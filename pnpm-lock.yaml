@@ -120,6 +120,12 @@ importers:
 
   apps/workflow-platform:
     dependencies:
+      '@gigalibs/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
+      '@gigalibs/onboarding-flow':
+        specifier: workspace:*
+        version: link:../../packages/onboarding-flow
       '@xyflow/react':
         specifier: ^12.3.6
         version: 12.11.5(@types/react-dom@19.2.5(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
@@ -130,8 +136,8 @@ importers:
         specifier: ^4.1.0
         version: 4.4.0
       lucide-react:
-        specifier: ^0.478.0
-        version: 0.478.0(react@19.2.8)
+        specifier: ^1.38.0
+        version: 1.38.0(react@19.2.8)
       next:
         specifier: ^15.2.0
         version: 15.5.24(@types/node@24.13.3)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
@@ -403,15 +409,6 @@ importers:
         specifier: ^3.0.0
         version: 3.2.7(@types/node@24.13.3)(jiti@2.7.0)(tsx@4.23.12)
 
-  packages/cli:
-    devDependencies:
-      typescript:
-        specifier: ^5.8.3
-        version: 5.9.3
-      vitest:
-        specifier: ^3.0.0
-        version: 3.2.7(@types/node@24.13.3)(jiti@2.7.0)(tsx@4.23.12)
-
   packages/config:
     dependencies:
       zod:
@@ -549,8 +546,6 @@ importers:
       vitest:
         specifier: ^3.0.0
         version: 3.2.7(@types/node@24.13.3)(jiti@2.7.0)(tsx@4.23.12)
-
-  packages/export-engine-core: {}
 
   packages/form-engine-core: {}
 
@@ -1004,15 +999,6 @@ importers:
       typescript:
         specifier: ^5.8.3
         version: 5.9.3
-
-  packages/reports-grid-react:
-    dependencies:
-      '@gigalibs/export-engine-core':
-        specifier: workspace:*
-        version: link:../export-engine-core
-      react:
-        specifier: '>=18.0.0'
-        version: 19.2.8
 
   packages/reports-nest:
     devDependencies:
@@ -2032,6 +2018,7 @@ packages:
   '@smithy/node-http-handler@4.12.0':
     resolution: {integrity: sha512-0mq1pHadfyXCYCqm2cNpbjNIT+fbaUpNxewZb/YNr2L0IrEVMOb8gM/Fl4K6XvHCW3uSNDFwPl/+iKm0bx9jYg==}
     engines: {node: '>=18.0.0'}
+    deprecated: Depreacted due to a memory leak issue https://github.com/smithy-lang/smithy-typescript/issues/2258
 
   '@smithy/signature-v4@5.7.3':
     resolution: {integrity: sha512-7ImGm+FkHRLcBaRttIAMZ6bzJZWb2cJGoYjq46F2UjycujWzrL9GEN9h4w7eQyXJYnltrUhxbbieBAIRrdqpow==}
@@ -2757,8 +2744,8 @@ packages:
   loupe@3.2.1:
     resolution: {integrity: sha512-CdzqowRJCeLU72bHvWqwRBBlLcMEtIvGrlvef74kMnV2AolS9Y8xUv1I0U/MNAWMhBlKIoyuEgoJ0t/bbwHbLQ==}
 
-  lucide-react@0.478.0:
-    resolution: {integrity: sha512-aO8e1ZQEjh/0LcEjm08VyBAPtRSfGG/rJEUTph6/Bfi4GrosZKOawUoc0+JBGSslM04bRWaOTkCCzq+pVrUCnQ==}
+  lucide-react@1.38.0:
+    resolution: {integrity: sha512-xZCyBd/wiVUDactoCc+42TjL0aB7EBOXsuX+tjz+W/sGzw2KhHpL1NOH3FIaVUcpimvUBpIYfz34Ofj9S5JEzQ==}
     peerDependencies:
       react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
 
@@ -5190,7 +5177,7 @@ snapshots:
 
   loupe@3.2.1: {}
 
-  lucide-react@0.478.0(react@19.2.8):
+  lucide-react@1.38.0(react@19.2.8):
     dependencies:
       react: 19.2.8
 
