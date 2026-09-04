@@ -23,7 +23,7 @@
   "dependencies": {
     "@gigalibs/logger": "workspace:*",
     "bullmq": "^5.34.0",
-    "ioredis": "^5.4.1"
+    "ioredis": "^6.0.0"
   },
   "devDependencies": {
     "typescript": "^5.8.3",
