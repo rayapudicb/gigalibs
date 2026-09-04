@@ -1,0 +1,16 @@
+{
+  "name": "@gigalibs/security-shield",
+  "version": "0.0.1",
+  "description": "MFA/TOTP authenticator, brute-force mitigation, IP whitelisting, and security headers",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist *.tsbuildinfo"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3"
+  }
+}

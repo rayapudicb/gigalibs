@@ -1,0 +1,34 @@
+{
+  "id": "gigalibs.auth",
+  "name": "Authentication & Session Security",
+  "version": "1.0.0",
+  "description": "Password hashing with Argon2, JWT token issuance & verification, OTP passwordless login, and session rotation",
+  "capabilities": [
+    "password-auth",
+    "jwt-tokens",
+    "otp-login",
+    "session-management"
+  ],
+  "requires": {
+    "gigalibs.tenancy": "^1.0.0"
+  },
+  "optional": {
+    "gigalibs.audit": "^1.0.0"
+  },
+  "permissions": [
+    "auth.session.read",
+    "auth.session.revoke"
+  ],
+  "eventsProduced": [
+    "auth.login_success.v1",
+    "auth.login_failed.v1",
+    "auth.session_revoked.v1"
+  ],
+  "eventsConsumed": [
+    "user.deactivated.v1"
+  ],
+  "configurationNamespace": "auth",
+  "healthChecks": [
+    "database"
+  ]
+}

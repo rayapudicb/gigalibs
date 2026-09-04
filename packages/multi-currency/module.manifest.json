@@ -1,0 +1,28 @@
+{
+  "id": "gigalibs.currency",
+  "name": "Multi-Currency Engine & FX Rates",
+  "version": "1.0.0",
+  "description": "Multi-currency conversion, real-time FX rate snapshot provider port, decimal precision rules, and localized financial formatting",
+  "capabilities": [
+    "currency-conversion",
+    "fx-rates-provider",
+    "decimal-precision",
+    "financial-formatting"
+  ],
+  "requires": {
+    "gigalibs.tenancy": "^1.0.0"
+  },
+  "optional": {},
+  "permissions": [
+    "currency.fx.read",
+    "currency.fx.manage"
+  ],
+  "eventsProduced": [
+    "currency.rates_updated.v1"
+  ],
+  "eventsConsumed": [],
+  "configurationNamespace": "currency",
+  "healthChecks": [
+    "fx-provider"
+  ]
+}

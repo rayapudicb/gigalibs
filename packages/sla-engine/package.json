@@ -1,0 +1,16 @@
+{
+  "name": "@gigalibs/sla-engine",
+  "version": "0.0.1",
+  "description": "SLA breach calculator, first-response time tracker, escalation triggers",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist *.tsbuildinfo"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3"
+  }
+}

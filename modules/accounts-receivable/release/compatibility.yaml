@@ -1,0 +1,12 @@
+apiVersion: release.gigalibs.io/v1alpha1
+kind: ModuleCompatibility
+metadata:
+  module: accounts-receivable
+  version: 0.0.0-design
+spec:
+  status: draft
+  postgresql: '>=16 <19'
+  openapi: 0.1.0-draft
+  asyncapi: 0.1.0-draft
+  supportedUpgrades: []
+  certifiedDeploymentModes: []

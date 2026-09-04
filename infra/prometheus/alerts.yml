@@ -1,0 +1,78 @@
+groups:
+  - name: gigalibs-control-plane-alerts
+    rules:
+      - alert: ControlPlaneMetricsCollectorFailed
+        expr: gigalibs_metrics_collection_success{collector="database"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          tier: control-plane
+        annotations:
+          summary: "Control-plane metrics database collector failed"
+          description: "Database collector has returned 0 for > 2 minutes. Metrics may be stale or database is unreachable."
+          runbook_url: "docs/runbooks/control-plane-metrics.md"
+
+      - alert: ControlPlaneOutboxBacklogHigh
+        expr: sum(gigalibs_control_outbox_events{state="PENDING"}) > 100
+        for: 5m
+        labels:
+          severity: warning
+          tier: control-plane
+        annotations:
+          summary: "Control plane outbox backlog is accumulating"
+          description: "Over 100 pending outbox events for > 5 minutes. Check outbox publisher worker health."
+          runbook_url: "docs/runbooks/control-plane-metrics.md"
+
+      - alert: ControlPlaneHigh5xxRate
+        expr: sum(rate(gigalibs_http_requests_total{status=~"5.."}[5m])) / sum(rate(gigalibs_http_requests_total[5m])) * 100 > 1
+        for: 3m
+        labels:
+          severity: critical
+          tier: control-plane
+        annotations:
+          summary: "Control plane HTTP 5xx error rate > 1%"
+          description: "HTTP 5xx error rate has exceeded 1% of total traffic over the last 5 minutes."
+
+      - alert: ControlPlaneHighP99Latency
+        expr: histogram_quantile(0.99, sum(rate(gigalibs_http_request_duration_seconds_bucket[5m])) by (le)) > 1.0
+        for: 5m
+        labels:
+          severity: warning
+          tier: control-plane
+        annotations:
+          summary: "Control plane P99 latency > 1000ms"
+          description: "99th percentile request duration exceeds 1 second for 5 consecutive minutes."
+
+  - name: gigalibs-execution-plane-alerts
+    rules:
+      - alert: ExecutionPlaneMetricsCollectorFailed
+        expr: gigalibs_execution_metrics_collection_success == 0
+        for: 2m
+        labels:
+          severity: critical
+          tier: execution-plane
+        annotations:
+          summary: "Execution plane metrics collector failed"
+          description: "Execution plane metrics database collection has failed for > 2 minutes."
+          runbook_url: "docs/runbooks/execution-plane-metrics.md"
+
+      - alert: ExecutionPlaneQuarantinedRunsDetected
+        expr: sum(gigalibs_execution_runs{status="QUARANTINED"}) > 0
+        for: 1m
+        labels:
+          severity: warning
+          tier: execution-plane
+        annotations:
+          summary: "Quarantined execution runs in Dead-Letter Queue (DLQ)"
+          description: "One or more workflow runs have entered quarantine and require operator intervention or retry."
+          runbook_url: "docs/runbooks/execution-plane-metrics.md"
+
+      - alert: ExecutionPlaneOutboxBacklogHigh
+        expr: sum(gigalibs_execution_outbox_events{state="PENDING"}) > 50
+        for: 5m
+        labels:
+          severity: warning
+          tier: execution-plane
+        annotations:
+          summary: "Execution plane outbox backlog is growing"
+          description: "Over 50 pending events in execution outbox for > 5 minutes."

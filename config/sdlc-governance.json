@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "source": {
+    "repository": "TextFly (local source inventory)",
+    "agentDirectory": "docs/agents",
+    "adaptationRecord": ".pi/AGENT_IMPORT_PROVENANCE.md"
+  },
+  "coordinator": "agile_delivery_orchestrator",
+  "importedAgents": [
+    "api_contracts",
+    "backend_domain",
+    "communication_orchestration",
+    "data_portability",
+    "developer_platform",
+    "documentation_enablement",
+    "infrastructure_observability",
+    "integration_connectors",
+    "plugin_runtime",
+    "qa_spec",
+    "release_operations",
+    "requirements_spec",
+    "solution_architecture",
+    "study_guide_sync",
+    "tenant_config",
+    "tenant_identity_access",
+    "trust_safety_automation",
+    "web_experience"
+  ],
+  "statusValues": ["Proposed", "Ready", "In Progress", "Review", "Blocked", "Accepted", "Released"],
+  "workInProgressLimits": {
+    "implementationModules": 1,
+    "activeImplementationWorkItems": []
+  },
+  "relativeDeliveryEstimate": {
+    "total": 100,
+    "earned": 41,
+    "remaining": 59,
+    "basis": "Blueprint Releases 0-4 including implementation and required G0-G7 evidence"
+  },
+  "mandatoryArtifacts": [
+    "AGENTS.md",
+    ".pi/AGENT_CATALOG.md",
+    ".pi/AGENT_IMPORT_PROVENANCE.md",
+    ".pi/PLAN.md",
+    ".pi/WORK_ITEMS.md",
+    ".pi/work/WI-OI-003.md",
+    ".pi/work/WI-OI-005.md",
+    ".pi/work/WI-OI-006.md",
+    ".pi/work/WI-OI-007.md",
+    ".pi/work/WI-OI-008.md",
+    ".pi/work/WI-OI-009.md",
+    ".pi/work/WI-OI-010.md",
+    ".pi/work/WI-OI-011.md",
+    ".pi/work/WI-OI-012.md",
+    ".pi/work/WI-OI-013.md",
+    ".pi/work/WI-OI-014.md",
+    ".pi/work/WI-OI-015.md",
+    ".pi/work/WI-OI-016.md",
+    ".pi/work/WI-OI-017.md",
+    ".pi/work/WI-OI-018.md",
+    ".pi/work/WI-OI-019.md",
+    "docs/AGILE_MODULE_DELIVERY.md",
+    "docs/SDLC_DEVELOPMENT_GUIDE.md",
+    "docs/REQUIREMENTS_BASELINE.md",
+    "docs/ENGINEERING_MODULE_PRODUCTION_COMPLETENESS_STANDARD.md",
+    "docs/operational-intelligence-implementation-status.md",
+    "docs/zero-mock-data-lineage-remediation-audit.md",
+    "docs/runtime-quarantine.md"
+  ]
+}

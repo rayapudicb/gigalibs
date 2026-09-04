@@ -1,0 +1,19 @@
+{
+  "name": "@gigalibs/charts-react",
+  "version": "0.0.1",
+  "description": "Pre-themed Giga UI SVG/HTML charts: Line, Bar, Area, Donut, Heatmap",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist *.tsbuildinfo"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3"
+  }
+}

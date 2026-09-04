@@ -1,0 +1,16 @@
+{
+  "name": "@gigalibs/data-retention",
+  "version": "0.0.1",
+  "description": "Automated data retention and scheduled purge policy evaluator",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist *.tsbuildinfo"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3"
+  }
+}

@@ -1,0 +1,21 @@
+apiVersion: release.gigalibs.io/v1alpha1
+kind: ModuleEvidenceIndex
+metadata:
+  module: accounts-receivable
+  version: 0.0.0-design
+spec:
+  certification: not-certified
+  workItem: WI-OI-019
+  currentGate: G0-G3
+  evidence:
+    requirements: docs/requirements/PRODUCT_REQUIREMENTS.md
+    architecture: docs/architecture/ARCHITECTURE.md
+    openapi: contracts/openapi.yaml
+    asyncapi: contracts/asyncapi.yaml
+    dataModel: db/schema/AR_DATA_MODEL.md
+    testPlan: tests/README.md
+  implementation: null
+  migrations: []
+  tests: []
+  humanApprovals: []
+  productionObservation: null

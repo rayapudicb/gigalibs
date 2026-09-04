@@ -1,0 +1,38 @@
+{
+  "id": "gigalibs.rule-engine",
+  "name": "Universal Rule Engine (JSON AST)",
+  "version": "1.0.0",
+  "description": "Declarative JSON Abstract Syntax Tree evaluator supporting nested boolean logic, dynamic fact extraction, pluggable operators, and automated actions",
+  "capabilities": [
+    "json-ast-rules",
+    "boolean-logic",
+    "fact-extraction",
+    "rule-simulation",
+    "dynamic-actions"
+  ],
+  "requires": {
+    "gigalibs.tenancy": "^1.0.0"
+  },
+  "optional": {
+    "gigalibs.audit": "^1.0.0"
+  },
+  "permissions": [
+    "rules.rule.read",
+    "rules.rule.create",
+    "rules.rule.update",
+    "rules.rule.delete",
+    "rules.rule.evaluate"
+  ],
+  "eventsProduced": [
+    "rule.created.v1",
+    "rule.evaluated.v1",
+    "rule.action_triggered.v1"
+  ],
+  "eventsConsumed": [
+    "tenant.created.v1"
+  ],
+  "configurationNamespace": "rules",
+  "healthChecks": [
+    "database"
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "name": "@gigalibs/multi-currency",
+  "version": "0.0.1",
+  "description": "Real-time FX currency converter, localized currency formatting, and multi-currency billing",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist *.tsbuildinfo"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3"
+  }
+}

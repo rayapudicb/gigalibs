@@ -1,0 +1,47 @@
+{
+  "id": "gigalibs.tickets",
+  "name": "Tickets & Customer Service Desk",
+  "version": "1.0.0",
+  "description": "Universal ticketing lifecycle, priorities, assignments, conversation timeline, and SLA compliance",
+  "capabilities": [
+    "ticket-lifecycle",
+    "priority-escalation",
+    "agent-assignment",
+    "timeline-comments",
+    "sla-monitoring"
+  ],
+  "requires": {
+    "gigalibs.tenancy": "^1.0.0",
+    "gigalibs.audit": "^1.0.0"
+  },
+  "optional": {
+    "gigalibs.sla": "^1.0.0",
+    "gigalibs.notifications": "^1.0.0"
+  },
+  "permissions": [
+    "tickets.read",
+    "tickets.create",
+    "tickets.update",
+    "tickets.delete",
+    "tickets.assign",
+    "tickets.resolve",
+    "tickets.export"
+  ],
+  "eventsProduced": [
+    "ticket.created.v1",
+    "ticket.assigned.v1",
+    "ticket.status_changed.v1",
+    "ticket.comment_added.v1",
+    "ticket.resolved.v1",
+    "ticket.sla_breached.v1"
+  ],
+  "eventsConsumed": [
+    "tenant.created.v1",
+    "user.deactivated.v1"
+  ],
+  "configurationNamespace": "tickets",
+  "healthChecks": [
+    "database",
+    "sla-timer"
+  ]
+}

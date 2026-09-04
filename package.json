@@ -1,0 +1,48 @@
+{
+  "name": "gigalibs",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Headless Composable Enterprise Platform — Build once, reuse everywhere, sell to many.",
+  "packageManager": "pnpm@11.1.2",
+  "engines": {
+    "node": ">=22.0.0",
+    "pnpm": ">=10.0.0"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "test": "vitest run --config vitest.config.ts && pnpm test:execution-api",
+    "test:execution-api": "node scripts/run-workflow-api-tests.mjs",
+    "test:watch": "turbo run test:watch",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "format": "biome format --write .",
+    "typecheck": "turbo run typecheck",
+    "clean": "turbo run clean && rm -rf node_modules",
+    "changeset": "changeset",
+    "version": "changeset version",
+    "release": "turbo run build && changeset publish",
+    "docker:dev": "docker compose -f docker/docker-compose.dev.yml up -d",
+    "docker:down": "docker compose -f docker/docker-compose.dev.yml down",
+    "db:generate": "turbo run db:generate",
+    "db:migrate": "turbo run db:migrate",
+    "audit:production-data": "node scripts/verify-runtime-data-integrity.mjs",
+    "audit:all-runtime-data": "node scripts/verify-runtime-data-integrity.mjs --all-runtime",
+    "audit:package-dependencies": "node scripts/verify-package-dependencies.mjs",
+    "audit:api-boundary": "node scripts/verify-api-module-boundary.mjs",
+    "audit:navigation": "node scripts/verify-navigation-boundary.mjs",
+    "audit:sdlc": "node scripts/verify-sdlc-governance.mjs"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
+    "@changesets/cli": "^2.27.12",
+    "@types/node": "^24.10.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "turbo": "^2.3.3",
+    "typescript": "^5.8.3",
+    "vitest": "^3.0.0"
+  }
+}

@@ -1,0 +1,395 @@
+openapi: 3.1.0
+info:
+  title: GigaLibs Accounts Receivable API
+  version: 0.1.0-draft
+  description: >-
+    Draft contract for WI-OI-019. Tenant scope is derived from a verified OIDC token and is never accepted
+    from a request body. This contract is not yet backed by a runtime implementation.
+servers:
+  - url: https://{host}/ar/api
+    variables:
+      host:
+        default: ar.example.invalid
+security:
+  - oidc: []
+tags:
+  - name: Health
+  - name: Customers
+  - name: Invoices
+paths:
+  /health/live:
+    get:
+      tags: [Health]
+      operationId: getLiveness
+      security: []
+      responses:
+        '200':
+          description: Process is alive
+  /health/ready:
+    get:
+      tags: [Health]
+      operationId: getReadiness
+      security: []
+      responses:
+        '200':
+          description: Required dependencies are ready
+        '503':
+          description: A required dependency is unavailable
+  /v1/customers:
+    post:
+      tags: [Customers]
+      operationId: createCustomer
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCustomerRequest'
+      responses:
+        '201':
+          description: Customer created
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customer'
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '409': {$ref: '#/components/responses/Conflict'}
+    get:
+      tags: [Customers]
+      operationId: listCustomers
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/PageSize'
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, inactive]
+      responses:
+        '200':
+          description: Tenant-scoped customer page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerPage'
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+  /v1/invoices:
+    post:
+      tags: [Invoices]
+      operationId: createInvoiceDraft
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateInvoiceDraftRequest'
+      responses:
+        '201':
+          description: Draft created with authoritative server totals
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Invoice'
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '409': {$ref: '#/components/responses/Conflict'}
+    get:
+      tags: [Invoices]
+      operationId: listInvoices
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/PageSize'
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/InvoiceStatus'
+      responses:
+        '200':
+          description: Tenant-scoped invoice page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvoicePage'
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+  /v1/invoices/{invoiceId}:
+    parameters:
+      - $ref: '#/components/parameters/InvoiceId'
+    get:
+      tags: [Invoices]
+      operationId: getInvoice
+      responses:
+        '200':
+          description: Invoice
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Invoice'
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+    patch:
+      tags: [Invoices]
+      operationId: updateInvoiceDraft
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateInvoiceDraftRequest'
+      responses:
+        '200':
+          description: Draft updated with authoritative server totals
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Invoice'
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '412': {$ref: '#/components/responses/PreconditionFailed'}
+  /v1/invoices/{invoiceId}:issue:
+    post:
+      tags: [Invoices]
+      operationId: issueInvoice
+      parameters:
+        - $ref: '#/components/parameters/InvoiceId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [issuedAt]
+              properties:
+                issuedAt:
+                  type: string
+                  format: date
+                reason:
+                  type: string
+                  minLength: 1
+                  maxLength: 500
+      responses:
+        '200':
+          description: Existing idempotent issue result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Invoice'
+        '201':
+          description: Invoice issued atomically
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Invoice'
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '412': {$ref: '#/components/responses/PreconditionFailed'}
+components:
+  securitySchemes:
+    oidc:
+      type: openIdConnect
+      openIdConnectUrl: https://identity.example.invalid/.well-known/openid-configuration
+  parameters:
+    InvoiceId:
+      name: invoiceId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+        minLength: 16
+        maxLength: 128
+    IfMatch:
+      name: If-Match
+      in: header
+      required: true
+      schema:
+        type: string
+    Cursor:
+      name: cursor
+      in: query
+      schema:
+        type: string
+        maxLength: 512
+    PageSize:
+      name: pageSize
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 50
+  headers:
+    ETag:
+      description: Opaque resource version for optimistic concurrency
+      schema:
+        type: string
+  responses:
+    BadRequest:
+      description: Validation failed
+      content: {application/problem+json: {schema: {$ref: '#/components/schemas/Problem'}}}
+    Unauthorized:
+      description: Authentication is missing or invalid
+      content: {application/problem+json: {schema: {$ref: '#/components/schemas/Problem'}}}
+    Forbidden:
+      description: The caller lacks permission; object existence is not disclosed
+      content: {application/problem+json: {schema: {$ref: '#/components/schemas/Problem'}}}
+    NotFound:
+      description: The tenant-scoped object was not found
+      content: {application/problem+json: {schema: {$ref: '#/components/schemas/Problem'}}}
+    Conflict:
+      description: Domain or idempotency conflict
+      content: {application/problem+json: {schema: {$ref: '#/components/schemas/Problem'}}}
+    PreconditionFailed:
+      description: Resource version changed; reload before retrying
+      content: {application/problem+json: {schema: {$ref: '#/components/schemas/Problem'}}}
+  schemas:
+    CreateCustomerRequest:
+      type: object
+      additionalProperties: false
+      required: [legalName, billingEmail, currency]
+      properties:
+        legalName: {type: string, minLength: 1, maxLength: 200}
+        billingEmail: {type: string, format: email, maxLength: 320}
+        externalReference: {type: string, minLength: 1, maxLength: 100}
+        currency: {type: string, pattern: '^[A-Z]{3}$'}
+    Customer:
+      allOf:
+        - $ref: '#/components/schemas/CreateCustomerRequest'
+        - type: object
+          required: [id, status, version, createdAt, updatedAt]
+          properties:
+            id: {type: string, format: uuid}
+            status: {type: string, enum: [active, inactive]}
+            version: {type: integer, minimum: 1}
+            createdAt: {type: string, format: date-time}
+            updatedAt: {type: string, format: date-time}
+    InvoiceLineInput:
+      type: object
+      additionalProperties: false
+      required: [description, quantity, unitAmountMinor]
+      properties:
+        description: {type: string, minLength: 1, maxLength: 500}
+        quantity: {type: string, pattern: '^[0-9]+(\\.[0-9]{1,6})?$'}
+        unitAmountMinor: {type: integer, minimum: 0, maximum: 9007199254740991}
+    CreateInvoiceDraftRequest:
+      type: object
+      additionalProperties: false
+      required: [customerId, currency, dueDate, lines]
+      properties:
+        customerId: {type: string, format: uuid}
+        currency: {type: string, pattern: '^[A-Z]{3}$'}
+        dueDate: {type: string, format: date}
+        purchaseOrderReference: {type: string, maxLength: 100}
+        lines:
+          type: array
+          minItems: 1
+          maxItems: 500
+          items: {$ref: '#/components/schemas/InvoiceLineInput'}
+    UpdateInvoiceDraftRequest:
+      allOf:
+        - $ref: '#/components/schemas/CreateInvoiceDraftRequest'
+    InvoiceStatus:
+      type: string
+      enum: [draft, approval_pending, issued, partially_paid, paid, overdue, voided]
+    Invoice:
+      type: object
+      required:
+        - id
+        - customerId
+        - status
+        - currency
+        - lines
+        - subtotalMinor
+        - taxMinor
+        - totalMinor
+        - amountPaidMinor
+        - amountDueMinor
+        - version
+        - createdAt
+        - updatedAt
+      properties:
+        id: {type: string, format: uuid}
+        customerId: {type: string, format: uuid}
+        invoiceNumber: {type: [string, 'null']}
+        status: {$ref: '#/components/schemas/InvoiceStatus'}
+        currency: {type: string, pattern: '^[A-Z]{3}$'}
+        dueDate: {type: string, format: date}
+        lines:
+          type: array
+          items: {$ref: '#/components/schemas/InvoiceLineInput'}
+        subtotalMinor: {type: integer}
+        taxMinor: {type: integer}
+        totalMinor: {type: integer}
+        amountPaidMinor: {type: integer}
+        amountDueMinor: {type: integer}
+        version: {type: integer, minimum: 1}
+        issuedAt: {type: [string, 'null'], format: date-time}
+        createdAt: {type: string, format: date-time}
+        updatedAt: {type: string, format: date-time}
+    CustomerPage:
+      type: object
+      required: [items]
+      properties:
+        items: {type: array, items: {$ref: '#/components/schemas/Customer'}}
+        nextCursor: {type: [string, 'null']}
+    InvoicePage:
+      type: object
+      required: [items]
+      properties:
+        items: {type: array, items: {$ref: '#/components/schemas/Invoice'}}
+        nextCursor: {type: [string, 'null']}
+    Problem:
+      type: object
+      required: [type, title, status, correlationId]
+      properties:
+        type: {type: string, format: uri-reference}
+        title: {type: string}
+        status: {type: integer, minimum: 400, maximum: 599}
+        detail: {type: string}
+        correlationId: {type: string}
+        errors:
+          type: array
+          items:
+            type: object
+            required: [field, code]
+            properties:
+              field: {type: string}
+              code: {type: string}

@@ -1,0 +1,19 @@
+{
+  "name": "@gigalibs/document-viewer-react",
+  "version": "0.0.1",
+  "description": "Universal document/PDF viewer with zoom, page navigation, and text search",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist *.tsbuildinfo"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3"
+  }
+}

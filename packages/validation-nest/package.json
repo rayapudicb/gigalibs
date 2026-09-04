@@ -1,0 +1,30 @@
+{
+  "name": "@gigalibs/validation-nest",
+  "version": "0.1.0",
+  "description": "Reusable Zod request validation for NestJS modules",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist *.tsbuildinfo"
+  },
+  "dependencies": {
+    "@nestjs/common": "^11.2.3",
+    "zod": "^4.5.2"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.0",
+    "typescript": "^5.8.3",
+    "vitest": "^3.0.0"
+  }
+}

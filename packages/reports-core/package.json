@@ -1,0 +1,19 @@
+{
+  "name": "@gigalibs/reports-core",
+  "version": "0.0.1",
+  "description": "Report builder query engine, schedule parser, and PDF/CSV generator",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist *.tsbuildinfo"
+  },
+  "dependencies": {
+    "@gigalibs/crypto": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3"
+  }
+}

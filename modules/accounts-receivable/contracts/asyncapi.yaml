@@ -1,0 +1,74 @@
+asyncapi: 2.6.0
+info:
+  title: GigaLibs Accounts Receivable Events
+  version: 0.1.0-draft
+  description: Draft committed-domain-event contract for WI-OI-019; no producer exists yet.
+defaultContentType: application/json
+channels:
+  ar.invoice.issued.v1:
+    publish:
+      operationId: publishInvoiceIssued
+      message:
+        $ref: '#/components/messages/InvoiceIssued'
+  ar.invoice.balance-changed.v1:
+    publish:
+      operationId: publishInvoiceBalanceChanged
+      message:
+        $ref: '#/components/messages/InvoiceBalanceChanged'
+components:
+  messages:
+    InvoiceIssued:
+      name: ar.invoice.issued.v1
+      messageId: eventId
+      payload:
+        allOf:
+          - $ref: '#/components/schemas/EventEnvelope'
+          - type: object
+            required: [data]
+            properties:
+              data:
+                type: object
+                additionalProperties: false
+                required: [invoiceId, billingEntityId, invoiceNumber, currency, totalMinor, issuedAt]
+                properties:
+                  invoiceId: {type: string, format: uuid}
+                  billingEntityId: {type: string, format: uuid}
+                  invoiceNumber: {type: string}
+                  currency: {type: string, pattern: '^[A-Z]{3}$'}
+                  totalMinor: {type: integer}
+                  issuedAt: {type: string, format: date-time}
+    InvoiceBalanceChanged:
+      name: ar.invoice.balance-changed.v1
+      messageId: eventId
+      payload:
+        allOf:
+          - $ref: '#/components/schemas/EventEnvelope'
+          - type: object
+            required: [data]
+            properties:
+              data:
+                type: object
+                additionalProperties: false
+                required: [invoiceId, currency, previousAmountDueMinor, amountDueMinor, reason]
+                properties:
+                  invoiceId: {type: string, format: uuid}
+                  currency: {type: string, pattern: '^[A-Z]{3}$'}
+                  previousAmountDueMinor: {type: integer}
+                  amountDueMinor: {type: integer}
+                  reason: {type: string, enum: [payment, credit, refund, dispute, void]}
+  schemas:
+    EventEnvelope:
+      type: object
+      additionalProperties: false
+      required: [specversion, id, source, type, tenantId, subject, time, correlationId, data]
+      properties:
+        specversion: {type: string, const: '1.0'}
+        id: {type: string, format: uuid}
+        source: {type: string, const: gigalibs.accounts-receivable}
+        type: {type: string}
+        tenantId: {type: string, format: uuid}
+        subject: {type: string}
+        time: {type: string, format: date-time}
+        correlationId: {type: string}
+        causationId: {type: [string, 'null']}
+        data: {type: object}

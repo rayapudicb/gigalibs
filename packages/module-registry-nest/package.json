@@ -1,0 +1,30 @@
+{
+  "name": "@gigalibs/module-registry-nest",
+  "version": "0.1.0",
+  "description": "NestJS registration and inspection endpoints for GigaLibs modules",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run --passWithNoTests",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist *.tsbuildinfo"
+  },
+  "dependencies": {
+    "@gigalibs/module-registry": "workspace:*",
+    "@nestjs/common": "^11.2.3"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.0",
+    "typescript": "^5.8.3",
+    "vitest": "^3.0.0"
+  }
+}

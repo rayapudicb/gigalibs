@@ -1,0 +1,42 @@
+{
+  "id": "gigalibs.users",
+  "name": "Users & Organization Directory",
+  "version": "1.0.0",
+  "description": "User profile management, workspace membership, department squads, invitations, and status lifecycle",
+  "capabilities": [
+    "user-lifecycle",
+    "team-squads",
+    "invitation-workflow",
+    "preferences-management"
+  ],
+  "requires": {
+    "gigalibs.tenancy": "^1.0.0",
+    "gigalibs.rbac": "^1.0.0"
+  },
+  "optional": {
+    "gigalibs.audit": "^1.0.0",
+    "gigalibs.notifications": "^1.0.0"
+  },
+  "permissions": [
+    "users.user.read",
+    "users.user.invite",
+    "users.user.update",
+    "users.user.suspend",
+    "users.user.delete",
+    "users.group.manage"
+  ],
+  "eventsProduced": [
+    "user.created.v1",
+    "user.invited.v1",
+    "user.updated.v1",
+    "user.suspended.v1",
+    "user.deleted.v1"
+  ],
+  "eventsConsumed": [
+    "tenant.created.v1"
+  ],
+  "configurationNamespace": "users",
+  "healthChecks": [
+    "database"
+  ]
+}

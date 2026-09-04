@@ -1,0 +1,30 @@
+{
+  "id": "gigalibs.geofence",
+  "name": "Maps & Geofencing Boundary Engine",
+  "version": "1.0.0",
+  "description": "High-precision Haversine geodesic distance calculation, circular geofences, and Ray-Casting Point-in-Polygon boundary containment",
+  "capabilities": [
+    "haversine-distance",
+    "circular-geofencing",
+    "point-in-polygon",
+    "boundary-checks"
+  ],
+  "requires": {
+    "gigalibs.tenancy": "^1.0.0"
+  },
+  "optional": {},
+  "permissions": [
+    "geofence.fence.read",
+    "geofence.fence.manage",
+    "geofence.calculate"
+  ],
+  "eventsProduced": [
+    "geofence.entry_detected.v1",
+    "geofence.exit_detected.v1"
+  ],
+  "eventsConsumed": [],
+  "configurationNamespace": "geofence",
+  "healthChecks": [
+    "geo-engine"
+  ]
+}

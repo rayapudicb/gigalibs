@@ -1,0 +1,71 @@
+apiVersion: modules.gigalibs.io/v1alpha1
+kind: Module
+metadata:
+  name: accounts-receivable
+  displayName: Customer Invoicing and Accounts Receivable
+  version: 0.0.0-design
+  lifecycle: proposed
+  workItem: WI-OI-019
+spec:
+  standalone: true
+  requiredModules: []
+  optionalModules:
+    - ledger
+    - subscription-metering
+  capabilities:
+    - customers
+    - invoices
+    - delivery
+    - payments
+    - credit-notes
+    - collections
+    - reconciliation
+    - aging
+    - audit
+  ui:
+    application: apps/web
+    basePath: /ar
+  api:
+    application: apps/api
+    version: v1
+    openapi: contracts/openapi.yaml
+  worker:
+    application: apps/worker
+  events:
+    asyncapi: contracts/asyncapi.yaml
+    emits:
+      - ar.invoice.issued.v1
+      - ar.invoice.balance-changed.v1
+    consumes: []
+  identity:
+    protocol: oidc
+    tenantClaimRequired: true
+    failClosed: true
+  database:
+    engine: postgresql
+    minimumVersion: '16'
+    ownsSchema: true
+    defaultSchema: gigalibs_ar
+    crossSchemaAccess: false
+  deployment:
+    modes:
+      - suite
+      - customer-cloud
+      - self-contained
+      - customer-postgresql-schema
+    artifacts:
+      - ar-web
+      - ar-api
+      - ar-worker
+      - ar-migrations
+  health:
+    liveness: /health/live
+    readiness: /health/ready
+  commercialMeter:
+    owner: subscription-metering
+    usageEvent: ar.invoice.issued.v1
+    dimension: issued_invoices
+    idempotencyField: invoiceId
+  certification:
+    status: not-certified
+    evidence: release/evidence-index.yaml

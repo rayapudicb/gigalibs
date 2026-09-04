@@ -1,0 +1,19 @@
+{
+  "name": "@gigalibs/kpi-widgets-react",
+  "version": "0.0.1",
+  "description": "KPI stat metric cards with trend indicators and sparklines",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist *.tsbuildinfo"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3"
+  }
+}

@@ -1,0 +1,83 @@
+@import '@xyflow/react/dist/style.css';
+
+:root {
+  --bg-canvas: #09090f;
+  --bg-node: #11111b;
+  --border-node: #1f1f33;
+}
+
+body {
+  background-color: #09090f;
+  color: #f3f4f6;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* ReactFlow Dark Theme Overrides */
+.react-flow__background {
+  background-color: #09090f !important;
+}
+
+.react-flow__controls {
+  background: #11111b !important;
+  border: 1px solid #1f1f33 !important;
+  border-radius: 12px !important;
+  overflow: hidden !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5) !important;
+}
+
+.react-flow__controls-button {
+  background: #11111b !important;
+  border-bottom: 1px solid #1f1f33 !important;
+  color: #9ca3af !important;
+  fill: #9ca3af !important;
+}
+
+.react-flow__controls-button:hover {
+  background: #1f1f33 !important;
+  color: #ffffff !important;
+  fill: #ffffff !important;
+}
+
+.react-flow__minimap {
+  background-color: #11111b !important;
+  border: 1px solid #1f1f33 !important;
+  border-radius: 12px !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5) !important;
+}
+
+.react-flow__handle {
+  width: 10px !important;
+  height: 10px !important;
+  background: #6366f1 !important;
+  border: 2px solid #09090f !important;
+  transition: all 0.15s ease;
+}
+
+.react-flow__handle:hover {
+  transform: scale(1.3);
+  background: #a5b4fc !important;
+}
+
+.react-flow__edge-path {
+  stroke: #4f46e5 !important;
+  stroke-width: 2.5px !important;
+}
+
+.react-flow__edge.selected .react-flow__edge-path {
+  stroke: #818cf8 !important;
+  stroke-width: 3px !important;
+}
+
+.react-flow__edge.animated .react-flow__edge-path {
+  stroke-dasharray: 6;
+  animation: flowEdgePulse 0.8s linear infinite;
+}
+
+@keyframes flowEdgePulse {
+  from {
+    stroke-dashoffset: 24;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}

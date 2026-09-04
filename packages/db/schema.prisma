@@ -1,0 +1,2578 @@
+generator client {
+  provider     = "prisma-client"
+  output       = "./src/generated/prisma"
+  moduleFormat = "esm"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// ENUMS
+// ═══════════════════════════════════════════════════════════════════════
+
+enum TenantStatus {
+  PROVISIONING
+  ACTIVE
+  SUSPENDED
+  MAINTENANCE
+  TRIAL
+  CANCELLED
+}
+
+enum TenantIsolationMode {
+  ROW_LEVEL_SECURITY
+  SCHEMA_ISOLATED
+  DEDICATED_DATABASE
+}
+
+enum UserStatus {
+  ACTIVE
+  PENDING_VERIFICATION
+  SUSPENDED
+  DEACTIVATED
+}
+
+enum SessionStatus {
+  ACTIVE
+  REVOKED
+  EXPIRED
+}
+
+enum MemberRole {
+  SUPER_ADMIN
+  TENANT_ADMIN
+  MANAGER
+  MEMBER
+  VIEWER
+  GUEST
+}
+
+enum MemberStatus {
+  ACTIVE
+  INVITED
+  SUSPENDED
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  LOGIN
+  LOGOUT
+  EXPORT
+  IMPORT
+  INVITE
+  PERMISSION_CHANGE
+  SETTINGS_CHANGE
+  PROVISION
+  STATUS_CHANGE
+}
+
+enum BillingInterval {
+  DAY
+  WEEK
+  MONTH
+  YEAR
+}
+
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  PAUSED
+  CANCELLED
+  UNPAID
+  INCOMPLETE
+}
+
+enum InvoiceStatus {
+  DRAFT
+  OPEN
+  PAID
+  VOID
+  UNCOLLECTIBLE
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  REFUNDED
+}
+
+enum WorkflowStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  ARCHIVED
+}
+
+enum WorkflowRunStatus {
+  PENDING
+  RUNNING
+  SUCCEEDED
+  FAILED
+  QUARANTINED
+}
+
+enum IngestionCadence {
+  REALTIME_CDC
+  SYNC_8_HOURS
+  SYNC_24_HOURS
+}
+
+enum BillableSourceType {
+  TIMESHEET_SHIFT
+  MILESTONE_DELIVERABLE
+  EXPENSE_RECORD
+  EQUIPMENT_ASSET
+  SERVICE_FEE
+}
+
+enum BillableApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum BillableLockStatus {
+  UNBILLED
+  INVOICED
+  LOCKED
+  WRITTEN_OFF
+}
+
+enum AccountingSyncStatus {
+  PENDING
+  SYNCED
+  FAILED
+  SKIPPED
+}
+
+enum DeploymentEnvironmentKind {
+  DEVELOPMENT
+  TEST
+  STAGING
+  PRODUCTION
+  DEMO
+}
+
+enum EnvironmentStatus {
+  ACTIVE
+  LOCKED
+  EXPIRED
+}
+
+enum ConnectionInterface {
+  REST
+  CSV_HTTP
+  WEBHOOK
+  POSTGRESQL
+  FILE_UPLOAD
+}
+
+enum ConnectionMode {
+  READ_ONLY
+  READ_WRITE
+}
+
+enum ConnectionStatus {
+  UNTESTED
+  READY
+  READY_WITH_LIMITS
+  NOT_READY
+  DISABLED
+}
+
+enum CredentialProvider {
+  DEPLOYMENT_SECRET
+  EXTERNAL_VAULT
+}
+
+enum CredentialAuthType {
+  NONE
+  BEARER_TOKEN
+  API_KEY_HEADER
+  HMAC_SHA256
+  USERNAME_PASSWORD
+}
+
+enum SourceFileStatus {
+  UPLOAD_PENDING
+  AVAILABLE
+  PROFILED
+  INGESTED
+  FAILED
+  EXPIRED
+}
+
+enum CredentialStatus {
+  ACTIVE
+  INVALID
+  REVOKED
+}
+
+enum DataContractStatus {
+  DRAFT
+  ACTIVE
+  RETIRED
+}
+
+enum DataClassification {
+  PUBLIC
+  INTERNAL
+  CONFIDENTIAL
+  RESTRICTED
+}
+
+enum RetentionHoldStatus {
+  ACTIVE
+  RELEASED
+}
+
+enum RetentionExecutionStatus {
+  RUNNING
+  SUCCEEDED
+  FAILED
+}
+
+enum ConnectorOperation {
+  TEST
+  PROFILE
+  INGEST
+}
+
+enum ConnectorAttemptStatus {
+  SUCCEEDED
+  FAILED
+  BLOCKED
+}
+
+enum IngestedEventStatus {
+  RECEIVED
+  VALIDATED
+  REJECTED
+  PROCESSING
+  PROCESSED
+  QUARANTINED
+}
+
+enum ControlOutboxStatus {
+  PENDING
+  PROCESSING
+  PUBLISHED
+  FAILED
+}
+
+enum ApDocumentStatus {
+  RECEIVED
+  MATCHING
+  MATCHED
+  EXCEPTION
+  PENDING_APPROVAL
+  APPROVED_FOR_PAYMENT
+  REJECTED
+}
+
+enum ApMatchOutcome {
+  MATCHED
+  MISMATCH
+  INCOMPLETE
+}
+
+enum FindingSeverity {
+  INFO
+  WARNING
+  BLOCKING
+}
+
+enum BusinessActionStatus {
+  PROPOSED
+  PENDING_APPROVAL
+  APPROVED
+  REJECTED
+  EXECUTING
+  SUCCEEDED
+  FAILED
+  RECONCILIATION_REQUIRED
+}
+
+enum ActionRisk {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum ApprovalDecision {
+  APPROVED
+  REJECTED
+}
+
+enum OperationalExceptionKind {
+  PROCESSING_FAILURE
+  BUSINESS_MISMATCH
+  MISSING_EVIDENCE
+  ACTION_FAILURE
+  RECONCILIATION
+}
+
+enum OperationalExceptionStatus {
+  OPEN
+  ASSIGNED
+  RETRY_SCHEDULED
+  RESOLVED
+  RECONCILIATION_REQUIRED
+}
+
+enum RecoveryOperation {
+  ASSIGN
+  RETRY
+  REPLAY
+  EDIT_AND_REPLAY
+  RESOLVE
+  RECONCILE
+}
+
+enum RecoveryStatus {
+  REQUESTED
+  SUCCEEDED
+  FAILED
+}
+
+enum ValueDefinitionStatus {
+  DRAFT
+  ACTIVE
+  RETIRED
+}
+
+enum ValueEventStatus {
+  CALCULATED
+  VERIFIED
+  REJECTED
+}
+
+enum BenefitDecision {
+  VERIFIED
+  REJECTED
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// TENANCY — every entity is scoped to a tenant
+// ═══════════════════════════════════════════════════════════════════════
+
+model Tenant {
+  id            String              @id @default(cuid())
+  slug          String              @unique
+  name          String
+  status        TenantStatus        @default(ACTIVE)
+  isolationMode TenantIsolationMode @default(ROW_LEVEL_SECURITY)
+  region        String              @default("local")
+  customDomain  String?             @unique
+  provisionedAt DateTime?
+
+  // Branding (stored as JSON)
+  branding    Json?
+  // Active feature flags
+  features    String[]  @default([])
+  // Current plan identifier (resolves via billing module)
+  plan        String?
+  trialEndsAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  members                 TenantMember[]
+  invites                 TenantInvite[]
+  auditLogs               AuditLog[]
+  sessions                Session[]
+  settings                TenantSettings?
+  subscriptions           Subscription[]
+  invoices                Invoice[]
+  clients                 Client[]
+  products                ProductCatalogItem[]
+  tickets                 SupportTicket[]
+  journalEntries          JournalEntry[]
+  customRoles             CustomRole[]
+  userGroups              UserGroup[]
+  formSchemas             FormSchema[]
+  taxNexusConfigs         TaxNexusConfig[]
+  cartSessions            CartSession[]
+  orders                  OrderHeader[]
+  managedDocuments        ManagedDocument[]
+  esignEnvelopes          EsignEnvelope[]
+  kbCategories            KbCategory[]
+  chatChannels            ChatChannel[]
+  geofenceZones           GeofenceZone[]
+  ruleDefinitions         RuleDefinition[]
+  fraudAssessments        FraudAssessmentLog[]
+  workflowPipelines       WorkflowPipeline[]
+  workflowRuns            WorkflowRun[]
+  workflowVersions        WorkflowVersion[]
+  ingestionStreams        IngestionStream[]
+  environments            TenantEnvironment[]
+  credentialRefs          CredentialReference[]
+  sourceConnections       SourceConnection[]
+  sourceSchemas           SourceSchemaVersion[]
+  dataContracts           DataContract[]
+  contractVersions        DataContractVersion[]
+  sourceEvents            SourceEvent[]
+  connectorAttempts       ConnectorAttempt[]
+  connectorStates         ConnectorCheckpoint[]
+  controlOutbox           ControlOutboxEvent[]
+  suppliers               Supplier[]
+  purchaseOrders          PurchaseOrder[]
+  goodsReceipts           GoodsReceipt[]
+  supplierInvoices        SupplierInvoice[]
+  ruleVersions            RuleVersion[]
+  matchEvaluations        ApMatchEvaluation[]
+  evidenceBundles         EvidenceBundle[]
+  businessActions         BusinessAction[]
+  actionApprovals         ActionApproval[]
+  actionResults           ActionResult[]
+  operationalExceptions   OperationalException[]
+  exceptionRecoveries     ExceptionRecovery[]
+  valueDefinitions        ValueDefinition[]
+  valueDefinitionVersions ValueDefinitionVersion[]
+  valueEvents             ValueEvent[]
+  benefitApprovals        BenefitApproval[]
+  sourceFileImports       SourceFileImport[]
+  retentionHolds          DataRetentionHold[]
+  retentionExecutions     DataRetentionExecution[]
+
+  @@index([slug])
+  @@map("tenants")
+}
+
+model TenantSettings {
+  id           String   @id @default(cuid())
+  tenantId     String   @unique
+  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  version      Int      @default(1)
+  branding     Json
+  security     Json
+  localization Json
+  features     Json
+  metadata     Json
+  updatedById  String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("tenant_settings")
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// USERS — the global user identity (email/phone, spans tenants)
+// ═══════════════════════════════════════════════════════════════════════
+
+model User {
+  id              String     @id @default(cuid())
+  email           String     @unique
+  emailVerifiedAt DateTime?
+  phone           String?    @unique
+  phoneVerifiedAt DateTime?
+  passwordHash    String?
+  name            String
+  avatarUrl       String?
+  status          UserStatus @default(PENDING_VERIFICATION)
+
+  // User preferences stored as JSON
+  preferences Json?
+  metadata    Json?
+
+  lastLoginAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  sessions    Session[]
+  passkeys    Passkey[]
+  memberships TenantMember[]
+  auditLogs   AuditLog[]
+  otps        OTP[]
+
+  @@index([email])
+  @@index([phone])
+  @@map("users")
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// SESSIONS — JWT refresh token store
+// ═══════════════════════════════════════════════════════════════════════
+
+model Session {
+  id           String        @id @default(cuid())
+  refreshToken String        @unique
+  status       SessionStatus @default(ACTIVE)
+  userAgent    String?
+  ipAddress    String?
+  expiresAt    DateTime
+  revokedAt    DateTime?
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  tenantId String?
+  tenant   Tenant? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([tenantId])
+  @@index([refreshToken])
+  @@map("sessions")
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// PASSKEYS — WebAuthn credentials
+// ═══════════════════════════════════════════════════════════════════════
+
+model Passkey {
+  id           String    @id @default(cuid())
+  credentialId String    @unique
+  publicKey    String
+  counter      BigInt    @default(0)
+  deviceType   String?
+  deviceName   String?
+  transports   String[]
+  lastUsedAt   DateTime?
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@map("passkeys")
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// OTP — one-time passwords for email/phone verification
+// ═══════════════════════════════════════════════════════════════════════
+
+model OTP {
+  id          String    @id @default(cuid())
+  code        String
+  purpose     String // 'login' | 'verify_email' | 'verify_phone' | 'password_reset'
+  channel     String // 'email' | 'sms'
+  target      String // email address or phone number
+  attempts    Int       @default(0)
+  maxAttempts Int       @default(5)
+  expiresAt   DateTime
+  usedAt      DateTime?
+
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([target, purpose])
+  @@index([userId])
+  @@map("otps")
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// TENANT MEMBERS — user membership within a tenant (org)
+// ═══════════════════════════════════════════════════════════════════════
+
+model TenantMember {
+  id     String       @id @default(cuid())
+  role   MemberRole   @default(MEMBER)
+  status MemberStatus @default(ACTIVE)
+
+  // Custom permissions beyond the base role (stored as JSON array)
+  permissions String[] @default([])
+
+  joinedAt  DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, tenantId])
+  @@index([tenantId])
+  @@index([userId])
+  @@map("tenant_members")
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// TENANT INVITES — pending invitations to join an org
+// ═══════════════════════════════════════════════════════════════════════
+
+model TenantInvite {
+  id         String     @id @default(cuid())
+  email      String
+  role       MemberRole @default(MEMBER)
+  token      String     @unique // signed invite token
+  expiresAt  DateTime
+  acceptedAt DateTime?
+  revokedAt  DateTime?
+
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  invitedById String // userId of who sent the invite
+
+  createdAt DateTime @default(now())
+
+  @@index([email])
+  @@index([tenantId])
+  @@index([token])
+  @@map("tenant_invites")
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// AUDIT LOG — immutable, tamper-evident activity trail
+// ═══════════════════════════════════════════════════════════════════════
+
+model AuditLog {
+  id            String      @id @default(cuid())
+  action        AuditAction
+  resource      String // e.g. 'user', 'invoice', 'role'
+  resourceId    String?
+  correlationId String?
+  sourceEventId String?     @unique
+
+  // What changed (before/after snapshot)
+  before Json?
+  after  Json?
+
+  // Request metadata
+  ipAddress String?
+  userAgent String?
+  metadata  Json?
+
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  tenantId String?
+  tenant   Tenant? @relation(fields: [tenantId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+
+  // AuditLog is NEVER updated or deleted — append-only
+  @@index([tenantId, createdAt(sort: Desc)])
+  @@index([resource, resourceId])
+  @@index([userId])
+  @@index([correlationId])
+  @@map("audit_logs")
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// BILLING & SUBSCRIPTION ENGINE
+// ═══════════════════════════════════════════════════════════════════════
+
+model Plan {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  description String?
+  isActive    Boolean  @default(true)
+  trialDays   Int      @default(0)
+  features    String[] @default([])
+  limits      Json? // e.g. { "seats": 10, "workflows": 100, "storageGb": 50 }
+  metadata    Json?
+
+  prices        Price[]
+  subscriptions Subscription[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("plans")
+}
+
+model Price {
+  id     String @id @default(cuid())
+  planId String
+  plan   Plan   @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  currency      String          @default("USD") // ISO-4217
+  unitAmount    Int // Price in cents/smallest currency unit
+  interval      BillingInterval @default(MONTH)
+  intervalCount Int             @default(1)
+  isActive      Boolean         @default(true)
+
+  subscriptionItems SubscriptionItem[]
+  invoiceLineItems  InvoiceLineItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([planId])
+  @@map("prices")
+}
+
+model Subscription {
+  id       String @id @default(cuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  planId String
+  plan   Plan   @relation(fields: [planId], references: [id], onDelete: Restrict)
+
+  status             SubscriptionStatus @default(ACTIVE)
+  currentPeriodStart DateTime
+  currentPeriodEnd   DateTime
+  cancelAtPeriodEnd  Boolean            @default(false)
+  cancelledAt        DateTime?
+  trialStart         DateTime?
+  trialEnd           DateTime?
+
+  items    SubscriptionItem[]
+  invoices Invoice[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([planId])
+  @@index([status])
+  @@map("subscriptions")
+}
+
+model SubscriptionItem {
+  id             String       @id @default(cuid())
+  subscriptionId String
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  priceId String
+  price   Price  @relation(fields: [priceId], references: [id], onDelete: Restrict)
+
+  quantity Int @default(1)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([subscriptionId])
+  @@index([priceId])
+  @@map("subscription_items")
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// INVOICES & PAYMENTS LEDGER
+// ═══════════════════════════════════════════════════════════════════════
+
+model Invoice {
+  id            String @id @default(cuid())
+  invoiceNumber String @unique // e.g. INV-2026-0001 or INV-2026-0001-SUB1
+  tenantId      String
+  tenant        Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  subscriptionId String?
+  subscription   Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+
+  // Incremental / Supplemental Parent-Child Sub-Invoicing
+  parentInvoiceId  String?
+  parentInvoice    Invoice?  @relation("SubInvoices", fields: [parentInvoiceId], references: [id], onDelete: SetNull)
+  subInvoices      Invoice[] @relation("SubInvoices")
+  subSequenceIndex Int?      @default(0)
+  projectOrEventId String?
+
+  // Void & Audit Tracking
+  voidReason String?
+  voidedBy   String?
+
+  status          InvoiceStatus @default(OPEN)
+  currency        String        @default("USD")
+  subtotalCents   Int
+  taxCents        Int           @default(0)
+  totalCents      Int
+  amountPaidCents Int           @default(0)
+  amountDueCents  Int
+
+  dueDate  DateTime?
+  paidAt   DateTime?
+  voidedAt DateTime?
+
+  lineItems       InvoiceLineItem[]
+  payments        PaymentTransaction[]
+  billableRecords BillableSourceRecord[]
+  accountingSyncs AccountingSyncRecord[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([subscriptionId])
+  @@index([parentInvoiceId])
+  @@index([projectOrEventId])
+  @@index([status])
+  @@map("invoices")
+}
+
+model BillableSourceRecord {
+  id                     String                 @id @default(cuid())
+  tenantId               String
+  sourceType             BillableSourceType     @default(TIMESHEET_SHIFT)
+  sourceId               String
+  projectOrEventId       String
+  projectOrEventName     String?
+  resourceName           String
+  resourceRole           String?
+  date                   DateTime               @default(now())
+  quantity               Int                    @default(1)
+  rawCostCents           Int // direct cost in cents
+  markupType             String                 @default("PERCENTAGE") // PERCENTAGE or FLAT_AMOUNT
+  markupValue            Float                  @default(0.0)
+  markupAmountCents      Int                    @default(0)
+  billedUnitPriceCents   Int
+  billedTotalAmountCents Int
+  marginPercent          Float                  @default(0.0)
+  approvalStatus         BillableApprovalStatus @default(PENDING)
+  billingStatus          BillableLockStatus     @default(UNBILLED)
+
+  invoicedInHeaderId String?
+  invoice            Invoice?  @relation(fields: [invoicedInHeaderId], references: [id], onDelete: SetNull)
+  invoicedAt         DateTime?
+  notes              String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([projectOrEventId])
+  @@index([approvalStatus, billingStatus])
+  @@index([invoicedInHeaderId])
+  @@map("billable_source_records")
+}
+
+model AccountingSyncRecord {
+  id                 String               @id @default(cuid())
+  tenantId           String
+  invoiceId          String
+  invoice            Invoice              @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  provider           String               @default("QUICKBOOKS_ONLINE")
+  externalCustomerId String?
+  externalInvoiceId  String?
+  externalDocNumber  String?
+  syncStatus         AccountingSyncStatus @default(PENDING)
+  errorMessage       String?
+  retryCount         Int                  @default(0)
+  syncedAt           DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([invoiceId])
+  @@index([syncStatus])
+  @@map("accounting_sync_records")
+}
+
+model InvoiceLineItem {
+  id        String  @id @default(cuid())
+  invoiceId String
+  invoice   Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  priceId String?
+  price   Price?  @relation(fields: [priceId], references: [id], onDelete: SetNull)
+
+  description String
+  quantity    Int    @default(1)
+  unitAmount  Int // in cents
+  totalAmount Int // in cents
+
+  createdAt DateTime @default(now())
+
+  @@index([invoiceId])
+  @@map("invoice_line_items")
+}
+
+model PaymentTransaction {
+  id        String  @id @default(cuid())
+  invoiceId String
+  invoice   Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  provider      String // required provider identifier from the configured payment adapter
+  transactionId String?       @unique
+  amountCents   Int
+  currency      String        @default("USD")
+  status        PaymentStatus @default(SUCCEEDED)
+  paymentMethod String? // e.g. "pm_card_visa_4242"
+  failureReason String?
+
+  createdAt DateTime @default(now())
+
+  @@index([invoiceId])
+  @@map("payment_transactions")
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// WORKFLOW DAG ENGINE & INGESTION PIPELINES
+// ═══════════════════════════════════════════════════════════════════════
+
+model WorkflowPipeline {
+  id       String @id @default(cuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  name          String
+  description   String?
+  targetApp     String // e.g. "SAP S/4HANA & SAP FICO"
+  status        WorkflowStatus @default(ACTIVE)
+  definition    Json // Full ReactFlow Nodes & Edges AST
+  activeVersion Int?
+
+  totalRuns   Int   @default(0)
+  successRate Float @default(100.0)
+
+  runs     WorkflowRun[]
+  versions WorkflowVersion[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@map("workflow_pipelines")
+}
+
+model WorkflowVersion {
+  id         String           @id @default(cuid())
+  pipelineId String
+  pipeline   WorkflowPipeline @relation(fields: [pipelineId], references: [id], onDelete: Cascade)
+
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  version          Int
+  definition       Json
+  inputSchema      Json
+  outputSchema     Json
+  checksum         String
+  schemaVersion    String
+  compilerVersion  String
+  validationReport Json
+  publishedById    String
+  publishedAt      DateTime @default(now())
+  createdAt        DateTime @default(now())
+
+  @@unique([pipelineId, version])
+  @@index([tenantId, publishedAt(sort: Desc)])
+  @@index([checksum])
+  @@map("workflow_versions")
+}
+
+model WorkflowRun {
+  id         String           @id @default(cuid())
+  pipelineId String
+  pipeline   WorkflowPipeline @relation(fields: [pipelineId], references: [id], onDelete: Cascade)
+
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  status         WorkflowRunStatus @default(PENDING)
+  durationMs     Int               @default(0)
+  creditsSettled Int               @default(0)
+  executionLog   Json? // Step-by-step trace
+  errorDetails   String?
+  isQuarantined  Boolean           @default(false)
+
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  @@index([pipelineId])
+  @@index([tenantId])
+  @@index([status])
+  @@map("workflow_runs")
+}
+
+model IngestionStream {
+  id       String @id @default(cuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  name              String
+  sourceSystem      String
+  targetDestination String
+  cadence           IngestionCadence @default(SYNC_8_HOURS)
+  topology          String           @default("FAN_IN")
+  lastRunRows       Int              @default(0)
+  p99LatencyMs      Int              @default(25)
+  dataDriftPercent  Float            @default(0.0)
+  isActive          Boolean          @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@map("ingestion_streams")
+}
+
+// -----------------------------------------------------------------------
+// OPERATIONAL INTELLIGENCE — ENVIRONMENTS, CONNECTIONS, AND EVENT INTAKE
+// -----------------------------------------------------------------------
+
+model TenantEnvironment {
+  id            String                    @id @default(cuid())
+  tenantId      String
+  tenant        Tenant                    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  slug          String
+  displayName   String
+  kind          DeploymentEnvironmentKind
+  status        EnvironmentStatus         @default(ACTIVE)
+  region        String
+  retentionDays Int
+  expiresAt     DateTime?
+  configuration Json?
+  createdById   String
+  createdAt     DateTime                  @default(now())
+  updatedAt     DateTime                  @updatedAt
+
+  credentialRefs        CredentialReference[]
+  connections           SourceConnection[]
+  dataContracts         DataContract[]
+  sourceEvents          SourceEvent[]
+  connectorAttempts     ConnectorAttempt[]
+  connectorStates       ConnectorCheckpoint[]
+  suppliers             Supplier[]
+  purchaseOrders        PurchaseOrder[]
+  goodsReceipts         GoodsReceipt[]
+  supplierInvoices      SupplierInvoice[]
+  matchEvaluations      ApMatchEvaluation[]
+  evidenceBundles       EvidenceBundle[]
+  businessActions       BusinessAction[]
+  operationalExceptions OperationalException[]
+  valueDefinitions      ValueDefinition[]
+  valueEvents           ValueEvent[]
+  sourceFileImports     SourceFileImport[]
+  retentionHolds        DataRetentionHold[]
+  retentionExecutions   DataRetentionExecution[]
+
+  @@unique([tenantId, slug])
+  @@index([tenantId, status])
+  @@map("tenant_environments")
+}
+
+model CredentialReference {
+  id              String             @id @default(cuid())
+  tenantId        String
+  tenant          Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  environmentId   String
+  environment     TenantEnvironment  @relation(fields: [environmentId], references: [id], onDelete: Cascade)
+  label           String
+  provider        CredentialProvider
+  reference       String
+  authType        CredentialAuthType
+  headerName      String?
+  status          CredentialStatus   @default(ACTIVE)
+  createdById     String
+  lastValidatedAt DateTime?
+  revokedAt       DateTime?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  connections SourceConnection[]
+
+  @@unique([tenantId, environmentId, provider, reference])
+  @@index([tenantId, environmentId, status])
+  @@map("credential_references")
+}
+
+model SourceConnection {
+  id                    String               @id @default(cuid())
+  tenantId              String
+  tenant                Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  environmentId         String
+  environment           TenantEnvironment    @relation(fields: [environmentId], references: [id], onDelete: Cascade)
+  credentialReferenceId String?
+  credentialReference   CredentialReference? @relation(fields: [credentialReferenceId], references: [id], onDelete: SetNull)
+  slug                  String
+  name                  String
+  interfaceType         ConnectionInterface
+  mode                  ConnectionMode       @default(READ_ONLY)
+  endpoint              String
+  configuration         Json
+  status                ConnectionStatus     @default(UNTESTED)
+  statusReasonCode      String?
+  lastTestedAt          DateTime?
+  lastSuccessfulAt      DateTime?
+  lastLatencyMs         Int?
+  responseContentType   String?
+  observedSchemaVersion Int?
+  consecutiveFailures   Int                  @default(0)
+  circuitOpenUntil      DateTime?
+  createdById           String
+  createdAt             DateTime             @default(now())
+  updatedAt             DateTime             @updatedAt
+
+  schemaVersions SourceSchemaVersion[]
+  dataContracts  DataContract[]
+  sourceEvents   SourceEvent[]
+  attempts       ConnectorAttempt[]
+  checkpoints    ConnectorCheckpoint[]
+  fileImports    SourceFileImport[]
+
+  @@unique([tenantId, environmentId, slug])
+  @@index([tenantId, environmentId, status])
+  @@map("source_connections")
+}
+
+model SourceSchemaVersion {
+  id             String           @id @default(cuid())
+  tenantId       String
+  tenant         Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  connectionId   String
+  connection     SourceConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  version        Int
+  schema         Json
+  checksum       String
+  maskedSample   Json?
+  classification Json
+  compatibility  Json
+  breakingChange Boolean          @default(false)
+  observedAt     DateTime         @default(now())
+  createdById    String
+
+  @@unique([connectionId, version])
+  @@unique([connectionId, checksum])
+  @@index([tenantId, observedAt(sort: Desc)])
+  @@map("source_schema_versions")
+}
+
+model DataContract {
+  id             String             @id @default(cuid())
+  tenantId       String
+  tenant         Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  environmentId  String
+  environment    TenantEnvironment  @relation(fields: [environmentId], references: [id], onDelete: Cascade)
+  connectionId   String
+  connection     SourceConnection   @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  name           String
+  eventType      String
+  status         DataContractStatus @default(DRAFT)
+  currentVersion Int?
+  createdById    String
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  versions DataContractVersion[]
+
+  @@unique([tenantId, environmentId, eventType])
+  @@index([tenantId, connectionId, status])
+  @@map("data_contracts")
+}
+
+model DataContractVersion {
+  id                  String       @id @default(cuid())
+  tenantId            String
+  tenant              Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  contractId          String
+  contract            DataContract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  version             Int
+  jsonSchema          Json
+  mapping             Json
+  checksum            String
+  compatibilityReport Json
+  publishedById       String
+  publishedAt         DateTime     @default(now())
+
+  sourceEvents SourceEvent[]
+
+  @@unique([contractId, version])
+  @@unique([contractId, checksum])
+  @@index([tenantId, publishedAt(sort: Desc)])
+  @@map("data_contract_versions")
+}
+
+model SourceEvent {
+  id                    String              @id @default(cuid())
+  eventId               String
+  tenantId              String
+  tenant                Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  environmentId         String
+  environment           TenantEnvironment   @relation(fields: [environmentId], references: [id], onDelete: Restrict)
+  sourceConnectionId    String
+  sourceConnection      SourceConnection    @relation(fields: [sourceConnectionId], references: [id], onDelete: Restrict)
+  dataContractVersionId String
+  dataContractVersion   DataContractVersion @relation(fields: [dataContractVersionId], references: [id], onDelete: Restrict)
+  eventType             String
+  eventVersion          Int
+  occurredAt            DateTime
+  receivedAt            DateTime            @default(now())
+  correlationId         String
+  idempotencyKey        String
+  actorType             String
+  actorId               String?
+  entityRefs            Json
+  classification        DataClassification
+  payloadCiphertext     Bytes
+  payloadIv             Bytes
+  payloadAuthTag        Bytes
+  payloadHash           String
+  payloadKeyVersion     String
+  payloadPurgedAt       DateTime?
+  status                IngestedEventStatus @default(RECEIVED)
+  rejectionCode         String?
+  rejectionDetail       Json?
+  processedAt           DateTime?
+
+  purchaseOrder         PurchaseOrder?
+  goodsReceipt          GoodsReceipt?
+  supplierInvoice       SupplierInvoice?
+  operationalExceptions OperationalException[]
+  replayRecoveries      ExceptionRecovery[]    @relation("ReplaySourceEvent")
+  valueEvents           ValueEvent[]
+  sourceFileImport      SourceFileImport?
+
+  @@unique([tenantId, eventId])
+  @@unique([tenantId, sourceConnectionId, idempotencyKey])
+  @@index([tenantId, environmentId, status, receivedAt])
+  @@index([tenantId, correlationId])
+  @@index([environmentId, payloadPurgedAt, receivedAt])
+  @@map("source_events")
+}
+
+model ConnectorAttempt {
+  id            String                 @id @default(cuid())
+  tenantId      String
+  tenant        Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  environmentId String
+  environment   TenantEnvironment      @relation(fields: [environmentId], references: [id], onDelete: Cascade)
+  connectionId  String
+  connection    SourceConnection       @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  operation     ConnectorOperation
+  status        ConnectorAttemptStatus
+  traceId       String
+  responseCode  Int?
+  latencyMs     Int?
+  bytesReceived Int?
+  result        Json
+  errorCode     String?
+  errorDetail   Json?
+  startedAt     DateTime               @default(now())
+  completedAt   DateTime?
+
+  @@index([tenantId, connectionId, startedAt(sort: Desc)])
+  @@index([tenantId, traceId])
+  @@map("connector_attempts")
+}
+
+model SourceFileImport {
+  id               String              @id @default(cuid())
+  tenantId         String
+  tenant           Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  environmentId    String
+  environment      TenantEnvironment   @relation(fields: [environmentId], references: [id], onDelete: Cascade)
+  connectionId     String
+  connection       SourceConnection    @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  sourceEventId    String?             @unique
+  sourceEvent      SourceEvent?        @relation(fields: [sourceEventId], references: [id], onDelete: SetNull)
+  storageKey       String              @unique
+  originalName     String
+  contentType      String
+  declaredByteSize Int
+  actualByteSize   Int?
+  checksumSha256   String
+  classification   DataClassification?
+  status           SourceFileStatus    @default(UPLOAD_PENDING)
+  failureCode      String?
+  createdById      String
+  uploadExpiresAt  DateTime
+  completedAt      DateTime?
+  storageDeletedAt DateTime?
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+
+  @@index([tenantId, environmentId, status, createdAt(sort: Desc)])
+  @@index([tenantId, connectionId, createdAt(sort: Desc)])
+  @@map("source_file_imports")
+}
+
+model DataRetentionHold {
+  id            String              @id @default(cuid())
+  tenantId      String
+  tenant        Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  environmentId String
+  environment   TenantEnvironment   @relation(fields: [environmentId], references: [id], onDelete: Cascade)
+  status        RetentionHoldStatus @default(ACTIVE)
+  reason        String
+  placedById    String
+  releasedById  String?
+  releaseReason String?
+  placedAt      DateTime            @default(now())
+  releasedAt    DateTime?
+  updatedAt     DateTime            @updatedAt
+
+  @@index([tenantId, environmentId, status])
+  @@index([tenantId, placedAt(sort: Desc)])
+  @@map("data_retention_holds")
+}
+
+model DataRetentionExecution {
+  id                 String                   @id @default(cuid())
+  tenantId           String
+  tenant             Tenant                   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  environmentId      String
+  environment        TenantEnvironment        @relation(fields: [environmentId], references: [id], onDelete: Cascade)
+  status             RetentionExecutionStatus @default(RUNNING)
+  cutoffAt           DateTime
+  sourceEventsPurged Int                      @default(0)
+  failureCode        String?
+  startedAt          DateTime                 @default(now())
+  completedAt        DateTime?
+
+  @@index([tenantId, environmentId, startedAt(sort: Desc)])
+  @@index([status, startedAt])
+  @@map("data_retention_executions")
+}
+
+model ConnectorCheckpoint {
+  id            String            @id @default(cuid())
+  tenantId      String
+  tenant        Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  environmentId String
+  environment   TenantEnvironment @relation(fields: [environmentId], references: [id], onDelete: Cascade)
+  connectionId  String
+  connection    SourceConnection  @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  consumer      String
+  cursor        String
+  cursorHash    String
+  state         Json
+  updatedAt     DateTime          @updatedAt
+  createdAt     DateTime          @default(now())
+
+  @@unique([connectionId, consumer])
+  @@index([tenantId, environmentId])
+  @@map("connector_checkpoints")
+}
+
+model ControlOutboxEvent {
+  id            String              @id @default(cuid())
+  eventId       String              @unique
+  tenantId      String
+  tenant        Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  aggregateType String
+  aggregateId   String
+  eventType     String
+  payload       Json
+  status        ControlOutboxStatus @default(PENDING)
+  attempts      Int                 @default(0)
+  availableAt   DateTime            @default(now())
+  claimedAt     DateTime?
+  publishedAt   DateTime?
+  lastErrorCode String?
+  createdAt     DateTime            @default(now())
+
+  @@index([status, availableAt])
+  @@index([tenantId, aggregateType, aggregateId])
+  @@map("control_outbox_events")
+}
+
+// -----------------------------------------------------------------------
+// ACCOUNTS PAYABLE OUTCOME PACK — CANONICAL RECORDS AND CONTROLLED ACTION
+// -----------------------------------------------------------------------
+
+model Supplier {
+  id            String            @id @default(cuid())
+  tenantId      String
+  tenant        Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  environmentId String
+  environment   TenantEnvironment @relation(fields: [environmentId], references: [id], onDelete: Cascade)
+  externalId    String
+  name          String
+  status        String            @default("ACTIVE")
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  purchaseOrders   PurchaseOrder[]
+  supplierInvoices SupplierInvoice[]
+
+  @@unique([tenantId, environmentId, externalId])
+  @@index([tenantId, environmentId, status])
+  @@map("suppliers")
+}
+
+model PurchaseOrder {
+  id            String            @id @default(cuid())
+  tenantId      String
+  tenant        Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  environmentId String
+  environment   TenantEnvironment @relation(fields: [environmentId], references: [id], onDelete: Restrict)
+  supplierId    String
+  supplier      Supplier          @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  sourceEventId String            @unique
+  sourceEvent   SourceEvent       @relation(fields: [sourceEventId], references: [id], onDelete: Restrict)
+  externalId    String
+  currency      String
+  totalMinor    BigInt
+  status        String
+  orderedAt     DateTime
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  lines            PurchaseOrderLine[]
+  goodsReceipts    GoodsReceipt[]
+  supplierInvoices SupplierInvoice[]
+  matchEvaluations ApMatchEvaluation[]
+
+  @@unique([tenantId, environmentId, externalId])
+  @@index([tenantId, environmentId, supplierId, status])
+  @@map("purchase_orders")
+}
+
+model PurchaseOrderLine {
+  id              String        @id @default(cuid())
+  purchaseOrderId String
+  purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  lineNumber      Int
+  itemCode        String?
+  description     String
+  quantity        Decimal       @db.Decimal(20, 6)
+  unitPriceMinor  BigInt
+  totalMinor      BigInt
+
+  receiptLines GoodsReceiptLine[]
+  invoiceLines SupplierInvoiceLine[]
+
+  @@unique([purchaseOrderId, lineNumber])
+  @@index([purchaseOrderId])
+  @@map("purchase_order_lines")
+}
+
+model GoodsReceipt {
+  id                      String            @id @default(cuid())
+  tenantId                String
+  tenant                  Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  environmentId           String
+  environment             TenantEnvironment @relation(fields: [environmentId], references: [id], onDelete: Restrict)
+  purchaseOrderId         String?
+  purchaseOrder           PurchaseOrder?    @relation(fields: [purchaseOrderId], references: [id], onDelete: Restrict)
+  purchaseOrderExternalId String
+  sourceEventId           String            @unique
+  sourceEvent             SourceEvent       @relation(fields: [sourceEventId], references: [id], onDelete: Restrict)
+  externalId              String
+  receivedAt              DateTime
+  createdAt               DateTime          @default(now())
+
+  lines GoodsReceiptLine[]
+
+  @@unique([tenantId, environmentId, externalId])
+  @@index([tenantId, environmentId, purchaseOrderId])
+  @@map("goods_receipts")
+}
+
+model GoodsReceiptLine {
+  id                      String             @id @default(cuid())
+  goodsReceiptId          String
+  goodsReceipt            GoodsReceipt       @relation(fields: [goodsReceiptId], references: [id], onDelete: Cascade)
+  purchaseOrderLineId     String?
+  purchaseOrderLine       PurchaseOrderLine? @relation(fields: [purchaseOrderLineId], references: [id], onDelete: Restrict)
+  purchaseOrderLineNumber Int
+  quantityReceived        Decimal            @db.Decimal(20, 6)
+
+  @@unique([goodsReceiptId, purchaseOrderLineNumber])
+  @@index([purchaseOrderLineId])
+  @@map("goods_receipt_lines")
+}
+
+model SupplierInvoice {
+  id                      String            @id @default(cuid())
+  tenantId                String
+  tenant                  Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  environmentId           String
+  environment             TenantEnvironment @relation(fields: [environmentId], references: [id], onDelete: Restrict)
+  supplierId              String
+  supplier                Supplier          @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  purchaseOrderId         String?
+  purchaseOrder           PurchaseOrder?    @relation(fields: [purchaseOrderId], references: [id], onDelete: Restrict)
+  purchaseOrderExternalId String
+  sourceEventId           String            @unique
+  sourceEvent             SourceEvent       @relation(fields: [sourceEventId], references: [id], onDelete: Restrict)
+  externalId              String
+  invoiceNumber           String
+  currency                String
+  subtotalMinor           BigInt
+  taxMinor                BigInt
+  totalMinor              BigInt
+  status                  ApDocumentStatus  @default(RECEIVED)
+  invoiceDate             DateTime
+  dueDate                 DateTime?
+  createdAt               DateTime          @default(now())
+  updatedAt               DateTime          @updatedAt
+
+  lines                 SupplierInvoiceLine[]
+  matchEvaluations      ApMatchEvaluation[]
+  actions               BusinessAction[]
+  operationalExceptions OperationalException[]
+
+  @@unique([tenantId, environmentId, externalId])
+  @@unique([tenantId, environmentId, supplierId, invoiceNumber])
+  @@index([tenantId, environmentId, status, dueDate])
+  @@map("supplier_invoices")
+}
+
+model SupplierInvoiceLine {
+  id                      String             @id @default(cuid())
+  supplierInvoiceId       String
+  supplierInvoice         SupplierInvoice    @relation(fields: [supplierInvoiceId], references: [id], onDelete: Cascade)
+  purchaseOrderLineId     String?
+  purchaseOrderLine       PurchaseOrderLine? @relation(fields: [purchaseOrderLineId], references: [id], onDelete: Restrict)
+  purchaseOrderLineNumber Int
+  lineNumber              Int
+  description             String
+  quantity                Decimal            @db.Decimal(20, 6)
+  unitPriceMinor          BigInt
+  totalMinor              BigInt
+
+  @@unique([supplierInvoiceId, lineNumber])
+  @@index([purchaseOrderLineId])
+  @@map("supplier_invoice_lines")
+}
+
+model RuleVersion {
+  id            String         @id @default(cuid())
+  tenantId      String
+  tenant        Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  ruleId        String
+  rule          RuleDefinition @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+  version       Int
+  definition    Json
+  checksum      String
+  publishedById String
+  publishedAt   DateTime       @default(now())
+
+  matchEvaluations ApMatchEvaluation[]
+  businessActions  BusinessAction[]
+
+  @@unique([ruleId, version])
+  @@unique([ruleId, checksum])
+  @@index([tenantId, publishedAt(sort: Desc)])
+  @@map("rule_versions")
+}
+
+model ApMatchEvaluation {
+  id                String            @id @default(cuid())
+  tenantId          String
+  tenant            Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  environmentId     String
+  environment       TenantEnvironment @relation(fields: [environmentId], references: [id], onDelete: Restrict)
+  supplierInvoiceId String
+  supplierInvoice   SupplierInvoice   @relation(fields: [supplierInvoiceId], references: [id], onDelete: Cascade)
+  purchaseOrderId   String?
+  purchaseOrder     PurchaseOrder?    @relation(fields: [purchaseOrderId], references: [id], onDelete: Restrict)
+  ruleVersionId     String
+  ruleVersion       RuleVersion       @relation(fields: [ruleVersionId], references: [id], onDelete: Restrict)
+  outcome           ApMatchOutcome
+  explanation       String
+  inputHash         String
+  evaluatedAt       DateTime          @default(now())
+
+  findings             ApMatchFinding[]
+  evidenceBundle       EvidenceBundle?
+  operationalException OperationalException?
+
+  @@unique([supplierInvoiceId, inputHash])
+  @@index([tenantId, environmentId, outcome, evaluatedAt(sort: Desc)])
+  @@map("ap_match_evaluations")
+}
+
+model ApMatchFinding {
+  id                String            @id @default(cuid())
+  matchEvaluationId String
+  matchEvaluation   ApMatchEvaluation @relation(fields: [matchEvaluationId], references: [id], onDelete: Cascade)
+  code              String
+  severity          FindingSeverity
+  field             String
+  expected          String?
+  actual            String?
+  delta             String?
+  explanation       String
+  evidenceRefs      Json
+
+  @@index([matchEvaluationId, severity])
+  @@map("ap_match_findings")
+}
+
+model EvidenceBundle {
+  id                String            @id @default(cuid())
+  tenantId          String
+  tenant            Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  environmentId     String
+  environment       TenantEnvironment @relation(fields: [environmentId], references: [id], onDelete: Restrict)
+  matchEvaluationId String            @unique
+  matchEvaluation   ApMatchEvaluation @relation(fields: [matchEvaluationId], references: [id], onDelete: Cascade)
+  correlationId     String
+  summary           String
+  contentHash       String
+  createdAt         DateTime          @default(now())
+
+  items EvidenceItem[]
+
+  @@index([tenantId, correlationId])
+  @@map("evidence_bundles")
+}
+
+model EvidenceItem {
+  id               String         @id @default(cuid())
+  evidenceBundleId String
+  evidenceBundle   EvidenceBundle @relation(fields: [evidenceBundleId], references: [id], onDelete: Cascade)
+  recordType       String
+  recordId         String
+  citation         String
+  snapshot         Json
+  contentHash      String
+  createdAt        DateTime       @default(now())
+
+  @@index([evidenceBundleId, recordType])
+  @@map("evidence_items")
+}
+
+model BusinessAction {
+  id                  String               @id @default(cuid())
+  tenantId            String
+  tenant              Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  environmentId       String
+  environment         TenantEnvironment    @relation(fields: [environmentId], references: [id], onDelete: Restrict)
+  supplierInvoiceId   String
+  supplierInvoice     SupplierInvoice      @relation(fields: [supplierInvoiceId], references: [id], onDelete: Restrict)
+  policyRuleVersionId String
+  policyRuleVersion   RuleVersion          @relation(fields: [policyRuleVersionId], references: [id], onDelete: Restrict)
+  actionType          String
+  risk                ActionRisk
+  status              BusinessActionStatus @default(PROPOSED)
+  requestedById       String?
+  idempotencyKey      String
+  preview             Json
+  parameters          Json
+  inputHash           String
+  requiredApprovals   Int
+  approvedAt          DateTime?
+  rejectedAt          DateTime?
+  executedAt          DateTime?
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+
+  approvals             ActionApproval[]
+  result                ActionResult?
+  operationalExceptions OperationalException[]
+  valueEvent            ValueEvent?
+
+  @@unique([tenantId, actionType, idempotencyKey])
+  @@index([tenantId, environmentId, status, createdAt(sort: Desc)])
+  @@map("business_actions")
+}
+
+model ActionApproval {
+  id         String           @id @default(cuid())
+  tenantId   String
+  tenant     Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  actionId   String
+  action     BusinessAction   @relation(fields: [actionId], references: [id], onDelete: Cascade)
+  approverId String
+  decision   ApprovalDecision
+  reason     String
+  evidence   Json
+  decidedAt  DateTime         @default(now())
+
+  @@unique([actionId, approverId])
+  @@index([tenantId, approverId, decidedAt(sort: Desc)])
+  @@map("action_approvals")
+}
+
+model ActionResult {
+  id         String               @id @default(cuid())
+  tenantId   String
+  tenant     Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  actionId   String               @unique
+  action     BusinessAction       @relation(fields: [actionId], references: [id], onDelete: Cascade)
+  status     BusinessActionStatus
+  result     Json
+  beforeHash String
+  afterHash  String
+  executedAt DateTime             @default(now())
+
+  @@index([tenantId, executedAt(sort: Desc)])
+  @@map("action_results")
+}
+
+// -----------------------------------------------------------------------
+// OPERATIONAL EXCEPTIONS — RECOVERABLE FAILURES AND BUSINESS EXCEPTIONS
+// -----------------------------------------------------------------------
+
+model OperationalException {
+  id                String                     @id @default(cuid())
+  tenantId          String
+  tenant            Tenant                     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  environmentId     String
+  environment       TenantEnvironment          @relation(fields: [environmentId], references: [id], onDelete: Restrict)
+  sourceEventId     String?
+  sourceEvent       SourceEvent?               @relation(fields: [sourceEventId], references: [id], onDelete: Restrict)
+  supplierInvoiceId String?
+  supplierInvoice   SupplierInvoice?           @relation(fields: [supplierInvoiceId], references: [id], onDelete: Restrict)
+  matchEvaluationId String?                    @unique
+  matchEvaluation   ApMatchEvaluation?         @relation(fields: [matchEvaluationId], references: [id], onDelete: Restrict)
+  businessActionId  String?
+  businessAction    BusinessAction?            @relation(fields: [businessActionId], references: [id], onDelete: Restrict)
+  kind              OperationalExceptionKind
+  status            OperationalExceptionStatus @default(OPEN)
+  severity          FindingSeverity
+  title             String
+  summary           String
+  businessImpact    Json
+  rootCauseCode     String
+  retryable         Boolean                    @default(false)
+  classification    DataClassification
+  assignedToId      String?
+  openedAt          DateTime                   @default(now())
+  resolvedAt        DateTime?
+  updatedAt         DateTime                   @updatedAt
+
+  recoveries ExceptionRecovery[]
+
+  @@index([tenantId, environmentId, status, severity, openedAt(sort: Desc)])
+  @@index([tenantId, supplierInvoiceId])
+  @@index([tenantId, kind, sourceEventId])
+  @@index([tenantId, classification, status])
+  @@map("operational_exceptions")
+}
+
+model ExceptionRecovery {
+  id                  String               @id @default(cuid())
+  tenantId            String
+  tenant              Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  exceptionId         String
+  exception           OperationalException @relation(fields: [exceptionId], references: [id], onDelete: Restrict)
+  replaySourceEventId String?
+  replaySourceEvent   SourceEvent?         @relation("ReplaySourceEvent", fields: [replaySourceEventId], references: [id], onDelete: Restrict)
+  operation           RecoveryOperation
+  status              RecoveryStatus       @default(REQUESTED)
+  requestedById       String
+  reason              String
+  idempotencyKey      String
+  inputHash           String
+  result              Json
+  errorCode           String?
+  requestedAt         DateTime             @default(now())
+  completedAt         DateTime?
+
+  @@unique([exceptionId, idempotencyKey])
+  @@index([tenantId, requestedAt(sort: Desc)])
+  @@map("exception_recoveries")
+}
+
+// -----------------------------------------------------------------------
+// VERIFIED VALUE LEDGER — TENANT-OWNED ASSUMPTIONS AND EVIDENCE
+// -----------------------------------------------------------------------
+
+model ValueDefinition {
+  id             String                @id @default(cuid())
+  tenantId       String
+  tenant         Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  environmentId  String
+  environment    TenantEnvironment     @relation(fields: [environmentId], references: [id], onDelete: Restrict)
+  outcomeKey     String
+  name           String
+  description    String?
+  currency       String
+  classification DataClassification
+  status         ValueDefinitionStatus @default(DRAFT)
+  currentVersion Int?
+  createdById    String
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+
+  versions ValueDefinitionVersion[]
+
+  @@unique([tenantId, environmentId, outcomeKey])
+  @@index([tenantId, status])
+  @@index([tenantId, classification, status])
+  @@map("value_definitions")
+}
+
+model ValueDefinitionVersion {
+  id                String          @id @default(cuid())
+  tenantId          String
+  tenant            Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  valueDefinitionId String
+  valueDefinition   ValueDefinition @relation(fields: [valueDefinitionId], references: [id], onDelete: Restrict)
+  version           Int
+  formulaKind       String
+  assumptions       Json
+  baseline          Json
+  target            Json
+  checksum          String
+  publishedById     String
+  publishedAt       DateTime        @default(now())
+
+  valueEvents ValueEvent[]
+
+  @@unique([valueDefinitionId, version])
+  @@unique([valueDefinitionId, checksum])
+  @@index([tenantId, publishedAt(sort: Desc)])
+  @@map("value_definition_versions")
+}
+
+model ValueEvent {
+  id                       String                 @id @default(cuid())
+  tenantId                 String
+  tenant                   Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  environmentId            String
+  environment              TenantEnvironment      @relation(fields: [environmentId], references: [id], onDelete: Restrict)
+  valueDefinitionVersionId String
+  valueDefinitionVersion   ValueDefinitionVersion @relation(fields: [valueDefinitionVersionId], references: [id], onDelete: Restrict)
+  sourceEventId            String?
+  sourceEvent              SourceEvent?           @relation(fields: [sourceEventId], references: [id], onDelete: Restrict)
+  businessActionId         String?                @unique
+  businessAction           BusinessAction?        @relation(fields: [businessActionId], references: [id], onDelete: Restrict)
+  eventType                String
+  quantity                 Decimal                @db.Decimal(20, 6)
+  currency                 String
+  classification           DataClassification
+  grossValueMinor          BigInt
+  allocatedCostMinor       BigInt
+  netValueMinor            BigInt
+  calculation              Json
+  evidence                 Json
+  status                   ValueEventStatus       @default(CALCULATED)
+  occurredAt               DateTime
+  createdAt                DateTime               @default(now())
+
+  approvals BenefitApproval[]
+
+  @@index([tenantId, environmentId, status, occurredAt(sort: Desc)])
+  @@index([tenantId, classification, status])
+  @@map("value_events")
+}
+
+model BenefitApproval {
+  id           String          @id @default(cuid())
+  tenantId     String
+  tenant       Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  valueEventId String
+  valueEvent   ValueEvent      @relation(fields: [valueEventId], references: [id], onDelete: Restrict)
+  approverId   String
+  decision     BenefitDecision
+  reason       String
+  evidence     Json
+  decidedAt    DateTime        @default(now())
+
+  @@unique([valueEventId, approverId])
+  @@index([tenantId, decidedAt(sort: Desc)])
+  @@map("benefit_approvals")
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// CLIENTS & CUSTOMER MASTER DIRECTORY
+// ═══════════════════════════════════════════════════════════════════════
+
+model Client {
+  id       String @id @default(cuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  accountNumber           String
+  name                    String
+  dba                     String?
+  email                   String
+  phone                   String?
+  website                 String?
+  country                 String  @default("US")
+  stateOrProvince         String?
+  city                    String?
+  postalCode              String?
+  addressLine1            String?
+  addressLine2            String?
+  taxIdentifier           String?
+  isTaxExempt             Boolean @default(false)
+  defaultCurrency         String  @default("USD")
+  defaultPaymentTerms     String  @default("NET_30")
+  notes                   String?
+  totalInvoicedCents      BigInt  @default(0)
+  totalPaidCents          BigInt  @default(0)
+  outstandingBalanceCents BigInt  @default(0)
+  status                  String  @default("ACTIVE")
+
+  contacts ClientContact[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([tenantId, accountNumber])
+  @@index([tenantId])
+  @@index([email])
+  @@map("clients")
+}
+
+model ClientContact {
+  id       String @id @default(cuid())
+  clientId String
+  client   Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  name      String
+  email     String
+  phone     String?
+  roleTitle String?
+  isPrimary Boolean @default(false)
+  isBilling Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([clientId])
+  @@map("client_contacts")
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// PRODUCTS & SERVICES REUSABLE RATE CATALOG
+// ═══════════════════════════════════════════════════════════════════════
+
+model ProductCatalogItem {
+  id       String @id @default(cuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  sku            String
+  name           String
+  description    String?
+  category       String  @default("General")
+  unitPriceCents Int     @default(0)
+  unitMetric     String  @default("Units")
+  taxRatePercent Float?
+  isActive       Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([tenantId, sku])
+  @@index([tenantId])
+  @@map("product_catalog_items")
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// SERVICE DESK & SUPPORT TICKETS
+// ═══════════════════════════════════════════════════════════════════════
+
+model SupportTicket {
+  id       String @id @default(cuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  ticketNumber        String
+  subject             String
+  description         String
+  requesterName       String
+  requesterEmail      String
+  priority            String  @default("NORMAL") // URGENT, HIGH, NORMAL, LOW
+  status              String  @default("OPEN") // OPEN, IN_PROGRESS, RESOLVED, CLOSED
+  assignedAgentName   String?
+  slaRemainingMinutes Int     @default(240)
+
+  messages TicketMessage[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([tenantId, ticketNumber])
+  @@index([tenantId])
+  @@index([status])
+  @@map("support_tickets")
+}
+
+model TicketMessage {
+  id       String        @id @default(cuid())
+  ticketId String
+  ticket   SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  senderName String
+  senderRole String  @default("AGENT") // AGENT, CUSTOMER, SYSTEM
+  content    String
+  isInternal Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  @@index([ticketId])
+  @@map("ticket_messages")
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// DOUBLE-ENTRY GENERAL LEDGER
+// ═══════════════════════════════════════════════════════════════════════
+
+model GeneralLedgerAccount {
+  id       String @id @default(cuid())
+  code     String // 1000 Cash, 1200 AR, 2200 Tax, 4000 Revenue
+  name     String
+  type     String // ASSET, LIABILITY, EQUITY, REVENUE, EXPENSE
+  currency String @default("USD")
+
+  lines JournalLineItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([code])
+  @@map("general_ledger_accounts")
+}
+
+model JournalEntry {
+  id       String @id @default(cuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  entryNumber  String
+  memo         String
+  sourceModule String   @default("INVOICING")
+  referenceId  String?
+  postedAt     DateTime @default(now())
+  isBalanced   Boolean  @default(true)
+
+  lines JournalLineItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([tenantId, entryNumber])
+  @@index([tenantId])
+  @@map("journal_entries")
+}
+
+model JournalLineItem {
+  id      String       @id @default(cuid())
+  entryId String
+  entry   JournalEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+
+  accountCode String
+  account     GeneralLedgerAccount @relation(fields: [accountCode], references: [code], onDelete: Restrict)
+
+  description String?
+  debitCents  BigInt  @default(0)
+  creditCents BigInt  @default(0)
+
+  @@index([entryId])
+  @@index([accountCode])
+  @@map("journal_line_items")
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// DYNAMIC ROLES & USER GROUPS
+// ═══════════════════════════════════════════════════════════════════════
+
+model CustomRole {
+  id       String @id @default(cuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  name        String
+  description String?
+  color       String  @default("#6366f1")
+  isSystem    Boolean @default(false)
+  permissions Json // Map of module -> permission boolean flags
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
+  @@map("custom_roles")
+}
+
+model UserGroup {
+  id       String @id @default(cuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  name        String
+  description String?
+  color       String   @default("#3b82f6")
+  memberIds   String[] @default([])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
+  @@map("user_groups")
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// DYNAMIC FORMS STUDIO
+// ═══════════════════════════════════════════════════════════════════════
+
+model FormSchema {
+  id       String @id @default(cuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  title       String
+  description String?
+  schemaAst   Json // FormEngine.io JSON fields & validation rules
+  status      String  @default("PUBLISHED")
+
+  submissions FormSubmission[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@map("form_schemas")
+}
+
+model FormSubmission {
+  id     String     @id @default(cuid())
+  formId String
+  form   FormSchema @relation(fields: [formId], references: [id], onDelete: Cascade)
+
+  submittedBy String?
+  payload     Json
+
+  createdAt DateTime @default(now())
+
+  @@index([formId])
+  @@map("form_submissions")
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// TAX & US NEXUS CONFIGURATION
+// ═══════════════════════════════════════════════════════════════════════
+
+model TaxNexusConfig {
+  id       String @id @default(cuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  stateCode        String // CA, NY, TX, etc.
+  hasNexus         Boolean @default(true)
+  stateRatePercent Float   @default(0.0)
+  isOriginBased    Boolean @default(false)
+  exemptionRules   Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([tenantId, stateCode])
+  @@index([tenantId])
+  @@map("tax_nexus_configs")
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// HEADLESS SHOPPING CART & ORDERS
+// ═══════════════════════════════════════════════════════════════════════
+
+model CartSession {
+  id       String @id @default(cuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  sessionId String     @unique
+  currency  String     @default("USD")
+  items     CartItem[]
+  expiresAt DateTime
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@map("cart_sessions")
+}
+
+model CartItem {
+  id     String      @id @default(cuid())
+  cartId String
+  cart   CartSession @relation(fields: [cartId], references: [id], onDelete: Cascade)
+
+  sku            String
+  name           String
+  unitPriceCents Int
+  quantity       Int    @default(1)
+
+  @@index([cartId])
+  @@map("cart_items")
+}
+
+model OrderHeader {
+  id       String @id @default(cuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  orderNumber   String
+  customerEmail String
+  totalCents    Int
+  currency      String @default("USD")
+  status        String @default("COMPLETED")
+
+  items OrderItem[]
+
+  createdAt DateTime @default(now())
+
+  @@unique([tenantId, orderNumber])
+  @@index([tenantId])
+  @@map("orders")
+}
+
+model OrderItem {
+  id      String      @id @default(cuid())
+  orderId String
+  order   OrderHeader @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  sku            String
+  name           String
+  unitPriceCents Int
+  quantity       Int
+
+  @@index([orderId])
+  @@map("order_items")
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// DOCUMENTS & AI OCR PROCESSING
+// ═══════════════════════════════════════════════════════════════════════
+
+model ManagedDocument {
+  id       String @id @default(cuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  filename    String
+  mimeType    String
+  byteSize    Int
+  storagePath String
+  ocrJobs     OcrExtractionJob[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@map("managed_documents")
+}
+
+model OcrExtractionJob {
+  id         String          @id @default(cuid())
+  documentId String
+  document   ManagedDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  status         String @default("COMPLETED")
+  extractedText  String
+  confidenceRate Float  @default(0.99)
+  detectedFields Json?
+
+  createdAt DateTime @default(now())
+
+  @@index([documentId])
+  @@map("ocr_extraction_jobs")
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// CRYPTOGRAPHIC E-SIGNATURES
+// ═══════════════════════════════════════════════════════════════════════
+
+model EsignEnvelope {
+  id       String @id @default(cuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  title           String
+  status          String  @default("COMPLETED") // DRAFT, SENT, SIGNED, COMPLETED
+  documentSha256  String
+  certificateX509 String?
+  signedPdfPath   String?
+
+  recipients EsignRecipient[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@map("esign_envelopes")
+}
+
+model EsignRecipient {
+  id         String        @id @default(cuid())
+  envelopeId String
+  envelope   EsignEnvelope @relation(fields: [envelopeId], references: [id], onDelete: Cascade)
+
+  name     String
+  email    String
+  role     String    @default("SIGNER")
+  status   String    @default("SIGNED")
+  signedAt DateTime?
+
+  @@index([envelopeId])
+  @@map("esign_recipients")
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// KNOWLEDGE BASE & ARTICLES
+// ═══════════════════════════════════════════════════════════════════════
+
+model KbCategory {
+  id       String @id @default(cuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  slug        String
+  title       String
+  description String?
+  articles    KbArticle[]
+
+  createdAt DateTime @default(now())
+
+  @@unique([tenantId, slug])
+  @@index([tenantId])
+  @@map("kb_categories")
+}
+
+model KbArticle {
+  id         String     @id @default(cuid())
+  categoryId String
+  category   KbCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  slug        String
+  title       String
+  content     String
+  isPublished Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([categoryId])
+  @@map("kb_articles")
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// REAL-TIME CHAT & AI COPILOT
+// ═══════════════════════════════════════════════════════════════════════
+
+model ChatChannel {
+  id       String @id @default(cuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  name     String
+  isDirect Boolean       @default(false)
+  messages ChatMessage[]
+
+  createdAt DateTime @default(now())
+
+  @@index([tenantId])
+  @@map("chat_channels")
+}
+
+model ChatMessage {
+  id        String      @id @default(cuid())
+  channelId String
+  channel   ChatChannel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+
+  senderId   String
+  senderName String
+  content    String
+  isAiBot    Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  @@index([channelId])
+  @@map("chat_messages")
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// MAPS & GEOFENCING ZONES
+// ═══════════════════════════════════════════════════════════════════════
+
+model GeofenceZone {
+  id       String @id @default(cuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  name         String
+  centerLat    Float
+  centerLng    Float
+  radiusMeters Int     @default(500)
+  isActive     Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@map("geofence_zones")
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// UNIVERSAL RULE ENGINE (JSON AST)
+// ═══════════════════════════════════════════════════════════════════════
+
+model RuleDefinition {
+  id       String @id @default(cuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  name          String
+  description   String?
+  conditionAst  Json // JSON AST rule expression
+  actionPayload Json // Consequent action payload
+  isActive      Boolean @default(true)
+  kind          String  @default("GENERIC")
+  activeVersion Int?
+
+  versions RuleVersion[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
+  @@map("rule_definitions")
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// FRAUD DETECTION & RISK ASSESSMENTS
+// ═══════════════════════════════════════════════════════════════════════
+
+model FraudAssessmentLog {
+  id       String @id @default(cuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  entityId       String
+  riskScore      Int // 0 to 100
+  decision       String // APPROVE, MANUAL_REVIEW, BLOCK
+  triggeredRules Json // List of rules that fired
+
+  createdAt DateTime @default(now())
+
+  @@index([tenantId])
+  @@map("fraud_assessment_logs")
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// MULTI-CURRENCY & FX EXCHANGE RATES
+// ═══════════════════════════════════════════════════════════════════════
+
+model CurrencyExchangeRate {
+  id             String   @id @default(cuid())
+  baseCurrency   String   @default("USD")
+  targetCurrency String
+  rate           Float
+  syncedAt       DateTime @default(now())
+
+  @@unique([baseCurrency, targetCurrency])
+  @@map("currency_exchange_rates")
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// ENTERPRISE SPEND, PROJECT BUDGETS & EXPENSE CLAIMS
+// ═══════════════════════════════════════════════════════════════════════
+
+enum BudgetPeriod {
+  MONTHLY
+  QUARTERLY
+  ANNUAL
+  PROJECT_LIFETIME
+}
+
+enum BudgetStatus {
+  ACTIVE
+  EXCEEDED
+  CLOSED
+}
+
+enum ExpenseStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  REIMBURSED
+  REJECTED
+}
+
+enum BillingPassThrough {
+  BILLABLE
+  NON_BILLABLE
+}
+
+model Budget {
+  id               String           @id @default(cuid())
+  tenantId         String
+  name             String
+  code             String // e.g. BDG-WB-STAGE4
+  projectId        String?
+  department       String?
+  period           BudgetPeriod     @default(PROJECT_LIFETIME)
+  totalLimitCents  BigInt
+  warnThresholdPct Int              @default(80)
+  spentCents       BigInt           @default(0)
+  currency         String           @default("USD")
+  status           BudgetStatus     @default(ACTIVE)
+  startDate        DateTime?
+  endDate          DateTime?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  categories       BudgetCategory[]
+  expenses         ExpenseClaim[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId, projectId])
+  @@map("budgets")
+}
+
+model BudgetCategory {
+  id           String   @id @default(cuid())
+  tenantId     String
+  budgetId     String
+  budget       Budget   @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+  categoryName String // Travel, Equipment, Catering, Consulting, Software
+  limitCents   BigInt
+  spentCents   BigInt   @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([tenantId, budgetId])
+  @@map("budget_categories")
+}
+
+model ExpenseClaim {
+  id              String             @id @default(cuid())
+  tenantId        String
+  claimNumber     String // e.g. EXP-2026-101
+  budgetId        String?
+  budget          Budget?            @relation(fields: [budgetId], references: [id])
+  projectId       String?
+  claimantName    String // Worker / Crew member
+  claimantEmail   String?
+  merchant        String // Delta Airlines, Amazon, Home Depot
+  category        String // Travel, Equipment Rental, Meals
+  amountCents     BigInt
+  currency        String             @default("USD")
+  passThrough     BillingPassThrough @default(NON_BILLABLE)
+  markupPercent   Float              @default(0.0)
+  receiptUrl      String?
+  receiptOcrText  String?
+  status          ExpenseStatus      @default(SUBMITTED)
+  rejectionReason String?
+  approvedBy      String?
+  approvedAt      DateTime?
+  reimbursedAt    DateTime?
+  expenseDate     DateTime           @default(now())
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  @@unique([tenantId, claimNumber])
+  @@index([tenantId, status])
+  @@index([tenantId, projectId])
+  @@map("expense_claims")
+}
+
+model VendorSubscription {
+  id              String   @id @default(cuid())
+  tenantId        String
+  vendorName      String // AWS, Slack, GitHub, Figma, Twilio
+  serviceCategory String // Cloud Infrastructure, Developer Tools, Communication
+  cadence         String // MONTHLY, ANNUAL
+  amountCents     BigInt
+  currency        String   @default("USD")
+  autoRenew       Boolean  @default(true)
+  nextRenewalDate DateTime
+  ownerEmail      String?
+  seatsAllocated  Int?
+  status          String   @default("ACTIVE")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([tenantId, status])
+  @@map("vendor_subscriptions")
+}

@@ -1,0 +1,16 @@
+{
+  "name": "@gigalibs/app-docs",
+  "version": "0.0.1",
+  "description": "Documentation site (Fumadocs)",
+  "private": true,
+  "scripts": {
+    "build": "echo \"TODO: add build command\"",
+    "dev": "echo \"TODO: add dev command\"",
+    "test": "vitest run",
+    "clean": "rm -rf dist .next .turbo"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3",
+    "vitest": "^3.0.0"
+  }
+}

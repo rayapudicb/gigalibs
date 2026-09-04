@@ -1,0 +1,16 @@
+{
+  "name": "@gigalibs/privacy-gdpr",
+  "version": "0.0.1",
+  "description": "GDPR Subject Access Request (SAR) bundle generator and PII anonymizer",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist *.tsbuildinfo"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3"
+  }
+}

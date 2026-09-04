@@ -1,0 +1,30 @@
+{
+  "id": "gigalibs.document-viewer",
+  "name": "Document Viewer Pro & Canvas Annotator",
+  "version": "1.0.0",
+  "description": "High-fidelity PDF document reader canvas with thumbnail navigation, zoom controls, annotation layers, and direct e-signature triggers",
+  "capabilities": [
+    "pdf-rendering",
+    "thumbnail-navigation",
+    "annotation-layers",
+    "redaction-tools"
+  ],
+  "requires": {
+    "gigalibs.tenancy": "^1.0.0"
+  },
+  "optional": {
+    "gigalibs.esign": "^1.0.0",
+    "gigalibs.storage": "^1.0.0"
+  },
+  "permissions": [
+    "documents.view.read",
+    "documents.view.annotate",
+    "documents.view.download"
+  ],
+  "eventsProduced": [
+    "documents.viewed.v1"
+  ],
+  "eventsConsumed": [],
+  "configurationNamespace": "documents",
+  "healthChecks": []
+}

@@ -1,0 +1,28 @@
+apiVersion: commercial.gigalibs.io/v1alpha1
+kind: SubscriptionPlan
+metadata:
+  name: complete
+  version: 0.0.0-draft
+  status: proposed
+spec:
+  entitlementPolicy:
+    includeAllGenerallyAvailableModules: true
+    explicitlyIncludedModules: []
+  permissions:
+    inheritedByAllUsers: false
+    note: Each module applies deny-by-default roles independently.
+  meters:
+    - name: ar-issued-invoices
+      module: accounts-receivable
+      eventType: ar.invoice.issued.v1
+      aggregation: unique-count
+      uniqueField: invoiceId
+      tenantField: tenantId
+      period: contractual-month
+      includedQuantity: 10000
+      warningPercentages: [80, 90, 99, 100]
+      enforcementAfterIncludedQuantity: overage
+      status: proposed
+  activation:
+    active: false
+    reason: FR-16 and WI-OI-019 require design approval and implementation evidence.

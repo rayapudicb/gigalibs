@@ -1,0 +1,43 @@
+{
+  "id": "gigalibs.billing",
+  "name": "Subscription Billing & Monetization Engine",
+  "version": "1.0.0",
+  "description": "Subscription lifecycle state machine, usage metering, proration calculations in integer minor units, and payment gateway connectors",
+  "capabilities": [
+    "subscription-lifecycle",
+    "usage-metering",
+    "proration-engine",
+    "payment-gateway-adapters"
+  ],
+  "requires": {
+    "gigalibs.tenancy": "^1.0.0",
+    "gigalibs.users": "^1.0.0",
+    "gigalibs.audit": "^1.0.0"
+  },
+  "optional": {
+    "gigalibs.currency": "^1.0.0",
+    "gigalibs.invoices": "^1.0.0",
+    "gigalibs.ledger": "^1.0.0"
+  },
+  "permissions": [
+    "billing.subscription.read",
+    "billing.subscription.manage",
+    "billing.plan.manage",
+    "billing.usage.record"
+  ],
+  "eventsProduced": [
+    "billing.subscription_created.v1",
+    "billing.subscription_updated.v1",
+    "billing.subscription_cancelled.v1",
+    "billing.payment_failed.v1"
+  ],
+  "eventsConsumed": [
+    "tenant.created.v1",
+    "user.created.v1"
+  ],
+  "configurationNamespace": "billing",
+  "healthChecks": [
+    "database",
+    "payment-gateway"
+  ]
+}

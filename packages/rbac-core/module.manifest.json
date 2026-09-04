@@ -1,0 +1,39 @@
+{
+  "id": "gigalibs.rbac",
+  "name": "RBAC & Granular Permissions Matrix",
+  "version": "1.0.0",
+  "description": "Role-based access control, hierarchical role inheritance, scoped permission evaluation, and access control simulator",
+  "capabilities": [
+    "role-management",
+    "permission-evaluation",
+    "scoped-access",
+    "role-inheritance",
+    "access-simulation"
+  ],
+  "requires": {
+    "gigalibs.tenancy": "^1.0.0"
+  },
+  "optional": {
+    "gigalibs.audit": "^1.0.0"
+  },
+  "permissions": [
+    "rbac.role.read",
+    "rbac.role.create",
+    "rbac.role.update",
+    "rbac.role.delete",
+    "rbac.permission.assign"
+  ],
+  "eventsProduced": [
+    "rbac.role_created.v1",
+    "rbac.role_updated.v1",
+    "rbac.permissions_assigned.v1"
+  ],
+  "eventsConsumed": [
+    "tenant.created.v1",
+    "user.deactivated.v1"
+  ],
+  "configurationNamespace": "rbac",
+  "healthChecks": [
+    "database"
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "id": "gigalibs.presence",
+  "name": "Live User Presence & Heartbeat",
+  "version": "1.0.0",
+  "description": "Real-time user presence tracker (Online, Away, Offline), heartbeat intervals, and typing indicator broadcast",
+  "capabilities": [
+    "user-presence",
+    "heartbeat-monitor",
+    "typing-indicators",
+    "last-seen-timestamps"
+  ],
+  "requires": {
+    "gigalibs.tenancy": "^1.0.0",
+    "gigalibs.users": "^1.0.0"
+  },
+  "optional": {},
+  "permissions": [
+    "presence.read",
+    "presence.update"
+  ],
+  "eventsProduced": [
+    "presence.status_changed.v1"
+  ],
+  "eventsConsumed": [
+    "user.deactivated.v1"
+  ],
+  "configurationNamespace": "presence",
+  "healthChecks": [
+    "redis-presence"
+  ]
+}

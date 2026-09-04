@@ -1,0 +1,32 @@
+{
+  "id": "gigalibs.audit",
+  "name": "Audit & Compliance Engine",
+  "version": "1.0.0",
+  "description": "Immutable append-only audit trail, object change diffing, IP and user-agent capture, and GDPR export",
+  "capabilities": [
+    "audit-logging",
+    "object-diff",
+    "immutable-history",
+    "compliance-search"
+  ],
+  "requires": {
+    "gigalibs.tenancy": "^1.0.0"
+  },
+  "optional": {},
+  "permissions": [
+    "audit.log.read",
+    "audit.log.export"
+  ],
+  "eventsProduced": [
+    "audit.record_created.v1"
+  ],
+  "eventsConsumed": [
+    "tenant.created.v1",
+    "user.created.v1",
+    "user.deactivated.v1"
+  ],
+  "configurationNamespace": "audit",
+  "healthChecks": [
+    "database"
+  ]
+}

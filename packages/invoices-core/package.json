@@ -1,0 +1,12 @@
+{
+  "name": "@gigalibs/invoices-core",
+  "version": "0.1.0",
+  "description": "Enterprise Invoicing and Billing Engine for GigaLibs",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {}
+}

@@ -1,0 +1,46 @@
+# Global single-tenant / VPC overrides
+global:
+  environment: vpc-dedicated
+  residency: eu-central-1
+  byok:
+    enabled: true
+    kmsKeyArn: "arn:aws:kms:eu-central-1:123456789012:key/custom-enterprise-key"
+
+api:
+  replicaCount: 3
+  image:
+    repository: enterprise-registry.internal/workflow-api
+    tag: "1.0.0"
+  resources:
+    limits:
+      cpu: 2000m
+      memory: 4Gi
+    requests:
+      cpu: 500m
+      memory: 1Gi
+
+worker:
+  replicaCount: 6
+  concurrency: 8
+  resources:
+    limits:
+      cpu: 4000m
+      memory: 8Gi
+
+qdrant:
+  enabled: true
+  dedicatedCluster: true
+  persistence:
+    size: 250Gi
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+  hosts:
+    - host: workflow.customer.internal
+      paths:
+        - path: /
+          pathType: Prefix

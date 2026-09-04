@@ -1,0 +1,32 @@
+{
+  "id": "gigalibs.settings",
+  "name": "Platform Settings & White-Label Theming",
+  "version": "1.0.0",
+  "description": "Typed configuration schema hierarchy (System -> Product -> Tenant -> User), white-label branding, and theme palettes",
+  "capabilities": [
+    "settings-hierarchy",
+    "theme-palettes",
+    "white-label-branding",
+    "ip-whitelisting"
+  ],
+  "requires": {
+    "gigalibs.tenancy": "^1.0.0"
+  },
+  "optional": {
+    "gigalibs.audit": "^1.0.0"
+  },
+  "permissions": [
+    "settings.read",
+    "settings.manage"
+  ],
+  "eventsProduced": [
+    "settings.updated.v1"
+  ],
+  "eventsConsumed": [
+    "tenant.created.v1"
+  ],
+  "configurationNamespace": "settings",
+  "healthChecks": [
+    "database"
+  ]
+}

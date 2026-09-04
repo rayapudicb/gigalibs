@@ -1,0 +1,11 @@
+{
+  "name": "@gigalibs/export-engine-core",
+  "version": "0.1.0",
+  "description": "Universal Multi-Format Report Exporter and Ingestion Engine (Excel XLSX, CSV, JSON, TSV)",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {}
+}

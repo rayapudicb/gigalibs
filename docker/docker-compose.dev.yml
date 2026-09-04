@@ -1,0 +1,99 @@
+services:
+  control-postgres:
+    image: postgres:16-alpine
+    profiles: ["bootstrap-control"]
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${CONTROL_DB_USER:?CONTROL_DB_USER is required}
+      POSTGRES_PASSWORD: ${CONTROL_DB_PASSWORD:?CONTROL_DB_PASSWORD is required}
+      POSTGRES_DB: ${CONTROL_DB_NAME:?CONTROL_DB_NAME is required}
+    ports:
+      - "${CONTROL_DB_PORT:?CONTROL_DB_PORT is required}:5432"
+    volumes:
+      - control_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  execution-postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${EXECUTION_DB_USER:?EXECUTION_DB_USER is required}
+      POSTGRES_PASSWORD: ${EXECUTION_DB_PASSWORD:?EXECUTION_DB_PASSWORD is required}
+      POSTGRES_DB: ${EXECUTION_DB_NAME:?EXECUTION_DB_NAME is required}
+    ports:
+      - "${EXECUTION_DB_PORT:?EXECUTION_DB_PORT is required}:5432"
+    volumes:
+      - execution_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  control-redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${CONTROL_REDIS_PASSWORD:?CONTROL_REDIS_PASSWORD is required}"]
+    environment:
+      REDIS_PASSWORD: ${CONTROL_REDIS_PASSWORD:?CONTROL_REDIS_PASSWORD is required}
+    ports:
+      - "${CONTROL_REDIS_PORT:?CONTROL_REDIS_PORT is required}:6379"
+    volumes:
+      - control_redisdata:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a $$REDIS_PASSWORD ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  execution-redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${EXECUTION_REDIS_PASSWORD:?EXECUTION_REDIS_PASSWORD is required}"]
+    environment:
+      REDIS_PASSWORD: ${EXECUTION_REDIS_PASSWORD:?EXECUTION_REDIS_PASSWORD is required}
+    ports:
+      - "${EXECUTION_REDIS_PORT:?EXECUTION_REDIS_PORT is required}:6379"
+    volumes:
+      - execution_redisdata:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a $$REDIS_PASSWORD ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  minio:
+    image: minio/minio@sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e
+    restart: unless-stopped
+    command: ["server", "/data", "--console-address", ":9001"]
+    environment:
+      MINIO_ROOT_USER: ${STORAGE_ACCESS_KEY:?STORAGE_ACCESS_KEY is required}
+      MINIO_ROOT_PASSWORD: ${STORAGE_SECRET_KEY:?STORAGE_SECRET_KEY is required}
+    ports:
+      - "${MINIO_API_PORT:?MINIO_API_PORT is required}:9000"
+      - "${MINIO_CONSOLE_PORT:?MINIO_CONSOLE_PORT is required}:9001"
+    volumes:
+      - minio_data:/data
+
+  meilisearch:
+    image: getmeili/meilisearch@sha256:ac40212f9e5a7526d8007586e3e46fb0441d29dd36c7b02fa2341d2c9a1f6493
+    restart: unless-stopped
+    environment:
+      MEILI_ENV: development
+      MEILI_MASTER_KEY: ${MEILISEARCH_MASTER_KEY:?MEILISEARCH_MASTER_KEY is required}
+    ports:
+      - "${MEILISEARCH_PORT:?MEILISEARCH_PORT is required}:7700"
+    volumes:
+      - meilisearch_data:/meili_data
+
+volumes:
+  control_pgdata:
+  execution_pgdata:
+  control_redisdata:
+  execution_redisdata:
+  minio_data:
+  meilisearch_data:

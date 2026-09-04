@@ -1,0 +1,30 @@
+{
+  "id": "gigalibs.reports",
+  "name": "Spreadsheet Reports & Multi-Sheet Excel Engine",
+  "version": "1.0.0",
+  "description": "Multi-Sheet OpenXML Excel workbook generator (.xlsx), RFC 4180 CSV exporter, formula rows, styled headers, and clipboard TSV",
+  "capabilities": [
+    "multi-sheet-xlsx",
+    "rfc4180-csv",
+    "json-export",
+    "clipboard-tsv",
+    "formula-rows"
+  ],
+  "requires": {
+    "gigalibs.tenancy": "^1.0.0"
+  },
+  "optional": {
+    "gigalibs.currency": "^1.0.0"
+  },
+  "permissions": [
+    "reports.report.read",
+    "reports.report.export",
+    "reports.report.schedule"
+  ],
+  "eventsProduced": [
+    "reports.export_generated.v1"
+  ],
+  "eventsConsumed": [],
+  "configurationNamespace": "reports",
+  "healthChecks": []
+}

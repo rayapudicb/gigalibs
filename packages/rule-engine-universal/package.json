@@ -1,0 +1,16 @@
+{
+  "name": "@gigalibs/rule-engine-universal",
+  "version": "0.0.1",
+  "description": "Universal JSON-based declarative Rule Engine with nested boolean trees, dynamic fact resolvers, and pluggable operators",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist *.tsbuildinfo"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3"
+  }
+}

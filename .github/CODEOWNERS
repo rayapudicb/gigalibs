@@ -1,0 +1,9 @@
+# Temporary repository ownership. Add independent finance, security, data, and release teams before G4.
+* @rayapudicb
+
+/modules/accounts-receivable/ @rayapudicb
+/.pi/ @rayapudicb
+/docs/architecture/ @rayapudicb
+/docs/legal/ @rayapudicb
+/packages/db/ @rayapudicb
+/.github/workflows/ @rayapudicb

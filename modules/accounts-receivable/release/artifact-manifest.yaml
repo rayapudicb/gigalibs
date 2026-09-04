@@ -1,0 +1,9 @@
+apiVersion: release.gigalibs.io/v1alpha1
+kind: ModuleArtifactManifest
+metadata:
+  module: accounts-receivable
+  version: 0.0.0-design
+spec:
+  status: no-runtime-artifacts
+  artifacts: []
+  note: Runtime artifacts may be added only after G4 implementation and verification.

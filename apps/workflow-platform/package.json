@@ -1,0 +1,33 @@
+{
+  "name": "@gigalibs/workflow-platform",
+  "version": "0.0.1",
+  "description": "Enterprise AI Workflow Orchestration Platform — Next.js frontend",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --port 5180 --hostname 0.0.0.0",
+    "build": "next build",
+    "start": "next start --port 5180 --hostname 0.0.0.0",
+    "typecheck": "tsc --noEmit",
+    "lint": "next lint",
+    "verify:bff": "node scripts/verify-workflow-bff.mjs"
+  },
+  "dependencies": {
+    "next": "^15.2.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "@xyflow/react": "^12.3.6",
+    "zustand": "^5.0.3",
+    "clsx": "^2.1.1",
+    "date-fns": "^4.1.0",
+    "swr": "^2.3.3",
+    "lucide-react": "^0.478.0",
+    "@gigalibs/onboarding-flow": "workspace:*",
+    "@gigalibs/contracts": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "typescript": "^5.8.3"
+  }
+}

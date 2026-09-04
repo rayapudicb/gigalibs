@@ -1,0 +1,42 @@
+{
+  "id": "gigalibs.esign",
+  "name": "Cryptographic E-Signature & X.509 Audit Seal",
+  "version": "1.0.0",
+  "description": "Multi-party sequential signing envelopes, SHA-256 pre/post signature digest calculation, X.509 PKI certificate sealing, and eIDAS/ESIGN compliant audit certificates",
+  "capabilities": [
+    "esign-envelopes",
+    "sha256-digests",
+    "x509-pki-seals",
+    "sequential-routing",
+    "audit-certificates"
+  ],
+  "requires": {
+    "gigalibs.tenancy": "^1.0.0",
+    "gigalibs.audit": "^1.0.0"
+  },
+  "optional": {
+    "gigalibs.storage": "^1.0.0",
+    "gigalibs.notifications": "^1.0.0"
+  },
+  "permissions": [
+    "esign.envelope.read",
+    "esign.envelope.create",
+    "esign.envelope.sign",
+    "esign.envelope.void",
+    "esign.certificate.download"
+  ],
+  "eventsProduced": [
+    "esign.envelope_created.v1",
+    "esign.signer_signed.v1",
+    "esign.envelope_completed.v1",
+    "esign.envelope_voided.v1"
+  ],
+  "eventsConsumed": [
+    "tenant.created.v1"
+  ],
+  "configurationNamespace": "esign",
+  "healthChecks": [
+    "database",
+    "pki-hsm"
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "name": "@gigalibs/oauth-universal",
+  "version": "0.0.1",
+  "description": "Universal OAuth2 & OIDC client (Social login) and Authorization Code PKCE server",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist *.tsbuildinfo"
+  },
+  "dependencies": {
+    "@gigalibs/crypto": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3"
+  }
+}

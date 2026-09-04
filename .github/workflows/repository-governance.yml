@@ -1,0 +1,30 @@
+name: Repository governance
+
+on:
+  pull_request:
+  push:
+    branches: [master, dev]
+
+permissions:
+  contents: read
+
+jobs:
+  governance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Production data audit
+        run: node scripts/verify-runtime-data-integrity.mjs
+      - name: All active runtime data audit
+        run: node scripts/verify-runtime-data-integrity.mjs --all-runtime
+      - name: Package dependency audit
+        run: node scripts/verify-package-dependencies.mjs
+      - name: API boundary audit
+        run: node scripts/verify-api-module-boundary.mjs
+      - name: Navigation boundary audit
+        run: node scripts/verify-navigation-boundary.mjs
+      - name: SDLC governance audit
+        run: node scripts/verify-sdlc-governance.mjs

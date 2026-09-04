@@ -1,0 +1,42 @@
+{
+  "id": "gigalibs.invoices",
+  "name": "Invoicing & Accounts Receivable Engine",
+  "version": "1.0.0",
+  "description": "Multi-currency invoicing engine, sequential numbering, line item tax calculation, payment link generation, and PDF export",
+  "capabilities": [
+    "invoice-issuance",
+    "tax-calculation",
+    "payment-terms",
+    "pdf-generation",
+    "accounts-receivable"
+  ],
+  "requires": {
+    "gigalibs.tenancy": "^1.0.0",
+    "gigalibs.audit": "^1.0.0"
+  },
+  "optional": {
+    "gigalibs.currency": "^1.0.0",
+    "gigalibs.billing": "^1.0.0",
+    "gigalibs.ledger": "^1.0.0"
+  },
+  "permissions": [
+    "invoices.invoice.read",
+    "invoices.invoice.create",
+    "invoices.invoice.update",
+    "invoices.invoice.void",
+    "invoices.invoice.export"
+  ],
+  "eventsProduced": [
+    "invoice.created.v1",
+    "invoice.sent.v1",
+    "invoice.paid.v1",
+    "invoice.voided.v1"
+  ],
+  "eventsConsumed": [
+    "tenant.created.v1"
+  ],
+  "configurationNamespace": "invoices",
+  "healthChecks": [
+    "database"
+  ]
+}

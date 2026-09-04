@@ -1,0 +1,43 @@
+{
+  "name": "@gigalibs/db",
+  "version": "0.0.1",
+  "description": "Prisma client factory, multi-tenant helpers, migration runner, base schemas",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "prisma generate --config prisma.config.ts && tsc -p tsconfig.json",
+    "dev": "tsc -p tsconfig.json --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist src/generated *.tsbuildinfo",
+    "db:generate": "prisma generate --config prisma.config.ts",
+    "db:migrate": "prisma migrate deploy --config prisma.config.ts",
+    "db:migrate:dev": "prisma migrate dev --config prisma.config.ts"
+  },
+  "dependencies": {
+    "@gigalibs/contracts": "workspace:*",
+    "@gigalibs/logger": "workspace:*",
+    "@prisma/adapter-pg": "6.19.3",
+    "@prisma/client": "6.19.3",
+    "dotenv": "^17.2.2",
+    "pg": "^8.16.3"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.0",
+    "@types/pg": "^8.15.5",
+    "prisma": "6.19.3",
+    "tsx": "^4.20.6",
+    "typescript": "^5.8.3",
+    "vitest": "^3.0.0"
+  }
+}

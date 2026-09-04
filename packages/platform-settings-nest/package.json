@@ -1,0 +1,35 @@
+{
+  "name": "@gigalibs/platform-settings-nest",
+  "version": "0.1.0",
+  "description": "Persisted, tenant-scoped platform settings APIs",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run --passWithNoTests",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist *.tsbuildinfo"
+  },
+  "dependencies": {
+    "@gigalibs/auth-nest": "workspace:*",
+    "@gigalibs/db": "workspace:*",
+    "@gigalibs/platform-settings": "workspace:*",
+    "@gigalibs/rbac-nest": "workspace:*",
+    "@gigalibs/tenancy-nest": "workspace:*",
+    "@gigalibs/validation-nest": "workspace:*",
+    "@nestjs/common": "^11.2.3"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.0",
+    "typescript": "^5.8.3",
+    "vitest": "^3.0.0"
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "id": "gigalibs.tenancy",
+  "name": "Multi-Tenancy & Isolated Database Engine",
+  "version": "1.0.0",
+  "description": "Multi-tenant workspace isolation, custom domain resolution, feature gating, and database allocation",
+  "capabilities": [
+    "tenant-lifecycle",
+    "domain-routing",
+    "feature-gating",
+    "isolation-mode-selection"
+  ],
+  "requires": {},
+  "optional": {
+    "gigalibs.audit": "^1.0.0"
+  },
+  "permissions": [
+    "tenancy.tenant.read",
+    "tenancy.tenant.create",
+    "tenancy.tenant.update",
+    "tenancy.tenant.delete",
+    "tenancy.tenant.suspend",
+    "tenancy.domain.manage"
+  ],
+  "eventsProduced": [
+    "tenant.created.v1",
+    "tenant.updated.v1",
+    "tenant.suspended.v1",
+    "tenant.deleted.v1"
+  ],
+  "eventsConsumed": [],
+  "configurationNamespace": "tenancy",
+  "healthChecks": [
+    "database"
+  ]
+}

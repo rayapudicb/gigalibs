@@ -1,0 +1,38 @@
+{
+  "id": "gigalibs.notifications",
+  "name": "Omnichannel Notification Dispatcher",
+  "version": "1.0.0",
+  "description": "Omnichannel notification dispatcher (In-App Bell, Email, SMS, Push), template engine, user preference filtering, and delivery logs",
+  "capabilities": [
+    "in-app-inbox",
+    "email-notifications",
+    "sms-alerts",
+    "user-preferences",
+    "delivery-tracking"
+  ],
+  "requires": {
+    "gigalibs.tenancy": "^1.0.0",
+    "gigalibs.users": "^1.0.0"
+  },
+  "optional": {
+    "gigalibs.audit": "^1.0.0"
+  },
+  "permissions": [
+    "notifications.inbox.read",
+    "notifications.message.send",
+    "notifications.preferences.manage"
+  ],
+  "eventsProduced": [
+    "notification.dispatched.v1",
+    "notification.read.v1"
+  ],
+  "eventsConsumed": [
+    "ticket.created.v1",
+    "invoice.paid.v1",
+    "user.invited.v1"
+  ],
+  "configurationNamespace": "notifications",
+  "healthChecks": [
+    "email-provider"
+  ]
+}
