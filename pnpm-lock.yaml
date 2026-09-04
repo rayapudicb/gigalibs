@@ -85,10 +85,10 @@ importers:
         version: 11.2.3(reflect-metadata@0.2.2)(rxjs@7.8.2)
       '@nestjs/core':
         specifier: ^11.2.3
-        version: 11.2.3(@nestjs/common@11.2.3(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/platform-express@11.2.3)(@nestjs/websockets@11.2.3)(reflect-metadata@0.2.2)(rxjs@7.8.2)
+        version: 11.2.3(@nestjs/common@11.2.3(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/platform-express@12.0.1)(@nestjs/websockets@11.2.3)(reflect-metadata@0.2.2)(rxjs@7.8.2)
       '@nestjs/platform-express':
-        specifier: ^11.2.3
-        version: 11.2.3(@nestjs/common@11.2.3(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.2.3)
+        specifier: ^12.0.1
+        version: 12.0.1(@nestjs/common@11.2.3(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.2.3)
       helmet:
         specifier: ^8.1.0
         version: 8.3.0
@@ -120,6 +120,12 @@ importers:
 
   apps/workflow-platform:
     dependencies:
+      '@gigalibs/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
+      '@gigalibs/onboarding-flow':
+        specifier: workspace:*
+        version: link:../../packages/onboarding-flow
       '@xyflow/react':
         specifier: ^12.3.6
         version: 12.11.5(@types/react-dom@19.2.5(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
@@ -305,7 +311,7 @@ importers:
         version: 11.2.3(reflect-metadata@0.2.2)(rxjs@7.8.2)
       '@nestjs/core':
         specifier: ^11.2.3
-        version: 11.2.3(@nestjs/common@11.2.3(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/platform-express@11.2.3)(@nestjs/websockets@11.2.3)(reflect-metadata@0.2.2)(rxjs@7.8.2)
+        version: 11.2.3(@nestjs/common@11.2.3(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/platform-express@12.0.1)(@nestjs/websockets@11.2.3)(reflect-metadata@0.2.2)(rxjs@7.8.2)
     devDependencies:
       '@types/node':
         specifier: ^24.10.0
@@ -395,15 +401,6 @@ importers:
         version: 5.9.3
 
   packages/chat-core:
-    devDependencies:
-      typescript:
-        specifier: ^5.8.3
-        version: 5.9.3
-      vitest:
-        specifier: ^3.0.0
-        version: 3.2.7(@types/node@24.13.3)(jiti@2.7.0)(tsx@4.23.12)
-
-  packages/cli:
     devDependencies:
       typescript:
         specifier: ^5.8.3
@@ -549,8 +546,6 @@ importers:
       vitest:
         specifier: ^3.0.0
         version: 3.2.7(@types/node@24.13.3)(jiti@2.7.0)(tsx@4.23.12)
-
-  packages/export-engine-core: {}
 
   packages/form-engine-core: {}
 
@@ -932,7 +927,7 @@ importers:
         version: 11.2.3(reflect-metadata@0.2.2)(rxjs@7.8.2)
       '@nestjs/core':
         specifier: ^11.2.3
-        version: 11.2.3(@nestjs/common@11.2.3(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/platform-express@11.2.3)(@nestjs/websockets@11.2.3)(reflect-metadata@0.2.2)(rxjs@7.8.2)
+        version: 11.2.3(@nestjs/common@11.2.3(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/platform-express@12.0.1)(@nestjs/websockets@11.2.3)(reflect-metadata@0.2.2)(rxjs@7.8.2)
     devDependencies:
       '@types/node':
         specifier: ^24.10.0
@@ -1004,15 +999,6 @@ importers:
       typescript:
         specifier: ^5.8.3
         version: 5.9.3
-
-  packages/reports-grid-react:
-    dependencies:
-      '@gigalibs/export-engine-core':
-        specifier: workspace:*
-        version: link:../export-engine-core
-      react:
-        specifier: '>=18.0.0'
-        version: 19.2.8
 
   packages/reports-nest:
     devDependencies:
@@ -1751,11 +1737,11 @@ packages:
       '@nestjs/websockets':
         optional: true
 
-  '@nestjs/platform-express@11.2.3':
-    resolution: {integrity: sha512-YFQvRXT2de1qNL9LJPUBQ31+RsfI4cJ+sbpU9ENM/hDCgoHSEhm7oxUuGGKmhTZBNZEYm8mDYdfoTFmAH1LIJg==}
+  '@nestjs/platform-express@12.0.1':
+    resolution: {integrity: sha512-nF8bRgROptMyixYBfiJUAsjj2o9k13zxAjUKYaqHTPk8mTSd+gk7hXz6NykXNrfHWmMEYC9RttQlMUdMHNTbuA==}
     peerDependencies:
-      '@nestjs/common': ^11.0.0
-      '@nestjs/core': ^11.0.0
+      '@nestjs/common': ^12.0.0
+      '@nestjs/core': ^12.0.0
 
   '@nestjs/websockets@11.2.3':
     resolution: {integrity: sha512-Vjh+KswJbUJpTwTHwNH2CvnetUGkk4dQzyXmPKgty6dxLxtJbLZM3oOoLhIr8XOwrEBZDKqluIdFs8QKZAIm/w==}
@@ -2032,6 +2018,7 @@ packages:
   '@smithy/node-http-handler@4.12.0':
     resolution: {integrity: sha512-0mq1pHadfyXCYCqm2cNpbjNIT+fbaUpNxewZb/YNr2L0IrEVMOb8gM/Fl4K6XvHCW3uSNDFwPl/+iKm0bx9jYg==}
     engines: {node: '>=18.0.0'}
+    deprecated: Depreacted due to a memory leak issue https://github.com/smithy-lang/smithy-typescript/issues/2258
 
   '@smithy/signature-v4@5.7.3':
     resolution: {integrity: sha512-7ImGm+FkHRLcBaRttIAMZ6bzJZWb2cJGoYjq46F2UjycujWzrL9GEN9h4w7eQyXJYnltrUhxbbieBAIRrdqpow==}
@@ -3106,8 +3093,8 @@ packages:
   pure-rand@6.1.0:
     resolution: {integrity: sha512-bVWawvoZoBYpp6yIoQtQXHZjmz35RSVHnUOTefl8Vcjr8snTPY1wnpSPMWekcFwbxI6gtmT7rSYPFvz71ldiOA==}
 
-  qs@6.15.3:
-    resolution: {integrity: sha512-O9gl3zCl5h5blw1KGUzQKhA5oUXSl8rwUIM5o0S3nCXMliSvy5Dzx7/DJcI+SwgICv+IneSZwhBh1oSyEHA71A==}
+  qs@6.16.0:
+    resolution: {integrity: sha512-h6fhOIaRrID2CbEY2fqs+7t+UXZo+MLAnU5gRIq85uFtdiUPCdsApMlHhXogKVM4HM2DVbIjGNTTYH2OcmP1vA==}
     engines: {node: '>=0.6'}
 
   quansync@0.2.11:
@@ -4206,7 +4193,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@nestjs/core@11.2.3(@nestjs/common@11.2.3(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/platform-express@11.2.3)(@nestjs/websockets@11.2.3)(reflect-metadata@0.2.2)(rxjs@7.8.2)':
+  '@nestjs/core@11.2.3(@nestjs/common@11.2.3(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/platform-express@12.0.1)(@nestjs/websockets@11.2.3)(reflect-metadata@0.2.2)(rxjs@7.8.2)':
     dependencies:
       '@nestjs/common': 11.2.3(reflect-metadata@0.2.2)(rxjs@7.8.2)
       fast-safe-stringify: 2.1.1
@@ -4217,13 +4204,13 @@ snapshots:
       tslib: 2.8.1
       uid: 2.0.2
     optionalDependencies:
-      '@nestjs/platform-express': 11.2.3(@nestjs/common@11.2.3(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.2.3)
+      '@nestjs/platform-express': 12.0.1(@nestjs/common@11.2.3(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.2.3)
       '@nestjs/websockets': 11.2.3(@nestjs/common@11.2.3(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.2.3)(reflect-metadata@0.2.2)(rxjs@7.8.2)
 
-  '@nestjs/platform-express@11.2.3(@nestjs/common@11.2.3(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.2.3)':
+  '@nestjs/platform-express@12.0.1(@nestjs/common@11.2.3(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.2.3)':
     dependencies:
       '@nestjs/common': 11.2.3(reflect-metadata@0.2.2)(rxjs@7.8.2)
-      '@nestjs/core': 11.2.3(@nestjs/common@11.2.3(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/platform-express@11.2.3)(@nestjs/websockets@11.2.3)(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      '@nestjs/core': 11.2.3(@nestjs/common@11.2.3(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/platform-express@12.0.1)(@nestjs/websockets@11.2.3)(reflect-metadata@0.2.2)(rxjs@7.8.2)
       cors: 2.8.6
       express: 5.2.1
       multer: 2.2.0
@@ -4235,7 +4222,7 @@ snapshots:
   '@nestjs/websockets@11.2.3(@nestjs/common@11.2.3(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.2.3)(reflect-metadata@0.2.2)(rxjs@7.8.2)':
     dependencies:
       '@nestjs/common': 11.2.3(reflect-metadata@0.2.2)(rxjs@7.8.2)
-      '@nestjs/core': 11.2.3(@nestjs/common@11.2.3(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/platform-express@11.2.3)(@nestjs/websockets@11.2.3)(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      '@nestjs/core': 11.2.3(@nestjs/common@11.2.3(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/platform-express@12.0.1)(@nestjs/websockets@11.2.3)(reflect-metadata@0.2.2)(rxjs@7.8.2)
       iterare: 1.2.1
       object-hash: 3.0.0
       reflect-metadata: 0.2.2
@@ -4643,7 +4630,7 @@ snapshots:
       http-errors: 2.0.1
       iconv-lite: 0.7.3
       on-finished: 2.4.1
-      qs: 6.15.3
+      qs: 6.16.0
       raw-body: 3.0.2
       type-is: 2.1.0
     transitivePeerDependencies:
@@ -4964,7 +4951,7 @@ snapshots:
       once: 1.4.0
       parseurl: 1.3.3
       proxy-addr: 2.0.7
-      qs: 6.15.3
+      qs: 6.16.0
       range-parser: 1.3.0
       router: 2.2.0
       send: 1.2.1
@@ -5500,7 +5487,7 @@ snapshots:
 
   pure-rand@6.1.0: {}
 
-  qs@6.15.3:
+  qs@6.16.0:
     dependencies:
       es-define-property: 1.0.1
       side-channel: 1.1.1
