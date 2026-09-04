@@ -12,5 +12,8 @@ GigaLibs uses gated work items and pull-request review. Before changing product 
    release changes.
 
 Do not add production mocks, fake provider success, local-only business persistence, customer data, or
-credentials. Contribution acceptance remains paused until the project license and contribution terms are
-approved.
+credentials.
+
+The project is currently proprietary. External code contributions are not accepted unless the repository
+owner provides written contribution terms for that contribution. Issues and design feedback do not grant
+rights to the source code.

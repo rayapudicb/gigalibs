@@ -82,5 +82,6 @@ commercial/risk decision requiring human approval. At 99%, usage is 9,900 of 10,
 - Approve invoice-meter overage versus hard-cap behavior and price/period semantics.
 - Name independent Finance, Security, QA, Architecture, and Release reviewers.
 - Resolve or formally contain Release 1 P0/P1 blockers.
-- Select project license and contribution terms before the public push.
+- Maintain the approved proprietary public-source license and contribution policy; review any future
+  license change separately.
 - Select supported OIDC, email, object-storage, and first payment-provider production profiles.

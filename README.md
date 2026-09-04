@@ -53,8 +53,10 @@ pnpm audit:sdlc
 - A reviewed release pull request promotes `dev` to `master`; environments receive immutable artifacts,
   not different source branches.
 
-## Licensing status
+## License
 
-No project-wide software license has been selected yet. Public visibility does not grant permission to
-copy, modify, or redistribute the code. See `docs/legal/LICENSE_DECISION_REQUIRED.md` before publishing
-or accepting contributions.
+GigaLibs is currently proprietary and not open source. Public visibility does not grant permission to use,
+copy, modify, host, or redistribute the software. See `LICENSE` and `docs/legal/LICENSE_POLICY.md`.
+
+The owner may adopt an open-source, source-available, commercial, or dual-license model later through a
+reviewed license change. Third-party components always retain their own licenses.
