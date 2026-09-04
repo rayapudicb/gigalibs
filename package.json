@@ -36,7 +36,7 @@
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
     "@changesets/cli": "^2.27.12",
-    "@types/node": "^24.10.0",
+    "@types/node": "^26.4.0",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
     "react": "^19.2.8",
