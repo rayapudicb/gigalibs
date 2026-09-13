@@ -1,9 +1,14 @@
 /**
- * @gigalibs — Dynamic schema extension. Per-tenant field definitions. JSON typed storage [nest]
+ * @gigalibs/custom-fields-nest
+ *
+ * NestJS integration for per-tenant custom field definitions.
+ * Persists CustomFieldDefinition objects in gigalibs_ar.custom_field_definitions.
+ *
+ * Usage:
+ *   CustomFieldsNestModule.forRoot({ pool: myPgPool, schema: 'gigalibs_ar' })
  *
  * @module
  */
 
-// TODO: Implement module exports
-
-export const VERSION = '0.0.1';
+export * from './custom-fields-nest.service.js';
+export * from './custom-fields-nest.module.js';

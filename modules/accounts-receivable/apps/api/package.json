@@ -21,7 +21,9 @@
     "pg": "^8.23.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
-    "zod": "^4.5.2"
+    "zod": "^4.5.2",
+    "@gigalibs/forms-engine-nest": "workspace:*",
+    "@gigalibs/custom-fields-nest": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^24.10.0",

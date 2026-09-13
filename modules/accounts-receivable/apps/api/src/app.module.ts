@@ -23,7 +23,9 @@ import { SeriesService } from './series/series.service.js';
 import { SetupController } from './setup/setup.controller.js';
 import { SetupService } from './setup/setup.service.js';
 
-import { registerReservedKeys } from '@gigalibs/configuration-core';
+import { PLATFORM_LOCKED_FIELD_KEYS, registerReservedKeys } from '@gigalibs/configuration-core';
+import { FormsEngineNestModule } from '@gigalibs/forms-engine-nest';
+import { CustomFieldsNestModule } from '@gigalibs/custom-fields-nest';
 
 /**
  * AR-owned field keys that must never be exposed as user-configurable.
@@ -43,7 +45,41 @@ const AR_RESERVED_KEYS = [
   'billing-entity-id',
 ] as const;
 
+/**
+ * Combined locked-key set: platform-level + AR module reserved keys.
+ * Passed to FormsEngineNestModule so tenants can never remove or retype these fields.
+ */
+const AR_LOCKED_KEYS = new Set<string>([
+  ...PLATFORM_LOCKED_FIELD_KEYS,
+  ...AR_RESERVED_KEYS,
+]);
+
 @Module({
+  imports: [
+    /**
+     * Universal runtime form definitions.
+     * REST endpoints: GET/PUT/POST /forms/:key
+     * Admin publishes a change → all users see it on next request, zero deployment.
+     */
+    FormsEngineNestModule.forRootAsync({
+      inject: [DatabaseService],
+      useFactory: (db: DatabaseService) => ({
+        pool: db.pool,
+        schema: 'gigalibs_ar',
+        lockedKeys: AR_LOCKED_KEYS,
+      }),
+    }),
+    /**
+     * Per-tenant custom field definitions persisted to gigalibs_ar.custom_field_definitions.
+     */
+    CustomFieldsNestModule.forRootAsync({
+      inject: [DatabaseService],
+      useFactory: (db: DatabaseService) => ({
+        pool: db.pool,
+        schema: 'gigalibs_ar',
+      }),
+    }),
+  ],
   controllers: [
     HealthController,
     SetupController,
