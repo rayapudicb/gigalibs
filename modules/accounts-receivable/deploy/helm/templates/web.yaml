@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "gigalibs-ar.fullname" . }}-web
+  labels:
+    {{- include "gigalibs-ar.labels" . | nindent 4 }}
+    app.kubernetes.io/component: web
+spec:
+  replicas: {{ .Values.replicas.web }}
+  selector:
+    matchLabels: {app.kubernetes.io/name: {{ include "gigalibs-ar.name" . }}, app.kubernetes.io/instance: {{ .Release.Name }}, app.kubernetes.io/component: web}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: {{ include "gigalibs-ar.name" . }}, app.kubernetes.io/instance: {{ .Release.Name }}, app.kubernetes.io/component: web}
+    spec:
+      serviceAccountName: {{ include "gigalibs-ar.serviceAccount" . }}
+      automountServiceAccountToken: false
+      securityContext: {runAsNonRoot: true, seccompProfile: {type: RuntimeDefault}}
+      imagePullSecrets: {{ toYaml .Values.imagePullSecrets | nindent 8 }}
+      containers:
+        - name: web
+          image: {{ include "gigalibs-ar.image" (dict "Values" .Values "component" "web") }}
+          imagePullPolicy: IfNotPresent
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+          ports: [{name: http, containerPort: 3401}]
+          env:
+            - {name: NODE_ENV, value: production}
+            - {name: PORT, value: "3401"}
+            - {name: HOSTNAME, value: 0.0.0.0}
+            - {name: AR_WEB_BASE_URL, value: {{ required "web.externalUrl is required" .Values.web.externalUrl | quote }}}
+            - {name: AR_API_BASE_URL, value: {{ printf "http://%s-api:3400" (include "gigalibs-ar.fullname" .) | quote }}}
+            - {name: AR_WEB_OIDC_ISSUER, value: {{ required "oidc.issuer is required" .Values.oidc.issuer | quote }}}
+            - {name: AR_WEB_OIDC_CLIENT_ID, value: {{ required "oidc.clientId is required" .Values.oidc.clientId | quote }}}
+            - name: AR_WEB_OIDC_CLIENT_SECRET
+              valueFrom: {secretKeyRef: {name: {{ .Values.oidc.secretName }}, key: {{ .Values.oidc.clientSecretKey }}}}
+            - {name: AR_WEB_OIDC_SCOPE, value: {{ .Values.oidc.scope | quote }}}
+            - name: AR_WEB_SESSION_SECRET
+              valueFrom: {secretKeyRef: {name: {{ .Values.web.secretName }}, key: {{ .Values.web.sessionSecretKey }}}}
+            - {name: AR_WEB_ALLOW_INSECURE_HTTP, value: "false"}
+          readinessProbe: {httpGet: {path: /auth/signed-out, port: http}, initialDelaySeconds: 5, timeoutSeconds: 3}
+          livenessProbe: {httpGet: {path: /auth/signed-out, port: http}, initialDelaySeconds: 10, timeoutSeconds: 3}
+          resources: {{ toYaml .Values.resources.web | nindent 12 }}
+          volumeMounts: [{name: tmp, mountPath: /tmp}]
+      volumes: [{name: tmp, emptyDir: {}}]
+      nodeSelector: {{ toYaml .Values.nodeSelector | nindent 8 }}
+      tolerations: {{ toYaml .Values.tolerations | nindent 8 }}
+      affinity: {{ toYaml .Values.affinity | nindent 8 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "gigalibs-ar.fullname" . }}-web
+  labels:
+    {{- include "gigalibs-ar.labels" . | nindent 4 }}
+spec:
+  selector: {app.kubernetes.io/name: {{ include "gigalibs-ar.name" . }}, app.kubernetes.io/instance: {{ .Release.Name }}, app.kubernetes.io/component: web}
+  ports: [{name: http, port: 3401, targetPort: http}]

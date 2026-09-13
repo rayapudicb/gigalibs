@@ -1,0 +1,7 @@
+apiVersion: v2
+name: gigalibs-ar
+description: Standalone GigaLibs accounts receivable API, web BFF, worker, and migrations
+type: application
+version: 0.1.0-dev.1
+appVersion: 0.1.0-dev
+kubeVersion: ">=1.29.0-0"

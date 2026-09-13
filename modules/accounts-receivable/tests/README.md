@@ -1,7 +1,8 @@
 # AR verification matrix
 
-No test suite exists yet because runtime Build is not authorized. The eventual module cannot be certified
-from unit tests alone.
+Foundation tests now cover deterministic money/numbering rules, fail-closed configuration, canonical
+idempotency hashing, cursors, webhook signatures/retries, real PostgreSQL migrations/RLS/immutability, and a
+Playwright product lifecycle. These are G4 implementation checks, not full G5 product certification.
 
 | Layer | Required proof |
 | --- | --- |
@@ -20,3 +21,9 @@ from unit tests alone.
 
 Certification data must be generated in isolated non-production tenants and excluded from customer usage
 and business-value reporting.
+
+`pnpm --filter @gigalibs/ar-e2e test` builds all three processes and uses a disposable PostgreSQL 16
+container plus an isolated RSA-signing OIDC test issuer and signed event receiver. It exercises setup,
+customer, create/revise/issue, idempotency replay, concurrent numbering, keyset paging, immutable-edit
+rejection, signed event delivery, API restart, and persisted reread. There is no route interception or
+fixture business response; all generated records are visibly test-only and the database is removed.

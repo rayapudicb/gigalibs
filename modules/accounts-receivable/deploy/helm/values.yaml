@@ -1,0 +1,68 @@
+images:
+  api: {repository: "", digest: ""}
+  web: {repository: "", digest: ""}
+  worker: {repository: "", digest: ""}
+  migrations: {repository: "", digest: ""}
+imagePullSecrets: []
+
+replicas: {api: 2, web: 2, worker: 2}
+serviceAccount: {create: true, name: ""}
+
+database:
+  secretName: gigalibs-ar-database
+  apiUrlKey: api-url
+  workerUrlKey: worker-url
+  hostKey: host
+  portKey: port
+  nameKey: database
+  migrationUserKey: migration-user
+  migrationPasswordKey: migration-password
+  poolSize: 20
+
+oidc:
+  issuer: ""
+  jwksUri: ""
+  audience: gigalibs-ar
+  algorithms: RS256
+  tenantClaim: tenant_id
+  permissionsClaim: permissions
+  clientId: ""
+  scope: openid profile offline_access gigalibs-ar
+  secretName: gigalibs-ar-oidc
+  clientSecretKey: client-secret
+
+web:
+  externalUrl: ""
+  secretName: gigalibs-ar-web
+  sessionSecretKey: session-secret
+
+events:
+  webhookUrl: ""
+  secretName: gigalibs-ar-events
+  webhookSecretKey: webhook-secret
+
+ingress:
+  enabled: true
+  className: ""
+  host: ""
+  tlsSecretName: ""
+  annotations: {}
+
+resources:
+  api:
+    requests: {cpu: 100m, memory: 192Mi}
+    limits: {cpu: "1", memory: 512Mi}
+  web:
+    requests: {cpu: 100m, memory: 192Mi}
+    limits: {cpu: "1", memory: 512Mi}
+  worker:
+    requests: {cpu: 100m, memory: 128Mi}
+    limits: {cpu: "1", memory: 384Mi}
+  migrations:
+    requests: {cpu: 50m, memory: 64Mi}
+    limits: {cpu: 500m, memory: 256Mi}
+
+podDisruptionBudget: {enabled: true, minAvailable: 1}
+nodeSelector: {}
+tolerations: []
+affinity: {}

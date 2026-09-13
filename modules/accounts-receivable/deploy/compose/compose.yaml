@@ -1,0 +1,113 @@
+name: gigalibs-ar
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ar
+      POSTGRES_USER: ar_admin
+      POSTGRES_PASSWORD: ${AR_DB_ADMIN_PASSWORD:?generate an admin database password}
+      AR_RUNTIME_DB_PASSWORD: ${AR_RUNTIME_DB_PASSWORD:?generate a runtime database password}
+      AR_WORKER_DB_PASSWORD: ${AR_WORKER_DB_PASSWORD:?generate a worker database password}
+    volumes:
+      - ar-postgres:/var/lib/postgresql/data
+      - ./init-compose-database.sh:/docker-entrypoint-initdb.d/001-ar-roles.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ar_admin -d ar"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  migrations:
+    build:
+      context: ../../../..
+      dockerfile: modules/accounts-receivable/deploy/docker/Dockerfile.migrations
+    environment:
+      PGHOST: postgres
+      PGPORT: 5432
+      PGDATABASE: ar
+      PGUSER: ar_admin
+      PGPASSWORD: ${AR_DB_ADMIN_PASSWORD:?generate an admin database password}
+      AR_COMPOSE_GRANT_ROLES: "true"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  api:
+    build:
+      context: ../../../..
+      dockerfile: modules/accounts-receivable/deploy/docker/Dockerfile.api
+    environment:
+      NODE_ENV: production
+      AR_API_HOST: 0.0.0.0
+      AR_API_PORT: 3400
+      AR_CORS_ORIGINS: http://localhost:3401
+      AR_DATABASE_URL: postgresql://ar_runtime:${AR_RUNTIME_DB_PASSWORD:?generate a runtime database password}@postgres:5432/ar
+      AR_DATABASE_POOL_SIZE: 20
+      AR_OIDC_ISSUER: ${AR_OIDC_ISSUER:?configure an OIDC issuer}
+      AR_OIDC_AUDIENCE: ${AR_OIDC_AUDIENCE:?configure the API audience}
+      AR_OIDC_JWKS_URI: ${AR_OIDC_JWKS_URI:?configure a JWKS endpoint}
+      AR_OIDC_ALGORITHMS: RS256
+      AR_OIDC_TENANT_CLAIM: tenant_id
+      AR_OIDC_PERMISSIONS_CLAIM: permissions
+      AR_ALLOW_INSECURE_OIDC: "false"
+    depends_on:
+      migrations:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3400/health/ready').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    read_only: true
+    tmpfs: [/tmp]
+    restart: unless-stopped
+
+  web:
+    build:
+      context: ../../../..
+      dockerfile: modules/accounts-receivable/deploy/docker/Dockerfile.web
+    ports: ["127.0.0.1:3401:3401"]
+    environment:
+      NODE_ENV: production
+      AR_WEB_BASE_URL: http://localhost:3401
+      AR_API_BASE_URL: http://api:3400
+      AR_WEB_OIDC_ISSUER: ${AR_OIDC_ISSUER:?configure an OIDC issuer}
+      AR_WEB_OIDC_CLIENT_ID: ${AR_OIDC_CLIENT_ID:?configure a confidential OIDC client}
+      AR_WEB_OIDC_CLIENT_SECRET: ${AR_OIDC_CLIENT_SECRET:?configure the OIDC client secret}
+      AR_WEB_OIDC_SCOPE: openid profile offline_access gigalibs-ar
+      AR_WEB_SESSION_SECRET: ${AR_WEB_SESSION_SECRET:?generate a 32-byte base64 value}
+      AR_WEB_ALLOW_INSECURE_HTTP: "true"
+    depends_on:
+      api:
+        condition: service_healthy
+    read_only: true
+    tmpfs: [/tmp]
+    restart: unless-stopped
+
+  worker:
+    build:
+      context: ../../../..
+      dockerfile: modules/accounts-receivable/deploy/docker/Dockerfile.worker
+    environment:
+      NODE_ENV: production
+      AR_WORKER_DATABASE_URL: postgresql://ar_worker:${AR_WORKER_DB_PASSWORD:?generate a worker database password}@postgres:5432/ar
+      AR_EVENT_WEBHOOK_URL: ${AR_EVENT_WEBHOOK_URL:?configure an event receiver}
+      AR_EVENT_WEBHOOK_SECRET: ${AR_EVENT_WEBHOOK_SECRET:?generate an event signing secret}
+      AR_WORKER_ID: compose-worker-1
+      AR_WORKER_POLL_INTERVAL_MS: 1000
+      AR_WORKER_HTTP_TIMEOUT_MS: 5000
+      AR_WORKER_LEASE_SECONDS: 60
+      AR_WORKER_MAX_ATTEMPTS: 20
+      AR_WORKER_ALLOW_INSECURE_HTTP: "false"
+    depends_on:
+      migrations:
+        condition: service_completed_successfully
+    read_only: true
+    tmpfs: [/tmp]
+    restart: unless-stopped
+
+volumes:
+  ar-postgres:

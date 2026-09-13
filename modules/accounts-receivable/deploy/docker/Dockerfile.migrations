@@ -1,0 +1,8 @@
+ARG POSTGRES_IMAGE=postgres:16-alpine
+FROM ${POSTGRES_IMAGE}
+COPY modules/accounts-receivable/db/migrations/*.sql /opt/gigalibs-ar/migrations/
+COPY modules/accounts-receivable/deploy/compose/grant-compose-roles.sql /opt/gigalibs-ar/
+COPY modules/accounts-receivable/deploy/docker/apply-migrations.sh /usr/local/bin/apply-ar-migrations
+RUN chmod 0555 /usr/local/bin/apply-ar-migrations && chmod 0444 /opt/gigalibs-ar/migrations/*.sql /opt/gigalibs-ar/grant-compose-roles.sql
+USER postgres
+ENTRYPOINT ["apply-ar-migrations"]

@@ -1,0 +1,43 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "gigalibs-ar.fullname" . }}-migrate-{{ .Release.Revision }}
+  labels:
+    {{- include "gigalibs-ar.labels" . | nindent 4 }}
+    app.kubernetes.io/component: migrations
+  annotations:
+    helm.sh/hook: pre-install,pre-upgrade
+    helm.sh/hook-weight: "-5"
+    helm.sh/hook-delete-policy: before-hook-creation
+spec:
+  backoffLimit: 2
+  activeDeadlineSeconds: 600
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: {{ include "gigalibs-ar.name" . }}, app.kubernetes.io/instance: {{ .Release.Name }}, app.kubernetes.io/component: migrations}
+    spec:
+      restartPolicy: Never
+      serviceAccountName: {{ include "gigalibs-ar.serviceAccount" . }}
+      automountServiceAccountToken: false
+      securityContext: {runAsNonRoot: true, seccompProfile: {type: RuntimeDefault}}
+      imagePullSecrets: {{ toYaml .Values.imagePullSecrets | nindent 8 }}
+      containers:
+        - name: migrations
+          image: {{ include "gigalibs-ar.image" (dict "Values" .Values "component" "migrations") }}
+          imagePullPolicy: IfNotPresent
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+          env:
+            - name: PGHOST
+              valueFrom: {secretKeyRef: {name: {{ .Values.database.secretName }}, key: {{ .Values.database.hostKey }}}}
+            - name: PGPORT
+              valueFrom: {secretKeyRef: {name: {{ .Values.database.secretName }}, key: {{ .Values.database.portKey }}}}
+            - name: PGDATABASE
+              valueFrom: {secretKeyRef: {name: {{ .Values.database.secretName }}, key: {{ .Values.database.nameKey }}}}
+            - name: PGUSER
+              valueFrom: {secretKeyRef: {name: {{ .Values.database.secretName }}, key: {{ .Values.database.migrationUserKey }}}}
+            - name: PGPASSWORD
+              valueFrom: {secretKeyRef: {name: {{ .Values.database.secretName }}, key: {{ .Values.database.migrationPasswordKey }}}}
+            - {name: AR_COMPOSE_GRANT_ROLES, value: "false"}
+          resources: {{ toYaml .Values.resources.migrations | nindent 12 }}
+          volumeMounts: [{name: tmp, mountPath: /tmp}]
+      volumes: [{name: tmp, emptyDir: {}}]

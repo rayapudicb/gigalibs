@@ -2,11 +2,14 @@ apiVersion: release.gigalibs.io/v1alpha1
 kind: ModuleCompatibility
 metadata:
   module: accounts-receivable
-  version: 0.0.0-design
+  version: 0.1.0-dev
 spec:
   status: draft
   postgresql: '>=16 <19'
-  openapi: 0.1.0-draft
+  openapi: 0.1.0-dev
   asyncapi: 0.1.0-draft
   supportedUpgrades: []
   certifiedDeploymentModes: []
+  locallyVerifiedDevelopmentModes:
+    - native-processes-with-postgresql-16
+  note: No production deployment mode or upgrade path is certified yet.

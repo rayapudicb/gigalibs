@@ -3,8 +3,8 @@ kind: Module
 metadata:
   name: accounts-receivable
   displayName: Customer Invoicing and Accounts Receivable
-  version: 0.0.0-design
-  lifecycle: proposed
+  version: 0.1.0-dev
+  lifecycle: implementation
   workItem: WI-OI-019
 spec:
   standalone: true
@@ -14,14 +14,26 @@ spec:
     - subscription-metering
   capabilities:
     - customers
-    - invoices
-    - delivery
+    - invoice-drafts
+    - invoice-issue
+    - committed-event-delivery
+    - audit
+  plannedCapabilities:
+    - event-billing-summary
+    - source-backed-invoice-generation
+    - supplemental-invoice-families
+    - markup-policies
+    - missed-billing-control
+    - controlled-rebilling
+    - invoice-template-versions
+    - configurable-numbering
+    - accounting-system-reconciliation
+    - document-delivery
     - payments
     - credit-notes
     - collections
     - reconciliation
     - aging
-    - audit
   ui:
     application: apps/web
     basePath: /ar
@@ -35,6 +47,7 @@ spec:
     asyncapi: contracts/asyncapi.yaml
     emits:
       - ar.invoice.issued.v1
+    plannedEmits:
       - ar.invoice.balance-changed.v1
     consumes: []
   identity:

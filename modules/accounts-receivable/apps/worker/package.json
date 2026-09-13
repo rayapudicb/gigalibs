@@ -1,0 +1,24 @@
+{
+  "name": "@gigalibs/ar-worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsx watch src/main.ts",
+    "start": "node dist/main.js",
+    "test": "vitest run --root ../../../.. --config vitest.config.ts modules/accounts-receivable/apps/worker/src",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "pg": "^8.23.0",
+    "zod": "^4.5.2"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.0",
+    "@types/pg": "^8.23.1",
+    "tsx": "^4.20.6",
+    "typescript": "^5.8.3",
+    "vitest": "^3.0.0"
+  }
+}

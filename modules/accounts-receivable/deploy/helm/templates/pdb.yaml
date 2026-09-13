@@ -1,0 +1,15 @@
+{{- if .Values.podDisruptionBudget.enabled }}
+{{- range $component := list "api" "web" "worker" }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "gigalibs-ar.fullname" $ }}-{{ $component }}
+  labels:
+    {{- include "gigalibs-ar.labels" $ | nindent 4 }}
+spec:
+  minAvailable: {{ $.Values.podDisruptionBudget.minAvailable }}
+  selector:
+    matchLabels: {app.kubernetes.io/name: {{ include "gigalibs-ar.name" $ }}, app.kubernetes.io/instance: {{ $.Release.Name }}, app.kubernetes.io/component: {{ $component }}}
+---
+{{- end }}
+{{- end }}

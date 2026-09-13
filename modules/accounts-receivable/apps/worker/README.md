@@ -1,6 +1,8 @@
 # AR worker application
 
-Planned worker for committed outbox publication, invoice document generation, delivery, reconciliation,
-exports, reminders, and retry/DLQ processing. PostgreSQL remains authoritative; queues are transport.
+The implemented worker claims committed outbox events through a least-privileged PostgreSQL group role and
+delivers CloudEvents-compatible JSON to a configured HTTPS receiver. Requests use HMAC-SHA256 signatures,
+stable event IDs, bounded timeouts, leased claims, exponential retries, and durable dead-letter state.
 
-No runtime code is authorized yet.
+Delivery is at least once: consumers must deduplicate by event ID. PDF/email/payment/reconciliation/export
+jobs remain planned and are not implemented by this worker yet.

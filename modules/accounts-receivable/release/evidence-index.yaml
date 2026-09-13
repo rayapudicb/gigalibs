@@ -2,11 +2,11 @@ apiVersion: release.gigalibs.io/v1alpha1
 kind: ModuleEvidenceIndex
 metadata:
   module: accounts-receivable
-  version: 0.0.0-design
+  version: 0.1.0-dev
 spec:
   certification: not-certified
   workItem: WI-OI-019
-  currentGate: G0-G3
+  currentGate: G4
   evidence:
     requirements: docs/requirements/PRODUCT_REQUIREMENTS.md
     architecture: docs/architecture/ARCHITECTURE.md
@@ -14,8 +14,31 @@ spec:
     asyncapi: contracts/asyncapi.yaml
     dataModel: db/schema/AR_DATA_MODEL.md
     testPlan: tests/README.md
-  implementation: null
-  migrations: []
-  tests: []
+  implementation:
+    domain: domain/src/invoice.ts
+    api: apps/api/src
+    web: apps/web
+    worker: apps/worker/src
+    deployment: deploy
+  migrations:
+    - db/migrations/000001_ar_foundation.up.sql
+    - db/migrations/000002_ar_outbox_delivery.up.sql
+    - db/migrations/RECOVERY.md
+  tests:
+    - name: foundation unit tests
+      command: pnpm --filter @gigalibs/ar-domain test
+      status: passing-in-local-g4
+    - name: API unit tests
+      command: pnpm --filter @gigalibs/ar-api test
+      status: passing-in-local-g4
+    - name: worker unit tests
+      command: pnpm --filter @gigalibs/ar-worker test
+      status: passing-in-local-g4
+    - name: PostgreSQL 16 migration and isolation verification
+      source: db/verification
+      status: passing-in-disposable-local-g4
+    - name: standalone Playwright lifecycle
+      command: pnpm --filter @gigalibs/ar-e2e test
+      status: passing-in-disposable-local-g4
   humanApprovals: []
   productionObservation: null

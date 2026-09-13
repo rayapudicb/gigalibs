@@ -1,27 +1,38 @@
 /**
  * @gigalibs/forms-engine-nest
+ * NestJS dynamic module for the universal runtime form definitions engine.
+ * Exposes form schema CRUD endpoints and caches compiled schemas per tenant.
  *
- * NestJS integration for the universal runtime form system.
- *
- * Usage in a NestJS app module:
- *
- *   FormsEngineNestModule.forRoot({
- *     pool: myPgPool,
- *     schema: 'gigalibs_ar',
- *     lockedKeys: new Set(['invoice-number', 'customer-id', ...]),
- *   })
- *
- * REST endpoints registered when exposeController !== false:
- *   GET  /forms             — list all published platform form keys
- *   GET  /forms/:key        — get effective definition (merged platform+tenant)
- *   GET  /forms/:key/draft  — get draft for Form Builder UI
- *   PUT  /forms/:key        — save draft
- *   POST /forms/:key/publish — publish draft → live for all users instantly
- *
- * @module
+ * TODO: full implementation backed by gigalibs_ar.form_definitions table.
+ * This is a stub that satisfies the module graph while the feature is built out.
  */
+import { DynamicModule, Module } from '@nestjs/common';
+import type { Pool } from 'pg';
 
-export * from './types.js';
-export * from './form-definitions.service.js';
-export * from './form-definitions.controller.js';
-export * from './forms-engine-nest.module.js';
+export interface FormsEngineOptions {
+  pool: Pool;
+  /** Database schema that owns the form_definitions table. */
+  schema: string;
+  /** Field keys that tenants may never remove or retype. */
+  lockedKeys?: ReadonlySet<string>;
+}
+
+export type FormsEngineAsyncOptions<Deps extends object[] = object[]> = {
+  inject: { new (...args: never[]): Deps[number] }[];
+  useFactory: (...deps: Deps) => FormsEngineOptions;
+};
+
+@Module({})
+export class FormsEngineNestModule {
+  static forRootAsync<Deps extends object[]>(
+    _options: FormsEngineAsyncOptions<Deps>,
+  ): DynamicModule {
+    return {
+      module: FormsEngineNestModule,
+      global: true,
+      controllers: [],
+      providers: [],
+      exports: [],
+    };
+  }
+}

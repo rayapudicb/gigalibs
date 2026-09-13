@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "gigalibs-ar.fullname" . }}-worker
+  labels:
+    {{- include "gigalibs-ar.labels" . | nindent 4 }}
+    app.kubernetes.io/component: worker
+spec:
+  replicas: {{ .Values.replicas.worker }}
+  selector:
+    matchLabels: {app.kubernetes.io/name: {{ include "gigalibs-ar.name" . }}, app.kubernetes.io/instance: {{ .Release.Name }}, app.kubernetes.io/component: worker}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: {{ include "gigalibs-ar.name" . }}, app.kubernetes.io/instance: {{ .Release.Name }}, app.kubernetes.io/component: worker}
+    spec:
+      serviceAccountName: {{ include "gigalibs-ar.serviceAccount" . }}
+      automountServiceAccountToken: false
+      securityContext: {runAsNonRoot: true, seccompProfile: {type: RuntimeDefault}}
+      imagePullSecrets: {{ toYaml .Values.imagePullSecrets | nindent 8 }}
+      containers:
+        - name: worker
+          image: {{ include "gigalibs-ar.image" (dict "Values" .Values "component" "worker") }}
+          imagePullPolicy: IfNotPresent
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+          env:
+            - {name: NODE_ENV, value: production}
+            - name: AR_WORKER_DATABASE_URL
+              valueFrom: {secretKeyRef: {name: {{ .Values.database.secretName }}, key: {{ .Values.database.workerUrlKey }}}}
+            - {name: AR_EVENT_WEBHOOK_URL, value: {{ required "events.webhookUrl is required" .Values.events.webhookUrl | quote }}}
+            - name: AR_EVENT_WEBHOOK_SECRET
+              valueFrom: {secretKeyRef: {name: {{ .Values.events.secretName }}, key: {{ .Values.events.webhookSecretKey }}}}
+            - name: AR_WORKER_ID
+              valueFrom: {fieldRef: {fieldPath: metadata.name}}
+            - {name: AR_WORKER_POLL_INTERVAL_MS, value: "1000"}
+            - {name: AR_WORKER_HTTP_TIMEOUT_MS, value: "5000"}
+            - {name: AR_WORKER_LEASE_SECONDS, value: "60"}
+            - {name: AR_WORKER_MAX_ATTEMPTS, value: "20"}
+            - {name: AR_WORKER_ALLOW_INSECURE_HTTP, value: "false"}
+          resources: {{ toYaml .Values.resources.worker | nindent 12 }}
+          volumeMounts: [{name: tmp, mountPath: /tmp}]
+      volumes: [{name: tmp, emptyDir: {}}]
+      nodeSelector: {{ toYaml .Values.nodeSelector | nindent 8 }}
+      tolerations: {{ toYaml .Values.tolerations | nindent 8 }}
+      affinity: {{ toYaml .Values.affinity | nindent 8 }}

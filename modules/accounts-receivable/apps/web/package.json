@@ -1,0 +1,25 @@
+{
+  "name": "@gigalibs/ar-web",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "next build",
+    "dev": "next dev --hostname 0.0.0.0 --port 3401",
+    "start": "next start --hostname 0.0.0.0 --port 3401",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "jose": "^6.2.3",
+    "next": "^15.5.9",
+    "openid-client": "^6.8.7",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "zod": "^4.5.2"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "typescript": "^5.8.3"
+  }
+}

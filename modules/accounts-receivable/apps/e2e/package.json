@@ -1,0 +1,13 @@
+{
+  "name": "@gigalibs/ar-e2e",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build:system": "pnpm --filter @gigalibs/ar-domain build && pnpm --filter @gigalibs/ar-api build && pnpm --filter @gigalibs/ar-worker build && pnpm --filter @gigalibs/ar-web build",
+    "test": "pnpm build:system && playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.62.1",
+    "jose": "^6.2.3"
+  }
+}

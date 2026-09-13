@@ -1,6 +1,11 @@
 # AR API application
 
-Planned standalone NestJS API owning AR authorization, domain transactions, PostgreSQL persistence, audit,
-outbox publication, and operational endpoints. The draft contract is `../../contracts/openapi.yaml`.
+Standalone NestJS API under active WI-OI-019 implementation. The foundation provides fail-closed runtime
+configuration, remote-JWKS OIDC verification, tenant/permission context, PostgreSQL health checks and
+tenant-scoped transactions. It implements setup, customers, draft create/revise/read/list, and atomic issue.
+List endpoints use bounded keyset pagination; mutating creation/issue commands are idempotent and draft
+updates require the latest ETag.
 
-No local-memory or fixture repository is permitted. No runtime code is authorized yet.
+The API never accepts tenant scope from the body/header, never falls back to memory or fixtures, and will
+refuse to start with a superuser/BYPASSRLS database role. The draft contract is
+`../../contracts/openapi.yaml`.

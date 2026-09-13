@@ -1,0 +1,16 @@
+ARG NODE_IMAGE=node:22-alpine
+FROM ${NODE_IMAGE} AS builder
+RUN corepack enable
+WORKDIR /workspace
+COPY . .
+RUN pnpm install --frozen-lockfile
+RUN pnpm --filter @gigalibs/ar-domain build && pnpm --filter @gigalibs/ar-api build
+RUN pnpm --filter @gigalibs/ar-api deploy --prod --legacy /opt/ar-api
+
+FROM ${NODE_IMAGE} AS runtime
+ENV NODE_ENV=production
+WORKDIR /opt/ar-api
+COPY --from=builder --chown=node:node /opt/ar-api/ ./
+USER node
+EXPOSE 3400
+CMD ["node", "dist/main.js"]

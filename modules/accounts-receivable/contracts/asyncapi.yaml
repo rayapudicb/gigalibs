@@ -1,8 +1,10 @@
 asyncapi: 2.6.0
 info:
   title: GigaLibs Accounts Receivable Events
-  version: 0.1.0-draft
-  description: Draft committed-domain-event contract for WI-OI-019; no producer exists yet.
+  version: 0.1.0-dev
+  description: Development contract for the implemented committed invoice-issued event in WI-OI-019.
+x-planned-events:
+  - ar.invoice.balance-changed.v1
 defaultContentType: application/json
 channels:
   ar.invoice.issued.v1:
@@ -10,11 +12,6 @@ channels:
       operationId: publishInvoiceIssued
       message:
         $ref: '#/components/messages/InvoiceIssued'
-  ar.invoice.balance-changed.v1:
-    publish:
-      operationId: publishInvoiceBalanceChanged
-      message:
-        $ref: '#/components/messages/InvoiceBalanceChanged'
 components:
   messages:
     InvoiceIssued:
@@ -37,25 +34,6 @@ components:
                   currency: {type: string, pattern: '^[A-Z]{3}$'}
                   totalMinor: {type: integer}
                   issuedAt: {type: string, format: date-time}
-    InvoiceBalanceChanged:
-      name: ar.invoice.balance-changed.v1
-      messageId: eventId
-      payload:
-        allOf:
-          - $ref: '#/components/schemas/EventEnvelope'
-          - type: object
-            required: [data]
-            properties:
-              data:
-                type: object
-                additionalProperties: false
-                required: [invoiceId, currency, previousAmountDueMinor, amountDueMinor, reason]
-                properties:
-                  invoiceId: {type: string, format: uuid}
-                  currency: {type: string, pattern: '^[A-Z]{3}$'}
-                  previousAmountDueMinor: {type: integer}
-                  amountDueMinor: {type: integer}
-                  reason: {type: string, enum: [payment, credit, refund, dispute, void]}
   schemas:
     EventEnvelope:
       type: object

@@ -71,6 +71,20 @@ All create/effect commands are idempotent. Updates use expected version/ETag. Li
 cursor-paginated, bounded, filterable, and deterministic. Errors use a versioned problem-details contract
 with correlation ID and no secret/foreign-object disclosure.
 
+## Event/work-source and supplemental invoicing extension
+
+Proposed WI-OI-040 adds `FR-17-EB-01` through `FR-17-EB-15`: real timesheet/payroll source contracts,
+event billing summaries, source-record reservations, unlimited supplemental rounds, immutable invoice
+families, percentage/flat markup precedence, raw-cost controls, missed-billing exceptions, governed
+void/rebilling, customer template versions, numbering tokens, delivery policy and accounting mapping/
+reconciliation. The detailed requirements, current-state gaps, data/API design, compatibility impacts,
+implementation slices and acceptance matrix are in
+[`../../../../docs/plans/ar-event-billing-supplemental-invoicing-plan.md`](../../../../docs/plans/ar-event-billing-supplemental-invoicing-plan.md).
+
+The existing manual customer/draft/issue API remains supported. Browser values cannot establish source
+approval, billable quantity or raw cost. Issued invoices remain immutable, void never automatically
+unlocks source records, and accounting-provider failure never fabricates success or rolls back issuance.
+
 ## Subscription plan and 10,000-invoice meter
 
 This is a commercial entitlement/usage feature, not an invoice-table counter:

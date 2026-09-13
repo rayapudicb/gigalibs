@@ -2,8 +2,30 @@ apiVersion: release.gigalibs.io/v1alpha1
 kind: ModuleArtifactManifest
 metadata:
   module: accounts-receivable
-  version: 0.0.0-design
+  version: 0.1.0-dev
 spec:
-  status: no-runtime-artifacts
-  artifacts: []
-  note: Runtime artifacts may be added only after G4 implementation and verification.
+  status: build-definitions-only
+  artifacts:
+    - name: ar-api
+      type: oci-image
+      buildDefinition: deploy/docker/Dockerfile.api
+      publicationStatus: not-published
+    - name: ar-web
+      type: oci-image
+      buildDefinition: deploy/docker/Dockerfile.web
+      publicationStatus: not-published
+    - name: ar-worker
+      type: oci-image
+      buildDefinition: deploy/docker/Dockerfile.worker
+      publicationStatus: not-published
+    - name: ar-migrations
+      type: oci-image
+      buildDefinition: deploy/docker/Dockerfile.migrations
+      publicationStatus: not-published
+    - name: gigalibs-ar
+      type: helm-chart
+      buildDefinition: deploy/helm
+      publicationStatus: not-published
+  note: >-
+    Development build definitions exist, but no immutable image/chart digest, SBOM, signature,
+    provenance, registry publication, G5 certification, or G6 release approval is claimed.

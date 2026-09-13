@@ -1,0 +1,16 @@
+ARG NODE_IMAGE=node:22-alpine
+FROM ${NODE_IMAGE} AS builder
+RUN corepack enable
+WORKDIR /workspace
+COPY . .
+RUN pnpm install --frozen-lockfile
+RUN pnpm --filter @gigalibs/ar-web build
+
+FROM ${NODE_IMAGE} AS runtime
+ENV NODE_ENV=production HOSTNAME=0.0.0.0 PORT=3401
+WORKDIR /opt/ar-web
+COPY --from=builder --chown=node:node /workspace/modules/accounts-receivable/apps/web/.next/standalone/ ./
+COPY --from=builder --chown=node:node /workspace/modules/accounts-receivable/apps/web/.next/static/ ./modules/accounts-receivable/apps/web/.next/static/
+USER node
+EXPOSE 3401
+CMD ["node", "modules/accounts-receivable/apps/web/server.js"]

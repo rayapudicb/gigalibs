@@ -18,13 +18,24 @@ Rule: one product module in Build at a time
 
 1. Standalone empty-system setup, OIDC, tenant mapping, module roles, readiness.
 2. Customer + draft + atomic issue + immutable snapshot + audit/outbox + UI refresh.
-3. PDF/object storage + email delivery + receipt/retry/exception UI.
-4. Manual receipt + payment allocation + partial/full balance invariants.
-5. Hosted payment provider webhook + settlement reconciliation.
-6. Credit notes, governed void, refunds/disputes, on-account balance policy.
-7. Aging, statements, collections/reminders, reports and governed exports.
-8. Subscription-metering integration through events; no AR database access by metering.
-9. Standalone deployment profiles, upgrades, backup/restore, performance/resilience hardening.
+3. Reconcile migrations 000003/000004 with the runtime/deployment path before depending on their schema.
+4. Versioned timesheet/payroll source ingestion + event billing summary and freshness evidence.
+5. Markup policies + source-record reservation + original/supplemental draft generation.
+6. Atomic invoice-family issue + missed-billing exceptions + controlled void/Release for Rebilling.
+7. Immutable customer template versions + safe numbering tokens + explicit delivery policy.
+8. PDF/object storage + email delivery + receipt/retry/exception UI.
+9. Accounting-system mapping + provider sync receipts, retry and reconciliation.
+10. Manual receipt + payment allocation + partial/full balance invariants.
+11. Hosted payment provider webhook + settlement reconciliation.
+12. Credit notes, refunds/disputes, on-account balance policy and post-issue source corrections.
+13. Aging, statements, collections/reminders, reports and governed exports.
+14. Subscription-metering integration through events; no AR database access by metering.
+15. Standalone deployment profiles, upgrades, backup/restore, performance/resilience hardening.
+
+Steps 3–9 are specified by WI-OI-040 in
+[`../../../docs/plans/ar-event-billing-supplemental-invoicing-plan.md`](../../../docs/plans/ar-event-billing-supplemental-invoicing-plan.md).
+They are additive to the existing manual invoice foundation and remain outside Build until the active IAM
+gate and WI-OI-040 Definition of Ready blockers are closed.
 
 Every slice includes frontend, API, persistence, migration, permissions, audit, telemetry, failure/recovery,
 tests, docs, and evidence. A later slice cannot hide a P0/P1 from an earlier slice.

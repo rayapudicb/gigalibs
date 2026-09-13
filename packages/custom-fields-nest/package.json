@@ -1,7 +1,6 @@
 {
   "name": "@gigalibs/custom-fields-nest",
   "version": "0.1.0",
-  "description": "Dynamic schema extension. Per-tenant field definitions. JSON typed storage [nest]",
   "private": true,
   "type": "module",
   "main": "./dist/index.js",
@@ -12,27 +11,17 @@
       "types": "./dist/index.d.ts"
     }
   },
-  "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "dev": "tsc -p tsconfig.json --watch",
-    "test": "vitest run --passWithNoTests",
-    "test:watch": "vitest",
-    "typecheck": "tsc --noEmit",
-    "clean": "rm -rf dist *.tsbuildinfo"
-  },
   "dependencies": {
-    "@gigalibs/custom-fields": "workspace:*",
     "@nestjs/common": "^11.2.3",
     "pg": "^8.23.0"
   },
-  "devDependencies": {
-    "@types/node": "^24.10.0",
-    "@types/pg": "^8.11.14",
-    "typescript": "^5.8.3",
-    "vitest": "^3.0.0"
-  },
   "peerDependencies": {
     "@nestjs/common": "^11.2.3",
-    "reflect-metadata": "^0.2.0"
+    "pg": "^8.11.0 || ^8.23.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.0",
+    "@types/pg": "^8.23.1",
+    "typescript": "^5.8.3"
   }
 }

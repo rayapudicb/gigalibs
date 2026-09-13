@@ -1,6 +1,9 @@
 # AR web application
 
-Planned standalone Next.js application. It will use only the public AR API and OIDC; it will not import
-another application's routes, repositories, or server internals. No runtime code is authorized yet.
+Standalone Next.js application using only the public AR API and generic OIDC. Authorization Code + PKCE,
+state, nonce, encrypted HTTP-only sessions, refresh, CSRF origin checks, and a bounded same-origin BFF keep
+access tokens out of browser JavaScript.
 
-Planned routes and all required UI states are defined in `../../docs/requirements/PRODUCT_REQUIREMENTS.md`.
+Implemented routes cover overview, setup, customers, invoice list/create/detail/edit/issue, pagination,
+loading, empty, failure, concurrency feedback, and immutable-issued state. Remaining routes are listed in
+`../../docs/requirements/PRODUCT_REQUIREMENTS.md`; they are not implied by navigation or this first slice.

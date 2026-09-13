@@ -23,13 +23,17 @@
     "rxjs": "^7.8.2",
     "zod": "^4.5.2",
     "@gigalibs/forms-engine-nest": "workspace:*",
-    "@gigalibs/custom-fields-nest": "workspace:*"
+    "@gigalibs/custom-fields-nest": "workspace:*",
+    "pdfkit": "^0.15.2",
+    "nodemailer": "^7.0.3"
   },
   "devDependencies": {
     "@types/node": "^24.10.0",
     "@types/pg": "^8.23.1",
     "tsx": "^4.20.6",
     "typescript": "^5.8.3",
-    "vitest": "^3.0.0"
+    "vitest": "^3.0.0",
+    "@types/pdfkit": "^0.13.9",
+    "@types/nodemailer": "^6.4.17"
   }
 }
