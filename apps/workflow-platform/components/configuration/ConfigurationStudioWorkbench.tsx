@@ -138,7 +138,9 @@ export function ConfigurationStudioWorkbench({
   permissions,
   tenantId,
   tenantName,
-}: { currentUserId: string; permissions: string[]; tenantId: string; tenantName: string }) {
+  locale = 'en-US',
+  currency = 'USD',
+}: { currentUserId: string; permissions: string[]; tenantId: string; tenantName: string; locale?: string; currency?: string }) {
   const [tab, setTab] = useState<
     'designer' | 'governance' | 'published' | 'runtime' | 'portability'
   >('designer');
@@ -469,7 +471,7 @@ export function ConfigurationStudioWorkbench({
           onActivate={activate}
         />
       ) : null}
-      {tab === 'runtime' ? <RuntimePreview versions={published} activations={activations} /> : null}
+      {tab === 'runtime' ? <RuntimePreview versions={published} activations={activations} locale={locale} currency={currency} /> : null}
       {tab === 'portability' ? (
         <Portability
           packageText={packageText}
@@ -1654,7 +1656,9 @@ function Published({
 function RuntimePreview({
   versions,
   activations,
-}: { versions: PublishedVersion[]; activations: Activation[] }) {
+  locale = 'en-US',
+  currency = 'USD',
+}: { versions: PublishedVersion[]; activations: Activation[]; locale?: string; currency?: string }) {
   const active = activations.find((item) => item.status === 'ACTIVE');
   const version = active
     ? versions.find(
@@ -1761,6 +1765,8 @@ function RuntimePreview({
             values={values}
             records={sampleRecords}
             maskPolicy={maskPolicy}
+            locale={locale}
+            currency={currency}
             onChange={setValues}
             formEngine={effectiveMode === 'EDIT'}
           />
