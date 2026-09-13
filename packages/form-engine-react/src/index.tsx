@@ -514,3 +514,6 @@ export const DynamicFormStudio: React.FC<DynamicFormStudioProps> = ({
     </div>
   );
 };
+
+// ─── Medusa UI renderer ───────────────────────────────────────────────────────
+export { MedusaFormRenderer, type MedusaFormRendererProps } from './MedusaFormRenderer.js';

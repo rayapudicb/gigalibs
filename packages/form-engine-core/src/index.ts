@@ -274,3 +274,6 @@ CREATE INDEX IF NOT EXISTS idx_${tableName}_tenant_status ON ${tableName} (tenan
 `;
   }
 }
+
+// ─── GigaLibs adapter ─────────────────────────────────────────────────────────
+export { toFormSchema } from './gigalibs-adapter.js';

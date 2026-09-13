@@ -8,7 +8,12 @@
     "build": "tsc"
   },
   "dependencies": {
-    "@gigalibs/form-engine-core": "workspace:*",
-    "@gigalibs/export-engine-core": "workspace:*"
+    "@gigalibs/contracts": "workspace:*",
+    "@gigalibs/export-engine-core": "workspace:*",
+    "@gigalibs/form-engine-core": "workspace:*"
+  },
+  "peerDependencies": {
+    "@medusajs/ui": "^4.0.0",
+    "react": "^18.0.0 || ^19.0.0"
   }
 }
