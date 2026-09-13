@@ -16,11 +16,9 @@ import type {
   ConfigurationImpactReport,
 } from '@gigalibs/contracts';
 import {
-  AlertCircle,
   AlignLeft,
   CalendarClock,
   CalendarDays,
-  Check,
   CheckSquare2,
   ChevronRight,
   CircleDollarSign,
@@ -44,6 +42,7 @@ import {
   Type,
   Upload,
 } from 'lucide-react';
+import { Button, Badge, Input, toast as medusaToast } from '@medusajs/ui';
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import styles from './ConfigurationStudioWorkbench.module.css';
 
@@ -152,7 +151,6 @@ export function ConfigurationStudioWorkbench({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [reason, setReason] = useState('Configure tenant-specific fields');
   const [busy, setBusy] = useState(false);
-  const [notice, setNotice] = useState<{ kind: 'success' | 'error'; text: string } | null>(null);
   const [packageText, setPackageText] = useState('');
   const [impact, setImpact] = useState<ConfigurationImpactReport | null>(null);
   const [surfaces, setSurfaces] = useState<ConfigurationSurface[]>([]);
@@ -188,7 +186,7 @@ export function ConfigurationStudioWorkbench({
   }, []);
 
   useEffect(() => {
-    void load().catch((error: unknown) => setNotice({ kind: 'error', text: errorMessage(error) }));
+    void load().catch((error: unknown) => { medusaToast.error(errorMessage(error)); });
   }, [load]);
 
   useEffect(() => {
@@ -208,23 +206,22 @@ export function ConfigurationStudioWorkbench({
       .catch((error: unknown) => {
         if (error instanceof DOMException && error.name === 'AbortError') return;
         setImpact(null);
-        setNotice({ kind: 'error', text: errorMessage(error) });
+        medusaToast.error(errorMessage(error));
       });
     return () => controller.abort();
   }, [selectedId, selected?.updatedAt]);
 
   async function perform(action: () => Promise<Response>, success: string) {
     setBusy(true);
-    setNotice(null);
     try {
       const response = await action();
       if (!response.ok) throw new Error(await responseMessage(response));
       const payload = (await response.json()) as ChangeSet | PublishedVersion | Activation;
       if ('status' in payload && 'version' in payload) setSelectedId(payload.id);
       await load();
-      setNotice({ kind: 'success', text: success });
+      medusaToast.success(success);
     } catch (error) {
-      setNotice({ kind: 'error', text: errorMessage(error) });
+      medusaToast.error(errorMessage(error));
     } finally {
       setBusy(false);
     }
@@ -306,14 +303,10 @@ export function ConfigurationStudioWorkbench({
   async function exportPackage() {
     const latest = latestPublishedVersions(published);
     if (latest.length === 0) {
-      setNotice({
-        kind: 'error',
-        text: 'Publish at least one configuration version before exporting.',
-      });
+      medusaToast.error('Publish at least one configuration version before exporting.');
       return;
     }
     setBusy(true);
-    setNotice(null);
     try {
       const response = await fetch('/api/control/configuration/packages/export', {
         method: 'POST',
@@ -334,12 +327,9 @@ export function ConfigurationStudioWorkbench({
       link.download = `gigalibs-configuration-${Date.now()}.json`;
       link.click();
       URL.revokeObjectURL(url);
-      setNotice({
-        kind: 'success',
-        text: `Exported ${latest.length} latest surface definition(s) in a signed package.`,
-      });
+      medusaToast.success(`Exported ${latest.length} latest surface definition(s) in a signed package.`);
     } catch (error) {
-      setNotice({ kind: 'error', text: errorMessage(error) });
+      medusaToast.error(errorMessage(error));
     } finally {
       setBusy(false);
     }
@@ -347,7 +337,6 @@ export function ConfigurationStudioWorkbench({
 
   async function importPackage() {
     setBusy(true);
-    setNotice(null);
     try {
       const configurationPackage = JSON.parse(packageText) as unknown;
       const response = await fetch('/api/control/configuration/packages/import', {
@@ -363,12 +352,9 @@ export function ConfigurationStudioWorkbench({
       const result = (await response.json()) as { importedChangeSets: unknown[] };
       await load();
       setTab('governance');
-      setNotice({
-        kind: 'success',
-        text: `Verified the signature and imported ${result.importedChangeSets.length} definition(s) as validated drafts.`,
-      });
+      medusaToast.success(`Verified the signature and imported ${result.importedChangeSets.length} definition(s) as validated drafts.`);
     } catch (error) {
-      setNotice({ kind: 'error', text: errorMessage(error) });
+      medusaToast.error(errorMessage(error));
     } finally {
       setBusy(false);
     }
@@ -418,19 +404,7 @@ export function ConfigurationStudioWorkbench({
         ))}
       </div>
 
-      {notice ? (
-        <div
-          role={notice.kind === 'error' ? 'alert' : 'status'}
-          className={`mb-5 flex items-start gap-2 rounded-lg border p-3 text-sm ${notice.kind === 'error' ? 'border-ui-tag-red-border bg-ui-tag-red-bg text-ui-tag-red-text' : 'border-ui-tag-green-border bg-ui-tag-green-bg text-ui-tag-green-text'}`}
-        >
-          {notice.kind === 'error' ? (
-            <AlertCircle className="mt-0.5 h-4 w-4" />
-          ) : (
-            <Check className="mt-0.5 h-4 w-4" />
-          )}
-          {notice.text}
-        </div>
-      ) : null}
+      
 
       {tab === 'designer' ? (
         <Designer
@@ -1768,7 +1742,7 @@ function RuntimePreview({
             locale={locale}
             currency={currency}
             onChange={setValues}
-            formEngine={effectiveMode === 'EDIT'}
+            formEngine={process.env.NEXT_PUBLIC_USE_FORM_ENGINE === 'true' && effectiveMode === 'EDIT'}
           />
         </>
       ) : (
