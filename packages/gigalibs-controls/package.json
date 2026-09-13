@@ -1,0 +1,33 @@
+{
+  "name": "@gigalibs/gigalibs-controls",
+  "version": "0.1.0",
+  "description": "Shared AR form controls: CurrencyField, CustomerLookup, TaxCodeSelect",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc -p tsconfig.json --watch",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist *.tsbuildinfo"
+  },
+  "dependencies": {
+    "@medusajs/ui": "^4.2.3"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.0",
+    "@types/react": "^19.0.0",
+    "typescript": "^5.8.3"
+  },
+  "peerDependencies": {
+    "react": "^18 || ^19",
+    "@medusajs/ui": "^4.2.3"
+  }
+}
