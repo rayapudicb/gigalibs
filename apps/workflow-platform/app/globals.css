@@ -1,15 +1,156 @@
-@import '@xyflow/react/dist/style.css';
+@import "./medusa-theme.css";
+@import "@xyflow/react/dist/style.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
 
 :root {
+  --bg-base: #ffffff;
+  --bg-subtle: #f5f7f8;
+  --bg-subtle-hover: #edf1f2;
+  --bg-field: #ffffff;
+  --fg-base: #18201d;
+  --fg-subtle: #495650;
+  --fg-muted: #6b7872;
+  --fg-interactive: #167a55;
+  --border-base: #dce3df;
+  --border-strong: #aebbb5;
+  --tag-neutral-bg: #eef2f0;
+
   --bg-canvas: #09090f;
   --bg-node: #11111b;
   --border-node: #1f1f33;
 }
 
 body {
-  background-color: #09090f;
-  color: #f3f4f6;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background-color: var(--bg-subtle, #f5f7f8);
+  color: var(--fg-base, #18201d);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Roboto, sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+.auth-atmosphere {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: radial-gradient(circle at 26% 50%, rgba(239, 246, 255, 0.92), transparent 34%),
+    linear-gradient(135deg, #ffffff 0%, #ffffff 72%, #faf5ff 100%);
+}
+.auth-particle-origin {
+  position: absolute;
+  left: 27%;
+  top: 52%;
+  width: 1px;
+  height: 1px;
+}
+.auth-particle {
+  --travel: calc(var(--particle-distance) * 0.18);
+  position: absolute;
+  width: var(--particle-size);
+  height: calc(var(--particle-size) * 2.4);
+  border-radius: 999px;
+  background: var(--particle-color);
+  opacity: 0.65;
+  transform: rotate(var(--particle-angle)) translateX(var(--particle-distance));
+  animation: auth-particle-breathe var(--particle-duration) cubic-bezier(0.22, 1, 0.36, 1) infinite;
+  animation-delay: var(--particle-delay);
+  box-shadow: 0 0 14px color-mix(in srgb, var(--particle-color) 35%, transparent);
+}
+.auth-glow {
+  position: absolute;
+  border-radius: 999px;
+  filter: blur(80px);
+  opacity: 0.18;
+  animation: auth-glow-drift 10s ease-in-out infinite alternate;
+}
+.auth-glow-blue {
+  left: 8%;
+  top: 22%;
+  width: 420px;
+  height: 420px;
+  background: #60a5fa;
+}
+.auth-glow-violet {
+  right: 3%;
+  bottom: -12%;
+  width: 360px;
+  height: 360px;
+  background: #c084fc;
+  animation-delay: -4s;
+}
+.auth-orbit {
+  position: absolute;
+  border: 1px solid rgba(59, 130, 246, 0.1);
+  border-radius: 50%;
+}
+.auth-orbit-one {
+  left: -7%;
+  top: 7%;
+  width: 640px;
+  height: 640px;
+  animation: auth-orbit-spin 34s linear infinite;
+}
+.auth-orbit-two {
+  left: 6%;
+  top: 20%;
+  width: 430px;
+  height: 430px;
+  border-style: dashed;
+  animation: auth-orbit-spin 24s linear infinite reverse;
+}
+.auth-spring-mark {
+  width: 37px;
+  height: 37px;
+  border: 5px solid #2563eb;
+  border-top-color: #a855f7;
+  border-right-color: #f97316;
+  border-radius: 48% 52% 52% 48%;
+  animation: auth-mark-spring 3.8s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
+}
+@keyframes auth-particle-breathe {
+  0%,
+  100% {
+    opacity: 0.2;
+    transform: rotate(var(--particle-angle))
+      translateX(calc(var(--particle-distance) - var(--travel))) scale(0.65);
+  }
+  48% {
+    opacity: 0.85;
+    transform: rotate(var(--particle-angle))
+      translateX(calc(var(--particle-distance) + var(--travel))) scale(1.1);
+  }
+}
+@keyframes auth-glow-drift {
+  to {
+    transform: translate3d(45px, -28px, 0) scale(1.12);
+  }
+}
+@keyframes auth-orbit-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes auth-mark-spring {
+  0%,
+  100% {
+    transform: rotate(-8deg) scale(0.92);
+  }
+  50% {
+    transform: rotate(172deg) scale(1.08);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .auth-particle,
+  .auth-glow,
+  .auth-orbit,
+  .auth-spring-mark {
+    animation: none !important;
+  }
 }
 
 /* ReactFlow Dark Theme Overrides */
@@ -79,5 +220,101 @@ body {
   }
   to {
     stroke-dashoffset: 0;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════ */
+/* ENTERPRISE PRINT MEDIA STYLES (WI-OI-035)                                    */
+/* ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Screen Mode: Always hide elements meant exclusively for the print document */
+@media screen {
+  #printable-invoice-sheet,
+  .printable-only {
+    display: none !important;
+  }
+}
+
+/* Print Mode: Authoritative layout for PDF printing in Safari (WebKit) and Chrome */
+@media print {
+  @page {
+    size: letter portrait;
+    margin: 10mm 10mm 10mm 10mm;
+  }
+
+  *,
+  *::before,
+  *::after {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+
+  html,
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    font-size: 12px !important;
+  }
+
+  /* Reset all flex, min-h-screen, and scroll wrappers so WebKit does not clip or blank the print output */
+  #__next,
+  body > div,
+  main,
+  .min-h-screen,
+  .h-screen,
+  .flex,
+  .flex-col,
+  .flex-1 {
+    display: block !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+    position: static !important;
+    float: none !important;
+    background: transparent !important;
+  }
+
+  /* Hide screen-only interactive UI, navigation, sidebars, buttons, and modal backdrops */
+  aside,
+  nav,
+  header,
+  button,
+  .print-hide,
+  .print\:hidden,
+  [role="dialog"],
+  .fixed {
+    display: none !important;
+  }
+
+  /* Authoritative printable invoice sheet MUST display as block and be fully visible */
+  #printable-invoice-sheet,
+  .printable-only {
+    display: block !important;
+    visibility: visible !important;
+    position: static !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    opacity: 1 !important;
+  }
+
+  #printable-invoice-sheet * {
+    visibility: visible !important;
+  }
+
+  /* Prevent awkward page breaks in the middle of invoice line items or totals */
+  .break-inside-avoid,
+  tr,
+  tbody {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
   }
 }

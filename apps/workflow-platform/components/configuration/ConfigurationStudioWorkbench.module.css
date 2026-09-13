@@ -1,0 +1,23 @@
+.studioGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.palette,
+.inspector {
+  min-width: 0;
+}
+
+@media (min-width: 1440px) {
+  .studioGrid {
+    grid-template-columns: 260px minmax(420px, 1fr) 380px;
+  }
+
+  .palette {
+    border-right: 1px solid var(--border-base);
+  }
+
+  .inspector {
+    border-left: 1px solid var(--border-base);
+  }
+}

@@ -651,7 +651,7 @@ function Designer({
                   title: surface.label,
                 });
               }}
-              className="studio-input"
+              className="w-full rounded-md border border-ui-border-base bg-ui-bg-field px-2 py-1.5 text-sm text-ui-fg-base outline-none transition-all focus:shadow-borders-interactive disabled:opacity-50"
             >
               {surfaces.length === 0 ? (
                 <option value="">Loading registered surfaces…</option>
@@ -677,7 +677,7 @@ function Designer({
                   mode: event.target.value as ConfigurationDefinition['mode'],
                 })
               }
-              className="studio-input"
+              className="w-full rounded-md border border-ui-border-base bg-ui-bg-field px-2 py-1.5 text-sm text-ui-fg-base outline-none transition-all focus:shadow-borders-interactive disabled:opacity-50"
             >
               {(selectedSurface?.modes ?? ['CREATE', 'EDIT', 'READ', 'LIST']).map((mode) => (
                 <option key={mode}>{mode}</option>
@@ -687,8 +687,7 @@ function Designer({
           {selectedSurface?.entityKeyEditable ? (
             <>
               <Labeled label="Entity key">
-                <input
-                  className="studio-input"
+                <Input
                   value={definition.entityKey}
                   onChange={(event) =>
                     setDefinition({ ...definition, entityKey: normalizeKey(event.target.value) })
@@ -696,8 +695,7 @@ function Designer({
                 />
               </Labeled>
               <Labeled label="Surface key">
-                <input
-                  className="studio-input"
+                <Input
                   value={definition.surfaceKey}
                   onChange={(event) =>
                     setDefinition({ ...definition, surfaceKey: normalizeKey(event.target.value) })
@@ -707,8 +705,7 @@ function Designer({
             </>
           ) : null}
           <Labeled label="Form title">
-            <input
-              className="studio-input"
+            <Input
               value={definition.title}
               onChange={(event) => setDefinition({ ...definition, title: event.target.value })}
             />
@@ -720,9 +717,9 @@ function Designer({
             <h2 className="text-sm font-semibold">Layout sections</h2>
             <p className="text-xs text-ui-fg-muted">Group fields into responsive blocks.</p>
           </div>
-          <button type="button" onClick={addSection} className="studio-secondary">
+          <Button type="button" onClick={addSection} variant="secondary">
             <Plus className="h-4 w-4" /> Add section
-          </button>
+          </Button>
         </div>
         <div className="space-y-2">
           {definition.sections.map((section, index) => (
@@ -731,8 +728,7 @@ function Designer({
               className="space-y-2 rounded-xl border border-ui-border-base bg-ui-bg-subtle p-3"
             >
               <Labeled label="Section title">
-                <input
-                  className="studio-input"
+                <Input
                   value={section.title}
                   onChange={(event) => updateSection(index, { title: event.target.value })}
                 />
@@ -740,7 +736,7 @@ function Designer({
               <div className="flex items-end gap-2">
                 <Labeled label="Columns">
                   <select
-                    className="studio-input"
+                    className="w-full rounded-md border border-ui-border-base bg-ui-bg-field px-2 py-1.5 text-sm text-ui-fg-base outline-none transition-all focus:shadow-borders-interactive disabled:opacity-50"
                     value={section.columns}
                     onChange={(event) =>
                       updateSection(index, { columns: Number(event.target.value) as 1 | 2 | 3 })
@@ -790,20 +786,19 @@ function Designer({
         </div>
         <div className="border-t border-ui-border-base pt-4">
           <Labeled label="Change reason">
-            <input
-              className="studio-input"
+            <Input
               value={reason}
               onChange={(event) => setReason(event.target.value)}
             />
           </Labeled>
-          <button
+          <Button
             type="button"
             disabled={busy || !canDraft}
             onClick={onSave}
-            className="studio-primary mt-3 w-full"
+            variant="primary" className="mt-3 w-full"
           >
             <Save className="h-4 w-4" /> Validate and save draft
-          </button>
+          </Button>
         </div>
       </aside>
 
@@ -891,20 +886,20 @@ function Designer({
         {selectedField && selectedFieldIndex >= 0 ? (
           <>
             <div className="mb-3 flex gap-2">
-              <button
+              <Button
                 type="button"
                 onClick={() => reorderField(selectedField.key, -1)}
-                className="studio-secondary flex-1"
+                variant="secondary" className="flex-1"
               >
                 Move up
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
                 onClick={() => reorderField(selectedField.key, 1)}
-                className="studio-secondary flex-1"
+                variant="secondary" className="flex-1"
               >
                 Move down
-              </button>
+              </Button>
             </div>
             <FieldEditor
               field={selectedField}
@@ -952,22 +947,21 @@ function FieldEditor({
     <div className="rounded-lg border border-ui-border-base bg-ui-bg-subtle p-4">
       <div className="grid gap-3 md:grid-cols-[1fr_1fr_160px_auto]">
         <Labeled label="Label">
-          <input
-            className="studio-input"
+          <Input
             value={field.label}
             onChange={(event) => onChange({ label: event.target.value })}
           />
         </Labeled>
         <Labeled label="Key">
-          <input
-            className="studio-input font-mono"
+          <Input
+             className="font-mono"
             value={field.key}
             onChange={(event) => onChange({ key: normalizeKey(event.target.value) })}
           />
         </Labeled>
         <Labeled label="Type">
           <select
-            className="studio-input"
+            className="w-full rounded-md border border-ui-border-base bg-ui-bg-field px-2 py-1.5 text-sm text-ui-fg-base outline-none transition-all focus:shadow-borders-interactive disabled:opacity-50"
             value={field.type}
             onChange={(event) => {
               const type = event.target.value as ConfigurationField['type'];
@@ -996,15 +990,14 @@ function FieldEditor({
       </div>
       <div className="mt-3 grid gap-3 md:grid-cols-2">
         <Labeled label="Help text">
-          <input
-            className="studio-input"
+          <Input
             value={field.helpText ?? ''}
             onChange={(event) => onChange({ helpText: event.target.value || undefined })}
           />
         </Labeled>
         <Labeled label="Layout section">
           <select
-            className="studio-input"
+            className="w-full rounded-md border border-ui-border-base bg-ui-bg-field px-2 py-1.5 text-sm text-ui-fg-base outline-none transition-all focus:shadow-borders-interactive disabled:opacity-50"
             value={currentSection}
             onChange={(event) => onMove(event.target.value)}
           >
@@ -1061,8 +1054,8 @@ function FieldEditor({
       </div>
       <div className="mt-3 grid gap-3 md:grid-cols-2">
         <Labeled label="Read permission (optional)">
-          <input
-            className="studio-input font-mono"
+          <Input
+             className="font-mono"
             placeholder="configuration-apps:read"
             value={field.readPermission ?? ''}
             onChange={(event) =>
@@ -1071,8 +1064,8 @@ function FieldEditor({
           />
         </Labeled>
         <Labeled label="Write permission (optional)">
-          <input
-            className="studio-input font-mono"
+          <Input
+             className="font-mono"
             placeholder="configuration-apps:write"
             disabled={field.readOnly}
             value={field.writePermission ?? ''}
@@ -1086,9 +1079,9 @@ function FieldEditor({
         {numeric ? (
           <>
             <Labeled label="Minimum">
-              <input
+              <Input
                 type="number"
-                className="studio-input"
+                
                 value={field.minimum ?? ''}
                 onChange={(event) =>
                   onChange({
@@ -1098,9 +1091,9 @@ function FieldEditor({
               />
             </Labeled>
             <Labeled label="Maximum">
-              <input
+              <Input
                 type="number"
-                className="studio-input"
+                
                 value={field.maximum ?? ''}
                 onChange={(event) =>
                   onChange({
@@ -1113,10 +1106,10 @@ function FieldEditor({
         ) : (
           <>
             <Labeled label="Minimum length">
-              <input
+              <Input
                 type="number"
                 min={0}
-                className="studio-input"
+                
                 value={field.minLength ?? ''}
                 onChange={(event) =>
                   onChange({
@@ -1126,10 +1119,10 @@ function FieldEditor({
               />
             </Labeled>
             <Labeled label="Maximum length">
-              <input
+              <Input
                 type="number"
                 min={1}
-                className="studio-input"
+                
                 value={field.maxLength ?? ''}
                 onChange={(event) =>
                   onChange({
@@ -1143,8 +1136,8 @@ function FieldEditor({
       </div>
       {field.type === 'SELECT' || field.type === 'MULTI_SELECT' ? (
         <Labeled label="Options (comma separated)">
-          <input
-            className="studio-input mt-2"
+          <Input
+             className="mt-2"
             value={(field.options ?? []).map((option) => option.label).join(', ')}
             onChange={(event) =>
               onChange({
@@ -1239,7 +1232,7 @@ function ConditionalRuleEditor({
       {predicate ? (
         <div className="mt-3 grid gap-2">
           <select
-            className="studio-input"
+            className="w-full rounded-md border border-ui-border-base bg-ui-bg-field px-2 py-1.5 text-sm text-ui-fg-base outline-none transition-all focus:shadow-borders-interactive disabled:opacity-50"
             aria-label={`${label} source field`}
             value={predicate.fieldKey}
             onChange={(event) => setPredicate({ fieldKey: event.target.value, value: '' })}
@@ -1251,7 +1244,7 @@ function ConditionalRuleEditor({
             ))}
           </select>
           <select
-            className="studio-input"
+            className="w-full rounded-md border border-ui-border-base bg-ui-bg-field px-2 py-1.5 text-sm text-ui-fg-base outline-none transition-all focus:shadow-borders-interactive disabled:opacity-50"
             aria-label={`${label} operator`}
             value={predicate.operator}
             onChange={(event) =>
@@ -1283,7 +1276,7 @@ function ConditionalRuleEditor({
           {predicate.operator !== 'IS_EMPTY' && predicate.operator !== 'IS_NOT_EMPTY' ? (
             source?.type === 'BOOLEAN' && predicate.operator !== 'IN' ? (
               <select
-                className="studio-input"
+                className="w-full rounded-md border border-ui-border-base bg-ui-bg-field px-2 py-1.5 text-sm text-ui-fg-base outline-none transition-all focus:shadow-borders-interactive disabled:opacity-50"
                 aria-label={`${label} comparison value`}
                 value={String(predicate.value ?? false)}
                 onChange={(event) => setPredicate({ value: event.target.value === 'true' })}
@@ -1292,8 +1285,7 @@ function ConditionalRuleEditor({
                 <option value="false">false</option>
               </select>
             ) : (
-              <input
-                className="studio-input"
+              <Input
                 aria-label={`${label} comparison value`}
                 placeholder={predicate.operator === 'IN' ? 'value-1, value-2' : 'Comparison value'}
                 value={conditionValueText(predicate.value)}
@@ -1404,21 +1396,21 @@ function Governance({
               <p className="mt-5 text-sm text-ui-fg-muted">Evaluating persisted-record impact…</p>
             )}
             <Labeled label="Decision reason">
-              <input
-                className="studio-input mt-5"
+              <Input
+                 className="mt-5"
                 value={reason}
                 onChange={(event) => setReason(event.target.value)}
               />
             </Labeled>
             <div className="mt-5 flex flex-wrap gap-2">
-              <button
+              <Button
                 disabled={busy || selected.status !== 'VALIDATED'}
                 onClick={() => onTransition('submit')}
-                className="studio-primary"
+                variant="primary"
               >
                 <Send className="h-4 w-4" /> Submit
-              </button>
-              <button
+              </Button>
+              <Button
                 disabled={
                   busy ||
                   !canApprove ||
@@ -1426,24 +1418,24 @@ function Governance({
                   selected.createdById === currentUserId
                 }
                 onClick={() => onTransition('approve')}
-                className="studio-primary"
+                variant="primary"
               >
                 <ShieldCheck className="h-4 w-4" /> Approve
-              </button>
-              <button
+              </Button>
+              <Button
                 disabled={busy || !canApprove || selected.status !== 'SUBMITTED'}
                 onClick={() => onTransition('reject')}
-                className="studio-secondary"
+                variant="secondary"
               >
                 Reject
-              </button>
-              <button
+              </Button>
+              <Button
                 disabled={busy || !canPublish || selected.status !== 'APPROVED'}
                 onClick={() => onTransition('publish')}
-                className="studio-primary"
+                variant="primary"
               >
                 <Rocket className="h-4 w-4" /> Publish immutable version
-              </button>
+              </Button>
             </div>
             {selected.createdById === currentUserId && selected.status === 'SUBMITTED' ? (
               <p className="mt-3 text-xs text-ui-fg-muted">
@@ -1539,7 +1531,7 @@ function Published({
             <select
               value={environmentKey}
               onChange={(e) => setEnvironmentKey(e.target.value)}
-              className="studio-input studio-input-sm"
+              className="rounded border border-ui-border-base bg-ui-bg-field px-2 py-1 text-xs text-ui-fg-base outline-none focus:shadow-borders-interactive"
             >
               <option value="local-uat">Local UAT</option>
               <option value="staging">Staging</option>
@@ -1551,7 +1543,7 @@ function Published({
             <select
               value={cohortKey}
               onChange={(e) => setCohortKey(e.target.value)}
-              className="studio-input studio-input-sm"
+              className="rounded border border-ui-border-base bg-ui-bg-field px-2 py-1 text-xs text-ui-fg-base outline-none focus:shadow-borders-interactive"
             >
               <option value="all-users">All users</option>
               <option value="beta">Beta</option>
@@ -1601,13 +1593,13 @@ function Published({
                     {active ? (
                       <span className="text-ui-fg-success">Active</span>
                     ) : (
-                      <button
+                      <Button
+                        variant="secondary"
                         disabled={busy || (isRollback ? !canRollback : !canActivate)}
                         onClick={() => onActivate(version, { environmentKey, cohortKey })}
-                        className="studio-secondary"
                       >
                         {isRollback ? `Rollback to v${version.sequence}` : 'Activate for UAT'}
-                      </button>
+                      </Button>
                     )}
                   </td>
                 </tr>
@@ -1787,9 +1779,9 @@ function Portability({
           Exports the latest immutable version of every configured surface. Packages contain
           definitions and checksums; tenant records and secret values are excluded.
         </p>
-        <button className="studio-primary mt-5" disabled={busy || !canExport} onClick={onExport}>
+        <Button variant="primary" className="mt-5" disabled={busy || !canExport} onClick={onExport}>
           <Download className="h-4 w-4" /> Export JSON package
-        </button>
+        </Button>
       </section>
       <section className="rounded-xl border border-ui-border-base bg-ui-bg-base p-6 shadow-xs">
         <Upload className="h-6 w-6 text-ui-fg-muted" />
@@ -1799,8 +1791,7 @@ function Portability({
           still require review, publication and activation.
         </p>
         <Labeled label="Import reason">
-          <input
-            className="studio-input"
+          <Input
             value={reason}
             onChange={(event) => setReason(event.target.value)}
           />
@@ -1819,18 +1810,18 @@ function Portability({
         </label>
         <Labeled label="Signed package JSON">
           <textarea
-            className="studio-input min-h-64 font-mono text-xs"
+            className="w-full rounded-md border border-ui-border-base bg-ui-bg-field px-3 py-2 text-sm text-ui-fg-base outline-none transition-all focus:shadow-borders-interactive disabled:opacity-50 resize-y min-h-64 font-mono text-xs"
             value={packageText}
             onChange={(event) => setPackageText(event.target.value)}
           />
         </Labeled>
-        <button
-          className="studio-primary mt-4"
+        <Button
+          variant="primary" className="mt-4"
           disabled={busy || !canImport || packageText.trim().length === 0}
           onClick={onImport}
         >
           <Upload className="h-4 w-4" /> Verify and import drafts
-        </button>
+        </Button>
       </section>
     </div>
   );
