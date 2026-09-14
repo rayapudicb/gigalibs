@@ -18,18 +18,26 @@ Target RTO: < 15 minutes (via automated container restore)
 
 ## 2. Automated Backup Drill
 
-1. **Database Dump (pg_dump):**
+1. **Isolated PostgreSQL 16 migration and logical recovery certification:**
    ```bash
-   pg_dump -h localhost -p 5440 -U gigalibs -d gigalibs -F c -b -v -f /backups/gigalibs_backup_$(date +%Y%m%d_%H%M%S).dump
+   PG16_EVIDENCE_PATH=docs/audits/2026-09-09-readiness/evidence/uat/postgresql16-backup-restore-result.json \
+     pnpm --dir apps/playground-api verify:postgres16-recovery
    ```
-2. **Encrypted Archive Storage:** Backup archives are compressed, SHA-256 checksummed, and replicated across multi-region object storage (MinIO / S3).
+   The harness requires PostgreSQL 16, creates only timestamped `gigalibs_pg16_cert_*` databases, applies
+   all forward migrations, persists an attributable IAM graph, uses same-major backup/restore tools, compares
+   the restored graph and migration history and removes both databases and the temporary dump in `finally`.
+   `PG16_TOOL_CONTAINER` may select the PostgreSQL 16 tools container; it defaults to the local
+   `gigalibs-postgres` container.
+2. **Environment backup:** Production backup automation must use the deployment's PostgreSQL 16 tools,
+   encrypted immutable storage and separate credentials. Do not run the isolated harness as a substitute
+   for WAL archiving, PITR or a representative-volume recovery drill.
+3. **Encrypted archive storage:** Backup archives are compressed, SHA-256 checksummed, encrypted and
+   replicated to the approved independent backup store. MinIO is local-UAT evidence only.
 
 ## 3. Point-in-Time Recovery (PITR) & Restore Drill
 
-1. **Restore to Isolated Recovery Instance:**
-   ```bash
-   pg_restore -h localhost -p 5440 -U gigalibs -d gigalibs_dr -v /backups/gigalibs_backup_latest.dump
-   ```
+1. **Restore to an isolated recovery instance:** Never restore over the active database. Use a newly created
+   database/cluster with the same PostgreSQL major and the deployment-controlled backup job.
 2. **Data Consistency & Foreign Key Verification:**
    - Execute integrity checks verifying zero orphan foreign key references in `Tenant`, `User`, `Invoice`, and `WorkflowPipeline` tables.
    - Validate that all sequence counters match the maximum primary key values.

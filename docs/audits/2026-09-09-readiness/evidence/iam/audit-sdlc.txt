@@ -1,0 +1,18 @@
+$ node scripts/verify-sdlc-governance.mjs
+{
+  "status": "passed",
+  "agents": 19,
+  "importedTextFlyAgents": 18,
+  "workItems": 38,
+  "functionalRequirements": 16,
+  "workInProgressLimit": 1,
+  "activeImplementationWorkItems": [
+    "WI-OI-013"
+  ],
+  "deliveryEstimate": {
+    "total": 100,
+    "earned": 44,
+    "remaining": 56,
+    "basis": "Blueprint Releases 0-4 including implementation and required G0-G7 evidence"
+  }
+}

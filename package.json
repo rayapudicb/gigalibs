@@ -31,6 +31,7 @@
     "audit:package-dependencies": "node scripts/verify-package-dependencies.mjs",
     "audit:api-boundary": "node scripts/verify-api-module-boundary.mjs",
     "audit:navigation": "node scripts/verify-navigation-boundary.mjs",
+    "audit:anti-duplication": "node scripts/verify-anti-duplication.mjs",
     "audit:sdlc": "node scripts/verify-sdlc-governance.mjs"
   },
   "devDependencies": {

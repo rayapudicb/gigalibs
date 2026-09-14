@@ -1,0 +1,10 @@
+ Test Files  21 passed (21)
+      Tests  105 passed (105)
+   Start at  08:00:48
+   Duration  1.59s (transform 1.18s, setup 0ms, collect 5.18s, tests 1.36s, environment 2ms, prepare 2.07s)
+test_preserves_bounded_ids_and_replaces_unsafe_values (test_observability.CorrelationBoundaryTests.test_preserves_bounded_ids_and_replaces_unsafe_values) ... ok
+test_accepts_only_the_configured_bearer_secret (test_observability.MetricsAuthenticationTests.test_accepts_only_the_configured_bearer_secret) ... ok
+test_database_failure_is_explicit_and_emits_no_stale_gauges (test_observability.MetricsRenderingTests.test_database_failure_is_explicit_and_emits_no_stale_gauges) ... 2026-09-09 08:00:50 [error    ] execution.metrics_database_collection_failed error_class=RuntimeError
+test_escapes_prometheus_label_values (test_observability.MetricsRenderingTests.test_escapes_prometheus_label_values) ... ok
+Ran 4 tests in 0.005s
+OK

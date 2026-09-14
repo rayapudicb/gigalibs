@@ -1,0 +1,18 @@
+{
+  "checkedAt": "2026-09-13T12:35:30.605Z",
+  "url": "http://127.0.0.1:5180/configuration",
+  "checks": [
+    "authenticated-tenant-route",
+    "three-pane-builder-visible",
+    "thirteen-component-palette-visible",
+    "field-add-and-inspector-selection",
+    "responsive-preview-controls",
+    "registry-surfaces-loaded",
+    "no-page-errors",
+    "no-server-errors"
+  ],
+  "surfaceOptions": [
+    "Tenant profile",
+    "New tenant application"
+  ]
+}

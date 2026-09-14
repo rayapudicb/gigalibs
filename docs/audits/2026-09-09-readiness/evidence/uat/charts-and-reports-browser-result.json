@@ -1,0 +1,11 @@
+{
+  "result": "FAIL",
+  "error": "locator.waitFor: Timeout 5000ms exceeded.\nCall log:\n  - waiting for locator('aside').getByRole('link', { name: /Reports Studio/i }) to be visible\n",
+  "checkedAt": "2026-09-12T13:19:26.017Z",
+  "baseUrl": "http://127.0.0.1:5180",
+  "analytics36ChartsVerified": false,
+  "reportsStudioVerified": false,
+  "reportsDownloadOptionsVerified": false,
+  "sidebarNavigationVerified": false,
+  "reportCategoriesTested": []
+}

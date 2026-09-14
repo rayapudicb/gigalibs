@@ -1,0 +1,238 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.gigalibs.io/configuration/v1/resolved-manifest.schema.json",
+  "title": "GigaLibs resolved configuration manifest",
+  "description": "Portable, immutable runtime input produced by the governed Configuration Studio compiler. It contains no executable code, arbitrary URLs, secrets or business-record values.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contractVersion",
+    "manifestId",
+    "moduleKey",
+    "entityKey",
+    "surfaceKey",
+    "schemaVersion",
+    "activationVersion",
+    "checksum",
+    "publishedAt",
+    "mode",
+    "fields",
+    "layout"
+  ],
+  "properties": {
+    "contractVersion": { "const": "1.0" },
+    "manifestId": { "type": "string", "format": "uuid" },
+    "moduleKey": { "$ref": "#/$defs/stableKey" },
+    "entityKey": { "$ref": "#/$defs/stableKey" },
+    "surfaceKey": { "$ref": "#/$defs/stableKey" },
+    "schemaVersion": { "type": "integer", "minimum": 1 },
+    "activationVersion": { "type": "integer", "minimum": 1 },
+    "checksum": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+    "publishedAt": { "type": "string", "format": "date-time" },
+    "locale": { "type": "string", "pattern": "^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$" },
+    "mode": { "enum": ["create", "edit", "read", "list"] },
+    "fields": {
+      "type": "array",
+      "maxItems": 250,
+      "items": { "$ref": "#/$defs/field" }
+    },
+    "layout": { "$ref": "#/$defs/layout" }
+  },
+  "$defs": {
+    "stableKey": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 96,
+      "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$"
+    },
+    "permissionKey": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 128,
+      "pattern": "^[a-z][a-z0-9_-]*:[a-z*][a-z0-9_*-]*$"
+    },
+    "jsonScalar": {
+      "type": ["string", "number", "integer", "boolean", "null"]
+    },
+    "field": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "key",
+        "label",
+        "dataType",
+        "componentType",
+        "classification",
+        "required",
+        "permissions",
+        "constraints"
+      ],
+      "properties": {
+        "key": { "$ref": "#/$defs/stableKey" },
+        "label": { "type": "string", "minLength": 1, "maxLength": 160 },
+        "helpText": { "type": "string", "maxLength": 1000 },
+        "dataType": {
+          "enum": [
+            "string",
+            "multiline",
+            "integer",
+            "decimal",
+            "boolean",
+            "date",
+            "date-time",
+            "email",
+            "phone",
+            "money",
+            "enum",
+            "multi-enum",
+            "reference"
+          ]
+        },
+        "componentType": { "$ref": "#/$defs/stableKey" },
+        "classification": {
+          "enum": ["PUBLIC", "INTERNAL", "CONFIDENTIAL", "RESTRICTED"]
+        },
+        "required": { "type": "boolean" },
+        "readOnly": { "type": "boolean", "default": false },
+        "writeOnly": { "type": "boolean", "default": false },
+        "immutableAfter": {
+          "enum": ["never", "record-created", "record-approved", "record-issued", "record-settled"]
+        },
+        "defaultValue": { "$ref": "#/$defs/jsonScalar" },
+        "permissions": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["read", "write", "export"],
+          "properties": {
+            "read": { "$ref": "#/$defs/permissionKey" },
+            "write": { "$ref": "#/$defs/permissionKey" },
+            "export": { "$ref": "#/$defs/permissionKey" },
+            "unmask": { "$ref": "#/$defs/permissionKey" }
+          }
+        },
+        "constraints": { "$ref": "#/$defs/constraints" },
+        "visibility": { "$ref": "#/$defs/expression" },
+        "requiredWhen": { "$ref": "#/$defs/expression" },
+        "options": {
+          "type": "array",
+          "maxItems": 500,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["value", "label"],
+            "properties": {
+              "value": { "type": "string", "minLength": 1, "maxLength": 128 },
+              "label": { "type": "string", "minLength": 1, "maxLength": 160 },
+              "disabled": { "type": "boolean", "default": false }
+            }
+          }
+        }
+      }
+    },
+    "constraints": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "minimum": { "type": "number" },
+        "maximum": { "type": "number" },
+        "minLength": { "type": "integer", "minimum": 0, "maximum": 100000 },
+        "maxLength": { "type": "integer", "minimum": 1, "maximum": 100000 },
+        "patternKey": { "$ref": "#/$defs/stableKey" },
+        "decimalPlaces": { "type": "integer", "minimum": 0, "maximum": 12 },
+        "referenceEntityKey": { "$ref": "#/$defs/stableKey" }
+      }
+    },
+    "expression": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["op", "args"],
+          "properties": {
+            "op": { "enum": ["and", "or"] },
+            "args": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 20,
+              "items": { "$ref": "#/$defs/expression" }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["op", "arg"],
+          "properties": {
+            "op": { "const": "not" },
+            "arg": { "$ref": "#/$defs/expression" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["op", "field", "value"],
+          "properties": {
+            "op": { "enum": ["eq", "neq", "gt", "gte", "lt", "lte", "contains", "in"] },
+            "field": { "$ref": "#/$defs/stableKey" },
+            "value": {
+              "oneOf": [
+                { "$ref": "#/$defs/jsonScalar" },
+                {
+                  "type": "array",
+                  "maxItems": 100,
+                  "items": { "$ref": "#/$defs/jsonScalar" }
+                }
+              ]
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["op", "field"],
+          "properties": {
+            "op": { "enum": ["is-empty", "is-present"] },
+            "field": { "$ref": "#/$defs/stableKey" }
+          }
+        }
+      ]
+    },
+    "layout": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["component"],
+      "properties": {
+        "component": { "enum": ["page", "section", "columns", "tabs", "field", "text"] },
+        "key": { "$ref": "#/$defs/stableKey" },
+        "fieldKey": { "$ref": "#/$defs/stableKey" },
+        "title": { "type": "string", "maxLength": 160 },
+        "text": { "type": "string", "maxLength": 4000 },
+        "columns": { "type": "integer", "minimum": 1, "maximum": 4 },
+        "visibility": { "$ref": "#/$defs/expression" },
+        "children": {
+          "type": "array",
+          "maxItems": 500,
+          "items": { "$ref": "#/$defs/layout" }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "component": { "enum": ["page", "section", "columns", "tabs"] }
+            }
+          },
+          "then": { "required": ["children"] }
+        },
+        {
+          "if": { "properties": { "component": { "const": "field" } } },
+          "then": { "required": ["fieldKey"] }
+        },
+        {
+          "if": { "properties": { "component": { "const": "text" } } },
+          "then": { "required": ["text"] }
+        }
+      ]
+    }
+  }
+}

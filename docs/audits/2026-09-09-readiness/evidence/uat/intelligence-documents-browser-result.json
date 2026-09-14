@@ -1,0 +1,104 @@
+{
+  "result": "PASS",
+  "checkedAt": "2026-09-12T12:40:48.356Z",
+  "baseUrl": "http://127.0.0.1:5180",
+  "tenantSlug": "my-workspace",
+  "modules": [
+    {
+      "key": "analytics-studio",
+      "path": "/analytics",
+      "contained": false,
+      "kpiCardsVerified": true,
+      "lineageInspectorVerified": true,
+      "actionExecutionVerified": true
+    },
+    {
+      "key": "esignature",
+      "path": "/esign",
+      "contained": false,
+      "envelopeLifecycleVerified": true,
+      "digitalSignatureVerified": true,
+      "pkiCertificateVerified": true
+    }
+  ],
+  "pageErrors": [],
+  "serverFailures": [],
+  "apiResponses": [
+    {
+      "status": 200,
+      "url": "http://127.0.0.1:5180/api/analytics/v1/setup/status"
+    },
+    {
+      "status": 200,
+      "url": "http://127.0.0.1:5180/api/analytics/v1/metrics/timeseries"
+    },
+    {
+      "status": 200,
+      "url": "http://127.0.0.1:5180/api/analytics/v1/actions"
+    },
+    {
+      "status": 200,
+      "url": "http://127.0.0.1:5180/api/analytics/v1/metrics/summary"
+    },
+    {
+      "status": 200,
+      "url": "http://127.0.0.1:5180/api/analytics/v1/metrics/lineage/NET_AR_REVENUE"
+    },
+    {
+      "status": 201,
+      "url": "http://127.0.0.1:5180/api/analytics/v1/actions"
+    },
+    {
+      "status": 200,
+      "url": "http://127.0.0.1:5180/api/analytics/v1/metrics/summary"
+    },
+    {
+      "status": 200,
+      "url": "http://127.0.0.1:5180/api/analytics/v1/actions"
+    },
+    {
+      "status": 200,
+      "url": "http://127.0.0.1:5180/api/analytics/v1/metrics/timeseries"
+    },
+    {
+      "status": 200,
+      "url": "http://127.0.0.1:5180/api/esign/v1/setup/status"
+    },
+    {
+      "status": 200,
+      "url": "http://127.0.0.1:5180/api/esign/v1/envelopes?status=ALL"
+    },
+    {
+      "status": 200,
+      "url": "http://127.0.0.1:5180/api/esign/v1/envelopes?status=ALL"
+    },
+    {
+      "status": 201,
+      "url": "http://127.0.0.1:5180/api/esign/v1/envelopes"
+    },
+    {
+      "status": 200,
+      "url": "http://127.0.0.1:5180/api/esign/v1/envelopes?status=ALL"
+    },
+    {
+      "status": 200,
+      "url": "http://127.0.0.1:5180/api/esign/v1/envelopes/esg-bb4d5f40-0056-4c25-8d23-43a38b3cdd66"
+    },
+    {
+      "status": 201,
+      "url": "http://127.0.0.1:5180/api/esign/v1/signatures/esg-bb4d5f40-0056-4c25-8d23-43a38b3cdd66/sign"
+    },
+    {
+      "status": 200,
+      "url": "http://127.0.0.1:5180/api/esign/v1/envelopes?status=ALL"
+    },
+    {
+      "status": 200,
+      "url": "http://127.0.0.1:5180/api/esign/v1/envelopes/esg-bb4d5f40-0056-4c25-8d23-43a38b3cdd66"
+    },
+    {
+      "status": 200,
+      "url": "http://127.0.0.1:5180/api/esign/v1/signatures/esg-bb4d5f40-0056-4c25-8d23-43a38b3cdd66/certificate"
+    }
+  ]
+}

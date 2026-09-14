@@ -1,0 +1,28 @@
+{
+  "capturedAt": "2026-09-11T14:27:00+05:30",
+  "environment": "isolated local UAT",
+  "result": "PASS",
+  "tenantId": "9be2289d-04e3-4c10-9208-4cf85a62c7fd",
+  "jurisdictionId": "a297d75e-b75a-477a-86fb-e92a04f37b2a",
+  "exemptionId": "ee4afff5-9614-4412-b71c-112caf512e9a",
+  "calculationId": "a1ff68b5-f7af-41ae-8180-71bd9b53dd07",
+  "calculatedTaxMinor": 825,
+  "idempotencyReplay": true,
+  "unknownJurisdictionRejected": true,
+  "unauthenticatedRejected": true,
+  "crossTenantIsolation": true,
+  "ledgerReadback": true,
+  "exemptionReadback": true,
+  "browser": {
+    "route": "/tax",
+    "platformAdminLogin": "PASS",
+    "tenantSetup": "ACTIVE",
+    "containmentRemoved": true,
+    "workbenchSections": 5,
+    "serverFailures": []
+  },
+  "limitations": [
+    "Records are explicitly UAT-labelled and are not customer or statutory source data.",
+    "This evidence certifies the local vertical slice only; it is not production release approval."
+  ]
+}

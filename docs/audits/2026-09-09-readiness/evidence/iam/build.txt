@@ -1,0 +1,401 @@
+$ turbo run build
+• turbo 2.10.12
+
+   • Packages in scope: @gigalibs/admin-kit, @gigalibs/ai-chat-core, @gigalibs/ai-chat-nest, @gigalibs/analytics-core, @gigalibs/app-playground-api, @gigalibs/approvals-core, @gigalibs/approvals-nest, @gigalibs/approvals-react, @gigalibs/ar-api, @gigalibs/ar-domain, @gigalibs/ar-e2e, @gigalibs/ar-web, @gigalibs/ar-worker, @gigalibs/archival-core, @gigalibs/audit-core, @gigalibs/audit-nest, @gigalibs/auth-core, @gigalibs/auth-nest, @gigalibs/auth-react, @gigalibs/billing-react, @gigalibs/broker, @gigalibs/cache, @gigalibs/cart-react, @gigalibs/charts-react, @gigalibs/chat-core, @gigalibs/cmms-api, @gigalibs/config, @gigalibs/connectors-api, @gigalibs/contracts, @gigalibs/crypto, @gigalibs/currency-api, @gigalibs/data-retention, @gigalibs/data-studio-api, @gigalibs/db, @gigalibs/email-templates, @gigalibs/embed-sdk, @gigalibs/errors, @gigalibs/event-bus, @gigalibs/form-engine-core, @gigalibs/fraud-detection, @gigalibs/geofence-engine, @gigalibs/health, @gigalibs/host-kit, @gigalibs/i18n, @gigalibs/icons, @gigalibs/integration-aws-s3, @gigalibs/integration-minio, @gigalibs/integration-openai, @gigalibs/invoices-core, @gigalibs/jwt-universal, @gigalibs/knowledge-base-react, @gigalibs/kpi-widgets-react, @gigalibs/ledger-nest, @gigalibs/logger, @gigalibs/maps-core, @gigalibs/maps-react, @gigalibs/module-registry, @gigalibs/module-registry-nest, @gigalibs/multi-currency, @gigalibs/notifications-core, @gigalibs/notifications-react, @gigalibs/oauth-universal, @gigalibs/onboarding-flow, @gigalibs/orders-nest, @gigalibs/orgs-core, @gigalibs/pagination, @gigalibs/platform-rbac-api, @gigalibs/platform-settings, @gigalibs/platform-settings-nest, @gigalibs/pricing-calculator, @gigalibs/privacy-gdpr, @gigalibs/queue, @gigalibs/rbac-core, @gigalibs/rbac-nest, @gigalibs/rbac-react, @gigalibs/realtime, @gigalibs/recovery-api, @gigalibs/redis, @gigalibs/reports-core, @gigalibs/reports-nest, @gigalibs/reports-react, @gigalibs/rules-api, @gigalibs/sla-engine, @gigalibs/spend-api, @gigalibs/spend-core, @gigalibs/storage-core, @gigalibs/tax-api, @gigalibs/tenancy-nest, @gigalibs/ui, @gigalibs/ui-preset, @gigalibs/users-core, @gigalibs/validation-nest, @gigalibs/workflow-api, @gigalibs/workflow-engine, @gigalibs/workflow-platform
+   • Running build in 95 packages
+   • Remote caching disabled
+
+@gigalibs/data-retention:build: cache hit, replaying logs d0a6a8df4cd6c93c
+@gigalibs/approvals-react:build: cache hit, replaying logs fd41a7809ac43d24
+@gigalibs/data-retention:build: $ tsc -p tsconfig.json
+@gigalibs/geofence-engine:build: cache hit, replaying logs ec8041da45987c2e
+@gigalibs/knowledge-base-react:build: cache hit, replaying logs 8ddeee90cfc8dcbe
+@gigalibs/approvals-react:build: $ tsc -p tsconfig.json
+@gigalibs/knowledge-base-react:build: $ tsc -p tsconfig.json
+@gigalibs/geofence-engine:build: $ tsc -p tsconfig.json
+@gigalibs/platform-rbac-api:build: cache hit, replaying logs c4dbbdbb556ecb68
+@gigalibs/platform-rbac-api:build: $ tsc -p tsconfig.json
+@gigalibs/workflow-engine:build: cache hit, replaying logs 595a2a1bcc6c23d2
+@gigalibs/workflow-engine:build: $ tsc -p tsconfig.json
+@gigalibs/currency-api:build: cache hit, replaying logs dbd96ff476c26a87
+@gigalibs/currency-api:build: $ tsc -p tsconfig.json
+@gigalibs/sla-engine:build: cache hit, replaying logs 3b2692a06ba10da5
+@gigalibs/sla-engine:build: $ tsc -p tsconfig.json
+@gigalibs/pagination:build: cache hit, replaying logs 48a0f4da2c268886
+@gigalibs/auth-core:build: cache hit, replaying logs bbf45dbc10314aff
+@gigalibs/pagination:build: $ tsc -p tsconfig.json
+@gigalibs/ui:build: cache hit, replaying logs 1da92928ffa7e03c
+@gigalibs/auth-core:build: $ tsc -p tsconfig.json
+@gigalibs/cart-react:build: cache hit, replaying logs f0d6c892285803fb
+@gigalibs/multi-currency:build: cache hit, replaying logs 02a7b0a63ae37ae4
+@gigalibs/ui:build: $ tsc -p tsconfig.json
+@gigalibs/ai-chat-core:build: cache hit, replaying logs c13fb4a490430315
+@gigalibs/multi-currency:build: $ tsc -p tsconfig.json
+@gigalibs/ai-chat-core:build: $ tsc -p tsconfig.json
+@gigalibs/cart-react:build: $ tsc -p tsconfig.json
+@gigalibs/crypto:build: cache hit, replaying logs 385c4dba01ffe7a3
+@gigalibs/pricing-calculator:build: cache hit, replaying logs 231734e86487646e
+@gigalibs/recovery-api:build: cache hit, replaying logs d48182ce381561c2
+@gigalibs/crypto:build: $ tsc -p tsconfig.json
+@gigalibs/recovery-api:build: $ tsc -p tsconfig.json
+@gigalibs/integration-minio:build: cache hit, replaying logs fd93cf96c4aadf4f
+@gigalibs/i18n:build: cache hit, replaying logs af65937dc4396166
+@gigalibs/privacy-gdpr:build: cache hit, replaying logs 36904a250de58056
+@gigalibs/ar-worker:build: cache hit, replaying logs 19f0252981e39006
+@gigalibs/orders-nest:build: cache hit, replaying logs bce57411561cb571
+@gigalibs/pricing-calculator:build: $ tsc -p tsconfig.json
+@gigalibs/embed-sdk:build: cache hit, replaying logs 8eae73087c8f11f1
+@gigalibs/integration-minio:build: $ tsc -p tsconfig.json
+@gigalibs/privacy-gdpr:build: $ tsc -p tsconfig.json
+@gigalibs/orders-nest:build: $ tsc -p tsconfig.json
+@gigalibs/ar-worker:build: $ tsc -p tsconfig.json
+@gigalibs/i18n:build: $ tsc -p tsconfig.json
+@gigalibs/embed-sdk:build: $ tsc -p tsconfig.json
+@gigalibs/onboarding-flow:build: cache hit, replaying logs a4d2671c5c327926
+@gigalibs/maps-core:build: cache hit, replaying logs c6bc62ac734c5dfb
+@gigalibs/platform-settings:build: cache hit, replaying logs e81cb5e3fcbed5e0
+@gigalibs/storage-core:build: cache hit, replaying logs 19188ab607f6835c
+@gigalibs/onboarding-flow:build: $ tsc -p tsconfig.json
+@gigalibs/platform-settings:build: $ tsc -p tsconfig.json
+@gigalibs/storage-core:build: $ tsc -p tsconfig.json
+@gigalibs/validation-nest:build: cache hit, replaying logs 5e5a1c540e6e71bb
+@gigalibs/maps-core:build: $ tsc -p tsconfig.json
+@gigalibs/validation-nest:build: $ tsc -p tsconfig.json
+@gigalibs/form-engine-core:build: cache hit, replaying logs 7f6b3ccf979a256e
+@gigalibs/rules-api:build: cache hit, replaying logs ff55b5811a513249
+@gigalibs/form-engine-core:build: $ tsc
+@gigalibs/rules-api:build: $ tsc -p tsconfig.json
+@gigalibs/reports-nest:build: cache hit, replaying logs 1e90b0c9a1cdea3b
+@gigalibs/ledger-nest:build: cache hit, replaying logs 2f76d33d31f11445
+@gigalibs/reports-nest:build: $ tsc -p tsconfig.json
+@gigalibs/contracts:build: cache hit, replaying logs 515764a9970c83a1
+@gigalibs/maps-react:build: cache hit, replaying logs cc552bdd1cf4eac2
+@gigalibs/ledger-nest:build: $ tsc -p tsconfig.json
+@gigalibs/contracts:build: $ tsc -p tsconfig.json
+@gigalibs/maps-react:build: $ tsc -p tsconfig.json
+@gigalibs/integration-openai:build: cache hit, replaying logs 4bd1c25a449e65f3
+@gigalibs/invoices-core:build: cache hit, replaying logs 428508b5fadbaf86
+@gigalibs/integration-openai:build: $ tsc -p tsconfig.json
+@gigalibs/invoices-core:build: $ tsc
+@gigalibs/cmms-api:build: cache hit, replaying logs 83b83d5b27a83f5d
+@gigalibs/connectors-api:build: cache hit, replaying logs 66382a6f112e912e
+@gigalibs/analytics-core:build: cache hit, replaying logs 0cf8fc572adba5f8
+@gigalibs/cmms-api:build: $ tsc -p tsconfig.json
+@gigalibs/connectors-api:build: $ tsc -p tsconfig.json
+@gigalibs/kpi-widgets-react:build: cache hit, replaying logs 958280ad240ff1fd
+@gigalibs/analytics-core:build: $ tsc -p tsconfig.json
+@gigalibs/audit-core:build: cache hit, replaying logs 4636c9b9f62c2561
+@gigalibs/ui-preset:build: cache hit, replaying logs a5ccf4e5cd86fbc8
+@gigalibs/kpi-widgets-react:build: $ tsc -p tsconfig.json
+@gigalibs/ui-preset:build: $ tsc -p tsconfig.json
+@gigalibs/audit-core:build: $ tsc -p tsconfig.json
+@gigalibs/admin-kit:build: cache hit, replaying logs a7d604ca89d3fd20
+@gigalibs/users-core:build: cache hit, replaying logs 7c0dcf8643693c96
+@gigalibs/fraud-detection:build: cache hit, replaying logs c489372a80cc3432
+@gigalibs/users-core:build: $ tsc -p tsconfig.json
+@gigalibs/admin-kit:build: $ tsc -p tsconfig.json
+@gigalibs/logger:build: cache hit, replaying logs cf212b1e15e2a442
+@gigalibs/logger:build: $ tsc -p tsconfig.json
+@gigalibs/icons:build: cache hit, replaying logs b638d0a622096b11
+@gigalibs/fraud-detection:build: $ tsc -p tsconfig.json
+@gigalibs/icons:build: $ tsc -p tsconfig.json
+@gigalibs/integration-aws-s3:build: cache hit, replaying logs e3bfebc525b2528d
+@gigalibs/approvals-nest:build: cache hit, replaying logs f68209cd06f85ab2
+@gigalibs/integration-aws-s3:build: $ tsc -p tsconfig.json
+@gigalibs/approvals-nest:build: $ tsc -p tsconfig.json
+@gigalibs/tax-api:build: cache hit, replaying logs 0dce045dd6fa1667
+@gigalibs/cache:build: cache hit, replaying logs 95f2be9386a207e6
+@gigalibs/workflow-api:build: cache hit, replaying logs 14fd73a6a737062f
+@gigalibs/tax-api:build: $ tsc -p tsconfig.json
+@gigalibs/cache:build: $ tsc -p tsconfig.json
+@gigalibs/ar-domain:build: cache hit, replaying logs 7c4942fc2688a60e
+@gigalibs/workflow-api:build: $ tsc -p tsconfig.json
+@gigalibs/data-studio-api:build: cache hit, replaying logs 4ba98b39810e8806
+@gigalibs/ar-domain:build: $ tsc -p tsconfig.json
+@gigalibs/health:build: cache hit, replaying logs 236887d90cad3bd5
+@gigalibs/data-studio-api:build: $ tsc -p tsconfig.json
+@gigalibs/chat-core:build: cache hit, replaying logs dca927e466d48e69
+@gigalibs/chat-core:build: $ tsc -p tsconfig.json
+@gigalibs/health:build: $ tsc -p tsconfig.json
+@gigalibs/charts-react:build: cache hit, replaying logs 1eb47620421f65a0
+@gigalibs/reports-react:build: cache hit, replaying logs 63381fbcb1f393ed
+@gigalibs/charts-react:build: $ tsc -p tsconfig.json
+@gigalibs/reports-react:build: $ tsc -p tsconfig.json
+@gigalibs/spend-api:build: cache hit, replaying logs cf7d46d53e74b34b
+@gigalibs/notifications-core:build: cache hit, replaying logs 3a3215e290a0406b
+@gigalibs/spend-api:build: $ tsc -p tsconfig.json
+@gigalibs/notifications-core:build: $ tsc -p tsconfig.json
+@gigalibs/config:build: cache hit, replaying logs 0037e3ddf1848bab
+@gigalibs/email-templates:build: cache hit, replaying logs 4ade1d000b3bb948
+@gigalibs/module-registry:build: cache hit, replaying logs f00c36fc0602c1ff
+@gigalibs/email-templates:build: $ tsc -p tsconfig.json
+@gigalibs/rbac-core:build: cache hit, replaying logs 041488ed41722aac
+@gigalibs/config:build: $ tsc -p tsconfig.json
+@gigalibs/module-registry:build: $ tsc -p tsconfig.json
+@gigalibs/rbac-core:build: $ tsc -p tsconfig.json
+@gigalibs/archival-core:build: cache hit, replaying logs 593d658d71fdcbb0
+@gigalibs/oauth-universal:build: cache hit, replaying logs 02507592790b8600
+@gigalibs/ai-chat-nest:build: cache hit, replaying logs bede424e43bc52fb
+@gigalibs/approvals-core:build: cache hit, replaying logs 2074f81b674d7977
+@gigalibs/archival-core:build: $ tsc -p tsconfig.json
+@gigalibs/notifications-react:build: cache hit, replaying logs 55db36f4a062da50
+@gigalibs/oauth-universal:build: $ tsc -p tsconfig.json
+@gigalibs/ai-chat-nest:build: $ tsc -p tsconfig.json
+@gigalibs/auth-react:build: cache hit, replaying logs b709c30e4eb63ddd
+@gigalibs/approvals-core:build: $ tsc -p tsconfig.json
+@gigalibs/notifications-react:build: $ tsc -p tsconfig.json
+@gigalibs/reports-core:build: cache hit, replaying logs 117e84bc9ca83cd6
+@gigalibs/orgs-core:build: cache hit, replaying logs 2b1593ac9fa05c97
+@gigalibs/auth-react:build: $ tsc -p tsconfig.json
+@gigalibs/reports-core:build: $ tsc -p tsconfig.json
+@gigalibs/orgs-core:build: $ tsc -p tsconfig.json
+@gigalibs/errors:build: cache hit, replaying logs 4d6d53a7091f9714
+@gigalibs/billing-react:build: cache hit, replaying logs f06af553db4031bb
+@gigalibs/errors:build: $ tsc -p tsconfig.json
+@gigalibs/billing-react:build: $ tsc -p tsconfig.json
+@gigalibs/event-bus:build: cache hit, replaying logs 0ed5eff32e88f830
+@gigalibs/queue:build: cache hit, replaying logs 70e45427f17c00bf
+@gigalibs/event-bus:build: $ tsc -p tsconfig.json
+@gigalibs/realtime:build: cache hit, replaying logs a5ec74f54a64bbd7
+@gigalibs/rbac-react:build: cache hit, replaying logs af7466c1d90b7f69
+@gigalibs/queue:build: $ tsc -p tsconfig.json
+@gigalibs/realtime:build: $ tsc -p tsconfig.json
+@gigalibs/rbac-react:build: $ tsc -p tsconfig.json
+@gigalibs/redis:build: cache hit, replaying logs 9a5190a218d52d9a
+@gigalibs/redis:build: $ tsc -p tsconfig.json
+@gigalibs/module-registry-nest:build: cache hit, replaying logs 950d252bfd8c8498
+@gigalibs/broker:build: cache hit, replaying logs 23c3ff7b2426647b
+@gigalibs/module-registry-nest:build: $ tsc -p tsconfig.json
+@gigalibs/broker:build: $ tsc -p tsconfig.json
+@gigalibs/workflow-platform:build: cache miss, executing 5bd10910e6ea6b1d
+@gigalibs/ar-api:build: cache hit, replaying logs 9d98bf5d7c73785f
+@gigalibs/ar-api:build: $ tsc -p tsconfig.json
+@gigalibs/jwt-universal:build: cache hit, replaying logs e359efbdd57d577d
+@gigalibs/jwt-universal:build: $ tsc -p tsconfig.json
+@gigalibs/db:build: cache hit, replaying logs 239e2a22ebe7fb7a
+@gigalibs/db:build: $ prisma generate --config prisma.config.ts && tsc -p tsconfig.json
+@gigalibs/db:build: Loaded Prisma config from prisma.config.ts.
+@gigalibs/db:build: 
+@gigalibs/db:build: Prisma config detected, skipping environment variable loading.
+@gigalibs/db:build: Prisma schema loaded from schema.prisma
+@gigalibs/db:build: ┌─────────────────────────────────────────────────────────┐
+@gigalibs/db:build: │  Update available 6.19.3 -> 8.0.0-rc.13                 │
+@gigalibs/db:build: │                                                         │
+@gigalibs/db:build: │  This is a major update - please follow the guide at    │
+@gigalibs/db:build: │  https://pris.ly/d/major-version-upgrade                │
+@gigalibs/db:build: │                                                         │
+@gigalibs/db:build: │  Run the following to update                            │
+@gigalibs/db:build: │    npm i --save-dev prisma@latest                       │
+@gigalibs/db:build: │    npm i @prisma/client@latest                          │
+@gigalibs/db:build: └─────────────────────────────────────────────────────────┘
+@gigalibs/db:build: 
+@gigalibs/db:build: ✔ Generated Prisma Client (6.19.3) to ./src/generated/prisma in 1.27s
+@gigalibs/db:build: 
+@gigalibs/auth-nest:build: cache miss, executing c44b82fca70df28d
+@gigalibs/rbac-nest:build: cache hit, replaying logs cad5db3facdaf08f
+@gigalibs/rbac-nest:build: $ tsc -p tsconfig.json
+@gigalibs/ar-web:build: cache hit, replaying logs 9c0a67a785c51cdc
+@gigalibs/ar-web:build: $ next build
+@gigalibs/ar-web:build:    ▲ Next.js 15.5.24
+@gigalibs/ar-web:build:    - Environments: .env.local
+@gigalibs/ar-web:build: 
+@gigalibs/ar-web:build:    Creating an optimized production build ...
+@gigalibs/ar-web:build:  ✓ Compiled successfully in 20.5s
+@gigalibs/ar-web:build:    Linting and checking validity of types ...
+@gigalibs/ar-web:build:    Collecting page data ...
+@gigalibs/ar-web:build:    Generating static pages (0/12) ...
+@gigalibs/ar-web:build:    Generating static pages (3/12) 
+@gigalibs/ar-web:build:    Generating static pages (6/12) 
+@gigalibs/ar-web:build:    Generating static pages (9/12) 
+@gigalibs/ar-web:build:  ✓ Generating static pages (12/12)
+@gigalibs/ar-web:build:    Finalizing page optimization ...
+@gigalibs/ar-web:build:    Collecting build traces ...
+@gigalibs/ar-web:build: 
+@gigalibs/ar-web:build: Route (app)                                 Size  First Load JS
+@gigalibs/ar-web:build: ┌ ƒ /                                    1.83 kB         108 kB
+@gigalibs/ar-web:build: ├ ○ /_not-found                            991 B         103 kB
+@gigalibs/ar-web:build: ├ ƒ /api/ar/[...path]                      136 B         103 kB
+@gigalibs/ar-web:build: ├ ƒ /auth/callback                         136 B         103 kB
+@gigalibs/ar-web:build: ├ ƒ /auth/login                            136 B         103 kB
+@gigalibs/ar-web:build: ├ ƒ /auth/logout                           136 B         103 kB
+@gigalibs/ar-web:build: ├ ○ /auth/signed-out                       136 B         103 kB
+@gigalibs/ar-web:build: ├ ƒ /customers                            2.1 kB         104 kB
+@gigalibs/ar-web:build: ├ ƒ /invoices                            1.84 kB         108 kB
+@gigalibs/ar-web:build: ├ ƒ /invoices/[invoiceId]                2.42 kB         108 kB
+@gigalibs/ar-web:build: ├ ƒ /invoices/[invoiceId]/edit             122 B         109 kB
+@gigalibs/ar-web:build: ├ ƒ /invoices/new                          123 B         109 kB
+@gigalibs/ar-web:build: └ ƒ /setup                               1.75 kB         104 kB
+@gigalibs/ar-web:build: + First Load JS shared by all             102 kB
+@gigalibs/ar-web:build:   ├ chunks/527-c1219af5518355de.js       46.2 kB
+@gigalibs/ar-web:build:   ├ chunks/bb3e6e74-8f075c82ca308169.js  54.2 kB
+@gigalibs/ar-web:build:   └ other shared chunks (total)          1.92 kB
+@gigalibs/ar-web:build: 
+@gigalibs/ar-web:build: 
+@gigalibs/ar-web:build: ○  (Static)   prerendered as static content
+@gigalibs/ar-web:build: ƒ  (Dynamic)  server-rendered on demand
+@gigalibs/ar-web:build: 
+@gigalibs/workflow-platform:build: $ next build
+@gigalibs/auth-nest:build: $ tsc -p tsconfig.json
+@gigalibs/workflow-platform:build:    ▲ Next.js 15.5.24
+@gigalibs/workflow-platform:build:    - Environments: .env.local
+@gigalibs/workflow-platform:build: 
+@gigalibs/workflow-platform:build:    Creating an optimized production build ...
+@gigalibs/tenancy-nest:build: cache miss, executing 1b0f1c9363f692af
+@gigalibs/tenancy-nest:build: $ tsc -p tsconfig.json
+@gigalibs/platform-settings-nest:build: cache miss, executing b61bb46802281230
+@gigalibs/audit-nest:build: cache miss, executing baa83a3095b25b1f
+@gigalibs/audit-nest:build: $ tsc -p tsconfig.json
+@gigalibs/platform-settings-nest:build: $ tsc -p tsconfig.json
+@gigalibs/app-playground-api:build: cache miss, executing c73403c6cbb75e21
+@gigalibs/app-playground-api:build: $ tsc -p tsconfig.json
+@gigalibs/workflow-platform:build:  ✓ Compiled successfully in 17.8s
+@gigalibs/workflow-platform:build:    Linting and checking validity of types ...
+@gigalibs/workflow-platform:build:    Collecting page data ...
+@gigalibs/workflow-platform:build:    Generating static pages (0/101) ...
+@gigalibs/workflow-platform:build:    Generating static pages (25/101) 
+@gigalibs/workflow-platform:build:    Generating static pages (50/101) 
+@gigalibs/workflow-platform:build:    Generating static pages (75/101) 
+@gigalibs/workflow-platform:build:  ✓ Generating static pages (101/101)
+@gigalibs/workflow-platform:build:    Finalizing page optimization ...
+@gigalibs/workflow-platform:build:    Collecting build traces ...
+@gigalibs/workflow-platform:build: 
+@gigalibs/workflow-platform:build: Route (app)                                     Size  First Load JS
+@gigalibs/workflow-platform:build: ┌ ○ /                                          274 B         103 kB
+@gigalibs/workflow-platform:build: ├ ○ /_not-found                                998 B         104 kB
+@gigalibs/workflow-platform:build: ├ ƒ /actions                                 4.42 kB         122 kB
+@gigalibs/workflow-platform:build: ├ ƒ /admin/metering                            294 B         106 kB
+@gigalibs/workflow-platform:build: ├ ƒ /analytics                                 294 B         106 kB
+@gigalibs/workflow-platform:build: ├ ƒ /ap                                      5.18 kB         123 kB
+@gigalibs/workflow-platform:build: ├ ƒ /api/admin/metering                        274 B         103 kB
+@gigalibs/workflow-platform:build: ├ ƒ /api/analytics/action                      274 B         103 kB
+@gigalibs/workflow-platform:build: ├ ƒ /api/ar/[...path]                          274 B         103 kB
+@gigalibs/workflow-platform:build: ├ ƒ /api/auth/context                          274 B         103 kB
+@gigalibs/workflow-platform:build: ├ ƒ /api/auth/login                            274 B         103 kB
+@gigalibs/workflow-platform:build: ├ ƒ /api/auth/logout                           274 B         103 kB
+@gigalibs/workflow-platform:build: ├ ƒ /api/auth/refresh                          274 B         103 kB
+@gigalibs/workflow-platform:build: ├ ƒ /api/auth/register                         274 B         103 kB
+@gigalibs/workflow-platform:build: ├ ƒ /api/auth/select-tenant                    274 B         103 kB
+@gigalibs/workflow-platform:build: ├ ƒ /api/auth/tenants                          274 B         103 kB
+@gigalibs/workflow-platform:build: ├ ƒ /api/cmms/[...path]                        274 B         103 kB
+@gigalibs/workflow-platform:build: ├ ƒ /api/connectors-hub/[...path]              274 B         103 kB
+@gigalibs/workflow-platform:build: ├ ƒ /api/connectors/live-sync                  274 B         103 kB
+@gigalibs/workflow-platform:build: ├ ƒ /api/connectors/sam-gov/sync               274 B         103 kB
+@gigalibs/workflow-platform:build: ├ ƒ /api/connectors/sam-gov/test               274 B         103 kB
+@gigalibs/workflow-platform:build: ├ ƒ /api/control/[...path]                     274 B         103 kB
+@gigalibs/workflow-platform:build: ├ ƒ /api/currency/[...path]                    274 B         103 kB
+@gigalibs/workflow-platform:build: ├ ƒ /api/data-studio/[...path]                 274 B         103 kB
+@gigalibs/workflow-platform:build: ├ ƒ /api/event-fabric/queue                    274 B         103 kB
+@gigalibs/workflow-platform:build: ├ ƒ /api/event-fabric/replay                   274 B         103 kB
+@gigalibs/workflow-platform:build: ├ ƒ /api/oauth/authorize                       274 B         103 kB
+@gigalibs/workflow-platform:build: ├ ƒ /api/oauth/callback                        274 B         103 kB
+@gigalibs/workflow-platform:build: ├ ƒ /api/oauth/heartbeat                       274 B         103 kB
+@gigalibs/workflow-platform:build: ├ ƒ /api/oauth/providers                       274 B         103 kB
+@gigalibs/workflow-platform:build: ├ ƒ /api/ontology                              274 B         103 kB
+@gigalibs/workflow-platform:build: ├ ƒ /api/ootb/evaluations                      274 B         103 kB
+@gigalibs/workflow-platform:build: ├ ƒ /api/ootb/override                         274 B         103 kB
+@gigalibs/workflow-platform:build: ├ ƒ /api/ootb/rules                            274 B         103 kB
+@gigalibs/workflow-platform:build: ├ ƒ /api/operational-intelligence/[...path]    274 B         103 kB
+@gigalibs/workflow-platform:build: ├ ƒ /api/platform-admin/tenants/infra          274 B         103 kB
+@gigalibs/workflow-platform:build: ├ ƒ /api/platform-admin/tenants/infra/test     274 B         103 kB
+@gigalibs/workflow-platform:build: ├ ƒ /api/platform/[...path]                    274 B         103 kB
+@gigalibs/workflow-platform:build: ├ ƒ /api/recovery/[...path]                    274 B         103 kB
+@gigalibs/workflow-platform:build: ├ ƒ /api/rules/[...path]                       274 B         103 kB
+@gigalibs/workflow-platform:build: ├ ƒ /api/rules/kernel/evaluate                 274 B         103 kB
+@gigalibs/workflow-platform:build: ├ ƒ /api/rules/kernel/introspect               274 B         103 kB
+@gigalibs/workflow-platform:build: ├ ƒ /api/rules/kernel/rules                    274 B         103 kB
+@gigalibs/workflow-platform:build: ├ ƒ /api/rules/kernel/rules/[ruleId]           274 B         103 kB
+@gigalibs/workflow-platform:build: ├ ƒ /api/rules/kernel/simulate                 274 B         103 kB
+@gigalibs/workflow-platform:build: ├ ƒ /api/runs                                  274 B         103 kB
+@gigalibs/workflow-platform:build: ├ ƒ /api/runs/[runId]                          274 B         103 kB
+@gigalibs/workflow-platform:build: ├ ƒ /api/runs/[runId]/cancel                   274 B         103 kB
+@gigalibs/workflow-platform:build: ├ ƒ /api/saga                                  274 B         103 kB
+@gigalibs/workflow-platform:build: ├ ƒ /api/solutions/activate                    274 B         103 kB
+@gigalibs/workflow-platform:build: ├ ƒ /api/solutions/execute                     274 B         103 kB
+@gigalibs/workflow-platform:build: ├ ƒ /api/solutions/packs                       274 B         103 kB
+@gigalibs/workflow-platform:build: ├ ƒ /api/spend/[...path]                       274 B         103 kB
+@gigalibs/workflow-platform:build: ├ ƒ /api/tax/[...path]                         274 B         103 kB
+@gigalibs/workflow-platform:build: ├ ƒ /api/tenant-rbac/[...path]                 274 B         103 kB
+@gigalibs/workflow-platform:build: ├ ƒ /api/workflow-studio/[...path]             274 B         103 kB
+@gigalibs/workflow-platform:build: ├ ƒ /api/workflows                             274 B         103 kB
+@gigalibs/workflow-platform:build: ├ ƒ /api/workflows/[workflowId]                274 B         103 kB
+@gigalibs/workflow-platform:build: ├ ƒ /api/workflows/[workflowId]/draft          274 B         103 kB
+@gigalibs/workflow-platform:build: ├ ƒ /api/workflows/[workflowId]/publish        274 B         103 kB
+@gigalibs/workflow-platform:build: ├ ƒ /ar                                        294 B         106 kB
+@gigalibs/workflow-platform:build: ├ ƒ /ar/aging                                  294 B         106 kB
+@gigalibs/workflow-platform:build: ├ ƒ /ar/customers                              294 B         106 kB
+@gigalibs/workflow-platform:build: ├ ƒ /ar/invoices                               294 B         106 kB
+@gigalibs/workflow-platform:build: ├ ƒ /ar/invoices/[invoiceId]                   294 B         106 kB
+@gigalibs/workflow-platform:build: ├ ƒ /ar/invoices/new                           294 B         106 kB
+@gigalibs/workflow-platform:build: ├ ƒ /cmms                                      294 B         106 kB
+@gigalibs/workflow-platform:build: ├ ƒ /cmms/assets                               294 B         106 kB
+@gigalibs/workflow-platform:build: ├ ƒ /cmms/calendar                             294 B         106 kB
+@gigalibs/workflow-platform:build: ├ ƒ /cmms/floor                                294 B         106 kB
+@gigalibs/workflow-platform:build: ├ ƒ /cmms/inventory                            294 B         106 kB
+@gigalibs/workflow-platform:build: ├ ƒ /cmms/meters                               294 B         106 kB
+@gigalibs/workflow-platform:build: ├ ƒ /cmms/people                               294 B         106 kB
+@gigalibs/workflow-platform:build: ├ ƒ /cmms/purchase-orders                      294 B         106 kB
+@gigalibs/workflow-platform:build: ├ ƒ /cmms/requests                             294 B         106 kB
+@gigalibs/workflow-platform:build: ├ ƒ /cmms/requests/portal                      294 B         106 kB
+@gigalibs/workflow-platform:build: ├ ƒ /cmms/schedules                            294 B         106 kB
+@gigalibs/workflow-platform:build: ├ ƒ /cmms/vendors                              294 B         106 kB
+@gigalibs/workflow-platform:build: ├ ƒ /cmms/work-orders                          294 B         106 kB
+@gigalibs/workflow-platform:build: ├ ƒ /cmms/workload                             294 B         106 kB
+@gigalibs/workflow-platform:build: ├ ƒ /connections                             5.89 kB         130 kB
+@gigalibs/workflow-platform:build: ├ ƒ /connections/[connectionId]              4.09 kB         122 kB
+@gigalibs/workflow-platform:build: ├ ƒ /connections/credentials                 5.36 kB         123 kB
+@gigalibs/workflow-platform:build: ├ ƒ /connections/environments/new            3.86 kB         122 kB
+@gigalibs/workflow-platform:build: ├ ƒ /connections/new                         5.43 kB         123 kB
+@gigalibs/workflow-platform:build: ├ ƒ /connections/oauth-studio                  294 B         106 kB
+@gigalibs/workflow-platform:build: ├ ƒ /currency                                  294 B         106 kB
+@gigalibs/workflow-platform:build: ├ ƒ /dashboard                               6.71 kB         124 kB
+@gigalibs/workflow-platform:build: ├ ƒ /data-contracts                          17.6 kB         133 kB
+@gigalibs/workflow-platform:build: ├ ƒ /esign                                     294 B         106 kB
+@gigalibs/workflow-platform:build: ├ ƒ /exceptions                              4.37 kB         122 kB
+@gigalibs/workflow-platform:build: ├ ○ /login                                   1.34 kB         107 kB
+@gigalibs/workflow-platform:build: ├ ƒ /maps                                      294 B         106 kB
+@gigalibs/workflow-platform:build: ├ ƒ /marketplace                               294 B         106 kB
+@gigalibs/workflow-platform:build: ├ ƒ /ontology                                  294 B         106 kB
+@gigalibs/workflow-platform:build: ├ ƒ /opportunities                           5.18 kB         120 kB
+@gigalibs/workflow-platform:build: ├ ƒ /platform-admin                            294 B         106 kB
+@gigalibs/workflow-platform:build: ├ ƒ /platform-admin/dlq                        294 B         106 kB
+@gigalibs/workflow-platform:build: ├ ƒ /platform-admin/infra                      294 B         106 kB
+@gigalibs/workflow-platform:build: ├ ƒ /recovery                                  294 B         106 kB
+@gigalibs/workflow-platform:build: ├ ○ /register                                1.34 kB         107 kB
+@gigalibs/workflow-platform:build: ├ ƒ /reports                                   294 B         106 kB
+@gigalibs/workflow-platform:build: ├ ƒ /rules                                     294 B         106 kB
+@gigalibs/workflow-platform:build: ├ ƒ /rules/studio                              294 B         106 kB
+@gigalibs/workflow-platform:build: ├ ƒ /runs                                    4.17 kB         122 kB
+@gigalibs/workflow-platform:build: ├ ƒ /runs/[runId]                            2.53 kB         120 kB
+@gigalibs/workflow-platform:build: ├ ƒ /saga                                      294 B         106 kB
+@gigalibs/workflow-platform:build: ├ ƒ /scanner                                   294 B         106 kB
+@gigalibs/workflow-platform:build: ├ ○ /select-tenant                           3.93 kB         116 kB
+@gigalibs/workflow-platform:build: ├ ƒ /settings                                  294 B         106 kB
+@gigalibs/workflow-platform:build: ├ ƒ /settings/profile                          294 B         106 kB
+@gigalibs/workflow-platform:build: ├ ƒ /solutions                                 294 B         106 kB
+@gigalibs/workflow-platform:build: ├ ƒ /solutions/day-one                         294 B         106 kB
+@gigalibs/workflow-platform:build: ├ ƒ /spend                                     294 B         106 kB
+@gigalibs/workflow-platform:build: ├ ƒ /tax                                       294 B         106 kB
+@gigalibs/workflow-platform:build: ├ ƒ /tax/audit                                 294 B         106 kB
+@gigalibs/workflow-platform:build: ├ ƒ /tax/exemptions                            294 B         106 kB
+@gigalibs/workflow-platform:build: ├ ƒ /tax/monitor                               294 B         106 kB
+@gigalibs/workflow-platform:build: ├ ƒ /tax/rates                                 294 B         106 kB
+@gigalibs/workflow-platform:build: ├ ƒ /value                                   7.17 kB         125 kB
+@gigalibs/workflow-platform:build: ├ ƒ /workflows                               8.34 kB         133 kB
+@gigalibs/workflow-platform:build: ├ ƒ /workflows/[wfId]/canvas                 59.9 kB         180 kB
+@gigalibs/workflow-platform:build: └ ƒ /workflows/new                           6.64 kB         122 kB
+@gigalibs/workflow-platform:build: + First Load JS shared by all                 103 kB
+@gigalibs/workflow-platform:build:   ├ chunks/379f4093-0cb6420ca2dc6cae.js      54.2 kB
+@gigalibs/workflow-platform:build:   ├ chunks/9985-3a9e28b8b1f972d2.js          46.4 kB
+@gigalibs/workflow-platform:build:   └ other shared chunks (total)              2.03 kB
+@gigalibs/workflow-platform:build: 
+@gigalibs/workflow-platform:build: 
+@gigalibs/workflow-platform:build: ƒ Middleware                                 33.9 kB
+@gigalibs/workflow-platform:build: 
+@gigalibs/workflow-platform:build: ○  (Static)   prerendered as static content
+@gigalibs/workflow-platform:build: ƒ  (Dynamic)  server-rendered on demand
+@gigalibs/workflow-platform:build: 
+
+ Tasks:    92 successful, 92 total
+Cached:    86 cached, 92 total
+  Time:    43.96s 
+

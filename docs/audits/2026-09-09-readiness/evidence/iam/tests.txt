@@ -1,0 +1,224 @@
+
+ RUN  v3.2.7 /Users/rayapudi/dev/gigalibs
+
+ ✓ packages/tenancy-nest/src/domain-verification.test.ts (9 tests) 13ms
+ ✓ packages/module-registry/src/registry.test.ts (4 tests) 9ms
+ ✓ packages/tenancy-nest/src/guards/tenant-boundary.guard.spec.ts (4 tests) 25ms
+[15:18:14] [32mINFO[39m: [36mCreated generic rule in universal kernel[39m
+    [35mruleId[39m: "rule-815d9437"
+    [35mruleCode[39m: "SYS-SEC-AUTH-GATEWAY"
+[15:18:14] [32mINFO[39m: [36mCreated generic rule in universal kernel[39m
+    [35mruleId[39m: "rule-8b91bb1f"
+    [35mruleCode[39m: "PIPE-KAFKA-EXPEDITE"
+[15:18:14] [32mINFO[39m: [36mCreated generic rule in universal kernel[39m
+    [35mruleId[39m: "rule-6dc450be"
+    [35mruleCode[39m: "POL-PRICE-CREEP-GUARD"
+ ✓ packages/auth-core/src/auth-core.test.ts (5 tests) 191ms
+[15:18:14] [32mINFO[39m: [36mUniversal Rule Kernel evaluated event[39m
+    [35mevaluationId[39m: "eval-kern-871b7792"
+    [35mtenantId[39m: "any-tenant"
+    [35mtriggerEvent[39m: "API_GATEWAY_INGRESS"
+    [35mactionTaken[39m: "BLOCK_DROP"
+    [35mlatencyMs[39m: 0.05
+[15:18:14] [32mINFO[39m: [36mUniversal Rule Kernel evaluated event[39m
+    [35mevaluationId[39m: "eval-kern-ffdab33c"
+    [35mtenantId[39m: "demo-tenant"
+    [35mtriggerEvent[39m: "KAFKA_TOPIC_INGEST"
+    [35mactionTaken[39m: "REROUTE_TOPIC"
+    [35mlatencyMs[39m: 0.03
+[15:18:14] [32mINFO[39m: [36mCreated generic rule in universal kernel[39m
+    [35mruleId[39m: "rule-a1209e67"
+    [35mruleCode[39m: "RULE-KILLSWITCH-TEST"
+[15:18:14] [32mINFO[39m: [36mUniversal Rule Kernel evaluated event[39m
+    [35mevaluationId[39m: "eval-kern-270ae3cb"
+    [35mtenantId[39m: "test-tenant"
+    [35mtriggerEvent[39m: "CUSTOM_TRIGGER"
+    [35mactionTaken[39m: "BLOCK_DROP"
+    [35mlatencyMs[39m: 0.14
+[15:18:14] [33mWARN[39m: [36mEmergency Kill-Switch invoked on rule[39m
+    [35mruleId[39m: "rule-a1209e67"
+    [35mstatus[39m: "HIJACKED"
+    [35mhijackReason[39m: "Emergency freeze override by Operations Director"
+[15:18:14] [32mINFO[39m: [36mUniversal Rule Kernel evaluated event[39m
+    [35mevaluationId[39m: "eval-kern-f2c53ad6"
+    [35mtenantId[39m: "test-tenant"
+    [35mtriggerEvent[39m: "CUSTOM_TRIGGER"
+    [35mactionTaken[39m: "PASS"
+    [35mlatencyMs[39m: 0.05
+ ✓ apps/workflow-platform/__tests__/universal-rule-kernel.test.ts (7 tests) 19ms
+ ✓ packages/logger/src/correlation.test.ts (6 tests) 5ms
+ ✓ packages/auth-nest/src/guards/jwt-auth.guard.spec.ts (11 tests) 37ms
+ ✓ apps/workflow-platform/__tests__/auth-boundary-regression.test.ts (69 tests) 35ms
+ ✓ apps/workflow-platform/__tests__/ar-ledger-engine.test.ts (4 tests) 8ms
+ ✓ modules/accounts-receivable/domain/src/invoice.test.ts (20 tests) 7ms
+[15:18:15] [32mINFO[39m: [36mProvisioned RabbitMQ vhost for tenant[39m
+    [35mtenantId[39m: "defense"
+    [35mvhost[39m: "/vhost_defense"
+    [35mexchange[39m: "gigalibs.events.topic"
+ ✓ packages/broker/src/multi-tenant-manager.test.ts (4 tests) 12ms
+[15:18:15] [32mINFO[39m: [36mProvisioned Kafka topic for tenant[39m
+    [35mtenantId[39m: "defense"
+    [35mtopicName[39m: "t.defense.events"
+    [35mpartitions[39m: 5
+[15:18:15] [32mINFO[39m: [36mProvisioned Kafka topic for tenant[39m
+    [35mtenantId[39m: "defense"
+    [35mtopicName[39m: "t.defense.transactions"
+    [35mpartitions[39m: 5
+[15:18:15] [32mINFO[39m: [36mProvisioned Kafka topic for tenant[39m
+    [35mtenantId[39m: "defense"
+    [35mtopicName[39m: "t.defense.audit"
+    [35mpartitions[39m: 5
+[15:18:15] [32mINFO[39m: [36mProvisioned Kafka topic for tenant[39m
+    [35mtenantId[39m: "defense"
+    [35mtopicName[39m: "t.defense.dlq"
+    [35mpartitions[39m: 5
+[15:18:15] [32mINFO[39m: [36mTenant infrastructure provisioned[39m
+    [35mtenantId[39m: "defense"
+    [35mtier[39m: "ENTERPRISE_DEDICATED"
+    [35mreceipt[39m: "b0379544c564194f7a27884e34dc1bfde68ce3eb73f698f8f00670df49ffb370"
+[15:18:15] [32mINFO[39m: [36mProvisioned RabbitMQ vhost for tenant[39m
+    [35mtenantId[39m: "energy"
+    [35mvhost[39m: "/vhost_energy"
+    [35mexchange[39m: "gigalibs.events.topic"
+[15:18:15] [32mINFO[39m: [36mProvisioned Kafka topic for tenant[39m
+    [35mtenantId[39m: "energy"
+    [35mtopicName[39m: "t.energy.events"
+    [35mpartitions[39m: 5
+[15:18:15] [32mINFO[39m: [36mProvisioned Kafka topic for tenant[39m
+    [35mtenantId[39m: "energy"
+    [35mtopicName[39m: "t.energy.transactions"
+    [35mpartitions[39m: 5
+[15:18:15] [32mINFO[39m: [36mProvisioned Kafka topic for tenant[39m
+    [35mtenantId[39m: "energy"
+    [35mtopicName[39m: "t.energy.audit"
+    [35mpartitions[39m: 5
+[15:18:15] [32mINFO[39m: [36mProvisioned Kafka topic for tenant[39m
+    [35mtenantId[39m: "energy"
+    [35mtopicName[39m: "t.energy.dlq"
+    [35mpartitions[39m: 5
+[15:18:15] [32mINFO[39m: [36mTenant infrastructure provisioned[39m
+    [35mtenantId[39m: "energy"
+    [35mtier[39m: "ENTERPRISE_DEDICATED"
+    [35mreceipt[39m: "d459940228437b0f412e3ebfa43a9f8b7af1eb2c2759e5ef9e5458ce313e17f0"
+[15:18:15] [32mINFO[39m: [36mProvisioned RabbitMQ vhost for tenant[39m
+    [35mtenantId[39m: "treasury"
+    [35mvhost[39m: "/vhost_treasury"
+    [35mexchange[39m: "gigalibs.events.topic"
+[15:18:15] [32mINFO[39m: [36mProvisioned Kafka topic for tenant[39m
+    [35mtenantId[39m: "treasury"
+    [35mtopicName[39m: "t.treasury.events"
+    [35mpartitions[39m: 5
+[15:18:15] [32mINFO[39m: [36mProvisioned Kafka topic for tenant[39m
+    [35mtenantId[39m: "treasury"
+    [35mtopicName[39m: "t.treasury.transactions"
+    [35mpartitions[39m: 5
+[15:18:15] [32mINFO[39m: [36mProvisioned Kafka topic for tenant[39m
+    [35mtenantId[39m: "treasury"
+    [35mtopicName[39m: "t.treasury.audit"
+    [35mpartitions[39m: 5
+[15:18:15] [32mINFO[39m: [36mProvisioned Kafka topic for tenant[39m
+    [35mtenantId[39m: "treasury"
+    [35mtopicName[39m: "t.treasury.dlq"
+    [35mpartitions[39m: 5
+[15:18:15] [32mINFO[39m: [36mTenant infrastructure provisioned[39m
+    [35mtenantId[39m: "treasury"
+    [35mtier[39m: "ENTERPRISE_DEDICATED"
+    [35mreceipt[39m: "1e8c436ff48ce7556969743bac5bbea6b4a10da6dca696a3f65e6f420f23e971"
+[15:18:15] [32mINFO[39m: [36mProvisioned RabbitMQ vhost for tenant[39m
+    [35mtenantId[39m: "defense"
+    [35mvhost[39m: "/vhost_defense"
+    [35mexchange[39m: "gigalibs.events.topic"
+[15:18:15] [32mINFO[39m: [36mProvisioned Kafka topic for tenant[39m
+    [35mtenantId[39m: "defense"
+    [35mtopicName[39m: "t.defense.events"
+    [35mpartitions[39m: 5
+[15:18:15] [32mINFO[39m: [36mProvisioned Kafka topic for tenant[39m
+    [35mtenantId[39m: "defense"
+    [35mtopicName[39m: "t.defense.transactions"
+    [35mpartitions[39m: 5
+[15:18:15] [32mINFO[39m: [36mProvisioned Kafka topic for tenant[39m
+    [35mtenantId[39m: "defense"
+    [35mtopicName[39m: "t.defense.audit"
+    [35mpartitions[39m: 5
+[15:18:15] [32mINFO[39m: [36mProvisioned Kafka topic for tenant[39m
+    [35mtenantId[39m: "defense"
+    [35mtopicName[39m: "t.defense.dlq"
+    [35mpartitions[39m: 5
+[15:18:15] [32mINFO[39m: [36mTenant infrastructure provisioned[39m
+    [35mtenantId[39m: "defense"
+    [35mtier[39m: "ENTERPRISE_DEDICATED"
+    [35mreceipt[39m: "5809134dc7851f1d629c687d3a14ac39742e416ce64d50c5e68cf9dfae2f4125"
+ ✓ packages/auth-core/src/totp.test.ts (3 tests) 2ms
+ ✓ packages/platform-settings/src/index.test.ts (3 tests) 6ms
+[15:18:15] [32mINFO[39m: [36mCompleted 3-way match evaluation[39m
+    [35mevaluationId[39m: "eval-e133608c"
+    [35mstatus[39m: "PAYMENT_HOLD_APPLIED"
+    [35mtotalVarianceUsd[39m: 14500
+    [35mdocNumber[39m: "INV-2026-9812"
+[15:18:15] [32mINFO[39m: [36mToggled OOTB guardrail rule[39m
+    [35mruleId[39m: "rule-4"
+    [35menabled[39m: false
+[15:18:15] [32mINFO[39m: [36mToggled OOTB guardrail rule[39m
+    [35mruleId[39m: "rule-4"
+    [35menabled[39m: true
+[15:18:15] [32mINFO[39m: [36mUpdated OOTB rule threshold[39m
+    [35mruleId[39m: "rule-4"
+    [35mthresholdValue[39m: 8
+[15:18:15] [32mINFO[39m: [36mUpdated OOTB rule threshold[39m
+    [35mruleId[39m: "rule-4"
+    [35mthresholdValue[39m: 5
+[15:18:15] [32mINFO[39m: [36mCompleted 3-way match evaluation[39m
+    [35mevaluationId[39m: "eval-52d777eb"
+    [35mstatus[39m: "PAYMENT_HOLD_APPLIED"
+    [35mtotalVarianceUsd[39m: 14500
+    [35mdocNumber[39m: "INV-TEST-001"
+[15:18:15] [32mINFO[39m: [36mCompleted 3-way match evaluation[39m
+    [35mevaluationId[39m: "eval-5a4cf16e"
+    [35mstatus[39m: "PAYMENT_HOLD_APPLIED"
+    [35mtotalVarianceUsd[39m: 18000
+    [35mdocNumber[39m: "INV-TEST-002"
+[15:18:15] [32mINFO[39m: [36mCompleted 3-way match evaluation[39m
+    [35mevaluationId[39m: "eval-8418acac"
+    [35mstatus[39m: "CLEAN_AUTO_POSTED"
+    [35mtotalVarianceUsd[39m: 0
+    [35mdocNumber[39m: "INV-TEST-CLEAN"
+[15:18:15] [32mINFO[39m: [36mCompleted 3-way match evaluation[39m
+    [35mevaluationId[39m: "eval-9f19a6c5"
+    [35mstatus[39m: "PAYMENT_HOLD_APPLIED"
+    [35mtotalVarianceUsd[39m: 5000
+    [35mdocNumber[39m: "INV-TEST-OVERRIDE"
+[15:18:15] [32mINFO[39m: [36mAP Manager successfully overrode payment hold[39m
+    [35mevaluationId[39m: "eval-9f19a6c5"
+    [35mmanagerId[39m: "controller@gigalibs.client.com"
+    [35moverrideReason[39m: "Approved emergency freight for mission-critical prototype delivery"
+ ✓ apps/workflow-platform/__tests__/ootb-client-workbench.test.ts (7 tests) 11ms
+ ✓ apps/workflow-platform/__tests__/suite-containment.test.ts (293 tests) 511ms
+ ✓ apps/playground-api/src/json-schema.service.spec.ts (4 tests) 7ms
+ ✓ packages/auth-core/src/recovery-code.test.ts (3 tests) 6ms
+ ✓ packages/rbac-core/src/rbac.test.ts (2 tests) 2ms
+ ✓ apps/playground-api/src/metrics.service.spec.ts (3 tests) 7ms
+[15:18:15] [33mWARN[39m: [36mOperational metrics database collector failed[39m
+    [35merrorName[39m: "Error"
+ ✓ modules/accounts-receivable/apps/api/src/http/pagination.test.ts (4 tests) 3ms
+ ✓ modules/accounts-receivable/apps/worker/src/delivery.test.ts (2 tests) 3ms
+ ✓ modules/accounts-receivable/apps/api/src/runtime-config.test.ts (7 tests) 3ms
+ ✓ packages/maps-core/src/index.test.ts (5 tests) 3ms
+ ✓ modules/accounts-receivable/apps/api/src/database/persistence-helpers.test.ts (6 tests) 5ms
+ ✓ apps/playground-api/src/execution-events.controller.spec.ts (4 tests) 837ms
+ ✓ packages/validation-nest/src/zod-validation.pipe.test.ts (2 tests) 2ms
+
+ Test Files  26 passed (26)
+      Tests  491 passed (491)
+   Start at  20:48:14
+   Duration  1.41s (transform 1.57s, setup 0ms, collect 4.44s, tests 1.77s, environment 3ms, prepare 1.74s)
+
+test_preserves_bounded_ids_and_replaces_unsafe_values (test_observability.CorrelationBoundaryTests.test_preserves_bounded_ids_and_replaces_unsafe_values) ... ok
+test_accepts_only_the_configured_bearer_secret (test_observability.MetricsAuthenticationTests.test_accepts_only_the_configured_bearer_secret) ... ok
+test_database_failure_is_explicit_and_emits_no_stale_gauges (test_observability.MetricsRenderingTests.test_database_failure_is_explicit_and_emits_no_stale_gauges) ... 2026-09-09 20:48:16 [error    ] execution.metrics_database_collection_failed error_class=RuntimeError
+ok
+test_escapes_prometheus_label_values (test_observability.MetricsRenderingTests.test_escapes_prometheus_label_values) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.006s
+
+OK

@@ -1,0 +1,32 @@
+{
+  "result": "PASS",
+  "checkedAt": "2026-09-12T11:05:19.113Z",
+  "tenantId": "54029e0d-e591-51a6-b93a-94469a87d153",
+  "counts": {
+    "currencyPairs": [
+      0,
+      0
+    ],
+    "currencyLedger": [
+      0,
+      0
+    ],
+    "recoveryFindings": [
+      0,
+      0
+    ],
+    "recoveryScans": [
+      0,
+      0
+    ],
+    "recoveryClaims": [
+      0,
+      0
+    ]
+  },
+  "denials": {
+    "scanWithoutSource": 503,
+    "claimWithoutProvider": 503,
+    "paymentHoldWithoutProvider": 503
+  }
+}

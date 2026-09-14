@@ -26,15 +26,25 @@
     "trust_safety_automation",
     "web_experience"
   ],
-  "statusValues": ["Proposed", "Ready", "In Progress", "Review", "Blocked", "Accepted", "Released"],
+  "statusValues": [
+    "Proposed",
+    "Ready",
+    "In Progress",
+    "Review",
+    "Blocked",
+    "Accepted",
+    "Released"
+  ],
   "workInProgressLimits": {
     "implementationModules": 1,
-    "activeImplementationWorkItems": []
+    "activeImplementationWorkItems": [
+      "WI-OI-039"
+    ]
   },
   "relativeDeliveryEstimate": {
     "total": 100,
-    "earned": 41,
-    "remaining": 59,
+    "earned": 44,
+    "remaining": 56,
     "basis": "Blueprint Releases 0-4 including implementation and required G0-G7 evidence"
   },
   "mandatoryArtifacts": [
@@ -59,6 +69,16 @@
     ".pi/work/WI-OI-017.md",
     ".pi/work/WI-OI-018.md",
     ".pi/work/WI-OI-019.md",
+    ".pi/work/WI-OI-020.md",
+    ".pi/work/WI-OI-021.md",
+    ".pi/work/WI-OI-022.md",
+    ".pi/work/WI-OI-023.md",
+    ".pi/work/WI-OI-024.md",
+    ".pi/work/WI-OI-025.md",
+    ".pi/work/WI-OI-026.md",
+    ".pi/work/WI-OI-027.md",
+    ".pi/work/WI-OI-028.md",
+    ".pi/work/WI-OI-029.md",
     "docs/AGILE_MODULE_DELIVERY.md",
     "docs/SDLC_DEVELOPMENT_GUIDE.md",
     "docs/REQUIREMENTS_BASELINE.md",

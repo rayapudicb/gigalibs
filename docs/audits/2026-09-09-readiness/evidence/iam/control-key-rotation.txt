@@ -1,0 +1,9 @@
+{
+  "passed": true,
+  "checks": [
+    "A successful TOTP proof rewrapped an old-key credential with the active key",
+    "An authorized OIDC configuration save rewrapped the old client secret",
+    "A retained source payload remained decryptable through the bounded old-key ring",
+    "Two distinct MFA-verified tenant admins issued a one-time assisted-recovery grant; approval revoked target sessions, consumption erased old MFA credentials, replay failed and reenrollment became mandatory"
+  ]
+}

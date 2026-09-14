@@ -1,0 +1,230 @@
+ M .pi/PLAN.md
+ M .pi/WORK_ITEMS.md
+ M .pi/work/WI-OI-019.md
+ M apps/workflow-platform/app/(app)/actions/page.tsx
+ M apps/workflow-platform/app/(app)/ap/page.tsx
+ M apps/workflow-platform/app/(app)/connections/[connectionId]/page.tsx
+ M apps/workflow-platform/app/(app)/connections/credentials/page.tsx
+ M apps/workflow-platform/app/(app)/connections/environments/new/page.tsx
+ M apps/workflow-platform/app/(app)/connections/new/page.tsx
+ M apps/workflow-platform/app/(app)/connections/page.tsx
+ M apps/workflow-platform/app/(app)/dashboard/page.tsx
+ M apps/workflow-platform/app/(app)/data-contracts/page.tsx
+ M apps/workflow-platform/app/(app)/exceptions/page.tsx
+ M apps/workflow-platform/app/(app)/layout.tsx
+ M apps/workflow-platform/app/(app)/opportunities/page.tsx
+ M apps/workflow-platform/app/(app)/runs/[runId]/page.tsx
+ M apps/workflow-platform/app/(app)/runs/page.tsx
+ M apps/workflow-platform/app/(app)/value/page.tsx
+ M apps/workflow-platform/app/(app)/workflows/[wfId]/canvas/page.tsx
+ M apps/workflow-platform/app/(app)/workflows/new/page.tsx
+ M apps/workflow-platform/app/(app)/workflows/page.tsx
+ M apps/workflow-platform/app/(auth)/layout.tsx
+ M apps/workflow-platform/app/(auth)/login/page.tsx
+ M apps/workflow-platform/app/(auth)/register/page.tsx
+ M apps/workflow-platform/app/(auth)/select-tenant/page.tsx
+ M apps/workflow-platform/app/api/auth/login/route.ts
+ M apps/workflow-platform/app/api/auth/register/route.ts
+ M apps/workflow-platform/app/api/connectors/sam-gov/sync/route.ts
+ M apps/workflow-platform/app/globals.css
+ M apps/workflow-platform/app/layout.tsx
+ M apps/workflow-platform/components/AppSidebar.tsx
+ M apps/workflow-platform/lib/control-plane.ts
+ M apps/workflow-platform/middleware.ts
+ M apps/workflow-platform/next.config.ts
+ M apps/workflow-platform/package.json
+ M apps/workflow-platform/tsconfig.json
+ M config/sdlc-governance.json
+ M modules/accounts-receivable/CHANGELOG.md
+ M modules/accounts-receivable/README.md
+ M modules/accounts-receivable/apps/api/README.md
+ M modules/accounts-receivable/apps/web/README.md
+ M modules/accounts-receivable/apps/worker/README.md
+ M modules/accounts-receivable/contracts/asyncapi.yaml
+ M modules/accounts-receivable/contracts/openapi.yaml
+ M modules/accounts-receivable/db/migrations/README.md
+ M modules/accounts-receivable/db/verification/README.md
+ M modules/accounts-receivable/deploy/README.md
+ M modules/accounts-receivable/deploy/compose/README.md
+ M modules/accounts-receivable/deploy/docker/README.md
+ M modules/accounts-receivable/deploy/helm/README.md
+ M modules/accounts-receivable/domain/README.md
+ M modules/accounts-receivable/module.yaml
+ M modules/accounts-receivable/release/artifact-manifest.yaml
+ M modules/accounts-receivable/release/compatibility.yaml
+ M modules/accounts-receivable/release/evidence-index.yaml
+ M modules/accounts-receivable/tests/README.md
+ M package.json
+ M packages/broker/src/index.ts
+ M packages/charts-react/src/index.tsx
+ M packages/maps-core/package.json
+ M packages/maps-core/src/index.ts
+ M packages/maps-react/package.json
+ D packages/maps-react/src/index.ts
+ M packages/onboarding-flow/package.json
+ M packages/onboarding-flow/src/index.ts
+ M pnpm-lock.yaml
+ M pnpm-workspace.yaml
+ M scripts/verify-runtime-data-integrity.mjs
+ M vitest.config.ts
+?? .dockerignore
+?? .pi/work/WI-OI-020.md
+?? .pi/work/WI-OI-021.md
+?? .pi/work/WI-OI-022.md
+?? .pi/work/WI-OI-023.md
+?? .pi/work/WI-OI-024.md
+?? .pi/work/WI-OI-025.md
+?? .pi/work/WI-OI-026.md
+?? .pi/work/WI-OI-027.md
+?? .pi/work/WI-OI-028.md
+?? .pi/work/WI-OI-029.md
+?? .pi/work/WI-OI-030.md
+?? .pi/work/WI-OI-031.md
+?? .pi/work/WI-OI-032.md
+?? .pi/work/WI-OI-033.md
+?? .pi/work/WI-OI-034.md
+?? .pi/work/WI-OI-035.md
+?? apps/workflow-platform/__tests__/
+?? apps/workflow-platform/app/(app)/admin/
+?? apps/workflow-platform/app/(app)/analytics/
+?? apps/workflow-platform/app/(app)/ar/
+?? apps/workflow-platform/app/(app)/cmms/
+?? apps/workflow-platform/app/(app)/connections/oauth-studio/
+?? apps/workflow-platform/app/(app)/currency/
+?? apps/workflow-platform/app/(app)/esign/
+?? apps/workflow-platform/app/(app)/maps/
+?? apps/workflow-platform/app/(app)/marketplace/
+?? apps/workflow-platform/app/(app)/ontology/
+?? apps/workflow-platform/app/(app)/platform-admin/
+?? apps/workflow-platform/app/(app)/recovery/
+?? apps/workflow-platform/app/(app)/reports/
+?? apps/workflow-platform/app/(app)/rules/
+?? apps/workflow-platform/app/(app)/saga/
+?? apps/workflow-platform/app/(app)/scanner/
+?? apps/workflow-platform/app/(app)/settings/
+?? apps/workflow-platform/app/(app)/solutions/
+?? apps/workflow-platform/app/(app)/spend/
+?? apps/workflow-platform/app/(app)/tax/
+?? apps/workflow-platform/app/api/admin/
+?? apps/workflow-platform/app/api/analytics/
+?? apps/workflow-platform/app/api/ar/
+?? apps/workflow-platform/app/api/cmms/
+?? apps/workflow-platform/app/api/connectors-hub/
+?? apps/workflow-platform/app/api/connectors/live-sync/
+?? apps/workflow-platform/app/api/currency/
+?? apps/workflow-platform/app/api/data-studio/
+?? apps/workflow-platform/app/api/event-fabric/
+?? apps/workflow-platform/app/api/oauth/
+?? apps/workflow-platform/app/api/ontology/
+?? apps/workflow-platform/app/api/ootb/
+?? apps/workflow-platform/app/api/platform-admin/
+?? apps/workflow-platform/app/api/platform/
+?? apps/workflow-platform/app/api/recovery/
+?? apps/workflow-platform/app/api/rules/
+?? apps/workflow-platform/app/api/saga/
+?? apps/workflow-platform/app/api/solutions/
+?? apps/workflow-platform/app/api/spend/
+?? apps/workflow-platform/app/api/tax/
+?? apps/workflow-platform/app/api/tenant-rbac/
+?? apps/workflow-platform/app/api/workflow-studio/
+?? apps/workflow-platform/app/medusa-tailwind-extend.json
+?? apps/workflow-platform/app/medusa-theme.css
+?? apps/workflow-platform/app/output.css
+?? apps/workflow-platform/components/antd-compat.tsx
+?? apps/workflow-platform/components/ar/
+?? apps/workflow-platform/components/auth/
+?? apps/workflow-platform/components/cmms/
+?? apps/workflow-platform/components/currency/
+?? apps/workflow-platform/components/page-shell.tsx
+?? apps/workflow-platform/components/tax/
+?? apps/workflow-platform/components/ui/
+?? apps/workflow-platform/lib/ar-api.ts
+?? apps/workflow-platform/lib/ar-fallback-data.ts
+?? apps/workflow-platform/lib/ar-ledger-store.ts
+?? apps/workflow-platform/lib/auth-profiles.ts
+?? apps/workflow-platform/lib/cmms-api.ts
+?? apps/workflow-platform/lib/cmms-store.ts
+?? apps/workflow-platform/lib/currency-api.ts
+?? apps/workflow-platform/lib/event-fabric-queue.ts
+?? apps/workflow-platform/lib/industry-charts-catalog.ts
+?? apps/workflow-platform/lib/oauth-handshake-store.ts
+?? apps/workflow-platform/lib/ontology-store.ts
+?? apps/workflow-platform/lib/ootb-client-workbench-store.ts
+?? apps/workflow-platform/lib/saga-orchestrator.ts
+?? apps/workflow-platform/lib/solution-packs-store.ts
+?? apps/workflow-platform/lib/spend-api.ts
+?? apps/workflow-platform/lib/tax-api.ts
+?? apps/workflow-platform/lib/tax-ledger-store.ts
+?? apps/workflow-platform/lib/tax-nexus.ts
+?? apps/workflow-platform/lib/tenant-infra-orchestrator.ts
+?? apps/workflow-platform/lib/tenant-ingestion-store.ts
+?? apps/workflow-platform/lib/universal-rule-kernel-store.ts
+?? apps/workflow-platform/postcss.config.js
+?? apps/workflow-platform/public/
+?? apps/workflow-platform/tailwind.config.js
+?? config/anti-duplication-policy.json
+?? docs/ANTI_DUPLICATION_AND_ENHANCEMENT_STANDARD.md
+?? docs/CLIENT_REQUIREMENTS_CHECKLIST_AGENT.md
+?? docs/architecture/UNIVERSAL_OPERATIONAL_INTELLIGENCE_ARCHITECTURE.docx
+?? docs/architecture/UNIVERSAL_TRUE_SAAS_ARCHITECTURE.docx
+?? modules/accounts-receivable/.env.example
+?? modules/accounts-receivable/apps/api/package.json
+?? modules/accounts-receivable/apps/api/src/
+?? modules/accounts-receivable/apps/api/tsconfig.json
+?? modules/accounts-receivable/apps/e2e/
+?? modules/accounts-receivable/apps/web/app/
+?? modules/accounts-receivable/apps/web/components/
+?? modules/accounts-receivable/apps/web/lib/
+?? modules/accounts-receivable/apps/web/next-env.d.ts
+?? modules/accounts-receivable/apps/web/next.config.ts
+?? modules/accounts-receivable/apps/web/package.json
+?? modules/accounts-receivable/apps/web/tsconfig.json
+?? modules/accounts-receivable/apps/worker/package.json
+?? modules/accounts-receivable/apps/worker/src/
+?? modules/accounts-receivable/apps/worker/tsconfig.json
+?? modules/accounts-receivable/db/migrations/000001_ar_foundation.up.sql
+?? modules/accounts-receivable/db/migrations/000002_ar_outbox_delivery.up.sql
+?? modules/accounts-receivable/db/migrations/000003_ar_ledger_seals_and_installments.up.sql
+?? modules/accounts-receivable/db/migrations/000004_ar_settlements_and_wip.down.sql
+?? modules/accounts-receivable/db/migrations/000004_ar_settlements_and_wip.up.sql
+?? modules/accounts-receivable/db/migrations/RECOVERY.md
+?? modules/accounts-receivable/db/verification/000001_ar_foundation.integration.sql
+?? modules/accounts-receivable/db/verification/000001_ar_foundation.verify.sql
+?? modules/accounts-receivable/db/verification/000002_ar_outbox_delivery.integration.sql
+?? modules/accounts-receivable/db/verification/000002_ar_outbox_delivery.verify.sql
+?? modules/accounts-receivable/deploy/compose/.env.example
+?? modules/accounts-receivable/deploy/compose/compose.yaml
+?? modules/accounts-receivable/deploy/compose/grant-compose-roles.sql
+?? modules/accounts-receivable/deploy/compose/init-compose-database.sh
+?? modules/accounts-receivable/deploy/docker/Dockerfile.api
+?? modules/accounts-receivable/deploy/docker/Dockerfile.migrations
+?? modules/accounts-receivable/deploy/docker/Dockerfile.web
+?? modules/accounts-receivable/deploy/docker/Dockerfile.worker
+?? modules/accounts-receivable/deploy/docker/apply-migrations.sh
+?? modules/accounts-receivable/deploy/helm/Chart.yaml
+?? modules/accounts-receivable/deploy/helm/templates/
+?? modules/accounts-receivable/deploy/helm/values.yaml
+?? modules/accounts-receivable/domain/package.json
+?? modules/accounts-receivable/domain/src/
+?? modules/accounts-receivable/domain/tsconfig.json
+?? modules/autonomous-recovery-studio/
+?? modules/multi-currency/
+?? modules/physical-operations-cmms/
+?? modules/platform-rbac/
+?? modules/spend-management/
+?? modules/tax-configuration/
+?? modules/universal-connector-hub/
+?? modules/universal-data-studio/
+?? modules/universal-rule-pro/
+?? modules/workflow-studio/
+?? packages/broker/src/adapters/kafka-adapter.ts
+?? packages/broker/src/adapters/rabbitmq-adapter.ts
+?? packages/broker/src/multi-tenant-manager.test.ts
+?? packages/broker/src/multi-tenant-manager.ts
+?? packages/maps-core/src/index.test.ts
+?? packages/maps-react/src/index.tsx
+?? scratch/
+?? scripts/verify-anti-duplication.mjs
+?? "universal-invoicing-demo 2/"
+?? universal-invoicing-demo.zip
+?? universal-invoicing-demo/

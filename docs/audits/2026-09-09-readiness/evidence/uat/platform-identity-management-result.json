@@ -1,0 +1,18 @@
+{
+  "recordedAt": "2026-09-11T02:51:38.886Z",
+  "environment": "local-uat",
+  "database": "PostgreSQL",
+  "outcomes": [
+    "profile-persisted-with-optimistic-version",
+    "password-change-required-current-and-revoked-other-sessions",
+    "platform-directory-safe-projection",
+    "platform-role-grant-and-revoke",
+    "password-recovery-digest-only-and-audit-redacted",
+    "password-recovery-one-time-and-new-login",
+    "user-suspension-revoked-sessions-and-reactivation-restored-login",
+    "user-deprovisioning-revoked-external-identity-until-explicit-reactivation",
+    "external-identity-revocation-revoked-sessions-and-wrote-audit"
+  ],
+  "outcomeCount": 9,
+  "rawCredentialsPersistedInEvidence": false
+}

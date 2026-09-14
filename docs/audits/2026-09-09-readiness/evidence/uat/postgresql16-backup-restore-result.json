@@ -1,0 +1,25 @@
+{
+  "recordedAt": "2026-09-12T13:22:59.550Z",
+  "environment": "isolated-local-uat",
+  "databaseEngine": "PostgreSQL 16",
+  "backupClientMajor": 16,
+  "restoreClientMajor": 16,
+  "backupToolSource": "postgresql-16-container",
+  "migrationCount": 30,
+  "timestamptzCount": 86,
+  "dumpSizeBytes": 374639,
+  "durationMs": 28124,
+  "sourceAndRestoreDatabasesRetained": false,
+  "rawCredentialsPersistedInEvidence": false,
+  "businessDataPersistedInEvidence": false,
+  "outcomes": [
+    "postgresql-16-server-verified",
+    "clean-forward-migration-replay",
+    "attributable-iam-graph-persisted",
+    "absolute-time-schema-preserved",
+    "same-major-backup-restore-tools-verified",
+    "custom-format-backup-created",
+    "backup-restored-with-record-and-migration-integrity"
+  ],
+  "outcomeCount": 7
+}

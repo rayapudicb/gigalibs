@@ -1,0 +1,32 @@
+[
+  {
+    "check": "audit:production-data",
+    "exitCode": 0,
+    "evidence": "audit-production-data.txt"
+  },
+  {
+    "check": "audit:all-runtime-data",
+    "exitCode": 0,
+    "evidence": "audit-all-runtime-data.txt"
+  },
+  {
+    "check": "audit:package-dependencies",
+    "exitCode": 0,
+    "evidence": "audit-package-dependencies.txt"
+  },
+  {
+    "check": "audit:api-boundary",
+    "exitCode": 0,
+    "evidence": "audit-api-boundary.txt"
+  },
+  {
+    "check": "audit:navigation",
+    "exitCode": 0,
+    "evidence": "audit-navigation.txt"
+  },
+  {
+    "check": "audit:sdlc",
+    "exitCode": 0,
+    "evidence": "audit-sdlc.txt"
+  }
+]

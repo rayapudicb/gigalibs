@@ -1,0 +1,15 @@
+{
+  "result": "PASS",
+  "recordedAt": "2026-09-13T03:58:55.608Z",
+  "environment": "local-uat",
+  "base": "http://127.0.0.1:5180",
+  "tenantSlug": "my-workspace",
+  "checks": [
+    "named account authenticated and opened the 30-module catalogue",
+    "personal profile, password security and external sign-in methods rendered",
+    "global platform tenant control rendered for the supplied authority",
+    "contained Reports route rendered no fabricated business result"
+  ],
+  "pageErrors": [],
+  "credentialsRecorded": false
+}

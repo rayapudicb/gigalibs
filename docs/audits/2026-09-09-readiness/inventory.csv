@@ -1,0 +1,207 @@
+path,name,category,business_family,workspace_classification,quarantine_category,direct_declared_consumers,direct_active_declared_consumers,declared_reachable_from_active_apps_modules,source_test_count,readiness
+apps/docs,@gigalibs/app-docs,application,,quarantined,incompleteApplications,,,False,0,unverified
+apps/playground-api,@gigalibs/app-playground-api,application,,active,,,,True,3,unverified
+apps/playground-web,@gigalibs/archive-playground-web,application,,retired,,,,False,6,unverified
+apps/storybook,@gigalibs/app-storybook,application,,quarantined,incompleteApplications,,,False,0,unverified
+apps/workflow-platform,@gigalibs/workflow-platform,application,,active,,,,True,3,unverified
+modules/accounts-receivable/apps/api,@gigalibs/ar-api,module-package,accounts-receivable,active,,,,True,3,unverified
+modules/accounts-receivable/apps/e2e,@gigalibs/ar-e2e,module-package,accounts-receivable,active,,,,True,1,unverified
+modules/accounts-receivable/apps/web,@gigalibs/ar-web,module-package,accounts-receivable,active,,,,True,0,unverified
+modules/accounts-receivable/apps/worker,@gigalibs/ar-worker,module-package,accounts-receivable,active,,,,True,1,unverified
+modules/accounts-receivable/domain,@gigalibs/ar-domain,module-package,accounts-receivable,active,,apps/workflow-platform; modules/accounts-receivable/apps/api,apps/workflow-platform; modules/accounts-receivable/apps/api,True,1,unverified
+modules/autonomous-recovery-studio/apps/api,@gigalibs/recovery-api,module-package,autonomous-recovery-studio,active,,,,True,0,unverified
+modules/multi-currency/apps/api,@gigalibs/currency-api,module-package,multi-currency,active,,,,True,0,unverified
+modules/physical-operations-cmms/apps/api,@gigalibs/cmms-api,module-package,physical-operations-cmms,active,,,,True,0,unverified
+modules/platform-rbac/apps/api,@gigalibs/platform-rbac-api,module-package,platform-rbac,active,,,,True,0,unverified
+modules/spend-management/apps/api,@gigalibs/spend-api,module-package,spend-management,active,,,,True,0,unverified
+modules/tax-configuration/apps/api,@gigalibs/tax-api,module-package,tax-configuration,active,,,,True,0,unverified
+modules/universal-connector-hub/apps/api,@gigalibs/connectors-api,module-package,universal-connector-hub,active,,,,True,0,unverified
+modules/universal-data-studio/apps/api,@gigalibs/data-studio-api,module-package,universal-data-studio,active,,,,True,0,unverified
+modules/universal-rule-pro/apps/api,@gigalibs/rules-api,module-package,universal-rule-pro,active,,,,True,0,unverified
+modules/workflow-studio/apps/api,@gigalibs/workflow-api,module-package,workflow-studio,active,,,,True,0,unverified
+packages/activity-feed-nest,@gigalibs/activity-feed-nest,shared-package,,quarantined,unimplementedStubs,,,False,0,unverified
+packages/activity-feed-react,@gigalibs/activity-feed-react,shared-package,,quarantined,unimplementedStubs,,,False,0,unverified
+packages/admin-kit,@gigalibs/admin-kit,shared-package,,active,,,,False,0,unverified
+packages/ai-chat-core,@gigalibs/ai-chat-core,shared-package,,active,,packages/ai-chat-nest; packages/ai-chat-react,packages/ai-chat-nest,False,0,unverified
+packages/ai-chat-nest,@gigalibs/ai-chat-nest,shared-package,,active,,,,False,0,unverified
+packages/ai-chat-react,@gigalibs/ai-chat-react,shared-package,,quarantined,uncertifiedRuntimePackages,,,False,0,unverified
+packages/analytics-core,@gigalibs/analytics-core,shared-package,,active,,,,False,1,unverified
+packages/analytics-react,@gigalibs/analytics-react,shared-package,,quarantined,unimplementedStubs,,,False,0,unverified
+packages/api-keys-nest,@gigalibs/api-keys-nest,shared-package,,quarantined,unimplementedStubs,,,False,0,unverified
+packages/approvals-core,@gigalibs/approvals-core,shared-package,,active,,,,False,0,unverified
+packages/approvals-nest,@gigalibs/approvals-nest,shared-package,,active,,,,False,0,unverified
+packages/approvals-react,@gigalibs/approvals-react,shared-package,,active,,,,False,0,unverified
+packages/archival-core,@gigalibs/archival-core,shared-package,,active,,,,False,0,unverified
+packages/audit-core,@gigalibs/audit-core,shared-package,,active,,,,False,0,unverified
+packages/audit-nest,@gigalibs/audit-nest,shared-package,,active,,apps/playground-api; packages/tickets-nest,apps/playground-api,True,0,unverified
+packages/audit-react,@gigalibs/audit-react,shared-package,,quarantined,unimplementedStubs,,,False,0,unverified
+packages/auth-core,@gigalibs/auth-core,shared-package,,active,,packages/auth-nest; packages/chat-nest,packages/auth-nest,True,1,unverified
+packages/auth-nest,@gigalibs/auth-nest,shared-package,,active,,apps/playground-api; packages/platform-settings-nest; packages/tenancy-nest,apps/playground-api; packages/platform-settings-nest; packages/tenancy-nest,True,1,unverified
+packages/auth-react,@gigalibs/auth-react,shared-package,,active,,,,False,0,unverified
+packages/billing-core,@gigalibs/billing-core,shared-package,,quarantined,uncertifiedRuntimePackages,,,False,0,unverified
+packages/billing-nest,@gigalibs/billing-nest,shared-package,,quarantined,unsafeFinancialRuntime,,,False,0,unverified
+packages/billing-react,@gigalibs/billing-react,shared-package,,active,,,,False,0,unverified
+packages/broker,@gigalibs/broker,shared-package,,active,,apps/workflow-platform,apps/workflow-platform,True,1,unverified
+packages/cache,@gigalibs/cache,shared-package,,active,,,,False,0,unverified
+packages/cart-core,@gigalibs/cart-core,shared-package,,quarantined,uncertifiedRuntimePackages,,,False,0,unverified
+packages/cart-react,@gigalibs/cart-react,shared-package,,active,,,,False,0,unverified
+packages/charts-react,@gigalibs/charts-react,shared-package,,active,,apps/workflow-platform,apps/workflow-platform,True,0,unverified
+packages/chat-core,@gigalibs/chat-core,shared-package,,active,,packages/chat-nest; packages/chat-react,,False,1,unverified
+packages/chat-nest,@gigalibs/chat-nest,shared-package,,quarantined,unpersistedRuntimeServices,,,False,0,unverified
+packages/chat-react,@gigalibs/chat-react,shared-package,,quarantined,uncertifiedRuntimePackages,,,False,0,unverified
+packages/cli,@gigalibs/cli,shared-package,,quarantined,showcaseOnlyPackages,,,False,0,unverified
+packages/comments-nest,@gigalibs/comments-nest,shared-package,,quarantined,unimplementedStubs,,,False,0,unverified
+packages/comments-react,@gigalibs/comments-react,shared-package,,quarantined,unimplementedStubs,,,False,0,unverified
+packages/config,@gigalibs/config,shared-package,,active,,,,False,0,unverified
+packages/contracts,@gigalibs/contracts,shared-package,,active,,apps/playground-api; apps/workflow-platform; packages/auth-nest; packages/auth-react; packages/billing-nest; packages/billing-react; packages/db; packages/errors; packages/notifications-nest; packages/notifications-react; packages/tenancy-nest,apps/playground-api; apps/workflow-platform; packages/auth-nest; packages/auth-react; packages/billing-react; packages/db; packages/errors; packages/notifications-react; packages/tenancy-nest,True,0,unverified
+packages/crypto,@gigalibs/crypto,shared-package,,active,,packages/approvals-core; packages/archival-core; packages/billing-nest; packages/chat-nest; packages/knowledge-base-core; packages/notifications-nest; packages/oauth-universal; packages/orders-core; packages/orgs-core; packages/reports-core; packages/storage-nest; packages/workflow-nest,packages/approvals-core; packages/archival-core; packages/oauth-universal; packages/orgs-core; packages/reports-core,False,0,unverified
+packages/custom-fields-nest,@gigalibs/custom-fields-nest,shared-package,,quarantined,unimplementedStubs,,,False,0,unverified
+packages/custom-fields-react,@gigalibs/custom-fields-react,shared-package,,quarantined,unimplementedStubs,,,False,0,unverified
+packages/data-import-export-nest,@gigalibs/data-import-export-nest,shared-package,,quarantined,unimplementedStubs,,,False,0,unverified
+packages/data-import-export-react,@gigalibs/data-import-export-react,shared-package,,quarantined,unimplementedStubs,,,False,0,unverified
+packages/data-retention,@gigalibs/data-retention,shared-package,,active,,,,False,0,unverified
+packages/db,@gigalibs/db,shared-package,,active,,apps/playground-api; packages/audit-nest; packages/auth-nest; packages/billing-nest; packages/platform-settings-nest; packages/rbac-nest; packages/tenancy-nest,apps/playground-api; packages/audit-nest; packages/auth-nest; packages/platform-settings-nest; packages/rbac-nest; packages/tenancy-nest,True,0,unverified
+packages/document-ocr-core,@gigalibs/document-ocr-core,shared-package,,quarantined,uncertifiedRuntimePackages,,,False,0,unverified
+packages/document-viewer-react,@gigalibs/document-viewer-react,shared-package,,quarantined,uncertifiedRuntimePackages,,,False,0,unverified
+packages/email-templates,@gigalibs/email-templates,shared-package,,active,,,,False,0,unverified
+packages/embed-sdk,@gigalibs/embed-sdk,shared-package,,active,,,,False,0,unverified
+packages/errors,@gigalibs/errors,shared-package,,active,,,,False,0,unverified
+packages/esign-core,@gigalibs/esign-core,shared-package,,quarantined,uncertifiedRuntimePackages,,,False,1,unverified
+packages/event-bus,@gigalibs/event-bus,shared-package,,active,,,,False,0,unverified
+packages/export-engine-core,@gigalibs/export-engine-core,shared-package,,quarantined,uncertifiedRuntimePackages,packages/form-engine-react; packages/reports-grid-react,,False,0,unverified
+packages/feature-flags-nest,@gigalibs/feature-flags-nest,shared-package,,quarantined,unimplementedStubs,,,False,0,unverified
+packages/feature-flags-react,@gigalibs/feature-flags-react,shared-package,,quarantined,unimplementedStubs,,,False,0,unverified
+packages/form-engine-core,@gigalibs/form-engine-core,shared-package,,active,,packages/form-engine-react,,False,1,unverified
+packages/form-engine-react,@gigalibs/form-engine-react,shared-package,,quarantined,showcaseOnlyPackages,,,False,0,unverified
+packages/forms-engine-nest,@gigalibs/forms-engine-nest,shared-package,,quarantined,unimplementedStubs,,,False,0,unverified
+packages/forms-engine-react,@gigalibs/forms-engine-react,shared-package,,quarantined,unimplementedStubs,,,False,0,unverified
+packages/fraud-detection,@gigalibs/fraud-detection,shared-package,,active,,,,False,0,unverified
+packages/geofence-engine,@gigalibs/geofence-engine,shared-package,,active,,,,False,0,unverified
+packages/health,@gigalibs/health,shared-package,,active,,,,False,0,unverified
+packages/host-kit,@gigalibs/host-kit,shared-package,,active,,,,False,1,unverified
+packages/i18n,@gigalibs/i18n,shared-package,,active,,,,False,0,unverified
+packages/i18n-react,@gigalibs/i18n-react,shared-package,,quarantined,unimplementedStubs,,,False,0,unverified
+packages/icons,@gigalibs/icons,shared-package,,active,,,,False,0,unverified
+packages/integrations/agora,@gigalibs/integration-agora,integration-package,,quarantined,unimplementedStubs,,,False,0,unverified
+packages/integrations/ai-gateway,@gigalibs/integration-ai-gateway,integration-package,,quarantined,fabricatedAdapters,,,False,0,unverified
+packages/integrations/algolia,@gigalibs/integration-algolia,integration-package,,quarantined,unimplementedStubs,,,False,0,unverified
+packages/integrations/anthropic,@gigalibs/integration-anthropic,integration-package,,quarantined,unimplementedStubs,,,False,0,unverified
+packages/integrations/apns,@gigalibs/integration-apns,integration-package,,quarantined,unimplementedStubs,,,False,0,unverified
+packages/integrations/apple-auth,@gigalibs/integration-apple-auth,integration-package,,quarantined,unimplementedStubs,,,False,0,unverified
+packages/integrations/aws-s3,@gigalibs/integration-aws-s3,integration-package,,active,,,,False,0,unverified
+packages/integrations/azure-acs,@gigalibs/integration-azure-acs,integration-package,,quarantined,unimplementedStubs,,,False,0,unverified
+packages/integrations/azure-blob,@gigalibs/integration-azure-blob,integration-package,,quarantined,unimplementedStubs,,,False,0,unverified
+packages/integrations/azure-openai,@gigalibs/integration-azure-openai,integration-package,,quarantined,unimplementedStubs,,,False,0,unverified
+packages/integrations/azure-vision,@gigalibs/integration-azure-vision,integration-package,,quarantined,unimplementedStubs,,,False,0,unverified
+packages/integrations/cal,@gigalibs/integration-cal,integration-package,,quarantined,unimplementedStubs,,,False,0,unverified
+packages/integrations/cloudflare-r2,@gigalibs/integration-cloudflare-r2,integration-package,,quarantined,unimplementedStubs,,,False,0,unverified
+packages/integrations/daily,@gigalibs/integration-daily,integration-package,,quarantined,unimplementedStubs,,,False,0,unverified
+packages/integrations/datadog,@gigalibs/integration-datadog,integration-package,,quarantined,unimplementedStubs,,,False,0,unverified
+packages/integrations/digilocker,@gigalibs/integration-digilocker,integration-package,,quarantined,unimplementedStubs,,,False,0,unverified
+packages/integrations/digio,@gigalibs/integration-digio,integration-package,,quarantined,unimplementedStubs,,,False,0,unverified
+packages/integrations/docusign,@gigalibs/integration-docusign,integration-package,,quarantined,unimplementedStubs,,,False,0,unverified
+packages/integrations/exotel,@gigalibs/integration-exotel,integration-package,,quarantined,unimplementedStubs,,,False,0,unverified
+packages/integrations/fcm,@gigalibs/integration-fcm,integration-package,,quarantined,unimplementedStubs,,,False,0,unverified
+packages/integrations/gcs,@gigalibs/integration-gcs,integration-package,,quarantined,unimplementedStubs,,,False,0,unverified
+packages/integrations/gemini,@gigalibs/integration-gemini,integration-package,,quarantined,unimplementedStubs,,,False,0,unverified
+packages/integrations/github-auth,@gigalibs/integration-github-auth,integration-package,,quarantined,unimplementedStubs,,,False,0,unverified
+packages/integrations/google-auth,@gigalibs/integration-google-auth,integration-package,,quarantined,unimplementedStubs,,,False,0,unverified
+packages/integrations/google-calendar,@gigalibs/integration-google-calendar,integration-package,,quarantined,unimplementedStubs,,,False,0,unverified
+packages/integrations/google-maps,@gigalibs/integration-google-maps,integration-package,,quarantined,unimplementedStubs,,,False,0,unverified
+packages/integrations/hubspot,@gigalibs/integration-hubspot,integration-package,,quarantined,unimplementedStubs,,,False,0,unverified
+packages/integrations/jitsi,@gigalibs/integration-jitsi,integration-package,,quarantined,unimplementedStubs,,,False,0,unverified
+packages/integrations/lemonsqueezy,@gigalibs/integration-lemonsqueezy,integration-package,,quarantined,unimplementedStubs,,,False,0,unverified
+packages/integrations/mapbox,@gigalibs/integration-mapbox,integration-package,,quarantined,unimplementedStubs,,,False,0,unverified
+packages/integrations/meilisearch,@gigalibs/integration-meilisearch,integration-package,,quarantined,unimplementedStubs,,,False,0,unverified
+packages/integrations/microsoft-auth,@gigalibs/integration-microsoft-auth,integration-package,,quarantined,unimplementedStubs,,,False,0,unverified
+packages/integrations/microsoft-calendar,@gigalibs/integration-microsoft-calendar,integration-package,,quarantined,unimplementedStubs,,,False,0,unverified
+packages/integrations/minio,@gigalibs/integration-minio,integration-package,,active,,,,False,0,unverified
+packages/integrations/msg91,@gigalibs/integration-msg91,integration-package,,quarantined,unimplementedStubs,,,False,0,unverified
+packages/integrations/onfido,@gigalibs/integration-onfido,integration-package,,quarantined,unimplementedStubs,,,False,0,unverified
+packages/integrations/openai,@gigalibs/integration-openai,integration-package,,active,,,,False,0,unverified
+packages/integrations/paypal,@gigalibs/integration-paypal,integration-package,,quarantined,unimplementedStubs,,,False,0,unverified
+packages/integrations/posthog,@gigalibs/integration-posthog,integration-package,,quarantined,unimplementedStubs,,,False,0,unverified
+packages/integrations/postmark,@gigalibs/integration-postmark,integration-package,,quarantined,unimplementedStubs,,,False,0,unverified
+packages/integrations/quickbooks,@gigalibs/integration-quickbooks,integration-package,,quarantined,unimplementedStubs,,,False,0,unverified
+packages/integrations/razorpay,@gigalibs/integration-razorpay,integration-package,,quarantined,fabricatedAdapters,,,False,0,unverified
+packages/integrations/resend,@gigalibs/integration-resend,integration-package,,quarantined,uncertifiedRuntimePackages,,,False,0,unverified
+packages/integrations/salesforce,@gigalibs/integration-salesforce,integration-package,,quarantined,unimplementedStubs,,,False,0,unverified
+packages/integrations/sendgrid,@gigalibs/integration-sendgrid,integration-package,,quarantined,unimplementedStubs,,,False,0,unverified
+packages/integrations/sentry,@gigalibs/integration-sentry,integration-package,,quarantined,fabricatedAdapters,,,False,0,unverified
+packages/integrations/ses,@gigalibs/integration-ses,integration-package,,quarantined,unimplementedStubs,,,False,0,unverified
+packages/integrations/slack,@gigalibs/integration-slack,integration-package,,quarantined,unimplementedStubs,,,False,0,unverified
+packages/integrations/stripe,@gigalibs/integration-stripe,integration-package,,quarantined,fabricatedAdapters,,,False,0,unverified
+packages/integrations/telegram,@gigalibs/integration-telegram,integration-package,,quarantined,unimplementedStubs,,,False,0,unverified
+packages/integrations/tesseract,@gigalibs/integration-tesseract,integration-package,,quarantined,unimplementedStubs,,,False,0,unverified
+packages/integrations/twilio,@gigalibs/integration-twilio,integration-package,,quarantined,uncertifiedRuntimePackages,,,False,0,unverified
+packages/integrations/typesense,@gigalibs/integration-typesense,integration-package,,quarantined,unimplementedStubs,,,False,0,unverified
+packages/integrations/vonage,@gigalibs/integration-vonage,integration-package,,quarantined,unimplementedStubs,,,False,0,unverified
+packages/integrations/whatsapp,@gigalibs/integration-whatsapp,integration-package,,quarantined,unimplementedStubs,,,False,0,unverified
+packages/integrations/xero,@gigalibs/integration-xero,integration-package,,quarantined,unimplementedStubs,,,False,0,unverified
+packages/invoices-core,@gigalibs/invoices-core,shared-package,,active,,,,False,2,unverified
+packages/jwt-universal,@gigalibs/jwt-universal,shared-package,,active,,,,False,0,unverified
+packages/knowledge-base-core,@gigalibs/knowledge-base-core,shared-package,,quarantined,unpersistedRuntimeServices,,,False,0,unverified
+packages/knowledge-base-react,@gigalibs/knowledge-base-react,shared-package,,active,,,,False,0,unverified
+packages/kpi-widgets-react,@gigalibs/kpi-widgets-react,shared-package,,active,,,,False,0,unverified
+packages/ledger-core,@gigalibs/ledger-core,shared-package,,quarantined,uncertifiedRuntimePackages,,,False,1,unverified
+packages/ledger-nest,@gigalibs/ledger-nest,shared-package,,active,,,,False,0,unverified
+packages/logger,@gigalibs/logger,shared-package,,active,,apps/playground-api; apps/workflow-platform; packages/billing-nest; packages/broker; packages/db; packages/event-bus; packages/queue; packages/realtime; packages/redis,apps/playground-api; apps/workflow-platform; packages/broker; packages/db; packages/event-bus; packages/queue; packages/realtime; packages/redis,True,1,unverified
+packages/maps-core,@gigalibs/maps-core,shared-package,,active,,apps/workflow-platform,apps/workflow-platform,True,1,unverified
+packages/maps-react,@gigalibs/maps-react,shared-package,,active,,apps/workflow-platform,apps/workflow-platform,True,0,unverified
+packages/module-registry,@gigalibs/module-registry,shared-package,,active,,apps/playground-api; packages/module-registry-nest,apps/playground-api; packages/module-registry-nest,True,2,unverified
+packages/module-registry-nest,@gigalibs/module-registry-nest,shared-package,,active,,apps/playground-api,apps/playground-api,True,0,unverified
+packages/multi-currency,@gigalibs/multi-currency,shared-package,,active,,,,False,0,unverified
+packages/notifications-core,@gigalibs/notifications-core,shared-package,,active,,,,False,0,unverified
+packages/notifications-nest,@gigalibs/notifications-nest,shared-package,,quarantined,unpersistedRuntimeServices,,,False,0,unverified
+packages/notifications-react,@gigalibs/notifications-react,shared-package,,active,,,,False,0,unverified
+packages/oauth-universal,@gigalibs/oauth-universal,shared-package,,active,,,,False,0,unverified
+packages/onboarding-flow,@gigalibs/onboarding-flow,shared-package,,active,,apps/workflow-platform,apps/workflow-platform,True,0,unverified
+packages/orders-core,@gigalibs/orders-core,shared-package,,quarantined,uncertifiedRuntimePackages,,,False,0,unverified
+packages/orders-nest,@gigalibs/orders-nest,shared-package,,active,,,,False,0,unverified
+packages/orgs-core,@gigalibs/orgs-core,shared-package,,active,,,,False,0,unverified
+packages/orgs-nest,@gigalibs/orgs-nest,shared-package,,quarantined,unimplementedStubs,,,False,0,unverified
+packages/orgs-react,@gigalibs/orgs-react,shared-package,,quarantined,unimplementedStubs,,,False,0,unverified
+packages/pagination,@gigalibs/pagination,shared-package,,active,,,,False,0,unverified
+packages/platform-settings,@gigalibs/platform-settings,shared-package,,active,,packages/platform-settings-nest; packages/tenancy-nest,packages/platform-settings-nest; packages/tenancy-nest,True,1,unverified
+packages/platform-settings-nest,@gigalibs/platform-settings-nest,shared-package,,active,,apps/playground-api,apps/playground-api,True,0,unverified
+packages/presence-nest,@gigalibs/presence-nest,shared-package,,quarantined,unimplementedStubs,,,False,0,unverified
+packages/pricing-calculator,@gigalibs/pricing-calculator,shared-package,,active,,,,False,0,unverified
+packages/privacy-gdpr,@gigalibs/privacy-gdpr,shared-package,,active,,,,False,0,unverified
+packages/queue,@gigalibs/queue,shared-package,,active,,,,False,0,unverified
+packages/rbac-core,@gigalibs/rbac-core,shared-package,,active,,packages/rbac-nest; packages/rbac-react,packages/rbac-nest; packages/rbac-react,True,1,unverified
+packages/rbac-nest,@gigalibs/rbac-nest,shared-package,,active,,apps/playground-api; packages/audit-nest; packages/platform-settings-nest; packages/tenancy-nest; packages/tickets-nest,apps/playground-api; packages/audit-nest; packages/platform-settings-nest; packages/tenancy-nest,True,0,unverified
+packages/rbac-react,@gigalibs/rbac-react,shared-package,,active,,,,False,0,unverified
+packages/realtime,@gigalibs/realtime,shared-package,,active,,packages/chat-nest,,False,0,unverified
+packages/redis,@gigalibs/redis,shared-package,,active,,packages/jwt-universal,packages/jwt-universal,False,0,unverified
+packages/reports-core,@gigalibs/reports-core,shared-package,,active,,,,False,0,unverified
+packages/reports-grid-react,@gigalibs/reports-grid-react,shared-package,,quarantined,uncertifiedRuntimePackages,,,False,0,unverified
+packages/reports-nest,@gigalibs/reports-nest,shared-package,,active,,,,False,0,unverified
+packages/reports-react,@gigalibs/reports-react,shared-package,,active,,,,False,0,unverified
+packages/rule-engine-universal,@gigalibs/rule-engine-universal,shared-package,,quarantined,unpersistedRuntimeServices,,,False,0,unverified
+packages/scheduler-nest,@gigalibs/scheduler-nest,shared-package,,quarantined,unimplementedStubs,,,False,0,unverified
+packages/search-nest,@gigalibs/search-nest,shared-package,,quarantined,unimplementedStubs,,,False,0,unverified
+packages/security-shield,@gigalibs/security-shield,shared-package,,quarantined,uncertifiedRuntimePackages,,,False,0,unverified
+packages/sla-engine,@gigalibs/sla-engine,shared-package,,active,,packages/tickets-nest; packages/tickets-react,,False,0,unverified
+packages/spend-core,@gigalibs/spend-core,shared-package,,active,,,,False,1,unverified
+packages/storage-core,@gigalibs/storage-core,shared-package,,active,,packages/storage-nest,,False,0,unverified
+packages/storage-nest,@gigalibs/storage-nest,shared-package,,quarantined,uncertifiedRuntimePackages,,,False,0,unverified
+packages/storage-react,@gigalibs/storage-react,shared-package,,quarantined,unimplementedStubs,,,False,0,unverified
+packages/tags-taxonomy-nest,@gigalibs/tags-taxonomy-nest,shared-package,,quarantined,unimplementedStubs,,,False,0,unverified
+packages/tenancy-core,@gigalibs/tenancy-core,shared-package,,quarantined,uncertifiedRuntimePackages,,,False,0,unverified
+packages/tenancy-nest,@gigalibs/tenancy-nest,shared-package,,active,,apps/playground-api; packages/audit-nest; packages/platform-settings-nest; packages/tickets-nest,apps/playground-api; packages/audit-nest; packages/platform-settings-nest,True,1,unverified
+packages/tenancy-react,@gigalibs/tenancy-react,shared-package,,quarantined,unimplementedStubs,,,False,0,unverified
+packages/tickets-core,@gigalibs/tickets-core,shared-package,,quarantined,uncertifiedRuntimePackages,packages/tickets-nest; packages/tickets-react,,False,1,unverified
+packages/tickets-nest,@gigalibs/tickets-nest,shared-package,,quarantined,uncertifiedRuntimePackages,,,False,0,unverified
+packages/tickets-react,@gigalibs/tickets-react,shared-package,,quarantined,uncertifiedRuntimePackages,,,False,0,unverified
+packages/ui,@gigalibs/ui,shared-package,,active,,packages/tickets-react,,False,0,unverified
+packages/ui-preset,@gigalibs/ui-preset,shared-package,,active,,,,False,0,unverified
+packages/users-core,@gigalibs/users-core,shared-package,,active,,,,False,0,unverified
+packages/users-nest,@gigalibs/users-nest,shared-package,,quarantined,unimplementedStubs,,,False,0,unverified
+packages/users-react,@gigalibs/users-react,shared-package,,quarantined,unimplementedStubs,,,False,0,unverified
+packages/validation-nest,@gigalibs/validation-nest,shared-package,,active,,apps/playground-api; packages/auth-nest; packages/platform-settings-nest; packages/tenancy-nest,apps/playground-api; packages/auth-nest; packages/platform-settings-nest; packages/tenancy-nest,True,1,unverified
+packages/webhooks-nest,@gigalibs/webhooks-nest,shared-package,,quarantined,unimplementedStubs,,,False,0,unverified
+packages/webhooks-react,@gigalibs/webhooks-react,shared-package,,quarantined,unimplementedStubs,,,False,0,unverified
+packages/workflow-engine,@gigalibs/workflow-engine,shared-package,,active,,packages/workflow-nest,,False,0,unverified
+packages/workflow-nest,@gigalibs/workflow-nest,shared-package,,quarantined,unpersistedRuntimeServices,,,False,0,unverified
+packages/workflow-react,@gigalibs/workflow-react,shared-package,,quarantined,unimplementedStubs,,,False,0,unverified
+apps/workflow-api,workflow-api (Python execution plane),application-python,execution,active-non-js,,,,,1,unverified

@@ -1,0 +1,385 @@
+{
+  "workItem": "WI-OI-013",
+  "canonicalApiRoots": [
+    "analytics",
+    "ar",
+    "auth",
+    "cmms",
+    "communications",
+    "connectors-hub",
+    "control",
+    "currency",
+    "data-studio",
+    "esign",
+    "master-data",
+    "operational-intelligence",
+    "recovery",
+    "reports",
+    "rules",
+    "runs",
+    "spend",
+    "tax",
+    "workflows"
+  ],
+  "entries": [
+    {
+      "file": "apps/workflow-platform/app/api/admin/metering/route.ts",
+      "archive": "scratch/wi-oi-013-originals/apps/workflow-platform/app/api/admin/metering/route.ts.txt",
+      "sha256": "96af764060e60e2dda9db297e528c9bfa55c8b7718bebf794d6f6bd727fce4ca",
+      "kind": "api",
+      "methods": [
+        "GET"
+      ],
+      "reason": "No verified caller-scoped persistent suite contract; disabled pending module completion"
+    },
+    {
+      "file": "apps/workflow-platform/app/api/connectors/live-sync/route.ts",
+      "archive": "scratch/wi-oi-013-originals/apps/workflow-platform/app/api/connectors/live-sync/route.ts.txt",
+      "sha256": "dee1da84d21c1b06111f5b6210120405a654de65064e811ed6bd9956e6cfad65",
+      "kind": "api",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "reason": "No verified caller-scoped persistent suite contract; disabled pending module completion"
+    },
+    {
+      "file": "apps/workflow-platform/app/api/connectors/sam-gov/sync/route.ts",
+      "archive": "scratch/wi-oi-013-originals/apps/workflow-platform/app/api/connectors/sam-gov/sync/route.ts.txt",
+      "sha256": "b3f3f4001b5c36f8af273b4243ea86a5d1472e45654b97d1472555d3c88286ab",
+      "kind": "api",
+      "methods": [
+        "POST",
+        "GET"
+      ],
+      "reason": "No verified caller-scoped persistent suite contract; disabled pending module completion"
+    },
+    {
+      "file": "apps/workflow-platform/app/api/connectors/sam-gov/test/route.ts",
+      "archive": "scratch/wi-oi-013-originals/apps/workflow-platform/app/api/connectors/sam-gov/test/route.ts.txt",
+      "sha256": "f3dbb27334649b25ef6e8542e15b34d4fd7154f6c3492c1c1e537abf2a05bc92",
+      "kind": "api",
+      "methods": [
+        "POST"
+      ],
+      "reason": "No verified caller-scoped persistent suite contract; disabled pending module completion"
+    },
+    {
+      "file": "apps/workflow-platform/app/api/event-fabric/queue/route.ts",
+      "archive": "scratch/wi-oi-013-originals/apps/workflow-platform/app/api/event-fabric/queue/route.ts.txt",
+      "sha256": "89e720773b73be9d15b221ac12395edfe255a8d677c55ef0c7729ee22a8780c6",
+      "kind": "api",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "reason": "No verified caller-scoped persistent suite contract; disabled pending module completion"
+    },
+    {
+      "file": "apps/workflow-platform/app/api/event-fabric/replay/route.ts",
+      "archive": "scratch/wi-oi-013-originals/apps/workflow-platform/app/api/event-fabric/replay/route.ts.txt",
+      "sha256": "6e9013f827414f08ff7356e2c04f76343bbb037e08c030a4b68163480457a043",
+      "kind": "api",
+      "methods": [
+        "POST"
+      ],
+      "reason": "No verified caller-scoped persistent suite contract; disabled pending module completion"
+    },
+    {
+      "file": "apps/workflow-platform/app/api/platform/[...path]/route.ts",
+      "archive": "scratch/wi-oi-013-originals/apps/workflow-platform/app/api/platform/[...path]/route.ts.txt",
+      "sha256": "dcfcd717ea7b6e18d253cc30a548defa359de7f71502b2ba852315c60f1ae130",
+      "kind": "api",
+      "methods": [
+        "GET",
+        "POST",
+        "PUT",
+        "PATCH",
+        "DELETE"
+      ],
+      "reason": "No verified caller-scoped persistent suite contract; disabled pending module completion"
+    },
+    {
+      "file": "apps/workflow-platform/app/api/platform-admin/tenants/infra/route.ts",
+      "archive": "scratch/wi-oi-013-originals/apps/workflow-platform/app/api/platform-admin/tenants/infra/route.ts.txt",
+      "sha256": "b8b900da85a5d8cb127aaeea7d72d7b0dc6de4ac25aa0175713c6ebf933f4dfe",
+      "kind": "api",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "reason": "No verified caller-scoped persistent suite contract; disabled pending module completion"
+    },
+    {
+      "file": "apps/workflow-platform/app/api/platform-admin/tenants/infra/test/route.ts",
+      "archive": "scratch/wi-oi-013-originals/apps/workflow-platform/app/api/platform-admin/tenants/infra/test/route.ts.txt",
+      "sha256": "a1ccbb9c7d580469099d15c70d02637630cfd8d36238192373765eef5b6358d0",
+      "kind": "api",
+      "methods": [
+        "POST"
+      ],
+      "reason": "No verified caller-scoped persistent suite contract; disabled pending module completion"
+    },
+    {
+      "file": "apps/workflow-platform/app/api/tenant-rbac/[...path]/route.ts",
+      "archive": "scratch/wi-oi-013-originals/apps/workflow-platform/app/api/tenant-rbac/[...path]/route.ts.txt",
+      "sha256": "be0cf02a1380582a050d93978db5f785a05d4d85b81e56d02bdad02cfe58a455",
+      "kind": "api",
+      "methods": [
+        "GET",
+        "POST",
+        "PUT",
+        "PATCH",
+        "DELETE"
+      ],
+      "reason": "No verified caller-scoped persistent suite contract; disabled pending module completion"
+    },
+    {
+      "file": "apps/workflow-platform/app/api/workflow-studio/[...path]/route.ts",
+      "archive": "scratch/wi-oi-013-originals/apps/workflow-platform/app/api/workflow-studio/[...path]/route.ts.txt",
+      "sha256": "3442b18643cd423de1bc8f137eec3cc19bca3068090572f2255fcaa4bc69f475",
+      "kind": "api",
+      "methods": [
+        "GET",
+        "POST",
+        "PUT",
+        "PATCH",
+        "DELETE"
+      ],
+      "reason": "No verified caller-scoped persistent suite contract; disabled pending module completion"
+    },
+    {
+      "file": "apps/workflow-platform/app/(app)/admin/metering/page.tsx",
+      "archive": "scratch/wi-oi-013-originals/apps/workflow-platform/app/(app)/admin/metering/page.tsx.txt",
+      "sha256": "264da7b796ad5fcb0fbd53199431b63e91b2bafce6ce923f2652d96affa8a214",
+      "kind": "page",
+      "reason": "Prototype or unverified suite capability; no operational data/actions rendered"
+    },
+    {
+      "file": "apps/workflow-platform/app/(app)/maps/page.tsx",
+      "archive": "scratch/wi-oi-013-originals/apps/workflow-platform/app/(app)/maps/page.tsx.txt",
+      "sha256": "47a5f44fa5816c1a938f4284f036f5463200c3104c433a87c8ab8a9cba8f3322",
+      "kind": "page",
+      "reason": "Contained catalogue module; no authoritative tenant-scoped spatial data contract"
+    },
+    {
+      "file": "apps/workflow-platform/app/(app)/platform-admin/dlq/page.tsx",
+      "archive": "scratch/wi-oi-013-originals/apps/workflow-platform/app/(app)/platform-admin/dlq/page.tsx.txt",
+      "sha256": "c4c354be8738bf81c0f20c52f248d4f41e0b973f9b96c1b8f1044e56249148c6",
+      "kind": "page",
+      "reason": "Prototype or unverified suite capability; no operational data/actions rendered"
+    },
+    {
+      "file": "apps/workflow-platform/app/(app)/platform-admin/infra/page.tsx",
+      "archive": "scratch/wi-oi-013-originals/apps/workflow-platform/app/(app)/platform-admin/infra/page.tsx.txt",
+      "sha256": "67b1baa4456e511fcaed916260507d49c03a94c98d5075f217d0d7be9471e894",
+      "kind": "page",
+      "reason": "Prototype or unverified suite capability; no operational data/actions rendered"
+    },
+    {
+      "file": "apps/workflow-platform/app/api/solutions/activate/route.ts",
+      "archive": "scratch/wi-oi-013-originals/apps/workflow-platform/app/api/solutions/activate/route.ts.txt",
+      "sha256": "d3c04db99869ef00b3850bc3673faddb3e961ec13e53b3933af57b63aa521ae6",
+      "kind": "api",
+      "methods": [
+        "POST"
+      ],
+      "reason": "No verified caller-scoped persistent suite contract; disabled pending module completion"
+    },
+    {
+      "file": "apps/workflow-platform/app/api/solutions/execute/route.ts",
+      "archive": "scratch/wi-oi-013-originals/apps/workflow-platform/app/api/solutions/execute/route.ts.txt",
+      "sha256": "9a6c1c06789254a64cb3e3480606311c823098104f7fd691391134ad9d91e5e7",
+      "kind": "api",
+      "methods": [
+        "POST"
+      ],
+      "reason": "No verified caller-scoped persistent suite contract; disabled pending module completion"
+    },
+    {
+      "file": "apps/workflow-platform/app/api/solutions/packs/route.ts",
+      "archive": "scratch/wi-oi-013-originals/apps/workflow-platform/app/api/solutions/packs/route.ts.txt",
+      "sha256": "101d8033174d796926120a9d9e73bca1b456bab64096144291dbdcf13d1cf0be",
+      "kind": "api",
+      "methods": [
+        "GET"
+      ],
+      "reason": "No verified caller-scoped persistent suite contract; disabled pending module completion"
+    },
+    {
+      "file": "apps/workflow-platform/app/(app)/solutions/day-one/page.tsx",
+      "archive": "scratch/wi-oi-013-originals/apps/workflow-platform/app/(app)/solutions/day-one/page.tsx.txt",
+      "sha256": "c31e63a1e3fd566e68ba69c4ebfd8305360e1d5d4876dc56c0fce086fb953b09",
+      "kind": "page",
+      "reason": "Prototype or unverified suite capability; no operational data/actions rendered"
+    },
+    {
+      "file": "apps/workflow-platform/app/(app)/solutions/page.tsx",
+      "archive": "scratch/wi-oi-013-originals/apps/workflow-platform/app/(app)/solutions/page.tsx.txt",
+      "sha256": "7edc7194f3e7a9a84ce4c1e0cc0e4b7335e81a40a8d97a2c7ec60061770bf00d",
+      "kind": "page",
+      "reason": "Prototype or unverified suite capability; no operational data/actions rendered"
+    },
+    {
+      "file": "apps/workflow-platform/app/api/marketplace/route.ts",
+      "archive": "scratch/wi-oi-013-originals/apps/workflow-platform/app/api/marketplace/route.ts.txt",
+      "sha256": "2212d4094965ae77c18705afc47db06947ac5ca0d60d50863e0e9fe98d1ad424",
+      "kind": "api",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "reason": "In-memory wallet, invoice and purchase results are not production persistence"
+    },
+    {
+      "file": "apps/workflow-platform/app/(app)/marketplace/page.tsx",
+      "archive": "scratch/wi-oi-013-originals/apps/workflow-platform/app/(app)/marketplace/page.tsx.txt",
+      "sha256": "5b2b2e6e0c9ddf0c4420ab49372f585d5a9a736d953724a45f3c5a0149642fa5",
+      "kind": "page",
+      "reason": "In-memory commercial results are not a verified business outcome"
+    },
+    {
+      "file": "apps/workflow-platform/app/api/configuration/route.ts",
+      "archive": "scratch/wi-oi-013-originals/apps/workflow-platform/app/api/configuration/route.ts.txt",
+      "sha256": "e5dbadf4b005d825e2d4483d05db43643d54be8a89b6a9bdc73278c969443a0b",
+      "kind": "api",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "reason": "Default manifests and process-memory publication are not tenant-scoped durable configuration"
+    },
+    {
+      "file": "apps/workflow-platform/app/api/scanner/route.ts",
+      "archive": "scratch/wi-oi-013-originals/apps/workflow-platform/app/api/scanner/route.unsafe-prototype.ts.txt",
+      "sha256": "f068504fccc3ae4bcae61290a8fab0ab76cc538f5ee4d289983ec571f9d4812f",
+      "kind": "api",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "reason": "The route fabricates OCR fields, financial values and confidence and stores scan results only in process memory"
+    },
+    {
+      "file": "apps/workflow-platform/app/(app)/scanner/page.tsx",
+      "archive": "scratch/wi-oi-013-originals/apps/workflow-platform/app/(app)/scanner/page.unsafe-prototype.tsx.txt",
+      "sha256": "cb95e03738ade8144a268b42ca6a2cb29fcf1000be535d786c8e31599ca795a2",
+      "kind": "page",
+      "reason": "The screen claims OCR and direct PostgreSQL ledger commitment without a verified provider or durable write"
+    },
+    {
+      "file": "apps/workflow-platform/app/api/ontology/route.ts",
+      "archive": "scratch/wi-oi-013-originals/apps/workflow-platform/app/api/ontology/route.ts.txt",
+      "sha256": "d564f1a4fdbe419f44e015f7a8a7a498f7ee0c1c8103ce7331b6a7086fb9cbf4",
+      "kind": "api",
+      "methods": [
+        "GET"
+      ],
+      "reason": "Seeded process-memory ontology data is not authoritative tenant data"
+    },
+    {
+      "file": "apps/workflow-platform/app/(app)/ontology/page.tsx",
+      "archive": "scratch/wi-oi-013-originals/apps/workflow-platform/app/(app)/ontology/page.tsx.txt",
+      "sha256": "96da0aa0918321c9ff9c4476b4745a592058a73eeecbaed126267e80a10cb254",
+      "kind": "page",
+      "reason": "The graph screen presents seeded financial and operational entities as live data"
+    },
+    {
+      "file": "apps/workflow-platform/app/api/saga/route.ts",
+      "archive": "scratch/wi-oi-013-originals/apps/workflow-platform/app/api/saga/route.ts.txt",
+      "sha256": "e4c33785f3cf9e166417862ee37c6125592b240ee97ca680e1048881cb6b578d",
+      "kind": "api",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "reason": "Process-memory saga simulation cannot claim external commits or compensating rollback"
+    },
+    {
+      "file": "apps/workflow-platform/app/(app)/saga/page.tsx",
+      "archive": "scratch/wi-oi-013-originals/apps/workflow-platform/app/(app)/saga/page.tsx.txt",
+      "sha256": "b5970f0b88006a9020d9498f4da95ce8699df269f8dfe1473a4711b04dfdbb8a",
+      "kind": "page",
+      "reason": "The screen presents simulated cross-system transactions as real execution"
+    },
+    {
+      "file": "apps/workflow-platform/app/api/oauth/providers/route.ts",
+      "archive": "scratch/wi-oi-013-originals/apps/workflow-platform/app/api/oauth/providers/route.ts.txt",
+      "sha256": "ccc5ab8eac0d8e3042351568962e87a4b793c2d2ad6c7286a7f9377ff84213c0",
+      "kind": "api",
+      "methods": [
+        "GET"
+      ],
+      "reason": "Process-memory commercial OAuth metadata and credentials are not durable provider bindings"
+    },
+    {
+      "file": "apps/workflow-platform/app/api/oauth/authorize/route.ts",
+      "archive": "scratch/wi-oi-013-originals/apps/workflow-platform/app/api/oauth/authorize/route.ts.txt",
+      "sha256": "3435acf754b72b7b5bedb3dd716ba3210af94ab3bc409f5bde3f4788d321abf0",
+      "kind": "api",
+      "methods": [
+        "POST"
+      ],
+      "reason": "The local handshake store is not a verified external OAuth authorization flow"
+    },
+    {
+      "file": "apps/workflow-platform/app/api/oauth/callback/route.ts",
+      "archive": "scratch/wi-oi-013-originals/apps/workflow-platform/app/api/oauth/callback/route.ts.txt",
+      "sha256": "5d8a666c40213ab60706c776b5e3058188995abd91439fbf1498b514e0523c14",
+      "kind": "api",
+      "methods": [
+        "POST"
+      ],
+      "reason": "The local handshake store does not persist authoritative external identities or credentials"
+    },
+    {
+      "file": "apps/workflow-platform/app/api/oauth/heartbeat/route.ts",
+      "archive": "scratch/wi-oi-013-originals/apps/workflow-platform/app/api/oauth/heartbeat/route.ts.txt",
+      "sha256": "6a6d9d22751858260ed2bbf7e9d89ba9cfc0d89d9cb141758345d6a035532489",
+      "kind": "api",
+      "methods": [
+        "POST"
+      ],
+      "reason": "A simulated heartbeat cannot prove an external provider connection"
+    },
+    {
+      "file": "apps/workflow-platform/app/(app)/connections/oauth-studio/page.tsx",
+      "archive": "scratch/wi-oi-013-originals/apps/workflow-platform/app/(app)/connections/oauth-studio/page.tsx.txt",
+      "sha256": "1d803b43ce9a5ca511334f6c39e9d8d3826acc5fcac50db67636d85518cb911f",
+      "kind": "page",
+      "reason": "Commercial OAuth Studio requires real provider interoperability and durable credential custody"
+    },
+    {
+      "file": "apps/workflow-platform/app/api/ootb/evaluations/route.ts",
+      "archive": "scratch/wi-oi-013-originals/apps/workflow-platform/app/api/ootb/evaluations/route.ts.txt",
+      "sha256": "b687d5d5db8a74bcb23ce2f5a2643b5fc7ecd7dfe061f196bd53ab644de2bfc3",
+      "kind": "api",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "reason": "The OOTB evaluation store uses seeded process-memory business records"
+    },
+    {
+      "file": "apps/workflow-platform/app/api/ootb/override/route.ts",
+      "archive": "scratch/wi-oi-013-originals/apps/workflow-platform/app/api/ootb/override/route.ts.txt",
+      "sha256": "b53878034e4c957badcf46a6b08b26abba2a7d8364b6bdac9a88d2c4bb85428a",
+      "kind": "api",
+      "methods": [
+        "POST"
+      ],
+      "reason": "The OOTB override path has no verified durable action contract"
+    },
+    {
+      "file": "apps/workflow-platform/app/api/ootb/rules/route.ts",
+      "archive": "scratch/wi-oi-013-originals/apps/workflow-platform/app/api/ootb/rules/route.ts.txt",
+      "sha256": "49e3d98383b0ed3ab5e08b3a7281f3c040dd2f34380381da033b72cc6762069a",
+      "kind": "api",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "reason": "The OOTB rule store uses seeded process-memory definitions"
+    }
+  ]
+}

@@ -1,0 +1,60 @@
+{
+  "workItem": "WI-OI-013",
+  "observedAt": "2026-09-11T06:12:00Z",
+  "environment": "local-uat",
+  "applicationUrl": "http://localhost:5180",
+  "persona": "persisted PLATFORM_OWNER with an active selected tenant",
+  "result": "passed",
+  "scope": "suite-to-standalone AR local UAT bridge",
+  "dataProvenance": "visibly attributable local UAT records created through authenticated suite APIs",
+  "database": "PostgreSQL through the standalone Accounts Receivable API",
+  "outcomes": {
+    "authenticatedArPage": 200,
+    "unconfiguredTenantDetection": 409,
+    "tenantSetup": 201,
+    "customerCreation": 201,
+    "invoiceDraftCreation": 201,
+    "invoiceIssuance": 201,
+    "persistedCustomerReadBack": 200,
+    "persistedIssuedInvoiceReadBack": 200,
+    "idempotentSetupReplay": 200,
+    "browserLoginAndInvoiceScreen": "passed"
+  },
+  "persistedEvidence": {
+    "customerId": "b2ff4a9e-b1c2-412a-b549-a2cac8f9036a",
+    "invoiceId": "a1129c9a-6e01-4314-832d-3be8e9c3595f",
+    "invoiceNumber": "UAT-000001",
+    "status": "ISSUED",
+    "currency": "USD",
+    "subtotalMinor": 2500,
+    "totalMinor": 2500,
+    "amountDueMinor": 2500,
+    "version": 2
+  },
+  "boundaryEvidence": {
+    "canonicalTenantBinding": "deterministic UUID binding derived server-side from the verified selected tenant",
+    "browserTenantInputAccepted": false,
+    "browserPermissionInputAccepted": false,
+    "writeOriginProtection": "exact public protocol and host",
+    "upstreamRouteAllowlist": true,
+    "upstreamTimeoutMilliseconds": 15000,
+    "redirectsRejected": true,
+    "idempotencyForwarded": true,
+    "optimisticConcurrencyForwarded": true
+  },
+  "automatedVerification": {
+    "focusedTests": 299,
+    "typecheck": "passed",
+    "optimizedNextBuildRoutes": 114,
+    "headlessBrowserErrors": 0,
+    "screenshot": "accounts-receivable-actionable.png"
+  },
+  "scopeLimits": [
+    "The bridge uses the standalone AR development OIDC issuer and is restricted to a configured loopback AR origin for local UAT.",
+    "Local suite access is restricted to persisted PLATFORM_OWNER or PLATFORM_ADMIN sessions with the required tenant permission.",
+    "Customer creation, draft creation, draft editing through the API, listing, calculation and immutable issuance are implemented.",
+    "Payment allocation, credit notes, void/rebilling, delivery, supplemental invoices, aging/reconciliation and production identity federation remain unavailable.",
+    "Spend, tax, currency and recovery remain contained and were not made actionable by this result.",
+    "This result is local implementation evidence, not finance, security, product or production-release approval."
+  ]
+}

@@ -1,0 +1,20 @@
+{"checks":6,"passed":false}
+node:internal/modules/run_main:104
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: GET /settings status (response body intentionally not logged)
+
+200 !== 403
+
+    at request (file:///Users/rayapudi/dev/gigalibs/docs/audits/2026-09-09-readiness/evidence/iam/verify-auth-persistence.mjs:31:10)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async file:///Users/rayapudi/dev/gigalibs/docs/audits/2026-09-09-readiness/evidence/iam/verify-auth-persistence.mjs:84:3 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: 200,
+  expected: 403,
+  operator: 'strictEqual'
+}
+
+Node.js v23.11.0

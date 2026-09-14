@@ -1,0 +1,21 @@
+{
+  "recordedAt": "2026-09-12T11:52:46.642Z",
+  "environment": "local-uat",
+  "database": "PostgreSQL 16",
+  "activeCertificationRecordsRetained": false,
+  "appendOnlyAuditEvidenceRetained": true,
+  "rawCredentialsPersistedInEvidence": false,
+  "providerSuccessSimulated": false,
+  "outcomes": [
+    "tenant-created-atomically-with-trial-owner-entitlements-and-requests",
+    "tenant-owner-selected-active-trial",
+    "trial-extension-persisted-and-audited",
+    "entitlements-allowlisted-and-contained-module-rejected-without-write",
+    "isolation-remained-requested-without-fabricated-provider-success",
+    "tenant-suspension-revoked-active-tenant-sessions",
+    "explicit-reactivation-restored-new-login-without-restoring-old-session",
+    "cancellation-revoked-sessions-and-required-separate-restoration",
+    "lifecycle-decisions-retained-as-redacted-audit-evidence"
+  ],
+  "outcomeCount": 9
+}

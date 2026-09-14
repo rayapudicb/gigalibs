@@ -1,0 +1,89 @@
+Prisma schema loaded from schema.prisma
+Datasource "db": PostgreSQL database "gigalibs_export_cert_1c637d8489df", schema "public" at "127.0.0.1:60335"
+
+25 migrations found in prisma/migrations
+
+Applying migration `20260830000000_initial_control_plane`
+Applying migration `20260901000000_workflow_runtime_baseline`
+Applying migration `20260902000000_workflow_versions`
+Applying migration `20260902010000_execution_audit_ingest`
+Applying migration `20260902020000_operational_intelligence_core`
+Applying migration `20260902030000_legacy_module_baseline`
+Applying migration `20260903000000_ap_outcome_core`
+Applying migration `20260903001000_ap_out_of_order_reconciliation`
+Applying migration `20260903002000_ap_active_policy_guard`
+Applying migration `20260903003000_ap_action_integrity`
+Applying migration `20260903004000_ap_line_trigger_fix`
+Applying migration `20260903005000_exception_and_value_ledger`
+Applying migration `20260903006000_exception_recovery_replay_link`
+Applying migration `20260903007000_outcome_classification_snapshot`
+Applying migration `20260903008000_exception_history_cardinality`
+Applying migration `20260903009000_connector_interfaces_and_file_imports`
+Applying migration `20260903010000_retention_enforcement`
+Applying migration `20260903011000_remove_payment_provider_default`
+Applying migration `20260909000000_iam_timestamptz`
+Applying migration `20260909001000_custom_role_assignment`
+Applying migration `20260909002000_totp_mfa_enforcement`
+Applying migration `20260909003000_tenant_domain_verification`
+Applying migration `20260909004000_mfa_recovery_codes`
+Applying migration `20260909005000_tenant_oidc`
+Applying migration `20260910000000_tenant_data_exports`
+
+The following migration(s) have been applied:
+
+migrations/
+  └─ 20260830000000_initial_control_plane/
+    └─ migration.sql
+  └─ 20260901000000_workflow_runtime_baseline/
+    └─ migration.sql
+  └─ 20260902000000_workflow_versions/
+    └─ migration.sql
+  └─ 20260902010000_execution_audit_ingest/
+    └─ migration.sql
+  └─ 20260902020000_operational_intelligence_core/
+    └─ migration.sql
+  └─ 20260902030000_legacy_module_baseline/
+    └─ migration.sql
+  └─ 20260903000000_ap_outcome_core/
+    └─ migration.sql
+  └─ 20260903001000_ap_out_of_order_reconciliation/
+    └─ migration.sql
+  └─ 20260903002000_ap_active_policy_guard/
+    └─ migration.sql
+  └─ 20260903003000_ap_action_integrity/
+    └─ migration.sql
+  └─ 20260903004000_ap_line_trigger_fix/
+    └─ migration.sql
+  └─ 20260903005000_exception_and_value_ledger/
+    └─ migration.sql
+  └─ 20260903006000_exception_recovery_replay_link/
+    └─ migration.sql
+  └─ 20260903007000_outcome_classification_snapshot/
+    └─ migration.sql
+  └─ 20260903008000_exception_history_cardinality/
+    └─ migration.sql
+  └─ 20260903009000_connector_interfaces_and_file_imports/
+    └─ migration.sql
+  └─ 20260903010000_retention_enforcement/
+    └─ migration.sql
+  └─ 20260903011000_remove_payment_provider_default/
+    └─ migration.sql
+  └─ 20260909000000_iam_timestamptz/
+    └─ migration.sql
+  └─ 20260909001000_custom_role_assignment/
+    └─ migration.sql
+  └─ 20260909002000_totp_mfa_enforcement/
+    └─ migration.sql
+  └─ 20260909003000_tenant_domain_verification/
+    └─ migration.sql
+  └─ 20260909004000_mfa_recovery_codes/
+    └─ migration.sql
+  └─ 20260909005000_tenant_oidc/
+    └─ migration.sql
+  └─ 20260910000000_tenant_data_exports/
+    └─ migration.sql
+      
+All migrations have been successfully applied.
+Loaded Prisma config from prisma.config.ts.
+
+Prisma config detected, skipping environment variable loading.

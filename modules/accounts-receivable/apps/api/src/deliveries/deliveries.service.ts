@@ -26,7 +26,7 @@ import { ArConflictError } from '../http/problem.filter.js';
 // Mailhog / Mailpit (no auth required).
 
 function buildTransporter(): Transporter {
-  const host = process.env['SMTP_HOST'];
+  const host = process.env['SMTP_HOST'] || (process.env.NODE_ENV !== 'production' ? '127.0.0.1' : undefined);
   if (!host) {
     throw new Error('SMTP_HOST environment variable must be configured for email deliveries');
   }

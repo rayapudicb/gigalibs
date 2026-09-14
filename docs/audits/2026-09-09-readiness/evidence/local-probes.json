@@ -1,0 +1,69 @@
+{
+  "observed_at_utc": "2026-09-09T02:33:52.179771+00:00",
+  "base_url": "http://127.0.0.1:5180",
+  "results": [
+    {
+      "label": "unauthenticated-invoices",
+      "path": "/api/ar/v1/invoices",
+      "status": 200,
+      "authenticated_request": false,
+      "response_keys": [
+        "items",
+        "total"
+      ],
+      "selected_response": {},
+      "item_count": 4,
+      "session_cookie_count": 0
+    },
+    {
+      "label": "invalid-login",
+      "path": "/api/auth/login",
+      "status": 200,
+      "authenticated_request": false,
+      "response_keys": [
+        "authenticated",
+        "requiresTenantSelection",
+        "role"
+      ],
+      "selected_response": {
+        "authenticated": true,
+        "role": "SUPER_ADMIN",
+        "requiresTenantSelection": false
+      },
+      "session_cookie_count": 6,
+      "issued_token_role": "SUPER_ADMIN",
+      "issued_token_has_tenant": true
+    },
+    {
+      "label": "fabricated-action",
+      "path": "/api/analytics/action",
+      "status": 200,
+      "authenticated_request": false,
+      "response_keys": [
+        "actionType",
+        "auditDigest",
+        "entityCode",
+        "executedAt",
+        "impactMetrics",
+        "message",
+        "status",
+        "success",
+        "tenantId",
+        "transactionId"
+      ],
+      "selected_response": {
+        "status": "EXECUTED",
+        "success": true
+      },
+      "impactMetrics": {
+        "heldAmountUsd": 45000000,
+        "vendorNotified": true,
+        "erpLedgerStatus": "PAYMENT_BLOCKED_IN_ESCROW",
+        "legalNoticeGenerated": true
+      },
+      "audit_digest_present": true,
+      "session_cookie_count": 0
+    }
+  ],
+  "scope": "Local HTTP probes only. No browser UAT, provider execution, or database persistence certification."
+}

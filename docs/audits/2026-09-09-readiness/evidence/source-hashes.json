@@ -1,0 +1,20 @@
+{
+  "head": "f874df4397ae0f3d6e8db961b307d6d046602e07",
+  "qualification": "Hashes of selected current working-tree files, not an immutable whole-release artifact.",
+  "sha256": {
+    "apps/workflow-platform/app/api/auth/login/route.ts": "cd9b115b73aa27cf377ee57514203334a89340661ad6e2b519a46223b4437176",
+    "apps/workflow-platform/app/api/analytics/action/route.ts": "d0a66300c166db8d1aacd9be50e3bb9692a06dae135d59516d47ebd7efd0630b",
+    "apps/workflow-platform/app/api/ar/[...path]/route.ts": "da99c164f61d87d2653d194f95663c29051ee651b01467b660703eb6363c4c3b",
+    "apps/workflow-platform/lib/ar-ledger-store.ts": "ad180131ae072d29adba42968a94a0bcf0d2aa353dc4e3211dc4016987b9cf41",
+    "apps/workflow-platform/app/(app)/ar/page.tsx": "264fab533891a0493f1c911f832f48504a16b3a6bb9aed86ec93fb9bc50cab7b",
+    "modules/workflow-studio/apps/api/src/execution/execution.service.ts": "67471f2bde69a49268d0c2334a3c4a91bfb882da7b204a7a1b80c7795337ddc0",
+    "modules/autonomous-recovery-studio/apps/api/src/scanner/scanner.service.ts": "cb261d005342b9393e5d4c3157537dc45836f801d376e77fc60ea690a1712368",
+    "modules/platform-rbac/apps/api/src/rbac/rbac.service.ts": "56338fc29e00f5b5f7fd71b53d07c1e369450c1ec699c33654ef04a250c5001b",
+    "scripts/verify-runtime-data-integrity.mjs": "586de83984e479c9dada2ee0734d132ce704c77fdf7495153c38c527bf73baf4",
+    "scripts/verify-package-dependencies.mjs": "7e82658a7f3b398673baa789b5fc391fad215676c15e90b7d7f0d564a13ad862",
+    "vitest.config.ts": "b58c6d64338e32360af60bde6b11ec5ce49f1e75cab5147029b5baac9e1a52df",
+    "pnpm-lock.yaml": "b0b1913f277c51d75fbc30ba58278bf99ed24cf1eba781c83c105ca89fb55da2",
+    "pnpm-workspace.yaml": "677f60f61d7e5de6607be1812a1d3b92dedde192bc29f79c2de38bf337ea0838",
+    "packages/rbac-core/src/rbac.test.ts": "53fa9314323c2a55a22ec33e5c4aecfe75aa04137b4fe5ca79d0a96498f366ab"
+  }
+}

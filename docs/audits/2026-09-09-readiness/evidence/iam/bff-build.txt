@@ -1,0 +1,164 @@
+   ▲ Next.js 15.5.24
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully in 33.0s
+   Linting and checking validity of types ...
+   Collecting page data ...
+   Generating static pages (0/113) ...
+   Generating static pages (28/113) 
+   Generating static pages (56/113) 
+   Generating static pages (84/113) 
+ ✓ Generating static pages (113/113)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                     Size  First Load JS
+┌ ○ /                                          317 B         103 kB
+├ ○ /_not-found                                998 B         104 kB
+├ ƒ /actions                                  3.9 kB         122 kB
+├ ƒ /admin/metering                            253 B         106 kB
+├ ƒ /analytics                               27.8 kB         144 kB
+├ ƒ /ap                                      4.71 kB         123 kB
+├ ƒ /api/admin/metering                        317 B         103 kB
+├ ƒ /api/analytics/[...path]                   317 B         103 kB
+├ ƒ /api/ar/[...path]                          317 B         103 kB
+├ ƒ /api/auth/change-password                  317 B         103 kB
+├ ƒ /api/auth/context                          317 B         103 kB
+├ ƒ /api/auth/login                            317 B         103 kB
+├ ƒ /api/auth/logout                           317 B         103 kB
+├ ƒ /api/auth/mfa/recovery/generate            317 B         103 kB
+├ ƒ /api/auth/mfa/recovery/verify              317 B         103 kB
+├ ƒ /api/auth/mfa/totp/enroll                  317 B         103 kB
+├ ƒ /api/auth/mfa/totp/verify                  317 B         103 kB
+├ ƒ /api/auth/oidc/callback                    317 B         103 kB
+├ ƒ /api/auth/oidc/start                       317 B         103 kB
+├ ƒ /api/auth/profile                          317 B         103 kB
+├ ƒ /api/auth/refresh                          317 B         103 kB
+├ ƒ /api/auth/register                         317 B         103 kB
+├ ƒ /api/auth/reset-password                   317 B         103 kB
+├ ƒ /api/auth/select-tenant                    317 B         103 kB
+├ ƒ /api/auth/tenants                          317 B         103 kB
+├ ƒ /api/cmms/[...path]                        317 B         103 kB
+├ ƒ /api/connectors-hub/[...path]              317 B         103 kB
+├ ƒ /api/connectors/live-sync                  317 B         103 kB
+├ ƒ /api/connectors/sam-gov/sync               317 B         103 kB
+├ ƒ /api/connectors/sam-gov/test               317 B         103 kB
+├ ƒ /api/control/[...path]                     317 B         103 kB
+├ ƒ /api/currency/[...path]                    317 B         103 kB
+├ ƒ /api/data-studio/[...path]                 317 B         103 kB
+├ ƒ /api/esign/[...path]                       317 B         103 kB
+├ ƒ /api/event-fabric/queue                    317 B         103 kB
+├ ƒ /api/event-fabric/replay                   317 B         103 kB
+├ ƒ /api/oauth/authorize                       317 B         103 kB
+├ ƒ /api/oauth/callback                        317 B         103 kB
+├ ƒ /api/oauth/heartbeat                       317 B         103 kB
+├ ƒ /api/oauth/providers                       317 B         103 kB
+├ ƒ /api/ontology                              317 B         103 kB
+├ ƒ /api/ootb/evaluations                      317 B         103 kB
+├ ƒ /api/ootb/override                         317 B         103 kB
+├ ƒ /api/ootb/rules                            317 B         103 kB
+├ ƒ /api/operational-intelligence/[...path]    317 B         103 kB
+├ ƒ /api/platform-admin/tenants/infra          317 B         103 kB
+├ ƒ /api/platform-admin/tenants/infra/test     317 B         103 kB
+├ ƒ /api/platform/[...path]                    317 B         103 kB
+├ ƒ /api/recovery/[...path]                    317 B         103 kB
+├ ƒ /api/rules/[...path]                       317 B         103 kB
+├ ƒ /api/rules/kernel/evaluate                 317 B         103 kB
+├ ƒ /api/rules/kernel/introspect               317 B         103 kB
+├ ƒ /api/rules/kernel/rules                    317 B         103 kB
+├ ƒ /api/rules/kernel/rules/[ruleId]           317 B         103 kB
+├ ƒ /api/rules/kernel/simulate                 317 B         103 kB
+├ ƒ /api/runs                                  317 B         103 kB
+├ ƒ /api/runs/[runId]                          317 B         103 kB
+├ ƒ /api/runs/[runId]/cancel                   317 B         103 kB
+├ ƒ /api/saga                                  317 B         103 kB
+├ ƒ /api/solutions/activate                    317 B         103 kB
+├ ƒ /api/solutions/execute                     317 B         103 kB
+├ ƒ /api/solutions/packs                       317 B         103 kB
+├ ƒ /api/spend/[...path]                       317 B         103 kB
+├ ƒ /api/tax/[...path]                         317 B         103 kB
+├ ƒ /api/tenant-rbac/[...path]                 317 B         103 kB
+├ ƒ /api/workflow-studio/[...path]             317 B         103 kB
+├ ƒ /api/workflows                             317 B         103 kB
+├ ƒ /api/workflows/[workflowId]                317 B         103 kB
+├ ƒ /api/workflows/[workflowId]/draft          317 B         103 kB
+├ ƒ /api/workflows/[workflowId]/publish        317 B         103 kB
+├ ƒ /ar                                      4.67 kB         107 kB
+├ ƒ /ar/aging                                  253 B         106 kB
+├ ƒ /ar/customers                              317 B         103 kB
+├ ƒ /ar/invoices                               317 B         103 kB
+├ ƒ /ar/invoices/[invoiceId]                   253 B         106 kB
+├ ƒ /ar/invoices/new                           317 B         103 kB
+├ ƒ /cmms                                      253 B         106 kB
+├ ƒ /cmms/assets                               253 B         106 kB
+├ ƒ /cmms/calendar                             253 B         106 kB
+├ ƒ /cmms/floor                                253 B         106 kB
+├ ƒ /cmms/inventory                            253 B         106 kB
+├ ƒ /cmms/meters                               253 B         106 kB
+├ ƒ /cmms/people                               253 B         106 kB
+├ ƒ /cmms/purchase-orders                      253 B         106 kB
+├ ƒ /cmms/requests                             253 B         106 kB
+├ ƒ /cmms/requests/portal                      253 B         106 kB
+├ ƒ /cmms/schedules                            253 B         106 kB
+├ ƒ /cmms/vendors                              253 B         106 kB
+├ ƒ /cmms/work-orders                          253 B         106 kB
+├ ƒ /cmms/workload                             253 B         106 kB
+├ ƒ /connections                              6.4 kB         128 kB
+├ ƒ /connections/[connectionId]              5.89 kB         122 kB
+├ ƒ /connections/credentials                 7.01 kB         123 kB
+├ ƒ /connections/environments/new            2.63 kB         122 kB
+├ ƒ /connections/new                          4.2 kB         123 kB
+├ ƒ /connections/oauth-studio                  253 B         106 kB
+├ ƒ /currency                                5.13 kB         108 kB
+├ ƒ /dashboard                                 317 B         103 kB
+├ ƒ /data-contracts                          12.7 kB         132 kB
+├ ƒ /esign                                   9.99 kB         122 kB
+├ ƒ /exceptions                              5.77 kB         121 kB
+├ ƒ /login                                   2.52 kB         109 kB
+├ ƒ /maps                                      253 B         106 kB
+├ ƒ /marketplace                               253 B         106 kB
+├ ○ /mfa                                     5.02 kB         117 kB
+├ ƒ /modules                                   253 B         106 kB
+├ ƒ /ontology                                  253 B         106 kB
+├ ƒ /opportunities                           4.62 kB         120 kB
+├ ƒ /platform-admin                          4.89 kB         108 kB
+├ ƒ /platform-admin/dlq                        253 B         106 kB
+├ ƒ /platform-admin/infra                      253 B         106 kB
+├ ƒ /platform-admin/users                    4.06 kB         107 kB
+├ ƒ /recovery                                 8.5 kB         125 kB
+├ ○ /register                                2.52 kB         109 kB
+├ ƒ /reports                                 10.4 kB         136 kB
+├ ƒ /reset-password                           1.4 kB         107 kB
+├ ƒ /rules                                     253 B         106 kB
+├ ƒ /rules/studio                              253 B         106 kB
+├ ƒ /runs                                     5.5 kB         121 kB
+├ ƒ /runs/[runId]                            4.34 kB         120 kB
+├ ƒ /saga                                      253 B         106 kB
+├ ƒ /scanner                                   253 B         106 kB
+├ ○ /select-tenant                           3.93 kB         107 kB
+├ ƒ /settings                                11.5 kB         114 kB
+├ ƒ /settings/profile                        7.79 kB         114 kB
+├ ƒ /solutions                                 253 B         106 kB
+├ ƒ /solutions/day-one                         253 B         106 kB
+├ ƒ /spend                                   4.12 kB         107 kB
+├ ƒ /tax                                     4.99 kB         108 kB
+├ ƒ /tax/audit                                 317 B         103 kB
+├ ƒ /tax/exemptions                            317 B         103 kB
+├ ƒ /tax/monitor                               317 B         103 kB
+├ ƒ /tax/rates                                 317 B         103 kB
+├ ƒ /value                                   6.76 kB         125 kB
+├ ƒ /workflows                               8.86 kB         131 kB
+├ ƒ /workflows/[wfId]/canvas                   62 kB         181 kB
+└ ƒ /workflows/new                           3.56 kB         123 kB
++ First Load JS shared by all                 103 kB
+  ├ chunks/379f4093-0cb6420ca2dc6cae.js      54.2 kB
+  ├ chunks/9985-3a9e28b8b1f972d2.js          46.4 kB
+  └ other shared chunks (total)              2.03 kB
+
+
+ƒ Middleware                                 33.9 kB
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
+$ next build

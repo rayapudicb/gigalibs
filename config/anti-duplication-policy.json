@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "policyName": "GigaLibs Architectural Anti-Duplication & Enhancement Policy",
+  "version": "1.0.0",
+  "rules": {
+    "DBC_01_DISCOVERY_BEFORE_CREATION": {
+      "enabled": true,
+      "severity": "BLOCKING",
+      "description": "Requires searching existing modules before generating parallel routes or components."
+    },
+    "SCN_02_SINGLE_COHESIVE_NAVIGATION": {
+      "enabled": true,
+      "severity": "BLOCKING",
+      "description": "Prohibits rendering duplicate stacked navigation rows that repeat domain entities."
+    },
+    "SAD_03_SINGLE_AUTHORITATIVE_STORE": {
+      "enabled": true,
+      "severity": "BLOCKING",
+      "description": "Prohibits duplicate in-page domain mock declarations; mandates shared canonical stores."
+    },
+    "CRL_04_BIDIRECTIONAL_NAVIGATION": {
+      "enabled": true,
+      "severity": "BLOCKING",
+      "description": "Requires all sub-routes to maintain bidirectional linkage to the primary studio."
+    }
+  },
+  "protectedDomains": [
+    "accounts-receivable",
+    "accounts-payable",
+    "tax-configuration",
+    "spend-management",
+    "rule-governance"
+  ]
+}

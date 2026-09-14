@@ -1,0 +1,13 @@
+{
+  "source": "Isolated real PostgreSQL, NestJS, Next.js and signed OIDC provider",
+  "checks": [
+    "Tenant OIDC configuration is permission-protected, live-discovered and stores only an authenticated client-secret envelope",
+    "Authorization Code plus PKCE validates signed ID-token claims, consumes hashed state once, links an existing member and creates real session cookies",
+    "Authenticated self-service disconnect requires the current local password, retains the binding lifecycle and revokes other sessions",
+    "Explicit account linking persists a distinct expiring intent, revalidates the signed provider proof and can reactivate only the same user binding",
+    "OIDC callback replay is rejected after the database transaction is consumed",
+    "JIT provisions a real user and tenant membership only at the configured low-privilege role for the exact verified domain",
+    "JIT rejects a verified provider email outside the tenant DNS trust boundary and persists no user"
+  ],
+  "passed": true
+}

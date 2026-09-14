@@ -1,0 +1,57 @@
+{
+  "observedAt": "2026-09-10T12:55:00+05:30",
+  "baseUrl": "http://127.0.0.1:5180",
+  "tenant": "my-workspace",
+  "testDataClassification": "LOCAL_UAT",
+  "personas": {
+    "tenantAdmin": {
+      "email": "uat.tenant-admin.20260910a@gigalibs.io",
+      "landingPath": "/modules",
+      "effectivePermissionCount": 18,
+      "enabledCards": 7,
+      "platformRegistryStatus": 403
+    },
+    "manager": {
+      "email": "uat.manager.20260910a@gigalibs.io",
+      "landingPath": "/modules",
+      "effectivePermissionCount": 26,
+      "enabledCards": 6,
+      "platformRegistryStatus": 403
+    },
+    "member": {
+      "email": "uat.member.20260910a@gigalibs.io",
+      "landingPath": "/modules",
+      "effectivePermissionCount": 6,
+      "enabledCards": 1,
+      "privilegedModuleStatus": 403,
+      "platformRegistryStatus": 403
+    },
+    "viewer": {
+      "email": "uat.viewer.20260910a@gigalibs.io",
+      "landingPath": "/modules",
+      "effectivePermissionCount": 3,
+      "enabledCards": 1,
+      "privilegedModuleStatus": 403,
+      "platformRegistryStatus": 403
+    },
+    "suspendedMember": {
+      "email": "uat.suspended.20260910a@gigalibs.io",
+      "landingPath": "/select-tenant",
+      "tenantSelectionStatus": 403
+    },
+    "independentRegistrant": {
+      "email": "uat.independent.20260910a@gigalibs.io",
+      "landingPath": "/modules",
+      "tenant": "uat-independent-20260910a",
+      "tenantStatus": "TRIAL",
+      "trialEndsAt": "2026-09-17T07:17:46.095Z",
+      "enabledCards": 7
+    }
+  },
+  "results": [
+    "Registration, invitation, acceptance and tenant selection used canonical HTTP APIs and PostgreSQL records.",
+    "Base-role permissions returned by session context match the database-backed RBAC guard.",
+    "Every persona received the expected navigation and 200/403 boundary without a browser page error or 5xx response.",
+    "No business, financial or value records were created."
+  ]
+}

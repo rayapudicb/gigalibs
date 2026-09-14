@@ -1,0 +1,1439 @@
+{
+  "kind": "real Next.js HTTP negative verification",
+  "base": "http://127.0.0.1:5199",
+  "controlPlane": "deliberately unconfigured",
+  "businessWritesAttempted": false,
+  "databaseVerification": "not performed",
+  "scope": "denial and unavailability only; no DB E2E certification",
+  "passed": true,
+  "checks": [
+    {
+      "path": "/api/auth/login",
+      "method": "POST",
+      "status": 503,
+      "expected": [
+        503
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/auth/register",
+      "method": "POST",
+      "status": 503,
+      "expected": [
+        503
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/auth/login",
+      "method": "POST",
+      "status": 400,
+      "expected": [
+        400
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/auth/register",
+      "method": "POST",
+      "status": 400,
+      "expected": [
+        400
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/auth/login",
+      "method": "POST",
+      "status": 413,
+      "expected": [
+        413
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/admin/metering",
+      "method": "GET",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/admin/metering",
+      "method": "HEAD",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false
+    },
+    {
+      "path": "/api/analytics/action",
+      "method": "POST",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/ar/IAM-NONEXISTENT",
+      "method": "GET",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/ar/IAM-NONEXISTENT",
+      "method": "POST",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/ar/IAM-NONEXISTENT",
+      "method": "PATCH",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/ar/IAM-NONEXISTENT",
+      "method": "DELETE",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/ar/IAM-NONEXISTENT",
+      "method": "HEAD",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false
+    },
+    {
+      "path": "/api/cmms/IAM-NONEXISTENT",
+      "method": "GET",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/cmms/IAM-NONEXISTENT",
+      "method": "POST",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/cmms/IAM-NONEXISTENT",
+      "method": "PATCH",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/cmms/IAM-NONEXISTENT",
+      "method": "DELETE",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/cmms/IAM-NONEXISTENT",
+      "method": "HEAD",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false
+    },
+    {
+      "path": "/api/connectors/live-sync",
+      "method": "GET",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/connectors/live-sync",
+      "method": "POST",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/connectors/live-sync",
+      "method": "HEAD",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false
+    },
+    {
+      "path": "/api/connectors/sam-gov/sync",
+      "method": "POST",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/connectors/sam-gov/sync",
+      "method": "GET",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/connectors/sam-gov/sync",
+      "method": "HEAD",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false
+    },
+    {
+      "path": "/api/connectors/sam-gov/test",
+      "method": "POST",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/connectors-hub/IAM-NONEXISTENT",
+      "method": "GET",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/connectors-hub/IAM-NONEXISTENT",
+      "method": "POST",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/connectors-hub/IAM-NONEXISTENT",
+      "method": "PUT",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/connectors-hub/IAM-NONEXISTENT",
+      "method": "PATCH",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/connectors-hub/IAM-NONEXISTENT",
+      "method": "DELETE",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/connectors-hub/IAM-NONEXISTENT",
+      "method": "HEAD",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false
+    },
+    {
+      "path": "/api/currency/IAM-NONEXISTENT",
+      "method": "GET",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/currency/IAM-NONEXISTENT",
+      "method": "POST",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/currency/IAM-NONEXISTENT",
+      "method": "PUT",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/currency/IAM-NONEXISTENT",
+      "method": "PATCH",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/currency/IAM-NONEXISTENT",
+      "method": "DELETE",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/currency/IAM-NONEXISTENT",
+      "method": "HEAD",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false
+    },
+    {
+      "path": "/api/data-studio/IAM-NONEXISTENT",
+      "method": "GET",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/data-studio/IAM-NONEXISTENT",
+      "method": "POST",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/data-studio/IAM-NONEXISTENT",
+      "method": "PUT",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/data-studio/IAM-NONEXISTENT",
+      "method": "PATCH",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/data-studio/IAM-NONEXISTENT",
+      "method": "DELETE",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/data-studio/IAM-NONEXISTENT",
+      "method": "HEAD",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false
+    },
+    {
+      "path": "/api/event-fabric/queue",
+      "method": "GET",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/event-fabric/queue",
+      "method": "POST",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/event-fabric/queue",
+      "method": "HEAD",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false
+    },
+    {
+      "path": "/api/event-fabric/replay",
+      "method": "POST",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/oauth/authorize",
+      "method": "POST",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/oauth/callback",
+      "method": "POST",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/oauth/heartbeat",
+      "method": "POST",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/oauth/providers",
+      "method": "GET",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/oauth/providers",
+      "method": "HEAD",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false
+    },
+    {
+      "path": "/api/ontology",
+      "method": "GET",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/ontology",
+      "method": "HEAD",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false
+    },
+    {
+      "path": "/api/ootb/evaluations",
+      "method": "GET",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/ootb/evaluations",
+      "method": "POST",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/ootb/evaluations",
+      "method": "HEAD",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false
+    },
+    {
+      "path": "/api/ootb/override",
+      "method": "POST",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/ootb/rules",
+      "method": "GET",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/ootb/rules",
+      "method": "POST",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/ootb/rules",
+      "method": "HEAD",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false
+    },
+    {
+      "path": "/api/platform/IAM-NONEXISTENT",
+      "method": "GET",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/platform/IAM-NONEXISTENT",
+      "method": "POST",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/platform/IAM-NONEXISTENT",
+      "method": "PUT",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/platform/IAM-NONEXISTENT",
+      "method": "PATCH",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/platform/IAM-NONEXISTENT",
+      "method": "DELETE",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/platform/IAM-NONEXISTENT",
+      "method": "HEAD",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false
+    },
+    {
+      "path": "/api/platform-admin/tenants/infra",
+      "method": "GET",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/platform-admin/tenants/infra",
+      "method": "POST",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/platform-admin/tenants/infra",
+      "method": "HEAD",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false
+    },
+    {
+      "path": "/api/platform-admin/tenants/infra/test",
+      "method": "POST",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/recovery/IAM-NONEXISTENT",
+      "method": "GET",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/recovery/IAM-NONEXISTENT",
+      "method": "POST",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/recovery/IAM-NONEXISTENT",
+      "method": "PUT",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/recovery/IAM-NONEXISTENT",
+      "method": "PATCH",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/recovery/IAM-NONEXISTENT",
+      "method": "DELETE",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/recovery/IAM-NONEXISTENT",
+      "method": "HEAD",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false
+    },
+    {
+      "path": "/api/rules/IAM-NONEXISTENT",
+      "method": "GET",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/rules/IAM-NONEXISTENT",
+      "method": "POST",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/rules/IAM-NONEXISTENT",
+      "method": "PUT",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/rules/IAM-NONEXISTENT",
+      "method": "PATCH",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/rules/IAM-NONEXISTENT",
+      "method": "DELETE",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/rules/IAM-NONEXISTENT",
+      "method": "HEAD",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false
+    },
+    {
+      "path": "/api/rules/kernel/evaluate",
+      "method": "POST",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/rules/kernel/introspect",
+      "method": "POST",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/rules/kernel/rules/IAM-NONEXISTENT",
+      "method": "PATCH",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/rules/kernel/rules/IAM-NONEXISTENT",
+      "method": "DELETE",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/rules/kernel/rules",
+      "method": "GET",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/rules/kernel/rules",
+      "method": "POST",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/rules/kernel/rules",
+      "method": "HEAD",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false
+    },
+    {
+      "path": "/api/rules/kernel/simulate",
+      "method": "POST",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/saga",
+      "method": "GET",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/saga",
+      "method": "POST",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/saga",
+      "method": "HEAD",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false
+    },
+    {
+      "path": "/api/solutions/activate",
+      "method": "POST",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/solutions/execute",
+      "method": "POST",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/solutions/packs",
+      "method": "GET",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/solutions/packs",
+      "method": "HEAD",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false
+    },
+    {
+      "path": "/api/spend/IAM-NONEXISTENT",
+      "method": "GET",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/spend/IAM-NONEXISTENT",
+      "method": "POST",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/spend/IAM-NONEXISTENT",
+      "method": "PATCH",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/spend/IAM-NONEXISTENT",
+      "method": "DELETE",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/spend/IAM-NONEXISTENT",
+      "method": "HEAD",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false
+    },
+    {
+      "path": "/api/tax/IAM-NONEXISTENT",
+      "method": "GET",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/tax/IAM-NONEXISTENT",
+      "method": "POST",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/tax/IAM-NONEXISTENT",
+      "method": "PATCH",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/tax/IAM-NONEXISTENT",
+      "method": "DELETE",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/tax/IAM-NONEXISTENT",
+      "method": "HEAD",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false
+    },
+    {
+      "path": "/api/tenant-rbac/IAM-NONEXISTENT",
+      "method": "GET",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/tenant-rbac/IAM-NONEXISTENT",
+      "method": "POST",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/tenant-rbac/IAM-NONEXISTENT",
+      "method": "PUT",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/tenant-rbac/IAM-NONEXISTENT",
+      "method": "PATCH",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/tenant-rbac/IAM-NONEXISTENT",
+      "method": "DELETE",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/tenant-rbac/IAM-NONEXISTENT",
+      "method": "HEAD",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false
+    },
+    {
+      "path": "/api/workflow-studio/IAM-NONEXISTENT",
+      "method": "GET",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/workflow-studio/IAM-NONEXISTENT",
+      "method": "POST",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/workflow-studio/IAM-NONEXISTENT",
+      "method": "PUT",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/workflow-studio/IAM-NONEXISTENT",
+      "method": "PATCH",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/workflow-studio/IAM-NONEXISTENT",
+      "method": "DELETE",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/workflow-studio/IAM-NONEXISTENT",
+      "method": "HEAD",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false
+    },
+    {
+      "path": "/api/analytics/action",
+      "method": "POST",
+      "status": 503,
+      "expected": [
+        503
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/auth/context",
+      "method": "GET",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/control/ap/invoices",
+      "method": "GET",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/workflows",
+      "method": "GET",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/runs",
+      "method": "GET",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/api/operational-intelligence/environments",
+      "method": "GET",
+      "status": 401,
+      "expected": [
+        401
+      ],
+      "passed": true,
+      "setsAccessCookie": false,
+      "claimsSuccess": false
+    },
+    {
+      "path": "/dashboard",
+      "method": "GET",
+      "status": 307,
+      "expected": [
+        307,
+        303
+      ],
+      "passed": true,
+      "setsAccessCookie": false
+    },
+    {
+      "path": "/ar",
+      "method": "GET",
+      "status": 307,
+      "expected": [
+        307,
+        303
+      ],
+      "passed": true,
+      "setsAccessCookie": false
+    },
+    {
+      "path": "/ar/invoices/IAM-NONEXISTENT",
+      "method": "GET",
+      "status": 307,
+      "expected": [
+        307,
+        303
+      ],
+      "passed": true,
+      "setsAccessCookie": false
+    },
+    {
+      "path": "/cmms/requests/portal",
+      "method": "GET",
+      "status": 307,
+      "expected": [
+        307,
+        303
+      ],
+      "passed": true,
+      "setsAccessCookie": false
+    },
+    {
+      "path": "/tax",
+      "method": "GET",
+      "status": 307,
+      "expected": [
+        307,
+        303
+      ],
+      "passed": true,
+      "setsAccessCookie": false
+    },
+    {
+      "path": "/settings/profile",
+      "method": "GET",
+      "status": 307,
+      "expected": [
+        307,
+        303
+      ],
+      "passed": true,
+      "setsAccessCookie": false
+    }
+  ]
+}

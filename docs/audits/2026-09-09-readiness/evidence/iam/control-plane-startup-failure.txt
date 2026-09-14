@@ -1,0 +1,17 @@
+[12:13:30] [31mERROR[39m: [36mFailed to start Playground API[39m
+    err: {
+      "type": "Error",
+      "message": "TENANT_EXPORT_SIGNING_PRIVATE_KEY_BASE64 is not a valid PKCS8 key.",
+      "stack":
+          Error: TENANT_EXPORT_SIGNING_PRIVATE_KEY_BASE64 is not a valid PKCS8 key.
+              at getTenantExportSigningConfig (file:///Users/rayapudi/dev/gigalibs/apps/playground-api/dist/tenant-export-config.js:20:15)
+              at TenantDataExportWorker.onApplicationBootstrap (file:///Users/rayapudi/dev/gigalibs/apps/playground-api/dist/tenant-data-export.worker.js:33:24)
+              at MapIterator.iteratee (/Users/rayapudi/dev/gigalibs/node_modules/.pnpm/@nestjs+core@11.2.3_@nestjs+common@11.2.3_reflect-metadata@0.2.2_rxjs@7.8.2__@nestjs+pl_a42d12df96c0df509b28d1bb1d999a8c/node_modules/@nestjs/core/hooks/on-app-bootstrap.hook.js:22:43)
+              at MapIterator.next (/Users/rayapudi/dev/gigalibs/node_modules/.pnpm/iterare@1.2.1/node_modules/iterare/lib/map.js:13:39)
+              at IteratorWithOperators.next (/Users/rayapudi/dev/gigalibs/node_modules/.pnpm/iterare@1.2.1/node_modules/iterare/lib/iterate.js:21:28)
+              at Function.from (<anonymous>)
+              at IteratorWithOperators.toArray (/Users/rayapudi/dev/gigalibs/node_modules/.pnpm/iterare@1.2.1/node_modules/iterare/lib/iterate.js:180:22)
+              at callOperator (/Users/rayapudi/dev/gigalibs/node_modules/.pnpm/@nestjs+core@11.2.3_@nestjs+common@11.2.3_reflect-metadata@0.2.2_rxjs@7.8.2__@nestjs+pl_a42d12df96c0df509b28d1bb1d999a8c/node_modules/@nestjs/core/hooks/on-app-bootstrap.hook.js:23:10)
+              at callModuleBootstrapHook (/Users/rayapudi/dev/gigalibs/node_modules/.pnpm/@nestjs+core@11.2.3_@nestjs+common@11.2.3_reflect-metadata@0.2.2_rxjs@7.8.2__@nestjs+pl_a42d12df96c0df509b28d1bb1d999a8c/node_modules/@nestjs/core/hooks/on-app-bootstrap.hook.js:43:23)
+              at NestApplication.callBootstrapHook (/Users/rayapudi/dev/gigalibs/node_modules/.pnpm/@nestjs+core@11.2.3_@nestjs+common@11.2.3_reflect-metadata@0.2.2_rxjs@7.8.2__@nestjs+pl_a42d12df96c0df509b28d1bb1d999a8c/node_modules/@nestjs/core/nest-application-context.js:267:55)
+    }

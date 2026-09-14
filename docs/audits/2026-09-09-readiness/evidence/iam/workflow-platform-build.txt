@@ -1,0 +1,155 @@
+   ▲ Next.js 15.5.24
+   - Environments: .env.local
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully in 7.2s
+   Linting and checking validity of types ...
+   Collecting page data ...
+   Generating static pages (0/106) ...
+   Generating static pages (26/106) 
+   Generating static pages (52/106) 
+   Generating static pages (79/106) 
+ ✓ Generating static pages (106/106)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                     Size  First Load JS
+┌ ○ /                                          286 B         103 kB
+├ ○ /_not-found                                998 B         104 kB
+├ ƒ /actions                                 3.33 kB         122 kB
+├ ƒ /admin/metering                            287 B         106 kB
+├ ƒ /analytics                                 287 B         106 kB
+├ ƒ /ap                                       4.5 kB         123 kB
+├ ƒ /api/admin/metering                        286 B         103 kB
+├ ƒ /api/analytics/action                      286 B         103 kB
+├ ƒ /api/ar/[...path]                          286 B         103 kB
+├ ƒ /api/auth/context                          286 B         103 kB
+├ ƒ /api/auth/login                            286 B         103 kB
+├ ƒ /api/auth/logout                           286 B         103 kB
+├ ƒ /api/auth/mfa/recovery/generate            286 B         103 kB
+├ ƒ /api/auth/mfa/recovery/verify              286 B         103 kB
+├ ƒ /api/auth/mfa/totp/enroll                  286 B         103 kB
+├ ƒ /api/auth/mfa/totp/verify                  286 B         103 kB
+├ ƒ /api/auth/refresh                          286 B         103 kB
+├ ƒ /api/auth/register                         286 B         103 kB
+├ ƒ /api/auth/select-tenant                    286 B         103 kB
+├ ƒ /api/auth/tenants                          286 B         103 kB
+├ ƒ /api/cmms/[...path]                        286 B         103 kB
+├ ƒ /api/connectors-hub/[...path]              286 B         103 kB
+├ ƒ /api/connectors/live-sync                  286 B         103 kB
+├ ƒ /api/connectors/sam-gov/sync               286 B         103 kB
+├ ƒ /api/connectors/sam-gov/test               286 B         103 kB
+├ ƒ /api/control/[...path]                     286 B         103 kB
+├ ƒ /api/currency/[...path]                    286 B         103 kB
+├ ƒ /api/data-studio/[...path]                 286 B         103 kB
+├ ƒ /api/event-fabric/queue                    286 B         103 kB
+├ ƒ /api/event-fabric/replay                   286 B         103 kB
+├ ƒ /api/oauth/authorize                       286 B         103 kB
+├ ƒ /api/oauth/callback                        286 B         103 kB
+├ ƒ /api/oauth/heartbeat                       286 B         103 kB
+├ ƒ /api/oauth/providers                       286 B         103 kB
+├ ƒ /api/ontology                              286 B         103 kB
+├ ƒ /api/ootb/evaluations                      286 B         103 kB
+├ ƒ /api/ootb/override                         286 B         103 kB
+├ ƒ /api/ootb/rules                            286 B         103 kB
+├ ƒ /api/operational-intelligence/[...path]    286 B         103 kB
+├ ƒ /api/platform-admin/tenants/infra          286 B         103 kB
+├ ƒ /api/platform-admin/tenants/infra/test     286 B         103 kB
+├ ƒ /api/platform/[...path]                    286 B         103 kB
+├ ƒ /api/recovery/[...path]                    286 B         103 kB
+├ ƒ /api/rules/[...path]                       286 B         103 kB
+├ ƒ /api/rules/kernel/evaluate                 286 B         103 kB
+├ ƒ /api/rules/kernel/introspect               286 B         103 kB
+├ ƒ /api/rules/kernel/rules                    286 B         103 kB
+├ ƒ /api/rules/kernel/rules/[ruleId]           286 B         103 kB
+├ ƒ /api/rules/kernel/simulate                 286 B         103 kB
+├ ƒ /api/runs                                  286 B         103 kB
+├ ƒ /api/runs/[runId]                          286 B         103 kB
+├ ƒ /api/runs/[runId]/cancel                   286 B         103 kB
+├ ƒ /api/saga                                  286 B         103 kB
+├ ƒ /api/solutions/activate                    286 B         103 kB
+├ ƒ /api/solutions/execute                     286 B         103 kB
+├ ƒ /api/solutions/packs                       286 B         103 kB
+├ ƒ /api/spend/[...path]                       286 B         103 kB
+├ ƒ /api/tax/[...path]                         286 B         103 kB
+├ ƒ /api/tenant-rbac/[...path]                 286 B         103 kB
+├ ƒ /api/workflow-studio/[...path]             286 B         103 kB
+├ ƒ /api/workflows                             286 B         103 kB
+├ ƒ /api/workflows/[workflowId]                286 B         103 kB
+├ ƒ /api/workflows/[workflowId]/draft          286 B         103 kB
+├ ƒ /api/workflows/[workflowId]/publish        286 B         103 kB
+├ ƒ /ar                                        287 B         106 kB
+├ ƒ /ar/aging                                  287 B         106 kB
+├ ƒ /ar/customers                              287 B         106 kB
+├ ƒ /ar/invoices                               287 B         106 kB
+├ ƒ /ar/invoices/[invoiceId]                   287 B         106 kB
+├ ƒ /ar/invoices/new                           287 B         106 kB
+├ ƒ /cmms                                      287 B         106 kB
+├ ƒ /cmms/assets                               287 B         106 kB
+├ ƒ /cmms/calendar                             287 B         106 kB
+├ ƒ /cmms/floor                                287 B         106 kB
+├ ƒ /cmms/inventory                            287 B         106 kB
+├ ƒ /cmms/meters                               287 B         106 kB
+├ ƒ /cmms/people                               287 B         106 kB
+├ ƒ /cmms/purchase-orders                      287 B         106 kB
+├ ƒ /cmms/requests                             287 B         106 kB
+├ ƒ /cmms/requests/portal                      287 B         106 kB
+├ ƒ /cmms/schedules                            287 B         106 kB
+├ ƒ /cmms/vendors                              287 B         106 kB
+├ ƒ /cmms/work-orders                          287 B         106 kB
+├ ƒ /cmms/workload                             287 B         106 kB
+├ ƒ /connections                             8.35 kB         131 kB
+├ ƒ /connections/[connectionId]              6.01 kB         122 kB
+├ ƒ /connections/credentials                  4.7 kB         123 kB
+├ ƒ /connections/environments/new            5.36 kB         121 kB
+├ ƒ /connections/new                         7.24 kB         123 kB
+├ ƒ /connections/oauth-studio                  287 B         106 kB
+├ ƒ /currency                                  287 B         106 kB
+├ ƒ /dashboard                               6.03 kB         125 kB
+├ ƒ /data-contracts                          17.3 kB         133 kB
+├ ƒ /esign                                     287 B         106 kB
+├ ƒ /exceptions                              3.29 kB         122 kB
+├ ○ /login                                   1.35 kB         107 kB
+├ ƒ /maps                                      287 B         106 kB
+├ ƒ /marketplace                               287 B         106 kB
+├ ○ /mfa                                     4.73 kB         117 kB
+├ ƒ /ontology                                  287 B         106 kB
+├ ƒ /opportunities                           4.62 kB         120 kB
+├ ƒ /platform-admin                            287 B         106 kB
+├ ƒ /platform-admin/dlq                        287 B         106 kB
+├ ƒ /platform-admin/infra                      287 B         106 kB
+├ ƒ /recovery                                  287 B         106 kB
+├ ○ /register                                1.35 kB         107 kB
+├ ƒ /reports                                   287 B         106 kB
+├ ƒ /rules                                     287 B         106 kB
+├ ƒ /rules/studio                              287 B         106 kB
+├ ƒ /runs                                    3.49 kB         122 kB
+├ ƒ /runs/[runId]                            4.47 kB         120 kB
+├ ƒ /saga                                      287 B         106 kB
+├ ƒ /scanner                                   287 B         106 kB
+├ ○ /select-tenant                           4.52 kB         117 kB
+├ ƒ /settings                                7.66 kB         110 kB
+├ ƒ /settings/profile                        3.02 kB         106 kB
+├ ƒ /solutions                                 287 B         106 kB
+├ ƒ /solutions/day-one                         287 B         106 kB
+├ ƒ /spend                                     287 B         106 kB
+├ ƒ /tax                                       287 B         106 kB
+├ ƒ /tax/audit                                 287 B         106 kB
+├ ƒ /tax/exemptions                            287 B         106 kB
+├ ƒ /tax/monitor                               287 B         106 kB
+├ ƒ /tax/rates                                 287 B         106 kB
+├ ƒ /value                                   8.97 kB         125 kB
+├ ƒ /workflows                               10.8 kB         133 kB
+├ ƒ /workflows/[wfId]/canvas                 62.6 kB         181 kB
+└ ƒ /workflows/new                           6.25 kB         122 kB
++ First Load JS shared by all                 103 kB
+  ├ chunks/379f4093-0cb6420ca2dc6cae.js      54.2 kB
+  ├ chunks/9985-3a9e28b8b1f972d2.js          46.4 kB
+  └ other shared chunks (total)              2.03 kB
+
+
+ƒ Middleware                                 33.9 kB
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

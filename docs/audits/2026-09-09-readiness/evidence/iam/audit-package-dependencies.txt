@@ -1,0 +1,6 @@
+$ node scripts/verify-package-dependencies.mjs
+{
+  "status": "passed",
+  "activeManifests": 80,
+  "quarantineRegistry": "config/runtime-quarantine.json"
+}

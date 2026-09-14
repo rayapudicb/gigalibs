@@ -1,0 +1,19 @@
+{
+  "status": "passed",
+  "tenantId": "cmtyetiyz0003v8xfhwkjek44",
+  "tenantSlug": "control-plane-mtyetip7-49327",
+  "verified": [
+    "readiness",
+    "validation",
+    "registration",
+    "session-persistence",
+    "tenant-provisioning",
+    "membership-rbac",
+    "settings-optimistic-concurrency",
+    "tenant-status-lifecycle",
+    "audit-trail",
+    "refresh-token-rotation",
+    "module-registry",
+    "logout-revocation"
+  ]
+}

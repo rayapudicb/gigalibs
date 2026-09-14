@@ -1,0 +1,197 @@
+{
+  "result": "PASS",
+  "checkedAt": "2026-09-13T03:59:11.604Z",
+  "baseUrl": "http://127.0.0.1:5180",
+  "tenantSlug": "my-workspace",
+  "catalogCount": 30,
+  "financeLinks": [
+    "/ar",
+    "/spend",
+    "/tax",
+    "/currency",
+    "/recovery"
+  ],
+  "modules": [
+    {
+      "key": "accounts-receivable",
+      "path": "/ar",
+      "contained": false,
+      "apiStatuses": [
+        200,
+        404
+      ]
+    },
+    {
+      "key": "spend-management",
+      "path": "/spend",
+      "contained": false,
+      "apiStatuses": [
+        200,
+        404
+      ]
+    },
+    {
+      "key": "tax-configuration",
+      "path": "/tax",
+      "contained": false,
+      "apiStatuses": [
+        200,
+        404
+      ]
+    },
+    {
+      "key": "multi-currency",
+      "path": "/currency",
+      "contained": false,
+      "apiStatuses": [
+        200,
+        404
+      ]
+    },
+    {
+      "key": "autonomous-recovery",
+      "path": "/recovery",
+      "contained": false,
+      "apiStatuses": [
+        200,
+        404
+      ]
+    }
+  ],
+  "pageErrors": [],
+  "serverFailures": [],
+  "financeResponses": [
+    {
+      "status": 404,
+      "url": "http://127.0.0.1:5180/api/currency/pairs"
+    },
+    {
+      "status": 404,
+      "url": "http://127.0.0.1:5180/api/currency/preferences"
+    },
+    {
+      "status": 404,
+      "url": "http://127.0.0.1:5180/api/currency/pairs"
+    },
+    {
+      "status": 404,
+      "url": "http://127.0.0.1:5180/api/currency/preferences"
+    },
+    {
+      "status": 200,
+      "url": "http://127.0.0.1:5180/api/ar/v1/customers?pageSize=100"
+    },
+    {
+      "status": 200,
+      "url": "http://127.0.0.1:5180/api/ar/v1/invoices?pageSize=100"
+    },
+    {
+      "status": 404,
+      "url": "http://127.0.0.1:5180/api/currency/pairs"
+    },
+    {
+      "status": 404,
+      "url": "http://127.0.0.1:5180/api/currency/preferences"
+    },
+    {
+      "status": 200,
+      "url": "http://127.0.0.1:5180/api/spend/v1/setup"
+    },
+    {
+      "status": 200,
+      "url": "http://127.0.0.1:5180/api/spend/v1/cost-centers"
+    },
+    {
+      "status": 200,
+      "url": "http://127.0.0.1:5180/api/spend/v1/expenses"
+    },
+    {
+      "status": 200,
+      "url": "http://127.0.0.1:5180/api/spend/v1/analytics/metrics"
+    },
+    {
+      "status": 404,
+      "url": "http://127.0.0.1:5180/api/currency/pairs"
+    },
+    {
+      "status": 404,
+      "url": "http://127.0.0.1:5180/api/currency/preferences"
+    },
+    {
+      "status": 200,
+      "url": "http://127.0.0.1:5180/api/tax/v1/setup"
+    },
+    {
+      "status": 200,
+      "url": "http://127.0.0.1:5180/api/tax/api/tax/v1/jurisdictions"
+    },
+    {
+      "status": 200,
+      "url": "http://127.0.0.1:5180/api/tax/api/tax/v1/ledger"
+    },
+    {
+      "status": 200,
+      "url": "http://127.0.0.1:5180/api/tax/api/tax/v1/rates"
+    },
+    {
+      "status": 200,
+      "url": "http://127.0.0.1:5180/api/tax/api/tax/v1/exemptions"
+    },
+    {
+      "status": 200,
+      "url": "http://127.0.0.1:5180/api/tax/api/tax/v1/nexus-status"
+    },
+    {
+      "status": 404,
+      "url": "http://127.0.0.1:5180/api/currency/pairs"
+    },
+    {
+      "status": 404,
+      "url": "http://127.0.0.1:5180/api/currency/preferences"
+    },
+    {
+      "status": 200,
+      "url": "http://127.0.0.1:5180/api/currency/v1/setup"
+    },
+    {
+      "status": 200,
+      "url": "http://127.0.0.1:5180/api/currency/v1/pairs"
+    },
+    {
+      "status": 200,
+      "url": "http://127.0.0.1:5180/api/currency/v1/preferences"
+    },
+    {
+      "status": 200,
+      "url": "http://127.0.0.1:5180/api/currency/v1/ledger?limit=50"
+    },
+    {
+      "status": 404,
+      "url": "http://127.0.0.1:5180/api/currency/pairs"
+    },
+    {
+      "status": 404,
+      "url": "http://127.0.0.1:5180/api/currency/preferences"
+    },
+    {
+      "status": 200,
+      "url": "http://127.0.0.1:5180/api/recovery/scans"
+    },
+    {
+      "status": 200,
+      "url": "http://127.0.0.1:5180/api/recovery/setup"
+    },
+    {
+      "status": 200,
+      "url": "http://127.0.0.1:5180/api/recovery/claims"
+    },
+    {
+      "status": 200,
+      "url": "http://127.0.0.1:5180/api/recovery/metrics"
+    },
+    {
+      "status": 200,
+      "url": "http://127.0.0.1:5180/api/recovery/leaks"
+    }
+  ]
+}

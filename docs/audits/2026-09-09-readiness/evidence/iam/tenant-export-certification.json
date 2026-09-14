@@ -1,0 +1,27 @@
+{
+  "source": "Isolated, attributable records created through authenticated real APIs",
+  "services": "Disposable PostgreSQL 14 and MinIO S3-compatible object storage",
+  "checks": [
+    {
+      "check": "tenant-export-initdb",
+      "exitCode": 0
+    },
+    {
+      "check": "tenant-export-createdb",
+      "exitCode": 0
+    },
+    {
+      "check": "tenant-export-migrations",
+      "exitCode": 0
+    },
+    {
+      "check": "tenant-export-outcome",
+      "exitCode": 0
+    }
+  ],
+  "cleanup": {
+    "postgresDataRemoved": true,
+    "objectDataRemoved": true
+  },
+  "passed": true
+}

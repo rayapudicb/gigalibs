@@ -1,0 +1,17 @@
+{
+  "database": "gigalibs_key_rotation_cert_4fb6c26f21cd",
+  "postgresVersion": "14.20",
+  "runtimeRole": "dedicated non-superuser",
+  "source": "Isolated attributable rotation records created through real API and database setup",
+  "checks": [
+    {
+      "check": "control-key-rotation",
+      "exitCode": 0
+    }
+  ],
+  "cleanup": {
+    "databaseRemoved": true,
+    "roleRemoved": true
+  },
+  "passed": true
+}

@@ -1,0 +1,27 @@
+{
+  "passed": true,
+  "checks": [
+    "All 64 IAM, MFA, OIDC, recovery, tenant-domain, export, tenant lifecycle and audit instants are millisecond-precision timestamptz columns",
+    "BFF registration persists a real user/password hash and hashed refresh session without fabricating a workspace",
+    "BFF session context reads the created DB identity without a default tenant",
+    "Incorrect password creates no additional session",
+    "Tenant selection and current membership use the canonical persisted workspace",
+    "The authenticated tenant administration route resolves its settings implementation instead of the unavailable-capability screen",
+    "Tenant domain challenge uses real persistence and DNS verification, rejects private names and unmatched TXT data, never stores or relists the raw challenge, audits failure and supports revocation",
+    "Invitation acceptance, hashed secrets, concurrent replacement/revocation, custom-role CRUD and live permission assignment, role change, stale conflicts, last-admin protection, suspension/session revocation and audit persist end to end",
+    "MFA recovery codes require prior MFA, are generated and rotated through the BFF, revoke the prior set, persist only user-bound digests, never appear in audit plaintext, atomically consume once, report a DB count and reject replay through the shared lockout counter",
+    "Persisted tenant MFA policy blocks unverified sessions; fresh TOTP enrollment uses encrypted secret storage, verifies once, rejects replay, applies bounded lockout and writes no raw secret to audit",
+    "An existing foreign tenant is denied for both workspace selection and tenant-header override",
+    "Even an authenticated tenant admin cannot invoke the removed fabricated financial action path",
+    "BFF context reads a role downgrade from the DB rather than trusting stale token roles",
+    "An existing admin token loses privileged endpoint access immediately after a persisted downgrade",
+    "Suspended membership is denied immediately at the BFF context boundary",
+    "Suspended users cannot log in, use an existing session, or refresh credentials",
+    "Expired DB sessions cannot be used or refreshed; a new valid login creates a distinct session",
+    "Refresh rotates persisted credentials and rejects replay of the previous token",
+    "Concurrent reuse of a refresh token has exactly one successful database rotation",
+    "Logout revokes the DB session and subsequent use of the old cookies fails"
+  ],
+  "context": "Fresh isolated PostgreSQL 14.20 database; real NestJS, Next.js development BFF and DNS resolver lookup; no HTTP mocks",
+  "limitations": "Does not certify PostgreSQL 16, positive proof in an operator-owned DNS zone, browser concurrency across replicas, SSO/email providers, production data provenance, human UAT or deployment"
+}

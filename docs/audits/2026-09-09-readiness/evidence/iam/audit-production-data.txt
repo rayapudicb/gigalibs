@@ -1,0 +1,27 @@
+$ node scripts/verify-runtime-data-integrity.mjs
+{
+  "status": "passed",
+  "scope": "production",
+  "scannedRoots": [
+    "apps/workflow-platform",
+    "apps/playground-api",
+    "apps/workflow-api",
+    "modules/accounts-receivable",
+    "modules/spend-management",
+    "modules/tax-configuration",
+    "modules/multi-currency",
+    "modules/universal-data-studio",
+    "modules/universal-rule-pro",
+    "modules/workflow-studio",
+    "modules/universal-connector-hub",
+    "modules/autonomous-recovery-studio",
+    "modules/platform-rbac"
+  ],
+  "retiredApplications": [
+    "apps/playground-web"
+  ],
+  "quarantinedPackages": {
+    "count": 109,
+    "registry": "config/runtime-quarantine.json"
+  }
+}

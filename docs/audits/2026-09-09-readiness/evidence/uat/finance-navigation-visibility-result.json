@@ -1,0 +1,43 @@
+{
+  "workItem": "WI-OI-013",
+  "observedAt": "2026-09-11",
+  "environment": "local-uat",
+  "applicationUrl": "http://localhost:5180",
+  "persona": "persisted platform authority",
+  "result": "passed",
+  "modulesPageStatus": 200,
+  "visibleFinanceRoutes": [
+    "/ar",
+    "/spend",
+    "/tax",
+    "/currency",
+    "/recovery"
+  ],
+  "authenticatedRouteStatuses": {
+    "/ar": 200,
+    "/spend": 200,
+    "/tax": 200,
+    "/currency": 200,
+    "/recovery": 200
+  },
+  "moduleSpecificStatusScreensRendered": true,
+  "certifiedFinanceRoute": "/ap",
+  "businessActionsEnabledByThisChange": {
+    "/ar": [
+      "tenant AR setup",
+      "customer create and list",
+      "invoice draft create and list",
+      "invoice issue"
+    ],
+    "/spend": false,
+    "/tax": false,
+    "/currency": false,
+    "/recovery": false
+  },
+  "notes": [
+    "All five requested finance routes were present in the server-rendered platform-authority sidebar.",
+    "Spend, tax, currency and recovery return a module-specific readiness and blocked-action view.",
+    "Accounts Receivable was subsequently connected to its real standalone PostgreSQL API for bounded local UAT; see accounts-receivable-actionable-result.json.",
+    "No finance entitlement was granted by the original visibility change."
+  ]
+}

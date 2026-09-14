@@ -1,0 +1,22 @@
+{
+  "passed": true,
+  "database": "gigalibs_iam_time_fc5f345c3a42",
+  "source": "Isolated attributable migration records; no customer data",
+  "checks": [
+    "Applied 18 prior migrations to an empty isolated database",
+    "Created attributable pre-upgrade records while the database timezone was Asia/Kolkata",
+    "Converted all 33 target columns to millisecond-precision timestamptz",
+    "Preserved the UTC instant previously observed by Prisma for an existing session",
+    "Database defaults now create the correct instant under a non-UTC database timezone",
+    "New session defaults are not shifted by the database timezone after migration",
+    "Added nullable custom-role assignment to existing memberships and verified referential cleanup",
+    "Added nullable session MFA state and encrypted TOTP credential storage without changing existing sessions",
+    "Moved legacy domains to unverified candidates and proved pending claims do not reserve the trusted-domain unique slot",
+    "Added millisecond-precision one-time recovery-code storage and verified user cascade cleanup",
+    "Added encrypted tenant OIDC configuration, one-time login transactions and identity mappings with cascade cleanup"
+  ],
+  "cleanup": {
+    "databaseRemoved": true,
+    "roleRemoved": true
+  }
+}

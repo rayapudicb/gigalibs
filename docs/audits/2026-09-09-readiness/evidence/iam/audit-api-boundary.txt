@@ -1,0 +1,7 @@
+$ node scripts/verify-api-module-boundary.mjs
+{
+  "status": "passed",
+  "module": "apps/playground-api/src/app.module.ts",
+  "mountedControllers": 8,
+  "registeredProviders": 27
+}

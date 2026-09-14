@@ -1,0 +1,588 @@
+openapi: 3.1.0
+info:
+  title: GigaLibs Configuration Studio API
+  version: 1.0.0-draft
+  description: >-
+    Contract-first authoring and runtime API for WI-OI-039. Tenant and actor scope are derived from the
+    authenticated server session. Draft metadata never enters the runtime manifest path.
+servers:
+  - url: /api/configuration/v1
+security:
+  - sessionBearer: []
+tags:
+  - name: Registry
+  - name: Change sets
+  - name: Review
+  - name: Publication
+  - name: Activation
+  - name: Runtime
+  - name: Operations
+paths:
+  /registry:
+    get:
+      tags: [Registry]
+      operationId: listConfigurationRegistry
+      summary: List entities and surfaces the current actor may configure
+      responses:
+        '200':
+          description: Authorized registry projection
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RegistryResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /change-sets:
+    get:
+      tags: [Change sets]
+      operationId: listConfigurationChangeSets
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+        - name: status
+          in: query
+          schema: { $ref: '#/components/schemas/ChangeSetStatus' }
+      responses:
+        '200':
+          description: Tenant-scoped change sets
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/ChangeSet' }
+                  nextCursor: { type: string }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      tags: [Change sets]
+      operationId: createConfigurationChangeSet
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/CorrelationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateChangeSetRequest' }
+      responses:
+        '201':
+          description: Draft change set created
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ChangeSet' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /change-sets/{changeSetId}:
+    parameters:
+      - $ref: '#/components/parameters/ChangeSetId'
+    get:
+      tags: [Change sets]
+      operationId: getConfigurationChangeSet
+      responses:
+        '200':
+          description: Change set
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ChangeSet' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    patch:
+      tags: [Change sets]
+      operationId: updateConfigurationChangeSet
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/CorrelationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UpdateChangeSetRequest' }
+      responses:
+        '200':
+          description: Draft updated
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ChangeSet' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '412': { $ref: '#/components/responses/PreconditionFailed' }
+  /change-sets/{changeSetId}/validate:
+    post:
+      tags: [Change sets]
+      operationId: validateConfigurationChangeSet
+      parameters:
+        - $ref: '#/components/parameters/ChangeSetId'
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/CorrelationId'
+      responses:
+        '200':
+          description: Deterministic compiler result and impact summary
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ValidationResult' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '412': { $ref: '#/components/responses/PreconditionFailed' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /change-sets/{changeSetId}/submit:
+    post:
+      tags: [Review]
+      operationId: submitConfigurationChangeSet
+      parameters:
+        - $ref: '#/components/parameters/ChangeSetId'
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/CorrelationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ReasonRequest' }
+      responses:
+        '200':
+          description: Submitted for review
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ChangeSet' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /change-sets/{changeSetId}/approve:
+    post:
+      tags: [Review]
+      operationId: approveConfigurationChangeSet
+      parameters:
+        - $ref: '#/components/parameters/ChangeSetId'
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/CorrelationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ReasonRequest' }
+      responses:
+        '200':
+          description: Approved change set
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ChangeSet' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /change-sets/{changeSetId}/reject:
+    post:
+      tags: [Review]
+      operationId: rejectConfigurationChangeSet
+      parameters:
+        - $ref: '#/components/parameters/ChangeSetId'
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/CorrelationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ReasonRequest' }
+      responses:
+        '200':
+          description: Rejected change set
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ChangeSet' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /change-sets/{changeSetId}/publish:
+    post:
+      tags: [Publication]
+      operationId: publishConfigurationChangeSet
+      parameters:
+        - $ref: '#/components/parameters/ChangeSetId'
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/CorrelationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ReasonRequest' }
+      responses:
+        '201':
+          description: Immutable version published; it is not active yet
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PublishedVersion' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /activations/plan:
+    post:
+      tags: [Activation]
+      operationId: planConfigurationActivation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ActivationRequest' }
+      responses:
+        '200':
+          description: Dependency, compatibility and cohort impact plan; makes no change
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ActivationPlan' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /activations:
+    post:
+      tags: [Activation]
+      operationId: activateConfigurationVersion
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/CorrelationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ActivationRequest' }
+      responses:
+        '202':
+          description: Activation accepted for health verification
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Activation' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /activations/{activationId}/rollback:
+    post:
+      tags: [Activation]
+      operationId: rollbackConfigurationActivation
+      parameters:
+        - name: activationId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/CorrelationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ReasonRequest' }
+      responses:
+        '202':
+          description: Last-good compatible activation selected
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Activation' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /runtime/manifests/{moduleKey}/{entityKey}/{surfaceKey}:
+    get:
+      tags: [Runtime]
+      operationId: getResolvedConfigurationManifest
+      parameters:
+        - $ref: '#/components/parameters/ModuleKey'
+        - $ref: '#/components/parameters/EntityKey'
+        - $ref: '#/components/parameters/SurfaceKey'
+        - name: mode
+          in: query
+          required: true
+          schema: { enum: [create, edit, read, list] }
+        - name: locale
+          in: query
+          schema: { type: string, maxLength: 35 }
+        - name: If-None-Match
+          in: header
+          schema: { type: string }
+      responses:
+        '200':
+          description: Permission-resolved active manifest
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+            Cache-Control:
+              schema: { type: string }
+              description: Private cache policy; responses vary by tenant, scope, role/field policy, locale and checksum.
+          content:
+            application/json:
+              schema:
+                $ref: './configuration-manifest.schema.json'
+        '304': { description: Manifest checksum has not changed }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /versions/{versionId}/impact:
+    get:
+      tags: [Operations]
+      operationId: getConfigurationVersionImpact
+      parameters:
+        - name: versionId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Consumers, records, projections, dependencies and migration gates
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ImpactSummary' }
+        '404': { $ref: '#/components/responses/NotFound' }
+components:
+  securitySchemes:
+    sessionBearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Validated server session; token claims are hints and never the final tenant/RBAC authority.
+  headers:
+    ETag:
+      schema: { type: string }
+      description: Opaque optimistic version or content checksum.
+  parameters:
+    ChangeSetId:
+      name: changeSetId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    ModuleKey:
+      name: moduleKey
+      in: path
+      required: true
+      schema: { $ref: '#/components/schemas/StableKey' }
+    EntityKey:
+      name: entityKey
+      in: path
+      required: true
+      schema: { $ref: '#/components/schemas/StableKey' }
+    SurfaceKey:
+      name: surfaceKey
+      in: path
+      required: true
+      schema: { $ref: '#/components/schemas/StableKey' }
+    IfMatch:
+      name: If-Match
+      in: header
+      required: true
+      schema: { type: string }
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema: { type: string, minLength: 16, maxLength: 128 }
+    CorrelationId:
+      name: X-Correlation-ID
+      in: header
+      required: true
+      schema: { type: string, minLength: 8, maxLength: 128 }
+    Cursor:
+      name: cursor
+      in: query
+      schema: { type: string, maxLength: 1000 }
+    Limit:
+      name: limit
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 100, default: 25 }
+  schemas:
+    StableKey:
+      type: string
+      minLength: 1
+      maxLength: 96
+      pattern: '^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$'
+    ChangeSetStatus:
+      enum: [DRAFT, VALIDATED, IN_REVIEW, APPROVED, REJECTED, PUBLISHED, ABANDONED]
+    CompatibilityClass:
+      enum: [COMPATIBLE, CONDITIONALLY_COMPATIBLE, BREAKING, PROHIBITED]
+    CreateChangeSetRequest:
+      type: object
+      additionalProperties: false
+      required: [moduleKey, entityKey, surfaceKey, reason]
+      properties:
+        moduleKey: { $ref: '#/components/schemas/StableKey' }
+        entityKey: { $ref: '#/components/schemas/StableKey' }
+        surfaceKey: { $ref: '#/components/schemas/StableKey' }
+        basePublishedVersionId: { type: string, format: uuid }
+        reason: { type: string, minLength: 10, maxLength: 2000 }
+    UpdateChangeSetRequest:
+      type: object
+      additionalProperties: false
+      required: [draft]
+      properties:
+        draft:
+          type: object
+          description: Typed configuration document. Unknown keys fail deterministic compilation.
+        reason: { type: string, minLength: 10, maxLength: 2000 }
+    ReasonRequest:
+      type: object
+      additionalProperties: false
+      required: [reason]
+      properties:
+        reason: { type: string, minLength: 10, maxLength: 2000 }
+    ChangeSet:
+      type: object
+      additionalProperties: false
+      required: [id, moduleKey, entityKey, surfaceKey, status, optimisticVersion, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        moduleKey: { $ref: '#/components/schemas/StableKey' }
+        entityKey: { $ref: '#/components/schemas/StableKey' }
+        surfaceKey: { $ref: '#/components/schemas/StableKey' }
+        status: { $ref: '#/components/schemas/ChangeSetStatus' }
+        optimisticVersion: { type: integer, minimum: 1 }
+        draft: { type: object }
+        validation: { $ref: '#/components/schemas/ValidationResult' }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    Finding:
+      type: object
+      additionalProperties: false
+      required: [code, severity, path, message]
+      properties:
+        code: { type: string, minLength: 3, maxLength: 96 }
+        severity: { enum: [ERROR, WARNING, INFO] }
+        path: { type: string, maxLength: 1000 }
+        message: { type: string, maxLength: 2000 }
+    ValidationResult:
+      type: object
+      additionalProperties: false
+      required: [valid, compatibility, checksum, findings, impact]
+      properties:
+        valid: { type: boolean }
+        compatibility: { $ref: '#/components/schemas/CompatibilityClass' }
+        checksum: { type: string, pattern: '^sha256:[a-f0-9]{64}$' }
+        findings:
+          type: array
+          maxItems: 1000
+          items: { $ref: '#/components/schemas/Finding' }
+        impact: { $ref: '#/components/schemas/ImpactSummary' }
+    PublishedVersion:
+      type: object
+      additionalProperties: false
+      required: [id, sequence, checksum, compatibility, publishedAt]
+      properties:
+        id: { type: string, format: uuid }
+        sequence: { type: integer, minimum: 1 }
+        checksum: { type: string, pattern: '^sha256:[a-f0-9]{64}$' }
+        compatibility: { $ref: '#/components/schemas/CompatibilityClass' }
+        publishedAt: { type: string, format: date-time }
+    ActivationRequest:
+      type: object
+      additionalProperties: false
+      required: [publishedVersionId, environmentKey, cohort, reason]
+      properties:
+        publishedVersionId: { type: string, format: uuid }
+        environmentKey: { $ref: '#/components/schemas/StableKey' }
+        cohort: { enum: [PREVIEW, UAT, CANARY, ALL] }
+        reason: { type: string, minLength: 10, maxLength: 2000 }
+    ActivationPlan:
+      type: object
+      additionalProperties: false
+      required: [allowed, compatibility, dependencies, impact, findings]
+      properties:
+        allowed: { type: boolean }
+        compatibility: { $ref: '#/components/schemas/CompatibilityClass' }
+        dependencies:
+          type: array
+          items: { type: string }
+        impact: { $ref: '#/components/schemas/ImpactSummary' }
+        findings:
+          type: array
+          items: { $ref: '#/components/schemas/Finding' }
+    Activation:
+      type: object
+      additionalProperties: false
+      required: [id, publishedVersionId, environmentKey, cohort, status, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        publishedVersionId: { type: string, format: uuid }
+        environmentKey: { $ref: '#/components/schemas/StableKey' }
+        cohort: { enum: [PREVIEW, UAT, CANARY, ALL] }
+        status: { enum: [PENDING, ACTIVE, FAILED, ROLLED_BACK] }
+        lastGoodVersionId: { type: string, format: uuid }
+        createdAt: { type: string, format: date-time }
+    ImpactSummary:
+      type: object
+      additionalProperties: false
+      required: [surfaceCount, dependentVersionCount, affectedRecordCount, projectionCount, migrationRequired]
+      properties:
+        surfaceCount: { type: integer, minimum: 0 }
+        dependentVersionCount: { type: integer, minimum: 0 }
+        affectedRecordCount: { type: integer, minimum: 0 }
+        projectionCount: { type: integer, minimum: 0 }
+        migrationRequired: { type: boolean }
+    RegistryResponse:
+      type: object
+      additionalProperties: false
+      required: [modules]
+      properties:
+        modules:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [key, entities]
+            properties:
+              key: { $ref: '#/components/schemas/StableKey' }
+              entities:
+                type: array
+                items:
+                  type: object
+                  additionalProperties: false
+                  required: [key, surfaces, lockedInvariants]
+                  properties:
+                    key: { $ref: '#/components/schemas/StableKey' }
+                    surfaces:
+                      type: array
+                      items: { $ref: '#/components/schemas/StableKey' }
+                    lockedInvariants:
+                      type: array
+                      items: { type: string, maxLength: 500 }
+    Problem:
+      type: object
+      additionalProperties: false
+      required: [code, message, requestId]
+      properties:
+        code: { type: string, minLength: 3, maxLength: 96 }
+        message: { type: string, minLength: 1, maxLength: 2000 }
+        requestId: { type: string, minLength: 8, maxLength: 128 }
+        details: { type: object }
+  responses:
+    Unauthorized:
+      description: Authentication is missing or invalid
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    Forbidden:
+      description: Current actor lacks tenant, object or field authority
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    NotFound:
+      description: Resource is absent or hidden by the authorization boundary
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    Conflict:
+      description: State, idempotency or compatibility conflict
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    PreconditionFailed:
+      description: If-Match does not identify the current optimistic version
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    ValidationError:
+      description: Request or compiled configuration is invalid
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }

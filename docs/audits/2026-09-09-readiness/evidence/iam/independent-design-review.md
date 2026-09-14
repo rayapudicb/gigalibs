@@ -1,0 +1,54 @@
+# Independent IAM containment design review
+
+Date: 2026-09-09. Reviewer: independent Security/Architecture agent. Read-only source review; no provider/database action, product edit, exploit or deployed certification. This review supports the first bounded trust-boundary slice; later actual-diff review remains required. Relevant existing work: WI-OI-005/013/028 plus audit WI-OI-036 and implementation-plan trace. Apply FR-14/15, NFR-SEC-001–005, NFR-DATA-004, NFR-GOV-002–003 and NFR-OPS-001. Read the mandatory baseline, accepted ADR and tenant-identity role.
+
+## Safest bounded implementation
+
+1. Remove login/registration fabricated identities/tokens and distinguish invalid credentials from unavailable/malformed authority response. Set session cookies only after canonical token contract passes; do not sign BFF identities or infer accepted persistence from an onboarding response.
+2. Implement a small canonical BFF session check using authenticated `GET /api/v1/auth/context`. This endpoint verifies active DB session, active user, current tenant membership and returns current membership roles. Business routes require a selected, active tenant. A cookie's presence, decoded unsigned JWT, `wf_session`, selected profile, tenant header or subdomain is not authentication.
+3. Leave existing authenticated control/AP/operational-intelligence/workflow/run forwarding on their existing canonical owners. Replace unsafe legacy routes with honest authenticated-unavailable handlers until their real tenant/permission/delegation and outcome contracts are ready. No imports of seeded stores or provider/infra side effects in disabled handlers.
+4. AR/CMMS/spend suite bridges should remain unavailable in this bounded slice unless an actual delegated module token contract is implemented and tested. Preserve independent AR OIDC, permissions and domain persistence. Do not broaden AR's accepted issuers/algorithms or fall back to service credentials to make suite navigation appear functional.
+5. Remove UI fallback activation for disabled routes: errors and empty results must not select fixture invoices/assets/taxes or produce success toasts. Server containment alone does not correct misleading presentation. Record remaining static demo UI outside the slice as open gaps.
+
+## High-impact source findings
+
+| Finding | Evidence | Design implication |
+| --- | --- | --- |
+| Existing suite proxy loses caller identity | `app/api/ar/[...path]/route.ts`, CMMS and spend fetch `/oidc/token` using client_credentials, cache it process-wide and forward it for every visitor | A new session check before this code is insufficient: caller A can still operate with the token's tenant/permissions, and audit actor is wrong. Disable unsafe suite bridge or use reviewed identity-preserving token exchange; never just replace arbitrary tenant header. |
+| AR accepts a distinct OIDC contract | `modules/accounts-receivable/apps/api/src/auth/authorization.ts`; `runtime-config.ts` requires RS256/ES256, issuer/audience/JWKS, UUID tenant claim and explicit permission array | Canonical suite HS JWT claims (`sub`, `tid`, `sid`, `roles`) cannot simply be forwarded as equivalent AR permissions. Preserve standalone API. No invented permission translation or permissive JWKS/issuer mode. |
+| Effective permission endpoint can retain stale role claims | `packages/rbac-nest/src/rbac.service.ts:getUserPermissions` unions current `member.role` with `fallbackRoles`; `apps/playground-api/src/authorization.controller.ts` passes JWT roles as fallback | After role downgrade, an old privileged token could retain broader permissions. Do not use `/authorization/context` alone to enable legacy writes. Record repair under IAM effective permissions; current-auth-context can establish session and current membership, while disabled operations stay disabled. |
+| Canonical session context is useful but not a universal authorization verdict | `packages/auth-nest/src/auth.service.ts:getSessionContext` validates DB session/user/membership, returns current member roles and **direct** membership permissions | Validate returned shape, active user/tenant, selected tenant, session ID/expiry. Direct permissions are not the resolved inherited permission set; don't equate empty direct permissions with no legitimate role permissions or infer wildcard roles client-side. A session check is adequate before unavailable response, not certification of domain RBAC. |
+| Middleware currently supplies routing hints only | `apps/workflow-platform/middleware.ts`: cookie/subdomain to request headers; matcher excludes `/api`; no auth check | Page redirect may improve UX but is not the API trust boundary. Authenticate inside every enabled route. Never promote forwarded host or wf_tenant into authority; request can forge them. |
+| Authentication failures are conflated with outage in refresh | `lib/authenticated-upstream.ts:refreshAccessToken` clears both cookies for every non-OK response/malformed payload, including 5xx; fetch has no timeout | Reject/clear invalid or revoked refresh session; preserve unavailable semantics for timeout/5xx/malformed authority. Add bounded upstream timeout. Do not make outage look like invalid password or falsely revoke a legitimate session. |
+| Direct provider and infrastructure routes are broader than financial fallbacks | SAM sync/test, OAuth, ontology, rule kernel, OOTB, platform infra, metering, saga, event replay, solutions and standalone module proxies | Cover all API handlers/methods, not only the three reproduced P0 paths. Authenticated fake provider/financial success remains prohibited. Disabled routes must not fetch provider data, provision broker objects or mutate Maps/SQL. |
+
+## Response contract
+
+- **401:** no usable session, invalid token, expired/revoked session after any supported refresh attempt. Avoid business record/entity details. Authentication responses must not return tokens in JSON to browser JavaScript.
+- **403:** authenticated user lacks active tenant/membership or required permission; reject conflicting tenant selection/headers. Disabled feature still must not allow data access. Do not turn a membership denial into repeated refresh attempts.
+- **503:** authority unavailable/missing configuration or intentionally unavailable unsafe module capability. Return a stable truthful code/message, no `success`, `EXECUTED`, zero totals presented as real data, fake receipt or stack/secret details. Valid users receive no claim of business completion.
+- **502** may distinguish malformed upstream contract if chosen consistently. **400/413** only for bounded malformed/oversized client input. **404/405** for unsupported path/method with no fallback dispatch.
+- Add `Cache-Control: no-store` to session, denial, unavailable and business responses. Redirects are for pages; APIs return JSON/error status. Do not cache verified tenant context process-wide or across users.
+
+## Required negative and preservation evidence
+
+| Scenario | Required result |
+| --- | --- |
+| Missing cookies on every disabled handler, including dynamic rule and module catchalls | 401; zero business store/provider/infra invocation. Include GET/POST/PATCH/PUT/DELETE exports and Next's implicit HEAD/OPTIONS behavior. |
+| Arbitrary cookie, old fabricated SUPER_ADMIN token, unsigned token, forged role/tenant cookie/header | Authority rejects; handler never trusts local claim decoding. Test server response, not middleware visibility. |
+| Context returns 200 with `{}`, null, missing tenant/session, inactive user/tenant, malformed expiry | Fail closed; no legacy handler invocation or fallback data. Valid login with no tenant can use tenant-selection auth routes, but not tenant business data. |
+| Active tenant A plus tenant B query/body/header/object request | Denied before business/provider action. AR bridge cannot substitute cached tenant B service credentials. |
+| Authority 401, 403, 429/5xx, timeout, invalid JSON, invalid token response | Honest bounded failure and deliberate cookie behavior; no local identity, silent success, or unbounded hang. |
+| Active valid session calls disabled action/legacy API | Explicit 503; still zero financial/provider/store effects. Valid authentication does not authorize simulated capabilities. |
+| Revoked session/membership or changed active tenant | Next protected request denied based on DB-backed context; no stale memoized identity. Role downgrade case remains an explicit effective-permission regression requirement. |
+| Existing canonical AP/control/operational-intelligence/workflow/run path | Same authenticated upstream and current server-side guards; retain idempotency/concurrency headers where contracted, errors and no-store behavior. No broad middleware allow/deny mistakenly shadows working BFF paths. |
+| Standalone AR | Existing OIDC issuer/audience/permission/RLS flow remains independent and unchanged; no suite-control DB dependency introduced. Its full runtime/UAT certification is separate. |
+| AR/CMMS/tax empty/error UI | Real empty stays empty; unavailable remains visible; generated rows/totals are not substituted. Existing state must not claim newly committed work after rejected request. |
+
+Unit/route tests may use isolated explicit authority doubles and adversarial payloads to prove control flow; these are not production mock paths or proof of real IdP/database integration. Follow with local HTTP reproduction against a verified served artifact and real isolated session/membership data when available. Preserve distinction between source/route tests and actual DB-backed isolation certification.
+
+## Scope and residual security gates
+
+This is containment, not completion of the IAM module or a release approval. Independent standalone module daemons currently lacking guards remain unsafe if externally reachable; Next.js gating cannot secure their ports. Deployment exposure must remain constrained and separately tested before release. Existing stale-role permission resolution, logout remote-revocation failure semantics, secure-cookie production configuration, refresh races, session propagation and mutation CSRF/origin policy need tracked acceptance; cookie SameSite=Lax and a page middleware alone are not complete mutation authorization. Re-enable disabled modules only with actual source/persistence, scoped identity, per-command permission, retry/reconciliation and independent evidence.
+
+For later diff review: inspect root changes plus login/register changes together, classify every API route, verify no fixture/side-effect import remains reachable through new wrappers, prove active-context JSON validation and expiry, review refresh status mapping/timeouts, check standalone files remain untouched, and inspect negative-test assertions for absence of business calls—not merely expected HTTP status.

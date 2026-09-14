@@ -1,0 +1,17 @@
+{
+  "passed": true,
+  "checks": [
+    "control plane readiness reaches the migrated PostgreSQL database",
+    "registration writes a hashed user and active session through the live BFF",
+    "a new real identity starts without an invented tenant",
+    "tenant creation, owner membership, selection and RBAC context persist end to end",
+    "logout revokes the live database session"
+  ],
+  "services": [
+    "Next.js BFF on 5180",
+    "NestJS control plane on 3333",
+    "PostgreSQL 14.20 on 5432"
+  ],
+  "data": "Attributable [TEST] records retained because canonical audit records are append-only; identity metadata excludes them from business reporting",
+  "limits": "No execution plane, external provider, human UAT or production deployment"
+}

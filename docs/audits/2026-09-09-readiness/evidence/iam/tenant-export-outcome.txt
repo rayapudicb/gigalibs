@@ -1,0 +1,12 @@
+{
+  "passed": true,
+  "checks": [
+    "Real MinIO bucket accepts, reads and deletes an SDK object",
+    "Authenticated tenant admin creates one durable asynchronous export; concurrent request is rejected",
+    "Worker reads all classified models, signs a deterministic archive and verifies the stored size and digest metadata",
+    "Scoped presigned download returns the exact self-verifying archive without authentication or storage secrets",
+    "Live database role downgrade removes export access on the next request",
+    "Expired archive is deleted from real object storage and download fails with 410",
+    "Request, completion, download and expiry produce tenant audit evidence without signing material"
+  ]
+}

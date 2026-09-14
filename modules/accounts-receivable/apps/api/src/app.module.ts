@@ -54,14 +54,18 @@ const AR_LOCKED_KEYS = new Set<string>([
   ...AR_RESERVED_KEYS,
 ]);
 
+import { DatabaseModule } from './database/database.module.js';
+
 @Module({
   imports: [
+    DatabaseModule,
     /**
      * Universal runtime form definitions.
      * REST endpoints: GET/PUT/POST /forms/:key
      * Admin publishes a change → all users see it on next request, zero deployment.
      */
     FormsEngineNestModule.forRootAsync({
+      imports: [DatabaseModule],
       inject: [DatabaseService],
       useFactory: (db: DatabaseService) => ({
         pool: db.pool,
@@ -73,6 +77,7 @@ const AR_LOCKED_KEYS = new Set<string>([
      * Per-tenant custom field definitions persisted to gigalibs_ar.custom_field_definitions.
      */
     CustomFieldsNestModule.forRootAsync({
+      imports: [DatabaseModule],
       inject: [DatabaseService],
       useFactory: (db: DatabaseService) => ({
         pool: db.pool,

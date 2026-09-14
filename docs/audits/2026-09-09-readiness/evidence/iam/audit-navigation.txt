@@ -1,0 +1,7 @@
+$ node scripts/verify-navigation-boundary.mjs
+{
+  "status": "passed",
+  "application": "apps/workflow-platform",
+  "pageRoutes": 68,
+  "staticInternalLinks": 116
+}

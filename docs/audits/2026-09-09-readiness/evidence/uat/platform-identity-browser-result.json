@@ -1,0 +1,14 @@
+{
+  "recordedAt": "2026-09-11T02:16:29.435Z",
+  "base": "http://127.0.0.1:5180",
+  "environment": "local-uat",
+  "checks": [
+    "platform owner authenticated through the browser BFF",
+    "profile update persisted through the profile UI",
+    "platform user directory and display-once recovery UI completed",
+    "platform auditor UI rendered read-only controls",
+    "platform auditor mutation was denied by the control plane"
+  ],
+  "pageErrors": [],
+  "rawCredentialRecorded": false
+}

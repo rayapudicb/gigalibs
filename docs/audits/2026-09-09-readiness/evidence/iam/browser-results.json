@@ -1,0 +1,18 @@
+{
+  "kind": "Real Chromium browser verification",
+  "base": "http://127.0.0.1:5199",
+  "identityService": "deliberately unconfigured",
+  "mockedHttpResponses": false,
+  "scope": "negative identity/containment flows; not manual human UAT or DB E2E",
+  "passed": true,
+  "checks": [
+    "Login exposes the credential form without simulated personas",
+    "Real unavailable login stays on the form and creates no authenticated cookie",
+    "Browser password validation rejects short registration before an API call",
+    "Unavailable registration shows failure without a workspace-provisioning claim",
+    "Direct invoice navigation redirects anonymous users to sign in",
+    "Unverified cookie cannot open the workspace during an identity outage",
+    "Login form fits a 390-pixel viewport"
+  ],
+  "pageErrors": []
+}

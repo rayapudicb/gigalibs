@@ -1,6 +1,7 @@
 # GigaLibs Operational Intelligence requirements baseline
 
 Baseline: 2026-09-03  
+Last additive change: 2026-09-10 (`FR-17-EB-01`–`FR-17-EB-15`)
 Source: Operational Intelligence Blueprint v2.0, verified against the repository  
 Change rule: retain stable IDs; revise acceptance and record the decision instead of silently renumbering.
 
@@ -24,7 +25,32 @@ Change rule: retain stable IDs; revise acceptance and record the decision instea
 | FR-14 | Tenant Administration | Tenant admin performs routine setup without vendor support | Core tenant/environment/retention partial; SSO/admin/promotion/quotas/region pending |
 | FR-15 | Audit and Evidence | Auditor reconstructs actor, event, reason, policy and evidence | Release 1 coverage implemented; export/access coverage and external review pending |
 | FR-16 | Usage and Billing | Usage reconciles to runs/providers/storage; forecast, warning and cap work | Not implemented |
-| FR-17 | Customer Invoicing and Accounts Receivable | A tenant can independently configure billing, maintain customers, issue immutable invoices, deliver them, apply/reconcile payments and credits, report aging, and audit every financial action using module-owned persistence | Proposed under WI-OI-019; G0–G3 design only |
+| FR-17 | Customer Invoicing and Accounts Receivable | A tenant can independently configure billing, maintain customers, issue immutable invoices, deliver them, apply/reconcile payments and credits, report aging, and audit every financial action using module-owned persistence | Bounded customer/draft/issue foundation exists under WI-OI-019; full outcome and G5 evidence remain incomplete |
+
+### FR-17 event billing extension
+
+These stable child IDs incorporate the event/work-source and supplemental-invoicing gaps from the
+WhooCrew Invoicing BRD and the owner's 2026-09-10 requirement direction. They refine FR-17 without
+renumbering the universal FR-01–FR-17 outcomes. Detailed acceptance, impact and rollout design is in
+[`ar-event-billing-supplemental-invoicing-plan.md`](plans/ar-event-billing-supplemental-invoicing-plan.md).
+
+| ID | Priority | Required outcome |
+| --- | --- | --- |
+| FR-17-EB-01 | P0 | Persisted event/work-source billing summary with total workers/records, approved, pending, previously invoiced and ready-to-bill counts; generation is rejected when none are eligible |
+| FR-17-EB-02 | P0 | Repeated generation automatically classifies and creates the next supplemental draft for newly approved records, with no application-defined round limit |
+| FR-17-EB-03 | P0 | Immutable invoice family linking original, supplemental sequence, work source, covered records, void and replacement |
+| FR-17-EB-04 | P0 | Percentage/flat markup with line override → customer/category rule → customer default precedence |
+| FR-17-EB-05 | P0 | Internal raw-cost, markup and billed-amount transparency with separately governed customer-document cost visibility |
+| FR-17-EB-06 | P0 | Configurable missed-billing exception/report for approved records left unbilled beyond policy |
+| FR-17-EB-07 | P0 | Void does not unlock source records; authorized Release for Rebilling and linked replacement are explicit |
+| FR-17-EB-08 | P0 | Versioned billable-source contract with module-owned standalone entry, immutable lineage and governed pre/post-issue correction behavior; external client adapters are optional later implementations |
+| FR-17-EB-09 | P1 | Multiple customer templates, generation-time selection, prefill and immutable issued-version snapshot |
+| FR-17-EB-10 | P1 | Versioned numbering patterns with allowlisted customer/work/sequence/supplement tokens |
+| FR-17-EB-11 | P1 | Accounting connection plus customer, item/category, invoice and correction mappings with actionable retry/reconciliation |
+| FR-17-EB-12 | P1 | External paid/unknown invoice correction enters review and blocks automatic void/rebilling effects |
+| FR-17-EB-13 | P1 | Explicit snapshotted Ready to Send versus Auto Send on Issue delivery policy |
+| FR-17-EB-14 | P1 | Automated 26-approved-then-4-later acceptance scenario and a defined two-minute event-invoice user target |
+| FR-17-EB-15 | P2 | Event-level invoice-family history with amount, issue, delivery, synchronization and correction states |
 
 ## Non-functional requirements
 

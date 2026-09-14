@@ -1,0 +1,38 @@
+{
+  "observedAt": "2026-09-10T12:38:00+05:30",
+  "baseUrl": "http://127.0.0.1:5180",
+  "account": "newuser@gigalibs.io",
+  "landingPath": "/modules",
+  "platformRoles": ["PLATFORM_OWNER"],
+  "tenant": "my-workspace",
+  "visibleCatalogEntries": 29,
+  "enabledSurfaces": 8,
+  "enabledTenantModules": [
+    "tenant-access",
+    "personal-security",
+    "execution-runs",
+    "exceptions-recovery",
+    "approval-queue",
+    "value-ledger",
+    "invoice-matching"
+  ],
+  "platformCatalogStatus": 200,
+  "platformTenantRegistryStatus": 200,
+  "persistedTenantCount": 7,
+  "probedRoutes": [
+    "/settings",
+    "/settings/profile",
+    "/runs",
+    "/exceptions",
+    "/actions",
+    "/value",
+    "/ap",
+    "/platform-admin"
+  ],
+  "probeResult": "all routes returned 200 without capability-unavailable, sign-in redirect, page error, or 5xx response",
+  "notes": [
+    "The test created authentication sessions but did not create synthetic business records.",
+    "Workflow Definitions, Data Contracts, and Connections were returned to containment after their suite screens produced 503 responses from quarantined API contracts.",
+    "The PostgreSQL 16 execution database, Redis queue, and FastAPI execution plane were running for the Execution Runs probe."
+  ]
+}

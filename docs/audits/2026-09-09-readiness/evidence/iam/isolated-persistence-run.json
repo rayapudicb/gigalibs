@@ -1,0 +1,41 @@
+{
+  "database": "gigalibs_iam_cert_8ff0a624d1dd",
+  "postgresVersion": "14.20",
+  "runtimeRole": "dedicated non-superuser",
+  "source": "Isolated, attributable certification records created through real APIs",
+  "services": "Real PostgreSQL, NestJS control plane, Next.js development BFF, DNS resolver and isolated signed OIDC provider",
+  "unavailableServices": [
+    "execution plane",
+    "object storage",
+    "external enterprise identity provider",
+    "email provider"
+  ],
+  "checks": [
+    {
+      "check": "migration-deploy",
+      "exitCode": 0
+    },
+    {
+      "check": "bff-typecheck",
+      "exitCode": 0
+    },
+    {
+      "check": "control-plane-certification",
+      "exitCode": 0
+    },
+    {
+      "check": "auth-persistence",
+      "exitCode": 0
+    },
+    {
+      "check": "oidc-persistence",
+      "exitCode": 0
+    }
+  ],
+  "cleanup": {
+    "databaseRemoved": true,
+    "roleRemoved": true,
+    "certificationBuildRemoved": true
+  },
+  "passed": true
+}
