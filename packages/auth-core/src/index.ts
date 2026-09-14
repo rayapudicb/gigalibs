@@ -10,6 +10,8 @@
 
 export * from './jwt.js';
 export * from './password.js';
+export * from './recovery-code.js';
 export * from './otp.js';
 export * from './session.js';
+export * from './totp.js';
 export * from './types.js';

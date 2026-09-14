@@ -24,10 +24,13 @@
   "dependencies": {
     "@gigalibs/auth-core": "workspace:*",
     "@gigalibs/contracts": "workspace:*",
+    "@gigalibs/crypto": "workspace:*",
     "@gigalibs/db": "workspace:*",
     "@gigalibs/validation-nest": "workspace:*",
+    "@gigalibs/rbac-nest": "workspace:*",
     "@nestjs/common": "^11.2.3",
-    "@nestjs/core": "^11.2.3"
+    "@nestjs/core": "^11.2.3",
+    "openid-client": "^6.8.7"
   },
   "devDependencies": {
     "@types/node": "^24.10.0",

@@ -70,12 +70,19 @@ try {
   const registeredSurfaces = service.listSurfaces();
   assert.deepEqual(
     registeredSurfaces.map((surface) => surface.registrationKey),
-    ['tenant-profile-extension', 'tenant-record-application'],
+    [
+      'tenant-profile-extension',
+      'tenant-record-application',
+      'ar-customer-record',
+      'ar-invoice-draft',
+    ],
   );
-  assert.equal(
-    registeredSurfaces.some((surface) => surface.moduleKey === 'accounts-receivable'),
-    false,
+  const arSurfaces = registeredSurfaces.filter(
+    (surface) => surface.moduleKey === 'accounts-receivable',
   );
+  assert.equal(arSurfaces.length, 2);
+  assert.ok(arSurfaces.every((surface) => surface.authoringEnabled === false));
+  assert.ok(arSurfaces.every((surface) => surface.coreFields.length > 0));
   outcomes.push('control-plane-surface-registry-is-authoritative');
 
   const [staleTenants, staleUsers] = await Promise.all([
@@ -150,8 +157,8 @@ try {
   assert.equal(restrictedManifest.fields.some((field) => field.key === 'cost-approval'), false);
   await assert.rejects(() => service.createApplicationRecord(tenant.id, author.id, applicationDefinition.entityKey, { publishedVersionId: appVersion.id, values: { reference: 'INS-CONDITIONAL', passed: false, 'status-code': 'open' }, reason: 'Conditional requiredness denial test', idempotencyKey: `record-${randomBytes(12).toString('hex')}` }, ['*']), /failed validation/i);
   const record = await service.createApplicationRecord(tenant.id, author.id, applicationDefinition.entityKey, { publishedVersionId: appVersion.id, values: { reference: 'INS-001', passed: true, 'internal-cost': 125, 'status-code': 'open', notes: 'requires review' }, reason: 'Create UAT application record', idempotencyKey: `record-${randomBytes(12).toString('hex')}` }, ['*']);
-  assert.equal((await service.listApplicationRecords(tenant.id, applicationDefinition.entityKey, ['*'])).length, 1);
-  const restrictedRecords = await service.listApplicationRecords(tenant.id, applicationDefinition.entityKey, ['configuration-apps:read']);
+  assert.equal((await service.listApplicationRecords(tenant.id, applicationDefinition.entityKey, ['*'])).records.length, 1);
+  const restrictedRecords = (await service.listApplicationRecords(tenant.id, applicationDefinition.entityKey, ['configuration-apps:read'])).records;
   assert.equal(Object.prototype.hasOwnProperty.call(restrictedRecords[0].values, 'internal-cost'), false);
   await assert.rejects(() => service.updateApplicationRecord(tenant.id, author.id, applicationDefinition.entityKey, record.id, { publishedVersionId: appVersion.id, expectedVersion: record.version, values: { 'internal-cost': 250 }, reason: 'Unauthorized sensitive write test', idempotencyKey: `record-${randomBytes(12).toString('hex')}` }, ['configuration-apps:write']), /cannot be changed/i);
   const updated = await service.updateApplicationRecord(tenant.id, author.id, applicationDefinition.entityKey, record.id, { publishedVersionId: appVersion.id, expectedVersion: record.version, values: { reference: 'INS-001-R', passed: false, 'failure-detail': 'Seal failed inspection' }, reason: 'Update UAT application record', idempotencyKey: `record-${randomBytes(12).toString('hex')}` }, ['configuration-apps:read', 'configuration-apps:write']);
@@ -183,7 +190,7 @@ try {
   assert.equal(appImpact.activationAllowed, false);
   await assert.rejects(() => service.updateApplicationRecord(tenant.id, author.id, applicationDefinition.entityKey, record.id, { publishedVersionId: appVersion.id, expectedVersion: record.version, values: { reference: 'STALE', passed: true }, reason: 'Stale version test', idempotencyKey: `record-${randomBytes(12).toString('hex')}` }, ['*']), /changed; reload/i);
   await service.deleteApplicationRecord(tenant.id, author.id, applicationDefinition.entityKey, record.id, { expectedVersion: updated.version, reason: 'Delete UAT application record', idempotencyKey: `record-${randomBytes(12).toString('hex')}` });
-  assert.equal((await service.listApplicationRecords(tenant.id, applicationDefinition.entityKey, ['*'])).length, 0);
+  assert.equal((await service.listApplicationRecords(tenant.id, applicationDefinition.entityKey, ['*'])).records.length, 0);
   outcomes.push('tenant-app-conditional-validation-field-security-create-update-conflict-soft-delete');
 
   const exportedPackage = await service.exportPackage(tenant.id, reviewer.id, { publishedVersionIds: [profileVersion.id, appVersion.id], reason: 'Export definition-only UAT package', idempotencyKey: `package-${randomBytes(12).toString('hex')}` });

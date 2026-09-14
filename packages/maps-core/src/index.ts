@@ -12,7 +12,6 @@ export interface Coordinates {
   latitude: number;
   longitude: number;
 }
-
 export type GeofenceType = 'POLYGON' | 'RADIAL_CIRCLE';
 
 export interface GeofenceBoundary {
@@ -147,5 +146,227 @@ export class GeoCalculator {
     }
 
     return false;
+  }
+}
+
+// ============================================================================
+// GLOBAL GEOCODING & KNOWLEDGE DIRECTORY
+// ============================================================================
+
+export interface GeocodedPlace {
+  id: string;
+  name: string;
+  formattedAddress: string;
+  city: string;
+  stateOrProvince: string;
+  country: string;
+  countryCode: string;
+  postalCode?: string;
+  coordinates: Coordinates;
+  category: 'Commercial Hub' | 'Industrial Logistics' | 'Port / Terminal' | 'Retail District';
+  regionalCluster: string;
+  economicZone: string;
+  nearestHub?: {
+    name: string;
+    distanceKm: number;
+    mode: string;
+  };
+  details?: Record<string, any>;
+}
+
+export const GLOBAL_GEOCODED_LOCATIONS: GeocodedPlace[] = [
+  {
+    id: 'place-lewisville-tx',
+    name: 'Lewisville',
+    formattedAddress: 'Lewisville, Denton County, Texas 75057, United States',
+    city: 'Lewisville',
+    stateOrProvince: 'Texas',
+    country: 'United States',
+    countryCode: 'US',
+    postalCode: '75057',
+    coordinates: { latitude: 33.0462, longitude: -96.9942 },
+    category: 'Commercial Hub',
+    regionalCluster: 'Texas Triangle Economic Metro',
+    economicZone: 'Dallas-Fort Worth (DFW) Metroplex Intermodal',
+    nearestHub: {
+      name: 'Dallas Inland Port (DFW)',
+      distanceKm: 38.4,
+      mode: 'Intermodal Rail / Highway',
+    },
+    details: {
+      population: '112,500 residents',
+      taxJurisdiction: 'Texas Comptroller (8.25% Composite State + Local)',
+      logisticsCorridor: 'I-35E NAFTA / USMCA Primary Freight Spine',
+      majorIndustries: 'Commercial Distribution, Technology Manufacturing & Corporate Campuses',
+      nearestAirport: 'Dallas/Fort Worth International (DFW) — 18.2 km',
+    },
+  },
+  {
+    id: 'place-ongole-ap-in',
+    name: 'Ongole',
+    formattedAddress: 'Ongole, Prakasam District, Andhra Pradesh 523001, India',
+    city: 'Ongole',
+    stateOrProvince: 'Andhra Pradesh',
+    country: 'India',
+    countryCode: 'IN',
+    postalCode: '523001',
+    coordinates: { latitude: 15.5057, longitude: 80.0499 },
+    category: 'Industrial Logistics',
+    regionalCluster: 'South India Bay of Bengal Coastal Corridor',
+    economicZone: 'Andhra Pradesh Industrial Corridor (NH-16 / Golden Quadrilateral)',
+    nearestHub: {
+      name: 'Krishnapatnam Deepwater Port',
+      distanceKm: 135.2,
+      mode: 'Deep Sea Maritime Port',
+    },
+    details: {
+      population: '252,000 residents',
+      taxJurisdiction: 'Andhra Pradesh GST (18% Composite CGST + SGST)',
+      logisticsCorridor: 'National Highway 16 (Chennai-Kolkata Freight Corridor)',
+      majorIndustries: 'Galaxy Granite Export Processing, Marine Seafood & Cold-Chain Logistics',
+      nearestSeaports: 'Krishnapatnam Port (135 km), Chennai Seaport (285 km)',
+    },
+  },
+  {
+    id: 'place-tokyo-jp',
+    name: 'Tokyo',
+    formattedAddress: 'Chiyoda-ku, Tokyo 100-0001, Japan',
+    city: 'Tokyo',
+    stateOrProvince: 'Tokyo Prefecture',
+    country: 'Japan',
+    countryCode: 'JP',
+    postalCode: '100-0001',
+    coordinates: { latitude: 35.6762, longitude: 139.6503 },
+    category: 'Commercial Hub',
+    regionalCluster: 'Greater Tokyo Kanto Economic Basin',
+    economicZone: 'Tokyo Bay Keihin Industrial Zone',
+    nearestHub: {
+      name: 'Port of Tokyo & Haneda Airfreight Hub',
+      distanceKm: 12.0,
+      mode: 'Deep Sea & Air Cargo',
+    },
+    details: {
+      population: '14,100,000 residents',
+      taxJurisdiction: 'National Tax Agency Japan (10% Consumption Tax)',
+      majorIndustries: 'Robotics, Financial Services & Global Headquarters',
+    },
+  },
+  {
+    id: 'place-london-uk',
+    name: 'London',
+    formattedAddress: 'City of London, Greater London, United Kingdom',
+    city: 'London',
+    stateOrProvince: 'Greater London',
+    country: 'United Kingdom',
+    countryCode: 'GB',
+    postalCode: 'EC2N 2DB',
+    coordinates: { latitude: 51.5074, longitude: -0.1278 },
+    category: 'Commercial Hub',
+    regionalCluster: 'UK Southeast Economic Supercluster',
+    economicZone: 'London Heathrow / Thames Gateway Corridor',
+    nearestHub: {
+      name: 'London Gateway Port',
+      distanceKm: 42.5,
+      mode: 'Automated Deep Sea Container Terminal',
+    },
+    details: {
+      population: '8,980,000 residents',
+      taxJurisdiction: 'HMRC (20% Standard VAT)',
+      majorIndustries: 'Global FinTech, Insurance & Treasury Operations',
+    },
+  },
+  {
+    id: 'place-dallas-tx',
+    name: 'Dallas',
+    formattedAddress: 'Dallas, Dallas County, Texas, United States',
+    city: 'Dallas',
+    stateOrProvince: 'Texas',
+    country: 'United States',
+    countryCode: 'US',
+    postalCode: '75201',
+    coordinates: { latitude: 32.7767, longitude: -96.797 },
+    category: 'Industrial Logistics',
+    regionalCluster: 'Texas Triangle Economic Metro',
+    economicZone: 'Dallas Inland Port (DFW)',
+    nearestHub: {
+      name: 'DFW International Intermodal Hub',
+      distanceKm: 24.0,
+      mode: 'Class I BNSF/Union Pacific Rail',
+    },
+    details: {
+      population: '1,304,000 residents',
+      taxJurisdiction: 'Texas Comptroller (8.25%)',
+    },
+  },
+  {
+    id: 'place-bengaluru-in',
+    name: 'Bengaluru',
+    formattedAddress: 'Bengaluru, Karnataka 560001, India',
+    city: 'Bengaluru',
+    stateOrProvince: 'Karnataka',
+    country: 'India',
+    countryCode: 'IN',
+    postalCode: '560001',
+    coordinates: { latitude: 12.9716, longitude: 77.5946 },
+    category: 'Commercial Hub',
+    regionalCluster: 'Deccan Tech & Aerospace Hub',
+    economicZone: 'Electronic City & Whitefield Export Corridor',
+    nearestHub: {
+      name: 'Kempegowda International Cargo Village',
+      distanceKm: 34.8,
+      mode: 'Air Cargo Intermodal',
+    },
+    details: {
+      population: '13,200,000 residents',
+      taxJurisdiction: 'Karnataka GST (18%)',
+    },
+  },
+];
+
+export class GeoSearchEngine {
+  /**
+   * Performs an instant multi-attribute search across the global geocoded knowledge directory.
+   */
+  static search(query: string): GeocodedPlace[] {
+    if (!query || !query.trim()) return [];
+    const q = query.trim().toLowerCase();
+
+    // Check exact or partial tokens
+    const tokens = q.split(/[\s,]+/).filter(Boolean);
+
+    return GLOBAL_GEOCODED_LOCATIONS.filter((place) => {
+      const searchTarget = [
+        place.name,
+        place.city,
+        place.stateOrProvince,
+        place.country,
+        place.countryCode,
+        place.postalCode,
+        place.category,
+        place.regionalCluster,
+        place.economicZone,
+        place.formattedAddress,
+        place.nearestHub?.name,
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+
+      // Match if all tokens appear in target or if whole query appears
+      if (searchTarget.includes(q)) return true;
+      return tokens.every((token) => searchTarget.includes(token));
+    });
+  }
+
+  /**
+   * Calculates proximity and geodesic distance from a query coordinate to known global hubs.
+   */
+  static findNearestHubs(coord: Coordinates, limit = 3): Array<{ place: GeocodedPlace; distanceKm: number }> {
+    return GLOBAL_GEOCODED_LOCATIONS.map((place) => ({
+      place,
+      distanceKm: GeoCalculator.haversineDistance(coord, place.coordinates),
+    }))
+      .sort((a, b) => a.distanceKm - b.distanceKm)
+      .slice(0, limit);
   }
 }

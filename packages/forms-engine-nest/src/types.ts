@@ -1,4 +1,17 @@
-import type { FormFieldType } from '@gigalibs/form-engine-core';
+export type FormFieldType =
+  | 'TEXT'
+  | 'TEXTAREA'
+  | 'NUMBER'
+  | 'EMAIL'
+  | 'PHONE'
+  | 'CURRENCY'
+  | 'SELECT'
+  | 'MULTI_SELECT'
+  | 'CHECKBOX'
+  | 'RADIO'
+  | 'DATE'
+  | 'TIME'
+  | string;
 
 // ─── Field-level row stored in JSONB ─────────────────────────────────────────
 

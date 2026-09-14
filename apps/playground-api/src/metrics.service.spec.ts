@@ -7,6 +7,10 @@ const database = vi.hoisted(() => ({
   operationalException: { groupBy: vi.fn() },
   businessAction: { groupBy: vi.fn() },
   dataRetentionExecution: { groupBy: vi.fn() },
+  configurationChangeSet: { groupBy: vi.fn() },
+  configurationActivation: { groupBy: vi.fn() },
+  configurationPublishedVersion: { count: vi.fn() },
+  configurationRecord: { count: vi.fn() },
 }));
 
 vi.mock('@gigalibs/db', () => ({ prisma: database }));
@@ -17,7 +21,8 @@ describe('MetricsService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     for (const repository of Object.values(database)) {
-      repository.groupBy.mockResolvedValue([]);
+      if ('groupBy' in repository) repository.groupBy.mockResolvedValue([]);
+      if ('count' in repository) repository.count.mockResolvedValue(0);
     }
   });
 
@@ -79,5 +84,24 @@ describe('MetricsService', () => {
     expect(failed).toContain('gigalibs_metrics_collection_success{collector="database"} 0');
     expect(failed).toContain('gigalibs_metrics_collection_failures_total{collector="database"} 1');
     expect(failed).not.toContain('gigalibs_source_events{status="PROCESSED"} 7');
+  });
+
+  it('emits bounded Configuration Studio lifecycle gauges', async () => {
+    database.configurationChangeSet.groupBy.mockResolvedValueOnce([
+      { status: 'SUBMITTED', _count: { _all: 2 } },
+    ]);
+    database.configurationActivation.groupBy.mockResolvedValueOnce([
+      { status: 'ACTIVE', _count: { _all: 1 } },
+    ]);
+    database.configurationPublishedVersion.count.mockResolvedValueOnce(3);
+    database.configurationRecord.count.mockResolvedValueOnce(4).mockResolvedValueOnce(1);
+
+    const output = await new MetricsService().renderPrometheus();
+
+    expect(output).toContain('gigalibs_configuration_change_sets{status="SUBMITTED"} 2');
+    expect(output).toContain('gigalibs_configuration_activations{status="ACTIVE"} 1');
+    expect(output).toContain('gigalibs_configuration_published_versions 3');
+    expect(output).toContain('gigalibs_configuration_records{status="ACTIVE"} 4');
+    expect(output).toContain('gigalibs_configuration_records{status="DELETED"} 1');
   });
 });

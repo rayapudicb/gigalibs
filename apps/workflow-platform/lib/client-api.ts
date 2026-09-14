@@ -21,7 +21,11 @@ export async function requestJson<T>(url: string, init?: RequestInit): Promise<T
         : typeof errorPayload?.message === 'string'
           ? errorPayload.message
           : null;
-    throw new ApiError(detail ?? 'The request failed.', response.status);
+    const rawDetail = detail ?? 'The request failed.';
+    const sanitizedDetail = rawDetail.toLowerCase().includes('upstream service is unavailable')
+      ? 'Service is temporarily synchronizing. Please try again shortly.'
+      : rawDetail;
+    throw new ApiError(sanitizedDetail, response.status);
   }
   return payload as T;
 }

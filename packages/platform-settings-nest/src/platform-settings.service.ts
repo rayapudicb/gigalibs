@@ -1,9 +1,9 @@
-import { prisma, type Prisma } from '@gigalibs/db';
+import { type Prisma, prisma } from '@gigalibs/db';
 import {
   PlatformSettingsEngine,
-  TenantPlatformSettingsSchema,
   type TenantPlatformSettings,
   type TenantPlatformSettingsPatch,
+  TenantPlatformSettingsSchema,
 } from '@gigalibs/platform-settings';
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 
@@ -52,7 +52,16 @@ export class PlatformSettingsService {
         });
       }
 
-      const updatedRow = await transaction.tenantSettings.findUniqueOrThrow({ where: { tenantId } });
+      if (!current.security.enforceMfa && next.security.enforceMfa) {
+        await transaction.session.updateMany({
+          where: { tenantId, status: 'ACTIVE' },
+          data: { mfaVerifiedAt: null },
+        });
+      }
+
+      const updatedRow = await transaction.tenantSettings.findUniqueOrThrow({
+        where: { tenantId },
+      });
       await transaction.auditLog.create({
         data: {
           action: 'SETTINGS_CHANGE',
@@ -62,6 +71,7 @@ export class PlatformSettingsService {
           tenantId,
           before: current as Prisma.InputJsonValue,
           after: next as Prisma.InputJsonValue,
+          ...(patch.changeReason ? { metadata: { reason: patch.changeReason } } : {}),
         },
       });
 

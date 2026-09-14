@@ -9,15 +9,26 @@ import { TenancyService } from './tenancy.service.js';
 import { TenantMiddleware } from './middleware/tenant.middleware.js';
 import { TenancyController } from './tenancy.controller.js';
 import { TenantBoundaryGuard } from './guards/tenant-boundary.guard.js';
+import { PlatformAuthorityGuard } from './guards/platform-authority.guard.js';
+import { PlatformAdministrationController } from './platform-administration.controller.js';
+import { PlatformAdministrationService } from './platform-administration.service.js';
 
 @Module({
-  controllers: [TenancyController],
+  controllers: [TenancyController, PlatformAdministrationController],
   providers: [
     TenancyService,
     TenantMiddleware,
     TenantBoundaryGuard,
+    PlatformAuthorityGuard,
+    PlatformAdministrationService,
   ],
-  exports: [TenancyService, TenantMiddleware, TenantBoundaryGuard],
+  exports: [
+    TenancyService,
+    TenantMiddleware,
+    TenantBoundaryGuard,
+    PlatformAuthorityGuard,
+    PlatformAdministrationService,
+  ],
 })
 export class TenancyModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
@@ -29,13 +40,21 @@ export class TenancyModule implements NestModule {
   static forRoot(): DynamicModule {
     return {
       module: TenancyModule,
-      controllers: [TenancyController],
+      controllers: [TenancyController, PlatformAdministrationController],
       providers: [
         TenancyService,
         TenantMiddleware,
         TenantBoundaryGuard,
+        PlatformAuthorityGuard,
+        PlatformAdministrationService,
       ],
-      exports: [TenancyService, TenantMiddleware, TenantBoundaryGuard],
+      exports: [
+        TenancyService,
+        TenantMiddleware,
+        TenantBoundaryGuard,
+        PlatformAuthorityGuard,
+        PlatformAdministrationService,
+      ],
     };
   }
 }

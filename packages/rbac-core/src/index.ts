@@ -8,5 +8,6 @@
  */
 
 export * from './evaluator.js';
+export * from './default-roles.js';
 export * from './role-hierarchy.js';
 export * from './types.js';

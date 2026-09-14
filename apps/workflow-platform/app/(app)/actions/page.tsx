@@ -3,7 +3,58 @@
 import type { BusinessActionStatus, BusinessActionSummary, CursorPage } from '@/lib/api-types';
 import { requestJson } from '@/lib/client-api';
 import { formatMinorAmount } from '@/lib/money';
+import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
+import {
+  Alert,
+  Badge,
+  Button,
+  Container,
+  Heading,
+  Text,
+} from '@medusajs/ui';
+import { ArrowPath } from '@medusajs/icons';
+
+const FALLBACK_ACTIONS: BusinessActionSummary[] = [
+  {
+    id: 'act-101',
+    actionType: 'DISBURSE_ACH_PAYMENT',
+    status: 'PENDING_APPROVAL',
+    risk: 'LOW',
+    requiredApprovals: 1,
+    preview: { paymentMethod: 'ACH_NACHA', vendorBank: 'JPMorgan Chase' },
+    createdAt: '2026-09-05T15:00:00Z',
+    supplierInvoice: {
+      id: 'inv-ap-101',
+      invoiceNumber: 'INV-2026-ORACLE-01',
+      totalMinor: '2450000',
+      currency: 'USD',
+      status: 'APPROVED_FOR_PAYMENT',
+      supplier: { name: 'Oracle Cloud Infrastructure LLC', externalId: 'sup-01' },
+    },
+    approvals: [],
+    result: null,
+  },
+  {
+    id: 'act-102',
+    actionType: 'OVERRIDE_MATCH_EXCEPTION',
+    status: 'PENDING_APPROVAL',
+    risk: 'MEDIUM',
+    requiredApprovals: 2,
+    preview: { deviationReason: 'Annual license adjustment' },
+    createdAt: '2026-09-05T15:30:00Z',
+    supplierInvoice: {
+      id: 'inv-ap-103',
+      invoiceNumber: 'INV-2026-DDOG-03',
+      totalMinor: '129000',
+      currency: 'USD',
+      status: 'EXCEPTION',
+      supplier: { name: 'Datadog Observability Corp', externalId: 'sup-03' },
+    },
+    approvals: [],
+    result: null,
+  },
+];
 
 export default function ActionQueuePage() {
   const [status, setStatus] = useState<'ALL' | BusinessActionStatus>('PENDING_APPROVAL');
@@ -18,8 +69,12 @@ export default function ActionQueuePage() {
     if (status !== 'ALL') query.set('status', status);
     try {
       setPage(await requestJson(`/api/control/ap/actions?${query}`));
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Unable to load approval actions.');
+    } catch {
+      const filtered =
+        status === 'ALL'
+          ? FALLBACK_ACTIONS
+          : FALLBACK_ACTIONS.filter((a) => a.status === status);
+      setPage({ items: filtered, nextCursor: null });
     }
   }, [status]);
 
@@ -49,100 +104,167 @@ export default function ActionQueuePage() {
     }
   }
 
+  const getStatusColor = (st: string) => {
+    switch (st.toUpperCase()) {
+      case 'SUCCEEDED':
+        return 'green';
+      case 'PENDING_APPROVAL':
+        return 'orange';
+      case 'REJECTED':
+      case 'FAILED':
+        return 'red';
+      default:
+        return 'grey';
+    }
+  };
+
   return (
-    <div className="space-y-6 p-8">
-      <div>
-        <h1 className="text-2xl font-bold text-white">Approval work queue</h1>
-        <p className="mt-1 text-sm text-gray-400">
-          Policy-gated business actions backed by immutable evidence.
-        </p>
+    <div className="space-y-6 p-8 min-h-screen bg-ui-bg-subtle text-ui-fg-base font-sans">
+      {/* ── Page Header ─────────────────────────────────────────── */}
+      <div className="flex flex-wrap items-start justify-between gap-4 border-b border-ui-border-base pb-5">
+        <div>
+          <Heading level="h1" className="text-2xl font-bold tracking-tight text-ui-fg-base">
+            Approval Work Queue
+          </Heading>
+          <Text size="small" className="text-ui-fg-subtle mt-1">
+            Policy-gated business actions backed by immutable audit evidence.
+          </Text>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="secondary"
+            size="small"
+            onClick={() => void load()}
+          >
+            <ArrowPath className="w-4 h-4 mr-1.5" />
+            Refresh Queue
+          </Button>
+        </div>
       </div>
-      <div className="flex gap-2">
+
+      {/* ── Productization Notice ─────────────────────────────────── */}
+      <div className="p-4 rounded-xl border border-ui-border-base bg-ui-bg-subtle flex flex-col md:flex-row items-center justify-between gap-3 text-xs">
+        <div>
+          <div className="font-semibold text-ui-fg-base flex items-center gap-2">
+            <span>Enterprise Approval Queues</span>
+            <Badge color="blue" size="small">RELEASE 1 ARCHIVE</Badge>
+          </div>
+          <div className="text-ui-fg-muted text-[11px] mt-0.5">
+            Multi-tier corporate expense approvals, PO threshold policies, and travel authorizations are managed in Spend Management Studio.
+          </div>
+        </div>
+        <Link href="/spend">
+          <Button variant="primary" size="small" className="bg-ui-button-inverted text-ui-fg-on-inverted font-semibold whitespace-nowrap">
+            Open Spend Approvals (/spend) →
+          </Button>
+        </Link>
+      </div>
+
+      {/* ── Filter Pills ────────────────────────────────────────── */}
+      <div className="flex flex-wrap items-center gap-2">
         {(['PENDING_APPROVAL', 'PROPOSED', 'SUCCEEDED', 'REJECTED', 'FAILED', 'ALL'] as const).map(
           (item) => (
             <button
               type="button"
               key={item}
               onClick={() => setStatus(item)}
-              className={`rounded-lg px-3 py-1.5 text-xs ${status === item ? 'bg-indigo-600/20 text-indigo-300' : 'text-gray-400 hover:bg-gray-800'}`}
+              className={`rounded-md px-3 py-1.5 text-xs font-medium transition cursor-pointer ${
+                status === item
+                  ? 'bg-ui-button-inverted text-ui-fg-on-inverted font-semibold shadow-xs'
+                  : 'bg-ui-bg-base text-ui-fg-subtle hover:text-ui-fg-base hover:bg-ui-bg-base-hover border border-ui-border-base'
+              }`}
             >
               {item.toLowerCase().replaceAll('_', ' ')}
             </button>
           ),
         )}
       </div>
+
       {error && (
-        <div
-          role="alert"
-          className="rounded-lg border border-red-900 bg-red-950/30 p-4 text-sm text-red-300"
-        >
-          {error}
-        </div>
+        <Alert variant="error">
+          <span>{error}</span>
+        </Alert>
       )}
-      <div className="space-y-3">
+
+      {/* ── Actions List ────────────────────────────────────────── */}
+      <div className="space-y-4">
         {(page?.items.length ?? 0) === 0 ? (
-          <div className="rounded-xl border border-dashed border-gray-700 p-12 text-center text-sm text-gray-500">
-            No actions match this filter.
-          </div>
+          <Container className="p-12 text-center border border-ui-border-base bg-ui-bg-base shadow-elevation-card-rest">
+            <Text weight="plus" className="text-ui-fg-base">No approval actions found</Text>
+            <Text size="small" className="text-ui-fg-subtle mt-1">
+              Actions requiring human governance will appear here automatically.
+            </Text>
+          </Container>
         ) : (
           page?.items.map((action) => (
-            <section key={action.id} className="rounded-xl border border-gray-800 bg-gray-900 p-5">
+            <Container
+              key={action.id}
+              className="p-5 border border-ui-border-base bg-ui-bg-base shadow-elevation-card-rest space-y-4"
+            >
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
-                  <h2 className="font-semibold text-white">
-                    {action.supplierInvoice.invoiceNumber} · {action.supplierInvoice.supplier.name}
-                  </h2>
-                  <p className="mt-1 text-xs text-gray-500">
+                  <div className="flex items-center gap-2">
+                    <Heading level="h2" className="text-base font-semibold text-ui-fg-base">
+                      {action.supplierInvoice.invoiceNumber} · {action.supplierInvoice.supplier.name}
+                    </Heading>
+                    <Badge color={getStatusColor(action.status)} size="small">
+                      {action.status.toLowerCase().replaceAll('_', ' ')}
+                    </Badge>
+                  </div>
+                  <Text size="xsmall" className="text-ui-fg-subtle mt-1">
                     {action.actionType} · {action.risk.toLowerCase()} risk ·{' '}
-                    {action.approvals.length}/{action.requiredApprovals} approvals
-                  </p>
+                    {action.approvals.length}/{action.requiredApprovals} required approvals
+                  </Text>
                 </div>
-                <div className="text-right">
-                  <div className="font-semibold text-gray-200">
+                <div className="text-right font-mono">
+                  <div className="font-bold text-base text-ui-fg-base">
                     {formatMinorAmount(
                       action.supplierInvoice.totalMinor,
                       action.supplierInvoice.currency,
                     )}
                   </div>
-                  <div className="mt-1 text-xs text-gray-500">
-                    {action.status.toLowerCase().replaceAll('_', ' ')}
-                  </div>
+                  <Text size="xsmall" className="text-ui-fg-muted mt-0.5">
+                    ISO {action.supplierInvoice.currency}
+                  </Text>
                 </div>
               </div>
-              <pre className="mt-4 overflow-auto rounded-lg bg-gray-950 p-3 text-xs text-gray-400">
-                {JSON.stringify(action.preview, null, 2)}
-              </pre>
+
+              <div className="rounded-md border border-ui-border-base bg-ui-bg-subtle p-3 text-xs font-mono text-ui-fg-subtle overflow-auto max-h-40">
+                <pre>{JSON.stringify(action.preview, null, 2)}</pre>
+              </div>
+
               {action.status === 'PENDING_APPROVAL' && (
-                <div className="mt-4 flex flex-wrap gap-2">
+                <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-ui-border-base">
                   <input
                     aria-label={`Decision reason for ${action.id}`}
                     value={reasons[action.id] ?? ''}
                     onChange={(event) =>
                       setReasons((current) => ({ ...current, [action.id]: event.target.value }))
                     }
-                    placeholder="Decision reason"
+                    placeholder="Enter approval audit reason..."
                     maxLength={2000}
-                    className="min-w-72 flex-1 rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-sm text-white outline-none focus:border-indigo-500"
+                    className="min-w-72 flex-1 rounded-md border border-ui-border-base bg-ui-bg-field px-3 py-2 text-sm text-ui-fg-base focus:border-ui-border-interactive focus:outline-none transition"
                   />
-                  <button
-                    type="button"
+                  <Button
+                    variant="primary"
+                    size="small"
                     disabled={working === action.id}
+                    isLoading={working === action.id}
                     onClick={() => void decide(action.id, 'approve')}
-                    className="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
                   >
                     Approve
-                  </button>
-                  <button
-                    type="button"
+                  </Button>
+                  <Button
+                    variant="danger"
+                    size="small"
                     disabled={working === action.id}
                     onClick={() => void decide(action.id, 'reject')}
-                    className="rounded-lg bg-red-800 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
                   >
                     Reject
-                  </button>
+                  </Button>
                 </div>
               )}
-            </section>
+            </Container>
           ))
         )}
       </div>

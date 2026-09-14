@@ -13,3 +13,4 @@ export * from './hmac.js';
 export * from './hash.js';
 export * from './random.js';
 export * from './aes.js';
+export * from './keyring.js';

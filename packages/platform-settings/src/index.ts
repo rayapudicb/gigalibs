@@ -5,7 +5,10 @@ export const WhiteLabelBrandingSchema = z.object({
   logoUrl: z.string().url().optional(),
   faviconUrl: z.string().url().optional(),
   primaryColor: z.string().regex(/^#[0-9a-fA-F]{6}$/),
-  accentColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
+  accentColor: z
+    .string()
+    .regex(/^#[0-9a-fA-F]{6}$/)
+    .optional(),
   customCss: z.string().max(50_000).optional(),
   customDomain: z.string().max(253).optional(),
   emailSenderName: z.string().max(100).optional(),
@@ -38,14 +41,25 @@ export const TenantPlatformSettingsSchema = z.object({
   metadata: z.record(z.string(), z.unknown()),
 });
 
-export const TenantPlatformSettingsPatchSchema = z.object({
-  expectedVersion: z.number().int().positive(),
-  branding: WhiteLabelBrandingSchema.partial().optional(),
-  security: SecurityPolicySettingsSchema.partial().optional(),
-  localization: LocalizationSettingsSchema.partial().optional(),
-  features: z.record(z.string(), z.boolean()).optional(),
-  metadata: z.record(z.string(), z.unknown()).optional(),
-});
+export const TenantPlatformSettingsPatchSchema = z
+  .object({
+    expectedVersion: z.number().int().positive(),
+    branding: WhiteLabelBrandingSchema.partial().optional(),
+    security: SecurityPolicySettingsSchema.partial().optional(),
+    localization: LocalizationSettingsSchema.partial().optional(),
+    features: z.record(z.string(), z.boolean()).optional(),
+    metadata: z.record(z.string(), z.unknown()).optional(),
+    changeReason: z.string().trim().min(3).max(500).optional(),
+  })
+  .superRefine((patch, context) => {
+    if (patch.security && !patch.changeReason) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['changeReason'],
+        message: 'A change reason is required for security policy updates',
+      });
+    }
+  });
 
 export type WhiteLabelBranding = z.infer<typeof WhiteLabelBrandingSchema>;
 export type SecurityPolicySettings = z.infer<typeof SecurityPolicySettingsSchema>;
@@ -77,6 +91,7 @@ export const defaultSystemSettings: Omit<TenantPlatformSettings, 'tenantId'> = {
   metadata: {},
 };
 
+// biome-ignore lint/complexity/noStaticOnlyClass: retained public API for existing consumers.
 export class PlatformSettingsEngine {
   static createDefaults(tenantId: string): TenantPlatformSettings {
     return structuredClone({ ...defaultSystemSettings, tenantId });

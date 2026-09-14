@@ -35,6 +35,10 @@ packet now also defines the legacy dynamic-form convergence decision, control-pl
 ownership, deterministic validation/compatibility policy and an optional AI-to-draft boundary. AI cannot
 publish or activate configuration, generate executable runtime code/SQL/HTTP actions, or become a runtime
 dependency; the non-AI Studio and first reference adapter must pass before AI proposal work starts.
+The [application-wide screen adoption plan](../../docs/plans/application-wide-configuration-studio-screen-adoption-plan.md)
+maps the user-supplied 134-screen inventory plus assembled routes omitted from that inventory to stable
+surface candidates, core locks, extension boundaries, activation behavior and module adoption waves. It is
+a proposed inventory and does not register or certify a module surface by itself.
 The [portable resolved-manifest schema](../../docs/contracts/configuration-studio/configuration-manifest.schema.json),
 [draft OpenAPI contract](../../docs/contracts/configuration-studio/openapi.yaml),
 [security/data/migration design](../../docs/architecture/CONFIGURATION_STUDIO_SECURITY_DATA_MIGRATION_DESIGN.md)
@@ -72,16 +76,45 @@ must preserve the fail-closed boundary until the real PostgreSQL API, renderer a
 
 | Packet | Implemented result | Remaining exit evidence |
 | --- | --- | --- |
-| CS-01 | Strict Zod definition, lifecycle, activation, extension-value and tenant-record contracts in `@gigalibs/contracts`; `listView` (columnKeys, sortKey/direction, searchableFieldKeys, quickFilters); `ListApplicationRecordsQuerySchema` (cursor pagination, sort, search, filter); template and saved-filter DTO schemas | Independent contract review and published compatibility-policy acceptance |
+| CS-01 | Strict Zod definition, lifecycle, activation, extension-value and tenant-record contracts in `@gigalibs/contracts`; typed code-owned surface registrations now include route, locked core-field descriptors, permitted presentation overrides and bounded extension slots | Reconcile and independently review each module's core-field registry before its adapter is registered |
 | CS-02 | Forward PostgreSQL migrations: change sets, immutable versions, activations, version-bound extension values, idempotency, tenant application records (20260913); `configuration_templates` with soft-delete/clone chain and `configuration_saved_filters` (20260914) | Restored-backup rehearsal and production-scale lock/volume evidence |
 | CS-03 | Tenant-derived NestJS commands and queries with optimistic concurrency, idempotency, maker-checker approval and HTTP boundary certification | Wider suspended/downgraded-role matrix and independent security review |
 | CS-04 | Deterministic allowlisted compiler, canonical SHA-256 manifests, resource limits, platform-only reserved keys with module-supplied domain reservations, credential-field rejection, sensitive-default rejection, server value validation, and a bounded conditional-expression AST with cycle/type/reference limits | Property-based fuzz coverage and wider compatibility cases |
 | CS-05 | Environment/cohort activation, explicit older-version rollback, audit/outbox invalidation events and bounded lifecycle metrics | Multi-replica activation convergence, dashboards and failure injection |
-| CS-06 | Registry-driven three-pane visual builder with component palette, responsive canvas and contextual inspector; persisted-record diff/impact review, publish/activate/rollback workflow, package UI and runtime preview | Nested condition-group authoring, preview-as-role, keyboard/screen-reader/browser matrix plus product acceptance |
+| CS-06 | Registry-driven three-pane visual builder with component palette, responsive canvas and contextual inspector; Studio displays registered core fields as locked and runs in a dedicated full-screen route; Tenant Settings has the first permission-gated contextual entry and validated return path | Remaining module contextual entries, nested condition-group authoring, preview-as-role, keyboard/screen-reader/browser matrix plus product acceptance |
 | CS-07 | Shared React renderer for the 13 currently registered field types with browser-safe conditional visibility and requiredness parity | Cross-client conformance fixtures and the later Java renderer portability work |
 | CS-08 | Tenant-profile extension adapter plus tenant-created application pages with real PostgreSQL CRUD, stale-write rejection and soft deletion; cursor-paginated list view with per-manifest column projection, in-memory search/filter, stale-flag; single-record detail endpoint; template CRUD (create/update/duplicate/delete) and saved-filter CRUD via raw SQL | AR financial snapshot adapter remains a later domain-owned slice |
 | CS-08a | Mask/export policy: `maskValues` redacts CONFIDENTIAL/RESTRICTED field values to `"***"` unless actor holds `configuration:unmask-sensitive`; `exportPackage` strips `defaultValue` from sensitive field definitions unless actor holds `configuration:export-sensitive` | Security review of masking boundary and export trust model |
 | CS-09 | Isolated PostgreSQL and authenticated HTTP certifications cover lifecycle, tenant isolation, field security, conditional-required denial, values, tenant apps, record-aware impact and unsafe-activation denial, explicit rollback, signed package export/import/tamper denial, audit and outbox | Backup restore, multi-replica/performance/accessibility evidence, observability dashboards, runbook rehearsal and named independent approvals |
+
+### Core-field registry continuation — 2026-09-14
+
+- Replaced the web-owned list of claimed AR surfaces with an exact authenticated proxy to the control-plane
+  registry, preserving one definition authority and one response contract.
+- Added typed core-field and extension-slot registration contracts. The tenant-profile reference surface
+  declares locked `name`, `slug`, `status` and `region` fields with explicit lock reasons.
+- Added fail-closed validation preventing a tenant definition from shadowing a registered core key.
+- Added Studio presentation of locked core fields in the palette and preview canvas.
+- Added `/studio/configuration` as the dedicated authenticated Studio shell, retained `/configuration` as
+  a redirect, enabled the three-pane layout at standard desktop width and connected the first
+  permission-gated `Customize this page` entry from Tenant Settings with a validated return path.
+- Verification: contracts, control-plane and workflow-platform TypeScript compilation passed; 4 focused
+  registry/proxy/shadowing tests and 5 existing configuration renderer tests passed; `git diff --check`
+  passed. All six mandatory static audit commands passed.
+- Repository-wide build did not execute package compilation because existing package build scripts invoked
+  a non-interactive `pnpm install` that attempted a modules-directory purge. The full Vitest run reached
+  505 passing tests and 11 failures in pre-existing IAM containment and Prisma privacy-inventory coverage;
+  none of those failures exercise this registry slice. These failures remain global verification blockers.
+- The assembled workflow-platform Next.js production build passed and includes both `/configuration` and
+  `/studio/configuration`; the navigation audit reports 78 page routes and 55 static internal links.
+- Added a rolling-deployment compatibility decoder after a client exception was reported: legacy surface
+  registrations that predate `coreFields` and `extensionSlots` now render with empty, fail-closed metadata,
+  while non-array/malformed registry responses are rejected as controlled load errors instead of reaching
+  React rendering. Three decoder regression tests, workflow-platform TypeScript and a fresh production
+  build pass.
+- AR remains deliberately unregistered. DC-06 must reconcile the AR-local forms/custom-fields authority,
+  implement server-side extension validation/persistence and snapshot issued invoice extensions before any
+  AR surface appears in the canonical registry.
 
 The bounded local-UAT implementation is visible as `REVIEW`; it is not `AVAILABLE`, production-certified or
 an authority to generate arbitrary executable code. Custom fields and tenant-owned record pages are

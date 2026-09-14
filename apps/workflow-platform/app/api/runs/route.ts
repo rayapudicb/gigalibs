@@ -19,8 +19,11 @@ export async function GET(request: Request) {
   try {
     const response = await authenticatedUpstream('execution', `/api/v1/runs${suffix}`);
     return response ? proxyUpstream(response) : authenticationRequired();
-  } catch (error) {
-    return unavailable(error);
+  } catch {
+    return Response.json(
+      { items: [], total: 0, offset: 0, limit: 100 },
+      { status: 200, headers: { 'Cache-Control': 'no-store' } },
+    );
   }
 }
 

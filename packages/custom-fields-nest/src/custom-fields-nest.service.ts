@@ -1,6 +1,29 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { Pool } from 'pg';
-import type { CustomFieldDefinition, CustomFieldType } from '@gigalibs/custom-fields';
+export type CustomFieldType =
+  | 'text'
+  | 'number'
+  | 'boolean'
+  | 'date'
+  | 'select'
+  | 'multiselect'
+  | 'json';
+
+export interface CustomFieldDefinition {
+  id: string;
+  tenantId: string;
+  entityType: string;
+  name: string;
+  label: string;
+  fieldType: CustomFieldType;
+  required: boolean;
+  defaultValue?: unknown;
+  options?: string[];
+  validationRule?: { min?: number; max?: number; regex?: string };
+  position: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 export const CUSTOM_FIELDS_POOL = 'CUSTOM_FIELDS_POOL';
 export const CUSTOM_FIELDS_SCHEMA = 'CUSTOM_FIELDS_SCHEMA';
@@ -180,6 +203,38 @@ export class CustomFieldsNestService {
     }
   }
 
+function validateFieldValue(def: CustomFieldDefinition, value: unknown): { isValid: boolean; error?: string } {
+  if (def.required && (value === undefined || value === null || value === '')) {
+    return { isValid: false, error: `${def.label} is required` };
+  }
+  if (value === undefined || value === null) {
+    return { isValid: true };
+  }
+  switch (def.fieldType) {
+    case 'text':
+      if (typeof value !== 'string') return { isValid: false, error: `${def.label} must be a text string` };
+      break;
+    case 'number':
+      if (typeof value !== 'number' || Number.isNaN(value)) return { isValid: false, error: `${def.label} must be a valid number` };
+      break;
+    case 'boolean':
+      if (typeof value !== 'boolean') return { isValid: false, error: `${def.label} must be true or false` };
+      break;
+    case 'select':
+      if (def.options && !def.options.includes(String(value))) {
+        return { isValid: false, error: `${def.label} must be one of: ${def.options.join(', ')}` };
+      }
+      break;
+    case 'multiselect':
+      if (!Array.isArray(value)) return { isValid: false, error: `${def.label} must be an array of values` };
+      if (def.options && !value.every((v) => def.options?.includes(String(v)))) {
+        return { isValid: false, error: `Invalid option selected for ${def.label}` };
+      }
+      break;
+  }
+  return { isValid: true };
+}
+
   /**
    * Validates custom field values against their definitions.
    * Returns a map of { fieldName → error message } for invalid values.
@@ -189,7 +244,6 @@ export class CustomFieldsNestService {
     entityType: string,
     values: Record<string, unknown>,
   ): Promise<Record<string, string>> {
-    const { CustomFieldValidator } = await import('@gigalibs/custom-fields');
     const definitions = await this.getFieldsForEntity(tenantId, entityType);
     const errors: Record<string, string> = {};
 
@@ -200,7 +254,7 @@ export class CustomFieldsNestService {
         continue;
       }
       if (value !== undefined && value !== null) {
-        const result = CustomFieldValidator.validate(def, value);
+        const result = validateFieldValue(def, value);
         if (!result.isValid && result.error) errors[def.name] = result.error;
       }
     }

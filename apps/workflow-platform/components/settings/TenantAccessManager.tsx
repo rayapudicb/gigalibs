@@ -1,0 +1,1270 @@
+'use client';
+
+import { PageShell } from '@/components/page-shell';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { type ChangeEvent, type FormEvent, useCallback, useEffect, useState } from 'react';
+import { MfaAssistedRecoveryManager } from './MfaAssistedRecoveryManager';
+import { TenantDataExportManager } from './TenantDataExportManager';
+import { TenantOidcManager } from './TenantOidcManager';
+
+const ROLES = ['TENANT_ADMIN', 'MANAGER', 'MEMBER', 'VIEWER', 'GUEST'] as const;
+const STATUSES = ['ACTIVE', 'SUSPENDED'] as const;
+const TENANT_PERMISSIONS = [
+  'users:read',
+  'users:update',
+  'invites:read',
+  'invites:create',
+  'invites:delete',
+  'settings:read',
+  'settings:update',
+  'workflows:read',
+  'workflows:create',
+  'workflows:update',
+  'workflows:execute',
+  'runs:read',
+  'runs:cancel',
+  'connections:read',
+  'connections:test',
+  'connections:profile',
+  'contracts:read',
+  'contracts:update',
+  'events:read',
+  'ap:read',
+  'ap:evaluate',
+  'actions:read',
+  'actions:approve',
+  'exceptions:read',
+  'exceptions:assign',
+  'exceptions:recover',
+  'exceptions:resolve',
+  'value:read',
+  'value:verify',
+  'retention:read',
+  'tenant:export',
+] as const;
+type AssignableMemberRole = (typeof ROLES)[number];
+type MemberRole = AssignableMemberRole | 'SUPER_ADMIN';
+type MemberStatus = (typeof STATUSES)[number];
+
+interface Member {
+  id: string;
+  role: MemberRole;
+  status: MemberStatus;
+  joinedAt: string;
+  updatedAt: string;
+  user: { id: string; email: string; name: string | null; status: string };
+  customRole: Pick<CustomRole, 'id' | 'name' | 'color' | 'permissions'> | null;
+}
+
+interface CustomRole {
+  id: string;
+  name: string;
+  description: string | null;
+  color: string;
+  isSystem: boolean;
+  permissions: string[];
+  createdAt: string;
+  updatedAt: string;
+  _count: { members: number };
+}
+
+interface Invitation {
+  id: string;
+  email: string;
+  role: AssignableMemberRole;
+  expiresAt: string;
+  acceptedAt: string | null;
+  revokedAt: string | null;
+  createdAt: string;
+}
+
+interface CreatedInvitation extends Invitation {
+  token: string;
+  delivery: 'MANUAL_SECURE_LINK';
+}
+
+interface ApiErrorPayload {
+  detail?: unknown;
+  message?: unknown;
+}
+
+interface TenantSettings {
+  version: number;
+  security: { enforceMfa: boolean };
+}
+
+interface TenantDomainStatus {
+  activeDomain?: string | null;
+  activeDomainVerifiedAt?: string | null;
+  domain: string | null;
+  recordName: string | null;
+  status: 'NOT_CONFIGURED' | 'UNVERIFIED' | 'PENDING' | 'LOCKED' | 'EXPIRED' | 'VERIFIED';
+  verifiedAt?: string | null;
+  challengeExpiresAt?: string | null;
+  verificationAttempts?: number;
+  lockedUntil?: string | null;
+}
+
+interface TenantDomainChallenge extends TenantDomainStatus {
+  verificationValue: string;
+}
+
+function hasPermission(permissions: string[], requested: string): boolean {
+  if (permissions.includes('*') || permissions.includes(requested)) return true;
+  const [resource] = requested.split(':');
+  return permissions.includes(`${resource}:*`);
+}
+
+async function readError(response: Response, fallback: string): Promise<string> {
+  const payload = (await response.json().catch(() => null)) as ApiErrorPayload | null;
+  if (typeof payload?.detail === 'string') return payload.detail;
+  if (typeof payload?.message === 'string') return payload.message;
+  if (Array.isArray(payload?.message)) return payload.message.join(', ');
+  return fallback;
+}
+
+function formatDate(value: string): string {
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? 'Invalid date' : parsed.toLocaleString();
+}
+
+function invitationStatus(invitation: Invitation): string {
+  if (invitation.acceptedAt) return 'Accepted';
+  if (invitation.revokedAt) return 'Revoked';
+  if (new Date(invitation.expiresAt).getTime() <= Date.now()) return 'Expired';
+  return 'Pending';
+}
+
+interface MemberRowProps {
+  member: Member;
+  currentUserId: string;
+  canUpdate: boolean;
+  customRoles: CustomRole[];
+  onSaved: () => Promise<void>;
+}
+
+function MemberRow({ member, currentUserId, canUpdate, customRoles, onSaved }: MemberRowProps) {
+  const [role, setRole] = useState<MemberRole>(member.role);
+  const [status, setStatus] = useState<MemberStatus>(member.status);
+  const [customRoleId, setCustomRoleId] = useState(member.customRole?.id ?? '');
+  const [reason, setReason] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const changed =
+    role !== member.role ||
+    status !== member.status ||
+    customRoleId !== (member.customRole?.id ?? '');
+
+  const save = async () => {
+    setSaving(true);
+    setError(null);
+    try {
+      const response = await fetch(`/api/control/tenants/current/members/${member.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...(role !== member.role ? { role } : {}),
+          ...(status !== member.status ? { status } : {}),
+          ...(customRoleId !== (member.customRole?.id ?? '')
+            ? { customRoleId: customRoleId || null }
+            : {}),
+          expectedUpdatedAt: member.updatedAt,
+          reason,
+        }),
+      });
+      if (!response.ok) throw new Error(await readError(response, 'Member update failed.'));
+      setReason('');
+      await onSaved();
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : 'Member update failed.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <TableRow>
+      <TableCell>
+        <p className="font-medium text-zinc-900">
+          {member.user.name || 'Unnamed user'}
+          {member.user.id === currentUserId ? ' (you)' : ''}
+        </p>
+        <p className="text-zinc-500">{member.user.email}</p>
+      </TableCell>
+      <TableCell>
+        {canUpdate ? (
+          <select
+            aria-label={`Role for ${member.user.email}`}
+            className="h-8 rounded-md border border-zinc-200 bg-white px-2"
+            value={role}
+            onChange={(event) => setRole(event.target.value as MemberRole)}
+          >
+            {member.role === 'SUPER_ADMIN' ? (
+              <option value="SUPER_ADMIN" disabled>
+                SUPER ADMIN (operator managed)
+              </option>
+            ) : null}
+            {ROLES.map((option) => (
+              <option key={option} value={option}>
+                {option.replaceAll('_', ' ')}
+              </option>
+            ))}
+          </select>
+        ) : (
+          member.role.replaceAll('_', ' ')
+        )}
+      </TableCell>
+      <TableCell>
+        {canUpdate ? (
+          <select
+            aria-label={`Status for ${member.user.email}`}
+            className="h-8 rounded-md border border-zinc-200 bg-white px-2"
+            value={status}
+            onChange={(event) => setStatus(event.target.value as MemberStatus)}
+          >
+            {STATUSES.map((option) => (
+              <option key={option}>{option}</option>
+            ))}
+          </select>
+        ) : (
+          member.status
+        )}
+      </TableCell>
+      <TableCell>{formatDate(member.joinedAt)}</TableCell>
+      <TableCell>
+        {canUpdate ? (
+          <select
+            aria-label={`Custom role for ${member.user.email}`}
+            className="h-8 rounded-md border border-zinc-200 bg-white px-2"
+            value={customRoleId}
+            onChange={(event) => setCustomRoleId(event.target.value)}
+          >
+            <option value="">None</option>
+            {customRoles.map((customRole) => (
+              <option key={customRole.id} value={customRole.id}>
+                {customRole.name}
+              </option>
+            ))}
+          </select>
+        ) : (
+          (member.customRole?.name ?? 'None')
+        )}
+      </TableCell>
+      {canUpdate ? (
+        <TableCell className="min-w-64">
+          <div className="flex flex-col gap-2">
+            <input
+              aria-label={`Reason for changing ${member.user.email}`}
+              className="h-8 rounded-md border border-zinc-200 px-2"
+              placeholder="Reason for this change"
+              value={reason}
+              onChange={(event) => setReason(event.target.value)}
+            />
+            <Button
+              type="button"
+              size="small"
+              variant="primary"
+              disabled={!changed || reason.trim().length < 3}
+              isLoading={saving}
+              onClick={() => void save()}
+            >
+              Save change
+            </Button>
+            {error ? (
+              <p className="text-xs text-rose-700" role="alert">
+                {error}
+              </p>
+            ) : null}
+          </div>
+        </TableCell>
+      ) : null}
+    </TableRow>
+  );
+}
+
+function selectedPermissions(event: ChangeEvent<HTMLSelectElement>): string[] {
+  return Array.from(event.target.selectedOptions, (option) => option.value);
+}
+
+function CustomRoleRow({
+  role,
+  canDelete,
+  onSaved,
+}: {
+  role: CustomRole;
+  canDelete: boolean;
+  onSaved: () => Promise<void>;
+}) {
+  const [name, setName] = useState(role.name);
+  const [description, setDescription] = useState(role.description ?? '');
+  const [permissions, setPermissions] = useState<string[]>(role.permissions);
+  const [reason, setReason] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const save = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      const response = await fetch(`/api/control/tenants/current/roles/${role.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name,
+          description: description || null,
+          permissions,
+          expectedUpdatedAt: role.updatedAt,
+          reason,
+        }),
+      });
+      if (!response.ok) throw new Error(await readError(response, 'Custom role update failed.'));
+      setReason('');
+      await onSaved();
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : 'Custom role update failed.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const remove = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      const response = await fetch(
+        `/api/control/tenants/current/roles/${role.id}?reason=${encodeURIComponent(reason)}`,
+        { method: 'DELETE' },
+      );
+      if (!response.ok) throw new Error(await readError(response, 'Custom role deletion failed.'));
+      await onSaved();
+    } catch (requestError) {
+      setError(
+        requestError instanceof Error ? requestError.message : 'Custom role deletion failed.',
+      );
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="grid gap-3 border-t border-zinc-100 p-4 lg:grid-cols-[12rem_minmax(12rem,1fr)_minmax(18rem,2fr)_14rem_auto]">
+      <label className="text-xs font-medium text-zinc-700">
+        Name
+        <input
+          className="mt-1 h-9 w-full rounded-md border border-zinc-200 px-3"
+          value={name}
+          onChange={(event) => setName(event.target.value)}
+        />
+      </label>
+      <label className="text-xs font-medium text-zinc-700">
+        Description
+        <input
+          className="mt-1 h-9 w-full rounded-md border border-zinc-200 px-3"
+          value={description}
+          onChange={(event) => setDescription(event.target.value)}
+        />
+      </label>
+      <label className="text-xs font-medium text-zinc-700">
+        Effective additions ({permissions.length})
+        <select
+          multiple
+          className="mt-1 h-28 w-full rounded-md border border-zinc-200 bg-white p-2 font-mono"
+          value={permissions}
+          onChange={(event) => setPermissions(selectedPermissions(event))}
+        >
+          {TENANT_PERMISSIONS.map((permission) => (
+            <option key={permission}>{permission}</option>
+          ))}
+        </select>
+      </label>
+      <label className="text-xs font-medium text-zinc-700">
+        Change reason
+        <input
+          className="mt-1 h-9 w-full rounded-md border border-zinc-200 px-3"
+          placeholder="Required for save/delete"
+          value={reason}
+          onChange={(event) => setReason(event.target.value)}
+        />
+        <span className="mt-2 block text-zinc-500">
+          Assigned to {role._count.members} member(s)
+        </span>
+      </label>
+      <div className="flex flex-col justify-end gap-2">
+        <Button
+          type="button"
+          variant="primary"
+          disabled={reason.trim().length < 3}
+          isLoading={busy}
+          onClick={() => void save()}
+        >
+          Save role
+        </Button>
+        {canDelete ? (
+          <Button
+            type="button"
+            variant="danger"
+            disabled={reason.trim().length < 3 || role._count.members > 0}
+            onClick={() => void remove()}
+          >
+            Delete
+          </Button>
+        ) : null}
+        {error ? (
+          <p className="text-xs text-rose-700" role="alert">
+            {error}
+          </p>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+export function TenantAccessManager({
+  currentUserId,
+  permissions,
+  roles,
+  tenantName,
+}: {
+  currentUserId: string;
+  permissions: string[];
+  roles: string[];
+  tenantName: string;
+}) {
+  const effectivePermissions = roles.some(
+    (role) => role === 'TENANT_ADMIN' || role === 'SUPER_ADMIN',
+  )
+    ? [...permissions, '*']
+    : permissions;
+  const canReadMembers = hasPermission(effectivePermissions, 'users:read');
+  const canUpdateMembers = hasPermission(effectivePermissions, 'users:update');
+  const canReadInvites = hasPermission(effectivePermissions, 'invites:read');
+  const canCreateInvites = hasPermission(effectivePermissions, 'invites:create');
+  const canDeleteInvites = hasPermission(effectivePermissions, 'invites:delete');
+  const canReadRoles = hasPermission(effectivePermissions, 'roles:read');
+  const canCreateRoles = hasPermission(effectivePermissions, 'roles:create');
+  const canUpdateRoles = hasPermission(effectivePermissions, 'roles:update');
+  const canDeleteRoles = hasPermission(effectivePermissions, 'roles:delete');
+  const canReadSettings = hasPermission(effectivePermissions, 'settings:read');
+  const canUpdateSettings = hasPermission(effectivePermissions, 'settings:update');
+  const canReadTenant = hasPermission(effectivePermissions, 'tenant:read');
+  const canUpdateTenant = hasPermission(effectivePermissions, 'tenant:update');
+  const canExportTenant = hasPermission(effectivePermissions, 'tenant:export');
+  const [members, setMembers] = useState<Member[]>([]);
+  const [invitations, setInvitations] = useState<Invitation[]>([]);
+  const [customRoles, setCustomRoles] = useState<CustomRole[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [pageError, setPageError] = useState<string | null>(null);
+  const [email, setEmail] = useState('');
+  const [role, setRole] = useState<AssignableMemberRole>('MEMBER');
+  const [expiresInHours, setExpiresInHours] = useState(72);
+  const [creating, setCreating] = useState(false);
+  const [createdInvitation, setCreatedInvitation] = useState<CreatedInvitation | null>(null);
+  const [newRoleName, setNewRoleName] = useState('');
+  const [newRoleDescription, setNewRoleDescription] = useState('');
+  const [newRolePermissions, setNewRolePermissions] = useState<string[]>([]);
+  const [creatingRole, setCreatingRole] = useState(false);
+  const [settings, setSettings] = useState<TenantSettings | null>(null);
+  const [enforceMfa, setEnforceMfa] = useState(false);
+  const [mfaReason, setMfaReason] = useState('');
+  const [savingMfa, setSavingMfa] = useState(false);
+  const [domainStatus, setDomainStatus] = useState<TenantDomainStatus | null>(null);
+  const [domainName, setDomainName] = useState('');
+  const [domainReason, setDomainReason] = useState('');
+  const [domainChallenge, setDomainChallenge] = useState<TenantDomainChallenge | null>(null);
+  const [savingDomain, setSavingDomain] = useState(false);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setPageError(null);
+    try {
+      const requests: Promise<void>[] = [];
+      if (canReadMembers) {
+        requests.push(
+          fetch('/api/control/tenants/current/members', { cache: 'no-store' }).then(
+            async (response) => {
+              if (!response.ok)
+                throw new Error(await readError(response, 'Members could not be loaded.'));
+              const payload: unknown = await response.json();
+              if (!Array.isArray(payload))
+                throw new Error('Member service returned an invalid response.');
+              setMembers(payload as Member[]);
+            },
+          ),
+        );
+      }
+      if (canReadInvites) {
+        requests.push(
+          fetch('/api/control/tenants/current/invitations', { cache: 'no-store' }).then(
+            async (response) => {
+              if (!response.ok)
+                throw new Error(await readError(response, 'Invitations could not be loaded.'));
+              const payload: unknown = await response.json();
+              if (!Array.isArray(payload))
+                throw new Error('Invitation service returned an invalid response.');
+              setInvitations(payload as Invitation[]);
+            },
+          ),
+        );
+      }
+      if (canReadRoles) {
+        requests.push(
+          fetch('/api/control/tenants/current/roles', { cache: 'no-store' }).then(
+            async (response) => {
+              if (!response.ok) {
+                throw new Error(await readError(response, 'Custom roles could not be loaded.'));
+              }
+              const payload: unknown = await response.json();
+              if (!Array.isArray(payload)) {
+                throw new Error('Custom role service returned an invalid response.');
+              }
+              setCustomRoles(payload as CustomRole[]);
+            },
+          ),
+        );
+      }
+      if (canReadSettings) {
+        requests.push(
+          fetch('/api/control/settings', { cache: 'no-store' }).then(async (response) => {
+            if (!response.ok) {
+              throw new Error(await readError(response, 'Security settings could not be loaded.'));
+            }
+            const payload = (await response.json()) as TenantSettings;
+            if (
+              !Number.isSafeInteger(payload?.version) ||
+              typeof payload?.security?.enforceMfa !== 'boolean'
+            ) {
+              throw new Error('Settings service returned an invalid response.');
+            }
+            setSettings(payload);
+            setEnforceMfa(payload.security.enforceMfa);
+          }),
+        );
+      }
+      if (canReadTenant) {
+        requests.push(
+          fetch('/api/control/tenants/current/domain', { cache: 'no-store' }).then(
+            async (response) => {
+              if (!response.ok) {
+                throw new Error(await readError(response, 'Tenant domain could not be loaded.'));
+              }
+              const payload = (await response.json()) as TenantDomainStatus;
+              if (
+                ![
+                  'NOT_CONFIGURED',
+                  'UNVERIFIED',
+                  'PENDING',
+                  'LOCKED',
+                  'EXPIRED',
+                  'VERIFIED',
+                ].includes(payload?.status)
+              ) {
+                throw new Error('Tenant domain service returned an invalid response.');
+              }
+              setDomainStatus(payload);
+              setDomainName(payload.domain ?? '');
+            },
+          ),
+        );
+      }
+      await Promise.all(requests);
+    } catch (requestError) {
+      setPageError(
+        requestError instanceof Error
+          ? requestError.message
+          : 'Tenant access data could not be loaded.',
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, [canReadInvites, canReadMembers, canReadRoles, canReadSettings, canReadTenant]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const createInvite = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setCreating(true);
+    setPageError(null);
+    setCreatedInvitation(null);
+    try {
+      const response = await fetch('/api/control/tenants/current/invitations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, role, expiresInHours }),
+      });
+      if (!response.ok)
+        throw new Error(await readError(response, 'Invitation could not be created.'));
+      const payload = (await response.json()) as CreatedInvitation;
+      if (!payload.token || payload.delivery !== 'MANUAL_SECURE_LINK') {
+        throw new Error('Invitation service returned an invalid response.');
+      }
+      setCreatedInvitation(payload);
+      setEmail('');
+      await load();
+    } catch (requestError) {
+      setPageError(
+        requestError instanceof Error ? requestError.message : 'Invitation could not be created.',
+      );
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const revoke = async (invitation: Invitation) => {
+    setPageError(null);
+    const response = await fetch(`/api/control/tenants/current/invitations/${invitation.id}`, {
+      method: 'DELETE',
+    });
+    if (!response.ok) {
+      setPageError(await readError(response, 'Invitation could not be revoked.'));
+      return;
+    }
+    await load();
+  };
+
+  const createCustomRole = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setCreatingRole(true);
+    setPageError(null);
+    try {
+      const response = await fetch('/api/control/tenants/current/roles', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: newRoleName,
+          description: newRoleDescription || null,
+          color: '#6366f1',
+          permissions: newRolePermissions,
+        }),
+      });
+      if (!response.ok)
+        throw new Error(await readError(response, 'Custom role could not be created.'));
+      setNewRoleName('');
+      setNewRoleDescription('');
+      setNewRolePermissions([]);
+      await load();
+    } catch (requestError) {
+      setPageError(
+        requestError instanceof Error ? requestError.message : 'Custom role could not be created.',
+      );
+    } finally {
+      setCreatingRole(false);
+    }
+  };
+
+  const saveMfaPolicy = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!settings) return;
+    setSavingMfa(true);
+    setPageError(null);
+    try {
+      const response = await fetch('/api/control/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          expectedVersion: settings.version,
+          security: { enforceMfa },
+          changeReason: mfaReason,
+        }),
+      });
+      if (!response.ok) throw new Error(await readError(response, 'MFA policy update failed.'));
+      const payload = (await response.json()) as TenantSettings;
+      setSettings(payload);
+      setEnforceMfa(payload.security.enforceMfa);
+      setMfaReason('');
+      if (payload.security.enforceMfa) window.location.assign('/mfa');
+    } catch (requestError) {
+      setPageError(
+        requestError instanceof Error ? requestError.message : 'MFA policy update failed.',
+      );
+    } finally {
+      setSavingMfa(false);
+    }
+  };
+
+  const createDomainChallenge = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setSavingDomain(true);
+    setPageError(null);
+    setDomainChallenge(null);
+    try {
+      const response = await fetch('/api/control/tenants/current/domain/challenge', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ domain: domainName, reason: domainReason }),
+      });
+      if (!response.ok) {
+        throw new Error(await readError(response, 'Domain challenge could not be created.'));
+      }
+      const payload = (await response.json()) as TenantDomainChallenge;
+      if (!payload.verificationValue || payload.status !== 'PENDING' || !payload.recordName) {
+        throw new Error('Tenant domain service returned an invalid challenge.');
+      }
+      setDomainChallenge(payload);
+      setDomainStatus(payload);
+      setDomainName(payload.domain ?? '');
+      setDomainReason('');
+    } catch (requestError) {
+      setPageError(
+        requestError instanceof Error
+          ? requestError.message
+          : 'Domain challenge could not be created.',
+      );
+    } finally {
+      setSavingDomain(false);
+    }
+  };
+
+  const verifyDomain = async () => {
+    setSavingDomain(true);
+    setPageError(null);
+    try {
+      const response = await fetch('/api/control/tenants/current/domain/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason: domainReason }),
+      });
+      if (!response.ok) {
+        throw new Error(await readError(response, 'Domain ownership could not be verified.'));
+      }
+      const payload = (await response.json()) as TenantDomainStatus;
+      if (payload.status !== 'VERIFIED') {
+        throw new Error('Tenant domain service did not return verified ownership.');
+      }
+      setDomainStatus(payload);
+      setDomainChallenge(null);
+      setDomainReason('');
+    } catch (requestError) {
+      setPageError(
+        requestError instanceof Error
+          ? requestError.message
+          : 'Domain ownership could not be verified.',
+      );
+    } finally {
+      setSavingDomain(false);
+    }
+  };
+
+  const revokeDomain = async () => {
+    setSavingDomain(true);
+    setPageError(null);
+    try {
+      const response = await fetch(
+        `/api/control/tenants/current/domain?reason=${encodeURIComponent(domainReason)}`,
+        { method: 'DELETE' },
+      );
+      if (!response.ok) {
+        throw new Error(await readError(response, 'Tenant domain could not be removed.'));
+      }
+      setDomainStatus((await response.json()) as TenantDomainStatus);
+      setDomainChallenge(null);
+      setDomainName('');
+      setDomainReason('');
+    } catch (requestError) {
+      setPageError(
+        requestError instanceof Error
+          ? requestError.message
+          : 'Tenant domain could not be removed.',
+      );
+    } finally {
+      setSavingDomain(false);
+    }
+  };
+
+  const invitationLink =
+    createdInvitation && typeof window !== 'undefined'
+      ? `${window.location.origin}/select-tenant?invite=${encodeURIComponent(createdInvitation.token)}`
+      : '';
+
+  return (
+    <PageShell
+      eyebrow="Tenant administration"
+      title={`${tenantName} access`}
+      description="Manage persisted tenant memberships and invitation credentials. Every change is enforced server-side and written to the audit log."
+    >
+      {pageError ? (
+        <div
+          className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800"
+          role="alert"
+        >
+          {pageError}
+        </div>
+      ) : null}
+
+      {canReadTenant ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Verified organization domain</CardTitle>
+            <CardDescription>
+              Prove ownership with a real DNS TXT record before this domain can be used as an SSO
+              trust boundary. A challenge expires after 24 hours and its value is shown only once.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4 pt-6">
+            <div className="grid gap-2 text-sm md:grid-cols-3">
+              <p>
+                <span className="font-medium">Current claim:</span>{' '}
+                {domainStatus?.domain ?? 'Not configured'}
+              </p>
+              <p>
+                <span className="font-medium">Status:</span>{' '}
+                {domainStatus?.status.replaceAll('_', ' ') ?? 'Loading'}
+              </p>
+              <p>
+                <span className="font-medium">Claim verified:</span>{' '}
+                {domainStatus?.status === 'VERIFIED' && domainStatus.verifiedAt
+                  ? formatDate(domainStatus.verifiedAt)
+                  : 'No'}
+              </p>
+            </div>
+            {domainStatus?.activeDomain && domainStatus.activeDomain !== domainStatus.domain ? (
+              <p className="text-sm text-zinc-700">
+                Active verified domain:{' '}
+                <span className="font-mono">{domainStatus.activeDomain}</span>
+                {domainStatus.activeDomainVerifiedAt
+                  ? ` since ${formatDate(domainStatus.activeDomainVerifiedAt)}`
+                  : ''}
+              </p>
+            ) : null}
+            {domainChallenge ? (
+              <output className="block rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm">
+                <p className="font-semibold text-amber-950">
+                  Add this TXT record now. The challenge value cannot be retrieved later.
+                </p>
+                <dl className="mt-3 grid gap-2">
+                  <div>
+                    <dt className="font-medium text-amber-900">Record name</dt>
+                    <dd className="break-all font-mono">{domainChallenge.recordName}</dd>
+                  </div>
+                  <div>
+                    <dt className="font-medium text-amber-900">TXT value</dt>
+                    <dd className="break-all font-mono">{domainChallenge.verificationValue}</dd>
+                  </div>
+                </dl>
+              </output>
+            ) : domainStatus?.status === 'PENDING' ? (
+              <p className="rounded-md bg-amber-50 p-3 text-sm text-amber-900">
+                A challenge is pending for {domainStatus.recordName}. Its secret value is no longer
+                available; create a new challenge if it was not saved.
+              </p>
+            ) : null}
+            {canUpdateTenant ? (
+              <form
+                className="grid gap-3 md:grid-cols-[minmax(15rem,1fr)_minmax(16rem,2fr)_auto]"
+                onSubmit={createDomainChallenge}
+              >
+                <label className="text-xs font-medium text-zinc-700">
+                  Public DNS hostname
+                  <input
+                    className="mt-1 h-9 w-full rounded-md border border-zinc-200 px-3"
+                    placeholder="login.company.com"
+                    required
+                    value={domainName}
+                    onChange={(event) => setDomainName(event.target.value)}
+                  />
+                </label>
+                <label className="text-xs font-medium text-zinc-700">
+                  Change reason
+                  <input
+                    className="mt-1 h-9 w-full rounded-md border border-zinc-200 px-3"
+                    placeholder="Required for challenge, verify, or removal"
+                    required
+                    minLength={3}
+                    value={domainReason}
+                    onChange={(event) => setDomainReason(event.target.value)}
+                  />
+                </label>
+                <Button
+                  className="self-end"
+                  type="submit"
+                  variant="primary"
+                  disabled={domainReason.trim().length < 3}
+                  isLoading={savingDomain}
+                >
+                  Create challenge
+                </Button>
+              </form>
+            ) : null}
+            {canUpdateTenant && domainStatus?.status === 'PENDING' ? (
+              <Button
+                type="button"
+                variant="primary"
+                disabled={domainReason.trim().length < 3}
+                isLoading={savingDomain}
+                onClick={() => void verifyDomain()}
+              >
+                Verify DNS now
+              </Button>
+            ) : null}
+            {canUpdateTenant && domainStatus?.domain ? (
+              <Button
+                type="button"
+                variant="danger"
+                disabled={domainReason.trim().length < 3}
+                isLoading={savingDomain}
+                onClick={() => void revokeDomain()}
+              >
+                Remove domain
+              </Button>
+            ) : null}
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {canReadSettings ? <TenantOidcManager canUpdate={canUpdateSettings} /> : null}
+
+      {canReadSettings ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Session MFA policy</CardTitle>
+            <CardDescription>
+              Require every member to verify a persisted TOTP authenticator after password sign-in
+              or workspace switching. Existing unverified sessions are blocked on their next
+              request.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pt-6">
+            {settings ? (
+              <form
+                className="grid gap-4 md:grid-cols-[minmax(16rem,1fr)_minmax(16rem,2fr)_auto]"
+                onSubmit={saveMfaPolicy}
+              >
+                <label className="flex items-center gap-3 text-sm font-medium text-zinc-800">
+                  <input
+                    type="checkbox"
+                    checked={enforceMfa}
+                    disabled={!canUpdateSettings}
+                    onChange={(event) => setEnforceMfa(event.target.checked)}
+                  />
+                  Enforce TOTP for this tenant
+                </label>
+                <label className="text-xs font-medium text-zinc-700">
+                  Change reason
+                  <input
+                    className="mt-1 h-9 w-full rounded-md border border-zinc-200 px-3"
+                    disabled={!canUpdateSettings}
+                    placeholder="Required for a security policy change"
+                    value={mfaReason}
+                    onChange={(event) => setMfaReason(event.target.value)}
+                  />
+                </label>
+                {canUpdateSettings ? (
+                  <Button
+                    className="self-end"
+                    type="submit"
+                    variant="primary"
+                    disabled={
+                      enforceMfa === settings.security.enforceMfa || mfaReason.trim().length < 3
+                    }
+                    isLoading={savingMfa}
+                  >
+                    Save MFA policy
+                  </Button>
+                ) : null}
+              </form>
+            ) : (
+              <p className="text-sm text-zinc-500">Loading security policy…</p>
+            )}
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {canReadMembers ? (
+        <MfaAssistedRecoveryManager
+          canRequest={canUpdateMembers}
+          currentUserId={currentUserId}
+          enforceMfa={settings?.security.enforceMfa === true}
+          members={members}
+        />
+      ) : null}
+
+      {canCreateInvites ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Invite a member</CardTitle>
+            <CardDescription>
+              The recipient must register with this email. Secure email delivery is not configured,
+              so the link is shown once for manual secure delivery.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pt-6">
+            <form
+              className="grid gap-3 md:grid-cols-[minmax(14rem,1fr)_12rem_10rem_auto]"
+              onSubmit={createInvite}
+            >
+              <label className="text-xs font-medium text-zinc-700">
+                Email
+                <input
+                  className="mt-1 h-9 w-full rounded-md border border-zinc-200 px-3"
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                />
+              </label>
+              <label className="text-xs font-medium text-zinc-700">
+                Role
+                <select
+                  className="mt-1 h-9 w-full rounded-md border border-zinc-200 bg-white px-2"
+                  value={role}
+                  onChange={(event) => setRole(event.target.value as AssignableMemberRole)}
+                >
+                  {ROLES.map((option) => (
+                    <option key={option}>{option}</option>
+                  ))}
+                </select>
+              </label>
+              <label className="text-xs font-medium text-zinc-700">
+                Expires in hours
+                <input
+                  className="mt-1 h-9 w-full rounded-md border border-zinc-200 px-3"
+                  type="number"
+                  min={1}
+                  max={168}
+                  required
+                  value={expiresInHours}
+                  onChange={(event) => setExpiresInHours(Number(event.target.value))}
+                />
+              </label>
+              <Button className="self-end" type="submit" variant="primary" isLoading={creating}>
+                Create invitation
+              </Button>
+            </form>
+            {createdInvitation ? (
+              <output className="mt-4 rounded-lg border border-amber-300 bg-amber-50 p-4">
+                <p className="text-sm font-semibold text-amber-950">
+                  Copy this link now. It will not be shown again.
+                </p>
+                <p className="mt-1 text-xs text-amber-900">
+                  Share it only through an approved secure channel. The database stores a SHA-256
+                  digest, not this credential.
+                </p>
+                <div className="mt-3 flex gap-2">
+                  <input
+                    aria-label="One-time invitation link"
+                    className="h-9 min-w-0 flex-1 rounded-md border border-amber-300 bg-white px-3 font-mono text-xs"
+                    readOnly
+                    value={invitationLink}
+                  />
+                  <Button
+                    type="button"
+                    onClick={() => void navigator.clipboard.writeText(invitationLink)}
+                  >
+                    Copy
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="transparent"
+                    onClick={() => setCreatedInvitation(null)}
+                  >
+                    Dismiss
+                  </Button>
+                </div>
+              </output>
+            ) : null}
+          </CardContent>
+        </Card>
+      ) : null}
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Custom roles</CardTitle>
+          <CardDescription>
+            Add tenant-scoped permissions to a member's base role. Platform permissions and
+            unvalidated permission formats are rejected by the server.
+          </CardDescription>
+        </CardHeader>
+        {canCreateRoles ? (
+          <CardContent className="pt-6">
+            <form
+              className="grid gap-3 lg:grid-cols-[12rem_minmax(12rem,1fr)_minmax(18rem,2fr)_auto]"
+              onSubmit={createCustomRole}
+            >
+              <label className="text-xs font-medium text-zinc-700">
+                Role name
+                <input
+                  className="mt-1 h-9 w-full rounded-md border border-zinc-200 px-3"
+                  minLength={2}
+                  required
+                  value={newRoleName}
+                  onChange={(event) => setNewRoleName(event.target.value)}
+                />
+              </label>
+              <label className="text-xs font-medium text-zinc-700">
+                Description
+                <input
+                  className="mt-1 h-9 w-full rounded-md border border-zinc-200 px-3"
+                  value={newRoleDescription}
+                  onChange={(event) => setNewRoleDescription(event.target.value)}
+                />
+              </label>
+              <label className="text-xs font-medium text-zinc-700">
+                Permission additions ({newRolePermissions.length})
+                <select
+                  multiple
+                  className="mt-1 h-28 w-full rounded-md border border-zinc-200 bg-white p-2 font-mono"
+                  value={newRolePermissions}
+                  onChange={(event) => setNewRolePermissions(selectedPermissions(event))}
+                >
+                  {TENANT_PERMISSIONS.map((permission) => (
+                    <option key={permission}>{permission}</option>
+                  ))}
+                </select>
+              </label>
+              <Button className="self-end" type="submit" variant="primary" isLoading={creatingRole}>
+                Create role
+              </Button>
+            </form>
+          </CardContent>
+        ) : null}
+        {!canReadRoles ? (
+          <p className="border-t border-zinc-100 p-6 text-sm text-zinc-600">
+            You do not have permission to list custom roles.
+          </p>
+        ) : loading ? (
+          <p className="border-t border-zinc-100 p-6 text-sm text-zinc-500">
+            Loading custom roles…
+          </p>
+        ) : customRoles.length === 0 ? (
+          <p className="border-t border-zinc-100 p-6 text-sm text-zinc-500">
+            No custom roles have been created.
+          </p>
+        ) : canUpdateRoles ? (
+          customRoles.map((customRole) => (
+            <CustomRoleRow
+              key={customRole.id}
+              role={customRole}
+              canDelete={canDeleteRoles}
+              onSaved={load}
+            />
+          ))
+        ) : (
+          <ul className="border-t border-zinc-100 p-6 text-sm text-zinc-700">
+            {customRoles.map((customRole) => (
+              <li key={customRole.id}>
+                {customRole.name}: {customRole.permissions.join(', ') || 'No permission additions'}
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Members</CardTitle>
+          <CardDescription>
+            Suspending a member immediately revokes that member's active sessions for this
+            workspace.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="p-0">
+          {!canReadMembers ? (
+            <p className="p-6 text-sm text-zinc-600">
+              You do not have permission to list tenant members.
+            </p>
+          ) : loading ? (
+            <p className="p-6 text-sm text-zinc-500">Loading members…</p>
+          ) : members.length === 0 ? (
+            <p className="p-6 text-sm text-zinc-500">No persisted memberships were found.</p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>User</TableHead>
+                  <TableHead>Role</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Joined</TableHead>
+                  <TableHead>Custom role</TableHead>
+                  {canUpdateMembers ? <TableHead>Change control</TableHead> : null}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {members.map((member) => (
+                  <MemberRow
+                    key={member.id}
+                    member={member}
+                    currentUserId={currentUserId}
+                    canUpdate={canUpdateMembers}
+                    customRoles={customRoles}
+                    onSaved={load}
+                  />
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Invitations</CardTitle>
+          <CardDescription>Invitation credentials are never returned by this list.</CardDescription>
+        </CardHeader>
+        <CardContent className="p-0">
+          {!canReadInvites ? (
+            <p className="p-6 text-sm text-zinc-600">
+              You do not have permission to list invitations.
+            </p>
+          ) : loading ? (
+            <p className="p-6 text-sm text-zinc-500">Loading invitations…</p>
+          ) : invitations.length === 0 ? (
+            <p className="p-6 text-sm text-zinc-500">No invitations have been created.</p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Role</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Expires</TableHead>
+                  {canDeleteInvites ? <TableHead>Action</TableHead> : null}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {invitations.map((invitation) => {
+                  const status = invitationStatus(invitation);
+                  return (
+                    <TableRow key={invitation.id}>
+                      <TableCell>{invitation.email}</TableCell>
+                      <TableCell>{invitation.role}</TableCell>
+                      <TableCell>{status}</TableCell>
+                      <TableCell>{formatDate(invitation.expiresAt)}</TableCell>
+                      {canDeleteInvites ? (
+                        <TableCell>
+                          {status === 'Pending' ? (
+                            <Button
+                              type="button"
+                              size="small"
+                              variant="danger"
+                              onClick={() => void revoke(invitation)}
+                            >
+                              Revoke
+                            </Button>
+                          ) : (
+                            '—'
+                          )}
+                        </TableCell>
+                      ) : null}
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      <TenantDataExportManager enabled={canExportTenant} />
+    </PageShell>
+  );
+}

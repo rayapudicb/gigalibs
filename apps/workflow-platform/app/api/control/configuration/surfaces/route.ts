@@ -1,47 +1,21 @@
-import { NextResponse } from 'next/server';
+import {
+  authenticatedUpstream,
+  authenticationRequired,
+  proxyUpstream,
+  unavailable,
+} from '@/lib/authenticated-upstream';
 
 /**
- * Surface registry — lists all schema-driven surfaces available in the platform.
- * Each surface is a (moduleKey, entityKey, surfaceKey) triple that the
- * ConfigurationStudioWorkbench uses to drive the surface picker.
+ * Exact-route proxy for the code-owned control-plane registry.
  *
- * Extend this list when a new module registers a configurable surface.
+ * Surface definitions must never be duplicated in the web application: the
+ * control plane owns registration, permissions, core locks and extension slots.
  */
-const SURFACE_REGISTRY = [
-  {
-    moduleKey: 'tenant-settings',
-    entityKey: 'tenant-profile',
-    surfaceKey: 'profile-extension',
-    registrationKey: 'tenant-settings:tenant-profile:profile-extension',
-    label: 'Tenant profile extension',
-    description: 'Add schema-defined fields to the tenant profile form.',
-  },
-  {
-    moduleKey: 'tenant-apps',
-    entityKey: 'custom-record',
-    surfaceKey: 'custom-form',
-    registrationKey: 'tenant-apps:custom-record:custom-form',
-    label: 'Tenant application',
-    description: 'Schema-driven form for a tenant-scoped custom application.',
-  },
-  {
-    moduleKey: 'accounts-receivable',
-    entityKey: 'customer',
-    surfaceKey: 'customer-extension',
-    registrationKey: 'accounts-receivable:customer:customer-extension',
-    label: 'AR — Customer extension',
-    description: 'Add configurable fields to the AR customer record.',
-  },
-  {
-    moduleKey: 'accounts-receivable',
-    entityKey: 'invoice',
-    surfaceKey: 'invoice-extension',
-    registrationKey: 'accounts-receivable:invoice:invoice-extension',
-    label: 'AR — Invoice extension',
-    description: 'Add configurable fields to the AR invoice form.',
-  },
-] as const;
-
 export async function GET() {
-  return NextResponse.json({ items: SURFACE_REGISTRY });
+  try {
+    const response = await authenticatedUpstream('control', '/api/v1/configuration/surfaces');
+    return response ? proxyUpstream(response) : authenticationRequired();
+  } catch (error) {
+    return unavailable(error);
+  }
 }

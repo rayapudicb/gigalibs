@@ -1,9 +1,10 @@
 /**
- * @gigalibs — Translations, locale detection, pluralization, currency/date formatting, RTL [react]
+ * @gigalibs/i18n-react
+ *
+ * React integration for GigaLibs localization, locale hooks, and dynamic translation catalogs.
  *
  * @module
  */
 
-// TODO: Implement module exports
-
-export const VERSION = '0.0.1';
+export * from './context.js';
+export * from './LanguageSelector.js';

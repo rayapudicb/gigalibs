@@ -1,3 +1,5 @@
+import { parseAes256KeyRing } from '@gigalibs/crypto';
+
 try {
   process.loadEnvFile?.('.env');
 } catch {}
@@ -99,13 +101,15 @@ function requireStorageBucket(): string {
   return value;
 }
 
-function requireEncryptionKey(name: string): Buffer {
-  const value = requireString(name);
-  const decoded = Buffer.from(value, 'base64');
-  if (decoded.length !== 32 || decoded.toString('base64') !== value) {
-    throw new Error(`${name} must be a canonical base64-encoded 32-byte key.`);
-  }
-  return decoded;
+const controlPayloadKeyVersion = requireString('CONTROL_PAYLOAD_KEY_VERSION');
+const controlPayloadKeyRing = parseAes256KeyRing(
+  controlPayloadKeyVersion,
+  requireString('CONTROL_PAYLOAD_ENCRYPTION_KEY'),
+  process.env.CONTROL_PAYLOAD_PREVIOUS_KEYS_JSON,
+);
+const controlPayloadEncryptionKeyBase64 = controlPayloadKeyRing.get(controlPayloadKeyVersion);
+if (!controlPayloadEncryptionKeyBase64) {
+  throw new Error('The active control-payload encryption key is not loaded.');
 }
 
 export const runtimeConfig = Object.freeze({
@@ -144,8 +148,14 @@ export const runtimeConfig = Object.freeze({
   retentionWorkerIntervalSeconds: requirePositiveInteger('RETENTION_WORKER_INTERVAL_SECONDS'),
   retentionEnvironmentBatchSize: requirePositiveInteger('RETENTION_ENVIRONMENT_BATCH_SIZE'),
   retentionEventBatchSize: requirePositiveInteger('RETENTION_EVENT_BATCH_SIZE'),
-  controlPayloadEncryptionKey: requireEncryptionKey('CONTROL_PAYLOAD_ENCRYPTION_KEY'),
-  controlPayloadKeyVersion: requireString('CONTROL_PAYLOAD_KEY_VERSION'),
+  controlPayloadEncryptionKey: Buffer.from(controlPayloadEncryptionKeyBase64, 'base64'),
+  controlPayloadDecryptionKeys: new Map(
+    [...controlPayloadKeyRing].map(([version, encoded]) => [
+      version,
+      Buffer.from(encoded, 'base64'),
+    ]),
+  ) as ReadonlyMap<string, Buffer>,
+  controlPayloadKeyVersion,
   controlOutboxPollIntervalSeconds: requirePositiveInteger('CONTROL_OUTBOX_POLL_INTERVAL_SECONDS'),
   controlOutboxBatchSize: requirePositiveInteger('CONTROL_OUTBOX_BATCH_SIZE'),
   controlOutboxClaimTimeoutSeconds: requirePositiveInteger('CONTROL_OUTBOX_CLAIM_TIMEOUT_SECONDS'),

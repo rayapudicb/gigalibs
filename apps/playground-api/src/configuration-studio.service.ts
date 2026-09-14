@@ -15,6 +15,7 @@ import type {
   ConfigurationReasonDto,
   ExportConfigurationPackageDto,
   ImportConfigurationPackageDto,
+  ConfigurationSurfaceRegistration,
   CreateConfigurationChangeSetDto,
   CreateConfigurationRecordDto,
   DeleteConfigurationRecordDto,
@@ -40,35 +41,581 @@ import {
   trustedConfigurationPackageKey,
 } from './configuration-package-signing.js';
 
+function registeredCoreField(
+  key: string,
+  label: string,
+  type: ConfigurationSurfaceRegistration['coreFields'][number]['type'],
+  required: boolean,
+  readOnly: boolean,
+  lockReason: string,
+  classification: ConfigurationSurfaceRegistration['coreFields'][number]['classification'] = 'INTERNAL',
+): ConfigurationSurfaceRegistration['coreFields'][number] {
+  return {
+    key,
+    label,
+    type,
+    required,
+    readOnly,
+    classification,
+    lockReason,
+    allowedPresentationOverrides: ['LABEL', 'HELP_TEXT', 'PLACEMENT'],
+  };
+}
+
 @Injectable()
 export class ConfigurationStudioService {
-  listSurfaces() {
+  listBaseSurfaces(): readonly ConfigurationSurfaceRegistration[] {
     return [
       {
         registrationKey: 'tenant-profile-extension',
         moduleKey: 'tenant-settings',
         entityKey: 'tenant-profile',
         surfaceKey: 'profile-extension',
+        route: '/settings',
         label: 'Tenant profile',
         description: 'Add governed tenant-specific attributes to the organization profile.',
         ownership: 'MODULE_EXTENSION',
+        authoringEnabled: true,
         entityKeyEditable: false,
         surfaceKeyEditable: false,
         modes: ['EDIT'],
+        coreFields: [
+          {
+            key: 'name',
+            label: 'Workspace name',
+            type: 'TEXT',
+            required: true,
+            readOnly: false,
+            classification: 'INTERNAL',
+            lockReason: 'Canonical tenant identity used throughout the control plane.',
+            allowedPresentationOverrides: ['LABEL', 'HELP_TEXT', 'PLACEMENT'],
+          },
+          {
+            key: 'slug',
+            label: 'Workspace slug',
+            type: 'TEXT',
+            required: true,
+            readOnly: true,
+            classification: 'INTERNAL',
+            lockReason: 'Stable tenant routing identity managed by the tenant service.',
+            allowedPresentationOverrides: ['LABEL', 'HELP_TEXT'],
+          },
+          {
+            key: 'status',
+            label: 'Workspace status',
+            type: 'SELECT',
+            required: true,
+            readOnly: true,
+            classification: 'INTERNAL',
+            lockReason: 'Tenant lifecycle is controlled by authorized platform commands.',
+            allowedPresentationOverrides: ['LABEL', 'HELP_TEXT', 'PLACEMENT'],
+          },
+          {
+            key: 'region',
+            label: 'Data region',
+            type: 'TEXT',
+            required: true,
+            readOnly: true,
+            classification: 'INTERNAL',
+            lockReason: 'Residency and deployment binding require an operator-controlled workflow.',
+            allowedPresentationOverrides: ['LABEL', 'HELP_TEXT', 'PLACEMENT'],
+          },
+        ],
+        extensionSlots: [
+          {
+            key: 'profile-details',
+            label: 'Additional workspace details',
+            description: 'Tenant-specific, non-secret profile attributes.',
+            allowedFieldTypes: [
+              'TEXT',
+              'TEXTAREA',
+              'NUMBER',
+              'INTEGER',
+              'BOOLEAN',
+              'DATE',
+              'DATETIME',
+              'EMAIL',
+              'PHONE',
+              'URL',
+              'SELECT',
+              'MULTI_SELECT',
+            ],
+            maximumFields: 100,
+          },
+        ],
       },
       {
         registrationKey: 'tenant-record-application',
         moduleKey: 'tenant-apps',
         entityKey: 'custom-record',
         surfaceKey: 'custom-form',
+        route: '/apps',
         label: 'New tenant application',
         description: 'Create a tenant-owned record application with PostgreSQL-backed CRUD.',
         ownership: 'TENANT_APPLICATION',
+        authoringEnabled: true,
         entityKeyEditable: true,
         surfaceKeyEditable: true,
         modes: ['CREATE', 'EDIT', 'READ', 'LIST'],
+        coreFields: [],
+        extensionSlots: [
+          {
+            key: 'application-fields',
+            label: 'Application fields',
+            description: 'Schema-defined fields owned by the tenant application.',
+            allowedFieldTypes: [
+              'TEXT',
+              'TEXTAREA',
+              'NUMBER',
+              'INTEGER',
+              'BOOLEAN',
+              'DATE',
+              'DATETIME',
+              'EMAIL',
+              'PHONE',
+              'URL',
+              'CURRENCY',
+              'SELECT',
+              'MULTI_SELECT',
+            ],
+            maximumFields: 200,
+          },
+        ],
+      },
+      {
+        registrationKey: 'ar-customer-record',
+        moduleKey: 'accounts-receivable',
+        entityKey: 'customer',
+        surfaceKey: 'customer-record',
+        route: '/ar',
+        label: 'AR customer record',
+        description:
+          'Customer identity, billing, tax and credit attributes owned by Accounts Receivable.',
+        ownership: 'MODULE_EXTENSION',
+        authoringEnabled: false,
+        authoringDisabledReason:
+          'Core-field inspection is available. Custom-field authoring remains disabled until the AR adapter persists validated extension values in the AR transaction.',
+        entityKeyEditable: false,
+        surfaceKeyEditable: false,
+        modes: ['CREATE', 'EDIT', 'READ', 'LIST'],
+        coreFields: [
+          registeredCoreField('id', 'Customer ID', 'TEXT', true, true, 'Stable AR customer identity.'),
+          registeredCoreField(
+            'legalName',
+            'Legal name',
+            'TEXT',
+            true,
+            false,
+            'Canonical customer legal identity.',
+          ),
+          registeredCoreField(
+            'billingEmail',
+            'Billing email',
+            'EMAIL',
+            true,
+            false,
+            'Invoice delivery and billing contact destination.',
+          ),
+          registeredCoreField(
+            'externalReference',
+            'External reference',
+            'TEXT',
+            false,
+            false,
+            'Module-enforced external customer identity.',
+          ),
+          registeredCoreField(
+            'currency',
+            'Currency',
+            'CURRENCY',
+            true,
+            false,
+            'Currency participates in financial validation.',
+          ),
+          registeredCoreField(
+            'status',
+            'Status',
+            'SELECT',
+            true,
+            true,
+            'Customer lifecycle transitions are module commands.',
+          ),
+          registeredCoreField('phone', 'Phone', 'PHONE', false, false, 'Canonical customer contact data.'),
+          registeredCoreField('website', 'Website', 'URL', false, false, 'Canonical customer profile data.'),
+          registeredCoreField(
+            'taxId',
+            'Tax identifier',
+            'TEXT',
+            false,
+            false,
+            'Tax identity is classified and module validated.',
+            'CONFIDENTIAL',
+          ),
+          registeredCoreField(
+            'taxIdType',
+            'Tax identifier type',
+            'SELECT',
+            false,
+            false,
+            'Tax identifier vocabulary is code owned.',
+          ),
+          registeredCoreField(
+            'billingAddress',
+            'Billing address',
+            'TEXTAREA',
+            false,
+            false,
+            'Billing address is snapshotted during invoice issuance.',
+            'CONFIDENTIAL',
+          ),
+          registeredCoreField(
+            'paymentTermsDays',
+            'Payment terms',
+            'INTEGER',
+            false,
+            false,
+            'Terms feed invoice due-date behavior.',
+          ),
+          registeredCoreField(
+            'creditLimitMinor',
+            'Credit limit',
+            'CURRENCY',
+            false,
+            false,
+            'Credit limits are financial policy inputs.',
+            'CONFIDENTIAL',
+          ),
+          registeredCoreField(
+            'notes',
+            'Notes',
+            'TEXTAREA',
+            false,
+            false,
+            'Canonical AR customer notes.',
+            'CONFIDENTIAL',
+          ),
+          registeredCoreField(
+            'version',
+            'Version',
+            'INTEGER',
+            true,
+            true,
+            'Optimistic concurrency token managed by AR.',
+          ),
+          registeredCoreField(
+            'createdAt',
+            'Created at',
+            'DATETIME',
+            true,
+            true,
+            'System audit timestamp.',
+          ),
+          registeredCoreField(
+            'updatedAt',
+            'Updated at',
+            'DATETIME',
+            true,
+            true,
+            'System audit timestamp.',
+          ),
+        ],
+        extensionSlots: [
+          {
+            key: 'customer-additional-details',
+            label: 'Additional customer details',
+            description:
+              'Future non-financial customer metadata after the AR adapter is certified.',
+            allowedFieldTypes: [
+              'TEXT',
+              'TEXTAREA',
+              'NUMBER',
+              'INTEGER',
+              'BOOLEAN',
+              'DATE',
+              'DATETIME',
+              'EMAIL',
+              'PHONE',
+              'URL',
+              'SELECT',
+              'MULTI_SELECT',
+            ],
+            maximumFields: 50,
+          },
+        ],
+      },
+      {
+        registrationKey: 'ar-invoice-draft',
+        moduleKey: 'accounts-receivable',
+        entityKey: 'invoice',
+        surfaceKey: 'invoice-draft',
+        route: '/ar',
+        label: 'AR invoice draft',
+        description:
+          'Invoice drafting surface with code-owned financial calculation and issuance invariants.',
+        ownership: 'MODULE_EXTENSION',
+        authoringEnabled: false,
+        authoringDisabledReason:
+          'Core-field inspection is available. Custom-field authoring remains disabled until draft extensions are validated in the AR transaction and snapshotted immutably at issuance.',
+        entityKeyEditable: false,
+        surfaceKeyEditable: false,
+        modes: ['CREATE', 'EDIT', 'READ', 'LIST'],
+        coreFields: [
+          registeredCoreField('id', 'Invoice ID', 'TEXT', true, true, 'Stable invoice aggregate identity.'),
+          registeredCoreField(
+            'billingEntityId',
+            'Billing entity',
+            'TEXT',
+            true,
+            false,
+            'The issuing legal entity is module controlled.',
+          ),
+          registeredCoreField(
+            'invoiceSeriesId',
+            'Invoice series',
+            'TEXT',
+            true,
+            false,
+            'Number allocation is controlled by the locked AR series.',
+          ),
+          registeredCoreField(
+            'customerId',
+            'Customer',
+            'TEXT',
+            true,
+            false,
+            'Canonical AR customer relationship.',
+          ),
+          registeredCoreField(
+            'invoiceNumber',
+            'Invoice number',
+            'TEXT',
+            false,
+            true,
+            'Allocated atomically only when the invoice is issued.',
+          ),
+          registeredCoreField(
+            'status',
+            'Status',
+            'SELECT',
+            true,
+            true,
+            'Invoice state transitions are module commands.',
+          ),
+          registeredCoreField(
+            'currency',
+            'Currency',
+            'CURRENCY',
+            true,
+            false,
+            'Currency is a financial calculation invariant.',
+          ),
+          registeredCoreField(
+            'issueDate',
+            'Issue date',
+            'DATE',
+            true,
+            false,
+            'Issue date participates in invoice validation.',
+          ),
+          registeredCoreField(
+            'dueDate',
+            'Due date',
+            'DATE',
+            true,
+            false,
+            'Due date must satisfy AR date invariants.',
+          ),
+          registeredCoreField(
+            'purchaseOrderReference',
+            'Purchase order reference',
+            'TEXT',
+            false,
+            false,
+            'Canonical commercial reference.',
+          ),
+          registeredCoreField(
+            'lines',
+            'Invoice line items',
+            'TEXTAREA',
+            true,
+            false,
+            'Line quantities and prices are calculated and validated by AR.',
+          ),
+          registeredCoreField(
+            'subtotalMinor',
+            'Subtotal',
+            'CURRENCY',
+            true,
+            true,
+            'Server-calculated financial amount.',
+          ),
+          registeredCoreField(
+            'taxMinor',
+            'Tax',
+            'CURRENCY',
+            true,
+            true,
+            'Server-calculated tax amount.',
+          ),
+          registeredCoreField(
+            'totalMinor',
+            'Total',
+            'CURRENCY',
+            true,
+            true,
+            'Server-calculated financial total.',
+          ),
+          registeredCoreField(
+            'amountPaidMinor',
+            'Amount paid',
+            'CURRENCY',
+            true,
+            true,
+            'Derived from immutable payment records.',
+          ),
+          registeredCoreField(
+            'amountDueMinor',
+            'Amount due',
+            'CURRENCY',
+            true,
+            true,
+            'Derived from invoice total and settled payments.',
+          ),
+          registeredCoreField(
+            'version',
+            'Version',
+            'INTEGER',
+            true,
+            true,
+            'Optimistic concurrency token managed by AR.',
+          ),
+          registeredCoreField(
+            'issuedAt',
+            'Issued at',
+            'DATETIME',
+            false,
+            true,
+            'Immutable issuance timestamp.',
+          ),
+          registeredCoreField(
+            'createdAt',
+            'Created at',
+            'DATETIME',
+            true,
+            true,
+            'System audit timestamp.',
+          ),
+          registeredCoreField(
+            'updatedAt',
+            'Updated at',
+            'DATETIME',
+            true,
+            true,
+            'System audit timestamp.',
+          ),
+        ],
+        extensionSlots: [
+          {
+            key: 'invoice-non-financial-details',
+            label: 'Additional invoice details',
+            description: 'Future non-financial metadata snapshotted with the issued invoice.',
+            allowedFieldTypes: [
+              'TEXT',
+              'TEXTAREA',
+              'NUMBER',
+              'INTEGER',
+              'BOOLEAN',
+              'DATE',
+              'DATETIME',
+              'EMAIL',
+              'PHONE',
+              'URL',
+              'SELECT',
+              'MULTI_SELECT',
+            ],
+            maximumFields: 50,
+          },
+        ],
       },
     ] as const;
+  }
+
+  listSurfaces(): ReturnType<ConfigurationStudioService['listBaseSurfaces']>;
+  listSurfaces(tenantId: string): Promise<Record<string, unknown>[]>;
+  listSurfaces(tenantId?: string): unknown {
+    const base = this.listBaseSurfaces();
+    if (!tenantId) {
+      return base;
+    }
+    return this.listDynamicSurfaces(tenantId, base);
+  }
+
+  private async listDynamicSurfaces(
+    tenantId: string,
+    baseSurfaces: readonly Record<string, unknown>[],
+  ) {
+    const activeCustomApps = await prisma.configurationActivation.findMany({
+      where: {
+        tenantId,
+        status: 'ACTIVE',
+        moduleKey: 'tenant-apps',
+      },
+      include: {
+        publishedVersion: {
+          select: {
+            manifest: true,
+            sequence: true,
+            checksum: true,
+          },
+        },
+      },
+      orderBy: { activatedAt: 'desc' },
+    });
+
+    const seen = new Set<string>();
+    const customSurfaces: Record<string, unknown>[] = [];
+
+    for (const app of activeCustomApps) {
+      const key = `${app.moduleKey}:${app.entityKey}:${app.surfaceKey}`;
+      if (seen.has(key) || app.entityKey === 'custom-record') continue;
+      seen.add(key);
+
+      const manifest = app.publishedVersion?.manifest as Record<string, unknown> | null;
+      const label = (manifest?.title as string) || app.entityKey;
+      const description =
+        (manifest?.description as string) || `Custom application for ${app.entityKey}`;
+
+      customSurfaces.push({
+        registrationKey: `tenant-app-${app.entityKey}-${app.surfaceKey}`,
+        moduleKey: app.moduleKey,
+        entityKey: app.entityKey,
+        surfaceKey: app.surfaceKey,
+        label,
+        description,
+        route: `/apps/${app.entityKey}`,
+        ownership: 'TENANT_APPLICATION',
+        authoringEnabled: true,
+        entityKeyEditable: false,
+        surfaceKeyEditable: false,
+        modes: ['CREATE', 'EDIT', 'READ', 'LIST'],
+        coreFields: [],
+        extensionSlots: [
+          {
+            key: 'application-fields',
+            label: 'Application fields',
+            description: 'Schema-defined fields owned by the tenant application.',
+            allowedFieldTypes: [
+              'TEXT', 'TEXTAREA', 'NUMBER', 'INTEGER', 'BOOLEAN', 'DATE', 'DATETIME',
+              'EMAIL', 'PHONE', 'URL', 'CURRENCY', 'SELECT', 'MULTI_SELECT',
+            ],
+            maximumFields: 200,
+          },
+        ],
+        versionSequence: app.publishedVersion?.sequence,
+      });
+    }
+
+    return [...baseSurfaces, ...customSurfaces];
   }
 
   listChangeSets(tenantId: string) {
@@ -126,7 +673,7 @@ export class ConfigurationStudioService {
     );
   }
 
-  async exportPackage(tenantId: string, actorId: string, dto: ExportConfigurationPackageDto, permissions: string[]) {
+  async exportPackage(tenantId: string, actorId: string, dto: ExportConfigurationPackageDto, permissions: string[] = ['*']) {
     const requestChecksum = checksum(dto);
     const operation = 'configuration-package.export';
     const replay = await this.idempotentReplay(
@@ -1622,16 +2169,29 @@ export class ConfigurationStudioService {
   }
 
   private assertRegisteredSurface(definition: ConfigurationDefinition) {
-    const registered = this.listSurfaces().some(
+    const surface = this.listBaseSurfaces().find(
       (surface) =>
         surface.moduleKey === definition.moduleKey &&
         (surface.entityKeyEditable || surface.entityKey === definition.entityKey) &&
         (surface.surfaceKeyEditable || surface.surfaceKey === definition.surfaceKey) &&
         (surface.modes as readonly string[]).includes(definition.mode),
     );
-    if (!registered) {
+    if (!surface) {
       throw new BadRequestException(
         'This module surface is not registered for governed configuration.',
+      );
+    }
+    if (!surface.authoringEnabled) {
+      throw new BadRequestException(
+        surface.authoringDisabledReason ??
+          'This module surface is available for inspection but not configuration authoring.',
+      );
+    }
+    const coreKeys = new Set(surface.coreFields.map((field) => field.key));
+    const shadowedKey = definition.fields.find((field) => coreKeys.has(field.key))?.key;
+    if (shadowedKey) {
+      throw new BadRequestException(
+        `Field ${shadowedKey} is module-owned core and cannot be redefined by configuration.`,
       );
     }
   }

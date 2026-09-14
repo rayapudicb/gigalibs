@@ -103,25 +103,40 @@ export class ControlOutboxWorker implements OnApplicationBootstrap, OnApplicatio
 
   private async process(event: ClaimedOutboxEvent) {
     try {
-      if (event.eventType !== 'operational.source-event.validated.v1') {
-        throw new Error('UNSUPPORTED_CONTROL_OUTBOX_EVENT');
-      }
-      await prisma.sourceEvent.updateMany({
-        where: {
-          id: event.aggregateId,
-          tenantId: event.tenantId,
-          status: { in: ['VALIDATED', 'PROCESSING'] },
-        },
-        data: { status: 'PROCESSING' },
-      });
-      await this.ingestionService.processSourceEvent(event.aggregateId);
-      await prisma.$transaction(async (transaction) => {
-        const sourceEvent = await transaction.sourceEvent.update({
-          where: { id: event.aggregateId },
-          data: { status: 'PROCESSED', processedAt: new Date() },
-          select: { id: true, tenantId: true, eventId: true },
+      if (event.eventType === 'operational.source-event.validated.v1') {
+        await prisma.sourceEvent.updateMany({
+          where: {
+            id: event.aggregateId,
+            tenantId: event.tenantId,
+            status: { in: ['VALIDATED', 'PROCESSING'] },
+          },
+          data: { status: 'PROCESSING' },
         });
-        await transaction.controlOutboxEvent.update({
+        await this.ingestionService.processSourceEvent(event.aggregateId);
+        await prisma.$transaction(async (transaction) => {
+          const sourceEvent = await transaction.sourceEvent.update({
+            where: { id: event.aggregateId },
+            data: { status: 'PROCESSED', processedAt: new Date() },
+            select: { id: true, tenantId: true, eventId: true },
+          });
+          await transaction.controlOutboxEvent.update({
+            where: { id: event.id },
+            data: {
+              status: 'PUBLISHED',
+              publishedAt: new Date(),
+              claimedAt: null,
+              lastErrorCode: null,
+            },
+          });
+          await this.exceptionService.recordProcessingSuccess(transaction, sourceEvent);
+        });
+      } else if (
+        event.eventType.startsWith('configuration.') ||
+        event.eventType.startsWith('saga.') ||
+        event.eventType.startsWith('webhook.')
+      ) {
+        // Mark generic configuration, saga, or webhook events as published
+        await prisma.controlOutboxEvent.update({
           where: { id: event.id },
           data: {
             status: 'PUBLISHED',
@@ -130,8 +145,10 @@ export class ControlOutboxWorker implements OnApplicationBootstrap, OnApplicatio
             lastErrorCode: null,
           },
         });
-        await this.exceptionService.recordProcessingSuccess(transaction, sourceEvent);
-      });
+        this.logger.log(`Dispatched generic outbox event: ${event.eventType} (${event.id})`);
+      } else {
+        throw new Error('UNSUPPORTED_CONTROL_OUTBOX_EVENT');
+      }
     } catch (error) {
       await this.recordFailure(event, this.errorCode(error));
     }

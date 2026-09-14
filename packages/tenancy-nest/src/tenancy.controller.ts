@@ -1,15 +1,45 @@
-import { CurrentUser } from '@gigalibs/auth-nest';
+import { AllowMfaPending, CurrentUser } from '@gigalibs/auth-nest';
 import {
-  ChangeTenantStatusSchema,
-  CreateTenantSchema,
+  type AcceptTenantInviteDto,
+  AcceptTenantInviteSchema,
   type ChangeTenantStatusDto,
+  ChangeTenantStatusSchema,
+  type CreateCustomRoleDto,
+  CreateCustomRoleSchema,
+  type CreateTenantDomainChallengeDto,
+  CreateTenantDomainChallengeSchema,
   type CreateTenantDto,
+  type CreateTenantInviteDto,
+  CreateTenantInviteSchema,
+  CreateTenantSchema,
+  type DeleteCustomRoleDto,
+  DeleteCustomRoleSchema,
+  type RevokeTenantDomainDto,
+  RevokeTenantDomainSchema,
+  type UpdateCustomRoleDto,
+  UpdateCustomRoleSchema,
+  type UpdateTenantMemberDto,
+  UpdateTenantMemberSchema,
+  type VerifyTenantDomainDto,
+  VerifyTenantDomainSchema,
 } from '@gigalibs/contracts';
 import { RequirePermissions } from '@gigalibs/rbac-nest';
 import { ZodValidationPipe } from '@gigalibs/validation-nest';
-import { Body, Controller, Get, Patch, Post } from '@nestjs/common';
-import { CurrentTenant } from './decorators/current-tenant.decorator.js';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Header,
+  Param,
+  Patch,
+  Post,
+  Query,
+  SetMetadata,
+} from '@nestjs/common';
 import { AllowTenantStatuses } from './decorators/allow-tenant-statuses.decorator.js';
+import { CurrentTenant } from './decorators/current-tenant.decorator.js';
+// biome-ignore lint/style/useImportType: Nest constructor injection requires the runtime class.
 import { TenancyService } from './tenancy.service.js';
 
 @Controller('tenants')
@@ -17,11 +47,14 @@ export class TenancyController {
   constructor(private readonly tenancyService: TenancyService) {}
 
   @Get()
+  @SetMetadata('skipTenantBoundary', true)
+  @AllowMfaPending()
   list(@CurrentUser('sub') userId: string) {
     return this.tenancyService.listForUser(userId);
   }
 
   @Post()
+  @SetMetadata('skipTenantBoundary', true)
   create(
     @CurrentUser('sub') userId: string,
     @Body(new ZodValidationPipe(CreateTenantSchema)) dto: CreateTenantDto,
@@ -31,10 +64,7 @@ export class TenancyController {
 
   @Get('current')
   @RequirePermissions('tenant:read')
-  getCurrent(
-    @CurrentTenant('tenantId') tenantId: string,
-    @CurrentUser('sub') userId: string,
-  ) {
+  getCurrent(@CurrentTenant('tenantId') tenantId: string, @CurrentUser('sub') userId: string) {
     return this.tenancyService.getTenantForUser(tenantId, userId);
   }
 
@@ -47,5 +77,135 @@ export class TenancyController {
     @Body(new ZodValidationPipe(ChangeTenantStatusSchema)) dto: ChangeTenantStatusDto,
   ) {
     return this.tenancyService.changeStatus(tenantId, userId, dto);
+  }
+
+  @Get('current/domain')
+  @RequirePermissions('tenant:read')
+  getDomainStatus(@CurrentTenant('tenantId') tenantId: string) {
+    return this.tenancyService.getDomainStatus(tenantId);
+  }
+
+  @Post('current/domain/challenge')
+  @Header('Cache-Control', 'no-store')
+  @RequirePermissions('tenant:update')
+  createDomainChallenge(
+    @CurrentTenant('tenantId') tenantId: string,
+    @CurrentUser('sub') userId: string,
+    @Body(new ZodValidationPipe(CreateTenantDomainChallengeSchema))
+    dto: CreateTenantDomainChallengeDto,
+  ) {
+    return this.tenancyService.createDomainChallenge(tenantId, userId, dto);
+  }
+
+  @Post('current/domain/verify')
+  @RequirePermissions('tenant:update')
+  verifyDomain(
+    @CurrentTenant('tenantId') tenantId: string,
+    @CurrentUser('sub') userId: string,
+    @Body(new ZodValidationPipe(VerifyTenantDomainSchema)) dto: VerifyTenantDomainDto,
+  ) {
+    return this.tenancyService.verifyDomain(tenantId, userId, dto.reason);
+  }
+
+  @Delete('current/domain')
+  @RequirePermissions('tenant:update')
+  revokeDomain(
+    @CurrentTenant('tenantId') tenantId: string,
+    @CurrentUser('sub') userId: string,
+    @Query(new ZodValidationPipe(RevokeTenantDomainSchema)) query: RevokeTenantDomainDto,
+  ) {
+    return this.tenancyService.revokeDomain(tenantId, userId, query.reason);
+  }
+
+  @Get('current/members')
+  @RequirePermissions('users:read')
+  listMembers(@CurrentTenant('tenantId') tenantId: string) {
+    return this.tenancyService.listMembers(tenantId);
+  }
+
+  @Get('current/roles')
+  @RequirePermissions('roles:read')
+  listCustomRoles(@CurrentTenant('tenantId') tenantId: string) {
+    return this.tenancyService.listCustomRoles(tenantId);
+  }
+
+  @Post('current/roles')
+  @RequirePermissions('roles:create')
+  createCustomRole(
+    @CurrentTenant('tenantId') tenantId: string,
+    @CurrentUser('sub') userId: string,
+    @Body(new ZodValidationPipe(CreateCustomRoleSchema)) dto: CreateCustomRoleDto,
+  ) {
+    return this.tenancyService.createCustomRole(tenantId, userId, dto);
+  }
+
+  @Patch('current/roles/:roleId')
+  @RequirePermissions('roles:update')
+  updateCustomRole(
+    @CurrentTenant('tenantId') tenantId: string,
+    @CurrentUser('sub') userId: string,
+    @Param('roleId') roleId: string,
+    @Body(new ZodValidationPipe(UpdateCustomRoleSchema)) dto: UpdateCustomRoleDto,
+  ) {
+    return this.tenancyService.updateCustomRole(tenantId, roleId, userId, dto);
+  }
+
+  @Delete('current/roles/:roleId')
+  @RequirePermissions('roles:delete')
+  deleteCustomRole(
+    @CurrentTenant('tenantId') tenantId: string,
+    @CurrentUser('sub') userId: string,
+    @Param('roleId') roleId: string,
+    @Query(new ZodValidationPipe(DeleteCustomRoleSchema)) query: DeleteCustomRoleDto,
+  ) {
+    return this.tenancyService.deleteCustomRole(tenantId, roleId, userId, query.reason);
+  }
+
+  @Get('current/invitations')
+  @RequirePermissions('invites:read')
+  listInvites(@CurrentTenant('tenantId') tenantId: string) {
+    return this.tenancyService.listInvites(tenantId);
+  }
+
+  @Post('current/invitations')
+  @Header('Cache-Control', 'no-store')
+  @RequirePermissions('invites:create')
+  createInvite(
+    @CurrentTenant('tenantId') tenantId: string,
+    @CurrentUser('sub') userId: string,
+    @Body(new ZodValidationPipe(CreateTenantInviteSchema)) dto: CreateTenantInviteDto,
+  ) {
+    return this.tenancyService.createInvite(tenantId, userId, dto);
+  }
+
+  @Delete('current/invitations/:inviteId')
+  @RequirePermissions('invites:delete')
+  revokeInvite(
+    @CurrentTenant('tenantId') tenantId: string,
+    @CurrentUser('sub') userId: string,
+    @Param('inviteId') inviteId: string,
+  ) {
+    return this.tenancyService.revokeInvite(tenantId, inviteId, userId);
+  }
+
+  @Post('invitations/accept')
+  @Header('Cache-Control', 'no-store')
+  @SetMetadata('skipTenantBoundary', true)
+  acceptInvite(
+    @CurrentUser('sub') userId: string,
+    @Body(new ZodValidationPipe(AcceptTenantInviteSchema)) dto: AcceptTenantInviteDto,
+  ) {
+    return this.tenancyService.acceptInvite(userId, dto);
+  }
+
+  @Patch('current/members/:memberId')
+  @RequirePermissions('users:update')
+  updateMember(
+    @CurrentTenant('tenantId') tenantId: string,
+    @CurrentUser('sub') userId: string,
+    @Param('memberId') memberId: string,
+    @Body(new ZodValidationPipe(UpdateTenantMemberSchema)) dto: UpdateTenantMemberDto,
+  ) {
+    return this.tenancyService.updateMember(tenantId, memberId, userId, dto);
   }
 }

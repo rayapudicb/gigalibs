@@ -22,7 +22,11 @@ declare global {
 function createPrismaClient(): PrismaClient {
   const connectionString = requireDatabaseUrl();
 
-  const adapter = new PrismaPg({ connectionString });
+  // Keep every ORM connection on UTC. This also protects legacy module fields
+  // that still use `timestamp without time zone` until their domain owners
+  // classify and migrate them, and prevents native-driver serialization from
+  // depending on the PostgreSQL host timezone.
+  const adapter = new PrismaPg({ connectionString, options: '-c timezone=UTC' });
   const client = new PrismaClient({
     adapter,
     log:

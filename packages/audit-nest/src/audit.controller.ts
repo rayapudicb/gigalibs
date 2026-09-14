@@ -15,4 +15,10 @@ export class AuditController {
   ) {
     return this.auditService.getTenantAuditLogs(tenantId, limit);
   }
+
+  @Get('verify')
+  @RequirePermissions('audit:read')
+  async verifyTenantChain(@CurrentTenant('tenantId') tenantId: string) {
+    return this.auditService.verifyTenantChain(tenantId);
+  }
 }

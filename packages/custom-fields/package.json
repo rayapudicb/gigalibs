@@ -19,6 +19,9 @@
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist *.tsbuildinfo"
   },
+  "dependencies": {
+    "@gigalibs/crypto": "workspace:*"
+  },
   "devDependencies": {
     "@types/node": "^24.10.0",
     "typescript": "^5.8.3",

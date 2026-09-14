@@ -1,4 +1,11 @@
-export type LocaleDictionary = Record<string, string | Record<string, unknown>>;
+export type LocaleDictionary = Record<string, any>;
+
+export interface SupportedLocale {
+  code: string;
+  name: string;
+  englishName: string;
+  direction: 'ltr' | 'rtl';
+}
 
 export interface I18nConfig {
   defaultLocale: string;

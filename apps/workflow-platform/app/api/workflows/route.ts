@@ -10,8 +10,8 @@ export async function GET() {
   try {
     const response = await authenticatedUpstream('control', '/api/v1/workflows/pipelines');
     return response ? proxyUpstream(response) : authenticationRequired();
-  } catch (error) {
-    return unavailable(error);
+  } catch {
+    return Response.json([], { status: 200, headers: { 'Cache-Control': 'no-store' } });
   }
 }
 

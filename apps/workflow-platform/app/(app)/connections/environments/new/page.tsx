@@ -4,6 +4,7 @@ import { requestJson } from '@/lib/client-api';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { type FormEvent, useState } from 'react';
+import { Container, Heading, Text, Button, Input, Label, Alert } from '@medusajs/ui';
 
 export default function NewEnvironmentPage() {
   const router = useRouter();
@@ -35,57 +36,56 @@ export default function NewEnvironmentPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6 p-8">
-      <Link href="/connections" className="text-sm text-gray-400 hover:text-white">
+    <div className="mx-auto max-w-2xl space-y-6 p-8 font-sans text-ui-fg-base">
+      <Link href="/connections" className="text-xs text-ui-fg-muted hover:text-ui-fg-base">
         ← Integration Hub
       </Link>
       <div>
-        <h1 className="text-2xl font-bold text-white">Create environment</h1>
-        <p className="mt-1 text-sm text-gray-400">
+        <Heading level="h1" className="text-2xl font-bold text-ui-fg-base">Create environment</Heading>
+        <Text size="small" className="mt-1 text-ui-fg-muted">
           Defines an isolated tenant deployment boundary and retention policy.
-        </p>
+        </Text>
       </div>
-      <form
-        onSubmit={submit}
-        className="space-y-5 rounded-xl border border-gray-800 bg-gray-900 p-6"
-      >
-        {error && <Alert message={error} />}
-        <Field name="displayName" label="Display name" maxLength={120} />
-        <Field name="slug" label="Slug" pattern="[a-z0-9]+(?:-[a-z0-9]+)*" maxLength={80} />
-        <div>
-          <Label text="Kind" htmlFor="kind" />
-          <select id="kind" name="kind" required className={control}>
-            <option value="">Select kind</option>
-            <option value="DEVELOPMENT">Development</option>
-            <option value="TEST">Test</option>
-            <option value="STAGING">Staging</option>
-            <option value="PRODUCTION">Production</option>
-            <option value="DEMO">Demo</option>
-          </select>
-        </div>
-        <Field name="region" label="Deployment region" maxLength={80} />
-        <Field name="retentionDays" label="Retention days" type="number" min={1} max={3650} />
-        <button
-          type="submit"
-          disabled={saving}
-          className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500 disabled:opacity-50"
-        >
-          {saving ? 'Creating…' : 'Create environment'}
-        </button>
-      </form>
+      <Container className="p-6 border border-ui-border-base bg-ui-bg-base shadow-elevation-card-rest rounded-xl">
+        <form onSubmit={submit} className="space-y-4">
+          {error && <Alert variant="error" className="text-xs">{error}</Alert>}
+          <Field name="displayName" label="Display name" maxLength={120} />
+          <Field name="slug" label="Slug" pattern="[a-z0-9]+(?:-[a-z0-9]+)*" maxLength={80} />
+          <div className="space-y-1">
+            <Label htmlFor="kind" className="text-xs font-medium text-ui-fg-subtle">
+              Kind
+            </Label>
+            <select
+              id="kind"
+              name="kind"
+              required
+              className="w-full h-8 px-2.5 text-xs rounded-md border border-ui-border-base bg-ui-bg-base text-ui-fg-base outline-none focus:border-ui-border-interactive focus:ring-1 focus:ring-ui-border-interactive shadow-borders-base"
+            >
+              <option value="">Select kind</option>
+              <option value="DEVELOPMENT">Development</option>
+              <option value="TEST">Test</option>
+              <option value="STAGING">Staging</option>
+              <option value="PRODUCTION">Production</option>
+              <option value="DEMO">Demo</option>
+            </select>
+          </div>
+          <Field name="region" label="Deployment region" maxLength={80} />
+          <Field name="retentionDays" label="Retention days" type="number" min={1} max={3650} />
+          <Button
+            type="submit"
+            disabled={saving}
+            variant="primary"
+            size="small"
+            isLoading={saving}
+          >
+            Create environment
+          </Button>
+        </form>
+      </Container>
     </div>
   );
 }
 
-const control =
-  'w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white outline-none focus:border-indigo-500';
-function Label({ text, htmlFor }: { text: string; htmlFor: string }) {
-  return (
-    <label htmlFor={htmlFor} className="mb-1 block text-sm font-medium text-gray-300">
-      {text}
-    </label>
-  );
-}
 function Field({
   name,
   label,
@@ -101,19 +101,11 @@ function Field({
   pattern?: string;
 }) {
   return (
-    <div>
-      <Label text={label} htmlFor={name} />
-      <input id={name} name={name} type={type} required className={control} {...props} />
-    </div>
-  );
-}
-function Alert({ message }: { message: string }) {
-  return (
-    <div
-      role="alert"
-      className="rounded-lg border border-red-900 bg-red-950/30 p-3 text-sm text-red-300"
-    >
-      {message}
+    <div className="space-y-1">
+      <Label htmlFor={name} className="text-xs font-medium text-ui-fg-subtle">
+        {label}
+      </Label>
+      <Input id={name} name={name} type={type} required size="small" {...props} />
     </div>
   );
 }

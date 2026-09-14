@@ -46,14 +46,9 @@ export class PayloadCryptoService {
     },
     authenticatedContext: string,
   ): Record<string, unknown> {
-    if (encrypted.keyVersion !== runtimeConfig.controlPayloadKeyVersion) {
-      throw new Error(`Payload key version '${encrypted.keyVersion}' is not loaded.`);
-    }
-    const decipher = createDecipheriv(
-      'aes-256-gcm',
-      runtimeConfig.controlPayloadEncryptionKey,
-      encrypted.iv,
-    );
+    const key = runtimeConfig.controlPayloadDecryptionKeys.get(encrypted.keyVersion);
+    if (!key) throw new Error(`Payload key version '${encrypted.keyVersion}' is not loaded.`);
+    const decipher = createDecipheriv('aes-256-gcm', key, encrypted.iv);
     decipher.setAAD(Buffer.from(authenticatedContext, 'utf8'));
     decipher.setAuthTag(encrypted.authTag);
     const plaintext = Buffer.concat([decipher.update(encrypted.ciphertext), decipher.final()]);

@@ -1,5 +1,7 @@
-import { NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
+import { RegisterWithEmailSchema } from '@gigalibs/contracts';
+import { cookies } from 'next/headers';
+import { NextResponse } from 'next/server';
+import { readBoundedBody, unavailable } from '../../../../lib/authenticated-upstream';
 import {
   ACCESS_COOKIE_NAME,
   REFRESH_COOKIE_NAME,
@@ -8,160 +10,88 @@ import {
   isTokenResponse,
   refreshCookieOptions,
   tokenHasTenant,
-  upstreamError,
-} from '@/lib/control-plane'
-import { OnboardingManager } from '@gigalibs/onboarding-flow'
+} from '../../../../lib/control-plane';
 
+// WI-OI-013: the control plane exclusively owns credentials and session issuance.
 export async function POST(request: Request) {
   try {
-    const body = await request.json()
-    const {
-      name,
-      email,
-      password,
-      companyName,
-      slug: customSlug,
-      isolationMode = 'ROW_LEVEL_SECURITY',
-      plan = 'ENTERPRISE',
-      region = 'ap-south-1',
-    } = body
-
-    if (!email || !password || !name || !companyName) {
-      return NextResponse.json(
-        { detail: 'Name, email, password, and company name are required.' },
-        { status: 400 }
-      )
-    }
-
-    const slug = customSlug
-      ? OnboardingManager.sanitizeSlug(customSlug)
-      : OnboardingManager.sanitizeSlug(companyName)
-
-    if (!slug) {
-      return NextResponse.json(
-        { detail: 'A valid workspace subdomain slug is required.' },
-        { status: 400 }
-      )
-    }
-
-    let registrationToken: string | null = null
-    let tenantId: string | null = null
-
-    // 1. Attempt upstream registration via control plane
+    const rawBody = await readBoundedBody(request);
+    let body: unknown;
     try {
-      const regRes = await fetch(controlPlaneUrl('/api/v1/auth/register'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, name }),
-        cache: 'no-store',
-      })
-
-      if (regRes.ok) {
-        const regData = (await regRes.json()) as { accessToken: string }
-        registrationToken = regData.accessToken
-
-        // 2. Provision Tenant with Database Isolation
-        const tenRes = await fetch(controlPlaneUrl('/api/v1/tenants'), {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${registrationToken}`,
-          },
-          body: JSON.stringify({
-            name: companyName,
-            slug,
-            plan,
-            isolationMode,
-            region,
-          }),
-          cache: 'no-store',
-        })
-
-        if (tenRes.ok) {
-          const tenData = (await tenRes.json()) as { id: string }
-          tenantId = tenData.id
-
-          // 3. Select Tenant & Issue Scoped Access Token
-          const selRes = await fetch(controlPlaneUrl('/api/v1/auth/select-tenant'), {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${registrationToken}`,
-            },
-            body: JSON.stringify({ tenantId }),
-            cache: 'no-store',
-          })
-
-          if (selRes.ok) {
-            const selData: unknown = await selRes.json()
-            if (isTokenResponse(selData)) {
-              const cookieStore = await cookies()
-              cookieStore.set(
-                ACCESS_COOKIE_NAME,
-                selData.accessToken,
-                accessCookieOptions(selData.expiresIn)
-              )
-              cookieStore.set(
-                REFRESH_COOKIE_NAME,
-                selData.refreshToken,
-                refreshCookieOptions()
-              )
-              cookieStore.delete('wf_session')
-
-              return NextResponse.json({
-                success: true,
-                tenant: { id: tenantId, slug, name: companyName, isolationMode },
-                redirectUrl: '/dashboard',
-              })
-            }
-          }
-        }
-      }
+      body = JSON.parse(rawBody);
     } catch {
-      // Fallback to local cryptographic token if upstream control plane is offline in dev
+      return NextResponse.json(
+        { detail: 'Request body must be valid JSON.' },
+        { status: 400, headers: { 'Cache-Control': 'no-store' } },
+      );
     }
 
-    // Resilient local cryptographic session fallback
-    const jwtSecret = process.env.JWT_ACCESS_SECRET || 'change-me-access-secret-min-32-chars-long'
-    const now = Math.floor(Date.now() / 1000)
-    const generatedTenantId = `ten_${slug}_${Date.now().toString(36)}`
-    const payload = {
-      sub: `usr_${Date.now().toString(36)}`,
-      email,
-      name,
-      role: 'TENANT_ADMIN',
-      tid: generatedTenantId,
-      slug,
-      isolationMode,
-      iat: now,
-      exp: now + 86400,
+    const parsed = RegisterWithEmailSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { detail: 'A valid email, name, and password of 12 to 128 characters are required.' },
+        { status: 400, headers: { 'Cache-Control': 'no-store' } },
+      );
     }
-    const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url')
-    const bodySegment = Buffer.from(JSON.stringify(payload)).toString('base64url')
-    const { createHmac } = await import('node:crypto')
-    const sig = createHmac('sha256', jwtSecret).update(`${header}.${bodySegment}`).digest('base64url')
-    const devToken = `${header}.${bodySegment}.${sig}`
 
-    const cookieStore = await cookies()
-    cookieStore.set(ACCESS_COOKIE_NAME, devToken, accessCookieOptions(86400))
-    cookieStore.set(REFRESH_COOKIE_NAME, devToken, refreshCookieOptions())
-    cookieStore.delete('wf_session')
+    const upstream = await fetch(controlPlaneUrl('/api/v1/auth/register'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify(parsed.data),
+      cache: 'no-store',
+      redirect: 'error',
+      signal: AbortSignal.any([request.signal, AbortSignal.timeout(10_000)]),
+    });
 
-    return NextResponse.json({
-      success: true,
-      tenant: {
-        id: generatedTenantId,
-        slug,
-        name: companyName,
-        isolationMode,
-        customDomain: `${slug}.localhost`,
-      },
-      redirectUrl: '/dashboard',
-    })
-  } catch (err: any) {
+    if (!upstream.ok) {
+      const status = upstream.status >= 400 && upstream.status < 500 ? upstream.status : 503;
+      return NextResponse.json(
+        {
+          detail:
+            status === 401
+              ? 'Invalid email or password.'
+              : status === 429
+                ? 'Too many authentication requests. Try again later.'
+                : status === 503
+                  ? 'Authentication service is unavailable.'
+                  : 'Registration was rejected. Check your details or sign in if an account already exists.',
+        },
+        { status, headers: { 'Cache-Control': 'no-store' } },
+      );
+    }
+
+    const tokenResponse: unknown = await upstream.json().catch(() => null);
+    if (!isTokenResponse(tokenResponse)) {
+      return NextResponse.json(
+        { detail: 'Authentication service returned an invalid token contract.' },
+        { status: 502, headers: { 'Cache-Control': 'no-store' } },
+      );
+    }
+
+    const cookieStore = await cookies();
+    cookieStore.set(
+      ACCESS_COOKIE_NAME,
+      tokenResponse.accessToken,
+      accessCookieOptions(tokenResponse.expiresIn),
+    );
+    cookieStore.set(REFRESH_COOKIE_NAME, tokenResponse.refreshToken, refreshCookieOptions());
+    for (const legacyCookie of ['wf_session', 'wf_tenant', 'wf_user_id', 'wf_role']) {
+      cookieStore.delete(legacyCookie);
+    }
+
+    const requiresTenantSelection = !tokenHasTenant(tokenResponse.accessToken);
     return NextResponse.json(
-      { detail: err.message || 'Self-service registration error.' },
-      { status: 500 }
-    )
+      {
+        success: true,
+        authenticated: true,
+        requiresTenantSelection,
+        requiresMfa: tokenResponse.requiresMfa === true,
+        mfaEnrolled: tokenResponse.mfaEnrolled === true,
+        redirectUrl: requiresTenantSelection ? '/select-tenant' : '/modules',
+      },
+      { status: 201, headers: { 'Cache-Control': 'no-store' } },
+    );
+  } catch (error) {
+    return unavailable(error);
   }
 }

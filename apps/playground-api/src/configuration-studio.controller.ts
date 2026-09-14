@@ -52,8 +52,8 @@ export class ConfigurationStudioController {
 
   @Get('surfaces')
   @RequirePermissions('configuration:read')
-  surfaces() {
-    return this.configuration.listSurfaces();
+  async surfaces(@CurrentTenant('tenantId') tenantId?: string) {
+    return tenantId ? this.configuration.listSurfaces(tenantId) : this.configuration.listSurfaces();
   }
 
   @Get('change-sets')

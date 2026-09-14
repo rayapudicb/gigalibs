@@ -1,11 +1,11 @@
-import {
-  ForbiddenException,
-  Injectable,
-  type CanActivate,
-  type ExecutionContext,
-} from '@nestjs/common';
 import type { TenantContext } from '@gigalibs/contracts';
 import { prisma } from '@gigalibs/db';
+import {
+  type CanActivate,
+  type ExecutionContext,
+  ForbiddenException,
+  Injectable,
+} from '@nestjs/common';
 
 type RequestShape = {
   tenant?: TenantContext;
@@ -32,9 +32,9 @@ export class TenantBoundaryGuard implements CanActivate {
     const headerTenantId = request.headers?.['x-tenant-id'];
     const requestedIdentifiers = [
       typeof headerTenantId === 'string' ? headerTenantId : undefined,
-      request.params?.['tenantId'],
-      request.query?.['tenantId'],
-      request.body?.['tenantId'],
+      request.params?.tenantId,
+      request.query?.tenantId,
+      request.body?.tenantId,
     ].filter((value): value is string => typeof value === 'string' && value.length > 0);
 
     const tokenTenantId = request.user?.tid;
@@ -52,16 +52,31 @@ export class TenantBoundaryGuard implements CanActivate {
           tenantId: tokenTenantId,
         },
       },
-      include: { tenant: true },
+      select: {
+        status: true,
+        tenant: {
+          select: {
+            id: true,
+            slug: true,
+            status: true,
+            features: true,
+            plan: true,
+            trialEndsAt: true,
+          },
+        },
+      },
     });
-    const allowedTenantStatuses =
-      Reflect.getMetadata('allowedTenantStatuses', context.getHandler()) ??
-      Reflect.getMetadata('allowedTenantStatuses', context.getClass()) ??
-      ['ACTIVE'];
+    const allowedTenantStatuses = Reflect.getMetadata(
+      'allowedTenantStatuses',
+      context.getHandler(),
+    ) ??
+      Reflect.getMetadata('allowedTenantStatuses', context.getClass()) ?? ['ACTIVE', 'TRIAL'];
     if (
       !membership ||
       membership.status !== 'ACTIVE' ||
-      !allowedTenantStatuses.includes(membership.tenant.status)
+      !allowedTenantStatuses.includes(membership.tenant.status) ||
+      (membership.tenant.status === 'TRIAL' &&
+        (!membership.tenant.trialEndsAt || membership.tenant.trialEndsAt <= new Date()))
     ) {
       throw new ForbiddenException('Tenant membership is inactive or has been revoked');
     }
@@ -73,12 +88,11 @@ export class TenantBoundaryGuard implements CanActivate {
       plan: membership.tenant.plan,
     };
 
-    const allowedIdentifiers = new Set([
-      membership.tenant.id,
-      membership.tenant.slug,
-    ]);
+    const allowedIdentifiers = new Set([membership.tenant.id, membership.tenant.slug]);
     if (requestedIdentifiers.some((identifier) => !allowedIdentifiers.has(identifier))) {
-      throw new ForbiddenException('Tenant identifier is outside the authenticated tenant boundary');
+      throw new ForbiddenException(
+        'Tenant identifier is outside the authenticated tenant boundary',
+      );
     }
     return true;
   }

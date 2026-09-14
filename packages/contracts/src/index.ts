@@ -20,3 +20,5 @@ export * from './workflow/index.js';
 export * from './operational-intelligence/index.js';
 export * from './ap/index.js';
 export * from './connectors/index.js';
+export * from './modules/index.js';
+export * from './configuration/index.js';

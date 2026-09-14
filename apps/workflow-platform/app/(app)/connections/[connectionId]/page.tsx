@@ -5,6 +5,7 @@ import { requestJson } from '@/lib/client-api';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { type FormEvent, useCallback, useEffect, useState } from 'react';
+import { Container, Heading, Text, Button, Badge, StatusBadge, Alert } from '@medusajs/ui';
 
 interface TestResult {
   traceId: string;
@@ -73,46 +74,47 @@ export default function ConnectionDetailPage() {
   }
 
   return (
-    <div className="space-y-6 p-8">
-      <Link href="/connections" className="text-sm text-gray-400 hover:text-white">
+    <div className="space-y-6 p-8 font-sans text-ui-fg-base">
+      <Link href="/connections" className="text-xs text-ui-fg-muted hover:text-ui-fg-base">
         ← Integration Hub
       </Link>
       {error && (
-        <div
-          role="alert"
-          className="rounded-lg border border-red-900 bg-red-950/30 p-4 text-sm text-red-300"
-        >
+        <Alert variant="error" className="text-xs">
           {error}
-        </div>
+        </Alert>
       )}
       {!connection ? (
-        <div className="rounded-xl border border-gray-800 bg-gray-900 p-12 text-center text-sm text-gray-400">
+        <div className="rounded-xl border border-ui-border-base bg-ui-bg-base p-12 text-center text-xs text-ui-fg-muted">
           Loading connection…
         </div>
       ) : (
         <>
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
-              <h1 className="text-2xl font-bold text-white">{connection.name}</h1>
-              <p className="mt-1 text-sm text-gray-400">{connection.endpoint}</p>
+              <Heading level="h1" className="text-2xl font-bold text-ui-fg-base">{connection.name}</Heading>
+              <Text size="small" className="mt-1 text-ui-fg-muted font-mono text-xs">{connection.endpoint}</Text>
             </div>
             <div className="flex gap-2">
-              <button
+              <Button
                 type="button"
+                variant="secondary"
+                size="small"
                 disabled={working !== null || connection.interfaceType === 'FILE_UPLOAD'}
                 onClick={() => void run('test')}
-                className="rounded-lg border border-gray-700 px-4 py-2 text-sm font-semibold text-gray-200 hover:bg-gray-800 disabled:opacity-50"
+                isLoading={working === 'test'}
               >
-                {working === 'test' ? 'Testing…' : 'Test connection'}
-              </button>
-              <button
+                Test connection
+              </Button>
+              <Button
                 type="button"
+                variant="primary"
+                size="small"
                 disabled={working !== null}
                 onClick={() => void run('profile')}
-                className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500 disabled:opacity-50"
+                isLoading={working === 'profile'}
               >
-                {working === 'profile' ? 'Profiling…' : 'Profile schema'}
-              </button>
+                Profile schema
+              </Button>
             </div>
           </div>
           {connection.interfaceType === 'FILE_UPLOAD' && (
@@ -135,27 +137,27 @@ export default function ConnectionDetailPage() {
             />
           </div>
           {testResult && (
-            <section className="rounded-xl border border-gray-800 bg-gray-900 p-5">
-              <h2 className="font-semibold text-white">Latest readiness result</h2>
+            <Container className="p-5 border border-ui-border-base bg-ui-bg-base shadow-elevation-card-rest rounded-xl">
+              <Heading level="h2" className="text-base font-semibold text-ui-fg-base">Latest readiness result</Heading>
               <div className="mt-4 grid gap-3 md:grid-cols-3">
                 {Object.entries(testResult.checks).map(([key, value]) => (
                   <Metric key={key} label={key.replaceAll('_', ' ')} value={String(value)} />
                 ))}
               </div>
-              <p className="mt-3 text-xs text-gray-500">Trace {testResult.traceId}</p>
-            </section>
+              <Text size="xsmall" className="mt-3 text-ui-fg-muted font-mono">Trace {testResult.traceId}</Text>
+            </Container>
           )}
           <section className="space-y-3">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-400">
+            <Text size="xsmall" weight="plus" className="uppercase tracking-wide text-ui-fg-muted">
               Versioned schema profiles
-            </h2>
+            </Text>
             {connection.schemaVersions?.length ? (
               connection.schemaVersions.map((schema) => (
                 <details
                   key={schema.id}
-                  className="rounded-xl border border-gray-800 bg-gray-900 p-5"
+                  className="rounded-xl border border-ui-border-base bg-ui-bg-base p-5 shadow-elevation-card-rest"
                 >
-                  <summary className="cursor-pointer text-sm font-semibold text-white">
+                  <summary className="cursor-pointer text-sm font-semibold text-ui-fg-base">
                     Version {schema.version} ·{' '}
                     {schema.breakingChange ? 'breaking change' : 'compatible'} ·{' '}
                     {new Date(schema.observedAt).toLocaleString()}
@@ -164,47 +166,45 @@ export default function ConnectionDetailPage() {
                     <JsonPanel title="Inferred schema" value={schema.schema} />
                     <JsonPanel title="Masked sample" value={schema.maskedSample} />
                   </div>
-                  <p className="mt-3 break-all text-xs text-gray-500">SHA-256 {schema.checksum}</p>
+                  <p className="mt-3 break-all font-mono text-xs text-ui-fg-muted">SHA-256 {schema.checksum}</p>
                 </details>
               ))
             ) : (
-              <div className="rounded-xl border border-dashed border-gray-700 p-10 text-center text-sm text-gray-400">
+              <div className="rounded-xl border border-dashed border-ui-border-base p-10 text-center text-xs text-ui-fg-muted">
                 No schema profile has been captured.
               </div>
             )}
           </section>
           <section className="space-y-3">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-400">
+            <Text size="xsmall" weight="plus" className="uppercase tracking-wide text-ui-fg-muted">
               Recent attempts
-            </h2>
-            <div className="overflow-hidden rounded-xl border border-gray-800 bg-gray-900">
+            </Text>
+            <Container className="p-0 overflow-hidden border border-ui-border-base bg-ui-bg-base shadow-elevation-card-rest rounded-xl">
               {connection.attempts?.length ? (
                 connection.attempts.map((attempt) => (
                   <div
                     key={attempt.id}
-                    className="grid grid-cols-5 gap-3 border-b border-gray-800 px-4 py-3 text-sm last:border-0"
+                    className="grid grid-cols-5 gap-3 border-b border-ui-border-base px-4 py-3 text-xs last:border-0"
                   >
-                    <span className="text-gray-200">{attempt.operation.toLowerCase()}</span>
-                    <span
-                      className={
-                        attempt.status === 'SUCCEEDED' ? 'text-emerald-400' : 'text-red-400'
-                      }
-                    >
-                      {attempt.status.toLowerCase()}
+                    <span className="text-ui-fg-base font-medium">{attempt.operation.toLowerCase()}</span>
+                    <span>
+                      <StatusBadge color={attempt.status === 'SUCCEEDED' ? 'green' : 'red'}>
+                        {attempt.status.toLowerCase()}
+                      </StatusBadge>
                     </span>
-                    <span className="text-gray-400">
+                    <span className="text-ui-fg-subtle font-mono">
                       {attempt.latencyMs === null ? '—' : `${attempt.latencyMs} ms`}
                     </span>
-                    <span className="truncate text-gray-500">{attempt.errorCode ?? '—'}</span>
-                    <span className="text-right text-gray-500">
+                    <span className="truncate text-ui-fg-muted">{attempt.errorCode ?? '—'}</span>
+                    <span className="text-right text-ui-fg-muted font-mono">
                       {new Date(attempt.startedAt).toLocaleString()}
                     </span>
                   </div>
                 ))
               ) : (
-                <div className="p-8 text-center text-sm text-gray-400">No attempts recorded.</div>
+                <div className="p-8 text-center text-xs text-ui-fg-muted">No attempts recorded.</div>
               )}
-            </div>
+            </Container>
           </section>
         </>
       )}
@@ -300,18 +300,18 @@ function FileUploadPanel({
   }
 
   return (
-    <section className="space-y-4 rounded-xl border border-gray-800 bg-gray-900 p-5">
+    <Container className="space-y-4 rounded-xl border border-ui-border-base bg-ui-bg-base p-5 shadow-elevation-card-rest">
       <div>
-        <h2 className="font-semibold text-white">Verified source file</h2>
-        <p className="mt-1 text-sm text-gray-400">
+        <Heading level="h2" className="text-base font-semibold text-ui-fg-base">Verified source file</Heading>
+        <Text size="small" className="mt-1 text-ui-fg-muted">
           The server verifies size and SHA-256, profiles a masked sample, and removes the temporary
           object after processing.
-        </p>
+        </Text>
       </div>
       {error && (
-        <div role="alert" className="rounded-lg border border-red-900 p-3 text-sm text-red-300">
+        <Alert variant="error" className="text-xs">
           {error}
-        </div>
+        </Alert>
       )}
       <form onSubmit={submit} className="grid gap-4 md:grid-cols-4">
         <input
@@ -319,7 +319,7 @@ function FileUploadPanel({
           type="file"
           accept="application/json,text/csv,.json,.csv"
           required
-          className="rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-sm text-gray-300"
+          className="rounded-md border border-ui-border-base bg-ui-bg-base px-3 py-1.5 text-xs text-ui-fg-base shadow-borders-base"
         />
         <select
           value={operation}
@@ -338,13 +338,15 @@ function FileUploadPanel({
           <option value="CONFIDENTIAL">Confidential</option>
           <option value="RESTRICTED">Restricted</option>
         </select>
-        <button
+        <Button
           type="submit"
           disabled={working}
-          className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500 disabled:opacity-50"
+          variant="primary"
+          size="small"
+          isLoading={working}
         >
-          {working ? 'Processing…' : 'Upload source file'}
-        </button>
+          Upload source file
+        </Button>
         {operation === 'INGEST' && (
           <>
             <input
@@ -364,29 +366,29 @@ function FileUploadPanel({
           </>
         )}
       </form>
-      <div className="overflow-hidden rounded-lg border border-gray-800">
+      <div className="overflow-hidden rounded-lg border border-ui-border-base">
         {files.length === 0 ? (
-          <div className="p-6 text-center text-sm text-gray-500">No source files processed.</div>
+          <div className="p-6 text-center text-xs text-ui-fg-muted">No source files processed.</div>
         ) : (
           files.map((file) => (
             <div
               key={file.id}
-              className="grid gap-3 border-b border-gray-800 px-4 py-3 text-sm last:border-0 md:grid-cols-5"
+              className="grid gap-3 border-b border-ui-border-base px-4 py-3 text-xs last:border-0 md:grid-cols-5"
             >
-              <span className="truncate text-gray-200">{file.originalName}</span>
-              <span className="text-gray-400">{file.status.toLowerCase()}</span>
-              <span className="text-gray-400">{file.classification?.toLowerCase() ?? 'pending'}</span>
-              <span className="truncate font-mono text-xs text-gray-500">
+              <span className="truncate text-ui-fg-base font-medium">{file.originalName}</span>
+              <span className="text-ui-fg-subtle">{file.status.toLowerCase()}</span>
+              <span className="text-ui-fg-subtle">{file.classification?.toLowerCase() ?? 'pending'}</span>
+              <span className="truncate font-mono text-[11px] text-ui-fg-muted">
                 {file.checksumSha256}
               </span>
-              <span className="text-right text-gray-500">
+              <span className="text-right text-ui-fg-muted font-mono">
                 {new Date(file.createdAt).toLocaleString()}
               </span>
             </div>
           ))
         )}
       </div>
-    </section>
+    </Container>
   );
 }
 
@@ -396,21 +398,22 @@ async function sha256(file: File): Promise<string> {
 }
 
 const controlStyle =
-  'rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-sm text-white outline-none focus:border-indigo-500';
+  'rounded-md border border-ui-border-base bg-ui-bg-base px-2.5 py-1.5 text-xs text-ui-fg-base outline-none focus:border-ui-border-interactive focus:ring-1 focus:ring-ui-border-interactive shadow-borders-base';
 
 function Metric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border border-gray-800 bg-gray-950 p-3">
-      <div className="text-xs capitalize text-gray-500">{label}</div>
-      <div className="mt-1 truncate text-sm font-semibold text-gray-200">{value}</div>
-    </div>
+    <Container className="p-3 border border-ui-border-base bg-ui-bg-base shadow-elevation-card-rest rounded-lg">
+      <div className="text-[11px] uppercase tracking-wider text-ui-fg-muted font-semibold">{label}</div>
+      <div className="mt-1 truncate text-sm font-semibold text-ui-fg-base">{value}</div>
+    </Container>
   );
 }
+
 function JsonPanel({ title, value }: { title: string; value: unknown }) {
   return (
     <div>
-      <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">{title}</h3>
-      <pre className="max-h-96 overflow-auto rounded-lg bg-gray-950 p-4 text-xs text-gray-300">
+      <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-ui-fg-muted">{title}</h3>
+      <pre className="max-h-96 overflow-auto rounded-lg border border-ui-border-base bg-ui-bg-subtle p-3.5 font-mono text-xs text-ui-fg-base">
         {JSON.stringify(value, null, 2)}
       </pre>
     </div>

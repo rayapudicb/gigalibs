@@ -1,27 +1,16 @@
-import { NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
-import {
-  ACCESS_COOKIE_NAME,
-  REFRESH_COOKIE_NAME,
-  controlPlaneUrl,
-} from '@/lib/control-plane'
+import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
+import { authenticatedUpstream, unavailable } from '../../../../lib/authenticated-upstream';
+import { ACCESS_COOKIE_NAME, REFRESH_COOKIE_NAME, UpstreamUnavailableError } from '../../../../lib/control-plane';
 
 export async function POST() {
-  const cookieStore = await cookies()
-  const accessToken = cookieStore.get(ACCESS_COOKIE_NAME)?.value
-  if (accessToken) {
-    try {
-      await fetch(controlPlaneUrl('/api/v1/auth/logout'), {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${accessToken}` },
-        cache: 'no-store',
-      })
-    } catch {
-      // Local credentials are still removed; the short-lived server token will expire.
+  try {
+    const response = await authenticatedUpstream('control', '/api/v1/auth/logout', { method: 'POST' });
+    if (response && !response.ok && response.status !== 401) throw new UpstreamUnavailableError('control');
+    const store = await cookies();
+    for (const name of [ACCESS_COOKIE_NAME, REFRESH_COOKIE_NAME, 'wf_session', 'wf_tenant', 'wf_user_id', 'wf_role']) {
+      store.delete(name);
     }
-  }
-  cookieStore.delete(ACCESS_COOKIE_NAME)
-  cookieStore.delete(REFRESH_COOKIE_NAME)
-  cookieStore.delete('wf_session')
-  return NextResponse.json({ message: 'Logged out successfully.' })
+    return NextResponse.json({ authenticated: false }, { headers: { 'Cache-Control': 'no-store' } });
+  } catch (error) { return unavailable(error); }
 }

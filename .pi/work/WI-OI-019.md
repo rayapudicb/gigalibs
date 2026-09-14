@@ -1,11 +1,15 @@
 # WI-OI-019 — Standalone Customer Invoicing and Accounts Receivable product
 
-Status: Proposed  
+Status: Review
 Parent requirements: FR-17, FR-14, FR-15, FR-16 and applicable NFRs  
 Producer: SDLC Orchestrator coordinating Product, Finance, Architecture, Backend, Web, Data, Security, QA,
 SRE, Release, and Documentation roles  
 Independent reviewers: Finance/Domain, Solution Architecture, Security & Privacy, QA/SDET, Product  
-Current gate: G0–G3 discovery and design; G4 is not authorized
+Current gate: G4 first vertical slice; no G5/G6 certification or release authorization
+
+Prioritization record: on 2026-09-04, repository owner `rayapudicb` directed the team to publish the
+proprietary repository and start product-level AR development. This authorizes Build prioritization; it is
+not acceptance of security, finance, migration, QA, legal, or production-release risk.
 
 ## Outcome
 
@@ -37,6 +41,14 @@ through contracts if installed and never through shared tables.
 
 Delivery, payment providers, credits, reconciliation, aging, subscription metering, and exports follow as
 separate vertical slices within the same module work item; no second module enters Build concurrently.
+
+Source-backed event/work-source billing, markup, supplemental invoice families, missed-billing control,
+authorized rebilling, customer template/numbering policy and accounting-system reconciliation are refined
+under proposed WI-OI-040. Its [implementation and impact plan](../../docs/plans/ar-event-billing-supplemental-invoicing-plan.md)
+preserves this manual foundation path and cannot enter Build while WI-OI-013 is active.
+The [portability and integration plan](../../docs/plans/universal-invoicing-portability-and-integration-plan.md)
+defines how this module becomes a language-neutral contract and conformance pack rather than requiring a
+client to adopt the reference implementation's frameworks.
 
 ## Subscription-metering boundary
 
@@ -71,12 +83,22 @@ commercial/risk decision requiring human approval. At 99%, usage is 9,900 of 10,
 | G1 | Approved FR-17 stories, roles, policies, classifications, SLO/RPO/RTO and 10k-meter policy | Open; Product/Finance/SRE decision |
 | G2 | ADR, threat model, permission matrix, data ownership/schema, migrations/recovery, deployment modes | Draft structure only; Architecture/Security/Data review |
 | G3 | OpenAPI/AsyncAPI, UI states, test matrix, representative 10k+ tenant volume | Draft contracts pending independent review |
-| G4 | UI/API/domain/PostgreSQL/outbox/audit/telemetry vertical slice, no mocks | Blocked by current plan and readiness gates |
+| G4 | UI/API/domain/PostgreSQL/outbox/audit/telemetry vertical slice, no mocks | Foundation implementation and local verification complete on `feat/WI-OI-019-ar-foundation`; independent review remains open |
 | G5 | Full independent integration/security/E2E/load/accessibility/recovery/UAT evidence | Not started |
 | G6 | Immutable images/charts/SBOM/signatures/provenance, rollout and human release approval | Not started |
 | G7 | Production SLO, incident, cost and business-outcome observation | Not started |
 
-## Human decisions required before G4
+## Current G4 implementation evidence
+
+- Domain, API, worker, and production Next.js builds pass locally.
+- PostgreSQL 16 clean-install verification proves forced RLS, cross-tenant denial, immutable issued records,
+  and the worker's outbox-only database privilege.
+- Playwright proves OIDC login, persisted setup/customer/draft, revision, idempotent replay, concurrent atomic
+  numbering, immutable issue, signed committed-event delivery, API restart, and persistence after restart.
+- The foundation still has no G5 security, accessibility, load, recovery, upgrade, compatibility, or UAT
+  certification and no G6 published artifact digest, SBOM, signature, provenance, or release approval.
+
+## Human decisions required before G5 and release
 
 - Approve customer segment, countries/tax scope, invoice/credit/void legal policy, and system of record.
 - Approve invoice-meter overage versus hard-cap behavior and price/period semantics.

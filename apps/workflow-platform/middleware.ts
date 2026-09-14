@@ -1,10 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { ACCESS_COOKIE_NAME, REFRESH_COOKIE_NAME } from '@/lib/auth-constants'
 
+// Hostnames and legacy browser cookies are never authoritative tenant identity.
+// Route handlers and the app layout validate the canonical session independently.
 export function middleware(request: NextRequest) {
-  return NextResponse.next()
+  const headers = new Headers(request.headers)
+  for (const name of ['x-tenant-id', 'x-tenant-slug', 'x-tenant-subdomain', 'x-user-id', 'x-user-role']) {
+    headers.delete(name)
+  }
+  return NextResponse.next({ request: { headers } })
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/workflows/:path*', '/runs/:path*', '/brain/:path*', '/connections/:path*', '/usage/:path*', '/audit/:path*', '/admin/:path*'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
 }

@@ -12,22 +12,34 @@
     "verify:bff": "node scripts/verify-workflow-bff.mjs"
   },
   "dependencies": {
+    "@gigalibs/ar-domain": "workspace:*",
+    "@gigalibs/broker": "workspace:*",
+    "@gigalibs/charts-react": "workspace:*",
+    "@gigalibs/configuration-react": "workspace:*",
+    "@gigalibs/contracts": "workspace:*",
+    "@gigalibs/db": "workspace:*",
+    "@gigalibs/i18n": "workspace:*",
+    "@gigalibs/logger": "workspace:*",
+    "@medusajs/icons": "^2.20.1",
+    "@medusajs/ui": "^4.2.3",
+    "@xyflow/react": "^12.3.6",
+    "clsx": "^2.1.1",
+    "date-fns": "^4.1.0",
+    "lucide-react": "^0.478.0",
     "next": "^15.2.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
-    "@xyflow/react": "^12.3.6",
-    "zustand": "^5.0.3",
-    "clsx": "^2.1.1",
-    "date-fns": "^4.1.0",
     "swr": "^2.3.3",
-    "lucide-react": "^0.478.0",
-    "@gigalibs/onboarding-flow": "workspace:*",
-    "@gigalibs/contracts": "workspace:*"
+    "zustand": "^5.0.3"
   },
   "devDependencies": {
+    "@gigalibs/ar-domain": "workspace:*",
+    "@medusajs/ui-preset": "^2.20.1",
     "@types/node": "^24.10.0",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
-    "typescript": "^5.8.3"
+    "tailwindcss": "3.4.19",
+    "typescript": "^5.8.3",
+    "vitest": "^3.0.0"
   }
 }

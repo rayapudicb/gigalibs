@@ -1,89 +1,22 @@
 import { prisma } from '@gigalibs/db';
-import { RoleHierarchy } from '@gigalibs/rbac-core';
+import { createDefaultRoleHierarchy } from '@gigalibs/rbac-core';
 import { Injectable } from '@nestjs/common';
+
+const baseRoleHierarchy = createDefaultRoleHierarchy();
+
+export function resolveBaseRolePermissions(roles: readonly string[]): string[] {
+  return baseRoleHierarchy.resolveUserPermissions([...roles]);
+}
 
 @Injectable()
 export class RbacService {
-  private hierarchy = new RoleHierarchy();
-
-  constructor() {
-    this.initDefaultRoles();
-  }
-
-  private initDefaultRoles() {
-    this.hierarchy.registerRoles([
-      {
-        name: 'SUPER_ADMIN',
-        permissions: ['*'],
-      },
-      {
-        name: 'TENANT_ADMIN',
-        permissions: [
-          'tenant:*',
-          'users:*',
-          'billing:*',
-          'roles:*',
-          'invites:*',
-          'settings:*',
-          'audit:*',
-          'workflows:*',
-          'runs:*',
-          'connections:*',
-          'contracts:*',
-          'events:*',
-          'ap:*',
-          'actions:*',
-          'exceptions:*',
-          'value:*',
-          'retention:*',
-        ],
-      },
-      {
-        name: 'MANAGER',
-        permissions: [
-          'users:read',
-          'reports:*',
-          'workflows:*',
-          'comments:*',
-          'connections:read',
-          'connections:test',
-          'connections:profile',
-          'contracts:read',
-          'events:read',
-          'ap:read',
-          'ap:evaluate',
-          'actions:read',
-          'actions:approve',
-          'exceptions:read',
-          'exceptions:assign',
-          'exceptions:recover',
-          'exceptions:resolve',
-          'value:read',
-          'value:verify',
-          'retention:read',
-        ],
-        inherits: ['MEMBER'],
-      },
-      {
-        name: 'MEMBER',
-        permissions: ['users:read', 'chat:*', 'comments:create', 'profile:*'],
-        inherits: ['VIEWER'],
-      },
-      {
-        name: 'VIEWER',
-        permissions: ['dashboard:read', 'content:read'],
-      },
-    ]);
-  }
-
   async getUserPermissions(
     userId?: string,
     tenantId?: string,
-    fallbackRoles: string[] = [],
+    // Retained for source compatibility; token roles cannot grant permissions.
+    _fallbackRoles: string[] = [],
   ): Promise<string[]> {
-    if (!userId) return [];
-
-    let roles = fallbackRoles;
+    if (!userId || !tenantId) return [];
 
     if (tenantId) {
       const member = await prisma.tenantMember.findUnique({
@@ -93,16 +26,29 @@ export class RbacService {
             tenantId,
           },
         },
+        include: {
+          user: { select: { status: true } },
+          customRole: { select: { permissions: true } },
+        },
       });
 
-      if (member) {
-        roles = [member.role, ...fallbackRoles];
+      if (member?.status === 'ACTIVE' && member.user.status === 'ACTIVE') {
         const customPermissions = member.permissions ?? [];
-        const rolePermissions = this.hierarchy.resolveUserPermissions(roles);
-        return Array.from(new Set([...rolePermissions, ...customPermissions]));
+        const assignedRolePermissions = Array.isArray(member.customRole?.permissions)
+          ? member.customRole.permissions.filter(
+              (permission): permission is string =>
+                typeof permission === 'string' &&
+                /^[a-z][a-z0-9-]*:(?:\*|[a-z][a-z0-9-]*)$/.test(permission) &&
+                !permission.startsWith('platform:'),
+            )
+          : [];
+        const rolePermissions = resolveBaseRolePermissions([member.role]);
+        return Array.from(
+          new Set([...rolePermissions, ...assignedRolePermissions, ...customPermissions]),
+        );
       }
     }
 
-    return this.hierarchy.resolveUserPermissions(roles);
+    return [];
   }
 }

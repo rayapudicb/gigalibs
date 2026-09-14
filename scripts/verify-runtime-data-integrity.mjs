@@ -22,6 +22,18 @@ const roots = [
   'apps/workflow-platform',
   'apps/playground-api',
   'apps/workflow-api',
+  'modules/accounts-receivable',
+  'modules/spend-management',
+  'modules/tax-configuration',
+  'modules/multi-currency',
+  'modules/universal-data-studio',
+  'modules/universal-rule-pro',
+  'modules/workflow-studio',
+  'modules/universal-connector-hub',
+  'modules/autonomous-recovery-studio',
+  'modules/analytics-studio',
+  'modules/esignature',
+  'modules/platform-rbac',
   ...(includeLegacy ? ['packages'] : []),
 ];
 const retiredApplications = ['apps/playground-web'];
@@ -34,6 +46,7 @@ const ignoredDirectories = new Set([
   '__pycache__',
   'coverage',
   'dist',
+  'e2e',
   'node_modules',
   'test',
   'tests',
@@ -100,7 +113,7 @@ const forbiddenContent = [
   {
     code: 'HARDCODED_LOCAL_RUNTIME_ENDPOINT',
     pattern:
-      /(?:\?\?|\|\||=)\s*['"](?:https?:\/\/|redis:\/\/)?(?:localhost|127\.0\.0\.1)(?::\d+)?['"]/g,
+      /(?:\?\?|\|\||(?<![=!<>])=(?!=))\s*['"](?:https?:\/\/|redis:\/\/)?(?:localhost|127\.0\.0\.1)(?::\d+)?['"]/g,
   },
   {
     code: 'SUSPICIOUS_RUNTIME_FIXTURE',

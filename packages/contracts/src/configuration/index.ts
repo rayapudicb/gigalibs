@@ -23,6 +23,16 @@ export const ConfigurationFieldTypeSchema = z.enum([
   'MULTI_SELECT',
 ]);
 
+export const ConfigurationCoreFieldKeySchema = z
+  .string()
+  .trim()
+  .min(1)
+  .max(120)
+  .regex(
+    /^[a-z][A-Za-z0-9]*(?:[._-][A-Za-z0-9]+)*$/,
+    'Use a stable module-owned field key or dotted field path',
+  );
+
 export const ConfigurationComponentKeySchema = z.enum([
   'text-input',
   'textarea',
@@ -33,6 +43,51 @@ export const ConfigurationComponentKeySchema = z.enum([
   'select',
   'multi-select',
 ]);
+
+export const ConfigurationCoreFieldSchema = z
+  .object({
+    key: ConfigurationCoreFieldKeySchema,
+    label: z.string().trim().min(1).max(160),
+    type: ConfigurationFieldTypeSchema,
+    required: z.boolean(),
+    readOnly: z.boolean(),
+    classification: z.enum(['PUBLIC', 'INTERNAL', 'CONFIDENTIAL', 'RESTRICTED']),
+    lockReason: z.string().trim().min(3).max(500),
+    allowedPresentationOverrides: z
+      .array(z.enum(['LABEL', 'HELP_TEXT', 'PLACEMENT']))
+      .max(3),
+  })
+  .strict();
+
+export const ConfigurationExtensionSlotSchema = z
+  .object({
+    key: ConfigurationKeySchema,
+    label: z.string().trim().min(1).max(160),
+    description: z.string().trim().min(1).max(500),
+    allowedFieldTypes: z.array(ConfigurationFieldTypeSchema).min(1).max(13),
+    maximumFields: z.number().int().min(1).max(200),
+  })
+  .strict();
+
+export const ConfigurationSurfaceRegistrationSchema = z
+  .object({
+    registrationKey: ConfigurationKeySchema,
+    moduleKey: ConfigurationKeySchema,
+    entityKey: ConfigurationKeySchema,
+    surfaceKey: ConfigurationKeySchema,
+    route: z.string().startsWith('/').max(300),
+    label: z.string().trim().min(1).max(160),
+    description: z.string().trim().min(1).max(500),
+    ownership: z.enum(['MODULE_EXTENSION', 'TENANT_APPLICATION']),
+    authoringEnabled: z.boolean(),
+    authoringDisabledReason: z.string().trim().min(3).max(500).optional(),
+    entityKeyEditable: z.boolean(),
+    surfaceKeyEditable: z.boolean(),
+    modes: z.array(z.enum(['CREATE', 'EDIT', 'READ', 'LIST'])).min(1).max(4),
+    coreFields: z.array(ConfigurationCoreFieldSchema).max(200),
+    extensionSlots: z.array(ConfigurationExtensionSlotSchema).min(1).max(20),
+  })
+  .strict();
 
 export const ConfigurationOptionSchema = z
   .object({
@@ -422,6 +477,11 @@ export const CreateSavedFilterSchema = z
 
 export type ConfigurationDefinition = z.infer<typeof ConfigurationDefinitionSchema>;
 export type ConfigurationField = z.infer<typeof ConfigurationFieldSchema>;
+export type ConfigurationCoreField = z.infer<typeof ConfigurationCoreFieldSchema>;
+export type ConfigurationExtensionSlot = z.infer<typeof ConfigurationExtensionSlotSchema>;
+export type ConfigurationSurfaceRegistration = z.infer<
+  typeof ConfigurationSurfaceRegistrationSchema
+>;
 export type CreateConfigurationChangeSetDto = z.infer<typeof CreateConfigurationChangeSetSchema>;
 export type UpdateConfigurationChangeSetDto = z.infer<typeof UpdateConfigurationChangeSetSchema>;
 export type ConfigurationReasonDto = z.infer<typeof ConfigurationReasonSchema>;

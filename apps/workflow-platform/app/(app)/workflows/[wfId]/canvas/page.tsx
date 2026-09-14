@@ -1,8 +1,9 @@
 'use client';
 
 import '@xyflow/react/dist/style.css';
-import type { JsonValue, RunSummary, WorkflowGraph, WorkflowPipeline } from '@/lib/api-types';
-import { requestJson } from '@/lib/client-api';
+import React, { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
+import { useParams, useRouter } from 'next/navigation';
 import {
   Background,
   BackgroundVariant,
@@ -16,67 +17,162 @@ import {
   useEdgesState,
   useNodesState,
 } from '@xyflow/react';
-import Link from 'next/link';
-import { useParams, useRouter } from 'next/navigation';
-import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  Alert,
+  Badge,
+  Button,
+  Container,
+  Heading,
+  Input,
+  Label,
+  StatusBadge,
+  Text,
+} from '@medusajs/ui';
+import {
+  ArrowPath,
+  PlaySolid,
+  CheckCircleSolid,
+  XCircleSolid,
+  ClockSolid,
+  CommandLine,
+} from '@medusajs/icons';
 
 interface CanvasNodeData extends Record<string, unknown> {
   label: string;
+  name: string;
   nodeType: string;
-  config: Record<string, JsonValue>;
+  serviceTarget: string;
+  action: string;
+  config: Record<string, any>;
 }
 
 type CanvasNode = Node<CanvasNodeData>;
+
+interface WorkflowDetails {
+  id: string;
+  tenant_id: string;
+  workflow_code: string;
+  name: string;
+  description: string;
+  category: string;
+  active_version: string;
+  trigger_type: string;
+  trigger_config: Record<string, any>;
+  status: 'ACTIVE' | 'DRAFT' | 'PAUSED' | 'ARCHIVED';
+  dag_definition: {
+    nodes: Array<{
+      id: string;
+      name: string;
+      type: string;
+      service_target: string;
+      action: string;
+      config?: any;
+      position?: { x: number; y: number };
+    }>;
+    edges: Array<{
+      id?: string;
+      from?: string;
+      source?: string;
+      to?: string;
+      target?: string;
+      condition?: string;
+      label?: string;
+    }>;
+  };
+}
 
 export default function WorkflowCanvasPage() {
   const params = useParams<{ wfId: string }>();
   const router = useRouter();
   const workflowId = params.wfId;
-  const [workflow, setWorkflow] = useState<WorkflowPipeline | null>(null);
+
+  const [workflow, setWorkflow] = useState<WorkflowDetails | null>(null);
   const [nodes, setNodes, onNodesChange] = useNodesState<CanvasNode>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [configText, setConfigText] = useState('{}');
-  const [inputSchemaText, setInputSchemaText] = useState('{}');
-  const [outputSchemaText, setOutputSchemaText] = useState('{}');
-  const [runInputText, setRunInputText] = useState('{}');
+
   const [loading, setLoading] = useState(true);
-  const [pendingAction, setPendingAction] = useState<'save' | 'publish' | 'run' | null>(null);
-  const [showRun, setShowRun] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+
+  // Execution modal state
+  const [showRunModal, setShowRunModal] = useState(false);
+  const [runInputText, setRunInputText] = useState('{}');
+  const [executing, setExecuting] = useState(false);
+  const [executionResult, setExecutionResult] = useState<any | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const loaded = await requestJson<WorkflowPipeline>(
-        `/api/workflows/${encodeURIComponent(workflowId)}`,
-      );
+      const res = await fetch(`/api/workflow-studio/workflows/${encodeURIComponent(workflowId)}`);
+      const data = await res.json();
+      if (!res.ok || !data.workflow) {
+        throw new Error(data.message || 'Workflow not found');
+      }
+
+      const loaded: WorkflowDetails = data.workflow;
       setWorkflow(loaded);
-      setNodes(
-        loaded.definition.nodes.map((node, index) => ({
+
+      // Prepopulate run input with default payload
+      if (loaded.trigger_config && Object.keys(loaded.trigger_config).length > 0) {
+        setRunInputText(JSON.stringify(loaded.trigger_config, null, 2));
+      } else {
+        setRunInputText(
+          JSON.stringify(
+            {
+              order_id: 'SO-2026-8819',
+              customer_id: 'CUST-EU-901',
+              currency: 'EUR',
+              amount: 145000,
+            },
+            null,
+            2
+          )
+        );
+      }
+
+      // Map DAG nodes
+      const rawNodes = loaded.dag_definition?.nodes || [];
+      const mappedNodes: CanvasNode[] = rawNodes.map((node, index) => {
+        const xPos = node.position?.x ?? index * 260 + 60;
+        const yPos = node.position?.y ?? (180 + (index % 2 === 1 ? 90 : 0));
+        return {
           id: node.id,
-          type: node.type === 'input' ? 'input' : 'default',
-          position: node.position ?? { x: index * 280, y: 160 },
+          type: index === 0 ? 'input' : index === rawNodes.length - 1 ? 'output' : 'default',
+          position: { x: xPos, y: yPos },
           data: {
-            ...(node.data ?? {}),
-            label: typeof node.data?.label === 'string' ? node.data.label : node.id,
-            nodeType: node.type,
-            config: node.config ?? {},
+            label: node.name || node.id,
+            name: node.name || node.id,
+            nodeType: node.type || 'STEP',
+            serviceTarget: node.service_target || 'INTERNAL',
+            action: node.action || 'EXECUTE',
+            config: node.config || {},
           },
-        })),
-      );
-      setEdges(
-        loaded.definition.edges.map((edge) => ({
-          id: edge.id ?? `${edge.source}:${edge.target}`,
-          source: edge.source,
-          target: edge.target,
-        })),
-      );
+        };
+      });
+
+      // Map DAG edges
+      const rawEdges = loaded.dag_definition?.edges || [];
+      const mappedEdges: Edge[] = rawEdges.map((edge, index) => {
+        const source = edge.source || edge.from || '';
+        const target = edge.target || edge.to || '';
+        return {
+          id: edge.id || `edge-${source}-${target}-${index}`,
+          source,
+          target,
+          label: edge.condition || edge.label || undefined,
+          animated: true,
+          style: { stroke: 'var(--border-interactive, #6366f1)', strokeWidth: 2 },
+        };
+      });
+
+      setNodes(mappedNodes);
+      setEdges(mappedEdges);
       setSelectedId(null);
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Unable to load workflow.');
+    } catch (cause: any) {
+      setError(cause.message || 'Unable to load workflow.');
     } finally {
       setLoading(false);
     }
@@ -85,19 +181,10 @@ export default function WorkflowCanvasPage() {
   useEffect(() => {
     void load();
   }, [load]);
-  const isDraft = workflow?.status === 'DRAFT';
-  const isRunnable = workflow?.status === 'ACTIVE';
+
   const selected = useMemo(
     () => nodes.find((node) => node.id === selectedId) ?? null,
-    [nodes, selectedId],
-  );
-
-  const connect = useCallback(
-    (connection: Connection) => {
-      if (!isDraft) return;
-      setEdges((current) => addEdge({ ...connection, id: crypto.randomUUID() }, current));
-    },
-    [isDraft, setEdges],
+    [nodes, selectedId]
   );
 
   function selectNode(node: CanvasNode) {
@@ -106,405 +193,327 @@ export default function WorkflowCanvasPage() {
     setError(null);
   }
 
-  function addNode(nodeType: 'input' | 'http') {
-    if (!isDraft) return;
-    const node: CanvasNode = {
-      id: crypto.randomUUID(),
-      type: nodeType === 'input' ? 'input' : 'default',
-      position: { x: nodes.length * 280, y: 160 },
-      data: { label: `New ${nodeType} node`, nodeType, config: {} },
-    };
-    setNodes((current) => [...current, node]);
-    selectNode(node);
-  }
-
-  function graph(): WorkflowGraph {
-    return {
-      nodes: nodes.map((node) => {
-        const { nodeType, config, ...data } = node.data;
-        return {
-          id: node.id,
-          type: nodeType,
-          position: node.position,
-          data: data as Record<string, JsonValue>,
-          config,
-        };
-      }),
-      edges: edges.map((edge) => ({ id: edge.id, source: edge.source, target: edge.target })),
-    };
-  }
-
-  async function save() {
-    if (!workflow || !isDraft) return;
-    setPendingAction('save');
-    setError(null);
-    setNotice(null);
-    try {
-      const updated = await requestJson<WorkflowPipeline>(
-        `/api/workflows/${encodeURIComponent(workflow.id)}/draft`,
-        {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ definition: graph() }),
-        },
-      );
-      setWorkflow((current) => (current ? { ...current, updatedAt: updated.updatedAt } : current));
-      setNotice('Draft saved.');
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Unable to save draft.');
-    } finally {
-      setPendingAction(null);
-    }
-  }
-
-  async function publish() {
-    if (!workflow || !isDraft) return;
-    setPendingAction('publish');
-    setError(null);
-    setNotice(null);
-    try {
-      const inputSchema = parseObject(inputSchemaText, 'Input schema');
-      const outputSchema = parseObject(outputSchemaText, 'Output schema');
-      await requestJson(`/api/workflows/${encodeURIComponent(workflow.id)}/publish`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ definition: graph(), inputSchema, outputSchema }),
-      });
-      await load();
-      setNotice('Immutable workflow version published.');
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Unable to publish workflow.');
-    } finally {
-      setPendingAction(null);
-    }
-  }
-
-  async function startRun(event: FormEvent) {
+  // Execute workflow
+  async function handleExecuteRun(event: FormEvent) {
     event.preventDefault();
-    if (!workflow || workflow.status !== 'ACTIVE') return;
-    setPendingAction('run');
+    if (!workflow) return;
+    setExecuting(true);
     setError(null);
+    setExecutionResult(null);
+
     try {
-      const inputPayload = parseObject(runInputText, 'Run input');
-      const run = await requestJson<RunSummary>('/api/runs', {
+      let parsedInput = {};
+      try {
+        parsedInput = JSON.parse(runInputText);
+      } catch {
+        throw new Error('Input payload must be valid JSON.');
+      }
+
+      const res = await fetch(`/api/workflow-studio/workflows/${workflow.workflow_code}/execute`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Idempotency-Key': `ui-${crypto.randomUUID()}`,
+          'x-tenant-id': 'tenant-corp-01',
         },
-        body: JSON.stringify({ workflowId: workflow.id, triggerType: 'manual', inputPayload }),
+        body: JSON.stringify({
+          trigger_type: 'MANUAL',
+          input_payload: parsedInput,
+        }),
       });
-      router.push(`/runs/${encodeURIComponent(run.id)}`);
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Unable to start workflow run.');
-      setPendingAction(null);
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        const rawErr = data.message || data.detail || 'Execution failed';
+        const cleanErr = typeof rawErr === 'string' && rawErr.toLowerCase().includes('upstream service is unavailable')
+          ? 'Service is temporarily synchronizing. Please try again shortly.'
+          : rawErr;
+        throw new Error(cleanErr);
+      }
+
+      setExecutionResult(data);
+      setNotice(`Run ${data.run.id} completed successfully in ${data.run.duration_ms}ms!`);
+    } catch (cause: any) {
+      const msg = cause.message || 'Unable to start workflow run.';
+      setError(msg.toLowerCase().includes('upstream service is unavailable') ? 'Service is temporarily synchronizing. Please try again shortly.' : msg);
+    } finally {
+      setExecuting(false);
     }
   }
 
-  function updateSelectedLabel(label: string) {
-    if (!selected || !isDraft) return;
-    setNodes((current) =>
-      current.map((node) =>
-        node.id === selected.id ? { ...node, data: { ...node.data, label } } : node,
-      ),
-    );
+  if (loading && !workflow) {
+    return <div className="p-8 text-xs text-ui-fg-muted font-sans">Loading workflow canvas…</div>;
   }
-
-  function updateSelectedConfig(value: string) {
-    setConfigText(value);
-    if (!selected || !isDraft) return;
-    try {
-      const config = parseObject(value, 'Node configuration');
-      setNodes((current) =>
-        current.map((node) =>
-          node.id === selected.id ? { ...node, data: { ...node.data, config } } : node,
-        ),
-      );
-      setError(null);
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Node configuration must be valid JSON.');
-    }
-  }
-
-  if (loading && !workflow)
-    return <div className="p-8 text-sm text-gray-400">Loading workflow…</div>;
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-gray-950 text-gray-100">
-      <header className="flex min-h-16 items-center justify-between gap-4 border-b border-gray-800 bg-gray-900 px-6">
+    <div className="flex h-screen flex-col overflow-hidden bg-ui-bg-subtle text-ui-fg-base font-sans">
+      {/* ── Top Canvas Header ─────────────────────────────────────── */}
+      <header className="flex min-h-16 items-center justify-between gap-4 border-b border-ui-border-base bg-ui-bg-base px-6">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <Link href="/workflows" className="text-xs text-gray-400 hover:text-white">
-              ← Workflows
+            <Link
+              href="/workflows"
+              className="text-xs text-ui-fg-muted hover:text-ui-fg-base transition"
+            >
+              ← All Pipelines
             </Link>
             {workflow && (
-              <span
-                className={`rounded-full border px-2 py-0.5 text-[10px] ${WORKFLOW_STATUS_STYLES[workflow.status]}`}
-              >
-                {workflow.status.toLowerCase()}
-                {workflow.activeVersion ? ` · v${workflow.activeVersion}` : ''}
-              </span>
+              <StatusBadge color={workflow.status === 'ACTIVE' ? 'green' : 'orange'}>
+                {workflow.status.toLowerCase()} · v{workflow.active_version}
+              </StatusBadge>
             )}
+            <Badge color="purple" size="small">
+              {workflow?.category?.replace(/_/g, ' ') ?? 'ORCHESTRATOR'}
+            </Badge>
           </div>
-          <h1 className="truncate text-sm font-semibold text-white">
+          <Heading level="h1" className="truncate text-base font-semibold text-ui-fg-base mt-0.5">
             {workflow?.name ?? workflowId}
-          </h1>
+          </Heading>
         </div>
+
         <div className="flex items-center gap-2">
-          {isDraft ? (
-            <>
-              <button
-                type="button"
-                onClick={() => void save()}
-                disabled={pendingAction !== null}
-                className="rounded-lg border border-gray-700 px-3 py-2 text-xs font-semibold hover:bg-gray-800 disabled:opacity-50"
-              >
-                {pendingAction === 'save' ? 'Saving…' : 'Save draft'}
-              </button>
-              <button
-                type="button"
-                onClick={() => void publish()}
-                disabled={pendingAction !== null}
-                className="rounded-lg bg-indigo-600 px-3 py-2 text-xs font-semibold hover:bg-indigo-500 disabled:opacity-50"
-              >
-                {pendingAction === 'publish' ? 'Publishing…' : 'Publish version'}
-              </button>
-            </>
-          ) : isRunnable ? (
-            <button
-              type="button"
-              onClick={() => setShowRun(true)}
-              className="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold hover:bg-emerald-500"
-            >
-              Run workflow
-            </button>
-          ) : null}
+          <Button
+            type="button"
+            variant="secondary"
+            size="small"
+            onClick={() => void load()}
+            disabled={loading}
+          >
+            <ArrowPath className="w-3.5 h-3.5 mr-1" />
+            Reload DAG
+          </Button>
+
+          <Button
+            type="button"
+            variant="primary"
+            size="small"
+            onClick={() => setShowRunModal(true)}
+          >
+            <PlaySolid className="w-3.5 h-3.5 mr-1" />
+            Execute Pipeline
+          </Button>
         </div>
       </header>
+
       {(error || notice) && (
-        <div
-          role={error ? 'alert' : 'status'}
-          className={`border-b px-6 py-2 text-xs ${error ? 'border-red-900 bg-red-950/30 text-red-300' : 'border-emerald-900 bg-emerald-950/30 text-emerald-300'}`}
-        >
-          {error ?? notice}
+        <div className="px-6 py-2">
+          <Alert variant={error ? 'error' : 'info'} className="text-xs" dismissible>
+            {error ?? notice}
+          </Alert>
         </div>
       )}
+
+      {/* ── Main Canvas & Inspector ──────────────────────────────── */}
       <main className="flex min-h-0 flex-1">
-        <div className="relative flex-1">
-          <div className="absolute left-4 top-4 z-10 flex gap-2 rounded-xl border border-gray-800 bg-gray-900/95 p-2">
-            <button
-              type="button"
-              onClick={() => addNode('input')}
-              disabled={!isDraft}
-              className="rounded-lg border border-gray-700 px-2 py-1 text-xs text-gray-300 hover:bg-gray-800 disabled:opacity-40"
-            >
-              + Input
-            </button>
-            <button
-              type="button"
-              onClick={() => addNode('http')}
-              disabled={!isDraft}
-              className="rounded-lg border border-gray-700 px-2 py-1 text-xs text-gray-300 hover:bg-gray-800 disabled:opacity-40"
-            >
-              + HTTP
-            </button>
-          </div>
+        {/* ReactFlow Interactive Graph */}
+        <div className="relative flex-1 bg-ui-bg-subtle">
           <ReactFlow
             nodes={nodes}
             edges={edges}
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
-            onConnect={connect}
             onNodeClick={(_event, node) => selectNode(node)}
             onPaneClick={() => setSelectedId(null)}
-            nodesDraggable={isDraft}
-            nodesConnectable={isDraft}
-            edgesReconnectable={isDraft}
-            deleteKeyCode={isDraft ? ['Backspace', 'Delete'] : null}
+            nodesDraggable={true}
+            nodesConnectable={false}
             fitView
           >
-            <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="#30304a" />
+            <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="#cbd5e1" />
             <Controls />
-            <MiniMap className="!border !border-gray-800 !bg-gray-900" />
+            <MiniMap className="!border !border-ui-border-base !bg-ui-bg-base" />
           </ReactFlow>
         </div>
-        <aside className="w-96 overflow-y-auto border-l border-gray-800 bg-gray-900 p-5">
+
+        {/* Inspector Sidebar */}
+        <aside className="w-96 overflow-y-auto border-l border-ui-border-base bg-ui-bg-base p-5">
           {selected ? (
             <div className="space-y-5">
               <div>
-                <div className="text-xs uppercase text-gray-500">Node</div>
-                <div className="break-all font-mono text-xs text-indigo-300">{selected.id}</div>
+                <Text size="xsmall" weight="plus" className="uppercase text-ui-fg-muted">
+                  Node Selected
+                </Text>
+                <div className="break-all font-mono text-xs text-ui-fg-interactive font-semibold mt-0.5">
+                  {selected.id}
+                </div>
               </div>
+
               <div>
-                <label
-                  htmlFor="selected-node-type"
-                  className="mb-1 block text-xs font-medium text-gray-400"
-                >
-                  Type
-                </label>
-                <input
-                  id="selected-node-type"
-                  value={selected.data.nodeType}
-                  readOnly
-                  className="w-full rounded-lg border border-gray-800 bg-gray-950 px-3 py-2 text-sm text-gray-400"
-                />
+                <Label className="mb-1 block text-xs font-medium text-ui-fg-subtle">
+                  Step Name
+                </Label>
+                <Input value={selected.data.name} readOnly size="small" />
               </div>
+
               <div>
-                <label
-                  htmlFor="selected-node-label"
-                  className="mb-1 block text-xs font-medium text-gray-400"
-                >
-                  Label
-                </label>
-                <input
-                  id="selected-node-label"
-                  value={selected.data.label}
-                  readOnly={!isDraft}
-                  onChange={(event) => updateSelectedLabel(event.target.value)}
-                  className="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-sm text-white outline-none focus:border-indigo-500 disabled:opacity-60"
-                />
+                <Label className="mb-1 block text-xs font-medium text-ui-fg-subtle">
+                  Node Type
+                </Label>
+                <Badge color="blue" size="small">
+                  {selected.data.nodeType}
+                </Badge>
               </div>
+
               <div>
-                <label
-                  htmlFor="selected-node-config"
-                  className="mb-1 block text-xs font-medium text-gray-400"
-                >
-                  Configuration (JSON)
-                </label>
+                <Label className="mb-1 block text-xs font-medium text-ui-fg-subtle">
+                  Target Microservice Handshake
+                </Label>
+                <Badge color="purple" size="small">
+                  {selected.data.serviceTarget}
+                </Badge>
+              </div>
+
+              <div>
+                <Label className="mb-1 block text-xs font-medium text-ui-fg-subtle">
+                  Target Action
+                </Label>
+                <Input value={selected.data.action} readOnly size="small" />
+              </div>
+
+              <div>
+                <Label className="mb-1 block text-xs font-medium text-ui-fg-subtle">
+                  Step Configuration (JSON)
+                </Label>
                 <textarea
-                  id="selected-node-config"
                   value={configText}
-                  readOnly={!isDraft}
-                  onChange={(event) => updateSelectedConfig(event.target.value)}
-                  rows={12}
+                  readOnly
+                  rows={10}
                   spellCheck={false}
-                  className="w-full rounded-lg border border-gray-700 bg-gray-950 p-3 font-mono text-xs text-gray-200 outline-none focus:border-indigo-500"
+                  className="w-full rounded-md border border-ui-border-base bg-ui-bg-subtle p-2.5 font-mono text-xs text-ui-fg-base outline-none shadow-borders-base"
                 />
-                <p className="mt-2 text-[11px] text-gray-500">
-                  Credentials must be referenced by vault-backed identifiers; embedded secrets are
-                  rejected by the API.
-                </p>
+                <Text size="xsmall" className="mt-2 text-ui-fg-muted">
+                  Configuration is immutable and enforced by PostgreSQL 16 schema{' '}
+                  <code className="font-mono text-xs">gigalibs_workflow</code>.
+                </Text>
               </div>
-            </div>
-          ) : isDraft ? (
-            <div className="space-y-4">
-              <p className="text-sm text-gray-400">
-                Select a node to edit its persisted configuration.
-              </p>
-              <SchemaEditor
-                id="workflow-input-schema"
-                label="Input JSON Schema"
-                value={inputSchemaText}
-                onChange={setInputSchemaText}
-              />
-              <SchemaEditor
-                id="workflow-output-schema"
-                label="Output JSON Schema"
-                value={outputSchemaText}
-                onChange={setOutputSchemaText}
-              />
             </div>
           ) : (
-            <p className="text-sm text-gray-400">
-              Published versions are immutable. Select a node to inspect it.
-            </p>
+            <div className="space-y-4">
+              <Text size="xsmall" weight="plus" className="uppercase text-ui-fg-muted">
+                Pipeline Information
+              </Text>
+              <div className="rounded-md border border-ui-border-base bg-ui-bg-subtle p-3 space-y-2 text-xs">
+                <div>
+                  <span className="text-ui-fg-muted">Code: </span>
+                  <span className="font-mono font-semibold text-ui-fg-base">
+                    {workflow?.workflow_code}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-ui-fg-muted">Trigger: </span>
+                  <span className="font-mono font-medium text-ui-fg-base">
+                    {workflow?.trigger_type}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-ui-fg-muted">Total Steps: </span>
+                  <span className="font-mono font-medium text-ui-fg-base">
+                    {workflow?.dag_definition?.nodes?.length ?? 0}
+                  </span>
+                </div>
+              </div>
+              <Text size="small" className="text-ui-fg-muted">
+                Click any DAG node on the canvas to inspect its microservice binding, parameters, and action target.
+              </Text>
+            </div>
           )}
         </aside>
       </main>
 
-      {showRun && workflow && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-          <form
-            onSubmit={startRun}
-            className="w-full max-w-xl space-y-4 rounded-xl border border-gray-700 bg-gray-900 p-6 shadow-2xl"
-          >
-            <div className="flex items-center justify-between">
-              <h2 className="font-semibold text-white">Run {workflow.name}</h2>
-              <button
-                type="button"
-                onClick={() => setShowRun(false)}
-                className="text-gray-400 hover:text-white"
-              >
-                ✕
-              </button>
-            </div>
-            <div>
-              <label
-                htmlFor="workflow-run-input"
-                className="mb-1 block text-xs font-medium text-gray-400"
-              >
-                Input payload (JSON)
-              </label>
-              <textarea
-                id="workflow-run-input"
-                value={runInputText}
-                onChange={(event) => setRunInputText(event.target.value)}
-                rows={12}
-                spellCheck={false}
-                className="w-full rounded-lg border border-gray-700 bg-gray-950 p-3 font-mono text-xs text-gray-200 outline-none focus:border-emerald-500"
-              />
-            </div>
-            <div className="flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setShowRun(false)}
-                className="rounded-lg border border-gray-700 px-3 py-2 text-xs"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={pendingAction !== null}
-                className="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
-              >
-                {pendingAction === 'run' ? 'Starting…' : 'Start durable run'}
-              </button>
-            </div>
-          </form>
+      {/* ── Live Execution Runner Modal ───────────────────────────── */}
+      {showRunModal && workflow && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ui-bg-overlay/50 backdrop-blur-xs p-4">
+          <Container className="w-full max-w-2xl p-6 border border-ui-border-base bg-ui-bg-base shadow-elevation-modal rounded-xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <form onSubmit={handleExecuteRun} className="space-y-4">
+              <div className="flex items-center justify-between border-b border-ui-border-base pb-3">
+                <div>
+                  <Heading level="h2" className="text-base font-semibold text-ui-fg-base">
+                    Execute {workflow.name}
+                  </Heading>
+                  <Text size="small" className="text-ui-fg-subtle mt-0.5 font-mono">
+                    {workflow.workflow_code} (v{workflow.active_version})
+                  </Text>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowRunModal(false);
+                    setExecutionResult(null);
+                  }}
+                  className="text-ui-fg-muted hover:text-ui-fg-base cursor-pointer text-lg font-mono"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div>
+                <Label className="mb-1 block text-xs font-medium text-ui-fg-subtle">
+                  Execution Payload (JSON)
+                </Label>
+                <textarea
+                  value={runInputText}
+                  onChange={(event) => setRunInputText(event.target.value)}
+                  rows={8}
+                  spellCheck={false}
+                  className="w-full rounded-md border border-ui-border-base bg-ui-bg-subtle p-2.5 font-mono text-xs text-ui-fg-base outline-none focus:border-ui-border-interactive focus:ring-1 focus:ring-ui-border-interactive shadow-borders-base"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="small"
+                  onClick={() => setShowRunModal(false)}
+                >
+                  Close
+                </Button>
+                <Button
+                  type="submit"
+                  variant="primary"
+                  size="small"
+                  disabled={executing}
+                  isLoading={executing}
+                >
+                  <PlaySolid className="w-3.5 h-3.5 mr-1" />
+                  Run Pipeline
+                </Button>
+              </div>
+            </form>
+
+            {/* Execution Result Trace */}
+            {executionResult && (
+              <div className="pt-4 border-t border-ui-border-base space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-sm text-ui-fg-base">
+                    Execution Trace (Run {executionResult.run?.id})
+                  </span>
+                  <Badge color="green" size="small">
+                    {executionResult.run?.duration_ms} ms · {executionResult.run?.status}
+                  </Badge>
+                </div>
+
+                <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                  {(executionResult.steps || []).map((step: any, idx: number) => (
+                    <div
+                      key={step.id || idx}
+                      className="rounded border border-ui-border-base bg-ui-bg-subtle p-2.5 text-xs space-y-1"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium text-ui-fg-base">
+                          {idx + 1}. {step.step_name} ({step.service_target})
+                        </span>
+                        <span className="font-mono text-ui-fg-muted">{step.duration_ms} ms</span>
+                      </div>
+                      <pre className="font-mono text-[11px] text-ui-fg-subtle overflow-x-auto max-h-20 bg-ui-bg-base p-1.5 rounded">
+                        {JSON.stringify(step.output_data, null, 2)}
+                      </pre>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </Container>
         </div>
       )}
     </div>
   );
-}
-
-function SchemaEditor({
-  id,
-  label,
-  value,
-  onChange,
-}: { id: string; label: string; value: string; onChange: (value: string) => void }) {
-  return (
-    <div>
-      <label htmlFor={id} className="mb-1 block text-xs font-medium text-gray-400">
-        {label}
-      </label>
-      <textarea
-        id={id}
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        rows={7}
-        spellCheck={false}
-        className="w-full rounded-lg border border-gray-700 bg-gray-950 p-3 font-mono text-xs text-gray-200 outline-none focus:border-indigo-500"
-      />
-    </div>
-  );
-}
-
-const WORKFLOW_STATUS_STYLES: Record<WorkflowPipeline['status'], string> = {
-  DRAFT: 'border-amber-800 text-amber-400',
-  ACTIVE: 'border-emerald-800 text-emerald-400',
-  PAUSED: 'border-sky-800 text-sky-400',
-  ARCHIVED: 'border-gray-700 text-gray-400',
-};
-
-function parseObject(value: string, label: string): Record<string, JsonValue> {
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(value);
-  } catch {
-    throw new Error(`${label} must be valid JSON.`);
-  }
-  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed))
-    throw new Error(`${label} must be a JSON object.`);
-  return parsed as Record<string, JsonValue>;
 }

@@ -1,0 +1,33 @@
+{
+  "name": "@gigalibs/configuration-react",
+  "version": "0.1.0",
+  "description": "Allowlisted React renderer for governed configuration manifests",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist .tsbuildinfo"
+  },
+  "dependencies": {
+    "@gigalibs/configuration-core": "workspace:*",
+    "@gigalibs/contracts": "workspace:*",
+    "@react-form-builder/core": "10.3.0"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.0",
+    "react": "^19.2.8",
+    "typescript": "^5.8.3"
+  }
+}

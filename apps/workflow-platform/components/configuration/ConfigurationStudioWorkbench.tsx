@@ -28,6 +28,7 @@ import {
   GripVertical,
   Hash,
   Layers3,
+  LockKeyhole,
   Link2,
   ListChecks,
   Monitor,
@@ -43,7 +44,12 @@ import {
   Upload,
 } from 'lucide-react';
 import { Button, Badge, Input, toast as medusaToast } from '@medusajs/ui';
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import Link from 'next/link';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import {
+  decodeConfigurationSurfaces,
+  type ConfigurationSurface,
+} from '@/lib/configuration-surface-registry';
 import styles from './ConfigurationStudioWorkbench.module.css';
 
 type ChangeSet = {
@@ -82,19 +88,6 @@ type Activation = {
   status: string;
   activatedAt: string;
   publishedVersion: { checksum: string; sequence: number };
-};
-
-type ConfigurationSurface = {
-  registrationKey: string;
-  moduleKey: string;
-  entityKey: string;
-  surfaceKey: string;
-  label: string;
-  description: string;
-  ownership: 'MODULE_EXTENSION' | 'TENANT_APPLICATION';
-  entityKeyEditable: boolean;
-  surfaceKeyEditable: boolean;
-  modes: ConfigurationDefinition['mode'][];
 };
 
 const FIELD_TYPES: ConfigurationField['type'][] = [
@@ -139,7 +132,10 @@ export function ConfigurationStudioWorkbench({
   tenantName,
   locale = 'en-US',
   currency = 'USD',
-}: { currentUserId: string; permissions: string[]; tenantId: string; tenantName: string; locale?: string; currency?: string }) {
+  initialRegistrationKey,
+  returnTo = '/modules',
+  onClose,
+}: { currentUserId: string; permissions: string[]; tenantId: string; tenantName: string; locale?: string; currency?: string; initialRegistrationKey?: string; returnTo?: string; onClose?: () => void }) {
   const [tab, setTab] = useState<
     'designer' | 'governance' | 'published' | 'runtime' | 'portability'
   >('designer');
@@ -154,12 +150,24 @@ export function ConfigurationStudioWorkbench({
   const [packageText, setPackageText] = useState('');
   const [impact, setImpact] = useState<ConfigurationImpactReport | null>(null);
   const [surfaces, setSurfaces] = useState<ConfigurationSurface[]>([]);
+  const appliedInitialSurface = useRef(false);
 
   const selected = useMemo(
     () => changeSets.find((item) => item.id === selectedId) ?? null,
     [changeSets, selectedId],
   );
-  const canDraft = hasPermission(permissions, 'configuration:draft');
+  const activeSurface = useMemo(
+    () =>
+      surfaces.find(
+        (surface) =>
+          surface.moduleKey === definition.moduleKey &&
+          (surface.entityKeyEditable || surface.entityKey === definition.entityKey) &&
+          (surface.surfaceKeyEditable || surface.surfaceKey === definition.surfaceKey),
+      ),
+    [definition.entityKey, definition.moduleKey, definition.surfaceKey, surfaces],
+  );
+  const canDraft =
+    hasPermission(permissions, 'configuration:draft') && activeSurface?.authoringEnabled !== false;
   const canApprove = hasPermission(permissions, 'configuration:approve');
   const canPublish = hasPermission(permissions, 'configuration:publish');
   const canActivate = hasPermission(permissions, 'configuration:activate');
@@ -182,12 +190,31 @@ export function ConfigurationStudioWorkbench({
     setChangeSets((await draftResponse.json()) as ChangeSet[]);
     setPublished((await publishedResponse.json()) as PublishedVersion[]);
     setActivations((await activationResponse.json()) as Activation[]);
-    setSurfaces((await surfaceResponse.json()) as ConfigurationSurface[]);
+    setSurfaces(decodeConfigurationSurfaces(await surfaceResponse.json()));
   }, []);
 
   useEffect(() => {
     void load().catch((error: unknown) => { medusaToast.error(errorMessage(error)); });
   }, [load]);
+
+  useEffect(() => {
+    if (appliedInitialSurface.current || surfaces.length === 0) return;
+    appliedInitialSurface.current = true;
+    if (!initialRegistrationKey) return;
+    const surface = surfaces.find((item) => item.registrationKey === initialRegistrationKey);
+    if (!surface) {
+      medusaToast.error('The requested screen is not registered for governed configuration.');
+      return;
+    }
+    setDefinition((current) => ({
+      ...current,
+      moduleKey: surface.moduleKey,
+      entityKey: surface.entityKey,
+      surfaceKey: surface.surfaceKey,
+      mode: surface.modes[0] ?? 'EDIT',
+      title: surface.label,
+    }));
+  }, [initialRegistrationKey, surfaces]);
 
   useEffect(() => {
     if (!selectedId) {
@@ -375,10 +402,28 @@ export function ConfigurationStudioWorkbench({
             maker-checker approval, publish an immutable version, and activate it for runtime use.
           </p>
         </div>
-        <div className="rounded-lg border border-ui-border-base bg-ui-bg-base px-4 py-3 text-xs text-ui-fg-subtle">
-          <span className="font-semibold text-ui-fg-base">Tenant boundary</span>
-          <br />
-          {tenantId ? tenantId : null}
+        <div className="flex flex-wrap items-center justify-end gap-3">
+          {onClose ? (
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-lg border border-ui-border-base bg-ui-bg-base px-4 py-2.5 text-sm font-medium text-ui-fg-base hover:bg-ui-bg-subtle"
+            >
+              Close designer
+            </button>
+          ) : (
+            <Link
+              href={returnTo}
+              className="rounded-lg border border-ui-border-base bg-ui-bg-base px-4 py-2.5 text-sm font-medium text-ui-fg-base hover:bg-ui-bg-subtle"
+            >
+              Return to screen
+            </Link>
+          )}
+          <div className="rounded-lg border border-ui-border-base bg-ui-bg-base px-4 py-3 text-xs text-ui-fg-subtle">
+            <span className="font-semibold text-ui-fg-base">Tenant boundary</span>
+            <br />
+            {tenantId ? tenantId : null}
+          </div>
         </div>
       </header>
 
@@ -500,6 +545,8 @@ function Designer({
       (surface.entityKeyEditable || surface.entityKey === definition.entityKey) &&
       (surface.surfaceKeyEditable || surface.surfaceKey === definition.surfaceKey),
   );
+  const coreFields = selectedSurface?.coreFields ?? [];
+  const extensionSlots = selectedSurface?.extensionSlots ?? [];
   const updateField = (index: number, patch: Partial<ConfigurationField>) => {
     const previous = definition.fields[index];
     if (!previous) return;
@@ -721,6 +768,37 @@ function Designer({
             <Plus className="h-4 w-4" /> Add section
           </Button>
         </div>
+        {coreFields.length > 0 ? (
+          <div className="space-y-2">
+            {coreFields.map((field) => (
+              <div
+                key={field.key}
+                className="rounded-xl border border-ui-border-base bg-ui-bg-subtle p-3"
+              >
+                <div className="flex items-center gap-2">
+                  <LockKeyhole className="h-3.5 w-3.5 text-ui-fg-muted" />
+                  <span className="text-xs font-medium text-ui-fg-base">{field.label}</span>
+                </div>
+                <p className="mt-1 text-[11px] leading-4 text-ui-fg-muted">
+                  Platform core · {field.lockReason}
+                </p>
+              </div>
+            ))}
+          </div>
+        ) : null}
+        {selectedSurface && extensionSlots.length > 0 ? (
+          <div className="rounded-xl border border-dashed border-ui-border-base p-3 text-xs text-ui-fg-subtle">
+            <span className="font-semibold text-ui-fg-base">Extension slot</span>
+            <br />
+            {extensionSlots.map((slot) => slot.label).join(', ')}
+          </div>
+        ) : null}
+        {selectedSurface && !selectedSurface.authoringEnabled ? (
+          <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs leading-5 text-amber-950">
+            <span className="font-semibold">Inspection only.</span>{' '}
+            {selectedSurface.authoringDisabledReason}
+          </div>
+        ) : null}
         <div className="space-y-2">
           {definition.sections.map((section, index) => (
             <div
@@ -866,6 +944,27 @@ function Designer({
                 }
               />
             </div>
+            {coreFields.length > 0 ? (
+              <section className="mb-6 rounded-xl border border-ui-border-base bg-ui-bg-subtle p-4">
+                <div className="mb-3 flex items-center gap-2">
+                  <LockKeyhole className="h-4 w-4 text-ui-fg-muted" />
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-ui-fg-subtle">
+                    Platform core fields
+                  </h3>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {coreFields.map((field) => (
+                    <div key={field.key} className="rounded-lg border border-ui-border-base bg-white p-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs font-medium text-ui-fg-base">{field.label}</span>
+                        <LockKeyhole aria-label="Locked core field" className="h-3.5 w-3.5 text-ui-fg-muted" />
+                      </div>
+                      <p className="mt-1 font-mono text-[10px] text-ui-fg-muted">{field.key} · {field.type}</p>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            ) : null}
             <FormEngineConfigurationForm definition={definition} values={values} onChange={setValues} />
           </div>
         </div>

@@ -30,10 +30,14 @@ and independent acceptance evidence are incomplete.
 Releases 2–4 remain at G0–G2 depending on the capability. They must not be treated as implemented merely
 because their future package names exist.
 
-Customer Invoicing and Accounts Receivable (`WI-OI-019`) is the selected next product module. Repository
-structure and G0–G3 discovery/design may proceed without entering runtime Build. G4 implementation remains
-blocked until the Release 1 P0/P1 evidence is independently closed or a named human authority records a
-formal containment and reprioritization decision. This preserves the one-module Build limit.
+Customer Invoicing and Accounts Receivable (`WI-OI-019`) is the selected product module in G4. The
+repository owner explicitly reprioritized it on 2026-09-04 while the earlier Release 1 work remains in
+Review. This is product-priority authorization only: it does not accept Release 1 residual risk or allow AR
+to pass G5/G6 without its own independent evidence and human approvals. AR remains the next product
+implementation priority. On 2026-09-13, the owner explicitly reprioritized the Universal Configuration
+Studio as the first dependency to complete. WI-OI-013 is blocked on external-provider, operator-controlled
+DNS/regional infrastructure and independent human evidence. WI-OI-039 is the sole active Build item; this
+does not waive the IAM No-Go or authorize production release.
 
 ## Delivery sequence
 
@@ -47,6 +51,21 @@ formal containment and reprioritization decision. This preserves the one-module 
 8. Build Release 2 in vertical slices: expiring Demo Lab, governed Ask GigaLibs, Command Center and report.
 9. Build Release 3 tenant productization and commercial controls.
 10. Build Release 4 catalogue, connector SDK and two additional packs only from validated demand.
+
+## Audit-derived implementation proposal — 2026-09-09
+
+WI-OI-037 records the [module/submodule implementation proposal](../docs/plans/audit-remediation-implementation-plan.md)
+derived from WI-OI-036. It separates repairs, missing outcome completion, unverified functionality and
+demand-led extensions, with business acceptance and G0–G7 evidence. This is planning evidence, not an
+approved replacement for the current product sequence or release authority. AR-first and one-module
+Build remain in force. WI-OI-038 proposes a distinct CMMS discovery owner because its manifest currently
+reuses the solution-pack item. WI-OI-039 now builds the versioned dynamic configuration/forms core and its
+governed module-adoption architecture under the owner's 2026-09-13 priority decision. The
+[zero-code configuration and module rollout plan](../docs/plans/zero-code-configuration-and-module-rollout-plan.md)
+records the dependency order: metadata core, low-risk reference adapter, AR financial snapshot adapter, then
+one accepted module at a time. The exhaustive audit and manual/UAT verification remain open.
+WI-OI-040 separately baselines the WhooCrew-derived source-backed event billing and supplemental-invoice
+extension to FR-17. It remains a proposed G0–G3 design and does not enter Build while WI-OI-039 is active.
 
 ## Integrated certification commands
 

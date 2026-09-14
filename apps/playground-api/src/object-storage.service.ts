@@ -129,6 +129,87 @@ export class ObjectStorageService {
     }
   }
 
+  async writeVerifiedObject(input: {
+    storageKey: string;
+    contentType: string;
+    bytes: Buffer;
+    checksumSha256: string;
+  }): Promise<void> {
+    if (!input.bytes.length || input.bytes.length > runtimeConfig.storageMaxFileBytes) {
+      throw new ConnectorFailure(
+        'FILE_SIZE_LIMIT_EXCEEDED',
+        'The object exceeds the deployment file-size policy.',
+      );
+    }
+    try {
+      await this.client.send(
+        new PutObjectCommand({
+          Bucket: runtimeConfig.storageBucket,
+          Key: input.storageKey,
+          Body: input.bytes,
+          ContentType: input.contentType,
+          ContentLength: input.bytes.length,
+          Metadata: { 'declared-sha256': input.checksumSha256 },
+        }),
+      );
+    } catch {
+      throw new ConnectorFailure(
+        'FILE_OBJECT_WRITE_FAILED',
+        'The object could not be written to the configured storage provider.',
+      );
+    }
+    let head;
+    try {
+      head = await this.client.send(
+        new HeadObjectCommand({ Bucket: runtimeConfig.storageBucket, Key: input.storageKey }),
+      );
+    } catch {
+      throw new ConnectorFailure(
+        'FILE_UPLOAD_VERIFICATION_UNAVAILABLE',
+        'The stored object could not be verified after upload.',
+      );
+    }
+    if (
+      head.ContentLength !== input.bytes.length ||
+      head.ContentType?.split(';', 1)[0]?.trim().toLowerCase() !== input.contentType ||
+      head.Metadata?.['declared-sha256'] !== input.checksumSha256
+    ) {
+      throw new ConnectorFailure(
+        'FILE_UPLOAD_VERIFICATION_FAILED',
+        'The stored object does not match its declared archive evidence.',
+      );
+    }
+  }
+
+  async createDownloadUrl(input: {
+    storageKey: string;
+    filename: string;
+    expiresInSeconds?: number;
+  }): Promise<{ downloadUrl: string; expiresAt: Date }> {
+    const expiresIn = Math.min(
+      input.expiresInSeconds ?? runtimeConfig.storagePresignSeconds,
+      runtimeConfig.storagePresignSeconds,
+    );
+    try {
+      const downloadUrl = await getSignedUrl(
+        this.client,
+        new GetObjectCommand({
+          Bucket: runtimeConfig.storageBucket,
+          Key: input.storageKey,
+          ResponseContentType: 'application/zip',
+          ResponseContentDisposition: `attachment; filename="${input.filename}"`,
+        }),
+        { expiresIn },
+      );
+      return { downloadUrl, expiresAt: new Date(Date.now() + expiresIn * 1_000) };
+    } catch {
+      throw new ConnectorFailure(
+        'OBJECT_STORAGE_SIGNING_FAILED',
+        'The download URL could not be created.',
+      );
+    }
+  }
+
   async deleteObject(storageKey: string): Promise<void> {
     try {
       await this.client.send(

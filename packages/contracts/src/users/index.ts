@@ -19,11 +19,15 @@ export const UserSchema = z.object({
   updatedAt: z.date(),
 });
 
-export const UpdateProfileSchema = z.object({
-  name: z.string().min(1).max(100).optional(),
-  phone: PhoneSchema.optional(),
-  avatarUrl: UrlSchema.optional(),
-});
+export const UpdateProfileSchema = z
+  .object({
+    name: z.string().trim().min(1).max(100).optional(),
+    phone: PhoneSchema.nullable().optional(),
+    expectedUpdatedAt: z.string().datetime({ offset: true }),
+  })
+  .refine((value) => value.name !== undefined || value.phone !== undefined, {
+    message: 'A profile change is required',
+  });
 
 export const UserPreferencesSchema = z.object({
   locale: z.string().default('en'),

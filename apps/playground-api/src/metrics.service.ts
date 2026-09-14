@@ -31,6 +31,10 @@ const DATABASE_GAUGE_DEFINITIONS = Object.freeze({
   gigalibs_operational_exceptions: 'Operational exceptions by lifecycle status.',
   gigalibs_business_actions: 'Controlled business actions by lifecycle status.',
   gigalibs_retention_executions: 'Retention executions by lifecycle status.',
+  gigalibs_configuration_change_sets: 'Configuration Studio change sets by governance status.',
+  gigalibs_configuration_activations: 'Configuration Studio activations by lifecycle status.',
+  gigalibs_configuration_published_versions: 'Immutable Configuration Studio versions.',
+  gigalibs_configuration_records: 'Configuration Studio application records by lifecycle status.',
 });
 
 @Injectable()
@@ -147,6 +151,11 @@ export class MetricsService {
       exceptions,
       actions,
       retentionExecutions,
+      configurationChangeSets,
+      configurationActivations,
+      configurationPublishedVersions,
+      activeConfigurationRecords,
+      deletedConfigurationRecords,
     ] = await Promise.all([
       prisma.sourceEvent.groupBy({ by: ['status'], _count: { _all: true } }),
       prisma.controlOutboxEvent.groupBy({ by: ['status'], _count: { _all: true } }),
@@ -157,6 +166,11 @@ export class MetricsService {
       prisma.operationalException.groupBy({ by: ['status'], _count: { _all: true } }),
       prisma.businessAction.groupBy({ by: ['status'], _count: { _all: true } }),
       prisma.dataRetentionExecution.groupBy({ by: ['status'], _count: { _all: true } }),
+      prisma.configurationChangeSet.groupBy({ by: ['status'], _count: { _all: true } }),
+      prisma.configurationActivation.groupBy({ by: ['status'], _count: { _all: true } }),
+      prisma.configurationPublishedVersion.count(),
+      prisma.configurationRecord.count({ where: { deletedAt: null } }),
+      prisma.configurationRecord.count({ where: { deletedAt: { not: null } } }),
     ]);
 
     return [
@@ -182,6 +196,15 @@ export class MetricsService {
       ...retentionExecutions.map((row) =>
         gauge('gigalibs_retention_executions', { status: row.status }, row._count._all),
       ),
+      ...configurationChangeSets.map((row) =>
+        gauge('gigalibs_configuration_change_sets', { status: row.status }, row._count._all),
+      ),
+      ...configurationActivations.map((row) =>
+        gauge('gigalibs_configuration_activations', { status: row.status }, row._count._all),
+      ),
+      gauge('gigalibs_configuration_published_versions', {}, configurationPublishedVersions),
+      gauge('gigalibs_configuration_records', { status: 'ACTIVE' }, activeConfigurationRecords),
+      gauge('gigalibs_configuration_records', { status: 'DELETED' }, deletedConfigurationRecords),
     ];
   }
 }

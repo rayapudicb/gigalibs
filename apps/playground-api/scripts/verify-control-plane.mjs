@@ -68,7 +68,8 @@ const tenant = await request('/tenants', {
   },
   expectedStatus: 201,
 });
-assert.equal(tenant.status, 'PROVISIONING');
+assert.equal(tenant.status, 'TRIAL');
+assert.ok(tenant.trialEndsAt);
 
 const tenants = await request('/tenants', { token: registration.accessToken });
 assert.ok(tenants.some((item) => item.id === tenant.id && item.membershipRole === 'TENANT_ADMIN'));
@@ -79,20 +80,13 @@ const selected = await request('/auth/select-tenant', {
   body: { tenantId: tenant.id },
 });
 
-const activeTenant = await request('/tenants/current/status', {
-  method: 'PATCH',
-  token: selected.accessToken,
-  tenantId: tenant.id,
-  body: { status: 'ACTIVE', reason: 'Runtime verification completed' },
-});
-assert.equal(activeTenant.status, 'ACTIVE');
-assert.ok(activeTenant.provisionedAt);
-
 const currentTenant = await request('/tenants/current', {
   token: selected.accessToken,
   tenantId: tenant.id,
 });
 assert.equal(currentTenant.id, tenant.id);
+assert.equal(currentTenant.status, 'TRIAL');
+assert.ok(currentTenant.provisionedAt);
 
 const settings = await request('/settings', {
   token: selected.accessToken,
@@ -129,7 +123,6 @@ const auditLogs = await request('/audit?limit=20', {
 const actions = new Set(auditLogs.map((entry) => entry.action));
 assert.ok(actions.has('PROVISION'));
 assert.ok(actions.has('SETTINGS_CHANGE'));
-assert.ok(actions.has('STATUS_CHANGE'));
 
 const refreshed = await request('/auth/refresh', {
   method: 'POST',

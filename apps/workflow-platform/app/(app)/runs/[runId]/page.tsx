@@ -5,11 +5,7 @@ import { useParams } from 'next/navigation'
 import { useCallback, useEffect, useState } from 'react'
 import type { RunDetail, RunStatus, StepSummary } from '@/lib/api-types'
 import { requestJson } from '@/lib/client-api'
-
-const RUN_STATUS_STYLES: Record<RunStatus, string> = {
-  succeeded: 'text-emerald-400', running: 'text-blue-400', failed: 'text-red-400',
-  queued: 'text-gray-400', cancelled: 'text-gray-400', action_required: 'text-orange-400',
-}
+import { Container, Heading, Text, Button, StatusBadge, Alert, Table } from '@medusajs/ui'
 
 export default function RunDetailPage() {
   const params = useParams<{ runId: string }>()
@@ -46,72 +42,119 @@ export default function RunDetailPage() {
     }
   }
 
-  if (loading && !run) return <div className="p-8 text-sm text-gray-400">Loading run…</div>
+  if (loading && !run) return <div className="p-8 text-xs text-ui-fg-muted">Loading run…</div>
 
   return (
-    <div className="mx-auto max-w-6xl space-y-7 p-8">
+    <div className="mx-auto max-w-6xl space-y-6 p-8 font-sans text-ui-fg-base">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <Link href="/runs" className="text-sm text-gray-400 hover:text-white">← Runs</Link>
-          <h1 className="mt-2 text-2xl font-bold text-white">Execution detail</h1>
-          <p className="mt-1 break-all font-mono text-xs text-indigo-300">{runId}</p>
+          <Link href="/runs" className="text-xs text-ui-fg-muted hover:text-ui-fg-base">← Runs</Link>
+          <Heading level="h1" className="mt-2 text-2xl font-bold text-ui-fg-base">Execution detail</Heading>
+          <Text size="xsmall" className="mt-1 break-all font-mono text-ui-fg-interactive">{runId}</Text>
         </div>
-        <div className="flex gap-3">
-          <button onClick={() => void load()} disabled={loading} className="rounded-lg border border-gray-700 px-3 py-2 text-xs text-gray-300 hover:bg-gray-800 disabled:opacity-50">Refresh</button>
+        <div className="flex gap-2">
+          <Button onClick={() => void load()} disabled={loading} variant="secondary" size="small">
+            Refresh
+          </Button>
           {run && ['queued', 'running'].includes(run.status) && (
-            <button onClick={() => void cancel()} disabled={cancelling} className="rounded-lg bg-red-700 px-3 py-2 text-xs font-semibold text-white hover:bg-red-600 disabled:opacity-50">{cancelling ? 'Cancelling…' : 'Cancel run'}</button>
+            <Button
+              onClick={() => void cancel()}
+              disabled={cancelling}
+              variant="danger"
+              size="small"
+              isLoading={cancelling}
+            >
+              Cancel run
+            </Button>
           )}
         </div>
       </div>
-      {error && <div role="alert" className="rounded-lg border border-red-900 bg-red-950/30 p-4 text-sm text-red-300">{error}</div>}
+
+      {error && <Alert variant="error" className="text-xs">{error}</Alert>}
+
       {run && (
         <>
           <div className="grid gap-4 md:grid-cols-4">
-            <Metric label="Status" value={run.status.replace('_', ' ')} valueClass={RUN_STATUS_STYLES[run.status]} />
-            <Metric label="Workflow version" value={`v${run.workflow_version}`} />
-            <Metric label="Trigger" value={run.trigger_type} />
-            <Metric label="Duration" value={duration(run.started_at, run.completed_at)} />
+            <Container className="p-4 border border-ui-border-base bg-ui-bg-base shadow-elevation-card-rest rounded-xl">
+              <Text size="xsmall" weight="plus" className="uppercase text-ui-fg-muted font-semibold">Status</Text>
+              <div className="mt-1.5">
+                <StatusBadge color={run.status === 'succeeded' ? 'green' : run.status === 'running' ? 'blue' : run.status === 'failed' ? 'red' : 'grey'}>
+                  {run.status.replace('_', ' ')}
+                </StatusBadge>
+              </div>
+            </Container>
+            <Container className="p-4 border border-ui-border-base bg-ui-bg-base shadow-elevation-card-rest rounded-xl">
+              <Text size="xsmall" weight="plus" className="uppercase text-ui-fg-muted font-semibold">Workflow version</Text>
+              <div className="mt-1 font-mono text-sm font-semibold text-ui-fg-base">{`v${run.workflow_version}`}</div>
+            </Container>
+            <Container className="p-4 border border-ui-border-base bg-ui-bg-base shadow-elevation-card-rest rounded-xl">
+              <Text size="xsmall" weight="plus" className="uppercase text-ui-fg-muted font-semibold">Trigger</Text>
+              <div className="mt-1 text-sm font-semibold text-ui-fg-base">{run.trigger_type}</div>
+            </Container>
+            <Container className="p-4 border border-ui-border-base bg-ui-bg-base shadow-elevation-card-rest rounded-xl">
+              <Text size="xsmall" weight="plus" className="uppercase text-ui-fg-muted font-semibold">Duration</Text>
+              <div className="mt-1 font-mono text-sm font-semibold text-ui-fg-base">{duration(run.started_at, run.completed_at)}</div>
+            </Container>
           </div>
+
           {(run.error_class || run.error_summary) && (
-            <div className="rounded-xl border border-red-900/70 bg-red-950/20 p-4">
-              <div className="text-sm font-semibold text-red-300">{run.error_class || 'Execution failure'}</div>
-              {run.error_summary && <p className="mt-1 text-sm text-red-200/80">{run.error_summary}</p>}
-            </div>
+            <Alert variant="error" className="text-xs">
+              <div className="font-semibold">{run.error_class || 'Execution failure'}</div>
+              {run.error_summary && <div className="mt-1">{run.error_summary}</div>}
+            </Alert>
           )}
-          <section className="overflow-hidden rounded-xl border border-gray-800 bg-gray-900">
-            <div className="border-b border-gray-800 px-5 py-4"><h2 className="font-semibold text-white">Node attempts</h2></div>
-            {run.steps.length === 0 ? <div className="p-10 text-center text-sm text-gray-500">No node attempts have started.</div> : run.steps.map((step) => <StepRow key={step.id} step={step} />)}
-          </section>
-          <section className="grid gap-3 rounded-xl border border-gray-800 bg-gray-900 p-5 text-xs md:grid-cols-2">
+
+          <Container className="p-0 overflow-hidden border border-ui-border-base bg-ui-bg-base shadow-elevation-card-rest rounded-xl">
+            <div className="border-b border-ui-border-base px-5 py-3">
+              <Heading level="h2" className="text-sm font-semibold text-ui-fg-base">Node attempts</Heading>
+            </div>
+            {run.steps.length === 0 ? (
+              <div className="p-8 text-center text-xs text-ui-fg-muted">No node attempts have started.</div>
+            ) : (
+              <div className="divide-y divide-ui-border-base">
+                {run.steps.map((step) => <StepRow key={step.id} step={step} />)}
+              </div>
+            )}
+          </Container>
+
+          <Container className="grid gap-3 border border-ui-border-base bg-ui-bg-base p-5 text-xs shadow-elevation-card-rest rounded-xl md:grid-cols-2">
             <Evidence label="Workflow checksum" value={run.workflow_checksum} />
             <Evidence label="Correlation ID" value={run.correlation_id} />
             <Evidence label="Schema version" value={run.workflow_schema_version} />
             <Evidence label="Compiler version" value={run.workflow_compiler_version} />
-          </section>
+          </Container>
         </>
       )}
     </div>
   )
 }
 
-function Metric({ label, value, valueClass = 'text-white' }: { label: string; value: string; valueClass?: string }) {
-  return <div className="rounded-xl border border-gray-800 bg-gray-900 p-4"><div className="text-xs uppercase text-gray-500">{label}</div><div className={`mt-1 font-semibold ${valueClass}`}>{value}</div></div>
-}
-
 function StepRow({ step }: { step: StepSummary }) {
   return (
-    <div className="grid grid-cols-12 gap-4 border-b border-gray-800 px-5 py-4 text-sm last:border-b-0">
-      <div className="col-span-3"><div className="font-medium text-white">{step.node_id}</div><div className="text-xs text-gray-500">{step.node_type}</div></div>
-      <div className="col-span-2 text-gray-300">attempt {step.attempt}</div>
-      <div className="col-span-2 text-gray-300">{step.status}</div>
-      <div className="col-span-2 text-gray-500">{step.duration_ms === null ? '—' : `${step.duration_ms} ms`}</div>
-      <div className="col-span-3 break-words text-xs text-red-300">{step.error_detail || '—'}</div>
+    <div className="grid grid-cols-12 gap-4 px-5 py-3 text-xs items-center hover:bg-ui-bg-subtle-hover transition">
+      <div className="col-span-3">
+        <div className="font-medium text-ui-fg-base">{step.node_id}</div>
+        <div className="text-[10px] text-ui-fg-muted font-mono">{step.node_type}</div>
+      </div>
+      <div className="col-span-2 text-ui-fg-subtle">attempt {step.attempt}</div>
+      <div className="col-span-2">
+        <StatusBadge color={step.status === 'succeeded' ? 'green' : step.status === 'running' ? 'blue' : step.status === 'failed' ? 'red' : 'grey'}>
+          {step.status}
+        </StatusBadge>
+      </div>
+      <div className="col-span-2 text-ui-fg-muted font-mono">{step.duration_ms === null ? '—' : `${step.duration_ms} ms`}</div>
+      <div className="col-span-3 break-words text-[11px] text-ui-tag-red-text">{step.error_detail || '—'}</div>
     </div>
   )
 }
 
 function Evidence({ label, value }: { label: string; value: string }) {
-  return <div><span className="text-gray-500">{label}: </span><span className="break-all font-mono text-gray-300">{value}</span></div>
+  return (
+    <div>
+      <span className="text-ui-fg-muted font-medium">{label}: </span>
+      <span className="break-all font-mono text-ui-fg-base">{value}</span>
+    </div>
+  )
 }
 
 function duration(startedAt: string | null, completedAt: string | null): string {
