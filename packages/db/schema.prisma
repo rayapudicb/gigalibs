@@ -56,6 +56,55 @@ enum MemberStatus {
   SUSPENDED
 }
 
+// Platform authority is global and must never be inferred from a role held inside a tenant.
+enum PlatformRole {
+  PLATFORM_OWNER
+  PLATFORM_ADMIN
+  PLATFORM_AUDITOR
+}
+
+enum PlatformRoleAssignmentStatus {
+  ACTIVE
+  SUSPENDED
+  REVOKED
+}
+
+enum ExternalIdentityStatus {
+  ACTIVE
+  REVOKED
+}
+
+enum OidcAuthorizationPurpose {
+  LOGIN
+  LINK
+}
+
+enum TenantModuleEntitlementStatus {
+  ENABLED
+  DISABLED
+}
+
+enum TenantModuleEntitlementSource {
+  TRIAL
+  PLAN
+  PLATFORM_OVERRIDE
+}
+
+enum TenantInfrastructureStatus {
+  REQUESTED
+  PROVISIONING
+  READY
+  FAILED
+}
+
+enum TenantSubdomainStatus {
+  RESERVED
+  DNS_PENDING
+  TLS_PENDING
+  ACTIVE
+  FAILED
+}
+
 enum AuditAction {
   CREATE
   UPDATE
@@ -343,6 +392,14 @@ enum RecoveryStatus {
   FAILED
 }
 
+enum TenantDataExportStatus {
+  REQUESTED
+  RUNNING
+  SUCCEEDED
+  FAILED
+  EXPIRED
+}
+
 enum ValueDefinitionStatus {
   DRAFT
   ACTIVE
@@ -355,6 +412,14 @@ enum ValueEventStatus {
   REJECTED
 }
 
+enum MfaAssistedRecoveryStatus {
+  REQUESTED
+  APPROVED
+  CONSUMED
+  REJECTED
+  EXPIRED
+}
+
 enum BenefitDecision {
   VERIFIED
   REJECTED
@@ -365,14 +430,21 @@ enum BenefitDecision {
 // ═══════════════════════════════════════════════════════════════════════
 
 model Tenant {
-  id            String              @id @default(cuid())
-  slug          String              @unique
-  name          String
-  status        TenantStatus        @default(ACTIVE)
-  isolationMode TenantIsolationMode @default(ROW_LEVEL_SECURITY)
-  region        String              @default("local")
-  customDomain  String?             @unique
-  provisionedAt DateTime?
+  id                                  String              @id @default(cuid())
+  slug                                String              @unique
+  name                                String
+  status                              TenantStatus        @default(ACTIVE)
+  isolationMode                       TenantIsolationMode @default(ROW_LEVEL_SECURITY)
+  region                              String              @default("local")
+  customDomain                        String?             @unique
+  // A custom domain is not trusted until a matching DNS TXT challenge is observed.
+  customDomainChallengeDomain         String?
+  customDomainVerificationDigest      String?
+  customDomainChallengeExpiresAt      DateTime?           @db.Timestamptz(3)
+  customDomainVerifiedAt              DateTime?           @db.Timestamptz(3)
+  customDomainVerificationAttempts    Int                 @default(0)
+  customDomainVerificationLockedUntil DateTime?           @db.Timestamptz(3)
+  provisionedAt                       DateTime?           @db.Timestamptz(3)
 
   // Branding (stored as JSON)
   branding    Json?
@@ -380,10 +452,10 @@ model Tenant {
   features    String[]  @default([])
   // Current plan identifier (resolves via billing module)
   plan        String?
-  trialEndsAt DateTime?
+  trialEndsAt DateTime? @db.Timestamptz(3)
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
 
   // Relations
   members                 TenantMember[]
@@ -443,6 +515,21 @@ model Tenant {
   sourceFileImports       SourceFileImport[]
   retentionHolds          DataRetentionHold[]
   retentionExecutions     DataRetentionExecution[]
+  oidcConfiguration       TenantOidcConfiguration?
+  oidcLoginTransactions   OidcLoginTransaction[]
+  configurationChangeSets ConfigurationChangeSet[]
+  configurationVersions   ConfigurationPublishedVersion[]
+  configurationActivations ConfigurationActivation[]
+  configurationExtensionValues ConfigurationExtensionValue[]
+  configurationIdempotencyRecords ConfigurationIdempotencyRecord[]
+  configurationRecords            ConfigurationRecord[]
+  configurationTemplates          ConfigurationTemplate[]
+  configurationSavedFilters       ConfigurationSavedFilter[]
+  dataExports             TenantDataExport[]
+  mfaAssistedRecoveries   MfaAssistedRecovery[]
+  moduleEntitlements      TenantModuleEntitlement[]
+  isolationBinding        TenantIsolationBinding?
+  subdomainBinding        TenantSubdomainBinding?
 
   @@index([slug])
   @@map("tenants")
@@ -459,8 +546,8 @@ model TenantSettings {
   features     Json
   metadata     Json
   updatedById  String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt    DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime @updatedAt @db.Timestamptz(3)
 
   @@map("tenant_settings")
 }
@@ -472,9 +559,9 @@ model TenantSettings {
 model User {
   id              String     @id @default(cuid())
   email           String     @unique
-  emailVerifiedAt DateTime?
+  emailVerifiedAt DateTime?  @db.Timestamptz(3)
   phone           String?    @unique
-  phoneVerifiedAt DateTime?
+  phoneVerifiedAt DateTime?  @db.Timestamptz(3)
   passwordHash    String?
   name            String
   avatarUrl       String?
@@ -484,20 +571,151 @@ model User {
   preferences Json?
   metadata    Json?
 
-  lastLoginAt DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  lastLoginAt DateTime? @db.Timestamptz(3)
+  createdAt   DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime  @updatedAt @db.Timestamptz(3)
 
   // Relations
-  sessions    Session[]
-  passkeys    Passkey[]
-  memberships TenantMember[]
-  auditLogs   AuditLog[]
-  otps        OTP[]
+  sessions                   Session[]
+  passkeys                   Passkey[]
+  totpCredential             TotpCredential?
+  mfaRecoveryCodes           MfaRecoveryCode[]
+  memberships                TenantMember[]
+  auditLogs                  AuditLog[]
+  otps                       OTP[]
+  externalIdentities         ExternalIdentity[]
+  requestedTenantDataExports TenantDataExport[]       @relation("TenantDataExportRequester")
+  targetedMfaRecoveries      MfaAssistedRecovery[]    @relation("MfaRecoveryTarget")
+  requestedMfaRecoveries     MfaAssistedRecovery[]    @relation("MfaRecoveryRequester")
+  approvedMfaRecoveries      MfaAssistedRecovery[]    @relation("MfaRecoveryApprover")
+  rejectedMfaRecoveries      MfaAssistedRecovery[]    @relation("MfaRecoveryRejector")
+  platformRoleAssignments    PlatformRoleAssignment[] @relation("PlatformRoleSubject")
+  platformRoleGrants         PlatformRoleAssignment[] @relation("PlatformRoleGrantor")
+  passwordResetCredentials   PasswordResetCredential[] @relation("PasswordResetSubject")
+  passwordResetRequests      PasswordResetCredential[] @relation("PasswordResetRequester")
+  oidcLinkTransactions       OidcLoginTransaction[]     @relation("OidcLinkSubject")
 
   @@index([email])
   @@index([phone])
   @@map("users")
+}
+
+// Platform roles authorize cross-tenant control-plane operations. They are deliberately
+// separate from TenantMember because a tenant administrator cannot grant platform authority.
+model PlatformRoleAssignment {
+  id        String                       @id @default(cuid())
+  role      PlatformRole
+  status    PlatformRoleAssignmentStatus @default(ACTIVE)
+  reason    String
+  expiresAt DateTime?                    @db.Timestamptz(3)
+  revokedAt DateTime?                    @db.Timestamptz(3)
+
+  userId String
+  user   User   @relation("PlatformRoleSubject", fields: [userId], references: [id], onDelete: Cascade)
+
+  grantedById String?
+  grantedBy   User?   @relation("PlatformRoleGrantor", fields: [grantedById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+
+  @@unique([userId, role])
+  @@index([userId, status, expiresAt])
+  @@index([grantedById])
+  @@map("platform_role_assignments")
+}
+
+// Password reset credentials are display-once bearer credentials. PostgreSQL stores only
+// a SHA-256 digest; using one revokes every active session for the target identity.
+model PasswordResetCredential {
+  id          String    @id @default(cuid())
+  tokenDigest String    @unique
+  reason      String
+  expiresAt   DateTime  @db.Timestamptz(3)
+  usedAt      DateTime? @db.Timestamptz(3)
+
+  userId String
+  user   User   @relation("PasswordResetSubject", fields: [userId], references: [id], onDelete: Cascade)
+
+  requestedById String
+  requestedBy   User   @relation("PasswordResetRequester", fields: [requestedById], references: [id], onDelete: Restrict)
+
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  @@index([userId, expiresAt])
+  @@index([requestedById, createdAt(sort: Desc)])
+  @@map("password_reset_credentials")
+}
+
+// Entitlements are durable commercial/access decisions. Tenant.features remains the
+// compatibility projection used by existing guards and is updated in the same transaction.
+model TenantModuleEntitlement {
+  id          String                        @id @default(cuid())
+  moduleKey   String
+  status      TenantModuleEntitlementStatus @default(ENABLED)
+  source      TenantModuleEntitlementSource
+  startsAt    DateTime                      @default(now()) @db.Timestamptz(3)
+  endsAt      DateTime?                     @db.Timestamptz(3)
+  reason      String
+  updatedById String
+
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+
+  @@unique([tenantId, moduleKey])
+  @@index([tenantId, status, endsAt])
+  @@map("tenant_module_entitlements")
+}
+
+// This record is desired-state plus provider evidence. A requested dedicated database is
+// never presented as ready until an infrastructure worker stores a non-secret binding receipt.
+model TenantIsolationBinding {
+  id               String                     @id @default(cuid())
+  requestedMode    TenantIsolationMode
+  effectiveMode    TenantIsolationMode?
+  status           TenantInfrastructureStatus @default(REQUESTED)
+  region           String
+  bindingReference String?
+  failureCode      String?
+  failureMessage   String?
+  requestedById    String
+  reason           String
+  readyAt          DateTime?                  @db.Timestamptz(3)
+
+  tenantId String @unique
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+
+  @@index([status, region])
+  @@map("tenant_isolation_bindings")
+}
+
+// A reserved hostname records ownership inside GigaLibs. DNS/TLS become ACTIVE only after
+// deployment infrastructure supplies verifiable evidence for the configured base domain.
+model TenantSubdomainBinding {
+  id              String                @id @default(cuid())
+  hostname        String                @unique
+  status          TenantSubdomainStatus @default(RESERVED)
+  verificationRef String?
+  failureCode     String?
+  failureMessage  String?
+  requestedById   String
+  reason          String
+  activatedAt     DateTime?             @db.Timestamptz(3)
+
+  tenantId String @unique
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+
+  @@index([status])
+  @@map("tenant_subdomain_bindings")
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -505,13 +723,14 @@ model User {
 // ═══════════════════════════════════════════════════════════════════════
 
 model Session {
-  id           String        @id @default(cuid())
-  refreshToken String        @unique
-  status       SessionStatus @default(ACTIVE)
-  userAgent    String?
-  ipAddress    String?
-  expiresAt    DateTime
-  revokedAt    DateTime?
+  id            String        @id @default(cuid())
+  refreshToken  String        @unique
+  status        SessionStatus @default(ACTIVE)
+  userAgent     String?
+  ipAddress     String?
+  expiresAt     DateTime      @db.Timestamptz(3)
+  revokedAt     DateTime?     @db.Timestamptz(3)
+  mfaVerifiedAt DateTime?     @db.Timestamptz(3)
 
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -519,12 +738,165 @@ model Session {
   tenantId String?
   tenant   Tenant? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
-  createdAt DateTime @default(now())
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
 
   @@index([userId])
   @@index([tenantId])
   @@index([refreshToken])
   @@map("sessions")
+}
+
+// TOTP credentials are encrypted application secrets. The raw secret is returned only
+// during a fresh-password enrollment ceremony and is never written to logs or audit JSON.
+model TotpCredential {
+  id             String    @id @default(cuid())
+  secretEnvelope String
+  keyVersion     String
+  verifiedAt     DateTime? @db.Timestamptz(3)
+  lastUsedStep   BigInt?
+  failedAttempts Int       @default(0)
+  lockedUntil    DateTime? @db.Timestamptz(3)
+
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+
+  @@map("totp_credentials")
+}
+
+// Recovery codes are high-entropy one-time credentials. Only a user-bound SHA-256
+// digest is persisted; plaintext codes exist only in the one-time generation response.
+model MfaRecoveryCode {
+  id         String    @id @default(cuid())
+  codeDigest String
+  usedAt     DateTime? @db.Timestamptz(3)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  @@unique([userId, codeDigest])
+  @@index([userId, usedAt])
+  @@map("mfa_recovery_codes")
+}
+
+// Administrator-assisted recovery requires a distinct requesting and approving
+// tenant administrator. The one-time grant is persisted only as a user-bound digest.
+model MfaAssistedRecovery {
+  id                        String                    @id @default(cuid())
+  status                    MfaAssistedRecoveryStatus @default(REQUESTED)
+  requestReason             String
+  identityEvidenceReference String
+  grantDigest               String?                   @unique
+  expiresAt                 DateTime                  @db.Timestamptz(3)
+  approvedAt                DateTime?                 @db.Timestamptz(3)
+  consumedAt                DateTime?                 @db.Timestamptz(3)
+  rejectedAt                DateTime?                 @db.Timestamptz(3)
+
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  targetUserId String
+  targetUser   User   @relation("MfaRecoveryTarget", fields: [targetUserId], references: [id], onDelete: Cascade)
+
+  requestedById String
+  requestedBy   User   @relation("MfaRecoveryRequester", fields: [requestedById], references: [id], onDelete: Restrict)
+
+  approvedById String?
+  approvedBy   User?   @relation("MfaRecoveryApprover", fields: [approvedById], references: [id], onDelete: Restrict)
+
+  rejectedById String?
+  rejectedBy   User?   @relation("MfaRecoveryRejector", fields: [rejectedById], references: [id], onDelete: Restrict)
+
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+
+  @@index([tenantId, status, createdAt])
+  @@index([targetUserId, status])
+  @@map("mfa_assisted_recoveries")
+}
+
+// Tenant OIDC credentials are never returned after configuration. The client secret is
+// persisted only as an AES-GCM envelope bound to this configuration and tenant.
+model TenantOidcConfiguration {
+  id                   String     @id @default(cuid())
+  issuer               String
+  clientId             String
+  clientSecretEnvelope String
+  keyVersion           String
+  scopes               String[]   @default(["openid", "email", "profile"])
+  enabled              Boolean    @default(false)
+  allowJitProvisioning Boolean    @default(false)
+  defaultRole          MemberRole @default(MEMBER)
+  configuredById       String
+
+  tenantId String @unique
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  loginTransactions  OidcLoginTransaction[]
+  externalIdentities ExternalIdentity[]
+
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+
+  @@index([enabled])
+  @@map("tenant_oidc_configurations")
+}
+
+// State is stored as a digest and every authorization transaction is consumed exactly once.
+// The PKCE verifier is encrypted because it is a short-lived bearer credential.
+model OidcLoginTransaction {
+  id                   String    @id @default(cuid())
+  stateDigest          String    @unique
+  nonce                String
+  codeVerifierEnvelope String
+  keyVersion           String
+  purpose              OidcAuthorizationPurpose @default(LOGIN)
+  linkReason           String?
+  expiresAt            DateTime  @db.Timestamptz(3)
+  consumedAt           DateTime? @db.Timestamptz(3)
+
+  tenantId        String
+  tenant          Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  configurationId String
+  configuration   TenantOidcConfiguration @relation(fields: [configurationId], references: [id], onDelete: Cascade)
+  linkUserId      String?
+  linkUser        User?                   @relation("OidcLinkSubject", fields: [linkUserId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  @@index([tenantId, expiresAt])
+  @@index([configurationId])
+  @@index([linkUserId, purpose, expiresAt])
+  @@map("oidc_login_transactions")
+}
+
+// The validated issuer/subject pair is the durable identity key. Email is never used as
+// the identity key after an account is linked.
+model ExternalIdentity {
+  id          String   @id @default(cuid())
+  issuer      String
+  subject     String
+  status      ExternalIdentityStatus @default(ACTIVE)
+  statusReason String?
+  lastLoginAt DateTime @db.Timestamptz(3)
+  revokedAt   DateTime? @db.Timestamptz(3)
+
+  configurationId String
+  configuration   TenantOidcConfiguration @relation(fields: [configurationId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+
+  @@unique([issuer, subject])
+  @@index([configurationId, userId, status])
+  @@index([userId])
+  @@map("external_identities")
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -539,12 +911,12 @@ model Passkey {
   deviceType   String?
   deviceName   String?
   transports   String[]
-  lastUsedAt   DateTime?
+  lastUsedAt   DateTime? @db.Timestamptz(3)
 
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  createdAt DateTime @default(now())
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
 
   @@index([userId])
   @@map("passkeys")
@@ -562,13 +934,13 @@ model OTP {
   target      String // email address or phone number
   attempts    Int       @default(0)
   maxAttempts Int       @default(5)
-  expiresAt   DateTime
-  usedAt      DateTime?
+  expiresAt   DateTime  @db.Timestamptz(3)
+  usedAt      DateTime? @db.Timestamptz(3)
 
   userId String?
   user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  createdAt DateTime @default(now())
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
 
   @@index([target, purpose])
   @@index([userId])
@@ -587,8 +959,8 @@ model TenantMember {
   // Custom permissions beyond the base role (stored as JSON array)
   permissions String[] @default([])
 
-  joinedAt  DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  joinedAt  DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
 
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -596,9 +968,13 @@ model TenantMember {
   tenantId String
   tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
+  customRoleId String?
+  customRole   CustomRole? @relation(fields: [customRoleId], references: [id], onDelete: SetNull)
+
   @@unique([userId, tenantId])
   @@index([tenantId])
   @@index([userId])
+  @@index([customRoleId])
   @@map("tenant_members")
 }
 
@@ -610,17 +986,17 @@ model TenantInvite {
   id         String     @id @default(cuid())
   email      String
   role       MemberRole @default(MEMBER)
-  token      String     @unique // signed invite token
-  expiresAt  DateTime
-  acceptedAt DateTime?
-  revokedAt  DateTime?
+  token      String     @unique // SHA-256 digest; the raw invitation credential is returned once
+  expiresAt  DateTime   @db.Timestamptz(3)
+  acceptedAt DateTime?  @db.Timestamptz(3)
+  revokedAt  DateTime?  @db.Timestamptz(3)
 
   tenantId String
   tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   invitedById String // userId of who sent the invite
 
-  createdAt DateTime @default(now())
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
 
   @@index([email])
   @@index([tenantId])
@@ -655,7 +1031,7 @@ model AuditLog {
   tenantId String?
   tenant   Tenant? @relation(fields: [tenantId], references: [id], onDelete: SetNull)
 
-  createdAt DateTime @default(now())
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
 
   // AuditLog is NEVER updated or deleted — append-only
   @@index([tenantId, createdAt(sort: Desc)])
@@ -663,6 +1039,48 @@ model AuditLog {
   @@index([userId])
   @@index([correlationId])
   @@map("audit_logs")
+}
+
+// Tenant portability exports are asynchronous, immutable results. Archive bytes live in the approved
+// object store; this row retains lifecycle, integrity and signing evidence without storing archive data.
+model TenantDataExport {
+  id                 String                 @id @default(cuid())
+  status             TenantDataExportStatus @default(REQUESTED)
+  formatVersion      String                 @default("gigalibs.tenant-portability.v1")
+  requestReason      String
+  attempts           Int                    @default(0)
+  availableAt        DateTime               @default(now()) @db.Timestamptz(3)
+  claimedAt          DateTime?              @db.Timestamptz(3)
+  snapshotStartedAt  DateTime?              @db.Timestamptz(3)
+  completedAt        DateTime?              @db.Timestamptz(3)
+  expiresAt          DateTime?              @db.Timestamptz(3)
+  archiveDeletedAt   DateTime?              @db.Timestamptz(3)
+  storageKey         String?                @unique
+  archiveSha256      String?
+  archiveBytes       Int?
+  manifest           Json?
+  manifestSha256     String?
+  signatureAlgorithm String?
+  signatureKeyId     String?
+  signaturePublicKey String?
+  signatureValue     String?
+  totalRecords       Int?
+  failureCode        String?
+  failureMessage     String?
+
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  requestedById String
+  requestedBy   User   @relation("TenantDataExportRequester", fields: [requestedById], references: [id], onDelete: Restrict)
+
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+
+  @@index([tenantId, status, createdAt(sort: Desc)])
+  @@index([status, availableAt])
+  @@index([requestedById])
+  @@map("tenant_data_exports")
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -1020,11 +1438,11 @@ model TenantEnvironment {
   status        EnvironmentStatus         @default(ACTIVE)
   region        String
   retentionDays Int
-  expiresAt     DateTime?
+  expiresAt     DateTime?                 @db.Timestamptz(3)
   configuration Json?
   createdById   String
-  createdAt     DateTime                  @default(now())
-  updatedAt     DateTime                  @updatedAt
+  createdAt     DateTime                  @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime                  @updatedAt @db.Timestamptz(3)
 
   credentialRefs        CredentialReference[]
   connections           SourceConnection[]
@@ -2062,12 +2480,13 @@ model CustomRole {
 
   name        String
   description String?
-  color       String  @default("#6366f1")
-  isSystem    Boolean @default(false)
-  permissions Json // Map of module -> permission boolean flags
+  color       String         @default("#6366f1")
+  isSystem    Boolean        @default(false)
+  permissions Json // Validated array of tenant-scoped permission codes
+  members     TenantMember[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
 
   @@unique([tenantId, name])
   @@index([tenantId])
@@ -2084,8 +2503,8 @@ model UserGroup {
   color       String   @default("#3b82f6")
   memberIds   String[] @default([])
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
 
   @@unique([tenantId, name])
   @@index([tenantId])
@@ -2575,4 +2994,195 @@ model VendorSubscription {
 
   @@index([tenantId, status])
   @@map("vendor_subscriptions")
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// GOVERNED UNIVERSAL CONFIGURATION STUDIO (WI-OI-039)
+// ═══════════════════════════════════════════════════════════════════════
+
+model ConfigurationChangeSet {
+  id                  String   @id @default(cuid())
+  tenantId            String
+  tenant              Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  moduleKey           String
+  entityKey           String
+  surfaceKey          String
+  status              String   @default("DRAFT")
+  definition          Json
+  compiledManifest    Json?
+  checksum            String?
+  findings            Json
+  compatibility       String?
+  reason              String
+  version             Int      @default(1)
+  createdById         String
+  submittedAt         DateTime? @db.Timestamptz(3)
+  approvedById        String?
+  approvedAt          DateTime? @db.Timestamptz(3)
+  rejectedById        String?
+  rejectedAt          DateTime? @db.Timestamptz(3)
+  publishedAt         DateTime? @db.Timestamptz(3)
+  createdAt           DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime @updatedAt @db.Timestamptz(3)
+  publishedVersions   ConfigurationPublishedVersion[]
+
+  @@index([tenantId, status, updatedAt(sort: Desc)])
+  @@index([tenantId, moduleKey, entityKey, surfaceKey])
+  @@map("configuration_change_sets")
+}
+
+model ConfigurationPublishedVersion {
+  id                  String   @id @default(cuid())
+  tenantId            String
+  tenant              Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  changeSetId         String
+  changeSet           ConfigurationChangeSet @relation(fields: [changeSetId], references: [id], onDelete: Restrict)
+  moduleKey           String
+  entityKey           String
+  surfaceKey          String
+  sequence            Int
+  manifest            Json
+  checksum            String
+  compilerVersion     String
+  publishedById       String
+  publishedAt         DateTime @default(now()) @db.Timestamptz(3)
+  activations         ConfigurationActivation[]
+  extensionValues     ConfigurationExtensionValue[]
+  records             ConfigurationRecord[]
+  templates           ConfigurationTemplate[]
+
+  @@unique([tenantId, moduleKey, entityKey, surfaceKey, sequence])
+  @@unique([tenantId, checksum])
+  @@index([tenantId, publishedAt(sort: Desc)])
+  @@map("configuration_published_versions")
+}
+
+model ConfigurationActivation {
+  id                  String   @id @default(cuid())
+  tenantId            String
+  tenant              Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  publishedVersionId  String
+  publishedVersion    ConfigurationPublishedVersion @relation(fields: [publishedVersionId], references: [id], onDelete: Restrict)
+  moduleKey           String
+  entityKey           String
+  surfaceKey          String
+  environmentKey      String
+  cohortKey           String
+  status              String   @default("ACTIVE")
+  reason              String
+  activatedById       String
+  activatedAt         DateTime @default(now()) @db.Timestamptz(3)
+  deactivatedAt       DateTime? @db.Timestamptz(3)
+
+  @@index([tenantId, environmentKey, cohortKey, status])
+  @@index([tenantId, moduleKey, entityKey, surfaceKey, status])
+  @@map("configuration_activations")
+}
+
+model ConfigurationExtensionValue {
+  id                  String   @id @default(cuid())
+  tenantId            String
+  tenant              Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  ownerType           String
+  ownerId             String
+  publishedVersionId  String
+  publishedVersion    ConfigurationPublishedVersion @relation(fields: [publishedVersionId], references: [id], onDelete: Restrict)
+  manifestChecksum    String
+  values              Json
+  valuesChecksum      String
+  version             Int      @default(1)
+  createdById         String
+  updatedById         String
+  createdAt           DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime @updatedAt @db.Timestamptz(3)
+
+  @@unique([tenantId, ownerType, ownerId])
+  @@index([tenantId, publishedVersionId])
+  @@map("configuration_extension_values")
+}
+
+model ConfigurationIdempotencyRecord {
+  id                  String   @id @default(cuid())
+  tenantId            String
+  tenant              Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  actorId              String
+  operation            String
+  idempotencyKey       String
+  requestChecksum      String
+  response             Json
+  statusCode           Int
+  createdAt            DateTime @default(now()) @db.Timestamptz(3)
+
+  @@unique([tenantId, actorId, operation, idempotencyKey])
+  @@index([tenantId, createdAt(sort: Desc)])
+  @@map("configuration_idempotency_records")
+}
+
+model ConfigurationRecord {
+  id                 String   @id @default(cuid())
+  tenantId           String
+  tenant              Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  entityKey           String
+  publishedVersionId String
+  publishedVersion   ConfigurationPublishedVersion @relation(fields: [publishedVersionId], references: [id], onDelete: Restrict)
+  manifestChecksum   String
+  values             Json
+  valuesChecksum     String
+  version            Int      @default(1)
+  createdById        String
+  updatedById        String
+  createdAt          DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt          DateTime @updatedAt @db.Timestamptz(3)
+  deletedAt          DateTime? @db.Timestamptz(3)
+
+  @@index([tenantId, entityKey, deletedAt, updatedAt])
+  @@index([tenantId, publishedVersionId])
+  @@map("configuration_records")
+}
+
+model ConfigurationTemplate {
+  id                 String   @id @default(cuid())
+  tenantId           String
+  tenant             Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  entityKey          String
+  name               String
+  description        String?
+  publishedVersionId String
+  publishedVersion   ConfigurationPublishedVersion @relation(fields: [publishedVersionId], references: [id], onDelete: Restrict)
+  manifestChecksum   String
+  values             Json
+  valuesChecksum     String
+  sourceTemplateId   String?
+  sourceTemplate     ConfigurationTemplate?  @relation("TemplateClones", fields: [sourceTemplateId], references: [id], onDelete: SetNull)
+  clones             ConfigurationTemplate[] @relation("TemplateClones")
+  version            Int      @default(1)
+  createdById        String
+  updatedById        String
+  createdAt          DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt          DateTime @updatedAt @db.Timestamptz(3)
+  deletedAt          DateTime? @db.Timestamptz(3)
+
+  @@index([tenantId, entityKey, deletedAt, updatedAt(sort: Desc)])
+  @@index([tenantId, publishedVersionId])
+  @@map("configuration_templates")
+}
+
+model ConfigurationSavedFilter {
+  id              String   @id @default(cuid())
+  tenantId        String
+  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  entityKey       String
+  name            String
+  filterKey       String?
+  filterValue     String?
+  search          String?
+  sortKey         String?
+  sortDirection   String   @default("DESC")
+  createdById     String
+  createdAt       DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime @updatedAt @db.Timestamptz(3)
+
+  @@index([tenantId, entityKey, createdAt(sort: Desc)])
+  @@index([createdById])
+  @@map("configuration_saved_filters")
 }
