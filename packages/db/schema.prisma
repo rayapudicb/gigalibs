@@ -531,6 +531,16 @@ model Tenant {
   isolationBinding        TenantIsolationBinding?
   subdomainBinding        TenantSubdomainBinding?
 
+  // Org hierarchy for multi-tenant subsidiary tree (Phase 5)
+  parentTenantId      String?
+  parentTenant        Tenant?  @relation("TenantHierarchy", fields: [parentTenantId], references: [id])
+  subsidiaries        Tenant[] @relation("TenantHierarchy")
+
+  // Saga orchestration instances
+  sagaInstances       SagaInstance[]
+  // Governor rate bucket (one per tenant)
+  rateBucket          TenantRateBucket?
+
   @@index([slug])
   @@map("tenants")
 }
@@ -3185,4 +3195,61 @@ model ConfigurationSavedFilter {
   @@index([tenantId, entityKey, createdAt(sort: Desc)])
   @@index([createdById])
   @@map("configuration_saved_filters")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Phase 3 — Durable Saga State Machine (replaces in-memory sagaOrchestratorStore)
+// ─────────────────────────────────────────────────────────────────────────────
+
+model SagaInstance {
+  id                    String     @id @default(cuid())
+  tenantId              String
+  tenant                Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  sagaType              String     // DISPUTE_ESCROW_SETTLEMENT | GRID_CONTINGENCY_FAILOVER | TREASURY_RTGS_SETTLEMENT
+  status                String     @default("STARTED") // STARTED | IN_PROGRESS | COMPLETED | COMPENSATING | COMPENSATED | FAILED
+  payload               Json
+  compensationTriggered Boolean    @default(false)
+  auditLedgerDigest     String?
+  logSummary            String[]   @default([])
+  steps                 SagaStep[]
+  createdAt             DateTime   @default(now()) @db.Timestamptz(3)
+  updatedAt             DateTime   @updatedAt @db.Timestamptz(3)
+  completedAt           DateTime?  @db.Timestamptz(3)
+
+  @@index([tenantId, status, createdAt(sort: Desc)])
+  @@map("saga_instances")
+}
+
+model SagaStep {
+  id                  String       @id @default(cuid())
+  sagaInstanceId      String
+  sagaInstance        SagaInstance @relation(fields: [sagaInstanceId], references: [id], onDelete: Cascade)
+  stepIndex           Int
+  name                String
+  targetSystem        String       // SAP_S4HANA | SALESFORCE_CRM | TREASURY_DTS | CRYPTOGRAPHIC_VAULT | SCADA_GRID
+  forwardAction       String
+  compensatingAction  String
+  status              String       @default("PENDING") // PENDING | EXECUTING | SUCCESS | FAILED | COMPENSATED
+  fipsSha256Checksum  String?
+  errorMessage        String?
+  executedAt          DateTime?    @db.Timestamptz(3)
+  compensatedAt       DateTime?    @db.Timestamptz(3)
+
+  @@index([sagaInstanceId, stepIndex])
+  @@map("saga_steps")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Phase 4 — Durable Governor Rate Buckets (replaces in-memory Map<tenantId, BucketState>)
+// ─────────────────────────────────────────────────────────────────────────────
+
+model TenantRateBucket {
+  tenantId              String   @id
+  tenant                Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tier                  String   @default("STANDARD") // FREE | STANDARD | PRO | ENTERPRISE
+  tokens                Float    @default(0)
+  lastRefillTimestampMs BigInt
+  updatedAt             DateTime @updatedAt @db.Timestamptz(3)
+
+  @@map("tenant_rate_buckets")
 }

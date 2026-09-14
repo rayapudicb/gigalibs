@@ -9,6 +9,10 @@ import { TenantBoundaryGuard } from '@gigalibs/tenancy-nest';
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { PlatformController } from './platform.controller.js';
+import { TenantDataExportController } from './tenant-data-export.controller.js';
+import { TenantDataExportService } from './tenant-data-export.service.js';
+import { TenantDataExportWorker } from './tenant-data-export.worker.js';
+import { TenantExportSnapshotService } from './tenant-export-snapshot.service.js';
 
 const manifests: ModuleManifest[] = [
   {
@@ -28,8 +32,21 @@ const manifests: ModuleManifest[] = [
     id: 'gigalibs.auth',
     name: 'Authentication',
     version: '0.1.0',
-    description: 'Password authentication and rotating refresh-token sessions.',
-    capabilities: ['register', 'login', 'refresh-token-rotation', 'logout'],
+    description:
+      'Password and tenant OIDC authentication, enforced TOTP, controlled key rollover, and rotating refresh-token sessions.',
+    capabilities: [
+      'register',
+      'login',
+      'refresh-token-rotation',
+      'logout',
+      'totp-enrollment',
+      'tenant-mfa-enforcement',
+      'versioned-control-key-rollover',
+      'two-person-mfa-assisted-recovery',
+      'oidc-authorization-code-pkce',
+      'oidc-identity-mapping',
+      'oidc-jit-provisioning',
+    ],
     requires: { 'gigalibs.kernel': '^0.1.0' },
     optional: {},
     permissions: [],
@@ -42,10 +59,36 @@ const manifests: ModuleManifest[] = [
     name: 'Tenancy Control Plane',
     version: '0.1.0',
     description: 'Tenant lifecycle, membership, provisioning state, and tenant context.',
-    capabilities: ['tenant-create', 'tenant-list', 'tenant-status', 'membership'],
+    capabilities: [
+      'tenant-create',
+      'tenant-list',
+      'tenant-status',
+      'membership-list',
+      'membership-invite',
+      'membership-accept',
+      'membership-role-status-update',
+      'custom-role-crud',
+      'custom-role-assignment',
+      'dns-domain-verification',
+      'signed-tenant-data-export',
+      'expiring-export-download',
+    ],
     requires: { 'gigalibs.kernel': '^0.1.0', 'gigalibs.auth': '^0.1.0' },
     optional: {},
-    permissions: ['tenant:read', 'tenant:update'],
+    permissions: [
+      'tenant:read',
+      'tenant:update',
+      'users:read',
+      'users:update',
+      'roles:read',
+      'roles:create',
+      'roles:update',
+      'roles:delete',
+      'invites:read',
+      'invites:create',
+      'invites:delete',
+      'tenant:export',
+    ],
     eventsProduced: ['tenant.provisioning-requested.v1'],
     eventsConsumed: [],
     configurationNamespace: 'tenancy',
@@ -56,7 +99,7 @@ const manifests: ModuleManifest[] = [
     name: 'Tenant Platform Settings',
     version: '0.1.0',
     description: 'Versioned tenant branding, security, localization, and feature configuration.',
-    capabilities: ['settings-read', 'settings-update', 'optimistic-concurrency'],
+    capabilities: ['settings-read', 'settings-update', 'optimistic-concurrency', 'mfa-policy'],
     requires: { 'gigalibs.kernel': '^0.1.0', 'gigalibs.tenancy': '^0.1.0' },
     optional: {},
     permissions: ['settings:read', 'settings:update'],
@@ -73,8 +116,8 @@ import { ApMatchingService } from './ap-matching.service.js';
 import { ApPolicyService } from './ap-policy.service.js';
 import { ApController } from './ap.controller.js';
 import { AuthorizationController } from './authorization.controller.js';
-import { ConnectorHttpClient } from './connector-http.client.js';
 import { ConnectorCredentialService } from './connector-credential.service.js';
+import { ConnectorHttpClient } from './connector-http.client.js';
 import { ConnectorPostgresClient } from './connector-postgres.client.js';
 import { ConnectorProfileService } from './connector-profile.service.js';
 import { ControlOutboxWorker } from './control-outbox.worker.js';
@@ -85,19 +128,28 @@ import { ExecutionEventSignatureGuard } from './execution-event-signature.guard.
 import { ExecutionEventsController } from './execution-events.controller.js';
 import { ExecutionEventsService } from './execution-events.service.js';
 import { JsonSchemaService } from './json-schema.service.js';
-import { MetricsService } from './metrics.service.js';
 import { MetricsTokenGuard } from './metrics-token.guard.js';
+import { MetricsService } from './metrics.service.js';
+import { ObjectStorageService } from './object-storage.service.js';
 import { OperationalIntelligenceController } from './operational-intelligence.controller.js';
 import { OperationalIntelligenceService } from './operational-intelligence.service.js';
-import { ObjectStorageService } from './object-storage.service.js';
 import { PayloadCryptoService } from './payload-crypto.service.js';
 import { RetentionService } from './retention.service.js';
-import { SourcePayloadParserService } from './source-payload-parser.service.js';
 import { SourceFileCleanupWorker } from './source-file-cleanup.worker.js';
+import { SourcePayloadParserService } from './source-payload-parser.service.js';
 import { ValueLedgerController } from './value-ledger.controller.js';
 import { ValueLedgerService } from './value-ledger.service.js';
 import { WorkflowController } from './workflow.controller.js';
 import { WorkflowService } from './workflow.service.js';
+import { ConfigurationStudioController } from './configuration-studio.controller.js';
+import { ConfigurationStudioService } from './configuration-studio.service.js';
+import { GovernorController } from './governor.controller.js';
+import { GovernorService } from './governor.service.js';
+import { GovernorThrottlingGuard } from './governor.guard.js';
+import { GovernorPersistentService } from './governor-persistent.service.js';
+import { GovernorPersistentThrottlingGuard } from './governor-persistent.guard.js';
+import { ScimController } from './scim.controller.js';
+import { ScimService } from './scim.service.js';
 
 @Module({
   imports: [
@@ -117,6 +169,10 @@ import { WorkflowService } from './workflow.service.js';
     ExceptionController,
     ValueLedgerController,
     WorkflowController,
+    TenantDataExportController,
+    ConfigurationStudioController,
+    GovernorController,
+    ScimController,
   ],
   providers: [
     WorkflowService,
@@ -143,6 +199,15 @@ import { WorkflowService } from './workflow.service.js';
     ExceptionService,
     ValueLedgerService,
     ControlOutboxWorker,
+    TenantDataExportService,
+    TenantExportSnapshotService,
+    TenantDataExportWorker,
+    ConfigurationStudioService,
+    GovernorService,
+    GovernorThrottlingGuard,
+    GovernorPersistentService,
+    GovernorPersistentThrottlingGuard,
+    ScimService,
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: TenantBoundaryGuard },
     { provide: APP_GUARD, useClass: RbacGuard },
