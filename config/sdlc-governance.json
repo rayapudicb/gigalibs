@@ -38,13 +38,13 @@
   "workInProgressLimits": {
     "implementationModules": 1,
     "activeImplementationWorkItems": [
-      "WI-OI-039"
+      "WI-OI-043"
     ]
   },
   "relativeDeliveryEstimate": {
     "total": 100,
-    "earned": 44,
-    "remaining": 56,
+    "earned": 56,
+    "remaining": 44,
     "basis": "Blueprint Releases 0-4 including implementation and required G0-G7 evidence"
   },
   "mandatoryArtifacts": [

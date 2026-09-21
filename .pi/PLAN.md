@@ -67,6 +67,16 @@ one accepted module at a time. The exhaustive audit and manual/UAT verification 
 WI-OI-040 separately baselines the WhooCrew-derived source-backed event billing and supplemental-invoice
 extension to FR-17. It remains a proposed G0–G3 design and does not enter Build while WI-OI-039 is active.
 
+## Value-first all-module release directive — 2026-09-15
+
+The repository owner directed the program to move every claimed module to a genuine `RELEASED` state for
+both managed-cloud and customer-managed deployment. WI-OI-041 records the
+[value-first all-module release program](../docs/plans/value-first-all-module-release-program.md). Modules
+with verified cash, cost or worker-time outcomes are sequenced first; demand-led modules without a named
+client baseline remain last and contained. This directive does not waive G0-G7, the IAM No-Go, independent
+human acceptance or the one-module Build limit. WI-OI-039 remains the sole active implementation stream;
+AR remains the first client-value module after its exit handoff.
+
 ## Integrated certification commands
 
 The commands require explicitly configured local or integration endpoints and credentials:
@@ -84,3 +94,20 @@ pnpm --dir apps/workflow-platform verify:bff
 ```
 
 Certification scripts create isolated evidence records. They never provide runtime fallback data.
+
+## Analytics Studio Build directive — 2026-09-22
+
+The repository owner directed WI-OI-043 (External Data Analytics & Reporting Studio) to enter Build as the
+sole active implementation stream. WI-OI-039 and WI-OI-042 are moved to Review pending named human G5
+sign-offs; their G4 agent-executable evidence is complete. WI-OI-043 is now the canonical active Build
+item in all three governance records.
+
+Build sequence: Phase 1 (Connector Hub + PostgreSQL adapter) → Phase 2 (Ingestion engine) → Phase 3
+(Schema discovery + Data Studio) → Phase 4 (Analytical datasets + semantic model) → Phase 5 (Query engine
++ ECharts charts/dashboards) → Phase 6 (Reports + CSV + delivery) → Phase 7 (Lineage + audit + evidence).
+
+Visualization library: Apache ECharts (ADR-0004). Selected for B2B SaaS scale: 80+ chart types, canvas +
+WebGL renderer, DataZoom, cross-filtering, parallel coordinates, geo maps — the full Tableau-evolution
+surface. Apache 2.0 license. Wrapper: echarts-for-react.
+
+G5–G7 independent human review requirements remain in force. No agent may mark human acceptance.
