@@ -87,10 +87,11 @@ export const INDUSTRY_SECTORS: IndustrySector[] = [
     tagline: 'Precision Agriculture, Silo Telemetry & Soil Moisture Analytics',
     description: 'Collect critical indicators for agricultural production including silo thermal profiles, grain moisture, soil NPK nutrients, and real-time sensor alarms.',
     kpis: [
-      { label: 'Active Monitored Silos', value: '14 Units', delta: '+2 online', isPositive: true },
-      { label: 'Average Grain Temp', value: '18.4 °C', delta: '-0.6° nominal', isPositive: true },
-      { label: 'Field Moisture Index', value: '64.2 %', delta: 'Optimal', isPositive: true },
-      { label: 'Active Critical Alarms', value: '0 Active', delta: '100% Normal', isPositive: true },
+      // CONTAINED_P0: hardcoded KPI values removed from catalog IndustrySector definition.
+      // These figures (silo count, grain temp, moisture index, alarm count) were static
+      // constants presented as live operational data — fabricated data in production routing.
+      // KPI values must come from the analytical dataset (WI-OI-043) once the ingestion
+      // pipeline exists. Until then this array is empty.
     ],
   },
   {
@@ -101,10 +102,7 @@ export const INDUSTRY_SECTORS: IndustrySector[] = [
     tagline: 'Substation Telemetry, High-Voltage Grids & Peak Demand Balancing',
     description: 'High-frequency telemetry monitoring distribution substations, active megawatt loads, power factor variance, and battery energy storage systems.',
     kpis: [
-      { label: 'Substation Net Load', value: '448.2 MW', delta: '+3.1% vs peak', isPositive: false },
-      { label: 'Grid Frequency', value: '60.02 Hz', delta: 'Within ±0.05 Hz', isPositive: true },
-      { label: 'Renewable Generation', value: '41.8 %', delta: '+5.4% solar/wind', isPositive: true },
-      { label: 'Transformer Health', value: '99.4 %', delta: 'Nominal Temp', isPositive: true },
+      // CONTAINED_P0: hardcoded energy KPI values removed (MW load, Hz, generation %, health score).
     ],
   },
   {
@@ -115,10 +113,7 @@ export const INDUSTRY_SECTORS: IndustrySector[] = [
     tagline: 'Cold-Chain Refrigeration, Dynamic Routing & Delivery Telemetry',
     description: 'Autonomous logistics tracking temperature excursions across refrigerated containers, fuel efficiency, ETA accuracy, and fulfillment pipeline velocity.',
     kpis: [
-      { label: 'Active Fleet Vehicles', value: '142 Units', delta: '98% on route', isPositive: true },
-      { label: 'Cold-Chain Integrity', value: '99.92 %', delta: 'Zero spoilage', isPositive: true },
-      { label: 'On-Time Delivery Rate', value: '96.4 %', delta: '+1.8% vs SLA', isPositive: true },
-      { label: 'Average Fuel Burn', value: '8.4 L/100km', delta: '-4.2% eco-route', isPositive: true },
+      // CONTAINED_P0: hardcoded logistics KPI values removed (fleet count, cold-chain %, OTD %, fuel).
     ],
   },
   {
@@ -129,10 +124,7 @@ export const INDUSTRY_SECTORS: IndustrySector[] = [
     tagline: 'Overall Equipment Effectiveness (OEE), Anomaly Detection & Robotics',
     description: 'Robotic assembly line sensor streams measuring vibration harmonics, thermal anomalies, machine cycle velocity, and scrap reduction analytics.',
     kpis: [
-      { label: 'Overall OEE Index', value: '87.6 %', delta: '+2.4% World Class', isPositive: true },
-      { label: 'Cycle Time / Unit', value: '42.8 sec', delta: '-1.4s optimized', isPositive: true },
-      { label: 'Scrap Defect Rate', value: '0.14 %', delta: 'Six-Sigma target', isPositive: true },
-      { label: 'Vibration Anomalies', value: '0 Critical', delta: 'Bearing healthy', isPositive: true },
+      // CONTAINED_P0: hardcoded manufacturing KPI values removed (OEE, cycle time, defect rate, anomalies).
     ],
   },
   {
@@ -143,10 +135,7 @@ export const INDUSTRY_SECTORS: IndustrySector[] = [
     tagline: 'ICU Bed Occupancy, Patient Vitals Telemetry & Clinical SLA Compliance',
     description: 'Continuous patient telemetry tracking multi-parameter vitals (SpO2, Heart Rate, Arterial BP), critical triage wait times, and pharmacy dispensing reconciliation.',
     kpis: [
-      { label: 'ICU Bed Occupancy', value: '82.4 %', delta: '18 beds available', isPositive: true },
-      { label: 'Mean Triage Wait Time', value: '14.2 min', delta: '-3.8 min vs target', isPositive: true },
-      { label: 'Critical Vital Alerts', value: '1 Monitored', delta: 'Telemetry stable', isPositive: true },
-      { label: 'Clinical SLA Score', value: '99.85 %', delta: 'Joint Commission A+', isPositive: true },
+      // CONTAINED_P0: hardcoded healthcare KPI values removed (bed occupancy, triage time, SLA score).
     ],
   },
   {
@@ -157,10 +146,8 @@ export const INDUSTRY_SECTORS: IndustrySector[] = [
     tagline: 'Cashflow Variance, 3-Way Match AP Burndown & Working Capital',
     description: 'Corporate treasury intelligence analyzing DSO/DPO divergence, multi-currency FX exposure, autonomous invoice reconciliation, and revenue realization bridges.',
     kpis: [
-      { label: 'Net Available Cashflow', value: '$14.82 M', delta: '+$1.2M this month', isPositive: true },
-      { label: 'Days Sales Outstanding', value: '31.2 Days', delta: '-4.8d acceleration', isPositive: true },
-      { label: '3-Way AP Match Rate', value: '94.8 %', delta: 'Autonomous cleared', isPositive: true },
-      { label: 'Reconciliation Drift', value: '$0.00', delta: 'ACID Balance verified', isPositive: true },
+      // CONTAINED_P0: hardcoded FinOps KPI values removed ($14.82M cashflow, DSO, AP match rate).
+      // These dollar figures and ratios were fabricated data in production routing.
     ],
   },
 ];
