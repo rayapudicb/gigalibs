@@ -1,0 +1,14 @@
+{
+  "name": "@gigalibs/e2e",
+  "version": "0.0.1",
+  "private": true,
+  "description": "End-to-end Playwright certification suite for WI-OI-042",
+  "scripts": {
+    "test": "playwright test",
+    "test:report": "playwright show-report test-results/playwright-report"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.13.0",
+    "@playwright/test": "1.62.1"
+  }
+}
