@@ -13,9 +13,10 @@ import { TelemetryService } from './metrics/telemetry.service.js';
 import { ActionsController } from './actions/actions.controller.js';
 import { ActionsService } from './actions/actions.service.js';
 import { ConnectorModule } from './connectors/connector.module.js';
+import { IngestionModule } from './ingestion/ingestion.module.js';
 
 @Module({
-  imports: [ConnectorModule],
+  imports: [ConnectorModule, IngestionModule],
   controllers: [
     HealthController,
     SetupController,
