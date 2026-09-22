@@ -1,7 +1,7 @@
 {
   "name": "@gigalibs/workflow-platform",
   "version": "0.0.1",
-  "description": "Enterprise AI Workflow Orchestration Platform — Next.js frontend",
+  "description": "Enterprise AI Workflow Orchestration Platform \u2014 Next.js frontend",
   "private": true,
   "scripts": {
     "dev": "next dev --port 5180 --hostname 0.0.0.0",
@@ -9,17 +9,22 @@
     "start": "next start --port 5180 --hostname 0.0.0.0",
     "typecheck": "tsc --noEmit",
     "lint": "next lint",
-    "verify:bff": "node scripts/verify-workflow-bff.mjs"
+    "verify:bff": "node scripts/verify-workflow-bff.mjs",
+    "verify:configuration-accessibility": "node scripts/verify-configuration-studio-accessibility.mjs"
   },
   "dependencies": {
     "@gigalibs/ar-domain": "workspace:*",
+    "@gigalibs/auth-core": "workspace:*",
     "@gigalibs/broker": "workspace:*",
     "@gigalibs/charts-react": "workspace:*",
     "@gigalibs/configuration-react": "workspace:*",
     "@gigalibs/contracts": "workspace:*",
+    "@gigalibs/data-import-export-react": "workspace:*",
     "@gigalibs/db": "workspace:*",
     "@gigalibs/i18n": "workspace:*",
     "@gigalibs/logger": "workspace:*",
+    "@gigalibs/maps-core": "workspace:*",
+    "@gigalibs/maps-react": "workspace:*",
     "@medusajs/icons": "^2.20.1",
     "@medusajs/ui": "^4.2.3",
     "@xyflow/react": "^12.3.6",
@@ -33,8 +38,10 @@
     "zustand": "^5.0.3"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.13.0",
     "@gigalibs/ar-domain": "workspace:*",
     "@medusajs/ui-preset": "^2.20.1",
+    "@playwright/test": "1.62.1",
     "@types/node": "^24.10.0",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",

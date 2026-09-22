@@ -1,6 +1,6 @@
 {
   "name": "@gigalibs/data-import-export-react",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "CSV/Excel import+export. Column mapping. Bulk upsert. Background jobs [react]",
   "private": true,
   "main": "./dist/index.js",
@@ -20,7 +20,11 @@
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist *.tsbuildinfo"
   },
+  "peerDependencies": {
+    "react": "^18.0.0 || ^19.0.0"
+  },
   "devDependencies": {
+    "@types/react": "^18.3.0",
     "typescript": "^5.8.3",
     "vitest": "^3.0.0"
   }

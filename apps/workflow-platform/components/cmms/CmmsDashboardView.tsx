@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useCurrency } from '@/components/currency/CurrencyLocaleContext';
 import {
   Alert,
@@ -21,11 +22,11 @@ import {
   AlertOctagon,
   AlertTriangle,
   ArrowRight,
+  ArrowUpRight,
   BarChart3,
   Boxes,
   Calendar,
   CheckCircle2,
-  ClipboardList,
   Clock,
   Cpu,
   Factory,
@@ -37,11 +38,9 @@ import {
   RefreshCw,
   Search,
   ShieldAlert,
-  ShoppingCart,
   Sparkles,
-  Truck,
-  Users,
   Wrench,
+  Download,
   Zap,
 } from 'lucide-react';
 import type {
@@ -60,16 +59,38 @@ import ReliabilityAnalyticsView from './ReliabilityAnalyticsView';
 import AssetFormModal from './AssetFormModal';
 import PmScheduleFormModal from './PmScheduleFormModal';
 import PartFormModal from './PartFormModal';
-import WoCalendarView from './WoCalendarView';
-import WoWorkloadView from './WoWorkloadView';
-import RequestPortalView from './RequestPortalView';
-import PeopleTeamsView from './PeopleTeamsView';
-import PurchaseOrderView from './PurchaseOrderView';
-import VendorsView from './VendorsView';
+import VisualDispatchBoard from './VisualDispatchBoard';
+import {
+  ImportWizard,
+  ExportButton,
+  JobStatusDrawer,
+  type ImportableEntityType,
+} from '@gigalibs/data-import-export-react';
+import { importExportApi } from '@/lib/import-export-api-instance';
 
-export default function CmmsDashboardView({ initialTab = 'work-orders' }: { initialTab?: string } = {}) {
+export interface CmmsDashboardViewProps {
+  initialTab?: string;
+  isOverview?: boolean;
+}
+
+export default function CmmsDashboardView({
+  initialTab = 'work-orders',
+  isOverview,
+}: CmmsDashboardViewProps = {}) {
   const { currency } = useCurrency();
-  const [activeTab, setActiveTab] = useState(initialTab);
+  const showOverview = isOverview ?? (initialTab === 'overview');
+  const normalizedTab = (tab?: string) => {
+    if (tab === 'analytics') return 'reliability';
+    return tab || 'work-orders';
+  };
+  const [activeTab, setActiveTab] = useState(() => normalizedTab(initialTab));
+
+  useEffect(() => {
+    if (initialTab) {
+      setActiveTab(normalizedTab(initialTab));
+    }
+  }, [initialTab]);
+
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -80,18 +101,18 @@ export default function CmmsDashboardView({ initialTab = 'work-orders' }: { init
   const [parts, setParts] = useState<CmmsPart[]>([]);
   const [schedules, setSchedules] = useState<CmmsPmSchedule[]>([]);
   const [metrics, setMetrics] = useState<CmmsMetrics>({
-    completedCount: 14,
-    openCount: 6,
-    inProgressCount: 3,
-    onHoldCount: 1,
-    activeEmergencies: 1,
-    overdueCount: 2,
-    avgCycleTimeHours: 3.4,
+    completedCount: 0,
+    openCount: 0,
+    inProgressCount: 0,
+    onHoldCount: 0,
+    activeEmergencies: 0,
+    overdueCount: 0,
+    avgCycleTimeHours: 0,
   });
   const [inventoryMetrics, setInventoryMetrics] = useState<CmmsInventoryMetrics>({
-    totalParts: 42,
-    lowStockCount: 3,
-    totalInventoryValuation: 86450,
+    totalParts: 0,
+    lowStockCount: 0,
+    totalInventoryValuation: 0,
   });
 
   // Modal / Drawer States
@@ -103,9 +124,15 @@ export default function CmmsDashboardView({ initialTab = 'work-orders' }: { init
   const [showPartModal, setShowPartModal] = useState(false);
   const [selectedPartForEdit, setSelectedPartForEdit] = useState<CmmsPart | null>(null);
   const [showReadingModal, setShowReadingModal] = useState(false);
+  const [selectedMeterForReading, setSelectedMeterForReading] = useState<CmmsMeter | null>(null);
   const [showPartTxModal, setShowPartTxModal] = useState(false);
   const [selectedPart, setSelectedPart] = useState<CmmsPart | null>(null);
   const [selectedWoForWorkbench, setSelectedWoForWorkbench] = useState<CmmsWorkOrder | null>(null);
+
+  // Import / Export state
+  const [showImportWizard, setShowImportWizard] = useState(false);
+  const [importWizardEntity, setImportWizardEntity] = useState<ImportableEntityType>('assets');
+  const [showJobDrawer, setShowJobDrawer] = useState(false);
 
   // Form States
   const [newAsset, setNewAsset] = useState({
@@ -126,7 +153,7 @@ export default function CmmsDashboardView({ initialTab = 'work-orders' }: { init
     priority: 'MEDIUM' as const,
     assetId: '',
     estimatedDuration: 2,
-    assignedTo: 'Marcus Vance (Lead Millwright)',
+    assignedTo: '',
   });
 
   const [readingValue, setReadingValue] = useState<number>(4.2);
@@ -139,7 +166,7 @@ export default function CmmsDashboardView({ initialTab = 'work-orders' }: { init
   const fetchData = useCallback(async () => {
     try {
       setRefreshing(true);
-      const [woRes, assetRes, partsRes, schedRes, metricsRes] = await Promise.allSettled([
+      const [woRes, assetRes, partsRes, schedRes, meterRes, metricsRes, invRes] = await Promise.allSettled([
         requestCmms<{ data: CmmsWorkOrder[] }>('work-orders/search', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -156,7 +183,9 @@ export default function CmmsDashboardView({ initialTab = 'work-orders' }: { init
           body: JSON.stringify({ pageSize: 50 }),
         }),
         requestCmms<CmmsPmSchedule[]>('pm-schedules'),
+        requestCmms<CmmsMeter[]>('meters'),
         requestCmms<CmmsMetrics>('analytics/work-orders/overview'),
+        requestCmms<CmmsInventoryMetrics>('analytics/inventory/summary'),
       ]);
 
       if (woRes.status === 'fulfilled' && woRes.value?.data) {
@@ -176,8 +205,23 @@ export default function CmmsDashboardView({ initialTab = 'work-orders' }: { init
       if (schedRes.status === 'fulfilled' && Array.isArray(schedRes.value)) {
         setSchedules(schedRes.value);
       }
+      if (meterRes.status === 'fulfilled' && Array.isArray(meterRes.value)) {
+        setMeters(meterRes.value);
+      }
       if (metricsRes.status === 'fulfilled' && metricsRes.value) {
         setMetrics(metricsRes.value);
+      }
+      if (invRes?.status === 'fulfilled' && invRes.value) {
+        setInventoryMetrics(invRes.value);
+      } else if (partsRes.status === 'fulfilled' && partsRes.value?.data) {
+        const partsList = partsRes.value.data;
+        const lowStock = partsList.filter((p) => p.quantityOnHand <= (p.reorderPoint ?? p.minQuantity)).length;
+        const totalVal = partsList.reduce((acc, p) => acc + p.quantityOnHand * (p.unitCost ?? 0), 0);
+        setInventoryMetrics({
+          totalParts: partsList.length,
+          lowStockCount: lowStock,
+          totalInventoryValuation: Math.round(totalVal),
+        });
       }
     } catch (err: any) {
       console.warn('CMMS fetch notice:', err?.message);
@@ -192,13 +236,17 @@ export default function CmmsDashboardView({ initialTab = 'work-orders' }: { init
   }, [fetchData]);
 
   // Handle Work Order Status Machine transition
-  const handleTransitionStatus = async (woId: string, currentStatus: string) => {
+  const handleTransitionStatus = async (woId: string, currentStatus: string, expectedVersion: number) => {
     const nextStatus = currentStatus === 'OPEN' ? 'IN_PROGRESS' : currentStatus === 'IN_PROGRESS' ? 'COMPLETED' : 'OPEN';
     try {
       await requestCmms(`work-orders/${woId}/change-status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: nextStatus, feedback: `Status stepped to ${nextStatus}` }),
+        body: JSON.stringify({
+          status: nextStatus,
+          expectedVersion,
+          feedback: `Status stepped to ${nextStatus}`,
+        }),
       });
       toast.success('Work Order Updated', { description: `Status changed to ${nextStatus}` });
       fetchData();
@@ -218,28 +266,6 @@ export default function CmmsDashboardView({ initialTab = 'work-orders' }: { init
     }
   };
 
-  // Handle SCADA Ingestion Simulation
-  const handleSimulateIotSurge = async () => {
-    try {
-      await requestCmms('iot/readings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          readings: [
-            { iotTopic: 'factory/line-1/pump-a/vibration', value: 6.8, timestamp: new Date().toISOString() },
-            { iotTopic: 'factory/line-1/press/temp', value: 92.4, timestamp: new Date().toISOString() },
-          ],
-        }),
-      });
-      toast.success('SCADA Ingestion Stream Received', {
-        description: 'Vibration spike 6.8 mm/s ingested. Rule Engine evaluated threshold and fired Emergency Work Order.',
-      });
-      fetchData();
-    } catch (err: any) {
-      toast.error('IoT Ingestion Notice', { description: err.message });
-    }
-  };
-
   // Create Work Order
   const handleCreateWo = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -247,7 +273,15 @@ export default function CmmsDashboardView({ initialTab = 'work-orders' }: { init
       await requestCmms('work-orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newWo),
+        body: JSON.stringify({
+          title: newWo.title,
+          description: newWo.description || undefined,
+          type: newWo.type,
+          priority: newWo.priority,
+          assetId: newWo.assetId || undefined,
+          estimatedDuration: newWo.estimatedDuration,
+          assignedTo: newWo.assignedTo || undefined,
+        }),
       });
       toast.success('Work Order Created', { description: `${newWo.title} scheduled.` });
       setShowNewWoModal(false);
@@ -258,7 +292,7 @@ export default function CmmsDashboardView({ initialTab = 'work-orders' }: { init
         priority: 'MEDIUM',
         assetId: '',
         estimatedDuration: 2,
-        assignedTo: 'Marcus Vance (Lead Millwright)',
+        assignedTo: '',
       });
       fetchData();
     } catch (err: any) {
@@ -285,220 +319,372 @@ export default function CmmsDashboardView({ initialTab = 'work-orders' }: { init
 
   return (
     <div className="p-6 space-y-6 max-w-7xl mx-auto">
-      {/* Header Banner */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-ui-border-base pb-6">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-500">
-              <Factory className="w-5 h-5" />
-            </span>
-            <span className="text-xs font-semibold uppercase tracking-wider text-ui-fg-subtle">
-              Enterprise Asset Management & Operations Hub
-            </span>
-            <Badge color="green" size="small">
-              ISO 55000 • FIPS SEALED • ACID
-            </Badge>
-          </div>
-          <Heading level="h1" className="text-2xl font-bold tracking-tight text-ui-fg-base">
-            Heavy Physical Operations & Digital Twin Execution
-          </Heading>
-          <Text className="text-sm text-ui-fg-subtle mt-1">
-            Integrated asset lifecycle management, technician dispatch workbenches, multi-bin MRO inventory, and SCADA IoT telemetry.
-          </Text>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <Button
-            variant="secondary"
-            size="small"
-            onClick={fetchData}
-            isLoading={refreshing}
-            className="flex items-center gap-1.5"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
-            Sync Telemetry
-          </Button>
-
-          <Button
-            variant="danger"
-            size="small"
-            onClick={handleSimulateIotSurge}
-            className="flex items-center gap-1.5 font-medium"
-          >
-            <Zap className="w-3.5 h-3.5" />
-            Simulate SCADA Surge
-          </Button>
-
-          <Button
-            variant="primary"
-            size="small"
-            onClick={() => setShowNewWoModal(true)}
-            className="flex items-center gap-1.5"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            New Work Order
-          </Button>
-        </div>
-      </div>
-
-      {/* High-Alert Emergency Banner if active breakdown */}
-      {metrics.activeEmergencies > 0 && (
-        <Alert variant="error" className="bg-red-500/10 border-red-500/30 text-red-700 dark:text-red-300">
-          <div className="flex items-center justify-between w-full">
-            <div className="flex items-center gap-3">
-              <span className="p-2 rounded-full bg-red-500/20 animate-pulse text-red-500">
-                <AlertOctagon className="w-5 h-5" />
-              </span>
-              <div>
-                <p className="font-semibold text-sm">
-                  {metrics.activeEmergencies} Active Emergency Work Order(s) Requiring Dispatch
-                </p>
-                <p className="text-xs opacity-90">
-                  SCADA rule engine detected critical vibration/downtime event. Floor technicians alerted via Socket.IO push.
-                </p>
+      {/* Header Banner & Global KPIs — Rendered ONLY for the top overview of EAM */}
+      {showOverview && (
+        <>
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-ui-border-base pb-6">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-500">
+                  <Factory className="w-5 h-5" />
+                </span>
+                <span className="text-xs font-semibold uppercase tracking-wider text-ui-fg-subtle">
+                  Enterprise Asset Management & Operations Hub
+                </span>
+                <Badge color="green" size="small">
+                  Tenant-scoped operational records
+                </Badge>
               </div>
+              <Heading level="h1" className="text-2xl font-bold tracking-tight text-ui-fg-base">
+                Heavy Physical Operations & Digital Twin Execution
+              </Heading>
+              <Text className="text-sm text-ui-fg-subtle mt-1">
+                Asset, work-order, preventive-maintenance, inventory, and meter records from the connected CMMS service.
+              </Text>
             </div>
-            <Button
-              variant="danger"
-              size="small"
-              onClick={() => setActiveTab('floor-kiosk')}
-            >
-              Open Floor Kiosk View
-            </Button>
+
+            <div className="flex items-center gap-3">
+              <Button
+                variant="secondary"
+                size="small"
+                onClick={fetchData}
+                isLoading={refreshing}
+                className="flex items-center gap-1.5"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
+                Sync Telemetry
+              </Button>
+
+              <Button
+                variant="primary"
+                size="small"
+                onClick={() => setShowNewWoModal(true)}
+                className="flex items-center gap-1.5"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                New Work Order
+              </Button>
+            </div>
           </div>
-        </Alert>
+
+          {/* High-Alert Emergency Banner if active breakdown */}
+          {metrics.activeEmergencies > 0 && (
+            <Alert variant="error" className="bg-red-500/10 border-red-500/30 text-red-700 dark:text-red-300">
+              <div className="flex items-center justify-between w-full">
+                <div className="flex items-center gap-3">
+                  <span className="p-2 rounded-full bg-red-500/20 animate-pulse text-red-500">
+                    <AlertOctagon className="w-5 h-5" />
+                  </span>
+                  <div>
+                    <p className="font-semibold text-sm">
+                      {metrics.activeEmergencies} Active Emergency Work Order(s) Requiring Dispatch
+                    </p>
+                    <p className="text-xs opacity-90">
+                      Reported by the CMMS aggregate. Open the kiosk to inspect the loaded emergency work orders.
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  variant="danger"
+                  size="small"
+                  onClick={() => setActiveTab('floor-kiosk')}
+                >
+                  Open Floor Kiosk View
+                </Button>
+              </div>
+            </Alert>
+          )}
+
+          {/* KPI Summary Matrix */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+            <Container className="p-4 bg-ui-bg-base border border-ui-border-base">
+              <div className="flex items-center justify-between text-ui-fg-muted mb-2">
+                <span className="text-xs font-medium uppercase tracking-wider">Open WOs</span>
+                <Clock className="w-4 h-4 text-blue-500" />
+              </div>
+              <p className="text-2xl font-bold text-ui-fg-base">{metrics.openCount + metrics.inProgressCount}</p>
+              <span className="text-[11px] text-ui-fg-subtle">{metrics.inProgressCount} in progress</span>
+            </Container>
+
+            <Container className="p-4 bg-ui-bg-base border border-ui-border-base">
+              <div className="flex items-center justify-between text-ui-fg-muted mb-2">
+                <span className="text-xs font-medium uppercase tracking-wider">Emergencies</span>
+                <AlertTriangle className="w-4 h-4 text-red-500" />
+              </div>
+              <p className="text-2xl font-bold text-red-500">{metrics.activeEmergencies}</p>
+              <span className="text-[11px] text-red-400">Immediate response</span>
+            </Container>
+
+            <Container className="p-4 bg-ui-bg-base border border-ui-border-base">
+              <div className="flex items-center justify-between text-ui-fg-muted mb-2">
+                <span className="text-xs font-medium uppercase tracking-wider">Completed WOs</span>
+                <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+              </div>
+              <p className="text-2xl font-bold text-ui-fg-base">{metrics.completedCount}</p>
+              <span className="text-[11px] text-emerald-600">Audit receipt sealed</span>
+            </Container>
+
+            <Container className="p-4 bg-ui-bg-base border border-ui-border-base">
+              <div className="flex items-center justify-between text-ui-fg-muted mb-2">
+                <span className="text-xs font-medium uppercase tracking-wider">Avg MTTR</span>
+                <Activity className="w-4 h-4 text-purple-500" />
+              </div>
+              <p className="text-2xl font-bold text-ui-fg-base">{metrics.avgCycleTimeHours}h</p>
+              <span className="text-[11px] text-ui-fg-subtle">Mean Time To Repair</span>
+            </Container>
+
+            <Container className="p-4 bg-ui-bg-base border border-ui-border-base">
+              <div className="flex items-center justify-between text-ui-fg-muted mb-2">
+                <span className="text-xs font-medium uppercase tracking-wider">MRO Parts</span>
+                <Boxes className="w-4 h-4 text-amber-500" />
+              </div>
+              <p className="text-2xl font-bold text-ui-fg-base">{inventoryMetrics.totalParts}</p>
+              <span className="text-[11px] text-amber-600">{inventoryMetrics.lowStockCount} at reorder point</span>
+            </Container>
+
+            <Container className="p-4 bg-ui-bg-base border border-ui-border-base">
+              <div className="flex items-center justify-between text-ui-fg-muted mb-2">
+                <span className="text-xs font-medium uppercase tracking-wider">Digital Twin</span>
+                <Cpu className="w-4 h-4 text-cyan-500" />
+              </div>
+              <p className="text-2xl font-bold text-ui-fg-base">{assets.length}</p>
+              <span className="text-[11px] text-ui-fg-subtle">Assets in the loaded result</span>
+            </Container>
+          </div>
+        </>
       )}
 
-      {/* KPI Summary Matrix */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-        <Container className="p-4 bg-ui-bg-base border border-ui-border-base">
-          <div className="flex items-center justify-between text-ui-fg-muted mb-2">
-            <span className="text-xs font-medium uppercase tracking-wider">Open WOs</span>
-            <Clock className="w-4 h-4 text-blue-500" />
-          </div>
-          <p className="text-2xl font-bold text-ui-fg-base">{metrics.openCount + metrics.inProgressCount}</p>
-          <span className="text-[11px] text-ui-fg-subtle">{metrics.inProgressCount} in progress</span>
-        </Container>
-
-        <Container className="p-4 bg-ui-bg-base border border-ui-border-base">
-          <div className="flex items-center justify-between text-ui-fg-muted mb-2">
-            <span className="text-xs font-medium uppercase tracking-wider">Emergencies</span>
-            <AlertTriangle className="w-4 h-4 text-red-500" />
-          </div>
-          <p className="text-2xl font-bold text-red-500">{metrics.activeEmergencies}</p>
-          <span className="text-[11px] text-red-400">Immediate response</span>
-        </Container>
-
-        <Container className="p-4 bg-ui-bg-base border border-ui-border-base">
-          <div className="flex items-center justify-between text-ui-fg-muted mb-2">
-            <span className="text-xs font-medium uppercase tracking-wider">Completed WOs</span>
-            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-          </div>
-          <p className="text-2xl font-bold text-ui-fg-base">{metrics.completedCount}</p>
-          <span className="text-[11px] text-emerald-600">Audit receipt sealed</span>
-        </Container>
-
-        <Container className="p-4 bg-ui-bg-base border border-ui-border-base">
-          <div className="flex items-center justify-between text-ui-fg-muted mb-2">
-            <span className="text-xs font-medium uppercase tracking-wider">Avg MTTR</span>
-            <Activity className="w-4 h-4 text-purple-500" />
-          </div>
-          <p className="text-2xl font-bold text-ui-fg-base">{metrics.avgCycleTimeHours}h</p>
-          <span className="text-[11px] text-ui-fg-subtle">Mean Time To Repair</span>
-        </Container>
-
-        <Container className="p-4 bg-ui-bg-base border border-ui-border-base">
-          <div className="flex items-center justify-between text-ui-fg-muted mb-2">
-            <span className="text-xs font-medium uppercase tracking-wider">MRO Parts</span>
-            <Boxes className="w-4 h-4 text-amber-500" />
-          </div>
-          <p className="text-2xl font-bold text-ui-fg-base">{inventoryMetrics.totalParts}</p>
-          <span className="text-[11px] text-amber-600">{inventoryMetrics.lowStockCount} at reorder point</span>
-        </Container>
-
-        <Container className="p-4 bg-ui-bg-base border border-ui-border-base">
-          <div className="flex items-center justify-between text-ui-fg-muted mb-2">
-            <span className="text-xs font-medium uppercase tracking-wider">Digital Twin</span>
-            <Cpu className="w-4 h-4 text-cyan-500" />
-          </div>
-          <p className="text-2xl font-bold text-ui-fg-base">{assets.length || 8}</p>
-          <span className="text-[11px] text-ui-fg-subtle">Plant hierarchy online</span>
-        </Container>
-      </div>
-
-      {/* Main Tabs Navigation */}
+      {/* Main Submodule Content Driven by Left Navigation */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <Tabs.List className="border-b border-ui-border-base">
-          <Tabs.Trigger value="work-orders" className="flex items-center gap-2">
-            <Wrench className="w-4 h-4" />
-            Work Orders
-            {metrics.activeEmergencies > 0 && (
-              <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-red-500 text-white font-bold">
-                {metrics.activeEmergencies}
-              </span>
-            )}
-          </Tabs.Trigger>
+        {/* TAB 0: TOP OVERVIEW OF EAM */}
+        <Tabs.Content value="overview">
+          {/* Submodule Quick Access Matrix */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mb-6">
+            <Link
+              href="/cmms/work-orders"
+              className="p-3.5 rounded-lg border border-ui-border-base bg-ui-bg-base hover:bg-ui-bg-subtle transition-colors flex items-center justify-between group"
+            >
+              <div className="flex items-center gap-2.5 min-w-0">
+                <span className="p-2 rounded-md bg-blue-500/10 text-blue-500 group-hover:bg-blue-500/20">
+                  <Wrench className="w-4 h-4" />
+                </span>
+                <div className="truncate">
+                  <p className="text-xs font-semibold text-ui-fg-base truncate">Work Orders</p>
+                  <p className="text-[11px] text-ui-fg-muted truncate">{workOrders.length} active</p>
+                </div>
+              </div>
+              <ArrowUpRight className="w-3.5 h-3.5 text-ui-fg-muted group-hover:text-ui-fg-base shrink-0" />
+            </Link>
 
-          <Tabs.Trigger value="calendar" className="flex items-center gap-2">
-            <Calendar className="w-4 h-4" />
-            Calendar
-          </Tabs.Trigger>
+            <Link
+              href="/cmms/assets"
+              className="p-3.5 rounded-lg border border-ui-border-base bg-ui-bg-base hover:bg-ui-bg-subtle transition-colors flex items-center justify-between group"
+            >
+              <div className="flex items-center gap-2.5 min-w-0">
+                <span className="p-2 rounded-md bg-emerald-500/10 text-emerald-500 group-hover:bg-emerald-500/20">
+                  <Factory className="w-4 h-4" />
+                </span>
+                <div className="truncate">
+                  <p className="text-xs font-semibold text-ui-fg-base truncate">Assets &amp; Twin</p>
+                  <p className="text-[11px] text-ui-fg-muted truncate">{assets.length} registered</p>
+                </div>
+              </div>
+              <ArrowUpRight className="w-3.5 h-3.5 text-ui-fg-muted group-hover:text-ui-fg-base shrink-0" />
+            </Link>
 
-          <Tabs.Trigger value="workload" className="flex items-center gap-2">
-            <Users className="w-4 h-4" />
-            Workload
-          </Tabs.Trigger>
+            <Link
+              href="/cmms/schedules"
+              className="p-3.5 rounded-lg border border-ui-border-base bg-ui-bg-base hover:bg-ui-bg-subtle transition-colors flex items-center justify-between group"
+            >
+              <div className="flex items-center gap-2.5 min-w-0">
+                <span className="p-2 rounded-md bg-purple-500/10 text-purple-500 group-hover:bg-purple-500/20">
+                  <Clock className="w-4 h-4" />
+                </span>
+                <div className="truncate">
+                  <p className="text-xs font-semibold text-ui-fg-base truncate">PM Schedules</p>
+                  <p className="text-[11px] text-ui-fg-muted truncate">{schedules.length} recurring</p>
+                </div>
+              </div>
+              <ArrowUpRight className="w-3.5 h-3.5 text-ui-fg-muted group-hover:text-ui-fg-base shrink-0" />
+            </Link>
 
-          <Tabs.Trigger value="requests" className="flex items-center gap-2">
-            <ClipboardList className="w-4 h-4" />
-            Requests
-          </Tabs.Trigger>
+            <Link
+              href="/cmms/inventory"
+              className="p-3.5 rounded-lg border border-ui-border-base bg-ui-bg-base hover:bg-ui-bg-subtle transition-colors flex items-center justify-between group"
+            >
+              <div className="flex items-center gap-2.5 min-w-0">
+                <span className="p-2 rounded-md bg-amber-500/10 text-amber-500 group-hover:bg-amber-500/20">
+                  <Boxes className="w-4 h-4" />
+                </span>
+                <div className="truncate">
+                  <p className="text-xs font-semibold text-ui-fg-base truncate">MRO Parts</p>
+                  <p className="text-[11px] text-ui-fg-muted truncate">{parts.length} catalog items</p>
+                </div>
+              </div>
+              <ArrowUpRight className="w-3.5 h-3.5 text-ui-fg-muted group-hover:text-ui-fg-base shrink-0" />
+            </Link>
 
-          <Tabs.Trigger value="assets" className="flex items-center gap-2">
-            <Factory className="w-4 h-4" />
-            Assets & Twin
-          </Tabs.Trigger>
+            <Link
+              href="/cmms/meters"
+              className="p-3.5 rounded-lg border border-ui-border-base bg-ui-bg-base hover:bg-ui-bg-subtle transition-colors flex items-center justify-between group"
+            >
+              <div className="flex items-center gap-2.5 min-w-0">
+                <span className="p-2 rounded-md bg-cyan-500/10 text-cyan-500 group-hover:bg-cyan-500/20">
+                  <Gauge className="w-4 h-4" />
+                </span>
+                <div className="truncate">
+                  <p className="text-xs font-semibold text-ui-fg-base truncate">Meters &amp; IoT</p>
+                  <p className="text-[11px] text-ui-fg-muted truncate">{meters.length} telemetry feeds</p>
+                </div>
+              </div>
+              <ArrowUpRight className="w-3.5 h-3.5 text-ui-fg-muted group-hover:text-ui-fg-base shrink-0" />
+            </Link>
 
-          <Tabs.Trigger value="schedules" className="flex items-center gap-2">
-            <Clock className="w-4 h-4" />
-            PM Schedules
-          </Tabs.Trigger>
+            <Link
+              href="/cmms/analytics"
+              className="p-3.5 rounded-lg border border-ui-border-base bg-ui-bg-base hover:bg-ui-bg-subtle transition-colors flex items-center justify-between group"
+            >
+              <div className="flex items-center gap-2.5 min-w-0">
+                <span className="p-2 rounded-md bg-indigo-500/10 text-indigo-500 group-hover:bg-indigo-500/20">
+                  <BarChart3 className="w-4 h-4" />
+                </span>
+                <div className="truncate">
+                  <p className="text-xs font-semibold text-ui-fg-base truncate">Reliability</p>
+                  <p className="text-[11px] text-ui-fg-muted truncate">Recorded downtime facts</p>
+                </div>
+              </div>
+              <ArrowUpRight className="w-3.5 h-3.5 text-ui-fg-muted group-hover:text-ui-fg-base shrink-0" />
+            </Link>
 
-          <Tabs.Trigger value="telemetry" className="flex items-center gap-2">
-            <Gauge className="w-4 h-4" />
-            Meters & IoT
-          </Tabs.Trigger>
+            <Link
+              href="/cmms/floor"
+              className="p-3.5 rounded-lg border border-ui-border-base bg-ui-bg-base hover:bg-ui-bg-subtle transition-colors flex items-center justify-between group"
+            >
+              <div className="flex items-center gap-2.5 min-w-0">
+                <span className="p-2 rounded-md bg-rose-500/10 text-rose-500 group-hover:bg-rose-500/20">
+                  <Radio className="w-4 h-4" />
+                </span>
+                <div className="truncate">
+                  <p className="text-xs font-semibold text-ui-fg-base truncate">Floor Kiosk</p>
+                  <p className="text-[11px] text-ui-fg-muted truncate">Shop floor mode</p>
+                </div>
+              </div>
+              <ArrowUpRight className="w-3.5 h-3.5 text-ui-fg-muted group-hover:text-ui-fg-base shrink-0" />
+            </Link>
+          </div>
 
-          <Tabs.Trigger value="inventory" className="flex items-center gap-2">
-            <Boxes className="w-4 h-4" />
-            Inventory & MRO
-          </Tabs.Trigger>
+          {/* Technician Dispatch Queue Table */}
+          <Container className="p-0 border border-ui-border-base bg-ui-bg-base overflow-hidden">
+            <div className="p-4 border-b border-ui-border-base flex items-center justify-between">
+              <div>
+                <Heading level="h3" className="text-base font-semibold">Priority Operations &amp; Dispatch Queue</Heading>
+                <Text className="text-xs text-ui-fg-subtle">
+                  Live operational dispatch board across active plant work orders, emergencies, and corrective tasks.
+                </Text>
+              </div>
+              <Button size="small" variant="primary" onClick={() => setShowNewWoModal(true)}>
+                + New Work Order
+              </Button>
+            </div>
 
-          <Tabs.Trigger value="purchase-orders" className="flex items-center gap-2">
-            <ShoppingCart className="w-4 h-4" />
-            Purchase Orders
-          </Tabs.Trigger>
-
-          <Tabs.Trigger value="people" className="flex items-center gap-2">
-            <Users className="w-4 h-4" />
-            People & Crews
-          </Tabs.Trigger>
-
-          <Tabs.Trigger value="vendors" className="flex items-center gap-2">
-            <Truck className="w-4 h-4" />
-            Suppliers
-          </Tabs.Trigger>
-
-          <Tabs.Trigger value="reliability" className="flex items-center gap-2">
-            <BarChart3 className="w-4 h-4 text-cyan-500" />
-            Reliability
-          </Tabs.Trigger>
-
-          <Tabs.Trigger value="floor-kiosk" className="flex items-center gap-2 text-red-500 font-semibold">
-            <Radio className="w-4 h-4" />
-            Floor Kiosk
-          </Tabs.Trigger>
-        </Tabs.List>
+            <Table>
+              <Table.Header>
+                <Table.Row>
+                  <Table.HeaderCell>WO #</Table.HeaderCell>
+                  <Table.HeaderCell>Title &amp; Description</Table.HeaderCell>
+                  <Table.HeaderCell>Priority</Table.HeaderCell>
+                  <Table.HeaderCell>Type</Table.HeaderCell>
+                  <Table.HeaderCell>Status</Table.HeaderCell>
+                  <Table.HeaderCell>Assigned Technician</Table.HeaderCell>
+                  <Table.HeaderCell>Due Date</Table.HeaderCell>
+                  <Table.HeaderCell className="text-right">Execution Action</Table.HeaderCell>
+                </Table.Row>
+              </Table.Header>
+              <Table.Body>
+                {workOrders.length === 0 ? (
+                  <Table.Row>
+                    <Table.Cell className="text-center py-8 text-ui-fg-muted">
+                      No active work orders. Click &quot;+ New Work Order&quot; to log maintenance or repairs.
+                    </Table.Cell>
+                  </Table.Row>
+                ) : (
+                  workOrders.slice(0, 10).map((wo) => (
+                    <Table.Row key={wo.id}>
+                      <Table.Cell className="font-mono text-xs font-semibold text-cyan-500">
+                        {wo.woNumber}
+                      </Table.Cell>
+                      <Table.Cell>
+                        <div className="font-medium text-xs text-ui-fg-base">{wo.title}</div>
+                        <div className="text-[11px] text-ui-fg-subtle truncate max-w-xs">{wo.description}</div>
+                      </Table.Cell>
+                      <Table.Cell>
+                        <StatusBadge
+                          color={
+                            wo.priority === 'EMERGENCY'
+                              ? 'red'
+                              : wo.priority === 'HIGH'
+                              ? 'orange'
+                              : wo.priority === 'MEDIUM'
+                              ? 'blue'
+                              : 'grey'
+                          }
+                        >
+                          {wo.priority}
+                        </StatusBadge>
+                      </Table.Cell>
+                      <Table.Cell>
+                        <span className="text-xs text-ui-fg-subtle">{wo.type}</span>
+                      </Table.Cell>
+                      <Table.Cell>
+                        <StatusBadge
+                          color={
+                            wo.status === 'COMPLETED'
+                              ? 'green'
+                              : wo.status === 'IN_PROGRESS'
+                              ? 'blue'
+                              : wo.status === 'OPEN'
+                              ? 'orange'
+                              : 'red'
+                          }
+                        >
+                          {wo.status}
+                        </StatusBadge>
+                      </Table.Cell>
+                      <Table.Cell className="text-xs text-ui-fg-base">
+                        {wo.assignedTo || 'Unassigned'}
+                      </Table.Cell>
+                      <Table.Cell className="text-xs text-ui-fg-subtle">
+                        {wo.dueDate ? new Date(wo.dueDate).toLocaleDateString() : 'ASAP'}
+                      </Table.Cell>
+                      <Table.Cell className="text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <Button
+                            size="small"
+                            variant="primary"
+                            onClick={() => setSelectedWoForWorkbench(wo)}
+                            className="flex items-center gap-1 text-[11px]"
+                          >
+                            <Wrench className="w-3 h-3 text-cyan-300" />
+                            Inspect &amp; Execute
+                          </Button>
+                          {wo.status !== 'COMPLETED' && (
+                            <Button
+                              size="small"
+                              variant="secondary"
+                              onClick={() => handleTransitionStatus(wo.id, wo.status, wo.version)}
+                            >
+                              {wo.status === 'OPEN' ? 'Start' : 'Close'}
+                            </Button>
+                          )}
+                        </div>
+                      </Table.Cell>
+                    </Table.Row>
+                  ))
+                )}
+              </Table.Body>
+            </Table>
+          </Container>
+        </Tabs.Content>
 
         {/* TAB 1: WORK ORDERS & DISPATCH */}
         <Tabs.Content value="work-orders">
@@ -600,7 +786,7 @@ export default function CmmsDashboardView({ initialTab = 'work-orders' }: { init
                             <Button
                               size="small"
                               variant="secondary"
-                              onClick={() => handleTransitionStatus(wo.id, wo.status)}
+                              onClick={() => handleTransitionStatus(wo.id, wo.status, wo.version)}
                             >
                               {wo.status === 'OPEN' ? 'Start' : 'Close'}
                             </Button>
@@ -617,7 +803,8 @@ export default function CmmsDashboardView({ initialTab = 'work-orders' }: { init
 
         {/* TAB: MAINTENANCE CALENDAR */}
         <Tabs.Content value="calendar">
-          <WoCalendarView
+          <VisualDispatchBoard
+            defaultView="calendar"
             workOrders={workOrders}
             onSelectWo={(wo) => setSelectedWoForWorkbench(wo)}
             onCreateWo={() => setShowNewWoModal(true)}
@@ -626,22 +813,41 @@ export default function CmmsDashboardView({ initialTab = 'work-orders' }: { init
 
         {/* TAB: TECHNICIAN WORKLOAD & DISPATCH BOARD */}
         <Tabs.Content value="workload">
-          <WoWorkloadView
+          <VisualDispatchBoard
+            defaultView="timeline"
             workOrders={workOrders}
             onSelectWo={(wo) => setSelectedWoForWorkbench(wo)}
             onCreateWo={() => setShowNewWoModal(true)}
           />
         </Tabs.Content>
 
-        {/* TAB: SERVICE REQUESTS PORTAL */}
-        <Tabs.Content value="requests">
-          <RequestPortalView assets={assets} onRefresh={fetchData} />
-        </Tabs.Content>
-
         {/* TAB 2: ASSET HIERARCHY & DIGITAL TWIN */}
         <Tabs.Content value="assets">
           <div className="space-y-4">
-            <div className="flex justify-end">
+            <div className="flex items-center justify-end gap-2">
+              <Button
+                variant="transparent"
+                size="small"
+                onClick={() => setShowJobDrawer(true)}
+                className="text-xs text-ui-fg-subtle border border-ui-border-base"
+              >
+                <Download className="w-3.5 h-3.5 mr-1" /> Jobs
+              </Button>
+              <ExportButton
+                api={importExportApi}
+                entityType="assets"
+              />
+              <Button
+                variant="secondary"
+                size="small"
+                onClick={() => {
+                  setImportWizardEntity('assets');
+                  setShowImportWizard(true);
+                }}
+                className="text-xs font-semibold"
+              >
+                Import
+              </Button>
               <Button
                 variant="primary"
                 size="small"
@@ -770,80 +976,64 @@ export default function CmmsDashboardView({ initialTab = 'work-orders' }: { init
                     Time-series partitioned metrics from SCADA, IoT MQTT brokers, and manual floor logs.
                   </Text>
                 </div>
-                <Button size="small" variant="secondary" onClick={handleSimulateIotSurge}>
-                  Test Surge Event
-                </Button>
+                <Badge color="blue" size="small">Persisted readings only</Badge>
               </div>
 
               <div className="space-y-3">
-                <div className="p-4 border border-ui-border-base rounded-lg bg-ui-bg-subtle flex items-center justify-between">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
-                      <span className="font-semibold text-sm text-ui-fg-base">Vibration Sensor (Pump Motor #1)</span>
+                {meters.length === 0 ? (
+                  <div className="p-6 text-center text-sm text-ui-fg-muted border border-dashed border-ui-border-base rounded-lg">
+                    No persisted meter channels are available for this tenant.
+                  </div>
+                ) : meters.map((meter) => (
+                  <div key={meter.id} className="p-4 border border-ui-border-base rounded-lg bg-ui-bg-subtle flex items-center justify-between">
+                    <div className="space-y-1">
+                      <span className="font-semibold text-sm text-ui-fg-base">{meter.name}</span>
+                      <p className="text-xs text-ui-fg-subtle font-mono">{meter.iotTopic || 'Manual readings only'}</p>
                     </div>
-                    <p className="text-xs text-ui-fg-subtle font-mono">factory/line-1/pump-a/vibration</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xl font-mono font-bold text-ui-fg-base">3.4 mm/s</p>
-                    <p className="text-[11px] text-ui-fg-muted">Threshold: 4.5 mm/s max</p>
-                  </div>
-                </div>
-
-                <div className="p-4 border border-ui-border-base rounded-lg bg-ui-bg-subtle flex items-center justify-between">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
-                      <span className="font-semibold text-sm text-ui-fg-base">Hydraulic Temperature (Stamping Press)</span>
+                    <div className="text-right">
+                      <p className="text-xl font-mono font-bold text-ui-fg-base">
+                        {meter.currentValue === null ? '—' : `${meter.currentValue} ${meter.unit}`}
+                      </p>
+                      <p className="text-[11px] text-ui-fg-muted">
+                        {meter.lastReadAt ? `Last read ${new Date(meter.lastReadAt).toLocaleString()}` : 'No reading received'}
+                      </p>
+                      <Button
+                        size="small"
+                        variant="secondary"
+                        className="mt-2"
+                        onClick={() => {
+                          setSelectedMeterForReading(meter);
+                          setReadingValue(meter.currentValue ?? 0);
+                          setShowReadingModal(true);
+                        }}
+                      >
+                        Log reading
+                      </Button>
                     </div>
-                    <p className="text-xs text-ui-fg-subtle font-mono">factory/line-1/press/temp</p>
                   </div>
-                  <div className="text-right">
-                    <p className="text-xl font-mono font-bold text-ui-fg-base">68.2 °C</p>
-                    <p className="text-[11px] text-ui-fg-muted">Threshold: 85.0 °C max</p>
-                  </div>
-                </div>
-
-                <div className="p-4 border border-ui-border-base rounded-lg bg-ui-bg-subtle flex items-center justify-between">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="h-2.5 w-2.5 rounded-full bg-amber-500" />
-                      <span className="font-semibold text-sm text-ui-fg-base">Cumulative Runtime Counter (HVAC Chillers)</span>
-                    </div>
-                    <p className="text-xs text-ui-fg-subtle font-mono">hvac/central/operating-hours</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xl font-mono font-bold text-ui-fg-base">2,840 hrs</p>
-                    <p className="text-[11px] text-amber-600">Next PM Due at 3,000 hrs</p>
-                  </div>
-                </div>
+                ))}
               </div>
             </Container>
 
             <Container className="p-4 bg-ui-bg-base border border-ui-border-base space-y-4">
               <Heading level="h3" className="text-base font-semibold">SCADA Ingress Endpoint</Heading>
               <Text className="text-xs text-ui-fg-subtle">
-                Direct device integration via machine token without user JWT requirement.
+                Device ingestion must use the configured machine credential and server-derived tenant context.
               </Text>
 
               <div className="bg-ui-bg-subtle p-3 rounded font-mono text-[11px] text-ui-fg-muted space-y-1">
                 <p className="text-emerald-500">POST /v1/iot/readings</p>
                 <p>Content-Type: application/json</p>
-                <p>X-Tenant-Id: &lt;tenant-uuid&gt;</p>
+                <p>Authorization: Bearer &lt;machine-credential&gt;</p>
                 <p className="text-ui-fg-subtle mt-2">// Payload Schema:</p>
                 <p>{'{ "readings": ['}</p>
                 <p>&nbsp;&nbsp;{'{ "iotTopic": "line1/vibe", "value": 5.4 }'}</p>
                 <p>{'] }'}</p>
               </div>
 
-              <Button
-                size="small"
-                variant="secondary"
-                className="w-full"
-                onClick={() => setShowReadingModal(true)}
-              >
-                Log Manual Reading
-              </Button>
+              <Text className="text-xs text-ui-fg-muted">
+                Select a persisted meter channel to record a manual reading.
+              </Text>
             </Container>
           </div>
         </Tabs.Content>
@@ -853,22 +1043,39 @@ export default function CmmsDashboardView({ initialTab = 'work-orders' }: { init
           <Container className="p-0 border border-ui-border-base bg-ui-bg-base overflow-hidden">
             <div className="p-4 border-b border-ui-border-base flex items-center justify-between">
               <div>
-                <Heading level="h3" className="text-base font-semibold">MRO Spare Parts &amp; Multi-Bin Warehouse Tracking</Heading>
+                <Heading level="h3" className="text-base font-semibold">MRO Spare Parts Inventory</Heading>
                 <Text className="text-xs text-ui-fg-subtle">
-                  Warehouse bin coordinates (Aisle/Rack/Bin), supplier lead times, and automated restock triggers.
+                  Persisted stock balances, storage areas, costs, and reorder thresholds. Low-stock consumption emits a reconciliation event.
                 </Text>
               </div>
-              <Button
-                variant="primary"
-                size="small"
-                onClick={() => {
-                  setSelectedPartForEdit(null);
-                  setShowPartModal(true);
-                }}
-                className="text-xs font-semibold"
-              >
-                <Plus className="w-3.5 h-3.5 mr-1" /> Add Spare Part
-              </Button>
+              <div className="flex items-center gap-2">
+                <ExportButton
+                  api={importExportApi}
+                  entityType="parts"
+                />
+                <Button
+                  variant="secondary"
+                  size="small"
+                  onClick={() => {
+                    setImportWizardEntity('parts');
+                    setShowImportWizard(true);
+                  }}
+                  className="text-xs font-semibold"
+                >
+                  Import
+                </Button>
+                <Button
+                  variant="primary"
+                  size="small"
+                  onClick={() => {
+                    setSelectedPartForEdit(null);
+                    setShowPartModal(true);
+                  }}
+                  className="text-xs font-semibold"
+                >
+                  <Plus className="w-3.5 h-3.5 mr-1" /> Add Spare Part
+                </Button>
+              </div>
             </div>
 
             <Table>
@@ -876,9 +1083,9 @@ export default function CmmsDashboardView({ initialTab = 'work-orders' }: { init
                 <Table.Row>
                   <Table.HeaderCell>Part Number</Table.HeaderCell>
                   <Table.HeaderCell>Description</Table.HeaderCell>
-                  <Table.HeaderCell>Bin Location</Table.HeaderCell>
+                  <Table.HeaderCell>Storage Area</Table.HeaderCell>
                   <Table.HeaderCell>Stock On Hand</Table.HeaderCell>
-                  <Table.HeaderCell>Preferred Vendor</Table.HeaderCell>
+                  <Table.HeaderCell>Location Reference</Table.HeaderCell>
                   <Table.HeaderCell>Unit Cost</Table.HeaderCell>
                   <Table.HeaderCell className="text-right">Action</Table.HeaderCell>
                 </Table.Row>
@@ -898,11 +1105,11 @@ export default function CmmsDashboardView({ initialTab = 'work-orders' }: { init
                       </Table.Cell>
                       <Table.Cell>
                         <div className="font-medium text-sm text-ui-fg-base">{part.name}</div>
-                        <div className="text-xs text-ui-fg-subtle">{part.category || 'Mechanical'}</div>
+                        <div className="text-xs text-ui-fg-subtle">{part.category || '—'}</div>
                       </Table.Cell>
                       <Table.Cell>
                         <span className="font-mono text-xs text-cyan-600 bg-cyan-500/10 px-2 py-0.5 rounded">
-                          {part.warehouse || 'Central'} • {part.aisle || 'A1'}-{part.bin || 'B01'}
+                          {part.area || '—'}
                         </span>
                       </Table.Cell>
                       <Table.Cell>
@@ -918,25 +1125,13 @@ export default function CmmsDashboardView({ initialTab = 'work-orders' }: { init
                         <div className="text-[10px] text-ui-fg-muted">Min: {part.minQuantity} | Reorder: {part.reorderPoint}</div>
                       </Table.Cell>
                       <Table.Cell className="text-xs text-ui-fg-subtle">
-                        <div>{part.preferredVendor || 'Motion Industries'}</div>
-                        <div className="text-[10px] text-ui-fg-muted font-mono">{part.leadTimeDays || 4} days lead time</div>
+                        <div className="font-mono text-[11px]">{part.locationId || '—'}</div>
                       </Table.Cell>
                       <Table.Cell className="text-xs font-mono text-ui-fg-base">
-                        ${(part.unitCost || 0).toFixed(2)}
+                        {part.unitCost === null ? '—' : `$${part.unitCost.toFixed(2)}`}
                       </Table.Cell>
                       <Table.Cell className="text-right">
                         <div className="flex items-center justify-end gap-2">
-                          <Button
-                            size="small"
-                            variant="secondary"
-                            onClick={() => {
-                              setSelectedPartForEdit(part);
-                              setShowPartModal(true);
-                            }}
-                            className="h-7 text-xs"
-                          >
-                            Edit
-                          </Button>
                           <Button
                             size="small"
                             variant="secondary"
@@ -958,21 +1153,6 @@ export default function CmmsDashboardView({ initialTab = 'work-orders' }: { init
           </Container>
         </Tabs.Content>
 
-        {/* TAB: PURCHASE ORDERS & PROCUREMENT */}
-        <Tabs.Content value="purchase-orders">
-          <PurchaseOrderView parts={parts} onRefresh={fetchData} />
-        </Tabs.Content>
-
-        {/* TAB: PEOPLE, CREWS & ROLES */}
-        <Tabs.Content value="people">
-          <PeopleTeamsView />
-        </Tabs.Content>
-
-        {/* TAB: VENDORS & SUPPLIERS */}
-        <Tabs.Content value="vendors">
-          <VendorsView />
-        </Tabs.Content>
-
         {/* TAB 7: FLOOR EMERGENCY KIOSK */}
         <Tabs.Content value="floor-kiosk">
           <div className="bg-red-950/20 border-2 border-red-500/40 rounded-xl p-6 text-center space-y-4">
@@ -983,22 +1163,34 @@ export default function CmmsDashboardView({ initialTab = 'work-orders' }: { init
               Floor Emergency Beacon &amp; Kiosk Dispatch
             </Heading>
             <Text className="text-sm text-ui-fg-subtle max-w-xl mx-auto">
-              This terminal receives low-latency Socket.IO room events for critical breakdown alarms. Visual alerts and acoustic sirens trigger automatically on breakdown detection.
+              This view shows persisted emergency work orders from the CMMS API. It does not claim an alarm was delivered or acknowledged unless that event is stored by the service.
             </Text>
 
-            <div className="max-w-md mx-auto p-4 bg-ui-bg-base border border-red-500/50 rounded-lg text-left space-y-2">
-              <div className="flex justify-between items-center">
-                <span className="text-xs font-mono text-red-400 font-bold">EMERGENCY ALERT</span>
-                <span className="text-[10px] bg-red-500 text-white px-2 py-0.5 rounded font-bold">ACTIVE</span>
+            {workOrders.filter((workOrder) =>
+              (workOrder.type === 'EMERGENCY' || workOrder.priority === 'EMERGENCY') &&
+              workOrder.status !== 'COMPLETED' && workOrder.status !== 'CANCELLED'
+            ).length === 0 ? (
+              <div className="max-w-md mx-auto p-4 bg-ui-bg-base border border-ui-border-base rounded-lg text-sm text-ui-fg-muted">
+                No active emergency work orders in the loaded result.
               </div>
-              <p className="font-semibold text-sm text-ui-fg-base">Line 1 Primary Slurry Pump Bearing Failure</p>
-              <p className="text-xs text-ui-fg-muted">Vibration exceeded 6.0 mm/s limit. Work order WO-20260907-0042 dispatched to field tablet.</p>
-              <div className="pt-2 flex justify-end gap-2">
-                <Button size="small" variant="danger" onClick={() => toast.success('Floor Alarm Acknowledged', { description: 'Supervisors notified.' })}>
-                  Acknowledge Alarm
-                </Button>
+            ) : workOrders.filter((workOrder) =>
+              (workOrder.type === 'EMERGENCY' || workOrder.priority === 'EMERGENCY') &&
+              workOrder.status !== 'COMPLETED' && workOrder.status !== 'CANCELLED'
+            ).map((workOrder) => (
+              <div key={workOrder.id} className="max-w-md mx-auto p-4 bg-ui-bg-base border border-red-500/50 rounded-lg text-left space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-xs font-mono text-red-400 font-bold">{workOrder.woNumber}</span>
+                  <span className="text-[10px] bg-red-500 text-white px-2 py-0.5 rounded font-bold">{workOrder.status}</span>
+                </div>
+                <p className="font-semibold text-sm text-ui-fg-base">{workOrder.title}</p>
+                <p className="text-xs text-ui-fg-muted">{workOrder.description || 'No description supplied.'}</p>
+                <div className="pt-2 flex justify-end gap-2">
+                  <Button size="small" variant="danger" onClick={() => setSelectedWoForWorkbench(workOrder)}>
+                    Open Workbench
+                  </Button>
+                </div>
               </div>
-            </div>
+            ))}
           </div>
         </Tabs.Content>
       </Tabs>
@@ -1158,7 +1350,7 @@ export default function CmmsDashboardView({ initialTab = 'work-orders' }: { init
                 <Input
                   type="number"
                   min={1}
-                  max={selectedPart.quantityOnHand || 100}
+                  max={selectedPart.quantityOnHand}
                   value={partTx.quantity}
                   onChange={(e) => setPartTx({ ...partTx, quantity: Number(e.target.value) })}
                 />
@@ -1174,7 +1366,12 @@ export default function CmmsDashboardView({ initialTab = 'work-orders' }: { init
                 <Button variant="secondary" size="small" type="button" onClick={() => setShowPartTxModal(false)}>
                   Cancel
                 </Button>
-                <Button variant="primary" size="small" type="submit">
+                <Button
+                  variant="primary"
+                  size="small"
+                  type="submit"
+                  disabled={selectedPart.quantityOnHand <= 0}
+                >
                   Confirm Deduction
                 </Button>
               </div>
@@ -1184,20 +1381,37 @@ export default function CmmsDashboardView({ initialTab = 'work-orders' }: { init
       )}
 
       {/* Modal: Manual Reading */}
-      {showReadingModal && (
+      {showReadingModal && selectedMeterForReading && (
         <div className="fixed inset-0 bg-ui-bg-overlay flex items-center justify-center p-4 z-50">
           <Container className="max-w-md w-full p-6 bg-ui-bg-base border border-ui-border-base shadow-elevation-modal">
-            <Heading level="h2" className="text-lg font-bold text-ui-fg-base mb-3">Log Manual Meter Reading</Heading>
+            <Heading level="h2" className="text-lg font-bold text-ui-fg-base mb-3">
+              Log Reading: {selectedMeterForReading.name}
+            </Heading>
             <form
               onSubmit={async (e) => {
                 e.preventDefault();
-                toast.success('Reading Stored', { description: `Value ${readingValue} committed to partitioned meter table.` });
-                setShowReadingModal(false);
+                try {
+                  await requestCmms(`meters/${selectedMeterForReading.id}/readings`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ value: readingValue, source: 'MANUAL' }),
+                  });
+                  toast.success('Reading Stored', {
+                    description: `Value ${readingValue} ${selectedMeterForReading.unit} was accepted by CMMS.`,
+                  });
+                  setShowReadingModal(false);
+                  setSelectedMeterForReading(null);
+                  fetchData();
+                } catch (err: any) {
+                  toast.error('Reading Failed', { description: err?.message || 'CMMS rejected the reading.' });
+                }
               }}
               className="space-y-3"
             >
               <div>
-                <Label className="text-xs text-ui-fg-subtle mb-1 block">Sensor Value (mm/s or Bar)</Label>
+                <Label className="text-xs text-ui-fg-subtle mb-1 block">
+                  Sensor Value ({selectedMeterForReading.unit})
+                </Label>
                 <Input
                   type="number"
                   step={0.1}
@@ -1206,7 +1420,15 @@ export default function CmmsDashboardView({ initialTab = 'work-orders' }: { init
                 />
               </div>
               <div className="flex justify-end gap-2 pt-2">
-                <Button variant="secondary" size="small" type="button" onClick={() => setShowReadingModal(false)}>
+                <Button
+                  variant="secondary"
+                  size="small"
+                  type="button"
+                  onClick={() => {
+                    setShowReadingModal(false);
+                    setSelectedMeterForReading(null);
+                  }}
+                >
                   Cancel
                 </Button>
                 <Button variant="primary" size="small" type="submit">
@@ -1217,6 +1439,22 @@ export default function CmmsDashboardView({ initialTab = 'work-orders' }: { init
           </Container>
         </div>
       )}
+      {/* Import Wizard */}
+      {showImportWizard && (
+        <ImportWizard
+          api={importExportApi}
+          defaultEntityType={importWizardEntity}
+          onClose={() => setShowImportWizard(false)}
+          onComplete={() => setShowImportWizard(false)}
+        />
+      )}
+
+      {/* Job Status Drawer */}
+      <JobStatusDrawer
+        api={importExportApi}
+        isOpen={showJobDrawer}
+        onClose={() => setShowJobDrawer(false)}
+      />
     </div>
   );
 }
