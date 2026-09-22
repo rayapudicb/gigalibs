@@ -42,7 +42,7 @@
       "WI-OI-043"
     ],
     "note_WI-OI-043": "G4 Build evidence complete (commits f44c134, a3f9890, d1fc7ac, 286cd76). Awaiting human gate review \u2014 no agent may close.",
-    "note_WI-OI-042": "G4 Build evidence complete (Phases 0-8). Gate 13 (Live PG migration replay) IN PROGRESS. Awaiting human gate review."
+    "note_WI-OI-042": "G4 Build evidence complete (Phases 0-8). Gate 13 (Live PG migration replay) VERIFIED (commit 8c6b915, all 10 migrations pass). Gate 16 human sign-off pending \u2014 no agent may close."
   },
   "relativeDeliveryEstimate": {
     "total": 100,
