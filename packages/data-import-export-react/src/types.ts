@@ -108,6 +108,7 @@ export interface ExportFilters {
 export type WizardStep =
   | 'select-entity'
   | 'select-file'
+  | 'sheet-select'
   | 'column-mapping'
   | 'review-warnings'
   | 'uploading'
@@ -123,4 +124,8 @@ export interface WizardState {
   jobId: string | null;
   job: ImportJob | null;
   error: string | null;
+  /** Sheet names detected in uploaded multi-sheet file */
+  availableSheets: string[] | null;
+  /** Sheet names the user has selected to import (null = all) */
+  selectedSheets: string[] | null;
 }

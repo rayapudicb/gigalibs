@@ -53,8 +53,9 @@ export class ImportExportApi {
     });
   }
 
-  async enqueueImport(jobId: string): Promise<void> {
-    await this.request('POST', `/v1/import-export/imports/${jobId}/enqueue`);
+  async enqueueImport(jobId: string, options?: { selectedSheets?: string[] | null }): Promise<void> {
+    const body = options?.selectedSheets != null ? { selectedSheets: options.selectedSheets } : undefined;
+    await this.request('POST', `/v1/import-export/imports/${jobId}/enqueue`, body);
   }
 
   async getImportJob(jobId: string): Promise<ImportJob> {
@@ -72,6 +73,14 @@ export class ImportExportApi {
 
   async cancelImportJob(jobId: string): Promise<void> {
     await this.request('DELETE', `/v1/import-export/imports/${jobId}`);
+  }
+
+  async listSheets(jobId: string): Promise<string[]> {
+    const res = await this.request<{ data: { sheetNames: string[] } }>(
+      'GET',
+      `/v1/import-export/imports/${jobId}/sheets`,
+    );
+    return res.data.sheetNames;
   }
 
   async getErrorReportUrl(jobId: string): Promise<string> {

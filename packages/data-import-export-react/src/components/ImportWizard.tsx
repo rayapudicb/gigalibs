@@ -14,6 +14,8 @@ type Action =
   | { type: 'SET_STEP'; step: WizardStep }
   | { type: 'SET_JOB_ID'; jobId: string }
   | { type: 'SET_ERROR'; error: string | null }
+  | { type: 'SET_SHEETS'; available: string[]; selected: string[] | null }
+  | { type: 'SET_SELECTED_SHEETS'; selected: string[] | null }
   | { type: 'RESET' };
 
 const INITIAL_STATE: WizardState = {
@@ -25,17 +27,34 @@ const INITIAL_STATE: WizardState = {
   jobId: null,
   job: null,
   error: null,
+  availableSheets: null,
+  selectedSheets: null,
 };
+
+/** Entity types that support multi-sheet Excel import (one sheet per department) */
+const MULTI_SHEET_ENTITIES: ImportableEntityType[] = ['workforce_resources'];
 
 function reducer(state: WizardState, action: Action): WizardState {
   switch (action.type) {
     case 'SET_ENTITY': return { ...state, entityType: action.entityType, step: 'select-file' };
-    case 'SET_FILE': return { ...state, file: action.file, step: 'review-warnings' };
+    case 'SET_FILE': return {
+      ...state,
+      file: action.file,
+      // sheet-select step is inserted dynamically if entity is multi-sheet; handled in handleFileSelect
+      step: 'review-warnings',
+    };
     case 'SET_MAPPING': return { ...state, columnMappingOverrides: action.overrides };
     case 'SET_HISTORICAL': return { ...state, historical: action.historical };
     case 'SET_STEP': return { ...state, step: action.step };
     case 'SET_JOB_ID': return { ...state, jobId: action.jobId };
     case 'SET_ERROR': return { ...state, error: action.error, step: action.error ? 'select-file' : state.step };
+    case 'SET_SHEETS': return {
+      ...state,
+      availableSheets: action.available,
+      selectedSheets: action.selected,
+      step: 'sheet-select',
+    };
+    case 'SET_SELECTED_SHEETS': return { ...state, selectedSheets: action.selected };
     case 'RESET': return INITIAL_STATE;
     default: return state;
   }
@@ -86,8 +105,11 @@ export function ImportWizard({ api, onClose, onComplete, defaultEntityType }: Im
     dispatch({ type: 'SET_FILE', file });
   }, []);
 
-  const handleUpload = useCallback(async () => {
-    if (!state.entityType || !state.file) return;
+  const isMultiSheet = state.entityType ? MULTI_SHEET_ENTITIES.includes(state.entityType) : false;
+
+  /** Initiate + S3 upload only (no enqueue). Used as first half of multi-sheet flow. */
+  const handleUploadFile = useCallback(async (): Promise<string | null> => {
+    if (!state.entityType || !state.file) return null;
     dispatch({ type: 'SET_ERROR', error: null });
     dispatch({ type: 'SET_STEP', step: 'uploading' });
     setUploadProgress(0);
@@ -96,16 +118,56 @@ export function ImportWizard({ api, onClose, onComplete, defaultEntityType }: Im
       const { jobId, uploadUrl } = await api.initiateImport(state.entityType, state.file.name, {
         historical: state.historical,
         columnMappingOverrides: state.columnMappingOverrides,
+        multiSheet: isMultiSheet,
       });
       dispatch({ type: 'SET_JOB_ID', jobId });
-
       await api.uploadFile(uploadUrl, state.file, setUploadProgress);
-      await api.enqueueImport(jobId);
+      return jobId;
+    } catch (err: unknown) {
+      dispatch({ type: 'SET_ERROR', error: err instanceof Error ? err.message : String(err) });
+      return null;
+    }
+  }, [api, state, isMultiSheet]);
+
+  const handleUpload = useCallback(async () => {
+    if (!state.entityType || !state.file) return;
+
+    if (isMultiSheet) {
+      // Phase 1: upload file only, then show sheet selector
+      const jobId = await handleUploadFile();
+      if (!jobId) return;
+      try {
+        const sheetNames = await api.listSheets(jobId);
+        dispatch({ type: 'SET_SHEETS', available: sheetNames, selected: null });
+      } catch (err: unknown) {
+        dispatch({ type: 'SET_ERROR', error: err instanceof Error ? err.message : String(err) });
+      }
+    } else {
+      // Single-sheet: upload + enqueue in one go
+      const jobId = await handleUploadFile();
+      if (!jobId) return;
+      try {
+        await api.enqueueImport(jobId);
+        dispatch({ type: 'SET_STEP', step: 'processing' });
+      } catch (err: unknown) {
+        dispatch({ type: 'SET_ERROR', error: err instanceof Error ? err.message : String(err) });
+      }
+    }
+  }, [api, state, isMultiSheet, handleUploadFile]);
+
+  /** Enqueue after user picks sheets (multi-sheet flow only) */
+  const handleEnqueueWithSheets = useCallback(async () => {
+    if (!state.jobId) return;
+    dispatch({ type: 'SET_ERROR', error: null });
+    try {
+      await api.enqueueImport(state.jobId, {
+        selectedSheets: state.selectedSheets,
+      });
       dispatch({ type: 'SET_STEP', step: 'processing' });
     } catch (err: unknown) {
       dispatch({ type: 'SET_ERROR', error: err instanceof Error ? err.message : String(err) });
     }
-  }, [api, state]);
+  }, [api, state.jobId, state.selectedSheets]);
 
   const handleDownloadTemplate = useCallback(async () => {
     if (!state.entityType) return;
@@ -177,6 +239,14 @@ export function ImportWizard({ api, onClose, onComplete, defaultEntityType }: Im
             />
           )}
 
+          {state.step === 'sheet-select' && (
+            <SheetSelector
+              sheetNames={state.availableSheets ?? []}
+              selectedSheets={state.selectedSheets}
+              onSelectionChange={(sel) => dispatch({ type: 'SET_SELECTED_SHEETS', selected: sel })}
+            />
+          )}
+
           {state.step === 'uploading' && (
             <UploadProgress progress={uploadProgress} />
           )}
@@ -196,7 +266,7 @@ export function ImportWizard({ api, onClose, onComplete, defaultEntityType }: Im
         </div>
 
         {/* Footer */}
-        {(state.step === 'select-file' || state.step === 'review-warnings') && (
+        {(state.step === 'select-file' || state.step === 'review-warnings' || state.step === 'sheet-select') && (
           <div className="px-6 py-4 border-t border-slate-100 flex gap-3 justify-end bg-slate-50 rounded-b-2xl">
             {state.step === 'select-file' && (
               <>
@@ -208,7 +278,18 @@ export function ImportWizard({ api, onClose, onComplete, defaultEntityType }: Im
                   disabled={!state.file}
                   className="px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg disabled:opacity-40 hover:bg-blue-700 transition"
                 >
-                  Upload & Process
+                  {isMultiSheet ? 'Upload & Select Sheets' : 'Upload & Process'}
+                </button>
+              </>
+            )}
+            {state.step === 'sheet-select' && (
+              <>
+                <button onClick={() => dispatch({ type: 'SET_STEP', step: 'select-file' })} className="px-4 py-2 text-sm text-slate-600 hover:text-slate-900">← Back</button>
+                <button
+                  onClick={handleEnqueueWithSheets}
+                  className="px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                >
+                  Import Selected Sheets
                 </button>
               </>
             )}
@@ -417,14 +498,87 @@ function ImportResult({ job, onDownloadErrors, onClose, onImportMore }: {
   );
 }
 
+// ─── SheetSelector ────────────────────────────────────────────────────────────
+
+function SheetSelector({
+  sheetNames,
+  selectedSheets,
+  onSelectionChange,
+}: {
+  sheetNames: string[];
+  selectedSheets: string[] | null;
+  onSelectionChange: (sel: string[] | null) => void;
+}) {
+  const allSelected = selectedSheets === null;
+  const checkedSheets = selectedSheets ?? sheetNames;
+
+  const toggleAll = () => {
+    onSelectionChange(allSelected ? null : sheetNames);
+  };
+
+  const toggleSheet = (name: string) => {
+    const current = checkedSheets;
+    if (current.includes(name)) {
+      const next = current.filter((s) => s !== name);
+      onSelectionChange(next.length === sheetNames.length ? null : next);
+    } else {
+      const next = [...current, name];
+      onSelectionChange(next.length === sheetNames.length ? null : next);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <p className="text-sm font-medium text-slate-700 mb-1">Select sheets to import</p>
+        <p className="text-xs text-slate-500 mb-3">
+          This file has {sheetNames.length} worksheet{sheetNames.length !== 1 ? 's' : ''}.
+          Each sheet corresponds to a department. Select which departments you want to import.
+        </p>
+      </div>
+      <div className="border border-slate-200 rounded-xl overflow-hidden divide-y divide-slate-100">
+        {/* All sheets toggle */}
+        <label className="flex items-center gap-3 px-4 py-3 bg-slate-50 cursor-pointer hover:bg-slate-100 transition">
+          <input
+            type="checkbox"
+            checked={allSelected}
+            onChange={toggleAll}
+            className="w-4 h-4 rounded accent-blue-600"
+          />
+          <span className="text-sm font-medium text-slate-700">All sheets</span>
+          <span className="ml-auto text-xs text-slate-400">{sheetNames.length} departments</span>
+        </label>
+        {/* Individual sheets */}
+        {sheetNames.map((name) => (
+          <label key={name} className="flex items-center gap-3 px-4 py-2.5 cursor-pointer hover:bg-blue-50 transition">
+            <input
+              type="checkbox"
+              checked={checkedSheets.includes(name)}
+              onChange={() => toggleSheet(name)}
+              className="w-4 h-4 rounded accent-blue-600"
+            />
+            <span className="text-sm text-slate-700">{name}</span>
+          </label>
+        ))}
+      </div>
+      {!allSelected && selectedSheets !== null && (
+        <p className="text-xs text-slate-500">
+          {selectedSheets.length} of {sheetNames.length} departments selected
+        </p>
+      )}
+    </div>
+  );
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function stepLabel(step: WizardStep): string {
   const labels: Record<WizardStep, string> = {
-    'select-entity': 'Step 1 of 3 — Choose entity type',
-    'select-file': 'Step 2 of 3 — Select file',
-    'column-mapping': 'Step 2b — Map columns',
-    'review-warnings': 'Step 3 of 3 — Review & upload',
+    'select-entity': 'Step 1 of 4 — Choose entity type',
+    'select-file': 'Step 2 of 4 — Select file',
+    'sheet-select': 'Step 3 of 4 — Select sheets',
+    'column-mapping': 'Step 3b — Map columns',
+    'review-warnings': 'Step 4 of 4 — Review & upload',
     'uploading': 'Uploading…',
     'processing': 'Processing…',
     'done': 'Complete',
