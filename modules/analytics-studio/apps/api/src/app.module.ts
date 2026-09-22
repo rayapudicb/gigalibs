@@ -18,9 +18,10 @@ import { SchemaDiscoveryModule } from './schema-discovery/schema-discovery.modul
 import { DatasetModule } from './datasets/dataset.module.js';
 import { QueryEngineModule } from './query-engine/query-engine.module.js';
 import { ReportModule } from './reports/report.module.js';
+import { LineageModule } from './lineage/lineage.module.js';
 
 @Module({
-  imports: [ConnectorModule, IngestionModule, SchemaDiscoveryModule, DatasetModule, QueryEngineModule, ReportModule],
+  imports: [ConnectorModule, IngestionModule, SchemaDiscoveryModule, DatasetModule, QueryEngineModule, ReportModule, LineageModule],
   controllers: [
     HealthController,
     SetupController,
