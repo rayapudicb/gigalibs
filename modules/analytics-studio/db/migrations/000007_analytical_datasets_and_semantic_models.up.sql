@@ -199,6 +199,6 @@ CREATE INDEX IF NOT EXISTS idx_model_versions_tenant
   ON gigalibs_analytics.semantic_model_versions (tenant_id);
 
 -- ── schema_migrations ledger ─────────────────────────────────
-INSERT INTO gigalibs_analytics.schema_migrations (version, description, applied_at)
+INSERT INTO gigalibs_analytics.schema_migrations (version, name, applied_at)
 VALUES (7, 'analytical_datasets_and_semantic_models', now())
 ON CONFLICT (version) DO NOTHING;

@@ -207,6 +207,6 @@ CREATE POLICY report_deliveries_tenant_isolation
 
 -- ── Schema migrations ledger ─────────────────────────────────────────────────
 
-INSERT INTO gigalibs_analytics.schema_migrations (version, description, applied_at)
+INSERT INTO gigalibs_analytics.schema_migrations (version, name, applied_at)
 VALUES (9, '000009_reports_and_scheduled_delivery', now())
 ON CONFLICT (version) DO NOTHING;

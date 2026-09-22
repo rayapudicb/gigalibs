@@ -129,6 +129,6 @@ CREATE INDEX IF NOT EXISTS idx_raw_records_payload_gin
   ON gigalibs_analytics.raw_record_versions USING GIN (raw_payload);
 
 -- ── schema_migrations ledger ─────────────────────────────────
-INSERT INTO gigalibs_analytics.schema_migrations (version, description, applied_at)
+INSERT INTO gigalibs_analytics.schema_migrations (version, name, applied_at)
 VALUES (5, 'connector_sync_runs_and_raw_records', now())
 ON CONFLICT (version) DO NOTHING;

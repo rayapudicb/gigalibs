@@ -141,6 +141,6 @@ CREATE INDEX idx_audit_entity      ON gigalibs_analytics.analytics_audit_log (te
 
 -- ── Schema migrations ledger ─────────────────────────────────────────────────
 
-INSERT INTO gigalibs_analytics.schema_migrations (version, description, applied_at)
+INSERT INTO gigalibs_analytics.schema_migrations (version, name, applied_at)
 VALUES (10, '000010_lineage_and_audit', now())
 ON CONFLICT (version) DO NOTHING;

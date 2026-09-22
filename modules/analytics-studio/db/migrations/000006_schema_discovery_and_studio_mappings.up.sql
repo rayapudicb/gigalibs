@@ -163,6 +163,6 @@ CREATE INDEX IF NOT EXISTS idx_mapping_versions_hash
   ON gigalibs_analytics.studio_mapping_versions (content_hash);
 
 -- ── schema_migrations ledger ─────────────────────────────────
-INSERT INTO gigalibs_analytics.schema_migrations (version, description, applied_at)
+INSERT INTO gigalibs_analytics.schema_migrations (version, name, applied_at)
 VALUES (6, 'schema_discovery_and_studio_mappings', now())
 ON CONFLICT (version) DO NOTHING;

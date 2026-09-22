@@ -176,6 +176,6 @@ CREATE INDEX idx_qrc_chart_tenant_expires
 
 -- ── Schema migrations ledger ─────────────────────────────────────────────────
 
-INSERT INTO gigalibs_analytics.schema_migrations (version, description, applied_at)
+INSERT INTO gigalibs_analytics.schema_migrations (version, name, applied_at)
 VALUES (8, '000008_charts_and_dashboards', now())
 ON CONFLICT (version) DO NOTHING;

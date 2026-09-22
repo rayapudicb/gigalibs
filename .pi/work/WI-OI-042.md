@@ -271,7 +271,7 @@ Deliver a unified single control-plane architecture where:
 | 10. Direct URL & unauthorized protection | VERIFIED | Unauthenticated `/dashboard`, `/cmms`, `/settings` redirect to `/login` |
 | 11. Visual screenshot evidence | VERIFIED | Captured in `docs/audits/2026-09-20-readiness/evidence/ui/` |
 | 12. Monorepo audits & boundary tests | VERIFIED | All 6 mandatory static audits, 132 test files (1135 tests), 104 build tasks pass |
-| 13. Live PostgreSQL Migration Replay | IN PROGRESS | Schema and migrations valid; live PostgreSQL container replay pending (now includes migration 000005) |
+| 13. Live PostgreSQL Migration Replay | VERIFIED | All 10 analytics-studio migrations (000001–000010) replayed on PG 16.13 with 0 errors. Evidence: `modules/analytics-studio/db/migrations/evidence/gate13-pg-replay-2026-09-22.md` |
 | 14. Full CMMS Department Query Scope | VERIFIED | Migration 000005 adds `department_id`; all service `search`/`list` methods apply certified predicates; auth guard forwards `departmentIds` |
 | 15. Air-Gapped Offline Store (`@axe-core/playwright`) | VERIFIED | `e2e/package.json` created; `e2e` added to `pnpm-workspace.yaml`; dep present in `.pnpm-store/v11` |
 | 16. Independent Human Sign-off | PENDING | Required named human reviewers across Architecture, Security, Data, QA, Product |

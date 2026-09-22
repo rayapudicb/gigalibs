@@ -170,3 +170,100 @@ five are closed by named human reviewers.
 | Product | TBD | Pending |
 
 No agent may fill these names or mark acceptance.
+
+---
+
+## G4 Build Evidence — WI-OI-043 (All 7 Phases)
+
+**Status:** In Progress at G4  
+**Gate:** G4 Build / Integration — Build evidence complete; independent human review required before gate closure  
+**SDLC Governance:** No agent may mark human acceptance. Status remains In Progress until named human authorities (Solution Architecture, Security & Privacy, Backend/Data, QA/SDET, Product) close the gate.
+
+### ADR-0004 — OSS Visualization Library
+
+**Decision:** Apache ECharts 5.5.1 + echarts-for-react@3.0.2 adopted.  
+**Evidence:**
+- `packages/charts-react/src/index.tsx` — wrapper published as `@gigalibs/charts-react`
+- All chart render responses include `accessibleTable: Array<{label, value}>` (WCAG 2.1 AA)
+- Chart options template provides cosmetic config only (colors, title, labels); series data is always injected from real governed query results — never from template
+
+---
+
+### Phase Build Evidence Matrix
+
+| Phase | Description | Commit | Key Files |
+|---|---|---|---|
+| 1 | Connector Hub + Credential Vault | (prior sessions) | `connectors/connector.service.ts`, `000004_connector_hub_source_connections.up.sql` |
+| 2 | Ingestion Engine + Raw Tenant Staging | (prior sessions) | `ingestion/ingestion.service.ts`, `000005_connector_sync_runs_and_raw_records.up.sql` |
+| 3 | Schema Discovery + Data Studio Mappings | (prior sessions) | `schema-discovery/schema-discovery.service.ts`, `000006_schema_discovery_and_studio_mappings.up.sql` |
+| 4 | Analytical Datasets + Semantic Models | f44c134 | `datasets/dataset.service.ts`, `datasets/semantic-model.controller.ts`, `000007_analytical_datasets_and_semantic_models.up.sql` |
+| 5 | Governed Query Engine + ECharts + Dashboards | a3f9890 | `query-engine/query-engine.service.ts`, `query-engine/chart.service.ts`, `000008_charts_and_dashboards.up.sql` |
+| 6 | Reports, CSV Export, Scheduled Delivery | d1fc7ac | `reports/report.service.ts`, `reports/report.controller.ts`, `000009_reports_and_scheduled_delivery.up.sql` |
+| 7 | Lineage DAG + Tamper-Evident Audit Log | 286cd76 | `lineage/lineage.service.ts`, `lineage/lineage.controller.ts`, `000010_lineage_and_audit.up.sql` |
+
+---
+
+### Architecture Invariants Enforced
+
+| Invariant | Enforcement | Evidence |
+|---|---|---|
+| Tenant isolation | RLS + FORCE RLS on all tables; `withTenantTransaction` / `queryWithTenant` in all service calls | All 10 migrations (000004–000010) |
+| Append-only audit tables | `REVOKE UPDATE, DELETE` at migration level; no UPDATE/DELETE SQL in service source | Migrations 000005, 000006, 000007, 000008, 000009, 000010; source audits in each `.spec.ts` |
+| `UNAUTHORIZED` is never a FreshnessState | TypeScript union type `'FRESH' \| 'STALE' \| 'PARTIAL' \| 'REBUILDING' \| 'UNAVAILABLE'`; excluded from migration enum with comment; no assignment in code | `query-engine/query-engine.service.ts`; `000008_charts_and_dashboards.up.sql` |
+| No credential bytes in event_payload | Explicit JSDoc comment; source audit in `lineage.spec.ts` Suite 8 | `lineage/lineage.service.ts` |
+| SHA-256 content hashing | Mapping versions, semantic model versions, dataset checksums, CSV artifact checksums | `datasets/dataset.service.ts`, `reports/report.service.ts` |
+| RFC 4180 CSV | CRLF line endings; double-quote escaping; comment metadata lines | `reports/report.service.ts` — `buildCsv()`, `csvEscape()` |
+| Download token TTL = 15 minutes | `TOKEN_TTL_MS = 15 * 60 * 1000`; expired → GoneException | `reports/report.service.ts` |
+| Idempotency | `UNIQUE(report_definition_id, idempotency_key) DEFERRABLE` on report_runs | `000009_reports_and_scheduled_delivery.up.sql` |
+| Lineage TEXT node IDs | No cross-table FKs for heterogeneous node types | `000010_lineage_and_audit.up.sql` |
+| ECharts data from query results | Template merged first; series data always overridden from `queryResponse.results` | `query-engine/chart.service.ts` |
+| WCAG 2.1 AA accessible table | Every chart render response includes `accessibleTable` | `query-engine/chart.service.ts` |
+
+---
+
+### CONTAINED_P0 Phase Boundaries (Production Stubs)
+
+| Location | Stub | Production Replacement |
+|---|---|---|
+| `ingestion/ingestion.service.ts` | Vault credential resolution throws `NOT_IMPLEMENTED` | Wire real vault client (credential-vault service or Kubernetes secret) |
+| `reports/report.service.ts` | Artifact store is in-memory `Map<string, Buffer>` keyed by runId; `storage_ref = 'mem://${runId}'` | Vault-scoped object store (S3-compatible or cloud blob storage) |
+
+These are phase-boundary stubs. Both are clearly labelled `CONTAINED_P0` in source. Neither stub is a security boundary — the download token + TTL + SHA-256 verification layer applies at the controller layer regardless of storage backend.
+
+---
+
+### Vertical-Slice Truth Boundary Test
+
+`modules/analytics-studio/apps/api/src/analytics-truth-boundary.test.ts` (513 lines)
+
+Covers all 7 phases with cross-phase assertions:
+- All 7 pipeline modules registered in `AppModule`
+- Migration ledger versions 4–10 monotonically increasing, each with a schema_migrations INSERT
+- All append-only tables (`raw_record_versions`, `studio_mapping_versions`, `dataset_record_versions`, `semantic_model_versions`, `report_artifacts`, `report_deliveries`, `analytics_lineage_edges`, `analytics_audit_log`) have REVOKE UPDATE + DELETE
+- `PlatformContextV1` entitlement key `analytics-studio` present in auth source
+- `UNAUTHORIZED` not assigned as a `FreshnessState` value anywhere in codebase
+
+---
+
+### G4 Gate Compliance
+
+| Gate Criterion | Status | Evidence |
+|---|---|---|
+| Source-agnostic pipeline in prescribed immutable order | ✓ VERIFIED | 7 migrations (000004–000010); 7 NestJS modules; AppModule import chain |
+| All append-only tables REVOKE UPDATE/DELETE | ✓ VERIFIED | Migrations + source audits in each `.spec.ts` |
+| RLS + FORCE RLS on every table | ✓ VERIFIED | All 10 migrations |
+| No raw credentials or PII in audit event_payload | ✓ VERIFIED | `lineage.service.ts` comment + lineage.spec.ts Suite 8 |
+| `UNAUTHORIZED` excluded from FreshnessState | ✓ VERIFIED | TypeScript type + migration enum comment + no-assignment source audit |
+| ECharts data injected from query results, not template | ✓ VERIFIED | `chart.service.ts` merge order; truth-boundary test Phase 5 |
+| WCAG 2.1 AA accessible table on every chart | ✓ VERIFIED | `chart.service.ts` `accessibleTable` field; truth-boundary test Phase 5 |
+| SHA-256 content hashing | ✓ VERIFIED | Dataset, semantic model, CSV artifact checksums |
+| RFC 4180 CSV output | ✓ VERIFIED | `buildCsv()`, `csvEscape()`, CRLF line endings |
+| 15-minute download token TTL; GoneException on expiry | ✓ VERIFIED | `TOKEN_TTL_MS`; `report.service.ts`; `report.spec.ts` Suite 5 |
+| Idempotency key deduplication on report_runs | ✓ VERIFIED | UNIQUE DEFERRABLE constraint; `triggerReportRun` short-circuit |
+| Lineage DAG using TEXT node IDs | ✓ VERIFIED | `analytics_lineage_edges` schema; lineage.spec.ts Suite 3 |
+| CONTAINED_P0 stubs labelled | ✓ VERIFIED | `ingestion/ingestion.service.ts`; `reports/report.service.ts` |
+| Vertical-slice truth boundary test | ✓ VERIFIED | `analytics-truth-boundary.test.ts` — all 7 phases |
+| Independent human sign-off | ⏳ PENDING | Required: Solution Architecture, Security & Privacy, Backend/Data, QA/SDET, Product |
+
+**Status remains In Progress.** No agent may close this gate or update reviewer status.
+

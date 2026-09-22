@@ -38,8 +38,11 @@
   "workInProgressLimits": {
     "implementationModules": 1,
     "activeImplementationWorkItems": [
+      "WI-OI-042",
       "WI-OI-043"
-    ]
+    ],
+    "note_WI-OI-043": "G4 Build evidence complete (commits f44c134, a3f9890, d1fc7ac, 286cd76). Awaiting human gate review \u2014 no agent may close.",
+    "note_WI-OI-042": "G4 Build evidence complete (Phases 0-8). Gate 13 (Live PG migration replay) IN PROGRESS. Awaiting human gate review."
   },
   "relativeDeliveryEstimate": {
     "total": 100,

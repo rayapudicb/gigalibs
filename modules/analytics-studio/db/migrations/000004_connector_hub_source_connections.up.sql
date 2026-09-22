@@ -129,6 +129,6 @@ CREATE TRIGGER trg_source_connections_updated_at
   FOR EACH ROW EXECUTE FUNCTION gigalibs_analytics.set_updated_at();
 
 -- ── schema_migrations ledger ─────────────────────────────────
-INSERT INTO gigalibs_analytics.schema_migrations (version, description, applied_at)
+INSERT INTO gigalibs_analytics.schema_migrations (version, name, applied_at)
 VALUES (4, 'connector_hub_source_connections', now())
 ON CONFLICT (version) DO NOTHING;
