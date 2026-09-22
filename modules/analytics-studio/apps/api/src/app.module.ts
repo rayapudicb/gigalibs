@@ -15,9 +15,10 @@ import { ActionsService } from './actions/actions.service.js';
 import { ConnectorModule } from './connectors/connector.module.js';
 import { IngestionModule } from './ingestion/ingestion.module.js';
 import { SchemaDiscoveryModule } from './schema-discovery/schema-discovery.module.js';
+import { DatasetModule } from './datasets/dataset.module.js';
 
 @Module({
-  imports: [ConnectorModule, IngestionModule, SchemaDiscoveryModule],
+  imports: [ConnectorModule, IngestionModule, SchemaDiscoveryModule, DatasetModule],
   controllers: [
     HealthController,
     SetupController,
