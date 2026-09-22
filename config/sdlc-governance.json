@@ -89,5 +89,6 @@
     "docs/operational-intelligence-implementation-status.md",
     "docs/zero-mock-data-lineage-remediation-audit.md",
     "docs/runtime-quarantine.md"
-  ]
+  ],
+  "note_WI-OI-042": "G4 Build evidence complete (Phases 0-8). Gate 13 (Live PG migration replay) VERIFIED (commit 8c6b915, all 10 migrations pass). Gate 15 (CMMS missing capabilities) VERIFIED (commit ef7543e, vendors/customers/requests/purchase-orders). Gate 16 (CMMS OEE Analytics) VERIFIED (commit 34c4074, live MTBF/Availability/RAV from asset_downtimes, 90-day window). Gate 18 human sign-off pending \u2014 no agent may close."
 }

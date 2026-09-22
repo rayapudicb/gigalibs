@@ -274,6 +274,7 @@ Deliver a unified single control-plane architecture where:
 | 13. Live PostgreSQL Migration Replay | VERIFIED | All 10 analytics-studio migrations (000001–000010) replayed on PG 16.13 with 0 errors. Evidence: `modules/analytics-studio/db/migrations/evidence/gate13-pg-replay-2026-09-22.md` |
 | 14. Full CMMS Department Query Scope | VERIFIED | Migration 000005 adds `department_id`; all service `search`/`list` methods apply certified predicates; auth guard forwards `departmentIds` |
 | 15. CMMS Missing Capabilities (vendors/customers/requests/purchase-orders) | VERIFIED | Migration 000006 (purchase_orders + po_line_items, RLS + FORCE RLS); 4 service+controller pairs; atomic convert-to-WO; 4 truth-boundary test suites. Commit ef7543e |
-| 16. Air-Gapped Offline Store (`@axe-core/playwright`) | VERIFIED | `e2e/package.json` created; `e2e` added to `pnpm-workspace.yaml`; dep present in `.pnpm-store/v11` |
-| 17. Independent Human Sign-off | PENDING | Required named human reviewers across Architecture, Security, Data, QA, Product |
+| 16. CMMS OEE Analytics (live MTBF / Availability / RAV) | VERIFIED | Replaced `unavailableMetrics` placeholder with SQL CTEs against `gigalibs_cmms.asset_downtimes`; 90-day rolling window; MTBF, Availability%, RAV ratio now returned as numeric fields. Commit 34c4074 |
+| 17. Air-Gapped Offline Store (`@axe-core/playwright`) | VERIFIED | `e2e/package.json` created; `e2e` added to `pnpm-workspace.yaml`; dep present in `.pnpm-store/v11` |
+| 18. Independent Human Sign-off | PENDING | Required named human reviewers across Architecture, Security, Data, QA, Product |
 
