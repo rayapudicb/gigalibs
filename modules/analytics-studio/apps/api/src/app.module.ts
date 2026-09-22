@@ -17,9 +17,10 @@ import { IngestionModule } from './ingestion/ingestion.module.js';
 import { SchemaDiscoveryModule } from './schema-discovery/schema-discovery.module.js';
 import { DatasetModule } from './datasets/dataset.module.js';
 import { QueryEngineModule } from './query-engine/query-engine.module.js';
+import { ReportModule } from './reports/report.module.js';
 
 @Module({
-  imports: [ConnectorModule, IngestionModule, SchemaDiscoveryModule, DatasetModule, QueryEngineModule],
+  imports: [ConnectorModule, IngestionModule, SchemaDiscoveryModule, DatasetModule, QueryEngineModule, ReportModule],
   controllers: [
     HealthController,
     SetupController,
