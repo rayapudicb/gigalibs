@@ -1,4 +1,4 @@
-import React, { useCallback, useReducer, useRef } from 'react';
+import React, { useCallback, useReducer } from 'react';
 import type { ImportableEntityType, WizardState, WizardStep, ColumnWarning } from '../types.js';
 import { IMPORTABLE_ENTITY_TYPES, ENTITY_LABELS } from '../types.js';
 import type { ImportExportApi } from '../api/import-export-api.js';
@@ -79,7 +79,6 @@ export function ImportWizard({ api, onClose, onComplete, defaultEntityType }: Im
     step: defaultEntityType ? 'select-file' : 'select-entity',
   });
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadProgress, setUploadProgress] = React.useState(0);
 
   // Poll when we have a jobId
@@ -221,7 +220,6 @@ export function ImportWizard({ api, onClose, onComplete, defaultEntityType }: Im
           {state.step === 'select-file' && (
             <FileSelector
               entityType={state.entityType!}
-              fileInputRef={fileInputRef}
               file={state.file}
               historical={state.historical}
               onFileSelect={handleFileSelect}
@@ -258,7 +256,9 @@ export function ImportWizard({ api, onClose, onComplete, defaultEntityType }: Im
           {state.step === 'done' && (
             <ImportResult
               job={job}
-              onDownloadErrors={job?.errorReportS3Key ? handleDownloadErrorReport : undefined}
+              {...(job?.errorReportS3Key
+                ? { onDownloadErrors: handleDownloadErrorReport }
+                : {})}
               onClose={onClose}
               onImportMore={() => dispatch({ type: 'RESET' })}
             />
@@ -323,17 +323,18 @@ function EntitySelector({ onSelect }: { onSelect: (et: ImportableEntityType) => 
 }
 
 function FileSelector({
-  entityType, fileInputRef, file, historical,
+  entityType, file, historical,
   onFileSelect, onHistoricalChange, onDownloadTemplate,
 }: {
   entityType: ImportableEntityType;
-  fileInputRef: React.RefObject<HTMLInputElement | null>;
   file: File | null;
   historical: boolean;
   onFileSelect: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onHistoricalChange: (v: boolean) => void;
   onDownloadTemplate: () => void;
 }) {
+  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+
   return (
     <div className="space-y-5">
       <div>
@@ -358,7 +359,15 @@ function FileSelector({
             </div>
           )}
         </div>
-        <input ref={fileInputRef} type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={onFileSelect} />
+        <input
+          ref={(node) => {
+            fileInputRef.current = node;
+          }}
+          type="file"
+          accept=".xlsx,.xls,.csv"
+          className="hidden"
+          onChange={onFileSelect}
+        />
       </div>
 
       <div className="flex items-start gap-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
@@ -595,6 +604,7 @@ function entityIcon(et: ImportableEntityType): string {
     customers: '👤',
     workforce_resources: '👷',
     departments: '🏢',
+    users: '👥',
   };
   return icons[et] ?? '📋';
 }

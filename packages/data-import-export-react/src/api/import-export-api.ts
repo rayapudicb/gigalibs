@@ -27,7 +27,7 @@ export class ImportExportApi {
   async initiateImport(
     entityType: ImportableEntityType,
     filename: string,
-    options: { historical?: boolean; columnMappingOverrides?: Record<string, string> } = {},
+    options: { historical?: boolean; columnMappingOverrides?: Record<string, string>; multiSheet?: boolean } = {},
   ): Promise<InitiateImportResult> {
     const res = await this.request<{ data: InitiateImportResult }>('POST', '/v1/import-export/imports', {
       entityType,

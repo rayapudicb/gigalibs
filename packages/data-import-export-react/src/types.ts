@@ -6,6 +6,7 @@ export const IMPORTABLE_ENTITY_TYPES = [
   'customers',
   'workforce_resources',
   'departments',
+  'users',
 ] as const;
 
 export type ImportableEntityType = (typeof IMPORTABLE_ENTITY_TYPES)[number];
@@ -18,6 +19,7 @@ export const ENTITY_LABELS: Record<ImportableEntityType, string> = {
   customers: 'Customers',
   workforce_resources: 'Workforce',
   departments: 'Departments',
+  users: 'Users',
 };
 
 export type ImportJobStatus =

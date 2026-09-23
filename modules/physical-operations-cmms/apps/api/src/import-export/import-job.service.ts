@@ -1,11 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
 import type { DatabaseService } from '../database/database.service.js';
 import type { ImportJobPayload, ImportableEntityType, ImportJob, ColumnWarning, ValidatedRow } from './types.js';
+import { IAM_ENTITY_TYPES } from './types.js';
 import { AliasResolverService } from './alias-resolver.js';
 import { FkResolverService } from './fk-resolver.js';
 import { HierarchyResolverService } from './hierarchy-resolver.js';
 import { RowValidatorService } from './row-validator.js';
 import { BatchWriterService } from './batch-writer.js';
+import { IamUserImportService } from './iam-user-import.service.js';
 import { ImportStorageService } from './import-storage.service.js';
 import { XlsxStreamReader } from './xlsx-stream-reader.js';
 import { XlsxMultiSheetReader } from './xlsx-multisheet-reader.js';
@@ -25,6 +27,7 @@ export class ImportJobService {
     private readonly hierarchyResolver: HierarchyResolverService,
     private readonly rowValidator: RowValidatorService,
     private readonly batchWriter: BatchWriterService,
+    private readonly iamUserImportService: IamUserImportService,
     private readonly storage: ImportStorageService,
   ) {}
 
@@ -70,7 +73,7 @@ export class ImportJobService {
   // ─── Step 2: BullMQ worker entry point ───────────────────────────────────
 
   async processImportJob(payload: ImportJobPayload): Promise<void> {
-    const { tenantId, jobId, entityType, s3Key, options } = payload;
+    const { tenantId, actorId, jobId, entityType, s3Key, options } = payload;
     this.logger.log(`Processing import job ${jobId} for ${entityType}`);
 
     const useMultiSheet = options.multiSheet === true;
@@ -216,16 +219,26 @@ export class ImportJobService {
         return;
       }
 
-      // 8. Batch write
+      // 8. Commit — IAM entity types go through IamUserImportService; others use BatchWriterService
       await this.updateJobStatus(tenantId, jobId, 'COMMITTING');
-      const batchResult = await this.batchWriter.writeBatches(
-        tenantId,
-        entityType,
-        sorted,
-        allOrNothing,
-        (op: (client: PoolClient) => Promise<{ committed: number; failed: Array<{ rowNumber: number; error: string }> }>) =>
-          this.db.withTenantTransaction(tenantId, op),
-      );
+      let batchResult: { committed: number; failed: Array<{ rowNumber: number; error: string }> };
+      if (IAM_ENTITY_TYPES.includes(entityType)) {
+        batchResult = await this.iamUserImportService.processUserRows(
+          tenantId,
+          actorId,
+          sorted,
+          allOrNothing,
+        );
+      } else {
+        batchResult = await this.batchWriter.writeBatches(
+          tenantId,
+          entityType,
+          sorted,
+          allOrNothing,
+          (op: (client: PoolClient) => Promise<{ committed: number; failed: Array<{ rowNumber: number; error: string }> }>) =>
+            this.db.withTenantTransaction(tenantId, op),
+        );
+      }
 
       failedRows.push(...batchResult.failed);
       const successRows = batchResult.committed;

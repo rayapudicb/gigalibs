@@ -11,7 +11,11 @@ export const IMPORTABLE_ENTITY_TYPES = [
   'customers',
   'workforce_resources',
   'departments',
+  'users',
 ] as const;
+
+/** Entity types that go through the IAM provisioning path (not BatchWriterService). */
+export const IAM_ENTITY_TYPES: readonly ImportableEntityType[] = ['users'];
 
 export type ImportableEntityType = (typeof IMPORTABLE_ENTITY_TYPES)[number];
 
