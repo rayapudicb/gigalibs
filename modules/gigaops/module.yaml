@@ -56,6 +56,18 @@ spec:
       platformInspection: true
       reason: The tenant-isolated Workforce resource, capability-definition and qualification vertical is available for controlled local evaluation under WI-OI-061. Scheduling, time, pay and compliance remain visibly unavailable until separately implemented and certified.
       navigationOrder: 230
+      personas: [OPERATIONS_SUPERVISOR, WORKFORCE_MEMBER]
+      menu:
+        - { key: overview, label: Operations Overview, path: /gigaops, icon: gauge }
+        - { key: resources, label: Resource Directory, path: /gigaops/resources, icon: check-circle }
+        - { key: jobs, label: Jobs & Positions, path: /gigaops/jobs, icon: layers }
+        - { key: capabilities, label: Skills & Qualifications, path: /gigaops/capabilities, icon: shield-check }
+        - { key: availability, label: Availability, path: /gigaops/availability, icon: calendar }
+        - { key: scheduling, label: Scheduling & Dispatch, path: /gigaops/scheduling, icon: calendar }
+        - { key: time, label: Time & Attendance, path: /gigaops/time, icon: clock }
+        - { key: pay, label: Pay-ready Outputs, path: /gigaops/pay, icon: coins }
+        - { key: compliance, label: Compliance, path: /gigaops/compliance, icon: scale }
+        - { key: analytics, label: Workforce Analytics, path: /gigaops/analytics, icon: bar-chart }
   # Web gateway (WI-OI-083): the BFF reaches only these routes, as the user, with a freshly signed context. A list
   # means any one of the permissions. Workers reach their own time; managers read, correct and approve others'.
   gateway:

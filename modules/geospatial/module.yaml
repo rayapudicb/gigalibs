@@ -50,3 +50,4 @@ spec:
       platformInspection: false
       reason: The tenant-isolated place hierarchy (sites, zones, node types and jurisdiction) is available for controlled local evaluation under WI-OI-063; map drawing, distance and CMMS dispatch remain unavailable.
       navigationOrder: 240
+      personas: [OPERATIONS_SUPERVISOR]

@@ -232,14 +232,11 @@ Independent reviewers: Web/Accessibility, Security & Privacy, QA/SDET
 **Deviations and open points (for owner review):**
 - **G1 §4, dashboard widgets as slots:** no slot mechanism is built, because no module contributes a working
   widget yet. The first one would be CMMS maintenance KPIs (WI-OI-090).
-- **Module knowledge still hand-written in `AppSidebar.tsx`.** G1 §4 lists only icons and groups; the following
-  items were not changed and are **not approved**:
-  - per-module sub-menus (CMMS, GigaOps, TextFly), although CMMS pages are already declared in `spec.ui.pages`;
-  - persona allow-lists;
-  - a `gigaops` label override;
+- **Module knowledge still hand-written in `AppSidebar.tsx`:** sub-menus and persona allow-lists were moved to the
+  manifests later the same day (owner approved; see "083c addendum"). Still unchanged, as G1 §4 leaves text-only
+  mentions to their owners:
+  - label overrides (`gigaops` → "GigaOps Workforce", and a translated Accounts Receivable label);
   - navigation translation keys for the old five areas, now unused.
-
-  In a solution without CMMS these only become dead entries: the sidebar lists catalogue entries only.
 - **`audit:configuration-deployment-profile`** (not in the mandatory eight) still reports `WORKFORCE_API_URL`
   contract and `.env.example` drift, pre-existing from WI-OI-060/061 (see WI-OI-038).
 
@@ -263,3 +260,38 @@ Independent reviewers: Web/Accessibility, Security & Privacy, QA/SDET
 - **Deployed:** only `web` on 5180 (`up -d --no-deps web`). It is healthy, `/api/health/ready` and the API's
   `/ready` return 200, and it is read-only with all capabilities dropped. Other services are unchanged.
   `docker-disk-guard.sh prune --dry-run` found nothing to remove.
+
+## 083c addendum — sub-menus and persona lenses from manifests (2026-09-28)
+
+The owner approved this ahead of 083d, so the no-CMMS proof covers the whole sidebar.
+
+**Implementation:**
+- **New catalogue-entry fields**, manifest-only and validated by `pnpm modules:catalog`:
+  - `personas`: the restricted personas (`C_LEVEL`, `OPERATIONS_SUPERVISOR`, `WORKFORCE_MEMBER`,
+    `CUSTOMER_GUEST`) whose sidebar lens shows the entry. Platform Operators and Tenant Admins see every entry.
+  - `menu`: the entry's sub-menu items (key, label, path, icon). Each path must be the entry's route or below it.
+- **Generated output:** the generator writes these to `apps/workflow-platform/lib/generated/module-navigation.ts`.
+  The shared contracts catalogue is unchanged.
+- **Sidebar:** `lib/module-navigation.ts` (`personaSeesModule`, `moduleMenu`) serves them to the sidebar.
+  `PERSONA_ALLOWED_MODULE_KEYS` and `moduleSubmodulesByKey` are removed from `AppSidebar.tsx`.
+- **Overview items:** an item whose path equals the entry's route (the GigaOps overview) is active only on that
+  route, as the former `overview` key rule was.
+- **Icons:** six more names in `PlatformModuleIcon` for sub-menu items: `calendar`, `gauge`, `inbox`, `layers`,
+  `megaphone`, `wrench`.
+
+**Evidence:**
+- **Equivalence:**
+  - `module-navigation-equivalence.test.ts` now also checks, for all 32 entries, that each sub-menu equals the
+    frozen former table (key, label, href, icon) and that each persona lens shows exactly the same entries.
+    Former tables: `LEGACY_MODULE_MENUS` and `LEGACY_PERSONA_MODULE_KEYS` in the fixture.
+  - Two deliberate changes (a persona dropped, a label renamed) each failed exactly one case.
+- **Generator:** a menu path outside the route, and an unknown persona, fail `audit:module-manifests`.
+- **Chain:** build; full suite 220 files / 1,978 tests; all 8 audits pass. The deployment profile still reports
+  only the pre-existing `WORKFORCE_API_URL` drift.
+- **Images:** identity `c8422af46326-e05abab2dbb1`: control-plane migrations, API, web, Workforce, Analytics,
+  Connector Hub, CMMS. Geospatial was not rebuilt. The disk guard reported 176, 168 and 167 GB free.
+- **Live** (web on 127.0.0.1:5190): web paths pass (run `1790600414109-fd771f`) and Playwright/axe passes 14 of
+  14. The test sessions were revoked.
+- **Deployed:** only `web` on 5180, healthy; `/ready` returns 200 for web and API. The post-deploy
+  `docker-disk-guard.sh prune` removed `workflow-platform:88967ea35011-9ffa1e2a8005`, keeping the current web
+  image and one rollback.

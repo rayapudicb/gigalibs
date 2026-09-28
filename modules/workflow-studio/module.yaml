@@ -52,3 +52,4 @@ spec:
       platformInspection: true
       reason: Governed Workflow Studio & DAG Canvas with real-time execution telemetry, triggers, and visual DAG designer backed by real PostgreSQL persistence.
       navigationOrder: 30
+      personas: [C_LEVEL, OPERATIONS_SUPERVISOR]

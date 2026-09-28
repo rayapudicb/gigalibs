@@ -24,6 +24,7 @@ spec:
       platformInspection: false
       reason: Canonical tenant administration APIs and UI are available locally.
       navigationOrder: 10
+      personas: [C_LEVEL]
     - key: personal-security
       name: Personal Security
       navigationLabel: Personal Security & Profile
@@ -52,6 +53,7 @@ spec:
       platformInspection: false
       reason: Persisted execution evidence backed by gigalibs_workflow PostgreSQL schema.
       navigationOrder: 40
+      personas: [C_LEVEL, OPERATIONS_SUPERVISOR]
     - key: exceptions-recovery
       name: Exceptions & Recovery
       navigationLabel: Exceptions & Quarantine
@@ -66,6 +68,7 @@ spec:
       platformInspection: false
       reason: Canonical exception and recovery records are available for controlled local evaluation.
       navigationOrder: 50
+      personas: [OPERATIONS_SUPERVISOR]
     - key: approval-queue
       name: Approval Queue
       navigationLabel: Approval Queues
@@ -80,6 +83,7 @@ spec:
       platformInspection: false
       reason: Governed approval records are available for controlled local evaluation.
       navigationOrder: 60
+      personas: [C_LEVEL, OPERATIONS_SUPERVISOR, WORKFORCE_MEMBER]
     - key: value-ledger
       name: Business Value Ledger
       navigationLabel: Business Value Ledger
@@ -94,6 +98,7 @@ spec:
       platformInspection: false
       reason: Persisted value evidence is available for controlled local evaluation.
       navigationOrder: 70
+      personas: [C_LEVEL]
     - key: invoice-matching
       name: 3-Way Match Invoices
       navigationLabel: 3-Way Match Invoices
@@ -108,6 +113,7 @@ spec:
       platformInspection: false
       reason: The reference AP outcome is available for controlled local evaluation.
       navigationOrder: 100
+      personas: [C_LEVEL]
       hostedFor: procurement
     - key: dynamic-forms
       name: Dynamic Form Studio
@@ -123,6 +129,7 @@ spec:
       platformInspection: true
       reason: The governed PostgreSQL-backed designer, maker-checker lifecycle, immutable publication, activation, shared renderer, tenant-profile adapter and tenant-created record pages are available for controlled local UAT under WI-OI-039. Independent accessibility, security, recovery and product acceptance remain open.
       navigationOrder: 170
+      personas: [OPERATIONS_SUPERVISOR, WORKFORCE_MEMBER, CUSTOMER_GUEST]
     - key: platform-control
       name: Platform Control Tower
       navigationLabel: Platform Control Tower
@@ -151,6 +158,7 @@ spec:
       platformInspection: false
       reason: Statutory GAAP financial reporting, AR aging, spend reconciliation, and multi-format exports backed by tenant ledgers.
       navigationOrder: 290
+      personas: [C_LEVEL]
     - key: master-data
       name: Master Data Hub
       navigationLabel: Governed Enterprise Reference Data
@@ -165,6 +173,7 @@ spec:
       platformInspection: false
       reason: Authoritative Master Data Hub providing single-source-of-truth customer, vendor, chart of accounts, cost center, and signer directories.
       navigationOrder: 300
+      personas: [OPERATIONS_SUPERVISOR]
     - key: solution-packs
       name: Solution Packs
       navigationLabel: Solution Packs
@@ -179,3 +188,4 @@ spec:
       platformInspection: false
       reason: Turn-Key Enterprise Solution Packs Hub with 3-stage closed-loop pipelines (Pre-Actions, In-Flight Sagas, Post-Action ERP writebacks).
       navigationOrder: 310
+      personas: [C_LEVEL]

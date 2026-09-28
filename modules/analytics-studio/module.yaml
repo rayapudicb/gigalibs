@@ -55,3 +55,4 @@ spec:
       platformInspection: true
       reason: The bounded analytics slice uses PostgreSQL metric snapshots with cryptographic lineage proofs and executive actions; continuous multi-region rollup remains in review.
       navigationOrder: 210
+      personas: [C_LEVEL]

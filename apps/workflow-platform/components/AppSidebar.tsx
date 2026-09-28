@@ -16,30 +16,16 @@ import {
 } from '@gigalibs/contracts';
 import { determinePersona } from '@/lib/persona-utils';
 import { moduleIcons } from '@/lib/module-icons';
+import { type ModuleMenuItem, moduleMenu, personaSeesModule } from '@/lib/module-navigation';
 import {
   ArrowLeftRight,
-  BarChart3,
   Boxes,
   Building2,
-  Calendar,
-  CheckCircle2,
   ChevronDown,
   ChevronRight,
-  Clock,
-  Coins,
-  Factory,
-  FileText,
   Gauge,
-  Inbox,
-  Layers,
   Lock,
   type LucideIcon,
-  Megaphone,
-  Radio,
-  Scale,
-  ShieldCheck,
-  Wrench,
-  Zap,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -100,56 +86,6 @@ const PERSONA_CONFIG: Record<
     badge: '👤 Guest / Client',
     pillClass: 'bg-zinc-500/10 text-zinc-700 border-zinc-300 dark:border-zinc-700 dark:text-zinc-400',
   },
-};
-
-const PERSONA_ALLOWED_MODULE_KEYS: Record<PlatformContextPersona, Set<string> | null> = {
-  PLATFORM_OPERATOR: null,
-  TENANT_ADMIN: null,
-  C_LEVEL: new Set([
-    'analytics-studio',
-    'reports',
-    'value-ledger',
-    'solution-packs',
-    'approval-queue',
-    'accounts-receivable',
-    'invoice-matching',
-    'spend-management',
-    'tax-configuration',
-    'multi-currency',
-    'autonomous-recovery',
-    'workflow-definitions',
-    'execution-runs',
-    'tenant-access',
-  ]),
-  OPERATIONS_SUPERVISOR: new Set([
-    'asset-maintenance',
-    'geospatial-studio',
-    'approval-queue',
-    'exceptions-recovery',
-    'execution-runs',
-    'dynamic-forms',
-    'rule-studio',
-    'workflow-definitions',
-    'document-scanner',
-    'esignature',
-    'master-data',
-    'communications-textfly',
-    'gigaops',
-  ]),
-  WORKFORCE_MEMBER: new Set([
-    'asset-maintenance',
-    'approval-queue',
-    'dynamic-forms',
-    'document-scanner',
-    'esignature',
-    'communications-textfly',
-    'gigaops',
-  ]),
-  CUSTOMER_GUEST: new Set([
-    'dynamic-forms',
-    'document-scanner',
-    'esignature',
-  ]),
 };
 
 export default function AppSidebar({ session }: { session: VerifiedSession }) {
@@ -228,8 +164,7 @@ export default function AppSidebar({ session }: { session: VerifiedSession }) {
 
   const visibleModules = platformModuleCatalog.filter((module) => {
     if (SIDEBAR_HIDDEN_KEYS.has(module.key)) return false;
-    const personaAllowed = PERSONA_ALLOWED_MODULE_KEYS[activePersona];
-    if (personaAllowed && !personaAllowed.has(module.key)) return false;
+    if (!personaSeesModule(activePersona, module.key)) return false;
     return canOpenPlatformModule(module, session);
   });
   const activeModuleKey = mostSpecificActiveModuleKey(visibleModules, pathname);
@@ -397,44 +332,6 @@ export default function AppSidebar({ session }: { session: VerifiedSession }) {
   );
 }
 
-interface SubmoduleItem {
-  readonly key: string;
-  readonly label: string;
-  readonly href: string;
-  readonly icon: LucideIcon;
-}
-
-const moduleSubmodulesByKey: Readonly<Record<string, readonly SubmoduleItem[]>> = {
-  'asset-maintenance': [
-    { key: 'work-orders', label: 'Work Orders', href: '/cmms/work-orders', icon: Wrench },
-    { key: 'assets', label: 'Assets & Twin', href: '/cmms/assets', icon: Factory },
-    { key: 'schedules', label: 'PM Schedules', href: '/cmms/schedules', icon: Clock },
-    { key: 'inventory', label: 'MRO Parts', href: '/cmms/inventory', icon: Boxes },
-    { key: 'meters', label: 'Meters & IoT', href: '/cmms/meters', icon: Gauge },
-    { key: 'analytics', label: 'Reliability', href: '/cmms/analytics', icon: BarChart3 },
-    { key: 'floor', label: 'Floor Kiosk', href: '/cmms/floor', icon: Radio },
-  ],
-  'communications-textfly': [
-    { key: 'inbox', label: 'Unified Inbox', href: '/communications/inbox', icon: Inbox },
-    { key: 'channels', label: 'Channels & Providers', href: '/communications/channels', icon: Radio },
-    { key: 'templates', label: 'Message Templates', href: '/communications/templates', icon: FileText },
-    { key: 'campaigns', label: 'Reach & Campaigns', href: '/communications/campaigns', icon: Megaphone },
-    { key: 'triggers', label: 'Cross-Module Triggers', href: '/communications/triggers', icon: Zap },
-  ],
-  gigaops: [
-    { key: 'overview', label: 'Operations Overview', href: '/gigaops', icon: Gauge },
-    { key: 'resources', label: 'Resource Directory', href: '/gigaops/resources', icon: CheckCircle2 },
-    { key: 'jobs', label: 'Jobs & Positions', href: '/gigaops/jobs', icon: Layers },
-    { key: 'capabilities', label: 'Skills & Qualifications', href: '/gigaops/capabilities', icon: ShieldCheck },
-    { key: 'availability', label: 'Availability', href: '/gigaops/availability', icon: Calendar },
-    { key: 'scheduling', label: 'Scheduling & Dispatch', href: '/gigaops/scheduling', icon: Calendar },
-    { key: 'time', label: 'Time & Attendance', href: '/gigaops/time', icon: Clock },
-    { key: 'pay', label: 'Pay-ready Outputs', href: '/gigaops/pay', icon: Coins },
-    { key: 'compliance', label: 'Compliance', href: '/gigaops/compliance', icon: Scale },
-    { key: 'analytics', label: 'Workforce Analytics', href: '/gigaops/analytics', icon: BarChart3 },
-  ],
-};
-
 function ModuleLink({
   module,
   label,
@@ -447,9 +344,9 @@ function ModuleLink({
   isActive: boolean;
 }) {
   const isUnavailable = module.readiness === 'CONTAINED' || module.readiness === 'PLANNED';
-  const submodules = moduleSubmodulesByKey[module.key];
+  const submodules = moduleMenu(module.key);
 
-  if (!isUnavailable && submodules && submodules.length > 0) {
+  if (!isUnavailable && submodules.length > 0) {
     return (
       <ExpandableModuleItem
         module={module}
@@ -485,7 +382,7 @@ function ExpandableModuleItem({
   module: PlatformModuleDefinition;
   label?: string;
   pathname: string;
-  submodules: readonly SubmoduleItem[];
+  submodules: readonly ModuleMenuItem[];
   isUnavailable?: boolean;
   isActive: boolean;
 }) {
@@ -548,7 +445,8 @@ function ExpandableModuleItem({
         <div className="ml-3 border-l border-ui-border-base pl-2 space-y-0.5 mt-0.5">
           {submodules.map((sub) => {
             const SubIcon = sub.icon;
-            const isSubActive = sub.key === 'overview'
+            // An item at the entry's own route (an overview) is active only there, not on its sub-pages.
+            const isSubActive = sub.href === module.route
               ? pathname === sub.href
               : isNavigationPathActive(pathname, sub.href);
             return (

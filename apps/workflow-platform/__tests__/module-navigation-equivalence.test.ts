@@ -1,12 +1,17 @@
 /**
- * WI-OI-083c — sidebar groups and icons now come from each entry's manifest (`navigationGroup`, `iconKey`) instead
- * of hand-written tables in the shell. Every catalogue entry must land in the same group with the same icon as
- * before.
+ * WI-OI-083c — sidebar groups, icons, sub-menus and persona lenses now come from each entry's manifest
+ * (`navigationGroup`, `iconKey`, `menu`, `personas`) instead of hand-written tables in the shell. Every catalogue
+ * entry must look and appear exactly as before.
  */
 import { platformModuleCatalog } from '@gigalibs/contracts';
 import { describe, expect, it } from 'vitest';
 import { moduleIcons } from '../lib/module-icons';
-import { LEGACY_SIDEBAR_NAVIGATION } from './fixtures/legacy-module-navigation';
+import { moduleMenu, personaSeesModule } from '../lib/module-navigation';
+import {
+  LEGACY_MODULE_MENUS,
+  LEGACY_PERSONA_MODULE_KEYS,
+  LEGACY_SIDEBAR_NAVIGATION,
+} from './fixtures/legacy-module-navigation';
 
 describe('manifest-declared navigation equals the former sidebar tables', () => {
   it('covers exactly the catalogue entries the frozen tables covered', () => {
@@ -23,4 +28,25 @@ describe('manifest-declared navigation equals the former sidebar tables', () => 
       expect(moduleIcons[module.iconKey]).toBe(legacy?.icon);
     },
   );
+
+  it.each(platformModuleCatalog.map((module) => [module.key] as const))(
+    '%s keeps its sub-menu',
+    (key) => {
+      expect(moduleMenu(key)).toEqual(LEGACY_MODULE_MENUS[key] ?? []);
+    },
+  );
+
+  it('shows each persona lens exactly the entries it showed before', () => {
+    const personas = ['PLATFORM_OPERATOR', 'TENANT_ADMIN', ...Object.keys(LEGACY_PERSONA_MODULE_KEYS)] as const;
+    for (const persona of personas) {
+      const legacy = LEGACY_PERSONA_MODULE_KEYS[persona];
+      for (const module of platformModuleCatalog) {
+        expect([persona, module.key, personaSeesModule(persona as never, module.key)]).toEqual([
+          persona,
+          module.key,
+          legacy === undefined || legacy.includes(module.key),
+        ]);
+      }
+    }
+  });
 });

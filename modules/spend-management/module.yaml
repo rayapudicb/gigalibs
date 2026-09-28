@@ -53,3 +53,4 @@ spec:
       platformInspection: true
       reason: The bounded spend slice uses PostgreSQL RLS, tenant authority and optimistic locking; disbursement and full reconciliation remain in review.
       navigationOrder: 120
+      personas: [C_LEVEL]

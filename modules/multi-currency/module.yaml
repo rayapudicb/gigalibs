@@ -52,3 +52,4 @@ spec:
       platformInspection: true
       reason: Tenant currency preferences and the PostgreSQL ledger are available. No exchange rates are seeded; conversion requires an authoritative rate provider or reviewed import.
       navigationOrder: 140
+      personas: [C_LEVEL]

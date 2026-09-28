@@ -41,3 +41,10 @@ spec:
       platformInspection: true
       reason: Enterprise Omnichannel Communications Hub (TextFly) powering 2-way SMS, WhatsApp, Email, reach campaigns, and cross-module operational alerts.
       navigationOrder: 320
+      personas: [OPERATIONS_SUPERVISOR, WORKFORCE_MEMBER]
+      menu:
+        - { key: inbox, label: Unified Inbox, path: /communications/inbox, icon: inbox }
+        - { key: channels, label: Channels & Providers, path: /communications/channels, icon: radio }
+        - { key: templates, label: Message Templates, path: /communications/templates, icon: file-text }
+        - { key: campaigns, label: Reach & Campaigns, path: /communications/campaigns, icon: megaphone }
+        - { key: triggers, label: Cross-Module Triggers, path: /communications/triggers, icon: zap }

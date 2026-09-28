@@ -41,3 +41,4 @@ spec:
       platformInspection: false
       reason: AI Document Scanner & BYOM Workbench with bounded upload, pluggable OCR extraction, confidence scoring, arithmetic validation, and AP handoff.
       navigationOrder: 260
+      personas: [OPERATIONS_SUPERVISOR, WORKFORCE_MEMBER, CUSTOMER_GUEST]

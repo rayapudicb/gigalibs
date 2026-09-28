@@ -56,3 +56,4 @@ spec:
       platformInspection: true
       reason: Tenant recovery configuration and persisted read models are available. Detection needs an authoritative source contract, and external recovery actions remain unavailable without provider receipts.
       navigationOrder: 150
+      personas: [C_LEVEL]

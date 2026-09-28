@@ -9,6 +9,7 @@ import {
   BarChart3,
   Boxes,
   Building2,
+  Calendar,
   CheckCircle2,
   Clock,
   Coins,
@@ -18,10 +19,14 @@ import {
   FileCheck2,
   FileSignature,
   FileText,
+  Gauge,
+  Inbox,
   KeyRound,
+  Layers,
   Lock,
   type LucideIcon,
   MapPin,
+  Megaphone,
   MessageSquare,
   Network,
   Radio,
@@ -34,6 +39,7 @@ import {
   ShoppingBag,
   Sparkles,
   Workflow,
+  Wrench,
   Zap,
 } from 'lucide-react';
 
@@ -72,4 +78,83 @@ export const LEGACY_SIDEBAR_NAVIGATION: Readonly<
   'master-data': { group: 'Data & Documents', icon: Database },
   'solution-packs': { group: 'Intelligence', icon: Boxes },
   'communications-textfly': { group: 'Automate & Run', icon: MessageSquare },
+};
+
+// The sidebar's `PERSONA_ALLOWED_MODULE_KEYS` and `moduleSubmodulesByKey` as they were at commit c8422af. Platform
+// Operators and Tenant Admins saw every entry.
+export const LEGACY_PERSONA_MODULE_KEYS: Readonly<Record<string, readonly string[]>> = {
+  C_LEVEL: [
+    'analytics-studio',
+    'reports',
+    'value-ledger',
+    'solution-packs',
+    'approval-queue',
+    'accounts-receivable',
+    'invoice-matching',
+    'spend-management',
+    'tax-configuration',
+    'multi-currency',
+    'autonomous-recovery',
+    'workflow-definitions',
+    'execution-runs',
+    'tenant-access',
+  ],
+  OPERATIONS_SUPERVISOR: [
+    'asset-maintenance',
+    'geospatial-studio',
+    'approval-queue',
+    'exceptions-recovery',
+    'execution-runs',
+    'dynamic-forms',
+    'rule-studio',
+    'workflow-definitions',
+    'document-scanner',
+    'esignature',
+    'master-data',
+    'communications-textfly',
+    'gigaops',
+  ],
+  WORKFORCE_MEMBER: [
+    'asset-maintenance',
+    'approval-queue',
+    'dynamic-forms',
+    'document-scanner',
+    'esignature',
+    'communications-textfly',
+    'gigaops',
+  ],
+  CUSTOMER_GUEST: ['dynamic-forms', 'document-scanner', 'esignature'],
+};
+
+export const LEGACY_MODULE_MENUS: Readonly<
+  Record<string, readonly { key: string; label: string; href: string; icon: LucideIcon }[]>
+> = {
+  'asset-maintenance': [
+    { key: 'work-orders', label: 'Work Orders', href: '/cmms/work-orders', icon: Wrench },
+    { key: 'assets', label: 'Assets & Twin', href: '/cmms/assets', icon: Factory },
+    { key: 'schedules', label: 'PM Schedules', href: '/cmms/schedules', icon: Clock },
+    { key: 'inventory', label: 'MRO Parts', href: '/cmms/inventory', icon: Boxes },
+    { key: 'meters', label: 'Meters & IoT', href: '/cmms/meters', icon: Gauge },
+    { key: 'analytics', label: 'Reliability', href: '/cmms/analytics', icon: BarChart3 },
+    { key: 'floor', label: 'Floor Kiosk', href: '/cmms/floor', icon: Radio },
+  ],
+  'communications-textfly': [
+    { key: 'inbox', label: 'Unified Inbox', href: '/communications/inbox', icon: Inbox },
+    { key: 'channels', label: 'Channels & Providers', href: '/communications/channels', icon: Radio },
+    { key: 'templates', label: 'Message Templates', href: '/communications/templates', icon: FileText },
+    { key: 'campaigns', label: 'Reach & Campaigns', href: '/communications/campaigns', icon: Megaphone },
+    { key: 'triggers', label: 'Cross-Module Triggers', href: '/communications/triggers', icon: Zap },
+  ],
+  gigaops: [
+    { key: 'overview', label: 'Operations Overview', href: '/gigaops', icon: Gauge },
+    { key: 'resources', label: 'Resource Directory', href: '/gigaops/resources', icon: CheckCircle2 },
+    { key: 'jobs', label: 'Jobs & Positions', href: '/gigaops/jobs', icon: Layers },
+    { key: 'capabilities', label: 'Skills & Qualifications', href: '/gigaops/capabilities', icon: ShieldCheck },
+    { key: 'availability', label: 'Availability', href: '/gigaops/availability', icon: Calendar },
+    { key: 'scheduling', label: 'Scheduling & Dispatch', href: '/gigaops/scheduling', icon: Calendar },
+    { key: 'time', label: 'Time & Attendance', href: '/gigaops/time', icon: Clock },
+    { key: 'pay', label: 'Pay-ready Outputs', href: '/gigaops/pay', icon: Coins },
+    { key: 'compliance', label: 'Compliance', href: '/gigaops/compliance', icon: Scale },
+    { key: 'analytics', label: 'Workforce Analytics', href: '/gigaops/analytics', icon: BarChart3 },
+  ],
 };

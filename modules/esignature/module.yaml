@@ -42,3 +42,4 @@ spec:
       platformInspection: true
       reason: Court-admissible cryptographic e-signature studio with Adobe-grade X.509 Root CA binding, multi-signer routing, field placement, and tamper-evident PKI audit seals.
       navigationOrder: 250
+      personas: [OPERATIONS_SUPERVISOR, WORKFORCE_MEMBER, CUSTOMER_GUEST]

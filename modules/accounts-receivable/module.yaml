@@ -98,3 +98,4 @@ spec:
       platformInspection: true
       reason: A bounded PostgreSQL-backed customer, draft and issuance journey is available for controlled local UAT; the complete customer-to-cash outcome remains in review.
       navigationOrder: 110
+      personas: [C_LEVEL]

@@ -50,3 +50,4 @@ spec:
       platformInspection: true
       reason: A bounded PostgreSQL-backed jurisdiction, rate, exemption and calculation journey is available for controlled local UAT; broader production jurisdiction coverage remains in review.
       navigationOrder: 130
+      personas: [C_LEVEL]

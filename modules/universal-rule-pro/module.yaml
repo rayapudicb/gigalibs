@@ -51,3 +51,4 @@ spec:
       platformInspection: false
       reason: Universal Rule Pro & Policy Decision Engine with AST evaluation and multi-dimensional DMN decision tables.
       navigationOrder: 160
+      personas: [OPERATIONS_SUPERVISOR]

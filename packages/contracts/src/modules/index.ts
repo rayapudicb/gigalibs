@@ -18,6 +18,7 @@ export type PlatformModuleIcon =
   | 'bar-chart'
   | 'boxes'
   | 'building'
+  | 'calendar'
   | 'check-circle'
   | 'clock'
   | 'coins'
@@ -28,9 +29,13 @@ export type PlatformModuleIcon =
   | 'file-check'
   | 'file-signature'
   | 'file-text'
+  | 'gauge'
+  | 'inbox'
   | 'key-round'
+  | 'layers'
   | 'lock'
   | 'map-pin'
+  | 'megaphone'
   | 'message-square'
   | 'network'
   | 'radio'
@@ -43,6 +48,7 @@ export type PlatformModuleIcon =
   | 'shopping-bag'
   | 'sparkles'
   | 'workflow'
+  | 'wrench'
   | 'zap';
 
 export interface PlatformModuleDefinition {
