@@ -1,4 +1,4 @@
-apiVersion: modules.gigalibs.io/v1alpha1
+apiVersion: modules.gigalibs.io/v1
 kind: Module
 metadata:
   name: spend-management
@@ -37,3 +37,19 @@ spec:
     ownsSchema: true
     defaultSchema: gigalibs_spend
     crossSchemaAccess: false
+  # Web module catalogue entries (WI-OI-081): generated into @gigalibs/contracts by `pnpm modules:catalog`.
+  catalog:
+    - key: spend-management
+      name: Spend Management & AP
+      navigationLabel: Spend Management & AP
+      area: Finance
+      navigationGroup: Financial Operations
+      route: /spend
+      iconKey: spend
+      readiness: REVIEW
+      entitlementEligible: true
+      trialEligible: true
+      requiredPermission: spend:read
+      platformInspection: true
+      reason: The bounded spend slice uses PostgreSQL RLS, tenant authority and optimistic locking; disbursement and full reconciliation remain in review.
+      navigationOrder: 120

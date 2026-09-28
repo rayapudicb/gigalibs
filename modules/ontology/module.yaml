@@ -1,0 +1,47 @@
+# Operational Ontology: parties, agreements, transactions and assets. Prototype without a registered work item; frozen by the owner on 2026-09-28.
+apiVersion: modules.gigalibs.io/v1
+kind: Module
+metadata:
+  name: ontology
+  displayName: Operational Ontology
+  version: 0.1.0
+  lifecycle: prototype
+  workItem: null
+spec:
+  standalone: true
+  requiredModules: []
+  optionalModules: []
+  capabilities:
+    - parties
+    - agreements
+    - transactions
+    - assets
+    - graph-summary
+  ui:
+    application: apps/workflow-platform
+    basePath: /ontology
+  api:
+    application: apps/api
+    port: 3019
+    version: v1
+  database:
+    engine: postgresql
+    minimumVersion: '16'
+    ownsSchema: true
+    defaultSchema: gigalibs_ontology
+    crossSchemaAccess: false
+  catalog:
+    - key: operational-ontology
+      name: Operational Ontology
+      navigationLabel: Operational Ontology (Digital Twin)
+      area: Data
+      navigationGroup: Studio & Orchestration
+      route: /ontology
+      iconKey: ontology
+      readiness: AVAILABLE
+      entitlementEligible: true
+      trialEligible: true
+      requiredPermission: ontology:read
+      platformInspection: false
+      reason: Operational Ontology & Sovereign Digital Twin with 360-degree party, agreement, asset, and transaction graph backed by real RLS-isolated PostgreSQL persistence.
+      navigationOrder: 270

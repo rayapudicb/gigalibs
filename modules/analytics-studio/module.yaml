@@ -1,0 +1,52 @@
+# Analytics Studio (WI-OI-064): signed context, operational fact store, place rollups and governed metric, industry and country catalogues.
+apiVersion: modules.gigalibs.io/v1
+kind: Module
+metadata:
+  name: analytics-studio
+  displayName: Analytics Studio
+  version: 0.1.0
+  lifecycle: implementation
+  workItem: WI-OI-064
+spec:
+  standalone: true
+  requiredModules: []
+  optionalModules:
+    - geospatial
+    - universal-connector-hub
+  capabilities:
+    - metrics
+    - datasets
+    - query-engine
+    - place-rollups
+    - lineage
+    - reports
+    - ingestion
+    - schema-discovery
+  ui:
+    application: apps/workflow-platform
+    basePath: /analytics
+  api:
+    application: apps/api
+    port: 4400
+    version: v1
+  database:
+    engine: postgresql
+    minimumVersion: '16'
+    ownsSchema: true
+    defaultSchema: gigalibs_analytics
+    crossSchemaAccess: false
+  catalog:
+    - key: analytics-studio
+      name: Analytics Studio
+      navigationLabel: Universal Analytics Studio
+      area: Intelligence
+      navigationGroup: Executive Intelligence
+      route: /analytics
+      iconKey: analytics
+      readiness: REVIEW
+      entitlementEligible: true
+      trialEligible: true
+      requiredPermission: analytics:read
+      platformInspection: true
+      reason: The bounded analytics slice uses PostgreSQL metric snapshots with cryptographic lineage proofs and executive actions; continuous multi-region rollup remains in review.
+      navigationOrder: 210

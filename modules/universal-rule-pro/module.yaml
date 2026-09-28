@@ -1,4 +1,4 @@
-apiVersion: modules.gigalibs.io/v1alpha1
+apiVersion: modules.gigalibs.io/v1
 kind: Module
 metadata:
   name: universal-rule-pro
@@ -35,3 +35,19 @@ spec:
     ownsSchema: true
     defaultSchema: gigalibs_rules
     crossSchemaAccess: false
+  # Web module catalogue entries (WI-OI-081): generated into @gigalibs/contracts by `pnpm modules:catalog`.
+  catalog:
+    - key: rule-studio
+      name: Universal Rule Studio
+      navigationLabel: Universal Rule Pro
+      area: Decisioning
+      navigationGroup: Studio & Orchestration
+      route: /rules
+      iconKey: rules
+      readiness: REVIEW
+      entitlementEligible: true
+      trialEligible: true
+      requiredPermission: rules:read
+      platformInspection: false
+      reason: Universal Rule Pro & Policy Decision Engine with AST evaluation and multi-dimensional DMN decision tables.
+      navigationOrder: 160

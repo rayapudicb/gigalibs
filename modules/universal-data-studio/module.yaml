@@ -1,4 +1,4 @@
-apiVersion: modules.gigalibs.io/v1alpha1
+apiVersion: modules.gigalibs.io/v1
 kind: Module
 metadata:
   name: universal-data-studio
@@ -35,3 +35,19 @@ spec:
     ownsSchema: true
     defaultSchema: gigalibs_data_studio
     crossSchemaAccess: false
+  # Web module catalogue entries (WI-OI-081): generated into @gigalibs/contracts by `pnpm modules:catalog`.
+  catalog:
+    - key: data-contracts
+      name: Data Contracts
+      navigationLabel: Data Contracts & Schemas
+      area: Data
+      navigationGroup: Studio & Orchestration
+      route: /data-contracts
+      iconKey: data-contracts
+      readiness: REVIEW
+      entitlementEligible: true
+      trialEligible: true
+      requiredPermission: contracts:read
+      platformInspection: false
+      reason: Universal Data Studio & Data Contracts Engine with JSONSchema validation and schema drift detection.
+      navigationOrder: 80

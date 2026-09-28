@@ -1,0 +1,43 @@
+# Communications (WI-OI-041 programme): omnichannel messaging served by the TextFly runtime, which is not part of this workspace; this folder holds the communications schema. Frozen by the owner on 2026-09-28.
+apiVersion: modules.gigalibs.io/v1
+kind: Module
+metadata:
+  name: communications
+  displayName: Omnichannel Communications
+  version: 0.1.0
+  lifecycle: prototype
+  workItem: WI-OI-041
+spec:
+  standalone: true
+  requiredModules: []
+  optionalModules: []
+  capabilities:
+    - omnichannel-messaging
+    - campaigns
+    - templates
+    - triggers
+    - inbox
+  ui:
+    application: apps/workflow-platform
+    basePath: /communications
+  database:
+    engine: postgresql
+    minimumVersion: '16'
+    ownsSchema: true
+    defaultSchema: gigalibs_communications
+    crossSchemaAccess: false
+  catalog:
+    - key: communications-textfly
+      name: Omnichannel Communications
+      navigationLabel: Communications (TextFly)
+      area: Orchestration
+      navigationGroup: Studio & Orchestration
+      route: /communications
+      iconKey: communications
+      readiness: REVIEW
+      entitlementEligible: true
+      trialEligible: true
+      requiredPermission: communications:read
+      platformInspection: true
+      reason: Enterprise Omnichannel Communications Hub (TextFly) powering 2-way SMS, WhatsApp, Email, reach campaigns, and cross-module operational alerts.
+      navigationOrder: 320

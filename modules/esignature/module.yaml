@@ -1,0 +1,44 @@
+# E-Signature: envelopes and signatures. Prototype without a registered work item; frozen by the owner on 2026-09-28.
+apiVersion: modules.gigalibs.io/v1
+kind: Module
+metadata:
+  name: esignature
+  displayName: E-Signature
+  version: 0.1.0
+  lifecycle: prototype
+  workItem: null
+spec:
+  standalone: true
+  requiredModules: []
+  optionalModules: []
+  capabilities:
+    - envelopes
+    - signatures
+  ui:
+    application: apps/workflow-platform
+    basePath: /esign
+  api:
+    application: apps/api
+    port: 4500
+    version: v1
+  database:
+    engine: postgresql
+    minimumVersion: '16'
+    ownsSchema: true
+    defaultSchema: gigalibs_esign
+    crossSchemaAccess: false
+  catalog:
+    - key: esignature
+      name: E-Signature
+      navigationLabel: Cryptographic Esign Pro
+      area: Documents
+      navigationGroup: Studio & Orchestration
+      route: /esign
+      iconKey: esign
+      readiness: AVAILABLE
+      entitlementEligible: true
+      trialEligible: true
+      requiredPermission: esign:read
+      platformInspection: true
+      reason: Court-admissible cryptographic e-signature studio with Adobe-grade X.509 Root CA binding, multi-signer routing, field placement, and tamper-evident PKI audit seals.
+      navigationOrder: 250

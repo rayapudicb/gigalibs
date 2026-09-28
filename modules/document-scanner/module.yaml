@@ -1,0 +1,43 @@
+# Document Scanner: document capture and extraction. Prototype without a registered work item; frozen by the owner on 2026-09-28.
+apiVersion: modules.gigalibs.io/v1
+kind: Module
+metadata:
+  name: document-scanner
+  displayName: Document Scanner
+  version: 0.1.0
+  lifecycle: prototype
+  workItem: null
+spec:
+  standalone: true
+  requiredModules: []
+  optionalModules: []
+  capabilities:
+    - document-scanning
+  ui:
+    application: apps/workflow-platform
+    basePath: /scanner
+  api:
+    application: apps/api
+    port: 3017
+    version: v1
+  database:
+    engine: postgresql
+    minimumVersion: '16'
+    ownsSchema: true
+    defaultSchema: gigalibs_scanner
+    crossSchemaAccess: false
+  catalog:
+    - key: document-scanner
+      name: Document Scanner
+      navigationLabel: AI Document Scanner & BYOM
+      area: Documents
+      navigationGroup: Financial Operations
+      route: /scanner
+      iconKey: scanner
+      readiness: AVAILABLE
+      entitlementEligible: true
+      trialEligible: true
+      requiredPermission: documents:read
+      platformInspection: false
+      reason: AI Document Scanner & BYOM Workbench with bounded upload, pluggable OCR extraction, confidence scoring, arithmetic validation, and AP handoff.
+      navigationOrder: 260

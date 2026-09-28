@@ -1,0 +1,18 @@
+# Manufacturing Release 1 (WI-OI-079): the core plus the modules this solution ships. Validated by
+# `pnpm audit:module-manifests`; selective builds from this file follow in WI-OI-083.
+apiVersion: solutions.gigalibs.io/v1
+kind: Solution
+metadata:
+  name: manufacturing
+  displayName: Manufacturing maintenance
+  workItem: WI-OI-079
+spec:
+  modules:
+    - physical-operations-cmms
+    - gigaops
+    - geospatial
+    - analytics-studio
+    - universal-connector-hub
+  industryPack: manufacturing
+  # Owner decision D4 (pay output and jurisdiction) is open.
+  countryPack: null

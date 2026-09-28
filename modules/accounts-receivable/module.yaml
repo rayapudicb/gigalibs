@@ -1,4 +1,4 @@
-apiVersion: modules.gigalibs.io/v1alpha1
+apiVersion: modules.gigalibs.io/v1
 kind: Module
 metadata:
   name: accounts-receivable
@@ -82,3 +82,19 @@ spec:
   certification:
     status: not-certified
     evidence: release/evidence-index.yaml
+  # Web module catalogue entries (WI-OI-081): generated into @gigalibs/contracts by `pnpm modules:catalog`.
+  catalog:
+    - key: accounts-receivable
+      name: Accounts Receivable
+      navigationLabel: Accounts Receivable
+      area: Finance
+      navigationGroup: Financial Operations
+      route: /ar
+      iconKey: accounts-receivable
+      readiness: REVIEW
+      entitlementEligible: true
+      trialEligible: true
+      requiredPermission: ar:read
+      platformInspection: true
+      reason: A bounded PostgreSQL-backed customer, draft and issuance journey is available for controlled local UAT; the complete customer-to-cash outcome remains in review.
+      navigationOrder: 110

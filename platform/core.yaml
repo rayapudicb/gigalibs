@@ -1,0 +1,181 @@
+# Core surfaces every client gets, served by the control plane and the web shell (ADR-0013).
+# `hostedFor` marks a business capability still hosted by the control plane until its module exists.
+apiVersion: modules.gigalibs.io/v1
+kind: Core
+metadata:
+  name: core
+  displayName: GigaLibs core
+  version: 0.1.0
+  lifecycle: implementation
+  workItem: WI-OI-080
+spec:
+  catalog:
+    - key: tenant-access
+      name: Tenant & Access Administration
+      navigationLabel: Tenant RBAC & Settings
+      area: Platform
+      navigationGroup: Platform Administration
+      route: /settings
+      iconKey: settings
+      readiness: AVAILABLE
+      entitlementEligible: true
+      trialEligible: true
+      requiredPermission: tenant:read
+      platformInspection: false
+      reason: Canonical tenant administration APIs and UI are available locally.
+      navigationOrder: 10
+    - key: personal-security
+      name: Personal Security
+      navigationLabel: Personal Security & Profile
+      area: Platform
+      navigationGroup: Platform Administration
+      route: /settings/profile
+      iconKey: personal-security
+      readiness: AVAILABLE
+      entitlementEligible: true
+      trialEligible: true
+      requiredPermission: profile:*
+      platformInspection: false
+      reason: Canonical profile, password, TOTP and recovery flows are available locally.
+      navigationOrder: 20
+    - key: execution-runs
+      name: Execution Runs
+      navigationLabel: Execution Telemetry
+      area: Orchestration
+      navigationGroup: Studio & Orchestration
+      route: /runs
+      iconKey: runs
+      readiness: AVAILABLE
+      entitlementEligible: true
+      trialEligible: true
+      requiredPermission: runs:read
+      platformInspection: false
+      reason: Persisted execution evidence backed by gigalibs_workflow PostgreSQL schema.
+      navigationOrder: 40
+    - key: exceptions-recovery
+      name: Exceptions & Recovery
+      navigationLabel: Exceptions & Quarantine
+      area: Operations
+      navigationGroup: Studio & Orchestration
+      route: /exceptions
+      iconKey: exceptions
+      readiness: REVIEW
+      entitlementEligible: true
+      trialEligible: true
+      requiredPermission: exceptions:read
+      platformInspection: false
+      reason: Canonical exception and recovery records are available for controlled local evaluation.
+      navigationOrder: 50
+    - key: approval-queue
+      name: Approval Queue
+      navigationLabel: Approval Queues
+      area: Governance
+      navigationGroup: Studio & Orchestration
+      route: /actions
+      iconKey: approvals
+      readiness: REVIEW
+      entitlementEligible: true
+      trialEligible: true
+      requiredPermission: actions:read
+      platformInspection: false
+      reason: Governed approval records are available for controlled local evaluation.
+      navigationOrder: 60
+    - key: value-ledger
+      name: Business Value Ledger
+      navigationLabel: Business Value Ledger
+      area: Intelligence
+      navigationGroup: Executive Intelligence
+      route: /value
+      iconKey: value
+      readiness: REVIEW
+      entitlementEligible: true
+      trialEligible: true
+      requiredPermission: value:read
+      platformInspection: false
+      reason: Persisted value evidence is available for controlled local evaluation.
+      navigationOrder: 70
+    - key: invoice-matching
+      name: 3-Way Match Invoices
+      navigationLabel: 3-Way Match Invoices
+      area: Finance
+      navigationGroup: Financial Operations
+      route: /ap
+      iconKey: invoice-match
+      readiness: REVIEW
+      entitlementEligible: true
+      trialEligible: true
+      requiredPermission: ap:read
+      platformInspection: false
+      reason: The reference AP outcome is available for controlled local evaluation.
+      navigationOrder: 100
+      hostedFor: procurement
+    - key: dynamic-forms
+      name: Dynamic Form Studio
+      navigationLabel: Configuration Studio
+      area: Configuration
+      navigationGroup: Studio & Orchestration
+      route: /configuration
+      iconKey: dynamic-forms
+      readiness: REVIEW
+      entitlementEligible: true
+      trialEligible: true
+      requiredPermission: configuration:read
+      platformInspection: true
+      reason: The governed PostgreSQL-backed designer, maker-checker lifecycle, immutable publication, activation, shared renderer, tenant-profile adapter and tenant-created record pages are available for controlled local UAT under WI-OI-039. Independent accessibility, security, recovery and product acceptance remain open.
+      navigationOrder: 170
+    - key: platform-control
+      name: Platform Control Tower
+      navigationLabel: Platform Control Tower
+      area: Platform
+      navigationGroup: Platform Administration
+      route: /platform-admin
+      iconKey: platform-control
+      readiness: REVIEW
+      entitlementEligible: false
+      trialEligible: false
+      requiredPermission: null
+      platformInspection: false
+      reason: Platform control is global operator authority, not a tenant entitlement.
+      navigationOrder: 190
+    - key: reports
+      name: Reports Studio
+      navigationLabel: Universal Reports Studio
+      area: Intelligence
+      navigationGroup: Executive Intelligence
+      route: /reports
+      iconKey: reports
+      readiness: REVIEW
+      entitlementEligible: true
+      trialEligible: true
+      requiredPermission: reports:read
+      platformInspection: false
+      reason: Statutory GAAP financial reporting, AR aging, spend reconciliation, and multi-format exports backed by tenant ledgers.
+      navigationOrder: 290
+    - key: master-data
+      name: Master Data Hub
+      navigationLabel: Governed Enterprise Reference Data
+      area: Operations
+      navigationGroup: Platform Administration
+      route: /platform-admin/master-data
+      iconKey: master-data
+      readiness: REVIEW
+      entitlementEligible: true
+      trialEligible: true
+      requiredPermission: master-data:read
+      platformInspection: false
+      reason: Authoritative Master Data Hub providing single-source-of-truth customer, vendor, chart of accounts, cost center, and signer directories.
+      navigationOrder: 300
+    - key: solution-packs
+      name: Solution Packs
+      navigationLabel: Solution Packs
+      area: Solutions
+      navigationGroup: Executive Intelligence
+      route: /solutions
+      iconKey: solutions
+      readiness: REVIEW
+      entitlementEligible: true
+      trialEligible: true
+      requiredPermission: solutions:read
+      platformInspection: false
+      reason: Turn-Key Enterprise Solution Packs Hub with 3-stage closed-loop pipelines (Pre-Actions, In-Flight Sagas, Post-Action ERP writebacks).
+      navigationOrder: 310

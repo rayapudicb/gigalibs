@@ -1,4 +1,4 @@
-apiVersion: modules.gigalibs.io/v1alpha1
+apiVersion: modules.gigalibs.io/v1
 kind: Module
 metadata:
   name: platform-rbac
@@ -50,3 +50,19 @@ spec:
       - billing_invoices
       - ledger_transactions
       - platform_audit_events
+  # Web module catalogue entries (WI-OI-081): generated into @gigalibs/contracts by `pnpm modules:catalog`.
+  catalog:
+    - key: module-marketplace
+      name: Module Marketplace
+      navigationLabel: Module Marketplace & Usage Billing
+      area: Commercial
+      navigationGroup: Platform Administration
+      route: /marketplace
+      iconKey: marketplace
+      readiness: AVAILABLE
+      entitlementEligible: true
+      trialEligible: true
+      requiredPermission: marketplace:read
+      platformInspection: false
+      reason: Self-service module catalog, usage metering, credit wallet management, and double-entry billing ledger with RLS-isolated PostgreSQL persistence.
+      navigationOrder: 200

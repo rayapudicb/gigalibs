@@ -1,0 +1,43 @@
+# Saga Orchestrator: multi-step compensation. Prototype without a registered work item; frozen by the owner on 2026-09-28 (the workflow owner is open in ADR-0013).
+apiVersion: modules.gigalibs.io/v1
+kind: Module
+metadata:
+  name: saga-orchestrator
+  displayName: Saga Orchestrator
+  version: 0.1.0
+  lifecycle: prototype
+  workItem: null
+spec:
+  standalone: true
+  requiredModules: []
+  optionalModules: []
+  capabilities:
+    - saga-orchestration
+  ui:
+    application: apps/workflow-platform
+    basePath: /saga
+  api:
+    application: apps/api
+    port: 3020
+    version: v1
+  database:
+    engine: postgresql
+    minimumVersion: '16'
+    ownsSchema: true
+    defaultSchema: gigalibs_saga
+    crossSchemaAccess: false
+  catalog:
+    - key: saga-orchestrator
+      name: Saga Orchestrator
+      navigationLabel: Distributed Saga Orchestrator
+      area: Orchestration
+      navigationGroup: Studio & Orchestration
+      route: /saga
+      iconKey: saga
+      readiness: AVAILABLE
+      entitlementEligible: true
+      trialEligible: true
+      requiredPermission: saga:read
+      platformInspection: false
+      reason: Distributed Multi-System Saga Orchestrator with atomic forward execution, automated compensating rollbacks, and cryptographic audit ledger backed by real RLS-isolated PostgreSQL persistence.
+      navigationOrder: 280

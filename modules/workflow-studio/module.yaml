@@ -1,4 +1,4 @@
-apiVersion: modules.gigalibs.io/v1alpha1
+apiVersion: modules.gigalibs.io/v1
 kind: Module
 metadata:
   name: workflow-studio
@@ -36,3 +36,19 @@ spec:
     ownsSchema: true
     defaultSchema: gigalibs_workflow
     crossSchemaAccess: false
+  # Web module catalogue entries (WI-OI-081): generated into @gigalibs/contracts by `pnpm modules:catalog`.
+  catalog:
+    - key: workflow-definitions
+      name: Workflow Definitions
+      navigationLabel: Workflow Studio & DAG Canvas
+      area: Orchestration
+      navigationGroup: Studio & Orchestration
+      route: /workflows
+      iconKey: workflow
+      readiness: AVAILABLE
+      entitlementEligible: true
+      trialEligible: true
+      requiredPermission: workflows:read
+      platformInspection: true
+      reason: Governed Workflow Studio & DAG Canvas with real-time execution telemetry, triggers, and visual DAG designer backed by real PostgreSQL persistence.
+      navigationOrder: 30

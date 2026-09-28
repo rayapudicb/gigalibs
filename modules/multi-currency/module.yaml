@@ -1,4 +1,4 @@
-apiVersion: modules.gigalibs.io/v1alpha1
+apiVersion: modules.gigalibs.io/v1
 kind: Module
 metadata:
   name: multi-currency
@@ -36,3 +36,19 @@ spec:
     ownsSchema: true
     defaultSchema: gigalibs_currency
     crossSchemaAccess: false
+  # Web module catalogue entries (WI-OI-081): generated into @gigalibs/contracts by `pnpm modules:catalog`.
+  catalog:
+    - key: multi-currency
+      name: Multi-Currency Treasury
+      navigationLabel: Multi-Currency FX
+      area: Finance
+      navigationGroup: Financial Operations
+      route: /currency
+      iconKey: currency
+      readiness: REVIEW
+      entitlementEligible: true
+      trialEligible: true
+      requiredPermission: currency:read
+      platformInspection: true
+      reason: Tenant currency preferences and the PostgreSQL ledger are available. No exchange rates are seeded; conversion requires an authoritative rate provider or reviewed import.
+      navigationOrder: 140

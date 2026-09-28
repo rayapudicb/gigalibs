@@ -1,4 +1,4 @@
-apiVersion: modules.gigalibs.io/v1alpha1
+apiVersion: modules.gigalibs.io/v1
 kind: Module
 metadata:
   name: universal-connector-hub
@@ -39,3 +39,33 @@ spec:
       - raw_ingestion_journal
       - sync_jobs
       - audit_events
+  # Web module catalogue entries (WI-OI-081): generated into @gigalibs/contracts by `pnpm modules:catalog`.
+  catalog:
+    - key: connections
+      name: Connections
+      navigationLabel: Connections & Adapters
+      area: Integration
+      navigationGroup: Platform Administration
+      route: /connections
+      iconKey: connections
+      readiness: REVIEW
+      entitlementEligible: true
+      trialEligible: true
+      requiredPermission: connections:read
+      platformInspection: false
+      reason: Universal Enterprise Connector Hub with webhook ingestion journal, CDC feeds, and SOX audit logging.
+      navigationOrder: 90
+    - key: connector-hub
+      name: Connector Hub
+      navigationLabel: 1-Click OAuth Studio
+      area: Integration
+      navigationGroup: Platform Administration
+      route: /connections/oauth-studio
+      iconKey: connector-hub
+      readiness: REVIEW
+      entitlementEligible: true
+      trialEligible: true
+      requiredPermission: connections:read
+      platformInspection: false
+      reason: Commercial 1-Click OAuth Handshake Studio with automated schema discovery and heartbeat monitoring.
+      navigationOrder: 180

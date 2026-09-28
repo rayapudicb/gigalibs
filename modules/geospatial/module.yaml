@@ -1,0 +1,47 @@
+# Geospatial (WI-OI-063): places hierarchy, boundaries, per-tenant spatial scope and geofence evaluation.
+apiVersion: modules.gigalibs.io/v1
+kind: Module
+metadata:
+  name: geospatial
+  displayName: Geospatial Studio
+  version: 0.1.0
+  lifecycle: implementation
+  workItem: WI-OI-063
+spec:
+  standalone: true
+  requiredModules: []
+  optionalModules: []
+  capabilities:
+    - places-hierarchy
+    - boundaries
+    - spatial-scope
+    - geofence-evaluation
+    - place-import
+  ui:
+    application: apps/workflow-platform
+    basePath: /maps
+  api:
+    application: apps/api
+    port: 4720
+    version: v1
+  database:
+    engine: postgresql
+    minimumVersion: '16'
+    ownsSchema: true
+    defaultSchema: gigalibs_geospatial
+    crossSchemaAccess: false
+  catalog:
+    - key: geospatial-studio
+      name: Geospatial Studio
+      navigationLabel: Geospatial & OSM Studio
+      area: Location
+      navigationGroup: Studio & Orchestration
+      route: /maps
+      iconKey: maps
+      readiness: REVIEW
+      entitlementEligible: true
+      trialEligible: true
+      requiredPermission: maps:read
+      platformInspection: false
+      reason: The tenant-isolated place hierarchy (sites, zones, node types and jurisdiction) is available for controlled local evaluation under WI-OI-063; map drawing, distance and CMMS dispatch remain unavailable.
+      navigationOrder: 240

@@ -1,4 +1,4 @@
-apiVersion: modules.gigalibs.io/v1alpha1
+apiVersion: modules.gigalibs.io/v1
 kind: Module
 metadata:
   name: physical-operations-cmms
@@ -50,3 +50,19 @@ spec:
     defaultSchema: gigalibs_cmms
     crossSchemaAccess: false
     runtimeManifest: db/runtime-manifest.txt
+  # Web module catalogue entries (WI-OI-081): generated into @gigalibs/contracts by `pnpm modules:catalog`.
+  catalog:
+    - key: asset-maintenance
+      name: Asset & Maintenance (CMMS)
+      navigationLabel: EAM Operations Console
+      area: Physical Operations
+      navigationGroup: Physical Operations & CMMS
+      route: /cmms
+      iconKey: cmms
+      readiness: REVIEW
+      entitlementEligible: true
+      trialEligible: true
+      requiredPermission: cmms:read
+      platformInspection: true
+      reason: Enterprise Asset Management (EAM) & CMMS console with asset hierarchy, work order dispatch, IoT telemetry, and PM schedules.
+      navigationOrder: 220

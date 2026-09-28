@@ -1,4 +1,4 @@
-apiVersion: modules.gigalibs.io/v1alpha1
+apiVersion: modules.gigalibs.io/v1
 kind: Module
 metadata:
   name: tax-configuration
@@ -34,3 +34,19 @@ spec:
     ownsSchema: true
     defaultSchema: gigalibs_tax
     crossSchemaAccess: false
+  # Web module catalogue entries (WI-OI-081): generated into @gigalibs/contracts by `pnpm modules:catalog`.
+  catalog:
+    - key: tax-configuration
+      name: Tax Configuration
+      navigationLabel: Tax Configuration
+      area: Finance
+      navigationGroup: Financial Operations
+      route: /tax
+      iconKey: tax
+      readiness: REVIEW
+      entitlementEligible: true
+      trialEligible: true
+      requiredPermission: tax:read
+      platformInspection: true
+      reason: A bounded PostgreSQL-backed jurisdiction, rate, exemption and calculation journey is available for controlled local UAT; broader production jurisdiction coverage remains in review.
+      navigationOrder: 130

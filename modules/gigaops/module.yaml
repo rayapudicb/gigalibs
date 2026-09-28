@@ -1,0 +1,53 @@
+# GigaOps Workforce (WI-OI-060, WI-OI-061, WI-OI-065 to WI-OI-071): people, availability, bookings, time and pay-ready outputs; answers CMMS staffing requests (ADR-0007).
+apiVersion: modules.gigalibs.io/v1
+kind: Module
+metadata:
+  name: gigaops
+  displayName: GigaOps Universal Workforce
+  version: 0.1.0
+  lifecycle: implementation
+  workItem: WI-OI-060
+spec:
+  standalone: true
+  requiredModules: []
+  optionalModules:
+    - geospatial
+    - physical-operations-cmms
+  capabilities:
+    - resources
+    - capabilities
+    - jobs-and-positions
+    - availability-and-absence
+    - demand-and-bookings
+    - time-and-attendance
+    - pay-readiness
+    - payroll-export
+    - cmms-staffing-handshake
+  ui:
+    application: apps/workflow-platform
+    basePath: /gigaops
+  api:
+    application: apps/api
+    port: 4700
+    version: v1
+  database:
+    engine: postgresql
+    minimumVersion: '16'
+    ownsSchema: true
+    defaultSchema: gigalibs_workforce
+    crossSchemaAccess: false
+  catalog:
+    - key: gigaops
+      name: GigaOps Universal Workforce
+      navigationLabel: Universal Workforce & Payroll
+      area: Workforce
+      navigationGroup: Physical Operations & CMMS
+      route: /gigaops
+      iconKey: gigaops
+      readiness: REVIEW
+      entitlementEligible: true
+      trialEligible: true
+      requiredPermission: workforce:read
+      platformInspection: true
+      reason: The tenant-isolated Workforce resource, capability-definition and qualification vertical is available for controlled local evaluation under WI-OI-061. Scheduling, time, pay and compliance remain visibly unavailable until separately implemented and certified.
+      navigationOrder: 230

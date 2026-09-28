@@ -1,4 +1,4 @@
-apiVersion: modules.gigalibs.io/v1alpha1
+apiVersion: modules.gigalibs.io/v1
 kind: Module
 metadata:
   name: autonomous-recovery-studio
@@ -40,3 +40,19 @@ spec:
       - recovery_claims
       - historical_scan_sessions
       - audit_events
+  # Web module catalogue entries (WI-OI-081): generated into @gigalibs/contracts by `pnpm modules:catalog`.
+  catalog:
+    - key: autonomous-recovery
+      name: Autonomous Recovery Studio
+      navigationLabel: Autonomous Recovery Studio
+      area: Finance
+      navigationGroup: Financial Operations
+      route: /recovery
+      iconKey: recovery
+      readiness: REVIEW
+      entitlementEligible: true
+      trialEligible: true
+      requiredPermission: recovery:read
+      platformInspection: true
+      reason: Tenant recovery configuration and persisted read models are available. Detection needs an authoritative source contract, and external recovery actions remain unavailable without provider receipts.
+      navigationOrder: 150
