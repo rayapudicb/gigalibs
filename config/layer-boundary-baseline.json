@@ -1,10 +1,20 @@
 {
   "schemaVersion": 1,
-  "policy": "Existing layer violations when ADR-0013 was adopted (WI-OI-080). Entries may only be removed.",
+  "policy": "Existing layer violations when ADR-0013 was adopted (WI-OI-080) and module-schema access when that rule was added (WI-OI-083). Entries may only be removed.",
   "violations": [
     "CORE_IMPORTS_MODULE packages/chat-core/test/comms-certification.test.mjs -> ../../invoices-core/module.manifest.json",
     "CORE_IMPORTS_MODULE packages/chat-core/test/comms-certification.test.mjs -> ../../multi-currency/module.manifest.json",
     "CORE_IMPORTS_MODULE packages/form-engine-core/test/automation-certification.test.mjs -> ../../invoices-core/module.manifest.json",
-    "CORE_IMPORTS_MODULE packages/form-engine-core/test/automation-certification.test.mjs -> ../../multi-currency/module.manifest.json"
+    "CORE_IMPORTS_MODULE packages/form-engine-core/test/automation-certification.test.mjs -> ../../multi-currency/module.manifest.json",
+    "MODULE_SCHEMA_ACCESS apps/workflow-platform/app/(app)/workflows/page.tsx -> gigalibs_workflow",
+    "MODULE_SCHEMA_ACCESS apps/workflow-platform/components/analytics/AnalyticsStudioWorkbench.tsx -> gigalibs_analytics",
+    "MODULE_SCHEMA_ACCESS apps/workflow-platform/components/analytics/IndustryChartsCatalogView.tsx -> gigalibs_analytics",
+    "MODULE_SCHEMA_ACCESS apps/workflow-platform/components/currency/MultiCurrencyWorkbench.tsx -> gigalibs_currency",
+    "MODULE_SCHEMA_ACCESS apps/workflow-platform/lib/cmms-ledger-settlement-service.ts -> gigalibs_cmms",
+    "MODULE_SCHEMA_ACCESS apps/workflow-platform/lib/telemetry-bridge-service.ts -> gigalibs_cmms",
+    "MODULE_SCHEMA_ACCESS apps/workflow-platform/lib/workforce-safety-service.ts -> gigalibs_cmms",
+    "MODULE_SCHEMA_ACCESS apps/workflow-platform/lib/workforce-safety-service.ts -> gigalibs_workforce",
+    "MODULE_SCHEMA_ACCESS packages/custom-fields-nest/src/index.ts -> gigalibs_ar",
+    "MODULE_SCHEMA_ACCESS packages/forms-engine-nest/src/index.ts -> gigalibs_ar"
   ]
 }

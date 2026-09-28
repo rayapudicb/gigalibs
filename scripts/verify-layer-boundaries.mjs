@@ -4,8 +4,12 @@
 // config/layer-boundary-baseline.json; the audit fails on unclassified units and on any violation that is not
 // in the baseline, so the coupling can only shrink. `--write-baseline` rewrites the baseline; `--report` lists
 // every violation. Every core-database (Prisma) model must also be classified as core or module-owned.
+// MODULE_SCHEMA_ACCESS (WI-OI-083): only a module's own code may name its schema (`gigalibs_<x>.<table>`, owner from
+// `spec.database.defaultSchema` in the module manifest); everyone else goes through the module API. Tests and
+// verification scripts are exempt.
 import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative, resolve, sep } from 'node:path';
+import yaml from 'js-yaml';
 
 const root = resolve(new URL('../', import.meta.url).pathname);
 const config = JSON.parse(readFileSync(join(root, 'config/package-layers.json'), 'utf8'));
@@ -78,6 +82,17 @@ function layerOf(unit) {
   if (config.tooling.includes(unit)) return 'tooling';
   return null;
 }
+
+// Schema owners from the module manifests.
+const schemaOwner = new Map();
+for (const folder of readdirSync(join(root, 'modules'))) {
+  const manifestPath = join(root, 'modules', folder, 'module.yaml');
+  if (!existsSync(manifestPath)) continue;
+  const schema = yaml.load(readFileSync(manifestPath, 'utf8'))?.spec?.database?.defaultSchema;
+  if (typeof schema === 'string') schemaOwner.set(schema, folder);
+}
+const schemaReference = /\b(gigalibs_[a-z0-9_]+)\.[a-z_][a-z0-9_]*/g;
+const schemaExempt = /(?:\.test\.|\.spec\.|[/\\]__tests__[/\\]|[/\\]scripts[/\\])/;
 
 const units = workspaceUnits();
 const unclassified = units.filter((unit) => !layerOf(unit));
@@ -157,6 +172,13 @@ for (const unit of units) {
       if (from === 'shell' && to?.startsWith('module:'))
         shellModuleImports.set(to, (shellModuleImports.get(to) ?? 0) + 1);
     }
+    if (schemaExempt.test(relative(root, file))) continue;
+    for (const [, schema] of text.matchAll(schemaReference)) {
+      const owner = schemaOwner.get(schema);
+      if (owner && from !== `module:${owner}`) {
+        violations.push(`MODULE_SCHEMA_ACCESS ${relative(root, file)} -> ${schema}`);
+      }
+    }
   }
 }
 const found = [...new Set(violations)].sort();
@@ -177,7 +199,7 @@ const staleModels = [...modelConfig.core, ...moduleOwnedModels].filter(
 if (writeBaseline) {
   writeFileSync(
     baselinePath,
-    `${JSON.stringify({ schemaVersion: 1, policy: 'Existing layer violations when ADR-0013 was adopted (WI-OI-080). Entries may only be removed.', violations: found }, null, 2)}\n`,
+    `${JSON.stringify({ schemaVersion: 1, policy: 'Existing layer violations when ADR-0013 was adopted (WI-OI-080) and module-schema access when that rule was added (WI-OI-083). Entries may only be removed.', violations: found }, null, 2)}\n`,
   );
   console.log(`Wrote ${found.length} baseline violations to config/layer-boundary-baseline.json`);
 }

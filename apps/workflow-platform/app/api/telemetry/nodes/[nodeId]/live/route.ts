@@ -1,36 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { verifiedSession } from '@/lib/verified-session';
-import { telemetryBridgeService } from '@/lib/telemetry-bridge-service';
+import { unavailableCapability } from '@/lib/unavailable-capability';
 
 export const runtime = 'nodejs';
 
-/**
- * GET /api/telemetry/nodes/[nodeId]/live
- * Mobile-First live telemetry & prefill inspection resolver.
- * Called when a field technician scans a physical QR code on an asset or spatial checkpoint.
- */
-export async function GET(
-  request: NextRequest,
-  context: { params: Promise<{ nodeId: string }> }
-) {
-  const session = await verifiedSession(false);
-  if (session.response) return session.response;
-  if (!session.context.tenant) {
-    return NextResponse.json({ error: 'Tenant context required.' }, { status: 400 });
-  }
-
-  const { nodeId } = await context.params;
-
-  try {
-    const data = await telemetryBridgeService.getMobileNodeTelemetry(
-      session.context.tenant.id,
-      nodeId
-    );
-    return NextResponse.json(data);
-  } catch (error: any) {
-    return NextResponse.json(
-      { error: error?.message || 'Failed to fetch live telemetry' },
-      { status: 500 }
-    );
-  }
-}
+// Contained 2026-09-28 (WI-OI-083 security finding, owner-approved). The unreviewed implementation (commit
+// 808b8d2, lib/telemetry-bridge-service.ts) ran SQL against module schemas through the superuser control-plane role, and
+// this route read module data outside the module API. It stays unavailable (session required, no business action) until the D2 review
+// rebuilds it through the module API and signed gateway with RBAC.
+export const GET = () => unavailableCapability();

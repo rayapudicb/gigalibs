@@ -1,37 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { verifiedSession } from '@/lib/verified-session';
-import { cmmsLedgerSettlementService } from '@/lib/cmms-ledger-settlement-service';
+import { unavailableCapability } from '@/lib/unavailable-capability';
 
 export const runtime = 'nodejs';
 
-/**
- * GET /api/cmms/work-orders/[id]/financials
- * Returns comprehensive cost breakdown, labor hours, parts consumption,
- * settlement status, and linked GAAP General Ledger journal entries.
- */
-export async function GET(
-  request: NextRequest,
-  context: { params: Promise<{ id: string }> }
-) {
-  const session = await verifiedSession(false);
-  if (session.response) return session.response;
-  if (!session.context.tenant) {
-    return NextResponse.json({ error: 'Tenant context required.' }, { status: 400 });
-  }
-
-  const { id } = await context.params;
-
-  try {
-    const financials = await cmmsLedgerSettlementService.getWorkOrderFinancials(
-      session.context.tenant.id,
-      id
-    );
-    return NextResponse.json(financials);
-  } catch (error: any) {
-    const status = error?.message?.includes('not found') ? 404 : 500;
-    return NextResponse.json(
-      { error: error?.message || 'Failed to retrieve work order financials' },
-      { status }
-    );
-  }
-}
+// Contained 2026-09-28 (WI-OI-083 security finding, owner-approved). The unreviewed implementation (commit
+// 808b8d2, lib/cmms-ledger-settlement-service.ts) ran SQL against module schemas through the superuser control-plane role, and
+// this route read module data outside the module API. It stays unavailable (session required, no business action) until the D2 review
+// rebuilds it through the module API and signed gateway with RBAC.
+export const GET = () => unavailableCapability();
