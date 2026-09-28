@@ -99,6 +99,33 @@ describe('default tenant finance authority', () => {
     }
   });
 
+  it('gives tenant administrators Workforce authority but not managers or members', () => {
+    const hierarchy = createDefaultRoleHierarchy();
+    expect(hierarchy.resolveUserPermissions(['TENANT_ADMIN'])).toContain('workforce:*');
+    for (const role of ['MANAGER', 'MEMBER', 'VIEWER']) {
+      const permissions = hierarchy.resolveUserPermissions([role]);
+      expect(permissions.some((permission) => permission.startsWith('workforce'))).toBe(false);
+    }
+  });
+
+  it('gives tenant administrators Geospatial authority but not managers or members', () => {
+    const hierarchy = createDefaultRoleHierarchy();
+    expect(hierarchy.resolveUserPermissions(['TENANT_ADMIN'])).toContain('maps:*');
+    for (const role of ['MANAGER', 'MEMBER', 'VIEWER']) {
+      const permissions = hierarchy.resolveUserPermissions([role]);
+      expect(permissions.some((permission) => permission.startsWith('maps'))).toBe(false);
+    }
+  });
+
+  it('gives tenant administrators CMMS authority but not managers or members (WI-OI-038)', () => {
+    const hierarchy = createDefaultRoleHierarchy();
+    expect(hierarchy.resolveUserPermissions(['TENANT_ADMIN'])).toContain('cmms:*');
+    for (const role of ['MANAGER', 'MEMBER', 'VIEWER']) {
+      const permissions = hierarchy.resolveUserPermissions([role]);
+      expect(permissions.some((permission) => permission.startsWith('cmms'))).toBe(false);
+    }
+  });
+
   it('keeps viewer authority outside finance modules', () => {
     const hierarchy = createDefaultRoleHierarchy();
     const permissions = hierarchy.resolveUserPermissions(['VIEWER']);

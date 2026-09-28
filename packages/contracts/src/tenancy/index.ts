@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { EmailSchema, SlugSchema, UrlSchema } from '../common/index.js';
+import { SpatialScopePlaceIdsSchema } from '../geospatial/index.js';
 
 // ─── Tenancy Schemas ─────────────────────────────────────────────────────────
 
@@ -137,24 +138,88 @@ export const DeleteCustomRoleSchema = z.object({
   reason: z.string().trim().min(3).max(500),
 });
 
+export const EmploymentTypeSchema = z.enum([
+  'FULL_TIME',
+  'PART_TIME',
+  'CONTRACTOR',
+  'TEMPORARY',
+  'SEASONAL',
+  'INTERN',
+]);
+export type EmploymentType = z.infer<typeof EmploymentTypeSchema>;
+
 export const UpdateTenantMemberSchema = z
   .object({
     role: TenantMemberRoleSchema.optional(),
     status: z.enum(['ACTIVE', 'SUSPENDED']).optional(),
     customRoleId: z.string().min(1).nullable().optional(),
+    departmentId: z.string().min(1).nullable().optional(),
+    employmentType: EmploymentTypeSchema.nullable().optional(),
+    /** Places (with everything inside them) the member may reach once the tenant opts in to spatial scoping. */
+    spatialScopePlaceIds: SpatialScopePlaceIdsSchema.optional(),
     expectedUpdatedAt: z.string().datetime({ offset: true }),
     reason: z.string().trim().min(3).max(500),
   })
   .refine(
     (value) =>
-      value.role !== undefined || value.status !== undefined || value.customRoleId !== undefined,
+      value.role !== undefined ||
+      value.status !== undefined ||
+      value.customRoleId !== undefined ||
+      value.departmentId !== undefined ||
+      value.employmentType !== undefined ||
+      value.spatialScopePlaceIds !== undefined,
     {
-      message: 'A role or status change is required',
+      message: 'A role, status, department, employment type, or spatial scope change is required',
     },
   );
 
+export const CreateDepartmentSchema = z.object({
+  name: z.string().trim().min(1).max(100),
+  code: z
+    .string()
+    .trim()
+    .min(1)
+    .max(50)
+    .regex(/^[A-Za-z0-9_-]+$/, 'Code must be alphanumeric and may contain hyphens or underscores'),
+  parentId: z.string().min(1).nullable().optional(),
+  managerId: z.string().min(1).nullable().optional(),
+  spendingLimit: z.number().nonnegative().nullable().optional(),
+});
+export type CreateDepartmentDto = z.infer<typeof CreateDepartmentSchema>;
+
+export const UpdateDepartmentSchema = z.object({
+  name: z.string().trim().min(1).max(100).optional(),
+  code: z
+    .string()
+    .trim()
+    .min(1)
+    .max(50)
+    .regex(/^[A-Za-z0-9_-]+$/, 'Code must be alphanumeric and may contain hyphens or underscores')
+    .optional(),
+  parentId: z.string().min(1).nullable().optional(),
+  managerId: z.string().min(1).nullable().optional(),
+  spendingLimit: z.number().nonnegative().nullable().optional(),
+  isActive: z.boolean().optional(),
+});
+export type UpdateDepartmentDto = z.infer<typeof UpdateDepartmentSchema>;
+
+export const UpdateTenantOrganizationSettingsSchema = z
+  .object({
+    hierarchyEnabled: z.boolean().optional(),
+    /** Opt-in: members other than tenant administrators only reach their assigned place sub-trees. */
+    spatialScopingEnabled: z.boolean().optional(),
+  })
+  .refine(
+    (value) => value.hierarchyEnabled !== undefined || value.spatialScopingEnabled !== undefined,
+    { message: 'A hierarchy or spatial scoping change is required' },
+  );
+export type UpdateTenantOrganizationSettingsDto = z.infer<
+  typeof UpdateTenantOrganizationSettingsSchema
+>;
+
 export const CreateTenantDataExportSchema = z.object({
   reason: z.string().trim().min(3).max(500),
+  idempotencyKey: z.string().trim().min(1).max(255).optional(),
 });
 
 // ─── Global platform administration ─────────────────────────────────────────

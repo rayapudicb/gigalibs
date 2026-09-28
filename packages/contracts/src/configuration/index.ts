@@ -1,4 +1,10 @@
 import { z } from 'zod';
+import { GovernedCatalogueDefinitionSchema } from './catalogue.js';
+
+// The accepted Configuration Studio performance profile exercises 250 fields.
+// Keep one shared hard ceiling so API parsing and surface registration cannot
+// silently drift below (or expand beyond) that reviewed resource envelope.
+export const CONFIGURATION_MAX_FIELDS = 250;
 
 export const ConfigurationKeySchema = z
   .string()
@@ -53,9 +59,7 @@ export const ConfigurationCoreFieldSchema = z
     readOnly: z.boolean(),
     classification: z.enum(['PUBLIC', 'INTERNAL', 'CONFIDENTIAL', 'RESTRICTED']),
     lockReason: z.string().trim().min(3).max(500),
-    allowedPresentationOverrides: z
-      .array(z.enum(['LABEL', 'HELP_TEXT', 'PLACEMENT']))
-      .max(3),
+    allowedPresentationOverrides: z.array(z.enum(['LABEL', 'HELP_TEXT', 'PLACEMENT'])).max(3),
   })
   .strict();
 
@@ -65,7 +69,7 @@ export const ConfigurationExtensionSlotSchema = z
     label: z.string().trim().min(1).max(160),
     description: z.string().trim().min(1).max(500),
     allowedFieldTypes: z.array(ConfigurationFieldTypeSchema).min(1).max(13),
-    maximumFields: z.number().int().min(1).max(200),
+    maximumFields: z.number().int().min(1).max(CONFIGURATION_MAX_FIELDS),
   })
   .strict();
 
@@ -83,7 +87,10 @@ export const ConfigurationSurfaceRegistrationSchema = z
     authoringDisabledReason: z.string().trim().min(3).max(500).optional(),
     entityKeyEditable: z.boolean(),
     surfaceKeyEditable: z.boolean(),
-    modes: z.array(z.enum(['CREATE', 'EDIT', 'READ', 'LIST'])).min(1).max(4),
+    modes: z
+      .array(z.enum(['CREATE', 'EDIT', 'READ', 'LIST']))
+      .min(1)
+      .max(4),
     coreFields: z.array(ConfigurationCoreFieldSchema).max(200),
     extensionSlots: z.array(ConfigurationExtensionSlotSchema).min(1).max(20),
   })
@@ -95,6 +102,8 @@ export const ConfigurationOptionSchema = z
     label: z.string().trim().min(1).max(200),
   })
   .strict();
+
+export type ConfigurationOption = z.infer<typeof ConfigurationOptionSchema>;
 
 export const ConfigurationPermissionSchema = z
   .string()
@@ -202,7 +211,7 @@ export const ConfigurationDefinitionSchema = z
     mode: z.enum(['CREATE', 'EDIT', 'READ', 'LIST']),
     title: z.string().trim().min(1).max(160),
     description: z.string().trim().max(1000).optional(),
-    fields: z.array(ConfigurationFieldSchema).max(200),
+    fields: z.array(ConfigurationFieldSchema).max(CONFIGURATION_MAX_FIELDS),
     sections: z.array(ConfigurationSectionSchema).max(50),
     listView: z
       .object({
@@ -218,12 +227,7 @@ export const ConfigurationDefinitionSchema = z
                 fieldKey: ConfigurationKeySchema,
                 operator: ConfigurationConditionOperatorSchema,
                 value: z
-                  .union([
-                    z.string().max(200),
-                    z.number().finite(),
-                    z.boolean(),
-                    z.null(),
-                  ])
+                  .union([z.string().max(200), z.number().finite(), z.boolean(), z.null()])
                   .optional(),
               })
               .strict(),
@@ -236,9 +240,16 @@ export const ConfigurationDefinitionSchema = z
   })
   .strict();
 
+/** A change set carries either a form-surface definition or a governed catalogue (WI-OI-064c). */
+export const ConfigurationChangeSetDefinitionSchema = z.union([
+  ConfigurationDefinitionSchema,
+  GovernedCatalogueDefinitionSchema,
+]);
+export type ConfigurationChangeSetDefinition = z.infer<typeof ConfigurationChangeSetDefinitionSchema>;
+
 export const CreateConfigurationChangeSetSchema = z
   .object({
-    definition: ConfigurationDefinitionSchema,
+    definition: ConfigurationChangeSetDefinitionSchema,
     reason: z.string().trim().min(3).max(500),
     idempotencyKey: z.string().trim().min(8).max(200),
   })
@@ -246,7 +257,7 @@ export const CreateConfigurationChangeSetSchema = z
 
 export const UpdateConfigurationChangeSetSchema = z
   .object({
-    definition: ConfigurationDefinitionSchema,
+    definition: ConfigurationChangeSetDefinitionSchema,
     reason: z.string().trim().min(3).max(500),
     expectedVersion: z.number().int().positive(),
   })
@@ -262,8 +273,8 @@ export const ConfigurationReasonSchema = z
 export const ActivateConfigurationSchema = z
   .object({
     publishedVersionId: z.string().min(1).max(200),
-    environmentKey: ConfigurationKeySchema.default('local-uat'),
-    cohortKey: ConfigurationKeySchema.default('all-users'),
+    environmentKey: ConfigurationKeySchema,
+    cohortKey: ConfigurationKeySchema,
     reason: z.string().trim().min(3).max(500),
     idempotencyKey: z.string().trim().min(8).max(200),
   })
@@ -274,8 +285,124 @@ export const ConfigurationRuntimeQuerySchema = z
     moduleKey: ConfigurationKeySchema,
     entityKey: ConfigurationKeySchema,
     surfaceKey: ConfigurationKeySchema,
-    environmentKey: ConfigurationKeySchema.default('local-uat'),
-    cohortKey: ConfigurationKeySchema.default('all-users'),
+    environmentKey: ConfigurationKeySchema.optional(),
+    cohortKey: ConfigurationKeySchema.optional(),
+  })
+  .strict();
+
+export const ConfigurationRuntimeCurrentQuerySchema = z
+  .object({
+    moduleKey: ConfigurationKeySchema,
+    entityKey: ConfigurationKeySchema,
+    surfaceKey: ConfigurationKeySchema,
+  })
+  .strict();
+
+export const ConfigurationRuntimePreviewQuerySchema = z
+  .object({
+    moduleKey: ConfigurationKeySchema,
+    entityKey: ConfigurationKeySchema,
+    surfaceKey: ConfigurationKeySchema,
+    environmentKey: ConfigurationKeySchema,
+    cohortKey: ConfigurationKeySchema,
+  })
+  .strict();
+
+export const ModuleAdapterCapabilityV1Schema = z.enum([
+  'SURFACE_DISCOVERY',
+  'RUNTIME_MANIFEST',
+  'EXTENSION_VALUE_READ',
+  'EXTENSION_VALUE_WRITE',
+  'ADMINISTRATIVE_PREVIEW',
+]);
+
+export const ModuleAdapterStorageStrategyV1Schema = z.enum(['CONTROL_PLANE_EXTENSION_VALUES']);
+
+export const ModuleAdapterCompatibilityV1Schema = z
+  .object({
+    descriptorVersion: z.literal('1.0'),
+    manifestContractVersion: z.literal('1.0'),
+    minimumRuntimeVersion: z.literal('1.0'),
+  })
+  .strict();
+
+export const ModuleAdapterLimitsV1Schema = z
+  .object({
+    maximumFields: z.number().int().min(1).max(CONFIGURATION_MAX_FIELDS),
+    maximumExtensionSlots: z.number().int().min(1).max(20),
+    maximumFilterDepth: z.number().int().min(1).max(10),
+    maximumFilterPredicates: z.number().int().min(1).max(100),
+  })
+  .strict();
+
+export const SafeFilterContractDescriptorV1Schema = z
+  .object({
+    enabled: z.boolean(),
+    operators: z.array(ConfigurationConditionOperatorSchema).max(10),
+    maximumDepth: z.number().int().min(1).max(10),
+    maximumPredicates: z.number().int().min(1).max(100),
+  })
+  .strict();
+
+export const ModuleAdapterPermissionMapV1Schema = z
+  .object({
+    discover: ConfigurationPermissionSchema,
+    runtimeRead: ConfigurationPermissionSchema,
+    extensionRead: ConfigurationPermissionSchema,
+    extensionWrite: ConfigurationPermissionSchema,
+    administrativePreview: z.tuple([ConfigurationPermissionSchema, ConfigurationPermissionSchema]),
+  })
+  .strict();
+
+export const ModuleAdapterDescriptorV1Schema = z
+  .object({
+    contractVersion: z.literal('1.0'),
+    adapterKey: ConfigurationKeySchema,
+    moduleKey: ConfigurationKeySchema,
+    entityKey: ConfigurationKeySchema,
+    surfaceKey: ConfigurationKeySchema,
+    entitlementModuleKey: ConfigurationKeySchema,
+    capabilities: z.array(ModuleAdapterCapabilityV1Schema).min(1).max(5),
+    storageStrategy: ModuleAdapterStorageStrategyV1Schema,
+    compatibility: ModuleAdapterCompatibilityV1Schema,
+    limits: ModuleAdapterLimitsV1Schema,
+    permissions: ModuleAdapterPermissionMapV1Schema,
+    audit: z
+      .object({
+        extensionMutationAudited: z.literal(true),
+        previewEventType: z.literal('configuration.runtime.previewed.v1'),
+      })
+      .strict(),
+    filterContract: SafeFilterContractDescriptorV1Schema,
+    surface: ConfigurationSurfaceRegistrationSchema,
+  })
+  .strict();
+
+export const ConfigurationRuntimeScopeV1Schema = z
+  .object({
+    contractVersion: z.literal('1.0'),
+    environmentKey: ConfigurationKeySchema,
+    cohortKey: ConfigurationKeySchema,
+    policyKey: z.literal('ALL_ENTITLED_USERS_V1'),
+    entitlementModuleKey: ConfigurationKeySchema,
+    resolutionSource: z.literal('SERVER_POLICY'),
+  })
+  .strict();
+
+export const ConfigurationRuntimeErrorCodeSchema = z.enum([
+  'CONFIGURATION_ADAPTER_NOT_FOUND',
+  'CONFIGURATION_ADAPTER_INCOMPATIBLE',
+  'CONFIGURATION_RUNTIME_SCOPE_MISSING',
+  'CONFIGURATION_RUNTIME_SCOPE_DENIED',
+  'CONFIGURATION_MANIFEST_UNAVAILABLE',
+]);
+
+export const ConfigurationRuntimeErrorResponseSchema = z
+  .object({
+    contractVersion: z.literal('1.0'),
+    code: ConfigurationRuntimeErrorCodeSchema,
+    message: z.string().trim().min(1).max(240),
+    retryable: z.boolean(),
   })
   .strict();
 
@@ -376,8 +503,13 @@ export const ConfigurationImpactChangeSchema = z
       'FIELD_REMOVED',
       'TYPE_CHANGED',
       'REQUIRED_ADDED',
+      'REQUIRED_REMOVED',
       'OPTIONS_REMOVED',
       'CONSTRAINT_TIGHTENED',
+      'CONSTRAINT_RELAXED',
+      'PERMISSION_REDUCED',
+      'PERMISSION_BROADENED',
+      'PROJECTION_CHANGED',
     ]),
     severity: z.enum(['SAFE', 'CONDITIONAL', 'BREAKING']),
     message: z.string().min(1).max(500),
@@ -475,6 +607,276 @@ export const CreateSavedFilterSchema = z
   })
   .strict();
 
+// ---------------------------------------------------------------------------
+// Stable v1 response contracts
+// ---------------------------------------------------------------------------
+
+const ConfigurationResponseIdSchema = z.string().min(1).max(200);
+const ConfigurationChecksumSchema = z.string().regex(/^sha256:[a-f0-9]{64}$/);
+const ConfigurationJsonObjectSchema = z.record(z.string(), z.unknown());
+const ConfigurationResponseDateSchema = z
+  .union([z.date(), z.string().datetime({ offset: true })])
+  .transform((value) => (value instanceof Date ? value.toISOString() : value));
+
+export const ConfigurationSurfaceResponseSchema = ConfigurationSurfaceRegistrationSchema.extend({
+  versionSequence: z.number().int().positive().optional(),
+}).strict();
+
+export const ConfigurationChangeSetResponseSchema = z
+  .object({
+    id: ConfigurationResponseIdSchema,
+    tenantId: ConfigurationResponseIdSchema,
+    moduleKey: ConfigurationKeySchema,
+    entityKey: ConfigurationKeySchema,
+    surfaceKey: ConfigurationKeySchema,
+    status: z.enum(['DRAFT', 'VALIDATED', 'SUBMITTED', 'APPROVED', 'REJECTED', 'PUBLISHED']),
+    definition: ConfigurationChangeSetDefinitionSchema,
+    compiledManifest: ConfigurationJsonObjectSchema.nullable(),
+    checksum: ConfigurationChecksumSchema.nullable(),
+    findings: z.array(z.unknown()).max(1000),
+    compatibility: z.enum(['COMPATIBLE', 'CONDITIONAL', 'BREAKING']).nullable(),
+    reason: z.string().min(3).max(500),
+    version: z.number().int().positive(),
+    createdById: ConfigurationResponseIdSchema,
+    submittedAt: ConfigurationResponseDateSchema.nullable(),
+    approvedById: ConfigurationResponseIdSchema.nullable(),
+    approvedAt: ConfigurationResponseDateSchema.nullable(),
+    rejectedById: ConfigurationResponseIdSchema.nullable(),
+    rejectedAt: ConfigurationResponseDateSchema.nullable(),
+    publishedAt: ConfigurationResponseDateSchema.nullable(),
+    createdAt: ConfigurationResponseDateSchema,
+    updatedAt: ConfigurationResponseDateSchema,
+  })
+  .strict();
+
+export const ConfigurationPublishedVersionResponseSchema = z
+  .object({
+    id: ConfigurationResponseIdSchema,
+    tenantId: ConfigurationResponseIdSchema,
+    changeSetId: ConfigurationResponseIdSchema,
+    moduleKey: ConfigurationKeySchema,
+    entityKey: ConfigurationKeySchema,
+    surfaceKey: ConfigurationKeySchema,
+    sequence: z.number().int().positive(),
+    manifest: ConfigurationJsonObjectSchema,
+    checksum: ConfigurationChecksumSchema,
+    compilerVersion: z.string().min(1).max(100),
+    publishedById: ConfigurationResponseIdSchema,
+    publishedAt: ConfigurationResponseDateSchema,
+  })
+  .strict();
+
+export const ConfigurationActivationResponseSchema = z
+  .object({
+    id: ConfigurationResponseIdSchema,
+    tenantId: ConfigurationResponseIdSchema,
+    publishedVersionId: ConfigurationResponseIdSchema,
+    moduleKey: ConfigurationKeySchema,
+    entityKey: ConfigurationKeySchema,
+    surfaceKey: ConfigurationKeySchema,
+    environmentKey: ConfigurationKeySchema,
+    cohortKey: ConfigurationKeySchema,
+    status: z.enum(['ACTIVE', 'INACTIVE']),
+    reason: z.string().min(3).max(500),
+    activatedById: ConfigurationResponseIdSchema,
+    activatedAt: ConfigurationResponseDateSchema,
+    deactivatedAt: ConfigurationResponseDateSchema.nullable(),
+  })
+  .strict();
+
+export const ConfigurationActivationListItemResponseSchema =
+  ConfigurationActivationResponseSchema.extend({
+    publishedVersion: z
+      .object({
+        checksum: ConfigurationChecksumSchema,
+        sequence: z.number().int().positive(),
+      })
+      .strict(),
+  }).strict();
+
+export const ConfigurationRuntimeManifestResponseSchema = z
+  .object({
+    activationId: ConfigurationResponseIdSchema,
+    publishedVersionId: ConfigurationResponseIdSchema,
+    activatedAt: ConfigurationResponseDateSchema,
+    manifest: ConfigurationJsonObjectSchema,
+    checksum: ConfigurationChecksumSchema,
+  })
+  .strict();
+
+export const ConfigurationRuntimeManifestCurrentResponseSchema =
+  ConfigurationRuntimeManifestResponseSchema.extend({
+    scope: ConfigurationRuntimeScopeV1Schema,
+    adapter: z
+      .object({
+        adapterKey: ConfigurationKeySchema,
+        descriptorVersion: z.literal('1.0'),
+      })
+      .strict(),
+  }).strict();
+
+export const ConfigurationExtensionValueResponseSchema = z
+  .object({
+    id: ConfigurationResponseIdSchema,
+    tenantId: ConfigurationResponseIdSchema,
+    ownerType: ConfigurationKeySchema,
+    ownerId: ConfigurationResponseIdSchema,
+    publishedVersionId: ConfigurationResponseIdSchema,
+    manifestChecksum: ConfigurationChecksumSchema,
+    values: ConfigurationJsonObjectSchema,
+    valuesChecksum: ConfigurationChecksumSchema,
+    version: z.number().int().positive(),
+    createdById: ConfigurationResponseIdSchema,
+    updatedById: ConfigurationResponseIdSchema,
+    createdAt: ConfigurationResponseDateSchema,
+    updatedAt: ConfigurationResponseDateSchema,
+  })
+  .strict();
+
+export const ConfigurationRuntimeApplicationResponseSchema = z
+  .object({
+    entityKey: ConfigurationKeySchema,
+    surfaceKey: ConfigurationKeySchema,
+    activationId: ConfigurationResponseIdSchema,
+    publishedVersionId: ConfigurationResponseIdSchema,
+    checksum: ConfigurationChecksumSchema,
+    sequence: z.number().int().positive(),
+    manifest: ConfigurationJsonObjectSchema,
+  })
+  .strict();
+
+export const ConfigurationRecordMutationResponseSchema = z
+  .object({
+    id: ConfigurationResponseIdSchema,
+    tenantId: ConfigurationResponseIdSchema,
+    entityKey: ConfigurationKeySchema,
+    publishedVersionId: ConfigurationResponseIdSchema,
+    manifestChecksum: ConfigurationChecksumSchema,
+    values: ConfigurationJsonObjectSchema,
+    valuesChecksum: ConfigurationChecksumSchema,
+    version: z.number().int().positive(),
+    createdById: ConfigurationResponseIdSchema,
+    updatedById: ConfigurationResponseIdSchema,
+    createdAt: ConfigurationResponseDateSchema,
+    updatedAt: ConfigurationResponseDateSchema,
+    deletedAt: ConfigurationResponseDateSchema.nullable(),
+  })
+  .strict();
+
+export const ConfigurationRecordListItemResponseSchema =
+  ConfigurationRecordMutationResponseSchema.omit({ valuesChecksum: true, deletedAt: true })
+    .extend({ columns: ConfigurationJsonObjectSchema })
+    .strict();
+
+export const ConfigurationRecordDetailResponseSchema =
+  ConfigurationRecordMutationResponseSchema.omit({ valuesChecksum: true, deletedAt: true })
+    .extend({
+      manifest: ConfigurationJsonObjectSchema,
+      stale: z.boolean(),
+    })
+    .strict();
+
+export const ConfigurationRecordListResponseSchema = z
+  .object({
+    records: z.array(ConfigurationRecordListItemResponseSchema).max(200),
+    manifest: ConfigurationJsonObjectSchema,
+    columnKeys: z.array(ConfigurationKeySchema).max(20),
+    nextCursor: ConfigurationResponseIdSchema.nullable(),
+  })
+  .strict();
+
+export const ConfigurationTemplateResponseSchema = z
+  .object({
+    id: ConfigurationResponseIdSchema,
+    tenantId: ConfigurationResponseIdSchema,
+    entityKey: ConfigurationKeySchema,
+    name: z.string().min(1).max(160),
+    description: z.string().max(1000).nullable(),
+    publishedVersionId: ConfigurationResponseIdSchema,
+    manifestChecksum: ConfigurationChecksumSchema,
+    values: ConfigurationJsonObjectSchema,
+    valuesChecksum: ConfigurationChecksumSchema,
+    sourceTemplateId: ConfigurationResponseIdSchema.nullable(),
+    version: z.number().int().positive(),
+    createdById: ConfigurationResponseIdSchema,
+    updatedById: ConfigurationResponseIdSchema,
+    createdAt: ConfigurationResponseDateSchema,
+    updatedAt: ConfigurationResponseDateSchema,
+    stale: z.boolean().optional(),
+  })
+  .strict();
+
+export const ConfigurationTemplateListResponseSchema = z
+  .object({
+    templates: z.array(ConfigurationTemplateResponseSchema).max(200),
+    manifest: ConfigurationJsonObjectSchema,
+  })
+  .strict();
+
+export const ConfigurationTemplateUpdateResponseSchema = z
+  .object({
+    id: ConfigurationResponseIdSchema,
+    tenantId: ConfigurationResponseIdSchema,
+    entityKey: ConfigurationKeySchema,
+    version: z.number().int().positive(),
+    updatedAt: ConfigurationResponseDateSchema,
+  })
+  .strict();
+
+export const ConfigurationDeletedResourceResponseSchema = z
+  .object({
+    id: ConfigurationResponseIdSchema,
+    deletedAt: ConfigurationResponseDateSchema,
+  })
+  .strict();
+
+export const ConfigurationSavedFilterResponseSchema = z
+  .object({
+    id: ConfigurationResponseIdSchema,
+    tenantId: ConfigurationResponseIdSchema,
+    entityKey: ConfigurationKeySchema,
+    name: z.string().min(1).max(120),
+    filterKey: z.string().max(80).nullable(),
+    filterValue: z.string().max(500).nullable(),
+    search: z.string().max(200).nullable(),
+    sortKey: z.enum(['updated-at', 'created-at']).nullable(),
+    sortDirection: z.enum(['ASC', 'DESC']),
+    createdById: ConfigurationResponseIdSchema,
+    createdAt: ConfigurationResponseDateSchema,
+    updatedAt: ConfigurationResponseDateSchema,
+  })
+  .strict();
+
+export const ConfigurationDeletedSavedFilterResponseSchema = z
+  .object({ id: ConfigurationResponseIdSchema, deleted: z.literal(true) })
+  .strict();
+
+export const ConfigurationPackageImportResponseSchema = z
+  .object({
+    packageId: z.string().uuid(),
+    importedChangeSets: z.array(ConfigurationChangeSetResponseSchema).min(1).max(100),
+  })
+  .strict();
+
+export const ConfigurationSurfaceListResponseSchema = z
+  .array(ConfigurationSurfaceResponseSchema)
+  .max(500);
+export const ConfigurationChangeSetListResponseSchema = z
+  .array(ConfigurationChangeSetResponseSchema)
+  .max(100);
+export const ConfigurationPublishedVersionListResponseSchema = z
+  .array(ConfigurationPublishedVersionResponseSchema)
+  .max(100);
+export const ConfigurationActivationListResponseSchema = z
+  .array(ConfigurationActivationListItemResponseSchema)
+  .max(100);
+export const ConfigurationRuntimeApplicationListResponseSchema = z
+  .array(ConfigurationRuntimeApplicationResponseSchema)
+  .max(500);
+export const ConfigurationSavedFilterListResponseSchema = z
+  .array(ConfigurationSavedFilterResponseSchema)
+  .max(200);
+
 export type ConfigurationDefinition = z.infer<typeof ConfigurationDefinitionSchema>;
 export type ConfigurationField = z.infer<typeof ConfigurationFieldSchema>;
 export type ConfigurationCoreField = z.infer<typeof ConfigurationCoreFieldSchema>;
@@ -487,6 +889,18 @@ export type UpdateConfigurationChangeSetDto = z.infer<typeof UpdateConfiguration
 export type ConfigurationReasonDto = z.infer<typeof ConfigurationReasonSchema>;
 export type ActivateConfigurationDto = z.infer<typeof ActivateConfigurationSchema>;
 export type ConfigurationRuntimeQuery = z.infer<typeof ConfigurationRuntimeQuerySchema>;
+export type ConfigurationRuntimeCurrentQuery = z.infer<
+  typeof ConfigurationRuntimeCurrentQuerySchema
+>;
+export type ConfigurationRuntimePreviewQuery = z.infer<
+  typeof ConfigurationRuntimePreviewQuerySchema
+>;
+export type ModuleAdapterDescriptorV1 = z.infer<typeof ModuleAdapterDescriptorV1Schema>;
+export type ConfigurationRuntimeScopeV1 = z.infer<typeof ConfigurationRuntimeScopeV1Schema>;
+export type ConfigurationRuntimeErrorCode = z.infer<typeof ConfigurationRuntimeErrorCodeSchema>;
+export type ConfigurationRuntimeErrorResponse = z.infer<
+  typeof ConfigurationRuntimeErrorResponseSchema
+>;
 export type ConfigurationExtensionValuesDto = z.infer<typeof ConfigurationExtensionValuesSchema>;
 export type CreateConfigurationRecordDto = z.infer<typeof CreateConfigurationRecordSchema>;
 export type UpdateConfigurationRecordDto = z.infer<typeof UpdateConfigurationRecordSchema>;
@@ -499,5 +913,24 @@ export type ConfigurationImpactReport = z.infer<typeof ConfigurationImpactReport
 export type ListApplicationRecordsQuery = z.infer<typeof ListApplicationRecordsQuerySchema>;
 export type CreateConfigurationTemplateDto = z.infer<typeof CreateConfigurationTemplateSchema>;
 export type UpdateConfigurationTemplateDto = z.infer<typeof UpdateConfigurationTemplateSchema>;
-export type DuplicateConfigurationTemplateDto = z.infer<typeof DuplicateConfigurationTemplateSchema>;
+export type DuplicateConfigurationTemplateDto = z.infer<
+  typeof DuplicateConfigurationTemplateSchema
+>;
 export type CreateSavedFilterDto = z.infer<typeof CreateSavedFilterSchema>;
+export type ConfigurationChangeSetResponse = z.infer<typeof ConfigurationChangeSetResponseSchema>;
+export type ConfigurationPublishedVersionResponse = z.infer<
+  typeof ConfigurationPublishedVersionResponseSchema
+>;
+export type ConfigurationActivationResponse = z.infer<typeof ConfigurationActivationResponseSchema>;
+export type ConfigurationExtensionValueResponse = z.infer<
+  typeof ConfigurationExtensionValueResponseSchema
+>;
+export type ConfigurationRecordMutationResponse = z.infer<
+  typeof ConfigurationRecordMutationResponseSchema
+>;
+export type ConfigurationTemplateResponse = z.infer<typeof ConfigurationTemplateResponseSchema>;
+export type ConfigurationSavedFilterResponse = z.infer<
+  typeof ConfigurationSavedFilterResponseSchema
+>;
+
+export * from './catalogue.js';

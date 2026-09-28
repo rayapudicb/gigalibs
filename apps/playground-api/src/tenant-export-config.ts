@@ -9,8 +9,14 @@ export interface TenantExportSigningConfig {
 }
 
 export function getTenantExportSigningConfig(): TenantExportSigningConfig | undefined {
-  const encoded = process.env.TENANT_EXPORT_SIGNING_PRIVATE_KEY_BASE64?.trim();
-  const keyId = process.env.TENANT_EXPORT_SIGNING_KEY_ID?.trim();
+  const encoded = (
+    process.env.TENANT_EXPORT_SIGNING_PRIVATE_KEY_BASE64 ||
+    process.env.CONFIGURATION_PACKAGE_SIGNING_PRIVATE_KEY_BASE64
+  )?.trim();
+  const keyId = (
+    process.env.TENANT_EXPORT_SIGNING_KEY_ID ||
+    process.env.CONFIGURATION_PACKAGE_SIGNING_KEY_ID
+  )?.trim();
   if (!encoded && !keyId) return undefined;
   if (!encoded || !keyId || !/^[A-Za-z0-9][A-Za-z0-9._:-]{0,199}$/.test(keyId)) {
     throw new Error('Tenant export signing requires a valid private key and key identifier.');

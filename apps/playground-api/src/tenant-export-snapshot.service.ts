@@ -37,6 +37,7 @@ const RELATION_FILTERS: Readonly<Record<string, (tenantId: string) => Record<str
   EsignRecipient: (tenantId) => ({ envelope: { tenantId } }),
   KbArticle: (tenantId) => ({ category: { tenantId } }),
   ChatMessage: (tenantId) => ({ channel: { tenantId } }),
+  SagaStep: (tenantId) => ({ sagaInstance: { tenantId } }),
 };
 
 const OMIT_FIELDS: Readonly<Record<string, ReadonlySet<string>>> = {
@@ -96,6 +97,30 @@ export class TenantExportSnapshotService {
         if (tenantSection?.records.length !== 1) {
           throw new Error('TENANT_EXPORT_TENANT_NOT_FOUND');
         }
+
+        // Include governed ConfigurationExtensionValue records in portability export
+        const extensionValues = await transaction.configurationExtensionValue.findMany({
+          where: { tenantId },
+          orderBy: { id: 'asc' },
+        });
+        if (extensionValues.length > 0) {
+          sections.push({
+            name: 'configuration_extension_values',
+            records: extensionValues.map((ev) => ({
+              id: ev.id,
+              ownerType: ev.ownerType,
+              ownerId: ev.ownerId,
+              publishedVersionId: ev.publishedVersionId,
+              manifestChecksum: ev.manifestChecksum,
+              valuesChecksum: ev.valuesChecksum,
+              version: ev.version,
+              values: JSON.stringify(ev.values),
+              createdAt: ev.createdAt.toISOString(),
+              updatedAt: ev.updatedAt.toISOString(),
+            })),
+          });
+        }
+
         return { snapshotStartedAt, sections };
       },
       { isolationLevel: 'RepeatableRead', timeout: 120_000 },

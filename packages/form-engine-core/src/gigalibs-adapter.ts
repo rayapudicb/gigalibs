@@ -89,17 +89,18 @@ function mapField(field: ConfigurationField): FormFieldDefinition {
     name:        field.key,
     label:       field.label,
     type:        mapFieldType(field.type),
-    placeholder: undefined,
-    helpText:    field.helpText,
-    options:     field.options?.map((o) => ({ label: o.label, value: o.value })),
+    ...(field.helpText === undefined ? {} : { helpText: field.helpText }),
+    ...(field.options === undefined
+      ? {}
+      : { options: field.options.map((o) => ({ label: o.label, value: o.value })) }),
     validation: {
       required:         field.required,
-      min:              field.minimum,
-      max:              field.maximum,
-      minLength:        field.minLength,
-      maxLength:        field.maxLength,
+      ...(field.minimum === undefined ? {} : { min: field.minimum }),
+      ...(field.maximum === undefined ? {} : { max: field.maximum }),
+      ...(field.minLength === undefined ? {} : { minLength: field.minLength }),
+      ...(field.maxLength === undefined ? {} : { maxLength: field.maxLength }),
     },
-    defaultValue: field.defaultValue ?? undefined,
+    ...(field.defaultValue === undefined ? {} : { defaultValue: field.defaultValue }),
     conditions,
   };
 }
@@ -132,7 +133,7 @@ export function toFormSchema(
         name:  `__section_${section.key}`,
         label: section.title,
         type:  'DIVIDER_HEADING',
-        helpText: section.description,
+        ...(section.description === undefined ? {} : { helpText: section.description }),
       });
 
       for (const fieldKey of section.fieldKeys) {
@@ -154,7 +155,7 @@ export function toFormSchema(
     id:          `${definition.moduleKey}__${definition.entityKey}__${definition.surfaceKey}`,
     tenantId,
     title:       definition.title,
-    description: definition.description,
+    ...(definition.description === undefined ? {} : { description: definition.description }),
     version:     1,
     fields:      outputFields,
     submitButtonText: definition.mode === 'CREATE' ? 'Create' : 'Save changes',

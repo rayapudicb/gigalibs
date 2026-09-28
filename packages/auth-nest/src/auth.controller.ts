@@ -323,6 +323,14 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @AllowMfaPending()
   @SetMetadata('skipTenantBoundary', true)
+  @Get('activity')
+  async getActivity(@CurrentUser('sub') userId: string) {
+    return this.authService.getActivity(userId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @AllowMfaPending()
+  @SetMetadata('skipTenantBoundary', true)
   @Patch('profile')
   async updateProfile(
     @CurrentUser('sub') userId: string,

@@ -52,8 +52,19 @@ export function computeAuditRecordHash(input: ChainedAuditInput): string {
   return createHash('sha256').update(canonical).digest('hex');
 }
 
+export const AuditVerificationState = {
+  VALID: 'VALID',
+  UNSEALED: 'UNSEALED',
+  INVALID: 'INVALID',
+  INCOMPLETE: 'INCOMPLETE',
+} as const;
+
+export type AuditVerificationState =
+  (typeof AuditVerificationState)[keyof typeof AuditVerificationState];
+
 export interface ChainVerificationResult {
   valid: boolean;
+  state: AuditVerificationState;
   totalRecords: number;
   verifiedCount: number;
   brokenIndex?: number;
@@ -78,6 +89,7 @@ export function verifyAuditChain(records: AuditRecordWithProof[]): ChainVerifica
   if (!records || records.length === 0) {
     return {
       valid: true,
+      state: 'VALID',
       totalRecords: 0,
       verifiedCount: 0,
       headHash: GENESIS_HASH,
@@ -96,10 +108,12 @@ export function verifyAuditChain(records: AuditRecordWithProof[]): ChainVerifica
 
   if (chainedRecords.length === 0) {
     return {
-      valid: true,
+      valid: false,
+      state: 'UNSEALED',
       totalRecords: records.length,
       verifiedCount: 0,
       headHash: GENESIS_HASH,
+      error: 'No cryptographic proofs found in audit records',
     };
   }
 
@@ -109,10 +123,12 @@ export function verifyAuditChain(records: AuditRecordWithProof[]): ChainVerifica
   const first = chainedRecords[0];
   if (!first) {
     return {
-      valid: true,
+      valid: false,
+      state: 'UNSEALED',
       totalRecords: records.length,
       verifiedCount: 0,
       headHash: GENESIS_HASH,
+      error: 'No cryptographic proofs found in audit records',
     };
   }
 
@@ -126,6 +142,7 @@ export function verifyAuditChain(records: AuditRecordWithProof[]): ChainVerifica
     if (proof.sequence !== expectedSeq) {
       return {
         valid: false,
+        state: 'INCOMPLETE',
         totalRecords: records.length,
         verifiedCount: i,
         brokenIndex: i,
@@ -136,6 +153,7 @@ export function verifyAuditChain(records: AuditRecordWithProof[]): ChainVerifica
     if (i > 0 && proof.previousHash !== expectedPrevHash) {
       return {
         valid: false,
+        state: 'INVALID',
         totalRecords: records.length,
         verifiedCount: i,
         brokenIndex: i,
@@ -159,6 +177,7 @@ export function verifyAuditChain(records: AuditRecordWithProof[]): ChainVerifica
     if (recomputed !== proof.recordHash) {
       return {
         valid: false,
+        state: 'INVALID',
         totalRecords: records.length,
         verifiedCount: i,
         brokenIndex: i,
@@ -170,8 +189,20 @@ export function verifyAuditChain(records: AuditRecordWithProof[]): ChainVerifica
     expectedSeq += 1;
   }
 
+  if (chainedRecords.length < records.length) {
+    return {
+      valid: false,
+      state: 'UNSEALED',
+      totalRecords: records.length,
+      verifiedCount: chainedRecords.length,
+      headHash: expectedPrevHash,
+      error: `Unsealed records present: ${records.length - chainedRecords.length} records lack cryptographic proof`,
+    };
+  }
+
   return {
     valid: true,
+    state: 'VALID',
     totalRecords: records.length,
     verifiedCount: chainedRecords.length,
     headHash: expectedPrevHash,

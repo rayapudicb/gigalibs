@@ -1,5 +1,5 @@
 import { generateId } from '@gigalibs/crypto';
-import type { CustomFieldDefinition, CustomFieldType } from './types.js';
+import type { CustomFieldDefinition } from './types.js';
 
 export class CustomFieldManager {
   private definitions: CustomFieldDefinition[] = [];

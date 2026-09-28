@@ -44,6 +44,19 @@ for (const metric of [
   'gigalibs_operational_exceptions',
   'gigalibs_business_actions',
   'gigalibs_retention_executions',
+  'gigalibs_configuration_change_sets',
+  'gigalibs_configuration_activations',
+  'gigalibs_configuration_published_versions',
+  'gigalibs_configuration_records',
+  'gigalibs_configuration_outbox_events',
+  'gigalibs_configuration_outbox_oldest_pending_age_seconds',
+  'gigalibs_configuration_submitted_change_sets_older_than_24h',
+  'gigalibs_configuration_manifest_listener_connected',
+  'gigalibs_configuration_manifest_cache_entries',
+  'gigalibs_configuration_manifest_cache_requests_total',
+  'gigalibs_configuration_manifest_consumer_notifications_total',
+  'gigalibs_configuration_manifest_resynchronizations_total',
+  'gigalibs_configuration_manifest_reconnects_total',
 ]) {
   assert.ok(result.body.includes(metric), `Metrics output is missing ${metric}`);
 }

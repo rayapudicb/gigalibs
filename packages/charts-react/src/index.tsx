@@ -96,13 +96,15 @@ export const LineChart: React.FC<{
   lineColor?: string;
   fillGradient?: boolean;
 }> = ({ data = [], labels = [], height = 200, lineColor = '#2563eb', fillGradient = true }) => {
-  const min = Math.min(...data, 0);
-  const max = Math.max(...data, 1);
+  const safeData = Array.isArray(data) ? data : [];
+  const safeLabels = Array.isArray(labels) ? labels : [];
+  const min = safeData.length > 0 ? Math.min(...safeData, 0) : 0;
+  const max = safeData.length > 0 ? Math.max(...safeData, 1) : 1;
   const width = 500;
   const padding = 20;
 
-  const points = data.map((val, i) => {
-    const x = padding + (i / Math.max(data.length - 1, 1)) * (width - 2 * padding);
+  const points = safeData.map((val, i) => {
+    const x = padding + (i / Math.max(safeData.length - 1, 1)) * (width - 2 * padding);
     const y = height - padding - ((val - min) / (max - min || 1)) * (height - 2 * padding);
     return { x, y, val };
   });
@@ -132,12 +134,12 @@ export const LineChart: React.FC<{
         <path d={pathD} fill="none" stroke={lineColor} strokeWidth="3" strokeLinecap="round" />
         {points.map((p, i) => (
           <circle key={i} cx={p.x} cy={p.y} r="4" fill="#ffffff" stroke={lineColor} strokeWidth="2.5">
-            <title>{`${labels[i] || `Point ${i + 1}`}: ${p.val}`}</title>
+            <title>{`${safeLabels[i] || `Point ${i + 1}`}: ${p.val}`}</title>
           </circle>
         ))}
       </svg>
       <div className="flex justify-between border-t border-slate-100 pt-2 text-[11px] text-slate-500">
-        {labels.map((l, i) => (
+        {safeLabels.map((l, i) => (
           <span key={i}>{l}</span>
         ))}
       </div>
@@ -153,20 +155,21 @@ export const AreaChart: React.FC<{
   categories?: string[];
   height?: number;
 }> = ({ series = [], labels = [], categories = [], height = 200 }) => {
-  const effectiveLabels = labels.length > 0 ? labels : categories;
+  const safeSeries = Array.isArray(series) ? series : [];
+  const effectiveLabels = Array.isArray(labels) && labels.length > 0 ? labels : (Array.isArray(categories) ? categories : []);
   const width = 500;
   const padding = 20;
 
-  const allVals = series.flatMap((s) => s.data);
-  const max = Math.max(...allVals, 1);
+  const allVals = safeSeries.flatMap((s) => (Array.isArray(s?.data) ? s.data : []));
+  const max = allVals.length > 0 ? Math.max(...allVals, 1) : 1;
   const min = 0;
 
   return (
     <div className="w-full space-y-2">
       <svg viewBox={`0 0 ${width} ${height}`} className="w-full overflow-visible">
         <defs>
-          {series.map((s, sIdx) => {
-            const color = s.color || PALETTE[sIdx % PALETTE.length];
+          {safeSeries.map((s, sIdx) => {
+            const color = s?.color || PALETTE[sIdx % PALETTE.length];
             return (
               <linearGradient key={sIdx} id={`areaGrad_${sIdx}`} x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor={color} stopOpacity="0.45" />
@@ -176,10 +179,11 @@ export const AreaChart: React.FC<{
           })}
         </defs>
 
-        {series.map((s, sIdx) => {
-          const color = s.color || PALETTE[sIdx % PALETTE.length];
-          const points = s.data.map((val, i) => {
-            const x = padding + (i / Math.max(s.data.length - 1, 1)) * (width - 2 * padding);
+        {safeSeries.map((s, sIdx) => {
+          const color = s?.color || PALETTE[sIdx % PALETTE.length];
+          const sData = Array.isArray(s?.data) ? s.data : [];
+          const points = sData.map((val, i) => {
+            const x = padding + (i / Math.max(sData.length - 1, 1)) * (width - 2 * padding);
             const y = height - padding - ((val - min) / (max - min || 1)) * (height - 2 * padding);
             return { x, y, val };
           });
@@ -202,7 +206,7 @@ export const AreaChart: React.FC<{
               <path d={pathD} fill="none" stroke={color} strokeWidth="2.5" />
               {points.map((p, i) => (
                 <circle key={i} cx={p.x} cy={p.y} r="3" fill="#ffffff" stroke={color} strokeWidth="2">
-                  <title>{`${s.name} - ${effectiveLabels[i] || `Point ${i + 1}`}: ${p.val}`}</title>
+                  <title>{`${s?.name || ''} - ${effectiveLabels[i] || `Point ${i + 1}`}: ${p.val}`}</title>
                 </circle>
               ))}
             </g>
@@ -215,10 +219,10 @@ export const AreaChart: React.FC<{
         ))}
       </div>
       <div className="flex flex-wrap gap-4 pt-1">
-        {series.map((s, i) => (
+        {safeSeries.map((s, i) => (
           <div key={i} className="flex items-center gap-1.5 text-xs text-slate-600">
-            <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: s.color || PALETTE[i % PALETTE.length] }} />
-            <span>{s.name}</span>
+            <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: s?.color || PALETTE[i % PALETTE.length] }} />
+            <span>{s?.name || ''}</span>
           </div>
         ))}
       </div>
@@ -235,23 +239,25 @@ export const BarChart: React.FC<{
   barColor?: string;
   secondaryBarColor?: string;
 }> = ({ data = [], height = 200, barColor = '#2563eb', secondaryBarColor = '#10b981' }) => {
-  const maxValue = Math.max(...data.map((d) => Math.max(d.value, d.secondaryValue || 0)), 1);
+  const safeData = Array.isArray(data) ? data : [];
+  const maxValue = safeData.length > 0 ? Math.max(...safeData.map((d) => Math.max(d?.value ?? 0, d?.secondaryValue || 0)), 1) : 1;
 
   return (
     <div className="w-full flex flex-col space-y-2">
       <div className="flex items-end space-x-3 w-full" style={{ height }}>
-        {data.map((d, i) => {
-          const p1 = (d.value / maxValue) * 100;
-          const p2 = d.secondaryValue !== undefined ? (d.secondaryValue / maxValue) * 100 : null;
+        {safeData.map((d, i) => {
+          const val = d?.value ?? 0;
+          const p1 = (val / maxValue) * 100;
+          const p2 = d?.secondaryValue !== undefined ? (d.secondaryValue / maxValue) * 100 : null;
 
           return (
             <div key={i} className="flex-1 flex items-end justify-center space-x-1 h-full group relative">
               <div className="w-full flex flex-col items-center">
                 <div
-                  style={{ height: `${p1}%`, backgroundColor: d.color ?? barColor }}
+                  style={{ height: `${p1}%`, backgroundColor: d?.color ?? barColor }}
                   className="w-full rounded-t-md transition-all duration-300 hover:opacity-85"
                 >
-                  <title>{`${d.label}: ${d.value}`}</title>
+                  <title>{`${d?.label || `Item ${i + 1}`}: ${val}`}</title>
                 </div>
               </div>
               {p2 !== null && (
@@ -260,7 +266,7 @@ export const BarChart: React.FC<{
                     style={{ height: `${p2}%`, backgroundColor: secondaryBarColor }}
                     className="w-full rounded-t-md transition-all duration-300 hover:opacity-85"
                   >
-                    <title>{`${d.label} (Secondary): ${d.secondaryValue}`}</title>
+                    <title>{`${d?.label || `Item ${i + 1}`} (Secondary): ${d?.secondaryValue}`}</title>
                   </div>
                 </div>
               )}
@@ -269,9 +275,9 @@ export const BarChart: React.FC<{
         })}
       </div>
       <div className="flex justify-between border-t border-slate-100 pt-2">
-        {data.map((d, i) => (
+        {safeData.map((d, i) => (
           <span key={i} className="text-[11px] font-medium text-slate-500 truncate text-center flex-1">
-            {d.label}
+            {d?.label || ''}
           </span>
         ))}
       </div>
@@ -286,13 +292,15 @@ export const StackedBarChart: React.FC<{
   categories: string[];
   series: Array<{ name: string; data: number[]; color?: string }>;
 }> = ({ categories = [], series = [] }) => {
+  const safeCategories = Array.isArray(categories) ? categories : [];
+  const safeSeries = Array.isArray(series) ? series : [];
   // Sum totals per category
-  const totals = categories.map((_, i) => series.reduce((sum, s) => sum + (s.data[i] || 0), 0));
-  const maxTotal = Math.max(...totals, 1);
+  const totals = safeCategories.map((_, i) => safeSeries.reduce((sum, s) => sum + ((Array.isArray(s?.data) ? s.data[i] : 0) || 0), 0));
+  const maxTotal = totals.length > 0 ? Math.max(...totals, 1) : 1;
 
   return (
     <div className="w-full space-y-3">
-      {categories.map((cat, catIdx) => {
+      {safeCategories.map((cat, catIdx) => {
         return (
           <div key={catIdx} className="space-y-1 text-xs">
             <div className="flex justify-between font-medium text-slate-700">
@@ -300,17 +308,18 @@ export const StackedBarChart: React.FC<{
               <span className="font-mono text-slate-500">{totals[catIdx]?.toLocaleString()} total</span>
             </div>
             <div className="w-full bg-slate-100 h-6 rounded-md overflow-hidden flex">
-              {series.map((s, sIdx) => {
-                const val = s.data[catIdx] || 0;
+              {safeSeries.map((s, sIdx) => {
+                const sData = Array.isArray(s?.data) ? s.data : [];
+                const val = sData[catIdx] || 0;
                 const pct = (val / maxTotal) * 100;
-                const color = s.color || PALETTE[sIdx % PALETTE.length];
+                const color = s?.color || PALETTE[sIdx % PALETTE.length];
                 if (pct <= 0) return null;
                 return (
                   <div
                     key={sIdx}
                     style={{ width: `${pct}%`, backgroundColor: color }}
                     className="h-full transition-all hover:opacity-90 flex items-center justify-center text-[10px] text-white font-bold px-1 truncate"
-                    title={`${cat} - ${s.name}: ${val}`}
+                    title={`${cat} - ${s?.name || ''}: ${val}`}
                   >
                     {val > 0 ? val : ''}
                   </div>
@@ -321,10 +330,10 @@ export const StackedBarChart: React.FC<{
         );
       })}
       <div className="flex flex-wrap gap-4 pt-2 border-t border-slate-100">
-        {series.map((s, i) => (
+        {safeSeries.map((s, i) => (
           <div key={i} className="flex items-center gap-1.5 text-xs text-slate-600">
-            <span className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: s.color || PALETTE[i % PALETTE.length] }} />
-            <span>{s.name}</span>
+            <span className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: s?.color || PALETTE[i % PALETTE.length] }} />
+            <span>{s?.name || ''}</span>
           </div>
         ))}
       </div>
@@ -340,24 +349,27 @@ export const ColumnChart: React.FC<{
   series: Array<{ name: string; data: number[]; color?: string }>;
   height?: number;
 }> = ({ categories = [], series = [], height = 220 }) => {
-  const allVals = series.flatMap((s) => s.data);
-  const maxVal = Math.max(...allVals, 1);
+  const safeCategories = Array.isArray(categories) ? categories : [];
+  const safeSeries = Array.isArray(series) ? series : [];
+  const allVals = safeSeries.flatMap((s) => (Array.isArray(s?.data) ? s.data : []));
+  const maxVal = allVals.length > 0 ? Math.max(...allVals, 1) : 1;
 
   return (
     <div className="w-full space-y-2">
       <div className="flex items-end justify-between gap-3 w-full" style={{ height }}>
-        {categories.map((cat, catIdx) => (
+        {safeCategories.map((cat, catIdx) => (
           <div key={catIdx} className="flex-1 flex items-end justify-center gap-1 h-full">
-            {series.map((s, sIdx) => {
-              const val = s.data[catIdx] || 0;
+            {safeSeries.map((s, sIdx) => {
+              const sData = Array.isArray(s?.data) ? s.data : [];
+              const val = sData[catIdx] || 0;
               const pct = (val / maxVal) * 100;
-              const color = s.color || PALETTE[sIdx % PALETTE.length];
+              const color = s?.color || PALETTE[sIdx % PALETTE.length];
               return (
                 <div
                   key={sIdx}
                   style={{ height: `${pct}%`, backgroundColor: color }}
                   className="flex-1 rounded-t transition-all duration-300 hover:brightness-110 min-w-[12px]"
-                  title={`${cat} - ${s.name}: ${val}`}
+                  title={`${cat} - ${s?.name || ''}: ${val}`}
                 />
               );
             })}
@@ -365,17 +377,17 @@ export const ColumnChart: React.FC<{
         ))}
       </div>
       <div className="flex justify-between border-t border-slate-100 pt-2">
-        {categories.map((cat, i) => (
+        {safeCategories.map((cat, i) => (
           <span key={i} className="text-[11px] font-medium text-slate-500 truncate text-center flex-1">
             {cat}
           </span>
         ))}
       </div>
       <div className="flex flex-wrap gap-4 pt-1">
-        {series.map((s, i) => (
+        {safeSeries.map((s, i) => (
           <div key={i} className="flex items-center gap-1.5 text-xs text-slate-600">
-            <span className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: s.color || PALETTE[i % PALETTE.length] }} />
-            <span>{s.name}</span>
+            <span className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: s?.color || PALETTE[i % PALETTE.length] }} />
+            <span>{s?.name || ''}</span>
           </div>
         ))}
       </div>
@@ -391,25 +403,28 @@ export const StackedColumnChart: React.FC<{
   series: Array<{ name: string; data: number[]; color?: string }>;
   height?: number;
 }> = ({ categories = [], series = [], height = 220 }) => {
-  const totals = categories.map((_, cIdx) => series.reduce((sum, s) => sum + (s.data[cIdx] || 0), 0));
-  const maxTotal = Math.max(...totals, 1);
+  const safeCategories = Array.isArray(categories) ? categories : [];
+  const safeSeries = Array.isArray(series) ? series : [];
+  const totals = safeCategories.map((_, cIdx) => safeSeries.reduce((sum, s) => sum + ((Array.isArray(s?.data) ? s.data[cIdx] : 0) || 0), 0));
+  const maxTotal = totals.length > 0 ? Math.max(...totals, 1) : 1;
 
   return (
     <div className="w-full space-y-2">
       <div className="flex items-end justify-between gap-4 w-full" style={{ height }}>
-        {categories.map((cat, cIdx) => {
+        {safeCategories.map((cat, cIdx) => {
           return (
             <div key={cIdx} className="flex-1 flex flex-col-reverse justify-start h-full rounded overflow-hidden">
-              {series.map((s, sIdx) => {
-                const val = s.data[cIdx] || 0;
+              {safeSeries.map((s, sIdx) => {
+                const sData = Array.isArray(s?.data) ? s.data : [];
+                const val = sData[cIdx] || 0;
                 const pct = (val / maxTotal) * 100;
-                const color = s.color || PALETTE[sIdx % PALETTE.length];
+                const color = s?.color || PALETTE[sIdx % PALETTE.length];
                 return (
                   <div
                     key={sIdx}
                     style={{ height: `${pct}%`, backgroundColor: color }}
                     className="w-full transition-all duration-300 hover:brightness-110"
-                    title={`${cat} - ${s.name}: ${val}`}
+                    title={`${cat} - ${s?.name || ''}: ${val}`}
                   />
                 );
               })}
@@ -418,17 +433,17 @@ export const StackedColumnChart: React.FC<{
         })}
       </div>
       <div className="flex justify-between border-t border-slate-100 pt-2">
-        {categories.map((cat, i) => (
+        {safeCategories.map((cat, i) => (
           <span key={i} className="text-[11px] font-medium text-slate-500 truncate text-center flex-1">
             {cat}
           </span>
         ))}
       </div>
       <div className="flex flex-wrap gap-4 pt-1">
-        {series.map((s, i) => (
+        {safeSeries.map((s, i) => (
           <div key={i} className="flex items-center gap-1.5 text-xs text-slate-600">
-            <span className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: s.color || PALETTE[i % PALETTE.length] }} />
-            <span>{s.name}</span>
+            <span className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: s?.color || PALETTE[i % PALETTE.length] }} />
+            <span>{s?.name || ''}</span>
           </div>
         ))}
       </div>
@@ -579,15 +594,16 @@ export const ScatterChart: React.FC<{
   yLabel?: string;
   height?: number;
 }> = ({ points = [], xLabel = 'X Metric', yLabel = 'Y Metric', height = 220 }) => {
+  const safePoints = Array.isArray(points) ? points : [];
   const width = 450;
   const padding = 30;
 
-  const xVals = points.map((p) => p.x);
-  const yVals = points.map((p) => p.y);
-  const minX = Math.min(...xVals, 0);
-  const maxX = Math.max(...xVals, 100);
-  const minY = Math.min(...yVals, 0);
-  const maxY = Math.max(...yVals, 100);
+  const xVals = safePoints.map((p) => p?.x ?? 0);
+  const yVals = safePoints.map((p) => p?.y ?? 0);
+  const minX = xVals.length > 0 ? Math.min(...xVals, 0) : 0;
+  const maxX = xVals.length > 0 ? Math.max(...xVals, 100) : 100;
+  const minY = yVals.length > 0 ? Math.min(...yVals, 0) : 0;
+  const maxY = yVals.length > 0 ? Math.max(...yVals, 100) : 100;
 
   return (
     <div className="w-full space-y-1">
@@ -613,10 +629,12 @@ export const ScatterChart: React.FC<{
         <line x1={padding} y1={padding} x2={padding} y2={height - padding} stroke="#cbd5e1" strokeWidth="1" />
 
         {/* Points */}
-        {points.map((pt, i) => {
-          const cx = padding + ((pt.x - minX) / (maxX - minX || 1)) * (width - 2 * padding);
-          const cy = height - padding - ((pt.y - minY) / (maxY - minY || 1)) * (height - 2 * padding);
-          const color = pt.color || PALETTE[i % PALETTE.length];
+        {safePoints.map((pt, i) => {
+          const pX = pt?.x ?? 0;
+          const pY = pt?.y ?? 0;
+          const cx = padding + ((pX - minX) / (maxX - minX || 1)) * (width - 2 * padding);
+          const cy = height - padding - ((pY - minY) / (maxY - minY || 1)) * (height - 2 * padding);
+          const color = pt?.color || PALETTE[i % PALETTE.length];
 
           return (
             <circle
@@ -629,7 +647,7 @@ export const ScatterChart: React.FC<{
               strokeWidth="1.5"
               className="transition-transform duration-200 hover:scale-150 cursor-pointer"
             >
-              <title>{`${pt.label || `Point ${i + 1}`}: (${pt.x}, ${pt.y})`}</title>
+              <title>{`${pt?.label || `Point ${i + 1}`}: (${pX}, ${pY})`}</title>
             </circle>
           );
         })}
@@ -649,17 +667,18 @@ export const BubbleChart: React.FC<{
   points: XYPoint[];
   height?: number;
 }> = ({ points = [], height = 220 }) => {
+  const safePoints = Array.isArray(points) ? points : [];
   const width = 450;
   const padding = 35;
 
-  const xVals = points.map((p) => p.x);
-  const yVals = points.map((p) => p.y);
-  const sizeVals = points.map((p) => p.size || 10);
-  const minX = Math.min(...xVals, 0);
-  const maxX = Math.max(...xVals, 100);
-  const minY = Math.min(...yVals, 0);
-  const maxY = Math.max(...yVals, 100);
-  const maxSize = Math.max(...sizeVals, 1);
+  const xVals = safePoints.map((p) => p?.x ?? 0);
+  const yVals = safePoints.map((p) => p?.y ?? 0);
+  const sizeVals = safePoints.map((p) => p?.size || 10);
+  const minX = xVals.length > 0 ? Math.min(...xVals, 0) : 0;
+  const maxX = xVals.length > 0 ? Math.max(...xVals, 100) : 100;
+  const minY = yVals.length > 0 ? Math.min(...yVals, 0) : 0;
+  const maxY = yVals.length > 0 ? Math.max(...yVals, 100) : 100;
+  const maxSize = sizeVals.length > 0 ? Math.max(...sizeVals, 1) : 1;
 
   return (
     <div className="w-full space-y-1">
@@ -681,11 +700,13 @@ export const BubbleChart: React.FC<{
         <line x1={padding} y1={padding} x2={padding} y2={height - padding} stroke="#cbd5e1" strokeWidth="1" />
 
         {/* Bubbles */}
-        {points.map((pt, i) => {
-          const cx = padding + ((pt.x - minX) / (maxX - minX || 1)) * (width - 2 * padding);
-          const cy = height - padding - ((pt.y - minY) / (maxY - minY || 1)) * (height - 2 * padding);
-          const r = Math.max(((pt.size || 10) / maxSize) * 22, 6);
-          const color = pt.color || PALETTE[i % PALETTE.length];
+        {safePoints.map((pt, i) => {
+          const pX = pt?.x ?? 0;
+          const pY = pt?.y ?? 0;
+          const cx = padding + ((pX - minX) / (maxX - minX || 1)) * (width - 2 * padding);
+          const cy = height - padding - ((pY - minY) / (maxY - minY || 1)) * (height - 2 * padding);
+          const r = Math.max(((pt?.size || 10) / maxSize) * 22, 6);
+          const color = pt?.color || PALETTE[i % PALETTE.length];
 
           return (
             <g key={i}>
@@ -699,9 +720,9 @@ export const BubbleChart: React.FC<{
                 strokeWidth="2"
                 className="transition-all hover:fill-opacity-80 cursor-pointer"
               >
-                <title>{`${pt.label || 'Entity'}: X=${pt.x}, Y=${pt.y}, Weight=${pt.size}`}</title>
+                <title>{`${pt?.label || 'Entity'}: X=${pX}, Y=${pY}, Weight=${pt?.size || 10}`}</title>
               </circle>
-              {pt.label && (
+              {pt?.label && (
                 <text x={cx} y={cy} textAnchor="middle" dominantBaseline="central" className="text-[9px] font-bold fill-slate-800">
                   {pt.label.slice(0, 4)}
                 </text>
@@ -955,9 +976,12 @@ export const HeatmapChart: React.FC<{
   matrix: number[][]; // 0 to 100 or raw values
   colorScheme?: 'blue' | 'emerald' | 'amber';
 }> = ({ xLabels = [], yLabels = [], matrix = [], colorScheme = 'blue' }) => {
-  const allValues = matrix.flat();
-  const maxVal = Math.max(...allValues, 1);
-  const minVal = Math.min(...allValues, 0);
+  const safeMatrix = Array.isArray(matrix) ? matrix : [];
+  const safeXLabels = Array.isArray(xLabels) ? xLabels : [];
+  const safeYLabels = Array.isArray(yLabels) ? yLabels : [];
+  const allValues = safeMatrix.flat();
+  const maxVal = allValues.length > 0 ? Math.max(...allValues, 1) : 1;
+  const minVal = allValues.length > 0 ? Math.min(...allValues, 0) : 0;
 
   const getCellColor = (val: number) => {
     const ratio = Math.min(Math.max((val - minVal) / (maxVal - minVal || 1), 0.05), 1);
@@ -972,7 +996,7 @@ export const HeatmapChart: React.FC<{
         <thead>
           <tr>
             <th className="p-1.5 text-left text-[11px] font-semibold text-slate-400"></th>
-            {xLabels.map((col, idx) => (
+            {safeXLabels.map((col, idx) => (
               <th key={idx} className="p-1.5 text-center text-[10px] font-bold uppercase tracking-wider text-slate-500">
                 {col}
               </th>
@@ -980,11 +1004,11 @@ export const HeatmapChart: React.FC<{
           </tr>
         </thead>
         <tbody>
-          {yLabels.map((row, rIdx) => (
+          {safeYLabels.map((row, rIdx) => (
             <tr key={rIdx}>
               <td className="p-1.5 text-[11px] font-medium text-slate-700 whitespace-nowrap pr-3">{row}</td>
-              {xLabels.map((_, cIdx) => {
-                const val = matrix[rIdx]?.[cIdx] ?? 0;
+              {safeXLabels.map((_, cIdx) => {
+                const val = safeMatrix[rIdx]?.[cIdx] ?? 0;
                 const bg = getCellColor(val);
                 const isDark = (val - minVal) / (maxVal - minVal || 1) > 0.55;
                 return (
@@ -994,7 +1018,7 @@ export const HeatmapChart: React.FC<{
                       className={`h-9 rounded flex items-center justify-center text-[11px] font-mono font-bold transition-transform hover:scale-105 cursor-pointer shadow-sm ${
                         isDark ? 'text-white' : 'text-slate-800'
                       }`}
-                      title={`${row} - ${xLabels[cIdx]}: ${val}`}
+                      title={`${row} - ${safeXLabels[cIdx]}: ${val}`}
                     >
                       {val}
                     </div>
@@ -1016,13 +1040,15 @@ export const TreemapChart: React.FC<{
   nodes: TreemapNode[];
   height?: number;
 }> = ({ nodes = [], height = 220 }) => {
-  const total = nodes.reduce((sum, n) => sum + n.value, 0) || 1;
+  const safeNodes = Array.isArray(nodes) ? nodes : [];
+  const total = safeNodes.reduce((sum, n) => sum + (n?.value ?? 0), 0) || 1;
 
   return (
     <div className="w-full flex flex-wrap gap-1.5 p-1 bg-slate-50 rounded-lg" style={{ height }}>
-      {nodes.map((node, i) => {
-        const pct = (node.value / total) * 100;
-        const color = node.color || PALETTE[i % PALETTE.length];
+      {safeNodes.map((node, i) => {
+        const val = node?.value ?? 0;
+        const pct = (val / total) * 100;
+        const color = node?.color || PALETTE[i % PALETTE.length];
         const flexBasis = Math.max(pct, 8);
 
         return (
@@ -1034,11 +1060,11 @@ export const TreemapChart: React.FC<{
               minWidth: '80px',
             }}
             className="rounded p-2 text-white flex flex-col justify-between transition-all hover:brightness-110 cursor-pointer overflow-hidden shadow-sm"
-            title={`${node.label}: ${node.value.toLocaleString()} (${pct.toFixed(1)}%)`}
+            title={`${node?.label || `Node ${i + 1}`}: ${val.toLocaleString()} (${pct.toFixed(1)}%)`}
           >
-            <span className="text-xs font-bold truncate leading-tight">{node.label}</span>
+            <span className="text-xs font-bold truncate leading-tight">{node?.label || ''}</span>
             <div className="text-[10px] opacity-90 font-mono">
-              {node.value.toLocaleString()} ({pct.toFixed(0)}%)
+              {val.toLocaleString()} ({pct.toFixed(0)}%)
             </div>
           </div>
         );
@@ -1054,9 +1080,10 @@ export const SankeyChart: React.FC<{
   flows: SankeyFlow[];
   height?: number;
 }> = ({ flows = [], height = 220 }) => {
-  const totalValue = flows.reduce((sum, f) => sum + f.value, 0) || 1;
-  const sources = Array.from(new Set(flows.map((f) => f.source)));
-  const targets = Array.from(new Set(flows.map((f) => f.target)));
+  const safeFlows = Array.isArray(flows) ? flows : [];
+  const totalValue = safeFlows.reduce((sum, f) => sum + (f?.value ?? 0), 0) || 1;
+  const sources = Array.from(new Set(safeFlows.map((f) => f?.source).filter(Boolean)));
+  const targets = Array.from(new Set(safeFlows.map((f) => f?.target).filter(Boolean)));
 
   return (
     <div className="w-full flex items-stretch justify-between gap-4 p-2 bg-slate-50 rounded-lg" style={{ height }}>
@@ -1064,7 +1091,7 @@ export const SankeyChart: React.FC<{
       <div className="flex flex-col justify-around gap-2 w-1/4">
         <span className="text-[10px] font-bold uppercase text-slate-400">Sources / Inflow</span>
         {sources.map((src, i) => {
-          const srcTotal = flows.filter((f) => f.source === src).reduce((s, f) => s + f.value, 0);
+          const srcTotal = safeFlows.filter((f) => f?.source === src).reduce((s, f) => s + (f?.value ?? 0), 0);
           return (
             <div key={i} className="bg-blue-600 text-white p-2 rounded text-xs font-semibold shadow-sm truncate">
               {src}
@@ -1076,19 +1103,20 @@ export const SankeyChart: React.FC<{
 
       {/* Center Flow Channels */}
       <div className="flex-1 flex flex-col justify-center gap-1 px-2">
-        {flows.map((f, i) => {
-          const pct = (f.value / totalValue) * 100;
+        {safeFlows.map((f, i) => {
+          const val = f?.value ?? 0;
+          const pct = (val / totalValue) * 100;
           return (
             <div key={i} className="flex items-center gap-2 text-[10px] text-slate-600">
-              <span className="truncate w-24 text-right font-medium">{f.source}</span>
+              <span className="truncate w-24 text-right font-medium">{f?.source}</span>
               <div className="flex-1 bg-slate-200 h-2.5 rounded-full overflow-hidden flex">
                 <div
-                  style={{ width: `${pct}%`, backgroundColor: f.color || PALETTE[i % PALETTE.length] }}
+                  style={{ width: `${pct}%`, backgroundColor: f?.color || PALETTE[i % PALETTE.length] }}
                   className="h-full rounded-full transition-all"
-                  title={`${f.source} ➔ ${f.target}: $${f.value.toLocaleString()}`}
+                  title={`${f?.source} ➔ ${f?.target}: $${val.toLocaleString()}`}
                 />
               </div>
-              <span className="truncate w-24 font-medium">{f.target}</span>
+              <span className="truncate w-24 font-medium">{f?.target}</span>
             </div>
           );
         })}
@@ -1098,7 +1126,7 @@ export const SankeyChart: React.FC<{
       <div className="flex flex-col justify-around gap-2 w-1/4 text-right">
         <span className="text-[10px] font-bold uppercase text-slate-400">Destinations / Outflow</span>
         {targets.map((tgt, i) => {
-          const tgtTotal = flows.filter((f) => f.target === tgt).reduce((s, f) => s + f.value, 0);
+          const tgtTotal = safeFlows.filter((f) => f?.target === tgt).reduce((s, f) => s + (f?.value ?? 0), 0);
           return (
             <div key={i} className="bg-emerald-600 text-white p-2 rounded text-xs font-semibold shadow-sm truncate text-right">
               {tgt}
@@ -1118,16 +1146,17 @@ export const BoxPlotChart: React.FC<{
   data: BoxPlotPoint[];
   height?: number;
 }> = ({ data = [], height = 220 }) => {
-  const allVals = data.flatMap((d) => [d.min, d.q1, d.median, d.q3, d.max, ...(d.outliers || [])]);
-  const minVal = Math.min(...allVals, 0);
-  const maxVal = Math.max(...allVals, 100);
+  const safeData = Array.isArray(data) ? data : [];
+  const allVals = safeData.flatMap((d) => [d?.min ?? 0, d?.q1 ?? 0, d?.median ?? 0, d?.q3 ?? 0, d?.max ?? 0, ...(d?.outliers || [])]);
+  const minVal = allVals.length > 0 ? Math.min(...allVals, 0) : 0;
+  const maxVal = allVals.length > 0 ? Math.max(...allVals, 100) : 100;
 
   const getY = (val: number) => {
     return height - 40 - ((val - minVal) / (maxVal - minVal || 1)) * (height - 60);
   };
 
   const width = 450;
-  const colWidth = width / Math.max(data.length, 1);
+  const colWidth = width / Math.max(safeData.length, 1);
 
   return (
     <div className="w-full space-y-1">
@@ -1146,15 +1175,20 @@ export const BoxPlotChart: React.FC<{
           );
         })}
 
-        {data.map((box, i) => {
+        {safeData.map((box, i) => {
           const cx = colWidth * i + colWidth / 2;
           const boxW = Math.min(colWidth * 0.5, 36);
-          const yMin = getY(box.min);
-          const yQ1 = getY(box.q1);
-          const yMed = getY(box.median);
-          const yQ3 = getY(box.q3);
-          const yMax = getY(box.max);
-          const color = box.color || PALETTE[i % PALETTE.length];
+          const bMin = box?.min ?? 0;
+          const bQ1 = box?.q1 ?? 0;
+          const bMed = box?.median ?? 0;
+          const bQ3 = box?.q3 ?? 0;
+          const bMax = box?.max ?? 0;
+          const yMin = getY(bMin);
+          const yQ1 = getY(bQ1);
+          const yMed = getY(bMed);
+          const yQ3 = getY(bQ3);
+          const yMax = getY(bMax);
+          const color = box?.color || PALETTE[i % PALETTE.length];
 
           return (
             <g key={i}>
@@ -1176,14 +1210,14 @@ export const BoxPlotChart: React.FC<{
                 strokeWidth="2"
                 rx="2"
               >
-                <title>{`${box.label}: Min=${box.min}, Q1=${box.q1}, Med=${box.median}, Q3=${box.q3}, Max=${box.max}`}</title>
+                <title>{`${box?.label || `Item ${i + 1}`}: Min=${bMin}, Q1=${bQ1}, Med=${bMed}, Q3=${bQ3}, Max=${bMax}`}</title>
               </rect>
 
               {/* Median Line */}
               <line x1={cx - boxW / 2} y1={yMed} x2={cx + boxW / 2} y2={yMed} stroke={color} strokeWidth="3" />
 
               {/* Outliers */}
-              {box.outliers?.map((out, oIdx) => (
+              {box?.outliers?.map((out, oIdx) => (
                 <circle key={oIdx} cx={cx} cy={getY(out)} r="3" fill="#ef4444" stroke="#ffffff" strokeWidth="1">
                   <title>Outlier: {out}</title>
                 </circle>
@@ -1191,7 +1225,7 @@ export const BoxPlotChart: React.FC<{
 
               {/* Label */}
               <text x={cx} y={height - 10} textAnchor="middle" className="text-[10px] font-medium fill-slate-600">
-                {box.label}
+                {box?.label || ''}
               </text>
             </g>
           );
@@ -1209,29 +1243,31 @@ export const HistogramChart: React.FC<{
   height?: number;
   barColor?: string;
 }> = ({ bins = [], height = 200, barColor = '#6366f1' }) => {
-  const maxCount = Math.max(...bins.map((b) => b.count), 1);
+  const safeBins = Array.isArray(bins) ? bins : [];
+  const maxCount = safeBins.length > 0 ? Math.max(...safeBins.map((b) => b?.count ?? 0), 1) : 1;
 
   return (
     <div className="w-full space-y-2">
       <div className="flex items-end justify-between gap-1 w-full" style={{ height }}>
-        {bins.map((b, i) => {
-          const pct = (b.count / maxCount) * 100;
+        {safeBins.map((b, i) => {
+          const count = b?.count ?? 0;
+          const pct = (count / maxCount) * 100;
           return (
             <div key={i} className="flex-1 flex flex-col items-center justify-end h-full group">
               <div className="text-[9px] font-mono text-slate-400 mb-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                {b.count}
+                {count}
               </div>
               <div
                 style={{ height: `${pct}%`, backgroundColor: barColor }}
                 className="w-full rounded-t transition-all duration-300 hover:brightness-110"
-                title={`${b.range}: ${b.count} events`}
+                title={`${b?.range || ''}: ${count} events`}
               />
             </div>
           );
         })}
       </div>
       <div className="flex justify-between border-t border-slate-100 pt-2 text-[10px] text-slate-500 font-mono">
-        {bins.map((b, i) => (
+        {safeBins.map((b, i) => (
           <span key={i} className="truncate text-center flex-1">
             {b.range}
           </span>
@@ -1309,17 +1345,22 @@ export const FloatingBarChart: React.FC<{
   height?: number;
   unit?: string;
 }> = ({ data = [], height = 220, unit = '' }) => {
-  const globalMin = Math.min(...data.map((d) => d.min), 0);
-  const globalMax = Math.max(...data.map((d) => d.max), 1);
+  const safeData = Array.isArray(data) ? data : [];
+  const minVals = safeData.map((d) => d?.min ?? 0);
+  const maxVals = safeData.map((d) => d?.max ?? 1);
+  const globalMin = minVals.length > 0 ? Math.min(...minVals, 0) : 0;
+  const globalMax = maxVals.length > 0 ? Math.max(...maxVals, 1) : 1;
   const range = globalMax - globalMin || 1;
 
   return (
     <div className="w-full space-y-3">
       <div className="flex items-end justify-between gap-3 w-full" style={{ height }}>
-        {data.map((item, idx) => {
-          const bottomPct = ((item.min - globalMin) / range) * 100;
-          const heightPct = Math.max(((item.max - item.min) / range) * 100, 4);
-          const color = item.color || PALETTE[idx % PALETTE.length];
+        {safeData.map((item, idx) => {
+          const itemMin = item?.min ?? 0;
+          const itemMax = item?.max ?? 1;
+          const bottomPct = ((itemMin - globalMin) / range) * 100;
+          const heightPct = Math.max(((itemMax - itemMin) / range) * 100, 4);
+          const color = item?.color || PALETTE[idx % PALETTE.length];
 
           return (
             <div key={idx} className="flex-1 flex flex-col justify-end items-center h-full relative group">
@@ -1331,13 +1372,13 @@ export const FloatingBarChart: React.FC<{
                   backgroundColor: color,
                 }}
                 className="w-full max-w-[40px] rounded-md transition-all duration-300 hover:brightness-110 shadow-xs flex flex-col justify-between p-1 cursor-pointer"
-                title={`${item.label}: ${item.min} to ${item.max} ${unit}`}
+                title={`${item?.label || ''}: ${itemMin} to ${itemMax} ${unit}`}
               >
                 <span className="text-[9px] font-bold text-white text-center leading-none truncate">
-                  {item.max}
+                  {itemMax}
                 </span>
                 <span className="text-[9px] font-bold text-white/90 text-center leading-none truncate">
-                  {item.min}
+                  {itemMin}
                 </span>
               </div>
             </div>
@@ -1345,9 +1386,9 @@ export const FloatingBarChart: React.FC<{
         })}
       </div>
       <div className="flex justify-between border-t border-slate-100 pt-2">
-        {data.map((item, idx) => (
+        {safeData.map((item, idx) => (
           <span key={idx} className="text-[11px] font-medium text-slate-500 truncate text-center flex-1">
-            {item.label}
+            {item?.label || ''}
           </span>
         ))}
       </div>
@@ -1365,14 +1406,16 @@ export const SteppedLineChart: React.FC<{
   lineColor?: string;
   stepMode?: 'before' | 'after' | 'middle';
 }> = ({ data = [], labels = [], height = 200, lineColor = '#2563eb', stepMode = 'after' }) => {
-  const min = Math.min(...data, 0);
-  const max = Math.max(...data, 1);
+  const safeData = Array.isArray(data) ? data : [];
+  const safeLabels = Array.isArray(labels) ? labels : [];
+  const min = safeData.length > 0 ? Math.min(...safeData, 0) : 0;
+  const max = safeData.length > 0 ? Math.max(...safeData, 1) : 1;
   const range = max - min || 1;
 
-  const points = data.map((val, idx) => {
-    const x = labels.length > 1 ? (idx / (labels.length - 1)) * 100 : 50;
+  const points = safeData.map((val, idx) => {
+    const x = safeLabels.length > 1 ? (idx / (safeLabels.length - 1)) * 100 : 50;
     const y = 100 - ((val - min) / range) * 80 - 10;
-    return { x, y, val, label: labels[idx] };
+    return { x, y, val, label: safeLabels[idx] || `Point ${idx + 1}` };
   });
 
   // Build stepped path
@@ -1424,7 +1467,7 @@ export const SteppedLineChart: React.FC<{
         </svg>
       </div>
       <div className="flex justify-between border-t border-slate-100 pt-2 text-[11px] text-slate-500">
-        {labels.map((lbl, i) => (
+        {safeLabels.map((lbl, i) => (
           <span key={i} className="truncate">{lbl}</span>
         ))}
       </div>
@@ -1435,22 +1478,35 @@ export const SteppedLineChart: React.FC<{
 // ============================================================================
 // 23. COMBO BAR & LINE CHART (Dual/Mixed Scales)
 // ============================================================================
+type ComboSeriesItem = { name: string; data: number[]; color?: string; unit?: string };
+
 export const ComboBarLineChart: React.FC<{
-  categories: string[];
-  barSeries: { name: string; data: number[]; color?: string; unit?: string };
-  lineSeries: { name: string; data: number[]; color?: string; unit?: string };
+  categories?: string[];
+  barSeries: ComboSeriesItem | ComboSeriesItem[];
+  lineSeries: ComboSeriesItem | ComboSeriesItem[];
   height?: number;
 }> = ({ categories = [], barSeries, lineSeries, height = 220 }) => {
-  const maxBar = Math.max(...barSeries.data, 1);
-  const minLine = Math.min(...lineSeries.data, 0);
-  const maxLine = Math.max(...lineSeries.data, 1);
+  const safeCategories = Array.isArray(categories) ? categories : [];
+  const normBar = Array.isArray(barSeries) ? barSeries[0] : barSeries;
+  const normLine = Array.isArray(lineSeries) ? lineSeries[0] : lineSeries;
+
+  const barName = normBar?.name || 'Bars';
+  const barData = Array.isArray(normBar?.data) ? normBar.data : [];
+  const barColor = normBar?.color || '#3b82f6';
+  const barUnit = normBar?.unit || 'units';
+
+  const lineName = normLine?.name || 'Line';
+  const lineData = Array.isArray(normLine?.data) ? normLine.data : [];
+  const lineColor = normLine?.color || '#f59e0b';
+  const lineUnit = normLine?.unit || '%';
+
+  const maxBar = barData.length > 0 ? Math.max(...barData, 1) : 1;
+  const minLine = lineData.length > 0 ? Math.min(...lineData, 0) : 0;
+  const maxLine = lineData.length > 0 ? Math.max(...lineData, 1) : 1;
   const lineRange = maxLine - minLine || 1;
 
-  const barColor = barSeries.color || '#3b82f6';
-  const lineColor = lineSeries.color || '#f59e0b';
-
-  const linePoints = lineSeries.data.map((val, idx) => {
-    const x = categories.length > 1 ? (idx / (categories.length - 1)) * 100 : 50;
+  const linePoints = lineData.map((val, idx) => {
+    const x = safeCategories.length > 1 ? (idx / (safeCategories.length - 1)) * 100 : 50;
     const y = 100 - ((val - minLine) / lineRange) * 75 - 12;
     return { x, y, val };
   });
@@ -1466,26 +1522,26 @@ export const ComboBarLineChart: React.FC<{
       <div className="flex items-center justify-between text-xs pb-1">
         <div className="flex items-center gap-1.5 text-slate-700 font-medium">
           <span className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: barColor }} />
-          <span>{barSeries.name} ({barSeries.unit || 'units'})</span>
+          <span>{barName} ({barUnit})</span>
         </div>
         <div className="flex items-center gap-1.5 text-slate-700 font-medium">
           <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: lineColor }} />
-          <span>{lineSeries.name} ({lineSeries.unit || '%'})</span>
+          <span>{lineName} ({lineUnit})</span>
         </div>
       </div>
 
       <div className="relative w-full" style={{ height }}>
         {/* Bars Container */}
         <div className="absolute inset-0 flex items-end justify-between gap-2 px-3">
-          {categories.map((cat, idx) => {
-            const bVal = barSeries.data[idx] || 0;
+          {safeCategories.map((cat, idx) => {
+            const bVal = barData[idx] || 0;
             const bPct = (bVal / maxBar) * 85;
             return (
               <div key={idx} className="flex-1 flex flex-col items-center justify-end h-full group">
                 <div
                   style={{ height: `${bPct}%`, backgroundColor: barColor }}
                   className="w-full max-w-[36px] rounded-t-md transition-all duration-300 hover:brightness-110"
-                  title={`${cat} - ${barSeries.name}: ${bVal}`}
+                  title={`${cat} - ${barName}: ${bVal}`}
                 />
               </div>
             );
@@ -1494,7 +1550,7 @@ export const ComboBarLineChart: React.FC<{
 
         {/* Line Overlay SVG */}
         <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="absolute inset-0 w-full h-full pointer-events-none overflow-visible px-3">
-          <path d={linePathD} fill="none" stroke={lineColor} strokeWidth="3" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+          {linePathD && <path d={linePathD} fill="none" stroke={lineColor} strokeWidth="3" strokeLinecap="round" vectorEffect="non-scaling-stroke" />}
           {linePoints.map((pt, i) => (
             <circle
               key={i}
@@ -1506,14 +1562,14 @@ export const ComboBarLineChart: React.FC<{
               strokeWidth="2.5"
               className="pointer-events-auto cursor-pointer"
             >
-              <title>{`${categories[i]} - ${lineSeries.name}: ${pt.val}`}</title>
+              <title>{`${safeCategories[i] || `Point ${i + 1}`} - ${lineName}: ${pt.val}`}</title>
             </circle>
           ))}
         </svg>
       </div>
 
       <div className="flex justify-between border-t border-slate-100 pt-2 text-[11px] text-slate-500">
-        {categories.map((cat, i) => (
+        {safeCategories.map((cat, i) => (
           <span key={i} className="truncate flex-1 text-center">{cat}</span>
         ))}
       </div>
@@ -1525,19 +1581,22 @@ export const ComboBarLineChart: React.FC<{
 // 24. MULTI-AXIS LINE CHART (Dual/Triple Independent Y-Axes)
 // ============================================================================
 export const MultiAxisLineChart: React.FC<{
-  categories: string[];
+  categories?: string[];
   series: Array<{ name: string; data: number[]; color?: string; unit?: string }>;
   height?: number;
 }> = ({ categories = [], series = [], height = 220 }) => {
+  const safeCategories = Array.isArray(categories) ? categories : [];
+  const safeSeries = Array.isArray(series) ? series : [];
+
   return (
     <div className="w-full space-y-2">
       <div className="flex flex-wrap gap-4 text-xs pb-1">
-        {series.map((s, sIdx) => {
-          const color = s.color || PALETTE[sIdx % PALETTE.length];
+        {safeSeries.map((s, sIdx) => {
+          const color = s?.color || PALETTE[sIdx % PALETTE.length];
           return (
             <div key={sIdx} className="flex items-center gap-1.5 font-medium text-slate-700">
               <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: color }} />
-              <span>{s.name} ({s.unit || ''})</span>
+              <span>{s?.name || `Series ${sIdx + 1}`} ({s?.unit || ''})</span>
             </div>
           );
         })}
@@ -1550,14 +1609,15 @@ export const MultiAxisLineChart: React.FC<{
           <line x1="0" y1="50" x2="100" y2="50" stroke="#f1f5f9" strokeWidth="0.8" strokeDasharray="2 2" />
           <line x1="0" y1="80" x2="100" y2="80" stroke="#f1f5f9" strokeWidth="0.8" strokeDasharray="2 2" />
 
-          {series.map((s, sIdx) => {
-            const min = Math.min(...s.data, 0);
-            const max = Math.max(...s.data, 1);
+          {safeSeries.map((s, sIdx) => {
+            const sData = Array.isArray(s?.data) ? s.data : [];
+            const min = sData.length > 0 ? Math.min(...sData, 0) : 0;
+            const max = sData.length > 0 ? Math.max(...sData, 1) : 1;
             const range = max - min || 1;
-            const color = s.color || PALETTE[sIdx % PALETTE.length];
+            const color = s?.color || PALETTE[sIdx % PALETTE.length];
 
-            const pts = s.data.map((val, idx) => {
-              const x = categories.length > 1 ? (idx / (categories.length - 1)) * 100 : 50;
+            const pts = sData.map((val, idx) => {
+              const x = safeCategories.length > 1 ? (idx / (safeCategories.length - 1)) * 100 : 50;
               const y = 100 - ((val - min) / range) * 75 - 12;
               return { x, y, val };
             });
@@ -1570,7 +1630,7 @@ export const MultiAxisLineChart: React.FC<{
 
             return (
               <g key={sIdx}>
-                <path d={d} fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+                {d && <path d={d} fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" vectorEffect="non-scaling-stroke" />}
                 {pts.map((pt, i) => (
                   <circle
                     key={i}
@@ -1582,7 +1642,7 @@ export const MultiAxisLineChart: React.FC<{
                     strokeWidth="2"
                     className="cursor-pointer hover:r-4"
                   >
-                    <title>{`${categories[i]} - ${s.name}: ${pt.val} ${s.unit || ''}`}</title>
+                    <title>{`${safeCategories[i] || `Point ${i + 1}`} - ${s?.name || ''}: ${pt.val} ${s?.unit || ''}`}</title>
                   </circle>
                 ))}
               </g>
@@ -1592,7 +1652,7 @@ export const MultiAxisLineChart: React.FC<{
       </div>
 
       <div className="flex justify-between border-t border-slate-100 pt-2 text-[11px] text-slate-500">
-        {categories.map((cat, i) => (
+        {safeCategories.map((cat, i) => (
           <span key={i} className="truncate flex-1 text-center">{cat}</span>
         ))}
       </div>

@@ -39,6 +39,11 @@ export function createDefaultRoleHierarchy(): RoleHierarchy {
         'configuration-apps:*',
         'configuration-runtime:*',
         'configuration-values:*',
+        'workforce:*',
+        'maps:*',
+        // WI-OI-038: Tenant Admins run the CMMS core (assets, work orders, PM, meters, parts); custom maintenance
+        // roles for managers and technicians follow with custom roles (roadmap P1).
+        'cmms:*',
       ],
     },
     {

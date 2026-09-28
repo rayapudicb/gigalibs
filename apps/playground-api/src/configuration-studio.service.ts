@@ -1,41 +1,66 @@
+import { createHash, randomUUID, sign as signPayload, verify as verifyPayload } from 'node:crypto';
 import {
   CONFIGURATION_COMPILER_VERSION,
-  canonicalJson,
-  compileConfiguration,
-  validateConfigurationValues,
   type CompiledConfigurationManifest,
+  canonicalJson,
+  bundledGovernedCatalogue,
+  classifyConfigurationImpact,
+  classifyGovernedCatalogueChange,
+  compareConfigurationDefinitions,
+  compileConfiguration,
+  compileGovernedCatalogue,
+  listBundledGovernedCatalogues,
+  validateConfigurationValues,
 } from '@gigalibs/configuration-core';
+import { GOVERNED_CATALOGUE_SCOPES, isGovernedCatalogueDefinition } from '@gigalibs/contracts';
 import type {
   ActivateConfigurationDto,
+  ConfigurationChangeSetDefinition,
   ConfigurationCondition,
   ConfigurationDefinition,
+  GovernedCatalogueDefinition,
+  GovernedCatalogueKind,
+  InstallGovernedCatalogueDto,
   ConfigurationExtensionValuesDto,
-  ConfigurationImpactChange,
   ConfigurationImpactReport,
   ConfigurationReasonDto,
-  ExportConfigurationPackageDto,
-  ImportConfigurationPackageDto,
+  ModuleAdapterDescriptorV1,
+  ConfigurationRuntimeScopeV1,
   ConfigurationSurfaceRegistration,
   CreateConfigurationChangeSetDto,
   CreateConfigurationRecordDto,
+  CreateConfigurationTemplateDto,
+  CreateSavedFilterDto,
   DeleteConfigurationRecordDto,
+  DuplicateConfigurationTemplateDto,
+  ExportConfigurationPackageDto,
+  ImportConfigurationPackageDto,
+  ListApplicationRecordsQuery,
   UpdateConfigurationChangeSetDto,
   UpdateConfigurationRecordDto,
-  ListApplicationRecordsQuery,
-  CreateConfigurationTemplateDto,
   UpdateConfigurationTemplateDto,
-  DuplicateConfigurationTemplateDto,
-  CreateSavedFilterDto,
 } from '@gigalibs/contracts';
 import { Prisma, prisma } from '@gigalibs/db';
 import {
   BadRequestException,
   ConflictException,
   ForbiddenException,
+  HttpException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { createHash, randomUUID, sign as signPayload, verify as verifyPayload } from 'node:crypto';
+import {
+  ConfigurationManifestCache,
+  type ConfigurationManifestScope,
+} from './configuration-manifest.cache.js';
+import { ConfigurationAdapterRegistry } from './configuration-adapter.registry.js';
+import { configurationRuntimeError } from './configuration-runtime.error.js';
+import {
+  ConfigurationRuntimeMetrics,
+  type ConfigurationRuntimeOperation,
+  type ConfigurationRuntimeResult,
+} from './configuration-runtime.metrics.js';
+import { ConfigurationRuntimeScopeResolver } from './configuration-runtime-scope.resolver.js';
 import {
   configurationPackageSigningKey,
   trustedConfigurationPackageKey,
@@ -64,86 +89,16 @@ function registeredCoreField(
 
 @Injectable()
 export class ConfigurationStudioService {
+  constructor(
+    private readonly manifestCache: ConfigurationManifestCache = new ConfigurationManifestCache(),
+    private readonly adapterRegistry: ConfigurationAdapterRegistry = new ConfigurationAdapterRegistry(),
+    private readonly runtimeScope: ConfigurationRuntimeScopeResolver = new ConfigurationRuntimeScopeResolver(),
+    private readonly runtimeMetrics: ConfigurationRuntimeMetrics = new ConfigurationRuntimeMetrics(),
+  ) {}
+
   listBaseSurfaces(): readonly ConfigurationSurfaceRegistration[] {
     return [
-      {
-        registrationKey: 'tenant-profile-extension',
-        moduleKey: 'tenant-settings',
-        entityKey: 'tenant-profile',
-        surfaceKey: 'profile-extension',
-        route: '/settings',
-        label: 'Tenant profile',
-        description: 'Add governed tenant-specific attributes to the organization profile.',
-        ownership: 'MODULE_EXTENSION',
-        authoringEnabled: true,
-        entityKeyEditable: false,
-        surfaceKeyEditable: false,
-        modes: ['EDIT'],
-        coreFields: [
-          {
-            key: 'name',
-            label: 'Workspace name',
-            type: 'TEXT',
-            required: true,
-            readOnly: false,
-            classification: 'INTERNAL',
-            lockReason: 'Canonical tenant identity used throughout the control plane.',
-            allowedPresentationOverrides: ['LABEL', 'HELP_TEXT', 'PLACEMENT'],
-          },
-          {
-            key: 'slug',
-            label: 'Workspace slug',
-            type: 'TEXT',
-            required: true,
-            readOnly: true,
-            classification: 'INTERNAL',
-            lockReason: 'Stable tenant routing identity managed by the tenant service.',
-            allowedPresentationOverrides: ['LABEL', 'HELP_TEXT'],
-          },
-          {
-            key: 'status',
-            label: 'Workspace status',
-            type: 'SELECT',
-            required: true,
-            readOnly: true,
-            classification: 'INTERNAL',
-            lockReason: 'Tenant lifecycle is controlled by authorized platform commands.',
-            allowedPresentationOverrides: ['LABEL', 'HELP_TEXT', 'PLACEMENT'],
-          },
-          {
-            key: 'region',
-            label: 'Data region',
-            type: 'TEXT',
-            required: true,
-            readOnly: true,
-            classification: 'INTERNAL',
-            lockReason: 'Residency and deployment binding require an operator-controlled workflow.',
-            allowedPresentationOverrides: ['LABEL', 'HELP_TEXT', 'PLACEMENT'],
-          },
-        ],
-        extensionSlots: [
-          {
-            key: 'profile-details',
-            label: 'Additional workspace details',
-            description: 'Tenant-specific, non-secret profile attributes.',
-            allowedFieldTypes: [
-              'TEXT',
-              'TEXTAREA',
-              'NUMBER',
-              'INTEGER',
-              'BOOLEAN',
-              'DATE',
-              'DATETIME',
-              'EMAIL',
-              'PHONE',
-              'URL',
-              'SELECT',
-              'MULTI_SELECT',
-            ],
-            maximumFields: 100,
-          },
-        ],
-      },
+      ...this.adapterRegistry.surfaces(),
       {
         registrationKey: 'tenant-record-application',
         moduleKey: 'tenant-apps',
@@ -178,7 +133,7 @@ export class ConfigurationStudioService {
               'SELECT',
               'MULTI_SELECT',
             ],
-            maximumFields: 200,
+            maximumFields: 250,
           },
         ],
       },
@@ -199,7 +154,14 @@ export class ConfigurationStudioService {
         surfaceKeyEditable: false,
         modes: ['CREATE', 'EDIT', 'READ', 'LIST'],
         coreFields: [
-          registeredCoreField('id', 'Customer ID', 'TEXT', true, true, 'Stable AR customer identity.'),
+          registeredCoreField(
+            'id',
+            'Customer ID',
+            'TEXT',
+            true,
+            true,
+            'Stable AR customer identity.',
+          ),
           registeredCoreField(
             'legalName',
             'Legal name',
@@ -240,8 +202,22 @@ export class ConfigurationStudioService {
             true,
             'Customer lifecycle transitions are module commands.',
           ),
-          registeredCoreField('phone', 'Phone', 'PHONE', false, false, 'Canonical customer contact data.'),
-          registeredCoreField('website', 'Website', 'URL', false, false, 'Canonical customer profile data.'),
+          registeredCoreField(
+            'phone',
+            'Phone',
+            'PHONE',
+            false,
+            false,
+            'Canonical customer contact data.',
+          ),
+          registeredCoreField(
+            'website',
+            'Website',
+            'URL',
+            false,
+            false,
+            'Canonical customer profile data.',
+          ),
           registeredCoreField(
             'taxId',
             'Tax identifier',
@@ -360,7 +336,14 @@ export class ConfigurationStudioService {
         surfaceKeyEditable: false,
         modes: ['CREATE', 'EDIT', 'READ', 'LIST'],
         coreFields: [
-          registeredCoreField('id', 'Invoice ID', 'TEXT', true, true, 'Stable invoice aggregate identity.'),
+          registeredCoreField(
+            'id',
+            'Invoice ID',
+            'TEXT',
+            true,
+            true,
+            'Stable invoice aggregate identity.',
+          ),
           registeredCoreField(
             'billingEntityId',
             'Billing entity',
@@ -605,10 +588,21 @@ export class ConfigurationStudioService {
             label: 'Application fields',
             description: 'Schema-defined fields owned by the tenant application.',
             allowedFieldTypes: [
-              'TEXT', 'TEXTAREA', 'NUMBER', 'INTEGER', 'BOOLEAN', 'DATE', 'DATETIME',
-              'EMAIL', 'PHONE', 'URL', 'CURRENCY', 'SELECT', 'MULTI_SELECT',
+              'TEXT',
+              'TEXTAREA',
+              'NUMBER',
+              'INTEGER',
+              'BOOLEAN',
+              'DATE',
+              'DATETIME',
+              'EMAIL',
+              'PHONE',
+              'URL',
+              'CURRENCY',
+              'SELECT',
+              'MULTI_SELECT',
             ],
-            maximumFields: 200,
+            maximumFields: 250,
           },
         ],
         versionSequence: app.publishedVersion?.sequence,
@@ -673,7 +667,12 @@ export class ConfigurationStudioService {
     );
   }
 
-  async exportPackage(tenantId: string, actorId: string, dto: ExportConfigurationPackageDto, permissions: string[] = ['*']) {
+  async exportPackage(
+    tenantId: string,
+    actorId: string,
+    dto: ExportConfigurationPackageDto,
+    permissions: string[] = ['*'],
+  ) {
     const requestChecksum = checksum(dto);
     const operation = 'configuration-package.export';
     const replay = await this.idempotentReplay(
@@ -962,9 +961,7 @@ export class ConfigurationStudioService {
           : {};
       const maskedVals = maskValues(rawValues, filteredManifest, unmaskSensitive, fieldMap);
       const columns = Object.fromEntries(
-        columnKeys
-          .filter((key) => fieldMap.has(key))
-          .map((key) => [key, maskedVals[key] ?? null]),
+        columnKeys.filter((key) => fieldMap.has(key)).map((key) => [key, maskedVals[key] ?? null]),
       );
       return {
         id: record.id,
@@ -1298,7 +1295,7 @@ export class ConfigurationStudioService {
   }
 
   async createChangeSet(tenantId: string, actorId: string, dto: CreateConfigurationChangeSetDto) {
-    this.assertRegisteredSurface(dto.definition);
+    await this.assertAuthorable(tenantId, dto.definition);
     const requestChecksum = checksum(dto);
     const replay = await this.idempotentReplay(
       tenantId,
@@ -1308,7 +1305,7 @@ export class ConfigurationStudioService {
       requestChecksum,
     );
     if (replay) return replay;
-    const compiled = compileConfiguration(dto.definition);
+    const compiled = compileChangeSetDefinition(dto.definition);
     const result = await prisma.$transaction(async (tx) => {
       const changeSet = await tx.configurationChangeSet.create({
         data: {
@@ -1359,13 +1356,13 @@ export class ConfigurationStudioService {
     id: string,
     dto: UpdateConfigurationChangeSetDto,
   ) {
-    this.assertRegisteredSurface(dto.definition);
+    await this.assertAuthorable(tenantId, dto.definition);
     const current = await this.requireChangeSet(tenantId, id);
     if (!['DRAFT', 'VALIDATED'].includes(current.status))
       throw new ConflictException('Only draft or validated change sets can be edited.');
     if (current.version !== dto.expectedVersion)
       throw new ConflictException('The change set changed; reload before editing.');
-    const compiled = compileConfiguration(dto.definition);
+    const compiled = compileChangeSetDefinition(dto.definition);
     const updated = await prisma.configurationChangeSet.updateMany({
       where: { id, tenantId, version: dto.expectedVersion },
       data: {
@@ -1507,7 +1504,7 @@ export class ConfigurationStudioService {
       where: { id: dto.publishedVersionId, tenantId },
     });
     if (!published) throw new NotFoundException('Published configuration version was not found.');
-    return prisma.$transaction(async (tx) => {
+    const activation = await prisma.$transaction(async (tx) => {
       await this.lockActivationScope(
         tx,
         tenantId,
@@ -1606,6 +1603,15 @@ export class ConfigurationStudioService {
       });
       return activation;
     });
+    this.manifestCache.invalidate({
+      tenantId,
+      moduleKey: published.moduleKey,
+      entityKey: published.entityKey,
+      surfaceKey: published.surfaceKey,
+      environmentKey: dto.environmentKey,
+      cohortKey: dto.cohortKey,
+    });
+    return activation;
   }
 
   async rollback(tenantId: string, actorId: string, dto: ActivateConfigurationDto) {
@@ -1623,7 +1629,7 @@ export class ConfigurationStudioService {
       where: { id: dto.publishedVersionId, tenantId },
     });
     if (!target) throw new NotFoundException('Rollback configuration version was not found.');
-    return prisma.$transaction(async (tx) => {
+    const activation = await prisma.$transaction(async (tx) => {
       await this.lockActivationScope(
         tx,
         tenantId,
@@ -1722,9 +1728,123 @@ export class ConfigurationStudioService {
       });
       return activation;
     });
+    this.manifestCache.invalidate({
+      tenantId,
+      moduleKey: target.moduleKey,
+      entityKey: target.entityKey,
+      surfaceKey: target.surfaceKey,
+      environmentKey: dto.environmentKey,
+      cohortKey: dto.cohortKey,
+    });
+    return activation;
   }
 
   async runtimeManifest(
+    tenantId: string,
+    moduleKey: string,
+    entityKey: string,
+    surfaceKey: string,
+    environmentKey: string | undefined,
+    cohortKey: string | undefined,
+    permissions: string[],
+  ) {
+    return this.withRuntimeMetric('legacy', async () => {
+      const descriptor = this.adapterRegistry.descriptor(moduleKey, entityKey, surfaceKey);
+      const scope = this.runtimeScope.resolve(descriptor?.entitlementModuleKey ?? 'tenant-access');
+      this.runtimeScope.assertLegacyAssertions(scope, {
+        ...(environmentKey === undefined ? {} : { environmentKey }),
+        ...(cohortKey === undefined ? {} : { cohortKey }),
+      });
+      if (descriptor) {
+        await this.requireEntitlement(tenantId, descriptor.entitlementModuleKey);
+      }
+      return this.loadRuntimeManifest(
+        tenantId,
+        descriptor?.moduleKey ?? moduleKey,
+        descriptor?.entityKey ?? entityKey,
+        descriptor?.surfaceKey ?? surfaceKey,
+        scope.environmentKey,
+        scope.cohortKey,
+        permissions,
+      );
+    });
+  }
+
+  async currentRuntimeManifest(
+    tenantId: string,
+    moduleKey: string,
+    entityKey: string,
+    surfaceKey: string,
+    permissions: string[],
+  ) {
+    return this.withRuntimeMetric('current', async () => {
+      const { descriptor, scope } = await this.authorizedRuntimeScope(
+        tenantId,
+        moduleKey,
+        entityKey,
+        surfaceKey,
+      );
+      const manifest = await this.loadRuntimeManifest(
+        tenantId,
+        descriptor.moduleKey,
+        descriptor.entityKey,
+        descriptor.surfaceKey,
+        scope.environmentKey,
+        scope.cohortKey,
+        permissions,
+      );
+      return {
+        ...manifest,
+        scope,
+        adapter: {
+          adapterKey: descriptor.adapterKey,
+          descriptorVersion: descriptor.compatibility.descriptorVersion,
+        },
+      };
+    });
+  }
+
+  async previewRuntimeManifest(
+    tenantId: string,
+    actorId: string,
+    moduleKey: string,
+    entityKey: string,
+    surfaceKey: string,
+    environmentKey: string,
+    cohortKey: string,
+    permissions: string[],
+  ) {
+    return this.withRuntimeMetric('preview', async () => {
+      const descriptor = await this.authorizedAdapter(tenantId, moduleKey, entityKey, surfaceKey);
+      const manifest = await this.loadRuntimeManifest(
+        tenantId,
+        descriptor.moduleKey,
+        descriptor.entityKey,
+        descriptor.surfaceKey,
+        environmentKey,
+        cohortKey,
+        permissions,
+      );
+      await prisma.auditLog.create({
+        data: {
+          tenantId,
+          userId: actorId,
+          action: 'EXPORT',
+          resource: 'configuration-runtime-preview',
+          resourceId: manifest.activationId,
+          metadata: {
+            eventType: descriptor.audit.previewEventType,
+            adapterKey: descriptor.adapterKey,
+            environmentKey,
+            cohortKey,
+          },
+        },
+      });
+      return manifest;
+    });
+  }
+
+  private async loadRuntimeManifest(
     tenantId: string,
     moduleKey: string,
     entityKey: string,
@@ -1733,30 +1853,218 @@ export class ConfigurationStudioService {
     cohortKey: string,
     permissions: string[],
   ) {
-    const activation = await prisma.configurationActivation.findFirst({
-      where: {
+    const scope: ConfigurationManifestScope = {
+      tenantId,
+      moduleKey,
+      entityKey,
+      surfaceKey,
+      environmentKey,
+      cohortKey,
+    };
+    const activation = await this.manifestCache.read(scope, async () => {
+      const current = await prisma.configurationActivation.findFirst({
+        where: { ...scope, status: 'ACTIVE' },
+        include: { publishedVersion: true },
+        orderBy: { activatedAt: 'desc' },
+      });
+      if (!current) {
+        throw configurationRuntimeError(
+          'CONFIGURATION_MANIFEST_UNAVAILABLE',
+          'No active runtime configuration is available.',
+          false,
+          404,
+        );
+      }
+      return {
+        activationId: current.id,
+        publishedVersionId: current.publishedVersionId,
+        activatedAt: current.activatedAt,
+        manifest: current.publishedVersion.manifest as unknown as CompiledConfigurationManifest,
+        checksum: current.publishedVersion.checksum,
+      };
+    });
+    return {
+      activationId: activation.activationId,
+      publishedVersionId: activation.publishedVersionId,
+      activatedAt: activation.activatedAt,
+      manifest: isGovernedCatalogueDefinition(activation.manifest)
+        ? activation.manifest
+        : filterManifest(activation.manifest, permissions),
+      checksum: activation.checksum,
+    };
+  }
+
+  /** WI-OI-064c: platform-shipped catalogues with the tenant's latest change set and active version. */
+  async listGovernedCatalogues(tenantId: string) {
+    const scopes = Object.values(GOVERNED_CATALOGUE_SCOPES);
+    const identity = scopes.map(({ moduleKey, entityKey }) => ({ moduleKey, entityKey }));
+    const [changeSets, activations] = await Promise.all([
+      prisma.configurationChangeSet.findMany({
+        where: { tenantId, OR: identity },
+        orderBy: { updatedAt: 'desc' },
+        select: { id: true, moduleKey: true, entityKey: true, surfaceKey: true, status: true, version: true, updatedAt: true },
+      }),
+      prisma.configurationActivation.findMany({
+        where: { tenantId, status: 'ACTIVE', OR: identity },
+        orderBy: { activatedAt: 'desc' },
+        select: { publishedVersionId: true, moduleKey: true, entityKey: true, surfaceKey: true, environmentKey: true, cohortKey: true, activatedAt: true },
+      }),
+    ]);
+    return listBundledGovernedCatalogues().map((item) => {
+      const scope = GOVERNED_CATALOGUE_SCOPES[item.kind];
+      const same = (row: { moduleKey: string; entityKey: string; surfaceKey: string }) =>
+        row.moduleKey === scope.moduleKey && row.entityKey === scope.entityKey && row.surfaceKey === item.surfaceKey;
+      return { ...item, ...scope, latestChangeSet: changeSets.find(same) ?? null, activation: activations.find(same) ?? null };
+    });
+  }
+
+  /** Creates a change set from a platform-shipped catalogue; it then follows the normal approval lifecycle. */
+  async installGovernedCatalogue(tenantId: string, actorId: string, dto: InstallGovernedCatalogueDto) {
+    const definition = bundledGovernedCatalogue(dto.kind, dto.surfaceKey);
+    if (!definition) throw new NotFoundException('This catalogue is not shipped with the platform.');
+    return this.createChangeSet(tenantId, actorId, {
+      definition,
+      reason: dto.reason,
+      idempotencyKey: dto.idempotencyKey,
+    });
+  }
+
+  /** The active catalogue for this tenant's runtime scope, for server-side consumers such as the web BFF. */
+  async currentGovernedCatalogue(tenantId: string, kind: GovernedCatalogueKind, surfaceKey: string) {
+    return this.withRuntimeMetric('current', async () => {
+      const { moduleKey, entityKey } = GOVERNED_CATALOGUE_SCOPES[kind];
+      await this.requireEntitlement(tenantId, moduleKey);
+      const scope = this.runtimeScope.resolve(moduleKey);
+      const manifest = await this.loadRuntimeManifest(
         tenantId,
         moduleKey,
         entityKey,
         surfaceKey,
-        environmentKey,
-        cohortKey,
-        status: 'ACTIVE',
-      },
-      include: { publishedVersion: true },
-      orderBy: { activatedAt: 'desc' },
+        scope.environmentKey,
+        scope.cohortKey,
+        [],
+      );
+      return { ...manifest, scope };
     });
-    if (!activation) throw new NotFoundException('No active configuration exists for this scope.');
-    return {
-      activationId: activation.id,
-      publishedVersionId: activation.publishedVersionId,
-      activatedAt: activation.activatedAt,
-      manifest: filterManifest(
-        activation.publishedVersion.manifest as unknown as CompiledConfigurationManifest,
-        permissions,
-      ),
-      checksum: activation.publishedVersion.checksum,
-    };
+  }
+
+  /**
+   * WI-OI-064e, Demo Lab tenants only: installs, publishes and activates a bundled catalogue in one transaction,
+   * writing the same change set, version, activation, audit and outbox records as the normal lifecycle. Independent
+   * approval is skipped because demo tenants hold only synthetic data; the audit reason says so on every record.
+   */
+  async provisionDemoCatalogue(tenantId: string, actorId: string, kind: GovernedCatalogueKind, surfaceKey: string) {
+    const tenant = await prisma.tenant.findUnique({ where: { id: tenantId }, select: { features: true } });
+    if (!tenant?.features.includes('demo-lab')) {
+      throw new ForbiddenException('Only Demo Lab tenants may activate catalogues without independent approval.');
+    }
+    const definition = bundledGovernedCatalogue(kind, surfaceKey);
+    if (!definition) throw new NotFoundException('This catalogue is not shipped with the platform.');
+    const compiled = compileGovernedCatalogue(definition);
+    if (!compiled.valid || !compiled.manifest) {
+      throw new BadRequestException({ message: 'The bundled catalogue failed compilation.', findings: compiled.findings });
+    }
+    const manifest = compiled.manifest;
+    const scope = this.runtimeScope.resolve(definition.moduleKey);
+    const reason = `Demo Lab provisioning of ${kind} ${surfaceKey} (synthetic tenant; independent approval not required)`;
+    const now = new Date();
+    const activation = await prisma.$transaction(async (tx) => {
+      await this.lockActivationScope(tx, tenantId, definition.moduleKey, definition.entityKey, definition.surfaceKey, scope.environmentKey, scope.cohortKey);
+      const changeSet = await tx.configurationChangeSet.create({
+        data: {
+          tenantId,
+          moduleKey: definition.moduleKey,
+          entityKey: definition.entityKey,
+          surfaceKey: definition.surfaceKey,
+          status: 'PUBLISHED',
+          definition: definition as unknown as Prisma.InputJsonValue,
+          compiledManifest: jsonInput(manifest),
+          checksum: manifest.checksum,
+          findings: jsonInput(compiled.findings),
+          compatibility: 'COMPATIBLE',
+          reason,
+          createdById: actorId,
+          submittedAt: now,
+          approvedById: actorId,
+          approvedAt: now,
+          publishedAt: now,
+        },
+      });
+      await this.audit(tx, tenantId, actorId, 'CREATE', 'configuration-change-set', changeSet.id, reason, null, changeSet);
+      const latest = await tx.configurationPublishedVersion.findFirst({
+        where: { tenantId, moduleKey: definition.moduleKey, entityKey: definition.entityKey, surfaceKey: definition.surfaceKey },
+        orderBy: { sequence: 'desc' },
+      });
+      const published = await tx.configurationPublishedVersion.create({
+        data: {
+          tenantId,
+          changeSetId: changeSet.id,
+          moduleKey: definition.moduleKey,
+          entityKey: definition.entityKey,
+          surfaceKey: definition.surfaceKey,
+          sequence: (latest?.sequence ?? 0) + 1,
+          manifest: jsonInput(manifest),
+          checksum: manifest.checksum,
+          compilerVersion: CONFIGURATION_COMPILER_VERSION,
+          publishedById: actorId,
+        },
+      });
+      await this.audit(tx, tenantId, actorId, 'CREATE', 'configuration-version', published.id, reason, null, published);
+      await this.outbox(tx, tenantId, 'configuration-version', published.id, 'configuration.version.published.v1', {
+        publishedVersionId: published.id,
+        checksum: published.checksum,
+      });
+      await tx.configurationActivation.updateMany({
+        where: {
+          tenantId,
+          moduleKey: definition.moduleKey,
+          entityKey: definition.entityKey,
+          surfaceKey: definition.surfaceKey,
+          environmentKey: scope.environmentKey,
+          cohortKey: scope.cohortKey,
+          status: 'ACTIVE',
+        },
+        data: { status: 'INACTIVE', deactivatedAt: now },
+      });
+      const created = await tx.configurationActivation.create({
+        data: {
+          tenantId,
+          publishedVersionId: published.id,
+          moduleKey: definition.moduleKey,
+          entityKey: definition.entityKey,
+          surfaceKey: definition.surfaceKey,
+          environmentKey: scope.environmentKey,
+          cohortKey: scope.cohortKey,
+          reason,
+          activatedById: actorId,
+        },
+      });
+      await this.audit(tx, tenantId, actorId, 'STATUS_CHANGE', 'configuration-activation', created.id, reason, null, created);
+      await this.outbox(tx, tenantId, 'configuration-activation', created.id, 'configuration.activation.changed.v1', {
+        activationId: created.id,
+        publishedVersionId: published.id,
+        checksum: published.checksum,
+      });
+      return created;
+    });
+    this.manifestCache.invalidate({
+      tenantId,
+      moduleKey: definition.moduleKey,
+      entityKey: definition.entityKey,
+      surfaceKey: definition.surfaceKey,
+      environmentKey: scope.environmentKey,
+      cohortKey: scope.cohortKey,
+    });
+    return activation;
+  }
+
+  private async assertAuthorable(tenantId: string, definition: ConfigurationChangeSetDefinition) {
+    if (isGovernedCatalogueDefinition(definition)) {
+      // The schema pins each catalogue kind to its module and entity; the tenant must be entitled to it.
+      await this.requireEntitlement(tenantId, (definition as GovernedCatalogueDefinition).moduleKey);
+      return;
+    }
+    this.assertRegisteredSurface(definition as ConfigurationDefinition);
   }
 
   async getExtensionValues(
@@ -1766,6 +2074,12 @@ export class ConfigurationStudioService {
     permissions: string[],
   ) {
     this.assertExtensionOwner(tenantId, ownerType, ownerId);
+    await this.authorizedRuntimeScope(
+      tenantId,
+      'tenant-settings',
+      'tenant-profile',
+      'profile-extension',
+    );
     const record = await prisma.configurationExtensionValue.findFirst({
       where: { tenantId, ownerType, ownerId },
       include: { publishedVersion: true },
@@ -1791,6 +2105,12 @@ export class ConfigurationStudioService {
     permissions: string[],
   ) {
     this.assertExtensionOwner(tenantId, ownerType, ownerId);
+    const { scope } = await this.authorizedRuntimeScope(
+      tenantId,
+      'tenant-settings',
+      'tenant-profile',
+      'profile-extension',
+    );
     const operation = `extension-values.save:${ownerType}:${ownerId}`;
     const requestChecksum = checksum(dto);
     const replay = await this.idempotentReplay(
@@ -1821,8 +2141,8 @@ export class ConfigurationStudioService {
         published.moduleKey,
         published.entityKey,
         published.surfaceKey,
-        'local-uat',
-        'all-users',
+        scope.environmentKey,
+        scope.cohortKey,
       );
       const active = await tx.configurationActivation.findFirst({
         where: {
@@ -1831,14 +2151,14 @@ export class ConfigurationStudioService {
           moduleKey: published.moduleKey,
           entityKey: published.entityKey,
           surfaceKey: published.surfaceKey,
-          environmentKey: 'local-uat',
-          cohortKey: 'all-users',
+          environmentKey: scope.environmentKey,
+          cohortKey: scope.cohortKey,
           status: 'ACTIVE',
         },
       });
       if (!active)
         throw new ConflictException(
-          'The selected tenant-profile manifest is not active for local UAT.',
+          'The selected tenant-profile manifest is not active for the current runtime scope.',
         );
       const manifest = published.manifest as unknown as CompiledConfigurationManifest;
       const existing = await tx.configurationExtensionValue.findFirst({
@@ -1901,6 +2221,24 @@ export class ConfigurationStudioService {
           requestChecksum,
           response: jsonInput(record),
           statusCode: 200,
+        },
+      });
+      await tx.platformOutboxEvent.create({
+        data: {
+          tenantId,
+          eventType: 'tenant.profile.extensions.updated.v1',
+          aggregateType: 'tenant_profile',
+          aggregateId: ownerId,
+          aggregateVersion: record.version,
+          payload: {
+            ownerType,
+            ownerId,
+            publishedVersionId: published.id,
+            valuesChecksum: record.valuesChecksum,
+            version: record.version,
+            updatedFieldKeys: Object.keys(dto.values),
+          },
+          status: 'PENDING',
         },
       });
       return record;
@@ -1987,7 +2325,7 @@ export class ConfigurationStudioService {
     return activation;
   }
 
-  private async compatibility(tenantId: string, definition: ConfigurationDefinition) {
+  private async compatibility(tenantId: string, definition: ConfigurationChangeSetDefinition) {
     const latest = await prisma.configurationPublishedVersion.findFirst({
       where: {
         tenantId,
@@ -1998,8 +2336,14 @@ export class ConfigurationStudioService {
       orderBy: { sequence: 'desc' },
     });
     if (!latest) return 'COMPATIBLE';
-    return impactClassification(
-      compareConfigurationFields(
+    if (isGovernedCatalogueDefinition(definition)) {
+      return classifyGovernedCatalogueChange(
+        latest.manifest as unknown as GovernedCatalogueDefinition,
+        definition as GovernedCatalogueDefinition,
+      );
+    }
+    return classifyConfigurationImpact(
+      compareConfigurationDefinitions(
         latest.manifest as unknown as CompiledConfigurationManifest,
         definition as unknown as CompiledConfigurationManifest,
       ),
@@ -2027,7 +2371,26 @@ export class ConfigurationStudioService {
     targetPublishedVersionId: string | null,
     baseline: { id: string; manifest: Prisma.JsonValue } | null,
   ): Promise<ConfigurationImpactReport> {
-    const changes = compareConfigurationFields(
+    if (isGovernedCatalogueDefinition(target)) {
+      // Catalogues hold no tenant records to scan; losing a referenced entry is reported as breaking.
+      const catalogue = target as unknown as GovernedCatalogueDefinition;
+      return {
+        moduleKey: catalogue.moduleKey,
+        entityKey: catalogue.entityKey,
+        surfaceKey: catalogue.surfaceKey,
+        baselinePublishedVersionId: baseline?.id ?? null,
+        targetPublishedVersionId,
+        targetChecksum,
+        classification: baseline
+          ? classifyGovernedCatalogueChange(baseline.manifest as unknown as GovernedCatalogueDefinition, catalogue)
+          : 'COMPATIBLE',
+        changes: [],
+        scanned: { configurationRecords: 0, extensionValues: 0 },
+        incompatible: { configurationRecords: 0, extensionValues: 0, samples: [] },
+        activationAllowed: true,
+      };
+    }
+    const changes = compareConfigurationDefinitions(
       baseline?.manifest as unknown as CompiledConfigurationManifest | undefined,
       target,
     );
@@ -2038,7 +2401,7 @@ export class ConfigurationStudioService {
       baselinePublishedVersionId: baseline?.id ?? null,
       targetPublishedVersionId,
       targetChecksum,
-      classification: impactClassification(changes),
+      classification: classifyConfigurationImpact(changes),
       changes,
       scanned: { configurationRecords: 0, extensionValues: 0 },
       incompatible: { configurationRecords: 0, extensionValues: 0, samples: [] },
@@ -2187,6 +2550,24 @@ export class ConfigurationStudioService {
           'This module surface is available for inspection but not configuration authoring.',
       );
     }
+    const extensionSlots = surface.extensionSlots;
+    const maximumFields = extensionSlots.reduce((total, slot) => total + slot.maximumFields, 0);
+    if (definition.fields.length > maximumFields) {
+      throw new BadRequestException(
+        `This surface permits at most ${maximumFields} configurable fields.`,
+      );
+    }
+    const allowedFieldTypes = new Set(
+      extensionSlots.flatMap((slot) => [...slot.allowedFieldTypes]),
+    );
+    const unsupportedType = definition.fields.find(
+      (field) => !allowedFieldTypes.has(field.type),
+    )?.type;
+    if (unsupportedType) {
+      throw new BadRequestException(
+        `Field type ${unsupportedType} is not permitted by this surface.`,
+      );
+    }
     const coreKeys = new Set(surface.coreFields.map((field) => field.key));
     const shadowedKey = definition.fields.find((field) => coreKeys.has(field.key))?.key;
     if (shadowedKey) {
@@ -2197,10 +2578,102 @@ export class ConfigurationStudioService {
   }
 
   private assertExtensionOwner(tenantId: string, ownerType: string, ownerId: string) {
-    if (ownerType !== 'tenant-profile' || ownerId !== tenantId) {
+    if (!this.adapterRegistry.validatesExtensionOwner(tenantId, ownerType, ownerId)) {
       throw new BadRequestException(
         'This extension owner is not registered for direct value storage.',
       );
+    }
+  }
+
+  private registeredAdapter(
+    moduleKey: string,
+    entityKey: string,
+    surfaceKey: string,
+  ): ModuleAdapterDescriptorV1 {
+    const descriptor = this.adapterRegistry.descriptor(moduleKey, entityKey, surfaceKey);
+    if (!descriptor) {
+      throw configurationRuntimeError(
+        'CONFIGURATION_ADAPTER_NOT_FOUND',
+        'The requested configuration adapter is not available.',
+        false,
+        404,
+      );
+    }
+    return descriptor;
+  }
+
+  private async requireEntitlement(tenantId: string, moduleKey: string): Promise<void> {
+    const now = new Date();
+    const entitlement = await prisma.tenantModuleEntitlement.findUnique({
+      where: { tenantId_moduleKey: { tenantId, moduleKey } },
+      select: { status: true, startsAt: true, endsAt: true },
+    });
+    if (
+      !entitlement ||
+      entitlement.status !== 'ENABLED' ||
+      entitlement.startsAt > now ||
+      (entitlement.endsAt !== null && entitlement.endsAt <= now)
+    ) {
+      const error = configurationRuntimeError(
+        'CONFIGURATION_RUNTIME_SCOPE_DENIED',
+        'The requested runtime scope is not available.',
+        false,
+        403,
+      ) as HttpException & { configurationRuntimeResult?: ConfigurationRuntimeResult };
+      Object.defineProperty(error, 'configurationRuntimeResult', {
+        value: 'entitlement-denied',
+      });
+      throw error;
+    }
+  }
+
+  private async authorizedAdapter(
+    tenantId: string,
+    moduleKey: string,
+    entityKey: string,
+    surfaceKey: string,
+  ): Promise<ModuleAdapterDescriptorV1> {
+    const descriptor = this.registeredAdapter(moduleKey, entityKey, surfaceKey);
+    await this.requireEntitlement(tenantId, descriptor.entitlementModuleKey);
+    return descriptor;
+  }
+
+  private async authorizedRuntimeScope(
+    tenantId: string,
+    moduleKey: string,
+    entityKey: string,
+    surfaceKey: string,
+  ): Promise<{ descriptor: ModuleAdapterDescriptorV1; scope: ConfigurationRuntimeScopeV1 }> {
+    const descriptor = this.registeredAdapter(moduleKey, entityKey, surfaceKey);
+    const scope = this.runtimeScope.resolve(descriptor.entitlementModuleKey);
+    await this.requireEntitlement(tenantId, descriptor.entitlementModuleKey);
+    return { descriptor, scope };
+  }
+
+  private async withRuntimeMetric<T>(
+    operation: ConfigurationRuntimeOperation,
+    run: () => Promise<T>,
+  ): Promise<T> {
+    try {
+      const result = await run();
+      this.runtimeMetrics.record(operation, 'success');
+      return result;
+    } catch (error) {
+      const explicitResult = (error as { configurationRuntimeResult?: ConfigurationRuntimeResult })
+        .configurationRuntimeResult;
+      let result: ConfigurationRuntimeResult = explicitResult ?? 'failed';
+      if (!explicitResult && error instanceof HttpException) {
+        const response = error.getResponse();
+        const code =
+          typeof response === 'object' && response !== null && 'code' in response
+            ? (response as { code?: unknown }).code
+            : undefined;
+        if (code === 'CONFIGURATION_ADAPTER_NOT_FOUND') result = 'adapter-not-found';
+        else if (code === 'CONFIGURATION_RUNTIME_SCOPE_DENIED') result = 'scope-denied';
+        else if (code === 'CONFIGURATION_MANIFEST_UNAVAILABLE') result = 'manifest-unavailable';
+      }
+      this.runtimeMetrics.record(operation, result);
+      throw error;
     }
   }
 
@@ -2247,7 +2720,12 @@ export class ConfigurationStudioService {
     return {
       templates: rows.map((row) => ({
         ...row,
-        values: maskValues(row.values as Record<string, unknown>, filteredManifest, unmaskSensitive, fieldMap),
+        values: maskValues(
+          row.values as Record<string, unknown>,
+          filteredManifest,
+          unmaskSensitive,
+          fieldMap,
+        ),
         stale: row.manifestChecksum !== staleChecksum,
       })),
       manifest: filteredManifest,
@@ -2265,8 +2743,16 @@ export class ConfigurationStudioService {
     const manifest = active.publishedVersion.manifest as unknown as CompiledConfigurationManifest;
     const filteredManifest = filterManifest(manifest, permissions);
     assertAuthorizedValues(filteredManifest, dto.values as Record<string, unknown>, permissions);
-    const errors = validateConfigurationValues(filteredManifest, dto.values as Record<string, unknown>, { allowReadOnly: false });
-    if (Object.keys(errors).length > 0) throw new BadRequestException({ message: 'Template values contain validation errors.', errors });
+    const errors = validateConfigurationValues(
+      filteredManifest,
+      dto.values as Record<string, unknown>,
+      { allowReadOnly: false },
+    );
+    if (Object.keys(errors).length > 0)
+      throw new BadRequestException({
+        message: 'Template values contain validation errors.',
+        errors,
+      });
     const id = randomUUID();
     const valuesCs = checksum(dto.values);
     const now = new Date();
@@ -2282,13 +2768,24 @@ export class ConfigurationStudioService {
          ${JSON.stringify(dto.values)}::jsonb, ${valuesCs},
          1, ${actorId}, ${actorId}, ${now}, ${now})
     `;
-    return { id, tenantId, entityKey, name: dto.name, description: dto.description ?? null,
-             publishedVersionId: active.publishedVersion.id,
-             manifestChecksum: active.publishedVersion.checksum,
-             values: dto.values, valuesChecksum: valuesCs,
-             sourceTemplateId: null, version: 1,
-             createdById: actorId, updatedById: actorId,
-             createdAt: now, updatedAt: now, stale: false };
+    return {
+      id,
+      tenantId,
+      entityKey,
+      name: dto.name,
+      description: dto.description ?? null,
+      publishedVersionId: active.publishedVersion.id,
+      manifestChecksum: active.publishedVersion.checksum,
+      values: dto.values,
+      valuesChecksum: valuesCs,
+      sourceTemplateId: null,
+      version: 1,
+      createdById: actorId,
+      updatedById: actorId,
+      createdAt: now,
+      updatedAt: now,
+      stale: false,
+    };
   }
 
   async updateTemplate(
@@ -2299,7 +2796,9 @@ export class ConfigurationStudioService {
     dto: UpdateConfigurationTemplateDto,
     permissions: string[],
   ) {
-    const rows = await prisma.$queryRaw<Array<{ id: string; version: number; values: unknown; manifestChecksum: string }>>`
+    const rows = await prisma.$queryRaw<
+      Array<{ id: string; version: number; values: unknown; manifestChecksum: string }>
+    >`
       SELECT id, version, values, "manifestChecksum"
       FROM configuration_templates
       WHERE id = ${templateId} AND "tenantId" = ${tenantId} AND "entityKey" = ${entityKey} AND "deletedAt" IS NULL
@@ -2313,9 +2812,20 @@ export class ConfigurationStudioService {
     const filteredManifest = filterManifest(manifest, permissions);
     const mergedValues = { ...(row.values as Record<string, unknown>), ...(dto.values ?? {}) };
     if (dto.values) {
-      assertAuthorizedValues(filteredManifest, dto.values as Record<string, unknown>, permissions, row.values);
-      const errors = validateConfigurationValues(filteredManifest, mergedValues, { allowReadOnly: false });
-      if (Object.keys(errors).length > 0) throw new BadRequestException({ message: 'Template values contain validation errors.', errors });
+      assertAuthorizedValues(
+        filteredManifest,
+        dto.values as Record<string, unknown>,
+        permissions,
+        row.values,
+      );
+      const errors = validateConfigurationValues(filteredManifest, mergedValues, {
+        allowReadOnly: false,
+      });
+      if (Object.keys(errors).length > 0)
+        throw new BadRequestException({
+          message: 'Template values contain validation errors.',
+          errors,
+        });
     }
     const newValuesCs = checksum(mergedValues);
     const now = new Date();
@@ -2330,7 +2840,13 @@ export class ConfigurationStudioService {
           "updatedAt"      = ${now}
       WHERE id = ${templateId} AND "tenantId" = ${tenantId} AND version = ${dto.expectedVersion}
     `;
-    return { id: templateId, tenantId, entityKey, version: dto.expectedVersion + 1, updatedAt: now };
+    return {
+      id: templateId,
+      tenantId,
+      entityKey,
+      version: dto.expectedVersion + 1,
+      updatedAt: now,
+    };
   }
 
   async duplicateTemplate(
@@ -2364,11 +2880,23 @@ export class ConfigurationStudioService {
          ${JSON.stringify(source.values)}::jsonb, ${valuesCs}, ${templateId},
          1, ${actorId}, ${actorId}, ${now}, ${now})
     `;
-    return { id: newId, tenantId, entityKey, name: dto.name, sourceTemplateId: templateId,
-             publishedVersionId: source.publishedVersionId, manifestChecksum: source.manifestChecksum,
-             values: source.values, valuesChecksum: valuesCs,
-             version: 1, createdById: actorId, updatedById: actorId,
-             createdAt: now, updatedAt: now };
+    return {
+      id: newId,
+      tenantId,
+      entityKey,
+      name: dto.name,
+      description: null,
+      sourceTemplateId: templateId,
+      publishedVersionId: source.publishedVersionId,
+      manifestChecksum: source.manifestChecksum,
+      values: source.values,
+      valuesChecksum: valuesCs,
+      version: 1,
+      createdById: actorId,
+      updatedById: actorId,
+      createdAt: now,
+      updatedAt: now,
+    };
   }
 
   async deleteTemplate(tenantId: string, entityKey: string, templateId: string, actorId: string) {
@@ -2393,10 +2921,18 @@ export class ConfigurationStudioService {
   async listSavedFilters(tenantId: string, entityKey: string) {
     return prisma.$queryRaw<
       Array<{
-        id: string; tenantId: string; entityKey: string; name: string;
-        filterKey: string | null; filterValue: string | null; search: string | null;
-        sortKey: string | null; sortDirection: string;
-        createdById: string; createdAt: Date; updatedAt: Date;
+        id: string;
+        tenantId: string;
+        entityKey: string;
+        name: string;
+        filterKey: string | null;
+        filterValue: string | null;
+        search: string | null;
+        sortKey: string | null;
+        sortDirection: string;
+        createdById: string;
+        createdAt: Date;
+        updatedAt: Date;
       }>
     >`
       SELECT id, "tenantId", "entityKey", name,
@@ -2409,7 +2945,12 @@ export class ConfigurationStudioService {
     `;
   }
 
-  async createSavedFilter(tenantId: string, entityKey: string, actorId: string, dto: CreateSavedFilterDto) {
+  async createSavedFilter(
+    tenantId: string,
+    entityKey: string,
+    actorId: string,
+    dto: CreateSavedFilterDto,
+  ) {
     const id = randomUUID();
     const now = new Date();
     await prisma.$executeRaw`
@@ -2423,11 +2964,20 @@ export class ConfigurationStudioService {
          ${dto.search ?? null}, ${dto.sortKey ?? null}, ${dto.sortDirection},
          ${actorId}, ${now}, ${now})
     `;
-    return { id, tenantId, entityKey, name: dto.name,
-             filterKey: dto.filterKey ?? null, filterValue: dto.filterValue ?? null,
-             search: dto.search ?? null, sortKey: dto.sortKey ?? null,
-             sortDirection: dto.sortDirection, createdById: actorId,
-             createdAt: now, updatedAt: now };
+    return {
+      id,
+      tenantId,
+      entityKey,
+      name: dto.name,
+      filterKey: dto.filterKey ?? null,
+      filterValue: dto.filterValue ?? null,
+      search: dto.search ?? null,
+      sortKey: dto.sortKey ?? null,
+      sortDirection: dto.sortDirection,
+      createdById: actorId,
+      createdAt: now,
+      updatedAt: now,
+    };
   }
 
   async deleteSavedFilter(tenantId: string, entityKey: string, filterId: string, actorId: string) {
@@ -2456,98 +3006,6 @@ function jsonInput(value: unknown): Prisma.InputJsonValue {
 
 function nullableJsonInput(value: unknown): Prisma.InputJsonValue | typeof Prisma.JsonNull {
   return value === null || value === undefined ? Prisma.JsonNull : jsonInput(value);
-}
-
-function compareConfigurationFields(
-  baseline: CompiledConfigurationManifest | undefined,
-  target: CompiledConfigurationManifest,
-): ConfigurationImpactChange[] {
-  if (!baseline) {
-    return target.fields.map((field) => ({
-      fieldKey: field.key,
-      kind: 'FIELD_ADDED',
-      severity: 'SAFE',
-      message: `Field ${field.label} is introduced on a new surface.`,
-    }));
-  }
-  const changes: ConfigurationImpactChange[] = [];
-  const previousFields = new Map(baseline.fields.map((field) => [field.key, field]));
-  const nextFields = new Map(target.fields.map((field) => [field.key, field]));
-  for (const field of baseline.fields) {
-    const next = nextFields.get(field.key);
-    if (!next) {
-      changes.push({
-        fieldKey: field.key,
-        kind: 'FIELD_REMOVED',
-        severity: 'BREAKING',
-        message: `Field ${field.label} is removed.`,
-      });
-      continue;
-    }
-    if (next.type !== field.type) {
-      changes.push({
-        fieldKey: field.key,
-        kind: 'TYPE_CHANGED',
-        severity: 'BREAKING',
-        message: `Field ${field.label} changes from ${field.type} to ${next.type}.`,
-      });
-      continue;
-    }
-    if (!field.required && next.required) {
-      changes.push({
-        fieldKey: field.key,
-        kind: 'REQUIRED_ADDED',
-        severity: 'CONDITIONAL',
-        message: `Field ${field.label} becomes required.`,
-      });
-    }
-    const removedOptions = (field.options ?? []).filter(
-      (option) => !(next.options ?? []).some((candidate) => candidate.value === option.value),
-    );
-    if (removedOptions.length > 0) {
-      changes.push({
-        fieldKey: field.key,
-        kind: 'OPTIONS_REMOVED',
-        severity: 'CONDITIONAL',
-        message: `${removedOptions.length} allowed option value(s) are removed from ${field.label}.`,
-      });
-    }
-    const tightened = [
-      next.minimum !== undefined && (field.minimum === undefined || next.minimum > field.minimum),
-      next.maximum !== undefined && (field.maximum === undefined || next.maximum < field.maximum),
-      next.minLength !== undefined &&
-        (field.minLength === undefined || next.minLength > field.minLength),
-      next.maxLength !== undefined &&
-        (field.maxLength === undefined || next.maxLength < field.maxLength),
-    ].some(Boolean);
-    if (tightened) {
-      changes.push({
-        fieldKey: field.key,
-        kind: 'CONSTRAINT_TIGHTENED',
-        severity: 'CONDITIONAL',
-        message: `Validation constraints are tightened for ${field.label}.`,
-      });
-    }
-  }
-  for (const field of target.fields) {
-    if (!previousFields.has(field.key)) {
-      changes.push({
-        fieldKey: field.key,
-        kind: 'FIELD_ADDED',
-        severity: field.required && field.defaultValue === undefined ? 'CONDITIONAL' : 'SAFE',
-        message: `Field ${field.label} is added${field.required && field.defaultValue === undefined ? ' without a default value' : ''}.`,
-      });
-    }
-  }
-  return changes;
-}
-
-function impactClassification(
-  changes: ConfigurationImpactChange[],
-): ConfigurationImpactReport['classification'] {
-  if (changes.some((change) => change.severity === 'BREAKING')) return 'BREAKING';
-  if (changes.some((change) => change.severity === 'CONDITIONAL')) return 'CONDITIONAL';
-  return 'COMPATIBLE';
 }
 
 function hasPermission(permissions: string[], required: string | undefined): boolean {
@@ -2597,7 +3055,7 @@ function maskValues(
   values: Record<string, unknown>,
   _filteredManifest: CompiledConfigurationManifest,
   unmaskSensitive: boolean,
-  fieldMap: Map<string, CompiledConfigurationManifest["fields"][number]>,
+  fieldMap: Map<string, CompiledConfigurationManifest['fields'][number]>,
 ): Record<string, unknown> {
   return Object.fromEntries(
     Object.entries(values)
@@ -2659,4 +3117,10 @@ function assertAuthorizedValues(
       throw new ForbiddenException(`Field ${key} cannot be changed with the current permissions.`);
     }
   }
+}
+
+function compileChangeSetDefinition(definition: ConfigurationChangeSetDefinition) {
+  return isGovernedCatalogueDefinition(definition)
+    ? compileGovernedCatalogue(definition)
+    : compileConfiguration(definition);
 }

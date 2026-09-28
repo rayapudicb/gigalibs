@@ -7,12 +7,13 @@ import { RbacGuard, RbacModule } from '@gigalibs/rbac-nest';
 import { TenancyModule } from '@gigalibs/tenancy-nest';
 import { TenantBoundaryGuard } from '@gigalibs/tenancy-nest';
 import { Module } from '@nestjs/common';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { PlatformController } from './platform.controller.js';
 import { TenantDataExportController } from './tenant-data-export.controller.js';
 import { TenantDataExportService } from './tenant-data-export.service.js';
 import { TenantDataExportWorker } from './tenant-data-export.worker.js';
 import { TenantExportSnapshotService } from './tenant-export-snapshot.service.js';
+import { OutboxRelayProcessor } from './outbox-relay.processor.js';
 
 const manifests: ModuleManifest[] = [
   {
@@ -116,17 +117,37 @@ import { ApMatchingService } from './ap-matching.service.js';
 import { ApPolicyService } from './ap-policy.service.js';
 import { ApController } from './ap.controller.js';
 import { AuthorizationController } from './authorization.controller.js';
+import { ConfigurationInvalidationConsumer } from './configuration-invalidation.consumer.js';
+import {
+  CONFIGURATION_ADAPTERS,
+  ConfigurationAdapterRegistry,
+  defaultConfigurationAdapters,
+} from './configuration-adapter.registry.js';
+import { ConfigurationManifestCache } from './configuration-manifest.cache.js';
+import { ConfigurationOutboxPublisher } from './configuration-outbox.publisher.js';
+import { ConfigurationRuntimeMetrics } from './configuration-runtime.metrics.js';
+import { ConfigurationRuntimeScopeResolver } from './configuration-runtime-scope.resolver.js';
+import { ConfigurationStudioController } from './configuration-studio.controller.js';
+import { DemoLabController } from './demo-lab.controller.js';
+import { DemoLabService } from './demo-lab.service.js';
+import { ConfigurationStudioService } from './configuration-studio.service.js';
 import { ConnectorCredentialService } from './connector-credential.service.js';
 import { ConnectorHttpClient } from './connector-http.client.js';
 import { ConnectorPostgresClient } from './connector-postgres.client.js';
 import { ConnectorProfileService } from './connector-profile.service.js';
 import { ControlOutboxWorker } from './control-outbox.worker.js';
 import { DataRetentionWorker } from './data-retention.worker.js';
+import { DatabaseAvailabilityFilter } from './database-availability.filter.js';
 import { ExceptionController } from './exception.controller.js';
 import { ExceptionService } from './exception.service.js';
 import { ExecutionEventSignatureGuard } from './execution-event-signature.guard.js';
 import { ExecutionEventsController } from './execution-events.controller.js';
 import { ExecutionEventsService } from './execution-events.service.js';
+import { GovernorPersistentThrottlingGuard } from './governor-persistent.guard.js';
+import { GovernorPersistentService } from './governor-persistent.service.js';
+import { GovernorController } from './governor.controller.js';
+import { GovernorThrottlingGuard } from './governor.guard.js';
+import { GovernorService } from './governor.service.js';
 import { JsonSchemaService } from './json-schema.service.js';
 import { MetricsTokenGuard } from './metrics-token.guard.js';
 import { MetricsService } from './metrics.service.js';
@@ -135,21 +156,16 @@ import { OperationalIntelligenceController } from './operational-intelligence.co
 import { OperationalIntelligenceService } from './operational-intelligence.service.js';
 import { PayloadCryptoService } from './payload-crypto.service.js';
 import { RetentionService } from './retention.service.js';
+import { ScimController } from './scim.controller.js';
+import { ScimService } from './scim.service.js';
 import { SourceFileCleanupWorker } from './source-file-cleanup.worker.js';
 import { SourcePayloadParserService } from './source-payload-parser.service.js';
 import { ValueLedgerController } from './value-ledger.controller.js';
 import { ValueLedgerService } from './value-ledger.service.js';
+import { TransactionalInboxService } from './transactional-inbox.service.js';
+import { TenantWorkloadAdmissionService } from './tenant-workload-admission.service.js';
 import { WorkflowController } from './workflow.controller.js';
 import { WorkflowService } from './workflow.service.js';
-import { ConfigurationStudioController } from './configuration-studio.controller.js';
-import { ConfigurationStudioService } from './configuration-studio.service.js';
-import { GovernorController } from './governor.controller.js';
-import { GovernorService } from './governor.service.js';
-import { GovernorThrottlingGuard } from './governor.guard.js';
-import { GovernorPersistentService } from './governor-persistent.service.js';
-import { GovernorPersistentThrottlingGuard } from './governor-persistent.guard.js';
-import { ScimController } from './scim.controller.js';
-import { ScimService } from './scim.service.js';
 
 @Module({
   imports: [
@@ -171,10 +187,12 @@ import { ScimService } from './scim.service.js';
     WorkflowController,
     TenantDataExportController,
     ConfigurationStudioController,
+    DemoLabController,
     GovernorController,
     ScimController,
   ],
   providers: [
+    { provide: APP_FILTER, useClass: DatabaseAvailabilityFilter },
     WorkflowService,
     ExecutionEventsService,
     ExecutionEventSignatureGuard,
@@ -202,15 +220,26 @@ import { ScimService } from './scim.service.js';
     TenantDataExportService,
     TenantExportSnapshotService,
     TenantDataExportWorker,
+    OutboxRelayProcessor,
+    ConfigurationManifestCache,
+    { provide: CONFIGURATION_ADAPTERS, useFactory: defaultConfigurationAdapters },
+    ConfigurationAdapterRegistry,
+    ConfigurationRuntimeScopeResolver,
+    ConfigurationRuntimeMetrics,
+    TransactionalInboxService,
+    TenantWorkloadAdmissionService,
+    ConfigurationInvalidationConsumer,
+    ConfigurationOutboxPublisher,
     ConfigurationStudioService,
+    DemoLabService,
     GovernorService,
     GovernorThrottlingGuard,
     GovernorPersistentService,
     GovernorPersistentThrottlingGuard,
     ScimService,
-    { provide: APP_GUARD, useClass: JwtAuthGuard },
-    { provide: APP_GUARD, useClass: TenantBoundaryGuard },
-    { provide: APP_GUARD, useClass: RbacGuard },
+    { provide: APP_GUARD, useExisting: JwtAuthGuard },
+    { provide: APP_GUARD, useExisting: TenantBoundaryGuard },
+    { provide: APP_GUARD, useExisting: RbacGuard },
   ],
 })
 export class AppModule {}

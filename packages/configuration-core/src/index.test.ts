@@ -132,15 +132,56 @@ describe('configuration compiler', () => {
     expect(unknown.findings).toEqual(
       expect.arrayContaining([expect.objectContaining({ code: 'SCHEMA_INVALID' })]),
     );
-    const fields = Array.from({ length: 201 }, (_, index) => ({
+    const acceptedFields = Array.from({ length: 250 }, (_, index) => ({
       ...definition.fields[0],
       key: `field-${index}`,
     }));
+    const accepted = compileConfiguration({
+      ...definition,
+      fields: acceptedFields,
+      sections: [
+        {
+          ...definition.sections[0],
+          key: 'fields-1',
+          fieldKeys: acceptedFields.slice(0, 100).map((field) => field.key),
+        },
+        {
+          ...definition.sections[0],
+          key: 'fields-2',
+          fieldKeys: acceptedFields.slice(100, 200).map((field) => field.key),
+        },
+        {
+          ...definition.sections[0],
+          key: 'fields-3',
+          fieldKeys: acceptedFields.slice(200).map((field) => field.key),
+        },
+      ],
+    });
+    expect(accepted.valid).toBe(true);
+
+    const fields = [
+      ...acceptedFields,
+      { ...definition.fields[0], key: 'field-250' },
+    ];
     const oversized = compileConfiguration({
       ...definition,
       fields,
       sections: [
-        { ...definition.sections[0], fieldKeys: fields.slice(0, 100).map((field) => field.key) },
+        {
+          ...definition.sections[0],
+          key: 'fields-1',
+          fieldKeys: fields.slice(0, 100).map((field) => field.key),
+        },
+        {
+          ...definition.sections[0],
+          key: 'fields-2',
+          fieldKeys: fields.slice(100, 200).map((field) => field.key),
+        },
+        {
+          ...definition.sections[0],
+          key: 'fields-3',
+          fieldKeys: fields.slice(200).map((field) => field.key),
+        },
       ],
     });
     expect(oversized.valid).toBe(false);

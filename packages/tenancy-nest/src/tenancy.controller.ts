@@ -6,6 +6,8 @@ import {
   ChangeTenantStatusSchema,
   type CreateCustomRoleDto,
   CreateCustomRoleSchema,
+  type CreateDepartmentDto,
+  CreateDepartmentSchema,
   type CreateTenantDomainChallengeDto,
   CreateTenantDomainChallengeSchema,
   type CreateTenantDto,
@@ -18,8 +20,12 @@ import {
   RevokeTenantDomainSchema,
   type UpdateCustomRoleDto,
   UpdateCustomRoleSchema,
+  type UpdateDepartmentDto,
+  UpdateDepartmentSchema,
   type UpdateTenantMemberDto,
   UpdateTenantMemberSchema,
+  type UpdateTenantOrganizationSettingsDto,
+  UpdateTenantOrganizationSettingsSchema,
   type VerifyTenantDomainDto,
   VerifyTenantDomainSchema,
 } from '@gigalibs/contracts';
@@ -207,5 +213,59 @@ export class TenancyController {
     @Body(new ZodValidationPipe(UpdateTenantMemberSchema)) dto: UpdateTenantMemberDto,
   ) {
     return this.tenancyService.updateMember(tenantId, memberId, userId, dto);
+  }
+
+  @Get('current/departments')
+  @RequirePermissions('users:read')
+  listDepartments(@CurrentTenant('tenantId') tenantId: string) {
+    return this.tenancyService.listDepartments(tenantId);
+  }
+
+  @Post('current/departments')
+  @RequirePermissions('tenant:update')
+  createDepartment(
+    @CurrentTenant('tenantId') tenantId: string,
+    @CurrentUser('sub') userId: string,
+    @Body(new ZodValidationPipe(CreateDepartmentSchema)) dto: CreateDepartmentDto,
+  ) {
+    return this.tenancyService.createDepartment(tenantId, userId, dto);
+  }
+
+  @Patch('current/departments/:departmentId')
+  @RequirePermissions('tenant:update')
+  updateDepartment(
+    @CurrentTenant('tenantId') tenantId: string,
+    @CurrentUser('sub') userId: string,
+    @Param('departmentId') departmentId: string,
+    @Body(new ZodValidationPipe(UpdateDepartmentSchema)) dto: UpdateDepartmentDto,
+  ) {
+    return this.tenancyService.updateDepartment(tenantId, departmentId, userId, dto);
+  }
+
+  @Delete('current/departments/:departmentId')
+  @RequirePermissions('tenant:update')
+  deleteDepartment(
+    @CurrentTenant('tenantId') tenantId: string,
+    @CurrentUser('sub') userId: string,
+    @Param('departmentId') departmentId: string,
+  ) {
+    return this.tenancyService.deleteDepartment(tenantId, departmentId, userId);
+  }
+
+  @Get('current/organization/settings')
+  @RequirePermissions('tenant:read')
+  getOrganizationSettings(@CurrentTenant('tenantId') tenantId: string) {
+    return this.tenancyService.getOrganizationSettings(tenantId);
+  }
+
+  @Patch('current/organization/settings')
+  @RequirePermissions('tenant:update')
+  updateOrganizationSettings(
+    @CurrentTenant('tenantId') tenantId: string,
+    @CurrentUser('sub') userId: string,
+    @Body(new ZodValidationPipe(UpdateTenantOrganizationSettingsSchema))
+    dto: UpdateTenantOrganizationSettingsDto,
+  ) {
+    return this.tenancyService.updateOrganizationSettings(tenantId, userId, dto);
   }
 }

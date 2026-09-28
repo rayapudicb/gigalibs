@@ -1,0 +1,14 @@
+{
+  "name": "@gigalibs/db-migrations-runtime",
+  "version": "0.0.1",
+  "description": "Minimal production-only Prisma migration runtime for GigaLibs deployment artifacts",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "db:migrate": "prisma migrate deploy --config prisma.config.mjs"
+  },
+  "dependencies": {
+    "dotenv": "^17.2.2",
+    "prisma": "6.19.3"
+  }
+}

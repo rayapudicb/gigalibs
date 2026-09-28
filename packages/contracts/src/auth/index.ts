@@ -214,3 +214,5 @@ export type OidcLinkResult = z.infer<typeof OidcLinkResultSchema>;
 export type CompleteOidcAuthorizationResponse = z.infer<
   typeof CompleteOidcAuthorizationResponseSchema
 >;
+
+export * from './platform-context.js';

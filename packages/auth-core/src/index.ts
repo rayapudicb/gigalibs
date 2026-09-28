@@ -15,3 +15,5 @@ export * from './otp.js';
 export * from './session.js';
 export * from './totp.js';
 export * from './types.js';
+export * from './platform-context.js';
+export * from './relay-token.js';

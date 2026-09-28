@@ -80,14 +80,31 @@ function requireDatabaseUrl(): string {
   return configured;
 }
 
+let _prismaClient: PrismaClient | undefined;
+
+function getPrismaClient(): PrismaClient {
+  if (!_prismaClient) {
+    _prismaClient = globalThis.__gigalibsPrisma ?? createPrismaClient();
+    globalThis.__gigalibsPrisma = _prismaClient;
+  }
+  return _prismaClient;
+}
+
 /**
  * Global Prisma singleton — shared across all modules in the same process.
- * In production, this is created once on startup.
- * In development, uses global to survive hot reloads.
+ * Lazy-initialized via Proxy so importing @gigalibs/db during build-time (e.g. Next.js page collection)
+ * does not require DATABASE_URL until actual database operations are performed.
  */
-const prismaClient = globalThis.__gigalibsPrisma ?? createPrismaClient();
-globalThis.__gigalibsPrisma = prismaClient;
-export const prisma: PrismaClient = prismaClient;
+export const prisma: PrismaClient = new Proxy({} as PrismaClient, {
+  get(_target, prop, receiver) {
+    const client = getPrismaClient();
+    const value = Reflect.get(client, prop, receiver);
+    if (typeof value === 'function') {
+      return value.bind(client);
+    }
+    return value;
+  },
+});
 
 /**
  * Gracefully disconnect Prisma on process shutdown.

@@ -2,6 +2,17 @@ import assert from 'node:assert/strict';
 import { generateKeyPairSync, randomBytes } from 'node:crypto';
 
 if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL is required');
+if (process.env.NODE_ENV === 'production') {
+  throw new Error('Configuration Studio certification must not run with NODE_ENV=production');
+}
+const certificationDatabaseName = decodeURIComponent(
+  new URL(process.env.DATABASE_URL).pathname.replace(/^\//, ''),
+);
+if (!/^gigalibs_(?:configuration|config)_(?:cert|uat|test)_[a-z0-9_]+$/i.test(certificationDatabaseName)) {
+  throw new Error(
+    'Configuration Studio certification requires a disposable database named gigalibs_configuration_cert_*, gigalibs_config_uat_*, or gigalibs_config_test_*',
+  );
+}
 const [{ prisma }, { ConfigurationStudioService }] = await Promise.all([
   import('../../../packages/db/dist/index.js'),
   import('../dist/configuration-studio.service.js'),

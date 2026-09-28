@@ -1,4 +1,5 @@
 import { parseAes256KeyRing } from '@gigalibs/crypto';
+import { ConfigurationKeySchema } from '@gigalibs/contracts';
 
 try {
   process.loadEnvFile?.('.env');
@@ -101,6 +102,14 @@ function requireStorageBucket(): string {
   return value;
 }
 
+function requireConfigurationKey(name: string): string {
+  const parsed = ConfigurationKeySchema.safeParse(process.env[name]);
+  if (!parsed.success) {
+    throw new Error(`${name} must be configured as a valid configuration key.`);
+  }
+  return parsed.data;
+}
+
 const controlPayloadKeyVersion = requireString('CONTROL_PAYLOAD_KEY_VERSION');
 const controlPayloadKeyRing = parseAes256KeyRing(
   controlPayloadKeyVersion,
@@ -163,6 +172,9 @@ export const runtimeConfig = Object.freeze({
   controlOutboxRetryBaseSeconds: requirePositiveInteger('CONTROL_OUTBOX_RETRY_BASE_SECONDS'),
   controlOutboxRetryMaxSeconds: requirePositiveInteger('CONTROL_OUTBOX_RETRY_MAX_SECONDS'),
   observabilityMetricsToken: requireSecret('OBSERVABILITY_METRICS_TOKEN'),
+  configurationRuntimeEnvironmentKey: requireConfigurationKey(
+    'CONFIGURATION_RUNTIME_ENVIRONMENT_KEY',
+  ),
 });
 
 function requireString(name: string): string {

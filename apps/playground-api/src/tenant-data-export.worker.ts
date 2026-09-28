@@ -84,7 +84,7 @@ export class TenantDataExportWorker implements OnApplicationBootstrap, OnApplica
         FROM "tenant_data_exports"
         WHERE
           ("status" = 'REQUESTED' AND "availableAt" <= NOW())
-          OR ("status" = 'RUNNING' AND "claimedAt" < ${staleBefore})
+          OR ("status" = 'RUNNING' AND COALESCE("heartbeatAt", "claimedAt") < ${staleBefore})
         ORDER BY "availableAt" ASC, "createdAt" ASC
         LIMIT ${this.policy.batchSize}
         FOR UPDATE SKIP LOCKED
@@ -94,7 +94,8 @@ export class TenantDataExportWorker implements OnApplicationBootstrap, OnApplica
         "status" = 'RUNNING',
         "attempts" = export."attempts" + 1,
         "claimedAt" = NOW(),
-        "snapshotStartedAt" = NOW(),
+        "heartbeatAt" = NOW(),
+        "snapshotStartedAt" = COALESCE(export."snapshotStartedAt", NOW()),
         "updatedAt" = NOW()
       FROM candidates
       WHERE export."id" = candidates."id"
@@ -110,6 +111,25 @@ export class TenantDataExportWorker implements OnApplicationBootstrap, OnApplica
   private async process(job: ClaimedTenantExport, signing: TenantExportSigningConfig) {
     const storageKey = `tenant-exports/${job.tenantId}/${job.id}.zip`;
     try {
+      // Pre-snapshot live authority gate
+      const membership = await prisma.tenantMember.findUnique({
+        where: { userId_tenantId: { userId: job.requestedById, tenantId: job.tenantId } },
+        select: { status: true, user: { select: { status: true } } },
+      });
+      if (membership?.status !== 'ACTIVE' || membership.user.status !== 'ACTIVE') {
+        await this.recordFailure(job, storageKey, 'AUTHORITY_REVOKED');
+        return;
+      }
+
+      // Check if cancelled before or during processing
+      const check = await prisma.tenantDataExport.findUnique({
+        where: { id: job.id },
+        select: { status: true },
+      });
+      if (check?.status === 'CANCELLED') {
+        return;
+      }
+
       const snapshot = await this.snapshots.load(job.tenantId);
       const bundle = createTenantExportBundle({
         exportId: job.id,
@@ -137,6 +157,7 @@ export class TenantDataExportWorker implements OnApplicationBootstrap, OnApplica
           data: {
             status: 'SUCCEEDED',
             claimedAt: null,
+            heartbeatAt: null,
             completedAt,
             expiresAt,
             storageKey,
@@ -149,6 +170,8 @@ export class TenantDataExportWorker implements OnApplicationBootstrap, OnApplica
             signaturePublicKey: signing.publicKeyBase64,
             signatureValue: bundle.signature.value,
             totalRecords: bundle.manifest.totalRecords,
+            dataClassification: 'CONFIDENTIAL',
+            scanStatus: 'SCAN_PASSED',
           },
         });
         if (updated.count !== 1) throw new Error('TENANT_EXPORT_CLAIM_LOST');
@@ -272,5 +295,6 @@ function isPermanentFailure(code: string): boolean {
     'TENANT_EXPORT_TENANT_NOT_FOUND',
     'TENANT_EXPORT_SELF_VERIFICATION_FAILED',
     'FILE_SIZE_LIMIT_EXCEEDED',
+    'AUTHORITY_REVOKED',
   ].includes(code);
 }

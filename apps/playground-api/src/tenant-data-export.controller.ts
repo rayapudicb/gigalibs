@@ -6,7 +6,7 @@ import {
 import { RequirePermissions } from '@gigalibs/rbac-nest';
 import { CurrentTenant } from '@gigalibs/tenancy-nest';
 import { ZodValidationPipe } from '@gigalibs/validation-nest';
-import { Body, Controller, Get, Header, HttpCode, Param, Post } from '@nestjs/common';
+import { Body, Controller, Get, Header, Headers, HttpCode, Param, Post } from '@nestjs/common';
 // biome-ignore lint/style/useImportType: NestJS needs the runtime constructor token for dependency injection.
 import { TenantDataExportService } from './tenant-data-export.service.js';
 
@@ -25,9 +25,21 @@ export class TenantDataExportController {
   request(
     @CurrentTenant('tenantId') tenantId: string,
     @CurrentUser('sub') userId: string,
-    @Body(new ZodValidationPipe(CreateTenantDataExportSchema)) dto: CreateTenantDataExportDto,
+    @Headers('idempotency-key') headerKey?: string,
+    @Body(new ZodValidationPipe(CreateTenantDataExportSchema)) dto: CreateTenantDataExportDto = { reason: '' },
   ) {
-    return this.service.request(tenantId, userId, dto.reason);
+    const idempotencyKey = headerKey || dto.idempotencyKey;
+    return this.service.request(tenantId, userId, dto.reason, idempotencyKey);
+  }
+
+  @Post(':exportId/cancel')
+  @HttpCode(200)
+  cancel(
+    @CurrentTenant('tenantId') tenantId: string,
+    @CurrentUser('sub') userId: string,
+    @Param('exportId') exportId: string,
+  ) {
+    return this.service.cancel(tenantId, userId, exportId);
   }
 
   @Get(':exportId/download')

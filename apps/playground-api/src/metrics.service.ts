@@ -1,6 +1,8 @@
 import { prisma } from '@gigalibs/db';
 import { logger } from '@gigalibs/logger';
 import { Injectable } from '@nestjs/common';
+import { ConfigurationManifestCache } from './configuration-manifest.cache.js';
+import { ConfigurationRuntimeMetrics } from './configuration-runtime.metrics.js';
 
 const HTTP_DURATION_BUCKETS_SECONDS = Object.freeze([
   0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10,
@@ -35,13 +37,30 @@ const DATABASE_GAUGE_DEFINITIONS = Object.freeze({
   gigalibs_configuration_activations: 'Configuration Studio activations by lifecycle status.',
   gigalibs_configuration_published_versions: 'Immutable Configuration Studio versions.',
   gigalibs_configuration_records: 'Configuration Studio application records by lifecycle status.',
+  gigalibs_configuration_outbox_events:
+    'Configuration Studio outbox events by bounded delivery status.',
+  gigalibs_configuration_outbox_oldest_pending_age_seconds:
+    'Age in seconds of the oldest pending Configuration Studio outbox event.',
+  gigalibs_configuration_submitted_change_sets_older_than_24h:
+    'Configuration Studio change sets awaiting review for more than 24 hours.',
 });
+
+const CONFIGURATION_OUTBOX_AGGREGATES = Object.freeze([
+  'configuration-version',
+  'configuration-activation',
+  'configuration-record',
+]);
 
 @Injectable()
 export class MetricsService {
   private readonly startedAtSeconds = Date.now() / 1_000;
   private readonly http = new Map<string, HttpMetric>();
   private databaseCollectionFailures = 0;
+
+  constructor(
+    private readonly configurationManifestCache: ConfigurationManifestCache = new ConfigurationManifestCache(),
+    private readonly configurationRuntimeMetrics: ConfigurationRuntimeMetrics = new ConfigurationRuntimeMetrics(),
+  ) {}
 
   recordHttpRequest(input: {
     method: string;
@@ -104,6 +123,7 @@ export class MetricsService {
 
   private renderRuntimeAndHttpMetrics(): string[] {
     const memory = process.memoryUsage();
+    const manifestCache = this.configurationManifestCache.snapshot();
     const lines = [
       '# HELP process_start_time_seconds Start time of the process since unix epoch in seconds.',
       '# TYPE process_start_time_seconds gauge',
@@ -121,7 +141,40 @@ export class MetricsService {
       '# TYPE gigalibs_http_requests_total counter',
       '# HELP gigalibs_http_request_duration_seconds Completed HTTP request duration in seconds.',
       '# TYPE gigalibs_http_request_duration_seconds histogram',
+      '# HELP gigalibs_configuration_manifest_listener_connected Whether the PostgreSQL configuration invalidation listener is connected.',
+      '# TYPE gigalibs_configuration_manifest_listener_connected gauge',
+      `gigalibs_configuration_manifest_listener_connected ${manifestCache.listenerConnected ? 1 : 0}`,
+      '# HELP gigalibs_configuration_manifest_cache_entries Number of bounded manifest cache entries.',
+      '# TYPE gigalibs_configuration_manifest_cache_entries gauge',
+      `gigalibs_configuration_manifest_cache_entries ${manifestCache.entries}`,
+      '# HELP gigalibs_configuration_manifest_cache_requests_total Manifest cache requests by bounded result.',
+      '# TYPE gigalibs_configuration_manifest_cache_requests_total counter',
+      `gigalibs_configuration_manifest_cache_requests_total{result="hit"} ${manifestCache.hit}`,
+      `gigalibs_configuration_manifest_cache_requests_total{result="miss"} ${manifestCache.miss}`,
+      `gigalibs_configuration_manifest_cache_requests_total{result="bypass"} ${manifestCache.bypass}`,
+      '# HELP gigalibs_configuration_manifest_consumer_notifications_total Configuration invalidation notifications by bounded result.',
+      '# TYPE gigalibs_configuration_manifest_consumer_notifications_total counter',
+      `gigalibs_configuration_manifest_consumer_notifications_total{result="applied"} ${manifestCache.notificationApplied}`,
+      `gigalibs_configuration_manifest_consumer_notifications_total{result="deduplicated"} ${manifestCache.notificationDeduplicated}`,
+      `gigalibs_configuration_manifest_consumer_notifications_total{result="ignored"} ${manifestCache.notificationIgnored}`,
+      `gigalibs_configuration_manifest_consumer_notifications_total{result="invalid"} ${manifestCache.notificationInvalid}`,
+      `gigalibs_configuration_manifest_consumer_notifications_total{result="failed"} ${manifestCache.notificationFailed}`,
+      '# HELP gigalibs_configuration_manifest_resynchronizations_total Authoritative manifest resynchronizations by bounded result.',
+      '# TYPE gigalibs_configuration_manifest_resynchronizations_total counter',
+      `gigalibs_configuration_manifest_resynchronizations_total{result="success"} ${manifestCache.resynchronizationSucceeded}`,
+      `gigalibs_configuration_manifest_resynchronizations_total{result="failed"} ${manifestCache.resynchronizationFailed}`,
+      '# HELP gigalibs_configuration_manifest_reconnects_total Successful configuration listener reconnects.',
+      '# TYPE gigalibs_configuration_manifest_reconnects_total counter',
+      `gigalibs_configuration_manifest_reconnects_total ${manifestCache.reconnects}`,
+      '# HELP gigalibs_configuration_runtime_requests_total Configuration runtime requests by bounded operation and result.',
+      '# TYPE gigalibs_configuration_runtime_requests_total counter',
     ];
+
+    for (const metric of this.configurationRuntimeMetrics.snapshot()) {
+      lines.push(
+        `gigalibs_configuration_runtime_requests_total${formatLabels({ operation: metric.operation, result: metric.result })} ${metric.count}`,
+      );
+    }
 
     for (const [encoded, metric] of [...this.http.entries()].sort(([left], [right]) =>
       left.localeCompare(right),
@@ -156,6 +209,9 @@ export class MetricsService {
       configurationPublishedVersions,
       activeConfigurationRecords,
       deletedConfigurationRecords,
+      configurationOutboxEvents,
+      oldestPendingConfigurationOutbox,
+      staleSubmittedConfigurationChangeSets,
     ] = await Promise.all([
       prisma.sourceEvent.groupBy({ by: ['status'], _count: { _all: true } }),
       prisma.controlOutboxEvent.groupBy({ by: ['status'], _count: { _all: true } }),
@@ -171,7 +227,32 @@ export class MetricsService {
       prisma.configurationPublishedVersion.count(),
       prisma.configurationRecord.count({ where: { deletedAt: null } }),
       prisma.configurationRecord.count({ where: { deletedAt: { not: null } } }),
+      prisma.controlOutboxEvent.groupBy({
+        by: ['status'],
+        where: { aggregateType: { in: [...CONFIGURATION_OUTBOX_AGGREGATES] } },
+        _count: { _all: true },
+      }),
+      prisma.controlOutboxEvent.aggregate({
+        where: {
+          status: 'PENDING',
+          aggregateType: { in: [...CONFIGURATION_OUTBOX_AGGREGATES] },
+        },
+        _min: { createdAt: true },
+      }),
+      prisma.configurationChangeSet.count({
+        where: {
+          status: 'SUBMITTED',
+          updatedAt: { lt: new Date(Date.now() - 24 * 60 * 60 * 1_000) },
+        },
+      }),
     ]);
+
+    const oldestPendingAgeSeconds = oldestPendingConfigurationOutbox._min.createdAt
+      ? Math.max(
+          0,
+          (Date.now() - oldestPendingConfigurationOutbox._min.createdAt.getTime()) / 1_000,
+        )
+      : 0;
 
     return [
       ...sourceEvents.map((row) =>
@@ -205,6 +286,19 @@ export class MetricsService {
       gauge('gigalibs_configuration_published_versions', {}, configurationPublishedVersions),
       gauge('gigalibs_configuration_records', { status: 'ACTIVE' }, activeConfigurationRecords),
       gauge('gigalibs_configuration_records', { status: 'DELETED' }, deletedConfigurationRecords),
+      ...configurationOutboxEvents.map((row) =>
+        gauge('gigalibs_configuration_outbox_events', { status: row.status }, row._count._all),
+      ),
+      gauge(
+        'gigalibs_configuration_outbox_oldest_pending_age_seconds',
+        {},
+        oldestPendingAgeSeconds,
+      ),
+      gauge(
+        'gigalibs_configuration_submitted_change_sets_older_than_24h',
+        {},
+        staleSubmittedConfigurationChangeSets,
+      ),
     ];
   }
 }

@@ -259,6 +259,7 @@ export class AuthService {
   }
 
   async getSessionContext(userId: string, sessionId: string, tenantId?: string) {
+    const now = new Date();
     const session = await prisma.session.findFirst({
       where: {
         id: sessionId,
@@ -286,6 +287,15 @@ export class AuthService {
             plan: true,
             trialEndsAt: true,
             features: true,
+            moduleEntitlements: {
+              where: {
+                status: 'ENABLED',
+                startsAt: { lte: now },
+                OR: [{ endsAt: null }, { endsAt: { gt: now } }],
+              },
+              select: { moduleKey: true, status: true, updatedAt: true },
+              orderBy: { moduleKey: 'asc' },
+            },
             settings: { select: { security: true } },
           },
         },
@@ -302,7 +312,7 @@ export class AuthService {
     const membership = tenantId
       ? await prisma.tenantMember.findUnique({
           where: { userId_tenantId: { userId, tenantId } },
-          include: { customRole: { select: { permissions: true } } },
+          include: { customRole: { select: { name: true, permissions: true } } },
         })
       : null;
 
@@ -329,6 +339,25 @@ export class AuthService {
         orderBy: { createdAt: 'asc' },
       })
     ).map((assignment) => assignment.role);
+    const roles = membership
+      ? [membership.role, membership.customRole?.name].filter(
+          (role): role is string => typeof role === 'string' && role.length > 0,
+        )
+      : [];
+    const orgScope = await this.resolveOrganizationScope({
+      tenantId,
+      hierarchyEnabled: !!session.tenant?.features.includes('organization-hierarchy'),
+      departmentId: membership?.departmentId ?? null,
+      roles,
+      platformRoles,
+    });
+    const spatialScope = resolveSpatialScope({
+      tenantId,
+      spatialScopingEnabled: !!session.tenant?.features.includes('spatial-scoping'),
+      spatialScopePlaceIds: membership?.spatialScopePlaceIds ?? [],
+      roles,
+      platformRoles,
+    });
     const mfaRequired = this.mfaRequiredFromSecurity(
       session.tenant?.settings?.security,
       !!tenantId,
@@ -350,20 +379,73 @@ export class AuthService {
             plan: session.tenant.plan,
             trialEndsAt: session.tenant.trialEndsAt,
             features: session.tenant.features,
+            entitlements: session.tenant.moduleEntitlements.map((entitlement) => ({
+              moduleKey: entitlement.moduleKey,
+              status: entitlement.status,
+              version: entitlement.updatedAt.toISOString(),
+            })),
           }
         : null,
-      roles: membership ? [membership.role] : [],
+      roles,
       platformRoles,
       permissions: Array.from(
         new Set([...rolePermissions, ...directPermissions, ...customPermissions]),
       ),
       session: { id: session.id, expiresAt: session.expiresAt },
+      authVersion: Math.floor(session.createdAt.getTime() / 1_000),
+      orgScope,
+      spatialScope,
       mfa: {
         required: mfaRequired,
         enrolled: !!session.user.totpCredential?.verifiedAt,
         verified: !mfaRequired || !!session.mfaVerifiedAt,
         recoveryCodesRemaining,
       },
+    };
+  }
+
+  private async resolveOrganizationScope(input: {
+    tenantId: string | undefined;
+    hierarchyEnabled: boolean;
+    departmentId: string | null;
+    roles: string[];
+    platformRoles: string[];
+  }): Promise<
+    | { mode: 'FLAT_TENANT' }
+    | { mode: 'SCOPED_DEPARTMENTS'; departmentIds: string[] }
+  > {
+    if (!input.tenantId || !input.hierarchyEnabled) return { mode: 'FLAT_TENANT' };
+
+    if (hasTenantWideAuthority(input.roles, input.platformRoles)) {
+      return { mode: 'FLAT_TENANT' };
+    }
+
+    if (!input.departmentId) {
+      return { mode: 'SCOPED_DEPARTMENTS', departmentIds: [] };
+    }
+
+    const departments = await prisma.$queryRaw<Array<{ id: string }>>`
+      WITH RECURSIVE department_scope AS (
+        SELECT d."id", d."parentId", ARRAY[d."id"]::text[] AS path, 1 AS depth
+        FROM "departments" d
+        WHERE d."tenantId" = ${input.tenantId}
+          AND d."id" = ${input.departmentId}
+          AND d."isActive" = true
+        UNION ALL
+        SELECT child."id", child."parentId", scope.path || child."id", scope.depth + 1
+        FROM "departments" child
+        JOIN department_scope scope ON child."parentId" = scope."id"
+        WHERE child."tenantId" = ${input.tenantId}
+          AND child."isActive" = true
+          AND scope.depth < 10
+          AND NOT child."id" = ANY(scope.path)
+      )
+      SELECT "id" FROM department_scope ORDER BY depth, "id"
+    `;
+
+    return {
+      mode: 'SCOPED_DEPARTMENTS',
+      departmentIds: departments.map((department) => department.id),
     };
   }
 
@@ -897,7 +979,16 @@ export class AuthService {
             role: true,
             status: true,
             tenant: {
-              select: { id: true, name: true, slug: true, status: true, plan: true },
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+                status: true,
+                plan: true,
+                trialEndsAt: true,
+                isolationMode: true,
+                region: true,
+              },
             },
           },
         },
@@ -918,6 +1009,28 @@ export class AuthService {
       ...user,
       platformRoles,
     };
+  }
+
+  async getActivity(userId: string) {
+    return prisma.auditLog.findMany({
+      where: {
+        OR: [
+          { userId },
+          { resourceId: userId },
+        ],
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 20,
+      select: {
+        id: true,
+        action: true,
+        resource: true,
+        resourceId: true,
+        ipAddress: true,
+        userAgent: true,
+        createdAt: true,
+      },
+    });
   }
 
   async updateProfile(userId: string, data: UpdateProfileDto) {
@@ -1106,4 +1219,27 @@ function isTenantPermission(value: unknown): value is string {
 
 function isUniqueConstraintError(error: unknown): boolean {
   return isRecord(error) && error.code === 'P2002';
+}
+
+const TENANT_WIDE_ROLES = new Set(['SUPER_ADMIN', 'TENANT_ADMIN']);
+
+function hasTenantWideAuthority(roles: readonly string[], platformRoles: readonly string[]): boolean {
+  return platformRoles.length > 0 || roles.some((role) => TENANT_WIDE_ROLES.has(role.toUpperCase()));
+}
+
+/**
+ * Spatial scope is a tenant opt-in (feature `spatial-scoping`). Tenant administrators and platform roles
+ * stay unbounded; every other member reaches only their assigned places and everything inside them, and a
+ * member with none assigned reaches no places.
+ */
+export function resolveSpatialScope(input: {
+  tenantId: string | undefined;
+  spatialScopingEnabled: boolean;
+  spatialScopePlaceIds: readonly string[];
+  roles: readonly string[];
+  platformRoles: readonly string[];
+}): { mode: 'UNBOUNDED' } | { mode: 'SCOPED_PLACES'; placeIds: string[] } {
+  if (!input.tenantId || !input.spatialScopingEnabled) return { mode: 'UNBOUNDED' };
+  if (hasTenantWideAuthority(input.roles, input.platformRoles)) return { mode: 'UNBOUNDED' };
+  return { mode: 'SCOPED_PLACES', placeIds: [...input.spatialScopePlaceIds] };
 }

@@ -30,6 +30,13 @@ const EXPORT_PUBLIC_FIELDS = {
   totalRecords: true,
   failureCode: true,
   failureMessage: true,
+  idempotencyKey: true,
+  heartbeatAt: true,
+  cancelledAt: true,
+  cancelledById: true,
+  dataClassification: true,
+  scanStatus: true,
+  configurationManifestVersionId: true,
   requestedById: true,
   createdAt: true,
   updatedAt: true,
@@ -39,8 +46,19 @@ const EXPORT_PUBLIC_FIELDS = {
 export class TenantDataExportService {
   constructor(private readonly objectStorage: ObjectStorageService) {}
 
-  async request(tenantId: string, userId: string, reason: string) {
+  async request(tenantId: string, userId: string, reason: string, idempotencyKey?: string) {
     requireTenantExportSigningConfig();
+
+    if (idempotencyKey) {
+      const existing = await prisma.tenantDataExport.findUnique({
+        where: { tenantId_idempotencyKey: { tenantId, idempotencyKey } },
+        select: EXPORT_PUBLIC_FIELDS,
+      });
+      if (existing) {
+        return existing;
+      }
+    }
+
     try {
       return await prisma.$transaction(async (transaction) => {
         await transaction.$queryRaw`SELECT "id" FROM "tenants" WHERE "id" = ${tenantId} FOR UPDATE`;
@@ -64,7 +82,14 @@ export class TenantDataExportService {
           });
         }
         const created = await transaction.tenantDataExport.create({
-          data: { tenantId, requestedById: userId, requestReason: reason },
+          data: {
+            tenantId,
+            requestedById: userId,
+            requestReason: reason,
+            idempotencyKey: idempotencyKey ?? null,
+            dataClassification: 'CONFIDENTIAL',
+            scanStatus: 'UNSCANNED',
+          },
           select: EXPORT_PUBLIC_FIELDS,
         });
         await transaction.auditLog.create({
@@ -74,7 +99,7 @@ export class TenantDataExportService {
             action: 'EXPORT',
             resource: 'tenant-data-export',
             resourceId: created.id,
-            after: { status: 'REQUESTED', reason },
+            after: { status: 'REQUESTED', reason, idempotencyKey },
           },
         });
         return created;
@@ -84,6 +109,13 @@ export class TenantDataExportService {
         error instanceof Prisma.PrismaClientKnownRequestError &&
         error.code === 'P2002'
       ) {
+        if (idempotencyKey) {
+          const existing = await prisma.tenantDataExport.findUnique({
+            where: { tenantId_idempotencyKey: { tenantId, idempotencyKey } },
+            select: EXPORT_PUBLIC_FIELDS,
+          });
+          if (existing) return existing;
+        }
         throw new ConflictException({
           code: 'TENANT_EXPORT_ALREADY_ACTIVE',
           message: 'A tenant data export is already in progress.',
@@ -91,6 +123,44 @@ export class TenantDataExportService {
       }
       throw error;
     }
+  }
+
+  async cancel(tenantId: string, userId: string, exportId: string) {
+    const row = await prisma.tenantDataExport.findFirst({
+      where: { id: exportId, tenantId },
+      select: { id: true, status: true },
+    });
+    if (!row) throw new NotFoundException('Tenant data export was not found.');
+    if (['SUCCEEDED', 'FAILED', 'EXPIRED', 'CANCELLED'].includes(row.status)) {
+      throw new ConflictException({
+        code: 'CANNOT_CANCEL_TERMINAL_EXPORT',
+        message: `Cannot cancel an export with terminal status ${row.status}.`,
+      });
+    }
+    const now = new Date();
+    const updated = await prisma.tenantDataExport.update({
+      where: { id: exportId },
+      data: {
+        status: 'CANCELLED',
+        completedAt: now,
+        cancelledAt: now,
+        cancelledById: userId,
+        claimedAt: null,
+        heartbeatAt: null,
+      },
+      select: EXPORT_PUBLIC_FIELDS,
+    });
+    await prisma.auditLog.create({
+      data: {
+        tenantId,
+        userId,
+        action: 'STATUS_CHANGE',
+        resource: 'tenant-data-export',
+        resourceId: exportId,
+        after: { status: 'CANCELLED', cancelledById: userId, cancelledAt: now.toISOString() },
+      },
+    });
+    return updated;
   }
 
   list(tenantId: string) {
@@ -103,6 +173,14 @@ export class TenantDataExportService {
   }
 
   async createDownload(tenantId: string, userId: string, exportId: string) {
+    const membership = await prisma.tenantMember.findUnique({
+      where: { userId_tenantId: { userId, tenantId } },
+      select: { status: true, user: { select: { status: true } } },
+    });
+    if (membership?.status !== 'ACTIVE' || membership.user.status !== 'ACTIVE') {
+      throw new NotFoundException('Active tenant membership was not found.');
+    }
+
     const row = await prisma.tenantDataExport.findFirst({
       where: { id: exportId, tenantId },
       select: {
@@ -144,7 +222,7 @@ export class TenantDataExportService {
     const signed = await this.objectStorage.createDownloadUrl({
       storageKey: row.storageKey,
       filename: `gigalibs-tenant-export-${row.id}.zip`,
-      expiresInSeconds: secondsRemaining,
+      expiresInSeconds: Math.min(secondsRemaining, 900),
     });
     await prisma.auditLog.create({
       data: {

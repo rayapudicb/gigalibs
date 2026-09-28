@@ -92,12 +92,42 @@ export const TENANT_EXPORT_INVENTORY = Object.freeze([
     'Tenant-owned membership and authorization assignments.',
   ),
   entry(
+    'Department',
+    'departments',
+    'EXPORT',
+    'Tenant organizational units and hierarchy.',
+  ),
+  entry(
     'TenantInvite',
     'tenant_invitations',
     'EXPORT_REDACTED',
     'Omits the one-time invitation-token digest.',
   ),
   entry('AuditLog', 'audit_logs', 'EXPORT', 'Tenant audit and change evidence.'),
+  entry(
+    'TenantAuditChain',
+    undefined,
+    'EXCLUDE_SECURITY',
+    'Cryptographic audit-chain checkpoint state is an integrity control, not a portable business record.',
+  ),
+  entry(
+    'LedgerGenesisRecord',
+    undefined,
+    'EXCLUDE_SECURITY',
+    'Cryptographic ledger genesis anchor digest is an immutable platform integrity control.',
+  ),
+  entry(
+    'PlatformOutboxEvent',
+    undefined,
+    'EXCLUDE_SECURITY',
+    'Transactional delivery state and duplicated event payloads are internal reliability controls.',
+  ),
+  entry(
+    'PlatformInboxEvent',
+    undefined,
+    'EXCLUDE_SECURITY',
+    'Consumer deduplication and delivery-attempt state are internal reliability controls.',
+  ),
   entry(
     'TenantDataExport',
     'data_export_history',
@@ -300,7 +330,6 @@ export const TENANT_EXPORT_INVENTORY = Object.freeze([
   entry('KbArticle', 'knowledge_articles', 'EXPORT', 'Children of tenant knowledge categories.'),
   entry('ChatChannel', 'chat_channels', 'EXPORT', 'Tenant collaboration channels.'),
   entry('ChatMessage', 'chat_messages', 'EXPORT', 'Children of tenant channels.'),
-  entry('GeofenceZone', 'geofence_zones', 'EXPORT', 'Tenant geofence configuration.'),
   entry('RuleDefinition', 'rule_definitions', 'EXPORT', 'Tenant rule definitions.'),
   entry('FraudAssessmentLog', 'fraud_assessment_logs', 'EXPORT', 'Tenant risk-decision evidence.'),
   entry(
@@ -323,7 +352,37 @@ export const TENANT_EXPORT_INVENTORY = Object.freeze([
   entry('ConfigurationActivation', 'configuration_activations', 'EXPORT', 'Tenant active configuration surface bindings.'),
   entry('ConfigurationExtensionValue', 'configuration_extension_values', 'EXPORT', 'Tenant custom form field values and extensions.'),
   entry('ConfigurationRecord', 'configuration_records', 'EXPORT', 'Tenant-scoped dynamic configuration records.'),
+  entry(
+    'ConfigurationTemplate',
+    'configuration_templates',
+    'EXPORT_REDACTED',
+    'Tenant-owned reusable configuration templates; recursively redacts secret-named values.',
+  ),
+  entry(
+    'ConfigurationSavedFilter',
+    'configuration_saved_filters',
+    'EXPORT',
+    'Tenant-owned saved views and filter preferences.',
+  ),
   entry('ConfigurationIdempotencyRecord', undefined, 'EXCLUDE_SECURITY', 'Short-lived mutation idempotency tokens and execution cache.'),
+  entry(
+    'SagaInstance',
+    'saga_instances',
+    'EXPORT_REDACTED',
+    'Tenant-owned orchestration evidence; recursively redacts secret-named payload fields.',
+  ),
+  entry(
+    'SagaStep',
+    'saga_steps',
+    'EXPORT_REDACTED',
+    'Tenant-owned saga execution and compensation evidence reached through its parent instance.',
+  ),
+  entry(
+    'TenantRateBucket',
+    undefined,
+    'EXCLUDE_SECURITY',
+    'Mutable request-throttling state is a runtime security control, not portable business data.',
+  ),
 ] satisfies readonly TenantExportInventoryEntry[]);
 
 function entry(

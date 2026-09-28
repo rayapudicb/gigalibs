@@ -10,3 +10,5 @@
 export * from './diff.js';
 export * from './types.js';
 export * from './hash-chain.js';
+export * from './redaction.js';
+export * from './evidence.js';

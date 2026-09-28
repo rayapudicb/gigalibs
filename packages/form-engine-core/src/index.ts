@@ -82,6 +82,7 @@ export interface FormSchema {
   title: string;
   description?: string;
   category?: string;
+  mode?: 'OPERATIONAL' | 'PUBLIC' | 'HYBRID';
   version: number;
   fields: FormFieldDefinition[];
   submitButtonText?: string;
@@ -89,6 +90,9 @@ export interface FormSchema {
   redirectUrl?: string;
   isPublic?: boolean;
   publicShareSlug?: string;
+  spatialNodeId?: string;
+  equipmentTag?: string;
+  targetWorkflowId?: string;
   allowDrafts?: boolean;
   integrations?: FormIntegrationConfig;
   createdAt: string;
@@ -99,9 +103,14 @@ export interface FormSubmission {
   id: string;
   formId: string;
   tenantId: string;
+  submissionMode?: 'OPERATIONAL' | 'PUBLIC';
+  spatialNodeId?: string;
+  equipmentTag?: string;
+  clientSubmissionId?: string;
   data: Record<string, any>;
   submittedBy?: string;
   ipAddress?: string;
+  deviceMetadata?: Record<string, any>;
   status: 'SUBMITTED' | 'UNDER_REVIEW' | 'APPROVED' | 'REJECTED';
   notes?: string;
   submittedAt: string;

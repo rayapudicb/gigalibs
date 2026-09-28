@@ -3,11 +3,14 @@ import type {
   AcceptTenantInviteDto,
   ChangeTenantStatusDto,
   CreateCustomRoleDto,
+  CreateDepartmentDto,
   CreateTenantDomainChallengeDto,
   CreateTenantDto,
   CreateTenantInviteDto,
   UpdateCustomRoleDto,
+  UpdateDepartmentDto,
   UpdateTenantMemberDto,
+  UpdateTenantOrganizationSettingsDto,
 } from '@gigalibs/contracts';
 import { type Prisma, prisma } from '@gigalibs/db';
 import { PlatformSettingsEngine } from '@gigalibs/platform-settings';
@@ -480,6 +483,12 @@ export class TenancyService {
         permissions: true,
         joinedAt: true,
         updatedAt: true,
+        departmentId: true,
+        employmentType: true,
+        spatialScopePlaceIds: true,
+        department: {
+          select: { id: true, name: true, code: true },
+        },
         user: {
           select: { id: true, email: true, name: true, avatarUrl: true, status: true },
         },
@@ -894,6 +903,9 @@ export class TenancyService {
             role: true,
             status: true,
             customRoleId: true,
+            departmentId: true,
+            employmentType: true,
+            spatialScopePlaceIds: true,
             updatedAt: true,
           },
         });
@@ -914,6 +926,22 @@ export class TenancyService {
           if (!customRole)
             throw new BadRequestException('Custom role does not belong to this tenant');
         }
+
+        const nextDepartmentId =
+          dto.departmentId !== undefined ? dto.departmentId : member.departmentId;
+        if (nextDepartmentId) {
+          const department = await transaction.department.findFirst({
+            where: { id: nextDepartmentId, tenantId },
+            select: { id: true },
+          });
+          if (!department)
+            throw new BadRequestException('Department does not belong to this tenant');
+        }
+
+        const nextEmploymentType =
+          dto.employmentType !== undefined ? dto.employmentType : member.employmentType;
+        const nextSpatialScopePlaceIds = dto.spatialScopePlaceIds ?? member.spatialScopePlaceIds;
+
         if (
           member.role === 'TENANT_ADMIN' &&
           member.status === 'ACTIVE' &&
@@ -934,7 +962,14 @@ export class TenancyService {
 
         const changed = await transaction.tenantMember.updateMany({
           where: { id: member.id, tenantId, updatedAt: member.updatedAt },
-          data: { role: nextRole, status: nextStatus, customRoleId: nextCustomRoleId },
+          data: {
+            role: nextRole,
+            status: nextStatus,
+            customRoleId: nextCustomRoleId,
+            departmentId: nextDepartmentId,
+            employmentType: nextEmploymentType,
+            spatialScopePlaceIds: [...nextSpatialScopePlaceIds],
+          },
         });
         if (changed.count !== 1) {
           throw new ConflictException('Tenant member changed; reload before retrying');
@@ -945,11 +980,17 @@ export class TenancyService {
             id: true,
             role: true,
             status: true,
+            departmentId: true,
+            employmentType: true,
+            spatialScopePlaceIds: true,
             joinedAt: true,
             updatedAt: true,
             user: { select: { id: true, email: true, name: true, status: true } },
             customRole: {
               select: { id: true, name: true, color: true, permissions: true },
+            },
+            department: {
+              select: { id: true, name: true, code: true },
             },
           },
         });
@@ -970,11 +1011,17 @@ export class TenancyService {
               role: member.role,
               status: member.status,
               customRoleId: member.customRoleId,
+              departmentId: member.departmentId,
+              employmentType: member.employmentType,
+              spatialScopePlaceIds: member.spatialScopePlaceIds,
             },
             after: {
               role: updated.role,
               status: updated.status,
               customRoleId: updated.customRole?.id ?? null,
+              departmentId: updated.departmentId,
+              employmentType: updated.employmentType,
+              spatialScopePlaceIds: updated.spatialScopePlaceIds,
             },
             metadata: { reason: dto.reason },
           },
@@ -983,6 +1030,315 @@ export class TenancyService {
       },
       { isolationLevel: 'Serializable' },
     );
+  }
+
+  async listDepartments(tenantId: string) {
+    return prisma.department.findMany({
+      where: { tenantId },
+      orderBy: [{ name: 'asc' }],
+      include: {
+        parent: {
+          select: { id: true, name: true, code: true },
+        },
+        manager: {
+          select: { id: true, name: true, email: true },
+        },
+        _count: {
+          select: { members: true, children: true },
+        },
+      },
+    });
+  }
+
+  async createDepartment(tenantId: string, createdById: string, dto: CreateDepartmentDto) {
+    return prisma.$transaction(async (transaction) => {
+      await transaction.$queryRaw`SELECT "id" FROM "tenants" WHERE "id" = ${tenantId} FOR UPDATE`;
+      const existing = await transaction.department.findUnique({
+        where: { tenantId_code: { tenantId, code: dto.code } },
+      });
+      if (existing) {
+        throw new ConflictException(`A department with code '${dto.code}' already exists`);
+      }
+
+      if (dto.parentId) {
+        const parent = await transaction.department.findFirst({
+          where: { id: dto.parentId, tenantId, isActive: true },
+        });
+        if (!parent) {
+          throw new BadRequestException('Active parent department not found in this tenant');
+        }
+        let parentId: string | null = parent.id;
+        let depth = 1;
+        while (parentId) {
+          if (depth >= 10) {
+            throw new BadRequestException('Department hierarchy cannot exceed 10 levels');
+          }
+          const ancestor: { parentId: string | null } | null =
+            await transaction.department.findFirst({
+              where: { id: parentId, tenantId },
+              select: { parentId: true },
+            });
+          parentId = ancestor?.parentId ?? null;
+          depth += 1;
+        }
+      }
+
+      if (dto.managerId) {
+        const manager = await transaction.tenantMember.findFirst({
+          where: { userId: dto.managerId, tenantId, status: 'ACTIVE' },
+        });
+        if (!manager) {
+          throw new BadRequestException('Manager must be an active member of this tenant');
+        }
+      }
+
+      const created = await transaction.department.create({
+        data: {
+          tenantId,
+          name: dto.name,
+          code: dto.code,
+          parentId: dto.parentId ?? null,
+          managerId: dto.managerId ?? null,
+          spendingLimit:
+            dto.spendingLimit !== undefined && dto.spendingLimit !== null
+              ? dto.spendingLimit
+              : null,
+        },
+        include: {
+          parent: { select: { id: true, name: true, code: true } },
+          manager: { select: { id: true, name: true, email: true } },
+          _count: { select: { members: true, children: true } },
+        },
+      });
+
+      await transaction.auditLog.create({
+        data: {
+          action: 'CREATE',
+          resource: 'department',
+          resourceId: created.id,
+          userId: createdById,
+          tenantId,
+          after: { name: created.name, code: created.code, parentId: created.parentId },
+        },
+      });
+
+      return created;
+    });
+  }
+
+  async updateDepartment(
+    tenantId: string,
+    departmentId: string,
+    updatedById: string,
+    dto: UpdateDepartmentDto,
+  ) {
+    return prisma.$transaction(async (transaction) => {
+    await transaction.$queryRaw`SELECT "id" FROM "tenants" WHERE "id" = ${tenantId} FOR UPDATE`;
+    const department = await transaction.department.findFirst({
+      where: { id: departmentId, tenantId },
+    });
+    if (!department) {
+      throw new NotFoundException('Department not found in this tenant');
+    }
+
+    if (dto.code && dto.code !== department.code) {
+      const existing = await transaction.department.findUnique({
+        where: { tenantId_code: { tenantId, code: dto.code } },
+      });
+      if (existing) {
+        throw new ConflictException(`A department with code '${dto.code}' already exists`);
+      }
+    }
+
+    if (dto.parentId !== undefined && dto.parentId !== null) {
+      if (dto.parentId === departmentId) {
+        throw new BadRequestException('A department cannot be its own parent');
+      }
+
+      const parent = await transaction.department.findFirst({
+        where: { id: dto.parentId, tenantId, isActive: true },
+      });
+      if (!parent) {
+        throw new BadRequestException('Parent department not found in this tenant');
+      }
+
+      let currentParentId: string | null = dto.parentId;
+      const visited = new Set<string>([departmentId]);
+      let depth = 1;
+      while (currentParentId) {
+        if (visited.has(currentParentId)) {
+          throw new BadRequestException('Cyclic department hierarchy is not allowed');
+        }
+        visited.add(currentParentId);
+        if (depth >= 10) {
+          throw new BadRequestException('Department hierarchy cannot exceed 10 levels');
+        }
+        const ancestor: { parentId: string | null } | null =
+          await transaction.department.findFirst({
+            where: { id: currentParentId, tenantId },
+            select: { parentId: true },
+          });
+        currentParentId = ancestor?.parentId ?? null;
+        depth += 1;
+      }
+    }
+
+    if (dto.managerId) {
+      const manager = await transaction.tenantMember.findFirst({
+        where: { userId: dto.managerId, tenantId, status: 'ACTIVE' },
+      });
+      if (!manager) {
+        throw new BadRequestException('Manager must be an active member of this tenant');
+      }
+    }
+
+    const updated = await transaction.department.update({
+      where: { id: departmentId },
+      data: {
+        ...(dto.name !== undefined ? { name: dto.name } : {}),
+        ...(dto.code !== undefined ? { code: dto.code } : {}),
+        ...(dto.parentId !== undefined ? { parentId: dto.parentId } : {}),
+        ...(dto.managerId !== undefined ? { managerId: dto.managerId } : {}),
+        ...(dto.spendingLimit !== undefined
+          ? { spendingLimit: dto.spendingLimit !== null ? dto.spendingLimit : null }
+          : {}),
+        ...(dto.isActive !== undefined ? { isActive: dto.isActive } : {}),
+      },
+      include: {
+        parent: { select: { id: true, name: true, code: true } },
+        manager: { select: { id: true, name: true, email: true } },
+        _count: { select: { members: true, children: true } },
+      },
+    });
+
+    await transaction.auditLog.create({
+      data: {
+        action: 'UPDATE',
+        resource: 'department',
+        resourceId: updated.id,
+        userId: updatedById,
+        tenantId,
+        before: {
+          name: department.name,
+          code: department.code,
+          parentId: department.parentId,
+          isActive: department.isActive,
+        },
+        after: {
+          name: updated.name,
+          code: updated.code,
+          parentId: updated.parentId,
+          isActive: updated.isActive,
+        },
+      },
+    });
+
+    return updated;
+    });
+  }
+
+  async deleteDepartment(tenantId: string, departmentId: string, deletedById: string) {
+    return prisma.$transaction(async (transaction) => {
+    await transaction.$queryRaw`SELECT "id" FROM "tenants" WHERE "id" = ${tenantId} FOR UPDATE`;
+    const department = await transaction.department.findFirst({
+      where: { id: departmentId, tenantId },
+      include: {
+        _count: { select: { children: true, members: true } },
+      },
+    });
+    if (!department) {
+      throw new NotFoundException('Department not found in this tenant');
+    }
+
+    if (department._count.children > 0) {
+      throw new ConflictException(
+        `Cannot delete department with ${department._count.children} child department(s). Reassign or delete child departments first.`,
+      );
+    }
+
+    if (department._count.members > 0) {
+      throw new ConflictException(
+        `Cannot delete department with ${department._count.members} assigned member(s). Reassign members first.`,
+      );
+    }
+
+    await transaction.department.delete({
+      where: { id: departmentId },
+    });
+
+    await transaction.auditLog.create({
+      data: {
+        action: 'DELETE',
+        resource: 'department',
+        resourceId: departmentId,
+        userId: deletedById,
+        tenantId,
+        before: {
+          name: department.name,
+          code: department.code,
+        },
+      },
+    });
+
+    return { deleted: true, id: departmentId };
+    });
+  }
+
+  async getOrganizationSettings(tenantId: string) {
+    const tenant = await prisma.tenant.findUniqueOrThrow({
+      where: { id: tenantId },
+      select: { features: true },
+    });
+    return {
+      hierarchyEnabled: tenant.features.includes('organization-hierarchy'),
+      spatialScopingEnabled: tenant.features.includes('spatial-scoping'),
+    };
+  }
+
+  async updateOrganizationSettings(
+    tenantId: string,
+    updatedById: string,
+    dto: UpdateTenantOrganizationSettingsDto,
+  ) {
+    return prisma.$transaction(async (transaction) => {
+      const tenant = await transaction.tenant.findUniqueOrThrow({
+        where: { id: tenantId },
+        select: { id: true, features: true },
+      });
+      const featureSet = new Set(tenant.features);
+      const before = {
+        hierarchyEnabled: featureSet.has('organization-hierarchy'),
+        spatialScopingEnabled: featureSet.has('spatial-scoping'),
+      };
+      const toggle = (feature: string, enabled: boolean | undefined) => {
+        if (enabled === true) featureSet.add(feature);
+        if (enabled === false) featureSet.delete(feature);
+      };
+      toggle('organization-hierarchy', dto.hierarchyEnabled);
+      toggle('spatial-scoping', dto.spatialScopingEnabled);
+      const after = {
+        hierarchyEnabled: featureSet.has('organization-hierarchy'),
+        spatialScopingEnabled: featureSet.has('spatial-scoping'),
+      };
+      await transaction.tenant.update({
+        where: { id: tenantId },
+        data: { features: Array.from(featureSet) },
+      });
+
+      await transaction.auditLog.create({
+        data: {
+          action: 'SETTINGS_CHANGE',
+          resource: 'tenant_settings',
+          resourceId: tenantId,
+          userId: updatedById,
+          tenantId,
+          before,
+          after,
+        },
+      });
+
+      return after;
+    });
   }
 
   private hashInviteToken(token: string): string {

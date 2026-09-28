@@ -1,13 +1,17 @@
 import { createHash } from 'node:crypto';
 import {
-  ConfigurationDefinitionSchema,
   type ConfigurationCondition,
   type ConfigurationDefinition,
+  ConfigurationDefinitionSchema,
   type ConfigurationField,
 } from '@gigalibs/contracts';
 import { evaluateConfigurationCondition, isConfigurationValueEmpty } from './condition.js';
 
 export { evaluateConfigurationCondition, isConfigurationValueEmpty } from './condition.js';
+export {
+  classifyConfigurationImpact,
+  compareConfigurationDefinitions,
+} from './compatibility.js';
 
 export const CONFIGURATION_COMPILER_VERSION = '1.0.0';
 
@@ -507,3 +511,5 @@ export function canonicalJson(value: unknown): string {
 }
 
 export * from './format.js';
+export * from './catalogue-compiler.js';
+export * from './governed-catalogues.js';

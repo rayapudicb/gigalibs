@@ -1,5 +1,5 @@
 import { type DynamicModule, Module } from '@nestjs/common';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, Reflector } from '@nestjs/core';
 import { AuthController } from './auth.controller.js';
 import { AuthService } from './auth.service.js';
 import { JwtAuthGuard } from './guards/jwt-auth.guard.js';
@@ -12,12 +12,13 @@ export interface AuthModuleOptions {
 
 @Module({
   controllers: [AuthController],
-  providers: [AuthService, OidcService, MfaAssistedRecoveryService, JwtAuthGuard],
+  providers: [Reflector, AuthService, OidcService, MfaAssistedRecoveryService, JwtAuthGuard],
   exports: [AuthService, OidcService, MfaAssistedRecoveryService, JwtAuthGuard],
 })
 export class AuthModule {
   static forRoot(options?: AuthModuleOptions): DynamicModule {
     const providers: unknown[] = [
+      Reflector,
       AuthService,
       OidcService,
       MfaAssistedRecoveryService,

@@ -9,6 +9,8 @@ import {
 import { ApIngestionService } from './ap-ingestion.service.js';
 import { runtimeConfig } from './config/runtime-config.js';
 // biome-ignore lint/style/useImportType: NestJS needs the runtime constructor token for dependency injection.
+import { ConfigurationOutboxPublisher } from './configuration-outbox.publisher.js';
+// biome-ignore lint/style/useImportType: NestJS needs the runtime constructor token for dependency injection.
 import { ExceptionService } from './exception.service.js';
 
 interface ClaimedOutboxEvent {
@@ -30,6 +32,7 @@ export class ControlOutboxWorker implements OnApplicationBootstrap, OnApplicatio
   constructor(
     private readonly ingestionService: ApIngestionService,
     private readonly exceptionService: ExceptionService,
+    private readonly configurationPublisher: ConfigurationOutboxPublisher,
   ) {}
 
   onApplicationBootstrap() {
@@ -130,12 +133,24 @@ export class ControlOutboxWorker implements OnApplicationBootstrap, OnApplicatio
           });
           await this.exceptionService.recordProcessingSuccess(transaction, sourceEvent);
         });
-      } else if (
-        event.eventType.startsWith('configuration.') ||
-        event.eventType.startsWith('saga.') ||
-        event.eventType.startsWith('webhook.')
-      ) {
-        // Mark generic configuration, saga, or webhook events as published
+      } else if (event.eventType.startsWith('configuration.')) {
+        await prisma.$transaction(async (transaction) => {
+          await this.configurationPublisher.publish(transaction, event);
+          const published = await transaction.controlOutboxEvent.updateMany({
+            where: { id: event.id, status: 'PROCESSING', attempts: event.attempts },
+            data: {
+              status: 'PUBLISHED',
+              publishedAt: new Date(),
+              claimedAt: null,
+              lastErrorCode: null,
+            },
+          });
+          if (published.count !== 1) throw new Error('OUTBOX_CLAIM_LOST');
+        });
+        this.logger.log(`Published Configuration outbox event: ${event.eventType} (${event.id})`);
+      } else if (event.eventType.startsWith('saga.') || event.eventType.startsWith('webhook.')) {
+        // These legacy event families remain outside WI-OI-039. Their transport must be reconciled by
+        // their owning work items before either family can be production-certified.
         await prisma.controlOutboxEvent.update({
           where: { id: event.id },
           data: {
@@ -145,12 +160,19 @@ export class ControlOutboxWorker implements OnApplicationBootstrap, OnApplicatio
             lastErrorCode: null,
           },
         });
-        this.logger.log(`Dispatched generic outbox event: ${event.eventType} (${event.id})`);
+        this.logger.log(`Processed legacy outbox event: ${event.eventType} (${event.id})`);
       } else {
         throw new Error('UNSUPPORTED_CONTROL_OUTBOX_EVENT');
       }
     } catch (error) {
-      await this.recordFailure(event, this.errorCode(error));
+      try {
+        await this.recordFailure(event, this.errorCode(error));
+      } catch (failureError) {
+        this.logger.error(
+          `Control outbox failure state could not be persisted. eventId=${event.eventId}`,
+          failureError instanceof Error ? failureError.stack : undefined,
+        );
+      }
     }
   }
 
@@ -166,16 +188,18 @@ export class ControlOutboxWorker implements OnApplicationBootstrap, OnApplicatio
     const availableAt = new Date(Date.now() + retrySeconds * 1_000);
 
     await prisma.$transaction(async (transaction) => {
-      await transaction.controlOutboxEvent.update({
-        where: { id: event.id },
+      const updated = await transaction.controlOutboxEvent.updateMany({
+        where: { id: event.id, status: 'PROCESSING', attempts: event.attempts },
         data: {
           status: terminal ? 'FAILED' : 'PENDING',
           availableAt,
           claimedAt: null,
+          publishedAt: null,
           lastErrorCode: errorCode,
         },
       });
-      if (terminal) {
+      if (updated.count !== 1) return;
+      if (terminal && event.eventType === 'operational.source-event.validated.v1') {
         const sourceEvent = await transaction.sourceEvent.update({
           where: { id: event.aggregateId, tenantId: event.tenantId },
           data: {
@@ -218,6 +242,22 @@ export class ControlOutboxWorker implements OnApplicationBootstrap, OnApplicatio
             },
           },
         });
+      } else if (terminal) {
+        await transaction.auditLog.create({
+          data: {
+            tenantId: event.tenantId,
+            action: 'STATUS_CHANGE',
+            resource: 'control-outbox-event',
+            resourceId: event.id,
+            after: {
+              status: 'FAILED',
+              eventId: event.eventId,
+              eventType: event.eventType,
+              errorCode,
+              attempts: event.attempts,
+            },
+          },
+        });
       }
     });
     const message = terminal
@@ -243,6 +283,8 @@ export class ControlOutboxWorker implements OnApplicationBootstrap, OnApplicatio
     return (
       errorCode === 'SOURCE_EVENT_NOT_FOUND' ||
       errorCode === 'UNSUPPORTED_CONTROL_OUTBOX_EVENT' ||
+      errorCode === 'CONFIGURATION_EVENT_PAYLOAD_TOO_LARGE' ||
+      (errorCode.startsWith('CONFIGURATION_') && errorCode.endsWith('_INVALID')) ||
       /_(?:PAYLOAD_INVALID|LINE_DUPLICATE|BUSINESS_KEY_CONFLICT)$/.test(errorCode)
     );
   }
