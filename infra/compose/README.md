@@ -148,6 +148,24 @@ API liveness proves only that the API process serves HTTP. API readiness include
 liveness proves the Next.js process serves HTTP; web readiness depends on control-plane readiness. These
 routes must return an unavailable status when their declared dependency is unavailable.
 
+## Disk space
+
+Every build creates a new image tag and more build cache, and Docker keeps both until they are removed.
+Each build script first runs `scripts/docker-disk-guard.sh check`. It stops the build when the disk has
+less than 60 GB free (`GIGALIBS_MIN_FREE_GB`), after first trying a cleanup. Run the cleanup yourself once
+a deploy is healthy:
+
+```bash
+infra/compose/scripts/docker-disk-guard.sh prune --dry-run   # list what would be removed
+infra/compose/scripts/docker-disk-guard.sh prune
+```
+
+The cleanup keeps every image a container uses, the newest two tags of each `gigalibs/*` repository (the
+current build and one rollback; `GIGALIBS_KEEP_IMAGE_VERSIONS`), the pinned base images and all images of
+other projects. It trims the build cache to 20 GB (`GIGALIBS_BUILD_CACHE_MAX`) and never touches volumes.
+Never use `docker system prune --volumes`, `docker volume prune` or Docker Desktop "Clean / Purge data":
+they delete the local PostgreSQL volume.
+
 ## Local database backup and restore
 
 Create a PostgreSQL custom-format dump plus checksum and non-secret metadata:

@@ -4,6 +4,9 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 COMPOSE_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 REPO_ROOT="$(cd "${COMPOSE_DIR}/../.." && pwd)"
+
+"${SCRIPT_DIR}/docker-disk-guard.sh" check
+
 BASE_ENV="${COMPOSE_DIR}/.env"
 MODULE_ENV="${COMPOSE_DIR}/.env.modules"
 DOCKERFILE="${COMPOSE_DIR}/docker/Dockerfile"

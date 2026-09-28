@@ -4,6 +4,9 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 COMPOSE_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 REPO_ROOT="$(cd "${COMPOSE_DIR}/../.." && pwd)"
+
+"${SCRIPT_DIR}/docker-disk-guard.sh" check
+
 LOCAL_ENV="${COMPOSE_DIR}/.env"
 DOCKERFILE="${COMPOSE_DIR}/docker/Dockerfile"
 PROFILE="${REPO_ROOT}/config/deployment-profiles/configuration-local-development-v1.json"
