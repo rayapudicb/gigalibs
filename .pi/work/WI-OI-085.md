@@ -227,3 +227,80 @@ Conformance is next (085d), then the navigation proof (085e).
   - RLS is forced on records, audit, outbox and revocation tables.
   - Runtime privileges: `audit_events` INSERT and SELECT only; `auth_revocation_events` SELECT only.
   - Clean-up verified 0 schemas, 0 roles and 0 containers left, and removed the image and the copied secrets.
+
+## 085d — conformance suite and listing gate (2026-09-28)
+
+**Implementation:**
+- **Command:** `pnpm module:conformance <name> [--live] [--record]` (`scripts/module-conformance.mjs`).
+- **Static checks (15):**
+  - manifest and layer audits pass, and the generated runtime is current;
+  - the required API files exist;
+  - the guard is the SDK `SignedContextGuardBase`, the database is `ModuleDatabase`, and configuration comes from
+    `loadModuleRuntimeConfig`;
+  - there is no copied token verification;
+  - every non-health controller has `AuthorizationGuard`, and every route names a permission;
+  - every write records audit and outbox;
+  - every table has `tenant_id`, forced RLS and a tenant policy;
+  - audit is append-only and revocations read-only;
+  - every permission uses the module prefix;
+  - the tests exist and pass;
+  - the probe routes are declared.
+- **Live checks (`--live`):** a runner in the pinned Node image on the Compose network, with the repository mounted
+  read-only, calls the module API using contexts signed with the module's own key.
+  - Health is at the schema contract.
+  - 401 for no context, another key or another audience; 403 for another module's entitlement or a reader who
+    writes.
+  - Tenant A creates (201), and a repeated request key replays (200, `Idempotency-Replayed`).
+  - Tenant B can neither list, read nor change A's record.
+  - A stale version gets 409, and the current version updates.
+  - Then from the host: audit and outbox rows for each change, and RLS as the runtime role (no tenant: 0 rows;
+    tenant B: 0 rows).
+  - The synthetic tenants `conformance-<run>-a|b` are deleted afterwards.
+- **Recording:** `--record` writes `modules/<name>/conformance.json` only when every check passes, including live.
+  It carries the fingerprint of the API source, package file and database files
+  (`scripts/lib/module-code-hash.mjs`).
+- **Listing gate:** `audit:module-manifests` fails if a generated module has a catalogue entry above `PLANNED`
+  without a passing live record for its current fingerprint.
+
+**Evidence** (fresh throwaway copy, `conformance-proof.sh`):
+- Static conformance: 15 of 15 pass.
+- Broken copies, each refused by the right check:
+  - forced RLS removed: S11;
+  - `@RequirePermissions` removed from a route: S9;
+  - guard not extending the SDK guard: S5.
+- Live conformance with `--record`: 35 of 35 pass, and the record was written.
+- Listing gate:
+  - `REVIEW` with the current record passes;
+  - `REVIEW` without a record is refused;
+  - `REVIEW` after a code change is refused.
+- **Defects found and fixed during the run:**
+  - the live runner resolved `auth-core`'s absent CommonJS entry (it now reads the ES module entry);
+  - a psql `COMMIT` line was read as a row count.
+- Clean-up verified 0 schemas, 0 roles and 0 containers.
+- **Chain on the main tree:** build; full suite 223 files / 2,030 tests; all 8 audits pass. The deployment profile
+  still reports only the pre-existing `WORKFORCE_API_URL` drift.
+- **Coverage honesty:** conformance covers part of the vision's certification gates 2, 5, 6 and 7 only. It is not
+  certification (docs/GIGALIBS_PRODUCT_VISION.md §6).
+
+## Owner decisions, 2026-09-28 (align with the product vision)
+
+Checked against `docs/GIGALIBS_PRODUCT_VISION.md` and the mobile strategy. The owner chose to follow the vision
+on all three points:
+1. **Runtime: modular monolith by default (vision §8).** New modules run inside one shared module host by
+   default. A module gets its own service only when scale, data isolation, team ownership or failure isolation
+   justifies it.
+   - CMMS, Workforce and Geospatial stay services, because they were split out for data isolation.
+   - 085b's separate-service runtime becomes the extraction path. The generator's default becomes the host.
+     Rework: slice **085e** (module host); the navigation proof moves to **085f**.
+2. **Mobile code: one codebase (mobile vision §4).** The field app is a native shell (Capacitor) around the same
+   web components, with native plugins for GPS, NFC, camera, biometrics and offline storage. This matches the
+   manufacturing plan §5.1 (`/m` in the Next.js shell) and WI-OI-084.
+3. **Mobile API: no separate BFF (mobile vision §11).** Mobile uses the same gateway routes as the web. The gateway
+   also accepts mobile bearer sessions, and only sync and offline endpoints are added.
+
+**Also against the vision, to be registered as work items:**
+- Catalogue truth must use the vision's six maturity states (§5). Four entries claim `AVAILABLE` without evidence.
+- Horizon 1 gaps come before the factory (§12): session revocation fan-out to modules; a clean workspace build;
+  backup, restore and deployment profiles.
+- `VISION_AND_PHASED_IMPLEMENTATION_PLAN.md` phase 5 (GAAP ledger) conflicts with ADR-0013's "no general ledger".
+  Owner decision pending.

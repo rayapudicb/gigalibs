@@ -8,6 +8,7 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 import yaml from 'js-yaml';
+import { moduleCodeSha256 } from './lib/module-code-hash.mjs';
 
 const argValue = (flag) => {
   const index = process.argv.indexOf(flag);
@@ -723,6 +724,21 @@ for (const [name, manifest] of modules) {
     appendOnlyTables: tables('appendOnlyTables'),
     readOnlyTables: tables('readOnlyTables'),
   };
+  // Listing gate (WI-OI-085d): above PLANNED, a generated module needs a live conformance record for its current code.
+  const listed = (manifest.spec.catalog ?? []).filter((entry) => entry.readiness !== 'PLANNED');
+  if (listed.length) {
+    const recordFile = `modules/${name}/conformance.json`;
+    let record = null;
+    try {
+      record = JSON.parse(readText(recordFile) ?? 'null');
+    } catch {
+      record = null;
+    }
+    if (record?.passed !== true || record?.live !== true)
+      fail(where, `${listed.map((entry) => entry.key).join(', ')} is above PLANNED without ${recordFile}; run \`pnpm module:conformance ${name} --live --record\``);
+    else if (record.codeSha256 !== moduleCodeSha256(root, name))
+      fail(where, `${recordFile} was made for other code; rerun \`pnpm module:conformance ${name} --live --record\``);
+  }
   runtimeIndex[name] = resolved;
   runtimeFiles.set(`${RUNTIME_DIR}/compose.${name}.yaml`, runtimeOverlay(name, resolved));
 }
