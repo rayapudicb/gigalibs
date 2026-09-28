@@ -1,9 +1,4 @@
 import { Module } from '@nestjs/common';
-import { ConfigProvider } from './config.provider.js';
-import { OidcAuthorizationGuard } from './auth/authorization.js';
-import { OidcDevController } from './auth/oidc-dev.controller.js';
-import { OidcDevService } from './auth/oidc-dev.service.js';
-import { DatabaseService } from './database/database.service.js';
 import { HealthController } from './health/health.controller.js';
 import { SetupController } from './setup/setup.controller.js';
 import { SetupService } from './setup/setup.service.js';
@@ -19,29 +14,34 @@ import { DatasetModule } from './datasets/dataset.module.js';
 import { QueryEngineModule } from './query-engine/query-engine.module.js';
 import { ReportModule } from './reports/report.module.js';
 import { LineageModule } from './lineage/lineage.module.js';
+import { PlaceAnalyticsModule } from './places/place-analytics.module.js';
+import { AnalyticsRuntimeModule } from './runtime.module.js';
 
 @Module({
-  imports: [ConnectorModule, IngestionModule, SchemaDiscoveryModule, DatasetModule, QueryEngineModule, ReportModule, LineageModule],
+  imports: [
+    AnalyticsRuntimeModule,
+    ConnectorModule,
+    IngestionModule,
+    SchemaDiscoveryModule,
+    DatasetModule,
+    QueryEngineModule,
+    ReportModule,
+    LineageModule,
+    PlaceAnalyticsModule,
+  ],
   controllers: [
     HealthController,
     SetupController,
     MetricsController,
     ActionsController,
-    OidcDevController,
   ],
   providers: [
-    ConfigProvider,
-    DatabaseService,
     SetupService,
     MetricsService,
     TelemetryService,
     ActionsService,
-    OidcDevService,
-    OidcAuthorizationGuard,
   ],
   exports: [
-    ConfigProvider,
-    DatabaseService,
     SetupService,
     MetricsService,
     TelemetryService,

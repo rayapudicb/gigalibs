@@ -13,6 +13,9 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, test, vi } from 'vitest';
+
+const jest = vi;
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -49,7 +52,7 @@ describe('Migration 000008 — schema assertions', () => {
   test('UNAUTHORIZED is NOT in freshness_state enum', () => {
     // Governance rule: UNAUTHORIZED is an HTTP auth concept, not a freshness signal
     const enumBlock = sql.match(/freshness_state.*?AS ENUM\s*\((.*?)\)/s)?.[1] ?? '';
-    expect(enumBlock).not.toContain('UNAUTHORIZED');
+    expect(enumBlock.replace(/--.*$/gm, '')).not.toMatch(/['"]UNAUTHORIZED['"]/);
   });
 
   test('creates chart_definitions table', () => {
@@ -212,13 +215,13 @@ describe('QueryEngineService — governance: UNAUTHORIZED is not a freshness sta
     const typeExpr = typeMatch![1]!;
     expect(typeExpr).not.toContain('UNAUTHORIZED');
     // Confirm the enum comment states the rule
-    expect(src).toContain("'UNAUTHORIZED' is never a freshness state");
+    expect(src).toContain('UNAUTHORIZED is never a freshness state');
   });
 
   test('migration freshness_state enum does not contain UNAUTHORIZED', () => {
     const sql = readMigration();
     const enumBlock = sql.match(/freshness_state.*?AS ENUM\s*\((.*?)\)/s)?.[1] ?? '';
-    expect(enumBlock).not.toContain('UNAUTHORIZED');
+    expect(enumBlock.replace(/--.*$/gm, '')).not.toMatch(/['"]UNAUTHORIZED['"]/);
     // Confirm migration comment
     expect(sql).toContain("'UNAUTHORIZED' is never a freshness state");
   });

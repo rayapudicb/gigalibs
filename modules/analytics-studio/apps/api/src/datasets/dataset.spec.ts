@@ -14,6 +14,9 @@
 import * as crypto from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, test, vi } from 'vitest';
+
+const jest = vi;
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -55,11 +58,11 @@ describe('Migration 000007 — schema assertions', () => {
   });
 
   test('dataset_record_versions has REVOKE DELETE', () => {
-    expect(sql).toMatch(/REVOKE DELETE.*ON.*dataset_record_versions/s);
+    expect(sql).toMatch(/REVOKE UPDATE,\s*DELETE ON.*dataset_record_versions/s);
   });
 
   test('dataset_record_versions has GIN index on analytical_payload', () => {
-    expect(sql).toMatch(/USING gin.*analytical_payload/s);
+    expect(sql).toMatch(/USING\s+GIN\s*\(analytical_payload\)/s);
   });
 
   test('creates semantic_models table with updated_at trigger', () => {
@@ -91,7 +94,7 @@ describe('Migration 000007 — schema assertions', () => {
   });
 
   test('semantic_model_versions has REVOKE DELETE', () => {
-    expect(sql).toMatch(/REVOKE DELETE.*ON.*semantic_model_versions/s);
+    expect(sql).toMatch(/REVOKE UPDATE,\s*DELETE ON.*semantic_model_versions/s);
   });
 
   test('semantic_model_versions has UNIQUE on (model_id, version_number)', () => {
@@ -183,7 +186,7 @@ describe('DatasetService — build lifecycle', () => {
   }
 
   test('creates version as BUILDING then transitions to READY', async () => {
-    const db = makeDb([{ amount: 42, _pk: '1' }]);
+    const db = makeDb([{ raw_payload: { amount: 42 }, source_pk_hash: 'source-1' }]);
     const svc = new DatasetService(db as any);
     const result = await svc.buildDatasetVersion(
       { tenantId: 'tenant-A', subject: 'user-1', entitlements: new Set(['analytics-studio']) },
@@ -277,7 +280,7 @@ describe('DatasetService — append-only enforcement (source code audit)', () =>
   test('migration has REVOKE UPDATE + DELETE on dataset_record_versions', () => {
     const sql = readMigration();
     expect(sql).toMatch(/REVOKE UPDATE.*dataset_record_versions/s);
-    expect(sql).toMatch(/REVOKE DELETE.*dataset_record_versions/s);
+    expect(sql).toMatch(/REVOKE UPDATE,\s*DELETE ON.*dataset_record_versions/s);
   });
 });
 
@@ -350,7 +353,7 @@ describe('DatasetService — semantic model version immutability', () => {
   test('migration semantic_model_versions has REVOKE UPDATE + DELETE', () => {
     const sql = readMigration();
     expect(sql).toMatch(/REVOKE UPDATE.*semantic_model_versions/s);
-    expect(sql).toMatch(/REVOKE DELETE.*semantic_model_versions/s);
+    expect(sql).toMatch(/REVOKE UPDATE,\s*DELETE ON.*semantic_model_versions/s);
   });
 
   test('content_hash is deterministic SHA-256 of measures JSON', () => {

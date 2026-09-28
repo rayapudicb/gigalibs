@@ -23,7 +23,7 @@
  *
  * SDLC note: This file provides BUILD evidence for G4 (Build gate).
  * Named human authorities must still review and close the gate — no agent
- * may mark human acceptance. Status remains In Progress at G4 for WI-OI-042.
+ * may mark human acceptance. This evidence does not authorize WI-OI-043 release.
  *
  * GigaLibs SDLC Governance constraints (verbatim — must remain in effect):
  * Under GigaLibs SDLC rules, only named human authorities (Solution
@@ -36,13 +36,15 @@
  * @see TECH-02  — RLS requirements acceptance (Security & Privacy)
  */
 
+import { describe, expect, it } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
 const API_SRC = path.resolve(__dirname);
-const MIGRATIONS = path.resolve(__dirname, '../../../../db/migrations');
+const MIGRATIONS = path.resolve(__dirname, '../../../db/migrations');
+const REPO_ROOT = path.resolve(__dirname, '../../../../..');
 
 function readMigration(n: string): string {
   return fs.readFileSync(path.join(MIGRATIONS, n), 'utf-8');
@@ -52,6 +54,10 @@ function readSrc(rel: string): string {
   const abs = path.join(API_SRC, rel);
   if (!fs.existsSync(abs)) throw new Error(`Source file not found: ${rel}`);
   return fs.readFileSync(abs, 'utf-8');
+}
+
+function readRepo(rel: string): string {
+  return fs.readFileSync(path.join(REPO_ROOT, rel), 'utf-8');
 }
 
 function migrationExists(n: string): boolean {
@@ -64,12 +70,12 @@ function migrationExists(n: string): boolean {
 
 describe('Phase 1 — Connector Hub + Credential Vault', () => {
   it('migration 000004 exists: source_connections table', () => {
-    expect(migrationExists('000004_source_connections.up.sql')).toBe(true);
+    expect(migrationExists('000004_connector_hub_source_connections.up.sql')).toBe(true);
   });
 
-  it('source_connections has credential_vault_ref (no raw credentials in DB)', () => {
-    const sql = readMigration('000004_source_connections.up.sql');
-    expect(sql).toContain('credential_vault_ref');
+  it('source_connections has an opaque credential vault key (no raw credentials in DB)', () => {
+    const sql = readMigration('000004_connector_hub_source_connections.up.sql');
+    expect(sql).toContain('credential_vault_key');
     expect(sql).not.toContain('password TEXT');
     expect(sql).not.toContain('api_key TEXT');
   });
@@ -85,7 +91,7 @@ describe('Phase 1 — Connector Hub + Credential Vault', () => {
   });
 
   it('source_connections has RLS + FORCE RLS', () => {
-    const sql = readMigration('000004_source_connections.up.sql');
+    const sql = readMigration('000004_connector_hub_source_connections.up.sql');
     expect(sql).toContain('ENABLE ROW LEVEL SECURITY');
     expect(sql).toContain('FORCE ROW LEVEL SECURITY');
   });
@@ -101,17 +107,16 @@ describe('Phase 1 — Connector Hub + Credential Vault', () => {
 
 describe('Phase 2 — Ingestion Engine + Raw Tenant Staging', () => {
   it('migration 000005 exists: raw_record_versions table', () => {
-    expect(migrationExists('000005_ingestion_raw_staging.up.sql')).toBe(true);
+    expect(migrationExists('000005_connector_sync_runs_and_raw_records.up.sql')).toBe(true);
   });
 
   it('raw_record_versions is append-only (REVOKE UPDATE/DELETE)', () => {
-    const sql = readMigration('000005_ingestion_raw_staging.up.sql');
-    expect(sql).toContain('REVOKE UPDATE');
-    expect(sql).toContain('REVOKE DELETE');
+    const sql = readMigration('000005_connector_sync_runs_and_raw_records.up.sql');
+    expect(sql).toMatch(/REVOKE\s+UPDATE\s*,\s*DELETE/);
   });
 
   it('raw_record_versions has GIN index on raw_payload', () => {
-    const sql = readMigration('000005_ingestion_raw_staging.up.sql');
+    const sql = readMigration('000005_connector_sync_runs_and_raw_records.up.sql');
     expect(sql).toContain('GIN');
     expect(sql).toContain('raw_payload');
   });
@@ -142,17 +147,17 @@ describe('Phase 2 — Ingestion Engine + Raw Tenant Staging', () => {
 
 describe('Phase 3 — Schema Discovery + Data Studio Mapping', () => {
   it('migration 000006 exists: schema_discovery + studio_mappings', () => {
-    expect(migrationExists('000006_schema_discovery_and_mappings.up.sql')).toBe(true);
+    expect(migrationExists('000006_schema_discovery_and_studio_mappings.up.sql')).toBe(true);
   });
 
   it('studio_mappings has PUBLISHED status lifecycle', () => {
-    const sql = readMigration('000006_schema_discovery_and_mappings.up.sql');
+    const sql = readMigration('000006_schema_discovery_and_studio_mappings.up.sql');
     expect(sql).toContain("'DRAFT'");
     expect(sql).toContain("'PUBLISHED'");
   });
 
   it('studio_mapping_versions is append-only with content_hash', () => {
-    const sql = readMigration('000006_schema_discovery_and_mappings.up.sql');
+    const sql = readMigration('000006_schema_discovery_and_studio_mappings.up.sql');
     // REVOKE on mapping versions table
     expect(sql).toContain('REVOKE UPDATE');
     expect(sql).toContain('content_hash');
@@ -160,8 +165,8 @@ describe('Phase 3 — Schema Discovery + Data Studio Mapping', () => {
 
   it('identifier validation enforces safe SQL name regex', () => {
     const svc = readSrc('schema-discovery/schema-discovery.service.ts');
-    // Must reject injection characters
-    expect(svc).toContain('IDENTIFIER_RE');
+    // Must reject injection characters through an anchored allowlist.
+    expect(svc).toContain('/^[a-z][a-z0-9_]{0,62}$/');
   });
 
   it('SchemaDiscoveryModule exports SchemaDiscoveryService', () => {
@@ -186,8 +191,7 @@ describe('Phase 4 — Analytical Datasets + Semantic Models', () => {
   it('dataset_record_versions is append-only', () => {
     const sql = readMigration('000007_analytical_datasets_and_semantic_models.up.sql');
     const block = sql.slice(sql.indexOf('dataset_record_versions'));
-    expect(block).toContain('REVOKE UPDATE');
-    expect(block).toContain('REVOKE DELETE');
+    expect(block).toMatch(/REVOKE\s+UPDATE\s*,\s*DELETE/);
   });
 
   it('semantic_model_versions has content_hash (SHA-256)', () => {
@@ -235,7 +239,8 @@ describe('Phase 5 — Governed Query Engine + ECharts + Dashboards', () => {
     expect(sql).toContain("'PARTIAL'");
     expect(sql).toContain("'REBUILDING'");
     expect(sql).toContain("'UNAVAILABLE'");
-    expect(sql).not.toContain("'UNAUTHORIZED'");
+    const code = sql.replace(/--.*$/gm, '');
+    expect(code).not.toContain("'UNAUTHORIZED'");
   });
 
   it('QueryEngineService FreshnessState type does not include UNAUTHORIZED', () => {
@@ -243,7 +248,10 @@ describe('Phase 5 — Governed Query Engine + ECharts + Dashboards', () => {
     expect(svc).toContain('FreshnessState');
     expect(svc).toContain("'FRESH'");
     // Must not assign UNAUTHORIZED as a FreshnessState value
-    expect(svc).not.toMatch(/FreshnessState.*UNAUTHORIZED|UNAUTHORIZED.*FreshnessState/);
+    const code = svc
+      .replace(/\/\/.*$/gm, '')
+      .replace(/\/\*[\s\S]*?\*\//g, '');
+    expect(code).not.toMatch(/FreshnessState.*UNAUTHORIZED|UNAUTHORIZED.*FreshnessState/);
   });
 
   it('ChartService always injects series data from query results (never template)', () => {
@@ -356,8 +364,8 @@ describe('Phase 7 — Lineage DAG + Tamper-Evident Audit Log', () => {
 
   it('analytics_lineage_edges uses TEXT ids (no cross-table FK constraints)', () => {
     const sql = readMigration('000010_lineage_and_audit.up.sql');
-    expect(sql).toContain('source_node_id  TEXT');
-    expect(sql).toContain('target_node_id  TEXT');
+    expect(sql).toMatch(/source_node_id\s+TEXT/);
+    expect(sql).toMatch(/target_node_id\s+TEXT/);
   });
 
   it('analytics_lineage_edges is append-only', () => {
@@ -369,7 +377,7 @@ describe('Phase 7 — Lineage DAG + Tamper-Evident Audit Log', () => {
 
   it('analytics_audit_log captures client_ip as INET', () => {
     const sql = readMigration('000010_lineage_and_audit.up.sql');
-    expect(sql).toContain('client_ip          INET');
+    expect(sql).toMatch(/client_ip\s+INET/);
   });
 
   it('analytics_audit_log captures correlation_id (distributed trace linkage)', () => {
@@ -427,9 +435,9 @@ describe('Phase 7 — Lineage DAG + Tamper-Evident Audit Log', () => {
 
 describe('Cross-phase — Pipeline order & migration ledger', () => {
   const MIGRATIONS_IN_ORDER = [
-    '000004_source_connections.up.sql',
-    '000005_ingestion_raw_staging.up.sql',
-    '000006_schema_discovery_and_mappings.up.sql',
+    '000004_connector_hub_source_connections.up.sql',
+    '000005_connector_sync_runs_and_raw_records.up.sql',
+    '000006_schema_discovery_and_studio_mappings.up.sql',
     '000007_analytical_datasets_and_semantic_models.up.sql',
     '000008_charts_and_dashboards.up.sql',
     '000009_reports_and_scheduled_delivery.up.sql',
@@ -447,10 +455,7 @@ describe('Cross-phase — Pipeline order & migration ledger', () => {
       const sql = readMigration(m);
       const versionNum = i + 4;
       // Each migration must record its own version in schema_migrations
-      const prefix = String(versionNum).padStart(6, '0');
-      const hasLedger =
-        sql.includes(`'${prefix.slice(-6)}`) ||
-        sql.includes(`'${String(versionNum).padStart(6, '0')}`);
+      const hasLedger = new RegExp(`VALUES\\s*\\(\\s*${versionNum}\\s*,`).test(sql);
       return { migration: m, versionNum, hasLedger };
     });
     ledgerVersions.forEach(({ migration, hasLedger }) => {
@@ -470,8 +475,8 @@ describe('Cross-phase — Pipeline order & migration ledger', () => {
 
   it('all append-only tables across all phases have REVOKE UPDATE + DELETE', () => {
     const APPEND_ONLY_TABLES = [
-      ['000005_ingestion_raw_staging.up.sql', 'raw_record_versions'],
-      ['000006_schema_discovery_and_mappings.up.sql', 'studio_mapping_versions'],
+      ['000005_connector_sync_runs_and_raw_records.up.sql', 'raw_record_versions'],
+      ['000006_schema_discovery_and_studio_mappings.up.sql', 'studio_mapping_versions'],
       ['000007_analytical_datasets_and_semantic_models.up.sql', 'dataset_record_versions'],
       ['000007_analytical_datasets_and_semantic_models.up.sql', 'semantic_model_versions'],
       ['000009_reports_and_scheduled_delivery.up.sql', 'report_artifacts'],
@@ -486,7 +491,9 @@ describe('Cross-phase — Pipeline order & migration ledger', () => {
       expect(tableIdx).toBeGreaterThan(-1);
       const afterTable = sql.slice(tableIdx);
       const hasRevokeUpdate = afterTable.includes('REVOKE UPDATE');
-      const hasRevokeDelete = afterTable.includes('REVOKE DELETE');
+      const hasRevokeDelete =
+        afterTable.includes('REVOKE DELETE') ||
+        /REVOKE\s+UPDATE\s*,\s*DELETE/.test(afterTable);
       expect({ table, hasRevokeUpdate, hasRevokeDelete }).toMatchObject({
         table,
         hasRevokeUpdate: true,
@@ -496,9 +503,13 @@ describe('Cross-phase — Pipeline order & migration ledger', () => {
   });
 
   it('PlatformContextV1 entitlement key is analytics-studio throughout codebase', () => {
-    // Check at least one file references the correct entitlement key
-    const authSrc = readSrc('auth/authorization.ts');
-    expect(authSrc).toContain('analytics-studio');
+    // WI-OI-064a: the BFF mints the signed context for this module key and the service guard requires it.
+    const route = readRepo('apps/workflow-platform/app/api/analytics/[...path]/route.ts');
+    expect(route).toContain('proxyAnalytics');
+    const bff = readRepo('apps/workflow-platform/lib/analytics-proxy.ts');
+    expect(bff).toContain("moduleKey: 'analytics-studio'");
+    expect(bff).toContain("audience: 'gigalibs-analytics-api'");
+    expect(readSrc('auth/authorization.ts')).toContain("ANALYTICS_MODULE_KEY = 'analytics-studio'");
   });
 
   it('no service file emits UNAUTHORIZED as a FreshnessState', () => {

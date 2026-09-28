@@ -1,0 +1,41 @@
+apiVersion: modules.gigalibs.io/v1alpha1
+kind: Module
+metadata:
+  name: universal-connector-hub
+  displayName: Universal Enterprise Connector Hub
+  version: 0.1.0-dev
+  lifecycle: implementation
+  workItem: WI-OI-026
+spec:
+  standalone: true
+  requiredModules: []
+  optionalModules:
+    - workflow-studio
+    - universal-data-studio
+    - multi-currency
+    - universal-rule-pro
+    - accounts-receivable
+    - spend-management
+  capabilities:
+    - enterprise-connector-catalog
+    - inbound-webhook-ingestion
+    - hmac-signature-verification
+    - raw-ingestion-journaling
+    - idempotency-buffer
+    - polling-delta-sync
+    - workflow-studio-dispatch
+  ui:
+    application: apps/workflow-platform
+    basePath: /connections
+  api:
+    application: apps/api
+    port: 4100
+  storage:
+    schema: gigalibs_connectors
+    tables:
+      - connector_definitions
+      - tenant_connections
+      - connector_credentials
+      - raw_ingestion_journal
+      - sync_jobs
+      - audit_events

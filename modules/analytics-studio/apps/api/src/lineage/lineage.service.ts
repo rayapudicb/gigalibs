@@ -85,6 +85,33 @@ export interface AuditEntry {
   occurredAt: string;
 }
 
+const SENSITIVE_AUDIT_KEY =
+  /password|access.?token|refresh.?token|private.?key|secret.?key|credential|ssn|credit.?card/i;
+const MAX_AUDIT_PAYLOAD_DEPTH = 12;
+
+function sanitizeAuditPayload(
+  value: unknown,
+  depth = 0,
+  seen: WeakSet<object> = new WeakSet(),
+): unknown {
+  if (depth > MAX_AUDIT_PAYLOAD_DEPTH) return '[TRUNCATED]';
+  if (value === null || typeof value !== 'object') return value;
+  if (seen.has(value)) return '[CIRCULAR]';
+  seen.add(value);
+
+  if (Array.isArray(value)) {
+    return value.map((item) => sanitizeAuditPayload(item, depth + 1, seen));
+  }
+
+  const sanitized: Record<string, unknown> = {};
+  for (const [key, nestedValue] of Object.entries(value)) {
+    sanitized[key] = SENSITIVE_AUDIT_KEY.test(key)
+      ? '[REDACTED]'
+      : sanitizeAuditPayload(nestedValue, depth + 1, seen);
+  }
+  return sanitized;
+}
+
 // ─── LineageService ───────────────────────────────────────────────────────────
 
 @Injectable()
@@ -150,7 +177,7 @@ export class LineageService {
           tenantId, dto.eventType, subject,
           dto.entityId ?? null,
           dto.entityType ?? null,
-          JSON.stringify(dto.eventPayload ?? {}),
+          JSON.stringify(sanitizeAuditPayload(dto.eventPayload ?? {})),
           dto.clientIp ?? null,
           dto.correlationId ?? null,
         ],

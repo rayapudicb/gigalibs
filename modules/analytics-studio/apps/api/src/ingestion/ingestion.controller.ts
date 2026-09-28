@@ -12,12 +12,12 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { OidcAuthorizationGuard, Principal, RequirePermissions } from '../auth/authorization.js';
+import { PlatformContextAuthorizationGuard, Principal, RequirePermissions } from '../auth/authorization.js';
 import type { AnalyticsPrincipal } from '../auth/authorization.js';
 import { IngestionService, type StartSyncDto } from './ingestion.service.js';
 
 @Controller('v1/connectors')
-@UseGuards(OidcAuthorizationGuard)
+@UseGuards(PlatformContextAuthorizationGuard)
 export class IngestionController {
   constructor(private readonly ingestionService: IngestionService) {}
 

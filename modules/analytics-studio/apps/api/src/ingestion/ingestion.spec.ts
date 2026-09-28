@@ -4,8 +4,7 @@
  * tenant isolation, CONTAINED_P0 boundary, append-only enforcement.
  */
 
-import { describe, it, expect } from '@jest/globals';
-import { Test, TestingModule } from '@nestjs/testing';
+import { describe, it, expect } from 'vitest';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { IngestionService } from './ingestion.service.js';
 import { DatabaseService } from '../database/database.service.js';
@@ -258,7 +257,23 @@ async function buildService(overrides: {
   withTenantTransaction?: (...args: any[]) => Promise<any>;
   connectorGetConnection?: (...args: any[]) => Promise<any>;
 }): Promise<IngestionService> {
-  const defaultQuery = async () => ({ rows: [], rowCount: 0 });
+  const defaultQuery = async (_tenantId?: string, sql = '') => {
+    if (sql.includes('INSERT INTO gigalibs_analytics.source_sync_runs')) {
+      return { rows: [{ id: 'run-default-001' }], rowCount: 1 };
+    }
+    if (sql.includes('SELECT id, connection_id, tenant_id, status')) {
+      return {
+        rows: [{
+          id: 'run-default-001', connection_id: 'conn-default', tenant_id: TENANT_A,
+          status: 'FAILED', rows_fetched: 0, watermark_value: null,
+          error_message: 'CONTAINED_P0: vault not wired',
+          started_at: new Date().toISOString(), completed_at: new Date().toISOString(),
+        }],
+        rowCount: 1,
+      };
+    }
+    return { rows: [], rowCount: 0 };
+  };
 
   const mockDb = {
     query: defaultQuery,
@@ -283,13 +298,8 @@ async function buildService(overrides: {
     testConnection: async () => ({ success: false, latencyMs: 0 }),
   };
 
-  const module: TestingModule = await Test.createTestingModule({
-    providers: [
-      IngestionService,
-      { provide: DatabaseService, useValue: mockDb },
-      { provide: ConnectorService, useValue: mockConnector },
-    ],
-  }).compile();
-
-  return module.get<IngestionService>(IngestionService);
+  return new IngestionService(
+    mockDb as unknown as DatabaseService,
+    mockConnector as unknown as ConnectorService,
+  );
 }

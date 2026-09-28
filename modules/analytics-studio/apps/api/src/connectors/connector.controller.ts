@@ -10,7 +10,7 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
-import { OidcAuthorizationGuard, Principal, RequirePermissions } from '../auth/authorization.js';
+import { PlatformContextAuthorizationGuard, Principal, RequirePermissions } from '../auth/authorization.js';
 import type { AnalyticsPrincipal } from '../auth/authorization.js';
 import { ConnectorService, type CreateConnectionDto } from './connector.service.js';
 
@@ -20,7 +20,7 @@ import { ConnectorService, type CreateConnectionDto } from './connector.service.
 // self-contained until a validation pipe is added.
 
 @Controller('v1/connectors')
-@UseGuards(OidcAuthorizationGuard)
+@UseGuards(PlatformContextAuthorizationGuard)
 export class ConnectorController {
   constructor(private readonly connectorService: ConnectorService) {}
 

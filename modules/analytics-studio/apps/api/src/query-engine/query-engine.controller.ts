@@ -8,7 +8,7 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
-import { OidcAuthorizationGuard } from '../auth/authorization.js';
+import { PlatformContextAuthorizationGuard } from '../auth/authorization.js';
 import { CurrentPrincipal } from '../auth/principal.decorator.js';
 import type { AnalyticsPrincipal } from '../auth/authorization.js';
 import { QueryEngineService, RunQueryDto } from './query-engine.service.js';
@@ -18,7 +18,7 @@ import { DashboardService, CreateDashboardDto, AddChartToDashboardDto } from './
 // ─── Query Engine Controller ──────────────────────────────────────────────────
 
 @Controller('v1/query')
-@UseGuards(OidcAuthorizationGuard)
+@UseGuards(PlatformContextAuthorizationGuard)
 export class QueryEngineController {
   constructor(private readonly queryEngine: QueryEngineService) {}
 
@@ -40,7 +40,7 @@ export class QueryEngineController {
 // ─── Charts Controller ────────────────────────────────────────────────────────
 
 @Controller('v1/charts')
-@UseGuards(OidcAuthorizationGuard)
+@UseGuards(PlatformContextAuthorizationGuard)
 export class ChartsController {
   constructor(private readonly chartService: ChartService) {}
 
@@ -85,7 +85,7 @@ export class ChartsController {
 // ─── Dashboards Controller ────────────────────────────────────────────────────
 
 @Controller('v1/dashboards')
-@UseGuards(OidcAuthorizationGuard)
+@UseGuards(PlatformContextAuthorizationGuard)
 export class DashboardsController {
   constructor(private readonly dashboardService: DashboardService) {}
 

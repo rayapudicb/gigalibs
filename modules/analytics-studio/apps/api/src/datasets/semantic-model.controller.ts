@@ -8,7 +8,7 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
-import { OidcAuthorizationGuard } from '../auth/authorization.js';
+import { PlatformContextAuthorizationGuard } from '../auth/authorization.js';
 import { CurrentPrincipal } from '../auth/principal.decorator.js';
 import type { AnalyticsPrincipal } from '../auth/authorization.js';
 import { DatasetService, CreateSemanticModelDto } from './dataset.service.js';
@@ -16,7 +16,7 @@ import { DatasetService, CreateSemanticModelDto } from './dataset.service.js';
 // ─── Semantic Model Controller ────────────────────────────────────────────────
 
 @Controller('v1/semantic-models')
-@UseGuards(OidcAuthorizationGuard)
+@UseGuards(PlatformContextAuthorizationGuard)
 export class SemanticModelController {
   constructor(private readonly datasetService: DatasetService) {}
 

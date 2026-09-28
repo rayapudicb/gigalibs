@@ -15,6 +15,9 @@
 import * as crypto from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, test, vi } from 'vitest';
+
+const jest = vi;
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -263,9 +266,8 @@ describe('ReportService — CSV format', () => {
   test('csvEscape handles values with commas and quotes', () => {
     // Access private via source-code check — CSV escape is pure
     const src = fs.readFileSync(path.resolve(__dirname, 'report.service.ts'), 'utf8');
-    expect(src).toMatch(/csvEscape/);
-    // Verify RFC 4180: commas and quotes cause field to be double-quoted
-    expect(src).toMatch(/\[",\\r\\n\].*enclosed.*double-quote|"\[,",\\r\\n\]/.source ?? /csvEscape/);
+    expect(src).toContain('if (/[",\\r\\n]/.test(value))');
+    expect(src).toContain('value.replace(/"/g, \'""\')');
   });
 });
 
@@ -330,8 +332,8 @@ describe('ReportService — append-only enforcement', () => {
 
   test('source code never emits UPDATE/DELETE on report_artifacts', () => {
     const src = fs.readFileSync(path.resolve(__dirname, 'report.service.ts'), 'utf8');
-    expect(src).not.toMatch(/UPDATE.*report_artifacts/s);
-    expect(src).not.toMatch(/DELETE.*report_artifacts/s);
+    expect(src).not.toMatch(/`UPDATE\s+gigalibs_analytics\.report_artifacts/i);
+    expect(src).not.toMatch(/`DELETE\s+FROM\s+gigalibs_analytics\.report_artifacts/i);
   });
 });
 

@@ -270,8 +270,9 @@ export class IngestionService {
 
         // Advance watermark: track the max value in this page
         if (watermarkColumn) {
+          const col: string = watermarkColumn as string;
           const maxInPage = rows.reduce<string | null>((max, row) => {
-            const val = String(row[watermarkColumn] ?? '');
+            const val = String((row as Record<string, unknown>)[col] ?? '');
             return max === null || val > max ? val : max;
           }, currentWatermark);
           currentWatermark = maxInPage;

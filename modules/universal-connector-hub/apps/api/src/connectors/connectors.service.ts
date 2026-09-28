@@ -1,0 +1,340 @@
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  NotImplementedException,
+} from '@nestjs/common';
+import { randomUUID } from 'node:crypto';
+import { DatabaseService } from '../database/database.service.js';
+import { VaultCryptoService } from './vault-crypto.service.js';
+import {
+  assertAllowedConnectorUrl,
+  loadConnectorHubRuntimeConfig,
+} from '../runtime-config.js';
+
+export interface CreateConnectionDto {
+  connector_code: string;
+  name: string;
+  slug: string;
+  environment?: string;
+  auth_type?: string;
+  webhook_secret?: string;
+  target_workflow_code?: string;
+  configuration?: any;
+  credentials?: Record<string, any>;
+}
+
+export interface OAuthInitiateDto {
+  connector_code: string;
+  redirect_uri: string;
+  scopes?: string[];
+}
+
+export interface OAuthCallbackDto {
+  code: string;
+  state: string;
+  code_verifier: string;
+  redirect_uri?: string;
+}
+
+@Injectable()
+export class ConnectorsService {
+  constructor(
+    private readonly db: DatabaseService,
+    private readonly vaultCrypto: VaultCryptoService,
+  ) {}
+
+  async getCatalog(): Promise<any[]> {
+    const res = await this.db.query(
+      `SELECT * FROM gigalibs_connectors.connector_definitions WHERE status = 'ACTIVE' ORDER BY category ASC, name ASC`,
+    );
+    return res.rows;
+  }
+
+  async getConnections(tenantId: string, category?: string, status?: string): Promise<any[]> {
+    if (!tenantId) throw new BadRequestException('tenantId is required');
+
+    let sql = `
+      SELECT 
+        c.id, c.tenant_id, c.connector_code, c.name, c.slug, c.environment, c.auth_type,
+        c.target_workflow_code, c.configuration, c.status, c.last_sync_at, c.events_count,
+        c.created_at, c.updated_at,
+        d.name AS definition_name, d.category, d.icon, d.supported_events
+      FROM gigalibs_connectors.tenant_connections c
+      JOIN gigalibs_connectors.connector_definitions d ON c.connector_code = d.connector_code
+      WHERE c.tenant_id = $1
+    `;
+    const params: any[] = [tenantId];
+
+    if (category && category !== 'ALL') {
+      params.push(category);
+      sql += ` AND d.category = $${params.length}`;
+    }
+
+    if (status && status !== 'ALL') {
+      params.push(status);
+      sql += ` AND c.status = $${params.length}`;
+    }
+
+    sql += ` ORDER BY c.updated_at DESC`;
+
+    const res = await this.db.queryWithTenant(tenantId, sql, params);
+    return res.rows;
+  }
+
+  async getConnectionById(tenantId: string, idOrSlug: string): Promise<any> {
+    if (!tenantId) throw new BadRequestException('tenantId is required');
+
+    const res = await this.db.queryWithTenant(
+      tenantId,
+      `SELECT 
+        c.*, d.name AS definition_name, d.category, d.icon, d.supported_events
+       FROM gigalibs_connectors.tenant_connections c
+       JOIN gigalibs_connectors.connector_definitions d ON c.connector_code = d.connector_code
+       WHERE c.tenant_id = $1 AND (c.id = $2 OR c.slug = $2)`,
+      [tenantId, idOrSlug],
+    );
+
+    if (res.rowCount === 0) {
+      throw new NotFoundException(`Connection '${idOrSlug}' not found for tenant '${tenantId}'`);
+    }
+
+    return res.rows[0];
+  }
+
+  async createConnection(tenantId: string, dto: CreateConnectionDto): Promise<any> {
+    if (!tenantId) throw new BadRequestException('tenantId is required');
+    if (!dto.connector_code || !dto.name || !dto.slug) {
+      throw new BadRequestException('connector_code, name, and slug are required');
+    }
+
+    // Verify connector exists in catalog
+    const catRes = await this.db.query(
+      `SELECT * FROM gigalibs_connectors.connector_definitions WHERE connector_code = $1`,
+      [dto.connector_code],
+    );
+    if (catRes.rowCount === 0) {
+      throw new BadRequestException(`Unknown connector_code: '${dto.connector_code}'`);
+    }
+
+    const connId = `conn-${randomUUID().slice(0, 8)}`;
+    const secret = dto.webhook_secret || `whsec_${randomUUID().replace(/-/g, '')}`;
+
+    const sql = `
+      INSERT INTO gigalibs_connectors.tenant_connections (
+        id, tenant_id, connector_code, name, slug, environment, auth_type,
+        webhook_secret, target_workflow_code, configuration, status, created_at, updated_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'READY', NOW(), NOW())
+      RETURNING *
+    `;
+
+    const res = await this.db.queryWithTenant(tenantId, sql, [
+      connId,
+      tenantId,
+      dto.connector_code,
+      dto.name,
+      dto.slug.toLowerCase().replace(/[^a-z0-9-]/g, '-'),
+      dto.environment || 'PRODUCTION',
+      dto.auth_type || 'WEBHOOK',
+      secret,
+      dto.target_workflow_code || null,
+      JSON.stringify(dto.configuration || {}),
+    ]);
+
+    // Store encrypted credentials if provided
+    if (dto.credentials && Object.keys(dto.credentials).length > 0) {
+      await this.storeEncryptedCredential(
+        tenantId,
+        connId,
+        dto.auth_type === 'OAUTH2' ? 'OAUTH2_TOKENS' : 'API_KEY',
+        dto.credentials,
+      );
+    }
+
+    await this.db.queryWithTenant(
+      tenantId,
+      `INSERT INTO gigalibs_connectors.audit_events (id, tenant_id, entity_type, entity_id, action, payload, created_at)
+       VALUES ($1, $2, 'CONNECTION', $3, 'CONNECTION_CREATED', $4, NOW())`,
+      [
+        `aud-${randomUUID().slice(0, 8)}`,
+        tenantId,
+        connId,
+        JSON.stringify({ connector_code: dto.connector_code, slug: dto.slug }),
+      ],
+    );
+
+    return res.rows[0];
+  }
+
+  async storeEncryptedCredential(
+    tenantId: string,
+    connectionId: string,
+    credentialType: string,
+    plainPayload: any,
+  ): Promise<string> {
+    const serialized = typeof plainPayload === 'string' ? plainPayload : JSON.stringify(plainPayload);
+    const encrypted = this.vaultCrypto.encrypt(serialized);
+    const credId = `cred-${randomUUID().slice(0, 8)}`;
+
+    await this.db.queryWithTenant(
+      tenantId,
+      `INSERT INTO gigalibs_connectors.connector_credentials (
+        id, tenant_id, connection_id, credential_type, encrypted_data, iv, auth_tag,
+        key_reference, created_at, updated_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'master-kms-key-01', NOW(), NOW())
+      ON CONFLICT (id) DO UPDATE SET
+        encrypted_data = EXCLUDED.encrypted_data,
+        iv = EXCLUDED.iv,
+        auth_tag = EXCLUDED.auth_tag,
+        updated_at = NOW()`,
+      [
+        credId,
+        tenantId,
+        connectionId,
+        credentialType,
+        encrypted.encryptedData,
+        encrypted.iv,
+        encrypted.authTag,
+      ],
+    );
+
+    return credId;
+  }
+
+  async getDecryptedCredential(tenantId: string, connectionId: string): Promise<any | null> {
+    const res = await this.db.queryWithTenant(
+      tenantId,
+      `SELECT * FROM gigalibs_connectors.connector_credentials
+       WHERE tenant_id = $1 AND connection_id = $2
+       ORDER BY updated_at DESC LIMIT 1`,
+      [tenantId, connectionId],
+    );
+
+    if (res.rowCount === 0) return null;
+
+    const row = res.rows[0];
+    if (!row.iv || !row.auth_tag) {
+      throw new Error('Stored credential envelope is incomplete.');
+    }
+
+    const decryptedStr = this.vaultCrypto.decrypt({
+      encryptedData: row.encrypted_data,
+      iv: row.iv,
+      authTag: row.auth_tag,
+    });
+
+    try {
+      return JSON.parse(decryptedStr);
+    } catch {
+      return decryptedStr;
+    }
+  }
+
+  /**
+   * CN-01: Real live health probe validating network connectivity, credentials, and listener.
+   */
+  async testConnection(tenantId: string, id: string): Promise<any> {
+    const conn = await this.getConnectionById(tenantId, id);
+    const startTime = performance.now();
+
+    const checks: Record<string, string> = {
+      schema_validation: 'PASSED',
+      webhook_listener: conn.webhook_secret ? 'ACTIVE' : 'NOT_CONFIGURED',
+      target_pipeline: conn.target_workflow_code ? 'ATTACHED' : 'UNASSIGNED',
+    };
+
+    // 1. Check credential vault
+    const creds = await this.getDecryptedCredential(tenantId, conn.id);
+    if (creds) {
+      checks.credential_vault = 'ENCRYPTED_VALID';
+    } else if (conn.auth_type === 'WEBHOOK') {
+      checks.credential_vault = 'WEBHOOK_SECRET_PRESENT';
+    } else {
+      checks.credential_vault = 'MISSING_CREDENTIALS';
+    }
+
+    // 2. Perform live network probe if endpoint configured
+    const config = conn.configuration || {};
+    const probeUrl = config.instance_url || config.endpoint_url || config.probe_url;
+
+    let probePassed = true;
+    let errorMessage: string | null = null;
+
+    if (probeUrl) {
+      try {
+        const parsedUrl = assertAllowedConnectorUrl(
+          probeUrl,
+          loadConnectorHubRuntimeConfig(),
+        );
+        const timeoutSignal = AbortSignal.timeout(5000);
+        const res = await fetch(parsedUrl.toString(), {
+          method: 'HEAD',
+          signal: timeoutSignal,
+        });
+        checks.network_probe = `REACHABLE_HTTP_${res.status}`;
+      } catch (err: any) {
+        probePassed = false;
+        errorMessage = `Probe failed: ${err.message}`;
+        checks.network_probe = `FAILED: ${err.code || err.message}`;
+      }
+    } else {
+      checks.network_probe = 'PASSIVE_LISTENER_ONLY';
+    }
+
+    const latencyMs = Math.max(1, Math.round(performance.now() - startTime));
+    const newStatus = (probePassed && checks.credential_vault !== 'MISSING_CREDENTIALS') ? 'READY' : 'ERROR';
+
+    // Update connection status based on real probe outcome
+    await this.db.queryWithTenant(
+      tenantId,
+      `UPDATE gigalibs_connectors.tenant_connections
+       SET status = $1, updated_at = NOW()
+       WHERE id = $2 AND tenant_id = $3`,
+      [newStatus, conn.id, tenantId],
+    );
+
+    return {
+      success: newStatus === 'READY',
+      connection_id: conn.id,
+      slug: conn.slug,
+      status: newStatus,
+      checks,
+      latency_ms: latencyMs,
+      tested_at: new Date().toISOString(),
+      ...(errorMessage ? { error: errorMessage } : {}),
+    };
+  }
+
+  /**
+   * CN-02: Initiate OAuth2 PKCE authorization flow.
+   */
+  async initiateOAuthFlow(tenantId: string, dto: OAuthInitiateDto): Promise<any> {
+    if (!tenantId) throw new BadRequestException('tenantId is required');
+    if (!dto.connector_code || !dto.redirect_uri) {
+      throw new BadRequestException('connector_code and redirect_uri are required');
+    }
+
+    throw new NotImplementedException(
+      'OAuth onboarding is contained until a provider-specific client, callback state store and token exchange are configured.',
+    );
+  }
+
+  /**
+   * CN-02: Complete OAuth2 callback code exchange.
+   */
+  async exchangeOAuthCode(
+    tenantId: string,
+    connectionId: string,
+    dto: OAuthCallbackDto,
+  ): Promise<any> {
+    if (!tenantId) throw new BadRequestException('tenantId is required');
+    if (!dto.code || !dto.code_verifier) {
+      throw new BadRequestException('code and code_verifier are required');
+    }
+
+    void connectionId;
+    throw new NotImplementedException(
+      'OAuth token exchange is contained until the real provider exchange and durable callback state are implemented.',
+    );
+  }
+}

@@ -14,6 +14,9 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, test, vi } from 'vitest';
+
+const jest = vi;
 
 // ── helpers ────────────────────────────────────────────────────────────────
 
@@ -72,21 +75,21 @@ describe('Migration 000010 — lineage_and_audit schema', () => {
   });
 
   it('creates analytics_lineage_edges table', () => {
-    expect(sql).toContain('CREATE TABLE gigalibs_analytics.analytics_lineage_edges');
+    expect(sql).toMatch(/CREATE TABLE(?: IF NOT EXISTS)?\s+gigalibs_analytics\.analytics_lineage_edges/);
   });
 
   it('analytics_lineage_edges has TEXT ids (no cross-table FKs)', () => {
     // Node IDs are TEXT, not UUID with REFERENCES
-    expect(sql).toContain('source_node_id  TEXT');
-    expect(sql).toContain('target_node_id  TEXT');
+    expect(sql).toMatch(/source_node_id\s+TEXT/);
+    expect(sql).toMatch(/target_node_id\s+TEXT/);
     // Explicitly: no REFERENCES clause for these node ID columns
     const sourceIdLine = sql.split('\n').find(l => l.includes('source_node_id'));
     expect(sourceIdLine).not.toContain('REFERENCES');
   });
 
   it('analytics_lineage_edges has UNIQUE dedup constraint', () => {
-    expect(sql).toContain(
-      'UNIQUE(tenant_id, source_node_id, target_node_id, source_node_type, target_node_type)',
+    expect(sql).toMatch(
+      /UNIQUE\s*\(tenant_id, source_node_id, target_node_id, source_node_type, target_node_type\)/,
     );
   });
 
@@ -107,7 +110,7 @@ describe('Migration 000010 — lineage_and_audit schema', () => {
   });
 
   it('creates analytics_audit_log table', () => {
-    expect(sql).toContain('CREATE TABLE gigalibs_analytics.analytics_audit_log');
+    expect(sql).toMatch(/CREATE TABLE(?: IF NOT EXISTS)?\s+gigalibs_analytics\.analytics_audit_log/);
   });
 
   it('analytics_audit_log captures actor_subject (not raw token)', () => {
@@ -118,7 +121,7 @@ describe('Migration 000010 — lineage_and_audit schema', () => {
   });
 
   it('analytics_audit_log captures client_ip as INET type', () => {
-    expect(sql).toContain('client_ip          INET');
+    expect(sql).toMatch(/client_ip\s+INET/);
   });
 
   it('analytics_audit_log captures correlation_id for distributed tracing', () => {
@@ -495,32 +498,39 @@ describe('LineageService — tenant isolation', () => {
 //  Suite 8: Payload scrubbing — no credentials/PII/secrets in event_payload
 // ══════════════════════════════════════════════════════════════════════════════
 
-describe('LineageService — payload scrubbing (source code audit)', () => {
-  let src: string;
+describe('LineageService — payload scrubbing', () => {
+  it('recursively redacts credential, token, secret and regulated identity keys', async () => {
+    const { LineageService } = await import('./lineage.service.js');
+    const queryWithTenant = jest.fn().mockResolvedValue({ rows: [] });
+    const service = new LineageService({ queryWithTenant } as any);
 
-  beforeAll(() => {
-    src = readServiceSource('lineage.service.ts');
-  });
+    await service.recordAuditEvent(
+      { tenantId: 't1', subject: 's1' },
+      {
+        eventType: 'QUERY_EXECUTED',
+        eventPayload: {
+          password: 'secret-value',
+          nested: {
+            accessToken: 'token-value',
+            privateKey: 'private-key-value',
+            ssn: '999-99-9999',
+            creditCard: '4111111111111111',
+            allowed: 'kept',
+          },
+        },
+      },
+    );
 
-  const FORBIDDEN_PAYLOAD_KEYS = [
-    'password',     // raw credential
-    'accessToken',  // JWT/OAuth token
-    'privateKey',   // signing key
-    'secretKey',    // symmetric secret
-    'credential',   // generic credential catch-all
-    'ssn',          // social security number
-    'creditCard',   // PAN
-  ];
-
-  FORBIDDEN_PAYLOAD_KEYS.forEach(key => {
-    it(`service source does not embed "${key}" into event_payload`, () => {
-      // Look for key being added to a payload object literal
-      const pattern = new RegExp(`event_payload.*?${key}|${key}.*?event_payload`, 's');
-      expect(pattern.test(src)).toBe(false);
+    const [, , params] = queryWithTenant.mock.calls[0]!;
+    expect(JSON.parse(params[5] as string)).toEqual({
+      password: '[REDACTED]',
+      nested: {
+        accessToken: '[REDACTED]',
+        privateKey: '[REDACTED]',
+        ssn: '[REDACTED]',
+        creditCard: '[REDACTED]',
+        allowed: 'kept',
+      },
     });
-  });
-
-  it('service comment explicitly prohibits credentials/PII in event_payload', () => {
-    expect(src).toMatch(/no credential|no.*PII|no.*secret/i);
   });
 });

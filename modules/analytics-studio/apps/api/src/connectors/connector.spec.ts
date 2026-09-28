@@ -11,11 +11,11 @@
  *   instance with migrations 000001-000005 applied.
  */
 
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from '@jest/globals';
-import { Test, TestingModule } from '@nestjs/testing';
+import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { ConnectorService } from './connector.service.js';
 import { DatabaseService } from '../database/database.service.js';
+import { RequirePermissions } from '../auth/authorization.js';
 import type { AnalyticsPrincipal } from '../auth/authorization.js';
 
 // ── Test fixtures ─────────────────────────────────────────────────────────────
@@ -47,7 +47,7 @@ const VALID_DTO_BASE = {
 describe('ConnectorService — authentication boundary', () => {
   /**
    * These tests validate that every operation requires a valid principal.
-   * In the real HTTP flow the OidcAuthorizationGuard runs first; here we
+   * In the real HTTP flow the PlatformContextAuthorizationGuard runs first; here we
    * test the service layer directly to confirm it doesn't bypass guard
    * failures by calling with undefined/null principals.
    */
@@ -66,7 +66,6 @@ describe('ConnectorService — authentication boundary', () => {
   it('should require analytics:connectors:write for createConnection (permission model)', () => {
     // The guard enforces this; verify the decorator is declared on the controller.
     // We inspect metadata directly since the guard is mocked out in service tests.
-    const { RequirePermissions } = require('../auth/authorization.js');
     // This is a documentation assertion — the guard integration test covers runtime.
     expect(typeof RequirePermissions).toBe('function');
   });
@@ -279,19 +278,18 @@ describe('ConnectorService — credential vault key format', () => {
     'one/slash',
     'UPPERCASE/SCOPE/NAME',
     '/leading-slash/a/b',
-    'a/b/c/d/e',     // too many parts? No — the regex allows slashes in scope
+    'a/b/c/d/e',
     '',
     '../../traversal',
   ];
 
   it.each(validKeys)('should accept valid vault key: %s', async (key) => {
-    // The vault key regex: /^[a-z0-9_-]+\/[a-z0-9_/-]+\/[a-z0-9_-]+$/
-    const regex = /^[a-z0-9_-]+\/[a-z0-9_/-]+\/[a-z0-9_-]+$/;
+    const regex = /^[a-z0-9_-]+\/[a-z0-9_-]+\/[a-z0-9_-]+$/;
     expect(regex.test(key)).toBe(true);
   });
 
   it.each(invalidKeys)('should reject invalid vault key: "%s"', async (key) => {
-    const regex = /^[a-z0-9_-]+\/[a-z0-9_/-]+\/[a-z0-9_-]+$/;
+    const regex = /^[a-z0-9_-]+\/[a-z0-9_-]+\/[a-z0-9_-]+$/;
     expect(regex.test(key)).toBe(false);
   });
 });
@@ -348,12 +346,5 @@ async function buildServiceWithMockDb(
       (async (cb: any) => cb({ query: async () => ({ rows: [], rowCount: 0 }) })),
   };
 
-  const module: TestingModule = await Test.createTestingModule({
-    providers: [
-      ConnectorService,
-      { provide: DatabaseService, useValue: mockDb },
-    ],
-  }).compile();
-
-  return module.get<ConnectorService>(ConnectorService);
+  return new ConnectorService(mockDb as unknown as DatabaseService);
 }

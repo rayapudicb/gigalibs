@@ -12,7 +12,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { OidcAuthorizationGuard, Principal, RequirePermissions } from '../auth/authorization.js';
+import { PlatformContextAuthorizationGuard, Principal, RequirePermissions } from '../auth/authorization.js';
 import type { AnalyticsPrincipal } from '../auth/authorization.js';
 import {
   SchemaDiscoveryService,
@@ -21,7 +21,7 @@ import {
 } from './schema-discovery.service.js';
 
 @Controller('v1')
-@UseGuards(OidcAuthorizationGuard)
+@UseGuards(PlatformContextAuthorizationGuard)
 export class SchemaDiscoveryController {
   constructor(private readonly schemaDiscoveryService: SchemaDiscoveryService) {}
 

@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import pg from 'pg';
 import * as crypto from 'crypto';
+import { isIP } from 'node:net';
 import { DatabaseService } from '../database/database.service.js';
 import type { AnalyticsPrincipal } from '../auth/authorization.js';
 
@@ -44,12 +45,24 @@ async function resolveAndValidateHost(host: string, port: number): Promise<void>
     );
   }
 
-  // Resolve DNS; use Node's built-in dns/promises
-  const { Resolver } = await import('dns');
-  const resolver = new Resolver();
-  const resolved: string[] = await new Promise((resolve, reject) =>
-    resolver.resolve4(host, (err, addrs) => (err ? reject(err) : resolve(addrs))),
-  );
+  const addressKind = isIP(host);
+  if (addressKind === 6) {
+    throw new ForbiddenException(
+      `SSRF: IPv6 target '${host}' is not permitted for external data connections.`,
+    );
+  }
+
+  // Literal IPv4 addresses must be checked directly. Passing them to Resolver
+  // produces an environment-dependent DNS error before the CIDR guard runs.
+  const resolved: string[] = addressKind === 4
+    ? [host]
+    : await (async () => {
+        const { Resolver } = await import('dns');
+        const resolver = new Resolver();
+        return new Promise<string[]>((resolve, reject) =>
+          resolver.resolve4(host, (err, addrs) => (err ? reject(err) : resolve(addrs))),
+        );
+      })();
 
   for (const addr of resolved) {
     const parts = addr.split('.').map(Number);
@@ -135,7 +148,7 @@ export class ConnectorService {
     await resolveAndValidateHost(dto.host, dto.port);
 
     // Validate credential vault key format: "<provider>/<scope>/<name>"
-    if (!/^[a-z0-9_-]+\/[a-z0-9_/-]+\/[a-z0-9_-]+$/.test(dto.credentialVaultKey)) {
+    if (!/^[a-z0-9_-]+\/[a-z0-9_-]+\/[a-z0-9_-]+$/.test(dto.credentialVaultKey)) {
       throw new BadRequestException(
         'credentialVaultKey must match pattern <provider>/<scope>/<name> with lowercase alphanumeric, hyphens, or underscores.',
       );

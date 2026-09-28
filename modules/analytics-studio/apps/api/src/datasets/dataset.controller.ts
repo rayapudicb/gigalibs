@@ -8,7 +8,7 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
-import { OidcAuthorizationGuard } from '../auth/authorization.js';
+import { PlatformContextAuthorizationGuard } from '../auth/authorization.js';
 import { CurrentPrincipal } from '../auth/principal.decorator.js';
 import type { AnalyticsPrincipal } from '../auth/authorization.js';
 import { DatasetService, BuildDatasetDto } from './dataset.service.js';
@@ -16,7 +16,7 @@ import { DatasetService, BuildDatasetDto } from './dataset.service.js';
 // ─── Analytical Dataset Controller ───────────────────────────────────────────
 
 @Controller('v1/datasets')
-@UseGuards(OidcAuthorizationGuard)
+@UseGuards(PlatformContextAuthorizationGuard)
 export class DatasetController {
   constructor(private readonly datasetService: DatasetService) {}
 

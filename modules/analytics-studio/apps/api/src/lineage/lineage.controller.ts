@@ -9,12 +9,12 @@ import {
   Controller, Get, Param, Query, UseGuards, ParseIntPipe,
   DefaultValuePipe, BadRequestException,
 } from '@nestjs/common';
-import { OidcAuthorizationGuard, PlatformPrincipal } from '../auth/authorization.js';
+import { PlatformContextAuthorizationGuard, PlatformPrincipal } from '../auth/authorization.js';
 import { LineageService, LineageNodeType, AuditEventType } from './lineage.service.js';
 import type { AnalyticsPrincipal } from '../auth/authorization.js';
 
 @Controller('v1/lineage')
-@UseGuards(OidcAuthorizationGuard)
+@UseGuards(PlatformContextAuthorizationGuard)
 export class LineageController {
   constructor(private readonly lineage: LineageService) {}
 
@@ -40,7 +40,7 @@ export class LineageController {
 }
 
 @Controller('v1/audit')
-@UseGuards(OidcAuthorizationGuard)
+@UseGuards(PlatformContextAuthorizationGuard)
 export class AuditController {
   constructor(private readonly lineage: LineageService) {}
 

@@ -9,10 +9,16 @@ import {
   Res,
   UseGuards,
 } from '@nestjs/common';
-import type { Response } from 'express';
-import { OidcAuthorizationGuard } from '../auth/authorization.js';
+import { PlatformContextAuthorizationGuard } from '../auth/authorization.js';
 import { CurrentPrincipal } from '../auth/principal.decorator.js';
 import type { AnalyticsPrincipal } from '../auth/authorization.js';
+
+interface ReportResponse {
+  setHeader(name: string, value: string): void;
+  status(code: number): {
+    send(body: unknown): void;
+  };
+}
 import {
   ReportService,
   CreateReportDefinitionDto,
@@ -21,7 +27,7 @@ import {
 } from './report.service.js';
 
 @Controller('v1/reports')
-@UseGuards(OidcAuthorizationGuard)
+@UseGuards(PlatformContextAuthorizationGuard)
 export class ReportController {
   constructor(private readonly reportService: ReportService) {}
 
@@ -89,7 +95,7 @@ export class ReportController {
   async downloadArtifact(
     @CurrentPrincipal() principal: AnalyticsPrincipal,
     @Param('token') token: string,
-    @Res() res: Response,
+    @Res() res: ReportResponse,
   ) {
     const result = await this.reportService.downloadArtifact(principal, token);
     res.setHeader('Content-Type', result.contentType);

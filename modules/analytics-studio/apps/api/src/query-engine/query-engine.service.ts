@@ -22,7 +22,7 @@ import type { AnalyticsPrincipal } from '../auth/authorization.js';
 
 export type FreshnessState = 'FRESH' | 'STALE' | 'PARTIAL' | 'REBUILDING' | 'UNAVAILABLE';
 // NOTE: 'UNAUTHORIZED' is NOT a FreshnessState. Authorization failures
-//       surface as HTTP 403 from OidcAuthorizationGuard, not as a data signal.
+//       surface as HTTP 403 from PlatformContextAuthorizationGuard, not as a data signal.
 
 export interface MeasureResult {
   measureName: string;
@@ -241,37 +241,33 @@ export class QueryEngineService {
     measure: { aggregate_fn: string; field_reference: string; measure_name: string },
     _dimensionOverride?: string,
   ): Promise<number | null> {
-    // Build governed SQL expression for the aggregate function.
-    // field_reference is validated by SemanticModelService at write time
-    // (/^[a-zA-Z][a-zA-Z0-9_]{0,62}$/) so it is safe to embed as a JSONB key.
+    // The aggregate function comes from a closed switch; the JSONB key is always a bound parameter ($2),
+    // never SQL text (roadmap rule 4). field_reference is also validated at write time.
     const fn = measure.aggregate_fn;
-    const field = measure.field_reference;
-
-    // All numeric extraction from JSONB goes through explicit casts;
-    // no dynamic identifier interpolation into FROM/WHERE clauses.
     let aggregateExpr: string;
     switch (fn) {
       case 'SUM':
-        aggregateExpr = `COALESCE(SUM((analytical_payload->>'${field}')::numeric), 0)`;
+        aggregateExpr = `COALESCE(SUM((analytical_payload->>$2::text)::numeric), 0)`;
         break;
       case 'AVG':
-        aggregateExpr = `AVG((analytical_payload->>'${field}')::numeric)`;
+        aggregateExpr = `AVG((analytical_payload->>$2::text)::numeric)`;
         break;
       case 'COUNT':
         aggregateExpr = `COUNT(*)`;
         break;
       case 'COUNT_DISTINCT':
-        aggregateExpr = `COUNT(DISTINCT analytical_payload->>'${field}')`;
+        aggregateExpr = `COUNT(DISTINCT analytical_payload->>$2::text)`;
         break;
       case 'MIN':
-        aggregateExpr = `MIN((analytical_payload->>'${field}')::numeric)`;
+        aggregateExpr = `MIN((analytical_payload->>$2::text)::numeric)`;
         break;
       case 'MAX':
-        aggregateExpr = `MAX((analytical_payload->>'${field}')::numeric)`;
+        aggregateExpr = `MAX((analytical_payload->>$2::text)::numeric)`;
         break;
       default:
         throw new BadRequestException(`Unsupported aggregateFn: '${fn}'.`);
     }
+    const params = fn === 'COUNT' ? [datasetVersionId] : [datasetVersionId, measure.field_reference];
 
     try {
       const result = await this.db.queryWithTenant<{ value: string | null }>(
@@ -279,7 +275,7 @@ export class QueryEngineService {
         `SELECT ${aggregateExpr} AS value
          FROM gigalibs_analytics.dataset_record_versions
          WHERE dataset_version_id = $1`,
-        [datasetVersionId],
+        params,
       );
       const raw = result.rows[0]?.value;
       return raw === null || raw === undefined ? null : Number(raw);
