@@ -65,3 +65,17 @@ Docker's own cache limit (`builder.gc.defaultKeepStorage: 20GB`) was already set
   hold. Record both after the next WI-OI-083 build.
 - Docker Desktop has no virtual-disk cap. Lowering it can recreate the disk and delete all volumes. Back up
   `gigalibs-postgres` first; this is deferred and needs the owner's approval.
+
+## Fix: solution builds keep their own versions (2026-09-28)
+
+- **Defect:** the first solution build (WI-OI-083d) tags the web repository `<identity>-<solution>`. Being the
+  newest tag, it took one of the two kept versions, so the post-deploy `prune` removed the previous full web image
+  `c8422af46326-e05abab2dbb1` (the rollback).
+- **Fix:** `prune` now keeps the newest versions per build series.
+  - `<revision>-<state>` tags are the full build.
+  - A trailing `-<solution>` is that solution's series.
+  - Any other tag is a series of its own.
+- **Evidence:**
+  - `bash -n` passes, and `prune --dry-run` on the real images removes nothing.
+  - Test images `gigalibs/disk-guard-test` (removed afterwards): three full builds, one solution build and a
+    `latest` tag, dated so that tag order and dates disagree. The dry run removed only the oldest full build.

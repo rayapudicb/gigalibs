@@ -7,8 +7,8 @@
 #   docker-disk-guard.sh prune --dry-run  list what prune would remove
 #
 # Kept: every image a container (running or stopped) uses, the newest GIGALIBS_KEEP_IMAGE_VERSIONS tags of
-# each gigalibs/* repository (default 2: current and rollback), the pinned base images, and every image
-# outside gigalibs/*. Volumes are never touched.
+# each gigalibs/* repository and build series (default 2: current and rollback; full and solution builds count
+# separately), the pinned base images, and every image outside gigalibs/*. Volumes are never touched.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -46,8 +46,15 @@ prune() {
   in_use="$(container_image_ids)"
 
   for repo in $(docker images --format '{{.Repository}}' | grep '^gigalibs/' | sort -u); do
+    local series current_series="-"
     versions=0
-    while IFS='|' read -r created tag id; do
+    # Each build series keeps its own versions: `<revision>-<state>` tags are the full build, and a trailing
+    # `-<solution>` marks a solution build (WI-OI-083d); any other tag is a series of its own.
+    while IFS='|' read -r series created tag id; do
+      if [[ "${series}" != "${current_series}" ]]; then
+        current_series="${series}"
+        versions=0
+      fi
       if [[ "${tag}" == "<none>" ]]; then
         ref="${id}"
       else
@@ -69,7 +76,9 @@ prune() {
         continue
       fi
       removed=$((removed + 1))
-    done < <(docker images --no-trunc --format '{{.CreatedAt}}|{{.Tag}}|{{.ID}}' "${repo}" | sort -r)
+    done < <(docker images --no-trunc --format '{{.CreatedAt}}|{{.Tag}}|{{.ID}}' "${repo}" |
+      perl -F'\|' -lane 'print(($F[1] =~ /^[0-9a-f]{12}-[0-9a-f]{12}(?:-(.+))?$/ ? ($1 // "") : "~$F[1]") . "|$_")' |
+      sort -t'|' -k1,1 -k2,2r)
   done
 
   if [[ "${DRY_RUN}" == true ]]; then
