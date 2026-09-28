@@ -3,7 +3,7 @@ import {
   generatedModulePersonas,
 } from '@/lib/generated/module-navigation';
 import { moduleIcons } from '@/lib/module-icons';
-import type { PlatformContextPersona } from '@gigalibs/contracts';
+import { type PlatformContextPersona, platformModuleCatalog } from '@gigalibs/contracts';
 import type { LucideIcon } from 'lucide-react';
 
 // WI-OI-083c: sidebar sub-menus and persona lenses come from `menu` and `personas` of each catalogue entry's
@@ -37,4 +37,9 @@ const menus: Readonly<Record<string, readonly ModuleMenuItem[]>> = Object.fromEn
 /** The entry's sidebar sub-menu, empty when its manifest declares none. */
 export function moduleMenu(moduleKey: string): readonly ModuleMenuItem[] {
   return menus[moduleKey] ?? [];
+}
+
+/** Whether the built solution has a catalogue entry at this route, so a cross-link to it cannot dead-end (WI-OI-083d). */
+export function solutionHasRoute(route: string): boolean {
+  return platformModuleCatalog.some((module) => module.route === route);
 }

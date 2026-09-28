@@ -61,6 +61,7 @@ import {
   Wrench,
   X,
 } from 'lucide-react';
+import { solutionHasRoute } from '@/lib/module-navigation';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
@@ -556,12 +557,14 @@ export function UniversalDynamicFormsStudio({
                       </button>
 
                       <div className="flex items-center gap-2">
-                        <Link
-                          href="/cmms"
-                          className="inline-flex items-center gap-1 rounded-lg border border-purple-200 bg-purple-50 px-3 py-1.5 text-xs font-medium text-purple-700 hover:bg-purple-100 transition shadow-xs"
-                        >
-                          Deploy to Dispatch
-                        </Link>
+                        {solutionHasRoute('/cmms') && (
+                          <Link
+                            href="/cmms"
+                            className="inline-flex items-center gap-1 rounded-lg border border-purple-200 bg-purple-50 px-3 py-1.5 text-xs font-medium text-purple-700 hover:bg-purple-100 transition shadow-xs"
+                          >
+                            Deploy to Dispatch
+                          </Link>
+                        )}
                         <button
                           type="button"
                           onClick={() => {

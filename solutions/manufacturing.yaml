@@ -1,5 +1,5 @@
 # Manufacturing Release 1 (WI-OI-079): the core plus the modules this solution ships. Validated by
-# `pnpm audit:module-manifests`; selective builds from this file follow in WI-OI-083.
+# `pnpm audit:module-manifests`. Build its web image with infra/compose/scripts/build-solution-web-image.sh (WI-OI-083d).
 apiVersion: solutions.gigalibs.io/v1
 kind: Solution
 metadata:

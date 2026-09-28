@@ -73,6 +73,13 @@ spec:
           blockedActions:
             - Submitting or approving a maintenance request.
             - Claiming a request was routed or converted to a work order.
+      - route: /cmms/requests/portal
+        unavailable:
+          title: Maintenance request portal is not connected
+          summary: The portal is contained because no production request-intake endpoint currently persists and routes these submissions.
+          blockedActions:
+            - Submitting contact or maintenance issue data.
+            - Claiming dispatch, supervisor receipt, or technician assignment.
       - route: /cmms/purchase-orders
         unavailable:
           title: CMMS purchase orders are not connected
@@ -183,6 +190,13 @@ spec:
     routeNoun: CMMS
     serviceName: Asset & Maintenance
     entitlementName: Asset & Maintenance
+    # Contained 2026-09-28 (WI-OI-083 security finding, owner-approved): these answer "unavailable" to a signed-in
+    # tenant user (503, no business action) until rebuilt through the module API with RBAC (WI-OI-083d moved them
+    # from hand-written shell routes).
+    unavailable:
+      - { path: 'work-orders/{id}/financials', methods: [GET] }
+      - { path: 'work-orders/{id}/labour-link', methods: [POST] }
+      - { path: 'work-orders/{id}/settle', methods: [POST] }
     routes:
       - { path: 'v1/assets/search', POST: cmms.assets.read }
       - { path: 'v1/assets/{id}', GET: cmms.assets.read, PATCH: cmms.assets.write }

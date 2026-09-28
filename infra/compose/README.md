@@ -148,6 +148,18 @@ API liveness proves only that the API process serves HTTP. API readiness include
 liveness proves the Next.js process serves HTTP; web readiness depends on control-plane readiness. These
 routes must return an unavailable status when their declared dependency is unavailable.
 
+## Solution builds
+
+A solution (`solutions/<name>.yaml`) selects the modules one client gets. Build its web image with:
+
+```bash
+infra/compose/scripts/build-solution-web-image.sh manufacturing
+```
+
+The script copies the working tree and regenerates the catalogue, gateways, navigation and pages for that solution
+in the copy (`module-manifests.mjs --solution <name> --root <copy>`). It then builds the `web` target as
+`gigalibs/workflow-platform:<source identity>-<solution>`. The repository itself always holds the full build.
+
 ## Disk space
 
 Every build creates a new image tag and more build cache, and Docker keeps both until they are removed.

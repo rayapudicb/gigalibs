@@ -41,6 +41,7 @@ import {
   Wrench,
   Zap,
 } from 'lucide-react';
+import { solutionHasRoute } from '@/lib/module-navigation';
 import Link from 'next/link';
 import React, { useCallback, useEffect, useState } from 'react';
 
@@ -485,38 +486,44 @@ export default function ExecutiveControlTower({
                     Direct Domain Navigators
                   </Text>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    <Link
-                      href="/cmms"
-                      className="p-2.5 rounded-lg border border-ui-border-base bg-ui-bg-subtle hover:bg-ui-bg-base hover:border-purple-500 transition-colors flex items-center justify-between text-xs font-medium"
-                    >
-                      <span className="flex items-center gap-1.5 truncate">
-                        <Factory className="w-3.5 h-3.5 text-purple-600" />
-                        CMMS Board
-                      </span>
-                      <ArrowRight className="w-3 h-3 text-ui-fg-muted" />
-                    </Link>
+                    {solutionHasRoute('/cmms') && (
+                      <Link
+                        href="/cmms"
+                        className="p-2.5 rounded-lg border border-ui-border-base bg-ui-bg-subtle hover:bg-ui-bg-base hover:border-purple-500 transition-colors flex items-center justify-between text-xs font-medium"
+                      >
+                        <span className="flex items-center gap-1.5 truncate">
+                          <Factory className="w-3.5 h-3.5 text-purple-600" />
+                          CMMS Board
+                        </span>
+                        <ArrowRight className="w-3 h-3 text-ui-fg-muted" />
+                      </Link>
+                    )}
 
-                    <Link
-                      href="/ar"
-                      className="p-2.5 rounded-lg border border-ui-border-base bg-ui-bg-subtle hover:bg-ui-bg-base hover:border-blue-500 transition-colors flex items-center justify-between text-xs font-medium"
-                    >
-                      <span className="flex items-center gap-1.5 truncate">
-                        <Coins className="w-3.5 h-3.5 text-blue-600" />
-                        AR Ledger
-                      </span>
-                      <ArrowRight className="w-3 h-3 text-ui-fg-muted" />
-                    </Link>
+                    {solutionHasRoute('/ar') && (
+                      <Link
+                        href="/ar"
+                        className="p-2.5 rounded-lg border border-ui-border-base bg-ui-bg-subtle hover:bg-ui-bg-base hover:border-blue-500 transition-colors flex items-center justify-between text-xs font-medium"
+                      >
+                        <span className="flex items-center gap-1.5 truncate">
+                          <Coins className="w-3.5 h-3.5 text-blue-600" />
+                          AR Ledger
+                        </span>
+                        <ArrowRight className="w-3 h-3 text-ui-fg-muted" />
+                      </Link>
+                    )}
 
-                    <Link
-                      href="/analytics"
-                      className="p-2.5 rounded-lg border border-ui-border-base bg-ui-bg-subtle hover:bg-ui-bg-base hover:border-emerald-500 transition-colors flex items-center justify-between text-xs font-medium"
-                    >
-                      <span className="flex items-center gap-1.5 truncate">
-                        <BarChart3 className="w-3.5 h-3.5 text-emerald-600" />
-                        Analytics Studio
-                      </span>
-                      <ArrowRight className="w-3 h-3 text-ui-fg-muted" />
-                    </Link>
+                    {solutionHasRoute('/analytics') && (
+                      <Link
+                        href="/analytics"
+                        className="p-2.5 rounded-lg border border-ui-border-base bg-ui-bg-subtle hover:bg-ui-bg-base hover:border-emerald-500 transition-colors flex items-center justify-between text-xs font-medium"
+                      >
+                        <span className="flex items-center gap-1.5 truncate">
+                          <BarChart3 className="w-3.5 h-3.5 text-emerald-600" />
+                          Analytics Studio
+                        </span>
+                        <ArrowRight className="w-3 h-3 text-ui-fg-muted" />
+                      </Link>
+                    )}
 
                     <Link
                       href="/settings?tab=hierarchy"
@@ -726,11 +733,13 @@ export default function ExecutiveControlTower({
                   Cross-industry capacity, scheduling state machine, and 422 capability verification
                 </Text>
               </div>
-              <Link href="/cmms">
-                <Button variant="secondary" size="small" className="text-xs gap-1">
-                  Open Visual Dispatch Board <ArrowRight className="w-3.5 h-3.5" />
-                </Button>
-              </Link>
+              {solutionHasRoute('/cmms') && (
+                <Link href="/cmms">
+                  <Button variant="secondary" size="small" className="text-xs gap-1">
+                    Open Visual Dispatch Board <ArrowRight className="w-3.5 h-3.5" />
+                  </Button>
+                </Link>
+              )}
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">

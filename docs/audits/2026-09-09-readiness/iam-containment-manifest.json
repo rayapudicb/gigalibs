@@ -1,6 +1,7 @@
 {
   "workItem": "WI-OI-013",
   "canonicalApiRoots": [
+    "[gateway]",
     "analytics",
     "ar",
     "auth",

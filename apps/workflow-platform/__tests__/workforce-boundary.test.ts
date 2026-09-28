@@ -1,14 +1,19 @@
 import { generateKeyPairSync } from 'node:crypto';
 import { verifyPlatformContextToken } from '@gigalibs/auth-core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { GET as getGigaOps } from '../app/api/gigaops/[...path]/route';
-import {
-  GET as getWorkforce,
-  POST as postWorkforce,
-} from '../app/api/workforce/[...path]/route';
+import * as gatewayRoute from '../app/api/[gateway]/[...path]/route';
+import { moduleGatewayConfig } from '../lib/module-gateway';
 import { composePunchBody } from '../lib/punch-geofence';
 import { verifiedSession } from '../lib/verified-session';
-import { requiredWorkforcePermission } from '../lib/workforce-proxy';
+
+// WI-OI-083d: modules are reached through the one generic gateway route; these handlers add the base path segment.
+type PathContext = { params: Promise<{ path: string[] }> };
+const at = (gateway: string, handler: typeof gatewayRoute.GET) => (request: Request, context: PathContext) =>
+  handler(request, { params: context.params.then(({ path }) => ({ gateway, path })) });
+const getGigaOps = at('gigaops', gatewayRoute.GET);
+const getWorkforce = at('workforce', gatewayRoute.GET);
+const postWorkforce = at('workforce', gatewayRoute.POST);
+const requiredWorkforcePermission = moduleGatewayConfig('gigaops').requiredPermission;
 
 vi.mock('../lib/verified-session', () => ({ verifiedSession: vi.fn() }));
 

@@ -1,10 +1,19 @@
 import { generateKeyPairSync } from 'node:crypto';
 import { verifyPlatformContextToken } from '@gigalibs/auth-core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { GET, PATCH, POST } from '../app/api/cmms/[...path]/route';
-import { requiredCmmsPermission } from '../lib/cmms-proxy';
+import * as gatewayRoute from '../app/api/[gateway]/[...path]/route';
 import { canUseTenantModule, hasPermission } from '../lib/module-access';
+import { moduleGatewayConfig } from '../lib/module-gateway';
 import { verifiedSession } from '../lib/verified-session';
+
+// WI-OI-083d: modules are reached through the one generic gateway route; these handlers add the base path segment.
+type PathContext = { params: Promise<{ path: string[] }> };
+const at = (gateway: string, handler: typeof gatewayRoute.GET) => (request: Request, context: PathContext) =>
+  handler(request, { params: context.params.then(({ path }) => ({ gateway, path })) });
+const GET = at('cmms', gatewayRoute.GET);
+const POST = at('cmms', gatewayRoute.POST);
+const PATCH = at('cmms', gatewayRoute.PATCH);
+const requiredCmmsPermission = moduleGatewayConfig('physical-operations-cmms').requiredPermission;
 
 vi.mock('../lib/verified-session', () => ({ verifiedSession: vi.fn() }));
 

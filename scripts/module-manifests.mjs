@@ -3,11 +3,20 @@
 // (`solutions/*.yaml`), and generates `packages/contracts/src/modules/catalog.generated.ts`.
 //   node scripts/module-manifests.mjs          audit: fails on invalid manifests, solutions or a stale catalogue
 //   node scripts/module-manifests.mjs --write  regenerate the catalogue, then audit
+// Selective builds (WI-OI-083d): `--solution <name>` generates for the core plus that solution's modules only, and
+// `--root <dir>` works on another checkout (the solution build's worktree). The repository keeps the full build.
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
-import { dirname, join, relative } from 'node:path';
+import { dirname, join, relative, resolve } from 'node:path';
 import yaml from 'js-yaml';
 
-const root = new URL('../', import.meta.url).pathname;
+const argValue = (flag) => {
+  const index = process.argv.indexOf(flag);
+  return index === -1 ? undefined : process.argv[index + 1];
+};
+const root = argValue('--root')
+  ? `${resolve(argValue('--root'))}/`
+  : new URL('../', import.meta.url).pathname;
+const solutionName = argValue('--solution');
 const write = process.argv.includes('--write');
 const MODULE_API = 'modules.gigalibs.io/v1';
 const SOLUTION_API = 'solutions.gigalibs.io/v1';
@@ -171,6 +180,17 @@ for (const [name, manifest] of modules) {
     );
 }
 
+// Selective build (WI-OI-083d): everything generated below covers the core plus the chosen solution's modules.
+const allModules = new Map(modules);
+if (solutionName !== undefined) {
+  const path = `solutions/${solutionName}.yaml`;
+  const selected = existsSync(join(root, path))
+    ? yaml.load(readFileSync(join(root, path), 'utf8'))?.spec?.modules
+    : undefined;
+  if (!Array.isArray(selected)) fail(path, 'no such solution file with a spec.modules list');
+  else for (const name of [...modules.keys()]) if (!selected.includes(name)) modules.delete(name);
+}
+
 // Catalogue: every entry once, ordered by navigationOrder.
 const sources = [
   [corePath, core],
@@ -267,8 +287,8 @@ for (const file of existsSync(solutionDir)
     continue;
   }
   for (const name of selected) {
-    if (!modules.has(name)) fail(path, `module ${name} has no v1 manifest`);
-    for (const required of modules.get(name)?.spec.requiredModules ?? []) {
+    if (!allModules.has(name)) fail(path, `module ${name} has no v1 manifest`);
+    for (const required of allModules.get(name)?.spec.requiredModules ?? []) {
       if (!selected.includes(required))
         fail(path, `${name} requires ${required}, which the solution does not include`);
     }
@@ -435,6 +455,27 @@ for (const [name, manifest] of modules) {
         );
     }
   }
+  // WI-OI-083d: a named body transform the shell runs before forwarding, and contained routes the gateway answers as
+  // unavailable (503 to a signed-in tenant user, no business action). Neither may overlap an allowed route.
+  if (gateway.transformBody !== undefined && !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(gateway.transformBody))
+    fail(where, 'transformBody must name a shell gateway transform in kebab-case');
+  if (gateway.unavailable !== undefined && !Array.isArray(gateway.unavailable))
+    fail(where, 'unavailable must be a list');
+  const unavailable = [];
+  (Array.isArray(gateway.unavailable) ? gateway.unavailable : []).forEach((entry, index) => {
+    const at = `${where} unavailable[${index}]`;
+    const template = entry?.path;
+    if (typeof template !== 'string' || !template.split('/').every((segment) => SEGMENT.test(segment)))
+      return fail(at, 'path must be made of literals, {id} or a|b segments');
+    const methods = entry.methods;
+    if (!Array.isArray(methods) || methods.length === 0 || methods.some((method) => !METHODS.includes(method)))
+      return fail(at, `methods must list some of ${METHODS.join(', ')}`);
+    for (const sample of samplePaths(template)) {
+      if (routes.some((route) => new RegExp(route.pattern).test(sample)))
+        fail(at, `${sample} is also an allowed route`);
+    }
+    unavailable.push({ template, pattern: compileTemplate(template), methods });
+  });
   gateways.push({
     module: name,
     basePaths: gateway.basePaths,
@@ -447,6 +488,8 @@ for (const [name, manifest] of modules) {
     serviceName: gateway.serviceName,
     entitlementName: gateway.entitlementName,
     routes: routes.map(({ template, pattern, methods }) => ({ template, pattern, methods })),
+    transformBody: gateway.transformBody ?? null,
+    unavailable,
   });
 }
 const gatewaysGenerated = [
@@ -469,6 +512,12 @@ const gatewaysGenerated = [
   '  readonly serviceName: string;',
   '  readonly entitlementName: string;',
   '  readonly routes: readonly GeneratedGatewayRoute[];',
+  '  readonly transformBody: string | null;',
+  '  readonly unavailable: readonly {',
+  '    readonly template: string;',
+  '    readonly pattern: string;',
+  '    readonly methods: readonly string[];',
+  '  }[];',
   '}',
   `export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGateway>> = ${JSON.stringify(
     Object.fromEntries(gateways.map((gateway) => [gateway.module, gateway])),
@@ -643,6 +692,7 @@ if (write && errors.length === 0) {
 console.log(
   JSON.stringify(
     {
+      solution: solutionName ?? null,
       manifests: modules.size,
       catalogEntries: entries.length,
       gateways: gateways.map((gateway) => `${gateway.module}: ${gateway.routes.length} routes`),

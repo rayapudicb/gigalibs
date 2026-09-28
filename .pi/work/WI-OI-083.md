@@ -1,6 +1,6 @@
 # WI-OI-083 — Web extension points: module screens, routes and gateways from manifests (Wave 0, C4)
 
-Status: In Progress. G0 recorded; paused 2026-09-28 by a security finding (below).  
+Status: Review (2026-09-28). 083a–083d implemented and certified locally; independent review pending.  
 Owner: SDLC Orchestrator / Web Experience / Developer Platform  
 Plan: `docs/plans/manufacturing-package-solution-plan.md` §4 C4; ADR-0013 §3  
 Independent reviewers: Web/Accessibility, Security & Privacy, QA/SDET
@@ -295,3 +295,84 @@ The owner approved this ahead of 083d, so the no-CMMS proof covers the whole sid
 - **Deployed:** only `web` on 5180, healthy; `/ready` returns 200 for web and API. The post-deploy
   `docker-disk-guard.sh prune` removed `workflow-platform:88967ea35011-9ffa1e2a8005`, keeping the current web
   image and one rollback.
+
+## 083d — solution builds and the no-CMMS proof (2026-09-28)
+
+**Implementation:**
+- **One generic gateway route:** `app/api/[gateway]/[...path]/route.ts` (GET, POST and PATCH, the only methods any
+  allow-list uses) serves every module gateway in the generated table. It replaces 11 hand-written route files:
+  - the CMMS, Workforce and GigaOps catch-alls;
+  - 8 contained stubs.
+
+  `lib/cmms-proxy.ts` and `lib/workforce-proxy.ts` are removed.
+  - An unknown base path answers 404 `GATEWAY_UNKNOWN` before any session work.
+  - Everything else goes through the unchanged signed proxy.
+- **Contained routes:** they move into the manifests as `spec.gateway.unavailable` (CMMS: financials,
+  labour-link, settle; Workforce: handovers, countersign, permits, approve, close). The gateway answers them with
+  `unavailableCapability()`, so a signed-in tenant user gets 503 and a missing session still gets 401.
+  - They must not overlap an allowed route; the generator checks.
+  - `{id}` now requires a UUID. A non-UUID id previously reached the stub (503) and now gets the allow-list's 404.
+  - Because Workforce has two base paths, `/api/gigaops/permits` and similar now answer 503 as well
+    (previously a 404 from the allow-list).
+- **Body transforms:** Workforce names its transform in `spec.gateway.transformBody: punch-geofence`. The shell's
+  gateway transform registry (`lib/module-gateway.ts`) resolves it, and an unknown name throws.
+- **Selective generation:** `module-manifests.mjs --solution <name> --root <dir>` generates everything for the core
+  plus that solution's modules only: catalogue, gateways, upstreams, navigation and pages. Pages of other modules
+  are removed. Solutions are still validated against all manifests.
+- **Solution build:** `infra/compose/scripts/build-solution-web-image.sh <solution>` builds the web image for one
+  solution. The repository is not changed.
+  - It copies the working tree, minus ignored and deleted files, and generates for the solution in the copy.
+  - It builds the `web` target as `workflow-platform:<source identity>-<solution>`, labelled
+    `com.gigalibs.solution`.
+  - It runs the same image checks as `build-images.sh`.
+- **Solution files:** `solutions/proof-without-cmms.yaml`, a certification fixture: manufacturing without CMMS.
+- **CMMS portal page:** the last hand-written CMMS page (`/cmms/requests/portal`) is now declared in the CMMS
+  manifest, with the same texts. CMMS declares 15 pages.
+- **Cross-links:** the dashboard (CMMS, AR, Analytics) and the forms studio (CMMS) link to a module only when the
+  built solution's catalogue has its route (`solutionHasRoute`). In the full build every link shows as before.
+- **Containment manifest:** `docs/audits/2026-09-09-readiness/iam-containment-manifest.json` lists `[gateway]` as a
+  canonical API root, replacing the roles of `cmms`, `gigaops` and `workforce`. **Security review needed.**
+
+**Remaining limits (not in 083 scope):**
+- Geospatial (`/api/maps`), Analytics and Connector Hub still have hand-written proxies naming their upstreams, and
+  have no `spec.gateway`. A solution without them does not build yet.
+- The dashboard still reads Workforce through `lib/workforce-api`.
+- A help-text registry keyed by route (`lib/module-knowledge-registry.ts`) still holds CMMS text; it is text only.
+- `next.config.mjs` `transpilePackages` still lists `@gigalibs/cmms-web` (a name only).
+
+**Evidence:**
+- **Tests:**
+  - The CMMS (4) and Workforce (14) boundary tests pass unchanged through the generic route.
+  - New `module-gateway-route.test.ts` (14 cases):
+    - an unknown gateway gives 404 before any session work;
+    - the 10 contained route and method pairs give 503, and without a session 401;
+    - a contained path with an unlisted method is refused by the allow-list;
+    - every named transform resolves.
+  - `suite-containment.test.ts` classifies the new route.
+- **Generator:** rejects an `unavailable` path overlapping an allowed route, an unknown method, a
+  non-kebab-case transform name, and an unknown solution.
+- **Chain:** build; full suite 221 files / 1,992 tests; all 8 audits pass. The deployment profile still reports
+  only the pre-existing `WORKFORCE_API_URL` drift.
+- **Images** (identity `a255e935c80e-2e98e70d8d0e`): the full set, excluding Geospatial, plus the solution web
+  image `a255e935c80e-2e98e70d8d0e-proof-without-cmms`. Solution generation produced 4 module manifests,
+  17 catalogue entries, 0 pages and the Workforce gateway only.
+- **Live, full web on 5190:** web paths pass (run `1790603849260-4b99e6`) and Playwright/axe passes 14 of 14.
+- **Live, solution web on 5191:** it started with the same hardening and **without any CMMS setting**. All 22
+  checks pass against the full web as control:
+  - `/cmms`, `/cmms/work-orders` and `/cmms/requests/portal` give 404 (full: 200);
+  - reading a real work order through `/api/cmms/v1/work-orders/{id}` gives 404 `GATEWAY_UNKNOWN` (full: 200);
+  - the CMMS financials stub gives 404 (full: 503);
+  - Workforce tenant scope gives 200 and the Workforce permits stub gives 503 on both;
+  - an unknown gateway gives 404 on both;
+  - `/gigaops` and `/modules` render with no CMMS link, label or catalogue entry. The full web shows them.
+- **Bundle scan:** compiled CMMS routes: 0 in the solution image (full: 30). Files mentioning CMMS screens or
+  routes: 3 in the solution image (full: 210): the `transpilePackages` name, and the help-text entry in two chunks.
+  No CMMS component code.
+- **Deployed:** only the full `web` on 5180 (`a255e935c80e-2e98e70d8d0e`), healthy. Both `/ready` checks return 200.
+- **Rollback image lost:** the post-deploy prune removed the previous web image `c8422af46326-e05abab2dbb1`,
+  because the solution image took one of the two kept versions. Fixed separately in WI-OI-101. That rollback can be
+  rebuilt from `a255e93`.
+
+**Status:** all four slices are implemented and certified locally, and WI-OI-083 goes to Review. It is not
+production ready: that needs independent review (Web/Accessibility, Security & Privacy, QA/SDET) and human release
+authority.

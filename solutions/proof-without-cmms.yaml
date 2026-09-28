@@ -1,0 +1,16 @@
+# Certification fixture (WI-OI-083d): the manufacturing solution without CMMS. It proves that a solution build can
+# leave a module out (ADR-0013; plan Wave 0 exit). Not a product offering.
+apiVersion: solutions.gigalibs.io/v1
+kind: Solution
+metadata:
+  name: proof-without-cmms
+  displayName: Certification — manufacturing without CMMS
+  workItem: WI-OI-083
+spec:
+  modules:
+    - gigaops
+    - geospatial
+    - analytics-studio
+    - universal-connector-hub
+  industryPack: manufacturing
+  countryPack: null

@@ -4,15 +4,17 @@
  * regular expressions, and from a Workforce path list transcribed from the frozen code; plus negative variants.
  */
 import { describe, expect, it } from 'vitest';
-import { requiredCmmsPermission } from '../lib/cmms-proxy';
 import { generatedModuleGateways } from '../lib/generated/module-gateways';
 import { generatedModuleUpstreams } from '../lib/generated/module-upstreams';
-import { requiredWorkforcePermission } from '../lib/workforce-proxy';
+import { moduleGatewayConfig } from '../lib/module-gateway';
 import {
   LEGACY_CMMS_ROUTES,
   legacyCmmsPermission,
   legacyWorkforcePermission,
 } from './fixtures/legacy-module-gateways';
+
+const requiredCmmsPermission = moduleGatewayConfig('physical-operations-cmms').requiredPermission;
+const requiredWorkforcePermission = moduleGatewayConfig('gigaops').requiredPermission;
 
 const METHODS = ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS', 'HEAD'];
 const ID = '3f2b6c1e-9a4d-4e1f-8b2a-7c5d9e0f1a2b';

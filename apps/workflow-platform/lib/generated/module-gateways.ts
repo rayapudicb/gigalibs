@@ -17,6 +17,12 @@ export interface GeneratedModuleGateway {
   readonly serviceName: string;
   readonly entitlementName: string;
   readonly routes: readonly GeneratedGatewayRoute[];
+  readonly transformBody: string | null;
+  readonly unavailable: readonly {
+    readonly template: string;
+    readonly pattern: string;
+    readonly methods: readonly string[];
+  }[];
 }
 export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGateway>> = {
   "gigaops": {
@@ -413,6 +419,46 @@ export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGat
           "POST": "workforce.pay.manage"
         }
       }
+    ],
+    "transformBody": "punch-geofence",
+    "unavailable": [
+      {
+        "template": "handovers",
+        "pattern": "^handovers$",
+        "methods": [
+          "GET",
+          "POST"
+        ]
+      },
+      {
+        "template": "handovers/{id}/countersign",
+        "pattern": "^handovers/[0-9a-fA-F-]{36}/countersign$",
+        "methods": [
+          "POST"
+        ]
+      },
+      {
+        "template": "permits",
+        "pattern": "^permits$",
+        "methods": [
+          "GET",
+          "POST"
+        ]
+      },
+      {
+        "template": "permits/{id}/approve",
+        "pattern": "^permits/[0-9a-fA-F-]{36}/approve$",
+        "methods": [
+          "POST"
+        ]
+      },
+      {
+        "template": "permits/{id}/close",
+        "pattern": "^permits/[0-9a-fA-F-]{36}/close$",
+        "methods": [
+          "POST"
+        ]
+      }
     ]
   },
   "physical-operations-cmms": {
@@ -590,6 +636,30 @@ export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGat
         "methods": {
           "GET": "cmms.analytics.read"
         }
+      }
+    ],
+    "transformBody": null,
+    "unavailable": [
+      {
+        "template": "work-orders/{id}/financials",
+        "pattern": "^work-orders/[0-9a-fA-F-]{36}/financials$",
+        "methods": [
+          "GET"
+        ]
+      },
+      {
+        "template": "work-orders/{id}/labour-link",
+        "pattern": "^work-orders/[0-9a-fA-F-]{36}/labour-link$",
+        "methods": [
+          "POST"
+        ]
+      },
+      {
+        "template": "work-orders/{id}/settle",
+        "pattern": "^work-orders/[0-9a-fA-F-]{36}/settle$",
+        "methods": [
+          "POST"
+        ]
       }
     ]
   }

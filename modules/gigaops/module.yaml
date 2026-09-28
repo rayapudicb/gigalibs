@@ -80,6 +80,17 @@ spec:
     routeNoun: Workforce
     serviceName: GigaOps Workforce
     entitlementName: GigaOps
+    # The BFF composes the punch geofence verdict from Geospatial before forwarding (WI-OI-069); named here, run by
+    # the shell's gateway transform of that name (WI-OI-083d).
+    transformBody: punch-geofence
+    # Contained 2026-09-28 (WI-OI-083 security finding, owner-approved): these answer "unavailable" to a signed-in
+    # tenant user (503, no business action) until the D2 review rebuilds them through the module API with RBAC.
+    unavailable:
+      - { path: 'handovers', methods: [GET, POST] }
+      - { path: 'handovers/{id}/countersign', methods: [POST] }
+      - { path: 'permits', methods: [GET, POST] }
+      - { path: 'permits/{id}/approve', methods: [POST] }
+      - { path: 'permits/{id}/close', methods: [POST] }
     routes:
       - { path: 'v1/runtime/tenant-scope', GET: workforce:read }
       - { path: 'v1/resources', GET: workforce.resources.read, POST: workforce.resources.manage }
