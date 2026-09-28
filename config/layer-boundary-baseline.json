@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "policy": "Existing layer violations when ADR-0013 was adopted (WI-OI-080). Entries may only be removed.",
+  "violations": [
+    "CORE_IMPORTS_MODULE packages/chat-core/test/comms-certification.test.mjs -> ../../invoices-core/module.manifest.json",
+    "CORE_IMPORTS_MODULE packages/chat-core/test/comms-certification.test.mjs -> ../../multi-currency/module.manifest.json",
+    "CORE_IMPORTS_MODULE packages/form-engine-core/test/automation-certification.test.mjs -> ../../invoices-core/module.manifest.json",
+    "CORE_IMPORTS_MODULE packages/form-engine-core/test/automation-certification.test.mjs -> ../../multi-currency/module.manifest.json"
+  ]
+}
