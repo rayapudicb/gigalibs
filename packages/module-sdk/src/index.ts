@@ -31,3 +31,29 @@ export {
   type RelayInboxGuardOptions,
   type RelayRequest,
 } from './relay-inbox-guard.js';
+// WI-OI-085a: the signed-context guard, command helpers and runtime configuration for new modules.
+export {
+  CommandContext,
+  CurrentPrincipal,
+  RequirePermissions,
+  SignedContextGuardBase,
+  extractBearerToken,
+  hasModulePermission,
+  principalFromContext,
+  type ModuleCommandContext,
+  type ModuleDepartmentScope,
+  type ModulePlaceScope,
+  type ModulePrincipal,
+  type SignedContextGuardOptions,
+} from './signed-context.js';
+export {
+  moduleErrors,
+  recordMutation,
+  type MutationRecordOptions,
+  type Queryable,
+} from './module-command.js';
+export {
+  loadModuleRuntimeConfig,
+  type ModuleRuntimeConfig,
+  type ModuleRuntimeConfigOptions,
+} from './module-runtime-config.js';

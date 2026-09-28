@@ -37,8 +37,10 @@
   ],
   "workInProgressLimits": {
     "implementationModules": 1,
-    "activeImplementationWorkItems": [],
-    "note": "No implementation item is active: WI-OI-080 (ADR-0013), WI-OI-081 (module manifest v1), WI-OI-082 (module SDK) and WI-OI-083 (web extension points) are in Review. The next Wave 0 item (WI-OI-084 mobile shell or WI-OI-085 module:new) starts on the owner's decision. Items outside the manufacturing package are frozen (Blocked) by the owner's freeze decision. WI-OI-074 is paused as Ready; WI-OI-072 (P9) is Blocked and runs on the manufacturing UAT tenant.",
+    "activeImplementationWorkItems": [
+      "WI-OI-085"
+    ],
+    "note": "WI-OI-085 (module:new and conformance) is the sole active item, chosen by the owner on 2026-09-28. WI-OI-080 (ADR-0013), WI-OI-081 (module manifest v1), WI-OI-082 (module SDK) and WI-OI-083 (web extension points) are in Review. Items outside the manufacturing package are frozen (Blocked) by the owner's freeze decision. WI-OI-074 is paused as Ready; WI-OI-072 (P9) is Blocked and runs on the manufacturing UAT tenant.",
     "note_WI-OI-072": "Blocked: waits for owner decisions (place-path option, the other stream's Geospatial changes, forms migrations, UAT tenant).",
     "note_WI-OI-071": "Review: canonical PAYROLL_CSV_V1 export of approved pay runs (immutable, formula-injection safe, SHA-256), line-by-line reconciliation and second-person confirmation with matching control totals; build, tests, six audits, exact image 5abfa667bb10-173c70f53e51, pay+export certification and regression, zero Critical/High (infra/compose/evidence/wi-oi-071-20260927T152200Z). Target system, Connector Hub delivery, web image certification and acceptance open.",
     "note_WI-OI-070": "Review: reference policy packs (US-CA-OT@1, IN-48@1, not statutory advice), dated pay rates, weekly runs with traced earning lines in exact minor units, SHA-256 digest, four-eyes approval final in the database, reproducibility verification; build, tests, six audits, exact image 5abfa667bb10-8ba0e4452554, pay certification and regression, zero Critical/High (infra/compose/evidence/wi-oi-070-20260927T150757Z). Owner decisions (jurisdiction, ADR-0012), web image certification, review and acceptance open.",
