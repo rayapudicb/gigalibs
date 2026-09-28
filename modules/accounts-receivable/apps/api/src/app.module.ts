@@ -22,6 +22,10 @@ import { SeriesController } from './series/series.controller.js';
 import { SeriesService } from './series/series.service.js';
 import { SetupController } from './setup/setup.controller.js';
 import { SetupService } from './setup/setup.service.js';
+import { StorageService } from './storage/storage.service.js';
+import { WebhooksController } from './payments/webhooks.controller.js';
+import { WorkSourcesController } from './work-sources/work-sources.controller.js';
+import { WorkSourcesService } from './work-sources/work-sources.service.js';
 
 import { PLATFORM_LOCKED_FIELD_KEYS, registerReservedKeys } from '@gigalibs/configuration-core';
 import { FormsEngineNestModule } from '@gigalibs/forms-engine-nest';
@@ -95,6 +99,8 @@ import { DatabaseModule } from './database/database.module.js';
     DeliveriesController,
     PaymentsController,
     CreditNotesController,
+    WorkSourcesController,
+    WebhooksController,
     OidcDevController,
   ],
   providers: [
@@ -107,9 +113,11 @@ import { DatabaseModule } from './database/database.module.js';
     SeriesService,
     CustomersService,
     InvoicesService,
+    StorageService,
     DeliveriesService,
     PaymentsService,
     CreditNotesService,
+    WorkSourcesService,
     OidcDevService,
   ],
 })

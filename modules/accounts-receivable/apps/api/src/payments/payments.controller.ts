@@ -17,6 +17,7 @@ import {
   RequirePermissions,
 } from '../auth/authorization.js';
 import {
+  type CheckoutSessionResponse,
   type PaymentResponse,
   type VoidResponse,
   PaymentsService,
@@ -42,6 +43,26 @@ export class PaymentsController {
     @Res({ passthrough: true }) response: PassthroughResponse,
   ): Promise<PaymentResponse> {
     const result = await this.payments.record(
+      invoiceId,
+      body,
+      requirePrincipal(request),
+      request.correlationId ?? 'unavailable',
+    );
+    response.status(201);
+    return result;
+  }
+
+  // POST /v1/invoices/:invoiceId/checkout-session
+  // Create a hosted payment checkout session (Stripe / Adyen).
+  @Post(':invoiceId/checkout-session')
+  @RequirePermissions('ar.invoices.pay')
+  async createCheckoutSession(
+    @Param('invoiceId') invoiceId: string,
+    @Body() body: unknown,
+    @Req() request: AuthenticatedRequest,
+    @Res({ passthrough: true }) response: PassthroughResponse,
+  ): Promise<CheckoutSessionResponse> {
+    const result = await this.payments.createCheckoutSession(
       invoiceId,
       body,
       requirePrincipal(request),

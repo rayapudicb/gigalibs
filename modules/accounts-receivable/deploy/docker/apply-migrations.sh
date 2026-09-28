@@ -14,9 +14,16 @@ if [ "$(psql -XAtqc "SELECT to_regclass('gigalibs_ar.schema_migrations') IS NOT 
   psql -X -v ON_ERROR_STOP=1 -f /opt/gigalibs-ar/migrations/000001_ar_foundation.up.sql
 fi
 
-if [ "$(psql -XAtqc "SELECT EXISTS (SELECT 1 FROM gigalibs_ar.schema_migrations WHERE version = 2)")" != "t" ]; then
-  psql -X -v ON_ERROR_STOP=1 -f /opt/gigalibs-ar/migrations/000002_ar_outbox_delivery.up.sql
-fi
+for migration_file in $(ls -1 /opt/gigalibs-ar/migrations/*.up.sql 2>/dev/null | sort); do
+  version=$(basename "$migration_file" | cut -d'_' -f1 | sed 's/^0*//')
+  if [ -n "$version" ]; then
+    applied=$(psql -XAtqc "SELECT EXISTS (SELECT 1 FROM gigalibs_ar.schema_migrations WHERE version = ${version})")
+    if [ "$applied" != "t" ]; then
+      echo "Applying $migration_file..."
+      psql -X -v ON_ERROR_STOP=1 -f "$migration_file"
+    fi
+  fi
+done
 
 if [ "${AR_COMPOSE_GRANT_ROLES:-false}" = "true" ]; then
   psql -X -v ON_ERROR_STOP=1 -f /opt/gigalibs-ar/grant-compose-roles.sql

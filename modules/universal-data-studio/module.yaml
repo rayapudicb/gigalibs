@@ -1,0 +1,37 @@
+apiVersion: modules.gigalibs.io/v1alpha1
+kind: Module
+metadata:
+  name: universal-data-studio
+  displayName: Universal Data Studio & Enterprise Data Contract Engine
+  version: 0.1.0-dev
+  lifecycle: implementation
+  workItem: WI-OI-023
+spec:
+  standalone: true
+  requiredModules: []
+  optionalModules:
+    - multi-currency
+    - accounts-receivable
+    - spend-management
+    - tax-configuration
+  capabilities:
+    - data-contracts
+    - schema-drift-detection
+    - field-mapping-studio
+    - currency-normalization
+    - quality-assertions
+    - cross-module-lineage
+    - audit-log
+  ui:
+    application: apps/workflow-platform
+    basePath: /data-contracts
+  api:
+    application: apps/api
+    port: 3800
+    version: v1
+  database:
+    engine: postgresql
+    minimumVersion: '16'
+    ownsSchema: true
+    defaultSchema: gigalibs_data_studio
+    crossSchemaAccess: false

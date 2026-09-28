@@ -12,6 +12,7 @@ import {
   assertActiveTenant,
 } from '../database/persistence-helpers.js';
 import { ArConflictError } from '../http/problem.filter.js';
+import { StorageService } from '../storage/storage.service.js';
 
 // ─── Environment ──────────────────────────────────────────────────────────────
 // Required env vars:
@@ -113,7 +114,10 @@ export class DeliveriesService {
   private readonly logger = new Logger(DeliveriesService.name);
   private readonly mailer: Transporter;
 
-  constructor(@Inject(DatabaseService) private readonly database: DatabaseService) {
+  constructor(
+    @Inject(DatabaseService) private readonly database: DatabaseService,
+    @Inject(StorageService) private readonly storage: StorageService,
+  ) {
     this.mailer = buildTransporter();
   }
 
@@ -277,11 +281,28 @@ export class DeliveriesService {
 
         // Insert PDF render
         const renderId = randomUUID();
+        let storageKey: string | null = null;
+        let storageProvider = 'DATABASE';
+        try {
+          storageKey = await this.storage.putPdfObject({
+            tenantId: principal.tenantId,
+            invoiceId,
+            renderId,
+            bytes: pdfBytes,
+            checksumSha256: checksum,
+          });
+          if (storageKey) {
+            storageProvider = 'S3';
+          }
+        } catch (storageErr) {
+          this.logger.warn(`Failed to store PDF in S3: ${storageErr}; falling back to database bytea`);
+        }
+
         await client.query(
           `
             INSERT INTO gigalibs_ar.invoice_pdf_renders
-              (tenant_id, id, invoice_id, pdf_bytes, byte_size, checksum_sha256, rendered_by)
-            VALUES ($1, $2, $3, $4, $5, $6, $7)
+              (tenant_id, id, invoice_id, pdf_bytes, byte_size, checksum_sha256, rendered_by, storage_key, storage_provider)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
           `,
           [
             principal.tenantId,
@@ -291,6 +312,8 @@ export class DeliveriesService {
             pdfBytes.byteLength,
             checksum,
             principal.subject,
+            storageKey,
+            storageProvider,
           ],
         );
 
@@ -430,6 +453,53 @@ export class DeliveriesService {
       return {
         filename: `${row.invoice_number}.pdf`,
         bytes: row.pdf_bytes,
+      };
+    });
+  }
+
+  // ── Get presigned download URL or fallback stream URL ────────────────────────
+  async getDownloadUrl(
+    invoiceId: string,
+    principal: ArPrincipal,
+  ): Promise<{ downloadUrl: string; expiresAt?: string; filename: string }> {
+    return this.database.withTenantTransaction(principal.tenantId, async (client) => {
+      await assertActiveTenant(client, principal.tenantId, principal.issuer);
+      const result = await client.query<{
+        invoice_number: string;
+        storage_key: string | null;
+        storage_provider: string;
+      }>(
+        `
+          SELECT i.invoice_number, r.storage_key, r.storage_provider
+          FROM gigalibs_ar.invoice_pdf_renders r
+          JOIN gigalibs_ar.invoices i ON i.tenant_id = r.tenant_id AND i.id = r.invoice_id
+          WHERE r.tenant_id = $1 AND r.invoice_id = $2
+          ORDER BY r.rendered_at DESC
+          LIMIT 1
+        `,
+        [principal.tenantId, invoiceId],
+      );
+      const render = result.rows[0];
+      if (!render) throw new NotFoundException('No rendered PDF was found for this invoice.');
+
+      const filename = `${render.invoice_number}.pdf`;
+      if (render.storage_key && render.storage_provider === 'S3' && this.storage.isEnabled()) {
+        const presigned = await this.storage.createDownloadUrl({
+          storageKey: render.storage_key,
+          filename,
+        });
+        if (presigned) {
+          return {
+            downloadUrl: presigned.url,
+            expiresAt: presigned.expiresAt,
+            filename,
+          };
+        }
+      }
+
+      return {
+        downloadUrl: `/v1/invoices/${invoiceId}/pdf`,
+        filename,
       };
     });
   }

@@ -1,0 +1,36 @@
+apiVersion: modules.gigalibs.io/v1alpha1
+kind: Module
+metadata:
+  name: tax-configuration
+  displayName: Enterprise Tax Nexus & Multi-Jurisdiction Engine
+  version: 0.1.0-dev
+  lifecycle: implementation
+  workItem: WI-OI-021
+spec:
+  standalone: true
+  requiredModules: []
+  optionalModules:
+    - accounts-receivable
+    - spend-management
+    - multi-currency
+  capabilities:
+    - tax-jurisdictions
+    - nexus-threshold-monitoring
+    - exemption-certificates
+    - multi-rate-matrix
+    - tax-calculation-ledger
+    - outbox-events
+    - audit-log
+  ui:
+    application: apps/workflow-platform
+    basePath: /tax
+  api:
+    application: apps/api
+    port: 3600
+    version: v1
+  database:
+    engine: postgresql
+    minimumVersion: '16'
+    ownsSchema: true
+    defaultSchema: gigalibs_tax
+    crossSchemaAccess: false

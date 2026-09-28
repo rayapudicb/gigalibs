@@ -1,3 +1,9 @@
+/**
+ * WI-OI-042 — AR Runtime-Config Validation Tests
+ *
+ * Verifies that loadRuntimeConfig() fails closed for every missing or
+ * invalid required variable and accepts a well-formed production config.
+ */
 import { describe, expect, it } from 'vitest';
 import { loadRuntimeConfig } from './runtime-config.js';
 
@@ -49,5 +55,28 @@ describe('loadRuntimeConfig', () => {
     expect(() =>
       loadRuntimeConfig({ ...validEnvironment, AR_OIDC_ALGORITHMS: 'RS256,HS256' }),
     ).toThrow('only RS256 and/or ES256');
+  });
+
+  it('accepts insecure OIDC when NODE_ENV is development', () => {
+    expect(() =>
+      loadRuntimeConfig({
+        ...validEnvironment,
+        NODE_ENV: 'development',
+        AR_ALLOW_INSECURE_OIDC: 'true',
+        AR_OIDC_ISSUER: 'http://localhost:3400/oidc',
+      }),
+    ).not.toThrow();
+  });
+
+  it('rejects a non-numeric AR_API_PORT', () => {
+    expect(() =>
+      loadRuntimeConfig({ ...validEnvironment, AR_API_PORT: 'not-a-number' }),
+    ).toThrow();
+  });
+
+  it('rejects AR_DATABASE_POOL_SIZE of zero', () => {
+    expect(() =>
+      loadRuntimeConfig({ ...validEnvironment, AR_DATABASE_POOL_SIZE: '0' }),
+    ).toThrow();
   });
 });

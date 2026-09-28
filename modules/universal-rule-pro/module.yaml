@@ -1,0 +1,37 @@
+apiVersion: modules.gigalibs.io/v1alpha1
+kind: Module
+metadata:
+  name: universal-rule-pro
+  displayName: Universal Rule Pro & Policy Decision Engine
+  version: 0.1.0-dev
+  lifecycle: implementation
+  workItem: WI-OI-024
+spec:
+  standalone: true
+  requiredModules: []
+  optionalModules:
+    - multi-currency
+    - universal-data-studio
+    - accounts-receivable
+    - spend-management
+    - tax-configuration
+  capabilities:
+    - business-policy-rules
+    - tiered-inheritance
+    - ast-condition-evaluator
+    - dmn-decision-tables
+    - real-time-fx-normalization
+    - evaluation-audit-trail
+  ui:
+    application: apps/workflow-platform
+    basePath: /rules
+  api:
+    application: apps/api
+    port: 3900
+    version: v1
+  database:
+    engine: postgresql
+    minimumVersion: '16'
+    ownsSchema: true
+    defaultSchema: gigalibs_rules
+    crossSchemaAccess: false

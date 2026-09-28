@@ -70,6 +70,12 @@ export class InvoicesController {
     );
   }
 
+  @Get('ledger/verify')
+  @RequirePermissions('ar.invoices.read')
+  async verifyLedger(@Req() request: AuthenticatedRequest): Promise<object> {
+    return this.invoices.verifyLedger(requirePrincipal(request));
+  }
+
   @Get(':invoiceId')
   @RequirePermissions('ar.invoices.read')
   async get(

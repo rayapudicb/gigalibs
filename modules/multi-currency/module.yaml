@@ -1,0 +1,38 @@
+apiVersion: modules.gigalibs.io/v1alpha1
+kind: Module
+metadata:
+  name: multi-currency
+  displayName: Enterprise MultiCurrency & Global Treasury Engine
+  version: 0.1.0-dev
+  lifecycle: implementation
+  workItem: WI-OI-022
+spec:
+  standalone: true
+  requiredModules: []
+  optionalModules:
+    - accounts-receivable
+    - spend-management
+    - tax-configuration
+  capabilities:
+    - currency-pairs
+    - live-fx-rates
+    - cross-currency-settlement
+    - conversion-ledger
+    - treasury-hedging
+    - gaap-revaluation
+    - tenant-currency-preferences
+    - outbox-events
+    - audit-log
+  ui:
+    application: apps/workflow-platform
+    basePath: /currency
+  api:
+    application: apps/api
+    port: 3700
+    version: v1
+  database:
+    engine: postgresql
+    minimumVersion: '16'
+    ownsSchema: true
+    defaultSchema: gigalibs_currency
+    crossSchemaAccess: false

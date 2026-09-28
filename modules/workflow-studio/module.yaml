@@ -1,0 +1,38 @@
+apiVersion: modules.gigalibs.io/v1alpha1
+kind: Module
+metadata:
+  name: workflow-studio
+  displayName: Workflow Studio & Durable DAG Orchestrator
+  version: 0.1.0-dev
+  lifecycle: implementation
+  workItem: WI-OI-025
+spec:
+  standalone: true
+  requiredModules: []
+  optionalModules:
+    - multi-currency
+    - universal-data-studio
+    - universal-rule-pro
+    - accounts-receivable
+    - spend-management
+    - tax-configuration
+  capabilities:
+    - visual-dag-canvas
+    - durable-state-machine
+    - step-checkpointing
+    - saga-compensation-rollback
+    - time-travel-replay
+    - cross-module-orchestration
+  ui:
+    application: apps/workflow-platform
+    basePath: /workflows
+  api:
+    application: apps/api
+    port: 4000
+    version: v1
+  database:
+    engine: postgresql
+    minimumVersion: '16'
+    ownsSchema: true
+    defaultSchema: gigalibs_workflow
+    crossSchemaAccess: false

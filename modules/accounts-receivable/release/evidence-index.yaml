@@ -23,12 +23,20 @@ spec:
   migrations:
     - db/migrations/000001_ar_foundation.up.sql
     - db/migrations/000002_ar_outbox_delivery.up.sql
+    - db/migrations/000003_ar_ledger_seals_and_installments.up.sql
+    - db/migrations/000004_ar_settlements_and_wip.up.sql
+    - db/migrations/000005_ar_customer_contacts_and_billing_entity_expand.up.sql
+    - db/migrations/000006_ar_drop_foundation_tax_check.up.sql
+    - db/migrations/000007_ar_invoice_deliveries.up.sql
+    - db/migrations/000008_ar_payments_phase4.up.sql
+    - db/migrations/000009_ar_credit_notes_aging.up.sql
+    - db/migrations/000010_form_definitions.up.sql
     - db/migrations/RECOVERY.md
   tests:
     - name: foundation unit tests
       command: pnpm --filter @gigalibs/ar-domain test
       status: passing-in-local-g4
-    - name: API unit tests
+    - name: API unit tests (payments, credit-notes, deliveries, pagination, persistence-helpers, runtime-config)
       command: pnpm --filter @gigalibs/ar-api test
       status: passing-in-local-g4
     - name: worker unit tests
@@ -40,5 +48,8 @@ spec:
     - name: standalone Playwright lifecycle
       command: pnpm --filter @gigalibs/ar-e2e test
       status: passing-in-disposable-local-g4
+    - name: suite security boundary and anti-mock enforcement
+      command: pnpm vitest run apps/workflow-platform/__tests__/ar-boundary.test.ts
+      status: passing-in-local-g4
   humanApprovals: []
   productionObservation: null

@@ -1,0 +1,52 @@
+apiVersion: modules.gigalibs.io/v1alpha1
+kind: Module
+metadata:
+  name: platform-rbac
+  displayName: Centralized Platform Control Panel, RBAC & Marketplace
+  version: 0.1.0-dev
+  lifecycle: implementation
+  workItem: WI-OI-028
+spec:
+  standalone: true
+  requiredModules: []
+  optionalModules:
+    - accounts-receivable
+    - spend-management
+    - tax-configuration
+    - multi-currency
+    - universal-data-studio
+    - universal-rule-pro
+    - workflow-studio
+    - universal-connector-hub
+    - autonomous-recovery-studio
+  capabilities:
+    - centralized-platform-control-tower
+    - tenant-fleet-lifecycle
+    - dynamic-subdomain-routing
+    - zero-ghost-schemas-isolation
+    - zero-downtime-modular-hydration
+    - self-service-module-marketplace
+    - transactional-purchase-ledger
+    - hierarchical-department-group-rbac
+    - declarative-client-can-authorization
+    - just-in-time-impersonation-audit
+  ui:
+    application: apps/workflow-platform
+    basePaths:
+      - /platform-admin
+      - /marketplace
+      - /settings
+  api:
+    application: apps/api
+    port: 4300
+  storage:
+    schema: gigalibs_platform
+    tables:
+      - platform_tenants
+      - platform_users
+      - platform_settings
+      - module_catalog
+      - module_purchases
+      - billing_invoices
+      - ledger_transactions
+      - platform_audit_events

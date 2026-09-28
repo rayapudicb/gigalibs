@@ -83,6 +83,17 @@ export class DeliveriesController {
     response.setHeader('Cache-Control', 'private, max-age=300');
     response.status(200).end(bytes);
   }
+
+  // GET /v1/invoices/:invoiceId/download-url
+  // Returns presigned temporary download URL or stream URL for the invoice PDF.
+  @Get(':invoiceId/download-url')
+  @RequirePermissions('ar.invoices.read')
+  async downloadUrl(
+    @Param('invoiceId') invoiceId: string,
+    @Req() request: AuthenticatedRequest,
+  ): Promise<{ downloadUrl: string; expiresAt?: string; filename: string }> {
+    return this.deliveries.getDownloadUrl(invoiceId, requirePrincipal(request));
+  }
 }
 
 function requirePrincipal(request: AuthenticatedRequest): ArPrincipal {

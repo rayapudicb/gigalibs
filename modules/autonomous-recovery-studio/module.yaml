@@ -1,0 +1,42 @@
+apiVersion: modules.gigalibs.io/v1alpha1
+kind: Module
+metadata:
+  name: autonomous-recovery-studio
+  displayName: Autonomous Cash Leakage & Recovery Studio
+  version: 0.1.0-dev
+  lifecycle: implementation
+  workItem: WI-OI-027
+spec:
+  standalone: true
+  requiredModules: []
+  optionalModules:
+    - workflow-studio
+    - universal-connector-hub
+    - universal-data-studio
+    - multi-currency
+    - universal-rule-pro
+    - accounts-receivable
+    - spend-management
+    - tax-configuration
+  capabilities:
+    - duplicate-invoice-detection
+    - missed-tax-exemption-audit
+    - unclaimed-credit-recovery
+    - contract-pricing-creep-detection
+    - historical-shadow-audit-scanner
+    - automated-clawback-dispatch
+    - dual-gate-accuracy-protocol
+    - vendor-settlement-claims
+  ui:
+    application: apps/workflow-platform
+    basePath: /recovery
+  api:
+    application: apps/api
+    port: 4200
+  storage:
+    schema: gigalibs_recovery
+    tables:
+      - detected_leaks
+      - recovery_claims
+      - historical_scan_sessions
+      - audit_events

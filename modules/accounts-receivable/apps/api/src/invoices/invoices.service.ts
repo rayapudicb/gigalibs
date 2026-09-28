@@ -21,6 +21,13 @@ import {
 } from '../database/persistence-helpers.js';
 import { decodeInvoiceCursor, encodeCursor } from '../http/pagination.js';
 import { ArConflictError } from '../http/problem.filter.js';
+import {
+  type InvoiceSealRecord,
+  type LedgerVerificationResult,
+  GENESIS_SEAL_HASH,
+  computeInvoiceSealHash,
+  verifyInvoiceLedgerChain,
+} from './invoice-ledger-seal.js';
 
 const uuid = z.uuid();
 const lineSchema = z
@@ -64,6 +71,9 @@ interface DraftHeaderRow {
   version: number;
   invoice_number: string | null;
   issued_at: string | null;
+  seal_hash?: string | null;
+  previous_seal_hash?: string | null;
+  seal_sequence?: string | null;
   created_at: string;
   updated_at: string;
   // Phase 4: live settlement values joined from payment_records / void_records
@@ -134,6 +144,9 @@ export interface InvoiceResponse {
   isVoided: boolean;
   version: number;
   issuedAt: string | null;
+  sealHash?: string | null;
+  previousSealHash?: string | null;
+  sealSequence?: number | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -357,16 +370,48 @@ export class InvoicesService {
       const nextValue = Number(series.next_value);
       const invoiceNumber = formatInvoiceNumber(series.prefix, nextValue, series.padding);
 
+      // Query latest sealed invoice for this tenant with FOR UPDATE lock
+      const latestSealResult = await client.query<{ seal_sequence: string; seal_hash: string }>(
+        `
+          SELECT seal_sequence::text, seal_hash
+          FROM gigalibs_ar.invoices
+          WHERE tenant_id = $1 AND seal_sequence IS NOT NULL
+          ORDER BY seal_sequence DESC
+          LIMIT 1
+          FOR UPDATE
+        `,
+        [principal.tenantId],
+      );
+      const latestSeal = latestSealResult.rows[0];
+      const nextSealSequence = latestSeal ? Number(latestSeal.seal_sequence) + 1 : 1;
+      const previousSealHash = latestSeal?.seal_hash ?? GENESIS_SEAL_HASH;
+      const issuedAt = new Date().toISOString();
+
+      const sealHash = computeInvoiceSealHash({
+        tenantId: principal.tenantId,
+        sequence: nextSealSequence,
+        invoiceId: id,
+        invoiceNumber,
+        currency: prior.currency,
+        subtotalMinor: prior.subtotalMinor,
+        taxMinor: prior.taxMinor,
+        totalMinor: prior.totalMinor,
+        issuedAt,
+        previousSealHash,
+      });
+
       await client.query(
         `
           INSERT INTO gigalibs_ar.invoices (
             tenant_id, id, source_draft_id, billing_entity_id, invoice_series_id, customer_id,
             invoice_number, currency, issue_date, due_date, purchase_order_reference,
             seller_snapshot, buyer_snapshot, terms_snapshot,
-            subtotal_minor, tax_minor, total_minor, issued_by
+            subtotal_minor, tax_minor, total_minor, issued_by, issued_at,
+            seal_sequence, seal_hash, previous_seal_hash
           ) VALUES (
             $1, $2, $2, $3, $4, $5, $6, $7, $8::date, $9::date, $10,
-            $11::jsonb, $12::jsonb, $13::jsonb, $14, $15, $16, $17
+            $11::jsonb, $12::jsonb, $13::jsonb, $14, $15, $16, $17, $18::timestamptz,
+            $19, $20, $21
           )
         `,
         [
@@ -398,6 +443,10 @@ export class InvoicesService {
           prior.taxMinor,
           prior.totalMinor,
           principal.subject,
+          issuedAt,
+          nextSealSequence,
+          sealHash,
+          previousSealHash,
         ],
       );
       await client.query(
@@ -543,6 +592,9 @@ export class InvoicesService {
             d.version,
             i.invoice_number,
             i.issued_at::text,
+            i.seal_hash,
+            i.previous_seal_hash,
+            i.seal_sequence::text,
             d.created_at::text,
             d.updated_at::text,
             COALESCE(bal.amount_paid_minor, 0)::text AS amount_paid_minor,
@@ -606,6 +658,50 @@ export class InvoicesService {
       };
     });
   }
+
+  async verifyLedger(principal: ArPrincipal): Promise<LedgerVerificationResult> {
+    return this.database.withTenantTransaction(principal.tenantId, async (client) => {
+      await assertActiveTenant(client, principal.tenantId, principal.issuer);
+      const res = await client.query<{
+        id: string;
+        tenant_id: string;
+        invoice_number: string;
+        currency: string;
+        subtotal_minor: string;
+        tax_minor: string;
+        total_minor: string;
+        issued_at: string;
+        seal_sequence: string | null;
+        seal_hash: string | null;
+        previous_seal_hash: string | null;
+      }>(
+        `
+          SELECT
+            id, tenant_id, invoice_number, currency,
+            subtotal_minor::text, tax_minor::text, total_minor::text,
+            issued_at::text, seal_sequence::text, seal_hash, previous_seal_hash
+          FROM gigalibs_ar.invoices
+          WHERE tenant_id = $1
+          ORDER BY seal_sequence ASC NULLS LAST, created_at ASC
+        `,
+        [principal.tenantId],
+      );
+      const records: InvoiceSealRecord[] = res.rows.map((r) => ({
+        id: r.id,
+        tenantId: r.tenant_id,
+        invoiceNumber: r.invoice_number,
+        currency: r.currency,
+        subtotalMinor: Number(r.subtotal_minor),
+        taxMinor: Number(r.tax_minor),
+        totalMinor: Number(r.total_minor),
+        issuedAt: new Date(r.issued_at).toISOString(),
+        sealSequence: r.seal_sequence ? Number(r.seal_sequence) : null,
+        sealHash: r.seal_hash,
+        previousSealHash: r.previous_seal_hash,
+      }));
+      return verifyInvoiceLedgerChain(records);
+    });
+  }
 }
 
 async function loadInvoice(
@@ -632,6 +728,9 @@ async function loadInvoice(
         d.version,
         i.invoice_number,
         i.issued_at::text,
+        i.seal_hash,
+        i.previous_seal_hash,
+        i.seal_sequence::text,
         d.created_at::text,
         d.updated_at::text,
         COALESCE(bal.amount_paid_minor, 0)::text AS amount_paid_minor,
@@ -695,6 +794,9 @@ function mapInvoice(row: DraftHeaderRow, lines: readonly LineRow[]): InvoiceResp
     isVoided: row.is_voided ?? false,
     version: row.version,
     issuedAt: row.issued_at ? new Date(row.issued_at).toISOString() : null,
+    sealHash: row.seal_hash ?? null,
+    previousSealHash: row.previous_seal_hash ?? null,
+    sealSequence: row.seal_sequence ? Number(row.seal_sequence) : null,
     createdAt: new Date(row.created_at).toISOString(),
     updatedAt: new Date(row.updated_at).toISOString(),
   };

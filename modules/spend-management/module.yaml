@@ -1,0 +1,39 @@
+apiVersion: modules.gigalibs.io/v1alpha1
+kind: Module
+metadata:
+  name: spend-management
+  displayName: Enterprise Spend Management & AP Studio
+  version: 0.1.0-dev
+  lifecycle: implementation
+  workItem: WI-OI-020
+spec:
+  standalone: true
+  requiredModules: []
+  optionalModules:
+    - accounts-receivable
+    - multi-currency
+    - tax-configuration
+  capabilities:
+    - cost-centers
+    - expense-reporting
+    - corporate-cards
+    - travel-desk-gsa
+    - imprest-wallets
+    - saas-subscriptions
+    - approval-matrix
+    - spend-analytics
+    - outbox-events
+    - audit-log
+  ui:
+    application: apps/workflow-platform
+    basePath: /spend
+  api:
+    application: apps/api
+    port: 3500
+    version: v1
+  database:
+    engine: postgresql
+    minimumVersion: '16'
+    ownsSchema: true
+    defaultSchema: gigalibs_spend
+    crossSchemaAccess: false
