@@ -7,7 +7,7 @@ const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
 const nextConfig = {
   reactStrictMode: true,
   distDir: process.env.NEXT_DIST_DIR?.trim() || '.next',
-  transpilePackages: ['@gigalibs/contracts', '@gigalibs/broker', '@gigalibs/logger'], // data-import-export-react quarantined
+  transpilePackages: ['@gigalibs/contracts', '@gigalibs/broker', '@gigalibs/logger', '@gigalibs/web-sdk', '@gigalibs/cmms-web'], // data-import-export-react quarantined
   webpack: (config) => {
     config.resolve.alias = {
       ...config.resolve.alias,

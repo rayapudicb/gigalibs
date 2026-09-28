@@ -6,6 +6,7 @@ packages:
   - modules/geospatial/apps/api
   - modules/gigaops/apps/api
   - modules/physical-operations-cmms/apps/api
+  - modules/physical-operations-cmms/web
   - modules/universal-connector-hub/apps/api
   - packages/analytics-core
   - packages/audit-core
@@ -34,6 +35,7 @@ packages:
   - packages/rbac-nest
   - packages/tenancy-nest
   - packages/validation-nest
+  - packages/web-sdk
 
 allowBuilds:
   '@biomejs/biome': true

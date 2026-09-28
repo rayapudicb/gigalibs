@@ -29,10 +29,17 @@ export async function requestCmms<T>(path: string, options: RequestInit = {}): P
     if (response.status === 401 && typeof window !== 'undefined') window.location.assign('/login');
     const payload: unknown = await response.json().catch(() => null);
     const body = payload && typeof payload === 'object' ? (payload as Record<string, unknown>) : {};
-    const nested = body.message && typeof body.message === 'object' ? (body.message as Record<string, unknown>) : body;
-    const issues = Array.isArray(nested.issues) ? (nested.issues as { path: string; message: string }[]) : undefined;
+    const nested =
+      body.message && typeof body.message === 'object'
+        ? (body.message as Record<string, unknown>)
+        : body;
+    const issues = Array.isArray(nested.issues)
+      ? (nested.issues as { path: string; message: string }[])
+      : undefined;
     const detail =
-      (issues?.[0] ? `${issues[0].path ? `${issues[0].path}: ` : ''}${issues[0].message}` : undefined) ??
+      (issues?.[0]
+        ? `${issues[0].path ? `${issues[0].path}: ` : ''}${issues[0].message}`
+        : undefined) ??
       text(nested.message) ??
       text(body.title) ??
       `CMMS request failed (${response.status}).`;
@@ -45,27 +52,39 @@ export async function requestCmms<T>(path: string, options: RequestInit = {}): P
   return (await response.json()) as T;
 }
 
-const post = (body: unknown): RequestInit => ({ method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-const patch = (body: unknown): RequestInit => ({ method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+const post = (body: unknown): RequestInit => ({
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify(body),
+});
+const patch = (body: unknown): RequestInit => ({
+  method: 'PATCH',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify(body),
+});
 const id = (value: string) => encodeURIComponent(value);
 
 export const cmmsApi = {
   overview: () => requestCmms<CmmsWorkOrderOverviewV1>('/analytics/work-orders/overview'),
   inventory: () => requestCmms<CmmsInventorySummaryV1>('/analytics/inventory/summary'),
 
-  searchAssets: (query: Record<string, unknown> = {}) => requestCmms<CmmsPageV1<CmmsAssetV1>>('/assets/search', post(query)),
+  searchAssets: (query: Record<string, unknown> = {}) =>
+    requestCmms<CmmsPageV1<CmmsAssetV1>>('/assets/search', post(query)),
   getAsset: (assetId: string) => requestCmms<CmmsAssetV1>(`/assets/${id(assetId)}`),
   createAsset: (input: Record<string, unknown>) => requestCmms<CmmsAssetV1>('/assets', post(input)),
-  updateAsset: (assetId: string, input: Record<string, unknown>) => requestCmms<CmmsAssetV1>(`/assets/${id(assetId)}`, patch(input)),
+  updateAsset: (assetId: string, input: Record<string, unknown>) =>
+    requestCmms<CmmsAssetV1>(`/assets/${id(assetId)}`, patch(input)),
   archiveAsset: (assetId: string, input: { expectedVersion: number; reason: string }) =>
     requestCmms<CmmsAssetV1>(`/assets/${id(assetId)}/archive`, post(input)),
 
   searchWorkOrders: (query: Record<string, unknown> = {}) =>
     requestCmms<CmmsPageV1<CmmsWorkOrderV1>>('/work-orders/search', post(query)),
-  getWorkOrder: (workOrderId: string) => requestCmms<CmmsWorkOrderDetailV1>(`/work-orders/${id(workOrderId)}`),
+  getWorkOrder: (workOrderId: string) =>
+    requestCmms<CmmsWorkOrderDetailV1>(`/work-orders/${id(workOrderId)}`),
   workOrderHistory: (workOrderId: string) =>
     requestCmms<{ items: CmmsWorkOrderEventV1[] }>(`/work-orders/${id(workOrderId)}/history`),
-  createWorkOrder: (input: Record<string, unknown>) => requestCmms<CmmsWorkOrderDetailV1>('/work-orders', post(input)),
+  createWorkOrder: (input: Record<string, unknown>) =>
+    requestCmms<CmmsWorkOrderDetailV1>('/work-orders', post(input)),
   updateWorkOrder: (workOrderId: string, input: Record<string, unknown>) =>
     requestCmms<CmmsWorkOrderDetailV1>(`/work-orders/${id(workOrderId)}`, patch(input)),
   changeStatus: (workOrderId: string, input: Record<string, unknown>) =>
@@ -73,7 +92,10 @@ export const cmmsApi = {
   addTask: (workOrderId: string, input: { label: string; required: boolean }) =>
     requestCmms<CmmsWorkOrderDetailV1>(`/work-orders/${id(workOrderId)}/tasks`, post(input)),
   recordTask: (workOrderId: string, taskId: string, input: Record<string, unknown>) =>
-    requestCmms<CmmsWorkOrderDetailV1>(`/work-orders/${id(workOrderId)}/tasks/${id(taskId)}`, patch(input)),
+    requestCmms<CmmsWorkOrderDetailV1>(
+      `/work-orders/${id(workOrderId)}/tasks/${id(taskId)}`,
+      patch(input),
+    ),
   logLabour: (workOrderId: string, input: Record<string, unknown>) =>
     requestCmms<CmmsWorkOrderDetailV1>(`/work-orders/${id(workOrderId)}/labour`, post(input)),
   issuePart: (workOrderId: string, input: Record<string, unknown>) =>
@@ -83,10 +105,14 @@ export const cmmsApi = {
   requestStaffing: (workOrderId: string, input: Record<string, unknown>) =>
     requestCmms<CmmsWorkOrderDetailV1>(`/work-orders/${id(workOrderId)}/staffing`, post(input)),
   cancelStaffing: (workOrderId: string, reason: string) =>
-    requestCmms<CmmsWorkOrderDetailV1>(`/work-orders/${id(workOrderId)}/staffing/cancel`, post({ reason })),
+    requestCmms<CmmsWorkOrderDetailV1>(
+      `/work-orders/${id(workOrderId)}/staffing/cancel`,
+      post({ reason }),
+    ),
 
   listSchedules: () => requestCmms<{ items: CmmsPmScheduleV1[] }>('/pm-schedules'),
-  createSchedule: (input: Record<string, unknown>) => requestCmms<CmmsPmScheduleV1>('/pm-schedules', post(input)),
+  createSchedule: (input: Record<string, unknown>) =>
+    requestCmms<CmmsPmScheduleV1>('/pm-schedules', post(input)),
   updateSchedule: (scheduleId: string, input: Record<string, unknown>) =>
     requestCmms<CmmsPmScheduleV1>(`/pm-schedules/${id(scheduleId)}`, patch(input)),
   generateWorkOrder: (scheduleId: string, expectedVersion: number) =>
@@ -98,15 +124,25 @@ export const cmmsApi = {
   listMeters: () => requestCmms<{ items: CmmsMeterV1[] }>('/meters'),
   createMeter: (input: Record<string, unknown>) => requestCmms<CmmsMeterV1>('/meters', post(input)),
   recordReading: (meterId: string, input: Record<string, unknown>) =>
-    requestCmms<{ meter: CmmsMeterV1; reading: CmmsMeterReadingV1; replayed: boolean }>(`/meters/${id(meterId)}/readings`, post(input)),
-  readings: (meterId: string) => requestCmms<{ items: CmmsMeterReadingV1[] }>(`/meters/${id(meterId)}/readings`),
+    requestCmms<{ meter: CmmsMeterV1; reading: CmmsMeterReadingV1; replayed: boolean }>(
+      `/meters/${id(meterId)}/readings`,
+      post(input),
+    ),
+  readings: (meterId: string) =>
+    requestCmms<{ items: CmmsMeterReadingV1[] }>(`/meters/${id(meterId)}/readings`),
 
-  searchParts: (query: Record<string, unknown> = {}) => requestCmms<CmmsPageV1<CmmsPartV1>>('/parts/search', post(query)),
+  searchParts: (query: Record<string, unknown> = {}) =>
+    requestCmms<CmmsPageV1<CmmsPartV1>>('/parts/search', post(query)),
   createPart: (input: Record<string, unknown>) => requestCmms<CmmsPartV1>('/parts', post(input)),
-  updatePart: (partId: string, input: Record<string, unknown>) => requestCmms<CmmsPartV1>(`/parts/${id(partId)}`, patch(input)),
+  updatePart: (partId: string, input: Record<string, unknown>) =>
+    requestCmms<CmmsPartV1>(`/parts/${id(partId)}`, patch(input)),
   recordMovement: (partId: string, input: Record<string, unknown>) =>
-    requestCmms<{ part: CmmsPartV1; movement: CmmsStockMovementV1; replayed: boolean }>(`/parts/${id(partId)}/movements`, post(input)),
-  movements: (partId: string) => requestCmms<{ items: CmmsStockMovementV1[] }>(`/parts/${id(partId)}/movements`),
+    requestCmms<{ part: CmmsPartV1; movement: CmmsStockMovementV1; replayed: boolean }>(
+      `/parts/${id(partId)}/movements`,
+      post(input),
+    ),
+  movements: (partId: string) =>
+    requestCmms<{ items: CmmsStockMovementV1[] }>(`/parts/${id(partId)}/movements`),
 };
 
 function text(value: unknown): string | undefined {

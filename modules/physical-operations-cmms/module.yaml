@@ -39,6 +39,97 @@ spec:
   ui:
     application: apps/workflow-platform
     basePath: /cmms
+    # Pages (WI-OI-083b): generated into the web shell by `pnpm modules:catalog`; screens come from `package`.
+    package: '@gigalibs/cmms-web'
+    pages:
+      - route: /cmms
+        component: CmmsWorkspace
+        props:
+          section: overview
+      - route: /cmms/work-orders
+        component: CmmsWorkspace
+        props:
+          section: work-orders
+      - route: /cmms/assets
+        component: CmmsWorkspace
+        props:
+          section: assets
+      - route: /cmms/schedules
+        component: CmmsWorkspace
+        props:
+          section: schedules
+      - route: /cmms/meters
+        component: CmmsWorkspace
+        props:
+          section: meters
+      - route: /cmms/inventory
+        component: CmmsWorkspace
+        props:
+          section: inventory
+      - route: /cmms/requests
+        unavailable:
+          title: Maintenance request intake is not connected
+          summary: Request intake is contained until authenticated create, review, approval, conversion, and audit endpoints are available.
+          blockedActions:
+            - Submitting or approving a maintenance request.
+            - Claiming a request was routed or converted to a work order.
+      - route: /cmms/purchase-orders
+        unavailable:
+          title: CMMS purchase orders are not connected
+          summary: Procurement actions are contained until an authenticated purchase-order service, approval policy, goods receipt, and reconciliation path are implemented.
+          blockedActions:
+            - Creating or approving purchase orders.
+            - Claiming inventory replenishment without a persisted goods receipt.
+      - route: /cmms/vendors
+        unavailable:
+          title: CMMS vendors are not connected
+          summary: The supplier screen is contained until a tenant-scoped vendor service and authoritative rating provenance are implemented.
+          blockedActions:
+            - Creating supplier records from this screen.
+            - Showing inferred vendor ratings or default commercial rates.
+      - route: /cmms/people
+        unavailable:
+          title: CMMS people and teams are not connected
+          summary: The CMMS screen is contained until it reads and writes the canonical workforce resources, capabilities, and allocations APIs.
+          availableForTesting:
+            - Canonical workforce APIs remain available through authenticated integration tests.
+          blockedActions:
+            - Creating technicians or teams from a separate CMMS-local people model.
+            - Displaying default roles, rates, or utilization as customer facts.
+      - route: /cmms/workload
+        unavailable:
+          title: CMMS workforce workload is moving to GigaOps Workforce
+          summary: CMMS will publish maintenance demand and consume tenant-bound GigaOps Workforce bookings. Capacity and utilization will not be calculated from a duplicate CMMS technician model.
+          availableForTesting:
+            - The CMMS-to-Workforce ownership boundary and containment state.
+          blockedActions:
+            - Dispatching or reallocating people through the legacy CMMS-local workforce model.
+            - Displaying sample capacity or utilization as customer facts.
+      - route: /cmms/floor
+        unavailable:
+          title: Shop-floor kiosk is not connected
+          summary: The kiosk view needs device identity and live meter alerts, which arrive with governed meter-to-work automation (CM-04). Technicians use the work-order screen to execute work.
+          availableForTesting:
+            - Work-order execution at /cmms/work-orders.
+          blockedActions:
+            - Displaying simulated sensor alerts or line status as live facts.
+      - route: /cmms/calendar
+        unavailable:
+          title: CMMS workforce calendar is moving to GigaOps Workforce
+          summary: CMMS continues to own maintenance work orders and required skills. Scheduling people against that demand will be provided by the canonical GigaOps Workforce booking service after WI-OI-060 certification.
+          availableForTesting:
+            - CMMS maintenance work orders remain separate from workforce identity and booking ownership.
+          blockedActions:
+            - Scheduling technicians through the legacy CMMS-local workforce model.
+            - Presenting unpersisted calendar allocations as tenant records.
+      - route: /cmms/analytics
+        unavailable:
+          title: Reliability reporting is not connected yet
+          summary: Mean time between failures, availability and downtime Pareto need attributable downtime and service-restoration records, which arrive with downtime capture (CM-07). The CMMS overview shows open, overdue and completed work and the stock position from persisted records.
+          availableForTesting:
+            - Work-order and stock overview at /cmms, derived from persisted CMMS records.
+          blockedActions:
+            - Presenting reliability, availability or downtime figures that are not measured.
   api:
     application: apps/api
     port: 4200

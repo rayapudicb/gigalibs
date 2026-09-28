@@ -1,6 +1,5 @@
 'use client';
 
-import { type CmmsApiError, cmmsApi } from '@/lib/cmms-api';
 import type {
   CmmsAssetV1,
   CmmsPageV1,
@@ -15,8 +14,19 @@ import type {
   CmmsWorkOrderV1,
 } from '@gigalibs/contracts';
 import { Plus } from '@medusajs/icons';
-import { Button, Checkbox, Container, Heading, Input, StatusBadge, Table, Text, Textarea } from '@medusajs/ui';
+import {
+  Button,
+  Checkbox,
+  Container,
+  Heading,
+  Input,
+  StatusBadge,
+  Table,
+  Text,
+  Textarea,
+} from '@medusajs/ui';
 import { type FormEvent, useCallback, useEffect, useState } from 'react';
+import { type CmmsApiError, cmmsApi } from '../api';
 import {
   ActionError,
   EmptyState,
@@ -41,9 +51,24 @@ export const statusColor: Record<CmmsWorkOrderStatusV1, BadgeColor> = {
   COMPLETED: 'green',
   CANCELLED: 'grey',
 };
-export const priorityColor: Record<CmmsPriorityV1, BadgeColor> = { LOW: 'grey', MEDIUM: 'blue', HIGH: 'orange', EMERGENCY: 'red' };
-const taskColor: Record<CmmsTaskStatusV1, BadgeColor> = { PENDING: 'grey', DONE: 'green', FAILED: 'red', NOT_APPLICABLE: 'purple' };
-const staffingColor: Record<CmmsStaffingV1['status'], BadgeColor> = { REQUESTED: 'orange', ACCEPTED: 'green', REJECTED: 'red', CANCELLED: 'grey' };
+export const priorityColor: Record<CmmsPriorityV1, BadgeColor> = {
+  LOW: 'grey',
+  MEDIUM: 'blue',
+  HIGH: 'orange',
+  EMERGENCY: 'red',
+};
+const taskColor: Record<CmmsTaskStatusV1, BadgeColor> = {
+  PENDING: 'grey',
+  DONE: 'green',
+  FAILED: 'red',
+  NOT_APPLICABLE: 'purple',
+};
+const staffingColor: Record<CmmsStaffingV1['status'], BadgeColor> = {
+  REQUESTED: 'orange',
+  ACCEPTED: 'green',
+  REJECTED: 'red',
+  CANCELLED: 'grey',
+};
 const bookingColor: Record<CmmsWorkOrderBookingV1['status'], BadgeColor> = {
   DRAFT: 'grey',
   CONFIRMED: 'blue',
@@ -98,9 +123,13 @@ export function CmmsWorkOrders() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <Heading level="h2">Work orders</Heading>
-            <Text size="small" className="mt-1 text-ui-fg-subtle">{page ? `${page.total} matching` : 'Loading…'}</Text>
+            <Text size="small" className="mt-1 text-ui-fg-subtle">
+              {page ? `${page.total} matching` : 'Loading…'}
+            </Text>
           </div>
-          <Button type="button" size="small" onClick={() => setShowCreate((value) => !value)}><Plus /> New work order</Button>
+          <Button type="button" size="small" onClick={() => setShowCreate((value) => !value)}>
+            <Plus /> New work order
+          </Button>
         </div>
         {showCreate ? (
           <CreateWorkOrderForm
@@ -120,14 +149,31 @@ export function CmmsWorkOrders() {
           }}
         >
           <div className="min-w-[220px] flex-1">
-            <Input type="text" inputMode="search" enterKeyHint="search" aria-label="Search work orders" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search title or number" />
+            <Input
+              type="text"
+              inputMode="search"
+              enterKeyHint="search"
+              aria-label="Search work orders"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Search title or number"
+            />
           </div>
-          <select aria-label="Status" value={status} onChange={(event) => setStatus(event.target.value as typeof status)} className={`${selectClass} w-auto min-w-[180px]`}>
+          <select
+            aria-label="Status"
+            value={status}
+            onChange={(event) => setStatus(event.target.value as typeof status)}
+            className={`${selectClass} w-auto min-w-[180px]`}
+          >
             <option value="ACTIVE">Open work</option>
             <option value="">All statuses</option>
-            {(['OPEN', 'IN_PROGRESS', 'ON_HOLD', 'COMPLETED', 'CANCELLED'] as const).map((value) => (
-              <option key={value} value={value}>{value.replace('_', ' ')}</option>
-            ))}
+            {(['OPEN', 'IN_PROGRESS', 'ON_HOLD', 'COMPLETED', 'CANCELLED'] as const).map(
+              (value) => (
+                <option key={value} value={value}>
+                  {value.replace('_', ' ')}
+                </option>
+              ),
+            )}
           </select>
         </form>
         {loading ? (
@@ -135,7 +181,11 @@ export function CmmsWorkOrders() {
         ) : !page || page.items.length === 0 ? (
           <EmptyState
             title={assets.length === 0 ? 'Register an asset first' : 'No matching work orders'}
-            text={assets.length === 0 ? 'Work orders are raised against assets at your sites.' : 'Raise a work order or change the filters.'}
+            text={
+              assets.length === 0
+                ? 'Work orders are raised against assets at your sites.'
+                : 'Raise a work order or change the filters.'
+            }
           />
         ) : (
           <div className="mt-4 overflow-x-auto">
@@ -163,8 +213,16 @@ export function CmmsWorkOrders() {
                         {workOrder.triggerSource === 'PM_SCHEDULE' ? ' · preventive' : ''}
                       </span>
                     </Table.Cell>
-                    <Table.Cell><StatusBadge color={priorityColor[workOrder.priority]}>{workOrder.priority}</StatusBadge></Table.Cell>
-                    <Table.Cell><StatusBadge color={statusColor[workOrder.status]}>{workOrder.status.replace('_', ' ')}</StatusBadge></Table.Cell>
+                    <Table.Cell>
+                      <StatusBadge color={priorityColor[workOrder.priority]}>
+                        {workOrder.priority}
+                      </StatusBadge>
+                    </Table.Cell>
+                    <Table.Cell>
+                      <StatusBadge color={statusColor[workOrder.status]}>
+                        {workOrder.status.replace('_', ' ')}
+                      </StatusBadge>
+                    </Table.Cell>
                     <Table.Cell>{formatDate(workOrder.dueAt)}</Table.Cell>
                   </Table.Row>
                 ))}
@@ -178,7 +236,13 @@ export function CmmsWorkOrders() {
   );
 }
 
-function CreateWorkOrderForm({ assets, onCreated }: { assets: readonly CmmsAssetV1[]; onCreated: (workOrder: CmmsWorkOrderDetailV1) => Promise<void> }) {
+function CreateWorkOrderForm({
+  assets,
+  onCreated,
+}: {
+  assets: readonly CmmsAssetV1[];
+  onCreated: (workOrder: CmmsWorkOrderDetailV1) => Promise<void>;
+}) {
   const [requestKey] = useState(() => crypto.randomUUID());
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<CmmsApiError | null>(null);
@@ -216,8 +280,13 @@ function CreateWorkOrderForm({ assets, onCreated }: { assets: readonly CmmsAsset
   }
 
   return (
-    <form onSubmit={submit} className="mt-5 grid gap-3 rounded-lg border border-ui-border-base bg-ui-bg-subtle p-4 md:grid-cols-2">
-      <Field id="wo-title" label="Title" className="md:col-span-2"><Input id="wo-title" name="title" required maxLength={240} /></Field>
+    <form
+      onSubmit={submit}
+      className="mt-5 grid gap-3 rounded-lg border border-ui-border-base bg-ui-bg-subtle p-4 md:grid-cols-2"
+    >
+      <Field id="wo-title" label="Title" className="md:col-span-2">
+        <Input id="wo-title" name="title" required maxLength={240} />
+      </Field>
       <Field id="wo-type" label="Type">
         <select id="wo-type" name="type" className={selectClass} defaultValue="REACTIVE">
           <option value="REACTIVE">Reactive</option>
@@ -238,25 +307,44 @@ function CreateWorkOrderForm({ assets, onCreated }: { assets: readonly CmmsAsset
         <select id="wo-asset" name="assetId" className={selectClass} defaultValue="">
           <option value="">No asset</option>
           {assets.map((asset) => (
-            <option key={asset.id} value={asset.id}>{asset.name} ({asset.assetTag})</option>
+            <option key={asset.id} value={asset.id}>
+              {asset.name} ({asset.assetTag})
+            </option>
           ))}
         </select>
       </Field>
-      <Field id="wo-due" label="Due"><Input id="wo-due" name="dueAt" type="datetime-local" /></Field>
-      <Field id="wo-hours" label="Estimated hours"><Input id="wo-hours" name="estimatedHours" type="number" min="0.25" step="0.25" /></Field>
+      <Field id="wo-due" label="Due">
+        <Input id="wo-due" name="dueAt" type="datetime-local" />
+      </Field>
+      <Field id="wo-hours" label="Estimated hours">
+        <Input id="wo-hours" name="estimatedHours" type="number" min="0.25" step="0.25" />
+      </Field>
       <div className="flex items-center gap-2 self-end pb-1">
         <Checkbox id="wo-signature" name="requiresSignature" />
-        <label htmlFor="wo-signature" className="txt-compact-small">Completion requires a signature</label>
+        <label htmlFor="wo-signature" className="txt-compact-small">
+          Completion requires a signature
+        </label>
       </div>
-      <Field id="wo-description" label="Description" className="md:col-span-2"><Textarea id="wo-description" name="description" rows={3} maxLength={10000} /></Field>
-      <Field id="wo-tasks" label="Checklist (one required task per line)" className="md:col-span-2"><Textarea id="wo-tasks" name="tasks" rows={3} /></Field>
-      <div className="md:col-span-2"><ActionError error={error} /></div>
-      <Button type="submit" isLoading={saving} className="md:col-span-2">Create work order</Button>
+      <Field id="wo-description" label="Description" className="md:col-span-2">
+        <Textarea id="wo-description" name="description" rows={3} maxLength={10000} />
+      </Field>
+      <Field id="wo-tasks" label="Checklist (one required task per line)" className="md:col-span-2">
+        <Textarea id="wo-tasks" name="tasks" rows={3} />
+      </Field>
+      <div className="md:col-span-2">
+        <ActionError error={error} />
+      </div>
+      <Button type="submit" isLoading={saving} className="md:col-span-2">
+        Create work order
+      </Button>
     </form>
   );
 }
 
-function WorkOrderPanel({ workOrderId, onChanged }: { workOrderId: string | null; onChanged: () => Promise<void> }) {
+function WorkOrderPanel({
+  workOrderId,
+  onChanged,
+}: { workOrderId: string | null; onChanged: () => Promise<void> }) {
   const [workOrder, setWorkOrder] = useState<CmmsWorkOrderDetailV1 | null>(null);
   const [history, setHistory] = useState<readonly CmmsWorkOrderEventV1[] | null>(null);
   const [error, setError] = useState<CmmsApiError | null>(null);
@@ -301,62 +389,134 @@ function WorkOrderPanel({ workOrderId, onChanged }: { workOrderId: string | null
       <aside aria-label="Work order details">
         <Container className="p-5">
           <Heading level="h2">Work order details</Heading>
-          <Text size="small" className="mt-3 text-ui-fg-subtle">Select a work order to execute it: start, record checklist results, log labour, issue parts and complete it.</Text>
+          <Text size="small" className="mt-3 text-ui-fg-subtle">
+            Select a work order to execute it: start, record checklist results, log labour, issue
+            parts and complete it.
+          </Text>
         </Container>
       </aside>
     );
   }
   if (!workOrder) {
-    return error ? <ErrorState error={error} retry={() => void reload()} /> : <LoadingState label="Loading work order…" />;
+    return error ? (
+      <ErrorState error={error} retry={() => void reload()} />
+    ) : (
+      <LoadingState label="Loading work order…" />
+    );
   }
 
   const executing = EXECUTING.includes(workOrder.status);
   const active = ACTIVE.includes(workOrder.status);
-  const pendingRequired = workOrder.tasks.filter((task) => task.required && task.status === 'PENDING').length;
+  const pendingRequired = workOrder.tasks.filter(
+    (task) => task.required && task.status === 'PENDING',
+  ).length;
 
   return (
     <aside aria-label="Work order details" className="space-y-4">
       <Container className="p-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <Text size="xsmall" className="font-mono text-ui-fg-subtle">{workOrder.woNumber} · v{workOrder.version}</Text>
-            <Heading level="h2" className="mt-1">{workOrder.title}</Heading>
+            <Text size="xsmall" className="font-mono text-ui-fg-subtle">
+              {workOrder.woNumber} · v{workOrder.version}
+            </Text>
+            <Heading level="h2" className="mt-1">
+              {workOrder.title}
+            </Heading>
           </div>
           <div className="flex gap-2">
-            <StatusBadge color={priorityColor[workOrder.priority]}>{workOrder.priority}</StatusBadge>
-            <StatusBadge color={statusColor[workOrder.status]}>{workOrder.status.replace('_', ' ')}</StatusBadge>
+            <StatusBadge color={priorityColor[workOrder.priority]}>
+              {workOrder.priority}
+            </StatusBadge>
+            <StatusBadge color={statusColor[workOrder.status]}>
+              {workOrder.status.replace('_', ' ')}
+            </StatusBadge>
           </div>
         </div>
-        {workOrder.description ? <Text size="small" className="mt-3 whitespace-pre-wrap text-ui-fg-subtle">{workOrder.description}</Text> : null}
+        {workOrder.description ? (
+          <Text size="small" className="mt-3 whitespace-pre-wrap text-ui-fg-subtle">
+            {workOrder.description}
+          </Text>
+        ) : null}
         <dl className="mt-4 grid grid-cols-2 gap-3 txt-compact-small">
-          <div><dt className="text-ui-fg-subtle">Asset</dt><dd>{workOrder.assetName ?? '—'}</dd></div>
-          <div><dt className="text-ui-fg-subtle">Site</dt><dd>{siteName(workOrder.siteRef)}</dd></div>
-          <div><dt className="text-ui-fg-subtle">Due</dt><dd>{formatDate(workOrder.dueAt)}</dd></div>
-          <div><dt className="text-ui-fg-subtle">Started</dt><dd>{formatDate(workOrder.startedAt)}</dd></div>
-          <div><dt className="text-ui-fg-subtle">Labour</dt><dd className="tabular-nums">{workOrder.labourHours} h</dd></div>
+          <div>
+            <dt className="text-ui-fg-subtle">Asset</dt>
+            <dd>{workOrder.assetName ?? '—'}</dd>
+          </div>
+          <div>
+            <dt className="text-ui-fg-subtle">Site</dt>
+            <dd>{siteName(workOrder.siteRef)}</dd>
+          </div>
+          <div>
+            <dt className="text-ui-fg-subtle">Due</dt>
+            <dd>{formatDate(workOrder.dueAt)}</dd>
+          </div>
+          <div>
+            <dt className="text-ui-fg-subtle">Started</dt>
+            <dd>{formatDate(workOrder.startedAt)}</dd>
+          </div>
+          <div>
+            <dt className="text-ui-fg-subtle">Labour</dt>
+            <dd className="tabular-nums">{workOrder.labourHours} h</dd>
+          </div>
           <div>
             <dt className="text-ui-fg-subtle">Cost</dt>
-            <dd className="tabular-nums">{workOrder.costs.length === 0 ? '—' : workOrder.costs.map((cost) => formatMoney(cost.amount, cost.currencyCode)).join(' · ')}</dd>
+            <dd className="tabular-nums">
+              {workOrder.costs.length === 0
+                ? '—'
+                : workOrder.costs
+                    .map((cost) => formatMoney(cost.amount, cost.currencyCode))
+                    .join(' · ')}
+            </dd>
           </div>
-          {workOrder.completedAt ? <div><dt className="text-ui-fg-subtle">Completed</dt><dd>{formatDate(workOrder.completedAt)}{workOrder.signed ? ' · signed' : ''}</dd></div> : null}
-          {workOrder.completionNotes ? <div className="col-span-2"><dt className="text-ui-fg-subtle">Completion notes</dt><dd>{workOrder.completionNotes}</dd></div> : null}
+          {workOrder.completedAt ? (
+            <div>
+              <dt className="text-ui-fg-subtle">Completed</dt>
+              <dd>
+                {formatDate(workOrder.completedAt)}
+                {workOrder.signed ? ' · signed' : ''}
+              </dd>
+            </div>
+          ) : null}
+          {workOrder.completionNotes ? (
+            <div className="col-span-2">
+              <dt className="text-ui-fg-subtle">Completion notes</dt>
+              <dd>{workOrder.completionNotes}</dd>
+            </div>
+          ) : null}
         </dl>
-        <StatusActions workOrder={workOrder} busy={busy} pendingRequired={pendingRequired} run={run} />
+        <StatusActions
+          workOrder={workOrder}
+          busy={busy}
+          pendingRequired={pendingRequired}
+          run={run}
+        />
         <ActionError error={error} onReload={() => void reload()} />
       </Container>
 
       <Container className="p-5">
         <Heading level="h3">Checklist</Heading>
-        {workOrder.tasks.length === 0 ? <Text size="small" className="mt-2 text-ui-fg-subtle">No checklist tasks.</Text> : (
+        {workOrder.tasks.length === 0 ? (
+          <Text size="small" className="mt-2 text-ui-fg-subtle">
+            No checklist tasks.
+          </Text>
+        ) : (
           <ul className="mt-3 space-y-3">
             {workOrder.tasks.map((task) => (
               <li key={task.id} className="rounded-md border border-ui-border-base p-3">
                 <div className="flex items-start justify-between gap-2">
-                  <Text size="small" weight="plus">{task.position}. {task.label}{task.required ? '' : ' (optional)'}</Text>
-                  <StatusBadge color={taskColor[task.status]}>{task.status.replace('_', ' ')}</StatusBadge>
+                  <Text size="small" weight="plus">
+                    {task.position}. {task.label}
+                    {task.required ? '' : ' (optional)'}
+                  </Text>
+                  <StatusBadge color={taskColor[task.status]}>
+                    {task.status.replace('_', ' ')}
+                  </StatusBadge>
                 </div>
                 {task.resultValue !== null || task.notes ? (
-                  <Text size="xsmall" className="mt-1 text-ui-fg-subtle">{task.resultValue !== null ? `Result ${task.resultValue}. ` : ''}{task.notes ?? ''}</Text>
+                  <Text size="xsmall" className="mt-1 text-ui-fg-subtle">
+                    {task.resultValue !== null ? `Result ${task.resultValue}. ` : ''}
+                    {task.notes ?? ''}
+                  </Text>
                 ) : null}
                 {executing ? (
                   <form
@@ -374,15 +534,34 @@ function WorkOrderPanel({ workOrderId, onChanged }: { workOrderId: string | null
                       );
                     }}
                   >
-                    <select name="status" aria-label={`Result for ${task.label}`} defaultValue={task.status === 'PENDING' ? 'DONE' : task.status} className={`${selectClass} w-auto`}>
+                    <select
+                      name="status"
+                      aria-label={`Result for ${task.label}`}
+                      defaultValue={task.status === 'PENDING' ? 'DONE' : task.status}
+                      className={`${selectClass} w-auto`}
+                    >
                       <option value="DONE">Done</option>
                       <option value="FAILED">Failed</option>
                       <option value="NOT_APPLICABLE">Not applicable</option>
                       <option value="PENDING">Reset</option>
                     </select>
-                    <Input name="resultValue" type="number" step="any" placeholder="Reading" aria-label="Reading" className="w-28" />
-                    <Input name="notes" placeholder="Notes" aria-label="Task notes" className="min-w-[120px] flex-1" />
-                    <Button type="submit" size="small" variant="secondary" isLoading={busy}>Record</Button>
+                    <Input
+                      name="resultValue"
+                      type="number"
+                      step="any"
+                      placeholder="Reading"
+                      aria-label="Reading"
+                      className="w-28"
+                    />
+                    <Input
+                      name="notes"
+                      placeholder="Notes"
+                      aria-label="Task notes"
+                      className="min-w-[120px] flex-1"
+                    />
+                    <Button type="submit" size="small" variant="secondary" isLoading={busy}>
+                      Record
+                    </Button>
                   </form>
                 ) : null}
               </li>
@@ -396,18 +575,34 @@ function WorkOrderPanel({ workOrderId, onChanged }: { workOrderId: string | null
               event.preventDefault();
               const form = event.currentTarget;
               const label = optionalText(new FormData(form).get('label'));
-              if (label) void run(() => cmmsApi.addTask(workOrder.id, { label, required: true })).then((saved) => saved && form.reset());
+              if (label)
+                void run(() => cmmsApi.addTask(workOrder.id, { label, required: true })).then(
+                  (saved) => saved && form.reset(),
+                );
             }}
           >
-            <Input name="label" placeholder="Add a required task" aria-label="New task" maxLength={240} />
-            <Button type="submit" size="small" variant="secondary" isLoading={busy}>Add</Button>
+            <Input
+              name="label"
+              placeholder="Add a required task"
+              aria-label="New task"
+              maxLength={240}
+            />
+            <Button type="submit" size="small" variant="secondary" isLoading={busy}>
+              Add
+            </Button>
           </form>
         ) : null}
       </Container>
 
       <LabourCard workOrder={workOrder} busy={busy} run={run} executing={executing} />
       <PartsCard workOrder={workOrder} busy={busy} run={run} executing={executing} />
-      <StaffingCard workOrder={workOrder} busy={busy} run={run} active={active} refresh={() => void reload()} />
+      <StaffingCard
+        workOrder={workOrder}
+        busy={busy}
+        run={run}
+        active={active}
+        refresh={() => void reload()}
+      />
 
       <Container className="p-5">
         <Heading level="h3">Notes</Heading>
@@ -417,17 +612,24 @@ function WorkOrderPanel({ workOrderId, onChanged }: { workOrderId: string | null
             event.preventDefault();
             const form = event.currentTarget;
             const body = optionalText(new FormData(form).get('body'));
-            if (body) void run(() => cmmsApi.addNote(workOrder.id, body)).then((saved) => saved && form.reset());
+            if (body)
+              void run(() => cmmsApi.addNote(workOrder.id, body)).then(
+                (saved) => saved && form.reset(),
+              );
           }}
         >
           <Input name="body" placeholder="Add a note" aria-label="New note" maxLength={4000} />
-          <Button type="submit" size="small" variant="secondary" isLoading={busy}>Add</Button>
+          <Button type="submit" size="small" variant="secondary" isLoading={busy}>
+            Add
+          </Button>
         </form>
         {workOrder.notes.length === 0 ? null : (
           <ul className="mt-3 space-y-2">
             {workOrder.notes.map((note) => (
               <li key={note.id} className="txt-compact-small">
-                <span className="text-ui-fg-subtle">{formatDate(note.occurredAt)} · {note.actorSubject}</span>
+                <span className="text-ui-fg-subtle">
+                  {formatDate(note.occurredAt)} · {note.actorSubject}
+                </span>
                 <p className="mt-0.5 whitespace-pre-wrap">{String(note.details.body ?? '')}</p>
               </li>
             ))}
@@ -443,7 +645,12 @@ function WorkOrderPanel({ workOrderId, onChanged }: { workOrderId: string | null
               type="button"
               size="small"
               variant="secondary"
-              onClick={() => void cmmsApi.workOrderHistory(workOrder.id).then((result) => setHistory(result.items), (reason) => setError(reason as CmmsApiError))}
+              onClick={() =>
+                void cmmsApi.workOrderHistory(workOrder.id).then(
+                  (result) => setHistory(result.items),
+                  (reason) => setError(reason as CmmsApiError),
+                )
+              }
             >
               Show history
             </Button>
@@ -466,7 +673,12 @@ function WorkOrderPanel({ workOrderId, onChanged }: { workOrderId: string | null
   );
 }
 
-function StatusActions({ workOrder, busy, pendingRequired, run }: {
+function StatusActions({
+  workOrder,
+  busy,
+  pendingRequired,
+  run,
+}: {
   workOrder: CmmsWorkOrderDetailV1;
   busy: boolean;
   pendingRequired: number;
@@ -474,21 +686,64 @@ function StatusActions({ workOrder, busy, pendingRequired, run }: {
 }) {
   const [completing, setCompleting] = useState(false);
   const move = (status: CmmsWorkOrderStatusV1, extra: Record<string, unknown> = {}) =>
-    run(() => cmmsApi.changeStatus(workOrder.id, { expectedVersion: workOrder.version, status, ...extra }));
+    run(() =>
+      cmmsApi.changeStatus(workOrder.id, { expectedVersion: workOrder.version, status, ...extra }),
+    );
 
   if (workOrder.status === 'COMPLETED' || workOrder.status === 'CANCELLED') return null;
   return (
     <div className="mt-4">
       <div className="flex flex-wrap gap-2">
-        {workOrder.status === 'OPEN' ? <Button type="button" size="small" isLoading={busy} onClick={() => void move('IN_PROGRESS')}>Start work</Button> : null}
-        {workOrder.status === 'ON_HOLD' ? <Button type="button" size="small" isLoading={busy} onClick={() => void move('IN_PROGRESS')}>Resume</Button> : null}
+        {workOrder.status === 'OPEN' ? (
+          <Button
+            type="button"
+            size="small"
+            isLoading={busy}
+            onClick={() => void move('IN_PROGRESS')}
+          >
+            Start work
+          </Button>
+        ) : null}
+        {workOrder.status === 'ON_HOLD' ? (
+          <Button
+            type="button"
+            size="small"
+            isLoading={busy}
+            onClick={() => void move('IN_PROGRESS')}
+          >
+            Resume
+          </Button>
+        ) : null}
         {workOrder.status === 'IN_PROGRESS' ? (
           <>
-            <Button type="button" size="small" isLoading={busy} onClick={() => setCompleting((value) => !value)}>Complete…</Button>
-            <Button type="button" size="small" variant="secondary" isLoading={busy} onClick={() => void move('ON_HOLD')}>Put on hold</Button>
+            <Button
+              type="button"
+              size="small"
+              isLoading={busy}
+              onClick={() => setCompleting((value) => !value)}
+            >
+              Complete…
+            </Button>
+            <Button
+              type="button"
+              size="small"
+              variant="secondary"
+              isLoading={busy}
+              onClick={() => void move('ON_HOLD')}
+            >
+              Put on hold
+            </Button>
           </>
         ) : null}
-        <Button type="button" size="small" variant="danger" isLoading={busy} onClick={() => void move('CANCELLED')}>Cancel work order</Button>
+        <Button
+          type="button"
+          size="small"
+          variant="danger"
+          isLoading={busy}
+          onClick={() => void move('CANCELLED')}
+        >
+          Cancel work order
+        </Button>
       </div>
       {completing && workOrder.status === 'IN_PROGRESS' ? (
         <form
@@ -504,20 +759,33 @@ function StatusActions({ workOrder, busy, pendingRequired, run }: {
           }}
         >
           {pendingRequired > 0 ? (
-            <Text size="small" className="text-ui-fg-error">{pendingRequired} required task(s) still pending; record them before completing.</Text>
+            <Text size="small" className="text-ui-fg-error">
+              {pendingRequired} required task(s) still pending; record them before completing.
+            </Text>
           ) : null}
-          <Field id="complete-notes" label="Completion notes"><Textarea id="complete-notes" name="notes" rows={2} maxLength={4000} /></Field>
+          <Field id="complete-notes" label="Completion notes">
+            <Textarea id="complete-notes" name="notes" rows={2} maxLength={4000} />
+          </Field>
           {workOrder.requiresSignature ? (
-            <Field id="complete-signature" label="Signature (type your full name)"><Input id="complete-signature" name="signature" required maxLength={200} /></Field>
+            <Field id="complete-signature" label="Signature (type your full name)">
+              <Input id="complete-signature" name="signature" required maxLength={200} />
+            </Field>
           ) : null}
-          <Button type="submit" size="small" isLoading={busy}>Confirm completion</Button>
+          <Button type="submit" size="small" isLoading={busy}>
+            Confirm completion
+          </Button>
         </form>
       ) : null}
     </div>
   );
 }
 
-function LabourCard({ workOrder, busy, run, executing }: {
+function LabourCard({
+  workOrder,
+  busy,
+  run,
+  executing,
+}: {
   workOrder: CmmsWorkOrderDetailV1;
   busy: boolean;
   executing: boolean;
@@ -527,12 +795,23 @@ function LabourCard({ workOrder, busy, run, executing }: {
   return (
     <Container className="p-5">
       <Heading level="h3">Labour</Heading>
-      {workOrder.labour.length === 0 ? <Text size="small" className="mt-2 text-ui-fg-subtle">No labour logged.</Text> : (
+      {workOrder.labour.length === 0 ? (
+        <Text size="small" className="mt-2 text-ui-fg-subtle">
+          No labour logged.
+        </Text>
+      ) : (
         <ul className="mt-3 space-y-1">
           {workOrder.labour.map((entry) => (
             <li key={entry.id} className="flex justify-between gap-2 txt-compact-small">
-              <span>{entry.performedOn} · {entry.workerRef} · {entry.timeCategory.toLowerCase()}</span>
-              <span className="tabular-nums">{entry.hours} h{entry.hourlyRate !== null && entry.currencyCode ? ` · ${formatMoney(entry.hours * entry.hourlyRate, entry.currencyCode)}` : ''}</span>
+              <span>
+                {entry.performedOn} · {entry.workerRef} · {entry.timeCategory.toLowerCase()}
+              </span>
+              <span className="tabular-nums">
+                {entry.hours} h
+                {entry.hourlyRate !== null && entry.currencyCode
+                  ? ` · ${formatMoney(entry.hours * entry.hourlyRate, entry.currencyCode)}`
+                  : ''}
+              </span>
             </li>
           ))}
         </ul>
@@ -551,31 +830,87 @@ function LabourCard({ workOrder, busy, run, executing }: {
                 hours: Number(data.get('hours')),
                 performedOn: String(data.get('performedOn')),
                 timeCategory: String(data.get('timeCategory')),
-                ...(rate !== undefined ? { hourlyRate: rate, currencyCode: optionalText(data.get('currencyCode'))?.toUpperCase() } : {}),
+                ...(rate !== undefined
+                  ? {
+                      hourlyRate: rate,
+                      currencyCode: optionalText(data.get('currencyCode'))?.toUpperCase(),
+                    }
+                  : {}),
               }),
             ).then((saved) => saved && form.reset());
           }}
         >
-          <Input name="workerRef" placeholder={userId ? 'Worker (defaults to you)' : 'Worker user id'} aria-label="Worker" className="col-span-2" />
-          <Input name="hours" type="number" min="0.25" max="24" step="0.25" required placeholder="Hours" aria-label="Hours" />
-          <Input name="performedOn" type="date" required defaultValue={new Date().toISOString().slice(0, 10)} aria-label="Date" />
-          <select name="timeCategory" aria-label="Time category" className={selectClass} defaultValue="REGULAR">
+          <Input
+            name="workerRef"
+            placeholder={userId ? 'Worker (defaults to you)' : 'Worker user id'}
+            aria-label="Worker"
+            className="col-span-2"
+          />
+          <Input
+            name="hours"
+            type="number"
+            min="0.25"
+            max="24"
+            step="0.25"
+            required
+            placeholder="Hours"
+            aria-label="Hours"
+          />
+          <Input
+            name="performedOn"
+            type="date"
+            required
+            defaultValue={new Date().toISOString().slice(0, 10)}
+            aria-label="Date"
+          />
+          <select
+            name="timeCategory"
+            aria-label="Time category"
+            className={selectClass}
+            defaultValue="REGULAR"
+          >
             <option value="REGULAR">Regular</option>
             <option value="OVERTIME">Overtime</option>
             <option value="TRAVEL">Travel</option>
           </select>
           <div className="flex gap-2">
-            <Input name="hourlyRate" type="number" min="0" step="0.01" placeholder="Rate" aria-label="Hourly rate" />
-            <Input name="currencyCode" maxLength={3} placeholder="USD" aria-label="Currency" className="w-20 uppercase" />
+            <Input
+              name="hourlyRate"
+              type="number"
+              min="0"
+              step="0.01"
+              placeholder="Rate"
+              aria-label="Hourly rate"
+            />
+            <Input
+              name="currencyCode"
+              maxLength={3}
+              placeholder="USD"
+              aria-label="Currency"
+              className="w-20 uppercase"
+            />
           </div>
-          <Button type="submit" size="small" variant="secondary" isLoading={busy} className="col-span-2">Log labour</Button>
+          <Button
+            type="submit"
+            size="small"
+            variant="secondary"
+            isLoading={busy}
+            className="col-span-2"
+          >
+            Log labour
+          </Button>
         </form>
       ) : null}
     </Container>
   );
 }
 
-function PartsCard({ workOrder, busy, run, executing }: {
+function PartsCard({
+  workOrder,
+  busy,
+  run,
+  executing,
+}: {
   workOrder: CmmsWorkOrderDetailV1;
   busy: boolean;
   executing: boolean;
@@ -585,7 +920,10 @@ function PartsCard({ workOrder, busy, run, executing }: {
   useEffect(() => {
     if (!executing) return;
     let active = true;
-    cmmsApi.searchParts({ pageSize: 100 }).then((page) => active && setParts(page.items), () => undefined);
+    cmmsApi.searchParts({ pageSize: 100 }).then(
+      (page) => active && setParts(page.items),
+      () => undefined,
+    );
     return () => {
       active = false;
     };
@@ -593,12 +931,23 @@ function PartsCard({ workOrder, busy, run, executing }: {
   return (
     <Container className="p-5">
       <Heading level="h3">Parts used</Heading>
-      {workOrder.parts.length === 0 ? <Text size="small" className="mt-2 text-ui-fg-subtle">No parts issued.</Text> : (
+      {workOrder.parts.length === 0 ? (
+        <Text size="small" className="mt-2 text-ui-fg-subtle">
+          No parts issued.
+        </Text>
+      ) : (
         <ul className="mt-3 space-y-1">
           {workOrder.parts.map((part) => (
             <li key={part.movementId} className="flex justify-between gap-2 txt-compact-small">
-              <span>{part.partNumber} · {part.partName}</span>
-              <span className="tabular-nums">{part.quantity}{part.unitCost !== null ? ` · ${formatMoney(part.quantity * part.unitCost, part.currencyCode)}` : ''}</span>
+              <span>
+                {part.partNumber} · {part.partName}
+              </span>
+              <span className="tabular-nums">
+                {part.quantity}
+                {part.unitCost !== null
+                  ? ` · ${formatMoney(part.quantity * part.unitCost, part.currencyCode)}`
+                  : ''}
+              </span>
             </li>
           ))}
         </ul>
@@ -619,14 +968,36 @@ function PartsCard({ workOrder, busy, run, executing }: {
             ).then((saved) => saved && form.reset());
           }}
         >
-          <select name="partId" required aria-label="Part" className={`${selectClass} min-w-[200px] flex-1`} defaultValue="">
-            <option value="" disabled>Select a part</option>
+          <select
+            name="partId"
+            required
+            aria-label="Part"
+            className={`${selectClass} min-w-[200px] flex-1`}
+            defaultValue=""
+          >
+            <option value="" disabled>
+              Select a part
+            </option>
             {parts.map((part) => (
-              <option key={part.id} value={part.id}>{part.partNumber} · {part.name} ({part.nonStock ? 'non-stock' : `${part.quantityOnHand} on hand`})</option>
+              <option key={part.id} value={part.id}>
+                {part.partNumber} · {part.name} (
+                {part.nonStock ? 'non-stock' : `${part.quantityOnHand} on hand`})
+              </option>
             ))}
           </select>
-          <Input name="quantity" type="number" min="0.001" step="any" required placeholder="Qty" aria-label="Quantity" className="w-24" />
-          <Button type="submit" size="small" variant="secondary" isLoading={busy}>Issue</Button>
+          <Input
+            name="quantity"
+            type="number"
+            min="0.001"
+            step="any"
+            required
+            placeholder="Qty"
+            aria-label="Quantity"
+            className="w-24"
+          />
+          <Button type="submit" size="small" variant="secondary" isLoading={busy}>
+            Issue
+          </Button>
         </form>
       ) : null}
     </Container>
@@ -637,7 +1008,13 @@ function PartsCard({ workOrder, busy, run, executing }: {
  * Staffing through Workforce (WI-OI-068): CMMS asks for people with capabilities for a window; Workforce answers
  * asynchronously (accepted, or refused with a reason) and its bookings appear here. CMMS keeps no worker records.
  */
-function StaffingCard({ workOrder, busy, run, active, refresh }: {
+function StaffingCard({
+  workOrder,
+  busy,
+  run,
+  active,
+  refresh,
+}: {
   workOrder: CmmsWorkOrderDetailV1;
   busy: boolean;
   active: boolean;
@@ -645,35 +1022,62 @@ function StaffingCard({ workOrder, busy, run, active, refresh }: {
   refresh: () => void;
 }) {
   const staffing = workOrder.staffing;
-  const live = staffing !== null && (staffing.status === 'REQUESTED' || staffing.status === 'ACCEPTED');
+  const live =
+    staffing !== null && (staffing.status === 'REQUESTED' || staffing.status === 'ACCEPTED');
   const [cancelling, setCancelling] = useState(false);
   return (
     <Container className="p-5">
       <div className="flex items-center justify-between gap-3">
         <Heading level="h3">Staffing</Heading>
-        {live ? <Button type="button" size="small" variant="transparent" onClick={refresh}>Refresh</Button> : null}
+        {live ? (
+          <Button type="button" size="small" variant="transparent" onClick={refresh}>
+            Refresh
+          </Button>
+        ) : null}
       </div>
       {staffing ? (
         <div className="mt-3 rounded-md border border-ui-border-base p-3">
           <div className="flex items-start justify-between gap-2">
             <Text size="small" weight="plus">
-              {staffing.headcount} × {staffing.capabilityCodes.length ? staffing.capabilityCodes.join(', ') : 'any capability'}
+              {staffing.headcount} ×{' '}
+              {staffing.capabilityCodes.length
+                ? staffing.capabilityCodes.join(', ')
+                : 'any capability'}
             </Text>
             <StatusBadge color={staffingColor[staffing.status]}>{staffing.status}</StatusBadge>
           </div>
-          <Text size="xsmall" className="mt-1 text-ui-fg-subtle">{formatDate(staffing.startsAt)} → {formatDate(staffing.endsAt)}</Text>
-          {staffing.status === 'REQUESTED' ? <Text size="xsmall" className="mt-1 text-ui-fg-subtle">Waiting for Workforce to accept the request.</Text> : null}
-          {staffing.rejectionReason ? <Text size="xsmall" className="mt-1 text-ui-fg-error">Workforce refused: {staffing.rejectionReason}</Text> : null}
+          <Text size="xsmall" className="mt-1 text-ui-fg-subtle">
+            {formatDate(staffing.startsAt)} → {formatDate(staffing.endsAt)}
+          </Text>
+          {staffing.status === 'REQUESTED' ? (
+            <Text size="xsmall" className="mt-1 text-ui-fg-subtle">
+              Waiting for Workforce to accept the request.
+            </Text>
+          ) : null}
+          {staffing.rejectionReason ? (
+            <Text size="xsmall" className="mt-1 text-ui-fg-error">
+              Workforce refused: {staffing.rejectionReason}
+            </Text>
+          ) : null}
         </div>
       ) : (
-        <Text size="small" className="mt-2 text-ui-fg-subtle">No staffing requested. Ask Workforce for qualified people for this job.</Text>
+        <Text size="small" className="mt-2 text-ui-fg-subtle">
+          No staffing requested. Ask Workforce for qualified people for this job.
+        </Text>
       )}
       {workOrder.bookings.length > 0 ? (
         <ul className="mt-3 space-y-1">
           {workOrder.bookings.map((booking) => (
-            <li key={booking.bookingRef} className="flex items-center justify-between gap-2 txt-compact-small">
-              <span>{booking.resourceName ?? 'Booked resource'} · {formatDate(booking.startsAt)}</span>
-              <StatusBadge color={bookingColor[booking.status]}>{booking.status.replace('_', ' ')}</StatusBadge>
+            <li
+              key={booking.bookingRef}
+              className="flex items-center justify-between gap-2 txt-compact-small"
+            >
+              <span>
+                {booking.resourceName ?? 'Booked resource'} · {formatDate(booking.startsAt)}
+              </span>
+              <StatusBadge color={bookingColor[booking.status]}>
+                {booking.status.replace('_', ' ')}
+              </StatusBadge>
             </li>
           ))}
         </ul>
@@ -685,14 +1089,33 @@ function StaffingCard({ workOrder, busy, run, active, refresh }: {
             onSubmit={(event) => {
               event.preventDefault();
               const reason = optionalText(new FormData(event.currentTarget).get('reason'));
-              if (reason) void run(() => cmmsApi.cancelStaffing(workOrder.id, reason)).then((saved) => saved && setCancelling(false));
+              if (reason)
+                void run(() => cmmsApi.cancelStaffing(workOrder.id, reason)).then(
+                  (saved) => saved && setCancelling(false),
+                );
             }}
           >
-            <Input name="reason" required maxLength={500} placeholder="Why is staffing no longer needed?" aria-label="Cancellation reason" />
-            <Button type="submit" size="small" variant="danger" isLoading={busy}>Withdraw</Button>
+            <Input
+              name="reason"
+              required
+              maxLength={500}
+              placeholder="Why is staffing no longer needed?"
+              aria-label="Cancellation reason"
+            />
+            <Button type="submit" size="small" variant="danger" isLoading={busy}>
+              Withdraw
+            </Button>
           </form>
         ) : (
-          <Button type="button" size="small" variant="secondary" className="mt-3" onClick={() => setCancelling(true)}>Withdraw request…</Button>
+          <Button
+            type="button"
+            size="small"
+            variant="secondary"
+            className="mt-3"
+            onClick={() => setCancelling(true)}
+          >
+            Withdraw request…
+          </Button>
         )
       ) : null}
       {active && !live ? (
@@ -701,7 +1124,10 @@ function StaffingCard({ workOrder, busy, run, active, refresh }: {
           onSubmit={(event) => {
             event.preventDefault();
             const data = new FormData(event.currentTarget);
-            const codes = String(data.get('capabilityCodes') ?? '').split(',').map((code) => code.trim()).filter(Boolean);
+            const codes = String(data.get('capabilityCodes') ?? '')
+              .split(',')
+              .map((code) => code.trim())
+              .filter(Boolean);
             void run(() =>
               cmmsApi.requestStaffing(workOrder.id, {
                 startsAt: new Date(String(data.get('startsAt'))).toISOString(),
@@ -712,11 +1138,40 @@ function StaffingCard({ workOrder, busy, run, active, refresh }: {
             );
           }}
         >
-          <Field id="staffing-starts" label="From"><Input id="staffing-starts" name="startsAt" type="datetime-local" required /></Field>
-          <Field id="staffing-ends" label="Until"><Input id="staffing-ends" name="endsAt" type="datetime-local" required /></Field>
-          <Field id="staffing-headcount" label="People"><Input id="staffing-headcount" name="headcount" type="number" min="1" max="50" defaultValue="1" required /></Field>
-          <Field id="staffing-capabilities" label="Capability codes"><Input id="staffing-capabilities" name="capabilityCodes" placeholder="e.g. MECH-L2, LOTO" maxLength={400} /></Field>
-          <Button type="submit" size="small" variant="secondary" isLoading={busy} className="col-span-2">Request staffing</Button>
+          <Field id="staffing-starts" label="From">
+            <Input id="staffing-starts" name="startsAt" type="datetime-local" required />
+          </Field>
+          <Field id="staffing-ends" label="Until">
+            <Input id="staffing-ends" name="endsAt" type="datetime-local" required />
+          </Field>
+          <Field id="staffing-headcount" label="People">
+            <Input
+              id="staffing-headcount"
+              name="headcount"
+              type="number"
+              min="1"
+              max="50"
+              defaultValue="1"
+              required
+            />
+          </Field>
+          <Field id="staffing-capabilities" label="Capability codes">
+            <Input
+              id="staffing-capabilities"
+              name="capabilityCodes"
+              placeholder="e.g. MECH-L2, LOTO"
+              maxLength={400}
+            />
+          </Field>
+          <Button
+            type="submit"
+            size="small"
+            variant="secondary"
+            isLoading={busy}
+            className="col-span-2"
+          >
+            Request staffing
+          </Button>
         </form>
       ) : null}
     </Container>

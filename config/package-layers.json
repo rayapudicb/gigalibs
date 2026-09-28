@@ -1,9 +1,15 @@
 {
   "schemaVersion": 1,
   "policy": "ADR-0013 layering (Proposed). Every workspace unit has exactly one layer. core: industry-agnostic foundations every client gets. module:<key>: code owned by one business module (modules/<key>/** is always module-owned). shell: the web composition root, which may import anything until WI-OI-083 replaces hand-wiring with manifests. tooling: tests and build tooling, not shipped. A new workspace package must be added here before it builds (audit:layers fails on unclassified units).",
-  "shell": ["apps/workflow-platform"],
-  "tooling": ["e2e"],
-  "coreApps": ["apps/playground-api"],
+  "shell": [
+    "apps/workflow-platform"
+  ],
+  "tooling": [
+    "e2e"
+  ],
+  "coreApps": [
+    "apps/playground-api"
+  ],
   "core": [
     "packages/admin-kit",
     "packages/ai-chat-core",
@@ -83,17 +89,32 @@
     "packages/ui-preset",
     "packages/users-core",
     "packages/validation-nest",
+    "packages/web-sdk",
     "packages/workflow-engine",
     "packages/workflow-mcp",
     "packages/workflow-sdk"
   ],
   "modulePackages": {
-    "accounts-receivable": ["packages/invoices-core", "packages/gigalibs-controls"],
-    "spend-management": ["packages/spend-core"],
-    "multi-currency": ["packages/multi-currency"],
-    "commerce": ["packages/cart-react", "packages/orders-nest"],
-    "finance-ledger": ["packages/ledger-nest"],
-    "knowledge-base": ["packages/knowledge-base-react"]
+    "accounts-receivable": [
+      "packages/invoices-core",
+      "packages/gigalibs-controls"
+    ],
+    "spend-management": [
+      "packages/spend-core"
+    ],
+    "multi-currency": [
+      "packages/multi-currency"
+    ],
+    "commerce": [
+      "packages/cart-react",
+      "packages/orders-nest"
+    ],
+    "finance-ledger": [
+      "packages/ledger-nest"
+    ],
+    "knowledge-base": [
+      "packages/knowledge-base-react"
+    ]
   },
   "rules": {
     "CORE_IMPORTS_MODULE": "Core code must not import module-owned code.",
@@ -210,12 +231,27 @@
         "OrderItem",
         "ProductCatalogItem"
       ],
-      "support (frozen)": ["SupportTicket", "TicketMessage"],
-      "knowledge-base (frozen)": ["KbCategory", "KbArticle"],
-      "esignature (frozen)": ["EsignEnvelope", "EsignRecipient"],
-      "document-scanner (frozen)": ["OcrExtractionJob"],
-      "tax-configuration (frozen)": ["TaxNexusConfig"],
-      "multi-currency (frozen)": ["CurrencyExchangeRate"],
+      "support (frozen)": [
+        "SupportTicket",
+        "TicketMessage"
+      ],
+      "knowledge-base (frozen)": [
+        "KbCategory",
+        "KbArticle"
+      ],
+      "esignature (frozen)": [
+        "EsignEnvelope",
+        "EsignRecipient"
+      ],
+      "document-scanner (frozen)": [
+        "OcrExtractionJob"
+      ],
+      "tax-configuration (frozen)": [
+        "TaxNexusConfig"
+      ],
+      "multi-currency (frozen)": [
+        "CurrencyExchangeRate"
+      ],
       "spend-management (frozen)": [
         "Budget",
         "BudgetCategory",

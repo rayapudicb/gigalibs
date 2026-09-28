@@ -4,6 +4,7 @@ packages:
   - "apps/*"
   - "e2e"
   - "modules/*/domain"
+  - "modules/*/web"
   - "modules/*/apps/*"
   - "!apps/docs"
   - "!apps/playground-web"

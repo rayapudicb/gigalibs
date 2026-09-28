@@ -1,7 +1,7 @@
 {
   "name": "@gigalibs/workflow-platform",
   "version": "0.0.1",
-  "description": "Enterprise AI Workflow Orchestration Platform — Next.js frontend",
+  "description": "Enterprise AI Workflow Orchestration Platform \u2014 Next.js frontend",
   "private": true,
   "scripts": {
     "dev": "next dev --port 5180 --hostname 0.0.0.0",
@@ -17,12 +17,14 @@
     "@gigalibs/auth-core": "workspace:*",
     "@gigalibs/broker": "workspace:*",
     "@gigalibs/charts-react": "workspace:*",
+    "@gigalibs/cmms-web": "workspace:*",
     "@gigalibs/configuration-react": "workspace:*",
     "@gigalibs/contracts": "workspace:*",
     "@gigalibs/db": "workspace:*",
     "@gigalibs/i18n": "workspace:*",
     "@gigalibs/logger": "workspace:*",
     "@gigalibs/maps-core": "workspace:*",
+    "@gigalibs/web-sdk": "workspace:*",
     "@medusajs/icons": "^2.20.1",
     "@medusajs/ui": "^4.2.3",
     "@xyflow/react": "^12.3.6",

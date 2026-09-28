@@ -50,7 +50,7 @@ import {
 } from 'lucide-react';
 import type { PlatformContextPersona } from '@gigalibs/contracts';
 import { workforceApi } from '@/lib/workforce-api';
-import { requestCmms } from '@/lib/cmms-api';
+import { requestCmms } from '@gigalibs/cmms-web';
 
 export interface ExecutiveControlTowerProps {
   initialPersona?: PlatformContextPersona;

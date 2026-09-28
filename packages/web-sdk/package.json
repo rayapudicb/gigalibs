@@ -1,0 +1,23 @@
+{
+  "name": "@gigalibs/web-sdk",
+  "version": "0.1.0",
+  "description": "Web SDK (ADR-0013 core): shell services module web packages may use, such as the place-picker slot and the signed-in user",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./src/index.ts"
+    }
+  },
+  "peerDependencies": {
+    "react": "^19.2.8"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.18",
+    "react": "19.2.8",
+    "typescript": "^5.8.3"
+  }
+}

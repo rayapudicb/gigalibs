@@ -160,3 +160,32 @@ Independent reviewers: Web/Accessibility, Security & Privacy, QA/SDET
 - **Live** (images `81005abe5146-903f2761a688`, web on 127.0.0.1:5190):
   - GigaOps P6–P8, CMMS and Workforce jobs web paths pass through the generated gateways;
   - Playwright/axe 14 of 14.
+
+## 083b — CMMS web package and generated pages (2026-09-28)
+
+**Implementation:**
+- **`@gigalibs/cmms-web`** (`modules/physical-operations-cmms/web`, module layer): the 7 CMMS screens and the API
+  client, moved with `git mv`. It has no shell (`@/`) imports.
+- **`@gigalibs/web-sdk`** (`packages/web-sdk`, core):
+  - the place-picker slot (`PlacesProvider`, `usePlaces`, `PlaceSelect`), which falls back to an empty picker and
+    short ids as before;
+  - `useCurrentUserId`.
+- **Shell:** `GeospatialPlacesProvider` fills the slot, mounted in `app/(app)/layout.tsx`. The provider only
+  supplies the hook, so no extra request is made on pages that do not ask for places.
+- **Pages:** CMMS declares 14 pages in `spec.ui.pages` (6 component pages, 8 capability-status pages with their
+  exact texts). `pnpm modules:catalog` generates them into `app/(app)/cmms/**`. It refused to overwrite the 14
+  hand-written pages until they were removed, and it flags generated pages no manifest declares.
+- **Framework instances:** the packages declare React, Next and Medusa UI as peer dependencies, with development
+  copies pinned to the web app's exact versions. Medusa UI, the icons, Next.js and React resolve to the same
+  instance from the web app, `cmms-web` and `web-sdk`.
+- **Other changes:**
+  - the dashboard imports `requestCmms` from `@gigalibs/cmms-web` (083c turns it into a slot);
+  - `modules/*/web` added to the pnpm workspace;
+  - both packages added to the image workspace and to `transpilePackages`.
+
+**Evidence:**
+- **Local:** the web app type-checks; full suite 219 files / 1,911 tests; all 8 audits pass.
+- **Layer audit:** 116 units. The shell's imports of CMMS code are now 7 (6 generated pages and the dashboard).
+- **Live** (images `88967ea35011-9ffa1e2a8005`, web on 127.0.0.1:5190):
+  - GigaOps P6–P8, CMMS and Workforce jobs web paths pass;
+  - Playwright/axe 14 of 14, including the CMMS work-order staffing test.

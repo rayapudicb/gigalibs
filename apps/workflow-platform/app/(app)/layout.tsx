@@ -1,9 +1,10 @@
 import AppSidebar from '@/components/AppSidebar';
 import { UserNav } from '@/components/auth/UserNav';
+import { OmnichannelSoftphoneDrawer } from '@/components/communications/OmnichannelSoftphoneDrawer';
 import { StudioModeProvider, StudioModeToggle } from '@/components/configuration/StudioMode';
 import { CurrencyLocaleProvider } from '@/components/currency/CurrencyLocaleContext';
+import { GeospatialPlacesProvider } from '@/components/geospatial/GeospatialPlacesProvider';
 import { AppI18nProvider } from '@/components/i18n/AppI18nProvider';
-import { OmnichannelSoftphoneDrawer } from '@/components/communications/OmnichannelSoftphoneDrawer';
 import { ModuleHeaderAndDrawer } from '@/components/navigation/ModuleHeaderAndDrawer';
 import { verifiedSession } from '@/lib/verified-session';
 import { cookies } from 'next/headers';
@@ -85,7 +86,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
               className="flex-1 overflow-y-auto print:overflow-visible print:h-auto print:p-0"
               data-module-content-root
             >
-              <CurrencyLocaleProvider>{children}</CurrencyLocaleProvider>
+              <CurrencyLocaleProvider>
+                <GeospatialPlacesProvider>{children}</GeospatialPlacesProvider>
+              </CurrencyLocaleProvider>
             </main>
           </div>
           <OmnichannelSoftphoneDrawer />
