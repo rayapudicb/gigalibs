@@ -2345,6 +2345,9 @@ importers:
 
   packages/web-sdk:
     devDependencies:
+      '@medusajs/ui':
+        specifier: 4.2.3
+        version: 4.2.3(@types/react-dom@19.2.5(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(typescript@5.9.3)
       '@types/react':
         specifier: 19.2.18
         version: 19.2.18

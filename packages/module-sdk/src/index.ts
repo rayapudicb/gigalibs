@@ -49,8 +49,10 @@ export {
 export {
   moduleErrors,
   recordMutation,
+  type ModuleErrors,
   type MutationRecordOptions,
   type Queryable,
+  type SafeParser,
 } from './module-command.js';
 export {
   loadModuleRuntimeConfig,

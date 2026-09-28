@@ -149,3 +149,81 @@ A business module (CMMS is the reference) consists of:
   only the pre-existing `WORKFORCE_API_URL` drift.
 - **No image rebuilt:** no running service uses the new code yet.
 - **Review:** Security & Privacy should review `SignedContextGuardBase` before a generated module is listed.
+
+## 085b + 085c — generic module runtime and the `module:new` generator (2026-09-28)
+
+The runtime and the generator were built and proven together: neither can be verified without the other.
+Conformance is next (085d), then the navigation proof (085e).
+
+**Generic runtime (085b), for modules declaring `spec.runtime.generated`:**
+- **Manifest:** `spec.runtime` holds `generated`, `appendOnlyTables` and `readOnlyTables`. Everything else is
+  derived and checked, so the manifest stays the single source:
+  - the package, from `<api.application>/package.json`;
+  - the environment prefix, from `spec.api.upstream.environmentKey`;
+  - the service hostname `<name>-api`;
+  - the signing-key variable;
+  - the schema;
+  - the migration version, from the last runtime-manifest entry.
+- **Generated files:** `pnpm modules:catalog` writes `infra/compose/generated/modules.json` and
+  `generated/compose.<name>.yaml`:
+  - migrations and API services, with the same hardening and labels as the hand-written module overlay;
+  - the web's `<PREFIX>_API_URL` and signing key.
+
+  Drift and stale files fail the audit.
+- **Dockerfile:** a `generated-module-build` stage and `generated-module` target, chosen by build arguments. It uses
+  the root workspace, which matches the lockfile, installs only the module's dependency closure, and copies only
+  the runtime-manifest migrations.
+- **Scripts:**
+  - `build-generated-module-image.sh <module>`: disk guard, source identity, and the same image checks as the
+    other builds.
+  - `generate-generated-module-credentials.sh <module>`: writes `.env.module.<name>` (image, runtime role URL,
+    Ed25519 key pair) and never replaces it.
+  - `refresh-source-identity.sh` updates every `.env.module.*` image identity.
+- **Existing modules** keep their hand-written wiring.
+
+**Generator (085c):**
+- **Command:** `pnpm module:new <name> --title … --group … [--icon] [--prefix] [--port] [--work-item]`
+  (`scripts/module-new.mjs`, templates in `scripts/module-template/*.tmpl`).
+- **Checks before writing:**
+  - the name, title, group, icon, prefix and port;
+  - collisions with existing modules, routes, `/api` folders, catalogue keys, prefixes and ports.
+- **Writing:** it renders every file before writing anything, and refuses to overwrite.
+- **Output:** the manifest, the API on the SDK (config, database, guard subclass, health, a `records` resource with
+  idempotent create and versioned update, audit and outbox), the migration, the runtime manifest, a README and
+  tests.
+- **Regeneration:** it then regenerates everything the manifests drive, and rolls the module back if the manifest
+  audit fails.
+- **Screen:** a generated module's page uses a new core screen, `RecordsWorkspace` in `@gigalibs/web-sdk`
+  (Medusa UI, `ui-*` tokens), with its gateway as a property. That needs **no shell edit**. A module gets its own
+  web package when it needs its own screens. `web-sdk` gains `@medusajs/ui` as a peer, following `cmms-web`.
+- **SDK:** exports `SafeParser` and `ModuleErrors`, needed for declaration emit in generated modules.
+
+**Findings:**
+- Nothing outside the SDK writes `auth_revocation_events`. Module revocation checks can never fire today;
+  revocation relies on the BFF's 120 s context expiry. This predates this item. Generated modules keep the same
+  table, so they are ready when a revocation fan-out exists.
+
+**Evidence** (throwaway copy of the working tree under the session scratchpad; the repository has no sample module):
+- **Generator:** `module:new field-inspections --title "Field Inspections" --group "Workforce & Operations"
+  --icon scale`.
+  - It wrote 16 files and chose port 4800, prefix `FIELD_INSPECTIONS`, schema `gigalibs_field_inspections`, and
+    catalogue entry `/field-inspections`.
+  - A second run and an invalid name were both refused.
+  - After `pnpm install --offline`, the dependency build and type-check pass, and the module's 9 tests pass
+    (configuration, guard on the real routes, contract).
+  - The manifest audit passes and lists the generated module. The page and overlay were generated.
+- **Defects found and fixed during the run:**
+  - the placeholder pattern mis-read `___SNAKE___`;
+  - a failed render left a partial module (rendering now happens before any write);
+  - `SafeParser` was not exported.
+- **Runtime proof** (`runtime-proof.sh`, with a throwaway git commit for a source identity):
+  - Credentials were created, and a second run refused.
+  - The generic image built (52 s): component `field-inspections-api`, `generated-module=true`, user
+    65532:65532.
+  - The generated overlay renders. Migrations exited 0, the API became healthy, and `/v1/health/ready` returned
+    200 at migration version 1.
+  - `/v1/records` without a signed context gave 401.
+  - The runtime role is not superuser, cannot bypass RLS and cannot create roles.
+  - RLS is forced on records, audit, outbox and revocation tables.
+  - Runtime privileges: `audit_events` INSERT and SELECT only; `auth_revocation_events` SELECT only.
+  - Clean-up verified 0 schemas, 0 roles and 0 containers left, and removed the image and the copied secrets.

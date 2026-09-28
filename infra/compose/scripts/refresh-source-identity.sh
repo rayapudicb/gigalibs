@@ -77,3 +77,17 @@ if [[ -f "${GEOSPATIAL_ENV}" ]]; then
   mv "${GEOSPATIAL_TEMP_ENV}" "${GEOSPATIAL_ENV}"
   echo "Updated WI-OI-063 Geospatial image identity; Geospatial secrets were preserved and not printed."
 fi
+
+# WI-OI-085b: each generated module keeps its image identity in .env.module.<name>.
+for GENERATED_ENV in "${COMPOSE_DIR}"/.env.module.*; do
+  [[ -f "${GENERATED_ENV}" ]] || continue
+  GENERATED_TEMP_ENV="$(mktemp "${COMPOSE_DIR}/.env-module-refresh.XXXXXX")"
+  awk \
+    -v tag="${TAG}" '
+      match($0, /^[A-Z][A-Z0-9_]*_IMAGE=gigalibs\/[a-z0-9-]+:/) { print substr($0, 1, RLENGTH) tag; next }
+      { print }
+    ' "${GENERATED_ENV}" >"${GENERATED_TEMP_ENV}"
+  chmod 600 "${GENERATED_TEMP_ENV}"
+  mv "${GENERATED_TEMP_ENV}" "${GENERATED_ENV}"
+  echo "Updated the generated module image identity in $(basename "${GENERATED_ENV}"); its secrets were preserved and not printed."
+done

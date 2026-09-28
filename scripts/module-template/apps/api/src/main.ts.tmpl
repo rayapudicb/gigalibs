@@ -1,0 +1,28 @@
+import 'reflect-metadata';
+import type { ModuleRuntimeConfig } from '@gigalibs/module-sdk';
+import { Logger } from '@nestjs/common';
+import { NestFactory } from '@nestjs/core';
+import helmet from 'helmet';
+import { AppModule } from './app.module.js';
+import { RUNTIME_CONFIG } from './config.js';
+
+async function bootstrap(): Promise<void> {
+  const app = await NestFactory.create(AppModule, { bufferLogs: true });
+  const config = app.get<ModuleRuntimeConfig>(RUNTIME_CONFIG);
+  app.use(helmet());
+  app.enableCors({
+    origin: [...config.corsOrigins],
+    credentials: true,
+    methods: ['GET', 'POST', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Accept', 'Authorization', 'Content-Type', 'X-Correlation-Id'],
+    exposedHeaders: ['Idempotency-Replayed', 'X-Correlation-Id'],
+  });
+  app.enableShutdownHooks();
+  await app.listen(config.apiPort, config.apiHost);
+  Logger.log(`__TITLE__ API is accepting connections on ${config.apiHost}:${config.apiPort}`, 'Bootstrap');
+}
+
+bootstrap().catch((error: unknown) => {
+  new Logger('Bootstrap').error('__TITLE__ API failed to start.', error instanceof Error ? error.stack : undefined);
+  process.exitCode = 1;
+});

@@ -13,11 +13,14 @@ export interface Queryable {
   query(text: string, values?: readonly unknown[]): Promise<unknown>;
 }
 
-interface SafeParser<T> {
+/** Any schema with zod's `safeParse` shape. */
+export interface SafeParser<T> {
   safeParse(value: unknown):
     | { success: true; data: T }
     | { success: false; error: { issues: readonly { path: PropertyKey[]; message: string }[] } };
 }
+
+export type ModuleErrors = ReturnType<typeof moduleErrors>;
 
 /** Error helpers whose codes carry the module's prefix, for example `INSPECTIONS_NOT_FOUND`. */
 export function moduleErrors(codePrefix: string, label: string) {

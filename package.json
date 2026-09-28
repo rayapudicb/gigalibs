@@ -43,6 +43,7 @@
     "audit:layers": "node scripts/verify-layer-boundaries.mjs",
     "audit:module-manifests": "node scripts/module-manifests.mjs",
     "modules:catalog": "node scripts/module-manifests.mjs --write",
+    "module:new": "node scripts/module-new.mjs",
     "audit:anti-duplication": "node scripts/verify-anti-duplication.mjs",
     "audit:sdlc": "node scripts/verify-sdlc-governance.mjs"
   },

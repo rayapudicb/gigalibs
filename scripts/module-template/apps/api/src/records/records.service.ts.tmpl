@@ -1,0 +1,138 @@
+import { randomUUID } from 'node:crypto';
+import {
+  type ModuleCommandContext,
+  type ModulePrincipal,
+  moduleErrors,
+  recordMutation,
+} from '@gigalibs/module-sdk';
+import { Injectable } from '@nestjs/common';
+import type { z } from 'zod';
+import { SCHEMA, TOPIC } from '../config.js';
+import { DatabaseService } from '../database.service.js';
+import type { CreateRecordV1, RecordV1, UpdateRecordV1 } from './records.contract.js';
+
+export const errors = moduleErrors('__PREFIX__', '__TITLE__');
+
+const COLUMNS = 'id, title, status, version, created_by, created_at, updated_at';
+
+interface RecordRow {
+  id: string;
+  title: string;
+  status: 'OPEN' | 'CLOSED';
+  version: number;
+  created_by: string;
+  created_at: Date;
+  updated_at: Date;
+}
+
+function toRecord(row: RecordRow): RecordV1 {
+  return {
+    id: row.id,
+    title: row.title,
+    status: row.status,
+    version: Number(row.version),
+    createdBy: row.created_by,
+    createdAt: new Date(row.created_at).toISOString(),
+    updatedAt: new Date(row.updated_at).toISOString(),
+  };
+}
+
+/**
+ * Tenant records. Every statement runs in a transaction bound to the verified tenant (forced RLS); every change writes
+ * the state, its audit evidence and its outbox fact in the same transaction.
+ */
+@Injectable()
+export class RecordsService {
+  constructor(private readonly database: DatabaseService) {}
+
+  list(principal: ModulePrincipal, limit: number): Promise<{ items: RecordV1[] }> {
+    return this.database.withTenantTransaction(principal.tenantId, async (client) => {
+      const result = await client.query<RecordRow>(
+        `SELECT ${COLUMNS} FROM ${SCHEMA}.records WHERE tenant_id = $1 ORDER BY updated_at DESC, id LIMIT $2`,
+        [principal.tenantId, limit],
+      );
+      return { items: result.rows.map(toRecord) };
+    });
+  }
+
+  get(principal: ModulePrincipal, id: string): Promise<RecordV1> {
+    errors.assertUuid(id, 'id');
+    return this.database.withTenantTransaction(principal.tenantId, async (client) => {
+      const result = await client.query<RecordRow>(
+        `SELECT ${COLUMNS} FROM ${SCHEMA}.records WHERE tenant_id = $1 AND id = $2`,
+        [principal.tenantId, id],
+      );
+      return result.rows[0] ? toRecord(result.rows[0]) : errors.notFound('Record');
+    });
+  }
+
+  /** Idempotent by request key: a repeated request returns the record it created, with `replayed`. */
+  create(
+    context: ModuleCommandContext,
+    input: z.infer<typeof CreateRecordV1>,
+  ): Promise<{ record: RecordV1; replayed: boolean }> {
+    const { tenantId, subject } = context.principal;
+    return this.database.withTenantTransaction(tenantId, async (client) => {
+      const inserted = await client.query<RecordRow>(
+        `INSERT INTO ${SCHEMA}.records (id, tenant_id, request_key, title, created_by)
+         VALUES ($1, $2, $3, $4, $5)
+         ON CONFLICT (tenant_id, request_key) DO NOTHING
+         RETURNING ${COLUMNS}`,
+        [randomUUID(), tenantId, input.requestKey, input.title, subject],
+      );
+      const row = inserted.rows[0];
+      if (!row) {
+        const existing = await client.query<RecordRow>(
+          `SELECT ${COLUMNS} FROM ${SCHEMA}.records WHERE tenant_id = $1 AND request_key = $2`,
+          [tenantId, input.requestKey],
+        );
+        return { record: toRecord(existing.rows[0]!), replayed: true };
+      }
+      const record = toRecord(row);
+      await recordMutation(client, { schema: SCHEMA, topic: TOPIC }, context, {
+        action: 'RECORD_CREATED',
+        aggregateType: 'record',
+        aggregateId: record.id,
+        aggregateVersion: record.version,
+        payload: { title: record.title, status: record.status },
+      });
+      return { record, replayed: false };
+    });
+  }
+
+  update(
+    context: ModuleCommandContext,
+    id: string,
+    input: z.infer<typeof UpdateRecordV1>,
+  ): Promise<RecordV1> {
+    errors.assertUuid(id, 'id');
+    const { tenantId } = context.principal;
+    return this.database.withTenantTransaction(tenantId, async (client) => {
+      const updated = await client.query<RecordRow>(
+        `UPDATE ${SCHEMA}.records
+            SET title = COALESCE($4, title), status = COALESCE($5, status), version = version + 1,
+                updated_at = now()
+          WHERE tenant_id = $1 AND id = $2 AND version = $3
+          RETURNING ${COLUMNS}`,
+        [tenantId, id, input.version, input.title ?? null, input.status ?? null],
+      );
+      const row = updated.rows[0];
+      if (!row) {
+        const exists = await client.query(`SELECT 1 FROM ${SCHEMA}.records WHERE tenant_id = $1 AND id = $2`, [
+          tenantId,
+          id,
+        ]);
+        return exists.rowCount ? errors.versionConflict('Record') : errors.notFound('Record');
+      }
+      const record = toRecord(row);
+      await recordMutation(client, { schema: SCHEMA, topic: TOPIC }, context, {
+        action: 'RECORD_UPDATED',
+        aggregateType: 'record',
+        aggregateId: record.id,
+        aggregateVersion: record.version,
+        payload: { title: record.title, status: record.status },
+      });
+      return record;
+    });
+  }
+}

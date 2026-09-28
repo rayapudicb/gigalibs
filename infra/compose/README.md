@@ -160,6 +160,31 @@ The script copies the working tree and regenerates the catalogue, gateways, navi
 in the copy (`module-manifests.mjs --solution <name> --root <copy>`). It then builds the `web` target as
 `gigalibs/workflow-platform:<source identity>-<solution>`. The repository itself always holds the full build.
 
+## Generated modules
+
+`pnpm module:new <name> --title "<Display name>" --group "<sidebar group>"` creates a complete module under
+`modules/<name>` (WI-OI-085):
+- the manifest;
+- the API on `@gigalibs/module-sdk`;
+- the schema with forced RLS, audit, outbox and revocation tables;
+- tests.
+
+It regenerates the catalogue, gateway, navigation, pages and `generated/compose.<name>.yaml`; no shell or
+infrastructure file is edited by hand. Run it with:
+
+```bash
+pnpm install
+infra/compose/scripts/generate-generated-module-credentials.sh <name>   # .env.module.<name>, never replaced
+infra/compose/scripts/build-generated-module-image.sh <name>            # generic `generated-module` target
+docker compose --env-file infra/compose/.env --env-file infra/compose/.env.modules \
+  --env-file infra/compose/.env.module.<name> -f infra/compose/compose.yaml \
+  -f infra/compose/compose.modules.local.yaml -f infra/compose/generated/compose.<name>.yaml up -d <name>-api
+```
+
+The shared migration runner creates the module's least-privilege runtime role. `refresh-source-identity.sh` keeps
+every `.env.module.<name>` image identity current. A generated module stays `readiness: PLANNED` until it passes
+conformance and review.
+
 ## Disk space
 
 Every build creates a new image tag and more build cache, and Docker keeps both until they are removed.

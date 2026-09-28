@@ -1,0 +1,27 @@
+import { type ModuleRuntimeConfig, loadModuleRuntimeConfig } from '@gigalibs/module-sdk';
+import type { Provider } from '@nestjs/common';
+
+/** Audience the web BFF signs __TITLE__ platform contexts for. */
+export const AUDIENCE = 'gigalibs-__NAME__-api';
+/** Catalogue key of the entitlement the signed context must carry. */
+export const MODULE_KEY = '__NAME__';
+/** `__PERMISSION__:*` grants every `__PERMISSION__.<area>.<action>` permission. */
+export const PERMISSION_PREFIX = '__PERMISSION__';
+/** The schema this module owns; every table has forced RLS on `app.tenant_id`. */
+export const SCHEMA = '__SCHEMA__';
+/** Outbox topic of this module's facts. */
+export const TOPIC = '__NAME__.facts.v1';
+/** Last migration in `db/runtime-manifest.txt`; readiness requires the database to be exactly here. */
+export const SCHEMA_CONTRACT_VERSION = 1;
+
+export const RUNTIME_CONFIG = Symbol('__PREFIX___RUNTIME_CONFIG');
+
+export const runtimeConfigProvider: Provider<ModuleRuntimeConfig> = {
+  provide: RUNTIME_CONFIG,
+  useFactory: () =>
+    loadModuleRuntimeConfig({
+      prefix: '__PREFIX__',
+      audience: AUDIENCE,
+      schemaContractVersion: SCHEMA_CONTRACT_VERSION,
+    }),
+};

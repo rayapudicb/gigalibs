@@ -9,3 +9,4 @@ export {
   type PlacesState,
 } from './places';
 export { useCurrentUserId } from './session';
+export { RecordsWorkspace, type RecordsWorkspaceProps } from './records-workspace';

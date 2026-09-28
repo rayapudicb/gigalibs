@@ -1,0 +1,53 @@
+import {
+  CommandContext,
+  CurrentPrincipal,
+  type ModuleCommandContext,
+  type ModulePrincipal,
+  RequirePermissions,
+} from '@gigalibs/module-sdk';
+import { Body, Controller, Get, Param, Patch, Post, Query, Res, UseGuards } from '@nestjs/common';
+import { AuthorizationGuard } from '../authorization.js';
+import { CreateRecordV1, ListRecordsQueryV1, UpdateRecordV1 } from './records.contract.js';
+import { RecordsService, errors } from './records.service.js';
+
+interface ReplayResponse {
+  status(code: number): unknown;
+  setHeader(name: string, value: string): unknown;
+}
+
+@Controller('v1/records')
+@UseGuards(AuthorizationGuard)
+export class RecordsController {
+  constructor(private readonly records: RecordsService) {}
+
+  @Get()
+  @RequirePermissions('__PERMISSION__.records.read')
+  list(@CurrentPrincipal() principal: ModulePrincipal, @Query() query: unknown) {
+    return this.records.list(principal, errors.parseInput(ListRecordsQueryV1, query).limit);
+  }
+
+  @Get(':id')
+  @RequirePermissions('__PERMISSION__.records.read')
+  get(@CurrentPrincipal() principal: ModulePrincipal, @Param('id') id: string) {
+    return this.records.get(principal, id);
+  }
+
+  @Post()
+  @RequirePermissions('__PERMISSION__.records.manage')
+  async create(
+    @CommandContext() context: ModuleCommandContext,
+    @Body() body: unknown,
+    @Res({ passthrough: true }) response: ReplayResponse,
+  ) {
+    const { record, replayed } = await this.records.create(context, errors.parseInput(CreateRecordV1, body));
+    response.status(replayed ? 200 : 201);
+    if (replayed) response.setHeader('Idempotency-Replayed', 'true');
+    return record;
+  }
+
+  @Patch(':id')
+  @RequirePermissions('__PERMISSION__.records.manage')
+  update(@CommandContext() context: ModuleCommandContext, @Param('id') id: string, @Body() body: unknown) {
+    return this.records.update(context, id, errors.parseInput(UpdateRecordV1, body));
+  }
+}

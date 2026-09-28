@@ -1,0 +1,24 @@
+import { ModuleDatabase, type ModuleRuntimeConfig } from '@gigalibs/module-sdk';
+import { Inject, Injectable } from '@nestjs/common';
+import { RUNTIME_CONFIG, SCHEMA } from './config.js';
+
+/**
+ * __TITLE__ PostgreSQL runtime on the module SDK: every statement runs in a transaction bound to the verified tenant
+ * through `app.tenant_id`, which the forced RLS policies evaluate. The runtime role must not be superuser or
+ * BYPASSRLS, and the schema must be exactly at the image's contract version.
+ */
+@Injectable()
+export class DatabaseService extends ModuleDatabase {
+  constructor(@Inject(RUNTIME_CONFIG) config: ModuleRuntimeConfig) {
+    super({
+      label: '__TITLE__',
+      schema: SCHEMA,
+      databaseUrl: config.databaseUrl,
+      poolSize: config.databasePoolSize,
+      expectedMigrationVersion: config.expectedMigrationVersion,
+      definerFunctions: [],
+      tenantBinding: 'set-local',
+      poolOptions: { statement_timeout: 15_000, application_name: 'gigalibs-__NAME__-api' },
+    });
+  }
+}

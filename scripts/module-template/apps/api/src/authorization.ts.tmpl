@@ -1,0 +1,22 @@
+import { type ModuleRuntimeConfig, SignedContextGuardBase } from '@gigalibs/module-sdk';
+import { Inject, Injectable } from '@nestjs/common';
+import { MODULE_KEY, PERMISSION_PREFIX, RUNTIME_CONFIG } from './config.js';
+import { DatabaseService } from './database.service.js';
+
+/** Tenant authority only from a PlatformContextV1 the web BFF signed for this module (module SDK, WI-OI-085a). */
+@Injectable()
+export class AuthorizationGuard extends SignedContextGuardBase {
+  constructor(@Inject(RUNTIME_CONFIG) config: ModuleRuntimeConfig, database: DatabaseService) {
+    super(
+      {
+        label: '__TITLE__',
+        moduleKey: MODULE_KEY,
+        entitlementName: '__TITLE__',
+        permissionPrefix: PERMISSION_PREFIX,
+        publicKey: config.platformContextPublicKey,
+        audience: config.platformContextAudience,
+      },
+      database,
+    );
+  }
+}

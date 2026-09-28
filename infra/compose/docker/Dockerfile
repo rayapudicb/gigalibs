@@ -250,3 +250,56 @@ COPY --from=module-build --chown=65532:65532 /output/cmms-api/ ./
 USER 65532:65532
 EXPOSE 4200
 CMD ["dist/main.js"]
+
+# WI-OI-085b: one build for any generated module (`spec.runtime.generated` in its manifest), chosen by build
+# arguments that build-generated-module-image.sh reads from infra/compose/generated/modules.json. It uses the root
+# workspace, which matches the lockfile, and installs only the module's dependency closure. The modules above keep
+# their own targets.
+FROM build-base AS generated-module-build
+ARG MODULE_PACKAGE
+ARG MODULE_DIR
+ENV PNPM_HOME=/pnpm
+ENV PATH=/pnpm:$PATH
+WORKDIR /workspace
+
+RUN test -n "${MODULE_PACKAGE}" && test -n "${MODULE_DIR}"
+RUN corepack enable && corepack prepare pnpm@11.1.2 --activate
+COPY . .
+RUN --mount=type=cache,id=gigalibs-pnpm-store,target=/pnpm/store \
+    pnpm config set store-dir /pnpm/store && \
+    pnpm config set fetch-timeout 600000 && \
+    pnpm config set fetch-retries 5 && \
+    pnpm config set network-concurrency 8 && \
+    pnpm install --frozen-lockfile --filter "${MODULE_PACKAGE}..."
+RUN pnpm --recursive --sort --workspace-concurrency=1 --filter "${MODULE_PACKAGE}..." run build
+RUN pnpm --filter "${MODULE_PACKAGE}" deploy --prod --legacy /output/module
+# Only the ordered runtime manifest is installed, never other files beside it.
+RUN mkdir -p /output/module/migrations && \
+    grep -Ev '^(#|$)' "${MODULE_DIR}/db/runtime-manifest.txt" | \
+      while read -r migration; do cp "${MODULE_DIR}/db/migrations/${migration}" /output/module/migrations/; done && \
+    test "$(ls /output/module/migrations | wc -l)" -eq "$(grep -Evc '^(#|$)' "${MODULE_DIR}/db/runtime-manifest.txt")" && \
+    cp infra/compose/docker/run-module-migrations.mjs /output/module/ && \
+    find /output -type f \( -name '.env' -o -name '.env.*' \) -delete && \
+    test -z "$(find /output -type f \( -name '.env' -o -name '.env.*' \) -print -quit)"
+
+FROM gcr.io/distroless/nodejs24-debian13@sha256:bb6b03d81066993293a10feda7250e8e1cc034035fe9b61cfceededa7c8bf04d AS generated-module
+ARG SOURCE_REVISION
+ARG SOURCE_STATE_SHA256
+ARG MODULE_TITLE
+ARG MODULE_COMPONENT
+ARG MODULE_WORK_ITEM
+ARG MODULE_PORT
+LABEL org.opencontainers.image.title="GigaLibs ${MODULE_TITLE} API" \
+      org.opencontainers.image.revision="${SOURCE_REVISION}" \
+      com.gigalibs.source-state-sha256="${SOURCE_STATE_SHA256}" \
+      com.gigalibs.component="${MODULE_COMPONENT}" \
+      com.gigalibs.work-item="${MODULE_WORK_ITEM}" \
+      com.gigalibs.generated-module="true" \
+      com.gigalibs.profile-key="module-runtime-local-development-v1"
+ENV NODE_ENV=development
+ENV PATH=/nodejs/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+WORKDIR /app
+COPY --from=generated-module-build --chown=65532:65532 /output/module/ ./
+USER 65532:65532
+EXPOSE ${MODULE_PORT}
+CMD ["dist/main.js"]
