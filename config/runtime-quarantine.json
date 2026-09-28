@@ -84,12 +84,17 @@
     "packages/integrations/stripe"
   ],
   "showcaseOnlyPackages": ["packages/form-engine-react", "packages/cli"],
-  "incompleteApplications": ["apps/docs", "apps/storybook"],
+  "incompleteApplications": [
+    "apps/docs",
+    "apps/storybook",
+    "modules/communications-textfly/apps/admin-console",
+    "modules/communications-textfly/apps/agent-runtime",
+    "modules/communications-textfly/apps/embed-demo-host"
+  ],
   "unpersistedRuntimeServices": [
     "packages/chat-nest",
     "packages/knowledge-base-core",
     "packages/notifications-nest",
-    "packages/rule-engine-universal",
     "packages/workflow-nest"
   ],
   "unsafeFinancialRuntime": ["packages/billing-nest"],

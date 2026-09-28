@@ -1,0 +1,201 @@
+{
+  "contractVersion": 1,
+  "profileKey": "configuration-local-development-v1",
+  "executionClass": "LOCAL_DEVELOPMENT",
+  "environmentKey": "${ENVIRONMENT_KEY}",
+  "releaseId": "${RELEASE_ID}",
+  "sourceRevision": "${SOURCE_REVISION}",
+  "sourceStateSha256": "${SOURCE_STATE_SHA256}",
+  "evidenceId": "${EVIDENCE_ID}",
+  "publicOrigin": "${PUBLIC_ORIGIN}",
+  "dependencyAuthority": {
+    "database": {
+      "kind": "EXISTING_LOCAL_POSTGRESQL",
+      "majorVersion": 16,
+      "composeFile": "docker/docker-compose.dev.yml",
+      "observedContainer": "gigalibs-postgres",
+      "observedComposeProject": "gigalibs-dev",
+      "observedService": "postgres",
+      "sourceComposeService": "control-postgres",
+      "topologyNote": "The running container predates the current service name. Reuse it by container identity; do not instantiate a duplicate.",
+      "runtimeReference": "DATABASE_URL"
+    },
+    "objectStorage": {
+      "kind": "EXISTING_LOCAL_MINIO",
+      "composeFile": "docker/docker-compose.dev.yml",
+      "service": "minio",
+      "observedContainer": "docker-minio-1",
+      "observedComposeProject": "docker",
+      "runtimeReference": "STORAGE_ENDPOINT",
+      "allowInsecure": true,
+      "allowedEndpointHosts": ["127.0.0.1", "localhost", "host.docker.internal", "minio"]
+    },
+    "redis": {
+      "required": false,
+      "reason": "The bounded Configuration lifecycle has no accepted Redis dependency."
+    }
+  },
+  "components": {
+    "migrations": {
+      "dockerfile": "infra/compose/docker/Dockerfile",
+      "target": "migrations",
+      "imageInput": "MIGRATIONS_IMAGE",
+      "requiredEnvironment": ["DATABASE_URL"],
+      "optionalEnvironment": [],
+      "completion": "pnpm --dir packages/db db:migrate"
+    },
+    "api": {
+      "dockerfile": "infra/compose/docker/Dockerfile",
+      "target": "api",
+      "imageInput": "API_IMAGE",
+      "requiredEnvironment": [
+        "NODE_ENV",
+        "API_HOST",
+        "API_PORT",
+        "CORS_ORIGINS",
+        "DATABASE_URL",
+        "JWT_ACCESS_SECRET",
+        "JWT_ACCESS_EXPIRES_IN",
+        "JWT_REFRESH_EXPIRES_IN",
+        "WORKFLOW_SCHEMA_VERSION",
+        "WORKFLOW_COMPILER_VERSION",
+        "WORKFLOW_PUBLISH_MAX_RETRIES",
+        "EXECUTION_EVENT_SOURCE_ID",
+        "EXECUTION_EVENT_SIGNING_SECRET",
+        "EXECUTION_EVENT_MAX_SKEW_SECONDS",
+        "CONNECTOR_HTTP_ALLOWED_HOSTS",
+        "CONNECTOR_HTTP_ALLOWED_PORTS",
+        "CONNECTOR_HTTP_ALLOW_INSECURE",
+        "CONNECTOR_HTTP_ALLOW_PRIVATE_NETWORKS",
+        "CONNECTOR_HTTP_TIMEOUT_SECONDS",
+        "CONNECTOR_HTTP_MAX_RESPONSE_BYTES",
+        "CONNECTOR_DATABASE_ALLOWED_HOSTS",
+        "CONNECTOR_DATABASE_ALLOWED_PORTS",
+        "CONNECTOR_DATABASE_ALLOW_PRIVATE_NETWORKS",
+        "CONNECTOR_FAILURE_THRESHOLD",
+        "CONNECTOR_CIRCUIT_COOLDOWN_SECONDS",
+        "STORAGE_ENDPOINT",
+        "STORAGE_REGION",
+        "STORAGE_BUCKET",
+        "STORAGE_ACCESS_KEY",
+        "STORAGE_SECRET_KEY",
+        "STORAGE_FORCE_PATH_STYLE",
+        "STORAGE_ALLOW_INSECURE",
+        "STORAGE_PRESIGN_SECONDS",
+        "STORAGE_MAX_FILE_BYTES",
+        "STORAGE_CLEANUP_INTERVAL_SECONDS",
+        "STORAGE_CLEANUP_BATCH_SIZE",
+        "RETENTION_WORKER_INTERVAL_SECONDS",
+        "RETENTION_ENVIRONMENT_BATCH_SIZE",
+        "RETENTION_EVENT_BATCH_SIZE",
+        "CONTROL_PAYLOAD_ENCRYPTION_KEY",
+        "CONTROL_PAYLOAD_KEY_VERSION",
+        "CONTROL_OUTBOX_POLL_INTERVAL_SECONDS",
+        "CONTROL_OUTBOX_BATCH_SIZE",
+        "CONTROL_OUTBOX_CLAIM_TIMEOUT_SECONDS",
+        "CONTROL_OUTBOX_MAX_ATTEMPTS",
+        "CONTROL_OUTBOX_RETRY_BASE_SECONDS",
+        "CONTROL_OUTBOX_RETRY_MAX_SECONDS",
+        "OBSERVABILITY_METRICS_TOKEN",
+        "CONFIGURATION_PACKAGE_SIGNING_KEY_ID",
+        "CONFIGURATION_PACKAGE_SIGNING_PRIVATE_KEY_BASE64",
+        "CONFIGURATION_PACKAGE_TRUSTED_PUBLIC_KEYS_JSON",
+        "CONFIGURATION_RUNTIME_ENVIRONMENT_KEY"
+      ],
+      "optionalEnvironment": ["CONTROL_PAYLOAD_PREVIOUS_KEYS_JSON"],
+      "liveness": "/api/v1/health",
+      "readiness": "/api/v1/ready"
+    },
+    "web": {
+      "dockerfile": "infra/compose/docker/Dockerfile",
+      "target": "web",
+      "imageInput": "WEB_IMAGE",
+      "requiredEnvironment": [
+        "NODE_ENV",
+        "PORT",
+        "CONTROL_PLANE_API_URL",
+        "BFF_MAX_REQUEST_BYTES",
+        "COOKIE_SECURE"
+      ],
+      "optionalEnvironment": [
+        "NEXT_PUBLIC_ENV_LABEL",
+        "NEXT_PUBLIC_USE_FORM_ENGINE",
+        "AR_API_URL",
+        "SPEND_API_URL",
+        "TAX_API_URL",
+        "CURRENCY_API_URL",
+        "CONNECTOR_HUB_API_URL",
+        "DATA_STUDIO_API_URL",
+        "RULES_API_URL",
+        "WORKFLOW_STUDIO_API_URL",
+        "RECOVERY_API_URL",
+        "PLATFORM_RBAC_API_URL",
+        "ANALYTICS_API_URL",
+        "ESIGN_API_URL",
+        "CMMS_API_URL"
+      ],
+      "liveness": "/api/health/live",
+      "readiness": "/api/health/ready"
+    }
+  },
+  "secretInputs": [
+    "DATABASE_URL",
+    "JWT_ACCESS_SECRET",
+    "EXECUTION_EVENT_SIGNING_SECRET",
+    "STORAGE_ACCESS_KEY",
+    "STORAGE_SECRET_KEY",
+    "CONTROL_PAYLOAD_ENCRYPTION_KEY",
+    "CONTROL_PAYLOAD_PREVIOUS_KEYS_JSON",
+    "OBSERVABILITY_METRICS_TOKEN",
+    "CONFIGURATION_PACKAGE_SIGNING_PRIVATE_KEY_BASE64",
+    "CONFIGURATION_PACKAGE_TRUSTED_PUBLIC_KEYS_JSON"
+  ],
+  "forbiddenEnvironment": [
+    "CONTROL_PLANE_URL",
+    "CONFIGURATION_PACKAGE_SIGNING_KEY",
+    "JWT_REFRESH_SECRET",
+    "NEXTAUTH_SECRET",
+    "REDIS_URL"
+  ],
+  "artifactPolicy": {
+    "baseImage": "node:24-bookworm-slim@sha256:0e0ff40c39bc087845bfb27465a0df4ea419520094bc35842ff83dd8cbe6f9b6",
+    "baseRuntimeObserved": "builder-node-v24.21.0-debian-12-linux-arm64",
+    "finalRuntimeImage": "gcr.io/distroless/nodejs24-debian13@sha256:bb6b03d81066993293a10feda7250e8e1cc034035fe9b61cfceededa7c8bf04d",
+    "finalRuntimeObserved": "node-v24.21.0-distroless-debian-13-linux-arm64",
+    "runtimeUidGid": "65532:65532",
+    "baseOsPackages": {
+      "ca-certificates": "20250419~deb12u1",
+      "openssl": "3.0.20-1~deb12u2"
+    },
+    "allowedLifecycleBuilds": [
+      "@biomejs/biome",
+      "@prisma/client",
+      "@prisma/engines",
+      "esbuild",
+      "prisma"
+    ],
+    "sbomFormat": "cyclonedx-json",
+    "vulnerabilityScanner": "trivy@0.74.0",
+    "vulnerabilityPolicy": {
+      "maximumCritical": 0,
+      "maximumHigh": 0,
+      "ignoreUnfixed": false
+    },
+    "pullPolicy": "never",
+    "revisionQualifiedTags": true,
+    "sourceStateFingerprintRequired": true,
+    "localImageIdEvidenceRequired": true,
+    "remoteRegistryProvenance": "DEFERRED_EXTERNAL"
+  },
+  "deferredExternal": [
+    "cloud-provider",
+    "public-dns-tls",
+    "external-kms-secret-manager",
+    "external-object-storage",
+    "remote-registry-provenance",
+    "multi-host-ha",
+    "external-alert-delivery",
+    "external-backup-vault-pitr",
+    "production-observation-window"
+  ]
+}

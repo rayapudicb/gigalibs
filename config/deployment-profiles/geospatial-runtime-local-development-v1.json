@@ -1,0 +1,57 @@
+{
+  "profileKey": "geospatial-runtime-local-development-v1",
+  "executionClass": "LOCAL_DEVELOPMENT",
+  "baseProfileKey": "configuration-local-development-v1",
+  "status": "IMPLEMENTATION",
+  "workItem": "WI-OI-063",
+  "components": [
+    "geospatial-migrations",
+    "geospatial-api"
+  ],
+  "network": {
+    "name": "gigalibs-configuration-local",
+    "publishedModulePorts": false,
+    "webUpstreamEnabled": true,
+    "reason": "The signed same-origin BFF exposes only the allow-listed node-type and place routes."
+  },
+  "identity": {
+    "moduleKey": "geospatial-studio",
+    "serviceAudience": "gigalibs-geospatial-api",
+    "contextVersion": "PlatformContextV1",
+    "rawBearerForwarding": false,
+    "callerTenantHeaders": false
+  },
+  "persistence": {
+    "engine": "postgresql",
+    "schema": "gigalibs_geospatial",
+    "expectedMigrationVersion": 3,
+    "tenantSessionKey": "app.tenant_id",
+    "runtimeRole": "gigalibs_geospatial_runtime",
+    "runtimeRoleMustBeNonSuperuser": true,
+    "runtimeRoleMustNotBypassRls": true,
+    "prototypeSchemaExcluded": "gigalibs_spatial"
+  },
+  "capabilities": {
+    "liveness": "/v1/health/live",
+    "readiness": "/v1/health/ready",
+    "tenantScopeVerification": "/v1/runtime/tenant-scope",
+    "businessApisEnabled": true,
+    "businessUiEnabled": true,
+    "enabledBusinessCapabilities": [
+      "node-types",
+      "places-hierarchy"
+    ],
+    "unavailableCapabilities": [
+      "map-drawing",
+      "distance",
+      "cmms-dispatch",
+      "spatial-scope"
+    ]
+  },
+  "limits": {
+    "productionAuthorized": false,
+    "cloudAuthorized": false,
+    "externalReleaseAuthorized": false,
+    "postgisAuthorized": false
+  }
+}

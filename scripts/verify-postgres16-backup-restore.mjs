@@ -38,6 +38,8 @@ const pgRestoreBinary =
   (existsSync(join(libpqBin, 'pg_restore')) ? join(libpqBin, 'pg_restore') : 'pg_restore');
 const pg16ToolContainer = process.env.PG16_TOOL_CONTAINER?.trim() || 'gigalibs-postgres';
 let usedContainerTools = false;
+let prismaSchemaProbe;
+let recoveryEvidence;
 
 function databaseUrl(name) {
   const value = new URL(baseUrl);
@@ -85,9 +87,7 @@ async function sql(url, statement) {
 }
 
 async function dropCertificationDatabase(name) {
-  await sql(configuredUrl, `DROP DATABASE IF EXISTS ${quoteIdentifier(name)} WITH (FORCE)`).catch(
-    () => undefined,
-  );
+  await sql(configuredUrl, `DROP DATABASE IF EXISTS ${quoteIdentifier(name)} WITH (FORCE)`);
 }
 
 async function createBackupAndRestore({ serverMajor, dumpMajor, restoreMajor }) {
@@ -186,6 +186,68 @@ try {
   await run('pnpm', ['--dir', 'packages/db', 'db:migrate'], {
     env: { ...process.env, DATABASE_URL: databaseUrl(sourceName), NODE_ENV: 'test' },
   });
+  process.env.DATABASE_URL = databaseUrl(sourceName);
+  ({ prisma: prismaSchemaProbe } = await import('../packages/db/dist/index.js'));
+  await Promise.all([
+    prismaSchemaProbe.tenant.findFirst({ select: { id: true, parentTenantId: true } }),
+    prismaSchemaProbe.sagaInstance.findFirst({
+      select: {
+        id: true,
+        tenantId: true,
+        sagaType: true,
+        compensationTriggered: true,
+        auditLedgerDigest: true,
+        logSummary: true,
+        createdAt: true,
+        updatedAt: true,
+        completedAt: true,
+      },
+    }),
+    prismaSchemaProbe.sagaStep.findFirst({
+      select: {
+        id: true,
+        sagaInstanceId: true,
+        stepIndex: true,
+        targetSystem: true,
+        forwardAction: true,
+        compensatingAction: true,
+        fipsSha256Checksum: true,
+        errorMessage: true,
+        executedAt: true,
+        compensatedAt: true,
+      },
+    }),
+    prismaSchemaProbe.tenantRateBucket.findFirst({
+      select: {
+        tenantId: true,
+        lastRefillTimestampMs: true,
+        updatedAt: true,
+      },
+    }),
+  ]);
+  outcomes.push('generated-prisma-client-schema-compatible');
+  const schemaDiff = await run(
+    'pnpm',
+    [
+      '--dir',
+      'packages/db',
+      'exec',
+      'prisma',
+      'migrate',
+      'diff',
+      '--from-url',
+      databaseUrl(sourceName),
+      '--to-schema-datamodel',
+      'schema.prisma',
+      '--script',
+    ],
+    { capture: true },
+  );
+  assert.ok(
+    schemaDiff === '' || schemaDiff === '-- This is an empty migration.',
+    `Physical database schema differs from the canonical Prisma datamodel:\n${schemaDiff.slice(0, 30_000)}`,
+  );
+  outcomes.push('physical-schema-matches-prisma-datamodel');
   const migrationCount = Number(
     await sql(databaseUrl(sourceName), 'SELECT count(*) FROM "_prisma_migrations" WHERE finished_at IS NOT NULL'),
   );
@@ -256,7 +318,7 @@ try {
   assert.equal(restoredMigrationCount, migrationCount, 'Restored migration history differs from source');
   outcomes.push('backup-restored-with-record-and-migration-integrity');
 
-  const evidence = {
+  recoveryEvidence = {
     recordedAt: new Date().toISOString(),
     environment: 'isolated-local-uat',
     databaseEngine: 'PostgreSQL 16',
@@ -273,15 +335,30 @@ try {
     outcomes,
     outcomeCount: outcomes.length,
   };
-  if (evidencePath) {
-    await writeFile(resolve(repositoryRoot, evidencePath), `${JSON.stringify(evidence, null, 2)}\n`, 'utf8');
-  }
-  console.log(JSON.stringify(evidence));
 } finally {
+  if (prismaSchemaProbe) await prismaSchemaProbe.$disconnect().catch(() => undefined);
   await dropCertificationDatabase(restoreName);
   await dropCertificationDatabase(sourceName);
   await run('docker', ['exec', pg16ToolContainer, 'rm', '-f', containerDumpPath], {
     capture: true,
   }).catch(() => undefined);
   await unlink(dumpPath).catch(() => undefined);
+  const retainedDatabaseCount = Number(
+    await sql(
+      configuredUrl,
+      `SELECT count(*) FROM pg_database WHERE datname IN ('${sourceName}', '${restoreName}')`,
+    ),
+  );
+  assert.equal(retainedDatabaseCount, 0, 'PostgreSQL recovery certification database cleanup failed.');
+  assert.equal(existsSync(dumpPath), false, 'PostgreSQL recovery certification dump cleanup failed.');
 }
+
+assert.ok(recoveryEvidence, 'PostgreSQL recovery certification did not produce evidence.');
+if (evidencePath) {
+  await writeFile(
+    resolve(repositoryRoot, evidencePath),
+    `${JSON.stringify(recoveryEvidence, null, 2)}\n`,
+    'utf8',
+  );
+}
+console.log(JSON.stringify(recoveryEvidence));

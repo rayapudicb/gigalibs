@@ -87,7 +87,6 @@ packages:
   - "!packages/presence-nest"
   - "!packages/scheduler-nest"
   - "!packages/search-nest"
-  - "!packages/rule-engine-universal"
   - "!packages/storage-react"
   - "!packages/tags-taxonomy-nest"
   - "!packages/tenancy-react"
@@ -123,3 +122,8 @@ allowBuilds:
   esbuild: true
   msgpackr-extract: true
   prisma: true
+
+overrides:
+  "@prisma/config@6.19.3>deepmerge-ts": "8.0.2"
+  "@nestjs/platform-express@11.2.3>multer": "2.4.0"
+  "next@15.5.24>postcss": "8.5.28"

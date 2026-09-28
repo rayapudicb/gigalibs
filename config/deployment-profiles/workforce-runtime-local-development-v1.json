@@ -1,0 +1,47 @@
+{
+  "profileKey": "workforce-runtime-local-development-v1",
+  "executionClass": "LOCAL_DEVELOPMENT",
+  "baseProfileKey": "configuration-local-development-v1",
+  "status": "IMPLEMENTATION",
+  "workItem": "WI-OI-061",
+  "components": ["workforce-migrations", "workforce-api"],
+  "network": {
+    "name": "gigalibs-configuration-local",
+    "publishedModulePorts": false,
+    "webUpstreamEnabled": true,
+    "reason": "WI-OI-061 exposes only the allow-listed resource/capability routes through the signed same-origin BFF."
+  },
+  "identity": {
+    "moduleKey": "gigaops",
+    "serviceAudience": "gigalibs-workforce-api",
+    "contextVersion": "PlatformContextV1",
+    "rawBearerForwarding": false,
+    "callerTenantHeaders": false
+  },
+  "persistence": {
+    "engine": "postgresql",
+    "schema": "gigalibs_workforce",
+    "expectedMigrationVersion": 4,
+    "tenantSessionKey": "app.tenant_id",
+    "runtimeRole": "gigalibs_workforce_runtime",
+    "runtimeRoleMustBeNonSuperuser": true,
+    "runtimeRoleMustNotBypassRls": true,
+    "prototypeSchemaExcluded": "gigalibs_gigaops"
+  },
+  "capabilities": {
+    "liveness": "/v1/health/live",
+    "readiness": "/v1/health/ready",
+    "tenantScopeVerification": "/v1/runtime/tenant-scope",
+    "businessApisEnabled": true,
+    "businessUiEnabled": true,
+    "enabledBusinessCapabilities": ["resources", "capability-definitions", "resource-qualifications"],
+    "unavailableSections": ["jobs", "availability", "scheduling", "time", "pay", "compliance", "analytics"]
+  },
+  "limits": {
+    "productionAuthorized": false,
+    "cloudAuthorized": false,
+    "externalReleaseAuthorized": false,
+    "cmmsWorkforceEnabled": false,
+    "payrollAuthorized": false
+  }
+}

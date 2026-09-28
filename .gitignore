@@ -52,3 +52,5 @@ secrets/
 *.tfstate.*
 .terraform/
 docker-compose.override.yml
+infra/compose/backups/
+infra/compose/evidence/

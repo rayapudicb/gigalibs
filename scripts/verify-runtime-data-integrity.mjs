@@ -34,6 +34,9 @@ const roots = [
   'modules/analytics-studio',
   'modules/esignature',
   'modules/platform-rbac',
+  'modules/physical-operations-cmms',
+  'modules/gigaops',
+  'modules/geospatial',
   ...(includeLegacy ? ['packages'] : []),
 ];
 const retiredApplications = ['apps/playground-web'];
@@ -245,7 +248,9 @@ function verifyQuarantineBoundary() {
   for (const { category, path: configuredRoot } of quarantinedPackages) {
     if (
       typeof configuredRoot !== 'string' ||
-      (!configuredRoot.startsWith('packages/') && !configuredRoot.startsWith('apps/')) ||
+      (!configuredRoot.startsWith('packages/') &&
+        !configuredRoot.startsWith('apps/') &&
+        !configuredRoot.startsWith('modules/')) ||
       configuredRoot.includes('..') ||
       seenPaths.has(configuredRoot)
     ) {

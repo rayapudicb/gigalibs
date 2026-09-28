@@ -1,0 +1,33 @@
+{
+  "profileKey": "module-runtime-local-development-v1",
+  "executionClass": "LOCAL_DEVELOPMENT",
+  "baseProfileKey": "configuration-local-development-v1",
+  "status": "IMPLEMENTATION",
+  "workItem": "WI-OI-059",
+  "components": [
+    "connector-hub-migrations",
+    "connector-hub-api",
+    "analytics-migrations",
+    "analytics-api"
+  ],
+  "network": {
+    "name": "gigalibs-configuration-local",
+    "publishedModulePorts": false,
+    "webUpstreams": {
+      "connectorHub": "http://connector-hub-api:4100",
+      "analytics": "http://analytics-api:4400"
+    }
+  },
+  "persistence": {
+    "engine": "postgresql",
+    "schemas": ["gigalibs_connectors", "gigalibs_analytics"],
+    "tenantSessionKey": "app.tenant_id",
+    "migrationOrder": ["connector-hub-migrations", "analytics-migrations"]
+  },
+  "limits": {
+    "productionAuthorized": false,
+    "cloudAuthorized": false,
+    "externalReleaseAuthorized": false,
+    "reportsContainmentRemoved": false
+  }
+}

@@ -7,7 +7,11 @@ export default defineConfig({
       '@': path.resolve(__dirname, './apps/workflow-platform'),
       '@gigalibs/logger': path.resolve(__dirname, './packages/logger/dist/index.js'),
       '@gigalibs/broker': path.resolve(__dirname, './packages/broker/dist/index.js'),
+      '@gigalibs/audit-core': path.resolve(__dirname, './packages/audit-core/dist/index.js'),
       '@gigalibs/ar-domain': path.resolve(__dirname, './modules/accounts-receivable/domain/src/index.ts'),
+      '@gigalibs/maps-core': path.resolve(__dirname, './packages/maps-core/src/index.ts'),
+      '@gigalibs/maps-react': path.resolve(__dirname, './packages/maps-react/src/index.tsx'),
+      '@gigalibs/rule-engine-universal': path.resolve(__dirname, './packages/rule-engine-universal/src/index.ts'),
     },
   },
 
