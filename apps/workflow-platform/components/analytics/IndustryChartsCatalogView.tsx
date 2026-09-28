@@ -49,8 +49,48 @@ import {
   type ChartFamily,
 } from '@/lib/industry-charts-catalog';
 
+interface ChartErrorBoundaryProps {
+  fallback?: React.ReactNode;
+  children: React.ReactNode;
+}
+
+interface ChartErrorBoundaryState {
+  hasError: boolean;
+  error?: Error;
+}
+
+class ChartErrorBoundary extends React.Component<ChartErrorBoundaryProps, ChartErrorBoundaryState> {
+  constructor(props: ChartErrorBoundaryProps) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(error: Error): ChartErrorBoundaryState {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error('Chart visualization render error:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        this.props.fallback || (
+          <div className="flex flex-col items-center justify-center p-4 text-center">
+            <span className="text-xs text-rose-500 font-semibold mb-1">Visualization Unavailable</span>
+            <span className="text-[11px] text-slate-500 font-mono">{this.state.error?.message || 'Error rendering chart'}</span>
+          </div>
+        )
+      );
+    }
+    return this.props.children;
+  }
+}
+
 export function IndustryChartsCatalogView() {
-  const [charts, setCharts] = useState<IndustryChartDef[]>(INDUSTRY_CHARTS_CATALOG);
+  const [charts, setCharts] = useState<IndustryChartDef[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isLiveDbSynced, setIsLiveDbSynced] = useState(false);
   const [dbSyncTimestamp, setDbSyncTimestamp] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -62,18 +102,21 @@ export function IndustryChartsCatalogView() {
   useEffect(() => {
     let active = true;
     async function fetchLiveCharts() {
+      setIsLoading(true);
       try {
         const res = await fetch('/api/analytics/v1/metrics/charts');
         if (res.ok) {
           const data = await res.json();
-          if (active && Array.isArray(data) && data.length > 0) {
+          if (active && Array.isArray(data)) {
             setCharts(data);
-            setIsLiveDbSynced(true);
+            setIsLiveDbSynced(data.length > 0);
             setDbSyncTimestamp(new Date().toLocaleTimeString());
           }
         }
       } catch (err) {
         console.warn('Could not sync live telemetry from PostgreSQL API:', err);
+      } finally {
+        if (active) setIsLoading(false);
       }
     }
     fetchLiveCharts();
@@ -179,76 +222,81 @@ export function IndustryChartsCatalogView() {
       }
       return true;
     });
-  }, [selectedDomain, selectedFamily, searchQuery]);
+  }, [charts, selectedDomain, selectedFamily, searchQuery]);
 
   // Pure SVG / Canvas Chart.js Renderer
   const renderIndustryChart = (chart: IndustryChartDef) => {
-    const p = { ...chart.payload };
+    const p = { ...(chart.payload || {}) };
 
     switch (chart.chartType) {
-      case 'multiAxisLine':
-        return <MultiAxisLineChart categories={p.categories || p.labels} series={p.series} height={220} />;
+      case 'multiAxisLine': {
+        const series = Array.isArray(p.series) ? p.series : [];
+        return <MultiAxisLineChart categories={p.categories || p.labels || []} series={series} height={220} />;
+      }
       case 'steppedLine':
         return (
           <SteppedLineChart
-            labels={p.labels || p.categories}
-            data={p.data}
+            labels={p.labels || p.categories || []}
+            data={Array.isArray(p.data) ? p.data : []}
             lineColor={p.lineColor}
             stepMode={p.stepMode}
             height={200}
           />
         );
-      case 'comboBarLine':
+      case 'comboBarLine': {
+        const barSeries = Array.isArray(p.barSeries) ? p.barSeries[0] : p.barSeries;
+        const lineSeries = Array.isArray(p.lineSeries) ? p.lineSeries[0] : p.lineSeries;
         return (
           <ComboBarLineChart
-            categories={p.categories || p.labels}
-            barSeries={p.barSeries}
-            lineSeries={p.lineSeries}
+            categories={p.categories || p.labels || []}
+            barSeries={barSeries || { name: 'Metric', data: [] }}
+            lineSeries={lineSeries || { name: 'Target', data: [] }}
             height={220}
           />
         );
+      }
       case 'floatingBar':
-        return <FloatingBarChart data={p.data} unit={p.unit} height={220} />;
+        return <FloatingBarChart data={Array.isArray(p.data) ? p.data : []} unit={p.unit} height={220} />;
       case 'area':
-        return <AreaChart categories={p.categories || p.labels} series={p.series} height={220} />;
+        return <AreaChart categories={p.categories || p.labels || []} series={Array.isArray(p.series) ? p.series : []} height={220} />;
       case 'line':
-        return <LineChart labels={p.labels || p.categories} data={p.data} lineColor={p.lineColor} fillGradient={p.fillGradient} height={200} />;
+        return <LineChart labels={p.labels || p.categories || []} data={Array.isArray(p.data) ? p.data : []} lineColor={p.lineColor} fillGradient={p.fillGradient} height={200} />;
       case 'bar':
-        return <BarChart data={p.data} height={200} />;
+        return <BarChart data={Array.isArray(p.data) ? p.data : []} height={200} />;
       case 'stackedBar':
-        return <StackedBarChart categories={p.categories || p.labels} series={p.series} />;
+        return <StackedBarChart categories={p.categories || p.labels || []} series={Array.isArray(p.series) ? p.series : []} />;
       case 'column':
-        return <ColumnChart categories={p.categories || p.labels} series={p.series} height={220} />;
+        return <ColumnChart categories={p.categories || p.labels || []} series={Array.isArray(p.series) ? p.series : []} height={220} />;
       case 'stackedColumn':
-        return <StackedColumnChart categories={p.categories || p.labels} series={p.series} height={220} />;
+        return <StackedColumnChart categories={p.categories || p.labels || []} series={Array.isArray(p.series) ? p.series : []} height={220} />;
       case 'donut':
-        return <DonutChart data={p.data} total={p.total} />;
+        return <DonutChart data={Array.isArray(p.data) ? p.data : []} total={p.total} />;
       case 'pie':
-        return <PieChart data={p.data} />;
+        return <PieChart data={Array.isArray(p.data) ? p.data : []} />;
       case 'scatter':
-        return <ScatterChart points={p.points} height={220} />;
+        return <ScatterChart points={Array.isArray(p.points) ? p.points : []} height={220} />;
       case 'bubble':
-        return <BubbleChart points={p.points} height={220} />;
+        return <BubbleChart points={Array.isArray(p.points) ? p.points : []} height={220} />;
       case 'radar':
-        return <RadarChart categories={p.categories} series={p.series} />;
+        return <RadarChart categories={Array.isArray(p.categories) ? p.categories : []} series={Array.isArray(p.series) ? p.series : []} />;
       case 'gauge':
-        return <GaugeChart value={p.value} min={p.min} max={p.max} label={p.label} />;
+        return <GaugeChart value={p.value ?? 0} min={p.min} max={p.max} label={p.label} />;
       case 'waterfall':
-        return <WaterfallChart data={p.data} />;
+        return <WaterfallChart data={Array.isArray(p.data) ? p.data : []} />;
       case 'funnel':
-        return <FunnelChart stages={p.stages} />;
+        return <FunnelChart stages={Array.isArray(p.stages) ? p.stages : []} />;
       case 'heatmap':
-        return <HeatmapChart xLabels={p.xLabels} yLabels={p.yLabels} matrix={p.matrix} />;
+        return <HeatmapChart xLabels={Array.isArray(p.xLabels) ? p.xLabels : []} yLabels={Array.isArray(p.yLabels) ? p.yLabels : []} matrix={Array.isArray(p.matrix) ? p.matrix : []} />;
       case 'treemap':
-        return <TreemapChart nodes={p.nodes} height={220} />;
+        return <TreemapChart nodes={Array.isArray(p.nodes) ? p.nodes : []} height={220} />;
       case 'sankey':
-        return <SankeyChart flows={p.flows} height={220} />;
+        return <SankeyChart flows={Array.isArray(p.flows) ? p.flows : []} height={220} />;
       case 'boxPlot':
-        return <BoxPlotChart data={p.data} height={220} />;
+        return <BoxPlotChart data={Array.isArray(p.data) ? p.data : []} height={220} />;
       case 'histogram':
-        return <HistogramChart bins={p.bins} height={200} />;
+        return <HistogramChart bins={Array.isArray(p.bins) ? p.bins : []} height={200} />;
       case 'polarArea':
-        return <PolarAreaChart data={p.data} />;
+        return <PolarAreaChart data={Array.isArray(p.data) ? p.data : []} />;
       default:
         return <Text className="text-xs text-ui-fg-muted">Chart preview unavailable</Text>;
     }
@@ -446,13 +494,26 @@ export function IndustryChartsCatalogView() {
         </div>
       </div>
 
-      {/* 36 Charts Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {filteredCharts.map((chart, index) => {
-          const isTableActive = isAllTable || (tableViewMap[chart.id] ?? false);
-          const sector = getSectorInfo(chart.industryId);
+      {/* Charts Grid or Honest Empty State */}
+      {isLoading ? (
+        <div className="p-12 text-center border border-ui-border-base rounded-2xl bg-ui-bg-base">
+          <div className="text-sm font-semibold text-ui-fg-base">Loading Authoritative Telemetry Charts...</div>
+          <div className="text-xs text-ui-fg-muted mt-1 font-mono">Querying gigalibs_analytics.telemetry_series...</div>
+        </div>
+      ) : filteredCharts.length === 0 ? (
+        <div className="p-12 text-center border border-dashed border-ui-border-base rounded-2xl bg-ui-bg-subtle">
+          <Heading level="h3" className="text-ui-fg-base font-bold mb-2">No Authoritative Telemetry Series Found</Heading>
+          <Text className="text-sm text-ui-fg-muted max-w-md mx-auto mb-4">
+            No telemetry series records were found in PostgreSQL for this tenant workspace. Live industrial telemetry charts will appear here when telemetry streams or IoT devices are connected.
+          </Text>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {filteredCharts.map((chart, index) => {
+            const isTableActive = isAllTable || (tableViewMap[chart.id] ?? false);
+            const sector = getSectorInfo(chart.industryId);
 
-          return (
+            return (
             <Container
               key={chart.id}
               className="p-6 bg-ui-bg-base border border-ui-border-base rounded-2xl shadow-2xs flex flex-col justify-between hover:border-ui-border-strong transition-all"
@@ -541,7 +602,9 @@ export function IndustryChartsCatalogView() {
                     </div>
                   ) : (
                     <div className="w-full h-full flex flex-col justify-center">
-                      {renderIndustryChart(chart)}
+                      <ChartErrorBoundary>
+                        {renderIndustryChart(chart)}
+                      </ChartErrorBoundary>
                     </div>
                   )}
                 </div>
@@ -568,7 +631,8 @@ export function IndustryChartsCatalogView() {
             </Container>
           );
         })}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

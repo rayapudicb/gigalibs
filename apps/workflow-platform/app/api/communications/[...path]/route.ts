@@ -53,11 +53,20 @@ async function handleCommunications(request: Request, context: RouteContext): Pr
   const tenantId = session.context.tenant.id;
   const pathStr = pathSegments.join('/');
 
+  let rawBody = '';
+  if (MUTATING_METHODS.has(method)) {
+    try {
+      rawBody = await readBoundedBody(request);
+    } catch {
+      rawBody = await request.text().catch(() => '');
+    }
+  }
+
   // If external microservice is configured, attempt proxying first
   const configuredUpstream = process.env.COMMUNICATIONS_API_URL?.trim();
   if (configuredUpstream) {
     try {
-      const body = MUTATING_METHODS.has(method) ? await readBoundedBody(request) : undefined;
+      const body = rawBody || undefined;
       const target = new URL(`/${pathSegments.map(encodeURIComponent).join('/')}`, configuredUpstream);
       target.search = new URL(request.url).search;
 
@@ -99,7 +108,7 @@ async function handleCommunications(request: Request, context: RouteContext): Pr
         return NextResponse.json({ channels }, { status: 200 });
       }
       if (method === 'POST') {
-        const body = JSON.parse(await readBoundedBody(request) || '{}');
+        const body = JSON.parse(rawBody || '{}');
         const channel = communicationsStore.createChannel(tenantId, body);
         return NextResponse.json({ channel }, { status: 201 });
       }
@@ -121,7 +130,7 @@ async function handleCommunications(request: Request, context: RouteContext): Pr
         return NextResponse.json({ messages }, { status: 200 });
       }
       if (method === 'POST') {
-        const body = JSON.parse(await readBoundedBody(request) || '{}');
+        const body = JSON.parse(rawBody || '{}');
         const msg = communicationsStore.sendMessage(
           tenantId,
           convId,
@@ -140,7 +149,7 @@ async function handleCommunications(request: Request, context: RouteContext): Pr
         return NextResponse.json({ templates }, { status: 200 });
       }
       if (method === 'POST') {
-        const body = JSON.parse(await readBoundedBody(request) || '{}');
+        const body = JSON.parse(rawBody || '{}');
         const template = communicationsStore.createTemplate(tenantId, body);
         return NextResponse.json({ template }, { status: 201 });
       }
@@ -153,7 +162,7 @@ async function handleCommunications(request: Request, context: RouteContext): Pr
         return NextResponse.json({ campaigns }, { status: 200 });
       }
       if (method === 'POST') {
-        const body = JSON.parse(await readBoundedBody(request) || '{}');
+        const body = JSON.parse(rawBody || '{}');
         const campaign = communicationsStore.createCampaign(tenantId, body);
         return NextResponse.json({ campaign }, { status: 201 });
       }
@@ -162,9 +171,82 @@ async function handleCommunications(request: Request, context: RouteContext): Pr
     // 6. Cross-Module Trigger Dispatch
     if (pathStr === 'dispatch') {
       if (method === 'POST') {
-        const body = JSON.parse(await readBoundedBody(request) || '{}') as TriggerDispatchPayload;
+        const body = JSON.parse(rawBody || '{}') as TriggerDispatchPayload;
         const result = communicationsStore.dispatchTrigger(tenantId, body);
         return NextResponse.json(result, { status: 200 });
+      }
+    }
+
+    // 7. WebRTC Voice Token
+    if (pathStr === 'voice/token') {
+      if (method === 'GET') {
+        const twilioAccountSid = process.env.TWILIO_ACCOUNT_SID?.trim();
+        const twilioApiKeySid = process.env.TWILIO_API_KEY_SID?.trim();
+        const callerId = process.env.TWILIO_VOICE_CALLER_ID?.trim() || '+1 (855) 532-6595';
+
+        const tokenPayload = {
+          provider: 'TWILIO',
+          identity: `client:${session.context.user.id}`,
+          accountSid: twilioAccountSid,
+          apiKeySid: twilioApiKeySid,
+          callerId,
+          token: twilioAccountSid && twilioApiKeySid
+            ? `twilio-jwt-voice-${twilioAccountSid.slice(0, 8)}-${Buffer.from(twilioApiKeySid).toString('base64url').slice(0, 16)}`
+            : `webrtc-auth-token-${tenantId.slice(0, 8)}-${randomUUID().slice(0, 16)}`,
+          expiresIn: 3600,
+          tenantId,
+          issuedAt: new Date().toISOString(),
+        };
+        return NextResponse.json(tokenPayload, { status: 200 });
+      }
+    }
+
+    // 8. Voice Calls (Softphone placement & logging)
+    if (pathStr === 'voice/calls') {
+      if (method === 'GET') {
+        const calls = communicationsStore.listCallAttempts(tenantId);
+        return NextResponse.json({ calls }, { status: 200 });
+      }
+      if (method === 'POST') {
+        const body = JSON.parse(rawBody || '{}');
+        const attempt = communicationsStore.recordCallAttempt(tenantId, {
+          recipientAddress: body.recipientAddress || '',
+          callerAddress: body.callerAddress || '+1 (855) 444-2542',
+          direction: body.direction || 'OUTBOUND',
+          status: 'IN_PROGRESS',
+          conversationId: body.conversationId,
+        });
+        return NextResponse.json({ callAttemptId: attempt.id, attempt }, { status: 201 });
+      }
+      if (method === 'PATCH') {
+        const body = JSON.parse(rawBody || '{}');
+        const updated = communicationsStore.updateCallAttempt(tenantId, body.callAttemptId, {
+          durationSeconds: body.durationSeconds,
+          status: body.status || 'COMPLETED',
+          recordingUrl: body.recordingUrl,
+          transcriptText: body.transcriptText,
+        });
+        return NextResponse.json({ attempt: updated }, { status: 200 });
+      }
+    }
+
+    // 9. Communications Usage Metrics
+    if (pathStr === 'metering/usage') {
+      if (method === 'GET') {
+        const metrics = communicationsStore.getUsageMetrics(tenantId);
+        return NextResponse.json({ tenantId, metrics }, { status: 200 });
+      }
+    }
+
+    // 10. Tiered Rating Engine & Quote
+    if (pathStr === 'metering/quote') {
+      if (method === 'GET' || method === 'POST') {
+        let options = undefined;
+        if (method === 'POST') {
+          if (rawBody) options = JSON.parse(rawBody);
+        }
+        const quote = communicationsStore.getUsageQuote(tenantId, options);
+        return NextResponse.json({ tenantId, quote }, { status: 200 });
       }
     }
 

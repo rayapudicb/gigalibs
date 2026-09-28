@@ -144,36 +144,10 @@ export default function AccountsReceivableWorkbench() {
     >
       <div className="min-h-full bg-[#f6f8f7] p-6 lg:p-9">
         <div className="mx-auto max-w-7xl space-y-6">
-        <header className="flex flex-col justify-between gap-4 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm md:flex-row md:items-center">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700">
-              Financial operations
-            </p>
-            <h1 className="mt-2 text-3xl font-semibold tracking-tight text-zinc-950">
-              Accounts Receivable
-            </h1>
-            <p className="mt-2 max-w-3xl text-sm text-zinc-600">
-              Tenant-scoped customers, invoice drafts, revisions, and immutable issuance backed by
-              PostgreSQL.
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            {process.env.NEXT_PUBLIC_ENV_LABEL ? (
-              <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
-                {process.env.NEXT_PUBLIC_ENV_LABEL}
-              </span>
-            ) : null}
-            <button
-              type="button"
-              onClick={() => void load()}
-              className="rounded-lg border border-zinc-300 px-3 py-2 text-sm font-medium"
-            >
-              Refresh
-            </button>
-          </div>
-        </header>
 
-        <nav className="flex flex-wrap gap-2" aria-label="Accounts Receivable sections">
+
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <nav className="flex flex-wrap gap-2" aria-label="Accounts Receivable sections">
           {([
             ['overview', 'Overview'],
             ['customers', 'Customers'],
@@ -196,6 +170,21 @@ export default function AccountsReceivableWorkbench() {
             </button>
           ))}
         </nav>
+          <div className="flex items-center gap-3">
+            {process.env.NEXT_PUBLIC_ENV_LABEL ? (
+              <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+                {process.env.NEXT_PUBLIC_ENV_LABEL}
+              </span>
+            ) : null}
+            <button
+              type="button"
+              onClick={() => void load()}
+              className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs font-medium hover:bg-zinc-50"
+            >
+              Refresh
+            </button>
+          </div>
+        </div>
 
         {error ? (
           <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
@@ -715,15 +704,15 @@ function InvoicePanel({ customers, onCreated }: { customers: Customer[]; onCreat
         <h2 className="text-xl font-semibold">Generate Governed Invoice Draft</h2>
         <p className="text-sm text-zinc-500">Calculates double-entry receivables, statutory jurisdiction tax, and SOX cryptographic seals.</p>
       </div>
-      <div className="grid gap-4 md:grid-cols-2">
-        <label className="grid gap-1.5 text-sm font-medium">
-          Debtor / Counterparty
+      <div className="grid gap-4 md:grid-cols-2 min-w-0">
+        <label className="grid gap-1.5 text-sm font-medium min-w-0">
+          <span className="truncate">Debtor / Counterparty</span>
           <select
             name="customerId"
             required
             value={selectedCustomerId}
             onChange={(e) => setSelectedCustomerId(e.target.value)}
-            className="rounded-lg border border-zinc-300 px-3 py-2.5 font-normal"
+            className="w-full rounded-lg border border-zinc-300 px-3 py-2.5 font-normal"
           >
             <option value="">Select a debtor / customer</option>
             {customers.map((customer) => (
@@ -819,9 +808,9 @@ interface FieldProps {
 
 function Field({ label, ...inputProps }: FieldProps) {
   return (
-    <label className="grid gap-1.5 text-sm font-medium text-zinc-800">
-      {label}
-      <input {...inputProps} className="rounded-lg border border-zinc-300 px-3 py-2.5 font-normal outline-none focus:border-emerald-600" />
+    <label className="grid gap-1.5 text-sm font-medium text-zinc-800 min-w-0">
+      <span className="truncate">{label}</span>
+      <input {...inputProps} className="w-full rounded-lg border border-zinc-300 px-3 py-2.5 font-normal outline-none focus:border-emerald-600" />
     </label>
   );
 }

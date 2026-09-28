@@ -60,7 +60,8 @@ export function UniversalReportsWorkbench() {
       });
       const res = await fetch(`/api/reports?${params.toString()}`);
       if (!res.ok) {
-        throw new Error(`Failed to load report (${res.status})`);
+        const errJson = await res.json().catch(() => null);
+        throw new Error(errJson?.detail || errJson?.title || `Failed to load report (${res.status})`);
       }
       const data = await res.json();
       setReport(data.report);
@@ -176,18 +177,9 @@ export function UniversalReportsWorkbench() {
   return (
     <div className="flex flex-col gap-6 p-8 max-w-[1600px] mx-auto">
       {/* Top Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-ui-border-base pb-6">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <DocumentText className="text-ui-fg-interactive h-5 w-5" />
-            <Heading level="h1" className="text-2xl font-bold tracking-tight">
-              Universal Reports Studio
-            </Heading>
-            <Badge color="green">GA Certified</Badge>
-          </div>
-          <Text className="text-ui-fg-subtle text-sm">
-            Statutory double-entry general ledger, revenue realization, CECL AR aging, and DCAA compliance reports.
-          </Text>
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-ui-border-base pb-3">
+        <div className="flex items-center gap-2">
+          <Badge color="green">GA Certified</Badge>
         </div>
 
         {/* Global Controls */}

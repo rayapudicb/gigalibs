@@ -36,7 +36,7 @@ export default async function StudioLayout({ children }: { children: React.React
           </div>
           <UserNav session={session.context} />
         </header>
-        <main className="min-h-0 flex-1 overflow-y-auto">
+        <main className="min-h-0 flex-1 overflow-y-auto" data-module-content-root>
           <CurrencyLocaleProvider>{children}</CurrencyLocaleProvider>
         </main>
       </div>

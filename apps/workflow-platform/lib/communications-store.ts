@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { rateCommunicationsUsage, type BillingUsageInput, type BillingRatingOptions, type RatedQuote } from '@gigalibs/contracts';
 
 export type ChannelType = 'SMS' | 'WHATSAPP' | 'EMAIL' | 'WEBHOOK';
 export type ChannelProvider = 'TWILIO' | 'AZURE_COMMUNICATION_SERVICES' | 'SMTP_SENDGRID' | 'CUSTOM_WEBHOOK';
@@ -102,12 +103,30 @@ export interface TriggerDispatchResult {
   timestamp: string;
 }
 
+export interface CallAttempt {
+  id: string;
+  tenantId: string;
+  conversationId?: string;
+  provider: 'TWILIO' | 'AZURE_COMMUNICATION_SERVICES';
+  callerAddress: string;
+  recipientAddress: string;
+  direction: 'INBOUND' | 'OUTBOUND';
+  status: 'INITIATED' | 'RINGING' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED' | 'BUSY' | 'NO_ANSWER';
+  durationSeconds: number;
+  providerCallId?: string;
+  recordingUrl?: string;
+  transcriptText?: string;
+  createdAt: string;
+  endedAt?: string;
+}
+
 class CommunicationsStore {
   private channels: Map<string, ChannelConfig[]> = new Map();
   private conversations: Map<string, Conversation[]> = new Map();
   private messages: Map<string, Message[]> = new Map();
   private templates: Map<string, MessageTemplate[]> = new Map();
   private campaigns: Map<string, ReachCampaign[]> = new Map();
+  private callAttempts: Map<string, CallAttempt[]> = new Map();
 
   constructor() {
     this.seedDefaults('default');
@@ -117,26 +136,38 @@ class CommunicationsStore {
     const ch1: ChannelConfig = {
       id: 'ch-twilio-sms-01',
       tenantId,
-      name: 'Twilio Toll-Free SMS Primary',
+      name: 'Twilio SMS Primary Carrier',
       type: 'SMS',
       provider: 'TWILIO',
       status: 'ACTIVE',
-      senderAddress: '+1 (855) 444-2542',
+      senderAddress: process.env.TWILIO_SMS_FROM || '+1 (608) 809-1531',
       isDefault: true,
-      deliverySuccessRate: 99.4,
-      updatedAt: '2026-09-13T10:00:00Z',
+      deliverySuccessRate: 99.8,
+      updatedAt: '2026-09-19T10:00:00Z',
     };
     const ch2: ChannelConfig = {
       id: 'ch-acs-whatsapp-02',
       tenantId,
-      name: 'Azure ACS WhatsApp Business',
+      name: 'Azure ACS Voice & WhatsApp Business',
       type: 'WHATSAPP',
       provider: 'AZURE_COMMUNICATION_SERVICES',
       status: 'ACTIVE',
-      senderAddress: '+1 (800) 902-1144',
+      senderAddress: process.env.ACS_PHONE_NUMBER || '+1 (877) 217-7262',
       isDefault: true,
-      deliverySuccessRate: 98.7,
-      updatedAt: '2026-09-13T10:15:00Z',
+      deliverySuccessRate: 99.2,
+      updatedAt: '2026-09-19T10:15:00Z',
+    };
+    const chVoice: ChannelConfig = {
+      id: 'ch-twilio-voice-03',
+      tenantId,
+      name: 'Twilio WebRTC Voice Trunk',
+      type: 'VOICE' as any,
+      provider: 'TWILIO',
+      status: 'ACTIVE',
+      senderAddress: process.env.TWILIO_VOICE_CALLER_ID || '+1 (855) 532-6595',
+      isDefault: true,
+      deliverySuccessRate: 99.9,
+      updatedAt: '2026-09-19T10:30:00Z',
     };
     const ch3: ChannelConfig = {
       id: 'ch-sendgrid-email-03',
@@ -551,6 +582,75 @@ class CommunicationsStore {
       renderedBody,
       timestamp: msg.timestamp,
     };
+  }
+
+  listCallAttempts(tenantId: string): CallAttempt[] {
+    return this.callAttempts.get(tenantId) || [];
+  }
+
+  recordCallAttempt(tenantId: string, payload: Partial<CallAttempt>): CallAttempt {
+    const attempts = this.callAttempts.get(tenantId) || [];
+    const attempt: CallAttempt = {
+      id: payload.id || `call-${randomUUID().slice(0, 8)}`,
+      tenantId,
+      conversationId: payload.conversationId,
+      provider: payload.provider || 'TWILIO',
+      callerAddress: payload.callerAddress || '+1 (855) 444-2542',
+      recipientAddress: payload.recipientAddress || '',
+      direction: payload.direction || 'OUTBOUND',
+      status: payload.status || 'INITIATED',
+      durationSeconds: payload.durationSeconds || 0,
+      providerCallId: payload.providerCallId || `CA-${randomUUID().slice(0, 12)}`,
+      recordingUrl: payload.recordingUrl,
+      transcriptText: payload.transcriptText,
+      createdAt: new Date().toISOString(),
+    };
+    attempts.unshift(attempt);
+    this.callAttempts.set(tenantId, attempts);
+    return attempt;
+  }
+
+  updateCallAttempt(tenantId: string, id: string, updates: Partial<CallAttempt>): CallAttempt | null {
+    const attempts = this.callAttempts.get(tenantId) || [];
+    const idx = attempts.findIndex((a) => a.id === id);
+    if (idx === -1) return null;
+
+    const existing = attempts[idx];
+    if (!existing) return null;
+    const updated: CallAttempt = {
+      ...existing,
+      ...updates,
+      endedAt: updates.status === 'COMPLETED' ? new Date().toISOString() : existing.endedAt,
+    };
+    attempts[idx] = updated;
+    this.callAttempts.set(tenantId, attempts);
+    return updated;
+  }
+
+  getUsageMetrics(tenantId: string): BillingUsageInput {
+    const messages = this.messages.get(tenantId) || [];
+    const calls = this.callAttempts.get(tenantId) || [];
+
+    const smsCount = messages.filter((m) => m.channelType === 'SMS').length;
+    const whatsAppCount = messages.filter((m) => m.channelType === 'WHATSAPP').length;
+    const emailCount = messages.filter((m) => m.channelType === 'EMAIL').length;
+    const voiceCalls = calls.length;
+    const voiceMinutes = Number(
+      (calls.reduce((sum, c) => sum + (c.durationSeconds || 0), 0) / 60).toFixed(1),
+    );
+
+    return {
+      smsCount,
+      whatsAppCount,
+      emailCount,
+      voiceCalls,
+      voiceMinutes,
+    };
+  }
+
+  getUsageQuote(tenantId: string, options?: BillingRatingOptions): RatedQuote {
+    const usage = this.getUsageMetrics(tenantId);
+    return rateCommunicationsUsage(usage, options);
   }
 }
 

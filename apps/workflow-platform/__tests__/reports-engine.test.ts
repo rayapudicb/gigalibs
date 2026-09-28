@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
+import { masterDataStore } from '../lib/master-data-store';
 import { reportsEngine, type ReportCategory } from '../lib/reports-engine';
 
 describe('Universal Reports Engine', () => {
@@ -13,6 +14,23 @@ describe('Universal Reports Engine', () => {
     'SAM_GOV_FAR',
     'VALUE_RECOVERY',
   ];
+
+  beforeAll(() => {
+    masterDataStore.createRecord(tenantId, {
+      entityKey: 'customers',
+      domain: 'COUNTERPARTY',
+      code: 'TEST-REPORT-CUSTOMER',
+      name: 'Test Report Customer',
+      payload: { testFixture: true },
+    });
+    masterDataStore.createRecord(tenantId, {
+      entityKey: 'vendors',
+      domain: 'COUNTERPARTY',
+      code: 'TEST-REPORT-VENDOR',
+      name: 'Test Report Vendor',
+      payload: { testFixture: true },
+    });
+  });
 
   it('generates all 8 statutory enterprise reports with valid columns and rows', () => {
     for (const cat of categories) {

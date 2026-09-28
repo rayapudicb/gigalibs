@@ -1,7 +1,5 @@
-'use client';
+import { CmmsWorkspace } from '@/components/cmms/CmmsWorkspace';
 
-import CmmsDashboardView from '@/components/cmms/CmmsDashboardView';
-
-export default function CmmsDashboardPage() {
-  return <CmmsDashboardView initialTab="work-orders" />;
+export default function CmmsOverviewPage() {
+  return <CmmsWorkspace section="overview" />;
 }

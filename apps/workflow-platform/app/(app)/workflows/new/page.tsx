@@ -58,6 +58,9 @@ export default function NewWorkflowPage() {
           ],
           edges: [
             {
+              id: 'edge-step-trigger-step-validate',
+              source: 'step-trigger',
+              target: 'step-validate',
               from: 'step-trigger',
               to: 'step-validate',
             },
@@ -69,7 +72,6 @@ export default function NewWorkflowPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-tenant-id': 'tenant-corp-01',
         },
         body: JSON.stringify(payload),
       });

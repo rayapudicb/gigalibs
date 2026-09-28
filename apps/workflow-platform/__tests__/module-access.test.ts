@@ -1,9 +1,11 @@
 import { platformModuleCatalog } from '@gigalibs/contracts';
 import { describe, expect, it } from 'vitest';
 import {
+  canOpenPlatformModule,
   canInspectPlatformModule,
   canUseTenantModule,
   hasPermission,
+  mostSpecificActiveModuleKey,
   tenantModulePermission,
 } from '../lib/module-access';
 
@@ -12,6 +14,14 @@ describe('module access', () => {
     expect(hasPermission(['*'], 'ap:read')).toBe(true);
     expect(hasPermission(['ap:*'], 'ap:read')).toBe(true);
     expect(hasPermission(['value:*'], 'ap:read')).toBe(false);
+  });
+
+  it('lets a resource wildcard cover granular dotted permissions of the same resource only', () => {
+    expect(hasPermission(['workforce:*'], 'workforce.resources.read')).toBe(true);
+    expect(hasPermission(['workforce:*'], 'workforce.capabilities.manage')).toBe(true);
+    expect(hasPermission(['workforce:read'], 'workforce.resources.read')).toBe(false);
+    expect(hasPermission(['cmms:*'], 'workforce.resources.read')).toBe(false);
+    expect(hasPermission(['workforce-x:*'], 'workforce.resources.read')).toBe(false);
   });
 
   it('requires both an entitlement and the role permission', () => {
@@ -47,6 +57,64 @@ describe('module access', () => {
         expect(tenantModulePermission[module.key]).toBeUndefined();
       }
     }
+  });
+
+  it('does not let a platform role substitute for a tenant entitlement on ordinary modules', () => {
+    const marketplace = platformModuleCatalog.find((module) => module.key === 'module-marketplace')!;
+    expect(
+      canOpenPlatformModule(marketplace, {
+        tenant: { features: [] },
+        permissions: ['marketplace:read'],
+        platformRoles: ['PLATFORM_ADMIN'],
+      }),
+    ).toBe(false);
+  });
+
+  it('opens the reviewed GigaOps slice only with its tenant entitlement and permission', () => {
+    const gigaOps = platformModuleCatalog.find((module) => module.key === 'gigaops')!;
+    expect(gigaOps.readiness).toBe('REVIEW');
+    expect(gigaOps.entitlementEligible).toBe(true);
+    expect(gigaOps.requiredPermission).toBe('workforce:read');
+    expect(
+      canOpenPlatformModule(gigaOps, {
+        tenant: { features: ['gigaops'] },
+        permissions: ['workforce:read'],
+        platformRoles: [],
+      }),
+    ).toBe(true);
+    expect(
+      canOpenPlatformModule(gigaOps, {
+        tenant: { features: [] },
+        permissions: [],
+        platformRoles: ['PLATFORM_ADMIN'],
+      }),
+    ).toBe(true);
+  });
+
+  it('requires a tenant context for explicitly declared module inspection', () => {
+    const ar = platformModuleCatalog.find((module) => module.key === 'accounts-receivable')!;
+    expect(
+      canOpenPlatformModule(ar, {
+        tenant: null,
+        permissions: [],
+        platformRoles: ['PLATFORM_ADMIN'],
+      }),
+    ).toBe(false);
+    expect(
+      canOpenPlatformModule(ar, {
+        tenant: { features: [] },
+        permissions: [],
+        platformRoles: ['PLATFORM_ADMIN'],
+      }),
+    ).toBe(true);
+  });
+
+  it('chooses the most-specific module route for the active navigation state', () => {
+    const modules = platformModuleCatalog.filter((module) =>
+      ['connections', 'connector-hub'].includes(module.key),
+    );
+    expect(mostSpecificActiveModuleKey(modules, '/connections/oauth-studio')).toBe('connector-hub');
+    expect(mostSpecificActiveModuleKey(modules, '/connections/example')).toBe('connections');
   });
 
   it.each([

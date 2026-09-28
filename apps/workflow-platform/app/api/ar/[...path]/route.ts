@@ -67,7 +67,7 @@ async function proxyAr(request: Request, context: RouteContext): Promise<NextRes
       ...(body ? { body } : {}),
       cache: 'no-store',
       redirect: 'error',
-      signal: AbortSignal.timeout(15_000),
+      signal: AbortSignal.timeout(3_000),
     });
     const response = new NextResponse(upstream.body, { status: upstream.status });
     for (const name of ['content-type', 'etag', 'idempotency-replayed', 'x-correlation-id']) {
@@ -112,7 +112,7 @@ async function arToken(baseUrl: string, tenantId: string, userId: string): Promi
     body: JSON.stringify({ grant_type: 'client_credentials', tenant_id: tenantId, sub: userId }),
     cache: 'no-store',
     redirect: 'error',
-    signal: AbortSignal.timeout(5_000),
+    signal: AbortSignal.timeout(2_000),
   });
   const payload: unknown = await response.json().catch(() => null);
   if (
@@ -134,19 +134,39 @@ async function arToken(baseUrl: string, tenantId: string, userId: string): Promi
 
 function isAllowedPath(method: string, path: string[]): boolean {
   if (path.some((part) => !/^[A-Za-z0-9._:-]{1,100}$/.test(part))) return false;
-  if (method === 'POST' && path.join('/') === 'v1/setup') return true;
-  if (path.join('/') === 'v1/customers') return method === 'GET' || method === 'POST';
-  if (path.join('/') === 'v1/invoices') return method === 'GET' || method === 'POST';
+  const joined = path.join('/');
+  if (method === 'POST' && joined === 'v1/setup') return true;
+  if (joined === 'v1/customers') return method === 'GET' || method === 'POST';
+  if (path.length === 3 && path[0] === 'v1' && path[1] === 'customers') {
+    return method === 'GET';
+  }
+  if (joined === 'v1/invoices') return method === 'GET' || method === 'POST';
+  if (joined === 'v1/invoices/aging') return method === 'GET';
   if (path.length === 3 && path[0] === 'v1' && path[1] === 'invoices') {
     return method === 'GET' || method === 'PATCH';
   }
-  return (
-    method === 'POST' &&
-    path.length === 4 &&
-    path[0] === 'v1' &&
-    path[1] === 'invoices' &&
-    path[3] === 'issue'
-  );
+  if (path.length === 4 && path[0] === 'v1' && path[1] === 'invoices') {
+    const sub = path[3];
+    if (sub === 'issue') return method === 'POST';
+    if (sub === 'deliver') return method === 'POST';
+    if (sub === 'deliveries') return method === 'GET';
+    if (sub === 'pdf') return method === 'GET';
+    if (sub === 'payments') return method === 'GET' || method === 'POST';
+    if (sub === 'checkout-session') return method === 'POST';
+    if (sub === 'download-url') return method === 'GET';
+    if (sub === 'void') return method === 'GET' || method === 'POST';
+    if (sub === 'credit-notes') return method === 'GET' || method === 'POST';
+    if (sub === 'collections') return method === 'GET' || method === 'POST';
+  }
+  if (joined === 'v1/work-sources') return method === 'POST';
+  if (path.length === 4 && path[0] === 'v1' && path[1] === 'work-sources') {
+    const sub = path[3];
+    if (sub === 'records') return method === 'POST';
+    if (sub === 'summary') return method === 'GET';
+    if (sub === 'generate-invoice') return method === 'POST';
+    if (sub === 'family') return method === 'GET';
+  }
+  return false;
 }
 
 function requiredArPermission(method: string, path: string[]): string {

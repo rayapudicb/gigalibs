@@ -275,34 +275,9 @@ export default function MultiCurrencyWorkbench() {
 
   return (
     <div className="space-y-6">
-      <header className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-                Multi-Currency & Treasury FX
-              </h1>
-              <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-600/20">
-                PostgreSQL Persisted
-              </span>
-            </div>
-            <p className="mt-1 text-sm text-slate-500">
-              Tenant FX rates, ISO 4217 minor-unit conversion ledger, and localization preferences.
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => load()}
-              disabled={loading}
-              className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
-            >
-              {loading ? 'Refreshing...' : 'Refresh'}
-            </button>
-          </div>
-        </div>
-
-        {configured && (
-          <nav className="mt-6 flex space-x-2 border-t border-slate-100 pt-4">
+      {configured ? (
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <nav className="flex flex-wrap gap-2">
             {(
               [
                 ['overview', 'Overview'],
@@ -318,15 +293,37 @@ export default function MultiCurrencyWorkbench() {
                 className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${
                   view === id
                     ? 'bg-slate-900 text-white'
-                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                    : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                 }`}
               >
                 {label}
               </button>
             ))}
           </nav>
-        )}
-      </header>
+          <div className="flex items-center gap-2">
+            <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-600/20">
+              PostgreSQL Persisted
+            </span>
+            <button
+              onClick={() => load()}
+              disabled={loading}
+              className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+            >
+              {loading ? 'Refreshing...' : 'Refresh'}
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="flex justify-end">
+          <button
+            onClick={() => load()}
+            disabled={loading}
+            className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+          >
+            {loading ? 'Refreshing...' : 'Refresh'}
+          </button>
+        </div>
+      )}
 
       {error && (
         <div className="rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800">

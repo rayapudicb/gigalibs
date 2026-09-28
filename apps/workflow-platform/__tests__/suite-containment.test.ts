@@ -32,11 +32,15 @@ const context = () => ({
     status: 'ACTIVE',
     trialEndsAt: null,
     features: [],
+    entitlements: [],
   },
   roles: ['VIEWER'],
   platformRoles: [],
   permissions: [],
   session: { id: 'isolated-session', expiresAt: new Date(Date.now() + 60_000).toISOString() },
+  authVersion: 1,
+  orgScope: { mode: 'FLAT_TENANT' as const },
+  spatialScope: { mode: 'UNBOUNDED' as const },
   mfa: { required: false, enrolled: false, verified: true, recoveryCodesRemaining: 0 },
 });
 const accessToken = (expiresAtSeconds: number) =>
@@ -111,6 +115,8 @@ describe('WI-OI-013: complete suite API containment', () => {
   });
 });
 
+const PLACE_ID = '5b9f7c1e-4d2a-4e8b-9c3f-1a2b3c4d5e6f';
+
 describe('canonical session verification and outage recovery', () => {
   it.each([
     null,
@@ -120,6 +126,19 @@ describe('canonical session verification and outage recovery', () => {
     { ...context(), tenant: { id: 'missing-contract' } },
   ])('rejects an invalid session contract', (value) => {
     expect(isVerifiedSession(value)).toBe(false);
+  });
+  it.each([
+    { ...context(), spatialScope: undefined },
+    { ...context(), spatialScope: { mode: 'EVERYWHERE' } },
+    { ...context(), spatialScope: { mode: 'SCOPED_PLACES' } },
+    { ...context(), spatialScope: { mode: 'SCOPED_PLACES', placeIds: ["x') OR true --"] } },
+    { ...context(), spatialScope: { mode: 'SCOPED_PLACES', placeIds: [PLACE_ID, PLACE_ID] } },
+  ])('rejects a missing or malformed spatial scope', (value) => {
+    expect(isVerifiedSession(value)).toBe(false);
+  });
+  it('accepts a spatially scoped session, including the fail-closed empty scope', () => {
+    expect(isVerifiedSession({ ...context(), spatialScope: { mode: 'SCOPED_PLACES', placeIds: [PLACE_ID] } })).toBe(true);
+    expect(isVerifiedSession({ ...context(), spatialScope: { mode: 'SCOPED_PLACES', placeIds: [] } })).toBe(true);
   });
   it.each([403, 503])('preserves denial/unavailability status %i', async (status) => {
     store.get.mockReturnValue({ value: 'isolated-test-token' });

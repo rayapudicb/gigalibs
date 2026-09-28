@@ -16,14 +16,17 @@ export default async function StudioConfigurationPage({
   const canUseStudioMode =
     session.context.permissions.includes('*') ||
     session.context.permissions.includes('configuration:*') ||
-    session.context.permissions.includes('configuration:draft');
+    session.context.permissions.includes('configuration:draft') ||
+    session.context.permissions.includes('configuration:read');
 
   if (!canUseStudioMode) redirect('/modules');
 
   const params = await searchParams;
   const initialRegistrationKey =
     typeof params.surface === 'string' ? params.surface : undefined;
-  const returnTo = typeof params.returnTo === 'string' ? params.returnTo : '/modules';
+  const initialTemplateId =
+    typeof params.template === 'string' ? params.template : undefined;
+  const returnTo = typeof params.returnTo === 'string' ? params.returnTo : '/configuration';
 
   const cookieStore = await cookies();
   const locale = cookieStore.get('gigalibs_locale')?.value || 'en-US';
@@ -38,6 +41,7 @@ export default async function StudioConfigurationPage({
       locale={locale}
       currency={currency}
       initialRegistrationKey={initialRegistrationKey}
+      initialTemplateId={initialTemplateId}
       returnTo={returnTo}
     />
   );

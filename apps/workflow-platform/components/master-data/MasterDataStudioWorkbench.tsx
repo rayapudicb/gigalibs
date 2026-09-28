@@ -21,7 +21,24 @@ import {
   Plus,
   Sparkles,
 } from '@medusajs/icons';
-import { Database, Users, CreditCard, Layers, FileCheck2, ShieldCheck, Globe, Building, Coins, Clock, Info } from 'lucide-react';
+import {
+  Database,
+  Users,
+  CreditCard,
+  Layers,
+  FileCheck2,
+  ShieldCheck,
+  Globe,
+  Building,
+  Coins,
+  Clock,
+  Info,
+  Download,
+  Upload,
+  FileSpreadsheet,
+  AlertCircle,
+  CheckCircle2,
+} from 'lucide-react';
 import {
   MASTER_CUSTOMERS,
   MASTER_VENDORS,
@@ -53,6 +70,7 @@ type ScopeFilter = 'ALL' | 'PLATFORM_GLOBAL' | 'PLATFORM_TEMPLATE' | 'TENANT_LOC
 interface MasterRecordRow {
   id: string;
   scope: MasterDataScope;
+  entityKey: string;
   code: string;
   name: string;
   status: string;
@@ -77,16 +95,35 @@ export function MasterDataStudioWorkbench() {
   const [newCategory, setNewCategory] = useState('ASSET');
   const [newDetail, setNewDetail] = useState('');
 
+  // Bulk spreadsheet import modal state
+  const [importModalOpen, setImportModalOpen] = useState(false);
+  const [importCsvText, setImportCsvText] = useState('');
+  const [importFileName, setImportFileName] = useState('');
+  const [validatingImport, setValidatingImport] = useState(false);
+  const [committingImport, setCommittingImport] = useState(false);
+  const [validationResult, setValidationResult] = useState<any>(null);
+
+  const [containmentNotice, setContainmentNotice] = useState<string | null>(null);
+
   const fetchRecords = () => {
     setLoading(true);
     fetch('/api/master-data')
-      .then((res) => (res.ok ? res.json() : null))
+      .then(async (res) => {
+        if (!res.ok) {
+          const errData = await res.json().catch(() => null);
+          setContainmentNotice(errData?.detail || 'Master data governance adapter is currently contained.');
+          return null;
+        }
+        setContainmentNotice(null);
+        return res.json();
+      })
       .then((data) => {
         if (!data?.records) return;
         setAllRecords(
           data.records.map((r: any) => ({
             id: r.id,
             scope: r.scope,
+            entityKey: r.entityKey ?? '',
             code: r.code,
             name: r.name,
             status: r.status,
@@ -109,14 +146,22 @@ export function MasterDataStudioWorkbench() {
 
   // Filter by active tab, scope, and search query
   const filteredRecords = allRecords.filter((rec) => {
-    let matchesTab = false;
-    if (activeTab === 'accounts') matchesTab = rec.id.includes('acc-') || rec.code.match(/^\d{4}$/) !== null;
-    else if (activeTab === 'currencies') matchesTab = rec.id.includes('curr-') || rec.code.length === 3; // ISO-4217 codes are 3 chars — no hardcoded list
-    else if (activeTab === 'payment-terms') matchesTab = rec.id.includes('pt-') || rec.code.startsWith('NET_') || rec.code === 'DUE_ON_RECEIPT';
-    else if (activeTab === 'customers') matchesTab = rec.id.includes('cust-') || rec.code.startsWith('CUST-');
-    else if (activeTab === 'vendors') matchesTab = rec.id.includes('vend-') || rec.code.startsWith('VEND-');
-    else if (activeTab === 'cost-centers') matchesTab = rec.id.includes('cc-') || rec.code.startsWith('CC-');
-    else if (activeTab === 'signers') matchesTab = rec.id.includes('sgn-') || rec.payload?.email !== undefined;
+    // Primary match: use the stored entityKey directly (most reliable)
+    let matchesTab = rec.entityKey === activeTab;
+
+    // Fallback heuristics for records that may lack entityKey on old responses
+    if (!matchesTab) {
+      if (activeTab === 'accounts') matchesTab = rec.id.includes('acc-') || rec.code.match(/^\d{4}$/) !== null;
+      else if (activeTab === 'currencies') matchesTab = rec.id.includes('curr-');
+      else if (activeTab === 'payment-terms') matchesTab = rec.id.includes('pt-') || rec.code.startsWith('NET_') || rec.code === 'DUE_ON_RECEIPT';
+      else if (activeTab === 'customers') matchesTab = rec.id.includes('cust-') || rec.code.startsWith('CUST-');
+      else if (activeTab === 'vendors') matchesTab = rec.id.includes('vend-') || rec.code.startsWith('VEND-');
+      else if (activeTab === 'cost-centers') matchesTab = rec.id.includes('cc-') || rec.code.startsWith('CC-');
+      else if (activeTab === 'signers') matchesTab = rec.id.includes('sgn-') || rec.payload?.email !== undefined;
+      else if (activeTab === 'countries') matchesTab = rec.id.includes('country-') || rec.payload?.alpha3 !== undefined;
+      else if (activeTab === 'jurisdictions') matchesTab = rec.id.includes('jur-') || rec.payload?.taxType !== undefined;
+      else if (activeTab === 'classifications') matchesTab = rec.id.includes('class-') || rec.payload?.retentionYears !== undefined;
+    }
 
     if (!matchesTab) return false;
 
@@ -225,29 +270,209 @@ export function MasterDataStudioWorkbench() {
     URL.revokeObjectURL(url);
   };
 
+  // Download official RFC 4180 CSV template for active entity
+  const handleDownloadTemplate = async () => {
+    try {
+      const res = await fetch(`/api/master-data?action=template&entityKey=${encodeURIComponent(activeTab)}`);
+      if (!res.ok) {
+        const err = await res.json().catch(() => null);
+        toast.error('Template Download Failed', {
+          description: err?.error || `No template registered for ${activeTab}.`,
+        });
+        return;
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${activeTab}_template.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      toast.success('Template Downloaded', {
+        description: `Downloaded official template for ${activeTab}. Populate and import.`,
+      });
+    } catch {
+      toast.error('Download Error', { description: 'Network error downloading template.' });
+    }
+  };
+
+  // Client-side CSV parser
+  const parseCsvText = (text: string): Record<string, string>[] => {
+    const lines = text
+      .split(/\r?\n/)
+      .map((l) => l.trim())
+      .filter((l) => l.length > 0 && !l.startsWith('#'));
+    if (lines.length < 2) return [];
+
+    const headers = lines[0].split(',').map((h) => h.replace(/^"(.*)"$/, '$1').trim());
+    const results: Record<string, string>[] = [];
+
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i];
+      const cells: string[] = [];
+      let cur = '';
+      let inQuotes = false;
+      for (let c = 0; c < line.length; c++) {
+        const char = line[c];
+        if (char === '"') {
+          inQuotes = !inQuotes;
+        } else if (char === ',' && !inQuotes) {
+          cells.push(cur.trim());
+          cur = '';
+        } else {
+          cur += char;
+        }
+      }
+      cells.push(cur.trim());
+
+      const row: Record<string, string> = {};
+      headers.forEach((hdr, idx) => {
+        row[hdr] = cells[idx] ? cells[idx].replace(/^"(.*)"$/, '$1').trim() : '';
+      });
+      results.push(row);
+    }
+    return results;
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImportFileName(file.name);
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = event.target?.result as string;
+      setImportCsvText(text || '');
+      setValidationResult(null);
+    };
+    reader.readAsText(file);
+  };
+
+  // Phase 1: Dry-run validation
+  const handleDryRunValidation = async () => {
+    if (!importCsvText.trim()) {
+      toast.error('No Data', { description: 'Please upload a CSV file or paste CSV content.' });
+      return;
+    }
+    const rows = parseCsvText(importCsvText);
+    if (rows.length === 0) {
+      toast.error('Invalid CSV Format', { description: 'Could not parse headers or rows from the provided content.' });
+      return;
+    }
+
+    setValidatingImport(true);
+    try {
+      const res = await fetch('/api/master-data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'validate',
+          entityKey: activeTab,
+          rows,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setValidationResult(data.validation);
+        if (data.validation.errorCount === 0) {
+          toast.success('Validation Passed', {
+            description: `All ${data.validation.validCount} records are syntactically valid and ready to commit.`,
+          });
+        } else {
+          toast.warning('Validation Issues Detected', {
+            description: `Found ${data.validation.errorCount} row error(s) across ${data.validation.totalRows} row(s).`,
+          });
+        }
+      } else {
+        toast.error('Validation Failed', { description: data.error || 'Server rejected format.' });
+      }
+    } catch {
+      toast.error('Network Error', { description: 'Failed to contact validation engine.' });
+    } finally {
+      setValidatingImport(false);
+    }
+  };
+
+  // Phase 2: Batch commit
+  const handleCommitImport = async () => {
+    if (!validationResult || validationResult.validCount === 0) {
+      toast.error('Cannot Commit', { description: 'No valid records ready to commit.' });
+      return;
+    }
+    const rows = parseCsvText(importCsvText);
+    setCommittingImport(true);
+    try {
+      const res = await fetch('/api/master-data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'import',
+          entityKey: activeTab,
+          rows,
+          allowPartial: validationResult.errorCount > 0,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        toast.success('Import Successful', {
+          description: `Committed ${data.count} master entities to your tenant workspace.`,
+        });
+        setImportModalOpen(false);
+        setImportCsvText('');
+        setImportFileName('');
+        setValidationResult(null);
+        fetchRecords();
+      } else {
+        toast.error('Import Commit Failed', { description: data.error || 'Could not persist records.' });
+      }
+    } catch {
+      toast.error('Network Error', { description: 'Network error during import commit.' });
+    } finally {
+      setCommittingImport(false);
+    }
+  };
+
   const globalCount = allRecords.filter((r) => r.scope === 'PLATFORM_GLOBAL').length;
   const tenantCount = allRecords.filter((r) => r.scope === 'TENANT_LOCAL').length;
+  const supportsSpreadsheetTemplates = ['customers', 'vendors', 'accounts', 'cost-centers', 'signers'].includes(activeTab);
 
   return (
     <div className="p-8 space-y-8 max-w-7xl mx-auto">
-      {/* Studio Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-zinc-200 pb-6">
-        <div>
-          <div className="flex items-center gap-2">
-            <Badge color="purple">3-Tier Master Data Governance</Badge>
-            <Badge color="blue">Multi-Tier MDM Architecture</Badge>
-            <StatusBadge color="green">PLATFORM &amp; TENANT BOUNDARY</StatusBadge>
-          </div>
-          <Heading level="h1" className="mt-2 text-2xl font-bold tracking-tight text-zinc-950 flex items-center gap-2.5">
-            <Database className="w-6 h-6 text-purple-600" />
-            <span>Master Data Governance Hub</span>
-          </Heading>
-          <Text className="mt-1 text-sm text-zinc-600">
-            Authoritative reference catalog cascading platform-level global standards down to tenant workspaces with isolated local overrides.
-          </Text>
+      {/* Action Toolbar */}
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-zinc-200 pb-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge color="purple">3-Tier Master Data Governance</Badge>
+          <Badge color="blue">Multi-Tier MDM Architecture</Badge>
+          <StatusBadge color="green">PLATFORM &amp; TENANT BOUNDARY</StatusBadge>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2.5">
+          {supportsSpreadsheetTemplates && (
+            <>
+              <Button
+                variant="secondary"
+                className="flex items-center gap-1.5 text-xs font-medium border-emerald-300 text-emerald-900 hover:bg-emerald-50"
+                onClick={handleDownloadTemplate}
+              >
+                <Download className="w-3.5 h-3.5 text-emerald-600" />
+                <span>Download Template</span>
+              </Button>
+              <Button
+                variant="secondary"
+                className="flex items-center gap-1.5 text-xs font-medium border-purple-300 text-purple-900 hover:bg-purple-50"
+                onClick={() => {
+                  setImportModalOpen(true);
+                  setValidationResult(null);
+                  setImportCsvText('');
+                  setImportFileName('');
+                }}
+              >
+                <Upload className="w-3.5 h-3.5 text-purple-600" />
+                <span>Import Spreadsheet</span>
+              </Button>
+            </>
+          )}
           <Button
             variant="secondary"
             className="flex items-center gap-1.5 text-xs font-medium"
@@ -270,6 +495,13 @@ export function MasterDataStudioWorkbench() {
           </Button>
         </div>
       </div>
+
+      {containmentNotice && (
+        <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs font-medium flex items-center gap-2">
+          <Info className="w-4 h-4 text-amber-600 shrink-0" />
+          <span>{containmentNotice}</span>
+        </div>
+      )}
 
       {/* Platform Admin Architecture Explainer Banner */}
       {showArchExplainer && (
@@ -690,6 +922,168 @@ export function MasterDataStudioWorkbench() {
                 </Button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal for Two-Phase Spreadsheet Import */}
+      {importModalOpen && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-zinc-200 pb-3">
+              <div className="flex items-center gap-2">
+                <FileSpreadsheet className="w-5 h-5 text-purple-600" />
+                <Heading level="h2" className="text-base font-bold text-zinc-900">
+                  Import Spreadsheet: {activeTab.toUpperCase()}
+                </Heading>
+              </div>
+              <button
+                type="button"
+                className="text-zinc-400 hover:text-zinc-700 font-bold"
+                onClick={() => setImportModalOpen(false)}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="text-xs text-zinc-600 space-y-2">
+              <p>
+                Upload an Excel or CSV file matching the governed template for <strong>{activeTab}</strong>.
+                Ingestion operates in two stages: schema dry-run validation followed by atomic commit to your tenant partition.
+              </p>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="secondary"
+                  size="small"
+                  onClick={handleDownloadTemplate}
+                  className="flex items-center gap-1 text-[11px]"
+                >
+                  <Download className="w-3 h-3 text-emerald-600" />
+                  <span>Download Official Template ({activeTab})</span>
+                </Button>
+                {importFileName && (
+                  <span className="font-mono text-purple-700 bg-purple-50 px-2 py-0.5 rounded border border-purple-200">
+                    {importFileName}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* File drop / upload zone */}
+            <div className="border-2 border-dashed border-zinc-300 rounded-xl p-4 text-center hover:border-purple-400 transition-colors">
+              <input
+                type="file"
+                accept=".csv,text/csv"
+                onChange={handleFileUpload}
+                className="hidden"
+                id="master-data-file-upload"
+              />
+              <label htmlFor="master-data-file-upload" className="cursor-pointer flex flex-col items-center gap-1">
+                <Upload className="w-6 h-6 text-zinc-400" />
+                <span className="font-bold text-xs text-purple-700">Choose CSV file or drag &amp; drop</span>
+                <span className="text-[10px] text-zinc-400">Supports standard UTF-8 CSV</span>
+              </label>
+            </div>
+
+            {/* Direct CSV Text Area (Alternative) */}
+            <div className="space-y-1">
+              <label className="block font-bold text-[11px] text-zinc-600">
+                Or Paste CSV Content Directly:
+              </label>
+              <textarea
+                rows={4}
+                value={importCsvText}
+                onChange={(e) => {
+                  setImportCsvText(e.target.value);
+                  setValidationResult(null);
+                }}
+                placeholder="Paste CSV rows with header row here..."
+                className="w-full font-mono text-[11px] border border-zinc-300 rounded-lg p-2.5 focus:border-purple-600 focus:outline-none"
+              />
+            </div>
+
+            {/* Phase 1 Validation Summary & Preview */}
+            {validationResult && (
+              <div className="space-y-3 pt-2 border-t border-zinc-200">
+                <div className="flex items-center gap-3">
+                  <Badge color="blue">Total: {validationResult.totalRows}</Badge>
+                  <Badge color="green">Valid: {validationResult.validCount}</Badge>
+                  {validationResult.errorCount > 0 && (
+                    <Badge color="red">Errors: {validationResult.errorCount}</Badge>
+                  )}
+                </div>
+
+                {validationResult.errorCount > 0 && (
+                  <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-900 text-[11px] space-y-1 max-h-32 overflow-y-auto">
+                    <div className="flex items-center gap-1 font-bold text-red-800">
+                      <AlertCircle className="w-3.5 h-3.5" />
+                      <span>Validation Errors</span>
+                    </div>
+                    {validationResult.failures.map((f: any, idx: number) => (
+                      <div key={idx} className="font-mono text-[10px]">
+                        Row {f.rowNumber}: {f.errors.join('; ')}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {validationResult.validCount > 0 && (
+                  <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-[11px] text-emerald-950 space-y-1">
+                    <div className="flex items-center gap-1 font-bold text-emerald-800">
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      <span>Valid Records Ready to Commit ({validationResult.validCount})</span>
+                    </div>
+                    <div className="max-h-28 overflow-y-auto space-y-1 font-mono text-[10px]">
+                      {validationResult.validRecords.map((r: any, idx: number) => (
+                        <div key={idx} className="flex items-center justify-between border-b border-emerald-100 py-0.5">
+                          <span className="font-bold">{r.code}</span>
+                          <span className="text-zinc-600 truncate max-w-xs">{r.name}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Modal Actions */}
+            <div className="pt-3 flex items-center justify-between border-t border-zinc-200">
+              <Button
+                variant="secondary"
+                size="small"
+                type="button"
+                onClick={() => setImportModalOpen(false)}
+              >
+                Cancel
+              </Button>
+
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="secondary"
+                  size="small"
+                  onClick={handleDryRunValidation}
+                  disabled={validatingImport || !importCsvText.trim()}
+                  className="flex items-center gap-1"
+                >
+                  <span>{validatingImport ? 'Validating...' : 'Validate (Dry-Run)'}</span>
+                </Button>
+
+                <Button
+                  variant="primary"
+                  size="small"
+                  onClick={handleCommitImport}
+                  disabled={
+                    committingImport ||
+                    !validationResult ||
+                    validationResult.validCount === 0
+                  }
+                  className="bg-purple-600 hover:bg-purple-700 text-white flex items-center gap-1"
+                >
+                  <CheckCircleSolid className="w-3 h-3" />
+                  <span>{committingImport ? 'Committing...' : `Commit ${validationResult?.validCount ?? ''} to Workspace`}</span>
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
       )}

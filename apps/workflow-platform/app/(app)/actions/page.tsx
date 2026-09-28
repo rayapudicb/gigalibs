@@ -15,47 +15,6 @@ import {
 } from '@medusajs/ui';
 import { ArrowPath } from '@medusajs/icons';
 
-const FALLBACK_ACTIONS: BusinessActionSummary[] = [
-  {
-    id: 'act-101',
-    actionType: 'DISBURSE_ACH_PAYMENT',
-    status: 'PENDING_APPROVAL',
-    risk: 'LOW',
-    requiredApprovals: 1,
-    preview: { paymentMethod: 'ACH_NACHA', vendorBank: 'JPMorgan Chase' },
-    createdAt: '2026-09-05T15:00:00Z',
-    supplierInvoice: {
-      id: 'inv-ap-101',
-      invoiceNumber: 'INV-2026-ORACLE-01',
-      totalMinor: '2450000',
-      currency: 'USD',
-      status: 'APPROVED_FOR_PAYMENT',
-      supplier: { name: 'Oracle Cloud Infrastructure LLC', externalId: 'sup-01' },
-    },
-    approvals: [],
-    result: null,
-  },
-  {
-    id: 'act-102',
-    actionType: 'OVERRIDE_MATCH_EXCEPTION',
-    status: 'PENDING_APPROVAL',
-    risk: 'MEDIUM',
-    requiredApprovals: 2,
-    preview: { deviationReason: 'Annual license adjustment' },
-    createdAt: '2026-09-05T15:30:00Z',
-    supplierInvoice: {
-      id: 'inv-ap-103',
-      invoiceNumber: 'INV-2026-DDOG-03',
-      totalMinor: '129000',
-      currency: 'USD',
-      status: 'EXCEPTION',
-      supplier: { name: 'Datadog Observability Corp', externalId: 'sup-03' },
-    },
-    approvals: [],
-    result: null,
-  },
-];
-
 export default function ActionQueuePage() {
   const [status, setStatus] = useState<'ALL' | BusinessActionStatus>('PENDING_APPROVAL');
   const [page, setPage] = useState<CursorPage<BusinessActionSummary> | null>(null);
@@ -69,12 +28,9 @@ export default function ActionQueuePage() {
     if (status !== 'ALL') query.set('status', status);
     try {
       setPage(await requestJson(`/api/control/ap/actions?${query}`));
-    } catch {
-      const filtered =
-        status === 'ALL'
-          ? FALLBACK_ACTIONS
-          : FALLBACK_ACTIONS.filter((a) => a.status === status);
-      setPage({ items: filtered, nextCursor: null });
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to load business actions from Accounts Payable API.');
+      setPage({ items: [], nextCursor: null });
     }
   }, [status]);
 
@@ -120,14 +76,12 @@ export default function ActionQueuePage() {
 
   return (
     <div className="space-y-6 p-8 min-h-screen bg-ui-bg-subtle text-ui-fg-base font-sans">
-      {/* ── Page Header ─────────────────────────────────────────── */}
-      <div className="flex flex-wrap items-start justify-between gap-4 border-b border-ui-border-base pb-5">
-        <div>
-          <Heading level="h1" className="text-2xl font-bold tracking-tight text-ui-fg-base">
-            Approval Work Queue
-          </Heading>
-          <Text size="small" className="text-ui-fg-subtle mt-1">
-            Policy-gated business actions backed by immutable audit evidence.
+      {/* ── Action Toolbar ─────────────────────────────────────────── */}
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-ui-border-base pb-3">
+        <div className="flex items-center gap-2">
+          <Badge color="blue" size="small">Approval Queue</Badge>
+          <Text size="small" className="text-ui-fg-subtle">
+            {page?.items.length ?? 0} Pending Business Decisions
           </Text>
         </div>
         <div className="flex items-center gap-2">
@@ -139,25 +93,12 @@ export default function ActionQueuePage() {
             <ArrowPath className="w-4 h-4 mr-1.5" />
             Refresh Queue
           </Button>
+          <Link href="/spend">
+            <Button variant="primary" size="small" className="bg-ui-button-inverted text-ui-fg-on-inverted font-semibold whitespace-nowrap">
+              Spend Approvals →
+            </Button>
+          </Link>
         </div>
-      </div>
-
-      {/* ── Productization Notice ─────────────────────────────────── */}
-      <div className="p-4 rounded-xl border border-ui-border-base bg-ui-bg-subtle flex flex-col md:flex-row items-center justify-between gap-3 text-xs">
-        <div>
-          <div className="font-semibold text-ui-fg-base flex items-center gap-2">
-            <span>Enterprise Approval Queues</span>
-            <Badge color="blue" size="small">RELEASE 1 ARCHIVE</Badge>
-          </div>
-          <div className="text-ui-fg-muted text-[11px] mt-0.5">
-            Multi-tier corporate expense approvals, PO threshold policies, and travel authorizations are managed in Spend Management Studio.
-          </div>
-        </div>
-        <Link href="/spend">
-          <Button variant="primary" size="small" className="bg-ui-button-inverted text-ui-fg-on-inverted font-semibold whitespace-nowrap">
-            Open Spend Approvals (/spend) →
-          </Button>
-        </Link>
       </div>
 
       {/* ── Filter Pills ────────────────────────────────────────── */}

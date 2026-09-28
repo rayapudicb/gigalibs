@@ -1,7 +1,13 @@
-'use client';
-
-import CmmsDashboardView from '@/components/cmms/CmmsDashboardView';
+import { CapabilityStatus } from '@/components/UnavailableCapability';
 
 export default function CmmsPeoplePage() {
-  return <CmmsDashboardView initialTab="people" />;
+  return (
+    <CapabilityStatus
+      title="CMMS people and teams are not connected"
+      summary="The CMMS screen is contained until it reads and writes the canonical workforce resources, capabilities, and allocations APIs."
+      availableForTesting={['Canonical workforce APIs remain available through authenticated integration tests.']}
+      blockedActions={['Creating technicians or teams from a separate CMMS-local people model.', 'Displaying default roles, rates, or utilization as customer facts.']}
+    />
+  );
 }
+

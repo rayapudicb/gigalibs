@@ -1,7 +1,12 @@
-'use client';
-
-import CmmsDashboardView from '@/components/cmms/CmmsDashboardView';
+import { CapabilityStatus } from '@/components/UnavailableCapability';
 
 export default function CmmsVendorsPage() {
-  return <CmmsDashboardView initialTab="vendors" />;
+  return (
+    <CapabilityStatus
+      title="CMMS vendors are not connected"
+      summary="The supplier screen is contained until a tenant-scoped vendor service and authoritative rating provenance are implemented."
+      blockedActions={['Creating supplier records from this screen.', 'Showing inferred vendor ratings or default commercial rates.']}
+    />
+  );
 }
+

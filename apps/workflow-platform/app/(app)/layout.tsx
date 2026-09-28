@@ -1,13 +1,12 @@
-import { cookies } from 'next/headers';
-import { AppI18nProvider } from '@/components/i18n/AppI18nProvider';
 import AppSidebar from '@/components/AppSidebar';
 import { UserNav } from '@/components/auth/UserNav';
+import { StudioModeProvider, StudioModeToggle } from '@/components/configuration/StudioMode';
 import { CurrencyLocaleProvider } from '@/components/currency/CurrencyLocaleContext';
-import {
-  StudioModeProvider,
-  StudioModeToggle,
-} from '@/components/configuration/StudioMode';
+import { AppI18nProvider } from '@/components/i18n/AppI18nProvider';
+import { OmnichannelSoftphoneDrawer } from '@/components/communications/OmnichannelSoftphoneDrawer';
+import { ModuleHeaderAndDrawer } from '@/components/navigation/ModuleHeaderAndDrawer';
 import { verifiedSession } from '@/lib/verified-session';
+import { cookies } from 'next/headers';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import type React from 'react';
@@ -49,7 +48,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         </section>
       </main>
     );
-  if (!session.context.tenant && session.context.platformRoles.length === 0) redirect('/select-tenant');
+  if (!session.context.tenant && session.context.platformRoles.length === 0)
+    redirect('/select-tenant');
   const cookieStore = await cookies();
   const userLocale = cookieStore.get('gigalibs_locale')?.value;
   const initialLocale = userLocale || 'en-US';
@@ -74,24 +74,21 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           <div className="flex-1 flex flex-col min-w-0 overflow-hidden print:overflow-visible print:h-auto print:block">
             {/* Global Top Platform Header */}
             <header className="h-14 border-b border-ui-border-base bg-ui-bg-base px-6 flex items-center justify-between shrink-0 z-30 print:hidden">
-              <div className="flex items-center gap-3">
-                <span className="text-xs font-semibold text-ui-fg-base tracking-tight hidden md:inline">
-                  GigaLibs
-                </span>
-                <span className="text-[11px] font-mono text-ui-fg-muted hidden lg:inline">
-                  {session.context.tenant?.name ?? 'Platform administration'}
-                </span>
-              </div>
+              <ModuleHeaderAndDrawer />
               <div className="flex items-center gap-4">
-                <StudioModeToggle />
+                {canUseStudioMode ? <StudioModeToggle /> : null}
                 <UserNav session={session.context} />
               </div>
             </header>
 
-            <main className="flex-1 overflow-y-auto print:overflow-visible print:h-auto print:p-0">
+            <main
+              className="flex-1 overflow-y-auto print:overflow-visible print:h-auto print:p-0"
+              data-module-content-root
+            >
               <CurrencyLocaleProvider>{children}</CurrencyLocaleProvider>
             </main>
           </div>
+          <OmnichannelSoftphoneDrawer />
         </div>
       </StudioModeProvider>
     </AppI18nProvider>

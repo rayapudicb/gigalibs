@@ -10,7 +10,7 @@
 
 @media (min-width: 1200px) {
   .studioGrid {
-    grid-template-columns: 260px minmax(420px, 1fr) 380px;
+    grid-template-columns: 280px minmax(0, 1fr) 340px;
   }
 
   .palette {

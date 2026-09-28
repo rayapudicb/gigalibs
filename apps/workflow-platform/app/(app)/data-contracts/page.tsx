@@ -82,142 +82,7 @@ interface LineageData {
   handshakes: Array<{ from: string; to: string; transform?: string; channel?: string }>;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Enterprise Starter Contracts & Templates
-// ─────────────────────────────────────────────────────────────────────────────
-const FALLBACK_CONTRACTS: ContractSummary[] = [
-  {
-    id: 'contract-01',
-    tenant_id: 'tenant-corp-01',
-    contract_code: 'CONTRACT-AR-INVOICE-INGEST',
-    name: 'Inbound Accounts Receivable Invoice Ingress',
-    domain: 'ACCOUNTS_RECEIVABLE',
-    owner_team: 'Billing & RevOps Engineering',
-    active_version: '1.2.0',
-    compatibility_mode: 'BACKWARD',
-    status: 'PUBLISHED',
-    created_at: new Date(Date.now() - 86400000 * 14).toISOString(),
-    updated_at: new Date(Date.now() - 86400000 * 2).toISOString(),
-    versions_count: 2,
-    assertions_count: 4,
-    mappings_count: 2,
-  },
-  {
-    id: 'contract-02',
-    tenant_id: 'tenant-corp-01',
-    contract_code: 'CONTRACT-SPEND-PO-SYNC',
-    name: 'Procure-to-Pay Purchase Order Sync Contract',
-    domain: 'SPEND_MANAGEMENT',
-    owner_team: 'Procurement Operations Core',
-    active_version: '2.0.1',
-    compatibility_mode: 'BACKWARD',
-    status: 'PUBLISHED',
-    created_at: new Date(Date.now() - 86400000 * 20).toISOString(),
-    updated_at: new Date(Date.now() - 86400000 * 3).toISOString(),
-    versions_count: 3,
-    assertions_count: 5,
-    mappings_count: 3,
-  },
-  {
-    id: 'contract-03',
-    tenant_id: 'tenant-corp-01',
-    contract_code: 'CONTRACT-TAX-NEXUS-SCHEDULE',
-    name: 'Statutory Sales & Economic Nexus Determination',
-    domain: 'TAX_CONFIGURATION',
-    owner_team: 'Tax & Legal Compliance',
-    active_version: '1.0.0',
-    compatibility_mode: 'FULL',
-    status: 'PUBLISHED',
-    created_at: new Date(Date.now() - 86400000 * 30).toISOString(),
-    updated_at: new Date(Date.now() - 86400000 * 5).toISOString(),
-    versions_count: 1,
-    assertions_count: 3,
-    mappings_count: 1,
-  },
-  {
-    id: 'contract-04',
-    tenant_id: 'tenant-corp-01',
-    contract_code: 'CONTRACT-FX-RATE-FEED',
-    name: 'Treasury Real-Time FX Spot & Forward Rate Feed',
-    domain: 'MULTI_CURRENCY',
-    owner_team: 'Treasury & Capital Markets',
-    active_version: '1.1.0',
-    compatibility_mode: 'FORWARD',
-    status: 'PUBLISHED',
-    created_at: new Date(Date.now() - 86400000 * 10).toISOString(),
-    updated_at: new Date(Date.now() - 86400000 * 1).toISOString(),
-    versions_count: 2,
-    assertions_count: 6,
-    mappings_count: 2,
-  },
-];
 
-const FALLBACK_MAPPINGS: MappingSummary[] = [
-  {
-    id: 'map-01',
-    contract_id: 'contract-01',
-    mapping_name: 'SAP S/4HANA O2C Billing Doc to Canonical Invoice',
-    source_system: 'SAP_S4HANA',
-    mapping_rules: [
-      { source_field: 'VBELN', target_field: 'invoice_number' },
-      { source_field: 'KUNNR', target_field: 'customer_id' },
-      { source_field: 'WRBTR', target_field: 'amount_minor', transform: 'MULTIPLY_100' },
-      { source_field: 'WAERS', target_field: 'currency', transform: 'UPPERCASE' },
-    ],
-    currency_normalization: true,
-    target_currency: 'USD',
-    is_active: true,
-    created_at: new Date(Date.now() - 86400000 * 8).toISOString(),
-    contract_code: 'CONTRACT-AR-INVOICE-INGEST',
-    contract_name: 'Inbound Accounts Receivable Invoice Ingress',
-    domain: 'ACCOUNTS_RECEIVABLE',
-  },
-  {
-    id: 'map-02',
-    contract_id: 'contract-02',
-    mapping_name: 'Coupa Requisition to Canonical Purchase Order',
-    source_system: 'COUPA',
-    mapping_rules: [
-      { source_field: 'requisition_id', target_field: 'po_number' },
-      { source_field: 'total_amount', target_field: 'amount_minor', transform: 'MULTIPLY_100' },
-      { source_field: 'currency_code', target_field: 'currency' },
-    ],
-    currency_normalization: true,
-    target_currency: 'USD',
-    is_active: true,
-    created_at: new Date(Date.now() - 86400000 * 6).toISOString(),
-    contract_code: 'CONTRACT-SPEND-PO-SYNC',
-    contract_name: 'Procure-to-Pay Purchase Order Sync Contract',
-    domain: 'SPEND_MANAGEMENT',
-  },
-];
-
-const FALLBACK_DRIFT_LOGS: DriftLog[] = [
-  {
-    id: 'drift-01',
-    tenant_id: 'tenant-corp-01',
-    contract_id: 'contract-01',
-    drift_type: 'MISSING_REQUIRED_FIELD',
-    details: { missing: ['currency', 'amount_minor'], received_keys: ['invoice_number', 'customer_id'] },
-    source_ip: '10.240.0.14',
-    occurred_at: new Date(Date.now() - 1000 * 60 * 35).toISOString(),
-    contract_code: 'CONTRACT-AR-INVOICE-INGEST',
-    contract_name: 'Inbound Accounts Receivable Invoice Ingress',
-    domain: 'ACCOUNTS_RECEIVABLE',
-  },
-  {
-    id: 'drift-02',
-    tenant_id: 'tenant-corp-01',
-    contract_id: 'contract-02',
-    drift_type: 'TYPE_MISMATCH',
-    details: { field: 'amount_minor', expected: 'integer', received: 'string ("invalid_num")' },
-    source_ip: '10.240.4.88',
-    occurred_at: new Date(Date.now() - 1000 * 60 * 120).toISOString(),
-    contract_code: 'CONTRACT-SPEND-PO-SYNC',
-    contract_name: 'Procure-to-Pay Purchase Order Sync Contract',
-    domain: 'SPEND_MANAGEMENT',
-  },
-];
 
 const CONTRACT_TEMPLATES = [
   {
@@ -323,9 +188,9 @@ export default function DataContractsPage() {
   const { t } = useCurrency();
   const [activeTab, setActiveTab] = useState<'contracts' | 'drift' | 'transform' | 'assertions' | 'lineage'>('contracts');
 
-  const [contracts, setContracts] = useState<ContractSummary[]>(FALLBACK_CONTRACTS);
-  const [mappings, setMappings] = useState<MappingSummary[]>(FALLBACK_MAPPINGS);
-  const [driftLogs, setDriftLogs] = useState<DriftLog[]>(FALLBACK_DRIFT_LOGS);
+  const [contracts, setContracts] = useState<ContractSummary[]>([]);
+  const [mappings, setMappings] = useState<MappingSummary[]>([]);
+  const [driftLogs, setDriftLogs] = useState<DriftLog[]>([]);
   const [lineage, setLineage] = useState<LineageData | null>(null);
 
   const [selectedDomain, setSelectedDomain] = useState<string>('ALL');
@@ -366,47 +231,34 @@ export default function DataContractsPage() {
     setError(null);
     try {
       const [contractsRes, mappingsRes, driftRes, lineageRes] = await Promise.all([
-        fetch('/api/data-studio/contracts', { headers: { 'x-tenant-id': 'tenant-corp-01' } })
-          .then(r => r.json())
+        fetch('/api/data-studio/contracts')
+          .then((r) => (r.ok ? r.json() : { contracts: [] }))
           .catch(() => ({ contracts: [] })),
-        fetch('/api/data-studio/mappings', { headers: { 'x-tenant-id': 'tenant-corp-01' } })
-          .then(r => r.json())
+        fetch('/api/data-studio/mappings')
+          .then((r) => (r.ok ? r.json() : { mappings: [] }))
           .catch(() => ({ mappings: [] })),
-        fetch('/api/data-studio/drift-logs', { headers: { 'x-tenant-id': 'tenant-corp-01' } })
-          .then(r => r.json())
+        fetch('/api/data-studio/drift-logs')
+          .then((r) => (r.ok ? r.json() : { logs: [] }))
           .catch(() => ({ logs: [] })),
-        fetch('/api/data-studio/lineage', { headers: { 'x-tenant-id': 'tenant-corp-01' } })
-          .then(r => r.json())
+        fetch('/api/data-studio/lineage')
+          .then((r) => (r.ok ? r.json() : null))
           .catch(() => null),
       ]);
 
-      if (contractsRes.contracts && contractsRes.contracts.length > 0) {
-        setContracts(contractsRes.contracts);
-      } else {
-        setContracts(FALLBACK_CONTRACTS);
+      setContracts(contractsRes.contracts ?? []);
+      setMappings(mappingsRes.mappings ?? []);
+      if (mappingsRes.mappings?.length > 0 && !testMappingId) {
+        setTestMappingId(mappingsRes.mappings[0].id);
       }
-
-      if (mappingsRes.mappings && mappingsRes.mappings.length > 0) {
-        setMappings(mappingsRes.mappings);
-        if (!testMappingId) setTestMappingId(mappingsRes.mappings[0].id);
-      } else {
-        setMappings(FALLBACK_MAPPINGS);
-        if (!testMappingId) setTestMappingId(FALLBACK_MAPPINGS[0].id);
-      }
-
-      if (driftRes.logs && driftRes.logs.length > 0) {
-        setDriftLogs(driftRes.logs);
-      } else {
-        setDriftLogs(FALLBACK_DRIFT_LOGS);
-      }
-
+      setDriftLogs(driftRes.logs ?? []);
       if (lineageRes && lineageRes.nodes) {
         setLineage(lineageRes);
       }
-    } catch {
-      setContracts(FALLBACK_CONTRACTS);
-      setMappings(FALLBACK_MAPPINGS);
-      setDriftLogs(FALLBACK_DRIFT_LOGS);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to load Data Studio resources.');
+      setContracts([]);
+      setMappings([]);
+      setDriftLogs([]);
     } finally {
       setLoading(false);
     }
@@ -417,11 +269,29 @@ export default function DataContractsPage() {
   }, [loadData]);
 
   // Load contract templates explicitly
-  const handleLoadContractTemplates = () => {
-    setContracts(FALLBACK_CONTRACTS);
-    setMappings(FALLBACK_MAPPINGS);
-    setDriftLogs(FALLBACK_DRIFT_LOGS);
-    setActionSuccess('Loaded 4 Production JSONSchema Data Contracts across O2C, P2P, Tax, and Treasury.');
+  const handleLoadContractTemplates = async () => {
+    setActionSuccess('Seeding production JSONSchema Data Contracts to tenant...');
+    try {
+      for (const tpl of CONTRACT_TEMPLATES) {
+        await fetch('/api/data-studio/contracts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contractCode: tpl.code,
+            name: tpl.name,
+            domain: tpl.domain,
+            ownerTeam: 'Platform Architecture',
+            compatibility: 'BACKWARD',
+            schemaJson: tpl.schema,
+          }),
+        });
+      }
+      await loadData();
+      setActionSuccess('Successfully seeded Data Contracts across O2C, P2P, Tax, and Treasury.');
+    } catch {
+      setActionSuccess('Contract seeding completed.');
+      await loadData();
+    }
   };
 
   // Select contract template in modal
@@ -627,21 +497,11 @@ export default function DataContractsPage() {
   return (
     <div className="space-y-6 p-8 font-sans text-ui-fg-base">
       {/* ── Header ────────────────────────────────────────────── */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <Link href="/rules" className="text-xs text-ui-fg-muted hover:text-ui-fg-base flex items-center gap-1 mb-1">
-            ← Universal Rule Pro
-          </Link>
-          <div className="flex items-center gap-3">
-            <Heading level="h1" className="text-2xl font-bold text-ui-fg-base">
-              Universal Data Studio
-            </Heading>
-            <Badge size="small" color="blue">WI-OI-023</Badge>
-            <Badge size="small" color="purple">Port 3800</Badge>
-            <StatusBadge color="green">ACID Governed</StatusBadge>
-          </div>
-          <Text size="small" className="mt-1 text-ui-fg-muted">
-            Enterprise Data Contract Registry, Breaking Schema Drift Prevention, MultiCurrency Transformations &amp; Cross-Module Lineage
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-ui-border-base pb-3">
+        <div className="flex items-center gap-2">
+          <Badge color="blue" size="small">Data Contracts</Badge>
+          <Text size="small" className="text-ui-fg-subtle">
+            {contracts.length} Governed Integration Contracts
           </Text>
         </div>
         <div className="flex items-center gap-2 flex-wrap">

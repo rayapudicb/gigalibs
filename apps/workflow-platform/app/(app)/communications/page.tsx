@@ -20,6 +20,7 @@ export default async function CommunicationsPage() {
       tenantId={session.context.tenant?.id ?? 'default'}
       tenantName={session.context.tenant?.name ?? 'Current Workspace'}
       permissions={session.context.permissions}
+      initialTab="inbox"
     />
   );
 }

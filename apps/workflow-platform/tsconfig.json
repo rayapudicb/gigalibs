@@ -50,8 +50,8 @@
       "@gigalibs/db": [
         "../../packages/db/dist/index.d.ts"
       ],
-      "@gigalibs/data-import-export-react": [
-        "../../packages/data-import-export-react/src/index.ts"
+      "@gigalibs/form-engine-core": [
+        "../../packages/form-engine-core/dist/index.d.ts"
       ]
     }
   },

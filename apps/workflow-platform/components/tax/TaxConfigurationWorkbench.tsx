@@ -48,15 +48,14 @@ export default function TaxConfigurationWorkbench() {
   ];
 
   return <div className="min-h-full bg-[#f6f8f7] p-6 lg:p-9"><div className="mx-auto max-w-7xl space-y-6">
-    <header className="flex flex-col justify-between gap-4 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm md:flex-row md:items-center">
-      <div><p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700">Financial operations</p>
-        <h1 className="mt-2 text-3xl font-semibold tracking-tight text-zinc-950">Tax Configuration</h1>
-        <p className="mt-2 max-w-3xl text-sm text-zinc-600">Tenant-scoped jurisdictions, effective rates, reviewed exemptions, tax decisions, and nexus thresholds backed by PostgreSQL.</p></div>
-      <div className="flex items-center gap-3"><span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800">LOCAL UAT BUILD</span>
-        <button type="button" onClick={() => void load()} className="rounded-lg border border-zinc-300 px-3 py-2 text-sm font-medium">Refresh</button></div>
-    </header>
-    <nav className="flex flex-wrap gap-2" aria-label="Tax Configuration sections">{tabs.map(([key, label]) =>
-      <button key={key} type="button" disabled={configured === false && key !== 'setup'} onClick={() => setView(key)} className={`rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-40 ${view === key ? 'bg-zinc-950 text-white' : 'border border-zinc-300 bg-white text-zinc-700'}`}>{label}</button>)}</nav>
+    <div className="flex flex-wrap items-center justify-between gap-3">
+      <nav className="flex flex-wrap gap-2" aria-label="Tax Configuration sections">{tabs.map(([key, label]) =>
+        <button key={key} type="button" disabled={configured === false && key !== 'setup'} onClick={() => setView(key)} className={`rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-40 ${view === key ? 'bg-zinc-950 text-white' : 'border border-zinc-300 bg-white text-zinc-700'}`}>{label}</button>)}</nav>
+      <div className="flex items-center gap-3">
+        <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800">LOCAL UAT BUILD</span>
+        <button type="button" onClick={() => void load()} className="rounded-lg border border-zinc-300 bg-white px-3.5 py-2 text-sm font-medium hover:bg-zinc-50">Refresh</button>
+      </div>
+    </div>
     {error ? <p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">{error}</p> : null}
     {loading ? <Panel>Loading persisted tax configuration…</Panel> : null}
     {!loading && view === 'setup' ? <Setup configured={configured === true} reload={load} /> : null}

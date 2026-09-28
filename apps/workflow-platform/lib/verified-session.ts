@@ -6,6 +6,7 @@ import {
   unavailable,
 } from './authenticated-upstream';
 import { ACCESS_COOKIE_NAME, UpstreamUnavailableError, controlPlaneUrl } from './control-plane';
+import { SpatialScopePlaceIdsSchema } from '@gigalibs/contracts';
 
 export interface VerifiedSession {
   user: { id: string; email: string; name: string | null; status: 'ACTIVE' };
@@ -16,11 +17,21 @@ export interface VerifiedSession {
     status: string;
     trialEndsAt: string | null;
     features: string[];
+    entitlements: Array<{
+      moduleKey: string;
+      status: 'ENABLED';
+      version: string;
+    }>;
   } | null;
   roles: string[];
   platformRoles: string[];
   permissions: string[];
   session: { id: string; expiresAt: string };
+  authVersion: number;
+  orgScope:
+    | { mode: 'FLAT_TENANT' }
+    | { mode: 'SCOPED_DEPARTMENTS'; departmentIds: string[] };
+  spatialScope: { mode: 'UNBOUNDED' } | { mode: 'SCOPED_PLACES'; placeIds: string[] };
   mfa: {
     required: boolean;
     enrolled: boolean;
@@ -55,13 +66,32 @@ export function isVerifiedSession(value: unknown): value is VerifiedSession {
         text(tenant.status) &&
         (tenant.trialEndsAt === null || text(tenant.trialEndsAt)) &&
         Array.isArray(tenant.features) &&
-        tenant.features.every(text))) &&
+        tenant.features.every(text) &&
+        Array.isArray(tenant.entitlements) &&
+        tenant.entitlements.every(
+          (entitlement) =>
+            record(entitlement) &&
+            text(entitlement.moduleKey) &&
+            entitlement.status === 'ENABLED' &&
+            text(entitlement.version),
+        ))) &&
     Array.isArray(value.roles) &&
     value.roles.every(text) &&
     Array.isArray(value.platformRoles) &&
     value.platformRoles.every(text) &&
     Array.isArray(value.permissions) &&
     value.permissions.every(text) &&
+    Number.isSafeInteger(value.authVersion) &&
+    Number(value.authVersion) > 0 &&
+    record(value.orgScope) &&
+    (value.orgScope.mode === 'FLAT_TENANT' ||
+      (value.orgScope.mode === 'SCOPED_DEPARTMENTS' &&
+        Array.isArray(value.orgScope.departmentIds) &&
+        value.orgScope.departmentIds.every(text))) &&
+    record(value.spatialScope) &&
+    (value.spatialScope.mode === 'UNBOUNDED' ||
+      (value.spatialScope.mode === 'SCOPED_PLACES' &&
+        SpatialScopePlaceIdsSchema.safeParse(value.spatialScope.placeIds).success)) &&
     typeof mfa.required === 'boolean' &&
     typeof mfa.enrolled === 'boolean' &&
     typeof mfa.verified === 'boolean' &&

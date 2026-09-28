@@ -26,48 +26,6 @@ const STATUS_COLOR_MAP: Record<RunStatus, 'green' | 'blue' | 'red' | 'grey' | 'o
   action_required: 'orange',
 };
 
-const FALLBACK_RUNS: RunSummary[] = [
-  {
-    id: 'run-8921-prod',
-    workflow_id: 'wf-sam-sync',
-    workflow_version: 3,
-    status: 'succeeded' as RunStatus,
-    trigger_type: 'CRON_SCHEDULE',
-    correlation_id: 'corr-sam-sync-991',
-    queued_at: '2026-09-05T17:14:58Z',
-    started_at: '2026-09-05T17:15:00Z',
-    completed_at: '2026-09-05T17:15:42Z',
-    error_class: null,
-    error_summary: null,
-  },
-  {
-    id: 'run-8922-prod',
-    workflow_id: 'wf-wip-burndown',
-    workflow_version: 2,
-    status: 'succeeded' as RunStatus,
-    trigger_type: 'API_WEBHOOK',
-    correlation_id: 'corr-wip-882',
-    queued_at: '2026-09-05T17:29:55Z',
-    started_at: '2026-09-05T17:30:00Z',
-    completed_at: '2026-09-05T17:30:18Z',
-    error_class: null,
-    error_summary: null,
-  },
-  {
-    id: 'run-8923-prod',
-    workflow_id: 'wf-credit-enforce',
-    workflow_version: 1,
-    status: 'running' as RunStatus,
-    trigger_type: 'EVENT_STREAM',
-    correlation_id: 'corr-credit-104',
-    queued_at: '2026-09-05T17:39:50Z',
-    started_at: '2026-09-05T17:40:00Z',
-    completed_at: null,
-    error_class: null,
-    error_summary: null,
-  },
-];
-
 export default function RunsPage() {
   const [runs, setRuns] = useState<RunList | null>(null);
   const [filter, setFilter] = useState<StatusFilter>('all');
@@ -81,12 +39,9 @@ export default function RunsPage() {
       const query = filter === 'all' ? '' : `?status=${encodeURIComponent(filter)}`;
       const res = await requestJson<RunList>(`/api/runs${query}`);
       setRuns(res);
-    } catch {
-      const filtered =
-        filter === 'all'
-          ? FALLBACK_RUNS
-          : FALLBACK_RUNS.filter((r) => r.status === filter);
-      setRuns({ items: filtered, total: filtered.length, offset: 0, limit: 100 });
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to load workflow execution runs.');
+      setRuns({ items: [], total: 0, offset: 0, limit: 100 });
     } finally {
       setLoading(false);
     }
@@ -100,14 +55,12 @@ export default function RunsPage() {
 
   return (
     <div className="space-y-6 p-8 min-h-screen bg-ui-bg-subtle text-ui-fg-base font-sans">
-      {/* ── Page Header ─────────────────────────────────────────── */}
-      <div className="flex flex-wrap items-start justify-between gap-4 border-b border-ui-border-base pb-5">
-        <div>
-          <Heading level="h1" className="text-2xl font-bold tracking-tight text-ui-fg-base">
-            Execution Runs &amp; Telemetry
-          </Heading>
-          <Text size="small" className="text-ui-fg-subtle mt-1">
-            Durable, tenant-scoped deterministic execution history from the FastAPI execution plane.
+      {/* ── Action Toolbar ─────────────────────────────────────────── */}
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-ui-border-base pb-3">
+        <div className="flex items-center gap-2">
+          <Badge color="green" size="small">Execution History</Badge>
+          <Text size="small" className="text-ui-fg-subtle">
+            {runs?.total ?? 0} Recorded Workflow Executions
           </Text>
         </div>
         <div className="flex items-center gap-2">
@@ -121,25 +74,12 @@ export default function RunsPage() {
             <ArrowPath className="w-4 h-4 mr-1.5" />
             Refresh Runs
           </Button>
+          <Link href="/workflows">
+            <Button variant="primary" size="small" className="bg-ui-button-inverted text-ui-fg-on-inverted font-semibold whitespace-nowrap">
+              Workflow Studio →
+            </Button>
+          </Link>
         </div>
-      </div>
-
-      {/* ── Productization Notice ─────────────────────────────────── */}
-      <div className="p-4 rounded-xl border border-ui-border-base bg-ui-bg-subtle flex flex-col md:flex-row items-center justify-between gap-3 text-xs">
-        <div>
-          <div className="font-semibold text-ui-fg-base flex items-center gap-2">
-            <span>Durable DAG Workflow Studio &amp; Execution Canvas</span>
-            <Badge color="green" size="small">LIVE ORCHESTRATOR</Badge>
-          </div>
-          <div className="text-ui-fg-muted text-[11px] mt-0.5">
-            Real-time visual node graphs, interactive step runs, and compensation rollbacks are actively running in Workflow Studio.
-          </div>
-        </div>
-        <Link href="/workflows">
-          <Button variant="primary" size="small" className="bg-ui-button-inverted text-ui-fg-on-inverted font-semibold whitespace-nowrap">
-            Open Workflow Studio (/workflows) →
-          </Button>
-        </Link>
       </div>
 
       {/* ── Status Filter Pills ─────────────────────────────────── */}

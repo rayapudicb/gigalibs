@@ -1,7 +1,5 @@
-'use client';
-
-import CmmsDashboardView from '@/components/cmms/CmmsDashboardView';
+import { CmmsWorkspace } from '@/components/cmms/CmmsWorkspace';
 
 export default function CmmsInventoryPage() {
-  return <CmmsDashboardView initialTab="inventory" />;
+  return <CmmsWorkspace section="inventory" />;
 }

@@ -26,7 +26,7 @@ import {
   CommandLine,
   InformationCircleSolid,
 } from '@medusajs/icons';
-import { Zap } from 'lucide-react';
+
 import { useCurrency } from '@/components/currency/CurrencyLocaleContext';
 
 interface WorkflowDefinition {
@@ -125,114 +125,16 @@ const PRESET_PAYLOADS: Record<string, Record<string, any>> = {
   },
 };
 
-const STARTER_WORKFLOWS: WorkflowDefinition[] = [
-  {
-    id: 'wf-01',
-    tenant_id: 'tenant-corp-01',
-    workflow_code: 'WF-O2C-CROSS-BORDER',
-    name: 'End-to-End Order-to-Cash Cross-Border Settlement',
-    description: 'Deterministic multi-hop DAG uniting Data Contract schema ingress, Multi-Currency live spot normalization, Universal Rule Pro fraud verification, Tax Determination, and AR Invoice sealing.',
-    category: 'ORDER_TO_CASH',
-    active_version: '1.0.0',
-    trigger_type: 'WEBHOOK_OR_EVENT',
-    trigger_config: { event: 'salesforce.opportunity.closed_won' },
-    status: 'ACTIVE',
-    runs_count: 42,
-    last_run_status: 'COMPLETED',
-    created_at: new Date(Date.now() - 86400000 * 14).toISOString(),
-    updated_at: new Date(Date.now() - 86400000 * 1).toISOString(),
-    dag_definition: {
-      nodes: [
-        { id: 'node-1', name: 'Contract Ingest Guard', type: 'SCHEMA_VALIDATE', service_target: 'Port 3800 Data Studio', action: 'VALIDATE_INGRESS' },
-        { id: 'node-2', name: 'Multi-Currency Normalizer', type: 'FX_NORMALIZATION', service_target: 'Port 3500 FX Engine', action: 'CONVERT_TO_BASE' },
-        { id: 'node-3', name: 'Rule Pro Risk Assessment', type: 'RULE_EVALUATION', service_target: 'Port 3900 Rule Pro', action: 'EVALUATE_POLICY' },
-        { id: 'node-4', name: 'Tax Determination Engine', type: 'TAX_ASSESS', service_target: 'Port 3600 Tax Service', action: 'CALCULATE_SALES_TAX' },
-        { id: 'node-5', name: 'Cryptographic Ledger Seal', type: 'LEDGER_DISPATCH', service_target: 'Port 3400 AR Core', action: 'CREATE_INVOICE_SEAL' },
-      ],
-      edges: [
-        { from: 'node-1', to: 'node-2' },
-        { from: 'node-2', to: 'node-3' },
-        { from: 'node-3', to: 'node-4' },
-        { from: 'node-4', to: 'node-5' },
-      ],
-    },
-  },
-  {
-    id: 'wf-02',
-    tenant_id: 'tenant-corp-01',
-    workflow_code: 'WF-P2P-SPEND-APPROVAL',
-    name: 'Procure-to-Pay Spend Policy & Requisition Approval',
-    description: 'Autonomous P2P workflow executing budget reservations, vendor 3-way matching tolerance checks, and executive escalation for purchase orders exceeding thresholds.',
-    category: 'PROCURE_TO_PAY',
-    active_version: '1.1.0',
-    trigger_type: 'API_TRIGGER',
-    trigger_config: { endpoint: '/api/p2p/requisition' },
-    status: 'ACTIVE',
-    runs_count: 28,
-    last_run_status: 'COMPLETED',
-    created_at: new Date(Date.now() - 86400000 * 20).toISOString(),
-    updated_at: new Date(Date.now() - 86400000 * 2).toISOString(),
-    dag_definition: {
-      nodes: [
-        { id: 'node-1', name: 'Ingest PO Requisition', type: 'SCHEMA_VALIDATE', service_target: 'Port 3800 Data Studio', action: 'VALIDATE_INGRESS' },
-        { id: 'node-2', name: 'Check Budget Reservation', type: 'BUDGET_CHECK', service_target: 'Port 3900 Rule Pro', action: 'CHECK_CAPEX_LIMIT' },
-        { id: 'node-3', name: '3-Way Match Verification', type: 'TOLERANCE_MATCH', service_target: 'Port 3400 AP Core', action: 'MATCH_LINE_ITEMS' },
-        { id: 'node-4', name: 'Disburse Approval Token', type: 'APPROVAL_DISPATCH', service_target: 'Port 4000 Orchestrator', action: 'NOTIFY_APPROVER' },
-      ],
-      edges: [
-        { from: 'node-1', to: 'node-2' },
-        { from: 'node-2', to: 'node-3' },
-        { from: 'node-3', to: 'node-4' },
-      ],
-    },
-  },
-  {
-    id: 'wf-03',
-    tenant_id: 'tenant-corp-01',
-    workflow_code: 'WF-TREASURY-AUTO-HEDGE',
-    name: 'Real-Time Multi-Currency FX Exposure Sweep & Hedging',
-    description: 'Automated treasury hedging pipeline sweeping unhedged currency exposures across EMEA/APAC accounts and executing forward risk mitigation orders.',
-    category: 'TREASURY_HEDGING',
-    active_version: '1.0.0',
-    trigger_type: 'SCHEDULED_CRON',
-    trigger_config: { cron: '0 */4 * * *' },
-    status: 'ACTIVE',
-    runs_count: 14,
-    last_run_status: 'COMPLETED',
-    created_at: new Date(Date.now() - 86400000 * 30).toISOString(),
-    updated_at: new Date(Date.now() - 86400000 * 1).toISOString(),
-    dag_definition: {
-      nodes: [
-        { id: 'node-1', name: 'Aggregate FX Exposure', type: 'PORTFOLIO_INGEST', service_target: 'Port 3500 FX Engine', action: 'SWEEP_POSITIONS' },
-        { id: 'node-2', name: 'Compute VaR & Variance', type: 'QUANT_EVAL', service_target: 'Port 3500 FX Engine', action: 'CALCULATE_VARIANCE' },
-        { id: 'node-3', name: 'Enforce Risk Threshold', type: 'RULE_EVALUATION', service_target: 'Port 3900 Rule Pro', action: 'EVALUATE_HEDGE_POLICY' },
-        { id: 'node-4', name: 'Dispatch Forward Order', type: 'EXECUTION_DISPATCH', service_target: 'Port 4100 Connector Hub', action: 'DISPATCH_SWIFT_MT300' },
-      ],
-      edges: [
-        { from: 'node-1', to: 'node-2' },
-        { from: 'node-2', to: 'node-3' },
-        { from: 'node-3', to: 'node-4' },
-      ],
-    },
-  },
-];
-
-const DEFAULT_STATS: WorkflowStats = {
-  total_runs: 84,
-  completed_runs: 82,
-  failed_runs: 2,
-  active_runs: 0,
-  avg_duration_ms: 22,
-};
+// Zero-simulation policy: honest empty state shown when service is unavailable.
 
 export default function WorkflowsPage() {
   const { t } = useCurrency();
   const [activeTab, setActiveTab] = useState<'pipelines' | 'runner' | 'runs' | 'handshake'>('pipelines');
 
-  // Server state
-  const [workflows, setWorkflows] = useState<WorkflowDefinition[]>(STARTER_WORKFLOWS);
+  // Server state — start empty, populated from real API
+  const [workflows, setWorkflows] = useState<WorkflowDefinition[]>([]);
   const [runs, setRuns] = useState<WorkflowRun[]>([]);
-  const [stats, setStats] = useState<WorkflowStats | null>(DEFAULT_STATS);
+  const [stats, setStats] = useState<WorkflowStats | null>(null);
 
   // Filters & selection
   const [categoryFilter, setCategoryFilter] = useState<string>('ALL');
@@ -269,22 +171,14 @@ export default function WorkflowsPage() {
           .catch(() => ({ stats: null })),
       ]);
 
-      if (wfRes.workflows && wfRes.workflows.length > 0) {
-        setWorkflows(wfRes.workflows);
-      } else {
-        setWorkflows(STARTER_WORKFLOWS);
-      }
-      if (runsRes.runs && runsRes.runs.length > 0) {
-        setRuns(runsRes.runs);
-      }
-      if (statsRes.stats) {
-        setStats(statsRes.stats);
-      } else {
-        setStats(DEFAULT_STATS);
-      }
+      setWorkflows(wfRes.workflows ?? []);
+      setRuns(runsRes.runs ?? []);
+      setStats(statsRes.stats ?? null);
     } catch {
-      setWorkflows(STARTER_WORKFLOWS);
-      setStats(DEFAULT_STATS);
+      // Honest empty state — service temporarily unavailable
+      setWorkflows([]);
+      setStats(null);
+      setError('Workflow Studio service is temporarily unavailable. Retry when the service is running.');
     } finally {
       setLoading(false);
     }
@@ -319,7 +213,7 @@ export default function WorkflowsPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-tenant-id': 'tenant-corp-01',
+          
         },
         body: JSON.stringify({
           trigger_type: 'MANUAL',
@@ -360,7 +254,7 @@ export default function WorkflowsPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-tenant-id': 'tenant-corp-01',
+          
         },
       });
 
@@ -399,23 +293,14 @@ export default function WorkflowsPage() {
 
   return (
     <div className="space-y-6 p-8 min-h-screen bg-ui-bg-subtle text-ui-fg-base font-sans">
-      {/* ── Top Header ────────────────────────────────────────────── */}
-      <div className="flex flex-wrap items-start justify-between gap-4 border-b border-ui-border-base pb-5">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <Badge color="purple" size="small">
-              MICROSERVICE PORT 4000
-            </Badge>
-            <StatusBadge color="green">POSTGRESQL 16 SCHEMA gigalibs_workflow</StatusBadge>
-            <Badge color="blue" size="small">
-              DURABLE DAG ORCHESTRATOR
-            </Badge>
-          </div>
-          <Heading level="h1" className="text-2xl font-bold tracking-tight text-ui-fg-base">
-            Workflow Studio &amp; Visual DAG Orchestrator
-          </Heading>
-          <Text size="small" className="text-ui-fg-subtle mt-1">
-            Deterministic business process orchestration uniting Data Studio contracts, MultiCurrency rates, Universal Rule Pro, Tax, AR, and Spend into automated durable pipelines.
+      {/* ── Action Bar ────────────────────────────────────────────── */}
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-ui-border-base pb-3">
+        <div className="flex items-center gap-2">
+          <Badge color="blue" size="small">
+            Active Pipelines
+          </Badge>
+          <Text size="small" className="text-ui-fg-subtle">
+            {workflows.length} Automated Business Workflows
           </Text>
         </div>
 
@@ -423,16 +308,14 @@ export default function WorkflowsPage() {
           <Button
             variant="secondary"
             size="small"
-            onClick={() => {
-              setWorkflows(STARTER_WORKFLOWS);
-              setStats(DEFAULT_STATS);
-              setActionSuccess('Loaded 3 battle-tested enterprise orchestration DAG pipelines across O2C, P2P, and Treasury.');
-            }}
+            onClick={() => void loadData()}
+            disabled={loading}
+            isLoading={loading}
             className="flex items-center gap-1.5"
-            title="Pre-populate with 3 production DAG pipelines"
+            title="Refresh pipelines from service"
           >
-            <Zap className="w-3.5 h-3.5 text-amber-500" />
-            Load Starter Pipelines
+            <ArrowPath className="w-3.5 h-3.5" />
+            Reload Pipelines
           </Button>
           <Button
             variant="secondary"
@@ -645,10 +528,9 @@ export default function WorkflowsPage() {
                   onClick={() => {
                     setCategoryFilter('ALL');
                     setSearchQuery('');
-                    setWorkflows(STARTER_WORKFLOWS);
                   }}
                 >
-                  Clear Filters &amp; Load Starters
+                  Clear Filters
                 </Button>
               </div>
             </Container>

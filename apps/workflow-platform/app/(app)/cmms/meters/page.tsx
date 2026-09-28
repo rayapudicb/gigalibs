@@ -1,7 +1,5 @@
-'use client';
-
-import CmmsDashboardView from '@/components/cmms/CmmsDashboardView';
+import { CmmsWorkspace } from '@/components/cmms/CmmsWorkspace';
 
 export default function CmmsMetersPage() {
-  return <CmmsDashboardView initialTab="telemetry" />;
+  return <CmmsWorkspace section="meters" />;
 }

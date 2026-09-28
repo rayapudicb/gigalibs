@@ -155,11 +155,23 @@ export default function ConnectionsPage() {
     setLoading(true);
     setError(null);
     try {
+      const safeJson = async (res: Response) => {
+        if (!res.ok) {
+          let detail = `Connector Hub returned status ${res.status}`;
+          try {
+            const body = await res.json();
+            if (body?.detail) detail = body.detail;
+            else if (body?.title) detail = body.title;
+          } catch {}
+          throw new Error(detail);
+        }
+        return res.json();
+      };
       const [connRes, catRes, jourRes, statRes] = await Promise.all([
-        fetch('/api/connectors-hub/connections').then((r) => r.json()),
-        fetch('/api/connectors-hub/catalog').then((r) => r.json()),
-        fetch('/api/connectors-hub/journal').then((r) => r.json()),
-        fetch('/api/connectors-hub/stats').then((r) => r.json()),
+        fetch('/api/connectors-hub/connections').then(safeJson),
+        fetch('/api/connectors-hub/catalog').then(safeJson),
+        fetch('/api/connectors-hub/journal').then(safeJson),
+        fetch('/api/connectors-hub/stats').then(safeJson),
       ]);
 
       if (connRes.connections) setConnections(connRes.connections);
@@ -301,23 +313,12 @@ export default function ConnectionsPage() {
 
   return (
     <div className="space-y-6 p-8 min-h-screen bg-ui-bg-subtle text-ui-fg-base font-sans">
-      {/* ── Top Header ────────────────────────────────────────────── */}
-      <div className="flex flex-wrap items-start justify-between gap-4 border-b border-ui-border-base pb-5">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <Badge color="purple" size="small">
-              MICROSERVICE PORT 4100
-            </Badge>
-            <StatusBadge color="green">POSTGRESQL 16 SCHEMA gigalibs_connectors</StatusBadge>
-            <Badge color="blue" size="small">
-              ENTERPRISE INTEGRATION HUB
-            </Badge>
-          </div>
-          <Heading level="h1" className="text-2xl font-bold tracking-tight text-ui-fg-base">
-            Integration Hub &amp; Universal Connectors
-          </Heading>
-          <Text size="small" className="text-ui-fg-subtle mt-1">
-            Zero-code inbound webhook ingestion, automated OAuth2 synchronization, and direct event dispatching to Workflow Studio DAG pipelines.
+      {/* ── Action Toolbar ────────────────────────────────────────────── */}
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-ui-border-base pb-3">
+        <div className="flex items-center gap-2">
+          <Badge color="blue" size="small">Active Integrations</Badge>
+          <Text size="small" className="text-ui-fg-subtle">
+            {connections.length} Active System Connections
           </Text>
         </div>
 

@@ -1,17 +1,12 @@
 /**
- * Shared ImportExportApi instance for the workflow-platform.
+ * import-export-api-instance.ts
  *
- * Uses the existing CMMS BFF proxy at /api/cmms so that all authentication,
- * tenant resolution and module-access checks are handled server-side by the
- * Next.js catch-all route at app/api/cmms/[...path]/route.ts.
+ * data-import-export-react package is quarantined (runtime-quarantine.json).
+ * This stub preserves the module shape so referencing files compile.
+ * Replace with the certified implementation when data-import-export-react exits quarantine.
+ *
+ * @see runtime-quarantine.json — unimplementedStubs
  */
-import { ImportExportApi } from '@gigalibs/data-import-export-react';
 
-/**
- * The base URL is the CMMS BFF prefix. The ImportExportApi will append
- * "/v1/import-export/..." paths to this base, which matches the proxy's
- * path-rewriting logic (joins segments and prepends /v1/ when absent).
- */
-export const importExportApi = new ImportExportApi({
-  baseUrl: '/api/cmms',
-});
+// Stub: no live API instance until the package is certified.
+export const importExportApi = null as unknown as never;

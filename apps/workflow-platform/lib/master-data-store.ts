@@ -1,21 +1,9 @@
 import { randomUUID } from 'node:crypto';
 import {
-  MASTER_CUSTOMERS,
-  MASTER_VENDORS,
   MASTER_ACCOUNTS,
-  MASTER_COST_CENTERS,
-  MASTER_SIGNERS,
   MASTER_COUNTRIES,
   MASTER_TAX_JURISDICTIONS,
   MASTER_DATA_CLASSIFICATIONS,
-  type MasterCustomer,
-  type MasterVendor,
-  type MasterAccount,
-  type MasterCostCenter,
-  type MasterSigner,
-  type MasterCountry,
-  type MasterTaxJurisdiction,
-  type MasterDataClassification,
 } from './master-data-catalog';
 
 export type MasterDataScope = 'PLATFORM_GLOBAL' | 'PLATFORM_TEMPLATE' | 'TENANT_LOCAL';
@@ -57,7 +45,6 @@ class MasterDataStore {
 
   constructor() {
     this.seedPlatformGlobal();
-    this.seedDefaultTenantLocal('default');
   }
 
   private seedPlatformGlobal() {
@@ -192,88 +179,9 @@ class MasterDataStore {
     }
   }
 
-  private seedDefaultTenantLocal(tenantId: string) {
-    const map = new Map<string, MasterRecordWithPayload>();
-    const now = '2026-09-10T00:00:00.000Z';
-
-    // Seed initial tenant-scoped customers
-    for (const cust of MASTER_CUSTOMERS) {
-      map.set(cust.id, {
-        id: cust.id,
-        scope: 'TENANT_LOCAL',
-        domain: 'COUNTERPARTY',
-        entityKey: 'customers',
-        tenantId,
-        code: cust.code,
-        name: cust.name,
-        status: cust.status === 'ACTIVE' ? 'ACTIVE' : 'INACTIVE',
-        createdAt: now,
-        updatedAt: now,
-        version: 1,
-        payload: cust,
-      });
-    }
-
-    // Seed initial tenant-scoped vendors
-    for (const vend of MASTER_VENDORS) {
-      map.set(vend.id, {
-        id: vend.id,
-        scope: 'TENANT_LOCAL',
-        domain: 'COUNTERPARTY',
-        entityKey: 'vendors',
-        tenantId,
-        code: vend.code,
-        name: vend.name,
-        status: vend.status === 'ACTIVE' ? 'ACTIVE' : 'INACTIVE',
-        createdAt: now,
-        updatedAt: now,
-        version: 1,
-        payload: vend,
-      });
-    }
-
-    // Seed initial cost centers
-    for (const cc of MASTER_COST_CENTERS) {
-      map.set(cc.id, {
-        id: cc.id,
-        scope: 'TENANT_LOCAL',
-        domain: 'FINANCE',
-        entityKey: 'cost-centers',
-        tenantId,
-        code: cc.code,
-        name: cc.name,
-        status: 'ACTIVE',
-        createdAt: now,
-        updatedAt: now,
-        version: 1,
-        payload: cc,
-      });
-    }
-
-    // Seed initial signers
-    for (const sgn of MASTER_SIGNERS) {
-      map.set(sgn.id, {
-        id: sgn.id,
-        scope: 'TENANT_LOCAL',
-        domain: 'GOVERNANCE',
-        entityKey: 'signers',
-        tenantId,
-        code: `SIGN-${sgn.department.toUpperCase()}`,
-        name: sgn.name,
-        status: 'ACTIVE',
-        createdAt: now,
-        updatedAt: now,
-        version: 1,
-        payload: sgn,
-      });
-    }
-
-    this.tenantRecords.set(tenantId, map);
-  }
-
   private ensureTenant(tenantId: string): Map<string, MasterRecordWithPayload> {
     if (!this.tenantRecords.has(tenantId)) {
-      this.seedDefaultTenantLocal(tenantId);
+      this.tenantRecords.set(tenantId, new Map());
     }
     return this.tenantRecords.get(tenantId)!;
   }
@@ -329,7 +237,7 @@ class MasterDataStore {
   public createRecord(
     tenantId: string,
     input: {
-      entityKey: 'customers' | 'vendors' | 'accounts' | 'cost-centers' | 'signers' | 'currencies' | 'payment-terms';
+      entityKey: BaseMasterRecord['entityKey'];
       domain: MasterDataDomain;
       code: string;
       name: string;

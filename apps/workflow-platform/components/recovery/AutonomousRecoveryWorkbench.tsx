@@ -235,28 +235,19 @@ export function AutonomousRecoveryWorkbench() {
 
   return (
     <div className="flex flex-col min-h-screen bg-ui-bg-subtle text-ui-fg-base font-sans pb-16">
-      {/* Header */}
-      <div className="border-b border-ui-border-base bg-ui-bg-base px-8 py-6 shadow-2xs">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <Heading level="h1" className="text-2xl font-bold tracking-tight text-ui-fg-base">
-                Autonomous Cash Leakage & Recovery Studio
-              </Heading>
-              <Badge color="green" size="small">
-                REAL RECORDS ONLY
-              </Badge>
-              <Badge color="blue" size="small">
-                SOURCE REQUIRED
-              </Badge>
-              <Badge color="purple" size="small">
-                WI-OI-027 REVIEW
-              </Badge>
-            </div>
-            <Text className="text-ui-fg-muted text-sm">
-              Tenant-scoped recovery review • Source lineage required • External actions remain
-              disabled until provider receipts are implemented
-            </Text>
+      {/* Action Toolbar */}
+      <div className="border-b border-ui-border-base bg-ui-bg-base px-8 py-3.5 shadow-2xs">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge color="green" size="small">
+              REAL RECORDS ONLY
+            </Badge>
+            <Badge color="blue" size="small">
+              SOURCE REQUIRED
+            </Badge>
+            <Badge color="purple" size="small">
+              WI-OI-027 REVIEW
+            </Badge>
           </div>
 
           <div className="flex items-center gap-3">

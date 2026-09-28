@@ -125,7 +125,9 @@ class UniversalRuleKernelStore {
 
   constructor() {
     this.initializeDefaultRules();
-    this.initializeSampleHistoricalEvents();
+    if (process.env.NODE_ENV === 'test') {
+      this.seedTestFixtures();
+    }
   }
 
   /**
@@ -589,8 +591,10 @@ class UniversalRuleKernelStore {
         holdReason: 'Missing mandatory bearer token on gateway ingress',
       },
     });
+  }
 
-    // 2. Data Pipeline Rule: Route High-Volume Stream to High-Throughput Topic
+  private seedTestFixtures(): void {
+    // Isolated non-production test fixtures for unit test coverage
     this.createRule({
       tenantId: 'demo-tenant',
       ruleCode: 'PIPE-KAFKA-EXPEDITE',
@@ -615,7 +619,6 @@ class UniversalRuleKernelStore {
       },
     });
 
-    // 3. Operational Policy: Unit Price Inflation Hold
     this.createRule({
       tenantId: 'demo-tenant',
       ruleCode: 'POL-PRICE-CREEP-GUARD',
@@ -640,15 +643,13 @@ class UniversalRuleKernelStore {
         disputeMemoTemplate: 'Variance alert: Invoice unit price exceeds authorized ceiling.',
       },
     });
-  }
 
-  private initializeSampleHistoricalEvents(): void {
     this.historicalEvents.push(
-      { id: 'evt-1', payload: { amount_usd: 12500, customer: 'Lockheed', category: 'DEFENSE' }, headers: { authorization: 'Bearer tok-1' } },
-      { id: 'evt-2', payload: { amount_usd: 4200, customer: 'Siemens', category: 'ENERGY' }, headers: { authorization: 'Bearer tok-2' } },
-      { id: 'evt-3', payload: { amount_usd: 98000, customer: 'Raytheon', category: 'DEFENSE' }, headers: { authorization: 'Bearer tok-3' } },
-      { id: 'evt-4', payload: { amount_usd: 350, customer: 'Local SME', category: 'RETAIL' }, headers: { authorization: 'Bearer tok-4' } },
-      { id: 'evt-5', payload: { amount_usd: 21000, customer: 'General Dynamics', category: 'DEFENSE' }, headers: {} }, // Missing auth!
+      { id: 'evt-1', payload: { amount_usd: 12500, customer: 'TestCo 1', category: 'DEFENSE' }, headers: { authorization: 'Bearer tok-1' } },
+      { id: 'evt-2', payload: { amount_usd: 4200, customer: 'TestCo 2', category: 'ENERGY' }, headers: { authorization: 'Bearer tok-2' } },
+      { id: 'evt-3', payload: { amount_usd: 98000, customer: 'TestCo 3', category: 'DEFENSE' }, headers: { authorization: 'Bearer tok-3' } },
+      { id: 'evt-4', payload: { amount_usd: 350, customer: 'TestCo 4', category: 'RETAIL' }, headers: { authorization: 'Bearer tok-4' } },
+      { id: 'evt-5', payload: { amount_usd: 21000, customer: 'TestCo 5', category: 'DEFENSE' }, headers: {} },
     );
   }
 }

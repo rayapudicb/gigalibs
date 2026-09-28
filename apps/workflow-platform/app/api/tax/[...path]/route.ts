@@ -53,7 +53,7 @@ async function proxyTax(request: Request, context: RouteContext): Promise<NextRe
       ...(body ? { body } : {}),
       cache: 'no-store',
       redirect: 'error',
-      signal: AbortSignal.timeout(15_000),
+      signal: AbortSignal.timeout(3_000),
     });
     if (upstream.status === 401) {
       tokenCache.delete(`${tenantId}:${session.context.user.id}`);
@@ -67,7 +67,7 @@ async function proxyTax(request: Request, context: RouteContext): Promise<NextRe
         ...(body ? { body } : {}),
         cache: 'no-store',
         redirect: 'error',
-        signal: AbortSignal.timeout(15_000),
+        signal: AbortSignal.timeout(3_000),
       });
     }
     const response = new NextResponse(upstream.body, { status: upstream.status });
@@ -112,7 +112,7 @@ async function taxToken(baseUrl: string, tenantId: string, userId: string): Prom
     body: JSON.stringify({ tenant_id: tenantId, sub: userId }),
     cache: 'no-store',
     redirect: 'error',
-    signal: AbortSignal.timeout(5_000),
+    signal: AbortSignal.timeout(2_000),
   });
   const payload: unknown = await response.json().catch(() => null);
   if (

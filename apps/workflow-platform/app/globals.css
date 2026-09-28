@@ -20,9 +20,9 @@
   --border-strong: #aebbb5;
   --tag-neutral-bg: #eef2f0;
 
-  --bg-canvas: #09090f;
-  --bg-node: #11111b;
-  --border-node: #1f1f33;
+  --bg-canvas: #f0f4ff;
+  --bg-node: #ffffff;
+  --border-node: #e2e8f0;
 }
 
 body {
@@ -32,6 +32,45 @@ body {
     Roboto, sans-serif;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
+}
+
+/*
+ * Authenticated module viewport contract (WI-OI-058).
+ *
+ * Every module receives a five-pixel outer gutter. Page-level wrappers may keep
+ * vertical rhythm, while their legacy horizontal padding and width caps no
+ * longer consume the application workspace. Bordered roots retain their own
+ * internal padding so cards, forms, and focus affordances stay usable.
+ */
+[data-module-content-root] {
+  padding-inline: 5px;
+}
+
+[data-module-content-root] > :where(div, main, section) {
+  width: 100%;
+  max-width: none !important;
+  margin-inline: 0 !important;
+}
+
+[data-module-content-root] > :where(div, main, section):not([class*="border"]) {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+[data-module-content-root]
+  :where(
+    [class~="mx-auto"][class~="max-w-7xl"],
+    [class~="mx-auto"][class~="max-w-[1500px]"]
+  ) {
+  width: 100%;
+  max-width: none !important;
+  margin-inline: 0 !important;
+}
+
+@media print {
+  [data-module-content-root] {
+    padding-inline: 0;
+  }
 }
 
 .auth-atmosphere {

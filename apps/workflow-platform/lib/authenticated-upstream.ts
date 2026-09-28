@@ -182,10 +182,8 @@ export function unavailable(error: unknown): NextResponse {
       { status: error.status, headers: { 'Cache-Control': 'no-store' } },
     );
   }
-  const rawMessage = (error as any)?.message;
-  const detail =
-    typeof rawMessage === 'string' && !rawMessage.toLowerCase().includes('upstream service is unavailable')
-      ? rawMessage
-      : 'Service is temporarily synchronizing. Please try again shortly.';
-  return NextResponse.json({ detail }, { status: 503, headers: { 'Cache-Control': 'no-store' } });
+  return NextResponse.json(
+    { detail: 'Service is temporarily synchronizing. Please try again shortly.' },
+    { status: 503, headers: { 'Cache-Control': 'no-store' } },
+  );
 }

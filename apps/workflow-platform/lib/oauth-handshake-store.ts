@@ -56,7 +56,6 @@ class OAuthHandshakeStore {
 
   constructor() {
     this.initializeProviders();
-    this.initializeDefaultTenantConnections();
   }
 
   private initializeProviders(): void {
@@ -161,45 +160,6 @@ class OAuthHandshakeStore {
     });
   }
 
-  private initializeDefaultTenantConnections(): void {
-    // Defense tenant has active Salesforce & SAP connections
-    this.saveCredential('defense', 'salesforce', {
-      status: 'CONNECTED',
-      connectedAt: '2026-09-05T10:00:00Z',
-      expiresAt: '2026-10-05T10:00:00Z',
-      grantedScopes: ['api', 'refresh_token', 'offline_access', 'id'],
-      tokenFingerprint: 'sha256-sfdc-def9940182847192',
-      lastHeartbeatMs: 44,
-      lastHeartbeatAt: new Date().toISOString(),
-      discoveredEntities: this.providers.get('salesforce')!.canonicalEntities,
-      fipsSha256Receipt: '7a19c5b29091e4a5d894819eacbf929182947191029481928471928471928471',
-    });
-
-    this.saveCredential('defense', 'sap', {
-      status: 'CONNECTED',
-      connectedAt: '2026-09-04T12:00:00Z',
-      expiresAt: '2026-10-04T12:00:00Z',
-      grantedScopes: ['API_BUSINESS_PARTNER', 'API_PURCHASEORDER_PROCESS_SRV', 'API_SUPPLIERINVOICE_PROCESS_SRV'],
-      tokenFingerprint: 'sha256-sap-def8891048291048',
-      lastHeartbeatMs: 62,
-      lastHeartbeatAt: new Date().toISOString(),
-      discoveredEntities: this.providers.get('sap')!.canonicalEntities,
-      fipsSha256Receipt: '8b29c6d39192e5b6e995829fbdbf030293058202130592039582039582039582',
-    });
-
-    // Energy has NetSuite & Stripe
-    this.saveCredential('energy', 'netsuite', {
-      status: 'CONNECTED',
-      connectedAt: '2026-09-03T09:00:00Z',
-      expiresAt: '2026-10-03T09:00:00Z',
-      grantedScopes: ['restlets', 'rest_webservices', 'suite_analytics'],
-      tokenFingerprint: 'sha256-ns-eng1192849102948',
-      lastHeartbeatMs: 51,
-      lastHeartbeatAt: new Date().toISOString(),
-      discoveredEntities: this.providers.get('netsuite')!.canonicalEntities,
-      fipsSha256Receipt: '9c39d7e49293e6c7f006930fcedf141304169313241603140693140693140693',
-    });
-  }
 
   private saveCredential(
     tenantId: string,

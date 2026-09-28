@@ -281,6 +281,56 @@ export interface SupplierInvoiceSummary {
   }>;
 }
 
+export interface MatchFindingSummary {
+  id: string;
+  code: string;
+  severity: 'INFO' | 'WARNING' | 'BLOCKING';
+  field: string;
+  expected: string | null;
+  actual: string | null;
+  delta: string | null;
+  explanation: string;
+  incomplete?: boolean;
+}
+
+export interface SupplierInvoiceDetail extends SupplierInvoiceSummary {
+  subtotalMinor: string;
+  taxMinor: string;
+  lines: Array<{
+    id: string;
+    lineNumber: number;
+    purchaseOrderLineNumber: number | null;
+    description: string;
+    quantity: string;
+    unitPriceMinor: string;
+    totalMinor: string;
+  }>;
+  purchaseOrder: {
+    id: string;
+    externalId: string;
+    currency: string;
+    lines?: Array<{
+      id: string;
+      lineNumber: number;
+      description: string;
+      quantity: string;
+      unitPriceMinor: string;
+      receiptLines?: Array<{
+        id: string;
+        quantityReceived: string;
+      }>;
+    }>;
+  } | null;
+  matchEvaluations: Array<{
+    id: string;
+    outcome: 'MATCHED' | 'MISMATCH' | 'INCOMPLETE';
+    explanation: string;
+    evaluatedAt: string;
+    ruleVersion?: { id: string; version: number; checksum: string };
+    findings?: MatchFindingSummary[];
+  }>;
+}
+
 export interface BusinessActionSummary {
   id: string;
   actionType: string;

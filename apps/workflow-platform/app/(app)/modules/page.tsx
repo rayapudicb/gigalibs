@@ -1,4 +1,4 @@
-import { canUseTenantModule } from '@/lib/module-access';
+import { canOpenPlatformModule } from '@/lib/module-access';
 import { verifiedSession } from '@/lib/verified-session';
 import { cookies } from 'next/headers';
 import { Translator } from '@gigalibs/i18n';
@@ -40,6 +40,7 @@ const moduleIcon: Readonly<Record<string, string>> = {
   reports: '▥',
   solutions: '⬢',
   communications: '✉',
+  gigaops: '⏱',
 };
 
 export default async function ModulesPage() {
@@ -49,19 +50,8 @@ export default async function ModulesPage() {
   const translator = new Translator({ defaultLocale: locale });
 
   const context = session.context;
-  const enabled = new Set(context?.tenant?.features ?? []);
-  const hasPlatformAuthority = (context?.platformRoles.length ?? 0) > 0;
-  const canOpen = (module: PlatformModuleDefinition) => {
-    if (module.key === 'platform-control') return hasPlatformAuthority;
-    if (module.platformInspection && hasPlatformAuthority) return true;
-    if (!context?.tenant) return false;
-    return (
-      (module.readiness === 'AVAILABLE' || module.readiness === 'REVIEW') &&
-      (hasPlatformAuthority ||
-        context.permissions.includes('*') ||
-        canUseTenantModule(module.key, enabled, context.permissions))
-    );
-  };
+  const canOpen = (module: PlatformModuleDefinition) =>
+    Boolean(context && canOpenPlatformModule(module, context));
   const enabledForSession = platformModuleCatalog.filter(canOpen).length;
 
   return (
@@ -163,4 +153,3 @@ function Metric({
     </div>
   );
 }
-

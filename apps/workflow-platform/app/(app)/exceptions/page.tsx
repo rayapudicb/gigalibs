@@ -18,64 +18,6 @@ import {
 } from '@medusajs/ui';
 import { ArrowPath } from '@medusajs/icons';
 
-const FALLBACK_EXCEPTIONS: OperationalExceptionSummary[] = [
-  {
-    id: 'exc-101',
-    kind: 'BUSINESS_MISMATCH',
-    status: 'OPEN',
-    severity: 'WARNING',
-    title: 'PO Line Item Rate Discrepancy',
-    summary: 'Supplier invoice billed rate differs from purchase order contracted rate by 4.2%.',
-    rootCauseCode: 'RATE_TOLERANCE_EXCEEDED',
-    retryable: true,
-    assignedToId: 'usr-super-admin',
-    businessImpact: { amountExceededMinor: 12500, currency: 'USD' },
-    openedAt: '2026-09-05T14:30:00Z',
-    environment: { slug: 'production', displayName: 'Production Fleet' },
-    sourceEvent: {
-      eventId: 'evt-891',
-      eventType: 'SUPPLIER_INVOICE_INGESTED',
-      eventVersion: 1,
-      classification: 'INTERNAL',
-      status: 'HELD_IN_QUARANTINE',
-      rejectionCode: null,
-    },
-    supplierInvoice: {
-      invoiceNumber: 'INV-2026-0891',
-      totalMinor: '12500',
-      currency: 'USD',
-      status: 'EXCEPTION',
-    },
-    businessAction: null,
-    _count: { recoveries: 1 },
-  },
-  {
-    id: 'exc-102',
-    kind: 'PROCESSING_FAILURE',
-    status: 'OPEN',
-    severity: 'BLOCKING',
-    title: 'Tax Nexus Calculation API Timeout',
-    summary: 'Outbound tax evaluation failed to respond within 3000ms threshold.',
-    rootCauseCode: 'UPSTREAM_GATEWAY_TIMEOUT',
-    retryable: true,
-    assignedToId: null,
-    businessImpact: { unverifiedTaxMinor: 48900, currency: 'USD' },
-    openedAt: '2026-09-05T16:00:00Z',
-    environment: { slug: 'production', displayName: 'Production Fleet' },
-    sourceEvent: {
-      eventId: 'evt-892',
-      eventType: 'SALES_TAX_ASSESSED',
-      eventVersion: 1,
-      classification: 'INTERNAL',
-      status: 'DLQ_HELD',
-      rejectionCode: 'TIMEOUT_504',
-    },
-    supplierInvoice: null,
-    businessAction: null,
-    _count: { recoveries: 0 },
-  },
-];
-
 export default function ExceptionInboxPage() {
   const [status, setStatus] = useState<'ALL' | OperationalExceptionStatus>('OPEN');
   const [page, setPage] = useState<CursorPage<OperationalExceptionSummary> | null>(null);
@@ -89,12 +31,9 @@ export default function ExceptionInboxPage() {
     setError(null);
     try {
       setPage(await requestJson(`/api/control/exceptions?${query}`));
-    } catch {
-      const filtered =
-        status === 'ALL'
-          ? FALLBACK_EXCEPTIONS
-          : FALLBACK_EXCEPTIONS.filter((e) => e.status === status);
-      setPage({ items: filtered, nextCursor: null });
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to load operational exceptions.');
+      setPage({ items: [], nextCursor: null });
     }
   }, [status]);
 
@@ -143,14 +82,12 @@ export default function ExceptionInboxPage() {
 
   return (
     <div className="space-y-6 p-8 min-h-screen bg-ui-bg-subtle text-ui-fg-base font-sans">
-      {/* ── Page Header ─────────────────────────────────────────── */}
-      <div className="flex flex-wrap items-start justify-between gap-4 border-b border-ui-border-base pb-5">
-        <div>
-          <Heading level="h1" className="text-2xl font-bold tracking-tight text-ui-fg-base">
-            Exceptions &amp; DLQ Quarantine
-          </Heading>
-          <Text size="small" className="text-ui-fg-subtle mt-1">
-            Recoverable processing failures, evidence-backed business exceptions, and DLQ replay policies.
+      {/* ── Action Toolbar ─────────────────────────────────────────── */}
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-ui-border-base pb-3">
+        <div className="flex items-center gap-2">
+          <Badge color="green" size="small">Exception Queue</Badge>
+          <Text size="small" className="text-ui-fg-subtle">
+            {page?.items.length ?? 0} Operational Exceptions
           </Text>
         </div>
         <div className="flex items-center gap-2">
@@ -162,25 +99,12 @@ export default function ExceptionInboxPage() {
             <ArrowPath className="w-4 h-4 mr-1.5" />
             Refresh Exceptions
           </Button>
+          <Link href="/recovery">
+            <Button variant="primary" size="small" className="bg-ui-button-inverted text-ui-fg-on-inverted font-semibold whitespace-nowrap">
+              Recovery Studio →
+            </Button>
+          </Link>
         </div>
-      </div>
-
-      {/* ── Productization Notice ─────────────────────────────────── */}
-      <div className="p-4 rounded-xl border border-ui-border-base bg-ui-bg-subtle flex flex-col md:flex-row items-center justify-between gap-3 text-xs">
-        <div>
-          <div className="font-semibold text-ui-fg-base flex items-center gap-2">
-            <span>Autonomous Cash Recovery &amp; Exception Quarantine</span>
-            <Badge color="green" size="small">LIVE RECOVERY STUDIO</Badge>
-          </div>
-          <div className="text-ui-fg-muted text-[11px] mt-0.5">
-            Automated financial leak detection, merchant dispute evidence, and autonomous ledger recovery are active in Recovery Studio.
-          </div>
-        </div>
-        <Link href="/recovery">
-          <Button variant="primary" size="small" className="bg-ui-button-inverted text-ui-fg-on-inverted font-semibold whitespace-nowrap">
-            Open Recovery Studio (/recovery) →
-          </Button>
-        </Link>
       </div>
 
       {/* ── Filter Pills ────────────────────────────────────────── */}

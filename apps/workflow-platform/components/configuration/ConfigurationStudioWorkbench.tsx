@@ -1,20 +1,22 @@
 'use client';
 
 import {
-  ConfigurationForm,
-  FormEngineConfigurationForm,
-  ConfigurationDetailView,
-  ConfigurationListView,
   ConfigurationRenderer,
   type ConfigurationValues,
+  FormEngineConfigurationForm,
 } from '@gigalibs/configuration-react';
 
+import {
+  type ConfigurationSurface,
+  decodeConfigurationSurfaces,
+} from '@/lib/configuration-surface-registry';
 import type {
   ConfigurationCondition,
   ConfigurationDefinition,
   ConfigurationField,
   ConfigurationImpactReport,
 } from '@gigalibs/contracts';
+import { Button, Input, toast as medusaToast } from '@medusajs/ui';
 import {
   AlignLeft,
   CalendarClock,
@@ -23,14 +25,13 @@ import {
   ChevronRight,
   CircleDollarSign,
   Download,
-  Eye,
   FileCheck2,
   GripVertical,
   Hash,
   Layers3,
-  LockKeyhole,
   Link2,
   ListChecks,
+  LockKeyhole,
   Monitor,
   Plus,
   Rocket,
@@ -42,15 +43,25 @@ import {
   Trash2,
   Type,
   Upload,
+  X,
 } from 'lucide-react';
-import { Button, Badge, Input, toast as medusaToast } from '@medusajs/ui';
 import Link from 'next/link';
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import {
-  decodeConfigurationSurfaces,
-  type ConfigurationSurface,
-} from '@/lib/configuration-surface-registry';
+  type KeyboardEvent,
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import styles from './ConfigurationStudioWorkbench.module.css';
+import { getFormTemplateById } from '@/lib/form-templates-catalog';
+import {
+  type ConfigurationOption,
+  formatOptionsForDisplay,
+  parseOptionsInput,
+} from '@/lib/form-options-parser';
 
 type ChangeSet = {
   id: string;
@@ -124,6 +135,15 @@ const FIELD_PALETTE: Array<{
   { type: 'PHONE', label: 'Phone', icon: Smartphone },
   { type: 'URL', label: 'Website link', icon: Link2 },
 ];
+const WORKFLOW_TABS = [
+  ['designer', '1. Design'],
+  ['governance', '2. Review'],
+  ['published', '3. Publish & activate'],
+  ['runtime', '4. Runtime preview'],
+  ['portability', '5. Package'],
+] as const;
+
+type WorkflowTab = (typeof WORKFLOW_TABS)[number][0];
 
 export function ConfigurationStudioWorkbench({
   currentUserId,
@@ -133,19 +153,45 @@ export function ConfigurationStudioWorkbench({
   locale = 'en-US',
   currency = 'USD',
   initialRegistrationKey,
+  initialTemplateId,
+  initialTemplate,
   returnTo = '/modules',
   onClose,
-}: { currentUserId: string; permissions: string[]; tenantId: string; tenantName: string; locale?: string; currency?: string; initialRegistrationKey?: string; returnTo?: string; onClose?: () => void }) {
-  const [tab, setTab] = useState<
-    'designer' | 'governance' | 'published' | 'runtime' | 'portability'
-  >('designer');
-  const [definition, setDefinition] = useState<ConfigurationDefinition>(() => initialDefinition());
+}: {
+  currentUserId: string;
+  permissions: string[];
+  tenantId: string;
+  tenantName: string;
+  locale?: string;
+  currency?: string;
+  initialRegistrationKey?: string;
+  initialTemplateId?: string;
+  initialTemplate?: ConfigurationDefinition;
+  returnTo?: string;
+  onClose?: () => void;
+}) {
+  const [tab, setTab] = useState<WorkflowTab>('designer');
+  const [definition, setDefinition] = useState<ConfigurationDefinition>(() => {
+    if (initialTemplate) return initialTemplate;
+    if (initialTemplateId) {
+      const template = getFormTemplateById(initialTemplateId);
+      if (template) return template.definition;
+    }
+    return initialDefinition();
+  });
   const [previewValues, setPreviewValues] = useState<ConfigurationValues>({});
   const [changeSets, setChangeSets] = useState<ChangeSet[]>([]);
   const [published, setPublished] = useState<PublishedVersion[]>([]);
   const [activations, setActivations] = useState<Activation[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [reason, setReason] = useState('Configure tenant-specific fields');
+  const [reason, setReason] = useState(() => {
+    if (initialTemplate?.title) return `Created from template: ${initialTemplate.title}`;
+    if (initialTemplateId) {
+      const template = getFormTemplateById(initialTemplateId);
+      if (template) return `Created from template: ${template.name}`;
+    }
+    return 'Configure tenant-specific fields';
+  });
   const [busy, setBusy] = useState(false);
   const [packageText, setPackageText] = useState('');
   const [impact, setImpact] = useState<ConfigurationImpactReport | null>(null);
@@ -175,6 +221,24 @@ export function ConfigurationStudioWorkbench({
   const canExport = hasPermission(permissions, 'configuration:export');
   const canImport = hasPermission(permissions, 'configuration:import');
 
+  const moveTabFocus = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
+    let nextIndex: number | null = null;
+    if (event.key === 'ArrowRight') nextIndex = (index + 1) % WORKFLOW_TABS.length;
+    if (event.key === 'ArrowLeft') {
+      nextIndex = (index - 1 + WORKFLOW_TABS.length) % WORKFLOW_TABS.length;
+    }
+    if (event.key === 'Home') nextIndex = 0;
+    if (event.key === 'End') nextIndex = WORKFLOW_TABS.length - 1;
+    if (nextIndex === null) return;
+    event.preventDefault();
+    const nextTab = WORKFLOW_TABS[nextIndex]?.[0];
+    if (!nextTab) return;
+    setTab(nextTab);
+    requestAnimationFrame(() => {
+      document.getElementById(`configuration-tab-${nextTab}`)?.focus();
+    });
+  };
+
   const load = useCallback(async () => {
     const [draftResponse, publishedResponse, activationResponse, surfaceResponse] =
       await Promise.all([
@@ -194,7 +258,9 @@ export function ConfigurationStudioWorkbench({
   }, []);
 
   useEffect(() => {
-    void load().catch((error: unknown) => { medusaToast.error(errorMessage(error)); });
+    void load().catch((error: unknown) => {
+      medusaToast.error(errorMessage(error));
+    });
   }, [load]);
 
   useEffect(() => {
@@ -216,6 +282,7 @@ export function ConfigurationStudioWorkbench({
     }));
   }, [initialRegistrationKey, surfaces]);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: refresh impact after a selected draft changes version.
   useEffect(() => {
     if (!selectedId) {
       setImpact(null);
@@ -286,7 +353,10 @@ export function ConfigurationStudioWorkbench({
 
   function activate(
     version: PublishedVersion,
-    options: { environmentKey: string; cohortKey: string } = { environmentKey: 'local-uat', cohortKey: 'all-users' },
+    options: { environmentKey: string; cohortKey: string } = {
+      environmentKey: 'local-uat',
+      cohortKey: 'all-users',
+    },
   ) {
     const current = activations.find(
       (item) =>
@@ -354,7 +424,9 @@ export function ConfigurationStudioWorkbench({
       link.download = `gigalibs-configuration-${Date.now()}.json`;
       link.click();
       URL.revokeObjectURL(url);
-      medusaToast.success(`Exported ${latest.length} latest surface definition(s) in a signed package.`);
+      medusaToast.success(
+        `Exported ${latest.length} latest surface definition(s) in a signed package.`,
+      );
     } catch (error) {
       medusaToast.error(errorMessage(error));
     } finally {
@@ -379,7 +451,9 @@ export function ConfigurationStudioWorkbench({
       const result = (await response.json()) as { importedChangeSets: unknown[] };
       await load();
       setTab('governance');
-      medusaToast.success(`Verified the signature and imported ${result.importedChangeSets.length} definition(s) as validated drafts.`);
+      medusaToast.success(
+        `Verified the signature and imported ${result.importedChangeSets.length} definition(s) as validated drafts.`,
+      );
     } catch (error) {
       medusaToast.error(errorMessage(error));
     } finally {
@@ -391,7 +465,7 @@ export function ConfigurationStudioWorkbench({
     <main className="min-h-full bg-ui-bg-subtle p-6 lg:p-8">
       <header className="mb-6 flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
         <div>
-          <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-ui-fg-muted">
+          <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-ui-fg-subtle">
             <Layers3 className="h-4 w-4" /> Governed metadata
           </div>
           <h1 className="text-2xl font-semibold tracking-tight text-ui-fg-base">
@@ -428,20 +502,17 @@ export function ConfigurationStudioWorkbench({
       </header>
 
       <div className="mb-5 flex flex-wrap gap-2" role="tablist" aria-label="Configuration workflow">
-        {(
-          [
-            ['designer', '1. Design'],
-            ['governance', '2. Review'],
-            ['published', '3. Publish & activate'],
-            ['runtime', '4. Runtime preview'],
-            ['portability', '5. Package'],
-          ] as const
-        ).map(([key, label]) => (
+        {WORKFLOW_TABS.map(([key, label], index) => (
           <button
             key={key}
+            type="button"
+            id={`configuration-tab-${key}`}
             role="tab"
             aria-selected={tab === key}
+            aria-controls={`configuration-panel-${key}`}
+            tabIndex={tab === key ? 0 : -1}
             onClick={() => setTab(key)}
+            onKeyDown={(event) => moveTabFocus(event, index)}
             className={`rounded-lg border px-4 py-2 text-sm font-medium ${tab === key ? 'border-ui-border-interactive bg-ui-bg-base text-ui-fg-base shadow-xs' : 'border-ui-border-base bg-transparent text-ui-fg-subtle hover:bg-ui-bg-base'}`}
           >
             {label}
@@ -449,61 +520,72 @@ export function ConfigurationStudioWorkbench({
         ))}
       </div>
 
-      
-
-      {tab === 'designer' ? (
-        <Designer
-          definition={definition}
-          setDefinition={setDefinition}
-          values={previewValues}
-          setValues={setPreviewValues}
-          reason={reason}
-          setReason={setReason}
-          busy={busy}
-          canDraft={canDraft}
-          onSave={createChangeSet}
-          surfaces={surfaces}
-        />
-      ) : null}
-      {tab === 'governance' ? (
-        <Governance
-          changeSets={changeSets}
-          selected={selected}
-          impact={impact}
-          currentUserId={currentUserId}
-          reason={reason}
-          setReason={setReason}
-          busy={busy}
-          canApprove={canApprove}
-          canPublish={canPublish}
-          onSelect={selectChangeSet}
-          onTransition={transition}
-        />
-      ) : null}
-      {tab === 'published' ? (
-        <Published
-          versions={published}
-          activations={activations}
-          busy={busy}
-          canActivate={canActivate}
-          canRollback={canRollback}
-          onActivate={activate}
-        />
-      ) : null}
-      {tab === 'runtime' ? <RuntimePreview versions={published} activations={activations} locale={locale} currency={currency} /> : null}
-      {tab === 'portability' ? (
-        <Portability
-          packageText={packageText}
-          setPackageText={setPackageText}
-          reason={reason}
-          setReason={setReason}
-          busy={busy}
-          canExport={canExport}
-          canImport={canImport}
-          onExport={exportPackage}
-          onImport={importPackage}
-        />
-      ) : null}
+      <section
+        id={`configuration-panel-${tab}`}
+        role="tabpanel"
+        aria-labelledby={`configuration-tab-${tab}`}
+      >
+        {tab === 'designer' ? (
+          <Designer
+            definition={definition}
+            setDefinition={setDefinition}
+            values={previewValues}
+            setValues={setPreviewValues}
+            reason={reason}
+            setReason={setReason}
+            busy={busy}
+            canDraft={canDraft}
+            onSave={createChangeSet}
+            surfaces={surfaces}
+          />
+        ) : null}
+        {tab === 'governance' ? (
+          <Governance
+            changeSets={changeSets}
+            selected={selected}
+            impact={impact}
+            currentUserId={currentUserId}
+            reason={reason}
+            setReason={setReason}
+            busy={busy}
+            canApprove={canApprove}
+            canPublish={canPublish}
+            onSelect={selectChangeSet}
+            onTransition={transition}
+          />
+        ) : null}
+        {tab === 'published' ? (
+          <Published
+            versions={published}
+            activations={activations}
+            busy={busy}
+            canActivate={canActivate}
+            canRollback={canRollback}
+            onActivate={activate}
+          />
+        ) : null}
+        {tab === 'runtime' ? (
+          <RuntimePreview
+            versions={published}
+            activations={activations}
+            locale={locale}
+            currency={currency}
+          />
+        ) : null}
+        {tab === 'portability' ? (
+          <Portability
+            packageText={packageText}
+            setPackageText={setPackageText}
+            reason={reason}
+            setReason={setReason}
+            busy={busy}
+            canExport={canExport}
+            canImport={canImport}
+            onExport={exportPackage}
+            onImport={importPackage}
+          />
+        ) : null}
+      </section>
     </main>
   );
 }
@@ -657,7 +739,10 @@ function Designer({
     const target = current + direction;
     if (target < 0 || target >= section.fieldKeys.length) return;
     const fieldKeys = [...section.fieldKeys];
-    [fieldKeys[current], fieldKeys[target]] = [fieldKeys[target]!, fieldKeys[current]!];
+    const currentValue = fieldKeys[current];
+    const targetValue = fieldKeys[target];
+    if (currentValue === undefined || targetValue === undefined) return;
+    [fieldKeys[current], fieldKeys[target]] = [targetValue, currentValue];
     setDefinition({
       ...definition,
       sections: definition.sections.map((item) =>
@@ -667,7 +752,9 @@ function Designer({
   };
 
   return (
-    <div className={`${styles.studioGrid} min-h-[720px] overflow-hidden rounded-2xl border border-ui-border-base bg-ui-bg-base shadow-sm`}>
+    <div
+      className={`${styles.studioGrid} min-h-[720px] overflow-hidden rounded-2xl border border-ui-border-base bg-ui-bg-base shadow-sm`}
+    >
       <aside className={`${styles.palette} space-y-5 bg-white p-4`}>
         <div className="flex items-center justify-between">
           <div>
@@ -768,24 +855,7 @@ function Designer({
             <Plus className="h-4 w-4" /> Add section
           </Button>
         </div>
-        {coreFields.length > 0 ? (
-          <div className="space-y-2">
-            {coreFields.map((field) => (
-              <div
-                key={field.key}
-                className="rounded-xl border border-ui-border-base bg-ui-bg-subtle p-3"
-              >
-                <div className="flex items-center gap-2">
-                  <LockKeyhole className="h-3.5 w-3.5 text-ui-fg-muted" />
-                  <span className="text-xs font-medium text-ui-fg-base">{field.label}</span>
-                </div>
-                <p className="mt-1 text-[11px] leading-4 text-ui-fg-muted">
-                  Platform core · {field.lockReason}
-                </p>
-              </div>
-            ))}
-          </div>
-        ) : null}
+
         {selectedSurface && extensionSlots.length > 0 ? (
           <div className="rounded-xl border border-dashed border-ui-border-base p-3 text-xs text-ui-fg-subtle">
             <span className="font-semibold text-ui-fg-base">Extension slot</span>
@@ -864,16 +934,14 @@ function Designer({
         </div>
         <div className="border-t border-ui-border-base pt-4">
           <Labeled label="Change reason">
-            <Input
-              value={reason}
-              onChange={(event) => setReason(event.target.value)}
-            />
+            <Input value={reason} onChange={(event) => setReason(event.target.value)} />
           </Labeled>
           <Button
             type="button"
             disabled={busy || !canDraft}
             onClick={onSave}
-            variant="primary" className="mt-3 w-full"
+            variant="primary"
+            className="mt-3 w-full"
           >
             <Save className="h-4 w-4" /> Validate and save draft
           </Button>
@@ -883,7 +951,7 @@ function Designer({
       <section className="min-w-0 bg-[#f5f6f8] p-5 lg:p-7">
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-ui-fg-muted">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-ui-fg-subtle">
               Canvas
             </p>
             <h2 className="mt-1 text-sm font-semibold">{definition.title}</h2>
@@ -954,18 +1022,30 @@ function Designer({
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2">
                   {coreFields.map((field) => (
-                    <div key={field.key} className="rounded-lg border border-ui-border-base bg-white p-3">
+                    <div
+                      key={field.key}
+                      className="rounded-lg border border-ui-border-base bg-white p-3"
+                    >
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-xs font-medium text-ui-fg-base">{field.label}</span>
-                        <LockKeyhole aria-label="Locked core field" className="h-3.5 w-3.5 text-ui-fg-muted" />
+                        <LockKeyhole
+                          aria-label="Locked core field"
+                          className="h-3.5 w-3.5 text-ui-fg-muted"
+                        />
                       </div>
-                      <p className="mt-1 font-mono text-[10px] text-ui-fg-muted">{field.key} · {field.type}</p>
+                      <p className="mt-1 font-mono text-[10px] text-ui-fg-muted">
+                        {field.key} · {field.type}
+                      </p>
                     </div>
                   ))}
                 </div>
               </section>
             ) : null}
-            <FormEngineConfigurationForm definition={definition} values={values} onChange={setValues} />
+            <FormEngineConfigurationForm
+              definition={definition}
+              values={values}
+              onChange={setValues}
+            />
           </div>
         </div>
       </section>
@@ -988,14 +1068,16 @@ function Designer({
               <Button
                 type="button"
                 onClick={() => reorderField(selectedField.key, -1)}
-                variant="secondary" className="flex-1"
+                variant="secondary"
+                className="flex-1"
               >
                 Move up
               </Button>
               <Button
                 type="button"
                 onClick={() => reorderField(selectedField.key, 1)}
-                variant="secondary" className="flex-1"
+                variant="secondary"
+                className="flex-1"
               >
                 Move down
               </Button>
@@ -1020,6 +1102,128 @@ function Designer({
           </div>
         )}
       </aside>
+    </div>
+  );
+}
+
+function FieldOptionsEditor({
+  options,
+  onChange,
+}: {
+  options: readonly ConfigurationOption[] | undefined;
+  onChange: (options: ConfigurationOption[]) => void;
+}) {
+  const [rawText, setRawText] = useState(() => formatOptionsForDisplay(options));
+  const [quickInput, setQuickInput] = useState('');
+  const lastSyncedRef = useRef<string>('');
+
+  useEffect(() => {
+    const formatted = formatOptionsForDisplay(options);
+    if (formatted !== lastSyncedRef.current) {
+      setRawText(formatted);
+      lastSyncedRef.current = formatted;
+    }
+  }, [options]);
+
+  const handleRawChange = (text: string) => {
+    setRawText(text);
+    const parsed = parseOptionsInput(text);
+    lastSyncedRef.current = formatOptionsForDisplay(parsed);
+    onChange(parsed);
+  };
+
+  const handleRemoveOption = (index: number) => {
+    const current = options ? [...options] : [];
+    const updated = current.filter((_, i) => i !== index);
+    const formatted = formatOptionsForDisplay(updated);
+    setRawText(formatted);
+    lastSyncedRef.current = formatted;
+    onChange(updated);
+  };
+
+  const handleQuickAdd = () => {
+    const trimmed = quickInput.trim();
+    if (!trimmed) return;
+    const additional = parseOptionsInput(trimmed);
+    if (additional.length === 0) return;
+    const current = options ? [...options] : [];
+    const updated = [...current, ...additional];
+    const formatted = formatOptionsForDisplay(updated);
+    setRawText(formatted);
+    lastSyncedRef.current = formatted;
+    onChange(updated);
+    setQuickInput('');
+  };
+
+  const activeOptions = options ?? [];
+
+  return (
+    <div className="mt-3 rounded-lg border border-ui-border-base bg-ui-bg-base p-3 space-y-2.5">
+      <Labeled label="Dropdown Options (comma, newline, or key:value)">
+        <textarea
+          rows={3}
+          value={rawText}
+          onChange={(e) => handleRawChange(e.target.value)}
+          placeholder="e.g. Active, Inactive, Pending or act: Active Account"
+          className="mt-1.5 w-full rounded-md border border-ui-border-base bg-ui-bg-field p-2 font-mono text-xs text-ui-fg-base outline-none transition focus:border-ui-border-interactive focus:ring-1 focus:ring-ui-border-interactive"
+        />
+      </Labeled>
+
+      {activeOptions.length > 0 ? (
+        <div className="flex flex-wrap items-center gap-1.5 pt-1">
+          <span className="text-[10px] font-semibold text-ui-fg-muted uppercase tracking-wider">
+            Configured ({activeOptions.length}):
+          </span>
+          {activeOptions.map((opt, idx) => (
+            <span
+              key={`${opt.value}-${idx}`}
+              className="inline-flex items-center gap-1 rounded-md bg-ui-bg-subtle border border-ui-border-base px-2 py-0.5 text-xs text-ui-fg-base"
+            >
+              <span className="font-medium">{opt.label}</span>
+              <span className="font-mono text-[10px] text-ui-fg-muted">({opt.value})</span>
+              <button
+                type="button"
+                onClick={() => handleRemoveOption(idx)}
+                className="ml-0.5 rounded-full p-0.5 text-ui-fg-muted hover:bg-ui-bg-base hover:text-ui-fg-error"
+                aria-label={`Remove option ${opt.label}`}
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </span>
+          ))}
+        </div>
+      ) : (
+        <p className="text-[11px] text-amber-600 font-medium">
+          ⚠️ At least one option is required for dropdown fields.
+        </p>
+      )}
+
+      <div className="flex items-center gap-2 pt-1 border-t border-ui-border-base">
+        <input
+          type="text"
+          placeholder="Quick add single option (e.g. 'Draft' or 'dft: Draft Version')"
+          value={quickInput}
+          onChange={(e) => setQuickInput(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              handleQuickAdd();
+            }
+          }}
+          className="flex-1 rounded-md border border-ui-border-base bg-ui-bg-field px-2.5 py-1 text-xs text-ui-fg-base outline-none focus:border-ui-border-interactive"
+        />
+        <Button
+          type="button"
+          variant="secondary"
+          size="small"
+          onClick={handleQuickAdd}
+          disabled={!quickInput.trim()}
+          className="text-xs"
+        >
+          <Plus className="h-3.5 w-3.5 mr-1" />
+          Add
+        </Button>
+      </div>
     </div>
   );
 }
@@ -1053,7 +1257,7 @@ function FieldEditor({
         </Labeled>
         <Labeled label="Key">
           <Input
-             className="font-mono"
+            className="font-mono"
             value={field.key}
             onChange={(event) => onChange({ key: normalizeKey(event.target.value) })}
           />
@@ -1154,7 +1358,7 @@ function FieldEditor({
       <div className="mt-3 grid gap-3 md:grid-cols-2">
         <Labeled label="Read permission (optional)">
           <Input
-             className="font-mono"
+            className="font-mono"
             placeholder="configuration-apps:read"
             value={field.readPermission ?? ''}
             onChange={(event) =>
@@ -1164,7 +1368,7 @@ function FieldEditor({
         </Labeled>
         <Labeled label="Write permission (optional)">
           <Input
-             className="font-mono"
+            className="font-mono"
             placeholder="configuration-apps:write"
             disabled={field.readOnly}
             value={field.writePermission ?? ''}
@@ -1180,7 +1384,6 @@ function FieldEditor({
             <Labeled label="Minimum">
               <Input
                 type="number"
-                
                 value={field.minimum ?? ''}
                 onChange={(event) =>
                   onChange({
@@ -1192,7 +1395,6 @@ function FieldEditor({
             <Labeled label="Maximum">
               <Input
                 type="number"
-                
                 value={field.maximum ?? ''}
                 onChange={(event) =>
                   onChange({
@@ -1208,7 +1410,6 @@ function FieldEditor({
               <Input
                 type="number"
                 min={0}
-                
                 value={field.minLength ?? ''}
                 onChange={(event) =>
                   onChange({
@@ -1221,7 +1422,6 @@ function FieldEditor({
               <Input
                 type="number"
                 min={1}
-                
                 value={field.maxLength ?? ''}
                 onChange={(event) =>
                   onChange({
@@ -1234,21 +1434,10 @@ function FieldEditor({
         )}
       </div>
       {field.type === 'SELECT' || field.type === 'MULTI_SELECT' ? (
-        <Labeled label="Options (comma separated)">
-          <Input
-             className="mt-2"
-            value={(field.options ?? []).map((option) => option.label).join(', ')}
-            onChange={(event) =>
-              onChange({
-                options: event.target.value
-                  .split(',')
-                  .map((label) => label.trim())
-                  .filter(Boolean)
-                  .map((label) => ({ label, value: normalizeKey(label) })),
-              })
-            }
-          />
-        </Labeled>
+        <FieldOptionsEditor
+          options={field.options}
+          onChange={(options) => onChange({ options })}
+        />
       ) : null}
       <div className="mt-4 grid gap-3 border-t border-ui-border-base pt-4 lg:grid-cols-2">
         <ConditionalRuleEditor
@@ -1295,7 +1484,7 @@ function ConditionalRuleEditor({
       value: '',
     };
     const next = { ...current, ...patch };
-    if (next.operator === 'IS_EMPTY' || next.operator === 'IS_NOT_EMPTY') delete next.value;
+    if (next.operator === 'IS_EMPTY' || next.operator === 'IS_NOT_EMPTY') next.value = undefined;
     else if (next.value === undefined) next.value = '';
     onChange(next);
   };
@@ -1435,6 +1624,7 @@ function Governance({
           {changeSets.map((item) => (
             <button
               key={item.id}
+              type="button"
               onClick={() => onSelect(item)}
               className={`flex w-full items-center justify-between rounded-lg px-3 py-3 text-left ${selected?.id === item.id ? 'bg-ui-bg-base-hover' : 'hover:bg-ui-bg-subtle'}`}
             >
@@ -1496,7 +1686,7 @@ function Governance({
             )}
             <Labeled label="Decision reason">
               <Input
-                 className="mt-5"
+                className="mt-5"
                 value={reason}
                 onChange={(event) => setReason(event.target.value)}
               />
@@ -1608,7 +1798,10 @@ function Published({
   busy: boolean;
   canActivate: boolean;
   canRollback: boolean;
-  onActivate: (version: PublishedVersion, options: { environmentKey: string; cohortKey: string }) => void;
+  onActivate: (
+    version: PublishedVersion,
+    options: { environmentKey: string; cohortKey: string },
+  ) => void;
 }) {
   const [environmentKey, setEnvironmentKey] = useState('local-uat');
   const [cohortKey, setCohortKey] = useState('all-users');
@@ -1723,7 +1916,12 @@ function RuntimePreview({
   activations,
   locale = 'en-US',
   currency = 'USD',
-}: { versions: PublishedVersion[]; activations: Activation[]; locale?: string; currency?: string }) {
+}: {
+  versions: PublishedVersion[];
+  activations: Activation[];
+  locale?: string;
+  currency?: string;
+}) {
   const active = activations.find((item) => item.status === 'ACTIVE');
   const version = active
     ? versions.find(
@@ -1833,7 +2031,9 @@ function RuntimePreview({
             locale={locale}
             currency={currency}
             onChange={setValues}
-            formEngine={process.env.NEXT_PUBLIC_USE_FORM_ENGINE === 'true' && effectiveMode === 'EDIT'}
+            formEngine={
+              process.env.NEXT_PUBLIC_USE_FORM_ENGINE === 'true' && effectiveMode === 'EDIT'
+            }
           />
         </>
       ) : (
@@ -1890,10 +2090,7 @@ function Portability({
           still require review, publication and activation.
         </p>
         <Labeled label="Import reason">
-          <Input
-            value={reason}
-            onChange={(event) => setReason(event.target.value)}
-          />
+          <Input value={reason} onChange={(event) => setReason(event.target.value)} />
         </Labeled>
         <label className="mt-4 block text-xs font-medium">
           Load package file
@@ -1915,7 +2112,8 @@ function Portability({
           />
         </Labeled>
         <Button
-          variant="primary" className="mt-4"
+          variant="primary"
+          className="mt-4"
           disabled={busy || !canImport || packageText.trim().length === 0}
           onClick={onImport}
         >
@@ -1928,6 +2126,7 @@ function Portability({
 
 function Labeled({ label, children }: { label: string; children: ReactNode }) {
   return (
+    // biome-ignore lint/a11y/noLabelWithoutControl: the rendered child is the wrapped form control.
     <label className="block text-xs font-medium text-ui-fg-base">
       <span className="mb-1.5 block">{label}</span>
       {children}
@@ -1993,7 +2192,9 @@ function rewriteConditionFieldKey(
     return condition.fieldKey === oldKey ? { ...condition, fieldKey: newKey } : condition;
   return {
     ...condition,
-    conditions: condition.conditions.map((item) => rewriteConditionFieldKey(item, oldKey, newKey)!),
+    conditions: condition.conditions.map(
+      (item) => rewriteConditionFieldKey(item, oldKey, newKey) ?? item,
+    ),
   };
 }
 function conditionUsesField(

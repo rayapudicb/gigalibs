@@ -44,6 +44,8 @@ import type {
   ReachCampaign,
   ChannelType,
 } from '@/lib/communications-store';
+import { VoiceCallPanel } from './softphone/VoiceCallPanel';
+import { DeliveryReceiptTicks } from './DeliveryReceiptTicks';
 
 export interface CommunicationsWorkbenchProps {
   currentUserId?: string;
@@ -52,6 +54,7 @@ export interface CommunicationsWorkbenchProps {
   tenantId?: string;
   tenantName?: string;
   permissions?: readonly string[];
+  initialTab?: 'inbox' | 'channels' | 'templates' | 'reach' | 'triggers';
 }
 
 export function CommunicationsWorkbench({
@@ -61,8 +64,16 @@ export function CommunicationsWorkbench({
   tenantId,
   tenantName,
   permissions,
+  initialTab = 'inbox',
 }: CommunicationsWorkbenchProps = {}) {
-  const [activeTab, setActiveTab] = useState<'inbox' | 'channels' | 'templates' | 'reach' | 'triggers'>('inbox');
+  const [activeTab, setActiveTab] = useState<'inbox' | 'channels' | 'templates' | 'reach' | 'triggers'>(initialTab);
+
+  useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab]);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -77,6 +88,7 @@ export function CommunicationsWorkbench({
   // Composer state
   const [replyText, setReplyText] = useState('');
   const [isSendingReply, setIsSendingReply] = useState(false);
+  const [softphoneOpen, setSoftphoneOpen] = useState(false);
 
   // New Channel Modal
   const [channelModalOpen, setChannelModalOpen] = useState(false);
@@ -357,21 +369,6 @@ export function CommunicationsWorkbench({
         />
       </div>
 
-      {/* Tabs */}
-      <div className="mt-6">
-        <Tabs
-          options={[
-            { value: 'inbox', label: 'Unified Inbox', count: conversations.filter((c) => c.status === 'OPEN').length },
-            { value: 'channels', label: 'Omnichannel Providers', count: channels.length },
-            { value: 'templates', label: 'Message Templates', count: templates.length },
-            { value: 'reach', label: 'Reach & Campaigns', count: campaigns.length },
-            { value: 'triggers', label: 'Cross-Module Triggers' },
-          ]}
-          value={activeTab}
-          onChange={(v) => setActiveTab(v as any)}
-        />
-      </div>
-
       {loading && conversations.length === 0 ? (
         <div className="mt-6">
           <LoadingState message="Connecting to TextFly communications cluster..." />
@@ -481,6 +478,14 @@ export function CommunicationsWorkbench({
                       </div>
 
                       <div className="flex items-center gap-2">
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => setSoftphoneOpen(true)}
+                          className="flex items-center gap-1 text-emerald-600"
+                        >
+                          <Phone className="h-3.5 w-3.5" /> Call
+                        </Button>
                         <StatusBadge
                           tone={
                             selectedConversation.status === 'RESOLVED'
@@ -522,7 +527,7 @@ export function CommunicationsWorkbench({
                               {isOutbound && (
                                 <>
                                   <span>•</span>
-                                  <span className="text-emerald-500 font-medium">Delivered</span>
+                                  <DeliveryReceiptTicks status={m.status} tone="onLight" />
                                 </>
                               )}
                             </div>
@@ -1076,6 +1081,14 @@ export function CommunicationsWorkbench({
           </div>
         </div>
       </Modal>
+
+      <VoiceCallPanel
+        tenantId={tenantId ?? ''}
+        isOpen={softphoneOpen}
+        onClose={() => setSoftphoneOpen(false)}
+        initialPhoneNumber={selectedConversation?.contactAddress}
+        contactName={selectedConversation?.contactName}
+      />
     </PageShell>
   );
 }

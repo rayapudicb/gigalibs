@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Alert,
@@ -119,14 +120,32 @@ export function AnalyticsStudioWorkbench() {
 
   const loadAnalyticsData = async () => {
     try {
+      setError(null);
       const [sumRes, tsRes, actRes] = await Promise.all([
         fetch('/api/analytics/v1/metrics/summary'),
         fetch('/api/analytics/v1/metrics/timeseries'),
         fetch('/api/analytics/v1/actions'),
       ]);
-      if (sumRes.ok) setSummary(await sumRes.json());
-      if (tsRes.ok) setTimeSeries(await tsRes.json());
+      if (sumRes.ok) {
+        setSummary(await sumRes.json());
+      } else {
+        setSummary(null);
+      }
+      if (tsRes.ok) {
+        setTimeSeries(await tsRes.json());
+      } else {
+        setTimeSeries([]);
+      }
       if (actRes.ok) setActions(await actRes.json());
+      const unavailable = [sumRes, tsRes].find((response) => !response.ok);
+      if (unavailable) {
+        const payload = await unavailable.json().catch(() => null);
+        setError(
+          payload && typeof payload === 'object' && typeof payload.message === 'string'
+            ? payload.message
+            : 'Certified analytical datasets are not available for this tenant yet.',
+        );
+      }
     } catch (err: any) {
       console.error('Failed to load analytics data', err);
     }
@@ -218,19 +237,19 @@ export function AnalyticsStudioWorkbench() {
       <Container className="p-8 max-w-4xl mx-auto space-y-6">
         <div className="rounded-2xl border border-blue-200 bg-blue-50/50 p-6 space-y-4">
           <div className="flex items-center gap-3">
-            <BarChart3 className="w-8 h-8 text-blue-600" />
+            <BarChart3 className="w-6 h-6 text-blue-600" />
             <div>
-              <Heading level="h2" className="text-xl font-semibold text-zinc-900">
-                Analytics Studio Setup & Schema Binding
-              </Heading>
-              <Text className="text-sm text-zinc-600">
-                Bind your tenant workspace to the PostgreSQL <code>gigalibs_analytics</code> schema and verify cross-module metric lineage.
+              <p className="font-semibold text-zinc-900">
+                PostgreSQL Schema Initialization
+              </p>
+              <Text className="text-xs text-zinc-600">
+                Bind tenant workspace to isolated <code>gigalibs_analytics</code> schema.
               </Text>
             </div>
           </div>
           <div className="border-t border-blue-100 pt-4 flex items-center justify-between">
             <div className="text-xs font-mono text-zinc-500">
-              Authority: Verified OIDC & Tenant RLS · FIPS 186-4 SHA-256 Proofs
+              Authority: Verified local OIDC · Tenant RLS · PostgreSQL persistence
             </div>
             <Button
               variant="primary"
@@ -248,20 +267,15 @@ export function AnalyticsStudioWorkbench() {
 
   return (
     <div className="p-8 space-y-8 max-w-7xl mx-auto">
-      {/* Top Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-zinc-200 pb-6">
-        <div>
-          <div className="flex items-center gap-2">
-            <Badge color="blue">Universal Intelligence</Badge>
+      {/* Action Toolbar */}
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-zinc-200 pb-3">
+        <div className="flex items-center gap-2">
+          <Badge color="blue">Universal Intelligence</Badge>
+          {summary?.overallLineageVerified ? (
             <StatusBadge color="green">LINEAGE_VERIFIED</StatusBadge>
-            <Badge color="grey">FIPS 186-4 SHA-256</Badge>
-          </div>
-          <Heading level="h1" className="mt-2 text-2xl font-bold tracking-tight text-zinc-950">
-            Analytics Studio
-          </Heading>
-          <Text className="mt-1 text-sm text-zinc-600">
-            Authoritative executive intelligence with cryptographic data lineage to live PostgreSQL tables.
-          </Text>
+          ) : (
+            <StatusBadge color="orange">DATA_NOT_AVAILABLE</StatusBadge>
+          )}
         </div>
 
         <div className="flex items-center gap-3">
@@ -272,11 +286,22 @@ export function AnalyticsStudioWorkbench() {
             variant="primary"
             className="bg-zinc-900 text-white hover:bg-zinc-800 flex items-center gap-2"
             onClick={() => setActionModalOpen(true)}
+            disabled={!summary}
           >
             <Zap className="w-4 h-4 text-amber-400" /> Executive Action
           </Button>
+          {/* WI-OI-064f: governed estate → region → site drill-down. */}
+          <Button asChild variant="secondary">
+            <Link href="/analytics/places">Place drill-down</Link>
+          </Button>
         </div>
       </div>
+
+      {error && (
+        <div role="status" className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+          {error}
+        </div>
+      )}
 
       {/* Studio Navigation Tabs */}
       <div className="flex items-center gap-2 border-b border-zinc-200">
@@ -302,8 +327,7 @@ export function AnalyticsStudioWorkbench() {
           }`}
         >
           <LayoutGrid className="w-4 h-4 text-purple-600" />
-          <span>36 Industry Visualizations &amp; Telemetry</span>
-          <Badge color="purple" size="small" className="font-mono">36 Charts</Badge>
+          <span>Tenant Visualizations &amp; Telemetry</span>
         </button>
       </div>
 
@@ -322,13 +346,14 @@ export function AnalyticsStudioWorkbench() {
             <BuildingTax className="w-4 h-4 text-emerald-600" />
           </div>
           <div className="text-2xl font-bold text-zinc-900">
-            ${summary?.netArRevenueUsd.toLocaleString('en-US', { minimumFractionDigits: 2 }) ?? '0.00'}
+            {summary ? `$${summary.netArRevenueUsd.toLocaleString('en-US', { minimumFractionDigits: 2 })}` : 'Unavailable'}
           </div>
           <div className="flex items-center justify-between pt-2 border-t border-zinc-100 text-xs text-zinc-500">
-            <span>{summary?.arInvoicesCount ?? 0} Invoices</span>
+            <span>{summary ? `${summary.arInvoicesCount} Invoices` : 'No certified dataset'}</span>
             <button
               className="text-blue-600 font-medium hover:underline flex items-center gap-0.5"
               onClick={() => handleInspectLineage('NET_AR_REVENUE')}
+              disabled={!summary}
             >
               Inspect Lineage <ArrowUpRight className="w-3 h-3" />
             </button>
@@ -344,13 +369,14 @@ export function AnalyticsStudioWorkbench() {
             <DocumentText className="w-4 h-4 text-blue-600" />
           </div>
           <div className="text-2xl font-bold text-zinc-900">
-            ${summary?.committedSpendUsd.toLocaleString('en-US', { minimumFractionDigits: 2 }) ?? '0.00'}
+            {summary ? `$${summary.committedSpendUsd.toLocaleString('en-US', { minimumFractionDigits: 2 })}` : 'Unavailable'}
           </div>
           <div className="flex items-center justify-between pt-2 border-t border-zinc-100 text-xs text-zinc-500">
-            <span>{summary?.spendExpensesCount ?? 0} Expenses</span>
+            <span>{summary ? `${summary.spendExpensesCount} Expenses` : 'No certified dataset'}</span>
             <button
               className="text-blue-600 font-medium hover:underline flex items-center gap-0.5"
               onClick={() => handleInspectLineage('COMMITTED_SPEND')}
+              disabled={!summary}
             >
               Inspect Lineage <ArrowUpRight className="w-3 h-3" />
             </button>
@@ -366,13 +392,14 @@ export function AnalyticsStudioWorkbench() {
             <Sparkles className="w-4 h-4 text-purple-600" />
           </div>
           <div className="text-2xl font-bold text-zinc-900">
-            ${summary?.fxConvertedVolumeUsd.toLocaleString('en-US', { minimumFractionDigits: 2 }) ?? '0.00'}
+            {summary ? `$${summary.fxConvertedVolumeUsd.toLocaleString('en-US', { minimumFractionDigits: 2 })}` : 'Unavailable'}
           </div>
           <div className="flex items-center justify-between pt-2 border-t border-zinc-100 text-xs text-zinc-500">
-            <span>{summary?.fxOrdersCount ?? 0} Orders</span>
+            <span>{summary ? `${summary.fxOrdersCount} Orders` : 'No certified dataset'}</span>
             <button
               className="text-blue-600 font-medium hover:underline flex items-center gap-0.5"
               onClick={() => handleInspectLineage('CROSS_BORDER_FX')}
+              disabled={!summary}
             >
               Inspect Lineage <ArrowUpRight className="w-3 h-3" />
             </button>
@@ -388,13 +415,14 @@ export function AnalyticsStudioWorkbench() {
             <ShieldCheck className="w-4 h-4 text-amber-600" />
           </div>
           <div className="text-2xl font-bold text-zinc-900">
-            ${summary?.recoveryPreservedUsd.toLocaleString('en-US', { minimumFractionDigits: 2 }) ?? '0.00'}
+            {summary ? `$${summary.recoveryPreservedUsd.toLocaleString('en-US', { minimumFractionDigits: 2 })}` : 'Unavailable'}
           </div>
           <div className="flex items-center justify-between pt-2 border-t border-zinc-100 text-xs text-zinc-500">
-            <span>{summary?.recoveryLeaksCount ?? 0} Incidents</span>
+            <span>{summary ? `${summary.recoveryLeaksCount} Incidents` : 'No certified dataset'}</span>
             <button
               className="text-blue-600 font-medium hover:underline flex items-center gap-0.5"
               onClick={() => handleInspectLineage('PRESERVED_CASH')}
+              disabled={!summary}
             >
               Inspect Lineage <ArrowUpRight className="w-3 h-3" />
             </button>
@@ -431,7 +459,7 @@ export function AnalyticsStudioWorkbench() {
 
         {timeSeries.length === 0 ? (
           <div className="p-8 text-center text-zinc-500 text-sm">
-            No historical transactions recorded yet in this tenant's PostgreSQL tables.
+            No certified analytical time series is available for this tenant.
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -485,7 +513,7 @@ export function AnalyticsStudioWorkbench() {
 
         {actions.length === 0 ? (
           <div className="p-8 text-center text-zinc-500 text-sm">
-            No executive actions dispatched yet. Use the "Executive Action" button to trigger governed recomputation or attestation.
+            No governed executive actions have been recorded for this tenant.
           </div>
         ) : (
           <div className="overflow-x-auto">

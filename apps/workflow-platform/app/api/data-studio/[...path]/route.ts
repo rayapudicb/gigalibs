@@ -23,7 +23,7 @@ async function proxyDataStudio(request: Request, context: RouteContext): Promise
 
   const method = request.method.toUpperCase();
   const pathSegments = (await context.params).path;
-  if (pathSegments.some((part) => !/^[A-Za-z0-9._:-]{1,100}$/.test(part))) {
+  if (pathSegments.some((part) => part === '..' || part === '.' || !/^[A-Za-z0-9_:-]{1,100}$/.test(part))) {
     return problem(404, 'Unsupported Data Studio route.');
   }
 
@@ -70,7 +70,7 @@ async function proxyDataStudio(request: Request, context: RouteContext): Promise
       ...(body ? { body } : {}),
       cache: 'no-store',
       redirect: 'error',
-      signal: AbortSignal.timeout(15_000),
+      signal: AbortSignal.timeout(3_000),
     });
 
     const response = new NextResponse(upstream.body, { status: upstream.status });

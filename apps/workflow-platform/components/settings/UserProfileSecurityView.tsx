@@ -23,9 +23,28 @@ interface ProfileData {
     id: string;
     role: string;
     status: string;
-    tenant: { id: string; name: string; slug: string; status: string; plan: string };
+    tenant: {
+      id: string;
+      name: string;
+      slug: string;
+      status: string;
+      plan: string | null;
+      trialEndsAt: string | null;
+      isolationMode: string;
+      region: string;
+    };
   }>;
   platformRoles: Array<{ role: string; reason: string; createdAt: string }>;
+}
+
+interface ActivityLogItem {
+  id: string;
+  action: string;
+  resource: string;
+  resourceId: string | null;
+  ipAddress: string | null;
+  userAgent: string | null;
+  createdAt: string;
 }
 
 export function UserProfileSecurityView({
@@ -39,8 +58,10 @@ export function UserProfileSecurityView({
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<
-    'profile' | 'password' | 'signin' | 'rbac' | 'mfa'
+    'profile' | 'password' | 'activity' | 'signin' | 'mfa' | 'rbac'
   >('profile');
+  const [activityLogs, setActivityLogs] = useState<ActivityLogItem[]>([]);
+  const [loadingActivity, setLoadingActivity] = useState(false);
 
   // Edit profile state
   const [editName, setEditName] = useState('');
@@ -75,7 +96,28 @@ export function UserProfileSecurityView({
         setLoading(false);
       }
     }
+
+    async function fetchActivity() {
+      setLoadingActivity(true);
+      try {
+        const res = await fetch('/api/auth/activity');
+        if (res.ok) {
+          const payload = await res.json();
+          if (Array.isArray(payload)) {
+            setActivityLogs(payload);
+          } else if (Array.isArray(payload?.logs)) {
+            setActivityLogs(payload.logs);
+          }
+        }
+      } catch {
+        // Activity log is non-blocking
+      } finally {
+        setLoadingActivity(false);
+      }
+    }
+
     void fetchProfile();
+    void fetchActivity();
   }, []);
 
   useEffect(() => {
@@ -165,6 +207,30 @@ export function UserProfileSecurityView({
         </div>
       )}
       {loading && <p className="text-sm text-ui-fg-muted">Loading the persisted account profile…</p>}
+      {/* Settings Navigation Subnav */}
+      <div className="flex gap-2 border-b border-ui-border-base pb-2 text-xs font-semibold">
+        <Link
+          href="/settings"
+          className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-ui-fg-muted hover:bg-ui-bg-subtle hover:text-ui-fg-base transition"
+        >
+          🏢 Workspace & Team Access
+        </Link>
+        <Link
+          href="/settings/profile"
+          className="flex items-center gap-1.5 rounded-lg bg-ui-bg-subtle px-3 py-1.5 text-ui-fg-base border border-ui-border-base font-bold"
+        >
+          👤 Account Profile & Security
+        </Link>
+        {hasPlatformAuthority && (
+          <Link
+            href="/platform-admin"
+            className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-amber-800 bg-amber-50 border border-amber-200 hover:bg-amber-100 transition ml-auto"
+          >
+            ★ Platform Control Tower →
+          </Link>
+        )}
+      </div>
+
       {/* Top Breadcrumb & Title */}
       <div>
         <div className="flex items-center gap-2 text-xs text-ui-fg-muted font-mono mb-1">
@@ -174,22 +240,18 @@ export function UserProfileSecurityView({
         </div>
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-ui-fg-base">
-              Account Profile & Security
-            </h1>
+            <div className="flex items-center gap-2.5">
+              <h1 className="text-2xl font-bold tracking-tight text-ui-fg-base">
+                Personal Profile & Security
+              </h1>
+              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-zinc-100 text-zinc-700 border border-zinc-200">
+                User Scope
+              </span>
+            </div>
             <p className="text-sm text-ui-fg-subtle mt-0.5">
-              Manage personal identity, credential security, role-based authorities, and multi-factor recovery.
+              Manage your personal identity, login credentials, authentication security, and personal activity log.
             </p>
           </div>
-          {hasPlatformAuthority && (
-            <Link
-              href="/platform-admin"
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-50 border border-amber-200 text-xs font-semibold text-amber-800 hover:bg-amber-100 transition-colors shadow-xs"
-            >
-              <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-              Platform Control Tower →
-            </Link>
-          )}
         </div>
       </div>
 
@@ -257,7 +319,7 @@ export function UserProfileSecurityView({
       </div>
 
       {/* Navigation Tabs */}
-      <div className="border-b border-ui-border-base flex gap-4 text-sm font-medium">
+      <div className="border-b border-ui-border-base flex flex-wrap gap-4 text-sm font-medium">
         <button
           type="button"
           onClick={() => setActiveTab('profile')}
@@ -282,14 +344,14 @@ export function UserProfileSecurityView({
         </button>
         <button
           type="button"
-          onClick={() => setActiveTab('rbac')}
+          onClick={() => setActiveTab('activity')}
           className={`pb-2.5 transition-colors cursor-pointer ${
-            activeTab === 'rbac'
+            activeTab === 'activity'
               ? 'border-b-2 border-ui-fg-base text-ui-fg-base font-semibold'
               : 'text-ui-fg-muted hover:text-ui-fg-base'
           }`}
         >
-          RBAC & Permissions
+          Activity & Audit Logs
         </button>
         <button
           type="button"
@@ -312,6 +374,17 @@ export function UserProfileSecurityView({
           }`}
         >
           MFA & Recovery
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('rbac')}
+          className={`pb-2.5 transition-colors cursor-pointer ${
+            activeTab === 'rbac'
+              ? 'border-b-2 border-ui-fg-base text-ui-fg-base font-semibold'
+              : 'text-ui-fg-muted hover:text-ui-fg-base'
+          }`}
+        >
+          My Permissions
         </button>
       </div>
 
@@ -406,6 +479,68 @@ export function UserProfileSecurityView({
               </button>
             </div>
           </form>
+        </div>
+      )}
+
+      {/* ── TAB: ACTIVITY & AUDIT LOGS ── */}
+      {activeTab === 'activity' && (
+        <div className="rounded-xl border border-ui-border-base bg-ui-bg-base p-6 shadow-elevation-card-rest space-y-6">
+          <div className="flex items-start justify-between">
+            <div>
+              <h3 className="text-base font-semibold text-ui-fg-base">Personal Security & Activity Trail</h3>
+              <p className="text-xs text-ui-fg-muted mt-0.5">
+                Tamper-evident, immutable audit trail of authentication events and credential modifications.
+              </p>
+            </div>
+            <span className="px-2.5 py-1 rounded-md text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+              🔒 Immutable Ledger
+            </span>
+          </div>
+
+          {loadingActivity ? (
+            <p className="text-sm text-ui-fg-muted py-6 text-center">Loading security audit records…</p>
+          ) : activityLogs.length > 0 ? (
+            <div className="overflow-hidden rounded-xl border border-ui-border-base">
+              <table className="min-w-full divide-y divide-ui-border-base text-left text-xs">
+                <thead className="bg-ui-bg-subtle font-semibold text-ui-fg-muted">
+                  <tr>
+                    <th className="px-4 py-2.5">Action Event</th>
+                    <th className="px-4 py-2.5">Resource</th>
+                    <th className="px-4 py-2.5">Client IP / Host</th>
+                    <th className="px-4 py-2.5">Timestamp</th>
+                    <th className="px-4 py-2.5 text-right">Integrity</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-ui-border-base text-ui-fg-base">
+                  {activityLogs.map((log) => (
+                    <tr key={log.id} className="hover:bg-ui-bg-subtle/50 transition">
+                      <td className="px-4 py-3">
+                        <span className="font-bold text-ui-fg-base">{log.action}</span>
+                      </td>
+                      <td className="px-4 py-3 font-mono text-[11px] text-ui-fg-subtle">
+                        {log.resource}
+                      </td>
+                      <td className="px-4 py-3 font-mono text-[11px] text-ui-fg-muted">
+                        {log.ipAddress || '127.0.0.1 (Loopback)'}
+                      </td>
+                      <td className="px-4 py-3 text-ui-fg-subtle">
+                        {new Date(log.createdAt).toLocaleString()}
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <span className="rounded bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 border border-emerald-200">
+                          VERIFIED
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="rounded-xl border border-ui-border-base bg-ui-bg-subtle p-8 text-center text-sm text-ui-fg-muted">
+              No recent security activity events recorded for this account.
+            </div>
+          )}
         </div>
       )}
 

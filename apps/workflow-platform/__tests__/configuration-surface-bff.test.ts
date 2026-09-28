@@ -27,7 +27,9 @@ afterEach(() => {
 
 describe('Configuration Studio surface registry BFF', () => {
   it('proxies the exact authenticated control-plane registry without a web-owned fallback', async () => {
-    cookieStore.get.mockReturnValue({ value: accessToken() });
+    // One token for both the cookie and the assertion: accessToken() embeds the current second.
+    const token = accessToken();
+    cookieStore.get.mockReturnValue({ value: token });
     upstreamFetch.mockResolvedValue(
       Response.json([
         {
@@ -52,7 +54,7 @@ describe('Configuration Studio surface registry BFF', () => {
       'https://control.example.invalid/api/v1/configuration/surfaces',
     );
     expect(new Headers(upstreamFetch.mock.calls[0]?.[1]?.headers).get('Authorization')).toBe(
-      `Bearer ${accessToken()}`,
+      `Bearer ${token}`,
     );
   });
 

@@ -4,16 +4,9 @@ import { verifiedSession } from '@/lib/verified-session';
 import { canUseTenantModule } from '@/lib/module-access';
 import { hasSameOrigin } from '@/lib/same-origin';
 import { readBoundedBody } from '@/lib/authenticated-upstream';
+import { localModuleUpstreamOrigin } from '@/lib/local-module-upstream';
 
 export const runtime = 'nodejs';
-
-function getConnectorHubBaseUrl(): string {
-  const url = process.env.CONNECTOR_HUB_API_URL;
-  if (!url) {
-    throw new Error('CONNECTOR_HUB_API_URL environment variable is required.');
-  }
-  return url.replace('localhost', '127.0.0.1');
-}
 
 type RouteContext = { params: Promise<{ path: string[] }> };
 
@@ -45,11 +38,10 @@ async function proxy(request: NextRequest, context: RouteContext): Promise<NextR
     return NextResponse.json({ detail: 'Cross-site request rejected.' }, { status: 403 });
   }
 
-  const hubBaseUrl = getConnectorHubBaseUrl();
-  const targetUrl = new URL(`${hubBaseUrl}/api/connectors/v1/${path.join('/')}`);
-  targetUrl.search = request.nextUrl.search;
-
   try {
+    const hubBaseUrl = localModuleUpstreamOrigin('connector-hub');
+    const targetUrl = new URL(`${hubBaseUrl}/api/connectors/v1/${path.join('/')}`);
+    targetUrl.search = request.nextUrl.search;
     const headers = new Headers();
     headers.set('Accept', 'application/json');
 
@@ -74,7 +66,7 @@ async function proxy(request: NextRequest, context: RouteContext): Promise<NextR
       headers,
       body,
       cache: 'no-store',
-      signal: AbortSignal.timeout(15_000),
+      signal: AbortSignal.timeout(3_000),
     });
 
     const data = await response.text();
@@ -87,14 +79,15 @@ async function proxy(request: NextRequest, context: RouteContext): Promise<NextR
       headers: forwardHeaders,
     });
   } catch (error) {
+    const configurationError =
+      error instanceof Error && error.message.startsWith('Local module runtime');
     return NextResponse.json(
       {
-        detail:
-          error instanceof Error
-            ? error.message
-            : 'Internal error communicating with Connector Hub API.',
+        detail: configurationError
+          ? 'Connector Hub is not configured for this local runtime.'
+          : 'The Connector Hub service is temporarily unavailable.',
       },
-      { status: 502 },
+      { status: configurationError ? 503 : 502 },
     );
   }
 }

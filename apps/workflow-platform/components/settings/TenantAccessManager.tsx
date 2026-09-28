@@ -433,11 +433,13 @@ export function TenantAccessManager({
   permissions,
   roles,
   tenantName,
+  displaySection = 'all',
 }: {
   currentUserId: string;
   permissions: string[];
   roles: string[];
   tenantName: string;
+  displaySection?: 'all' | 'team' | 'security';
 }) {
   const effectivePermissions = roles.some(
     (role) => role === 'TENANT_ADMIN' || role === 'SUPER_ADMIN',
@@ -786,12 +788,11 @@ export function TenantAccessManager({
       ? `${window.location.origin}/select-tenant?invite=${encodeURIComponent(createdInvitation.token)}`
       : '';
 
-  return (
-    <PageShell
-      eyebrow="Tenant administration"
-      title={`${tenantName} access`}
-      description="Manage persisted tenant memberships and invitation credentials. Every change is enforced server-side and written to the audit log."
-    >
+  const showSecurity = displaySection === 'all' || displaySection === 'security';
+  const showTeam = displaySection === 'all' || displaySection === 'team';
+
+  const content = (
+    <div className="space-y-6">
       {pageError ? (
         <div
           className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800"
@@ -801,7 +802,7 @@ export function TenantAccessManager({
         </div>
       ) : null}
 
-      {canReadTenant ? (
+      {showSecurity && canReadTenant ? (
         <Card>
           <CardHeader>
             <CardTitle>Verified organization domain</CardTitle>
@@ -921,9 +922,9 @@ export function TenantAccessManager({
         </Card>
       ) : null}
 
-      {canReadSettings ? <TenantOidcManager canUpdate={canUpdateSettings} /> : null}
+      {showSecurity && canReadSettings ? <TenantOidcManager canUpdate={canUpdateSettings} /> : null}
 
-      {canReadSettings ? (
+      {showSecurity && canReadSettings ? (
         <Card>
           <CardHeader>
             <CardTitle>Session MFA policy</CardTitle>
@@ -979,7 +980,7 @@ export function TenantAccessManager({
         </Card>
       ) : null}
 
-      {canReadMembers ? (
+      {showSecurity && canReadMembers ? (
         <MfaAssistedRecoveryManager
           canRequest={canUpdateMembers}
           currentUserId={currentUserId}
@@ -988,10 +989,14 @@ export function TenantAccessManager({
         />
       ) : null}
 
-      {canCreateInvites ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>Invite a member</CardTitle>
+      {showSecurity ? <TenantDataExportManager enabled={canExportTenant} /> : null}
+
+      {showTeam && (
+        <>
+          {canCreateInvites ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>Invite a member</CardTitle>
             <CardDescription>
               The recipient must register with this email. Secure email delivery is not configured,
               so the link is shown once for manual secure delivery.
@@ -1263,8 +1268,22 @@ export function TenantAccessManager({
           )}
         </CardContent>
       </Card>
+        </>
+      )}
+    </div>
+  );
 
-      <TenantDataExportManager enabled={canExportTenant} />
+  if (displaySection !== 'all') {
+    return content;
+  }
+
+  return (
+    <PageShell
+      eyebrow="Tenant administration"
+      title={`${tenantName} access`}
+      description="Manage persisted tenant memberships and invitation credentials. Every change is enforced server-side and written to the audit log."
+    >
+      {content}
     </PageShell>
   );
 }
