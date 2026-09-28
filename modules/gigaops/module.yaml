@@ -51,3 +51,65 @@ spec:
       platformInspection: true
       reason: The tenant-isolated Workforce resource, capability-definition and qualification vertical is available for controlled local evaluation under WI-OI-061. Scheduling, time, pay and compliance remain visibly unavailable until separately implemented and certified.
       navigationOrder: 230
+  # Web gateway (WI-OI-083): the BFF reaches only these routes, as the user, with a freshly signed context. A list
+  # means any one of the permissions. Workers reach their own time; managers read, correct and approve others'.
+  gateway:
+    basePaths: [/api/workforce, /api/gigaops]
+    catalogKey: gigaops
+    audience: gigalibs-workforce-api
+    upstream: workforce
+    signingKeyEnvironment: WORKFORCE_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64
+    codePrefix: WORKFORCE
+    routeNoun: Workforce
+    serviceName: GigaOps Workforce
+    entitlementName: GigaOps
+    routes:
+      - { path: 'v1/runtime/tenant-scope', GET: workforce:read }
+      - { path: 'v1/resources', GET: workforce.resources.read, POST: workforce.resources.manage }
+      - { path: 'v1/resources/{id}', GET: workforce.resources.read, PATCH: workforce.resources.manage }
+      - { path: 'v1/resources/{id}/capabilities', POST: workforce.capabilities.manage }
+      - { path: 'v1/capabilities', GET: workforce.capabilities.read, POST: workforce.capabilities.manage }
+      - { path: 'v1/job-profiles', GET: workforce.jobs.read, POST: workforce.jobs.manage }
+      - { path: 'v1/job-profiles/{id}', GET: workforce.jobs.read, PATCH: workforce.jobs.manage }
+      - { path: 'v1/job-profiles/{id}/revisions', POST: workforce.jobs.manage }
+      - { path: 'v1/positions', GET: workforce.positions.read, POST: workforce.positions.manage }
+      - { path: 'v1/positions/{id}', GET: workforce.positions.read, PATCH: workforce.positions.manage }
+      - { path: 'v1/engagements', GET: workforce.engagements.read, POST: workforce.engagements.manage }
+      - { path: 'v1/engagements/{id}/end|cancel', POST: workforce.engagements.manage }
+      - { path: 'v1/availability', GET: workforce.availability.read }
+      - { path: 'v1/availability-patterns', GET: workforce.availability.read, POST: workforce.availability.manage }
+      - { path: 'v1/availability-patterns/{id}/end', POST: workforce.availability.manage }
+      - { path: 'v1/absence-types', GET: workforce.absences.read, POST: workforce.calendars.manage }
+      - { path: 'v1/absence-types/{id}', PATCH: workforce.calendars.manage }
+      - { path: 'v1/absences', GET: workforce.absences.read, POST: workforce.absences.request }
+      - { path: 'v1/absences/{id}/approve|reject', POST: workforce.absences.approve }
+      - { path: 'v1/absences/{id}/cancel', POST: workforce.absences.request }
+      - { path: 'v1/working-calendars', GET: workforce.calendars.read, POST: workforce.calendars.manage }
+      - { path: 'v1/working-calendars/{id}/closures', POST: workforce.calendars.manage }
+      - { path: 'v1/working-calendars/{id}/closures/{id}/withdraw', POST: workforce.calendars.manage }
+      - { path: 'v1/work-requirements', GET: workforce.demand.read, POST: workforce.demand.manage }
+      - { path: 'v1/work-requirements/{id}', GET: workforce.demand.read }
+      - { path: 'v1/work-requirements/{id}/candidates', GET: workforce.bookings.read }
+      - { path: 'v1/work-requirements/{id}/cancel', POST: workforce.demand.manage }
+      - { path: 'v1/bookings', GET: workforce.bookings.read, POST: workforce.bookings.manage }
+      - { path: 'v1/bookings/{id}/status', POST: workforce.bookings.manage }
+      - { path: 'v1/punches', POST: workforce.time.punch, GET: [workforce.time.punch, workforce.time.read] }
+      - { path: 'v1/timesheets/preview', GET: [workforce.time.punch, workforce.time.read] }
+      - { path: 'v1/timesheets', GET: [workforce.time.punch, workforce.time.read], POST: [workforce.time.punch, workforce.time.manage] }
+      - { path: 'v1/timesheets/{id}', GET: [workforce.time.punch, workforce.time.read] }
+      - { path: 'v1/timesheets/{id}/approve|reject', POST: workforce.timesheets.approve }
+      - { path: 'v1/time-corrections', POST: workforce.time.manage }
+      - { path: 'v1/time-exceptions', GET: [workforce.time.punch, workforce.time.read] }
+      - { path: 'v1/time-exceptions/{id}/resolve', POST: workforce.time.manage }
+      - { path: 'v1/pay-packs', GET: workforce.pay.read }
+      - { path: 'v1/pay-rates', GET: workforce.pay.read, POST: workforce.pay.manage }
+      - { path: 'v1/pay-runs', GET: workforce.pay.read, POST: workforce.pay.manage }
+      - { path: 'v1/pay-runs/{id}', GET: workforce.pay.read }
+      - { path: 'v1/pay-runs/{id}/verification', GET: workforce.pay.read }
+      - { path: 'v1/pay-runs/{id}/approve', POST: workforce.pay.approve }
+      - { path: 'v1/pay-runs/{id}/void', POST: workforce.pay.manage }
+      - { path: 'v1/pay-runs/{id}/exports', POST: workforce.pay.manage }
+      - { path: 'v1/pay-exports', GET: workforce.pay.read }
+      - { path: 'v1/pay-exports/{id}', GET: workforce.pay.read }
+      - { path: 'v1/pay-exports/{id}/file|reconciliation', GET: workforce.pay.read }
+      - { path: 'v1/pay-exports/{id}/acknowledge', POST: workforce.pay.manage }

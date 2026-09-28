@@ -132,3 +132,31 @@ Independent reviewers: Web/Accessibility, Security & Privacy, QA/SDET
 - **Web** unit tests and the full suite.
 - **Live:** web image rebuild, then web paths and Playwright/axe on 5190.
 - **No-CMMS build** starts, with CMMS routes absent (404) and the sidebar free of CMMS.
+
+## 083a — gateways from manifests (2026-09-28)
+
+**Implementation:**
+- CMMS (22 routes) and Workforce (49 routes, base paths `/api/workforce` and `/api/gigaops`) declare
+  `spec.gateway` in their `module.yaml`.
+- `pnpm modules:catalog` validates the gateways and generates `apps/workflow-platform/lib/generated/module-gateways.ts`.
+  Validation covers the template grammar, methods, permissions or any-of lists, the catalogue key, the upstream,
+  base-path clashes, and that each concrete path matches exactly one template.
+- `lib/module-gateway.ts` turns a generated gateway into the signed proxy's configuration.
+- `lib/cmms-proxy.ts` and `lib/workforce-proxy.ts` are now thin wrappers with the same exports. The Workforce
+  punch-body transform is still supplied in code.
+
+**Evidence:**
+- **Equivalence** (`__tests__/module-gateway-equivalence.test.ts`) against a frozen copy of the hand-written
+  allow-lists (`__tests__/fixtures/legacy-module-gateways.ts`):
+  - every method (GET, POST, PATCH, PUT, DELETE, OPTIONS, HEAD);
+  - over a corpus from the manifest templates, the expanded CMMS regular expressions and a transcribed Workforce
+    path list;
+  - with negative variants: extra and missing segments, malformed, upper-case and over-long identifiers, unknown
+    paths.
+
+  A one-permission mutation of the generated table makes it fail.
+- **Tests:** the existing CMMS and Workforce boundary tests pass unchanged, and the web app type-checks.
+- **Chain:** build, full suite and audits pass.
+- **Live** (images `81005abe5146-903f2761a688`, web on 127.0.0.1:5190):
+  - GigaOps P6–P8, CMMS and Workforce jobs web paths pass through the generated gateways;
+  - Playwright/axe 14 of 14.

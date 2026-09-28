@@ -3,8 +3,8 @@
 // (`solutions/*.yaml`), and generates `packages/contracts/src/modules/catalog.generated.ts`.
 //   node scripts/module-manifests.mjs          audit: fails on invalid manifests, solutions or a stale catalogue
 //   node scripts/module-manifests.mjs --write  regenerate the catalogue, then audit
-import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 import yaml from 'js-yaml';
 
 const root = new URL('../', import.meta.url).pathname;
@@ -217,20 +217,195 @@ for (const file of existsSync(solutionDir)
   solutions.push({ name: solution.metadata.name, modules: selected.length });
 }
 
+// Gateways (WI-OI-083): each module's BFF allow-list, generated for the web shell. Templates are `/`-separated
+// segments: a literal, `{id}` (an identifier) or `a|b` (one of several values). No two templates of a module may
+// match the same concrete path, so a lookup by path then method equals the former first-match functions.
+const gatewaysPath = 'apps/workflow-platform/lib/generated/module-gateways.ts';
+const upstreamSource = readFileSync(
+  join(root, 'apps/workflow-platform/lib/local-module-upstream.ts'),
+  'utf8',
+);
+const upstreamValues = [
+  ...(upstreamSource.match(/export type LocalModuleUpstream =([^;]+);/)?.[1] ?? '').matchAll(
+    /'([^']+)'/g,
+  ),
+].map(([, value]) => value);
+const METHODS = ['GET', 'POST', 'PATCH', 'PUT', 'DELETE'];
+const ID_PATTERN = '[0-9a-fA-F-]{36}';
+const SEGMENT = /^(?:\{id\}|[a-z0-9-]+(?:\|[a-z0-9-]+)*)$/;
+const escapeRegex = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const compileTemplate = (template) =>
+  `^${template
+    .split('/')
+    .map((segment) =>
+      segment === '{id}'
+        ? ID_PATTERN
+        : segment.includes('|')
+          ? `(?:${segment.split('|').map(escapeRegex).join('|')})`
+          : escapeRegex(segment),
+    )
+    .join('/')}$`;
+function samplePaths(template) {
+  let paths = [''];
+  for (const segment of template.split('/')) {
+    const options =
+      segment === '{id}' ? ['00000000-0000-4000-8000-000000000000'] : segment.split('|');
+    paths = paths.flatMap((prefix) =>
+      options.map((option) => (prefix ? `${prefix}/${option}` : option)),
+    );
+  }
+  return paths;
+}
+const isPermission = (value) =>
+  isText(value) || (Array.isArray(value) && value.length > 0 && value.every(isText));
+
+const gateways = [];
+const basePathOwner = new Map();
+for (const [name, manifest] of modules) {
+  const gateway = manifest.spec.gateway;
+  if (gateway === undefined) continue;
+  const where = `modules/${name}/module.yaml spec.gateway`;
+  if (!gateway || typeof gateway !== 'object') {
+    fail(where, 'must be a mapping');
+    continue;
+  }
+  const catalogKeys = (manifest.spec.catalog ?? []).map((entry) => entry.key);
+  if (!Array.isArray(gateway.basePaths) || gateway.basePaths.length === 0) {
+    fail(where, 'basePaths must list at least one /api/<segment> path');
+  }
+  for (const basePath of gateway.basePaths ?? []) {
+    if (!/^\/api\/[a-z0-9-]+$/.test(basePath))
+      fail(where, `basePath ${basePath} must be /api/<segment>`);
+    if (basePathOwner.has(basePath))
+      fail(where, `basePath ${basePath} is also used by ${basePathOwner.get(basePath)}`);
+    else basePathOwner.set(basePath, name);
+  }
+  if (!catalogKeys.includes(gateway.catalogKey))
+    fail(
+      where,
+      `catalogKey must be one of this module's catalogue keys (${catalogKeys.join(', ')})`,
+    );
+  if (!upstreamValues.includes(gateway.upstream))
+    fail(where, `upstream must be one of ${upstreamValues.join(' | ')}`);
+  for (const field of [
+    'audience',
+    'signingKeyEnvironment',
+    'codePrefix',
+    'routeNoun',
+    'serviceName',
+    'entitlementName',
+  ]) {
+    if (!isText(gateway[field])) fail(where, `${field} is required`);
+  }
+  if (!Array.isArray(gateway.routes) || gateway.routes.length === 0) {
+    fail(where, 'routes must list at least one route');
+    continue;
+  }
+  const routes = [];
+  gateway.routes.forEach((route, index) => {
+    const at = `${where} routes[${index}]`;
+    const template = route?.path;
+    if (
+      typeof template !== 'string' ||
+      !template.startsWith('v1/') ||
+      !template.split('/').every((segment) => SEGMENT.test(segment))
+    ) {
+      fail(at, 'path must be v1/… made of literals, {id} or a|b segments');
+      return;
+    }
+    const unknown = Object.keys(route).filter((key) => key !== 'path' && !METHODS.includes(key));
+    if (unknown.length)
+      fail(at, `unknown keys ${unknown.join(', ')} (methods are ${METHODS.join(', ')})`);
+    const methods = Object.fromEntries(
+      METHODS.filter((method) => route[method] !== undefined).map((method) => [
+        method,
+        route[method],
+      ]),
+    );
+    if (Object.keys(methods).length === 0) fail(at, 'at least one method is required');
+    for (const [method, permission] of Object.entries(methods)) {
+      if (!isPermission(permission))
+        fail(at, `${method} needs a permission or a non-empty list of permissions`);
+    }
+    routes.push({ template, pattern: compileTemplate(template), methods });
+  });
+  for (const route of routes) {
+    for (const sample of samplePaths(route.template)) {
+      const matches = routes.filter((candidate) => new RegExp(candidate.pattern).test(sample));
+      if (matches.length !== 1)
+        fail(
+          where,
+          `${sample} matches ${matches.length} route templates; each concrete path must match exactly one`,
+        );
+    }
+  }
+  gateways.push({
+    module: name,
+    basePaths: gateway.basePaths,
+    catalogKey: gateway.catalogKey,
+    audience: gateway.audience,
+    upstream: gateway.upstream,
+    signingKeyEnvironment: gateway.signingKeyEnvironment,
+    codePrefix: gateway.codePrefix,
+    routeNoun: gateway.routeNoun,
+    serviceName: gateway.serviceName,
+    entitlementName: gateway.entitlementName,
+    routes: routes.map(({ template, pattern, methods }) => ({ template, pattern, methods })),
+  });
+}
+const gatewaysGenerated = [
+  '// Generated by `pnpm modules:catalog` (scripts/module-manifests.mjs) from `spec.gateway` in modules/*/module.yaml',
+  '// (ADR-0013, WI-OI-083). Do not edit: change the owning manifest and regenerate.',
+  'export interface GeneratedGatewayRoute {',
+  '  readonly template: string;',
+  '  readonly pattern: string;',
+  '  readonly methods: Readonly<Partial<Record<string, string | readonly string[]>>>;',
+  '}',
+  'export interface GeneratedModuleGateway {',
+  '  readonly module: string;',
+  '  readonly basePaths: readonly string[];',
+  '  readonly catalogKey: string;',
+  '  readonly audience: string;',
+  '  readonly upstream: string;',
+  '  readonly signingKeyEnvironment: string;',
+  '  readonly codePrefix: string;',
+  '  readonly routeNoun: string;',
+  '  readonly serviceName: string;',
+  '  readonly entitlementName: string;',
+  '  readonly routes: readonly GeneratedGatewayRoute[];',
+  '}',
+  `export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGateway>> = ${JSON.stringify(
+    Object.fromEntries(gateways.map((gateway) => [gateway.module, gateway])),
+    null,
+    2,
+  )};`,
+  '',
+].join('\n');
+
 let catalogueCurrent =
   existsSync(join(root, generatedPath)) &&
   readFileSync(join(root, generatedPath), 'utf8') === generated;
-if (write && errors.length === 0 && !catalogueCurrent) {
-  writeFileSync(join(root, generatedPath), generated);
+let gatewaysCurrent =
+  existsSync(join(root, gatewaysPath)) &&
+  readFileSync(join(root, gatewaysPath), 'utf8') === gatewaysGenerated;
+if (write && errors.length === 0) {
+  if (!catalogueCurrent) writeFileSync(join(root, generatedPath), generated);
+  if (!gatewaysCurrent) {
+    mkdirSync(dirname(join(root, gatewaysPath)), { recursive: true });
+    writeFileSync(join(root, gatewaysPath), gatewaysGenerated);
+  }
   catalogueCurrent = true;
+  gatewaysCurrent = true;
 }
 if (!catalogueCurrent) fail(generatedPath, 'out of date; run `pnpm modules:catalog`');
+if (!gatewaysCurrent) fail(gatewaysPath, 'out of date; run `pnpm modules:catalog`');
 
 console.log(
   JSON.stringify(
     {
       manifests: modules.size,
       catalogEntries: entries.length,
+      gateways: gateways.map((gateway) => `${gateway.module}: ${gateway.routes.length} routes`),
       solutions,
       legacyManifests,
       warnings,
