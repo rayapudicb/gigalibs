@@ -1,4 +1,3 @@
-import { createHash, randomUUID } from 'node:crypto';
 import { BadRequestException, HttpException, Injectable, Logger } from '@nestjs/common';
 import {
   CmmsStaffingCancelledV1Schema,
@@ -6,6 +5,7 @@ import {
   CreateWorkRequirementV1Schema,
   RelayEnvelopeV1Schema,
 } from '@gigalibs/contracts';
+import { type InboxReceiptOptions, receiveOnce } from '@gigalibs/module-sdk';
 import type { PoolClient } from 'pg';
 import type { GigaOpsPrincipal } from '../auth/authorization.js';
 import { BookingsService } from '../bookings/bookings.service.js';
@@ -13,6 +13,7 @@ import { type CommandContext, recordMutation } from '../common/commands.js';
 import { WorkforceDatabaseService } from '../database/database.service.js';
 
 const CONSUMER = 'workforce.cmms-handshake';
+const RECEIPTS: InboxReceiptOptions = { schema: 'gigalibs_workforce', consumer: CONSUMER, sourceModule: 'cmms' };
 
 export type InboxOutcome = { readonly status: 'PROCESSED' | 'DUPLICATE' | 'REJECTED'; readonly code?: string };
 
@@ -39,27 +40,15 @@ export class WorkforceInboxService {
     if (!['CMMS_STAFFING_REQUESTED_V1', 'CMMS_STAFFING_CANCELLED_V1'].includes(envelope.eventType)) {
       throw new BadRequestException({ code: 'WORKFORCE_INBOX_EVENT_UNKNOWN', message: `No consumer for ${envelope.eventType}.` });
     }
-    return this.database.withTenantTransaction(envelope.tenantId, async (client) => {
-      const receipt = await client.query<{ id: string }>(
-        `INSERT INTO gigalibs_workforce.inbox_receipts
-           (id, tenant_id, consumer_name, message_id, event_type, source_module, source_version, correlation_id, payload_sha256, status, attempt_count)
-         VALUES ($1, $2, $3, $4, $5, 'cmms', $6, $7, $8, 'PROCESSING', 1)
-         ON CONFLICT (tenant_id, consumer_name, message_id) DO NOTHING
-         RETURNING id`,
-        [randomUUID(), envelope.tenantId, CONSUMER, envelope.messageId, envelope.eventType, envelope.schemaVersion, envelope.correlationId,
-          createHash('sha256').update(rawBody, 'utf8').digest('hex')],
-      );
-      if (!receipt.rows[0]) return { status: 'DUPLICATE' as const };
-      const context: CommandContext = { principal: relayPrincipal(envelope.tenantId), correlationId: envelope.correlationId };
-      const outcome = envelope.eventType === 'CMMS_STAFFING_REQUESTED_V1'
-        ? await this.staffingRequested(client, context, envelope.messageId, envelope.payload)
-        : await this.staffingCancelled(client, context, envelope.messageId, envelope.payload);
-      await client.query(
-        `UPDATE gigalibs_workforce.inbox_receipts SET status = $3, processed_at = now(), last_error_code = $4 WHERE tenant_id = $1 AND id = $2`,
-        [envelope.tenantId, receipt.rows[0].id, outcome.status === 'PROCESSED' ? 'PROCESSED' : 'FAILED', outcome.code ?? null],
-      );
-      return outcome;
-    });
+    // Receipt de-duplication from the module SDK (WI-OI-082): a redelivery is a DUPLICATE with no effect.
+    return this.database.withTenantTransaction(envelope.tenantId, (client) =>
+      receiveOnce(client, RECEIPTS, envelope, rawBody, () => {
+        const context: CommandContext = { principal: relayPrincipal(envelope.tenantId), correlationId: envelope.correlationId };
+        return envelope.eventType === 'CMMS_STAFFING_REQUESTED_V1'
+          ? this.staffingRequested(client, context, envelope.messageId, envelope.payload)
+          : this.staffingCancelled(client, context, envelope.messageId, envelope.payload);
+      }),
+    );
   }
 
   private async staffingRequested(client: PoolClient, context: CommandContext, messageId: string, rawPayload: unknown): Promise<InboxOutcome> {

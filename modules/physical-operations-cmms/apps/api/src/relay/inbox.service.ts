@@ -1,12 +1,13 @@
-import { createHash, randomUUID } from 'node:crypto';
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { RelayEnvelopeV1Schema, WorkforceHandshakeFactV1Schema, type RelayEnvelopeV1, type WorkforceHandshakeFactV1 } from '@gigalibs/contracts';
+import { type InboxReceiptOptions, receiveOnce } from '@gigalibs/module-sdk';
 import type { PoolClient } from 'pg';
 import type { CmmsCommandContext, CmmsPrincipal } from '../auth/authorization.js';
 import { recordMutation } from '../common/command.js';
 import { DatabaseService } from '../database/database.service.js';
 
 const CONSUMER = 'cmms.workforce-handshake';
+const RECEIPTS: InboxReceiptOptions = { schema: 'gigalibs_cmms', consumer: CONSUMER, sourceModule: 'workforce' };
 const HANDLED = new Set([
   'WORKFORCE_WORK_REQUIREMENT_REQUESTED_V1',
   'WORKFORCE_WORK_REQUIREMENT_CANCELLED_V1',
@@ -36,24 +37,10 @@ export class CmmsInboxService {
     if (!HANDLED.has(envelope.eventType)) {
       throw new BadRequestException({ code: 'CMMS_INBOX_EVENT_UNKNOWN', message: `No consumer for ${envelope.eventType}.` });
     }
-    return this.database.withTenantTransaction(envelope.tenantId, async (client) => {
-      const receipt = await client.query<{ id: string }>(
-        `INSERT INTO gigalibs_cmms.inbox_receipts
-           (id, tenant_id, consumer_name, message_id, event_type, source_module, source_version, correlation_id, payload_sha256, status, attempt_count)
-         VALUES ($1, $2, $3, $4, $5, 'workforce', $6, $7, $8, 'PROCESSING', 1)
-         ON CONFLICT (tenant_id, consumer_name, message_id) DO NOTHING
-         RETURNING id`,
-        [randomUUID(), envelope.tenantId, CONSUMER, envelope.messageId, envelope.eventType, envelope.schemaVersion, envelope.correlationId,
-          createHash('sha256').update(rawBody, 'utf8').digest('hex')],
-      );
-      if (!receipt.rows[0]) return { status: 'DUPLICATE' as const };
-      const outcome = await this.apply(client, envelope);
-      await client.query(
-        `UPDATE gigalibs_cmms.inbox_receipts SET status = $3, processed_at = now(), last_error_code = $4 WHERE tenant_id = $1 AND id = $2`,
-        [envelope.tenantId, receipt.rows[0].id, outcome.status === 'PROCESSED' ? 'PROCESSED' : 'FAILED', outcome.code ?? null],
-      );
-      return outcome;
-    });
+    // Receipt de-duplication from the module SDK (WI-OI-082): a redelivery is a DUPLICATE with no effect.
+    return this.database.withTenantTransaction(envelope.tenantId, (client) =>
+      receiveOnce(client, RECEIPTS, envelope, rawBody, () => this.apply(client, envelope)),
+    );
   }
 
   private async apply(client: PoolClient, envelope: RelayEnvelopeV1): Promise<CmmsInboxOutcome> {

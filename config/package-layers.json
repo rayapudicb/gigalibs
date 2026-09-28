@@ -55,6 +55,7 @@
     "packages/maps-react",
     "packages/module-registry",
     "packages/module-registry-nest",
+    "packages/module-sdk",
     "packages/notifications-core",
     "packages/notifications-react",
     "packages/oauth-universal",

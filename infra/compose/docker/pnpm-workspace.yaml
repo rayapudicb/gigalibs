@@ -26,6 +26,7 @@ packages:
   - packages/maps-react
   - packages/module-registry
   - packages/module-registry-nest
+  - packages/module-sdk
   - packages/platform-settings
   - packages/platform-settings-nest
   - packages/privacy-gdpr
