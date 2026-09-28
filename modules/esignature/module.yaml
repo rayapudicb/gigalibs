@@ -32,9 +32,9 @@ spec:
       name: E-Signature
       navigationLabel: Cryptographic Esign Pro
       area: Documents
-      navigationGroup: Studio & Orchestration
+      navigationGroup: Data & Documents
       route: /esign
-      iconKey: esign
+      iconKey: file-signature
       readiness: AVAILABLE
       entitlementEligible: true
       trialEligible: true

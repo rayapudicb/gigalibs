@@ -41,9 +41,9 @@ spec:
       name: Data Contracts
       navigationLabel: Data Contracts & Schemas
       area: Data
-      navigationGroup: Studio & Orchestration
+      navigationGroup: Data & Documents
       route: /data-contracts
-      iconKey: data-contracts
+      iconKey: database
       readiness: REVIEW
       entitlementEligible: true
       trialEligible: true

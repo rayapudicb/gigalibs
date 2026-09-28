@@ -15,6 +15,7 @@ import {
   platformModuleCatalog,
 } from '@gigalibs/contracts';
 import { determinePersona } from '@/lib/persona-utils';
+import { moduleIcons } from '@/lib/module-icons';
 import {
   ArrowLeftRight,
   BarChart3,
@@ -26,33 +27,17 @@ import {
   ChevronRight,
   Clock,
   Coins,
-  Cpu,
-  CreditCard,
-  Database,
   Factory,
-  FileCheck2,
-  FileSignature,
   FileText,
   Gauge,
   Inbox,
-  KeyRound,
   Layers,
   Lock,
   type LucideIcon,
-  MapPin,
   Megaphone,
-  MessageSquare,
-  Network,
   Radio,
   Scale,
-  ScanLine,
-  Server,
-  Settings,
-  ShieldAlert,
   ShieldCheck,
-  ShoppingBag,
-  Sparkles,
-  Workflow,
   Wrench,
   Zap,
 } from 'lucide-react';
@@ -60,17 +45,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
-// ── New semantic nav grouping (overrides catalog navigationGroup) ──────────────
-type NavGroup =
-  | 'Studio & Build'
-  | 'Automate & Run'
-  | 'Workforce & Operations'
-  | 'Financial Operations'
-  | 'Intelligence'
-  | 'Data & Documents'
-  | 'Platform';
-
-const newGroupOrder: readonly NavGroup[] = [
+// Sidebar group order. Each module picks its group in `navigationGroup` of its manifest (WI-OI-083c).
+const newGroupOrder: readonly PlatformModuleArea[] = [
   'Studio & Build',
   'Automate & Run',
   'Workforce & Operations',
@@ -80,51 +56,7 @@ const newGroupOrder: readonly NavGroup[] = [
   'Platform',
 ];
 
-// Map each module key to its new semantic group.
-// Any key not listed here falls back to the catalog's own navigationGroup.
-const MODULE_NAV_GROUP: Record<string, NavGroup> = {
-  // ── Studio & Build ──────────────────────────────────
-  'workflow-definitions': 'Studio & Build',
-  'rule-studio':          'Studio & Build',
-  'dynamic-forms':        'Studio & Build',
-  'saga-orchestrator':    'Studio & Build',
-  'operational-ontology': 'Studio & Build',
-  // ── Automate & Run ──────────────────────────────────
-  'execution-runs':         'Automate & Run',
-  'exceptions-recovery':    'Automate & Run',
-  'approval-queue':         'Automate & Run',
-  'communications-textfly': 'Automate & Run',
-  // ── Workforce & Operations ──────────────────────────
-  'gigaops':             'Workforce & Operations',
-  'asset-maintenance':   'Workforce & Operations',
-  'geospatial-studio':   'Workforce & Operations',
-  // ── Financial Operations ────────────────────────────
-  'accounts-receivable': 'Financial Operations',
-  'invoice-matching':    'Financial Operations',
-  'spend-management':    'Financial Operations',
-  'tax-configuration':   'Financial Operations',
-  'multi-currency':      'Financial Operations',
-  'autonomous-recovery': 'Financial Operations',
-  // ── Intelligence ────────────────────────────────────
-  'analytics-studio': 'Intelligence',
-  'reports':          'Intelligence',
-  'value-ledger':     'Intelligence',
-  'solution-packs':   'Intelligence',
-  // ── Data & Documents ────────────────────────────────
-  'data-contracts':       'Data & Documents',
-  'document-scanner':     'Data & Documents',
-  'esignature':           'Data & Documents',
-  'master-data':          'Data & Documents',
-  // ── Platform ────────────────────────────────────────
-  'connections':      'Platform',
-  'connector-hub':    'Platform',
-  'platform-control': 'Platform',
-  'module-marketplace': 'Platform',
-  'tenant-access':    'Platform',
-  'personal-security': 'Platform',
-};
-
-const newGroupLabelByKey: Record<NavGroup, string> = {
+const newGroupLabelByKey: Record<PlatformModuleArea, string> = {
   'Studio & Build':      'Studio & Build',
   'Automate & Run':      'Automate & Run',
   'Workforce & Operations': 'Workforce & Ops',
@@ -132,51 +64,6 @@ const newGroupLabelByKey: Record<NavGroup, string> = {
   'Intelligence':        'Intelligence',
   'Data & Documents':    'Data & Docs',
   'Platform':            'Platform',
-};
-
-// Keep old groupOrder for type-compat with existing groupLabelByKey (unused below)
-const groupOrder: readonly PlatformModuleArea[] = [
-  'Executive Intelligence',
-  'Financial Operations',
-  'Physical Operations & CMMS',
-  'Studio & Orchestration',
-  'Platform Administration',
-];
-
-const iconByKey: Readonly<Record<string, LucideIcon>> = {
-  settings: Settings,
-  'personal-security': KeyRound,
-  workflow: Zap,
-  runs: FileCheck2,
-  exceptions: ShieldAlert,
-  approvals: CheckCircle2,
-  value: CheckCircle2,
-  'data-contracts': Database,
-  connections: Radio,
-  'invoice-match': FileText,
-  'accounts-receivable': ArrowLeftRight,
-  spend: CreditCard,
-  tax: Building2,
-  currency: Coins,
-  recovery: ShieldCheck,
-  rules: Scale,
-  'dynamic-forms': Sparkles,
-  'connector-hub': Lock,
-  'platform-control': Server,
-  marketplace: ShoppingBag,
-  analytics: BarChart3,
-  cmms: Factory,
-  maps: MapPin,
-  esign: FileSignature,
-  scanner: ScanLine,
-  ontology: Network,
-  saga: Workflow,
-  reports: BarChart3,
-  'master-data': Database,
-  solutions: Boxes,
-  infrastructure: Cpu,
-  communications: MessageSquare,
-  gigaops: Clock,
 };
 
 const PERSONA_CONFIG: Record<
@@ -272,14 +159,6 @@ export default function AppSidebar({ session }: { session: VerifiedSession }) {
   const hasPlatformAuthority = session.platformRoles.length > 0;
   const mayReadTenantApps = session.permissions.includes('*') || session.permissions.includes('configuration-apps:*') || session.permissions.includes('configuration-apps:read');
 
-  const groupLabelByKey: Record<PlatformModuleArea, string> = {
-    'Executive Intelligence': t('executiveIntelligence'),
-    'Financial Operations': t('financialOperations'),
-    'Physical Operations & CMMS': t('physicalOperations'),
-    'Studio & Orchestration': t('studioOrchestration'),
-    'Platform Administration': t('platformAdmin'),
-  };
-
   const moduleLabelByKey: Record<string, string> = {
     gigaops: 'GigaOps Workforce',
     esign: t('eSignatureStudio'),
@@ -355,12 +234,9 @@ export default function AppSidebar({ session }: { session: VerifiedSession }) {
   });
   const activeModuleKey = mostSpecificActiveModuleKey(visibleModules, pathname);
 
-  // Build groups using the new semantic nav mapping
   const grouped = newGroupOrder
     .map((group) => {
-      const modules = visibleModules.filter(
-        (module) => (MODULE_NAV_GROUP[module.key] ?? 'Platform') === group,
-      );
+      const modules = visibleModules.filter((module) => module.navigationGroup === group);
       return {
         group,
         label: newGroupLabelByKey[group],
@@ -590,7 +466,7 @@ function ModuleLink({
     <SidebarLink
       href={module.route}
       label={label ?? module.navigationLabel}
-      icon={iconByKey[module.iconKey] ?? Boxes}
+      icon={moduleIcons[module.iconKey] ?? Boxes}
       pathname={pathname}
       isUnavailable={isUnavailable}
       active={isActive}
@@ -622,7 +498,7 @@ function ExpandableModuleItem({
     }
   }, [isModuleActive]);
 
-  const Icon = iconByKey[module.iconKey] ?? Boxes;
+  const Icon = moduleIcons[module.iconKey] ?? Boxes;
   const isExactParentActive = pathname === module.route;
 
   return (

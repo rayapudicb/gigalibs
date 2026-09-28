@@ -90,7 +90,7 @@ spec:
       area: Finance
       navigationGroup: Financial Operations
       route: /ar
-      iconKey: accounts-receivable
+      iconKey: arrow-left-right
       readiness: REVIEW
       entitlementEligible: true
       trialEligible: true

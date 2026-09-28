@@ -183,12 +183,13 @@ for (const requiredWorkspace of [
   );
 }
 // WI-OI-038: only the CMMS core API enters the image workspace, for its own module image; the rest of the
-// CMMS tree (import/export, prototypes) stays out and the control-plane build never filters it in.
+// CMMS tree (import/export, prototypes) stays out and the control-plane build never filters it in. WI-OI-083b adds
+// the CMMS web package (its screens and API client, built into the web image).
 expect(
   JSON.stringify((dockerWorkspace?.packages ?? []).filter((entry) => entry.includes('physical-operations-cmms'))) ===
-    JSON.stringify(['modules/physical-operations-cmms/apps/api']),
+    JSON.stringify(['modules/physical-operations-cmms/apps/api', 'modules/physical-operations-cmms/web']),
   'FROZEN_SCOPE_INCLUDED',
-  'Only the CMMS core API may enter the image workspace.',
+  'Only the CMMS core API and web package may enter the image workspace.',
 );
 expect(
   JSON.stringify(Object.keys(dockerWorkspace?.allowBuilds ?? {}).sort()) ===

@@ -189,3 +189,77 @@ Independent reviewers: Web/Accessibility, Security & Privacy, QA/SDET
 - **Live** (images `88967ea35011-9ffa1e2a8005`, web on 127.0.0.1:5190):
   - GigaOps P6–P8, CMMS and Workforce jobs web paths pass;
   - Playwright/axe 14 of 14, including the CMMS work-order staffing test.
+
+## 083c — shell decoupling (2026-09-28)
+
+**Implementation:**
+- **Upstreams:**
+  - Five manifests declare `spec.api.upstream` (key, Compose service hostname, `…_URL` variable): Analytics,
+    CMMS, Connector Hub, Geospatial and Workforce (`gigaops`).
+  - `pnpm modules:catalog` validates them and generates `lib/generated/module-upstreams.ts`.
+  - `lib/local-module-upstream.ts` no longer holds a port and hostname table.
+- **Compose:** the web service no longer waits for module APIs (`depends_on` removed from the Geospatial,
+  Workforce and modules overlays).
+  - While a module is down, its gateway answers 502 `RUNTIME_UNAVAILABLE` (3 s timeout), or 503 when it is not
+    configured.
+  - The base web → API dependency stays, as the deployment profile requires.
+- **Dashboard:** the Executive Control Tower no longer imports `@gigalibs/cmms-web`.
+  - Its only CMMS call asked for `analytics/assets/reliability`. That route is in neither the CMMS gateway nor the
+    frozen legacy allow-list, so it always failed and showed "CMMS Reliability Service Unreachable".
+  - Reliability now shows as Unavailable, without the error.
+- **Sidebar groups:**
+  - `navigationGroup` (`PlatformModuleArea`) now holds the seven groups the sidebar shows: Studio & Build,
+    Automate & Run, Workforce & Operations, Financial Operations, Intelligence, Data & Documents, Platform.
+  - The old five areas were not displayed anywhere.
+  - The sidebar groups entries by their manifest value. `MODULE_NAV_GROUP` and the unused old group tables are
+    removed.
+- **Icons:**
+  - `iconKey` now names an icon from a closed set, `PlatformModuleIcon` (30 names such as `factory`, `clock`,
+    `map-pin`). It no longer uses module names.
+  - The generator rejects unknown names.
+  - `lib/module-icons.ts` is the one registry for the sidebar (Lucide) and the `/modules` page (glyphs), so a new
+    module needs no shell change.
+  - On `/modules`, entries that now share an icon share its glyph:
+    - value ledger `◇` → `✓`;
+    - analytics studio `⌁` → `▥`;
+    - master data `•` → `{}`.
+- **Deployment-profile check:** 083b put `modules/physical-operations-cmms/web` in the image workspace, which
+  broke the check's frozen-scope rule.
+  - The check now allows the CMMS core API and web package only; the frozen import/export and prototypes stay
+    excluded.
+  - The web package holds only the 7 screens and API client.
+
+**Deviations and open points (for owner review):**
+- **G1 §4, dashboard widgets as slots:** no slot mechanism is built, because no module contributes a working
+  widget yet. The first one would be CMMS maintenance KPIs (WI-OI-090).
+- **Module knowledge still hand-written in `AppSidebar.tsx`.** G1 §4 lists only icons and groups; the following
+  items were not changed and are **not approved**:
+  - per-module sub-menus (CMMS, GigaOps, TextFly), although CMMS pages are already declared in `spec.ui.pages`;
+  - persona allow-lists;
+  - a `gigaops` label override;
+  - navigation translation keys for the old five areas, now unused.
+
+  In a solution without CMMS these only become dead entries: the sidebar lists catalogue entries only.
+- **`audit:configuration-deployment-profile`** (not in the mandatory eight) still reports `WORKFORCE_API_URL`
+  contract and `.env.example` drift, pre-existing from WI-OI-060/061 (see WI-OI-038).
+
+**Evidence:**
+- **Equivalence:**
+  - `__tests__/module-navigation-equivalence.test.ts` checks all 32 catalogue entries against a frozen copy of the
+    former sidebar tables (`__tests__/fixtures/legacy-module-navigation.ts`): same group, same Lucide icon.
+  - Changing one entry's group in the built contracts made exactly that case fail.
+  - The upstream table equals the former hard-coded one (`module-gateway-equivalence.test.ts`).
+- **Generator:** an unknown `iconKey` fails `audit:module-manifests` with the allowed list.
+- **Chain:** build 107/107 tasks; full suite 220 files / 1,945 tests; all 8 audits pass.
+- **Images:** identity `4da4159bb9f9-43a34f921481`, from HEAD `4da4159` plus the uncommitted 083c changes.
+  - Built: control-plane migrations, API, web, Workforce, Analytics, Connector Hub and CMMS. Geospatial was not
+    rebuilt (owner rule).
+  - The WI-OI-101 disk guard ran before each build: 194, 180 and 179 GB free. Build cache afterwards: 11.35 GB.
+- **Live** (web on 127.0.0.1:5190, same hardening as Compose):
+  - GigaOps P6–P8, CMMS and Workforce web paths pass through the generated gateways and upstream table
+    (run `1790599113268-839d44`);
+  - Playwright/axe 14 of 14.
+  - The verification users' sessions were revoked afterwards (64, including earlier runs); none active remain.
+- **Deployed:** only `web` on 5180 (`up -d --no-deps web`). It is healthy, `/api/health/ready` and the API's
+  `/ready` return 200, and it is read-only with all capabilities dropped. Other services are unchanged.
+  `docker-disk-guard.sh prune --dry-run` found nothing to remove.

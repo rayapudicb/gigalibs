@@ -29,6 +29,11 @@ spec:
   api:
     application: apps/api
     port: 4700
+    # How the web gateway reaches this module (WI-OI-083c); generated into the shell by `pnpm modules:catalog`.
+    upstream:
+      key: workforce
+      serviceHostname: workforce-api
+      environmentKey: WORKFORCE_API_URL
     version: v1
   database:
     engine: postgresql
@@ -41,9 +46,9 @@ spec:
       name: GigaOps Universal Workforce
       navigationLabel: Universal Workforce & Payroll
       area: Workforce
-      navigationGroup: Physical Operations & CMMS
+      navigationGroup: Workforce & Operations
       route: /gigaops
-      iconKey: gigaops
+      iconKey: clock
       readiness: REVIEW
       entitlementEligible: true
       trialEligible: true

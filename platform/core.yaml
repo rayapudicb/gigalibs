@@ -14,7 +14,7 @@ spec:
       name: Tenant & Access Administration
       navigationLabel: Tenant RBAC & Settings
       area: Platform
-      navigationGroup: Platform Administration
+      navigationGroup: Platform
       route: /settings
       iconKey: settings
       readiness: AVAILABLE
@@ -28,9 +28,9 @@ spec:
       name: Personal Security
       navigationLabel: Personal Security & Profile
       area: Platform
-      navigationGroup: Platform Administration
+      navigationGroup: Platform
       route: /settings/profile
-      iconKey: personal-security
+      iconKey: key-round
       readiness: AVAILABLE
       entitlementEligible: true
       trialEligible: true
@@ -42,9 +42,9 @@ spec:
       name: Execution Runs
       navigationLabel: Execution Telemetry
       area: Orchestration
-      navigationGroup: Studio & Orchestration
+      navigationGroup: Automate & Run
       route: /runs
-      iconKey: runs
+      iconKey: file-check
       readiness: AVAILABLE
       entitlementEligible: true
       trialEligible: true
@@ -56,9 +56,9 @@ spec:
       name: Exceptions & Recovery
       navigationLabel: Exceptions & Quarantine
       area: Operations
-      navigationGroup: Studio & Orchestration
+      navigationGroup: Automate & Run
       route: /exceptions
-      iconKey: exceptions
+      iconKey: shield-alert
       readiness: REVIEW
       entitlementEligible: true
       trialEligible: true
@@ -70,9 +70,9 @@ spec:
       name: Approval Queue
       navigationLabel: Approval Queues
       area: Governance
-      navigationGroup: Studio & Orchestration
+      navigationGroup: Automate & Run
       route: /actions
-      iconKey: approvals
+      iconKey: check-circle
       readiness: REVIEW
       entitlementEligible: true
       trialEligible: true
@@ -84,9 +84,9 @@ spec:
       name: Business Value Ledger
       navigationLabel: Business Value Ledger
       area: Intelligence
-      navigationGroup: Executive Intelligence
+      navigationGroup: Intelligence
       route: /value
-      iconKey: value
+      iconKey: check-circle
       readiness: REVIEW
       entitlementEligible: true
       trialEligible: true
@@ -100,7 +100,7 @@ spec:
       area: Finance
       navigationGroup: Financial Operations
       route: /ap
-      iconKey: invoice-match
+      iconKey: file-text
       readiness: REVIEW
       entitlementEligible: true
       trialEligible: true
@@ -113,9 +113,9 @@ spec:
       name: Dynamic Form Studio
       navigationLabel: Configuration Studio
       area: Configuration
-      navigationGroup: Studio & Orchestration
+      navigationGroup: Studio & Build
       route: /configuration
-      iconKey: dynamic-forms
+      iconKey: sparkles
       readiness: REVIEW
       entitlementEligible: true
       trialEligible: true
@@ -127,9 +127,9 @@ spec:
       name: Platform Control Tower
       navigationLabel: Platform Control Tower
       area: Platform
-      navigationGroup: Platform Administration
+      navigationGroup: Platform
       route: /platform-admin
-      iconKey: platform-control
+      iconKey: server
       readiness: REVIEW
       entitlementEligible: false
       trialEligible: false
@@ -141,9 +141,9 @@ spec:
       name: Reports Studio
       navigationLabel: Universal Reports Studio
       area: Intelligence
-      navigationGroup: Executive Intelligence
+      navigationGroup: Intelligence
       route: /reports
-      iconKey: reports
+      iconKey: bar-chart
       readiness: REVIEW
       entitlementEligible: true
       trialEligible: true
@@ -155,9 +155,9 @@ spec:
       name: Master Data Hub
       navigationLabel: Governed Enterprise Reference Data
       area: Operations
-      navigationGroup: Platform Administration
+      navigationGroup: Data & Documents
       route: /platform-admin/master-data
-      iconKey: master-data
+      iconKey: database
       readiness: REVIEW
       entitlementEligible: true
       trialEligible: true
@@ -169,9 +169,9 @@ spec:
       name: Solution Packs
       navigationLabel: Solution Packs
       area: Solutions
-      navigationGroup: Executive Intelligence
+      navigationGroup: Intelligence
       route: /solutions
-      iconKey: solutions
+      iconKey: boxes
       readiness: REVIEW
       entitlementEligible: true
       trialEligible: true

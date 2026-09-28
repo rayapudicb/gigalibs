@@ -45,7 +45,7 @@ spec:
       area: Finance
       navigationGroup: Financial Operations
       route: /spend
-      iconKey: spend
+      iconKey: credit-card
       readiness: REVIEW
       entitlementEligible: true
       trialEligible: true

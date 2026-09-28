@@ -48,7 +48,7 @@ spec:
       area: Finance
       navigationGroup: Financial Operations
       route: /recovery
-      iconKey: recovery
+      iconKey: shield-check
       readiness: REVIEW
       entitlementEligible: true
       trialEligible: true

@@ -31,9 +31,9 @@ spec:
       name: Omnichannel Communications
       navigationLabel: Communications (TextFly)
       area: Orchestration
-      navigationGroup: Studio & Orchestration
+      navigationGroup: Automate & Run
       route: /communications
-      iconKey: communications
+      iconKey: message-square
       readiness: REVIEW
       entitlementEligible: true
       trialEligible: true

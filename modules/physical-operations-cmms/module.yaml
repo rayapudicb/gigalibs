@@ -133,6 +133,11 @@ spec:
   api:
     application: apps/api
     port: 4200
+    # How the web gateway reaches this module (WI-OI-083c); generated into the shell by `pnpm modules:catalog`.
+    upstream:
+      key: cmms
+      serviceHostname: cmms-api
+      environmentKey: CMMS_API_URL
     version: v1
   database:
     engine: postgresql
@@ -147,9 +152,9 @@ spec:
       name: Asset & Maintenance (CMMS)
       navigationLabel: EAM Operations Console
       area: Physical Operations
-      navigationGroup: Physical Operations & CMMS
+      navigationGroup: Workforce & Operations
       route: /cmms
-      iconKey: cmms
+      iconKey: factory
       readiness: REVIEW
       entitlementEligible: true
       trialEligible: true

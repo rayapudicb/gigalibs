@@ -42,9 +42,9 @@ spec:
       name: Workflow Definitions
       navigationLabel: Workflow Studio & DAG Canvas
       area: Orchestration
-      navigationGroup: Studio & Orchestration
+      navigationGroup: Studio & Build
       route: /workflows
-      iconKey: workflow
+      iconKey: zap
       readiness: AVAILABLE
       entitlementEligible: true
       trialEligible: true

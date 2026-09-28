@@ -41,9 +41,9 @@ spec:
       name: Universal Rule Studio
       navigationLabel: Universal Rule Pro
       area: Decisioning
-      navigationGroup: Studio & Orchestration
+      navigationGroup: Studio & Build
       route: /rules
-      iconKey: rules
+      iconKey: scale
       readiness: REVIEW
       entitlementEligible: true
       trialEligible: true

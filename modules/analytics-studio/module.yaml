@@ -28,6 +28,11 @@ spec:
   api:
     application: apps/api
     port: 4400
+    # How the web gateway reaches this module (WI-OI-083c); generated into the shell by `pnpm modules:catalog`.
+    upstream:
+      key: analytics
+      serviceHostname: analytics-api
+      environmentKey: ANALYTICS_API_URL
     version: v1
   database:
     engine: postgresql
@@ -40,9 +45,9 @@ spec:
       name: Analytics Studio
       navigationLabel: Universal Analytics Studio
       area: Intelligence
-      navigationGroup: Executive Intelligence
+      navigationGroup: Intelligence
       route: /analytics
-      iconKey: analytics
+      iconKey: bar-chart
       readiness: REVIEW
       entitlementEligible: true
       trialEligible: true

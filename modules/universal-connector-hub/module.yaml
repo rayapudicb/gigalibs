@@ -30,6 +30,11 @@ spec:
   api:
     application: apps/api
     port: 4100
+    # How the web gateway reaches this module (WI-OI-083c); generated into the shell by `pnpm modules:catalog`.
+    upstream:
+      key: connector-hub
+      serviceHostname: connector-hub-api
+      environmentKey: CONNECTOR_HUB_API_URL
   storage:
     schema: gigalibs_connectors
     tables:
@@ -45,9 +50,9 @@ spec:
       name: Connections
       navigationLabel: Connections & Adapters
       area: Integration
-      navigationGroup: Platform Administration
+      navigationGroup: Platform
       route: /connections
-      iconKey: connections
+      iconKey: radio
       readiness: REVIEW
       entitlementEligible: true
       trialEligible: true
@@ -59,9 +64,9 @@ spec:
       name: Connector Hub
       navigationLabel: 1-Click OAuth Studio
       area: Integration
-      navigationGroup: Platform Administration
+      navigationGroup: Platform
       route: /connections/oauth-studio
-      iconKey: connector-hub
+      iconKey: lock
       readiness: REVIEW
       entitlementEligible: true
       trialEligible: true

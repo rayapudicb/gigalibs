@@ -35,9 +35,9 @@ spec:
       name: Operational Ontology
       navigationLabel: Operational Ontology (Digital Twin)
       area: Data
-      navigationGroup: Studio & Orchestration
+      navigationGroup: Studio & Build
       route: /ontology
-      iconKey: ontology
+      iconKey: network
       readiness: AVAILABLE
       entitlementEligible: true
       trialEligible: true

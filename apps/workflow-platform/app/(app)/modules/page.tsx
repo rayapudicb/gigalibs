@@ -1,4 +1,5 @@
 import { canOpenPlatformModule } from '@/lib/module-access';
+import { moduleIconGlyphs } from '@/lib/module-icons';
 import { verifiedSession } from '@/lib/verified-session';
 import { cookies } from 'next/headers';
 import { Translator } from '@gigalibs/i18n';
@@ -8,40 +9,6 @@ import {
 } from '@gigalibs/contracts';
 import { Lock } from 'lucide-react';
 import Link from 'next/link';
-
-const moduleIcon: Readonly<Record<string, string>> = {
-  settings: '◎',
-  'personal-security': '◈',
-  workflow: '↯',
-  runs: '▷',
-  exceptions: '!',
-  approvals: '✓',
-  value: '◇',
-  'data-contracts': '{}',
-  connections: '⌁',
-  'invoice-match': '≋',
-  'accounts-receivable': '$',
-  spend: '▣',
-  tax: '%',
-  currency: '¤',
-  recovery: '↺',
-  rules: '⌘',
-  'dynamic-forms': '✦',
-  'connector-hub': '∞',
-  'platform-control': '▦',
-  marketplace: '◫',
-  analytics: '⌁',
-  cmms: '⚙',
-  maps: '⌖',
-  esign: '✎',
-  scanner: '▤',
-  ontology: '⬡',
-  saga: '⇄',
-  reports: '▥',
-  solutions: '⬢',
-  communications: '✉',
-  gigaops: '⏱',
-};
 
 export default async function ModulesPage() {
   const session = await verifiedSession(false);
@@ -82,7 +49,7 @@ export default async function ModulesPage() {
               <div key={`${module.key}-content`} className="contents">
                 <div className="flex items-start justify-between gap-3">
                   <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-zinc-950 font-mono text-base font-semibold text-white">
-                    {moduleIcon[module.iconKey] ?? '•'}
+                    {moduleIconGlyphs[module.iconKey] ?? '•'}
                   </span>
                   {!open && (
                     <span

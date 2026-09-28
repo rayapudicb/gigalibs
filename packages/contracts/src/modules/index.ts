@@ -2,12 +2,48 @@ import { generatedPlatformModuleCatalog } from './catalog.generated.js';
 
 export type PlatformModuleReadiness = 'AVAILABLE' | 'REVIEW' | 'CONTAINED' | 'PLANNED';
 
+// The sidebar groups, in display order (WI-OI-083c). Each catalogue entry picks its group in its manifest.
 export type PlatformModuleArea =
-  | 'Executive Intelligence'
+  | 'Studio & Build'
+  | 'Automate & Run'
+  | 'Workforce & Operations'
   | 'Financial Operations'
-  | 'Physical Operations & CMMS'
-  | 'Studio & Orchestration'
-  | 'Platform Administration';
+  | 'Intelligence'
+  | 'Data & Documents'
+  | 'Platform';
+
+// The shell's navigation icon set (WI-OI-083c). A manifest picks one by name, so a new module needs no shell change.
+export type PlatformModuleIcon =
+  | 'arrow-left-right'
+  | 'bar-chart'
+  | 'boxes'
+  | 'building'
+  | 'check-circle'
+  | 'clock'
+  | 'coins'
+  | 'cpu'
+  | 'credit-card'
+  | 'database'
+  | 'factory'
+  | 'file-check'
+  | 'file-signature'
+  | 'file-text'
+  | 'key-round'
+  | 'lock'
+  | 'map-pin'
+  | 'message-square'
+  | 'network'
+  | 'radio'
+  | 'scale'
+  | 'scan-line'
+  | 'server'
+  | 'settings'
+  | 'shield-alert'
+  | 'shield-check'
+  | 'shopping-bag'
+  | 'sparkles'
+  | 'workflow'
+  | 'zap';
 
 export interface PlatformModuleDefinition {
   key: string;
@@ -16,7 +52,7 @@ export interface PlatformModuleDefinition {
   area: string;
   navigationGroup: PlatformModuleArea;
   route: `/${string}`;
-  iconKey: string;
+  iconKey: PlatformModuleIcon;
   readiness: PlatformModuleReadiness;
   entitlementEligible: boolean;
   trialEligible: boolean;

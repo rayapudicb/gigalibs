@@ -1,15 +1,8 @@
 'use client';
 
-import React, { useCallback, useEffect, useState } from 'react';
-import Link from 'next/link';
-import {
-  Badge,
-  Button,
-  Container,
-  Heading,
-  Tabs,
-  Text,
-} from '@medusajs/ui';
+import { workforceApi } from '@/lib/workforce-api';
+import type { PlatformContextPersona } from '@gigalibs/contracts';
+import { Badge, Button, Container, Heading, Tabs, Text } from '@medusajs/ui';
 import {
   Activity,
   AlertOctagon,
@@ -48,9 +41,8 @@ import {
   Wrench,
   Zap,
 } from 'lucide-react';
-import type { PlatformContextPersona } from '@gigalibs/contracts';
-import { workforceApi } from '@/lib/workforce-api';
-import { requestCmms } from '@gigalibs/cmms-web';
+import Link from 'next/link';
+import React, { useCallback, useEffect, useState } from 'react';
 
 export interface ExecutiveControlTowerProps {
   initialPersona?: PlatformContextPersona;
@@ -103,7 +95,9 @@ export default function ExecutiveControlTower({
   initialPersona = 'C_LEVEL',
   initialDepartment = 'ALL',
 }: ExecutiveControlTowerProps) {
-  const [activeTab, setActiveTab] = useState<'kpis' | 'cash_velocity' | 'oee_telemetry' | 'workforce_ops' | 'integrity_ledger'>('kpis');
+  const [activeTab, setActiveTab] = useState<
+    'kpis' | 'cash_velocity' | 'oee_telemetry' | 'workforce_ops' | 'integrity_ledger'
+  >('kpis');
   const [refreshing, setRefreshing] = useState<boolean>(false);
   const [upstreamErrors, setUpstreamErrors] = useState<string[]>([]);
 
@@ -171,23 +165,13 @@ export default function ExecutiveControlTower({
         errors.push('Workforce Telemetry Offline');
       }
 
-      // 2. Fetch real CMMS reliability metrics
-      let operationalAssets = 0;
-      let mttr = 0;
-      let reliabilityAvailable = false;
-
-      try {
-        const reliabilityData = await requestCmms<any>('analytics/assets/reliability');
-        if (reliabilityData) {
-          if (reliabilityData.overallMttrHours) mttr = reliabilityData.overallMttrHours;
-          if (reliabilityData.operationalAssetsCount !== undefined) {
-            operationalAssets = Number(reliabilityData.operationalAssetsCount);
-          }
-          reliabilityAvailable = true;
-        }
-      } catch {
-        errors.push('CMMS Reliability Service Unreachable');
-      }
+      // 2. Reliability (MTTR, operational assets) is not measured yet. The former call asked CMMS for
+      // `analytics/assets/reliability`, a route CMMS never exposed (not in its gateway allow-list), so it always
+      // failed. Maintenance KPIs arrive as a CMMS-contributed dashboard widget (WI-OI-090); the shell no longer
+      // imports module code for them (WI-OI-083c).
+      const operationalAssets = 0;
+      const mttr = 0;
+      const reliabilityAvailable = false;
 
       setUpstreamErrors(errors);
       setSourceStatus({
@@ -377,7 +361,9 @@ export default function ExecutiveControlTower({
           </div>
           <div className="mt-4 pt-3 border-t border-ui-border-base flex items-center justify-between text-[11px] font-mono text-ui-fg-muted">
             <span>MTBF: {kpis.mtbfHours > 0 ? `${kpis.mtbfHours}h` : '—'}</span>
-            <span className="text-purple-600 font-semibold">MTTR: {kpis.mttrHours > 0 ? `${kpis.mttrHours}h` : '—'}</span>
+            <span className="text-purple-600 font-semibold">
+              MTTR: {kpis.mttrHours > 0 ? `${kpis.mttrHours}h` : '—'}
+            </span>
           </div>
         </Container>
 
@@ -394,12 +380,17 @@ export default function ExecutiveControlTower({
               <span className="text-2xl font-black text-ui-fg-base font-mono">
                 {sourceStatus.workforce ? `${kpis.allocationCoveragePercent}%` : '—'}
               </span>
-              <Badge color={sourceStatus.workforce ? 'blue' : 'grey'} size="small" className="text-[10px] font-mono">
+              <Badge
+                color={sourceStatus.workforce ? 'blue' : 'grey'}
+                size="small"
+                className="text-[10px] font-mono"
+              >
                 {sourceStatus.workforce ? 'Live counts' : 'Unavailable'}
               </Badge>
             </div>
             <Text className="text-[11px] text-ui-fg-subtle mt-1">
-              Allocation coverage · {kpis.totalWorkforceResources} resources · {kpis.activeAllocationsCount} active allocations
+              Allocation coverage · {kpis.totalWorkforceResources} resources ·{' '}
+              {kpis.activeAllocationsCount} active allocations
             </Text>
           </div>
           <div className="mt-4 pt-3 border-t border-ui-border-base flex items-center justify-between text-[11px] font-mono text-ui-fg-muted">
@@ -459,9 +450,7 @@ export default function ExecutiveControlTower({
                     <Text className="text-[11px] font-semibold text-ui-fg-muted uppercase">
                       Working Capital Velocity
                     </Text>
-                    <div className="text-lg font-bold font-mono text-ui-fg-base">
-                      —
-                    </div>
+                    <div className="text-lg font-bold font-mono text-ui-fg-base">—</div>
                     <Text className="text-[10px] text-emerald-600 font-semibold">
                       AR aggregate not connected
                     </Text>
@@ -471,9 +460,7 @@ export default function ExecutiveControlTower({
                     <Text className="text-[11px] font-semibold text-ui-fg-muted uppercase">
                       Plant Production OEE
                     </Text>
-                    <div className="text-lg font-bold font-mono text-ui-fg-base">
-                      —
-                    </div>
+                    <div className="text-lg font-bold font-mono text-ui-fg-base">—</div>
                     <Text className="text-[10px] text-purple-600 font-semibold">
                       OEE performance and quality not measured
                     </Text>
@@ -566,7 +553,8 @@ export default function ExecutiveControlTower({
                     <span className="text-[10px] font-mono">Unavailable</span>
                   </div>
                   <Text className="text-[11px] text-ui-fg-subtle">
-                    No reconciled AR aggregate endpoint is connected, so no cash or DSO claim is displayed.
+                    No reconciled AR aggregate endpoint is connected, so no cash or DSO claim is
+                    displayed.
                   </Text>
                 </div>
 
@@ -575,7 +563,9 @@ export default function ExecutiveControlTower({
                     <span className="flex items-center gap-1.5">
                       <Zap className="w-3.5 h-3.5" /> OEE Data Readiness
                     </span>
-                    <span className="text-[10px] font-mono">{sourceStatus.reliability ? 'Connected' : 'Unavailable'}</span>
+                    <span className="text-[10px] font-mono">
+                      {sourceStatus.reliability ? 'Connected' : 'Unavailable'}
+                    </span>
                   </div>
                   <Text className="text-[11px] text-ui-fg-subtle">
                     {sourceStatus.reliability
@@ -589,7 +579,9 @@ export default function ExecutiveControlTower({
                     <span className="flex items-center gap-1.5">
                       <UserCheck className="w-3.5 h-3.5" /> Universal Workforce
                     </span>
-                    <span className="text-[10px] font-mono">{sourceStatus.workforce ? 'Connected' : 'Unavailable'}</span>
+                    <span className="text-[10px] font-mono">
+                      {sourceStatus.workforce ? 'Connected' : 'Unavailable'}
+                    </span>
                   </div>
                   <Text className="text-[11px] text-ui-fg-subtle">
                     {sourceStatus.workforce
@@ -667,9 +659,7 @@ export default function ExecutiveControlTower({
                   Telemetry parameters governed by Physical Operations / CMMS
                 </Text>
               </div>
-              <span className="font-mono text-base font-bold text-purple-600">
-                OEE: —
-              </span>
+              <span className="font-mono text-base font-bold text-purple-600">OEE: —</span>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
@@ -679,7 +669,10 @@ export default function ExecutiveControlTower({
                   <span className="font-mono text-ui-fg-muted">—</span>
                 </div>
                 <div className="w-full bg-ui-border-base h-2 rounded-full overflow-hidden">
-                  <div className="bg-emerald-500 h-full" style={{ width: `${kpis.availabilityPercent}%` }} />
+                  <div
+                    className="bg-emerald-500 h-full"
+                    style={{ width: `${kpis.availabilityPercent}%` }}
+                  />
                 </div>
                 <Text className="text-[10px] text-ui-fg-subtle">
                   Operating Time vs Planned Production Time
@@ -692,7 +685,10 @@ export default function ExecutiveControlTower({
                   <span className="font-mono text-ui-fg-muted">—</span>
                 </div>
                 <div className="w-full bg-ui-border-base h-2 rounded-full overflow-hidden">
-                  <div className="bg-blue-500 h-full" style={{ width: `${kpis.performancePercent}%` }} />
+                  <div
+                    className="bg-blue-500 h-full"
+                    style={{ width: `${kpis.performancePercent}%` }}
+                  />
                 </div>
                 <Text className="text-[10px] text-ui-fg-subtle">
                   Net Operating Run Rate vs Nameplate Ideal Speed
@@ -705,7 +701,10 @@ export default function ExecutiveControlTower({
                   <span className="font-mono text-ui-fg-muted">—</span>
                 </div>
                 <div className="w-full bg-ui-border-base h-2 rounded-full overflow-hidden">
-                  <div className="bg-purple-500 h-full" style={{ width: `${kpis.qualityPercent}%` }} />
+                  <div
+                    className="bg-purple-500 h-full"
+                    style={{ width: `${kpis.qualityPercent}%` }}
+                  />
                 </div>
                 <Text className="text-[10px] text-ui-fg-subtle">
                   Conforming Units vs Total Production Units
@@ -736,24 +735,40 @@ export default function ExecutiveControlTower({
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div className="p-3 rounded-lg border border-ui-border-base bg-ui-bg-subtle space-y-1">
-                <Text className="text-[11px] font-semibold text-ui-fg-muted uppercase">Rostered Capacity</Text>
-                <div className="text-xl font-bold font-mono text-ui-fg-base">{kpis.totalWorkforceResources}</div>
+                <Text className="text-[11px] font-semibold text-ui-fg-muted uppercase">
+                  Rostered Capacity
+                </Text>
+                <div className="text-xl font-bold font-mono text-ui-fg-base">
+                  {kpis.totalWorkforceResources}
+                </div>
                 <Text className="text-[10px] text-ui-fg-subtle">Total Registered</Text>
               </div>
               <div className="p-3 rounded-lg border border-ui-border-base bg-ui-bg-subtle space-y-1">
-                <Text className="text-[11px] font-semibold text-ui-fg-muted uppercase">Active Allocations</Text>
-                <div className="text-xl font-bold font-mono text-purple-600">{kpis.activeAllocationsCount}</div>
+                <Text className="text-[11px] font-semibold text-ui-fg-muted uppercase">
+                  Active Allocations
+                </Text>
+                <div className="text-xl font-bold font-mono text-purple-600">
+                  {kpis.activeAllocationsCount}
+                </div>
                 <Text className="text-[10px] text-ui-fg-subtle">Committed Shifts</Text>
               </div>
               <div className="p-3 rounded-lg border border-ui-border-base bg-ui-bg-subtle space-y-1">
-                <Text className="text-[11px] font-semibold text-ui-fg-muted uppercase">On-Site Verified</Text>
-                <div className="text-xl font-bold font-mono text-emerald-600">{kpis.onSiteActiveCount}</div>
+                <Text className="text-[11px] font-semibold text-ui-fg-muted uppercase">
+                  On-Site Verified
+                </Text>
+                <div className="text-xl font-bold font-mono text-emerald-600">
+                  {kpis.onSiteActiveCount}
+                </div>
                 <Text className="text-[10px] text-ui-fg-subtle">Geo-Fence Check-in</Text>
               </div>
               <div className="p-3 rounded-lg border border-ui-border-base bg-ui-bg-subtle space-y-1">
-                <Text className="text-[11px] font-semibold text-ui-fg-muted uppercase">422 Guard Enforced</Text>
+                <Text className="text-[11px] font-semibold text-ui-fg-muted uppercase">
+                  422 Guard Enforced
+                </Text>
                 <div className="text-xl font-bold font-mono text-ui-fg-muted">—</div>
-                <Text className="text-[10px] text-ui-fg-subtle">Compliance aggregate not connected</Text>
+                <Text className="text-[10px] text-ui-fg-subtle">
+                  Compliance aggregate not connected
+                </Text>
               </div>
             </div>
           </Container>
@@ -782,7 +797,8 @@ export default function ExecutiveControlTower({
                 Execution receipt service not connected
               </Heading>
               <Text className="text-[11px] text-ui-fg-subtle max-w-sm mx-auto">
-                Executive mutations remain disabled until a production command API returns a persisted receipt and reconciliation state.
+                Executive mutations remain disabled until a production command API returns a
+                persisted receipt and reconciliation state.
               </Text>
             </div>
           </Container>

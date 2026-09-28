@@ -31,9 +31,9 @@ spec:
       name: Document Scanner
       navigationLabel: AI Document Scanner & BYOM
       area: Documents
-      navigationGroup: Financial Operations
+      navigationGroup: Data & Documents
       route: /scanner
-      iconKey: scanner
+      iconKey: scan-line
       readiness: AVAILABLE
       entitlementEligible: true
       trialEligible: true

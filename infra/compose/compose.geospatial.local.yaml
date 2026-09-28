@@ -76,9 +76,7 @@ services:
     environment:
       GEOSPATIAL_API_URL: http://geospatial-api:4720
       GEOSPATIAL_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64: ${GEOSPATIAL_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64:?GEOSPATIAL_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64 is required}
-    depends_on:
-      geospatial-api:
-        condition: service_healthy
+    # WI-OI-083c: the web shell no longer waits for module services; the gateway answers 502/503 while one is down.
 
 networks:
   default:

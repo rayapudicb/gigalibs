@@ -44,7 +44,7 @@ spec:
       area: Finance
       navigationGroup: Financial Operations
       route: /currency
-      iconKey: currency
+      iconKey: coins
       readiness: REVIEW
       entitlementEligible: true
       trialEligible: true

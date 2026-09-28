@@ -1,43 +1,10 @@
-export type LocalModuleUpstream = 'analytics' | 'cmms' | 'connector-hub' | 'geospatial' | 'workforce';
+import {
+  type GeneratedModuleUpstream,
+  generatedModuleUpstreams,
+} from '@/lib/generated/module-upstreams';
 
-interface UpstreamContract {
-  readonly environmentKey:
-    | 'ANALYTICS_API_URL'
-    | 'CMMS_API_URL'
-    | 'CONNECTOR_HUB_API_URL'
-    | 'GEOSPATIAL_API_URL'
-    | 'WORKFORCE_API_URL';
-  readonly port: string;
-  readonly serviceHostname: string;
-}
-
-const CONTRACTS: Readonly<Record<LocalModuleUpstream, UpstreamContract>> = Object.freeze({
-  analytics: Object.freeze({
-    environmentKey: 'ANALYTICS_API_URL',
-    port: '4400',
-    serviceHostname: 'analytics-api',
-  }),
-  cmms: Object.freeze({
-    environmentKey: 'CMMS_API_URL',
-    port: '4200',
-    serviceHostname: 'cmms-api',
-  }),
-  'connector-hub': Object.freeze({
-    environmentKey: 'CONNECTOR_HUB_API_URL',
-    port: '4100',
-    serviceHostname: 'connector-hub-api',
-  }),
-  geospatial: Object.freeze({
-    environmentKey: 'GEOSPATIAL_API_URL',
-    port: '4720',
-    serviceHostname: 'geospatial-api',
-  }),
-  workforce: Object.freeze({
-    environmentKey: 'WORKFORCE_API_URL',
-    port: '4700',
-    serviceHostname: 'workforce-api',
-  }),
-});
+/** A module service the web gateway may reach, declared in `spec.api.upstream` of its manifest (WI-OI-083c). */
+export type LocalModuleUpstream = GeneratedModuleUpstream;
 
 const LOOPBACK_HOSTNAMES = new Set(['localhost', '127.0.0.1', '::1', '[::1]']);
 
@@ -49,7 +16,7 @@ export function localModuleUpstreamOrigin(
   module: LocalModuleUpstream,
   environment: Readonly<Record<string, string | undefined>> = process.env,
 ): string {
-  const contract = CONTRACTS[module];
+  const contract = generatedModuleUpstreams[module];
   const configured = environment[contract.environmentKey]?.trim();
   if (!configured) {
     throw new Error(`Local module runtime requires ${contract.environmentKey}.`);

@@ -31,9 +31,9 @@ spec:
       name: Saga Orchestrator
       navigationLabel: Distributed Saga Orchestrator
       area: Orchestration
-      navigationGroup: Studio & Orchestration
+      navigationGroup: Studio & Build
       route: /saga
-      iconKey: saga
+      iconKey: workflow
       readiness: AVAILABLE
       entitlementEligible: true
       trialEligible: true

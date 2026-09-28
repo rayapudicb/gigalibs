@@ -6,6 +6,7 @@
 import { describe, expect, it } from 'vitest';
 import { requiredCmmsPermission } from '../lib/cmms-proxy';
 import { generatedModuleGateways } from '../lib/generated/module-gateways';
+import { generatedModuleUpstreams } from '../lib/generated/module-upstreams';
 import { requiredWorkforcePermission } from '../lib/workforce-proxy';
 import {
   LEGACY_CMMS_ROUTES,
@@ -162,6 +163,41 @@ describe('manifest-generated gateways equal the hand-written allow-lists', () =>
       }
     }
     expect(allowed).toBeGreaterThanOrEqual(70);
+  });
+
+  it('generates the same upstream table the shell hard-coded before WI-OI-083c', () => {
+    const pick = (entry: { environmentKey: string; port: string; serviceHostname: string }) => ({
+      environmentKey: entry.environmentKey,
+      port: entry.port,
+      serviceHostname: entry.serviceHostname,
+    });
+    expect(
+      Object.fromEntries(
+        Object.entries(generatedModuleUpstreams).map(([key, entry]) => [key, pick(entry)]),
+      ),
+    ).toEqual({
+      analytics: {
+        environmentKey: 'ANALYTICS_API_URL',
+        port: '4400',
+        serviceHostname: 'analytics-api',
+      },
+      cmms: { environmentKey: 'CMMS_API_URL', port: '4200', serviceHostname: 'cmms-api' },
+      'connector-hub': {
+        environmentKey: 'CONNECTOR_HUB_API_URL',
+        port: '4100',
+        serviceHostname: 'connector-hub-api',
+      },
+      geospatial: {
+        environmentKey: 'GEOSPATIAL_API_URL',
+        port: '4720',
+        serviceHostname: 'geospatial-api',
+      },
+      workforce: {
+        environmentKey: 'WORKFORCE_API_URL',
+        port: '4700',
+        serviceHostname: 'workforce-api',
+      },
+    });
   });
 
   it('keeps each module identity the proxies had', () => {

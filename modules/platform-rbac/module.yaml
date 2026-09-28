@@ -56,9 +56,9 @@ spec:
       name: Module Marketplace
       navigationLabel: Module Marketplace & Usage Billing
       area: Commercial
-      navigationGroup: Platform Administration
+      navigationGroup: Platform
       route: /marketplace
-      iconKey: marketplace
+      iconKey: shopping-bag
       readiness: AVAILABLE
       entitlementEligible: true
       trialEligible: true

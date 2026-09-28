@@ -23,6 +23,11 @@ spec:
   api:
     application: apps/api
     port: 4720
+    # How the web gateway reaches this module (WI-OI-083c); generated into the shell by `pnpm modules:catalog`.
+    upstream:
+      key: geospatial
+      serviceHostname: geospatial-api
+      environmentKey: GEOSPATIAL_API_URL
     version: v1
   database:
     engine: postgresql
@@ -35,9 +40,9 @@ spec:
       name: Geospatial Studio
       navigationLabel: Geospatial & OSM Studio
       area: Location
-      navigationGroup: Studio & Orchestration
+      navigationGroup: Workforce & Operations
       route: /maps
-      iconKey: maps
+      iconKey: map-pin
       readiness: REVIEW
       entitlementEligible: true
       trialEligible: true

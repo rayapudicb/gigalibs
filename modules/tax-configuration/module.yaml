@@ -42,7 +42,7 @@ spec:
       area: Finance
       navigationGroup: Financial Operations
       route: /tax
-      iconKey: tax
+      iconKey: building
       readiness: REVIEW
       entitlementEligible: true
       trialEligible: true
