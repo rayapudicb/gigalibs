@@ -1,0 +1,4618 @@
+{
+  "$schema": "http://cyclonedx.org/schema/bom-1.7.schema.json",
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.7",
+  "serialNumber": "urn:uuid:b812b287-4d4a-4c96-87a5-2a747c7e9b38",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-09-24T01:51:03+00:00",
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "manufacturer": {
+            "name": "Aqua Security Software Ltd."
+          },
+          "group": "aquasecurity",
+          "name": "trivy",
+          "version": "0.74.0"
+        }
+      ]
+    },
+    "component": {
+      "bom-ref": "pkg:oci/control-plane-migrations@sha256:f59eb319beb1fbee31b63631b29f7077e538e10f11a275741d66e6d84e61ae18?arch=arm64&repository_url=index.docker.io%2Fgigalibs%2Fcontrol-plane-migrations",
+      "type": "container",
+      "name": "gigalibs/control-plane-migrations:5abfa667bb10-7185c069c640",
+      "purl": "pkg:oci/control-plane-migrations@sha256:f59eb319beb1fbee31b63631b29f7077e538e10f11a275741d66e6d84e61ae18?arch=arm64&repository_url=index.docker.io%2Fgigalibs%2Fcontrol-plane-migrations",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:DiffID",
+          "value": "sha256:187cfc6d1e3e8a40a5e64653bcd3239c140807dcf1c09e48021178705a5a6139"
+        },
+        {
+          "name": "aquasecurity:trivy:DiffID",
+          "value": "sha256:275a30dd8ce958b21daa9ad962c6fbc09f98306ee2f486b65c9075dc257b1412"
+        },
+        {
+          "name": "aquasecurity:trivy:DiffID",
+          "value": "sha256:30884b21b6a1362fbcdb60743280a138148b6d0ac50a3f8ee3e9f213b371c9e7"
+        },
+        {
+          "name": "aquasecurity:trivy:DiffID",
+          "value": "sha256:323c2be748e4417f7ab7b05b33d6c1a52df0788e779143555109ddcd5325c76c"
+        },
+        {
+          "name": "aquasecurity:trivy:DiffID",
+          "value": "sha256:4cde6b0bb6f50a5f255eef7b2a42162c661cf776b803225dcac9a659e396bb6b"
+        },
+        {
+          "name": "aquasecurity:trivy:DiffID",
+          "value": "sha256:4d049f83d9cf21d1f5cc0e11deaf36df02790d0e60c1a3829538fb4b61685368"
+        },
+        {
+          "name": "aquasecurity:trivy:DiffID",
+          "value": "sha256:50a5575df19e16694e9b7bfca79ef13cfce85faab4b0585ff197a078a952b007"
+        },
+        {
+          "name": "aquasecurity:trivy:DiffID",
+          "value": "sha256:60c814f208fb51ccfcf4ffdc48b83b9dbae0626798f27a4d85aab295669deca7"
+        },
+        {
+          "name": "aquasecurity:trivy:DiffID",
+          "value": "sha256:621c35e751a51a9a9dc3e80aa0b7fe8be2a93402ea6ccd307d30852cd7776cda"
+        },
+        {
+          "name": "aquasecurity:trivy:DiffID",
+          "value": "sha256:6f1cdceb6a3146f0ccb986521156bef8a422cdbb0863396f7f751f575ba308f4"
+        },
+        {
+          "name": "aquasecurity:trivy:DiffID",
+          "value": "sha256:7578331450f7cd6e1f6f28caf2ce9af93ea935a049132bb63ed523dcbda068e4"
+        },
+        {
+          "name": "aquasecurity:trivy:DiffID",
+          "value": "sha256:763a77745f27b86cf26b97887b6842d83720e63b1c48848c0ba9ee54e351d63a"
+        },
+        {
+          "name": "aquasecurity:trivy:DiffID",
+          "value": "sha256:7b57942929394e731b49e8f1863a4da2cbd1b9fda48d9f1e75a0a28b2d89d01a"
+        },
+        {
+          "name": "aquasecurity:trivy:DiffID",
+          "value": "sha256:91213e6dc2fda431a0de4541602a933c7a48206a0bf487217fa681260fccdc23"
+        },
+        {
+          "name": "aquasecurity:trivy:DiffID",
+          "value": "sha256:98e60ab107344e21eafbefbeb2b684499275c59e3e5ea7326132aa5866fcd8ab"
+        },
+        {
+          "name": "aquasecurity:trivy:DiffID",
+          "value": "sha256:ad51d0769d16ba578106a177987dfe3d2e02c1668c852b795b2f6b024068242a"
+        },
+        {
+          "name": "aquasecurity:trivy:DiffID",
+          "value": "sha256:af5aa97ebe6ce1604747ec1e21af7136ded391bcabe4acef882e718a87c86bcc"
+        },
+        {
+          "name": "aquasecurity:trivy:DiffID",
+          "value": "sha256:bacd591b65851de851b2551f47f58c5162d79d23193508925276863aae511b78"
+        },
+        {
+          "name": "aquasecurity:trivy:DiffID",
+          "value": "sha256:bd3cdfae1d3fdd83a2231d608969b38b82349777c2fff9a7c12d54f8ac5c9b38"
+        },
+        {
+          "name": "aquasecurity:trivy:DiffID",
+          "value": "sha256:d5653c936aa120141ef21c40fbded7622368c620112e049806ef2fe7a0ee7cab"
+        },
+        {
+          "name": "aquasecurity:trivy:DiffID",
+          "value": "sha256:e842bc95a0a8664498b7881e537b5929e419d590f5a9954fb7f81c73c20fc6c7"
+        },
+        {
+          "name": "aquasecurity:trivy:DiffID",
+          "value": "sha256:f0d0eff4c2312a7bd6e21797bdfea5eb35f60e76b555ce2b22794424af2cad36"
+        },
+        {
+          "name": "aquasecurity:trivy:DiffID",
+          "value": "sha256:f2392a9484bf6b18f06beaf705b994e31dbb2716c99cf7d03c9c495cd107f364"
+        },
+        {
+          "name": "aquasecurity:trivy:DiffID",
+          "value": "sha256:fcb0c313318aac64dde0e0574b4df3394902929eb62d43e8b6c47ec4562f170d"
+        },
+        {
+          "name": "aquasecurity:trivy:ImageID",
+          "value": "sha256:f59eb319beb1fbee31b63631b29f7077e538e10f11a275741d66e6d84e61ae18"
+        },
+        {
+          "name": "aquasecurity:trivy:Labels:com.gigalibs.component",
+          "value": "migrations"
+        },
+        {
+          "name": "aquasecurity:trivy:Labels:com.gigalibs.profile-key",
+          "value": "configuration-local-development-v1"
+        },
+        {
+          "name": "aquasecurity:trivy:Labels:com.gigalibs.source-state-sha256",
+          "value": "7185c069c64026c17fb58ed02636b3304ab48e56711a92d150f0969034517fc5"
+        },
+        {
+          "name": "aquasecurity:trivy:Labels:org.opencontainers.image.revision",
+          "value": "5abfa667bb105143ba8c00bc07b1fb4e6d9ac7d6"
+        },
+        {
+          "name": "aquasecurity:trivy:Labels:org.opencontainers.image.title",
+          "value": "GigaLibs control-plane migrations"
+        },
+        {
+          "name": "aquasecurity:trivy:Reference",
+          "value": "gigalibs/control-plane-migrations:5abfa667bb10-7185c069c640"
+        },
+        {
+          "name": "aquasecurity:trivy:RepoDigest",
+          "value": "gigalibs/control-plane-migrations@sha256:f59eb319beb1fbee31b63631b29f7077e538e10f11a275741d66e6d84e61ae18"
+        },
+        {
+          "name": "aquasecurity:trivy:RepoTag",
+          "value": "gigalibs/control-plane-migrations:5abfa667bb10-7185c069c640"
+        },
+        {
+          "name": "aquasecurity:trivy:SchemaVersion",
+          "value": "2"
+        },
+        {
+          "name": "aquasecurity:trivy:Size",
+          "value": "288458752"
+        }
+      ]
+    }
+  },
+  "components": [
+    {
+      "bom-ref": "6cea2414-31bd-48a3-a310-496684009e68",
+      "type": "operating-system",
+      "name": "debian",
+      "version": "13.7",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:Class",
+          "value": "os-pkgs"
+        },
+        {
+          "name": "aquasecurity:trivy:Type",
+          "value": "debian"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:deb/debian/base-files@13.8%2Bdeb13u7?arch=arm64&distro=debian-13.7",
+      "type": "library",
+      "supplier": {
+        "name": "Santiago Vila <sanvila@debian.org>"
+      },
+      "name": "base-files",
+      "version": "13.8+deb13u7",
+      "licenses": [
+        {
+          "license": {
+            "id": "GPL-2.0-or-later"
+          }
+        },
+        {
+          "license": {
+            "id": "GPL-2.0-only"
+          }
+        },
+        {
+          "license": {
+            "name": "verbatim"
+          }
+        }
+      ],
+      "purl": "pkg:deb/debian/base-files@13.8%2Bdeb13u7?arch=arm64&distro=debian-13.7",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:LayerDiffID",
+          "value": "sha256:e842bc95a0a8664498b7881e537b5929e419d590f5a9954fb7f81c73c20fc6c7"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDigest",
+          "value": "sha256:401d177fd1e8a1e0d7a48139788d026e9a2e919ccb122bedd110ac7cf351f53e"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "base-files@13.8+deb13u7"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "debian"
+        },
+        {
+          "name": "aquasecurity:trivy:SrcName",
+          "value": "base-files"
+        },
+        {
+          "name": "aquasecurity:trivy:SrcVersion",
+          "value": "13.8+deb13u7"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:deb/debian/ca-certificates@20250419?arch=all&distro=debian-13.7",
+      "type": "library",
+      "supplier": {
+        "name": "Julien Cristau <jcristau@debian.org>"
+      },
+      "name": "ca-certificates",
+      "version": "20250419",
+      "licenses": [
+        {
+          "license": {
+            "id": "GPL-2.0-or-later"
+          }
+        },
+        {
+          "license": {
+            "id": "GPL-2.0-only"
+          }
+        },
+        {
+          "license": {
+            "id": "MPL-2.0"
+          }
+        }
+      ],
+      "purl": "pkg:deb/debian/ca-certificates@20250419?arch=all&distro=debian-13.7",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:LayerDiffID",
+          "value": "sha256:f2392a9484bf6b18f06beaf705b994e31dbb2716c99cf7d03c9c495cd107f364"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDigest",
+          "value": "sha256:6ed1ef0cb1159b9c93a24ceb88b987c6b3a8adff7160940c7c5e6bfc001f1766"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "ca-certificates@20250419"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "debian"
+        },
+        {
+          "name": "aquasecurity:trivy:SrcName",
+          "value": "ca-certificates"
+        },
+        {
+          "name": "aquasecurity:trivy:SrcVersion",
+          "value": "20250419"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:deb/debian/gcc-14-base@14.2.0-19?arch=arm64&distro=debian-13.7",
+      "type": "library",
+      "supplier": {
+        "name": "Debian GCC Maintainers <debian-gcc@lists.debian.org>"
+      },
+      "name": "gcc-14-base",
+      "version": "14.2.0-19",
+      "licenses": [
+        {
+          "license": {
+            "id": "GPL-2.0-or-later"
+          }
+        },
+        {
+          "license": {
+            "id": "GPL-3.0-only"
+          }
+        },
+        {
+          "license": {
+            "id": "GFDL-1.2-only"
+          }
+        },
+        {
+          "license": {
+            "id": "Artistic-2.0"
+          }
+        },
+        {
+          "license": {
+            "id": "LGPL-2.0-or-later"
+          }
+        }
+      ],
+      "purl": "pkg:deb/debian/gcc-14-base@14.2.0-19?arch=arm64&distro=debian-13.7",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:LayerDiffID",
+          "value": "sha256:30884b21b6a1362fbcdb60743280a138148b6d0ac50a3f8ee3e9f213b371c9e7"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDigest",
+          "value": "sha256:278aecde295e501a4fd778a510306c47ff8862395c98a7bbb9f2cc41d2c89e64"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "gcc-14-base@14.2.0-19"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "debian"
+        },
+        {
+          "name": "aquasecurity:trivy:SrcName",
+          "value": "gcc-14"
+        },
+        {
+          "name": "aquasecurity:trivy:SrcRelease",
+          "value": "19"
+        },
+        {
+          "name": "aquasecurity:trivy:SrcVersion",
+          "value": "14.2.0"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:deb/debian/libc6@2.41-12%2Bdeb13u4?arch=arm64&distro=debian-13.7",
+      "type": "library",
+      "supplier": {
+        "name": "GNU Libc Maintainers <debian-glibc@lists.debian.org>"
+      },
+      "name": "libc6",
+      "version": "2.41-12+deb13u4",
+      "licenses": [
+        {
+          "license": {
+            "id": "LGPL-2.1-or-later"
+          }
+        },
+        {
+          "license": {
+            "id": "LGPL-2.0-or-later"
+          }
+        },
+        {
+          "license": {
+            "name": "LGPL-2.1-or-later WITH link-exception"
+          }
+        },
+        {
+          "license": {
+            "id": "LGPL-3.0-or-later"
+          }
+        },
+        {
+          "license": {
+            "id": "GPL-2.0-or-later"
+          }
+        },
+        {
+          "license": {
+            "name": "GPL-2.0-or-later WITH link-exception"
+          }
+        },
+        {
+          "license": {
+            "id": "GPL-2.0-only"
+          }
+        },
+        {
+          "license": {
+            "id": "GPL-3.0-or-later"
+          }
+        },
+        {
+          "license": {
+            "id": "FSFAP"
+          }
+        },
+        {
+          "license": {
+            "name": "Carnegie"
+          }
+        },
+        {
+          "license": {
+            "name": "Inner-Net"
+          }
+        },
+        {
+          "license": {
+            "name": "MIT-like-Lord"
+          }
+        },
+        {
+          "license": {
+            "name": "BSD-like-Spencer"
+          }
+        },
+        {
+          "license": {
+            "name": "PCRE"
+          }
+        },
+        {
+          "license": {
+            "name": "BSD-3-clause-Carnegie"
+          }
+        },
+        {
+          "license": {
+            "id": "Unicode-DFS-2016"
+          }
+        },
+        {
+          "license": {
+            "id": "BSL-1.0"
+          }
+        },
+        {
+          "license": {
+            "id": "SunPro"
+          }
+        },
+        {
+          "license": {
+            "name": "CORE-MATH"
+          }
+        },
+        {
+          "license": {
+            "name": "BSD-3-clause-Berkeley"
+          }
+        },
+        {
+          "license": {
+            "name": "BSD-3-clause-WIDE"
+          }
+        },
+        {
+          "license": {
+            "id": "BSD-2-Clause"
+          }
+        },
+        {
+          "license": {
+            "name": "BSD-3-clause-Oracle"
+          }
+        },
+        {
+          "license": {
+            "name": "DEC"
+          }
+        },
+        {
+          "license": {
+            "name": "IBM"
+          }
+        },
+        {
+          "license": {
+            "id": "ISC"
+          }
+        },
+        {
+          "license": {
+            "name": "Univ-Coimbra"
+          }
+        },
+        {
+          "license": {
+            "name": "public-domain"
+          }
+        },
+        {
+          "license": {
+            "id": "GPL-3.0-only"
+          }
+        },
+        {
+          "license": {
+            "id": "LGPL-2.0-only"
+          }
+        },
+        {
+          "license": {
+            "id": "LGPL-2.1-only"
+          }
+        },
+        {
+          "license": {
+            "id": "LGPL-3.0-only"
+          }
+        }
+      ],
+      "purl": "pkg:deb/debian/libc6@2.41-12%2Bdeb13u4?arch=arm64&distro=debian-13.7",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:LayerDiffID",
+          "value": "sha256:50a5575df19e16694e9b7bfca79ef13cfce85faab4b0585ff197a078a952b007"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDigest",
+          "value": "sha256:2ee8cec66b403fe9cd8ef6b2bf1542a9e902028b82bddc32b4e2e2c22fa8defb"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "libc6@2.41-12+deb13u4"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "debian"
+        },
+        {
+          "name": "aquasecurity:trivy:SrcName",
+          "value": "glibc"
+        },
+        {
+          "name": "aquasecurity:trivy:SrcRelease",
+          "value": "12+deb13u4"
+        },
+        {
+          "name": "aquasecurity:trivy:SrcVersion",
+          "value": "2.41"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:deb/debian/libgcc-s1@14.2.0-19?arch=arm64&distro=debian-13.7",
+      "type": "library",
+      "supplier": {
+        "name": "Debian GCC Maintainers <debian-gcc@lists.debian.org>"
+      },
+      "name": "libgcc-s1",
+      "version": "14.2.0-19",
+      "purl": "pkg:deb/debian/libgcc-s1@14.2.0-19?arch=arm64&distro=debian-13.7",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:LayerDiffID",
+          "value": "sha256:fcb0c313318aac64dde0e0574b4df3394902929eb62d43e8b6c47ec4562f170d"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDigest",
+          "value": "sha256:ff43311d121db6d09786fed4a9233aadcf961479170e9da96f21ee71a6fce1dd"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "libgcc-s1@14.2.0-19"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "debian"
+        },
+        {
+          "name": "aquasecurity:trivy:SrcName",
+          "value": "gcc-14"
+        },
+        {
+          "name": "aquasecurity:trivy:SrcRelease",
+          "value": "19"
+        },
+        {
+          "name": "aquasecurity:trivy:SrcVersion",
+          "value": "14.2.0"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:deb/debian/libgomp1@14.2.0-19?arch=arm64&distro=debian-13.7",
+      "type": "library",
+      "supplier": {
+        "name": "Debian GCC Maintainers <debian-gcc@lists.debian.org>"
+      },
+      "name": "libgomp1",
+      "version": "14.2.0-19",
+      "purl": "pkg:deb/debian/libgomp1@14.2.0-19?arch=arm64&distro=debian-13.7",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:LayerDiffID",
+          "value": "sha256:7578331450f7cd6e1f6f28caf2ce9af93ea935a049132bb63ed523dcbda068e4"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDigest",
+          "value": "sha256:77d3479ca1b97dd6df1f9324298c7813520a9b09a961564ba9196f648803ee5a"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "libgomp1@14.2.0-19"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "debian"
+        },
+        {
+          "name": "aquasecurity:trivy:SrcName",
+          "value": "gcc-14"
+        },
+        {
+          "name": "aquasecurity:trivy:SrcRelease",
+          "value": "19"
+        },
+        {
+          "name": "aquasecurity:trivy:SrcVersion",
+          "value": "14.2.0"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:deb/debian/libssl3t64@3.5.7-1~deb13u2?arch=arm64&distro=debian-13.7",
+      "type": "library",
+      "supplier": {
+        "name": "Debian OpenSSL Team <pkg-openssl-devel@alioth-lists.debian.net>"
+      },
+      "name": "libssl3t64",
+      "version": "3.5.7-1~deb13u2",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        },
+        {
+          "license": {
+            "id": "Artistic-2.0"
+          }
+        },
+        {
+          "license": {
+            "id": "GPL-1.0-or-later"
+          }
+        },
+        {
+          "license": {
+            "id": "GPL-1.0-only"
+          }
+        }
+      ],
+      "purl": "pkg:deb/debian/libssl3t64@3.5.7-1~deb13u2?arch=arm64&distro=debian-13.7",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:LayerDiffID",
+          "value": "sha256:d5653c936aa120141ef21c40fbded7622368c620112e049806ef2fe7a0ee7cab"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDigest",
+          "value": "sha256:d858c35c6c86469ec02d00cf6788b2ca345955df22b2cb081f40212857ae7fd4"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "libssl3t64@3.5.7-1~deb13u2"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "debian"
+        },
+        {
+          "name": "aquasecurity:trivy:SrcName",
+          "value": "openssl"
+        },
+        {
+          "name": "aquasecurity:trivy:SrcRelease",
+          "value": "1~deb13u2"
+        },
+        {
+          "name": "aquasecurity:trivy:SrcVersion",
+          "value": "3.5.7"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:deb/debian/libstdc%2B%2B6@14.2.0-19?arch=arm64&distro=debian-13.7",
+      "type": "library",
+      "supplier": {
+        "name": "Debian GCC Maintainers <debian-gcc@lists.debian.org>"
+      },
+      "name": "libstdc++6",
+      "version": "14.2.0-19",
+      "purl": "pkg:deb/debian/libstdc%2B%2B6@14.2.0-19?arch=arm64&distro=debian-13.7",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:LayerDiffID",
+          "value": "sha256:323c2be748e4417f7ab7b05b33d6c1a52df0788e779143555109ddcd5325c76c"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDigest",
+          "value": "sha256:35d8e5f294cf94c1f251ca338d7558e62e820d945ff4603833cdfaed4abc7ccf"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "libstdc++6@14.2.0-19"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "debian"
+        },
+        {
+          "name": "aquasecurity:trivy:SrcName",
+          "value": "gcc-14"
+        },
+        {
+          "name": "aquasecurity:trivy:SrcRelease",
+          "value": "19"
+        },
+        {
+          "name": "aquasecurity:trivy:SrcVersion",
+          "value": "14.2.0"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:deb/debian/libzstd1@1.5.7%2Bdfsg-1?arch=arm64&distro=debian-13.7",
+      "type": "library",
+      "supplier": {
+        "name": "RPM packaging team <team+pkg-rpm@tracker.debian.org>"
+      },
+      "name": "libzstd1",
+      "version": "1.5.7+dfsg-1",
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        },
+        {
+          "license": {
+            "id": "GPL-2.0-only"
+          }
+        },
+        {
+          "license": {
+            "id": "Zlib"
+          }
+        },
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:deb/debian/libzstd1@1.5.7%2Bdfsg-1?arch=arm64&distro=debian-13.7",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:LayerDiffID",
+          "value": "sha256:91213e6dc2fda431a0de4541602a933c7a48206a0bf487217fa681260fccdc23"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDigest",
+          "value": "sha256:52b2cf548ae5e56fa607ae06498752a8ed05fb4ce56128e90b2380945552c54b"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "libzstd1@1.5.7+dfsg-1"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "debian"
+        },
+        {
+          "name": "aquasecurity:trivy:SrcName",
+          "value": "libzstd"
+        },
+        {
+          "name": "aquasecurity:trivy:SrcRelease",
+          "value": "1"
+        },
+        {
+          "name": "aquasecurity:trivy:SrcVersion",
+          "value": "1.5.7+dfsg"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:deb/debian/media-types@13.0.0?arch=all&distro=debian-13.7",
+      "type": "library",
+      "supplier": {
+        "name": "Mime-Support Packagers <team+debian-mimesupport-packagers@tracker.debian.org>"
+      },
+      "name": "media-types",
+      "version": "13.0.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "ad-hoc"
+          }
+        }
+      ],
+      "purl": "pkg:deb/debian/media-types@13.0.0?arch=all&distro=debian-13.7",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:LayerDiffID",
+          "value": "sha256:275a30dd8ce958b21daa9ad962c6fbc09f98306ee2f486b65c9075dc257b1412"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDigest",
+          "value": "sha256:d6b1b89eccacc15c2420b2776d72c1dae334a00805ed9af54bf2f71e4d536f28"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "media-types@13.0.0"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "debian"
+        },
+        {
+          "name": "aquasecurity:trivy:SrcName",
+          "value": "media-types"
+        },
+        {
+          "name": "aquasecurity:trivy:SrcVersion",
+          "value": "13.0.0"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:deb/debian/netbase@6.5?arch=all&distro=debian-13.7",
+      "type": "library",
+      "supplier": {
+        "name": "Marco d'Itri <md@linux.it>"
+      },
+      "name": "netbase",
+      "version": "6.5",
+      "licenses": [
+        {
+          "license": {
+            "id": "GPL-2.0-only"
+          }
+        }
+      ],
+      "purl": "pkg:deb/debian/netbase@6.5?arch=all&distro=debian-13.7",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:LayerDiffID",
+          "value": "sha256:621c35e751a51a9a9dc3e80aa0b7fe8be2a93402ea6ccd307d30852cd7776cda"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDigest",
+          "value": "sha256:c172f21841dff4c8cf45cde46589c1c2616cefe7e819965e92e6d3475c428aa0"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "netbase@6.5"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "debian"
+        },
+        {
+          "name": "aquasecurity:trivy:SrcName",
+          "value": "netbase"
+        },
+        {
+          "name": "aquasecurity:trivy:SrcVersion",
+          "value": "6.5"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:deb/debian/tzdata-legacy@2026c-0%2Bdeb13u1?arch=all&distro=debian-13.7",
+      "type": "library",
+      "supplier": {
+        "name": "GNU Libc Maintainers <debian-glibc@lists.debian.org>"
+      },
+      "name": "tzdata-legacy",
+      "version": "2026c-0+deb13u1",
+      "licenses": [
+        {
+          "license": {
+            "name": "public-domain"
+          }
+        }
+      ],
+      "purl": "pkg:deb/debian/tzdata-legacy@2026c-0%2Bdeb13u1?arch=all&distro=debian-13.7",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:LayerDiffID",
+          "value": "sha256:f0d0eff4c2312a7bd6e21797bdfea5eb35f60e76b555ce2b22794424af2cad36"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDigest",
+          "value": "sha256:f6069939f718601b38d25ec5ed5631ed047e4da24acec2e252f8f29d251be718"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "tzdata-legacy@2026c-0+deb13u1"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "debian"
+        },
+        {
+          "name": "aquasecurity:trivy:SrcName",
+          "value": "tzdata"
+        },
+        {
+          "name": "aquasecurity:trivy:SrcRelease",
+          "value": "0+deb13u1"
+        },
+        {
+          "name": "aquasecurity:trivy:SrcVersion",
+          "value": "2026c"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:deb/debian/tzdata@2026c-0%2Bdeb13u1?arch=all&distro=debian-13.7",
+      "type": "library",
+      "supplier": {
+        "name": "GNU Libc Maintainers <debian-glibc@lists.debian.org>"
+      },
+      "name": "tzdata",
+      "version": "2026c-0+deb13u1",
+      "licenses": [
+        {
+          "license": {
+            "name": "public-domain"
+          }
+        }
+      ],
+      "purl": "pkg:deb/debian/tzdata@2026c-0%2Bdeb13u1?arch=all&distro=debian-13.7",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:LayerDiffID",
+          "value": "sha256:763a77745f27b86cf26b97887b6842d83720e63b1c48848c0ba9ee54e351d63a"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDigest",
+          "value": "sha256:218cf840d0d95a86231eb9d33d26ac8a520a4299c6096cb70a0c2fb2a87c9e0a"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "tzdata@2026c-0+deb13u1"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "debian"
+        },
+        {
+          "name": "aquasecurity:trivy:SrcName",
+          "value": "tzdata"
+        },
+        {
+          "name": "aquasecurity:trivy:SrcRelease",
+          "value": "0+deb13u1"
+        },
+        {
+          "name": "aquasecurity:trivy:SrcVersion",
+          "value": "2026c"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:deb/debian/zlib1g@1.3.dfsg%2Breally1.3.1-1%2Bb1?arch=arm64&distro=debian-13.7&epoch=1",
+      "type": "library",
+      "supplier": {
+        "name": "Mark Brown <broonie@debian.org>"
+      },
+      "name": "zlib1g",
+      "version": "1:1.3.dfsg+really1.3.1-1+b1",
+      "licenses": [
+        {
+          "license": {
+            "id": "Zlib"
+          }
+        }
+      ],
+      "purl": "pkg:deb/debian/zlib1g@1.3.dfsg%2Breally1.3.1-1%2Bb1?arch=arm64&distro=debian-13.7&epoch=1",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:LayerDiffID",
+          "value": "sha256:7b57942929394e731b49e8f1863a4da2cbd1b9fda48d9f1e75a0a28b2d89d01a"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDigest",
+          "value": "sha256:8072b5a0f7957662b5097bbaec05c482fb580118820d83849421d879854b12be"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "zlib1g@1:1.3.dfsg+really1.3.1-1+b1"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "debian"
+        },
+        {
+          "name": "aquasecurity:trivy:SrcEpoch",
+          "value": "1"
+        },
+        {
+          "name": "aquasecurity:trivy:SrcName",
+          "value": "zlib"
+        },
+        {
+          "name": "aquasecurity:trivy:SrcRelease",
+          "value": "1"
+        },
+        {
+          "name": "aquasecurity:trivy:SrcVersion",
+          "value": "1.3.dfsg+really1.3.1"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:npm/%40gigalibs/db-migrations-runtime@0.0.1",
+      "type": "library",
+      "group": "@gigalibs",
+      "name": "db-migrations-runtime",
+      "version": "0.0.1",
+      "hashes": [
+        {
+          "alg": "SHA-1",
+          "content": "90ce6f50ff6b8ae1e35e418daebfabad257be4c8"
+        }
+      ],
+      "purl": "pkg:npm/%40gigalibs/db-migrations-runtime@0.0.1",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:FilePath",
+          "value": "app/package.json"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDiffID",
+          "value": "sha256:60c814f208fb51ccfcf4ffdc48b83b9dbae0626798f27a4d85aab295669deca7"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDigest",
+          "value": "sha256:05cd9aa5874eb28e84eb2409b9a7087dd3c68dc11ec002be29b43e410d54562d"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "@gigalibs/db-migrations-runtime@0.0.1"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "node-pkg"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:npm/%40prisma/client@6.19.3",
+      "type": "library",
+      "group": "@prisma",
+      "name": "client",
+      "version": "6.19.3",
+      "hashes": [
+        {
+          "alg": "SHA-1",
+          "content": "9128d83921dac75c73e69bf4fb7a3eca17755a47"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40prisma/client@6.19.3",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:FilePath",
+          "value": "app/node_modules/.pnpm/prisma@6.19.3_typescript@5.9.3/node_modules/prisma/prisma-client/package.json"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDiffID",
+          "value": "sha256:60c814f208fb51ccfcf4ffdc48b83b9dbae0626798f27a4d85aab295669deca7"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDigest",
+          "value": "sha256:05cd9aa5874eb28e84eb2409b9a7087dd3c68dc11ec002be29b43e410d54562d"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "@prisma/client@6.19.3"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "node-pkg"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:npm/%40prisma/config@6.19.3",
+      "type": "library",
+      "group": "@prisma",
+      "name": "config",
+      "version": "6.19.3",
+      "hashes": [
+        {
+          "alg": "SHA-1",
+          "content": "bf49eddf5b18fbb3037f4b98afd26d06a4303053"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40prisma/config@6.19.3",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:FilePath",
+          "value": "app/node_modules/.pnpm/@prisma+config@6.19.3/node_modules/@prisma/config/package.json"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDiffID",
+          "value": "sha256:60c814f208fb51ccfcf4ffdc48b83b9dbae0626798f27a4d85aab295669deca7"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDigest",
+          "value": "sha256:05cd9aa5874eb28e84eb2409b9a7087dd3c68dc11ec002be29b43e410d54562d"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "@prisma/config@6.19.3"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "node-pkg"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:npm/%40prisma/debug@6.19.3",
+      "type": "library",
+      "group": "@prisma",
+      "name": "debug",
+      "version": "6.19.3",
+      "hashes": [
+        {
+          "alg": "SHA-1",
+          "content": "0c07ef767a5680172e875a34d903e70c7b0fb2fa"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40prisma/debug@6.19.3",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:FilePath",
+          "value": "app/node_modules/.pnpm/@prisma+debug@6.19.3/node_modules/@prisma/debug/package.json"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDiffID",
+          "value": "sha256:60c814f208fb51ccfcf4ffdc48b83b9dbae0626798f27a4d85aab295669deca7"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDigest",
+          "value": "sha256:05cd9aa5874eb28e84eb2409b9a7087dd3c68dc11ec002be29b43e410d54562d"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "@prisma/debug@6.19.3"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "node-pkg"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:npm/%40prisma/engines-version@7.1.1-3.c2990dca591cba766e3b7ef5d9e8a84796e47ab7",
+      "type": "library",
+      "group": "@prisma",
+      "name": "engines-version",
+      "version": "7.1.1-3.c2990dca591cba766e3b7ef5d9e8a84796e47ab7",
+      "hashes": [
+        {
+          "alg": "SHA-1",
+          "content": "d64b80a50306e55f079815954b05a58d093fb459"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40prisma/engines-version@7.1.1-3.c2990dca591cba766e3b7ef5d9e8a84796e47ab7",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:FilePath",
+          "value": "app/node_modules/.pnpm/@prisma+engines-version@7.1.1-3.c2990dca591cba766e3b7ef5d9e8a84796e47ab7/node_modules/@prisma/engines-version/package.json"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDiffID",
+          "value": "sha256:60c814f208fb51ccfcf4ffdc48b83b9dbae0626798f27a4d85aab295669deca7"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDigest",
+          "value": "sha256:05cd9aa5874eb28e84eb2409b9a7087dd3c68dc11ec002be29b43e410d54562d"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "@prisma/engines-version@7.1.1-3.c2990dca591cba766e3b7ef5d9e8a84796e47ab7"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "node-pkg"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:npm/%40prisma/engines@6.19.3",
+      "type": "library",
+      "group": "@prisma",
+      "name": "engines",
+      "version": "6.19.3",
+      "hashes": [
+        {
+          "alg": "SHA-1",
+          "content": "ddfb4fc80b7dd828e992ba5f09ced3c90f6d7d8a"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40prisma/engines@6.19.3",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:FilePath",
+          "value": "app/node_modules/.pnpm/@prisma+engines@6.19.3/node_modules/@prisma/engines/package.json"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDiffID",
+          "value": "sha256:60c814f208fb51ccfcf4ffdc48b83b9dbae0626798f27a4d85aab295669deca7"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDigest",
+          "value": "sha256:05cd9aa5874eb28e84eb2409b9a7087dd3c68dc11ec002be29b43e410d54562d"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "@prisma/engines@6.19.3"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "node-pkg"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:npm/%40prisma/fetch-engine@6.19.3",
+      "type": "library",
+      "group": "@prisma",
+      "name": "fetch-engine",
+      "version": "6.19.3",
+      "hashes": [
+        {
+          "alg": "SHA-1",
+          "content": "7f761afe2883b59994bef2a4aed1654389de8c7e"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40prisma/fetch-engine@6.19.3",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:FilePath",
+          "value": "app/node_modules/.pnpm/@prisma+fetch-engine@6.19.3/node_modules/@prisma/fetch-engine/package.json"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDiffID",
+          "value": "sha256:60c814f208fb51ccfcf4ffdc48b83b9dbae0626798f27a4d85aab295669deca7"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDigest",
+          "value": "sha256:05cd9aa5874eb28e84eb2409b9a7087dd3c68dc11ec002be29b43e410d54562d"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "@prisma/fetch-engine@6.19.3"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "node-pkg"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:npm/%40prisma/get-platform@6.19.3",
+      "type": "library",
+      "group": "@prisma",
+      "name": "get-platform",
+      "version": "6.19.3",
+      "hashes": [
+        {
+          "alg": "SHA-1",
+          "content": "bcfc1dd0eac274953c5b80d973512ebb696177dc"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40prisma/get-platform@6.19.3",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:FilePath",
+          "value": "app/node_modules/.pnpm/@prisma+get-platform@6.19.3/node_modules/@prisma/get-platform/package.json"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDiffID",
+          "value": "sha256:60c814f208fb51ccfcf4ffdc48b83b9dbae0626798f27a4d85aab295669deca7"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDigest",
+          "value": "sha256:05cd9aa5874eb28e84eb2409b9a7087dd3c68dc11ec002be29b43e410d54562d"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "@prisma/get-platform@6.19.3"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "node-pkg"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:npm/%40standard-schema/spec@1.1.0",
+      "type": "library",
+      "group": "@standard-schema",
+      "name": "spec",
+      "version": "1.1.0",
+      "hashes": [
+        {
+          "alg": "SHA-1",
+          "content": "ef122360f134701af5258c890c303eb6f487f92f"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40standard-schema/spec@1.1.0",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:FilePath",
+          "value": "app/node_modules/.pnpm/@standard-schema+spec@1.1.0/node_modules/@standard-schema/spec/package.json"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDiffID",
+          "value": "sha256:60c814f208fb51ccfcf4ffdc48b83b9dbae0626798f27a4d85aab295669deca7"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDigest",
+          "value": "sha256:05cd9aa5874eb28e84eb2409b9a7087dd3c68dc11ec002be29b43e410d54562d"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "@standard-schema/spec@1.1.0"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "node-pkg"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:npm/c12@3.1.0",
+      "type": "library",
+      "name": "c12",
+      "version": "3.1.0",
+      "hashes": [
+        {
+          "alg": "SHA-1",
+          "content": "6117e0b9bb9715ada2df3e3672802bdf6cb770b6"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:npm/c12@3.1.0",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:FilePath",
+          "value": "app/node_modules/.pnpm/c12@3.1.0/node_modules/c12/package.json"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDiffID",
+          "value": "sha256:60c814f208fb51ccfcf4ffdc48b83b9dbae0626798f27a4d85aab295669deca7"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDigest",
+          "value": "sha256:05cd9aa5874eb28e84eb2409b9a7087dd3c68dc11ec002be29b43e410d54562d"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "c12@3.1.0"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "node-pkg"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:npm/chokidar@4.0.3",
+      "type": "library",
+      "name": "chokidar",
+      "version": "4.0.3",
+      "hashes": [
+        {
+          "alg": "SHA-1",
+          "content": "7107e07dd149bcfb6dbf8b3dfffeaa9352b8a65b"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:npm/chokidar@4.0.3",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:FilePath",
+          "value": "app/node_modules/.pnpm/chokidar@4.0.3/node_modules/chokidar/package.json"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDiffID",
+          "value": "sha256:60c814f208fb51ccfcf4ffdc48b83b9dbae0626798f27a4d85aab295669deca7"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDigest",
+          "value": "sha256:05cd9aa5874eb28e84eb2409b9a7087dd3c68dc11ec002be29b43e410d54562d"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "chokidar@4.0.3"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "node-pkg"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:npm/citty@0.1.6",
+      "type": "library",
+      "name": "citty",
+      "version": "0.1.6",
+      "hashes": [
+        {
+          "alg": "SHA-1",
+          "content": "fb9d6c722908ef3b3bf30155945bf85453394f80"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:npm/citty@0.1.6",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:FilePath",
+          "value": "app/node_modules/.pnpm/citty@0.1.6/node_modules/citty/package.json"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDiffID",
+          "value": "sha256:60c814f208fb51ccfcf4ffdc48b83b9dbae0626798f27a4d85aab295669deca7"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDigest",
+          "value": "sha256:05cd9aa5874eb28e84eb2409b9a7087dd3c68dc11ec002be29b43e410d54562d"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "citty@0.1.6"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "node-pkg"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:npm/citty@0.2.2",
+      "type": "library",
+      "name": "citty",
+      "version": "0.2.2",
+      "hashes": [
+        {
+          "alg": "SHA-1",
+          "content": "a74f5e6bff5fb7fe13c09d82cc7cd3235926bd68"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:npm/citty@0.2.2",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:FilePath",
+          "value": "app/node_modules/.pnpm/citty@0.2.2/node_modules/citty/package.json"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDiffID",
+          "value": "sha256:60c814f208fb51ccfcf4ffdc48b83b9dbae0626798f27a4d85aab295669deca7"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDigest",
+          "value": "sha256:05cd9aa5874eb28e84eb2409b9a7087dd3c68dc11ec002be29b43e410d54562d"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "citty@0.2.2"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "node-pkg"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:npm/confbox@0.2.4",
+      "type": "library",
+      "name": "confbox",
+      "version": "0.2.4",
+      "hashes": [
+        {
+          "alg": "SHA-1",
+          "content": "6c3edfe4918e23a28b7b35eb1046031be2bd9328"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:npm/confbox@0.2.4",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:FilePath",
+          "value": "app/node_modules/.pnpm/confbox@0.2.4/node_modules/confbox/package.json"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDiffID",
+          "value": "sha256:60c814f208fb51ccfcf4ffdc48b83b9dbae0626798f27a4d85aab295669deca7"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDigest",
+          "value": "sha256:05cd9aa5874eb28e84eb2409b9a7087dd3c68dc11ec002be29b43e410d54562d"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "confbox@0.2.4"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "node-pkg"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:npm/consola@3.4.2",
+      "type": "library",
+      "name": "consola",
+      "version": "3.4.2",
+      "hashes": [
+        {
+          "alg": "SHA-1",
+          "content": "bebbcd2fd3b4fb7ff6216582d735f513e7dfecd5"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:npm/consola@3.4.2",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:FilePath",
+          "value": "app/node_modules/.pnpm/consola@3.4.2/node_modules/consola/package.json"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDiffID",
+          "value": "sha256:60c814f208fb51ccfcf4ffdc48b83b9dbae0626798f27a4d85aab295669deca7"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDigest",
+          "value": "sha256:05cd9aa5874eb28e84eb2409b9a7087dd3c68dc11ec002be29b43e410d54562d"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "consola@3.4.2"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "node-pkg"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:npm/deepmerge-ts@8.0.2",
+      "type": "library",
+      "name": "deepmerge-ts",
+      "version": "8.0.2",
+      "hashes": [
+        {
+          "alg": "SHA-1",
+          "content": "675a5592577198b9a2fa65c4cb46b3dc3b4366d7"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        }
+      ],
+      "purl": "pkg:npm/deepmerge-ts@8.0.2",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:FilePath",
+          "value": "app/node_modules/.pnpm/deepmerge-ts@8.0.2/node_modules/deepmerge-ts/package.json"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDiffID",
+          "value": "sha256:60c814f208fb51ccfcf4ffdc48b83b9dbae0626798f27a4d85aab295669deca7"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDigest",
+          "value": "sha256:05cd9aa5874eb28e84eb2409b9a7087dd3c68dc11ec002be29b43e410d54562d"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "deepmerge-ts@8.0.2"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "node-pkg"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:npm/defu@6.1.7",
+      "type": "library",
+      "name": "defu",
+      "version": "6.1.7",
+      "hashes": [
+        {
+          "alg": "SHA-1",
+          "content": "06ab91796d6e7ec1ed4baa9cb231a0ee41d2c305"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:npm/defu@6.1.7",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:FilePath",
+          "value": "app/node_modules/.pnpm/defu@6.1.7/node_modules/defu/package.json"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDiffID",
+          "value": "sha256:60c814f208fb51ccfcf4ffdc48b83b9dbae0626798f27a4d85aab295669deca7"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDigest",
+          "value": "sha256:05cd9aa5874eb28e84eb2409b9a7087dd3c68dc11ec002be29b43e410d54562d"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "defu@6.1.7"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "node-pkg"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:npm/destr@2.0.5",
+      "type": "library",
+      "name": "destr",
+      "version": "2.0.5",
+      "hashes": [
+        {
+          "alg": "SHA-1",
+          "content": "b074ff32162dd7582aff807faa37ad9c28a86f27"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:npm/destr@2.0.5",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:FilePath",
+          "value": "app/node_modules/.pnpm/destr@2.0.5/node_modules/destr/package.json"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDiffID",
+          "value": "sha256:60c814f208fb51ccfcf4ffdc48b83b9dbae0626798f27a4d85aab295669deca7"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDigest",
+          "value": "sha256:05cd9aa5874eb28e84eb2409b9a7087dd3c68dc11ec002be29b43e410d54562d"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "destr@2.0.5"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "node-pkg"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:npm/dotenv@16.6.1",
+      "type": "library",
+      "name": "dotenv",
+      "version": "16.6.1",
+      "hashes": [
+        {
+          "alg": "SHA-1",
+          "content": "fcf468e195b6900141812024315c3ee4dc881ae2"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-2-Clause"
+          }
+        }
+      ],
+      "purl": "pkg:npm/dotenv@16.6.1",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:FilePath",
+          "value": "app/node_modules/.pnpm/dotenv@16.6.1/node_modules/dotenv/package.json"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDiffID",
+          "value": "sha256:60c814f208fb51ccfcf4ffdc48b83b9dbae0626798f27a4d85aab295669deca7"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDigest",
+          "value": "sha256:05cd9aa5874eb28e84eb2409b9a7087dd3c68dc11ec002be29b43e410d54562d"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "dotenv@16.6.1"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "node-pkg"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:npm/dotenv@17.4.2",
+      "type": "library",
+      "name": "dotenv",
+      "version": "17.4.2",
+      "hashes": [
+        {
+          "alg": "SHA-1",
+          "content": "260954fdb4877d4d5ad6ee251e55f79e1ed35564"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-2-Clause"
+          }
+        }
+      ],
+      "purl": "pkg:npm/dotenv@17.4.2",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:FilePath",
+          "value": "app/node_modules/.pnpm/dotenv@17.4.2/node_modules/dotenv/package.json"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDiffID",
+          "value": "sha256:60c814f208fb51ccfcf4ffdc48b83b9dbae0626798f27a4d85aab295669deca7"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDigest",
+          "value": "sha256:05cd9aa5874eb28e84eb2409b9a7087dd3c68dc11ec002be29b43e410d54562d"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "dotenv@17.4.2"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "node-pkg"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:npm/effect@3.21.0",
+      "type": "library",
+      "name": "effect",
+      "version": "3.21.0",
+      "hashes": [
+        {
+          "alg": "SHA-1",
+          "content": "98130c632ac9ae21519c15b8921e773f6cfaa9cf"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:npm/effect@3.21.0",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:FilePath",
+          "value": "app/node_modules/.pnpm/effect@3.21.0/node_modules/effect/package.json"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDiffID",
+          "value": "sha256:60c814f208fb51ccfcf4ffdc48b83b9dbae0626798f27a4d85aab295669deca7"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDigest",
+          "value": "sha256:05cd9aa5874eb28e84eb2409b9a7087dd3c68dc11ec002be29b43e410d54562d"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "effect@3.21.0"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "node-pkg"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:npm/empathic@2.0.0",
+      "type": "library",
+      "name": "empathic",
+      "version": "2.0.0",
+      "hashes": [
+        {
+          "alg": "SHA-1",
+          "content": "96138d2637433733f08dd85b7259972ea739742f"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:npm/empathic@2.0.0",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:FilePath",
+          "value": "app/node_modules/.pnpm/empathic@2.0.0/node_modules/empathic/package.json"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDiffID",
+          "value": "sha256:60c814f208fb51ccfcf4ffdc48b83b9dbae0626798f27a4d85aab295669deca7"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDigest",
+          "value": "sha256:05cd9aa5874eb28e84eb2409b9a7087dd3c68dc11ec002be29b43e410d54562d"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "empathic@2.0.0"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "node-pkg"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:npm/exsolve@1.1.1",
+      "type": "library",
+      "name": "exsolve",
+      "version": "1.1.1",
+      "hashes": [
+        {
+          "alg": "SHA-1",
+          "content": "dd0fc25ca7aba1461aa89b14eeff9ae46c4b0237"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:npm/exsolve@1.1.1",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:FilePath",
+          "value": "app/node_modules/.pnpm/exsolve@1.1.1/node_modules/exsolve/package.json"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDiffID",
+          "value": "sha256:60c814f208fb51ccfcf4ffdc48b83b9dbae0626798f27a4d85aab295669deca7"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDigest",
+          "value": "sha256:05cd9aa5874eb28e84eb2409b9a7087dd3c68dc11ec002be29b43e410d54562d"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "exsolve@1.1.1"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "node-pkg"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:npm/fast-check@3.23.2",
+      "type": "library",
+      "name": "fast-check",
+      "version": "3.23.2",
+      "hashes": [
+        {
+          "alg": "SHA-1",
+          "content": "53549826e1cd7491922c0350276224a67944dced"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:npm/fast-check@3.23.2",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:FilePath",
+          "value": "app/node_modules/.pnpm/fast-check@3.23.2/node_modules/fast-check/package.json"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDiffID",
+          "value": "sha256:60c814f208fb51ccfcf4ffdc48b83b9dbae0626798f27a4d85aab295669deca7"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDigest",
+          "value": "sha256:05cd9aa5874eb28e84eb2409b9a7087dd3c68dc11ec002be29b43e410d54562d"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "fast-check@3.23.2"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "node-pkg"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:npm/giget@2.0.0",
+      "type": "library",
+      "name": "giget",
+      "version": "2.0.0",
+      "hashes": [
+        {
+          "alg": "SHA-1",
+          "content": "a9a93c429a6a78ab9682d46d0e0244f88bd18062"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:npm/giget@2.0.0",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:FilePath",
+          "value": "app/node_modules/.pnpm/giget@2.0.0/node_modules/giget/package.json"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDiffID",
+          "value": "sha256:60c814f208fb51ccfcf4ffdc48b83b9dbae0626798f27a4d85aab295669deca7"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDigest",
+          "value": "sha256:05cd9aa5874eb28e84eb2409b9a7087dd3c68dc11ec002be29b43e410d54562d"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "giget@2.0.0"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "node-pkg"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:npm/jiti@2.7.0",
+      "type": "library",
+      "name": "jiti",
+      "version": "2.7.0",
+      "hashes": [
+        {
+          "alg": "SHA-1",
+          "content": "d418e7af8c7cd69f7d475a538d26cdba6a620796"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:npm/jiti@2.7.0",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:FilePath",
+          "value": "app/node_modules/.pnpm/jiti@2.7.0/node_modules/jiti/package.json"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDiffID",
+          "value": "sha256:60c814f208fb51ccfcf4ffdc48b83b9dbae0626798f27a4d85aab295669deca7"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDigest",
+          "value": "sha256:05cd9aa5874eb28e84eb2409b9a7087dd3c68dc11ec002be29b43e410d54562d"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "jiti@2.7.0"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "node-pkg"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:npm/node-fetch-native@1.6.7",
+      "type": "library",
+      "name": "node-fetch-native",
+      "version": "1.6.7",
+      "hashes": [
+        {
+          "alg": "SHA-1",
+          "content": "17f190e34dd41b622bd2e4023c3182e2f2a551d5"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:npm/node-fetch-native@1.6.7",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:FilePath",
+          "value": "app/node_modules/.pnpm/node-fetch-native@1.6.7/node_modules/node-fetch-native/package.json"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDiffID",
+          "value": "sha256:60c814f208fb51ccfcf4ffdc48b83b9dbae0626798f27a4d85aab295669deca7"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDigest",
+          "value": "sha256:05cd9aa5874eb28e84eb2409b9a7087dd3c68dc11ec002be29b43e410d54562d"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "node-fetch-native@1.6.7"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "node-pkg"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:npm/nypm@0.6.9",
+      "type": "library",
+      "name": "nypm",
+      "version": "0.6.9",
+      "hashes": [
+        {
+          "alg": "SHA-1",
+          "content": "2f18d66871f449a6a7fd0d74d74bf1985e198390"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:npm/nypm@0.6.9",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:FilePath",
+          "value": "app/node_modules/.pnpm/nypm@0.6.9/node_modules/nypm/package.json"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDiffID",
+          "value": "sha256:60c814f208fb51ccfcf4ffdc48b83b9dbae0626798f27a4d85aab295669deca7"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDigest",
+          "value": "sha256:05cd9aa5874eb28e84eb2409b9a7087dd3c68dc11ec002be29b43e410d54562d"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "nypm@0.6.9"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "node-pkg"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:npm/ohash@2.0.12",
+      "type": "library",
+      "name": "ohash",
+      "version": "2.0.12",
+      "hashes": [
+        {
+          "alg": "SHA-1",
+          "content": "162ae5bd62d45fe7c76983804665975f994e0df0"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:npm/ohash@2.0.12",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:FilePath",
+          "value": "app/node_modules/.pnpm/ohash@2.0.12/node_modules/ohash/package.json"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDiffID",
+          "value": "sha256:60c814f208fb51ccfcf4ffdc48b83b9dbae0626798f27a4d85aab295669deca7"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDigest",
+          "value": "sha256:05cd9aa5874eb28e84eb2409b9a7087dd3c68dc11ec002be29b43e410d54562d"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "ohash@2.0.12"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "node-pkg"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:npm/pathe@2.0.3",
+      "type": "library",
+      "name": "pathe",
+      "version": "2.0.3",
+      "hashes": [
+        {
+          "alg": "SHA-1",
+          "content": "63d23465e3ee9af93a734af4b39a9b725812b28a"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:npm/pathe@2.0.3",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:FilePath",
+          "value": "app/node_modules/.pnpm/pathe@2.0.3/node_modules/pathe/package.json"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDiffID",
+          "value": "sha256:60c814f208fb51ccfcf4ffdc48b83b9dbae0626798f27a4d85aab295669deca7"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDigest",
+          "value": "sha256:05cd9aa5874eb28e84eb2409b9a7087dd3c68dc11ec002be29b43e410d54562d"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "pathe@2.0.3"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "node-pkg"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:npm/perfect-debounce@1.0.0",
+      "type": "library",
+      "name": "perfect-debounce",
+      "version": "1.0.0",
+      "hashes": [
+        {
+          "alg": "SHA-1",
+          "content": "9a4c98dc9992831b8fa5840f991c3d21367f3564"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:npm/perfect-debounce@1.0.0",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:FilePath",
+          "value": "app/node_modules/.pnpm/perfect-debounce@1.0.0/node_modules/perfect-debounce/package.json"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDiffID",
+          "value": "sha256:60c814f208fb51ccfcf4ffdc48b83b9dbae0626798f27a4d85aab295669deca7"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDigest",
+          "value": "sha256:05cd9aa5874eb28e84eb2409b9a7087dd3c68dc11ec002be29b43e410d54562d"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "perfect-debounce@1.0.0"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "node-pkg"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:npm/pkg-types@2.3.1",
+      "type": "library",
+      "name": "pkg-types",
+      "version": "2.3.1",
+      "hashes": [
+        {
+          "alg": "SHA-1",
+          "content": "dfd6edc2325a599ab3aeadc04ea4b65ca9805c5a"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:npm/pkg-types@2.3.1",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:FilePath",
+          "value": "app/node_modules/.pnpm/pkg-types@2.3.1/node_modules/pkg-types/package.json"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDiffID",
+          "value": "sha256:60c814f208fb51ccfcf4ffdc48b83b9dbae0626798f27a4d85aab295669deca7"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDigest",
+          "value": "sha256:05cd9aa5874eb28e84eb2409b9a7087dd3c68dc11ec002be29b43e410d54562d"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "pkg-types@2.3.1"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "node-pkg"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:npm/prisma@6.19.3",
+      "type": "library",
+      "name": "prisma",
+      "version": "6.19.3",
+      "hashes": [
+        {
+          "alg": "SHA-1",
+          "content": "5a1d242ce6003ec9112c792bc7d8cb353350d397"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "purl": "pkg:npm/prisma@6.19.3",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:FilePath",
+          "value": "app/node_modules/.pnpm/prisma@6.19.3_typescript@5.9.3/node_modules/prisma/package.json"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDiffID",
+          "value": "sha256:60c814f208fb51ccfcf4ffdc48b83b9dbae0626798f27a4d85aab295669deca7"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDigest",
+          "value": "sha256:05cd9aa5874eb28e84eb2409b9a7087dd3c68dc11ec002be29b43e410d54562d"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "prisma@6.19.3"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "node-pkg"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:npm/pure-rand@6.1.0",
+      "type": "library",
+      "name": "pure-rand",
+      "version": "6.1.0",
+      "hashes": [
+        {
+          "alg": "SHA-1",
+          "content": "d393d1d3d6db29af90371698f8ce66d749834eec"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:npm/pure-rand@6.1.0",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:FilePath",
+          "value": "app/node_modules/.pnpm/pure-rand@6.1.0/node_modules/pure-rand/package.json"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDiffID",
+          "value": "sha256:60c814f208fb51ccfcf4ffdc48b83b9dbae0626798f27a4d85aab295669deca7"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDigest",
+          "value": "sha256:05cd9aa5874eb28e84eb2409b9a7087dd3c68dc11ec002be29b43e410d54562d"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "pure-rand@6.1.0"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "node-pkg"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:npm/rc9@2.1.2",
+      "type": "library",
+      "name": "rc9",
+      "version": "2.1.2",
+      "hashes": [
+        {
+          "alg": "SHA-1",
+          "content": "e861f76aad534bb03e8a04535f56d367c448d7cf"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:npm/rc9@2.1.2",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:FilePath",
+          "value": "app/node_modules/.pnpm/rc9@2.1.2/node_modules/rc9/package.json"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDiffID",
+          "value": "sha256:60c814f208fb51ccfcf4ffdc48b83b9dbae0626798f27a4d85aab295669deca7"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDigest",
+          "value": "sha256:05cd9aa5874eb28e84eb2409b9a7087dd3c68dc11ec002be29b43e410d54562d"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "rc9@2.1.2"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "node-pkg"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:npm/readdirp@4.1.2",
+      "type": "library",
+      "name": "readdirp",
+      "version": "4.1.2",
+      "hashes": [
+        {
+          "alg": "SHA-1",
+          "content": "1776b86bb5f422b65cd18b9862b7e2440c79a2f4"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:npm/readdirp@4.1.2",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:FilePath",
+          "value": "app/node_modules/.pnpm/readdirp@4.1.2/node_modules/readdirp/package.json"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDiffID",
+          "value": "sha256:60c814f208fb51ccfcf4ffdc48b83b9dbae0626798f27a4d85aab295669deca7"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDigest",
+          "value": "sha256:05cd9aa5874eb28e84eb2409b9a7087dd3c68dc11ec002be29b43e410d54562d"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "readdirp@4.1.2"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "node-pkg"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:npm/tinyexec@1.3.0",
+      "type": "library",
+      "name": "tinyexec",
+      "version": "1.3.0",
+      "hashes": [
+        {
+          "alg": "SHA-1",
+          "content": "d1ca64a0ce3d82ab3b7125fe49f4706b80eada5c"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:npm/tinyexec@1.3.0",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:FilePath",
+          "value": "app/node_modules/.pnpm/tinyexec@1.3.0/node_modules/tinyexec/package.json"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDiffID",
+          "value": "sha256:60c814f208fb51ccfcf4ffdc48b83b9dbae0626798f27a4d85aab295669deca7"
+        },
+        {
+          "name": "aquasecurity:trivy:LayerDigest",
+          "value": "sha256:05cd9aa5874eb28e84eb2409b9a7087dd3c68dc11ec002be29b43e410d54562d"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "tinyexec@1.3.0"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "node-pkg"
+        }
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "6cea2414-31bd-48a3-a310-496684009e68",
+      "dependsOn": [
+        "pkg:deb/debian/base-files@13.8%2Bdeb13u7?arch=arm64&distro=debian-13.7",
+        "pkg:deb/debian/ca-certificates@20250419?arch=all&distro=debian-13.7",
+        "pkg:deb/debian/gcc-14-base@14.2.0-19?arch=arm64&distro=debian-13.7",
+        "pkg:deb/debian/libc6@2.41-12%2Bdeb13u4?arch=arm64&distro=debian-13.7",
+        "pkg:deb/debian/libgcc-s1@14.2.0-19?arch=arm64&distro=debian-13.7",
+        "pkg:deb/debian/libgomp1@14.2.0-19?arch=arm64&distro=debian-13.7",
+        "pkg:deb/debian/libssl3t64@3.5.7-1~deb13u2?arch=arm64&distro=debian-13.7",
+        "pkg:deb/debian/libstdc%2B%2B6@14.2.0-19?arch=arm64&distro=debian-13.7",
+        "pkg:deb/debian/libzstd1@1.5.7%2Bdfsg-1?arch=arm64&distro=debian-13.7",
+        "pkg:deb/debian/media-types@13.0.0?arch=all&distro=debian-13.7",
+        "pkg:deb/debian/netbase@6.5?arch=all&distro=debian-13.7",
+        "pkg:deb/debian/tzdata-legacy@2026c-0%2Bdeb13u1?arch=all&distro=debian-13.7",
+        "pkg:deb/debian/tzdata@2026c-0%2Bdeb13u1?arch=all&distro=debian-13.7",
+        "pkg:deb/debian/zlib1g@1.3.dfsg%2Breally1.3.1-1%2Bb1?arch=arm64&distro=debian-13.7&epoch=1"
+      ]
+    },
+    {
+      "ref": "pkg:deb/debian/base-files@13.8%2Bdeb13u7?arch=arm64&distro=debian-13.7",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:deb/debian/ca-certificates@20250419?arch=all&distro=debian-13.7",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:deb/debian/gcc-14-base@14.2.0-19?arch=arm64&distro=debian-13.7",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:deb/debian/libc6@2.41-12%2Bdeb13u4?arch=arm64&distro=debian-13.7",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:deb/debian/libgcc-s1@14.2.0-19?arch=arm64&distro=debian-13.7",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:deb/debian/libgomp1@14.2.0-19?arch=arm64&distro=debian-13.7",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:deb/debian/libssl3t64@3.5.7-1~deb13u2?arch=arm64&distro=debian-13.7",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:deb/debian/libstdc%2B%2B6@14.2.0-19?arch=arm64&distro=debian-13.7",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:deb/debian/libzstd1@1.5.7%2Bdfsg-1?arch=arm64&distro=debian-13.7",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:deb/debian/media-types@13.0.0?arch=all&distro=debian-13.7",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:deb/debian/netbase@6.5?arch=all&distro=debian-13.7",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:deb/debian/tzdata-legacy@2026c-0%2Bdeb13u1?arch=all&distro=debian-13.7",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:deb/debian/tzdata@2026c-0%2Bdeb13u1?arch=all&distro=debian-13.7",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:deb/debian/zlib1g@1.3.dfsg%2Breally1.3.1-1%2Bb1?arch=arm64&distro=debian-13.7&epoch=1",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/%40gigalibs/db-migrations-runtime@0.0.1",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/%40prisma/client@6.19.3",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/%40prisma/config@6.19.3",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/%40prisma/debug@6.19.3",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/%40prisma/engines-version@7.1.1-3.c2990dca591cba766e3b7ef5d9e8a84796e47ab7",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/%40prisma/engines@6.19.3",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/%40prisma/fetch-engine@6.19.3",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/%40prisma/get-platform@6.19.3",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/%40standard-schema/spec@1.1.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/c12@3.1.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/chokidar@4.0.3",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/citty@0.1.6",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/citty@0.2.2",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/confbox@0.2.4",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/consola@3.4.2",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/deepmerge-ts@8.0.2",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/defu@6.1.7",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/destr@2.0.5",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/dotenv@16.6.1",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/dotenv@17.4.2",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/effect@3.21.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/empathic@2.0.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/exsolve@1.1.1",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/fast-check@3.23.2",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/giget@2.0.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/jiti@2.7.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/node-fetch-native@1.6.7",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/nypm@0.6.9",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/ohash@2.0.12",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/pathe@2.0.3",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/perfect-debounce@1.0.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/pkg-types@2.3.1",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/prisma@6.19.3",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/pure-rand@6.1.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/rc9@2.1.2",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/readdirp@4.1.2",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/tinyexec@1.3.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:oci/control-plane-migrations@sha256:f59eb319beb1fbee31b63631b29f7077e538e10f11a275741d66e6d84e61ae18?arch=arm64&repository_url=index.docker.io%2Fgigalibs%2Fcontrol-plane-migrations",
+      "dependsOn": [
+        "6cea2414-31bd-48a3-a310-496684009e68",
+        "pkg:npm/%40gigalibs/db-migrations-runtime@0.0.1",
+        "pkg:npm/%40prisma/client@6.19.3",
+        "pkg:npm/%40prisma/config@6.19.3",
+        "pkg:npm/%40prisma/debug@6.19.3",
+        "pkg:npm/%40prisma/engines-version@7.1.1-3.c2990dca591cba766e3b7ef5d9e8a84796e47ab7",
+        "pkg:npm/%40prisma/engines@6.19.3",
+        "pkg:npm/%40prisma/fetch-engine@6.19.3",
+        "pkg:npm/%40prisma/get-platform@6.19.3",
+        "pkg:npm/%40standard-schema/spec@1.1.0",
+        "pkg:npm/c12@3.1.0",
+        "pkg:npm/chokidar@4.0.3",
+        "pkg:npm/citty@0.1.6",
+        "pkg:npm/citty@0.2.2",
+        "pkg:npm/confbox@0.2.4",
+        "pkg:npm/consola@3.4.2",
+        "pkg:npm/deepmerge-ts@8.0.2",
+        "pkg:npm/defu@6.1.7",
+        "pkg:npm/destr@2.0.5",
+        "pkg:npm/dotenv@16.6.1",
+        "pkg:npm/dotenv@17.4.2",
+        "pkg:npm/effect@3.21.0",
+        "pkg:npm/empathic@2.0.0",
+        "pkg:npm/exsolve@1.1.1",
+        "pkg:npm/fast-check@3.23.2",
+        "pkg:npm/giget@2.0.0",
+        "pkg:npm/jiti@2.7.0",
+        "pkg:npm/node-fetch-native@1.6.7",
+        "pkg:npm/nypm@0.6.9",
+        "pkg:npm/ohash@2.0.12",
+        "pkg:npm/pathe@2.0.3",
+        "pkg:npm/perfect-debounce@1.0.0",
+        "pkg:npm/pkg-types@2.3.1",
+        "pkg:npm/prisma@6.19.3",
+        "pkg:npm/pure-rand@6.1.0",
+        "pkg:npm/rc9@2.1.2",
+        "pkg:npm/readdirp@4.1.2",
+        "pkg:npm/tinyexec@1.3.0"
+      ]
+    }
+  ],
+  "vulnerabilities": [
+    {
+      "id": "CVE-2010-4756",
+      "source": {
+        "name": "debian",
+        "url": "https://salsa.debian.org/security-tracker-team/security-tracker"
+      },
+      "ratings": [
+        {
+          "source": {
+            "name": "debian"
+          },
+          "severity": "low"
+        },
+        {
+          "source": {
+            "name": "nvd"
+          },
+          "score": 4,
+          "severity": "medium",
+          "method": "CVSSv2",
+          "vector": "AV:N/AC:L/Au:S/C:N/I:N/A:P"
+        },
+        {
+          "source": {
+            "name": "redhat"
+          },
+          "score": 5,
+          "severity": "low",
+          "method": "CVSSv2",
+          "vector": "AV:N/AC:L/Au:N/C:N/I:N/A:P"
+        }
+      ],
+      "cwes": [
+        399
+      ],
+      "description": "The glob implementation in the GNU C Library (aka glibc or libc6) allows remote authenticated users to cause a denial of service (CPU and memory consumption) via crafted glob expressions that do not match any pathnames, as demonstrated by glob expressions in STAT commands to an FTP daemon, a different vulnerability than CVE-2010-2632.",
+      "advisories": [
+        {
+          "url": "https://avd.aquasec.com/nvd/cve-2010-4756"
+        },
+        {
+          "url": "http://cxib.net/stuff/glob-0day.c"
+        },
+        {
+          "url": "http://securityreason.com/achievement_securityalert/89"
+        },
+        {
+          "url": "http://securityreason.com/exploitalert/9223"
+        },
+        {
+          "url": "https://access.redhat.com/security/cve/CVE-2010-4756"
+        },
+        {
+          "url": "https://bugzilla.redhat.com/show_bug.cgi?id=681681"
+        },
+        {
+          "url": "https://bugzilla.redhat.com/show_bug.cgi?id=CVE-2010-4756"
+        },
+        {
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2010-4756"
+        },
+        {
+          "url": "https://security.netapp.com/advisory/ntap-20241108-0002/"
+        },
+        {
+          "url": "https://www.cve.org/CVERecord?id=CVE-2010-4756"
+        }
+      ],
+      "published": "2011-03-02T20:00:01+00:00",
+      "updated": "2026-04-29T01:13:23+00:00",
+      "affects": [
+        {
+          "ref": "pkg:deb/debian/libc6@2.41-12%2Bdeb13u4?arch=arm64&distro=debian-13.7",
+          "versions": [
+            {
+              "version": "2.41-12+deb13u4",
+              "status": "affected"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "CVE-2018-20796",
+      "source": {
+        "name": "debian",
+        "url": "https://salsa.debian.org/security-tracker-team/security-tracker"
+      },
+      "ratings": [
+        {
+          "source": {
+            "name": "cbl-mariner"
+          },
+          "severity": "high"
+        },
+        {
+          "source": {
+            "name": "debian"
+          },
+          "severity": "low"
+        },
+        {
+          "source": {
+            "name": "nvd"
+          },
+          "score": 5,
+          "severity": "medium",
+          "method": "CVSSv2",
+          "vector": "AV:N/AC:L/Au:N/C:N/I:N/A:P"
+        },
+        {
+          "source": {
+            "name": "nvd"
+          },
+          "score": 7.5,
+          "severity": "high",
+          "method": "CVSSv3",
+          "vector": "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+        },
+        {
+          "source": {
+            "name": "redhat"
+          },
+          "score": 5.3,
+          "severity": "medium",
+          "method": "CVSSv3",
+          "vector": "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L"
+        }
+      ],
+      "cwes": [
+        674
+      ],
+      "description": "In the GNU C Library (aka glibc or libc6) through 2.29, check_dst_limits_calc_pos_1 in posix/regexec.c has Uncontrolled Recursion, as demonstrated by '(\\227|)(\\\\1\\\\1|t1|\\\\\\2537)+' in grep.",
+      "advisories": [
+        {
+          "url": "https://avd.aquasec.com/nvd/cve-2018-20796"
+        },
+        {
+          "url": "http://www.securityfocus.com/bid/107160"
+        },
+        {
+          "url": "https://access.redhat.com/security/cve/CVE-2018-20796"
+        },
+        {
+          "url": "https://debbugs.gnu.org/cgi/bugreport.cgi?bug=34141"
+        },
+        {
+          "url": "https://lists.gnu.org/archive/html/bug-gnulib/2019-01/msg00108.html"
+        },
+        {
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2018-20796"
+        },
+        {
+          "url": "https://security.netapp.com/advisory/ntap-20190315-0002/"
+        },
+        {
+          "url": "https://support.f5.com/csp/article/K26346590?utm_source=f5support&amp%3Butm_medium=RSS"
+        },
+        {
+          "url": "https://www.cve.org/CVERecord?id=CVE-2018-20796"
+        }
+      ],
+      "published": "2019-02-26T02:29:00+00:00",
+      "updated": "2026-06-17T01:53:29+00:00",
+      "affects": [
+        {
+          "ref": "pkg:deb/debian/libc6@2.41-12%2Bdeb13u4?arch=arm64&distro=debian-13.7",
+          "versions": [
+            {
+              "version": "2.41-12+deb13u4",
+              "status": "affected"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "CVE-2019-1010022",
+      "source": {
+        "name": "debian",
+        "url": "https://salsa.debian.org/security-tracker-team/security-tracker"
+      },
+      "ratings": [
+        {
+          "source": {
+            "name": "debian"
+          },
+          "severity": "low"
+        },
+        {
+          "source": {
+            "name": "nvd"
+          },
+          "score": 7.5,
+          "severity": "high",
+          "method": "CVSSv2",
+          "vector": "AV:N/AC:L/Au:N/C:P/I:P/A:P"
+        },
+        {
+          "source": {
+            "name": "nvd"
+          },
+          "score": 9.8,
+          "severity": "critical",
+          "method": "CVSSv3",
+          "vector": "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"
+        }
+      ],
+      "cwes": [
+        119
+      ],
+      "description": "GNU Libc current is affected by: Mitigation bypass. The impact is: Attacker may bypass stack guard protection. The component is: nptl. The attack vector is: Exploit stack buffer overflow vulnerability and use this bypass vulnerability to bypass stack guard. NOTE: Upstream comments indicate \"this is being treated as a non-security bug and no real threat.",
+      "advisories": [
+        {
+          "url": "https://avd.aquasec.com/nvd/cve-2019-1010022"
+        },
+        {
+          "url": "https://access.redhat.com/security/cve/CVE-2019-1010022"
+        },
+        {
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2019-1010022"
+        },
+        {
+          "url": "https://security-tracker.debian.org/tracker/CVE-2019-1010022"
+        },
+        {
+          "url": "https://sourceware.org/bugzilla/show_bug.cgi?id=22850"
+        },
+        {
+          "url": "https://sourceware.org/bugzilla/show_bug.cgi?id=22850#c3"
+        },
+        {
+          "url": "https://ubuntu.com/security/CVE-2019-1010022"
+        },
+        {
+          "url": "https://www.cve.org/CVERecord?id=CVE-2019-1010022"
+        }
+      ],
+      "published": "2019-07-15T04:15:13+00:00",
+      "updated": "2026-06-17T02:09:43+00:00",
+      "affects": [
+        {
+          "ref": "pkg:deb/debian/libc6@2.41-12%2Bdeb13u4?arch=arm64&distro=debian-13.7",
+          "versions": [
+            {
+              "version": "2.41-12+deb13u4",
+              "status": "affected"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "CVE-2019-1010023",
+      "source": {
+        "name": "debian",
+        "url": "https://salsa.debian.org/security-tracker-team/security-tracker"
+      },
+      "ratings": [
+        {
+          "source": {
+            "name": "debian"
+          },
+          "severity": "low"
+        },
+        {
+          "source": {
+            "name": "nvd"
+          },
+          "score": 6.8,
+          "severity": "medium",
+          "method": "CVSSv2",
+          "vector": "AV:N/AC:M/Au:N/C:P/I:P/A:P"
+        },
+        {
+          "source": {
+            "name": "nvd"
+          },
+          "score": 8.8,
+          "severity": "high",
+          "method": "CVSSv3",
+          "vector": "CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H"
+        },
+        {
+          "source": {
+            "name": "redhat"
+          },
+          "score": 7.8,
+          "severity": "low",
+          "method": "CVSSv3",
+          "vector": "CVSS:3.0/AV:L/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H"
+        }
+      ],
+      "description": "GNU Libc current is affected by: Re-mapping current loaded library with malicious ELF file. The impact is: In worst case attacker may evaluate privileges. The component is: libld. The attack vector is: Attacker sends 2 ELF files to victim and asks to run ldd on it. ldd execute code. NOTE: Upstream comments indicate \"this is being treated as a non-security bug and no real threat.",
+      "advisories": [
+        {
+          "url": "https://avd.aquasec.com/nvd/cve-2019-1010023"
+        },
+        {
+          "url": "http://www.securityfocus.com/bid/109167"
+        },
+        {
+          "url": "https://access.redhat.com/security/cve/CVE-2019-1010023"
+        },
+        {
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2019-1010023"
+        },
+        {
+          "url": "https://security-tracker.debian.org/tracker/CVE-2019-1010023"
+        },
+        {
+          "url": "https://sourceware.org/bugzilla/show_bug.cgi?id=22851"
+        },
+        {
+          "url": "https://support.f5.com/csp/article/K11932200?utm_source=f5support&amp%3Butm_medium=RSS"
+        },
+        {
+          "url": "https://ubuntu.com/security/CVE-2019-1010023"
+        },
+        {
+          "url": "https://www.cve.org/CVERecord?id=CVE-2019-1010023"
+        }
+      ],
+      "published": "2019-07-15T04:15:13+00:00",
+      "updated": "2026-06-17T02:09:44+00:00",
+      "affects": [
+        {
+          "ref": "pkg:deb/debian/libc6@2.41-12%2Bdeb13u4?arch=arm64&distro=debian-13.7",
+          "versions": [
+            {
+              "version": "2.41-12+deb13u4",
+              "status": "affected"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "CVE-2019-1010024",
+      "source": {
+        "name": "debian",
+        "url": "https://salsa.debian.org/security-tracker-team/security-tracker"
+      },
+      "ratings": [
+        {
+          "source": {
+            "name": "debian"
+          },
+          "severity": "low"
+        },
+        {
+          "source": {
+            "name": "nvd"
+          },
+          "score": 5,
+          "severity": "medium",
+          "method": "CVSSv2",
+          "vector": "AV:N/AC:L/Au:N/C:P/I:N/A:N"
+        },
+        {
+          "source": {
+            "name": "nvd"
+          },
+          "score": 5.3,
+          "severity": "medium",
+          "method": "CVSSv3",
+          "vector": "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N"
+        },
+        {
+          "source": {
+            "name": "redhat"
+          },
+          "score": 5.3,
+          "severity": "medium",
+          "method": "CVSSv3",
+          "vector": "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N"
+        }
+      ],
+      "cwes": [
+        200
+      ],
+      "description": "GNU Libc current is affected by: Mitigation bypass. The impact is: Attacker may bypass ASLR using cache of thread stack and heap. The component is: glibc. NOTE: Upstream comments indicate \"this is being treated as a non-security bug and no real threat.",
+      "advisories": [
+        {
+          "url": "https://avd.aquasec.com/nvd/cve-2019-1010024"
+        },
+        {
+          "url": "http://www.securityfocus.com/bid/109162"
+        },
+        {
+          "url": "https://access.redhat.com/security/cve/CVE-2019-1010024"
+        },
+        {
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2019-1010024"
+        },
+        {
+          "url": "https://security-tracker.debian.org/tracker/CVE-2019-1010024"
+        },
+        {
+          "url": "https://sourceware.org/bugzilla/show_bug.cgi?id=22852"
+        },
+        {
+          "url": "https://support.f5.com/csp/article/K06046097"
+        },
+        {
+          "url": "https://support.f5.com/csp/article/K06046097?utm_source=f5support&amp%3Butm_medium=RSS"
+        },
+        {
+          "url": "https://ubuntu.com/security/CVE-2019-1010024"
+        },
+        {
+          "url": "https://www.cve.org/CVERecord?id=CVE-2019-1010024"
+        }
+      ],
+      "published": "2019-07-15T04:15:13+00:00",
+      "updated": "2026-06-17T02:09:44+00:00",
+      "affects": [
+        {
+          "ref": "pkg:deb/debian/libc6@2.41-12%2Bdeb13u4?arch=arm64&distro=debian-13.7",
+          "versions": [
+            {
+              "version": "2.41-12+deb13u4",
+              "status": "affected"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "CVE-2019-1010025",
+      "source": {
+        "name": "debian",
+        "url": "https://salsa.debian.org/security-tracker-team/security-tracker"
+      },
+      "ratings": [
+        {
+          "source": {
+            "name": "debian"
+          },
+          "severity": "low"
+        },
+        {
+          "source": {
+            "name": "nvd"
+          },
+          "score": 5,
+          "severity": "medium",
+          "method": "CVSSv2",
+          "vector": "AV:N/AC:L/Au:N/C:P/I:N/A:N"
+        },
+        {
+          "source": {
+            "name": "nvd"
+          },
+          "score": 5.3,
+          "severity": "medium",
+          "method": "CVSSv3",
+          "vector": "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N"
+        },
+        {
+          "source": {
+            "name": "redhat"
+          },
+          "score": 2.9,
+          "severity": "low",
+          "method": "CVSSv3",
+          "vector": "CVSS:3.0/AV:L/AC:H/PR:N/UI:N/S:U/C:L/I:N/A:N"
+        }
+      ],
+      "cwes": [
+        330
+      ],
+      "description": "GNU Libc current is affected by: Mitigation bypass. The impact is: Attacker may guess the heap addresses of pthread_created thread. The component is: glibc. NOTE: the vendor's position is \"ASLR bypass itself is not a vulnerability.",
+      "advisories": [
+        {
+          "url": "https://avd.aquasec.com/nvd/cve-2019-1010025"
+        },
+        {
+          "url": "https://access.redhat.com/security/cve/CVE-2019-1010025"
+        },
+        {
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2019-1010025"
+        },
+        {
+          "url": "https://security-tracker.debian.org/tracker/CVE-2019-1010025"
+        },
+        {
+          "url": "https://sourceware.org/bugzilla/show_bug.cgi?id=22853"
+        },
+        {
+          "url": "https://support.f5.com/csp/article/K06046097"
+        },
+        {
+          "url": "https://support.f5.com/csp/article/K06046097?utm_source=f5support&amp%3Butm_medium=RSS"
+        },
+        {
+          "url": "https://ubuntu.com/security/CVE-2019-1010025"
+        },
+        {
+          "url": "https://www.cve.org/CVERecord?id=CVE-2019-1010025"
+        }
+      ],
+      "published": "2019-07-15T04:15:13+00:00",
+      "updated": "2026-06-17T02:09:44+00:00",
+      "affects": [
+        {
+          "ref": "pkg:deb/debian/libc6@2.41-12%2Bdeb13u4?arch=arm64&distro=debian-13.7",
+          "versions": [
+            {
+              "version": "2.41-12+deb13u4",
+              "status": "affected"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "CVE-2019-9192",
+      "source": {
+        "name": "debian",
+        "url": "https://salsa.debian.org/security-tracker-team/security-tracker"
+      },
+      "ratings": [
+        {
+          "source": {
+            "name": "cbl-mariner"
+          },
+          "severity": "high"
+        },
+        {
+          "source": {
+            "name": "debian"
+          },
+          "severity": "low"
+        },
+        {
+          "source": {
+            "name": "nvd"
+          },
+          "score": 5,
+          "severity": "medium",
+          "method": "CVSSv2",
+          "vector": "AV:N/AC:L/Au:N/C:N/I:N/A:P"
+        },
+        {
+          "source": {
+            "name": "nvd"
+          },
+          "score": 7.5,
+          "severity": "high",
+          "method": "CVSSv3",
+          "vector": "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+        },
+        {
+          "source": {
+            "name": "redhat"
+          },
+          "score": 2.8,
+          "severity": "low",
+          "method": "CVSSv3",
+          "vector": "CVSS:3.0/AV:L/AC:L/PR:L/UI:R/S:U/C:N/I:N/A:L"
+        }
+      ],
+      "cwes": [
+        674
+      ],
+      "description": "In the GNU C Library (aka glibc or libc6) through 2.29, check_dst_limits_calc_pos_1 in posix/regexec.c has Uncontrolled Recursion, as demonstrated by '(|)(\\\\1\\\\1)*' in grep, a different issue than CVE-2018-20796. NOTE: the software maintainer disputes that this is a vulnerability because the behavior occurs only with a crafted pattern",
+      "advisories": [
+        {
+          "url": "https://avd.aquasec.com/nvd/cve-2019-9192"
+        },
+        {
+          "url": "https://access.redhat.com/security/cve/CVE-2019-9192"
+        },
+        {
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2019-9192"
+        },
+        {
+          "url": "https://sourceware.org/bugzilla/show_bug.cgi?id=24269"
+        },
+        {
+          "url": "https://support.f5.com/csp/article/K26346590?utm_source=f5support&amp%3Butm_medium=RSS"
+        },
+        {
+          "url": "https://www.cve.org/CVERecord?id=CVE-2019-9192"
+        }
+      ],
+      "published": "2019-02-26T18:29:00+00:00",
+      "updated": "2026-06-17T02:43:19+00:00",
+      "affects": [
+        {
+          "ref": "pkg:deb/debian/libc6@2.41-12%2Bdeb13u4?arch=arm64&distro=debian-13.7",
+          "versions": [
+            {
+              "version": "2.41-12+deb13u4",
+              "status": "affected"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "CVE-2026-18374",
+      "source": {
+        "name": "debian",
+        "url": "https://salsa.debian.org/security-tracker-team/security-tracker"
+      },
+      "ratings": [
+        {
+          "source": {
+            "name": "redhat"
+          },
+          "score": 4.9,
+          "severity": "medium",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:L/AC:H/PR:N/UI:N/S:U/C:L/I:L/A:L"
+        },
+        {
+          "source": {
+            "name": "ubuntu"
+          },
+          "severity": "medium"
+        }
+      ],
+      "cwes": [
+        787
+      ],
+      "description": "Passing an effectively empty string to the `,ccs=` syntax extension of the mode argument in the `fopen` function in the GNU C Library version 2.45 or earlier may result in a heap buffer overflow when the mode string input to the function is attacker controlled.\n\n\n\nThis usage pattern is not seen in applications in common GNU/Linux distributions and applications that process user-supplied values for `ccs` should not pass them through without validation.",
+      "advisories": [
+        {
+          "url": "https://avd.aquasec.com/nvd/cve-2026-18374"
+        },
+        {
+          "url": "http://www.openwall.com/lists/oss-security/2026/08/27/6"
+        },
+        {
+          "url": "https://access.redhat.com/security/cve/CVE-2026-18374"
+        },
+        {
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-18374"
+        },
+        {
+          "url": "https://sourceware.org/bugzilla/show_bug.cgi?id=34574"
+        },
+        {
+          "url": "https://sourceware.org/git/?p=glibc.git;a=blob;f=advisories/GLIBC-SA-2026-0015"
+        },
+        {
+          "url": "https://sourceware.org/git/?p=glibc.git;a=blob_plain;f=advisories/GLIBC-SA-2026-0015"
+        },
+        {
+          "url": "https://www.cve.org/CVERecord?id=CVE-2026-18374"
+        }
+      ],
+      "published": "2026-08-27T20:17:03+00:00",
+      "updated": "2026-09-03T16:43:15+00:00",
+      "affects": [
+        {
+          "ref": "pkg:deb/debian/libc6@2.41-12%2Bdeb13u4?arch=arm64&distro=debian-13.7",
+          "versions": [
+            {
+              "version": "2.41-12+deb13u4",
+              "status": "affected"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "CVE-2026-19499",
+      "source": {
+        "name": "debian",
+        "url": "https://salsa.debian.org/security-tracker-team/security-tracker"
+      },
+      "ratings": [
+        {
+          "source": {
+            "name": "redhat"
+          },
+          "score": 6.8,
+          "severity": "medium",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:L/AC:L/PR:L/UI:R/S:U/C:L/I:H/A:H"
+        },
+        {
+          "source": {
+            "name": "ubuntu"
+          },
+          "severity": "medium"
+        }
+      ],
+      "cwes": [
+        122
+      ],
+      "description": "Calling strfmon and strfmon_l in the GNU C Library version 2.38 to 2.44 can write past the end of the caller-supplied output buffer when a conversion uses right-justified width padding.\n\nExploitation requires an application code path that calls strfmon or strfmon_l with right-justified width padding into a destination buffer that is large enough for the padding to succeed but too small for the internal memmove call. The field width or format may be attacker-influenced or a fixed susceptible pattern in the caller.\n\nAt the time of publication, no network-facing application impact is known.",
+      "advisories": [
+        {
+          "url": "https://avd.aquasec.com/nvd/cve-2026-19499"
+        },
+        {
+          "url": "https://access.redhat.com/security/cve/CVE-2026-19499"
+        },
+        {
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-19499"
+        },
+        {
+          "url": "https://sourceware.org/bugzilla/show_bug.cgi?id=34510"
+        },
+        {
+          "url": "https://sourceware.org/git/?p=glibc.git;a=blob_plain;f=advisories/GLIBC-SA-2026-0017"
+        },
+        {
+          "url": "https://ubuntu.com/security/notices/USN-8737-1"
+        },
+        {
+          "url": "https://ubuntu.com/security/notices/USN-8737-2"
+        },
+        {
+          "url": "https://www.cve.org/CVERecord?id=CVE-2026-19499"
+        }
+      ],
+      "published": "2026-09-14T18:17:45+00:00",
+      "updated": "2026-09-18T18:17:47+00:00",
+      "affects": [
+        {
+          "ref": "pkg:deb/debian/libc6@2.41-12%2Bdeb13u4?arch=arm64&distro=debian-13.7",
+          "versions": [
+            {
+              "version": "2.41-12+deb13u4",
+              "status": "affected"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "CVE-2026-19542",
+      "source": {
+        "name": "debian",
+        "url": "https://salsa.debian.org/security-tracker-team/security-tracker"
+      },
+      "ratings": [
+        {
+          "source": {
+            "name": "redhat"
+          },
+          "score": 4.2,
+          "severity": "medium",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:L/A:L"
+        },
+        {
+          "source": {
+            "name": "ubuntu"
+          },
+          "severity": "medium"
+        }
+      ],
+      "cwes": [
+        121
+      ],
+      "description": "Calling tdelete on a sufficiently deep tree in the GNU C Library version 2.1 to 2.44 may write one pointer past the end of an alloca-allocated array on the stack, which may crash the application.\n\nThe tdelete implementation keeps an explicit stack of parent nodes for rebalancing, which is grown as needed while descending the tree.  Two rebalancing branches push an additional entry without checking the capacity, and write past the array when the stack is exactly full. Triggering this requires a node at a depth of exactly 40 (or 40 plus a multiple of 20), which implies a tree with at least a million nodes, so an attacker must drive a large number of insertions and deletions through an application that uses tsearch and tdelete.  The written value is a pointer into a tree node and is not directly attacker controlled.  No affected application in common distributions has been identified.",
+      "advisories": [
+        {
+          "url": "https://avd.aquasec.com/nvd/cve-2026-19542"
+        },
+        {
+          "url": "https://access.redhat.com/security/cve/CVE-2026-19542"
+        },
+        {
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-19542"
+        },
+        {
+          "url": "https://sourceware.org/bugzilla/show_bug.cgi?id=34506"
+        },
+        {
+          "url": "https://sourceware.org/git/?p=glibc.git;a=blob_plain;f=advisories/GLIBC-SA-2026-0018"
+        },
+        {
+          "url": "https://ubuntu.com/security/notices/USN-8737-1"
+        },
+        {
+          "url": "https://ubuntu.com/security/notices/USN-8737-2"
+        },
+        {
+          "url": "https://www.cve.org/CVERecord?id=CVE-2026-19542"
+        }
+      ],
+      "published": "2026-09-14T18:17:46+00:00",
+      "updated": "2026-09-18T18:17:47+00:00",
+      "affects": [
+        {
+          "ref": "pkg:deb/debian/libc6@2.41-12%2Bdeb13u4?arch=arm64&distro=debian-13.7",
+          "versions": [
+            {
+              "version": "2.41-12+deb13u4",
+              "status": "affected"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "CVE-2026-27171",
+      "source": {
+        "name": "debian",
+        "url": "https://salsa.debian.org/security-tracker-team/security-tracker"
+      },
+      "ratings": [
+        {
+          "source": {
+            "name": "amazon"
+          },
+          "severity": "low"
+        },
+        {
+          "source": {
+            "name": "azure"
+          },
+          "severity": "low"
+        },
+        {
+          "source": {
+            "name": "cbl-mariner"
+          },
+          "severity": "low"
+        },
+        {
+          "source": {
+            "name": "julia"
+          },
+          "score": 5.5,
+          "severity": "medium",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:H"
+        },
+        {
+          "source": {
+            "name": "nvd"
+          },
+          "score": 5.5,
+          "severity": "medium",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:H"
+        },
+        {
+          "source": {
+            "name": "photon"
+          },
+          "severity": "medium"
+        },
+        {
+          "source": {
+            "name": "redhat"
+          },
+          "score": 3.3,
+          "severity": "low",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:L"
+        },
+        {
+          "source": {
+            "name": "ubuntu"
+          },
+          "severity": "low"
+        }
+      ],
+      "cwes": [
+        1284
+      ],
+      "description": "zlib before 1.3.2 allows CPU consumption via crc32_combine64 and crc32_combine_gen64 because x2nmodp can do right shifts within a loop that has no termination condition.",
+      "advisories": [
+        {
+          "url": "https://avd.aquasec.com/nvd/cve-2026-27171"
+        },
+        {
+          "url": "https://7asecurity.com/blog/2026/02/zlib-7asecurity-audit"
+        },
+        {
+          "url": "https://7asecurity.com/blog/2026/02/zlib-7asecurity-audit/"
+        },
+        {
+          "url": "https://7asecurity.com/reports/pentest-report-zlib-RC1.1.pdf"
+        },
+        {
+          "url": "https://access.redhat.com/security/cve/CVE-2026-27171"
+        },
+        {
+          "url": "https://github.com/advisories/GHSA-h858-mf2m-8jf4"
+        },
+        {
+          "url": "https://github.com/madler/zlib/issues/904"
+        },
+        {
+          "url": "https://github.com/madler/zlib/releases/tag/v1.3.2"
+        },
+        {
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-27171"
+        },
+        {
+          "url": "https://ostif.org/zlib-audit-complete"
+        },
+        {
+          "url": "https://ostif.org/zlib-audit-complete/"
+        },
+        {
+          "url": "https://ubuntu.com/security/notices/USN-8706-1"
+        },
+        {
+          "url": "https://www.cve.org/CVERecord?id=CVE-2026-27171"
+        }
+      ],
+      "published": "2026-02-18T04:16:01+00:00",
+      "updated": "2026-06-17T10:26:47+00:00",
+      "affects": [
+        {
+          "ref": "pkg:deb/debian/zlib1g@1.3.dfsg%2Breally1.3.1-1%2Bb1?arch=arm64&distro=debian-13.7&epoch=1",
+          "versions": [
+            {
+              "version": "1:1.3.dfsg+really1.3.1-1+b1",
+              "status": "affected"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "CVE-2026-5435",
+      "source": {
+        "name": "debian",
+        "url": "https://salsa.debian.org/security-tracker-team/security-tracker"
+      },
+      "ratings": [
+        {
+          "source": {
+            "name": "alma"
+          },
+          "severity": "medium"
+        },
+        {
+          "source": {
+            "name": "oracle-oval"
+          },
+          "severity": "medium"
+        },
+        {
+          "source": {
+            "name": "redhat"
+          },
+          "score": 5.9,
+          "severity": "medium",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:R/S:U/C:L/I:N/A:H"
+        },
+        {
+          "source": {
+            "name": "rocky"
+          },
+          "severity": "medium"
+        },
+        {
+          "source": {
+            "name": "ubuntu"
+          },
+          "severity": "medium"
+        }
+      ],
+      "cwes": [
+        787
+      ],
+      "description": "The deprecated functions ns_printrrf, ns_printrr and fp_nquery in the GNU C Library version 2.2 and newer fail to enforce the caller-supplied buffer length, and can result in an out-of-bounds write when printing TSIG records.",
+      "advisories": [
+        {
+          "url": "https://avd.aquasec.com/nvd/cve-2026-5435"
+        },
+        {
+          "url": "https://access.redhat.com/errata/RHSA-2026:42952"
+        },
+        {
+          "url": "https://access.redhat.com/security/cve/CVE-2026-5435"
+        },
+        {
+          "url": "https://bugzilla.redhat.com/2459854"
+        },
+        {
+          "url": "https://bugzilla.redhat.com/2463465"
+        },
+        {
+          "url": "https://bugzilla.redhat.com/2463539"
+        },
+        {
+          "url": "https://bugzilla.redhat.com/show_bug.cgi?id=2459854"
+        },
+        {
+          "url": "https://bugzilla.redhat.com/show_bug.cgi?id=2463465"
+        },
+        {
+          "url": "https://bugzilla.redhat.com/show_bug.cgi?id=2463539"
+        },
+        {
+          "url": "https://cert-portal.siemens.com/productcert/html/ssa-082556.html"
+        },
+        {
+          "url": "https://creativecommons.org/licenses/by/4.0/"
+        },
+        {
+          "url": "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2026-5435"
+        },
+        {
+          "url": "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2026-5928"
+        },
+        {
+          "url": "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2026-6238"
+        },
+        {
+          "url": "https://errata.almalinux.org/9/ALSA-2026-42952.html"
+        },
+        {
+          "url": "https://errata.rockylinux.org/RLSA-2026:42952"
+        },
+        {
+          "url": "https://inbox.sourceware.org/libc-alpha/cover.1777546194.git.fweimer@redhat.com/"
+        },
+        {
+          "url": "https://inbox.sourceware.org/libc-announce/7a655d55-276f-41fe-b550-feb3ebb2ce91@redhat.com/T/#u"
+        },
+        {
+          "url": "https://linux.oracle.com/cve/CVE-2026-5435.html"
+        },
+        {
+          "url": "https://linux.oracle.com/errata/ELSA-2026-500297.html"
+        },
+        {
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-5435"
+        },
+        {
+          "url": "https://sourceware.org/bugzilla/show_bug.cgi?id=34033"
+        },
+        {
+          "url": "https://sourceware.org/git/?p=glibc.git;a=blob_plain;f=advisories/GLIBC-SA-2026-0011"
+        },
+        {
+          "url": "https://ubuntu.com/security/notices/USN-8611-1"
+        },
+        {
+          "url": "https://www.cve.org/CVERecord?id=CVE-2026-5435"
+        }
+      ],
+      "published": "2026-04-28T13:19:22+00:00",
+      "updated": "2026-07-14T13:19:01+00:00",
+      "affects": [
+        {
+          "ref": "pkg:deb/debian/libc6@2.41-12%2Bdeb13u4?arch=arm64&distro=debian-13.7",
+          "versions": [
+            {
+              "version": "2.41-12+deb13u4",
+              "status": "affected"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "CVE-2026-6238",
+      "source": {
+        "name": "debian",
+        "url": "https://salsa.debian.org/security-tracker-team/security-tracker"
+      },
+      "ratings": [
+        {
+          "source": {
+            "name": "alma"
+          },
+          "severity": "medium"
+        },
+        {
+          "source": {
+            "name": "oracle-oval"
+          },
+          "severity": "medium"
+        },
+        {
+          "source": {
+            "name": "redhat"
+          },
+          "score": 6.5,
+          "severity": "medium",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:L/I:N/A:H"
+        },
+        {
+          "source": {
+            "name": "rocky"
+          },
+          "severity": "medium"
+        },
+        {
+          "source": {
+            "name": "ubuntu"
+          },
+          "severity": "medium"
+        }
+      ],
+      "cwes": [
+        126
+      ],
+      "description": "The deprecated functions ns_printrrf, ns_printrr and fp_nquery in the GNU C Library version 2.0.1 to version 2.43 fail to validate the RDATA content against the RDATA length in a DNS response when processing A6, CERT, LOC, TKEY or TSIG records, which may allow an attacker to craft a DNS response, causing a target application to crash or read uninitialized memory.\n\nThese functions are for application debugging only and hence not in the path of code executed by the DNS resolver.  Further, they have been deprecated since version 2.34 and should not be used by any new applications.  Applications should consider porting away from these interfaces since they may be removed in future versions.",
+      "advisories": [
+        {
+          "url": "https://avd.aquasec.com/nvd/cve-2026-6238"
+        },
+        {
+          "url": "https://access.redhat.com/errata/RHSA-2026:42952"
+        },
+        {
+          "url": "https://access.redhat.com/security/cve/CVE-2026-6238"
+        },
+        {
+          "url": "https://bugzilla.redhat.com/2459854"
+        },
+        {
+          "url": "https://bugzilla.redhat.com/2463465"
+        },
+        {
+          "url": "https://bugzilla.redhat.com/2463539"
+        },
+        {
+          "url": "https://bugzilla.redhat.com/show_bug.cgi?id=2459854"
+        },
+        {
+          "url": "https://bugzilla.redhat.com/show_bug.cgi?id=2463465"
+        },
+        {
+          "url": "https://bugzilla.redhat.com/show_bug.cgi?id=2463539"
+        },
+        {
+          "url": "https://cert-portal.siemens.com/productcert/html/ssa-082556.html"
+        },
+        {
+          "url": "https://creativecommons.org/licenses/by/4.0/"
+        },
+        {
+          "url": "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2026-5435"
+        },
+        {
+          "url": "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2026-5928"
+        },
+        {
+          "url": "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2026-6238"
+        },
+        {
+          "url": "https://errata.almalinux.org/9/ALSA-2026-42952.html"
+        },
+        {
+          "url": "https://errata.rockylinux.org/RLSA-2026:42952"
+        },
+        {
+          "url": "https://inbox.sourceware.org/libc-alpha/cover.1777546194.git.fweimer@redhat.com/"
+        },
+        {
+          "url": "https://inbox.sourceware.org/libc-announce/7a655d55-276f-41fe-b550-feb3ebb2ce91@redhat.com/T/#u"
+        },
+        {
+          "url": "https://linux.oracle.com/cve/CVE-2026-6238.html"
+        },
+        {
+          "url": "https://linux.oracle.com/errata/ELSA-2026-500297.html"
+        },
+        {
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-6238"
+        },
+        {
+          "url": "https://sourceware.org/bugzilla/show_bug.cgi?id=34069"
+        },
+        {
+          "url": "https://sourceware.org/git/?p=glibc.git;a=blob_plain;f=advisories/GLIBC-SA-2026-0012"
+        },
+        {
+          "url": "https://ubuntu.com/security/notices/USN-8611-1"
+        },
+        {
+          "url": "https://www.cve.org/CVERecord?id=CVE-2026-6238"
+        }
+      ],
+      "published": "2026-04-28T19:37:47+00:00",
+      "updated": "2026-07-14T13:19:09+00:00",
+      "affects": [
+        {
+          "ref": "pkg:deb/debian/libc6@2.41-12%2Bdeb13u4?arch=arm64&distro=debian-13.7",
+          "versions": [
+            {
+              "version": "2.41-12+deb13u4",
+              "status": "affected"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "CVE-2026-6368",
+      "source": {
+        "name": "debian",
+        "url": "https://salsa.debian.org/security-tracker-team/security-tracker"
+      },
+      "ratings": [
+        {
+          "source": {
+            "name": "redhat"
+          },
+          "score": 5.5,
+          "severity": "medium",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:H"
+        },
+        {
+          "source": {
+            "name": "ubuntu"
+          },
+          "severity": "medium"
+        }
+      ],
+      "cwes": [
+        908
+      ],
+      "description": "Calling wordexp with WRDE_APPEND in the GNU C Library version 2.0 to version 2.43 can cause the interface to return invalid memory in the we_wordv member, which on subsequent calls to wordfree may abort the process.",
+      "advisories": [
+        {
+          "url": "https://avd.aquasec.com/nvd/cve-2026-6368"
+        },
+        {
+          "url": "https://access.redhat.com/security/cve/CVE-2026-6368"
+        },
+        {
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-6368"
+        },
+        {
+          "url": "https://sourceware.org/bugzilla/show_bug.cgi?id=34090"
+        },
+        {
+          "url": "https://sourceware.org/git/?p=glibc.git;a=blob;f=advisories/GLIBC-SA-2026-0014"
+        },
+        {
+          "url": "https://sourceware.org/git/?p=glibc.git;a=blob;f=advisories/GLIBC-SA-2026-0014;h=1e9a0039f07471ddfe6816e5df04875bec409f92;hb=HEAD"
+        },
+        {
+          "url": "https://ubuntu.com/security/notices/USN-8737-1"
+        },
+        {
+          "url": "https://ubuntu.com/security/notices/USN-8737-2"
+        },
+        {
+          "url": "https://www.cve.org/CVERecord?id=CVE-2026-6368"
+        }
+      ],
+      "published": "2026-08-10T19:17:30+00:00",
+      "updated": "2026-09-03T16:43:15+00:00",
+      "affects": [
+        {
+          "ref": "pkg:deb/debian/libc6@2.41-12%2Bdeb13u4?arch=arm64&distro=debian-13.7",
+          "versions": [
+            {
+              "version": "2.41-12+deb13u4",
+              "status": "affected"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "CVE-2026-6791",
+      "source": {
+        "name": "debian",
+        "url": "https://salsa.debian.org/security-tracker-team/security-tracker"
+      },
+      "ratings": [
+        {
+          "source": {
+            "name": "redhat"
+          },
+          "score": 5.9,
+          "severity": "medium",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H"
+        },
+        {
+          "source": {
+            "name": "ubuntu"
+          },
+          "severity": "medium"
+        }
+      ],
+      "cwes": [
+        121
+      ],
+      "description": "When expanding paths that begin with a tilde (~) followed by a username, the internal parse_tilde function extracts the username to determine the user's home directory.  The implementation allocates memory for this username directly on the stack using the strndupa macro. Because the size of this allocation was determined by the length of the user-supplied input without any bounds checks, passing an excessively long username e.g. thousands of characters, forces the thread to exhaust its stack space. Thus if an application passes untrusted, attacker-controlled input to the wordexp function, an attacker can trigger a stack clash.",
+      "advisories": [
+        {
+          "url": "https://avd.aquasec.com/nvd/cve-2026-6791"
+        },
+        {
+          "url": "https://access.redhat.com/security/cve/CVE-2026-6791"
+        },
+        {
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-6791"
+        },
+        {
+          "url": "https://sourceware.org/bugzilla/show_bug.cgi?id=34091"
+        },
+        {
+          "url": "https://sourceware.org/git/?p=glibc.git;a=blob;f=advisories/GLIBC-SA-2026-0013"
+        },
+        {
+          "url": "https://ubuntu.com/security/notices/USN-8737-1"
+        },
+        {
+          "url": "https://ubuntu.com/security/notices/USN-8737-2"
+        },
+        {
+          "url": "https://www.cve.org/CVERecord?id=CVE-2026-6791"
+        }
+      ],
+      "published": "2026-08-10T19:17:30+00:00",
+      "updated": "2026-09-03T16:43:15+00:00",
+      "affects": [
+        {
+          "ref": "pkg:deb/debian/libc6@2.41-12%2Bdeb13u4?arch=arm64&distro=debian-13.7",
+          "versions": [
+            {
+              "version": "2.41-12+deb13u4",
+              "status": "affected"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "CVE-2026-77117",
+      "source": {
+        "name": "debian",
+        "url": "https://salsa.debian.org/security-tracker-team/security-tracker"
+      },
+      "ratings": [
+        {
+          "source": {
+            "name": "redhat"
+          },
+          "score": 5.9,
+          "severity": "medium",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H"
+        },
+        {
+          "source": {
+            "name": "ubuntu"
+          },
+          "severity": "medium"
+        }
+      ],
+      "cwes": [
+        835
+      ],
+      "description": "Converting crafted SHIFT_JISX0213 input to UCS-4 or the internal wide character encoding, for example with iconv, in the GNU C Library version 2.3 to 2.44 may result in the converter making no progress, causing the calling application to hang.\n\nSome SHIFT_JISX0213 sequences decode to two code points.  If the output buffer has room for only the first one, the converter stores the second in the conversion state and returns E2BIG, but it never clears that pending character after emitting it on the next call.  The converter then keeps emitting the pending character without consuming further input, so an application that retries the conversion loops forever. The input must be attacker controlled and the application must convert it with an output buffer small enough to split the two code points. Only the SHIFT_JISX0213 character set is affected, which is not commonly used.  The related defect in the EUC_JISX0213 converter is tracked separately as CVE-2026-80489.",
+      "advisories": [
+        {
+          "url": "https://avd.aquasec.com/nvd/cve-2026-77117"
+        },
+        {
+          "url": "https://access.redhat.com/security/cve/CVE-2026-77117"
+        },
+        {
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-77117"
+        },
+        {
+          "url": "https://sourceware.org/bugzilla/show_bug.cgi?id=34556"
+        },
+        {
+          "url": "https://sourceware.org/git/?p=glibc.git;a=blob_plain;f=advisories/GLIBC-SA-2026-0019"
+        },
+        {
+          "url": "https://ubuntu.com/security/notices/USN-8737-1"
+        },
+        {
+          "url": "https://ubuntu.com/security/notices/USN-8737-2"
+        },
+        {
+          "url": "https://www.cve.org/CVERecord?id=CVE-2026-77117"
+        }
+      ],
+      "published": "2026-09-15T11:17:12+00:00",
+      "updated": "2026-09-18T18:17:47+00:00",
+      "affects": [
+        {
+          "ref": "pkg:deb/debian/libc6@2.41-12%2Bdeb13u4?arch=arm64&distro=debian-13.7",
+          "versions": [
+            {
+              "version": "2.41-12+deb13u4",
+              "status": "affected"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "CVE-2026-80489",
+      "source": {
+        "name": "debian",
+        "url": "https://salsa.debian.org/security-tracker-team/security-tracker"
+      },
+      "ratings": [
+        {
+          "source": {
+            "name": "redhat"
+          },
+          "score": 5.9,
+          "severity": "medium",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H"
+        },
+        {
+          "source": {
+            "name": "ubuntu"
+          },
+          "severity": "medium"
+        }
+      ],
+      "cwes": [
+        835
+      ],
+      "description": "Converting crafted EUC_JISX0213 input to UCS-4 or the internal wide character encoding, for example with iconv, in the GNU C Library version 2.3 to 2.44 may result in the converter making no progress, causing the calling application to hang.\n\nSome EUC_JISX0213 sequences decode to two code points.  If the output buffer has room for only the first one, the converter stores the second in the conversion state and returns E2BIG, but it never clears that pending character after emitting it on the next call.  The converter then keeps emitting the pending character without consuming further input, so an application that retries the conversion loops forever. The input must be attacker controlled and the application must convert it with an output buffer small enough to split the two code points. Only the EUC_JISX0213 character set is affected, which is not commonly used.  The related defect in SHIFT_JISX0213 converter is tracked separately as CVE-2026-77117.",
+      "advisories": [
+        {
+          "url": "https://avd.aquasec.com/nvd/cve-2026-80489"
+        },
+        {
+          "url": "https://access.redhat.com/security/cve/CVE-2026-80489"
+        },
+        {
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-80489"
+        },
+        {
+          "url": "https://sourceware.org/bugzilla/show_bug.cgi?id=34568"
+        },
+        {
+          "url": "https://sourceware.org/git/?p=glibc.git;a=blob_plain;f=advisories/GLIBC-SA-2026-0020"
+        },
+        {
+          "url": "https://ubuntu.com/security/notices/USN-8737-1"
+        },
+        {
+          "url": "https://ubuntu.com/security/notices/USN-8737-2"
+        },
+        {
+          "url": "https://www.cve.org/CVERecord?id=CVE-2026-80489"
+        }
+      ],
+      "published": "2026-09-15T11:17:12+00:00",
+      "updated": "2026-09-18T18:17:47+00:00",
+      "affects": [
+        {
+          "ref": "pkg:deb/debian/libc6@2.41-12%2Bdeb13u4?arch=arm64&distro=debian-13.7",
+          "versions": [
+            {
+              "version": "2.41-12+deb13u4",
+              "status": "affected"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "CVE-2026-85091",
+      "source": {
+        "name": "debian",
+        "url": "https://salsa.debian.org/security-tracker-team/security-tracker"
+      },
+      "ratings": [
+        {
+          "source": {
+            "name": "ubuntu"
+          },
+          "severity": "medium"
+        }
+      ],
+      "cwes": [
+        787
+      ],
+      "description": "zlib versions 1.3.1.2 through 1.3.2 contain a heap buffer overflow vulnerability in the gz_vacate() function when processing non-blocking gzwrite() operations with stale external buffer pointers. Attackers can trigger the overflow by calling gzprintf() or gzvprintf() after a write stall, causing an unchecked memmove() to write beyond the internal input buffer boundary.",
+      "advisories": [
+        {
+          "url": "https://avd.aquasec.com/nvd/cve-2026-85091"
+        },
+        {
+          "url": "https://gist.github.com/thesmartshadow/e0b9481792afb7c31e86fee1ff084490"
+        },
+        {
+          "url": "https://github.com/madler/zlib"
+        },
+        {
+          "url": "https://github.com/madler/zlib/blob/v1.3.2/gzwrite.c#L393"
+        },
+        {
+          "url": "https://www.cve.org/CVERecord?id=CVE-2026-85091"
+        },
+        {
+          "url": "https://www.vulncheck.com/advisories/zlib-1.3.1.2-through-1.3.2-heap-buffer-overflow-via-gz-vacate"
+        }
+      ],
+      "published": "2026-09-03T13:06:20+00:00",
+      "updated": "2026-09-09T20:41:07+00:00",
+      "affects": [
+        {
+          "ref": "pkg:deb/debian/zlib1g@1.3.dfsg%2Breally1.3.1-1%2Bb1?arch=arm64&distro=debian-13.7&epoch=1",
+          "versions": [
+            {
+              "version": "1:1.3.dfsg+really1.3.1-1+b1",
+              "status": "affected"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "CVE-2026-8674",
+      "source": {
+        "name": "debian",
+        "url": "https://salsa.debian.org/security-tracker-team/security-tracker"
+      },
+      "ratings": [
+        {
+          "source": {
+            "name": "redhat"
+          },
+          "score": 5.3,
+          "severity": "medium",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:A/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H"
+        }
+      ],
+      "cwes": [
+        617
+      ],
+      "description": "Initializing the DNS stub resolver from an /etc/resolv.conf file, or a LOCALDOMAIN environment variable, whose search list contains a domain of roughly 200 characters or more in the GNU C Library version 2.26 to 2.44 results in an assertion failure which aborts the process.\n\nThe resolver truncates the search list when copying it into the fixed-size _res.defdname buffer, then asserts that the copy is consistent with the full configuration.  The consistency check compared against the wrong size and did not handle a first entry that does not fit, so a correctly truncated list failed the assertion.  Any process that resolves names through the library is affected, including long-running processes that reload /etc/resolv.conf on the next query after it changes.  Search domains are commonly written to /etc/resolv.conf from data received over DHCP or from a VPN server, so an attacker on the local network may be able to trigger this without privileges on the target system, subject to validation by the network configuration software.",
+      "advisories": [
+        {
+          "url": "https://avd.aquasec.com/nvd/cve-2026-8674"
+        },
+        {
+          "url": "http://www.openwall.com/lists/oss-security/2026/09/17/4"
+        },
+        {
+          "url": "https://access.redhat.com/security/cve/CVE-2026-8674"
+        },
+        {
+          "url": "https://joshua.hu/fuzzing-glibc-libresolv"
+        },
+        {
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-8674"
+        },
+        {
+          "url": "https://sourceware.org/bugzilla/show_bug.cgi?id=31026"
+        },
+        {
+          "url": "https://sourceware.org/git/?p=glibc.git;a=blob_plain;f=advisories/GLIBC-SA-2026-0021"
+        },
+        {
+          "url": "https://sourceware.org/git/?p=glibc.git;a=commit;h=506ea57086bfb9ce3daff1c14246a1cb532aba0a"
+        },
+        {
+          "url": "https://www.cve.org/CVERecord?id=CVE-2026-8674"
+        }
+      ],
+      "published": "2026-09-17T17:16:53+00:00",
+      "updated": "2026-09-18T18:17:47+00:00",
+      "affects": [
+        {
+          "ref": "pkg:deb/debian/libc6@2.41-12%2Bdeb13u4?arch=arm64&distro=debian-13.7",
+          "versions": [
+            {
+              "version": "2.41-12+deb13u4",
+              "status": "affected"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "CVE-2026-86805",
+      "source": {
+        "name": "debian",
+        "url": "https://salsa.debian.org/security-tracker-team/security-tracker"
+      },
+      "ratings": [
+        {
+          "source": {
+            "name": "redhat"
+          },
+          "score": 7,
+          "severity": "medium",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:L/AC:H/PR:L/UI:N/S:U/C:H/I:H/A:H"
+        }
+      ],
+      "cwes": [
+        367
+      ],
+      "description": "A time-of-check to time-of-use (TOCTOU) race condition in the dynamic loader (ld.so) of the GNU C Library (glibc) versions 2.14 through 2.44 allows a local attacker to escalate privileges. When expanding $ORIGIN in DT_RPATH for setuid/setgid (AT_SECURE) programs, glibc validates the lexically normalized search path against the trusted directories but then opens the raw, un-normalized path. On systems where the Linux fs.protected_hardlinks sysctl is disabled, a local attacker who hard-links such a program into an attacker-controlled directory and wins a race to replace an intermediate path component with a symbolic link can direct the loader outside the trusted directory, causing it to load an attacker-controlled shared object and execute arbitrary code with the elevated privileges of the program.\n\nExploitation requires an installed setuid or setgid binary whose DT_RPATH uses $ORIGIN followed by \"..\" traversal that normalizes into a trusted directory, and the ability to hard-link that binary and win the race by swapping a path component for a symbolic link. Major Linux-based OS distributions ship with fs.protected_hardlinks enabled by default and mitigate the vulnerability.",
+      "advisories": [
+        {
+          "url": "https://avd.aquasec.com/nvd/cve-2026-86805"
+        },
+        {
+          "url": "https://access.redhat.com/security/cve/CVE-2026-86805"
+        },
+        {
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-86805"
+        },
+        {
+          "url": "https://sourceware.org/bugzilla/show_bug.cgi?id=34360"
+        },
+        {
+          "url": "https://sourceware.org/git/?p=glibc.git;a=blob_plain;f=advisories/GLIBC-SA-2026-0022"
+        },
+        {
+          "url": "https://www.cve.org/CVERecord?id=CVE-2026-86805"
+        }
+      ],
+      "published": "2026-09-22T16:18:06+00:00",
+      "updated": "2026-09-23T04:17:57+00:00",
+      "affects": [
+        {
+          "ref": "pkg:deb/debian/libc6@2.41-12%2Bdeb13u4?arch=arm64&distro=debian-13.7",
+          "versions": [
+            {
+              "version": "2.41-12+deb13u4",
+              "status": "affected"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "CVE-2026-89092",
+      "source": {
+        "name": "debian",
+        "url": "https://salsa.debian.org/security-tracker-team/security-tracker"
+      },
+      "ratings": [
+        {
+          "source": {
+            "name": "redhat"
+          },
+          "score": 4.2,
+          "severity": "medium",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:A/AC:H/PR:N/UI:N/S:U/C:N/I:L/A:L"
+        }
+      ],
+      "cwes": [
+        789
+      ],
+      "description": "The nscd service in the GNU C Library 2.3.4 onwards may crash due to a \nstack overflow when a malicious DNS server returns too large a response \nfor a DNS query, resulting in degraded DNS resolution for the system.\n\n\n\nExploitation of this bug needs a system that has nscd enabled and using \nan untrusted DNS server for name resolution, with the compromised DNS \nserver being capable of processing records large enough to result in a \nstack overflow in an nscd thread stack.  During experimentation, bind 9 \nwas unable to handle large records, but that could change in future or \nwith a different name server.  In typical installations, nscd is \nexecuted in an isolated context as its own user without a shell, due to \nwhich any compromise of that service is isolated.\n\n\n\nThere is a remote possibility of nscd cache corruption if an attacker \nmanages to get the stack pointer into a desired point in the heap, \npotentially resulting in other caches in nscd being overwritten with \ncorrupt data through the stack overflow, until the buggy code path \neventually results in a crash.\n\n\n\nFinally, a crash in nscd may result in performance degradation when \nresolving names, but it does not result in a denial of service.",
+      "advisories": [
+        {
+          "url": "https://avd.aquasec.com/nvd/cve-2026-89092"
+        },
+        {
+          "url": "http://www.openwall.com/lists/oss-security/2026/09/11/2"
+        },
+        {
+          "url": "https://access.redhat.com/security/cve/CVE-2026-89092"
+        },
+        {
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-89092"
+        },
+        {
+          "url": "https://sourceware.org/bugzilla/show_bug.cgi?id=34624"
+        },
+        {
+          "url": "https://sourceware.org/git/?p=glibc.git;a=blob_plain;f=advisories/GLIBC-SA-2026-0016"
+        },
+        {
+          "url": "https://www.cve.org/CVERecord?id=CVE-2026-89092"
+        }
+      ],
+      "published": "2026-09-11T02:18:35+00:00",
+      "updated": "2026-09-11T18:17:00+00:00",
+      "affects": [
+        {
+          "ref": "pkg:deb/debian/libc6@2.41-12%2Bdeb13u4?arch=arm64&distro=debian-13.7",
+          "versions": [
+            {
+              "version": "2.41-12+deb13u4",
+              "status": "affected"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "CVE-2026-95818",
+      "source": {
+        "name": "debian",
+        "url": "https://salsa.debian.org/security-tracker-team/security-tracker"
+      },
+      "ratings": [
+        {
+          "source": {
+            "name": "redhat"
+          },
+          "score": 5.8,
+          "severity": "medium",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:L/AC:H/PR:L/UI:N/S:U/C:L/I:L/A:H"
+        }
+      ],
+      "cwes": [
+        121
+      ],
+      "description": "A stack-based buffer overflow in the dynamic loader (ld.so) of the GNU C Library (glibc) versions 2.14 through 2.44 allows a local attacker to crash or corrupt the memory of setuid/setgid (AT_SECURE) programs.\n\nWhen such a program's DT_RPATH or DT_RUNPATH begins with $ORIGIN and is followed by NUL or '/' the loader both reads past the end of the path buffer and writes past the end of a stack-allocated internal buffer. The corrupted loader stack can lead to a loader crash (denial of service) and limited disclosure of process memory.",
+      "advisories": [
+        {
+          "url": "https://avd.aquasec.com/nvd/cve-2026-95818"
+        },
+        {
+          "url": "https://access.redhat.com/security/cve/CVE-2026-95818"
+        },
+        {
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-95818"
+        },
+        {
+          "url": "https://sourceware.org/bugzilla/show_bug.cgi?id=34360"
+        },
+        {
+          "url": "https://sourceware.org/git/?p=glibc.git;a=blob_plain;f=advisories/GLIBC-SA-2026-0023"
+        },
+        {
+          "url": "https://www.cve.org/CVERecord?id=CVE-2026-95818"
+        }
+      ],
+      "published": "2026-09-22T17:17:32+00:00",
+      "updated": "2026-09-22T19:56:19+00:00",
+      "affects": [
+        {
+          "ref": "pkg:deb/debian/libc6@2.41-12%2Bdeb13u4?arch=arm64&distro=debian-13.7",
+          "versions": [
+            {
+              "version": "2.41-12+deb13u4",
+              "status": "affected"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "recordedAt": "2026-09-16T05:17:36.483Z",
+  "environment": "isolated-local-uat",
+  "certification": "WI-OI-039-configuration-studio-live-observability",
+  "acceptanceStatus": "LOCAL_LIVE_SCRAPE_ONLY",
+  "releaseAcceptance": false,
+  "databaseEngine": "16.14",
+  "migrationCount": 35,
+  "apiReplicaCount": 1,
+  "configurationMetricCount": 13,
+  "liveVerifierChecks": [
+    "missing-scraper-credential-rejected",
+    "invalid-scraper-credential-rejected",
+    "dedicated-configured-scraper-authentication",
+    "prometheus-content-contract",
+    "real-process-and-request-measurements",
+    "registered-route-template-cardinality",
+    "unmatched-route-value-redaction",
+    "invalid-correlation-value-replaced",
+    "durable-database-operational-state",
+    "database-collector-health-signal",
+    "tenant-identity-and-payload-non-disclosure"
+  ],
+  "outcomes": [
+    "disposable-postgresql16-database-replayed-all-forward-migrations",
+    "real-control-plane-api-started-with-one-run-dedicated-scraper-secret",
+    "missing-and-invalid-scraper-credentials-rejected",
+    "authenticated-prometheus-content-contract-returned",
+    "database-collector-reported-current-success",
+    "thirteen-configuration-metric-families-present-in-live-scrape",
+    "manifest-invalidation-listener-reported-connected",
+    "bounded-cache-and-consumer-counters-exported-without-high-cardinality-labels",
+    "empty-database-configuration-gauges-reported-honest-zeroes",
+    "route-cardinality-and-tenant-user-record-event-label-boundaries-passed"
+  ],
+  "outcomeCount": 10,
+  "limitations": [
+    "This is a local single-replica live scrape, not managed-cloud or customer-managed deployment evidence.",
+    "Grafana dashboard import, Prometheus rule evaluation and fired-and-resolved notification delivery were not exercised.",
+    "An independent operator has not executed the database, outbox and rollback runbook scenarios."
+  ],
+  "certificationDatabaseRetained": false,
+  "metricsTokenPersistedInEvidence": false,
+  "rawMetricsPersistedInEvidence": false,
+  "durationMs": 2713
+}

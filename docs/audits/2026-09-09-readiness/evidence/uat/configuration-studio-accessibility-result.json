@@ -1,0 +1,186 @@
+{
+  "recordedAt": "2026-09-15T20:56:41.114Z",
+  "certification": "WI-OI-039-configuration-accessibility-local",
+  "status": "passed",
+  "standard": "WCAG 2.2 A/AA automated rules supported by axe-core",
+  "browsers": [
+    "chromium-headless",
+    "firefox-headless",
+    "webkit-headless"
+  ],
+  "testData": "generated-attributable-non-production-identities-deactivated-after-run",
+  "scans": [
+    {
+      "name": "chromium-designer-desktop-reduced-motion",
+      "passes": 21,
+      "incomplete": 0,
+      "inapplicable": 41,
+      "violations": []
+    },
+    {
+      "name": "chromium-designer-mobile-preview",
+      "passes": 21,
+      "incomplete": 0,
+      "inapplicable": 41,
+      "violations": []
+    },
+    {
+      "name": "chromium-governance-empty",
+      "passes": 16,
+      "incomplete": 0,
+      "inapplicable": 46,
+      "violations": []
+    },
+    {
+      "name": "chromium-published-empty",
+      "passes": 20,
+      "incomplete": 0,
+      "inapplicable": 42,
+      "violations": []
+    },
+    {
+      "name": "chromium-runtime-empty",
+      "passes": 16,
+      "incomplete": 0,
+      "inapplicable": 46,
+      "violations": []
+    },
+    {
+      "name": "chromium-portability-empty",
+      "passes": 18,
+      "incomplete": 0,
+      "inapplicable": 44,
+      "violations": []
+    },
+    {
+      "name": "chromium-designer-compact-viewport",
+      "passes": 21,
+      "incomplete": 0,
+      "inapplicable": 41,
+      "violations": []
+    },
+    {
+      "name": "firefox-designer-desktop-reduced-motion",
+      "passes": 21,
+      "incomplete": 0,
+      "inapplicable": 41,
+      "violations": []
+    },
+    {
+      "name": "firefox-designer-mobile-preview",
+      "passes": 21,
+      "incomplete": 0,
+      "inapplicable": 41,
+      "violations": []
+    },
+    {
+      "name": "firefox-governance-empty",
+      "passes": 16,
+      "incomplete": 0,
+      "inapplicable": 46,
+      "violations": []
+    },
+    {
+      "name": "firefox-published-empty",
+      "passes": 20,
+      "incomplete": 0,
+      "inapplicable": 42,
+      "violations": []
+    },
+    {
+      "name": "firefox-runtime-empty",
+      "passes": 16,
+      "incomplete": 0,
+      "inapplicable": 46,
+      "violations": []
+    },
+    {
+      "name": "firefox-portability-empty",
+      "passes": 18,
+      "incomplete": 0,
+      "inapplicable": 44,
+      "violations": []
+    },
+    {
+      "name": "firefox-designer-compact-viewport",
+      "passes": 21,
+      "incomplete": 0,
+      "inapplicable": 41,
+      "violations": []
+    },
+    {
+      "name": "webkit-designer-desktop-reduced-motion",
+      "passes": 21,
+      "incomplete": 0,
+      "inapplicable": 41,
+      "violations": []
+    },
+    {
+      "name": "webkit-designer-mobile-preview",
+      "passes": 21,
+      "incomplete": 0,
+      "inapplicable": 41,
+      "violations": []
+    },
+    {
+      "name": "webkit-governance-empty",
+      "passes": 16,
+      "incomplete": 0,
+      "inapplicable": 46,
+      "violations": []
+    },
+    {
+      "name": "webkit-published-empty",
+      "passes": 20,
+      "incomplete": 0,
+      "inapplicable": 42,
+      "violations": []
+    },
+    {
+      "name": "webkit-runtime-empty",
+      "passes": 16,
+      "incomplete": 0,
+      "inapplicable": 46,
+      "violations": []
+    },
+    {
+      "name": "webkit-portability-empty",
+      "passes": 18,
+      "incomplete": 0,
+      "inapplicable": 44,
+      "violations": []
+    },
+    {
+      "name": "webkit-designer-compact-viewport",
+      "passes": 21,
+      "incomplete": 0,
+      "inapplicable": 41,
+      "violations": []
+    }
+  ],
+  "scanCount": 21,
+  "checks": [
+    "chromium-roving-tab-focus-arrow-home-end",
+    "chromium-desktop-and-compact-responsive-scan",
+    "chromium-reduced-motion-browser-context",
+    "chromium-no-browser-page-errors",
+    "chromium-no-http-5xx-responses",
+    "firefox-roving-tab-focus-arrow-home-end",
+    "firefox-desktop-and-compact-responsive-scan",
+    "firefox-reduced-motion-browser-context",
+    "firefox-no-browser-page-errors",
+    "firefox-no-http-5xx-responses",
+    "webkit-roving-tab-focus-arrow-home-end",
+    "webkit-desktop-and-compact-responsive-scan",
+    "webkit-reduced-motion-browser-context",
+    "webkit-no-browser-page-errors",
+    "webkit-no-http-5xx-responses"
+  ],
+  "failure": null,
+  "limitations": [
+    "Automated axe-core coverage cannot replace manual keyboard, zoom, high-contrast or screen-reader review.",
+    "This local browser-matrix run does not prove managed-cloud or customer-managed deployment profiles.",
+    "The contextual Studio overlay and adopting module journeys require separate accessibility acceptance."
+  ],
+  "releaseAcceptance": false
+}

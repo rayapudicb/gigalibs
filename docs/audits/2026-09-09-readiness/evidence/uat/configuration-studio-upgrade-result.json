@@ -1,0 +1,26 @@
+{
+  "recordedAt": "2026-09-15T18:48:18.570Z",
+  "environment": "isolated-local-uat",
+  "databaseEngine": "PostgreSQL 16",
+  "baselineMigrationCount": 33,
+  "upgradedMigrationCount": 35,
+  "baselineCutoff": "20260915000000",
+  "durationMs": 4005,
+  "applicationRestartCount": 1,
+  "databaseRestartPerformed": false,
+  "semanticStateChecksumPreserved": true,
+  "certificationDatabaseRetained": false,
+  "temporaryMigrationDirectoryRetained": false,
+  "rawCredentialsPersistedInEvidence": false,
+  "businessDataPersistedInEvidence": false,
+  "outcomes": [
+    "accepted-33-migration-baseline-replayed",
+    "representative-hierarchy-saga-governor-configuration-state-seeded",
+    "two-forward-fix-migrations-applied",
+    "semantic-state-checksum-preserved-across-column-alignment",
+    "generated-client-read-all-upgraded-models",
+    "upgraded-api-served-preserved-active-manifest",
+    "application-restart-served-same-active-manifest"
+  ],
+  "outcomeCount": 7
+}

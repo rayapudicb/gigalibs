@@ -1,10 +1,15 @@
 # WI-OI-042 — Single control plane, opt-in hierarchy, persona routing, and universal workforce architecture
 
-Status: In Progress  
+Status: Review
 Owner: SDLC Orchestrator / Solution Architecture with Security & Privacy and Platform Engineering  
 Requirements: FR-14, FR-01, FR-02, FR-04, FR-05, FR-06, FR-08, FR-10, FR-11, FR-13, FR-15, FR-16; NFR-GOV-001–003, NFR-SEC-001–006, NFR-DATA-001–004, NFR-REL-001–003, NFR-UX-001–004, NFR-OBS-001–004, NFR-OPS-001–004  
 Independent reviewers: Solution Architecture, Security & Privacy, Backend & Data, QA/SDET, SRE, and Product  
-Gate: G4 Build / Integration (In Progress)
+Gate: bounded Local G4 schema-contract remediation accepted by independent Backend/Data on 2026-09-24;
+broader named-human and repository gates remain open
+
+Canonical disposition (2026-09-24): the bounded Department schema-contract remediation authorized in
+section 16 is technically complete and this item has returned to Review. No active G4 authority remains.
+Historical phase text below remains implementation provenance and does not broaden the completed scope.
 
 ---
 
@@ -278,3 +283,96 @@ Deliver a unified single control-plane architecture where:
 | 17. Air-Gapped Offline Store (`@axe-core/playwright`) | VERIFIED | `e2e/package.json` created; `e2e` added to `pnpm-workspace.yaml`; dep present in `.pnpm-store/v11` |
 | 18. Independent Human Sign-off | PENDING | Required named human reviewers across Architecture, Security, Data, QA, Product |
 
+## 15. Routed P1 Department schema drift — 2026-09-24
+
+WI-OI-047 exact-image verification replayed all 37 migrations on an empty PostgreSQL 16 database and
+upgraded representative 35-migration state using the exact migration image. State preservation,
+idempotency, same-tenant Department assignment and cross-tenant assignment denial passed. Both paths
+produced the same canonical schema diff:
+
+```sql
+ALTER TABLE "departments" ALTER COLUMN "updatedAt" DROP DEFAULT;
+```
+
+WI-OI-042 introduced `Department` and
+`20260920000000_canonical_departments_and_workforce_memberships`. That migration creates the column with
+`DEFAULT CURRENT_TIMESTAMP`, while `packages/db/schema.prisma` declares `DateTime @updatedAt` without a
+database default. The full evidence and cleanup proof are in
+`docs/audits/2026-09-24-wi-oi-047-department-schema-drift.md`.
+
+This is a P1 local-foundation data-contract blocker. Do not edit the applied migration. Repository evidence
+favors adding `@default(now())` to the canonical Prisma field because the deployed migration and newer
+configuration models intentionally retain the database default; removing that default would require a new
+forward migration and compatibility justification. Either correction requires WI-OI-042 to receive a
+bounded Build return and named Backend/Data plus Solution Architecture approval. WI-OI-042 remains
+`In Progress` only for the bounded remediation authorized below; no broader Build authority is inferred.
+
+## 16. Bounded Department schema-contract remediation authority — 2026-09-24
+
+Chinni babu Rayapudo supplied the following authorization as Product Owner and Solution Architecture
+reviewer:
+
+```text
+I authorize WI-OI-042 to return from Review to In Progress as the sole active Build item for bounded Local Development Department schema-contract remediation. Scope is limited to aligning Department.updatedAt in the canonical Prisma schema with the intentional deployed DEFAULT CURRENT_TIMESTAMP contract using @default(now()) @updatedAt @db.Timestamptz(3), regenerating affected artifacts, rebuilding the required exact images, and rerunning clean replay, representative upgrade, schema-drift, tenant-isolation, vulnerability, runtime and restore certification. Applied migrations must not be edited and the live application database must not be modified. Independent Backend/Data review remains required before acceptance. This does not authorize production, cloud, external release, WI-OI-047 acceptance or WI-OI-046 G4 implementation.
+```
+
+Implementation boundary:
+
+- change only the canonical Prisma annotation required to match the deployed default;
+- do not edit migration 36, migration 37 or any other applied migration;
+- do not run schema mutation against the live `gigalibs` database;
+- use uniquely named disposable databases for migration verification;
+- rebuild source-state-bound images and replace superseded evidence rather than extending its claim; and
+- return WI-OI-042 to Review after agent-executable evidence, preserving independent Backend/Data and all
+  other applicable human decisions.
+
+## 17. Bounded remediation result and review handoff — 2026-09-24
+
+The authorized canonical correction is complete. `Department.updatedAt` now declares
+`@default(now()) @updatedAt @db.Timestamptz(3)`. Prisma generation, schema validation and the
+`@gigalibs/db` build pass. Migration 36 and migration 37 were compared with the previously certified
+migrations image and remain byte-identical. The live application database was not targeted.
+
+Replacement image identity:
+
+| Component | Exact image ID |
+| --- | --- |
+| Migrations | `sha256:f59eb319beb1fbee31b63631b29f7077e538e10f11a275741d66e6d84e61ae18` |
+| API | `sha256:7fee5a35ba72cd968ae6a5e967207d6a8a1f99fe1b05696938a8431d99f9d987` |
+| Web | `sha256:ddec8e4cb4cb0effa8e45a7f89372e59a28fcfd67c71393315bb1652d413bd47` |
+
+All three images use source-state SHA-256
+`7185c069c64026c17fb58ed02636b3304ab48e56711a92d150f0969034517fc5`, run as `65532:65532` and pass the
+recorded zero Critical/High/secret policy. Exact-image empty replay and representative 35→37 upgrade both
+apply 37 migrations, preserve representative state, rerun idempotently, enforce same-tenant/cross-tenant
+Department constraints and match the canonical physical schema. Disposable runtime verification passes
+13 outcomes; clean-target restore preserves migration state and the recorded semantic checksum. All
+disposable databases, containers and networks were removed.
+
+Authoritative evidence:
+
+- `docs/audits/2026-09-24-wi-oi-042-department-remediation-closure.md`;
+- `docs/audits/2026-09-24-wi-oi-042-exact-migration-image-result.json`; and
+- `docs/audits/2026-09-24-wi-oi-042-replacement-evidence/`.
+
+The independent human handoff is
+`docs/reviews/WI-OI-042-backend-data-decision-request-2026-09-24.md`.
+
+Repository-wide `build`, `test`, `audit:production-data` and `audit:all-runtime-data` remain red on
+pre-existing Analytics, frozen CMMS and quarantined-package findings. The package-dependency, API-boundary,
+navigation and SDLC gates pass. Those failures were recorded and routed, not altered under this bounded
+authority.
+
+WI-OI-042 is now `Review`. Rakesh Konduri accepted the bounded Local Development Department evidence as
+the independent Backend/Data reviewer on 2026-09-24 with no conditions. The exact decision is recorded in
+`docs/reviews/WI-OI-042-backend-data-decision-2026-09-24.md`. This bounded decision does not complete the
+broader work-item review, accept WI-OI-047, activate WI-OI-046, or authorize production, cloud or external
+release.
+
+## 18. Independent Backend/Data decision — 2026-09-24
+
+Rakesh Konduri declared independence from the implementation producer and recorded `Accept` with no
+conditions for the bounded `configuration-local-development-v1` Department schema-contract remediation.
+The decision is bound to the unchanged request SHA-256
+`17d71fa5c77bb745ab877752a748b8ae25f3f931cc5f09869309181603427177` and its exact evidence identities.
+WI-OI-042 remains `Review` for its broader applicable gates.

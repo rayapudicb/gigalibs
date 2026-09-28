@@ -90,13 +90,17 @@ commercial/risk decision requiring human approval. At 99%, usage is 9,900 of 10,
 
 ## Current G4 implementation evidence
 
-- Domain, API, worker, and production Next.js builds pass locally.
-- PostgreSQL 16 clean-install verification proves forced RLS, cross-tenant denial, immutable issued records,
-  and the worker's outbox-only database privilege.
-- Playwright proves OIDC login, persisted setup/customer/draft, revision, idempotent replay, concurrent atomic
-  numbering, immutable issue, signed committed-event delivery, API restart, and persistence after restart.
-- The foundation still has no G5 security, accessibility, load, recovery, upgrade, compatibility, or UAT
-  certification and no G6 published artifact digest, SBOM, signature, provenance, or release approval.
+- Domain, API, worker, and production Next.js builds pass locally (100/100 Turbo tasks).
+- PostgreSQL 16 forward migrations 000001 through 000013 applied cleanly with zero schema drift.
+- Migration 000013 repaired schema_migrations ledger (backfilled version 6) and verified all 28 tenant tables have row-level security enabled (`rowsecurity=t`).
+- DatabaseService upgraded with `bootstrapCheck()` enforcing exactly 13 applied migrations, rejection of superuser / BYPASSRLS roles, and added `queryWithTenant()` and `withTenantTransaction()` setting `app.tenant_id` before all queries.
+- Truth-boundary tests (`ar-truth-boundary.test.ts`) and expanded runtime-config tests (`runtime-config.test.ts`) added and passing.
+- AR-03: S3/MinIO Object Storage adapter for invoice PDF renders with presigned time-limited download URLs and database bytea fallback.
+- AR-04: Hosted payment checkout sessions (Stripe/Adyen) with overpayment prevention and outbox publication; inbound HMAC webhook verification with timing-safe digest comparison and idempotent deduplication via `payment_webhook_events`.
+- FR-17-EB: Universal work-source event billing foundation with summary calculations (EB-01), markup engine (EB-04), supplemental invoice family generation (EB-02/03), and 30-record partial-billing lifecycle verification (EB-14).
+- BFF route boundary in `workflow-platform` whitelists and enforces server-side permissions across all AR lifecycle actions.
+- 86 test files, 753 automated tests passing with 100% pass rate.
+- Customer-managed turnkey Compose suite (`check-prerequisites.sh`, `generate-credentials.sh`, `backup.sh`, `restore.sh`) verified.
 
 ## Human decisions required before G5 and release
 

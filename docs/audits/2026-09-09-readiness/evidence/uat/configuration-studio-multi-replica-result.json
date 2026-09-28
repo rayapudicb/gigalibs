@@ -1,0 +1,35 @@
+{
+  "recordedAt": "2026-09-16T05:18:02.646Z",
+  "environment": "isolated-local-uat",
+  "databaseEngine": "PostgreSQL 16",
+  "replicaCount": 2,
+  "databaseReadModel": "bounded-read-through-manifest-cache-with-authoritative-postgresql-resynchronization",
+  "cacheInvalidationRequired": true,
+  "manifestCacheMaxAgeSeconds": 30,
+  "listenerConnected": {
+    "replicaA": 1,
+    "replicaB": 1
+  },
+  "appliedNotifications": {
+    "replicaA": 4,
+    "replicaB": 2
+  },
+  "durationMs": 4898,
+  "publishedActivationEvents": 4,
+  "certificationDatabaseRetained": false,
+  "rawCredentialsPersistedInEvidence": false,
+  "businessDataPersistedInEvidence": false,
+  "outcomes": [
+    "two-api-replicas-ready-on-one-authoritative-database",
+    "activation-on-replica-a-observed-on-online-cached-replica-b",
+    "connected-replica-b-served-bounded-cache-hit",
+    "postgresql-notification-invalidated-and-reconciled-replica-b-cache",
+    "replica-b-offline-during-third-activation",
+    "restarted-replica-b-resynchronized-from-authoritative-postgresql",
+    "rollback-on-replica-b-invalidated-online-replica-a-cache",
+    "both-replica-listeners-reported-connected-with-bounded-metrics",
+    "activation-and-rollback-outbox-events-published"
+  ],
+  "outcomeCount": 9,
+  "metricsTokenPersistedInEvidence": false
+}

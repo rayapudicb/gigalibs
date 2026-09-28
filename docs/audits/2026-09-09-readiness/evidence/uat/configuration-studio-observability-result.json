@@ -1,0 +1,31 @@
+{
+  "recordedAt": "2026-09-16T05:22:53.562Z",
+  "certification": "WI-OI-039-configuration-observability-static-conformance",
+  "metricCount": 13,
+  "alertCount": 6,
+  "dashboardPanelCount": 16,
+  "artifacts": {
+    "metricsSourceSha256": "d6f507f1d73770f4354385384c6183c91ae6a26ae21431f0074b9a73b873a631",
+    "liveVerifierSha256": "beb6f9221d4942b4ece9c22b48e5c42c92300b86cf06338f9fb51a2efc11193c",
+    "alertRulesSha256": "4bd399ad179b4e1670807762c80910df307f960547657bbcb966219277fe230d",
+    "dashboardSha256": "2b5c738998d1431441c5bff2e3f8c2e1d8cb62533bfe047b0722cda3ee0a9649",
+    "runbookSha256": "bb303a12d3b4f2c1b3cf7a63e006fc019bf40b32da93f0b5f15b8630e5bfcf82"
+  },
+  "outcomes": [
+    "configuration-metrics-are-produced-and-required-by-live-scrape-verifier",
+    "prometheus-configuration-alert-group-parses-with-six-expected-rules",
+    "configuration-alerts-use-emitted-status-label-and-module-runbook",
+    "alert-expressions-cover-failure-delay-review-latency-and-database-unavailability",
+    "grafana-dashboard-parses-with-unique-panels-and-required-operational-signals",
+    "dashboard-avoids-tenant-user-record-and-event-cardinality",
+    "runbook-preserves-authoritative-persistence-reconciliation-and-governed-rollback",
+    "runbook-distinguishes-static-wiring-from-both-profile-live-acceptance"
+  ],
+  "outcomeCount": 8,
+  "limitations": [
+    "This is static wiring conformance; it does not prove a deployed Prometheus scrape or Grafana import.",
+    "Fired-and-resolved alert routing and notification delivery have not been rehearsed.",
+    "An independent operator must execute the outage, backlog and rollback scenarios in cloud and customer-managed profiles."
+  ],
+  "releaseAcceptance": false
+}

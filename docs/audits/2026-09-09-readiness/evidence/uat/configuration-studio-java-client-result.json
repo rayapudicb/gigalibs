@@ -1,0 +1,35 @@
+{
+  "recordedAt": "2026-09-16T04:59:34.965Z",
+  "certification": "WI-OI-039-java-client-conformance",
+  "javaVersion": "java version \"11.0.30\" 2026-01-20 LTS",
+  "javacVersion": "javac 11.0.30",
+  "contractVersion": "1.0",
+  "compilerVersion": "1.0.0",
+  "fieldTypeCount": 13,
+  "componentCount": 8,
+  "manifestChecksum": "sha256:4475d9c5ccb6c99c26c4a11bca8d87e0fc26dee0e0a4b902187be7b221ca68ee",
+  "sourceSha256": "edead1f7aff23874acaf427e78f1d85b68cda95131d90f8c2e48e008eaa66fee",
+  "manifestSchemaSha256": "8c41dc7b0a670d625aad3ba402c36324ad5881fbd71942a4803473327ae8f49d",
+  "openApiSha256": "b984d50e599b82d03dfbf5cdff7fb3e5755a15821457a10a1e13bffcebfe9414",
+  "outcomes": [
+    "real-typescript-compiler-manifest-decoded-by-java-11-client",
+    "all-13-field-types-and-8-components-decoded",
+    "conditional-field-and-list-view-references-validated",
+    "unknown-runtime-response-property-rejected",
+    "response-manifest-checksum-disagreement-rejected",
+    "unknown-manifest-property-rejected",
+    "incompatible-field-component-rejected",
+    "field-limit-overflow-rejected",
+    "self-referential-condition-rejected",
+    "invalid-activation-timestamp-rejected",
+    "duplicate-json-property-rejected"
+  ],
+  "outcomeCount": 11,
+  "temporaryClassDirectoryRetained": false,
+  "limitations": [
+    "This proves strict Java 11 decoding of the portable runtime-manifest response; it is not an Android, Spring, browser-rendering or live-network certification.",
+    "The server remains authoritative for compilation, authorization and field-value validation.",
+    "Independent API/client review and both deployment-profile journeys remain required."
+  ],
+  "releaseAcceptance": false
+}

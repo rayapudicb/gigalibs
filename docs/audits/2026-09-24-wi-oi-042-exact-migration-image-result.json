@@ -1,0 +1,44 @@
+{
+  "verifier": "verify-exact-migration-image",
+  "recordedAt": "2026-09-24T01:43:24.605Z",
+  "profile": "configuration-local-development-v1",
+  "status": "PASS",
+  "gitRevision": "5abfa667bb105143ba8c00bc07b1fb4e6d9ac7d6",
+  "sourceStateSha256": "7185c069c64026c17fb58ed02636b3304ab48e56711a92d150f0969034517fc5",
+  "migrationsImage": "gigalibs/control-plane-migrations:5abfa667bb10-7185c069c640",
+  "migrationsImageId": "sha256:f59eb319beb1fbee31b63631b29f7077e538e10f11a275741d66e6d84e61ae18",
+  "databaseEngine": "PostgreSQL 16",
+  "expectedMigrationCount": 37,
+  "baselineMigrationCount": 35,
+  "timings": {
+    "cleanReplayMs": 2186,
+    "upgradeAndIdempotencyMs": 2030
+  },
+  "outcomes": [
+    "postgresql-16-server-verified",
+    "exact-migration-image-id-verified",
+    "exact-image-clean-37-migration-replay",
+    "clean-physical-schema-matches-prisma-datamodel",
+    "exact-image-35-to-37-representative-upgrade",
+    "pre-upgrade-tenant-membership-state-preserved",
+    "tenant-safe-department-relationship-enforced",
+    "cross-tenant-department-assignment-denied",
+    "exact-image-second-run-idempotent",
+    "upgraded-physical-schema-matches-prisma-datamodel",
+    "disposable-database-removed:upgrade",
+    "disposable-database-removed:clean",
+    "temporary-baseline-migration-directory-removed"
+  ],
+  "failures": [],
+  "cleanup": {
+    "disposableDatabaseCount": 2,
+    "retainedDisposableDatabases": 0,
+    "temporaryMigrationDirectoryRetained": false
+  },
+  "limitations": [
+    "This verifies two disposable databases on the existing local PostgreSQL 16 container.",
+    "This is not WAL/PITR, encrypted backup, host-loss, failover, representative-volume RTO or production evidence."
+  ],
+  "productionReleaseClaim": "NONE",
+  "durationMs": 5653
+}

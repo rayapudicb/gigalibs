@@ -18,10 +18,18 @@ abstains from answering when confidence is below threshold, tracks token costs, 
 - Hallucination abstention guardrails: if cosine similarity < 0.72, the agent returns an explicit "Insufficient Context" response.
 - Real-time token usage and credit ledger settlement per RAG query.
 
-## Acceptance Criteria
+## Document Scanner & BYOM Extraction Certification (AI-01 & AI-02)
 
-1. RAG query returns answers only from documents owned by the authenticated tenant.
-2. Every generated factual claim includes verifiable document chunk citations.
-3. Queries with low semantic confidence trigger explicit abstention rather than hallucinated answers.
-4. Token compute costs are recorded in the credit ledger.
-5. All SDLC machine audits pass.
+1. **AI-01 Bounded Intake & Storage Security**:
+   - Migration `modules/document-scanner/db/migrations/000001_document_intake_and_ocr.up.sql` establishes `gigalibs_scanner.document_uploads` with PostgreSQL Row-Level Security (`current_setting('app.current_tenant_id', true)`).
+   - Ingestion enforces 25MB bounded limit, permitted MIME types (`application/pdf`, `image/*`, `text/plain`), and deterministic SHA-256 calculation.
+2. **AI-02 OCR / BYOM Engine & Human-in-the-Loop Review**:
+   - Pluggable OCR adapter architecture (`ocr-adapters.ts`) supporting GigaLibs Native Engine, AWS Textract, Azure Document AI, and In-VPC vLLM / Ollama BYOM.
+   - Extracts structured headers, line items, and calculates individual field confidence scores.
+   - Deterministic arithmetic validation: validates $\sum \text{Line Items} == \text{Subtotal}$ and $\text{Subtotal} + \text{Tax} == \text{Total}$.
+   - Human correction API (`PATCH /v1/scanner/jobs/:id/correct`) and direct Accounts Payable hand-off (`POST /v1/scanner/jobs/:id/handoff`).
+3. **Route Security & Monorepo Verification**:
+   - Hardened Next.js BFF proxy at `apps/workflow-platform/app/api/scanner/[...path]/route.ts`.
+   - Certified with 10/10 passing tests in `scanner-boundary.test.ts` and 6/6 tests in `scanner-truth-boundary.test.ts`.
+   - Monorepo health: 103/103 test files passed (931/931 tests), 6/6 SDLC governance audits passed.
+

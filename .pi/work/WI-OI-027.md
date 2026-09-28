@@ -28,6 +28,43 @@ confidence policy, Workflow/AP provider execution, retry/idempotency, receipt ve
 reconciliation, PostgreSQL 16 rehearsal and independent Finance/Security/QA acceptance remain open.
 Current gate remains G4 Review / No-Go.
 
+## 2026-09-16 production-hardening implementation (G4 evidence)
+
+### Schema migrations applied to live PostgreSQL 16 (port 5440, schema gigalibs_recovery)
+
+- `000001_recovery_foundation.up.sql` applied: schema + 4 tables (detected_leaks, recovery_claims, historical_scan_sessions, audit_events) + 4 indexes.
+- `000002_recovery_tenancy_and_receipts.up.sql` applied: tenant_id columns on all 4 tables, tenant_recovery_configs, reconciliation_receipts, 8 composite indexes.
+- `000003_recovery_rls_and_constraints.up.sql` applied (new): created schema_migrations ledger, enforced NOT NULL on all 4 tenant_id columns, enabled RLS on 5 tables (detected_leaks, recovery_claims, historical_scan_sessions, audit_events, reconciliation_receipts) with RESTRICTIVE tenant isolation policies using `current_setting('app.tenant_id', true)`, recorded all 3 version ledger entries.
+
+Verified in live PostgreSQL: `rowsecurity = t` on all 5 tenant tables, ledger has 3 rows (versions 1–3).
+
+### Service hardening
+
+- `database.service.ts`: Added `withTenantTransaction(tenantId, callback)` (sets `app.tenant_id` via `set_config` before DML), `queryWithTenant(tenantId, sql, params)` (sets `app.tenant_id` for reads), and `bootstrapCheck()` (requires `COUNT(*) = 3` in schema_migrations at startup).
+- `leaks.service.ts`: `getMetrics`, `getLeaks`, `getLeakById` switched to `queryWithTenant`; `takeAction` switched to `withTenantTransaction`.
+- `setup.service.ts`: `setupTenant` switched to `withTenantTransaction`.
+- `scanner.service.ts`: `getScans` switched to `queryWithTenant`.
+- `claims.service.ts`: `getClaims` switched to `queryWithTenant`.
+- `.env`: DB URL corrected to `postgresql://gigalibs:gigalibs_dev@localhost:5440/gigalibs`.
+
+### Tests
+
+- `runtime-config.test.ts` (NEW): 7 tests — missing URL, non-postgresql scheme, missing DB name, unsupported algorithm, insecure OIDC in production, empty CORS origins, valid config.
+- `recovery-truth-boundary.test.ts`: 1 new test — `withTenantTransaction sets app.tenant_id before performing DML` verifies set_config appears before any DML statement.
+- Total: **85 test files, 742 tests, 100% pass**.
+
+### Verification results
+
+- `pnpm build`: 100/100 tasks successful.
+- `pnpm test`: 85 files, 742 tests, 0 failures.
+- `audit:production-data`: passed.
+- `audit:all-runtime-data`: passed.
+- `audit:package-dependencies`: passed.
+- `audit:api-boundary`: passed.
+- `audit:navigation`: passed.
+- `audit:sdlc`: passed.
+
+
 ## Product boundary
 
 The module owns `detected_leaks`, `recovery_claims`, `historical_scan_sessions`, and `audit_events` in the dedicated schema `gigalibs_recovery`.

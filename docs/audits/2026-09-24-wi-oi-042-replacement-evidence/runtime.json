@@ -1,0 +1,51 @@
+{
+  "verifier": "verify-local-f2-runtime",
+  "timestamp": "2026-09-24T01:47:49.839Z",
+  "status": "PASS",
+  "profile": "configuration-local-development-v1",
+  "releaseId": "wi-oi-042-20260924014735_a4e8cd72",
+  "apiUrl": "http://127.0.0.1:55333",
+  "images": {
+    "migrations": "gigalibs/control-plane-migrations:5abfa667bb10-7185c069c640",
+    "api": "gigalibs/playground-api:5abfa667bb10-7185c069c640",
+    "web": "gigalibs/workflow-platform:5abfa667bb10-7185c069c640"
+  },
+  "outcomes": [
+    "two-distinct-tenants-and-maker-checker-identities",
+    "four-surface-discovery",
+    "unauthenticated-returns-401",
+    "maker-checker-self-approval-denied",
+    "maker-checker-publish-activate-and-checksum-persistence",
+    "cross-tenant-list-mutation-and-runtime-isolation",
+    "tenant-profile-values-remain-unwritten",
+    "250-field-tenant-app-custom-form-accepted",
+    "profile-extension-101-field-rejected",
+    "100-surface-reads-at-concurrency-10-within-threshold",
+    "live-role-membership-user-and-tenant-revocation",
+    "logout-session-revocation",
+    "generated-test-identities-tenants-and-memberships-inactive"
+  ],
+  "failures": [],
+  "timings": {
+    "concurrentReads": {
+      "count": 100,
+      "concurrency": 10,
+      "p50Ms": 16.616,
+      "p95Ms": 29.797,
+      "p99Ms": 40.717,
+      "maxMs": 40.76,
+      "failedCount": 0
+    }
+  },
+  "testDataCleanup": {
+    "activeUsers": 0,
+    "activeTenants": 0,
+    "activeMemberships": 0
+  },
+  "limitations": [
+    "F3/TP-1 Tenant Profile value persistence is outside F2 and was not exercised",
+    "TLS/DNS and public origin are deferred to an authorized release profile",
+    "Manual keyboard, screen-reader, zoom and high-contrast review requires a human",
+    "External vulnerability tooling requires separately available scanner authorization"
+  ]
+}

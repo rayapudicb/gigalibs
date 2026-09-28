@@ -1,0 +1,10 @@
+# WI-OI-047 authorized Local Development supply-chain remediation pre-change baseline
+# Recorded 2026-09-23 before changing the pinned base image, runtime dependency closure or scanner gate.
+bdb6f34da98c3367cbddeb14fc09f1256641b5511bed3969fe7c12610e351e68  infra/compose/docker/Dockerfile
+7180fbf4cb886b74f7cb4d5098c0ca8514f0d6d298d0418d0be1e0b48c9eb838  config/deployment-profiles/configuration-local-development-v1.json
+f2b484d13e174922a74516863ff7308439ed508fecad113b21c25be26c706ee5  infra/compose/scripts/build-images.sh
+7fcbbb02981ac2274e587e3949c23483d4eb815230ac1f23503305d33008f176  infra/compose/scripts/run-phase-a-certification.sh
+82ef4485c4536bd703d7c838f20e1a6dee4c99fbdb3a4f598614cae355389361  packages/db/package.json
+ff820a1103e6d6012003a6b1f93c181d84c58dc4d9ad21d2322f3ac96052f38f  package.json
+51d4b0a44be7ab58906e28cd9e4e35252e11fa2595abb1131105e5c83dccfe78  pnpm-lock.yaml
+0be3946760a0709d443ba6882a0bf6c69b04d32dfa90622889f2f09f41e79f75  scripts/verify-configuration-local-profile.mjs

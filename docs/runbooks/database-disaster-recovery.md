@@ -24,14 +24,38 @@ Target RTO: < 15 minutes (via automated container restore)
      pnpm --dir apps/playground-api verify:postgres16-recovery
    ```
    The harness requires PostgreSQL 16, creates only timestamped `gigalibs_pg16_cert_*` databases, applies
-   all forward migrations, persists an attributable IAM graph, uses same-major backup/restore tools, compares
-   the restored graph and migration history and removes both databases and the temporary dump in `finally`.
+   all forward migrations, runs generated-client probes for recently changed models, requires an empty
+   physical-database-to-Prisma schema diff, persists an attributable IAM graph, uses same-major
+   backup/restore tools, compares the restored graph and migration history and removes both databases and
+   the temporary dump in `finally`.
    `PG16_TOOL_CONTAINER` may select the PostgreSQL 16 tools container; it defaults to the local
    `gigalibs-postgres` container.
-2. **Environment backup:** Production backup automation must use the deployment's PostgreSQL 16 tools,
+2. **Configuration Studio forward-upgrade and application-restart certification:**
+   ```bash
+   CONFIGURATION_UPGRADE_EVIDENCE_PATH=docs/audits/2026-09-09-readiness/evidence/uat/configuration-studio-upgrade-result.json \
+     pnpm --dir apps/playground-api verify:configuration-studio-upgrade
+   ```
+   The harness creates a local disposable database, replays the accepted 33-migration predecessor from a
+   generated temporary migration directory, seeds attributable tenant hierarchy, Saga, Governor and active
+   Configuration state, applies the current forward migrations and verifies semantic checksum preservation.
+   It starts and restarts the current API and requires the same active manifest before verifying removal of
+   the database and temporary migration directory. It does not restart PostgreSQL or prove WAL/PITR.
+3. **Guarded local PostgreSQL-process restart:**
+   ```bash
+   POSTGRES_CERT_CONTAINER=gigalibs-postgres \
+   CONFIGURATION_RESTART_EVIDENCE_PATH=docs/audits/2026-09-09-readiness/evidence/uat/configuration-studio-database-restart-result.json \
+     pnpm --dir apps/playground-api verify:configuration-studio-database-restart
+   ```
+   The harness verifies the named local container and published port before restarting it, keeps one API
+   process alive, requires successful responses to retain the active checksum, requires transient HTTP
+   failures to be sanitized retryable 503s, verifies preserved values plus a new post-restart transaction,
+   restarts the API, and removes its generated database. Do not point it at production or a shared customer
+   database. This is local process-restart evidence only; it is not WAL/PITR, failover, host/storage loss or
+   approved RPO/RTO evidence.
+4. **Environment backup:** Production backup automation must use the deployment's PostgreSQL 16 tools,
    encrypted immutable storage and separate credentials. Do not run the isolated harness as a substitute
    for WAL archiving, PITR or a representative-volume recovery drill.
-3. **Encrypted archive storage:** Backup archives are compressed, SHA-256 checksummed, encrypted and
+5. **Encrypted archive storage:** Backup archives are compressed, SHA-256 checksummed, encrypted and
    replicated to the approved independent backup store. MinIO is local-UAT evidence only.
 
 ## 3. Point-in-Time Recovery (PITR) & Restore Drill

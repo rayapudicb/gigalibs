@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "workItem": "WI-OI-047",
+  "reviewedAt": "2026-09-24T01:10:35Z",
+  "profile": "configuration-local-development-v1",
+  "evidenceBundle": "phase-a-20260923T180053Z",
+  "migrationSource": {
+    "directory": "packages/db/migrations",
+    "migrationSqlCount": 37,
+    "exactImageId": "sha256:0ef0a1e9bbfc6d5294c9856c4252bf876967aac74cd5e47415c4c30246636e48",
+    "composeRunResult": "exit-0-on-existing-local-database",
+    "emptyDatabaseReplayAgainstExactImage": "NOT_EVIDENCED_IN_REPLACEMENT_BUNDLE"
+  },
+  "backup": {
+    "file": "infra/compose/backups/gigalibs_backup_20260923_180843Z.dump",
+    "timestamp": "20260923_180843Z",
+    "engine": "PostgreSQL 16",
+    "format": "custom-fc",
+    "sizeBytes": 1451445,
+    "sha256": "92d2715f5cfdcd9f3232374328632381c84e2cb6c84d961694df408a2d23a801",
+    "metadataChecksumMatches": true,
+    "checksumFileMatches": true,
+    "fileMode": "0600",
+    "encrypted": false,
+    "independentOffHostCopy": false
+  },
+  "restore": {
+    "timestamp": "2026-09-23T18:08:43Z",
+    "status": "PASS",
+    "disposableTarget": "gigalibs_restore_verify_20260923180843",
+    "migrationCount": 37,
+    "requiredConfigurationTablesVerified": 3,
+    "activeActivationsPreserved": 35,
+    "activeManifestChecksumSetPreserved": true,
+    "disposableTargetRemoved": true,
+    "durationMeasured": false,
+    "fullSchemaConstraintAndRowSetComparison": false
+  },
+  "postgresOutage": {
+    "timestamp": "2026-09-23T18:07:57Z",
+    "status": "PASS",
+    "preOutageLiveness": 200,
+    "preOutageReadiness": 200,
+    "outageLiveness": 200,
+    "outageReadiness": 503,
+    "postOutageReadiness": 200,
+    "concurrentWriteRollbackAndPostRecoveryWriteAgainstReplacementImages": "NOT_EVIDENCED"
+  },
+  "historicalSupportingEvidence": {
+    "cleanPostgresql16MigrationReplay": "PASS_AT_35_MIGRATIONS_ON_2026-09-15_NOT_BOUND_TO_REPLACEMENT_IMAGE",
+    "configurationForwardUpgrade": "PASS_33_TO_35_MIGRATIONS_ON_2026-09-15_NOT_BOUND_TO_REPLACEMENT_IMAGE",
+    "databaseRestartAndTransactionRecovery": "PASS_AT_35_MIGRATIONS_ON_2026-09-16_NOT_BOUND_TO_REPLACEMENT_IMAGE"
+  },
+  "deferredExternal": [
+    "encrypted-independent-backup-store",
+    "WAL-archiving-and-PITR",
+    "cross-host-restore",
+    "replica-promotion-or-failover",
+    "representative-volume-RPO-RTO",
+    "customer-managed-or-cloud-recovery"
+  ],
+  "productionReleaseClaim": "NONE"
+}

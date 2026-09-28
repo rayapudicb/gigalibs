@@ -1,0 +1,3 @@
+networks:
+  default:
+    name: ${CERTIFICATION_NETWORK:?CERTIFICATION_NETWORK is required}

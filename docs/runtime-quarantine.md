@@ -12,14 +12,14 @@ The machine-readable authority is `config/runtime-quarantine.json`.
 
 | Category | Roots | Reason |
 | --- | ---: | --- |
-| Unimplemented stubs | 76 | Placeholder exports or no certified runtime implementation |
+| Unimplemented stubs | 74 | Placeholder exports or no certified runtime implementation |
 | Fabricated adapters | 4 | Success-looking provider behavior without a verified external operation |
 | Showcase-only packages | 2 | Demonstration UI/data behavior or a no-op delivery CLI |
-| Incomplete applications | 2 | Non-production scaffolds |
+| Incomplete applications | 5 | Non-production scaffolds |
 | Unpersisted runtime services | 5 | Runtime state is not durably/authoritatively implemented |
 | Unsafe financial runtime | 1 | Financial behavior lacks the required transactional/security controls |
 | Other uncertified runtime packages | 19 | Data, tenant, provider, persistence, document-evidence, or active-consumer behavior has not met the gate |
-| **Total** | **109** | Excluded and unavailable |
+| **Total** | **110** | Excluded and unavailable |
 
 `apps/playground-web` is separately marked `RETIRED`: it exposes no executable build/dev/start/preview script and has no browser entry point.
 

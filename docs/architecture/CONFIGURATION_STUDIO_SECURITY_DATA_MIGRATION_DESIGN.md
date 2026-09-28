@@ -75,6 +75,14 @@ Business browser
 The browser renderer cannot authorize a field or action. Hidden and disabled components are presentation
 states; the module API repeats every permission, validation and invariant decision.
 
+The reference Java 11 client calls only the versioned runtime-manifest path with an in-memory bearer and
+then applies the same strict manifest decoder used by offline conformance. Non-loopback endpoints require
+HTTPS with the JVM's normal trust store and hostname verification. Redirect following is disabled so a
+bearer cannot be forwarded to another origin; non-200 and non-JSON responses are rejected without exposing
+their bodies, and the response body is bounded to two megabytes. Loopback HTTP is permitted only for local
+development/certification. The local certification passes the bearer to the Java child process through its
+environment and persists only aggregate results and source hashes, never the credential.
+
 ## 5. Persistence and transaction rules
 
 CS-02 adds forward migrations for registry bindings, surfaces, component versions, fields, change sets,
@@ -133,15 +141,40 @@ fix or restore under the module recovery plan.
 
 ## 9. Cache, events and operations
 
-Manifest cache keys include tenant, environment/cohort, module, entity, surface, mode, locale, effective
-field policy and activation checksum. Missing or unverifiable manifests fail closed for dynamic fields;
-module-coded canonical fields may continue only when their adapter contract explicitly permits it.
+The implemented manifest projection cache uses the complete activation scope: tenant, module, entity,
+surface, environment and cohort. It stores the unfiltered checksummed manifest for at most 30 seconds and
+1,000 process-local entries; permission filtering is applied after lookup so no role-specific projection is
+reused across callers. Exact-scope and tenant invalidation use revision fencing so an in-flight stale load
+cannot repopulate the cache. Missing or unverifiable manifests fail closed for dynamic fields; module-coded
+canonical fields may continue only when their adapter contract explicitly permits it.
 
-Outbox events are versioned and contain identifiers/checksums rather than definitions or business values:
-`configuration.version.published.v1`, `configuration.activation.changed.v1`,
-`configuration.projection.requested.v1` and `configuration.activation.failed.v1`. Consumers are idempotent,
-checkpointed and observable. Metrics cover compilation, publication, activation, cache age/miss/error,
-adapter conflicts, projection lag and rollback. Alerts link to tested runbooks.
+Implemented Configuration outbox events use PostgreSQL `NOTIFY` channel
+`gigalibs_configuration_events_v1`. Publication and the fenced transition from `PROCESSING` to `PUBLISHED`
+run in the same database transaction; PostgreSQL emits the notification only after that transaction commits.
+The versioned envelope contains only `eventId`, `tenantId`, `aggregateId`, `eventType`, delivery `attempt` and
+`envelopeVersion`. It contains no definition, extension value, credential or business record.
+
+The implemented event types are `configuration.version.published.v1`,
+`configuration.activation.changed.v1`, `configuration.activation.rolled-back.v1` and the versioned
+configuration-record create/update/delete events. Delivery is at least once. The adopting manifest consumer
+strictly parses the exact envelope, processes notifications sequentially, bounds successful-event
+deduplication to 10,000 entries/one hour, marks an `eventId` only after successful processing and reloads the
+current active activation rather than trusting event order or payload state. Activation events invalidate
+the tenant and exact scope before authoritative PostgreSQL reconciliation; other Configuration events are
+counted but do not alter this projection. `attempt` is delivery evidence rather than business identity.
+
+`NOTIFY` is deliberately an invalidation signal, not a durable business-action queue. The dedicated
+listener must establish `LISTEN` before the API becomes ready. After a later disconnect, every runtime read
+bypasses cached values and queries PostgreSQL. Reconnect uses bounded exponential backoff, reloads all known
+scopes from PostgreSQL and only then marks the cache usable. Consumer completion is not implied by outbox
+`PUBLISHED`; local cache-aware two-replica and replay evidence proves this consumer, while every future
+adopting consumer must provide its own convergence evidence.
+
+Metrics cover durable Configuration lifecycle state, outbox age, listener connectivity, cache entries and
+hit/miss/bypass results, notification outcomes, resynchronization results and reconnects without tenant or
+record labels. Alerts link to tested runbooks and include sustained listener disconnection. Saga and webhook
+event families are not certified by WI-OI-039 and require their owning work items to implement and certify
+their transport before release.
 
 ## 10. AI boundary
 

@@ -1,0 +1,40 @@
+{
+  "recordedAt": "2026-09-16T04:59:33.940Z",
+  "certification": "WI-OI-039-configuration-contract-convergence",
+  "contractVersion": "1.0",
+  "compilerVersion": "1.0.0",
+  "openApiVersion": "1.0.0",
+  "controllerOperationCount": 32,
+  "documentedOperationCount": 32,
+  "fieldTypeCount": 13,
+  "componentTypeCount": 8,
+  "impactChangeKindCount": 11,
+  "maximumFields": 250,
+  "artifacts": {
+    "manifestSchemaSha256": "8c41dc7b0a670d625aad3ba402c36324ad5881fbd71942a4803473327ae8f49d",
+    "openApiSha256": "b984d50e599b82d03dfbf5cdff7fb3e5755a15821457a10a1e13bffcebfe9414",
+    "controllerSha256": "9ce11e2bf2e878cf7a5e1baa04e11a69474fc88e88e53ac63048db6603c6c193",
+    "contractSourceSha256": "7c5c26b670d5ba923e20eccdc1b366093463aad316862cd3b15a8a2fe65e5219",
+    "compilerSourceSha256": "50e251b86a6d9778266fc8420bc1d87b3ae93f05c14874a8d194a93bc0b2ea68",
+    "compatibilitySourceSha256": "cc28b5942e423a1149f2685441fd90b565b88d015eb5512cfd5cc5657da53aac"
+  },
+  "outcomes": [
+    "json-schema-2020-12-parsed-and-compiled-with-ajv",
+    "real-compiler-output-validates-against-portable-manifest-schema",
+    "unknown-executable-metadata-rejected-by-portable-schema",
+    "portable-schema-enforces-shared-250-field-ceiling",
+    "field-type-component-mode-and-compiler-enums-match-runtime-contracts",
+    "openapi-yaml-parses-and-covers-every-controller-method-path",
+    "openapi-request-limits-and-runtime-wrapper-match-implemented-contract",
+    "openapi-status-codes-match-publish-activation-and-retryable-database-boundaries",
+    "all-32-operations-use-named-v1-success-response-contracts",
+    "controller-enforces-strict-response-projections-before-serialization",
+    "impact-change-kinds-match-between-runtime-contract-and-openapi"
+  ],
+  "outcomeCount": 11,
+  "limitations": [
+    "Dependency-free Java 11 client conformance is certified separately; this static audit does not prove live Java transport or consumer integration.",
+    "Independent architecture, client and API review is still required before release acceptance."
+  ],
+  "releaseAcceptance": false
+}

@@ -1,0 +1,74 @@
+{
+  "recordedAt": "2026-09-16T04:46:34.232Z",
+  "environment": "isolated-local-uat",
+  "certification": "WI-OI-039-configuration-studio-database-restart",
+  "acceptanceStatus": "LOCAL_DATABASE_RESTART_ONLY",
+  "releaseAcceptance": false,
+  "databaseEngine": "16.14",
+  "migrationCount": 35,
+  "restartTarget": {
+    "containerName": "gigalibs-postgres",
+    "image": "postgres:16-alpine",
+    "configuredPort": 5440,
+    "startTimestampChanged": true,
+    "restartCommandDurationMs": 16205
+  },
+  "probe": {
+    "sampleCount": 266,
+    "statusCounts": {
+      "200": 4,
+      "503": 261,
+      "networkError": 1
+    },
+    "successfulResponsesValidatedAgainstActiveChecksum": 4,
+    "retryableUnavailableResponses": 261,
+    "unexpectedHttpResponses": 0,
+    "rawSamplesPersisted": false
+  },
+  "persistedState": {
+    "activeManifestChecksumPreserved": true,
+    "preRestartValuePreserved": true,
+    "postRestartWriteVersion": 2,
+    "applicationRestartChecksumPreserved": true,
+    "applicationRestartValuePreserved": true
+  },
+  "outboxRecovery": {
+    "pendingEventWasDueWhileDatabaseStopped": true,
+    "publishedAfterDatabaseRestart": true,
+    "publishAttempts": 1,
+    "notificationReceivedAfterDatabaseRestart": true,
+    "rawEnvelopePersisted": false
+  },
+  "interruptedPublishRecovery": {
+    "publishTransactionPausedAfterNotificationQueued": true,
+    "interruptedTransactionReceiptCount": 0,
+    "publishedAfterRecovery": true,
+    "publishAttempts": 2,
+    "committedReceiptCount": 1,
+    "rawEnvelopePersisted": false
+  },
+  "outcomes": [
+    "dedicated-local-postgresql16-container-target-verified",
+    "35-forward-migrations-applied-to-generated-database",
+    "active-manifest-and-extension-value-persisted-before-restart",
+    "successful-in-flight-responses-never-returned-a-stale-checksum",
+    "database-outage-responses-sanitized-as-retryable-503",
+    "same-api-process-reconnected-after-full-postgresql-container-restart",
+    "manifest-and-value-integrity-preserved-after-database-restart",
+    "new-transactional-write-succeeded-after-database-restart",
+    "manifest-and-updated-value-survived-subsequent-application-restart",
+    "pending-configuration-event-published-and-notified-after-database-restart",
+    "interrupted-publish-transaction-rolled-back-and-recovered-on-attempt-two"
+  ],
+  "outcomeCount": 11,
+  "limitations": [
+    "This restarts one local PostgreSQL container, not a managed-cloud service, customer host or storage layer.",
+    "This does not prove WAL archiving, point-in-time recovery, replica promotion, host loss or approved RPO/RTO.",
+    "Transient probe status counts characterize this run and are not an availability SLO.",
+    "The outbox scenarios prove pending-event recovery and rollback/retry when PostgreSQL stops after notification enqueue but before the PUBLISHED commit; they do not certify an adopting consumer."
+  ],
+  "certificationDatabaseRetained": false,
+  "rawCredentialsPersistedInEvidence": false,
+  "businessDataPersistedInEvidence": false,
+  "durationMs": 33705
+}

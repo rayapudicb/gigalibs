@@ -1,0 +1,33 @@
+{
+  "verifier": "verify-exact-migration-image",
+  "recordedAt": "2026-09-24T01:19:29.072Z",
+  "profile": "configuration-local-development-v1",
+  "status": "FAIL",
+  "gitRevision": "5abfa667bb105143ba8c00bc07b1fb4e6d9ac7d6",
+  "sourceStateSha256": "3e04668a12128ac56234549152789e034a61b60b56085055d9db58b74b53f614",
+  "migrationsImage": "gigalibs/control-plane-migrations:5abfa667bb10-3e04668a1212",
+  "migrationsImageId": "sha256:0ef0a1e9bbfc6d5294c9856c4252bf876967aac74cd5e47415c4c30246636e48",
+  "databaseEngine": "PostgreSQL 16",
+  "expectedMigrationCount": 37,
+  "baselineMigrationCount": 35,
+  "timings": {},
+  "outcomes": [
+    "postgresql-16-server-verified",
+    "exact-migration-image-id-verified",
+    "disposable-database-removed:clean"
+  ],
+  "failures": [
+    "pnpm exited 1: Scope: all 112 workspace projects\n../..                                    | Progress: resolved 1, reused 0, downloaded 0, added 0\n../..                                    | Progress: resolved 8, reused 0, downloaded 0, added 0\n../..                                    | Progress: resolved 10, reused 0, downloaded 1, added 0\n/Users/rayapudi/dev/gigalibs/apps/workflow-platform:\n[ERR_PNPM_WORKSPACE_PKG_NOT_FOUND] In ../../apps/workflow-platform: \"@gigalibs/data-import-export-react@workspace:*\" is in the dependencies but no package named \"@gigalibs/data-import-export-react\" is present in the workspace\n\nThis error happened while installing a direct dependency of /Users/rayapudi/dev/gigalibs/apps/workflow-platform\n\nPackages found in the workspace: gigalibs, @gigalibs/app-playground-api, @gigalibs/workflow-platform, @gigalibs/e2e, @gigalibs/ar-api, @gigalibs/ar-e2e, @gigalibs/ar-web, @gigalibs/ar-worker, @gigalibs/ar-domain, @gigalibs/analytics-api, @gigalibs/recovery-api, @gigalibs/document-scanner-api, @gigalibs/esignature-api, @gigalibs/geospatial-api, @gigalibs/currency-api, @gigalibs/ontology-api, @gigalibs/cmms-api, @gigalibs/platform-rbac-api, @gigalibs/saga-orchestrator-api, @gigalibs/spend-api, @gigalibs/tax-api, @gigalibs/connectors-api, @gigalibs/data-studio-api, @gigalibs/rules-api, @gigalibs/workflow-api, @gigalibs/admin-kit, @gigalibs/ai-chat-core, @gigalibs/ai-chat-nest, @gigalibs/analytics-core, @gigalibs/approvals-core, @gigalibs/approvals-nest, @gigalibs/approvals-react, @gigalibs/archival-core, @gigalibs/audit-core, @gigalibs/audit-nest, @gigalibs/auth-core, @gigalibs/auth-nest, @gigalibs/auth-react, @gigalibs/billing-react, @gigalibs/broker, @gigalibs/cache, @gigalibs/cart-react, @gigalibs/charts-react, @gigalibs/chat-core, @gigalibs/config, @gigalibs/configuration-core, @gigalibs/configuration-react, @gigalibs/contracts, @gigalibs/crypto, @gigalibs/custom-fields, @gigalibs/custom-fields-nest, @gigalibs/data-retention, @gigalibs/db, @gigalibs/db-migrations-runtime, @gigalibs/email-templates, @gigalibs/embed-sdk, @gigalibs/errors, @gigalibs/event-bus, @gigalibs/form-engine-core, @gigalibs/forms-engine-nest, @gigalibs/fraud-detection, @gigalibs/geofence-engine, @gigalibs/gigalibs-controls, @gigalibs/health, @gigalibs/host-kit, @gigalibs/i18n, @gigalibs/icons, @gigalibs/integration-aws-s3, @gigalibs/integration-minio, @gigalibs/integration-openai, @gigalibs/invoices-core, @gigalibs/jwt-universal, @gigalibs/knowledge-base-react, @gigalibs/kpi-widgets-react, @gigalibs/ledger-nest, @gigalibs/logger, @gigalibs/maps-core, @gigalibs/maps-react, @gigalibs/module-registry, @gigalibs/module-registry-nest, @gigalibs/multi-currency, @gigalibs/notifications-core, @gigalibs/notifications-react, @gigalibs/oauth-universal, @gigalibs/onboarding-flow, @gigalibs/orders-nest, @gigalibs/orgs-core, @gigalibs/pagination, @gigalibs/platform-settings, @gigalibs/platform-settings-nest, @gigalibs/pricing-calculator, @gigalibs/privacy-gdpr, @gigalibs/queue, @gigalibs/rbac-core, @gigalibs/rbac-nest, @gigalibs/rbac-react, @gigalibs/realtime, @gigalibs/redis, @gigalibs/reports-core, @gigalibs/reports-nest, @gigalibs/reports-react, @gigalibs/sla-engine, @gigalibs/spend-core, @gigalibs/storage-core, @gigalibs/tenancy-nest, @gigalibs/ui, @gigalibs/ui-preset, @gigalibs/users-core, @gigalibs/validation-nest, @gigalibs/workflow-engine, @gigalibs/workflow-mcp, @gigalibs/workflow-sdk\n[ERROR] Command failed with exit code 1: pnpm install\n\npnpm: Command failed with exit code 1: pnpm install\n    at getFinalError (file:///Users/rayapudi/.cache/node/corepack/v1/pnpm/11.1.2/dist/pnpm.mjs:28776:14)\n    at makeError (file:///Users/rayapudi/.cache/node/corepack/v1/pnpm/11.1.2/dist/pnpm.mjs:31083:21)\n    at getSyncResult (file:///Users/rayapudi/.cache/node/corepack/v1/pnpm/11.1.2/dist/pnpm.mjs:32927:10)\n    at spawnSubprocessSync (file:///Users/rayapudi/.cache/node/corepack/v1/pnpm/11.1.2/dist/pnpm.mjs:32887:14)\n    at execaCoreSync (file:///Users/r"
+  ],
+  "cleanup": {
+    "disposableDatabaseCount": 1,
+    "retainedDisposableDatabases": 0,
+    "temporaryMigrationDirectoryRetained": false
+  },
+  "limitations": [
+    "This verifies two disposable databases on the existing local PostgreSQL 16 container.",
+    "This is not WAL/PITR, encrypted backup, host-loss, failover, representative-volume RTO or production evidence."
+  ],
+  "productionReleaseClaim": "NONE",
+  "durationMs": 6123
+}

@@ -1,5 +1,23 @@
 # WI-OI-013 IAM and runtime-containment implementation status
 
+## 2026-09-15 containment regression correction
+
+A repository-wide verification pass found later work had made several unaccepted capabilities reachable
+again. Event Fabric queue/replay, Saga, Governor consume/quotas, SCIM service configuration/users, user
+locale mutation and Workflow Studio run-stream/webhook endpoints now fail closed through the canonical
+unavailable-capability response. Five Workflow Studio pages that exposed hard-coded or simulated workflow
+outcomes were also returned to explicit containment. Their original sources are preserved with verified
+hashes in the containment manifest and `scratch/wi-oi-013-originals`; current work-in-progress sources are
+preserved outside the runtime graph in `scratch/wi-oi-041-wip`.
+
+The authenticated upstream boundary no longer exposes arbitrary infrastructure exception messages. Only a
+validated request-body error may be returned; other failures use the fixed unavailable response. Focused
+verification passes 194 containment tests and 69 authentication-boundary tests, and the repository build,
+test suite and mandatory static audits pass. This is a safety correction, not IAM completion: external
+IdP/SCIM/SAML/WebAuthn interoperability, operator-controlled DNS/TLS, regional infrastructure,
+production-scale recovery and named independent acceptance remain open. Status remains **In Progress /
+No-Go**.
+
 ## 2026-09-10 platform-authority and UAT access correction
 
 The displayed `SUPER_ADMIN` role was confirmed to be tenant-scoped and therefore could not authorize the
@@ -145,7 +163,7 @@ first trust-boundary slice. It is not full-platform, module, UAT, deployment or 
 | Isolated persistence | Migrations, control-plane certification and 14-check IAM run passed against a new attributable DB; DB and role removed | PostgreSQL 14.20, not the planned PostgreSQL 16; no providers |
 | IAM migration upgrade | Eleven checks passed across all 18 prior migrations, pre-upgrade data, 33 type conversions, preserved instant, non-UTC-server defaults, nullable custom-role/MFA state, explicitly unverified legacy domains, recovery-code storage and OIDC tables/cascades; DB and role removed | PostgreSQL 14.20; assumes existing timestamps came from the canonical Prisma UTC path; imported local-wall-clock data needs provenance review |
 | Updated isolated persistence | Clean migrations, control-plane certification and 20-check IAM run passed; DB and role removed | PostgreSQL 14.20; includes invitation/custom-role concurrency, TOTP enrollment/enforcement/replay/lockout, hashed one-time recovery codes and a real unmatched DNS lookup; no SSO/email providers or production data |
-| PostgreSQL 16 migration and recovery | PostgreSQL 16.14 applied all 30 forward migrations, persisted an attributable user/tenant/membership/audit graph, produced a 374,639-byte same-major custom backup, restored it, matched record and migration integrity and removed both isolated databases and the temporary backup | Minimal IAM graph; production-import provenance, representative volume, WAL/PITR, RPO/RTO, deployment storage and failover remain open; evidence in `evidence/uat/postgresql16-backup-restore-result.json` |
+| PostgreSQL 16 migration and recovery | PostgreSQL 16 applied all 35 forward migrations, passed generated-client and zero-physical-schema-drift checks, persisted an attributable user/tenant/membership/audit graph, produced a 420,338-byte same-major custom backup, restored matching record/migration integrity and removed both isolated databases plus the temporary backup | Minimal IAM graph; production-import provenance, representative volume, WAL/PITR, RPO/RTO, deployment storage and failover remain open; evidence in `evidence/uat/postgresql16-backup-restore-result.json` |
 | Platform tenant lifecycle | Nine real API/database outcomes passed on PostgreSQL 16: atomic trial creation, tenant selection, extension, allowlisted entitlements, contained-module denial without write, truthful pending isolation, suspension/cancellation session revocation, explicit activation, cancellation finality and append-only audit evidence | Test identities/tenant are deactivated/cancelled and visibly attributable; provider execution, DNS/TLS, billing conversion, regional routing and independent acceptance remain open; evidence in `evidence/uat/platform-tenant-lifecycle-result.json` |
 | Isolated OIDC persistence | Seven end-to-end outcomes passed with real NestJS/Next.js processes, PostgreSQL and a signed OIDC issuer, including explicit password-protected disconnect and proof-based relinking; DB, role and isolated build directory removed | Isolated certification issuer, not external Okta/Entra/Google interoperability, upstream SCIM lifecycle or production data |
 | Isolated tenant export | Seven end-to-end outcomes passed through the authenticated NestJS API with disposable PostgreSQL 14 and real MinIO; database, object data and sparse volume removed | Isolated certification records; production key custody/rotation, large-data performance and PostgreSQL 16 remain open |

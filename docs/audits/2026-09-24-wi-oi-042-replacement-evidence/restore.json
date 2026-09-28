@@ -1,0 +1,10 @@
+{
+  "verifier": "verify-wi-oi-042-disposable-restore",
+  "status": "PASS",
+  "backupSha256": "8d61365ac414956e6e222ce2c4e37c54e3655d23c610fc7f732db9817228feb8",
+  "migrationCount": 37,
+  "semanticChecksum": "3|2|2|1|1|5891f6f0ff6e94ad9d8a1349b09674a7",
+  "physicalSchemaMatchesCanonicalPrisma": true,
+  "liveApplicationDatabaseModified": false,
+  "productionReleaseClaim": "NONE"
+}

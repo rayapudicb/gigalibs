@@ -82,7 +82,133 @@ Package tests and UI screenshots alone do not satisfy this result.
 ## 6. Mandatory certification commands
 
 The implementation work item must add focused contract, compiler, API, migration, renderer, adapter and
-browser commands. Before G5 handoff it must also pass:
+browser commands. The compiler and compatibility-policy suite is:
+
+```text
+pnpm --filter @gigalibs/configuration-core test
+```
+
+Its fixed seed (`0x5eedc0de`) covers 600 arbitrary JSON documents, 180 valid definitions after deep
+object-key reordering and 180 generated runtime-value sets. Focused transition tests cover optional and
+required additions, presentation-only edits, type/key changes, option removal, tightened/relaxed
+constraints, reduced/broadened authority and list-projection changes. Seeded local generation does not
+replace independent security/QA review or record-aware projection/backfill rehearsal.
+
+The isolated real-HTTP authorization and lifecycle command is:
+
+```text
+CONFIGURATION_HTTP_EVIDENCE_PATH=docs/audits/2026-09-09-readiness/evidence/uat/configuration-studio-http-boundary-result.json \
+  pnpm --filter @gigalibs/app-playground-api verify:configuration-studio-http-local
+```
+
+It requires an explicitly local PostgreSQL 16 endpoint, creates and removes a guarded certification
+database, starts one real control-plane API with one-run secrets and exercises the HTTP verifier. It proves
+that current database suspension and role downgrade override an already-issued token, while an allowlisted
+viewer runtime read remains available. It also listens on the versioned PostgreSQL Configuration channel,
+validates the minimal envelope emitted after the outbox commit, simulates a five-minute-old worker claim and
+proves reclaim/republication by receiving the same `eventId` at an incremented attempt. The adopting
+manifest consumer must process the first delivery successfully and increment its deduplication counter for
+the replay. Finally the harness submits a test-attributable invalid envelope and requires one terminal
+attempt, an immutable failure audit, null publication state and no notification. It is not
+transaction-commit failure injection, external-IdP/custom-role, deployment-profile or independent-review
+evidence; cache-aware multi-replica convergence is certified by the separate replica harness.
+
+The bounded local performance command is:
+
+```text
+CONFIGURATION_PERFORMANCE_EVIDENCE_PATH=docs/audits/2026-09-09-readiness/evidence/uat/configuration-studio-performance-result.json \
+  pnpm --filter @gigalibs/app-playground-api verify:configuration-studio-performance
+```
+
+This command creates two attributable tenants in a generated local PostgreSQL 16 database, exercises the
+accepted 250-field bound, concurrent authors and second-tenant pressure, writes only aggregate measurements
+after verified cleanup, and remains local characterization until independent reviewers accept both target
+deployment profiles and budgets.
+
+The guarded local database-process restart command is:
+
+```text
+POSTGRES_CERT_CONTAINER=gigalibs-postgres \
+CONFIGURATION_RESTART_EVIDENCE_PATH=docs/audits/2026-09-09-readiness/evidence/uat/configuration-studio-database-restart-result.json \
+  pnpm --filter @gigalibs/app-playground-api verify:configuration-studio-database-restart
+```
+
+It verifies the named container/port, stops and restarts the PostgreSQL service while the API stays alive,
+requires checksum/value integrity plus a post-restart write, accepts only checksum-valid success, retryable
+sanitized 503 or a network interruption during the outage, and verifies generated-database cleanup. A
+test-attributable Configuration event becomes due while the database is stopped and must reach `PUBLISHED`
+with a valid notification after recovery. A certification-only trigger also pauses another event after
+notification enqueue and before the `PUBLISHED` commit; the database stop must yield no receipt and the
+reclaimed attempt must yield exactly one. It is not WAL/PITR, host-loss, failover or target-profile RPO/RTO
+evidence; adopting-consumer behavior is certified separately by the HTTP replay and cache-aware replica
+harnesses.
+
+The portable contract convergence command is:
+
+```text
+CONFIGURATION_CONTRACT_EVIDENCE_PATH=docs/audits/2026-09-09-readiness/evidence/uat/configuration-studio-contract-convergence-result.json \
+  pnpm audit:configuration-contracts
+```
+
+It compiles the JSON Schema with AJV 2020-12, validates a real compiler result, checks the shared enums,
+impact-change kinds and resource ceiling, parses OpenAPI and requires exact method/path coverage for the Configuration controller.
+All operations now use named strict v1 response schemas enforced at the controller boundary. Offline Java
+11 client conformance is verified with:
+
+```text
+CONFIGURATION_JAVA_EVIDENCE_PATH=docs/audits/2026-09-09-readiness/evidence/uat/configuration-studio-java-client-result.json \
+  pnpm certify:configuration-java-client
+```
+
+The command compiles the dependency-free client with `--release 11 -Xlint:all -Werror`, feeds it a real
+TypeScript compiler/runtime-response fixture spanning all 13 field types and eight components, validates
+conditional/list references and requires eight hostile fixtures to fail closed. It removes generated class
+files before recording evidence. The disposable real-HTTP command above additionally compiles the Java
+transport, passes its bearer token only through the child-process environment, fetches and strictly decodes
+the live runtime manifest, proves invalid-token denial, and verifies non-loopback cleartext refusal, no
+redirect following, JSON media type and the two-megabyte body ceiling. It removes temporary classes and
+persists only aggregate hashes/results inside the HTTP evidence. Target-profile TLS/trust-chain behavior,
+consumer-specific rendering and independent API/client review remain explicit follow-on work.
+
+Static observability wiring is verified with:
+
+```text
+CONFIGURATION_OBSERVABILITY_EVIDENCE_PATH=docs/audits/2026-09-09-readiness/evidence/uat/configuration-studio-observability-result.json \
+  pnpm audit:configuration-observability
+```
+
+That audit covers metric producer/scrape-verifier alignment, Prometheus rule parsing, dashboard signal and
+cardinality checks, and runbook safety. A guarded local live scrape is run with:
+
+```text
+CONFIGURATION_LIVE_OBSERVABILITY_EVIDENCE_PATH=docs/audits/2026-09-09-readiness/evidence/uat/configuration-studio-live-observability-result.json \
+  pnpm certify:configuration-observability-live
+```
+
+The local command creates and removes an isolated PostgreSQL database and never persists its one-run
+scraper secret or raw metric body. Neither command replaces alert delivery, dashboard import or independent
+operator rehearsal in either deployment profile.
+
+The guarded local automated accessibility command is:
+
+```text
+DATABASE_URL=postgresql://<local-uat-user>:<password>@127.0.0.1:<port>/<local-uat-db> \
+WORKFLOW_PLATFORM_TEST_URL=http://127.0.0.1:5180 \
+CONFIGURATION_ACCESSIBILITY_BROWSERS=chromium,firefox,webkit \
+  pnpm certify:configuration-accessibility
+```
+
+It creates attributable non-production identity and tenant data, signs in through the real control plane,
+opens the optimized isolated workbench, exercises workflow-tab keyboard behavior and runs seven axe-core
+scans per requested browser engine for supported WCAG 2.2 A/AA rules across desktop, mobile preview,
+compact viewport, reduced-motion and all workflow states. It fails on any violation, incomplete browser
+state, page error or HTTP 5xx and
+deactivates generated identities after the run. Passing this command does not replace recorded manual
+keyboard, screen-reader, 200%/400% zoom, high-contrast, contextual-overlay or either deployment-profile
+review. Chromium is the safe default when `CONFIGURATION_ACCESSIBILITY_BROWSERS` is omitted; the recorded
+release baseline requires Chromium, Firefox and WebKit.
+
+Before G5 handoff it must also pass:
 
 ```text
 pnpm build
@@ -101,7 +227,7 @@ pnpm audit:sdlc
 - Any tenant/RBAC/object/field negative case fails.
 - Draft metadata reaches runtime or a renderer becomes a write authority.
 - Runtime code, SQL, arbitrary URL or secret value is accepted by configuration metadata.
-- PostgreSQL 16 clean/upgrade/restore, rollback/forward-fix or multi-replica evidence is missing.
+- PostgreSQL 16 clean/upgrade/restore, rollback/forward-fix or cache-aware multi-replica evidence is missing.
 - An issued financial snapshot changes after current configuration changes.
 - A production-reachable fixture, fabricated success or silent persistence fallback exists.
 - Independent Architecture, Security, Backend/Data, Web/Accessibility, QA, affected Domain or Product decision is missing.

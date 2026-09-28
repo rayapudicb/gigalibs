@@ -1,0 +1,27 @@
+{
+  "verifier": "verify-wi-oi-042-disposable-runtime",
+  "startedAt": "2026-09-24T01:47:36Z",
+  "finishedAt": "2026-09-24T01:47:53Z",
+  "status": "PASS",
+  "profile": "configuration-local-development-v1",
+  "sourceRevision": "5abfa667bb105143ba8c00bc07b1fb4e6d9ac7d6",
+  "sourceStateSha256": "7185c069c64026c17fb58ed02636b3304ab48e56711a92d150f0969034517fc5",
+  "images": {
+    "migrations": "gigalibs/control-plane-migrations:5abfa667bb10-7185c069c640",
+    "api": "gigalibs/playground-api:5abfa667bb10-7185c069c640",
+    "web": "gigalibs/workflow-platform:5abfa667bb10-7185c069c640"
+  },
+  "isolation": {
+    "runtimeDatabase": "gigalibs_wi_oi_042_runtime_20260924014735_a4e8cd72",
+    "restoreDatabase": "gigalibs_wi_oi_042_restore_20260924014735_a4e8cd72",
+    "liveApplicationDatabaseModified": false,
+    "disposableDatabasesRetained": 0,
+    "composeProjectRetained": false
+  },
+  "evidence": {
+    "runtime": "docs/audits/2026-09-24-wi-oi-042-replacement-evidence/runtime.json",
+    "restore": "docs/audits/2026-09-24-wi-oi-042-replacement-evidence/restore.json"
+  },
+  "failure": null,
+  "productionReleaseClaim": "NONE"
+}

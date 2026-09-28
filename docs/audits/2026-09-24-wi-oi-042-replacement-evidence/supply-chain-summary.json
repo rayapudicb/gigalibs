@@ -1,0 +1,56 @@
+{
+  "workItem": "WI-OI-042",
+  "profile": "configuration-local-development-v1",
+  "scanner": "trivy@0.74.0",
+  "sourceRevision": "5abfa667bb105143ba8c00bc07b1fb4e6d9ac7d6",
+  "sourceStateSha256": "7185c069c64026c17fb58ed02636b3304ab48e56711a92d150f0969034517fc5",
+  "policy": {
+    "maximumCritical": 0,
+    "maximumHigh": 0,
+    "maximumSecrets": 0,
+    "status": "PASS"
+  },
+  "images": {
+    "migrations": {
+      "tag": "gigalibs/control-plane-migrations:5abfa667bb10-7185c069c640",
+      "id": "sha256:f59eb319beb1fbee31b63631b29f7077e538e10f11a275741d66e6d84e61ae18",
+      "runtimeUser": "65532:65532",
+      "sbomComponents": 52,
+      "critical": 0,
+      "high": 0,
+      "totalVulnerabilities": 22,
+      "secretFindings": 0,
+      "sbomSha256": "d524bdb18d9d915a0136c5da01b5ece019122f35b5919e3d9a1f5c549bbdf98c",
+      "vulnerabilityReportSha256": "a512b37fcbbcbb8107ac4649a407e797a12e227d30a9f5830092e997ef4998e4",
+      "secretReportSha256": "f6270db8251422d49b40f1a08fe6a0ea55f75abae741e36af495f33a8b0893df"
+    },
+    "api": {
+      "tag": "gigalibs/playground-api:5abfa667bb10-7185c069c640",
+      "id": "sha256:7fee5a35ba72cd968ae6a5e967207d6a8a1f99fe1b05696938a8431d99f9d987",
+      "runtimeUser": "65532:65532",
+      "sbomComponents": 243,
+      "critical": 0,
+      "high": 0,
+      "totalVulnerabilities": 24,
+      "secretFindings": 0,
+      "sbomSha256": "cbc90830899d9cdbfbbe00224509a12818527ad8ddab63461225a86eeabd35af",
+      "vulnerabilityReportSha256": "ec7e95d8ab5e08179f864deae803695849a7ad20b0d12c7c6e62efe4613e9c3a",
+      "secretReportSha256": "aaf50dfd16a6221014ecef4c198e6a31e704fa96a6b4a20c17e0cf744110e877"
+    },
+    "web": {
+      "tag": "gigalibs/workflow-platform:5abfa667bb10-7185c069c640",
+      "id": "sha256:ddec8e4cb4cb0effa8e45a7f89372e59a28fcfd67c71393315bb1652d413bd47",
+      "runtimeUser": "65532:65532",
+      "sbomComponents": 304,
+      "critical": 0,
+      "high": 0,
+      "totalVulnerabilities": 22,
+      "secretFindings": 0,
+      "sbomSha256": "aa2ab890463fafb16798024f61bb536df23342df528558847872d2ef61dae505",
+      "vulnerabilityReportSha256": "f3abc33dcfc976d9b81f78c3ac206496a55492379eaf5fe99d095d2328ca6c5c",
+      "secretReportSha256": "c7e626284ce59c2d88197ad08324a01c91de3cfe4b2236b3259cd5814b45fa0e"
+    }
+  },
+  "externalTransmission": "Trivy vulnerability database update and local image inspection only; no source code, credentials or application data were submitted for analysis.",
+  "productionReleaseClaim": "NONE"
+}

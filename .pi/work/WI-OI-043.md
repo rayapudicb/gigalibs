@@ -1,11 +1,17 @@
 # WI-OI-043 — External Data Analytics & Reporting Studio
 
-Status: Proposed  
-Gate: G0  
+Status: Review
+Gate: G4–G5 Review; contained P0 replacements and named human acceptance remain pending
 Owner: SDLC Orchestrator  
 Created: 2026-09-21  
 Plan: `docs/plans/analytics-reports-production-implementation-plan.md`  
 Agent prompt: `docs/plans/analytics-reports-production-agent-prompt.md`
+
+Canonical disposition (2026-09-22): G4 implementation evidence is recorded later in this file, but the
+item is not an active Build stream and no production/release acceptance is inferred. The earlier G0
+blocker text is retained as governance history; later implementation did not retroactively erase it. CMMS
+import/export files carrying `WI-OI-043` annotations are frozen scope contamination and are excluded from
+Analytics evidence pending an authorized attribution decision.
 
 ---
 
@@ -37,7 +43,7 @@ Semantic model → Governed query engine → Charts + dashboards → Reports + C
 
 ---
 
-## G0 blockers — must be resolved before Build is authorized
+## Historical G0 blockers — preserved for audit
 
 All items below are blockers. No agent may mark them resolved. Only named human authorities
 (Solution Architecture, Security & Privacy, Backend/Data, QA/SDET, Product) can close G0.
@@ -175,8 +181,8 @@ No agent may fill these names or mark acceptance.
 
 ## G4 Build Evidence — WI-OI-043 (All 7 Phases)
 
-**Status:** In Progress at G4  
-**Gate:** G4 Build / Integration — Build evidence complete; independent human review required before gate closure  
+**Evidence state:** G4 Build evidence recorded; independent human review remains pending
+**Current gate:** G4–G5 Review
 **SDLC Governance:** No agent may mark human acceptance. Status remains In Progress until named human authorities (Solution Architecture, Security & Privacy, Backend/Data, QA/SDET, Product) close the gate.
 
 ### ADR-0004 — OSS Visualization Library
@@ -265,5 +271,4 @@ Covers all 7 phases with cross-phase assertions:
 | Vertical-slice truth boundary test | ✓ VERIFIED | `analytics-truth-boundary.test.ts` — all 7 phases |
 | Independent human sign-off | ⏳ PENDING | Required: Solution Architecture, Security & Privacy, Backend/Data, QA/SDET, Product |
 
-**Status remains In Progress.** No agent may close this gate or update reviewer status.
-
+**Status remains Review.** No agent may close this gate or update reviewer status.

@@ -1,0 +1,45 @@
+{
+  "verifier": "verify-exact-migration-image",
+  "recordedAt": "2026-09-24T01:22:01.733Z",
+  "profile": "configuration-local-development-v1",
+  "status": "FAIL",
+  "gitRevision": "5abfa667bb105143ba8c00bc07b1fb4e6d9ac7d6",
+  "sourceStateSha256": "3e04668a12128ac56234549152789e034a61b60b56085055d9db58b74b53f614",
+  "migrationsImage": "gigalibs/control-plane-migrations:5abfa667bb10-3e04668a1212",
+  "migrationsImageId": "sha256:0ef0a1e9bbfc6d5294c9856c4252bf876967aac74cd5e47415c4c30246636e48",
+  "databaseEngine": "PostgreSQL 16",
+  "expectedMigrationCount": 37,
+  "baselineMigrationCount": 35,
+  "timings": {
+    "cleanReplayMs": 2188,
+    "upgradeAndIdempotencyMs": 2142
+  },
+  "outcomes": [
+    "postgresql-16-server-verified",
+    "exact-migration-image-id-verified",
+    "exact-image-clean-37-migration-replay",
+    "exact-image-35-to-37-representative-upgrade",
+    "pre-upgrade-tenant-membership-state-preserved",
+    "tenant-safe-department-relationship-enforced",
+    "cross-tenant-department-assignment-denied",
+    "exact-image-second-run-idempotent",
+    "disposable-database-removed:upgrade",
+    "disposable-database-removed:clean",
+    "temporary-baseline-migration-directory-removed"
+  ],
+  "failures": [
+    "clean-schema-drift: -- AlterTable\nALTER TABLE \"departments\" ALTER COLUMN \"updatedAt\" DROP DEFAULT;",
+    "upgraded-schema-drift: -- AlterTable\nALTER TABLE \"departments\" ALTER COLUMN \"updatedAt\" DROP DEFAULT;"
+  ],
+  "cleanup": {
+    "disposableDatabaseCount": 2,
+    "retainedDisposableDatabases": 0,
+    "temporaryMigrationDirectoryRetained": false
+  },
+  "limitations": [
+    "This verifies two disposable databases on the existing local PostgreSQL 16 container.",
+    "This is not WAL/PITR, encrypted backup, host-loss, failover, representative-volume RTO or production evidence."
+  ],
+  "productionReleaseClaim": "NONE",
+  "durationMs": 5813
+}

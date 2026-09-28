@@ -1,19 +1,21 @@
 {
-  "recordedAt": "2026-09-12T13:22:59.550Z",
+  "recordedAt": "2026-09-15T18:43:24.708Z",
   "environment": "isolated-local-uat",
   "databaseEngine": "PostgreSQL 16",
   "backupClientMajor": 16,
   "restoreClientMajor": 16,
   "backupToolSource": "postgresql-16-container",
-  "migrationCount": 30,
-  "timestamptzCount": 86,
-  "dumpSizeBytes": 374639,
-  "durationMs": 28124,
+  "migrationCount": 35,
+  "timestamptzCount": 112,
+  "dumpSizeBytes": 420338,
+  "durationMs": 4758,
   "sourceAndRestoreDatabasesRetained": false,
   "rawCredentialsPersistedInEvidence": false,
   "businessDataPersistedInEvidence": false,
   "outcomes": [
     "postgresql-16-server-verified",
+    "generated-prisma-client-schema-compatible",
+    "physical-schema-matches-prisma-datamodel",
     "clean-forward-migration-replay",
     "attributable-iam-graph-persisted",
     "absolute-time-schema-preserved",
@@ -21,5 +23,5 @@
     "custom-format-backup-created",
     "backup-restored-with-record-and-migration-integrity"
   ],
-  "outcomeCount": 7
+  "outcomeCount": 9
 }
