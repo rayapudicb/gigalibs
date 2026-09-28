@@ -1,0 +1,28 @@
+name: gigalibs-configuration-local
+
+# Phase 1 / US-P1-04: Self-Hosted ThingsBoard Community Edition (Open Source, $0 license)
+# Ingests high-frequency sensor telemetry (MQTT / HTTP) and emits threshold webhooks to GigaLibs
+services:
+  thingsboard:
+    image: thingsboard/tb-postgres:3.6.2
+    pull_policy: if_not_present
+    restart: unless-stopped
+    ports:
+      - "9090:9090"   # ThingsBoard Web Dashboard & REST Ingestion API
+      - "1883:1883"   # MQTT Broker for Industrial/IoT Sensors
+    environment:
+      TB_QUEUE_TYPE: in-memory
+      SPRING_DATASOURCE_URL: jdbc:postgresql://gigalibs-postgres:5432/gigalibs_dev
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-postgres}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    networks:
+      - default
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9090/api/noauth/activate"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    labels:
+      com.gigalibs.service: thingsboard-ce
+      com.gigalibs.layer: telemetry-edge-ingestion

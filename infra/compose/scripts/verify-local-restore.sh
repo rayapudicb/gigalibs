@@ -63,7 +63,11 @@ cleanup() {
     psql -U "${CONTROL_DB_USER}" -d postgres -c "DROP DATABASE IF EXISTS \"${RESTORE_DB}\";" >/dev/null 2>&1 || true
   # Write evidence
   local failures_json
-  failures_json="$(printf '"%s",' "${FAILURES[@]:-}" | sed 's/,$//')"
+  if [[ ${#FAILURES[@]} -eq 0 ]]; then
+    failures_json=""
+  else
+    failures_json="$(printf '"%s",' "${FAILURES[@]}" | sed 's/,$//')"
+  fi
   local outcomes_json
   outcomes_json="$(printf '"%s",' "${OUTCOMES[@]:-}" | sed 's/,$//')"
   cat > "${EVIDENCE_PATH}" <<EOF
@@ -74,7 +78,7 @@ cleanup() {
   "restoreDatabase": "${RESTORE_DB}",
   "outcomes": [${outcomes_json}],
   "failures": [${failures_json}],
-  "limitations": ["full-migration-replay-requires-clean-target-manually"]
+  "limitations": ["physical-host disaster recovery and remote backup-vault retrieval are outside the local-development profile"]
 }
 EOF
   exit "${exit_code}"
@@ -117,7 +121,11 @@ fi
 OUTCOMES+=("migration-count-verified: ${MIGRATION_COUNT}")
 
 # 5. Verify required Configuration tables exist
-REQUIRED_TABLES=("configuration_packages" "configuration_change_sets" "configuration_activations")
+REQUIRED_TABLES=(
+  "configuration_change_sets"
+  "configuration_published_versions"
+  "configuration_activations"
+)
 for tbl in "${REQUIRED_TABLES[@]}"; do
   FOUND="$(docker exec "${CONTROL_POSTGRES_CONTAINER}" \
     psql -U "${CONTROL_DB_USER}" -d "${RESTORE_DB}" -t -c \
@@ -129,11 +137,31 @@ for tbl in "${REQUIRED_TABLES[@]}"; do
 done
 OUTCOMES+=("configuration-tables-present")
 
-# 6. Verify active manifest checksum is preserved (count only, no value printed)
-CHECKSUM_COUNT="$(docker exec "${CONTROL_POSTGRES_CONTAINER}" \
+# 6. Verify active activation count and manifest-checksum set are preserved.
+SOURCE_ACTIVE_COUNT="$(docker exec "${CONTROL_POSTGRES_CONTAINER}" \
+  psql -U "${CONTROL_DB_USER}" -d "${CONTROL_DB_NAME}" -t -c \
+  "SELECT COUNT(*) FROM configuration_activations WHERE status = 'ACTIVE';" 2>/dev/null | tr -d ' \n')"
+RESTORED_ACTIVE_COUNT="$(docker exec "${CONTROL_POSTGRES_CONTAINER}" \
   psql -U "${CONTROL_DB_USER}" -d "${RESTORE_DB}" -t -c \
-  "SELECT COUNT(*) FROM configuration_activations WHERE revoked_at IS NULL;" 2>/dev/null | tr -d ' \n')"
-OUTCOMES+=("active-activation-count: ${CHECKSUM_COUNT}")
+  "SELECT COUNT(*) FROM configuration_activations WHERE status = 'ACTIVE';" 2>/dev/null | tr -d ' \n')"
+if [[ "${SOURCE_ACTIVE_COUNT}" != "${RESTORED_ACTIVE_COUNT}" ]]; then
+  FAILURES+=("active-activation-count-mismatch: source=${SOURCE_ACTIVE_COUNT} restored=${RESTORED_ACTIVE_COUNT}")
+  exit 1
+fi
+OUTCOMES+=("active-activation-count-preserved: ${RESTORED_ACTIVE_COUNT}")
+
+CHECKSUM_SET_SQL="SELECT md5(COALESCE(string_agg(pv.checksum, ',' ORDER BY a.id), '')) FROM configuration_activations a JOIN configuration_published_versions pv ON pv.id = a.\"publishedVersionId\" WHERE a.status = 'ACTIVE';"
+SOURCE_CHECKSUM_SET="$(docker exec "${CONTROL_POSTGRES_CONTAINER}" \
+  psql -U "${CONTROL_DB_USER}" -d "${CONTROL_DB_NAME}" -t -c \
+  "${CHECKSUM_SET_SQL}" 2>/dev/null | tr -d ' \n')"
+RESTORED_CHECKSUM_SET="$(docker exec "${CONTROL_POSTGRES_CONTAINER}" \
+  psql -U "${CONTROL_DB_USER}" -d "${RESTORE_DB}" -t -c \
+  "${CHECKSUM_SET_SQL}" 2>/dev/null | tr -d ' \n')"
+if [[ -z "${SOURCE_CHECKSUM_SET}" || "${SOURCE_CHECKSUM_SET}" != "${RESTORED_CHECKSUM_SET}" ]]; then
+  FAILURES+=("active-manifest-checksum-set-mismatch")
+  exit 1
+fi
+OUTCOMES+=("active-manifest-checksum-set-preserved")
 
 STATUS="PASS"
 OUTCOMES+=("restore-verification-complete")

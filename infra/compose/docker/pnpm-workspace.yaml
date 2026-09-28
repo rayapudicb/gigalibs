@@ -1,0 +1,47 @@
+packages:
+  - apps/playground-api
+  - apps/workflow-platform
+  - modules/accounts-receivable/domain
+  - modules/analytics-studio/apps/api
+  - modules/geospatial/apps/api
+  - modules/gigaops/apps/api
+  - modules/physical-operations-cmms/apps/api
+  - modules/universal-connector-hub/apps/api
+  - packages/analytics-core
+  - packages/audit-core
+  - packages/audit-nest
+  - packages/auth-core
+  - packages/auth-nest
+  - packages/broker
+  - packages/charts-react
+  - packages/configuration-core
+  - packages/configuration-react
+  - packages/contracts
+  - packages/crypto
+  - packages/db
+  - packages/db-migrations-runtime
+  - packages/i18n
+  - packages/logger
+  - packages/maps-core
+  - packages/maps-react
+  - packages/module-registry
+  - packages/module-registry-nest
+  - packages/platform-settings
+  - packages/platform-settings-nest
+  - packages/privacy-gdpr
+  - packages/rbac-core
+  - packages/rbac-nest
+  - packages/tenancy-nest
+  - packages/validation-nest
+
+allowBuilds:
+  '@biomejs/biome': true
+  '@prisma/client': true
+  '@prisma/engines': true
+  esbuild: true
+  prisma: true
+
+overrides:
+  "@prisma/config@6.19.3>deepmerge-ts": "8.0.2"
+  "@nestjs/platform-express@11.2.3>multer": "2.4.0"
+  "next@15.5.24>postcss": "8.5.28"

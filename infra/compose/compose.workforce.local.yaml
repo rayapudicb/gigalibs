@@ -1,0 +1,91 @@
+name: gigalibs-configuration-local
+
+# WI-OI-061 bounded resource/capability overlay. The module port remains private
+# to the Compose network; the verified-session web BFF is the only browser path.
+services:
+  workforce-migrations:
+    image: ${WORKFORCE_IMAGE:?WORKFORCE_IMAGE is required}
+    pull_policy: never
+    command: ["run-module-migrations.mjs"]
+    restart: "no"
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    environment:
+      DATABASE_URL: ${WORKFORCE_MIGRATIONS_DATABASE_URL:?WORKFORCE_MIGRATIONS_DATABASE_URL is required}
+      MODULE_RUNTIME_DATABASE_URL: ${WORKFORCE_DATABASE_URL:?WORKFORCE_DATABASE_URL is required}
+      MODULE_MIGRATIONS_DIRECTORY: /app/migrations
+      MODULE_SCHEMA: gigalibs_workforce
+      MODULE_EXPECTED_MIGRATION_VERSION: "14"
+      MODULE_APPEND_ONLY_TABLES: audit_events,booking_events,punches,punch_voids,time_corrections,earning_lines
+      MODULE_READ_ONLY_TABLES: auth_revocation_events
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    labels: &workforce-labels
+      com.gigalibs.profile-key: workforce-runtime-local-development-v1
+      com.gigalibs.execution-class: LOCAL_DEVELOPMENT
+      com.gigalibs.work-item: WI-OI-061
+      com.gigalibs.release-id: ${RELEASE_ID:?RELEASE_ID is required}
+      org.opencontainers.image.revision: ${SOURCE_REVISION:?SOURCE_REVISION is required}
+      com.gigalibs.source-state-sha256: ${SOURCE_STATE_SHA256:?SOURCE_STATE_SHA256 is required}
+
+  workforce-api:
+    image: ${WORKFORCE_IMAGE:?WORKFORCE_IMAGE is required}
+    pull_policy: never
+    restart: unless-stopped
+    init: true
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    environment:
+      NODE_ENV: development
+      WORKFORCE_API_HOST: 0.0.0.0
+      WORKFORCE_API_PORT: "4700"
+      WORKFORCE_CORS_ORIGINS: ${PUBLIC_ORIGIN:?PUBLIC_ORIGIN is required}
+      WORKFORCE_DATABASE_URL: ${WORKFORCE_DATABASE_URL:?WORKFORCE_DATABASE_URL is required}
+      WORKFORCE_DATABASE_POOL_SIZE: "10"
+      WORKFORCE_EXPECTED_MIGRATION_VERSION: "14"
+      # WI-OI-070: reference pay packs (not statutory advice) are for this local profile only; production leaves this unset.
+      WORKFORCE_PAY_REFERENCE_PACKS: enabled
+      WORKFORCE_PLATFORM_CONTEXT_AUDIENCE: gigalibs-workforce-api
+      WORKFORCE_PLATFORM_CONTEXT_PUBLIC_KEY_BASE64: ${WORKFORCE_PLATFORM_CONTEXT_PUBLIC_KEY_BASE64:?WORKFORCE_PLATFORM_CONTEXT_PUBLIC_KEY_BASE64 is required}
+      # WI-OI-068 (ADR-0007 option A); keys from scripts/generate-relay-credentials.sh.
+      WORKFORCE_INBOX_RELAY_PUBLIC_KEY_BASE64: ${WORKFORCE_INBOX_RELAY_PUBLIC_KEY_BASE64:?WORKFORCE_INBOX_RELAY_PUBLIC_KEY_BASE64 is required}
+      WORKFORCE_RELAY_CMMS_URL: http://cmms-api:4200
+      CMMS_INBOX_RELAY_PRIVATE_KEY_BASE64: ${CMMS_INBOX_RELAY_PRIVATE_KEY_BASE64:?CMMS_INBOX_RELAY_PRIVATE_KEY_BASE64 is required}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      workforce-migrations:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:4700/v1/health/ready').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    labels: *workforce-labels
+
+  web:
+    environment:
+      WORKFORCE_API_URL: http://workforce-api:4700
+      WORKFORCE_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64: ${WORKFORCE_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64:?WORKFORCE_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64 is required}
+    depends_on:
+      workforce-api:
+        condition: service_healthy
+
+networks:
+  default:
+    name: gigalibs-configuration-local

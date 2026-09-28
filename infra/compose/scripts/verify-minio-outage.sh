@@ -73,7 +73,7 @@ trap cleanup EXIT
 
 # Pre-outage baseline
 echo "[1/5] Verifying baseline liveness..."
-PRE_LIVE="$(curl -sf -o /dev/null -w "%{http_code}" --max-time 5 "${API_URL}/health/live" 2>/dev/null || echo '000')"
+PRE_LIVE="$(curl -sS -o /dev/null -w "%{http_code}" --max-time 5 "${API_URL}/api/v1/health" 2>/dev/null || echo '000')"
 if [[ "${PRE_LIVE}" != "200" ]]; then
   FAILURES+=("pre-outage liveness=${PRE_LIVE} expected 200")
   write_evidence "FAIL"; exit 1
@@ -81,7 +81,7 @@ fi
 OUTCOMES+=("pre-outage-liveness=200")
 
 echo "[2/5] Verifying baseline readiness..."
-PRE_READY="$(curl -sf -o /dev/null -w "%{http_code}" --max-time 5 "${API_URL}/health/ready" 2>/dev/null || echo '000')"
+PRE_READY="$(curl -sS -o /dev/null -w "%{http_code}" --max-time 5 "${API_URL}/api/v1/ready" 2>/dev/null || echo '000')"
 if [[ "${PRE_READY}" != "200" ]]; then
   FAILURES+=("pre-outage readiness=${PRE_READY} expected 200")
   write_evidence "FAIL"; exit 1
@@ -95,13 +95,13 @@ sleep 10
 
 # During outage: F2 has no object-storage dependency — API must remain live AND ready
 echo "[4/5] Checking liveness during MinIO outage (expect 200 — F2 has no object-storage dep)..."
-OUTAGE_LIVE="$(curl -sf -o /dev/null -w "%{http_code}" --max-time 10 "${API_URL}/health/live" 2>/dev/null || echo '000')"
+OUTAGE_LIVE="$(curl -sS -o /dev/null -w "%{http_code}" --max-time 10 "${API_URL}/api/v1/health" 2>/dev/null || echo '000')"
 if [[ "${OUTAGE_LIVE}" != "200" ]]; then
   FAILURES+=("outage liveness=${OUTAGE_LIVE} expected 200 — F2 must not depend on MinIO")
 fi
 OUTCOMES+=("outage-liveness=${OUTAGE_LIVE}")
 
-OUTAGE_READY="$(curl -sf -o /dev/null -w "%{http_code}" --max-time 10 "${API_URL}/health/ready" 2>/dev/null || echo '000')"
+OUTAGE_READY="$(curl -sS -o /dev/null -w "%{http_code}" --max-time 10 "${API_URL}/api/v1/ready" 2>/dev/null || echo '000')"
 if [[ "${OUTAGE_READY}" != "200" ]]; then
   FAILURES+=("outage readiness=${OUTAGE_READY} expected 200 — F2 must not depend on MinIO")
 fi
@@ -112,7 +112,7 @@ echo "[5/5] Restarting MinIO and polling for API readiness (up to 20s)..."
 docker start "${CONTAINER}" >/dev/null
 for i in $(seq 1 4); do
   sleep 5
-  RECOVER_READY="$(curl -sf -o /dev/null -w "%{http_code}" --max-time 5 "${API_URL}/health/ready" 2>/dev/null || echo '000')"
+  RECOVER_READY="$(curl -sS -o /dev/null -w "%{http_code}" --max-time 5 "${API_URL}/api/v1/ready" 2>/dev/null || echo '000')"
   if [[ "${RECOVER_READY}" == "200" ]]; then
     OUTCOMES+=("post-outage-readiness=200")
     echo "  Recovery confirmed (${i}x5s)"

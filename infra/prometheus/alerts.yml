@@ -13,7 +13,7 @@ groups:
           runbook_url: "docs/runbooks/control-plane-metrics.md"
 
       - alert: ControlPlaneOutboxBacklogHigh
-        expr: sum(gigalibs_control_outbox_events{state="PENDING"}) > 100
+        expr: sum(gigalibs_control_outbox_events{status="PENDING"}) > 100
         for: 5m
         labels:
           severity: warning
@@ -32,6 +32,7 @@ groups:
         annotations:
           summary: "Control plane HTTP 5xx error rate > 1%"
           description: "HTTP 5xx error rate has exceeded 1% of total traffic over the last 5 minutes."
+          runbook_url: "docs/runbooks/control-plane-metrics.md"
 
       - alert: ControlPlaneHighP99Latency
         expr: histogram_quantile(0.99, sum(rate(gigalibs_http_request_duration_seconds_bucket[5m])) by (le)) > 1.0
@@ -42,6 +43,81 @@ groups:
         annotations:
           summary: "Control plane P99 latency > 1000ms"
           description: "99th percentile request duration exceeds 1 second for 5 consecutive minutes."
+          runbook_url: "docs/runbooks/control-plane-metrics.md"
+
+  - name: gigalibs-configuration-studio-alerts
+    rules:
+      - alert: ConfigurationStudioOutboxFailed
+        expr: sum(gigalibs_configuration_outbox_events{status="FAILED"}) > 0
+        for: 2m
+        labels:
+          severity: critical
+          tier: control-plane
+          module: configuration-studio
+        annotations:
+          summary: "Configuration Studio outbox delivery failed"
+          description: "At least one governed configuration event is in FAILED state. Activation consumers may not have converged."
+          runbook_url: "docs/runbooks/configuration-studio-operations.md"
+
+      - alert: ConfigurationStudioOutboxPendingTooLong
+        expr: gigalibs_configuration_outbox_oldest_pending_age_seconds > 300
+        for: 5m
+        labels:
+          severity: warning
+          tier: control-plane
+          module: configuration-studio
+        annotations:
+          summary: "Configuration Studio event delivery is delayed"
+          description: "The oldest pending configuration event is more than five minutes old."
+          runbook_url: "docs/runbooks/configuration-studio-operations.md"
+
+      - alert: ConfigurationStudioReviewBacklogStale
+        expr: gigalibs_configuration_submitted_change_sets_older_than_24h > 0
+        for: 30m
+        labels:
+          severity: warning
+          tier: control-plane
+          module: configuration-studio
+        annotations:
+          summary: "Configuration review backlog contains stale submissions"
+          description: "One or more submitted change sets have awaited an independent review for over 24 hours."
+          runbook_url: "docs/runbooks/configuration-studio-operations.md"
+
+      - alert: ConfigurationStudioReadP95LatencyHigh
+        expr: histogram_quantile(0.95, sum(rate(gigalibs_http_request_duration_seconds_bucket{method="GET",route=~".*/configuration/(runtime/manifest|apps/.*)"}[5m])) by (le)) > 2
+        for: 5m
+        labels:
+          severity: warning
+          tier: control-plane
+          module: configuration-studio
+        annotations:
+          summary: "Configuration Studio read p95 exceeds two seconds"
+          description: "Runtime-manifest or tenant-application read p95 has exceeded the provisional NFR-PERF-002 budget for five minutes."
+          runbook_url: "docs/runbooks/configuration-studio-operations.md"
+
+      - alert: ConfigurationStudioDatabaseUnavailable
+        expr: sum(rate(gigalibs_http_requests_total{route=~".*/configuration/.*",status="503"}[5m])) > 0
+        for: 2m
+        labels:
+          severity: critical
+          tier: control-plane
+          module: configuration-studio
+        annotations:
+          summary: "Configuration Studio persistence is unavailable"
+          description: "Configuration requests have returned sanitized retryable database-unavailable responses for two minutes."
+          runbook_url: "docs/runbooks/configuration-studio-operations.md"
+
+      - alert: ConfigurationStudioManifestConsumerDisconnected
+        expr: gigalibs_configuration_manifest_listener_connected == 0
+        for: 2m
+        labels:
+          severity: critical
+          tier: control-plane
+          module: configuration-studio
+        annotations:
+          summary: "Configuration Studio manifest invalidation listener is disconnected"
+          description: "The replica is bypassing its manifest cache because the PostgreSQL invalidation listener has remained disconnected for two minutes."
+          runbook_url: "docs/runbooks/configuration-studio-operations.md"
 
   - name: gigalibs-execution-plane-alerts
     rules:

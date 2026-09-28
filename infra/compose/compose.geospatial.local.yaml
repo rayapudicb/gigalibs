@@ -1,0 +1,85 @@
+name: gigalibs-configuration-local
+
+# WI-OI-063 Geospatial overlay. The module port remains private to the Compose network; the
+# verified-session web BFF (/api/maps) is the only browser path and mints a signed context per request.
+services:
+  geospatial-migrations:
+    image: ${GEOSPATIAL_IMAGE:?GEOSPATIAL_IMAGE is required}
+    pull_policy: never
+    command: ["run-module-migrations.mjs"]
+    restart: "no"
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    environment:
+      DATABASE_URL: ${GEOSPATIAL_MIGRATIONS_DATABASE_URL:?GEOSPATIAL_MIGRATIONS_DATABASE_URL is required}
+      MODULE_RUNTIME_DATABASE_URL: ${GEOSPATIAL_DATABASE_URL:?GEOSPATIAL_DATABASE_URL is required}
+      MODULE_MIGRATIONS_DIRECTORY: /app/migrations
+      MODULE_SCHEMA: gigalibs_geospatial
+      MODULE_EXPECTED_MIGRATION_VERSION: "3"
+      MODULE_APPEND_ONLY_TABLES: audit_events
+      MODULE_READ_ONLY_TABLES: auth_revocation_events
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    labels: &geospatial-labels
+      com.gigalibs.profile-key: geospatial-runtime-local-development-v1
+      com.gigalibs.execution-class: LOCAL_DEVELOPMENT
+      com.gigalibs.work-item: WI-OI-063
+      com.gigalibs.release-id: ${RELEASE_ID:?RELEASE_ID is required}
+      org.opencontainers.image.revision: ${SOURCE_REVISION:?SOURCE_REVISION is required}
+      com.gigalibs.source-state-sha256: ${SOURCE_STATE_SHA256:?SOURCE_STATE_SHA256 is required}
+
+  geospatial-api:
+    image: ${GEOSPATIAL_IMAGE:?GEOSPATIAL_IMAGE is required}
+    pull_policy: never
+    restart: unless-stopped
+    init: true
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    environment:
+      NODE_ENV: development
+      GEOSPATIAL_API_HOST: 0.0.0.0
+      GEOSPATIAL_API_PORT: "4720"
+      GEOSPATIAL_CORS_ORIGINS: ${PUBLIC_ORIGIN:?PUBLIC_ORIGIN is required}
+      GEOSPATIAL_DATABASE_URL: ${GEOSPATIAL_DATABASE_URL:?GEOSPATIAL_DATABASE_URL is required}
+      GEOSPATIAL_DATABASE_POOL_SIZE: "10"
+      GEOSPATIAL_EXPECTED_MIGRATION_VERSION: "3"
+      GEOSPATIAL_PLATFORM_CONTEXT_AUDIENCE: gigalibs-geospatial-api
+      GEOSPATIAL_PLATFORM_CONTEXT_PUBLIC_KEY_BASE64: ${GEOSPATIAL_PLATFORM_CONTEXT_PUBLIC_KEY_BASE64:?GEOSPATIAL_PLATFORM_CONTEXT_PUBLIC_KEY_BASE64 is required}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      geospatial-migrations:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:4720/v1/health/ready').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    labels: *geospatial-labels
+
+  web:
+    environment:
+      GEOSPATIAL_API_URL: http://geospatial-api:4720
+      GEOSPATIAL_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64: ${GEOSPATIAL_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64:?GEOSPATIAL_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64 is required}
+    depends_on:
+      geospatial-api:
+        condition: service_healthy
+
+networks:
+  default:
+    name: gigalibs-configuration-local

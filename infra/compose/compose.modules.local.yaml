@@ -1,0 +1,224 @@
+name: gigalibs-configuration-local
+
+# WI-OI-059 additive module-runtime profile. Render with compose.yaml and both
+# infra/compose/.env plus infra/compose/.env.modules. No module port is published.
+services:
+  connector-hub-migrations:
+    image: ${CONNECTOR_HUB_IMAGE:?CONNECTOR_HUB_IMAGE is required}
+    pull_policy: never
+    command: ["run-module-migrations.mjs"]
+    restart: "no"
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    environment:
+      DATABASE_URL: ${MODULE_MIGRATIONS_DATABASE_URL:?MODULE_MIGRATIONS_DATABASE_URL is required}
+      MODULE_RUNTIME_DATABASE_URL: ${CONNECTORS_DATABASE_URL:?CONNECTORS_DATABASE_URL is required}
+      MODULE_MIGRATIONS_DIRECTORY: /app/migrations
+      MODULE_SCHEMA: gigalibs_connectors
+      MODULE_EXPECTED_MIGRATION_VERSION: "4"
+      MODULE_APPEND_ONLY_TABLES: audit_events
+      MODULE_READ_ONLY_TABLES: connector_definitions
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    labels: &module-labels
+      com.gigalibs.profile-key: module-runtime-local-development-v1
+      com.gigalibs.execution-class: LOCAL_DEVELOPMENT
+      com.gigalibs.release-id: ${RELEASE_ID:?RELEASE_ID is required}
+      org.opencontainers.image.revision: ${SOURCE_REVISION:?SOURCE_REVISION is required}
+      com.gigalibs.source-state-sha256: ${SOURCE_STATE_SHA256:?SOURCE_STATE_SHA256 is required}
+
+  connector-hub-api:
+    image: ${CONNECTOR_HUB_IMAGE:?CONNECTOR_HUB_IMAGE is required}
+    pull_policy: never
+    restart: unless-stopped
+    init: true
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    environment:
+      NODE_ENV: development
+      CONNECTOR_HUB_API_HOST: 0.0.0.0
+      CONNECTOR_HUB_API_PORT: "4100"
+      CONNECTOR_HUB_CORS_ORIGINS: ${PUBLIC_ORIGIN:?PUBLIC_ORIGIN is required}
+      CONNECTORS_DATABASE_URL: ${CONNECTORS_DATABASE_URL:?CONNECTORS_DATABASE_URL is required}
+      CONNECTOR_HUB_DATABASE_POOL_SIZE: "10"
+      CONNECTOR_HUB_EXPECTED_MIGRATION_VERSION: "4"
+      CONNECTOR_VAULT_KEY: ${CONNECTOR_VAULT_KEY:?CONNECTOR_VAULT_KEY is required}
+      CONNECTOR_HUB_ALLOWED_OUTBOUND_HOSTS: ${CONNECTOR_HUB_ALLOWED_OUTBOUND_HOSTS:?CONNECTOR_HUB_ALLOWED_OUTBOUND_HOSTS is required}
+      CONNECTOR_HUB_ALLOW_INSECURE_OUTBOUND: "false"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      connector-hub-migrations:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:4100/api/connectors/v1/health/ready').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    labels: *module-labels
+
+  analytics-migrations:
+    image: ${ANALYTICS_IMAGE:?ANALYTICS_IMAGE is required}
+    pull_policy: never
+    command: ["run-module-migrations.mjs"]
+    restart: "no"
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    environment:
+      DATABASE_URL: ${MODULE_MIGRATIONS_DATABASE_URL:?MODULE_MIGRATIONS_DATABASE_URL is required}
+      MODULE_RUNTIME_DATABASE_URL: ${ANALYTICS_DATABASE_URL:?ANALYTICS_DATABASE_URL is required}
+      MODULE_MIGRATIONS_DIRECTORY: /app/migrations
+      MODULE_SCHEMA: gigalibs_analytics
+      MODULE_EXPECTED_MIGRATION_VERSION: "15"
+      MODULE_APPEND_ONLY_TABLES: raw_record_versions,studio_mapping_versions,report_artifacts,report_deliveries,analytics_lineage_edges,analytics_audit_log,operational_facts
+      MODULE_READ_ONLY_TABLES: auth_revocation_events
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    labels: *module-labels
+
+  analytics-api:
+    image: ${ANALYTICS_IMAGE:?ANALYTICS_IMAGE is required}
+    pull_policy: never
+    restart: unless-stopped
+    init: true
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    environment:
+      NODE_ENV: development
+      ANALYTICS_API_HOST: 0.0.0.0
+      ANALYTICS_API_PORT: "4400"
+      ANALYTICS_CORS_ORIGINS: ${PUBLIC_ORIGIN:?PUBLIC_ORIGIN is required}
+      ANALYTICS_DATABASE_URL: ${ANALYTICS_DATABASE_URL:?ANALYTICS_DATABASE_URL is required}
+      ANALYTICS_DATABASE_POOL_SIZE: "10"
+      ANALYTICS_EXPECTED_MIGRATION_VERSION: "15"
+      ANALYTICS_PLATFORM_CONTEXT_AUDIENCE: gigalibs-analytics-api
+      ANALYTICS_PLATFORM_CONTEXT_PUBLIC_KEY_BASE64: ${ANALYTICS_PLATFORM_CONTEXT_PUBLIC_KEY_BASE64:?ANALYTICS_PLATFORM_CONTEXT_PUBLIC_KEY_BASE64 is required}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      analytics-migrations:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:4400/v1/health/ready').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    labels: *module-labels
+
+  # WI-OI-038: CMMS core runtime. Installs only db/runtime-manifest.txt; the runtime role may read, never write,
+  # revocations, and history, labour, readings, stock movements and audit are append-only.
+  cmms-migrations:
+    image: ${CMMS_IMAGE:?CMMS_IMAGE is required}
+    pull_policy: never
+    command: ["run-module-migrations.mjs"]
+    restart: "no"
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    environment:
+      DATABASE_URL: ${MODULE_MIGRATIONS_DATABASE_URL:?MODULE_MIGRATIONS_DATABASE_URL is required}
+      MODULE_RUNTIME_DATABASE_URL: ${CMMS_DATABASE_URL:?CMMS_DATABASE_URL is required}
+      MODULE_MIGRATIONS_DIRECTORY: /app/migrations
+      MODULE_SCHEMA: gigalibs_cmms
+      MODULE_EXPECTED_MIGRATION_VERSION: "14"
+      MODULE_APPEND_ONLY_TABLES: audit_events,work_order_events,work_order_labour,meter_readings,stock_movements
+      MODULE_READ_ONLY_TABLES: auth_revocation_events
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    labels: *module-labels
+
+  cmms-api:
+    image: ${CMMS_IMAGE:?CMMS_IMAGE is required}
+    pull_policy: never
+    restart: unless-stopped
+    init: true
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    environment:
+      NODE_ENV: development
+      CMMS_API_HOST: 0.0.0.0
+      CMMS_API_PORT: "4200"
+      CMMS_CORS_ORIGINS: ${PUBLIC_ORIGIN:?PUBLIC_ORIGIN is required}
+      CMMS_DATABASE_URL: ${CMMS_DATABASE_URL:?CMMS_DATABASE_URL is required}
+      CMMS_DATABASE_POOL_SIZE: "10"
+      CMMS_EXPECTED_MIGRATION_VERSION: "14"
+      CMMS_PLATFORM_CONTEXT_AUDIENCE: gigalibs-cmms-api
+      CMMS_PLATFORM_CONTEXT_PUBLIC_KEY_BASE64: ${CMMS_PLATFORM_CONTEXT_PUBLIC_KEY_BASE64:?CMMS_PLATFORM_CONTEXT_PUBLIC_KEY_BASE64 is required}
+      # WI-OI-068 (ADR-0007 option A); keys from scripts/generate-relay-credentials.sh.
+      CMMS_INBOX_RELAY_PUBLIC_KEY_BASE64: ${CMMS_INBOX_RELAY_PUBLIC_KEY_BASE64:?CMMS_INBOX_RELAY_PUBLIC_KEY_BASE64 is required}
+      CMMS_RELAY_WORKFORCE_URL: http://workforce-api:4700
+      WORKFORCE_INBOX_RELAY_PRIVATE_KEY_BASE64: ${WORKFORCE_INBOX_RELAY_PRIVATE_KEY_BASE64:?WORKFORCE_INBOX_RELAY_PRIVATE_KEY_BASE64 is required}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      cmms-migrations:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:4200/v1/health/ready').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    labels: *module-labels
+
+  web:
+    environment:
+      CONNECTOR_HUB_API_URL: http://connector-hub-api:4100
+      ANALYTICS_API_URL: http://analytics-api:4400
+      ANALYTICS_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64: ${ANALYTICS_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64:?ANALYTICS_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64 is required}
+      CMMS_API_URL: http://cmms-api:4200
+      CMMS_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64: ${CMMS_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64:?CMMS_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64 is required}
+    depends_on:
+      connector-hub-api:
+        condition: service_healthy
+      analytics-api:
+        condition: service_healthy
+      cmms-api:
+        condition: service_healthy
+
+networks:
+  default:
+    name: gigalibs-configuration-local

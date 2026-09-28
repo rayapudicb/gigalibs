@@ -1,0 +1,207 @@
+{
+  "annotations": { "list": [] },
+  "editable": false,
+  "graphTooltip": 1,
+  "panels": [
+    {
+      "id": 1,
+      "title": "Configuration request rate",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(gigalibs_http_requests_total{route=~\".*/configuration/.*\"}[5m])) by (status)",
+          "legendFormat": "{{status}}"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Configuration read p95 latency",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 0 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 2 }]
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.95, sum(rate(gigalibs_http_request_duration_seconds_bucket{method=\"GET\",route=~\".*/configuration/(runtime/manifest|apps/.*)\"}[5m])) by (le))",
+          "legendFormat": "p95"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Configuration 5xx and retryable 503",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 0 },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(gigalibs_http_requests_total{route=~\".*/configuration/.*\",status=~\"5..\"}[5m])) by (status)",
+          "legendFormat": "{{status}}"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Change sets by governance status",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 8 },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(gigalibs_configuration_change_sets) by (status)",
+          "legendFormat": "{{status}}"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Activations by status",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 8 },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(gigalibs_configuration_activations) by (status)",
+          "legendFormat": "{{status}}"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "Configuration outbox by delivery status",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 8 },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(gigalibs_configuration_outbox_events) by (status)",
+          "legendFormat": "{{status}}"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "Oldest pending configuration event",
+      "type": "stat",
+      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 16 },
+      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
+      "targets": [
+        { "refId": "A", "expr": "gigalibs_configuration_outbox_oldest_pending_age_seconds" }
+      ]
+    },
+    {
+      "id": 8,
+      "title": "Submitted reviews older than 24h",
+      "type": "stat",
+      "gridPos": { "h": 6, "w": 6, "x": 6, "y": 16 },
+      "targets": [
+        { "refId": "A", "expr": "gigalibs_configuration_submitted_change_sets_older_than_24h" }
+      ]
+    },
+    {
+      "id": 9,
+      "title": "Application records by status",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 6, "x": 12, "y": 16 },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(gigalibs_configuration_records) by (status)",
+          "legendFormat": "{{status}}"
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "title": "Database metrics collector",
+      "type": "stat",
+      "gridPos": { "h": 6, "w": 6, "x": 18, "y": 16 },
+      "targets": [
+        { "refId": "A", "expr": "gigalibs_metrics_collection_success{collector=\"database\"}" }
+      ]
+    },
+    {
+      "id": 11,
+      "title": "Manifest invalidation listener",
+      "type": "stat",
+      "gridPos": { "h": 6, "w": 4, "x": 0, "y": 22 },
+      "targets": [{ "refId": "A", "expr": "gigalibs_configuration_manifest_listener_connected" }]
+    },
+    {
+      "id": 12,
+      "title": "Manifest cache entries",
+      "type": "stat",
+      "gridPos": { "h": 6, "w": 4, "x": 4, "y": 22 },
+      "targets": [{ "refId": "A", "expr": "gigalibs_configuration_manifest_cache_entries" }]
+    },
+    {
+      "id": 13,
+      "title": "Manifest cache request outcomes",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 4, "x": 8, "y": 22 },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(gigalibs_configuration_manifest_cache_requests_total[5m])) by (result)",
+          "legendFormat": "{{result}}"
+        }
+      ]
+    },
+    {
+      "id": 14,
+      "title": "Manifest consumer outcomes",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 4, "x": 12, "y": 22 },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(gigalibs_configuration_manifest_consumer_notifications_total[5m])) by (result)",
+          "legendFormat": "{{result}}"
+        }
+      ]
+    },
+    {
+      "id": 15,
+      "title": "Manifest resynchronization outcomes",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 4, "x": 16, "y": 22 },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(gigalibs_configuration_manifest_resynchronizations_total[5m])) by (result)",
+          "legendFormat": "{{result}}"
+        }
+      ]
+    },
+    {
+      "id": 16,
+      "title": "Manifest listener reconnects",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 4, "x": 20, "y": 22 },
+      "targets": [
+        { "refId": "A", "expr": "rate(gigalibs_configuration_manifest_reconnects_total[5m])" }
+      ]
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": ["gigalibs", "configuration-studio", "wi-oi-039"],
+  "templating": { "list": [] },
+  "time": { "from": "now-6h", "to": "now" },
+  "timezone": "browser",
+  "title": "GigaLibs Configuration Studio Operations",
+  "uid": "gigalibs-configuration-studio",
+  "version": 1
+}

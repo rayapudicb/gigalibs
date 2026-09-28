@@ -1,0 +1,84 @@
+# Default values for workflow-platform (Managed Cloud Profile)
+images:
+  api:
+    repository: "ghcr.io/gigalibs/control-plane-api"
+    tag: "1.0.0"
+    digest: ""
+    pullPolicy: IfNotPresent
+  web:
+    repository: "ghcr.io/gigalibs/workflow-platform-web"
+    tag: "1.0.0"
+    digest: ""
+    pullPolicy: IfNotPresent
+  migrations:
+    repository: "ghcr.io/gigalibs/control-plane-migrations"
+    tag: "1.0.0"
+    digest: ""
+    pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+
+replicas:
+  api: 2
+  web: 2
+
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
+
+database:
+  secretName: "gigalibs-database-credentials"
+  urlKey: "database-url"
+  poolSize: 20
+  sslMode: "require"
+
+redis:
+  secretName: "gigalibs-redis-credentials"
+  urlKey: "redis-url"
+
+auth:
+  secretName: "gigalibs-auth-secrets"
+  jwtAccessSecretKey: "jwt-access-secret"
+  jwtRefreshSecretKey: "jwt-refresh-secret"
+  sessionSecretKey: "session-secret"
+  signingKeyKey: "package-signing-key"
+  platformContextPrivateKeyKey: "platform-context-ed25519-private-pem"
+  platformContextPublicKeyKey: "platform-context-ed25519-public-pem"
+
+cmms:
+  # Credential-free HTTPS origin for the independently deployed CMMS API.
+  baseUrl: ""
+
+ingress:
+  enabled: true
+  className: "nginx"
+  host: "platform.example.com"
+  tlsSecretName: "platform-tls-cert"
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+
+resources:
+  api:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: "1"
+      memory: 1Gi
+  web:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: "1"
+      memory: 1Gi
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+networkPolicy:
+  enabled: true

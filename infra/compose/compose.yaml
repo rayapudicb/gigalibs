@@ -1,0 +1,178 @@
+name: gigalibs-configuration-local
+
+# Application-only Local Development profile. PostgreSQL and MinIO remain owned by
+# docker/docker-compose.dev.yml and are reached through host.docker.internal.
+services:
+  migrations:
+    image: ${MIGRATIONS_IMAGE:?MIGRATIONS_IMAGE is required}
+    pull_policy: never
+    restart: "no"
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    labels:
+      com.gigalibs.profile-key: ${PROFILE_KEY:?PROFILE_KEY is required}
+      com.gigalibs.execution-class: ${EXECUTION_CLASS:?EXECUTION_CLASS is required}
+      com.gigalibs.release-id: ${RELEASE_ID:?RELEASE_ID is required}
+      org.opencontainers.image.revision: ${SOURCE_REVISION:?SOURCE_REVISION is required}
+      com.gigalibs.source-state-sha256: ${SOURCE_STATE_SHA256:?SOURCE_STATE_SHA256 is required}
+
+  api:
+    image: ${API_IMAGE:?API_IMAGE is required}
+    pull_policy: never
+    restart: unless-stopped
+    init: true
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    environment:
+      NODE_ENV: production
+      API_HOST: 0.0.0.0
+      API_PORT: "3333"
+      CORS_ORIGINS: ${PUBLIC_ORIGIN:?PUBLIC_ORIGIN is required}
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?JWT_ACCESS_SECRET is required}
+      JWT_ACCESS_EXPIRES_IN: ${JWT_ACCESS_EXPIRES_IN:?JWT_ACCESS_EXPIRES_IN is required}
+      JWT_REFRESH_EXPIRES_IN: ${JWT_REFRESH_EXPIRES_IN:?JWT_REFRESH_EXPIRES_IN is required}
+      WORKFLOW_SCHEMA_VERSION: ${WORKFLOW_SCHEMA_VERSION:?WORKFLOW_SCHEMA_VERSION is required}
+      WORKFLOW_COMPILER_VERSION: ${WORKFLOW_COMPILER_VERSION:?WORKFLOW_COMPILER_VERSION is required}
+      WORKFLOW_PUBLISH_MAX_RETRIES: ${WORKFLOW_PUBLISH_MAX_RETRIES:?WORKFLOW_PUBLISH_MAX_RETRIES is required}
+      EXECUTION_EVENT_SOURCE_ID: ${EXECUTION_EVENT_SOURCE_ID:?EXECUTION_EVENT_SOURCE_ID is required}
+      EXECUTION_EVENT_SIGNING_SECRET: ${EXECUTION_EVENT_SIGNING_SECRET:?EXECUTION_EVENT_SIGNING_SECRET is required}
+      EXECUTION_EVENT_MAX_SKEW_SECONDS: ${EXECUTION_EVENT_MAX_SKEW_SECONDS:?EXECUTION_EVENT_MAX_SKEW_SECONDS is required}
+      CONNECTOR_HTTP_ALLOWED_HOSTS: ${CONNECTOR_HTTP_ALLOWED_HOSTS-}
+      CONNECTOR_HTTP_ALLOWED_PORTS: ${CONNECTOR_HTTP_ALLOWED_PORTS:?CONNECTOR_HTTP_ALLOWED_PORTS is required}
+      CONNECTOR_HTTP_ALLOW_INSECURE: "false"
+      CONNECTOR_HTTP_ALLOW_PRIVATE_NETWORKS: "false"
+      CONNECTOR_HTTP_TIMEOUT_SECONDS: ${CONNECTOR_HTTP_TIMEOUT_SECONDS:?CONNECTOR_HTTP_TIMEOUT_SECONDS is required}
+      CONNECTOR_HTTP_MAX_RESPONSE_BYTES: ${CONNECTOR_HTTP_MAX_RESPONSE_BYTES:?CONNECTOR_HTTP_MAX_RESPONSE_BYTES is required}
+      CONNECTOR_DATABASE_ALLOWED_HOSTS: ${CONNECTOR_DATABASE_ALLOWED_HOSTS-}
+      CONNECTOR_DATABASE_ALLOWED_PORTS: ${CONNECTOR_DATABASE_ALLOWED_PORTS:?CONNECTOR_DATABASE_ALLOWED_PORTS is required}
+      CONNECTOR_DATABASE_ALLOW_PRIVATE_NETWORKS: "false"
+      CONNECTOR_FAILURE_THRESHOLD: ${CONNECTOR_FAILURE_THRESHOLD:?CONNECTOR_FAILURE_THRESHOLD is required}
+      CONNECTOR_CIRCUIT_COOLDOWN_SECONDS: ${CONNECTOR_CIRCUIT_COOLDOWN_SECONDS:?CONNECTOR_CIRCUIT_COOLDOWN_SECONDS is required}
+      STORAGE_ENDPOINT: ${STORAGE_ENDPOINT:?STORAGE_ENDPOINT is required}
+      STORAGE_REGION: ${STORAGE_REGION:?STORAGE_REGION is required}
+      STORAGE_BUCKET: ${STORAGE_BUCKET:?STORAGE_BUCKET is required}
+      STORAGE_ACCESS_KEY: ${STORAGE_ACCESS_KEY:?STORAGE_ACCESS_KEY is required}
+      STORAGE_SECRET_KEY: ${STORAGE_SECRET_KEY:?STORAGE_SECRET_KEY is required}
+      STORAGE_FORCE_PATH_STYLE: "true"
+      STORAGE_ALLOW_INSECURE: "true"
+      STORAGE_PRESIGN_SECONDS: ${STORAGE_PRESIGN_SECONDS:?STORAGE_PRESIGN_SECONDS is required}
+      STORAGE_MAX_FILE_BYTES: ${STORAGE_MAX_FILE_BYTES:?STORAGE_MAX_FILE_BYTES is required}
+      STORAGE_CLEANUP_INTERVAL_SECONDS: ${STORAGE_CLEANUP_INTERVAL_SECONDS:?STORAGE_CLEANUP_INTERVAL_SECONDS is required}
+      STORAGE_CLEANUP_BATCH_SIZE: ${STORAGE_CLEANUP_BATCH_SIZE:?STORAGE_CLEANUP_BATCH_SIZE is required}
+      RETENTION_WORKER_INTERVAL_SECONDS: ${RETENTION_WORKER_INTERVAL_SECONDS:?RETENTION_WORKER_INTERVAL_SECONDS is required}
+      RETENTION_ENVIRONMENT_BATCH_SIZE: ${RETENTION_ENVIRONMENT_BATCH_SIZE:?RETENTION_ENVIRONMENT_BATCH_SIZE is required}
+      RETENTION_EVENT_BATCH_SIZE: ${RETENTION_EVENT_BATCH_SIZE:?RETENTION_EVENT_BATCH_SIZE is required}
+      CONTROL_PAYLOAD_ENCRYPTION_KEY: ${CONTROL_PAYLOAD_ENCRYPTION_KEY:?CONTROL_PAYLOAD_ENCRYPTION_KEY is required}
+      CONTROL_PAYLOAD_KEY_VERSION: ${CONTROL_PAYLOAD_KEY_VERSION:?CONTROL_PAYLOAD_KEY_VERSION is required}
+      CONTROL_PAYLOAD_PREVIOUS_KEYS_JSON: ${CONTROL_PAYLOAD_PREVIOUS_KEYS_JSON-}
+      CONTROL_OUTBOX_POLL_INTERVAL_SECONDS: ${CONTROL_OUTBOX_POLL_INTERVAL_SECONDS:?CONTROL_OUTBOX_POLL_INTERVAL_SECONDS is required}
+      CONTROL_OUTBOX_BATCH_SIZE: ${CONTROL_OUTBOX_BATCH_SIZE:?CONTROL_OUTBOX_BATCH_SIZE is required}
+      CONTROL_OUTBOX_CLAIM_TIMEOUT_SECONDS: ${CONTROL_OUTBOX_CLAIM_TIMEOUT_SECONDS:?CONTROL_OUTBOX_CLAIM_TIMEOUT_SECONDS is required}
+      CONTROL_OUTBOX_MAX_ATTEMPTS: ${CONTROL_OUTBOX_MAX_ATTEMPTS:?CONTROL_OUTBOX_MAX_ATTEMPTS is required}
+      CONTROL_OUTBOX_RETRY_BASE_SECONDS: ${CONTROL_OUTBOX_RETRY_BASE_SECONDS:?CONTROL_OUTBOX_RETRY_BASE_SECONDS is required}
+      CONTROL_OUTBOX_RETRY_MAX_SECONDS: ${CONTROL_OUTBOX_RETRY_MAX_SECONDS:?CONTROL_OUTBOX_RETRY_MAX_SECONDS is required}
+      OBSERVABILITY_METRICS_TOKEN: ${OBSERVABILITY_METRICS_TOKEN:?OBSERVABILITY_METRICS_TOKEN is required}
+      CONFIGURATION_PACKAGE_SIGNING_KEY_ID: ${CONFIGURATION_PACKAGE_SIGNING_KEY_ID:?CONFIGURATION_PACKAGE_SIGNING_KEY_ID is required}
+      CONFIGURATION_PACKAGE_SIGNING_PRIVATE_KEY_BASE64: ${CONFIGURATION_PACKAGE_SIGNING_PRIVATE_KEY_BASE64:?CONFIGURATION_PACKAGE_SIGNING_PRIVATE_KEY_BASE64 is required}
+      CONFIGURATION_PACKAGE_TRUSTED_PUBLIC_KEYS_JSON: ${CONFIGURATION_PACKAGE_TRUSTED_PUBLIC_KEYS_JSON:?CONFIGURATION_PACKAGE_TRUSTED_PUBLIC_KEYS_JSON is required}
+      CONFIGURATION_RUNTIME_ENVIRONMENT_KEY: ${CONFIGURATION_RUNTIME_ENVIRONMENT_KEY:?CONFIGURATION_RUNTIME_ENVIRONMENT_KEY is required}
+    ports:
+      - "127.0.0.1:${API_PUBLIC_PORT:?API_PUBLIC_PORT is required}:3333"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      migrations:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3333/api/v1/ready').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    labels:
+      com.gigalibs.profile-key: ${PROFILE_KEY:?PROFILE_KEY is required}
+      com.gigalibs.execution-class: ${EXECUTION_CLASS:?EXECUTION_CLASS is required}
+      com.gigalibs.release-id: ${RELEASE_ID:?RELEASE_ID is required}
+      org.opencontainers.image.revision: ${SOURCE_REVISION:?SOURCE_REVISION is required}
+      com.gigalibs.source-state-sha256: ${SOURCE_STATE_SHA256:?SOURCE_STATE_SHA256 is required}
+
+  web:
+    image: ${WEB_IMAGE:?WEB_IMAGE is required}
+    pull_policy: never
+    restart: unless-stopped
+    init: true
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+      - /app/.next/cache:rw,noexec,nosuid,size=128m
+    environment:
+      NODE_ENV: production
+      PORT: "5180"
+      CONTROL_PLANE_API_URL: http://api:3333
+      BFF_MAX_REQUEST_BYTES: ${BFF_MAX_REQUEST_BYTES:?BFF_MAX_REQUEST_BYTES is required}
+      COOKIE_SECURE: "false"
+      NEXT_PUBLIC_ENV_LABEL: ${NEXT_PUBLIC_ENV_LABEL-local}
+      NEXT_PUBLIC_USE_FORM_ENGINE: ${NEXT_PUBLIC_USE_FORM_ENGINE-false}
+      # Module API proxy URLs — each module's backend runs on the host
+      AR_API_URL: ${AR_API_URL-}
+      SPEND_API_URL: ${SPEND_API_URL-}
+      TAX_API_URL: ${TAX_API_URL-}
+      CURRENCY_API_URL: ${CURRENCY_API_URL-}
+      CONNECTOR_HUB_API_URL: ${CONNECTOR_HUB_API_URL-}
+      DATA_STUDIO_API_URL: ${DATA_STUDIO_API_URL-}
+      RULES_API_URL: ${RULES_API_URL-}
+      WORKFLOW_STUDIO_API_URL: ${WORKFLOW_STUDIO_API_URL-}
+      RECOVERY_API_URL: ${RECOVERY_API_URL-}
+      PLATFORM_RBAC_API_URL: ${PLATFORM_RBAC_API_URL-}
+      ANALYTICS_API_URL: ${ANALYTICS_API_URL-}
+      ESIGN_API_URL: ${ESIGN_API_URL-}
+      CMMS_API_URL: ${CMMS_API_URL-}
+      WORKFORCE_API_URL: ${WORKFORCE_API_URL-}
+    ports:
+      - "127.0.0.1:${WEB_PUBLIC_PORT:?WEB_PUBLIC_PORT is required}:5180"
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:5180/api/health/ready').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    labels:
+      com.gigalibs.profile-key: ${PROFILE_KEY:?PROFILE_KEY is required}
+      com.gigalibs.execution-class: ${EXECUTION_CLASS:?EXECUTION_CLASS is required}
+      com.gigalibs.release-id: ${RELEASE_ID:?RELEASE_ID is required}
+      org.opencontainers.image.revision: ${SOURCE_REVISION:?SOURCE_REVISION is required}
+      com.gigalibs.source-state-sha256: ${SOURCE_STATE_SHA256:?SOURCE_STATE_SHA256 is required}
+
+networks:
+  default:
+    name: gigalibs-configuration-local

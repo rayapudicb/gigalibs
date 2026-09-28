@@ -68,14 +68,14 @@ cleanup() {
   docker start "${CONTAINER}" >/dev/null 2>&1 || true
   sleep 5
   local final_live
-  final_live="$(curl -sf -o /dev/null -w "%{http_code}" --max-time 5 "${API_URL}/health/live" 2>/dev/null || echo '000')"
+  final_live="$(curl -sS -o /dev/null -w "%{http_code}" --max-time 5 "${API_URL}/api/v1/health" 2>/dev/null || echo '000')"
   echo "[cleanup] Post-restore liveness: ${final_live}"
 }
 trap cleanup EXIT
 
 # Pre-outage: verify healthy baseline
 echo "[1/6] Verifying baseline liveness..."
-PRE_LIVE="$(curl -sf -o /dev/null -w "%{http_code}" --max-time 5 "${API_URL}/health/live" 2>/dev/null || echo '000')"
+PRE_LIVE="$(curl -sS -o /dev/null -w "%{http_code}" --max-time 5 "${API_URL}/api/v1/health" 2>/dev/null || echo '000')"
 if [[ "${PRE_LIVE}" != "200" ]]; then
   FAILURES+=("pre-outage liveness=${PRE_LIVE} expected 200")
   write_evidence "FAIL"; exit 1
@@ -83,7 +83,7 @@ fi
 OUTCOMES+=("pre-outage-liveness=200")
 
 echo "[2/6] Verifying baseline readiness..."
-PRE_READY="$(curl -sf -o /dev/null -w "%{http_code}" --max-time 5 "${API_URL}/health/ready" 2>/dev/null || echo '000')"
+PRE_READY="$(curl -sS -o /dev/null -w "%{http_code}" --max-time 5 "${API_URL}/api/v1/ready" 2>/dev/null || echo '000')"
 if [[ "${PRE_READY}" != "200" ]]; then
   FAILURES+=("pre-outage readiness=${PRE_READY} expected 200")
   write_evidence "FAIL"; exit 1
@@ -97,14 +97,14 @@ sleep 15
 
 # During outage: liveness must remain 200 (process up), readiness must degrade
 echo "[4/6] Checking liveness during outage (expect 200)..."
-OUTAGE_LIVE="$(curl -sf -o /dev/null -w "%{http_code}" --max-time 10 "${API_URL}/health/live" 2>/dev/null || echo '000')"
+OUTAGE_LIVE="$(curl -sS -o /dev/null -w "%{http_code}" --max-time 10 "${API_URL}/api/v1/health" 2>/dev/null || echo '000')"
 if [[ "${OUTAGE_LIVE}" != "200" ]]; then
   FAILURES+=("outage liveness=${OUTAGE_LIVE} expected 200 — process must stay live even when DB is down")
 fi
 OUTCOMES+=("outage-liveness=${OUTAGE_LIVE}")
 
 echo "[5/6] Checking readiness during outage (expect non-200)..."
-OUTAGE_READY="$(curl -sf -o /dev/null -w "%{http_code}" --max-time 10 "${API_URL}/health/ready" 2>/dev/null || echo '000')"
+OUTAGE_READY="$(curl -sS -o /dev/null -w "%{http_code}" --max-time 10 "${API_URL}/api/v1/ready" 2>/dev/null || echo '000')"
 if [[ "${OUTAGE_READY}" == "200" ]]; then
   FAILURES+=("outage readiness=${OUTAGE_READY} — readiness must degrade when DB is unreachable")
 fi
@@ -115,7 +115,7 @@ echo "[6/6] Restarting PostgreSQL and polling for recovery (up to 30s)..."
 docker start "${CONTAINER}" >/dev/null
 for i in $(seq 1 6); do
   sleep 5
-  RECOVER_READY="$(curl -sf -o /dev/null -w "%{http_code}" --max-time 5 "${API_URL}/health/ready" 2>/dev/null || echo '000')"
+  RECOVER_READY="$(curl -sS -o /dev/null -w "%{http_code}" --max-time 5 "${API_URL}/api/v1/ready" 2>/dev/null || echo '000')"
   if [[ "${RECOVER_READY}" == "200" ]]; then
     OUTCOMES+=("post-outage-readiness=200")
     echo "  Recovery confirmed (${i}x5s)"
