@@ -1,58 +1,54 @@
+import { Body, Controller, Get, HttpCode, HttpStatus, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import {
-  Body, Controller, Get, HttpCode, HttpStatus,
-  Param, Post, Req, UseGuards,
-} from '@nestjs/common';
-import { AuthenticatedRequest, OidcAuthorizationGuard, RequirePermissions } from '../auth/authorization.js';
+  CmmsAuthorizationGuard,
+  CommandContext,
+  CurrentPrincipal,
+  RequirePermissions,
+  type CmmsCommandContext,
+  type CmmsPrincipal,
+} from '../auth/authorization.js';
 import { PartsService } from './parts.service.js';
 
 @Controller('v1/parts')
-@UseGuards(OidcAuthorizationGuard)
+@UseGuards(CmmsAuthorizationGuard)
 export class PartsController {
-  constructor(private readonly svc: PartsService) {}
+  constructor(private readonly parts: PartsService) {}
 
   @Post('search')
-  @RequirePermissions('cmms.parts.read')
   @HttpCode(HttpStatus.OK)
-  search(
-    @Req() req: AuthenticatedRequest,
-    @Body() body: { page?: number; pageSize?: number; category?: string; lowStockOnly?: boolean; q?: string },
-  ) {
-    const departmentIds = req.principal!.departmentScope.mode === 'SCOPED_DEPARTMENTS'
-      ? req.principal!.departmentScope.departmentIds
-      : undefined;
-    return this.svc.search(req.principal!.tenantId, body, departmentIds);
+  @RequirePermissions('cmms.parts.read')
+  search(@CurrentPrincipal() principal: CmmsPrincipal, @Body() body: unknown) {
+    return this.parts.search(principal, body);
   }
 
-  @Get(':id')
+  @Get(':partId')
   @RequirePermissions('cmms.parts.read')
-  getOne(@Req() req: AuthenticatedRequest, @Param('id') id: string) {
-    return this.svc.getOne(req.principal!.tenantId, id);
+  get(@CurrentPrincipal() principal: CmmsPrincipal, @Param('partId') partId: string) {
+    return this.parts.get(principal, partId);
   }
 
-  @Get(':id/transactions')
+  @Get(':partId/movements')
   @RequirePermissions('cmms.parts.read')
-  getTransactions(@Req() req: AuthenticatedRequest, @Param('id') id: string) {
-    return this.svc.getTransactions(req.principal!.tenantId, id);
+  movements(@CurrentPrincipal() principal: CmmsPrincipal, @Param('partId') partId: string) {
+    return this.parts.movements(principal, partId);
   }
 
   @Post()
   @RequirePermissions('cmms.parts.write')
-  @HttpCode(HttpStatus.CREATED)
-  create(@Req() req: AuthenticatedRequest, @Body() body: any) {
-    return this.svc.create(req.principal!.tenantId, req.principal!.subject, body);
+  create(@CommandContext() context: CmmsCommandContext, @Body() body: unknown) {
+    return this.parts.create(context, body);
   }
 
-  @Post(':id/transaction')
+  @Patch(':partId')
   @RequirePermissions('cmms.parts.write')
-  @HttpCode(HttpStatus.CREATED)
-  recordTransaction(
-    @Req() req: AuthenticatedRequest,
-    @Param('id') id: string,
-    @Body() body: { type: 'ADD' | 'CONSUME' | 'TRANSFER' | 'ADJUSTMENT'; quantity: number; woId?: string; poId?: string; unitCost?: number; notes?: string },
-  ) {
-    return this.svc.recordTransaction(req.principal!.tenantId, req.principal!.subject, {
-      ...body,
-      partId: id,
-    });
+  update(@CommandContext() context: CmmsCommandContext, @Param('partId') partId: string, @Body() body: unknown) {
+    return this.parts.update(context, partId, body);
+  }
+
+  @Post(':partId/movements')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermissions('cmms.parts.write')
+  move(@CommandContext() context: CmmsCommandContext, @Param('partId') partId: string, @Body() body: unknown) {
+    return this.parts.recordMovement(context, partId, body);
   }
 }

@@ -14,9 +14,11 @@ import {
   ParseIntPipe,
   DefaultValuePipe,
 } from '@nestjs/common';
-import { OidcAuthorizationGuard } from '@gigalibs/auth-core/nest';
-import { RequirePermissions } from '@gigalibs/auth-core/nest';
-import type { AuthenticatedRequest } from '@gigalibs/auth-core';
+import {
+  type AuthenticatedRequest,
+  OidcAuthorizationGuard,
+  RequirePermissions,
+} from '../auth/authorization.js';
 import { ImportJobService } from './import-job.service.js';
 import { ExportJobService } from './export-job.service.js';
 import { ImportStorageService } from './import-storage.service.js';
@@ -26,7 +28,7 @@ import { IMPORTABLE_ENTITY_TYPES } from './types.js';
 import type { ImportableEntityType, ExportFilters } from './types.js';
 import { Queues } from '@gigalibs/queue';
 import { createQueue, enqueue } from '@gigalibs/queue';
-import Redis from 'ioredis';
+import { Redis } from 'ioredis';
 
 // ─── DTOs ─────────────────────────────────────────────────────────────────────
 
@@ -57,7 +59,7 @@ export class ImportExportController {
     private readonly storageService: ImportStorageService,
   ) {
     const redis = new Redis({
-      host: process.env['REDIS_HOST'] ?? 'localhost',
+      host: process.env['REDIS_HOST'] ?? (() => { throw new Error('REDIS_HOST is required'); })(),
       port: Number(process.env['REDIS_PORT'] ?? 6379),
       password: process.env['REDIS_PASSWORD'],
       tls: process.env['REDIS_TLS'] === 'true' ? {} : undefined,

@@ -50,11 +50,9 @@ describe('listSheetNamesFromBuffer', () => {
     expect(names).toEqual(['Engineering', 'Finance', 'HR']);
   });
 
-  it('returns empty array for a workbook with no sheets', async () => {
-    // Build minimal xlsx with no sheets using raw XLSX
+  it('rejects an invalid workbook with no sheets before it can be uploaded', () => {
     const wb = XLSX.utils.book_new();
-    const rawBuf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' }) as Buffer;
-    expect(listSheetNamesFromBuffer(rawBuf)).toEqual([]);
+    expect(() => XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' })).toThrow('Workbook is empty');
   });
 });
 

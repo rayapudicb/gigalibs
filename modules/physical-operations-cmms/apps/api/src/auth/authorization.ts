@@ -1,196 +1,178 @@
+import { randomUUID } from 'node:crypto';
 import {
   type CanActivate,
   type ExecutionContext,
   ForbiddenException,
   Inject,
   Injectable,
+  ServiceUnavailableException,
   SetMetadata,
   UnauthorizedException,
+  createParamDecorator,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { type JWTPayload, createRemoteJWKSet, jwtVerify } from 'jose';
-import {
-  type PlatformContextV1,
-  verifyPlatformContextToken,
-  PlatformContextError,
-} from '@gigalibs/auth-core';
+import { PlatformContextError, verifyPlatformContextToken, type PlatformContextV1 } from '@gigalibs/auth-core';
 import { CMMS_CONFIG } from '../config.provider.js';
-import type { CmmsRuntimeConfig } from '../runtime-config.js';
+import { DatabaseService } from '../database/database.service.js';
+import { CMMS_MODULE_KEY, type CmmsRuntimeConfig } from '../runtime-config.js';
 
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const PERMISSIONS_METADATA = 'cmms.required-permissions';
+const TENANT_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/;
+const CORRELATION_ID_PATTERN = /^[A-Za-z0-9._:-]{1,128}$/;
 
-export interface DepartmentScope {
-  mode: 'FLAT_TENANT' | 'SCOPED_DEPARTMENTS';
-  /** Resolved department UUIDs from the recursive CTE on the control-plane side. */
-  departmentIds?: readonly string[];
-}
+/** Department (org) scope: ALL for flat tenants; otherwise only the listed departments, fail-closed when empty. */
+export type CmmsDepartmentScope =
+  | { readonly mode: 'ALL' }
+  | { readonly mode: 'DEPARTMENTS'; readonly departmentIds: readonly string[] };
+
+/**
+ * Spatial scope: ALL when unbounded; otherwise records whose site is exactly one of the scope places. Places
+ * below a scope root are not resolved here until a place directory projection exists, so this errs on the side
+ * of showing less, never more.
+ */
+export type CmmsPlaceScope = { readonly mode: 'ALL' } | { readonly mode: 'PLACES'; readonly placeIds: readonly string[] };
 
 export interface CmmsPrincipal {
-  tenantId: string;
-  subject: string;
-  issuer: string;
-  permissions: readonly string[];
-  persona?: string;
-  /** Parsed and typed org-scope forwarded from the platform-context token. */
-  departmentScope: DepartmentScope;
+  readonly tenantId: string;
+  readonly subject: string;
+  readonly sessionId: string;
+  readonly authVersion: number;
+  readonly permissions: readonly string[];
+  readonly roles: readonly string[];
+  readonly persona: PlatformContextV1['persona_type'];
+  readonly departmentScope: CmmsDepartmentScope;
+  readonly placeScope: CmmsPlaceScope;
 }
 
-export interface AuthenticatedRequest {
+export interface CmmsCommandContext {
+  readonly principal: CmmsPrincipal;
+  readonly correlationId: string;
+}
+
+interface AuthenticatedRequest {
   headers: Record<string, string | string[] | undefined>;
-  principal?: CmmsPrincipal;
-  correlationId?: string;
+  cmmsPrincipal?: CmmsPrincipal;
 }
 
-export const RequirePermissions = (...permissions: string[]) =>
-  SetMetadata(PERMISSIONS_METADATA, permissions);
+export const RequirePermissions = (...permissions: string[]) => SetMetadata(PERMISSIONS_METADATA, permissions);
 
+export const CurrentPrincipal = createParamDecorator((_data: unknown, context: ExecutionContext): CmmsPrincipal => {
+  const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
+  if (!request.cmmsPrincipal) throw new UnauthorizedException('Request is unauthenticated.');
+  return request.cmmsPrincipal;
+});
+
+/** The verified principal plus a correlation id taken from `X-Correlation-Id` when well-formed. */
+export const CommandContext = createParamDecorator((_data: unknown, context: ExecutionContext): CmmsCommandContext => {
+  const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
+  if (!request.cmmsPrincipal) throw new UnauthorizedException('Request is unauthenticated.');
+  const header = request.headers['x-correlation-id'];
+  const candidate = typeof header === 'string' ? header.trim() : '';
+  return {
+    principal: request.cmmsPrincipal,
+    correlationId: CORRELATION_ID_PATTERN.test(candidate) ? candidate : randomUUID(),
+  };
+});
+
+/**
+ * Tenant authority comes only from a PlatformContextV1 signed by the web BFF with the CMMS key for this
+ * audience and the `asset-maintenance` entitlement (WI-OI-038). Caller-supplied tenant or user values are never
+ * read; the user's verified scopes decide each endpoint, and revoked sessions are refused.
+ */
 @Injectable()
-export class OidcAuthorizationGuard implements CanActivate {
-  private readonly jwks: ReturnType<typeof createRemoteJWKSet>;
-
+export class CmmsAuthorizationGuard implements CanActivate {
   constructor(
     @Inject(CMMS_CONFIG) private readonly config: CmmsRuntimeConfig,
     @Inject(Reflector) private readonly reflector: Reflector,
-  ) {
-    this.jwks = createRemoteJWKSet(new URL(config.oidcJwksUri), {
-      timeoutDuration: 3_000,
-      cooldownDuration: 30_000,
-      cacheMaxAge: 600_000,
-    });
-  }
+    private readonly database: DatabaseService,
+  ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
     const token = extractBearerToken(request.headers.authorization);
 
-    const platformPublicKey = this.config.platformContextPublicKey;
-
-    if (isEdDsaToken(token)) {
-      if (!platformPublicKey?.trim()) {
-        throw new UnauthorizedException('Platform context verification key is not configured.');
-      }
-      let platformContext: PlatformContextV1;
-      try {
-        platformContext = verifyPlatformContextToken(
-          token,
-          platformPublicKey,
-          this.config.oidcAudience || 'gigalibs-cmms-api',
-        );
-      } catch (error) {
-        if (error instanceof PlatformContextError) {
-          throw new UnauthorizedException(`Platform context verification failed: ${error.message}`);
-        }
-        throw new UnauthorizedException('Missing, invalid, or expired bearer token.');
-      }
-
-      if (platformContext.entitlement.status !== 'ENABLED') {
-        throw new ForbiddenException(
-          `Module '${platformContext.entitlement.module_key}' is not entitled.`,
-        );
-      }
-      if (platformContext.entitlement.module_key !== 'asset-maintenance') {
-        throw new ForbiddenException(
-          `Platform context token is for module '${platformContext.entitlement.module_key}', not 'asset-maintenance'.`,
-        );
-      }
-      const tenantId = platformContext.tenant_id;
-      const subject = platformContext.sub;
-      const issuer = platformContext.iss;
-      const permissions = platformContext.granted_scopes;
-
-      const rawOrgScope = platformContext.org_scope as { mode?: string; departmentIds?: string[] } | undefined;
-      const departmentScope: DepartmentScope = rawOrgScope?.mode === 'SCOPED_DEPARTMENTS'
-        ? { mode: 'SCOPED_DEPARTMENTS', departmentIds: Object.freeze(rawOrgScope.departmentIds ?? []) as readonly string[] }
-        : { mode: 'FLAT_TENANT' };
-
-      request.principal = Object.freeze({
-        tenantId,
-        subject,
-        issuer,
-        permissions: Object.freeze(permissions),
-        persona: platformContext.persona_type,
-        departmentScope: Object.freeze(departmentScope),
-      });
-
-      const requiredPermissions =
-        this.reflector.getAllAndOverride<string[] | undefined>(PERMISSIONS_METADATA, [
-          context.getHandler(),
-          context.getClass(),
-        ]) ?? [];
-
-      for (const permission of requiredPermissions) {
-        if (!permissions.includes(permission)) {
-          throw new ForbiddenException(`Missing required permission: ${permission}`);
-        }
-      }
-
-      return true;
-    }
-
-    let payload: JWTPayload;
+    let platformContext: PlatformContextV1;
     try {
-      ({ payload } = await jwtVerify(token, this.jwks, {
-        issuer: this.config.oidcIssuer,
-        audience: this.config.oidcAudience,
-        algorithms: [...this.config.oidcAlgorithms],
-        clockTolerance: 5,
-        requiredClaims: ['sub', this.config.tenantClaim, this.config.permissionsClaim],
-      }));
-    } catch {
-      throw new UnauthorizedException('Missing, invalid, or expired bearer token.');
+      platformContext = verifyPlatformContextToken(
+        token,
+        this.config.platformContextPublicKey,
+        this.config.platformContextAudience,
+      );
+    } catch (error) {
+      if (error instanceof PlatformContextError) {
+        throw new UnauthorizedException('Platform context token is invalid or expired.');
+      }
+      throw new UnauthorizedException('Platform context verification failed.');
     }
 
-    const tenantId = payload[this.config.tenantClaim];
-    if (typeof tenantId !== 'string' || !UUID_PATTERN.test(tenantId)) {
-      throw new UnauthorizedException('Token contains an invalid tenant claim.');
+    if (platformContext.entitlement.status !== 'ENABLED' || platformContext.entitlement.module_key !== CMMS_MODULE_KEY) {
+      throw new ForbiddenException('The Asset & Maintenance entitlement is not active.');
+    }
+    if (!TENANT_ID_PATTERN.test(platformContext.tenant_id)) {
+      throw new UnauthorizedException('Platform context contains an invalid tenant identifier.');
     }
 
-    const permissionsRaw = payload[this.config.permissionsClaim];
-    const permissions = Array.isArray(permissionsRaw)
-      ? permissionsRaw.filter((p): p is string => typeof p === 'string')
-      : [];
-
-    const subject = typeof payload.sub === 'string' ? payload.sub : '';
-    const issuer = typeof payload.iss === 'string' ? payload.iss : '';
-
-    request.principal = Object.freeze({ tenantId, subject, issuer, permissions: Object.freeze(permissions), departmentScope: Object.freeze<DepartmentScope>({ mode: 'FLAT_TENANT' }) });
-
-    const requiredPermissions =
+    const required =
       this.reflector.getAllAndOverride<string[] | undefined>(PERMISSIONS_METADATA, [
         context.getHandler(),
         context.getClass(),
       ]) ?? [];
-
-    for (const permission of requiredPermissions) {
-      if (!permissions.includes(permission)) {
+    for (const permission of required) {
+      if (!hasCmmsPermission(platformContext.granted_scopes, permission)) {
         throw new ForbiddenException(`Missing required permission: ${permission}`);
       }
     }
 
+    try {
+      const revoked = await this.database.isContextRevoked({
+        tenantId: platformContext.tenant_id,
+        subject: platformContext.sub,
+        sessionId: platformContext.session_id,
+        authVersion: platformContext.auth_version,
+      });
+      if (revoked) throw new UnauthorizedException('Platform context has been revoked.');
+    } catch (error) {
+      if (error instanceof UnauthorizedException) throw error;
+      throw new ServiceUnavailableException('Authorization state is temporarily unavailable.');
+    }
+
+    request.cmmsPrincipal = principalFromContext(platformContext);
     return true;
   }
 }
 
-function extractBearerToken(header: string | string[] | undefined): string {
-  if (typeof header !== 'string') {
-    throw new UnauthorizedException('Authorization header is missing or malformed.');
-  }
-  const match = /^Bearer\s+([A-Za-z0-9-_.~+/]+=*)$/.exec(header.trim());
-  if (!match || !match[1]) {
-    throw new UnauthorizedException('Authorization header must use Bearer scheme.');
-  }
+export function principalFromContext(context: PlatformContextV1): CmmsPrincipal {
+  const org = context.org_scope;
+  const spatial = context.spatial_scope ?? { mode: 'UNBOUNDED' as const };
+  return Object.freeze({
+    tenantId: context.tenant_id,
+    subject: context.sub,
+    sessionId: context.session_id,
+    authVersion: context.auth_version,
+    permissions: Object.freeze([...context.granted_scopes]),
+    roles: Object.freeze([...context.roles]),
+    persona: context.persona_type,
+    departmentScope: Object.freeze(
+      org.mode === 'SCOPED_DEPARTMENTS'
+        ? { mode: 'DEPARTMENTS' as const, departmentIds: Object.freeze([...org.department_ids]) }
+        : { mode: 'ALL' as const },
+    ),
+    placeScope: Object.freeze(
+      spatial.mode === 'SCOPED_PLACES'
+        ? { mode: 'PLACES' as const, placeIds: Object.freeze([...spatial.place_ids]) }
+        : { mode: 'ALL' as const },
+    ),
+  });
+}
+
+export function extractBearerToken(header: string | string[] | undefined): string {
+  if (typeof header !== 'string') throw new UnauthorizedException('Authorization header is missing or malformed.');
+  const match = /^Bearer\s+([^\s]+)$/.exec(header.trim());
+  if (!match?.[1]) throw new UnauthorizedException('Authorization header must use the Bearer scheme.');
   return match[1];
 }
 
-function isEdDsaToken(token: string): boolean {
-  try {
-    const firstPart = token.split('.')[0];
-    if (!firstPart) return false;
-    const headerJson = Buffer.from(firstPart, 'base64url').toString('utf8');
-    const header = JSON.parse(headerJson);
-    return header.alg === 'EdDSA';
-  } catch {
-    return false;
-  }
+/** `*`, `cmms:*` or the exact permission; `cmms:*` covers every `cmms.<area>.<action>`. */
+export function hasCmmsPermission(granted: readonly string[], required: string): boolean {
+  return granted.includes('*') || granted.includes('cmms:*') || granted.includes(required);
 }

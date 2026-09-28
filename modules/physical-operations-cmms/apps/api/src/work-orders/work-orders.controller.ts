@@ -1,99 +1,123 @@
+import { Body, Controller, Get, HttpCode, HttpStatus, Param, Patch, Post, Res, UseGuards } from '@nestjs/common';
 import {
-  Body, Controller, Get, HttpCode, HttpStatus,
-  Param, Patch, Post, Req, UseGuards,
-} from '@nestjs/common';
-import { ZodValidationPipe } from '@gigalibs/validation-nest';
-import { AuthenticatedRequest, OidcAuthorizationGuard, RequirePermissions } from '../auth/authorization.js';
+  CmmsAuthorizationGuard,
+  CommandContext,
+  CurrentPrincipal,
+  RequirePermissions,
+  type CmmsCommandContext,
+  type CmmsPrincipal,
+} from '../auth/authorization.js';
 import { WorkOrdersService } from './work-orders.service.js';
-import {
-  ChangeWorkOrderStatusSchema,
-  CreateWorkOrderSchema,
-  UpdateWorkOrderSchema,
-  WorkOrderSearchSchema,
-  type ChangeWorkOrderStatus,
-  type CreateWorkOrder,
-  type UpdateWorkOrder,
-  type WorkOrderSearch,
-} from './work-orders.schemas.js';
+
+interface ReplayResponse {
+  status(code: number): unknown;
+  setHeader(name: string, value: string): unknown;
+}
 
 @Controller('v1/work-orders')
-@UseGuards(OidcAuthorizationGuard)
+@UseGuards(CmmsAuthorizationGuard)
 export class WorkOrdersController {
-  constructor(private readonly svc: WorkOrdersService) {}
+  constructor(private readonly workOrders: WorkOrdersService) {}
 
   @Post('search')
-  @RequirePermissions('cmms.work-orders.read')
   @HttpCode(HttpStatus.OK)
-  search(
-    @Req() req: AuthenticatedRequest,
-    @Body(new ZodValidationPipe(WorkOrderSearchSchema)) body: WorkOrderSearch,
-  ) {
-    const departmentIds = req.principal!.departmentScope.mode === 'SCOPED_DEPARTMENTS'
-      ? req.principal!.departmentScope.departmentIds
-      : undefined;
-    return this.svc.search(req.principal!.tenantId, body, departmentIds);
-  }
-
-  @Get('urgent')
   @RequirePermissions('cmms.work-orders.read')
-  getUrgent(@Req() req: AuthenticatedRequest) {
-    const departmentIds = req.principal!.departmentScope.mode === 'SCOPED_DEPARTMENTS'
-      ? req.principal!.departmentScope.departmentIds
-      : undefined;
-    return this.svc.getUrgent(req.principal!.tenantId, departmentIds);
+  search(@CurrentPrincipal() principal: CmmsPrincipal, @Body() body: unknown) {
+    return this.workOrders.search(principal, body);
   }
 
-  @Get('asset/:assetId')
+  @Get(':workOrderId')
   @RequirePermissions('cmms.work-orders.read')
-  getByAsset(@Req() req: AuthenticatedRequest, @Param('assetId') assetId: string) {
-    const departmentIds = req.principal!.departmentScope.mode === 'SCOPED_DEPARTMENTS'
-      ? req.principal!.departmentScope.departmentIds
-      : undefined;
-    return this.svc.search(req.principal!.tenantId, { assetId }, departmentIds);
+  get(@CurrentPrincipal() principal: CmmsPrincipal, @Param('workOrderId') workOrderId: string) {
+    return this.workOrders.get(principal, workOrderId);
   }
 
-  @Get(':id')
+  @Get(':workOrderId/history')
   @RequirePermissions('cmms.work-orders.read')
-  getOne(@Req() req: AuthenticatedRequest, @Param('id') id: string) {
-    return this.svc.getOne(req.principal!.tenantId, id);
+  history(@CurrentPrincipal() principal: CmmsPrincipal, @Param('workOrderId') workOrderId: string) {
+    return this.workOrders.history(principal, workOrderId);
   }
 
-  @Get(':id/history')
-  @RequirePermissions('cmms.work-orders.read')
-  getHistory(@Req() req: AuthenticatedRequest, @Param('id') id: string) {
-    return this.svc.getHistory(req.principal!.tenantId, id);
-  }
-
+  /** 201 for a new work order; 200 with `Idempotency-Replayed: true` when the request key was seen before. */
   @Post()
   @RequirePermissions('cmms.work-orders.write')
-  @HttpCode(HttpStatus.CREATED)
-  create(
-    @Req() req: AuthenticatedRequest,
-    @Body(new ZodValidationPipe(CreateWorkOrderSchema)) body: CreateWorkOrder,
+  async create(
+    @CommandContext() context: CmmsCommandContext,
+    @Body() body: unknown,
+    @Res({ passthrough: true }) response: ReplayResponse,
   ) {
-    return this.svc.create(req.principal!.tenantId, req.principal!.subject, body);
+    const { replayed, ...workOrder } = await this.workOrders.create(context, body);
+    if (replayed) {
+      response.status(HttpStatus.OK);
+      response.setHeader('Idempotency-Replayed', 'true');
+    }
+    return workOrder;
   }
 
-  @Patch(':id')
+  @Patch(':workOrderId')
   @RequirePermissions('cmms.work-orders.write')
-  update(
-    @Req() req: AuthenticatedRequest,
-    @Param('id') id: string,
-    @Body(new ZodValidationPipe(UpdateWorkOrderSchema)) body: UpdateWorkOrder,
-  ) {
-    return this.svc.update(req.principal!.tenantId, id, req.principal!.subject, body);
+  update(@CommandContext() context: CmmsCommandContext, @Param('workOrderId') workOrderId: string, @Body() body: unknown) {
+    return this.workOrders.update(context, workOrderId, body);
   }
 
-  @Patch(':id/change-status')
+  @Post(':workOrderId/status')
+  @HttpCode(HttpStatus.OK)
   @RequirePermissions('cmms.work-orders.write')
-  changeStatus(
-    @Req() req: AuthenticatedRequest,
-    @Param('id') id: string,
-    @Body(new ZodValidationPipe(ChangeWorkOrderStatusSchema)) body: ChangeWorkOrderStatus,
+  status(@CommandContext() context: CmmsCommandContext, @Param('workOrderId') workOrderId: string, @Body() body: unknown) {
+    return this.workOrders.changeStatus(context, workOrderId, body);
+  }
+
+  @Post(':workOrderId/tasks')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermissions('cmms.work-orders.write')
+  addTask(@CommandContext() context: CmmsCommandContext, @Param('workOrderId') workOrderId: string, @Body() body: unknown) {
+    return this.workOrders.addTask(context, workOrderId, body);
+  }
+
+  @Patch(':workOrderId/tasks/:taskId')
+  @RequirePermissions('cmms.work-orders.write')
+  recordTask(
+    @CommandContext() context: CmmsCommandContext,
+    @Param('workOrderId') workOrderId: string,
+    @Param('taskId') taskId: string,
+    @Body() body: unknown,
   ) {
-    return this.svc.changeStatus(
-      req.principal!.tenantId, id, req.principal!.subject,
-      body.status, body.expectedVersion, body.feedback, body.signatureData,
-    );
+    return this.workOrders.recordTask(context, workOrderId, taskId, body);
+  }
+
+  @Post(':workOrderId/labour')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermissions('cmms.work-orders.write')
+  labour(@CommandContext() context: CmmsCommandContext, @Param('workOrderId') workOrderId: string, @Body() body: unknown) {
+    return this.workOrders.logLabour(context, workOrderId, body);
+  }
+
+  @Post(':workOrderId/parts')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermissions('cmms.work-orders.write')
+  parts(@CommandContext() context: CmmsCommandContext, @Param('workOrderId') workOrderId: string, @Body() body: unknown) {
+    return this.workOrders.issuePart(context, workOrderId, body);
+  }
+
+  /** Asks Workforce to staff the work order (WI-OI-068); the answer arrives asynchronously. */
+  @Post(':workOrderId/staffing')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermissions('cmms.work-orders.write')
+  requestStaffing(@CommandContext() context: CmmsCommandContext, @Param('workOrderId') workOrderId: string, @Body() body: unknown) {
+    return this.workOrders.requestStaffing(context, workOrderId, body);
+  }
+
+  @Post(':workOrderId/staffing/cancel')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermissions('cmms.work-orders.write')
+  cancelStaffing(@CommandContext() context: CmmsCommandContext, @Param('workOrderId') workOrderId: string, @Body() body: unknown) {
+    return this.workOrders.cancelStaffing(context, workOrderId, body);
+  }
+
+  @Post(':workOrderId/notes')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermissions('cmms.work-orders.write')
+  note(@CommandContext() context: CmmsCommandContext, @Param('workOrderId') workOrderId: string, @Body() body: unknown) {
+    return this.workOrders.addNote(context, workOrderId, body);
   }
 }

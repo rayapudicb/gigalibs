@@ -1,0 +1,52 @@
+apiVersion: modules.gigalibs.io/v1alpha1
+kind: Module
+metadata:
+  name: physical-operations-cmms
+  displayName: Asset & Maintenance (CMMS)
+  version: 0.2.0-dev
+  lifecycle: implementation
+  # WI-OI-038 (roadmap P4) owns the CMMS core. The earlier WI-OI-031 reference was the solution-pack item.
+  workItem: WI-OI-038
+spec:
+  standalone: true
+  requiredModules: []
+  optionalModules:
+    - geospatial
+  # Mounted in the canonical runtime (signed context, least-privilege RLS, db/runtime-manifest.txt).
+  capabilities:
+    - asset-registry
+    - asset-hierarchy
+    - work-orders
+    - preventive-maintenance
+    - meter-readings
+    - parts-inventory
+    - stock-ledger
+    - maintenance-overview
+    - audit-log
+    - outbox-events
+  # Contained until their own work items: CMMS-local people and dispatch (Workforce owns people, P6 handshake
+  # WI-OI-068), requests/vendors/procurement (CM-06), IoT ingress and meter automation (CM-04), automatic PM
+  # generation (CM-05), downtime and reliability reporting (CM-07), import/export (frozen under WI-OI-043).
+  containedCapabilities:
+    - people-and-dispatch
+    - maintenance-requests
+    - vendors-customers
+    - purchase-orders
+    - iot-ingress
+    - automatic-pm-generation
+    - reliability-analytics
+    - import-export
+  ui:
+    application: apps/workflow-platform
+    basePath: /cmms
+  api:
+    application: apps/api
+    port: 4200
+    version: v1
+  database:
+    engine: postgresql
+    minimumVersion: '16'
+    ownsSchema: true
+    defaultSchema: gigalibs_cmms
+    crossSchemaAccess: false
+    runtimeManifest: db/runtime-manifest.txt

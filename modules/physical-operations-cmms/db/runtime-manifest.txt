@@ -1,0 +1,13 @@
+# WI-OI-038 ordered runtime migration manifest for gigalibs_cmms (roadmap P4).
+# Only these files, in this order, are copied into the CMMS image and installed by run-module-migrations.mjs.
+# 000001 and 000002 were installed before the manifest existed and stay immutable. 000003–000009 are prototype
+# inventory that no supported target installs: a CMMS-local workforce model superseded by the Workforce module
+# (000003, 000004), uuid department columns (000005), purchase orders (000006) and import/export frozen and
+# hash-protected under WI-OI-043 (000007–000009). 000010 replaces the empty prototype core with the canonical one.
+000001_cmms_foundation.up.sql
+000002_cmms_rls_and_policies.up.sql
+000010_cmms_canonical_core.up.sql
+000011_cmms_workforce_handshake.up.sql
+000012_cmms_relay_ordering.up.sql
+000013_cmms_relay_function_privileges.up.sql
+000014_cmms_outbox_retention.up.sql

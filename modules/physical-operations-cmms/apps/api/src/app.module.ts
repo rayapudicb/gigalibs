@@ -1,70 +1,58 @@
 import { Module } from '@nestjs/common';
-import { OidcAuthorizationGuard } from './auth/authorization.js';
-import { OidcDevController } from './auth/oidc-dev.controller.js';
-import { OidcDevService } from './auth/oidc-dev.service.js';
-import { cmmsConfigProvider } from './config.provider.js';
-import { DatabaseService } from './database/database.service.js';
-import { HealthController } from './health/health.controller.js';
-import { LocationsController } from './locations/locations.controller.js';
-import { LocationsService } from './locations/locations.service.js';
+import { AnalyticsController } from './analytics/analytics.controller.js';
+import { AnalyticsService } from './analytics/analytics.service.js';
 import { AssetsController } from './assets/assets.controller.js';
 import { AssetsService } from './assets/assets.service.js';
-import { WorkOrdersController } from './work-orders/work-orders.controller.js';
-import { WorkOrdersService } from './work-orders/work-orders.service.js';
-import { MetersController, IotIngressController } from './meters/meters.controller.js';
+import { CmmsAuthorizationGuard } from './auth/authorization.js';
+import { DatabaseModule } from './database/database.module.js';
+import { HealthController } from './health/health.controller.js';
+import { MetersController } from './meters/meters.controller.js';
 import { MetersService } from './meters/meters.service.js';
 import { PartsController } from './parts/parts.controller.js';
 import { PartsService } from './parts/parts.service.js';
 import { PmSchedulesController } from './pm-schedules/pm-schedules.controller.js';
 import { PmSchedulesService } from './pm-schedules/pm-schedules.service.js';
-import { AnalyticsController } from './analytics/analytics.controller.js';
-import { AnalyticsService } from './analytics/analytics.service.js';
-import { WorkforceController } from './workforce/workforce.controller.js';
-import { WorkforceService } from './workforce/workforce.service.js';
-import { VendorsController } from './vendors/vendors.controller.js';
-import { VendorsService } from './vendors/vendors.service.js';
-import { CustomersController } from './customers/customers.controller.js';
-import { CustomersService } from './customers/customers.service.js';
-import { RequestsController } from './requests/requests.controller.js';
-import { RequestsService } from './requests/requests.service.js';
-import { PurchaseOrdersController } from './purchase-orders/purchase-orders.controller.js';
-import { PurchaseOrdersService } from './purchase-orders/purchase-orders.service.js';
+import { CmmsInboxController } from './relay/inbox.controller.js';
+import { CmmsInboxService } from './relay/inbox.service.js';
+import { CmmsOutboxRelay } from './relay/outbox-relay.js';
+import { RelayInboxGuard } from './relay/relay-inbox.guard.js';
+import { CMMS_RELAY_CONFIG, loadCmmsRelayConfig } from './relay/relay-config.js';
+import { OUTBOX_RETENTION_CONFIG, OutboxRetention, loadOutboxRetentionConfig } from './relay/outbox-retention.js';
+import { WorkOrdersController } from './work-orders/work-orders.controller.js';
+import { WorkOrdersService } from './work-orders/work-orders.service.js';
 
+/**
+ * CMMS core runtime (WI-OI-038, roadmap P4): assets, work orders, preventive maintenance, meters and parts.
+ * Staffing goes to Workforce through the outbox relay and inbox (WI-OI-068, ADR-0007 option A). People,
+ * dispatch, requests, vendors, customers, purchase orders, import/export and IoT ingress are contained and not
+ * mounted.
+ */
 @Module({
+  imports: [DatabaseModule],
   controllers: [
     HealthController,
-    OidcDevController,
-    LocationsController,
     AssetsController,
     WorkOrdersController,
-    MetersController,
-    IotIngressController,
-    PartsController,
     PmSchedulesController,
+    MetersController,
+    PartsController,
     AnalyticsController,
-    WorkforceController,
-    VendorsController,
-    CustomersController,
-    RequestsController,
-    PurchaseOrdersController,
+    CmmsInboxController,
   ],
   providers: [
-    cmmsConfigProvider,
-    DatabaseService,
-    OidcDevService,
-    OidcAuthorizationGuard,
-    LocationsService,
+    CmmsAuthorizationGuard,
     AssetsService,
     WorkOrdersService,
+    PmSchedulesService,
     MetersService,
     PartsService,
-    PmSchedulesService,
     AnalyticsService,
-    WorkforceService,
-    VendorsService,
-    CustomersService,
-    RequestsService,
-    PurchaseOrdersService,
+    CmmsInboxService,
+    CmmsOutboxRelay,
+    RelayInboxGuard,
+    { provide: CMMS_RELAY_CONFIG, useFactory: () => loadCmmsRelayConfig() },
+    OutboxRetention,
+    { provide: OUTBOX_RETENTION_CONFIG, useFactory: () => loadOutboxRetentionConfig() },
   ],
 })
 export class AppModule {}

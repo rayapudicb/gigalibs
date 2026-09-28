@@ -1,202 +1,272 @@
-import { randomUUID } from 'node:crypto';
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable } from '@nestjs/common';
+import {
+  CreateCmmsPmScheduleV1Schema,
+  GenerateCmmsPmWorkOrderV1Schema,
+  UpdateCmmsPmScheduleV1Schema,
+  type CmmsPmScheduleV1,
+  type CmmsWorkOrderDetailV1,
+} from '@gigalibs/contracts';
+import type { PoolClient } from 'pg';
+import type { CmmsCommandContext, CmmsPrincipal } from '../auth/authorization.js';
+import { assertWritableScope, scopePredicates } from '../auth/scope.js';
+import { AssetsService } from '../assets/assets.service.js';
+import {
+  assertUuid,
+  iso,
+  isoOrNull,
+  notFound,
+  numberOrNull,
+  parseInput,
+  recordMutation,
+  versionConflict,
+} from '../common/command.js';
 import { DatabaseService } from '../database/database.service.js';
 import { WorkOrdersService } from '../work-orders/work-orders.service.js';
 
-export interface PmSchedule {
-  id: string;
-  name: string;
-  description: string | null;
-  assetId: string;
-  locationId: string | null;
-  categoryId: string | null;
-  triggerType: string;
-  cronExpression: string | null;
-  cronTimezone: string;
-  meterId: string | null;
-  meterThreshold: number | null;
-  woTitleTemplate: string | null;
-  woDescription: string | null;
-  woPriority: string;
-  assignedTo: string | null;
-  assignedTeams: string[];
-  formSchemaId: string | null;
-  estimatedDuration: number | null;
-  workflowDagId: string | null;
-  isActive: boolean;
-  lastTriggeredAt: string | null;
-  nextDueAt: string | null;
-  version: number;
-  createdBy: string;
-  createdAt: string;
-  updatedAt: string;
-}
+const SCHEDULE_COLUMNS = `s.*, a.name AS asset_name, (s.is_active AND s.next_due_at < now()) AS overdue`;
+const SCHEDULE_FROM = `gigalibs_cmms.pm_schedules s
+  JOIN gigalibs_cmms.assets a ON a.tenant_id = s.tenant_id AND a.id = s.asset_id`;
+
+/**
+ * Next occurrence in the schedule's own time zone, so a 09:00 local schedule stays at 09:00 across daylight
+ * saving changes; month steps clamp to the month end (Jan 31 + 1 month = Feb 28/29).
+ */
+const ADVANCE_SQL = `((s.next_due_at AT TIME ZONE s.time_zone) + make_interval(
+    years => CASE WHEN s.interval_unit = 'YEAR' THEN s.interval_count ELSE 0 END,
+    months => CASE WHEN s.interval_unit = 'MONTH' THEN s.interval_count ELSE 0 END,
+    weeks => CASE WHEN s.interval_unit = 'WEEK' THEN s.interval_count ELSE 0 END,
+    days => CASE WHEN s.interval_unit = 'DAY' THEN s.interval_count ELSE 0 END)) AT TIME ZONE s.time_zone`;
 
 @Injectable()
 export class PmSchedulesService {
   constructor(
-    private readonly db: DatabaseService,
-    private readonly workOrdersService: WorkOrdersService,
+    private readonly database: DatabaseService,
+    private readonly assets: AssetsService,
+    private readonly workOrders: WorkOrdersService,
   ) {}
 
-  async list(tenantId: string, assetId?: string, departmentIds?: readonly string[]): Promise<PmSchedule[]> {
-    const conditions = ['tenant_id = $1'];
-    const values: unknown[] = [tenantId];
-    let idx = 2;
-    if (departmentIds && departmentIds.length > 0) {
-      const placeholders = departmentIds.map(() => `$${idx++}`).join(', ');
-      conditions.push(`(department_id IS NULL OR department_id IN (${placeholders}))`);
-      for (const d of departmentIds) values.push(d);
-    }
-    if (assetId) {
-      conditions.push(`asset_id = $${idx++}`);
-      values.push(assetId);
-    }
-    const result = await this.db.queryWithTenant(
-      tenantId,
-      `SELECT id, name, description, asset_id, location_id, category_id,
-              trigger_type, cron_expression, cron_timezone, meter_id, meter_threshold,
-              wo_title_template, wo_description, wo_priority, assigned_to, assigned_teams,
-              form_schema_id, estimated_duration, workflow_dag_id, is_active,
-              last_triggered_at, next_due_at, version, created_by, created_at, updated_at
-       FROM gigalibs_cmms.pm_schedules
-       WHERE ${conditions.join(' AND ')}
-       ORDER BY next_due_at ASC NULLS LAST, name ASC`,
+  async list(principal: CmmsPrincipal, assetId?: string): Promise<{ readonly items: readonly CmmsPmScheduleV1[] }> {
+    if (assetId !== undefined) assertUuid(assetId, 'assetId');
+    return this.database.withTenantTransaction(principal.tenantId, async (client) => {
+      const values: unknown[] = [principal.tenantId];
+      const where = ['s.tenant_id = $1', ...scopePredicates(principal, values, 's.')];
+      if (assetId) {
+        values.push(assetId);
+        where.push(`s.asset_id = $${values.length}`);
+      }
+      const result = await client.query(
+        `SELECT ${SCHEDULE_COLUMNS} FROM ${SCHEDULE_FROM}
+          WHERE ${where.join(' AND ')}
+          ORDER BY s.is_active DESC, s.next_due_at ASC, s.name ASC
+          LIMIT 500`,
+        values,
+      );
+      return { items: result.rows.map(mapSchedule) };
+    });
+  }
+
+  async get(principal: CmmsPrincipal, scheduleId: string): Promise<CmmsPmScheduleV1> {
+    assertUuid(scheduleId, 'scheduleId');
+    return this.database.withTenantTransaction(principal.tenantId, (client) => this.visible(client, principal, scheduleId, false));
+  }
+
+  async create(context: CmmsCommandContext, raw: unknown): Promise<CmmsPmScheduleV1> {
+    const input = parseInput(CreateCmmsPmScheduleV1Schema, raw);
+    return this.database.withTenantTransaction(context.principal.tenantId, async (client) => {
+      const asset = await this.assets.visibleAsset(client, context.principal, input.assetId, false);
+      const siteRef = input.siteRef ?? asset.siteRef;
+      const departmentId = input.departmentId ?? asset.departmentId;
+      assertWritableScope(context.principal, { departmentId, siteRef });
+      const result = await client.query<{ id: string }>(
+        `INSERT INTO gigalibs_cmms.pm_schedules
+           (tenant_id, name, description, asset_id, site_ref, department_id, interval_count, interval_unit, time_zone,
+            next_due_at, wo_title, wo_description, wo_priority, estimated_hours, requires_signature, task_labels,
+            created_by, updated_by, correlation_id)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16::jsonb, $17, $17, $18)
+         RETURNING id`,
+        [
+          context.principal.tenantId,
+          input.name,
+          input.description ?? null,
+          input.assetId,
+          siteRef,
+          departmentId,
+          input.intervalCount,
+          input.intervalUnit,
+          input.timeZone,
+          input.firstDueAt,
+          input.woTitle,
+          input.woDescription ?? null,
+          input.woPriority,
+          input.estimatedHours ?? null,
+          input.requiresSignature,
+          JSON.stringify(input.taskLabels),
+          context.principal.subject,
+          context.correlationId,
+        ],
+      );
+      const id = result.rows[0]!.id;
+      await recordMutation(client, context, {
+        action: 'CMMS_PM_SCHEDULE_CREATED',
+        aggregateType: 'CMMS_PM_SCHEDULE',
+        aggregateId: id,
+        aggregateVersion: 1,
+        payload: { assetId: input.assetId, intervalCount: input.intervalCount, intervalUnit: input.intervalUnit },
+      });
+      return this.visible(client, context.principal, id, false);
+    });
+  }
+
+  async update(context: CmmsCommandContext, scheduleId: string, raw: unknown): Promise<CmmsPmScheduleV1> {
+    assertUuid(scheduleId, 'scheduleId');
+    const input = parseInput(UpdateCmmsPmScheduleV1Schema, raw);
+    return this.database.withTenantTransaction(context.principal.tenantId, async (client) => {
+      const current = await this.lock(client, context, scheduleId, input.expectedVersion);
+      const result = await client.query<{ version: number }>(
+        `UPDATE gigalibs_cmms.pm_schedules
+            SET name = $4, description = $5, interval_count = $6, interval_unit = $7, time_zone = $8,
+                next_due_at = $9, wo_title = $10, wo_description = $11, wo_priority = $12, estimated_hours = $13,
+                requires_signature = $14, task_labels = $15::jsonb, is_active = $16,
+                version = version + 1, updated_by = $17, correlation_id = $18, updated_at = now()
+          WHERE tenant_id = $1 AND id = $2 AND version = $3
+          RETURNING version`,
+        [
+          context.principal.tenantId,
+          scheduleId,
+          input.expectedVersion,
+          input.name ?? current.name,
+          input.description === undefined ? current.description : input.description,
+          input.intervalCount ?? current.interval_count,
+          input.intervalUnit ?? current.interval_unit,
+          input.timeZone ?? current.time_zone,
+          input.nextDueAt ?? current.next_due_at,
+          input.woTitle ?? current.wo_title,
+          input.woDescription === undefined ? current.wo_description : input.woDescription,
+          input.woPriority ?? current.wo_priority,
+          input.estimatedHours === undefined ? current.estimated_hours : input.estimatedHours,
+          input.requiresSignature ?? current.requires_signature,
+          JSON.stringify(input.taskLabels ?? current.task_labels ?? []),
+          input.isActive ?? current.is_active,
+          context.principal.subject,
+          context.correlationId,
+        ],
+      );
+      if (result.rowCount === 0) versionConflict('The schedule');
+      await recordMutation(client, context, {
+        action: 'CMMS_PM_SCHEDULE_UPDATED',
+        aggregateType: 'CMMS_PM_SCHEDULE',
+        aggregateId: scheduleId,
+        aggregateVersion: Number(result.rows[0]!.version),
+        payload: { changed: Object.keys(input).filter((key) => key !== 'expectedVersion') },
+      });
+      return this.visible(client, context.principal, scheduleId, false);
+    });
+  }
+
+  /**
+   * Generates the work order for the current due occurrence and advances the schedule in one transaction. The
+   * (schedule, occurrence) key is unique, so a retry or a second operator can never create a duplicate.
+   */
+  async generate(
+    context: CmmsCommandContext,
+    scheduleId: string,
+    raw: unknown,
+  ): Promise<{ readonly schedule: CmmsPmScheduleV1; readonly workOrder: CmmsWorkOrderDetailV1 }> {
+    assertUuid(scheduleId, 'scheduleId');
+    const input = parseInput(GenerateCmmsPmWorkOrderV1Schema, raw);
+    return this.database.withTenantTransaction(context.principal.tenantId, async (client) => {
+      const current = await this.lock(client, context, scheduleId, input.expectedVersion);
+      if (!current.is_active) {
+        throw new ConflictException({ code: 'CMMS_SCHEDULE_INACTIVE', message: 'Activate the schedule before generating work.' });
+      }
+      const occurrence = iso(current.next_due_at);
+      const workOrderId = await this.workOrders.createWithClient(
+        client,
+        context,
+        {
+          type: 'PREVENTIVE',
+          priority: current.wo_priority,
+          title: current.wo_title,
+          description: current.wo_description ?? undefined,
+          assetId: current.asset_id,
+          siteRef: current.site_ref ?? undefined,
+          departmentId: current.department_id ?? undefined,
+          dueAt: occurrence,
+          requiresSignature: current.requires_signature === true,
+          estimatedHours: numberOrNull(current.estimated_hours) ?? undefined,
+          tasks: ((current.task_labels ?? []) as string[]).map((label) => ({ label, required: true })),
+        },
+        { triggerSource: 'PM_SCHEDULE', pmScheduleId: scheduleId, pmOccurrenceAt: occurrence },
+      );
+      const advanced = await client.query<{ version: number }>(
+        `UPDATE gigalibs_cmms.pm_schedules s
+            SET next_due_at = ${ADVANCE_SQL}, last_generated_at = now(), version = s.version + 1,
+                updated_by = $3, correlation_id = $4, updated_at = now()
+          WHERE s.tenant_id = $1 AND s.id = $2
+          RETURNING s.version`,
+        [context.principal.tenantId, scheduleId, context.principal.subject, context.correlationId],
+      );
+      await recordMutation(client, context, {
+        action: 'CMMS_PM_WORK_ORDER_GENERATED',
+        aggregateType: 'CMMS_PM_SCHEDULE',
+        aggregateId: scheduleId,
+        aggregateVersion: Number(advanced.rows[0]!.version),
+        payload: { occurrence, workOrderId },
+      });
+      return {
+        schedule: await this.visible(client, context.principal, scheduleId, false),
+        workOrder: await this.workOrders.detailWithClient(client, context.principal, workOrderId),
+      };
+    });
+  }
+
+  private async lock(client: PoolClient, context: CmmsCommandContext, scheduleId: string, expectedVersion: number): Promise<any> {
+    const values: unknown[] = [context.principal.tenantId, scheduleId];
+    const where = ['s.tenant_id = $1', 's.id = $2', ...scopePredicates(context.principal, values, 's.')];
+    const result = await client.query(`SELECT s.* FROM gigalibs_cmms.pm_schedules s WHERE ${where.join(' AND ')} FOR UPDATE`, values);
+    const current = result.rows[0];
+    if (!current) notFound('The schedule');
+    if (Number(current.version) !== expectedVersion) versionConflict('The schedule');
+    assertWritableScope(context.principal, { departmentId: current.department_id, siteRef: current.site_ref });
+    return current;
+  }
+
+  private async visible(client: PoolClient, principal: CmmsPrincipal, scheduleId: string, lock: boolean): Promise<CmmsPmScheduleV1> {
+    const values: unknown[] = [principal.tenantId, scheduleId];
+    const where = ['s.tenant_id = $1', 's.id = $2', ...scopePredicates(principal, values, 's.')];
+    const result = await client.query(
+      `SELECT ${SCHEDULE_COLUMNS} FROM ${SCHEDULE_FROM} WHERE ${where.join(' AND ')}${lock ? ' FOR UPDATE OF s' : ''}`,
       values,
     );
-    return result.rows.map(mapPm);
-  }
-
-  async getOne(tenantId: string, id: string): Promise<PmSchedule> {
-    const result = await this.db.queryWithTenant(
-      tenantId,
-      `SELECT id, name, description, asset_id, location_id, category_id,
-              trigger_type, cron_expression, cron_timezone, meter_id, meter_threshold,
-              wo_title_template, wo_description, wo_priority, assigned_to, assigned_teams,
-              form_schema_id, estimated_duration, workflow_dag_id, is_active,
-              last_triggered_at, next_due_at, version, created_by, created_at, updated_at
-       FROM gigalibs_cmms.pm_schedules WHERE tenant_id = $1 AND id = $2`,
-      [tenantId, id],
-    );
-    if (!result.rows[0]) throw new NotFoundException(`PM Schedule ${id} not found.`);
-    return mapPm(result.rows[0]);
-  }
-
-  async create(
-    tenantId: string,
-    actorId: string,
-    data: {
-      name: string;
-      description?: string;
-      assetId: string;
-      locationId?: string;
-      categoryId?: string;
-      triggerType: 'CALENDAR' | 'METER_THRESHOLD' | 'BOTH';
-      cronExpression?: string;
-      meterId?: string;
-      meterThreshold?: number;
-      woTitleTemplate?: string;
-      woDescription?: string;
-      woPriority?: 'NONE' | 'LOW' | 'MEDIUM' | 'HIGH' | 'EMERGENCY';
-      assignedTo?: string;
-      formSchemaId?: string;
-      estimatedDuration?: number;
-      workflowDagId?: string;
-      nextDueAt?: string;
-    },
-  ): Promise<PmSchedule> {
-    await this.ensureTenant(tenantId);
-    const id = randomUUID();
-
-    const result = await this.db.queryWithTenant(
-      tenantId,
-      `INSERT INTO gigalibs_cmms.pm_schedules (
-         tenant_id, id, name, description, asset_id, location_id, category_id,
-         trigger_type, cron_expression, meter_id, meter_threshold,
-         wo_title_template, wo_description, wo_priority, assigned_to,
-         form_schema_id, estimated_duration, workflow_dag_id, next_due_at, created_by
-       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)
-       RETURNING *`,
-      [
-        tenantId, id, data.name.trim(), data.description ?? null, data.assetId,
-        data.locationId ?? null, data.categoryId ?? null, data.triggerType,
-        data.cronExpression ?? null, data.meterId ?? null, data.meterThreshold ?? null,
-        data.woTitleTemplate ?? `PM: ${data.name}`, data.woDescription ?? null,
-        data.woPriority ?? 'MEDIUM', data.assignedTo ?? null, data.formSchemaId ?? null,
-        data.estimatedDuration ?? null, data.workflowDagId ?? null,
-        data.nextDueAt ?? null, actorId,
-      ],
-    );
-
-    return mapPm(result.rows[0]);
-  }
-
-  async triggerWorkOrder(tenantId: string, id: string, actorId: string) {
-    const pm = await this.getOne(tenantId, id);
-
-    const wo = await this.workOrdersService.create(tenantId, actorId, {
-      type: 'PREVENTIVE',
-      priority: (pm.woPriority as any) ?? 'MEDIUM',
-      title: pm.woTitleTemplate || `PM: ${pm.name}`,
-      description: pm.woDescription ?? undefined,
-      assetId: pm.assetId,
-      locationId: pm.locationId ?? undefined,
-      categoryId: pm.categoryId ?? undefined,
-      assignedTo: pm.assignedTo ?? undefined,
-      formSchemaId: pm.formSchemaId ?? undefined,
-      estimatedDuration: pm.estimatedDuration ?? undefined,
-      triggerSource: 'PM_SCHEDULE',
-    });
-
-    const now = new Date().toISOString();
-    await this.db.queryWithTenant(
-      tenantId,
-      `UPDATE gigalibs_cmms.pm_schedules
-       SET last_triggered_at = $1, version = version + 1, updated_at = transaction_timestamp()
-       WHERE tenant_id = $2 AND id = $3`,
-      [now, tenantId, id],
-    );
-
-    return { message: 'Preventive maintenance work order triggered successfully.', workOrder: wo };
-  }
-
-  private async ensureTenant(tenantId: string): Promise<void> {
-    await this.db.queryWithTenant(
-      tenantId,
-      `INSERT INTO gigalibs_cmms.module_tenants (id, oidc_issuer, external_tenant_subject)
-       VALUES ($1, 'system', $1) ON CONFLICT (id) DO NOTHING`,
-      [tenantId],
-    );
+    if (!result.rows[0]) notFound('The schedule');
+    return mapSchedule(result.rows[0]);
   }
 }
 
-function mapPm(row: any): PmSchedule {
+function mapSchedule(row: any): CmmsPmScheduleV1 {
   return {
     id: row.id,
     name: row.name,
     description: row.description ?? null,
     assetId: row.asset_id,
-    locationId: row.location_id ?? null,
-    categoryId: row.category_id ?? null,
-    triggerType: row.trigger_type,
-    cronExpression: row.cron_expression ?? null,
-    cronTimezone: row.cron_timezone ?? 'UTC',
-    meterId: row.meter_id ?? null,
-    meterThreshold: row.meter_threshold ? Number(row.meter_threshold) : null,
-    woTitleTemplate: row.wo_title_template ?? null,
+    assetName: row.asset_name ?? null,
+    siteRef: row.site_ref ?? null,
+    departmentId: row.department_id ?? null,
+    intervalCount: Number(row.interval_count),
+    intervalUnit: row.interval_unit,
+    timeZone: row.time_zone,
+    nextDueAt: iso(row.next_due_at),
+    lastGeneratedAt: isoOrNull(row.last_generated_at),
+    overdue: row.overdue === true,
+    woTitle: row.wo_title,
     woDescription: row.wo_description ?? null,
     woPriority: row.wo_priority,
-    assignedTo: row.assigned_to ?? null,
-    assignedTeams: row.assigned_teams ?? [],
-    formSchemaId: row.form_schema_id ?? null,
-    estimatedDuration: row.estimated_duration ? Number(row.estimated_duration) : null,
-    workflowDagId: row.workflow_dag_id ?? null,
-    isActive: row.is_active,
-    lastTriggeredAt: row.last_triggered_at ? new Date(row.last_triggered_at).toISOString() : null,
-    nextDueAt: row.next_due_at ? new Date(row.next_due_at).toISOString() : null,
+    estimatedHours: numberOrNull(row.estimated_hours),
+    requiresSignature: row.requires_signature === true,
+    taskLabels: Array.isArray(row.task_labels) ? row.task_labels : [],
+    isActive: row.is_active === true,
     version: Number(row.version),
-    createdBy: row.created_by,
-    createdAt: row.created_at.toISOString(),
-    updatedAt: row.updated_at.toISOString(),
+    createdAt: iso(row.created_at),
+    updatedAt: iso(row.updated_at),
   };
 }

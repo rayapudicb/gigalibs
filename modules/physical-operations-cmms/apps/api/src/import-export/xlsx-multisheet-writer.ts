@@ -15,6 +15,12 @@ import ExcelJS from 'exceljs';
 import type { ImportableEntityType } from './types.js';
 import { getColumnDefs } from './column-registry.js';
 
+type WorksheetWithDataValidations = ExcelJS.Worksheet & {
+  dataValidations: {
+    add(range: string, validation: ExcelJS.DataValidation): void;
+  };
+};
+
 const HEADER_FILL: ExcelJS.Fill = {
   type: 'pattern',
   pattern: 'solid',
@@ -163,7 +169,7 @@ export async function generateWorkforceTemplate(
     defs.forEach((def, colIdx) => {
       if (!def.enumValues || def.enumValues.length === 0) return;
       const colLetter = columnIndexToLetter(colIdx + 1);
-      ws.dataValidations.add(`${colLetter}2:${colLetter}1048576`, {
+      (ws as WorksheetWithDataValidations).dataValidations.add(`${colLetter}2:${colLetter}1048576`, {
         type: 'list',
         allowBlank: true,
         formulae: [`"${def.enumValues.join(',')}"`],
