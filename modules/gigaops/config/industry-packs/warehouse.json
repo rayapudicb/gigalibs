@@ -1,0 +1,36 @@
+{
+  "slug": "warehouse",
+  "label": "Warehouse & 3PL",
+  "emoji": "📦",
+  "terminology": {
+    "workUnit": "Pick Wave",
+    "role": "Zone",
+    "position": "Slot",
+    "worker": "Associate",
+    "agreement": "Assignment"
+  },
+  "roleLabels": {
+    "workforce_manager": "DC General Manager",
+    "ops_supervisor": "Floor Supervisor",
+    "time_approver": "Shift Lead"
+  },
+  "classificationLabels": {
+    "W2": "Core Associate",
+    "AGENCY": "3PL Temp",
+    "CASUAL": "Seasonal Picker"
+  },
+  "requiredCertifications": [
+    { "slug": "reach-truck", "label": "High-Reach Forklift", "required": false },
+    { "slug": "rf-scanner", "label": "WMS Scanner Certified", "required": false }
+  ],
+  "defaultPayTypeCode": "10ST",
+  "features": {
+    "perDiem": false,
+    "flatRates": false,
+    "guaranteedHours": true,
+    "unionSupport": false,
+    "vendorPay": true,
+    "clockPunches": true,
+    "mobileTimesheet": true
+  }
+}

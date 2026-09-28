@@ -1,0 +1,37 @@
+{
+  "slug": "healthcare",
+  "label": "Healthcare & Clinical Staffing",
+  "emoji": "🏥",
+  "terminology": {
+    "workUnit": "Shift",
+    "role": "Department",
+    "position": "Role",
+    "worker": "Clinician",
+    "agreement": "Engagement Letter"
+  },
+  "roleLabels": {
+    "workforce_manager": "Director of Nursing",
+    "ops_supervisor": "Charge Nurse",
+    "time_approver": "Staffing Coordinator"
+  },
+  "classificationLabels": {
+    "W2": "Staff Clinician",
+    "AGENCY": "Travel Nurse / Locum",
+    "CASUAL": "PRN / Per Diem Clinician"
+  },
+  "requiredCertifications": [
+    { "slug": "rn-license", "label": "State Board RN License", "required": true },
+    { "slug": "bls-cpr", "label": "Basic Life Support (BLS / CPR)", "required": true },
+    { "slug": "acls", "label": "Advanced Cardiac Life Support (ACLS)", "required": false }
+  ],
+  "defaultPayTypeCode": "8ST_8OT",
+  "features": {
+    "perDiem": true,
+    "flatRates": false,
+    "guaranteedHours": true,
+    "unionSupport": true,
+    "vendorPay": true,
+    "clockPunches": true,
+    "mobileTimesheet": true
+  }
+}

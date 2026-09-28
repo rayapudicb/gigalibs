@@ -1,0 +1,29 @@
+{
+  "code": "IN",
+  "label": "India",
+  "currency": "INR",
+  "weeklyOtThreshold": 48,
+  "dataRetentionMonths": 60,
+  "payroll": {
+    "type": "INDIA_FACTORIES_ACT",
+    "dailyRegularCap": 9,
+    "dailyOtCap": null,
+    "otMultiplier": 2.0,
+    "dtMultiplier": null,
+    "holidayRegularCap": 9,
+    "holidayOtMultiplier": 2.0,
+    "holidayDtMultiplier": 2.0,
+    "seventhDayRule": false,
+    "deductions": {
+      "epf_employee_pct": 12.0,
+      "epf_employer_pct": 12.0,
+      "esi_employee_pct": 0.75,
+      "esi_employer_pct": 3.25,
+      "pt_by_state": true
+    }
+  },
+  "exportFormats": [
+    { "code": "XLSX", "label": "Excel Payroll Register", "periodDays": 30 },
+    { "code": "CSV", "label": "Generic Indian Bank Transfer CSV", "periodDays": 7 }
+  ]
+}

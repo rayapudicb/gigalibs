@@ -1,0 +1,38 @@
+{
+  "slug": "event-staffing",
+  "label": "Event Staffing",
+  "emoji": "🎤",
+  "terminology": {
+    "workUnit": "Event",
+    "role": "Job",
+    "position": "Position",
+    "worker": "Crew Member",
+    "agreement": "Contract"
+  },
+  "roleLabels": {
+    "workforce_manager": "Production Coordinator",
+    "ops_supervisor": "Stage Manager",
+    "time_approver": "Lead Crew Chief"
+  },
+  "classificationLabels": {
+    "W2": "W2 Crew",
+    "CONTRACTOR": "1099 Tech",
+    "CASUAL": "Local Runner",
+    "UNION_W2": "IATSE Crew"
+  },
+  "requiredCertifications": [
+    { "slug": "rigging-cert", "label": "Arena Rigging ETCP", "required": false },
+    { "slug": "electrical-safety", "label": "NFPA 70E Safety", "required": false },
+    { "slug": "forklift", "label": "Stage Forklift Operator", "required": false }
+  ],
+  "defaultPayTypeCode": "8ST_8OT",
+  "features": {
+    "perDiem": true,
+    "flatRates": true,
+    "guaranteedHours": true,
+    "unionSupport": true,
+    "vendorPay": true,
+    "clockPunches": true,
+    "mobileTimesheet": true
+  }
+}

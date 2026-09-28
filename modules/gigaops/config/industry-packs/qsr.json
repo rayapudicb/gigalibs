@@ -1,0 +1,37 @@
+{
+  "slug": "qsr",
+  "label": "Quick Service Restaurant & F&B",
+  "emoji": "🍔",
+  "terminology": {
+    "workUnit": "Day Part",
+    "role": "Station",
+    "position": "Crew Slot",
+    "worker": "Team Member",
+    "agreement": "Offer Letter"
+  },
+  "roleLabels": {
+    "workforce_manager": "Store Manager",
+    "ops_supervisor": "Shift Supervisor",
+    "time_approver": "Team Lead"
+  },
+  "classificationLabels": {
+    "W2": "Full-Time Team Member",
+    "CASUAL": "Part-Time Crew",
+    "PERMANENT": "Assistant Manager"
+  },
+  "requiredCertifications": [
+    { "slug": "food-handler", "label": "Food Handler Card", "required": true },
+    { "slug": "servsafe-manager", "label": "ServSafe Manager", "required": false },
+    { "slug": "allergen-safety", "label": "Allergen Awareness", "required": false }
+  ],
+  "defaultPayTypeCode": "10ST",
+  "features": {
+    "perDiem": false,
+    "flatRates": false,
+    "guaranteedHours": false,
+    "unionSupport": false,
+    "vendorPay": false,
+    "clockPunches": true,
+    "mobileTimesheet": true
+  }
+}

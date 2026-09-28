@@ -1,0 +1,25 @@
+{
+  "code": "AU",
+  "label": "Australia",
+  "currency": "AUD",
+  "weeklyOtThreshold": 38,
+  "dataRetentionMonths": 84,
+  "payroll": {
+    "type": "FAIR_WORK_AU",
+    "dailyRegularCap": 7.6,
+    "dailyOtCap": 9.6,
+    "otMultiplier": 1.5,
+    "dtMultiplier": 2.0,
+    "holidayRegularCap": 7.6,
+    "holidayOtMultiplier": 2.5,
+    "holidayDtMultiplier": 2.5,
+    "seventhDayRule": true,
+    "deductions": {
+      "superannuation_pct": 11.5
+    }
+  },
+  "exportFormats": [
+    { "code": "ABA", "label": "Australian Bank File (ABA)", "periodDays": 14 },
+    { "code": "STP_CSV", "label": "Single Touch Payroll Export", "periodDays": 14 }
+  ]
+}

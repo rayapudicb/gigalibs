@@ -1,0 +1,37 @@
+{
+  "slug": "manufacturing",
+  "label": "Manufacturing",
+  "emoji": "🏭",
+  "terminology": {
+    "workUnit": "Shift Block",
+    "role": "Production Line",
+    "position": "Operator Slot",
+    "worker": "Operator",
+    "agreement": "Onboarding Doc"
+  },
+  "roleLabels": {
+    "workforce_manager": "Plant Manager",
+    "ops_supervisor": "Line Supervisor",
+    "time_approver": "Team Leader"
+  },
+  "classificationLabels": {
+    "W2": "Full-time Operator",
+    "CASUAL": "Casual / Temp",
+    "CONTRACTOR": "Contract Worker"
+  },
+  "requiredCertifications": [
+    { "slug": "safety-induction", "label": "Safety Induction", "required": true },
+    { "slug": "forklift-license", "label": "Forklift License", "required": false },
+    { "slug": "first-aid", "label": "First Aid", "required": false }
+  ],
+  "defaultPayTypeCode": "10ST",
+  "features": {
+    "perDiem": false,
+    "flatRates": false,
+    "guaranteedHours": true,
+    "unionSupport": true,
+    "vendorPay": false,
+    "clockPunches": true,
+    "mobileTimesheet": true
+  }
+}

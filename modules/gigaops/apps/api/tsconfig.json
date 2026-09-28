@@ -1,0 +1,31 @@
+{
+  "compilerOptions": {
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "outDir": "dist",
+    "rootDir": "src",
+    "strict": true,
+    "esModuleInterop": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true
+  },
+  "include": [
+    "src/main.ts",
+    "src/gigaops.module.ts",
+    "src/config.provider.ts",
+    "src/runtime-config.ts",
+    "src/auth/authorization.ts",
+    "src/database/**/*.ts",
+    "src/health/**/*.ts",
+    "src/runtime/**/*.ts",
+    "src/resources/**/*.ts"
+  ],
+  "exclude": ["node_modules", "dist", "src/**/*.test.ts", "src/**/*.spec.ts"]
+}
