@@ -1,6 +1,6 @@
 # NOW: where the work stands
 
-Updated 2026-09-29 by Claude (WI-OI-102b done, uncommitted). Keep this file to one page. Replace old content rather than
+Updated 2026-09-29 by Claude (WI-OI-102c done, uncommitted). Keep this file to one page. Replace old content rather than
 appending to it, and update it at the end of every task.
 
 ## State
@@ -31,11 +31,17 @@ appending to it, and update it at the end of every task.
 
 ## Next
 
-**Task card `.pi/tasks/WI-OI-102c.md`** (Approved): kernel, capability and business classification, and the
-layer-audit rules (ADR-0016 F1–F2).
+Write and do the **102d** card: fencing. It labels AP matching "hosted, moving" and adds an audit that fails on new
+code writing to the 31 fenced core business tables plus the 3 core workflow tables.
 
-Then 102d (fencing), 102e (module triage and catalogue truth) and 102f (package inventory, which also parks the
-Python plane and retires the retired engines). After that come WI-OI-103 to WI-OI-107, as ordered in ADR-0016.
+After that: 102e (module triage and catalogue truth), 102f (package inventory: park the Python plane, retire the
+retired engines), 102g (merge `platform-rbac` into the kernel), then WI-OI-103 to WI-OI-107.
+
+102c (2026-09-29):
+- 50 kernel and 32 capability packages;
+- 3 new layer rules, with a 27-entry baseline, all in legacy tests;
+- `spec.category` in all 19 manifests and in `module:new`;
+- `platform-rbac`: merge its useful parts, then retire it (102g).
 
 102b decisions (2026-09-29):
 - Workflow Studio is the one workflow engine;

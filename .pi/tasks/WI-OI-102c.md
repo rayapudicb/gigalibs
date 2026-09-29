@@ -1,6 +1,7 @@
 # WI-OI-102c: kernel, capability and business classification (ADR-0016 F1, F2)
 
-- **Status:** Approved, as part of WI-OI-102, which the owner started on 2026-09-29.
+- **Status:** Done (2026-09-29). The owner chose to merge `platform-rbac`'s useful parts into the kernel (slice
+  102g). Evidence is in `.pi/work/WI-OI-102.md` under "102c".
 - **Work item:** WI-OI-102. Evidence goes in `.pi/work/WI-OI-102.md`, under "102c".
 - **Size:** M.
 

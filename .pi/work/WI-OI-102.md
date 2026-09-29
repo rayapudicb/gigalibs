@@ -49,10 +49,11 @@ Each slice has a task card in `.pi/tasks/` when it starts.
 |---|---|---|---|
 | 102a | ADR-0016, registration of WI-OI-102 to WI-OI-107, this file | S | Done, 2026-09-29 |
 | 102b | Engine evaluation (F3, F12): forms, rules, workflow, execution plane | S | Done, 2026-09-29; owner decided |
-| 102c | Kernel/capability/business classification in manifests and the layer audit (F1, F2); `platform-rbac` into the kernel | M | Next (`.pi/tasks/WI-OI-102c.md`) |
+| 102c | Kernel/capability/business classification in manifests and the layer audit (F1, F2); `platform-rbac` into the kernel | M | Done, 2026-09-29 |
 | 102d | Fencing (F4, F5): the "hosted, moving" label and the fenced-table audit | S | Proposed |
 | 102e | Module triage and catalogue truth (F6): six maturity states in manifests, catalogue and screens | M | Proposed |
 | 102f | Package inventory (F7): proposal, then owner-approved batches | M | Proposed |
+| 102g | Merge `platform-rbac`'s department/group roles and Marketplace into the kernel, then retire the module (F6, owner decision 2026-09-29) | M | Proposed |
 
 ## 102a: ADR-0016 and registration (2026-09-29)
 
@@ -122,3 +123,105 @@ designed. C retires, and D is frozen.
     node and 0 runs.
 
   There is nothing to migrate. They go with the core workflow tables when those retire, after a backup.
+
+## 102c: kernel, capability and business classification (2026-09-29)
+
+### Classification (`config/package-layers.json`)
+
+The 82 packages that were labelled `core` are now **50 kernel** and **32 capability** packages.
+
+**Kernel (`core`):**
+
+| Area | Packages |
+|---|---|
+| Identity and sessions | auth-core, auth-nest, auth-react, jwt-universal, oauth-universal, crypto, users-core |
+| Tenancy | tenancy-nest, orgs-core, onboarding-flow |
+| Roles and policy | rbac-core, rbac-nest, rbac-react |
+| Versioned configuration and settings | configuration-core, platform-settings, platform-settings-nest, config |
+| Module registry | module-registry, module-registry-nest, module-sdk, contracts |
+| Persistence | db, db-migrations-runtime, pagination, cache, redis, storage-core, integrations/aws-s3, integrations/minio |
+| Events and jobs | event-bus, queue, broker, realtime |
+| Audit and retention | audit-core, audit-nest, archival-core, data-retention, privacy-gdpr |
+| Observability | health, logger |
+| API conventions | errors, validation-nest, i18n |
+| Experience SDK and UI conventions | ui, ui-preset, icons, web-sdk, admin-kit, host-kit, embed-sdk |
+
+**Capability (`capabilityPackages`):**
+
+| Capability | Packages |
+|---|---|
+| forms | configuration-react, custom-fields, custom-fields-nest, form-engine-core, forms-engine-nest |
+| rules | rule-engine-universal |
+| workflow | approvals-core, approvals-nest, approvals-react, sla-engine, workflow-engine, workflow-sdk, workflow-mcp |
+| notifications | notifications-core, notifications-react, email-templates, chat-core |
+| analytics | analytics-core, charts-react, kpi-widgets-react, reports-core, reports-nest, reports-react |
+| places | maps-core, maps-react, geofence-engine |
+| ai | ai-chat-core, ai-chat-nest, integrations/openai |
+| billing | billing-react, pricing-calculator |
+| risk | fraud-detection |
+
+**`retiring`** (removed in 102f): form-engine-core, forms-engine-nest, workflow-engine, workflow-sdk, workflow-mcp.
+`packages/forms-engine` has no `package.json`, so it is not a workspace unit; it is removed in 102f too.
+
+**Judgement calls, recorded for review:**
+- `configuration-core` is **kernel**: it is the versioned, signed configuration engine that the core API runs
+  (vision §3.1, "versioned configuration"). The forms designer built on it, `configuration-react`, is the forms
+  capability.
+- `host-kit`, `embed-sdk` and `admin-kit` are kernel as experience SDKs.
+- `realtime` is kernel as event transport.
+
+### Rules (`scripts/verify-layer-boundaries.mjs`)
+
+New rules:
+- `KERNEL_IMPORTS_CAPABILITY`;
+- `CAPABILITY_IMPORTS_CAPABILITY`;
+- `CAPABILITY_IMPORTS_MODULE`.
+
+These stay as before: `CORE_IMPORTS_MODULE`, `MODULE_IMPORTS_MODULE`, `IMPORTS_SHELL`, `IMPORTS_TOOLING`,
+`MODULE_SCHEMA_ACCESS`.
+
+**Baseline:** rewritten to 27 named entries.
+- 10 are schema accesses, unchanged.
+- 17 come from the split. All of them are in three legacy certification tests that read other packages'
+  `module.manifest.json`: `packages/chat-core/test/comms-certification.test.mjs`,
+  `packages/form-engine-core/test/automation-certification.test.mjs` and
+  `packages/module-registry/test/platform-certification.test.mjs`.
+- The 4 former `CORE_IMPORTS_MODULE` entries are the same test lines, reclassified as `CAPABILITY_IMPORTS_MODULE`.
+- No shipped source file violates the new rules.
+
+**Proof:** temporary probe files made the audit fail with exit 1:
+- `packages/logger` importing `@gigalibs/analytics-core` and `@gigalibs/rule-engine-universal` →
+  `KERNEL_IMPORTS_CAPABILITY`;
+- `packages/rule-engine-universal` importing `@gigalibs/maps-core` → `CAPABILITY_IMPORTS_CAPABILITY`.
+
+The probes were removed, and the audit passes again.
+
+### Manifests and generator
+
+- `spec.category: capability | business` is required in module manifest v1 (`scripts/module-manifests.mjs`).
+  - **capability (15):** analytics-studio, geospatial, universal-connector-hub, communications,
+    document-scanner, esignature, ontology, workflow-studio, saga-orchestrator, universal-rule-pro,
+    universal-data-studio, autonomous-recovery-studio, multi-currency, tax-configuration, platform-rbac (pending
+    the owner's decision).
+  - **business (4):** physical-operations-cmms, gigaops, accounts-receivable, spend-management.
+- `pnpm module:new … --category business|capability`, default `business`. The template carries `__CATEGORY__`.
+- **Proof:** a manifest with `category: industry` was refused ("spec.category must be capability or business").
+  `module:new zz-probe … --category industry` was refused before writing anything. The positive generator path
+  runs in the next generated-module proof.
+
+### `platform-rbac`: stopped, owner question
+
+`modules/platform-rbac` is not a copy of the kernel's `rbac-*`:
+- It has its own API (`me`, departments, groups, roles, permissions, seats, users) over per-tenant schemas
+  (659 lines in `rbac.service.ts`).
+- Its only catalogue entry is **Module Marketplace** (`/marketplace`, AVAILABLE).
+- The core database also has departments (the `Department` model, WI-OI-042).
+
+Folding it into the kernel would duplicate the department hierarchy. The options are for the owner.
+
+**Owner decision (2026-09-29): merge the useful parts.**
+- Department/group roles merge into the kernel's existing departments and roles.
+- The Marketplace becomes the kernel's page for enabling modules for a tenant.
+- `platform-rbac` then retires. This is slice 102g.
+
+Until then, its manifest keeps `category: capability` with a comment recording the decision.

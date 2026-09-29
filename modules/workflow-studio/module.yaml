@@ -8,6 +8,7 @@ metadata:
   workItem: WI-OI-025
 spec:
   standalone: true
+  category: capability
   requiredModules: []
   optionalModules:
     - multi-currency

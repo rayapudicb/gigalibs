@@ -8,6 +8,9 @@ metadata:
   workItem: WI-OI-028
 spec:
   standalone: true
+  # ADR-0016 F6, owner decision 2026-09-29: department/group roles merge into the kernel's departments and
+  # roles, the Marketplace becomes the kernel's module-enablement page, then this module retires (WI-OI-102g).
+  category: capability
   requiredModules: []
   optionalModules:
     - accounts-receivable

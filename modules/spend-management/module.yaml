@@ -8,6 +8,7 @@ metadata:
   workItem: WI-OI-020
 spec:
   standalone: true
+  category: business
   requiredModules: []
   optionalModules:
     - accounts-receivable

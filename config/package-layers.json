@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "policy": "ADR-0013 layering (Proposed). Every workspace unit has exactly one layer. core: industry-agnostic foundations every client gets. module:<key>: code owned by one business module (modules/<key>/** is always module-owned). shell: composition roots (the web app, and the module host that runs generated modules, WI-OI-085e), which may import anything; WI-OI-083 replaced the web hand-wiring with manifests. tooling: tests and build tooling, not shipped. A new workspace package must be added here before it builds (audit:layers fails on unclassified units).",
+  "policy": "ADR-0013 layering, narrowed by ADR-0016 (WI-OI-102c). Every workspace unit has exactly one layer. core: the kernel only (identity and sessions, tenancy, roles and policy, versioned configuration and settings, module registry, persistence, events and jobs, audit and retention, observability, API and UI conventions). capability:<name>: packages of a capability product (forms, rules, workflow, notifications, analytics, places, ai, billing, risk) that any solution may select. module:<key>: code owned by one business or capability module (modules/<key>/** is always module-owned). shell: composition roots (the web app and the module host), which may import anything. tooling: tests and build tooling, not shipped. Kernel code must not import capability or module code; a capability must not import another capability's or a module's code. retiring lists packages that WI-OI-102f removes (ADR-0016 F3). A new workspace package must be added here before it builds (audit:layers fails on unclassified units).",
   "shell": [
     "apps/workflow-platform",
     "apps/module-host"
@@ -13,65 +13,41 @@
   ],
   "core": [
     "packages/admin-kit",
-    "packages/ai-chat-core",
-    "packages/ai-chat-nest",
-    "packages/analytics-core",
-    "packages/approvals-core",
-    "packages/approvals-nest",
-    "packages/approvals-react",
     "packages/archival-core",
     "packages/audit-core",
     "packages/audit-nest",
     "packages/auth-core",
     "packages/auth-nest",
     "packages/auth-react",
-    "packages/billing-react",
     "packages/broker",
     "packages/cache",
-    "packages/charts-react",
-    "packages/chat-core",
     "packages/config",
     "packages/configuration-core",
-    "packages/configuration-react",
     "packages/contracts",
     "packages/crypto",
-    "packages/custom-fields",
-    "packages/custom-fields-nest",
     "packages/data-retention",
     "packages/db",
     "packages/db-migrations-runtime",
-    "packages/email-templates",
     "packages/embed-sdk",
     "packages/errors",
     "packages/event-bus",
-    "packages/form-engine-core",
-    "packages/forms-engine-nest",
-    "packages/fraud-detection",
-    "packages/geofence-engine",
     "packages/health",
     "packages/host-kit",
     "packages/i18n",
     "packages/icons",
     "packages/integrations/aws-s3",
     "packages/integrations/minio",
-    "packages/integrations/openai",
     "packages/jwt-universal",
-    "packages/kpi-widgets-react",
     "packages/logger",
-    "packages/maps-core",
-    "packages/maps-react",
     "packages/module-registry",
     "packages/module-registry-nest",
     "packages/module-sdk",
-    "packages/notifications-core",
-    "packages/notifications-react",
     "packages/oauth-universal",
     "packages/onboarding-flow",
     "packages/orgs-core",
     "packages/pagination",
     "packages/platform-settings",
     "packages/platform-settings-nest",
-    "packages/pricing-calculator",
     "packages/privacy-gdpr",
     "packages/queue",
     "packages/rbac-core",
@@ -79,21 +55,72 @@
     "packages/rbac-react",
     "packages/realtime",
     "packages/redis",
-    "packages/reports-core",
-    "packages/reports-nest",
-    "packages/reports-react",
-    "packages/rule-engine-universal",
-    "packages/sla-engine",
     "packages/storage-core",
     "packages/tenancy-nest",
     "packages/ui",
     "packages/ui-preset",
     "packages/users-core",
     "packages/validation-nest",
-    "packages/web-sdk",
+    "packages/web-sdk"
+  ],
+  "capabilityPackages": {
+    "forms": [
+      "packages/configuration-react",
+      "packages/custom-fields",
+      "packages/custom-fields-nest",
+      "packages/form-engine-core",
+      "packages/forms-engine-nest"
+    ],
+    "rules": [
+      "packages/rule-engine-universal"
+    ],
+    "workflow": [
+      "packages/approvals-core",
+      "packages/approvals-nest",
+      "packages/approvals-react",
+      "packages/sla-engine",
+      "packages/workflow-engine",
+      "packages/workflow-sdk",
+      "packages/workflow-mcp"
+    ],
+    "notifications": [
+      "packages/notifications-core",
+      "packages/notifications-react",
+      "packages/email-templates",
+      "packages/chat-core"
+    ],
+    "analytics": [
+      "packages/analytics-core",
+      "packages/charts-react",
+      "packages/kpi-widgets-react",
+      "packages/reports-core",
+      "packages/reports-nest",
+      "packages/reports-react"
+    ],
+    "places": [
+      "packages/maps-core",
+      "packages/maps-react",
+      "packages/geofence-engine"
+    ],
+    "ai": [
+      "packages/ai-chat-core",
+      "packages/ai-chat-nest",
+      "packages/integrations/openai"
+    ],
+    "billing": [
+      "packages/billing-react",
+      "packages/pricing-calculator"
+    ],
+    "risk": [
+      "packages/fraud-detection"
+    ]
+  },
+  "retiring": [
+    "packages/form-engine-core",
+    "packages/forms-engine-nest",
     "packages/workflow-engine",
-    "packages/workflow-mcp",
-    "packages/workflow-sdk"
+    "packages/workflow-sdk",
+    "packages/workflow-mcp"
   ],
   "modulePackages": {
     "accounts-receivable": [
@@ -121,7 +148,10 @@
     "CORE_IMPORTS_MODULE": "Core code must not import module-owned code.",
     "MODULE_IMPORTS_MODULE": "A module must not import another module's code; use published contracts (@gigalibs/contracts), APIs and events.",
     "IMPORTS_SHELL": "Nothing imports the shell; it is the composition root.",
-    "IMPORTS_TOOLING": "Shipped code must not import test or build tooling."
+    "IMPORTS_TOOLING": "Shipped code must not import test or build tooling.",
+    "KERNEL_IMPORTS_CAPABILITY": "Kernel code must not import a capability package; the capability depends on the kernel, never the reverse (ADR-0016 F1).",
+    "CAPABILITY_IMPORTS_CAPABILITY": "A capability package must not import another capability's package; capabilities cooperate through contracts, APIs and events.",
+    "CAPABILITY_IMPORTS_MODULE": "A capability package must not import module-owned code."
   },
   "controlPlaneModels": {
     "policy": "Every Prisma model in packages/db/schema.prisma (the core control-plane database) is classified. core: industry-agnostic. moduleOwned: business data that belongs to a module and leaves the core database or stays frozen (plan C7). An unclassified model fails audit:layers, so no business table enters the core database without review.",

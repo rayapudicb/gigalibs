@@ -9,6 +9,7 @@ metadata:
   workItem: null
 spec:
   standalone: true
+  category: capability
   requiredModules: []
   optionalModules: []
   capabilities:

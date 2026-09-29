@@ -8,6 +8,7 @@ metadata:
   workItem: WI-OI-019
 spec:
   standalone: true
+  category: business
   requiredModules: []
   optionalModules:
     - ledger

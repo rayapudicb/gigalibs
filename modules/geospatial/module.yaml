@@ -9,6 +9,7 @@ metadata:
   workItem: WI-OI-063
 spec:
   standalone: true
+  category: capability
   requiredModules: []
   optionalModules: []
   capabilities:

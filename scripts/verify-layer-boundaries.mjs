@@ -1,6 +1,7 @@
-// ADR-0013 layer boundaries (WI-OI-080). Every pnpm workspace unit has one layer (config/package-layers.json):
-// core, module:<key>, shell or tooling. Core must not import module code, a module must not import another
-// module's code, and nothing imports the shell or tooling. Existing violations are recorded in
+// ADR-0013 layer boundaries (WI-OI-080), narrowed by ADR-0016 (WI-OI-102c). Every pnpm workspace unit has one layer
+// (config/package-layers.json): core (the kernel), capability:<name>, module:<key>, shell or tooling. The kernel must
+// not import capability or module code, a capability must not import another capability's or a module's code, a
+// module must not import another module's code, and nothing imports the shell or tooling. Existing violations are recorded in
 // config/layer-boundary-baseline.json; the audit fails on unclassified units and on any violation that is not
 // in the baseline, so the coupling can only shrink. `--write-baseline` rewrites the baseline; `--report` lists
 // every violation. Every core-database (Prisma) model must also be classified as core or module-owned.
@@ -73,10 +74,14 @@ function workspaceUnits() {
 const moduleOfPackage = new Map(
   Object.entries(config.modulePackages).flatMap(([key, paths]) => paths.map((path) => [path, key])),
 );
+const capabilityOfPackage = new Map(
+  Object.entries(config.capabilityPackages).flatMap(([key, paths]) => paths.map((path) => [path, key])),
+);
 function layerOf(unit) {
   const moduleMatch = unit.match(/^modules\/([^/]+)\//);
   if (moduleMatch) return `module:${moduleMatch[1]}`;
   if (moduleOfPackage.has(unit)) return `module:${moduleOfPackage.get(unit)}`;
+  if (capabilityOfPackage.has(unit)) return `capability:${capabilityOfPackage.get(unit)}`;
   if (config.core.includes(unit) || config.coreApps.includes(unit)) return 'core';
   if (config.shell.includes(unit)) return 'shell';
   if (config.tooling.includes(unit)) return 'tooling';
@@ -102,6 +107,8 @@ const stale = [
   ...config.shell,
   ...config.tooling,
   ...moduleOfPackage.keys(),
+  ...capabilityOfPackage.keys(),
+  ...config.retiring,
 ].filter((unit) => !units.includes(unit));
 const unitByName = new Map(
   units.map((unit) => [
@@ -149,6 +156,9 @@ function rule(from, to) {
   if (to === 'shell') return 'IMPORTS_SHELL';
   if (to === 'tooling' && from !== 'tooling') return 'IMPORTS_TOOLING';
   if (from === 'core' && to.startsWith('module:')) return 'CORE_IMPORTS_MODULE';
+  if (from === 'core' && to.startsWith('capability:')) return 'KERNEL_IMPORTS_CAPABILITY';
+  if (from.startsWith('capability:') && to.startsWith('capability:')) return 'CAPABILITY_IMPORTS_CAPABILITY';
+  if (from.startsWith('capability:') && to.startsWith('module:')) return 'CAPABILITY_IMPORTS_MODULE';
   if (from.startsWith('module:') && to.startsWith('module:')) return 'MODULE_IMPORTS_MODULE';
   return null;
 }
@@ -199,7 +209,7 @@ const staleModels = [...modelConfig.core, ...moduleOwnedModels].filter(
 if (writeBaseline) {
   writeFileSync(
     baselinePath,
-    `${JSON.stringify({ schemaVersion: 1, policy: 'Existing layer violations when ADR-0013 was adopted (WI-OI-080) and module-schema access when that rule was added (WI-OI-083). Entries may only be removed.', violations: found }, null, 2)}\n`,
+    `${JSON.stringify({ schemaVersion: 1, policy: 'Existing layer violations when ADR-0013 was adopted (WI-OI-080), module-schema access when that rule was added (WI-OI-083), and kernel/capability imports when ADR-0016 split the core (WI-OI-102c; all in legacy certification tests that read other packages\' manifests). Entries may only be removed.', violations: found }, null, 2)}\n`,
   );
   console.log(`Wrote ${found.length} baseline violations to config/layer-boundary-baseline.json`);
 }

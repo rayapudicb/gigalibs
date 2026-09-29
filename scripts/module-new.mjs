@@ -2,7 +2,8 @@
 // everything the manifests drive (catalogue, gateway, upstream, navigation, pages, runtime overlay). No shell or
 // infrastructure file is edited by hand.
 //   pnpm module:new <name> --title "<Display name>" --group "<sidebar group>" [--icon <icon>] [--prefix <PREFIX>]
-//                   [--hosting host|service] [--port <port>] [--work-item WI-OI-NNN]
+//                   [--hosting host|service] [--category business|capability] [--port <port>]
+//                   [--work-item WI-OI-NNN]
 // A module runs inside the shared module host by default (product vision §8, WI-OI-085e); `--hosting service` gives
 // it its own image and service, for when scale, data isolation, team ownership or failure isolation justifies it.
 // Everything the module needs to run follows: see scripts/module-template/README.md.tmpl.
@@ -66,6 +67,8 @@ const usedPrefixes = manifests
   .filter(Boolean);
 if (usedPrefixes.includes(prefix)) refuse(`the environment prefix ${prefix} is already used`);
 const HOST_PORT = 4790;
+const category = option('--category') ?? 'business';
+if (!['capability', 'business'].includes(category)) refuse('--category must be capability or business');
 const hosting = option('--hosting') ?? 'host';
 if (!['host', 'service'].includes(hosting)) refuse('--hosting must be host or service');
 const usedPorts = [HOST_PORT, ...manifests.map((manifest) => manifest.spec?.api?.port).filter(Number.isInteger)];
@@ -95,6 +98,7 @@ const values = {
   __ORDER__: String(order),
   __WORK_ITEM__: workItem ?? 'null',
   __HOSTING__: hosting,
+  __CATEGORY__: category,
   __SERVICE__: hosting === 'host' ? 'module-host' : `${name}-api`,
   __BASE_PATH_LINE__: hosting === 'host' ? `basePath: /${name}` : '__DROP_LINE__',
   __RUN_WHERE__: hosting === 'host' ? 'inside the shared module host' : 'as its own service',

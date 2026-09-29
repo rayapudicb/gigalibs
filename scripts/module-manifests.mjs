@@ -140,6 +140,9 @@ function checkManifest(where, manifest, kind, folder) {
   const spec = manifest.spec ?? {};
   if (kind === 'Module') {
     if (typeof spec.standalone !== 'boolean') fail(where, 'spec.standalone must be true or false');
+    // ADR-0016 F1 (WI-OI-102c): a module is a capability any solution may select, or a business module.
+    if (!['capability', 'business'].includes(spec.category))
+      fail(where, 'spec.category must be capability or business (ADR-0016)');
     for (const field of ['requiredModules', 'optionalModules', 'capabilities']) {
       if (!Array.isArray(spec[field]) || !spec[field].every(isText))
         fail(where, `spec.${field} must be a list of names`);

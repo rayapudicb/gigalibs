@@ -9,6 +9,7 @@ metadata:
   workItem: WI-OI-064
 spec:
   standalone: true
+  category: capability
   requiredModules: []
   optionalModules:
     - geospatial
