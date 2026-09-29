@@ -1,6 +1,6 @@
 # WI-OI-085 — `module:new` generator and module conformance suite (Wave 0, C9)
 
-Status: In Progress (2026-09-28, owner chose it after WI-OI-083).  
+Status: Review (2026-09-29, 085a–085f implemented and locally verified; independent review pending).  
 Owner: SDLC Orchestrator / Developer Platform  
 Plan: `docs/plans/manufacturing-package-solution-plan.md` §4 C9; ADR-0013  
 Independent reviewers: QA/SDET, Documentation (Security & Privacy for the SDK guard in 085a)
@@ -423,3 +423,50 @@ service module (`vendor-checks`).
   - all eight required audits, plus the manifest and layer audits (14 baselined violations, 0 new);
   - the profile verifier still reports only the pre-existing `WORKFORCE_API_URL` drift.
 - **No running service was rebuilt.**
+
+## 085f — generated navigation and web-gateway proof (2026-09-29)
+
+The proof used a fresh throwaway working-tree copy and generated `field-inspections` with the documented command.
+No sample module or proof credentials were retained in the repository. The existing web on port 5180 was not
+rebuilt, restarted, or replaced; the proof web ran on `127.0.0.1:5190`.
+
+**Listing gate and exact runtime:**
+- The throwaway manifest moved from `PLANNED` to `REVIEW`, regenerated with the scoped conformance bypass, and
+  received a local-only Git source identity before either image was built.
+- The shared host and web images carried the same exact source identity:
+  `61c00ef350de6936326d3ebb608696685b07028e` /
+  `7a748619dc6d230a28ec63aaf5f7b064b28fdcdfc3390d97518b9edca73d7534`.
+- `field-inspections` live conformance passed 35 of 35 and recorded code fingerprint
+  `bc9f027867048dd9c81bce05360a302aca45eb6df83fec98182fa820c28b0a6f`; the ordinary manifest audit then passed
+  without a bypass.
+- Trivy 0.74.0 scanned unfixed findings in both exact images. Module host: 0 Critical, 0 High, 25 total. Web: 0
+  Critical, 0 High, 23 total. This is a local vulnerability-policy result, not a claim of zero risk.
+
+**Real-session web and gateway proof:**
+- An entitled Tenant Admin with `field-inspections:*` saw `Field Inspections` in the manifest-driven sidebar and
+  opened the generated `RecordsWorkspace` page. Missing-permission and missing-entitlement users did not see the
+  navigation entry, and direct workspace access failed closed through the gateway.
+- Through the same-origin BFF and a freshly signed platform context: create returned 201, the same request key
+  replayed the same record with `Idempotency-Replayed`, list/read succeeded, a stale version returned 409, and a
+  current version updated successfully.
+- Another entitled tenant could not list, read, or change the first tenant's record. A request without a browser
+  session returned 401.
+- Chrome/Playwright passed the permitted, missing-permission, and missing-entitlement journeys (3 of 3). The
+  generated workspace had zero serious/critical violations under the automated WCAG 2.2 A/AA axe rules. Video,
+  screenshots, and traces were disabled so credentials and tenant data were not retained.
+- After the module host was stopped deliberately, the authenticated shell and sidebar still loaded, the page
+  showed a controlled service-unavailable state, and the BFF returned the typed
+  `FIELD_INSPECTIONS_RUNTIME_UNAVAILABLE` 502 (1 of 1 outage journey passed).
+
+**Regression and cleanup:**
+- Main tree: build 108 of 108; 225 TypeScript test files / 2,041 tests plus 4 execution-plane tests; all mandatory
+  data, dependency, API-boundary, navigation and SDLC audits passed; layer audit passed with 14 baselined and zero
+  new violations; ordinary manifest audit passed.
+- The separate configuration-deployment-profile verifier still reports only the pre-existing
+  `WORKFORCE_API_URL` contract/example drift (`ENV_UNKNOWN`, `ENV_EXAMPLE_DRIFT`); it is not caused by 085f.
+- Cleanup verified zero proof users, active sessions, schemas, runtime roles, containers, images, credentials, and
+  throwaway copies. The volume-safe disk guard prune completed, and the existing web on port 5180 remained healthy.
+
+**G4 conclusion:** 085a–085f satisfy the bounded local implementation and proof scope of WI-OI-085. The item is in
+Review for independent QA/SDET and Documentation decisions. It does not certify a customer module, production or
+cloud deployment, external distribution, or the wider manufacturing release.

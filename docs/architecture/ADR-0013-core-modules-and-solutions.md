@@ -45,11 +45,13 @@ Dependencies point one way: solution → modules → core.
 | Layer | Contains | Rule |
 | --- | --- | --- |
 | **Core** | Foundations every client gets, with no industry logic: <ul><li>identity and access</li><li>tenancy and entitlements</li><li>audit and evidence</li><li>metadata (fields, catalogues, forms, wording)</li><li>rules and workflow</li><li>events</li><li>places and parties</li><li>files, notifications, search</li><li>analytics facts</li><li>integration runtime, AI gateway</li><li>web and mobile shell</li><li>module registry and SDK</li><li>platform billing</li></ul> | Never imports a module; never stores a module's business data |
-| **Business module** | One business capability as a separately deployed service with its own schema and least-privilege role (the existing module pattern), plus its own contracts, web and mobile packages | Never imports another module's code or reads another module's schema. Uses contracts, APIs and events |
+| **Business module** | One business capability with its own schema, least-privilege role, contracts, and web/mobile extension packages. Per the owner's 2026-09-28 decision and the product vision §8, a module runs in the shared module host by default; it receives a separate service only when scale, data isolation, team ownership, or failure isolation justifies extraction | Never imports another module's code or reads another module's schema. Uses contracts, APIs and events |
 | **Solution** | Configuration only (industry pack, country pack, module selection). A new behaviour or object becomes a module | Never contains code |
 
-`apps/workflow-platform` is the **shell**, the composition root. It may import anything until WI-OI-083 replaces
-hand-wiring with manifest-driven extension points. Nothing imports the shell.
+`apps/workflow-platform` and `apps/module-host` are **shells**, the composition roots. The web shell composes
+manifest-driven UI and gateway extension points; the module host composes modules that declare
+`spec.runtime.hosting: host`. Nothing imports either shell. A module with `spec.runtime.hosting: service` follows
+the same contracts and is the extraction path when a separate process is justified.
 
 ### 2. One owner per concept
 
@@ -92,8 +94,9 @@ behaviour and no runtime microfrontends. A manifest UI entry may point to a remo
 - anything imports the shell or tooling;
 - a core-database model is unclassified.
 
-The 4 existing violations are in `config/layer-boundary-baseline.json`. Entries may only be removed. The audit
-also reports the shell's imports of module code, which is the WI-OI-083 progress measure.
+The 14 existing violations (4 `CORE_IMPORTS_MODULE`, 10 `MODULE_SCHEMA_ACCESS`) are in
+`config/layer-boundary-baseline.json`. Entries may only be removed. The audit also reports the shells' imports
+of module code, which is the WI-OI-083/WI-OI-085 composition measure.
 
 ## Consequences
 
