@@ -102,6 +102,9 @@ export class IngestionService {
     if (conn.status === 'DISABLED') {
       throw new BadRequestException(`Connection '${dto.connectionId}' is DISABLED.`);
     }
+    if (conn.sourceType === 'SYNTHETIC') {
+      throw new BadRequestException(`Connection '${dto.connectionId}' is a synthetic source; there is no external system to sync.`);
+    }
 
     // Resolve the last committed watermark for this connection + table
     const lastWatermark = await this.getLastWatermark(

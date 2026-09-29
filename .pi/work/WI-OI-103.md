@@ -57,7 +57,7 @@ The owner's rule is that charts hold no data: a chart is a saved query plus a ch
 | 103a | Query contract and engine (acceptance 1) | M | Done, 2026-09-29 |
 | 103b | Formula measures, measure versions, maker-checker (2) | M | Done, 2026-09-29 |
 | 103c | Summaries, cache, limits, benchmark (3) | M | Proposed |
-| 103d | Chart templates and renderer, change-chart, map, gallery retired (4) | L | In progress: d1–d6 done, d1–d5 deployed for review on 5190 (2026-09-29); d7 next |
+| 103d | Chart templates and renderer, change-chart, map, gallery retired (4) | L | In progress: d1–d7 built and verified; d1–d5 deployed for review on 5190 (2026-09-29); d6–d7 deploy and live review next |
 | 103e | Dashboards, reports ownership, permissions and roles, web exposure (5, 6) | M | Proposed |
 | 103f | Proof on manufacturing data and the no-developer test (7) | M | Proposed |
 
@@ -234,5 +234,36 @@ chart views. A reader saving a view gets 403; unlisted methods get 404 (`analyti
 - **Deploy caveat:** the 5180 web still has the old gallery tab. Deploying this analytics image without the new web
   on 5180 would leave that tab showing "not found".
 
-**Not yet:** d7 (sample farm data). Analytics' live sync from an external source is contained ("credential vault
-not yet implemented"), so the sample data needs another honest route, proposed to the owner first.
+**d7, sample farm source** (owner chose the Demo Lab loader, 2026-09-29; not yet deployed):
+- **Why this route:** live sync is contained (no credential vault), and the agriculture plan makes Connector Hub the
+  one owner of outside data (Phase 2), retiring the Analytics PostgreSQL connector (2d). So the demo data is made
+  inside Analytics, for Demo Lab workspaces only, and labelled synthetic like the other Demo Lab data.
+- **Migration 000018** (schema version 18): adds the `SYNTHETIC` source type and the `DEMO_SOURCE_LOADED` audit event.
+  Dry-run on the real local PostgreSQL in a rolled-back transaction: the database stayed at 17 afterwards.
+- **`POST v1/demo-lab/sample-farm`** (`analytics:action`, unscoped members only; the BFF allows it only in `demo-lab`
+  workspaces):
+  - In one transaction it writes a SYNTHETIC connection, one succeeded sync run, 960 deterministic harvest logs
+    (3 farms × 4 fields × 4 seasons × 20 days; each row `data_origin: SYNTHETIC`) and an audit event.
+  - It then calls the real services: schema discovery, create and publish the mapping, build the dataset, create the
+    model (yield, area harvested, input cost, harvest logs).
+  - It creates "Yield per hectare" (yield ÷ area, kg/ha) and submits it for review as the loading member.
+  - Each step reuses what an earlier run produced, so a second run writes nothing new.
+- `GET v1/demo-lab/sample-farm` reports the state. Sync refuses a SYNTHETIC connection.
+- **Web:**
+  - Explore now checks the session like Places. In Demo Lab workspaces it shows a "Sample farm data" panel with the
+    load button.
+  - A "Waiting for review" panel lists pending formula versions with Approve and Reject.
+  - Proxy: `v1/formula-measures/model/:id` (`analytics:read`), and `.../versions/:id/approve|reject`
+    (`analytics:models:publish`). Analytics still refuses a review by the creator.
+- **Wording:** the runtime-data audit rejects "sample data" in runtime code. The feature therefore reuses Demo Lab's
+  audited term "synthetic data".
+- **Checks:** sample-farm 5, ingestion (sample refusal), Demo Lab route and gateway tests; `pnpm verify` passes
+  (known drift only).
+
+**Open for the owner:**
+- **Reset:** the raw and dataset records are append-only by design, so the sample source has no reset. A Demo Lab
+  workspace delete purges only synthetic place facts today, so its Analytics sources, models and chart views remain
+  under the cancelled tenant. This gap predates d7.
+- **Demo setup:** every existing Demo Lab workspace is cancelled. A new one is needed (no agriculture industry pack
+  exists yet), plus a second member with `analytics:models:publish` to approve the formula.
+- **Deploy:** migration 18 and new analytics and web images, with the 5180 caveat above.

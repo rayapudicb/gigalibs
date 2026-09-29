@@ -196,6 +196,33 @@ describe('Analytics Studio signed BFF (WI-OI-064a)', () => {
     expect(String(fetchSpy.mock.calls.at(-1)![0])).toBe('http://127.0.0.1:4400/v1/chart-views');
   });
 
+  // WI-OI-103d d7: formula review. Listing needs analytics:read; approving or rejecting needs analytics:models:publish.
+  it('exposes formula review with the publish permission', async () => {
+    const sameOrigin = { Host: 'platform.example.invalid', Origin: 'https://platform.example.invalid', 'Content-Type': 'application/json' };
+    const model = '00000000-0000-4000-8000-0000000000e1';
+    const formula = '00000000-0000-4000-8000-0000000000f1';
+    const version = '00000000-0000-4000-8000-0000000000f2';
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(
+      async () => new Response(JSON.stringify({}), { status: 200, headers: { 'Content-Type': 'application/json' } }),
+    );
+    vi.mocked(verifiedSession).mockResolvedValue({ context: { ...entitledContext, permissions: ['analytics:read'] } } as never);
+    expect((await call(getAnalytics, 'GET', ['v1', 'formula-measures', 'model', model])).status).toBe(200);
+    for (const decision of ['approve', 'reject']) {
+      const path = ['v1', 'formula-measures', formula, 'versions', version, decision];
+      expect((await call(postAnalytics, 'POST', path, { headers: sameOrigin, body: '{}' })).status).toBe(403);
+      expect((await call(getAnalytics, 'GET', path)).status).toBe(404);
+    }
+    expect((await call(postAnalytics, 'POST', ['v1', 'formula-measures', formula, 'versions', version, 'submit'], { headers: sameOrigin, body: '{}' })).status).toBe(404);
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+
+    vi.mocked(verifiedSession).mockResolvedValue({
+      context: { ...entitledContext, permissions: ['analytics:read', 'analytics:models:publish'] },
+    } as never);
+    const approved = await call(postAnalytics, 'POST', ['v1', 'formula-measures', formula, 'versions', version, 'approve'], { headers: sameOrigin, body: '{}' });
+    expect(approved.status).toBe(200);
+    expect(String(fetchSpy.mock.calls.at(-1)![0])).toBe(`http://127.0.0.1:4400/v1/formula-measures/${formula}/versions/${version}/approve`);
+  });
+
   it('returns 503 when the runtime is not configured and 502 during an outage', async () => {
     vi.mocked(verifiedSession).mockResolvedValue({ context: entitledContext } as never);
     vi.stubEnv('ANALYTICS_API_URL', '');

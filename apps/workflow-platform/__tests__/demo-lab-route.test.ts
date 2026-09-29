@@ -114,4 +114,23 @@ describe('Demo Lab BFF route', () => {
     expect(String(fetchSpy.mock.calls[0]![0])).toBe('http://127.0.0.1:4400/v1/demo-lab/reset');
     expect(vi.mocked(authenticatedUpstream).mock.calls[0]![1]).toBe('/api/v1/platform/demo-lab/tenants/demo-tenant/delete');
   });
+
+  // WI-OI-103d d7: the labelled sample farm source is a Demo Lab action too, and loading needs analytics:action.
+  it('reads and loads the sample farm source only in Demo Lab workspaces, with analytics:action to load', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(async () => Response.json({ loaded: true }));
+    const read = () => GET(new Request('https://platform.example.invalid/api/demo-lab/sample-farm'), { params: Promise.resolve({ action: 'sample-farm' }) });
+    vi.mocked(verifiedSession).mockResolvedValue({ context: context(['analytics-studio']) } as never);
+    expect((await read()).status).toBe(404);
+    expect((await post('sample-farm', {})).status).toBe(404);
+    vi.mocked(verifiedSession).mockResolvedValue({ context: context(['analytics-studio', 'demo-lab'], { permissions: ['analytics:read'] }) } as never);
+    expect((await read()).status).toBe(200);
+    expect(String(fetchSpy.mock.calls[0]![0])).toBe('http://127.0.0.1:4400/v1/demo-lab/sample-farm');
+    expect((await post('sample-farm', {})).status).toBe(403);
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    vi.mocked(verifiedSession).mockResolvedValue({ context: context(['analytics-studio', 'demo-lab']) } as never);
+    expect((await post('sample-farm', {})).status).toBe(200);
+    const [target, init] = fetchSpy.mock.calls[1]!;
+    expect(String(target)).toBe('http://127.0.0.1:4400/v1/demo-lab/sample-farm');
+    expect(init?.method).toBe('POST');
+  });
 });

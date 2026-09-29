@@ -205,7 +205,7 @@ function shiftDays(date: string, days: number): string {
   return new Date(Date.parse(`${date}T00:00:00Z`) + days * 86_400_000).toISOString().slice(0, 10);
 }
 
-function assertUnscoped(principal: AnalyticsPrincipal): void {
+export function assertUnscoped(principal: AnalyticsPrincipal): void {
   if (principal.spatialScope.mode !== 'UNBOUNDED') {
     throw new ForbiddenException({ code: 'SPATIAL_SCOPE_DENIED', message: 'Demo Lab data is managed by unscoped members only.' });
   }

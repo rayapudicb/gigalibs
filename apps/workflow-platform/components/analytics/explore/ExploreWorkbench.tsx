@@ -22,6 +22,8 @@ import type {
 import { chartTypeLabel, compatibleChartTypes, resultShape } from '@/lib/analytics/chart-render';
 import { AnalyticsChart, ResultTable } from './AnalyticsChart';
 import { analyticsApi as api } from './analytics-api';
+import { FormulaReviewPanel } from './FormulaReviewPanel';
+import { SampleFarmPanel } from './SampleFarmPanel';
 
 type FilterOp = AnalyticsFilterV1['op'];
 interface FilterRow {
@@ -40,10 +42,11 @@ function coerce(raw: string, type: AnalyticsFieldType): string | number | boolea
   return raw.trim();
 }
 
-export function ExploreWorkbench() {
+export function ExploreWorkbench({ demoLab = false, canLoadSample = false }: { demoLab?: boolean; canLoadSample?: boolean }) {
   const [models, setModels] = useState<AnalyticsModelSummaryV1[] | null>(null);
   const [modelId, setModelId] = useState('');
   const [catalog, setCatalog] = useState<AnalyticsModelCatalogV1 | null>(null);
+  const [catalogRevision, setCatalogRevision] = useState(0);
   const [measures, setMeasures] = useState<string[]>([]);
   const [dimensions, setDimensions] = useState<string[]>([]);
   const [timeField, setTimeField] = useState('');
@@ -62,15 +65,21 @@ export function ExploreWorkbench() {
     api<ChartViewV1[]>('v1/chart-views').then(setViews).catch(() => setViews([]));
   }, []);
 
+  const refreshModels = useCallback(
+    () =>
+      api<AnalyticsModelSummaryV1[]>('v1/semantic-models')
+        .then(setModels)
+        .catch((cause: Error) => {
+          setModels([]);
+          setError(cause.message);
+        }),
+    [],
+  );
+
   useEffect(() => {
-    api<AnalyticsModelSummaryV1[]>('v1/semantic-models')
-      .then(setModels)
-      .catch((cause: Error) => {
-        setModels([]);
-        setError(cause.message);
-      });
+    void refreshModels();
     refreshViews();
-  }, [refreshViews]);
+  }, [refreshModels, refreshViews]);
 
   useEffect(() => {
     setCatalog(null);
@@ -83,7 +92,7 @@ export function ExploreWorkbench() {
         setDimensions((current) => current.filter((name) => loaded.fields.some((field) => field.name === name)));
       })
       .catch((cause: Error) => setError(cause.message));
-  }, [modelId]);
+  }, [modelId, catalogRevision]);
 
   const fieldType = useMemo(
     () => new Map((catalog?.fields ?? []).map((field) => [field.name, field.type] as const)),
@@ -160,254 +169,272 @@ export function ExploreWorkbench() {
     list.includes(name) ? list.filter((item) => item !== name) : list.length < max ? [...list, name] : list;
 
   return (
-    <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
-      <Container className="flex w-full flex-col gap-5 lg:w-80 lg:shrink-0">
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="explore-model">Model</Label>
-          <select id="explore-model" className={selectClass} value={modelId} onChange={(event) => setModelId(event.target.value)}>
-            <option value="">{models === null ? 'Loading…' : models.length ? 'Choose a model' : 'No models yet'}</option>
-            {(models ?? []).map((model) => (
-              <option key={model.id} value={model.id}>
-                {model.displayName}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {catalog && (
-          <>
-            <fieldset className="flex flex-col gap-2">
-              <legend className="mb-1 text-sm font-medium text-ui-fg-base">Measures</legend>
-              {catalog.measures.map((measure) => (
-                <div key={measure.name} className="flex items-center gap-2">
-                  <Checkbox
-                    id={`measure-${measure.name}`}
-                    checked={measures.includes(measure.name)}
-                    onCheckedChange={() => setMeasures((current) => toggle(current, measure.name, 10))}
-                  />
-                  <Label htmlFor={`measure-${measure.name}`} className="font-normal">
-                    {measure.label}
-                    {measure.kind === 'formula' && (
-                      <Badge size="2xsmall" color="purple" className="ml-1.5">
-                        {measure.unit ?? 'formula'}
-                      </Badge>
-                    )}
-                  </Label>
-                </div>
+    <div className="flex flex-col gap-4">
+      {demoLab && (
+        <SampleFarmPanel
+          canLoad={canLoadSample}
+          onLoaded={(semanticModelId) => {
+            void refreshModels().then(() => setModelId(semanticModelId));
+          }}
+        />
+      )}
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
+        <Container className="flex w-full flex-col gap-5 lg:w-80 lg:shrink-0">
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="explore-model">Model</Label>
+            <select id="explore-model" className={selectClass} value={modelId} onChange={(event) => setModelId(event.target.value)}>
+              <option value="">{models === null ? 'Loading…' : models.length ? 'Choose a model' : 'No models yet'}</option>
+              {(models ?? []).map((model) => (
+                <option key={model.id} value={model.id}>
+                  {model.displayName}
+                </option>
               ))}
-            </fieldset>
+            </select>
+          </div>
 
-            <fieldset className="flex flex-col gap-2">
-              <legend className="mb-1 text-sm font-medium text-ui-fg-base">Group by (up to 3)</legend>
-              {catalog.fields
-                .filter((field) => field.name !== timeField)
-                .map((field) => (
-                  <div key={field.name} className="flex items-center gap-2">
+          {modelId && catalog && (
+            <FormulaReviewPanel
+              modelId={modelId}
+              measureLabels={new Map(catalog.measures.map((measure) => [measure.name, measure.label] as const))}
+              onPublished={() => setCatalogRevision((revision) => revision + 1)}
+            />
+          )}
+
+          {catalog && (
+            <>
+              <fieldset className="flex flex-col gap-2">
+                <legend className="mb-1 text-sm font-medium text-ui-fg-base">Measures</legend>
+                {catalog.measures.map((measure) => (
+                  <div key={measure.name} className="flex items-center gap-2">
                     <Checkbox
-                      id={`dimension-${field.name}`}
-                      checked={dimensions.includes(field.name)}
-                      onCheckedChange={() => setDimensions((current) => toggle(current, field.name, 3))}
+                      id={`measure-${measure.name}`}
+                      checked={measures.includes(measure.name)}
+                      onCheckedChange={() => setMeasures((current) => toggle(current, measure.name, 10))}
                     />
-                    <Label htmlFor={`dimension-${field.name}`} className="font-normal">
-                      {field.name} <span className="text-ui-fg-muted">({field.type})</span>
+                    <Label htmlFor={`measure-${measure.name}`} className="font-normal">
+                      {measure.label}
+                      {measure.kind === 'formula' && (
+                        <Badge size="2xsmall" color="purple" className="ml-1.5">
+                          {measure.unit ?? 'formula'}
+                        </Badge>
+                      )}
                     </Label>
                   </div>
                 ))}
-            </fieldset>
+              </fieldset>
 
-            <div className="grid grid-cols-2 gap-2">
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="explore-time">Over time</Label>
-                <select
-                  id="explore-time"
-                  className={selectClass}
-                  value={timeField}
-                  onChange={(event) => {
-                    setTimeField(event.target.value);
-                    setDimensions((current) => current.filter((name) => name !== event.target.value));
-                  }}
-                >
-                  <option value="">None</option>
-                  {timeFields.map((field) => (
-                    <option key={field.name} value={field.name}>
-                      {field.name}
-                    </option>
+              <fieldset className="flex flex-col gap-2">
+                <legend className="mb-1 text-sm font-medium text-ui-fg-base">Group by (up to 3)</legend>
+                {catalog.fields
+                  .filter((field) => field.name !== timeField)
+                  .map((field) => (
+                    <div key={field.name} className="flex items-center gap-2">
+                      <Checkbox
+                        id={`dimension-${field.name}`}
+                        checked={dimensions.includes(field.name)}
+                        onCheckedChange={() => setDimensions((current) => toggle(current, field.name, 3))}
+                      />
+                      <Label htmlFor={`dimension-${field.name}`} className="font-normal">
+                        {field.name} <span className="text-ui-fg-muted">({field.type})</span>
+                      </Label>
+                    </div>
                   ))}
-                </select>
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="explore-grain">Per</Label>
-                <select
-                  id="explore-grain"
-                  className={selectClass}
-                  value={grain}
-                  disabled={!timeField}
-                  onChange={(event) => setGrain(event.target.value as AnalyticsTimeGrain)}
-                >
-                  {GRAINS.map((value) => (
-                    <option key={value} value={value}>
-                      {value}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
+              </fieldset>
 
-            <fieldset className="flex flex-col gap-2">
-              <legend className="mb-1 text-sm font-medium text-ui-fg-base">Filters</legend>
-              {filters.map((row, index) => (
-                <div key={index} className="grid grid-cols-[1fr_4.5rem_1fr_auto] items-center gap-1.5">
+              <div className="grid grid-cols-2 gap-2">
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="explore-time">Over time</Label>
                   <select
-                    aria-label="Filter field"
+                    id="explore-time"
                     className={selectClass}
-                    value={row.field}
-                    onChange={(event) =>
-                      setFilters((current) => current.map((item, i) => (i === index ? { ...item, field: event.target.value } : item)))
-                    }
+                    value={timeField}
+                    onChange={(event) => {
+                      setTimeField(event.target.value);
+                      setDimensions((current) => current.filter((name) => name !== event.target.value));
+                    }}
                   >
-                    <option value="">Field</option>
-                    {catalog.fields.map((field) => (
+                    <option value="">None</option>
+                    {timeFields.map((field) => (
                       <option key={field.name} value={field.name}>
                         {field.name}
                       </option>
                     ))}
                   </select>
-                  <select
-                    aria-label="Filter operator"
-                    className={selectClass}
-                    value={row.op}
-                    onChange={(event) =>
-                      setFilters((current) =>
-                        current.map((item, i) => (i === index ? { ...item, op: event.target.value as FilterRow['op'] } : item)),
-                      )
-                    }
-                  >
-                    <option value="eq">=</option>
-                    <option value="neq">≠</option>
-                    <option value="in">in</option>
-                    <option value="gte">≥</option>
-                    <option value="lte">≤</option>
-                  </select>
-                  <Input
-                    aria-label="Filter value"
-                    size="small"
-                    placeholder={row.op === 'in' ? 'a, b, c' : 'value'}
-                    value={row.value}
-                    onChange={(event) =>
-                      setFilters((current) => current.map((item, i) => (i === index ? { ...item, value: event.target.value } : item)))
-                    }
-                  />
-                  <Button
-                    variant="transparent"
-                    size="small"
-                    aria-label="Remove filter"
-                    onClick={() => setFilters((current) => current.filter((_, i) => i !== index))}
-                  >
-                    ×
-                  </Button>
                 </div>
-              ))}
-              {filters.length < 5 && (
-                <Button
-                  variant="secondary"
-                  size="small"
-                  onClick={() => setFilters((current) => [...current, { field: '', op: 'eq', value: '' }])}
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="explore-grain">Per</Label>
+                  <select
+                    id="explore-grain"
+                    className={selectClass}
+                    value={grain}
+                    disabled={!timeField}
+                    onChange={(event) => setGrain(event.target.value as AnalyticsTimeGrain)}
+                  >
+                    {GRAINS.map((value) => (
+                      <option key={value} value={value}>
+                        {value}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <fieldset className="flex flex-col gap-2">
+                <legend className="mb-1 text-sm font-medium text-ui-fg-base">Filters</legend>
+                {filters.map((row, index) => (
+                  <div key={index} className="grid grid-cols-[1fr_4.5rem_1fr_auto] items-center gap-1.5">
+                    <select
+                      aria-label="Filter field"
+                      className={selectClass}
+                      value={row.field}
+                      onChange={(event) =>
+                        setFilters((current) => current.map((item, i) => (i === index ? { ...item, field: event.target.value } : item)))
+                      }
+                    >
+                      <option value="">Field</option>
+                      {catalog.fields.map((field) => (
+                        <option key={field.name} value={field.name}>
+                          {field.name}
+                        </option>
+                      ))}
+                    </select>
+                    <select
+                      aria-label="Filter operator"
+                      className={selectClass}
+                      value={row.op}
+                      onChange={(event) =>
+                        setFilters((current) =>
+                          current.map((item, i) => (i === index ? { ...item, op: event.target.value as FilterRow['op'] } : item)),
+                        )
+                      }
+                    >
+                      <option value="eq">=</option>
+                      <option value="neq">≠</option>
+                      <option value="in">in</option>
+                      <option value="gte">≥</option>
+                      <option value="lte">≤</option>
+                    </select>
+                    <Input
+                      aria-label="Filter value"
+                      size="small"
+                      placeholder={row.op === 'in' ? 'a, b, c' : 'value'}
+                      value={row.value}
+                      onChange={(event) =>
+                        setFilters((current) => current.map((item, i) => (i === index ? { ...item, value: event.target.value } : item)))
+                      }
+                    />
+                    <Button
+                      variant="transparent"
+                      size="small"
+                      aria-label="Remove filter"
+                      onClick={() => setFilters((current) => current.filter((_, i) => i !== index))}
+                    >
+                      ×
+                    </Button>
+                  </div>
+                ))}
+                {filters.length < 5 && (
+                  <Button
+                    variant="secondary"
+                    size="small"
+                    onClick={() => setFilters((current) => [...current, { field: '', op: 'eq', value: '' }])}
+                  >
+                    Add filter
+                  </Button>
+                )}
+              </fieldset>
+
+              <Button onClick={() => void run()} isLoading={busy} disabled={!measures.length}>
+                Show
+              </Button>
+            </>
+          )}
+
+          {views.length > 0 && (
+            <div className="flex flex-col gap-1.5 border-t border-ui-border-base pt-4">
+              <Text size="small" weight="plus">
+                Saved charts
+              </Text>
+              {views.map((view) => (
+                <button
+                  key={view.id}
+                  type="button"
+                  className="rounded-md px-2 py-1 text-left text-sm text-ui-fg-interactive hover:bg-ui-bg-base-hover"
+                  onClick={() => void open(view)}
                 >
-                  Add filter
-                </Button>
-              )}
-            </fieldset>
+                  {view.name} <span className="text-ui-fg-muted">· {chartTypeLabel[view.visual.type]}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </Container>
 
-            <Button onClick={() => void run()} isLoading={busy} disabled={!measures.length}>
-              Show
-            </Button>
-          </>
-        )}
+        <Container className="flex min-w-0 flex-1 flex-col gap-4">
+          {error && <Alert variant="error">{error}</Alert>}
+          {notice && <Alert variant="success">{notice}</Alert>}
 
-        {views.length > 0 && (
-          <div className="flex flex-col gap-1.5 border-t border-ui-border-base pt-4">
-            <Text size="small" weight="plus">
-              Saved charts
-            </Text>
-            {views.map((view) => (
-              <button
-                key={view.id}
-                type="button"
-                className="rounded-md px-2 py-1 text-left text-sm text-ui-fg-interactive hover:bg-ui-bg-base-hover"
-                onClick={() => void open(view)}
-              >
-                {view.name} <span className="text-ui-fg-muted">· {chartTypeLabel[view.visual.type]}</span>
-              </button>
-            ))}
-          </div>
-        )}
-      </Container>
-
-      <Container className="flex min-w-0 flex-1 flex-col gap-4">
-        {error && <Alert variant="error">{error}</Alert>}
-        {notice && <Alert variant="success">{notice}</Alert>}
-
-        {!result ? (
-          <div className="flex flex-col gap-1 py-10 text-center">
-            <Heading level="h3">Ask a question</Heading>
-            <Text size="small" className="text-ui-fg-subtle">
-              Choose a model and at least one measure, add group-bys, time or filters, then select Show.
-            </Text>
-          </div>
-        ) : (
-          <>
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge size="2xsmall" color={result.freshness === 'FRESH' ? 'green' : 'orange'}>
-                {result.freshness.toLowerCase()}
-              </Badge>
+          {!result ? (
+            <div className="flex flex-col gap-1 py-10 text-center">
+              <Heading level="h3">Ask a question</Heading>
               <Text size="small" className="text-ui-fg-subtle">
-                {result.rows.length} row{result.rows.length === 1 ? '' : 's'}
-                {result.truncated ? ' (more rows match; showing the first 1,000)' : ''}
+                Choose a model and at least one measure, add group-bys, time or filters, then select Show.
               </Text>
             </div>
-
-            <div role="group" aria-label="Chart type" className="flex flex-wrap gap-1.5">
-              {chartTypes.map((type) => (
-                <Button
-                  key={type}
-                  size="small"
-                  variant={type === chartType ? 'primary' : 'secondary'}
-                  aria-pressed={type === chartType}
-                  onClick={() => setChartType(type)}
-                >
-                  {chartTypeLabel[type]}
-                </Button>
-              ))}
-            </div>
-
-            <AnalyticsChart result={result} type={chartType} />
-
-            {chartType !== 'table' && (
-              <div className="flex flex-col gap-2">
-                <Button variant="transparent" size="small" className="self-start" onClick={() => setShowData((value) => !value)}>
-                  {showData ? 'Hide data' : 'Show data'}
-                </Button>
-                {showData && <ResultTable result={result} />}
+          ) : (
+            <>
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge size="2xsmall" color={result.freshness === 'FRESH' ? 'green' : 'orange'}>
+                  {result.freshness.toLowerCase()}
+                </Badge>
+                <Text size="small" className="text-ui-fg-subtle">
+                  {result.rows.length} row{result.rows.length === 1 ? '' : 's'}
+                  {result.truncated ? ' (more rows match; showing the first 1,000)' : ''}
+                </Text>
               </div>
-            )}
 
-            <div className="flex flex-col gap-2 border-t border-ui-border-base pt-4 sm:flex-row sm:items-end">
-              <div className="flex flex-1 flex-col gap-1.5">
-                <Label htmlFor="explore-save">Save as chart</Label>
-                <Input
-                  id="explore-save"
-                  placeholder="For example: Yield by field per month"
-                  value={viewName}
-                  onChange={(event) => setViewName(event.target.value)}
-                />
+              <div role="group" aria-label="Chart type" className="flex flex-wrap gap-1.5">
+                {chartTypes.map((type) => (
+                  <Button
+                    key={type}
+                    size="small"
+                    variant={type === chartType ? 'primary' : 'secondary'}
+                    aria-pressed={type === chartType}
+                    onClick={() => setChartType(type)}
+                  >
+                    {chartTypeLabel[type]}
+                  </Button>
+                ))}
               </div>
-              <Button variant="secondary" disabled={!viewName.trim()} onClick={() => void save()}>
-                Save chart
-              </Button>
-            </div>
-          </>
-        )}
-      </Container>
+
+              <AnalyticsChart result={result} type={chartType} />
+
+              {chartType !== 'table' && (
+                <div className="flex flex-col gap-2">
+                  <Button variant="transparent" size="small" className="self-start" onClick={() => setShowData((value) => !value)}>
+                    {showData ? 'Hide data' : 'Show data'}
+                  </Button>
+                  {showData && <ResultTable result={result} />}
+                </div>
+              )}
+
+              <div className="flex flex-col gap-2 border-t border-ui-border-base pt-4 sm:flex-row sm:items-end">
+                <div className="flex flex-1 flex-col gap-1.5">
+                  <Label htmlFor="explore-save">Save as chart</Label>
+                  <Input
+                    id="explore-save"
+                    placeholder="For example: Yield by field per month"
+                    value={viewName}
+                    onChange={(event) => setViewName(event.target.value)}
+                  />
+                </div>
+                <Button variant="secondary" disabled={!viewName.trim()} onClick={() => void save()}>
+                  Save chart
+                </Button>
+              </div>
+            </>
+          )}
+        </Container>
+      </div>
     </div>
   );
 }

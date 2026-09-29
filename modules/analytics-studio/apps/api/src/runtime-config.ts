@@ -3,7 +3,7 @@ import { createPublicKey } from 'node:crypto';
 /** Audience the web BFF signs Analytics platform contexts for (WI-OI-064a). */
 export const ANALYTICS_AUDIENCE = 'gigalibs-analytics-api';
 /** Highest migration in `db/migrations`; the readiness check requires the database to be exactly here. */
-export const ANALYTICS_SCHEMA_CONTRACT_VERSION = 17;
+export const ANALYTICS_SCHEMA_CONTRACT_VERSION = 18;
 
 export interface AnalyticsRuntimeConfig {
   nodeEnv: string;

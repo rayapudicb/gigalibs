@@ -124,6 +124,24 @@ describe('IngestionService — CONTAINED_P0 vault boundary', () => {
     expect(result.errorMessage).toContain('CONTAINED_P0');
   });
 
+  // WI-OI-103d d7: a SYNTHETIC connection's records are generated inside Analytics; there is nothing to sync from.
+  it('startSync should refuse a synthetic source before recording a sync run', async () => {
+    const service = await buildService({
+      connectorGetConnection: async () => ({
+        id: 'conn1', tenantId: TENANT_A, displayName: 'Sample farm harvests (synthetic)', sourceType: 'SYNTHETIC',
+        host: 'sample.invalid', port: 1, databaseName: 'sample_farm_harvests',
+        sslMode: 'disable', status: 'ACTIVE', createdBy: 'u',
+        createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
+      }),
+    });
+    await expect(
+      service.startSync(makePrincipal(), {
+        connectionId: '00000000-0000-4000-8000-000000000001',
+        sourceTableName: 'sample_farm_harvests',
+      }),
+    ).rejects.toThrow(/synthetic source/);
+  });
+
   it('startSync should record a sync run in RUNNING then FAILED state', async () => {
     const writtenRuns: Record<string, unknown>[] = [];
     const updatedRuns: Record<string, unknown>[] = [];

@@ -39,8 +39,9 @@ function generateOptions(raw: string): { days?: number; seed?: number } | null {
 export async function GET(_request: Request, context: RouteContext) {
   const session = await demoSession();
   if ('response' in session) return session.response;
-  if ((await context.params).action !== 'dataset') return problem(404, 'Unsupported Demo Lab action.');
-  return relay(await callSignedModule(analyticsModule, session.context, 'GET', ['v1', 'demo-lab', 'dataset']));
+  const action = (await context.params).action;
+  if (action !== 'dataset' && action !== 'sample-farm') return problem(404, 'Unsupported Demo Lab action.');
+  return relay(await callSignedModule(analyticsModule, session.context, 'GET', ['v1', 'demo-lab', action]));
 }
 
 export async function POST(request: Request, context: RouteContext) {
@@ -53,6 +54,11 @@ export async function POST(request: Request, context: RouteContext) {
     if (action === 'reset') {
       if (!hasPermission(session.context.permissions, 'analytics:action')) return problem(403, 'Permission analytics:action is required.');
       return relay(await callSignedModule(analyticsModule, session.context, 'POST', ['v1', 'demo-lab', 'reset'], {}, 60_000));
+    }
+    // WI-OI-103d d7: the labelled sample farm source, through the real discovery, mapping, dataset and model steps.
+    if (action === 'sample-farm') {
+      if (!hasPermission(session.context.permissions, 'analytics:action')) return problem(403, 'Permission analytics:action is required.');
+      return relay(await callSignedModule(analyticsModule, session.context, 'POST', ['v1', 'demo-lab', 'sample-farm'], {}, 120_000));
     }
     if (action === 'delete') return await remove(session.context);
     return problem(404, 'Unsupported Demo Lab action.');

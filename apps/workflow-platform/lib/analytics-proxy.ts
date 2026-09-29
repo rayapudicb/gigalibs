@@ -43,5 +43,10 @@ function requiredAnalyticsPermission(method: string, path: readonly string[]): s
   if (new RegExp(`^v1/semantic-models/${SEGMENT}/catalog$`).test(joined)) return read;
   if (joined === 'v1/chart-views') return method === 'GET' ? 'analytics:read' : method === 'POST' ? 'analytics:charts:write' : null;
   if (new RegExp(`^v1/chart-views/${SEGMENT}(/data)?$`).test(joined)) return read;
+  // WI-OI-103d d7: formula review. Analytics also refuses a review by the version's creator (maker-checker).
+  if (new RegExp(`^v1/formula-measures/model/${SEGMENT}$`).test(joined)) return read;
+  if (new RegExp(`^v1/formula-measures/${SEGMENT}/versions/${SEGMENT}/(approve|reject)$`).test(joined)) {
+    return method === 'POST' ? 'analytics:models:publish' : null;
+  }
   return null;
 }
