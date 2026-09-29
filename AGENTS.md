@@ -10,9 +10,29 @@ certification.
 Never claim that the full platform, an industry pack, a quarantined package, or an external production
 deployment is complete without the evidence required by the SDLC and module-completeness gates.
 
+## Every session: start here
+
+Work in short, focused sessions. The owner starts a fresh session for each task and may just say "next".
+
+1. Read `.pi/NOW.md` first: one page with the state, the next task and the open decisions. Then read the task card
+   it points to in `.pi/tasks/`. Read other documents only where the task touches them.
+2. If the owner asks for something new, write a task card from `.pi/tasks/TEMPLATE.md`, show it, and wait for
+   the owner's OK before changing product code.
+3. Stay inside the card's scope. At a decision that the card, the vision or the owner has not settled, stop and ask.
+4. Keep context small:
+   - search for the lines you need (`rg`, `grep`, `sed -n`) instead of reading whole files;
+   - in `.pi/WORK_ITEMS.md`, read only your item's row;
+   - show only the tail of long command output;
+   - verify with `pnpm verify`, which prints one line per step and the path of the full log.
+5. Finish by updating `.pi/NOW.md` and the task card's status. Then report in at most five short bullets: what
+   changed, the evidence, what's next, and what the owner must decide. Commit only when the owner says "commit".
+
+"next" (or `/next`) means: run steps 1–5 for the task that `.pi/NOW.md` names.
+
 ## Mandatory reading order
 
-Before changing product behavior, read:
+Before changing product behavior, consult these where the task touches them. Read the relevant sections, not
+every file in every session:
 
 1. `.pi/PLAN.md`
 2. `.pi/WORK_ITEMS.md`
@@ -62,5 +82,8 @@ pnpm audit:api-boundary
 pnpm audit:navigation
 pnpm audit:sdlc
 ```
+
+`pnpm verify` runs all of the above plus `pnpm audit:layers`, the module-manifest check and the deployment-profile
+check. It prints one line per step. `pnpm verify --audits` skips build and test, for documentation-only changes.
 
 Run slice-specific integration certifications listed in `.pi/PLAN.md` when their services are available.
