@@ -16,13 +16,17 @@ import type {
   AnalyticsQueryColumnV1,
   AnalyticsQueryV1,
   AnalyticsTimeGrain,
+  FormulaExpressionV1,
 } from '@gigalibs/contracts';
 
 export interface QueryMeasure {
   readonly name: string;
-  readonly aggregateFn: string;
-  readonly fieldReference: string;
+  readonly aggregateFn?: string;
+  readonly fieldReference?: string;
   readonly label: string;
+  /** Present only for a published formula version. Formula leaves may reference base measures only. */
+  readonly formulaExpression?: FormulaExpressionV1;
+  readonly formulaVersionId?: string;
 }
 
 export interface BuiltAnalyticsQuery {
@@ -96,7 +100,7 @@ export function buildAnalyticsQuery(input: {
     if (!measure) throw new AnalyticsQuerySpecError(`measures: unknown measure '${name}'.`);
     if (columns.some((column) => column.name === name))
       throw new AnalyticsQuerySpecError(`measures: '${name}' has the same name as a dimension.`);
-    select.push(aggregate(measure, bind));
+    select.push(measureExpression(measure, measures, bind));
     columns.push({ name, label: measure.label || name, role: 'measure', type: 'number' });
   }
 
@@ -124,7 +128,19 @@ export function buildAnalyticsQuery(input: {
   return { text, params, columns };
 }
 
+function measureExpression(
+  measure: QueryMeasure,
+  measures: ReadonlyMap<string, QueryMeasure>,
+  bind: (value: unknown) => string,
+): string {
+  if (measure.formulaExpression) return formulaExpression(measure.formulaExpression, measures, bind);
+  return aggregate(measure, bind);
+}
+
 function aggregate(measure: QueryMeasure, bind: (value: unknown) => string): string {
+  if (!measure.aggregateFn || !measure.fieldReference) {
+    throw new AnalyticsQuerySpecError(`measures: '${measure.name}' has an incomplete base-measure definition.`);
+  }
   switch (measure.aggregateFn) {
     case 'SUM':
       return `COALESCE(SUM((r.analytical_payload->>${bind(measure.fieldReference)}::text)::numeric), 0)`;
@@ -140,6 +156,34 @@ function aggregate(measure: QueryMeasure, bind: (value: unknown) => string): str
       return `COUNT(DISTINCT r.analytical_payload->>${bind(measure.fieldReference)}::text)`;
     default:
       throw new AnalyticsQuerySpecError(`measures: '${measure.name}' uses unsupported aggregate '${measure.aggregateFn}'.`);
+  }
+}
+
+function formulaExpression(
+  expression: FormulaExpressionV1,
+  measures: ReadonlyMap<string, QueryMeasure>,
+  bind: (value: unknown) => string,
+): string {
+  if (expression.kind === 'constant') return `${bind(expression.value)}::numeric`;
+  if (expression.kind === 'measure') {
+    const referenced = measures.get(expression.name);
+    if (!referenced || referenced.formulaExpression) {
+      throw new AnalyticsQuerySpecError(`formula: unknown base measure '${expression.name}'.`);
+    }
+    return aggregate(referenced, bind);
+  }
+  const left = formulaExpression(expression.left, measures, bind);
+  const right = formulaExpression(expression.right, measures, bind);
+  switch (expression.operator) {
+    case 'add':
+      return `((${left}) + (${right}))`;
+    case 'subtract':
+      return `((${left}) - (${right}))`;
+    case 'multiply':
+      return `((${left}) * (${right}))`;
+    case 'divide':
+      // A zero or missing denominator is an unknown ratio, never Infinity or an exception.
+      return `((${left}) / NULLIF((${right}), 0))`;
   }
 }
 

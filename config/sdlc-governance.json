@@ -77,7 +77,7 @@
     "note_WI-OI-083": "Review: manifest-driven web extension points and the bounded no-CMMS solution proof are locally complete; independent review remains open.",
     "note_WI-OI-085": "Review: 085a–085f are locally implemented and verified. The isolated generated field-inspections proof passed 35/35 conformance, real-session sidebar and BFF CRUD/replay/conflict/two-tenant isolation, controlled host outage, Chrome/axe accessibility and exact-image vulnerability policy with zero Critical/High. Cleanup left no sample module or proof resources. Independent QA/SDET and Documentation decisions remain open; no production, cloud or external-release authority.",
     "note_WI-OI-102": "Review: 102a–102g locally complete — ADR-0016; one engine per job (Workflow Studio, Python plane parked); kernel/capability layers; fenced core tables; catalogue truth with six maturity states; package clean-up (586 files, 77 units, locked modules refused at the API); platform-rbac merged (Modules & Plan) and retired. Independent review pending.",
-    "note_WI-OI-103": "In Progress: 103a query contract and engine done (AnalyticsQueryV1, parameterised builder, POST v1/query/spec). Next 103b formula measures with maker-checker."
+    "note_WI-OI-103": "In Progress: 103a query engine and 103b formula measures (maker-checker, migration 000016) done. Owner order 2026-09-29: 103d then 103e until 2026-10-04, then the agriculture package; 103c, 103f and WI-OI-104..107 after it."
   },
   "relativeDeliveryEstimate": {
     "total": 100,

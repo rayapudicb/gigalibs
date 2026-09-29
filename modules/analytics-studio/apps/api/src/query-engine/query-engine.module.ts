@@ -8,11 +8,13 @@ import {
   DashboardsController,
 } from './query-engine.controller.js';
 import { DatasetModule } from '../datasets/dataset.module.js';
+import { FormulaMeasureController } from './formula-measure.controller.js';
+import { FormulaMeasureService } from './formula-measure.service.js';
 
 @Module({
   imports: [DatasetModule],
-  controllers: [QueryEngineController, ChartsController, DashboardsController],
-  providers: [QueryEngineService, ChartService, DashboardService],
-  exports: [QueryEngineService, ChartService, DashboardService],
+  controllers: [QueryEngineController, ChartsController, DashboardsController, FormulaMeasureController],
+  providers: [QueryEngineService, ChartService, DashboardService, FormulaMeasureService],
+  exports: [QueryEngineService, ChartService, DashboardService, FormulaMeasureService],
 })
 export class QueryEngineModule {}

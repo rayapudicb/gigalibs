@@ -55,9 +55,9 @@ The owner's rule is that charts hold no data: a chart is a saved query plus a ch
 | Slice | What | Size | Status |
 |---|---|---|---|
 | 103a | Query contract and engine (acceptance 1) | M | Done, 2026-09-29 |
-| 103b | Formula measures, measure versions, maker-checker (2) | M | Proposed |
+| 103b | Formula measures, measure versions, maker-checker (2) | M | Done, 2026-09-29 |
 | 103c | Summaries, cache, limits, benchmark (3) | M | Proposed |
-| 103d | Chart templates and renderer, change-chart, map, gallery retired (4) | L | Proposed |
+| 103d | Chart templates and renderer, change-chart, map, gallery retired (4) | L | Next (owner order, 2026-09-29) |
 | 103e | Dashboards, reports ownership, permissions and roles, web exposure (5, 6) | M | Proposed |
 | 103f | Proof on manufacturing data and the no-developer test (7) | M | Proposed |
 
@@ -111,3 +111,58 @@ The owner's rule is that charts hold no data: a chart is a saved query plus a ch
 - The running analytics service (image `5abfa667bb10-7507432cb066`) does not have this endpoint until it is
   rebuilt; that is the owner's call, planned for 103f.
 - The web proxy does not expose `v1/query/spec` yet (103e, with the permissions).
+
+## Owner plan change (2026-09-29)
+
+- Foundation work is time-boxed to **Sunday 2026-10-04**: close 103b, then **103d** (chart templates and the
+  Explore screen), then 103e (dashboards and permissions).
+- From Monday, build the **agriculture package** for a client capability pitch (date not fixed). Its pieces are
+  thin first versions of the planned capabilities: a farmOS adapter shaped like WI-OI-104, fields as Geospatial
+  places, and the pack as configuration. Predictions (requirements 1, 5, 9) are roadmap only.
+- Afterwards, return to 103c, 103f and WI-OI-104 to WI-OI-107.
+
+## 103b: formula measures with maker-checker (2026-09-29)
+
+**Provenance:** implemented by the GPT (Codex) agent, which stopped before recording or committing. Claude
+reviewed it, proved it and closed the slice.
+
+**Contract** (`packages/contracts/src/analytics/formula-measure.ts`):
+- A formula is a **typed expression tree**: base-measure leaves, numeric constants, and add, subtract, multiply
+  and divide. It has at most 31 nodes, depth 8 and 10 base measures. No free text or SQL is stored.
+- There are create, version, submit, approve and reject payloads. Version states are DRAFT, PENDING_REVIEW,
+  PUBLISHED, SUPERSEDED and REJECTED.
+- `AnalyticsQueryV1.measureVersions` pins formula measures to approved versions, and the result reports which
+  versions were used.
+
+**Database** (migration `000016_formula_measure_versions`, forward-only):
+- `formula_measures`, `formula_measure_versions` and `formula_measure_reviews`, with forced RLS.
+- Composite (id, tenant) keys bind every row to its tenant and its own formula.
+- Versions and reviews are append-only: UPDATE and DELETE are revoked, and the runner's
+  `MODULE_APPEND_ONLY_TABLES` includes them.
+- New audit and lineage values. The expected schema version is now 16 (the runtime contract, Compose and
+  `.env.example`).
+
+**Maker-checker** (`formula-measure.service.ts`):
+- The creator submits, and **a different person** approves or rejects (403 otherwise).
+- Only the latest version can be reviewed, and a new version needs the previous one reviewed first.
+- A formula name cannot clash with a base measure, and it may reference only known base measures.
+- **Routes:** `analytics:models:write` to create and submit, `analytics:models:publish` to approve or reject, and
+  `analytics:read` to read.
+
+**Query engine:**
+- Formula measures compile to SQL from the tree: constants are bound parameters, operators come from a closed
+  switch, and division uses `NULLIF(…, 0)` (unknown, not an error).
+- Queries use only **approved** versions of formulas in the same model and tenant (the current published one, or
+  a pinned one).
+- Pinning a base measure, or a version that was never approved, is refused.
+
+**Evidence:**
+- **Tests:** 79 pass (builder, service, formula service and the contract).
+- **Migration on the real local PostgreSQL:** applied inside a transaction that was **rolled back**. It created 3
+  formula tables, all with forced RLS; 0 remained afterwards.
+- **Formula query:** "yield per hectare by field and month" executed read-only on the real schema.
+- `pnpm verify` passes (known drift only).
+- The migration is not applied to the running database, and the analytics image is not rebuilt; both happen at
+  deploy, which is the owner's call.
+
+**For 103e:** the permission set now also includes `analytics:models:publish`; it goes into the default roles.

@@ -14,12 +14,13 @@
  * UNAUTHORIZED is never a freshness state.
  */
 
-import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
 import {
   type AnalyticsFieldType,
   AnalyticsFieldTypeSchema,
   type AnalyticsQueryResultV1,
   AnalyticsQueryV1Schema,
+  FormulaMeasureDefinitionV1Schema,
 } from '@gigalibs/contracts';
 import { AnalyticsQuerySpecError, buildAnalyticsQuery, type QueryMeasure } from './query-builder.js';
 import { DatabaseService } from '../database/database.service.js';
@@ -209,6 +210,7 @@ export class QueryEngineService {
       semanticModelId: query.semanticModelId,
       datasetVersionId,
       definitionVersion,
+      measureVersions: {},
       asOf,
       freshness,
       watermark,
@@ -251,6 +253,54 @@ export class QueryEngineService {
         },
       ]),
     );
+    const formulaRows = await this.db.queryWithTenant<{
+      measure_name: string;
+      current_published_version_id: string | null;
+      version_id: string;
+      definition: unknown;
+    }>(
+      tenantId,
+      `SELECT fm.measure_name, fm.current_published_version_id,
+              fmv.id AS version_id, fmv.definition
+       FROM gigalibs_analytics.formula_measures fm
+       JOIN gigalibs_analytics.formula_measure_versions fmv
+         ON fmv.formula_measure_id = fm.id
+       WHERE fm.semantic_model_id = $1
+         AND fm.measure_name = ANY($2::text[])
+         AND EXISTS (
+           SELECT 1 FROM gigalibs_analytics.formula_measure_reviews review
+           WHERE review.formula_measure_version_id = fmv.id AND review.decision = 'APPROVED'
+         )`,
+      [query.semanticModelId, query.measures],
+    );
+    const resolvedMeasureVersions: Record<string, string> = {};
+    for (const name of query.measures) {
+      const pinnedVersionId = query.measureVersions[name];
+      if (pinnedVersionId && measures.has(name)) {
+        throw new BadRequestException(`Measure '${name}' is a base measure and cannot be version-pinned.`);
+      }
+      const candidates = formulaRows.rows.filter((row) => row.measure_name === name);
+      const selected = pinnedVersionId
+        ? candidates.find((row) => row.version_id === pinnedVersionId)
+        : candidates.find((row) => row.version_id === row.current_published_version_id);
+      if (!selected) {
+        if (pinnedVersionId) {
+          throw new BadRequestException(`Published version '${pinnedVersionId}' is not available for formula measure '${name}'.`);
+        }
+        continue;
+      }
+      const definition = FormulaMeasureDefinitionV1Schema.safeParse(selected.definition);
+      if (!definition.success) {
+        throw new ServiceUnavailableException(`Published formula measure '${name}' has an invalid stored definition.`);
+      }
+      measures.set(name, {
+        name,
+        label: definition.data.displayLabel,
+        formulaExpression: definition.data.expression,
+        formulaVersionId: selected.version_id,
+      });
+      resolvedMeasureVersions[name] = selected.version_id;
+    }
 
     let built;
     try {
@@ -268,6 +318,7 @@ export class QueryEngineService {
       semanticModelId: query.semanticModelId,
       datasetVersionId,
       definitionVersion,
+      measureVersions: resolvedMeasureVersions,
       asOf,
       freshness,
       watermark,

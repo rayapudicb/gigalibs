@@ -18,6 +18,20 @@ const measures = new Map<string, QueryMeasure>([
   ['work_orders', { name: 'work_orders', aggregateFn: 'COUNT', fieldReference: 'site', label: 'Work orders' }],
   ['labour_hours', { name: 'labour_hours', aggregateFn: 'SUM', fieldReference: 'hours', label: 'Labour hours' }],
   ['sites', { name: 'sites', aggregateFn: 'COUNT_DISTINCT', fieldReference: 'site', label: 'Sites' }],
+  [
+    'hours_per_order',
+    {
+      name: 'hours_per_order',
+      label: 'Hours per work order',
+      formulaVersionId: '00000000-0000-4000-8000-000000000099',
+      formulaExpression: {
+        kind: 'binary',
+        operator: 'divide',
+        left: { kind: 'measure', name: 'labour_hours' },
+        right: { kind: 'measure', name: 'work_orders' },
+      },
+    },
+  ],
 ]);
 const query = (input: Record<string, unknown>): AnalyticsQueryV1 =>
   AnalyticsQueryV1Schema.parse({ semanticModelId: '00000000-0000-4000-8000-000000000001', ...input });
@@ -77,6 +91,46 @@ describe('buildAnalyticsQuery', () => {
     expect(built.text).toContain('ORDER BY 2 DESC NULLS LAST');
   });
 
+  it('compiles a formula from allowlisted base measures and handles a zero denominator as null', () => {
+    const built = build({ measures: ['hours_per_order'] });
+    expect(built.text).toContain('NULLIF');
+    expect(built.text).toContain('COUNT(*)');
+    expect(built.text).toMatch(/COALESCE\(SUM\(\(r\.analytical_payload->>\$\d+::text\)::numeric\), 0\)/);
+    expect(built.text).not.toContain('hours_per_order');
+    expect(built.text).not.toContain('labour_hours');
+    expect(built.params).toContain('hours');
+  });
+
+  it('binds formula constants and refuses formula-to-formula references', () => {
+    const scaled = new Map(measures).set('scaled_hours', {
+      name: 'scaled_hours',
+      label: 'Scaled hours',
+      formulaExpression: {
+        kind: 'binary',
+        operator: 'multiply',
+        left: { kind: 'measure', name: 'labour_hours' },
+        right: { kind: 'constant', value: 100 },
+      },
+    });
+    const built = buildAnalyticsQuery({
+      datasetVersionId: 'd',
+      query: query({ measures: ['scaled_hours'] }),
+      fields,
+      measures: scaled,
+    });
+    expect(built.text).not.toContain('100');
+    expect(built.params).toContain(100);
+
+    const nested = new Map(measures).set('nested', {
+      name: 'nested',
+      label: 'Nested',
+      formulaExpression: { kind: 'measure', name: 'hours_per_order' },
+    });
+    expect(() =>
+      buildAnalyticsQuery({ datasetVersionId: 'd', query: query({ measures: ['nested'] }), fields, measures: nested }),
+    ).toThrow("unknown base measure 'hours_per_order'");
+  });
+
   it.each([
     [{ measures: ['labour_hours'], dimensions: ['unknown_field'] }, "unknown field 'unknown_field'"],
     [{ measures: ['labour_hours'], time: { field: 'site', grain: 'day' } }, 'not a date or timestamp'],
@@ -115,6 +169,7 @@ describe('AnalyticsQueryV1Schema', () => {
     [{ measures: ['a'], limit: 10_001 }],
     [{ measures: ['a', 'a'] }],
     [{ measures: ['a'], extra: true }],
+    [{ measures: ['a'], measureVersions: { b: '00000000-0000-4000-8000-000000000001' } }],
   ])('rejects %j', (input) => {
     expect(AnalyticsQueryV1Schema.safeParse({ semanticModelId: '00000000-0000-4000-8000-000000000001', ...input }).success).toBe(false);
   });

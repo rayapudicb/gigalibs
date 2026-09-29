@@ -43,6 +43,7 @@ function service(options: { model?: boolean; resultRows?: Array<Record<string, u
         ],
       };
     }
+    if (sql.includes('FROM gigalibs_analytics.formula_measures fm')) return { rows: [] };
     if (sql.includes('FROM gigalibs_analytics.dataset_record_versions r')) return { rows: options.resultRows ?? [] };
     throw new Error(`unexpected SQL: ${sql}`);
   });
@@ -96,5 +97,45 @@ describe('QueryEngineService.runSpec', () => {
     await expect(service({ model: false }).engine.runSpec(principal, { semanticModelId: MODEL, measures: ['work_orders'] })).rejects.toThrow(
       NotFoundException,
     );
+  });
+
+  it('resolves and returns the exact published formula version used by the query', async () => {
+    const versionId = '00000000-0000-4000-8000-000000000099';
+    const { engine, calls } = service({ resultRows: [{ c0: '2.5' }] });
+    const original = (engine as any).db.queryWithTenant;
+    (engine as any).db.queryWithTenant = vi.fn(async (tenant: string, sql: string, params: unknown[] = []) => {
+      if (sql.includes('FROM gigalibs_analytics.formula_measures fm')) {
+        return {
+          rows: [
+            {
+              measure_name: 'hours_per_order',
+              current_published_version_id: versionId,
+              version_id: versionId,
+              definition: {
+                displayLabel: 'Hours per order',
+                description: null,
+                unit: 'hours/order',
+                expression: {
+                  kind: 'binary',
+                  operator: 'divide',
+                  left: { kind: 'measure', name: 'labour_hours' },
+                  right: { kind: 'measure', name: 'work_orders' },
+                },
+              },
+            },
+          ],
+        };
+      }
+      return original(tenant, sql, params);
+    });
+    const result = await engine.runSpec(principal, {
+      semanticModelId: MODEL,
+      measures: ['hours_per_order'],
+      measureVersions: { hours_per_order: versionId },
+    });
+    expect(result.measureVersions).toEqual({ hours_per_order: versionId });
+    expect(result.columns[0]?.label).toBe('Hours per order');
+    expect(result.rows).toEqual([[2.5]]);
+    expect(calls.some((call) => call.sql.includes('NULLIF'))).toBe(true);
   });
 });

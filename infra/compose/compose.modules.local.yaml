@@ -85,8 +85,8 @@ services:
       MODULE_RUNTIME_DATABASE_URL: ${ANALYTICS_DATABASE_URL:?ANALYTICS_DATABASE_URL is required}
       MODULE_MIGRATIONS_DIRECTORY: /app/migrations
       MODULE_SCHEMA: gigalibs_analytics
-      MODULE_EXPECTED_MIGRATION_VERSION: "15"
-      MODULE_APPEND_ONLY_TABLES: raw_record_versions,studio_mapping_versions,report_artifacts,report_deliveries,analytics_lineage_edges,analytics_audit_log,operational_facts
+      MODULE_EXPECTED_MIGRATION_VERSION: "16"
+      MODULE_APPEND_ONLY_TABLES: raw_record_versions,studio_mapping_versions,report_artifacts,report_deliveries,analytics_lineage_edges,analytics_audit_log,operational_facts,formula_measure_versions,formula_measure_reviews
       MODULE_READ_ONLY_TABLES: auth_revocation_events
     extra_hosts:
       - "host.docker.internal:host-gateway"
@@ -111,7 +111,7 @@ services:
       ANALYTICS_CORS_ORIGINS: ${PUBLIC_ORIGIN:?PUBLIC_ORIGIN is required}
       ANALYTICS_DATABASE_URL: ${ANALYTICS_DATABASE_URL:?ANALYTICS_DATABASE_URL is required}
       ANALYTICS_DATABASE_POOL_SIZE: "10"
-      ANALYTICS_EXPECTED_MIGRATION_VERSION: "15"
+      ANALYTICS_EXPECTED_MIGRATION_VERSION: "16"
       ANALYTICS_PLATFORM_CONTEXT_AUDIENCE: gigalibs-analytics-api
       ANALYTICS_PLATFORM_CONTEXT_PUBLIC_KEY_BASE64: ${ANALYTICS_PLATFORM_CONTEXT_PUBLIC_KEY_BASE64:?ANALYTICS_PLATFORM_CONTEXT_PUBLIC_KEY_BASE64 is required}
     extra_hosts:

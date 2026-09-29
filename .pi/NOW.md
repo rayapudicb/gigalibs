@@ -1,6 +1,6 @@
 # NOW: where the work stands
 
-Updated 2026-09-29 by Claude (WI-OI-103a done, uncommitted). Keep this file to one page. Replace old content rather than
+Updated 2026-09-29 by Claude (WI-OI-103b done, uncommitted). Keep this file to one page. Replace old content rather than
 appending to it, and update it at the end of every task.
 
 ## State
@@ -31,22 +31,25 @@ appending to it, and update it at the end of every task.
 
 ## Next
 
-Write and do the **103b** card: formula measures (for example yield/ha, cost per work order).
-- Measures are defined once, as arithmetic over other measures.
-- They are versioned, and a second person publishes them (maker-checker).
-- Charts pin a measure version.
-- Sensitive measures are flagged.
+**Owner plan (2026-09-29):** foundation work until **Sunday 2026-10-04**, then the **agriculture package** for a
+client capability pitch (date not fixed), then back to the rest of the foundation.
 
-The builder in `query-engine/query-builder.ts` gets a formula aggregate.
+1. Write and do the **103d** card: chart templates that hold no data.
+   - A chart is a query spec plus a visual spec.
+   - One renderer covers the 24 types, with a "change chart" menu by data shape and a map.
+   - A thin **Explore** screen (pick a measure, group-by and time, then see the chart).
+   - The static gallery is retired.
+   - The demo uses a clearly labelled sample farm dataset.
+2. Then **103e**: dashboards with shared filters, permissions and roles (including `analytics:models:publish`),
+   reports owned by Analytics.
+3. From Monday: the agriculture package (`.pi/proposals/agriculture-package-plan.md`), with thin first versions
+   of connectors, places and the pack.
 
-103a (2026-09-29):
-- the `AnalyticsQueryV1` contract;
-- a parameterised builder with no user text in SQL;
-- `POST v1/query/spec` with `analytics:read`;
-- 64 tests;
-- the generated SQL was proven on real PostgreSQL, read-only.
+103a–103b (2026-09-29):
+- the query engine (`AnalyticsQueryV1`, `POST v1/query/spec`);
+- formula measures with maker-checker and approved-version pinning (migration 000016, schema version 16).
 
-The running analytics service does not have it until it is rebuilt, which is the owner's call (103f).
+Not deployed: the analytics image and migration 16 wait for the owner's deploy call.
 
 Open decisions:
 - drop the empty `gigalibs_platform` schema;

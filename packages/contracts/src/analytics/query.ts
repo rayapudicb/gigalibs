@@ -35,6 +35,8 @@ export const AnalyticsQueryV1Schema = z
   .object({
     semanticModelId: z.string().uuid(),
     measures: z.array(AnalyticsMeasureNameSchema).min(1).max(10),
+    /** Formula measures may be pinned to any previously published immutable version. */
+    measureVersions: z.record(AnalyticsMeasureNameSchema, z.string().uuid()).default({}),
     dimensions: z.array(AnalyticsFieldNameSchema).max(3).default([]),
     time: z.object({ field: AnalyticsFieldNameSchema, grain: AnalyticsTimeGrainSchema }).strict().optional(),
     filters: z.array(AnalyticsFilterV1Schema).max(20).default([]),
@@ -46,7 +48,11 @@ export const AnalyticsQueryV1Schema = z
   })
   .strict()
   .refine((query) => new Set(query.dimensions).size === query.dimensions.length, 'Dimensions must be distinct.')
-  .refine((query) => new Set(query.measures).size === query.measures.length, 'Measures must be distinct.');
+  .refine((query) => new Set(query.measures).size === query.measures.length, 'Measures must be distinct.')
+  .refine(
+    (query) => Object.keys(query.measureVersions).every((name) => query.measures.includes(name)),
+    'Every pinned measure version must name a selected measure.',
+  );
 export type AnalyticsQueryV1 = z.infer<typeof AnalyticsQueryV1Schema>;
 export type AnalyticsQueryInputV1 = z.input<typeof AnalyticsQueryV1Schema>;
 
@@ -62,6 +68,8 @@ export const AnalyticsQueryResultV1Schema = z.object({
   semanticModelId: z.string(),
   datasetVersionId: z.string(),
   definitionVersion: z.number().int(),
+  /** Formula measure versions actually used, keyed by measure name. Base measures are omitted. */
+  measureVersions: z.record(AnalyticsMeasureNameSchema, z.string().uuid()).default({}),
   asOf: z.string(),
   freshness: z.enum(['FRESH', 'STALE', 'PARTIAL', 'REBUILDING', 'UNAVAILABLE']),
   watermark: z.string().nullable(),
