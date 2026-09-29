@@ -275,3 +275,20 @@ chart views. A reader saving a view gets 403; unlisted methods get 404 (`analyti
 - Review web `gigalibs-review-web` on 127.0.0.1:5190 (same tag): ready 200. Without a session, Explore redirects to
   login and the Analytics APIs answer 401.
 - 5180 is unchanged (`a255e935c80e-2e98e70d8d0e`, 200). The disk guard ran.
+
+## 103e: dashboards, permissions and roles, reports (2026-09-29)
+
+Task card: `.pi/tasks/WI-OI-103e.md`. Owner decisions: system roles now; order e1 → e2 → e4 → e3 → e5.
+
+**e1, permission names (kernel):**
+- One rule, `isTenantPermissionCode` in `@gigalibs/contracts`, now serves the custom-role schema, the session
+  (`auth-nest`) and role resolution (`rbac-nest`, which gains a `contracts` dependency).
+- Accepted: `resource:action`, `resource:*` and `module:resource:action` (for example `analytics:charts:write`).
+- Still refused: `platform:` codes, wildcards anywhere but the whole action of a two-part code, capitals, and four
+  parts.
+- Before this, three-part codes from a custom role or a direct grant were silently dropped, so only Tenant admins
+  (`analytics:*`) could save charts or approve formulas.
+- **Checks:** contracts rule 15 cases; session permissions 11 (one new); `rbac-core`, `rbac-nest` and `auth-nest`
+  81 in total; `pnpm verify` passes (known drift only).
+- **Finding:** Workforce's dotted names (`workforce.resources.read`) are also outside the grammar, so a tenant role
+  cannot grant them either. Left as is; noted for WI-OI-077.

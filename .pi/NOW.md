@@ -39,7 +39,7 @@ appending to it, and update it at the end of every task.
 **Owner plan (2026-09-29):** foundation work until **Sunday 2026-10-04**, then the **agriculture package** for a
 client capability pitch (date not fixed), then back to the rest of the foundation.
 
-1. **Task card `.pi/tasks/WI-OI-103d.md`: d1–d7 are built, verified and deployed for review on 5190** (schema 18).
+1. **WI-OI-103e (`.pi/tasks/WI-OI-103e.md`): e1 is done; e2 is next.** 103d: d1–d7 are built, verified and deployed for review on 5190 (schema 18).
    Next:
    - the owner creates a Demo Lab workspace and adds a second member with `analytics:models:publish`;
    - the live review: load the sample farm, approve "Yield per hectare", build and save a chart.

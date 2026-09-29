@@ -1,3 +1,4 @@
+import { isTenantPermissionCode } from '@gigalibs/contracts';
 import { prisma } from '@gigalibs/db';
 import { createDefaultRoleHierarchy } from '@gigalibs/rbac-core';
 import { Injectable } from '@nestjs/common';
@@ -35,12 +36,7 @@ export class RbacService {
       if (member?.status === 'ACTIVE' && member.user.status === 'ACTIVE') {
         const customPermissions = member.permissions ?? [];
         const assignedRolePermissions = Array.isArray(member.customRole?.permissions)
-          ? member.customRole.permissions.filter(
-              (permission): permission is string =>
-                typeof permission === 'string' &&
-                /^[a-z][a-z0-9-]*:(?:\*|[a-z][a-z0-9-]*)$/.test(permission) &&
-                !permission.startsWith('platform:'),
-            )
+          ? member.customRole.permissions.filter(isTenantPermissionCode)
           : [];
         const rolePermissions = resolveBaseRolePermissions([member.role]);
         return Array.from(

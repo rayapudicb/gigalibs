@@ -98,9 +98,20 @@ export const AcceptTenantInviteSchema = z.object({
   token: z.string().min(32).max(512),
 });
 
+/**
+ * A tenant permission code: `resource:action`, `resource:*`, or (WI-OI-103e, ADR-0016 F16) `module:resource:action`
+ * such as `analytics:charts:write`. `resource:*` covers the three-part codes of that resource. A wildcard is only
+ * allowed as the whole action of a two-part code, and `platform:` codes are never delegated by a tenant role.
+ */
+export const TENANT_PERMISSION_CODE_PATTERN = /^[a-z][a-z0-9-]*:(?:\*|[a-z][a-z0-9-]*(?::[a-z][a-z0-9-]*)?)$/;
+
+export function isTenantPermissionCode(value: unknown): value is string {
+  return typeof value === 'string' && TENANT_PERMISSION_CODE_PATTERN.test(value) && !value.startsWith('platform:');
+}
+
 export const TenantPermissionSchema = z
   .string()
-  .regex(/^[a-z][a-z0-9-]*:(?:\*|[a-z][a-z0-9-]*)$/, 'Invalid tenant permission code')
+  .regex(TENANT_PERMISSION_CODE_PATTERN, 'Invalid tenant permission code')
   .refine((permission) => !permission.startsWith('platform:'), {
     message: 'Platform permissions cannot be delegated by a tenant role',
   });

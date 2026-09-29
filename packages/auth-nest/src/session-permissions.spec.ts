@@ -79,6 +79,23 @@ describe('session permissions for Workforce access', () => {
     expect(context.permissions.some((permission) => permission.startsWith('workforce'))).toBe(false);
     expect(context.permissions.some((permission) => permission.startsWith('cmms'))).toBe(false);
   });
+
+  // WI-OI-103e (ADR-0016 F16): module permissions such as analytics:charts:write reach the session through a custom
+  // role or a direct grant; platform codes and misplaced wildcards still do not.
+  it('keeps three-part module permissions from a custom role and direct grants, and drops invalid codes', async () => {
+    prismaMock.tenantMember.findUnique.mockResolvedValue({
+      ...membership('MEMBER'),
+      permissions: ['analytics:export', 'analytics:charts:*', 'platform:tenants:write'],
+      customRole: { permissions: ['analytics:charts:write', 'analytics:models:publish', 'platform:admin', 'Analytics:read'] },
+    });
+    const context = await new AuthService().getSessionContext('user-1', 'session-1', tenantId);
+    expect(context.permissions).toEqual(
+      expect.arrayContaining(['analytics:charts:write', 'analytics:models:publish', 'analytics:export']),
+    );
+    for (const refused of ['analytics:charts:*', 'platform:tenants:write', 'platform:admin', 'Analytics:read']) {
+      expect(context.permissions).not.toContain(refused);
+    }
+  });
 });
 
 describe('session spatial scope', () => {

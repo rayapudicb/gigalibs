@@ -1846,6 +1846,9 @@ importers:
 
   packages/rbac-nest:
     dependencies:
+      '@gigalibs/contracts':
+        specifier: workspace:*
+        version: link:../contracts
       '@gigalibs/db':
         specifier: workspace:*
         version: link:../db

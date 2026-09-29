@@ -20,6 +20,7 @@ import type {
   ResetPasswordDto,
   UpdateProfileDto,
 } from '@gigalibs/contracts';
+import { isTenantPermissionCode } from '@gigalibs/contracts';
 import { decrypt, encrypt, parseAes256KeyRing, requireAes256KeyVersion } from '@gigalibs/crypto';
 import { prisma } from '@gigalibs/db';
 import { resolveBaseRolePermissions } from '@gigalibs/rbac-nest';
@@ -321,9 +322,9 @@ export class AuthService {
     }
 
     const customPermissions = Array.isArray(membership?.customRole?.permissions)
-      ? membership.customRole.permissions.filter(isTenantPermission)
+      ? membership.customRole.permissions.filter(isTenantPermissionCode)
       : [];
-    const directPermissions = (membership?.permissions ?? []).filter(isTenantPermission);
+    const directPermissions = (membership?.permissions ?? []).filter(isTenantPermissionCode);
     const rolePermissions = membership ? resolveBaseRolePermissions([membership.role]) : [];
     const recoveryCodesRemaining = session.user.totpCredential?.verifiedAt
       ? await prisma.mfaRecoveryCode.count({ where: { userId, usedAt: null } })
@@ -1209,13 +1210,6 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === 'object' && !Array.isArray(value);
 }
 
-function isTenantPermission(value: unknown): value is string {
-  return (
-    typeof value === 'string' &&
-    /^[a-z][a-z0-9-]*:(?:\*|[a-z][a-z0-9-]*)$/.test(value) &&
-    !value.startsWith('platform:')
-  );
-}
 
 function isUniqueConstraintError(error: unknown): boolean {
   return isRecord(error) && error.code === 'P2002';
