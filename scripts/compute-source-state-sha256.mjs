@@ -57,6 +57,7 @@ function isExcludedFromDockerContext(relativePath) {
     basename === '.env' ||
     basename.startsWith('.env.') ||
     basename.endsWith('.tsbuildinfo') ||
+    basename === 'conformance.json' ||
     basename.endsWith('.log') ||
     basename.startsWith('celerybeat-schedule') ||
     basename === '.DS_Store'

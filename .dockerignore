@@ -17,6 +17,7 @@ dist
 **/.pytest_cache
 coverage
 **/coverage
+**/conformance.json
 test-results
 playwright-report
 docs

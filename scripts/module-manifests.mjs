@@ -3,6 +3,8 @@
 // (`solutions/*.yaml`), and generates `packages/contracts/src/modules/catalog.generated.ts`.
 //   node scripts/module-manifests.mjs          audit: fails on invalid manifests, solutions or a stale catalogue
 //   node scripts/module-manifests.mjs --write  regenerate the catalogue, then audit
+// `--conformance-module <name>` defers only that generated module's existing-record listing gate while the
+// conformance runner refreshes it. The runner performs the ordinary audit again after writing the new record.
 // Selective builds (WI-OI-083d): `--solution <name>` generates for the core plus that solution's modules only, and
 // `--root <dir>` works on another checkout (the solution build's worktree). The repository keeps the full build.
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
@@ -18,12 +20,27 @@ const root = argValue('--root')
   ? `${resolve(argValue('--root'))}/`
   : new URL('../', import.meta.url).pathname;
 const solutionName = argValue('--solution');
+const conformanceModule = argValue('--conformance-module');
+if (conformanceModule !== undefined && !/^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/.test(conformanceModule)) {
+  console.error('--conformance-module must name one kebab-case module.');
+  process.exit(2);
+}
 const write = process.argv.includes('--write');
 const MODULE_API = 'modules.gigalibs.io/v1';
 const SOLUTION_API = 'solutions.gigalibs.io/v1';
 const generatedPath = 'packages/contracts/src/modules/catalog.generated.ts';
 const industryPacks = 'modules/gigaops/config/industry-packs';
 const countryPacks = 'modules/gigaops/config/country-packs';
+const generatedModuleConformanceChecks = [
+  ...Array.from({ length: 15 }, (_, index) => `S${index + 1}`),
+  'L0',
+  ...Array.from({ length: 14 }, (_, index) => `L${index + 1}`),
+  'L20',
+  'L21',
+  'L22',
+  'L23',
+  'L99',
+];
 
 const errors = [];
 const warnings = [];
@@ -726,7 +743,7 @@ for (const [name, manifest] of modules) {
   };
   // Listing gate (WI-OI-085d): above PLANNED, a generated module needs a live conformance record for its current code.
   const listed = (manifest.spec.catalog ?? []).filter((entry) => entry.readiness !== 'PLANNED');
-  if (listed.length) {
+  if (listed.length && name !== conformanceModule) {
     const recordFile = `modules/${name}/conformance.json`;
     let record = null;
     try {
@@ -734,7 +751,18 @@ for (const [name, manifest] of modules) {
     } catch {
       record = null;
     }
-    if (record?.passed !== true || record?.live !== true)
+    const recordedChecks = Array.isArray(record?.checks) ? new Set(record.checks) : new Set();
+    const completeRecord =
+      record?.module === name &&
+      record?.passed === true &&
+      record?.live === true &&
+      typeof record?.checkedAt === 'string' &&
+      Number.isFinite(Date.parse(record.checkedAt)) &&
+      Array.isArray(record?.checks) &&
+      record.checks.length === generatedModuleConformanceChecks.length &&
+      recordedChecks.size === generatedModuleConformanceChecks.length &&
+      generatedModuleConformanceChecks.every((checkId) => recordedChecks.has(checkId));
+    if (!completeRecord)
       fail(where, `${listed.map((entry) => entry.key).join(', ')} is above PLANNED without ${recordFile}; run \`pnpm module:conformance ${name} --live --record\``);
     else if (record.codeSha256 !== moduleCodeSha256(root, name))
       fail(where, `${recordFile} was made for other code; rerun \`pnpm module:conformance ${name} --live --record\``);

@@ -257,28 +257,44 @@ Conformance is next (085d), then the navigation proof (085e).
     tenant B: 0 rows).
   - The synthetic tenants `conformance-<run>-a|b` are deleted afterwards.
 - **Recording:** `--record` writes `modules/<name>/conformance.json` only when every check passes, including live.
-  It carries the fingerprint of the API source, package file and database files
-  (`scripts/lib/module-code-hash.mjs`).
+  It carries the fingerprint of the module manifest, complete API package (excluding build/dependency output) and
+  database files (`scripts/lib/module-code-hash.mjs`). The normal manifest audit is rerun after recording.
 - **Listing gate:** `audit:module-manifests` fails if a generated module has a catalogue entry above `PLANNED`
-  without a passing live record for its current fingerprint.
+  without a passing live record for its current fingerprint. The conformance runner alone may defer the old-record
+  check for the named module while refreshing it; the final ordinary audit has no bypass.
 
 **Evidence** (fresh throwaway copy, `conformance-proof.sh`):
 - Static conformance: 15 of 15 pass.
 - Broken copies, each refused by the right check:
   - forced RLS removed: S11;
-  - `@RequirePermissions` removed from a route: S9;
-  - guard not extending the SDK guard: S5.
+  - guard not extending the SDK guard: S5 and build/test refusal;
+  - invalid manifest readiness: S1.
 - Live conformance with `--record`: 35 of 35 pass, and the record was written.
 - Listing gate:
-  - `REVIEW` with the current record passes;
-  - `REVIEW` without a record is refused;
-  - `REVIEW` after a code change is refused.
+  - `CONTAINED` with the current record passes the ordinary audit;
+  - `CONTAINED` without a record is refused;
+  - `CONTAINED` after a manifest/code change is refused;
+  - a healthy container built from a stale source identity is refused before recording.
 - **Defects found and fixed during the run:**
   - the live runner resolved `auth-core`'s absent CommonJS entry (it now reads the ES module entry);
   - a psql `COMMIT` line was read as a row count.
-- Clean-up verified 0 schemas, 0 roles and 0 containers.
-- **Chain on the main tree:** build; full suite 223 files / 2,030 tests; all 8 audits pass. The deployment profile
-  still reports only the pre-existing `WORKFORCE_API_URL` drift.
+  - a clean copy could not run generated tests until dependencies were built; S14 now builds the module dependency
+    closure before testing;
+  - the code fingerprint omitted `module.yaml`, so permission/route changes could retain a stale record;
+  - cleanup was reported as passing even when `psql` failed; it now uses `ON_ERROR_STOP` and validates every delete;
+  - promotion above `PLANNED` deadlocked against the stale-record gate; the named-module refresh is now scoped and
+    followed by the ordinary no-bypass listing audit;
+  - live conformance could test an old healthy image; L0 now binds health to the exact Git revision and source-state
+    digest;
+  - generated conformance evidence was entering the runtime source digest; `conformance.json` is now excluded from
+    the Docker context and image source-state hash.
+  - the listing gate accepted a hand-written record with an empty check list; it now requires the named module,
+    valid timestamp and the exact 35 unique static/live check identifiers.
+- Clean-up verified 0 schemas, 0 roles, 0 containers and 0 generated module image tags; the throwaway copy and
+  copied secrets were removed.
+- **Chain on the main tree after the fixes:** build 107/107; full suite 223 files / 2,030 TypeScript tests plus 4
+  execution-plane tests; all eight required repository audits plus module-manifest and layer audits pass. The layer
+  audit truthfully retains 14 baselined violations and reports zero new violations.
 - **Coverage honesty:** conformance covers part of the vision's certification gates 2, 5, 6 and 7 only. It is not
   certification (docs/GIGALIBS_PRODUCT_VISION.md §6).
 
@@ -304,3 +320,32 @@ on all three points:
   backup, restore and deployment profiles.
 - `VISION_AND_PHASED_IMPLEMENTATION_PLAN.md` phase 5 (GAAP ledger) conflicts with ADR-0013's "no general ledger".
   Owner decision pending.
+
+## 085d review fixes: independent verification (2026-09-29)
+
+- **Provenance:** the hardening above was made by a Codex review session after commit `a3db758`, which already
+  contained one of its changes: the fingerprint's inclusion of `module.yaml` and the whole API package. It edited:
+  - `.dockerignore`;
+  - `scripts/compute-source-state-sha256.mjs`;
+  - `scripts/module-conformance.mjs`;
+  - `scripts/module-manifests.mjs`;
+  - this file.
+- **How it was verified:** Claude checked it in isolation, using a copy of HEAD `a3db758` plus only those files
+  (`codex-verify.sh`).
+- **Results:**
+  - The manifest, layer and SDLC audits pass.
+  - Static conformance: 15 of 15. The three broken copies were refused (S11, S9, S5).
+  - Readiness `REVIEW` is refused before a record exists.
+  - Live conformance with `--record`: 35 of 35.
+  - The ordinary audit passes with the current record. Writing the record leaves the source identity unchanged.
+  - The audit refuses when the record is removed, and after a code change.
+  - Live conformance refuses a healthy container built from older code (L0).
+  - Clean-up left 0 schemas, roles, containers and secrets.
+- **Promotion order:** to move a generated module above `PLANNED`:
+  1. change the readiness;
+  2. regenerate with `node scripts/module-manifests.mjs --write --conformance-module <name>`;
+  3. commit and refresh the source identity;
+  4. build and start the image;
+  5. run `pnpm module:conformance <name> --live --record`.
+
+  Skipping step 2 leaves a stale catalogue, and L0 then correctly refuses the image.

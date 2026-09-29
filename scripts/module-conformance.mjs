@@ -10,7 +10,7 @@
 //           requires it, for the current code fingerprint, before a generated module is listed above PLANNED.
 import { spawnSync } from 'node:child_process';
 import { randomUUID, createPrivateKey } from 'node:crypto';
-import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, unlinkSync, writeFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { moduleCodeSha256 } from './lib/module-code-hash.mjs';
@@ -69,7 +69,12 @@ const tests = [...sourceFiles(src)].filter(isTest);
 // ─── Static ───────────────────────────────────────────────────────────────────────────────────────────────
 const run = (command, commandArgs) =>
   spawnSync(command, commandArgs, { cwd: root, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
-check('S1', 'manifest audit passes', run(process.execPath, ['scripts/module-manifests.mjs']).status === 0);
+check(
+  'S1',
+  'manifest contract audit passes',
+  run(process.execPath, ['scripts/module-manifests.mjs', '--write', '--conformance-module', name])
+    .status === 0,
+);
 check('S2', 'layer audit passes', run(process.execPath, ['scripts/verify-layer-boundaries.mjs']).status === 0);
 check('S3', 'generated runtime is current', Boolean(runtime), runtime ? '' : 'run pnpm modules:catalog');
 
@@ -154,7 +159,24 @@ if (args.includes('--live')) {
   );
   const container = `gigalibs-configuration-local-${runtime?.service}-1`;
   const health = spawnSync('docker', ['inspect', '-f', '{{.State.Health.Status}}', container], { encoding: 'utf8' }).stdout.trim();
-  check('L0', 'the module API container is healthy', health === 'healthy', `${container}: ${health || 'absent'}`);
+  const imageIdentity = spawnSync(
+    'docker',
+    [
+      'inspect',
+      '-f',
+      '{{index .Config.Labels "org.opencontainers.image.revision"}}|{{index .Config.Labels "com.gigalibs.source-state-sha256"}}',
+      container,
+    ],
+    { encoding: 'utf8' },
+  ).stdout.trim();
+  const currentRevision = run('git', ['rev-parse', 'HEAD']).stdout.trim();
+  const currentState = run(process.execPath, ['scripts/compute-source-state-sha256.mjs']).stdout.trim();
+  check(
+    'L0',
+    'the module API container is healthy and runs the current source identity',
+    health === 'healthy' && imageIdentity === `${currentRevision}|${currentState}`,
+    `${container}: ${health || 'absent'}; identity ${imageIdentity || 'absent'}`,
+  );
   const profile = JSON.parse(read(join(root, 'config/deployment-profiles/configuration-local-development-v1.json')));
   const runId = randomUUID().slice(0, 8);
   const tenants = { a: `conformance-${runId}-a`, b: `conformance-${runId}-b` };
@@ -251,10 +273,18 @@ if (args.includes('--record')) {
     console.error('Not recorded: --record needs every check to pass, including --live.');
     process.exit(1);
   }
+  const recordFile = join(moduleRoot, 'conformance.json');
   writeFileSync(
-    join(moduleRoot, 'conformance.json'),
+    recordFile,
     `${JSON.stringify({ module: name, passed: true, live: true, checkedAt: new Date().toISOString(), codeSha256: moduleCodeSha256(root, name), checks: results.map((r) => r.id) }, null, 2)}\n`,
   );
+  const listingAudit = run(process.execPath, ['scripts/module-manifests.mjs']);
+  if (listingAudit.status !== 0) {
+    unlinkSync(recordFile);
+    console.error(listingAudit.stdout || listingAudit.stderr);
+    console.error('Not recorded: the ordinary listing audit rejected the new conformance record.');
+    process.exit(1);
+  }
   console.log(`Recorded modules/${name}/conformance.json.`);
 }
 process.exit(failed.length ? 1 : 0);
