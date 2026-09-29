@@ -3,8 +3,8 @@
 ## Product boundary
 
 GigaLibs is an operational-intelligence and action platform. The active production candidate is the
-Next.js workflow experience, NestJS control plane, FastAPI execution plane, and explicitly active shared
-packages. A package name, compiled artifact, prototype screen, or passing unit test is not production
+Next.js workflow experience, the NestJS control plane, the modules and the explicitly active shared
+packages. The FastAPI execution plane is parked (ADR-0016 F12). A package name, compiled artifact, prototype screen, or passing unit test is not production
 certification.
 
 Never claim that the full platform, an industry pack, a quarantined package, or an external production

@@ -1,6 +1,7 @@
 # WI-OI-102b: engine evaluation (forms, rules, workflow, execution plane)
 
-- **Status:** Approved (owner, 2026-09-29: "let's start the development"; ADR-0016 F3 and F12).
+- **Status:** Done (2026-09-29). The owner chose Workflow Studio, parked the execution plane, and had the 17 pipelines
+  inspected (all test data).
 - **Work item:** WI-OI-102. Evidence goes in `.pi/work/WI-OI-102.md`, under "102b".
 - **Size:** S (analysis only; no code changes).
 

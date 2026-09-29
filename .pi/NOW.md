@@ -1,6 +1,6 @@
 # NOW: where the work stands
 
-Updated 2026-09-29 by Claude (WI-OI-102a done, uncommitted). Keep this file to one page. Replace old content rather than
+Updated 2026-09-29 by Claude (WI-OI-102b done, uncommitted). Keep this file to one page. Replace old content rather than
 appending to it, and update it at the end of every task.
 
 ## State
@@ -31,11 +31,16 @@ appending to it, and update it at the end of every task.
 
 ## Next
 
-**Task card `.pi/tasks/WI-OI-102b.md`** (Approved): the engine evaluation for forms, rules, workflow and the
-execution plane. It is analysis only and ends with the owner choosing the workflow engine.
+**Task card `.pi/tasks/WI-OI-102c.md`** (Approved): kernel, capability and business classification, and the
+layer-audit rules (ADR-0016 F1–F2).
 
-After that come the WI-OI-102 slices 102c to 102f (`.pi/work/WI-OI-102.md`), then WI-OI-103 to WI-OI-107, as
-ordered in ADR-0016.
+Then 102d (fencing), 102e (module triage and catalogue truth) and 102f (package inventory, which also parks the
+Python plane and retires the retired engines). After that come WI-OI-103 to WI-OI-107, as ordered in ADR-0016.
+
+102b decisions (2026-09-29):
+- Workflow Studio is the one workflow engine;
+- the Python execution plane is parked;
+- the 17 core pipelines are all test data and go when the core workflow tables retire.
 
 Open for later:
 - Geospatial `mobile/sync`: adopt or replace (when mobile starts);
