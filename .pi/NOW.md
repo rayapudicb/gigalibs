@@ -1,6 +1,6 @@
 # NOW: where the work stands
 
-Updated 2026-09-29 by Claude (WI-OI-103b done, uncommitted). Keep this file to one page. Replace old content rather than
+Updated 2026-09-29 by Claude (WI-OI-103d d1–d5 committed; review deploy on 5190 done). Keep this file to one page. Replace old content rather than
 appending to it, and update it at the end of every task.
 
 ## State
@@ -18,7 +18,11 @@ appending to it, and update it at the end of every task.
 - **Running locally** (never touch it during a proof):
   - web on 5180: `a255e935c80e-2e98e70d8d0e`;
   - cmms and workforce: `88967ea35011-9ffa1e2a8005`;
-  - the other services: `5abfa667bb10-7507432cb066`.
+  - the other services: `5abfa667bb10-7507432cb066`;
+  - analytics-api: `4366613b86c8-1d4af1e44d20`, schema 17 (deployed 2026-09-29 with the owner's OK; backup
+    `infra/compose/backups/gigalibs_backup_20260929_145224Z.dump`);
+  - **review web on 5190**: container `gigalibs-review-web`, image `workflow-platform:4366613b86c8-1d4af1e44d20`.
+    Remove it with `docker rm -f gigalibs-review-web` when the review ends.
 
 ## Owner decisions, 2026-09-29 (handover Task 2)
 
@@ -34,8 +38,9 @@ appending to it, and update it at the end of every task.
 **Owner plan (2026-09-29):** foundation work until **Sunday 2026-10-04**, then the **agriculture package** for a
 client capability pitch (date not fixed), then back to the rest of the foundation.
 
-1. **Task card `.pi/tasks/WI-OI-103d.md`: d1–d5 are done and verified.** Next: d6 (retire the static gallery) and
-   d7 (sample farm data and a review deploy on 5190, with the owner's OK). Continue piece by piece, and commit after each
+1. **Task card `.pi/tasks/WI-OI-103d.md`: d1–d5 are done, verified and deployed for review on 5190.** Next: d6
+   (retire the static gallery) and d7 (sample farm data by an honest route, since ingestion sync is contained; propose the route
+   to the owner first). Continue piece by piece, and commit after each
    piece on the owner's "commit". Charts use ECharts (ADR-0004), not `charts-react`. The card is summarised below:
    chart templates that hold no data.
    - A chart is a query spec plus a visual spec.
@@ -52,11 +57,11 @@ client capability pitch (date not fixed), then back to the rest of the foundatio
 - the query engine (`AnalyticsQueryV1`, `POST v1/query/spec`);
 - formula measures with maker-checker and approved-version pinning (migration 000016, schema version 16).
 
-Not deployed: the analytics image and migration 16 wait for the owner's deploy call.
+Deployed 2026-09-29: Analytics migrations 16–17 and the analytics image. The 5180 web is still on the old image.
 
 Open decisions:
 - drop the empty `gigalibs_platform` schema;
-- rebuild the web and analytics images;
+- when to move 5180 to the new web image;
 - the `platform-rbac` leftovers.
 
 WI-OI-102 (2026-09-29), 102a–102g:
