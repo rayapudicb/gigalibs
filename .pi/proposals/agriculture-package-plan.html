@@ -1,0 +1,562 @@
+<title>Agriculture Package Plan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,500..800&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --bg: #f4f6f2;
+    --surface: #ffffff;
+    --surface-2: #eaeee7;
+    --ink: #1c2921;
+    --muted: #56665b;
+    --line: #d5dcd3;
+    --accent: #1f6a58;
+    --accent-soft: #dcebe5;
+    --ok: #2c7a45;
+    --ok-soft: #dff0e3;
+    --part: #97680f;
+    --part-soft: #f6ead0;
+    --gap: #ad3a2c;
+    --gap-soft: #f7e1dc;
+    --later: #5a5f86;
+    --later-soft: #e5e6f2;
+    --display: "Archivo", "Helvetica Neue", Arial, sans-serif;
+    --body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --bg: #111813;
+      --surface: #18211b;
+      --surface-2: #1f2a23;
+      --ink: #e3ebe4;
+      --muted: #9aab9f;
+      --line: #2c3830;
+      --accent: #5fc0a2;
+      --accent-soft: #19362d;
+      --ok: #6fcf8d;
+      --ok-soft: #173020;
+      --part: #e0b35a;
+      --part-soft: #362a12;
+      --gap: #f08a7a;
+      --gap-soft: #3a1c17;
+      --later: #a9aee0;
+      --later-soft: #24263b;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #111813;
+    --surface: #18211b;
+    --surface-2: #1f2a23;
+    --ink: #e3ebe4;
+    --muted: #9aab9f;
+    --line: #2c3830;
+    --accent: #5fc0a2;
+    --accent-soft: #19362d;
+    --ok: #6fcf8d;
+    --ok-soft: #173020;
+    --part: #e0b35a;
+    --part-soft: #362a12;
+    --gap: #f08a7a;
+    --gap-soft: #3a1c17;
+    --later: #a9aee0;
+    --later-soft: #24263b;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--body);
+    font-size: 16px;
+    line-height: 1.55;
+    padding-inline: 20px;
+    padding-block: 32px 64px;
+  }
+  .page { max-width: 1040px; margin: 0 auto; display: grid; gap: 56px; }
+  h1, h2, h3 { font-family: var(--display); line-height: 1.15; text-wrap: balance; margin: 0; }
+  h1 { font-size: clamp(30px, 5vw, 44px); font-weight: 780; font-stretch: 112%; letter-spacing: -0.01em; }
+  h2 { font-size: 24px; font-weight: 720; font-stretch: 108%; }
+  h3 { font-size: 17px; font-weight: 700; font-stretch: 104%; }
+  p { margin: 0; max-width: 68ch; }
+  code, .mono { font-family: var(--mono); font-size: 0.86em; }
+  code { background: var(--surface-2); padding: 1px 5px; border-radius: 4px; }
+  a { color: var(--accent); }
+  a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .eyebrow { font-family: var(--display); font-size: 12px; font-weight: 650; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); }
+  .muted { color: var(--muted); }
+  section { display: grid; gap: 20px; }
+  .section-head { display: grid; gap: 8px; }
+
+  /* Header */
+  header.top { display: grid; gap: 18px; }
+  .status-row { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; padding: 3px 10px; border-radius: 999px; background: var(--surface-2); color: var(--ink); white-space: nowrap; }
+  .chip.accent { background: var(--accent-soft); color: var(--accent); }
+  .lede { font-size: 19px; max-width: 64ch; }
+  .keypoints { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; }
+  .keypoint { border-top: 2px solid var(--accent); padding-top: 10px; display: grid; gap: 4px; }
+  .keypoint strong { font-family: var(--display); font-size: 15px; font-weight: 700; }
+  .keypoint span { color: var(--muted); font-size: 15px; }
+
+  /* Package stack */
+  .stack { display: grid; gap: 6px; }
+  .band { display: grid; grid-template-columns: 210px 1fr; gap: 16px; padding: 14px 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; align-items: start; }
+  .band.solution { background: var(--accent-soft); border-color: transparent; }
+  .band.pack { border-style: dashed; border-color: var(--accent); }
+  .band-label { display: grid; gap: 2px; }
+  .band-label b { font-family: var(--display); font-weight: 700; font-size: 15px; }
+  .band-label small { color: var(--muted); font-size: 13px; }
+  .tiles { display: flex; flex-wrap: wrap; gap: 8px; }
+  .tile { background: var(--surface-2); border-radius: 6px; padding: 6px 10px; font-size: 14px; display: grid; gap: 1px; }
+  .band.solution .tile { background: var(--surface); }
+  .tile b { font-weight: 600; }
+  .tile i { font-style: normal; color: var(--muted); font-size: 12.5px; }
+  .tile.off { opacity: 0.75; }
+  .tile.off b::after { content: " (code only)"; font-weight: 400; color: var(--muted); font-size: 12.5px; }
+  .tile .num { font-family: var(--mono); font-size: 11.5px; color: var(--accent); }
+  .note { font-size: 14px; color: var(--muted); }
+
+  /* Flow */
+  .flow { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; }
+  .step { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 12px; display: grid; gap: 6px; align-content: start; position: relative; }
+  .step .n { font-family: var(--mono); font-size: 12px; color: var(--accent); }
+  .step b { font-family: var(--display); font-weight: 700; font-size: 15px; }
+  .step p { font-size: 13.5px; color: var(--muted); }
+  .placeband { background: var(--accent-soft); border-radius: 8px; padding: 10px 14px; font-size: 14.5px; }
+  .placeband b { font-family: var(--display); }
+
+  /* Tables */
+  .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; min-width: 720px; font-size: 14.5px; }
+  th, td { text-align: left; vertical-align: top; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+  th { font-family: var(--display); font-size: 12px; font-weight: 650; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); background: var(--surface-2); }
+  tr:last-child td { border-bottom: none; }
+  td.idx { font-family: var(--mono); color: var(--muted); width: 32px; font-variant-numeric: tabular-nums; }
+  .pill { display: inline-block; font-size: 12.5px; font-weight: 600; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+  .pill.ok { background: var(--ok-soft); color: var(--ok); }
+  .pill.part { background: var(--part-soft); color: var(--part); }
+  .pill.gap { background: var(--gap-soft); color: var(--gap); }
+  .pill.later { background: var(--later-soft); color: var(--later); }
+  .legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 13.5px; color: var(--muted); }
+
+  /* Metric catalogue */
+  .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
+  .metric { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; display: grid; gap: 4px; }
+  .metric .unit { font-family: var(--mono); font-size: 13px; color: var(--accent); }
+  .metric b { font-family: var(--display); font-weight: 700; font-size: 15px; }
+  .metric span { font-size: 13.5px; color: var(--muted); }
+
+  /* Phases */
+  .phases { display: grid; gap: 14px; }
+  .phase { display: grid; grid-template-columns: 56px 1fr; gap: 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px; }
+  .phase .pn { font-family: var(--display); font-weight: 800; font-stretch: 120%; font-size: 30px; color: var(--accent); line-height: 1; }
+  .phase-body { display: grid; gap: 10px; min-width: 0; }
+  .phase-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 12px; }
+  .tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .tag { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: var(--surface-2); color: var(--muted); white-space: nowrap; }
+  .tag.common { background: var(--accent-soft); color: var(--accent); }
+  .tag.agri { background: var(--part-soft); color: var(--part); }
+  .slices { margin: 0; padding-left: 20px; display: grid; gap: 4px; font-size: 15px; }
+  .slices li::marker { color: var(--muted); font-family: var(--mono); font-size: 12px; }
+  .exit { font-size: 14.5px; border-top: 1px dashed var(--line); padding-top: 10px; }
+  .exit b { font-family: var(--display); }
+  .deps { font-size: 13.5px; color: var(--muted); }
+
+  /* Checklist, decisions, risks */
+  .checklist { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; counter-reset: c; }
+  .checklist li { counter-increment: c; display: grid; grid-template-columns: 30px 1fr; gap: 10px; align-items: baseline; }
+  .checklist li::before { content: counter(c); font-family: var(--mono); font-size: 13px; color: var(--accent); background: var(--accent-soft); border-radius: 50%; width: 24px; height: 24px; display: inline-grid; place-items: center; }
+  .decisions { margin: 0; padding-left: 22px; display: grid; gap: 10px; }
+  .decisions li::marker { font-family: var(--display); font-weight: 700; color: var(--accent); }
+  .decisions b { font-family: var(--display); font-weight: 700; }
+  .rec { display: block; color: var(--muted); font-size: 14.5px; }
+  .two-col { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 28px; }
+  .plain { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
+  footer { border-top: 1px solid var(--line); padding-top: 18px; display: grid; gap: 10px; font-size: 14px; color: var(--muted); }
+  footer ul { margin: 0; padding-left: 18px; display: grid; gap: 3px; }
+
+  @media (max-width: 860px) {
+    .flow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .band { grid-template-columns: 1fr; gap: 10px; }
+  }
+  @media (max-width: 480px) {
+    body { padding-inline: 16px; }
+    .phase { grid-template-columns: 1fr; gap: 8px; }
+    .flow { grid-template-columns: 1fr; }
+  }
+</style>
+
+<main class="page">
+
+  <header class="top">
+    <div class="eyebrow">GigaLibs · Proposal for the product owner · 29 September 2026</div>
+    <h1>Agriculture Package Plan</h1>
+    <div class="status-row">
+      <span class="chip accent">Proposal, not approved</span>
+      <span class="chip">Nothing started</span>
+      <span class="chip">Aligned to the product vision §3–§8</span>
+      <span class="chip">AI predictions out of scope</span>
+    </div>
+    <p class="lede">Agriculture is built as configuration on top of common modules, not as agriculture code. The common analytics engine comes first. It also serves manufacturing Release 1, so it respects the manufacturing-first decision. The agriculture sources and pack come after it.</p>
+    <div class="keypoints">
+      <div class="keypoint"><strong>Charts hold no data</strong><span>A chart is a saved query plus a chart template. The same data can be switched to any chart type that fits it.</span></div>
+      <div class="keypoint"><strong>No developer per requirement</strong><span>Analysts connect, model, chart and report in the UI. Developers build each layer once, plus one adapter per kind of source system.</span></div>
+      <div class="keypoint"><strong>Agriculture is a pack</strong><span>Wording, fields, lists, dashboards and metrics are settings. The only new code is reusable gaps such as piece-rate pay.</span></div>
+    </div>
+  </header>
+
+  <section id="package">
+    <div class="section-head">
+      <div class="eyebrow">How the package is put together</div>
+      <h2>One solution file, one pack, shared modules</h2>
+      <p class="muted">These are the layers of your vision (§3): core, capability products, business modules, industry packs and solutions. Only the top two bands are specific to agriculture, and both are configuration.</p>
+    </div>
+    <div class="stack">
+      <div class="band solution">
+        <div class="band-label"><b>Solution</b><small>configuration only</small></div>
+        <div class="tiles">
+          <div class="tile"><b><code>solutions/agriculture.yaml</code></b><i>picks the modules, one industry pack and one country pack</i></div>
+          <div class="tile"><b>Country pack</b><i>units, currency and rules for the farm's country</i></div>
+        </div>
+      </div>
+      <div class="band pack">
+        <div class="band-label"><b>Agriculture pack</b><small>7 layers, from the WI-OI-074 design</small></div>
+        <div class="tiles">
+          <div class="tile"><span class="num">1</span><b>Vocabulary</b><i>Farm, Field, Block, Crop, Season, Harvest run</i></div>
+          <div class="tile"><span class="num">2</span><b>Fields and forms</b><i>variety, sowing date, soil test values</i></div>
+          <div class="tile"><span class="num">3</span><b>Lists and types</b><i>crops, inputs, pest and disease codes, irrigation methods</i></div>
+          <div class="tile"><span class="num">4</span><b>Screens and personas</b><i>farm owner, agronomist, farm manager, field worker</i></div>
+          <div class="tile"><span class="num">5</span><b>Workflows</b><i>spray approval gate, harvest quality check</i></div>
+          <div class="tile"><span class="num">6</span><b>Outcomes</b><i>metric catalogue and default dashboards</i></div>
+          <div class="tile"><span class="num">7</span><b>Core rules</b><i>stay in code; none new except capability gaps</i></div>
+        </div>
+      </div>
+      <div class="band">
+        <div class="band-label"><b>Common capability modules</b><small>any industry; used by a business, not a business</small></div>
+        <div class="tiles">
+          <div class="tile"><b>Connector Hub</b><i>pulls data from outside systems</i></div>
+          <div class="tile"><b>Geospatial</b><i>farm › field › block places, boundaries, area</i></div>
+          <div class="tile"><b>Analytics</b><i>model, query, charts, dashboards</i></div>
+          <div class="tile"><b>Reports</b><i>scheduled CSV now; PDF and Excel in Reporting v2</i></div>
+          <div class="tile off"><b>Workflow Studio</b><i>approval gates, follow-ups</i></div>
+          <div class="tile off"><b>Rules</b><i>rule-based crop advice</i></div>
+          <div class="tile off"><b>Communications</b><i>alerts by SMS or email</i></div>
+        </div>
+      </div>
+      <div class="band">
+        <div class="band-label"><b>Business modules</b><small>optional, per farm</small></div>
+        <div class="tiles">
+          <div class="tile"><b>Workforce</b><i>farm hands, crews, time, pay (piece-rate is a gap)</i></div>
+          <div class="tile"><b>CMMS</b><i>tractors, pumps, irrigation equipment</i></div>
+          <div class="tile off"><b>Inventory</b><i>seed, fertiliser (Wave 2)</i></div>
+        </div>
+      </div>
+      <div class="band">
+        <div class="band-label"><b>Core</b><small>every client gets it</small></div>
+        <div class="tiles">
+          <div class="tile"><b>Sign-in and sessions</b><i>one login across modules</i></div>
+          <div class="tile"><b>Tenants and entitlements</b><i>who has which modules</i></div>
+          <div class="tile"><b>Roles and permissions</b><i>who can do what</i></div>
+          <div class="tile"><b>Audit</b><i>who changed what, when</i></div>
+        </div>
+      </div>
+    </div>
+    <p class="note">"Code only" means the module has code and a catalogue entry but no running service today.</p>
+  </section>
+
+  <section id="flow">
+    <div class="section-head">
+      <div class="eyebrow">How data moves</div>
+      <h2>Pull, model once, query, chart, compose</h2>
+      <p class="muted">This is how Palantir Foundry, Looker, Power BI and Tableau avoid a developer for every new question. Each layer is built once and then configured.</p>
+    </div>
+    <div class="flow">
+      <div class="step"><span class="n">source</span><b>Farm systems</b><p>farmOS and Farmier, Ekylibre, Tania, weather, market prices</p></div>
+      <div class="step"><span class="n">1 connect</span><b>Connector Hub</b><p>one adapter per system type, scheduled incremental pulls, no duplicates</p></div>
+      <div class="step"><span class="n">2 model</span><b>Records and measures</b><p>standard farm records; measures defined once, like yield per hectare</p></div>
+      <div class="step"><span class="n">3 query</span><b>One engine</b><p>measure by dimension, filtered by place, crop, season or date</p></div>
+      <div class="step"><span class="n">4 visualise</span><b>Chart templates</b><p>24 chart types plus a map; switch type on the same data</p></div>
+      <div class="step"><span class="n">5 compose</span><b>Dashboards and reports</b><p>saved views with shared filters; scheduled delivery</p></div>
+    </div>
+    <div class="placeband"><b>Every record carries its place.</b> Incoming data is linked to a Geospatial place (Farm › Field › Block) once, when it arrives. Filters then use the place tree, and each user's place scope limits what they can see.</div>
+  </section>
+
+  <section id="records">
+    <div class="section-head">
+      <div class="eyebrow">What the pack defines</div>
+      <h2>Standard farm records and the metric catalogue</h2>
+      <p class="muted">Every source is mapped onto the same records. Metrics are formulas over those records, defined once in the model and reused by every chart. Units follow the country pack.</p>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Record</th><th>Key facts</th><th>First source</th></tr></thead>
+        <tbody>
+          <tr><td>Farm, Field, Block</td><td>boundary, area (ha), parent place</td><td>farmOS land assets (WKT geometry)</td></tr>
+          <tr><td>Crop planting</td><td>crop, variety, planted area (ha), sowing date, season</td><td>farmOS plantings and seeding logs</td></tr>
+          <tr><td>Harvest</td><td>quantity and unit (t, kg, quintal), field, date, grade</td><td>farmOS harvest logs and quantities</td></tr>
+          <tr><td>Input application</td><td>product, rate per ha, cost</td><td>farmOS input logs, Ekylibre</td></tr>
+          <tr><td>Irrigation event</td><td>volume (m³), duration, method</td><td>farmOS activity logs</td></tr>
+          <tr><td>Soil test</td><td>pH, N, P, K (kg/ha), organic matter (%), EC (dS/m)</td><td>farmOS lab test logs</td></tr>
+          <tr><td>Field observation</td><td>pest or disease code, severity, photo</td><td>farmOS observation logs</td></tr>
+          <tr><td>Weather reading</td><td>rainfall (mm), temperature (°C), reference evapotranspiration ET₀ (mm)</td><td>weather provider (to choose)</td></tr>
+          <tr><td>Market price</td><td>commodity, market, price per tonne, date</td><td>price feed (to choose by country)</td></tr>
+          <tr><td>Cost and revenue</td><td>account, amount, field or crop</td><td>Ekylibre accounting; Workforce and CMMS costs</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="metrics">
+      <div class="metric"><span class="unit">t/ha</span><b>Yield</b><span>harvest quantity ÷ planted area</span></div>
+      <div class="metric"><span class="unit">ha</span><b>Area by crop</b><span>sum of field areas per crop and season</span></div>
+      <div class="metric"><span class="unit">mm · m³/ha</span><b>Water applied</b><span>irrigation volume ÷ area, next to rainfall</span></div>
+      <div class="metric"><span class="unit">kg/m³</span><b>Water productivity</b><span>harvest ÷ water applied</span></div>
+      <div class="metric"><span class="unit">cost/ha</span><b>Input cost</b><span>input cost ÷ planted area</span></div>
+      <div class="metric"><span class="unit">margin/ha</span><b>Gross margin</b><span>(revenue − variable costs) ÷ area</span></div>
+      <div class="metric"><span class="unit">pH · kg/ha · %</span><b>Soil health</b><span>latest and trend per field</span></div>
+      <div class="metric"><span class="unit">% fields</span><b>Pest incidence</b><span>fields with an observation ÷ fields</span></div>
+    </div>
+  </section>
+
+  <section id="coverage">
+    <div class="section-head">
+      <div class="eyebrow">Your 10 requirements</div>
+      <h2>What this plan delivers, and what waits</h2>
+    </div>
+    <div class="legend">
+      <span><span class="pill ok">Delivered</span> by this plan</span>
+      <span><span class="pill part">Partly</span> the history part now, the rest later</span>
+      <span><span class="pill later">Later</span> needs AI or sensors (Wave 3)</span>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>#</th><th>Requirement</th><th>Status</th><th>How</th><th>Phase</th></tr></thead>
+        <tbody>
+          <tr><td class="idx">1</td><td>Crop Yield Prediction</td><td><span class="pill part">Partly</span></td><td>Yield history per field and season now. The forecast needs a prediction model, after the AI decision (D11).</td><td>5, then AI</td></tr>
+          <tr><td class="idx">2</td><td>Weather vs Crop Performance</td><td><span class="pill ok">Delivered</span></td><td>Weather readings per field location, joined to yields; scatter and multi-axis charts.</td><td>4, 5</td></tr>
+          <tr><td class="idx">3</td><td>Satellite &amp; NDVI (area by crop type)</td><td><span class="pill ok">Delivered</span></td><td>Area by crop from field boundaries and plantings. No satellite imagery needed for area.</td><td>3, 5</td></tr>
+          <tr><td class="idx">4</td><td>Smart Irrigation Analytics</td><td><span class="pill part">Partly</span></td><td>Water use from irrigation logs and weather now. Live soil-moisture sensors come with IoT (C10).</td><td>5, then IoT</td></tr>
+          <tr><td class="idx">5</td><td>Pest &amp; Disease Prediction</td><td><span class="pill part">Partly</span></td><td>Where and when outbreaks happened (maps, heatmaps) now. Prediction after D11.</td><td>5, then AI</td></tr>
+          <tr><td class="idx">6</td><td>Agricultural Market Price Analytics</td><td><span class="pill ok">Delivered</span></td><td>Price feed adapter; trends by commodity and market.</td><td>4, 5</td></tr>
+          <tr><td class="idx">7</td><td>Farm Profitability Analysis</td><td><span class="pill ok">Delivered</span></td><td>Revenue and costs per field or crop: Ekylibre accounting, plus labour from Workforce and machinery from CMMS. No ledger is built (ADR-0013).</td><td>4, 5</td></tr>
+          <tr><td class="idx">8</td><td>Soil Health Analytics</td><td><span class="pill ok">Delivered</span></td><td>farmOS lab tests by field and over time; map by field.</td><td>4, 5</td></tr>
+          <tr><td class="idx">9</td><td>Crop Recommendation</td><td><span class="pill later">Later</span></td><td>Rule-based advice once the Rules module runs; model-based advice after D11.</td><td>later</td></tr>
+          <tr><td class="idx">10</td><td>Agriculture Intelligence Platform</td><td><span class="pill ok">Delivered</span></td><td>The agriculture solution and pack, combining the items above.</td><td>5</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="plan">
+    <div class="section-head">
+      <div class="eyebrow">Development plan</div>
+      <h2>Seven phases, common capability first</h2>
+      <p class="muted">Phases 1 to 3 are common and serve manufacturing too. Agriculture-specific work starts at phase 4, when you schedule the second industry. Sizes are relative (S, M, L); estimates follow the phase 0 decisions. Each phase is a work item with gates G0–G7, and only one runs at a time.</p>
+    </div>
+    <div class="phases">
+
+      <article class="phase">
+        <div class="pn">0</div>
+        <div class="phase-body">
+          <div class="phase-head"><h3>Decisions and registration</h3><div class="tags"><span class="tag">Size S</span><span class="tag">Owner</span></div></div>
+          <p>Answer the decisions listed below. Register the work items with G0–G3 recorded, and choose when each starts. The GPT agent holds the active slot until WI-OI-085 reaches Review.</p>
+          <p class="exit"><b>Exit:</b> the decisions are recorded, and phase 1 is registered as the next active item.</p>
+        </div>
+      </article>
+
+      <article class="phase">
+        <div class="pn">1</div>
+        <div class="phase-body">
+          <div class="phase-head"><h3>Complete the Analytics engine</h3><div class="tags"><span class="tag">Size L</span><span class="tag common">Common</span><span class="tag">Serves manufacturing KPIs</span></div></div>
+          <ol class="slices" type="a">
+            <li><b>Query.</b> One query contract: measures, one or more dimensions, time grain, filters and place scope. It returns rows, uses safe SQL, and keeps tenant isolation and the accessible data table.</li>
+            <li><b>Model.</b> Formula measures such as yield per hectare. Measure versions are published through maker-checker, and each chart keeps the version it was built on. Sensitive measures are flagged.</li>
+            <li><b>Speed.</b> Typed fact rows, summaries per measure, place and day or month (refreshed as data arrives), a result cache, and time and row limits. Benchmark at 1M and 10M rows against the agreed target.</li>
+            <li><b>Visualise.</b> A chart is a query plus a chart template. One renderer covers all 24 types, a "change chart" menu offers only the types that fit, and there is a map chart. The static chart gallery is removed.</li>
+            <li><b>Compose and permissions.</b> Dashboards with shared filters (time, place, category), scheduled CSV reports, seven permissions and four default roles, and every change audited.</li>
+            <li><b>Proof on manufacturing data.</b> CMMS work orders by site over time, built with the no-developer test below.</li>
+          </ol>
+          <p class="exit"><b>Exit:</b> the no-developer test passes on manufacturing data, and the Wave 1 KPIs (WI-OI-090) can be built on it.</p>
+        </div>
+      </article>
+
+      <article class="phase">
+        <div class="pn">2</div>
+        <div class="phase-body">
+          <div class="phase-head"><h3>Connect: one path for outside data</h3><div class="tags"><span class="tag">Size M</span><span class="tag common">Common</span></div></div>
+          <ol class="slices" type="a">
+            <li><b>Adapter framework</b> in Connector Hub: logins (OAuth2, API key, token), paging styles, incremental pulls, retries, and a quarantine for bad records.</li>
+            <li><b>Bridge to Analytics:</b> raw records become datasets through no-code field mapping, including unit conversion (kg, quintal, t).</li>
+            <li><b>Scheduler</b> for pulls and report runs.</li>
+            <li><b>One connector owner.</b> An ADR makes Connector Hub the integration foundation (plan C10) and retires the copies in Analytics and the core API.</li>
+          </ol>
+          <p class="exit"><b>Exit:</b> a REST source syncs on a schedule into a dataset, with no code beyond its adapter.</p>
+          <p class="deps">Can start after 1a and 1b.</p>
+        </div>
+      </article>
+
+      <article class="phase">
+        <div class="pn">3</div>
+        <div class="phase-body">
+          <div class="phase-head"><h3>Places with boundaries</h3><div class="tags"><span class="tag">Size M</span><span class="tag common">Common</span></div></div>
+          <ol class="slices" type="a">
+            <li>Area computed when a boundary is saved, and stored on the place.</li>
+            <li>Records with only coordinates are assigned to the smallest place that contains them. Unmatched records go to a visible "Unplaced" bucket.</li>
+            <li>Places are created or updated from source locations, keeping each source id linked to its place id.</li>
+            <li>Each user's place scope applies to every Analytics query. It arrives in the signed context today but is unused.</li>
+          </ol>
+          <p class="exit"><b>Exit:</b> a map of fields coloured by a measure, filtered to one farm, shows only what the user may see.</p>
+          <p class="deps">Depends on decision 3 (PostGIS or code).</p>
+        </div>
+      </article>
+
+      <article class="phase">
+        <div class="pn">4</div>
+        <div class="phase-body">
+          <div class="phase-head"><h3>Agriculture sources</h3><div class="tags"><span class="tag">Size M</span><span class="tag agri">Agriculture</span></div></div>
+          <ol class="slices" type="a">
+            <li><b>farmOS adapter</b> (JSON:API, OAuth2 client credentials). It also covers Farmier, which hosts farmOS.</li>
+            <li><b>Weather adapter</b> (provider to choose).</li>
+            <li><b>Market price adapter</b> (source depends on country).</li>
+            <li><b>Ekylibre adapter</b> (REST with a token) for accounting and profitability.</li>
+            <li>Tania, only if a client uses it (last change March 2026).</li>
+          </ol>
+          <p class="exit"><b>Exit:</b> each source syncs a real farm's data into the standard records, with no code copied from GPL or AGPL projects.</p>
+          <p class="deps">Needs phases 2 and 3.</p>
+        </div>
+      </article>
+
+      <article class="phase">
+        <div class="pn">5</div>
+        <div class="phase-body">
+          <div class="phase-head"><h3>Agriculture pack and solution</h3><div class="tags"><span class="tag">Size M</span><span class="tag agri">Agriculture</span><span class="tag">Configuration only</span></div></div>
+          <ol class="slices" type="a">
+            <li>Standard farm records as versioned contracts.</li>
+            <li>Vocabulary (resumes WI-OI-074), lists and personas.</li>
+            <li>Metric catalogue and default dashboards for requirements 2, 3, 4, 6, 7, 8 and 10, plus the history parts of 1 and 5.</li>
+            <li><code>solutions/agriculture.yaml</code> and its country pack.</li>
+            <li>Acceptance on a design-partner farm's data.</li>
+          </ol>
+          <p class="exit"><b>Exit:</b> installing the pack on a new tenant needs no code change and no deploy.</p>
+          <p class="deps">Needs phase 4, and the decision on where packs live (the GPT agent's Task 2d).</p>
+        </div>
+      </article>
+
+      <article class="phase">
+        <div class="pn">6</div>
+        <div class="phase-body">
+          <div class="phase-head"><h3>Reports v2: PDF and Excel</h3><div class="tags"><span class="tag">Size M</span><span class="tag common">Common</span></div></div>
+          <ol class="slices" type="a">
+            <li>Excel from the same result table, one sheet per chart, with formula-injection protection (reuses the Workforce export pattern).</li>
+            <li>PDF with charts rendered on the server, the filters applied, data freshness, and a data table under each chart.</li>
+            <li>Delivery through the existing channels: email, webhook, SFTP, in-app, and signed download links.</li>
+          </ol>
+          <p class="exit"><b>Exit:</b> a scheduled report arrives as PDF and Excel that match the screen.</p>
+          <p class="deps">Can run any time after 1e. The plan puts it in Wave 2 (WI-OI-096); decision 6 can move it earlier.</p>
+        </div>
+      </article>
+
+    </div>
+  </section>
+
+  <section id="acceptance">
+    <div class="section-head">
+      <div class="eyebrow">Acceptance</div>
+      <h2>The no-developer test</h2>
+      <p class="muted">An analyst does all of this in the UI, with no code change and no deploy. It is run first on manufacturing data (phase 1f), then on a farm (phase 5e).</p>
+    </div>
+    <ol class="checklist">
+      <li>Connect a source and see its fields.</li>
+      <li>Map the fields to the standard records, including units.</li>
+      <li>Define a measure such as yield per hectare, and have a second person publish it.</li>
+      <li>Build a chart of that measure by field and month.</li>
+      <li>Switch the same chart to three other chart types without rebuilding the query.</li>
+      <li>Add it to a dashboard filtered to one farm; a user scoped to another farm sees nothing from it.</li>
+      <li>Schedule a report of the dashboard to a recipient who is allowed to see it.</li>
+      <li>Find every step in the audit log and every number's lineage back to its source.</li>
+    </ol>
+  </section>
+
+  <section id="decisions">
+    <div class="section-head">
+      <div class="eyebrow">Your decisions</div>
+      <h2>Needed before phase 1 starts</h2>
+    </div>
+    <ol class="decisions">
+      <li><b>Priority.</b> Schedule phases 1–3 next (they serve manufacturing too), and decide when agriculture, phases 4–5, starts.<span class="rec">Manufacturing stays first as decided; phase 1 feeds its Wave 1 KPIs.</span></li>
+      <li><b>Who owns Reports.</b> Analytics, or a separate Reports module (ADR-0001, one owner per concept).<span class="rec">Recommendation: Analytics owns report definitions and runs; the core's switched-off Reports entry goes.</span></li>
+      <li><b>Field geometry.</b> Compute area and containment in code now, or add PostGIS now.<span class="rec">Recommendation: code now; PostGIS later, if free-form map questions are needed, with an ADR and a restore drill first.</span></li>
+      <li><b>Speed target.</b><span class="rec">Suggested: 95% of dashboard queries under 1 second at 10 million rows.</span></li>
+      <li><b>Roles and maker-checker.</b> Viewer, Analyst, Data steward and Tenant admin; a second person publishes measure changes.</li>
+      <li><b>PDF method and timing.</b> Server-rendered charts (recommended) or headless Chrome; whether PDF and Excel come before Wave 2.</li>
+      <li><b>Where industry packs live.</b> Inside Workforce today; the vision puts them at the solution layer across modules.</li>
+      <li><b>Data providers.</b> Weather, market prices for the target country, and satellite later if wanted.</li>
+      <li><b>Design-partner farm.</b> Which farm, which source system (farmOS, Farmier or Ekylibre), and which country pack.</li>
+      <li><b>One connector owner.</b> Connector Hub as the integration foundation (plan C10), retiring the other two copies.</li>
+    </ol>
+  </section>
+
+  <section id="risks">
+    <div class="two-col">
+      <div class="section-head">
+        <div class="eyebrow">Risks</div>
+        <h2>What could go wrong</h2>
+        <ul class="plain">
+          <li><b>Licences.</b> farmOS is GPL-2.0 and Ekylibre is AGPL-3.0. Integrate through their APIs only and never copy their code.</li>
+          <li><b>Messy source data.</b> Missing boundaries, mixed units, fields without crops. Mapping handles units, and the Unplaced bucket keeps gaps visible.</li>
+          <li><b>Speed at volume.</b> Measured in phase 1c before anything is built on top.</li>
+          <li><b>Scope creep into prediction.</b> Kept out until D11.</li>
+          <li><b>Catalogue truth.</b> Agriculture is not advertised as available until it is Certified (vision §5).</li>
+          <li><b>Two agents at once.</b> Only one active item; the GPT agent is on WI-OI-085f now.</li>
+        </ul>
+      </div>
+      <div class="section-head">
+        <div class="eyebrow">Not in this plan</div>
+        <h2>Later, by decision</h2>
+        <ul class="plain">
+          <li>Yield, pest and disease prediction, and model-based crop advice: AI gateway C11, after D11 (Wave 3).</li>
+          <li>Live soil-moisture and flow sensors: IoT ingestion C10 (Wave 3).</li>
+          <li>Satellite imagery and NDVI indices beyond field area.</li>
+          <li>A general ledger. ADR-0013 rules it out; money figures come from the farm's accounting system.</li>
+          <li>Piece-rate pay for crews: a reusable Workforce capability, when a client needs it.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section id="today">
+    <div class="section-head">
+      <div class="eyebrow">Starting point</div>
+      <h2>What exists today, checked in the code</h2>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Area</th><th>Today</th><th>State</th></tr></thead>
+        <tbody>
+          <tr><td>Chart library</td><td>24 chart types in <code>@gigalibs/charts-react</code> (ECharts 6)</td><td><span class="pill ok">Ready</span></td></tr>
+          <tr><td>Saved charts</td><td>9 types. A chart stores a query, not data, but the engine returns only one total per measure: dimensions, filters and time grain are ignored.</td><td><span class="pill part">Partial</span></td></tr>
+          <tr><td>Model</td><td>Measures are a simple SUM, AVG, COUNT, MIN or MAX of one field; no formulas</td><td><span class="pill part">Partial</span></td></tr>
+          <tr><td>Fast facts</td><td>Typed fact rows and daily roll-ups by place; 1 million facts in about 6 ms (95th percentile)</td><td><span class="pill ok">Ready</span></td></tr>
+          <tr><td>Industry chart gallery</td><td>Reads stored chart payloads; empty; counts are hard-coded</td><td><span class="pill gap">Replace</span></td></tr>
+          <tr><td>Build permissions</td><td>Model, chart, dashboard and report routes name no permission, and the web does not expose them yet</td><td><span class="pill gap">Missing</span></td></tr>
+          <tr><td>Reports</td><td>Definitions, schedules and secure files; CSV only; delivery by email, webhook, SFTP or in-app</td><td><span class="pill part">Partial</span></td></tr>
+          <tr><td>Connector Hub</td><td>Generic REST pull without a login; raw journal; nothing reaches Analytics; no scheduler</td><td><span class="pill part">Partial</span></td></tr>
+          <tr><td>Analytics sources</td><td>External PostgreSQL only</td><td><span class="pill part">Partial</span></td></tr>
+          <tr><td>Geospatial</td><td>Place tree with points and JSON boundaries; no PostGIS; place scope carried but unused by Analytics</td><td><span class="pill part">Partial</span></td></tr>
+          <tr><td>Industry packs</td><td>9 JSON files inside Workforce, Workforce wording only; no agriculture pack</td><td><span class="pill gap">Missing</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer>
+    <p>Prepared from the GigaLibs repository on branch <code>feat/gigaops-convergence-core</code>, the product vision, the manufacturing package plan and the WI-OI-074 industry-pack design. This page is a proposal: nothing here is registered, approved or started.</p>
+    <ul>
+      <li><a href="https://github.com/farmOS/farmOS">farmOS on GitHub</a> · <a href="https://farmos.org/development/api/">farmOS API</a> · <a href="https://farmos.org/development/api/authentication/">farmOS authentication</a> · <a href="https://farmos.org/model/logic/location/">farmOS location and geometry</a></li>
+      <li><a href="https://farmier.com/">Farmier</a> (hosted farmOS)</li>
+      <li><a href="https://github.com/ekylibre/ekylibre">Ekylibre on GitHub</a> · <a href="https://ekylibre.stoplight.io/docs/eky/747a3d68e6ba3-ekylibre">Ekylibre API</a></li>
+      <li><a href="https://github.com/usetania/tania-core">Tania on GitHub</a></li>
+    </ul>
+  </footer>
+
+</main>
