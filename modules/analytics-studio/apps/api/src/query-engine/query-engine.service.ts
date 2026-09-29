@@ -17,11 +17,11 @@
 import { BadRequestException, Injectable, Logger, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
 import {
   type AnalyticsFieldType,
-  AnalyticsFieldTypeSchema,
   type AnalyticsQueryResultV1,
   AnalyticsQueryV1Schema,
   FormulaMeasureDefinitionV1Schema,
 } from '@gigalibs/contracts';
+import { loadDatasetFields } from './dataset-fields.js';
 import { AnalyticsQuerySpecError, buildAnalyticsQuery, type QueryMeasure } from './query-builder.js';
 import { DatabaseService } from '../database/database.service.js';
 import type { AnalyticsPrincipal } from '../auth/authorization.js';
@@ -222,26 +222,7 @@ export class QueryEngineService {
     const { freshness, watermark } = await this.computeFreshness(tenantId, datasetVersionId, SPEC_FRESHNESS_TTL_SECONDS);
     if (freshness === 'UNAVAILABLE') return empty(freshness, watermark);
 
-    const mappingResult = await this.db.queryWithTenant<{ field_mappings: unknown }>(
-      tenantId,
-      `SELECT mv.field_mappings
-       FROM gigalibs_analytics.analytical_dataset_versions adv
-       JOIN gigalibs_analytics.studio_mapping_versions mv
-         ON mv.mapping_id = adv.mapping_id AND mv.version_number = adv.mapping_version
-       WHERE adv.id = $1`,
-      [datasetVersionId],
-    );
-    const rawMappings = mappingResult.rows[0]?.field_mappings;
-    const mappings: Array<{ analyticalField?: unknown; analyticalType?: unknown }> = Array.isArray(rawMappings)
-      ? rawMappings
-      : typeof rawMappings === 'string'
-        ? JSON.parse(rawMappings)
-        : [];
-    const fields = new Map<string, AnalyticsFieldType>();
-    for (const mapping of mappings) {
-      const type = AnalyticsFieldTypeSchema.safeParse(mapping.analyticalType);
-      if (typeof mapping.analyticalField === 'string' && type.success) fields.set(mapping.analyticalField, type.data);
-    }
+    const fields = await loadDatasetFields(this.db, tenantId, datasetVersionId);
     const measures = new Map<string, QueryMeasure>(
       modelResult.rows.map((row: any) => [
         row.measure_name,
