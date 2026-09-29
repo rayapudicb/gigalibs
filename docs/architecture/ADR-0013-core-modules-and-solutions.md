@@ -3,6 +3,9 @@
 - Status: Proposed. The direction was approved by the owner on 2026-09-28 ("core first"). Independent acceptance
   is pending.
 - Date: 2026-09-28
+- Amended by: ADR-0016 (2026-09-29), which narrows "core" to the kernel and makes forms, rules, workflow,
+  notifications, reports, analytics, places, integration and the AI gateway capability modules. Where this ADR
+  and ADR-0016 differ on what core contains, ADR-0016 applies.
 - Work item: WI-OI-080 (plan: `docs/plans/manufacturing-package-solution-plan.md` §3–4, C1)
 - Reviewers required before acceptance: Solution Architecture (independent), Product, Backend/Data, Security &
   Privacy, QA/SDET
