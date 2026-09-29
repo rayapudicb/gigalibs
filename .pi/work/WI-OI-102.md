@@ -51,7 +51,7 @@ Each slice has a task card in `.pi/tasks/` when it starts.
 | 102b | Engine evaluation (F3, F12): forms, rules, workflow, execution plane | S | Done, 2026-09-29; owner decided |
 | 102c | Kernel/capability/business classification in manifests and the layer audit (F1, F2); `platform-rbac` into the kernel | M | Done, 2026-09-29 |
 | 102d | Fencing (F4, F5): the "hosted, moving" label and the fenced-table audit | S | Done, 2026-09-29 |
-| 102e | Module triage and catalogue truth (F6): six maturity states in manifests, catalogue and screens | M | Proposed |
+| 102e | Module triage and catalogue truth (F6): six maturity states in manifests, catalogue and screens | M | Done, 2026-09-29 |
 | 102f | Package inventory (F7): proposal, then owner-approved batches | M | Proposed |
 | 102g | Merge `platform-rbac`'s department/group roles and Marketplace into the kernel, then retire the module (F6, owner decision 2026-09-29) | M | Proposed |
 
@@ -272,3 +272,69 @@ With the probe removed, the audit passes.
 - 10 schema accesses;
 - 17 from the kernel/capability split, all in legacy tests;
 - 13 fenced writes.
+
+## 102e: catalogue truth and module triage (2026-09-29)
+
+### Mechanism
+
+- **Contract:** `PlatformModuleMaturity` (the vision §5 states: CONCEPT, UI_PROTOTYPE, CORE_IMPLEMENTED,
+  INTEGRATED_CANDIDATE, CERTIFIED, PRODUCTION_PROVEN) is a required `maturity` field on every catalogue entry.
+- **Validator:** `readiness: AVAILABLE` requires maturity CERTIFIED or PRODUCTION_PROVEN. Nothing is certified, so
+  **no entry is AVAILABLE** any more. The 9 former AVAILABLE entries became REVIEW, which leaves access unchanged,
+  because REVIEW is still openable.
+- **Screens:** a maturity badge (Medusa UI, `ui-*` tokens) on the modules page and the tenant plan screen
+  (`components/modules/MaturityBadge.tsx`, `lib/module-maturity.ts`).
+- **Generator:** new modules start at CORE_IMPLEMENTED, because they come with working code and tests.
+- **Chart gallery:** its counts come from the charts the API returns; the hard-coded "(6)" and "All 36 Charts" are
+  gone.
+- **Test:** `apps/workflow-platform/__tests__/module-maturity.test.ts` checks that every entry has a known maturity
+  and that none is advertised as available without certification.
+
+### Maturity by evidence (32 entries)
+
+| Maturity | Entries |
+|---|---|
+| INTEGRATED_CANDIDATE (13) | tenant-access, personal-security, exceptions-recovery, approval-queue, value-ledger, invoice-matching, dynamic-forms, platform-control, analytics-studio, geospatial-studio, gigaops, asset-maintenance, connections |
+| CORE_IMPLEMENTED (14) | execution-runs, accounts-receivable, autonomous-recovery, document-scanner, esignature, multi-currency, operational-ontology, module-marketplace, saga-orchestrator, spend-management, tax-configuration, data-contracts, rule-studio, workflow-definitions |
+| UI_PROTOTYPE (3) | reports (the read model returns 503), master-data (in-memory store), connector-hub (no OAuth or schema discovery yet) |
+| CONCEPT (2) | solution-packs (an unavailable-capability page), communications-textfly (a separate project, not integrated) |
+| CERTIFIED, PRODUCTION_PROVEN | none |
+
+Total: 13 + 14 + 3 + 2 = 32. Each entry has exactly one maturity, taken from its manifest.
+
+**Reasons rewritten to what exists:**
+- Among the claims removed: e-signature "court-admissible … X.509", marketplace "double-entry billing", workflow
+  "real-time execution telemetry", reports "statutory GAAP", connector "1-Click OAuth", ontology "sovereign digital
+  twin", CMMS "IoT".
+- Each entry now says whether it runs, what is missing, and "Not certified".
+
+### Triage (F6): owner decisions, 2026-09-29
+
+**Kept as capabilities:**
+- Workflow Studio: runs in the host when workflow work starts.
+- Rules (`universal-rule-pro`): hosted when a solution needs it.
+- Communications: the future notifications capability; TextFly stays separate.
+
+**Merged:** `platform-rbac` merges into the kernel (102g).
+
+**Frozen and locked (10):** data-contracts, saga-orchestrator, accounts-receivable, spend-management,
+tax-configuration, multi-currency, esignature, document-scanner, operational-ontology, autonomous-recovery.
+- Their readiness is CONTAINED, so the sidebar and modules page show them locked, with their reasons.
+- They are no longer in new-tenant trials; existing entitlements are kept.
+- E-Signature's development-token path can no longer be reached from its screen.
+
+The `module-access` test used Accounts Receivable as its platform-inspection example. It now checks the rule on an
+openable copy, and asserts that the locked entry stays closed even to platform operators.
+
+### Findings for later
+
+- **In-memory business stores in the web app:** `lib/master-data-store.ts` (the Master Data workbench) and
+  `lib/solution-packs-store.ts`. They break `AGENTS.md` ("no local-only business persistence"). Both entries are
+  labelled honestly; they are reviewed in 102f.
+- **Kept modules without running services:** workflow-definitions, rule-studio, communications-textfly and
+  module-marketplace are still openable, but their services do not run. They were not locked, because the owner's
+  lock decision covered frozen modules only.
+- **Not deployed yet:** the running web on 5180 shows the old labels until its image is rebuilt.
+
+**Verification:** `pnpm verify` passes (known drift only), including web type-check, contracts build, the
+catalogue-truth test and the updated module-access test.

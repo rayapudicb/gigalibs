@@ -36,11 +36,12 @@ spec:
       navigationGroup: Data & Documents
       route: /esign
       iconKey: file-signature
-      readiness: AVAILABLE
+      readiness: CONTAINED
+      maturity: CORE_IMPLEMENTED
       entitlementEligible: true
-      trialEligible: true
+      trialEligible: false
       requiredPermission: esign:read
       platformInspection: true
-      reason: Court-admissible cryptographic e-signature studio with Adobe-grade X.509 Root CA binding, multi-signer routing, field placement, and tamper-evident PKI audit seals.
+      reason: Envelope service code with tests. Not running in the local stack; the web still uses a development token. No legal-signature compliance is claimed. Frozen and locked (ADR-0016 F6).
       navigationOrder: 250
       personas: [OPERATIONS_SUPERVISOR, WORKFORCE_MEMBER, CUSTOMER_GUEST]

@@ -46,10 +46,11 @@ spec:
       route: /rules
       iconKey: scale
       readiness: REVIEW
+      maturity: CORE_IMPLEMENTED
       entitlementEligible: true
       trialEligible: true
       requiredPermission: rules:read
       platformInspection: false
-      reason: Universal Rule Pro & Policy Decision Engine with AST evaluation and multi-dimensional DMN decision tables.
+      reason: Rules service code with tests; no rules stored. Not running; it becomes the one Rules capability (ADR-0016 F3).
       navigationOrder: 160
       personas: [OPERATIONS_SUPERVISOR]

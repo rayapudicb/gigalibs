@@ -1,6 +1,6 @@
 # NOW: where the work stands
 
-Updated 2026-09-29 by Claude (WI-OI-102d done, uncommitted). Keep this file to one page. Replace old content rather than
+Updated 2026-09-29 by Claude (WI-OI-102e done, uncommitted). Keep this file to one page. Replace old content rather than
 appending to it, and update it at the end of every task.
 
 ## State
@@ -31,22 +31,24 @@ appending to it, and update it at the end of every task.
 
 ## Next
 
-Write and do the **102e** card: module triage and catalogue truth.
-- The six maturity states go into manifests, the catalogue and the screens.
-- Each of the 14 code-only modules gets an outcome for the owner to approve: run in the host, freeze, or retire.
+Write and do the **102f** card: the package inventory (ADR-0016 F7). The owner approves each batch before anything
+is deleted or moved. The inputs:
+- the 5 `retiring` packages and `packages/forms-engine`;
+- the Python plane parked out of `pnpm test`;
+- the dead `lib/cmms-ledger-settlement-service.ts`;
+- the in-memory `master-data-store` and `solution-packs-store`;
+- the 3 legacy manifest-reading tests (17 baseline entries);
+- the 56 unused core packages, the 104 excluded packages, and the 8 module packages in `packages/`.
 
-After that:
-- **102f:** package inventory. It parks the Python plane, retires the retired engines and the dead
-  `cmms-ledger-settlement-service`, and also removes the 3 legacy manifest-reading tests behind 17 baseline
-  entries.
-- **102g:** merge `platform-rbac` into the kernel.
-- Then WI-OI-103 to WI-OI-107.
+Then **102g**: merge `platform-rbac` into the kernel. Then WI-OI-103 to WI-OI-107.
 
-102d (2026-09-29):
-- the AP catalogue entries are labelled "hosted by the core until Procurement exists";
-- the 3 core workflow tables are module-owned;
-- the fence rule is `FENCED_MODEL_WRITE`, with 13 existing writes baselined;
-- the layer baseline has 40 named entries.
+102e (2026-09-29):
+- the six maturity states are in the catalogue, with 0 uncertified AVAILABLE entries;
+- the reasons are rewritten to fact;
+- 10 frozen modules are locked;
+- the gallery counts are real.
+
+The running web shows the new labels only after the web image is rebuilt, which is the owner's call.
 
 102b decisions (2026-09-29):
 - Workflow Studio is the one workflow engine;

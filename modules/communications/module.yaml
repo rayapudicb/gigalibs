@@ -36,11 +36,12 @@ spec:
       route: /communications
       iconKey: message-square
       readiness: REVIEW
+      maturity: CONCEPT
       entitlementEligible: true
       trialEligible: true
       requiredPermission: communications:read
       platformInspection: true
-      reason: Enterprise Omnichannel Communications Hub (TextFly) powering 2-way SMS, WhatsApp, Email, reach campaigns, and cross-module operational alerts.
+      reason: The TextFly communications product is a separate project and is not integrated into GigaLibs.
       navigationOrder: 320
       personas: [OPERATIONS_SUPERVISOR, WORKFORCE_MEMBER]
       menu:

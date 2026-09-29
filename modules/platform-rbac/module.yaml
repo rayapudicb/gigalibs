@@ -62,10 +62,11 @@ spec:
       navigationGroup: Platform
       route: /marketplace
       iconKey: shopping-bag
-      readiness: AVAILABLE
+      readiness: REVIEW
+      maturity: CORE_IMPLEMENTED
       entitlementEligible: true
       trialEligible: true
       requiredPermission: marketplace:read
       platformInspection: false
-      reason: Self-service module catalog, usage metering, credit wallet management, and double-entry billing ledger with RLS-isolated PostgreSQL persistence.
+      reason: Module catalogue and department/group roles service code with tests. Not running; merging into the kernel (ADR-0016 F6, WI-OI-102g). No billing is claimed.
       navigationOrder: 200

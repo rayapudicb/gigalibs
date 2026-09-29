@@ -51,6 +51,7 @@ spec:
       route: /gigaops
       iconKey: clock
       readiness: REVIEW
+      maturity: INTEGRATED_CANDIDATE
       entitlementEligible: true
       trialEligible: true
       requiredPermission: workforce:read

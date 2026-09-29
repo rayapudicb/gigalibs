@@ -45,6 +45,7 @@ spec:
       route: /maps
       iconKey: map-pin
       readiness: REVIEW
+      maturity: INTEGRATED_CANDIDATE
       entitlementEligible: true
       trialEligible: true
       requiredPermission: maps:read

@@ -92,7 +92,14 @@ describe('module access', () => {
   });
 
   it('requires a tenant context for explicitly declared module inspection', () => {
-    const ar = platformModuleCatalog.find((module) => module.key === 'accounts-receivable')!;
+    // Accounts Receivable declares platform inspection. It is frozen and locked (ADR-0016 F6, WI-OI-102e), so the
+    // inspection rule is checked on an openable copy, and the locked entry must stay closed even to operators.
+    const locked = platformModuleCatalog.find((module) => module.key === 'accounts-receivable')!;
+    expect(locked.readiness).toBe('CONTAINED');
+    expect(
+      canOpenPlatformModule(locked, { tenant: { features: [] }, permissions: [], platformRoles: ['PLATFORM_ADMIN'] }),
+    ).toBe(false);
+    const ar = { ...locked, readiness: 'REVIEW' as const };
     expect(
       canOpenPlatformModule(ar, {
         tenant: null,

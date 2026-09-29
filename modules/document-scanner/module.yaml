@@ -35,11 +35,12 @@ spec:
       navigationGroup: Data & Documents
       route: /scanner
       iconKey: scan-line
-      readiness: AVAILABLE
+      readiness: CONTAINED
+      maturity: CORE_IMPLEMENTED
       entitlementEligible: true
-      trialEligible: true
+      trialEligible: false
       requiredPermission: documents:read
       platformInspection: false
-      reason: AI Document Scanner & BYOM Workbench with bounded upload, pluggable OCR extraction, confidence scoring, arithmetic validation, and AP handoff.
+      reason: Upload and extraction service code with a test. Not running in the local stack; no production OCR provider is connected. Frozen and locked (ADR-0016 F6).
       navigationOrder: 260
       personas: [OPERATIONS_SUPERVISOR, WORKFORCE_MEMBER, CUSTOMER_GUEST]

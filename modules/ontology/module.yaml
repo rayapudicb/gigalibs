@@ -39,10 +39,11 @@ spec:
       navigationGroup: Studio & Build
       route: /ontology
       iconKey: network
-      readiness: AVAILABLE
+      readiness: CONTAINED
+      maturity: CORE_IMPLEMENTED
       entitlementEligible: true
-      trialEligible: true
+      trialEligible: false
       requiredPermission: ontology:read
       platformInspection: false
-      reason: Operational Ontology & Sovereign Digital Twin with 360-degree party, agreement, asset, and transaction graph backed by real RLS-isolated PostgreSQL persistence.
+      reason: Ontology service code with a test. Not running in the local stack. Frozen and locked (ADR-0016 F6).
       navigationOrder: 270

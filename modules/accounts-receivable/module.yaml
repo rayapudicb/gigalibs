@@ -92,11 +92,12 @@ spec:
       navigationGroup: Financial Operations
       route: /ar
       iconKey: arrow-left-right
-      readiness: REVIEW
+      readiness: CONTAINED
+      maturity: CORE_IMPLEMENTED
       entitlementEligible: true
-      trialEligible: true
+      trialEligible: false
       requiredPermission: ar:read
       platformInspection: true
-      reason: A bounded PostgreSQL-backed customer, draft and issuance journey is available for controlled local UAT; the complete customer-to-cash outcome remains in review.
+      reason: Customer, draft and issuance domain with tests and migrations. Its service is not part of the running local stack. Frozen and locked (ADR-0016 F6).
       navigationOrder: 110
       personas: [C_LEVEL]

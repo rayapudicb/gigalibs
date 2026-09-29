@@ -50,11 +50,12 @@ spec:
       navigationGroup: Financial Operations
       route: /recovery
       iconKey: shield-check
-      readiness: REVIEW
+      readiness: CONTAINED
+      maturity: CORE_IMPLEMENTED
       entitlementEligible: true
-      trialEligible: true
+      trialEligible: false
       requiredPermission: recovery:read
       platformInspection: true
-      reason: Tenant recovery configuration and persisted read models are available. Detection needs an authoritative source contract, and external recovery actions remain unavailable without provider receipts.
+      reason: Recovery configuration and read models with tests. Its service is not part of the running local stack. Frozen and locked (ADR-0016 F6).
       navigationOrder: 150
       personas: [C_LEVEL]

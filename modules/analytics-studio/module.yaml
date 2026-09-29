@@ -50,10 +50,11 @@ spec:
       route: /analytics
       iconKey: bar-chart
       readiness: REVIEW
+      maturity: INTEGRATED_CANDIDATE
       entitlementEligible: true
       trialEligible: true
       requiredPermission: analytics:read
       platformInspection: true
-      reason: The bounded analytics slice uses PostgreSQL metric snapshots with cryptographic lineage proofs and executive actions; continuous multi-region rollup remains in review.
+      reason: Runs as a service with PostgreSQL metric facts, place roll-ups and lineage. Queries return totals only until WI-OI-103. Not certified.
       navigationOrder: 210
       personas: [C_LEVEL]

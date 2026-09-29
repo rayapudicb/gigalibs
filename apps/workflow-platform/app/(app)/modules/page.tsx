@@ -1,5 +1,6 @@
 import { canOpenPlatformModule } from '@/lib/module-access';
 import { moduleIconGlyphs } from '@/lib/module-icons';
+import { MaturityBadge } from '@/components/modules/MaturityBadge';
 import { verifiedSession } from '@/lib/verified-session';
 import { cookies } from 'next/headers';
 import { Translator } from '@gigalibs/i18n';
@@ -60,9 +61,12 @@ export default async function ModulesPage() {
                     </span>
                   )}
                 </div>
-                <p className="mt-5 text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-400">
-                  {module.area}
-                </p>
+                <div className="mt-5 flex flex-wrap items-center gap-2">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-400">
+                    {module.area}
+                  </p>
+                  <MaturityBadge maturity={module.maturity} />
+                </div>
                 <h2 className="mt-1 text-base font-semibold text-zinc-900 group-hover:text-blue-700">
                   {module.name}
                 </h2>

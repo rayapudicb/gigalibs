@@ -45,10 +45,11 @@ spec:
       navigationGroup: Data & Documents
       route: /data-contracts
       iconKey: database
-      readiness: REVIEW
+      readiness: CONTAINED
+      maturity: CORE_IMPLEMENTED
       entitlementEligible: true
-      trialEligible: true
+      trialEligible: false
       requiredPermission: contracts:read
       platformInspection: false
-      reason: Universal Data Studio & Data Contracts Engine with JSONSchema validation and schema drift detection.
+      reason: Data contract and schema validation service code with tests. Not running in the local stack. Frozen and locked (ADR-0016 F6).
       navigationOrder: 80

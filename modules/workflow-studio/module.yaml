@@ -46,11 +46,12 @@ spec:
       navigationGroup: Studio & Build
       route: /workflows
       iconKey: zap
-      readiness: AVAILABLE
+      readiness: REVIEW
+      maturity: CORE_IMPLEMENTED
       entitlementEligible: true
       trialEligible: true
       requiredPermission: workflows:read
       platformInspection: true
-      reason: Governed Workflow Studio & DAG Canvas with real-time execution telemetry, triggers, and visual DAG designer backed by real PostgreSQL persistence.
+      reason: Workflow Studio service code with tests. Not running and no workflow has run; it becomes the one workflow capability (ADR-0016 F3).
       navigationOrder: 30
       personas: [C_LEVEL, OPERATIONS_SUPERVISOR]

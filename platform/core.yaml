@@ -17,12 +17,13 @@ spec:
       navigationGroup: Platform
       route: /settings
       iconKey: settings
-      readiness: AVAILABLE
+      readiness: REVIEW
+      maturity: INTEGRATED_CANDIDATE
       entitlementEligible: true
       trialEligible: true
       requiredPermission: tenant:read
       platformInspection: false
-      reason: Canonical tenant administration APIs and UI are available locally.
+      reason: Tenant administration APIs and screens run against the local PostgreSQL reference environment. Not certified.
       navigationOrder: 10
       personas: [C_LEVEL]
     - key: personal-security
@@ -32,12 +33,13 @@ spec:
       navigationGroup: Platform
       route: /settings/profile
       iconKey: key-round
-      readiness: AVAILABLE
+      readiness: REVIEW
+      maturity: INTEGRATED_CANDIDATE
       entitlementEligible: true
       trialEligible: true
       requiredPermission: profile:*
       platformInspection: false
-      reason: Canonical profile, password, TOTP and recovery flows are available locally.
+      reason: Profile, password, TOTP and recovery flows run against the local reference environment. Not certified.
       navigationOrder: 20
     - key: execution-runs
       name: Execution Runs
@@ -46,12 +48,13 @@ spec:
       navigationGroup: Automate & Run
       route: /runs
       iconKey: file-check
-      readiness: AVAILABLE
+      readiness: REVIEW
+      maturity: CORE_IMPLEMENTED
       entitlementEligible: true
       trialEligible: true
       requiredPermission: runs:read
       platformInspection: false
-      reason: Persisted execution evidence backed by gigalibs_workflow PostgreSQL schema.
+      reason: Run history screen over the core workflow tables. No run has been produced; workflow moves to Workflow Studio (ADR-0016 F3).
       navigationOrder: 40
       personas: [C_LEVEL, OPERATIONS_SUPERVISOR]
     - key: exceptions-recovery
@@ -62,6 +65,7 @@ spec:
       route: /exceptions
       iconKey: shield-alert
       readiness: REVIEW
+      maturity: INTEGRATED_CANDIDATE
       entitlementEligible: true
       trialEligible: true
       requiredPermission: exceptions:read
@@ -77,6 +81,7 @@ spec:
       route: /actions
       iconKey: check-circle
       readiness: REVIEW
+      maturity: INTEGRATED_CANDIDATE
       entitlementEligible: true
       trialEligible: true
       requiredPermission: actions:read
@@ -93,6 +98,7 @@ spec:
       route: /value
       iconKey: check-circle
       readiness: REVIEW
+      maturity: INTEGRATED_CANDIDATE
       entitlementEligible: true
       trialEligible: true
       requiredPermission: value:read
@@ -108,6 +114,7 @@ spec:
       route: /ap
       iconKey: file-text
       readiness: REVIEW
+      maturity: INTEGRATED_CANDIDATE
       entitlementEligible: true
       trialEligible: true
       requiredPermission: ap:read
@@ -124,6 +131,7 @@ spec:
       route: /configuration
       iconKey: sparkles
       readiness: REVIEW
+      maturity: INTEGRATED_CANDIDATE
       entitlementEligible: true
       trialEligible: true
       requiredPermission: configuration:read
@@ -139,6 +147,7 @@ spec:
       route: /platform-admin
       iconKey: server
       readiness: REVIEW
+      maturity: INTEGRATED_CANDIDATE
       entitlementEligible: false
       trialEligible: false
       requiredPermission: null
@@ -153,11 +162,12 @@ spec:
       route: /reports
       iconKey: bar-chart
       readiness: REVIEW
+      maturity: UI_PROTOTYPE
       entitlementEligible: true
       trialEligible: true
       requiredPermission: reports:read
       platformInspection: false
-      reason: Statutory GAAP financial reporting, AR aging, spend reconciliation, and multi-format exports backed by tenant ledgers.
+      reason: The screen exists, but its reporting read model is contained and returns 503. Analytics takes over reports (ADR-0016 F11, WI-OI-103).
       navigationOrder: 290
       personas: [C_LEVEL]
     - key: master-data
@@ -168,11 +178,12 @@ spec:
       route: /platform-admin/master-data
       iconKey: database
       readiness: REVIEW
+      maturity: UI_PROTOTYPE
       entitlementEligible: true
       trialEligible: true
       requiredPermission: master-data:read
       platformInspection: false
-      reason: Authoritative Master Data Hub providing single-source-of-truth customer, vendor, chart of accounts, cost center, and signer directories.
+      reason: The workbench works, but records are kept in the web server's memory and are lost on restart. Not persisted.
       navigationOrder: 300
       personas: [OPERATIONS_SUPERVISOR]
     - key: solution-packs
@@ -183,10 +194,11 @@ spec:
       route: /solutions
       iconKey: boxes
       readiness: REVIEW
+      maturity: CONCEPT
       entitlementEligible: true
       trialEligible: true
       requiredPermission: solutions:read
       platformInspection: false
-      reason: Turn-Key Enterprise Solution Packs Hub with 3-stage closed-loop pipelines (Pre-Actions, In-Flight Sagas, Post-Action ERP writebacks).
+      reason: Shows an unavailable-capability page. Industry packs are planned at the solution layer (ADR-0016 F10, WI-OI-107).
       navigationOrder: 310
       personas: [C_LEVEL]

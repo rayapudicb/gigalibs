@@ -2,6 +2,17 @@ import { generatedPlatformModuleCatalog } from './catalog.generated.js';
 
 export type PlatformModuleReadiness = 'AVAILABLE' | 'REVIEW' | 'CONTAINED' | 'PLANNED';
 
+// The product vision's maturity states (docs/GIGALIBS_PRODUCT_VISION.md §5; ADR-0016, WI-OI-102e). Readiness says whether
+// a tenant can open a screen; maturity says how much evidence stands behind it. Only CERTIFIED and PRODUCTION_PROVEN
+// entries may be advertised as available, so readiness AVAILABLE requires one of them.
+export type PlatformModuleMaturity =
+  | 'CONCEPT'
+  | 'UI_PROTOTYPE'
+  | 'CORE_IMPLEMENTED'
+  | 'INTEGRATED_CANDIDATE'
+  | 'CERTIFIED'
+  | 'PRODUCTION_PROVEN';
+
 // The sidebar groups, in display order (WI-OI-083c). Each catalogue entry picks its group in its manifest.
 export type PlatformModuleArea =
   | 'Studio & Build'
@@ -60,6 +71,7 @@ export interface PlatformModuleDefinition {
   route: `/${string}`;
   iconKey: PlatformModuleIcon;
   readiness: PlatformModuleReadiness;
+  maturity: PlatformModuleMaturity;
   entitlementEligible: boolean;
   trialEligible: boolean;
   requiredPermission: string | null;

@@ -47,11 +47,12 @@ spec:
       navigationGroup: Financial Operations
       route: /spend
       iconKey: credit-card
-      readiness: REVIEW
+      readiness: CONTAINED
+      maturity: CORE_IMPLEMENTED
       entitlementEligible: true
-      trialEligible: true
+      trialEligible: false
       requiredPermission: spend:read
       platformInspection: true
-      reason: The bounded spend slice uses PostgreSQL RLS, tenant authority and optimistic locking; disbursement and full reconciliation remain in review.
+      reason: The bounded spend slice uses PostgreSQL RLS, tenant authority and optimistic locking; disbursement and full reconciliation remain in review. Frozen and locked (ADR-0016 F6).
       navigationOrder: 120
       personas: [C_LEVEL]

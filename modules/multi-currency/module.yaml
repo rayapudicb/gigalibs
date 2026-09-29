@@ -46,11 +46,12 @@ spec:
       navigationGroup: Financial Operations
       route: /currency
       iconKey: coins
-      readiness: REVIEW
+      readiness: CONTAINED
+      maturity: CORE_IMPLEMENTED
       entitlementEligible: true
-      trialEligible: true
+      trialEligible: false
       requiredPermission: currency:read
       platformInspection: true
-      reason: Tenant currency preferences and the PostgreSQL ledger are available. No exchange rates are seeded; conversion requires an authoritative rate provider or reviewed import.
+      reason: Tenant currency preferences and ledger code with tests. Not running in the local stack; no exchange rates are seeded. Frozen and locked (ADR-0016 F6).
       navigationOrder: 140
       personas: [C_LEVEL]

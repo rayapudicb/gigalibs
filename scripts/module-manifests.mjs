@@ -54,6 +54,9 @@ function union(name) {
   return [...match[1].matchAll(/'([^']+)'/g)].map(([, value]) => value);
 }
 const readinessValues = union('PlatformModuleReadiness');
+const maturityValues = union('PlatformModuleMaturity');
+// Vision §5: only certified entries may be advertised as available (ADR-0016, WI-OI-102e).
+const advertisableMaturity = ['CERTIFIED', 'PRODUCTION_PROVEN'];
 const groupValues = union('PlatformModuleArea');
 const iconValues = union('PlatformModuleIcon');
 
@@ -67,6 +70,7 @@ const entryFields = [
   'route',
   'iconKey',
   'readiness',
+  'maturity',
   'entitlementEligible',
   'trialEligible',
   'requiredPermission',
@@ -96,6 +100,10 @@ function checkEntry(where, entry, kind) {
     fail(where, 'route must start with /');
   if (!readinessValues.includes(entry.readiness))
     fail(where, `readiness must be one of ${readinessValues.join(' | ')}`);
+  if (!maturityValues.includes(entry.maturity))
+    fail(where, `maturity must be one of ${maturityValues.join(' | ')}`);
+  else if (entry.readiness === 'AVAILABLE' && !advertisableMaturity.includes(entry.maturity))
+    fail(where, `readiness AVAILABLE requires maturity ${advertisableMaturity.join(' or ')} (vision §5)`);
   for (const field of ['entitlementEligible', 'trialEligible', 'platformInspection'])
     if (typeof entry[field] !== 'boolean') fail(where, `${field} must be true or false`);
   if (entry.requiredPermission !== null && !isText(entry.requiredPermission))

@@ -35,10 +35,11 @@ spec:
       navigationGroup: Studio & Build
       route: /saga
       iconKey: workflow
-      readiness: AVAILABLE
+      readiness: CONTAINED
+      maturity: CORE_IMPLEMENTED
       entitlementEligible: true
-      trialEligible: true
+      trialEligible: false
       requiredPermission: saga:read
       platformInspection: false
-      reason: Distributed Multi-System Saga Orchestrator with atomic forward execution, automated compensating rollbacks, and cryptographic audit ledger backed by real RLS-isolated PostgreSQL persistence.
+      reason: Saga service code with a test. Not running in the local stack; frozen (ADR-0016 F3). Frozen and locked (ADR-0016 F6).
       navigationOrder: 280

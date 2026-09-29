@@ -164,11 +164,12 @@ spec:
       route: /cmms
       iconKey: factory
       readiness: REVIEW
+      maturity: INTEGRATED_CANDIDATE
       entitlementEligible: true
       trialEligible: true
       requiredPermission: cmms:read
       platformInspection: true
-      reason: Enterprise Asset Management (EAM) & CMMS console with asset hierarchy, work order dispatch, IoT telemetry, and PM schedules.
+      reason: Assets, work orders, preventive maintenance, meters and parts run as a service with tenant isolation and live checks. IoT and deeper EAM are planned. Not certified.
       navigationOrder: 220
       personas: [OPERATIONS_SUPERVISOR, WORKFORCE_MEMBER]
       menu:

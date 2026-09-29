@@ -5,6 +5,7 @@ import Link from 'next/link';
 import type { VerifiedSession } from '@/lib/verified-session';
 import { canUseTenantModule } from '@/lib/module-access';
 import { platformModuleCatalog } from '@gigalibs/contracts';
+import { MaturityBadge } from '@/components/modules/MaturityBadge';
 
 interface TenantPlanEntitlementsProps {
   session: VerifiedSession;
@@ -147,6 +148,7 @@ export function TenantPlanEntitlements({
                     {isEntitled ? (canOpen ? 'ENTITLED' : 'NO ACCESS') : 'NOT ENTITLED'}
                   </span>
                 </div>
+                <MaturityBadge maturity={module.maturity} />
                 <p className="text-[11px] text-ui-fg-subtle">{module.reason}</p>
                 {canOpen && (
                   <div className="pt-1">

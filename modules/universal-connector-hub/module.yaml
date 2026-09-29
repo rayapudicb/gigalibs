@@ -55,11 +55,12 @@ spec:
       route: /connections
       iconKey: radio
       readiness: REVIEW
+      maturity: INTEGRATED_CANDIDATE
       entitlementEligible: true
       trialEligible: true
       requiredPermission: connections:read
       platformInspection: false
-      reason: Universal Enterprise Connector Hub with webhook ingestion journal, CDC feeds, and SOX audit logging.
+      reason: Webhook intake and scheduled pulls into a raw ingestion journal, as a service with tenant isolation. Outbound logins and certified connectors are planned (WI-OI-104). Not certified.
       navigationOrder: 90
     - key: connector-hub
       name: Connector Hub
@@ -69,9 +70,10 @@ spec:
       route: /connections/oauth-studio
       iconKey: lock
       readiness: REVIEW
+      maturity: UI_PROTOTYPE
       entitlementEligible: true
       trialEligible: true
       requiredPermission: connections:read
       platformInspection: false
-      reason: Commercial 1-Click OAuth Handshake Studio with automated schema discovery and heartbeat monitoring.
+      reason: Connection set-up screens. Logins such as OAuth and schema discovery are not implemented yet (WI-OI-104).
       navigationOrder: 180

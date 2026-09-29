@@ -435,14 +435,20 @@ export function IndustryChartsCatalogView() {
         <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-ui-border-base text-xs">
           <span className="text-[11px] font-mono text-slate-400 uppercase font-semibold mr-1">Sector:</span>
           {[
-            { id: 'all', label: 'All 36 Charts' },
-            { id: 'farming', label: '🌾 Smart Farming (6)' },
-            { id: 'energy', label: '⚡ Energy & Grid (6)' },
-            { id: 'logistics', label: '🚚 Fleet Logistics (6)' },
-            { id: 'manufacturing', label: '🏭 Manufacturing IIoT (6)' },
-            { id: 'healthcare', label: '🏥 Clinical Healthcare (6)' },
-            { id: 'finops', label: '💰 Enterprise FinOps (6)' },
-          ].map((d) => {
+            { id: 'all', label: 'All charts' },
+            { id: 'farming', label: '🌾 Smart Farming' },
+            { id: 'energy', label: '⚡ Energy & Grid' },
+            { id: 'logistics', label: '🚚 Fleet Logistics' },
+            { id: 'manufacturing', label: '🏭 Manufacturing IIoT' },
+            { id: 'healthcare', label: '🏥 Clinical Healthcare' },
+            { id: 'finops', label: '💰 Enterprise FinOps' },
+          ].map((sector) => ({
+            ...sector,
+            // WI-OI-102e (catalogue truth): counts come from the charts the API returned, never fixed numbers.
+            label: `${sector.label} (${
+              sector.id === 'all' ? charts.length : charts.filter((chart) => chart.industryId === sector.id).length
+            })`,
+          })).map((d) => {
             const active = selectedDomain === d.id;
             return (
               <button
