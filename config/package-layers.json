@@ -151,10 +151,11 @@
     "IMPORTS_TOOLING": "Shipped code must not import test or build tooling.",
     "KERNEL_IMPORTS_CAPABILITY": "Kernel code must not import a capability package; the capability depends on the kernel, never the reverse (ADR-0016 F1).",
     "CAPABILITY_IMPORTS_CAPABILITY": "A capability package must not import another capability's package; capabilities cooperate through contracts, APIs and events.",
-    "CAPABILITY_IMPORTS_MODULE": "A capability package must not import module-owned code."
+    "CAPABILITY_IMPORTS_MODULE": "A capability package must not import module-owned code.",
+    "FENCED_MODEL_WRITE": "Only baselined code may write a module-owned core-database model; new behaviour belongs in the owning module (ADR-0016 F5)."
   },
   "controlPlaneModels": {
-    "policy": "Every Prisma model in packages/db/schema.prisma (the core control-plane database) is classified. core: industry-agnostic. moduleOwned: business data that belongs to a module and leaves the core database or stays frozen (plan C7). An unclassified model fails audit:layers, so no business table enters the core database without review.",
+    "policy": "Every Prisma model in packages/db/schema.prisma (the core control-plane database) is classified. core: industry-agnostic. moduleOwned: business data that belongs to a module and leaves the core database or stays frozen (plan C7). An unclassified model fails audit:layers, so no business table enters the core database without review. Module-owned models are fenced (ADR-0016 F5, WI-OI-102d): audit:layers reports FENCED_MODEL_WRITE for any non-test source that writes one, so only baselined writes remain until each table moves or is dropped.",
     "schema": "packages/db/schema.prisma",
     "core": [
       "Tenant",
@@ -191,9 +192,6 @@
       "AccountingSyncRecord",
       "InvoiceLineItem",
       "PaymentTransaction",
-      "WorkflowPipeline",
-      "WorkflowVersion",
-      "WorkflowRun",
       "IngestionStream",
       "TenantEnvironment",
       "CredentialReference",
@@ -294,6 +292,11 @@
         "JournalEntry",
         "JournalLineItem",
         "LedgerGenesisRecord"
+      ],
+      "workflow (moving to Workflow Studio, WI-OI-102b)": [
+        "WorkflowPipeline",
+        "WorkflowVersion",
+        "WorkflowRun"
       ]
     }
   }

@@ -1,6 +1,6 @@
 # NOW: where the work stands
 
-Updated 2026-09-29 by Claude (WI-OI-102c done, uncommitted). Keep this file to one page. Replace old content rather than
+Updated 2026-09-29 by Claude (WI-OI-102d done, uncommitted). Keep this file to one page. Replace old content rather than
 appending to it, and update it at the end of every task.
 
 ## State
@@ -31,17 +31,22 @@ appending to it, and update it at the end of every task.
 
 ## Next
 
-Write and do the **102d** card: fencing. It labels AP matching "hosted, moving" and adds an audit that fails on new
-code writing to the 31 fenced core business tables plus the 3 core workflow tables.
+Write and do the **102e** card: module triage and catalogue truth.
+- The six maturity states go into manifests, the catalogue and the screens.
+- Each of the 14 code-only modules gets an outcome for the owner to approve: run in the host, freeze, or retire.
 
-After that: 102e (module triage and catalogue truth), 102f (package inventory: park the Python plane, retire the
-retired engines), 102g (merge `platform-rbac` into the kernel), then WI-OI-103 to WI-OI-107.
+After that:
+- **102f:** package inventory. It parks the Python plane, retires the retired engines and the dead
+  `cmms-ledger-settlement-service`, and also removes the 3 legacy manifest-reading tests behind 17 baseline
+  entries.
+- **102g:** merge `platform-rbac` into the kernel.
+- Then WI-OI-103 to WI-OI-107.
 
-102c (2026-09-29):
-- 50 kernel and 32 capability packages;
-- 3 new layer rules, with a 27-entry baseline, all in legacy tests;
-- `spec.category` in all 19 manifests and in `module:new`;
-- `platform-rbac`: merge its useful parts, then retire it (102g).
+102d (2026-09-29):
+- the AP catalogue entries are labelled "hosted by the core until Procurement exists";
+- the 3 core workflow tables are module-owned;
+- the fence rule is `FENCED_MODEL_WRITE`, with 13 existing writes baselined;
+- the layer baseline has 40 named entries.
 
 102b decisions (2026-09-29):
 - Workflow Studio is the one workflow engine;

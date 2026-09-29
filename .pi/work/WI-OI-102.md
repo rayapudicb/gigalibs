@@ -50,7 +50,7 @@ Each slice has a task card in `.pi/tasks/` when it starts.
 | 102a | ADR-0016, registration of WI-OI-102 to WI-OI-107, this file | S | Done, 2026-09-29 |
 | 102b | Engine evaluation (F3, F12): forms, rules, workflow, execution plane | S | Done, 2026-09-29; owner decided |
 | 102c | Kernel/capability/business classification in manifests and the layer audit (F1, F2); `platform-rbac` into the kernel | M | Done, 2026-09-29 |
-| 102d | Fencing (F4, F5): the "hosted, moving" label and the fenced-table audit | S | Proposed |
+| 102d | Fencing (F4, F5): the "hosted, moving" label and the fenced-table audit | S | Done, 2026-09-29 |
 | 102e | Module triage and catalogue truth (F6): six maturity states in manifests, catalogue and screens | M | Proposed |
 | 102f | Package inventory (F7): proposal, then owner-approved batches | M | Proposed |
 | 102g | Merge `platform-rbac`'s department/group roles and Marketplace into the kernel, then retire the module (F6, owner decision 2026-09-29) | M | Proposed |
@@ -225,3 +225,50 @@ Folding it into the kernel would duplicate the department hierarchy. The options
 - `platform-rbac` then retires. This is slice 102g.
 
 Until then, its manifest keeps `category: capability` with a comment recording the decision.
+
+## 102d: fencing (2026-09-29)
+
+**AP label (F4):**
+- The `invoice-matching` and `approval-queue` catalogue entries now say "Hosted by the core until the Procurement
+  module exists (ADR-0016 F4)". `approval-queue` shows AP actions at `/actions`.
+- Both carry `hostedFor: procurement`, and the catalogue was regenerated.
+- The reason text is what the modules page and the tenant plan screen display.
+
+**Reclassified:** `WorkflowPipeline`, `WorkflowVersion` and `WorkflowRun` are now module-owned ("workflow, moving to
+Workflow Studio"). The core database counts are now 82 core models and 34 module-owned.
+
+**Fence (F5):**
+- `audit:layers` reports `FENCED_MODEL_WRITE` for any non-test, non-generated source that writes a module-owned
+  core model:
+  - Prisma `create`, `createMany`, `update`, `updateMany`, `upsert`, `delete` and `deleteMany` on the model's
+    delegate;
+  - raw `INSERT INTO`, `UPDATE` and `DELETE FROM` on its table.
+- The generated Prisma client is excluded, because its doc comments show example writes.
+
+**Existing writes, baselined (13):**
+- `apps/playground-api/src/ap-action.service.ts` → SupplierInvoice
+- `apps/playground-api/src/ap-ingestion.service.ts` → GoodsReceipt
+- `apps/playground-api/src/ap-ingestion.service.ts` → GoodsReceiptLine
+- `apps/playground-api/src/ap-ingestion.service.ts` → PurchaseOrder
+- `apps/playground-api/src/ap-ingestion.service.ts` → Supplier
+- `apps/playground-api/src/ap-ingestion.service.ts` → SupplierInvoice
+- `apps/playground-api/src/ap-ingestion.service.ts` → SupplierInvoiceLine
+- `apps/playground-api/src/ap-matching.service.ts` → ApMatchEvaluation
+- `apps/playground-api/src/ap-matching.service.ts` → SupplierInvoice
+- `apps/playground-api/src/workflow.service.ts` → WorkflowPipeline
+- `apps/playground-api/src/workflow.service.ts` → WorkflowVersion
+- `apps/workflow-platform/lib/cmms-ledger-settlement-service.ts` → JournalEntry
+- `apps/workflow-platform/lib/cmms-ledger-settlement-service.ts` → JournalLineItem
+
+**Finding:** `apps/workflow-platform/lib/cmms-ledger-settlement-service.ts` writes the **frozen** ledger tables
+`JournalEntry` and `JournalLineItem`, but only its own test imports it; no route or screen reaches it. It is a
+102f retirement candidate.
+
+**Proof:** a probe in `apps/playground-api/src` with `prisma.supportTicket.create(…)` and a raw
+`INSERT INTO "cart_sessions"` failed the audit (exit 1, `FENCED_MODEL_WRITE` for SupportTicket and CartSession).
+With the probe removed, the audit passes.
+
+**Baseline:** 40 named entries:
+- 10 schema accesses;
+- 17 from the kernel/capability split, all in legacy tests;
+- 13 fenced writes.

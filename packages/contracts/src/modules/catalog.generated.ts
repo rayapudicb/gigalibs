@@ -95,7 +95,7 @@ export const generatedPlatformModuleCatalog = [
     trialEligible: true,
     requiredPermission: 'actions:read',
     platformInspection: false,
-    reason: 'Governed approval records are available for controlled local evaluation.',
+    reason: 'Hosted by the core until the Procurement module exists (ADR-0016 F4). Governed AP approval records are available for controlled local evaluation.',
   },
   // platform/core.yaml
   {
@@ -159,7 +159,7 @@ export const generatedPlatformModuleCatalog = [
     trialEligible: true,
     requiredPermission: 'ap:read',
     platformInspection: false,
-    reason: 'The reference AP outcome is available for controlled local evaluation.',
+    reason: 'Hosted by the core until the Procurement module exists (ADR-0016 F4). The reference AP outcome is available for controlled local evaluation.',
   },
   // modules/accounts-receivable/module.yaml
   {

@@ -163,6 +163,26 @@ function rule(from, to) {
   return null;
 }
 
+// Fenced core-database models (ADR-0016 F5, WI-OI-102d): module-owned models may still be read, but only baselined
+// code may write them until each table moves to its module or is dropped. Tests are exempt.
+const prismaSchema = readFileSync(join(root, config.controlPlaneModels.schema), 'utf8');
+const fencedModels = Object.values(config.controlPlaneModels.moduleOwned)
+  .flat()
+  .map((model) => {
+    const body = prismaSchema.match(new RegExp(`^model ${model} \\{([\\s\\S]*?)^\\}`, 'm'))?.[1] ?? '';
+    const table = body.match(/@@map\("([^"]+)"\)/)?.[1] ?? model;
+    const delegate = model[0].toLowerCase() + model.slice(1);
+    return {
+      model,
+      prismaWrite: new RegExp(
+        `\\.${delegate}\\s*\\.\\s*(?:create|createMany|createManyAndReturn|update|updateMany|updateManyAndReturn|upsert|delete|deleteMany)\\s*\\(`,
+      ),
+      sqlWrite: new RegExp(`\\b(?:insert\\s+into|update|delete\\s+from)\\s+(?:"?public"?\\.)?"?${table}"?(?![\\w])`, 'i'),
+    };
+  });
+const testFile = /(?:\.test\.|\.spec\.|[/\\]__tests__[/\\]|[/\\]tests?[/\\])/;
+const generatedPrismaClient = /[/\\]generated[/\\]prisma[/\\]/; // doc comments show example writes
+
 const violations = [];
 const shellModuleImports = new Map();
 let filesScanned = 0;
@@ -181,6 +201,12 @@ for (const unit of units) {
       if (code) violations.push(`${code} ${relative(root, file)} -> ${specifier}`);
       if (from === 'shell' && to?.startsWith('module:'))
         shellModuleImports.set(to, (shellModuleImports.get(to) ?? 0) + 1);
+    }
+    if (!testFile.test(relative(root, file)) && !generatedPrismaClient.test(relative(root, file))) {
+      for (const fenced of fencedModels) {
+        if (fenced.prismaWrite.test(text) || fenced.sqlWrite.test(text))
+          violations.push(`FENCED_MODEL_WRITE ${relative(root, file)} -> ${fenced.model}`);
+      }
     }
     if (schemaExempt.test(relative(root, file))) continue;
     for (const [, schema] of text.matchAll(schemaReference)) {
@@ -209,7 +235,7 @@ const staleModels = [...modelConfig.core, ...moduleOwnedModels].filter(
 if (writeBaseline) {
   writeFileSync(
     baselinePath,
-    `${JSON.stringify({ schemaVersion: 1, policy: 'Existing layer violations when ADR-0013 was adopted (WI-OI-080), module-schema access when that rule was added (WI-OI-083), and kernel/capability imports when ADR-0016 split the core (WI-OI-102c; all in legacy certification tests that read other packages\' manifests). Entries may only be removed.', violations: found }, null, 2)}\n`,
+    `${JSON.stringify({ schemaVersion: 1, policy: 'Existing layer violations when ADR-0013 was adopted (WI-OI-080), module-schema access when that rule was added (WI-OI-083), kernel/capability imports when ADR-0016 split the core (WI-OI-102c; all in legacy certification tests that read other packages\' manifests), and writes to fenced module-owned core models (WI-OI-102d). Entries may only be removed.', violations: found }, null, 2)}\n`,
   );
   console.log(`Wrote ${found.length} baseline violations to config/layer-boundary-baseline.json`);
 }

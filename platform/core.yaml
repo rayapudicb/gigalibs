@@ -81,7 +81,8 @@ spec:
       trialEligible: true
       requiredPermission: actions:read
       platformInspection: false
-      reason: Governed approval records are available for controlled local evaluation.
+      reason: Hosted by the core until the Procurement module exists (ADR-0016 F4). Governed AP approval records are available for controlled local evaluation.
+      hostedFor: procurement
       navigationOrder: 60
       personas: [C_LEVEL, OPERATIONS_SUPERVISOR, WORKFORCE_MEMBER]
     - key: value-ledger
@@ -111,7 +112,7 @@ spec:
       trialEligible: true
       requiredPermission: ap:read
       platformInspection: false
-      reason: The reference AP outcome is available for controlled local evaluation.
+      reason: Hosted by the core until the Procurement module exists (ADR-0016 F4). The reference AP outcome is available for controlled local evaluation.
       navigationOrder: 100
       personas: [C_LEVEL]
       hostedFor: procurement

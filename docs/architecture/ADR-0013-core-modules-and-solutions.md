@@ -97,12 +97,12 @@ behaviour and no runtime microfrontends. A manifest UI entry may point to a remo
 - anything imports the shell or tooling;
 - a core-database model is unclassified.
 
-The 27 existing violations are in `config/layer-boundary-baseline.json`:
+The 40 existing violations are in `config/layer-boundary-baseline.json`:
 - 10 `MODULE_SCHEMA_ACCESS`;
-- 17 from the ADR-0016 kernel/capability split (WI-OI-102c): 12 `CAPABILITY_IMPORTS_CAPABILITY`,
-  4 `CAPABILITY_IMPORTS_MODULE` and 1 `KERNEL_IMPORTS_CAPABILITY`.
-
-The 17 are all in legacy certification tests that read other packages' manifest files. Entries may only be removed. The audit also reports the shells' imports
+- 17 from the ADR-0016 kernel/capability split (WI-OI-102c), all in legacy certification tests that read
+  other packages' manifest files;
+- 13 `FENCED_MODEL_WRITE`: existing writes to module-owned core tables (WI-OI-102d).
+ Entries may only be removed. The audit also reports the shells' imports
 of module code, which is the WI-OI-083/WI-OI-085 composition measure.
 
 ## Consequences
