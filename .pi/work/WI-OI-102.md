@@ -52,7 +52,7 @@ Each slice has a task card in `.pi/tasks/` when it starts.
 | 102c | Kernel/capability/business classification in manifests and the layer audit (F1, F2); `platform-rbac` into the kernel | M | Done, 2026-09-29 |
 | 102d | Fencing (F4, F5): the "hosted, moving" label and the fenced-table audit | S | Done, 2026-09-29 |
 | 102e | Module triage and catalogue truth (F6): six maturity states in manifests, catalogue and screens | M | Done, 2026-09-29 |
-| 102f | Package inventory (F7): proposal, then owner-approved batches | M | Proposed |
+| 102f | Package inventory (F7): proposal, then owner-approved batches | M | Done, 2026-09-29 |
 | 102g | Merge `platform-rbac`'s department/group roles and Marketplace into the kernel, then retire the module (F6, owner decision 2026-09-29) | M | Proposed |
 
 ## 102a: ADR-0016 and registration (2026-09-29)
@@ -338,3 +338,49 @@ openable copy, and asserts that the locked entry stays closed even to platform o
 
 **Verification:** `pnpm verify` passes (known drift only), including web type-check, contracts build, the
 catalogue-truth test and the updated module-access test.
+
+## 102f: package inventory and clean-up (2026-09-29)
+
+**Owner decisions (2026-09-29):**
+- Proceed with the recommended batches A–D; each ran separately, with `pnpm verify` after it.
+- Lock the Master Data workbench.
+
+**The lock now covers APIs** (`lib/module-access.ts`):
+- `canUseTenantModule` refuses any CONTAINED or PLANNED catalogue entry, whatever the features and permissions.
+- That function gates 28 web API routes and the generic gateway, so a locked module refuses its APIs as well as
+  its screen. E-Signature's development-token route is therefore unreachable.
+- Master Data is CONTAINED, with its in-memory reason, and out of trials.
+
+| Batch | Removed | Notes |
+|---|---|---|
+| A (decided) | `workflow-engine`, `workflow-sdk`, `workflow-mcp`, `form-engine-core`, `packages/forms-engine`; the dead `lib/cmms-ledger-settlement-service.ts` and its test; the dead `lib/solution-packs-store.ts` | `db-migrations-runtime` was **restored**: it has no source, but the migrations image and the deployment-profile check use its `package.json`. It is kernel. |
+| A (Python plane) | `pnpm test` no longer runs `test:execution-api` (the script remains for manual use) | `apps/workflow-api/PARKED.md` records the owner decision (ADR-0016 F12). |
+| B (unused starter code) | 32 packages: ui, ui-preset, icons, admin-kit, auth-react, rbac-react, jwt-universal, oauth-universal, users-core, orgs-core, onboarding-flow, config, errors, health, pagination, archival-core, data-retention, approvals-core/-nest/-react, sla-engine, reports-core/-nest/-react, custom-fields, chat-core, billing-react, pricing-calculator, fraud-detection, ai-chat-core/-nest, integrations/openai. Also the legacy `module-registry` manifest test, which is not in `pnpm test`, read retired manifests, and is superseded by the WI-OI-081 manifest audit. | **Kept** after the reference scan: `embed-sdk` and `host-kit` (the separate TextFly project refers to them), and `custom-fields-nest` (the frozen AR module imports it). |
+| C (quarantined) | 104 workspace-excluded packages; `apps/docs` and `apps/storybook` (stubs); the retired `apps/playground-web` | `pnpm-workspace.yaml` exclusions and `config/runtime-quarantine.json` keep only the 3 TextFly apps. The retired-app audit accepts a removed app (`scripts/verify-runtime-data-integrity.mjs`), and `verify-package-dependencies.mjs` no longer hard-codes playground-web. |
+| D (frozen, no module) | `cart-react`, `orders-nest` (commerce), `ledger-nest` (a ledger is ruled out by ADR-0013), `knowledge-base-react` | They were removed from `modulePackages`. |
+
+**Kept on purpose (16 + 4):**
+- queue, event-bus, redis, cache (the scheduler, WI-OI-104);
+- realtime (mobile);
+- storage-core, integrations/aws-s3, integrations/minio (report files, WI-OI-106);
+- maps-react, geofence-engine (places, WI-OI-105);
+- kpi-widgets-react (WI-OI-103);
+- notifications-core, notifications-react, email-templates (Communications);
+- rule-engine-universal (Rules);
+- forms-engine-nest and custom-fields-nest (the frozen AR imports them);
+- embed-sdk and host-kit (TextFly);
+- the AR, Spend and Multi-currency packages (frozen modules, left in place).
+
+**Tests for locked modules:**
+- 11 web suites that exercise the routes of locked modules use `describe.skipIf(isLockedModule(key))` (helper
+  `__tests__/helpers/locked-modules.ts`). They run again automatically when a module is revived.
+- `module-access.test.ts` proves that every locked entry is refused, even with its feature and `*`, and that an
+  open module is not.
+
+**Result:**
+- 586 tracked files removed (about 43,000 lines).
+- Workspace units: 77, down from 113 (kernel 34, capability 13, module 27, shell 2, tooling 1).
+- Layer baseline: 20 entries, down from 40 (9 schema accesses, 11 fenced writes).
+- Tests: 214 files and 1,930 tests pass; 11 files and 109 tests are skipped while their modules are locked.
+- The Python execution-plane tests no longer run in `pnpm test`.
+- `pnpm verify` passes, with the known drift only.

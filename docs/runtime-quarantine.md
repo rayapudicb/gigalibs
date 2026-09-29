@@ -8,6 +8,11 @@ Quarantine is a deny-by-default production boundary, not a statement that the co
 
 The machine-readable authority is `config/runtime-quarantine.json`.
 
+> **2026-09-29 update (WI-OI-102f, ADR-0016 F7):** with the owner's approval, the 104 quarantined packages and the
+> quarantined `apps/docs` and `apps/storybook` were **removed** from the repository; git history keeps them. The
+> retired `apps/playground-web` was removed too. Only the three separately owned TextFly apps remain quarantined. The
+> inventory below records what was quarantined at the 2026-09-03 assessment.
+
 ## Current inventory
 
 | Category | Roots | Reason |

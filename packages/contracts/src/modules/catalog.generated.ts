@@ -503,13 +503,13 @@ export const generatedPlatformModuleCatalog = [
     navigationGroup: 'Data & Documents',
     route: '/platform-admin/master-data',
     iconKey: 'database',
-    readiness: 'REVIEW',
+    readiness: 'CONTAINED',
     maturity: 'UI_PROTOTYPE',
     entitlementEligible: true,
-    trialEligible: true,
+    trialEligible: false,
     requiredPermission: 'master-data:read',
     platformInspection: false,
-    reason: 'The workbench works, but records are kept in the web server\'s memory and are lost on restart. Not persisted.',
+    reason: 'Locked. The workbench kept records only in the web server\'s memory, which were lost on restart; it returns when a persisted master-data capability is designed (ADR-0016, WI-OI-102f).',
   },
   // platform/core.yaml
   {

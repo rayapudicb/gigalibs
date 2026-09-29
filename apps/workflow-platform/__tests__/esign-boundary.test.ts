@@ -3,12 +3,13 @@ import { GET as getEsign, POST as postEsign } from '../app/api/esign/[...path]/r
 import { moduleTenantBindingId } from '../lib/ar-tenant-binding';
 import { canUseTenantModule, hasPermission } from '../lib/module-access';
 import { verifiedSession } from '../lib/verified-session';
+import { isLockedModule } from './helpers/locked-modules';
 
 vi.mock('../lib/verified-session', () => ({
   verifiedSession: vi.fn(),
 }));
 
-describe('E-Signature tenant binding and access control', () => {
+describe.skipIf(isLockedModule('esignature'))('E-Signature tenant binding and access control', () => {
   it('maps canonical tenant IDs to deterministic isolated UUIDs for esign', () => {
     const tenantA = moduleTenantBindingId('tenant-esign-alpha');
     const tenantB = moduleTenantBindingId('tenant-esign-beta');
@@ -36,7 +37,7 @@ describe('E-Signature tenant binding and access control', () => {
   });
 });
 
-describe('Wave 5 / E-Signature Route Security Boundary & Anti-Mock Enforcement', () => {
+describe.skipIf(isLockedModule('esignature'))('Wave 5 / E-Signature Route Security Boundary & Anti-Mock Enforcement', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.stubEnv('ESIGN_API_URL', 'http://127.0.0.1:4100');

@@ -3,12 +3,13 @@ import { GET as getOntology, POST as postOntology } from '../app/api/ontology/[.
 import { moduleTenantBindingId } from '../lib/ar-tenant-binding';
 import { canUseTenantModule, hasPermission } from '../lib/module-access';
 import { verifiedSession } from '../lib/verified-session';
+import { isLockedModule } from './helpers/locked-modules';
 
 vi.mock('../lib/verified-session', () => ({
   verifiedSession: vi.fn(),
 }));
 
-describe('Operational Ontology tenant binding and access control', () => {
+describe.skipIf(isLockedModule('operational-ontology'))('Operational Ontology tenant binding and access control', () => {
   it('maps canonical tenant IDs to deterministic isolated UUIDs for ontology data', () => {
     const tenantA = moduleTenantBindingId('tenant-ontology-alpha');
     const tenantB = moduleTenantBindingId('tenant-ontology-beta');
@@ -34,7 +35,7 @@ describe('Operational Ontology tenant binding and access control', () => {
   });
 });
 
-describe('Operational Ontology Route Security Boundary', () => {
+describe.skipIf(isLockedModule('operational-ontology'))('Operational Ontology Route Security Boundary', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.stubEnv('ONTOLOGY_API_URL', 'http://127.0.0.1:3019');

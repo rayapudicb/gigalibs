@@ -49,9 +49,6 @@
       ],
       "@gigalibs/db": [
         "../../packages/db/dist/index.d.ts"
-      ],
-      "@gigalibs/form-engine-core": [
-        "../../packages/form-engine-core/dist/index.d.ts"
       ]
     }
   },

@@ -1,12 +1,13 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { GET as getAr, POST as postAr } from '../app/api/ar/[...path]/route';
 import { verifiedSession } from '../lib/verified-session';
+import { isLockedModule } from './helpers/locked-modules';
 
 vi.mock('../lib/verified-session', () => ({
   verifiedSession: vi.fn(),
 }));
 
-describe('WI-OI-019 / RT-02 Exit Proof: AR route security boundary and anti-mock enforcement', () => {
+describe.skipIf(isLockedModule('accounts-receivable'))('WI-OI-019 / RT-02 Exit Proof: AR route security boundary and anti-mock enforcement', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });

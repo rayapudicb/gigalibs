@@ -3,12 +3,13 @@ import { GET as getScanner, POST as postScanner } from '../app/api/scanner/[...p
 import { moduleTenantBindingId } from '../lib/ar-tenant-binding';
 import { canUseTenantModule, hasPermission } from '../lib/module-access';
 import { verifiedSession } from '../lib/verified-session';
+import { isLockedModule } from './helpers/locked-modules';
 
 vi.mock('../lib/verified-session', () => ({
   verifiedSession: vi.fn(),
 }));
 
-describe('Document Scanner tenant binding and access control', () => {
+describe.skipIf(isLockedModule('document-scanner'))('Document Scanner tenant binding and access control', () => {
   it('maps canonical tenant IDs to deterministic isolated UUIDs for scanner', () => {
     const tenantA = moduleTenantBindingId('tenant-scanner-alpha');
     const tenantB = moduleTenantBindingId('tenant-scanner-beta');
@@ -34,7 +35,7 @@ describe('Document Scanner tenant binding and access control', () => {
   });
 });
 
-describe('Document Scanner Route Security Boundary & Anti-Mock Enforcement (AI-01, AI-02)', () => {
+describe.skipIf(isLockedModule('document-scanner'))('Document Scanner Route Security Boundary & Anti-Mock Enforcement (AI-01, AI-02)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.stubEnv('SCANNER_API_URL', 'http://127.0.0.1:3017');

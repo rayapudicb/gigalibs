@@ -1,6 +1,6 @@
 # NOW: where the work stands
 
-Updated 2026-09-29 by Claude (WI-OI-102e done, uncommitted). Keep this file to one page. Replace old content rather than
+Updated 2026-09-29 by Claude (WI-OI-102f done, uncommitted). Keep this file to one page. Replace old content rather than
 appending to it, and update it at the end of every task.
 
 ## State
@@ -31,24 +31,20 @@ appending to it, and update it at the end of every task.
 
 ## Next
 
-Write and do the **102f** card: the package inventory (ADR-0016 F7). The owner approves each batch before anything
-is deleted or moved. The inputs:
-- the 5 `retiring` packages and `packages/forms-engine`;
-- the Python plane parked out of `pnpm test`;
-- the dead `lib/cmms-ledger-settlement-service.ts`;
-- the in-memory `master-data-store` and `solution-packs-store`;
-- the 3 legacy manifest-reading tests (17 baseline entries);
-- the 56 unused core packages, the 104 excluded packages, and the 8 module packages in `packages/`.
+Write and do the **102g** card: merge `platform-rbac` into the kernel.
+- Its department/group roles merge into the kernel's existing departments and roles.
+- The Marketplace becomes the kernel's page for enabling modules for a tenant.
+- Then the module retires.
 
-Then **102g**: merge `platform-rbac` into the kernel. Then WI-OI-103 to WI-OI-107.
+This is the last WI-OI-102 slice. After it, WI-OI-102 goes to Review, and WI-OI-103 (Analytics engine) comes next.
 
-102e (2026-09-29):
-- the six maturity states are in the catalogue, with 0 uncertified AVAILABLE entries;
-- the reasons are rewritten to fact;
-- 10 frozen modules are locked;
-- the gallery counts are real.
-
-The running web shows the new labels only after the web image is rebuilt, which is the owner's call.
+102f (2026-09-29):
+- 586 files removed across batches A–D;
+- 77 workspace units remain;
+- locked modules are refused at the API too;
+- Master Data is locked;
+- the Python plane is out of `pnpm test`;
+- the layer baseline has 20 entries.
 
 102b decisions (2026-09-29):
 - Workflow Studio is the one workflow engine;

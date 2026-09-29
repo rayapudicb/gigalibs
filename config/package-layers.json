@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "policy": "ADR-0013 layering, narrowed by ADR-0016 (WI-OI-102c). Every workspace unit has exactly one layer. core: the kernel only (identity and sessions, tenancy, roles and policy, versioned configuration and settings, module registry, persistence, events and jobs, audit and retention, observability, API and UI conventions). capability:<name>: packages of a capability product (forms, rules, workflow, notifications, analytics, places, ai, billing, risk) that any solution may select. module:<key>: code owned by one business or capability module (modules/<key>/** is always module-owned). shell: composition roots (the web app and the module host), which may import anything. tooling: tests and build tooling, not shipped. Kernel code must not import capability or module code; a capability must not import another capability's or a module's code. retiring lists packages that WI-OI-102f removes (ADR-0016 F3). A new workspace package must be added here before it builds (audit:layers fails on unclassified units).",
+  "policy": "ADR-0013 layering, narrowed by ADR-0016 (WI-OI-102c). Every workspace unit has exactly one layer. core: the kernel only (identity and sessions, tenancy, roles and policy, versioned configuration and settings, module registry, persistence, events and jobs, audit and retention, observability, API and UI conventions). capability:<name>: packages of a capability product (the groups under capabilityPackages) that any solution may select; a capability may also be a module (spec.category: capability). module:<key>: code owned by one business or capability module (modules/<key>/** is always module-owned). shell: composition roots (the web app and the module host), which may import anything. tooling: tests and build tooling, not shipped. Kernel code must not import capability or module code; a capability must not import another capability's or a module's code. retiring lists packages that WI-OI-102f removes (ADR-0016 F3). A new workspace package must be added here before it builds (audit:layers fails on unclassified units).",
   "shell": [
     "apps/workflow-platform",
     "apps/module-host"
@@ -12,115 +12,67 @@
     "apps/playground-api"
   ],
   "core": [
-    "packages/admin-kit",
-    "packages/archival-core",
     "packages/audit-core",
     "packages/audit-nest",
     "packages/auth-core",
     "packages/auth-nest",
-    "packages/auth-react",
     "packages/broker",
     "packages/cache",
-    "packages/config",
     "packages/configuration-core",
     "packages/contracts",
     "packages/crypto",
-    "packages/data-retention",
     "packages/db",
     "packages/db-migrations-runtime",
     "packages/embed-sdk",
-    "packages/errors",
     "packages/event-bus",
-    "packages/health",
     "packages/host-kit",
     "packages/i18n",
-    "packages/icons",
     "packages/integrations/aws-s3",
     "packages/integrations/minio",
-    "packages/jwt-universal",
     "packages/logger",
     "packages/module-registry",
     "packages/module-registry-nest",
     "packages/module-sdk",
-    "packages/oauth-universal",
-    "packages/onboarding-flow",
-    "packages/orgs-core",
-    "packages/pagination",
     "packages/platform-settings",
     "packages/platform-settings-nest",
     "packages/privacy-gdpr",
     "packages/queue",
     "packages/rbac-core",
     "packages/rbac-nest",
-    "packages/rbac-react",
     "packages/realtime",
     "packages/redis",
     "packages/storage-core",
     "packages/tenancy-nest",
-    "packages/ui",
-    "packages/ui-preset",
-    "packages/users-core",
     "packages/validation-nest",
     "packages/web-sdk"
   ],
   "capabilityPackages": {
     "forms": [
       "packages/configuration-react",
-      "packages/custom-fields",
       "packages/custom-fields-nest",
-      "packages/form-engine-core",
       "packages/forms-engine-nest"
     ],
     "rules": [
       "packages/rule-engine-universal"
     ],
-    "workflow": [
-      "packages/approvals-core",
-      "packages/approvals-nest",
-      "packages/approvals-react",
-      "packages/sla-engine",
-      "packages/workflow-engine",
-      "packages/workflow-sdk",
-      "packages/workflow-mcp"
-    ],
     "notifications": [
       "packages/notifications-core",
       "packages/notifications-react",
-      "packages/email-templates",
-      "packages/chat-core"
+      "packages/email-templates"
     ],
     "analytics": [
       "packages/analytics-core",
       "packages/charts-react",
-      "packages/kpi-widgets-react",
-      "packages/reports-core",
-      "packages/reports-nest",
-      "packages/reports-react"
+      "packages/kpi-widgets-react"
     ],
     "places": [
       "packages/maps-core",
       "packages/maps-react",
       "packages/geofence-engine"
-    ],
-    "ai": [
-      "packages/ai-chat-core",
-      "packages/ai-chat-nest",
-      "packages/integrations/openai"
-    ],
-    "billing": [
-      "packages/billing-react",
-      "packages/pricing-calculator"
-    ],
-    "risk": [
-      "packages/fraud-detection"
     ]
   },
   "retiring": [
-    "packages/form-engine-core",
-    "packages/forms-engine-nest",
-    "packages/workflow-engine",
-    "packages/workflow-sdk",
-    "packages/workflow-mcp"
+    "packages/forms-engine-nest"
   ],
   "modulePackages": {
     "accounts-receivable": [
@@ -132,16 +84,6 @@
     ],
     "multi-currency": [
       "packages/multi-currency"
-    ],
-    "commerce": [
-      "packages/cart-react",
-      "packages/orders-nest"
-    ],
-    "finance-ledger": [
-      "packages/ledger-nest"
-    ],
-    "knowledge-base": [
-      "packages/knowledge-base-react"
     ]
   },
   "rules": {

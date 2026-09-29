@@ -2,12 +2,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { GET as getRecovery, POST as postRecovery } from '../app/api/recovery/[...path]/route';
 import { moduleTenantBindingId } from '../lib/ar-tenant-binding';
 import { verifiedSession } from '../lib/verified-session';
+import { isLockedModule } from './helpers/locked-modules';
 
 vi.mock('../lib/verified-session', () => ({
   verifiedSession: vi.fn(),
 }));
 
-describe('Autonomous Recovery tenant binding and isolation boundary', () => {
+describe.skipIf(isLockedModule('autonomous-recovery'))('Autonomous Recovery tenant binding and isolation boundary', () => {
   it('maps canonical tenant IDs to deterministic isolated UUIDs for recovery schema', () => {
     const tenantA = moduleTenantBindingId('recovery-workspace-alpha');
     const tenantB = moduleTenantBindingId('recovery-workspace-beta');
@@ -25,7 +26,7 @@ describe('Autonomous Recovery tenant binding and isolation boundary', () => {
   });
 });
 
-describe('Wave 4 / Autonomous Recovery Route Security Boundary & Anti-Mock Enforcement', () => {
+describe.skipIf(isLockedModule('autonomous-recovery'))('Wave 4 / Autonomous Recovery Route Security Boundary & Anti-Mock Enforcement', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.stubEnv('RECOVERY_API_URL', 'http://127.0.0.1:4200');

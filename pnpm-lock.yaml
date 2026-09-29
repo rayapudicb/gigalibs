@@ -1241,44 +1241,6 @@ importers:
         specifier: ^5.8.3
         version: 5.9.3
 
-  packages/admin-kit:
-    dependencies:
-      react:
-        specifier: '>=18.0.0'
-        version: 19.2.8
-    devDependencies:
-      typescript:
-        specifier: ^5.8.3
-        version: 5.9.3
-      vitest:
-        specifier: ^3.0.0
-        version: 3.2.7(@types/node@24.13.3)(jiti@2.7.0)(tsx@4.23.12)
-
-  packages/ai-chat-core:
-    devDependencies:
-      typescript:
-        specifier: ^5.8.3
-        version: 5.9.3
-      vitest:
-        specifier: ^3.0.0
-        version: 3.2.7(@types/node@24.13.3)(jiti@2.7.0)(tsx@4.23.12)
-
-  packages/ai-chat-nest:
-    dependencies:
-      '@gigalibs/ai-chat-core':
-        specifier: workspace:*
-        version: link:../ai-chat-core
-      '@nestjs/common':
-        specifier: ^11.2.3
-        version: 11.2.3(reflect-metadata@0.2.2)(rxjs@7.8.2)
-    devDependencies:
-      typescript:
-        specifier: ^5.8.3
-        version: 5.9.3
-      vitest:
-        specifier: ^3.0.0
-        version: 3.2.7(@types/node@24.13.3)(jiti@2.7.0)(tsx@4.23.12)
-
   packages/analytics-core:
     devDependencies:
       typescript:
@@ -1287,38 +1249,6 @@ importers:
       vitest:
         specifier: ^3.0.0
         version: 3.2.7(@types/node@24.13.3)(jiti@2.7.0)(tsx@4.23.12)
-
-  packages/approvals-core:
-    dependencies:
-      '@gigalibs/crypto':
-        specifier: workspace:*
-        version: link:../crypto
-    devDependencies:
-      typescript:
-        specifier: ^5.8.3
-        version: 5.9.3
-
-  packages/approvals-nest:
-    devDependencies:
-      typescript:
-        specifier: ^5.8.3
-        version: 5.9.3
-
-  packages/approvals-react:
-    devDependencies:
-      typescript:
-        specifier: ^5.8.3
-        version: 5.9.3
-
-  packages/archival-core:
-    dependencies:
-      '@gigalibs/crypto':
-        specifier: workspace:*
-        version: link:../crypto
-    devDependencies:
-      typescript:
-        specifier: ^5.8.3
-        version: 5.9.3
 
   packages/audit-core:
     devDependencies:
@@ -1413,38 +1343,6 @@ importers:
         specifier: ^3.0.0
         version: 3.2.7(@types/node@24.13.3)(jiti@2.7.0)(tsx@4.23.12)
 
-  packages/auth-react:
-    dependencies:
-      '@gigalibs/contracts':
-        specifier: workspace:*
-        version: link:../contracts
-      react:
-        specifier: ^18.0.0 || ^19.0.0
-        version: 19.2.8
-    devDependencies:
-      typescript:
-        specifier: ^5.8.3
-        version: 5.9.3
-      vitest:
-        specifier: ^3.0.0
-        version: 3.2.7(@types/node@24.13.3)(jiti@2.7.0)(tsx@4.23.12)
-
-  packages/billing-react:
-    dependencies:
-      '@gigalibs/contracts':
-        specifier: workspace:*
-        version: link:../contracts
-      react:
-        specifier: '>=18.0.0'
-        version: 19.2.8
-    devDependencies:
-      typescript:
-        specifier: ^5.8.3
-        version: 5.9.3
-      vitest:
-        specifier: ^3.0.0
-        version: 3.2.7(@types/node@24.13.3)(jiti@2.7.0)(tsx@4.23.12)
-
   packages/broker:
     dependencies:
       '@gigalibs/logger':
@@ -1474,12 +1372,6 @@ importers:
         specifier: ^3.0.0
         version: 3.2.7(@types/node@24.13.3)(jiti@2.7.0)(tsx@4.23.12)
 
-  packages/cart-react:
-    devDependencies:
-      typescript:
-        specifier: ^5.8.3
-        version: 5.9.3
-
   packages/charts-react:
     dependencies:
       react:
@@ -1489,31 +1381,6 @@ importers:
       typescript:
         specifier: ^5.8.3
         version: 5.9.3
-
-  packages/chat-core:
-    devDependencies:
-      typescript:
-        specifier: ^5.8.3
-        version: 5.9.3
-      vitest:
-        specifier: ^3.0.0
-        version: 3.2.7(@types/node@24.13.3)(jiti@2.7.0)(tsx@4.23.12)
-
-  packages/config:
-    dependencies:
-      zod:
-        specifier: ^4.5.2
-        version: 4.5.2
-    devDependencies:
-      '@types/node':
-        specifier: ^24.10.0
-        version: 24.13.3
-      typescript:
-        specifier: ^5.8.3
-        version: 5.9.3
-      vitest:
-        specifier: ^3.0.0
-        version: 3.2.7(@types/node@24.13.3)(jiti@2.7.0)(tsx@4.23.12)
 
   packages/configuration-core:
     dependencies:
@@ -1582,22 +1449,6 @@ importers:
         specifier: ^3.0.0
         version: 3.2.7(@types/node@24.13.3)(jiti@2.7.0)(tsx@4.23.12)
 
-  packages/custom-fields:
-    dependencies:
-      '@gigalibs/crypto':
-        specifier: workspace:*
-        version: link:../crypto
-    devDependencies:
-      '@types/node':
-        specifier: ^24.10.0
-        version: 24.13.3
-      typescript:
-        specifier: ^5.8.3
-        version: 5.9.3
-      vitest:
-        specifier: ^3.0.0
-        version: 3.2.7(@types/node@24.13.3)(jiti@2.7.0)(tsx@4.23.12)
-
   packages/custom-fields-nest:
     dependencies:
       '@nestjs/common':
@@ -1613,12 +1464,6 @@ importers:
       '@types/pg':
         specifier: ^8.23.1
         version: 8.23.1
-      typescript:
-        specifier: ^5.8.3
-        version: 5.9.3
-
-  packages/data-retention:
-    devDependencies:
       typescript:
         specifier: ^5.8.3
         version: 5.9.3
@@ -1690,19 +1535,6 @@ importers:
         specifier: ^3.0.0
         version: 3.2.7(@types/node@24.13.3)(jiti@2.7.0)(tsx@4.23.12)
 
-  packages/errors:
-    dependencies:
-      '@gigalibs/contracts':
-        specifier: workspace:*
-        version: link:../contracts
-    devDependencies:
-      typescript:
-        specifier: ^5.8.3
-        version: 5.9.3
-      vitest:
-        specifier: ^3.0.0
-        version: 3.2.7(@types/node@24.13.3)(jiti@2.7.0)(tsx@4.23.12)
-
   packages/event-bus:
     dependencies:
       '@gigalibs/logger':
@@ -1719,12 +1551,6 @@ importers:
         specifier: ^3.0.0
         version: 3.2.7(@types/node@24.13.3)(jiti@2.7.0)(tsx@4.23.12)
 
-  packages/form-engine-core:
-    dependencies:
-      '@gigalibs/contracts':
-        specifier: workspace:*
-        version: link:../contracts
-
   packages/forms-engine-nest:
     dependencies:
       '@nestjs/common':
@@ -1740,12 +1566,6 @@ importers:
       '@types/pg':
         specifier: ^8.23.1
         version: 8.23.1
-      typescript:
-        specifier: ^5.8.3
-        version: 5.9.3
-
-  packages/fraud-detection:
-    devDependencies:
       typescript:
         specifier: ^5.8.3
         version: 5.9.3
@@ -1775,15 +1595,6 @@ importers:
         specifier: ^5.8.3
         version: 5.9.3
 
-  packages/health:
-    devDependencies:
-      typescript:
-        specifier: ^5.8.3
-        version: 5.9.3
-      vitest:
-        specifier: ^3.0.0
-        version: 3.2.7(@types/node@24.13.3)(jiti@2.7.0)(tsx@4.23.12)
-
   packages/host-kit:
     devDependencies:
       typescript:
@@ -1791,19 +1602,6 @@ importers:
         version: 5.9.3
 
   packages/i18n:
-    devDependencies:
-      typescript:
-        specifier: ^5.8.3
-        version: 5.9.3
-      vitest:
-        specifier: ^3.0.0
-        version: 3.2.7(@types/node@24.13.3)(jiti@2.7.0)(tsx@4.23.12)
-
-  packages/icons:
-    dependencies:
-      react:
-        specifier: '>=18.0.0'
-        version: 19.2.8
     devDependencies:
       typescript:
         specifier: ^5.8.3
@@ -1837,48 +1635,13 @@ importers:
         specifier: ^3.0.0
         version: 3.2.7(@types/node@24.13.3)(jiti@2.7.0)(tsx@4.23.12)
 
-  packages/integrations/openai:
-    dependencies:
-      openai:
-        specifier: ^7.9.0
-        version: 7.9.0(@aws-sdk/credential-provider-node@3.972.82)(@smithy/signature-v4@5.7.3)(ws@8.21.3)(zod@4.5.2)
-    devDependencies:
-      typescript:
-        specifier: ^5.8.3
-        version: 5.9.3
-      vitest:
-        specifier: ^3.0.0
-        version: 3.2.7(@types/node@24.13.3)(jiti@2.7.0)(tsx@4.23.12)
-
   packages/invoices-core: {}
-
-  packages/jwt-universal:
-    dependencies:
-      '@gigalibs/redis':
-        specifier: workspace:*
-        version: link:../redis
-    devDependencies:
-      typescript:
-        specifier: ^5.8.3
-        version: 5.9.3
-
-  packages/knowledge-base-react:
-    devDependencies:
-      typescript:
-        specifier: ^5.8.3
-        version: 5.9.3
 
   packages/kpi-widgets-react:
     dependencies:
       react:
         specifier: '>=18.0.0'
         version: 19.2.8
-    devDependencies:
-      typescript:
-        specifier: ^5.8.3
-        version: 5.9.3
-
-  packages/ledger-nest:
     devDependencies:
       typescript:
         specifier: ^5.8.3
@@ -2028,50 +1791,6 @@ importers:
         specifier: ^3.0.0
         version: 3.2.7(@types/node@24.13.3)(jiti@2.7.0)(tsx@4.23.12)
 
-  packages/oauth-universal:
-    dependencies:
-      '@gigalibs/crypto':
-        specifier: workspace:*
-        version: link:../crypto
-    devDependencies:
-      typescript:
-        specifier: ^5.8.3
-        version: 5.9.3
-
-  packages/onboarding-flow:
-    devDependencies:
-      typescript:
-        specifier: ^5.8.3
-        version: 5.9.3
-
-  packages/orders-nest:
-    devDependencies:
-      typescript:
-        specifier: ^5.8.3
-        version: 5.9.3
-
-  packages/orgs-core:
-    dependencies:
-      '@gigalibs/crypto':
-        specifier: workspace:*
-        version: link:../crypto
-    devDependencies:
-      typescript:
-        specifier: ^5.8.3
-        version: 5.9.3
-      vitest:
-        specifier: ^3.0.0
-        version: 3.2.7(@types/node@24.13.3)(jiti@2.7.0)(tsx@4.23.12)
-
-  packages/pagination:
-    devDependencies:
-      typescript:
-        specifier: ^5.8.3
-        version: 5.9.3
-      vitest:
-        specifier: ^3.0.0
-        version: 3.2.7(@types/node@24.13.3)(jiti@2.7.0)(tsx@4.23.12)
-
   packages/platform-settings:
     dependencies:
       zod:
@@ -2121,12 +1840,6 @@ importers:
       vitest:
         specifier: ^3.0.0
         version: 3.2.7(@types/node@24.13.3)(jiti@2.7.0)(tsx@4.23.12)
-
-  packages/pricing-calculator:
-    devDependencies:
-      typescript:
-        specifier: ^5.8.3
-        version: 5.9.3
 
   packages/privacy-gdpr:
     devDependencies:
@@ -2193,22 +1906,6 @@ importers:
         specifier: ^3.0.0
         version: 3.2.7(@types/node@24.13.3)(jiti@2.7.0)(tsx@4.23.12)
 
-  packages/rbac-react:
-    dependencies:
-      '@gigalibs/rbac-core':
-        specifier: workspace:*
-        version: link:../rbac-core
-      react:
-        specifier: '>=18.0.0'
-        version: 19.2.8
-    devDependencies:
-      typescript:
-        specifier: ^5.8.3
-        version: 5.9.3
-      vitest:
-        specifier: ^3.0.0
-        version: 3.2.7(@types/node@24.13.3)(jiti@2.7.0)(tsx@4.23.12)
-
   packages/realtime:
     dependencies:
       '@gigalibs/logger':
@@ -2244,28 +1941,6 @@ importers:
         specifier: ^3.0.0
         version: 3.2.7(@types/node@24.13.3)(jiti@2.7.0)(tsx@4.23.12)
 
-  packages/reports-core:
-    dependencies:
-      '@gigalibs/crypto':
-        specifier: workspace:*
-        version: link:../crypto
-    devDependencies:
-      typescript:
-        specifier: ^5.8.3
-        version: 5.9.3
-
-  packages/reports-nest:
-    devDependencies:
-      typescript:
-        specifier: ^5.8.3
-        version: 5.9.3
-
-  packages/reports-react:
-    devDependencies:
-      typescript:
-        specifier: ^5.8.3
-        version: 5.9.3
-
   packages/rule-engine-universal:
     devDependencies:
       typescript:
@@ -2274,12 +1949,6 @@ importers:
       vitest:
         specifier: ^3.2.7
         version: 3.2.7(@types/node@24.13.3)(jiti@2.7.0)(tsx@4.23.12)
-
-  packages/sla-engine:
-    devDependencies:
-      typescript:
-        specifier: ^5.8.3
-        version: 5.9.3
 
   packages/spend-core:
     devDependencies:
@@ -2330,37 +1999,6 @@ importers:
         specifier: ^3.0.0
         version: 3.2.7(@types/node@24.13.3)(jiti@2.7.0)(tsx@4.23.12)
 
-  packages/ui:
-    dependencies:
-      react:
-        specifier: '>=18.0.0'
-        version: 19.2.8
-    devDependencies:
-      typescript:
-        specifier: ^5.8.3
-        version: 5.9.3
-      vitest:
-        specifier: ^3.0.0
-        version: 3.2.7(@types/node@24.13.3)(jiti@2.7.0)(tsx@4.23.12)
-
-  packages/ui-preset:
-    devDependencies:
-      typescript:
-        specifier: ^5.8.3
-        version: 5.9.3
-      vitest:
-        specifier: ^3.0.0
-        version: 3.2.7(@types/node@24.13.3)(jiti@2.7.0)(tsx@4.23.12)
-
-  packages/users-core:
-    devDependencies:
-      typescript:
-        specifier: ^5.8.3
-        version: 5.9.3
-      vitest:
-        specifier: ^3.0.0
-        version: 3.2.7(@types/node@24.13.3)(jiti@2.7.0)(tsx@4.23.12)
-
   packages/validation-nest:
     dependencies:
       '@nestjs/common':
@@ -2394,37 +2032,6 @@ importers:
       typescript:
         specifier: ^5.8.3
         version: 5.9.3
-
-  packages/workflow-engine:
-    devDependencies:
-      typescript:
-        specifier: ^5.8.3
-        version: 5.9.3
-      vitest:
-        specifier: ^3.0.0
-        version: 3.2.7(@types/node@24.13.3)(jiti@2.7.0)(tsx@4.23.12)
-
-  packages/workflow-mcp:
-    dependencies:
-      '@gigalibs/workflow-sdk':
-        specifier: workspace:*
-        version: link:../workflow-sdk
-      '@modelcontextprotocol/sdk':
-        specifier: ^1.0.0
-        version: 1.30.0(zod@4.5.2)
-    devDependencies:
-      typescript:
-        specifier: ^5.8.3
-        version: 5.9.3
-
-  packages/workflow-sdk:
-    devDependencies:
-      typescript:
-        specifier: ^5.8.3
-        version: 5.9.3
-      vitest:
-        specifier: ^3.0.0
-        version: 3.2.7(@types/node@24.13.3)(jiti@2.7.0)(tsx@4.23.12)
 
 packages:
 
@@ -2976,12 +2583,6 @@ packages:
     resolution: {integrity: sha512-SWJLZrPamDPsJlFFOW1nkgN0j0rbPbmSdmK0XAoXlyqKieLtMVl4vzng3aR5pwKoUx0scug8+YY2oct3fdfy9A==}
     engines: {node: '>=18.0.0', npm: '>=7.0.0'}
 
-  '@hono/node-server@2.1.1':
-    resolution: {integrity: sha512-ELuehkj5VCBdgEw9zs+ivkKwyzzUCSQuE96YmiPvn1ECBoZCczbFXJLeEGMTYjphP6gydh4pHMqEYPVMYUVgQg==}
-    engines: {node: '>=20'}
-    peerDependencies:
-      hono: ^4
-
   '@img/colour@1.1.0':
     resolution: {integrity: sha512-Td76q7j57o/tLVdgS746cYARfSyxk8iEfRxewL9h4OMzYhbW4TAcppl0mT4eyqXddh6L/jwoM75mo7ixa/pCeQ==}
     engines: {node: '>=18'}
@@ -3203,16 +2804,6 @@ packages:
     peerDependencies:
       react: ^18.3.1
       react-dom: ^18.3.1
-
-  '@modelcontextprotocol/sdk@1.30.0':
-    resolution: {integrity: sha512-xKd8OIzlqNzcqcNumGAa6g+PW2kjD5vrpcKOnfldAUPP3j7lnqMPwlTXQm8gF+UwH72z0lqaRbjr9hqGz0eITA==}
-    engines: {node: '>=18'}
-    peerDependencies:
-      '@cfworker/json-schema': ^4.1.1
-      zod: ^3.25 || ^4.0
-    peerDependenciesMeta:
-      '@cfworker/json-schema':
-        optional: true
 
   '@msgpackr-extract/msgpackr-extract-darwin-arm64@3.0.4':
     resolution: {integrity: sha512-LCkGo6JDfaBhgST7UpPWgNgLINpcpabaHfyz5OBx75nUYxBsaEPxjnyNjWpeb/xBup/682QnBfRBy2/LvPutZQ==}
@@ -5073,14 +4664,6 @@ packages:
   eventemitter2@6.4.9:
     resolution: {integrity: sha512-JEPTiaOt9f04oa6NOkc4aH+nVp5I3wEjpHbIPqfgCdD5v5bUzy7xQqwcVO2aDQgOWhI28da57HksMrzK9HlRxg==}
 
-  eventsource-parser@3.1.1:
-    resolution: {integrity: sha512-EKN1vKAMcZ8MlYMpaNuxN6R9yakzH6uajHcHVTqWJzvu5pWw9DyhbP35HH8MVBQ+dZjAfDxk+A8NiR9KWaXiyQ==}
-    engines: {node: '>=18.0.0'}
-
-  eventsource@3.0.7:
-    resolution: {integrity: sha512-CRT1WTyuQoD771GW56XEZFQ/ZoSfWid1alKGDYMmkt2yl8UXrVR4pspqWNEcqKvVIzg6PAltWjxcSSPrboA4iA==}
-    engines: {node: '>=18.0.0'}
-
   exceljs@4.4.0:
     resolution: {integrity: sha512-XctvKaEMaj1Ii9oDOqbW/6e1gXknSY4g/aLCDicOXqBE4M0nRWkUu0PTp++UPNzoFY12BNHMfs/VadKIS6llvg==}
     engines: {node: '>=8.3.0'}
@@ -5088,12 +4671,6 @@ packages:
   expect-type@1.4.0:
     resolution: {integrity: sha512-KfYbmpRm0VbLjEvVa9yGwCi9GI34xvi7A/HXYWQO65CSD2u3MczUJSuwXKFIxlGsgBQizV9q5J9NHj4VG0n+pA==}
     engines: {node: '>=12.0.0'}
-
-  express-rate-limit@8.7.0:
-    resolution: {integrity: sha512-hOwV7WOxXfjRpAM1DSJWZDXx3GhplwD8IfwuwvogD8i1Qnkgosw/H45s4ZnFAUHDAhPjlY9hLBvJhKmGMyY26g==}
-    engines: {node: '>= 16'}
-    peerDependencies:
-      express: '>= 4.11'
 
   express@5.2.1:
     resolution: {integrity: sha512-hIS4idWWai69NezIdRt2xFVofaF4j+6INOpJlVOLDO8zXGpUVEVzIYk12UUi2JzjEzWL3IOAxcTubgz9Po0yXw==}
@@ -5276,10 +4853,6 @@ packages:
   help-me@5.0.0:
     resolution: {integrity: sha512-7xgomUX6ADmcYzFik0HzAxh/73YlKR9bmFzf51CZwR+b6YtzU2m0u49hQCqV6SvlqIqsaxovfwdvbnsw3b/zpg==}
 
-  hono@4.13.7:
-    resolution: {integrity: sha512-c8/gF9ac8Y78/agExVocyLevgR+JlpNB444Py0FSX8pJoPdYUfUzRcXtYEYGwt6l19qIlVZPN5Mfsw9jFShmQQ==}
-    engines: {node: '>=16.9.0'}
-
   http-errors@2.0.1:
     resolution: {integrity: sha512-4FbRdAX+bSdmo4AUFuS0WNiPz8NgFt+r8ThgNWmlrjQjt1Q7ZR9+zTlce2859x4KSXrwIsaeTqDoKQmtP8pLmQ==}
     engines: {node: '>= 0.8'}
@@ -5316,10 +4889,6 @@ packages:
   ioredis@5.11.1:
     resolution: {integrity: sha512-ehuGcf94bQXhfagULNXrJdfnWO38v070jxSx/qE87Kjzmu2fU7ro5EFAb+OPituLqgfyuQaym5DlrNydW2sJ9A==}
     engines: {node: '>=12.22.0'}
-
-  ip-address@10.7.0:
-    resolution: {integrity: sha512-BGFsyJd5mpXp3rK6jIdADLNgpJUK1jnjzvYF8lK+VyDab9JAmqN0YOKDdP17HlgKb2+ehPgDc8EtnRLbGCAMhA==}
-    engines: {node: '>= 12'}
 
   ipaddr.js@1.9.1:
     resolution: {integrity: sha512-0KI/607xoxSToH7GjN1FfSbLoU0+btTicjsQSWQlh/hZykN8KpmMf7uYwPW3R+akZ6R/w18ZlXSHBYXiYUPO3g==}
@@ -5461,9 +5030,6 @@ packages:
 
   json-schema-traverse@1.0.0:
     resolution: {integrity: sha512-NM8/P9n3XjXhIZn1lLhkFaACTOURQXjWhV4BA/RnOv8xvgqtqpAX9IO4mRQxSx1Rlo4tqzeqb0sOlruaOy3dug==}
-
-  json-schema-typed@8.0.2:
-    resolution: {integrity: sha512-fQhoXdcvc3V28x7C7BMs4P5+kNlgUURe2jmUT1T//oBRMDrqy1QPelJimwZGo7Hg9VPV3EQV5Bnq4hbFy2vetA==}
 
   jsonfile@4.0.0:
     resolution: {integrity: sha512-m6F1R3z8jjlf2imQHS2Qez5sjKWQzbuuhuJ/FKYFRZvPE3PuHcSMVZzfsLhGVOkfd20obL5SWEBew5ShlquNxg==}
@@ -5763,30 +5329,6 @@ packages:
   once@1.4.0:
     resolution: {integrity: sha512-lNaJgI+2Q5URQBkccEKHTQOPaXdUxnZZElQTZY0MFUAuaEqe1E+Nyvgdz/aIyNi6Z9MzO5dv1H8n58/GELp3+w==}
 
-  openai@7.9.0:
-    resolution: {integrity: sha512-Qfx4qKmPllnilbuP6NgEj5KPUxLShYxrlRPWh3ZRQgNgs5B1V52PrfAdEQbW9MTGq7MquDYFMm+K/KXxiY736w==}
-    engines: {node: '>=22.0.0'}
-    peerDependencies:
-      '@aws-sdk/credential-provider-node': '>=3.972.0 <4'
-      '@smithy/hash-node': '>=4.3.0 <5'
-      '@smithy/signature-v4': '>=5.4.0 <6'
-      undici: '>=5 <9'
-      ws: ^8.21.0
-      zod: ^3.25 || ^4.0
-    peerDependenciesMeta:
-      '@aws-sdk/credential-provider-node':
-        optional: true
-      '@smithy/hash-node':
-        optional: true
-      '@smithy/signature-v4':
-        optional: true
-      undici:
-        optional: true
-      ws:
-        optional: true
-      zod:
-        optional: true
-
   openid-client@6.8.7:
     resolution: {integrity: sha512-gtKthNu7evSBvTdrrlHb4F3Fi9dcwlb5QaITlCs+9mfpvuOi0Q3qtBf5+iY4sEP8hy1qCoAdxBNPDcmZeVSDzQ==}
 
@@ -5930,10 +5472,6 @@ packages:
   pirates@4.0.7:
     resolution: {integrity: sha512-TfySrs/5nm8fQJDcBDuUng3VOUKsd7S+zqvbOTiGXHfxX4wK31ard+hoNuvkicM/2YFzlpDgABOevKSsB4G/FA==}
     engines: {node: '>= 6'}
-
-  pkce-challenge@5.0.1:
-    resolution: {integrity: sha512-wQ0b/W4Fr01qtpHlqSqspcj3EhBvimsdh0KlHhH8HRZnMsEa0ea2fTULOXOS9ccQr3om+GcGRk4e+isrZWV8qQ==}
-    engines: {node: '>=16.20.0'}
 
   pkg-types@2.3.1:
     resolution: {integrity: sha512-y+ichcgc2LrADuhLNAx8DFjVfgz91pRxfZdI3UDhxHvcVEZsenLO+7XaU5vOp0u/7V/wZ+plyuQxtrDlZJ+yeg==}
@@ -6836,11 +6374,6 @@ packages:
     resolution: {integrity: sha512-9qv4rlDiopXg4E69k+vMHjNN63YFMe9sZMrdlvKnCjlCRWeCBswPPMPUfx+ipsAWq1LXHe70RcbaHdJJpS6hyQ==}
     engines: {node: '>= 10'}
 
-  zod-to-json-schema@3.25.2:
-    resolution: {integrity: sha512-O/PgfnpT1xKSDeQYSCfRI5Gy3hPf91mKVDuYLUHZJMiDFptvP41MSnWofm8dnCm0256ZNfZIM7DSzuSMAFnjHA==}
-    peerDependencies:
-      zod: ^3.25.28 || ^4
-
   zod@4.5.2:
     resolution: {integrity: sha512-XkYXCol10+ba/6F/cueWV+TezUeOqXW0hdeJt5CdXjTYeAgAQg5N03RQdJ80mhfFE72+pblvYMW4wy2Qp4Qbrg==}
 
@@ -7460,10 +6993,6 @@ snapshots:
 
   '@fluent/bundle@0.19.1': {}
 
-  '@hono/node-server@2.1.1(hono@4.13.7)':
-    dependencies:
-      hono: 4.13.7
-
   '@img/colour@1.1.0':
     optional: true
 
@@ -7661,28 +7190,6 @@ snapshots:
       - '@types/react'
       - '@types/react-dom'
       - typescript
-
-  '@modelcontextprotocol/sdk@1.30.0(zod@4.5.2)':
-    dependencies:
-      '@hono/node-server': 2.1.1(hono@4.13.7)
-      ajv: 8.20.0
-      ajv-formats: 3.0.1(ajv@8.20.0)
-      content-type: 1.0.5
-      cors: 2.8.6
-      cross-spawn: 7.0.6
-      eventsource: 3.0.7
-      eventsource-parser: 3.1.1
-      express: 5.2.1
-      express-rate-limit: 8.7.0(express@5.2.1)
-      hono: 4.13.7
-      jose: 6.2.10
-      json-schema-typed: 8.0.2
-      pkce-challenge: 5.0.1
-      raw-body: 3.0.2
-      zod: 4.5.2
-      zod-to-json-schema: 3.25.2(zod@4.5.2)
-    transitivePeerDependencies:
-      - supports-color
 
   '@msgpackr-extract/msgpackr-extract-darwin-arm64@3.0.4':
     optional: true
@@ -9633,12 +9140,6 @@ snapshots:
 
   eventemitter2@6.4.9: {}
 
-  eventsource-parser@3.1.1: {}
-
-  eventsource@3.0.7:
-    dependencies:
-      eventsource-parser: 3.1.1
-
   exceljs@4.4.0:
     dependencies:
       archiver: 5.3.2
@@ -9652,14 +9153,6 @@ snapshots:
       uuid: 8.3.2
 
   expect-type@1.4.0: {}
-
-  express-rate-limit@8.7.0(express@5.2.1):
-    dependencies:
-      debug: 4.4.3
-      express: 5.2.1
-      ip-address: 10.7.0
-    transitivePeerDependencies:
-      - supports-color
 
   express@5.2.1:
     dependencies:
@@ -9894,8 +9387,6 @@ snapshots:
 
   help-me@5.0.0: {}
 
-  hono@4.13.7: {}
-
   http-errors@2.0.1:
     dependencies:
       depd: 2.0.0
@@ -9940,8 +9431,6 @@ snapshots:
       standard-as-callback: 2.1.0
     transitivePeerDependencies:
       - supports-color
-
-  ip-address@10.7.0: {}
 
   ipaddr.js@1.9.1: {}
 
@@ -10064,8 +9553,6 @@ snapshots:
       argparse: 2.0.1
 
   json-schema-traverse@1.0.0: {}
-
-  json-schema-typed@8.0.2: {}
 
   jsonfile@4.0.0:
     optionalDependencies:
@@ -10324,13 +9811,6 @@ snapshots:
     dependencies:
       wrappy: 1.0.2
 
-  openai@7.9.0(@aws-sdk/credential-provider-node@3.972.82)(@smithy/signature-v4@5.7.3)(ws@8.21.3)(zod@4.5.2):
-    optionalDependencies:
-      '@aws-sdk/credential-provider-node': 3.972.82
-      '@smithy/signature-v4': 5.7.3
-      ws: 8.21.3
-      zod: 4.5.2
-
   openid-client@6.8.7:
     dependencies:
       jose: 6.2.10
@@ -10472,8 +9952,6 @@ snapshots:
       thread-stream: 4.2.0
 
   pirates@4.0.7: {}
-
-  pkce-challenge@5.0.1: {}
 
   pkg-types@2.3.1:
     dependencies:
@@ -11557,10 +11035,6 @@ snapshots:
       archiver-utils: 3.0.4
       compress-commons: 4.1.2
       readable-stream: 3.6.2
-
-  zod-to-json-schema@3.25.2(zod@4.5.2):
-    dependencies:
-      zod: 4.5.2
 
   zod@4.5.2: {}
 

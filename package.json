@@ -11,7 +11,7 @@
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev",
-    "test": "vitest run --config vitest.config.ts && pnpm test:execution-api",
+    "test": "vitest run --config vitest.config.ts",
     "verify": "node scripts/verify.mjs",
     "test:execution-api": "node scripts/run-workflow-api-tests.mjs",
     "test:watch": "turbo run test:watch",

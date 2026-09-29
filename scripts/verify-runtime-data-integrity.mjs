@@ -151,6 +151,8 @@ for (const configuredRoot of roots) {
 }
 
 function verifyRetiredApplication(configuredRoot) {
+  // A retired application that has been removed entirely (WI-OI-102f) is stronger than one carrying a retired marker.
+  if (!existsSync(join(repositoryRoot, configuredRoot))) return;
   const packagePath = join(repositoryRoot, configuredRoot, 'package.json');
   const entryPath = join(repositoryRoot, configuredRoot, 'index.html');
   if (!existsSync(packagePath)) {

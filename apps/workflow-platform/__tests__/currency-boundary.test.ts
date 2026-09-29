@@ -3,12 +3,13 @@ import { GET as getCurrency, POST as postCurrency } from '../app/api/currency/[.
 import { moduleTenantBindingId } from '../lib/ar-tenant-binding';
 import { canUseTenantModule, hasPermission } from '../lib/module-access';
 import { verifiedSession } from '../lib/verified-session';
+import { isLockedModule } from './helpers/locked-modules';
 
 vi.mock('../lib/verified-session', () => ({
   verifiedSession: vi.fn(),
 }));
 
-describe('Currency tenant binding and isolation boundary', () => {
+describe.skipIf(isLockedModule('multi-currency'))('Currency tenant binding and isolation boundary', () => {
   it('maps canonical tenant IDs to deterministic isolated UUIDs for currency schema', () => {
     const tenantA = moduleTenantBindingId('currency-workspace-east');
     const tenantB = moduleTenantBindingId('currency-workspace-west');
@@ -40,7 +41,7 @@ describe('Currency tenant binding and isolation boundary', () => {
   });
 });
 
-describe('Wave 6 / Multi-Currency Route Security Boundary & Anti-Mock Enforcement', () => {
+describe.skipIf(isLockedModule('multi-currency'))('Wave 6 / Multi-Currency Route Security Boundary & Anti-Mock Enforcement', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.stubEnv('CURRENCY_API_URL', 'http://127.0.0.1:3700');

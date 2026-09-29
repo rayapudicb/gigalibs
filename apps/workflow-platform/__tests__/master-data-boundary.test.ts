@@ -2,12 +2,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { GET as getMasterData, POST as postMasterData } from '../app/api/master-data/route';
 import { verifiedSession } from '../lib/verified-session';
 import { masterDataStore } from '../lib/master-data-store';
+import { isLockedModule } from './helpers/locked-modules';
 
 vi.mock('../lib/verified-session', () => ({
   verifiedSession: vi.fn(),
 }));
 
-describe('Master Data Governance API Boundary & Tri-Modal Ingestion', () => {
+describe.skipIf(isLockedModule('master-data'))('Master Data Governance API Boundary & Tri-Modal Ingestion', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });

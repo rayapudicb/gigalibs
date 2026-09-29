@@ -15,7 +15,6 @@ const excludedRoots = new Set(
         (value.startsWith('apps/') || value.startsWith('packages/')),
     ),
 );
-excludedRoots.add('apps/playground-web');
 
 const ignoredDirectories = new Set([
   '.next',

@@ -3,12 +3,13 @@ import { GET as getTax, POST as postTax } from '../app/api/tax/[...path]/route';
 import { moduleTenantBindingId } from '../lib/ar-tenant-binding';
 import { canUseTenantModule, hasPermission } from '../lib/module-access';
 import { verifiedSession } from '../lib/verified-session';
+import { isLockedModule } from './helpers/locked-modules';
 
 vi.mock('../lib/verified-session', () => ({
   verifiedSession: vi.fn(),
 }));
 
-describe('Tax Configuration tenant binding and access control', () => {
+describe.skipIf(isLockedModule('tax-configuration'))('Tax Configuration tenant binding and access control', () => {
   it('maps canonical tenant IDs to deterministic isolated UUIDs for tax schema', () => {
     const tenantA = moduleTenantBindingId('tax-workspace-alpha');
     const tenantB = moduleTenantBindingId('tax-workspace-beta');
@@ -36,7 +37,7 @@ describe('Tax Configuration tenant binding and access control', () => {
   });
 });
 
-describe('Wave 6 / Tax Configuration Route Security Boundary & Anti-Mock Enforcement', () => {
+describe.skipIf(isLockedModule('tax-configuration'))('Wave 6 / Tax Configuration Route Security Boundary & Anti-Mock Enforcement', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.stubEnv('TAX_API_URL', 'http://127.0.0.1:3600');

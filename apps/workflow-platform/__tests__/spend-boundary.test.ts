@@ -2,12 +2,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { GET as getSpend, POST as postSpend } from '../app/api/spend/[...path]/route';
 import { moduleTenantBindingId } from '../lib/ar-tenant-binding';
 import { verifiedSession } from '../lib/verified-session';
+import { isLockedModule } from './helpers/locked-modules';
 
 vi.mock('../lib/verified-session', () => ({
   verifiedSession: vi.fn(),
 }));
 
-describe('Spend tenant binding and isolation', () => {
+describe.skipIf(isLockedModule('spend-management'))('Spend tenant binding and isolation', () => {
   it('maps canonical tenant IDs to deterministic isolated UUIDs', () => {
     const tenantA = moduleTenantBindingId('tenant-workspace-alpha');
     const tenantB = moduleTenantBindingId('tenant-workspace-beta');
@@ -25,7 +26,7 @@ describe('Spend tenant binding and isolation', () => {
   });
 });
 
-describe('Wave 3 / Spend Management Route Security Boundary & Anti-Mock Enforcement', () => {
+describe.skipIf(isLockedModule('spend-management'))('Wave 3 / Spend Management Route Security Boundary & Anti-Mock Enforcement', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.stubEnv('SPEND_API_URL', 'http://127.0.0.1:3500');

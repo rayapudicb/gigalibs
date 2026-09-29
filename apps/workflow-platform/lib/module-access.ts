@@ -32,6 +32,14 @@ export function hasPermission(granted: readonly string[], required: string): boo
   return granted.includes(`${required.slice(0, separator)}:*`);
 }
 
+// A frozen or planned entry is locked (ADR-0016 F6; WI-OI-102e/f): its APIs refuse as well as its screens, whatever
+// the tenant's features and the user's permissions.
+const lockedModuleKeys = new Set<string>(
+  platformModuleCatalog
+    .filter((module) => module.readiness === 'CONTAINED' || module.readiness === 'PLANNED')
+    .map((module) => module.key),
+);
+
 export function canUseTenantModule(
   moduleKey: string,
   enabledModules: ReadonlySet<string>,
@@ -39,6 +47,7 @@ export function canUseTenantModule(
 ): boolean {
   const requiredPermission = tenantModulePermission[moduleKey];
   return (
+    !lockedModuleKeys.has(moduleKey) &&
     enabledModules.has(moduleKey) &&
     typeof requiredPermission === 'string' &&
     hasPermission(permissions, requiredPermission)

@@ -76,7 +76,7 @@
     "note_WI-OI-082": "Review: module SDK adopted by CMMS and Workforce; 12/12 live certifications on 103da75e470e-f01b896910a9.",
     "note_WI-OI-083": "Review: manifest-driven web extension points and the bounded no-CMMS solution proof are locally complete; independent review remains open.",
     "note_WI-OI-085": "Review: 085a–085f are locally implemented and verified. The isolated generated field-inspections proof passed 35/35 conformance, real-session sidebar and BFF CRUD/replay/conflict/two-tenant isolation, controlled host outage, Chrome/axe accessibility and exact-image vulnerability policy with zero Critical/High. Cleanup left no sample module or proof resources. Independent QA/SDET and Documentation decisions remain open; no production, cloud or external-release authority.",
-    "note_WI-OI-102": "In Progress: 102a ADR-0016; 102b engines (Workflow Studio kept, Python plane parked); 102c kernel/capability layers and spec.category; 102d fenced core tables; 102e catalogue truth (six maturity states, no uncertified AVAILABLE, 10 frozen modules locked). Next 102f package inventory and 102g platform-rbac merge."
+    "note_WI-OI-102": "In Progress: 102a ADR-0016; 102b engines; 102c kernel/capability layers; 102d fenced core tables; 102e catalogue truth; 102f package clean-up (586 files removed, 77 workspace units, locked modules refused at the API, Python plane out of pnpm test). Next 102g platform-rbac merge."
   },
   "relativeDeliveryEstimate": {
     "total": 100,

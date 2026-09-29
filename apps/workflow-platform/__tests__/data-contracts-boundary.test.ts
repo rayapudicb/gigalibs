@@ -2,12 +2,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { GET as getDataStudio, POST as postDataStudio } from '../app/api/data-studio/[...path]/route';
 import { canUseTenantModule, hasPermission } from '../lib/module-access';
 import { verifiedSession } from '../lib/verified-session';
+import { isLockedModule } from './helpers/locked-modules';
 
 vi.mock('../lib/verified-session', () => ({
   verifiedSession: vi.fn(),
 }));
 
-describe('Wave 2 / Data Contracts Module Access Control & Permissions', () => {
+describe.skipIf(isLockedModule('data-contracts'))('Wave 2 / Data Contracts Module Access Control & Permissions', () => {
   it('verifies data-contracts module entitlement and permission checks', () => {
     const features = new Set(['data-contracts']);
     const permissions = ['contracts:read'];
@@ -28,7 +29,7 @@ describe('Wave 2 / Data Contracts Module Access Control & Permissions', () => {
   });
 });
 
-describe('Wave 2 / Data Studio Route Security Boundary & Anti-Mock Enforcement', () => {
+describe.skipIf(isLockedModule('data-contracts'))('Wave 2 / Data Studio Route Security Boundary & Anti-Mock Enforcement', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.stubEnv('DATA_STUDIO_API_URL', 'http://127.0.0.1:4100');

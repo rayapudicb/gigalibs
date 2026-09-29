@@ -8,6 +8,7 @@ import {
   mostSpecificActiveModuleKey,
   tenantModulePermission,
 } from '../lib/module-access';
+import { isLockedModule } from './helpers/locked-modules';
 
 describe('module access', () => {
   it('supports global and resource wildcards without crossing resources', () => {
@@ -91,6 +92,20 @@ describe('module access', () => {
     ).toBe(true);
   });
 
+  it('refuses every locked catalogue entry, even with its feature and every permission', () => {
+    const locked = platformModuleCatalog.filter((module) => isLockedModule(module.key));
+    expect(locked.length).toBeGreaterThan(0);
+    for (const module of locked) expect(canUseTenantModule(module.key, new Set([module.key]), ['*']), module.key).toBe(false);
+  });
+
+  it('refuses a locked module even with its feature and every permission (ADR-0016 F6)', () => {
+    for (const key of ['esignature', 'accounts-receivable', 'master-data']) {
+      expect(platformModuleCatalog.find((module) => module.key === key)?.readiness, key).toBe('CONTAINED');
+      expect(canUseTenantModule(key, new Set([key]), ['*']), key).toBe(false);
+    }
+    expect(canUseTenantModule('asset-maintenance', new Set(['asset-maintenance']), ['*'])).toBe(true);
+  });
+
   it('requires a tenant context for explicitly declared module inspection', () => {
     // Accounts Receivable declares platform inspection. It is frozen and locked (ADR-0016 F6, WI-OI-102e), so the
     // inspection rule is checked on an openable copy, and the locked entry must stay closed even to operators.
@@ -124,7 +139,9 @@ describe('module access', () => {
     expect(mostSpecificActiveModuleKey(modules, '/connections/example')).toBe('connections');
   });
 
-  it.each([
+  it.skipIf(
+    ['accounts-receivable', 'spend-management', 'tax-configuration', 'multi-currency', 'autonomous-recovery'].every(isLockedModule),
+  ).each([
     ['accounts-receivable', 'ar:read'],
     ['spend-management', 'spend:read'],
     ['tax-configuration', 'tax:read'],
