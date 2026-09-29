@@ -19,9 +19,10 @@ appending to it, and update it at the end of every task.
   - web on 5180: `a255e935c80e-2e98e70d8d0e`;
   - cmms and workforce: `88967ea35011-9ffa1e2a8005`;
   - the other services: `5abfa667bb10-7507432cb066`;
-  - analytics-api: `4366613b86c8-1d4af1e44d20`, schema 17 (deployed 2026-09-29 with the owner's OK; backup
-    `infra/compose/backups/gigalibs_backup_20260929_145224Z.dump`);
-  - **review web on 5190**: container `gigalibs-review-web`, image `workflow-platform:4366613b86c8-1d4af1e44d20`.
+  - analytics-api: `4cc55442219a-7c0b64d63cfd`, schema 18 (deployed 2026-09-29 with the owner's OK; backup
+    `infra/compose/backups/gigalibs_backup_20260929_161251Z.dump`);
+  - **review web on 5190**: container `gigalibs-review-web`, image `workflow-platform:4cc55442219a-7c0b64d63cfd`.
+  - The 5180 web still has the retired gallery tab, which now answers "not found".
     Remove it with `docker rm -f gigalibs-review-web` when the review ends.
 
 ## Owner decisions, 2026-09-29 (handover Task 2)
@@ -38,12 +39,11 @@ appending to it, and update it at the end of every task.
 **Owner plan (2026-09-29):** foundation work until **Sunday 2026-10-04**, then the **agriculture package** for a
 client capability pitch (date not fixed), then back to the rest of the foundation.
 
-1. **Task card `.pi/tasks/WI-OI-103d.md`: d1–d5 are deployed for review on 5190. d6 (Saved charts replaces the
-   gallery) and d7 (Demo Lab sample farm loader, migration 18, formula review panel) are built and verified, not
-   deployed.** Next, with the owner's OK:
-   - deploy migration 18 and new analytics and web images (5180 caveat in the evidence);
-   - create a Demo Lab workspace with a second member who holds `analytics:models:publish`;
-   - the live review. Continue piece by piece, and commit after each
+1. **Task card `.pi/tasks/WI-OI-103d.md`: d1–d7 are built, verified and deployed for review on 5190** (schema 18).
+   Next:
+   - the owner creates a Demo Lab workspace and adds a second member with `analytics:models:publish`;
+   - the live review: load the sample farm, approve "Yield per hectare", build and save a chart.
+   - Then 103e. Continue piece by piece, and commit after each
    piece on the owner's "commit". Charts use ECharts (ADR-0004), not `charts-react`. The card is summarised below:
    chart templates that hold no data.
    - A chart is a query spec plus a visual spec.

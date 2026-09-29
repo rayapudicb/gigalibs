@@ -57,7 +57,7 @@ The owner's rule is that charts hold no data: a chart is a saved query plus a ch
 | 103a | Query contract and engine (acceptance 1) | M | Done, 2026-09-29 |
 | 103b | Formula measures, measure versions, maker-checker (2) | M | Done, 2026-09-29 |
 | 103c | Summaries, cache, limits, benchmark (3) | M | Proposed |
-| 103d | Chart templates and renderer, change-chart, map, gallery retired (4) | L | In progress: d1–d7 built and verified; d1–d5 deployed for review on 5190 (2026-09-29); d6–d7 deploy and live review next |
+| 103d | Chart templates and renderer, change-chart, map, gallery retired (4) | L | In progress: d1–d7 built, verified and deployed for review on 5190 (2026-09-29); owner's live review next |
 | 103e | Dashboards, reports ownership, permissions and roles, web exposure (5, 6) | M | Proposed |
 | 103f | Proof on manufacturing data and the no-developer test (7) | M | Proposed |
 
@@ -266,4 +266,12 @@ chart views. A reader saving a view gets 403; unlisted methods get 404 (`analyti
   under the cancelled tenant. This gap predates d7.
 - **Demo setup:** every existing Demo Lab workspace is cancelled. A new one is needed (no agriculture industry pack
   exists yet), plus a second member with `analytics:models:publish` to approve the formula.
-- **Deploy:** migration 18 and new analytics and web images, with the 5180 caveat above.
+- **5180 caveat:** the 5180 web still has the retired gallery tab, which now answers "not found".
+
+**Review deploy of d6 and d7** (owner's "deploy", 2026-09-29):
+- Backup first: `infra/compose/backups/gigalibs_backup_20260929_161251Z.dump`.
+- The `analytics-migrations` job exited 0 at migration 18; the schema version is 18.
+- `analytics-api` `4cc55442219a-7c0b64d63cfd` is healthy.
+- Review web `gigalibs-review-web` on 127.0.0.1:5190 (same tag): ready 200. Without a session, Explore redirects to
+  login and the Analytics APIs answer 401.
+- 5180 is unchanged (`a255e935c80e-2e98e70d8d0e`, 200). The disk guard ran.

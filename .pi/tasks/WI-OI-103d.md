@@ -1,9 +1,8 @@
 # WI-OI-103d: chart templates that hold no data, and the Explore screen
 
 - **Status:** In progress. d1–d5 are done (2026-09-29). The review deploy is done: analytics-api
-  `4366613b86c8-1d4af1e44d20` at schema 17, and the review web on 127.0.0.1:5190. d6 and d7 (the Demo Lab sample farm
-  loader, migration 18) are built and verified but not deployed. Next: deploy them with the owner's OK, then the live
-  review. Evidence is in `.pi/work/WI-OI-103.md`.
+  `4cc55442219a-7c0b64d63cfd` at schema 18, and the review web on 127.0.0.1:5190 (2026-09-29). d6 and d7 (the Demo Lab
+  sample farm loader, migration 18) are deployed. Next: the owner's live review. Evidence is in `.pi/work/WI-OI-103.md`.
 - **Work item:** WI-OI-103. Evidence goes in `.pi/work/WI-OI-103.md`, under "103d".
 - **Size:** L. The owner's deadline for foundation work is 2026-10-04.
 
