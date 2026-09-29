@@ -129,7 +129,6 @@
         "RULES_API_URL",
         "WORKFLOW_STUDIO_API_URL",
         "RECOVERY_API_URL",
-        "PLATFORM_RBAC_API_URL",
         "ANALYTICS_API_URL",
         "ESIGN_API_URL",
         "CMMS_API_URL"

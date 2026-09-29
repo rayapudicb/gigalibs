@@ -906,40 +906,6 @@ importers:
         specifier: ^5.8.3
         version: 5.9.3
 
-  modules/platform-rbac/apps/api:
-    dependencies:
-      '@nestjs/common':
-        specifier: ^11.2.3
-        version: 11.2.3(reflect-metadata@0.2.2)(rxjs@7.8.2)
-      '@nestjs/core':
-        specifier: ^11.2.3
-        version: 11.2.3(@nestjs/common@11.2.3(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/platform-express@11.2.3)(@nestjs/websockets@11.2.3)(reflect-metadata@0.2.2)(rxjs@7.8.2)
-      '@nestjs/platform-express':
-        specifier: ^11.2.3
-        version: 11.2.3(@nestjs/common@11.2.3(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.2.3)
-      helmet:
-        specifier: ^8.1.0
-        version: 8.3.0
-      pg:
-        specifier: ^8.23.0
-        version: 8.23.0
-      reflect-metadata:
-        specifier: ^0.2.2
-        version: 0.2.2
-      rxjs:
-        specifier: ^7.8.2
-        version: 7.8.2
-    devDependencies:
-      '@types/node':
-        specifier: ^24.10.0
-        version: 24.13.3
-      '@types/pg':
-        specifier: ^8.23.1
-        version: 8.23.1
-      typescript:
-        specifier: ^5.8.3
-        version: 5.9.3
-
   modules/saga-orchestrator/apps/api:
     dependencies:
       '@gigalibs/maps-core':

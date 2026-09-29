@@ -1,6 +1,7 @@
 # WI-OI-102: Foundation boundaries (kernel, capability modules, one engine per job, inventory)
 
-- **Status:** In Progress. The owner started it on 2026-09-29 after approving ADR-0016 F1–F17.
+- **Status:** Review (2026-09-29). Slices 102a–102g are implemented and verified locally; independent review is
+  pending.
 - **Owner:** SDLC Orchestrator / Solution Architecture / Developer Platform.
 - **Decision record:** `docs/architecture/ADR-0016-kernel-capability-modules-and-foundation.md`, which amends
   ADR-0013 §1.
@@ -53,7 +54,7 @@ Each slice has a task card in `.pi/tasks/` when it starts.
 | 102d | Fencing (F4, F5): the "hosted, moving" label and the fenced-table audit | S | Done, 2026-09-29 |
 | 102e | Module triage and catalogue truth (F6): six maturity states in manifests, catalogue and screens | M | Done, 2026-09-29 |
 | 102f | Package inventory (F7): proposal, then owner-approved batches | M | Done, 2026-09-29 |
-| 102g | Merge `platform-rbac`'s department/group roles and Marketplace into the kernel, then retire the module (F6, owner decision 2026-09-29) | M | Proposed |
+| 102g | Merge `platform-rbac`'s department/group roles and Marketplace into the kernel, then retire the module (F6, owner decision 2026-09-29) | M | Done, 2026-09-29 |
 
 ## 102a: ADR-0016 and registration (2026-09-29)
 
@@ -384,3 +385,51 @@ catalogue-truth test and the updated module-access test.
 - Tests: 214 files and 1,930 tests pass; 11 files and 109 tests are skipped while their modules are locked.
 - The Python execution-plane tests no longer run in `pnpm test`.
 - `pnpm verify` passes, with the known drift only.
+
+## 102g: platform-rbac merged into the kernel and retired (2026-09-29)
+
+**Findings:**
+- The kernel already had departments (`Department`, with hierarchy, manager and members) and user groups
+  (`UserGroup`), so platform-rbac's copies were duplicates.
+- Its extra parts were custom roles with a role-permission mapping, per-user permissions, resource ACLs and
+  impersonation. The kernel has fixed base roles and no impersonation.
+- Its "Marketplace" was billing (purchases, invoices, credit wallets, a usage ledger).
+- Its `gigalibs_platform` schema had 14 tables, all empty.
+- ADR-0003 had already described it as a duplicate prototype.
+
+**Merge:**
+- **Modules & Plan:** `module-marketplace` moved to `platform/core.yaml` as the kernel's "Modules & Plan". It keeps
+  the same key, so entitlements stay valid. It is INTEGRATED_CANDIDATE, because it reads the kernel's entitlements.
+  `/marketplace` now opens Settings → Plan (`TenantPlanEntitlements`), and platform operators enable modules in
+  Platform Control. There is no purchasing or billing (ADR-0013).
+- **Roles design:** custom roles, the role-permission mapping, resource ACLs and impersonation are recorded in the
+  WI-OI-077 row of `docs/plans/manufacturing-package-solution-plan.md` and in ADR-0016 F6.
+
+**Retired:**
+- `modules/platform-rbac` (git keeps its history);
+- the `/api/marketplace` proxy and its test;
+- `PLATFORM_RBAC_API_URL`, removed from Compose, `.env.example` and the profile contract together;
+- the scan root in `verify-runtime-data-integrity.mjs`.
+
+**Not changed:**
+- The empty `gigalibs_platform` schema stays in the database; dropping it needs a backup and the owner's OK.
+- Ignored leftovers stay in `modules/platform-rbac/apps/api`: `.env`, `dist`, `.turbo` and the `node_modules` link.
+- The running web shows the change only after a web image rebuild.
+
+**Verification:** `pnpm verify` passes (known drift only). No reference to the module or its setting remains
+outside historical documents.
+
+## WI-OI-102 result
+
+Every G2 acceptance check is met locally:
+1. **ADR:** ADR-0016 is recorded, and ADR-0013 defers to it.
+2. **Engines:** evaluated; the owner chose Workflow Studio and parked the Python plane.
+3. **Layers:** kernel, capability, business, shell and tooling are enforced by `audit:layers`, and `platform-rbac`
+   is merged.
+4. **Fencing:** AP is labelled "hosted", and `FENCED_MODEL_WRITE` blocks new writes to the 34 fenced core tables.
+5. **Triage:** the 14 code-only modules have owner-approved outcomes.
+6. **Catalogue truth:** six maturity states, and no uncertified entry is AVAILABLE.
+7. **Clean-up:** owner-approved batches, with `pnpm verify` passing after each.
+8. **Nothing running changed:** no service was rebuilt or redeployed, and no data was touched.
+
+The item is in Review for Product, Backend/Data and QA/SDET. It certifies nothing for production.

@@ -33,7 +33,6 @@ const roots = [
   'modules/autonomous-recovery-studio',
   'modules/analytics-studio',
   'modules/esignature',
-  'modules/platform-rbac',
   'modules/physical-operations-cmms',
   'modules/gigaops',
   'modules/geospatial',

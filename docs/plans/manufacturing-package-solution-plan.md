@@ -234,7 +234,7 @@ business model.
 | WI-OI-096 | Reporting v2 | 2 | backend_domain | web_experience |
 | WI-OI-097 | Facility pack (configuration only) | 2 | requirements_spec | Product, qa_spec |
 | WI-OI-098 | Integrations Marketplace v1 and first ERP connector | 2 | integration_connectors | api_contracts, Security, documentation_enablement |
-| WI-OI-077 / 078 | Custom roles and persona navigation / approval hooks | 2 | tenant_identity_access / plugin_runtime | Security |
+| WI-OI-077 / 078 | Custom roles and persona navigation / approval hooks. WI-OI-077 also takes the design retired with platform-rbac (ADR-0016 F6, WI-OI-102g): custom roles with a role-permission mapping, per-user permissions, resource-level ACLs and impersonation sessions | 2 | tenant_identity_access / plugin_runtime | Security |
 | WI-OI-099 | Condition Monitoring and IoT (C10) | 3 | integration_connectors | infrastructure_observability, Security |
 | WI-OI-100 | AI maintenance assistant, ADR-0015 (C11) | 3 | plugin_runtime | trust_safety_automation, Security |
 

@@ -1,6 +1,6 @@
 # NOW: where the work stands
 
-Updated 2026-09-29 by Claude (WI-OI-102f done, uncommitted). Keep this file to one page. Replace old content rather than
+Updated 2026-09-29 by Claude (WI-OI-102 complete and in Review, 102g uncommitted). Keep this file to one page. Replace old content rather than
 appending to it, and update it at the end of every task.
 
 ## State
@@ -11,8 +11,8 @@ appending to it, and update it at the end of every task.
   - `76af949` WI-OI-085f;
   - `80de9af` handover brief;
   - `9db88a3` WI-OI-085e shared module host.
-- **Active work item: WI-OI-102**, foundation boundaries (ADR-0016). WI-OI-103 to WI-OI-107 are Proposed and
-  follow in order. WI-OI-085 is in Review.
+- **Active work item: none.** WI-OI-102 (foundation boundaries) is in Review. WI-OI-103 to WI-OI-107 are
+  Proposed, in the ADR-0016 order.
 - **Wave 0:** WI-OI-080, 081, 082, 083 and 085 are in Review, waiting for human reviews. WI-OI-084 (mobile) has
   not started.
 - **Running locally** (never touch it during a proof):
@@ -31,20 +31,25 @@ appending to it, and update it at the end of every task.
 
 ## Next
 
-Write and do the **102g** card: merge `platform-rbac` into the kernel.
-- Its department/group roles merge into the kernel's existing departments and roles.
-- The Marketplace becomes the kernel's page for enabling modules for a tenant.
-- Then the module retires.
+Ask the owner to choose the next active item. The ADR-0016 order says **WI-OI-103: the Analytics engine**, meaning
+the query contract, formula measures, fast summaries, chart templates, dashboards and builder permissions. It is the
+foundation for the agriculture plan and for manufacturing KPIs.
 
-This is the last WI-OI-102 slice. After it, WI-OI-102 goes to Review, and WI-OI-103 (Analytics engine) comes next.
+Once chosen, write its G0–G3 in `.pi/work/WI-OI-103.md` and its first task card.
 
-102f (2026-09-29):
-- 586 files removed across batches A–D;
-- 77 workspace units remain;
-- locked modules are refused at the API too;
-- Master Data is locked;
-- the Python plane is out of `pnpm test`;
-- the layer baseline has 20 entries.
+Open decisions:
+- drop the empty `gigalibs_platform` schema (needs a backup);
+- rebuild and redeploy the web so 5180 shows the foundation changes;
+- the ignored leftovers in `modules/platform-rbac/apps/api`.
+
+WI-OI-102 (2026-09-29), 102a–102g:
+- ADR-0016;
+- engines: Workflow Studio kept, the Python plane parked;
+- kernel/capability layers;
+- fenced core tables;
+- catalogue truth;
+- 586 files cleaned up;
+- `platform-rbac` merged into "Modules & Plan" and retired.
 
 102b decisions (2026-09-29):
 - Workflow Studio is the one workflow engine;

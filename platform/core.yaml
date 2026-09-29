@@ -202,3 +202,18 @@ spec:
       reason: Shows an unavailable-capability page. Industry packs are planned at the solution layer (ADR-0016 F10, WI-OI-107).
       navigationOrder: 310
       personas: [C_LEVEL]
+    - key: module-marketplace
+      name: Modules & Plan
+      navigationLabel: Modules & Plan
+      area: Platform
+      navigationGroup: Platform
+      route: /marketplace
+      iconKey: shopping-bag
+      readiness: REVIEW
+      maturity: INTEGRATED_CANDIDATE
+      entitlementEligible: true
+      trialEligible: true
+      requiredPermission: marketplace:read
+      platformInspection: false
+      reason: The tenant's plan and modules, from the kernel's entitlements (Settings, Plan). Platform operators enable modules in Platform Control. No purchasing or billing (ADR-0013).
+      navigationOrder: 200

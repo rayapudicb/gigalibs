@@ -324,22 +324,22 @@ export const generatedPlatformModuleCatalog = [
     platformInspection: false,
     reason: 'Platform control is global operator authority, not a tenant entitlement.',
   },
-  // modules/platform-rbac/module.yaml
+  // platform/core.yaml
   {
     key: 'module-marketplace',
-    name: 'Module Marketplace',
-    navigationLabel: 'Module Marketplace & Usage Billing',
-    area: 'Commercial',
+    name: 'Modules & Plan',
+    navigationLabel: 'Modules & Plan',
+    area: 'Platform',
     navigationGroup: 'Platform',
     route: '/marketplace',
     iconKey: 'shopping-bag',
     readiness: 'REVIEW',
-    maturity: 'CORE_IMPLEMENTED',
+    maturity: 'INTEGRATED_CANDIDATE',
     entitlementEligible: true,
     trialEligible: true,
     requiredPermission: 'marketplace:read',
     platformInspection: false,
-    reason: 'Module catalogue and department/group roles service code with tests. Not running; merging into the kernel (ADR-0016 F6, WI-OI-102g). No billing is claimed.',
+    reason: 'The tenant\'s plan and modules, from the kernel\'s entitlements (Settings, Plan). Platform operators enable modules in Platform Control. No purchasing or billing (ADR-0013).',
   },
   // modules/analytics-studio/module.yaml
   {
