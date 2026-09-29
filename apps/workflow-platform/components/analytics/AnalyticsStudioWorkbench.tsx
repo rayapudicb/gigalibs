@@ -23,7 +23,7 @@ import {
   ExclamationCircleSolid,
 } from '@medusajs/icons';
 import { BarChart3, LineChart, FileCode, CheckCircle2, Lock, ArrowUpRight, Zap, LayoutGrid } from 'lucide-react';
-import { IndustryChartsCatalogView } from './IndustryChartsCatalogView';
+import { SavedChartViews } from './explore/SavedChartViews';
 
 interface MetricSummary {
   netArRevenueUsd: number;
@@ -94,7 +94,7 @@ export function AnalyticsStudioWorkbench() {
   const [actionReason, setActionReason] = useState('Quarterly executive audit');
   const [isExecutingAction, setIsExecutingAction] = useState(false);
   const [actionReceipt, setActionReceipt] = useState<any | null>(null);
-  const [activeTab, setActiveTab] = useState<'executive' | 'industry_charts'>('executive');
+  const [activeTab, setActiveTab] = useState<'executive' | 'saved_charts'>('executive');
 
   const checkStatus = useCallback(async () => {
     try {
@@ -319,20 +319,20 @@ export function AnalyticsStudioWorkbench() {
         </button>
         <button
           type="button"
-          onClick={() => setActiveTab('industry_charts')}
+          onClick={() => setActiveTab('saved_charts')}
           className={`pb-3 px-4 text-sm font-semibold border-b-2 transition-all flex items-center gap-2 cursor-pointer ${
-            activeTab === 'industry_charts'
+            activeTab === 'saved_charts'
               ? 'border-zinc-900 text-zinc-950 font-bold'
               : 'border-transparent text-zinc-500 hover:text-zinc-800'
           }`}
         >
           <LayoutGrid className="w-4 h-4 text-purple-600" />
-          <span>Tenant Visualizations &amp; Telemetry</span>
+          <span>Saved charts</span>
         </button>
       </div>
 
-      {activeTab === 'industry_charts' ? (
-        <IndustryChartsCatalogView />
+      {activeTab === 'saved_charts' ? (
+        <SavedChartViews />
       ) : (
         <>
           {/* KPI Cards */}

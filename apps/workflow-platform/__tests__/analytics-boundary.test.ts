@@ -92,7 +92,15 @@ describe('Analytics Studio signed BFF (WI-OI-064a)', () => {
     vi.mocked(verifiedSession).mockResolvedValue({
       context: { ...entitledContext, permissions: ['analytics:*'] },
     } as never);
-    for (const path of [['oidc', 'dev', 'token'], ['v1', 'connectors'], ['v1', '..', 'setup'], ['v1', 'metrics', 'charts', 'a', 'b']]) {
+    // WI-OI-103d d6: the stored-payload chart gallery routes are retired; charts are chart views.
+    for (const path of [
+      ['oidc', 'dev', 'token'],
+      ['v1', 'connectors'],
+      ['v1', '..', 'setup'],
+      ['v1', 'metrics', 'charts'],
+      ['v1', 'metrics', 'charts', 'industry-kpi'],
+      ['v1', 'metrics', 'charts', 'a', 'b'],
+    ]) {
       expect((await call(getAnalytics, 'GET', path)).status).toBe(404);
     }
     expect((await call(postAnalytics, 'POST', ['v1', 'metrics', 'summary'])).status).toBe(404);

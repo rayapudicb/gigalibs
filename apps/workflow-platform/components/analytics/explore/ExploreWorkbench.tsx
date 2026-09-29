@@ -21,6 +21,7 @@ import type {
 } from '@gigalibs/contracts';
 import { chartTypeLabel, compatibleChartTypes, resultShape } from '@/lib/analytics/chart-render';
 import { AnalyticsChart, ResultTable } from './AnalyticsChart';
+import { analyticsApi as api } from './analytics-api';
 
 type FilterOp = AnalyticsFilterV1['op'];
 interface FilterRow {
@@ -32,20 +33,6 @@ interface FilterRow {
 const GRAINS: AnalyticsTimeGrain[] = ['day', 'week', 'month', 'quarter', 'year'];
 const selectClass =
   'w-full rounded-md border border-ui-border-base bg-ui-bg-field px-2 py-1.5 text-sm text-ui-fg-base focus:outline-none focus:ring-2 focus:ring-ui-border-interactive';
-
-async function api<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`/api/analytics/${path}`, {
-    ...init,
-    headers: { Accept: 'application/json', ...(init?.body ? { 'Content-Type': 'application/json' } : {}), ...init?.headers },
-  });
-  const body = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    const detail = (body as { message?: string; detail?: string }).message ?? (body as { detail?: string }).detail;
-    if (response.status === 403) throw new Error(detail ?? 'You do not have permission for this.');
-    throw new Error(detail ?? `Request failed (${response.status}).`);
-  }
-  return body as T;
-}
 
 function coerce(raw: string, type: AnalyticsFieldType): string | number | boolean {
   if (type === 'number') return Number(raw);

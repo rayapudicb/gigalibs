@@ -57,7 +57,7 @@ The owner's rule is that charts hold no data: a chart is a saved query plus a ch
 | 103a | Query contract and engine (acceptance 1) | M | Done, 2026-09-29 |
 | 103b | Formula measures, measure versions, maker-checker (2) | M | Done, 2026-09-29 |
 | 103c | Summaries, cache, limits, benchmark (3) | M | Proposed |
-| 103d | Chart templates and renderer, change-chart, map, gallery retired (4) | L | In progress: d1–d5 done (2026-09-29); d6, d7 next |
+| 103d | Chart templates and renderer, change-chart, map, gallery retired (4) | L | In progress: d1–d6 done, d1–d5 deployed for review on 5190 (2026-09-29); d7 next |
 | 103e | Dashboards, reports ownership, permissions and roles, web exposure (5, 6) | M | Proposed |
 | 103f | Proof on manufacturing data and the no-developer test (7) | M | Proposed |
 
@@ -211,8 +211,28 @@ chart views. A reader saving a view gets 403; unlisted methods get 404 (`analyti
 - **Chain:** `pnpm verify` passes (known drift only). One run failed a sign-up test on a 5-second timeout while the
   machine's load average was around 21; the file then passed on its own (69 tests in 28 ms), and the full run passed.
 
-**Not yet:** d6 (retire the static gallery) and d7 (sample farm data and a review deploy on 5190).
-- **Finding for d7:** Analytics' live sync from an external source is contained ("credential vault not yet
-  implemented"), so the sample data needs another honest route.
-- The review deploy needs migrations 16 and 17 on the local database (additive, forward-only) and new analytics
-  and web images. That is the owner's call.
+**Review deploy** (owner's OK, 2026-09-29):
+- Backup first: `infra/compose/backups/gigalibs_backup_20260929_145224Z.dump`.
+- The `analytics-migrations` job (recreated, `--no-deps`) exited 0 at migration 17. The four new tables
+  (`formula_measures`, `formula_measure_versions`, `formula_measure_reviews`, `chart_views`) exist with forced RLS.
+- `analytics-api` `4366613b86c8-1d4af1e44d20` is healthy on schema 17.
+- Review web `gigalibs-review-web` on 127.0.0.1:5190 (same image tag); `/api/health/ready` returned 200.
+- 5180 is unchanged (`a255e935c80e-2e98e70d8d0e`, 200). The disk guard removed 6 superseded images.
+
+**d6, static gallery retired** (after the deploy, so not yet on 5190):
+- The Analytics workbench tab "Tenant Visualizations & Telemetry" (`IndustryChartsCatalogView`, 644 lines of stored
+  chart payloads) is replaced by **Saved charts** (`SavedChartViews`). Opening a saved chart re-runs its stored
+  question through `GET v1/chart-views/:id/data`; the list links to Explore.
+- Retired: `TelemetryService`, the `v1/metrics/charts` and `v1/metrics/charts/:id` routes, and their proxy entries.
+  The gateway test now proves both paths return 404. The module-schema baseline entry is removed.
+- The web no longer depends on `@gigalibs/charts-react`; the gallery was its only user. The package itself stays
+  until the owner decides on it (ADR-0004, F3).
+- The `telemetry_series` table and its rows are **kept**. Dropping it is a data change for the owner.
+- A shared `analyticsApi` helper serves Explore and Saved charts.
+- **Checks:** web and analytics typechecks pass; gateway, renderer and navigation tests pass (83); `pnpm verify`
+  passes (known drift only).
+- **Deploy caveat:** the 5180 web still has the old gallery tab. Deploying this analytics image without the new web
+  on 5180 would leave that tab showing "not found".
+
+**Not yet:** d7 (sample farm data). Analytics' live sync from an external source is contained ("credential vault
+not yet implemented"), so the sample data needs another honest route, proposed to the owner first.

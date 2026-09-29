@@ -35,9 +35,6 @@
       "@gigalibs/ar-domain": [
         "../../modules/accounts-receivable/domain/dist/index.d.ts"
       ],
-      "@gigalibs/charts-react": [
-        "../../packages/charts-react/dist/index.d.ts"
-      ],
       "@gigalibs/maps-core": [
         "../../packages/maps-core/dist/index.d.ts"
       ],

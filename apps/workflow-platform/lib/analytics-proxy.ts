@@ -30,8 +30,8 @@ function requiredAnalyticsPermission(method: string, path: readonly string[]): s
   const read = method === 'GET' ? 'analytics:read' : null;
   if (joined === 'v1/setup/status') return read;
   if (joined === 'v1/setup') return method === 'POST' ? 'analytics:action' : null;
-  if (['v1/metrics/summary', 'v1/metrics/timeseries', 'v1/metrics/charts'].includes(joined)) return read;
-  if (new RegExp(`^v1/metrics/(charts|lineage)/${SEGMENT}$`).test(joined)) return read;
+  if (['v1/metrics/summary', 'v1/metrics/timeseries'].includes(joined)) return read;
+  if (new RegExp(`^v1/metrics/lineage/${SEGMENT}$`).test(joined)) return read;
   if (joined === 'v1/actions') return method === 'GET' ? 'analytics:read' : method === 'POST' ? 'analytics:action' : null;
   // WI-OI-064b: place drill-down is read-only through the BFF; rollup rebuilds stay internal to Analytics.
   if (joined === 'v1/places/drilldown') return read;

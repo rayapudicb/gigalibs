@@ -1,7 +1,8 @@
 # WI-OI-103d: chart templates that hold no data, and the Explore screen
 
 - **Status:** In progress. d1–d5 are done (2026-09-29). The review deploy is done: analytics-api
-  `4366613b86c8-1d4af1e44d20` at schema 17, and the review web on 127.0.0.1:5190. d6 and the d7 sample data are next. Evidence is in `.pi/work/WI-OI-103.md`.
+  `4366613b86c8-1d4af1e44d20` at schema 17, and the review web on 127.0.0.1:5190. d6 is done (not yet deployed). The
+  d7 sample data is next. Evidence is in `.pi/work/WI-OI-103.md`.
 - **Work item:** WI-OI-103. Evidence goes in `.pi/work/WI-OI-103.md`, under "103d".
 - **Size:** L. The owner's deadline for foundation work is 2026-10-04.
 
@@ -55,7 +56,7 @@ click, and save it as a chart view that stores the question, never the data.
 
 ## Done when
 
-- [ ] Pieces d1–d6 pass `pnpm verify`, with tests.
+- [x] Pieces d1–d6 pass `pnpm verify`, with tests (2026-09-29).
 - [ ] On 5190 the owner builds a chart live, switches its type, and saves it.
 - [ ] Evidence is recorded, and `.pi/NOW.md` is updated.
 

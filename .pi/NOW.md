@@ -38,9 +38,9 @@ appending to it, and update it at the end of every task.
 **Owner plan (2026-09-29):** foundation work until **Sunday 2026-10-04**, then the **agriculture package** for a
 client capability pitch (date not fixed), then back to the rest of the foundation.
 
-1. **Task card `.pi/tasks/WI-OI-103d.md`: d1–d5 are done, verified and deployed for review on 5190.** Next: d6
-   (retire the static gallery) and d7 (sample farm data by an honest route, since ingestion sync is contained; propose the route
-   to the owner first). Continue piece by piece, and commit after each
+1. **Task card `.pi/tasks/WI-OI-103d.md`: d1–d5 are done, verified and deployed for review on 5190. d6 (gallery
+   retired, replaced by Saved charts) is done and not yet deployed.** Next: d7, sample farm data by an honest route,
+   since ingestion sync is contained. Propose the route to the owner first. Continue piece by piece, and commit after each
    piece on the owner's "commit". Charts use ECharts (ADR-0004), not `charts-react`. The card is summarised below:
    chart templates that hold no data.
    - A chart is a query spec plus a visual spec.

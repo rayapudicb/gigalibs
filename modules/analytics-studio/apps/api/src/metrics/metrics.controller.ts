@@ -6,15 +6,12 @@ import {
   RequirePermissions,
 } from '../auth/authorization.js';
 import { MetricsService } from './metrics.service.js';
-import { TelemetryService } from './telemetry.service.js';
 
+// WI-OI-103d d6: the stored-payload chart routes (`charts`, `charts/:chartId`) are retired; charts are chart views.
 @Controller('v1/metrics')
 @UseGuards(PlatformContextAuthorizationGuard)
 export class MetricsController {
-  constructor(
-    private readonly metricsService: MetricsService,
-    private readonly telemetryService: TelemetryService,
-  ) {}
+  constructor(private readonly metricsService: MetricsService) {}
 
   @Get('summary')
   @RequirePermissions('analytics:read')
@@ -35,21 +32,6 @@ export class MetricsController {
     @Param('metricKey') metricKey: string,
   ) {
     return this.metricsService.getLineageProof(principal.tenantId, metricKey);
-  }
-
-  @Get('charts')
-  @RequirePermissions('analytics:read')
-  async getCharts(@Principal() principal: AnalyticsPrincipal) {
-    return this.telemetryService.getTelemetryCharts(principal.tenantId);
-  }
-
-  @Get('charts/:chartId')
-  @RequirePermissions('analytics:read')
-  async getChartById(
-    @Principal() principal: AnalyticsPrincipal,
-    @Param('chartId') chartId: string,
-  ) {
-    return this.telemetryService.getTelemetryChartById(principal.tenantId, chartId);
   }
 }
 

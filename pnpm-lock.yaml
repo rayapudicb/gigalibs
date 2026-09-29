@@ -189,9 +189,6 @@ importers:
       '@gigalibs/broker':
         specifier: workspace:*
         version: link:../../packages/broker
-      '@gigalibs/charts-react':
-        specifier: workspace:*
-        version: link:../../packages/charts-react
       '@gigalibs/cmms-web':
         specifier: workspace:*
         version: link:../../modules/physical-operations-cmms/web
