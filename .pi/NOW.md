@@ -1,6 +1,6 @@
 # NOW: where the work stands
 
-Updated 2026-09-29 by Claude (WI-OI-102 complete and in Review, 102g uncommitted). Keep this file to one page. Replace old content rather than
+Updated 2026-09-29 by Claude (WI-OI-103a done, uncommitted). Keep this file to one page. Replace old content rather than
 appending to it, and update it at the end of every task.
 
 ## State
@@ -11,8 +11,8 @@ appending to it, and update it at the end of every task.
   - `76af949` WI-OI-085f;
   - `80de9af` handover brief;
   - `9db88a3` WI-OI-085e shared module host.
-- **Active work item: none.** WI-OI-102 (foundation boundaries) is in Review. WI-OI-103 to WI-OI-107 are
-  Proposed, in the ADR-0016 order.
+- **Active work item: WI-OI-103**, the Analytics engine (`.pi/work/WI-OI-103.md`). WI-OI-102 is in Review.
+  WI-OI-104 to WI-OI-107 are Proposed.
 - **Wave 0:** WI-OI-080, 081, 082, 083 and 085 are in Review, waiting for human reviews. WI-OI-084 (mobile) has
   not started.
 - **Running locally** (never touch it during a proof):
@@ -31,16 +31,27 @@ appending to it, and update it at the end of every task.
 
 ## Next
 
-Ask the owner to choose the next active item. The ADR-0016 order says **WI-OI-103: the Analytics engine**, meaning
-the query contract, formula measures, fast summaries, chart templates, dashboards and builder permissions. It is the
-foundation for the agriculture plan and for manufacturing KPIs.
+Write and do the **103b** card: formula measures (for example yield/ha, cost per work order).
+- Measures are defined once, as arithmetic over other measures.
+- They are versioned, and a second person publishes them (maker-checker).
+- Charts pin a measure version.
+- Sensitive measures are flagged.
 
-Once chosen, write its G0–G3 in `.pi/work/WI-OI-103.md` and its first task card.
+The builder in `query-engine/query-builder.ts` gets a formula aggregate.
+
+103a (2026-09-29):
+- the `AnalyticsQueryV1` contract;
+- a parameterised builder with no user text in SQL;
+- `POST v1/query/spec` with `analytics:read`;
+- 64 tests;
+- the generated SQL was proven on real PostgreSQL, read-only.
+
+The running analytics service does not have it until it is rebuilt, which is the owner's call (103f).
 
 Open decisions:
-- drop the empty `gigalibs_platform` schema (needs a backup);
-- rebuild and redeploy the web so 5180 shows the foundation changes;
-- the ignored leftovers in `modules/platform-rbac/apps/api`.
+- drop the empty `gigalibs_platform` schema;
+- rebuild the web and analytics images;
+- the `platform-rbac` leftovers.
 
 WI-OI-102 (2026-09-29), 102a–102g:
 - ADR-0016;

@@ -8,7 +8,7 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
-import { PlatformContextAuthorizationGuard } from '../auth/authorization.js';
+import { PlatformContextAuthorizationGuard, RequirePermissions } from '../auth/authorization.js';
 import { CurrentPrincipal } from '../auth/principal.decorator.js';
 import type { AnalyticsPrincipal } from '../auth/authorization.js';
 import { QueryEngineService, RunQueryDto } from './query-engine.service.js';
@@ -34,6 +34,17 @@ export class QueryEngineController {
     @Body() dto: RunQueryDto,
   ) {
     return this.queryEngine.runQuery(principal, dto);
+  }
+
+  /**
+   * POST /v1/query/spec (WI-OI-103a)
+   * Run an AnalyticsQueryV1: measures by dimensions, per time grain, filtered and sorted. Returns typed rows.
+   */
+  @Post('spec')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermissions('analytics:read')
+  async runSpec(@CurrentPrincipal() principal: AnalyticsPrincipal, @Body() body: unknown) {
+    return this.queryEngine.runSpec(principal, body);
   }
 }
 

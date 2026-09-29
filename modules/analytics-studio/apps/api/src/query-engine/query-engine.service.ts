@@ -15,6 +15,13 @@
  */
 
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  type AnalyticsFieldType,
+  AnalyticsFieldTypeSchema,
+  type AnalyticsQueryResultV1,
+  AnalyticsQueryV1Schema,
+} from '@gigalibs/contracts';
+import { AnalyticsQuerySpecError, buildAnalyticsQuery, type QueryMeasure } from './query-builder.js';
 import { DatabaseService } from '../database/database.service.js';
 import type { AnalyticsPrincipal } from '../auth/authorization.js';
 
@@ -53,6 +60,9 @@ export interface RunQueryDto {
   /** Override dimension grouping for a single query */
   dimensionOverride?: string;
 }
+
+/** Freshness window for ad-hoc query specs; saved charts carry their own (WI-OI-103d). */
+export const SPEC_FRESHNESS_TTL_SECONDS = 3600;
 
 // ─── QueryEngineService ───────────────────────────────────────────────────────
 
@@ -162,6 +172,110 @@ export class QueryEngineService {
   }
 
   // ── Freshness computation ──────────────────────────────────────────────────
+
+  /**
+   * Execute an AnalyticsQueryV1 (WI-OI-103a): measures by dimensions, per time grain, filtered and sorted, over the
+   * semantic model's latest version and its READY dataset. Fields are whitelisted against the published mapping.
+   */
+  async runSpec(principal: AnalyticsPrincipal, input: unknown): Promise<AnalyticsQueryResultV1> {
+    const parsed = AnalyticsQueryV1Schema.safeParse(input);
+    if (!parsed.success) {
+      const issue = parsed.error.issues[0];
+      throw new BadRequestException(`Invalid query: ${issue?.path.join('.') || 'body'} ${issue?.message ?? ''}`.trim());
+    }
+    const query = parsed.data;
+    const { tenantId } = principal;
+    const asOf = new Date().toISOString();
+
+    const modelResult = await this.db.queryWithTenant<any>(
+      tenantId,
+      `SELECT sm.id, sm.dataset_version_id, smv.version_number,
+              sm_meas.measure_name, sm_meas.aggregate_fn, sm_meas.field_reference, sm_meas.display_label
+       FROM gigalibs_analytics.semantic_models sm
+       JOIN gigalibs_analytics.semantic_model_versions smv ON smv.model_id = sm.id
+       JOIN gigalibs_analytics.semantic_measures sm_meas ON sm_meas.model_id = sm.id
+       WHERE sm.id = $1
+         AND smv.version_number = (
+           SELECT MAX(version_number) FROM gigalibs_analytics.semantic_model_versions WHERE model_id = sm.id
+         )`,
+      [query.semanticModelId],
+    );
+    if (modelResult.rows.length === 0) {
+      throw new NotFoundException(`Semantic model '${query.semanticModelId}' not found.`);
+    }
+    const datasetVersionId: string = modelResult.rows[0]!.dataset_version_id;
+    const definitionVersion: number = modelResult.rows[0]!.version_number;
+    const empty = (freshness: AnalyticsQueryResultV1['freshness'], watermark: string | null): AnalyticsQueryResultV1 => ({
+      semanticModelId: query.semanticModelId,
+      datasetVersionId,
+      definitionVersion,
+      asOf,
+      freshness,
+      watermark,
+      columns: [],
+      rows: [],
+      truncated: false,
+    });
+
+    const { freshness, watermark } = await this.computeFreshness(tenantId, datasetVersionId, SPEC_FRESHNESS_TTL_SECONDS);
+    if (freshness === 'UNAVAILABLE') return empty(freshness, watermark);
+
+    const mappingResult = await this.db.queryWithTenant<{ field_mappings: unknown }>(
+      tenantId,
+      `SELECT mv.field_mappings
+       FROM gigalibs_analytics.analytical_dataset_versions adv
+       JOIN gigalibs_analytics.studio_mapping_versions mv
+         ON mv.mapping_id = adv.mapping_id AND mv.version_number = adv.mapping_version
+       WHERE adv.id = $1`,
+      [datasetVersionId],
+    );
+    const rawMappings = mappingResult.rows[0]?.field_mappings;
+    const mappings: Array<{ analyticalField?: unknown; analyticalType?: unknown }> = Array.isArray(rawMappings)
+      ? rawMappings
+      : typeof rawMappings === 'string'
+        ? JSON.parse(rawMappings)
+        : [];
+    const fields = new Map<string, AnalyticsFieldType>();
+    for (const mapping of mappings) {
+      const type = AnalyticsFieldTypeSchema.safeParse(mapping.analyticalType);
+      if (typeof mapping.analyticalField === 'string' && type.success) fields.set(mapping.analyticalField, type.data);
+    }
+    const measures = new Map<string, QueryMeasure>(
+      modelResult.rows.map((row: any) => [
+        row.measure_name,
+        {
+          name: row.measure_name,
+          aggregateFn: row.aggregate_fn,
+          fieldReference: row.field_reference,
+          label: row.display_label,
+        },
+      ]),
+    );
+
+    let built;
+    try {
+      built = buildAnalyticsQuery({ datasetVersionId, query, fields, measures });
+    } catch (error) {
+      if (error instanceof AnalyticsQuerySpecError) throw new BadRequestException(error.message);
+      throw error;
+    }
+    const result = await this.db.queryWithTenant<Record<string, unknown>>(tenantId, built.text, [...built.params]);
+    const truncated = result.rows.length > query.limit;
+    const rows = result.rows.slice(0, query.limit).map((row) =>
+      built.columns.map((column, index) => toCell(row[`c${index}`], column.role === 'measure' ? 'number' : column.type)),
+    );
+    return {
+      semanticModelId: query.semanticModelId,
+      datasetVersionId,
+      definitionVersion,
+      asOf,
+      freshness,
+      watermark,
+      columns: [...built.columns],
+      rows,
+      truncated,
+    };
+  }
 
   private async computeFreshness(
     tenantId: string,
@@ -301,5 +415,21 @@ export class QueryEngineService {
       results: [],
       accessibleTable: [],
     };
+  }
+}
+
+/** Converts a database value to the contract's cell type; numeric and bigint arrive as strings from pg. */
+function toCell(value: unknown, type: AnalyticsFieldType): string | number | boolean | null {
+  if (value === null || value === undefined) return null;
+  if (value instanceof Date) return value.toISOString();
+  switch (type) {
+    case 'number': {
+      const number = Number(value);
+      return Number.isFinite(number) ? number : null;
+    }
+    case 'boolean':
+      return value === true || value === 'true';
+    default:
+      return String(value);
   }
 }

@@ -37,8 +37,10 @@
   ],
   "workInProgressLimits": {
     "implementationModules": 1,
-    "activeImplementationWorkItems": [],
-    "note": "No active Build item. WI-OI-102 (foundation boundaries, ADR-0016) moved to Review on 2026-09-29. WI-OI-103 to WI-OI-107 are Proposed in the ADR-0016 order; the owner picks the next item. WI-OI-080 to WI-OI-083, WI-OI-085 and WI-OI-102 are in Review. Items outside the manufacturing package remain frozen (Blocked). WI-OI-074 is paused as Ready; WI-OI-072 (P9) is Blocked.",
+    "activeImplementationWorkItems": [
+      "WI-OI-103"
+    ],
+    "note": "WI-OI-103 (Analytics engine, ADR-0016 F13/F16/F11) is the sole active item, started by the owner on 2026-09-29. WI-OI-104 to WI-OI-107 are Proposed. WI-OI-080 to WI-OI-083, WI-OI-085 and WI-OI-102 are in Review. Items outside the manufacturing package remain frozen (Blocked). WI-OI-074 is paused as Ready; WI-OI-072 (P9) is Blocked.",
     "note_WI-OI-072": "Blocked: waits for owner decisions (place-path option, the other stream's Geospatial changes, forms migrations, UAT tenant).",
     "note_WI-OI-071": "Review: canonical PAYROLL_CSV_V1 export of approved pay runs (immutable, formula-injection safe, SHA-256), line-by-line reconciliation and second-person confirmation with matching control totals; build, tests, six audits, exact image 5abfa667bb10-173c70f53e51, pay+export certification and regression, zero Critical/High (infra/compose/evidence/wi-oi-071-20260927T152200Z). Target system, Connector Hub delivery, web image certification and acceptance open.",
     "note_WI-OI-070": "Review: reference policy packs (US-CA-OT@1, IN-48@1, not statutory advice), dated pay rates, weekly runs with traced earning lines in exact minor units, SHA-256 digest, four-eyes approval final in the database, reproducibility verification; build, tests, six audits, exact image 5abfa667bb10-8ba0e4452554, pay certification and regression, zero Critical/High (infra/compose/evidence/wi-oi-070-20260927T150757Z). Owner decisions (jurisdiction, ADR-0012), web image certification, review and acceptance open.",
@@ -74,7 +76,8 @@
     "note_WI-OI-082": "Review: module SDK adopted by CMMS and Workforce; 12/12 live certifications on 103da75e470e-f01b896910a9.",
     "note_WI-OI-083": "Review: manifest-driven web extension points and the bounded no-CMMS solution proof are locally complete; independent review remains open.",
     "note_WI-OI-085": "Review: 085a–085f are locally implemented and verified. The isolated generated field-inspections proof passed 35/35 conformance, real-session sidebar and BFF CRUD/replay/conflict/two-tenant isolation, controlled host outage, Chrome/axe accessibility and exact-image vulnerability policy with zero Critical/High. Cleanup left no sample module or proof resources. Independent QA/SDET and Documentation decisions remain open; no production, cloud or external-release authority.",
-    "note_WI-OI-102": "Review: 102a–102g locally complete — ADR-0016; one engine per job (Workflow Studio, Python plane parked); kernel/capability layers; fenced core tables; catalogue truth with six maturity states; package clean-up (586 files, 77 units, locked modules refused at the API); platform-rbac merged (Modules & Plan) and retired. Independent review pending."
+    "note_WI-OI-102": "Review: 102a–102g locally complete — ADR-0016; one engine per job (Workflow Studio, Python plane parked); kernel/capability layers; fenced core tables; catalogue truth with six maturity states; package clean-up (586 files, 77 units, locked modules refused at the API); platform-rbac merged (Modules & Plan) and retired. Independent review pending.",
+    "note_WI-OI-103": "In Progress: 103a query contract and engine done (AnalyticsQueryV1, parameterised builder, POST v1/query/spec). Next 103b formula measures with maker-checker."
   },
   "relativeDeliveryEstimate": {
     "total": 100,
