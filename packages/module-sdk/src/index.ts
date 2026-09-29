@@ -55,7 +55,9 @@ export {
   type SafeParser,
 } from './module-command.js';
 export {
+  loadModuleListenerConfig,
   loadModuleRuntimeConfig,
+  type ModuleListenerConfig,
   type ModuleRuntimeConfig,
   type ModuleRuntimeConfigOptions,
 } from './module-runtime-config.js';

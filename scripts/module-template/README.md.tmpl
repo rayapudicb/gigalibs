@@ -9,12 +9,12 @@ Start from the `records` resource, then replace it with the module's own resourc
 - every statement in `DatabaseService.withTenantTransaction`, and every change followed by `recordMutation`;
 - forward-only migrations listed in `db/runtime-manifest.txt`, each table with forced RLS on `app.tenant_id`.
 
-Run it (see `infra/compose/README.md`, "Generated modules"):
+It runs __RUN_WHERE__. Run it (see `infra/compose/README.md`, "Generated modules"):
 
 ```bash
 pnpm install && pnpm modules:catalog
 infra/compose/scripts/generate-generated-module-credentials.sh __NAME__
-infra/compose/scripts/build-generated-module-image.sh __NAME__
+infra/compose/scripts/__BUILD_SCRIPT__
 pnpm module:conformance __NAME__ --live
 ```
 

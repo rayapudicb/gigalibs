@@ -200,7 +200,7 @@ Conformance is next (085d), then the navigation proof (085e).
 
 **Findings:**
 - Nothing outside the SDK writes `auth_revocation_events`. Module revocation checks can never fire today;
-  revocation relies on the BFF's 120 s context expiry. This predates this item. Generated modules keep the same
+  revocation relies on the expiry of the context the web signs (at most 300 s, `apps/workflow-platform/lib/platform-context.ts`; the verifier checks `exp` but does not cap the lifetime). This predates this item. Generated modules keep the same
   table, so they are ready when a revocation fan-out exists.
 
 **Evidence** (throwaway copy of the working tree under the session scratchpad; the repository has no sample module):
@@ -349,3 +349,77 @@ on all three points:
   5. run `pnpm module:conformance <name> --live --record`.
 
   Skipping step 2 leaves a stale catalogue, and L0 then correctly refuses the image.
+
+## 085e — shared module host (2026-09-29)
+
+Implements owner decision 1 (vision §8): new modules run in one module host by default.
+
+**Implementation:**
+- **Host (`apps/module-host`, layer `shell`, a composition root):**
+  - One NestJS process imports every module that declares `spec.runtime.hosting: host`, from the generated
+    `src/hosted-modules.generated.ts`, and mounts each one under `/<name>`.
+  - `/health/live`. `/health/ready` returns 200 only when each hosted module's own `/<name>/v1/health/ready`
+    returns 200.
+  - Each hosted module keeps its own schema, least-privilege runtime role, Ed25519 key and audience, guard,
+    database pool and migrations service. Only the process and the image are shared.
+- **SDK:** listener settings moved out of `loadModuleRuntimeConfig` into `loadModuleListenerConfig({ prefix })`, so
+  a hosted module's `AppModule` needs no port of its own.
+- **Manifest:** `spec.runtime.hosting: host | service`, default `host`.
+  - Host: service hostname `module-host`, port 4790, `spec.api.upstream.basePath: /<name>`.
+  - Service: `<name>-api` and no base path.
+  - The audit checks that the host's `package.json` depends on every hosted module's package.
+  - Generated: `hosted-modules.generated.ts` and `generated/compose.module-host.yaml` (one host service, plus one
+    migrations service per hosted module). Service modules keep `generated/compose.<name>.yaml`.
+- **Gateway:** `localModuleUpstreamUrl` adds the base path (empty for every existing module) and refuses empty or
+  dot segments.
+- **Image:** `module-host` Dockerfile target and `build-module-host-image.sh`. It checks:
+  - disk guard, source identity, user 65532 and labels;
+  - no secrets or development paths;
+  - `pg` for the migrations runner, and each hosted module's migrations;
+  - exactly one copy of `@nestjs/common`.
+- **Generator:** `--hosting host | service`, default `host`.
+  - `--port` applies only to a service; the names `host` and `module-host` are reserved.
+  - It adds the module's package to the host's dependencies, and removes it on rollback.
+  - The credentials script writes `.env.module.host` for hosted modules, and no per-module image line.
+- **Conformance:** for hosted modules it targets `module-host:4790/<name>`, and L0 checks the host container's
+  source identity.
+- **Unchanged:** CMMS, Workforce, Geospatial, Connector Hub and Analytics (base path empty).
+
+**Evidence** (throwaway copy, `host-proof.sh`): two hosted modules (`field-inspections`, `site-visits`) and one
+service module (`vendor-checks`).
+- **Generation:**
+  - The generator refused the reserved name `host`.
+  - It produced `compose.module-host.yaml` and `compose.vendor-checks.yaml`, and the host list names both hosted
+    modules.
+  - The audit refused a host that lacked a hosted module's dependency.
+  - Static conformance passed 15 of 15 for each module. Hosted modules have no image of their own.
+- **Runtime:**
+  - The host image and the service image built and passed their checks.
+  - Migrations exited 0 for all three modules, and the host and the service became healthy.
+  - Host readiness returned 200, listing both modules as ready.
+- **Isolation inside one process:**
+  - Three distinct runtime roles; none is superuser or can bypass RLS.
+  - `field-inspections`'s role reads its own records (0 rows under RLS with no tenant). Reading `site-visits`
+    fails with `permission denied for schema gigalibs_site_visits`.
+  - A context signed for `field-inspections` gets 200 at `/field-inspections` and 401 at `/site-visits`.
+- **Live conformance:** 35 of 35 for all three modules.
+- **Clean-up:** 0 schemas, roles, containers, secrets and proof images left.
+- **Defects found and fixed during the runs:**
+  - hosted migrations exited 1 because the runner imports `pg`, which the host lacked; the host now depends on
+    `pg` directly;
+  - the image check looked for `pg/package.json` through a pnpm link; it now checks the link and its target.
+
+  Three proof-script faults were also fixed:
+  - the clean-up crashed on an empty image list;
+  - the cross-read check read psql output out of order;
+  - a helper file changed the copy's source identity.
+- **Not proven yet:** a hosted module through the web gateway and sidebar. The web image was not rebuilt; that is
+  085f. A unit test covers the gateway's base-path URLs for a hosted module and refuses climbing out of the base
+  path.
+- **Chain on the main tree:**
+  - build 108 of 108;
+  - full suite 225 files / 2,040 TypeScript tests (2,041 with the hosted gateway test added afterwards), plus 4
+    execution-plane tests;
+  - all eight required audits, plus the manifest and layer audits (14 baselined violations, 0 new);
+  - the profile verifier still reports only the pre-existing `WORKFORCE_API_URL` drift.
+- **No running service was rebuilt.**

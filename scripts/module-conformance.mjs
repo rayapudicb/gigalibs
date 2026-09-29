@@ -157,6 +157,7 @@ if (args.includes('--live')) {
       .filter((line) => /^[A-Z0-9_]+=/.test(line))
       .map((line) => [line.slice(0, line.indexOf('=')), line.slice(line.indexOf('=') + 1)]),
   );
+  // A hosted module runs in the module host container and answers under its base path (WI-OI-085e).
   const container = `gigalibs-configuration-local-${runtime?.service}-1`;
   const health = spawnSync('docker', ['inspect', '-f', '{{.State.Health.Status}}', container], { encoding: 'utf8' }).stdout.trim();
   const imageIdentity = spawnSync(
@@ -188,7 +189,7 @@ if (args.includes('--live')) {
         'run', '--rm', '--network', 'gigalibs-configuration-local', '--read-only', '--cap-drop', 'ALL',
         '--security-opt', 'no-new-privileges:true', '-v', `${root}:/repo:ro`, '-w', '/repo',
         ...Object.entries({
-          CONFORMANCE_API_URL: `http://${runtime.service}:${runtime.port}`,
+          CONFORMANCE_API_URL: `http://${runtime.service}:${runtime.port}${runtime.basePath ?? ''}`,
           CONFORMANCE_PRIVATE_KEY_B64: env[`${runtime.prefix}_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64`] ?? '',
           CONFORMANCE_AUDIENCE: runtime.audience,
           CONFORMANCE_MODULE_KEY: gateway.catalogKey,

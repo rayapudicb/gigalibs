@@ -1,8 +1,9 @@
 {
   "schemaVersion": 1,
-  "policy": "ADR-0013 layering (Proposed). Every workspace unit has exactly one layer. core: industry-agnostic foundations every client gets. module:<key>: code owned by one business module (modules/<key>/** is always module-owned). shell: the web composition root, which may import anything until WI-OI-083 replaces hand-wiring with manifests. tooling: tests and build tooling, not shipped. A new workspace package must be added here before it builds (audit:layers fails on unclassified units).",
+  "policy": "ADR-0013 layering (Proposed). Every workspace unit has exactly one layer. core: industry-agnostic foundations every client gets. module:<key>: code owned by one business module (modules/<key>/** is always module-owned). shell: composition roots (the web app, and the module host that runs generated modules, WI-OI-085e), which may import anything; WI-OI-083 replaced the web hand-wiring with manifests. tooling: tests and build tooling, not shipped. A new workspace package must be added here before it builds (audit:layers fails on unclassified units).",
   "shell": [
-    "apps/workflow-platform"
+    "apps/workflow-platform",
+    "apps/module-host"
   ],
   "tooling": [
     "e2e"

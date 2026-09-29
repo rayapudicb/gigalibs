@@ -19,6 +19,7 @@ export default defineConfig({
   test: {
     include: [
       'apps/playground-api/src/**/*.{test,spec}.{ts,tsx}',
+      'apps/module-host/src/**/*.{test,spec}.{ts,tsx}',
       'modules/*/{domain,apps/*}/src/**/*.{test,spec}.{ts,tsx}',
       'packages/**/*.{test,spec}.{ts,tsx}',
       'apps/workflow-platform/**/*.{test,spec}.{ts,tsx}',

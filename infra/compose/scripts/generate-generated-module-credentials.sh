@@ -13,7 +13,7 @@ BASE_ENV="${COMPOSE_DIR}/.env"
 INDEX="${COMPOSE_DIR}/generated/modules.json"
 
 MODULE="${1:-}"
-if [[ ! "${MODULE}" =~ ^[a-z0-9]+(-[a-z0-9]+)*$ ]]; then
+if [[ ! "${MODULE}" =~ ^[a-z0-9]+(-[a-z0-9]+)*$ || "${MODULE}" == host || "${MODULE}" == module-host ]]; then
   echo "Usage: $(basename "$0") <module>" >&2
   exit 2
 fi
@@ -44,6 +44,7 @@ read_value() {
 PREFIX="$(module_value prefix)"
 SCHEMA="$(module_value schema)"
 IMAGE="$(module_value image)"
+HOSTING="$(module_value hosting)"
 SOURCE_REVISION="$(read_value SOURCE_REVISION)"
 SOURCE_STATE_SHA256="$(read_value SOURCE_STATE_SHA256)"
 DATABASE_URL="$(read_value DATABASE_URL)"
@@ -70,7 +71,10 @@ RUNTIME_URL="$(
 )"
 {
   printf '# Generated module %s (WI-OI-085b): image identity, runtime role and platform-context key pair.\n' "${MODULE}"
-  printf '%s_IMAGE=%s:%s-%s\n' "${PREFIX}" "${IMAGE}" "${SOURCE_REVISION:0:12}" "${SOURCE_STATE_SHA256:0:12}"
+  # A hosted module runs in the module host image (.env.module.host); only a service module has its own image.
+  if [[ "${HOSTING}" == service ]]; then
+    printf '%s_IMAGE=%s:%s-%s\n' "${PREFIX}" "${IMAGE}" "${SOURCE_REVISION:0:12}" "${SOURCE_STATE_SHA256:0:12}"
+  fi
   printf '%s_DATABASE_URL=%s\n' "${PREFIX}" "${RUNTIME_URL}"
   printf '%s_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64=%s\n' "${PREFIX}" \
     "$(openssl pkey -in "${KEY_DIR}/private.pem" -outform DER | base64 | tr -d '\n')"
@@ -79,4 +83,11 @@ RUNTIME_URL="$(
 } >"${TEMP_ENV}"
 mv "${TEMP_ENV}" "${TARGET_ENV}"
 trap 'rm -rf "${KEY_DIR}"' EXIT
+HOST_ENV="${COMPOSE_DIR}/.env.module.host"
+if [[ "${HOSTING}" == host && ! -e "${HOST_ENV}" ]]; then
+  ( umask 077
+    printf '# The shared module host (WI-OI-085e): its image identity. refresh-source-identity.sh keeps it current.\n' >"${HOST_ENV}"
+    printf 'MODULE_HOST_IMAGE=gigalibs/module-host:%s-%s\n' "${SOURCE_REVISION:0:12}" "${SOURCE_STATE_SHA256:0:12}" >>"${HOST_ENV}" )
+  echo "Created ${HOST_ENV} for the module host."
+fi
 echo "Created ${TARGET_ENV} for ${MODULE} (image identity, runtime role ${SCHEMA}_runtime, key pair); values were not printed."

@@ -72,7 +72,7 @@ describe('__TITLE__ runtime configuration', () => {
     }
   };
   it('loads the __PREFIX___* variables', () => {
-    expect(load()).toMatchObject({ apiPort: __PORT__, platformContextAudience: AUDIENCE, expectedMigrationVersion: 1 });
+    expect(load()).toMatchObject({ platformContextAudience: AUDIENCE, expectedMigrationVersion: 1 });
   });
   it('refuses another audience', () => {
     expect(() => load({ __PREFIX___PLATFORM_CONTEXT_AUDIENCE: 'gigalibs-other-api' })).toThrow(AUDIENCE);

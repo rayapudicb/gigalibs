@@ -5,31 +5,36 @@ export const generatedModuleUpstreams = {
     "module": "analytics-studio",
     "environmentKey": "ANALYTICS_API_URL",
     "port": "4400",
-    "serviceHostname": "analytics-api"
+    "serviceHostname": "analytics-api",
+    "basePath": ""
   },
   "cmms": {
     "module": "physical-operations-cmms",
     "environmentKey": "CMMS_API_URL",
     "port": "4200",
-    "serviceHostname": "cmms-api"
+    "serviceHostname": "cmms-api",
+    "basePath": ""
   },
   "connector-hub": {
     "module": "universal-connector-hub",
     "environmentKey": "CONNECTOR_HUB_API_URL",
     "port": "4100",
-    "serviceHostname": "connector-hub-api"
+    "serviceHostname": "connector-hub-api",
+    "basePath": ""
   },
   "geospatial": {
     "module": "geospatial",
     "environmentKey": "GEOSPATIAL_API_URL",
     "port": "4720",
-    "serviceHostname": "geospatial-api"
+    "serviceHostname": "geospatial-api",
+    "basePath": ""
   },
   "workforce": {
     "module": "gigaops",
     "environmentKey": "WORKFORCE_API_URL",
     "port": "4700",
-    "serviceHostname": "workforce-api"
+    "serviceHostname": "workforce-api",
+    "basePath": ""
   }
 } as const;
 

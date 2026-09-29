@@ -303,3 +303,44 @@ COPY --from=generated-module-build --chown=65532:65532 /output/module/ ./
 USER 65532:65532
 EXPOSE ${MODULE_PORT}
 CMD ["dist/main.js"]
+
+# WI-OI-085e: the shared module host (product vision §8, a modular monolith by default). One image runs every
+# generated module with `spec.runtime.hosting: host`; each keeps its own migrations, run by its own migrations service
+# from /app/modules/<name>/migrations. It uses the root workspace, which matches the lockfile, so the host and its
+# modules share one copy of each framework package.
+FROM build-base AS module-host-build
+ENV PNPM_HOME=/pnpm
+ENV PATH=/pnpm:$PATH
+WORKDIR /workspace
+
+RUN corepack enable && corepack prepare pnpm@11.1.2 --activate
+COPY . .
+RUN --mount=type=cache,id=gigalibs-pnpm-store,target=/pnpm/store \
+    pnpm config set store-dir /pnpm/store && \
+    pnpm config set fetch-timeout 600000 && \
+    pnpm config set fetch-retries 5 && \
+    pnpm config set network-concurrency 8 && \
+    pnpm install --frozen-lockfile --filter "@gigalibs/module-host..."
+RUN pnpm --recursive --sort --workspace-concurrency=1 --filter "@gigalibs/module-host..." run build
+RUN pnpm --filter @gigalibs/module-host deploy --prod --legacy /output/host
+RUN node infra/compose/docker/copy-hosted-migrations.mjs /output/host && \
+    cp infra/compose/docker/run-module-migrations.mjs /output/host/ && \
+    find /output -type f \( -name '.env' -o -name '.env.*' \) -delete && \
+    test -z "$(find /output -type f \( -name '.env' -o -name '.env.*' \) -print -quit)"
+
+FROM gcr.io/distroless/nodejs24-debian13@sha256:bb6b03d81066993293a10feda7250e8e1cc034035fe9b61cfceededa7c8bf04d AS module-host
+ARG SOURCE_REVISION
+ARG SOURCE_STATE_SHA256
+LABEL org.opencontainers.image.title="GigaLibs module host" \
+      org.opencontainers.image.revision="${SOURCE_REVISION}" \
+      com.gigalibs.source-state-sha256="${SOURCE_STATE_SHA256}" \
+      com.gigalibs.component="module-host" \
+      com.gigalibs.work-item="WI-OI-085" \
+      com.gigalibs.profile-key="module-runtime-local-development-v1"
+ENV NODE_ENV=development
+ENV PATH=/nodejs/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+WORKDIR /app
+COPY --from=module-host-build --chown=65532:65532 /output/host/ ./
+USER 65532:65532
+EXPOSE 4790
+CMD ["dist/main.js"]

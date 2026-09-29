@@ -1,6 +1,6 @@
 import { createPrivateKey, randomUUID } from 'node:crypto';
 import { RequestBodyError, readBoundedBody } from '@/lib/authenticated-upstream';
-import { type LocalModuleUpstream, localModuleUpstreamOrigin } from '@/lib/local-module-upstream';
+import { type LocalModuleUpstream, localModuleUpstreamUrl } from '@/lib/local-module-upstream';
 import { canUseTenantModule, hasPermission } from '@/lib/module-access';
 import { mintPlatformContextToken } from '@/lib/platform-context';
 import { hasSameOrigin } from '@/lib/same-origin';
@@ -87,10 +87,9 @@ export function createSignedModuleProxy(config: SignedModuleProxyConfig) {
     }
 
     try {
-      const baseUrl = localModuleUpstreamOrigin(config.upstream);
+      const target = localModuleUpstreamUrl(config.upstream, path);
       const received = MUTATING_METHODS.has(method) ? await readBoundedBody(request) : undefined;
       const body = received && config.transformBody ? await config.transformBody(session.context, method, path, received) : received;
-      const target = new URL(`/${path.map(encodeURIComponent).join('/')}`, baseUrl);
       target.search = new URL(request.url).search;
 
       const moduleToken = mintPlatformContextToken(session.context, config.moduleKey, config.audience, {
@@ -145,7 +144,7 @@ export async function callSignedModule(
   const token = mintPlatformContextToken(session, config.moduleKey, config.audience, {
     privateKey: signingKey(config),
   });
-  const target = new URL(`/${path.map(encodeURIComponent).join('/')}`, localModuleUpstreamOrigin(config.upstream));
+  const target = localModuleUpstreamUrl(config.upstream, path);
   return fetch(target, {
     method,
     headers: {

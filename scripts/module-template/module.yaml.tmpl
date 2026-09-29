@@ -28,8 +28,9 @@ spec:
     port: __PORT__
     upstream:
       key: __NAME__
-      serviceHostname: __NAME__-api
+      serviceHostname: __SERVICE__
       environmentKey: __PREFIX___API_URL
+      __BASE_PATH_LINE__
     version: v1
   database:
     engine: postgresql
@@ -38,9 +39,10 @@ spec:
     defaultSchema: __SCHEMA__
     crossSchemaAccess: false
     runtimeManifest: db/runtime-manifest.txt
-  # Built by the generic module image and run from a generated Compose overlay (WI-OI-085b).
+  # host: runs inside the shared module host (product vision §8, WI-OI-085e); service: its own image and service.
   runtime:
     generated: true
+    hosting: __HOSTING__
     appendOnlyTables: [audit_events]
     readOnlyTables: [auth_revocation_events]
   catalog:

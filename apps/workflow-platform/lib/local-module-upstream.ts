@@ -46,3 +46,21 @@ export function localModuleUpstreamOrigin(
 
   return url.origin;
 }
+
+/**
+ * The module URL for a gateway path: its exact origin plus, for a module inside the shared module host, its base path
+ * (WI-OI-085e). Each segment is encoded, and dot segments are refused, so the URL stays under the base path.
+ */
+export function localModuleUpstreamUrl(
+  module: LocalModuleUpstream,
+  path: readonly string[],
+  environment: Readonly<Record<string, string | undefined>> = process.env,
+): URL {
+  if (path.some((segment) => segment === '.' || segment === '..' || segment === ''))
+    throw new Error('Module paths may not contain empty or dot segments.');
+  const basePath = generatedModuleUpstreams[module].basePath;
+  return new URL(
+    `${basePath}/${path.map(encodeURIComponent).join('/')}`,
+    localModuleUpstreamOrigin(module, environment),
+  );
+}

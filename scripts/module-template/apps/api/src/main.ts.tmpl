@@ -1,14 +1,14 @@
 import 'reflect-metadata';
-import type { ModuleRuntimeConfig } from '@gigalibs/module-sdk';
+import { loadModuleListenerConfig } from '@gigalibs/module-sdk';
 import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import helmet from 'helmet';
 import { AppModule } from './app.module.js';
-import { RUNTIME_CONFIG } from './config.js';
 
 async function bootstrap(): Promise<void> {
+  // Standalone service only (`hosting: service`); inside the module host, the host listens instead.
+  const config = loadModuleListenerConfig({ prefix: '__PREFIX__' });
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
-  const config = app.get<ModuleRuntimeConfig>(RUNTIME_CONFIG);
   app.use(helmet());
   app.enableCors({
     origin: [...config.corsOrigins],

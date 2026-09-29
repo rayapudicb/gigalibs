@@ -1,7 +1,8 @@
 import { createPublicKey } from 'node:crypto';
 
 // WI-OI-085a: strict runtime configuration for new modules, following the certified CMMS loader (WI-OI-038). Every
-// variable carries the module's prefix, and every refusal names the variable.
+// variable carries the module's prefix, and every refusal names the variable. WI-OI-085e: the listener (host, port,
+// CORS) is separate, because a module running inside the shared module host does not listen on its own.
 
 export interface ModuleRuntimeConfigOptions {
   /** Environment variable prefix, for example `INSPECTIONS`. */
@@ -14,9 +15,6 @@ export interface ModuleRuntimeConfigOptions {
 
 export interface ModuleRuntimeConfig {
   readonly nodeEnv: string;
-  readonly apiHost: string;
-  readonly apiPort: number;
-  readonly corsOrigins: readonly string[];
   readonly databaseUrl: string;
   readonly databasePoolSize: number;
   readonly expectedMigrationVersion: number;
@@ -40,9 +38,6 @@ export function loadModuleRuntimeConfig(
 
   return Object.freeze({
     nodeEnv: optionalString(environment, 'NODE_ENV') ?? 'development',
-    apiHost: requireString(environment, name('API_HOST')),
-    apiPort: parseInteger(environment, name('API_PORT'), 1, 65_535),
-    corsOrigins: parseOrigins(environment, name('CORS_ORIGINS')),
     databaseUrl: parseDatabaseUrl(environment, name('DATABASE_URL')),
     databasePoolSize: parseInteger(environment, name('DATABASE_POOL_SIZE'), 1, 100),
     expectedMigrationVersion: parseInteger(
@@ -53,6 +48,27 @@ export function loadModuleRuntimeConfig(
     ),
     platformContextPublicKey: parseEd25519PublicKey(environment, name('PLATFORM_CONTEXT_PUBLIC_KEY')),
     platformContextAudience: audience,
+  });
+}
+
+export interface ModuleListenerConfig {
+  readonly apiHost: string;
+  readonly apiPort: number;
+  readonly corsOrigins: readonly string[];
+}
+
+/** Where a standalone module service (or the module host) listens: `<PREFIX>_API_HOST`, `_API_PORT`, `_CORS_ORIGINS`. */
+export function loadModuleListenerConfig(
+  options: { readonly prefix: string },
+  environment: NodeJS.ProcessEnv = process.env,
+): ModuleListenerConfig {
+  if (!/^[A-Z][A-Z0-9_]*$/.test(options.prefix))
+    throw new Error('prefix must be upper-case letters, digits and underscores.');
+  const name = (suffix: string) => `${options.prefix}_${suffix}`;
+  return Object.freeze({
+    apiHost: requireString(environment, name('API_HOST')),
+    apiPort: parseInteger(environment, name('API_PORT'), 1, 65_535),
+    corsOrigins: parseOrigins(environment, name('CORS_ORIGINS')),
   });
 }
 

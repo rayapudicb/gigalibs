@@ -169,20 +169,32 @@ in the copy (`module-manifests.mjs --solution <name> --root <copy>`). It then bu
 - the schema with forced RLS, audit, outbox and revocation tables;
 - tests.
 
-It regenerates the catalogue, gateway, navigation, pages and `generated/compose.<name>.yaml`; no shell or
-infrastructure file is edited by hand. Run it with:
+It regenerates the catalogue, gateway, navigation, pages and the Compose overlay; no shell or infrastructure file
+is edited by hand.
+
+**Where it runs.** By default a module runs inside the shared **module host** (`apps/module-host`, product vision
+§8: a modular monolith by default). One process, one image and one service run every hosted module:
+- each hosted module keeps its own schema, least-privilege role, signing key, guard and migrations service;
+- it answers under `/<name>`.
+
+`--hosting service` gives a module its own image and service instead, when scale, data isolation, team ownership
+or failure isolation justifies it. Run hosted modules with:
 
 ```bash
 pnpm install
-infra/compose/scripts/generate-generated-module-credentials.sh <name>   # .env.module.<name>, never replaced
-infra/compose/scripts/build-generated-module-image.sh <name>            # generic `generated-module` target
+infra/compose/scripts/generate-generated-module-credentials.sh <name>   # .env.module.<name> (+ .env.module.host)
+infra/compose/scripts/build-module-host-image.sh                        # one image for every hosted module
 docker compose --env-file infra/compose/.env --env-file infra/compose/.env.modules \
-  --env-file infra/compose/.env.module.<name> -f infra/compose/compose.yaml \
-  -f infra/compose/compose.modules.local.yaml -f infra/compose/generated/compose.<name>.yaml up -d <name>-api
+  --env-file infra/compose/.env.module.host --env-file infra/compose/.env.module.<name> \
+  -f infra/compose/compose.yaml -f infra/compose/compose.modules.local.yaml \
+  -f infra/compose/generated/compose.module-host.yaml up -d module-host
 ```
 
-The shared migration runner creates the module's least-privilege runtime role. `refresh-source-identity.sh` keeps
-every `.env.module.<name>` image identity current. A generated module stays `readiness: PLANNED` until it passes
+A module with `hosting: service` uses `build-generated-module-image.sh <name>` and
+`generated/compose.<name>.yaml` (`up -d <name>-api`) instead.
+
+The shared migration runner creates each module's least-privilege runtime role. `refresh-source-identity.sh` keeps
+every `.env.module.*` image identity current. A generated module stays `readiness: PLANNED` until it passes
 conformance and review.
 
 ## Disk space

@@ -20,6 +20,7 @@ import {
   RequirePermissions,
   SignedContextGuardBase,
   hasModulePermission,
+  loadModuleListenerConfig,
   loadModuleRuntimeConfig,
   moduleErrors,
   recordMutation,
@@ -245,17 +246,38 @@ describe('module runtime configuration', () => {
     });
 
   it('loads a complete configuration', () => {
-    expect(load()).toMatchObject({ apiPort: 4800, databasePoolSize: 10, expectedMigrationVersion: 1, platformContextAudience: AUDIENCE });
+    expect(load()).toMatchObject({ databasePoolSize: 10, expectedMigrationVersion: 1, platformContextAudience: AUDIENCE });
+    expect(load()).not.toHaveProperty('apiPort');
     expect(load().platformContextPublicKey).toContain('BEGIN PUBLIC KEY');
   });
 
   it.each([
     [{ INSPECTIONS_PLATFORM_CONTEXT_AUDIENCE: 'gigalibs-cmms-api' }, 'INSPECTIONS_PLATFORM_CONTEXT_AUDIENCE must equal'],
-    [{ INSPECTIONS_API_PORT: '80a' }, 'INSPECTIONS_API_PORT must be an integer'],
     [{ INSPECTIONS_DATABASE_URL: 'mysql://x/y' }, 'INSPECTIONS_DATABASE_URL must use postgresql'],
     [{ INSPECTIONS_EXPECTED_MIGRATION_VERSION: '2' }, 'INSPECTIONS_EXPECTED_MIGRATION_VERSION must be an integer between 1 and 1'],
     [{ INSPECTIONS_PLATFORM_CONTEXT_PUBLIC_KEY_BASE64: undefined }, 'Configure exactly one of INSPECTIONS_PLATFORM_CONTEXT_PUBLIC_KEY'],
     [{ INSPECTIONS_PLATFORM_CONTEXT_PUBLIC_KEY_BASE64: 'bm90IGEga2V5' }, 'must be an Ed25519 public key'],
+  ])('refuses %o', (overrides, message) => {
+    expect(() => load(overrides)).toThrow(message);
+  });
+});
+
+describe('module listener configuration', () => {
+  const environment = {
+    INSPECTIONS_API_HOST: '0.0.0.0',
+    INSPECTIONS_API_PORT: '4800',
+    INSPECTIONS_CORS_ORIGINS: 'http://127.0.0.1:5180',
+  };
+  const load = (overrides: Record<string, string | undefined> = {}) =>
+    loadModuleListenerConfig({ prefix: 'INSPECTIONS' }, { ...environment, ...overrides });
+
+  it('loads host, port and origins', () => {
+    expect(load()).toEqual({ apiHost: '0.0.0.0', apiPort: 4800, corsOrigins: ['http://127.0.0.1:5180'] });
+  });
+
+  it.each([
+    [{ INSPECTIONS_API_PORT: '80a' }, 'INSPECTIONS_API_PORT must be an integer'],
+    [{ INSPECTIONS_API_HOST: undefined }, 'INSPECTIONS_API_HOST is required'],
     [{ INSPECTIONS_CORS_ORIGINS: ' , ' }, 'INSPECTIONS_CORS_ORIGINS must contain at least one origin'],
   ])('refuses %o', (overrides, message) => {
     expect(() => load(overrides)).toThrow(message);
