@@ -34,10 +34,8 @@ appending to it, and update it at the end of every task.
 **Owner plan (2026-09-29):** foundation work until **Sunday 2026-10-04**, then the **agriculture package** for a
 client capability pitch (date not fixed), then back to the rest of the foundation.
 
-1. **Do task card `.pi/tasks/WI-OI-103d.md`** (Approved). **d1 code is written but NOT yet verified**
-   (`model-catalog.*`, `dataset-fields.ts`, contracts `analytics/catalog.ts`; `runSpec` uses the shared field
-   helper). Run the contracts build, the analytics type-check, the query-engine tests and `pnpm verify` before
-   committing. Then continue piece by piece, and commit after each
+1. **Task card `.pi/tasks/WI-OI-103d.md`: d1–d5 are done and verified.** Next: d6 (retire the static gallery) and
+   d7 (sample farm data and a review deploy on 5190, with the owner's OK). Continue piece by piece, and commit after each
    piece on the owner's "commit". Charts use ECharts (ADR-0004), not `charts-react`. The card is summarised below:
    chart templates that hold no data.
    - A chart is a query spec plus a visual spec.

@@ -162,6 +162,32 @@ describe('Analytics Studio signed BFF (WI-OI-064a)', () => {
     expect((await call(getAnalytics, 'GET', ['v1', 'places', 'metric-drilldown'])).status).toBe(404);
   });
 
+  // WI-OI-103d: the Explore screen's routes. Reading needs analytics:read; saving a chart view needs analytics:charts:write.
+  it('exposes the model catalog, query spec and chart views with their permissions', async () => {
+    const sameOrigin = { Host: 'platform.example.invalid', Origin: 'https://platform.example.invalid', 'Content-Type': 'application/json' };
+    const view = '00000000-0000-4000-8000-0000000000b1';
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(
+      async () => new Response(JSON.stringify({}), { status: 200, headers: { 'Content-Type': 'application/json' } }),
+    );
+    vi.mocked(verifiedSession).mockResolvedValue({ context: { ...entitledContext, permissions: ['analytics:read'] } } as never);
+    expect((await call(getAnalytics, 'GET', ['v1', 'semantic-models'])).status).toBe(200);
+    expect((await call(getAnalytics, 'GET', ['v1', 'semantic-models', view, 'catalog'])).status).toBe(200);
+    expect((await call(postAnalytics, 'POST', ['v1', 'query', 'spec'], { headers: sameOrigin, body: '{}' })).status).toBe(200);
+    expect((await call(getAnalytics, 'GET', ['v1', 'chart-views'])).status).toBe(200);
+    expect((await call(getAnalytics, 'GET', ['v1', 'chart-views', view, 'data'])).status).toBe(200);
+    const readerSaves = await call(postAnalytics, 'POST', ['v1', 'chart-views'], { headers: sameOrigin, body: '{}' });
+    expect(readerSaves.status).toBe(403);
+    expect((await call(getAnalytics, 'GET', ['v1', 'query', 'spec'])).status).toBe(404);
+    const forwarded = fetchSpy.mock.calls.length;
+
+    vi.mocked(verifiedSession).mockResolvedValue({
+      context: { ...entitledContext, permissions: ['analytics:read', 'analytics:charts:write'] },
+    } as never);
+    expect((await call(postAnalytics, 'POST', ['v1', 'chart-views'], { headers: sameOrigin, body: '{}' })).status).toBe(200);
+    expect(fetchSpy.mock.calls.length).toBe(forwarded + 1);
+    expect(String(fetchSpy.mock.calls.at(-1)![0])).toBe('http://127.0.0.1:4400/v1/chart-views');
+  });
+
   it('returns 503 when the runtime is not configured and 502 during an outage', async () => {
     vi.mocked(verifiedSession).mockResolvedValue({ context: entitledContext } as never);
     vi.stubEnv('ANALYTICS_API_URL', '');

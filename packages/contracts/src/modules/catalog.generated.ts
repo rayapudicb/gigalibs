@@ -356,7 +356,7 @@ export const generatedPlatformModuleCatalog = [
     trialEligible: true,
     requiredPermission: 'analytics:read',
     platformInspection: true,
-    reason: 'Runs as a service with PostgreSQL metric facts, place roll-ups and lineage. Queries return totals only until WI-OI-103. Not certified.',
+    reason: 'Runs as a service with PostgreSQL metric facts, place roll-ups and lineage. Explore answers questions by dimension, time and filter, with formula measures and saved chart views (WI-OI-103). Not certified.',
   },
   // modules/physical-operations-cmms/module.yaml
   {

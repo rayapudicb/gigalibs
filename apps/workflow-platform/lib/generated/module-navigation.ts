@@ -11,6 +11,26 @@ export interface GeneratedModuleMenuItem {
 }
 
 export const generatedModuleMenus: Readonly<Record<string, readonly GeneratedModuleMenuItem[]>> = {
+  "analytics-studio": [
+    {
+      "key": "overview",
+      "label": "Overview",
+      "path": "/analytics",
+      "icon": "bar-chart"
+    },
+    {
+      "key": "places",
+      "label": "Places",
+      "path": "/analytics/places",
+      "icon": "map-pin"
+    },
+    {
+      "key": "explore",
+      "label": "Explore",
+      "path": "/analytics/explore",
+      "icon": "layers"
+    }
+  ],
   "asset-maintenance": [
     {
       "key": "work-orders",

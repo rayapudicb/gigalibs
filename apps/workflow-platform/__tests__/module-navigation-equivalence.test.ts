@@ -29,10 +29,21 @@ describe('manifest-declared navigation equals the former sidebar tables', () => 
     },
   );
 
+  // Deliberate navigation changes made after the freeze, each with its work item. Every other entry must still match
+  // the frozen tables exactly.
+  const INTENDED_MENU_CHANGES: Readonly<Record<string, ReturnType<typeof moduleMenu>>> = {
+    // WI-OI-103d: Analytics gains Overview, Places and the new Explore screen.
+    'analytics-studio': [
+      { key: 'overview', label: 'Overview', href: '/analytics', icon: moduleIcons['bar-chart'] },
+      { key: 'places', label: 'Places', href: '/analytics/places', icon: moduleIcons['map-pin'] },
+      { key: 'explore', label: 'Explore', href: '/analytics/explore', icon: moduleIcons.layers },
+    ],
+  };
+
   it.each(platformModuleCatalog.map((module) => [module.key] as const))(
     '%s keeps its sub-menu',
     (key) => {
-      expect(moduleMenu(key)).toEqual(LEGACY_MODULE_MENUS[key] ?? []);
+      expect(moduleMenu(key)).toEqual(INTENDED_MENU_CHANGES[key] ?? LEGACY_MODULE_MENUS[key] ?? []);
     },
   );
 

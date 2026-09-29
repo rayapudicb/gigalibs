@@ -1,6 +1,6 @@
 # WI-OI-103d: chart templates that hold no data, and the Explore screen
 
-- **Status:** Approved (owner, 2026-09-29: "next to start 103d, the part you'll actually see on screen").
+- **Status:** In progress. d1–d5 are done (2026-09-29); d6 and d7 are next. Evidence is in `.pi/work/WI-OI-103.md`.
 - **Work item:** WI-OI-103. Evidence goes in `.pi/work/WI-OI-103.md`, under "103d".
 - **Size:** L. The owner's deadline for foundation work is 2026-10-04.
 

@@ -57,7 +57,7 @@ The owner's rule is that charts hold no data: a chart is a saved query plus a ch
 | 103a | Query contract and engine (acceptance 1) | M | Done, 2026-09-29 |
 | 103b | Formula measures, measure versions, maker-checker (2) | M | Done, 2026-09-29 |
 | 103c | Summaries, cache, limits, benchmark (3) | M | Proposed |
-| 103d | Chart templates and renderer, change-chart, map, gallery retired (4) | L | Next (owner order, 2026-09-29) |
+| 103d | Chart templates and renderer, change-chart, map, gallery retired (4) | L | In progress: d1–d5 done (2026-09-29); d6, d7 next |
 | 103e | Dashboards, reports ownership, permissions and roles, web exposure (5, 6) | M | Proposed |
 | 103f | Proof on manufacturing data and the no-developer test (7) | M | Proposed |
 
@@ -166,3 +166,53 @@ reviewed it, proved it and closed the slice.
   deploy, which is the owner's call.
 
 **For 103e:** the permission set now also includes `analytics:models:publish`; it goes into the default roles.
+
+## 103d: chart views, renderer and the Explore screen (2026-09-29, d1–d5)
+
+**Correction to earlier statements:**
+- `@gigalibs/charts-react` is hand-drawn SVG (single-series lines, hard-coded colours), not ECharts.
+- ADR-0004 (accepted 2026-09-22) makes Apache ECharts the only charting library, so the new screens use ECharts.
+- `charts-react` is a later retirement candidate (ADR-0016 F3).
+
+**d1, model catalog:**
+- `GET v1/semantic-models` and `GET v1/semantic-models/:id/catalog`, with `analytics:read`.
+- The catalog returns base measures, approved formula measures (with the version a chart may pin) and typed fields.
+- `dataset-fields.ts` is the single field whitelist, used by both the catalog and `runSpec`.
+
+**d2, chart views:**
+- Migration `000017_chart_views`: forced RLS, and a tenant-bound FK to the model (using the composite key from
+  000016). Schema version 17 is set in the runtime contract, Compose (2 places) and `.env.example`.
+- Saving runs the question, refuses a chart type that does not fit its shape, pins formula versions, and audits
+  `CHART_VIEW_CREATED`.
+- `GET :id/data` re-runs the stored question.
+- Permissions: `analytics:charts:write` to save, `analytics:read` otherwise.
+- The shape rules (`compatibleChartTypes`) live in `@gigalibs/contracts`, so the UI and the API agree.
+
+**d3, web gateway:** `lib/analytics-proxy.ts` allows the query spec (POST, read), the model list and catalog, and
+chart views. A reader saving a view gets 403; unlisted methods get 404 (`analytics-boundary.test.ts`).
+
+**d4, renderer** (`lib/analytics/chart-render.ts`):
+- Turns a result into an ECharts option for 20 types: table, KPI, line, area, stacked area, column, stacked
+  column, bar, stacked bar, pie, donut, scatter, bubble, heatmap, treemap, funnel, gauge, radar, sankey, and a
+  points map.
+- Colours come from the `--tag-*-icon` and `--fg-*` design tokens at runtime. Missing values stay missing.
+
+**d5, Explore screen** (`/analytics/explore`, and an Analytics sub-menu of Overview, Places and Explore):
+- Pickers: model, measures (formulas marked with their unit), up to 3 group-bys, time and grain, up to 5 filters.
+- One-click chart-type chips (fitting types only), a data-table toggle, save as chart view, and the saved-view
+  list.
+- Loading, empty, error, permission and truncation states.
+- Medusa UI with `ui-*` tokens. The chart is drawn with SVG, and an accessible table is always available.
+- The navigation equivalence test records this as the one intended menu change since the freeze.
+
+**Evidence:**
+- **Tests:** 336 analytics tests; renderer 9; gateway 8; navigation 66.
+- **Real database:** migrations 16 and 17 applied on the real local PostgreSQL in a rolled-back transaction.
+- **Chain:** `pnpm verify` passes (known drift only). One run failed a sign-up test on a 5-second timeout while the
+  machine's load average was around 21; the file then passed on its own (69 tests in 28 ms), and the full run passed.
+
+**Not yet:** d6 (retire the static gallery) and d7 (sample farm data and a review deploy on 5190).
+- **Finding for d7:** Analytics' live sync from an external source is contained ("credential vault not yet
+  implemented"), so the sample data needs another honest route.
+- The review deploy needs migrations 16 and 17 on the local database (additive, forward-only) and new analytics
+  and web images. That is the owner's call.

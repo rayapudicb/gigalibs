@@ -55,6 +55,19 @@ spec:
       trialEligible: true
       requiredPermission: analytics:read
       platformInspection: true
-      reason: Runs as a service with PostgreSQL metric facts, place roll-ups and lineage. Queries return totals only until WI-OI-103. Not certified.
+      reason: Runs as a service with PostgreSQL metric facts, place roll-ups and lineage. Explore answers questions by dimension, time and filter, with formula measures and saved chart views (WI-OI-103). Not certified.
       navigationOrder: 210
+      menu:
+        - key: overview
+          label: Overview
+          path: /analytics
+          icon: bar-chart
+        - key: places
+          label: Places
+          path: /analytics/places
+          icon: map-pin
+        - key: explore
+          label: Explore
+          path: /analytics/explore
+          icon: layers
       personas: [C_LEVEL]

@@ -37,5 +37,11 @@ function requiredAnalyticsPermission(method: string, path: readonly string[]): s
   if (joined === 'v1/places/drilldown') return read;
   // WI-OI-064d: a typed metric spec is posted, but the call only reads.
   if (joined === 'v1/places/metric-drilldown') return method === 'POST' ? 'analytics:read' : null;
+  // WI-OI-103d: the Explore screen — a typed query spec is posted but only reads; the model catalog and chart views.
+  if (joined === 'v1/query/spec') return method === 'POST' ? 'analytics:read' : null;
+  if (joined === 'v1/semantic-models') return read;
+  if (new RegExp(`^v1/semantic-models/${SEGMENT}/catalog$`).test(joined)) return read;
+  if (joined === 'v1/chart-views') return method === 'GET' ? 'analytics:read' : method === 'POST' ? 'analytics:charts:write' : null;
+  if (new RegExp(`^v1/chart-views/${SEGMENT}(/data)?$`).test(joined)) return read;
   return null;
 }
