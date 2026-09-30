@@ -3,9 +3,7 @@ import { randomBytes, randomUUID } from 'node:crypto'
 import { prisma, disconnectDb } from '@gigalibs/db'
 
 const baseUrl = process.env.CONTROL_API_URL
-const sourceUrl = process.env.CONNECTOR_VERIFICATION_SOURCE_URL
 if (!baseUrl) throw new Error('CONTROL_API_URL is required')
-if (!sourceUrl) throw new Error('CONNECTOR_VERIFICATION_SOURCE_URL is required')
 
 async function request(path, options = {}) {
   const response = await fetch(`${baseUrl}${path}`, {
@@ -67,41 +65,32 @@ try {
   })
   assert.equal(environment.body.tenantId, owner.tenant.id)
 
+  // WI-OI-104f (ADR-0016 F8): pulling REST, CSV-over-HTTP and PostgreSQL sources moved to Connector Hub; the core
+  // refuses them and keeps its push intake (the events API used below, webhooks, file uploads).
+  const refused = await request('/api/v1/operational-intelligence/connections', {
+    method: 'POST', token: owner.token, statuses: [400], body: {
+      environmentId: environment.body.id,
+      slug: 'execution-health-pull',
+      name: 'Execution health (pull)',
+      interfaceType: 'REST',
+      mode: 'READ_ONLY',
+      endpoint: 'https://source.example.invalid/health',
+      configuration: { requestMethod: 'GET', accept: 'application/json', sampleRecordLimit: 25 },
+    },
+  })
+  assert.match(JSON.stringify(refused.body), /Connector Hub/)
+
   const connection = await request('/api/v1/operational-intelligence/connections', {
     method: 'POST', token: owner.token, statuses: [201], body: {
       environmentId: environment.body.id,
       slug: 'execution-health',
       name: 'Execution health',
-      interfaceType: 'REST',
+      interfaceType: 'FILE_UPLOAD',
       mode: 'READ_ONLY',
-      endpoint: sourceUrl,
-      configuration: {
-        requestMethod: 'GET',
-        accept: 'application/json',
-        sampleRecordLimit: 25,
-      },
+      configuration: { acceptedContentTypes: ['application/json'], csvDelimiter: ',', sampleRecordLimit: 25 },
     },
   })
   assert.equal(connection.body.status, 'UNTESTED')
-
-  const tested = await request(`/api/v1/operational-intelligence/connections/${connection.body.id}/test`, {
-    method: 'POST', token: owner.token, statuses: [201],
-  })
-  assert.equal(tested.body.status, 'READY')
-  assert.equal(tested.body.checks.policy, 'passed')
-  assert.equal(tested.body.checks.reachable, true)
-
-  const profiled = await request(`/api/v1/operational-intelligence/connections/${connection.body.id}/profile`, {
-    method: 'POST', token: owner.token, statuses: [201],
-  })
-  assert.equal(profiled.body.version, 1)
-  assert.equal(profiled.body.schema.type, 'object')
-  assert.equal(typeof profiled.body.checksum, 'string')
-  const profileReplay = await request(`/api/v1/operational-intelligence/connections/${connection.body.id}/profile`, {
-    method: 'POST', token: owner.token, statuses: [201],
-  })
-  assert.equal(profileReplay.body.version, 1)
-  assert.equal(profileReplay.body.checksum, profiled.body.checksum)
 
   const contract = await request('/api/v1/operational-intelligence/data-contracts', {
     method: 'POST', token: owner.token, statuses: [201], body: {

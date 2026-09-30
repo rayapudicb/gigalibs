@@ -3,9 +3,7 @@ import { randomBytes, randomUUID } from 'node:crypto';
 import { disconnectDb, prisma } from '@gigalibs/db';
 
 const baseUrl = process.env.CONTROL_API_URL;
-const sourceUrl = process.env.CONNECTOR_VERIFICATION_SOURCE_URL;
 if (!baseUrl) throw new Error('CONTROL_API_URL is required');
-if (!sourceUrl) throw new Error('CONNECTOR_VERIFICATION_SOURCE_URL is required');
 
 async function request(path, options = {}) {
   const response = await fetch(`${baseUrl}${path}`, {
@@ -238,21 +236,13 @@ try {
       environmentId: environment.body.id,
       slug: 'ap-erp-read-path',
       name: 'AP ERP read path',
-      interfaceType: 'REST',
+      // WI-OI-104f: the core no longer pulls REST sources; AP facts arrive through the events API below.
+      interfaceType: 'FILE_UPLOAD',
       mode: 'READ_ONLY',
-      endpoint: sourceUrl,
-      configuration: { requestMethod: 'GET', accept: 'application/json', sampleRecordLimit: 25 },
+      configuration: { acceptedContentTypes: ['application/json'], csvDelimiter: ',', sampleRecordLimit: 25 },
     },
   });
-  const readiness = await request(
-    `/api/v1/operational-intelligence/connections/${connection.body.id}/test`,
-    {
-      method: 'POST',
-      token: owner.token,
-      statuses: [201],
-    },
-  );
-  assert.equal(readiness.body.status, 'READY');
+  assert.equal(connection.body.status, 'UNTESTED');
 
   for (const [eventType, jsonSchema] of Object.entries(schemas)) {
     const contract = await request('/api/v1/operational-intelligence/data-contracts', {

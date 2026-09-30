@@ -531,3 +531,36 @@ core API) and no scheduler. Connector Hub also trusts a caller-supplied tenant h
     wrong quotes, and SQL quoting, now in `kernel-stage.sh` with psql variables.
 - **104e is live.** F8 remaining: 104f, retiring the connector copies (owner decision: retire Analytics' Postgres
   connector now; a Hub Postgres adapter when a client needs one).
+
+## 104f: retire the connector copies
+
+**Part 1, Analytics' own Postgres connector** (dfa2112; owner: retire now, with a Hub Postgres adapter when a client
+needs one):
+- `connectors/` and `ingestion/` are deleted (routes, services, modules, specs). Discovery checks the source directly.
+- The truth-boundary test now proves Connector Hub through the relay inbox is the only way in.
+- The tables stay until the package inventory.
+- Checks: 307 Analytics tests; both real-database proofs; `pnpm verify`.
+
+**Part 2, the core API's pull side** (owner option A, 2026-09-30):
+- Findings:
+  - The core's pull code (HTTP client, Postgres client, network policy) served only "test" and "profile" of REST,
+    CSV-over-HTTP and PostgreSQL connections. Every intake path is push: the events API, signed webhooks and file
+    uploads.
+  - All 40 core connections (and their attempts, events and contracts) belong to old test and certification tenants.
+- Done:
+  - `connector-http.client.ts`, `connector-postgres.client.ts` and `connector-network-policy.ts` are deleted.
+  - Creating a REST, CSV-over-HTTP or PostgreSQL connection answers 400 with a pointer to Connector Hub. Testing or
+    profiling an existing one answers 410, before any attempt or circuit state is recorded.
+  - Kept: webhooks, file uploads and the events API, the credential service (webhook signatures), the profiler (file
+    profiles), the error type.
+- Web:
+  - "Register source connection" offers only a signed webhook or a file upload, with a link to Connector Hub pull
+    sources.
+  - An existing pulled connection shows a note instead of Test and Profile.
+- Certification scripts:
+  - `verify-connector-interfaces.mjs` (only the retired pull types) is retired.
+  - `verify-operational-intelligence`, `verify-ap-outcome` and `verify-retention` now register a file-upload source
+    (their events come through the events API), and no longer need `CONNECTOR_VERIFICATION_SOURCE_URL`.
+  - The operational-intelligence script also asserts that REST is refused with the Connector Hub pointer.
+- Named for later: FOUNDATION-CLOSE item 8, the core's push intake.
+- Checks: `operational-intelligence.pull-retired.spec.ts` (5 tests); core and web typecheck; `pnpm verify`.

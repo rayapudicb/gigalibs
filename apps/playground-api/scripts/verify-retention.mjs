@@ -7,9 +7,7 @@ try {
 } catch {}
 
 const baseUrl = process.env.CONTROL_API_URL ?? process.env.CONTROL_PLANE_API_URL;
-const sourceUrl = process.env.CONNECTOR_VERIFICATION_SOURCE_URL;
 if (!baseUrl) throw new Error('CONTROL_API_URL or CONTROL_PLANE_API_URL is required');
-if (!sourceUrl) throw new Error('CONNECTOR_VERIFICATION_SOURCE_URL is required');
 
 async function request(path, options = {}) {
   const response = await fetch(`${baseUrl}${path}`, {
@@ -86,10 +84,10 @@ try {
       environmentId: environment.id,
       slug: 'retention-source',
       name: 'Retention source',
-      interfaceType: 'REST',
+      // WI-OI-104f: the core no longer pulls REST sources; retention is certified on pushed events.
+      interfaceType: 'FILE_UPLOAD',
       mode: 'READ_ONLY',
-      endpoint: sourceUrl,
-      configuration: { requestMethod: 'GET', accept: 'application/json', sampleRecordLimit: 1 },
+      configuration: { acceptedContentTypes: ['application/json'], csvDelimiter: ',', sampleRecordLimit: 1 },
     },
   });
   const contract = await request('/api/v1/operational-intelligence/data-contracts', {

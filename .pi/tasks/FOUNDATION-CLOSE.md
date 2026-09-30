@@ -22,6 +22,13 @@ The owner chose to finish the open ADR-0016 foundation work before starting the 
      from the core, so they need those modules' migrations first. Their home is each module's own migrations.
    - Both are already applied locally; the fix must keep the local history valid (owner review).
 
+8. **Core push intake (named by WI-OI-104f, owner option A, 2026-09-30):** the core API still takes pushed data
+   (signed webhooks, checksum-verified file uploads, the events API) into its operational-intelligence data contracts
+   and events, which exceptions and the Value page use.
+   - Its pull side (REST, CSV over HTTP, PostgreSQL) is retired in favour of Connector Hub.
+   - Next: move webhooks and file uploads into Connector Hub, and re-home the event pipeline as a capability, with the
+     owner's decisions on the four core connection screens and on the test-tenant data (40 connections).
+
 ## Decisions (2026-09-30)
 
 - **Jobs and scheduling (F14):** one kernel job interface with two infrastructure backends. The owner's words:

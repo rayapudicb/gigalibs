@@ -94,6 +94,14 @@ export default function ConnectionDetailPage() {
               <Heading level="h1" className="text-2xl font-bold text-ui-fg-base">{connection.name}</Heading>
               <Text size="small" className="mt-1 text-ui-fg-muted font-mono text-xs">{connection.endpoint}</Text>
             </div>
+            {/* WI-OI-104f: pulled sources (REST, CSV over HTTP, PostgreSQL) are tested and profiled in Connector Hub now. */}
+            {['REST', 'CSV_HTTP', 'POSTGRESQL'].includes(connection.interfaceType) ? (
+              <Text size="small" className="max-w-sm text-ui-fg-muted">
+                Pulling from this kind of source moved to Connector Hub. This record is kept for its history; set the
+                source up again as a{' '}
+                <Link href="/connections" className="text-ui-fg-interactive hover:underline">Connector Hub pull source</Link>.
+              </Text>
+            ) : (
             <div className="flex gap-2">
               <Button
                 type="button"
@@ -116,6 +124,7 @@ export default function ConnectionDetailPage() {
                 Profile schema
               </Button>
             </div>
+            )}
           </div>
           {connection.interfaceType === 'FILE_UPLOAD' && (
             <FileUploadPanel connectionId={connectionId} files={sourceFiles} onCompleted={load} />

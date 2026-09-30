@@ -134,8 +134,6 @@ import { DemoLabController } from './demo-lab.controller.js';
 import { DemoLabService } from './demo-lab.service.js';
 import { ConfigurationStudioService } from './configuration-studio.service.js';
 import { ConnectorCredentialService } from './connector-credential.service.js';
-import { ConnectorHttpClient } from './connector-http.client.js';
-import { ConnectorPostgresClient } from './connector-postgres.client.js';
 import { ConnectorProfileService } from './connector-profile.service.js';
 import { ControlOutboxWorker } from './control-outbox.worker.js';
 import { DataRetentionWorker } from './data-retention.worker.js';
@@ -199,9 +197,7 @@ import { WorkflowService } from './workflow.service.js';
     WorkflowService,
     ExecutionEventsService,
     ExecutionEventSignatureGuard,
-    ConnectorHttpClient,
     ConnectorCredentialService,
-    ConnectorPostgresClient,
     ConnectorProfileService,
     JsonSchemaService,
     MetricsService,

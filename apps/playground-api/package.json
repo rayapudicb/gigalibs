@@ -12,7 +12,6 @@
     "verify:e2e": "node scripts/verify-control-plane.mjs",
     "verify:workflow": "node scripts/verify-operational-workflow.mjs",
     "verify:operational-intelligence": "node scripts/verify-operational-intelligence.mjs",
-    "verify:connector-interfaces": "node scripts/verify-connector-interfaces.mjs",
     "verify:ap-outcome": "node scripts/verify-ap-outcome.mjs",
     "verify:retention": "node scripts/verify-retention.mjs",
     "verify:observability": "node scripts/verify-observability.mjs",

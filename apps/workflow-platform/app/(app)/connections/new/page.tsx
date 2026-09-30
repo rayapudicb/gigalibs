@@ -11,14 +11,16 @@ import { useRouter } from 'next/navigation';
 import { type FormEvent, useEffect, useMemo, useState } from 'react';
 import { Container, Heading, Text, Button, Input, Label, Alert } from '@medusajs/ui';
 
-type InterfaceType = 'REST' | 'CSV_HTTP' | 'WEBHOOK' | 'POSTGRESQL' | 'FILE_UPLOAD';
+// WI-OI-104f (ADR-0016 F8): sources that are pulled (REST, CSV over HTTP, PostgreSQL) are set up in Connector Hub;
+// the core registers only pushed sources here.
+type InterfaceType = 'WEBHOOK' | 'FILE_UPLOAD';
 
 export default function NewConnectionPage() {
   const router = useRouter();
   const [environments, setEnvironments] = useState<TenantEnvironment[]>([]);
   const [credentials, setCredentials] = useState<CredentialReferenceSummary[]>([]);
   const [environmentId, setEnvironmentId] = useState('');
-  const [interfaceType, setInterfaceType] = useState<InterfaceType>('REST');
+  const [interfaceType, setInterfaceType] = useState<InterfaceType>('WEBHOOK');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -45,11 +47,8 @@ export default function NewConnectionPage() {
       credentials.filter(
         (item) =>
           item.environmentId === environmentId &&
-          (interfaceType === 'WEBHOOK'
-            ? item.authType === 'HMAC_SHA256'
-            : interfaceType === 'POSTGRESQL'
-              ? item.authType === 'USERNAME_PASSWORD'
-              : ['NONE', 'BEARER_TOKEN', 'API_KEY_HEADER'].includes(item.authType)),
+          interfaceType === 'WEBHOOK' &&
+          item.authType === 'HMAC_SHA256',
       ),
     [credentials, environmentId, interfaceType],
   );
@@ -62,43 +61,21 @@ export default function NewConnectionPage() {
     const credentialReferenceId = String(data.get('credentialReferenceId') ?? '');
     const sampleRecordLimit = Number(data.get('sampleRecordLimit'));
     const configuration =
-      interfaceType === 'REST'
-        ? { requestMethod: 'GET', accept: 'application/json', sampleRecordLimit }
-        : interfaceType === 'CSV_HTTP'
-          ? {
-              requestMethod: 'GET',
-              accept: 'text/csv',
-              csvDelimiter: data.get('csvDelimiter'),
-              sampleRecordLimit,
-            }
-          : interfaceType === 'WEBHOOK'
-            ? {
-                signatureHeader: data.get('signatureHeader'),
-                timestampHeader: data.get('timestampHeader'),
-                maxSkewSeconds: Number(data.get('maxSkewSeconds')),
-                sampleRecordLimit,
-              }
-            : interfaceType === 'POSTGRESQL'
-              ? {
-                  schemaName: data.get('schemaName'),
-                  tableName: data.get('tableName'),
-                  columns: String(data.get('columns') ?? '')
-                    .split(',')
-                    .map((column) => column.trim())
-                    .filter(Boolean),
-                  sampleRecordLimit,
-                  connectionTimeoutSeconds: Number(data.get('connectionTimeoutSeconds')),
-                  statementTimeoutMs: Number(data.get('statementTimeoutMs')),
-                  sslMode: data.get('sslMode'),
-                }
-              : {
-                  acceptedContentTypes:
-                    data.get('acceptedContentTypes') === 'JSON_AND_CSV'
-                      ? ['application/json', 'text/csv']
-                      : [data.get('acceptedContentTypes')],
-                  csvDelimiter: data.get('csvDelimiter'),
-                  sampleRecordLimit,
-                };
+      interfaceType === 'WEBHOOK'
+        ? {
+            signatureHeader: data.get('signatureHeader'),
+            timestampHeader: data.get('timestampHeader'),
+            maxSkewSeconds: Number(data.get('maxSkewSeconds')),
+            sampleRecordLimit,
+          }
+        : {
+            acceptedContentTypes:
+              data.get('acceptedContentTypes') === 'JSON_AND_CSV'
+                ? ['application/json', 'text/csv']
+                : [data.get('acceptedContentTypes')],
+            csvDelimiter: data.get('csvDelimiter'),
+            sampleRecordLimit,
+          };
     try {
       const connection = await requestJson<SourceConnection>(
         '/api/operational-intelligence/connections',
@@ -113,11 +90,6 @@ export default function NewConnectionPage() {
             name: data.get('name'),
             interfaceType,
             mode: 'READ_ONLY',
-            ...(interfaceType === 'REST' ||
-            interfaceType === 'CSV_HTTP' ||
-            interfaceType === 'POSTGRESQL'
-              ? { endpoint: data.get('endpoint') }
-              : {}),
             configuration,
           }),
         },
@@ -139,7 +111,12 @@ export default function NewConnectionPage() {
           Register source connection
         </Heading>
         <Text size="small" className="mt-1 text-ui-fg-muted">
-          Only read-only, allowlisted endpoints can be tested or profiled.
+          Register a signed webhook or a checksum-verified file upload. To pull from a REST API or a database, set up a pull
+          source in{' '}
+          <Link href="/connections" className="text-ui-fg-interactive hover:underline">
+            Connector Hub
+          </Link>
+          .
         </Text>
       </div>
       {environments.length === 0 && !error ? (
@@ -181,24 +158,10 @@ export default function NewConnectionPage() {
               onChange={(event) => setInterfaceType(event.target.value as InterfaceType)}
               className="w-full h-8 px-2.5 text-xs rounded-md border border-ui-border-base bg-ui-bg-base text-ui-fg-base outline-none focus:border-ui-border-interactive focus:ring-1 focus:ring-ui-border-interactive shadow-borders-base"
             >
-              <option value="REST">REST / JSON</option>
-              <option value="CSV_HTTP">CSV over HTTP</option>
               <option value="WEBHOOK">Signed webhook</option>
-              <option value="POSTGRESQL">PostgreSQL read-only</option>
               <option value="FILE_UPLOAD">Checksum-verified file upload</option>
             </select>
           </div>
-          {(interfaceType === 'REST' || interfaceType === 'CSV_HTTP') && (
-            <Field name="endpoint" label="HTTP(S) source URL" type="url" maxLength={2048} />
-          )}
-          {interfaceType === 'POSTGRESQL' && (
-            <Field
-              name="endpoint"
-              label="PostgreSQL URL without credentials or query parameters"
-              type="url"
-              maxLength={2048}
-            />
-          )}
           {interfaceType === 'WEBHOOK' && (
             <div className="rounded-md border border-ui-border-base bg-ui-bg-subtle p-3 text-xs text-ui-fg-muted">
               The authenticated inbound URL is generated after registration.
@@ -212,13 +175,11 @@ export default function NewConnectionPage() {
               <select
                 id="credentialReferenceId"
                 name="credentialReferenceId"
-                required={interfaceType === 'WEBHOOK' || interfaceType === 'POSTGRESQL'}
+                required={interfaceType === 'WEBHOOK'}
                 className="w-full h-8 px-2.5 text-xs rounded-md border border-ui-border-base bg-ui-bg-base text-ui-fg-base outline-none focus:border-ui-border-interactive focus:ring-1 focus:ring-ui-border-interactive shadow-borders-base"
               >
                 <option value="">
-                  {interfaceType === 'WEBHOOK' || interfaceType === 'POSTGRESQL'
-                    ? 'Select required credential'
-                    : 'No authentication'}
+                  Select required credential
                 </option>
                 {eligibleCredentials.map((credential) => (
                   <option key={credential.id} value={credential.id}>
@@ -234,7 +195,7 @@ export default function NewConnectionPage() {
               </Text>
             </div>
           )}
-          {(interfaceType === 'CSV_HTTP' || interfaceType === 'FILE_UPLOAD') && (
+          {interfaceType === 'FILE_UPLOAD' && (
             <Field name="csvDelimiter" label="CSV delimiter" maxLength={1} />
           )}
           {interfaceType === 'WEBHOOK' && (
@@ -248,49 +209,6 @@ export default function NewConnectionPage() {
                 min={1}
                 max={3600}
               />
-            </div>
-          )}
-          {interfaceType === 'POSTGRESQL' && (
-            <div className="space-y-4 rounded-lg border border-ui-border-base bg-ui-bg-subtle p-4">
-              <div className="grid gap-4 md:grid-cols-2">
-                <Field name="schemaName" label="Schema" maxLength={63} />
-                <Field name="tableName" label="Table" maxLength={63} />
-              </div>
-              <Field name="columns" label="Allowed columns (comma-separated)" maxLength={4096} />
-              <div className="grid gap-4 md:grid-cols-2">
-                <Field
-                  name="connectionTimeoutSeconds"
-                  label="Connection timeout (seconds)"
-                  type="number"
-                  min={1}
-                  max={60}
-                />
-                <Field
-                  name="statementTimeoutMs"
-                  label="Statement timeout (milliseconds)"
-                  type="number"
-                  min={100}
-                  max={120000}
-                />
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor="sslMode" className="text-xs font-medium text-ui-fg-subtle">
-                  TLS policy
-                </Label>
-                <select
-                  id="sslMode"
-                  name="sslMode"
-                  required
-                  defaultValue=""
-                  className="w-full h-8 px-2.5 text-xs rounded-md border border-ui-border-base bg-ui-bg-base text-ui-fg-base outline-none focus:border-ui-border-interactive focus:ring-1 focus:ring-ui-border-interactive shadow-borders-base"
-                >
-                  <option value="" disabled>
-                    Select TLS policy
-                  </option>
-                  <option value="VERIFY_FULL">Verify certificate and hostname</option>
-                  <option value="DISABLE">Disable TLS (private development sources only)</option>
-                </select>
-              </div>
             </div>
           )}
           {interfaceType === 'FILE_UPLOAD' && (

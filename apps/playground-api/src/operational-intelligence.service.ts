@@ -15,6 +15,7 @@ import { logger } from '@gigalibs/logger';
 import {
   BadRequestException,
   ConflictException,
+  GoneException,
   Injectable,
   NotFoundException,
   ServiceUnavailableException,
@@ -23,18 +24,8 @@ import {
 } from '@nestjs/common';
 import { runtimeConfig } from './config/runtime-config.js';
 // biome-ignore lint/style/useImportType: NestJS needs the runtime constructor token for dependency injection.
-import {
-  type ConnectorCredential,
-  ConnectorFailure,
-  ConnectorHttpClient,
-} from './connector-http.client.js';
-// biome-ignore lint/style/useImportType: NestJS needs the runtime constructor token for dependency injection.
-import { ConnectorCredentialService } from './connector-credential.service.js';
-// biome-ignore lint/style/useImportType: NestJS needs the runtime constructor token for dependency injection.
-import {
-  ConnectorPostgresClient,
-  type PostgreSqlConnectorConfiguration,
-} from './connector-postgres.client.js';
+import { type ConnectorCredential, ConnectorCredentialService } from './connector-credential.service.js';
+import { ConnectorFailure } from './connector-errors.js';
 // biome-ignore lint/style/useImportType: NestJS needs the runtime constructor token for dependency injection.
 import { ConnectorProfileService } from './connector-profile.service.js';
 // biome-ignore lint/style/useImportType: NestJS needs the runtime constructor token for dependency injection.
@@ -49,12 +40,14 @@ import { resolveTenantId } from './tenant-resolver.js';
 // biome-ignore lint/style/useImportType: NestJS needs the runtime constructor token for dependency injection.
 import { SourcePayloadParserService } from './source-payload-parser.service.js';
 
-interface StoredHttpConnectorConfiguration {
-  requestMethod: 'GET';
-  accept: 'application/json' | 'text/csv';
-  csvDelimiter?: string;
-  sampleRecordLimit: number;
-}
+/**
+ * WI-OI-104f (ADR-0016 F8, owner decision option A): pulling outside systems is Connector Hub's job. The core no longer
+ * creates, tests or profiles REST, CSV-over-HTTP or PostgreSQL connections; existing ones stay readable. The core keeps
+ * its push intake (webhooks, file uploads, the events API) until that moves too (FOUNDATION-CLOSE item 8).
+ */
+const RETIRED_PULL_INTERFACES: ReadonlySet<string> = new Set(['REST', 'CSV_HTTP', 'POSTGRESQL']);
+const PULL_RETIRED_MESSAGE =
+  'Pulling from REST, CSV-over-HTTP and PostgreSQL sources is done in Connector Hub now: set the source up under Connections › Connector Hub.';
 
 interface StoredWebhookConnectorConfiguration {
   signatureHeader: string;
@@ -69,11 +62,7 @@ interface StoredFileConnectorConfiguration {
   sampleRecordLimit: number;
 }
 
-type StoredConnectorConfiguration =
-  | StoredHttpConnectorConfiguration
-  | StoredWebhookConnectorConfiguration
-  | StoredFileConnectorConfiguration
-  | PostgreSqlConnectorConfiguration;
+type StoredConnectorConfiguration = StoredWebhookConnectorConfiguration | StoredFileConnectorConfiguration;
 
 interface ConnectionWithCredential {
   id: string;
@@ -90,8 +79,6 @@ interface ConnectionWithCredential {
 @Injectable()
 export class OperationalIntelligenceService {
   constructor(
-    private readonly connectorHttpClient: ConnectorHttpClient,
-    private readonly connectorPostgresClient: ConnectorPostgresClient,
     private readonly connectorCredentialService: ConnectorCredentialService,
     private readonly connectorProfileService: ConnectorProfileService,
     private readonly jsonSchemaService: JsonSchemaService,
@@ -307,6 +294,7 @@ export class OperationalIntelligenceService {
   }
 
   async createConnection(tenantId: string, userId: string, dto: CreateConnectionDto) {
+    if (RETIRED_PULL_INTERFACES.has(dto.interfaceType)) throw new BadRequestException(PULL_RETIRED_MESSAGE);
     const resolvedTenantId = await resolveTenantId(tenantId);
     await this.requireEnvironment(resolvedTenantId, dto.environmentId);
     assertNoEmbeddedSecrets(dto.configuration);
@@ -448,6 +436,7 @@ export class OperationalIntelligenceService {
   async profileConnection(tenantId: string, userId: string, connectionId: string) {
     const resolvedTenantId = await resolveTenantId(tenantId);
     const connection = await this.requireConnection(resolvedTenantId, connectionId);
+    if (RETIRED_PULL_INTERFACES.has(connection.interfaceType)) throw new GoneException(PULL_RETIRED_MESSAGE);
     if (connection.interfaceType === 'FILE_UPLOAD') {
       throw new BadRequestException(
         'File connections are profiled when a checksum-verified source file is completed.',
@@ -1257,6 +1246,8 @@ export class OperationalIntelligenceService {
     operation: 'TEST' | 'PROFILE',
   ) {
     const connection = await this.requireConnection(tenantId, connectionId);
+    // Before any attempt is recorded: a retired pull connection is not tested or profiled here any more.
+    if (RETIRED_PULL_INTERFACES.has(connection.interfaceType)) throw new GoneException(PULL_RETIRED_MESSAGE);
     if (connection.status === 'DISABLED')
       throw new ServiceUnavailableException('The source connection is disabled.');
     const traceId = randomUUID();
@@ -1390,23 +1381,6 @@ export class OperationalIntelligenceService {
     configuration: StoredConnectorConfiguration,
     operation: 'TEST' | 'PROFILE',
   ) {
-    if (connection.interfaceType === 'REST' || connection.interfaceType === 'CSV_HTTP') {
-      const httpConfiguration = configuration as StoredHttpConnectorConfiguration;
-      return this.connectorHttpClient.fetch(
-        connection.endpoint,
-        httpConfiguration.accept,
-        connection.credentialReference,
-        httpConfiguration.csvDelimiter,
-      );
-    }
-    if (connection.interfaceType === 'POSTGRESQL') {
-      return this.connectorPostgresClient.execute(
-        connection.endpoint,
-        configuration as PostgreSqlConnectorConfiguration,
-        connection.credentialReference,
-        operation,
-      );
-    }
     if (connection.interfaceType === 'FILE_UPLOAD') {
       if (operation !== 'TEST') {
         throw new ConnectorFailure(
@@ -1737,24 +1711,7 @@ export class OperationalIntelligenceService {
     if (!Number.isSafeInteger(sampleRecordLimit) || Number(sampleRecordLimit) < 1) {
       throw new Error('Stored connector configuration is invalid.');
     }
-    if (interfaceType === 'REST' || interfaceType === 'CSV_HTTP') {
-      const { requestMethod, accept, csvDelimiter } = configuration;
-      if (
-        requestMethod !== 'GET' ||
-        (interfaceType === 'REST' && accept !== 'application/json') ||
-        (interfaceType === 'CSV_HTTP' && accept !== 'text/csv') ||
-        (interfaceType === 'CSV_HTTP' &&
-          (typeof csvDelimiter !== 'string' || csvDelimiter.length !== 1))
-      ) {
-        throw new Error('Stored HTTP connector configuration is invalid.');
-      }
-      return {
-        requestMethod,
-        accept: accept as 'application/json' | 'text/csv',
-        ...(typeof csvDelimiter === 'string' ? { csvDelimiter } : {}),
-        sampleRecordLimit: Number(sampleRecordLimit),
-      };
-    }
+    if (RETIRED_PULL_INTERFACES.has(interfaceType)) throw new GoneException(PULL_RETIRED_MESSAGE);
     if (interfaceType === 'WEBHOOK') {
       const { signatureHeader, timestampHeader, maxSkewSeconds } = configuration;
       if (
@@ -1773,39 +1730,6 @@ export class OperationalIntelligenceService {
         timestampHeader,
         maxSkewSeconds: Number(maxSkewSeconds),
         sampleRecordLimit: Number(sampleRecordLimit),
-      };
-    }
-    if (interfaceType === 'POSTGRESQL') {
-      const {
-        schemaName,
-        tableName,
-        columns,
-        connectionTimeoutSeconds,
-        statementTimeoutMs,
-        sslMode,
-      } = configuration;
-      if (
-        typeof schemaName !== 'string' ||
-        typeof tableName !== 'string' ||
-        !Array.isArray(columns) ||
-        columns.length < 1 ||
-        columns.length > 100 ||
-        columns.some((column) => typeof column !== 'string' || column.length < 1) ||
-        new Set(columns).size !== columns.length ||
-        !Number.isSafeInteger(connectionTimeoutSeconds) ||
-        !Number.isSafeInteger(statementTimeoutMs) ||
-        !['DISABLE', 'VERIFY_FULL'].includes(String(sslMode))
-      ) {
-        throw new Error('Stored PostgreSQL connector configuration is invalid.');
-      }
-      return {
-        schemaName,
-        tableName,
-        columns: columns as string[],
-        sampleRecordLimit: Number(sampleRecordLimit),
-        connectionTimeoutSeconds: Number(connectionTimeoutSeconds),
-        statementTimeoutMs: Number(statementTimeoutMs),
-        sslMode: sslMode as 'DISABLE' | 'VERIFY_FULL',
       };
     }
     const { acceptedContentTypes, csvDelimiter } = configuration;
