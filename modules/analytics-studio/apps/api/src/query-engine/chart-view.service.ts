@@ -16,6 +16,7 @@ import {
 import { DatabaseService } from '../database/database.service.js';
 import type { AnalyticsPrincipal } from '../auth/authorization.js';
 import { QueryEngineService } from './query-engine.service.js';
+import { SummaryService } from './summary.service.js';
 
 interface ChartViewRow {
   id: string;
@@ -32,6 +33,7 @@ export class ChartViewService {
   constructor(
     private readonly db: DatabaseService,
     private readonly queryEngine: QueryEngineService,
+    private readonly summaries?: SummaryService,
   ) {}
 
   async create(principal: AnalyticsPrincipal, input: unknown): Promise<ChartViewV1> {
@@ -76,6 +78,8 @@ export class ChartViewService {
        VALUES ($1, 'CHART_VIEW_CREATED'::gigalibs_analytics.audit_event_type, $2, $3, 'CHART_VIEW', $4::jsonb)`,
       [principal.tenantId, principal.subject, row.id, JSON.stringify({ name: view.name, chartType: view.visual.type })],
     );
+    // A saved question gets the summary it needs, built in the background (WI-OI-103c).
+    void this.summaries?.ensureForQuestion(principal.tenantId, query);
     return toView(row);
   }
 

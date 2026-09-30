@@ -61,7 +61,9 @@ function harness(initialReviews: Review[] = []) {
       if (sql.includes('FROM gigalibs_analytics.formula_measures WHERE id = $1') && !sql.includes('FOR UPDATE')) {
         return { rows: [{ id: FORMULA, semantic_model_id: MODEL, measure_name: 'hours_per_order', created_by: 'maker', created_at: '2026-09-29T00:00:00.000Z', current_published_version_id: state.published }] };
       }
-      if (sql.includes('FROM gigalibs_analytics.formula_measure_versions') && sql.includes('FOR UPDATE')) {
+      // Versions are append-only, so they are read without a row lock; the formula row lock serialises reviews.
+      if (sql.includes('SELECT id, version_number, created_by') && sql.includes('FROM gigalibs_analytics.formula_measure_versions')) {
+        expect(sql).not.toContain('FOR UPDATE');
         return { rows: [{ id: VERSION, version_number: 1, created_by: 'maker' }] };
       }
       if (sql.includes('SELECT v.id, v.version_number')) return { rows: [versionRow()] };

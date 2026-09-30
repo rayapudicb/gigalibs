@@ -25,6 +25,7 @@ import type { AnalyticsPrincipal } from '../auth/authorization.js';
 import { DatabaseService } from '../database/database.service.js';
 import { loadDatasetFields } from './dataset-fields.js';
 import { QueryEngineService } from './query-engine.service.js';
+import { SummaryService } from './summary.service.js';
 
 const MAX_FILTER_VALUES = 200;
 
@@ -58,6 +59,7 @@ export class DashboardService {
   constructor(
     private readonly db: DatabaseService,
     private readonly queryEngine: QueryEngineService,
+    private readonly summaries?: SummaryService,
   ) {}
 
   async create(principal: AnalyticsPrincipal, input: unknown): Promise<DashboardV1> {
@@ -82,7 +84,7 @@ export class DashboardService {
       await writeTiles(client, principal.tenantId, id, dashboard.tiles);
       await audit(client, principal, 'DASHBOARD_CREATED', id, summary(dashboard));
       return readDashboard(client, id);
-    });
+    }).then((saved) => this.requestSummaries(principal.tenantId, saved));
   }
 
   /** Replaces the name, filters and tiles in one transaction. */
@@ -104,7 +106,17 @@ export class DashboardService {
         after: summary(dashboard),
       });
       return readDashboard(client, id);
-    });
+    }).then((saved) => this.requestSummaries(principal.tenantId, saved));
+  }
+
+  /** Each chart gets a summary covering its question and the dashboard's shared filters (WI-OI-103c). */
+  private async requestSummaries(tenantId: string, dashboard: DashboardV1): Promise<DashboardV1> {
+    if (this.summaries) {
+      const views = await this.db.withTenantTransaction(tenantId, (client) => readTileViews(client, dashboard.id));
+      const filterFields = dashboard.filters.map((filter) => filter.field);
+      for (const view of views.values()) void this.summaries.ensureForQuestion(tenantId, view.query, filterFields);
+    }
+    return dashboard;
   }
 
   async list(principal: AnalyticsPrincipal): Promise<DashboardSummaryV1[]> {

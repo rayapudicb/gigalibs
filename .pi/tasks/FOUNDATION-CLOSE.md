@@ -1,0 +1,41 @@
+# Closing the remaining foundation work (owner decision, 2026-09-30)
+
+The owner chose to finish the open ADR-0016 foundation work before starting the agriculture package.
+
+## Order
+
+1. **WI-OI-103 remainder:**
+   - 103c: summaries, cache, limits, and a measured benchmark (95% of dashboard queries under 1 s at 10M rows);
+   - 103f: proof on manufacturing data and the no-developer test;
+   - retire the old engine: `v1/charts`, `v1/query/run`, `ChartService` and `runQuery`.
+2. **WI-OI-104** (F8, F14): Connector Hub adapter framework, the bridge into Analytics, one scheduler and job runner,
+   and retiring the connector copies in Analytics and the core API.
+3. **WI-OI-105** (F15): places with boundaries; area and containment computed in code; place scope enforced in every
+   module query.
+4. **WI-OI-107** (F10): industry packs at the solution layer; Workforce's packs move into it.
+5. **WI-OI-106** (F17): Reports v2, PDF and Excel.
+6. **WI-OI-108:** rebuild the contained other-stream forms properly.
+
+## Decisions (2026-09-30)
+
+- **Jobs and scheduling (F14):** one kernel job interface with two infrastructure backends. The owner's words:
+  "keep the logic redis and bullmq as a infrastructure layer pieces and then incorporate where ever needed".
+  - **PostgreSQL job table:** durable schedules and runs, audit, retries; claimed with `SKIP LOCKED`.
+  - **Redis and BullMQ:** the existing `@gigalibs/queue`, for high-volume or fast queues.
+  - Each job type names its backend. Redis holds only transient queue state; the durable truth stays in PostgreSQL.
+  - Redis joins the local stack as an infrastructure service.
+- **Connector credentials (F8):** encrypted at rest in Connector Hub's own schema with a platform key from its
+  environment. Never returned by the API or logged. An external vault can replace the key store later.
+- **PDF (F17):** charts are rendered on the server (ECharts to SVG), laid out with `pdfkit` (already used by Accounts
+  Receivable). Excel uses `exceljs` (already used by CMMS), with formula-injection protection.
+- **Already decided by ADR-0016 and the agriculture plan §8:**
+  - Connector Hub is the only integration path (F8).
+  - Places are computed in code; PostGIS only with its own ADR and restore drill (F15).
+  - Packs live at the solution layer (F10).
+  - Speed target: 95% under 1 s at 10M rows.
+
+## Working rules
+
+- One piece at a time, each verified with `pnpm verify` and committed on the owner's "commit".
+- Deploys and migrations on the local stack need the owner's OK. The benchmark runs in a throwaway PostgreSQL
+  container, never in the owner's database.

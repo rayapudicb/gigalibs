@@ -57,14 +57,26 @@ const CAST: Readonly<Record<AnalyticsFieldType, string>> = {
 
 const ORDERED_TYPES: ReadonlySet<AnalyticsFieldType> = new Set(['number', 'date', 'timestamp']);
 
+/**
+ * A READY summary chosen by `summaryCovers` (WI-OI-103c); the question is then answered from its rows. `dimensions`
+ * and `numericFields` give the positions of the summary's typed arrays.
+ */
+export interface QuerySummarySource {
+  readonly id: string;
+  readonly dimensions: readonly string[];
+  readonly timeField: string | null;
+  readonly numericFields: readonly string[];
+}
+
 export function buildAnalyticsQuery(input: {
   readonly datasetVersionId: string;
   readonly query: AnalyticsQueryV1;
   readonly fields: ReadonlyMap<string, AnalyticsFieldType>;
   readonly measures: ReadonlyMap<string, QueryMeasure>;
+  readonly summary?: QuerySummarySource;
 }): BuiltAnalyticsQuery {
-  const { query, fields, measures } = input;
-  const params: unknown[] = [input.datasetVersionId];
+  const { query, fields, measures, summary } = input;
+  const params: unknown[] = [summary ? summary.id : input.datasetVersionId];
   const bind = (value: unknown): string => {
     params.push(value);
     return `$${params.length}`;
@@ -74,7 +86,15 @@ export function buildAnalyticsQuery(input: {
     if (!type) throw new AnalyticsQuerySpecError(`${where}: unknown field '${name}'.`);
     return type;
   };
-  const fieldText = (name: string): string => `(r.analytical_payload->>${bind(name)}::text)`;
+  const fieldText = (name: string): string => {
+    if (!summary) return `(r.analytical_payload->>${bind(name)}::text)`;
+    if (name === summary.timeField) return '(s.day::text)';
+    // Array positions come from the summary's own field list, never from the caller's text.
+    const position = summary.dimensions.indexOf(name);
+    if (position >= 0) return `(s.dims[${position + 1}])`;
+    throw new AnalyticsQuerySpecError(`summary: field '${name}' is not held by the chosen summary.`);
+  };
+  const agg = (measure: QueryMeasure): string => (summary ? summaryAggregate(measure, summary.numericFields) : aggregate(measure, bind));
 
   const select: string[] = [];
   const columns: AnalyticsQueryColumnV1[] = [];
@@ -100,11 +120,11 @@ export function buildAnalyticsQuery(input: {
     if (!measure) throw new AnalyticsQuerySpecError(`measures: unknown measure '${name}'.`);
     if (columns.some((column) => column.name === name))
       throw new AnalyticsQuerySpecError(`measures: '${name}' has the same name as a dimension.`);
-    select.push(measureExpression(measure, measures, bind));
+    select.push(measureExpression(measure, measures, bind, agg));
     columns.push({ name, label: measure.label || name, role: 'measure', type: 'number' });
   }
 
-  const where = ['r.dataset_version_id = $1'];
+  const where = [summary ? 's.summary_id = $1' : 'r.dataset_version_id = $1'];
   for (const filter of query.filters) where.push(filterSql(filter, fieldType(filter.field, 'filters'), fieldText, bind));
 
   const orderBy = query.sort.map((sort) => {
@@ -116,7 +136,7 @@ export function buildAnalyticsQuery(input: {
 
   const text = [
     `SELECT ${select.map((expression, index) => `${expression} AS c${index}`).join(', ')}`,
-    'FROM gigalibs_analytics.dataset_record_versions r',
+    summary ? 'FROM gigalibs_analytics.analytics_summary_rows s' : 'FROM gigalibs_analytics.dataset_record_versions r',
     `WHERE ${where.join(' AND ')}`,
     groupCount > 0 ? `GROUP BY ${Array.from({ length: groupCount }, (_, i) => i + 1).join(', ')}` : '',
     orderBy.length > 0 ? `ORDER BY ${orderBy.join(', ')}` : '',
@@ -132,9 +152,10 @@ function measureExpression(
   measure: QueryMeasure,
   measures: ReadonlyMap<string, QueryMeasure>,
   bind: (value: unknown) => string,
+  agg: (measure: QueryMeasure) => string,
 ): string {
-  if (measure.formulaExpression) return formulaExpression(measure.formulaExpression, measures, bind);
-  return aggregate(measure, bind);
+  if (measure.formulaExpression) return formulaExpression(measure.formulaExpression, measures, bind, agg);
+  return agg(measure);
 }
 
 function aggregate(measure: QueryMeasure, bind: (value: unknown) => string): string {
@@ -159,10 +180,35 @@ function aggregate(measure: QueryMeasure, bind: (value: unknown) => string): str
   }
 }
 
+/**
+ * The same base measure over summary rows: sums of sums, sums of counts, minimum of minimums and maximum of maximums,
+ * so the answer equals the one over raw rows. COUNT_DISTINCT cannot be summed, so `summaryCovers` never picks a
+ * summary for it.
+ */
+function summaryAggregate(measure: QueryMeasure, numericFields: readonly string[]): string {
+  if (measure.aggregateFn === 'COUNT') return 'COALESCE(SUM(s.row_count), 0)';
+  const position = numericFields.indexOf(measure.fieldReference ?? '');
+  if (position < 0) throw new AnalyticsQuerySpecError(`summary: measure '${measure.name}' uses a field the summary does not hold.`);
+  const part = (array: 'sums' | 'counts' | 'mins' | 'maxs') => `s.${array}[${position + 1}]`;
+  switch (measure.aggregateFn) {
+    case 'SUM':
+      return `COALESCE(SUM(${part('sums')}), 0)`;
+    case 'AVG':
+      return `(SUM(${part('sums')}) / NULLIF(SUM(${part('counts')}), 0))`;
+    case 'MIN':
+      return `MIN(${part('mins')})`;
+    case 'MAX':
+      return `MAX(${part('maxs')})`;
+    default:
+      throw new AnalyticsQuerySpecError(`summary: measure '${measure.name}' (${measure.aggregateFn}) cannot be answered from a summary.`);
+  }
+}
+
 function formulaExpression(
   expression: FormulaExpressionV1,
   measures: ReadonlyMap<string, QueryMeasure>,
   bind: (value: unknown) => string,
+  agg: (measure: QueryMeasure) => string,
 ): string {
   if (expression.kind === 'constant') return `${bind(expression.value)}::numeric`;
   if (expression.kind === 'measure') {
@@ -170,10 +216,10 @@ function formulaExpression(
     if (!referenced || referenced.formulaExpression) {
       throw new AnalyticsQuerySpecError(`formula: unknown base measure '${expression.name}'.`);
     }
-    return aggregate(referenced, bind);
+    return agg(referenced);
   }
-  const left = formulaExpression(expression.left, measures, bind);
-  const right = formulaExpression(expression.right, measures, bind);
+  const left = formulaExpression(expression.left, measures, bind, agg);
+  const right = formulaExpression(expression.right, measures, bind, agg);
   switch (expression.operator) {
     case 'add':
       return `((${left}) + (${right}))`;

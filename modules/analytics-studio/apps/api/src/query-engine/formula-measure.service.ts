@@ -168,7 +168,7 @@ export class FormulaMeasureService {
     const versionId = parseId(rawVersionId, 'versionId');
     return this.db.withTenantTransaction(principal.tenantId, async (client) => {
       const formula = await this.lockFormula(client, formulaId);
-      const version = await this.versionForUpdate(client, formulaId, versionId);
+      const version = await this.versionOf(client, formulaId, versionId);
       const latest = await this.latestVersionState(client, formulaId, formula.current_published_version_id);
       if (!latest || latest.id !== versionId) throw new ConflictException('Only the latest formula version may be reviewed.');
 
@@ -278,11 +278,15 @@ export class FormulaMeasureService {
     return result.rows[0]!;
   }
 
-  private async versionForUpdate(client: PoolClient, formulaId: string, versionId: string) {
+  /**
+   * Versions are append-only (the runtime role has no UPDATE on them, so `FOR UPDATE` is refused). Review transitions
+   * are serialised by the formula row lock taken first in `lockFormula`.
+   */
+  private async versionOf(client: PoolClient, formulaId: string, versionId: string) {
     const result = await client.query<{ id: string; version_number: number; created_by: string }>(
       `SELECT id, version_number, created_by
        FROM gigalibs_analytics.formula_measure_versions
-       WHERE id = $1 AND formula_measure_id = $2 FOR UPDATE`,
+       WHERE id = $1 AND formula_measure_id = $2`,
       [versionId, formulaId],
     );
     if (result.rows.length === 0) throw new NotFoundException(`Formula version '${versionId}' not found.`);

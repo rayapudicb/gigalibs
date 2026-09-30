@@ -391,15 +391,14 @@ export class DatasetService {
       const values: unknown[] = [];
       let p = 1;
       for (const row of batch) {
-        placeholders.push(`($${p++}, $${p++}, $${p++}, $${p++})`);
-        values.push(datasetVersionId, mappingId, tenantId, JSON.stringify(row.analytical_payload));
-        // Note: source_pk_hash included for lineage
-        // We use a separate placeholder batch for simplicity
+        placeholders.push(`($${p++}, $${p++}, $${p++}, $${p++}, $${p++})`);
+        // source_pk_hash is required (migration 000007) and links each record to its raw source row for lineage.
+        values.push(datasetVersionId, mappingId, tenantId, JSON.stringify(row.analytical_payload), row.source_pk_hash);
       }
       await this.db.queryWithTenant(
         tenantId,
         `INSERT INTO gigalibs_analytics.dataset_record_versions
-           (dataset_version_id, mapping_id, tenant_id, analytical_payload)
+           (dataset_version_id, mapping_id, tenant_id, analytical_payload, source_pk_hash)
          VALUES ${placeholders.join(', ')}`,
         values,
       );

@@ -21,8 +21,11 @@ import {
   AnalyticsQueryV1Schema,
   FormulaMeasureDefinitionV1Schema,
 } from '@gigalibs/contracts';
+import { AnswerCache } from './answer-cache.js';
 import { loadDatasetFields } from './dataset-fields.js';
 import { AnalyticsQuerySpecError, buildAnalyticsQuery, type QueryMeasure } from './query-builder.js';
+import { chooseSummary } from './summary-plan.js';
+import { SummaryService } from './summary.service.js';
 import { DatabaseService } from '../database/database.service.js';
 import type { AnalyticsPrincipal } from '../auth/authorization.js';
 
@@ -65,13 +68,21 @@ export interface RunQueryDto {
 /** Freshness window for ad-hoc query specs; saved charts carry their own (WI-OI-103d). */
 export const SPEC_FRESHNESS_TTL_SECONDS = 3600;
 
+/** Longest a single Analytics question may run (WI-OI-103c); a slower one is refused with advice, not queued. */
+export const SPEC_STATEMENT_TIMEOUT_MS = 15_000;
+
 // ─── QueryEngineService ───────────────────────────────────────────────────────
 
 @Injectable()
 export class QueryEngineService {
   private readonly logger = new Logger(QueryEngineService.name);
 
-  constructor(private readonly db: DatabaseService) {}
+  private readonly answers = new AnswerCache();
+
+  constructor(
+    private readonly db: DatabaseService,
+    private readonly summaries?: SummaryService,
+  ) {}
 
   /**
    * Execute a governed query against the most-recent READY dataset version
@@ -283,19 +294,43 @@ export class QueryEngineService {
       resolvedMeasureVersions[name] = selected.version_id;
     }
 
+    const cacheKey = AnswerCache.key({
+      tenantId,
+      datasetVersionId,
+      definitionVersion,
+      query,
+      measureVersions: resolvedMeasureVersions,
+      spatialScope: principal.spatialScope,
+    });
+    const cached = this.answers.get(cacheKey);
+    // The answer cannot change for this dataset version; freshness is about now, so it is recomputed above.
+    if (cached) return { ...cached, freshness, watermark };
+
+    // A READY summary that answers the question exactly is used instead of the raw rows (WI-OI-103c).
+    const summary = this.summaries
+      ? chooseSummary(await this.summaries.ready(tenantId, datasetVersionId), query, measures, fields)
+      : undefined;
     let built;
     try {
-      built = buildAnalyticsQuery({ datasetVersionId, query, fields, measures });
+      built = buildAnalyticsQuery({
+        datasetVersionId,
+        query,
+        fields,
+        measures,
+        ...(summary
+          ? { summary: { id: summary.id, dimensions: summary.dimensions, timeField: summary.timeField, numericFields: summary.numericFields } }
+          : {}),
+      });
     } catch (error) {
       if (error instanceof AnalyticsQuerySpecError) throw new BadRequestException(error.message);
       throw error;
     }
-    const result = await this.db.queryWithTenant<Record<string, unknown>>(tenantId, built.text, [...built.params]);
+    const result = await this.runLimited(tenantId, built.text, [...built.params]);
     const truncated = result.rows.length > query.limit;
     const rows = result.rows.slice(0, query.limit).map((row) =>
       built.columns.map((column, index) => toCell(row[`c${index}`], column.role === 'measure' ? 'number' : column.type)),
     );
-    return {
+    const answer: AnalyticsQueryResultV1 = {
       semanticModelId: query.semanticModelId,
       datasetVersionId,
       definitionVersion,
@@ -306,7 +341,27 @@ export class QueryEngineService {
       columns: [...built.columns],
       rows,
       truncated,
+      answeredFrom: summary ? 'summary' : 'rows',
     };
+    this.answers.set(cacheKey, answer);
+    return answer;
+  }
+
+  /** Runs one question under the statement time limit; a timeout becomes advice instead of a stuck connection. */
+  private async runLimited(tenantId: string, text: string, params: unknown[]): Promise<{ rows: Record<string, unknown>[] }> {
+    try {
+      return await this.db.withTenantTransaction(tenantId, async (client) => {
+        await client.query('SELECT set_config($1, $2, true)', ['statement_timeout', String(SPEC_STATEMENT_TIMEOUT_MS)]);
+        return client.query<Record<string, unknown>>(text, params);
+      });
+    } catch (error) {
+      if ((error as { code?: string }).code === '57014') {
+        throw new BadRequestException(
+          `This question took longer than ${SPEC_STATEMENT_TIMEOUT_MS / 1000} seconds. Narrow it with a filter or a shorter date range, or save it in a chart or dashboard so a summary is built for it.`,
+        );
+      }
+      throw error;
+    }
   }
 
   private async computeFreshness(

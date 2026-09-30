@@ -78,5 +78,7 @@ export const AnalyticsQueryResultV1Schema = z.object({
   rows: z.array(z.array(z.union([z.string(), z.number(), z.boolean(), z.null()]))),
   /** True when more rows matched than `limit`. */
   truncated: z.boolean(),
+  /** Where the answer came from: the raw rows or a pre-aggregated summary (WI-OI-103c). Same answer either way. */
+  answeredFrom: z.enum(['rows', 'summary']).optional(),
 });
 export type AnalyticsQueryResultV1 = z.infer<typeof AnalyticsQueryResultV1Schema>;

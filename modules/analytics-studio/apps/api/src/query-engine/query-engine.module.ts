@@ -14,6 +14,7 @@ import { ModelCatalogController } from './model-catalog.controller.js';
 import { ModelCatalogService } from './model-catalog.service.js';
 import { ChartViewController } from './chart-view.controller.js';
 import { ChartViewService } from './chart-view.service.js';
+import { SummaryService } from './summary.service.js';
 
 @Module({
   imports: [DatasetModule],
@@ -32,7 +33,8 @@ import { ChartViewService } from './chart-view.service.js';
     FormulaMeasureService,
     ModelCatalogService,
     ChartViewService,
+    SummaryService,
   ],
-  exports: [QueryEngineService, ChartService, DashboardService, FormulaMeasureService, ModelCatalogService, ChartViewService],
+  exports: [QueryEngineService, ChartService, DashboardService, FormulaMeasureService, ModelCatalogService, ChartViewService, SummaryService],
 })
 export class QueryEngineModule {}

@@ -56,7 +56,7 @@ The owner's rule is that charts hold no data: a chart is a saved query plus a ch
 |---|---|---|---|
 | 103a | Query contract and engine (acceptance 1) | M | Done, 2026-09-29 |
 | 103b | Formula measures, measure versions, maker-checker (2) | M | Done, 2026-09-29 |
-| 103c | Summaries, cache, limits, benchmark (3) | M | Proposed |
+| 103c | Summaries, cache, limits, benchmark (3) | M | Done (not deployed): p95 64 ms at 10M rows (2026-09-30) |
 | 103d | Chart templates and renderer, change-chart, map, gallery retired (4) | L | Done: d1–d7 live on 5180 (2026-09-30) |
 | 103e | Dashboards, reports ownership, permissions and roles, web exposure (5, 6) | M | Done: e1–e5 live on 5180 (2026-09-30) |
 | 103f | Proof on manufacturing data and the no-developer test (7) | M | Proposed |
@@ -434,3 +434,52 @@ Task card: `.pi/tasks/WI-OI-103e.md`. Owner decisions: system roles now; order e
 - e1–e5 are live on 5180 (`85abf9c80a5f-823fa00b1327`, Analytics schema 20).
 - The core API carries e1 (permission names) and e3 (default roles).
 - The 5190 review web is removed.
+
+## 103c: summaries, cache, limits, benchmark (2026-09-30, not deployed)
+
+- **Limits:** every question runs under a 15 s statement limit. A slower one gets advice (narrow it, or save it so a
+  summary is built) instead of holding a connection.
+- **Answer cache:** in-process LRU, 500 entries, 1 h. The key is tenant, dataset version, model version, resolved
+  formula versions, the normalised question and the caller's place scope. Dataset versions never change, so an
+  entry is never wrong; freshness is recomputed on every hit.
+- **Summaries** (migration 000021, schema 21: `analytics_summaries`, `analytics_summary_rows`, forced RLS,
+  same-tenant keys):
+  - What: per dataset version, rows grouped by the question's dimensions and filter fields, plus the dashboard's
+    shared filter fields, and bucketed by day on its time field. Typed arrays hold the row count and the sum, count,
+    min and max of every number field.
+  - When: saving a chart view or a dashboard asks for the summaries its questions need. They build in the
+    background, with a 5-minute limit, rebuild when failed or stuck, and move to the kernel job runner in WI-OI-104.
+  - How: the engine answers from the smallest READY summary that gives exactly the raw answer: dimensions and
+    filters held; day filters only on date fields; SUM, AVG, MIN, MAX, COUNT and formulas over them; COUNT DISTINCT
+    stays on the raw rows. The result says `answeredFrom`.
+- **Real-database proof** (`pnpm --filter @gigalibs/analytics-api proof:real-database`):
+  - The unmocked services run against a throwaway PostgreSQL 16 with every migration applied and a non-superuser
+    runtime role (RLS on, append-only tables enforced).
+  - Path covered: sample farm, then maker-checker, yield per hectare, chart view plus summary (equal to the raw
+    rows), dashboard with farm and date filters, CSV report, and tenant isolation. It passes.
+  - **It found two bugs that are live on 5180, both fixed here:**
+    1. `DatasetService` never wrote the required `source_pk_hash`, so every real dataset build failed, including the
+       Demo Lab sample farm.
+    2. `FormulaMeasureService` locked version rows with `FOR UPDATE`, which the append-only runtime role may not do,
+       so formula submit, approve and reject were refused. The formula row lock already serialises reviews.
+- **Benchmark** (`pnpm --filter @gigalibs/analytics-api benchmark:summaries`):
+  - Setup: 10,000,000 synthetic harvest rows (5.4 GB) in a throwaway `postgres:16-alpine` on stock settings, with a
+    non-superuser role under RLS.
+  - Questions: seven dashboard questions, with the chart's and the dashboard's summaries (shared farm and crop
+    filters). Half the views had a farm filter picked. New engine per question (no cache).
+
+  | Question | Raw rows, median | Summary, median / p95 | Summaries (rows, build) |
+  |---|---|---|---|
+  | Yield by month | 3,917 ms | 45 / 110 ms | 1,095 (62 s); 175,200 (71 s) |
+  | Yield per hectare by crop and quarter | 5,598 ms | 39 / 70 ms | 8,760 (60 s); 175,200 |
+  | Yield by farm in one year | 4,790 ms | 31 / 64 ms | 21,900 (78 s); 175,200 |
+  | One farm by field | 3,398 ms | 15 / 23 ms | 1,000 (59 s); 8,000 (73 s) |
+  | Input cost by crop and farm | 3,935 ms | 15 / 27 ms | 800 (57 s) |
+  | KPI totals for a quarter | 3,864 ms | 19 / 32 ms | 1,095; 175,200 |
+  | Average yield of two crops | 4,352 ms | 19 / 34 ms | 8 (67 s); 800 |
+
+  - **Result:** 140 summary views, p95 64 ms, 100% under 1 s. **Acceptance 3 is met.** Every summary answer
+    equalled the raw answer.
+  - A cold first raw question exceeded the 15 s limit, which is why saved questions get summaries.
+- **Checks:** Analytics suite 22 files (answer cache, limits, summary planning and building, builder summary mode,
+  engine routing); `pnpm verify` passes (known drift only).

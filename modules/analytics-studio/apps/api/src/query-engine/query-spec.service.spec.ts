@@ -45,9 +45,21 @@ function service(options: { model?: boolean; resultRows?: Array<Record<string, u
     }
     if (sql.includes('FROM gigalibs_analytics.formula_measures fm')) return { rows: [] };
     if (sql.includes('FROM gigalibs_analytics.dataset_record_versions r')) return { rows: options.resultRows ?? [] };
+    if (sql.includes('FROM gigalibs_analytics.analytics_summary_rows s')) return { rows: options.resultRows ?? [] };
     throw new Error(`unexpected SQL: ${sql}`);
   });
-  return { engine: new QueryEngineService({ queryWithTenant } as never), calls };
+  // Questions run in a transaction with a statement time limit (WI-OI-103c); route its client through the same mock,
+  // looked up at call time so a test can swap queryWithTenant.
+  const db: Record<string, unknown> = { queryWithTenant };
+  db.withTenantTransaction = vi.fn(async (tenant: string, callback: (client: unknown) => unknown) =>
+    callback({
+      query: (sql: string, params: unknown[] = []) =>
+        sql.startsWith('SELECT set_config')
+          ? (calls.push({ sql, params }), Promise.resolve({ rows: [] }))
+          : (db.queryWithTenant as typeof queryWithTenant)(tenant, sql, params),
+    }),
+  );
+  return { engine: new QueryEngineService(db as never), calls };
 }
 
 describe('QueryEngineService.runSpec', () => {
@@ -137,5 +149,59 @@ describe('QueryEngineService.runSpec', () => {
     expect(result.columns[0]?.label).toBe('Hours per order');
     expect(result.rows).toEqual([[2.5]]);
     expect(calls.some((call) => call.sql.includes('NULLIF'))).toBe(true);
+  });
+
+  // WI-OI-103c: limits and the answer cache.
+  it('runs each question under the statement time limit', async () => {
+    const { engine, calls } = service({ resultRows: [{ c0: '3' }] });
+    await engine.runSpec(principal, { semanticModelId: MODEL, measures: ['work_orders'] });
+    expect(calls.some((call) => call.sql.startsWith('SELECT set_config') && call.params[0] === 'statement_timeout' && call.params[1] === '15000')).toBe(true);
+  });
+
+  it('turns a statement timeout into advice instead of an error page', async () => {
+    const { engine } = service();
+    (engine as any).db.queryWithTenant = vi.fn(async () => {
+      throw Object.assign(new Error('canceling statement due to statement timeout'), { code: '57014' });
+    });
+    (engine as any).db.withTenantTransaction = vi.fn(async () => {
+      throw Object.assign(new Error('canceling statement due to statement timeout'), { code: '57014' });
+    });
+    const fresh = service({ resultRows: [] });
+    (fresh.engine as any).db.withTenantTransaction = (engine as any).db.withTenantTransaction;
+    await expect(fresh.engine.runSpec(principal, { semanticModelId: MODEL, measures: ['work_orders'] })).rejects.toThrow(/longer than 15 seconds/);
+  });
+
+  it('answers a repeated question from the cache, but not across tenants or place scopes', async () => {
+    const { engine, calls } = service({ resultRows: [{ c0: '3' }] });
+    const scans = () => calls.filter((call) => call.sql.includes('FROM gigalibs_analytics.dataset_record_versions r')).length;
+    const question = { semanticModelId: MODEL, measures: ['work_orders'], dimensions: ['site'] };
+    const first = await engine.runSpec(principal, question);
+    const again = await engine.runSpec(principal, { dimensions: ['site'], measures: ['work_orders'], semanticModelId: MODEL });
+    expect(scans()).toBe(1);
+    expect(again.rows).toEqual(first.rows);
+    expect(again.freshness).toBe(first.freshness);
+    await engine.runSpec({ tenantId: 'tenant-b' } as AnalyticsPrincipal, question);
+    await engine.runSpec({ tenantId: 'tenant-a', spatialScope: { mode: 'SCOPED_PLACES', place_ids: ['p1'] } } as never, question);
+    expect(scans()).toBe(3);
+  });
+
+  it('answers from a READY summary that covers the question, and from the raw rows otherwise', async () => {
+    const { engine, calls } = service({ resultRows: [{ c0: 'North', c1: '7' }] });
+    const summaries = {
+      ready: vi.fn(async () => [{ id: 'sum-1', dimensions: ['site'], timeField: 'occurred_at', numericFields: ['hours'], rowCount: 12 }]),
+    };
+    const routed = new QueryEngineService((engine as any).db, summaries as never);
+    const covered = await routed.runSpec(principal, { semanticModelId: MODEL, measures: ['labour_hours'], dimensions: ['site'] });
+    expect(covered.answeredFrom).toBe('summary');
+    expect(calls.at(-1)!.sql).toContain('FROM gigalibs_analytics.analytics_summary_rows s');
+    expect(calls.at(-1)!.params[0]).toBe('sum-1');
+
+    const notCovered = await routed.runSpec(principal, {
+      semanticModelId: MODEL,
+      measures: ['labour_hours'],
+      filters: [{ field: 'hours', op: 'gte', value: 2 }],
+    });
+    expect(notCovered.answeredFrom).toBe('rows');
+    expect(calls.at(-1)!.sql).toContain('FROM gigalibs_analytics.dataset_record_versions r');
   });
 });

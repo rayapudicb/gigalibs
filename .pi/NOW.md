@@ -37,15 +37,21 @@ Replace old content rather than appending to it, and update it at the end of eve
 
 ## Next
 
-**Owner plan:** foundation until **Sunday 2026-10-04**, then the **agriculture package** for the client capability
-pitch (`.pi/proposals/agriculture-package-plan.md`), then back to the rest of the foundation.
+**Owner plan (2026-09-30):** close the rest of the foundation before the agriculture package, in the order in
+`.pi/tasks/FOUNDATION-CLOSE.md` (decisions there: jobs on PostgreSQL plus Redis/BullMQ, credentials encrypted in
+Connector Hub, server-rendered PDF).
 
-1. **Owner review on 5180.** Create a Demo Lab workspace, load the sample farm (Explore), and have a second member
-   (Analytics data steward) approve "Yield per hectare". Then build a dashboard and run a report.
-2. **Small cleanup:** retire the old Analytics engine that nothing uses: `v1/charts`, `v1/query/run`,
-   `ChartService` and `QueryEngineService.runQuery`, with their tests.
-3. **From Monday:** the agriculture package. The first versions of connectors, places and the pack are thin.
-4. **After agriculture:** 103c, 103f, WI-OI-104 to WI-OI-108.
+1. **103c is done but not committed or deployed** (evidence in WI-OI-103: p95 64 ms at 10M rows). It carries two
+   fixes for bugs that are **live on 5180**:
+   - Analytics dataset builds fail, so the Demo Lab sample farm cannot load;
+   - formula approvals are refused.
+
+   Deploy them with migration 21 on the owner's OK.
+2. **WI-OI-104** (F8, F14): Connector Hub adapters and encrypted credentials, the bridge into Analytics, kernel jobs
+   (PostgreSQL plus Redis/BullMQ), and retiring the connector copies in Analytics and the core API.
+3. Then **WI-OI-105** (F15), **WI-OI-107** (F10), **WI-OI-106** (F17), and the 103 leftovers (103f, old-engine
+   cleanup) and **WI-OI-108**.
+4. Then the agriculture package.
 
 ## Open decisions (owner)
 
