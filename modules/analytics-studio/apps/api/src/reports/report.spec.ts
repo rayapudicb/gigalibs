@@ -325,24 +325,6 @@ describe('ReportService — append-only enforcement', () => {
   });
 });
 
-// ─── 7. Cron expression validation ───────────────────────────────────────────
-
-describe('ReportService — cron expression validation', () => {
-  const svc = () =>
-    new ReportService({ queryWithTenant: jest.fn().mockResolvedValue({ rows: [{ id: 'sched-1' }] }), withTenantTransaction: jest.fn() } as any, {} as any, {} as any);
-  const base = { reportDefinitionId: 'def-1', deliveryChannel: 'IN_APP' as const, deliveryTargetRef: 'ref-1' };
-
-  test('accepts valid 5-field cron expression', async () => {
-    await expect(svc().createSchedule(PRINCIPAL as any, { ...base, cronExpression: '0 8 * * 1' })).resolves.toBeDefined();
-  });
-
-  test('rejects cron with wrong number of fields', async () => {
-    await expect(svc().createSchedule(PRINCIPAL as any, { ...base, cronExpression: '0 8 * *' })).rejects.toMatchObject({
-      message: expect.stringContaining('5 fields'),
-    });
-  });
-});
-
 // ─── 8. Tenant isolation ──────────────────────────────────────────────────────
 
 describe('ReportService — tenant isolation', () => {

@@ -382,6 +382,34 @@ export class PostgresJobStore implements JobStore {
     });
   }
 
+  /** A tenant's most recent jobs for one correlation id (such as `schedule:<id>`), newest first. */
+  async listByCorrelationForTenant(tenantId: string, correlationId: string, limit: number): Promise<readonly JobRecord[]> {
+    return this.transaction(async (client) => {
+      await setTenant(client, tenantId);
+      const result = await client.query<JobRow>(
+        `SELECT * FROM "kernel_job_runs" WHERE "tenantId" = $1 AND "correlationId" = $2
+         ORDER BY "createdAt" DESC LIMIT $3`,
+        [tenantId, correlationId, Math.min(Math.max(limit, 1), 100)],
+      );
+      return result.rows.map(mapJob);
+    });
+  }
+
+  /** The newest job for each of the given correlation ids. */
+  async latestByCorrelationForTenant(tenantId: string, correlationIds: readonly string[]): Promise<ReadonlyMap<string, JobRecord>> {
+    if (correlationIds.length === 0) return new Map();
+    return this.transaction(async (client) => {
+      await setTenant(client, tenantId);
+      const result = await client.query<JobRow>(
+        `SELECT DISTINCT ON ("correlationId") * FROM "kernel_job_runs"
+         WHERE "tenantId" = $1 AND "correlationId" = ANY($2::varchar[])
+         ORDER BY "correlationId", "createdAt" DESC`,
+        [tenantId, correlationIds],
+      );
+      return new Map(result.rows.map((row) => [row.correlationId, mapJob(row)]));
+    });
+  }
+
   async listAuditForTenant(tenantId: string, jobId: string): Promise<readonly JobAuditEvent[]> {
     return this.transaction(async (client) => {
       await setTenant(client, tenantId);

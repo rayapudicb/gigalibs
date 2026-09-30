@@ -115,16 +115,38 @@ export class PostgresScheduleStore {
     });
   }
 
-  /** Pauses (with a reason) or resumes (with the next due time) a tenant's schedule. */
-  async setStatus(tenantId: string, id: string, change: { status: 'PAUSED'; reason: string } | { status: 'ACTIVE'; nextRunAt: Date }): Promise<ScheduleRecord | null> {
+  /**
+   * Pauses (with a reason) or resumes (with the next due time) a tenant's schedule. A resume may hand the schedule to
+   * a new owner, whose rights it then runs with.
+   */
+  async setStatus(
+    tenantId: string,
+    id: string,
+    change: { status: 'PAUSED'; reason: string } | { status: 'ACTIVE'; nextRunAt: Date; ownerSubjectId?: string },
+  ): Promise<ScheduleRecord | null> {
     return this.tenantTransaction(tenantId, async (client) => {
-      const result = await client.query<ScheduleRow>(
+      const result =
         change.status === 'PAUSED'
-          ? `UPDATE "kernel_job_schedules" SET "status" = 'PAUSED', "pausedReason" = $2, "updatedAt" = now() WHERE "id" = $1 RETURNING ${COLUMNS}`
-          : `UPDATE "kernel_job_schedules" SET "status" = 'ACTIVE', "pausedReason" = NULL, "nextRunAt" = $2, "updatedAt" = now() WHERE "id" = $1 RETURNING ${COLUMNS}`,
-        [id, change.status === 'PAUSED' ? change.reason.slice(0, 256) : change.nextRunAt],
-      );
+          ? await client.query<ScheduleRow>(
+              `UPDATE "kernel_job_schedules" SET "status" = 'PAUSED', "pausedReason" = $2, "updatedAt" = now() WHERE "id" = $1 RETURNING ${COLUMNS}`,
+              [id, change.reason.slice(0, 256)],
+            )
+          : await client.query<ScheduleRow>(
+              `UPDATE "kernel_job_schedules"
+                  SET "status" = 'ACTIVE', "pausedReason" = NULL, "nextRunAt" = $2,
+                      "ownerSubjectId" = COALESCE($3, "ownerSubjectId"), "updatedAt" = now()
+                WHERE "id" = $1 RETURNING ${COLUMNS}`,
+              [id, change.nextRunAt, change.ownerSubjectId ?? null],
+            );
       return result.rows[0] ? toRecord(result.rows[0]) : null;
+    });
+  }
+
+  /** Removes a tenant's schedule. Its past jobs and their audit stay. */
+  async remove(tenantId: string, id: string): Promise<boolean> {
+    return this.tenantTransaction(tenantId, async (client) => {
+      const result = await client.query(`DELETE FROM "kernel_job_schedules" WHERE "id" = $1`, [id]);
+      return (result.rowCount ?? 0) > 0;
     });
   }
 
@@ -207,11 +229,16 @@ export class KernelScheduler {
     });
   }
 
-  async resume(tenantId: string, id: string): Promise<ScheduleRecord | null> {
+  /** Resumes from now; `ownerSubjectId` hands the schedule to whoever resumed it. */
+  async resume(tenantId: string, id: string, ownerSubjectId?: string): Promise<ScheduleRecord | null> {
     const schedule = await this.#options.store.get(tenantId, id);
     if (!schedule) return null;
     const nextRunAt = nextCronRun(parseCron(schedule.cron), this.#clock(), schedule.timeZone);
-    return this.#options.store.setStatus(tenantId, id, { status: 'ACTIVE', nextRunAt });
+    return this.#options.store.setStatus(tenantId, id, { status: 'ACTIVE', nextRunAt, ...(ownerSubjectId ? { ownerSubjectId } : {}) });
+  }
+
+  remove(tenantId: string, id: string): Promise<boolean> {
+    return this.#options.store.remove(tenantId, id);
   }
 
   pause(tenantId: string, id: string, reason: string): Promise<ScheduleRecord | null> {

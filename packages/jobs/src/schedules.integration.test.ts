@@ -148,4 +148,32 @@ integration('kernel schedules on PostgreSQL', () => {
     const resumed = await scheduler().resume(tenantA, created.id);
     expect([resumed?.status, resumed?.nextRunAt.toISOString()]).toEqual(['ACTIVE', '2026-10-01T02:00:00.000Z']);
   });
+
+  it('hands a resumed schedule to a new owner, lists its runs, and removes it within its tenant only', async () => {
+    const created = await scheduler().create({
+      tenantId: tenantA,
+      name: 'Handed over',
+      jobType: 'analytics.report-run',
+      jobVersion: 1,
+      payload: { reportId: 'r-5' },
+      cron: '0 2 * * *',
+      ownerSubjectId: 'owner-gone',
+    });
+    clock = new Date('2026-09-30T02:05:00.000Z');
+    await scheduler().tick();
+    const handed = await scheduler().resume(tenantA, created.id, 'owner-1');
+    expect([handed?.status, handed?.ownerSubjectId]).toEqual(['ACTIVE', 'owner-1']);
+    clock = new Date('2026-10-01T02:00:10.000Z');
+    await scheduler().tick();
+    const jobStore = new PostgresJobStore(pool);
+    const runs = await jobStore.listByCorrelationForTenant(tenantA, `schedule:${created.id}`, 10);
+    expect(runs.map((run) => [run.ownerSubjectId, run.ownerAuthVersion])).toEqual([['owner-1', 4]]);
+    expect(await jobStore.listByCorrelationForTenant(tenantB, `schedule:${created.id}`, 10)).toEqual([]);
+    const latest = await jobStore.latestByCorrelationForTenant(tenantA, [`schedule:${created.id}`, 'schedule:none']);
+    expect([...latest.keys()]).toEqual([`schedule:${created.id}`]);
+    expect(await store.remove(tenantB, created.id)).toBe(false);
+    expect(await scheduler().remove(tenantA, created.id)).toBe(true);
+    expect(await store.get(tenantA, created.id)).toBeNull();
+    expect(await jobStore.listByCorrelationForTenant(tenantA, `schedule:${created.id}`, 10)).toHaveLength(1);
+  });
 });

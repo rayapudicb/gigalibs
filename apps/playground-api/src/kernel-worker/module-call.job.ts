@@ -7,6 +7,7 @@
 
 import { createPrivateKey } from 'node:crypto';
 import { buildPlatformContext, signPlatformContextToken } from '@gigalibs/auth-core';
+import { SCHEDULED_OPERATIONS } from '@gigalibs/contracts';
 import { type JobDefinition, NonRetryableJobError } from '@gigalibs/jobs';
 import { HttpException } from '@nestjs/common';
 
@@ -33,21 +34,21 @@ const IDENTIFIER = /^[A-Za-z0-9._:-]{1,128}$/;
 
 export const MODULE_CALL_OPERATIONS: Readonly<Record<ModuleCallPayload['operation'], Operation>> = {
   'analytics.report-run': {
-    moduleKey: 'analytics-studio',
+    moduleKey: SCHEDULED_OPERATIONS['analytics.report-run'].moduleKey,
     audience: 'gigalibs-analytics-api',
     baseUrlEnvironment: 'ANALYTICS_API_URL',
     privateKeyEnvironment: 'ANALYTICS_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64',
-    permission: 'analytics:reports:write',
+    permission: SCHEDULED_OPERATIONS['analytics.report-run'].runPermission,
     path: () => 'v1/reports/runs',
     // The job id makes a retried run idempotent at the module.
     body: (payload, jobId) => ({ reportDefinitionId: (payload as { reportDefinitionId: string }).reportDefinitionId, idempotencyKey: jobId }),
   },
   'connector-hub.sync': {
-    moduleKey: 'connections',
+    moduleKey: SCHEDULED_OPERATIONS['connector-hub.sync'].moduleKey,
     audience: 'gigalibs-connector-hub-api',
     baseUrlEnvironment: 'CONNECTOR_HUB_API_URL',
     privateKeyEnvironment: 'CONNECTOR_HUB_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64',
-    permission: 'connections:sync',
+    permission: SCHEDULED_OPERATIONS['connector-hub.sync'].runPermission,
     path: (payload) => `api/connectors/v1/connections/${encodeURIComponent((payload as { connectionId: string }).connectionId)}/sync`,
     body: () => ({}),
   },
@@ -62,6 +63,18 @@ export function parseModuleCallPayload(value: unknown): ModuleCallPayload {
     return { operation: 'connector-hub.sync', connectionId: input.connectionId };
   }
   throw new NonRetryableJobError('NOT_SCHEDULABLE', 'The scheduled operation is not one that can be scheduled.');
+}
+
+/** The job payload for an operation and its target (a report definition or a connection). */
+export function moduleCallPayload(operation: ModuleCallPayload['operation'], targetId: string): ModuleCallPayload {
+  return parseModuleCallPayload(
+    operation === 'analytics.report-run' ? { operation, reportDefinitionId: targetId } : { operation, connectionId: targetId },
+  );
+}
+
+/** The target id inside a stored payload. */
+export function moduleCallTarget(payload: ModuleCallPayload): string {
+  return payload.operation === 'analytics.report-run' ? payload.reportDefinitionId : payload.connectionId;
 }
 
 /** True when auth refused the owner (inactive user, tenant or membership); anything else, such as a database outage, is not. */

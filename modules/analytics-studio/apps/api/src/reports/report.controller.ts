@@ -23,7 +23,6 @@ interface ReportResponse {
 import {
   ReportService,
   TriggerReportRunDto,
-  CreateScheduleDto,
 } from './report.service.js';
 
 @Controller('v1/reports')
@@ -130,20 +129,5 @@ export class ReportController {
     // Prevent caching of download responses
     res.setHeader('Cache-Control', 'no-store');
     res.status(200).send(result.bytes);
-  }
-
-  /**
-   * POST /v1/reports/schedules
-   * Create a scheduled delivery for a report definition.
-   * Required scope: analytics:reports:write
-   */
-  @Post('schedules')
-  @RequirePermissions('analytics:reports:write')
-  @HttpCode(HttpStatus.CREATED)
-  async createSchedule(
-    @CurrentPrincipal() principal: AnalyticsPrincipal,
-    @Body() dto: CreateScheduleDto,
-  ) {
-    return this.reportService.createSchedule(principal, dto);
   }
 }

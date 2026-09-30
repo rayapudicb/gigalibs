@@ -10,6 +10,8 @@ import { Module } from '@nestjs/common';
 import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { PlatformController } from './platform.controller.js';
 import { TenantDataExportController } from './tenant-data-export.controller.js';
+import { KernelSchedulesController } from './kernel-schedules.controller.js';
+import { KernelSchedulesService } from './kernel-schedules.service.js';
 import { TenantDataExportService } from './tenant-data-export.service.js';
 import { TenantDataExportWorker } from './tenant-data-export.worker.js';
 import { TenantExportSnapshotService } from './tenant-export-snapshot.service.js';
@@ -186,6 +188,7 @@ import { WorkflowService } from './workflow.service.js';
     ValueLedgerController,
     WorkflowController,
     TenantDataExportController,
+    KernelSchedulesController,
     ConfigurationStudioController,
     DemoLabController,
     GovernorController,
@@ -218,6 +221,7 @@ import { WorkflowService } from './workflow.service.js';
     ValueLedgerService,
     ControlOutboxWorker,
     TenantDataExportService,
+    KernelSchedulesService,
     TenantExportSnapshotService,
     TenantDataExportWorker,
     OutboxRelayProcessor,

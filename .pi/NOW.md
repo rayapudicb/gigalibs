@@ -44,9 +44,11 @@ Replace old content rather than appending to it, and update it at the end of eve
 
    Recurring schedules run jobs with the owner's rights, re-checked at run time. The first users are summary
    builds, connector pulls and report runs.
-   - Step 1 (schedules) committed 943d2f8. Step 2 (worker, `module.call`, Redis in Compose) verified, not deployed.
-   - Next: step 3, a schedules API and the first scheduled report runs and connector syncs; then the 104c deploy
-     (core migration, `redis`, `kernel-worker`) with the owner's OK.
+   - Step 1 (schedules) 943d2f8; step 2 (worker, `module.call`, Redis in Compose) a63cb52; step 3 (schedules API,
+     report and connector-sync schedules in the web) verified, not deployed.
+   - Next: the 104c deploy with the owner's OK. It needs a core migration, `REDIS_PASSWORD`, the `redis` and
+     `kernel-worker` services, and new core, web and Analytics images.
+   - Owner to confirm: summary builds move to the kernel with 104e, not 104c.
 2. Then 104d adapters, 104e the Analytics bridge, and 104f retiring the connector copies.
 3. Then WI-OI-105 (F15), WI-OI-107 (F10), WI-OI-106 (F17), the 103 leftovers and WI-OI-108.
 4. Then the agriculture package.

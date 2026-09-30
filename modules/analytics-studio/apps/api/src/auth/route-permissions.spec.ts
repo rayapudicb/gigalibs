@@ -99,7 +99,6 @@ const EXPECTED: Record<string, string> = {
   'GET v1/reports/runs/:runId': 'analytics:read',
   'GET v1/reports/definitions/:definitionId/runs': 'analytics:read',
   'GET v1/reports/download/:token': 'analytics:export',
-  'POST v1/reports/schedules': 'analytics:reports:write',
   'GET v1/lineage/:nodeType/:nodeId': 'analytics:read',
   'GET v1/audit': 'analytics:read',
   'GET v1/places/drilldown': 'analytics:read',

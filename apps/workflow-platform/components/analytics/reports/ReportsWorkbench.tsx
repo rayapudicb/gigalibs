@@ -3,12 +3,14 @@
 /**
  * WI-OI-103e (ADR-0016 F11): Analytics-owned reports. A report is a saved chart or a dashboard exported as CSV; each
  * run re-asks the stored questions with the member's rights. Creating and running need analytics:reports:write;
- * downloading needs analytics:export. Scheduled delivery arrives with the scheduler (WI-OI-104).
+ * downloading needs analytics:export. WI-OI-104c: a report can run on a schedule, held by the kernel and run as its
+ * owner; email delivery comes later.
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { Fragment, useCallback, useEffect, useState } from 'react';
 import { Alert, Badge, Button, Container, Heading, Input, Label, Table, Text } from '@medusajs/ui';
 import type { ChartViewV1, CreateReportV1, DashboardSummaryV1, ReportRunV1, ReportV1 } from '@gigalibs/contracts';
+import { SchedulePanel } from '@/components/schedules/SchedulePanel';
 import { analyticsApi } from '../explore/analytics-api';
 
 const selectClass =
@@ -29,6 +31,7 @@ export function ReportsWorkbench({ canWrite, canExport }: { canWrite: boolean; c
   const [source, setSource] = useState('');
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [scheduling, setScheduling] = useState<string | null>(null);
 
   const refresh = useCallback(() => {
     analyticsApi<ReportV1[]>('v1/reports/definitions')
@@ -116,7 +119,7 @@ export function ReportsWorkbench({ canWrite, canExport }: { canWrite: boolean; c
           </div>
           <Text size="xsmall" className="text-ui-fg-subtle">
             A report stores which chart or dashboard to export, never the data: each run asks again and produces a fresh
-            CSV. Scheduled email delivery is not available yet.
+            CSV. Open Schedule on a report to run it every day, week or month; email delivery is not available yet.
           </Text>
         </Container>
       ) : null}
@@ -144,7 +147,8 @@ export function ReportsWorkbench({ canWrite, canExport }: { canWrite: boolean; c
               </Table.Header>
               <Table.Body>
                 {reports.map((report) => (
-                  <Table.Row key={report.id}>
+                  <Fragment key={report.id}>
+                  <Table.Row>
                     <Table.Cell>{report.name}</Table.Cell>
                     <Table.Cell>
                       <Text size="small">{report.source.name}</Text>
@@ -172,6 +176,15 @@ export function ReportsWorkbench({ canWrite, canExport }: { canWrite: boolean; c
                     </Table.Cell>
                     <Table.Cell>
                       <div className="flex justify-end gap-2">
+                        <Button
+                          type="button"
+                          size="small"
+                          variant="transparent"
+                          aria-expanded={scheduling === report.id}
+                          onClick={() => setScheduling(scheduling === report.id ? null : report.id)}
+                        >
+                          Schedule
+                        </Button>
                         {canWrite ? (
                           <Button type="button" size="small" variant="secondary" isLoading={busy === report.id} disabled={busy !== null} onClick={() => void run(report)}>
                             Run now
@@ -187,6 +200,14 @@ export function ReportsWorkbench({ canWrite, canExport }: { canWrite: boolean; c
                       </div>
                     </Table.Cell>
                   </Table.Row>
+                  {scheduling === report.id ? (
+                    <Table.Row>
+                      <td colSpan={4} className="bg-ui-bg-subtle px-6 py-3">
+                        <SchedulePanel operation="analytics.report-run" targetId={report.id} targetName={report.name} />
+                      </td>
+                    </Table.Row>
+                  ) : null}
+                  </Fragment>
                 ))}
               </Table.Body>
             </Table>

@@ -44,6 +44,8 @@ CREATE POLICY "kernel_job_schedules_worker_policy" ON "kernel_job_schedules"
   TO gigalibs_jobs_worker USING (true) WITH CHECK (true);
 
 GRANT SELECT, INSERT, UPDATE ON TABLE "kernel_job_schedules" TO gigalibs_jobs_tenant, gigalibs_jobs_worker;
+-- A member removes a schedule; its jobs and their audit stay. The worker never deletes.
+GRANT DELETE ON TABLE "kernel_job_schedules" TO gigalibs_jobs_tenant;
 
 COMMENT ON TABLE "kernel_job_schedules" IS
   'WI-OI-104c recurring kernel job schedules. Payloads hold references, never credentials.';

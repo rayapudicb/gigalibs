@@ -31,3 +31,4 @@ export * from './cmms/index.js';
 export * from './handshake/index.js';
 export * from './forms/index.js';
 export * from './telemetry/index.js';
+export * from './jobs/index.js';

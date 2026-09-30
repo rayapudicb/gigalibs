@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
+import { SchedulePanel } from '@/components/schedules/SchedulePanel';
 import {
   Alert,
   Badge,
@@ -136,6 +137,8 @@ export default function ConnectionsPage() {
   // Modal & Sandbox state
   const [testingId, setTestingId] = useState<string | null>(null);
   const [syncingId, setSyncingId] = useState<string | null>(null);
+  // WI-OI-104c: scheduled syncs run in the kernel worker as the schedule's owner.
+  const [schedulingId, setSchedulingId] = useState<string | null>(null);
   const [selectedSimSlug, setSelectedSimSlug] = useState<string>('salesforce-crm');
   const [simPayloadText, setSimPayloadText] = useState<string>(
     JSON.stringify(SAMPLE_WEBHOOK_PAYLOADS['salesforce-crm'], null, 2)
@@ -592,6 +595,19 @@ export default function ConnectionsPage() {
                   >
                     Simulate
                   </Button>
+                </div>
+                <div className="mt-3 flex flex-col gap-2">
+                  <Button
+                    variant="transparent"
+                    size="small"
+                    aria-expanded={schedulingId === conn.id}
+                    onClick={() => setSchedulingId(schedulingId === conn.id ? null : conn.id)}
+                  >
+                    {schedulingId === conn.id ? 'Hide sync schedule' : 'Sync schedule'}
+                  </Button>
+                  {schedulingId === conn.id ? (
+                    <SchedulePanel operation="connector-hub.sync" targetId={conn.id} targetName={conn.name} />
+                  ) : null}
                 </div>
               </Container>
             ))}

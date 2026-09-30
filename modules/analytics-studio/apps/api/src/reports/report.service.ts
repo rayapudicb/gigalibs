@@ -42,14 +42,6 @@ export interface DownloadResult {
   contentSha256: string;
 }
 
-export interface CreateScheduleDto {
-  reportDefinitionId: string;
-  cronExpression: string;
-  deliveryChannel: 'EMAIL' | 'WEBHOOK' | 'SFTP' | 'IN_APP';
-  /** Credential Vault reference for the delivery target (no raw PII) */
-  deliveryTargetRef: string;
-}
-
 interface DefinitionRow {
   id: string;
   display_name: string;
@@ -199,22 +191,7 @@ export class ReportService {
     };
   }
 
-  // ── Schedule management ─────────────────────────────────────────────────
-
-  async createSchedule(principal: AnalyticsPrincipal, dto: CreateScheduleDto): Promise<{ id: string }> {
-    const { tenantId, subject } = principal;
-    this.validateCronExpression(dto.cronExpression);
-    const result = await this.db.queryWithTenant<{ id: string }>(
-      tenantId,
-      `INSERT INTO gigalibs_analytics.report_schedules
-         (report_definition_id, tenant_id, cron_expression,
-          delivery_channel, delivery_target_ref, created_by)
-       VALUES ($1, $2, $3, $4::gigalibs_analytics.delivery_channel, $5, $6)
-       RETURNING id`,
-      [dto.reportDefinitionId, tenantId, dto.cronExpression, dto.deliveryChannel, dto.deliveryTargetRef, subject],
-    );
-    return { id: result.rows[0]!.id };
-  }
+  // Schedules live in the kernel (WI-OI-104c): the kernel worker calls POST v1/reports/runs as the schedule's owner.
 
   async getReportRun(principal: AnalyticsPrincipal, runId: string): Promise<ReportRunV1> {
     const result = await this.db.queryWithTenant<Record<string, unknown>>(principal.tenantId, `${RUN_SELECT} WHERE rr.id = $1`, [runId]);
@@ -336,14 +313,6 @@ export class ReportService {
     };
   }
 
-  private validateCronExpression(expr: string): void {
-    const parts = expr.trim().split(/\s+/);
-    if (parts.length !== 5) {
-      throw new BadRequestException(
-        `Invalid cron expression '${expr}'. Must have exactly 5 fields (minute hour day month weekday).`,
-      );
-    }
-  }
 }
 
 // ─── Queries ──────────────────────────────────────────────────────────────────

@@ -194,3 +194,48 @@ core API) and no scheduler. Connector Hub also trusts a caller-supplied tenant h
 - **Found by the smoke, tracked in `FOUNDATION-CLOSE.md` item 7:** an empty database cannot be migrated.
   - `20260924000000_tp2_durable_export_and_outbox`: enum value used in the same transaction.
   - A1: phase 3–5 alter module schemas.
+
+**Step 3: the schedules API and its first users** (not deployed):
+- **Contract** (`packages/contracts/src/jobs`):
+  - `SCHEDULED_OPERATIONS` holds each operation's module, read permission and run permission. The worker's job, the
+    API and the web share it.
+  - Also the request and response types.
+- **Core API** `tenants/current/schedules` (`kernel-schedules.controller.ts` and `.service.ts`), reached through the
+  web's existing control proxy:
+  - list (filter by operation and target), create, runs, pause, resume, remove. Explicit actions, no DELETE.
+  - Rights are the caller's current ones from `getSubjectContext`, as the worker resolves them. The module must be
+    enabled.
+    - Seeing a schedule needs the read or the run permission.
+    - Creating, pausing, resuming and removing need the run permission. A schedule the caller cannot see answers 404.
+  - The owner is the creator. Resume hands the schedule to whoever resumed it, since a departed owner would only pause
+    it again.
+  - Guards: the body is strict (no owner or job type from the client); runs at most every 15 minutes; at most 200
+    schedules per workspace.
+- **Jobs store:**
+  - `resume(…, ownerSubjectId)`, `remove`;
+  - `listByCorrelationForTenant`, `latestByCorrelationForTenant`;
+  - the schedules migration grants DELETE to the tenant role only. It is not deployed yet, so editing it is safe.
+- **First users (web):**
+  - Analytics Reports: a Schedule panel per report (every day, week or month, at a time, in a time zone). It shows the
+    owner, next run, the last run's result, and pause, "resume as me" and remove.
+  - Connector Hub connections: a "Sync schedule" panel per connection.
+- **Retired:** Analytics' `POST v1/reports/schedules`. It stored rows in `report_schedules` that nothing ever ran, and
+  the web never called it.
+  - The table stays, since dropping it would drop data. It goes with the 103f cleanup, with the owner's OK.
+- **Not done: summary builds.** The task card lists them as a first user, but they are started by saving a chart or
+  dashboard, not by a clock. Their kernel hand-over belongs with 104e, when connector data creates new dataset
+  versions. This needs the owner's confirmation.
+- **Checks:**
+  - schedules API 5 service tests and 2 HTTP route tests (Nest app on 127.0.0.1: filters, strict body, UUID ids,
+    status codes);
+  - `module.call` 6 tests;
+  - jobs 24 tests with a throwaway PostgreSQL: new owner on resume, run history per tenant, remove within its tenant
+    only;
+  - web cadence 2 tests; Analytics reports and route permissions 36 tests;
+  - `pnpm verify` passes (known drift only).
+- **Deploy notes for 104c:**
+  - the core migration `20260930010000_kernel_job_schedules`;
+  - `REDIS_PASSWORD` via the credentials script;
+  - the `redis` and `kernel-worker` services;
+  - new core and web images; a new Analytics image (route retired).
+  - Outside the local stack, the core's database user must be able to `SET ROLE` to the two jobs roles.
