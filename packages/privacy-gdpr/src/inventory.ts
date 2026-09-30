@@ -141,6 +141,12 @@ export const TENANT_EXPORT_INVENTORY = Object.freeze([
     'Worker identities, correlations and dispatch transitions are internal reliability evidence.',
   ),
   entry(
+    'KernelJobSchedule',
+    undefined,
+    'EXCLUDE_SECURITY',
+    'Recurring schedules hold job references, cron timing and owner identifiers for internal automation, not tenant business records.',
+  ),
+  entry(
     'TenantDataExport',
     'data_export_history',
     'EXPORT_REDACTED',

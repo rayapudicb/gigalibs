@@ -336,6 +336,11 @@ enum KernelJobDispatchStatus {
   DISPATCHED
 }
 
+enum KernelJobScheduleStatus {
+  ACTIVE
+  PAUSED
+}
+
 enum ApDocumentStatus {
   RECEIVED
   MATCHING
@@ -519,6 +524,7 @@ model Tenant {
   controlOutbox           ControlOutboxEvent[]
   kernelJobRuns           KernelJobRun[]
   kernelJobAuditEvents    KernelJobAuditEvent[]
+  kernelJobSchedules      KernelJobSchedule[]
   suppliers               Supplier[]
   purchaseOrders          PurchaseOrder[]
   goodsReceipts           GoodsReceipt[]
@@ -3502,4 +3508,29 @@ model TenantRateBucket {
   updatedAt             DateTime @default(now()) @updatedAt @db.Timestamptz(3)
 
   @@map("tenant_rate_buckets")
+}
+
+// WI-OI-104c: recurring schedules that turn into one kernel job per due time.
+model KernelJobSchedule {
+  id             String                  @id
+  tenantId       String
+  tenant         Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name           String                  @db.VarChar(120)
+  jobType        String                  @db.VarChar(128)
+  jobVersion     Int
+  payload        Json
+  cron           String                  @db.VarChar(120)
+  timeZone       String                  @default("UTC") @db.VarChar(64)
+  status         KernelJobScheduleStatus @default(ACTIVE)
+  pausedReason   String?                 @db.VarChar(256)
+  ownerSubjectId String                  @db.VarChar(128)
+  nextRunAt      DateTime                @db.Timestamptz(3)
+  lastRunAt      DateTime?               @db.Timestamptz(3)
+  lastJobId      String?
+  createdAt      DateTime                @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime                @updatedAt @db.Timestamptz(3)
+
+  @@unique([tenantId, id])
+  @@unique([tenantId, name])
+  @@map("kernel_job_schedules")
 }

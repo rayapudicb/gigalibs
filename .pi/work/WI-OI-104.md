@@ -36,7 +36,7 @@ core API) and no scheduler. Connector Hub also trusts a caller-supplied tenant h
 |---|---|---|---|
 | 104a | Secure Connector Hub | M | Done, live on 5180 (2026-09-30) |
 | 104b | Kernel jobs (PostgreSQL plus Redis/BullMQ) | M | Done (GPT agent); core migration live (2026-09-30) |
-| 104c | Kernel scheduler | M | Proposed |
+| 104c | Kernel scheduler | M | In progress: step 1 (schedules) built and verified (2026-09-30) |
 | 104d | Adapter framework | M | Proposed |
 | 104e | Bridge into Analytics with unit conversion | M | Proposed |
 | 104f | Retire the connector copies | S | Proposed |
@@ -118,3 +118,34 @@ core API) and no scheduler. Connector Hub also trusts a caller-supplied tenant h
 - The live proof passed: a real Tenant Admin login, signed Workforce, CMMS and Geospatial contexts, and 14
   Playwright tests.
 - 103c (summaries and the two bug fixes) is live too.
+
+## 104c: kernel scheduler (owner decisions 2026-09-30: a `kernel-worker` service; Redis in the stack)
+
+**Step 1: recurring schedules** (not deployed):
+- **Cron** (`packages/jobs/src/cron.ts`): five-field cron in an IANA time zone, with lists, ranges, steps and
+  month/weekday names. Both day fields restricted means either may match, as in classic cron. A local time skipped
+  by daylight saving does not run that day. The next run is searched up to two years ahead.
+- **Schedules** (`packages/jobs/src/schedules.ts`), with core migration `20260930010000_kernel_job_schedules` and the
+  `KernelJobSchedule` model:
+  - Security: forced RLS, and the tenant and worker roles from 104b.
+  - Creating a schedule validates the name, cron, time zone, job definition and payload before storing.
+  - Pause (with a reason) and resume (from now).
+  - `tick()` claims due schedules `FOR UPDATE SKIP LOCKED` and enqueues one job per due time. The idempotency key is
+    `schedule:<id>:<due time>`, the correlation `schedule:<id>`, and the owner's auth version is re-resolved at each
+    due time.
+  - A schedule whose owner is no longer an active member, or whose definition can no longer run, pauses with the
+    reason.
+  - Missed times collapse into one run, then continue from now.
+- **Classified:** in `config/package-layers.json` (core model) and the privacy inventory (`EXCLUDE_SECURITY`).
+- **Checks:**
+  - cron 5 tests;
+  - 4 schedule integration tests on a throwaway PostgreSQL 16, bound to 127.0.0.1 and removed afterwards:
+    validation and tenant isolation; two concurrent workers giving exactly one job per due time with the owner's
+    auth version; a crash between enqueue and advance not duplicating; missed hours collapsing to one run; a departed
+    owner pausing the schedule, and resume;
+  - the 104b tests still pass (21 in total with PostgreSQL);
+  - `pnpm verify` passes (known drift only).
+- **Next steps:**
+  - step 2: the `kernel-worker` service (core API image) running ticks, PostgreSQL jobs and BullMQ; a module-call job
+    that signs a context for the owner with re-resolved permissions; Redis in Compose;
+  - step 3: a schedules API, plus scheduled report runs and connector syncs as the first users.
