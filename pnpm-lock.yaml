@@ -1606,6 +1606,28 @@ importers:
 
   packages/invoices-core: {}
 
+  packages/jobs:
+    dependencies:
+      bullmq:
+        specifier: ^5.34.0
+        version: 5.81.4
+      ioredis:
+        specifier: ^5.4.1
+        version: 5.11.1
+      pg:
+        specifier: ^8.16.3
+        version: 8.23.0
+    devDependencies:
+      '@types/pg':
+        specifier: ^8.15.5
+        version: 8.23.1
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.3
+      vitest:
+        specifier: ^3.0.0
+        version: 3.2.7(@types/node@24.13.3)(jiti@2.7.0)(tsx@4.23.12)
+
   packages/kpi-widgets-react:
     dependencies:
       react:

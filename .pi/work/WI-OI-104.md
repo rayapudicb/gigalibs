@@ -1,0 +1,107 @@
+# WI-OI-104: Connector Hub is the one way in; one scheduler and job runner (ADR-0016 F8, F14)
+
+- **Status:** In Progress. The owner started it on 2026-09-30 ("lets complete these").
+- **Owner:** Integration Connectors / Developer Platform.
+- **Decision records:** ADR-0016 F8 and F14, and `.pi/tasks/FOUNDATION-CLOSE.md`:
+  - jobs on PostgreSQL plus Redis/BullMQ behind one kernel interface;
+  - credentials encrypted in Connector Hub.
+- **Task card:** `.pi/tasks/WI-OI-104.md`.
+- **Independent reviewers:** Security & Privacy, Infrastructure/SRE, QA/SDET.
+
+## G0: why
+
+Outside data must come in through one governed path: Connector Hub, with logins, paging, retries and quarantine, then
+into Analytics through no-code mapping. Today there are three connector copies (Connector Hub, Analytics and the
+core API) and no scheduler. Connector Hub also trusts a caller-supplied tenant header.
+
+## G1: scope
+
+- **In scope:** 104a to 104f in the task card: secure Connector Hub, kernel jobs, the scheduler, the adapter
+  framework, the Analytics bridge with unit conversion, and retiring the copies.
+- **Out of scope:** agriculture-specific adapters (farmOS and others; agriculture phase 4), certification of
+  individual connectors, and an external vault.
+
+## G2: acceptance
+
+1. Connector Hub trusts only a BFF-signed context. Every route names its permission, and a tenant header is never
+   read.
+2. One kernel job interface, with PostgreSQL and Redis/BullMQ backends, retries, dead-letter and audit.
+3. One scheduler. Scheduled work runs with its owner's rights, re-checked at run time.
+4. A REST source syncs on a schedule into an Analytics dataset, with no code beyond its adapter.
+5. The Analytics and core API connector copies are retired.
+
+## G3: slices
+
+| Slice | What | Size | Status |
+|---|---|---|---|
+| 104a | Secure Connector Hub | M | Built and verified (2026-09-30), not deployed |
+| 104b | Kernel jobs (PostgreSQL plus Redis/BullMQ) | M | Built and verified by the GPT agent (2026-09-30), not deployed |
+| 104c | Kernel scheduler | M | Proposed |
+| 104d | Adapter framework | M | Proposed |
+| 104e | Bridge into Analytics with unit conversion | M | Proposed |
+| 104f | Retire the connector copies | S | Proposed |
+
+## 104a: secure Connector Hub (2026-09-30)
+
+- **Before:** every Connector Hub route took its tenant from an `X-Tenant-Id` header (or a `tenant_id` body field on
+  create) and checked no permission. The web proxy forwarded any path after only a module-level check. So any member
+  with the Connections entitlement could create connections, start syncs and start OAuth, and anything on the Docker
+  network could act as any tenant. The port is not published outside the network.
+- **Hub:**
+  - Connector Hub uses the shared `@gigalibs/module-sdk` `SignedContextGuardBase`, with Ed25519, audience
+    `gigalibs-connector-hub-api` and the `connections` entitlement.
+  - The tenant comes only from the signed principal.
+  - Per-route permissions: `connections:read` for the catalogue, connections, journal and stats;
+    `connections:write` for create and OAuth; `connections:test` for test; `connections:sync` for sync.
+  - Revoked sessions are refused: migration 000005 adds `auth_revocation_events`, read-only for the runtime role.
+  - The config requires `CONNECTOR_HUB_PLATFORM_CONTEXT_PUBLIC_KEY_BASE64`, and the schema contract is 5.
+- **Web:**
+  - `lib/connector-hub-proxy.ts` uses the shared signed proxy with an allow-list; the shared proxy gains an
+    `upstreamPathPrefix` option.
+  - Not exposed: webhooks (they come from outside senders), and `credentials` and `oauth/callback`, which have no hub
+    route. The old screens' webhook simulator and those two calls already failed or relied on the trusted header.
+- **Infrastructure:**
+  - Compose passes the key pair (the web signs; the hub verifies).
+  - The credentials script adds the Connector Hub key group to an existing profile without touching other secrets.
+- **Role change (tightening):** MANAGER keeps read and test (it holds `connections:read` and `connections:test`), but
+  can no longer create connections, start OAuth or sync through the web. Its role never held `connections:write`.
+  TENANT_ADMIN (`connections:*`) keeps everything.
+- **Checks:**
+  - hub guard tests: foreign key, wrong audience and other entitlements are refused; the tenant never comes from the
+    header; the manager versus admin matrix; revocation; the route-permission table;
+  - hub suite 43;
+  - web proxy tests: signed context, no tenant header, the permission matrix, webhooks not exposed, cross-site
+    refused;
+  - Analytics, CMMS and gateway proxy tests still pass;
+  - migration 5 dry-run on the real database rolled back (it stayed at 4);
+  - `pnpm verify` passes (known drift only).
+- **Deploy note:** needs the new key pair added to `infra/compose/.env.modules` (script), migration 5, and new hub
+  and web images. It is part of the next deploy, with the owner's OK.
+
+## 104b: kernel jobs (2026-09-30; built by the GPT agent, recorded and verified by Claude)
+
+- **Built by the GPT (Codex) agent** between 10:20 and 11:58 IST, at the owner's request. It stopped (usage limit)
+  just before recording evidence and running the repository check. Claude traced the session log, then recorded and
+  verified it; the work is uncommitted.
+- **`@gigalibs/jobs` (kernel):** one interface to define, schedule, enqueue and run work (`kernel-jobs.ts`, registry,
+  validation, backoff).
+  - The PostgreSQL store is authoritative: accepted jobs, versioned definition reference, tenant, initiating subject
+    and authority version, correlation and idempotency keys, attempts, leases and heartbeats, retries and
+    dead-letter, bounded result, and an append-only lifecycle audit.
+  - A BullMQ adapter dispatches on Redis, which carries only the job id and is never recovery truth.
+  - Each definition chooses `POSTGRES` polling or `BULLMQ` dispatch.
+- **Core migration** `20260930000000_kernel_jobs_foundation`, plus `schema.prisma` models. Also edits to
+  `config/package-layers.json` (package layer) and `packages/privacy-gdpr/src/inventory.ts` (the new tables in the
+  data inventory).
+- **ADR-0017** "PostgreSQL-authoritative kernel jobs with optional BullMQ dispatch". It is marked "Accepted for the
+  bounded local-development implementation" by the agent, so the owner should confirm.
+- **Checks:**
+  - 13 tests: 8 unit, plus 5 integration tests against real PostgreSQL and Redis (tenant isolation, separate
+    database roles, immutable audit privileges, idempotency conflicts, leases and heartbeats, bounded dispatch
+    backoff, stale Redis redelivery, BullMQ deduplication). Re-run by Claude: 13/13.
+  - `pnpm verify` passes together with the uncommitted 103c and 104a work (known drift only).
+- **Clean-up:** the agent's two test containers (`gigalibs-wi-oi-104b-postgres` on 55432 and
+  `gigalibs-wi-oi-104b-redis` on 56379, both published on all interfaces with test passwords) were removed after the
+  re-run.
+- **Not yet:** Redis in the local Compose stack; deploying the core migration (part of the next deploy, with the
+  owner's OK); using jobs (scheduler 104c, then summary builds and connector pulls).

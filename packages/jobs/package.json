@@ -1,0 +1,33 @@
+{
+  "name": "@gigalibs/jobs",
+  "version": "0.0.1",
+  "description": "Durable tenant-scoped kernel jobs with PostgreSQL truth and optional BullMQ acceleration",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc -p tsconfig.json --watch",
+    "test": "vitest run --root ../.. packages/jobs/src",
+    "test:watch": "vitest --root ../.. packages/jobs/src",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist *.tsbuildinfo"
+  },
+  "dependencies": {
+    "bullmq": "^5.34.0",
+    "ioredis": "^5.4.1",
+    "pg": "^8.16.3"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.15.5",
+    "typescript": "^5.8.3",
+    "vitest": "^3.0.0"
+  }
+}

@@ -129,6 +129,18 @@ export const TENANT_EXPORT_INVENTORY = Object.freeze([
     'Consumer deduplication and delivery-attempt state are internal reliability controls.',
   ),
   entry(
+    'KernelJobRun',
+    undefined,
+    'EXCLUDE_SECURITY',
+    'Job payload references, leases, retries and worker state are internal reliability and security controls.',
+  ),
+  entry(
+    'KernelJobAuditEvent',
+    undefined,
+    'EXCLUDE_SECURITY',
+    'Worker identities, correlations and dispatch transitions are internal reliability evidence.',
+  ),
+  entry(
     'TenantDataExport',
     'data_export_history',
     'EXPORT_REDACTED',

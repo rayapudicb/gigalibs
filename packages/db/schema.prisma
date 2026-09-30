@@ -316,6 +316,26 @@ enum ControlOutboxStatus {
   FAILED
 }
 
+enum KernelJobBackend {
+  POSTGRES
+  BULLMQ
+}
+
+enum KernelJobStatus {
+  QUEUED
+  RUNNING
+  RETRY_WAIT
+  SUCCEEDED
+  DEAD_LETTER
+  CANCELLED
+}
+
+enum KernelJobDispatchStatus {
+  NOT_REQUIRED
+  PENDING
+  DISPATCHED
+}
+
 enum ApDocumentStatus {
   RECEIVED
   MATCHING
@@ -497,6 +517,8 @@ model Tenant {
   connectorAttempts       ConnectorAttempt[]
   connectorStates         ConnectorCheckpoint[]
   controlOutbox           ControlOutboxEvent[]
+  kernelJobRuns           KernelJobRun[]
+  kernelJobAuditEvents    KernelJobAuditEvent[]
   suppliers               Supplier[]
   purchaseOrders          PurchaseOrder[]
   goodsReceipts           GoodsReceipt[]
@@ -1229,6 +1251,75 @@ model PlatformInboxEvent {
   @@unique([tenantId, consumerGroup, messageId])
   @@index([consumerGroup, status, availableAt])
   @@map("platform_inbox_events")
+}
+
+// KERNEL JOBS — PostgreSQL is the durable lifecycle truth for both the direct
+// PostgreSQL worker and the optional BullMQ/Redis acceleration backend.
+model KernelJobRun {
+  id                    String                  @id
+  tenantId              String
+  tenant                Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  jobType               String
+  jobVersion            Int
+  backend               KernelJobBackend
+  status                KernelJobStatus         @default(QUEUED)
+  payload               Json
+  payloadSha256         String
+  ownerSubjectId        String
+  ownerAuthVersion      Int
+  correlationId         String
+  idempotencyKey        String
+  maxAttempts           Int
+  attempts              Int                     @default(0)
+  backoffBaseMs         Int
+  backoffMaxMs          Int
+  availableAt           DateTime                @default(now()) @db.Timestamptz(3)
+  leaseOwner            String?
+  leaseExpiresAt        DateTime?                @db.Timestamptz(3)
+  heartbeatAt           DateTime?                @db.Timestamptz(3)
+  dispatchStatus        KernelJobDispatchStatus @default(NOT_REQUIRED)
+  dispatchAttempts      Int                     @default(0)
+  dispatchedAt          DateTime?               @db.Timestamptz(3)
+  dispatchLastError     String?
+  resultSummary         Json?
+  lastErrorCode         String?
+  lastErrorMessage      String?
+  auditSequence         Int                     @default(1)
+  createdAt             DateTime                @default(now()) @db.Timestamptz(3)
+  updatedAt             DateTime                @updatedAt @db.Timestamptz(3)
+  startedAt             DateTime?               @db.Timestamptz(3)
+  completedAt           DateTime?               @db.Timestamptz(3)
+  auditEvents           KernelJobAuditEvent[]
+
+  @@unique([tenantId, id])
+  @@unique([tenantId, jobType, idempotencyKey])
+  @@index([backend, status, availableAt, createdAt])
+  @@index([backend, dispatchStatus, availableAt])
+  @@index([status, leaseExpiresAt])
+  @@index([tenantId, createdAt(sort: Desc)])
+  @@map("kernel_job_runs")
+}
+
+// Append-only lifecycle evidence. Runtime roles receive no UPDATE or DELETE privilege.
+model KernelJobAuditEvent {
+  id            String          @id
+  tenantId      String
+  tenant        Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  jobId         String
+  job           KernelJobRun    @relation(fields: [tenantId, jobId], references: [tenantId, id], onDelete: Cascade)
+  sequence      Int
+  eventType     String
+  fromStatus    KernelJobStatus?
+  toStatus      KernelJobStatus
+  attempt       Int
+  workerId      String?
+  correlationId String
+  errorCode     String?
+  createdAt     DateTime        @default(now()) @db.Timestamptz(3)
+
+  @@unique([tenantId, jobId, sequence])
+  @@index([tenantId, createdAt(sort: Desc)])
+  @@map("kernel_job_audit_events")
 }
 
 
