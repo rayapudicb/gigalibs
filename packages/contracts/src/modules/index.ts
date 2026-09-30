@@ -105,3 +105,4 @@ export function assertEligibleModuleKeys(moduleKeys: readonly string[]): string[
   }
   return unique;
 }
+export * from './roles.generated.js';

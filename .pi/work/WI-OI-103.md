@@ -349,3 +349,34 @@ Task card: `.pi/tasks/WI-OI-103e.md`. Owner decisions: system roles now; order e
   - The proxy adds the routes, and PATCH.
 - **Checks:** dashboard service 7; route-permission table (now 65 routes); gateway test (reader vs writer, PATCH);
   navigation equivalence; `pnpm verify` passes (known drift only), including the web production build.
+
+**Review deploy of e1–e4** (owner's "deploy", 2026-09-30):
+- Backup first: `infra/compose/backups/gigalibs_backup_20260930_014457Z.dump`.
+- The migrations job exited 0 at migration 19.
+- `analytics-api` `ffb31cc0e75b-1878cab3837f` is healthy.
+- The review web on 5190 (same tag) is ready. Without a session, `/analytics/dashboards` redirects to login and the
+  API answers 401.
+- 5180 is unchanged. The disk guard ran.
+
+**e3, default roles (F16)** (not deployed):
+- **Declared in the manifest:** the Analytics catalogue entry lists three roles. `pnpm modules:catalog` validates
+  them (kebab keys, names unique across manifests, tenant permissions without wildcards, no `platform:`) and
+  generates `packages/contracts/src/modules/roles.generated.ts`.
+  - **Analytics viewer:** `read`.
+  - **Analytics analyst:** `read`, `charts:write`, `dashboards:write`, `reports:write`.
+  - **Analytics data steward:** `read`, `connectors:write`, `mappings:write`, `models:write`, `models:publish`.
+  - **Tenant admin** keeps `analytics:*` through its base role. `export` stays with Tenant admin, or with a tenant's
+    own custom role. The plan gives the Analyst "charts, dashboards and reports", without export.
+- **Kernel** (`tenancy-nest`): `syncDefaultRoles(tenantId)` runs before roles are listed.
+  - For each module the tenant is entitled to now (enabled, within its dates), it creates the declared roles as
+    built-in custom roles, and brings a drifted built-in role back to the manifest.
+  - It leaves a tenant's own role of the same name alone.
+  - Each change is audited as a system action (no user; metadata `module-manifest`, catalogue key, role key).
+  - It tolerates a concurrent creation. The existing rules already refuse edits and deletes of built-in roles.
+- **Web:**
+  - The member screen shows built-in roles read-only, marked "Built-in", and they can be assigned like any custom
+    role.
+  - The custom-role permission picker now offers the nine Analytics permissions (valid since e1).
+- **Checks:** default-role sync 4 (tenancy suite 45); `pnpm verify` passes (known drift only).
+- **Deploy note:** e3 changes the core API (`playground-api`), which the 5180 web also uses. Deploying it replaces a
+  service of the running 5180 stack, so it needs the owner's explicit OK.

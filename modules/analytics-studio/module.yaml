@@ -74,4 +74,25 @@ spec:
           label: Dashboards
           path: /analytics/dashboards
           icon: gauge
+      # Default roles (ADR-0016 F16, WI-OI-103e): every tenant entitled to Analytics gets these as built-in roles.
+      # Tenant admins keep analytics:* through their base role. Measures a steward writes are published by a second
+      # person (maker-checker), so a tenant needs two stewards, or a steward and an admin, to publish a formula.
+      roles:
+        - key: analytics-viewer
+          name: Analytics viewer
+          description: Views Analytics dashboards, saved charts, places and Explore.
+          permissions: [analytics:read]
+        - key: analytics-analyst
+          name: Analytics analyst
+          description: Builds charts, dashboards and reports from published models.
+          permissions: [analytics:read, analytics:charts:write, analytics:dashboards:write, analytics:reports:write]
+        - key: analytics-data-steward
+          name: Analytics data steward
+          description: Connects sources, maps fields and defines and publishes measures.
+          permissions:
+            - analytics:read
+            - analytics:connectors:write
+            - analytics:mappings:write
+            - analytics:models:write
+            - analytics:models:publish
       personas: [C_LEVEL]

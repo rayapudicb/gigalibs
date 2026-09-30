@@ -19,9 +19,9 @@ appending to it, and update it at the end of every task.
   - web on 5180: `a255e935c80e-2e98e70d8d0e`;
   - cmms and workforce: `88967ea35011-9ffa1e2a8005`;
   - the other services: `5abfa667bb10-7507432cb066`;
-  - analytics-api: `4cc55442219a-7c0b64d63cfd`, schema 18 (deployed 2026-09-29 with the owner's OK; backup
-    `infra/compose/backups/gigalibs_backup_20260929_161251Z.dump`);
-  - **review web on 5190**: container `gigalibs-review-web`, image `workflow-platform:4cc55442219a-7c0b64d63cfd`.
+  - analytics-api: `ffb31cc0e75b-1878cab3837f`, schema 19 (deployed 2026-09-30 with the owner's OK; backup
+    `infra/compose/backups/gigalibs_backup_20260930_014457Z.dump`);
+  - **review web on 5190**: container `gigalibs-review-web`, image `workflow-platform:ffb31cc0e75b-1878cab3837f`.
   - The 5180 web still has the retired gallery tab, which now answers "not found".
     Remove it with `docker rm -f gigalibs-review-web` when the review ends.
 
@@ -39,7 +39,7 @@ appending to it, and update it at the end of every task.
 **Owner plan (2026-09-29):** foundation work until **Sunday 2026-10-04**, then the **agriculture package** for a
 client capability pitch (date not fixed), then back to the rest of the foundation.
 
-1. **WI-OI-103e (`.pi/tasks/WI-OI-103e.md`): e1, e2 and e4 are done (e4 not deployed); e3 (roles) is next.** 103d: d1–d7 are built, verified and deployed for review on 5190 (schema 18).
+1. **WI-OI-103e (`.pi/tasks/WI-OI-103e.md`): e1, e2 and e4 are deployed for review on 5190 (schema 19); e3 (roles) is done but not deployed (it changes the core API that 5180 also uses); e5 (reports) is next.** 103d: d1–d7 are built, verified and deployed for review on 5190 (schema 18).
    Next:
    - the owner creates a Demo Lab workspace and adds a second member with `analytics:models:publish`;
    - the live review: load the sample farm, approve "Yield per hectare", build and save a chart.

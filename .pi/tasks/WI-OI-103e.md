@@ -1,6 +1,6 @@
 # WI-OI-103e: dashboards, permissions and roles, and Analytics owns reports
 
-- **Status:** In progress. e1, e2 (2026-09-29) and e4 (2026-09-30) are done; e3 (roles) is next. Evidence goes in `.pi/work/WI-OI-103.md`, under "103e".
+- **Status:** In progress. e1, e2 (2026-09-29), e4 and e3 (2026-09-30) are done; e5 (reports) is next. e3 is not deployed. Evidence goes in `.pi/work/WI-OI-103.md`, under "103e".
 - **Work item:** WI-OI-103 (acceptance 5 and 6); ADR-0016 F16 and F11, both approved 2026-09-29.
 - **Size:** M–L. The owner's deadline for foundation work is 2026-10-04; whatever is unfinished then waits until
   after the agriculture package.

@@ -12,6 +12,7 @@ import type {
   UpdateTenantMemberDto,
   UpdateTenantOrganizationSettingsDto,
 } from '@gigalibs/contracts';
+import { type ModuleDefaultRole, moduleDefaultRoles } from '@gigalibs/contracts';
 import { type Prisma, prisma } from '@gigalibs/db';
 import { PlatformSettingsEngine } from '@gigalibs/platform-settings';
 import {
@@ -500,6 +501,7 @@ export class TenancyService {
   }
 
   async listCustomRoles(tenantId: string) {
+    await this.syncDefaultRoles(tenantId);
     return prisma.customRole.findMany({
       where: { tenantId },
       orderBy: [{ isSystem: 'desc' }, { name: 'asc' }, { id: 'asc' }],
@@ -515,6 +517,78 @@ export class TenancyService {
         _count: { select: { members: true } },
       },
     });
+  }
+
+  /**
+   * WI-OI-103e (ADR-0016 F16): the default roles that module manifests declare become built-in custom roles of each
+   * tenant entitled to the module, kept equal to the manifest. A tenant's own role with the same name is left alone.
+   * Idempotent; runs before roles are listed, so the member screen always offers them.
+   */
+  async syncDefaultRoles(tenantId: string, declared: readonly ModuleDefaultRole[] = moduleDefaultRoles): Promise<void> {
+    if (declared.length === 0) return;
+    const now = new Date();
+    const entitlements = await prisma.tenantModuleEntitlement.findMany({
+      where: { tenantId, status: 'ENABLED', startsAt: { lte: now }, OR: [{ endsAt: null }, { endsAt: { gt: now } }] },
+      select: { moduleKey: true },
+    });
+    const entitled = new Set(entitlements.map((entitlement) => entitlement.moduleKey));
+    const wanted = declared.filter((role) => entitled.has(role.catalogKey));
+    if (wanted.length === 0) return;
+    try {
+      await prisma.$transaction(async (transaction) => {
+        const existing = await transaction.customRole.findMany({
+          where: { tenantId, name: { in: wanted.map((role) => role.name) } },
+          select: { id: true, name: true, description: true, isSystem: true, permissions: true },
+        });
+        for (const role of wanted) {
+          const current = existing.find((candidate) => candidate.name === role.name);
+          const permissions = [...role.permissions];
+          const metadata = { source: 'module-manifest', catalogKey: role.catalogKey, roleKey: role.key };
+          if (!current) {
+            const created = await transaction.customRole.create({
+              data: { tenantId, name: role.name, description: role.description, isSystem: true, permissions },
+              select: { id: true },
+            });
+            await transaction.auditLog.create({
+              data: {
+                action: 'CREATE',
+                resource: 'custom_role',
+                resourceId: created.id,
+                userId: null,
+                tenantId,
+                after: { name: role.name, description: role.description, permissions, isSystem: true },
+                metadata,
+              },
+            });
+            continue;
+          }
+          if (!current.isSystem) continue;
+          const same =
+            current.description === role.description &&
+            JSON.stringify(current.permissions) === JSON.stringify(permissions);
+          if (same) continue;
+          await transaction.customRole.update({
+            where: { id: current.id },
+            data: { description: role.description, permissions },
+          });
+          await transaction.auditLog.create({
+            data: {
+              action: 'UPDATE',
+              resource: 'custom_role',
+              resourceId: current.id,
+              userId: null,
+              tenantId,
+              before: { description: current.description, permissions: current.permissions as Prisma.InputJsonValue },
+              after: { description: role.description, permissions },
+              metadata,
+            },
+          });
+        }
+      });
+    } catch (error) {
+      // A concurrent request created the same role first; its transaction already did the work.
+      if (!isUniqueConstraintError(error)) throw error;
+    }
   }
 
   async createCustomRole(tenantId: string, createdById: string, dto: CreateCustomRoleDto) {

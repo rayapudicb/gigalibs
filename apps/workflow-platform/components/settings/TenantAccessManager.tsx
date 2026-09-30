@@ -50,6 +50,16 @@ const TENANT_PERMISSIONS = [
   'value:verify',
   'retention:read',
   'tenant:export',
+  // WI-OI-103e (ADR-0016 F16): Analytics permissions, grantable one by one.
+  'analytics:read',
+  'analytics:connectors:write',
+  'analytics:mappings:write',
+  'analytics:models:write',
+  'analytics:models:publish',
+  'analytics:charts:write',
+  'analytics:dashboards:write',
+  'analytics:reports:write',
+  'analytics:export',
 ] as const;
 type AssignableMemberRole = (typeof ROLES)[number];
 type MemberRole = AssignableMemberRole | 'SUPER_ADMIN';
@@ -293,6 +303,31 @@ function MemberRow({ member, currentUserId, canUpdate, customRoles, onSaved }: M
 
 function selectedPermissions(event: ChangeEvent<HTMLSelectElement>): string[] {
   return Array.from(event.target.selectedOptions, (option) => option.value);
+}
+
+/** WI-OI-103e (ADR-0016 F16): a module's default role, kept equal to its manifest; members can be assigned it. */
+function BuiltInRoleRow({ role }: { role: CustomRole }) {
+  return (
+    <div className="grid gap-3 border-t border-zinc-100 p-4 lg:grid-cols-[12rem_minmax(12rem,1fr)_minmax(18rem,2fr)_14rem_auto]">
+      <div className="text-xs font-medium text-zinc-700">
+        Name
+        <p className="mt-1 text-sm text-zinc-900">
+          {role.name} <span className="rounded bg-zinc-100 px-1.5 py-0.5 text-[11px] text-zinc-600">Built-in</span>
+        </p>
+      </div>
+      <div className="text-xs font-medium text-zinc-700">
+        Description
+        <p className="mt-1 text-sm font-normal text-zinc-600">{role.description}</p>
+      </div>
+      <div className="text-xs font-medium text-zinc-700">
+        Permissions ({role.permissions.length})
+        <p className="mt-1 break-words font-mono text-xs font-normal text-zinc-600">{role.permissions.join(', ')}</p>
+      </div>
+      <p className="text-xs text-zinc-500">
+        Defined by the module; it cannot be edited or deleted. Assigned to {role._count.members} member(s).
+      </p>
+    </div>
+  );
 }
 
 function CustomRoleRow({
@@ -1145,14 +1180,18 @@ export function TenantAccessManager({
             No custom roles have been created.
           </p>
         ) : canUpdateRoles ? (
-          customRoles.map((customRole) => (
-            <CustomRoleRow
-              key={customRole.id}
-              role={customRole}
-              canDelete={canDeleteRoles}
-              onSaved={load}
-            />
-          ))
+          customRoles.map((customRole) =>
+            customRole.isSystem ? (
+              <BuiltInRoleRow key={customRole.id} role={customRole} />
+            ) : (
+              <CustomRoleRow
+                key={customRole.id}
+                role={customRole}
+                canDelete={canDeleteRoles}
+                onSaved={load}
+              />
+            ),
+          )
         ) : (
           <ul className="border-t border-zinc-100 p-6 text-sm text-zinc-700">
             {customRoles.map((customRole) => (
