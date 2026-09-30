@@ -1,34 +1,19 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Param,
-  Query,
-  Headers,
-  Body,
-  BadRequestException,
-} from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
+import { CurrentPrincipal, type ModulePrincipal, RequirePermissions } from '@gigalibs/module-sdk';
+import { ConnectorHubAuthorizationGuard } from '../auth/authorization.js';
 import { SyncService, SyncOptions } from './sync.service.js';
 
+// WI-OI-104a: the tenant comes only from the BFF-signed context; each route names the permission it needs.
 @Controller('api/connectors/v1')
+@UseGuards(ConnectorHubAuthorizationGuard)
 export class SyncController {
   constructor(private readonly syncService: SyncService) {}
 
-  private extractTenant(tenantHeader?: string): string {
-    if (!tenantHeader || tenantHeader.trim() === '') {
-      throw new BadRequestException('x-tenant-id header is required');
-    }
-    return tenantHeader.trim();
-  }
-
   @Get('journal')
-  async getJournal(
-    @Headers('x-tenant-id') tenantHeader?: string,
-    @Query('limit') limitStr?: string,
-  ) {
-    const tenantId = this.extractTenant(tenantHeader);
+  @RequirePermissions('connections:read')
+  async getJournal(@CurrentPrincipal() principal: ModulePrincipal, @Query('limit') limitStr?: string) {
     const limit = limitStr ? parseInt(limitStr, 10) : 50;
-    const journal = await this.syncService.getJournal(tenantId, limit);
+    const journal = await this.syncService.getJournal(principal.tenantId, limit);
     return {
       success: true,
       count: journal.length,
@@ -37,19 +22,19 @@ export class SyncController {
   }
 
   @Post('connections/:id/sync')
+  @RequirePermissions('connections:sync')
   async triggerSync(
+    @CurrentPrincipal() principal: ModulePrincipal,
     @Param('id') id: string,
-    @Headers('x-tenant-id') tenantHeader?: string,
     @Body() options?: SyncOptions,
   ) {
-    const tenantId = this.extractTenant(tenantHeader);
-    return this.syncService.triggerSync(tenantId, id, options);
+    return this.syncService.triggerSync(principal.tenantId, id, options);
   }
 
   @Get('stats')
-  async getStats(@Headers('x-tenant-id') tenantHeader?: string) {
-    const tenantId = this.extractTenant(tenantHeader);
-    const stats = await this.syncService.getStats(tenantId);
+  @RequirePermissions('connections:read')
+  async getStats(@CurrentPrincipal() principal: ModulePrincipal) {
+    const stats = await this.syncService.getStats(principal.tenantId);
     return {
       success: true,
       stats,

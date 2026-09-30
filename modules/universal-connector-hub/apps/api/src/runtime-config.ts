@@ -1,4 +1,8 @@
+import { createPublicKey } from 'node:crypto';
+
 const ORIGIN_PROTOCOLS = new Set(['http:', 'https:']);
+/** The audience the web BFF signs Connector Hub contexts for (WI-OI-104a). */
+export const CONNECTOR_HUB_AUDIENCE = 'gigalibs-connector-hub-api';
 
 export interface ConnectorHubRuntimeConfig {
   readonly nodeEnv: string;
@@ -11,6 +15,9 @@ export interface ConnectorHubRuntimeConfig {
   readonly expectedMigrationVersion: number;
   readonly allowedOutboundHosts: ReadonlySet<string>;
   readonly allowInsecureOutbound: boolean;
+  /** Ed25519 public key (PEM) of the web BFF's Connector Hub signing key. */
+  readonly platformContextPublicKey: string;
+  readonly platformContextAudience: string;
 }
 
 export function loadConnectorHubRuntimeConfig(
@@ -27,15 +34,28 @@ export function loadConnectorHubRuntimeConfig(
     expectedMigrationVersion: parseInteger(
       environment,
       'CONNECTOR_HUB_EXPECTED_MIGRATION_VERSION',
-      4,
-      4,
+      5,
+      5,
     ),
     allowedOutboundHosts: parseHostAllowlist(environment),
     allowInsecureOutbound: parseBoolean(
       environment,
       'CONNECTOR_HUB_ALLOW_INSECURE_OUTBOUND',
     ),
+    platformContextPublicKey: parseEd25519PublicKey(environment),
+    platformContextAudience: CONNECTOR_HUB_AUDIENCE,
   });
+}
+
+function parseEd25519PublicKey(environment: NodeJS.ProcessEnv): string {
+  const base64Value = requireString(environment, 'CONNECTOR_HUB_PLATFORM_CONTEXT_PUBLIC_KEY_BASE64');
+  try {
+    const key = createPublicKey({ key: Buffer.from(base64Value, 'base64'), format: 'der', type: 'spki' });
+    if (key.asymmetricKeyType !== 'ed25519') throw new Error('wrong key type');
+    return key.export({ format: 'pem', type: 'spki' }).toString();
+  } catch {
+    throw new Error('CONNECTOR_HUB_PLATFORM_CONTEXT_PUBLIC_KEY_BASE64 must be an Ed25519 public key (base64 DER).');
+  }
 }
 
 export function assertAllowedConnectorUrl(

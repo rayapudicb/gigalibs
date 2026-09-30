@@ -73,6 +73,11 @@ if [[ -e "${TARGET_ENV}" ]]; then
     cmms_runtime_values >>"${TARGET_ENV}"
     added+=("CMMS image, runtime role and key pair")
   fi
+  # WI-OI-104a: Connector Hub verifies BFF-signed contexts like the other module services.
+  if ! grep -q '^CONNECTOR_HUB_PLATFORM_CONTEXT_PUBLIC_KEY_BASE64=' "${TARGET_ENV}"; then
+    context_keys CONNECTOR_HUB >>"${TARGET_ENV}"
+    added+=("Connector Hub platform-context key pair")
+  fi
   if [[ ${#added[@]} -eq 0 ]]; then
     echo "Error: ${TARGET_ENV} already exists and is complete; refusing to overwrite module secrets." >&2
     exit 1
@@ -99,6 +104,7 @@ CONNECTOR_VAULT_KEY=${CONNECTOR_VAULT_KEY}
 CONNECTOR_HUB_ALLOWED_OUTBOUND_HOSTS=disabled.invalid
 EOF
 context_keys ANALYTICS >>"${TARGET_ENV}"
+context_keys CONNECTOR_HUB >>"${TARGET_ENV}"
 cmms_runtime_values >>"${TARGET_ENV}"
 
 chmod 600 "${TARGET_ENV}"

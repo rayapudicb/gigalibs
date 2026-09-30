@@ -1,3 +1,4 @@
+import { generateKeyPairSync } from 'node:crypto';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { SyncService } from './sync.service.js';
 import type { DatabaseService } from '../database/database.service.js';
@@ -14,7 +15,8 @@ describe('SyncService (CN-03 Checkpointing & Ingestion)', () => {
       'postgresql://connectors_runtime:secret@localhost:5440/gigalibs';
     process.env.CONNECTOR_HUB_DATABASE_POOL_SIZE = '10';
     process.env.CONNECTOR_VAULT_KEY = 'local-test-key-that-is-at-least-32-bytes-long';
-    process.env.CONNECTOR_HUB_EXPECTED_MIGRATION_VERSION = '4';
+    process.env.CONNECTOR_HUB_EXPECTED_MIGRATION_VERSION = '5';
+    process.env.CONNECTOR_HUB_PLATFORM_CONTEXT_PUBLIC_KEY_BASE64 = generateKeyPairSync('ed25519').publicKey.export({ format: 'der', type: 'spki' }).toString('base64');
     process.env.CONNECTOR_HUB_ALLOWED_OUTBOUND_HOSTS = 'api.spend.internal';
     process.env.CONNECTOR_HUB_ALLOW_INSECURE_OUTBOUND = 'false';
     const query = vi.fn();

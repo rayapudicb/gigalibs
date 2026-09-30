@@ -1,13 +1,6 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Param,
-  Query,
-  Headers,
-  BadRequestException,
-} from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
+import { CurrentPrincipal, type ModulePrincipal, RequirePermissions } from '@gigalibs/module-sdk';
+import { ConnectorHubAuthorizationGuard } from '../auth/authorization.js';
 import {
   ConnectorsService,
   CreateConnectionDto,
@@ -15,18 +8,14 @@ import {
   OAuthCallbackDto,
 } from './connectors.service.js';
 
+// WI-OI-104a: the tenant comes only from the BFF-signed context; each route names the permission it needs.
 @Controller('api/connectors/v1')
+@UseGuards(ConnectorHubAuthorizationGuard)
 export class ConnectorsController {
   constructor(private readonly connectorsService: ConnectorsService) {}
 
-  private extractTenant(tenantHeader?: string): string {
-    if (!tenantHeader || tenantHeader.trim() === '') {
-      throw new BadRequestException('x-tenant-id header is required');
-    }
-    return tenantHeader.trim();
-  }
-
   @Get('catalog')
+  @RequirePermissions('connections:read')
   async getCatalog() {
     const catalog = await this.connectorsService.getCatalog();
     return {
@@ -37,13 +26,13 @@ export class ConnectorsController {
   }
 
   @Get('connections')
+  @RequirePermissions('connections:read')
   async listConnections(
-    @Headers('x-tenant-id') tenantHeader?: string,
+    @CurrentPrincipal() principal: ModulePrincipal,
     @Query('category') category?: string,
     @Query('status') status?: string,
   ) {
-    const tenantId = this.extractTenant(tenantHeader);
-    const connections = await this.connectorsService.getConnections(tenantId, category, status);
+    const connections = await this.connectorsService.getConnections(principal.tenantId, category, status);
     return {
       success: true,
       count: connections.length,
@@ -52,12 +41,9 @@ export class ConnectorsController {
   }
 
   @Get('connections/:idOrSlug')
-  async getConnection(
-    @Param('idOrSlug') idOrSlug: string,
-    @Headers('x-tenant-id') tenantHeader?: string,
-  ) {
-    const tenantId = this.extractTenant(tenantHeader);
-    const connection = await this.connectorsService.getConnectionById(tenantId, idOrSlug);
+  @RequirePermissions('connections:read')
+  async getConnection(@CurrentPrincipal() principal: ModulePrincipal, @Param('idOrSlug') idOrSlug: string) {
+    const connection = await this.connectorsService.getConnectionById(principal.tenantId, idOrSlug);
     return {
       success: true,
       connection,
@@ -65,12 +51,9 @@ export class ConnectorsController {
   }
 
   @Post('connections')
-  async createConnection(
-    @Body() body: CreateConnectionDto & { tenant_id?: string },
-    @Headers('x-tenant-id') tenantHeader?: string,
-  ) {
-    const tenantId = this.extractTenant(tenantHeader || body.tenant_id);
-    const connection = await this.connectorsService.createConnection(tenantId, body);
+  @RequirePermissions('connections:write')
+  async createConnection(@CurrentPrincipal() principal: ModulePrincipal, @Body() body: CreateConnectionDto) {
+    const connection = await this.connectorsService.createConnection(principal.tenantId, body);
     return {
       success: true,
       connection,
@@ -78,30 +61,24 @@ export class ConnectorsController {
   }
 
   @Post('connections/:id/test')
-  async testConnection(
-    @Param('id') id: string,
-    @Headers('x-tenant-id') tenantHeader?: string,
-  ) {
-    const tenantId = this.extractTenant(tenantHeader);
-    return this.connectorsService.testConnection(tenantId, id);
+  @RequirePermissions('connections:test')
+  async testConnection(@CurrentPrincipal() principal: ModulePrincipal, @Param('id') id: string) {
+    return this.connectorsService.testConnection(principal.tenantId, id);
   }
 
   @Post('oauth/initiate')
-  async initiateOAuth(
-    @Body() body: OAuthInitiateDto,
-    @Headers('x-tenant-id') tenantHeader?: string,
-  ) {
-    const tenantId = this.extractTenant(tenantHeader);
-    return this.connectorsService.initiateOAuthFlow(tenantId, body);
+  @RequirePermissions('connections:write')
+  async initiateOAuth(@CurrentPrincipal() principal: ModulePrincipal, @Body() body: OAuthInitiateDto) {
+    return this.connectorsService.initiateOAuthFlow(principal.tenantId, body);
   }
 
   @Post('connections/:id/oauth/callback')
+  @RequirePermissions('connections:write')
   async exchangeOAuth(
+    @CurrentPrincipal() principal: ModulePrincipal,
     @Param('id') id: string,
     @Body() body: OAuthCallbackDto,
-    @Headers('x-tenant-id') tenantHeader?: string,
   ) {
-    const tenantId = this.extractTenant(tenantHeader);
-    return this.connectorsService.exchangeOAuthCode(tenantId, id, body);
+    return this.connectorsService.exchangeOAuthCode(principal.tenantId, id, body);
   }
 }

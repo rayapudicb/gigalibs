@@ -1040,6 +1040,9 @@ importers:
 
   modules/universal-connector-hub/apps/api:
     dependencies:
+      '@gigalibs/module-sdk':
+        specifier: workspace:*
+        version: link:../../../../packages/module-sdk
       '@nestjs/common':
         specifier: ^11.2.3
         version: 11.2.3(reflect-metadata@0.2.2)(rxjs@7.8.2)
@@ -1062,6 +1065,9 @@ importers:
         specifier: ^7.8.2
         version: 7.8.2
     devDependencies:
+      '@gigalibs/auth-core':
+        specifier: workspace:*
+        version: link:../../../../packages/auth-core
       '@types/node':
         specifier: ^24.10.0
         version: 24.13.3

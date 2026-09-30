@@ -117,4 +117,26 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
   async getClient(): Promise<pg.PoolClient> {
     return this.pool.connect();
   }
+
+  /** True when the session or the subject's auth version was revoked (WI-OI-104a, as the other module services). */
+  async isContextRevoked(input: {
+    readonly tenantId: string;
+    readonly subject: string;
+    readonly sessionId: string;
+    readonly authVersion: number;
+  }): Promise<boolean> {
+    return this.withTenantTransaction(input.tenantId, async (client) => {
+      const result = await client.query<{ revoked: boolean }>(
+        `SELECT EXISTS (
+           SELECT 1 FROM gigalibs_connectors.auth_revocation_events
+            WHERE tenant_id = $1
+              AND ((revocation_type = 'SESSION' AND session_id = $2)
+                OR (revocation_type = 'SUBJECT_AUTH_VERSION' AND subject_id = $3
+                    AND invalid_through_auth_version >= $4))
+         ) AS revoked`,
+        [input.tenantId, input.sessionId, input.subject, input.authVersion],
+      );
+      return result.rows[0]?.revoked === true;
+    });
+  }
 }

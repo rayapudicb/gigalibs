@@ -30,6 +30,11 @@ export interface SignedModuleProxyConfig {
    */
   readonly requiredPermission: (method: string, path: readonly string[]) => string | readonly string[] | null;
   /**
+   * The module's API prefix when it is not `v1` (WI-OI-104a: Connector Hub serves `api/connectors/v1`). The browser
+   * path is appended to it, and `requiredPermission` sees the full path.
+   */
+  readonly upstreamPathPrefix?: readonly string[];
+  /**
    * Optional server-side rewrite of a mutating request body before it is forwarded (for example evidence the BFF
    * composes from another module). It runs after authorization and receives the verified session.
    */
@@ -60,7 +65,11 @@ export function createSignedModuleProxy(config: SignedModuleProxyConfig) {
 
     const method = request.method.toUpperCase();
     const rawPath = (await context.params).path;
-    const path = rawPath[0] === 'v1' ? rawPath : ['v1', ...rawPath];
+    const path = config.upstreamPathPrefix
+      ? [...config.upstreamPathPrefix, ...rawPath]
+      : rawPath[0] === 'v1'
+        ? rawPath
+        : ['v1', ...rawPath];
     const requiredPermission = path.every((part) => PATH_SEGMENT.test(part))
       ? config.requiredPermission(method, path)
       : null;
