@@ -12,13 +12,11 @@ Replace old content rather than appending to it, and update it at the end of eve
   - WI-OI-102 is in Review. WI-OI-104 to WI-OI-108 are Proposed.
 - **Wave 0:** WI-OI-080, 081, 082, 083 and 085 are in Review, waiting for human reviews. WI-OI-084 (mobile) has
   not started.
-- **Running locally (2026-09-30):** every service is on `85abf9c80a5f-823fa00b1327`.
-  - The web is on 5180. The APIs are core, Analytics (schema 20), CMMS (14), Workforce (14), Geospatial (3) and
-    Connector Hub (4).
-  - Backup before the catch-up: `infra/compose/backups/gigalibs_backup_20260930_024649Z.dump`.
-  - The live proof (`live-web.sh`) passed: a real login, signed contexts to Workforce, CMMS and Geospatial, and 14
-    Playwright tests.
-  - There is no review web on 5190 any more.
+- **Running locally (2026-09-30 12:33):** every service is on `54cacf060c4d-1ec93ce7c941`.
+  - The web is on 5180. Analytics is at schema 21, Connector Hub at 5, and the core has kernel jobs recorded.
+  - Backup: `infra/compose/backups/gigalibs_backup_20260930_064549Z.dump`.
+  - Connector Hub now refuses unsigned requests. The live proof passed (a real login, signed module contexts,
+    14 Playwright tests).
 - **D2 is closed** (`.pi/work/D2-review-808b8d2.md`):
   - The five other-stream core migrations were already in the database and are now recorded.
   - Its forms routes are contained (unavailable).
@@ -37,20 +35,17 @@ Replace old content rather than appending to it, and update it at the end of eve
 
 ## Next
 
-**Owner plan (2026-09-30):** close the rest of the foundation before the agriculture package, in the order in
-`.pi/tasks/FOUNDATION-CLOSE.md` (decisions there: jobs on PostgreSQL plus Redis/BullMQ, credentials encrypted in
-Connector Hub, server-rendered PDF).
+**Owner plan (2026-09-30):** close the rest of the foundation before the agriculture package
+(`.pi/tasks/FOUNDATION-CLOSE.md`).
 
-1. **103c is done but not committed or deployed** (evidence in WI-OI-103: p95 64 ms at 10M rows). It carries two
-   fixes for bugs that are **live on 5180**:
-   - Analytics dataset builds fail, so the Demo Lab sample farm cannot load;
-   - formula approvals are refused.
+1. **WI-OI-104c, the scheduler** (`.pi/tasks/WI-OI-104.md`). Owner decisions 2026-09-30:
+   - a `kernel-worker` Compose service (core API image, different start command);
+   - Redis added to the stack now (internal only, generated password).
 
-   Deploy them with migration 21 on the owner's OK.
-2. **WI-OI-104** (F8, F14): Connector Hub adapters and encrypted credentials, the bridge into Analytics, kernel jobs
-   (PostgreSQL plus Redis/BullMQ), and retiring the connector copies in Analytics and the core API.
-3. Then **WI-OI-105** (F15), **WI-OI-107** (F10), **WI-OI-106** (F17), and the 103 leftovers (103f, old-engine
-   cleanup) and **WI-OI-108**.
+   Recurring schedules run jobs with the owner's rights, re-checked at run time. The first users are summary
+   builds, connector pulls and report runs.
+2. Then 104d adapters, 104e the Analytics bridge, and 104f retiring the connector copies.
+3. Then WI-OI-105 (F15), WI-OI-107 (F10), WI-OI-106 (F17), the 103 leftovers and WI-OI-108.
 4. Then the agriculture package.
 
 ## Open decisions (owner)

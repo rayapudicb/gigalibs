@@ -34,8 +34,8 @@ core API) and no scheduler. Connector Hub also trusts a caller-supplied tenant h
 
 | Slice | What | Size | Status |
 |---|---|---|---|
-| 104a | Secure Connector Hub | M | Built and verified (2026-09-30), not deployed |
-| 104b | Kernel jobs (PostgreSQL plus Redis/BullMQ) | M | Built and verified by the GPT agent (2026-09-30), not deployed |
+| 104a | Secure Connector Hub | M | Done, live on 5180 (2026-09-30) |
+| 104b | Kernel jobs (PostgreSQL plus Redis/BullMQ) | M | Done (GPT agent); core migration live (2026-09-30) |
 | 104c | Kernel scheduler | M | Proposed |
 | 104d | Adapter framework | M | Proposed |
 | 104e | Bridge into Analytics with unit conversion | M | Proposed |
@@ -105,3 +105,16 @@ core API) and no scheduler. Connector Hub also trusts a caller-supplied tenant h
   re-run.
 - **Not yet:** Redis in the local Compose stack; deploying the core migration (part of the next deploy, with the
   owner's OK); using jobs (scheduler 104c, then summary builds and connector pulls).
+
+## Deploy (owner's "deploy", 2026-09-30 12:33)
+
+- Backup first: `gigalibs_backup_20260930_064549Z.dump`.
+- The credentials script added the Connector Hub key pair to `.env.modules` (mode 600; no secret printed).
+- Every image was built at `54cacf060c4d-1ec93ce7c941`. The migrations jobs recorded `kernel_jobs_foundation`,
+  and module migrations completed: Connector Hub 5, Analytics 21, the others unchanged.
+- All seven services and the 5180 web are healthy.
+- Negative check: an unsigned request with `X-Tenant-Id` sent from inside the network to Connector Hub is refused
+  (401).
+- The live proof passed: a real Tenant Admin login, signed Workforce, CMMS and Geospatial contexts, and 14
+  Playwright tests.
+- 103c (summaries and the two bug fixes) is live too.

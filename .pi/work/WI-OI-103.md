@@ -56,7 +56,7 @@ The owner's rule is that charts hold no data: a chart is a saved query plus a ch
 |---|---|---|---|
 | 103a | Query contract and engine (acceptance 1) | M | Done, 2026-09-29 |
 | 103b | Formula measures, measure versions, maker-checker (2) | M | Done, 2026-09-29 |
-| 103c | Summaries, cache, limits, benchmark (3) | M | Done (not deployed): p95 64 ms at 10M rows (2026-09-30) |
+| 103c | Summaries, cache, limits, benchmark (3) | M | Done, live on 5180: p95 64 ms at 10M rows (2026-09-30) |
 | 103d | Chart templates and renderer, change-chart, map, gallery retired (4) | L | Done: d1–d7 live on 5180 (2026-09-30) |
 | 103e | Dashboards, reports ownership, permissions and roles, web exposure (5, 6) | M | Done: e1–e5 live on 5180 (2026-09-30) |
 | 103f | Proof on manufacturing data and the no-developer test (7) | M | Proposed |
