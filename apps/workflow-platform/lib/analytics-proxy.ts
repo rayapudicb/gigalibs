@@ -48,5 +48,13 @@ function requiredAnalyticsPermission(method: string, path: readonly string[]): s
   if (new RegExp(`^v1/formula-measures/${SEGMENT}/versions/${SEGMENT}/(approve|reject)$`).test(joined)) {
     return method === 'POST' ? 'analytics:models:publish' : null;
   }
+  // WI-OI-103e: dashboards of saved charts with shared filters. The data call posts the viewer's filter values but
+  // only reads; saving a dashboard needs analytics:dashboards:write.
+  if (joined === 'v1/dashboards') return method === 'GET' ? 'analytics:read' : method === 'POST' ? 'analytics:dashboards:write' : null;
+  if (new RegExp(`^v1/dashboards/${SEGMENT}$`).test(joined)) {
+    return method === 'GET' ? 'analytics:read' : method === 'PATCH' ? 'analytics:dashboards:write' : null;
+  }
+  if (new RegExp(`^v1/dashboards/${SEGMENT}/data$`).test(joined)) return method === 'POST' ? 'analytics:read' : null;
+  if (new RegExp(`^v1/dashboards/${SEGMENT}/filter-values/${SEGMENT}$`).test(joined)) return read;
   return null;
 }

@@ -70,4 +70,8 @@ spec:
           label: Explore
           path: /analytics/explore
           icon: layers
+        - key: dashboards
+          label: Dashboards
+          path: /analytics/dashboards
+          icon: gauge
       personas: [C_LEVEL]

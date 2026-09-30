@@ -29,6 +29,12 @@ export const generatedModuleMenus: Readonly<Record<string, readonly GeneratedMod
       "label": "Explore",
       "path": "/analytics/explore",
       "icon": "layers"
+    },
+    {
+      "key": "dashboards",
+      "label": "Dashboards",
+      "path": "/analytics/dashboards",
+      "icon": "gauge"
     }
   ],
   "asset-maintenance": [

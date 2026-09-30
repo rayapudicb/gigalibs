@@ -5,11 +5,11 @@ import { z } from 'zod';
 // same data can be shown with any chart that fits it.
 
 /** Field names come from the published mapping's analytical fields; the engine whitelists them. */
-const AnalyticsFieldNameSchema = z
+export const AnalyticsFieldNameSchema = z
   .string()
   .regex(/^[A-Za-z_][A-Za-z0-9_]{0,63}$/, 'Field names are letters, digits and underscores (max 64).');
 const AnalyticsMeasureNameSchema = z.string().min(1).max(64);
-const AnalyticsScalarSchema = z.union([z.string().max(256), z.number().finite(), z.boolean()]);
+export const AnalyticsScalarSchema = z.union([z.string().max(256), z.number().finite(), z.boolean()]);
 
 export const AnalyticsTimeGrainSchema = z.enum(['day', 'week', 'month', 'quarter', 'year']);
 export type AnalyticsTimeGrain = z.infer<typeof AnalyticsTimeGrainSchema>;

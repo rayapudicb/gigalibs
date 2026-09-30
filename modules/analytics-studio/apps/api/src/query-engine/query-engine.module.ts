@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common';
 import { QueryEngineService } from './query-engine.service.js';
 import { ChartService } from './chart.service.js';
+import { DashboardController } from './dashboard.controller.js';
 import { DashboardService } from './dashboard.service.js';
 import {
   QueryEngineController,
   ChartsController,
-  DashboardsController,
 } from './query-engine.controller.js';
 import { DatasetModule } from '../datasets/dataset.module.js';
 import { FormulaMeasureController } from './formula-measure.controller.js';
@@ -20,7 +20,7 @@ import { ChartViewService } from './chart-view.service.js';
   controllers: [
     QueryEngineController,
     ChartsController,
-    DashboardsController,
+    DashboardController,
     FormulaMeasureController,
     ModelCatalogController,
     ChartViewController,

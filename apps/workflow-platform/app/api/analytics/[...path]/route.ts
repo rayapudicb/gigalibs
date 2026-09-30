@@ -6,3 +6,4 @@ export const runtime = 'nodejs';
 // service's own unauthenticated development issuer, is preserved only in scratch/wi-oi-064-originals.
 export const GET = (request: Request, context: AnalyticsRouteContext) => proxyAnalytics(request, context);
 export const POST = (request: Request, context: AnalyticsRouteContext) => proxyAnalytics(request, context);
+export const PATCH = (request: Request, context: AnalyticsRouteContext) => proxyAnalytics(request, context);

@@ -8,7 +8,6 @@
  *  4. QueryEngineService — tenant isolation
  *  5. ChartService — ECharts option builder (data from query, not template)
  *  6. ChartService — accessible table present on every chart type
- *  7. DashboardService — layout join table assertions
  */
 
 import * as fs from 'fs';
@@ -359,47 +358,4 @@ describe('ChartService — accessible table present on every chart type', () => 
       expect(typeof result.accessibleTable[0]!.label).toBe('string');
     });
   }
-});
-
-// ─── 7. Dashboard layout join table ───────────────────────────────────────────
-
-import { DashboardService } from './dashboard.service.js';
-
-describe('DashboardService — layout join table', () => {
-  test('addChartToDashboard throws NotFoundException for unknown dashboard', async () => {
-    const db = {
-      queryWithTenant: jest.fn().mockResolvedValue({ rows: [] }),
-      withTenantTransaction: jest.fn(),
-    };
-    const svc = new DashboardService(db as any);
-    await expect(svc.addChartToDashboard(
-      PRINCIPAL, 'dashboard-nonexistent', { chartDefinitionId: 'cd-1' },
-    )).rejects.toMatchObject({ message: expect.stringContaining('not found') });
-  });
-
-  test('getDashboard returns chart list ordered by sort_order', async () => {
-    const db = {
-      queryWithTenant: jest.fn().mockImplementation((_t: string, sql: string) => {
-        if (sql.includes('FROM gigalibs_analytics.dashboards WHERE')) {
-          return Promise.resolve({
-            rows: [{ id: 'dash-1', tenant_id: 'T', display_name: 'Main', description: null, created_by: 'u', created_at: '2026-01-01' }],
-          });
-        }
-        if (sql.includes('dashboard_charts')) {
-          return Promise.resolve({
-            rows: [
-              { id: 'dc-1', chart_definition_id: 'cd-1', grid_col: 0, grid_row: 0, col_span: 6, row_span: 4, chart_type: 'BAR', display_name: 'Revenue' },
-              { id: 'dc-2', chart_definition_id: 'cd-2', grid_col: 6, grid_row: 0, col_span: 6, row_span: 4, chart_type: 'LINE', display_name: 'Orders' },
-            ],
-          });
-        }
-        return Promise.resolve({ rows: [] });
-      }),
-      withTenantTransaction: jest.fn(),
-    };
-    const svc = new DashboardService(db as any);
-    const result = await svc.getDashboard(PRINCIPAL, 'dash-1');
-    expect(result.charts).toHaveLength(2);
-    expect(result.charts[0]!.chartType).toBe('BAR');
-  });
 });

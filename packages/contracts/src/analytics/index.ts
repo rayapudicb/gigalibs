@@ -215,3 +215,4 @@ export * from './chart-view.js';
 export * from './chart-shape.js';
 export * from './formula-measure.js';
 export * from './sample-farm.js';
+export * from './dashboard.js';

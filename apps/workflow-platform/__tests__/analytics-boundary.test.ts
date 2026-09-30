@@ -1,7 +1,7 @@
 import { generateKeyPairSync } from 'node:crypto';
 import { verifyPlatformContextToken } from '@gigalibs/auth-core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { GET as getAnalytics, POST as postAnalytics } from '../app/api/analytics/[...path]/route';
+import { GET as getAnalytics, PATCH as patchAnalytics, POST as postAnalytics } from '../app/api/analytics/[...path]/route';
 import { canUseTenantModule, hasPermission } from '../lib/module-access';
 import { verifiedSession } from '../lib/verified-session';
 
@@ -221,6 +221,37 @@ describe('Analytics Studio signed BFF (WI-OI-064a)', () => {
     const approved = await call(postAnalytics, 'POST', ['v1', 'formula-measures', formula, 'versions', version, 'approve'], { headers: sameOrigin, body: '{}' });
     expect(approved.status).toBe(200);
     expect(String(fetchSpy.mock.calls.at(-1)![0])).toBe(`http://127.0.0.1:4400/v1/formula-measures/${formula}/versions/${version}/approve`);
+  });
+
+  // WI-OI-103e: dashboards. Viewing (including posting filter values) needs analytics:read; saving needs
+  // analytics:dashboards:write.
+  it('exposes dashboards with the dashboards write permission for saving', async () => {
+    const sameOrigin = { Host: 'platform.example.invalid', Origin: 'https://platform.example.invalid', 'Content-Type': 'application/json' };
+    const dashboard = '00000000-0000-4000-8000-0000000000d1';
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(
+      async () => new Response(JSON.stringify({}), { status: 200, headers: { 'Content-Type': 'application/json' } }),
+    );
+    vi.mocked(verifiedSession).mockResolvedValue({ context: { ...entitledContext, permissions: ['analytics:read'] } } as never);
+    expect((await call(getAnalytics, 'GET', ['v1', 'dashboards'])).status).toBe(200);
+    expect((await call(getAnalytics, 'GET', ['v1', 'dashboards', dashboard])).status).toBe(200);
+    expect((await call(postAnalytics, 'POST', ['v1', 'dashboards', dashboard, 'data'], { headers: sameOrigin, body: '{}' })).status).toBe(200);
+    expect((await call(getAnalytics, 'GET', ['v1', 'dashboards', dashboard, 'filter-values', 'farm'])).status).toBe(200);
+    const forwarded = fetchSpy.mock.calls.length;
+    expect((await call(postAnalytics, 'POST', ['v1', 'dashboards'], { headers: sameOrigin, body: '{}' })).status).toBe(403);
+    expect((await call(patchAnalytics, 'PATCH', ['v1', 'dashboards', dashboard], { headers: sameOrigin, body: '{}' })).status).toBe(403);
+    expect((await call(getAnalytics, 'GET', ['v1', 'dashboards', dashboard, 'data'])).status).toBe(404);
+    expect((await call(patchAnalytics, 'PATCH', ['v1', 'dashboards'], { headers: sameOrigin, body: '{}' })).status).toBe(404);
+    expect(fetchSpy.mock.calls.length).toBe(forwarded);
+
+    vi.mocked(verifiedSession).mockResolvedValue({
+      context: { ...entitledContext, permissions: ['analytics:read', 'analytics:dashboards:write'] },
+    } as never);
+    expect((await call(postAnalytics, 'POST', ['v1', 'dashboards'], { headers: sameOrigin, body: '{}' })).status).toBe(200);
+    const patched = await call(patchAnalytics, 'PATCH', ['v1', 'dashboards', dashboard], { headers: sameOrigin, body: '{}' });
+    expect(patched.status).toBe(200);
+    const [target, init] = fetchSpy.mock.calls.at(-1)!;
+    expect(String(target)).toBe(`http://127.0.0.1:4400/v1/dashboards/${dashboard}`);
+    expect(init?.method).toBe('PATCH');
   });
 
   it('returns 503 when the runtime is not configured and 502 during an outage', async () => {

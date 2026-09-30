@@ -318,3 +318,34 @@ Task card: `.pi/tasks/WI-OI-103e.md`. Owner decisions: system roles now; order e
 - **Follow-up:** moving the Analytics proxy to manifest-declared gateway routes (like CMMS and Workforce) needs a new
   segment type in the manifest grammar. `{id}` is UUID-only, and the lineage route takes metric keys such as
   `NET_AR_REVENUE`. Left for later.
+
+**e4, dashboards with shared filters** (not yet deployed):
+- **Contract** `dashboard.ts`:
+  - a dashboard is a name, a date-range switch, up to 5 shared filters (field and label) and up to 12 tiles (saved
+    chart view and size);
+  - the viewer's values are posted per view and never stored;
+  - each tile answers with its result plus `applied` and `skipped` (with the reason).
+- **Migration 000019** (schema 19):
+  - `dashboards` gains `time_range`, `shared_filters` and a same-tenant key;
+  - new `dashboard_tiles` has forced RLS and same-tenant foreign keys to dashboards and chart views;
+  - audit `DASHBOARD_CREATED` and `DASHBOARD_UPDATED`.
+  - The five old tables were empty on the local database (0 rows each). `dashboard_charts` and `dashboard_filters`
+    stay unused until the old chart routes retire with reports (e5).
+  - Dry-run on the real local PostgreSQL in a rolled-back transaction: the database stayed at 18.
+- **API** (`v1/dashboards`): create and `PATCH` (replace tiles and filters in one transaction, audited before and
+  after) need `dashboards:write`. List, get, `POST .../data` (runs every tile) and `GET .../filter-values/:field`
+  need `read`.
+  - Filter rules:
+    - A filter applies only to charts whose model has that field.
+    - The date range applies only to charts with a time axis, as `between` on their own time field.
+    - Values not offered by the dashboard are refused.
+  - One failing chart returns its error without hiding the others.
+  - The old chart-definition dashboards controller and service are removed.
+- **Web:**
+  - "Dashboards" is added to the Analytics menu. There are list, new, view and edit pages, gated on the server
+    (the builder needs `dashboards:write`).
+  - The builder offers only the fields of the chosen charts' models, with "n of m charts".
+  - The view has date and field pickers, and each tile notes what it was filtered by and what it could not take.
+  - The proxy adds the routes, and PATCH.
+- **Checks:** dashboard service 7; route-permission table (now 65 routes); gateway test (reader vs writer, PATCH);
+  navigation equivalence; `pnpm verify` passes (known drift only), including the web production build.
