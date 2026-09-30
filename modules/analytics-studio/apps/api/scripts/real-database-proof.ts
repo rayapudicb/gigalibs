@@ -11,7 +11,6 @@
 import assert from 'node:assert/strict';
 import type { AnalyticsQueryInputV1, AnalyticsQueryResultV1 } from '@gigalibs/contracts';
 import type { AnalyticsPrincipal } from '../src/auth/authorization.js';
-import { ConnectorService } from '../src/connectors/connector.service.js';
 import { DatabaseService } from '../src/database/database.service.js';
 import { DatasetService } from '../src/datasets/dataset.service.js';
 import { SampleFarmService } from '../src/places/sample-farm.service.js';
@@ -63,7 +62,7 @@ try {
   const chartViews = new ChartViewService(db, engine, summaries);
   const dashboards = new DashboardService(db, engine, summaries);
   const reports = new ReportService(db, chartViews, dashboards);
-  const sampleFarm = new SampleFarmService(db, new SchemaDiscoveryService(db, new ConnectorService(db)), new DatasetService(db), formulas);
+  const sampleFarm = new SampleFarmService(db, new SchemaDiscoveryService(db), new DatasetService(db), formulas);
 
   step('1. Demo Lab sample farm loads through source, discovery, mapping, dataset and model');
   const loaded = await sampleFarm.load(maker, 'proof-load-1');

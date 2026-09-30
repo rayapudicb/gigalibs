@@ -7,7 +7,6 @@ import {
 } from '@nestjs/common';
 import * as crypto from 'crypto';
 import { DatabaseService } from '../database/database.service.js';
-import { ConnectorService } from '../connectors/connector.service.js';
 import type { AnalyticsPrincipal } from '../auth/authorization.js';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -82,7 +81,6 @@ export class SchemaDiscoveryService {
 
   constructor(
     private readonly db: DatabaseService,
-    private readonly connectorService: ConnectorService,
   ) {}
 
   /**
@@ -104,7 +102,7 @@ export class SchemaDiscoveryService {
     this.validateIdentifier(sourceTableName, 'sourceTableName');
 
     // Confirm connection belongs to tenant
-    await this.connectorService.getConnection(principal, connectionId);
+    await this.requireSource(principal, connectionId);
 
     // Sample raw records for this connection + table
     const sampleResult = await this.db.queryWithTenant<{ raw_payload: Record<string, unknown> }>(
@@ -251,7 +249,7 @@ export class SchemaDiscoveryService {
     this.validateIdentifier(dto.sourceTableName, 'sourceTableName');
     this.validateFieldMappings(dto.fieldMappings);
 
-    await this.connectorService.getConnection(principal, dto.connectionId);
+    await this.requireSource(principal, dto.connectionId);
 
     const result = await this.db.queryWithTenant<{ id: string }>(
       tenantId,
@@ -333,6 +331,16 @@ export class SchemaDiscoveryService {
 
       return this.getMappingSummary(tenantId, mappingId, client);
     });
+  }
+
+  /** WI-OI-104f: the source must exist in this tenant (RLS); Analytics' own Postgres connector is retired. */
+  private async requireSource(principal: AnalyticsPrincipal, connectionId: string): Promise<void> {
+    const found = await this.db.queryWithTenant<{ id: string }>(
+      principal.tenantId,
+      'SELECT id FROM gigalibs_analytics.source_connections WHERE id = $1',
+      [connectionId],
+    );
+    if (found.rows.length === 0) throw new NotFoundException(`Source '${connectionId}' not found.`);
   }
 
   /** WI-OI-104e: mappable sources, without connection details. */

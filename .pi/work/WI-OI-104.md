@@ -500,3 +500,34 @@ core API) and no scheduler. Connector Hub also trusts a caller-supplied tenant h
     - a pull with "Send pulled records to Analytics" on;
     - on Analytics Sources: map with a unit conversion, build, and make it explorable;
     - then a scheduled rebuild through the live kernel worker, with its chained summary job.
+
+## 104e deploy (owner: "deploy", 2026-09-30 18:24)
+
+- Backup first: `gigalibs_backup_20260930_125422Z.dump`. The credentials script added the Analytics inbox relay key
+  pair to `.env.modules` (mode 600; no secret printed).
+- All images are at `53247eb8d1c0-603838479495`. Migrations: Connector Hub 7, Analytics 24; the others unchanged.
+  Every service is healthy. 5180 answers, and an unsigned Hub request gets 401.
+- **Live proof:** a real Tenant Admin login, signed contexts, 14 Playwright tests.
+- **End-to-end proof** (`e2e/specs/connector-to-analytics.spec.ts`, harness `.pi/handoff/proof-scripts/e2e-104e.sh`
+  and `kernel-stage.sh`). A throwaway source, plus a throwaway Hub sharing the 5190 proof web's network and relaying
+  to the live Analytics inbox. In Chrome, a throwaway tenant's Tenant Admin:
+  - Connector Hub: set up a REST pull with page paging and an API key; turned on "Send pulled records to Analytics";
+    pulled 3 pages, 4 new records.
+  - Analytics › Sources: the source appeared (Connector Hub) within seconds.
+    - Map fields: `quantity` became `yield_kg`, converted from the unit named in each record's `unit` field
+      ("Quintals", "qtl", "tonnes", "kg"). Published with 6 fields.
+    - Build now gave dataset version 1 with 4 records. Make explorable created the model.
+    - The model answered maize 3,200 kg (12 quintals + 2 tonnes), rice 800 and wheat 500.
+    - A saved chart, and a daily rebuild schedule.
+  - **Kernel stage:** the schedule was made due. The live kernel worker ran `analytics.dataset-build` (SUCCEEDED,
+    dataset version 2 READY), which chained `analytics.summaries-build` (SUCCEEDED, 1 summary ready).
+    - The model moved to version 2, and the move was audited (`SEMANTIC_MODEL_REFRESHED`).
+    - The schedule was removed afterwards, and no proof schedules remain.
+- **The proof found a UI flaw:** "Send pulled records to Analytics" ticked only after Connector Hub answered, so the
+  click seemed to do nothing.
+  - Fixed: the switch now moves at once and moves back if Hub refuses. The saved spec uses `check()` again, and the
+    fix ships with the next deploy.
+  - The deployed run clicked and waited instead. Two further harness faults were fixed: a message matched with the
+    wrong quotes, and SQL quoting, now in `kernel-stage.sh` with psql variables.
+- **104e is live.** F8 remaining: 104f, retiring the connector copies (owner decision: retire Analytics' Postgres
+  connector now; a Hub Postgres adapter when a client needs one).

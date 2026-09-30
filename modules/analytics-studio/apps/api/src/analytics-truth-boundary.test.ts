@@ -68,7 +68,7 @@ function migrationExists(n: string): boolean {
 //  Phase 1: Connector Hub + Credential Vault (WI-OI-043 Phase 1)
 // ══════════════════════════════════════════════════════════════════════════════
 
-describe('Phase 1 — Connector Hub + Credential Vault', () => {
+describe('Phase 1 — Connector Hub (the only way in)', () => {
   it('migration 000004 exists: source_connections table', () => {
     expect(migrationExists('000004_connector_hub_source_connections.up.sql')).toBe(true);
   });
@@ -80,14 +80,18 @@ describe('Phase 1 — Connector Hub + Credential Vault', () => {
     expect(sql).not.toContain('api_key TEXT');
   });
 
-  it('ConnectorService exists', () => {
-    expect(readSrc('connectors/connector.service.ts')).toContain('ConnectorService');
+  // WI-OI-104f (ADR-0016 F8): Connector Hub is the only way in. Analytics' own Postgres connector and ingestion are
+  // retired; records arrive through the relay inbox (WI-OI-104e).
+  it('Analytics has no connector or ingestion code of its own', () => {
+    expect(fs.existsSync(path.join(API_SRC, 'connectors'))).toBe(false);
+    expect(fs.existsSync(path.join(API_SRC, 'ingestion'))).toBe(false);
   });
 
-  it('ConnectorModule exports ConnectorService', () => {
-    const mod = readSrc('connectors/connector.module.ts');
-    expect(mod).toContain('ConnectorModule');
-    expect(mod).toContain('ConnectorService');
+  it('Connector Hub records arrive through the relay inbox as CONNECTOR_HUB sources', () => {
+    const inbox = readSrc('inbox/connector-hub-inbox.ts');
+    expect(inbox).toContain('RelayInboxGuardBase');
+    expect(inbox).toContain("'CONNECTOR_HUB'");
+    expect(readMigration('000023_connector_hub_inbox.up.sql')).toContain('inbox_receipts');
   });
 
   it('source_connections has RLS + FORCE RLS', () => {
@@ -96,8 +100,10 @@ describe('Phase 1 — Connector Hub + Credential Vault', () => {
     expect(sql).toContain('FORCE ROW LEVEL SECURITY');
   });
 
-  it('AppModule imports ConnectorModule', () => {
-    expect(readSrc('app.module.ts')).toContain('ConnectorModule');
+  it('AppModule imports the Connector Hub inbox and no connector module', () => {
+    const app = readSrc('app.module.ts');
+    expect(app).toContain('ConnectorHubInboxModule');
+    expect(app).not.toMatch(/\bConnectorModule\b|\bIngestionModule\b/);
   });
 });
 
@@ -105,7 +111,7 @@ describe('Phase 1 — Connector Hub + Credential Vault', () => {
 //  Phase 2: Ingestion Engine + Raw Tenant Staging
 // ══════════════════════════════════════════════════════════════════════════════
 
-describe('Phase 2 — Ingestion Engine + Raw Tenant Staging', () => {
+describe('Phase 2 — Relay inbox + Raw Tenant Staging', () => {
   it('migration 000005 exists: raw_record_versions table', () => {
     expect(migrationExists('000005_connector_sync_runs_and_raw_records.up.sql')).toBe(true);
   });
@@ -121,23 +127,10 @@ describe('Phase 2 — Ingestion Engine + Raw Tenant Staging', () => {
     expect(sql).toContain('raw_payload');
   });
 
-  it('IngestionService exists with sync logic', () => {
-    const svc = readSrc('ingestion/ingestion.service.ts');
-    expect(svc).toContain('IngestionService');
-  });
-
-  it('IngestionModule imports ConnectorModule', () => {
-    const mod = readSrc('ingestion/ingestion.module.ts');
-    expect(mod).toContain('ConnectorModule');
-  });
-
-  it('AppModule imports IngestionModule', () => {
-    expect(readSrc('app.module.ts')).toContain('IngestionModule');
-  });
-
-  it('CONTAINED_P0 vault credential stub is present and labelled', () => {
-    const svc = readSrc('ingestion/ingestion.service.ts');
-    expect(svc).toContain('CONTAINED_P0');
+  it('the relay inbox stages each delivered record as a raw record version, receipted once', () => {
+    const inbox = readSrc('inbox/connector-hub-inbox.ts');
+    expect(inbox).toContain('INSERT INTO gigalibs_analytics.raw_record_versions');
+    expect(inbox).toContain('ON CONFLICT (message_id) DO NOTHING');
   });
 });
 
@@ -467,10 +460,11 @@ describe('Cross-phase — Pipeline order & migration ledger', () => {
     });
   });
 
-  it('all 7 pipeline modules registered in AppModule', () => {
+  // WI-OI-104f: the Connector Hub inbox replaces Analytics' own connector and ingestion modules.
+  it('all pipeline modules registered in AppModule', () => {
     const appMod = readSrc('app.module.ts');
     [
-      'ConnectorModule', 'IngestionModule', 'SchemaDiscoveryModule',
+      'ConnectorHubInboxModule', 'SchemaDiscoveryModule',
       'DatasetModule', 'QueryEngineModule', 'ReportModule', 'LineageModule',
     ].forEach(mod => {
       expect(appMod).toContain(mod);

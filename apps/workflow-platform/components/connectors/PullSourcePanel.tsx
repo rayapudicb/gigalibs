@@ -129,10 +129,16 @@ export function PullSourcePanel({ connectionId, source, deliverToAnalytics = fal
     });
 
   // WI-OI-104e: newly pulled records also go to Analytics, where they appear as a Connector Hub source to map.
+  // The switch moves at once and moves back if Connector Hub refuses (found by the WI-OI-104e browser proof).
   const setDelivery = (analytics: boolean) =>
     run('delivery', async () => {
-      await post('delivery', { analytics });
       setToAnalytics(analytics);
+      try {
+        await post('delivery', { analytics });
+      } catch (error) {
+        setToAnalytics(!analytics);
+        throw error;
+      }
       return analytics
         ? 'New records will also go to Analytics, where this connection appears as a source to map into a dataset.'
         : 'New records stay in Connector Hub.';

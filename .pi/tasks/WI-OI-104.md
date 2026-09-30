@@ -97,7 +97,8 @@
  Journal records become raw records,
    then go through the existing discovery, mapping, dataset and model steps. Mapping gains unit conversion (kg,
    quintal, t).
-6. **104f Retire the copies:**
+6. **104f Retire the copies** (owner decision 2026-09-30: retire Analytics' Postgres connector now, with no
+   replacement; Connector Hub gets a Postgres adapter when a client needs one):
    - Analytics' PostgreSQL connector (routes, service and screens) retires;
    - the core API connector services retire;
    - catalogue entries are updated.

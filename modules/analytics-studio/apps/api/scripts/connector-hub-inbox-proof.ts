@@ -6,7 +6,6 @@
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import type { AnalyticsPrincipal } from '../src/auth/authorization.js';
-import { ConnectorService } from '../src/connectors/connector.service.js';
 import { DatabaseService } from '../src/database/database.service.js';
 import { DatasetService } from '../src/datasets/dataset.service.js';
 import { ConnectorHubInboxService, HUB_RECORDS_TABLE } from '../src/inbox/connector-hub-inbox.js';
@@ -72,11 +71,11 @@ try {
   await inbox.receive(envelope('other-tenant', 'x-1', { id: 'x-1', crop: 'wheat' }, '2026-09-24T06:00:00.000Z'));
   await assert.rejects(inbox.receive({ ...first, messageId: 'evt-bad', eventType: 'SOMETHING_ELSE' }), /Only CONNECTOR_RECORD_PULLED_V1/);
   await assert.rejects(inbox.receive({ ...first, messageId: 'evt-bad-2', payload: { ...first.payload, record: 'not an object' } }), /incomplete/);
-  const sources = await new ConnectorService(db).listConnections(farm);
+  const sources = await new SchemaDiscoveryService(db).listSources(farm);
   assert.deepEqual(sources.map((source) => [source.sourceType, source.displayName]), [['CONNECTOR_HUB', 'farmOS harvests']]);
   const sourceId = sources[0]!.id;
   assert.equal(stored.sourceConnectionId, sourceId);
-  assert.equal((await new ConnectorService(db).listConnections(other)).length, 1);
+  assert.equal((await new SchemaDiscoveryService(db).listSources(other)).length, 1);
   const runs = await db.queryWithTenant<{ hub_sync_job_id: string; rows_fetched: string }>(
     'farm-tenant',
     'SELECT hub_sync_job_id, rows_fetched::text FROM gigalibs_analytics.source_sync_runs WHERE connection_id = $1 ORDER BY hub_sync_job_id',
@@ -85,7 +84,7 @@ try {
   assert.deepEqual(runs.rows.map((run) => [run.hub_sync_job_id, run.rows_fetched]), [['sync-1', '4'], ['sync-2', '1']]);
 
   step('2. discovery, mapping and a dataset build work on it unchanged; the latest pulled version of each record wins');
-  const discovery = new SchemaDiscoveryService(db, new ConnectorService(db));
+  const discovery = new SchemaDiscoveryService(db);
   const schema = await discovery.discoverSchema(farm, sourceId, HUB_RECORDS_TABLE);
   const fields = JSON.stringify(schema);
   for (const field of ['crop', 'quantity', 'unit', 'harvested_on', 'plot.area.value', 'plot.area.unit']) assert.ok(fields.includes(field), `discovered ${field}`);
