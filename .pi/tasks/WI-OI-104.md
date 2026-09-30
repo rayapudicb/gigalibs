@@ -41,12 +41,14 @@
 3. **104c Kernel scheduler:**
    - Schedules live in the kernel. Due runs are dispatched to the owning module over a signed service context:
      scheduled work runs with the schedule owner's rights, re-resolved at run time.
-   - First users: Connector Hub pulls, Analytics summary builds and scheduled report runs.
+   - First users: Connector Hub pulls and scheduled report runs. Analytics summary builds move to 104e (owner
+     decision 2026-09-30): they follow new dataset versions, not a clock.
 4. **104d Adapter framework** in Connector Hub:
    - logins: API key, bearer token, OAuth2;
    - paging styles: page, offset, cursor, since-watermark;
    - incremental pulls, retries, and a quarantine for bad records.
-5. **104e Bridge into Analytics:** an Analytics source of type `CONNECTOR_HUB`. Journal records become raw records,
+5. **104e Bridge into Analytics:** an Analytics source of type `CONNECTOR_HUB`. Summary builds become kernel jobs
+   here, started by each new dataset version. Journal records become raw records,
    then go through the existing discovery, mapping, dataset and model steps. Mapping gains unit conversion (kg,
    quintal, t).
 6. **104f Retire the copies:**

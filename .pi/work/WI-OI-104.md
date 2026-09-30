@@ -239,3 +239,30 @@ core API) and no scheduler. Connector Hub also trusts a caller-supplied tenant h
   - the `redis` and `kernel-worker` services;
   - new core and web images; a new Analytics image (route retired).
   - Outside the local stack, the core's database user must be able to `SET ROLE` to the two jobs roles.
+
+## 104c deploy (owner: "go as per your recommendation", 2026-09-30 14:05)
+
+- Backup first: `gigalibs_backup_20260930_083914Z.dump`.
+- `REDIS_PASSWORD` was added to `.env.modules` by the credentials script (mode 600; no secret printed).
+- **First image build failed:** the image workspace (`infra/compose/docker/pnpm-workspace.yaml`) did not list
+  `packages/jobs`, and did not allow the `msgpackr-extract` build that bullmq needs. `pnpm verify` cannot see this.
+  - Fixed, and all images rebuilt at `13cd27af9761-214bebf5ead2`: the commit plus that fix, uncommitted until the
+    owner's "commit".
+  - The core image loads the worker entry, `ioredis` and `@gigalibs/jobs`.
+- **Deploy:**
+  - Every migrations job exited 0. Core recorded `20260930010000_kernel_job_schedules`; modules unchanged (CMMS 14,
+    Workforce 14, Geospatial 3, Connector Hub 5, Analytics 21).
+  - Every service is healthy, including the new `redis` and `kernel-worker` (neither has a host port). The worker
+    started with BullMQ on, and no tick failed.
+  - 5180 answers. An unsigned request to Connector Hub is refused (401).
+- **Live proof:** a real Tenant Admin login; signed Workforce, CMMS and Geospatial contexts; 14 Playwright tests.
+- **Schedules live proof** (`scratchpad/schedule-live.mjs`, web on 5190, a throwaway tenant; sessions revoked):
+  - Create and list through the web control proxy.
+  - Refused: a run every 5 minutes (400), a smuggled owner (400), a viewer creating (403) or pausing.
+  - Pause and resume.
+  - Both schedules made due. The live worker ran each once as its owner. Analytics and Connector Hub each accepted
+    the worker-signed context and answered 404 for the deliberately missing target (a bad signature is 401), so the
+    job ended MODULE_REFUSED, and the schedule moved to its next time.
+  - Run history listed; both schedules removed, with their job history kept.
+- The 5190 container and credential files were removed, and superseded images pruned.
+- 104c is live. WI-OI-104 continues with 104d (the adapter framework).

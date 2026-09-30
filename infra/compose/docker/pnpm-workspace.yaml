@@ -22,6 +22,7 @@ packages:
   - packages/db
   - packages/db-migrations-runtime
   - packages/i18n
+  - packages/jobs
   - packages/logger
   - packages/maps-core
   - packages/maps-react
@@ -42,6 +43,7 @@ allowBuilds:
   '@prisma/client': true
   '@prisma/engines': true
   esbuild: true
+  msgpackr-extract: true
   prisma: true
 
 overrides:
