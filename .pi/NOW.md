@@ -1,97 +1,66 @@
 # NOW: where the work stands
 
-Updated 2026-09-29 by Claude (WI-OI-103d d1–d5 committed; review deploy on 5190 done). Keep this file to one page. Replace old content rather than
-appending to it, and update it at the end of every task.
+Updated 2026-09-30 by Claude (WI-OI-103e done; D2 closed; the full local stack caught up). Keep this file to one page.
+Replace old content rather than appending to it, and update it at the end of every task.
 
 ## State
 
 - **Branch:** `feat/gigaops-convergence-core`, local only, never pushed.
-- **Latest commits:**
-  - `6dda714` agriculture proposal;
-  - `76af949` WI-OI-085f;
-  - `80de9af` handover brief;
-  - `9db88a3` WI-OI-085e shared module host.
-- **Active work item: WI-OI-103**, the Analytics engine (`.pi/work/WI-OI-103.md`). WI-OI-102 is in Review.
-  WI-OI-104 to WI-OI-107 are Proposed.
+- **Active work item: WI-OI-103**, the Analytics engine (`.pi/work/WI-OI-103.md`).
+  - Done: 103a, 103b, 103d and 103e.
+  - Open: 103c (summaries, benchmark) and 103f (manufacturing proof).
+  - WI-OI-102 is in Review. WI-OI-104 to WI-OI-108 are Proposed.
 - **Wave 0:** WI-OI-080, 081, 082, 083 and 085 are in Review, waiting for human reviews. WI-OI-084 (mobile) has
   not started.
-- **Running locally** (never touch it during a proof):
-  - web on 5180: `a255e935c80e-2e98e70d8d0e`;
-  - cmms and workforce: `88967ea35011-9ffa1e2a8005`;
-  - the other services: `5abfa667bb10-7507432cb066`;
-  - analytics-api: `ffb31cc0e75b-1878cab3837f`, schema 19 (deployed 2026-09-30 with the owner's OK; backup
-    `infra/compose/backups/gigalibs_backup_20260930_014457Z.dump`);
-  - **review web on 5190**: container `gigalibs-review-web`, image `workflow-platform:ffb31cc0e75b-1878cab3837f`.
-  - The 5180 web still has the retired gallery tab, which now answers "not found".
-    Remove it with `docker rm -f gigalibs-review-web` when the review ends.
+- **Running locally (2026-09-30):** every service is on `85abf9c80a5f-823fa00b1327`.
+  - The web is on 5180. The APIs are core, Analytics (schema 20), CMMS (14), Workforce (14), Geospatial (3) and
+    Connector Hub (4).
+  - Backup before the catch-up: `infra/compose/backups/gigalibs_backup_20260930_024649Z.dump`.
+  - The live proof (`live-web.sh`) passed: a real login, signed contexts to Workforce, CMMS and Geospatial, and 14
+    Playwright tests.
+  - There is no review web on 5190 any more.
+- **D2 is closed** (`.pi/work/D2-review-808b8d2.md`):
+  - The five other-stream core migrations were already in the database and are now recorded.
+  - Its forms routes are contained (unavailable).
+  - The rebuild is registered as **WI-OI-108**.
 
-## Owner decisions, 2026-09-29 (handover Task 2)
+## What is live for the owner (5180)
 
-- **Offline mobile:** SQLite on the device, with changes synced as queued commands that the server validates
-  (plan §5.1). Update the vision's CRDT wording in ADR-0014.
-- **App-store presence:** decide later, before Release 1.
-- **Vision-derived items:** register **catalogue truth** (six maturity states). The others were not chosen.
-- **Order:** the **foundation comes first.** The owner approved ADR-0016 F1–F17 on 2026-09-29. Revocation and
-  mobile come after.
+- **Analytics:**
+  - Overview, with the Saved charts tab;
+  - Places;
+  - **Explore**: any chart type, save the question; in Demo Lab workspaces, the sample farm and formula review;
+  - **Dashboards**: shared filters by date and field;
+  - **Reports**: CSV from a saved chart or a dashboard.
+- **Roles** (Settings → members): Analytics viewer, Analytics analyst and Analytics data steward appear as built-in
+  roles for tenants with Analytics. Tenant admins keep `analytics:*`.
 
 ## Next
 
-**Owner plan (2026-09-29):** foundation work until **Sunday 2026-10-04**, then the **agriculture package** for a
-client capability pitch (date not fixed), then back to the rest of the foundation.
+**Owner plan:** foundation until **Sunday 2026-10-04**, then the **agriculture package** for the client capability
+pitch (`.pi/proposals/agriculture-package-plan.md`), then back to the rest of the foundation.
 
-1. **WI-OI-103e (`.pi/tasks/WI-OI-103e.md`): e1–e5 are built and verified.** e1, e2 and e4 are deployed on 5190 (schema 19). e5 (reports, migration 20) waits for a deploy. e3 (roles) needs the owner's core-deploy decision: it would also apply 5 other core migrations and move the 5180 core API 52 commits (see evidence). 103d: d1–d7 are deployed.
-   Next:
-   - the owner creates a Demo Lab workspace and adds a second member with `analytics:models:publish`;
-   - the live review: load the sample farm, approve "Yield per hectare", build and save a chart.
-   - Then 103e. Continue piece by piece, and commit after each
-   piece on the owner's "commit". Charts use ECharts (ADR-0004), not `charts-react`. The card is summarised below:
-   chart templates that hold no data.
-   - A chart is a query spec plus a visual spec.
-   - One renderer covers the 24 types, with a "change chart" menu by data shape and a map.
-   - A thin **Explore** screen (pick a measure, group-by and time, then see the chart).
-   - The static gallery is retired.
-   - The demo uses a clearly labelled sample farm dataset.
-2. Then **103e**: dashboards with shared filters, permissions and roles (including `analytics:models:publish`),
-   reports owned by Analytics.
-3. From Monday: the agriculture package (`.pi/proposals/agriculture-package-plan.md`), with thin first versions
-   of connectors, places and the pack.
+1. **Owner review on 5180.** Create a Demo Lab workspace, load the sample farm (Explore), and have a second member
+   (Analytics data steward) approve "Yield per hectare". Then build a dashboard and run a report.
+2. **Small cleanup:** retire the old Analytics engine that nothing uses: `v1/charts`, `v1/query/run`,
+   `ChartService` and `QueryEngineService.runQuery`, with their tests.
+3. **From Monday:** the agriculture package. The first versions of connectors, places and the pack are thin.
+4. **After agriculture:** 103c, 103f, WI-OI-104 to WI-OI-108.
 
-103a–103b (2026-09-29):
-- the query engine (`AnalyticsQueryV1`, `POST v1/query/spec`);
-- formula measures with maker-checker and approved-version pinning (migration 000016, schema version 16).
+## Open decisions (owner)
 
-Deployed 2026-09-29: Analytics migrations 16–17 and the analytics image. The 5180 web is still on the old image.
-
-Open decisions:
-- drop the empty `gigalibs_platform` schema;
-- when to move 5180 to the new web image;
-- the `platform-rbac` leftovers.
-
-WI-OI-102 (2026-09-29), 102a–102g:
-- ADR-0016;
-- engines: Workflow Studio kept, the Python plane parked;
-- kernel/capability layers;
-- fenced core tables;
-- catalogue truth;
-- 586 files cleaned up;
-- `platform-rbac` merged into "Modules & Plan" and retired.
-
-102b decisions (2026-09-29):
-- Workflow Studio is the one workflow engine;
-- the Python execution plane is parked;
-- the 17 core pipelines are all test data and go when the core workflow tables retire.
-
-Open for later:
-- Geospatial `mobile/sync`: adopt or replace (when mobile starts);
-- agriculture sources and pack (`.pi/proposals/agriculture-package-plan.md`, phases 4 and 5).
+- Drop the empty `gigalibs_platform` schema.
+- The `platform-rbac` leftovers.
+- The Analyst role has no `analytics:export`, following the plan wording. Change it if the owner wants.
+- Revoke old test sessions: 721 sessions are active, mostly test accounts.
 
 ## Watch-outs
 
 - One agent in the repository at a time. Commit only on the owner's literal "commit".
 - `pnpm verify` reports the deployment-profile `WORKFORCE_API_URL` drift as KNOWN. Do not fix it without the
   owner.
-- 60 active sessions of old UAT test accounts (2026-09-13 to 23) remain. Revoke them only with the owner's OK.
-- The GPT agent's Codex account is usage-limited until 2026-10-03.
+- Other agents' work lands in this repository. Review it before deploying it (the D2 lesson: its migrations had been
+  applied by hand without being recorded).
 
 ## Where things are
 

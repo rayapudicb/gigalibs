@@ -57,8 +57,8 @@ The owner's rule is that charts hold no data: a chart is a saved query plus a ch
 | 103a | Query contract and engine (acceptance 1) | M | Done, 2026-09-29 |
 | 103b | Formula measures, measure versions, maker-checker (2) | M | Done, 2026-09-29 |
 | 103c | Summaries, cache, limits, benchmark (3) | M | Proposed |
-| 103d | Chart templates and renderer, change-chart, map, gallery retired (4) | L | In progress: d1–d7 built, verified and deployed for review on 5190 (2026-09-29); owner's live review next |
-| 103e | Dashboards, reports ownership, permissions and roles, web exposure (5, 6) | M | Proposed |
+| 103d | Chart templates and renderer, change-chart, map, gallery retired (4) | L | Done: d1–d7 live on 5180 (2026-09-30) |
+| 103e | Dashboards, reports ownership, permissions and roles, web exposure (5, 6) | M | Done: e1–e5 live on 5180 (2026-09-30) |
 | 103f | Proof on manufacturing data and the no-developer test (7) | M | Proposed |
 
 ## 103a: query contract and engine (2026-09-29)
@@ -429,3 +429,8 @@ Task card: `.pi/tasks/WI-OI-103e.md`. Owner decisions: system roles now; order e
 - **Live review:** the 103e check with Viewer, Analyst and Steward on 5190 needs e3 deployed (see the core deploy
   decision above).
 - **Remaining pieces:** 103c (summaries, benchmark) and 103f (manufacturing proof).
+
+**103e deployed** (2026-09-30, the owner-approved full catch-up; see `.pi/work/D2-review-808b8d2.md`):
+- e1–e5 are live on 5180 (`85abf9c80a5f-823fa00b1327`, Analytics schema 20).
+- The core API carries e1 (permission names) and e3 (default roles).
+- The 5190 review web is removed.

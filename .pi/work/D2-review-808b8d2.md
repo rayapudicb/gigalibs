@@ -61,3 +61,16 @@ page `/forms/q/[slug]`.
 are rebuilt on the governed forms engine with permissions. The data stays in place. The public questionnaire and
 mobile sync would come back as part of that rebuild, the offline-mobile path the owner chose (SQLite plus a command
 queue).
+
+## Outcome (owner decisions, 2026-09-30)
+
+- **Forms:** shut off now (commit `85abf9c`). The six forms routes answer "unavailable", and the public
+  questionnaire page answers "not found"; the data is kept. The proper rebuild is **WI-OI-108**.
+- **Full catch-up of the local stack, Geospatial included:**
+  - Backup `gigalibs_backup_20260930_024649Z.dump`.
+  - The core migrations job recorded the five migrations (no data change).
+  - The module jobs completed: CMMS 14, Workforce 14, Geospatial 3, Connector Hub 4, Analytics 20.
+  - All six APIs and the 5180 web are on `85abf9c80a5f-823fa00b1327` and healthy.
+  - Data unchanged: 248 tenants, 549 users, 95 work orders, 46 assets.
+  - The live proof passed: a real login, signed contexts to Workforce, CMMS and Geospatial, and 14 Playwright tests
+    in Chrome.
