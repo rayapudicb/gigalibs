@@ -80,6 +80,12 @@ export class ConnectorsController {
     return this.connectorsService.storePullCredentials(principal.tenantId, id, body);
   }
 
+  @Post('connections/:id/delivery')
+  @RequirePermissions('connections:write')
+  async setDelivery(@CurrentPrincipal() principal: ModulePrincipal, @Param('id') id: string, @Body() body: unknown) {
+    return this.connectorsService.setDelivery(principal.tenantId, id, body);
+  }
+
   @Post('oauth/initiate')
   @RequirePermissions('connections:write')
   async initiateOAuth(@CurrentPrincipal() principal: ModulePrincipal, @Body() body: OAuthInitiateDto) {

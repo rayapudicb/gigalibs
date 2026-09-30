@@ -9,6 +9,8 @@
  *     read everything, or to the last one when a truncated run's records came oldest first. Otherwise it stays, and the
  *     next run re-reads (duplicates are skipped).
  *  A failure marks the job FAILED and the connection ERROR, keeps what was written, and leaves the watermark alone.
+ *  WI-OI-104e: when the connection sends to Analytics, each newly journalled record also writes an outbox fact in the
+ *  same transaction, so a record is delivered exactly when it is journalled.
  */
 
 import { createHash, randomUUID } from 'node:crypto';
@@ -28,6 +30,9 @@ export interface PullConnection {
   readonly id: string;
   readonly tenantId: string;
   readonly connectorCode: string;
+  readonly name?: string;
+  /** WI-OI-104e: newly journalled records also become outbox facts for the Analytics relay. */
+  readonly deliverToAnalytics?: boolean;
 }
 
 export interface PullOptions {
@@ -155,8 +160,12 @@ export class PullRunner {
                 JSON.stringify({ sync_job_id: jobId, source_id: record.sourceId }),
               ],
             );
-            if ((inserted.rowCount ?? 0) > 0) counts.ingested += 1;
-            else counts.duplicates += 1;
+            if ((inserted.rowCount ?? 0) > 0) {
+              counts.ingested += 1;
+              if (connection.deliverToAnalytics) await this.emit(client, connection, jobId, record, options.correlationId ?? null);
+            } else {
+              counts.duplicates += 1;
+            }
             if (record.watermark) {
               if (last && record.watermark < last) ascending = false;
               last = record.watermark;
@@ -193,6 +202,40 @@ export class PullRunner {
       watermarkAfter,
       durationMs,
     };
+  }
+
+  /** One CONNECTOR_RECORD_PULLED_V1 fact per new record version; the aggregate is the source record. */
+  private async emit(
+    client: pg.PoolClient,
+    connection: PullConnection,
+    jobId: string,
+    record: { sourceId: string; payloadSha256: string; json: string },
+    correlationId: string | null,
+  ): Promise<void> {
+    const aggregateId = `${connection.id}:${createHash('sha256').update(record.sourceId).digest('hex').slice(0, 32)}`;
+    await client.query(
+      `INSERT INTO gigalibs_connectors.outbox_events
+         (id, tenant_id, topic, event_type, aggregate_type, aggregate_id, aggregate_version, correlation_id, schema_version, payload)
+       VALUES ($1, $2::varchar, 'connector.records', 'CONNECTOR_RECORD_PULLED_V1', 'connector_record', $3::varchar,
+               (SELECT count(*) + 1 FROM gigalibs_connectors.outbox_events
+                 WHERE tenant_id = $2::varchar AND aggregate_type = 'connector_record' AND aggregate_id = $3::varchar),
+               $4, 1, $5::jsonb)`,
+      [
+        `evt-${randomUUID()}`,
+        connection.tenantId,
+        aggregateId,
+        (correlationId ?? jobId).slice(0, 128),
+        JSON.stringify({
+          hubConnectionId: connection.id,
+          connectionName: connection.name ?? connection.id,
+          connectorCode: connection.connectorCode,
+          syncJobId: jobId,
+          sourceId: record.sourceId,
+          payloadSha256: record.payloadSha256,
+          record: JSON.parse(record.json) as unknown,
+        }),
+      ],
+    );
   }
 
   private async credentials(connection: PullConnection, source: PullSource): Promise<PullCredentials | null> {

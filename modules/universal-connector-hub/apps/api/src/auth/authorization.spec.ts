@@ -49,7 +49,7 @@ describe('Connector Hub authorization', () => {
       CONNECTORS_DATABASE_URL: 'postgresql://connectors_runtime:secret@localhost:5440/gigalibs',
       CONNECTOR_HUB_DATABASE_POOL_SIZE: '5',
       CONNECTOR_VAULT_KEY: 'local-test-key-that-is-at-least-32-bytes-long',
-      CONNECTOR_HUB_EXPECTED_MIGRATION_VERSION: '6',
+      CONNECTOR_HUB_EXPECTED_MIGRATION_VERSION: '7',
       CONNECTOR_HUB_ALLOWED_OUTBOUND_HOSTS: 'example.com',
       CONNECTOR_HUB_ALLOW_INSECURE_OUTBOUND: 'false',
       CONNECTOR_HUB_PLATFORM_CONTEXT_PUBLIC_KEY_BASE64: publicKey.toString('base64'),
@@ -131,6 +131,7 @@ describe('Connector Hub authorization', () => {
       'GET api/connectors/v1/connections/:id/quarantine': 'connections:read',
       'POST api/connectors/v1/connections/:id/source': 'connections:write',
       'POST api/connectors/v1/connections/:id/credentials': 'connections:write',
+      'POST api/connectors/v1/connections/:id/delivery': 'connections:write',
       'GET api/connectors/v1/stats': 'connections:read',
     });
   });

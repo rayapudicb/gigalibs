@@ -74,6 +74,7 @@ describe('Connector Hub signed BFF', () => {
     // WI-OI-104d: the pull source and its login secrets need connections:write; secrets can never be read back.
     expect((await call(postHub, 'POST', ['connections', 'c1', 'source'], { headers: sameOrigin, body: '{}' })).status).toBe(403);
     expect((await call(postHub, 'POST', ['connections', 'c1', 'credentials'], { headers: sameOrigin, body: '{}' })).status).toBe(403);
+    expect((await call(postHub, 'POST', ['connections', 'c1', 'delivery'], { headers: sameOrigin, body: '{}' })).status).toBe(403);
     expect((await call(getHub, 'GET', ['connections', 'c1', 'credentials'])).status).toBe(404);
     expect(fetchSpy.mock.calls.length).toBe(forwarded);
 
@@ -82,6 +83,7 @@ describe('Connector Hub signed BFF', () => {
     expect((await call(postHub, 'POST', ['connections', 'c1', 'sync'], { headers: sameOrigin, body: '{}' })).status).toBe(200);
     expect((await call(postHub, 'POST', ['connections', 'c1', 'source'], { headers: sameOrigin, body: '{}' })).status).toBe(200);
     expect((await call(postHub, 'POST', ['connections', 'c1', 'credentials'], { headers: sameOrigin, body: '{}' })).status).toBe(200);
+    expect((await call(postHub, 'POST', ['connections', 'c1', 'delivery'], { headers: sameOrigin, body: '{}' })).status).toBe(200);
   });
 
   it('does not expose webhooks, unknown routes or cross-site changes', async () => {

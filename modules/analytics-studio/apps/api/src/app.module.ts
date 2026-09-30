@@ -1,3 +1,4 @@
+import { ConnectorHubInboxModule } from './inbox/connector-hub-inbox.js';
 import { Module } from '@nestjs/common';
 import { HealthController } from './health/health.controller.js';
 import { SetupController } from './setup/setup.controller.js';
@@ -27,6 +28,7 @@ import { AnalyticsRuntimeModule } from './runtime.module.js';
     ReportModule,
     LineageModule,
     PlaceAnalyticsModule,
+    ConnectorHubInboxModule,
   ],
   controllers: [
     HealthController,

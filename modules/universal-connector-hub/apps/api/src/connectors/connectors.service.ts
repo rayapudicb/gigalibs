@@ -58,7 +58,7 @@ export class ConnectorsService {
     let sql = `
       SELECT 
         c.id, c.tenant_id, c.connector_code, c.name, c.slug, c.environment, c.auth_type,
-        c.target_workflow_code, c.configuration, c.status, c.last_sync_at, c.events_count,
+        c.target_workflow_code, c.configuration, c.status, c.last_sync_at, c.events_count, c.deliver_to_analytics,
         c.created_at, c.updated_at,
         d.name AS definition_name, d.category, d.icon, d.supported_events
       FROM gigalibs_connectors.tenant_connections c
@@ -210,6 +210,20 @@ export class ConnectorsService {
     });
     await this.audit(tenantId, conn.id, 'CREDENTIALS_REPLACED', { kind: credentials.kind });
     return { success: true, connection_id: conn.id, kind: credentials.kind };
+  }
+
+  /** WI-OI-104e: whether this connection's newly pulled records are sent to Analytics (through the outbox relay). */
+  async setDelivery(tenantId: string, idOrSlug: string, body: unknown): Promise<any> {
+    const analytics = (body as { analytics?: unknown } | null)?.analytics;
+    if (typeof analytics !== 'boolean') throw new BadRequestException('analytics must be true or false.');
+    const conn = await this.getConnectionById(tenantId, idOrSlug);
+    await this.db.queryWithTenant(
+      tenantId,
+      `UPDATE gigalibs_connectors.tenant_connections SET deliver_to_analytics = $3, updated_at = NOW() WHERE id = $1 AND tenant_id = $2`,
+      [conn.id, tenantId, analytics],
+    );
+    await this.audit(tenantId, conn.id, analytics ? 'ANALYTICS_DELIVERY_ON' : 'ANALYTICS_DELIVERY_OFF', {});
+    return { success: true, connection_id: conn.id, deliver_to_analytics: analytics };
   }
 
   private validSource(value: unknown) {

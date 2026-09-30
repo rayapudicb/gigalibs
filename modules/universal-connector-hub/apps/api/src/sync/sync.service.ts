@@ -67,9 +67,9 @@ export class SyncService {
    */
   async triggerSync(tenantId: string, connectionId: string, options: SyncOptions = {}, correlationId?: string | null): Promise<Record<string, unknown>> {
     if (!tenantId) throw new BadRequestException('tenantId is required');
-    const connection = await this.db.queryWithTenant<{ id: string; name: string; connector_code: string; configuration: Record<string, unknown> | null }>(
+    const connection = await this.db.queryWithTenant<{ id: string; name: string; connector_code: string; configuration: Record<string, unknown> | null; deliver_to_analytics: boolean }>(
       tenantId,
-      `SELECT id, name, connector_code, configuration FROM gigalibs_connectors.tenant_connections
+      `SELECT id, name, connector_code, configuration, deliver_to_analytics FROM gigalibs_connectors.tenant_connections
         WHERE (id = $1 OR slug = $1) AND tenant_id = $2`,
       [connectionId, tenantId],
     );
@@ -84,7 +84,7 @@ export class SyncService {
     }
     try {
       const result = await this.runner.run(
-        { id: conn.id, tenantId, connectorCode: conn.connector_code },
+        { id: conn.id, tenantId, connectorCode: conn.connector_code, name: conn.name, deliverToAnalytics: conn.deliver_to_analytics },
         source,
         { fromStart: options.from_start === true, correlationId: correlationId ?? null },
       );

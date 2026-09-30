@@ -99,6 +99,10 @@ export class IngestionService {
 
     // Confirm connection exists and belongs to tenant (RLS-enforced lookup)
     const conn = await this.connectorService.getConnection(principal, dto.connectionId);
+    // WI-OI-104e: a Connector Hub source's records arrive through the relay inbox; it is never pulled from here.
+    if (conn.sourceType === 'CONNECTOR_HUB') {
+      throw new BadRequestException('Records of this source arrive from Connector Hub; run the pull there.');
+    }
     if (conn.status === 'DISABLED') {
       throw new BadRequestException(`Connection '${dto.connectionId}' is DISABLED.`);
     }

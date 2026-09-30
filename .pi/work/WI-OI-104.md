@@ -354,3 +354,93 @@ core API) and no scheduler. Connector Hub also trusts a caller-supplied tenant h
     - Playwright sets up a pull source with an API key, stores the secret, pulls, and sees the result and the
       quarantine.
     - Afterwards both containers go and the test sessions are revoked.
+
+## 104d deploy (owner: "deploy", 2026-09-30)
+
+- Backup first: `gigalibs_backup_20260930_101247Z.dump`.
+- **Builds:**
+  - The disk guard stopped the module build at 58 GB free (60 required). The build cache was trimmed to 10 GB (no
+    volumes) and the build resumed.
+  - The session ended mid-build, so the build was restarted.
+  - All images are at `fcfb580d7a60-7546df7beda8`.
+- **Deploy:**
+  - Every migrations job exited 0. Connector Hub is at migration 6; the others are unchanged (CMMS 14, Workforce 14,
+    Geospatial 3, Analytics 21).
+  - Every service is healthy, including `redis` and `kernel-worker`. 5180 answers, and an unsigned Hub request gets
+    401.
+- **Live proof:** a real Tenant Admin login, signed contexts, 14 Playwright tests.
+- **Pull proof** (`e2e/specs/connector-pull.spec.ts`, harness `.pi/handoff/proof-scripts/pull-live.sh`):
+  - Setup, leaving the live Hub's allowlist untouched:
+    - a throwaway source container;
+    - the 5190 proof web;
+    - a throwaway Hub sharing the proof web's network namespace, reached at 127.0.0.1:4100 (the web accepts only
+      loopback or the service name) and allowed to reach only the source;
+    - a throwaway tenant with a Tenant Admin.
+  - In Chrome, the admin created a REST pull connection and set up the source (page paging, changed-at field, API key
+    header).
+  - Pulling without the key said to store the credentials. The key field is a password field and was cleared after
+    storing.
+  - The first pull read 3 pages: 4 new and 1 quarantined, with its reason shown. The second pull asked only for
+    changes: 1 unchanged.
+  - Both pulls appear in the history, and the key never appears on the page.
+  - All containers and files were removed and the session revoked.
+- The proof scripts of 104c and 104d are kept in `.pi/handoff/proof-scripts/` so they outlive the session scratchpad.
+- **104d is live.** Next: 104e, the bridge into Analytics, on ADR-0007's outbox-relay-inbox pattern.
+
+## 104e: the bridge into Analytics (ADR-0007 outbox, relay and inbox)
+
+**Step 1: the bridge** (not deployed):
+- **Connector Hub, migration 000007:**
+  - `deliver_to_analytics` per connection;
+  - `outbox_events` (RLS forced);
+  - definer functions `relay_lease_analytics_records` (the oldest pending fact per record, so versions arrive in
+    order), `relay_settle_analytics_record` and `outbox_sweep` (delivered facts after 30 days). EXECUTE is revoked
+    from PUBLIC.
+  - The Hub schema contract is now 7.
+- **Connector Hub code:**
+  - When a connection sends to Analytics, each newly journalled record writes a `CONNECTOR_RECORD_PULLED_V1` fact in
+    the same page transaction. The aggregate is the source record, and its version counts that record's facts.
+  - `AnalyticsOutboxRelay` and `HubOutboxRetention` (Module SDK) sign with `ANALYTICS_INBOX_RELAY_PRIVATE_KEY_BASE64`
+    and deliver to `http://analytics-api:4400/internal/v1/inbox`.
+  - `POST connections/:id/delivery` (`connections:write`) sets the switch. An allow-listed `relayCall` is added.
+- **Analytics, migrations 000022 and 000023:**
+  - The source type `CONNECTOR_HUB` gets its own migration, since a new enum value must be committed before use (the
+    fresh-install lesson).
+  - `source_connections` gains `hub_connection_id`, with host, port and database now required only for Postgres and
+    synthetic sources.
+  - `source_sync_runs.hub_sync_job_id`; `inbox_receipts` (RLS forced); `outbox_sweep` for receipts after 90 days.
+  - The schema contract is now 23.
+- **Analytics inbox** (`src/inbox/connector-hub-inbox.ts`):
+  - `POST internal/v1/inbox` answers only a relay token from Connector Hub for the Analytics audience, bound to the
+    exact body. `rawBody` is on, and the route-permission spec allows exactly this one relay route.
+  - Each message is receipted once. The first delivery creates the Hub connection's `CONNECTOR_HUB` source; each Hub
+    pull becomes one sync run; each record becomes a raw record version at the time Hub pulled it.
+  - Anything else answers 400, which the relay dead-letters.
+  - The Postgres ingestion refuses Hub sources.
+  - Analytics now depends on `@gigalibs/module-sdk`.
+- **Compose and keys:**
+  - The Hub has `CONNECTOR_HUB_RELAY_ANALYTICS_URL` and the private key; Analytics has the public key.
+  - `generate-module-runtime-credentials.sh` appends the Analytics inbox key pair if missing.
+  - `generate-relay-credentials.sh` now refuses only when CMMS or Workforce relay keys exist, so the new key cannot
+    block a fresh setup.
+- **Web:** a "Send pulled records to Analytics" switch in the pull-source panel, and the proxy route with its
+  boundary test.
+- **Caught before running:** the new source rule first allowed only Postgres and Connector Hub. It would have broken
+  the Demo Lab's synthetic sources; synthetic is now allowed, and the proof loads the sample farm.
+- **Fixed during testing:** the outbox insert used parameters as both varchar and text (the same PostgreSQL inference
+  issue as before); they are now cast.
+- **Checks:**
+  - Hub 51 tests with a throwaway PostgreSQL (migrations 1–7, runtime role, RLS forced). The relay test: with
+    delivery on, only newly pulled records become outbox facts (none on a full re-read, none visible to another
+    tenant). The real `AnalyticsOutboxRelay` signs each; a stub inbox verifies every token; all are published except
+    the refused one, which is dead-lettered; a second pass finds nothing.
+  - Analytics `proof:connector-hub-inbox` on a throwaway PostgreSQL (migrations 1–23, non-superuser):
+    - one source per Hub connection, and sync runs per Hub pull;
+    - duplicates ignored, other tenants isolated, malformed messages refused;
+    - discovery, mapping and a dataset build work unchanged. The newest version of each record wins, and a
+      late-arriving older copy does not.
+    - The Demo Lab sample farm still loads.
+  - Analytics `proof:real-database` passes; all 364 Analytics tests pass.
+  - `pnpm verify` passes (known drift only).
+- **Next:** step 2, unit conversion in mappings; step 3, dataset builds on a schedule with chained summary builds.
+  Then the 104e deploy with an end-to-end proof (a Hub pull reaching an Analytics dataset).

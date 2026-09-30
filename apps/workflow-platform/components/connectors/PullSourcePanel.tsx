@@ -55,7 +55,7 @@ function Field({ id, label, hint, children }: { id: string; label: string; hint?
   );
 }
 
-export function PullSourcePanel({ connectionId, source }: { connectionId: string; source: unknown }) {
+export function PullSourcePanel({ connectionId, source, deliverToAnalytics = false }: { connectionId: string; source: unknown; deliverToAnalytics?: boolean }) {
   const configured = Boolean(source);
   const [form, setForm] = useState<PullSourceForm>(() => formFromSource(source));
   const [editing, setEditing] = useState(!configured);
@@ -66,6 +66,7 @@ export function PullSourcePanel({ connectionId, source }: { connectionId: string
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [savedLogin, setSavedLogin] = useState<LoginKind>(formFromSource(source).loginKind);
+  const [toAnalytics, setToAnalytics] = useState(deliverToAnalytics);
   const id = (name: string) => `${name}-${connectionId}`;
   const set = <K extends keyof PullSourceForm>(key: K) => (event: { target: { value: string } }) =>
     setForm((current) => ({ ...current, [key]: event.target.value as PullSourceForm[K] }));
@@ -125,6 +126,16 @@ export function PullSourcePanel({ connectionId, source }: { connectionId: string
       return `Pulled ${result.pages} page(s): ${result.records_synced} new, ${result.duplicates_skipped} unchanged, ${result.records_quarantined} quarantined.${
         result.truncated ? ' The page limit was reached; the next pull continues.' : ''
       }`;
+    });
+
+  // WI-OI-104e: newly pulled records also go to Analytics, where they appear as a Connector Hub source to map.
+  const setDelivery = (analytics: boolean) =>
+    run('delivery', async () => {
+      await post('delivery', { analytics });
+      setToAnalytics(analytics);
+      return analytics
+        ? 'New records will also go to Analytics, where this connection appears as a source to map into a dataset.'
+        : 'New records stay in Connector Hub.';
     });
 
   const secretFields = credentialFields(savedLogin);
@@ -293,6 +304,24 @@ export function PullSourcePanel({ connectionId, source }: { connectionId: string
           </div>
         </div>
       )}
+
+      {!editing ? (
+        <label className="flex items-start gap-2 text-sm text-ui-fg-base">
+          <input
+            type="checkbox"
+            className="mt-0.5"
+            checked={toAnalytics}
+            disabled={busy !== null}
+            onChange={(event) => void setDelivery(event.target.checked)}
+          />
+          <span>
+            Send pulled records to Analytics
+            <Text as="span" size="xsmall" className="block text-ui-fg-subtle">
+              Records pulled from now on are delivered to Analytics, where you map them into a dataset.
+            </Text>
+          </span>
+        </label>
+      ) : null}
 
       {!editing && secretFields.length > 0 ? (
         <div className="flex flex-col gap-2 rounded-md border border-ui-border-base p-3">

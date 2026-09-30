@@ -131,6 +131,13 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
+  /** WI-OI-104e: the retention sweep of relay inbox receipts, the only allow-listed definer function. */
+  async relayCall<T extends pg.QueryResultRow>(fn: 'outbox_sweep', values: readonly unknown[]): Promise<T[]> {
+    if (fn !== 'outbox_sweep') throw new Error(`${fn} is not an allow-listed definer function.`);
+    const result = await this.pool.query<T>('SELECT * FROM gigalibs_analytics.outbox_sweep($1, $2, $3)', [...values]);
+    return result.rows;
+  }
+
   async readiness(): Promise<{ migrationVersion: number }> {
     const result = await this.pool.query<{
       migration_version: string | null;

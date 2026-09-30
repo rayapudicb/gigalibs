@@ -4,6 +4,7 @@ import { GUARDS_METADATA, METHOD_METADATA, PATH_METADATA } from '@nestjs/common/
 import { describe, expect, it } from 'vitest';
 import { AppModule } from '../app.module.js';
 import { HealthController } from '../health/health.controller.js';
+import { ConnectorHubInboxGuard } from '../inbox/connector-hub-inbox.js';
 import { ANALYTICS_PERMISSIONS, PlatformContextAuthorizationGuard, declaredPermissions } from './authorization.js';
 
 type Constructor = abstract new (...args: never[]) => unknown;
@@ -19,7 +20,7 @@ function controllersOf(module: unknown, seen = new Set<unknown>()): Constructor[
 
 const join = (...parts: string[]) => parts.filter(Boolean).join('/').replace(/\/+/g, '/').replace(/\/$/, '');
 
-function routes(): Array<{ route: string; guarded: boolean; permissions: readonly string[] | undefined }> {
+function routes(): Array<{ route: string; guarded: boolean; relay: boolean; permissions: readonly string[] | undefined }> {
   return [...new Set(controllersOf(AppModule))].flatMap((controller) => {
     const base = String(Reflect.getMetadata(PATH_METADATA, controller) ?? '');
     const guards = (Reflect.getMetadata(GUARDS_METADATA, controller) ?? []) as unknown[];
@@ -34,6 +35,7 @@ function routes(): Array<{ route: string; guarded: boolean; permissions: readonl
         guarded:
           guards.includes(PlatformContextAuthorizationGuard) ||
           ((Reflect.getMetadata(GUARDS_METADATA, handler) ?? []) as unknown[]).includes(PlatformContextAuthorizationGuard),
+        relay: guards.includes(ConnectorHubInboxGuard),
         permissions: declaredPermissions(handler, controller),
       }));
     });
@@ -115,7 +117,9 @@ describe('Analytics route permissions', () => {
   const all = routes();
 
   it('guards every route except health, and each guarded route names exactly one known permission', () => {
-    const unguarded = all.filter((route) => !route.guarded).map((route) => route.route);
+    const unguarded = all.filter((route) => !route.guarded && !route.relay).map((route) => route.route);
+    // WI-OI-104e: the one relay route answers only Connector Hub's relay token, never a user context.
+    expect(all.filter((route) => route.relay).map((route) => [route.route, route.guarded])).toEqual([['POST internal/v1/inbox', false]]);
     const healthRoutes = Object.getOwnPropertyNames(HealthController.prototype).length > 1;
     expect(healthRoutes).toBe(true);
     expect(unguarded.sort()).toEqual(['GET v1/health', 'GET v1/health/live', 'GET v1/health/ready']);

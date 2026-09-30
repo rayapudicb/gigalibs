@@ -49,6 +49,21 @@ context_keys() {
   rm -rf "${key_dir}"
 }
 
+# WI-OI-104e: Connector Hub relays pulled records to the Analytics inbox (ADR-0007): Hub signs with the private key,
+# Analytics verifies with the public key.
+relay_keys() {
+  local prefix="$1"
+  local key_dir
+  key_dir="$(mktemp -d)"
+  openssl genpkey -algorithm Ed25519 -out "${key_dir}/private.pem" >/dev/null 2>&1
+  openssl pkey -in "${key_dir}/private.pem" -pubout -out "${key_dir}/public.pem" >/dev/null 2>&1
+  printf '%s_INBOX_RELAY_PRIVATE_KEY_BASE64=%s\n' "${prefix}" \
+    "$(openssl pkey -in "${key_dir}/private.pem" -outform DER | base64 | tr -d '\n')"
+  printf '%s_INBOX_RELAY_PUBLIC_KEY_BASE64=%s\n' "${prefix}" \
+    "$(openssl pkey -pubin -in "${key_dir}/public.pem" -outform DER | base64 | tr -d '\n')"
+  rm -rf "${key_dir}"
+}
+
 # WI-OI-038: the CMMS runtime image, its least-privilege database role and its signing key pair.
 cmms_runtime_values() {
   printf 'CMMS_IMAGE=gigalibs/cmms-api:%s\n' "${TAG}"
@@ -77,6 +92,10 @@ if [[ -e "${TARGET_ENV}" ]]; then
   if ! grep -q '^CONNECTOR_HUB_PLATFORM_CONTEXT_PUBLIC_KEY_BASE64=' "${TARGET_ENV}"; then
     context_keys CONNECTOR_HUB >>"${TARGET_ENV}"
     added+=("Connector Hub platform-context key pair")
+  fi
+  if ! grep -q '^ANALYTICS_INBOX_RELAY_PUBLIC_KEY_BASE64=' "${TARGET_ENV}"; then
+    relay_keys ANALYTICS >>"${TARGET_ENV}"
+    added+=("Analytics inbox relay key pair")
   fi
   # WI-OI-104c: the kernel worker's Redis (BullMQ job ids only) requires a password.
   if ! grep -q '^REDIS_PASSWORD=' "${TARGET_ENV}"; then
@@ -111,6 +130,7 @@ REDIS_PASSWORD=$(openssl rand -hex 32)
 EOF
 context_keys ANALYTICS >>"${TARGET_ENV}"
 context_keys CONNECTOR_HUB >>"${TARGET_ENV}"
+relay_keys ANALYTICS >>"${TARGET_ENV}"
 cmms_runtime_values >>"${TARGET_ENV}"
 
 chmod 600 "${TARGET_ENV}"

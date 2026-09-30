@@ -8,12 +8,14 @@
     "start": "node dist/main.js",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "proof:real-database": "tsx scripts/real-database-proof.ts",
-    "benchmark:summaries": "tsx scripts/benchmark-summaries.ts"
+    "benchmark:summaries": "tsx scripts/benchmark-summaries.ts",
+    "proof:connector-hub-inbox": "tsx scripts/connector-hub-inbox-proof.ts"
   },
   "dependencies": {
     "@gigalibs/analytics-core": "workspace:*",
     "@gigalibs/auth-core": "workspace:*",
     "@gigalibs/contracts": "workspace:*",
+    "@gigalibs/module-sdk": "workspace:*",
     "@nestjs/common": "^11.2.3",
     "@nestjs/core": "^11.2.3",
     "@nestjs/platform-express": "^11.2.3",

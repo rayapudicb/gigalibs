@@ -2,6 +2,7 @@ import { generateKeyPairSync, randomUUID } from 'node:crypto';
 import { createServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import pg from 'pg';
+import { verifyRelayToken } from '@gigalibs/auth-core';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 const databaseUrl = process.env.CONNECTOR_HUB_TEST_DATABASE_URL;
@@ -57,7 +58,7 @@ integration('Connector Hub pulls on PostgreSQL', () => {
       CONNECTORS_DATABASE_URL: databaseUrl,
       CONNECTOR_HUB_DATABASE_POOL_SIZE: '4',
       CONNECTOR_VAULT_KEY: 'integration-test-vault-key-that-is-long-enough',
-      CONNECTOR_HUB_EXPECTED_MIGRATION_VERSION: '6',
+      CONNECTOR_HUB_EXPECTED_MIGRATION_VERSION: '7',
       CONNECTOR_HUB_PLATFORM_CONTEXT_PUBLIC_KEY_BASE64: generateKeyPairSync('ed25519').publicKey.export({ format: 'der', type: 'spki' }).toString('base64'),
       CONNECTOR_HUB_ALLOWED_OUTBOUND_HOSTS: '127.0.0.1',
       CONNECTOR_HUB_ALLOW_INSECURE_OUTBOUND: 'true',
@@ -69,7 +70,7 @@ integration('Connector Hub pulls on PostgreSQL', () => {
       import('../sync/sync.service.js'),
     ]);
     const db = new DatabaseService();
-    await expect(db.readiness()).resolves.toMatchObject({ migrationVersion: 6 });
+    await expect(db.readiness()).resolves.toMatchObject({ migrationVersion: 7 });
     const vault = new VaultCryptoService();
     services = { db, connectors: new ConnectorsService(db, vault), sync: new SyncService(db, vault) };
   });
@@ -151,4 +152,68 @@ integration('Connector Hub pulls on PostgreSQL', () => {
     const { connection } = await services.connectors.createConnection(tenantA, { connector_code: 'CUSTOM_WEBHOOK', name: 'Push only', slug: 'push-only' }).then((created) => ({ connection: created }));
     await expect(services.sync.triggerSync(tenantA, connection.id)).rejects.toThrow('no pull source');
   });
+
+  // WI-OI-104e: a connection that sends to Analytics writes one outbox fact per newly journalled record, and the
+  // relay signs and delivers each to the Analytics inbox; a message the inbox refuses is dead-lettered.
+  it('relays newly pulled records to the Analytics inbox, once, and dead-letters a refused message', async () => {
+    const { signingKey, verify } = relayKeys();
+    const received: Array<{ sourceId: string; connectionName: string; record: unknown; tenantId: string }> = [];
+    const inbox = createServer(async (request, response) => {
+      let body = '';
+      for await (const chunk of request) body += chunk;
+      const claims = verify(String(request.headers.authorization ?? '').replace('Bearer ', ''), body);
+      const envelope = JSON.parse(body) as { tenantId: string; eventType: string; payload: { sourceId: string; connectionName: string; record: unknown } };
+      if (!claims || envelope.eventType !== 'CONNECTOR_RECORD_PULLED_V1') return response.writeHead(401).end();
+      if (envelope.payload.sourceId === 'h-2') return response.writeHead(400).end('{"message":"refused"}');
+      received.push({ ...envelope.payload, tenantId: envelope.tenantId });
+      response.writeHead(202).end('{}');
+    });
+    await new Promise<void>((resolve) => inbox.listen(0, '127.0.0.1', resolve));
+    try {
+      const { connection } = await services.connectors
+        .createConnection(tenantA, { connector_code: 'GENERIC_REST_PULL', name: 'Relay feed', slug: 'relay-feed', configuration: { source: source() } })
+        .then((created) => ({ connection: created }));
+      await services.connectors.storePullCredentials(tenantA, connection.id, { kind: 'oauth2-client-credentials', clientId: 'farm', clientSecret: 'farm-secret' });
+      await expect(services.connectors.setDelivery(tenantA, connection.id, { analytics: 'yes' })).rejects.toMatchObject({ status: 400 });
+      await services.connectors.setDelivery(tenantA, connection.id, { analytics: true });
+      const pulled = (await services.sync.triggerSync(tenantA, connection.id)) as { records_synced: number };
+      const outbox = async () =>
+        (await services.db.queryWithTenant(tenantA, `SELECT status, payload->>'sourceId' AS source_id FROM gigalibs_connectors.outbox_events WHERE payload->>'hubConnectionId' = $1 ORDER BY created_at`, [connection.id])).rows as Array<{ status: string; source_id: string }>;
+      expect((await outbox()).length).toBe(pulled.records_synced);
+      await services.sync.triggerSync(tenantA, connection.id, { from_start: true });
+      expect((await outbox()).length).toBe(pulled.records_synced);
+      expect(await services.db.queryWithTenant(tenantB, 'SELECT count(*)::int AS n FROM gigalibs_connectors.outbox_events').then((result) => result.rows[0].n)).toBe(0);
+
+      const { AnalyticsOutboxRelay } = await import('../relay/analytics-relay.js');
+      const relay = new AnalyticsOutboxRelay(services.db, {
+        inboxPublicKey: null,
+        outbound: { targetOrigin: `http://127.0.0.1:${(inbox.address() as AddressInfo).port}`, privateKey: signingKey },
+        intervalMs: 1000,
+      });
+      await relay.tick();
+      const settled = await outbox();
+      expect(settled.filter((row) => row.status === 'PUBLISHED').length).toBe(pulled.records_synced - 1);
+      expect(settled.find((row) => row.source_id === 'h-2')?.status).toBe('FAILED');
+      expect(received.map((message) => message.sourceId).sort()).toEqual(settled.filter((row) => row.status === 'PUBLISHED').map((row) => row.source_id).sort());
+      expect(received[0]).toMatchObject({ tenantId: tenantA, connectionName: 'Relay feed', record: expect.objectContaining({ crop: expect.any(String) }) });
+      expect(await relay.tick()).toBe(0);
+    } finally {
+      await new Promise<void>((resolve) => inbox.close(() => resolve()));
+    }
+  });
 });
+
+function relayKeys() {
+  const pair = generateKeyPairSync('ed25519');
+  const publicPem = pair.publicKey.export({ format: 'pem', type: 'spki' }).toString();
+  return {
+    signingKey: pair.privateKey.export({ format: 'pem', type: 'pkcs8' }).toString(),
+    verify: (token: string, body: string) => {
+      try {
+        return verifyRelayToken(token, publicPem, { audience: 'gigalibs-analytics-inbox', source: 'connector-hub', body });
+      } catch {
+        return null;
+      }
+    },
+  };
+}

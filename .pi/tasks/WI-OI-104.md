@@ -72,7 +72,26 @@
    - **Not in 104d:** the OAuth2 consent flow (authorization code, for example Salesforce). Its initiate and callback
      routes stay "not implemented" until a client needs it.
 5. **104e Bridge into Analytics:** an Analytics source of type `CONNECTOR_HUB`. Summary builds become kernel jobs
-   here, started by each new dataset version. Journal records become raw records,
+   here, started by each new dataset version.
+
+   Plan (2026-09-30), following ADR-0007's outbox-relay-inbox pattern (no module reads another's schema):
+   - **Step 1, the bridge.**
+     - Connector Hub: a per-connection "send pulled records to Analytics" switch. Each newly journalled record also
+       writes a `CONNECTOR_RECORD_PULLED_V1` outbox row in the same transaction.
+     - The Module SDK `OutboxRelay` delivers those rows with a dedicated relay key (Analytics inbox key pair) to
+       Analytics `/internal/v1/inbox`.
+     - Analytics deduplicates by message id, keeps one `CONNECTOR_HUB` source per Hub connection (created on first
+       delivery), and stores each record as a raw record version. The existing discovery, mapping and dataset steps
+       then apply unchanged.
+   - **Step 2, unit conversion in mappings:** mass (g, kg, quintal, t, lb), area (m², ha, acre) and volume (L, m³),
+     applied when a dataset is built.
+   - **Step 3, from pull to dataset on a schedule.**
+     - Kernel operation `analytics.dataset-build` (schedulable, runs as the owner).
+     - When it produces a new dataset version, the job enqueues `analytics.summaries-build` for it. This is the
+       summary-build hand-over the owner decided on.
+     - Exit (agriculture plan phase 2): a REST source syncs on a schedule into a dataset with no code beyond its
+       adapter settings.
+ Journal records become raw records,
    then go through the existing discovery, mapping, dataset and model steps. Mapping gains unit conversion (kg,
    quintal, t).
 6. **104f Retire the copies:**

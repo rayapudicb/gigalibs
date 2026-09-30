@@ -6,6 +6,9 @@ const { Pool } = pg;
 
 export type TenantTransaction<T> = (client: pg.PoolClient) => Promise<T>;
 
+export const HUB_DEFINER_FUNCTIONS = ['relay_lease_analytics_records', 'relay_settle_analytics_record', 'outbox_sweep'] as const;
+export type HubDefinerFunction = (typeof HUB_DEFINER_FUNCTIONS)[number];
+
 @Injectable()
 export class DatabaseService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(DatabaseService.name);
@@ -112,6 +115,17 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     } finally {
       client.release();
     }
+  }
+
+  /**
+   * WI-OI-104e: calls one of the allow-listed SECURITY DEFINER functions of the Analytics relay (lease, settle,
+   * retention sweep), the relay's only cross-tenant access.
+   */
+  async relayCall<T extends pg.QueryResultRow>(fn: HubDefinerFunction, values: readonly unknown[]): Promise<T[]> {
+    if (!HUB_DEFINER_FUNCTIONS.includes(fn)) throw new Error(`${fn} is not an allow-listed definer function.`);
+    const placeholders = values.map((_value, index) => `$${index + 1}`).join(', ');
+    const result = await this.pool.query<T>(`SELECT * FROM gigalibs_connectors.${fn}(${placeholders})`, [...values]);
+    return result.rows;
   }
 
   async getClient(): Promise<pg.PoolClient> {

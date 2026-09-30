@@ -19,8 +19,9 @@ for file in "${MODULE_ENV}" "${WORKFORCE_ENV}"; do
     echo "Error: ${file} is required; generate the module and Workforce profiles first." >&2
     exit 1
   fi
-  if grep -q '_INBOX_RELAY_' "${file}"; then
-    echo "Error: ${file} already holds relay keys; refusing to replace them." >&2
+  # Only the CMMS and Workforce inbox keys; other relays (WI-OI-104e Analytics inbox) have their own generator.
+  if grep -qE '^(CMMS|WORKFORCE)_INBOX_RELAY_' "${file}"; then
+    echo "Error: ${file} already holds CMMS/Workforce relay keys; refusing to replace them." >&2
     exit 1
   fi
 done

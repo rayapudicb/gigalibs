@@ -17,7 +17,8 @@ async function bootstrap(): Promise<void> {
     }
   }
 
-  const app = await NestFactory.create(AppModule, { bufferLogs: true });
+  // rawBody: the relay inbox verifies its token against the exact request body (WI-OI-104e).
+  const app = await NestFactory.create(AppModule, { bufferLogs: true, rawBody: true });
   const config = app.get<AnalyticsRuntimeConfig>(ANALYTICS_CONFIG);
 
   app.use(helmet());
