@@ -17,7 +17,7 @@ describe('ConnectorsService & VaultCryptoService', () => {
       'postgresql://connectors_runtime:secret@localhost:5440/gigalibs';
     process.env.CONNECTOR_HUB_DATABASE_POOL_SIZE = '10';
     process.env.CONNECTOR_VAULT_KEY = 'local-test-key-that-is-at-least-32-bytes-long';
-    process.env.CONNECTOR_HUB_EXPECTED_MIGRATION_VERSION = '5';
+    process.env.CONNECTOR_HUB_EXPECTED_MIGRATION_VERSION = '6';
     process.env.CONNECTOR_HUB_PLATFORM_CONTEXT_PUBLIC_KEY_BASE64 = generateKeyPairSync('ed25519').publicKey.export({ format: 'der', type: 'spki' }).toString('base64');
     process.env.CONNECTOR_HUB_ALLOWED_OUTBOUND_HOSTS = 'example.com';
     process.env.CONNECTOR_HUB_ALLOW_INSECURE_OUTBOUND = 'false';

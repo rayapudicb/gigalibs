@@ -13,7 +13,7 @@ const validEnvironment: NodeJS.ProcessEnv = {
   CONNECTORS_DATABASE_URL: 'postgresql://connectors_runtime:secret@localhost:5440/gigalibs',
   CONNECTOR_HUB_DATABASE_POOL_SIZE: '10',
   CONNECTOR_VAULT_KEY: 'local-test-key-that-is-at-least-32-bytes-long',
-  CONNECTOR_HUB_EXPECTED_MIGRATION_VERSION: '5',
+  CONNECTOR_HUB_EXPECTED_MIGRATION_VERSION: '6',
   CONNECTOR_HUB_ALLOWED_OUTBOUND_HOSTS: 'example.com,api.example.net',
   CONNECTOR_HUB_ALLOW_INSECURE_OUTBOUND: 'false',
   CONNECTOR_HUB_PLATFORM_CONTEXT_PUBLIC_KEY_BASE64: PUBLIC_KEY_BASE64,
@@ -85,6 +85,6 @@ describe('Connector Hub runtime configuration', () => {
         ...validEnvironment,
         CONNECTOR_HUB_EXPECTED_MIGRATION_VERSION: '4',
       }),
-    ).toThrow('between 5 and 5');
+    ).toThrow('between 6 and 6');
   });
 });

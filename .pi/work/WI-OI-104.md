@@ -266,3 +266,63 @@ core API) and no scheduler. Connector Hub also trusts a caller-supplied tenant h
   - Run history listed; both schedules removed, with their job history kept.
 - The 5190 container and credential files were removed, and superseded images pruned.
 - 104c is live. WI-OI-104 continues with 104d (the adapter framework).
+
+## 104d: the Connector Hub adapter framework
+
+**Step 1: the framework** (not deployed):
+- **Pull source per connection** (`apps/api/src/pull/pull-source.ts`), set through `POST connections/:id/source`
+  (`connections:write`) and validated:
+  - base URL (http(s), no credentials, query or fragment), resource path, static query;
+  - records path, id field;
+  - optional watermark (field, parameter, and iso or epoch format);
+  - paging: none, page, offset, cursor or next link; `maxPages` of 500 at most;
+  - login: none, API key (header or query; `Authorization`, `Cookie`, `X-Tenant-Id` and similar refused), bearer, or
+    OAuth2 client credentials (basic or body client authentication).
+- **Secrets:** `POST connections/:id/credentials` replaces the connection's secrets in one transaction.
+  - Encrypted with the existing vault key (AES-256-GCM) and never returned. The audit records only the kind.
+  - The web proxy has no route that reads them (404).
+- **Requests** (`source-http.ts`):
+  - every URL, including token URLs and next links, must pass `CONNECTOR_HUB_ALLOWED_OUTBOUND_HOSTS`, and next links
+    must stay on the source's origin;
+  - redirects are refused;
+  - pages are capped at 5 MB while streaming;
+  - 429, 5xx and network errors are retried up to 4 times, honouring Retry-After, within a 90 s run budget.
+- **Logins** (`source-auth.ts`): OAuth2 tokens are cached per connection until a minute before expiry, and a 401
+  drops the token and tries once more.
+- **Runner** (`pull-runner.ts`):
+  - A connection lease (5 min) allows one pull at a time; a second pull gets 409.
+  - The job is recorded as RUNNING, then COMPLETED or FAILED. It keeps its counts, pages, truncation, watermark before
+    and after, the correlation id, and SCHEDULED when started by the kernel worker.
+  - Each page is written in one transaction. The journal is idempotent on source id plus payload hash, so a changed
+    record is a new version and a re-read is a duplicate. Unidentifiable records go to `quarantined_records` with a
+    reason.
+  - The watermark comes from the records themselves, and only as far as they prove it.
+  - A failure keeps what was written, leaves the watermark alone, marks the connection ERROR, and answers 502 when
+    retrying may help or 424 when the source or login needs fixing. The kernel job therefore retries or stops.
+- **Routes:** `GET connections/:id/sync-jobs` and `GET connections/:id/quarantine` (`connections:read`). The web
+  proxy allow-list adds these and the two write routes.
+- **Migration 000006** (additive): sync lease, fuller sync jobs, `quarantined_records` (RLS forced), and the catalogue
+  entry "REST API (scheduled pull)" (`GENERIC_REST_PULL`). The Hub schema contract is now 6.
+- **Tightened:**
+  - The sync route no longer accepts caller-supplied records. Webhooks, with their signatures, are the push path.
+  - No tenant id is sent to outside sources.
+  - The old sync test of that injection path is replaced.
+- **Checks:**
+  - 8 framework tests against a local source: every paging style, API key, OAuth2 token reuse and renewal, retries,
+    allowlist, next link leaving the source, page cap, quarantine reasons, watermark rules;
+  - 4 PostgreSQL tests with the real module migration runner and the non-superuser runtime role (RLS forced):
+    - OAuth2 pull across pages, quarantine and watermark; secrets stored encrypted;
+    - incremental and duplicate handling, a changed record as a new version, a full re-read;
+    - the lease (409) and a failure (502, job FAILED, watermark kept, lease released);
+    - tenant isolation, allowlist refusal (424), invalid config (400), a connection without a source.
+  - All 50 Hub tests pass; the web boundary test covers the new routes.
+  - `pnpm verify` passes (known drift only).
+- **Fixed on the way:**
+  - The runner's lease release used one parameter as both varchar and text, so PostgreSQL refused it and the lease
+    was never released. The runner now casts it, and logs instead of silently ignoring a failed release.
+  - The 104c image-workspace fix (1f1c572) allowed the `msgpackr-extract` build that bullmq needs, but not in the
+    reviewed deployment-profile allowlist, so the profile audit failed. It is now added to
+    `artifactPolicy.allowedLifecycleBuilds`, a reviewed supply-chain list change for the owner to note.
+- **Not in 104d:** the OAuth2 consent flow (authorization code). Its routes stay "not implemented".
+- **Next:** step 2, the web (configure a pull source and its login, run it, see pulls and quarantine), then the 104d
+  deploy (Hub migration 6, Hub and web images) with the owner's OK.

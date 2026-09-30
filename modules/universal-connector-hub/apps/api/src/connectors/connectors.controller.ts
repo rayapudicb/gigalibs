@@ -66,6 +66,20 @@ export class ConnectorsController {
     return this.connectorsService.testConnection(principal.tenantId, id);
   }
 
+  // WI-OI-104d: the pull source (how the generic REST adapter reads this system) and its login secrets. Secrets are
+  // stored encrypted and never returned.
+  @Post('connections/:id/source')
+  @RequirePermissions('connections:write')
+  async configureSource(@CurrentPrincipal() principal: ModulePrincipal, @Param('id') id: string, @Body() body: unknown) {
+    return this.connectorsService.configureSource(principal.tenantId, id, body);
+  }
+
+  @Post('connections/:id/credentials')
+  @RequirePermissions('connections:write')
+  async storeCredentials(@CurrentPrincipal() principal: ModulePrincipal, @Param('id') id: string, @Body() body: unknown) {
+    return this.connectorsService.storePullCredentials(principal.tenantId, id, body);
+  }
+
   @Post('oauth/initiate')
   @RequirePermissions('connections:write')
   async initiateOAuth(@CurrentPrincipal() principal: ModulePrincipal, @Body() body: OAuthInitiateDto) {

@@ -63,7 +63,7 @@ describe('Connector Hub signed BFF', () => {
   it('lets a manager read and test but not create or sync; connections:* may do both', async () => {
     const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(async () => new Response('{}', { status: 200, headers: { 'Content-Type': 'application/json' } }));
     vi.mocked(verifiedSession).mockResolvedValue({ context: context(['connections:read', 'connections:test']) } as never);
-    for (const path of [['catalog'], ['connections'], ['connections', 'c1'], ['journal'], ['stats']]) {
+    for (const path of [['catalog'], ['connections'], ['connections', 'c1'], ['journal'], ['stats'], ['connections', 'c1', 'sync-jobs'], ['connections', 'c1', 'quarantine']]) {
       expect((await call(getHub, 'GET', path)).status).toBe(200);
     }
     expect((await call(postHub, 'POST', ['connections', 'c1', 'test'], { headers: sameOrigin, body: '{}' })).status).toBe(200);
@@ -71,11 +71,17 @@ describe('Connector Hub signed BFF', () => {
     expect((await call(postHub, 'POST', ['connections'], { headers: sameOrigin, body: '{}' })).status).toBe(403);
     expect((await call(postHub, 'POST', ['connections', 'c1', 'sync'], { headers: sameOrigin, body: '{}' })).status).toBe(403);
     expect((await call(postHub, 'POST', ['oauth', 'initiate'], { headers: sameOrigin, body: '{}' })).status).toBe(403);
+    // WI-OI-104d: the pull source and its login secrets need connections:write; secrets can never be read back.
+    expect((await call(postHub, 'POST', ['connections', 'c1', 'source'], { headers: sameOrigin, body: '{}' })).status).toBe(403);
+    expect((await call(postHub, 'POST', ['connections', 'c1', 'credentials'], { headers: sameOrigin, body: '{}' })).status).toBe(403);
+    expect((await call(getHub, 'GET', ['connections', 'c1', 'credentials'])).status).toBe(404);
     expect(fetchSpy.mock.calls.length).toBe(forwarded);
 
     vi.mocked(verifiedSession).mockResolvedValue({ context: context(['connections:*']) } as never);
     expect((await call(postHub, 'POST', ['connections'], { headers: sameOrigin, body: '{}' })).status).toBe(200);
     expect((await call(postHub, 'POST', ['connections', 'c1', 'sync'], { headers: sameOrigin, body: '{}' })).status).toBe(200);
+    expect((await call(postHub, 'POST', ['connections', 'c1', 'source'], { headers: sameOrigin, body: '{}' })).status).toBe(200);
+    expect((await call(postHub, 'POST', ['connections', 'c1', 'credentials'], { headers: sameOrigin, body: '{}' })).status).toBe(200);
   });
 
   it('does not expose webhooks, unknown routes or cross-site changes', async () => {

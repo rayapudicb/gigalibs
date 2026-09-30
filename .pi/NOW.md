@@ -42,16 +42,15 @@ Replace old content rather than appending to it, and update it at the end of eve
    - a `kernel-worker` Compose service (core API image, different start command);
    - Redis added to the stack now (internal only, generated password).
 
-   Recurring schedules run jobs with the owner's rights, re-checked at run time. The first users are summary
-   builds, connector pulls and report runs.
-   - Step 1 (schedules) 943d2f8; step 2 (worker, `module.call`, Redis in Compose) a63cb52; step 3 (schedules API,
-     report and connector-sync schedules in the web) verified, not deployed.
-   - 104c deployed 2026-09-30 at `13cd27af9761-214bebf5ead2` (with the uncommitted image-workspace fix for
-     `packages/jobs`). Live proofs pass. Next: 104d, the Connector Hub adapter framework.
+   Recurring schedules run jobs with the owner's rights, re-checked at run time. The first users are connector
+   pulls and report runs. **Done and live:** steps 943d2f8, a63cb52 and 13cd27a, plus the image-workspace fix
+   1f1c572, deployed 2026-09-30 at `13cd27af9761-214bebf5ead2`; the live proofs pass.
    - Owner decision 2026-09-30: summary builds move to the kernel with 104e, not 104c.
-2. Then 104d adapters, 104e the Analytics bridge, and 104f retiring the connector copies.
-3. Then WI-OI-105 (F15), WI-OI-107 (F10), WI-OI-106 (F17), the 103 leftovers and WI-OI-108.
-4. Then the agriculture package.
+2. **WI-OI-104d, the adapter framework:** step 1 (framework, migration 000006, routes) verified, not deployed. Next:
+   step 2, the web for pull sources, credentials, pulls and quarantine.
+3. Then 104e the Analytics bridge (with summary builds) and 104f retiring the connector copies.
+4. Then WI-OI-105 (F15), WI-OI-107 (F10), WI-OI-106 (F17), the 103 leftovers, WI-OI-108 and the fresh-install fix.
+5. Then the agriculture package.
 
 ## Open decisions (owner)
 

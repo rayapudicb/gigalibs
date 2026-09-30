@@ -1,33 +1,44 @@
 import {
+  BadGatewayException,
+  BadRequestException,
+  ConflictException,
+  HttpException,
   Injectable,
   NotFoundException,
-  BadRequestException,
-  Logger,
-  BadGatewayException,
 } from '@nestjs/common';
-import { randomUUID, createHash } from 'node:crypto';
 import { DatabaseService } from '../database/database.service.js';
-import {
-  assertAllowedConnectorUrl,
-  loadConnectorHubRuntimeConfig,
-} from '../runtime-config.js';
+import { VaultCryptoService } from '../connectors/vault-crypto.service.js';
+import { loadConnectorHubRuntimeConfig } from '../runtime-config.js';
+import { PullConfigError, parsePullSource } from '../pull/pull-source.js';
+import { PullRunner, SyncInProgressError } from '../pull/pull-runner.js';
+import { TokenCache } from '../pull/source-auth.js';
+import { SourceError } from '../pull/source-http.js';
 
 export interface SyncOptions {
-  batch_size?: number;
-  cursor_override?: string;
-  source_records?: Array<{
-    id: string;
-    version?: string | number;
-    event_type?: string;
-    data: Record<string, any>;
-  }>;
+  /** Ignore the watermark and read the source from the start (records already journalled are skipped). */
+  from_start?: boolean;
 }
+
+/** HTTP 424: the source or its login needs fixing; retrying will not help. */
+const FAILED_DEPENDENCY = 424;
 
 @Injectable()
 export class SyncService {
-  private readonly logger = new Logger(SyncService.name);
+  private readonly tokens = new TokenCache();
+  private readonly runner: PullRunner;
 
-  constructor(private readonly db: DatabaseService) {}
+  constructor(
+    private readonly db: DatabaseService,
+    private readonly vault: VaultCryptoService,
+  ) {
+    const config = loadConnectorHubRuntimeConfig();
+    this.runner = new PullRunner(db, {
+      allowedOutboundHosts: config.allowedOutboundHosts,
+      allowInsecureOutbound: config.allowInsecureOutbound,
+      tokens: this.tokens,
+      decryptCredentials: (tenantId, connectionId) => this.decryptCredentials(tenantId, connectionId),
+    });
+  }
 
   async getJournal(tenantId: string, limit: number = 50): Promise<any[]> {
     if (!tenantId) throw new BadRequestException('tenantId is required');
@@ -50,175 +61,103 @@ export class SyncService {
   }
 
   /**
-   * CN-03: Real delta sync with bounded fetching, durable checkpointing, and source-to-journal reconciliation.
+   * WI-OI-104d: pull the connection's configured source once (see PullRunner). Answers 409 while another pull of the
+   * same connection runs, 502 when the source is unavailable (worth retrying), and 424 when the source or its login
+   * needs fixing.
    */
-  async triggerSync(tenantId: string, connectionId: string, options?: SyncOptions): Promise<any> {
+  async triggerSync(tenantId: string, connectionId: string, options: SyncOptions = {}, correlationId?: string | null): Promise<Record<string, unknown>> {
     if (!tenantId) throw new BadRequestException('tenantId is required');
-
-    const connRes = await this.db.queryWithTenant(
+    const connection = await this.db.queryWithTenant<{ id: string; name: string; connector_code: string; configuration: Record<string, unknown> | null }>(
       tenantId,
-      `SELECT * FROM gigalibs_connectors.tenant_connections WHERE (id = $1 OR slug = $1) AND tenant_id = $2`,
+      `SELECT id, name, connector_code, configuration FROM gigalibs_connectors.tenant_connections
+        WHERE (id = $1 OR slug = $1) AND tenant_id = $2`,
       [connectionId, tenantId],
     );
-
-    if (connRes.rowCount === 0) {
-      throw new NotFoundException(`Connection '${connectionId}' not found for tenant '${tenantId}'`);
+    const conn = connection.rows[0];
+    if (!conn) throw new NotFoundException(`Connection '${connectionId}' not found.`);
+    if (!conn.configuration?.source) throw new BadRequestException('This connection has no pull source; configure one first.');
+    let source;
+    try {
+      source = parsePullSource(conn.configuration.source);
+    } catch (error) {
+      throw new BadRequestException(`The pull source is not valid: ${(error as Error).message}`);
     }
-
-    const conn = connRes.rows[0];
-    const jobId = `job-${randomUUID().slice(0, 8)}`;
-    const startTime = performance.now();
-
-    // 1. Retrieve last committed checkpoint watermark
-    const lastJobRes = await this.db.queryWithTenant(
-      tenantId,
-      `SELECT cursor_after FROM gigalibs_connectors.sync_jobs
-       WHERE tenant_id = $1 AND connection_id = $2 AND status = 'COMPLETED'
-       ORDER BY completed_at DESC LIMIT 1`,
-      [tenantId, conn.id],
-    );
-
-    const currentCursor =
-      options?.cursor_override ||
-      lastJobRes.rows[0]?.cursor_after ||
-      new Date(Date.now() - 24 * 3600 * 1000).toISOString();
-
-    const batchLimit = Math.min(options?.batch_size || 50, 100);
-    let recordsToProcess: Array<{
-      id: string;
-      version?: string | number;
-      event_type?: string;
-      data: Record<string, any>;
-    }> = [];
-
-    // 2. Fetch records: either from provided batch, external provider REST API, or delta stream
-    if (options?.source_records && options.source_records.length > 0) {
-      recordsToProcess = options.source_records.slice(0, batchLimit);
-    } else {
-      const config = conn.configuration || {};
-      const syncEndpoint = config.sync_endpoint || config.instance_url;
-
-      if (syncEndpoint) {
-        try {
-          const fetchUrl = assertAllowedConnectorUrl(
-            syncEndpoint,
-            loadConnectorHubRuntimeConfig(),
-          );
-          fetchUrl.searchParams.set('since', currentCursor);
-          fetchUrl.searchParams.set('limit', String(batchLimit));
-
-          const res = await fetch(fetchUrl.toString(), {
-            method: 'GET',
-            headers: {
-              'Accept': 'application/json',
-              'x-tenant-id': tenantId,
-            },
-            signal: AbortSignal.timeout(8000),
-          });
-
-          if (!res.ok) throw new Error(`Remote sync returned HTTP ${res.status}.`);
-          const data: any = await res.json();
-          const rawList = Array.isArray(data) ? data : data.records || data.items || [];
-          recordsToProcess = rawList.map((item: any, idx: number) => ({
-            id: item.id || item.source_id || `rec-${idx}`,
-            version: item.version || item.updated_at || 1,
-            event_type: `${conn.connector_code.toLowerCase()}.record_synced`,
-            data: item,
-          }));
-        } catch (fetchErr: any) {
-          this.logger.warn(`Remote sync fetch failed: ${fetchErr.message}`);
-          throw new BadGatewayException('The configured connector source could not be synchronized.');
-        }
-      } else {
-        throw new BadRequestException(
-          'No source records or configured sync endpoint were provided.',
-        );
+    try {
+      const result = await this.runner.run(
+        { id: conn.id, tenantId, connectorCode: conn.connector_code },
+        source,
+        { fromStart: options.from_start === true, correlationId: correlationId ?? null },
+      );
+      return {
+        success: true,
+        job_id: result.jobId,
+        connection_id: conn.id,
+        connection_name: conn.name,
+        status: result.status,
+        records_synced: result.recordsIngested,
+        duplicates_skipped: result.duplicatesSkipped,
+        records_quarantined: result.recordsQuarantined,
+        pages: result.pages,
+        truncated: result.truncated,
+        cursor_before: result.watermarkBefore,
+        cursor_after: result.watermarkAfter,
+        duration_ms: result.durationMs,
+      };
+    } catch (error) {
+      if (error instanceof SyncInProgressError) throw new ConflictException(error.message);
+      if (error instanceof PullConfigError) throw new BadRequestException(error.message);
+      if (error instanceof SourceError) {
+        if (error.kind === 'unavailable') throw new BadGatewayException(error.message);
+        throw new HttpException({ statusCode: FAILED_DEPENDENCY, message: error.message }, FAILED_DEPENDENCY);
       }
+      throw error;
     }
+  }
 
-    // 3. Ingest records atomically into raw_ingestion_journal
-    let ingestedCount = 0;
-    let duplicateCount = 0;
-    let nextCursor = currentCursor;
-
-    for (const rec of recordsToProcess) {
-      const payloadStr = JSON.stringify(rec.data);
-      const payloadSha256 = createHash('sha256').update(payloadStr).digest('hex');
-      const idempotencyKey = `sync-${conn.slug}-${rec.id}-v${rec.version ?? 1}`;
-      const eventType = rec.event_type || `${conn.connector_code.toLowerCase()}.sync_item`;
-      const ingestId = `ing-sync-${randomUUID().slice(0, 8)}`;
-
-      // Check if already in journal
-      const dupCheck = await this.db.queryWithTenant(
-        tenantId,
-        `SELECT id FROM gigalibs_connectors.raw_ingestion_journal
-         WHERE tenant_id = $1 AND idempotency_key = $2`,
-        [tenantId, idempotencyKey],
-      );
-
-      if (dupCheck.rowCount && dupCheck.rowCount > 0) {
-        duplicateCount++;
-        continue;
-      }
-
-      await this.db.queryWithTenant(
-        tenantId,
-        `INSERT INTO gigalibs_connectors.raw_ingestion_journal (
-          id, tenant_id, connection_id, idempotency_key, event_type, payload_sha256,
-          raw_payload, headers, client_ip, status, duration_ms, received_at
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, '127.0.0.1', 'INGESTED', 0, NOW())`,
-        [
-          ingestId,
-          tenantId,
-          conn.id,
-          idempotencyKey,
-          eventType,
-          payloadSha256,
-          payloadStr,
-          JSON.stringify({ sync_job_id: jobId, source_id: rec.id }),
-        ],
-      );
-
-      ingestedCount++;
-      nextCursor = new Date().toISOString();
-    }
-
-    const durationMs = Math.max(1, Math.round(performance.now() - startTime));
-
-    // 4. Commit durable checkpoint
-    await this.db.queryWithTenant(
+  async listSyncJobs(tenantId: string, connectionId: string): Promise<unknown[]> {
+    const result = await this.db.queryWithTenant(
       tenantId,
-      `INSERT INTO gigalibs_connectors.sync_jobs (
-        id, tenant_id, connection_id, job_type, status, records_ingested,
-        cursor_after, duration_ms, started_at, completed_at
-      ) VALUES ($1, $2, $3, 'MANUAL', 'COMPLETED', $4, $5, $6, NOW(), NOW())`,
-      [jobId, tenantId, conn.id, ingestedCount, nextCursor, durationMs],
+      `SELECT j.id, j.job_type, j.status, j.records_ingested, j.duplicates_skipped, j.records_quarantined,
+              j.pages_fetched, j.truncated, j.watermark_before, j.cursor_after, j.error_details, j.duration_ms,
+              j.correlation_id, j.started_at, j.completed_at
+         FROM gigalibs_connectors.sync_jobs j
+         JOIN gigalibs_connectors.tenant_connections c ON c.id = j.connection_id
+        WHERE j.tenant_id = $1 AND (c.id = $2 OR c.slug = $2)
+        ORDER BY j.started_at DESC LIMIT 20`,
+      [tenantId, connectionId],
     );
+    return result.rows;
+  }
 
-    // 5. Update connection statistics
-    if (ingestedCount > 0) {
-      await this.db.queryWithTenant(
-        tenantId,
-        `UPDATE gigalibs_connectors.tenant_connections 
-         SET events_count = events_count + $1, last_sync_at = NOW(), updated_at = NOW()
-         WHERE id = $2 AND tenant_id = $3`,
-        [ingestedCount, conn.id, tenantId],
-      );
+  async listQuarantine(tenantId: string, connectionId: string): Promise<unknown[]> {
+    const result = await this.db.queryWithTenant(
+      tenantId,
+      `SELECT q.id, q.sync_job_id, q.source_id, q.reason, q.raw_payload, q.received_at
+         FROM gigalibs_connectors.quarantined_records q
+         JOIN gigalibs_connectors.tenant_connections c ON c.id = q.connection_id
+        WHERE q.tenant_id = $1 AND (c.id = $2 OR c.slug = $2)
+        ORDER BY q.received_at DESC LIMIT 100`,
+      [tenantId, connectionId],
+    );
+    return result.rows;
+  }
+
+  private async decryptCredentials(tenantId: string, connectionId: string): Promise<unknown | null> {
+    const result = await this.db.queryWithTenant<{ encrypted_data: string; iv: string | null; auth_tag: string | null }>(
+      tenantId,
+      `SELECT encrypted_data, iv, auth_tag FROM gigalibs_connectors.connector_credentials
+        WHERE tenant_id = $1 AND connection_id = $2 ORDER BY updated_at DESC LIMIT 1`,
+      [tenantId, connectionId],
+    );
+    const row = result.rows[0];
+    if (!row) return null;
+    if (!row.iv || !row.auth_tag) throw new SourceError('refused', 'The stored credentials are incomplete; store them again.');
+    const plain = this.vault.decrypt({ encryptedData: row.encrypted_data, iv: row.iv, authTag: row.auth_tag });
+    try {
+      return JSON.parse(plain);
+    } catch {
+      return null;
     }
-
-    return {
-      success: true,
-      job_id: jobId,
-      connection_id: conn.id,
-      connection_name: conn.name,
-      records_synced: ingestedCount,
-      duplicates_skipped: duplicateCount,
-      cursor_before: currentCursor,
-      cursor_after: nextCursor,
-      duration_ms: durationMs,
-      status: 'COMPLETED',
-      completed_at: new Date().toISOString(),
-    };
   }
 
   async getStats(tenantId: string): Promise<any> {

@@ -7,6 +7,7 @@ import {
 import { randomUUID } from 'node:crypto';
 import { DatabaseService } from '../database/database.service.js';
 import { VaultCryptoService } from './vault-crypto.service.js';
+import { PullConfigError, parsePullCredentials, parsePullSource } from '../pull/pull-source.js';
 import {
   assertAllowedConnectorUrl,
   loadConnectorHubRuntimeConfig,
@@ -117,6 +118,8 @@ export class ConnectorsService {
       throw new BadRequestException(`Unknown connector_code: '${dto.connector_code}'`);
     }
 
+    const configuration = { ...(dto.configuration || {}) };
+    if (configuration.source !== undefined) configuration.source = this.validSource(configuration.source);
     const connId = `conn-${randomUUID().slice(0, 8)}`;
     const secret = dto.webhook_secret || `whsec_${randomUUID().replace(/-/g, '')}`;
 
@@ -138,7 +141,7 @@ export class ConnectorsService {
       dto.auth_type || 'WEBHOOK',
       secret,
       dto.target_workflow_code || null,
-      JSON.stringify(dto.configuration || {}),
+      JSON.stringify(configuration),
     ]);
 
     // Store encrypted credentials if provided
@@ -164,6 +167,67 @@ export class ConnectorsService {
     );
 
     return res.rows[0];
+  }
+
+  /** WI-OI-104d: sets the connection's pull source after validating it; other configuration keys are kept. */
+  async configureSource(tenantId: string, idOrSlug: string, body: unknown): Promise<any> {
+    const source = this.validSource(body);
+    const conn = await this.getConnectionById(tenantId, idOrSlug);
+    const res = await this.db.queryWithTenant(
+      tenantId,
+      `UPDATE gigalibs_connectors.tenant_connections
+          SET configuration = jsonb_set(configuration, '{source}', $3::jsonb, true), updated_at = NOW()
+        WHERE id = $1 AND tenant_id = $2
+        RETURNING id, slug, configuration`,
+      [conn.id, tenantId, JSON.stringify(source)],
+    );
+    await this.audit(tenantId, conn.id, 'PULL_SOURCE_CONFIGURED', { base_url: source.baseUrl, resource_path: source.resourcePath, auth: source.auth.kind, paging: source.paging.style });
+    return { success: true, connection: res.rows[0] };
+  }
+
+  /**
+   * WI-OI-104d: replaces the connection's login secrets (API key, bearer token or OAuth2 client). The previous ones are
+   * deleted in the same transaction; nothing secret is returned or audited.
+   */
+  async storePullCredentials(tenantId: string, idOrSlug: string, body: unknown): Promise<any> {
+    let credentials;
+    try {
+      credentials = parsePullCredentials(body);
+    } catch (error) {
+      throw new BadRequestException((error as Error).message);
+    }
+    const conn = await this.getConnectionById(tenantId, idOrSlug);
+    const encrypted = this.vaultCrypto.encrypt(JSON.stringify(credentials));
+    const type = { 'api-key': 'API_KEY', bearer: 'BEARER_TOKEN', 'oauth2-client-credentials': 'OAUTH2_CLIENT' }[credentials.kind];
+    await this.db.withTenantTransaction(tenantId, async (client) => {
+      await client.query(`DELETE FROM gigalibs_connectors.connector_credentials WHERE tenant_id = $1 AND connection_id = $2`, [tenantId, conn.id]);
+      await client.query(
+        `INSERT INTO gigalibs_connectors.connector_credentials
+           (id, tenant_id, connection_id, credential_type, encrypted_data, iv, auth_tag, key_reference, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, 'connector-vault-key', NOW(), NOW())`,
+        [`cred-${randomUUID()}`, tenantId, conn.id, type, encrypted.encryptedData, encrypted.iv, encrypted.authTag],
+      );
+    });
+    await this.audit(tenantId, conn.id, 'CREDENTIALS_REPLACED', { kind: credentials.kind });
+    return { success: true, connection_id: conn.id, kind: credentials.kind };
+  }
+
+  private validSource(value: unknown) {
+    try {
+      return parsePullSource(value);
+    } catch (error) {
+      if (error instanceof PullConfigError) throw new BadRequestException(`The pull source is not valid: ${error.message}`);
+      throw error;
+    }
+  }
+
+  private async audit(tenantId: string, connectionId: string, action: string, payload: Record<string, unknown>): Promise<void> {
+    await this.db.queryWithTenant(
+      tenantId,
+      `INSERT INTO gigalibs_connectors.audit_events (id, tenant_id, entity_type, entity_id, action, payload, created_at)
+       VALUES ($1, $2, 'CONNECTION', $3, $4, $5, NOW())`,
+      [`aud-${randomUUID()}`, tenantId, connectionId, action, JSON.stringify(payload)],
+    );
   }
 
   async storeEncryptedCredential(

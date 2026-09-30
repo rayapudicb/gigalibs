@@ -34,8 +34,8 @@ export function loadConnectorHubRuntimeConfig(
     expectedMigrationVersion: parseInteger(
       environment,
       'CONNECTOR_HUB_EXPECTED_MIGRATION_VERSION',
-      5,
-      5,
+      6,
+      6,
     ),
     allowedOutboundHosts: parseHostAllowlist(environment),
     allowInsecureOutbound: parseBoolean(

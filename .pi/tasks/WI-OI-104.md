@@ -47,6 +47,30 @@
    - logins: API key, bearer token, OAuth2;
    - paging styles: page, offset, cursor, since-watermark;
    - incremental pulls, retries, and a quarantine for bad records.
+
+   Plan (2026-09-30), in two steps:
+   - **Step 1, the framework.**
+     - A pull source per connection (`configuration.source`, validated): base URL, resource path, records path,
+       id field, optional watermark field and parameter, static query.
+     - Paging: none, page, offset, cursor, next link.
+     - Logins: none, API key (header or query), bearer token, OAuth2 client credentials (token cached until expiry).
+       Secrets live only in the encrypted `connector_credentials`, rotated through their own route and never
+       returned.
+     - Every URL, including token URLs and next links, must pass the outbound allowlist, and next links stay on the
+       source's origin.
+     - Retries on 429, 5xx and network errors, honouring Retry-After. Bounded pages, bytes and time per run.
+     - One sync per connection at a time (a lease).
+     - Journal writes are idempotent (source id plus payload hash). Bad records go to `quarantined_records` with a
+       reason.
+     - The watermark advances only from the records themselves, and only when the run completes (or the source is
+       sorted by it).
+     - Sync history and quarantine routes; migration 000006.
+     - Tightened: the sync route no longer accepts caller-supplied records (webhooks are the push path), and no
+       tenant id is sent to outside sources.
+   - **Step 2, the web.** Configure the pull source and its login on a connection, run it, and see the sync
+     history and quarantine.
+   - **Not in 104d:** the OAuth2 consent flow (authorization code, for example Salesforce). Its initiate and callback
+     routes stay "not implemented" until a client needs it.
 5. **104e Bridge into Analytics:** an Analytics source of type `CONNECTOR_HUB`. Summary builds become kernel jobs
    here, started by each new dataset version. Journal records become raw records,
    then go through the existing discovery, mapping, dataset and model steps. Mapping gains unit conversion (kg,

@@ -38,6 +38,9 @@ export function requiredConnectorHubPermission(method: string, path: readonly st
   if (new RegExp(`^connections/${SEGMENT}$`).test(route)) return read;
   if (new RegExp(`^connections/${SEGMENT}/test$`).test(route)) return method === 'POST' ? 'connections:test' : null;
   if (new RegExp(`^connections/${SEGMENT}/sync$`).test(route)) return method === 'POST' ? 'connections:sync' : null;
+  // WI-OI-104d: pull history and quarantine are read; the pull source and its login secrets are written.
+  if (new RegExp(`^connections/${SEGMENT}/(sync-jobs|quarantine)$`).test(route)) return read;
+  if (new RegExp(`^connections/${SEGMENT}/(source|credentials)$`).test(route)) return method === 'POST' ? 'connections:write' : null;
   if (route === 'oauth/initiate') return method === 'POST' ? 'connections:write' : null;
   if (new RegExp(`^connections/${SEGMENT}/oauth/callback$`).test(route)) return method === 'POST' ? 'connections:write' : null;
   return null;

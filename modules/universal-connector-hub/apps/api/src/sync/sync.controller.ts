@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Headers, Param, Post, Query, UseGuards } from '@nestjs/common';
 import { CurrentPrincipal, type ModulePrincipal, RequirePermissions } from '@gigalibs/module-sdk';
 import { ConnectorHubAuthorizationGuard } from '../auth/authorization.js';
 import { SyncService, SyncOptions } from './sync.service.js';
@@ -27,8 +27,22 @@ export class SyncController {
     @CurrentPrincipal() principal: ModulePrincipal,
     @Param('id') id: string,
     @Body() options?: SyncOptions,
+    @Headers('x-correlation-id') correlationId?: string,
   ) {
-    return this.syncService.triggerSync(principal.tenantId, id, options);
+    return this.syncService.triggerSync(principal.tenantId, id, { from_start: options?.from_start === true }, correlationId ?? null);
+  }
+
+  // WI-OI-104d: a connection's recent pulls and the records they could not identify.
+  @Get('connections/:id/sync-jobs')
+  @RequirePermissions('connections:read')
+  async listSyncJobs(@CurrentPrincipal() principal: ModulePrincipal, @Param('id') id: string) {
+    return { success: true, jobs: await this.syncService.listSyncJobs(principal.tenantId, id) };
+  }
+
+  @Get('connections/:id/quarantine')
+  @RequirePermissions('connections:read')
+  async listQuarantine(@CurrentPrincipal() principal: ModulePrincipal, @Param('id') id: string) {
+    return { success: true, records: await this.syncService.listQuarantine(principal.tenantId, id) };
   }
 
   @Get('stats')
