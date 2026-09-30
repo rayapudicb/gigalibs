@@ -206,6 +206,79 @@ services:
       - ALL
     labels: *module-labels
 
+  # WI-OI-104c (ADR-0017): Redis carries only BullMQ job ids; PostgreSQL holds every job and schedule, so Redis keeps
+  # nothing on disk and never evicts. Internal network only, password required.
+  redis:
+    image: redis:7-alpine@sha256:6ab0b6e7381779332f97b8ca76193e45b0756f38d4c0dcda72dbb3c32061ab99
+    pull_policy: never
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /data:rw,noexec,nosuid,size=64m
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
+    command:
+      - sh
+      - -c
+      - exec redis-server --requirepass "$$REDIS_PASSWORD" --save "" --appendonly no --maxmemory 48mb --maxmemory-policy noeviction
+    healthcheck:
+      test: ["CMD-SHELL", "REDISCLI_AUTH=\"$$REDIS_PASSWORD\" redis-cli ping | grep -q PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    labels: *module-labels
+
+  # WI-OI-104c: turns due schedules into jobs and runs them, calling modules as each schedule's owner with a context
+  # signed for that module only. Same image as the core API; no published port.
+  kernel-worker:
+    image: ${API_IMAGE:?API_IMAGE is required}
+    pull_policy: never
+    command: ["dist/kernel-worker/main.js"]
+    restart: unless-stopped
+    init: true
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
+      REDIS_URL: redis://:${REDIS_PASSWORD:?REDIS_PASSWORD is required}@redis:6379/0
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?JWT_ACCESS_SECRET is required}
+      JWT_ACCESS_EXPIRES_IN: ${JWT_ACCESS_EXPIRES_IN:?JWT_ACCESS_EXPIRES_IN is required}
+      JWT_REFRESH_EXPIRES_IN: ${JWT_REFRESH_EXPIRES_IN:?JWT_REFRESH_EXPIRES_IN is required}
+      CONTROL_PAYLOAD_ENCRYPTION_KEY: ${CONTROL_PAYLOAD_ENCRYPTION_KEY:?CONTROL_PAYLOAD_ENCRYPTION_KEY is required}
+      CONTROL_PAYLOAD_KEY_VERSION: ${CONTROL_PAYLOAD_KEY_VERSION:?CONTROL_PAYLOAD_KEY_VERSION is required}
+      CONTROL_PAYLOAD_PREVIOUS_KEYS_JSON: ${CONTROL_PAYLOAD_PREVIOUS_KEYS_JSON-}
+      ANALYTICS_API_URL: http://analytics-api:4400
+      ANALYTICS_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64: ${ANALYTICS_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64:?ANALYTICS_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64 is required}
+      CONNECTOR_HUB_API_URL: http://connector-hub-api:4100
+      CONNECTOR_HUB_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64: ${CONNECTOR_HUB_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64:?CONNECTOR_HUB_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64 is required}
+      KERNEL_WORKER_HEALTH_PORT: "4800"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:4800/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"
+      interval: 15s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    labels: *module-labels
+
   web:
     environment:
       CONNECTOR_HUB_API_URL: http://connector-hub-api:4100

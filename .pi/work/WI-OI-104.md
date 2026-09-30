@@ -149,3 +149,48 @@ core API) and no scheduler. Connector Hub also trusts a caller-supplied tenant h
   - step 2: the `kernel-worker` service (core API image) running ticks, PostgreSQL jobs and BullMQ; a module-call job
     that signs a context for the owner with re-resolved permissions; Redis in Compose;
   - step 3: a schedules API, plus scheduled report runs and connector syncs as the first users.
+
+**Step 2: the kernel worker** (not deployed):
+- **Owner context for scheduled work:**
+  - `AuthService.getSubjectContext(user, tenant, contextId)` builds the owner's current context the same way a login
+    does, through the shared `assembleContext`: active user, tenant and membership; custom role; scopes.
+  - The auth version is that of a fresh context, and MFA counts as verified, since the owner passed it when creating
+    the schedule.
+  - `buildPlatformContext` moved into `@gigalibs/auth-core`, and the web's mint uses it too, so the web and the worker
+    build identical claims. `determinePersona` moved to contracts.
+- **`module.call` job** (`apps/playground-api/src/kernel-worker/module-call.job.ts`):
+  - Only listed operations can be scheduled: `analytics.report-run` (`analytics:reports:write`) and
+    `connector-hub.sync` (`connections:sync`).
+  - Each run re-resolves the owner, requires the permission and the module entitlement, and signs a context for that
+    module's audience only. The job id is the run's idempotency key.
+  - Final (not retried): owner refused by auth, permission missing, entitlement missing, the module answers 4xx.
+  - Retried: database errors while checking the owner, 5xx, network errors.
+- **Worker process** (`apps/playground-api/src/kernel-worker/main.ts`):
+  - A tick loop: due schedules, then BullMQ dispatch when Redis is set, then up to 20 PostgreSQL jobs.
+  - Health check on 127.0.0.1:4800; graceful stop on SIGTERM.
+  - Only an auth refusal pauses a schedule; any other error ends the tick and is retried on the next.
+- **Compose** (`compose.modules.local.yaml`):
+  - `redis`: pinned digest, password, no host port, nothing on disk, `noeviction`.
+  - `kernel-worker`: core API image with `dist/kernel-worker/main.js`, no published port.
+  - `REDIS_PASSWORD` is added by `generate-module-runtime-credentials.sh`, appending only if missing.
+- **Bug fixed in 104b's job store** (GPT's code; the owner is informed):
+  - In `fail()` and lease recovery, the completion time sat in `CASE ... THEN $n ELSE NULL`, so PostgreSQL typed it as
+    text and the update failed.
+  - Effect: any failed or abandoned job stayed RUNNING. Now cast to `timestamptz`.
+  - Two new integration tests (retry then dead-letter; lease recovery) fail without the fix and pass with it.
+- **Checks:**
+  - `module-call.job` 6 tests; auth subject context 2 tests (13 in the file);
+  - jobs 23 tests with a throwaway PostgreSQL (the Redis one skipped);
+  - `compose config` valid with both profiles;
+  - `pnpm verify` passes (known drift only).
+- **Worker smoke** (throwaway PostgreSQL and Redis on 127.0.0.1, removed afterwards; a stub Analytics that verifies the
+  token; built `dist/kernel-worker/main.js`):
+  - health 200, BullMQ on;
+  - the departed owner's schedule was paused;
+  - the active owner's schedule ran once and moved to 02:00 IST the next day;
+  - the job SUCCEEDED as the owner;
+  - the stub verified the signature for `gigalibs-analytics-api` only, and saw the owner's current scopes, the schedule
+    correlation id, and the job id as idempotency key.
+- **Found by the smoke, tracked in `FOUNDATION-CLOSE.md` item 7:** an empty database cannot be migrated.
+  - `20260924000000_tp2_durable_export_and_outbox`: enum value used in the same transaction.
+  - A1: phase 3–5 alter module schemas.

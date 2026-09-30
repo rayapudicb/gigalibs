@@ -238,7 +238,7 @@ export class PostgresJobStore implements JobStore {
       const updated = await client.query<JobRow>(
         `UPDATE "kernel_job_runs"
          SET "status" = $3::"KernelJobStatus", "availableAt" = COALESCE($4, "availableAt"),
-             "completedAt" = CASE WHEN $3 = 'DEAD_LETTER' THEN $5 ELSE NULL END,
+             "completedAt" = CASE WHEN $3 = 'DEAD_LETTER' THEN $5::timestamptz ELSE NULL END,
              "leaseOwner" = NULL, "leaseExpiresAt" = NULL, "heartbeatAt" = $5,
              "dispatchStatus" = $6::"KernelJobDispatchStatus",
              "dispatchedAt" = CASE WHEN $6 = 'PENDING' THEN NULL ELSE "dispatchedAt" END,
@@ -438,7 +438,7 @@ export class PostgresJobStore implements JobStore {
       const updated = await client.query<JobRow>(
         `UPDATE "kernel_job_runs"
          SET "status" = $2::"KernelJobStatus", "availableAt" = $3,
-             "completedAt" = CASE WHEN $2 = 'DEAD_LETTER' THEN $4 ELSE NULL END,
+             "completedAt" = CASE WHEN $2 = 'DEAD_LETTER' THEN $4::timestamptz ELSE NULL END,
              "leaseOwner" = NULL, "leaseExpiresAt" = NULL, "dispatchStatus" = $5::"KernelJobDispatchStatus",
              "dispatchedAt" = CASE WHEN $5 = 'PENDING' THEN NULL ELSE "dispatchedAt" END,
              "lastErrorCode" = 'LEASE_EXPIRED', "lastErrorMessage" = 'The worker lease expired.',

@@ -1,10 +1,11 @@
 import {
   createPrivateKey,
   createPublicKey,
+  randomUUID,
   sign as signBytes,
   verify as verifyBytes,
 } from 'node:crypto';
-import { type PlatformContextV1, PlatformContextV1Schema } from '@gigalibs/contracts';
+import { type PlatformContextV1, PlatformContextV1Schema, determinePersona } from '@gigalibs/contracts';
 export type { PlatformContextV1 };
 
 function base64UrlEncode(str: string): string {
@@ -161,4 +162,63 @@ function parseEd25519PublicKey(value: string) {
       'INVALID_PUBLIC_KEY',
     );
   }
+}
+
+/** The verified facts a module context is built from: a live session (web) or a schedule owner (kernel worker). */
+export interface PlatformContextSubject {
+  readonly user: { readonly id: string };
+  readonly tenant: {
+    readonly id: string;
+    readonly entitlements: readonly { readonly moduleKey: string; readonly status: string; readonly version: string }[];
+  } | null;
+  readonly roles: readonly string[];
+  readonly platformRoles: readonly string[];
+  readonly permissions: readonly string[];
+  readonly authVersion: number;
+  readonly session?: { readonly id: string } | null;
+  readonly orgScope: { readonly mode: 'FLAT_TENANT' } | { readonly mode: 'SCOPED_DEPARTMENTS'; readonly departmentIds: readonly string[] };
+  readonly spatialScope: { readonly mode: 'UNBOUNDED' } | { readonly mode: 'SCOPED_PLACES'; readonly placeIds: readonly string[] };
+}
+
+/**
+ * The one builder of module PlatformContextV1 claims (WI-OI-104c), shared by the web BFF and the kernel worker: the
+ * module must be actively entitled, the lifetime is at most 300 s, and persona, organisation and place scope come
+ * from the subject.
+ */
+export function buildPlatformContext(
+  subject: PlatformContextSubject,
+  moduleKey: string,
+  audience: string,
+  options: { readonly ttlSeconds?: number; readonly nowSeconds?: number } = {},
+): PlatformContextV1 {
+  if (!subject.tenant) throw new Error('Cannot mint module context token without an active tenant workspace.');
+  const entitlement = subject.tenant.entitlements.find(
+    (candidate) => candidate.moduleKey === moduleKey && candidate.status === 'ENABLED',
+  );
+  if (!entitlement) throw new Error(`Module '${moduleKey}' is not actively entitled for this workspace.`);
+  const now = options.nowSeconds ?? Math.floor(Date.now() / 1000);
+  const ttl = Math.min(options.ttlSeconds ?? 300, 300);
+  return {
+    iss: 'gigalibs-control-plane',
+    aud: audience,
+    sub: subject.user.id,
+    tenant_id: subject.tenant.id,
+    session_id: subject.session?.id ?? randomUUID(),
+    auth_version: subject.authVersion,
+    roles: [...subject.roles],
+    granted_scopes: [...subject.permissions],
+    persona_type: determinePersona([...subject.roles], [...subject.platformRoles]),
+    org_scope:
+      subject.orgScope.mode === 'SCOPED_DEPARTMENTS'
+        ? { mode: 'SCOPED_DEPARTMENTS', department_ids: [...subject.orgScope.departmentIds] }
+        : { mode: 'FLAT_TENANT' },
+    spatial_scope:
+      subject.spatialScope.mode === 'SCOPED_PLACES'
+        ? { mode: 'SCOPED_PLACES', place_ids: [...subject.spatialScope.placeIds] }
+        : { mode: 'UNBOUNDED' },
+    entitlement: { module_key: moduleKey, status: 'ENABLED', version: entitlement.version },
+    iat: now,
+    exp: now + ttl,
+    jti: randomUUID(),
+  };
 }

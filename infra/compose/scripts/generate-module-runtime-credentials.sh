@@ -78,6 +78,11 @@ if [[ -e "${TARGET_ENV}" ]]; then
     context_keys CONNECTOR_HUB >>"${TARGET_ENV}"
     added+=("Connector Hub platform-context key pair")
   fi
+  # WI-OI-104c: the kernel worker's Redis (BullMQ job ids only) requires a password.
+  if ! grep -q '^REDIS_PASSWORD=' "${TARGET_ENV}"; then
+    printf 'REDIS_PASSWORD=%s\n' "$(openssl rand -hex 32)" >>"${TARGET_ENV}"
+    added+=("kernel worker Redis password")
+  fi
   if [[ ${#added[@]} -eq 0 ]]; then
     echo "Error: ${TARGET_ENV} already exists and is complete; refusing to overwrite module secrets." >&2
     exit 1
@@ -102,6 +107,7 @@ CONNECTORS_DATABASE_URL=${CONNECTORS_DATABASE_URL}
 ANALYTICS_DATABASE_URL=${ANALYTICS_DATABASE_URL}
 CONNECTOR_VAULT_KEY=${CONNECTOR_VAULT_KEY}
 CONNECTOR_HUB_ALLOWED_OUTBOUND_HOSTS=disabled.invalid
+REDIS_PASSWORD=$(openssl rand -hex 32)
 EOF
 context_keys ANALYTICS >>"${TARGET_ENV}"
 context_keys CONNECTOR_HUB >>"${TARGET_ENV}"

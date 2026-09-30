@@ -101,6 +101,9 @@ importers:
       '@gigalibs/audit-nest':
         specifier: workspace:*
         version: link:../../packages/audit-nest
+      '@gigalibs/auth-core':
+        specifier: workspace:*
+        version: link:../../packages/auth-core
       '@gigalibs/auth-nest':
         specifier: workspace:*
         version: link:../../packages/auth-nest
@@ -116,6 +119,9 @@ importers:
       '@gigalibs/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@gigalibs/jobs':
+        specifier: workspace:*
+        version: link:../../packages/jobs
       '@gigalibs/logger':
         specifier: workspace:*
         version: link:../../packages/logger
@@ -152,6 +158,9 @@ importers:
       helmet:
         specifier: ^8.1.0
         version: 8.3.0
+      ioredis:
+        specifier: ^5.4.1
+        version: 5.11.1
       pg:
         specifier: ^8.23.0
         version: 8.23.0

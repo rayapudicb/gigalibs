@@ -58,6 +58,38 @@ integration('PostgresJobStore real PostgreSQL lifecycle', () => {
     ]);
   });
 
+  // WI-OI-104c: the kernel worker smoke found `fail` and lease recovery typed their timestamp as text, so a failed or
+  // abandoned job stayed RUNNING. Both paths now run against PostgreSQL.
+  it('retries a failed job with backoff, then dead-letters it at the last attempt', async () => {
+    const input = makeInput(tenantA, new Date(now.getTime() + 2_000), { maxAttempts: 2 });
+    await store.enqueue(input);
+    const at = new Date(now.getTime() + 2_000);
+    await store.claimById(input.id, 'POSTGRES', 'worker-proof', 30_000, at);
+    const retryAt = new Date(at.getTime() + 100);
+    await expect(store.fail(input.id, 'worker-proof', { code: 'MODULE_DOWN', message: 'busy', retryAt }, at)).resolves.toMatchObject({
+      status: 'RETRY_WAIT',
+      availableAt: retryAt,
+      completedAt: null,
+      lastErrorCode: 'MODULE_DOWN',
+    });
+    const later = new Date(retryAt.getTime() + 1);
+    await store.claimById(input.id, 'POSTGRES', 'worker-proof', 30_000, later);
+    await expect(store.fail(input.id, 'worker-proof', { code: 'MODULE_DOWN', message: 'busy', retryAt }, later)).resolves.toMatchObject({
+      status: 'DEAD_LETTER',
+      completedAt: later,
+      attempts: 2,
+    });
+  });
+
+  it('recovers a job whose worker lease expired', async () => {
+    const input = makeInput(tenantA, new Date(now.getTime() + 3_000));
+    await store.enqueue(input);
+    const at = new Date(now.getTime() + 3_000);
+    await store.claimById(input.id, 'POSTGRES', 'worker-gone', 1_000, at);
+    await store.claimNext('POSTGRES', 'worker-proof', 30_000, new Date(at.getTime() + 5_000));
+    await expect(store.getForTenant(tenantA, input.id)).resolves.toMatchObject({ status: 'RETRY_WAIT', lastErrorCode: 'LEASE_EXPIRED', completedAt: null });
+  });
+
   it('rejects changed input under the same idempotency key', async () => {
     const input = makeInput(tenantA, new Date(now.getTime() + 1_000));
     await store.enqueue(input);

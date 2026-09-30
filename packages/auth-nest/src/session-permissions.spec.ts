@@ -3,6 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const prismaMock = vi.hoisted(() => ({
   session: { findFirst: vi.fn() },
+  user: { findUnique: vi.fn() },
+  tenant: { findUnique: vi.fn() },
   tenantMember: { findUnique: vi.fn() },
   mfaRecoveryCode: { count: vi.fn() },
   platformRoleAssignment: { findMany: vi.fn() },
@@ -150,5 +152,50 @@ describe('session spatial scope', () => {
   it('keeps platform roles unbounded in an opted-in tenant', async () => {
     prismaMock.platformRoleAssignment.findMany.mockResolvedValue([{ role: 'PLATFORM_ADMIN' }]);
     await expect(scopeFor('MEMBER', [bengaluru])).resolves.toEqual({ mode: 'UNBOUNDED' });
+  });
+});
+
+// WI-OI-104c: scheduled work runs with its owner's current rights, resolved exactly as for a session.
+describe('subject context for scheduled work', () => {
+  beforeEach(() => {
+    vi.stubEnv('JWT_ACCESS_SECRET', 'x'.repeat(48));
+    vi.stubEnv('JWT_ACCESS_EXPIRES_IN', '15m');
+    vi.stubEnv('JWT_REFRESH_EXPIRES_IN', '30d');
+    vi.stubEnv('CONTROL_PAYLOAD_KEY_VERSION', 'v1');
+    vi.stubEnv('CONTROL_PAYLOAD_ENCRYPTION_KEY', randomBytes(32).toString('base64'));
+    const session = activeSession();
+    prismaMock.user.findUnique.mockResolvedValue(session.user);
+    prismaMock.tenant.findUnique.mockResolvedValue(session.tenant);
+    prismaMock.platformRoleAssignment.findMany.mockResolvedValue([]);
+    prismaMock.mfaRecoveryCode.count.mockResolvedValue(0);
+  });
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.clearAllMocks();
+  });
+
+  it('resolves the owner membership, custom role and scopes, with a fresh auth version and the job context id', async () => {
+    prismaMock.tenantMember.findUnique.mockResolvedValue({
+      ...membership('MEMBER'),
+      permissions: [],
+      customRole: { name: 'Analytics analyst', permissions: ['analytics:reports:write'] },
+    });
+    const before = Math.floor(Date.now() / 1000);
+    const context = await new AuthService().getSubjectContext('user-1', tenantId, 'job:abc');
+    expect(context.permissions).toContain('analytics:reports:write');
+    expect(context.roles).toEqual(['MEMBER', 'Analytics analyst']);
+    expect(context.session.id).toBe('job:abc');
+    expect(context.authVersion).toBeGreaterThanOrEqual(before);
+    expect(context.tenant?.entitlements).toEqual([expect.objectContaining({ moduleKey: 'gigaops', status: 'ENABLED' })]);
+  });
+
+  it('refuses an inactive owner, a suspended membership and an inactive tenant', async () => {
+    prismaMock.tenantMember.findUnique.mockResolvedValue({ ...membership('MEMBER'), status: 'SUSPENDED' });
+    await expect(new AuthService().getSubjectContext('user-1', tenantId, 'job:1')).rejects.toThrow('inactive or has been revoked');
+    prismaMock.user.findUnique.mockResolvedValue({ ...activeSession().user, status: 'SUSPENDED' });
+    await expect(new AuthService().getSubjectContext('user-1', tenantId, 'job:2')).rejects.toThrow('not an active user');
+    prismaMock.user.findUnique.mockResolvedValue(activeSession().user);
+    prismaMock.tenant.findUnique.mockResolvedValue({ ...activeSession().tenant, status: 'SUSPENDED' });
+    await expect(new AuthService().getSubjectContext('user-1', tenantId, 'job:3')).rejects.toThrow('tenant is not active');
   });
 });

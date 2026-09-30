@@ -1,5 +1,4 @@
-import { randomUUID } from 'node:crypto';
-import { signPlatformContextToken } from '@gigalibs/auth-core';
+import { buildPlatformContext, signPlatformContextToken } from '@gigalibs/auth-core';
 import type {
   PlatformContextOrgScope,
   PlatformContextPersona,
@@ -43,51 +42,15 @@ export function mintPlatformContextToken(
   audience: string,
   options?: MintPlatformContextOptions,
 ): string {
-  if (!session.tenant) {
-    throw new Error('Cannot mint module context token without an active tenant workspace.');
-  }
-
   const privateKey = options?.privateKey ?? process.env.PLATFORM_CONTEXT_PRIVATE_KEY;
-
   if (!privateKey?.trim()) {
     throw new Error(
       'PLATFORM_CONTEXT_PRIVATE_KEY must contain an Ed25519 private PEM key.',
     );
   }
-
-  const entitlement = session.tenant.entitlements.find(
-    (candidate) => candidate.moduleKey === moduleKey && candidate.status === 'ENABLED',
-  );
-  if (!entitlement) {
-    throw new Error(`Module '${moduleKey}' is not actively entitled for this workspace.`);
-  }
-
-  const now = Math.floor(Date.now() / 1000);
-  const ttl = Math.min(options?.ttlSeconds ?? 300, 300);
-  const persona = determinePersona(session.roles, session.platformRoles);
-  const orgScope = determineOrgScope(session);
-
-  const payload: PlatformContextV1 = {
-    iss: 'gigalibs-control-plane',
-    aud: audience,
-    sub: session.user.id,
-    tenant_id: session.tenant.id,
-    session_id: session.session?.id ?? randomUUID(),
-    auth_version: session.authVersion,
-    roles: session.roles,
-    granted_scopes: session.permissions,
-    persona_type: persona,
-    org_scope: orgScope,
-    spatial_scope: determineSpatialScope(session),
-    entitlement: {
-      module_key: moduleKey,
-      status: 'ENABLED',
-      version: entitlement.version,
-    },
-    iat: now,
-    exp: now + ttl,
-    jti: randomUUID(),
-  };
-
+  // WI-OI-104c: the claims come from the kernel's one builder, shared with the scheduled-job worker.
+  const payload: PlatformContextV1 = buildPlatformContext(session, moduleKey, audience, {
+    ...(options?.ttlSeconds !== undefined ? { ttlSeconds: options.ttlSeconds } : {}),
+  });
   return signPlatformContextToken(payload, privateKey);
 }

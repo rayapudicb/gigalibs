@@ -15,6 +15,12 @@ The owner chose to finish the open ADR-0016 foundation work before starting the 
 4. **WI-OI-107** (F10): industry packs at the solution layer; Workforce's packs move into it.
 5. **WI-OI-106** (F17): Reports v2, PDF and Excel.
 6. **WI-OI-108:** rebuild the contained other-stream forms properly.
+7. **Fresh install (found 2026-09-30 by the 104c worker smoke):** `prisma migrate deploy` on an empty database stops
+   at two points, so a new client install fails. Fix before the agriculture package ships.
+   - `20260924000000_tp2_durable_export_and_outbox` adds an enum value and uses it in the same transaction (55P04).
+   - D2 finding A1: `20260927110000_phase3`, `…120000_phase4` and `…130000_phase5` alter the CMMS and Workforce schemas
+     from the core, so they need those modules' migrations first. Their home is each module's own migrations.
+   - Both are already applied locally; the fix must keep the local history valid (owner review).
 
 ## Decisions (2026-09-30)
 

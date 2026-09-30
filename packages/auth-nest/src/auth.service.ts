@@ -22,7 +22,7 @@ import type {
 } from '@gigalibs/contracts';
 import { isTenantPermissionCode } from '@gigalibs/contracts';
 import { decrypt, encrypt, parseAes256KeyRing, requireAes256KeyVersion } from '@gigalibs/crypto';
-import { prisma } from '@gigalibs/db';
+import { type Prisma, prisma } from '@gigalibs/db';
 import { resolveBaseRolePermissions } from '@gigalibs/rbac-nest';
 import {
   BadRequestException,
@@ -310,6 +310,74 @@ export class AuthService {
       throw new UnauthorizedException('Token tenant does not match the active session tenant');
     }
 
+    return this.assembleContext(session, userId, tenantId);
+  }
+
+  /**
+   * WI-OI-104c: a subject's current context without a login session, for work that runs with its owner's rights
+   * (the kernel worker). Membership, roles, permissions and scopes are resolved exactly as for a session; the user and
+   * membership must still be active. The auth version is "now", like a fresh login, so earlier subject revocations do
+   * not carry over while the membership stays active.
+   */
+  async getSubjectContext(userId: string, tenantId: string, contextId: string) {
+    const now = new Date();
+    const [user, tenant] = await Promise.all([
+      prisma.user.findUnique({
+        where: { id: userId },
+        select: { id: true, email: true, name: true, status: true, totpCredential: { select: { verifiedAt: true } } },
+      }),
+      prisma.tenant.findUnique({
+        where: { id: tenantId },
+        select: {
+          id: true,
+          slug: true,
+          name: true,
+          status: true,
+          region: true,
+          plan: true,
+          trialEndsAt: true,
+          features: true,
+          moduleEntitlements: {
+            where: { status: 'ENABLED', startsAt: { lte: now }, OR: [{ endsAt: null }, { endsAt: { gt: now } }] },
+            select: { moduleKey: true, status: true, updatedAt: true },
+            orderBy: { moduleKey: 'asc' },
+          },
+          settings: { select: { security: true } },
+        },
+      }),
+    ]);
+    if (!user || user.status !== 'ACTIVE') throw new UnauthorizedException('The subject is not an active user');
+    if (!tenant || tenant.status !== 'ACTIVE') throw new ForbiddenException('The tenant is not active');
+    return this.assembleContext(
+      { id: contextId, expiresAt: new Date(now.getTime() + 300_000), createdAt: now, mfaVerifiedAt: now, user, tenant },
+      userId,
+      tenantId,
+    );
+  }
+
+  private async assembleContext(
+    session: {
+      id: string;
+      expiresAt: Date;
+      createdAt: Date;
+      mfaVerifiedAt: Date | null;
+      user: { id: string; email: string; name: string | null; status: string; totpCredential: { verifiedAt: Date | null } | null };
+      tenant: {
+        id: string;
+        slug: string;
+        name: string;
+        status: string;
+        region: string;
+        plan: string | null;
+        trialEndsAt: Date | null;
+        features: string[];
+        moduleEntitlements: { moduleKey: string; status: string; updatedAt: Date }[];
+        settings: { security: Prisma.JsonValue } | null;
+      } | null;
+    },
+    userId: string,
+    tenantId: string | undefined,
+  ) {
     const membership = tenantId
       ? await prisma.tenantMember.findUnique({
           where: { userId_tenantId: { userId, tenantId } },
