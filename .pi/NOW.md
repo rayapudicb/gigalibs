@@ -50,11 +50,13 @@ Replace old content rather than appending to it, and update it at the end of eve
    `fcfb580d7a60-7546df7beda8`. The live proof and the browser pull proof pass.
 3. **WI-OI-104e, the bridge into Analytics:** done and live (dac2f46, 53247eb), deployed 2026-09-30 at
    `53247eb8d1c0-603838479495`. The end-to-end browser proof and the kernel stage pass.
-4. **WI-OI-104f, retire the connector copies:** part 1 dfa2112 (Analytics' Postgres connector); part 2 (the core's
-   REST, CSV and PostgreSQL pull side, owner option A) verified. Neither is deployed. This closes F8; the core's push
-   intake is named as FOUNDATION-CLOSE item 8.
-5. Then WI-OI-105 (F15), WI-OI-107 (F10), WI-OI-106 (F17), the 103 leftovers, WI-OI-108, the fresh-install fix and item 8.
-6. Then the agriculture package.
+4. **WI-OI-104f, retire the connector copies:** done and live (dfa2112, 5a88c52), deployed 2026-09-30 at
+   `5a88c52aabb3-647ff50dab46`. **WI-OI-104 is in Review; F8 and F14 are closed.** The core's push intake is
+   FOUNDATION-CLOSE item 8.
+5. **WI-OI-105, places with boundaries (F15):** the card `.pi/tasks/WI-OI-105.md` is Proposed, with four owner
+   decisions (D1–D4) before building.
+6. Then WI-OI-107 (F10), WI-OI-106 (F17), the 103 leftovers, WI-OI-108, the fresh-install fix and item 8.
+7. Then the agriculture package.
 
 ## Open decisions (owner)
 

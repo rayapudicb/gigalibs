@@ -564,3 +564,20 @@ needs one):
   - The operational-intelligence script also asserts that REST is refused with the Connector Hub pointer.
 - Named for later: FOUNDATION-CLOSE item 8, the core's push intake.
 - Checks: `operational-intelligence.pull-retired.spec.ts` (5 tests); core and web typecheck; `pnpm verify`.
+
+## 104f deploy and WI-OI-104 to Review (owner: "deploy", 2026-09-30)
+
+- Backup first: `gigalibs_backup_20260930_135854Z.dump`.
+- **Builds:** all images at `5a88c52aabb3-647ff50dab46`. The disk guard paused the Workforce build at 59 GB free; the
+  build cache was trimmed to 10 GB (no volumes) and the last two builds resumed.
+- **Deploy:** no migrations. Every service is healthy. 5180 answers, and an unsigned Hub request gets 401.
+- **Live proof:** 14 Playwright tests.
+- **End-to-end proof again:** the saved spec (`check()` on "Send pulled records to Analytics") passes, confirming the
+  switch fix. The kernel stage passes: dataset rebuild and summary build both SUCCEEDED, the model is on version 2,
+  and 1 summary is ready.
+- **WI-OI-104 is complete and live:**
+  - 104a secured Hub; 104b kernel jobs; 104c scheduler; 104d pull framework; 104e bridge into Analytics;
+  - 104f the connector copies retired.
+  - F8 and F14 are closed. Status: Review (needs the named human reviewers).
+  - Open follow-ups: FOUNDATION-CLOSE item 8 (the core's push intake); the OAuth2 consent flow when a client needs it;
+    a Hub Postgres adapter when a client needs one.
