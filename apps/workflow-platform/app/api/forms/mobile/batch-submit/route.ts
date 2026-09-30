@@ -1,42 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { verifiedSession } from '@/lib/verified-session';
-import { formsEngineService } from '@/lib/forms-engine-service';
-import { MobileBatchSubmitPayloadSchema } from '@gigalibs/contracts';
+import { unavailableCapability } from '@/lib/unavailable-capability';
 
 export const runtime = 'nodejs';
 
-/**
- * POST /api/forms/mobile/batch-submit
- * Mobile-First Batch Ingestion for offline sync queues with clientSubmissionId idempotency.
- */
-export async function POST(request: NextRequest) {
-  const session = await verifiedSession(false);
-  if (session.response) return session.response;
-  if (!session.context.tenant) {
-    return NextResponse.json({ error: 'Tenant context required.' }, { status: 400 });
-  }
-
-  try {
-    const body = await request.json();
-    const parsed = MobileBatchSubmitPayloadSchema.safeParse(body);
-    if (!parsed.success) {
-      return NextResponse.json(
-        { error: 'Invalid batch submit payload', details: parsed.error.issues },
-        { status: 400 }
-      );
-    }
-
-    const result = await formsEngineService.mobileBatchSubmit(
-      session.context.tenant.id,
-      parsed.data.submissions,
-      session.context.user.id
-    );
-
-    return NextResponse.json(result, { status: 200 });
-  } catch (error: any) {
-    return NextResponse.json(
-      { error: error?.message || 'Failed to process batch submissions' },
-      { status: 500 }
-    );
-  }
-}
+// Contained 2026-09-30 (D2 review of the unreviewed commit 808b8d2, owner-approved; .pi/work/D2-review-808b8d2.md).
+// The forms routes checked only for a session (no permission or entitlement), had no same-origin check on changes, and
+// the public submission had no size or rate limit. They answer unavailable (session required, no business action)
+// until the forms are rebuilt on the governed forms engine with permissions (WI-OI-108). Stored forms and submissions
+// are kept.
+export const POST = () => unavailableCapability();

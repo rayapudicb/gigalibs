@@ -1,88 +1,12 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { verifiedSession } from '@/lib/verified-session';
-import { formsEngineService } from '@/lib/forms-engine-service';
+import { unavailableCapability } from '@/lib/unavailable-capability';
 
 export const runtime = 'nodejs';
 
-/**
- * GET /api/forms/[id]
- */
-export async function GET(
-  request: NextRequest,
-  context: { params: Promise<{ id: string }> }
-) {
-  const session = await verifiedSession(false);
-  if (session.response) return session.response;
-  if (!session.context.tenant) {
-    return NextResponse.json({ error: 'Tenant context required.' }, { status: 400 });
-  }
-
-  const { id } = await context.params;
-
-  try {
-    const form = await formsEngineService.getFormById(session.context.tenant.id, id);
-    if (!form) {
-      return NextResponse.json({ error: 'Form not found.' }, { status: 404 });
-    }
-    return NextResponse.json(form);
-  } catch (error: any) {
-    return NextResponse.json(
-      { error: error?.message || 'Failed to fetch form' },
-      { status: 500 }
-    );
-  }
-}
-
-/**
- * PATCH /api/forms/[id]
- */
-export async function PATCH(
-  request: NextRequest,
-  context: { params: Promise<{ id: string }> }
-) {
-  const session = await verifiedSession(false);
-  if (session.response) return session.response;
-  if (!session.context.tenant) {
-    return NextResponse.json({ error: 'Tenant context required.' }, { status: 400 });
-  }
-
-  const { id } = await context.params;
-
-  try {
-    const body = await request.json();
-    await formsEngineService.updateForm(session.context.tenant.id, id, body);
-    const updated = await formsEngineService.getFormById(session.context.tenant.id, id);
-    return NextResponse.json(updated);
-  } catch (error: any) {
-    return NextResponse.json(
-      { error: error?.message || 'Failed to update form' },
-      { status: 400 }
-    );
-  }
-}
-
-/**
- * DELETE /api/forms/[id]
- */
-export async function DELETE(
-  request: NextRequest,
-  context: { params: Promise<{ id: string }> }
-) {
-  const session = await verifiedSession(false);
-  if (session.response) return session.response;
-  if (!session.context.tenant) {
-    return NextResponse.json({ error: 'Tenant context required.' }, { status: 400 });
-  }
-
-  const { id } = await context.params;
-
-  try {
-    await formsEngineService.deleteForm(session.context.tenant.id, id);
-    return NextResponse.json({ success: true, id });
-  } catch (error: any) {
-    return NextResponse.json(
-      { error: error?.message || 'Failed to delete form' },
-      { status: 500 }
-    );
-  }
-}
+// Contained 2026-09-30 (D2 review of the unreviewed commit 808b8d2, owner-approved; .pi/work/D2-review-808b8d2.md).
+// The forms routes checked only for a session (no permission or entitlement), had no same-origin check on changes, and
+// the public submission had no size or rate limit. They answer unavailable (session required, no business action)
+// until the forms are rebuilt on the governed forms engine with permissions (WI-OI-108). Stored forms and submissions
+// are kept.
+export const GET = () => unavailableCapability();
+export const PATCH = () => unavailableCapability();
+export const DELETE = () => unavailableCapability();
