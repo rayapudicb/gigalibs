@@ -14,9 +14,16 @@ import {
 } from './fixtures/legacy-module-navigation';
 
 describe('manifest-declared navigation equals the former sidebar tables', () => {
-  it('covers exactly the catalogue entries the frozen tables covered', () => {
+  // Entries removed after the freeze, each with its reason. Every other frozen entry must still be in the catalogue.
+  const INTENDED_REMOVALS: Readonly<Record<string, string>> = {
+    reports: 'WI-OI-103e (ADR-0016 F11): Analytics owns reports; the contained core Reports entry is removed.',
+  };
+
+  it('covers exactly the catalogue entries the frozen tables covered, less the intended removals', () => {
     expect(platformModuleCatalog.map((module) => module.key).sort()).toEqual(
-      Object.keys(LEGACY_SIDEBAR_NAVIGATION).sort(),
+      Object.keys(LEGACY_SIDEBAR_NAVIGATION)
+        .filter((key) => !(key in INTENDED_REMOVALS))
+        .sort(),
     );
   });
 
@@ -32,12 +39,13 @@ describe('manifest-declared navigation equals the former sidebar tables', () => 
   // Deliberate navigation changes made after the freeze, each with its work item. Every other entry must still match
   // the frozen tables exactly.
   const INTENDED_MENU_CHANGES: Readonly<Record<string, ReturnType<typeof moduleMenu>>> = {
-    // WI-OI-103d: Analytics gains Overview, Places and the new Explore screen; WI-OI-103e adds Dashboards.
+    // WI-OI-103d: Analytics gains Overview, Places and the new Explore screen; WI-OI-103e adds Dashboards and Reports.
     'analytics-studio': [
       { key: 'overview', label: 'Overview', href: '/analytics', icon: moduleIcons['bar-chart'] },
       { key: 'places', label: 'Places', href: '/analytics/places', icon: moduleIcons['map-pin'] },
       { key: 'explore', label: 'Explore', href: '/analytics/explore', icon: moduleIcons.layers },
       { key: 'dashboards', label: 'Dashboards', href: '/analytics/dashboards', icon: moduleIcons.gauge },
+      { key: 'reports', label: 'Reports', href: '/analytics/reports', icon: moduleIcons['file-text'] },
     ],
   };
 

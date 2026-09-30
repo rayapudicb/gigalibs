@@ -35,6 +35,12 @@ export const generatedModuleMenus: Readonly<Record<string, readonly GeneratedMod
       "label": "Dashboards",
       "path": "/analytics/dashboards",
       "icon": "gauge"
+    },
+    {
+      "key": "reports",
+      "label": "Reports",
+      "path": "/analytics/reports",
+      "icon": "file-text"
     }
   ],
   "asset-maintenance": [
@@ -249,9 +255,6 @@ export const generatedModulePersonas: Readonly<Record<string, readonly PlatformC
     "OPERATIONS_SUPERVISOR",
     "WORKFORCE_MEMBER",
     "CUSTOMER_GUEST"
-  ],
-  "reports": [
-    "C_LEVEL"
   ],
   "master-data": [
     "OPERATIONS_SUPERVISOR"

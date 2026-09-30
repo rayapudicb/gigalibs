@@ -325,9 +325,13 @@ describe('Phase 6 — Reports, CSV Export, Scheduled Delivery', () => {
     expect(svc).toContain('GoneException');
   });
 
-  it('CONTAINED_P0 artifact store is labelled (in-memory, phase boundary)', () => {
+  // WI-OI-103e: the in-memory artifact store (lost on restart) is replaced by bytes kept with the artifact row.
+  it('report artifacts keep their CSV bytes durably, not in process memory', () => {
     const svc = readSrc('reports/report.service.ts');
-    expect(svc).toContain('CONTAINED_P0');
+    expect(svc).not.toContain('artifactStore');
+    expect(svc).not.toContain('mem://');
+    expect(svc).toMatch(/INSERT INTO gigalibs_analytics\.report_artifacts[\s\S]*content\)/);
+    expect(readMigration('000020_reports_from_chart_views.up.sql')).toMatch(/ADD COLUMN content BYTEA/);
   });
 
   it('cron expression validation requires exactly 5 fields', () => {

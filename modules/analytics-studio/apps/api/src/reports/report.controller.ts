@@ -5,6 +5,7 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  ParseUUIDPipe,
   Post,
   Res,
   UseGuards,
@@ -21,7 +22,6 @@ interface ReportResponse {
 }
 import {
   ReportService,
-  CreateReportDefinitionDto,
   TriggerReportRunDto,
   CreateScheduleDto,
 } from './report.service.js';
@@ -33,7 +33,7 @@ export class ReportController {
 
   /**
    * POST /v1/reports/definitions
-   * Create a report definition with pinned inputs.
+   * Create a report from a saved chart view or a dashboard (WI-OI-103e).
    * Required scope: analytics:reports:write
    */
   @Post('definitions')
@@ -41,9 +41,26 @@ export class ReportController {
   @HttpCode(HttpStatus.CREATED)
   async createDefinition(
     @CurrentPrincipal() principal: AnalyticsPrincipal,
-    @Body() dto: CreateReportDefinitionDto,
+    @Body() body: unknown,
   ) {
-    return this.reportService.createReportDefinition(principal, dto);
+    return this.reportService.createReportDefinition(principal, body);
+  }
+
+  /** GET /v1/reports/definitions — the tenant's reports with their last run. */
+  @Get('definitions')
+  @RequirePermissions('analytics:read')
+  async listDefinitions(@CurrentPrincipal() principal: AnalyticsPrincipal) {
+    return this.reportService.listReportDefinitions(principal);
+  }
+
+  /** GET /v1/reports/definitions/:definitionId */
+  @Get('definitions/:definitionId')
+  @RequirePermissions('analytics:read')
+  async getDefinition(
+    @CurrentPrincipal() principal: AnalyticsPrincipal,
+    @Param('definitionId', ParseUUIDPipe) definitionId: string,
+  ) {
+    return this.reportService.getReportDefinition(principal, definitionId);
   }
 
   /**

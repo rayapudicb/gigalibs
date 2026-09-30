@@ -56,5 +56,14 @@ function requiredAnalyticsPermission(method: string, path: readonly string[]): s
   }
   if (new RegExp(`^v1/dashboards/${SEGMENT}/data$`).test(joined)) return method === 'POST' ? 'analytics:read' : null;
   if (new RegExp(`^v1/dashboards/${SEGMENT}/filter-values/${SEGMENT}$`).test(joined)) return read;
+  // WI-OI-103e (ADR-0016 F11): Analytics owns reports. Creating and running need analytics:reports:write; the CSV
+  // download needs analytics:export. Schedules stay internal until the scheduler exists (WI-OI-104).
+  if (joined === 'v1/reports/definitions') {
+    return method === 'GET' ? 'analytics:read' : method === 'POST' ? 'analytics:reports:write' : null;
+  }
+  if (new RegExp(`^v1/reports/definitions/${SEGMENT}(/runs)?$`).test(joined)) return read;
+  if (joined === 'v1/reports/runs') return method === 'POST' ? 'analytics:reports:write' : null;
+  if (new RegExp(`^v1/reports/runs/${SEGMENT}$`).test(joined)) return read;
+  if (new RegExp(`^v1/reports/download/${SEGMENT}$`).test(joined)) return method === 'GET' ? 'analytics:export' : null;
   return null;
 }

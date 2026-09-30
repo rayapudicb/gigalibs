@@ -356,7 +356,7 @@ export const generatedPlatformModuleCatalog = [
     trialEligible: true,
     requiredPermission: 'analytics:read',
     platformInspection: true,
-    reason: 'Runs as a service with PostgreSQL metric facts, place roll-ups and lineage. Explore answers questions by dimension, time and filter, with formula measures and saved chart views (WI-OI-103). Not certified.',
+    reason: 'Runs as a service with PostgreSQL metric facts, place roll-ups and lineage. Explore answers questions by dimension, time and filter, with formula measures, saved chart views, dashboards and CSV reports (WI-OI-103). Not certified.',
   },
   // modules/physical-operations-cmms/module.yaml
   {
@@ -476,23 +476,6 @@ export const generatedPlatformModuleCatalog = [
     requiredPermission: 'saga:read',
     platformInspection: false,
     reason: 'Saga service code with a test. Not running in the local stack; frozen (ADR-0016 F3). Frozen and locked (ADR-0016 F6).',
-  },
-  // platform/core.yaml
-  {
-    key: 'reports',
-    name: 'Reports Studio',
-    navigationLabel: 'Universal Reports Studio',
-    area: 'Intelligence',
-    navigationGroup: 'Intelligence',
-    route: '/reports',
-    iconKey: 'bar-chart',
-    readiness: 'REVIEW',
-    maturity: 'UI_PROTOTYPE',
-    entitlementEligible: true,
-    trialEligible: true,
-    requiredPermission: 'reports:read',
-    platformInspection: false,
-    reason: 'The screen exists, but its reporting read model is contained and returns 503. Analytics takes over reports (ADR-0016 F11, WI-OI-103).',
   },
   // platform/core.yaml
   {

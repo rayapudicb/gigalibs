@@ -55,7 +55,7 @@ spec:
       trialEligible: true
       requiredPermission: analytics:read
       platformInspection: true
-      reason: Runs as a service with PostgreSQL metric facts, place roll-ups and lineage. Explore answers questions by dimension, time and filter, with formula measures and saved chart views (WI-OI-103). Not certified.
+      reason: Runs as a service with PostgreSQL metric facts, place roll-ups and lineage. Explore answers questions by dimension, time and filter, with formula measures, saved chart views, dashboards and CSV reports (WI-OI-103). Not certified.
       navigationOrder: 210
       menu:
         - key: overview
@@ -74,6 +74,10 @@ spec:
           label: Dashboards
           path: /analytics/dashboards
           icon: gauge
+        - key: reports
+          label: Reports
+          path: /analytics/reports
+          icon: file-text
       # Default roles (ADR-0016 F16, WI-OI-103e): every tenant entitled to Analytics gets these as built-in roles.
       # Tenant admins keep analytics:* through their base role. Measures a steward writes are published by a second
       # person (maker-checker), so a tenant needs two stewards, or a steward and an admin, to publish a formula.

@@ -154,22 +154,6 @@ spec:
       platformInspection: false
       reason: Platform control is global operator authority, not a tenant entitlement.
       navigationOrder: 190
-    - key: reports
-      name: Reports Studio
-      navigationLabel: Universal Reports Studio
-      area: Intelligence
-      navigationGroup: Intelligence
-      route: /reports
-      iconKey: bar-chart
-      readiness: REVIEW
-      maturity: UI_PROTOTYPE
-      entitlementEligible: true
-      trialEligible: true
-      requiredPermission: reports:read
-      platformInspection: false
-      reason: The screen exists, but its reporting read model is contained and returns 503. Analytics takes over reports (ADR-0016 F11, WI-OI-103).
-      navigationOrder: 290
-      personas: [C_LEVEL]
     - key: master-data
       name: Master Data Hub
       navigationLabel: Governed Enterprise Reference Data

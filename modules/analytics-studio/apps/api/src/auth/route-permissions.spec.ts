@@ -93,6 +93,8 @@ const EXPECTED: Record<string, string> = {
   'POST v1/dashboards/:dashboardId/data': 'analytics:read',
   'GET v1/dashboards/:dashboardId/filter-values/:field': 'analytics:read',
   'POST v1/reports/definitions': 'analytics:reports:write',
+  'GET v1/reports/definitions': 'analytics:read',
+  'GET v1/reports/definitions/:definitionId': 'analytics:read',
   'POST v1/reports/runs': 'analytics:reports:write',
   'GET v1/reports/runs/:runId': 'analytics:read',
   'GET v1/reports/definitions/:definitionId/runs': 'analytics:read',

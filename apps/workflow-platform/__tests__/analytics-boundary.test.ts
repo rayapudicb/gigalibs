@@ -254,6 +254,36 @@ describe('Analytics Studio signed BFF (WI-OI-064a)', () => {
     expect(init?.method).toBe('PATCH');
   });
 
+  // WI-OI-103e (ADR-0016 F11): reports. Reading needs analytics:read, creating and running analytics:reports:write,
+  // and the CSV download analytics:export; the file's headers pass through.
+  it('exposes reports with separate write and export permissions', async () => {
+    const sameOrigin = { Host: 'platform.example.invalid', Origin: 'https://platform.example.invalid', 'Content-Type': 'application/json' };
+    const token = '00000000-0000-4000-8000-0000000000e9';
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(async (target) =>
+      String(target).includes('/download/')
+        ? new Response('a,b\r\n', { status: 200, headers: { 'Content-Type': 'text/csv; charset=utf-8', 'Content-Disposition': 'attachment; filename="yield.csv"' } })
+        : new Response(JSON.stringify({}), { status: 200, headers: { 'Content-Type': 'application/json' } }),
+    );
+    vi.mocked(verifiedSession).mockResolvedValue({ context: { ...entitledContext, permissions: ['analytics:read'] } } as never);
+    expect((await call(getAnalytics, 'GET', ['v1', 'reports', 'definitions'])).status).toBe(200);
+    expect((await call(getAnalytics, 'GET', ['v1', 'reports', 'definitions', token, 'runs'])).status).toBe(200);
+    const forwarded = fetchSpy.mock.calls.length;
+    expect((await call(postAnalytics, 'POST', ['v1', 'reports', 'definitions'], { headers: sameOrigin, body: '{}' })).status).toBe(403);
+    expect((await call(postAnalytics, 'POST', ['v1', 'reports', 'runs'], { headers: sameOrigin, body: '{}' })).status).toBe(403);
+    expect((await call(getAnalytics, 'GET', ['v1', 'reports', 'download', token])).status).toBe(403);
+    expect((await call(postAnalytics, 'POST', ['v1', 'reports', 'schedules'], { headers: sameOrigin, body: '{}' })).status).toBe(404);
+    expect(fetchSpy.mock.calls.length).toBe(forwarded);
+
+    vi.mocked(verifiedSession).mockResolvedValue({
+      context: { ...entitledContext, permissions: ['analytics:read', 'analytics:reports:write', 'analytics:export'] },
+    } as never);
+    expect((await call(postAnalytics, 'POST', ['v1', 'reports', 'runs'], { headers: sameOrigin, body: '{}' })).status).toBe(200);
+    const download = await call(getAnalytics, 'GET', ['v1', 'reports', 'download', token]);
+    expect(download.status).toBe(200);
+    expect(download.headers.get('content-disposition')).toBe('attachment; filename="yield.csv"');
+    expect(await download.text()).toBe('a,b\r\n');
+  });
+
   it('returns 503 when the runtime is not configured and 502 during an outage', async () => {
     vi.mocked(verifiedSession).mockResolvedValue({ context: entitledContext } as never);
     vi.stubEnv('ANALYTICS_API_URL', '');

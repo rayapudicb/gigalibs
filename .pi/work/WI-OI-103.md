@@ -380,3 +380,52 @@ Task card: `.pi/tasks/WI-OI-103e.md`. Owner decisions: system roles now; order e
 - **Checks:** default-role sync 4 (tenancy suite 45); `pnpm verify` passes (known drift only).
 - **Deploy note:** e3 changes the core API (`playground-api`), which the 5180 web also uses. Deploying it replaces a
   service of the running 5180 stack, so it needs the owner's explicit OK.
+
+**Core deploy for e3: not done, owner decision needed** (checked 2026-09-30):
+- The core API under 5180 runs `playground-api:5abfa667bb10`, which is 52 commits behind (720 files in
+  `apps/playground-api` and `packages`).
+- The local database lacks 5 core migrations from other work streams: `ledger_genesis_records`,
+  `phase2_dual_mode_forms`, `phase3_thingsboard_telemetry`, `phase4_workforce_eptw_handover` and
+  `phase5_cmms_workforce_ledger_settlement`.
+- So "deploy core" would apply those migrations and move the core API 52 commits under the old 5180 web, not only
+  add e3. Left for the owner.
+
+**e5, Analytics owns reports (F11)** (not deployed):
+- **Migration 000020** (schema 20):
+  - `report_definitions` gains `chart_view_id` or `dashboard_id` (same-tenant FKs, exactly one source);
+    `chart_definition_id` is kept only for old rows (0 locally);
+  - `report_artifacts` gains `content BYTEA`, size-checked;
+  - audit `REPORT_DEFINITION_CREATED` and `REPORT_RUN_COMPLETED`.
+  - Dry-run on the real local PostgreSQL in a rolled-back transaction: the database stayed at 19.
+- **Service rewrite:**
+  - A report is a saved chart view or a dashboard. Creating it checks the source exists in the tenant and is
+    audited.
+  - A run re-asks the stored question(s) with the caller's rights and pins the questions, not the answers.
+  - The CSV has labelled columns and one section per dashboard chart; a failed chart is noted.
+  - The CSV is RFC 4180. Text a spreadsheet would run as a formula (`= + - @`, tab, CR) is prefixed with `'`.
+  - At most 50,000 rows.
+  - The bytes are stored with the append-only artifact, replacing the in-memory store that lost files on restart.
+  - The 15-minute download token needs `export`.
+  - A report on a retired chart definition fails with a clear message.
+  - Schedules are stored but not run (WI-OI-104); the web does not expose them.
+- **Routes:** added `GET v1/reports/definitions` and `GET v1/reports/definitions/:id`; the route table is now 67.
+- **Web:**
+  - "Reports" is added to the Analytics menu. The page creates a report from a saved chart or dashboard
+    (`reports:write`), with "Run now" (`reports:write`) and "Download CSV" (`export`).
+  - The proxy adds the routes, with the file's headers passed through.
+- **F11:** the core `reports` catalogue entry, the `/reports` page, `UniversalReportsWorkbench` (396 lines), the
+  contained 503 route, its test, the help-drawer entry and the feature-script entry are removed. The navigation test
+  records the removal as intended.
+- **Checks:**
+  - reports 30 (rewritten for the new source model, CSV safety and durable bytes);
+  - Analytics suite 352;
+  - gateway test (read, write and export split; CSV headers pass through);
+  - navigation 64;
+  - `pnpm verify` passes (known drift only), including the web build.
+
+**Still open in 103e and 103:**
+- **Old engine:** `v1/charts`, `v1/query/run`, `ChartService` and `QueryEngineService.runQuery` no longer back
+  anything the product uses. Retire them in a small follow-up; tests cover them today.
+- **Live review:** the 103e check with Viewer, Analyst and Steward on 5190 needs e3 deployed (see the core deploy
+  decision above).
+- **Remaining pieces:** 103c (summaries, benchmark) and 103f (manufacturing proof).

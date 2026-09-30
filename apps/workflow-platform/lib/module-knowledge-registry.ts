@@ -490,26 +490,6 @@ export const MODULE_KNOWLEDGE_REGISTRY: Record<string, ModuleKnowledgeEntry> = {
       schema: 'gigalibs_analytics',
     },
   },
-  '/reports': {
-    category: 'Intelligence & Reporting',
-    businessTitle: 'Statutory & Compliance Reports',
-    summary: 'Standardized accounting and operational compliance reports including general ledger, aging schedules, and audit logs.',
-    actions: [
-      'Generate statutory balance sheet and income statement summaries',
-      'Produce CECL-compliant AR aging analysis for financial auditors',
-      'Export immutable system audit trail reports for compliance audits',
-      'Schedule automated report delivery to executive stakeholders',
-    ],
-    guardrails: [
-      'Report figures reconcile exactly against primary double-entry database tables',
-      'Generated report PDFs and CSVs carry cryptographic generation hashes',
-    ],
-    technicalSpec: {
-      serviceName: 'Universal Reports Studio',
-      port: '4400',
-      schema: 'gigalibs_reports',
-    },
-  },
 
   // ── Trust, Security & Execution Monitoring ──
   '/esign': {

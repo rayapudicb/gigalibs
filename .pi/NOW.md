@@ -39,7 +39,7 @@ appending to it, and update it at the end of every task.
 **Owner plan (2026-09-29):** foundation work until **Sunday 2026-10-04**, then the **agriculture package** for a
 client capability pitch (date not fixed), then back to the rest of the foundation.
 
-1. **WI-OI-103e (`.pi/tasks/WI-OI-103e.md`): e1, e2 and e4 are deployed for review on 5190 (schema 19); e3 (roles) is done but not deployed (it changes the core API that 5180 also uses); e5 (reports) is next.** 103d: d1–d7 are built, verified and deployed for review on 5190 (schema 18).
+1. **WI-OI-103e (`.pi/tasks/WI-OI-103e.md`): e1–e5 are built and verified.** e1, e2 and e4 are deployed on 5190 (schema 19). e5 (reports, migration 20) waits for a deploy. e3 (roles) needs the owner's core-deploy decision: it would also apply 5 other core migrations and move the 5180 core API 52 commits (see evidence). 103d: d1–d7 are deployed.
    Next:
    - the owner creates a Demo Lab workspace and adds a second member with `analytics:models:publish`;
    - the live review: load the sample farm, approve "Yield per hectare", build and save a chart.

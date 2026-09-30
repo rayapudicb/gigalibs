@@ -3,10 +3,10 @@
  *
  * Test categories:
  *  1. Migration 000009 schema assertions
- *  2. ReportService — input pinning
+ *  2. ReportService — reports from saved chart views and dashboards (WI-OI-103e, ADR-0016 F11)
  *  3. ReportService — idempotency key / duplicate suppression
- *  4. ReportService — CSV format (RFC 4180)
- *  5. ReportService — short-lived download token (TTL + expiry)
+ *  4. CSV format (RFC 4180, labelled columns, spreadsheet-safe text)
+ *  5. ReportService — short-lived download token (TTL + expiry), bytes kept with the artifact
  *  6. ReportService — append-only enforcement (report_artifacts, report_deliveries)
  *  7. ReportService — cron expression validation
  *  8. ReportService — tenant isolation
@@ -32,18 +32,6 @@ function readMigration(): string {
 
 const PRINCIPAL = { tenantId: 'T', subject: 'u', entitlements: new Set(['analytics-studio']) };
 
-const MOCK_QUERY_RESPONSE = {
-  chartDefinitionId: 'cd-1', asOf: '2026-01-01T00:00:00.000Z',
-  watermark: 'wm-1', definitionVersion: 1, freshness: 'FRESH' as const,
-  results: [
-    { measureName: 'total_revenue', aggregateFn: 'SUM', fieldReference: 'revenue', displayLabel: 'Revenue', value: 100 },
-    { measureName: 'count_orders', aggregateFn: 'COUNT', fieldReference: '*', displayLabel: 'Orders', value: 25 },
-  ],
-  accessibleTable: [
-    { label: 'Revenue', value: '100' },
-    { label: 'Orders', value: '25' },
-  ],
-};
 
 // ─── 1. Migration 000009 schema assertions ───────────────────────────────────
 
@@ -118,244 +106,240 @@ describe('Migration 000009 — schema assertions', () => {
   });
 });
 
-// ─── 2. ReportService — input pinning ────────────────────────────────────────
+// ─── 2. Reports from saved chart views and dashboards ─────────────────────────
 
-import { ReportService } from './report.service.js';
+import { NotFoundException } from '@nestjs/common';
+import { ReportService, buildCsv, csvCell } from './report.service.js';
 
-function makeQueryEngineMock() {
-  return { runQuery: jest.fn().mockResolvedValue(MOCK_QUERY_RESPONSE) };
+const VIEW_ID = '00000000-0000-4000-8000-0000000000a1';
+const DASHBOARD_ID = '00000000-0000-4000-8000-0000000000d1';
+
+const RESULT = {
+  semanticModelId: 'm', datasetVersionId: 'dv', definitionVersion: 1, measureVersions: {},
+  asOf: '2026-09-30T00:00:00.000Z', freshness: 'FRESH' as const, watermark: null, truncated: false,
+  columns: [
+    { name: 'crop', label: 'crop', role: 'dimension' as const, type: 'string' as const },
+    { name: 'total_yield_kg', label: 'Yield (kg)', role: 'measure' as const, type: 'number' as const },
+  ],
+  rows: [['Rice', 5200], ['Wheat, durum', 3500]],
+};
+
+function definitionRow(overrides: Record<string, unknown> = {}) {
+  return {
+    id: 'def-1', display_name: 'Yield by crop', description: null, chart_definition_id: null,
+    chart_view_id: VIEW_ID, dashboard_id: null, source_name: 'Yield by crop', created_by: 'u',
+    created_at: '2026-09-30T00:00:00Z', ...overrides,
+  };
 }
 
-function makeFullDb(reportDefRow: Record<string, unknown> | null = null) {
-  let runId = 'run-1';
-  return {
+function harness(definition: Record<string, unknown> | null = definitionRow()) {
+  const client = { query: jest.fn().mockResolvedValue({ rows: [{ id: 'def-new' }] }) };
+  const db = {
     queryWithTenant: jest.fn().mockImplementation((_t: string, sql: string) => {
-      if (sql.includes('report_definitions') && sql.includes('WHERE id = $1')) {
-        if (!reportDefRow) return Promise.resolve({ rows: [] });
-        return Promise.resolve({ rows: [reportDefRow] });
-      }
-      if (sql.includes('report_runs') && sql.includes('INSERT')) {
-        return Promise.resolve({ rows: [{ id: runId }] });
-      }
-      if (sql.includes('report_runs') && sql.includes('idempotency_key')) {
-        return Promise.resolve({ rows: [] }); // No existing run
-      }
-      if (sql.includes('UPDATE') && sql.includes('report_runs')) {
-        return Promise.resolve({ rows: [] });
-      }
-      if (sql.includes('INSERT INTO') && sql.includes('report_artifacts')) {
-        return Promise.resolve({ rows: [] });
-      }
-      if (sql.includes('report_runs') && sql.includes('LEFT JOIN')) {
+      if (sql.includes('FROM gigalibs_analytics.report_definitions d')) return Promise.resolve({ rows: definition ? [definition] : [] });
+      if (sql.includes('INSERT INTO gigalibs_analytics.report_runs')) return Promise.resolve({ rows: [{ id: 'run-1' }] });
+      if (sql.includes('FROM gigalibs_analytics.report_runs rr')) {
         return Promise.resolve({
           rows: [{
-            id: runId, report_definition_id: 'def-1', tenant_id: 'T',
-            status: 'SUCCEEDED', row_count: 2, error_message: null,
-            triggered_by: 'u', queued_at: '2026-01-01T00:00:00Z',
-            completed_at: '2026-01-01T00:00:01Z',
-            artifact_id: 'art-1', download_token: 'tok-abc',
-            token_expires_at: new Date(Date.now() + 60_000).toISOString(),
+            id: 'run-1', report_definition_id: 'def-1', status: 'SUCCEEDED', row_count: 2, error_message: null,
+            triggered_by: 'u', queued_at: '2026-09-30T00:00:00Z', completed_at: '2026-09-30T00:00:01Z',
+            download_token: 'tok-1', token_expires_at: new Date(Date.now() + 60_000).toISOString(), filename: 'r.csv',
           }],
         });
       }
       return Promise.resolve({ rows: [] });
     }),
-    withTenantTransaction: jest.fn(),
+    withTenantTransaction: jest.fn(async (_t: string, callback: (value: unknown) => unknown) => callback(client)),
   };
+  const chartViews = {
+    get: jest.fn().mockResolvedValue({ id: VIEW_ID }),
+    data: jest.fn().mockResolvedValue({ view: { id: VIEW_ID, query: { semanticModelId: 'm', measures: ['total_yield_kg'] } }, result: RESULT }),
+  };
+  const dashboards = {
+    get: jest.fn().mockResolvedValue({ id: DASHBOARD_ID }),
+    data: jest.fn().mockResolvedValue({
+      dashboardId: DASHBOARD_ID,
+      generatedAt: '2026-09-30T00:00:00Z',
+      tiles: [
+        { chartViewId: VIEW_ID, name: 'Yield by crop', result: RESULT, error: null },
+        { chartViewId: 'v2', name: 'Cost by farm', result: null, error: 'Formula version is no longer published.' },
+      ],
+    }),
+  };
+  const svc = new ReportService(db as any, chartViews as any, dashboards as any);
+  const artifactInsert = () => client.query.mock.calls.find(([sql]: [string]) => sql.includes('INSERT INTO gigalibs_analytics.report_artifacts'));
+  return { svc, db, client, chartViews, dashboards, artifactInsert };
 }
 
-describe('ReportService — input pinning', () => {
-  test('pinned_inputs stored in report_definitions at creation, not per run', async () => {
-    const db = {
-      queryWithTenant: jest.fn().mockResolvedValue({ rows: [{ id: 'def-1' }] }),
-      withTenantTransaction: jest.fn(),
-    };
-    const svc = new ReportService(db as any, makeQueryEngineMock() as any);
-    await svc.createReportDefinition(PRINCIPAL, {
-      chartDefinitionId: 'cd-1', displayName: 'Q1 Revenue',
-      pinnedInputs: { fiscalYear: 2026, region: 'APAC' },
-    });
-    const insertCall = db.queryWithTenant.mock.calls[0]!;
-    // pinnedInputs must be in the INSERT, not deferred
-    expect(insertCall[2]).toContain(JSON.stringify({ fiscalYear: 2026, region: 'APAC' }));
+describe('ReportService — reports from saved chart views and dashboards', () => {
+  test('creates a report from a saved chart after proving the chart exists, and audits it', async () => {
+    const { svc, client, chartViews } = harness();
+    await svc.createReportDefinition(PRINCIPAL as any, { name: 'Yield by crop', source: { chartViewId: VIEW_ID } });
+    expect(chartViews.get).toHaveBeenCalledWith(PRINCIPAL, VIEW_ID);
+    const insert = client.query.mock.calls[0]!;
+    expect(insert[0]).toContain('chart_view_id, dashboard_id');
+    expect(insert[1]).toEqual(['T', 'Yield by crop', null, VIEW_ID, null, 'u']);
+    expect(client.query.mock.calls[1]![0]).toContain("'REPORT_DEFINITION_CREATED'");
+  });
+
+  test('refuses a report without exactly one known source', async () => {
+    const { svc, dashboards, client } = harness();
+    await expect(svc.createReportDefinition(PRINCIPAL as any, { name: 'X', source: {} })).rejects.toThrow(/Invalid report/);
+    await expect(
+      svc.createReportDefinition(PRINCIPAL as any, { name: 'X', source: { chartViewId: VIEW_ID, dashboardId: DASHBOARD_ID } }),
+    ).rejects.toThrow(/Invalid report/);
+    dashboards.get.mockRejectedValueOnce(new NotFoundException('Dashboard not found.'));
+    await expect(svc.createReportDefinition(PRINCIPAL as any, { name: 'X', source: { dashboardId: DASHBOARD_ID } })).rejects.toBeInstanceOf(
+      NotFoundException,
+    );
+    expect(client.query).not.toHaveBeenCalled();
+  });
+
+  test('a run re-asks the saved question, pins the question (not the answer) and stores the CSV with the artifact', async () => {
+    const { svc, db, chartViews, artifactInsert } = harness();
+    const run = await svc.triggerReportRun(PRINCIPAL as any, { reportDefinitionId: 'def-1' });
+    expect(chartViews.data).toHaveBeenCalledWith(PRINCIPAL, VIEW_ID);
+    const pinned = db.queryWithTenant.mock.calls.find(([, sql]: [string, string]) => sql.includes('pinned_query_snapshot'))!;
+    expect(JSON.parse(pinned[2][1])).toEqual({ chartView: VIEW_ID, query: { semanticModelId: 'm', measures: ['total_yield_kg'] } });
+    const [sql, values] = artifactInsert()!;
+    expect(sql).toContain('content');
+    const bytes = values[7] as Buffer;
+    expect(values[4]).toBe(bytes.length);
+    expect(values[3]).toBe(crypto.createHash('sha256').update(bytes).digest('hex'));
+    expect(bytes.toString('utf8')).toContain('crop,Yield (kg)\r\nRice,5200\r\n"Wheat, durum",3500');
+    expect(run.download).toEqual(expect.objectContaining({ token: 'tok-1' }));
+  });
+
+  test('a dashboard report writes one labelled section per chart and notes a chart that failed', async () => {
+    const { svc, dashboards, artifactInsert } = harness(definitionRow({ chart_view_id: null, dashboard_id: DASHBOARD_ID }));
+    await svc.triggerReportRun(PRINCIPAL as any, { reportDefinitionId: 'def-1' });
+    expect(dashboards.data).toHaveBeenCalledWith(PRINCIPAL, DASHBOARD_ID, {});
+    const csv = (artifactInsert()![1][7] as Buffer).toString('utf8');
+    expect(csv).toContain('Yield by crop\r\ncrop,Yield (kg)');
+    expect(csv).toContain('Cost by farm\r\nFormula version is no longer published.');
+  });
+
+  test('a report on a retired chart definition fails with a clear message instead of running the old engine', async () => {
+    const { svc, db, artifactInsert } = harness(definitionRow({ chart_view_id: null, chart_definition_id: 'cd-1' }));
+    await svc.triggerReportRun(PRINCIPAL as any, { reportDefinitionId: 'def-1' });
+    const failed = db.queryWithTenant.mock.calls.find(([, sql]: [string, string]) => sql.includes("status = 'FAILED'"))!;
+    expect(failed[2][1]).toMatch(/retired chart definition/);
+    expect(artifactInsert()).toBeUndefined();
   });
 });
 
 // ─── 3. Idempotency key / duplicate suppression ───────────────────────────────
 
 describe('ReportService — idempotency key suppression', () => {
-  test('returns existing run when idempotency_key already seen', async () => {
-    const db = {
-      queryWithTenant: jest.fn().mockImplementation((_t: string, sql: string) => {
-        if (sql.includes('report_definitions') && sql.includes('WHERE id = $1')) {
-          return Promise.resolve({ rows: [{ id: 'def-1', chart_definition_id: 'cd-1', pinned_inputs: '{}' }] });
-        }
-        if (sql.includes('idempotency_key')) {
-          return Promise.resolve({ rows: [{ id: 'run-existing', status: 'SUCCEEDED' }] });
-        }
-        if (sql.includes('LEFT JOIN') && sql.includes('report_runs')) {
-          return Promise.resolve({
-            rows: [{
-              id: 'run-existing', report_definition_id: 'def-1', tenant_id: 'T',
-              status: 'SUCCEEDED', row_count: 2, error_message: null,
-              triggered_by: 'u', queued_at: '2026-01-01T00:00:00Z',
-              completed_at: '2026-01-01T00:00:01Z',
-              artifact_id: 'art-1', download_token: 'tok-x',
-              token_expires_at: new Date(Date.now() + 60000).toISOString(),
-            }],
-          });
-        }
-        return Promise.resolve({ rows: [] });
-      }),
-      withTenantTransaction: jest.fn(),
-    };
-    const svc = new ReportService(db as any, makeQueryEngineMock() as any);
-    const result = await svc.triggerReportRun(PRINCIPAL, {
-      reportDefinitionId: 'def-1', idempotencyKey: 'idem-123',
+  test('returns the existing run when the idempotency key was already seen, without re-asking', async () => {
+    const { svc, db, chartViews } = harness();
+    db.queryWithTenant.mockImplementation((_t: string, sql: string) => {
+      if (sql.includes('FROM gigalibs_analytics.report_definitions d')) return Promise.resolve({ rows: [definitionRow()] });
+      if (sql.includes('idempotency_key = $2')) return Promise.resolve({ rows: [{ id: 'run-existing' }] });
+      if (sql.includes('FROM gigalibs_analytics.report_runs rr')) {
+        return Promise.resolve({
+          rows: [{ id: 'run-existing', report_definition_id: 'def-1', status: 'SUCCEEDED', row_count: 2, error_message: null,
+            triggered_by: 'u', queued_at: '2026-09-30T00:00:00Z', completed_at: null, download_token: null, token_expires_at: null }],
+        });
+      }
+      return Promise.resolve({ rows: [] });
     });
-    expect(result.id).toBe('run-existing');
-    // runQuery should NOT be called (idempotent short-circuit)
-    const qe = makeQueryEngineMock();
-    expect(qe.runQuery).not.toHaveBeenCalled();
+    const run = await svc.triggerReportRun(PRINCIPAL as any, { reportDefinitionId: 'def-1', idempotencyKey: 'idem-1' });
+    expect(run.id).toBe('run-existing');
+    expect(chartViews.data).not.toHaveBeenCalled();
   });
 });
 
-// ─── 4. CSV format (RFC 4180) ─────────────────────────────────────────────────
+// ─── 4. CSV format ────────────────────────────────────────────────────────────
 
-describe('ReportService — CSV format', () => {
-  test('CSV header is Measure,AggregateFunction,FieldReference,Value', async () => {
-    const db = makeFullDb({ id: 'def-1', chart_definition_id: 'cd-1', pinned_inputs: '{}' });
-    const qe = makeQueryEngineMock();
-    const svc = new ReportService(db as any, qe as any);
-    await svc.triggerReportRun(PRINCIPAL, { reportDefinitionId: 'def-1' });
-
-    // Inspect stored bytes via private store
-    const stored = (ReportService as any).artifactStore;
-    const bytes: Buffer | undefined = [...stored.values()][0];
-    expect(bytes).toBeDefined();
-    const csv = bytes!.toString('utf8');
-    expect(csv).toContain('Measure,AggregateFunction,FieldReference,Value');
+describe('CSV format', () => {
+  test('labelled header, one row per result row, RFC 4180 quoting and CRLF', () => {
+    const { csv, rowCount } = buildCsv('Yield', [{ title: null, result: RESULT, note: null }]);
+    expect(rowCount).toBe(2);
+    expect(csv.startsWith('Yield\r\nGenerated ')).toBe(true);
+    expect(csv).toContain('\r\n\r\ncrop,Yield (kg)\r\nRice,5200\r\n"Wheat, durum",3500\r\n');
+    expect(csvCell('say "hi"')).toBe('"say ""hi"""');
+    expect(csvCell(null)).toBe('');
+    expect(csvCell(-12.5)).toBe('-12.5');
   });
 
-  test('CSV rows contain measure display labels and values', async () => {
-    const db = makeFullDb({ id: 'def-1', chart_definition_id: 'cd-1', pinned_inputs: '{}' });
-    const svc = new ReportService(db as any, makeQueryEngineMock() as any);
-    await svc.triggerReportRun(PRINCIPAL, { reportDefinitionId: 'def-1' });
-
-    const stored = (ReportService as any).artifactStore;
-    const bytes: Buffer = [...stored.values()].at(-1);
-    const csv = bytes.toString('utf8');
-    expect(csv).toContain('Revenue');
-    expect(csv).toContain('100');
-    expect(csv).toContain('Orders');
-    expect(csv).toContain('25');
+  test('text a spreadsheet would run as a formula is neutralised', () => {
+    for (const hostile of ['=HYPERLINK("x")', '+1', '-2+3', '@SUM(A1)', '\tcmd']) {
+      expect(csvCell(hostile).replace(/^"/, '').startsWith("'")).toBe(true);
+    }
+    expect(csvCell('Rice')).toBe('Rice');
   });
 
-  test('CSV includes freshness metadata comment lines', async () => {
-    const db = makeFullDb({ id: 'def-1', chart_definition_id: 'cd-1', pinned_inputs: '{}' });
-    const svc = new ReportService(db as any, makeQueryEngineMock() as any);
-    await svc.triggerReportRun(PRINCIPAL, { reportDefinitionId: 'def-1' });
-
-    const stored = (ReportService as any).artifactStore;
-    const bytes: Buffer = [...stored.values()].at(-1);
-    const csv = bytes.toString('utf8');
-    expect(csv).toMatch(/# Freshness: FRESH/);
-    expect(csv).toMatch(/# GigaLibs Analytics Report/);
-  });
-
-  test('csvEscape handles values with commas and quotes', () => {
-    // Access private via source-code check — CSV escape is pure
-    const src = fs.readFileSync(path.resolve(__dirname, 'report.service.ts'), 'utf8');
-    expect(src).toContain('if (/[",\\r\\n]/.test(value))');
-    expect(src).toContain('value.replace(/"/g, \'""\')');
+  test('notes when a chart returned fewer rows than matched', () => {
+    const { csv } = buildCsv('Yield', [{ title: null, result: { ...RESULT, truncated: true }, note: null }]);
+    expect(csv).toContain('More rows matched than this chart returns');
   });
 });
 
 // ─── 5. Short-lived download token ───────────────────────────────────────────
 
 describe('ReportService — short-lived download token', () => {
-  test('download token expires after TTL (GoneException)', async () => {
-    const expiredAt = new Date(Date.now() - 1000).toISOString();
-    const db = {
-      queryWithTenant: jest.fn().mockResolvedValue({
-        rows: [{
-          id: 'art-1', filename: 'r.csv', content_type: 'text/csv',
-          content_sha256: 'abc', storage_ref: 'mem://run-x',
-          token_expires_at: expiredAt,
-        }],
-      }),
-      withTenantTransaction: jest.fn(),
-    };
-    const svc = new ReportService(db as any, makeQueryEngineMock() as any);
-    await expect(svc.downloadArtifact(PRINCIPAL, 'expired-token')).rejects.toThrow();
+  const artifact = (overrides: Record<string, unknown>) => ({
+    filename: 'r.csv', content_type: 'text/csv; charset=utf-8', content_sha256: 'abc',
+    token_expires_at: new Date(Date.now() + 60_000).toISOString(), content: Buffer.from('a,b\r\n'), ...overrides,
+  });
+  const svcWith = (rows: unknown[]) =>
+    new ReportService({ queryWithTenant: jest.fn().mockResolvedValue({ rows }), withTenantTransaction: jest.fn() } as any, {} as any, {} as any);
+
+  test('returns the stored bytes while the token is valid', async () => {
+    const result = await svcWith([artifact({})]).downloadArtifact(PRINCIPAL as any, 'tok');
+    expect(result.bytes.toString('utf8')).toBe('a,b\r\n');
+  });
+
+  test('an expired token is gone, an unknown token is not found', async () => {
+    await expect(svcWith([artifact({ token_expires_at: new Date(Date.now() - 1000).toISOString() })]).downloadArtifact(PRINCIPAL as any, 'tok'))
+      .rejects.toThrow(/expired/);
+    await expect(svcWith([]).downloadArtifact(PRINCIPAL as any, 'nope')).rejects.toThrow(/not found/);
+  });
+
+  test('an artifact from before files were stored asks for a new run', async () => {
+    await expect(svcWith([artifact({ content: null })]).downloadArtifact(PRINCIPAL as any, 'tok')).rejects.toThrow(/run the report again/);
   });
 
   test('download token TTL is 15 minutes (source code audit)', () => {
     const src = fs.readFileSync(path.resolve(__dirname, 'report.service.ts'), 'utf8');
-    expect(src).toMatch(/15 \* 60 \* 1000|TOKEN_TTL_MS.*=.*15/s);
-  });
-
-  test('download token not found throws NotFoundException', async () => {
-    const db = {
-      queryWithTenant: jest.fn().mockResolvedValue({ rows: [] }),
-      withTenantTransaction: jest.fn(),
-    };
-    const svc = new ReportService(db as any, makeQueryEngineMock() as any);
-    await expect(svc.downloadArtifact(PRINCIPAL, 'nonexistent-token'))
-      .rejects.toMatchObject({ message: expect.stringContaining('not found') });
-  });
-
-  test('content_sha256 is deterministic SHA-256 of CSV bytes', () => {
-    const csv = 'Measure,AggregateFunction,FieldReference,Value\r\nRevenue,SUM,revenue,100\r\n';
-    const hash = crypto.createHash('sha256').update(Buffer.from(csv, 'utf8')).digest('hex');
-    expect(hash).toHaveLength(64);
-    // Same input → same hash
-    const hash2 = crypto.createHash('sha256').update(Buffer.from(csv, 'utf8')).digest('hex');
-    expect(hash).toBe(hash2);
+    expect(src).toMatch(/15 \* 60 \* 1000/);
   });
 });
 
 // ─── 6. Append-only enforcement ───────────────────────────────────────────────
 
 describe('ReportService — append-only enforcement', () => {
-  test('migration has REVOKE UPDATE + DELETE on report_artifacts', () => {
+  test('migration has REVOKE UPDATE + DELETE on report_artifacts and report_deliveries', () => {
     const sql = readMigration();
     expect(sql).toMatch(/REVOKE UPDATE.*report_artifacts/s);
     expect(sql).toMatch(/REVOKE DELETE.*report_artifacts/s);
-  });
-
-  test('migration has REVOKE UPDATE + DELETE on report_deliveries', () => {
-    const sql = readMigration();
     expect(sql).toMatch(/REVOKE UPDATE.*report_deliveries/s);
     expect(sql).toMatch(/REVOKE DELETE.*report_deliveries/s);
   });
 
   test('source code never emits UPDATE/DELETE on report_artifacts', () => {
     const src = fs.readFileSync(path.resolve(__dirname, 'report.service.ts'), 'utf8');
-    expect(src).not.toMatch(/`UPDATE\s+gigalibs_analytics\.report_artifacts/i);
-    expect(src).not.toMatch(/`DELETE\s+FROM\s+gigalibs_analytics\.report_artifacts/i);
+    expect(src).not.toMatch(/UPDATE\s+gigalibs_analytics\.report_artifacts/i);
+    expect(src).not.toMatch(/DELETE\s+FROM\s+gigalibs_analytics\.report_artifacts/i);
   });
 });
 
 // ─── 7. Cron expression validation ───────────────────────────────────────────
 
 describe('ReportService — cron expression validation', () => {
-  function svc() {
-    const db = {
-      queryWithTenant: jest.fn().mockResolvedValue({ rows: [{ id: 'sched-1' }] }),
-      withTenantTransaction: jest.fn(),
-    };
-    return new ReportService(db as any, makeQueryEngineMock() as any);
-  }
+  const svc = () =>
+    new ReportService({ queryWithTenant: jest.fn().mockResolvedValue({ rows: [{ id: 'sched-1' }] }), withTenantTransaction: jest.fn() } as any, {} as any, {} as any);
   const base = { reportDefinitionId: 'def-1', deliveryChannel: 'IN_APP' as const, deliveryTargetRef: 'ref-1' };
 
   test('accepts valid 5-field cron expression', async () => {
-    await expect(svc().createSchedule(PRINCIPAL, { ...base, cronExpression: '0 8 * * 1' })).resolves.toBeDefined();
+    await expect(svc().createSchedule(PRINCIPAL as any, { ...base, cronExpression: '0 8 * * 1' })).resolves.toBeDefined();
   });
 
   test('rejects cron with wrong number of fields', async () => {
-    await expect(svc().createSchedule(PRINCIPAL, { ...base, cronExpression: '0 8 * *' }))
-      .rejects.toMatchObject({ message: expect.stringContaining('5 fields') });
+    await expect(svc().createSchedule(PRINCIPAL as any, { ...base, cronExpression: '0 8 * *' })).rejects.toMatchObject({
+      message: expect.stringContaining('5 fields'),
+    });
   });
 });
 
@@ -363,12 +347,9 @@ describe('ReportService — cron expression validation', () => {
 
 describe('ReportService — tenant isolation', () => {
   test('triggerReportRun throws NotFoundException for unknown definition (cross-tenant)', async () => {
-    const db = {
-      queryWithTenant: jest.fn().mockResolvedValue({ rows: [] }),
-      withTenantTransaction: jest.fn(),
-    };
-    const svc = new ReportService(db as any, makeQueryEngineMock() as any);
-    await expect(svc.triggerReportRun(PRINCIPAL, { reportDefinitionId: 'def-other-tenant' }))
-      .rejects.toMatchObject({ message: expect.stringContaining('not found') });
+    const { svc } = harness(null);
+    await expect(svc.triggerReportRun(PRINCIPAL as any, { reportDefinitionId: 'def-other-tenant' })).rejects.toMatchObject({
+      message: expect.stringContaining('not found'),
+    });
   });
 });

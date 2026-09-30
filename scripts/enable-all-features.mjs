@@ -35,7 +35,6 @@ const trialModuleKeys = [
   'esignature',
   'operational-ontology',
   'saga-orchestrator',
-  'reports',
   'master-data',
   'solution-packs',
   'communications-textfly',
