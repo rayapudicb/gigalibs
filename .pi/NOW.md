@@ -46,8 +46,9 @@ Replace old content rather than appending to it, and update it at the end of eve
    pulls and report runs. **Done and live:** steps 943d2f8, a63cb52 and 13cd27a, plus the image-workspace fix
    1f1c572, deployed 2026-09-30 at `13cd27af9761-214bebf5ead2`; the live proofs pass.
    - Owner decision 2026-09-30: summary builds move to the kernel with 104e, not 104c.
-2. **WI-OI-104d, the adapter framework:** step 1 (framework, migration 000006, routes) verified, not deployed. Next:
-   step 2, the web for pull sources, credentials, pulls and quarantine.
+2. **WI-OI-104d, the adapter framework:** step 1 bfc4c66 (framework, migration 000006, routes); step 2 (web panel)
+   verified. Neither is deployed. Next: the 104d deploy and a live pull proof (plan in `.pi/work/WI-OI-104.md`), with
+   the owner's OK.
 3. Then 104e the Analytics bridge (with summary builds) and 104f retiring the connector copies.
 4. Then WI-OI-105 (F15), WI-OI-107 (F10), WI-OI-106 (F17), the 103 leftovers, WI-OI-108 and the fresh-install fix.
 5. Then the agriculture package.

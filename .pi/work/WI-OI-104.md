@@ -326,3 +326,31 @@ core API) and no scheduler. Connector Hub also trusts a caller-supplied tenant h
 - **Not in 104d:** the OAuth2 consent flow (authorization code). Its routes stay "not implemented".
 - **Next:** step 2, the web (configure a pull source and its login, run it, see pulls and quarantine), then the 104d
   deploy (Hub migration 6, Hub and web images) with the owner's OK.
+
+**Step 2: the web** (not deployed):
+- `components/connectors/PullSourcePanel.tsx` goes on each Connector Hub connection card ("Set up a pull source" /
+  "Pull source"):
+  - Source form: base URL, resource path, fixed query parameters, records path, id field, changed-at field with its
+    parameter and time format, paging style with its settings, most pages per pull, and the login with its
+    non-secret settings.
+  - When saved, the form becomes a summary with "Edit source" and "Pull now".
+  - Login secrets: write-only password fields (API key, token, or client ID and secret), replaced as a whole and never
+    shown.
+  - Recent pulls: status, manual or scheduled, new, unchanged and quarantined counts, pages, page limit, and the error.
+  - Quarantined records: the reason, source id and time, with the kept payload collapsed.
+- `lib/connectors/pull-source-form.ts` maps the flat form to and from the pull source, sending only the chosen paging
+  style's and login's settings. 2 tests, including a farmOS-style JSON:API source that round-trips.
+- The existing "Trigger Sync" message now reports new, unchanged and quarantined counts.
+- Hub validation and permissions stay server-side; the panel shows their messages.
+- **Checks:** web typecheck; `pnpm verify` passes (known drift only). Not yet seen in a browser.
+- **Deploy plan (owner's OK needed):**
+  - backup;
+  - Hub migration 000006 through its migrations job;
+  - Hub and web images, then the live proof.
+  - **Pull proof, without changing the live Hub's allowlist:**
+    - a throwaway source container and a throwaway Hub container on the Compose network, the Hub allowing only that
+      host;
+    - the 5190 proof web pointed at that Hub;
+    - Playwright sets up a pull source with an API key, stores the secret, pulls, and sees the result and the
+      quarantine.
+    - Afterwards both containers go and the test sessions are revoked.

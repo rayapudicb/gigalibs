@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import { SchedulePanel } from '@/components/schedules/SchedulePanel';
+import { PullSourcePanel } from '@/components/connectors/PullSourcePanel';
 import {
   Alert,
   Badge,
@@ -139,6 +140,8 @@ export default function ConnectionsPage() {
   const [syncingId, setSyncingId] = useState<string | null>(null);
   // WI-OI-104c: scheduled syncs run in the kernel worker as the schedule's owner.
   const [schedulingId, setSchedulingId] = useState<string | null>(null);
+  // WI-OI-104d: the pull source (generic REST adapter) of one connection at a time.
+  const [pullSourceId, setPullSourceId] = useState<string | null>(null);
   const [selectedSimSlug, setSelectedSimSlug] = useState<string>('salesforce-crm');
   const [simPayloadText, setSimPayloadText] = useState<string>(
     JSON.stringify(SAMPLE_WEBHOOK_PAYLOADS['salesforce-crm'], null, 2)
@@ -218,7 +221,9 @@ export default function ConnectionsPage() {
       const res = await fetch(`/api/connectors-hub/connections/${id}/sync`, { method: 'POST' });
       const data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.message || 'Sync failed');
-      setActionSuccess(`Delta sync completed! ${data.records_synced} new records ingested into data highway.`);
+      setActionSuccess(
+        `Pull completed: ${data.records_synced} new, ${data.duplicates_skipped ?? 0} unchanged, ${data.records_quarantined ?? 0} quarantined.`,
+      );
       void loadData();
     } catch (err: any) {
       setError(err.message || 'Sync failed.');
@@ -597,6 +602,15 @@ export default function ConnectionsPage() {
                   </Button>
                 </div>
                 <div className="mt-3 flex flex-col gap-2">
+                  <Button
+                    variant="transparent"
+                    size="small"
+                    aria-expanded={pullSourceId === conn.id}
+                    onClick={() => setPullSourceId(pullSourceId === conn.id ? null : conn.id)}
+                  >
+                    {pullSourceId === conn.id ? 'Hide pull source' : conn.configuration?.source ? 'Pull source' : 'Set up a pull source'}
+                  </Button>
+                  {pullSourceId === conn.id ? <PullSourcePanel connectionId={conn.id} source={conn.configuration?.source} /> : null}
                   <Button
                     variant="transparent"
                     size="small"
