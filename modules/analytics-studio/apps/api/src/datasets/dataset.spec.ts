@@ -181,7 +181,8 @@ describe('DatasetService — build lifecycle', () => {
         }
         return Promise.resolve({ rows: [] });
       }),
-      withTenantTransaction: jest.fn(),
+      // WI-OI-104e: a build moves the models on the same mapping version in one transaction (none here).
+      withTenantTransaction: jest.fn(async (_tenantId: string, work: (client: unknown) => unknown) => work({ query: jest.fn(async () => ({ rows: [] })) })),
     };
   }
 
@@ -230,7 +231,8 @@ describe('DatasetService — build lifecycle', () => {
         }
         return Promise.resolve({ rows: [] });
       }),
-      withTenantTransaction: jest.fn(),
+      // WI-OI-104e: a build moves the models on the same mapping version in one transaction (none here).
+      withTenantTransaction: jest.fn(async (_tenantId: string, work: (client: unknown) => unknown) => work({ query: jest.fn(async () => ({ rows: [] })) })),
     };
     const svc = new DatasetService(db as any);
     await expect(
@@ -248,7 +250,8 @@ describe('DatasetService — tenant isolation', () => {
   test('getDatasetVersion throws NotFoundException for unknown id (other tenant)', async () => {
     const db = {
       queryWithTenant: jest.fn().mockResolvedValue({ rows: [] }),
-      withTenantTransaction: jest.fn(),
+      // WI-OI-104e: a build moves the models on the same mapping version in one transaction (none here).
+      withTenantTransaction: jest.fn(async (_tenantId: string, work: (client: unknown) => unknown) => work({ query: jest.fn(async () => ({ rows: [] })) })),
     };
     const svc = new DatasetService(db as any);
     await expect(

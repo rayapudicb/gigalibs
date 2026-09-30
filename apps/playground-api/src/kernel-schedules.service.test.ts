@@ -111,4 +111,15 @@ describe('kernel schedules API', () => {
     expect(() => assertInterval('0,5 6 * * *', 'UTC')).toThrow('every 15 minutes');
     expect(() => assertInterval('61 * * * *', 'UTC')).toThrow();
   });
+
+  // WI-OI-104e: members may schedule a dataset rebuild; the chained summary build is never a schedule of its own.
+  it('schedules dataset rebuilds with the mapping right, and never lists internal operations', async () => {
+    const MAPPING = '00000000-0000-4000-8000-0000000000bb';
+    const { service, backend } = setup(['analytics:read', 'analytics:mappings:write']);
+    await service.create('tenant-1', 'caller', { name: 'Nightly rebuild', operation: 'analytics.dataset-build', targetId: MAPPING, cron: '30 6 * * *', timeZone: 'Asia/Kolkata' });
+    expect(backend.scheduler.create).toHaveBeenCalledWith(expect.objectContaining({ payload: { operation: 'analytics.dataset-build', mappingId: MAPPING } }));
+    await expect(setup(['analytics:read', 'analytics:reports:write']).service.create('tenant-1', 'caller', { name: 'x', operation: 'analytics.dataset-build', targetId: MAPPING, cron: '30 6 * * *', timeZone: 'UTC' })).rejects.toThrow('analytics:mappings:write');
+    backend.schedules.list.mockResolvedValueOnce([record('44444444-4444-4444-8444-444444444444', { operation: 'analytics.summaries-build', datasetVersionId: MAPPING })] as never);
+    expect((await service.list('tenant-1', 'caller', {})).schedules).toEqual([]);
+  });
 });

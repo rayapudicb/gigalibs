@@ -39,13 +39,15 @@ describe('manifest-declared navigation equals the former sidebar tables', () => 
   // Deliberate navigation changes made after the freeze, each with its work item. Every other entry must still match
   // the frozen tables exactly.
   const INTENDED_MENU_CHANGES: Readonly<Record<string, ReturnType<typeof moduleMenu>>> = {
-    // WI-OI-103d: Analytics gains Overview, Places and the new Explore screen; WI-OI-103e adds Dashboards and Reports.
+    // WI-OI-103d: Analytics gains Overview, Places and the new Explore screen; WI-OI-103e adds Dashboards and Reports;
+    // WI-OI-104e adds Sources (no-code mapping of pulled records into datasets).
     'analytics-studio': [
       { key: 'overview', label: 'Overview', href: '/analytics', icon: moduleIcons['bar-chart'] },
       { key: 'places', label: 'Places', href: '/analytics/places', icon: moduleIcons['map-pin'] },
       { key: 'explore', label: 'Explore', href: '/analytics/explore', icon: moduleIcons.layers },
       { key: 'dashboards', label: 'Dashboards', href: '/analytics/dashboards', icon: moduleIcons.gauge },
       { key: 'reports', label: 'Reports', href: '/analytics/reports', icon: moduleIcons['file-text'] },
+      { key: 'sources', label: 'Sources', href: '/analytics/sources', icon: moduleIcons.database },
     ],
   };
 

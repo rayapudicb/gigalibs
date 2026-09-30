@@ -91,6 +91,9 @@
        summary-build hand-over the owner decided on.
      - Exit (agriculture plan phase 2): a REST source syncs on a schedule into a dataset with no code beyond its
        adapter settings.
+   - **Step 4, the no-code mapping screen** (added 2026-09-30: F8 needs "no-code field mapping", and there was no web
+     screen for sources, discovery or mapping). Analytics "Sources": discover a source's fields (dot paths into
+     nested records), map names, types and unit conversions, publish, build, make explorable, and schedule rebuilds.
  Journal records become raw records,
    then go through the existing discovery, mapping, dataset and model steps. Mapping gains unit conversion (kg,
    quintal, t).

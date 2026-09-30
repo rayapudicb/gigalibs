@@ -78,6 +78,10 @@ spec:
           label: Reports
           path: /analytics/reports
           icon: file-text
+        - key: sources
+          label: Sources
+          path: /analytics/sources
+          icon: database
       # Default roles (ADR-0016 F16, WI-OI-103e): every tenant entitled to Analytics gets these as built-in roles.
       # Tenant admins keep analytics:* through their base role. Measures a steward writes are published by a second
       # person (maker-checker), so a tenant needs two stewards, or a steward and an admin, to publish a formula.

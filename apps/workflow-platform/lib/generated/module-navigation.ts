@@ -41,6 +41,12 @@ export const generatedModuleMenus: Readonly<Record<string, readonly GeneratedMod
       "label": "Reports",
       "path": "/analytics/reports",
       "icon": "file-text"
+    },
+    {
+      "key": "sources",
+      "label": "Sources",
+      "path": "/analytics/sources",
+      "icon": "database"
     }
   ],
   "asset-maintenance": [

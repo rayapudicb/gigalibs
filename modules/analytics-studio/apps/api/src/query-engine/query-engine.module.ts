@@ -15,10 +15,12 @@ import { ModelCatalogService } from './model-catalog.service.js';
 import { ChartViewController } from './chart-view.controller.js';
 import { ChartViewService } from './chart-view.service.js';
 import { SummaryService } from './summary.service.js';
+import { SummaryController } from './summary.controller.js';
 
 @Module({
   imports: [DatasetModule],
   controllers: [
+    SummaryController,
     QueryEngineController,
     ChartsController,
     DashboardController,

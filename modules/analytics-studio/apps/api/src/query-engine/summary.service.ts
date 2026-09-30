@@ -60,6 +60,7 @@ export class SummaryService {
     tenantId: string,
     query: Pick<AnalyticsQueryV1, 'semanticModelId' | 'dimensions' | 'filters' | 'time'>,
     extraFilterFields: readonly string[] = [],
+    options: { wait?: boolean } = {},
   ): Promise<void> {
     try {
       const model = await this.db.queryWithTenant<{ dataset_version_id: string }>(
@@ -71,10 +72,39 @@ export class SummaryService {
       if (!datasetVersionId) return;
       const fields = await loadDatasetFields(this.db, tenantId, datasetVersionId);
       const shape = summaryShapeFor(query, fields, extraFilterFields);
-      if (shape) await this.ensure(tenantId, datasetVersionId, shape, fields);
+      if (shape) await this.ensure(tenantId, datasetVersionId, shape, fields, options);
     } catch (error) {
       this.logger.warn(`[tenant:${tenantId}] Summary request skipped: ${error instanceof Error ? error.message : String(error)}`);
     }
+  }
+
+  /**
+   * WI-OI-104e (the kernel's `analytics.summaries-build` job): builds, and waits for, the summaries every saved chart
+   * and dashboard needs on the models that now use this dataset version. Returns how many summaries are READY or FAILED.
+   */
+  async ensureForDatasetVersion(tenantId: string, datasetVersionId: string): Promise<{ ready: number; failed: number; building: number }> {
+    const views = await this.db.queryWithTenant<{ query_spec: AnalyticsQueryV1; filter_fields: string[] | null }>(
+      tenantId,
+      `SELECT v.query_spec,
+              (SELECT array_agg(DISTINCT f->>'field') FROM gigalibs_analytics.dashboard_tiles t
+                 JOIN gigalibs_analytics.dashboards d ON d.id = t.dashboard_id,
+                 jsonb_array_elements(COALESCE(d.shared_filters, '[]'::jsonb)) f
+                WHERE t.chart_view_id = v.id) AS filter_fields
+         FROM gigalibs_analytics.chart_views v
+         JOIN gigalibs_analytics.semantic_models m ON m.id::text = v.query_spec->>'semanticModelId'
+        WHERE m.dataset_version_id = $1`,
+      [datasetVersionId],
+    );
+    for (const view of views.rows) {
+      await this.ensureForQuestion(tenantId, view.query_spec, (view.filter_fields ?? []).filter(Boolean), { wait: true });
+    }
+    const states = await this.db.queryWithTenant<{ status: string; n: number }>(
+      tenantId,
+      `SELECT status, count(*)::int AS n FROM gigalibs_analytics.analytics_summaries WHERE dataset_version_id = $1 GROUP BY status`,
+      [datasetVersionId],
+    );
+    const count = (status: string) => states.rows.find((row) => row.status === status)?.n ?? 0;
+    return { ready: count('READY'), failed: count('FAILED'), building: count('BUILDING') };
   }
 
   /** Records the summary and starts its build when it is new, failed or stuck. Returns the summary id. */

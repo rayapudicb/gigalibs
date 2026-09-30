@@ -25,6 +25,16 @@ import {
 export class SchemaDiscoveryController {
   constructor(private readonly schemaDiscoveryService: SchemaDiscoveryService) {}
 
+  /**
+   * GET /v1/sources — WI-OI-104e: the sources a member can map (name, kind and status only; no connection details). The
+   * Sources screen uses this instead of the Postgres connector's admin routes, which WI-OI-104f retires.
+   */
+  @Get('sources')
+  @RequirePermissions('analytics:mappings:write')
+  async listSources(@Principal() principal: AnalyticsPrincipal) {
+    return this.schemaDiscoveryService.listSources(principal);
+  }
+
   /** POST /v1/connectors/:id/discover — trigger schema discovery for a table */
   @Post('connectors/:id/discover')
   @RequirePermissions('analytics:mappings:write')

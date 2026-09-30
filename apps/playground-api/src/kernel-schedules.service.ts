@@ -90,7 +90,7 @@ export class KernelSchedulesService implements OnModuleDestroy {
     const rights = await this.rights(tenantId, userId);
     const visible = (await this.#backend.schedules.list(tenantId))
       .map((record) => ({ record, payload: moduleCall(record) }))
-      .filter((entry): entry is { record: ScheduleRecord; payload: ModuleCallPayload } => entry.payload !== null)
+      .filter((entry): entry is { record: ScheduleRecord; payload: ScheduledPayload } => entry.payload !== null)
       .filter(({ payload }) => !filter.operation || payload.operation === filter.operation)
       .filter(({ payload }) => !filter.targetId || moduleCallTarget(payload) === filter.targetId)
       .filter(({ payload }) => rights.canRead(payload.operation));
@@ -111,9 +111,9 @@ export class KernelSchedulesService implements OnModuleDestroy {
   async create(tenantId: string, userId: string, dto: CreateKernelScheduleDto): Promise<KernelScheduleV1> {
     const rights = await this.rights(tenantId, userId);
     this.requireRun(rights, dto.operation);
-    let payload: ModuleCallPayload;
+    let payload: ScheduledPayload;
     try {
-      payload = moduleCallPayload(dto.operation, dto.targetId);
+      payload = moduleCallPayload(dto.operation, dto.targetId) as ScheduledPayload;
     } catch {
       throw new BadRequestException(`'${dto.targetId}' is not a valid ${SCHEDULED_OPERATIONS[dto.operation].target} id.`);
     }
@@ -186,7 +186,7 @@ export class KernelSchedulesService implements OnModuleDestroy {
   }
 
   /** The schedule's payload when the caller may see it; unknown and hidden schedules look the same. */
-  private async visible(tenantId: string, id: string, rights: CallerRights): Promise<ModuleCallPayload | null> {
+  private async visible(tenantId: string, id: string, rights: CallerRights): Promise<ScheduledPayload | null> {
     const record = await this.#backend.schedules.get(tenantId, id);
     const payload = record ? moduleCall(record) : null;
     return payload && rights.canRead(payload.operation) ? payload : null;
@@ -200,7 +200,7 @@ export class KernelSchedulesService implements OnModuleDestroy {
     return { rights, payload };
   }
 
-  private async present(tenantId: string, record: ScheduleRecord | null, payload: ModuleCallPayload): Promise<KernelScheduleV1> {
+  private async present(tenantId: string, record: ScheduleRecord | null, payload: ScheduledPayload): Promise<KernelScheduleV1> {
     if (!record) throw new NotFoundException('Schedule not found.');
     const [latest, owners] = await Promise.all([
       this.#backend.jobs.latestByCorrelationForTenant(tenantId, [correlation(record.id)]),
@@ -247,10 +247,14 @@ function badRequest(error: unknown): never {
   throw error;
 }
 
-function moduleCall(record: ScheduleRecord): ModuleCallPayload | null {
+/** A module call whose operation members can schedule (chained operations such as summary builds are not). */
+type ScheduledPayload = Extract<ModuleCallPayload, { operation: ScheduledOperation }>;
+
+function moduleCall(record: ScheduleRecord): ScheduledPayload | null {
   if (record.jobType !== 'module.call') return null;
   try {
-    return parseModuleCallPayload(record.payload);
+    const payload = parseModuleCallPayload(record.payload);
+    return Object.hasOwn(SCHEDULED_OPERATIONS, payload.operation) ? (payload as ScheduledPayload) : null;
   } catch {
     return null;
   }
@@ -267,7 +271,7 @@ async function ownerNames(ids: readonly string[]): Promise<Map<string, string | 
 
 function toSchedule(
   record: ScheduleRecord,
-  payload: ModuleCallPayload,
+  payload: ScheduledPayload,
   owners: ReadonlyMap<string, string | null>,
   lastJob: JobRecord | null,
   canManage: boolean,

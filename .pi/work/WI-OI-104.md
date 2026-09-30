@@ -444,3 +444,59 @@ core API) and no scheduler. Connector Hub also trusts a caller-supplied tenant h
   - `pnpm verify` passes (known drift only).
 - **Next:** step 2, unit conversion in mappings; step 3, dataset builds on a schedule with chained summary builds.
   Then the 104e deploy with an end-to-end proof (a Hub pull reaching an Analytics dataset).
+
+**Steps 2–4: units, scheduled rebuilds with chained summaries, and the Sources screen** (not deployed):
+- **Units** (`packages/contracts/src/analytics/units.ts`):
+  - mass (g, kg, quintal, t, lb), area (m², ha, acre) and volume (mL, L, m³), with common spellings ("Quintals",
+    "qtl", "Tonnes", "metric ton");
+  - conversions stay within a dimension, and binary noise is rounded away.
+  - A mapping's number field may convert from a fixed unit or from the unit named in another field of each record.
+    Analytics validates the pairing (for example, kg to ha is refused).
+  - At build time, a value whose unit is unknown or of another kind becomes null and is logged, never guessed.
+- **Nested records:** mapping source fields may be dot paths (up to five segments), and discovery profiles nested
+  objects as dot paths. JSON:API records such as farmOS's (`attributes.…`) can therefore be mapped without code.
+- **Scheduled rebuilds:**
+  - `POST v1/datasets/build` uses the latest published mapping version when none is given.
+  - After a READY build, semantic models on an older build of the same mapping version (identical fields) move to the
+    new version, each move audited (`SEMANTIC_MODEL_REFRESHED`, Analytics migration 000024, contract 24). Models on
+    another mapping version stay.
+  - A failed model move is logged and never turns the finished build FAILED. The dataset spec caught the first
+    placement of this code inside the build's failure path.
+  - The answer cache key includes the dataset version, so a moved model never serves stale answers.
+- **Chained summaries:**
+  - `POST v1/datasets/:id/summaries` (kernel only; the web proxy answers 404) builds, and waits for, the summaries the
+    saved charts and dashboards on that version need.
+  - Kernel operations: `analytics.dataset-build` (schedulable; target a mapping; needs `analytics:mappings:write`) and
+    `analytics.summaries-build` (internal).
+  - A READY build enqueues the summary job as the same owner (idempotency `summaries:<version>`). A FAILED build is
+    final (`BUILD_FAILED`).
+  - The schedules API never lists internal operations. `module.call` jobs now have ten minutes.
+- **Sources screen** (`/analytics/sources`, menu "Sources"):
+  - lists mappable sources (`GET v1/sources`: names, kinds and status only; the Postgres connector's own routes stay
+    unexposed, as the boundary test requires);
+  - "Map fields": discover, then per field use, dataset name, type and unit conversion; save and publish;
+  - Datasets: latest build, "Build now", "Make explorable" (a model with a total of each number field and a record
+    count), and a rebuild "Schedule".
+  - The data steward role holds every right the screen needs.
+- **Checks:**
+  - units 2 tests; mapping draft 2 tests; kernel job and schedules tests (chaining, final failure, internal operations
+    not listed, the mapping right required);
+  - Analytics boundary test for the Sources routes; navigation test with the intended Sources entry; all 364
+    Analytics tests;
+  - `proof:connector-hub-inbox` (throwaway PostgreSQL, migrations 1–24):
+    - quintals, tonnes and acres converted and an unknown unit left empty;
+    - nested fields mapped;
+    - a rebuild after a new harvest moved the model (audited) and the saved chart's total went from 1,200 to 3,200 kg;
+    - the chained summary build readied the chart's summary, and the chart now answers from it;
+    - the Demo Lab sample farm still loads.
+  - `pnpm verify` passes (known drift only).
+- **Deploy plan (owner's OK):**
+  - backup;
+  - Hub migration 7 and Analytics migrations 22–24;
+  - the Analytics inbox relay key pair (credentials script);
+  - new core, web, Hub and Analytics images.
+  - **End-to-end proof in the browser:**
+    - a throwaway source and throwaway Hub that relays to the live Analytics inbox;
+    - a pull with "Send pulled records to Analytics" on;
+    - on Analytics Sources: map with a unit conversion, build, and make it explorable;
+    - then a scheduled rebuild through the live kernel worker, with its chained summary job.

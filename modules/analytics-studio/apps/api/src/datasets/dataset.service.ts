@@ -1,3 +1,5 @@
+import { type FieldUnitConversion, convertUnit, normalizeUnit } from '@gigalibs/contracts';
+import { readSourceField } from '../schema-discovery/schema-discovery.service.js';
 import {
   BadRequestException,
   Injectable,
@@ -12,8 +14,8 @@ import type { AnalyticsPrincipal } from '../auth/authorization.js';
 
 export interface BuildDatasetDto {
   mappingId: string;
-  /** Must match a PUBLISHED mapping version number */
-  mappingVersion: number;
+  /** Must match a PUBLISHED mapping version number; omitted, the latest one (WI-OI-104e scheduled rebuilds). */
+  mappingVersion?: number;
 }
 
 export interface DatasetVersionSummary {
@@ -29,6 +31,8 @@ export interface DatasetVersionSummary {
   builtBy: string;
   builtAt: string;
   completedAt: string | null;
+  /** WI-OI-104e: semantic models moved to this version by this build (same mapping version, so the same fields). */
+  refreshedModelIds?: string[];
 }
 
 export interface SemanticMeasureDto {
@@ -91,6 +95,17 @@ export class DatasetService {
   ): Promise<DatasetVersionSummary> {
     const { tenantId, subject } = principal;
 
+    if (dto.mappingVersion === undefined) {
+      const latest = await this.db.queryWithTenant<{ version_number: number }>(
+        tenantId,
+        `SELECT max(version_number) AS version_number FROM gigalibs_analytics.studio_mapping_versions WHERE mapping_id = $1`,
+        [dto.mappingId],
+      );
+      const version = latest.rows[0]?.version_number;
+      if (!version) throw new NotFoundException(`Mapping '${dto.mappingId}' has no published version.`);
+      dto = { ...dto, mappingVersion: Number(version) };
+    }
+
     // Verify the mapping exists and belongs to tenant
     const mappingResult = await this.db.queryWithTenant<any>(
       tenantId,
@@ -122,9 +137,13 @@ export class DatasetService {
       sourceField: string;
       analyticalField: string;
       analyticalType: string;
+      unit?: FieldUnitConversion;
     }> = Array.isArray(mapping.field_mappings)
       ? mapping.field_mappings
       : JSON.parse(mapping.field_mappings);
+
+    let refreshedModelIds: string[] = [];
+    let ready = false;
 
     // Create dataset version record (BUILDING)
     const versionResult = await this.db.queryWithTenant<{ id: string; version_number: number }>(
@@ -176,6 +195,7 @@ export class DatasetService {
         `[tenant:${tenantId}] Dataset version ${versionNumber} READY: ` +
           `${recordCount} records, checksum=${checksum.slice(0, 8)}…`,
       );
+      ready = true;
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       await this.db.queryWithTenant(
@@ -188,7 +208,48 @@ export class DatasetService {
       this.logger.error(`[tenant:${tenantId}] Dataset version ${versionNumber} FAILED: ${msg}`);
     }
 
-    return this.getDatasetVersion(principal, datasetVersionId);
+    // The dataset is complete whatever happens next: a failed model move is logged, never turns the build FAILED.
+    if (ready) {
+      refreshedModelIds = await this.refreshModels(principal, dto.mappingId, dto.mappingVersion!, datasetVersionId).catch((err: unknown) => {
+        this.logger.error(`[tenant:${tenantId}] Models were not moved to dataset ${datasetVersionId}: ${err instanceof Error ? err.message : String(err)}`);
+        return [];
+      });
+    }
+    const built = await this.getDatasetVersion(principal, datasetVersionId);
+    return refreshedModelIds.length > 0 ? { ...built, refreshedModelIds } : built;
+  }
+
+  /**
+   * WI-OI-104e: the semantic models on an older build of the same mapping version (identical fields) move to the new
+   * version, so saved charts and dashboards show the new data; each move is audited. Models on another mapping
+   * version stay where they are until someone moves them.
+   */
+  private async refreshModels(principal: AnalyticsPrincipal, mappingId: string, mappingVersion: number, datasetVersionId: string): Promise<string[]> {
+    return this.db.withTenantTransaction(principal.tenantId, async (client) => {
+      const moved = await client.query<{ id: string; previous: string }>(
+        `WITH previous AS (
+           SELECT sm.id, sm.dataset_version_id AS previous
+             FROM gigalibs_analytics.semantic_models sm
+             JOIN gigalibs_analytics.analytical_dataset_versions dv ON dv.id = sm.dataset_version_id
+            WHERE dv.mapping_id = $1 AND dv.mapping_version = $2 AND dv.id <> $3
+            FOR UPDATE OF sm)
+         UPDATE gigalibs_analytics.semantic_models sm
+            SET dataset_version_id = $3, updated_at = now()
+           FROM previous
+          WHERE sm.id = previous.id
+          RETURNING sm.id, previous.previous`,
+        [mappingId, mappingVersion, datasetVersionId],
+      );
+      for (const model of moved.rows) {
+        await client.query(
+          `INSERT INTO gigalibs_analytics.analytics_audit_log
+             (tenant_id, event_type, actor_subject, entity_id, entity_type, event_payload)
+           VALUES ($1, 'SEMANTIC_MODEL_REFRESHED'::gigalibs_analytics.audit_event_type, $2, $3, 'SEMANTIC_MODEL', $4::jsonb)`,
+          [principal.tenantId, principal.subject, model.id, JSON.stringify({ fromDatasetVersionId: model.previous, toDatasetVersionId: datasetVersionId, mappingId, mappingVersion })],
+        );
+      }
+      return moved.rows.map((model) => model.id);
+    });
   }
 
   async getDatasetVersion(
@@ -352,7 +413,7 @@ export class DatasetService {
     mappingId: string,
     connectionId: string,
     sourceTableName: string,
-    fieldMappings: Array<{ sourceField: string; analyticalField: string; analyticalType: string }>,
+    fieldMappings: Array<{ sourceField: string; analyticalField: string; analyticalType: string; unit?: FieldUnitConversion }>,
   ): Promise<{ recordCount: number; checksum: string }> {
     // Read most recent raw records for this connection + table (all of them)
     const rawResult = await this.db.queryWithTenant<{
@@ -373,15 +434,27 @@ export class DatasetService {
       return { recordCount: 0, checksum: crypto.createHash('sha256').update('empty').digest('hex') };
     }
 
-    // Transform each raw row: pick declared source fields, cast to analyticalType
+    // Transform each raw row: pick declared source fields (dot paths reach nested records), cast to analyticalType,
+    // and convert units (WI-OI-104e). A value whose unit is unknown or of another kind becomes null, never a guess.
+    let unconverted = 0;
     const analyticalRows = rawRows.map((r) => {
       const payload: Record<string, unknown> = {};
       for (const mapping of fieldMappings) {
-        const rawValue = r.raw_payload[mapping.sourceField];
-        payload[mapping.analyticalField] = castToType(rawValue, mapping.analyticalType);
+        const rawValue = readSourceField(r.raw_payload, mapping.sourceField);
+        let value = castToType(rawValue, mapping.analyticalType);
+        if (mapping.unit && typeof value === 'number') {
+          const from = mapping.unit.from ?? normalizeUnit(readSourceField(r.raw_payload, mapping.unit.fromField ?? ''));
+          const converted = from ? convertUnit(value, from, mapping.unit.to) : null;
+          if (converted === null) unconverted += 1;
+          value = converted;
+        }
+        payload[mapping.analyticalField] = value;
       }
       return { analytical_payload: payload, source_pk_hash: r.source_pk_hash };
     });
+    if (unconverted > 0) {
+      this.logger.warn(`[tenant:${tenantId}] dataset ${datasetVersionId}: ${unconverted} value(s) had an unknown or mismatched unit and were left empty.`);
+    }
 
     // Batch-insert into dataset_record_versions (append-only)
     const BATCH = 200;

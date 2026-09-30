@@ -18,10 +18,18 @@ export const SCHEDULED_OPERATIONS = {
     runPermission: 'connections:sync',
     target: 'connection',
   },
+  // WI-OI-104e: rebuild a dataset from its mapping's latest published version; the summaries its charts and
+  // dashboards need are built next, as a chained kernel job.
+  'analytics.dataset-build': {
+    moduleKey: 'analytics-studio',
+    readPermission: 'analytics:read',
+    runPermission: 'analytics:mappings:write',
+    target: 'mapping',
+  },
 } as const;
 
 export type ScheduledOperation = keyof typeof SCHEDULED_OPERATIONS;
-export const ScheduledOperationSchema = z.enum(['analytics.report-run', 'connector-hub.sync']);
+export const ScheduledOperationSchema = z.enum(['analytics.report-run', 'connector-hub.sync', 'analytics.dataset-build']);
 
 export const CreateKernelScheduleSchema = z
   .object({

@@ -39,7 +39,7 @@ function requiredAnalyticsPermission(method: string, path: readonly string[]): s
   if (joined === 'v1/places/metric-drilldown') return method === 'POST' ? 'analytics:read' : null;
   // WI-OI-103d: the Explore screen — a typed query spec is posted but only reads; the model catalog and chart views.
   if (joined === 'v1/query/spec') return method === 'POST' ? 'analytics:read' : null;
-  if (joined === 'v1/semantic-models') return read;
+  if (joined === 'v1/semantic-models') return method === 'GET' ? 'analytics:read' : method === 'POST' ? 'analytics:models:write' : null;
   if (new RegExp(`^v1/semantic-models/${SEGMENT}/catalog$`).test(joined)) return read;
   if (joined === 'v1/chart-views') return method === 'GET' ? 'analytics:read' : method === 'POST' ? 'analytics:charts:write' : null;
   if (new RegExp(`^v1/chart-views/${SEGMENT}(/data)?$`).test(joined)) return read;
@@ -65,5 +65,14 @@ function requiredAnalyticsPermission(method: string, path: readonly string[]): s
   if (joined === 'v1/reports/runs') return method === 'POST' ? 'analytics:reports:write' : null;
   if (new RegExp(`^v1/reports/runs/${SEGMENT}$`).test(joined)) return read;
   if (new RegExp(`^v1/reports/download/${SEGMENT}$`).test(joined)) return method === 'GET' ? 'analytics:export' : null;
+  // WI-OI-104e: the Sources screen maps pulled records into datasets without code. Sources (names and kinds only),
+  // discovery, mappings and dataset builds belong to mapping; a model makes a dataset explorable. The Postgres
+  // connector's own routes (v1/connectors) stay unexposed.
+  if (joined === 'v1/sources') return method === 'GET' ? 'analytics:mappings:write' : null;
+  if (new RegExp(`^v1/connectors/${SEGMENT}/discover$`).test(joined)) return method === 'POST' ? 'analytics:mappings:write' : null;
+  if (joined === 'v1/mappings') return method === 'GET' ? 'analytics:read' : method === 'POST' ? 'analytics:mappings:write' : null;
+  if (new RegExp(`^v1/mappings/${SEGMENT}/publish$`).test(joined)) return method === 'POST' ? 'analytics:mappings:write' : null;
+  if (joined === 'v1/datasets/build') return method === 'POST' ? 'analytics:mappings:write' : null;
+  if (new RegExp(`^v1/datasets/by-mapping/${SEGMENT}$`).test(joined)) return read;
   return null;
 }

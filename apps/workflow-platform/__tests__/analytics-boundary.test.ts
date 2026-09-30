@@ -87,6 +87,30 @@ describe('Analytics Studio signed BFF (WI-OI-064a)', () => {
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
+  // WI-OI-104e: the Sources screen. Mapping needs analytics:mappings:write, a model analytics:models:write; the
+  // Postgres connector's own routes stay closed.
+  it('lets a data steward map, build and model, and a viewer only read mappings and datasets', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(async () => new Response('[]', { status: 200, headers: { 'Content-Type': 'application/json' } }));
+    const post = (path: string[]) =>
+      call(postAnalytics, 'POST', path, { headers: { Host: 'platform.example.invalid', Origin: 'https://platform.example.invalid', 'Content-Type': 'application/json' }, body: '{}' });
+    const source = '11111111-1111-4111-8111-111111111111';
+    vi.mocked(verifiedSession).mockResolvedValue({ context: { ...entitledContext, permissions: ['analytics:read'] } } as never);
+    expect((await call(getAnalytics, 'GET', ['v1', 'mappings'])).status).toBe(200);
+    expect((await call(getAnalytics, 'GET', ['v1', 'datasets', 'by-mapping', source])).status).toBe(200);
+    for (const path of [['v1', 'mappings'], ['v1', 'datasets', 'build'], ['v1', 'connectors', source, 'discover'], ['v1', 'semantic-models']]) {
+      expect((await post(path)).status).toBe(403);
+    }
+    expect((await call(getAnalytics, 'GET', ['v1', 'sources'])).status).toBe(403);
+    vi.mocked(verifiedSession).mockResolvedValue({ context: { ...entitledContext, permissions: ['analytics:read', 'analytics:mappings:write', 'analytics:models:write'] } } as never);
+    expect((await call(getAnalytics, 'GET', ['v1', 'sources'])).status).toBe(200);
+    for (const path of [['v1', 'mappings'], ['v1', 'mappings', source, 'publish'], ['v1', 'datasets', 'build'], ['v1', 'connectors', source, 'discover'], ['v1', 'semantic-models']]) {
+      expect((await post(path)).status).toBe(200);
+    }
+    expect((await call(getAnalytics, 'GET', ['v1', 'connectors'])).status).toBe(404);
+    expect((await post(['v1', 'datasets', source, 'summaries'])).status).toBe(404);
+    expect(fetchSpy).toHaveBeenCalled();
+  });
+
   it('rejects unlisted routes, the development issuer path and cross-site mutations before forwarding', async () => {
     const fetchSpy = vi.spyOn(globalThis, 'fetch');
     vi.mocked(verifiedSession).mockResolvedValue({

@@ -95,4 +95,30 @@ describe('module.call job', () => {
     expect(grants(['*'], 'connections:sync')).toBe(true);
     expect(grants(['analytics:read'], 'analytics:reports:write')).toBe(false);
   });
+
+  // WI-OI-104e: a scheduled dataset build chains the summary build for the new version, as the same owner.
+  it('chains the summary build after a ready dataset build, and stops for good when the build failed', async () => {
+    const MAPPING = '00000000-0000-4000-8000-0000000000bb';
+    const VERSION = '00000000-0000-4000-8000-0000000000cc';
+    const enqueue = vi.fn(async () => ({ id: 'job-2' }));
+    const writer = { getSubjectContext: async () => owner(['analytics:mappings:write']) };
+    const job = moduleCallJob(writer as never, environment, ok({ id: VERSION, buildStatus: 'READY' }, 202) as never, enqueue);
+    const result = await job.handler(context({ operation: 'analytics.dataset-build', mappingId: MAPPING }));
+    expect(result).toMatchObject({ operation: 'analytics.dataset-build', resultId: VERSION, resultStatus: 'READY', followUpJobId: 'job-2' });
+    expect(enqueue).toHaveBeenCalledWith(expect.objectContaining({
+      tenantId: 'tenant-1',
+      type: 'module.call',
+      ownerSubjectId: 'owner-1',
+      correlationId: 'schedule:s-1',
+      idempotencyKey: `summaries:${VERSION}`,
+      payload: { operation: 'analytics.summaries-build', datasetVersionId: VERSION },
+    }));
+    const failed = moduleCallJob(writer as never, environment, ok({ id: VERSION, buildStatus: 'FAILED', buildError: 'field crop missing' }, 202) as never, enqueue);
+    await expect(failed.handler(context({ operation: 'analytics.dataset-build', mappingId: MAPPING }))).rejects.toMatchObject({ code: 'BUILD_FAILED' });
+    const fetchSpy = ok({ datasetVersionId: VERSION, ready: 2, failed: 0, building: 0 }, 200);
+    const summaries = await moduleCallJob(writer as never, environment, fetchSpy as never).handler(context({ operation: 'analytics.summaries-build', datasetVersionId: VERSION }));
+    expect(String((fetchSpy.mock.calls[0] as unknown as [string])[0])).toBe(`http://analytics-api:4400/v1/datasets/${VERSION}/summaries`);
+    expect(summaries).toMatchObject({ resultId: VERSION, summariesReady: 2, summariesFailed: 0 });
+    expect(() => parseModuleCallPayload({ operation: 'analytics.dataset-build', mappingId: 'not-a-uuid' })).toThrow(NonRetryableJobError);
+  });
 });

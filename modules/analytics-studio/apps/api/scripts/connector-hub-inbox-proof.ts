@@ -11,7 +11,10 @@ import { DatabaseService } from '../src/database/database.service.js';
 import { DatasetService } from '../src/datasets/dataset.service.js';
 import { ConnectorHubInboxService, HUB_RECORDS_TABLE } from '../src/inbox/connector-hub-inbox.js';
 import { SampleFarmService } from '../src/places/sample-farm.service.js';
+import { ChartViewService } from '../src/query-engine/chart-view.service.js';
 import { FormulaMeasureService } from '../src/query-engine/formula-measure.service.js';
+import { QueryEngineService } from '../src/query-engine/query-engine.service.js';
+import { SummaryService } from '../src/query-engine/summary.service.js';
 import { SchemaDiscoveryService } from '../src/schema-discovery/schema-discovery.service.js';
 import { startThrowawayPostgres } from './throwaway-postgres.js';
 
@@ -52,9 +55,9 @@ try {
 
   step('1. pulled records arrive once each, as one CONNECTOR_HUB source per Hub connection');
   const harvests = [
-    { id: 'h-1', field: 'North', crop: 'maize', quantity: 12, unit: 'quintal', harvested_on: '2026-09-21' },
-    { id: 'h-2', field: 'North', crop: 'rice', quantity: 8, unit: 'quintal', harvested_on: '2026-09-22' },
-    { id: 'h-3', field: 'South', crop: 'maize', quantity: 9.5, unit: 'quintal', harvested_on: '2026-09-23' },
+    { id: 'h-1', field: 'North', crop: 'maize', quantity: 12, unit: 'Quintals', harvested_on: '2026-09-21', plot: { area: { value: 2, unit: 'acres' } } },
+    { id: 'h-2', field: 'North', crop: 'rice', quantity: 8, unit: 'qtl', harvested_on: '2026-09-22', plot: { area: { value: 1.5, unit: 'ha' } } },
+    { id: 'h-3', field: 'South', crop: 'maize', quantity: 9.5, unit: 'bushel', harvested_on: '2026-09-23', plot: { area: { value: 1, unit: 'ha' } } },
   ];
   const first = envelope('farm-tenant', 'h-1', harvests[0]!, '2026-09-24T06:00:00.000Z');
   const stored = await inbox.receive(first);
@@ -85,14 +88,20 @@ try {
   const discovery = new SchemaDiscoveryService(db, new ConnectorService(db));
   const schema = await discovery.discoverSchema(farm, sourceId, HUB_RECORDS_TABLE);
   const fields = JSON.stringify(schema);
-  for (const field of ['crop', 'quantity', 'unit', 'harvested_on']) assert.ok(fields.includes(field), `discovered ${field}`);
+  for (const field of ['crop', 'quantity', 'unit', 'harvested_on', 'plot.area.value', 'plot.area.unit']) assert.ok(fields.includes(field), `discovered ${field}`);
   const fieldMappings = [
     { sourceField: 'id', analyticalField: 'harvest_id', analyticalType: 'string' },
     { sourceField: 'field', analyticalField: 'field', analyticalType: 'string' },
     { sourceField: 'crop', analyticalField: 'crop', analyticalType: 'string' },
-    { sourceField: 'quantity', analyticalField: 'quantity', analyticalType: 'number' },
+    // WI-OI-104e: each record names its own unit; the dataset holds kilograms and hectares.
+    { sourceField: 'quantity', analyticalField: 'yield_kg', analyticalType: 'number', unit: { to: 'kg', fromField: 'unit' } },
+    { sourceField: 'plot.area.value', analyticalField: 'area_ha', analyticalType: 'number', unit: { to: 'ha', fromField: 'plot.area.unit' } },
     { sourceField: 'harvested_on', analyticalField: 'harvested_on', analyticalType: 'date' },
   ] as const;
+  await assert.rejects(
+    discovery.createMapping(farm, { connectionId: sourceId, displayName: 'Bad', sourceTableName: HUB_RECORDS_TABLE, fieldMappings: [{ sourceField: 'quantity', analyticalField: 'q', analyticalType: 'number', unit: { to: 'ha', from: 'kg' } }] }),
+    /measure different things/,
+  );
   const mapping = await discovery.createMapping(farm, { connectionId: sourceId, displayName: 'Harvests', sourceTableName: HUB_RECORDS_TABLE, fieldMappings: [...fieldMappings] });
   const version = (await discovery.publishMappingVersion(farm, mapping.id, { fieldMappings: [...fieldMappings] })).latestVersionNumber!;
   const datasets = new DatasetService(db);
@@ -104,11 +113,41 @@ try {
     [built.id],
   );
   assert.equal(rows.rows.length, 3, 'one dataset row per source record');
-  const text = JSON.stringify(rows.rows);
-  assert.ok(text.includes('8.4'), 'the newer h-2 version wins');
-  assert.ok(text.includes('9.5') && !/"quantity":1[,}]/.test(text), 'the late older h-3 copy does not replace the newer one');
+  const byId = Object.fromEntries(rows.rows.map((row) => [row.analytical_payload.harvest_id, row.analytical_payload]));
+  assert.deepEqual([byId['h-1']?.yield_kg, byId['h-1']?.area_ha], [1200, 0.80937128448], 'quintals to kg, acres to ha');
+  assert.equal(byId['h-2']?.yield_kg, 840, 'the newer h-2 version (8.4 qtl) wins');
+  assert.equal(byId['h-3']?.yield_kg, null, 'an unknown unit (bushel) is left empty, never guessed');
+  assert.equal(byId['h-3']?.area_ha, 1, 'the late older h-3 copy does not replace the newer one');
 
-  step('3. the Demo Lab sample farm (synthetic source) still loads under the new source rule');
+  step('3. a scheduled rebuild moves the model on it to the new data, and the chained summary build readies its chart');
+  const summaries = new SummaryService(db);
+  const engine = new QueryEngineService(db, summaries);
+  const chartViews = new ChartViewService(db, engine, summaries);
+  const model = await datasets.createSemanticModel(farm, {
+    datasetVersionId: built.id,
+    displayName: 'Harvests',
+    measures: [{ measureName: 'total_yield_kg', aggregateFn: 'SUM', fieldReference: 'yield_kg', displayLabel: 'Yield (kg)' }],
+  });
+  const view = await chartViews.create(farm, { name: 'Yield by crop', query: { semanticModelId: model.id, measures: ['total_yield_kg'], dimensions: ['crop'] }, visual: { type: 'table' } });
+  const maize = async () => (await engine.runSpec(farm, view.query)).rows.find((row) => row[0] === 'maize')?.[1];
+  assert.equal(await maize(), 1200, 'before: h-1 only (h-3 has an unknown unit)');
+  const h4 = { id: 'h-4', field: 'South', crop: 'maize', quantity: 2, unit: 'tonnes', harvested_on: '2026-09-26', plot: { area: { value: 1, unit: 'ha' } } };
+  await inbox.receive(envelope('farm-tenant', 'h-4', h4, '2026-09-26T06:00:00.000Z', { payload: { ...first.payload, sourceId: 'h-4', syncJobId: 'sync-3', record: h4 } }));
+  const rebuilt = await datasets.buildDatasetVersion(farm, { mappingId: mapping.id });
+  assert.equal(rebuilt.buildStatus, 'READY');
+  assert.deepEqual(rebuilt.refreshedModelIds, [model.id], 'the model follows the rebuild of the same mapping version');
+  assert.equal(await maize(), 3200, 'after: plus 2 tonnes, as 2000 kg');
+  const audit = await db.queryWithTenant<{ n: number }>(
+    'farm-tenant',
+    "SELECT count(*)::int AS n FROM gigalibs_analytics.analytics_audit_log WHERE event_type = 'SEMANTIC_MODEL_REFRESHED' AND entity_id = $1",
+    [model.id],
+  );
+  assert.equal(audit.rows[0]!.n, 1);
+  const chained = await summaries.ensureForDatasetVersion('farm-tenant', rebuilt.id);
+  assert.deepEqual(chained, { ready: 1, failed: 0, building: 0 }, 'the saved chart has its summary on the new version');
+  assert.equal((await new QueryEngineService(db, summaries).runSpec(farm, view.query)).answeredFrom, 'summary');
+
+  step('4. the Demo Lab sample farm (synthetic source) still loads under the new source rule');
   const formulas = new FormulaMeasureService(db);
   const sample = new SampleFarmService(db, discovery, datasets, formulas);
   const loaded = await sample.load(principal('demo-farm'), 'inbox-proof');

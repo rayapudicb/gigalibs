@@ -1,3 +1,4 @@
+import { ANALYTICS_UNITS, type FieldUnitConversion, isAnalyticsUnit } from '@gigalibs/contracts';
 import {
   BadRequestException,
   Injectable,
@@ -34,11 +35,17 @@ export interface FieldProfile {
 }
 
 export interface FieldMappingEntry {
+  /** A top-level field, or a dot path into nested records (WI-OI-104e), for example `attributes.quantity`. */
   sourceField: string;
   analyticalField: string;
   analyticalType: 'string' | 'number' | 'boolean' | 'date' | 'timestamp';
   transformHint?: string;
+  /** WI-OI-104e: number fields may convert to one unit, from a fixed unit or from the unit named in another field. */
+  unit?: FieldUnitConversion;
 }
+
+/** A source field: a name, or a dot path of up to five segments into nested records. */
+export const SOURCE_FIELD_PATH = /^[a-zA-Z_][a-zA-Z0-9_]{0,62}(\.[a-zA-Z0-9_]{1,63}){0,4}$/;
 
 export interface CreateMappingDto {
   connectionId: string;
@@ -63,6 +70,8 @@ export interface MappingSummary {
   updatedAt: string;
   latestVersionNumber: number | null;
   latestContentHash: string | null;
+  /** WI-OI-104e: the latest published field mappings, for the Sources screen's measures. */
+  latestFieldMappings?: FieldMappingEntry[];
 }
 
 // ─── SchemaDiscoveryService ───────────────────────────────────────────────────
@@ -326,6 +335,15 @@ export class SchemaDiscoveryService {
     });
   }
 
+  /** WI-OI-104e: mappable sources, without connection details. */
+  async listSources(principal: AnalyticsPrincipal): Promise<Array<{ id: string; displayName: string; sourceType: string; status: string }>> {
+    const result = await this.db.queryWithTenant<{ id: string; display_name: string; source_type: string; status: string }>(
+      principal.tenantId,
+      `SELECT id, display_name, source_type::text, status::text FROM gigalibs_analytics.source_connections ORDER BY display_name`,
+    );
+    return result.rows.map((row) => ({ id: row.id, displayName: row.display_name, sourceType: row.source_type, status: row.status }));
+  }
+
   async listMappings(principal: AnalyticsPrincipal): Promise<MappingSummary[]> {
     const { tenantId } = principal;
     const result = await this.db.queryWithTenant<any>(
@@ -333,10 +351,11 @@ export class SchemaDiscoveryService {
       `SELECT m.id, m.connection_id, m.tenant_id, m.display_name, m.source_table_name,
               m.lifecycle, m.created_by, m.created_at::text, m.updated_at::text,
               mv.version_number AS latest_version_number,
-              mv.content_hash   AS latest_content_hash
+              mv.content_hash   AS latest_content_hash,
+              mv.field_mappings AS latest_field_mappings
        FROM gigalibs_analytics.data_studio_mappings m
        LEFT JOIN LATERAL (
-         SELECT version_number, content_hash
+         SELECT version_number, content_hash, field_mappings
          FROM gigalibs_analytics.studio_mapping_versions
          WHERE mapping_id = m.id
          ORDER BY version_number DESC LIMIT 1
@@ -362,10 +381,11 @@ export class SchemaDiscoveryService {
       `SELECT m.id, m.connection_id, m.tenant_id, m.display_name, m.source_table_name,
               m.lifecycle, m.created_by, m.created_at::text, m.updated_at::text,
               mv.version_number AS latest_version_number,
-              mv.content_hash   AS latest_content_hash
+              mv.content_hash   AS latest_content_hash,
+              mv.field_mappings AS latest_field_mappings
        FROM gigalibs_analytics.data_studio_mappings m
        LEFT JOIN LATERAL (
-         SELECT version_number, content_hash
+         SELECT version_number, content_hash, field_mappings
          FROM gigalibs_analytics.studio_mapping_versions
          WHERE mapping_id = m.id
          ORDER BY version_number DESC LIMIT 1
@@ -391,6 +411,9 @@ export class SchemaDiscoveryService {
       updatedAt: row['updated_at'] as string,
       latestVersionNumber: row['latest_version_number'] != null ? Number(row['latest_version_number']) : null,
       latestContentHash: (row['latest_content_hash'] as string | null) ?? null,
+      ...(row['latest_field_mappings'] != null
+        ? { latestFieldMappings: (typeof row['latest_field_mappings'] === 'string' ? JSON.parse(row['latest_field_mappings'] as string) : row['latest_field_mappings']) as FieldMappingEntry[] }
+        : {}),
     };
   }
 
@@ -409,7 +432,7 @@ export class SchemaDiscoveryService {
     const VALID_TYPES = new Set(['string', 'number', 'boolean', 'date', 'timestamp']);
     const FIELD_NAME_RE = /^[a-zA-Z][a-zA-Z0-9_]{0,62}$/;
     for (const entry of mappings) {
-      if (!FIELD_NAME_RE.test(entry.sourceField)) {
+      if (!SOURCE_FIELD_PATH.test(entry.sourceField)) {
         throw new BadRequestException(`Invalid sourceField name: '${entry.sourceField}'.`);
       }
       if (!FIELD_NAME_RE.test(entry.analyticalField)) {
@@ -420,6 +443,7 @@ export class SchemaDiscoveryService {
           `Invalid analyticalType '${entry.analyticalType}'. Must be one of: ${[...VALID_TYPES].join(', ')}.`,
         );
       }
+      if (entry.unit !== undefined) validateUnitConversion(entry);
     }
     // Check for duplicate source fields
     const seen = new Set<string>();
@@ -438,7 +462,8 @@ export class SchemaDiscoveryService {
   private profileFields(rows: Record<string, unknown>[]): Omit<FieldProfile, 'id' | 'profiledAt'>[] {
     if (rows.length === 0) return [];
 
-    // Collect all field names across all rows
+    // Collect all field names across all rows; nested objects are profiled as dot paths (WI-OI-104e).
+    rows = rows.map((row) => flattenRecord(row));
     const allFields = new Set<string>();
     for (const row of rows) {
       for (const key of Object.keys(row)) {
@@ -486,4 +511,45 @@ function inferJsonType(value: unknown): string {
   if (Array.isArray(value)) return 'array';
   if (typeof value === 'object') return 'object';
   return 'string';
+}
+
+/** WI-OI-104e: a unit conversion applies to number fields, to a known unit, from a known unit or a source field. */
+function validateUnitConversion(entry: FieldMappingEntry): void {
+  const unit = entry.unit as Partial<FieldUnitConversion> | null;
+  if (!unit || typeof unit !== 'object') throw new BadRequestException(`The unit of '${entry.analyticalField}' must be an object.`);
+  if (entry.analyticalType !== 'number') throw new BadRequestException(`Only number fields convert units ('${entry.analyticalField}').`);
+  if (!isAnalyticsUnit(unit.to)) throw new BadRequestException(`'${String(unit.to)}' is not a known unit (${Object.keys(ANALYTICS_UNITS).join(', ')}).`);
+  if ((unit.from === undefined) === (unit.fromField === undefined)) {
+    throw new BadRequestException(`The unit of '${entry.analyticalField}' needs either a fixed "from" unit or a "fromField".`);
+  }
+  if (unit.from !== undefined) {
+    if (!isAnalyticsUnit(unit.from)) throw new BadRequestException(`'${String(unit.from)}' is not a known unit.`);
+    if (ANALYTICS_UNITS[unit.from].dimension !== ANALYTICS_UNITS[unit.to].dimension) {
+      throw new BadRequestException(`${unit.from} cannot convert to ${unit.to}: they measure different things.`);
+    }
+  }
+  if (unit.fromField !== undefined && (typeof unit.fromField !== 'string' || !SOURCE_FIELD_PATH.test(unit.fromField))) {
+    throw new BadRequestException(`Invalid unit fromField: '${String(unit.fromField)}'.`);
+  }
+}
+
+/** Nested objects become dot paths (at most five levels); arrays and scalars are kept as they are. */
+export function flattenRecord(record: Record<string, unknown>, prefix = '', depth = 0, into: Record<string, unknown> = {}): Record<string, unknown> {
+  for (const [key, value] of Object.entries(record)) {
+    const path = prefix ? `${prefix}.${key}` : key;
+    if (value && typeof value === 'object' && !Array.isArray(value) && depth < 4) flattenRecord(value as Record<string, unknown>, path, depth + 1, into);
+    else into[path] = value;
+  }
+  return into;
+}
+
+/** The value at a dot path; a plain name reads the top-level field. */
+export function readSourceField(record: Record<string, unknown>, path: string): unknown {
+  if (Object.hasOwn(record, path)) return record[path];
+  let current: unknown = record;
+  for (const key of path.split('.')) {
+    if (!current || typeof current !== 'object' || Array.isArray(current)) return undefined;
+    current = (current as Record<string, unknown>)[key];
+  }
+  return current;
 }

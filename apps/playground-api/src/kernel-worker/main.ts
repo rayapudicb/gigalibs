@@ -32,12 +32,14 @@ export async function startKernelWorker(): Promise<() => Promise<void>> {
   const pool = new Pool({ connectionString: databaseUrl, max: 5 });
   const auth = new AuthService();
   const registry = new JobRegistry();
-  registry.register(moduleCallJob(auth));
+  // A dataset build chains its summary build as the next job (WI-OI-104e); `jobs` exists by the time a job runs.
+  let jobs: KernelJobs | undefined;
+  registry.register(moduleCallJob(auth, process.env, fetch, (command) => jobs!.enqueue(command)));
 
   const redisUrl = process.env.REDIS_URL?.trim();
   const redis = redisUrl ? new Redis(redisUrl, { maxRetriesPerRequest: null }) : undefined;
   const bullMq = redis ? new BullMqJobAdapter(redis) : undefined;
-  const jobs = new KernelJobs({
+  jobs = new KernelJobs({
     store: new PostgresJobStore(pool),
     registry,
     ...(bullMq ? { bullMq } : {}),
