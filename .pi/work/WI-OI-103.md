@@ -292,3 +292,29 @@ Task card: `.pi/tasks/WI-OI-103e.md`. Owner decisions: system roles now; order e
   81 in total; `pnpm verify` passes (known drift only).
 - **Finding:** Workforce's dotted names (`workforce.resources.read`) are also outside the grammar, so a tenant role
   cannot grant them either. Left as is; noted for WI-OI-077.
+
+**e2, Analytics permission set (F16):**
+- `ANALYTICS_PERMISSIONS` in the module: `read`, `connectors:write`, `mappings:write`, `models:write`,
+  `models:publish`, `charts:write`, `dashboards:write`, `reports:write` and `export`, plus `action` (setup,
+  operational actions, Demo Lab). `RequirePermissions` accepts only these names, checked at compile time.
+- **Folded:**
+  - `connectors:read`, `ingestion:read` and `ingestion:write` → `connectors:write`. Source internals (hosts, sync
+    runs) are for whoever manages sources.
+  - `schema:write` → `mappings:write`.
+  - `schema:read` and `mappings:read` → `read`.
+- **Gap closed:** 24 routes named no permission, so any entitled member could call them at the module:
+  - reports (6), audit and lineage (2), datasets (3) and semantic models (2);
+  - the old `v1/query/run`, `v1/charts` (3) and `v1/dashboards` (4).
+
+  Each now names one permission, and the guard fails closed: a guarded route that names none is refused, even for
+  `analytics:*`.
+- **Exposure unchanged:** the web proxy exposes the same routes with the same permissions as before. None of the
+  newly guarded routes is exposed, so what any base role can do in the product is unchanged.
+- **Checks:**
+  - a route-permission test walks all 63 guarded routes through Nest metadata and compares them with the agreed
+    table; only the three health routes are unguarded;
+  - a guard test proves a route with no declared permission is refused;
+  - Analytics suite 345; `pnpm verify` passes (known drift only).
+- **Follow-up:** moving the Analytics proxy to manifest-declared gateway routes (like CMMS and Workforce) needs a new
+  segment type in the manifest grammar. `{id}` is UUID-only, and the lineage route takes metric keys such as
+  `NET_AR_REVENUE`. Left for later.

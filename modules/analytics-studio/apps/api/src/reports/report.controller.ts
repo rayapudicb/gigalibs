@@ -9,7 +9,7 @@ import {
   Res,
   UseGuards,
 } from '@nestjs/common';
-import { PlatformContextAuthorizationGuard } from '../auth/authorization.js';
+import { PlatformContextAuthorizationGuard, RequirePermissions } from '../auth/authorization.js';
 import { CurrentPrincipal } from '../auth/principal.decorator.js';
 import type { AnalyticsPrincipal } from '../auth/authorization.js';
 
@@ -37,6 +37,7 @@ export class ReportController {
    * Required scope: analytics:reports:write
    */
   @Post('definitions')
+  @RequirePermissions('analytics:reports:write')
   @HttpCode(HttpStatus.CREATED)
   async createDefinition(
     @CurrentPrincipal() principal: AnalyticsPrincipal,
@@ -51,6 +52,7 @@ export class ReportController {
    * Required scope: analytics:reports:write
    */
   @Post('runs')
+  @RequirePermissions('analytics:reports:write')
   @HttpCode(HttpStatus.ACCEPTED)
   async triggerRun(
     @CurrentPrincipal() principal: AnalyticsPrincipal,
@@ -64,6 +66,7 @@ export class ReportController {
    * Required scope: analytics:reports:read
    */
   @Get('runs/:runId')
+  @RequirePermissions('analytics:read')
   async getRun(
     @CurrentPrincipal() principal: AnalyticsPrincipal,
     @Param('runId') runId: string,
@@ -77,6 +80,7 @@ export class ReportController {
    * Required scope: analytics:reports:read
    */
   @Get('definitions/:definitionId/runs')
+  @RequirePermissions('analytics:read')
   async listRuns(
     @CurrentPrincipal() principal: AnalyticsPrincipal,
     @Param('definitionId') definitionId: string,
@@ -92,6 +96,7 @@ export class ReportController {
    * Required scope: analytics:reports:read
    */
   @Get('download/:token')
+  @RequirePermissions('analytics:export')
   async downloadArtifact(
     @CurrentPrincipal() principal: AnalyticsPrincipal,
     @Param('token') token: string,
@@ -116,6 +121,7 @@ export class ReportController {
    * Required scope: analytics:reports:write
    */
   @Post('schedules')
+  @RequirePermissions('analytics:reports:write')
   @HttpCode(HttpStatus.CREATED)
   async createSchedule(
     @CurrentPrincipal() principal: AnalyticsPrincipal,

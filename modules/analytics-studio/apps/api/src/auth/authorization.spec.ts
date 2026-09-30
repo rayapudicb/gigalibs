@@ -47,9 +47,10 @@ class ReadController {
   read() {}
   @RequirePermissions('analytics:connectors:write')
   write() {}
+  undeclared() {}
 }
 
-function context(request: AuthenticatedRequest, handler: 'read' | 'write' = 'read') {
+function context(request: AuthenticatedRequest, handler: 'read' | 'write' | 'undeclared' = 'read') {
   return {
     switchToHttp: () => ({ getRequest: () => request }),
     getHandler: () => ReadController.prototype[handler],
@@ -98,6 +99,13 @@ describe('Analytics signed platform-context guard', () => {
     await expect(guard.canActivate(context(bearer(reader), 'write'))).rejects.toThrow('analytics:connectors:write');
     const admin = signPlatformContextToken(payload({ granted_scopes: ['analytics:*'] }), privateKey);
     await expect(guard.canActivate(context(bearer(admin), 'write'))).resolves.toBe(true);
+  });
+
+  // WI-OI-103e: fail closed. A route that names no permission is refused even for analytics:*.
+  it('refuses a route that declares no permission', async () => {
+    const admin = signPlatformContextToken(payload({ granted_scopes: ['analytics:*'] }), privateKey);
+    await expect(guard.canActivate(context(bearer(admin), 'undeclared'))).rejects.toThrow('declares no permission');
+    expect(database.isContextRevoked).not.toHaveBeenCalled();
   });
 
   it('refuses a revoked session and fails closed when revocation cannot be checked', async () => {

@@ -8,7 +8,7 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
-import { PlatformContextAuthorizationGuard } from '../auth/authorization.js';
+import { PlatformContextAuthorizationGuard, RequirePermissions } from '../auth/authorization.js';
 import { CurrentPrincipal } from '../auth/principal.decorator.js';
 import type { AnalyticsPrincipal } from '../auth/authorization.js';
 import { DatasetService, BuildDatasetDto } from './dataset.service.js';
@@ -26,6 +26,7 @@ export class DatasetController {
    * Required scope: analytics:datasets:write
    */
   @Post('build')
+  @RequirePermissions('analytics:mappings:write')
   @HttpCode(HttpStatus.ACCEPTED) // 202 — build is async within the request
   async buildDataset(
     @CurrentPrincipal() principal: AnalyticsPrincipal,
@@ -40,6 +41,7 @@ export class DatasetController {
    * Required scope: analytics:datasets:read
    */
   @Get(':datasetVersionId')
+  @RequirePermissions('analytics:read')
   async getDatasetVersion(
     @CurrentPrincipal() principal: AnalyticsPrincipal,
     @Param('datasetVersionId') datasetVersionId: string,
@@ -53,6 +55,7 @@ export class DatasetController {
    * Required scope: analytics:datasets:read
    */
   @Get('by-mapping/:mappingId')
+  @RequirePermissions('analytics:read')
   async listDatasetVersions(
     @CurrentPrincipal() principal: AnalyticsPrincipal,
     @Param('mappingId') mappingId: string,

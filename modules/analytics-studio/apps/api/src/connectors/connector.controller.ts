@@ -45,7 +45,7 @@ export class ConnectorController {
    * Required permission: analytics:connectors:read
    */
   @Get()
-  @RequirePermissions('analytics:connectors:read')
+  @RequirePermissions('analytics:connectors:write')
   async listConnections(@Principal() principal: AnalyticsPrincipal) {
     return this.connectorService.listConnections(principal);
   }
@@ -56,7 +56,7 @@ export class ConnectorController {
    * Required permission: analytics:connectors:read
    */
   @Get(':id')
-  @RequirePermissions('analytics:connectors:read')
+  @RequirePermissions('analytics:connectors:write')
   async getConnection(
     @Principal() principal: AnalyticsPrincipal,
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,

@@ -28,6 +28,7 @@ export class QueryEngineController {
    * Required scope: analytics:query:read
    */
   @Post('run')
+  @RequirePermissions('analytics:read')
   @HttpCode(HttpStatus.OK)
   async runQuery(
     @CurrentPrincipal() principal: AnalyticsPrincipal,
@@ -61,6 +62,7 @@ export class ChartsController {
    * Required scope: analytics:charts:write
    */
   @Post()
+  @RequirePermissions('analytics:charts:write')
   @HttpCode(HttpStatus.CREATED)
   async createChartDefinition(
     @CurrentPrincipal() principal: AnalyticsPrincipal,
@@ -75,6 +77,7 @@ export class ChartsController {
    * Required scope: analytics:charts:read
    */
   @Get()
+  @RequirePermissions('analytics:read')
   async listCharts(@CurrentPrincipal() principal: AnalyticsPrincipal) {
     return this.chartService.listChartDefinitions(principal);
   }
@@ -85,6 +88,7 @@ export class ChartsController {
    * Required scope: analytics:charts:read
    */
   @Get(':chartId/render')
+  @RequirePermissions('analytics:read')
   async renderChart(
     @CurrentPrincipal() principal: AnalyticsPrincipal,
     @Param('chartId') chartId: string,
@@ -105,6 +109,7 @@ export class DashboardsController {
    * Required scope: analytics:dashboards:write
    */
   @Post()
+  @RequirePermissions('analytics:dashboards:write')
   @HttpCode(HttpStatus.CREATED)
   async createDashboard(
     @CurrentPrincipal() principal: AnalyticsPrincipal,
@@ -118,6 +123,7 @@ export class DashboardsController {
    * Required scope: analytics:dashboards:read
    */
   @Get()
+  @RequirePermissions('analytics:read')
   async listDashboards(@CurrentPrincipal() principal: AnalyticsPrincipal) {
     return this.dashboardService.listDashboards(principal);
   }
@@ -127,6 +133,7 @@ export class DashboardsController {
    * Required scope: analytics:dashboards:read
    */
   @Get(':dashboardId')
+  @RequirePermissions('analytics:read')
   async getDashboard(
     @CurrentPrincipal() principal: AnalyticsPrincipal,
     @Param('dashboardId') dashboardId: string,
@@ -139,6 +146,7 @@ export class DashboardsController {
    * Required scope: analytics:dashboards:write
    */
   @Post(':dashboardId/charts')
+  @RequirePermissions('analytics:dashboards:write')
   @HttpCode(HttpStatus.CREATED)
   async addChart(
     @CurrentPrincipal() principal: AnalyticsPrincipal,

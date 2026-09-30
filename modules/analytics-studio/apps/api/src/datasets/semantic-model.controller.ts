@@ -8,7 +8,7 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
-import { PlatformContextAuthorizationGuard } from '../auth/authorization.js';
+import { PlatformContextAuthorizationGuard, RequirePermissions } from '../auth/authorization.js';
 import { CurrentPrincipal } from '../auth/principal.decorator.js';
 import type { AnalyticsPrincipal } from '../auth/authorization.js';
 import { DatasetService, CreateSemanticModelDto } from './dataset.service.js';
@@ -26,6 +26,7 @@ export class SemanticModelController {
    * Required scope: analytics:semantic-models:write
    */
   @Post()
+  @RequirePermissions('analytics:models:write')
   @HttpCode(HttpStatus.CREATED)
   async createSemanticModel(
     @CurrentPrincipal() principal: AnalyticsPrincipal,
@@ -40,6 +41,7 @@ export class SemanticModelController {
    * Required scope: analytics:semantic-models:read
    */
   @Get(':modelId')
+  @RequirePermissions('analytics:read')
   async getSemanticModel(
     @CurrentPrincipal() principal: AnalyticsPrincipal,
     @Param('modelId') modelId: string,

@@ -27,7 +27,7 @@ export class IngestionController {
    * Required permission: analytics:ingestion:write
    */
   @Post(':id/sync')
-  @RequirePermissions('analytics:ingestion:write')
+  @RequirePermissions('analytics:connectors:write')
   @HttpCode(HttpStatus.ACCEPTED)
   async startSync(
     @Principal() principal: AnalyticsPrincipal,
@@ -43,7 +43,7 @@ export class IngestionController {
    * Required permission: analytics:ingestion:read
    */
   @Get(':id/sync')
-  @RequirePermissions('analytics:ingestion:read')
+  @RequirePermissions('analytics:connectors:write')
   async listSyncRuns(
     @Principal() principal: AnalyticsPrincipal,
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
@@ -58,7 +58,7 @@ export class IngestionController {
    * Required permission: analytics:ingestion:read
    */
   @Get('/sync-runs/:runId')
-  @RequirePermissions('analytics:ingestion:read')
+  @RequirePermissions('analytics:connectors:write')
   async getSyncRun(
     @Principal() principal: AnalyticsPrincipal,
     @Param('runId', new ParseUUIDPipe({ version: '4' })) runId: string,

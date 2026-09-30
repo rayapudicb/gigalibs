@@ -42,8 +42,34 @@ export interface AuthenticatedRequest {
   correlationId?: string;
 }
 
-export const RequirePermissions = (...permissions: string[]) =>
+/**
+ * WI-OI-103e (ADR-0016 F16): the Analytics permissions. `analytics:action` stays for setup, operational actions and
+ * Demo Lab. Every guarded route names exactly one of these; a route that names none is refused.
+ */
+export const ANALYTICS_PERMISSIONS = [
+  'analytics:read',
+  'analytics:connectors:write',
+  'analytics:mappings:write',
+  'analytics:models:write',
+  'analytics:models:publish',
+  'analytics:charts:write',
+  'analytics:dashboards:write',
+  'analytics:reports:write',
+  'analytics:export',
+  'analytics:action',
+] as const;
+export type AnalyticsPermission = (typeof ANALYTICS_PERMISSIONS)[number];
+
+export const RequirePermissions = (...permissions: AnalyticsPermission[]) =>
   SetMetadata(PERMISSIONS_METADATA, permissions);
+
+/** The permissions a route handler declares, or undefined when it declares none. */
+export function declaredPermissions(handler: object, controller: object): readonly string[] | undefined {
+  return (
+    (Reflect.getMetadata(PERMISSIONS_METADATA, handler) as string[] | undefined) ??
+    (Reflect.getMetadata(PERMISSIONS_METADATA, controller) as string[] | undefined)
+  );
+}
 
 export const Principal = createParamDecorator(
   (_data: unknown, ctx: ExecutionContext): AnalyticsPrincipal => {
@@ -100,11 +126,14 @@ export class PlatformContextAuthorizationGuard implements CanActivate {
       throw new UnauthorizedException('Platform context contains an invalid tenant identifier.');
     }
 
-    const required =
-      this.reflector.getAllAndOverride<string[] | undefined>(PERMISSIONS_METADATA, [
-        context.getHandler(),
-        context.getClass(),
-      ]) ?? [];
+    const required = this.reflector.getAllAndOverride<string[] | undefined>(PERMISSIONS_METADATA, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+    // WI-OI-103e: fail closed. A guarded route that names no permission is refused rather than open to every member.
+    if (!required || required.length === 0) {
+      throw new ForbiddenException('This Analytics route declares no permission.');
+    }
     for (const permission of required) {
       if (!hasPermission(platformContext.granted_scopes, permission)) {
         throw new ForbiddenException(`Missing required permission: ${permission}`);

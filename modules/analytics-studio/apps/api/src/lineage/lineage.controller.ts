@@ -9,7 +9,7 @@ import {
   Controller, Get, Param, Query, UseGuards, ParseIntPipe,
   DefaultValuePipe, BadRequestException,
 } from '@nestjs/common';
-import { PlatformContextAuthorizationGuard, PlatformPrincipal } from '../auth/authorization.js';
+import { PlatformContextAuthorizationGuard, PlatformPrincipal, RequirePermissions } from '../auth/authorization.js';
 import { LineageService, LineageNodeType, AuditEventType } from './lineage.service.js';
 import type { AnalyticsPrincipal } from '../auth/authorization.js';
 
@@ -19,6 +19,7 @@ export class LineageController {
   constructor(private readonly lineage: LineageService) {}
 
   @Get(':nodeType/:nodeId')
+  @RequirePermissions('analytics:read')
   async getLineage(
     @PlatformPrincipal() principal: AnalyticsPrincipal,
     @Param('nodeId') nodeId: string,
@@ -45,6 +46,7 @@ export class AuditController {
   constructor(private readonly lineage: LineageService) {}
 
   @Get()
+  @RequirePermissions('analytics:read')
   async getAuditLog(
     @PlatformPrincipal() principal: AnalyticsPrincipal,
     @Query('entityId') entityId?: string,

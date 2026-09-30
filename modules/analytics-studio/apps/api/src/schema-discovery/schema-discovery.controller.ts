@@ -27,7 +27,7 @@ export class SchemaDiscoveryController {
 
   /** POST /v1/connectors/:id/discover — trigger schema discovery for a table */
   @Post('connectors/:id/discover')
-  @RequirePermissions('analytics:schema:write')
+  @RequirePermissions('analytics:mappings:write')
   @HttpCode(HttpStatus.OK)
   async discoverSchema(
     @Principal() principal: AnalyticsPrincipal,
@@ -40,7 +40,7 @@ export class SchemaDiscoveryController {
 
   /** GET /v1/schemas/:schemaId — fetch a schema + field profiles */
   @Get('schemas/:schemaId')
-  @RequirePermissions('analytics:schema:read')
+  @RequirePermissions('analytics:read')
   async getSchema(
     @Principal() principal: AnalyticsPrincipal,
     @Param('schemaId', new ParseUUIDPipe({ version: '4' })) schemaId: string,
@@ -61,7 +61,7 @@ export class SchemaDiscoveryController {
 
   /** GET /v1/mappings — list all mappings for the tenant */
   @Get('mappings')
-  @RequirePermissions('analytics:mappings:read')
+  @RequirePermissions('analytics:read')
   async listMappings(@Principal() principal: AnalyticsPrincipal) {
     return this.schemaDiscoveryService.listMappings(principal);
   }
