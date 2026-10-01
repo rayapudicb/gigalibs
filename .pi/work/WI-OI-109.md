@@ -125,3 +125,38 @@ Implemented 2026-10-01; not deployed. Place links and the Department bridge move
 - Not yet: an HTTP-level run through the real guards (109g live proof), and deployment: the API image must not ship
   before the 109b migration is applied to the running database.
 
+## 109d administration UI
+
+Implemented 2026-10-01; not deployed (needs the 109b migration live, then the API and web images).
+
+- Settings › Organization (`/settings?tab=hierarchy`) now opens `OrganizationAdministration`
+  (`apps/workflow-platform/components/organization/`), Medusa UI with ui-* tokens, four sections:
+  - Structure: create the primary tree or rollup trees; the version in force, or as of any moment; the one draft
+    with place/move/remove, validation problems by unit, impact preview (moves and touched grants), submit,
+    withdraw, approve (disabled with the reason for the author or submitter), reject, publish, activate from now or
+    a later time; activation history with "view as of".
+  - Units: search, type and status filters, cursor pages; create and edit with dates, time zone, manager, contact,
+    address, and legal identity only for legal-entity types; deactivate, archive (with the server's guard
+    explained), restore.
+  - Unit types: names, grouping or record-holding, capabilities, where each may sit; archive and restore.
+  - Access: grant a member a unit and everything below it (optional end), revoke with a reason; revoked shown on
+    request.
+- States: loading, empty (guided first steps), denied (no organization:read; per-step permission reasons),
+  validation (server problems and field issues), conflict and missing (Reload), outage (Try again), session
+  ended (Sign in), success messages announced (role=status). Trees load one level at a time; nested lists with
+  disclosure buttons for keyboard and screen readers.
+- The old department manager stays below in a collapsed "Departments (legacy)" section: it is still the only place
+  that sets a member's department and employment type, which Workforce and CMMS scope read until the 109e bridge.
+- API addition: `ids` filter on the unit list (up to 200) to show names in grants, impact and problems; docs
+  regenerated.
+- Evidence: `e2e/specs/organization-admin.spec.ts` 2/2 in Chrome on a throwaway stack (restored backup plus
+  migration; new API on 127.0.0.1:3399 and web on 127.0.0.1:5190 from the current build, storage pointed nowhere;
+  removed afterwards): two administrators build three levels, three units and a tree; self-approval refused on
+  screen; second administrator approves; publish; activate; in-force tree read by level; a breach listed by unit;
+  impact shows the move; withdraw; grant and revoke; a stale edit shows the conflict with Reload; axe WCAG 2.2 AA
+  scan of all four sections clean; a member without permission sees the refusal and the API answers 403.
+  `__tests__/organization-client.test.ts` 11/11 (error mapping, permissions, maker-checker steps). Service and
+  database integration 14/14 on a throwaway database. `pnpm verify` PASS (2134 passed, 150 skipped).
+- Found while proving: Medusa's `Input type="search"` draws an unlabeled role=img icon (axe role-img-alt); the
+  organization screens use a labeled text input instead. Other screens using it are not changed here.
+

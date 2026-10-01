@@ -9,6 +9,7 @@ import { TenantPlanEntitlements } from './TenantPlanEntitlements';
 import { TenantLocalizationSettings } from './TenantLocalizationSettings';
 import { ConfiguredTenantFields } from './ConfiguredTenantFields';
 import { TenantOrganizationHierarchyManager } from './TenantOrganizationHierarchyManager';
+import { OrganizationAdministration } from '@/components/organization/OrganizationAdministration';
 import { TenantSpatialScopeManager } from './TenantSpatialScopeManager';
 import { hasPermission } from '@/lib/module-access';
 
@@ -101,7 +102,7 @@ export function TenantSettingsView({
               : 'text-ui-fg-muted hover:text-ui-fg-base'
           }`}
         >
-          <span>🏢</span> Organization & Hierarchy
+          <span>🏢</span> Organization
         </button>
         <button
           type="button"
@@ -152,10 +153,20 @@ export function TenantSettingsView({
 
         {activeTab === 'hierarchy' && (
           <div className="space-y-6">
-            <TenantOrganizationHierarchyManager
-              tenantId={tenantId}
-              canManage={canUpdateConfiguredValues}
-            />
+            <OrganizationAdministration grantedPermissions={session.permissions} userId={session.user.id} />
+            {/* WI-OI-109d: departments stay reachable until the 109e bridge turns them into units and grants;
+                member department and employment-type assignment still lives here. */}
+            <details className="rounded-lg border border-ui-border-base bg-ui-bg-base">
+              <summary className="cursor-pointer px-4 py-3 text-sm text-ui-fg-subtle">
+                Departments (legacy, replaced by the organization above)
+              </summary>
+              <div className="p-4">
+                <TenantOrganizationHierarchyManager
+                  tenantId={tenantId}
+                  canManage={canUpdateConfiguredValues}
+                />
+              </div>
+            </details>
             {geospatialEntitled ? (
               <TenantSpatialScopeManager
                 canToggle={hasPermission(session.permissions, 'tenant:update')}

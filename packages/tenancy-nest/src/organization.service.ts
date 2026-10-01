@@ -185,6 +185,7 @@ export class OrganizationService {
       const rows = await tx.orgUnit.findMany({
         where: {
           tenantId,
+          ...(query.ids ? { id: { in: query.ids } } : {}),
           ...(query.status ? { status: query.status } : {}),
           ...(query.typeCode ? { type: { code: query.typeCode } } : {}),
           ...(query.q

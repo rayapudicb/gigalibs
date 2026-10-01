@@ -1,12 +1,12 @@
 # NOW: where the work stands
 
-Updated 2026-10-01 (WI-OI-109 in progress: 109a–109c done, 109b migration awaiting live apply; WI-OI-103/106 live proofs deferred for organization-aware rerun). Keep this file to one page.
+Updated 2026-10-01 (WI-OI-109 in progress: 109a–109d done, 109b migration awaiting live apply; WI-OI-103/106 live proofs deferred for organization-aware rerun). Keep this file to one page.
 Replace old content rather than appending to it, and update it at the end of every task.
 
 ## State
 
 - **Branch:** `feat/gigaops-convergence-core`, local only, never pushed.
-- **Active implementation item:** WI-OI-109 (universal organization hierarchy and enterprise scope), owner-approved 2026-10-01. 109a (reconciliation, ADR-0018 with D1–D6 accepted), 109b (contracts, migration `20261001000000_organization_hierarchy`, Prisma models, throwaway upgrade proof) and 109c (administration APIs, not deployed) are done; evidence in `.pi/work/WI-OI-109.md`. WI-OI-103 and WI-OI-106 are in Review; their live deployment/proofs are deferred and must be rerun after organization-scope integration. WI-OI-104, 105 and 107 remain in Review; WI-OI-108 is Proposed.
+- **Active implementation item:** WI-OI-109 (universal organization hierarchy and enterprise scope), owner-approved 2026-10-01. 109a (reconciliation, ADR-0018 with D1–D6 accepted), 109b (contracts, migration `20261001000000_organization_hierarchy`, Prisma models, throwaway upgrade proof) 109c (administration APIs) and 109d (Settings › Organization screens, browser-proven on a throwaway stack) are done, not deployed; evidence in `.pi/work/WI-OI-109.md`. WI-OI-103 and WI-OI-106 are in Review; their live deployment/proofs are deferred and must be rerun after organization-scope integration. WI-OI-104, 105 and 107 remain in Review; WI-OI-108 is Proposed.
 - **Wave 0:** WI-OI-080, 081, 082, 083 and 085 are in Review, waiting for human reviews. WI-OI-084 (mobile) has
   not started.
 - **Running locally (2026-10-01 07:56):** every service is on `2a48e326e327-93674f4f9ea2`; the web is on 5180.
@@ -29,7 +29,8 @@ Replace old content rather than appending to it, and update it at the end of eve
 
 ## Next
 
-- **WI-OI-109d:** organization administration UI on the 109c APIs (31 operations, `docs/contracts/organization/openapi.json`). Then 109e IAM and module scope (with place links and the Department bridge), 109f mobile/API contracts, 109g certification with the five reference structures.
+- **To see it on 5180:** apply the 109b migration (Open decisions), then deploy the API and web images (backup first, `up -d --no-deps api` then `web`).
+- **WI-OI-109e:** IAM and module scope (signed OrganizationScopeV2, module-side expansion), place links and the Department bridge. Then 109f mobile/API contracts, 109g certification with the five reference structures.
 - **Deferred Foundation Close:** WI-OI-103/WI-OI-106 organization-aware live proofs, WI-OI-108, the fresh-install fix (item 7), core push intake (item 8), and F3 engine clean-up (item 9).
 
 ## Open decisions (owner)

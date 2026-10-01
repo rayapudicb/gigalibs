@@ -351,6 +351,8 @@ export type RevokeOrgScopeGrantV1 = z.infer<typeof RevokeOrgScopeGrantV1Schema>;
 
 export const OrgUnitListQuerySchema = z
   .object({
+    /** Comma-separated unit ids (up to 200), for resolving names in lists such as grants or an impact report. */
+    ids: z.string().min(1).max(13_200).transform((value) => value.split(',')).pipe(z.array(IdSchema).min(1).max(200)).optional(),
     q: z.string().trim().min(1).max(100).optional(),
     typeCode: OrgTypeCodeSchema.optional(),
     status: z.enum(['ACTIVE', 'INACTIVE', 'ARCHIVED']).optional(),

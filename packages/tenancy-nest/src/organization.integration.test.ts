@@ -73,6 +73,9 @@ integration('organization service', () => {
     const secondPage = await service.listUnits(A, { typeCode: 'STORE', limit: 2, cursor: firstPage.nextCursor ?? undefined });
     expect(secondPage.items.map((unit) => unit.code)).toHaveLength(1);
     expect((await service.listUnits(A, { q: 'store 10', limit: 50 })).items.map((unit) => unit.code).sort()).toEqual(['S-101', 'S-102']);
+    // Names for ids shown elsewhere (grants, impact), never another tenant's.
+    expect((await service.listUnits(A, { ids: [ids.company, ids.north], limit: 50 })).items.map((unit) => unit.code).sort()).toEqual(['FRESHMART', 'NORTH']);
+    expect((await service.listUnits(B, { ids: [ids.company], limit: 50 })).items).toEqual([]);
     // Tenant B sees none of it.
     expect((await service.listUnits(B, { limit: 50 })).items).toEqual([]);
     await expectStatus(service.getUnit(B, ids.company), 404);

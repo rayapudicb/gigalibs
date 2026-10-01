@@ -282,6 +282,16 @@
         "x-permission": "organization:read",
         "parameters": [
           {
+            "name": "ids",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 13200
+            }
+          },
+          {
             "name": "q",
             "in": "query",
             "required": false,
