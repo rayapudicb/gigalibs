@@ -218,3 +218,4 @@ export * from './sample-farm.js';
 export * from './dashboard.js';
 export * from './report.js';
 export * from './units.js';
+export * from './place-directory.js';

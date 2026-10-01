@@ -172,10 +172,13 @@ export class ReportService {
       content: Buffer | null;
     }>(
       principal.tenantId,
-      `SELECT filename, content_type, content_sha256, token_expires_at, content
-       FROM gigalibs_analytics.report_artifacts
-       WHERE download_token = $1`,
-      [downloadToken],
+      // WI-OI-105d: a member with a place scope downloads only files of runs they started, which were made under
+      // their own scope; another member's file may hold records outside their places.
+      `SELECT a.filename, a.content_type, a.content_sha256, a.token_expires_at, a.content
+       FROM gigalibs_analytics.report_artifacts a
+       JOIN gigalibs_analytics.report_runs rr ON rr.id = a.run_id
+       WHERE a.download_token = $1 AND ($2::text IS NULL OR rr.triggered_by = $2)`,
+      [downloadToken, principal.spatialScope.mode === 'UNBOUNDED' ? null : principal.subject],
     );
     const artifact = artifactResult.rows[0];
     if (!artifact) throw new NotFoundException('Download token not found.');

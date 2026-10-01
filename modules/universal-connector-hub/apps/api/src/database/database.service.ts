@@ -6,7 +6,13 @@ const { Pool } = pg;
 
 export type TenantTransaction<T> = (client: pg.PoolClient) => Promise<T>;
 
-export const HUB_DEFINER_FUNCTIONS = ['relay_lease_analytics_records', 'relay_settle_analytics_record', 'outbox_sweep'] as const;
+export const HUB_DEFINER_FUNCTIONS = [
+  'relay_lease_analytics_records',
+  'relay_settle_analytics_record',
+  'relay_lease_geospatial_places',
+  'relay_settle_geospatial_place',
+  'outbox_sweep',
+] as const;
 export type HubDefinerFunction = (typeof HUB_DEFINER_FUNCTIONS)[number];
 
 @Injectable()

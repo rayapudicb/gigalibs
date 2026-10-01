@@ -8,7 +8,8 @@ import { GeospatialModule } from './geospatial.module.js';
 import type { GeospatialRuntimeConfig } from './runtime-config.js';
 
 async function bootstrap(): Promise<void> {
-  const app = await NestFactory.create<NestExpressApplication>(GeospatialModule, { bufferLogs: true });
+  // rawBody: the relay inbox verifies its token against the exact request body (WI-OI-105e).
+  const app = await NestFactory.create<NestExpressApplication>(GeospatialModule, { bufferLogs: true, rawBody: true });
   const config = app.get<GeospatialRuntimeConfig>(GEOSPATIAL_CONFIG);
   // Matches the web BFF's 1 MiB request cap so a full place import (2,000 rows) is accepted.
   app.useBodyParser('json', { limit: '1mb' });

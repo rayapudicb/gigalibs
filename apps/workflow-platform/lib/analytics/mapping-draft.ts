@@ -3,6 +3,8 @@
  * dataset fields with a type guessed from their samples; the member edits names, types and unit conversions, and the
  * draft becomes the field mappings Analytics validates. A new dataset gets simple default measures so it can be
  * explored at once.
+ * WI-OI-105c: a draft may also tag each record with its place, found from a latitude and longitude, or from a place
+ * code or id; the dataset then has a place field (the place's name, or "Unplaced").
  */
 
 import { type AnalyticsUnit, isAnalyticsUnit } from '@gigalibs/contracts';
@@ -33,6 +35,26 @@ export interface FieldMappingEntry {
   analyticalField: string;
   analyticalType: AnalyticalType;
   unit?: { to: AnalyticsUnit; from?: AnalyticsUnit; fromField?: string };
+  place?: { longitudeField: string } | { byCode: true };
+}
+
+export interface PlaceDraft {
+  mode: 'none' | 'point' | 'code';
+  /** The dataset field holding each record's place name. */
+  fieldName: string;
+  latitudeField: string;
+  longitudeField: string;
+  codeField: string;
+}
+
+export const NO_PLACE: PlaceDraft = { mode: 'none', fieldName: 'place', latitudeField: '', longitudeField: '', codeField: '' };
+
+/** Proposes a point from discovered latitude and longitude fields, when both are there. */
+export function placeDraftFromDiscovery(fields: readonly DiscoveredField[]): PlaceDraft {
+  const find = (pattern: RegExp) => fields.find((field) => field.inferredType === 'number' && pattern.test(field.fieldName.split('.').pop() ?? ''))?.fieldName ?? '';
+  const latitudeField = find(/^(lat|latitude)$/i);
+  const longitudeField = find(/^(lon|lng|long|longitude)$/i);
+  return { ...NO_PLACE, latitudeField, longitudeField };
 }
 
 const NAME = /^[a-zA-Z][a-zA-Z0-9_]{0,62}$/;
@@ -74,7 +96,10 @@ export function draftFromDiscovery(fields: readonly DiscoveredField[]): DraftFie
 }
 
 /** The field mappings of the included fields, or the first problem to fix. */
-export function fieldMappingsFromDraft(draft: readonly DraftField[]): { fieldMappings: FieldMappingEntry[]; error: string | null } {
+export function fieldMappingsFromDraft(
+  draft: readonly DraftField[],
+  place: PlaceDraft = NO_PLACE,
+): { fieldMappings: FieldMappingEntry[]; error: string | null } {
   const included = draft.filter((field) => field.include);
   if (included.length === 0) return { fieldMappings: [], error: 'Include at least one field.' };
   const names = new Set<string>();
@@ -96,6 +121,18 @@ export function fieldMappingsFromDraft(draft: readonly DraftField[]): { fieldMap
       }
     }
     fieldMappings.push(entry);
+  }
+  if (place.mode !== 'none') {
+    const fieldName = place.fieldName.trim();
+    if (!NAME.test(fieldName)) return { fieldMappings: [], error: `"${fieldName}" is not a valid name for the place field.` };
+    if (names.has(fieldName) || ['place_id', 'place_path'].includes(fieldName)) return { fieldMappings: [], error: `Choose another name for the place field; "${fieldName}" is taken.` };
+    if (place.mode === 'point') {
+      if (!place.latitudeField || !place.longitudeField) return { fieldMappings: [], error: 'Choose the latitude and longitude fields that locate each record.' };
+      fieldMappings.push({ sourceField: place.latitudeField, analyticalField: fieldName, analyticalType: 'string', place: { longitudeField: place.longitudeField } });
+    } else {
+      if (!place.codeField) return { fieldMappings: [], error: 'Choose the field holding each record’s place code or id.' };
+      fieldMappings.push({ sourceField: place.codeField, analyticalField: fieldName, analyticalType: 'string', place: { byCode: true } });
+    }
   }
   return { fieldMappings, error: null };
 }

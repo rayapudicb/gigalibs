@@ -18,6 +18,7 @@ import type {
   AnalyticsTimeGrain,
   FormulaExpressionV1,
 } from '@gigalibs/contracts';
+import { placeScopeCondition, type PlaceScope } from '../places/place-scope.js';
 
 export interface QueryMeasure {
   readonly name: string;
@@ -74,8 +75,11 @@ export function buildAnalyticsQuery(input: {
   readonly fields: ReadonlyMap<string, AnalyticsFieldType>;
   readonly measures: ReadonlyMap<string, QueryMeasure>;
   readonly summary?: QuerySummarySource;
+  /** WI-OI-105d: only records tagged with one of these places; summaries hold no place, so never with a summary. */
+  readonly placeScope?: PlaceScope;
 }): BuiltAnalyticsQuery {
-  const { query, fields, measures, summary } = input;
+  const { query, fields, measures, summary, placeScope } = input;
+  if (summary && placeScope) throw new AnalyticsQuerySpecError('A place-scoped question is answered from the rows.');
   const params: unknown[] = [summary ? summary.id : input.datasetVersionId];
   const bind = (value: unknown): string => {
     params.push(value);
@@ -126,6 +130,7 @@ export function buildAnalyticsQuery(input: {
 
   const where = [summary ? 's.summary_id = $1' : 'r.dataset_version_id = $1'];
   for (const filter of query.filters) where.push(filterSql(filter, fieldType(filter.field, 'filters'), fieldText, bind));
+  if (placeScope) where.push(placeScopeCondition('r', placeScope, bind));
 
   const orderBy = query.sort.map((sort) => {
     const position = columns.findIndex((column) => column.name === sort.by);

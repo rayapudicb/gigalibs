@@ -1,6 +1,7 @@
 # WI-OI-105: places with boundaries (ADR-0016 F15)
 
-- **Status:** Approved (owner, 2026-09-30: "go" with D1–D4 as recommended). In progress.
+- **Status:** Done and live (Review), 2026-09-30. Approved by the owner ("go" with D1–D4); built and deployed in one
+  batch ("batch"). Evidence: `.pi/work/WI-OI-105.md`.
 - **Work item:** WI-OI-105. Evidence goes in `.pi/work/WI-OI-105.md`.
 - **Size:** L. Five pieces, each verified and committed on its own.
 

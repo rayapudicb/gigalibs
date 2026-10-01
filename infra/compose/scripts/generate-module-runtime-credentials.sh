@@ -97,6 +97,16 @@ if [[ -e "${TARGET_ENV}" ]]; then
     relay_keys ANALYTICS >>"${TARGET_ENV}"
     added+=("Analytics inbox relay key pair")
   fi
+  # WI-OI-105b: Geospatial relays place facts to the Analytics inbox with its own key pair.
+  if ! grep -q '^ANALYTICS_GEOSPATIAL_INBOX_RELAY_PUBLIC_KEY_BASE64=' "${TARGET_ENV}"; then
+    relay_keys ANALYTICS_GEOSPATIAL >>"${TARGET_ENV}"
+    added+=("Analytics inbox relay key pair for Geospatial")
+  fi
+  # WI-OI-105e: Connector Hub relays pulled places to the Geospatial inbox with its own key pair.
+  if ! grep -q '^GEOSPATIAL_HUB_INBOX_RELAY_PUBLIC_KEY_BASE64=' "${TARGET_ENV}"; then
+    relay_keys GEOSPATIAL_HUB >>"${TARGET_ENV}"
+    added+=("Geospatial inbox relay key pair for Connector Hub")
+  fi
   # WI-OI-104c: the kernel worker's Redis (BullMQ job ids only) requires a password.
   if ! grep -q '^REDIS_PASSWORD=' "${TARGET_ENV}"; then
     printf 'REDIS_PASSWORD=%s\n' "$(openssl rand -hex 32)" >>"${TARGET_ENV}"
@@ -131,6 +141,8 @@ EOF
 context_keys ANALYTICS >>"${TARGET_ENV}"
 context_keys CONNECTOR_HUB >>"${TARGET_ENV}"
 relay_keys ANALYTICS >>"${TARGET_ENV}"
+relay_keys ANALYTICS_GEOSPATIAL >>"${TARGET_ENV}"
+relay_keys GEOSPATIAL_HUB >>"${TARGET_ENV}"
 cmms_runtime_values >>"${TARGET_ENV}"
 
 chmod 600 "${TARGET_ENV}"

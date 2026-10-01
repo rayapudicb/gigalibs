@@ -35,6 +35,8 @@ function requiredAnalyticsPermission(method: string, path: readonly string[]): s
   if (joined === 'v1/actions') return method === 'GET' ? 'analytics:read' : method === 'POST' ? 'analytics:action' : null;
   // WI-OI-064b: place drill-down is read-only through the BFF; rollup rebuilds stay internal to Analytics.
   if (joined === 'v1/places/drilldown') return read;
+  // WI-OI-105e: the places a member may see (within their place scope), for the farm filter and the place map.
+  if (joined === 'v1/places/directory') return read;
   // WI-OI-064d: a typed metric spec is posted, but the call only reads.
   if (joined === 'v1/places/metric-drilldown') return method === 'POST' ? 'analytics:read' : null;
   // WI-OI-103d: the Explore screen — a typed query spec is posted but only reads; the model catalog and chart views.

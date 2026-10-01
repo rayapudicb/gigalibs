@@ -58,7 +58,7 @@ integration('Connector Hub pulls on PostgreSQL', () => {
       CONNECTORS_DATABASE_URL: databaseUrl,
       CONNECTOR_HUB_DATABASE_POOL_SIZE: '4',
       CONNECTOR_VAULT_KEY: 'integration-test-vault-key-that-is-long-enough',
-      CONNECTOR_HUB_EXPECTED_MIGRATION_VERSION: '7',
+      CONNECTOR_HUB_EXPECTED_MIGRATION_VERSION: '8',
       CONNECTOR_HUB_PLATFORM_CONTEXT_PUBLIC_KEY_BASE64: generateKeyPairSync('ed25519').publicKey.export({ format: 'der', type: 'spki' }).toString('base64'),
       CONNECTOR_HUB_ALLOWED_OUTBOUND_HOSTS: '127.0.0.1',
       CONNECTOR_HUB_ALLOW_INSECURE_OUTBOUND: 'true',
@@ -70,7 +70,7 @@ integration('Connector Hub pulls on PostgreSQL', () => {
       import('../sync/sync.service.js'),
     ]);
     const db = new DatabaseService();
-    await expect(db.readiness()).resolves.toMatchObject({ migrationVersion: 7 });
+    await expect(db.readiness()).resolves.toMatchObject({ migrationVersion: 8 });
     const vault = new VaultCryptoService();
     services = { db, connectors: new ConnectorsService(db, vault), sync: new SyncService(db, vault) };
   });
@@ -201,16 +201,63 @@ integration('Connector Hub pulls on PostgreSQL', () => {
       await new Promise<void>((resolve) => inbox.close(() => resolve()));
     }
   });
+
+  // WI-OI-105e: a connection can send its records to Geospatial as places, read with the connection's field names.
+  it('sends newly pulled records to the Geospatial inbox as places, with their own relay key', async () => {
+    const { signingKey, verify } = relayKeys('gigalibs-geospatial-inbox');
+    const received: Array<{ sourceId: string; place: Record<string, unknown> }> = [];
+    const inbox = createServer(async (request, response) => {
+      let body = '';
+      for await (const chunk of request) body += chunk;
+      const claims = verify(String(request.headers.authorization ?? '').replace('Bearer ', ''), body);
+      const envelope = JSON.parse(body) as { eventType: string; payload: { sourceId: string; place: Record<string, unknown> } };
+      if (!claims || envelope.eventType !== 'CONNECTOR_PLACE_PULLED_V1') return response.writeHead(401).end();
+      received.push(envelope.payload);
+      response.writeHead(202).end('{}');
+    });
+    await new Promise<void>((resolve) => inbox.listen(0, '127.0.0.1', resolve));
+    try {
+      const connection = await services.connectors.createConnection(tenantA, {
+        connector_code: 'GENERIC_REST_PULL',
+        name: 'Land feed',
+        slug: 'land-feed',
+        configuration: { source: source() },
+      });
+      await services.connectors.storePullCredentials(tenantA, connection.id, { kind: 'oauth2-client-credentials', clientId: 'farm', clientSecret: 'farm-secret' });
+      await expect(services.connectors.setDelivery(tenantA, connection.id, { places: { nodeTypeCode: 'FIELD', nameField: 'crop', geometryField: 'a..b' } })).rejects.toMatchObject({ status: 400 });
+      const set = await services.connectors.setDelivery(tenantA, connection.id, { places: { nodeTypeCode: 'FIELD', nameField: 'crop', geometryField: 'geom', codeField: 'id' } });
+      expect(set).toMatchObject({ deliver_to_analytics: false, place_delivery: { nodeTypeCode: 'FIELD', geometryField: 'geom' } });
+      const pulled = (await services.sync.triggerSync(tenantA, connection.id)) as { records_synced: number };
+      const facts = await services.db.queryWithTenant<{ event_type: string; aggregate_type: string; aggregate_version: number }>(
+        tenantA,
+        `SELECT event_type, aggregate_type, aggregate_version FROM gigalibs_connectors.outbox_events WHERE payload->>'hubConnectionId' = $1`,
+        [connection.id],
+      );
+      expect(facts.rows.length).toBe(pulled.records_synced);
+      expect(facts.rows.every((fact) => fact.event_type === 'CONNECTOR_PLACE_PULLED_V1' && fact.aggregate_type === 'connector_place' && fact.aggregate_version === 1)).toBe(true);
+
+      const { AnalyticsOutboxRelay, GeospatialPlaceRelay } = await import('../relay/analytics-relay.js');
+      const outbound = { targetOrigin: `http://127.0.0.1:${(inbox.address() as AddressInfo).port}`, privateKey: signingKey };
+      expect(await new AnalyticsOutboxRelay(services.db, { inboxPublicKey: null, outbound, intervalMs: 1000 }).tick()).toBe(0);
+      expect(await new GeospatialPlaceRelay(services.db, { inboxPublicKey: null, outbound, intervalMs: 1000 }).tick()).toBe(pulled.records_synced);
+      expect(received.find((fact) => fact.sourceId === 'h-1')?.place).toEqual({ nodeTypeCode: 'FIELD', code: 'h-1', name: 'maize', geometry: null, parentSourceId: null });
+      await services.connectors.setDelivery(tenantA, connection.id, { places: null });
+      await services.sync.triggerSync(tenantA, connection.id, { from_start: true });
+      expect((await services.db.queryWithTenant(tenantA, `SELECT 1 FROM gigalibs_connectors.outbox_events WHERE payload->>'hubConnectionId' = $1`, [connection.id])).rows.length).toBe(pulled.records_synced);
+    } finally {
+      await new Promise<void>((resolve) => inbox.close(() => resolve()));
+    }
+  });
 });
 
-function relayKeys() {
+function relayKeys(audience = 'gigalibs-analytics-inbox') {
   const pair = generateKeyPairSync('ed25519');
   const publicPem = pair.publicKey.export({ format: 'pem', type: 'spki' }).toString();
   return {
     signingKey: pair.privateKey.export({ format: 'pem', type: 'pkcs8' }).toString(),
     verify: (token: string, body: string) => {
       try {
-        return verifyRelayToken(token, publicPem, { audience: 'gigalibs-analytics-inbox', source: 'connector-hub', body });
+        return verifyRelayToken(token, publicPem, { audience, source: 'connector-hub', body });
       } catch {
         return null;
       }

@@ -4,6 +4,7 @@ import {
   BadRequestException,
   NotImplementedException,
 } from '@nestjs/common';
+import { ConnectorPlaceDeliveryV1Schema, type ConnectorPlaceDeliveryV1 } from '@gigalibs/contracts';
 import { randomUUID } from 'node:crypto';
 import { DatabaseService } from '../database/database.service.js';
 import { VaultCryptoService } from './vault-crypto.service.js';
@@ -58,7 +59,7 @@ export class ConnectorsService {
     let sql = `
       SELECT 
         c.id, c.tenant_id, c.connector_code, c.name, c.slug, c.environment, c.auth_type,
-        c.target_workflow_code, c.configuration, c.status, c.last_sync_at, c.events_count, c.deliver_to_analytics,
+        c.target_workflow_code, c.configuration, c.status, c.last_sync_at, c.events_count, c.deliver_to_analytics, c.place_delivery,
         c.created_at, c.updated_at,
         d.name AS definition_name, d.category, d.icon, d.supported_events
       FROM gigalibs_connectors.tenant_connections c
@@ -212,18 +213,41 @@ export class ConnectorsService {
     return { success: true, connection_id: conn.id, kind: credentials.kind };
   }
 
-  /** WI-OI-104e: whether this connection's newly pulled records are sent to Analytics (through the outbox relay). */
+  /**
+   * WI-OI-104e: whether this connection's newly pulled records are sent to Analytics (through the outbox relay).
+   * WI-OI-105e: and whether they are sent to Geospatial as places, with the record fields that hold each place's
+   * name, geometry, code and parent (null turns it off). Either or both may be given.
+   */
   async setDelivery(tenantId: string, idOrSlug: string, body: unknown): Promise<any> {
-    const analytics = (body as { analytics?: unknown } | null)?.analytics;
-    if (typeof analytics !== 'boolean') throw new BadRequestException('analytics must be true or false.');
+    const request = (body ?? {}) as { analytics?: unknown; places?: unknown };
+    const analytics = request.analytics;
+    if (analytics !== undefined && typeof analytics !== 'boolean') throw new BadRequestException('analytics must be true or false.');
+    let places: ConnectorPlaceDeliveryV1 | null | undefined;
+    if (request.places === null) places = null;
+    else if (request.places !== undefined) {
+      const parsed = ConnectorPlaceDeliveryV1Schema.safeParse(request.places);
+      if (!parsed.success) {
+        const issue = parsed.error.issues[0];
+        throw new BadRequestException(`places.${issue?.path.join('.') ?? ''}: ${issue?.message ?? 'invalid'}`);
+      }
+      places = parsed.data;
+    }
+    if (analytics === undefined && places === undefined) throw new BadRequestException('Give analytics, places, or both.');
     const conn = await this.getConnectionById(tenantId, idOrSlug);
-    await this.db.queryWithTenant(
+    const updated = await this.db.queryWithTenant<{ deliver_to_analytics: boolean; place_delivery: ConnectorPlaceDeliveryV1 | null }>(
       tenantId,
-      `UPDATE gigalibs_connectors.tenant_connections SET deliver_to_analytics = $3, updated_at = NOW() WHERE id = $1 AND tenant_id = $2`,
-      [conn.id, tenantId, analytics],
+      `UPDATE gigalibs_connectors.tenant_connections
+          SET deliver_to_analytics = COALESCE($3, deliver_to_analytics),
+              place_delivery = CASE WHEN $4::boolean THEN $5::jsonb ELSE place_delivery END,
+              updated_at = NOW()
+        WHERE id = $1 AND tenant_id = $2
+        RETURNING deliver_to_analytics, place_delivery`,
+      [conn.id, tenantId, analytics ?? null, places !== undefined, places ? JSON.stringify(places) : null],
     );
-    await this.audit(tenantId, conn.id, analytics ? 'ANALYTICS_DELIVERY_ON' : 'ANALYTICS_DELIVERY_OFF', {});
-    return { success: true, connection_id: conn.id, deliver_to_analytics: analytics };
+    if (analytics !== undefined) await this.audit(tenantId, conn.id, analytics ? 'ANALYTICS_DELIVERY_ON' : 'ANALYTICS_DELIVERY_OFF', {});
+    if (places !== undefined) await this.audit(tenantId, conn.id, places ? 'PLACE_DELIVERY_ON' : 'PLACE_DELIVERY_OFF', places ?? {});
+    const row = updated.rows[0]!;
+    return { success: true, connection_id: conn.id, deliver_to_analytics: row.deliver_to_analytics, place_delivery: row.place_delivery };
   }
 
   private validSource(value: unknown) {

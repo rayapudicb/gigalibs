@@ -11,12 +11,15 @@
  *  A failure marks the job FAILED and the connection ERROR, keeps what was written, and leaves the watermark alone.
  *  WI-OI-104e: when the connection sends to Analytics, each newly journalled record also writes an outbox fact in the
  *  same transaction, so a record is delivered exactly when it is journalled.
+ *  WI-OI-105e: when the connection sends places to Geospatial, each newly journalled record also writes a
+ *  CONNECTOR_PLACE_PULLED_V1 fact with the place's fields read from the record.
  */
 
 import { createHash, randomUUID } from 'node:crypto';
+import { CONNECTOR_PLACE_PULLED_V1, type ConnectorPlaceDeliveryV1, type ConnectorPlacePulledV1 } from '@gigalibs/contracts';
 import { Logger } from '@nestjs/common';
 import type pg from 'pg';
-import { type PagingOutcome, inspectRecord, pullPages } from './pager.js';
+import { type PagingOutcome, inspectRecord, pullPages, readPath } from './pager.js';
 import { type PullCredentials, type PullSource, parsePullCredentials } from './pull-source.js';
 import { SourceLogin, type TokenCache } from './source-auth.js';
 import { SourceError, SourceHttp } from './source-http.js';
@@ -33,6 +36,8 @@ export interface PullConnection {
   readonly name?: string;
   /** WI-OI-104e: newly journalled records also become outbox facts for the Analytics relay. */
   readonly deliverToAnalytics?: boolean;
+  /** WI-OI-105e: newly journalled records also become place facts for the Geospatial relay. */
+  readonly placeDelivery?: ConnectorPlaceDeliveryV1 | null;
 }
 
 export interface PullOptions {
@@ -163,6 +168,7 @@ export class PullRunner {
             if ((inserted.rowCount ?? 0) > 0) {
               counts.ingested += 1;
               if (connection.deliverToAnalytics) await this.emit(client, connection, jobId, record, options.correlationId ?? null);
+              if (connection.placeDelivery) await this.emitPlace(client, connection, connection.placeDelivery, jobId, record, options.correlationId ?? null);
             } else {
               counts.duplicates += 1;
             }
@@ -202,6 +208,45 @@ export class PullRunner {
       watermarkAfter,
       durationMs,
     };
+  }
+
+  /** One CONNECTOR_PLACE_PULLED_V1 fact per new record version, with the place's fields read from the record. */
+  private async emitPlace(
+    client: pg.PoolClient,
+    connection: PullConnection,
+    delivery: ConnectorPlaceDeliveryV1,
+    jobId: string,
+    record: { sourceId: string; json: string },
+    correlationId: string | null,
+  ): Promise<void> {
+    const body = JSON.parse(record.json) as unknown;
+    const text = (path: string | undefined): string | null => {
+      const value = path ? readPath(body, path) : undefined;
+      return typeof value === 'string' || typeof value === 'number' ? String(value).slice(0, 256) : null;
+    };
+    const payload: ConnectorPlacePulledV1 = {
+      hubConnectionId: connection.id,
+      connectionName: (connection.name ?? connection.id).slice(0, 200),
+      syncJobId: jobId,
+      sourceId: record.sourceId,
+      place: {
+        nodeTypeCode: (text(delivery.nodeTypeField) ?? delivery.nodeTypeCode).slice(0, 64),
+        code: text(delivery.codeField),
+        name: text(delivery.nameField),
+        geometry: readPath(body, delivery.geometryField) ?? null,
+        parentSourceId: text(delivery.parentField),
+      },
+    };
+    const aggregateId = `${connection.id}:${createHash('sha256').update(record.sourceId).digest('hex').slice(0, 32)}`;
+    await client.query(
+      `INSERT INTO gigalibs_connectors.outbox_events
+         (id, tenant_id, topic, event_type, aggregate_type, aggregate_id, aggregate_version, correlation_id, schema_version, payload)
+       VALUES ($1, $2::varchar, 'connector.places', $6::varchar, 'connector_place', $3::varchar,
+               (SELECT count(*) + 1 FROM gigalibs_connectors.outbox_events
+                 WHERE tenant_id = $2::varchar AND aggregate_type = 'connector_place' AND aggregate_id = $3::varchar),
+               $4, 1, $5::jsonb)`,
+      [`evt-${randomUUID()}`, connection.tenantId, aggregateId, (correlationId ?? jobId).slice(0, 128), JSON.stringify(payload), CONNECTOR_PLACE_PULLED_V1],
+    );
   }
 
   /** One CONNECTOR_RECORD_PULLED_V1 fact per new record version; the aggregate is the source record. */

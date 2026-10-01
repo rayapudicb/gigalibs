@@ -3,6 +3,7 @@
  * to Analytics write a CONNECTOR_RECORD_PULLED_V1 fact per new record; this relay leases them (the oldest pending per
  * record first), signs one relay token per message with the Analytics inbox key, delivers, and settles each row
  * (published, retry with back-off, or dead letter). The outbox stays authoritative; the Analytics inbox deduplicates.
+ * WI-OI-105e: a second relay delivers CONNECTOR_PLACE_PULLED_V1 facts to the Geospatial inbox with its own key.
  */
 
 import {
@@ -18,7 +19,9 @@ import { DatabaseService, type HubDefinerFunction } from '../database/database.s
 
 export const ANALYTICS_INBOX_AUDIENCE = 'gigalibs-analytics-inbox';
 export const HUB_RELAY_SOURCE = 'connector-hub';
+export const GEOSPATIAL_INBOX_AUDIENCE = 'gigalibs-geospatial-inbox';
 export const HUB_RELAY_CONFIG = Symbol('HUB_RELAY_CONFIG');
+export const HUB_GEOSPATIAL_RELAY_CONFIG = Symbol('HUB_GEOSPATIAL_RELAY_CONFIG');
 export const HUB_RETENTION_CONFIG = Symbol('HUB_RETENTION_CONFIG');
 
 export function loadHubRelayConfig(environment: NodeJS.ProcessEnv = process.env): RelayConfig {
@@ -30,6 +33,29 @@ export function loadHubRelayConfig(environment: NodeJS.ProcessEnv = process.env)
     interval: 'CONNECTOR_HUB_RELAY_INTERVAL_MS',
     peerService: 'analytics-api',
   });
+}
+
+export function loadHubGeospatialRelayConfig(environment: NodeJS.ProcessEnv = process.env): RelayConfig {
+  return loadRelayConfig(environment, {
+    inboxPublicKey: 'CONNECTOR_HUB_INBOX_RELAY_PUBLIC_KEY_BASE64',
+    targetUrl: 'CONNECTOR_HUB_RELAY_GEOSPATIAL_URL',
+    signingKey: 'GEOSPATIAL_HUB_INBOX_RELAY_PRIVATE_KEY_BASE64',
+    interval: 'CONNECTOR_HUB_RELAY_INTERVAL_MS',
+    peerService: 'geospatial-api',
+  });
+}
+
+@Injectable()
+export class GeospatialPlaceRelay extends OutboxRelay<HubDefinerFunction> {
+  constructor(database: DatabaseService, @Inject(HUB_GEOSPATIAL_RELAY_CONFIG) config: RelayConfig) {
+    super(database, config, {
+      leaseFunction: 'relay_lease_geospatial_places',
+      settleFunction: 'relay_settle_geospatial_place',
+      audience: GEOSPATIAL_INBOX_AUDIENCE,
+      source: HUB_RELAY_SOURCE,
+      notConfiguredMessage: 'The relay to Geospatial is not configured; pulled places stay in the outbox.',
+    });
+  }
 }
 
 @Injectable()
@@ -56,8 +82,10 @@ export class HubOutboxRetention extends OutboxRetentionSweeper {
 @Module({
   providers: [
     { provide: HUB_RELAY_CONFIG, useFactory: () => loadHubRelayConfig() },
+    { provide: HUB_GEOSPATIAL_RELAY_CONFIG, useFactory: () => loadHubGeospatialRelayConfig() },
     { provide: HUB_RETENTION_CONFIG, useFactory: () => loadOutboxRetentionConfig(process.env, 'CONNECTOR_HUB') },
     AnalyticsOutboxRelay,
+    GeospatialPlaceRelay,
     HubOutboxRetention,
   ],
 })

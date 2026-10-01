@@ -1,5 +1,6 @@
 import { type FieldUnitConversion, convertUnit, normalizeUnit } from '@gigalibs/contracts';
 import { readSourceField } from '../schema-discovery/schema-discovery.service.js';
+import { PlaceTagger } from './place-tagger.js';
 import {
   BadRequestException,
   Injectable,
@@ -33,6 +34,8 @@ export interface DatasetVersionSummary {
   completedAt: string | null;
   /** WI-OI-104e: semantic models moved to this version by this build (same mapping version, so the same fields). */
   refreshedModelIds?: string[];
+  /** WI-OI-105c: records no place contained or matched (the dataset's "Unplaced" bucket). */
+  unplacedCount?: number;
 }
 
 export interface SemanticMeasureDto {
@@ -138,6 +141,7 @@ export class DatasetService {
       analyticalField: string;
       analyticalType: string;
       unit?: FieldUnitConversion;
+      place?: { longitudeField: string } | { byCode: true };
     }> = Array.isArray(mapping.field_mappings)
       ? mapping.field_mappings
       : JSON.parse(mapping.field_mappings);
@@ -173,7 +177,7 @@ export class DatasetService {
     );
 
     try {
-      const { recordCount, checksum } = await this.transformAndWrite(
+      const { recordCount, checksum, unplacedCount: unplacedInBuild } = await this.transformAndWrite(
         tenantId,
         datasetVersionId,
         dto.mappingId,
@@ -186,9 +190,9 @@ export class DatasetService {
         tenantId,
         `UPDATE gigalibs_analytics.analytical_dataset_versions
          SET build_status = 'READY', record_count = $2,
-             content_checksum = $3, completed_at = now()
+             content_checksum = $3, unplaced_count = $4, completed_at = now()
          WHERE id = $1`,
-        [datasetVersionId, recordCount, checksum],
+        [datasetVersionId, recordCount, checksum, unplacedInBuild ?? null],
       );
 
       this.logger.log(
@@ -216,7 +220,10 @@ export class DatasetService {
       });
     }
     const built = await this.getDatasetVersion(principal, datasetVersionId);
-    return refreshedModelIds.length > 0 ? { ...built, refreshedModelIds } : built;
+    return {
+      ...built,
+      ...(refreshedModelIds.length > 0 ? { refreshedModelIds } : {}),
+    };
   }
 
   /**
@@ -260,7 +267,7 @@ export class DatasetService {
     const result = await this.db.queryWithTenant<any>(
       tenantId,
       `SELECT id, mapping_id, mapping_version, tenant_id, version_number,
-              build_status, record_count, content_checksum, build_error,
+              build_status, record_count, content_checksum, build_error, unplaced_count,
               built_by, built_at::text, completed_at::text
        FROM gigalibs_analytics.analytical_dataset_versions
        WHERE id = $1`,
@@ -280,7 +287,7 @@ export class DatasetService {
     const result = await this.db.queryWithTenant<any>(
       tenantId,
       `SELECT id, mapping_id, mapping_version, tenant_id, version_number,
-              build_status, record_count, content_checksum, build_error,
+              build_status, record_count, content_checksum, build_error, unplaced_count,
               built_by, built_at::text, completed_at::text
        FROM gigalibs_analytics.analytical_dataset_versions
        WHERE mapping_id = $1
@@ -413,8 +420,14 @@ export class DatasetService {
     mappingId: string,
     connectionId: string,
     sourceTableName: string,
-    fieldMappings: Array<{ sourceField: string; analyticalField: string; analyticalType: string; unit?: FieldUnitConversion }>,
-  ): Promise<{ recordCount: number; checksum: string }> {
+    fieldMappings: Array<{
+      sourceField: string;
+      analyticalField: string;
+      analyticalType: string;
+      unit?: FieldUnitConversion;
+      place?: { longitudeField: string } | { byCode: true };
+    }>,
+  ): Promise<{ recordCount: number; checksum: string; unplacedCount?: number }> {
     // Read most recent raw records for this connection + table (all of them)
     const rawResult = await this.db.queryWithTenant<{
       raw_payload: Record<string, unknown>;
@@ -431,15 +444,34 @@ export class DatasetService {
     const rawRows = rawResult.rows;
 
     if (rawRows.length === 0) {
-      return { recordCount: 0, checksum: crypto.createHash('sha256').update('empty').digest('hex') };
+      return {
+        recordCount: 0,
+        checksum: crypto.createHash('sha256').update('empty').digest('hex'),
+        ...(fieldMappings.some((mapping) => mapping.place) ? { unplacedCount: 0 } : {}),
+      };
     }
 
     // Transform each raw row: pick declared source fields (dot paths reach nested records), cast to analyticalType,
     // and convert units (WI-OI-104e). A value whose unit is unknown or of another kind becomes null, never a guess.
     let unconverted = 0;
+    // WI-OI-105c: a place field is filled from the place directory; unmatched records are "Unplaced".
+    const placeEntry = fieldMappings.find((mapping) => mapping.place);
+    const tagger = placeEntry ? await PlaceTagger.load(this.db, tenantId) : null;
+    let unplaced = 0;
     const analyticalRows = rawRows.map((r) => {
       const payload: Record<string, unknown> = {};
+      if (placeEntry && tagger) {
+        const place = placeEntry.place!;
+        const found = 'longitudeField' in place
+          ? tagger.byPoint(readSourceField(r.raw_payload, placeEntry.sourceField), readSourceField(r.raw_payload, place.longitudeField))
+          : tagger.byCode(readSourceField(r.raw_payload, placeEntry.sourceField));
+        if (!found) unplaced += 1;
+        payload[placeEntry.analyticalField] = found?.name ?? 'Unplaced';
+        payload.place_id = found?.id ?? null;
+        payload.place_path = found?.path ?? null;
+      }
       for (const mapping of fieldMappings) {
+        if (mapping === placeEntry) continue;
         const rawValue = readSourceField(r.raw_payload, mapping.sourceField);
         let value = castToType(rawValue, mapping.analyticalType);
         if (mapping.unit && typeof value === 'number') {
@@ -484,7 +516,7 @@ export class DatasetService {
     });
     const checksum = crypto.createHash('sha256').update(checksumInput, 'utf8').digest('hex');
 
-    return { recordCount: analyticalRows.length, checksum };
+    return { recordCount: analyticalRows.length, checksum, ...(placeEntry ? { unplacedCount: unplaced } : {}) };
   }
 
   private validateMeasures(measures: SemanticMeasureDto[]): void {
@@ -525,6 +557,7 @@ export class DatasetService {
       builtBy: row['built_by'] as string,
       builtAt: row['built_at'] as string,
       completedAt: (row['completed_at'] as string | null) ?? null,
+      ...(row['unplaced_count'] != null ? { unplacedCount: Number(row['unplaced_count']) } : {}),
     };
   }
 }

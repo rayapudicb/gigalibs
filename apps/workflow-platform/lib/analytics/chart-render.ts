@@ -6,7 +6,7 @@
  * into an ECharts option. Colours are passed in (resolved from the ui-* design tokens at runtime), never hard-coded.
  */
 
-import { type AnalyticsQueryResultV1, type ChartTypeV1, resultShape } from '@gigalibs/contracts';
+import { type AnalyticsQueryResultV1, type ChartTypeV1, type PlaceDirectoryEntryV1, resultShape } from '@gigalibs/contracts';
 import type { EChartsOption } from 'echarts';
 
 type Cell = string | number | boolean | null;
@@ -26,7 +26,7 @@ export function toEChartsOption(
   palette: readonly string[],
   text: { readonly color: string; readonly muted: string } = { color: 'inherit', muted: 'inherit' },
 ): EChartsOption | null {
-  if (!isEChartsType(type) || result.rows.length === 0) return null;
+  if (!isEChartsType(type) || type === 'place_map' || result.rows.length === 0) return null;
   const columns = result.columns;
   const timeIndex = columns.findIndex((column) => column.role === 'time');
   const dimensionIndexes = columns.flatMap((column, index) => (column.role === 'dimension' ? [index] : []));
@@ -266,4 +266,105 @@ function niceCeiling(value: number): number {
   if (value <= 0) return 1;
   const magnitude = 10 ** Math.floor(Math.log10(value));
   return Math.ceil((value * 1.1) / magnitude) * magnitude;
+}
+
+/**
+ * WI-OI-105e: a place map. Each place in the result (grouped by `place_id`) is drawn by its boundary and coloured by
+ * the first measure; places around them (the farm's other fields) are drawn empty for context. Records in no known
+ * place, and places without a boundary, cannot be drawn and are counted instead.
+ */
+export interface PlaceMap {
+  readonly geoJson: { type: 'FeatureCollection'; features: Array<{ type: 'Feature'; properties: { name: string }; geometry: unknown }> };
+  readonly option: EChartsOption;
+  /** Result rows that could not be drawn: no place ("Unplaced") or a place without a boundary. */
+  readonly notDrawn: number;
+}
+
+export function placeMap(
+  result: AnalyticsQueryResultV1,
+  places: readonly PlaceDirectoryEntryV1[],
+  mapName: string,
+  colors: { readonly low: string; readonly high: string; readonly empty: string; readonly border: string },
+  text: { readonly color: string; readonly muted: string } = { color: 'inherit', muted: 'inherit' },
+): PlaceMap | null {
+  const placeIndex = result.columns.findIndex((column) => column.name === 'place_id');
+  const measureIndex = result.columns.findIndex((column) => column.role === 'measure');
+  if (placeIndex < 0 || measureIndex < 0) return null;
+  const drawable = new Map(places.filter((place) => place.boundary).map((place) => [place.id, place] as const));
+  const values = new Map<string, number>();
+  let notDrawn = 0;
+  for (const row of result.rows) {
+    const id = row[placeIndex];
+    const value = row[measureIndex];
+    if (typeof id !== 'string' || !drawable.has(id)) notDrawn += 1;
+    else values.set(id, typeof value === 'number' ? value : 0);
+  }
+  if (drawable.size === 0) return null;
+  // Larger places first, so a field is drawn over its farm.
+  const ordered = [...drawable.values()].sort((a, b) => (b.areaM2 ?? 0) - (a.areaM2 ?? 0) || a.depth - b.depth);
+  const latitudes = ordered.flatMap((place) => ringLatitudes(place.boundary));
+  const midLatitude = latitudes.length ? (Math.min(...latitudes) + Math.max(...latitudes)) / 2 : 0;
+  const numbers = [...values.values()];
+  const low = numbers.length ? Math.min(...numbers) : 0;
+  const high = numbers.length ? Math.max(...numbers) : 1;
+  const measureLabel = result.columns[measureIndex]!.label;
+  return {
+    geoJson: {
+      type: 'FeatureCollection',
+      features: ordered.map((place) => ({ type: 'Feature', properties: { name: place.id }, geometry: place.boundary })),
+    },
+    notDrawn,
+    option: {
+      aria: { enabled: true },
+      textStyle: { color: text.color },
+      tooltip: {
+        trigger: 'item',
+        formatter: (params: unknown) => {
+          const item = params as { data?: { placeName?: string; value?: number | null } };
+          const value = item.data?.value;
+          return `${item.data?.placeName ?? ''}<br/>${measureLabel}: ${value === null || value === undefined ? 'no records' : formatCell(value)}`;
+        },
+      },
+      visualMap: {
+        type: 'continuous',
+        min: low === high ? Math.min(0, low) : low,
+        max: high,
+        calculable: false,
+        orient: 'horizontal',
+        left: 'center',
+        bottom: 0,
+        text: [formatCell(high), formatCell(low === high ? Math.min(0, low) : low)],
+        textStyle: { color: text.muted },
+        inRange: { color: [colors.low, colors.high] },
+        outOfRange: { color: colors.empty },
+      },
+      series: [
+        {
+          type: 'map',
+          map: mapName,
+          name: measureLabel,
+          roam: true,
+          // Equal distances north and east at this latitude.
+          aspectScale: Math.max(0.2, Math.cos((midLatitude * Math.PI) / 180)),
+          layoutCenter: ['50%', '46%'],
+          layoutSize: '88%',
+          itemStyle: { borderColor: colors.border, borderWidth: 1, areaColor: colors.empty },
+          emphasis: { label: { show: true, color: text.color }, itemStyle: { borderWidth: 2 } },
+          label: { show: false },
+          data: ordered.map((place) => ({
+            name: place.id,
+            placeName: place.name,
+            value: values.has(place.id) ? values.get(place.id)! : null,
+            ...(values.has(place.id) ? {} : { itemStyle: { areaColor: colors.empty } }),
+          })),
+        },
+      ],
+    } as EChartsOption,
+  };
+}
+
+function ringLatitudes(boundary: PlaceDirectoryEntryV1['boundary']): number[] {
+  if (!boundary) return [];
+  const polygons = boundary.type === 'Polygon' ? [boundary.coordinates] : boundary.coordinates;
+  return polygons.flatMap((polygon) => (polygon[0] ?? []).map((position) => position[1]));
 }

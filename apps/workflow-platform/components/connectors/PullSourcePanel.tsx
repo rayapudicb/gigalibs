@@ -17,6 +17,7 @@ import {
   formFromSource,
   sourceFromForm,
 } from '@/lib/connectors/pull-source-form';
+import { PlaceDeliveryPanel } from './PlaceDeliveryPanel';
 
 const HUB = '/api/connectors-hub/connections';
 const selectClass =
@@ -55,7 +56,17 @@ function Field({ id, label, hint, children }: { id: string; label: string; hint?
   );
 }
 
-export function PullSourcePanel({ connectionId, source, deliverToAnalytics = false }: { connectionId: string; source: unknown; deliverToAnalytics?: boolean }) {
+export function PullSourcePanel({
+  connectionId,
+  source,
+  deliverToAnalytics = false,
+  placeDelivery = null,
+}: {
+  connectionId: string;
+  source: unknown;
+  deliverToAnalytics?: boolean;
+  placeDelivery?: unknown;
+}) {
   const configured = Boolean(source);
   const [form, setForm] = useState<PullSourceForm>(() => formFromSource(source));
   const [editing, setEditing] = useState(!configured);
@@ -328,6 +339,8 @@ export function PullSourcePanel({ connectionId, source, deliverToAnalytics = fal
           </span>
         </label>
       ) : null}
+
+      {!editing ? <PlaceDeliveryPanel connectionId={connectionId} placeDelivery={placeDelivery} /> : null}
 
       {!editing && secretFields.length > 0 ? (
         <div className="flex flex-col gap-2 rounded-md border border-ui-border-base p-3">

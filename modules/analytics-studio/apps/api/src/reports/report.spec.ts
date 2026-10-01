@@ -30,7 +30,7 @@ function readMigration(): string {
   return fs.readFileSync(MIGRATION_FILE, 'utf8');
 }
 
-const PRINCIPAL = { tenantId: 'T', subject: 'u', entitlements: new Set(['analytics-studio']) };
+const PRINCIPAL = { tenantId: 'T', subject: 'u', entitlements: new Set(['analytics-studio']), spatialScope: { mode: 'UNBOUNDED' } };
 
 
 // ─── 1. Migration 000009 schema assertions ───────────────────────────────────

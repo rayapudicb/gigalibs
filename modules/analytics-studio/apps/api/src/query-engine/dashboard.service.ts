@@ -23,6 +23,7 @@ import type { PoolClient } from 'pg';
 import type { z } from 'zod';
 import type { AnalyticsPrincipal } from '../auth/authorization.js';
 import { DatabaseService } from '../database/database.service.js';
+import { placeScopeCondition, resolvePlaceScope } from '../places/place-scope.js';
 import { loadDatasetFields } from './dataset-fields.js';
 import { QueryEngineService } from './query-engine.service.js';
 import { SummaryService } from './summary.service.js';
@@ -212,24 +213,30 @@ export class DashboardService {
     if (!dashboard.filters.some((filter) => filter.field === field)) {
       throw new BadRequestException(`'${field}' is not a filter of this dashboard.`);
     }
+    // WI-OI-105d: a member with a place scope is offered only values from records under their places.
+    const placeScope = await resolvePlaceScope(this.db, principal);
     const datasetVersions: string[] = [];
     let type: AnalyticsFieldType | undefined;
     for (const modelId of new Set([...views.values()].map((view) => view.query.semanticModelId))) {
       const datasetVersionId = await this.datasetVersionOf(principal.tenantId, modelId);
       const fields = await loadDatasetFields(this.db, principal.tenantId, datasetVersionId);
-      if (!fields.has(field)) continue;
+      if (!fields.has(field) || (placeScope && !fields.has('place_id'))) continue;
       datasetVersions.push(datasetVersionId);
       type ??= fields.get(field);
     }
     if (datasetVersions.length === 0) return { field, values: [], truncated: false };
+    const params: unknown[] = [field, datasetVersions];
+    const scoped = placeScope
+      ? ` AND ${placeScopeCondition('', placeScope, (value) => `$${params.push(value)}`)}`
+      : '';
     const result = await this.db.queryWithTenant<{ value: string }>(
       principal.tenantId,
       `SELECT DISTINCT analytical_payload->>$1 AS value
          FROM gigalibs_analytics.dataset_record_versions
-        WHERE dataset_version_id = ANY($2::uuid[]) AND analytical_payload->>$1 IS NOT NULL
+        WHERE dataset_version_id = ANY($2::uuid[]) AND analytical_payload->>$1 IS NOT NULL${scoped}
         ORDER BY 1
         LIMIT ${MAX_FILTER_VALUES + 1}`,
-      [field, datasetVersions],
+      params,
     );
     const values = result.rows.slice(0, MAX_FILTER_VALUES).map((row) => typed(row.value, type));
     return { field, values, truncated: result.rows.length > MAX_FILTER_VALUES };

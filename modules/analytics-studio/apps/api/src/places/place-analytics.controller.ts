@@ -15,6 +15,13 @@ import { PlaceAnalyticsService } from './place-analytics.service.js';
 export class PlaceAnalyticsController {
   constructor(private readonly places: PlaceAnalyticsService) {}
 
+  /** WI-OI-105e: the places this member may see, for place pickers and the place map. */
+  @Get('directory')
+  @RequirePermissions('analytics:read')
+  directory(@PlatformPrincipal() principal: AnalyticsPrincipal, @Query() query: unknown) {
+    return this.places.directory(principal, query);
+  }
+
   @Get('drilldown')
   @RequirePermissions('analytics:read')
   drilldown(@PlatformPrincipal() principal: AnalyticsPrincipal, @Query() query: unknown) {

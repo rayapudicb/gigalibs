@@ -18,6 +18,8 @@ import type {
   AnalyticsTimeGrain,
   ChartTypeV1,
   ChartViewV1,
+  PlaceDirectoryEntryV1,
+  PlaceDirectoryV1,
 } from '@gigalibs/contracts';
 import { chartTypeLabel, compatibleChartTypes, resultShape } from '@/lib/analytics/chart-render';
 import { AnalyticsChart, ResultTable } from './AnalyticsChart';
@@ -52,6 +54,9 @@ export function ExploreWorkbench({ demoLab = false, canLoadSample = false }: { d
   const [timeField, setTimeField] = useState('');
   const [grain, setGrain] = useState<AnalyticsTimeGrain>('month');
   const [filters, setFilters] = useState<FilterRow[]>([]);
+  // WI-OI-105e: a question about one place (a farm and the fields inside it), for datasets built with places.
+  const [placeUnder, setPlaceUnder] = useState('');
+  const [placeOptions, setPlaceOptions] = useState<PlaceDirectoryEntryV1[] | null>(null);
   const [result, setResult] = useState<AnalyticsQueryResultV1 | null>(null);
   const [chartType, setChartType] = useState<ChartTypeV1>('table');
   const [showData, setShowData] = useState(false);
@@ -99,6 +104,14 @@ export function ExploreWorkbench({ demoLab = false, canLoadSample = false }: { d
     [catalog],
   );
   const timeFields = (catalog?.fields ?? []).filter((field) => field.type === 'date' || field.type === 'timestamp');
+  const hasPlaces = fieldType.has('place_id');
+
+  useEffect(() => {
+    if (!hasPlaces || placeOptions) return;
+    api<PlaceDirectoryV1>('v1/places/directory?maxDepth=2')
+      .then((loaded) => setPlaceOptions([...loaded.places]))
+      .catch(() => setPlaceOptions([]));
+  }, [hasPlaces, placeOptions]);
   const chartTypes = result ? compatibleChartTypes(resultShape(result)) : [];
 
   const query = (): AnalyticsQueryInputV1 => ({
@@ -114,6 +127,7 @@ export function ExploreWorkbench({ demoLab = false, canLoadSample = false }: { d
           ? { field: row.field, op: 'in', values: row.value.split(',').map((part) => coerce(part, type)) }
           : { field: row.field, op: row.op, value: coerce(row.value, type) };
       }),
+    ...(hasPlaces && placeUnder ? { placeUnder } : {}),
     limit: 1000,
   });
 
@@ -155,6 +169,7 @@ export function ExploreWorkbench({ demoLab = false, canLoadSample = false }: { d
     setDimensions(view.query.dimensions);
     setTimeField(view.query.time?.field ?? '');
     if (view.query.time) setGrain(view.query.time.grain);
+    setPlaceUnder(view.query.placeUnder ?? '');
     setFilters(
       view.query.filters.flatMap((filter): FilterRow[] =>
         filter.op === 'between'
@@ -344,6 +359,30 @@ export function ExploreWorkbench({ demoLab = false, canLoadSample = false }: { d
                 )}
               </fieldset>
 
+              {hasPlaces && (
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="explore-place" size="small" weight="plus">
+                    Place
+                  </Label>
+                  <select
+                    id="explore-place"
+                    className="w-full rounded-md border border-ui-border-base bg-ui-bg-field px-2 py-1.5 text-sm text-ui-fg-base focus:outline-none focus:ring-2 focus:ring-ui-border-interactive"
+                    value={placeUnder}
+                    onChange={(event) => setPlaceUnder(event.target.value)}
+                  >
+                    <option value="">All places I can see</option>
+                    {(placeOptions ?? []).map((place) => (
+                      <option key={place.id} value={place.id}>
+                        {`${'\u2003'.repeat(Math.max(0, place.depth - (placeOptions?.[0]?.depth ?? 1)))}${place.name}`}
+                      </option>
+                    ))}
+                  </select>
+                  <Text size="xsmall" className="text-ui-fg-subtle">
+                    Only records in this place and the places inside it. Group by place_id to draw them on a map.
+                  </Text>
+                </div>
+              )}
+
               <Button onClick={() => void run()} isLoading={busy} disabled={!measures.length}>
                 Show
               </Button>
@@ -406,7 +445,7 @@ export function ExploreWorkbench({ demoLab = false, canLoadSample = false }: { d
                 ))}
               </div>
 
-              <AnalyticsChart result={result} type={chartType} />
+              <AnalyticsChart result={result} type={chartType} placeUnder={hasPlaces && placeUnder ? placeUnder : undefined} />
 
               {chartType !== 'table' && (
                 <div className="flex flex-col gap-2">

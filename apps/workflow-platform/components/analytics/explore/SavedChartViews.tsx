@@ -95,7 +95,7 @@ export function SavedChartViews() {
               {selected.description && <Text size="small" className="text-ui-fg-subtle">{selected.description}</Text>}
             </div>
             {busy && <Text size="small" className="text-ui-fg-subtle">Running…</Text>}
-            {result && <AnalyticsChart result={result} type={selected.visual.type} />}
+            {result && <AnalyticsChart result={result} type={selected.visual.type} placeUnder={selected.query.placeUnder} />}
           </>
         )}
       </Container>

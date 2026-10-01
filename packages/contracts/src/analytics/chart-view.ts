@@ -25,6 +25,8 @@ export const ChartTypeV1Schema = z.enum([
   'radar',
   'sankey',
   'map',
+  // WI-OI-105e: places drawn by their boundaries, coloured by the first measure (grouped by place_id).
+  'place_map',
 ]);
 export type ChartTypeV1 = z.infer<typeof ChartTypeV1Schema>;
 

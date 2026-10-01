@@ -154,6 +154,36 @@ describe('PlacesService', () => {
     expect(client.query.mock.calls[2]![1]).toContain('SpatialNodeTypeCreatedV1');
   });
 
+  // WI-OI-105a/b (ADR-0016 F15): the area is computed in code when a boundary is saved, and the change fact carries
+  // what a consumer's place directory needs.
+  it('stores the computed area with a new field and publishes it with the boundary and name', async () => {
+    const dLat = 100 / 110_605;
+    const dLon = 100 / (111_320 * Math.cos((12.9716 * Math.PI) / 180));
+    const boundary = { type: 'Polygon' as const, coordinates: [[[77.5946, 12.9716], [77.5946 + dLon, 12.9716], [77.5946 + dLon, 12.9716 + dLat], [77.5946, 12.9716 + dLat], [77.5946, 12.9716]]] as [number, number][][] };
+    let inserted: unknown[] = [];
+    let fact: Record<string, unknown> = {};
+    client.query.mockImplementation(async (sql: string, params: unknown[] = []) => {
+      if (sql.includes('INSERT INTO gigalibs_geospatial.spatial_nodes')) {
+        inserted = params;
+        return { rowCount: 1, rows: [{ id: NODE_ID }] };
+      }
+      if (!sql.includes('n.*') && sql.includes('spatial_node_types')) return { rowCount: 1, rows: [{ id: TYPE_ID, code: 'FIELD' }] };
+      if (sql.includes('n.*')) {
+        return {
+          rowCount: 1,
+          rows: [{ ...lockRow({ code: 'NORTH', path: 'NORTH', display_name: 'North field', node_type_id: TYPE_ID, node_type_code: 'FIELD' }), boundary, area_m2: String(inserted[14]), time_zone: null, child_count: 0, ...timestamps }],
+        };
+      }
+      if (sql.includes('outbox_events')) fact = JSON.parse(String(params.at(-1)));
+      return { rowCount: 0, rows: [] };
+    });
+    const created = await service.createNode(context, { code: 'NORTH', displayName: 'North field', nodeTypeId: TYPE_ID, boundary });
+    const area = Number(inserted[14]);
+    expect(Math.abs(area - 10_000) / 10_000).toBeLessThan(0.005);
+    expect(created.areaM2).toBe(area);
+    expect(fact).toMatchObject({ nodeId: NODE_ID, change: 'CREATED', displayName: 'North field', areaM2: area, boundary });
+  });
+
   it('translates a duplicate code into a conflict', async () => {
     client.query.mockRejectedValueOnce(Object.assign(new Error('duplicate'), { code: '23505' }));
     await expect(service.createNodeType(context, { code: 'SITE', label: 'Site' })).rejects.toThrow(ConflictException);

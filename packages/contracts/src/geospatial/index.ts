@@ -123,6 +123,8 @@ export const SpatialNodeV1Schema = z.object({
   latitude: z.number().nullable(),
   longitude: z.number().nullable(),
   hasBoundary: z.boolean(),
+  /** WI-OI-105a: the boundary's area in square metres, computed in code when the boundary is saved. */
+  areaM2: z.number().nonnegative().nullable(),
   childCount: z.number().int().nonnegative(),
   status: SpatialRecordStatusV1Schema,
   version: z.number().int().positive(),
@@ -258,6 +260,12 @@ export const SpatialNodeChangedV1Schema = z.object({
   timeZone: z.string().nullable(),
   status: SpatialRecordStatusV1Schema,
   aggregateVersion: z.number().int().positive(),
+  // WI-OI-105b: what a consumer needs to keep its own place directory. Optional, so facts written before carry on.
+  displayName: z.string().optional(),
+  latitude: z.number().nullable().optional(),
+  longitude: z.number().nullable().optional(),
+  boundary: SpatialBoundaryV1Schema.nullable().optional(),
+  areaM2: z.number().nonnegative().nullable().optional(),
 });
 export type SpatialNodeChangedV1 = z.infer<typeof SpatialNodeChangedV1Schema>;
 
@@ -364,3 +372,61 @@ function distanceToRing(ring: readonly (readonly number[])[], point: { readonly 
   }
   return nearest;
 }
+
+// ─── Area and bounding box (WI-OI-105a, ADR-0016 F15: computed in code, no PostGIS) ──────────────────────────
+/** Radius of the sphere with the Earth's surface area (authalic), so spherical areas match the ellipsoid closely. */
+const AUTHALIC_RADIUS_METERS = 6_371_007.2;
+
+/**
+ * Area of a boundary in square metres: outer rings minus holes, on a sphere of authalic radius (the spherical-excess
+ * ring formula). For field- and farm-sized parcels it is within a fraction of a percent of the ellipsoidal area.
+ */
+export function boundaryAreaM2(boundary: SpatialBoundaryV1 | null | undefined): number | null {
+  if (!boundary) return null;
+  const polygons = boundary.type === 'Polygon' ? [boundary.coordinates] : boundary.coordinates;
+  let total = 0;
+  for (const [outer, ...holes] of polygons) {
+    if (!outer) continue;
+    total += ringAreaM2(outer) - holes.reduce((sum, hole) => sum + ringAreaM2(hole), 0);
+  }
+  return Math.round(Math.max(total, 0) * 100) / 100;
+}
+
+function ringAreaM2(ring: readonly (readonly number[])[]): number {
+  const radians = Math.PI / 180;
+  let sum = 0;
+  for (let i = 0; i + 1 < ring.length; i += 1) {
+    const [longitude1, latitude1] = ring[i] as [number, number];
+    const [longitude2, latitude2] = ring[i + 1] as [number, number];
+    sum += (longitude2 - longitude1) * radians * (2 + Math.sin(latitude1 * radians) + Math.sin(latitude2 * radians));
+  }
+  return Math.abs((sum * AUTHALIC_RADIUS_METERS * AUTHALIC_RADIUS_METERS) / 2);
+}
+
+export interface BoundingBoxV1 {
+  readonly minLongitude: number;
+  readonly minLatitude: number;
+  readonly maxLongitude: number;
+  readonly maxLatitude: number;
+}
+
+/** The smallest longitude/latitude box around a boundary's outer rings (a cheap first test before containment). */
+export function boundaryBoundingBox(boundary: SpatialBoundaryV1 | null | undefined): BoundingBoxV1 | null {
+  if (!boundary) return null;
+  const polygons = boundary.type === 'Polygon' ? [boundary.coordinates] : boundary.coordinates;
+  let box: { minLongitude: number; minLatitude: number; maxLongitude: number; maxLatitude: number } | null = null;
+  for (const [outer] of polygons) {
+    for (const [longitude, latitude] of (outer ?? []) as [number, number][]) {
+      box = box
+        ? {
+            minLongitude: Math.min(box.minLongitude, longitude),
+            minLatitude: Math.min(box.minLatitude, latitude),
+            maxLongitude: Math.max(box.maxLongitude, longitude),
+            maxLatitude: Math.max(box.maxLatitude, latitude),
+          }
+        : { minLongitude: longitude, minLatitude: latitude, maxLongitude: longitude, maxLatitude: latitude };
+    }
+  }
+  return box;
+}
+export * from './place-source.js';

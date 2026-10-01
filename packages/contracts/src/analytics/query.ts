@@ -45,6 +45,11 @@ export const AnalyticsQueryV1Schema = z
       .max(3)
       .default([]),
     limit: z.number().int().min(1).max(10_000).default(1_000),
+    /**
+     * WI-OI-105e: only records tagged with this place or a place inside it (a farm and its fields). Needs a dataset
+     * built with places; within a member's place scope, as every question is.
+     */
+    placeUnder: z.string().uuid().optional(),
   })
   .strict()
   .refine((query) => new Set(query.dimensions).size === query.dimensions.length, 'Dimensions must be distinct.')

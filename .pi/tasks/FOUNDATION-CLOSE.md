@@ -9,9 +9,9 @@ The owner chose to finish the open ADR-0016 foundation work before starting the 
    - 103f: proof on manufacturing data and the no-developer test;
    - retire the old engine: `v1/charts`, `v1/query/run`, `ChartService` and `runQuery`.
 2. **WI-OI-104** (F8, F14): Connector Hub adapter framework, the bridge into Analytics, one scheduler and job runner,
-   and retiring the connector copies in Analytics and the core API.
+   and retiring the connector copies in Analytics and the core API. **Done and live (Review); F8 and F14 closed.**
 3. **WI-OI-105** (F15): places with boundaries; area and containment computed in code; place scope enforced in every
-   module query.
+   module query. **Done and live 2026-09-30 (Review); F15 closed** (`.pi/work/WI-OI-105.md`).
 4. **WI-OI-107** (F10): industry packs at the solution layer; Workforce's packs move into it.
 5. **WI-OI-106** (F17): Reports v2, PDF and Excel.
 6. **WI-OI-108:** rebuild the contained other-stream forms properly.

@@ -41,6 +41,12 @@ export interface FieldMappingEntry {
   transformHint?: string;
   /** WI-OI-104e: number fields may convert to one unit, from a fixed unit or from the unit named in another field. */
   unit?: FieldUnitConversion;
+  /**
+   * WI-OI-105c: this field holds each record's place (its name, or "Unplaced"), found from the record's point (this
+   * source field is the latitude, `longitudeField` the longitude) or from a place code or id in this source field. The
+   * dataset also gets `place_id`, and `place_path` for place scope.
+   */
+  place?: { readonly longitudeField: string } | { readonly byCode: true };
 }
 
 /** A source field: a name, or a dot path of up to five segments into nested records. */
@@ -452,10 +458,18 @@ export class SchemaDiscoveryService {
         );
       }
       if (entry.unit !== undefined) validateUnitConversion(entry);
+      if (entry.place !== undefined) validatePlaceEntry(entry);
+      if (['place_id', 'place_path'].includes(entry.analyticalField)) {
+        throw new BadRequestException(`'${entry.analyticalField}' is reserved for place tagging.`);
+      }
     }
-    // Check for duplicate source fields
+    if (mappings.filter((entry) => entry.place !== undefined).length > 1) {
+      throw new BadRequestException('A mapping can tag records with one place field.');
+    }
+    // Check for duplicate source fields. The place field reads its source (a latitude or a code) without claiming it,
+    // so the same source field can also be mapped as a plain field (WI-OI-105 live proof).
     const seen = new Set<string>();
-    for (const entry of mappings) {
+    for (const entry of mappings.filter((candidate) => candidate.place === undefined)) {
       if (seen.has(entry.sourceField)) {
         throw new BadRequestException(`Duplicate sourceField: '${entry.sourceField}'.`);
       }
@@ -560,4 +574,19 @@ export function readSourceField(record: Record<string, unknown>, path: string): 
     current = (current as Record<string, unknown>)[key];
   }
   return current;
+}
+
+/** WI-OI-105c: a place field is a string, found from a point (latitude here, longitude named) or from a place code. */
+function validatePlaceEntry(entry: FieldMappingEntry): void {
+  const place = entry.place as Record<string, unknown> | null;
+  if (!place || typeof place !== 'object') throw new BadRequestException(`The place of '${entry.analyticalField}' must be an object.`);
+  if (entry.analyticalType !== 'string') throw new BadRequestException(`The place field '${entry.analyticalField}' must be a string field.`);
+  if (entry.unit !== undefined) throw new BadRequestException(`The place field '${entry.analyticalField}' cannot convert units.`);
+  const byPoint = typeof place.longitudeField === 'string';
+  if (byPoint === (place.byCode === true)) {
+    throw new BadRequestException(`The place of '${entry.analyticalField}' comes either from a point (longitudeField) or from a code (byCode).`);
+  }
+  if (byPoint && !SOURCE_FIELD_PATH.test(place.longitudeField as string)) {
+    throw new BadRequestException(`Invalid place longitudeField: '${String(place.longitudeField)}'.`);
+  }
 }

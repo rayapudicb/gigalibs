@@ -11,6 +11,8 @@ export interface AnalyticsResultShape {
   /** Numeric dimension fields that hold coordinates, when present (map charts). */
   readonly latitude?: string | undefined;
   readonly longitude?: string | undefined;
+  /** WI-OI-105e: the result is grouped by the place a record was tagged with (place map charts). */
+  readonly place?: boolean;
 }
 
 export const chartTypeLabel: Readonly<Record<ChartTypeV1, string>> = {
@@ -34,6 +36,7 @@ export const chartTypeLabel: Readonly<Record<ChartTypeV1, string>> = {
   radar: 'Radar',
   sankey: 'Sankey',
   map: 'Map (points)',
+  place_map: 'Map (places)',
 };
 
 export function resultShape(result: Pick<AnalyticsQueryResultV1, 'columns'>): AnalyticsResultShape {
@@ -46,6 +49,7 @@ export function resultShape(result: Pick<AnalyticsQueryResultV1, 'columns'>): An
     measures: result.columns.filter((column) => column.role === 'measure').length,
     latitude: numeric(/^(lat|latitude)$/i),
     longitude: numeric(/^(lon|lng|longitude)$/i),
+    place: dimensions.some((column) => column.name === 'place_id' && column.type === 'string'),
   };
 }
 
@@ -56,6 +60,7 @@ export function compatibleChartTypes(shape: AnalyticsResultShape): ChartTypeV1[]
   const types: ChartTypeV1[] = [];
   if (m === 0) return ['table'];
 
+  if (shape.place && shape.time === 0 && shape.dimensions === 1) types.push('place_map');
   if (shape.latitude && shape.longitude && shape.time === 0 && shape.dimensions <= 3) types.push('map');
 
   if (groups === 0) {

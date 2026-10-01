@@ -4,7 +4,7 @@ import { GUARDS_METADATA, METHOD_METADATA, PATH_METADATA } from '@nestjs/common/
 import { describe, expect, it } from 'vitest';
 import { AppModule } from '../app.module.js';
 import { HealthController } from '../health/health.controller.js';
-import { ConnectorHubInboxGuard } from '../inbox/connector-hub-inbox.js';
+import { AnalyticsRelayInboxGuard } from '../inbox/connector-hub-inbox.js';
 import { ANALYTICS_PERMISSIONS, PlatformContextAuthorizationGuard, declaredPermissions } from './authorization.js';
 
 type Constructor = abstract new (...args: never[]) => unknown;
@@ -35,7 +35,7 @@ function routes(): Array<{ route: string; guarded: boolean; relay: boolean; perm
         guarded:
           guards.includes(PlatformContextAuthorizationGuard) ||
           ((Reflect.getMetadata(GUARDS_METADATA, handler) ?? []) as unknown[]).includes(PlatformContextAuthorizationGuard),
-        relay: guards.includes(ConnectorHubInboxGuard),
+        relay: guards.includes(AnalyticsRelayInboxGuard),
         permissions: declaredPermissions(handler, controller),
       }));
     });
@@ -97,6 +97,7 @@ const EXPECTED: Record<string, string> = {
   'GET v1/reports/download/:token': 'analytics:export',
   'GET v1/lineage/:nodeType/:nodeId': 'analytics:read',
   'GET v1/audit': 'analytics:read',
+  'GET v1/places/directory': 'analytics:read',
   'GET v1/places/drilldown': 'analytics:read',
   'POST v1/places/metric-drilldown': 'analytics:read',
   'POST v1/places/rollups/rebuild': 'analytics:action',
@@ -112,7 +113,7 @@ describe('Analytics route permissions', () => {
 
   it('guards every route except health, and each guarded route names exactly one known permission', () => {
     const unguarded = all.filter((route) => !route.guarded && !route.relay).map((route) => route.route);
-    // WI-OI-104e: the one relay route answers only Connector Hub's relay token, never a user context.
+    // WI-OI-104e/105b: the one relay route answers only a producer's relay token (Connector Hub, Geospatial), never a user context.
     expect(all.filter((route) => route.relay).map((route) => [route.route, route.guarded])).toEqual([['POST internal/v1/inbox', false]]);
     const healthRoutes = Object.getOwnPropertyNames(HealthController.prototype).length > 1;
     expect(healthRoutes).toBe(true);

@@ -28,6 +28,7 @@ import { chooseSummary } from './summary-plan.js';
 import { SummaryService } from './summary.service.js';
 import { DatabaseService } from '../database/database.service.js';
 import type { AnalyticsPrincipal } from '../auth/authorization.js';
+import { assertPlacedDataset, placeScopeCondition, placesUnder, resolvePlaceScope, type PlaceScope } from '../places/place-scope.js';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -153,10 +154,14 @@ export class QueryEngineService {
       return this.unavailableResponse(dto.chartDefinitionId, asOf, 'No READY dataset version.');
     }
 
+    // WI-OI-105d: a member with a place scope sees only records under their places.
+    const placeScope = await resolvePlaceScope(this.db, principal);
+    if (placeScope) assertPlacedDataset(placeScope, await loadDatasetFields(this.db, tenantId, datasetVersionId));
+
     // 4. Execute measure aggregations against dataset_record_versions
     const results: MeasureResult[] = [];
     for (const m of measures) {
-      const value = await this.executeMeasure(tenantId, datasetVersionId, m, dto.dimensionOverride);
+      const value = await this.executeMeasure(tenantId, datasetVersionId, m, placeScope, dto.dimensionOverride);
       results.push({
         measureName: m.measure_name,
         aggregateFn: m.aggregate_fn,
@@ -234,6 +239,17 @@ export class QueryEngineService {
     if (freshness === 'UNAVAILABLE') return empty(freshness, watermark);
 
     const fields = await loadDatasetFields(this.db, tenantId, datasetVersionId);
+    // WI-OI-105d (D2, D3): a member with a place scope sees only records under their places, from the rows.
+    const memberScope = await resolvePlaceScope(this.db, principal);
+    assertPlacedDataset(memberScope, fields);
+    // WI-OI-105e: a question about one place (a farm) keeps the records under it, within the member's scope.
+    let placeScope = memberScope;
+    if (query.placeUnder) {
+      if (!fields.has('place_id')) throw new BadRequestException('This dataset has no places to filter by.');
+      const under = await placesUnder(this.db, tenantId, query.placeUnder);
+      const visible = memberScope ? new Set(memberScope.placeIds) : null;
+      placeScope = { placeIds: visible ? under.filter((id) => visible.has(id)) : under, paths: [] };
+    }
     const measures = new Map<string, QueryMeasure>(
       modelResult.rows.map((row: any) => [
         row.measure_name,
@@ -300,14 +316,15 @@ export class QueryEngineService {
       definitionVersion,
       query,
       measureVersions: resolvedMeasureVersions,
-      spatialScope: principal.spatialScope,
+      // The visible places, not the assignment: a place moved in or out of a farm changes the answer.
+      spatialScope: placeScope ? [...placeScope.placeIds].sort() : null,
     });
     const cached = this.answers.get(cacheKey);
     // The answer cannot change for this dataset version; freshness is about now, so it is recomputed above.
     if (cached) return { ...cached, freshness, watermark };
 
     // A READY summary that answers the question exactly is used instead of the raw rows (WI-OI-103c).
-    const summary = this.summaries
+    const summary = this.summaries && !placeScope
       ? chooseSummary(await this.summaries.ready(tenantId, datasetVersionId), query, measures, fields)
       : undefined;
     let built;
@@ -320,6 +337,7 @@ export class QueryEngineService {
         ...(summary
           ? { summary: { id: summary.id, dimensions: summary.dimensions, timeField: summary.timeField, numericFields: summary.numericFields } }
           : {}),
+        ...(placeScope ? { placeScope } : {}),
       });
     } catch (error) {
       if (error instanceof AnalyticsQuerySpecError) throw new BadRequestException(error.message);
@@ -440,6 +458,7 @@ export class QueryEngineService {
     tenantId: string,
     datasetVersionId: string,
     measure: { aggregate_fn: string; field_reference: string; measure_name: string },
+    placeScope: PlaceScope | null,
     _dimensionOverride?: string,
   ): Promise<number | null> {
     // The aggregate function comes from a closed switch; the JSONB key is always a bound parameter ($2),
@@ -468,14 +487,19 @@ export class QueryEngineService {
       default:
         throw new BadRequestException(`Unsupported aggregateFn: '${fn}'.`);
     }
-    const params = fn === 'COUNT' ? [datasetVersionId] : [datasetVersionId, measure.field_reference];
+    const params: unknown[] = fn === 'COUNT' ? [datasetVersionId] : [datasetVersionId, measure.field_reference];
+    const bind = (value: unknown) => {
+      params.push(value);
+      return `$${params.length}`;
+    };
+    const scoped = placeScope ? ` AND ${placeScopeCondition('', placeScope, bind)}` : '';
 
     try {
       const result = await this.db.queryWithTenant<{ value: string | null }>(
         tenantId,
         `SELECT ${aggregateExpr} AS value
          FROM gigalibs_analytics.dataset_record_versions
-         WHERE dataset_version_id = $1`,
+         WHERE dataset_version_id = $1${scoped}`,
         params,
       );
       const raw = result.rows[0]?.value;

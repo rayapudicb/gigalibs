@@ -95,7 +95,7 @@ describe('Migration 000008 — schema assertions', () => {
 
 import { QueryEngineService } from './query-engine.service.js';
 
-const PRINCIPAL = { tenantId: 'T', subject: 'u', entitlements: new Set(['analytics-studio']) };
+const PRINCIPAL = { tenantId: 'T', subject: 'u', entitlements: new Set(['analytics-studio']), spatialScope: { mode: 'UNBOUNDED' } };
 
 function mockDbForFreshness(opts: {
   buildingCount: number;

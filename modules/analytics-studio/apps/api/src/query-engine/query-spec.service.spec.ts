@@ -8,9 +8,10 @@ import type { AnalyticsPrincipal } from '../auth/authorization.js';
 import { QueryEngineService } from './query-engine.service.js';
 
 const MODEL = '00000000-0000-4000-8000-000000000001';
-const principal = { tenantId: 'tenant-a' } as AnalyticsPrincipal;
+const principal = { tenantId: 'tenant-a', spatialScope: { mode: 'UNBOUNDED' } } as AnalyticsPrincipal;
+const scoped = (placeIds: string[]) => ({ tenantId: 'tenant-a', spatialScope: { mode: 'SCOPED_PLACES', place_ids: placeIds } }) as never;
 
-function service(options: { model?: boolean; resultRows?: Array<Record<string, unknown>> } = {}) {
+function service(options: { model?: boolean; resultRows?: Array<Record<string, unknown>>; placed?: boolean } = {}) {
   const calls: Array<{ sql: string; params: unknown[] }> = [];
   const queryWithTenant = vi.fn(async (_tenant: string, sql: string, params: unknown[] = []) => {
     calls.push({ sql, params });
@@ -38,12 +39,26 @@ function service(options: { model?: boolean; resultRows?: Array<Record<string, u
               { sourceField: 'created_at', analyticalField: 'occurred_at', analyticalType: 'timestamp' },
               { sourceField: 'site_name', analyticalField: 'site', analyticalType: 'string' },
               { sourceField: 'labour', analyticalField: 'hours', analyticalType: 'number' },
+              ...(options.placed ? [{ sourceField: 'farm_code', analyticalField: 'farm', analyticalType: 'string', place: { byCode: true } }] : []),
             ],
           },
         ],
       };
     }
     if (sql.includes('FROM gigalibs_analytics.formula_measures fm')) return { rows: [] };
+    if (sql.includes('FROM gigalibs_analytics.place_directory d')) {
+      const assigned = params[0] as string[];
+      const directory = [
+        { place_id: 'p1', path: 'estate.north', parent: null },
+        { place_id: 'p1-field', path: 'estate.north.f1', parent: 'p1' },
+        { place_id: 'p2', path: 'estate.south', parent: null },
+      ];
+      return {
+        rows: directory
+          .filter((place) => assigned.includes(place.place_id) || (place.parent !== null && assigned.includes(place.parent)))
+          .map((place) => ({ place_id: place.place_id, path: place.path, assigned: assigned.includes(place.place_id) })),
+      };
+    }
     if (sql.includes('FROM gigalibs_analytics.dataset_record_versions r')) return { rows: options.resultRows ?? [] };
     if (sql.includes('FROM gigalibs_analytics.analytics_summary_rows s')) return { rows: options.resultRows ?? [] };
     throw new Error(`unexpected SQL: ${sql}`);
@@ -180,9 +195,43 @@ describe('QueryEngineService.runSpec', () => {
     expect(scans()).toBe(1);
     expect(again.rows).toEqual(first.rows);
     expect(again.freshness).toBe(first.freshness);
-    await engine.runSpec({ tenantId: 'tenant-b' } as AnalyticsPrincipal, question);
-    await engine.runSpec({ tenantId: 'tenant-a', spatialScope: { mode: 'SCOPED_PLACES', place_ids: ['p1'] } } as never, question);
-    expect(scans()).toBe(3);
+    await engine.runSpec({ tenantId: 'tenant-b', spatialScope: { mode: 'UNBOUNDED' } } as AnalyticsPrincipal, question);
+    expect(scans()).toBe(2);
+    const placed = service({ resultRows: [{ c0: '3' }], placed: true });
+    const placedScans = () => placed.calls.filter((call) => call.sql.includes('FROM gigalibs_analytics.dataset_record_versions r')).length;
+    await placed.engine.runSpec(principal, question);
+    await placed.engine.runSpec(scoped(['p1']), question);
+    await placed.engine.runSpec(scoped(['p2']), question);
+    await placed.engine.runSpec(scoped(['p1']), question);
+    expect(placedScans()).toBe(3);
+  });
+
+  // WI-OI-105d (ADR-0016 F15, D2 and D3).
+  describe('a member with a place scope', () => {
+    it('sees only records tagged with their places or places inside them, answered from the rows', async () => {
+      const { engine, calls } = service({ resultRows: [{ c0: 'North', c1: '7' }], placed: true });
+      const summaries = { ready: vi.fn(async () => [{ id: 'sum-1', dimensions: ['site'], timeField: 'occurred_at', numericFields: ['hours'], rowCount: 12 }]) };
+      const routed = new QueryEngineService((engine as any).db, summaries as never);
+      const answer = await routed.runSpec(scoped(['p1']), { semanticModelId: MODEL, measures: ['labour_hours'], dimensions: ['site'] });
+      expect(answer.answeredFrom).toBe('rows');
+      expect(summaries.ready).not.toHaveBeenCalled();
+      const scan = calls.at(-1)!;
+      expect(scan.sql).toContain("(r.analytical_payload->>'place_id') = ANY(");
+      expect(scan.params).toContainEqual(['p1', 'p1-field']);
+    });
+
+    it('sees nothing when none of their places is known yet, and is refused a dataset without places', async () => {
+      const placed = service({ placed: true });
+      await placed.engine.runSpec(scoped(['unknown']), { semanticModelId: MODEL, measures: ['work_orders'] });
+      expect(placed.calls.at(-1)!.params).toContainEqual([]);
+      const unplaced = service();
+      await expect(unplaced.engine.runSpec(scoped(['p1']), { semanticModelId: MODEL, measures: ['work_orders'] })).rejects.toMatchObject({
+        response: { code: 'SPATIAL_SCOPE_DENIED' },
+      });
+      await expect(unplaced.engine.runSpec(scoped([]), { semanticModelId: MODEL, measures: ['work_orders'] })).rejects.toMatchObject({
+        response: { code: 'SPATIAL_SCOPE_DENIED' },
+      });
+    });
   });
 
   it('answers from a READY summary that covers the question, and from the raw rows otherwise', async () => {

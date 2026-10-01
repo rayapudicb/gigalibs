@@ -33,7 +33,9 @@ step "core migrations recorded"
 docker exec gigalibs-postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -tA -c "SELECT migration_name FROM public._prisma_migrations WHERE finished_at IS NOT NULL AND migration_name >= '"'"'20260930'"'"' ORDER BY 1"' | sed 's/^/  /' | tee "$SP/core-migrations.txt"
 grep -q 20260930010000_kernel_job_schedules "$SP/core-migrations.txt" || fail "kernel_job_schedules not recorded"
 
-for svc in api cmms-api workforce-api geospatial-api connector-hub-api analytics-api redis kernel-worker web; do
+# Consumers before producers (WI-OI-105 lesson): a relay's peer must know its key before the relay starts delivering,
+# so Analytics (inbox for the Hub and Geospatial) goes first, then Geospatial (inbox for the Hub), then the Hub.
+for svc in api cmms-api workforce-api analytics-api geospatial-api connector-hub-api redis kernel-worker web; do
   step "replace $svc"
   "${DC[@]}" up -d --no-deps "$svc" > "$SP/$svc.out" 2>&1 || { tail -5 "$SP/$svc.out"; fail "$svc up"; }
   for _ in $(seq 1 80); do h=$(health "$svc"); [ "$h" = healthy ] && break; sleep 3; done

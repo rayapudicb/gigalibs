@@ -17,9 +17,12 @@ import {
   type DiscoveredField,
   type DraftField,
   type FieldMappingEntry,
+  NO_PLACE,
+  type PlaceDraft,
   defaultMeasures,
   draftFromDiscovery,
   fieldMappingsFromDraft,
+  placeDraftFromDiscovery,
 } from '@/lib/analytics/mapping-draft';
 import { analyticsApi } from '../explore/analytics-api';
 
@@ -50,6 +53,8 @@ interface DatasetVersion {
   versionNumber: number;
   buildStatus: 'BUILDING' | 'READY' | 'FAILED';
   recordCount: number;
+  /** WI-OI-105c: records a build tagged with no place; absent for datasets without places. */
+  unplacedCount?: number;
   buildError: string | null;
   completedAt: string | null;
 }
@@ -114,7 +119,8 @@ export function SourcesWorkbench({ canMap, canModel }: { canMap: boolean; canMod
       });
       if (built.buildStatus !== 'READY') throw new Error(`The build ended ${built.buildStatus.toLowerCase()}: ${built.buildError ?? 'no detail'}.`);
       const refreshed = built.refreshedModelIds?.length ?? 0;
-      return `Dataset version ${built.versionNumber} built: ${built.recordCount.toLocaleString()} records.${refreshed ? ` ${refreshed} model(s) now show it.` : ''}`;
+      const unplaced = built.unplacedCount ? ` ${built.unplacedCount.toLocaleString()} are in no known place (“Unplaced”).` : '';
+      return `Dataset version ${built.versionNumber} built: ${built.recordCount.toLocaleString()} records.${unplaced}${refreshed ? ` ${refreshed} model(s) now show it.` : ''}`;
     });
 
   const makeExplorable = (mapping: Mapping, version: DatasetVersion) =>
@@ -207,7 +213,7 @@ export function SourcesWorkbench({ canMap, canModel }: { canMap: boolean; canMod
                                 {`v${latest.versionNumber} ${latest.buildStatus.toLowerCase()}`}
                               </Badge>
                               <Text size="xsmall" className="tabular-nums text-ui-fg-subtle">
-                                {`${latest.recordCount.toLocaleString()} records${latest.completedAt ? ` · ${new Date(latest.completedAt).toLocaleString()}` : ''}`}
+                                {`${latest.recordCount.toLocaleString()} records${latest.unplacedCount !== undefined ? ` · ${latest.unplacedCount.toLocaleString()} unplaced` : ''}${latest.completedAt ? ` · ${new Date(latest.completedAt).toLocaleString()}` : ''}`}
                               </Text>
                               {latest.buildError ? <Text size="xsmall" className="text-ui-fg-error">{latest.buildError}</Text> : null}
                             </div>
@@ -263,9 +269,52 @@ export function SourcesWorkbench({ canMap, canModel }: { canMap: boolean; canMod
   );
 }
 
+/** WI-OI-105c: tag each record with the smallest known place holding its point, or the place its code names. */
+function PlaceChoice({ draft, place, onChange }: { draft: readonly DraftField[]; place: PlaceDraft; onChange: (place: PlaceDraft) => void }) {
+  const set = (change: Partial<PlaceDraft>) => onChange({ ...place, ...change });
+  const fieldOptions = draft.map((field) => <option key={field.sourceField} value={field.sourceField}>{field.sourceField}</option>);
+  return (
+    <div className="flex flex-col gap-2 rounded-md border border-ui-border-base p-3">
+      <Text size="small" weight="plus">Place of each record</Text>
+      <Text size="xsmall" className="text-ui-fg-subtle">
+        Records are matched to places from Geospatial. Members with a place scope see only records in their places; records in no known place show as “Unplaced”.
+      </Text>
+      <div className="flex flex-wrap items-center gap-2">
+        <select aria-label="Place of each record" className={selectClass} value={place.mode} onChange={(event) => set({ mode: event.target.value as PlaceDraft['mode'] })}>
+          <option value="none">No place</option>
+          <option value="point">From latitude and longitude</option>
+          <option value="code">From a place code or id</option>
+        </select>
+        {place.mode === 'point' ? (
+          <>
+            <select aria-label="Latitude field" className={selectClass} value={place.latitudeField} onChange={(event) => set({ latitudeField: event.target.value })}>
+              <option value="">Latitude field…</option>
+              {fieldOptions}
+            </select>
+            <select aria-label="Longitude field" className={selectClass} value={place.longitudeField} onChange={(event) => set({ longitudeField: event.target.value })}>
+              <option value="">Longitude field…</option>
+              {fieldOptions}
+            </select>
+          </>
+        ) : null}
+        {place.mode === 'code' ? (
+          <select aria-label="Place code field" className={selectClass} value={place.codeField} onChange={(event) => set({ codeField: event.target.value })}>
+            <option value="">Field with the place code or id…</option>
+            {fieldOptions}
+          </select>
+        ) : null}
+        {place.mode !== 'none' ? (
+          <Input aria-label="Name of the place field" size="small" className="w-40" value={place.fieldName} onChange={(event) => set({ fieldName: event.target.value })} />
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
 function MappingEditor({ source, onDone }: { source: Source; onDone: (message: string) => Promise<void> }) {
   const [table, setTable] = useState(source.sourceType === 'CONNECTOR_HUB' ? 'records' : '');
   const [draft, setDraft] = useState<DraftField[] | null>(null);
+  const [place, setPlace] = useState<PlaceDraft>(NO_PLACE);
   const [name, setName] = useState(source.displayName);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -279,6 +328,7 @@ function MappingEditor({ source, onDone }: { source: Source; onDone: (message: s
       const schema = await analyticsApi<{ fields: DiscoveredField[] }>(`v1/connectors/${source.id}/discover?table=${encodeURIComponent(table.trim())}`, { method: 'POST' });
       if (schema.fields.length === 0) throw new Error('No records to discover yet. Pull the source first.');
       setDraft(draftFromDiscovery(schema.fields));
+      setPlace(placeDraftFromDiscovery(schema.fields));
     } catch (cause) {
       setError((cause as Error).message);
     } finally {
@@ -287,7 +337,7 @@ function MappingEditor({ source, onDone }: { source: Source; onDone: (message: s
   };
 
   const publish = async () => {
-    const { fieldMappings, error: problem } = fieldMappingsFromDraft(draft ?? []);
+    const { fieldMappings, error: problem } = fieldMappingsFromDraft(draft ?? [], place);
     if (problem) {
       setError(problem);
       return;
@@ -397,6 +447,7 @@ function MappingEditor({ source, onDone }: { source: Source; onDone: (message: s
           <Text size="xsmall" className="text-ui-fg-subtle">
             A value whose unit is unknown or of another kind (for example a weight stored as an area) is left empty in the dataset, never guessed.
           </Text>
+          <PlaceChoice draft={draft} place={place} onChange={setPlace} />
           <div>
             <Button type="button" size="small" isLoading={busy === 'publish'} disabled={busy !== null} onClick={() => void publish()}>
               Save and publish mapping

@@ -57,6 +57,7 @@ interface TenantConnection {
   last_sync_at: string | null;
   events_count: number;
   deliver_to_analytics?: boolean;
+  place_delivery?: unknown;
   created_at: string;
   updated_at: string;
   definition_name: string;
@@ -611,7 +612,7 @@ export default function ConnectionsPage() {
                   >
                     {pullSourceId === conn.id ? 'Hide pull source' : conn.configuration?.source ? 'Pull source' : 'Set up a pull source'}
                   </Button>
-                  {pullSourceId === conn.id ? <PullSourcePanel connectionId={conn.id} source={conn.configuration?.source} deliverToAnalytics={conn.deliver_to_analytics} /> : null}
+                  {pullSourceId === conn.id ? <PullSourcePanel connectionId={conn.id} source={conn.configuration?.source} deliverToAnalytics={conn.deliver_to_analytics} placeDelivery={conn.place_delivery} /> : null}
                   <Button
                     variant="transparent"
                     size="small"

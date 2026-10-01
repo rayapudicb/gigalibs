@@ -8,6 +8,7 @@ import {
   UnprocessableEntityException,
 } from '@nestjs/common';
 import {
+  boundaryAreaM2,
   CreateSpatialNodeTypeV1Schema,
   CreateSpatialNodeV1Schema,
   ImportSpatialNodesV1Schema,
@@ -16,7 +17,9 @@ import {
   SpatialNodeImportRowV1Schema,
   UpdateSpatialNodeV1Schema,
   MobileSpatialSyncQuerySchema,
+  type CreateSpatialNodeV1,
   type MobileSpatialSyncResponseV1,
+  type MoveSpatialNodeV1,
   type SpatialBoundaryV1,
   type SpatialNodeImportResultV1,
   type SpatialNodeImportRowV1,
@@ -25,6 +28,7 @@ import {
   type SpatialNodePageV1,
   type SpatialNodeTypeV1,
   type SpatialNodeV1,
+  type UpdateSpatialNodeV1,
 } from '@gigalibs/contracts';
 import type { PoolClient } from 'pg';
 import type { GeospatialPrincipal } from '../auth/authorization.js';
@@ -248,243 +252,253 @@ export class PlacesService {
 
   async createNode(context: CommandContext, rawInput: unknown): Promise<SpatialNodeDetailV1> {
     const input = parse(CreateSpatialNodeV1Schema, rawInput);
+    return this.database.withTenantTransaction(context.principal.tenantId, (client) => this.createNodeIn(client, context, input));
+  }
+
+  /** Inside the caller's tenant transaction (WI-OI-105e: the Connector Hub inbox links the source record with it). */
+  async createNodeIn(client: PoolClient, context: CommandContext, input: CreateSpatialNodeV1): Promise<SpatialNodeDetailV1> {
     const tenantId = context.principal.tenantId;
-    return this.database.withTenantTransaction(tenantId, async (client) => {
-      const roots = await this.scopeRoots(client, context.principal);
-      if (roots !== null && !input.parentId) {
-        throw spatialScopeDenied('Add the place inside one of your assigned places.');
+    const roots = await this.scopeRoots(client, context.principal);
+    if (roots !== null && !input.parentId) {
+      throw spatialScopeDenied('Add the place inside one of your assigned places.');
+    }
+    const nodeType = await this.activeNodeType(client, tenantId, input.nodeTypeId);
+    let path = input.code;
+    let parentId: string | null = null;
+    if (input.parentId) {
+      const parent = await this.lockableNode(client, tenantId, input.parentId, false, roots);
+      if (parent.status !== 'ACTIVE') {
+        throw new UnprocessableEntityException({
+          code: 'SPATIAL_PARENT_INACTIVE',
+          message: 'A place cannot be added under an inactive parent.',
+        });
       }
-      const nodeType = await this.activeNodeType(client, tenantId, input.nodeTypeId);
-      let path = input.code;
-      let parentId: string | null = null;
-      if (input.parentId) {
-        const parent = await this.lockableNode(client, tenantId, input.parentId, false, roots);
-        if (parent.status !== 'ACTIVE') {
-          throw new UnprocessableEntityException({
-            code: 'SPATIAL_PARENT_INACTIVE',
-            message: 'A place cannot be added under an inactive parent.',
-          });
-        }
-        if (parent.depth + 1 > MAX_DEPTH) throw depthExceeded();
-        path = `${parent.path}.${input.code}`;
-        parentId = parent.id;
-      }
-      try {
-        const result = await client.query(
-          `INSERT INTO gigalibs_geospatial.spatial_nodes
-             (tenant_id, parent_id, node_type_id, code, path, display_name, country_code, subdivision_code,
-              time_zone, latitude, longitude, boundary, created_by, updated_by, correlation_id)
-           VALUES ($1, $2, $3, $4, $5::ltree, $6, $7, $8, $9, $10, $11, $12::jsonb, $13, $13, $14)
-           RETURNING id`,
-          [
-            tenantId,
-            parentId,
-            nodeType.id,
-            input.code,
-            path,
-            input.displayName,
-            input.countryCode ?? null,
-            input.subdivisionCode ?? null,
-            input.timeZone ?? null,
-            input.latitude ?? null,
-            input.longitude ?? null,
-            input.boundary ? JSON.stringify(input.boundary) : null,
-            context.principal.subject,
-            context.correlationId,
-          ],
-        );
-        const id = result.rows[0]!.id as string;
-        const created = await this.detail(client, tenantId, id, roots);
-        await recordAudit(client, context, 'SPATIAL_NODE_CREATED', 'SPATIAL_NODE', id, { path, nodeTypeCode: nodeType.code });
-        await publishNodeChange(client, context, created, 'CREATED', null);
-        return created;
-      } catch (error) {
-        translateUnique(error, 'A place with this code already exists under the same parent.');
-      }
-    });
+      if (parent.depth + 1 > MAX_DEPTH) throw depthExceeded();
+      path = `${parent.path}.${input.code}`;
+      parentId = parent.id;
+    }
+    try {
+      const result = await client.query(
+        `INSERT INTO gigalibs_geospatial.spatial_nodes
+           (tenant_id, parent_id, node_type_id, code, path, display_name, country_code, subdivision_code,
+            time_zone, latitude, longitude, boundary, area_m2, created_by, updated_by, correlation_id)
+         VALUES ($1, $2, $3, $4, $5::ltree, $6, $7, $8, $9, $10, $11, $12::jsonb, $15::numeric, $13, $13, $14)
+         RETURNING id`,
+        [
+          tenantId,
+          parentId,
+          nodeType.id,
+          input.code,
+          path,
+          input.displayName,
+          input.countryCode ?? null,
+          input.subdivisionCode ?? null,
+          input.timeZone ?? null,
+          input.latitude ?? null,
+          input.longitude ?? null,
+          input.boundary ? JSON.stringify(input.boundary) : null,
+          context.principal.subject,
+          context.correlationId,
+          boundaryAreaM2(input.boundary ?? null),
+        ],
+      );
+      const id = result.rows[0]!.id as string;
+      const created = await this.detail(client, tenantId, id, roots);
+      await recordAudit(client, context, 'SPATIAL_NODE_CREATED', 'SPATIAL_NODE', id, { path, nodeTypeCode: nodeType.code });
+      await publishNodeChange(client, context, created, 'CREATED', null);
+      return created;
+    } catch (error) {
+      translateUnique(error, 'A place with this code already exists under the same parent.');
+    }
   }
 
   async updateNode(context: CommandContext, nodeId: string, rawInput: unknown): Promise<SpatialNodeDetailV1> {
     assertUuid(nodeId, 'nodeId');
     const input = parse(UpdateSpatialNodeV1Schema, rawInput);
+    return this.database.withTenantTransaction(context.principal.tenantId, (client) => this.updateNodeIn(client, context, nodeId, input));
+  }
+
+  async updateNodeIn(client: PoolClient, context: CommandContext, nodeId: string, input: UpdateSpatialNodeV1): Promise<SpatialNodeDetailV1> {
     const tenantId = context.principal.tenantId;
-    return this.database.withTenantTransaction(tenantId, async (client) => {
-      const roots = await this.scopeRoots(client, context.principal);
-      const current = await this.lockableNode(client, tenantId, nodeId, true, roots);
-      if (current.version !== input.expectedVersion) throw versionConflict(input.expectedVersion, current.version);
-      if (input.nodeTypeId) await this.activeNodeType(client, tenantId, input.nodeTypeId);
-      if (input.status === 'INACTIVE' && current.status === 'ACTIVE') {
-        const active = await client.query(
-          `SELECT 1 FROM gigalibs_geospatial.spatial_nodes
-            WHERE tenant_id = $1 AND path <@ $2::ltree AND id <> $3 AND status = 'ACTIVE' LIMIT 1`,
-          [tenantId, current.path, nodeId],
-        );
-        if (active.rowCount) {
-          throw new ConflictException({
-            code: 'SPATIAL_ACTIVE_DESCENDANTS',
-            message: 'Deactivate or move the places under this one first.',
-          });
-        }
-      }
-      if (input.status === 'ACTIVE' && current.status === 'INACTIVE' && current.parentId) {
-        const parent = await this.lockableNode(client, tenantId, current.parentId, false);
-        if (parent.status !== 'ACTIVE') {
-          throw new UnprocessableEntityException({
-            code: 'SPATIAL_PARENT_INACTIVE',
-            message: 'Reactivate the parent place first.',
-          });
-        }
-      }
-
-      const has = (key: keyof typeof input) => Object.prototype.hasOwnProperty.call(input, key);
-      const merged = {
-        countryCode: has('countryCode') ? (input.countryCode ?? null) : current.countryCode,
-        subdivisionCode: has('subdivisionCode') ? (input.subdivisionCode ?? null) : current.subdivisionCode,
-        latitude: has('latitude') ? (input.latitude ?? null) : current.latitude,
-        longitude: has('longitude') ? (input.longitude ?? null) : current.longitude,
-      };
-      if ((merged.latitude === null) !== (merged.longitude === null)) {
-        throw new BadRequestException({
-          code: 'GEOSPATIAL_VALIDATION_FAILED',
-          message: 'Provide both latitude and longitude, or neither.',
-        });
-      }
-      if (merged.subdivisionCode && !merged.subdivisionCode.startsWith(`${merged.countryCode ?? ''}-`)) {
-        throw new BadRequestException({
-          code: 'GEOSPATIAL_VALIDATION_FAILED',
-          message: 'The subdivision must belong to the selected country.',
-        });
-      }
-
-      await client.query(
-        `UPDATE gigalibs_geospatial.spatial_nodes
-            SET display_name = COALESCE($3, display_name),
-                node_type_id = COALESCE($4, node_type_id),
-                status = COALESCE($5, status),
-                country_code = $6,
-                subdivision_code = $7,
-                time_zone = CASE WHEN $8::boolean THEN $9 ELSE time_zone END,
-                latitude = $10,
-                longitude = $11,
-                boundary = CASE WHEN $12::boolean THEN $13::jsonb ELSE boundary END,
-                version = version + 1,
-                updated_by = $14,
-                correlation_id = $15,
-                updated_at = now()
-          WHERE tenant_id = $1 AND id = $2`,
-        [
-          tenantId,
-          nodeId,
-          input.displayName ?? null,
-          input.nodeTypeId ?? null,
-          input.status ?? null,
-          merged.countryCode,
-          merged.subdivisionCode,
-          has('timeZone'),
-          input.timeZone ?? null,
-          merged.latitude,
-          merged.longitude,
-          has('boundary'),
-          input.boundary ? JSON.stringify(input.boundary) : null,
-          context.principal.subject,
-          context.correlationId,
-        ],
+    const roots = await this.scopeRoots(client, context.principal);
+    const current = await this.lockableNode(client, tenantId, nodeId, true, roots);
+    if (current.version !== input.expectedVersion) throw versionConflict(input.expectedVersion, current.version);
+    if (input.nodeTypeId) await this.activeNodeType(client, tenantId, input.nodeTypeId);
+    if (input.status === 'INACTIVE' && current.status === 'ACTIVE') {
+      const active = await client.query(
+        `SELECT 1 FROM gigalibs_geospatial.spatial_nodes
+          WHERE tenant_id = $1 AND path <@ $2::ltree AND id <> $3 AND status = 'ACTIVE' LIMIT 1`,
+        [tenantId, current.path, nodeId],
       );
-      const updated = await this.detail(client, tenantId, nodeId, roots);
-      const change: SpatialNodeChangedV1['change'] =
-        input.status === 'INACTIVE' && current.status === 'ACTIVE'
-          ? 'DEACTIVATED'
-          : input.status === 'ACTIVE' && current.status === 'INACTIVE'
-            ? 'REACTIVATED'
-            : 'UPDATED';
-      await recordAudit(client, context, `SPATIAL_NODE_${change}`, 'SPATIAL_NODE', nodeId, {
-        fields: Object.keys(input).filter((key) => key !== 'expectedVersion'),
+      if (active.rowCount) {
+        throw new ConflictException({
+          code: 'SPATIAL_ACTIVE_DESCENDANTS',
+          message: 'Deactivate or move the places under this one first.',
+        });
+      }
+    }
+    if (input.status === 'ACTIVE' && current.status === 'INACTIVE' && current.parentId) {
+      const parent = await this.lockableNode(client, tenantId, current.parentId, false);
+      if (parent.status !== 'ACTIVE') {
+        throw new UnprocessableEntityException({
+          code: 'SPATIAL_PARENT_INACTIVE',
+          message: 'Reactivate the parent place first.',
+        });
+      }
+    }
+
+    const has = (key: keyof typeof input) => Object.prototype.hasOwnProperty.call(input, key);
+    const merged = {
+      countryCode: has('countryCode') ? (input.countryCode ?? null) : current.countryCode,
+      subdivisionCode: has('subdivisionCode') ? (input.subdivisionCode ?? null) : current.subdivisionCode,
+      latitude: has('latitude') ? (input.latitude ?? null) : current.latitude,
+      longitude: has('longitude') ? (input.longitude ?? null) : current.longitude,
+    };
+    if ((merged.latitude === null) !== (merged.longitude === null)) {
+      throw new BadRequestException({
+        code: 'GEOSPATIAL_VALIDATION_FAILED',
+        message: 'Provide both latitude and longitude, or neither.',
       });
-      await publishNodeChange(client, context, updated, change, null);
-      return updated;
+    }
+    if (merged.subdivisionCode && !merged.subdivisionCode.startsWith(`${merged.countryCode ?? ''}-`)) {
+      throw new BadRequestException({
+        code: 'GEOSPATIAL_VALIDATION_FAILED',
+        message: 'The subdivision must belong to the selected country.',
+      });
+    }
+
+    await client.query(
+      `UPDATE gigalibs_geospatial.spatial_nodes
+          SET display_name = COALESCE($3, display_name),
+              node_type_id = COALESCE($4, node_type_id),
+              status = COALESCE($5, status),
+              country_code = $6,
+              subdivision_code = $7,
+              time_zone = CASE WHEN $8::boolean THEN $9 ELSE time_zone END,
+              latitude = $10,
+              longitude = $11,
+              boundary = CASE WHEN $12::boolean THEN $13::jsonb ELSE boundary END,
+              area_m2 = CASE WHEN $12::boolean THEN $16::numeric ELSE area_m2 END,
+              version = version + 1,
+              updated_by = $14,
+              correlation_id = $15,
+              updated_at = now()
+        WHERE tenant_id = $1 AND id = $2`,
+      [
+        tenantId,
+        nodeId,
+        input.displayName ?? null,
+        input.nodeTypeId ?? null,
+        input.status ?? null,
+        merged.countryCode,
+        merged.subdivisionCode,
+        has('timeZone'),
+        input.timeZone ?? null,
+        merged.latitude,
+        merged.longitude,
+        has('boundary'),
+        input.boundary ? JSON.stringify(input.boundary) : null,
+        context.principal.subject,
+        context.correlationId,
+        boundaryAreaM2(input.boundary ?? null),
+      ],
+    );
+    const updated = await this.detail(client, tenantId, nodeId, roots);
+    const change: SpatialNodeChangedV1['change'] =
+      input.status === 'INACTIVE' && current.status === 'ACTIVE'
+        ? 'DEACTIVATED'
+        : input.status === 'ACTIVE' && current.status === 'INACTIVE'
+          ? 'REACTIVATED'
+          : 'UPDATED';
+    await recordAudit(client, context, `SPATIAL_NODE_${change}`, 'SPATIAL_NODE', nodeId, {
+      fields: Object.keys(input).filter((key) => key !== 'expectedVersion'),
     });
+    await publishNodeChange(client, context, updated, change, null);
+    return updated;
   }
 
   async moveNode(context: CommandContext, nodeId: string, rawInput: unknown): Promise<SpatialNodeDetailV1> {
     assertUuid(nodeId, 'nodeId');
     const input = parse(MoveSpatialNodeV1Schema, rawInput);
+    return this.database.withTenantTransaction(context.principal.tenantId, (client) => this.moveNodeIn(client, context, nodeId, input));
+  }
+
+  async moveNodeIn(client: PoolClient, context: CommandContext, nodeId: string, input: MoveSpatialNodeV1): Promise<SpatialNodeDetailV1> {
     const tenantId = context.principal.tenantId;
-    return this.database.withTenantTransaction(tenantId, async (client) => {
-      const roots = await this.scopeRoots(client, context.principal);
-      const node = await this.lockableNode(client, tenantId, nodeId, true, roots);
-      if (node.version !== input.expectedVersion) throw versionConflict(input.expectedVersion, node.version);
-      if (roots !== null && !input.newParentId) {
-        throw spatialScopeDenied('Move the place inside one of your assigned places.');
-      }
-      if (input.newParentId === node.parentId) {
+    const roots = await this.scopeRoots(client, context.principal);
+    const node = await this.lockableNode(client, tenantId, nodeId, true, roots);
+    if (node.version !== input.expectedVersion) throw versionConflict(input.expectedVersion, node.version);
+    if (roots !== null && !input.newParentId) {
+      throw spatialScopeDenied('Move the place inside one of your assigned places.');
+    }
+    if (input.newParentId === node.parentId) {
+      throw new UnprocessableEntityException({
+        code: 'SPATIAL_MOVE_UNCHANGED',
+        message: 'The place is already under that parent.',
+      });
+    }
+
+    let newPrefix = node.code;
+    if (input.newParentId) {
+      const parent = await this.lockableNode(client, tenantId, input.newParentId, false, roots);
+      if (parent.status !== 'ACTIVE') {
         throw new UnprocessableEntityException({
-          code: 'SPATIAL_MOVE_UNCHANGED',
-          message: 'The place is already under that parent.',
+          code: 'SPATIAL_PARENT_INACTIVE',
+          message: 'A place cannot be moved under an inactive parent.',
         });
       }
-
-      let newPrefix = node.code;
-      if (input.newParentId) {
-        const parent = await this.lockableNode(client, tenantId, input.newParentId, false, roots);
-        if (parent.status !== 'ACTIVE') {
-          throw new UnprocessableEntityException({
-            code: 'SPATIAL_PARENT_INACTIVE',
-            message: 'A place cannot be moved under an inactive parent.',
-          });
-        }
-        const inside = await client.query(`SELECT $1::ltree <@ $2::ltree AS inside`, [parent.path, node.path]);
-        if (inside.rows[0]?.inside === true) {
-          throw new UnprocessableEntityException({
-            code: 'SPATIAL_MOVE_CYCLE',
-            message: 'A place cannot be moved under itself or one of its own places.',
-          });
-        }
-        newPrefix = `${parent.path}.${node.code}`;
+      const inside = await client.query(`SELECT $1::ltree <@ $2::ltree AS inside`, [parent.path, node.path]);
+      if (inside.rows[0]?.inside === true) {
+        throw new UnprocessableEntityException({
+          code: 'SPATIAL_MOVE_CYCLE',
+          message: 'A place cannot be moved under itself or one of its own places.',
+        });
       }
+      newPrefix = `${parent.path}.${node.code}`;
+    }
 
-      const deepest = await client.query<{ depth: number }>(
-        `SELECT MAX(nlevel(path))::int AS depth FROM gigalibs_geospatial.spatial_nodes
-          WHERE tenant_id = $1 AND path <@ $2::ltree`,
-        [tenantId, node.path],
+    const deepest = await client.query<{ depth: number }>(
+      `SELECT MAX(nlevel(path))::int AS depth FROM gigalibs_geospatial.spatial_nodes
+        WHERE tenant_id = $1 AND path <@ $2::ltree`,
+      [tenantId, node.path],
+    );
+    const newDepth = newPrefix.split('.').length + Number(deepest.rows[0]?.depth ?? node.depth) - node.depth;
+    if (newDepth > MAX_DEPTH) throw depthExceeded();
+
+    try {
+      const moved = await client.query<{ id: string; previous_path: string }>(
+        `WITH affected AS (
+           SELECT id, path AS previous_path FROM gigalibs_geospatial.spatial_nodes
+            WHERE tenant_id = $1 AND path <@ $2::ltree
+            FOR UPDATE
+         )
+         UPDATE gigalibs_geospatial.spatial_nodes n
+            -- subpath() rejects an offset equal to nlevel(), so the moved place takes the prefix as is.
+            SET path = CASE WHEN n.path = $2::ltree THEN $3::ltree
+                            ELSE $3::ltree || subpath(n.path, nlevel($2::ltree)) END,
+                parent_id = CASE WHEN n.id = $4 THEN $5::uuid ELSE n.parent_id END,
+                version = n.version + 1,
+                updated_by = $6,
+                correlation_id = $7,
+                updated_at = now()
+           FROM affected a
+          WHERE n.tenant_id = $1 AND n.id = a.id
+          RETURNING n.id, a.previous_path::text AS previous_path`,
+        [tenantId, node.path, newPrefix, nodeId, input.newParentId, context.principal.subject, context.correlationId],
       );
-      const newDepth = newPrefix.split('.').length + Number(deepest.rows[0]?.depth ?? node.depth) - node.depth;
-      if (newDepth > MAX_DEPTH) throw depthExceeded();
-
-      try {
-        const moved = await client.query<{ id: string; previous_path: string }>(
-          `WITH affected AS (
-             SELECT id, path AS previous_path FROM gigalibs_geospatial.spatial_nodes
-              WHERE tenant_id = $1 AND path <@ $2::ltree
-              FOR UPDATE
-           )
-           UPDATE gigalibs_geospatial.spatial_nodes n
-              -- subpath() rejects an offset equal to nlevel(), so the moved place takes the prefix as is.
-              SET path = CASE WHEN n.path = $2::ltree THEN $3::ltree
-                              ELSE $3::ltree || subpath(n.path, nlevel($2::ltree)) END,
-                  parent_id = CASE WHEN n.id = $4 THEN $5::uuid ELSE n.parent_id END,
-                  version = n.version + 1,
-                  updated_by = $6,
-                  correlation_id = $7,
-                  updated_at = now()
-             FROM affected a
-            WHERE n.tenant_id = $1 AND n.id = a.id
-            RETURNING n.id, a.previous_path::text AS previous_path`,
-          [tenantId, node.path, newPrefix, nodeId, input.newParentId, context.principal.subject, context.correlationId],
-        );
-        await recordAudit(client, context, 'SPATIAL_NODE_MOVED', 'SPATIAL_NODE', nodeId, {
-          previousPath: node.path,
-          path: newPrefix,
-          affectedNodes: moved.rowCount,
-        });
-        for (const row of moved.rows) {
-          const changed = await this.detail(client, tenantId, row.id);
-          await publishNodeChange(client, context, changed, 'MOVED', row.previous_path);
-        }
-        return this.detail(client, tenantId, nodeId, roots);
-      } catch (error) {
-        translateUnique(error, 'A place with this code already exists under the new parent.');
+      await recordAudit(client, context, 'SPATIAL_NODE_MOVED', 'SPATIAL_NODE', nodeId, {
+        previousPath: node.path,
+        path: newPrefix,
+        affectedNodes: moved.rowCount,
+      });
+      for (const row of moved.rows) {
+        const changed = await this.detail(client, tenantId, row.id);
+        await publishNodeChange(client, context, changed, 'MOVED', row.previous_path);
       }
-    });
+      return this.detail(client, tenantId, nodeId, roots);
+    } catch (error) {
+      translateUnique(error, 'A place with this code already exists under the new parent.');
+    }
   }
 
   private async activeNodeType(client: PoolClient, tenantId: string, nodeTypeId: string) {
@@ -503,6 +517,34 @@ export class PlacesService {
    * single create, plus one import summary audit. Parents are referenced by path and may be created earlier
    * in the same file, so rows are inserted one depth level at a time.
    */
+  /**
+   * WI-OI-105b: queues every place of the tenant again with its current state (name, point, boundary, area), so a
+   * consumer's place directory (Analytics) can be rebuilt. Tenant-wide, so only a member without a place scope may.
+   */
+  async republishPlaces(context: CommandContext): Promise<{ republished: number }> {
+    if (context.principal.spatialScope.mode !== 'UNBOUNDED') {
+      throw new ForbiddenException({ code: 'SPATIAL_SCOPE_DENIED', message: 'Republishing every place needs a member without a place scope.' });
+    }
+    const tenantId = context.principal.tenantId;
+    return this.database.withTenantTransaction(tenantId, async (client) => {
+      const result = await client.query(
+        `INSERT INTO gigalibs_geospatial.outbox_events
+           (id, tenant_id, topic, event_type, aggregate_type, aggregate_id, aggregate_version, correlation_id, schema_version, payload)
+         SELECT gen_random_uuid()::text, n.tenant_id, 'geospatial.facts.v1', 'SpatialNodeChangedV1', 'SPATIAL_NODE', n.id::text,
+                n.version, $2, 1, gigalibs_geospatial.place_fact_payload(n, t.code)
+           FROM gigalibs_geospatial.spatial_nodes n
+           JOIN gigalibs_geospatial.spatial_node_types t ON t.tenant_id = n.tenant_id AND t.id = n.node_type_id
+          WHERE n.tenant_id = $1
+         ON CONFLICT (tenant_id, aggregate_type, aggregate_id, aggregate_version, event_type)
+         DO UPDATE SET payload = EXCLUDED.payload, status = 'PENDING', available_at = now(), attempt_count = 0`,
+        [tenantId, context.correlationId],
+      );
+      const republished = result.rowCount ?? 0;
+      await recordAudit(client, context, 'SPATIAL_NODES_REPUBLISHED', 'SPATIAL_NODE_REPUBLISH', randomUUID(), { republished });
+      return { republished };
+    });
+  }
+
   async importNodes(context: CommandContext, rawInput: unknown): Promise<SpatialNodeImportResultV1> {
     const input = parse(ImportSpatialNodesV1Schema, rawInput);
     if (context.principal.spatialScope.mode !== 'UNBOUNDED') {
@@ -850,6 +892,12 @@ async function publishNodeChange(
     timeZone: node.timeZone,
     status: node.status,
     aggregateVersion: node.version,
+    // WI-OI-105b: enough for a consumer's place directory (Analytics tags records and applies place scope with it).
+    displayName: node.displayName,
+    latitude: node.latitude,
+    longitude: node.longitude,
+    boundary: node.boundary,
+    areaM2: node.areaM2,
   };
   await recordOutbox(client, context, 'SpatialNodeChangedV1', 'SPATIAL_NODE', node.id, node.version, fact);
 }
@@ -929,6 +977,8 @@ function mapNode(row: any): SpatialNodeV1 {
     latitude: row.latitude === null ? null : Number(row.latitude),
     longitude: row.longitude === null ? null : Number(row.longitude),
     hasBoundary: row.boundary !== null && row.boundary !== undefined,
+    // Stored when the boundary is saved (WI-OI-105a); places saved earlier are computed on read until next saved.
+    areaM2: row.area_m2 !== null && row.area_m2 !== undefined ? Number(row.area_m2) : boundaryAreaM2((row.boundary as SpatialBoundaryV1 | null) ?? null),
     childCount: Number(row.child_count ?? 0),
     status: row.status,
     version: Number(row.version),

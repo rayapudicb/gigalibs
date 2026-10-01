@@ -1,7 +1,9 @@
-import { BadRequestException, ForbiddenException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import {
   MetricDrilldownRequestV1Schema,
+  PlaceDirectoryQueryV1Schema,
   PlaceDrilldownQueryV1Schema,
+  type PlaceDirectoryV1,
   RebuildPlaceRollupsV1Schema,
   type MetricDrilldownV1,
   type PlaceDrilldownV1,
@@ -9,6 +11,7 @@ import {
 import type { z } from 'zod';
 import type { AnalyticsPrincipal } from '../auth/authorization.js';
 import { DatabaseService } from '../database/database.service.js';
+import { pathInScope, resolvePlaceScope, spatialScopeDenied } from './place-scope.js';
 
 /**
  * WI-OI-064b drill-down over hierarchical place rollups. Each query reads one ancestor's children for a day
@@ -19,8 +22,8 @@ export class PlaceAnalyticsService {
   constructor(private readonly db: DatabaseService) {}
 
   async drilldown(principal: AnalyticsPrincipal, rawQuery: unknown): Promise<PlaceDrilldownV1> {
-    assertUnscoped(principal);
     const query = parse(PlaceDrilldownQueryV1Schema, rawQuery);
+    await this.assertUnderScope(principal, query.under);
     const result = await this.db.queryWithTenant<{ path: string; self: boolean; quantity: string; fact_count: string }>(
       principal.tenantId,
       `SELECT child_path AS path,
@@ -59,8 +62,8 @@ export class PlaceAnalyticsService {
    * single pass and divide the sums, so a total is the ratio of totals rather than a sum of ratios.
    */
   async metricDrilldown(principal: AnalyticsPrincipal, rawBody: unknown): Promise<MetricDrilldownV1> {
-    assertUnscoped(principal);
     const request = parse(MetricDrilldownRequestV1Schema, rawBody);
+    await this.assertUnderScope(principal, request.under);
     const metric = request.metric;
     const sides = metric.kind === 'AGGREGATE' ? [metric] : [metric.numerator, metric.denominator];
     // Closed mapping: the only SQL text chosen at runtime is one of these two column names.
@@ -113,6 +116,67 @@ export class PlaceAnalyticsService {
     };
   }
 
+  /**
+   * WI-OI-105e: the places this member may see (their scope, or every place), optionally only under one place and a
+   * few levels deep, with boundaries for the map. Inactive places are left out.
+   */
+  async directory(principal: AnalyticsPrincipal, rawQuery: unknown): Promise<PlaceDirectoryV1> {
+    const query = parse(PlaceDirectoryQueryV1Schema, rawQuery);
+    const scope = await resolvePlaceScope(this.db, principal);
+    const withBoundaries = query.boundaries === 'true';
+    const limit = withBoundaries ? 2_000 : 5_000;
+    const result = await this.db.queryWithTenant<{
+      place_id: string;
+      parent_id: string | null;
+      path: string;
+      depth: number;
+      node_type_code: string;
+      display_name: string | null;
+      latitude: number | null;
+      longitude: number | null;
+      area_m2: string | null;
+      boundary?: unknown;
+    }>(
+      principal.tenantId,
+      `SELECT d.place_id::text AS place_id, d.parent_id::text AS parent_id, d.path, d.depth, d.node_type_code, d.display_name,
+              d.latitude::double precision AS latitude, d.longitude::double precision AS longitude, d.area_m2::text AS area_m2
+              ${withBoundaries ? ', d.boundary' : ''}
+         FROM gigalibs_analytics.place_directory d
+         LEFT JOIN gigalibs_analytics.place_directory u ON u.place_id = $1::uuid
+        WHERE d.status = 'ACTIVE'
+          AND ($1::uuid IS NULL OR (u.place_id IS NOT NULL AND (d.path = u.path OR starts_with(d.path, u.path || '.'))))
+          AND ($2::text[] IS NULL OR d.place_id::text = ANY($2::text[]))
+          AND ($3::int IS NULL OR d.depth <= COALESCE(u.depth, 0) + $3)
+        ORDER BY d.path
+        LIMIT ${limit + 1}`,
+      [query.under ?? null, scope ? [...scope.placeIds] : null, query.maxDepth ?? null],
+    );
+    const places = result.rows.slice(0, limit).map((row) => ({
+      id: row.place_id,
+      parentId: row.parent_id,
+      path: row.path,
+      depth: row.depth,
+      nodeTypeCode: row.node_type_code,
+      name: row.display_name ?? row.path.split('.').at(-1) ?? row.path,
+      latitude: row.latitude,
+      longitude: row.longitude,
+      areaM2: row.area_m2 === null ? null : Number(row.area_m2),
+      ...(withBoundaries ? { boundary: (row.boundary ?? null) as PlaceDirectoryV1['places'][number]['boundary'] } : {}),
+    }));
+    return { places, truncated: result.rows.length > limit };
+  }
+
+  /**
+   * WI-OI-105d: a member with a place scope drills down only at or under one of their places. A rollup above them
+   * sums places they may not see, so it is refused rather than trimmed.
+   */
+  private async assertUnderScope(principal: AnalyticsPrincipal, under: string): Promise<void> {
+    const scope = await resolvePlaceScope(this.db, principal);
+    if (scope && !pathInScope(scope, under)) {
+      throw spatialScopeDenied('You can drill down only at or under the places assigned to you.');
+    }
+  }
+
   /** Recomputes rollups for a window from facts (idempotent) and audits the rebuild. */
   async rebuildRollups(
     principal: AnalyticsPrincipal,
@@ -146,14 +210,10 @@ export class PlaceAnalyticsService {
   }
 }
 
-// Analytics has no place directory yet, so it cannot resolve assigned place ids to paths; scoped members are
-// refused rather than shown the whole estate (registered for the place-directory projection).
+// Rebuilding rollups covers the whole tenant, so it stays with members without a place scope.
 function assertUnscoped(principal: AnalyticsPrincipal): void {
   if (principal.spatialScope.mode !== 'UNBOUNDED') {
-    throw new ForbiddenException({
-      code: 'SPATIAL_SCOPE_DENIED',
-      message: 'Place analytics is available to members without a spatial scope for now.',
-    });
+    throw spatialScopeDenied('Rebuilding place rollups is available to members without a place scope.');
   }
 }
 

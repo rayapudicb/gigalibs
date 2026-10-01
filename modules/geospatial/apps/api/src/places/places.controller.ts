@@ -80,6 +80,17 @@ export class SpatialNodesController {
     return this.places.updateNode({ principal, correlationId: safeCorrelationId(correlationId) }, nodeId, body);
   }
 
+  // WI-OI-105b: queue every place again for consumers such as Analytics' place directory.
+  @Post('republish')
+  @HttpCode(200)
+  @RequirePermissions('maps.nodes.manage')
+  republish(
+    @CurrentGeospatialPrincipal() principal: GeospatialPrincipal,
+    @Headers('x-correlation-id') correlationId: string | undefined,
+  ) {
+    return this.places.republishPlaces({ principal, correlationId: safeCorrelationId(correlationId) });
+  }
+
   @Post('import')
   @HttpCode(200)
   @RequirePermissions('maps.nodes.manage')

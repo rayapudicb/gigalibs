@@ -1,14 +1,17 @@
 /**
  * WI-OI-104e real-database proof: Connector Hub records delivered to the Analytics inbox become a CONNECTOR_HUB
- * source that the existing discovery, mapping and dataset steps use unchanged. Runs on a throwaway PostgreSQL with
+ * source that the existing discovery, mapping and dataset steps use unchanged. WI-OI-105b–d: Geospatial place facts
+ * keep the place directory, records are tagged with their place, and place scope limits every answer. Runs on a throwaway PostgreSQL with
  * every migration and a non-superuser role (RLS forced). Usage: pnpm --filter @gigalibs/analytics-api proof:connector-hub-inbox
  */
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
+import { compatibleChartTypes, resultShape } from '@gigalibs/contracts';
 import type { AnalyticsPrincipal } from '../src/auth/authorization.js';
 import { DatabaseService } from '../src/database/database.service.js';
 import { DatasetService } from '../src/datasets/dataset.service.js';
 import { ConnectorHubInboxService, HUB_RECORDS_TABLE } from '../src/inbox/connector-hub-inbox.js';
+import { PlaceAnalyticsService } from '../src/places/place-analytics.service.js';
 import { SampleFarmService } from '../src/places/sample-farm.service.js';
 import { ChartViewService } from '../src/query-engine/chart-view.service.js';
 import { FormulaMeasureService } from '../src/query-engine/formula-measure.service.js';
@@ -146,7 +149,154 @@ try {
   assert.deepEqual(chained, { ready: 1, failed: 0, building: 0 }, 'the saved chart has its summary on the new version');
   assert.equal((await new QueryEngineService(db, summaries).runSpec(farm, view.query)).answeredFrom, 'summary');
 
-  step('4. the Demo Lab sample farm (synthetic source) still loads under the new source rule');
+  step('5. Geospatial place facts keep the place directory: versions, old-style facts, moves, and producer routing');
+  const placeFact = (placeId: string, version: number, payload: Record<string, unknown>, tenantId = 'farm-tenant') => ({
+    messageId: `evt-${randomUUID()}`,
+    tenantId,
+    eventType: 'SpatialNodeChangedV1',
+    aggregateType: 'SPATIAL_NODE',
+    aggregateId: placeId,
+    aggregateVersion: version,
+    correlationId: 'proof',
+    causationId: null,
+    schemaVersion: 1,
+    payload: { nodeId: placeId, change: 'CREATED', previousPath: null, parentId: null, countryCode: null, subdivisionCode: null, timeZone: null, status: 'ACTIVE', aggregateVersion: version, ...payload },
+    occurredAt: '2026-09-30T10:00:00.000Z',
+  });
+  const square = (x: number, y: number, size: number) => ({ type: 'Polygon', coordinates: [[[x, y], [x + size, y], [x + size, y + size], [x, y + size], [x, y]]] });
+  const FARM_A = '00000000-0000-4000-8000-00000000fa01';
+  const FARM_B = '00000000-0000-4000-8000-00000000fb01';
+  const BLOCK = '00000000-0000-4000-8000-00000000b101';
+  const ROW = '00000000-0000-4000-8000-00000000c101';
+  await inbox.receivePlace(placeFact(FARM_A, 2, { path: 'FARM_A', nodeTypeCode: 'FARM', displayName: 'Farm A', boundary: square(77.5, 12.9, 0.02), latitude: 12.91, longitude: 77.51 }));
+  await inbox.receivePlace(placeFact(FARM_B, 1, { path: 'FARM_B', nodeTypeCode: 'FARM', displayName: 'Farm B', boundary: square(77.6, 12.9, 0.02) }));
+  await inbox.receivePlace(placeFact(BLOCK, 1, { path: 'FARM_A.BLOCK_1', parentId: FARM_A, nodeTypeCode: 'BLOCK', displayName: 'Block 1', boundary: square(77.5, 12.9, 0.005) }));
+  await inbox.receivePlace(placeFact(ROW, 1, { path: 'FARM_A.BLOCK_1.ROW_1', parentId: BLOCK, nodeTypeCode: 'ROW', displayName: 'Row 1' }));
+  // An older version arrives late, and an old-style fact (no name, point or boundary) keeps what is held.
+  assert.equal((await inbox.receivePlace(placeFact(FARM_A, 1, { path: 'FARM_A', nodeTypeCode: 'FARM', displayName: 'Stale name' }))).status, 'stale');
+  await inbox.receivePlace(placeFact(FARM_A, 3, { change: 'UPDATED', path: 'FARM_A', nodeTypeCode: 'FARM' }));
+  const directory = async () =>
+    Object.fromEntries(
+      (await db.queryWithTenant<{ place_id: string; path: string; depth: number; display_name: string; area_m2: number | null; version: number; min_longitude: number | null }>(
+        'farm-tenant',
+        'SELECT place_id, path, depth, display_name, area_m2, version, min_longitude FROM gigalibs_analytics.place_directory',
+      )).rows.map((row) => [row.place_id, row]),
+    );
+  let held = await directory();
+  assert.deepEqual([held[FARM_A]!.display_name, held[FARM_A]!.version, held[FARM_A]!.min_longitude], ['Farm A', 3, 77.5]);
+  assert.ok(held[FARM_A]!.area_m2! > 4_700_000 && held[FARM_A]!.area_m2! < 4_900_000, `area ${held[FARM_A]!.area_m2} m² computed from the boundary`);
+  // Block 1 moves from Farm A to Farm B: it and the row under it take the new path.
+  await inbox.receivePlace(placeFact(BLOCK, 2, { change: 'MOVED', path: 'FARM_B.BLOCK_1', previousPath: 'FARM_A.BLOCK_1', parentId: FARM_B, nodeTypeCode: 'BLOCK', displayName: 'Block 1', boundary: square(77.6, 12.9, 0.005) }));
+  held = await directory();
+  assert.deepEqual([held[BLOCK]!.path, held[ROW]!.path, held[ROW]!.depth], ['FARM_B.BLOCK_1', 'FARM_B.BLOCK_1.ROW_1', 3]);
+  assert.equal(Object.keys(await (async () => Object.fromEntries((await db.queryWithTenant<{ place_id: string }>('other-tenant', 'SELECT place_id FROM gigalibs_analytics.place_directory')).rows.map((row) => [row.place_id, row])))()).length, 0);
+  // Each producer may deliver only its own event.
+  await assert.rejects(inbox.receiveFrom('geospatial', first), /may not deliver/);
+  await assert.rejects(inbox.receiveFrom('connector-hub', placeFact(FARM_A, 9, { path: 'FARM_A', nodeTypeCode: 'FARM' })), /may not deliver/);
+  await assert.rejects(inbox.receivePlace(placeFact(FARM_A, 10, { path: 'FARM_A', nodeTypeCode: 'FARM', status: 'GONE' })), /not valid/);
+
+  step('6. records are tagged with the smallest place holding them, and a member with a place scope sees only theirs');
+  const scouting = [
+    { id: 's-1', lat: 12.905, lon: 77.51, plot_code: 'FARM_A', pests: 10 },
+    { id: 's-2', lat: 12.902, lon: 77.602, plot_code: 'BLOCK_1', pests: 20 },
+    { id: 's-3', lat: 13.5, lon: 78, plot_code: 'NOWHERE', pests: 5 },
+    { id: 's-4', lat: 12.915, lon: 77.615, plot_code: FARM_B, pests: 7 },
+  ];
+  for (const record of scouting) {
+    await inbox.receive(envelope('farm-tenant', record.id, record, '2026-09-30T07:00:00.000Z', {
+      aggregateId: `conn-plots:${record.id}`,
+      payload: { ...first.payload, hubConnectionId: 'conn-plots', connectionName: 'Field scouting', syncJobId: 'sync-p', sourceId: record.id, record },
+    }));
+  }
+  const scoutingSource = (await discovery.listSources(farm)).find((source) => source.displayName === 'Field scouting')!.id;
+  const scoutingFields = (place: Record<string, unknown>, sourceField: string) => [
+    { sourceField: 'id', analyticalField: 'scouting_id', analyticalType: 'string' },
+    { sourceField: 'pests', analyticalField: 'pests', analyticalType: 'number' },
+    // The place field's source may also be mapped as a plain field.
+    { sourceField: 'lat', analyticalField: 'lat', analyticalType: 'number' },
+    { sourceField, analyticalField: 'place', analyticalType: 'string', place },
+  ];
+  await assert.rejects(
+    discovery.createMapping(farm, { connectionId: scoutingSource, displayName: 'Bad', sourceTableName: HUB_RECORDS_TABLE, fieldMappings: [{ sourceField: 'lat', analyticalField: 'place', analyticalType: 'string', place: { longitudeField: 'lon', byCode: true } }] as never }),
+    /either from a point/,
+  );
+  await assert.rejects(
+    discovery.createMapping(farm, { connectionId: scoutingSource, displayName: 'Bad', sourceTableName: HUB_RECORDS_TABLE, fieldMappings: [{ sourceField: 'id', analyticalField: 'place_id', analyticalType: 'string' }] }),
+    /reserved for place tagging/,
+  );
+  const buildScouting = async (name: string, fieldMappings: ReturnType<typeof scoutingFields>) => {
+    const created = await discovery.createMapping(farm, { connectionId: scoutingSource, displayName: name, sourceTableName: HUB_RECORDS_TABLE, fieldMappings: fieldMappings as never });
+    const published = (await discovery.publishMappingVersion(farm, created.id, { fieldMappings: fieldMappings as never })).latestVersionNumber!;
+    const dataset = await datasets.buildDatasetVersion(farm, { mappingId: created.id, mappingVersion: published });
+    assert.equal(dataset.buildStatus, 'READY', dataset.buildError ?? '');
+    const tagged = await db.queryWithTenant<{ analytical_payload: Record<string, unknown> }>(
+      'farm-tenant',
+      'SELECT analytical_payload FROM gigalibs_analytics.dataset_record_versions WHERE dataset_version_id = $1',
+      [dataset.id],
+    );
+    return { dataset, byId: Object.fromEntries(tagged.rows.map((row) => [row.analytical_payload.scouting_id, row.analytical_payload])) };
+  };
+  const byPoint = await buildScouting('Scouting by point', scoutingFields({ longitudeField: 'lon' }, 'lat'));
+  const placeOf = (record: Record<string, unknown> | undefined) => [record?.place, record?.place_id, record?.place_path];
+  assert.deepEqual(placeOf(byPoint.byId['s-1']), ['Farm A', FARM_A, 'FARM_A']);
+  assert.deepEqual(placeOf(byPoint.byId['s-2']), ['Block 1', BLOCK, 'FARM_B.BLOCK_1'], 'the smallest place holding the point');
+  assert.deepEqual(placeOf(byPoint.byId['s-3']), ['Unplaced', null, null]);
+  assert.deepEqual(placeOf(byPoint.byId['s-4']), ['Farm B', FARM_B, 'FARM_B']);
+  assert.equal(byPoint.dataset.unplacedCount, 1);
+  assert.equal((await datasets.getDatasetVersion(farm, byPoint.dataset.id)).unplacedCount, 1, 'the count is kept on the dataset');
+  const byCode = await buildScouting('Scouting by code', scoutingFields({ byCode: true }, 'plot_code'));
+  assert.deepEqual(['s-1', 's-2', 's-3', 's-4'].map((id) => byCode.byId[id]?.place), ['Farm A', 'Block 1', 'Unplaced', 'Farm B'], 'a code or a place id');
+  assert.equal(byCode.dataset.unplacedCount, 1);
+  assert.equal((await datasets.getDatasetVersion(farm, built.id)).unplacedCount, undefined, 'a dataset without places has no count');
+
+  const scoutingModel = await datasets.createSemanticModel(farm, {
+    datasetVersionId: byPoint.dataset.id,
+    displayName: 'Scouting',
+    measures: [{ measureName: 'pests', aggregateFn: 'SUM', fieldReference: 'pests', displayLabel: 'Pests' }],
+  });
+  const byPlace = { semanticModelId: scoutingModel.id, measures: ['pests'], dimensions: ['place'], sort: [{ by: 'place', direction: 'asc' as const }] };
+  const scopedTo = (placeIds: string[]): AnalyticsPrincipal => ({ ...farm, subject: 'agronomist-1', spatialScope: { mode: 'SCOPED_PLACES', place_ids: placeIds } });
+  const answer = async (who: AnalyticsPrincipal) => (await engine.runSpec(who, byPlace)).rows;
+  assert.deepEqual(await answer(farm), [['Block 1', 20], ['Farm A', 10], ['Farm B', 7], ['Unplaced', 5]]);
+  assert.deepEqual(await answer(scopedTo([FARM_B])), [['Block 1', 20], ['Farm B', 7]], 'Farm B and the block moved into it');
+  assert.deepEqual(await answer(scopedTo([FARM_A])), [['Farm A', 10]], 'the block moved out of Farm A goes with it');
+  assert.deepEqual(await answer(scopedTo([BLOCK])), [['Block 1', 20]]);
+  assert.deepEqual(await answer(scopedTo([])), [], 'no place assigned: nothing, not everything');
+  assert.deepEqual(await answer(scopedTo(['00000000-0000-4000-8000-0000000000ff'])), [], 'a place Analytics does not know yet');
+  await assert.rejects(engine.runSpec(scopedTo([FARM_A]), view.query), (error: { response?: { code?: string } }) => error.response?.code === 'SPATIAL_SCOPE_DENIED');
+  // A summary covering the question exists, but a scoped question is answered from the rows (D3).
+  await chartViews.create(farm, { name: 'Pests by place', query: byPlace, visual: { type: 'table' } });
+  let ensured = await summaries.ensureForDatasetVersion('farm-tenant', byPoint.dataset.id);
+  for (let wait = 0; ensured.building > 0 && wait < 50; wait += 1) {
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    ensured = await summaries.ensureForDatasetVersion('farm-tenant', byPoint.dataset.id);
+  }
+  assert.deepEqual(ensured, { ready: 1, failed: 0, building: 0 });
+  const uncached = new QueryEngineService(db, summaries);
+  assert.equal((await uncached.runSpec(farm, byPlace)).answeredFrom, 'summary');
+  const scopedAnswer = await uncached.runSpec(scopedTo([FARM_A]), byPlace);
+  assert.deepEqual([scopedAnswer.answeredFrom, scopedAnswer.rows], ['rows', [['Farm A', 10]]]);
+
+  // WI-OI-105e: a question about one farm, the place directory for pickers and the map, and the place map chart.
+  const farmB = { ...byPlace, placeUnder: FARM_B };
+  assert.deepEqual((await uncached.runSpec(farm, farmB)).rows, [['Block 1', 20], ['Farm B', 7]]);
+  assert.deepEqual((await uncached.runSpec(scopedTo([FARM_A]), farmB)).rows, [], 'another farm, outside the scope');
+  assert.deepEqual((await uncached.runSpec(scopedTo([BLOCK]), farmB)).rows, [['Block 1', 20]]);
+  await assert.rejects(uncached.runSpec(farm, { ...view.query, placeUnder: FARM_B }), /no places to filter by/);
+  const places = new PlaceAnalyticsService(db);
+  const ids = (directory: { places: readonly { id: string }[] }) => directory.places.map((place) => place.id);
+  assert.deepEqual(ids(await places.directory(scopedTo([FARM_B]), {})), [FARM_B, BLOCK, ROW]);
+  assert.deepEqual(ids(await places.directory(farm, { maxDepth: '1' })), [FARM_A, FARM_B]);
+  const map = await places.directory(farm, { under: FARM_B, boundaries: 'true', maxDepth: '1' });
+  assert.deepEqual(ids(map), [FARM_B, BLOCK]);
+  assert.equal(map.places[1]!.boundary?.type, 'Polygon');
+  assert.deepEqual(ids(await places.directory(scopedTo([BLOCK]), { under: FARM_B })), [BLOCK, ROW], 'the farm itself is outside the scope');
+  const byPlaceId = { semanticModelId: scoutingModel.id, measures: ['pests'], dimensions: ['place_id'], placeUnder: FARM_B };
+  const mapAnswer = await uncached.runSpec(farm, byPlaceId);
+  assert.ok(compatibleChartTypes(resultShape(mapAnswer)).includes('place_map'));
+  await chartViews.create(farm, { name: 'Pests on Farm B', query: byPlaceId, visual: { type: 'place_map' } });
+
+  step('7. the Demo Lab sample farm (synthetic source) still loads under the new source rule');
   const formulas = new FormulaMeasureService(db);
   const sample = new SampleFarmService(db, discovery, datasets, formulas);
   const loaded = await sample.load(principal('demo-farm'), 'inbox-proof');

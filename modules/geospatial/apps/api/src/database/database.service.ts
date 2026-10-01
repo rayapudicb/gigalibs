@@ -3,6 +3,9 @@ import pg from 'pg';
 import { GEOSPATIAL_CONFIG } from '../config.provider.js';
 import type { GeospatialRuntimeConfig } from '../runtime-config.js';
 
+export const GEOSPATIAL_DEFINER_FUNCTIONS = ['relay_lease_analytics_places', 'relay_settle_analytics_place', 'outbox_sweep'] as const;
+export type GeospatialDefinerFunction = (typeof GEOSPATIAL_DEFINER_FUNCTIONS)[number];
+
 const TENANT_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/;
 
 @Injectable()
@@ -29,6 +32,14 @@ export class GeospatialDatabaseService implements OnModuleInit, OnModuleDestroy 
 
   async readiness(): Promise<{ readonly migrationVersion: number }> {
     return this.assertReady();
+  }
+
+  /** WI-OI-105b: calls one of the allow-listed SECURITY DEFINER functions of the Analytics relay (lease, settle, sweep). */
+  async relayCall<T extends pg.QueryResultRow>(fn: GeospatialDefinerFunction, values: readonly unknown[]): Promise<T[]> {
+    if (!GEOSPATIAL_DEFINER_FUNCTIONS.includes(fn)) throw new Error(`${fn} is not an allow-listed definer function.`);
+    const placeholders = values.map((_value, index) => `$${index + 1}`).join(', ');
+    const result = await this.pool.query<T>(`SELECT * FROM gigalibs_geospatial.${fn}(${placeholders})`, [...values]);
+    return result.rows;
   }
 
   async withTenantTransaction<T>(
