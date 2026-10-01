@@ -178,7 +178,7 @@ describe('ReportService — reports from saved chart views and dashboards', () =
     expect(chartViews.get).toHaveBeenCalledWith(PRINCIPAL, VIEW_ID);
     const insert = client.query.mock.calls[0]!;
     expect(insert[0]).toContain('chart_view_id, dashboard_id');
-    expect(insert[1]).toEqual(['T', 'Yield by crop', null, VIEW_ID, null, 'u']);
+    expect(insert[1]).toEqual(['T', 'Yield by crop', null, VIEW_ID, null, 'u', ['CSV']]);
     expect(client.query.mock.calls[1]![0]).toContain("'REPORT_DEFINITION_CREATED'");
   });
 
@@ -333,5 +333,417 @@ describe('ReportService — tenant isolation', () => {
     await expect(svc.triggerReportRun(PRINCIPAL as any, { reportDefinitionId: 'def-other-tenant' })).rejects.toMatchObject({
       message: expect.stringContaining('not found'),
     });
+  });
+});
+
+// ─── 9. Migration 000026 — schema assertions (WI-OI-106) ──────────────────────
+
+const MIGRATION_000026_FILE = path.resolve(
+  __dirname,
+  '../../../../db/migrations/000026_report_formats.up.sql',
+);
+
+describe('Migration 000026 — schema assertions', () => {
+  let sql: string;
+  beforeAll(() => {
+    sql = fs.readFileSync(MIGRATION_000026_FILE, 'utf8');
+  });
+
+  test('adds formats column to report_definitions with default CSV and cardinality check', () => {
+    expect(sql).toMatch(/ALTER TABLE.*report_definitions/s);
+    expect(sql).toMatch(/ADD COLUMN formats TEXT\[\].*DEFAULT ARRAY\['CSV'\]/s);
+    expect(sql).toMatch(/CHECK \(cardinality\(formats\) BETWEEN 1 AND 3/s);
+  });
+
+  test('adds format column to report_artifacts with check constraint', () => {
+    expect(sql).toMatch(/ALTER TABLE.*report_artifacts/s);
+    expect(sql).toMatch(/ADD COLUMN format TEXT NOT NULL DEFAULT 'CSV'/s);
+    expect(sql).toMatch(/CHECK \(format IN \('CSV', 'XLSX', 'PDF'\)\)/s);
+  });
+
+  test('creates unique index on (run_id, format) in report_artifacts', () => {
+    expect(sql).toMatch(/CREATE UNIQUE INDEX report_artifacts_run_format.*report_artifacts \(run_id, format\)/s);
+  });
+
+  test('records version 26 in schema_migrations', () => {
+    expect(sql).toMatch(/INSERT INTO.*schema_migrations.*VALUES \(26, '000026_report_formats'\)/s);
+  });
+
+  test('creates report_download_grants with tenant RLS, cascade FK, and token hash index', () => {
+    expect(sql).toMatch(/CREATE TABLE IF NOT EXISTS gigalibs_analytics\.report_download_grants/s);
+    expect(sql).toMatch(/REFERENCES gigalibs_analytics\.report_artifacts\(id\) ON DELETE CASCADE/s);
+    expect(sql).toMatch(/token_hash\s+TEXT NOT NULL UNIQUE/s);
+    expect(sql).toMatch(/ALTER TABLE gigalibs_analytics\.report_download_grants ENABLE ROW LEVEL SECURITY/s);
+    expect(sql).toMatch(/CREATE POLICY report_download_grants_tenant_isolation/s);
+    expect(sql).toMatch(/CREATE INDEX idx_report_download_grants_lookup ON gigalibs_analytics\.report_download_grants \(token_hash, expires_at\)/s);
+    expect(sql).toMatch(/CREATE INDEX idx_report_download_grants_expiry ON gigalibs_analytics\.report_download_grants \(tenant_id, expires_at\)/s);
+  });
+});
+
+// ─── 10. Reports v2 — format selection, multi-artifact persistence, and atomic safety ──
+
+describe('Reports v2 — format selection and execution (WI-OI-106)', () => {
+  test('creates report with custom formats (CSV, XLSX, PDF) and audits', async () => {
+    const { svc, client } = harness();
+    await svc.createReportDefinition(PRINCIPAL as any, {
+      name: 'Executive Summary',
+      source: { chartViewId: VIEW_ID },
+      formats: ['CSV', 'XLSX', 'PDF'],
+    });
+
+    const insert = client.query.mock.calls[0]!;
+    expect(insert[1]).toEqual(['T', 'Executive Summary', null, VIEW_ID, null, 'u', ['CSV', 'XLSX', 'PDF']]);
+    expect(client.query.mock.calls[1]![1][3]).toContain('"formats":["CSV","XLSX","PDF"]');
+  });
+
+  test('refuses creating a report with duplicate or empty formats', async () => {
+    const { svc } = harness();
+    await expect(
+      svc.createReportDefinition(PRINCIPAL as any, {
+        name: 'Invalid Report',
+        source: { chartViewId: VIEW_ID },
+        formats: [],
+      }),
+    ).rejects.toThrow(/Invalid report/);
+
+    await expect(
+      svc.createReportDefinition(PRINCIPAL as any, {
+        name: 'Invalid Report',
+        source: { chartViewId: VIEW_ID },
+        formats: ['CSV', 'CSV'],
+      }),
+    ).rejects.toThrow(/Invalid report/);
+  });
+
+  test('updates report formats via updateReportFormats', async () => {
+    const { svc, client } = harness(definitionRow({ formats: ['CSV'] }));
+    await svc.updateReportFormats(PRINCIPAL as any, 'def-1', { formats: ['XLSX', 'PDF'] });
+
+    const updateCall = client.query.mock.calls.find(([sql]: [string]) => sql.includes('UPDATE gigalibs_analytics.report_definitions'));
+    expect(updateCall).toBeDefined();
+    expect(updateCall![1]).toEqual([['XLSX', 'PDF'], 'def-1', 'T']);
+
+    const auditCall = client.query.mock.calls.find(([sql]: [string]) => sql.includes("'REPORT_DEFINITION_UPDATED'"));
+    expect(auditCall).toBeDefined();
+    expect(auditCall![1][3]).toContain('"formats":["XLSX","PDF"]');
+  });
+
+  test('a run with multiple formats generates and persists one artifact per format atomically', async () => {
+    const { svc, client } = harness(definitionRow({ formats: ['CSV', 'XLSX', 'PDF'] }));
+    await svc.triggerReportRun(PRINCIPAL as any, { reportDefinitionId: 'def-1' });
+
+    const artifactCalls = client.query.mock.calls.filter(([sql]: [string]) =>
+      sql.includes('INSERT INTO gigalibs_analytics.report_artifacts'),
+    );
+    expect(artifactCalls).toHaveLength(3);
+
+    const savedFormats = artifactCalls.map((call: [string, unknown[]]) => call[1][9]);
+    expect(savedFormats).toEqual(['CSV', 'XLSX', 'PDF']);
+
+    // Check content types
+    const contentTypes = artifactCalls.map((call: [string, unknown[]]) => call[1][8]);
+    expect(contentTypes).toEqual([
+      'text/csv; charset=utf-8',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/pdf',
+    ]);
+  });
+
+  test('atomic failure guarantee: if a builder fails, zero artifacts are saved and run is marked FAILED', async () => {
+    const { svc, db, client, chartViews } = harness(definitionRow({ formats: ['CSV', 'XLSX'] }));
+    // Force buildCsv or execution to fail by exceeding max rows or erroring in query
+    chartViews.data.mockRejectedValueOnce(new Error('Underlying database query timed out'));
+
+    await svc.triggerReportRun(PRINCIPAL as any, { reportDefinitionId: 'def-1' });
+
+    // No artifact inserts should have been executed
+    const artifactCalls = client.query.mock.calls.filter(([sql]: [string]) =>
+      sql.includes('INSERT INTO gigalibs_analytics.report_artifacts'),
+    );
+    expect(artifactCalls).toHaveLength(0);
+
+    // Run was marked FAILED
+    const failedUpdate = db.queryWithTenant.mock.calls.find(([, sql]: [string, string]) =>
+      sql.includes("status = 'FAILED'"),
+    );
+    expect(failedUpdate).toBeDefined();
+    expect(failedUpdate![2][1]).toContain('Underlying database query timed out');
+  });
+
+  test('toRun returns ordered files[] while preserving legacy download', async () => {
+    const { svc, db } = harness();
+    const expiresAt = new Date(Date.now() + 600_000).toISOString();
+    db.queryWithTenant.mockImplementation((_t: string, sql: string) => {
+      if (sql.includes('FROM gigalibs_analytics.report_runs rr')) {
+        return Promise.resolve({
+          rows: [
+            {
+              id: 'run-multi',
+              report_definition_id: 'def-1',
+              status: 'SUCCEEDED',
+              row_count: 5,
+              error_message: null,
+              triggered_by: 'u',
+              queued_at: '2026-10-01T00:00:00Z',
+              completed_at: '2026-10-01T00:00:01Z',
+              files: [
+                { format: 'CSV', token: 'tok-csv', expiresAt, filename: 'r.csv', byteSize: 120 },
+                { format: 'XLSX', token: 'tok-xlsx', expiresAt, filename: 'r.xlsx', byteSize: 3500 },
+                { format: 'PDF', token: 'tok-pdf', expiresAt, filename: 'r.pdf', byteSize: 8400 },
+              ],
+            },
+          ],
+        });
+      }
+      return Promise.resolve({ rows: [] });
+    });
+
+    const run = await svc.getReportRun(PRINCIPAL as any, 'run-multi');
+    expect(run.files).toHaveLength(3);
+    expect(run.files.map((f) => f.format)).toEqual(['CSV', 'XLSX', 'PDF']);
+    expect(run.download).toEqual({
+      token: 'tok-csv',
+      expiresAt,
+      filename: 'r.csv',
+    });
+  });
+
+  test('spatial-scoped principal only downloads runs they triggered', async () => {
+    const db = {
+      queryWithTenant: jest.fn().mockImplementation((_tenant: string, sql: string, params: unknown[]) => {
+        if (sql.includes('FROM gigalibs_analytics.report_artifacts a')) {
+          // If triggered_by check passes
+          const filterUser = params[1];
+          if (filterUser === 'scoped-user') {
+            return Promise.resolve({
+              rows: [
+                {
+                  filename: 'r.csv',
+                  content_type: 'text/csv',
+                  content_sha256: 'abc',
+                  token_expires_at: new Date(Date.now() + 60_000).toISOString(),
+                  content: Buffer.from('data'),
+                },
+              ],
+            });
+          }
+          return Promise.resolve({ rows: [] });
+        }
+        return Promise.resolve({ rows: [] });
+      }),
+    };
+    const svc = new ReportService(db as any, {} as any, {} as any);
+
+    const scopedPrincipal = {
+      tenantId: 'T',
+      subject: 'scoped-user',
+      entitlements: new Set(['analytics-studio']),
+      spatialScope: { mode: 'SCOPED', placeIds: ['p-1'] },
+    };
+
+    const result = await svc.downloadArtifact(scopedPrincipal as any, 'valid-tok');
+    expect(result.filename).toBe('r.csv');
+
+    const otherPrincipal = {
+      tenantId: 'T',
+      subject: 'other-user',
+      entitlements: new Set(['analytics-studio']),
+      spatialScope: { mode: 'SCOPED', placeIds: ['p-1'] },
+    };
+    await expect(svc.downloadArtifact(otherPrincipal as any, 'valid-tok')).rejects.toThrow(/not found/);
+  });
+
+  test('generateDownloadToken cleans expired grants, issues fresh token, and stores only SHA-256 hash inside transaction', async () => {
+    let deletedTenantId: string | null = null;
+    let insertedGrant: unknown[] | null = null;
+    const client = {
+      query: jest.fn().mockImplementation((sql: string, params: unknown[]) => {
+        if (sql.includes('FROM gigalibs_analytics.report_artifacts a')) {
+          return Promise.resolve({
+            rows: [{ id: 'art-1', filename: 'report.xlsx', triggered_by: 'u' }],
+          });
+        }
+        if (sql.includes('DELETE FROM gigalibs_analytics.report_download_grants')) {
+          deletedTenantId = params[0] as string;
+          return Promise.resolve({ rows: [] });
+        }
+        if (sql.includes('INSERT INTO gigalibs_analytics.report_download_grants')) {
+          insertedGrant = params;
+          return Promise.resolve({ rows: [] });
+        }
+        return Promise.resolve({ rows: [] });
+      }),
+    };
+    const db = {
+      withTenantTransaction: jest.fn(async (_tenant: string, callback: (c: unknown) => unknown) => callback(client)),
+    };
+    const svc = new ReportService(db as any, {} as any, {} as any);
+    const tokenResult = await svc.generateDownloadToken(PRINCIPAL as any, 'run-1', 'XLSX');
+
+    expect(tokenResult.token).toBeDefined();
+    expect(tokenResult.format).toBe('XLSX');
+    expect(tokenResult.filename).toBe('report.xlsx');
+    expect(new Date(tokenResult.expiresAt).getTime()).toBeGreaterThan(Date.now());
+
+    // Verified transaction called with tenant
+    expect(db.withTenantTransaction).toHaveBeenCalledWith('T', expect.any(Function));
+
+    // Verified expired cleanup scoped to tenant
+    expect(deletedTenantId).toBe('T');
+
+    // Verified insertion
+    expect(insertedGrant).toBeDefined();
+    expect(insertedGrant![0]).toBe('T');
+    expect(insertedGrant![1]).toBe('art-1');
+    const expectedHash = crypto.createHash('sha256').update(tokenResult.token).digest('hex');
+    expect(insertedGrant![2]).toBe(expectedHash);
+    expect(insertedGrant![3]).toBe('u');
+  });
+
+  test('generateDownloadToken rejects invalid format, missing artifact, and cross-user for scoped principal', async () => {
+    const client = {
+      query: jest.fn().mockImplementation((sql: string) => {
+        if (sql.includes('FROM gigalibs_analytics.report_artifacts a')) {
+          return Promise.resolve({
+            rows: [{ id: 'art-1', filename: 'report.pdf', triggered_by: 'original-user' }],
+          });
+        }
+        return Promise.resolve({ rows: [] });
+      }),
+    };
+    const db = {
+      withTenantTransaction: jest.fn(async (_t: string, callback: (c: unknown) => unknown) => callback(client)),
+    };
+    const svc = new ReportService(db as any, {} as any, {} as any);
+
+    // Invalid format
+    await expect(svc.generateDownloadToken(PRINCIPAL as any, 'run-1', 'EXE')).rejects.toThrow(/Invalid report format/);
+
+    // Scoped principal trying to renew token for run by someone else
+    const scopedPrincipal = {
+      tenantId: 'T',
+      subject: 'different-user',
+      entitlements: new Set(['analytics-studio']),
+      spatialScope: { mode: 'SCOPED', placeIds: ['p-1'] },
+    };
+    await expect(svc.generateDownloadToken(scopedPrincipal as any, 'run-1', 'PDF')).rejects.toThrow(/own place scope/);
+  });
+
+  test('downloadArtifact via renewed token binds grant to requesting user (cross-user same tenant rejected with 404)', async () => {
+    const rawToken = 'fresh-random-token-123';
+    const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+    const content = Buffer.from('excel-bytes');
+
+    // Grant belongs to user 'u'
+    const db = {
+      queryWithTenant: jest.fn().mockImplementation((_t: string, sql: string, params: unknown[]) => {
+        if (sql.includes('FROM gigalibs_analytics.report_download_grants g')) {
+          const [queriedHash, queriedUser] = params as [string, string];
+          if (queriedHash === tokenHash && queriedUser === 'u') {
+            return Promise.resolve({
+              rows: [
+                {
+                  filename: 'report.xlsx',
+                  content_type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                  content_sha256: 'sha-xlsx',
+                  expires_at: new Date(Date.now() + 600_000).toISOString(),
+                  content,
+                  triggered_by: 'u',
+                },
+              ],
+            });
+          }
+        }
+        return Promise.resolve({ rows: [] });
+      }),
+    };
+    const svc = new ReportService(db as any, {} as any, {} as any);
+
+    // Same tenant, but different user 'other-user' attempts download -> 404 (does not leak existence)
+    const otherUserPrincipal = {
+      tenantId: 'T',
+      subject: 'other-user',
+      entitlements: new Set(['analytics-studio']),
+      spatialScope: { mode: 'UNBOUNDED' },
+    };
+    await expect(svc.downloadArtifact(otherUserPrincipal as any, rawToken)).rejects.toThrow(/Download token not found/);
+
+    // Original user 'u' succeeds
+    const res = await svc.downloadArtifact(PRINCIPAL as any, rawToken);
+    expect(res.filename).toBe('report.xlsx');
+    expect(res.bytes).toEqual(content);
+  });
+
+  test('downloadArtifact via renewed token returns clear expiration message when token is expired', async () => {
+    const rawToken = 'fresh-random-token-123';
+    const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+    const content = Buffer.from('excel-bytes');
+
+    const expiredDb = {
+      queryWithTenant: jest.fn().mockImplementation((_t: string, sql: string, params: unknown[]) => {
+        if (sql.includes('FROM gigalibs_analytics.report_download_grants g')) {
+          if (params[0] === tokenHash && params[1] === 'u') {
+            return Promise.resolve({
+              rows: [
+                {
+                  filename: 'report.xlsx',
+                  content_type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                  content_sha256: 'sha-xlsx',
+                  expires_at: new Date(Date.now() - 1000).toISOString(),
+                  content,
+                  triggered_by: 'u',
+                },
+              ],
+            });
+          }
+        }
+        return Promise.resolve({ rows: [] });
+      }),
+    };
+    const expiredSvc = new ReportService(expiredDb as any, {} as any, {} as any);
+    await expect(expiredSvc.downloadArtifact(PRINCIPAL as any, rawToken)).rejects.toThrow(
+      /Download token has expired\. Request a new download token\./,
+    );
+  });
+
+  test('file metadata is retained in getReportRun even when tokens are expired', async () => {
+    const db = {
+      queryWithTenant: jest.fn().mockImplementation((_t: string, sql: string) => {
+        if (sql.includes('FROM gigalibs_analytics.report_runs rr')) {
+          return Promise.resolve({
+            rows: [
+              {
+                id: 'run-expired',
+                report_definition_id: 'def-1',
+                status: 'SUCCEEDED',
+                row_count: 10,
+                error_message: null,
+                triggered_by: 'u',
+                queued_at: '2026-09-01T00:00:00Z',
+                completed_at: '2026-09-01T00:00:01Z',
+                files: [
+                  { format: 'CSV', token: 'old-tok-1', expiresAt: '2026-09-01T00:15:00Z', filename: 'r.csv', byteSize: 100 },
+                  { format: 'XLSX', token: 'old-tok-2', expiresAt: '2026-09-01T00:15:00Z', filename: 'r.xlsx', byteSize: 2000 },
+                  { format: 'PDF', token: 'old-tok-3', expiresAt: '2026-09-01T00:15:00Z', filename: 'r.pdf', byteSize: 5000 },
+                ],
+              },
+            ],
+          });
+        }
+        return Promise.resolve({ rows: [] });
+      }),
+    };
+    const svc = new ReportService(db as any, {} as any, {} as any);
+    const run = await svc.getReportRun(PRINCIPAL as any, 'run-expired');
+
+    // Files metadata is preserved
+    expect(run.files).toHaveLength(3);
+    expect(run.files.map((f) => f.format)).toEqual(['CSV', 'XLSX', 'PDF']);
+    expect(run.files[0]!.filename).toBe('r.csv');
+    // But tokens are null since they expired
+    expect(run.files[0]!.token).toBeNull();
+    expect(run.files[0]!.expiresAt).toBeNull();
+    // Legacy download object is null since expired
+    expect(run.download).toBeNull();
   });
 });

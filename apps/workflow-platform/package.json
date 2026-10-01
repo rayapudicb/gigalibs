@@ -18,6 +18,7 @@
     "@gigalibs/broker": "workspace:*",
     "@gigalibs/cmms-web": "workspace:*",
     "@gigalibs/configuration-react": "workspace:*",
+    "@gigalibs/analytics-charts": "workspace:*",
     "@gigalibs/contracts": "workspace:*",
     "@gigalibs/db": "workspace:*",
     "@gigalibs/i18n": "workspace:*",

@@ -14,18 +14,27 @@
  *    rights and check recipients at send time.
  */
 
-import { BadRequestException, GoneException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, GoneException, Injectable, Logger, NotFoundException, Optional } from '@nestjs/common';
 import * as crypto from 'crypto';
 import {
+  type AnalyticsFilterV1,
   type AnalyticsQueryResultV1,
+  type ChartTypeV1,
   CreateReportV1Schema,
+  type PlaceDirectoryEntryV1,
+  type ReportDownloadTokenV1,
+  type ReportFileV1,
+  type ReportFormatV1,
   type ReportRunV1,
   type ReportV1,
+  UpdateReportFormatsV1Schema,
 } from '@gigalibs/contracts';
 import type { AnalyticsPrincipal } from '../auth/authorization.js';
 import { DatabaseService } from '../database/database.service.js';
 import { ChartViewService } from '../query-engine/chart-view.service.js';
 import { DashboardService } from '../query-engine/dashboard.service.js';
+import { PlaceAnalyticsService } from '../places/place-analytics.service.js';
+import { buildPdf, buildXlsx, type ReportMeta, type ReportSection } from './report-files.js';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -49,6 +58,7 @@ interface DefinitionRow {
   chart_definition_id: string | null;
   chart_view_id: string | null;
   dashboard_id: string | null;
+  formats?: string[] | null;
   source_name: string | null;
   created_by: string;
   created_at: string | Date;
@@ -76,6 +86,7 @@ export class ReportService {
     private readonly db: DatabaseService,
     private readonly chartViews: ChartViewService,
     private readonly dashboards: DashboardService,
+    @Optional() private readonly places?: PlaceAnalyticsService,
   ) {}
 
   // ── Report definitions ───────────────────────────────────────────────────
@@ -93,22 +104,49 @@ export class ReportService {
     if (chartViewId) await this.chartViews.get(principal, chartViewId);
     if (dashboardId) await this.dashboards.get(principal, dashboardId);
 
+    const formats = report.formats && report.formats.length > 0 ? report.formats : ['CSV'];
+
     const id = await this.db.withTenantTransaction(principal.tenantId, async (client) => {
       const inserted = await client.query<{ id: string }>(
         `INSERT INTO gigalibs_analytics.report_definitions
-           (tenant_id, display_name, description, chart_view_id, dashboard_id, pinned_inputs, output_format, created_by)
-         VALUES ($1, $2, $3, $4, $5, '{}'::jsonb, 'CSV', $6)
+           (tenant_id, display_name, description, chart_view_id, dashboard_id, pinned_inputs, output_format, created_by, formats)
+         VALUES ($1, $2, $3, $4, $5, '{}'::jsonb, 'CSV', $6, $7)
          RETURNING id`,
-        [principal.tenantId, report.name, report.description, chartViewId, dashboardId, principal.subject],
+        [principal.tenantId, report.name, report.description, chartViewId, dashboardId, principal.subject, formats],
       );
       const reportId = inserted.rows[0]!.id;
       await client.query(
         `INSERT INTO gigalibs_analytics.analytics_audit_log
            (tenant_id, event_type, actor_subject, entity_id, entity_type, event_payload)
          VALUES ($1, 'REPORT_DEFINITION_CREATED', $2, $3, 'REPORT_DEFINITION', $4::jsonb)`,
-        [principal.tenantId, principal.subject, reportId, JSON.stringify({ name: report.name, source: report.source })],
+        [principal.tenantId, principal.subject, reportId, JSON.stringify({ name: report.name, source: report.source, formats })],
       );
       return reportId;
+    });
+    return this.getReportDefinition(principal, id);
+  }
+
+  async updateReportFormats(principal: AnalyticsPrincipal, id: string, input: unknown): Promise<ReportV1> {
+    const parsed = UpdateReportFormatsV1Schema.safeParse(input);
+    if (!parsed.success) {
+      const issue = parsed.error.issues[0];
+      throw new BadRequestException(`Invalid report formats: ${issue?.path.join('.') || 'body'} ${issue?.message ?? ''}`.trim());
+    }
+    await this.getReportDefinition(principal, id);
+
+    await this.db.withTenantTransaction(principal.tenantId, async (client) => {
+      await client.query(
+        `UPDATE gigalibs_analytics.report_definitions
+         SET formats = $1
+         WHERE id = $2 AND tenant_id = $3`,
+        [parsed.data.formats, id, principal.tenantId],
+      );
+      await client.query(
+        `INSERT INTO gigalibs_analytics.analytics_audit_log
+           (tenant_id, event_type, actor_subject, entity_id, entity_type, event_payload)
+         VALUES ($1, 'REPORT_DEFINITION_UPDATED', $2, $3, 'REPORT_DEFINITION', $4::jsonb)`,
+        [principal.tenantId, principal.subject, id, JSON.stringify({ formats: parsed.data.formats })],
+      );
     });
     return this.getReportDefinition(principal, id);
   }
@@ -161,9 +199,106 @@ export class ReportService {
     return this.getReportRun(principal, runId);
   }
 
-  // ── Download ─────────────────────────────────────────────────────────────
+  // ── Download & Token Renewal ─────────────────────────────────────────────
+
+  async generateDownloadToken(
+    principal: AnalyticsPrincipal,
+    runId: string,
+    formatInput: string,
+  ): Promise<ReportDownloadTokenV1> {
+    const format = formatInput.toUpperCase() as ReportFormatV1;
+    if (!['CSV', 'XLSX', 'PDF'].includes(format)) {
+      throw new BadRequestException(`Invalid report format '${formatInput}'. Choose CSV, XLSX, or PDF.`);
+    }
+
+    return this.db.withTenantTransaction(principal.tenantId, async (client) => {
+      const artifactResult = await client.query<{
+        id: string;
+        filename: string;
+        triggered_by: string;
+      }>(
+        `SELECT a.id, a.filename, rr.triggered_by
+         FROM gigalibs_analytics.report_artifacts a
+         JOIN gigalibs_analytics.report_runs rr ON rr.id = a.run_id
+         WHERE a.run_id = $1 AND a.format = $2`,
+        [runId, format],
+      );
+
+      const artifact = artifactResult.rows[0];
+      if (!artifact) {
+        throw new NotFoundException(`Report artifact for run '${runId}' and format '${format}' not found.`);
+      }
+
+      if (principal.spatialScope.mode !== 'UNBOUNDED' && artifact.triggered_by !== principal.subject) {
+        throw new ForbiddenException('You can only download reports generated within your own place scope.');
+      }
+
+      // Safe expired grant cleanup for this tenant
+      await client.query(
+        `DELETE FROM gigalibs_analytics.report_download_grants
+         WHERE tenant_id = $1 AND expires_at < now()`,
+        [principal.tenantId],
+      );
+
+      const rawToken = crypto.randomUUID();
+      const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+      const expiresAt = new Date(Date.now() + this.TOKEN_TTL_MS);
+
+      await client.query(
+        `INSERT INTO gigalibs_analytics.report_download_grants
+           (tenant_id, artifact_id, token_hash, user_id, expires_at)
+         VALUES ($1, $2, $3, $4, $5)`,
+        [principal.tenantId, artifact.id, tokenHash, principal.subject, expiresAt.toISOString()],
+      );
+
+      return {
+        token: rawToken,
+        expiresAt: expiresAt.toISOString(),
+        format,
+        filename: artifact.filename,
+      };
+    });
+  }
 
   async downloadArtifact(principal: AnalyticsPrincipal, downloadToken: string): Promise<DownloadResult> {
+    const tokenHash = crypto.createHash('sha256').update(downloadToken).digest('hex');
+
+    // 1. Check grants table first (hashed token lookup bound to requesting user)
+    const grantResult = await this.db.queryWithTenant<{
+      filename: string;
+      content_type: string;
+      content_sha256: string;
+      expires_at: string | Date;
+      content: Buffer | null;
+      triggered_by: string;
+    }>(
+      principal.tenantId,
+      `SELECT a.filename, a.content_type, a.content_sha256, g.expires_at, a.content, rr.triggered_by
+       FROM gigalibs_analytics.report_download_grants g
+       JOIN gigalibs_analytics.report_artifacts a ON a.id = g.artifact_id
+       JOIN gigalibs_analytics.report_runs rr ON rr.id = a.run_id
+       WHERE g.token_hash = $1 AND g.user_id = $2`,
+      [tokenHash, principal.subject],
+    );
+
+    if (grantResult.rows.length > 0 && 'expires_at' in grantResult.rows[0]!) {
+      const grant = grantResult.rows[0]!;
+      if (principal.spatialScope.mode !== 'UNBOUNDED' && grant.triggered_by !== principal.subject) {
+        throw new ForbiddenException('You can only download reports generated within your own place scope.');
+      }
+      if (new Date(grant.expires_at) < new Date()) {
+        throw new GoneException('Download token has expired. Request a new download token.');
+      }
+      if (!grant.content) throw new GoneException('This file was produced before files were stored; run the report again.');
+      return {
+        filename: grant.filename,
+        contentType: grant.content_type,
+        bytes: grant.content,
+        contentSha256: grant.content_sha256,
+      };
+    }
+
+    // 2. Fallback: check legacy download_token on report_artifacts (backwards compatibility)
     const artifactResult = await this.db.queryWithTenant<{
       filename: string;
       content_type: string;
@@ -215,10 +350,12 @@ export class ReportService {
 
   private async executeRun(principal: AnalyticsPrincipal, runId: string, def: DefinitionRow): Promise<void> {
     const { tenantId } = principal;
-    let sections: CsvSection[];
+    let questions: unknown;
+    let sections: ReportSection[];
     try {
-      const { questions, sections: asked } = await this.ask(principal, def);
-      sections = asked;
+      const asked = await this.ask(principal, def);
+      questions = asked.questions;
+      sections = asked.sections;
       await this.db.queryWithTenant(
         tenantId,
         `UPDATE gigalibs_analytics.report_runs
@@ -232,20 +369,93 @@ export class ReportService {
     }
 
     try {
+      const requestedFormats: ReportFormatV1[] =
+        def.formats && def.formats.length > 0 ? (def.formats as ReportFormatV1[]) : ['CSV'];
+
+      // Build CSV first to compute rowCount and check MAX_REPORT_ROWS
       const { csv, rowCount } = buildCsv(def.display_name, sections);
-      const bytes = Buffer.from(csv, 'utf8');
-      const contentSha256 = crypto.createHash('sha256').update(bytes).digest('hex');
-      const downloadToken = crypto.randomUUID();
+
+      const now = new Date();
+      const dateStr = now.toISOString().slice(0, 10);
+      const baseSlug = slug(def.display_name);
       const tokenExpiresAt = new Date(Date.now() + this.TOKEN_TTL_MS).toISOString();
-      const filename = `${slug(def.display_name)}-${new Date().toISOString().slice(0, 10)}.csv`;
+
+      const meta: ReportMeta = {
+        reportName: def.display_name,
+        sourceName: def.source_name ?? def.display_name,
+        generatedAt: now,
+      };
+
+      interface GeneratedFile {
+        format: ReportFormatV1;
+        filename: string;
+        contentType: string;
+        bytes: Buffer;
+        contentSha256: string;
+        downloadToken: string;
+        tokenExpiresAt: string;
+      }
+
+      const filesToPersist: GeneratedFile[] = [];
+
+      for (const fmt of requestedFormats) {
+        if (fmt === 'CSV') {
+          const bytes = Buffer.from(csv, 'utf8');
+          filesToPersist.push({
+            format: 'CSV',
+            filename: `${baseSlug}-${dateStr}.csv`,
+            contentType: 'text/csv; charset=utf-8',
+            bytes,
+            contentSha256: crypto.createHash('sha256').update(bytes).digest('hex'),
+            downloadToken: crypto.randomUUID(),
+            tokenExpiresAt,
+          });
+        } else if (fmt === 'XLSX') {
+          const bytes = await buildXlsx(meta, sections);
+          filesToPersist.push({
+            format: 'XLSX',
+            filename: `${baseSlug}-${dateStr}.xlsx`,
+            contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            bytes,
+            contentSha256: crypto.createHash('sha256').update(bytes).digest('hex'),
+            downloadToken: crypto.randomUUID(),
+            tokenExpiresAt,
+          });
+        } else if (fmt === 'PDF') {
+          const bytes = await buildPdf(meta, sections);
+          filesToPersist.push({
+            format: 'PDF',
+            filename: `${baseSlug}-${dateStr}.pdf`,
+            contentType: 'application/pdf',
+            bytes,
+            contentSha256: crypto.createHash('sha256').update(bytes).digest('hex'),
+            downloadToken: crypto.randomUUID(),
+            tokenExpiresAt,
+          });
+        }
+      }
+
       await this.db.withTenantTransaction(tenantId, async (client) => {
-        await client.query(
-          `INSERT INTO gigalibs_analytics.report_artifacts
-             (run_id, tenant_id, filename, content_type, content_sha256,
-              byte_size, download_token, token_expires_at, storage_ref, content)
-           VALUES ($1, $2, $3, 'text/csv; charset=utf-8', $4, $5, $6, $7, 'db:report_artifacts', $8)`,
-          [runId, tenantId, filename, contentSha256, bytes.length, downloadToken, tokenExpiresAt, bytes],
-        );
+        for (const file of filesToPersist) {
+          await client.query(
+            `INSERT INTO gigalibs_analytics.report_artifacts
+               (run_id, tenant_id, filename, content_type, content_sha256,
+                byte_size, download_token, token_expires_at, storage_ref, format, content)
+             VALUES ($1, $2, $3, $9, $4, $5, $6, $7, 'db:report_artifacts', $10, $8)`,
+            [
+              runId,
+              tenantId,
+              file.filename,
+              file.contentSha256,
+              file.bytes.length,
+              file.downloadToken,
+              file.tokenExpiresAt,
+              file.bytes,
+              file.contentType,
+              file.format,
+            ],
+          );
+        }
         await client.query(
           `UPDATE gigalibs_analytics.report_runs
            SET status = 'SUCCEEDED', row_count = $2, completed_at = now()
@@ -256,10 +466,20 @@ export class ReportService {
           `INSERT INTO gigalibs_analytics.analytics_audit_log
              (tenant_id, event_type, actor_subject, entity_id, entity_type, event_payload)
            VALUES ($1, 'REPORT_RUN_COMPLETED', $2, $3, 'REPORT_RUN', $4::jsonb)`,
-          [tenantId, principal.subject, runId, JSON.stringify({ reportId: def.id, rowCount, contentSha256 })],
+          [
+            tenantId,
+            principal.subject,
+            runId,
+            JSON.stringify({
+              reportId: def.id,
+              rowCount,
+              formats: filesToPersist.map((f) => f.format),
+              sha256: filesToPersist.map((f) => ({ format: f.format, sha256: f.contentSha256 })),
+            }),
+          ],
         );
       });
-      this.logger.log(`[tenant:${tenantId}] Report run '${runId}' SUCCEEDED: ${rowCount} rows, sha256=${contentSha256.slice(0, 8)}…`);
+      this.logger.log(`[tenant:${tenantId}] Report run '${runId}' SUCCEEDED: ${rowCount} rows, ${filesToPersist.length} files`);
     } catch (err) {
       await this.fail(tenantId, runId, err);
     }
@@ -269,16 +489,59 @@ export class ReportService {
   private async ask(
     principal: AnalyticsPrincipal,
     def: DefinitionRow,
-  ): Promise<{ questions: unknown; sections: CsvSection[] }> {
+  ): Promise<{ questions: unknown; sections: ReportSection[] }> {
     if (def.chart_view_id) {
       const { view, result } = await this.chartViews.data(principal, def.chart_view_id);
-      return { questions: { chartView: view.id, query: view.query }, sections: [{ title: null, result, note: null }] };
+      let places: PlaceDirectoryEntryV1[] | undefined;
+      const chartType = (view.visual?.type ?? 'table') as ChartTypeV1;
+      if (chartType === 'place_map' && this.places) {
+        try {
+          const dir = await this.places.directory(principal, { boundaries: 'true', under: view.query.placeUnder });
+          places = [...dir.places];
+        } catch {
+          // If directory loading fails or not configured, placeMap will skip drawing
+        }
+      }
+      return {
+        questions: { chartView: view.id, query: view.query },
+        sections: [
+          {
+            title: null,
+            result,
+            note: null,
+            chartType,
+            filters: describeFilters(view.query),
+            places,
+          },
+        ],
+      };
     }
     if (def.dashboard_id) {
       const data = await this.dashboards.data(principal, def.dashboard_id, {});
+      const sections: ReportSection[] = [];
+      for (const tile of data.tiles) {
+        let places: PlaceDirectoryEntryV1[] | undefined;
+        const chartType = (tile.chartType ?? 'table') as ChartTypeV1;
+        if (chartType === 'place_map' && this.places) {
+          try {
+            const dir = await this.places.directory(principal, { boundaries: 'true' });
+            places = [...dir.places];
+          } catch {
+            // Skip
+          }
+        }
+        sections.push({
+          title: tile.name,
+          result: tile.result,
+          note: tile.error,
+          chartType,
+          filters: tile.applied ?? [],
+          places,
+        });
+      }
       return {
         questions: { dashboard: def.dashboard_id, tiles: data.tiles.map((tile) => tile.chartViewId) },
-        sections: data.tiles.map((tile) => ({ title: tile.name, result: tile.result, note: tile.error })),
+        sections,
       };
     }
     throw new Error('This report uses a retired chart definition; recreate it from a saved chart or a dashboard.');
@@ -301,6 +564,7 @@ export class ReportService {
       `${RUN_SELECT} WHERE rr.report_definition_id = $1 ORDER BY rr.queued_at DESC LIMIT 1`,
       [row.id],
     );
+    const formats = (row.formats && row.formats.length > 0 ? row.formats : ['CSV']) as ReportFormatV1[];
     return {
       id: row.id,
       name: row.display_name,
@@ -312,6 +576,7 @@ export class ReportService {
           : { kind: 'retired_chart', id: row.chart_definition_id!, name: 'Retired chart definition' },
       createdBy: row.created_by,
       createdAt: new Date(row.created_at).toISOString(),
+      formats,
       lastRun: last.rows[0] ? toRun(last.rows[0]) : null,
     };
   }
@@ -322,6 +587,7 @@ export class ReportService {
 
 const DEFINITION_SELECT = `
   SELECT d.id, d.display_name, d.description, d.chart_definition_id, d.chart_view_id, d.dashboard_id,
+         d.formats,
          COALESCE(v.name, db.display_name) AS source_name, d.created_by, d.created_at
     FROM gigalibs_analytics.report_definitions d
     LEFT JOIN gigalibs_analytics.chart_views v ON v.id = d.chart_view_id
@@ -329,13 +595,54 @@ const DEFINITION_SELECT = `
 
 const RUN_SELECT = `
   SELECT rr.id, rr.report_definition_id, rr.status, rr.row_count, rr.error_message, rr.triggered_by,
-         rr.queued_at, rr.completed_at, ra.download_token, ra.token_expires_at, ra.filename
-    FROM gigalibs_analytics.report_runs rr
-    LEFT JOIN gigalibs_analytics.report_artifacts ra ON ra.run_id = rr.id`;
+         rr.queued_at, rr.completed_at,
+         (
+           SELECT json_agg(json_build_object(
+             'format', ra.format,
+             'token', ra.download_token,
+             'expiresAt', ra.token_expires_at,
+             'filename', ra.filename,
+             'byteSize', ra.byte_size
+           ) ORDER BY CASE ra.format WHEN 'CSV' THEN 1 WHEN 'XLSX' THEN 2 WHEN 'PDF' THEN 3 ELSE 4 END)
+           FROM gigalibs_analytics.report_artifacts ra
+           WHERE ra.run_id = rr.id
+         ) AS files
+    FROM gigalibs_analytics.report_runs rr`;
 
 function toRun(row: Record<string, unknown>): ReportRunV1 {
   const iso = (value: unknown) => (value === null || value === undefined ? null : new Date(value as string).toISOString());
-  const expiresAt = iso(row['token_expires_at']);
+  let files: ReportFileV1[] = [];
+  if (Array.isArray(row['files'])) {
+    files = (row['files'] as Array<Record<string, unknown>>)
+      .filter((f) => f && f.format && f.filename)
+      .map((f) => {
+        const hasValidToken = Boolean(f.token && f.expiresAt && new Date(f.expiresAt as string) > new Date());
+        return {
+          format: f.format as ReportFileV1['format'],
+          token: hasValidToken ? (f.token as string) : null,
+          expiresAt: hasValidToken ? iso(f.expiresAt) : null,
+          filename: f.filename as string,
+          byteSize: Number(f.byteSize ?? 0),
+        };
+      });
+  } else if (row['download_token'] || row['filename']) {
+    const expiresAt = iso(row['token_expires_at']);
+    const hasValidToken = Boolean(expiresAt && new Date(expiresAt) > new Date());
+    files = [
+      {
+        format: ((row['format'] as string) || 'CSV') as ReportFileV1['format'],
+        token: hasValidToken ? (row['download_token'] as string) : null,
+        expiresAt: hasValidToken ? expiresAt : null,
+        filename: (row['filename'] as string) ?? 'report.csv',
+        byteSize: Number(row['byte_size'] ?? 0),
+      },
+    ];
+  }
+
+  // The CSV's (or the first file's) short-lived token, kept for older callers; files lists every format
+  const csvFile = files.find((f) => f.format === 'CSV') ?? files[0];
+  const download = csvFile && csvFile.token && csvFile.expiresAt ? { token: csvFile.token, expiresAt: csvFile.expiresAt, filename: csvFile.filename } : null;
+
   return {
     id: row['id'] as string,
     reportId: row['report_definition_id'] as string,
@@ -345,12 +652,26 @@ function toRun(row: Record<string, unknown>): ReportRunV1 {
     triggeredBy: row['triggered_by'] as string,
     queuedAt: iso(row['queued_at'])!,
     completedAt: iso(row['completed_at']),
-    // An expired token is not offered; the run can be repeated.
-    download:
-      row['download_token'] && expiresAt && new Date(expiresAt) > new Date()
-        ? { token: row['download_token'] as string, expiresAt, filename: row['filename'] as string }
-        : null,
+    download,
+    files,
   };
+}
+
+function describeFilters(query?: { filters?: AnalyticsFilterV1[]; placeUnder?: string }): string[] {
+  if (!query) return [];
+  const words: string[] = [];
+  if (query.placeUnder) words.push(`Place under: ${query.placeUnder}`);
+  for (const f of query.filters ?? []) {
+    switch (f.op) {
+      case 'eq': words.push(`${f.field} = ${f.value}`); break;
+      case 'neq': words.push(`${f.field} != ${f.value}`); break;
+      case 'in': words.push(`${f.field} in (${f.values.join(', ')})`); break;
+      case 'gte': words.push(`${f.field} >= ${f.value}`); break;
+      case 'lte': words.push(`${f.field} <= ${f.value}`); break;
+      case 'between': words.push(`${f.field} between ${f.from} and ${f.to}`); break;
+    }
+  }
+  return words;
 }
 
 // ─── Pure helpers ─────────────────────────────────────────────────────────────

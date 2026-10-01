@@ -63,9 +63,15 @@ function requiredAnalyticsPermission(method: string, path: readonly string[]): s
   if (joined === 'v1/reports/definitions') {
     return method === 'GET' ? 'analytics:read' : method === 'POST' ? 'analytics:reports:write' : null;
   }
+  if (new RegExp(`^v1/reports/definitions/${SEGMENT}/formats$`).test(joined)) {
+    return method === 'PATCH' ? 'analytics:reports:write' : null;
+  }
   if (new RegExp(`^v1/reports/definitions/${SEGMENT}(/runs)?$`).test(joined)) return read;
   if (joined === 'v1/reports/runs') return method === 'POST' ? 'analytics:reports:write' : null;
   if (new RegExp(`^v1/reports/runs/${SEGMENT}$`).test(joined)) return read;
+  if (new RegExp(`^v1/reports/runs/${SEGMENT}/files/${SEGMENT}/download-token$`).test(joined)) {
+    return method === 'POST' ? 'analytics:export' : null;
+  }
   if (new RegExp(`^v1/reports/download/${SEGMENT}$`).test(joined)) return method === 'GET' ? 'analytics:export' : null;
   // WI-OI-104e: the Sources screen maps pulled records into datasets without code. Sources (names and kinds only),
   // discovery, mappings and dataset builds belong to mapping; a model makes a dataset explorable. The Postgres

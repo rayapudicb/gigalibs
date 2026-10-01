@@ -62,6 +62,7 @@
       "packages/email-templates"
     ],
     "analytics": [
+      "packages/analytics-charts",
       "packages/analytics-core",
       "packages/charts-react",
       "packages/kpi-widgets-react"

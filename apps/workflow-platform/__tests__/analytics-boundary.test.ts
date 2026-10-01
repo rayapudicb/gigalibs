@@ -308,6 +308,53 @@ describe('Analytics Studio signed BFF (WI-OI-064a)', () => {
     expect(await download.text()).toBe('a,b\r\n');
   });
 
+  // WI-OI-106: reports v2 format update and safe token renewal
+  it('allows PATCH on report formats with analytics:reports:write and denies GET/POST; allows token renewal with analytics:export', async () => {
+    const sameOrigin = { Host: 'platform.example.invalid', Origin: 'https://platform.example.invalid', 'Content-Type': 'application/json' };
+    const definitionId = '00000000-0000-4000-8000-0000000000d1';
+    const runId = '00000000-0000-4000-8000-0000000000r1';
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(
+      async () => new Response(JSON.stringify({ ok: true }), { status: 200, headers: { 'Content-Type': 'application/json' } }),
+    );
+
+    // 1. Reader only (no write, no export)
+    vi.mocked(verifiedSession).mockResolvedValue({ context: { ...entitledContext, permissions: ['analytics:read'] } } as never);
+    // formats endpoint denies GET and POST (not allowed methods)
+    expect((await call(getAnalytics, 'GET', ['v1', 'reports', 'definitions', definitionId, 'formats'])).status).toBe(404);
+    expect((await call(postAnalytics, 'POST', ['v1', 'reports', 'definitions', definitionId, 'formats'], { headers: sameOrigin, body: '{}' })).status).toBe(404);
+    // formats PATCH denied without analytics:reports:write
+    expect((await call(patchAnalytics, 'PATCH', ['v1', 'reports', 'definitions', definitionId, 'formats'], { headers: sameOrigin, body: '{"formats":["CSV","XLSX"]}' })).status).toBe(403);
+    // download-token endpoint denied without analytics:export
+    expect((await call(postAnalytics, 'POST', ['v1', 'reports', 'runs', runId, 'files', 'XLSX', 'download-token'], { headers: sameOrigin, body: '{}' })).status).toBe(403);
+    expect((await call(getAnalytics, 'GET', ['v1', 'reports', 'runs', runId, 'files', 'XLSX', 'download-token'])).status).toBe(404);
+
+    // 2. With analytics:reports:write
+    vi.mocked(verifiedSession).mockResolvedValue({
+      context: { ...entitledContext, permissions: ['analytics:read', 'analytics:reports:write'] },
+    } as never);
+    const patched = await call(patchAnalytics, 'PATCH', ['v1', 'reports', 'definitions', definitionId, 'formats'], {
+      headers: sameOrigin,
+      body: '{"formats":["CSV","XLSX","PDF"]}',
+    });
+    expect(patched.status).toBe(200);
+    const [target, init] = fetchSpy.mock.calls.at(-1)!;
+    expect(String(target)).toBe(`http://127.0.0.1:4400/v1/reports/definitions/${definitionId}/formats`);
+    expect(init?.method).toBe('PATCH');
+
+    // 3. With analytics:export
+    vi.mocked(verifiedSession).mockResolvedValue({
+      context: { ...entitledContext, permissions: ['analytics:read', 'analytics:export'] },
+    } as never);
+    const tokenRes = await call(postAnalytics, 'POST', ['v1', 'reports', 'runs', runId, 'files', 'XLSX', 'download-token'], {
+      headers: sameOrigin,
+      body: '{}',
+    });
+    expect(tokenRes.status).toBe(200);
+    const [tokenTarget, tokenInit] = fetchSpy.mock.calls.at(-1)!;
+    expect(String(tokenTarget)).toBe(`http://127.0.0.1:4400/v1/reports/runs/${runId}/files/XLSX/download-token`);
+    expect(tokenInit?.method).toBe('POST');
+  });
+
   it('returns 503 when the runtime is not configured and 502 during an outage', async () => {
     vi.mocked(verifiedSession).mockResolvedValue({ context: entitledContext } as never);
     vi.stubEnv('ANALYTICS_API_URL', '');

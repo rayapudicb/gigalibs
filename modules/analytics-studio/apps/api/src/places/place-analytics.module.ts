@@ -11,5 +11,6 @@ import { SampleFarmService } from './sample-farm.service.js';
   imports: [SchemaDiscoveryModule, DatasetModule, QueryEngineModule],
   controllers: [PlaceAnalyticsController, DemoLabController],
   providers: [PlaceAnalyticsService, DemoLabService, SampleFarmService],
+  exports: [PlaceAnalyticsService],
 })
 export class PlaceAnalyticsModule {}

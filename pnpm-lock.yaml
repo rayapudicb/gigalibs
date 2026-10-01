@@ -189,6 +189,9 @@ importers:
 
   apps/workflow-platform:
     dependencies:
+      '@gigalibs/analytics-charts':
+        specifier: workspace:*
+        version: link:../../packages/analytics-charts
       '@gigalibs/ar-domain':
         specifier: workspace:*
         version: link:../../modules/accounts-receivable/domain
@@ -454,6 +457,9 @@ importers:
 
   modules/analytics-studio/apps/api:
     dependencies:
+      '@gigalibs/analytics-charts':
+        specifier: workspace:*
+        version: link:../../../../packages/analytics-charts
       '@gigalibs/analytics-core':
         specifier: workspace:*
         version: link:../../../../packages/analytics-core
@@ -475,9 +481,18 @@ importers:
       '@nestjs/platform-express':
         specifier: ^11.2.3
         version: 11.2.3(@nestjs/common@11.2.3(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.2.3)
+      echarts:
+        specifier: ^6.1.0
+        version: 6.1.0
+      exceljs:
+        specifier: 4.4.0
+        version: 4.4.0
       helmet:
         specifier: ^8.1.0
         version: 8.3.0
+      pdfkit:
+        specifier: ^0.15.2
+        version: 0.15.2
       pg:
         specifier: ^8.23.0
         version: 8.23.0
@@ -487,6 +502,9 @@ importers:
       rxjs:
         specifier: ^7.8.2
         version: 7.8.2
+      svg-to-pdfkit:
+        specifier: 0.1.8
+        version: 0.1.8
       zod:
         specifier: ^4.5.2
         version: 4.5.2
@@ -494,6 +512,9 @@ importers:
       '@types/node':
         specifier: ^24.10.0
         version: 24.13.3
+      '@types/pdfkit':
+        specifier: ^0.13.9
+        version: 0.13.9
       '@types/pg':
         specifier: ^8.23.1
         version: 8.23.1
@@ -1224,6 +1245,19 @@ importers:
       tsx:
         specifier: ^4.20.6
         version: 4.23.12
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.3
+
+  packages/analytics-charts:
+    dependencies:
+      '@gigalibs/contracts':
+        specifier: workspace:*
+        version: link:../contracts
+      echarts:
+        specifier: ^6.1.0
+        version: 6.1.0
+    devDependencies:
       typescript:
         specifier: ^5.8.3
         version: 5.9.3
@@ -5999,6 +6033,9 @@ packages:
     resolution: {integrity: sha512-ot0WnXS9fgdkgIcePe6RHNk1WA8+muPa6cSjeR3V8K27q9BB1rTE3R1p7Hv0z1ZyAc8s6Vvv8DIyWf681MAt0w==}
     engines: {node: '>= 0.4'}
 
+  svg-to-pdfkit@0.1.8:
+    resolution: {integrity: sha512-QItiGZBy5TstGy+q8mjQTMGRlDDOARXLxH+sgVm1n/LYeo0zFcQlcCh8m4zi8QxctrxB9Kue/lStc/RD5iLadQ==}
+
   swr@2.5.1:
     resolution: {integrity: sha512-BRw55e8r0B7SpDN20CAzoQAHl7y1yP7/Zt7oqUjMv0vSt2u2Xnkm88Ws+VypbV9BXHQVuSuyVq7zMjO16wSExw==}
     peerDependencies:
@@ -10598,6 +10635,10 @@ snapshots:
       ts-interface-checker: 0.1.13
 
   supports-preserve-symlinks-flag@1.0.0: {}
+
+  svg-to-pdfkit@0.1.8:
+    dependencies:
+      pdfkit: 0.15.2
 
   swr@2.5.1(react@19.2.8):
     dependencies:

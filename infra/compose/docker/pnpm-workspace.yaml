@@ -8,6 +8,7 @@ packages:
   - modules/physical-operations-cmms/apps/api
   - modules/physical-operations-cmms/web
   - modules/universal-connector-hub/apps/api
+  - packages/analytics-charts
   - packages/analytics-core
   - packages/audit-core
   - packages/audit-nest

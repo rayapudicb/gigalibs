@@ -6,6 +6,7 @@ import {
   HttpStatus,
   Param,
   ParseUUIDPipe,
+  Patch,
   Post,
   Res,
   UseGuards,
@@ -43,6 +44,21 @@ export class ReportController {
     @Body() body: unknown,
   ) {
     return this.reportService.createReportDefinition(principal, body);
+  }
+
+  /**
+   * PATCH /v1/reports/definitions/:definitionId/formats
+   * Update chosen formats for a report definition (WI-OI-106).
+   * Required scope: analytics:reports:write
+   */
+  @Patch('definitions/:definitionId/formats')
+  @RequirePermissions('analytics:reports:write')
+  async updateFormats(
+    @CurrentPrincipal() principal: AnalyticsPrincipal,
+    @Param('definitionId', ParseUUIDPipe) definitionId: string,
+    @Body() body: unknown,
+  ) {
+    return this.reportService.updateReportFormats(principal, definitionId, body);
   }
 
   /** GET /v1/reports/definitions — the tenant's reports with their last run. */
@@ -129,5 +145,21 @@ export class ReportController {
     // Prevent caching of download responses
     res.setHeader('Cache-Control', 'no-store');
     res.status(200).send(result.bytes);
+  }
+
+  /**
+   * POST /v1/reports/runs/:runId/files/:format/download-token
+   * Issue a fresh 15-minute download token for a report artifact (WI-OI-106).
+   * Required scope: analytics:export
+   */
+  @Post('runs/:runId/files/:format/download-token')
+  @RequirePermissions('analytics:export')
+  @HttpCode(HttpStatus.OK)
+  async createDownloadToken(
+    @CurrentPrincipal() principal: AnalyticsPrincipal,
+    @Param('runId') runId: string,
+    @Param('format') format: string,
+  ) {
+    return this.reportService.generateDownloadToken(principal, runId, format);
   }
 }

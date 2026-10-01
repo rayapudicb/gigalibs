@@ -1,0 +1,27 @@
+{
+  "name": "@gigalibs/analytics-charts",
+  "version": "0.0.1",
+  "description": "Chart options for Analytics results, shared by the web screens and server-drawn reports (WI-OI-106)",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist *.tsbuildinfo"
+  },
+  "dependencies": {
+    "@gigalibs/contracts": "workspace:*",
+    "echarts": "^6.1.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3"
+  }
+}

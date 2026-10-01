@@ -140,7 +140,37 @@ try {
   assert.match(csv, /harvest_date \(quarter\),crop,Yield per hectare,Yield \(kg\),Harvest logs/);
   assert.equal(csv.trim().split('\r\n').length, 4 + run.rowCount!);
 
-  step('7. another tenant sees none of it');
+  step('7. Reports v2: multi-format report (CSV, XLSX, PDF) and safe token renewal (WI-OI-106)');
+  const v2Report = await reports.createReportDefinition(maker, {
+    name: 'Yield per hectare multi-format',
+    source: { chartViewId: view.id },
+    formats: ['CSV', 'XLSX', 'PDF'],
+  });
+  const v2Run = await reports.triggerReportRun(maker, { reportDefinitionId: v2Report.id });
+  assert.equal(v2Run.status, 'SUCCEEDED', v2Run.errorMessage ?? '');
+  assert.equal(v2Run.files.length, 3);
+  assert.deepEqual(v2Run.files.map((f) => f.format), ['CSV', 'XLSX', 'PDF']);
+
+  // Safe renewal of XLSX download token
+  const renewedXlsx = await reports.generateDownloadToken(maker, v2Run.id, 'XLSX');
+  assert.equal(renewedXlsx.format, 'XLSX');
+  assert.ok(renewedXlsx.token);
+  const downloadedXlsx = await reports.downloadArtifact(maker, renewedXlsx.token);
+  assert.equal(downloadedXlsx.filename, renewedXlsx.filename);
+  assert.ok(downloadedXlsx.bytes.length > 0);
+
+  // Cross-tenant download with renewed token is rejected with 404
+  await assert.rejects(reports.downloadArtifact(outsider, renewedXlsx.token), /not found/);
+
+  // Scoped principal cross-user renewal is rejected
+  const scopedUser = {
+    ...maker,
+    subject: 'other-farm-worker',
+    spatialScope: { mode: 'SCOPED' as const, placeIds: ['other-place'] },
+  };
+  await assert.rejects(reports.generateDownloadToken(scopedUser, v2Run.id, 'PDF'), /own place scope/);
+
+  step('8. another tenant sees none of it');
   assert.deepEqual(await chartViews.list(outsider), []);
   assert.deepEqual(await dashboards.list(outsider), []);
   await assert.rejects(engine.runSpec(outsider, view.query), /not found/);
