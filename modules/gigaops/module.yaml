@@ -24,6 +24,11 @@ spec:
     - pay-readiness
     - payroll-export
     - cmms-staffing-handshake
+  # WI-OI-107 (ADR-0016 F10): the pack layers this module reads; schemas in @gigalibs/contracts (PACK_SECTION_SCHEMAS).
+  # Industry: wording, certifications, capabilities and default pay type. Country: pay-rule parameters.
+  pack:
+    industry: [vocabulary, lists, capabilities]
+    country: [rules]
   ui:
     application: apps/workflow-platform
     basePath: /gigaops
@@ -95,6 +100,8 @@ spec:
       - { path: 'permits/{id}/close', methods: [POST] }
     routes:
       - { path: 'v1/runtime/tenant-scope', GET: workforce:read }
+      # WI-OI-107: Workforce's section of the active packs (sent by the kernel's pack.apply job, which calls the module directly).
+      - { path: 'v1/pack', GET: workforce:read }
       - { path: 'v1/resources', GET: workforce.resources.read, POST: workforce.resources.manage }
       - { path: 'v1/resources/{id}', GET: workforce.resources.read, PATCH: workforce.resources.manage }
       - { path: 'v1/resources/{id}/capabilities', POST: workforce.capabilities.manage }

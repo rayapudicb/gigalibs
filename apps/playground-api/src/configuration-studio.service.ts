@@ -12,7 +12,16 @@ import {
   listBundledGovernedCatalogues,
   validateConfigurationValues,
 } from '@gigalibs/configuration-core';
-import { GOVERNED_CATALOGUE_SCOPES, isGovernedCatalogueDefinition } from '@gigalibs/contracts';
+import {
+  GOVERNED_CATALOGUE_SCOPES,
+  LEGACY_GOVERNED_CATALOGUE_SCOPES,
+  SOLUTION_CONFIGURATION_MODULE_KEY,
+  isGovernedCatalogueDefinition,
+  normaliseCountryPack,
+  normaliseIndustryPack,
+  type CountryPackV2,
+  type IndustryPackV2,
+} from '@gigalibs/contracts';
 import type {
   ActivateConfigurationDto,
   ConfigurationChangeSetDefinition,
@@ -47,8 +56,11 @@ import {
   ForbiddenException,
   HttpException,
   Injectable,
+  Logger,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
+import { KernelPackApplicationsService } from './kernel-pack-applications.service.js';
 import {
   ConfigurationManifestCache,
   type ConfigurationManifestScope,
@@ -89,11 +101,15 @@ function registeredCoreField(
 
 @Injectable()
 export class ConfigurationStudioService {
+  private readonly logger = new Logger(ConfigurationStudioService.name);
+
   constructor(
     private readonly manifestCache: ConfigurationManifestCache = new ConfigurationManifestCache(),
     private readonly adapterRegistry: ConfigurationAdapterRegistry = new ConfigurationAdapterRegistry(),
     private readonly runtimeScope: ConfigurationRuntimeScopeResolver = new ConfigurationRuntimeScopeResolver(),
     private readonly runtimeMetrics: ConfigurationRuntimeMetrics = new ConfigurationRuntimeMetrics(),
+    // WI-OI-107: activating a pack sends each module its section through kernel jobs.
+    @Optional() private readonly packApplications?: KernelPackApplicationsService,
   ) {}
 
   listBaseSurfaces(): readonly ConfigurationSurfaceRegistration[] {
@@ -1554,6 +1570,7 @@ export class ConfigurationStudioService {
         },
         data: { status: 'INACTIVE', deactivatedAt: new Date() },
       });
+      await this.deactivateOtherPacks(tx, tenantId, published.entityKey, published.surfaceKey, dto.environmentKey, dto.cohortKey);
       const activation = await tx.configurationActivation.create({
         data: {
           tenantId,
@@ -1611,7 +1628,7 @@ export class ConfigurationStudioService {
       environmentKey: dto.environmentKey,
       cohortKey: dto.cohortKey,
     });
-    return activation;
+    return { ...activation, ...(await this.applyPack(tenantId, actorId, activation.id, published)) };
   }
 
   async rollback(tenantId: string, actorId: string, dto: ActivateConfigurationDto) {
@@ -1736,7 +1753,7 @@ export class ConfigurationStudioService {
       environmentKey: dto.environmentKey,
       cohortKey: dto.cohortKey,
     });
-    return activation;
+    return { ...activation, ...(await this.applyPack(tenantId, actorId, activation.id, target)) };
   }
 
   async runtimeManifest(
@@ -1896,7 +1913,8 @@ export class ConfigurationStudioService {
 
   /** WI-OI-064c: platform-shipped catalogues with the tenant's latest change set and active version. */
   async listGovernedCatalogues(tenantId: string) {
-    const scopes = Object.values(GOVERNED_CATALOGUE_SCOPES);
+    // Packs installed under Workforce before WI-OI-107 still count as installed and active.
+    const scopes = [...Object.values(GOVERNED_CATALOGUE_SCOPES), ...Object.values(LEGACY_GOVERNED_CATALOGUE_SCOPES)];
     const identity = scopes.map(({ moduleKey, entityKey }) => ({ moduleKey, entityKey }));
     const [changeSets, activations] = await Promise.all([
       prisma.configurationChangeSet.findMany({
@@ -1912,9 +1930,15 @@ export class ConfigurationStudioService {
     ]);
     return listBundledGovernedCatalogues().map((item) => {
       const scope = GOVERNED_CATALOGUE_SCOPES[item.kind];
-      const same = (row: { moduleKey: string; entityKey: string; surfaceKey: string }) =>
-        row.moduleKey === scope.moduleKey && row.entityKey === scope.entityKey && row.surfaceKey === item.surfaceKey;
-      return { ...item, ...scope, latestChangeSet: changeSets.find(same) ?? null, activation: activations.find(same) ?? null };
+      const legacy = item.kind === 'METRIC_CATALOGUE' ? null : LEGACY_GOVERNED_CATALOGUE_SCOPES[item.kind];
+      const inScope = (target: { moduleKey: string; entityKey: string } | null) => (row: { moduleKey: string; entityKey: string; surfaceKey: string }) =>
+        target !== null && row.moduleKey === target.moduleKey && row.entityKey === target.entityKey && row.surfaceKey === item.surfaceKey;
+      return {
+        ...item,
+        ...scope,
+        latestChangeSet: changeSets.find(inScope(scope)) ?? changeSets.find(inScope(legacy)) ?? null,
+        activation: activations.find(inScope(scope)) ?? activations.find(inScope(legacy)) ?? null,
+      };
     });
   }
 
@@ -1933,18 +1957,18 @@ export class ConfigurationStudioService {
   async currentGovernedCatalogue(tenantId: string, kind: GovernedCatalogueKind, surfaceKey: string) {
     return this.withRuntimeMetric('current', async () => {
       const { moduleKey, entityKey } = GOVERNED_CATALOGUE_SCOPES[kind];
-      await this.requireEntitlement(tenantId, moduleKey);
+      // Packs belong to the solution, not a module (WI-OI-107): no module entitlement is needed to read them.
+      if (moduleKey !== SOLUTION_CONFIGURATION_MODULE_KEY) await this.requireEntitlement(tenantId, moduleKey);
       const scope = this.runtimeScope.resolve(moduleKey);
-      const manifest = await this.loadRuntimeManifest(
-        tenantId,
-        moduleKey,
-        entityKey,
-        surfaceKey,
-        scope.environmentKey,
-        scope.cohortKey,
-        [],
-      );
-      return { ...manifest, scope };
+      const load = (fromModuleKey: string) =>
+        this.loadRuntimeManifest(tenantId, fromModuleKey, entityKey, surfaceKey, scope.environmentKey, scope.cohortKey, []);
+      try {
+        return { ...(await load(moduleKey)), scope };
+      } catch (error) {
+        // A pack installed under Workforce before WI-OI-107 is still read.
+        if (kind === 'METRIC_CATALOGUE' || !(error instanceof HttpException) || error.getStatus() !== 404) throw error;
+        return { ...(await load(LEGACY_GOVERNED_CATALOGUE_SCOPES[kind].moduleKey)), scope };
+      }
     });
   }
 
@@ -2026,6 +2050,7 @@ export class ConfigurationStudioService {
         },
         data: { status: 'INACTIVE', deactivatedAt: now },
       });
+      await this.deactivateOtherPacks(tx, tenantId, definition.entityKey, definition.surfaceKey, scope.environmentKey, scope.cohortKey);
       const created = await tx.configurationActivation.create({
         data: {
           tenantId,
@@ -2045,7 +2070,7 @@ export class ConfigurationStudioService {
         publishedVersionId: published.id,
         checksum: published.checksum,
       });
-      return created;
+      return { created, published };
     });
     this.manifestCache.invalidate({
       tenantId,
@@ -2055,13 +2080,99 @@ export class ConfigurationStudioService {
       environmentKey: scope.environmentKey,
       cohortKey: scope.cohortKey,
     });
-    return activation;
+    return { ...activation.created, ...(await this.applyPack(tenantId, actorId, activation.created.id, activation.published)) };
+  }
+
+  /**
+   * WI-OI-107: a tenant has one active industry pack and one active country pack. Activating one deactivates the
+   * other packs of that kind, whether installed at the solution scope or under Workforce before WI-OI-107.
+   */
+  private async deactivateOtherPacks(
+    tx: Prisma.TransactionClient,
+    tenantId: string,
+    entityKey: string,
+    surfaceKey: string,
+    environmentKey: string,
+    cohortKey: string,
+  ): Promise<void> {
+    if (entityKey !== 'industry-pack' && entityKey !== 'country-pack') return;
+    await tx.configurationActivation.updateMany({
+      where: {
+        tenantId,
+        moduleKey: { in: [SOLUTION_CONFIGURATION_MODULE_KEY, LEGACY_GOVERNED_CATALOGUE_SCOPES.INDUSTRY_PACK.moduleKey] },
+        entityKey,
+        surfaceKey: { not: surfaceKey },
+        environmentKey,
+        cohortKey,
+        status: 'ACTIVE',
+      },
+      data: { status: 'INACTIVE', deactivatedAt: new Date() },
+    });
+  }
+
+  /** WI-OI-107: after a pack version becomes active, each module that reads it is sent its section (kernel jobs). */
+  private async applyPack(
+    tenantId: string,
+    actorId: string,
+    activationId: string,
+    published: { id: string; checksum: string; manifest: unknown },
+  ): Promise<{ packApplications?: Array<{ moduleKey: string; jobId: string }>; packApplicationError?: string }> {
+    if (!this.packApplications || !isGovernedCatalogueDefinition(published.manifest)) return {};
+    try {
+      const queued = await this.packApplications.enqueueForActivation({
+        tenantId,
+        actorId,
+        activationId,
+        publishedVersionId: published.id,
+        checksum: published.checksum,
+        manifest: published.manifest,
+      });
+      return queued.length ? { packApplications: queued } : {};
+    } catch (error) {
+      // The activation stands; the modules keep their previous section until the pack is activated again.
+      this.logger.error(`[tenant:${tenantId}] pack ${published.id} was activated but not sent to modules: ${(error as Error).message}`);
+      return { packApplicationError: 'The pack is active, but sending it to the modules failed; activate it again to retry.' };
+    }
+  }
+
+  /**
+   * WI-OI-107: the tenant's active industry and country packs, in the solution-layer format whichever scope they were
+   * installed in, for server-side readers such as Demo Lab.
+   */
+  async activePacks(tenantId: string): Promise<{
+    industry: { surfaceKey: string; publishedVersionId: string; activatedAt: Date; pack: IndustryPackV2 } | null;
+    country: { surfaceKey: string; publishedVersionId: string; activatedAt: Date; pack: CountryPackV2 } | null;
+  }> {
+    const active = await prisma.configurationActivation.findMany({
+      where: {
+        tenantId,
+        status: 'ACTIVE',
+        moduleKey: { in: [SOLUTION_CONFIGURATION_MODULE_KEY, LEGACY_GOVERNED_CATALOGUE_SCOPES.INDUSTRY_PACK.moduleKey] },
+        entityKey: { in: ['industry-pack', 'country-pack'] },
+      },
+      include: { publishedVersion: { select: { manifest: true } } },
+      orderBy: { activatedAt: 'desc' },
+    });
+    const pick = (entityKey: string) => active.find((row) => row.entityKey === entityKey && isGovernedCatalogueDefinition(row.publishedVersion.manifest));
+    const industry = pick('industry-pack');
+    const country = pick('country-pack');
+    const catalogueOf = (row: (typeof active)[number]) => (row.publishedVersion.manifest as unknown as GovernedCatalogueDefinition).catalogue;
+    return {
+      industry: industry
+        ? { surfaceKey: industry.surfaceKey, publishedVersionId: industry.publishedVersionId, activatedAt: industry.activatedAt, pack: normaliseIndustryPack(catalogueOf(industry) as Parameters<typeof normaliseIndustryPack>[0]) }
+        : null,
+      country: country
+        ? { surfaceKey: country.surfaceKey, publishedVersionId: country.publishedVersionId, activatedAt: country.activatedAt, pack: normaliseCountryPack(catalogueOf(country) as Parameters<typeof normaliseCountryPack>[0]) }
+        : null,
+    };
   }
 
   private async assertAuthorable(tenantId: string, definition: ConfigurationChangeSetDefinition) {
     if (isGovernedCatalogueDefinition(definition)) {
-      // The schema pins each catalogue kind to its module and entity; the tenant must be entitled to it.
-      await this.requireEntitlement(tenantId, (definition as GovernedCatalogueDefinition).moduleKey);
+      // The schema pins each catalogue kind to its module and entity; the tenant must be entitled to that module.
+      // Packs belong to the solution layer (WI-OI-107) and need no module entitlement.
+      const { moduleKey } = definition as GovernedCatalogueDefinition;
+      if (moduleKey !== SOLUTION_CONFIGURATION_MODULE_KEY) await this.requireEntitlement(tenantId, moduleKey);
       return;
     }
     this.assertRegisteredSurface(definition as ConfigurationDefinition);

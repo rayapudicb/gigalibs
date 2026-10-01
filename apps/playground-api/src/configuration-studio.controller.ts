@@ -435,6 +435,13 @@ export class ConfigurationStudioController {
     return this.configuration.currentGovernedCatalogue(tenantId, query.kind, query.surfaceKey);
   }
 
+  /** WI-OI-107: the workspace's active industry and country packs, in the solution-layer format. */
+  @Get('packs/active')
+  @RequirePermissions('configuration-runtime:read')
+  async activePacks(@CurrentTenant('tenantId') tenantId: string) {
+    return this.configuration.activePacks(tenantId);
+  }
+
   @Get('runtime/manifest')
   @RequirePermissions('configuration-runtime:read')
   async runtime(

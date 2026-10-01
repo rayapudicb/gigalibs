@@ -1,20 +1,20 @@
 # NOW: where the work stands
 
-Updated 2026-09-30 by Claude (WI-OI-105 done and live; F8, F14 and F15 closed). Keep this file to one page.
+Updated 2026-10-01 by Claude (WI-OI-107 done and live; F8, F10, F14 and F15 closed). Keep this file to one page.
 Replace old content rather than appending to it, and update it at the end of every task.
 
 ## State
 
 - **Branch:** `feat/gigaops-convergence-core`, local only, never pushed.
-- **No active implementation item.** WI-OI-104 (F8, F14) and WI-OI-105 (F15) are done, live and in Review. WI-OI-103 is
-  in Review with 103f and the old-engine cleanup open. WI-OI-106 to WI-OI-108 are Proposed.
+- **No active implementation item.** WI-OI-104 (F8, F14), WI-OI-105 (F15) and WI-OI-107 (F10) are done, live and in
+  Review. WI-OI-103 is in Review with 103f and the old-engine cleanup open. WI-OI-106 and WI-OI-108 are Proposed.
 - **Wave 0:** WI-OI-080, 081, 082, 083 and 085 are in Review, waiting for human reviews. WI-OI-084 (mobile) has
   not started.
-- **Running locally (2026-09-30 23:18):** every service is on `042d22787b32-d3e901751025`; the web is on 5180.
-  - Schemas: Analytics 25, Connector Hub 8, Geospatial 6, CMMS 14, Workforce 14; Redis and the kernel worker run.
-  - Backup before the WI-OI-105 migrations: `infra/compose/backups/gigalibs_backup_20260930_170556Z.dump`.
-  - Live proofs pass: the web proof (14 Playwright tests) and the places proof (a member scoped to Farm B sees only
-    Farm B on the place map).
+- **Running locally (2026-10-01 07:56):** every service is on `2a48e326e327-93674f4f9ea2`; the web is on 5180.
+  - Schemas: Analytics 25, Connector Hub 8, Geospatial 8, CMMS 14, Workforce 16; Redis and the kernel worker run.
+  - Backups are taken before every deploy run (`infra/compose/backups/`).
+  - Live proofs pass: the web proof (14 Playwright tests), the places proof (WI-OI-105) and the packs proof (a pack
+    activated in Configuration Studio reaches Workforce and Geospatial; one industry pack at a time).
 
 ## What is live for the owner (5180)
 
@@ -25,16 +25,19 @@ Replace old content rather than appending to it, and update it at the end of eve
     place code); the unplaced count shows on each dataset.
   - **Explore:** any chart type, a Place filter (a farm and its fields), and **Map (places)**; save the question.
   - Dashboards, Reports, Places; every answer honours the member's place scope.
+- **Configuration › Industry packs:** the shipped industry and country packs (agriculture starter pack included),
+  installed per tenant, then approved, published and activated in Studio; Workforce and Geospatial receive their part.
 
 ## Next
 
 **Owner plan (2026-09-30):** close the rest of the foundation before the agriculture package
-(`.pi/tasks/FOUNDATION-CLOSE.md`): WI-OI-107 (F10), WI-OI-106 (F17), the 103 leftovers, WI-OI-108, the fresh-install
-fix (item 7) and the core push intake (item 8). Then the agriculture package.
+(`.pi/tasks/FOUNDATION-CLOSE.md`): WI-OI-106 (F17, Reports v2), the 103 leftovers (F13), WI-OI-108, the fresh-install
+fix (item 7), the core push intake (item 8) and the F3 engine clean-up (item 9). Then the agriculture package.
 
 ## Open decisions (owner)
 
 - Replay the 980 place facts dead-lettered during the WI-OI-105 swap (test tenants only), or leave them.
+- Removing the unregistered Workforce prototype (packs, payroll and others) is a package-inventory (F7) decision.
 - CMMS and Workforce give a member only their exact assigned place; Analytics (and the platform contract) include
   everything inside it. Align them or keep the stricter rule.
 - Fresh install fails on an empty database (two migration problems, `.pi/tasks/FOUNDATION-CLOSE.md` item 7).

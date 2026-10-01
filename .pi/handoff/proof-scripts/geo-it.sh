@@ -31,7 +31,7 @@ INSERT INTO gigalibs_geospatial.outbox_events (id, tenant_id, topic, event_type,
   '{"nodeId":"00000000-0000-4000-8000-0000000000a1","change":"UPDATED","path":"NORTH","previousPath":null,"parentId":null,"nodeTypeCode":"FARM","countryCode":null,"subdivisionCode":null,"timeZone":null,"status":"ACTIVE","aggregateVersion":2}'),
  ('type-1', 'geo-a', 'geospatial.facts.v1', 'SpatialNodeTypeCreatedV1', 'SPATIAL_NODE_TYPE', '00000000-0000-4000-8000-0000000000f1', 1, 'seed', 1, '{}');
 SQL
-migrate "$MIG" 6
+migrate "$MIG" 8
 # The relay tests count facts from the seeded state, so they run before the inbox adds places.
-cd "$REPO" && { GEOSPATIAL_TEST_DATABASE_URL="$RUNTIME" npx vitest run modules/geospatial/apps/api/src --exclude '**/inbox/**' 2>&1; \
-  GEOSPATIAL_TEST_DATABASE_URL="$RUNTIME" npx vitest run modules/geospatial/apps/api/src/inbox 2>&1; } | sed "s/\x1b\[[0-9;]*m//g" | grep -E "Tests |✓ .*(relay|inbox)|×|FAIL|Error:|expected|received" | head -30
+cd "$REPO" && { GEOSPATIAL_TEST_DATABASE_URL="$RUNTIME" npx vitest run modules/geospatial/apps/api/src --exclude "**/inbox/**" --exclude "**/pack/*.integration.test.ts" 2>&1; \
+  GEOSPATIAL_TEST_DATABASE_URL="$RUNTIME" npx vitest run modules/geospatial/apps/api/src/inbox modules/geospatial/apps/api/src/pack 2>&1; } | sed "s/\x1b\[[0-9;]*m//g" | grep -E "Tests |✓ .*(relay|inbox|pack)|×|FAIL|Error:|expected|received" | head -30

@@ -10,7 +10,7 @@ import {
   MAX_PLACE_ANALYTICS_WINDOW_DAYS,
   estimateDemoLabFacts,
   type DemoLabGenerateRequestV1,
-  type IndustryPackV1,
+  type IndustryPackV2,
 } from '@gigalibs/contracts';
 import { NextResponse } from 'next/server';
 
@@ -84,21 +84,18 @@ async function generate(request: Request, session: Session): Promise<NextRespons
   const options = generateOptions(raw);
   if (!options) return problem(400, `Send optional days (7–${MAX_PLACE_ANALYTICS_WINDOW_DAYS}) and seed only.`);
 
-  const catalogues = await controlJson<{ items: Array<{ kind: string; surfaceKey: string; activation: unknown }> }>(
-    '/api/v1/configuration/catalogues',
-  );
-  const active = catalogues?.items.find((item) => item.kind === 'INDUSTRY_PACK' && item.activation);
-  if (!active) return problem(409, 'Activate an industry pack in this workspace first.');
-  const current = await controlJson<{ manifest: { catalogue: IndustryPackV1 } }>(
-    `/api/v1/configuration/catalogues/current?kind=INDUSTRY_PACK&surfaceKey=${encodeURIComponent(active.surfaceKey)}`,
-  );
-  if (!current) return problem(502, 'The active industry pack could not be read.');
-  const pack = current.manifest.catalogue;
-  const perDay = estimateDemoLabFacts(pack.demoProfile, 1);
+  // WI-OI-107: the active industry pack in the solution-layer format, whichever scope it was installed in.
+  const active = await controlJson<{ industry: { pack: IndustryPackV2 } | null }>('/api/v1/configuration/packs/active');
+  if (!active) return problem(502, 'The active industry pack could not be read.');
+  const pack = active.industry?.pack;
+  if (!pack) return problem(409, 'Activate an industry pack in this workspace first.');
+  const placeTypes = pack.modules.geospatial?.lists?.placeTypes ?? [];
+  if (!pack.demo || placeTypes.length === 0) return problem(409, 'The active industry pack has no Demo Lab profile.');
+  const perDay = estimateDemoLabFacts(pack.demo, 1);
   const days = Math.max(7, Math.min(options.days ?? 180, Math.floor(MAX_DEMO_LAB_FACTS / perDay), MAX_PLACE_ANALYTICS_WINDOW_DAYS));
   const body: DemoLabGenerateRequestV1 = {
-    placeTypes: pack.placeTypes.slice(0, pack.demoProfile.zonesPerSite > 0 ? 3 : 2),
-    demoProfile: pack.demoProfile,
+    placeTypes: placeTypes.slice(0, pack.demo.zonesPerSite > 0 ? 3 : 2),
+    demoProfile: pack.demo,
     days,
     endDate: new Date().toISOString().slice(0, 10),
     seed: options.seed ?? 42,

@@ -2,7 +2,7 @@ import { createPublicKey } from 'node:crypto';
 
 const GEOSPATIAL_AUDIENCE = 'gigalibs-geospatial-api';
 // The exact gigalibs_geospatial schema this image supports; must equal the last runtime-foundation migration.
-export const GEOSPATIAL_SCHEMA_CONTRACT_VERSION = 6;
+export const GEOSPATIAL_SCHEMA_CONTRACT_VERSION = 8;
 
 export interface GeospatialRuntimeConfig {
   readonly nodeEnv: string;

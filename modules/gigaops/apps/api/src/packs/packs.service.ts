@@ -1,7 +1,11 @@
+import { SHIPPED_COUNTRY_PACKS, SHIPPED_INDUSTRY_PACKS, type CountryPackV2, type IndustryPackV2 } from '@gigalibs/contracts';
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import * as fs from 'node:fs';
-import * as path from 'node:path';
 import type { Pool } from 'pg';
+
+// Prototype pack reader (not wired into the running Workforce service). WI-OI-107 (ADR-0016 F10): it reads the packs
+// shipped at the solution layer (`solutions/packs`, compiled into @gigalibs/contracts) instead of its own JSON copies,
+// and the per-tenant pack switch (`POST packs/activate`) is retired: packs are activated in Configuration Studio and
+// sent to Workforce by the kernel (`v1/pack`). Removing this prototype is a package-inventory decision (F7).
 
 export interface IndustryPack {
   slug: string;
@@ -81,54 +85,29 @@ export const GIGAOPS_DB_POOL = 'GIGAOPS_DB_POOL';
 
 @Injectable()
 export class PacksService {
-  private readonly configDir: string;
   private readonly cache = new Map<string, { pack: MergedPack; expiresAt: number }>();
   private readonly TTL_MS = 5 * 60 * 1000; // 5 minutes
 
-  constructor(@Inject(GIGAOPS_DB_POOL) private readonly db: Pool) {
-    // Determine path to modules/gigaops/config
-    const cwd = process.cwd();
-    const candidatePaths = [
-      path.resolve(cwd, 'modules/gigaops/config'),
-      path.resolve(cwd, 'config'),
-      path.resolve(__dirname, '../../../../config'),
-      path.resolve(__dirname, '../../../config'),
-    ];
-    this.configDir = candidatePaths.find((p) => fs.existsSync(p)) ?? candidatePaths[0];
-  }
+  constructor(@Inject(GIGAOPS_DB_POOL) private readonly db: Pool) {}
 
   getIndustries(): IndustryPack[] {
-    const dir = path.join(this.configDir, 'industry-packs');
-    if (!fs.existsSync(dir)) return [];
-    return fs
-      .readdirSync(dir)
-      .filter((file) => file.endsWith('.json'))
-      .map((file) => JSON.parse(fs.readFileSync(path.join(dir, file), 'utf8')));
+    return SHIPPED_INDUSTRY_PACKS.map(legacyIndustryPack);
   }
 
   getCountries(): CountryPack[] {
-    const dir = path.join(this.configDir, 'country-packs');
-    if (!fs.existsSync(dir)) return [];
-    return fs
-      .readdirSync(dir)
-      .filter((file) => file.endsWith('.json'))
-      .map((file) => JSON.parse(fs.readFileSync(path.join(dir, file), 'utf8')));
+    return SHIPPED_COUNTRY_PACKS.map(legacyCountryPack);
   }
 
   loadIndustryPack(slug: string): IndustryPack {
-    const filePath = path.join(this.configDir, 'industry-packs', `${slug}.json`);
-    if (!fs.existsSync(filePath)) {
-      throw new NotFoundException(`Industry pack '${slug}' not found.`);
-    }
-    return JSON.parse(fs.readFileSync(filePath, 'utf8'));
+    const pack = SHIPPED_INDUSTRY_PACKS.find((candidate) => candidate.slug === slug);
+    if (!pack) throw new NotFoundException(`Industry pack '${slug}' not found.`);
+    return legacyIndustryPack(pack);
   }
 
   loadCountryPack(code: string): CountryPack {
-    const filePath = path.join(this.configDir, 'country-packs', `${code}.json`);
-    if (!fs.existsSync(filePath)) {
-      throw new NotFoundException(`Country pack '${code}' not found.`);
-    }
-    return JSON.parse(fs.readFileSync(filePath, 'utf8'));
+    const pack = SHIPPED_COUNTRY_PACKS.find((candidate) => candidate.code === code);
+    if (!pack) throw new NotFoundException(`Country pack '${code}' not found.`);
+    return legacyCountryPack(pack);
   }
 
   async getActivePack(tenantId: string, stateCode?: string): Promise<MergedPack> {
@@ -178,35 +157,33 @@ export class PacksService {
 
     return merged;
   }
+}
 
-  async activatePack(
-    tenantId: string,
-    industrySlug: string,
-    countryCode: string,
-    activatedBy?: string,
-  ): Promise<MergedPack> {
-    // Validate that JSONs exist
-    this.loadIndustryPack(industrySlug);
-    this.loadCountryPack(countryCode);
+// The prototype's own shape, from a shipped pack's Workforce sections.
+function legacyIndustryPack(pack: IndustryPackV2): IndustryPack {
+  const workforce = pack.modules.gigaops;
+  return {
+    slug: pack.slug,
+    label: pack.label,
+    emoji: pack.emoji ?? '',
+    terminology: workforce!.vocabulary!.terms,
+    ...(workforce?.vocabulary?.roleLabels ? { roleLabels: workforce.vocabulary.roleLabels } : {}),
+    ...(workforce?.vocabulary?.classificationLabels ? { classificationLabels: workforce.vocabulary.classificationLabels } : {}),
+    requiredCertifications: workforce?.lists?.certifications ?? [],
+    defaultPayTypeCode: workforce!.capabilities!.defaultPayTypeCode,
+    features: workforce!.capabilities!.features,
+  };
+}
 
-    // Deactivate previous
-    await this.db.query(
-      `UPDATE gigalibs_gigaops.tenant_packs 
-       SET is_active = false 
-       WHERE tenant_id = $1`,
-      [tenantId],
-    );
-
-    // Insert new active
-    await this.db.query(
-      `INSERT INTO gigalibs_gigaops.tenant_packs (tenant_id, industry_slug, country_code, activated_by, is_active)
-       VALUES ($1, $2, $3, $4, true)`,
-      [tenantId, industrySlug, countryCode, activatedBy ?? null],
-    );
-
-    // Bust cache
-    this.cache.delete(tenantId);
-
-    return this.getActivePack(tenantId);
-  }
+function legacyCountryPack(pack: CountryPackV2): CountryPack {
+  const rules = pack.modules.gigaops!.rules!;
+  return {
+    code: pack.code,
+    label: pack.label,
+    currency: pack.currency,
+    weeklyOtThreshold: rules.weeklyOtThreshold,
+    dataRetentionMonths: pack.dataRetentionMonths,
+    payroll: rules.payroll as CountryPack['payroll'],
+    exportFormats: rules.exportFormats,
+  };
 }

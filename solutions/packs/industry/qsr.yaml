@@ -1,0 +1,63 @@
+# Industry pack: Quick Service Restaurant & F&B (WI-OI-107, ADR-0016 F10). Validated and compiled by `pnpm modules:catalog`.
+formatVersion: 2
+slug: qsr
+label: Quick Service Restaurant & F&B
+emoji: 🍔
+version: '1.0'
+modules:
+  gigaops:
+    vocabulary:
+      terms:
+        workUnit: Day Part
+        role: Station
+        position: Crew Slot
+        worker: Team Member
+        agreement: Offer Letter
+      roleLabels:
+        workforce_manager: Store Manager
+        ops_supervisor: Shift Supervisor
+        time_approver: Team Lead
+      classificationLabels:
+        W2: Full-Time Team Member
+        CASUAL: Part-Time Crew
+        PERMANENT: Assistant Manager
+    lists:
+      certifications:
+        - slug: food-handler
+          label: Food Handler Card
+          required: true
+        - slug: servsafe-manager
+          label: ServSafe Manager
+          required: false
+        - slug: allergen-safety
+          label: Allergen Awareness
+          required: false
+    capabilities:
+      defaultPayTypeCode: 10ST
+      features:
+        perDiem: false
+        flatRates: false
+        guaranteedHours: false
+        unionSupport: false
+        vendorPay: false
+        clockPunches: true
+        mobileTimesheet: true
+  geospatial:
+    lists:
+      placeTypes:
+        - code: REGION
+          label: Region
+        - code: STORE
+          label: Store
+        - code: AREA
+          label: Area
+demo:
+  currency: USD
+  regions: 4
+  sitesPerRegion: 25
+  zonesPerSite: 2
+  labourHoursPerSitePerDay: 120
+  labourCostPerHour: 16
+  spendPerSitePerDay: 2600
+  downtimeMinutesPerSitePerDay: 18
+  carbonKgPerLabourHour: 1.1

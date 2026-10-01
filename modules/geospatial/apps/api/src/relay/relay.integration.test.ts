@@ -37,7 +37,7 @@ integration('Geospatial places reach Analytics', () => {
     );
 
   beforeAll(async () => {
-    db = new GeospatialDatabaseService({ databaseUrl, databasePoolSize: 3, expectedMigrationVersion: 6 } as never);
+    db = new GeospatialDatabaseService({ databaseUrl, databasePoolSize: 3, expectedMigrationVersion: 8 } as never);
     await db.onModuleInit();
   });
   afterAll(async () => {

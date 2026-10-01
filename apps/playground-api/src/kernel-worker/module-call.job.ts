@@ -7,12 +7,20 @@
 
 import { createPrivateKey } from 'node:crypto';
 import { buildPlatformContext, signPlatformContextToken } from '@gigalibs/auth-core';
-import { SCHEDULED_OPERATIONS } from '@gigalibs/contracts';
+import { SCHEDULED_OPERATIONS, type PackApplicationV1 } from '@gigalibs/contracts';
 import { type EnqueueJobCommand, type JobDefinition, NonRetryableJobError } from '@gigalibs/jobs';
 import { HttpException } from '@nestjs/common';
 
 export interface SubjectContextSource {
   getSubjectContext(userId: string, tenantId: string, contextId: string): Promise<Parameters<typeof buildPlatformContext>[0] & { permissions: string[] }>;
+}
+
+/**
+ * WI-OI-107: where a `pack.apply` job finds what it sends. The job holds only the published pack version; the module's
+ * section is read from that version when the job runs, so the payload stays small and the pack immutable.
+ */
+export interface PackSectionSource {
+  application(tenantId: string, publishedVersionId: string, moduleKey: string): Promise<PackApplicationV1 | null>;
 }
 
 interface Operation {
@@ -23,6 +31,8 @@ interface Operation {
   readonly permission: string;
   readonly path: (payload: ModuleCallPayload) => string;
   readonly body: (payload: ModuleCallPayload, jobId: string) => Record<string, unknown>;
+  /** Pack applications read their body from the published pack instead: this module's section (its manifest name). */
+  readonly packSection?: 'gigaops' | 'geospatial';
 }
 
 export type ModuleCallPayload =
@@ -30,7 +40,18 @@ export type ModuleCallPayload =
   | { readonly operation: 'connector-hub.sync'; readonly connectionId: string }
   | { readonly operation: 'analytics.dataset-build'; readonly mappingId: string }
   /** Chained after a dataset build (never scheduled directly). */
-  | { readonly operation: 'analytics.summaries-build'; readonly datasetVersionId: string };
+  | { readonly operation: 'analytics.summaries-build'; readonly datasetVersionId: string }
+  /** WI-OI-107: queued when a tenant activates an industry or country pack (never scheduled directly). */
+  | { readonly operation: 'workforce.pack-apply' | 'geospatial.pack-apply'; readonly publishedVersionId: string };
+
+/**
+ * The pack-apply operation of each module that reads packs, by the module's name in packs (its manifest name), with
+ * the catalogue key its tenants are entitled to.
+ */
+export const PACK_APPLY_OPERATIONS = {
+  gigaops: { operation: 'workforce.pack-apply', entitlementKey: 'gigaops' },
+  geospatial: { operation: 'geospatial.pack-apply', entitlementKey: 'geospatial-studio' },
+} as const;
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const IDENTIFIER = /^[A-Za-z0-9._:-]{1,128}$/;
@@ -73,6 +94,26 @@ export const MODULE_CALL_OPERATIONS: Readonly<Record<ModuleCallPayload['operatio
     path: (payload) => `v1/datasets/${(payload as { datasetVersionId: string }).datasetVersionId}/summaries`,
     body: () => ({}),
   },
+  'workforce.pack-apply': {
+    moduleKey: 'gigaops',
+    audience: 'gigalibs-workforce-api',
+    baseUrlEnvironment: 'WORKFORCE_API_URL',
+    privateKeyEnvironment: 'WORKFORCE_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64',
+    permission: 'workforce.configuration.manage',
+    path: () => 'v1/pack/apply',
+    body: () => ({}),
+    packSection: 'gigaops',
+  },
+  'geospatial.pack-apply': {
+    moduleKey: 'geospatial-studio',
+    audience: 'gigalibs-geospatial-api',
+    baseUrlEnvironment: 'GEOSPATIAL_API_URL',
+    privateKeyEnvironment: 'GEOSPATIAL_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64',
+    permission: 'maps.node-types.manage',
+    path: () => 'v1/pack/apply',
+    body: () => ({}),
+    packSection: 'geospatial',
+  },
 };
 
 export function parseModuleCallPayload(value: unknown): ModuleCallPayload {
@@ -89,6 +130,14 @@ export function parseModuleCallPayload(value: unknown): ModuleCallPayload {
   if (input.operation === 'analytics.summaries-build' && typeof input.datasetVersionId === 'string' && UUID.test(input.datasetVersionId)) {
     return { operation: 'analytics.summaries-build', datasetVersionId: input.datasetVersionId };
   }
+  // Configuration Studio's published version ids are cuids, not UUIDs.
+  if (
+    (input.operation === 'workforce.pack-apply' || input.operation === 'geospatial.pack-apply') &&
+    typeof input.publishedVersionId === 'string' &&
+    /^[A-Za-z0-9_-]{8,64}$/.test(input.publishedVersionId)
+  ) {
+    return { operation: input.operation, publishedVersionId: input.publishedVersionId };
+  }
   throw new NonRetryableJobError('NOT_SCHEDULABLE', 'The scheduled operation is not one that can be scheduled.');
 }
 
@@ -99,6 +148,8 @@ export function moduleCallPayload(operation: ModuleCallPayload['operation'], tar
     'connector-hub.sync': { connectionId: targetId },
     'analytics.dataset-build': { mappingId: targetId },
     'analytics.summaries-build': { datasetVersionId: targetId },
+    'workforce.pack-apply': { publishedVersionId: targetId },
+    'geospatial.pack-apply': { publishedVersionId: targetId },
   }[operation];
   return parseModuleCallPayload({ operation, ...target });
 }
@@ -114,6 +165,9 @@ export function moduleCallTarget(payload: ModuleCallPayload): string {
       return payload.mappingId;
     case 'analytics.summaries-build':
       return payload.datasetVersionId;
+    case 'workforce.pack-apply':
+    case 'geospatial.pack-apply':
+      return payload.publishedVersionId;
   }
 }
 
@@ -125,9 +179,9 @@ export function isOwnerRefusal(error: unknown): boolean {
   return error instanceof HttpException && [401, 403].includes(error.getStatus());
 }
 
-/** `*`, `resource:*` or the exact permission, as the modules check it. */
+/** `*`, `<prefix>:*` or the exact permission, as the modules check it (`maps:*` grants `maps.node-types.manage`). */
 export function grants(permissions: readonly string[], required: string): boolean {
-  return permissions.includes('*') || permissions.includes(required) || permissions.includes(`${required.split(':')[0]}:*`);
+  return permissions.includes('*') || permissions.includes(required) || permissions.includes(`${required.split(/[:.]/)[0]}:*`);
 }
 
 export function moduleCallJob(
@@ -135,6 +189,7 @@ export function moduleCallJob(
   environment: NodeJS.ProcessEnv = process.env,
   fetchImpl: typeof fetch = fetch,
   enqueue?: EnqueueFollowUp,
+  packs?: PackSectionSource,
 ): JobDefinition<ModuleCallPayload> {
   return {
     type: 'module.call',
@@ -163,6 +218,13 @@ export function moduleCallJob(
       } catch (error) {
         throw new NonRetryableJobError('ENTITLEMENT_MISSING', (error as Error).message);
       }
+      let requestBody: Record<string, unknown> = operation.body(context.payload, context.jobId);
+      if (operation.packSection) {
+        if (!packs) throw new NonRetryableJobError('WORKER_NOT_CONFIGURED', 'The kernel worker cannot read packs.');
+        const application = await packs.application(context.tenantId, moduleCallTarget(context.payload), operation.packSection);
+        if (!application) throw new NonRetryableJobError('PACK_NOT_FOUND', `The pack version has no ${operation.packSection} section for this workspace.`);
+        requestBody = application;
+      }
       const token = signPlatformContextToken(claims, signingKey(environment, operation.privateKeyEnvironment));
       const baseUrl = environment[operation.baseUrlEnvironment]?.replace(/\/+$/, '');
       if (!baseUrl) throw new NonRetryableJobError('WORKER_NOT_CONFIGURED', `${operation.baseUrlEnvironment} is not configured for the kernel worker.`);
@@ -174,7 +236,7 @@ export function moduleCallJob(
           Accept: 'application/json',
           'X-Correlation-Id': context.correlationId,
         },
-        body: JSON.stringify(operation.body(context.payload, context.jobId)),
+        body: JSON.stringify(requestBody),
         signal: context.signal,
       });
       const text = await response.text();

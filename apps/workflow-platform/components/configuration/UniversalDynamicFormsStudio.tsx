@@ -66,6 +66,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { ModuleControlBar } from '@/components/layout/ModuleControlBar';
+import { SolutionPacksPanel } from '@/components/configuration/SolutionPacksPanel';
 
 type StudioTab = 'templates' | 'industry-packs' | 'active-apps' | 'surfaces';
 
@@ -274,8 +275,7 @@ export function UniversalDynamicFormsStudio({
             },
             {
               id: 'industry-packs',
-              label: 'Industry Operations Packs',
-              badge: INDUSTRY_WORKFORCE_TEMPLATES.length,
+              label: 'Industry packs',
               icon: <ShieldCheck className="h-4 w-4 text-purple-600" />,
             },
             {
@@ -481,11 +481,15 @@ export function UniversalDynamicFormsStudio({
         {/* TAB: INDUSTRY OPERATIONS PACKS (ADR-0003) */}
         {activeTab === 'industry-packs' && (
           <div className="space-y-6">
+            {/* WI-OI-107: the packs shipped at the solution layer; the form templates below are layer 2 (WI-OI-075). */}
+            <SolutionPacksPanel
+              canInstall={permissions.includes('*') || permissions.includes('configuration:*') || permissions.includes('configuration:draft')}
+            />
             <div className="rounded-xl border border-purple-200 bg-purple-50/40 p-5">
               <div className="flex items-center gap-2">
                 <ShieldCheck className="h-5 w-5 text-purple-600" />
                 <h2 className="text-base font-bold text-zinc-950">
-                  Universal Workforce Industry Operations Packs
+                  Form templates by industry
                 </h2>
                 <span className="rounded-full bg-purple-100 px-2.5 py-0.5 text-xs font-mono font-bold text-purple-700">
                   ADR-0003 Phase 7

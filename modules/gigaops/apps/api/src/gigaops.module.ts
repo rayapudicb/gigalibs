@@ -32,6 +32,8 @@ import { TimeService } from './time/time.service.js';
 import { PayController } from './pay/pay.controller.js';
 import { PayExportService } from './pay/pay-export.service.js';
 import { PayService } from './pay/pay.service.js';
+import { WorkforcePackController } from './pack/pack.controller.js';
+import { WorkforcePackService } from './pack/pack.service.js';
 
 @Module({
   controllers: [
@@ -55,12 +57,14 @@ import { PayService } from './pay/pay.service.js';
     TimeCorrectionsController,
     TimeExceptionsController,
     PayController,
+    WorkforcePackController,
   ],
   providers: [
     GigaOpsConfigProvider,
     WorkforceDatabaseService,
     GigaOpsAuthorizationGuard,
     WorkforceResourcesService,
+    WorkforcePackService,
     JobsService,
     AvailabilityService,
     BookingsService,

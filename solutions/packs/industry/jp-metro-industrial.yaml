@@ -1,0 +1,69 @@
+# Industry pack: Japan Metro & Industrial Field Ops (現場) (WI-OI-107, ADR-0016 F10). Validated and compiled by `pnpm modules:catalog`.
+formatVersion: 2
+slug: jp-metro-industrial
+label: Japan Metro & Industrial Field Ops (現場)
+emoji: 🚅
+version: '1.0'
+modules:
+  gigaops:
+    vocabulary:
+      terms:
+        workUnit: 現場 / 工区 (Work Section)
+        role: 職種 (Trade Craft)
+        position: 配置スロット (Staff Slot)
+        worker: 作業員 (Field Specialist)
+        agreement: 請負・雇用契約 (Subcontract Covenant)
+      roleLabels:
+        track_maintenance: 保線工 (Track Maintenance Specialist)
+        electrical_signaling: 信号・通信電工 (Rail Signaling Electrician)
+        catenary_lineman: 架線工 (Overhead Catenary Specialist)
+        safety_watchman: 列車見張員 (Train Approach Safety Watchman)
+        heavy_equipment: 軌道モータカー操縦士 (Track Motorcar Operator)
+      classificationLabels:
+        PRIME: 元請社員 (Prime Contractor Employee)
+        TIER_1: 一次下請 (Tier 1 Subcontractor)
+        TIER_2: 二次下請 (Tier 2 Field Specialist)
+        CASUAL: 常用・日々雇用 (Casual Daily Specialist)
+    lists:
+      certifications:
+        - slug: tamakake
+          label: 玉掛け技能講習 (Crane Slinging License)
+          required: true
+        - slug: electrician_type2
+          label: 第二種電気工事士 (Type-2 Electrical Specialist)
+          required: false
+        - slug: track_watchman
+          label: 列車見張員認定証 (Rail Safety Watchman Certified)
+          required: true
+        - slug: oxygen_deficiency
+          label: 酸素欠乏危険作業主任者 (Confined Space Safety)
+          required: false
+    capabilities:
+      defaultPayTypeCode: HOURLY
+      features:
+        perDiem: true
+        flatRates: true
+        guaranteedHours: true
+        unionSupport: false
+        vendorPay: true
+        clockPunches: true
+        mobileTimesheet: true
+  geospatial:
+    lists:
+      placeTypes:
+        - code: REGION
+          label: Region
+        - code: PLANT
+          label: Plant
+        - code: LINE
+          label: Line
+demo:
+  currency: JPY
+  regions: 3
+  sitesPerRegion: 6
+  zonesPerSite: 8
+  labourHoursPerSitePerDay: 900
+  labourCostPerHour: 2600
+  spendPerSitePerDay: 4200000
+  downtimeMinutesPerSitePerDay: 45
+  carbonKgPerLabourHour: 6.5

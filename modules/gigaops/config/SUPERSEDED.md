@@ -1,7 +1,10 @@
-# Superseded prototype packs
+# Packs moved to the solution layer
 
-These JSON industry and country packs belong to the unregistered GigaOps prototype (`PacksService` is not part
-of the running Workforce module). Since WI-OI-064c the canonical packs are governed Configuration Studio
-catalogues bundled in `packages/configuration-core/src/governed-catalogues.ts` and installed per tenant through
-the change set → approval → publish → activation lifecycle. Edit the governed catalogues, not these files; they
-are retired with the rest of the prototype when P5 (WI-OI-065) replaces its payroll and pack code.
+The JSON industry and country packs that lived here (and the hand copy in
+`packages/configuration-core/src/governed-catalogues.ts`) were removed in WI-OI-107 (ADR-0016 F10). Industry and
+country packs are now one set of files in `solutions/packs/`, one section per module, compiled into
+`@gigalibs/contracts` (`SHIPPED_INDUSTRY_PACKS`, `SHIPPED_COUNTRY_PACKS`) by `pnpm modules:catalog`.
+
+A tenant activates a pack in Configuration Studio; the kernel then sends Workforce its section, which Workforce keeps
+(`GET v1/pack`). The unregistered prototype `PacksService` reads the shipped packs; removing the prototype is a
+package-inventory decision (F7).

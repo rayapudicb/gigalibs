@@ -1,0 +1,125 @@
+# Country pack: Japan (WI-OI-107, ADR-0016 F10). Validated and compiled by `pnpm modules:catalog`.
+formatVersion: 2
+code: JP
+label: Japan
+version: '1.0'
+currency: JPY
+timeZones:
+  - Asia/Tokyo
+subdivisions:
+  - code: JP-01
+    label: Hokkaido
+  - code: JP-02
+    label: Aomori
+  - code: JP-03
+    label: Iwate
+  - code: JP-04
+    label: Miyagi
+  - code: JP-05
+    label: Akita
+  - code: JP-06
+    label: Yamagata
+  - code: JP-07
+    label: Fukushima
+  - code: JP-08
+    label: Ibaraki
+  - code: JP-09
+    label: Tochigi
+  - code: JP-10
+    label: Gunma
+  - code: JP-11
+    label: Saitama
+  - code: JP-12
+    label: Chiba
+  - code: JP-13
+    label: Tokyo
+  - code: JP-14
+    label: Kanagawa
+  - code: JP-15
+    label: Niigata
+  - code: JP-16
+    label: Toyama
+  - code: JP-17
+    label: Ishikawa
+  - code: JP-18
+    label: Fukui
+  - code: JP-19
+    label: Yamanashi
+  - code: JP-20
+    label: Nagano
+  - code: JP-21
+    label: Gifu
+  - code: JP-22
+    label: Shizuoka
+  - code: JP-23
+    label: Aichi
+  - code: JP-24
+    label: Mie
+  - code: JP-25
+    label: Shiga
+  - code: JP-26
+    label: Kyoto
+  - code: JP-27
+    label: Osaka
+  - code: JP-28
+    label: Hyogo
+  - code: JP-29
+    label: Nara
+  - code: JP-30
+    label: Wakayama
+  - code: JP-31
+    label: Tottori
+  - code: JP-32
+    label: Shimane
+  - code: JP-33
+    label: Okayama
+  - code: JP-34
+    label: Hiroshima
+  - code: JP-35
+    label: Yamaguchi
+  - code: JP-36
+    label: Tokushima
+  - code: JP-37
+    label: Kagawa
+  - code: JP-38
+    label: Ehime
+  - code: JP-39
+    label: Kochi
+  - code: JP-40
+    label: Fukuoka
+  - code: JP-41
+    label: Saga
+  - code: JP-42
+    label: Nagasaki
+  - code: JP-43
+    label: Kumamoto
+  - code: JP-44
+    label: Oita
+  - code: JP-45
+    label: Miyazaki
+  - code: JP-46
+    label: Kagoshima
+  - code: JP-47
+    label: Okinawa
+dataRetentionMonths: 60
+modules:
+  gigaops:
+    rules:
+      weeklyOtThreshold: 40
+      payroll:
+        type: JAPAN_LABOUR_STANDARDS_ACT
+        dailyRegularCap: 8
+        dailyOtCap: null
+        otMultiplier: 1.25
+        dtMultiplier: null
+        holidayRegularCap: 0
+        holidayOtMultiplier: 1.35
+        holidayDtMultiplier: null
+        seventhDayRule: false
+      exportFormats:
+        - code: XLSX
+          label: Payroll register (Excel)
+          periodDays: 30
+        - code: CSV
+          label: Payroll export CSV
+          periodDays: 30

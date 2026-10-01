@@ -1,14 +1,15 @@
 import { createHash } from 'node:crypto';
 import {
   GovernedCatalogueDefinitionSchema,
+  SHIPPED_COUNTRY_PACKS,
+  SHIPPED_INDUSTRY_PACKS,
+  SOLUTION_CONFIGURATION_MODULE_KEY,
+  normaliseCountryPack,
+  normaliseIndustryPack,
   type GovernedCatalogueDefinition,
   type GovernedCatalogueKind,
 } from '@gigalibs/contracts';
-import {
-  BUNDLED_COUNTRY_PACKS,
-  BUNDLED_INDUSTRY_PACKS,
-  BUNDLED_METRIC_CATALOGUES,
-} from './governed-catalogues.js';
+import { BUNDLED_METRIC_CATALOGUES } from './governed-catalogues.js';
 import { CONFIGURATION_COMPILER_VERSION, canonicalJson, type ConfigurationFinding } from './index.js';
 
 export type CompiledGovernedCatalogue = GovernedCatalogueDefinition & {
@@ -45,7 +46,8 @@ export function compileGovernedCatalogue(input: unknown): {
 
 /**
  * Breaking when a published catalogue loses an entry that consumers may reference: a metric key, a place type,
- * or a subdivision. Additions and label changes are compatible.
+ * or a subdivision. Additions and label changes are compatible. Legacy (V1) and solution-layer (V2) packs compare
+ * by the same entries, so moving a tenant from one to the other is judged on content.
  */
 export function classifyGovernedCatalogueChange(
   previous: GovernedCatalogueDefinition,
@@ -56,9 +58,11 @@ export function classifyGovernedCatalogueChange(
       case 'METRIC_CATALOGUE':
         return new Set(definition.catalogue.metrics.map((metric) => `metric:${metric.key}`));
       case 'INDUSTRY_PACK':
-        return new Set(definition.catalogue.placeTypes.map((type) => `place:${type.code}`));
+        return new Set(
+          (normaliseIndustryPack(definition.catalogue).modules.geospatial?.lists?.placeTypes ?? []).map((type) => `place:${type.code}`),
+        );
       case 'COUNTRY_PACK':
-        return new Set(definition.catalogue.subdivisions.map((subdivision) => `subdivision:${subdivision.code}`));
+        return new Set(normaliseCountryPack(definition.catalogue).subdivisions.map((subdivision) => `subdivision:${subdivision.code}`));
     }
   };
   const after = keys(next);
@@ -77,16 +81,17 @@ export function bundledGovernedCatalogue(
         ? { contractVersion: '1.0', kind, moduleKey: 'analytics-studio', entityKey: 'metric-catalogue', surfaceKey, title: bundled.title, catalogue: bundled.catalogue }
         : undefined;
     }
+    // WI-OI-107: packs are installed at the solution scope, as format 2.
     case 'INDUSTRY_PACK': {
-      const pack = BUNDLED_INDUSTRY_PACKS.find((candidate) => candidate.slug === surfaceKey);
+      const pack = SHIPPED_INDUSTRY_PACKS.find((candidate) => candidate.slug === surfaceKey);
       return pack
-        ? { contractVersion: '1.0', kind, moduleKey: 'gigaops', entityKey: 'industry-pack', surfaceKey, title: pack.label, catalogue: pack }
+        ? { contractVersion: '2.0', kind, moduleKey: SOLUTION_CONFIGURATION_MODULE_KEY, entityKey: 'industry-pack', surfaceKey, title: pack.label, catalogue: pack }
         : undefined;
     }
     case 'COUNTRY_PACK': {
-      const pack = BUNDLED_COUNTRY_PACKS.find((candidate) => candidate.code.toLowerCase() === surfaceKey);
+      const pack = SHIPPED_COUNTRY_PACKS.find((candidate) => candidate.code.toLowerCase() === surfaceKey);
       return pack
-        ? { contractVersion: '1.0', kind, moduleKey: 'gigaops', entityKey: 'country-pack', surfaceKey, title: pack.label, catalogue: pack }
+        ? { contractVersion: '2.0', kind, moduleKey: SOLUTION_CONFIGURATION_MODULE_KEY, entityKey: 'country-pack', surfaceKey, title: pack.label, catalogue: pack }
         : undefined;
     }
   }
@@ -96,7 +101,7 @@ export function bundledGovernedCatalogue(
 export function listBundledGovernedCatalogues(): readonly { kind: GovernedCatalogueKind; surfaceKey: string; title: string }[] {
   return Object.freeze([
     ...BUNDLED_METRIC_CATALOGUES.map((item) => ({ kind: 'METRIC_CATALOGUE' as const, surfaceKey: item.key, title: item.title })),
-    ...BUNDLED_INDUSTRY_PACKS.map((pack) => ({ kind: 'INDUSTRY_PACK' as const, surfaceKey: pack.slug, title: pack.label })),
-    ...BUNDLED_COUNTRY_PACKS.map((pack) => ({ kind: 'COUNTRY_PACK' as const, surfaceKey: pack.code.toLowerCase(), title: pack.label })),
+    ...SHIPPED_INDUSTRY_PACKS.map((pack) => ({ kind: 'INDUSTRY_PACK' as const, surfaceKey: pack.slug, title: pack.label })),
+    ...SHIPPED_COUNTRY_PACKS.map((pack) => ({ kind: 'COUNTRY_PACK' as const, surfaceKey: pack.code.toLowerCase(), title: pack.label })),
   ]);
 }

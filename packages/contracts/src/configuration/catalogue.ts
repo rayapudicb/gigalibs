@@ -6,6 +6,7 @@ import {
   OperationalFactTypeV1Schema,
   type MetricSpecV1,
 } from '../analytics/index.js';
+import { CountryPackV2Schema, IndustryPackV2Schema, type CountryPackV2, type IndustryPackV2 } from './packs.js';
 
 // ─── Governed catalogue definitions (WI-OI-064c) ─────────────────────────────
 // Metric catalogues, industry packs and country packs use Configuration Studio's change set → approval →
@@ -61,7 +62,10 @@ export type MetricCatalogueV1 = z.infer<typeof MetricCatalogueV1Schema>;
 
 const SlugSchema = z.string().regex(/^[a-z][a-z0-9-]{0,62}$/, 'Use lower-case letters, digits or hyphens.');
 
-/** One industry template: vocabulary, certifications, features, place levels and the synthetic demo profile. */
+/**
+ * Legacy (WI-OI-064c) industry pack, owned by Workforce. Superseded by `IndustryPackV2` at the solution layer
+ * (WI-OI-107); kept so packs already installed in Configuration Studio stay readable (see `normaliseIndustryPack`).
+ */
 export const IndustryPackV1Schema = z
   .object({
     slug: SlugSchema,
@@ -110,7 +114,7 @@ const PayrollRulesSchema = z
   })
   .strict();
 
-/** One country: currency, time zones, ISO 3166-2 jurisdictions and statutory working-time defaults. */
+/** Legacy (WI-OI-064c) country pack; superseded by `CountryPackV2` (WI-OI-107) and kept readable. */
 export const CountryPackV1Schema = z
   .object({
     code: z.string().regex(/^([A-Z]{2})$/, 'Use an ISO 3166-1 alpha-2 code or EU.'),
@@ -147,12 +151,21 @@ export type CountryPackV1 = z.infer<typeof CountryPackV1Schema>;
 export const GovernedCatalogueKindSchema = z.enum(['METRIC_CATALOGUE', 'INDUSTRY_PACK', 'COUNTRY_PACK']);
 export type GovernedCatalogueKind = z.infer<typeof GovernedCatalogueKindSchema>;
 
+/** The Configuration Studio scope of solution-level catalogues: they belong to no module (WI-OI-107). */
+export const SOLUTION_CONFIGURATION_MODULE_KEY = 'solution';
+
 /** Where each catalogue kind lives in Configuration Studio's module/entity/surface identity. */
 export const GOVERNED_CATALOGUE_SCOPES = Object.freeze({
   METRIC_CATALOGUE: Object.freeze({ moduleKey: 'analytics-studio', entityKey: 'metric-catalogue' }),
+  INDUSTRY_PACK: Object.freeze({ moduleKey: SOLUTION_CONFIGURATION_MODULE_KEY, entityKey: 'industry-pack' }),
+  COUNTRY_PACK: Object.freeze({ moduleKey: SOLUTION_CONFIGURATION_MODULE_KEY, entityKey: 'country-pack' }),
+} satisfies Record<GovernedCatalogueKind, { moduleKey: string; entityKey: string }>);
+
+/** Where packs were installed before WI-OI-107 (under Workforce); still read, never written. */
+export const LEGACY_GOVERNED_CATALOGUE_SCOPES = Object.freeze({
   INDUSTRY_PACK: Object.freeze({ moduleKey: 'gigaops', entityKey: 'industry-pack' }),
   COUNTRY_PACK: Object.freeze({ moduleKey: 'gigaops', entityKey: 'country-pack' }),
-} satisfies Record<GovernedCatalogueKind, { moduleKey: string; entityKey: string }>);
+});
 
 const KebabKeySchema = z.string().trim().min(2).max(80).regex(/^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/, 'Use lowercase kebab-case');
 const catalogueEnvelope = {
@@ -167,7 +180,7 @@ const catalogueEnvelope = {
  * definition. `surfaceKey` names the catalogue within its kind (`operations`, `qsr`, `jp`).
  */
 export const GovernedCatalogueDefinitionSchema = z
-  .discriminatedUnion('kind', [
+  .union([
     z.object({
       ...catalogueEnvelope,
       kind: z.literal('METRIC_CATALOGUE'),
@@ -175,6 +188,24 @@ export const GovernedCatalogueDefinitionSchema = z
       entityKey: z.literal('metric-catalogue'),
       catalogue: MetricCatalogueV1Schema,
     }).strict(),
+    // WI-OI-107: packs at the solution layer.
+    z.object({
+      ...catalogueEnvelope,
+      contractVersion: z.literal('2.0'),
+      kind: z.literal('INDUSTRY_PACK'),
+      moduleKey: z.literal(SOLUTION_CONFIGURATION_MODULE_KEY),
+      entityKey: z.literal('industry-pack'),
+      catalogue: IndustryPackV2Schema,
+    }).strict(),
+    z.object({
+      ...catalogueEnvelope,
+      contractVersion: z.literal('2.0'),
+      kind: z.literal('COUNTRY_PACK'),
+      moduleKey: z.literal(SOLUTION_CONFIGURATION_MODULE_KEY),
+      entityKey: z.literal('country-pack'),
+      catalogue: CountryPackV2Schema,
+    }).strict(),
+    // Legacy packs installed under Workforce before WI-OI-107: readable, no longer shipped.
     z.object({
       ...catalogueEnvelope,
       kind: z.literal('INDUSTRY_PACK'),
@@ -202,6 +233,55 @@ export const GovernedCatalogueDefinitionSchema = z
     }
   });
 export type GovernedCatalogueDefinition = z.infer<typeof GovernedCatalogueDefinitionSchema>;
+
+/** A legacy V1 industry pack as a V2 pack (version 1.0), losing nothing. */
+export function industryPackV2FromV1(pack: IndustryPackV1): IndustryPackV2 {
+  return {
+    formatVersion: 2,
+    slug: pack.slug,
+    label: pack.label,
+    ...(pack.emoji ? { emoji: pack.emoji } : {}),
+    version: '1.0',
+    modules: {
+      gigaops: {
+        vocabulary: {
+          terms: pack.terminology,
+          ...(pack.roleLabels ? { roleLabels: pack.roleLabels } : {}),
+          ...(pack.classificationLabels ? { classificationLabels: pack.classificationLabels } : {}),
+        },
+        lists: { certifications: pack.requiredCertifications },
+        capabilities: { defaultPayTypeCode: pack.defaultPayTypeCode, features: pack.features },
+      },
+      geospatial: { lists: { placeTypes: pack.placeTypes } },
+    },
+    demo: pack.demoProfile,
+  };
+}
+
+/** A legacy V1 country pack as a V2 pack (version 1.0), losing nothing. */
+export function countryPackV2FromV1(pack: CountryPackV1): CountryPackV2 {
+  return {
+    formatVersion: 2,
+    code: pack.code,
+    label: pack.label,
+    version: '1.0',
+    currency: pack.currency,
+    timeZones: pack.timeZones,
+    subdivisions: pack.subdivisions,
+    dataRetentionMonths: pack.dataRetentionMonths,
+    modules: { gigaops: { rules: { weeklyOtThreshold: pack.weeklyOtThreshold, payroll: pack.payroll, exportFormats: pack.exportFormats } } },
+  };
+}
+
+/** Any installed industry pack (V2, or a legacy V1) as V2. */
+export function normaliseIndustryPack(catalogue: IndustryPackV1 | IndustryPackV2): IndustryPackV2 {
+  return 'formatVersion' in catalogue ? catalogue : industryPackV2FromV1(catalogue);
+}
+
+/** Any installed country pack (V2, or a legacy V1) as V2. */
+export function normaliseCountryPack(catalogue: CountryPackV1 | CountryPackV2): CountryPackV2 {
+  return 'formatVersion' in catalogue ? catalogue : countryPackV2FromV1(catalogue);
+}
 
 export function isGovernedCatalogueDefinition(value: unknown): value is { kind: GovernedCatalogueKind } {
   return !!value && typeof value === 'object' && 'kind' in value && GovernedCatalogueKindSchema.safeParse((value as { kind: unknown }).kind).success;

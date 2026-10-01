@@ -67,7 +67,7 @@ docker run --rm \
   --env "MODULE_RUNTIME_DATABASE_URL=${WORKFORCE_DATABASE_URL}" \
   --env MODULE_MIGRATIONS_DIRECTORY=/app/migrations \
   --env MODULE_SCHEMA=gigalibs_workforce \
-  --env MODULE_EXPECTED_MIGRATION_VERSION=14 \
+  --env MODULE_EXPECTED_MIGRATION_VERSION=16 \
   --env MODULE_APPEND_ONLY_TABLES=audit_events,booking_events,punches,punch_voids,time_corrections,earning_lines \
   --env MODULE_READ_ONLY_TABLES=auth_revocation_events \
   "${WORKFORCE_IMAGE}" run-module-migrations.mjs

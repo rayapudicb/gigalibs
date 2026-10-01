@@ -1,0 +1,44 @@
+# Country pack: United Kingdom (WI-OI-107, ADR-0016 F10). Validated and compiled by `pnpm modules:catalog`.
+formatVersion: 2
+code: GB
+label: United Kingdom
+version: '1.0'
+currency: GBP
+timeZones:
+  - Europe/London
+subdivisions:
+  - code: GB-ENG
+    label: England
+  - code: GB-SCT
+    label: Scotland
+  - code: GB-WLS
+    label: Wales
+  - code: GB-NIR
+    label: Northern Ireland
+dataRetentionMonths: 72
+modules:
+  gigaops:
+    rules:
+      weeklyOtThreshold: 48
+      payroll:
+        type: UK_PAYE
+        dailyRegularCap: 8
+        dailyOtCap: null
+        otMultiplier: 1.5
+        dtMultiplier: 2
+        holidayRegularCap: 8
+        holidayOtMultiplier: 1.5
+        holidayDtMultiplier: 2
+        seventhDayRule: true
+        deductions:
+          ni_class_1_employee_pct: 8
+          ni_class_1_employer_pct: 13.8
+          workplace_pension_employee_pct: 5
+          workplace_pension_employer_pct: 3
+      exportFormats:
+        - code: BACS_CSV
+          label: BACS Direct Credit File
+          periodDays: 30
+        - code: HMRC_RTI
+          label: HMRC RTI FPS Export
+          periodDays: 30

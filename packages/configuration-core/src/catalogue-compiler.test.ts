@@ -1,7 +1,6 @@
-import { resolveMetricSpec } from '@gigalibs/contracts';
+import { SHIPPED_COUNTRY_PACKS, industryPackV2FromV1, resolveMetricSpec, type GovernedCatalogueDefinition } from '@gigalibs/contracts';
 import { describe, expect, it } from 'vitest';
 import {
-  BUNDLED_COUNTRY_PACKS,
   bundledGovernedCatalogue,
   classifyGovernedCatalogueChange,
   compileGovernedCatalogue,
@@ -12,7 +11,8 @@ import {
 describe('governed catalogue compiler', () => {
   it('compiles every bundled catalogue with a stable checksum', () => {
     const bundled = listBundledGovernedCatalogues();
-    expect(bundled.filter((item) => item.kind === 'INDUSTRY_PACK')).toHaveLength(9);
+    // Nine converted packs plus the agriculture starter pack (WI-OI-107).
+    expect(bundled.filter((item) => item.kind === 'INDUSTRY_PACK')).toHaveLength(10);
     expect(bundled.filter((item) => item.kind === 'COUNTRY_PACK').map((item) => item.surfaceKey)).toEqual(['au', 'eu', 'gb', 'in', 'jp', 'us']);
     for (const item of bundled) {
       const definition = bundledGovernedCatalogue(item.kind, item.surfaceKey);
@@ -24,14 +24,16 @@ describe('governed catalogue compiler', () => {
   });
 
   it('ships the Japan pack with all 47 prefectures and statutory working-time defaults', () => {
-    const japan = BUNDLED_COUNTRY_PACKS.find((pack) => pack.code === 'JP')!;
+    const japan = SHIPPED_COUNTRY_PACKS.find((pack) => pack.code === 'JP')!;
+    const rules = japan.modules.gigaops!.rules!;
     expect(japan.subdivisions).toHaveLength(47);
     expect(japan.subdivisions[0]).toEqual({ code: 'JP-01', label: 'Hokkaido' });
     expect(japan.subdivisions[12]).toEqual({ code: 'JP-13', label: 'Tokyo' });
     expect(japan.subdivisions[46]).toEqual({ code: 'JP-47', label: 'Okinawa' });
-    expect(japan).toMatchObject({ currency: 'JPY', timeZones: ['Asia/Tokyo'], weeklyOtThreshold: 40 });
-    expect(japan.payroll).toMatchObject({ dailyRegularCap: 8, otMultiplier: 1.25, holidayOtMultiplier: 1.35 });
-    expect(japan.payroll.deductions).toBeUndefined();
+    expect(japan).toMatchObject({ currency: 'JPY', timeZones: ['Asia/Tokyo'] });
+    expect(rules.weeklyOtThreshold).toBe(40);
+    expect(rules.payroll).toMatchObject({ dailyRegularCap: 8, otMultiplier: 1.25, holidayOtMultiplier: 1.35 });
+    expect(rules.payroll.deductions).toBeUndefined();
   });
 
   it('rejects a ratio over an unknown metric, a mismatched pack key and a foreign subdivision', () => {
@@ -54,6 +56,38 @@ describe('governed catalogue compiler', () => {
     const fewer = { ...metrics, catalogue: { metrics: metrics.catalogue.metrics.filter((metric) => metric.key !== 'carbon_per_labour_hour') } };
     expect(classifyGovernedCatalogueChange(metrics, fewer)).toBe('BREAKING');
     expect(classifyGovernedCatalogueChange(fewer, metrics)).toBe('COMPATIBLE');
+  });
+
+  // WI-OI-107: packs install at the solution scope as format 2; a tenant's legacy V1 pack compares by content.
+  it('installs packs at the solution scope and compares a legacy V1 pack with its V2 successor by content', () => {
+    const agriculture = bundledGovernedCatalogue('INDUSTRY_PACK', 'agriculture')!;
+    expect(agriculture).toMatchObject({ contractVersion: '2.0', moduleKey: 'solution', entityKey: 'industry-pack' });
+    if (agriculture.kind !== 'INDUSTRY_PACK' || !('formatVersion' in agriculture.catalogue)) throw new Error('unexpected pack');
+    const v2 = agriculture.catalogue;
+    const placeTypes = v2.modules.geospatial!.lists!.placeTypes;
+    const legacy = {
+      contractVersion: '1.0',
+      kind: 'INDUSTRY_PACK',
+      moduleKey: 'gigaops',
+      entityKey: 'industry-pack',
+      surfaceKey: 'agriculture',
+      title: 'Agriculture',
+      catalogue: {
+        slug: 'agriculture',
+        label: 'Agriculture',
+        terminology: v2.modules.gigaops!.vocabulary!.terms,
+        requiredCertifications: v2.modules.gigaops!.lists!.certifications,
+        defaultPayTypeCode: v2.modules.gigaops!.capabilities!.defaultPayTypeCode,
+        features: v2.modules.gigaops!.capabilities!.features,
+        placeTypes,
+        demoProfile: v2.demo!,
+      },
+    } as const satisfies GovernedCatalogueDefinition;
+    expect(compileGovernedCatalogue(legacy).valid).toBe(true);
+    expect(classifyGovernedCatalogueChange(legacy, agriculture)).toBe('COMPATIBLE');
+    const fewer = { ...agriculture, catalogue: { ...v2, modules: { ...v2.modules, geospatial: { lists: { placeTypes: placeTypes.slice(0, 2) } } } } } as GovernedCatalogueDefinition;
+    expect(classifyGovernedCatalogueChange(agriculture, fewer)).toBe('BREAKING');
+    expect(industryPackV2FromV1(legacy.catalogue).modules.geospatial?.lists?.placeTypes).toEqual(placeTypes);
   });
 
   it('returns nothing for an unknown bundled catalogue', () => {

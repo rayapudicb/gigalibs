@@ -1,10 +1,6 @@
 import { randomBytes } from 'node:crypto';
-import {
-  BUNDLED_COUNTRY_PACKS,
-  BUNDLED_INDUSTRY_PACKS,
-  bundledGovernedCatalogue,
-} from '@gigalibs/configuration-core';
-import type { CreateDemoLabTenantDto, DeleteDemoLabTenantDto } from '@gigalibs/contracts';
+import { bundledGovernedCatalogue } from '@gigalibs/configuration-core';
+import { SHIPPED_COUNTRY_PACKS, SHIPPED_INDUSTRY_PACKS, type CreateDemoLabTenantDto, type DeleteDemoLabTenantDto } from '@gigalibs/contracts';
 import { prisma } from '@gigalibs/db';
 import { PlatformAdministrationService } from '@gigalibs/tenancy-nest';
 import { Injectable, NotFoundException } from '@nestjs/common';
@@ -26,14 +22,19 @@ export class DemoLabService {
 
   catalogues() {
     return {
-      industries: BUNDLED_INDUSTRY_PACKS.map((pack) => ({
-        slug: pack.slug,
-        label: pack.label,
-        emoji: pack.emoji ?? null,
-        placeTypes: pack.placeTypes,
-        demoProfile: pack.demoProfile,
-      })),
-      countries: BUNDLED_COUNTRY_PACKS.map((pack) => ({
+      // WI-OI-107: the packs shipped at the solution layer that carry a Demo Lab profile.
+      industries: SHIPPED_INDUSTRY_PACKS.flatMap((pack) =>
+        pack.demo
+          ? [{
+              slug: pack.slug,
+              label: pack.label,
+              emoji: pack.emoji ?? null,
+              placeTypes: pack.modules.geospatial?.lists?.placeTypes ?? [],
+              demoProfile: pack.demo,
+            }]
+          : [],
+      ),
+      countries: SHIPPED_COUNTRY_PACKS.map((pack) => ({
         code: pack.code.toLowerCase(),
         label: pack.label,
         currency: pack.currency,

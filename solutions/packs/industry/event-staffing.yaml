@@ -1,0 +1,64 @@
+# Industry pack: Event Staffing (WI-OI-107, ADR-0016 F10). Validated and compiled by `pnpm modules:catalog`.
+formatVersion: 2
+slug: event-staffing
+label: Event Staffing
+emoji: 🎤
+version: '1.0'
+modules:
+  gigaops:
+    vocabulary:
+      terms:
+        workUnit: Event
+        role: Job
+        position: Position
+        worker: Crew Member
+        agreement: Contract
+      roleLabels:
+        workforce_manager: Production Coordinator
+        ops_supervisor: Stage Manager
+        time_approver: Lead Crew Chief
+      classificationLabels:
+        W2: W2 Crew
+        CONTRACTOR: 1099 Tech
+        CASUAL: Local Runner
+        UNION_W2: IATSE Crew
+    lists:
+      certifications:
+        - slug: rigging-cert
+          label: Arena Rigging ETCP
+          required: false
+        - slug: electrical-safety
+          label: NFPA 70E Safety
+          required: false
+        - slug: forklift
+          label: Stage Forklift Operator
+          required: false
+    capabilities:
+      defaultPayTypeCode: 8ST_8OT
+      features:
+        perDiem: true
+        flatRates: true
+        guaranteedHours: true
+        unionSupport: true
+        vendorPay: true
+        clockPunches: true
+        mobileTimesheet: true
+  geospatial:
+    lists:
+      placeTypes:
+        - code: REGION
+          label: Region
+        - code: VENUE
+          label: Venue
+        - code: ZONE
+          label: Zone
+demo:
+  currency: USD
+  regions: 3
+  sitesPerRegion: 10
+  zonesPerSite: 6
+  labourHoursPerSitePerDay: 300
+  labourCostPerHour: 22
+  spendPerSitePerDay: 9000
+  downtimeMinutesPerSitePerDay: 10
+  carbonKgPerLabourHour: 0.8

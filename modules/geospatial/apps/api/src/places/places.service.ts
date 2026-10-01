@@ -79,30 +79,37 @@ export class PlacesService {
 
   async createNodeType(context: CommandContext, rawInput: unknown): Promise<SpatialNodeTypeV1> {
     const input = parse(CreateSpatialNodeTypeV1Schema, rawInput);
-    if (context.principal.spatialScope.mode !== 'UNBOUNDED') {
-      throw spatialScopeDenied('Place types are shared across the workspace; ask a workspace administrator.');
+    // Refused before any transaction opens; createNodeTypeIn checks again for callers inside one.
+    assertUnscopedForTypes(context);
+    return this.database.withTenantTransaction(context.principal.tenantId, (client) => this.createNodeTypeIn(client, context, input));
+  }
+
+  /** Inside the caller's tenant transaction (WI-OI-107: a pack activation seeds its place types with it). */
+  async createNodeTypeIn(
+    client: PoolClient,
+    context: CommandContext,
+    input: { readonly code: string; readonly label: string },
+  ): Promise<SpatialNodeTypeV1> {
+    assertUnscopedForTypes(context);
+    try {
+      const result = await client.query(
+        `INSERT INTO gigalibs_geospatial.spatial_node_types
+           (tenant_id, code, label, created_by, updated_by, correlation_id)
+         VALUES ($1, $2, $3, $4, $4, $5)
+         RETURNING *, 0 AS node_count`,
+        [context.principal.tenantId, input.code, input.label, context.principal.subject, context.correlationId],
+      );
+      const row = result.rows[0]!;
+      await recordAudit(client, context, 'SPATIAL_NODE_TYPE_CREATED', 'SPATIAL_NODE_TYPE', row.id, { code: input.code });
+      await recordOutbox(client, context, 'SpatialNodeTypeCreatedV1', 'SPATIAL_NODE_TYPE', row.id, 1, {
+        nodeTypeId: row.id,
+        code: input.code,
+        label: input.label,
+      });
+      return mapNodeType(row);
+    } catch (error) {
+      translateUnique(error, 'A node type with this code already exists.');
     }
-    return this.database.withTenantTransaction(context.principal.tenantId, async (client) => {
-      try {
-        const result = await client.query(
-          `INSERT INTO gigalibs_geospatial.spatial_node_types
-             (tenant_id, code, label, created_by, updated_by, correlation_id)
-           VALUES ($1, $2, $3, $4, $4, $5)
-           RETURNING *, 0 AS node_count`,
-          [context.principal.tenantId, input.code, input.label, context.principal.subject, context.correlationId],
-        );
-        const row = result.rows[0]!;
-        await recordAudit(client, context, 'SPATIAL_NODE_TYPE_CREATED', 'SPATIAL_NODE_TYPE', row.id, { code: input.code });
-        await recordOutbox(client, context, 'SpatialNodeTypeCreatedV1', 'SPATIAL_NODE_TYPE', row.id, 1, {
-          nodeTypeId: row.id,
-          code: input.code,
-          label: input.label,
-        });
-        return mapNodeType(row);
-      } catch (error) {
-        translateUnique(error, 'A node type with this code already exists.');
-      }
-    });
   }
 
   async listNodes(principal: GeospatialPrincipal, rawQuery: unknown): Promise<SpatialNodePageV1> {
@@ -823,6 +830,12 @@ export class PlacesService {
 /** Limits an ltree column to the scope roots bound as `$index` (an empty list matches nothing). */
 function inScope(column: string, index: number): string {
   return `${column} <@ ANY($${index}::ltree[])`;
+}
+
+function assertUnscopedForTypes(context: CommandContext): void {
+  if (context.principal.spatialScope.mode !== 'UNBOUNDED') {
+    throw spatialScopeDenied('Place types are shared across the workspace; ask a workspace administrator.');
+  }
 }
 
 function spatialScopeDenied(message: string): ForbiddenException {

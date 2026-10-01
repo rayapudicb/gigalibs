@@ -52,6 +52,7 @@ function fromLegacyRegex(source: string): string[] {
 
 const WORKFORCE_LEGACY_PATHS = [
   'v1/runtime/tenant-scope',
+  'v1/pack',
   'v1/resources',
   `v1/resources/${ID}`,
   `v1/resources/${ID}/capabilities`,

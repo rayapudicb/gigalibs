@@ -12,7 +12,7 @@ The owner chose to finish the open ADR-0016 foundation work before starting the 
    and retiring the connector copies in Analytics and the core API. **Done and live (Review); F8 and F14 closed.**
 3. **WI-OI-105** (F15): places with boundaries; area and containment computed in code; place scope enforced in every
    module query. **Done and live 2026-09-30 (Review); F15 closed** (`.pi/work/WI-OI-105.md`).
-4. **WI-OI-107** (F10): industry packs at the solution layer; Workforce's packs move into it.
+4. **WI-OI-107** (F10): industry packs at the solution layer; Workforce's packs move into it. **Done and live 2026-10-01 (Review); F10 closed** (`.pi/work/WI-OI-107.md`).
 5. **WI-OI-106** (F17): Reports v2, PDF and Excel.
 6. **WI-OI-108:** rebuild the contained other-stream forms properly.
 7. **Fresh install (found 2026-09-30 by the 104c worker smoke):** `prisma migrate deploy` on an empty database stops
@@ -28,6 +28,10 @@ The owner chose to finish the open ADR-0016 foundation work before starting the 
    - Its pull side (REST, CSV over HTTP, PostgreSQL) is retired in favour of Connector Hub.
    - Next: move webhooks and file uploads into Connector Hub, and re-home the event pipeline as a capability, with the
      owner's decisions on the four core connection screens and on the test-tenant data (40 connections).
+
+9. **F3 engine clean-up (added 2026-10-01, owner agreed):** WI-OI-102b decided one engine per job, but two retirements
+   are not done: the core API's own workflow controller (`apps/playground-api/src/workflow.*`) moves into Workflow
+   Studio, and the rules engines merge into one Rules capability module.
 
 ## Decisions (2026-09-30)
 

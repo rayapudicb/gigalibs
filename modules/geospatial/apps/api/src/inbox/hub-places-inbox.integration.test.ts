@@ -51,7 +51,7 @@ integration('Geospatial inbox for places pulled by Connector Hub', () => {
     ))[0]!;
 
   beforeAll(async () => {
-    db = new GeospatialDatabaseService({ databaseUrl, databasePoolSize: 3, expectedMigrationVersion: 6 } as never);
+    db = new GeospatialDatabaseService({ databaseUrl, databasePoolSize: 3, expectedMigrationVersion: 8 } as never);
     await db.onModuleInit();
     inbox = new HubPlacesInboxService(db, new PlacesService(db));
   });

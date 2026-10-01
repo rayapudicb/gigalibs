@@ -28,6 +28,8 @@ function requiredGeospatialPermission(method: string, path: readonly string[]): 
   if (joined === 'v1/nodes/mobile/sync' && method === 'GET') return 'maps.nodes.read';
   if (joined === 'v1/nodes/lookup/tag' && method === 'GET') return 'maps.nodes.read';
   if (joined === 'v1/nodes/import') return method === 'POST' ? 'maps.nodes.manage' : null;
+  // WI-OI-107: Geospatial's section of the active industry pack (applied by the kernel's pack.apply job, not the web).
+  if (joined === 'v1/pack' && method === 'GET') return 'maps.nodes.read';
   // WI-OI-105b: re-send every place to Analytics' place directory (members without a place scope only).
   if (joined === 'v1/nodes/republish') return method === 'POST' ? 'maps.nodes.manage' : null;
   if (new RegExp(`^v1/nodes/${UUID_SEGMENT}$`).test(joined)) {

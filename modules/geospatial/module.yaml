@@ -18,6 +18,10 @@ spec:
     - spatial-scope
     - geofence-evaluation
     - place-import
+  # WI-OI-107 (ADR-0016 F10): the industry-pack layers this module reads; schemas in @gigalibs/contracts
+  # (PACK_SECTION_SCHEMAS). Place types are seeded when a pack is activated.
+  pack:
+    industry: [lists]
   ui:
     application: apps/workflow-platform
     basePath: /maps

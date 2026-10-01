@@ -49,7 +49,7 @@ docker run --rm --add-host host.docker.internal:host-gateway \
   --env "MODULE_RUNTIME_DATABASE_URL=${RUNTIME_DATABASE_URL}" \
   --env MODULE_MIGRATIONS_DIRECTORY=/app/migrations \
   --env MODULE_SCHEMA=gigalibs_geospatial \
-  --env MODULE_EXPECTED_MIGRATION_VERSION=6 \
+  --env MODULE_EXPECTED_MIGRATION_VERSION=8 \
   --env MODULE_APPEND_ONLY_TABLES=audit_events \
   --env MODULE_READ_ONLY_TABLES=auth_revocation_events \
   "${GEOSPATIAL_IMAGE}" run-module-migrations.mjs >/dev/null

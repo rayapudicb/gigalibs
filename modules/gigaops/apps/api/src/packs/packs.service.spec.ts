@@ -2,6 +2,7 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { NotFoundException } from '@nestjs/common';
 import { PacksService } from './packs.service.js';
 
+// The prototype pack reader now reads the packs shipped at the solution layer (WI-OI-107).
 describe('GigaOps PacksService', () => {
   let mockDb: any;
   let service: PacksService;
@@ -47,5 +48,10 @@ describe('GigaOps PacksService', () => {
     const eventStaffing = service.loadIndustryPack('event-staffing');
     expect(eventStaffing.features.perDiem).toBe(true);
     expect(eventStaffing.features.flatRates).toBe(true);
+  });
+
+  it('5. Lists every shipped pack, including the agriculture starter pack', () => {
+    expect(service.getIndustries().map((pack) => pack.slug)).toContain('agriculture');
+    expect(service.getCountries().map((pack) => pack.code)).toEqual(expect.arrayContaining(['US', 'JP']));
   });
 });

@@ -12,10 +12,11 @@ vi.mock('../lib/authenticated-upstream', async (original) => ({
 }));
 
 const { privateKey, publicKey } = generateKeyPairSync('ed25519');
+// A solution-layer pack (WI-OI-107): place levels in the Geospatial section, the Demo Lab profile in `demo`.
 const pack = {
   slug: 'qsr',
-  placeTypes: [{ code: 'REGION', label: 'Region' }, { code: 'STORE', label: 'Store' }, { code: 'AREA', label: 'Area' }],
-  demoProfile: {
+  modules: { geospatial: { lists: { placeTypes: [{ code: 'REGION', label: 'Region' }, { code: 'STORE', label: 'Store' }, { code: 'AREA', label: 'Area' }] } } },
+  demo: {
     currency: 'USD', regions: 4, sitesPerRegion: 25, zonesPerSite: 2, labourHoursPerSitePerDay: 120,
     labourCostPerHour: 16, spendPerSitePerDay: 2600, downtimeMinutesPerSitePerDay: 18, carbonKgPerLabourHour: 1.1,
   },
@@ -74,10 +75,9 @@ describe('Demo Lab BFF route', () => {
 
   it('builds the generation request from the activated industry pack and signs it for Analytics', async () => {
     vi.mocked(verifiedSession).mockResolvedValue({ context: context(['analytics-studio', 'demo-lab']) } as never);
+    // WI-OI-107: the active pack arrives in the solution-layer format.
     vi.mocked(authenticatedUpstream).mockImplementation(async (_plane, path) =>
-      path.startsWith('/api/v1/configuration/catalogues/current')
-        ? Response.json({ manifest: { catalogue: pack } })
-        : Response.json({ items: [{ kind: 'INDUSTRY_PACK', surfaceKey: 'qsr', activation: { id: 'a1' } }] }),
+      path === '/api/v1/configuration/packs/active' ? Response.json({ industry: { pack }, country: null }) : new Response(null, { status: 404 }),
     );
     const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(Response.json({ facts: 24_000, rollupRows: 1, from: 'x', to: 'y' }));
     const response = await post('generate', { days: 30, seed: 7 });
@@ -85,18 +85,16 @@ describe('Demo Lab BFF route', () => {
     const [target, init] = fetchSpy.mock.calls[0]!;
     expect(String(target)).toBe('http://127.0.0.1:4400/v1/demo-lab/generate');
     const body = JSON.parse(String(init?.body));
-    expect(body).toMatchObject({ placeTypes: pack.placeTypes, demoProfile: pack.demoProfile, days: 30, seed: 7 });
+    expect(body).toMatchObject({ placeTypes: pack.modules.geospatial!.lists!.placeTypes, demoProfile: pack.demo, days: 30, seed: 7 });
     const token = new Headers(init?.headers).get('authorization')!.replace('Bearer ', '');
     expect(verifyPlatformContextToken(token, publicKey.export({ format: 'pem', type: 'spki' }).toString(), 'gigalibs-analytics-api').tenant_id).toBe('demo-tenant');
   });
 
   it('caps the days so a large profile stays within the synthetic fact limit', async () => {
     vi.mocked(verifiedSession).mockResolvedValue({ context: context(['analytics-studio', 'demo-lab']) } as never);
-    const big = { ...pack, demoProfile: { ...pack.demoProfile, regions: 20, sitesPerRegion: 50, zonesPerSite: 5 } };
+    const big = { ...pack, demo: { ...pack.demo!, regions: 20, sitesPerRegion: 50, zonesPerSite: 5 } };
     vi.mocked(authenticatedUpstream).mockImplementation(async (_plane, path) =>
-      path.startsWith('/api/v1/configuration/catalogues/current')
-        ? Response.json({ manifest: { catalogue: big } })
-        : Response.json({ items: [{ kind: 'INDUSTRY_PACK', surfaceKey: 'qsr', activation: { id: 'a1' } }] }),
+      path === '/api/v1/configuration/packs/active' ? Response.json({ industry: { pack: big }, country: null }) : new Response(null, { status: 404 }),
     );
     const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(Response.json({ facts: 1 }));
     await post('generate', { days: 365 });

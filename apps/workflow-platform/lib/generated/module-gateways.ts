@@ -48,6 +48,13 @@ export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGat
         }
       },
       {
+        "template": "v1/pack",
+        "pattern": "^v1/pack$",
+        "methods": {
+          "GET": "workforce:read"
+        }
+      },
+      {
         "template": "v1/resources",
         "pattern": "^v1/resources$",
         "methods": {

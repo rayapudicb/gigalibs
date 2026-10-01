@@ -1,0 +1,37 @@
+# Country pack: India (WI-OI-107, ADR-0016 F10). Validated and compiled by `pnpm modules:catalog`.
+formatVersion: 2
+code: IN
+label: India
+version: '1.0'
+currency: INR
+timeZones:
+  - Asia/Kolkata
+subdivisions: []
+dataRetentionMonths: 60
+modules:
+  gigaops:
+    rules:
+      weeklyOtThreshold: 48
+      payroll:
+        type: INDIA_FACTORIES_ACT
+        dailyRegularCap: 9
+        dailyOtCap: null
+        otMultiplier: 2
+        dtMultiplier: null
+        holidayRegularCap: 9
+        holidayOtMultiplier: 2
+        holidayDtMultiplier: 2
+        seventhDayRule: false
+        deductions:
+          epf_employee_pct: 12
+          epf_employer_pct: 12
+          esi_employee_pct: 0.75
+          esi_employer_pct: 3.25
+          pt_by_state: true
+      exportFormats:
+        - code: XLSX
+          label: Excel Payroll Register
+          periodDays: 30
+        - code: CSV
+          label: Generic Indian Bank Transfer CSV
+          periodDays: 7

@@ -61,6 +61,8 @@ export function legacyWorkforcePermission(
 ): string | readonly string[] | null {
   const joined = path.join('/');
   if (joined === 'v1/runtime/tenant-scope' && method === 'GET') return 'workforce:read';
+  // WI-OI-107: Workforce's section of the active packs, added after the gateways were generated.
+  if (joined === 'v1/pack' && method === 'GET') return 'workforce:read';
   if (joined === 'v1/resources' && method === 'GET') return 'workforce.resources.read';
   if (joined === 'v1/resources' && method === 'POST') return 'workforce.resources.manage';
   if (new RegExp(`^v1/resources/${UUID_SEGMENT}$`).test(joined)) {

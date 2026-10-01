@@ -681,6 +681,9 @@ export const ConfigurationActivationResponseSchema = z
     activatedById: ConfigurationResponseIdSchema,
     activatedAt: ConfigurationResponseDateSchema,
     deactivatedAt: ConfigurationResponseDateSchema.nullable(),
+    // WI-OI-107: for a pack, the kernel jobs sending each module its section (or why they could not be queued).
+    packApplications: z.array(z.object({ moduleKey: z.string().max(64), jobId: z.string().max(128) }).strict()).max(20).optional(),
+    packApplicationError: z.string().max(300).optional(),
   })
   .strict();
 
@@ -934,3 +937,5 @@ export type ConfigurationSavedFilterResponse = z.infer<
 >;
 
 export * from './catalogue.js';
+export * from './packs.js';
+export * from './packs.generated.js';
