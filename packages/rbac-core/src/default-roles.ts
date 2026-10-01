@@ -39,6 +39,8 @@ export function createDefaultRoleHierarchy(): RoleHierarchy {
         'configuration-apps:*',
         'configuration-runtime:*',
         'configuration-values:*',
+        // WI-OI-109 (ADR-0018): Tenant Admins hold every organization permission; a steward is a custom role.
+        'organization:*',
         'workforce:*',
         'maps:*',
         // WI-OI-038: Tenant Admins run the CMMS core (assets, work orders, PM, meters, parts); custom maintenance

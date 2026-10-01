@@ -12,15 +12,18 @@ import { TenantBoundaryGuard } from './guards/tenant-boundary.guard.js';
 import { PlatformAuthorityGuard } from './guards/platform-authority.guard.js';
 import { PlatformAdministrationController } from './platform-administration.controller.js';
 import { PlatformAdministrationService } from './platform-administration.service.js';
+import { OrganizationController } from './organization.controller.js';
+import { OrganizationService } from './organization.service.js';
 
 @Module({
-  controllers: [TenancyController, PlatformAdministrationController],
+  controllers: [TenancyController, PlatformAdministrationController, OrganizationController],
   providers: [
     TenancyService,
     TenantMiddleware,
     TenantBoundaryGuard,
     PlatformAuthorityGuard,
     PlatformAdministrationService,
+    OrganizationService,
   ],
   exports: [
     TenancyService,
@@ -28,6 +31,7 @@ import { PlatformAdministrationService } from './platform-administration.service
     TenantBoundaryGuard,
     PlatformAuthorityGuard,
     PlatformAdministrationService,
+    OrganizationService,
   ],
 })
 export class TenancyModule implements NestModule {
@@ -40,13 +44,14 @@ export class TenancyModule implements NestModule {
   static forRoot(): DynamicModule {
     return {
       module: TenancyModule,
-      controllers: [TenancyController, PlatformAdministrationController],
+      controllers: [TenancyController, PlatformAdministrationController, OrganizationController],
       providers: [
         TenancyService,
         TenantMiddleware,
         TenantBoundaryGuard,
         PlatformAuthorityGuard,
         PlatformAdministrationService,
+        OrganizationService,
       ],
       exports: [
         TenancyService,
@@ -54,6 +59,7 @@ export class TenancyModule implements NestModule {
         TenantBoundaryGuard,
         PlatformAuthorityGuard,
         PlatformAdministrationService,
+        OrganizationService,
       ],
     };
   }

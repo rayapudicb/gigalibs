@@ -1,12 +1,12 @@
 # NOW: where the work stands
 
-Updated 2026-10-01 (WI-OI-109 in progress: 109a and 109b done, 109b migration awaiting live apply; WI-OI-103/106 live proofs deferred for organization-aware rerun). Keep this file to one page.
+Updated 2026-10-01 (WI-OI-109 in progress: 109a–109c done, 109b migration awaiting live apply; WI-OI-103/106 live proofs deferred for organization-aware rerun). Keep this file to one page.
 Replace old content rather than appending to it, and update it at the end of every task.
 
 ## State
 
 - **Branch:** `feat/gigaops-convergence-core`, local only, never pushed.
-- **Active implementation item:** WI-OI-109 (universal organization hierarchy and enterprise scope), owner-approved 2026-10-01. 109a (reconciliation, ADR-0018 with D1–D6 accepted) and 109b (contracts, migration `20261001000000_organization_hierarchy`, Prisma models, throwaway upgrade proof) are done; evidence in `.pi/work/WI-OI-109.md`. WI-OI-103 and WI-OI-106 are in Review; their live deployment/proofs are deferred and must be rerun after organization-scope integration. WI-OI-104, 105 and 107 remain in Review; WI-OI-108 is Proposed.
+- **Active implementation item:** WI-OI-109 (universal organization hierarchy and enterprise scope), owner-approved 2026-10-01. 109a (reconciliation, ADR-0018 with D1–D6 accepted), 109b (contracts, migration `20261001000000_organization_hierarchy`, Prisma models, throwaway upgrade proof) and 109c (administration APIs, not deployed) are done; evidence in `.pi/work/WI-OI-109.md`. WI-OI-103 and WI-OI-106 are in Review; their live deployment/proofs are deferred and must be rerun after organization-scope integration. WI-OI-104, 105 and 107 remain in Review; WI-OI-108 is Proposed.
 - **Wave 0:** WI-OI-080, 081, 082, 083 and 085 are in Review, waiting for human reviews. WI-OI-084 (mobile) has
   not started.
 - **Running locally (2026-10-01 07:56):** every service is on `2a48e326e327-93674f4f9ea2`; the web is on 5180.
@@ -29,7 +29,7 @@ Replace old content rather than appending to it, and update it at the end of eve
 
 ## Next
 
-- **WI-OI-109c:** organization APIs, maker-checker publish (closure built at publish), activation, grants and the Department bridge. Then 109d admin UI, 109e IAM and module scope, 109f mobile/API contracts, 109g certification with the five reference structures.
+- **WI-OI-109d:** organization administration UI on the 109c APIs (31 operations, `docs/contracts/organization/openapi.json`). Then 109e IAM and module scope (with place links and the Department bridge), 109f mobile/API contracts, 109g certification with the five reference structures.
 - **Deferred Foundation Close:** WI-OI-103/WI-OI-106 organization-aware live proofs, WI-OI-108, the fresh-install fix (item 7), core push intake (item 8), and F3 engine clean-up (item 9).
 
 ## Open decisions (owner)

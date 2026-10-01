@@ -1,0 +1,250 @@
+{
+  "asyncapi": "3.0.0",
+  "info": {
+    "title": "GigaLibs Organization events",
+    "version": "1.0.0",
+    "description": "Written to platform_outbox_events in the same transaction as the change (aggregateType, aggregateId and aggregateVersion beside the payload). Consumers expand grants from the activated version (ADR-0018 §3)."
+  },
+  "channels": {
+    "organization_unit_type_changed_v1": {
+      "address": "organization.unit-type.changed.v1",
+      "messages": {
+        "organization_unit_type_changed_v1": {
+          "$ref": "#/components/messages/organization_unit_type_changed_v1"
+        }
+      }
+    },
+    "organization_unit_changed_v1": {
+      "address": "organization.unit.changed.v1",
+      "messages": {
+        "organization_unit_changed_v1": {
+          "$ref": "#/components/messages/organization_unit_changed_v1"
+        }
+      }
+    },
+    "organization_hierarchy_activated_v1": {
+      "address": "organization.hierarchy.activated.v1",
+      "messages": {
+        "organization_hierarchy_activated_v1": {
+          "$ref": "#/components/messages/organization_hierarchy_activated_v1"
+        }
+      }
+    },
+    "organization_scope_grant_changed_v1": {
+      "address": "organization.scope-grant.changed.v1",
+      "messages": {
+        "organization_scope_grant_changed_v1": {
+          "$ref": "#/components/messages/organization_scope_grant_changed_v1"
+        }
+      }
+    }
+  },
+  "operations": {
+    "publish_organization_unit_type_changed_v1": {
+      "action": "send",
+      "channel": {
+        "$ref": "#/channels/organization_unit_type_changed_v1"
+      }
+    },
+    "publish_organization_unit_changed_v1": {
+      "action": "send",
+      "channel": {
+        "$ref": "#/channels/organization_unit_changed_v1"
+      }
+    },
+    "publish_organization_hierarchy_activated_v1": {
+      "action": "send",
+      "channel": {
+        "$ref": "#/channels/organization_hierarchy_activated_v1"
+      }
+    },
+    "publish_organization_scope_grant_changed_v1": {
+      "action": "send",
+      "channel": {
+        "$ref": "#/channels/organization_scope_grant_changed_v1"
+      }
+    }
+  },
+  "components": {
+    "messages": {
+      "organization_unit_type_changed_v1": {
+        "name": "organization.unit-type.changed.v1",
+        "summary": "A unit type was created, changed, archived or restored.",
+        "payload": {
+          "type": "object",
+          "properties": {
+            "unitTypeId": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "code": {
+              "type": "string",
+              "pattern": "^[A-Z][A-Z0-9_]{0,39}$"
+            },
+            "holdsRecords": {
+              "type": "boolean"
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "ACTIVE",
+                "ARCHIVED"
+              ]
+            },
+            "version": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            }
+          },
+          "required": [
+            "unitTypeId",
+            "code",
+            "holdsRecords",
+            "status",
+            "version"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "organization_unit_changed_v1": {
+        "name": "organization.unit.changed.v1",
+        "summary": "A unit was created, changed, archived or restored.",
+        "payload": {
+          "type": "object",
+          "properties": {
+            "unitId": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "typeCode": {
+              "type": "string",
+              "pattern": "^[A-Z][A-Z0-9_]{0,39}$"
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "ACTIVE",
+                "INACTIVE",
+                "ARCHIVED"
+              ]
+            },
+            "version": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            }
+          },
+          "required": [
+            "unitId",
+            "typeCode",
+            "status",
+            "version"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "organization_hierarchy_activated_v1": {
+        "name": "organization.hierarchy.activated.v1",
+        "summary": "A published version takes effect for a tree from a moment.",
+        "payload": {
+          "type": "object",
+          "properties": {
+            "activationId": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "treeId": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "treeKind": {
+              "type": "string",
+              "enum": [
+                "PRIMARY",
+                "ALTERNATE"
+              ]
+            },
+            "versionId": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "versionNumber": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "checksum": {
+              "type": "string",
+              "pattern": "^sha256:[0-9a-f]{64}$"
+            },
+            "effectiveFrom": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "activationId",
+            "treeId",
+            "treeKind",
+            "versionId",
+            "versionNumber",
+            "checksum",
+            "effectiveFrom"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "organization_scope_grant_changed_v1": {
+        "name": "organization.scope-grant.changed.v1",
+        "summary": "A member was granted a unit, or a grant was revoked.",
+        "payload": {
+          "type": "object",
+          "properties": {
+            "grantId": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "userId": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "unitId": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "access": {
+              "type": "string",
+              "enum": [
+                "READ",
+                "READ_WRITE"
+              ]
+            },
+            "change": {
+              "type": "string",
+              "enum": [
+                "GRANTED",
+                "REVOKED"
+              ]
+            }
+          },
+          "required": [
+            "grantId",
+            "userId",
+            "unitId",
+            "access",
+            "change"
+          ],
+          "additionalProperties": false
+        }
+      }
+    }
+  }
+}

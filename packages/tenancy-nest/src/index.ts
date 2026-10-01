@@ -20,3 +20,5 @@ export * from './guards/platform-authority.guard.js';
 export * from './platform-administration.controller.js';
 export * from './platform-administration.service.js';
 export * from './platform-module-catalog.js';
+export * from './organization.controller.js';
+export * from './organization.service.js';

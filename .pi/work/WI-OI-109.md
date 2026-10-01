@@ -95,3 +95,33 @@ NOW.md) or grants the permission.
 - Clean install: not proven; blocked by FOUNDATION-CLOSE item 7 (fresh install fails before this migration).
 - `pnpm verify`: PASS (2114 tests passed, 142 skipped; the known WORKFORCE_API_URL profile drift). The governance
   active item moved from WI-OI-103 to WI-OI-109 to match the work register.
+
+## 109c domain and APIs
+
+Implemented 2026-10-01; not deployed. Place links and the Department bridge move to 109e, as the card orders them.
+
+- API: `OrganizationController` and `OrganizationService` in `packages/tenancy-nest`, 31 operations under
+  `/api/v1/tenants/current/organization`: unit types and units (create, change, archive, restore, search with cursor
+  pages), trees, drafts copied from the active version, one-level edge reads for tree views, place/move/remove
+  changes, validation, impact preview (added, removed, moved units and the grants they touch), submit, withdraw,
+  approve (never the author or submitter), reject, publish (closure and checksum built once), dated activation
+  (idempotent, never in the past), as-of reads and activation history, member grants (idempotent, members of the
+  tenant only, at most 200 each) and revocation.
+- Every transaction runs as `gigalibs_org_tenant` under forced RLS with the tenant set; audit rows, outbox events and
+  membership checks step out to the control plane inside the same transaction. Optimistic versions in request bodies
+  (409 on a stale version), ETag on single reads, safe 409/422 messages for database refusals, 500 for anything else.
+- Events in `platform_outbox_events`: `organization.unit-type.changed.v1`, `organization.unit.changed.v1`,
+  `organization.hierarchy.activated.v1`, `organization.scope-grant.changed.v1`.
+- Permissions `organization:read|draft|approve|activate|grant`; Tenant Admin holds `organization:*`; an organization
+  steward is a custom role. Registered on the tenancy kernel module with the four events.
+- Contracts: `packages/contracts/src/organization/api.ts` holds the route table and builds
+  `docs/contracts/organization/openapi.json` and `asyncapi.json` (`node scripts/write-organization-contracts.mjs`).
+- Evidence: `packages/tenancy-nest/src/organization.integration.test.ts` 8/8 on a throwaway PostgreSQL 16 restored
+  from the latest backup plus the migration (container removed): three-level retail tree, maker-checker refusal,
+  publish with closure, idempotent activation and key reuse, as-of reads, impact with an affected grant, validation
+  problems, whole-branch removal, archive guards, grant and revocation rules, tenant B sees nothing, audit and outbox
+  counts. Parity tests: controller routes, permissions and statuses equal the route table; committed documents equal
+  the contracts; SQL refusals map to safe errors. `pnpm verify` PASS (2123 tests passed, 150 skipped).
+- Not yet: an HTTP-level run through the real guards (109g live proof), and deployment: the API image must not ship
+  before the 109b migration is applied to the running database.
+

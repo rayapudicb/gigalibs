@@ -8,7 +8,7 @@ import {
   OrganizationScopeV2Schema,
   OrgTypeCodeSchema,
   OrgUnitCodeSchema,
-  ReplaceOrgDraftEdgesV1Schema,
+  UpdateOrgDraftEdgesV1Schema,
 } from './index.js';
 
 // WI-OI-109b (ADR-0018): the configurable hierarchy's request and runtime-scope contracts.
@@ -51,11 +51,14 @@ describe('organization hierarchy contracts', () => {
     expect(CreateOrgTreeV1Schema.safeParse({ code: 'primary', name: 'Organization', kind: 'PRIMARY', purpose: 'REPORTING' }).success).toBe(false);
   });
 
-  it('places each unit once and never under itself', () => {
-    const edges = [{ unitId: 'company', parentUnitId: null }, { unitId: 'north', parentUnitId: 'company' }];
-    expect(ReplaceOrgDraftEdgesV1Schema.safeParse({ expectedVersion: 1, edges }).success).toBe(true);
-    expect(ReplaceOrgDraftEdgesV1Schema.safeParse({ expectedVersion: 1, edges: [...edges, { unitId: 'north', parentUnitId: null }] }).success).toBe(false);
-    expect(ReplaceOrgDraftEdgesV1Schema.safeParse({ expectedVersion: 1, edges: [{ unitId: 'north', parentUnitId: 'north' }] }).success).toBe(false);
+  it('places each unit once and never under itself, and never places and removes a unit together', () => {
+    const upsert = [{ unitId: 'company', parentUnitId: null }, { unitId: 'north', parentUnitId: 'company' }];
+    expect(UpdateOrgDraftEdgesV1Schema.parse({ expectedVersion: 1, upsert })).toMatchObject({ remove: [] });
+    expect(UpdateOrgDraftEdgesV1Schema.safeParse({ expectedVersion: 1, upsert: [...upsert, { unitId: 'north', parentUnitId: null }] }).success).toBe(false);
+    expect(UpdateOrgDraftEdgesV1Schema.safeParse({ expectedVersion: 1, upsert: [{ unitId: 'north', parentUnitId: 'north' }] }).success).toBe(false);
+    expect(UpdateOrgDraftEdgesV1Schema.safeParse({ expectedVersion: 1, upsert, remove: ['north'] }).success).toBe(false);
+    expect(UpdateOrgDraftEdgesV1Schema.safeParse({ expectedVersion: 1 }).success).toBe(false);
+    expect(UpdateOrgDraftEdgesV1Schema.safeParse({ expectedVersion: 1, remove: Array.from({ length: 1_001 }, (_, i) => `u${i}`) }).success).toBe(false);
   });
 
   it('activates with a reason and an idempotency key', () => {

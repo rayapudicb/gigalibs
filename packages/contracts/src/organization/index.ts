@@ -156,19 +156,6 @@ export const OrgHierarchyEdgeV1Schema = z
   .strict();
 export type OrgHierarchyEdgeV1 = z.infer<typeof OrgHierarchyEdgeV1Schema>;
 
-/** A draft's whole tree: every unit once, with its parent in the same draft (or none for a root). */
-export const ReplaceOrgDraftEdgesV1Schema = z
-  .object({ expectedVersion: z.number().int().positive(), edges: z.array(OrgHierarchyEdgeV1Schema).max(MAX_ORG_UNITS) })
-  .strict()
-  .superRefine((input, context) => {
-    const seen = new Set<string>();
-    input.edges.forEach((edge, index) => {
-      if (seen.has(edge.unitId)) context.addIssue({ code: 'custom', path: ['edges', index, 'unitId'], message: 'Each unit appears once in a tree.' });
-      seen.add(edge.unitId);
-      if (edge.parentUnitId === edge.unitId) context.addIssue({ code: 'custom', path: ['edges', index, 'parentUnitId'], message: 'A unit cannot be its own parent.' });
-    });
-  });
-export type ReplaceOrgDraftEdgesV1 = z.input<typeof ReplaceOrgDraftEdgesV1Schema>;
 
 export const OrgHierarchyVersionV1Schema = z.object({
   id: IdSchema,
@@ -191,6 +178,11 @@ export type OrgHierarchyVersionV1 = z.infer<typeof OrgHierarchyVersionV1Schema>;
 export const OrgVersionTransitionV1Schema = z
   .object({ expectedVersion: z.number().int().positive(), reason: z.string().trim().min(3).max(500) })
   .strict();
+export type OrgVersionTransitionV1 = z.infer<typeof OrgVersionTransitionV1Schema>;
+
+/** Validation needs only the version the caller looked at. */
+export const OrgVersionCheckV1Schema = z.object({ expectedVersion: z.number().int().positive() }).strict();
+export type OrgVersionCheckV1 = z.infer<typeof OrgVersionCheckV1Schema>;
 
 export const ActivateOrgHierarchyV1Schema = z
   .object({
@@ -201,6 +193,7 @@ export const ActivateOrgHierarchyV1Schema = z
     idempotencyKey: z.string().trim().min(8).max(200),
   })
   .strict();
+export type ActivateOrgHierarchyV1 = z.infer<typeof ActivateOrgHierarchyV1Schema>;
 
 // ─── Place links and grants ──────────────────────────────────────────────────
 
@@ -261,3 +254,238 @@ export const OrganizationScopeV2Schema = z.discriminatedUnion('mode', [
   z.object({ mode: z.literal('DENIED') }).strict(),
 ]);
 export type OrganizationScopeV2 = z.infer<typeof OrganizationScopeV2Schema>;
+
+// ─── 109c: administration requests, queries, results and events ──────────────────────────────────────────────
+
+const ReasonSchema = z.string().trim().min(3).max(500);
+const IdempotencyKeySchema = z.string().trim().min(8).max(200);
+const CursorSchema = z.string().min(1).max(128);
+const LimitSchema = (max: number, fallback: number) => z.coerce.number().int().min(1).max(max).default(fallback);
+
+export const UpdateOrgUnitTypeV1Schema = z
+  .object({
+    expectedVersion: z.number().int().positive(),
+    labels: z.object({ one: LabelSchema, other: LabelSchema }).strict().optional(),
+    holdsRecords: z.boolean().optional(),
+    capabilities: z.array(OrgUnitCapabilitySchema).max(ORG_UNIT_CAPABILITIES.length).optional(),
+    allowedParentTypeCodes: z.array(OrgTypeCodeSchema).max(50).optional(),
+    allowAsRoot: z.boolean().optional(),
+    description: z.string().trim().max(500).nullable().optional(),
+    reason: ReasonSchema,
+  })
+  .strict()
+  .refine((type) => !type.capabilities || new Set(type.capabilities).size === type.capabilities.length, {
+    message: 'List each capability once.',
+    path: ['capabilities'],
+  });
+export type UpdateOrgUnitTypeV1 = z.infer<typeof UpdateOrgUnitTypeV1Schema>;
+
+export const UpdateOrgUnitV1Schema = OrgUnitFieldsSchema.omit({ typeCode: true })
+  .partial()
+  .extend({
+    expectedVersion: z.number().int().positive(),
+    /** INACTIVE keeps the unit in its trees but grants skip it; ARCHIVED goes through archive. */
+    status: z.enum(['ACTIVE', 'INACTIVE']).optional(),
+    reason: ReasonSchema,
+  })
+  .strict()
+  .refine((unit) => !unit.effectiveFrom || !unit.effectiveTo || unit.effectiveTo > unit.effectiveFrom, {
+    message: 'The end date must be after the start date.',
+    path: ['effectiveTo'],
+  });
+export type UpdateOrgUnitV1 = z.infer<typeof UpdateOrgUnitV1Schema>;
+
+/** Archive or restore a unit type or unit. */
+export const OrgRecordStatusChangeV1Schema = z.object({ expectedVersion: z.number().int().positive(), reason: ReasonSchema }).strict();
+export type OrgRecordStatusChangeV1 = z.infer<typeof OrgRecordStatusChangeV1Schema>;
+
+/** Opens the tree's one draft, copied from the given version or, when omitted, the tree's active version. */
+export const CreateOrgDraftVersionV1Schema = z
+  .object({ basedOnVersionId: IdSchema.nullable().optional(), reason: ReasonSchema.optional() })
+  .strict();
+export type CreateOrgDraftVersionV1 = z.infer<typeof CreateOrgDraftVersionV1Schema>;
+
+/** Places or moves units (`upsert`) and takes units out (`remove`) of a draft in one change. */
+export const UpdateOrgDraftEdgesV1Schema = z
+  .object({
+    expectedVersion: z.number().int().positive(),
+    // Sized to the API's 100 kB request limit; larger trees are built in several changes.
+    upsert: z.array(OrgHierarchyEdgeV1Schema).max(1_000).default([]),
+    remove: z.array(IdSchema).max(1_000).default([]),
+  })
+  .strict()
+  .superRefine((input, context) => {
+    const seen = new Set<string>();
+    for (const [index, edge] of input.upsert.entries()) {
+      if (seen.has(edge.unitId)) context.addIssue({ code: 'custom', path: ['upsert', index, 'unitId'], message: 'Each unit appears once in a change.' });
+      seen.add(edge.unitId);
+      if (edge.parentUnitId === edge.unitId) context.addIssue({ code: 'custom', path: ['upsert', index, 'parentUnitId'], message: 'A unit cannot be its own parent.' });
+    }
+    for (const [index, unitId] of input.remove.entries()) {
+      if (seen.has(unitId)) context.addIssue({ code: 'custom', path: ['remove', index], message: 'A unit cannot be placed and removed in one change.' });
+      seen.add(unitId);
+    }
+    if (input.upsert.length + input.remove.length === 0) context.addIssue({ code: 'custom', path: ['upsert'], message: 'Change at least one unit.' });
+  });
+export type UpdateOrgDraftEdgesV1 = z.infer<typeof UpdateOrgDraftEdgesV1Schema>;
+
+export const CreateOrgScopeGrantV1Schema = z
+  .object({
+    userId: IdSchema,
+    unitId: IdSchema,
+    access: z.enum(['READ', 'READ_WRITE']),
+    effectiveFrom: z.string().datetime({ offset: true }).optional(),
+    effectiveTo: z.string().datetime({ offset: true }).nullable().optional(),
+    reason: ReasonSchema,
+    idempotencyKey: IdempotencyKeySchema,
+  })
+  .strict()
+  .refine((grant) => !grant.effectiveTo || !grant.effectiveFrom || Date.parse(grant.effectiveTo) > Date.parse(grant.effectiveFrom), {
+    message: 'The end must be after the start.',
+    path: ['effectiveTo'],
+  });
+export type CreateOrgScopeGrantV1 = z.infer<typeof CreateOrgScopeGrantV1Schema>;
+
+export const RevokeOrgScopeGrantV1Schema = z.object({ reason: ReasonSchema }).strict();
+export type RevokeOrgScopeGrantV1 = z.infer<typeof RevokeOrgScopeGrantV1Schema>;
+
+export const OrgUnitListQuerySchema = z
+  .object({
+    q: z.string().trim().min(1).max(100).optional(),
+    typeCode: OrgTypeCodeSchema.optional(),
+    status: z.enum(['ACTIVE', 'INACTIVE', 'ARCHIVED']).optional(),
+    cursor: CursorSchema.optional(),
+    limit: LimitSchema(200, 50),
+  })
+  .strict();
+export type OrgUnitListQuery = z.infer<typeof OrgUnitListQuerySchema>;
+
+/** One level of a version: the roots (`parentUnitId` omitted) or the children of one unit. */
+export const OrgEdgeListQuerySchema = z
+  .object({ parentUnitId: IdSchema.optional(), cursor: CursorSchema.optional(), limit: LimitSchema(1_000, 200) })
+  .strict();
+export type OrgEdgeListQuery = z.infer<typeof OrgEdgeListQuerySchema>;
+
+export const OrgAsOfQuerySchema = z.object({ asOf: z.string().datetime({ offset: true }).optional() }).strict();
+export type OrgAsOfQuery = z.infer<typeof OrgAsOfQuerySchema>;
+
+export const OrgGrantListQuerySchema = z
+  .object({
+    userId: IdSchema.optional(),
+    unitId: IdSchema.optional(),
+    includeRevoked: z.enum(['true', 'false']).default('false').transform((value) => value === 'true'),
+    cursor: CursorSchema.optional(),
+    limit: LimitSchema(200, 100),
+  })
+  .strict();
+export type OrgGrantListQuery = z.infer<typeof OrgGrantListQuerySchema>;
+
+export const OrgValidationProblemCodeSchema = z.enum(['CYCLE', 'TOO_DEEP', 'ROOT_NOT_ALLOWED', 'PARENT_NOT_ALLOWED', 'UNIT_NOT_ACTIVE']);
+export const OrgValidationResultV1Schema = z.object({
+  valid: z.boolean(),
+  status: OrgHierarchyVersionStatusSchema,
+  lockVersion: z.number().int().positive(),
+  problems: z.array(z.object({ code: OrgValidationProblemCodeSchema, unitId: z.string(), detail: z.string() })),
+});
+export type OrgValidationResultV1 = z.infer<typeof OrgValidationResultV1Schema>;
+
+/** What activating a draft would change against the tree's active version. Lists are capped; totals are exact. */
+export const OrgImpactV1Schema = z.object({
+  versionId: IdSchema,
+  comparedWithVersionId: IdSchema.nullable(),
+  totals: z.object({ added: z.number().int(), removed: z.number().int(), moved: z.number().int(), affectedGrants: z.number().int() }),
+  added: z.array(z.string()),
+  removed: z.array(z.string()),
+  moved: z.array(z.object({ unitId: z.string(), fromParentUnitId: z.string().nullable(), toParentUnitId: z.string().nullable() })),
+  affectedGrants: z.array(z.object({ grantId: z.string(), userId: z.string(), unitId: z.string(), access: z.enum(['READ', 'READ_WRITE']) })),
+});
+export type OrgImpactV1 = z.infer<typeof OrgImpactV1Schema>;
+
+export const OrgHierarchyActivationV1Schema = z.object({
+  id: IdSchema,
+  treeId: IdSchema,
+  versionId: IdSchema,
+  effectiveFrom: z.string(),
+  reason: z.string(),
+  activatedBy: z.string(),
+  createdAt: z.string(),
+});
+export type OrgHierarchyActivationV1 = z.infer<typeof OrgHierarchyActivationV1Schema>;
+
+// Events written to the platform outbox in the same transaction as the change (AsyncAPI: docs/contracts/organization).
+export const ORGANIZATION_EVENT_TYPES = [
+  'organization.unit-type.changed.v1',
+  'organization.unit.changed.v1',
+  'organization.hierarchy.activated.v1',
+  'organization.scope-grant.changed.v1',
+] as const;
+
+export const OrgUnitTypeChangedEventV1Schema = z.object({
+  unitTypeId: IdSchema,
+  code: OrgTypeCodeSchema,
+  holdsRecords: z.boolean(),
+  status: z.enum(['ACTIVE', 'ARCHIVED']),
+  version: z.number().int().positive(),
+});
+export const OrgUnitChangedEventV1Schema = z.object({
+  unitId: IdSchema,
+  typeCode: OrgTypeCodeSchema,
+  status: z.enum(['ACTIVE', 'INACTIVE', 'ARCHIVED']),
+  version: z.number().int().positive(),
+});
+/** Modules fetch the version's structure and refuse contexts naming a version they do not hold yet (ADR-0018 §3). */
+export const OrgHierarchyActivatedEventV1Schema = z.object({
+  activationId: IdSchema,
+  treeId: IdSchema,
+  treeKind: OrgTreeKindSchema,
+  versionId: IdSchema,
+  versionNumber: z.number().int().positive(),
+  checksum: z.string().regex(/^sha256:[0-9a-f]{64}$/),
+  effectiveFrom: z.string(),
+});
+export const OrgScopeGrantChangedEventV1Schema = z.object({
+  grantId: IdSchema,
+  userId: IdSchema,
+  unitId: IdSchema,
+  access: z.enum(['READ', 'READ_WRITE']),
+  change: z.enum(['GRANTED', 'REVOKED']),
+});
+
+// Read models returned by the administration API.
+export const OrgTreeV1Schema = z.object({
+  id: IdSchema,
+  code: OrgTreeCodeSchema,
+  name: z.string(),
+  kind: OrgTreeKindSchema,
+  purpose: OrgTreePurposeSchema,
+  status: z.enum(['ACTIVE', 'ARCHIVED']),
+  createdAt: z.string(),
+});
+export type OrgTreeV1 = z.infer<typeof OrgTreeV1Schema>;
+
+export const OrgHierarchyVersionDetailV1Schema = OrgHierarchyVersionV1Schema.extend({ unitCount: z.number().int().min(0) });
+export type OrgHierarchyVersionDetailV1 = z.infer<typeof OrgHierarchyVersionDetailV1Schema>;
+
+/** One placed unit as a tree view shows it. */
+export const OrgEdgeViewV1Schema = z.object({
+  unitId: IdSchema,
+  parentUnitId: IdSchema.nullable(),
+  sortOrder: z.number().int(),
+  code: z.string(),
+  name: z.string(),
+  status: z.enum(['ACTIVE', 'INACTIVE', 'ARCHIVED']),
+  typeCode: z.string(),
+  holdsRecords: z.boolean(),
+  childCount: z.number().int().min(0),
+});
+export type OrgEdgeViewV1 = z.infer<typeof OrgEdgeViewV1Schema>;
+
+export const OrgActiveVersionV1Schema = z.object({
+  asOf: z.string(),
+  activation: OrgHierarchyActivationV1Schema,
+  version: OrgHierarchyVersionV1Schema,
+});
+export type OrgActiveVersionV1 = z.infer<typeof OrgActiveVersionV1Schema>;
+
+export const orgPageSchema = <T extends z.ZodTypeAny>(item: T) => z.object({ items: z.array(item), nextCursor: z.string().nullable() });
+export type OrgPage<T> = { items: T[]; nextCursor: string | null };
