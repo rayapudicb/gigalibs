@@ -11,9 +11,14 @@ import { PayloadCryptoService, sourceEventAuthenticatedContext } from './payload
 interface ExportDelegate {
   findMany(args: {
     where: Record<string, unknown>;
-    orderBy: { id: 'asc' };
+    orderBy: Record<string, 'asc'> | Array<Record<string, 'asc'>>;
   }): Promise<unknown[]>;
 }
+
+/** Stable order for models keyed by more than an `id`. */
+const ORDER_BY: Readonly<Record<string, Array<Record<string, 'asc'>>>> = {
+  OrgHierarchyEdge: [{ versionId: 'asc' }, { unitId: 'asc' }],
+};
 
 const RELATION_FILTERS: Readonly<Record<string, (tenantId: string) => Record<string, unknown>>> = {
   Tenant: (tenantId) => ({ id: tenantId }),
@@ -89,7 +94,8 @@ export class TenantExportSnapshotService {
           if (!inventory.disposition.startsWith('EXPORT') || !inventory.section) continue;
           const delegate = getDelegate(transaction, inventory.model);
           const where = RELATION_FILTERS[inventory.model]?.(tenantId) ?? { tenantId };
-          const rows = await delegate.findMany({ where, orderBy: { id: 'asc' } });
+          const orderBy = ORDER_BY[inventory.model] ?? { id: 'asc' as const };
+          const rows = await delegate.findMany({ where, orderBy });
           const records = rows.map((row) => this.projectRecord(inventory.model, row));
           sections.push({ name: inventory.section, records });
         }

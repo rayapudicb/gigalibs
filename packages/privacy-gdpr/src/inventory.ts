@@ -2,7 +2,9 @@ export type TenantExportDisposition =
   | 'EXPORT'
   | 'EXPORT_REDACTED'
   | 'EXCLUDE_SECURITY'
-  | 'EXCLUDE_GLOBAL';
+  | 'EXCLUDE_GLOBAL'
+  /** Rebuilt from records that are exported; carrying it would only duplicate them. */
+  | 'EXCLUDE_DERIVED';
 
 export interface TenantExportInventoryEntry {
   model: string;
@@ -97,6 +99,21 @@ export const TENANT_EXPORT_INVENTORY = Object.freeze([
     'EXPORT',
     'Tenant organizational units and hierarchy.',
   ),
+  entry('OrgUnitType', 'org_unit_types', 'EXPORT', 'Tenant-defined organization levels and their placement rules.'),
+  entry('OrgUnit', 'org_units', 'EXPORT', 'Tenant organization units, including legal identity and contacts.'),
+  entry('OrgTree', 'org_trees', 'EXPORT', 'Tenant primary and alternate organization trees.'),
+  entry('OrgHierarchyVersion', 'org_hierarchy_versions', 'EXPORT', 'Immutable hierarchy versions with their maker-checker history.'),
+  entry('OrgHierarchyActivation', 'org_hierarchy_activations', 'EXPORT', 'Effective-dated history of which hierarchy version was active.'),
+  entry('OrgHierarchyEdge', 'org_hierarchy_edges', 'EXPORT', 'Each unit and its parent within a hierarchy version.'),
+  entry(
+    'OrgHierarchyClosure',
+    undefined,
+    'EXCLUDE_DERIVED',
+    'Ancestor index rebuilt from the exported hierarchy edges whenever a version is published.',
+  ),
+  entry('OrgUnitPlaceLink', 'org_unit_place_links', 'EXPORT', 'Which places each organization unit operates or owns.'),
+  entry('OrgScopeGrant', 'org_scope_grants', 'EXPORT', 'Tenant-owned member access assignments to organization units.'),
+  entry('OrgIdempotencyRecord', undefined, 'EXCLUDE_SECURITY', 'Short-lived mutation idempotency tokens and execution cache.'),
   entry(
     'TenantInvite',
     'tenant_invitations',

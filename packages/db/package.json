@@ -16,8 +16,8 @@
   "scripts": {
     "build": "prisma generate --config prisma.config.ts && tsc -p tsconfig.json && node scripts/copy-prisma-engines.mjs",
     "dev": "tsc -p tsconfig.json --watch",
-    "test": "vitest run",
-    "test:watch": "vitest",
+    "test": "vitest run --root ../.. packages/db/src",
+    "test:watch": "vitest --root ../.. packages/db/src",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist src/generated *.tsbuildinfo",
     "db:generate": "prisma generate --config prisma.config.ts",

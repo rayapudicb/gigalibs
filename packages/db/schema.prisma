@@ -568,6 +568,15 @@ model Tenant {
   parentTenant        Tenant?  @relation("TenantHierarchy", fields: [parentTenantId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   subsidiaries        Tenant[] @relation("TenantHierarchy")
   departments         Department[]
+  // Universal organization hierarchy (WI-OI-109, ADR-0018)
+  orgUnitTypes          OrgUnitType[]
+  orgUnits              OrgUnit[]
+  orgTrees              OrgTree[]
+  orgHierarchyVersions  OrgHierarchyVersion[]
+  orgHierarchyActivations OrgHierarchyActivation[]
+  orgUnitPlaceLinks     OrgUnitPlaceLink[]
+  orgScopeGrants        OrgScopeGrant[]
+  orgIdempotencyRecords OrgIdempotencyRecord[]
 
   // Saga orchestration instances
   sagaInstances       SagaInstance[]
@@ -652,6 +661,7 @@ model User {
   configurationTemplatesUpdated ConfigurationTemplate[] @relation("ConfigurationTemplateUpdatedBy")
   configurationSavedFilters ConfigurationSavedFilter[] @relation("ConfigurationSavedFilterCreatedBy")
   managedDepartments        Department[]               @relation("DepartmentManager")
+  managedOrgUnits           OrgUnit[]                  @relation("OrgUnitManager")
 
   @@index([email])
   @@index([phone])
@@ -1036,6 +1046,8 @@ model TenantMember {
   // Geospatial place ids (each with everything inside it) this member may reach when the tenant opts in
   // to spatial scoping. Ids, not paths, so moves keep the assignment. Empty fails closed.
   spatialScopePlaceIds String[] @default([])
+  // Organization scope grants (WI-OI-109, ADR-0018): this member's units, each with everything below it.
+  orgScopeGrants       OrgScopeGrant[]
 
   @@unique([userId, tenantId])
   @@index([tenantId])
@@ -3533,4 +3545,271 @@ model KernelJobSchedule {
   @@unique([tenantId, id])
   @@unique([tenantId, name])
   @@map("kernel_job_schedules")
+}
+
+
+// ═══════════════════════════════════════════════════════════════════════
+// UNIVERSAL ORGANIZATION HIERARCHY (WI-OI-109, ADR-0018)
+// Tenant-bound tables under forced RLS for the gigalibs_org_tenant role (SET LOCAL ROLE per transaction).
+// CHECK constraints, partial unique indexes (one primary tree per tenant, one open draft per tree), the
+// immutability and lifecycle triggers, and org_validate_hierarchy_version() live in the migration
+// 20261001000000_organization_hierarchy; Prisma cannot express them.
+// ═══════════════════════════════════════════════════════════════════════
+
+enum OrgRecordStatus {
+  ACTIVE
+  ARCHIVED
+}
+
+enum OrgUnitStatus {
+  ACTIVE
+  INACTIVE
+  ARCHIVED
+}
+
+enum OrgTreeKind {
+  PRIMARY
+  ALTERNATE
+}
+
+enum OrgTreePurpose {
+  AUTHORITY
+  REPORTING
+  COST
+  LEGAL
+  OTHER
+}
+
+enum OrgHierarchyVersionStatus {
+  DRAFT
+  VALIDATED
+  SUBMITTED
+  APPROVED
+  REJECTED
+  PUBLISHED
+}
+
+enum OrgPlaceRelation {
+  OPERATES
+  OWNS
+}
+
+enum OrgScopeAccess {
+  READ
+  READ_WRITE
+}
+
+model OrgUnitType {
+  id                     String          @id @default(cuid())
+  tenantId               String
+  tenant                 Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  code                   String          @db.VarChar(40)
+  labelOne               String          @db.VarChar(120)
+  labelOther             String          @db.VarChar(120)
+  holdsRecords           Boolean
+  capabilities           String[]        @default([])
+  allowedParentTypeCodes String[]        @default([])
+  allowAsRoot            Boolean         @default(false)
+  description            String?         @db.VarChar(500)
+  status                 OrgRecordStatus @default(ACTIVE)
+  version                Int             @default(1)
+  createdById            String
+  updatedById            String
+  createdAt              DateTime        @default(now()) @db.Timestamptz(3)
+  updatedAt              DateTime        @default(now()) @db.Timestamptz(3)
+  units                  OrgUnit[]
+
+  @@unique([tenantId, code])
+  @@unique([tenantId, id])
+  @@map("org_unit_types")
+}
+
+model OrgUnit {
+  id            String             @id @default(cuid())
+  tenantId      String
+  tenant        Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  typeId        String
+  type          OrgUnitType        @relation(fields: [tenantId, typeId], references: [tenantId, id], onDelete: Restrict, map: "org_units_type_fkey")
+  code          String             @db.VarChar(64)
+  name          String             @db.VarChar(200)
+  status        OrgUnitStatus      @default(ACTIVE)
+  effectiveFrom DateTime           @db.Date
+  effectiveTo   DateTime?          @db.Date
+  timeZone      String?            @db.VarChar(64)
+  contact       Json?
+  managerUserId String?
+  manager       User?              @relation("OrgUnitManager", fields: [managerUserId], references: [id], onDelete: SetNull, map: "org_units_manager_fkey")
+  address       Json?
+  legal         Json?
+  version       Int                @default(1)
+  createdById   String
+  updatedById   String
+  createdAt     DateTime           @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime           @default(now()) @db.Timestamptz(3)
+  edges         OrgHierarchyEdge[]
+  placeLinks    OrgUnitPlaceLink[]
+  grants        OrgScopeGrant[]
+
+  @@unique([tenantId, code])
+  @@unique([tenantId, id])
+  @@index([tenantId, typeId])
+  @@map("org_units")
+}
+
+model OrgTree {
+  id          String                   @id @default(cuid())
+  tenantId    String
+  tenant      Tenant                   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  code        String                   @db.VarChar(40)
+  name        String                   @db.VarChar(120)
+  kind        OrgTreeKind
+  purpose     OrgTreePurpose
+  status      OrgRecordStatus          @default(ACTIVE)
+  createdById String
+  createdAt   DateTime                 @default(now()) @db.Timestamptz(3)
+  versions    OrgHierarchyVersion[]
+  activations OrgHierarchyActivation[]
+
+  @@unique([tenantId, code])
+  @@unique([tenantId, id])
+  @@map("org_trees")
+}
+
+model OrgHierarchyVersion {
+  id               String                    @id @default(cuid())
+  tenantId         String
+  tenant           Tenant                    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  treeId           String
+  tree             OrgTree                   @relation(fields: [tenantId, treeId], references: [tenantId, id], onDelete: Restrict, map: "org_hierarchy_versions_tree_fkey")
+  versionNumber    Int
+  status           OrgHierarchyVersionStatus @default(DRAFT)
+  basedOnVersionId String?
+  basedOn          OrgHierarchyVersion?      @relation("OrgHierarchyVersionLineage", fields: [tenantId, basedOnVersionId], references: [tenantId, id], onDelete: Restrict, map: "org_hierarchy_versions_based_on_fkey")
+  successors       OrgHierarchyVersion[]     @relation("OrgHierarchyVersionLineage")
+  checksum         String?                   @db.Char(71)
+  reason           String?                   @db.VarChar(500)
+  lockVersion      Int                       @default(1)
+  createdById      String
+  submittedById    String?
+  approvedById     String?
+  rejectedById     String?
+  publishedById    String?
+  createdAt        DateTime                  @default(now()) @db.Timestamptz(3)
+  updatedAt        DateTime                  @default(now()) @db.Timestamptz(3)
+  submittedAt      DateTime?                 @db.Timestamptz(3)
+  approvedAt       DateTime?                 @db.Timestamptz(3)
+  publishedAt      DateTime?                 @db.Timestamptz(3)
+  edges            OrgHierarchyEdge[]
+  closure          OrgHierarchyClosure[]
+  activations      OrgHierarchyActivation[]
+
+  @@unique([tenantId, treeId, versionNumber])
+  @@unique([tenantId, id])
+  @@map("org_hierarchy_versions")
+}
+
+model OrgHierarchyActivation {
+  id            String              @id @default(cuid())
+  tenantId      String
+  tenant        Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  treeId        String
+  tree          OrgTree             @relation(fields: [tenantId, treeId], references: [tenantId, id], onDelete: Restrict, map: "org_hierarchy_activations_tree_fkey")
+  versionId     String
+  version       OrgHierarchyVersion @relation(fields: [tenantId, versionId], references: [tenantId, id], onDelete: Restrict, map: "org_hierarchy_activations_version_fkey")
+  effectiveFrom DateTime            @db.Timestamptz(3)
+  reason        String              @db.VarChar(500)
+  activatedById String
+  createdAt     DateTime            @default(now()) @db.Timestamptz(3)
+
+  @@unique([tenantId, treeId, effectiveFrom])
+  @@map("org_hierarchy_activations")
+}
+
+model OrgHierarchyEdge {
+  tenantId     String
+  versionId    String
+  version      OrgHierarchyVersion @relation(fields: [tenantId, versionId], references: [tenantId, id], onDelete: Cascade, map: "org_hierarchy_edges_version_fkey")
+  unitId       String
+  unit         OrgUnit             @relation(fields: [tenantId, unitId], references: [tenantId, id], onDelete: Restrict, map: "org_hierarchy_edges_unit_fkey")
+  parentUnitId String?
+  parent       OrgHierarchyEdge?   @relation("OrgHierarchyEdgeParent", fields: [tenantId, versionId, parentUnitId], references: [tenantId, versionId, unitId], onDelete: Restrict, map: "org_hierarchy_edges_parent_fkey")
+  children     OrgHierarchyEdge[]  @relation("OrgHierarchyEdgeParent")
+  sortOrder    Int                 @default(0)
+  descendants  OrgHierarchyClosure[] @relation("OrgHierarchyClosureAncestor")
+  ancestors    OrgHierarchyClosure[] @relation("OrgHierarchyClosureDescendant")
+
+  @@id([tenantId, versionId, unitId])
+  @@index([tenantId, versionId, parentUnitId], map: "org_hierarchy_edges_parent_idx")
+  @@map("org_hierarchy_edges")
+}
+
+model OrgHierarchyClosure {
+  tenantId         String
+  versionId        String
+  version          OrgHierarchyVersion @relation(fields: [tenantId, versionId], references: [tenantId, id], onDelete: Cascade, map: "org_hierarchy_closure_version_fkey")
+  ancestorUnitId   String
+  ancestor         OrgHierarchyEdge    @relation("OrgHierarchyClosureAncestor", fields: [tenantId, versionId, ancestorUnitId], references: [tenantId, versionId, unitId], onDelete: Cascade, map: "org_hierarchy_closure_ancestor_fkey")
+  descendantUnitId String
+  descendant       OrgHierarchyEdge    @relation("OrgHierarchyClosureDescendant", fields: [tenantId, versionId, descendantUnitId], references: [tenantId, versionId, unitId], onDelete: Cascade, map: "org_hierarchy_closure_descendant_fkey")
+  depth            Int                 @db.SmallInt
+
+  @@id([tenantId, versionId, ancestorUnitId, descendantUnitId])
+  @@index([tenantId, versionId, descendantUnitId], map: "org_hierarchy_closure_descendant_idx")
+  @@map("org_hierarchy_closure")
+}
+
+model OrgUnitPlaceLink {
+  id            String           @id @default(cuid())
+  tenantId      String
+  tenant        Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  unitId        String
+  unit          OrgUnit          @relation(fields: [tenantId, unitId], references: [tenantId, id], onDelete: Restrict, map: "org_unit_place_links_unit_fkey")
+  placeId       String           @db.Uuid
+  relation      OrgPlaceRelation
+  effectiveFrom DateTime         @db.Date
+  effectiveTo   DateTime?        @db.Date
+  createdById   String
+  createdAt     DateTime         @default(now()) @db.Timestamptz(3)
+  endedById     String?
+
+  @@unique([tenantId, unitId, placeId, relation, effectiveFrom], map: "org_unit_place_links_unique_start")
+  @@map("org_unit_place_links")
+}
+
+model OrgScopeGrant {
+  id            String         @id @default(cuid())
+  tenantId      String
+  tenant        Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  userId        String
+  member        TenantMember   @relation(fields: [userId, tenantId], references: [userId, tenantId], onDelete: Cascade, map: "org_scope_grants_member_fkey")
+  unitId        String
+  unit          OrgUnit        @relation(fields: [tenantId, unitId], references: [tenantId, id], onDelete: Restrict, map: "org_scope_grants_unit_fkey")
+  access        OrgScopeAccess
+  effectiveFrom DateTime       @db.Timestamptz(3)
+  effectiveTo   DateTime?      @db.Timestamptz(3)
+  reason        String         @db.VarChar(500)
+  grantedById   String
+  createdAt     DateTime       @default(now()) @db.Timestamptz(3)
+  revokedAt     DateTime?      @db.Timestamptz(3)
+  revokedById   String?
+  revokeReason  String?        @db.VarChar(500)
+
+  @@index([tenantId, unitId], map: "org_scope_grants_unit_idx")
+  @@map("org_scope_grants")
+}
+
+model OrgIdempotencyRecord {
+  id             String   @id @default(cuid())
+  tenantId       String
+  tenant         Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  actorId        String
+  operation      String   @db.VarChar(80)
+  idempotencyKey String   @db.VarChar(200)
+  requestSha256  String   @db.Char(64)
+  response       Json
+  statusCode     Int
+  createdAt      DateTime @default(now()) @db.Timestamptz(3)
+
+  @@unique([tenantId, actorId, operation, idempotencyKey], map: "org_idempotency_records_key")
+  @@map("org_idempotency_records")
 }
