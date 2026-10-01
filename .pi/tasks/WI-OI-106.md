@@ -1,6 +1,6 @@
 # WI-OI-106: Reports v2, PDF and Excel (ADR-0016 F17)
 
-- **Status:** In progress (completion slice: automated implementation and throwaway DB proof complete; live deployment and live browser proof pending owner approval).
+- **Status:** Review (completion slice: automated implementation and throwaway DB proof complete; live deployment and live browser proof pending owner approval).
 - **Work item:** WI-OI-106. Evidence in `.pi/work/WI-OI-106.md`.
 - **Size:** L. Five pieces, built in one batch with a single deploy.
 

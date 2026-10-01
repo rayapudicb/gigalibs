@@ -483,3 +483,46 @@ Task card: `.pi/tasks/WI-OI-103e.md`. Owner decisions: system roles now; order e
   - A cold first raw question exceeded the 15 s limit, which is why saved questions get summaries.
 - **Checks:** Analytics suite 22 files (answer cache, limits, summary planning and building, builder summary mode,
   engine routing); `pnpm verify` passes (known drift only).
+
+## 103f: proof on manufacturing data & retired runtime elimination (2026-10-01, code complete, pre-deployment)
+
+- **Retirement of obsolete chart/query runtime (ADR-0016 F13):**
+  - Removed `ChartService` (`chart.service.ts` deleted) and `ChartsController`.
+  - Removed obsolete endpoints: `POST /v1/query/run`, `POST /v1/charts`, `GET /v1/charts`, `GET /v1/charts/:chartId/render`.
+  - Removed obsolete DTOs and methods from `QueryEngineService`: `runQuery`, `RunQueryDto`, `QueryResponse`, `MeasureResult`, `executeMeasure`, and `unavailableResponse`.
+  - `QueryEngineService.runSpec` remains the single canonical query path (`POST /v1/query/spec`).
+  - Added negative regression tests in `apps/workflow-platform/__tests__/analytics-boundary.test.ts` and `modules/analytics-studio/apps/api/src/auth/route-permissions.spec.ts` proving that direct API and BFF proxy return 404 for all retired endpoints.
+  - Zero production-runtime occurrences of `ChartService`, `runQuery(`, `v1/query/run`, or `v1/charts`.
+
+- **Manufacturing No-Developer Proof (Acceptance 7 & WI-OI-103f):**
+  - Helper library `scripts/verify-manufacturing-no-developer-helpers.mjs`:
+    - Deterministic manufacturing data generator (`generateManufacturingRecords`, batch 1 & 2, SHA-256 checksums, test origin tags, no mocks).
+    - Validation of 12 required manufacturing fields (`work_order_id`, `site_code`, `asset_id`, `asset_class`, `priority`, `work_type`, `status`, `opened_at`, `downtime_minutes`, `labour_hours`, `maintenance_cost`, `planned_work_order`).
+    - Exact baseline calculations and comparison logic for the 6 business questions:
+      1. Open work-order backlog by site and priority
+      2. Downtime or MTTR by asset class
+      3. Planned vs reactive work percentage
+      4. Maintenance cost by month and site
+      5. Labour hours per completed work order
+      6. Governed formula measures (`cost_per_order`)
+    - Maker-checker separation assertion: creator cannot be approver.
+    - Spatial place scope exclusion assertion: verifies zero leaked records for denied site and presence of allowed site records.
+    - Accessible table parity verification between UI representation and server response rows.
+    - Fail-closed structural assertion gate (`assertAllStepsPassed`): explicitly rejects boolean self-attestation and validates comprehensive underlying execution evidence.
+  - Unit test suite `modules/analytics-studio/apps/api/src/query-engine/manufacturing-proof-helpers.spec.ts`:
+    - 22 tests covering data generation, batch differentiation, schema field checks, metric calculations, comparison logic, maker-checker separation, spatial scope exclusion, table parity, and negative gates against boolean attestation, leaked rows, identical creator/approver, missing 404s, and errors.
+  - Fail-closed Playwright script `scripts/verify-manufacturing-no-developer.mjs`:
+    - Requires genuine credentials (`GIGALIBS_UAT_CREATOR_EMAIL`, `GIGALIBS_UAT_CREATOR_PASSWORD`, `GIGALIBS_UAT_APPROVER_EMAIL`, `GIGALIBS_UAT_APPROVER_PASSWORD`, `GIGALIBS_UAT_SCOPED_EMAIL`, `GIGALIBS_UAT_SCOPED_PASSWORD`, `GIGALIBS_UAT_SCOPED_ALLOWED_PLACE`, `GIGALIBS_UAT_SCOPED_DENIED_PLACE`, `GIGALIBS_UAT_TENANT_SLUG`) with no default fallbacks.
+    - Connects external ephemeral HTTP server serving manufacturing work orders.
+    - Executes full workflow through BFF/API: connector creation, schema discovery, mapping publication, ingestion run, dataset build, semantic model, maker-checker formula submission & approval, 6 query comparisons, chart view creation & compatible type switching, dashboard assembly, accessible table parity check, place scope exclusion check, batch-2 re-ingestion with immutable versioning, and direct API + BFF 404 checks for retired endpoints.
+    - Passes structured evidence to `assertAllStepsPassed`.
+
+- **Verification evidence:**
+  - `pnpm vitest run modules/analytics-studio/apps/api/src/query-engine/manufacturing-proof-helpers.spec.ts`: 22 passed.
+  - Targeted vitest suite (6 test files, 130 tests): 130 passed.
+  - `pnpm audit:sdlc`: PASSED (WI-OI-103 active implementation item).
+  - `pnpm audit:api-boundary`, `pnpm audit:production-data`, `pnpm audit:all-runtime-data`, `pnpm audit:package-dependencies`, `pnpm audit:navigation`: All PASSED.
+  - `pnpm verify`: PASSED (only the known WORKFORCE_API_URL drift).
+  - `pnpm --filter @gigalibs/analytics-api proof:real-database`: PASSED (all 26 migrations against real PostgreSQL).
+  - Live deployment of migration 26 and image rebuild awaiting explicit owner authorization.
+

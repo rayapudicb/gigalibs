@@ -73,11 +73,7 @@ const EXPECTED: Record<string, string> = {
   'POST v1/formula-measures/:formulaMeasureId/versions/:versionId/submit': 'analytics:models:write',
   'POST v1/formula-measures/:formulaMeasureId/versions/:versionId/approve': 'analytics:models:publish',
   'POST v1/formula-measures/:formulaMeasureId/versions/:versionId/reject': 'analytics:models:publish',
-  'POST v1/query/run': 'analytics:read',
   'POST v1/query/spec': 'analytics:read',
-  'POST v1/charts': 'analytics:charts:write',
-  'GET v1/charts': 'analytics:read',
-  'GET v1/charts/:chartId/render': 'analytics:read',
   'POST v1/chart-views': 'analytics:charts:write',
   'GET v1/chart-views': 'analytics:read',
   'GET v1/chart-views/:id': 'analytics:read',
@@ -131,5 +127,13 @@ describe('Analytics route permissions', () => {
       all.filter((route) => route.guarded).map((route) => [route.route, route.permissions?.[0] ?? '(none)']),
     );
     expect(actual).toEqual(EXPECTED);
+  });
+
+  it('proves obsolete chart and query/run routes are retired and not registered (return 404)', () => {
+    const routeNames = all.map((r) => r.route);
+    expect(routeNames).not.toContain('POST v1/query/run');
+    expect(routeNames).not.toContain('POST v1/charts');
+    expect(routeNames).not.toContain('GET v1/charts');
+    expect(routeNames).not.toContain('GET v1/charts/:chartId/render');
   });
 });

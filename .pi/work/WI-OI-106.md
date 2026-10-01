@@ -1,6 +1,6 @@
 # WI-OI-106: Reports v2, PDF and Excel (ADR-0016 F17)
 
-- **Status:** In Progress (completion slice: automated implementation, user-bound renewable download grants, expired-grant cleanup, throwaway database proof, unit/integration/API tests, and fail-closed browser test script complete; pending owner approval for live migration 000026 deployment and live browser proof execution).
+- **Status:** Review (completion slice: automated implementation, user-bound renewable download grants, expired-grant cleanup, throwaway database proof, unit/integration/API tests, and fail-closed browser test script complete; pending owner approval for live migration 000026 deployment and live browser proof execution).
 - **Owner:** Analytics Studio / Web Experience.
 - **Decision records:** ADR-0016 F17, owner decisions D1–D5 in task card `.pi/tasks/WI-OI-106.md`.
 - **Task card:** `.pi/tasks/WI-OI-106.md`.
@@ -93,12 +93,13 @@ In Reports v1 (WI-OI-103e), reports produced CSV only. Stakeholders and schedule
   - `pnpm verify`: PASS (69/69 build units, 242 test files passed, 18 skipped, 2072 tests passed, 136 skipped; all 7 audits green: `production-data`, `all-runtime-data`, `package-dependencies`, `api-boundary`, `navigation`, `sdlc`, `layers`; module manifests check passed; 1 known `WORKFORCE_API_URL` drift).
   - `report.spec.ts`: 45 passed (45). Schema assertions for migration 26 (`idx_report_download_grants_lookup`, `idx_report_download_grants_expiry`), format selection, multi-artifact atomic persistence, failure rollback, user-bound grants (cross-user same tenant rejected with 404), expired grant messaging, transaction-scoped cleanup, and spatial scoping.
   - `report-files.spec.ts`: 7 passed (7). Excel typed cells, frozen header, formula injection neutralization, PDF vector chart embedding, table pagination, and text sanitization.
-  - `reports-workbench.test.tsx`: 3 passed (3). Format selection on create, run history drawer rendering, format updating.
+  - `reports-workbench.test.tsx`: 3 passed (3). Static markup rendering tests: accessible format selection inputs, write permission omission, polite live region announcements, and visible focus indicators.
+  - `reports-v2-proof-helpers.spec.ts`: 17 passed (17). Unit tests for browser proof helpers: magic byte validation (CSV, XLSX, PDF), cell value normalization, RFC 4180 parsing, ExcelJS workbook validation (About sheet, frozen headers, formula-injection guards), new run identification, PDF text stream extraction, and fail-closed false-PASS prevention.
   - `analytics-boundary.test.ts`: 13 passed (13). BFF route authorization, method restrictions (PATCH allowed, GET/POST denied for formats; POST allowed for download-token).
   - `route-permissions.spec.ts`: 2 passed (2). All analytics controller endpoints guarded with explicit permissions.
 - **Git diff check:** `git diff --check` PASSED cleanly (zero whitespace errors).
-- **Playwright Browser Verification Script:** Prepared `scripts/verify-analytics-reports-v2-browser.mjs` with strict fail-closed assertions requiring all steps (auth, workbench, format selection, format PATCH, execution, run history drawer, download token renewal and non-zero byte download).
-  - **Status:** Pending deployment. Not executed against live database/containers prior to owner deployment approval.
+- **Playwright Browser Verification Script:** Prepared `scripts/verify-analytics-reports-v2-browser.mjs` with strict fail-closed assertions requiring all 34 live verification steps (UAT auth, real persisted PostgreSQL source, 3-format selection, real format PATCH test, exact new-run identification and SUCCEEDED polling, run history drawer, downloading all 3 files, magic byte and integrity checks, cross-format value parity across CSV/XLSX/PDF, kernel API schedule creation/execution/cleanup, and scoped member place isolation).
+  - **Status:** Prepared. Not executed against live database/containers prior to owner deployment approval. No browser, schedule, or scoped-member proof is claimed until executed post-deployment.
 
 ## Open for the owner
 

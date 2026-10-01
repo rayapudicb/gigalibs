@@ -163,42 +163,42 @@ describe('QueryEngineService — freshness state machine', () => {
   test('FRESH when dataset is READY and within TTL', async () => {
     const db = mockDbForFreshness({ buildingCount: 0, buildStatus: 'READY', recordCount: 10, completedOffsetSeconds: 60, freshnessttl: 3600 });
     const svc = new QueryEngineService(db as any);
-    const result = await svc.runQuery(PRINCIPAL, { chartDefinitionId: 'cd-1' });
+    const result = await (svc as any).computeFreshness(PRINCIPAL.tenantId, 'dv-1', 3600);
     expect(result.freshness).toBe('FRESH');
   });
 
   test('STALE when dataset exceeds TTL', async () => {
     const db = mockDbForFreshness({ buildingCount: 0, buildStatus: 'READY', recordCount: 10, completedOffsetSeconds: 7200, freshnessttl: 3600 });
     const svc = new QueryEngineService(db as any);
-    const result = await svc.runQuery(PRINCIPAL, { chartDefinitionId: 'cd-1' });
+    const result = await (svc as any).computeFreshness(PRINCIPAL.tenantId, 'dv-1', 3600);
     expect(result.freshness).toBe('STALE');
   });
 
   test('REBUILDING when a BUILDING version exists in parallel', async () => {
     const db = mockDbForFreshness({ buildingCount: 1, buildStatus: 'READY', recordCount: 10, completedOffsetSeconds: 60, freshnessttl: 3600 });
     const svc = new QueryEngineService(db as any);
-    const result = await svc.runQuery(PRINCIPAL, { chartDefinitionId: 'cd-1' });
+    const result = await (svc as any).computeFreshness(PRINCIPAL.tenantId, 'dv-1', 3600);
     expect(result.freshness).toBe('REBUILDING');
   });
 
   test('PARTIAL when READY dataset has 0 records', async () => {
     const db = mockDbForFreshness({ buildingCount: 0, buildStatus: 'READY', recordCount: 0, completedOffsetSeconds: 60, freshnessttl: 3600 });
     const svc = new QueryEngineService(db as any);
-    const result = await svc.runQuery(PRINCIPAL, { chartDefinitionId: 'cd-1' });
+    const result = await (svc as any).computeFreshness(PRINCIPAL.tenantId, 'dv-1', 3600);
     expect(result.freshness).toBe('PARTIAL');
   });
 
   test('UNAVAILABLE when no READY dataset version found', async () => {
     const db = mockDbForFreshness({ buildingCount: 0, buildStatus: 'FAILED', recordCount: 0, completedOffsetSeconds: 0, freshnessttl: null });
     const svc = new QueryEngineService(db as any);
-    const result = await svc.runQuery(PRINCIPAL, { chartDefinitionId: 'cd-1' });
+    const result = await (svc as any).computeFreshness(PRINCIPAL.tenantId, 'dv-1', null);
     expect(result.freshness).toBe('UNAVAILABLE');
   });
 
   test('FRESH when no TTL configured (no expiry check)', async () => {
     const db = mockDbForFreshness({ buildingCount: 0, buildStatus: 'READY', recordCount: 5, completedOffsetSeconds: 999999, freshnessttl: null });
     const svc = new QueryEngineService(db as any);
-    const result = await svc.runQuery(PRINCIPAL, { chartDefinitionId: 'cd-1' });
+    const result = await (svc as any).computeFreshness(PRINCIPAL.tenantId, 'dv-1', null);
     expect(result.freshness).toBe('FRESH');
   });
 });
@@ -236,126 +236,41 @@ describe('QueryEngineService — governance: UNAUTHORIZED is not a freshness sta
 // ─── 4. Tenant isolation ──────────────────────────────────────────────────────
 
 describe('QueryEngineService — tenant isolation', () => {
-  test('runQuery throws NotFoundException for chart not belonging to tenant', async () => {
+  test('runSpec throws NotFoundException for semantic model not belonging to tenant', async () => {
     const db = {
       queryWithTenant: jest.fn().mockResolvedValue({ rows: [] }),
       withTenantTransaction: jest.fn(),
     };
     const svc = new QueryEngineService(db as any);
-    await expect(svc.runQuery(
-      { tenantId: 'tenant-B', subject: 'u', entitlements: new Set(['analytics-studio']) },
-      { chartDefinitionId: 'cd-tenant-A' },
+    await expect(svc.runSpec(
+      { tenantId: 'tenant-B', subject: 'u', entitlements: new Set(['analytics-studio']), spatialScope: { mode: 'UNBOUNDED' } },
+      { semanticModelId: '00000000-0000-4000-8000-000000000001', measures: ['m1'] },
     )).rejects.toMatchObject({ message: expect.stringContaining('not found') });
   });
 });
 
-// ─── 5. ChartService — ECharts option builder ─────────────────────────────────
+// ─── 5. Obsolete runtime retirement ──────────────────────────────────────────
 
-import { ChartService } from './chart.service.js';
-
-const QUERY_RESPONSE = {
-  chartDefinitionId: 'cd-1', asOf: '2026-01-01T00:00:00.000Z',
-  watermark: 'wm-1', definitionVersion: 1, freshness: 'FRESH' as const,
-  results: [
-    { measureName: 'total_revenue', aggregateFn: 'SUM', fieldReference: 'revenue', displayLabel: 'Revenue', value: 100 },
-    { measureName: 'count_orders', aggregateFn: 'COUNT', fieldReference: '*', displayLabel: 'Orders', value: 25 },
-  ],
-  accessibleTable: [
-    { label: 'Revenue', value: '100' },
-    { label: 'Orders', value: '25' },
-  ],
-};
-
-describe('ChartService — ECharts option builder', () => {
-  function buildOption(chartType: string) {
-    const db = {
-      queryWithTenant: jest.fn().mockResolvedValue({
-        rows: [{ id: 'cd-1', display_name: 'Sales', chart_type: chartType, measure_names: ['total_revenue'], dimension_field: null, chart_options_template: {} }],
-      }),
-      withTenantTransaction: jest.fn(),
-    };
-    const qeSvc = {
-      runQuery: jest.fn().mockResolvedValue(QUERY_RESPONSE),
-    };
-    const svc = new ChartService(db as any, qeSvc as any);
-    return svc.renderChart(PRINCIPAL, 'cd-1');
-  }
-
-  test('BAR chart produces xAxis + series[type=bar]', async () => {
-    const result = await buildOption('BAR');
-    expect(result.echartsOption.xAxis).toBeDefined();
-    expect(result.echartsOption.series![0]!.type).toBe('bar');
+describe('QueryEngineService & Charts — obsolete runtime retirement', () => {
+  test('QueryEngineService no longer exposes runQuery method', () => {
+    const svc = new QueryEngineService({} as any);
+    expect((svc as any).runQuery).toBeUndefined();
   });
 
-  test('LINE chart produces series[type=line]', async () => {
-    const result = await buildOption('LINE');
-    expect(result.echartsOption.series![0]!.type).toBe('line');
+  test('QueryEngineController no longer exposes runQuery route handler', async () => {
+    const { QueryEngineController } = await import('./query-engine.controller.js');
+    const controller = new QueryEngineController({} as any);
+    expect((controller as any).runQuery).toBeUndefined();
+    expect(controller.runSpec).toBeDefined();
   });
 
-  test('PIE chart produces series[type=pie] with named data', async () => {
-    const result = await buildOption('PIE');
-    expect(result.echartsOption.series![0]!.type).toBe('pie');
-    const data = result.echartsOption.series![0]!.data as Array<{ name: string; value: number }>;
-    expect(data[0]!.name).toBe('Revenue');
-    expect(data[0]!.value).toBe(100);
+  test('ChartsController is completely removed from query-engine.controller', async () => {
+    const mod = await import('./query-engine.controller.js');
+    expect((mod as any).ChartsController).toBeUndefined();
   });
 
-  test('series data comes from query results, not from chart_options_template', async () => {
-    const db = {
-      queryWithTenant: jest.fn().mockResolvedValue({
-        rows: [{
-          id: 'cd-1', display_name: 'Sales', chart_type: 'BAR',
-          measure_names: ['total_revenue'], dimension_field: null,
-          // Template has data — should be IGNORED
-          chart_options_template: { series: [{ type: 'bar', data: [9999, 9999, 9999] }] },
-        }],
-      }),
-      withTenantTransaction: jest.fn(),
-    };
-    const qeSvc = { runQuery: jest.fn().mockResolvedValue(QUERY_RESPONSE) };
-    const svc = new ChartService(db as any, qeSvc as any);
-    const result = await svc.renderChart(PRINCIPAL, 'cd-1');
-    // Data must be the query result values [100, 25], not [9999, 9999, 9999]
-    const seriesData = result.echartsOption.series![0]!.data as number[];
-    expect(seriesData).toContain(100);
-    expect(seriesData).toContain(25);
-    expect(seriesData).not.toContain(9999);
+  test('chart.service.ts file has been deleted from repository', () => {
+    const chartServicePath = path.resolve(__dirname, 'chart.service.ts');
+    expect(fs.existsSync(chartServicePath)).toBe(false);
   });
-
-  test('GAUGE chart produces series[type=gauge]', async () => {
-    const result = await buildOption('GAUGE');
-    expect(result.echartsOption.series![0]!.type).toBe('gauge');
-  });
-
-  test('FUNNEL chart produces series[type=funnel]', async () => {
-    const result = await buildOption('FUNNEL');
-    expect(result.echartsOption.series![0]!.type).toBe('funnel');
-  });
-
-  test('title subtext includes freshness state', async () => {
-    const result = await buildOption('BAR');
-    expect((result.echartsOption.title as any)?.subtext).toContain('FRESH');
-  });
-});
-
-// ─── 6. Accessible table on every chart type ─────────────────────────────────
-
-describe('ChartService — accessible table present on every chart type', () => {
-  const CHART_TYPES = ['BAR', 'LINE', 'PIE', 'SCATTER', 'AREA', 'GAUGE', 'FUNNEL', 'TREEMAP', 'HEATMAP'];
-
-  for (const chartType of CHART_TYPES) {
-    test(`${chartType} chart returns non-empty accessibleTable`, async () => {
-      const db = {
-        queryWithTenant: jest.fn().mockResolvedValue({
-          rows: [{ id: 'cd-1', display_name: 'X', chart_type: chartType, measure_names: ['m1'], dimension_field: null, chart_options_template: {} }],
-        }),
-        withTenantTransaction: jest.fn(),
-      };
-      const qeSvc = { runQuery: jest.fn().mockResolvedValue(QUERY_RESPONSE) };
-      const svc = new ChartService(db as any, qeSvc as any);
-      const result = await svc.renderChart(PRINCIPAL, 'cd-1');
-      expect(result.accessibleTable.length).toBeGreaterThan(0);
-      expect(typeof result.accessibleTable[0]!.label).toBe('string');
-    });
-  }
 });

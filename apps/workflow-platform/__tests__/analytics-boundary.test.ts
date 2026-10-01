@@ -116,7 +116,7 @@ describe('Analytics Studio signed BFF (WI-OI-064a)', () => {
     vi.mocked(verifiedSession).mockResolvedValue({
       context: { ...entitledContext, permissions: ['analytics:*'] },
     } as never);
-    // WI-OI-103d d6: the stored-payload chart gallery routes are retired; charts are chart views.
+    // WI-OI-103d d6 & WI-OI-103 foundation close: obsolete chart routes and query/run are retired
     for (const path of [
       ['oidc', 'dev', 'token'],
       ['v1', 'connectors'],
@@ -124,8 +124,18 @@ describe('Analytics Studio signed BFF (WI-OI-064a)', () => {
       ['v1', 'metrics', 'charts'],
       ['v1', 'metrics', 'charts', 'industry-kpi'],
       ['v1', 'metrics', 'charts', 'a', 'b'],
+      ['v1', 'query', 'run'],
+      ['v1', 'charts'],
+      ['v1', 'charts', 'cd-1', 'render'],
     ]) {
       expect((await call(getAnalytics, 'GET', path)).status).toBe(404);
+    }
+    // POST to retired endpoints also returns 404
+    for (const path of [
+      ['v1', 'query', 'run'],
+      ['v1', 'charts'],
+    ]) {
+      expect((await call(postAnalytics, 'POST', path)).status).toBe(404);
     }
     expect((await call(postAnalytics, 'POST', ['v1', 'metrics', 'summary'])).status).toBe(404);
     const crossSite = await call(postAnalytics, 'POST', ['v1', 'actions'], {

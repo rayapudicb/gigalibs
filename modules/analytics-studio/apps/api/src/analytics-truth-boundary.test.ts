@@ -247,27 +247,30 @@ describe('Phase 5 — Governed Query Engine + ECharts + Dashboards', () => {
     expect(code).not.toMatch(/FreshnessState.*UNAUTHORIZED|UNAUTHORIZED.*FreshnessState/);
   });
 
-  it('ChartService always injects series data from query results (never template)', () => {
-    const svc = readSrc('query-engine/chart.service.ts');
-    // Template is only cosmetic — data must come from queryResponse.results
-    expect(svc).toContain('queryResponse');
-    expect(svc).toContain('results');
-    // Chart options template must not be used as the sole data source
-    expect(svc).toContain('chart_options_template');
-    // Merge pattern: template first, then real data overrides
-    const templateIdx = svc.indexOf('chart_options_template');
-    const resultsIdx = svc.indexOf('results');
-    expect(resultsIdx).toBeGreaterThan(templateIdx);
+  it('ChartViewService never stores data: saves query_spec and visual_spec and re-runs via runSpec', () => {
+    const svc = readSrc('query-engine/chart-view.service.ts');
+    expect(svc).toContain('query_spec');
+    expect(svc).toContain('visual_spec');
+    expect(svc).toContain('this.queryEngine.runSpec');
+    expect(svc).toContain('compatibleChartTypes');
   });
 
-  it('every chart render includes accessibleTable (WCAG 2.1 AA)', () => {
-    const svc = readSrc('query-engine/chart.service.ts');
-    expect(svc).toContain('accessibleTable');
+  it('chart views and report files generate accessible table data (WCAG 2.1 AA)', () => {
+    const reportFiles = readSrc('reports/report-files.ts');
+    expect(reportFiles).toContain('formatCell');
+    const queryBuilder = readSrc('query-engine/query-builder.ts');
+    expect(queryBuilder).toContain('columns');
   });
 
-  it('ADR-0004: ECharts 5.5.1 is the charting library (no other chart lib)', () => {
-    const svc = readSrc('query-engine/chart.service.ts');
-    expect(svc).toContain('EChartsOption');
+  it('ADR-0004: ECharts is the common charting library across reports and web views', () => {
+    const reportFiles = readSrc('reports/report-files.ts');
+    expect(reportFiles).toContain('toEChartsOption');
+    expect(reportFiles).toContain('@gigalibs/analytics-charts');
+  });
+
+  it('obsolete ChartService and chart.service.ts are completely eliminated', () => {
+    const chartServicePath = path.resolve(__dirname, 'query-engine/chart.service.ts');
+    expect(fs.existsSync(chartServicePath)).toBe(false);
   });
 
   it('QueryEngineModule imports DatasetModule', () => {

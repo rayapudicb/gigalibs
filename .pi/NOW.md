@@ -1,13 +1,12 @@
 # NOW: where the work stands
 
-Updated 2026-10-01 (WI-OI-106 In Progress for completion slice; WI-OI-107, 105, 104 live in Review). Keep this file to one page.
+Updated 2026-10-01 (WI-OI-103 In Progress for old-engine retirement and 103f manufacturing proof; WI-OI-106, 107, 105, 104 in Review). Keep this file to one page.
 Replace old content rather than appending to it, and update it at the end of every task.
 
 ## State
 
 - **Branch:** `feat/gigaops-convergence-core`, local only, never pushed.
-- **Active implementation item:** WI-OI-106 (F17, Reports v2 completion slice: automated implementation and throwaway proof complete; In Progress pending owner deployment approval and live browser proof). WI-OI-104 (F8, F14), WI-OI-105 (F15) and WI-OI-107 (F10) are done, live and in
-  Review. WI-OI-103 is in Review with 103f and the old-engine cleanup open. WI-OI-108 is Proposed.
+- **Active implementation item:** WI-OI-103 (F13, Analytics engine as common capability: obsolete chart/query runtime retired, fail-closed manufacturing no-developer proof ready). WI-OI-106 (F17), WI-OI-104 (F8, F14), WI-OI-105 (F15) and WI-OI-107 (F10) are done and in Review. WI-OI-108 is Proposed.
 - **Wave 0:** WI-OI-080, 081, 082, 083 and 085 are in Review, waiting for human reviews. WI-OI-084 (mobile) has
   not started.
 - **Running locally (2026-10-01 07:56):** every service is on `2a48e326e327-93674f4f9ea2`; the web is on 5180.
@@ -30,8 +29,8 @@ Replace old content rather than appending to it, and update it at the end of eve
 
 ## Next
 
-- **Owner review & deployment for WI-OI-106:** approve applying Analytics migration 000026 to live database and deploy services.
-- **Following items in Foundation Close (`.pi/tasks/FOUNDATION-CLOSE.md`):** the 103 leftovers (F13), WI-OI-108, the fresh-install fix (item 7), the core push intake (item 8), and F3 engine clean-up (item 9). Then the agriculture package.
+- **Owner review & deployment for WI-OI-106 & WI-OI-103:** approve applying Analytics migration 000026 to live database, container image rebuilds, and live Playwright execution.
+- **Following items in Foundation Close (`.pi/tasks/FOUNDATION-CLOSE.md`):** WI-OI-108, the fresh-install fix (item 7), the core push intake (item 8), and F3 engine clean-up (item 9). Then the agriculture package.
 
 ## Open decisions (owner)
 

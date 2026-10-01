@@ -1,11 +1,11 @@
 'use client';
 
 /**
- * WI-OI-103e (ADR-0016 F11): Analytics-owned reports. A report is a saved chart or a dashboard exported as CSV; each
- * run re-asks the stored questions with the member's rights. Creating and running need analytics:reports:write;
- * downloading needs analytics:export. WI-OI-104c: a report can run on a schedule, held by the kernel and run as its
- * owner; email delivery comes later.
- * WI-OI-106 (ADR-0016 F17): Reports v2 with multi-format support (CSV, Excel/XLSX, PDF), durable run history, safe token renewal,
+ * WI-OI-103e (ADR-0016 F11) & WI-OI-106 (ADR-0016 F17): Analytics-owned reports. A report is a saved chart or a dashboard exported
+ * as CSV, typed Excel (XLSX) or server-rendered PDF; each run re-asks the stored questions with the member's rights. Creating
+ * and running need analytics:reports:write; downloading needs analytics:export. WI-OI-104c: a report can run on a schedule, held
+ * by the kernel and run as its owner; email delivery comes later.
+ * Reports v2 provides multi-format support (CSV, Excel/XLSX, PDF), durable run history, safe token renewal,
  * accessible format controls, and live status announcements.
  */
 
