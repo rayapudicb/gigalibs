@@ -20,7 +20,7 @@ export async function loadDatasetFields(
     [datasetVersionId],
   );
   const rawMappings = mappingResult.rows[0]?.field_mappings;
-  const mappings: Array<{ analyticalField?: unknown; analyticalType?: unknown; place?: unknown }> = Array.isArray(rawMappings)
+  const mappings: Array<{ analyticalField?: unknown; analyticalType?: unknown; place?: unknown; organizationUnit?: unknown }> = Array.isArray(rawMappings)
     ? rawMappings
     : typeof rawMappings === 'string'
       ? JSON.parse(rawMappings)
@@ -31,6 +31,8 @@ export async function loadDatasetFields(
     if (typeof mapping.analyticalField === 'string' && type.success) fields.set(mapping.analyticalField, type.data);
     // WI-OI-105c: a place-tagged dataset also exposes each record's place id (its path stays internal, for scope).
     if (mapping.place) fields.set('place_id', 'string');
+    // WI-OI-109e3: a dataset with a unit field exposes each record's unit id (for scope and grouping).
+    if (mapping.organizationUnit) fields.set('unit_id', 'string');
   }
   return fields;
 }

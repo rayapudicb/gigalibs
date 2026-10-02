@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { datasetFieldName, defaultMeasures, draftFromDiscovery, fieldMappingsFromDraft } from '../lib/analytics/mapping-draft';
+import { NO_PLACE, datasetFieldName, defaultMeasures, draftFromDiscovery, fieldMappingsFromDraft } from '../lib/analytics/mapping-draft';
 
 // WI-OI-104e: the Sources screen proposes dataset fields from discovery and sends mappings Analytics accepts.
 describe('mapping draft', () => {
@@ -36,5 +36,29 @@ describe('mapping draft', () => {
     expect(fieldMappingsFromDraft(draft.map((field) => ({ ...field, analyticalField: 'same' }))).error).toContain('Two fields');
     expect(fieldMappingsFromDraft([{ ...draft[0]!, unitMode: 'fixed', unitTo: 'kg', unitFrom: 'quintal' }]).error).toContain('Only number');
     expect(fieldMappingsFromDraft(draft.map((field) => ({ ...field, include: false }))).error).toContain('at least one');
+  });
+});
+
+// WI-OI-109e3: a field naming each record's organization unit, by code or id.
+describe('unit of each record', () => {
+  const store = { sourceField: 'store', analyticalField: 'store', analyticalType: 'string' as const, include: true, unitMode: 'none' as const, unitTo: '', unitFrom: '', unitFromField: '' };
+
+  it('adds a unit field matched by code or id beside the plain fields', () => {
+    const byCode = fieldMappingsFromDraft([store as never], NO_PLACE, { mode: 'code', fieldName: 'unit', sourceField: 'store' });
+    expect(byCode).toEqual({
+      error: null,
+      fieldMappings: [
+        { sourceField: 'store', analyticalField: 'store', analyticalType: 'string' },
+        { sourceField: 'store', analyticalField: 'unit', analyticalType: 'string', organizationUnit: { match: 'CODE' } },
+      ],
+    });
+    expect(fieldMappingsFromDraft([store as never], NO_PLACE, { mode: 'id', fieldName: 'unit', sourceField: 'store' }).fieldMappings[1]).toMatchObject({ organizationUnit: { match: 'ID' } });
+  });
+
+  it('refuses a missing source, a taken name and the reserved unit_id', () => {
+    expect(fieldMappingsFromDraft([store as never], NO_PLACE, { mode: 'code', fieldName: 'unit', sourceField: '' }).error).toMatch(/naming each record/);
+    expect(fieldMappingsFromDraft([store as never], NO_PLACE, { mode: 'code', fieldName: 'store', sourceField: 'store' }).error).toMatch(/taken/);
+    expect(fieldMappingsFromDraft([store as never], NO_PLACE, { mode: 'code', fieldName: 'unit_id', sourceField: 'store' }).error).toMatch(/taken/);
+    expect(fieldMappingsFromDraft([store as never], { ...NO_PLACE, mode: 'code', codeField: 'store', fieldName: 'place' }, { mode: 'code', fieldName: 'place', sourceField: 'store' }).error).toMatch(/taken/);
   });
 });

@@ -13,6 +13,7 @@ import { TenantDataExportController } from './tenant-data-export.controller.js';
 import { KernelSchedulesController } from './kernel-schedules.controller.js';
 import { KernelSchedulesService } from './kernel-schedules.service.js';
 import { KernelPackApplicationsService } from './kernel-pack-applications.service.js';
+import { KernelOrganizationSyncService } from './kernel-organization-sync.service.js';
 import { TenantDataExportService } from './tenant-data-export.service.js';
 import { TenantDataExportWorker } from './tenant-data-export.worker.js';
 import { TenantExportSnapshotService } from './tenant-export-snapshot.service.js';
@@ -231,6 +232,7 @@ import { WorkflowService } from './workflow.service.js';
     TenantDataExportService,
     KernelSchedulesService,
     KernelPackApplicationsService,
+    KernelOrganizationSyncService,
     TenantExportSnapshotService,
     TenantDataExportWorker,
     OutboxRelayProcessor,

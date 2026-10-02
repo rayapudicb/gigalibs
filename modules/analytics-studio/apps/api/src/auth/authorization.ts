@@ -34,6 +34,8 @@ export interface AnalyticsPrincipal {
   readonly orgScope: PlatformContextV1['org_scope'];
   /** Tokens minted before spatial scoping carry no scope and mean UNBOUNDED. */
   readonly spatialScope: NonNullable<PlatformContextV1['spatial_scope']>;
+  /** WI-OI-109e3: present once the tenant's organization tree is in force; then records are filtered by unit. */
+  readonly organization?: NonNullable<PlatformContextV1['organization']>;
 }
 
 export interface AuthenticatedRequest {
@@ -57,6 +59,8 @@ export const ANALYTICS_PERMISSIONS = [
   'analytics:reports:write',
   'analytics:export',
   'analytics:action',
+  // WI-OI-109e2: receiving the control plane's organization versions (kernel `analytics.organization-sync`).
+  'organization:activate',
 ] as const;
 export type AnalyticsPermission = (typeof ANALYTICS_PERMISSIONS)[number];
 
@@ -163,6 +167,7 @@ export class PlatformContextAuthorizationGuard implements CanActivate {
       persona: platformContext.persona_type,
       orgScope: Object.freeze(platformContext.org_scope),
       spatialScope: Object.freeze(platformContext.spatial_scope ?? { mode: 'UNBOUNDED' as const }),
+      ...(platformContext.organization ? { organization: Object.freeze(platformContext.organization) } : {}),
     });
     return true;
   }
@@ -179,7 +184,15 @@ export function extractBearerToken(header: string | string[] | undefined): strin
   return match[1];
 }
 
-/** `*`, `analytics:*` or the exact permission; `analytics:*` also covers `analytics:connectors:write`. */
+/**
+ * `*`, `analytics:*` or the exact permission; `analytics:*` also covers `analytics:connectors:write`. Another family's
+ * wildcard (`organization:*`) covers its own permissions, as in the core and web (WI-OI-109e2).
+ */
 function hasPermission(granted: readonly string[], required: string): boolean {
-  return granted.includes('*') || granted.includes('analytics:*') || granted.includes(required);
+  return (
+    granted.includes('*') ||
+    granted.includes('analytics:*') ||
+    granted.includes(required) ||
+    granted.includes(`${required.split(/[:.]/)[0]}:*`)
+  );
 }

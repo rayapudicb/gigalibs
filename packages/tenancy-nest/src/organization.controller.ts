@@ -10,8 +10,15 @@ import {
   CreateOrgTreeV1Schema,
   type CreateOrgUnitTypeV1,
   CreateOrgUnitTypeV1Schema,
+  type CreateOrgUnitPlaceLinkV1,
+  CreateOrgUnitPlaceLinkV1Schema,
   type CreateOrgUnitV1,
   CreateOrgUnitV1Schema,
+  type EndOrgUnitPlaceLinkV1,
+  EndOrgUnitPlaceLinkV1Schema,
+  type ImportOrgDepartmentsV1,
+  ImportOrgDepartmentsV1Schema,
+  ORGANIZATION_CLIENT_MANIFEST_V1,
   type OrgAsOfQuery,
   OrgAsOfQuerySchema,
   type OrgEdgeListQuery,
@@ -26,6 +33,8 @@ import {
   OrgVersionCheckV1Schema,
   type OrgVersionTransitionV1,
   OrgVersionTransitionV1Schema,
+  type RequestOrgSyncV1,
+  RequestOrgSyncV1Schema,
   type RevokeOrgScopeGrantV1,
   RevokeOrgScopeGrantV1Schema,
   type UpdateOrgDraftEdgesV1,
@@ -52,6 +61,13 @@ interface HeaderTarget {
 @Controller('tenants/current/organization')
 export class OrganizationController {
   constructor(private readonly organization: OrganizationService) {}
+
+  /** Versioned discovery metadata for generated web, tablet and phone clients (WI-OI-109f). */
+  @Get('client-manifest')
+  @RequirePermissions('organization:read')
+  getClientManifest() {
+    return ORGANIZATION_CLIENT_MANIFEST_V1;
+  }
 
   // ─── Unit types ──────────────────────────────────────────────────────────────
 
@@ -174,6 +190,46 @@ export class OrganizationController {
     return this.organization.setUnitArchived(tenantId, actorId, unitId, false, dto);
   }
 
+  @Get('units/:unitId/place-links')
+  @RequirePermissions('organization:read')
+  listPlaceLinks(@CurrentTenant('tenantId') tenantId: string, @Param('unitId') unitId: string) {
+    return this.organization.listPlaceLinks(tenantId, unitId);
+  }
+
+  @Post('units/:unitId/place-links')
+  @RequirePermissions('organization:draft')
+  createPlaceLink(
+    @CurrentTenant('tenantId') tenantId: string,
+    @CurrentUser('sub') actorId: string,
+    @Param('unitId') unitId: string,
+    @Body(new ZodValidationPipe(CreateOrgUnitPlaceLinkV1Schema)) dto: CreateOrgUnitPlaceLinkV1,
+  ) {
+    return this.organization.createPlaceLink(tenantId, actorId, unitId, dto);
+  }
+
+  @Post('place-links/:linkId/end')
+  @HttpCode(200)
+  @RequirePermissions('organization:draft')
+  endPlaceLink(
+    @CurrentTenant('tenantId') tenantId: string,
+    @CurrentUser('sub') actorId: string,
+    @Param('linkId') linkId: string,
+    @Body(new ZodValidationPipe(EndOrgUnitPlaceLinkV1Schema)) dto: EndOrgUnitPlaceLinkV1,
+  ) {
+    return this.organization.endPlaceLink(tenantId, actorId, linkId, dto);
+  }
+
+  @Post('departments/import')
+  @HttpCode(200)
+  @RequirePermissions('organization:draft')
+  importDepartments(
+    @CurrentTenant('tenantId') tenantId: string,
+    @CurrentUser('sub') actorId: string,
+    @Body(new ZodValidationPipe(ImportOrgDepartmentsV1Schema)) dto: ImportOrgDepartmentsV1,
+  ) {
+    return this.organization.importDepartments(tenantId, actorId, dto);
+  }
+
   // ─── Trees, versions and activation ──────────────────────────────────────────
 
   @Get('trees')
@@ -217,6 +273,18 @@ export class OrganizationController {
     @Query(new ZodValidationPipe(OrgAsOfQuerySchema)) query: OrgAsOfQuery,
   ) {
     return this.organization.getActive(tenantId, treeId, query);
+  }
+
+  @Post('trees/:treeId/sync')
+  @HttpCode(200)
+  @RequirePermissions('organization:activate')
+  requestSync(
+    @CurrentTenant('tenantId') tenantId: string,
+    @CurrentUser('sub') actorId: string,
+    @Param('treeId') treeId: string,
+    @Body(new ZodValidationPipe(RequestOrgSyncV1Schema)) dto: RequestOrgSyncV1,
+  ) {
+    return this.organization.requestSync(tenantId, actorId, treeId, dto);
   }
 
   @Get('trees/:treeId/activations')

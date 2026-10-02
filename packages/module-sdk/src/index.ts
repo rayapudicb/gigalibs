@@ -61,3 +61,23 @@ export {
   type ModuleRuntimeConfig,
   type ModuleRuntimeConfigOptions,
 } from './module-runtime-config.js';
+export {
+  OrganizationReplica,
+  OrganizationReplicaConflictError,
+  organizationReplicaDdl,
+  type ReplicaClient,
+  type ReplicaHeader,
+  type ReplicaResult,
+  type ReplicaUnit,
+} from './organization-replica.js';
+export {
+  assertOrganizationWrite,
+  assertOwningUnit,
+  organizationAccess,
+  organizationReadCondition,
+  OrganizationScopeRefusal,
+  OrganizationVersionPendingError,
+  type OrganizationAccess,
+  type OrganizationClaim,
+  type OwnershipPolicy,
+} from './organization-access.js';

@@ -10,6 +10,7 @@ import {
 import * as crypto from 'crypto';
 import { DatabaseService } from '../database/database.service.js';
 import type { AnalyticsPrincipal } from '../auth/authorization.js';
+import { organizationReplica, UNMATCHED_UNIT } from '../organization/organization-scope.js';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -426,6 +427,7 @@ export class DatasetService {
       analyticalType: string;
       unit?: FieldUnitConversion;
       place?: { longitudeField: string } | { byCode: true };
+      organizationUnit?: { match: 'CODE' | 'ID' };
     }>,
   ): Promise<{ recordCount: number; checksum: string; unplacedCount?: number }> {
     // Read most recent raw records for this connection + table (all of them)
@@ -458,8 +460,22 @@ export class DatasetService {
     const placeEntry = fieldMappings.find((mapping) => mapping.place);
     const tagger = placeEntry ? await PlaceTagger.load(this.db, tenantId) : null;
     let unplaced = 0;
+    // WI-OI-109e3: a unit field is matched against Analytics' copy of the organization (newest held primary version).
+    const unitEntry = fieldMappings.find((mapping) => mapping.organizationUnit);
+    const unitsByCode = unitEntry
+      ? await organizationReplica.unitsByCode({ query: (text: string, values?: unknown[]) => this.db.queryWithTenant(tenantId, text, values as unknown[]) } as never, tenantId)
+      : new Map<string, { id: string; name: string }>();
+    const unitsById = new Map([...unitsByCode.values()].map((unit) => [unit.id, unit]));
     const analyticalRows = rawRows.map((r) => {
       const payload: Record<string, unknown> = {};
+      if (unitEntry) {
+        const raw = readSourceField(r.raw_payload, unitEntry.sourceField);
+        const value = raw === null || raw === undefined ? '' : String(raw).trim();
+        const found = value === '' ? null : unitEntry.organizationUnit!.match === 'CODE' ? unitsByCode.get(value) : unitsById.get(value);
+        // Empty: tenant-shared. Unknown: kept from everyone but tenant-wide members, never widened.
+        payload[unitEntry.analyticalField] = value === '' ? 'Shared' : found?.name ?? 'Unknown unit';
+        payload.unit_id = value === '' ? null : found?.id ?? UNMATCHED_UNIT;
+      }
       if (placeEntry && tagger) {
         const place = placeEntry.place!;
         const found = 'longitudeField' in place
@@ -471,7 +487,7 @@ export class DatasetService {
         payload.place_path = found?.path ?? null;
       }
       for (const mapping of fieldMappings) {
-        if (mapping === placeEntry) continue;
+        if (mapping === placeEntry || mapping === unitEntry) continue;
         const rawValue = readSourceField(r.raw_payload, mapping.sourceField);
         let value = castToType(rawValue, mapping.analyticalType);
         if (mapping.unit && typeof value === 'number') {

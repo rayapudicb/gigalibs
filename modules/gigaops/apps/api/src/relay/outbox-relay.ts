@@ -2,7 +2,9 @@ import { OutboxRelay } from '@gigalibs/module-sdk';
 import { Inject, Injectable } from '@nestjs/common';
 import { WorkforceDatabaseService } from '../database/database.service.js';
 import {
+  ANALYTICS_INBOX_AUDIENCE,
   CMMS_INBOX_AUDIENCE,
+  WORKFORCE_ANALYTICS_RELAY_CONFIG,
   WORKFORCE_RELAY_CONFIG,
   type WorkforceRelayConfig,
 } from './relay-config.js';
@@ -16,7 +18,7 @@ export { deliver, type RelayEnvelope } from '@gigalibs/module-sdk';
  */
 @Injectable()
 export class WorkforceOutboxRelay extends OutboxRelay<
-  'relay_lease_cmms_events' | 'relay_settle_cmms_event' | 'outbox_sweep'
+  'relay_lease_cmms_events' | 'relay_settle_cmms_event'
 > {
   constructor(
     database: WorkforceDatabaseService,
@@ -29,6 +31,25 @@ export class WorkforceOutboxRelay extends OutboxRelay<
       source: 'workforce',
       notConfiguredMessage:
         'Outbox relay to CMMS is not configured; handshake facts stay in the outbox.',
+    });
+  }
+}
+
+/** WI-OI-109e3: complete position facts, including organizationUnitId, reach Analytics durably. */
+@Injectable()
+export class WorkforceAnalyticsOutboxRelay extends OutboxRelay<
+  'relay_lease_analytics_positions' | 'relay_settle_analytics_position'
+> {
+  constructor(
+    database: WorkforceDatabaseService,
+    @Inject(WORKFORCE_ANALYTICS_RELAY_CONFIG) config: WorkforceRelayConfig,
+  ) {
+    super(database, config, {
+      leaseFunction: 'relay_lease_analytics_positions',
+      settleFunction: 'relay_settle_analytics_position',
+      audience: ANALYTICS_INBOX_AUDIENCE,
+      source: 'workforce',
+      notConfiguredMessage: 'Outbox relay to Analytics is not configured; position facts stay in the outbox.',
     });
   }
 }

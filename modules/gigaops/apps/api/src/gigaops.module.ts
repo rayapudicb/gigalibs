@@ -23,9 +23,14 @@ import { BookingsController, WorkRequirementsController } from './bookings/booki
 import { BookingsService } from './bookings/bookings.service.js';
 import { WorkforceInboxController } from './relay/inbox.controller.js';
 import { WorkforceInboxService } from './relay/inbox.service.js';
-import { WorkforceOutboxRelay } from './relay/outbox-relay.js';
+import { WorkforceAnalyticsOutboxRelay, WorkforceOutboxRelay } from './relay/outbox-relay.js';
 import { RelayInboxGuard } from './relay/relay-inbox.guard.js';
-import { WORKFORCE_RELAY_CONFIG, loadWorkforceRelayConfig } from './relay/relay-config.js';
+import {
+  WORKFORCE_ANALYTICS_RELAY_CONFIG,
+  WORKFORCE_RELAY_CONFIG,
+  loadWorkforceAnalyticsRelayConfig,
+  loadWorkforceRelayConfig,
+} from './relay/relay-config.js';
 import { OUTBOX_RETENTION_CONFIG, OutboxRetention, loadOutboxRetentionConfig } from './relay/outbox-retention.js';
 import { PunchesController, TimeCorrectionsController, TimeExceptionsController, TimesheetsController } from './time/time.controller.js';
 import { TimeService } from './time/time.service.js';
@@ -34,6 +39,8 @@ import { PayExportService } from './pay/pay-export.service.js';
 import { PayService } from './pay/pay.service.js';
 import { WorkforcePackController } from './pack/pack.controller.js';
 import { WorkforcePackService } from './pack/pack.service.js';
+import { WorkforceOrganizationReplicaController } from './organization/organization-replica.controller.js';
+import { WorkforceOrganizationReplicaService } from './organization/organization-replica.service.js';
 
 @Module({
   controllers: [
@@ -58,6 +65,7 @@ import { WorkforcePackService } from './pack/pack.service.js';
     TimeExceptionsController,
     PayController,
     WorkforcePackController,
+    WorkforceOrganizationReplicaController,
   ],
   providers: [
     GigaOpsConfigProvider,
@@ -65,6 +73,7 @@ import { WorkforcePackService } from './pack/pack.service.js';
     GigaOpsAuthorizationGuard,
     WorkforceResourcesService,
     WorkforcePackService,
+    WorkforceOrganizationReplicaService,
     JobsService,
     AvailabilityService,
     BookingsService,
@@ -73,8 +82,10 @@ import { WorkforcePackService } from './pack/pack.service.js';
     PayService,
     PayExportService,
     WorkforceOutboxRelay,
+    WorkforceAnalyticsOutboxRelay,
     RelayInboxGuard,
     { provide: WORKFORCE_RELAY_CONFIG, useFactory: () => loadWorkforceRelayConfig() },
+    { provide: WORKFORCE_ANALYTICS_RELAY_CONFIG, useFactory: () => loadWorkforceAnalyticsRelayConfig() },
     OutboxRetention,
     { provide: OUTBOX_RETENTION_CONFIG, useFactory: () => loadOutboxRetentionConfig() },
   ],

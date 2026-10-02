@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { OrganizationScopeV2Schema } from '../organization/index.js';
 import { SpatialScopePlaceIdsSchema } from '../geospatial/index.js';
 
 export const PlatformContextPersonaSchema = z.enum([
@@ -57,6 +58,11 @@ export const PlatformContextV1Schema = z.object({
   org_scope: PlatformContextOrgScopeSchema,
   /** Absent means UNBOUNDED, so tokens minted before spatial scoping keep their meaning. */
   spatial_scope: PlatformContextSpatialScopeSchema.optional(),
+  /**
+   * WI-OI-109e (ADR-0018 §3): the member's organization scope once the tenant's primary tree has a version in force.
+   * Absent means the tenant is not organization-scoped yet and `org_scope` applies.
+   */
+  organization: OrganizationScopeV2Schema.optional(),
   entitlement: PlatformContextEntitlementSchema,
   iat: z.number().int().positive(),
   exp: z.number().int().positive(),

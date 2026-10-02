@@ -8,7 +8,12 @@ import type { ExecutionContext } from '@nestjs/common';
 import { signRelayToken } from '@gigalibs/auth-core';
 import { describe, expect, it, vi } from 'vitest';
 import { WorkforceInboxService } from './inbox.service.js';
-import { CMMS_INBOX_AUDIENCE, WORKFORCE_INBOX_AUDIENCE, loadWorkforceRelayConfig } from './relay-config.js';
+import {
+  CMMS_INBOX_AUDIENCE,
+  WORKFORCE_INBOX_AUDIENCE,
+  loadWorkforceAnalyticsRelayConfig,
+  loadWorkforceRelayConfig,
+} from './relay-config.js';
 import { type RelayRequest, RelayInboxGuard } from './relay-inbox.guard.js';
 
 function keyPair() {
@@ -80,6 +85,19 @@ describe('Workforce relay configuration', () => {
     expect(() => loadWorkforceRelayConfig({ WORKFORCE_RELAY_CMMS_URL: 'http://attacker.example:4200', CMMS_INBOX_RELAY_PRIVATE_KEY_BASE64: der })).toThrow();
     expect(() => loadWorkforceRelayConfig({ CMMS_INBOX_RELAY_PRIVATE_KEY_BASE64: der })).toThrow(/or neither/);
     expect(() => loadWorkforceRelayConfig({ WORKFORCE_RELAY_INTERVAL_MS: '0' })).toThrow(/between 100 and 60000/);
+  });
+
+  it('uses a separate Workforce key and only the Analytics service origin for position facts', () => {
+    const signing = keyPair().privatePem;
+    const der = Buffer.from(signing.replace(/-----[^-]+-----|\s/g, ''), 'base64').toString('base64');
+    expect(loadWorkforceAnalyticsRelayConfig({
+      WORKFORCE_RELAY_ANALYTICS_URL: 'http://analytics-api:4400',
+      ANALYTICS_WORKFORCE_INBOX_RELAY_PRIVATE_KEY_BASE64: der,
+    }).outbound?.targetOrigin).toBe('http://analytics-api:4400');
+    expect(() => loadWorkforceAnalyticsRelayConfig({
+      WORKFORCE_RELAY_ANALYTICS_URL: 'http://attacker.example:4400',
+      ANALYTICS_WORKFORCE_INBOX_RELAY_PRIVATE_KEY_BASE64: der,
+    })).toThrow();
   });
 });
 

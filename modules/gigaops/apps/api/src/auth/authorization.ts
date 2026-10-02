@@ -33,6 +33,8 @@ export interface GigaOpsPrincipal {
   readonly roles: readonly string[];
   readonly persona: PlatformContextV1['persona_type'];
   readonly orgScope: PlatformContextV1['org_scope'];
+  /** WI-OI-109e3: present once the tenant's organization tree is in force; then it decides, not `orgScope`. */
+  readonly organization?: NonNullable<PlatformContextV1['organization']>;
   /** Tokens minted before spatial scoping carry no scope and mean UNBOUNDED (WI-OI-065 positions have sites). */
   readonly spatialScope: NonNullable<PlatformContextV1['spatial_scope']>;
 }
@@ -156,6 +158,7 @@ export class GigaOpsAuthorizationGuard implements CanActivate {
       roles: Object.freeze([...platformContext.roles]),
       persona: platformContext.persona_type,
       orgScope: Object.freeze(platformContext.org_scope),
+      ...(platformContext.organization ? { organization: Object.freeze(platformContext.organization) } : {}),
       spatialScope: Object.freeze(platformContext.spatial_scope ?? { mode: 'UNBOUNDED' as const }),
     });
     return true;
@@ -177,6 +180,8 @@ function hasPermission(granted: readonly string[], required: string): boolean {
   return (
     granted.includes('*') ||
     granted.includes('workforce:*') ||
-    granted.includes(required)
+    granted.includes(required) ||
+    // WI-OI-109e2: another family's wildcard (`organization:*`) covers its own permissions, as in the core and web.
+    granted.includes(`${required.split(/[:.]/)[0]}:*`)
   );
 }

@@ -4,7 +4,10 @@ import {
   Logger,
   type OnApplicationBootstrap,
   type OnApplicationShutdown,
+  Optional,
 } from '@nestjs/common';
+// biome-ignore lint/style/useImportType: NestJS needs the runtime constructor token for dependency injection.
+import { KernelOrganizationSyncService, ORGANIZATION_SYNC_EVENT_TYPES } from './kernel-organization-sync.service.js';
 
 @Injectable()
 export class OutboxRelayProcessor implements OnApplicationBootstrap, OnApplicationShutdown {
@@ -12,6 +15,8 @@ export class OutboxRelayProcessor implements OnApplicationBootstrap, OnApplicati
   private timer?: NodeJS.Timeout;
   private running = false;
   private stopping = false;
+
+  constructor(@Optional() private readonly organizationSync?: KernelOrganizationSyncService) {}
 
   onApplicationBootstrap() {
     this.timer = setInterval(() => void this.tick(), 5_000);
@@ -40,6 +45,11 @@ export class OutboxRelayProcessor implements OnApplicationBootstrap, OnApplicati
 
       for (const event of pending) {
         try {
+          // WI-OI-109e2: organization activations and sync requests become kernel jobs before they count as sent.
+          if ((ORGANIZATION_SYNC_EVENT_TYPES as readonly string[]).includes(event.eventType)) {
+            if (!this.organizationSync) throw new Error('Organization sync is not configured in this process.');
+            await this.organizationSync.dispatch(event);
+          }
           await prisma.platformOutboxEvent.update({
             where: { id: event.id },
             data: {

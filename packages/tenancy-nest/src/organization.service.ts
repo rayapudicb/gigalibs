@@ -6,10 +6,14 @@ import {
   type CreateOrgScopeGrantV1,
   type CreateOrgTreeV1,
   type CreateOrgUnitTypeV1,
+  type CreateOrgUnitPlaceLinkV1,
   type CreateOrgUnitV1,
+  type EndOrgUnitPlaceLinkV1,
+  type ImportOrgDepartmentsV1,
   MAX_ORG_GRANTS_PER_MEMBER,
   MAX_ORG_UNITS,
   type OrgAsOfQuery,
+  type OrgDepartmentImportV1,
   type OrgEdgeListQuery,
   type OrgEdgeViewV1,
   type OrgGrantListQuery,
@@ -20,13 +24,16 @@ import {
   type OrgPage,
   type OrgRecordStatusChangeV1,
   type OrgScopeGrantV1,
+  type OrgSyncRequestV1,
   type OrgTreeV1,
   type OrgUnitListQuery,
+  type OrgUnitPlaceLinkV1,
   type OrgUnitTypeV1,
   type OrgUnitV1,
   type OrgValidationResultV1,
   type OrgVersionCheckV1,
   type OrgVersionTransitionV1,
+  type RequestOrgSyncV1,
   type RevokeOrgScopeGrantV1,
   type UpdateOrgDraftEdgesV1,
   type UpdateOrgUnitTypeV1,
@@ -542,7 +549,7 @@ export class OrganizationService {
         SELECT ${tenantId}, ${versionId}, ancestor, descendant, depth FROM up`;
       const [row] = await tx.$queryRaw<Array<{ checksum: string }>>`
         SELECT 'sha256:' || encode(sha256(convert_to(coalesce(
-                 string_agg("unitId" || '>' || coalesce("parentUnitId", '') || '#' || "sortOrder", E'\n' ORDER BY "unitId"), ''), 'UTF8')), 'hex') AS checksum
+                 string_agg("unitId" || '>' || coalesce("parentUnitId", '') || '#' || "sortOrder", E'\n' ORDER BY "unitId" COLLATE "C"), ''), 'UTF8')), 'hex') AS checksum
           FROM org_hierarchy_edges WHERE "tenantId" = ${tenantId} AND "versionId" = ${versionId}`;
       return { publishedById: actorId, publishedAt: new Date(), checksum: row?.checksum ?? null };
     });
@@ -584,6 +591,38 @@ export class OrganizationService {
         },
       });
       return toActivation(created);
+    });
+  }
+
+  /**
+   * Asks for the tree's version in force, and any scheduled one, to be sent to the modules again (a module added
+   * later, or one that missed a delivery). The relay turns the event into kernel jobs; modules ignore what they hold.
+   */
+  async requestSync(tenantId: string, actorId: string, treeId: string, dto: RequestOrgSyncV1): Promise<OrgSyncRequestV1> {
+    return this.run(tenantId, async (tx, control) => {
+      await this.requireTree(tx, tenantId, treeId);
+      const now = new Date();
+      const current = await this.activeAt(tx, tenantId, treeId, now);
+      const scheduled = await tx.orgHierarchyActivation.findMany({ where: { tenantId, treeId, effectiveFrom: { gt: now } }, orderBy: [{ effectiveFrom: 'asc' }] });
+      const activations = [...(current ? [current] : []), ...scheduled];
+      if (activations.length === 0) throw new ConflictException('Nothing is active or scheduled for this tree yet.');
+      const requestId = createHash('sha256').update(`${tenantId}:${treeId}:${actorId}:${now.toISOString()}`).digest('hex').slice(0, 32);
+      for (const activation of activations)
+        await this.record(tx, control, tenantId, actorId, {
+          action: 'STATUS_CHANGE',
+          resource: 'organization-hierarchy-activation',
+          resourceId: activation.id,
+          after: { syncRequestId: requestId },
+          reason: dto.reason,
+          event: {
+            type: 'organization.hierarchy.sync-requested.v1',
+            aggregateType: 'organization_tree',
+            aggregateId: treeId,
+            aggregateVersion: 1,
+            payload: { activationId: activation.id, versionId: activation.versionId, requestId, requestedBy: actorId },
+          },
+        });
+      return { requestId, activations: activations.length };
     });
   }
 
@@ -737,6 +776,139 @@ export class OrganizationService {
         event: grantEvent(after, 'REVOKED'),
       });
       return toGrant(after);
+    });
+  }
+
+  // ─── Place links (D6: never grant place access) ─────────────────────────────────────────────────────────────
+
+  async listPlaceLinks(tenantId: string, unitId: string): Promise<OrgUnitPlaceLinkV1[]> {
+    return this.run(tenantId, async (tx) => {
+      await this.requireUnit(tx, tenantId, unitId);
+      return (await tx.orgUnitPlaceLink.findMany({ where: { tenantId, unitId }, orderBy: [{ effectiveFrom: 'desc' }], take: 500 })).map(toPlaceLink);
+    });
+  }
+
+  async createPlaceLink(tenantId: string, actorId: string, unitId: string, dto: CreateOrgUnitPlaceLinkV1): Promise<OrgUnitPlaceLinkV1> {
+    return this.run(tenantId, async (tx, control) => {
+      const unit = await this.requireUnit(tx, tenantId, unitId);
+      if (unit.status === 'ARCHIVED') throw new UnprocessableEntityException('An archived unit cannot take new place links.');
+      const from = toDate(dto.effectiveFrom);
+      const overlapping = await tx.orgUnitPlaceLink.findFirst({
+        where: {
+          tenantId, unitId, placeId: dto.placeId, relation: dto.relation,
+          OR: [{ effectiveTo: null }, { effectiveTo: { gt: from } }],
+          ...(dto.effectiveTo ? { effectiveFrom: { lt: toDate(dto.effectiveTo) } } : {}),
+        },
+        select: { id: true },
+      });
+      if (overlapping) throw new ConflictException('The unit already has this link to the place for part of that period.');
+      const created = await tx.orgUnitPlaceLink.create({
+        data: { tenantId, unitId, placeId: dto.placeId, relation: dto.relation, effectiveFrom: from, effectiveTo: dto.effectiveTo ? toDate(dto.effectiveTo) : null, createdById: actorId },
+      });
+      await this.record(tx, control, tenantId, actorId, {
+        action: 'CREATE', resource: 'organization-unit-place-link', resourceId: created.id, after: created, reason: dto.reason, event: placeLinkEvent(created),
+      });
+      return toPlaceLink(created);
+    });
+  }
+
+  async endPlaceLink(tenantId: string, actorId: string, linkId: string, dto: EndOrgUnitPlaceLinkV1): Promise<OrgUnitPlaceLinkV1> {
+    return this.run(tenantId, async (tx, control) => {
+      const current = await tx.orgUnitPlaceLink.findFirst({ where: { tenantId, id: linkId } });
+      if (!current) throw new NotFoundException('Place link not found.');
+      if (current.effectiveTo) throw new ConflictException('The place link has already ended.');
+      if (dto.effectiveTo <= date(current.effectiveFrom)) throw new UnprocessableEntityException('The end date must be after the start date.');
+      const ended = await tx.orgUnitPlaceLink.updateMany({
+        where: { tenantId, id: linkId, effectiveTo: null },
+        data: { effectiveTo: toDate(dto.effectiveTo), endedById: actorId },
+      });
+      if (ended.count !== 1) throw new ConflictException('The place link changed; reload it.');
+      const after = await tx.orgUnitPlaceLink.findFirstOrThrow({ where: { tenantId, id: linkId } });
+      await this.record(tx, control, tenantId, actorId, {
+        action: 'UPDATE', resource: 'organization-unit-place-link', resourceId: linkId, before: current, after, reason: dto.reason, event: placeLinkEvent(after),
+      });
+      return toPlaceLink(after);
+    });
+  }
+
+  // ─── Department bridge (ADR-0018 §4) ───────────────────────────────────────────────────────────────────────
+
+  /**
+   * Departments become DEPARTMENT units with the same ids (module references stay valid), placed as nested in the
+   * primary tree's draft, and each member's department becomes a read-write grant. Running it again adds only what is
+   * missing. Departments turn read-only when a version is activated.
+   */
+  async importDepartments(tenantId: string, actorId: string, dto: ImportOrgDepartmentsV1): Promise<OrgDepartmentImportV1> {
+    return this.run(tenantId, async (tx, control) => {
+      const departments = await control(() =>
+        tx.department.findMany({ where: { tenantId }, select: { id: true, code: true, name: true, parentId: true, managerId: true, isActive: true, createdAt: true } }),
+      );
+      if (departments.length === 0) return { departments: 0, unitsCreated: 0, placed: 0, grantsCreated: 0, draftVersionId: null };
+      const tree = await tx.orgTree.findFirst({ where: { tenantId, kind: 'PRIMARY' } });
+      if (!tree) throw new UnprocessableEntityException('Create the primary tree first; departments are placed in its draft.');
+      let type = await tx.orgUnitType.findFirst({ where: { tenantId, code: 'DEPARTMENT' } });
+      type ??= await tx.orgUnitType.create({
+        data: {
+          tenantId, code: 'DEPARTMENT', labelOne: 'Department', labelOther: 'Departments', holdsRecords: true,
+          capabilities: ['OPERATIONAL', 'WORKFORCE'], allowedParentTypeCodes: ['DEPARTMENT'], allowAsRoot: true,
+          description: 'Brought in from departments (ADR-0018 §4).', createdById: actorId, updatedById: actorId,
+        },
+      });
+      const ids = departments.map((department) => department.id);
+      const existing = new Set((await tx.orgUnit.findMany({ where: { tenantId, id: { in: ids } }, select: { id: true } })).map((unit) => unit.id));
+      const missing = departments.filter((department) => !existing.has(department.id));
+      const clashes = await tx.orgUnit.findMany({ where: { tenantId, code: { in: missing.map((department) => department.code) } }, select: { code: true } });
+      if (clashes.length > 0) throw new ConflictException(`Units already use these codes: ${clashes.map((unit) => unit.code).join(', ')}.`);
+      if (missing.length > 0)
+        await tx.orgUnit.createMany({
+          data: missing.map((department) => ({
+            id: department.id, tenantId, typeId: type.id, code: department.code, name: department.name,
+            status: department.isActive ? 'ACTIVE' : 'INACTIVE', effectiveFrom: toDate(date(department.createdAt)),
+            managerUserId: department.managerId, createdById: actorId, updatedById: actorId,
+          })),
+        });
+      let draft = await tx.orgHierarchyVersion.findFirst({ where: { tenantId, treeId: tree.id, status: { in: ['DRAFT', 'VALIDATED', 'SUBMITTED', 'APPROVED'] } } });
+      if (draft && draft.status !== 'DRAFT' && draft.status !== 'VALIDATED')
+        throw new ConflictException('The primary tree has a draft waiting for approval; finish it before bringing departments in.');
+      if (!draft) {
+        const basedOn = (await this.activeAt(tx, tenantId, tree.id, new Date()))?.versionId ?? null;
+        const last = await tx.orgHierarchyVersion.aggregate({ where: { tenantId, treeId: tree.id }, _max: { versionNumber: true } });
+        draft = await tx.orgHierarchyVersion.create({
+          data: { tenantId, treeId: tree.id, versionNumber: (last._max.versionNumber ?? 0) + 1, basedOnVersionId: basedOn, reason: dto.reason, createdById: actorId },
+        });
+        if (basedOn)
+          await tx.$executeRaw`
+            INSERT INTO org_hierarchy_edges ("tenantId", "versionId", "unitId", "parentUnitId", "sortOrder")
+            SELECT "tenantId", ${draft.id}, "unitId", "parentUnitId", "sortOrder" FROM org_hierarchy_edges WHERE "tenantId" = ${tenantId} AND "versionId" = ${basedOn}`;
+      }
+      await tx.$executeRaw`
+        INSERT INTO org_hierarchy_edges ("tenantId", "versionId", "unitId", "parentUnitId", "sortOrder")
+        SELECT ${tenantId}, ${draft.id}, d."unitId", d."parentUnitId", 0
+          FROM unnest(${ids}::text[], ${departments.map((department) => department.parentId)}::text[]) AS d("unitId", "parentUnitId")
+        ON CONFLICT ("tenantId", "versionId", "unitId") DO UPDATE SET "parentUnitId" = EXCLUDED."parentUnitId"`;
+      draft = await this.moveVersion(tx, tenantId, draft, 'DRAFT', {});
+      const assignments = await control(() =>
+        tx.tenantMember.findMany({ where: { tenantId, status: 'ACTIVE', departmentId: { in: ids } }, select: { userId: true, departmentId: true } }),
+      );
+      let grantsCreated = 0;
+      for (const assignment of assignments) {
+        const unitId = assignment.departmentId as string;
+        const current = { tenantId, userId: assignment.userId, revokedAt: null, OR: [{ effectiveTo: null }, { effectiveTo: { gt: new Date() } }] };
+        if (await tx.orgScopeGrant.findFirst({ where: { ...current, unitId }, select: { id: true } })) continue;
+        if ((await tx.orgScopeGrant.count({ where: current })) >= MAX_ORG_GRANTS_PER_MEMBER) continue;
+        const grant = await tx.orgScopeGrant.create({
+          data: { tenantId, userId: assignment.userId, unitId, access: 'READ_WRITE', effectiveFrom: new Date(), reason: 'Brought in from department membership', grantedById: actorId },
+        });
+        await this.record(tx, control, tenantId, actorId, {
+          action: 'CREATE', resource: 'organization-scope-grant', resourceId: grant.id, after: grant, reason: dto.reason, event: grantEvent(grant, 'GRANTED'),
+        });
+        grantsCreated += 1;
+      }
+      const result = { departments: departments.length, unitsCreated: missing.length, placed: departments.length, grantsCreated, draftVersionId: draft.id };
+      await this.record(tx, control, tenantId, actorId, {
+        action: 'CREATE', resource: 'organization-department-import', resourceId: draft.id, after: result, reason: dto.reason,
+      });
+      return result;
     });
   }
 
@@ -1056,6 +1228,27 @@ function grantEvent(row: GrantRow, change: 'GRANTED' | 'REVOKED') {
     aggregateId: row.id,
     aggregateVersion: change === 'GRANTED' ? 1 : 2,
     payload: { grantId: row.id, userId: row.userId, unitId: row.unitId, access: row.access, change },
+  };
+}
+
+function toPlaceLink(row: Awaited<ReturnType<Tx['orgUnitPlaceLink']['findFirstOrThrow']>>): OrgUnitPlaceLinkV1 {
+  return {
+    id: row.id,
+    unitId: row.unitId,
+    placeId: row.placeId,
+    relation: row.relation,
+    effectiveFrom: date(row.effectiveFrom),
+    effectiveTo: row.effectiveTo ? date(row.effectiveTo) : null,
+  };
+}
+
+function placeLinkEvent(row: Awaited<ReturnType<Tx['orgUnitPlaceLink']['findFirstOrThrow']>>) {
+  return {
+    type: 'organization.unit-place-link.changed.v1',
+    aggregateType: 'organization_unit_place_link',
+    aggregateId: row.id,
+    aggregateVersion: row.effectiveTo ? 2 : 1,
+    payload: (({ id, ...link }) => ({ linkId: id, ...link }))(toPlaceLink(row)),
   };
 }
 

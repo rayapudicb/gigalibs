@@ -14,6 +14,7 @@ import { ReportModule } from './reports/report.module.js';
 import { LineageModule } from './lineage/lineage.module.js';
 import { PlaceAnalyticsModule } from './places/place-analytics.module.js';
 import { AnalyticsRuntimeModule } from './runtime.module.js';
+import { AnalyticsOrganizationReplicaModule } from './organization/organization-replica.js';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { AnalyticsRuntimeModule } from './runtime.module.js';
     LineageModule,
     PlaceAnalyticsModule,
     ConnectorHubInboxModule,
+    AnalyticsOrganizationReplicaModule,
   ],
   controllers: [
     HealthController,

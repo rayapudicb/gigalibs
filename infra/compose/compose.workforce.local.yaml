@@ -16,7 +16,7 @@ services:
       MODULE_RUNTIME_DATABASE_URL: ${WORKFORCE_DATABASE_URL:?WORKFORCE_DATABASE_URL is required}
       MODULE_MIGRATIONS_DIRECTORY: /app/migrations
       MODULE_SCHEMA: gigalibs_workforce
-      MODULE_EXPECTED_MIGRATION_VERSION: "16"
+      MODULE_EXPECTED_MIGRATION_VERSION: "18"
       MODULE_APPEND_ONLY_TABLES: audit_events,booking_events,punches,punch_voids,time_corrections,earning_lines
       MODULE_READ_ONLY_TABLES: auth_revocation_events
     extra_hosts:
@@ -48,7 +48,7 @@ services:
       WORKFORCE_CORS_ORIGINS: ${PUBLIC_ORIGIN:?PUBLIC_ORIGIN is required}
       WORKFORCE_DATABASE_URL: ${WORKFORCE_DATABASE_URL:?WORKFORCE_DATABASE_URL is required}
       WORKFORCE_DATABASE_POOL_SIZE: "10"
-      WORKFORCE_EXPECTED_MIGRATION_VERSION: "16"
+      WORKFORCE_EXPECTED_MIGRATION_VERSION: "18"
       # WI-OI-070: reference pay packs (not statutory advice) are for this local profile only; production leaves this unset.
       WORKFORCE_PAY_REFERENCE_PACKS: enabled
       WORKFORCE_PLATFORM_CONTEXT_AUDIENCE: gigalibs-workforce-api
@@ -57,6 +57,9 @@ services:
       WORKFORCE_INBOX_RELAY_PUBLIC_KEY_BASE64: ${WORKFORCE_INBOX_RELAY_PUBLIC_KEY_BASE64:?WORKFORCE_INBOX_RELAY_PUBLIC_KEY_BASE64 is required}
       WORKFORCE_RELAY_CMMS_URL: http://cmms-api:4200
       CMMS_INBOX_RELAY_PRIVATE_KEY_BASE64: ${CMMS_INBOX_RELAY_PRIVATE_KEY_BASE64:?CMMS_INBOX_RELAY_PRIVATE_KEY_BASE64 is required}
+      # WI-OI-109e3: position snapshots, including organizationUnitId, reach Analytics through a separate key.
+      WORKFORCE_RELAY_ANALYTICS_URL: http://analytics-api:4400
+      ANALYTICS_WORKFORCE_INBOX_RELAY_PRIVATE_KEY_BASE64: ${ANALYTICS_WORKFORCE_INBOX_RELAY_PRIVATE_KEY_BASE64:?ANALYTICS_WORKFORCE_INBOX_RELAY_PRIVATE_KEY_BASE64 is required}
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:

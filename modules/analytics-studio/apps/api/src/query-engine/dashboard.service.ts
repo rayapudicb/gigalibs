@@ -24,6 +24,7 @@ import type { z } from 'zod';
 import type { AnalyticsPrincipal } from '../auth/authorization.js';
 import { DatabaseService } from '../database/database.service.js';
 import { placeScopeCondition, resolvePlaceScope } from '../places/place-scope.js';
+import { organizationFilters, organizationScopeCondition, resolveOrganizationAccess } from '../organization/organization-scope.js';
 import { loadDatasetFields } from './dataset-fields.js';
 import { QueryEngineService } from './query-engine.service.js';
 import { SummaryService } from './summary.service.js';
@@ -215,20 +216,26 @@ export class DashboardService {
     }
     // WI-OI-105d: a member with a place scope is offered only values from records under their places.
     const placeScope = await resolvePlaceScope(this.db, principal);
+    // WI-OI-109e3: and only values from their units' records and shared ones.
+    const memberAccess = await resolveOrganizationAccess(this.db, principal);
+    let unitScoped = false;
     const datasetVersions: string[] = [];
     let type: AnalyticsFieldType | undefined;
     for (const modelId of new Set([...views.values()].map((view) => view.query.semanticModelId))) {
       const datasetVersionId = await this.datasetVersionOf(principal.tenantId, modelId);
       const fields = await loadDatasetFields(this.db, principal.tenantId, datasetVersionId);
       if (!fields.has(field) || (placeScope && !fields.has('place_id'))) continue;
+      if (organizationFilters(memberAccess, fields)) unitScoped = true;
       datasetVersions.push(datasetVersionId);
       type ??= fields.get(field);
     }
     if (datasetVersions.length === 0) return { field, values: [], truncated: false };
     const params: unknown[] = [field, datasetVersions];
-    const scoped = placeScope
+    const scoped = (placeScope
       ? ` AND ${placeScopeCondition('', placeScope, (value) => `$${params.push(value)}`)}`
-      : '';
+      : '') + (unitScoped && memberAccess
+      ? ` AND ${organizationScopeCondition('', memberAccess, (value) => `$${params.push(value)}`)}`
+      : '');
     const result = await this.db.queryWithTenant<{ value: string }>(
       principal.tenantId,
       `SELECT DISTINCT analytical_payload->>$1 AS value

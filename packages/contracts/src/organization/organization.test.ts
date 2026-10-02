@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { PlatformContextV1Schema } from '../auth/platform-context.js';
 import {
   ActivateOrgHierarchyV1Schema,
   CreateOrgTreeV1Schema,
@@ -10,6 +11,7 @@ import {
   OrgUnitCodeSchema,
   UpdateOrgDraftEdgesV1Schema,
 } from './index.js';
+import { ORGANIZATION_CLIENT_MANIFEST_V1, ORGANIZATION_ROUTES } from './api.js';
 
 // WI-OI-109b (ADR-0018): the configurable hierarchy's request and runtime-scope contracts.
 describe('organization hierarchy contracts', () => {
@@ -78,5 +80,42 @@ describe('organization hierarchy contracts', () => {
     expect(OrganizationScopeV2Schema.safeParse({ mode: 'UNITS', read_roots: [], write_roots: [] }).success).toBe(false);
     const tooMany = Array.from({ length: MAX_ORG_GRANTS_PER_MEMBER + 1 }, (_, index) => `unit-${index}`);
     expect(OrganizationScopeV2Schema.safeParse({ ...units, read_roots: tooMany, write_roots: [] }).success).toBe(false);
+  });
+
+  it('refuses a signed context whose organization claim widens writes beyond reads', () => {
+    const claims = {
+      iss: 'gigalibs-control-plane', aud: 'workforce-api', sub: 'user-1', tenant_id: 'tenant-1', session_id: 'session-1', auth_version: 1,
+      roles: ['MEMBER'], granted_scopes: [], persona_type: 'WORKFORCE_MEMBER', org_scope: { mode: 'SCOPED_DEPARTMENTS', department_ids: [] },
+      entitlement: { module_key: 'gigaops', status: 'ENABLED', version: 'v1' }, iat: 1, exp: 2, jti: 'jti-1',
+    };
+    expect(PlatformContextV1Schema.safeParse({ ...claims, organization: { mode: 'UNITS', tree_version: 'v7', read_roots: ['north'], write_roots: ['north'] } }).success).toBe(true);
+    expect(PlatformContextV1Schema.safeParse({ ...claims, organization: { mode: 'UNITS', tree_version: 'v7', read_roots: ['north'], write_roots: ['south'] } }).success).toBe(false);
+    expect(PlatformContextV1Schema.safeParse(claims).success).toBe(true);
+  });
+
+  it('publishes server-authoritative phone and tablet capabilities without client-side authority', () => {
+    expect(ORGANIZATION_CLIENT_MANIFEST_V1).toMatchObject({
+      schemaVersion: 1,
+      scopeClaim: 'PlatformContextV1.organization',
+      ownership: { primaryField: 'organizationUnitId', legacyAlias: 'departmentId', tenantSharedMarker: 'tenantShared' },
+      authority: {
+        serverAuthoritative: true,
+        primaryTreeOnlyGrantsAccess: true,
+        placeLinksGrantAccess: false,
+        offlineMutationsAllowed: false,
+        clientsMayNarrowScopeOnly: true,
+      },
+    });
+    const knownOperations = new Set(ORGANIZATION_ROUTES.map((route) => route.operationId));
+    const advertisedOperations = ORGANIZATION_CLIENT_MANIFEST_V1.capabilities.map((capability) => capability.operationId);
+    expect(new Set(advertisedOperations)).toEqual(knownOperations);
+    expect(new Set(advertisedOperations).size).toBe(advertisedOperations.length);
+    for (const surface of ORGANIZATION_CLIENT_MANIFEST_V1.surfaces) {
+      expect(surface.operationIds.every((operationId) => knownOperations.has(operationId))).toBe(true);
+    }
+    for (const form of ORGANIZATION_CLIENT_MANIFEST_V1.forms) {
+      expect(knownOperations.has(form.createOperationId)).toBe(true);
+      if (form.updateOperationId) expect(knownOperations.has(form.updateOperationId)).toBe(true);
+    }
   });
 });

@@ -10,7 +10,13 @@
  */
 
 import { createHash } from 'node:crypto';
-import { type SpatialNodeChangedV1, SpatialNodeChangedV1Schema, boundaryAreaM2, boundaryBoundingBox } from '@gigalibs/contracts';
+import {
+  type SpatialNodeChangedV1,
+  SpatialNodeChangedV1Schema,
+  WorkforcePositionFactV1Schema,
+  boundaryAreaM2,
+  boundaryBoundingBox,
+} from '@gigalibs/contracts';
 import {
   type OutboxRetentionConfig,
   OutboxRetentionSweeper,
@@ -41,6 +47,7 @@ import { DatabaseService } from '../database/database.service.js';
 export const ANALYTICS_INBOX_AUDIENCE = 'gigalibs-analytics-inbox';
 export const ANALYTICS_RELAY_CONFIG = Symbol('ANALYTICS_RELAY_CONFIG');
 export const ANALYTICS_GEOSPATIAL_RELAY_CONFIG = Symbol('ANALYTICS_GEOSPATIAL_RELAY_CONFIG');
+export const ANALYTICS_WORKFORCE_RELAY_CONFIG = Symbol('ANALYTICS_WORKFORCE_RELAY_CONFIG');
 export const ANALYTICS_RETENTION_CONFIG = Symbol('ANALYTICS_RETENTION_CONFIG');
 export const HUB_RECORDS_TABLE = 'records';
 
@@ -66,6 +73,17 @@ export function loadAnalyticsGeospatialRelayConfig(environment: NodeJS.ProcessEn
   });
 }
 
+/** WI-OI-109e3: Workforce has its own key and may send only position snapshot facts. */
+export function loadAnalyticsWorkforceRelayConfig(environment: NodeJS.ProcessEnv = process.env): RelayConfig {
+  return loadRelayConfig(environment, {
+    inboxPublicKey: 'ANALYTICS_WORKFORCE_INBOX_RELAY_PUBLIC_KEY_BASE64',
+    targetUrl: 'ANALYTICS_RELAY_WORKFORCE_URL',
+    signingKey: 'WORKFORCE_INBOX_RELAY_PRIVATE_KEY_BASE64',
+    interval: 'ANALYTICS_RELAY_INTERVAL_MS',
+    peerService: 'workforce-api',
+  });
+}
+
 @Injectable()
 export class ConnectorHubInboxGuard extends RelayInboxGuardBase {
   constructor(@Inject(ANALYTICS_RELAY_CONFIG) config: RelayConfig) {
@@ -80,17 +98,25 @@ export class GeospatialInboxGuard extends RelayInboxGuardBase {
   }
 }
 
+@Injectable()
+export class WorkforceInboxGuard extends RelayInboxGuardBase {
+  constructor(@Inject(ANALYTICS_WORKFORCE_RELAY_CONFIG) config: RelayConfig) {
+    super(config, { audience: ANALYTICS_INBOX_AUDIENCE, source: 'workforce', label: 'Analytics (Workforce)' });
+  }
+}
+
 /** The inbox route's guard: a message passes when either producer's own key verifies it (the token names the producer). */
 @Injectable()
 export class AnalyticsRelayInboxGuard implements CanActivate {
   constructor(
     @Inject(ConnectorHubInboxGuard) private readonly hub: ConnectorHubInboxGuard,
     @Inject(GeospatialInboxGuard) private readonly geospatial: GeospatialInboxGuard,
+    @Inject(WorkforceInboxGuard) private readonly workforce: WorkforceInboxGuard,
   ) {}
 
   canActivate(context: ExecutionContext): boolean {
     let first: unknown;
-    for (const guard of [this.hub, this.geospatial]) {
+    for (const guard of [this.hub, this.geospatial, this.workforce]) {
       try {
         if (guard.canActivate(context)) return true;
       } catch (error) {
@@ -143,6 +169,27 @@ export function parsePulledRecord(envelope: Partial<RelayEnvelope> | null): { en
   };
 }
 
+export function parseWorkforcePositionFact(envelope: Partial<RelayEnvelope> | null) {
+  if (
+    !envelope ||
+    !['WORKFORCE_POSITION_CREATED_V1', 'WORKFORCE_POSITION_UPDATED_V1'].includes(String(envelope.eventType)) ||
+    envelope.schemaVersion !== 1 ||
+    !text(envelope.messageId, 64) ||
+    !text(envelope.tenantId, 64) ||
+    !text(envelope.aggregateId, 64) ||
+    !Number.isSafeInteger(envelope.aggregateVersion) ||
+    Number.isNaN(Date.parse(String(envelope.occurredAt)))
+  ) {
+    throw new BadRequestException('The Workforce position fact is incomplete.');
+  }
+  const fact = WorkforcePositionFactV1Schema.safeParse(envelope.payload);
+  if (!fact.success) throw new BadRequestException(`The Workforce position fact is invalid: ${fact.error.issues[0]?.message ?? 'unknown'}`);
+  if (fact.data.entityId !== envelope.aggregateId || fact.data.aggregateVersion !== envelope.aggregateVersion) {
+    throw new BadRequestException('The Workforce position fact does not match its envelope.');
+  }
+  return { envelope: envelope as RelayEnvelope, fact: fact.data };
+}
+
 @Injectable()
 export class ConnectorHubInboxService {
   constructor(private readonly db: DatabaseService) {}
@@ -152,7 +199,59 @@ export class ConnectorHubInboxService {
     const eventType = (body as { eventType?: unknown } | null)?.eventType;
     if (source === 'geospatial' && eventType === 'SpatialNodeChangedV1') return this.receivePlace(body);
     if (source === 'connector-hub' && eventType === 'CONNECTOR_RECORD_PULLED_V1') return this.receive(body);
+    if (source === 'workforce' && ['WORKFORCE_POSITION_CREATED_V1', 'WORKFORCE_POSITION_UPDATED_V1'].includes(String(eventType))) {
+      return this.receiveWorkforcePosition(body);
+    }
     throw new BadRequestException(`${String(source)} may not deliver ${String(eventType)} here.`);
+  }
+
+  /**
+   * Stores an authenticated Workforce snapshot as a MODULE_EVENTS raw record. It then follows Analytics' existing
+   * no-code discovery/mapping/build path; no cross-schema read or special chart is introduced.
+   */
+  async receiveWorkforcePosition(body: unknown): Promise<{ status: 'stored' | 'duplicate'; sourceConnectionId?: string }> {
+    const { envelope, fact } = parseWorkforcePositionFact(body as Partial<RelayEnvelope>);
+    return this.db.withTenantTransaction(envelope.tenantId, async (client) => {
+      const receipt = await client.query(
+        `INSERT INTO gigalibs_analytics.inbox_receipts (message_id, tenant_id, source, event_type)
+         VALUES ($1, $2, 'workforce', $3) ON CONFLICT (message_id) DO NOTHING`,
+        [envelope.messageId, envelope.tenantId, envelope.eventType],
+      );
+      if ((receipt.rowCount ?? 0) === 0) return { status: 'duplicate' as const };
+      const source = await client.query<{ id: string }>(
+        `INSERT INTO gigalibs_analytics.source_connections
+           (tenant_id, display_name, source_type, status, created_by, module_source_key)
+         VALUES ($1, 'Workforce positions', 'MODULE_EVENTS', 'ACTIVE', 'workforce', 'workforce:positions')
+         ON CONFLICT (tenant_id, module_source_key) WHERE module_source_key IS NOT NULL
+         DO UPDATE SET display_name = EXCLUDED.display_name, updated_at = now()
+         RETURNING id`,
+        [envelope.tenantId],
+      );
+      const sourceId = source.rows[0]!.id;
+      const run = await client.query<{ id: string }>(
+        `INSERT INTO gigalibs_analytics.source_sync_runs
+           (connection_id, tenant_id, status, rows_fetched, hub_sync_job_id, started_at, completed_at)
+         VALUES ($1, $2, 'SUCCEEDED', 1, $3, $4, $4)
+         ON CONFLICT (connection_id, hub_sync_job_id) WHERE hub_sync_job_id IS NOT NULL
+         DO UPDATE SET completed_at = GREATEST(gigalibs_analytics.source_sync_runs.completed_at, EXCLUDED.completed_at)
+         RETURNING id`,
+        [sourceId, envelope.tenantId, envelope.messageId, envelope.occurredAt],
+      );
+      await client.query(
+        `INSERT INTO gigalibs_analytics.raw_record_versions
+           (sync_run_id, connection_id, tenant_id, source_table_name, source_pk_hash, raw_payload, ingested_at)
+         VALUES ($1, $2, $3, 'position_facts', $4, $5::jsonb, $6)`,
+        [
+          run.rows[0]!.id,
+          sourceId,
+          envelope.tenantId,
+          createHash('sha256').update(fact.entityId).digest('hex'),
+          JSON.stringify({ eventType: envelope.eventType, occurredAt: envelope.occurredAt, ...fact }),
+          envelope.occurredAt,
+        ],
+      );
+      return { status: 'stored' as const, sourceConnectionId: sourceId };
+    });
   }
 
   /**
@@ -299,9 +398,11 @@ export class AnalyticsInboxRetention extends OutboxRetentionSweeper {
   providers: [
     { provide: ANALYTICS_RELAY_CONFIG, useFactory: () => loadAnalyticsRelayConfig() },
     { provide: ANALYTICS_GEOSPATIAL_RELAY_CONFIG, useFactory: () => loadAnalyticsGeospatialRelayConfig() },
+    { provide: ANALYTICS_WORKFORCE_RELAY_CONFIG, useFactory: () => loadAnalyticsWorkforceRelayConfig() },
     { provide: ANALYTICS_RETENTION_CONFIG, useFactory: () => loadOutboxRetentionConfig(process.env, 'ANALYTICS') },
     ConnectorHubInboxGuard,
     GeospatialInboxGuard,
+    WorkforceInboxGuard,
     AnalyticsRelayInboxGuard,
     ConnectorHubInboxService,
     AnalyticsInboxRetention,

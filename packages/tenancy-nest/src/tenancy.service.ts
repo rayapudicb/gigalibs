@@ -13,6 +13,7 @@ import type {
   UpdateTenantOrganizationSettingsDto,
 } from '@gigalibs/contracts';
 import { type ModuleDefaultRole, moduleDefaultRoles } from '@gigalibs/contracts';
+import { primaryVersionInForce } from '@gigalibs/auth-nest';
 import { type Prisma, prisma } from '@gigalibs/db';
 import { PlatformSettingsEngine } from '@gigalibs/platform-settings';
 import {
@@ -1001,6 +1002,8 @@ export class TenancyService {
             throw new BadRequestException('Custom role does not belong to this tenant');
         }
 
+        if (dto.departmentId !== undefined && dto.departmentId !== member.departmentId)
+          await assertDepartmentsEditable(transaction, tenantId);
         const nextDepartmentId =
           dto.departmentId !== undefined ? dto.departmentId : member.departmentId;
         if (nextDepartmentId) {
@@ -1127,6 +1130,7 @@ export class TenancyService {
   async createDepartment(tenantId: string, createdById: string, dto: CreateDepartmentDto) {
     return prisma.$transaction(async (transaction) => {
       await transaction.$queryRaw`SELECT "id" FROM "tenants" WHERE "id" = ${tenantId} FOR UPDATE`;
+      await assertDepartmentsEditable(transaction, tenantId);
       const existing = await transaction.department.findUnique({
         where: { tenantId_code: { tenantId, code: dto.code } },
       });
@@ -1208,6 +1212,7 @@ export class TenancyService {
   ) {
     return prisma.$transaction(async (transaction) => {
     await transaction.$queryRaw`SELECT "id" FROM "tenants" WHERE "id" = ${tenantId} FOR UPDATE`;
+      await assertDepartmentsEditable(transaction, tenantId);
     const department = await transaction.department.findFirst({
       where: { id: departmentId, tenantId },
     });
@@ -1314,6 +1319,7 @@ export class TenancyService {
   async deleteDepartment(tenantId: string, departmentId: string, deletedById: string) {
     return prisma.$transaction(async (transaction) => {
     await transaction.$queryRaw`SELECT "id" FROM "tenants" WHERE "id" = ${tenantId} FOR UPDATE`;
+      await assertDepartmentsEditable(transaction, tenantId);
     const department = await transaction.department.findFirst({
       where: { id: departmentId, tenantId },
       include: {
@@ -1486,4 +1492,12 @@ function presentDomainStatus(domain: DomainStatusRecord) {
 
 function isUniqueConstraintError(error: unknown): boolean {
   return !!error && typeof error === 'object' && (error as { code?: unknown }).code === 'P2002';
+}
+
+/** WI-OI-109e1: once the primary tree has a version in force, units and grants are the one authority (ADR-0018 §4). */
+async function assertDepartmentsEditable(db: Pick<typeof prisma, '$queryRaw'>, tenantId: string): Promise<void> {
+  if (await primaryVersionInForce(db, tenantId))
+    throw new ConflictException(
+      "Departments are read-only: this workspace's organization is managed in Settings › Organization (units and access).",
+    );
 }

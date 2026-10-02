@@ -8,6 +8,8 @@ const prismaMock = vi.hoisted(() => ({
   tenantMember: { findUnique: vi.fn() },
   mfaRecoveryCode: { count: vi.fn() },
   platformRoleAssignment: { findMany: vi.fn() },
+  // WI-OI-109e1: no primary tree in force unless a test says otherwise, so department scope applies.
+  $queryRaw: vi.fn(async (): Promise<Array<Record<string, unknown>>> => []),
 }));
 
 vi.mock('@gigalibs/db', () => ({ prisma: prismaMock }));
@@ -187,6 +189,26 @@ describe('subject context for scheduled work', () => {
     expect(context.session.id).toBe('job:abc');
     expect(context.authVersion).toBeGreaterThanOrEqual(before);
     expect(context.tenant?.entitlements).toEqual([expect.objectContaining({ moduleKey: 'gigaops', status: 'ENABLED' })]);
+  });
+
+  it('follows the organization once its primary tree has a version in force (WI-OI-109e1)', async () => {
+    prismaMock.tenantMember.findUnique.mockResolvedValue({ ...membership('MEMBER'), permissions: [] });
+    prismaMock.$queryRaw
+      .mockResolvedValueOnce([{ versionId: 'version-7' }])
+      .mockResolvedValueOnce([{ unitId: 'finance', write: false }, { unitId: 'north', write: true }])
+      .mockResolvedValueOnce([{ unitId: 'north' }, { unitId: 'store-101' }]);
+    const context = await new AuthService().getSubjectContext('user-1', tenantId, 'job:org');
+    expect(context.organizationScope).toEqual({ mode: 'UNITS', tree_version: 'version-7', read_roots: ['finance', 'north'], write_roots: ['north'] });
+    // The legacy field covers read-write units only.
+    expect(context.orgScope).toEqual({ mode: 'SCOPED_DEPARTMENTS', departmentIds: ['north', 'store-101'] });
+  });
+
+  it('gives tenant-wide roles the whole tenant once the tree is in force', async () => {
+    prismaMock.tenantMember.findUnique.mockResolvedValue({ ...membership('TENANT_ADMIN'), permissions: [] });
+    prismaMock.$queryRaw.mockResolvedValueOnce([{ versionId: 'version-7' }]);
+    const context = await new AuthService().getSubjectContext('user-1', tenantId, 'job:admin');
+    expect(context.organizationScope).toEqual({ mode: 'TENANT', tree_version: 'version-7' });
+    expect(context.orgScope).toEqual({ mode: 'FLAT_TENANT' });
   });
 
   it('refuses an inactive owner, a suspended membership and an inactive tenant', async () => {

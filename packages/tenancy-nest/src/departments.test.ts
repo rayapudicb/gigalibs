@@ -30,6 +30,7 @@ const prismaMock = vi.hoisted(() => {
     $queryRaw: vi.fn(),
   };
   mock.$transaction.mockImplementation(async (cb: any) => cb(mock));
+  mock.$queryRaw.mockResolvedValue([]);
   return mock;
 });
 
@@ -101,6 +102,17 @@ describe('TenancyService - Departments & Hierarchy', () => {
           code: 'OPS',
         }),
       ).rejects.toBeInstanceOf(ConflictException);
+    });
+  });
+
+  describe('once the organization tree is in force (WI-OI-109e1)', () => {
+    it('refuses department changes and points to Settings › Organization', async () => {
+      // The tenant lock, then the primary tree's version in force.
+      prismaMock.$queryRaw.mockResolvedValueOnce([]).mockResolvedValueOnce([{ versionId: 'version-1' }]);
+      await expect(service.createDepartment(tenantId, userId, { name: 'Sales', code: 'SALES' } as never)).rejects.toThrow(
+        /managed in Settings › Organization/,
+      );
+      expect(prismaMock.department.create).not.toHaveBeenCalled();
     });
   });
 

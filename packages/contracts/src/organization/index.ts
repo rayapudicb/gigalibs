@@ -234,7 +234,8 @@ export type OrgOwnershipPolicy = z.infer<typeof OrgOwnershipPolicySchema>;
  * refuses a version it does not hold yet. `TENANT` is tenant-wide authority; `DENIED` is an unresolvable scope.
  */
 export const OrganizationScopeV2Schema = z.discriminatedUnion('mode', [
-  z.object({ mode: z.literal('TENANT') }).strict(),
+  // The version in force rides along so modules can check that a record's unit exists and holds records.
+  z.object({ mode: z.literal('TENANT'), tree_version: IdSchema.optional() }).strict(),
   z
     .object({
       mode: z.literal('UNITS'),
@@ -420,6 +421,8 @@ export const ORGANIZATION_EVENT_TYPES = [
   'organization.unit.changed.v1',
   'organization.hierarchy.activated.v1',
   'organization.scope-grant.changed.v1',
+  'organization.unit-place-link.changed.v1',
+  'organization.hierarchy.sync-requested.v1',
 ] as const;
 
 export const OrgUnitTypeChangedEventV1Schema = z.object({
@@ -491,3 +494,199 @@ export type OrgActiveVersionV1 = z.infer<typeof OrgActiveVersionV1Schema>;
 
 export const orgPageSchema = <T extends z.ZodTypeAny>(item: T) => z.object({ items: z.array(item), nextCursor: z.string().nullable() });
 export type OrgPage<T> = { items: T[]; nextCursor: string | null };
+
+// ─── 109e1: place links and the Department bridge ────────────────────────────────────────────────────────────
+
+/** A unit operates or owns a place from a date (D6: a link never grants place access). */
+export const CreateOrgUnitPlaceLinkV1Schema = z
+  .object({
+    placeId: z.string().uuid(),
+    relation: z.enum(['OPERATES', 'OWNS']),
+    effectiveFrom: DateSchema,
+    effectiveTo: DateSchema.nullable().default(null),
+    reason: ReasonSchema,
+  })
+  .strict()
+  .refine((link) => link.effectiveTo === null || link.effectiveTo > link.effectiveFrom, {
+    message: 'The end date must be after the start date.',
+    path: ['effectiveTo'],
+  });
+export type CreateOrgUnitPlaceLinkV1 = z.infer<typeof CreateOrgUnitPlaceLinkV1Schema>;
+
+export const EndOrgUnitPlaceLinkV1Schema = z.object({ effectiveTo: DateSchema, reason: ReasonSchema }).strict();
+export type EndOrgUnitPlaceLinkV1 = z.infer<typeof EndOrgUnitPlaceLinkV1Schema>;
+
+export const OrgUnitPlaceLinkChangedEventV1Schema = z.object({
+  linkId: IdSchema,
+  unitId: IdSchema,
+  placeId: z.string().uuid(),
+  relation: z.enum(['OPERATES', 'OWNS']),
+  effectiveFrom: DateSchema,
+  effectiveTo: DateSchema.nullable(),
+});
+
+/**
+ * ADR-0018 §4: departments become units of a DEPARTMENT type with the same ids, placed in the primary tree's draft as
+ * they were nested, and each member's department becomes a read-write grant. Activation then retires departments.
+ */
+export const ImportOrgDepartmentsV1Schema = z.object({ reason: ReasonSchema }).strict();
+export type ImportOrgDepartmentsV1 = z.infer<typeof ImportOrgDepartmentsV1Schema>;
+
+export const OrgDepartmentImportV1Schema = z.object({
+  departments: z.number().int().min(0),
+  unitsCreated: z.number().int().min(0),
+  placed: z.number().int().min(0),
+  grantsCreated: z.number().int().min(0),
+  draftVersionId: IdSchema.nullable(),
+});
+export type OrgDepartmentImportV1 = z.infer<typeof OrgDepartmentImportV1Schema>;
+
+// ─── 109e2: delivering a version to modules (kernel `module.call` jobs) ──────────────────────────────────────
+
+/** Units per page: a page stays under the modules' 100 kB request limit. */
+export const ORG_REPLICA_PAGE_SIZE = 500;
+
+export const OrgReplicaUnitV1Schema = z
+  .object({
+    unit_id: IdSchema,
+    parent_unit_id: IdSchema.nullable(),
+    /** Code and name as they were when the version was sent; records may name a unit by code. */
+    code: OrgUnitCodeSchema,
+    name: z.string().min(1).max(200),
+    sort_order: z.number().int().min(0).max(1_000_000),
+    status: z.enum(['ACTIVE', 'INACTIVE', 'ARCHIVED']),
+    holds_records: z.boolean(),
+    type_code: OrgTypeCodeSchema,
+  })
+  .strict();
+export type OrgReplicaUnitV1 = z.infer<typeof OrgReplicaUnitV1Schema>;
+
+const OrgReplicaVersionHeaderSchema = z.object({
+  tree_id: IdSchema,
+  tree_kind: OrgTreeKindSchema,
+  version_number: z.number().int().positive(),
+  checksum: z.string().regex(/^sha256:[0-9a-f]{64}$/),
+});
+
+/** One page of a published version's units, sent in order; resending a page changes nothing. */
+export const OrgReplicaPageV1Schema = OrgReplicaVersionHeaderSchema.extend({
+  page: z.number().int().min(0).max(1_000),
+  units: z.array(OrgReplicaUnitV1Schema).min(1).max(ORG_REPLICA_PAGE_SIZE),
+}).strict();
+export type OrgReplicaPageV1 = z.infer<typeof OrgReplicaPageV1Schema>;
+
+/** The last call: the module recounts, recomputes the checksum, builds its closure and only then holds the version. */
+export const OrgReplicaCompletionV1Schema = OrgReplicaVersionHeaderSchema.extend({
+  unit_count: z.number().int().min(0).max(MAX_ORG_UNITS),
+}).strict();
+export type OrgReplicaCompletionV1 = z.infer<typeof OrgReplicaCompletionV1Schema>;
+
+export const OrgReplicaResultV1Schema = z.object({
+  version_id: IdSchema,
+  status: z.enum(['RECEIVING', 'READY']),
+  received_units: z.number().int().min(0),
+});
+export type OrgReplicaResultV1 = z.infer<typeof OrgReplicaResultV1Schema>;
+
+/** Sends the version in force (and any scheduled one) to the modules again, for example after a module was added. */
+export const OrgHierarchySyncRequestedEventV1Schema = z.object({
+  activationId: IdSchema,
+  versionId: IdSchema,
+  requestId: IdSchema,
+  requestedBy: IdSchema,
+});
+
+export const RequestOrgSyncV1Schema = z.object({ reason: ReasonSchema }).strict();
+export type RequestOrgSyncV1 = z.infer<typeof RequestOrgSyncV1Schema>;
+export const OrgSyncRequestV1Schema = z.object({ requestId: IdSchema, activations: z.number().int().min(0) });
+export type OrgSyncRequestV1 = z.infer<typeof OrgSyncRequestV1Schema>;
+
+// ─── 109f: capability-driven client contract ────────────────────────────────────────────────────────────────
+
+export const OrganizationClientPermissionSchema = z.enum([
+  'organization:read',
+  'organization:draft',
+  'organization:approve',
+  'organization:activate',
+  'organization:grant',
+]);
+export type OrganizationClientPermission = z.infer<typeof OrganizationClientPermissionSchema>;
+
+export const OrganizationClientCapabilityV1Schema = z
+  .object({
+    operationId: z.string().min(1),
+    method: z.enum(['get', 'post', 'patch']),
+    path: z.string().startsWith('/'),
+    permission: OrganizationClientPermissionSchema,
+  })
+  .strict();
+
+export const OrganizationClientSurfaceV1Schema = z
+  .object({
+    key: z.enum(['structure', 'units', 'unit-types', 'access']),
+    title: z.string().min(1).max(80),
+    readPermission: OrganizationClientPermissionSchema,
+    operationIds: z.array(z.string().min(1)).min(1),
+    phoneLayout: z.enum(['LIST_DETAIL', 'STEP_FLOW']),
+    tabletLayout: z.enum(['MASTER_DETAIL', 'TREE_DETAIL', 'TABLE_DETAIL']),
+  })
+  .strict();
+
+export const OrganizationClientFieldV1Schema = z
+  .object({
+    path: z.string().min(1).max(80),
+    label: z.string().min(1).max(80),
+    control: z.enum(['TEXT', 'TEXTAREA', 'SWITCH', 'DATE', 'SELECT', 'MULTI_SELECT', 'ENTITY_PICKER']),
+    requiredOnCreate: z.boolean(),
+    optionsSource: z.enum(['STATIC', 'UNIT_TYPES', 'UNITS', 'USERS', 'PLACES']).optional(),
+  })
+  .strict();
+
+export const OrganizationClientFormV1Schema = z
+  .object({
+    key: z.enum(['unit-type', 'unit', 'tree', 'grant', 'place-link']),
+    createOperationId: z.string().min(1),
+    updateOperationId: z.string().min(1).nullable(),
+    fields: z.array(OrganizationClientFieldV1Schema).min(1),
+  })
+  .strict();
+
+/**
+ * Presentation metadata for generated clients. It advertises server capabilities; it never carries tenant data,
+ * authority, validation rules or executable expressions. Clients still submit the versioned request contracts and
+ * render server validation/refusal states.
+ */
+export const OrganizationClientManifestV1Schema = z
+  .object({
+    schemaVersion: z.literal(1),
+    apiBase: z.literal('/api/v1/tenants/current/organization'),
+    scopeClaim: z.literal('PlatformContextV1.organization'),
+    ownership: z
+      .object({
+        primaryField: z.literal('organizationUnitId'),
+        legacyAlias: z.literal('departmentId'),
+        tenantSharedMarker: z.literal('tenantShared'),
+      })
+      .strict(),
+    limits: z
+      .object({
+        maxDepth: z.number().int().positive(),
+        maxUnits: z.number().int().positive(),
+        maxGrantRootsPerMember: z.number().int().positive(),
+      })
+      .strict(),
+    capabilities: z.array(OrganizationClientCapabilityV1Schema).min(1),
+    surfaces: z.array(OrganizationClientSurfaceV1Schema).length(4),
+    forms: z.array(OrganizationClientFormV1Schema).length(5),
+    authority: z
+      .object({
+        serverAuthoritative: z.literal(true),
+        primaryTreeOnlyGrantsAccess: z.literal(true),
+        placeLinksGrantAccess: z.literal(false),
+        offlineMutationsAllowed: z.literal(false),
+        clientsMayNarrowScopeOnly: z.literal(true),
+      })
+      .strict(),
+  })
+  .strict();
+export type OrganizationClientManifestV1 = z.infer<typeof OrganizationClientManifestV1Schema>;

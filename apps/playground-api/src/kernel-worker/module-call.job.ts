@@ -7,7 +7,13 @@
 
 import { createPrivateKey } from 'node:crypto';
 import { buildPlatformContext, signPlatformContextToken } from '@gigalibs/auth-core';
-import { SCHEDULED_OPERATIONS, type PackApplicationV1 } from '@gigalibs/contracts';
+import {
+  ORG_REPLICA_PAGE_SIZE,
+  type OrgReplicaCompletionV1,
+  type OrgReplicaUnitV1,
+  type PackApplicationV1,
+  SCHEDULED_OPERATIONS,
+} from '@gigalibs/contracts';
 import { type EnqueueJobCommand, type JobDefinition, NonRetryableJobError } from '@gigalibs/jobs';
 import { HttpException } from '@nestjs/common';
 
@@ -23,6 +29,11 @@ export interface PackSectionSource {
   application(tenantId: string, publishedVersionId: string, moduleKey: string): Promise<PackApplicationV1 | null>;
 }
 
+/** WI-OI-109e2: a published organization version as modules receive it, read tenant-scoped from the control plane. */
+export interface OrganizationVersionSource {
+  version(tenantId: string, versionId: string): Promise<{ header: Omit<OrgReplicaCompletionV1, 'unit_count'>; units: OrgReplicaUnitV1[] } | null>;
+}
+
 interface Operation {
   readonly moduleKey: string;
   readonly audience: string;
@@ -33,6 +44,8 @@ interface Operation {
   readonly body: (payload: ModuleCallPayload, jobId: string) => Record<string, unknown>;
   /** Pack applications read their body from the published pack instead: this module's section (its manifest name). */
   readonly packSection?: 'gigaops' | 'geospatial';
+  /** Organization syncs send a published version in pages, then complete it (WI-OI-109e2). */
+  readonly organizationVersion?: true;
 }
 
 export type ModuleCallPayload =
@@ -42,7 +55,8 @@ export type ModuleCallPayload =
   /** Chained after a dataset build (never scheduled directly). */
   | { readonly operation: 'analytics.summaries-build'; readonly datasetVersionId: string }
   /** WI-OI-107: queued when a tenant activates an industry or country pack (never scheduled directly). */
-  | { readonly operation: 'workforce.pack-apply' | 'geospatial.pack-apply'; readonly publishedVersionId: string };
+  | { readonly operation: 'workforce.pack-apply' | 'geospatial.pack-apply'; readonly publishedVersionId: string }
+  | { readonly operation: 'workforce.organization-sync' | 'analytics.organization-sync'; readonly versionId: string };
 
 /**
  * The pack-apply operation of each module that reads packs, by the module's name in packs (its manifest name), with
@@ -51,6 +65,12 @@ export type ModuleCallPayload =
 export const PACK_APPLY_OPERATIONS = {
   gigaops: { operation: 'workforce.pack-apply', entitlementKey: 'gigaops' },
   geospatial: { operation: 'geospatial.pack-apply', entitlementKey: 'geospatial-studio' },
+} as const;
+
+/** WI-OI-109e2: the modules that keep a copy of activated organization versions, by catalogue key. */
+export const ORGANIZATION_SYNC_OPERATIONS = {
+  gigaops: { operation: 'workforce.organization-sync' },
+  'analytics-studio': { operation: 'analytics.organization-sync' },
 } as const;
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -114,6 +134,26 @@ export const MODULE_CALL_OPERATIONS: Readonly<Record<ModuleCallPayload['operatio
     body: () => ({}),
     packSection: 'geospatial',
   },
+  'workforce.organization-sync': {
+    moduleKey: 'gigaops',
+    audience: 'gigalibs-workforce-api',
+    baseUrlEnvironment: 'WORKFORCE_API_URL',
+    privateKeyEnvironment: 'WORKFORCE_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64',
+    permission: 'organization:activate',
+    path: (payload) => `v1/organization/versions/${encodeURIComponent(moduleCallTarget(payload))}`,
+    body: () => ({}),
+    organizationVersion: true,
+  },
+  'analytics.organization-sync': {
+    moduleKey: 'analytics-studio',
+    audience: 'gigalibs-analytics-api',
+    baseUrlEnvironment: 'ANALYTICS_API_URL',
+    privateKeyEnvironment: 'ANALYTICS_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64',
+    permission: 'organization:activate',
+    path: (payload) => `v1/organization/versions/${encodeURIComponent(moduleCallTarget(payload))}`,
+    body: () => ({}),
+    organizationVersion: true,
+  },
 };
 
 export function parseModuleCallPayload(value: unknown): ModuleCallPayload {
@@ -138,6 +178,13 @@ export function parseModuleCallPayload(value: unknown): ModuleCallPayload {
   ) {
     return { operation: input.operation, publishedVersionId: input.publishedVersionId };
   }
+  if (
+    (input.operation === 'workforce.organization-sync' || input.operation === 'analytics.organization-sync') &&
+    typeof input.versionId === 'string' &&
+    /^[A-Za-z0-9_-]{8,64}$/.test(input.versionId)
+  ) {
+    return { operation: input.operation, versionId: input.versionId };
+  }
   throw new NonRetryableJobError('NOT_SCHEDULABLE', 'The scheduled operation is not one that can be scheduled.');
 }
 
@@ -150,6 +197,8 @@ export function moduleCallPayload(operation: ModuleCallPayload['operation'], tar
     'analytics.summaries-build': { datasetVersionId: targetId },
     'workforce.pack-apply': { publishedVersionId: targetId },
     'geospatial.pack-apply': { publishedVersionId: targetId },
+    'workforce.organization-sync': { versionId: targetId },
+    'analytics.organization-sync': { versionId: targetId },
   }[operation];
   return parseModuleCallPayload({ operation, ...target });
 }
@@ -168,6 +217,9 @@ export function moduleCallTarget(payload: ModuleCallPayload): string {
     case 'workforce.pack-apply':
     case 'geospatial.pack-apply':
       return payload.publishedVersionId;
+    case 'workforce.organization-sync':
+    case 'analytics.organization-sync':
+      return payload.versionId;
   }
 }
 
@@ -190,6 +242,7 @@ export function moduleCallJob(
   fetchImpl: typeof fetch = fetch,
   enqueue?: EnqueueFollowUp,
   packs?: PackSectionSource,
+  organizations?: OrganizationVersionSource,
 ): JobDefinition<ModuleCallPayload> {
   return {
     type: 'module.call',
@@ -228,6 +281,40 @@ export function moduleCallJob(
       const token = signPlatformContextToken(claims, signingKey(environment, operation.privateKeyEnvironment));
       const baseUrl = environment[operation.baseUrlEnvironment]?.replace(/\/+$/, '');
       if (!baseUrl) throw new NonRetryableJobError('WORKER_NOT_CONFIGURED', `${operation.baseUrlEnvironment} is not configured for the kernel worker.`);
+      if (operation.organizationVersion) {
+        if (!organizations) throw new NonRetryableJobError('WORKER_NOT_CONFIGURED', 'The kernel worker cannot read organization versions.');
+        const version = await organizations.version(context.tenantId, moduleCallTarget(context.payload));
+        if (!version) throw new NonRetryableJobError('VERSION_NOT_FOUND', 'The organization version is not published in this workspace.');
+        const post = async (suffix: string, body: unknown) => {
+          const response = await fetchImpl(`${baseUrl}/${operation.path(context.payload)}/${suffix}`, {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json',
+              Accept: 'application/json',
+              'X-Correlation-Id': context.correlationId,
+            },
+            body: JSON.stringify(body),
+            signal: context.signal,
+          });
+          const text = await response.text();
+          if (response.status >= 400 && response.status < 500)
+            throw new NonRetryableJobError('MODULE_REFUSED', `The module refused the organization version (${response.status}): ${text.slice(0, 300)}`);
+          if (!response.ok) throw new Error(`The module answered ${response.status}; the delivery will be retried.`);
+          return safeJson(text);
+        };
+        for (let page = 0; page * ORG_REPLICA_PAGE_SIZE < version.units.length; page += 1) {
+          await post('units', { ...version.header, page, units: version.units.slice(page * ORG_REPLICA_PAGE_SIZE, (page + 1) * ORG_REPLICA_PAGE_SIZE) });
+        }
+        const done = await post('complete', { ...version.header, unit_count: version.units.length });
+        return {
+          operation: context.payload.operation,
+          status: 200,
+          resultId: moduleCallTarget(context.payload),
+          resultStatus: typeof done?.status === 'string' ? done.status : 'UNKNOWN',
+          units: version.units.length,
+        };
+      }
       const response = await fetchImpl(`${baseUrl}/${operation.path(context.payload)}`, {
         method: 'POST',
         headers: {

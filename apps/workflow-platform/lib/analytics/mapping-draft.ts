@@ -36,6 +36,8 @@ export interface FieldMappingEntry {
   analyticalType: AnalyticalType;
   unit?: { to: AnalyticsUnit; from?: AnalyticsUnit; fromField?: string };
   place?: { longitudeField: string } | { byCode: true };
+  /** WI-OI-109e3: this field names each record's organization unit (by code or id); empty means tenant-shared. */
+  organizationUnit?: { match: 'CODE' | 'ID' };
 }
 
 export interface PlaceDraft {
@@ -48,6 +50,16 @@ export interface PlaceDraft {
 }
 
 export const NO_PLACE: PlaceDraft = { mode: 'none', fieldName: 'place', latitudeField: '', longitudeField: '', codeField: '' };
+
+/** WI-OI-109e3: which source field names each record's organization unit, matched by unit code or id. */
+export interface UnitDraft {
+  mode: 'none' | 'code' | 'id';
+  /** The dataset field holding each record's unit name. */
+  fieldName: string;
+  sourceField: string;
+}
+
+export const NO_UNIT: UnitDraft = { mode: 'none', fieldName: 'unit', sourceField: '' };
 
 /** Proposes a point from discovered latitude and longitude fields, when both are there. */
 export function placeDraftFromDiscovery(fields: readonly DiscoveredField[]): PlaceDraft {
@@ -99,6 +111,7 @@ export function draftFromDiscovery(fields: readonly DiscoveredField[]): DraftFie
 export function fieldMappingsFromDraft(
   draft: readonly DraftField[],
   place: PlaceDraft = NO_PLACE,
+  unit: UnitDraft = NO_UNIT,
 ): { fieldMappings: FieldMappingEntry[]; error: string | null } {
   const included = draft.filter((field) => field.include);
   if (included.length === 0) return { fieldMappings: [], error: 'Include at least one field.' };
@@ -133,6 +146,14 @@ export function fieldMappingsFromDraft(
       if (!place.codeField) return { fieldMappings: [], error: 'Choose the field holding each record’s place code or id.' };
       fieldMappings.push({ sourceField: place.codeField, analyticalField: fieldName, analyticalType: 'string', place: { byCode: true } });
     }
+    names.add(fieldName);
+  }
+  if (unit.mode !== 'none') {
+    const fieldName = unit.fieldName.trim();
+    if (!NAME.test(fieldName)) return { fieldMappings: [], error: `"${fieldName}" is not a valid name for the unit field.` };
+    if (names.has(fieldName) || fieldName === 'unit_id') return { fieldMappings: [], error: `Choose another name for the unit field; "${fieldName}" is taken.` };
+    if (!unit.sourceField) return { fieldMappings: [], error: 'Choose the field naming each record’s unit.' };
+    fieldMappings.push({ sourceField: unit.sourceField, analyticalField: fieldName, analyticalType: 'string', organizationUnit: { match: unit.mode === 'code' ? 'CODE' : 'ID' } });
   }
   return { fieldMappings, error: null };
 }

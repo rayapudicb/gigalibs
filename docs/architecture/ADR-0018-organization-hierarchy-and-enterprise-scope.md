@@ -101,6 +101,21 @@ global mutable session context, numeric magic ids, and letting any tree a role p
 - Existing `departments` rows (none today) become units of a tenant-defined `DEPARTMENT` type, **keeping their ids**, so
   any module reference stays valid. The department endpoints become a compatibility facade over units and then retire;
   there is no permanent dual write.
+- **As built (109e1, owner "go" 2026-10-01):** an administrator brings departments in (`POST …/departments/import`):
+  same ids, nested in the primary tree's draft, each member's department a read-write grant; repeatable. Once the
+  primary tree has a version in force, department changes and department assignment are refused with a pointer to
+  Settings › Organization, so units and grants are the one authority. A department-writing facade was not built: no
+  tenant has departments.
+
+### 109e decisions (owner "go", 2026-10-01)
+
+- A tenant follows its organization once its **primary tree has a version in force**; until then the department scope
+  applies unchanged and the `organization` claim is absent.
+- The signed context carries `organization` (`TENANT` for tenant-wide roles, otherwise `UNITS` with the version and the
+  member's current grant roots). The legacy `org_scope` is derived from **read-write grants only** (expanded, at most
+  1,000 units, else empty), so a read-only grant never unlocks a write in a module that still reads department ids.
+- The tree reaches modules through kernel jobs (the WI-OI-107 pack channel); a module refuses a context naming a
+  version it does not hold. Workforce → Analytics → Reports is the first complete path.
 
 ## Cross-check against iDempiere (`/Users/rayapudi/idem`, read 2026-10-01)
 

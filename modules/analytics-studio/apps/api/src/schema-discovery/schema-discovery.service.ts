@@ -47,6 +47,11 @@ export interface FieldMappingEntry {
    * dataset also gets `place_id`, and `place_path` for place scope.
    */
   place?: { readonly longitudeField: string } | { readonly byCode: true };
+  /**
+   * WI-OI-109e3 (ADR-0018): this field names each record's organization unit, by code or id. The field holds the
+   * unit's name; the dataset also gets `unit_id` (empty: tenant-shared; no match: visible only tenant-wide).
+   */
+  organizationUnit?: { readonly match: 'CODE' | 'ID' };
 }
 
 /** A source field: a name, or a dot path of up to five segments into nested records. */
@@ -459,17 +464,24 @@ export class SchemaDiscoveryService {
       }
       if (entry.unit !== undefined) validateUnitConversion(entry);
       if (entry.place !== undefined) validatePlaceEntry(entry);
+      if (entry.organizationUnit !== undefined) validateOrganizationUnitEntry(entry);
       if (['place_id', 'place_path'].includes(entry.analyticalField)) {
         throw new BadRequestException(`'${entry.analyticalField}' is reserved for place tagging.`);
+      }
+      if (entry.analyticalField === 'unit_id') {
+        throw new BadRequestException(`'unit_id' is reserved for organization units.`);
       }
     }
     if (mappings.filter((entry) => entry.place !== undefined).length > 1) {
       throw new BadRequestException('A mapping can tag records with one place field.');
     }
+    if (mappings.filter((entry) => entry.organizationUnit !== undefined).length > 1) {
+      throw new BadRequestException('A mapping can name one organization unit field.');
+    }
     // Check for duplicate source fields. The place field reads its source (a latitude or a code) without claiming it,
     // so the same source field can also be mapped as a plain field (WI-OI-105 live proof).
     const seen = new Set<string>();
-    for (const entry of mappings.filter((candidate) => candidate.place === undefined)) {
+    for (const entry of mappings.filter((candidate) => candidate.place === undefined && candidate.organizationUnit === undefined)) {
       if (seen.has(entry.sourceField)) {
         throw new BadRequestException(`Duplicate sourceField: '${entry.sourceField}'.`);
       }
@@ -574,6 +586,16 @@ export function readSourceField(record: Record<string, unknown>, path: string): 
     current = (current as Record<string, unknown>)[key];
   }
   return current;
+}
+
+/** WI-OI-109e3: the unit field is a plain string field matched by code or id; it cannot also be a place or convert units. */
+function validateOrganizationUnitEntry(entry: FieldMappingEntry): void {
+  const unit = entry.organizationUnit as { match?: unknown } | null;
+  if (!unit || typeof unit !== 'object' || (unit.match !== 'CODE' && unit.match !== 'ID'))
+    throw new BadRequestException(`The unit of '${entry.analyticalField}' is matched by CODE or ID.`);
+  if (entry.analyticalType !== 'string') throw new BadRequestException(`The unit field '${entry.analyticalField}' must be a string field.`);
+  if (entry.unit !== undefined || entry.place !== undefined)
+    throw new BadRequestException(`The unit field '${entry.analyticalField}' cannot also convert units or be a place.`);
 }
 
 /** WI-OI-105c: a place field is a string, found from a point (latitude here, longitude named) or from a place code. */

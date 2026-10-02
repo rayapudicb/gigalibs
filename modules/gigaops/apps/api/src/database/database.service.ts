@@ -6,6 +6,8 @@ import type { GigaOpsRuntimeConfig } from '../runtime-config.js';
 type WorkforceDefinerFunction =
   | 'relay_lease_cmms_events'
   | 'relay_settle_cmms_event'
+  | 'relay_lease_analytics_positions'
+  | 'relay_settle_analytics_position'
   | 'outbox_sweep';
 
 /**
@@ -22,7 +24,13 @@ export class WorkforceDatabaseService extends ModuleDatabase<WorkforceDefinerFun
       databaseUrl: config.databaseUrl,
       poolSize: config.databasePoolSize,
       expectedMigrationVersion: config.expectedMigrationVersion,
-      definerFunctions: ['relay_lease_cmms_events', 'relay_settle_cmms_event', 'outbox_sweep'],
+      definerFunctions: [
+        'relay_lease_cmms_events',
+        'relay_settle_cmms_event',
+        'relay_lease_analytics_positions',
+        'relay_settle_analytics_position',
+        'outbox_sweep',
+      ],
       tenantBinding: 'set-config',
     });
   }

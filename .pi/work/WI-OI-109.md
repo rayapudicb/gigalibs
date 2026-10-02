@@ -160,3 +160,118 @@ Implemented 2026-10-01; not deployed (needs the 109b migration live, then the AP
 - Found while proving: Medusa's `Input type="search"` draws an unlabeled role=img icon (axe role-img-alt); the
   organization screens use a labeled text input instead. Other screens using it are not changed here.
 
+
+## 109e plan (owner "go" 2026-10-01: decisions accepted as recommended)
+
+Current path: the control plane resolves `orgScope` per verified session from departments (`auth.service`
+`resolveOrganizationScope`); the web signs it into `PlatformContextV1.org_scope`; Workforce (`jobs.service`) and CMMS
+filter on `department_ids`; Analytics and Geospatial ignore it. The context schema strips unknown claims, so a new
+claim is safe for modules not yet updated.
+
+- 109e1 core scope: a tenant becomes organization-scoped when its primary tree has a version in force. Then tenant-wide
+  roles get `TENANT`, other members get `UNITS {tree_version, read_roots, write_roots}` from their current grants
+  (none means only tenant-shared records). Signed as a new `organization` claim; the legacy `org_scope` is derived
+  from the same grants (expanded unit ids, at most 1,000, else fail closed) until each module moves. Revocation:
+  the next context issue (minutes), sessions re-verify. Department bridge and place-link API/UI here.
+- 109e2 tree distribution: activation enqueues a kernel `organization.sync` job per entitled module (the WI-OI-107
+  pack-apply channel); the module stores the version's edges and closure and refuses a context naming a version it
+  does not hold yet. Shared expansion code in `@gigalibs/module-sdk`.
+- 109e3 vertical path: Workforce records owned by units (ownership policy, write needs a read-write root), unit on
+  the events Workforce sends Analytics, Analytics answers and Reports filtered by the member's units.
+
+Decisions for the owner: transport (kernel push vs module pull); department bridge (one-time conversion plus
+read-only departments once a tree is in force vs a full facade); legacy field derivation; vertical path (Workforce vs
+CMMS); when a tenant becomes organization-scoped (tree in force vs the existing feature switch).
+
+## 109e1 core scope, department bridge, place links
+
+Implemented 2026-10-01; not deployed (owner option B: one release after 109e).
+
+- Scope: `packages/auth-nest/src/organization-scope.ts` (`primaryVersionInForce`, `resolveTreeScope`), used by
+  `AuthService.resolveOrganizationScope` for both web sessions and kernel-job subjects. Tree in force: tenant-wide roles
+  `TENANT`; others `UNITS {tree_version, read_roots, write_roots}` from current grants on placed, non-archived units
+  (none means shared records only); legacy `org_scope` from read-write grants only (expanded, active units, at most
+  1,000, else empty with a warning). No tree in force: departments exactly as before, no claim.
+- Claim: `PlatformContextV1.organization` (optional; contracts strip-parse, so modules not yet updated ignore it);
+  `buildPlatformContext` adds it; the web session validator accepts it only when it matches the contract.
+- Department bridge: `POST /organization/departments/import` (same ids, nested in the primary draft, member grants,
+  repeatable); department create/update/delete and member department changes refused once a tree is in force.
+  "Bring in departments" on the Structure screen.
+- Place links: list, create (no overlapping period per unit/place/relation), end on a date; event
+  `organization.unit-place-link.changed.v1`; "Places" on the Units screen (Maps places when readable, else a place id).
+  Links never grant place access (D6).
+- Evidence: service and scope integration 11/11 on a throwaway restored database (scope from grants, read-only grant
+  kept out of the legacy write path, revocation empties roots, place-link periods, department import twice, tenant
+  isolation); signed-claim tests (web mint and verify 3/3, contract refusal of write roots outside read roots);
+  department read-only unit test; parity (35 routes, documents regenerated); Playwright 2/2 in Chrome on the throwaway
+  stack including departments refused after activation, the import action, place link and end, axe clean.
+
+## 109e2 delivering versions to modules
+
+Implemented 2026-10-01; not deployed (owner option B).
+
+- Core: the platform outbox relay dispatches `organization.hierarchy.activated.v1` and
+  `organization.hierarchy.sync-requested.v1` to `KernelOrganizationSyncService`, which queues one kernel `module.call`
+  job per entitled module (Workforce `gigaops`, Analytics `analytics-studio`), run as the activating or requesting
+  member, idempotent per activation or request and module. A dispatch failure keeps the event pending (relay retry and
+  quarantine). `POST /organization/trees/{treeId}/sync` (organization:activate) and "Send to modules again" resend.
+- Kernel worker: `workforce.organization-sync` and `analytics.organization-sync` read the published version
+  (`organization-versions.ts`, tenant-scoped, byte order) and post pages of 500 units then a completion, signed with
+  the module's key; 4xx is final (visible), 5xx retries.
+- Modules: `OrganizationReplica` in `@gigalibs/module-sdk` (tables generated by `organizationReplicaDdl`; Workforce
+  migration 000017, Analytics 000027, schema pins 17 and 27). Endpoints `POST v1/organization/versions/{id}/units` and
+  `/complete` (organization:activate); a version is held only when count, parents and checksum agree, then immutable.
+  Module permission matching now also accepts another family's wildcard (`organization:*`), as the core does.
+- Rules clarified (ADR-0018): byte-order checksum on both sides; a grant on an inactive unit is paused, roots cover
+  everything below.
+- Evidence: end-to-end on a throwaway restored database 4/4 (activation event → one queued job as the activator;
+  signed pages → module replica under forced RLS as a runtime role → checksum agreement with mixed-case and
+  punctuated codes → expansion; tenant B sees nothing; a retry changes nothing; tampered, orphaned and short versions
+  refused; resync request). Job unit tests 4/4 (1,001 units → 3 pages; refusals final; outage retried). Migration
+  parity tests. Earlier organization suites still pass (17). Playwright 2/2 including the resend action.
+- Noticed, not changed: `KernelSchedulesService` throws "Called end on pool more than once" when the API shuts down
+  (pre-existing, WI-OI-104). Adding `@gigalibs/module-sdk` as an API dev dependency also re-resolved one vitest
+  tooling entry in `pnpm-lock.yaml`.
+
+## 109e3 organization-aware Workforce to Analytics to Reports path
+
+Implemented 2026-10-02; not deployed.
+
+- Workforce positions now use canonical `organizationUnitId`; the deprecated `departmentId` alias remains for
+  compatibility and mismatched dual input is refused. Reads and writes expand only active units from an immutable
+  replica version, require the module to hold the signed version and require write roots to be inside read roots.
+- Workforce emits versioned `WorkforcePositionFactV1` facts transactionally. Migration 000018 adds the dedicated
+  relay, whose credentials are separate from other module channels. Analytics migrations 000028–000029 add the
+  module-event source without treating Workforce as a connector.
+- Analytics verifies the Workforce key, source and event type, validates and deduplicates the fact, then lands it in
+  the existing raw-record, discovery, mapping and dataset pipeline. Query, dashboard, cache and report paths apply
+  the caller's server-signed organization scope; Reports re-resolve under that same principal.
+- Organization replicas now exclude inactive units from lookup and expansion, and tenant-wide contexts still verify
+  that the named immutable tree version is held locally.
+
+## 109f mobile and client contract readiness
+
+Implemented 2026-10-02; not deployed.
+
+- `OrganizationClientManifestV1` and `GET /api/v1/tenants/current/organization/client-manifest` publish versioned
+  operations, permissions, phone/tablet layouts, form presentation metadata, ownership fields and limits.
+- The manifest is server-authored and capability-driven. It contains no client-side authorization, hierarchy
+  mutation authority or tenant-specific hardcoding, and this slice does not modify the separate mobile repository.
+- OpenAPI was regenerated from the same contract used by the controller.
+
+## 109g local certification checkpoint
+
+Completed 2026-10-02 for the pre-deployment local slice.
+
+- A marked throwaway PostgreSQL 16 run passed 29/29 integration cases: database hierarchy 6, five reference
+  structures plus sibling isolation 6, organization service 11 and module synchronization 6. Retail, government,
+  manufacturing, agriculture and healthcare structures were created and published through the same APIs with no
+  industry-specific hierarchy code.
+- Focused organization, scope, relay, Analytics and client-contract suites passed 82/82; the organization-aware
+  Reports suite passed 46/46. `git diff --check` passed.
+- `pnpm verify` passed: build, tests, all seven audits, layers and module manifests; 255 test files and 2,177 tests
+  passed, 22 files and 165 tests skipped. Only the known `WORKFORCE_API_URL` deployment-profile drift remains. Full
+  log: `/var/folders/jp/fkzm1c3s1d52rj_9cvjv6kx00000gn/T/gigalibs-verify/verify-2026-10-02T00-55-04-819Z.log`.
+- This is not release certification. The running stack remains at Analytics schema 25 and Workforce schema 16.
+  Pending: backup and coordinated migration/rebuild/deployment, live HTTP/browser/accessibility and revocation proof,
+  organization-aware WI-OI-103/WI-OI-106 reruns, fresh-install repair/proof and independent specialist decisions.

@@ -5,7 +5,7 @@ import {
   sign as signBytes,
   verify as verifyBytes,
 } from 'node:crypto';
-import { type PlatformContextV1, PlatformContextV1Schema, determinePersona } from '@gigalibs/contracts';
+import { type OrganizationScopeV2, type PlatformContextV1, PlatformContextV1Schema, determinePersona } from '@gigalibs/contracts';
 export type { PlatformContextV1 };
 
 function base64UrlEncode(str: string): string {
@@ -178,6 +178,8 @@ export interface PlatformContextSubject {
   readonly session?: { readonly id: string } | null;
   readonly orgScope: { readonly mode: 'FLAT_TENANT' } | { readonly mode: 'SCOPED_DEPARTMENTS'; readonly departmentIds: readonly string[] };
   readonly spatialScope: { readonly mode: 'UNBOUNDED' } | { readonly mode: 'SCOPED_PLACES'; readonly placeIds: readonly string[] };
+  /** Present once the tenant's primary tree has a version in force (WI-OI-109e). */
+  readonly organizationScope?: OrganizationScopeV2 | null;
 }
 
 /**
@@ -216,9 +218,17 @@ export function buildPlatformContext(
       subject.spatialScope.mode === 'SCOPED_PLACES'
         ? { mode: 'SCOPED_PLACES', place_ids: [...subject.spatialScope.placeIds] }
         : { mode: 'UNBOUNDED' },
+    ...(subject.organizationScope ? { organization: organizationClaim(subject.organizationScope) } : {}),
     entitlement: { module_key: moduleKey, status: 'ENABLED', version: entitlement.version },
     iat: now,
     exp: now + ttl,
     jti: randomUUID(),
   };
+}
+
+function organizationClaim(scope: OrganizationScopeV2): OrganizationScopeV2 {
+  if (scope.mode === 'UNITS')
+    return { mode: 'UNITS', tree_version: scope.tree_version, read_roots: [...scope.read_roots], write_roots: [...scope.write_roots] };
+  if (scope.mode === 'TENANT') return scope.tree_version ? { mode: 'TENANT', tree_version: scope.tree_version } : { mode: 'TENANT' };
+  return { mode: 'DENIED' };
 }

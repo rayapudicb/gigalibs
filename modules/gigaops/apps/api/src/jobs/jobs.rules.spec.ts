@@ -45,6 +45,8 @@ describe('Workforce job rules', () => {
     const base = { code: 'P-1', jobProfileId: capability, effectiveFrom: '2026-10-01' };
     expect(CreatePositionV1Schema.safeParse({ ...base, effectiveTo: '2026-09-30' }).success).toBe(false);
     expect(CreatePositionV1Schema.safeParse({ ...base, fte: 1.5 }).success).toBe(false);
+    expect(CreatePositionV1Schema.safeParse({ ...base, organizationUnitId: 'store-1', departmentId: 'store-2' }).success).toBe(false);
+    expect(CreatePositionV1Schema.safeParse({ ...base, organizationUnitId: 'store-1' }).success).toBe(true);
     expect(CreatePositionV1Schema.parse(base).fte).toBe(1);
     expect(UpdatePositionV1Schema.safeParse({ expectedVersion: 1 }).success).toBe(false);
     const engagement = { resourceId: capability, positionId: capability, engagementType: 'EMPLOYEE', startDate: '2026-10-01' };

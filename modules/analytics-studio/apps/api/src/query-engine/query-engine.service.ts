@@ -29,6 +29,7 @@ import { SummaryService } from './summary.service.js';
 import { DatabaseService } from '../database/database.service.js';
 import type { AnalyticsPrincipal } from '../auth/authorization.js';
 import { assertPlacedDataset, placeScopeCondition, placesUnder, resolvePlaceScope, type PlaceScope } from '../places/place-scope.js';
+import { organizationFilters, resolveOrganizationAccess } from '../organization/organization-scope.js';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -117,6 +118,9 @@ export class QueryEngineService {
       const visible = memberScope ? new Set(memberScope.placeIds) : null;
       placeScope = { placeIds: visible ? under.filter((id) => visible.has(id)) : under, paths: [] };
     }
+    // WI-OI-109e3: a member of an organization-scoped tenant sees their units' records and shared ones.
+    const memberAccess = await resolveOrganizationAccess(this.db, principal);
+    const unitScope = organizationFilters(memberAccess, fields) ? memberAccess : null;
     const measures = new Map<string, QueryMeasure>(
       modelResult.rows.map((row: any) => [
         row.measure_name,
@@ -185,13 +189,15 @@ export class QueryEngineService {
       measureVersions: resolvedMeasureVersions,
       // The visible places, not the assignment: a place moved in or out of a farm changes the answer.
       spatialScope: placeScope ? [...placeScope.placeIds].sort() : null,
+      // The visible units, not the grants: a reorganised tree changes the answer.
+      organizationScope: unitScope ? (unitScope.denied ? 'DENIED' : [...(unitScope.readUnits ?? [])].sort()) : null,
     });
     const cached = this.answers.get(cacheKey);
     // The answer cannot change for this dataset version; freshness is about now, so it is recomputed above.
     if (cached) return { ...cached, freshness, watermark };
 
     // A READY summary that answers the question exactly is used instead of the raw rows (WI-OI-103c).
-    const summary = this.summaries && !placeScope
+    const summary = this.summaries && !placeScope && !unitScope
       ? chooseSummary(await this.summaries.ready(tenantId, datasetVersionId), query, measures, fields)
       : undefined;
     let built;
@@ -205,6 +211,7 @@ export class QueryEngineService {
           ? { summary: { id: summary.id, dimensions: summary.dimensions, timeField: summary.timeField, numericFields: summary.numericFields } }
           : {}),
         ...(placeScope ? { placeScope } : {}),
+        ...(unitScope ? { organizationScope: unitScope } : {}),
       });
     } catch (error) {
       if (error instanceof AnalyticsQuerySpecError) throw new BadRequestException(error.message);

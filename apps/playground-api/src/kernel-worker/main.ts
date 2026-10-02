@@ -19,6 +19,7 @@ import { Redis } from 'ioredis';
 import { Pool } from 'pg';
 import { isOwnerRefusal, moduleCallJob } from './module-call.job.js';
 import { prismaPackSections } from './pack-sections.js';
+import { prismaOrganizationVersions } from './organization-versions.js';
 
 const interval = (name: string, fallback: number) => {
   const value = Number(process.env[name] ?? fallback);
@@ -36,7 +37,7 @@ export async function startKernelWorker(): Promise<() => Promise<void>> {
   // A dataset build chains its summary build as the next job (WI-OI-104e); `jobs` exists by the time a job runs.
   let jobs: KernelJobs | undefined;
   // Pack applications (WI-OI-107) read the activated pack version when they run.
-  registry.register(moduleCallJob(auth, process.env, fetch, (command) => jobs!.enqueue(command), prismaPackSections));
+  registry.register(moduleCallJob(auth, process.env, fetch, (command) => jobs!.enqueue(command), prismaPackSections, prismaOrganizationVersions));
 
   const redisUrl = process.env.REDIS_URL?.trim();
   const redis = redisUrl ? new Redis(redisUrl, { maxRetriesPerRequest: null }) : undefined;

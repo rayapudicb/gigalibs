@@ -104,6 +104,8 @@ const EXPECTED: Record<string, string> = {
   'POST v1/demo-lab/reset': 'analytics:action',
   'GET v1/demo-lab/sample-farm': 'analytics:read',
   'POST v1/demo-lab/sample-farm': 'analytics:action',
+  'POST v1/organization/versions/:versionId/units': 'organization:activate',
+  'POST v1/organization/versions/:versionId/complete': 'organization:activate',
 };
 
 describe('Analytics route permissions', () => {

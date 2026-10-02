@@ -1,4 +1,15 @@
-import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  assertOrganizationWrite,
+  assertOwningUnit,
+  organizationAccess,
+  organizationReadCondition,
+  OrganizationReplica,
+  OrganizationScopeRefusal,
+  OrganizationVersionPendingError,
+  type OrganizationAccess,
+  type OwnershipPolicy,
+} from '@gigalibs/module-sdk';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
 import {
   CancelEngagementV1Schema,
   CreateEngagementV1Schema,
@@ -165,7 +176,7 @@ export class JobsService {
     const asOf = query.asOf ?? today();
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
       const values: unknown[] = [principal.tenantId, asOf];
-      const where = ['pos.tenant_id = $1', ...scopePredicates(principal, values, 'pos.')];
+      const where = ['pos.tenant_id = $1', ...(await scopePredicates(client, principal, values, 'pos.'))];
       for (const [column, value] of [['site_ref', query.siteRef], ['job_profile_id', query.jobProfileId], ['status', query.status]] as const) {
         if (value !== undefined) {
           values.push(value);
@@ -189,9 +200,10 @@ export class JobsService {
     const input = parse(CreatePositionV1Schema, rawInput);
     const tenantId = context.principal.tenantId;
     const siteRef = input.siteRef ?? null;
-    const departmentId = input.departmentId ?? null;
-    assertWritableScope(context.principal, { siteRef, departmentId });
+    const departmentId = input.organizationUnitId ?? input.departmentId ?? null;
     return this.database.withTenantTransaction(tenantId, async (client) => {
+      await assertWritableScope(client, context.principal, { siteRef, departmentId });
+      await assertPositionOwner(client, context.principal, departmentId);
       const profile = await client.query<{ status: string; first_from: string | null }>(
         `SELECT p.status, (SELECT MIN(effective_from)::text FROM gigalibs_workforce.job_profile_revisions r
                             WHERE r.tenant_id = p.tenant_id AND r.job_profile_id = p.id) AS first_from
@@ -224,9 +236,12 @@ export class JobsService {
         code: input.code,
         jobProfileId: input.jobProfileId,
         siteRef,
+        organizationUnitId: departmentId,
+        tenantShared: departmentId === null,
         fte: input.fte,
         effectiveFrom: input.effectiveFrom,
         effectiveTo: input.effectiveTo ?? null,
+        status: 'OPEN',
       });
       return this.positionDetail(client, context.principal, positionId);
     });
@@ -239,10 +254,12 @@ export class JobsService {
     const tenantId = context.principal.tenantId;
     return this.database.withTenantTransaction(tenantId, async (client) => {
       const position = await this.lockPosition(client, context.principal, positionId, input.expectedVersion);
-      assertWritableScope(context.principal, { siteRef: position.site_ref, departmentId: position.department_id });
+      await assertWritableScope(client, context.principal, { siteRef: position.site_ref, departmentId: position.department_id });
       const siteRef = input.siteRef === undefined ? position.site_ref : input.siteRef;
-      const departmentId = input.departmentId === undefined ? position.department_id : input.departmentId;
-      assertWritableScope(context.principal, { siteRef, departmentId });
+      const requestedOwner = input.organizationUnitId !== undefined ? input.organizationUnitId : input.departmentId;
+      const departmentId = requestedOwner === undefined ? position.department_id : requestedOwner;
+      await assertWritableScope(client, context.principal, { siteRef, departmentId });
+      if (departmentId !== position.department_id) await assertPositionOwner(client, context.principal, departmentId);
       const effectiveTo = input.effectiveTo === undefined ? position.effective_to : input.effectiveTo;
       const fte = input.fte ?? Number(position.fte);
       const status = input.status ?? position.status;
@@ -272,6 +289,13 @@ export class JobsService {
       const version = await bumpVersion(client, context, 'positions', positionId);
       await recordMutation(client, context, 'WORKFORCE_POSITION_UPDATED', 'WORKFORCE_POSITION', positionId, version, {
         changed: Object.keys(input).filter((key) => key !== 'expectedVersion'),
+        code: position.code,
+        jobProfileId: position.job_profile_id,
+        siteRef,
+        organizationUnitId: departmentId,
+        tenantShared: departmentId === null,
+        fte,
+        effectiveFrom: String(position.effective_from),
         status,
         effectiveTo,
       });
@@ -284,7 +308,7 @@ export class JobsService {
     const query = parse(ListEngagementsV1QuerySchema, rawQuery);
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
       const values: unknown[] = [principal.tenantId];
-      const where = ['e.tenant_id = $1', ...scopePredicates(principal, values, 'pos.')];
+      const where = ['e.tenant_id = $1', ...(await scopePredicates(client, principal, values, 'pos.'))];
       for (const [column, value] of [['resource_id', query.resourceId], ['position_id', query.positionId], ['status', query.status]] as const) {
         if (value !== undefined) {
           values.push(value);
@@ -320,7 +344,7 @@ export class JobsService {
         throw new ConflictException({ code: 'WORKFORCE_RESOURCE_INACTIVE', message: 'The person is inactive.' });
       }
       const position = await this.lockPosition(client, context.principal, input.positionId, null);
-      assertWritableScope(context.principal, { siteRef: position.site_ref, departmentId: position.department_id });
+      await assertWritableScope(client, context.principal, { siteRef: position.site_ref, departmentId: position.department_id });
       if (position.status !== 'OPEN') {
         throw new ConflictException({ code: 'WORKFORCE_POSITION_NOT_OPEN', message: `The position is ${position.status.toLowerCase()}.` });
       }
@@ -427,7 +451,7 @@ export class JobsService {
 
   private async positionDetail(client: PoolClient, principal: GigaOpsPrincipal, positionId: string): Promise<PositionDetailV1> {
     const values: unknown[] = [principal.tenantId, today()];
-    const where = ['pos.tenant_id = $1', ...scopePredicates(principal, values, 'pos.')];
+    const where = ['pos.tenant_id = $1', ...(await scopePredicates(client, principal, values, 'pos.'))];
     values.push(positionId);
     where.push(`pos.id = $${values.length}`);
     const position = await client.query(`${POSITION_SELECT} WHERE ${where.join(' AND ')}`, values);
@@ -439,7 +463,7 @@ export class JobsService {
   private async lockPosition(client: PoolClient, principal: GigaOpsPrincipal, positionId: string, expectedVersion: number | null): Promise<any> {
     assertUuid(positionId, 'positionId');
     const values: unknown[] = [principal.tenantId, positionId];
-    const where = ['pos.tenant_id = $1', 'pos.id = $2', ...scopePredicates(principal, values, 'pos.')];
+    const where = ['pos.tenant_id = $1', 'pos.id = $2', ...(await scopePredicates(client, principal, values, 'pos.'))];
     const result = await client.query(
       `SELECT pos.*, pos.effective_from::text AS effective_from, pos.effective_to::text AS effective_to
          FROM gigalibs_workforce.positions pos WHERE ${where.join(' AND ')} FOR UPDATE`,
@@ -453,7 +477,7 @@ export class JobsService {
 
   private async lockEngagement(client: PoolClient, context: CommandContext, engagementId: string, expectedVersion: number): Promise<any> {
     const values: unknown[] = [context.principal.tenantId, engagementId];
-    const where = ['e.tenant_id = $1', 'e.id = $2', ...scopePredicates(context.principal, values, 'pos.')];
+    const where = ['e.tenant_id = $1', 'e.id = $2', ...(await scopePredicates(client, context.principal, values, 'pos.'))];
     const result = await client.query(
       `SELECT e.*, pos.site_ref, pos.department_id, pos.effective_to AS position_effective_to
          FROM gigalibs_workforce.engagements e
@@ -465,7 +489,7 @@ export class JobsService {
     const engagement = result.rows[0];
     if (!engagement) throw new NotFoundException('The engagement was not found.');
     if (Number(engagement.version) !== expectedVersion) conflict('engagement');
-    assertWritableScope(context.principal, { siteRef: engagement.site_ref, departmentId: engagement.department_id });
+    await assertWritableScope(client, context.principal, { siteRef: engagement.site_ref, departmentId: engagement.department_id });
     return engagement;
   }
 }
@@ -495,9 +519,52 @@ const ENGAGEMENT_SELECT = `
     JOIN gigalibs_workforce.positions pos ON pos.tenant_id = e.tenant_id AND pos.id = e.position_id
     JOIN gigalibs_workforce.workforce_resources res ON res.tenant_id = e.tenant_id AND res.id = e.resource_id`;
 
-function scopePredicates(principal: GigaOpsPrincipal, values: unknown[], alias: string): string[] {
+// WI-OI-109e3 (ADR-0018): once the tenant's tree is in force, the signed `organization` claim decides. A position's
+// department_id is its owning unit (the bridge kept department ids); null means tenant-shared (D3). Positions may be
+// owned by a unit or shared (EITHER); only tenant-wide authority creates or changes shared ones.
+const POSITION_OWNERSHIP: OwnershipPolicy = 'EITHER';
+const organizationReplica = new OrganizationReplica('gigalibs_workforce');
+const accessByRequest = new WeakMap<GigaOpsPrincipal, Promise<OrganizationAccess | null>>();
+
+/** The member's organization access for this request, or null when the department field still applies. */
+function organizationAccessFor(client: PoolClient, principal: GigaOpsPrincipal): Promise<OrganizationAccess | null> {
+  if (!principal.organization) return Promise.resolve(null);
+  let access = accessByRequest.get(principal);
+  if (!access) {
+    access = organizationAccess(organizationReplica, client, principal.tenantId, principal.organization).catch((error: unknown) => {
+      if (error instanceof OrganizationVersionPendingError) throw new ServiceUnavailableException({ code: error.code, message: error.message });
+      throw error;
+    });
+    accessByRequest.set(principal, access);
+  }
+  return access;
+}
+
+function refusal(error: unknown): never {
+  if (error instanceof OrganizationScopeRefusal) {
+    if (error.code === 'ORGANIZATION_OUT_OF_SCOPE' || error.code === 'ORGANIZATION_SHARED_NEEDS_TENANT')
+      throw new ForbiddenException({ code: 'WORKFORCE_OUT_OF_SCOPE', message: error.message });
+    throw new BadRequestException({ code: 'WORKFORCE_VALIDATION_FAILED', message: error.message });
+  }
+  throw error;
+}
+
+async function assertPositionOwner(client: PoolClient, principal: GigaOpsPrincipal, departmentId: string | null): Promise<void> {
+  const access = await organizationAccessFor(client, principal);
+  if (!access) return;
+  await assertOwningUnit(organizationReplica, client, principal.tenantId, access, POSITION_OWNERSHIP, departmentId).catch(refusal);
+}
+
+async function scopePredicates(client: PoolClient, principal: GigaOpsPrincipal, values: unknown[], alias: string): Promise<string[]> {
   const predicates: string[] = [];
-  if (principal.orgScope.mode === 'SCOPED_DEPARTMENTS') {
+  const access = await organizationAccessFor(client, principal);
+  if (access) {
+    const condition = organizationReadCondition(access, `${alias}department_id`, (value) => {
+      values.push(value);
+      return `$${values.length}`;
+    });
+    if (condition) predicates.push(condition);
+  } else if (principal.orgScope.mode === 'SCOPED_DEPARTMENTS') {
     if (principal.orgScope.department_ids.length === 0) return ['FALSE'];
     values.push([...principal.orgScope.department_ids]);
     predicates.push(`(${alias}department_id IS NULL OR ${alias}department_id = ANY($${values.length}::text[]))`);
@@ -509,8 +576,19 @@ function scopePredicates(principal: GigaOpsPrincipal, values: unknown[], alias: 
   return predicates;
 }
 
-function assertWritableScope(principal: GigaOpsPrincipal, target: { readonly siteRef: string | null; readonly departmentId: string | null }): void {
-  if (principal.orgScope.mode === 'SCOPED_DEPARTMENTS' && (target.departmentId === null || !principal.orgScope.department_ids.includes(target.departmentId))) {
+async function assertWritableScope(
+  client: PoolClient,
+  principal: GigaOpsPrincipal,
+  target: { readonly siteRef: string | null; readonly departmentId: string | null },
+): Promise<void> {
+  const access = await organizationAccessFor(client, principal);
+  if (access) {
+    try {
+      assertOrganizationWrite(access, target.departmentId);
+    } catch (error) {
+      refusal(error);
+    }
+  } else if (principal.orgScope.mode === 'SCOPED_DEPARTMENTS' && (target.departmentId === null || !principal.orgScope.department_ids.includes(target.departmentId))) {
     throw new ForbiddenException({ code: 'WORKFORCE_OUT_OF_SCOPE', message: 'The position must belong to one of your departments.' });
   }
   if (principal.spatialScope.mode === 'SCOPED_PLACES' && (target.siteRef === null || !principal.spatialScope.place_ids.includes(target.siteRef))) {
@@ -633,6 +711,7 @@ function mapPosition(row: any): PositionV1 {
     jobProfileCode: row.job_profile_code,
     title: row.current_title ?? null,
     siteRef: row.site_ref ?? null,
+    organizationUnitId: row.department_id ?? null,
     departmentId: row.department_id ?? null,
     fte: Number(row.fte),
     effectiveFrom: String(row.effective_from),

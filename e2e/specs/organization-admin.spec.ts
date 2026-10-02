@@ -137,6 +137,16 @@ test('an administrator builds, a second approves, and the tree goes into force f
   await expect(inForce.getByText('Store 101')).toBeVisible();
   await expect(page.getByRole('row').filter({ hasText: 'Go live' })).toBeVisible();
 
+  // With a tree in force, departments are read-only: the organization is the one authority (ADR-0018 §4).
+  const department = await page.request.post('/api/control/tenants/current/departments', { data: { name: 'Sales', code: 'SALES' }, headers: { Origin: origin } });
+  expect(department.status()).toBe(409);
+  expect(await department.text()).toContain('Settings › Organization');
+  await page.getByRole('button', { name: 'Bring in departments', exact: true }).click();
+  await status(page, 'There are no departments to bring in.');
+  // Modules keep their own copy; an administrator can send the version in force again (WI-OI-109e2).
+  await page.getByRole('button', { name: 'Send to modules again', exact: true }).click();
+  await status(page, 'Sent again: 1 version(s) queued for the modules.');
+
   // Rule breaches are listed by unit; the impact preview shows the move; the draft is withdrawn.
   await page.getByRole('button', { name: 'Start a draft', exact: true }).click();
   await status(page, 'Draft started from the version in force.');
@@ -174,6 +184,27 @@ test('an administrator builds, a second approves, and the tree goes into force f
   await revoke.getByLabel('Reason').fill('Moved to another region');
   await revoke.getByRole('button', { name: 'Revoke', exact: true }).click();
   await status(page, 'Grant revoked.');
+
+  // A unit records the places it operates; links never grant place access.
+  await page.getByRole('tab', { name: 'Units' }).click();
+  await page.getByLabel('Search').fill('STORE-101');
+  await page.getByRole('button', { name: 'Places of STORE-101', exact: true }).click();
+  const places = page.getByRole('region', { name: 'Places of STORE-101' });
+  await places.getByRole('button', { name: 'Link a place', exact: true }).click();
+  const link = places.getByRole('form', { name: 'Link a place' });
+  const placeId = link.getByLabel('Place id');
+  if (await placeId.count()) await placeId.fill('5b9f7c1e-4d2a-4e8b-9c3f-1a2b3c4d5e6f');
+  await link.getByLabel('Reason').fill('Store premises');
+  await link.getByRole('button', { name: 'Link', exact: true }).click();
+  await status(page, 'Place linked.');
+  await places.getByRole('row').filter({ hasText: 'Operates' }).getByRole('button', { name: 'End', exact: true }).click();
+  const end = places.getByRole('dialog', { name: 'End place link' });
+  await end.getByLabel('Ends on').fill('2030-01-31');
+  await end.getByLabel('Reason').fill('Lease ends');
+  await end.getByRole('button', { name: 'End link', exact: true }).click();
+  await status(page, 'Place link ended.');
+  await expect(places.getByRole('row').filter({ hasText: '2030-01-31' })).toBeVisible();
+  await places.getByRole('button', { name: 'Close', exact: true }).click();
 
   // A stale edit is refused with a way to reload.
   await page.getByRole('tab', { name: 'Units' }).click();

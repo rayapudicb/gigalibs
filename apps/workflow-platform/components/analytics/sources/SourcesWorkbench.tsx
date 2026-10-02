@@ -18,7 +18,9 @@ import {
   type DraftField,
   type FieldMappingEntry,
   NO_PLACE,
+  NO_UNIT,
   type PlaceDraft,
+  type UnitDraft,
   defaultMeasures,
   draftFromDiscovery,
   fieldMappingsFromDraft,
@@ -311,10 +313,40 @@ function PlaceChoice({ draft, place, onChange }: { draft: readonly DraftField[];
   );
 }
 
+/** WI-OI-109e3: the field naming each record's organization unit; members then see their units' records and shared ones. */
+function UnitChoice({ draft, unit, onChange }: { draft: readonly DraftField[]; unit: UnitDraft; onChange: (unit: UnitDraft) => void }) {
+  const set = (change: Partial<UnitDraft>) => onChange({ ...unit, ...change });
+  return (
+    <div className="flex flex-col gap-2 rounded-md border border-ui-border-base p-3">
+      <Text size="small" weight="plus">Unit of each record</Text>
+      <Text size="xsmall" className="text-ui-fg-subtle">
+        Records are matched to your organization’s units. Members see the records of the units they are granted and records with no unit; a unit that matches nothing is shown only to tenant-wide roles.
+      </Text>
+      <div className="flex flex-wrap items-center gap-2">
+        <select aria-label="Unit of each record" className={selectClass} value={unit.mode} onChange={(event) => set({ mode: event.target.value as UnitDraft['mode'] })}>
+          <option value="none">No unit</option>
+          <option value="code">From a unit code</option>
+          <option value="id">From a unit id</option>
+        </select>
+        {unit.mode !== 'none' ? (
+          <>
+            <select aria-label="Unit field" className={selectClass} value={unit.sourceField} onChange={(event) => set({ sourceField: event.target.value })}>
+              <option value="">Field naming the unit…</option>
+              {draft.map((field) => <option key={field.sourceField} value={field.sourceField}>{field.sourceField}</option>)}
+            </select>
+            <Input aria-label="Name of the unit field" size="small" className="w-40" value={unit.fieldName} onChange={(event) => set({ fieldName: event.target.value })} />
+          </>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
 function MappingEditor({ source, onDone }: { source: Source; onDone: (message: string) => Promise<void> }) {
   const [table, setTable] = useState(source.sourceType === 'CONNECTOR_HUB' ? 'records' : '');
   const [draft, setDraft] = useState<DraftField[] | null>(null);
   const [place, setPlace] = useState<PlaceDraft>(NO_PLACE);
+  const [unit, setUnit] = useState<UnitDraft>(NO_UNIT);
   const [name, setName] = useState(source.displayName);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -337,7 +369,7 @@ function MappingEditor({ source, onDone }: { source: Source; onDone: (message: s
   };
 
   const publish = async () => {
-    const { fieldMappings, error: problem } = fieldMappingsFromDraft(draft ?? [], place);
+    const { fieldMappings, error: problem } = fieldMappingsFromDraft(draft ?? [], place, unit);
     if (problem) {
       setError(problem);
       return;
@@ -448,6 +480,7 @@ function MappingEditor({ source, onDone }: { source: Source; onDone: (message: s
             A value whose unit is unknown or of another kind (for example a weight stored as an area) is left empty in the dataset, never guessed.
           </Text>
           <PlaceChoice draft={draft} place={place} onChange={setPlace} />
+          <UnitChoice draft={draft} unit={unit} onChange={setUnit} />
           <div>
             <Button type="button" size="small" isLoading={busy === 'publish'} disabled={busy !== null} onClick={() => void publish()}>
               Save and publish mapping

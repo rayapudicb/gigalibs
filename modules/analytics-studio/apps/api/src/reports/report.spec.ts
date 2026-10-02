@@ -210,6 +210,16 @@ describe('ReportService — reports from saved chart views and dashboards', () =
     expect(run.download).toEqual(expect.objectContaining({ token: 'tok-1' }));
   });
 
+  test('re-asks a report with the caller organization claim instead of a wider service identity', async () => {
+    const scopedPrincipal = {
+      ...PRINCIPAL,
+      organization: { mode: 'UNITS', tree_version: 'version-7', read_roots: ['plant-1'], write_roots: [] },
+    };
+    const { svc, chartViews } = harness();
+    await svc.triggerReportRun(scopedPrincipal as any, { reportDefinitionId: 'def-1' });
+    expect(chartViews.data).toHaveBeenCalledWith(scopedPrincipal, VIEW_ID);
+  });
+
   test('a dashboard report writes one labelled section per chart and notes a chart that failed', async () => {
     const { svc, dashboards, artifactInsert } = harness(definitionRow({ chart_view_id: null, dashboard_id: DASHBOARD_ID }));
     await svc.triggerReportRun(PRINCIPAL as any, { reportDefinitionId: 'def-1' });

@@ -22,6 +22,8 @@ export class AnswerCache {
     query: unknown;
     measureVersions: Readonly<Record<string, string>>;
     spatialScope: unknown;
+    /** WI-OI-109e3: the visible units (or DENIED); null when no unit filter applies. */
+    organizationScope?: unknown;
   }): string {
     return createHash('sha256').update(canonical(parts), 'utf8').digest('hex');
   }

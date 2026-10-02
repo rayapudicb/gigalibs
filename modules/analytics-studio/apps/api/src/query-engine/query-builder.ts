@@ -19,6 +19,8 @@ import type {
   FormulaExpressionV1,
 } from '@gigalibs/contracts';
 import { placeScopeCondition, type PlaceScope } from '../places/place-scope.js';
+import type { OrganizationAccess } from '@gigalibs/module-sdk';
+import { organizationScopeCondition } from '../organization/organization-scope.js';
 
 export interface QueryMeasure {
   readonly name: string;
@@ -77,9 +79,12 @@ export function buildAnalyticsQuery(input: {
   readonly summary?: QuerySummarySource;
   /** WI-OI-105d: only records tagged with one of these places; summaries hold no place, so never with a summary. */
   readonly placeScope?: PlaceScope;
+  /** WI-OI-109e3: only records of the member's units and shared ones; summaries hold no unit, so never with a summary. */
+  readonly organizationScope?: OrganizationAccess;
 }): BuiltAnalyticsQuery {
-  const { query, fields, measures, summary, placeScope } = input;
+  const { query, fields, measures, summary, placeScope, organizationScope } = input;
   if (summary && placeScope) throw new AnalyticsQuerySpecError('A place-scoped question is answered from the rows.');
+  if (summary && organizationScope) throw new AnalyticsQuerySpecError('A unit-scoped question is answered from the rows.');
   const params: unknown[] = [summary ? summary.id : input.datasetVersionId];
   const bind = (value: unknown): string => {
     params.push(value);
@@ -131,6 +136,7 @@ export function buildAnalyticsQuery(input: {
   const where = [summary ? 's.summary_id = $1' : 'r.dataset_version_id = $1'];
   for (const filter of query.filters) where.push(filterSql(filter, fieldType(filter.field, 'filters'), fieldText, bind));
   if (placeScope) where.push(placeScopeCondition('r', placeScope, bind));
+  if (organizationScope) where.push(organizationScopeCondition('r', organizationScope, bind));
 
   const orderBy = query.sort.map((sort) => {
     const position = columns.findIndex((column) => column.name === sort.by);

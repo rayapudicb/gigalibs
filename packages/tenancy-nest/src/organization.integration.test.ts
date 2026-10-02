@@ -149,6 +149,24 @@ integration('organization service', () => {
     expect((await service.listGrants(B, { includeRevoked: true, limit: 100 })).items).toEqual([]);
   });
 
+  it('resolves each member scope from grants once the tree is in force (WI-OI-109e1)', async () => {
+    const { primaryVersionInForce, resolveTreeScope } = await import('@gigalibs/auth-nest');
+    expect(await primaryVersionInForce(db, A)).toBe(ids.v1);
+    expect(await primaryVersionInForce(db, B)).toBeNull();
+    const regional = await resolveTreeScope(db, { tenantId: A, userId: member, versionId: ids.v1, tenantWide: false });
+    expect(regional.organizationScope).toEqual({ mode: 'UNITS', tree_version: ids.v1, read_roots: [ids.north], write_roots: [ids.north] });
+    // The legacy field lists what a read-write grant covers, so Workforce and CMMS keep working meanwhile.
+    expect([...(regional.orgScope.mode === 'SCOPED_DEPARTMENTS' ? regional.orgScope.departmentIds : [])].sort()).toEqual([ids.north, ids.store1, ids.store2].sort());
+    expect((await resolveTreeScope(db, { tenantId: A, userId: author, versionId: ids.v1, tenantWide: true })).organizationScope).toEqual({ mode: 'TENANT', tree_version: ids.v1 });
+    // A read-only grant is a read root only and never reaches the legacy write path.
+    const readOnly = await service.createGrant(A, author, { userId: checker, unitId: ids.company, access: 'READ', reason: 'Group finance', idempotencyKey: `grant-${run}-read` });
+    const reader = await resolveTreeScope(db, { tenantId: A, userId: checker, versionId: ids.v1, tenantWide: false });
+    expect(reader.organizationScope).toEqual({ mode: 'UNITS', tree_version: ids.v1, read_roots: [ids.company], write_roots: [] });
+    expect(reader.orgScope).toEqual({ mode: 'SCOPED_DEPARTMENTS', departmentIds: [] });
+    await service.revokeGrant(A, author, readOnly.id, { reason: 'Proof only' });
+    expect((await resolveTreeScope(db, { tenantId: A, userId: checker, versionId: ids.v1, tenantWide: false })).organizationScope).toMatchObject({ read_roots: [] });
+  });
+
   it('previews what the next version changes, including whose access moves', async () => {
     const draft = await service.createDraft(A, author, ids.tree, { reason: 'Open the South region' });
     ids.v2 = draft.id;
@@ -199,10 +217,41 @@ integration('organization service', () => {
     expect(restored.status).toBe('ACTIVE');
   });
 
+  it('records which places a unit operates, once per period, and ends links on a date', async () => {
+    const placeId = randomUUID();
+    const link = await service.createPlaceLink(A, author, ids.store1, { placeId, relation: 'OPERATES', effectiveFrom: '2026-10-01', effectiveTo: null, reason: 'Store premises' });
+    expect(link).toMatchObject({ unitId: ids.store1, placeId, relation: 'OPERATES', effectiveTo: null });
+    await expectStatus(service.createPlaceLink(A, author, ids.store1, { placeId, relation: 'OPERATES', effectiveFrom: '2026-11-01', effectiveTo: null, reason: 'again' }), 409);
+    expect((await service.endPlaceLink(A, author, link.id, { effectiveTo: '2027-03-31', reason: 'Lease ends' })).effectiveTo).toBe('2027-03-31');
+    await expectStatus(service.endPlaceLink(A, author, link.id, { effectiveTo: '2027-04-30', reason: 'twice' }), 409, /already ended/);
+    await expectStatus(service.listPlaceLinks(B, ids.store1), 404);
+  });
+
+  it('brings departments in as units with the same ids, nested in a draft, with member grants (ADR-0018 §4)', async () => {
+    const parent = `dept-${run}-ops`;
+    const child = `dept-${run}-field`;
+    await db.$executeRaw`INSERT INTO departments (id, "tenantId", name, code, "updatedAt") VALUES (${parent}, ${B}, 'Operations', ${`OPS-${run}`}, now())`;
+    await db.$executeRaw`INSERT INTO departments (id, "tenantId", name, code, "parentId", "updatedAt") VALUES (${child}, ${B}, 'Field teams', ${`FIELD-${run}`}, ${parent}, now())`;
+    await db.$executeRaw`UPDATE tenant_members SET "departmentId" = ${child} WHERE "tenantId" = ${B} AND "userId" = ${outsider}`;
+    await expectStatus(service.importDepartments(B, outsider, { reason: 'Adopt the organization model' }), 422, /primary tree/);
+    await service.createTree(B, outsider, { code: 'primary', name: 'Organization', kind: 'PRIMARY', purpose: 'AUTHORITY' });
+    const first = await service.importDepartments(B, outsider, { reason: 'Adopt the organization model' });
+    expect(first).toMatchObject({ departments: 2, unitsCreated: 2, placed: 2, grantsCreated: 1 });
+    expect((await service.getUnit(B, child)).typeCode).toBe('DEPARTMENT');
+    const roots = await service.listEdges(B, first.draftVersionId as string, { limit: 50 });
+    expect(roots.items.map((edge) => edge.unitId)).toEqual([parent]);
+    expect((await service.listEdges(B, first.draftVersionId as string, { parentUnitId: parent, limit: 50 })).items.map((edge) => edge.unitId)).toEqual([child]);
+    expect((await service.listGrants(B, { userId: outsider, includeRevoked: false, limit: 10 })).items).toEqual([expect.objectContaining({ unitId: child, access: 'READ_WRITE' })]);
+    // Running it again adds nothing.
+    expect(await service.importDepartments(B, outsider, { reason: 'Again' })).toMatchObject({ unitsCreated: 0, grantsCreated: 0, draftVersionId: first.draftVersionId });
+  });
+
   it('revokes once, and records every change in the audit log and outbox', async () => {
     const revoked = await service.revokeGrant(A, author, ids.grant, { reason: 'Moved to another region' });
     expect(revoked.revokedAt).not.toBeNull();
     await expectStatus(service.revokeGrant(A, author, ids.grant, { reason: 'twice' }), 409, /already revoked/);
+    const { resolveTreeScope } = await import('@gigalibs/auth-nest');
+    expect((await resolveTreeScope(db, { tenantId: A, userId: member, versionId: ids.v1, tenantWide: false })).organizationScope).toMatchObject({ read_roots: [], write_roots: [] });
     await expectStatus(service.revokeGrant(B, author, ids.grant, { reason: 'other tenant' }), 404);
     const audit = await db.$queryRaw<Array<{ resource: string; n: number }>>`
       SELECT resource, count(*)::int AS n FROM audit_logs WHERE "tenantId" = ${A} GROUP BY resource ORDER BY resource`;
@@ -210,13 +259,15 @@ integration('organization service', () => {
       'organization-unit-type': 3,
       'organization-tree': 1,
       'organization-hierarchy-activation': 1,
-      'organization-scope-grant': 2,
+      'organization-scope-grant': 4,
+      'organization-unit-place-link': 2,
     });
     const events = await db.$queryRaw<Array<{ eventType: string; n: number }>>`
       SELECT "eventType", count(*)::int AS n FROM platform_outbox_events WHERE "tenantId" = ${A} GROUP BY "eventType" ORDER BY 1`;
     expect(Object.fromEntries(events.map((row) => [row.eventType, row.n]))).toEqual({
       'organization.hierarchy.activated.v1': 1,
-      'organization.scope-grant.changed.v1': 2,
+      'organization.scope-grant.changed.v1': 4,
+      'organization.unit-place-link.changed.v1': 2,
       'organization.unit-type.changed.v1': 3,
       'organization.unit.changed.v1': 8,
     });

@@ -16,6 +16,7 @@ import type {
   AuthResponse,
   ChangePasswordDto,
   LoginWithEmailDto,
+  OrganizationScopeV2,
   RegisterWithEmailDto,
   ResetPasswordDto,
   UpdateProfileDto,
@@ -30,12 +31,15 @@ import {
   ForbiddenException,
   HttpException,
   Injectable,
+  Logger,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { type LegacyOrgScope, primaryVersionInForce, resolveTreeScope } from './organization-scope.js';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
   private readonly accessSecret: string;
   private readonly accessExpirySeconds: number;
   private readonly refreshExpiryDays: number;
@@ -413,8 +417,9 @@ export class AuthService {
           (role): role is string => typeof role === 'string' && role.length > 0,
         )
       : [];
-    const orgScope = await this.resolveOrganizationScope({
+    const { orgScope, organizationScope } = await this.resolveOrganizationScope({
       tenantId,
+      userId,
       hierarchyEnabled: !!session.tenant?.features.includes('organization-hierarchy'),
       departmentId: membership?.departmentId ?? null,
       roles,
@@ -463,6 +468,7 @@ export class AuthService {
       session: { id: session.id, expiresAt: session.expiresAt },
       authVersion: Math.floor(session.createdAt.getTime() / 1_000),
       orgScope,
+      organizationScope,
       spatialScope,
       mfa: {
         required: mfaRequired,
@@ -475,14 +481,36 @@ export class AuthService {
 
   private async resolveOrganizationScope(input: {
     tenantId: string | undefined;
+    userId: string;
     hierarchyEnabled: boolean;
     departmentId: string | null;
     roles: string[];
     platformRoles: string[];
-  }): Promise<
-    | { mode: 'FLAT_TENANT' }
-    | { mode: 'SCOPED_DEPARTMENTS'; departmentIds: string[] }
-  > {
+  }): Promise<{ orgScope: LegacyOrgScope; organizationScope: OrganizationScopeV2 | null }> {
+    if (!input.tenantId) return { orgScope: { mode: 'FLAT_TENANT' }, organizationScope: null };
+    // WI-OI-109e1: once the primary tree has a version in force, grants decide; departments no longer do.
+    const versionId = await primaryVersionInForce(prisma, input.tenantId);
+    if (versionId) {
+      const scope = await resolveTreeScope(prisma, {
+        tenantId: input.tenantId,
+        userId: input.userId,
+        versionId,
+        tenantWide: hasTenantWideAuthority(input.roles, input.platformRoles),
+      });
+      if (scope.legacyOverflow)
+        this.logger.warn(`Organization scope for a member of tenant ${input.tenantId} exceeds the legacy department list; legacy modules see shared records only.`);
+      return { orgScope: scope.orgScope, organizationScope: scope.organizationScope };
+    }
+    return { orgScope: await this.resolveDepartmentScope(input), organizationScope: null };
+  }
+
+  private async resolveDepartmentScope(input: {
+    tenantId: string | undefined;
+    hierarchyEnabled: boolean;
+    departmentId: string | null;
+    roles: string[];
+    platformRoles: string[];
+  }): Promise<LegacyOrgScope> {
     if (!input.tenantId || !input.hierarchyEnabled) return { mode: 'FLAT_TENANT' };
 
     if (hasTenantWideAuthority(input.roles, input.platformRoles)) {

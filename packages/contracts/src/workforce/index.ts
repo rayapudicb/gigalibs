@@ -448,6 +448,9 @@ export const CreatePositionV1Schema = z
     code: CodeSchema,
     jobProfileId: z.string().uuid(),
     siteRef: z.string().uuid().nullable().optional(),
+    /** Canonical organization owner (WI-OI-109). */
+    organizationUnitId: z.string().trim().min(1).max(64).nullable().optional(),
+    /** @deprecated Compatibility alias while Department consumers converge. */
     departmentId: z.string().trim().min(1).max(64).nullable().optional(),
     fte: z.number().positive().max(1).default(1),
     effectiveFrom: WorkforceDateSchema,
@@ -457,20 +460,31 @@ export const CreatePositionV1Schema = z
   .refine((value) => !value.effectiveTo || value.effectiveTo > value.effectiveFrom, {
     message: 'The end must be after the start.',
     path: ['effectiveTo'],
-  });
+  })
+  .refine(
+    (value) => value.organizationUnitId === undefined || value.departmentId === undefined || value.organizationUnitId === value.departmentId,
+    { message: 'organizationUnitId and the legacy departmentId must match when both are supplied.', path: ['organizationUnitId'] },
+  );
 export type CreatePositionV1 = z.infer<typeof CreatePositionV1Schema>;
 
 export const UpdatePositionV1Schema = z
   .object({
     expectedVersion: z.number().int().positive(),
     siteRef: z.string().uuid().nullable().optional(),
+    /** Canonical organization owner (WI-OI-109). */
+    organizationUnitId: z.string().trim().min(1).max(64).nullable().optional(),
+    /** @deprecated Compatibility alias while Department consumers converge. */
     departmentId: z.string().trim().min(1).max(64).nullable().optional(),
     fte: z.number().positive().max(1).optional(),
     effectiveTo: WorkforceDateSchema.nullable().optional(),
     status: PositionStatusV1Schema.optional(),
   })
   .strict()
-  .refine((value) => Object.keys(value).some((key) => key !== 'expectedVersion'), { message: 'Change at least one field.' });
+  .refine((value) => Object.keys(value).some((key) => key !== 'expectedVersion'), { message: 'Change at least one field.' })
+  .refine(
+    (value) => value.organizationUnitId === undefined || value.departmentId === undefined || value.organizationUnitId === value.departmentId,
+    { message: 'organizationUnitId and the legacy departmentId must match when both are supplied.', path: ['organizationUnitId'] },
+  );
 export type UpdatePositionV1 = z.infer<typeof UpdatePositionV1Schema>;
 
 export const ListPositionsV1QuerySchema = z.object({
@@ -505,6 +519,9 @@ export interface PositionV1 {
   readonly jobProfileCode: string;
   readonly title: string | null;
   readonly siteRef: string | null;
+  /** Canonical owner. Null is explicitly tenant-shared under the entity policy. */
+  readonly organizationUnitId: string | null;
+  /** @deprecated Compatibility alias; equal to organizationUnitId. */
   readonly departmentId: string | null;
   readonly fte: number;
   readonly effectiveFrom: string;
@@ -520,6 +537,36 @@ export interface PositionV1 {
 export interface PositionDetailV1 extends PositionV1 {
   readonly engagements: readonly EngagementV1[];
 }
+
+/**
+ * Durable Workforce position fact delivered to Analytics (WI-OI-109e3). The fact is a complete current snapshot,
+ * not a UI delta, so retries and out-of-order delivery can be reconciled by aggregateVersion. The organization owner
+ * is explicit; null means the record is tenant-shared under the position EITHER policy.
+ */
+export const WorkforcePositionFactV1Schema = z
+  .object({
+    entityId: z.string().uuid(),
+    aggregateVersion: z.number().int().positive(),
+    code: CodeSchema,
+    jobProfileId: z.string().uuid(),
+    siteRef: z.string().uuid().nullable(),
+    organizationUnitId: z.string().trim().min(1).max(64).nullable(),
+    tenantShared: z.boolean(),
+    fte: z.number().positive().max(1),
+    effectiveFrom: WorkforceDateSchema,
+    effectiveTo: WorkforceDateSchema.nullable(),
+    status: PositionStatusV1Schema,
+  })
+  .strict()
+  .refine((value) => value.tenantShared === (value.organizationUnitId === null), {
+    message: 'tenantShared must exactly describe whether organizationUnitId is null.',
+    path: ['tenantShared'],
+  })
+  .refine((value) => !value.effectiveTo || value.effectiveTo > value.effectiveFrom, {
+    message: 'The end must be after the start.',
+    path: ['effectiveTo'],
+  });
+export type WorkforcePositionFactV1 = z.infer<typeof WorkforcePositionFactV1Schema>;
 
 export const CreateEngagementV1Schema = z
   .object({
@@ -1457,4 +1504,3 @@ export const ShiftHandoverResponseV1Schema = z.object({
   createdAt: z.string(),
 });
 export type ShiftHandoverResponseV1 = z.infer<typeof ShiftHandoverResponseV1Schema>;
-

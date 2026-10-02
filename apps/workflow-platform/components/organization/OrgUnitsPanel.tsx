@@ -5,6 +5,7 @@ import { Badge, Button, Container, Heading, Input, Label, Table, Text } from '@m
 import { useCallback, useEffect, useId, useState } from 'react';
 import { describeOrgError, orgRequest, type OrgErrorView, type OrgPermissions } from './organization-client';
 import { OrgErrorAlert, OrgSuccess, ReasonField, selectClassName } from './OrgShared';
+import { OrgPlaceLinksPanel } from './OrgPlaceLinksPanel';
 
 export interface OrgMember {
   id: string;
@@ -55,6 +56,7 @@ export function OrgUnitsPanel({ unitTypes, members, permissions }: { unitTypes: 
   const [error, setError] = useState<OrgErrorView | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [archiving, setArchiving] = useState<OrgUnitV1 | null>(null);
+  const [placesOf, setPlacesOf] = useState<OrgUnitV1 | null>(null);
   const [archiveReason, setArchiveReason] = useState('');
   const fieldIds = {
     search: useId(), type: useId(), status: useId(), unitType: useId(), code: useId(), name: useId(), from: useId(), to: useId(),
@@ -298,15 +300,18 @@ export function OrgUnitsPanel({ unitTypes, members, permissions }: { unitTypes: 
                   <Table.Cell>{unit.effectiveFrom}{unit.effectiveTo ? ` – ${unit.effectiveTo}` : ''}</Table.Cell>
                   <Table.Cell><Badge size="2xsmall" color={STATUS_COLOR[unit.status]}>{unit.status.charAt(0) + unit.status.slice(1).toLowerCase()}</Badge></Table.Cell>
                   <Table.Cell>
+                    <div className="flex justify-end gap-2">
+                      <Button size="small" variant="transparent" onClick={() => setPlacesOf(unit)} aria-label={`Places of ${unit.code}`}>Places</Button>
                     {permissions.draft && (
-                      <div className="flex justify-end gap-2">
+                      <>
                         {unit.status !== 'ARCHIVED' && <Button size="small" variant="secondary" onClick={() => open(unit)}>Edit</Button>}
                         {unit.status === 'ACTIVE' && <Button size="small" variant="transparent" onClick={() => void changeStatus(unit, 'INACTIVE', 'Temporarily inactive')}>Deactivate</Button>}
                         {unit.status === 'INACTIVE' && <Button size="small" variant="transparent" onClick={() => void changeStatus(unit, 'ACTIVE', 'Active again')}>Activate</Button>}
                         {unit.status !== 'ARCHIVED' && <Button size="small" variant="transparent" onClick={() => setArchiving(unit)}>Archive</Button>}
                         {unit.status === 'ARCHIVED' && <Button size="small" variant="transparent" onClick={() => void changeStatus(unit, 'restore', 'Restored')}>Restore</Button>}
-                      </div>
+                      </>
                     )}
+                    </div>
                   </Table.Cell>
                 </Table.Row>
               ))}
@@ -318,6 +323,8 @@ export function OrgUnitsPanel({ unitTypes, members, permissions }: { unitTypes: 
           </div>
         </div>
       ) : null}
+
+      {placesOf && <OrgPlaceLinksPanel unit={placesOf} canEdit={permissions.draft} onClose={() => setPlacesOf(null)} />}
 
       {archiving && (
         <div className="flex flex-col gap-3 rounded-lg border border-ui-border-base bg-ui-bg-subtle p-4" role="dialog" aria-label={`Archive ${archiving.code}`}>

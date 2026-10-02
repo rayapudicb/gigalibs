@@ -5,17 +5,28 @@ import {
   CreateOrgScopeGrantV1Schema,
   CreateOrgTreeV1Schema,
   CreateOrgUnitTypeV1Schema,
+  CreateOrgUnitPlaceLinkV1Schema,
   CreateOrgUnitV1Schema,
+  EndOrgUnitPlaceLinkV1Schema,
+  ImportOrgDepartmentsV1Schema,
+  OrgDepartmentImportV1Schema,
+  OrgUnitPlaceLinkChangedEventV1Schema,
+  OrgUnitPlaceLinkV1Schema,
   OrgActiveVersionV1Schema,
   OrgAsOfQuerySchema,
   OrgEdgeListQuerySchema,
   OrgEdgeViewV1Schema,
   OrgGrantListQuerySchema,
   OrgHierarchyActivatedEventV1Schema,
+  OrgHierarchySyncRequestedEventV1Schema,
+  OrgSyncRequestV1Schema,
+  RequestOrgSyncV1Schema,
   OrgHierarchyActivationV1Schema,
   OrgHierarchyVersionDetailV1Schema,
   OrgHierarchyVersionV1Schema,
   OrgImpactV1Schema,
+  OrganizationClientManifestV1Schema,
+  type OrganizationClientPermission,
   OrgRecordStatusChangeV1Schema,
   OrgScopeGrantChangedEventV1Schema,
   OrgScopeGrantV1Schema,
@@ -33,18 +44,16 @@ import {
   UpdateOrgUnitTypeV1Schema,
   UpdateOrgUnitV1Schema,
   orgPageSchema,
+  MAX_ORG_DEPTH,
+  MAX_ORG_GRANTS_PER_MEMBER,
+  MAX_ORG_UNITS,
 } from './index.js';
 
 // WI-OI-109c: the organization administration API as data. The OpenAPI and AsyncAPI documents in
 // docs/contracts/organization are generated from it (scripts/write-organization-contracts.mjs); tests keep the
 // controller, this table and the committed documents identical.
 
-export type OrganizationPermission =
-  | 'organization:read'
-  | 'organization:draft'
-  | 'organization:approve'
-  | 'organization:activate'
-  | 'organization:grant';
+export type OrganizationPermission = OrganizationClientPermission;
 
 export interface OrganizationRoute {
   method: 'get' | 'post' | 'patch';
@@ -68,6 +77,7 @@ const StatusChange = named('OrgRecordStatusChange', OrgRecordStatusChangeV1Schem
 const Grant = named('OrgScopeGrant', OrgScopeGrantV1Schema);
 
 export const ORGANIZATION_ROUTES: readonly OrganizationRoute[] = [
+  { method: 'get', path: '/client-manifest', operationId: 'getOrganizationClientManifest', permission: 'organization:read', summary: 'Versioned phone and tablet navigation and form capabilities', status: 200, response: named('OrganizationClientManifest', OrganizationClientManifestV1Schema) },
   { method: 'get', path: '/unit-types', operationId: 'listOrgUnitTypes', permission: 'organization:read', summary: 'List unit types', status: 200, response: named('OrgUnitTypeList', z.array(OrgUnitTypeV1Schema)) },
   { method: 'post', path: '/unit-types', operationId: 'createOrgUnitType', permission: 'organization:draft', summary: 'Create a unit type', status: 201, body: named('CreateOrgUnitType', CreateOrgUnitTypeV1Schema), response: UnitType },
   { method: 'patch', path: '/unit-types/{unitTypeId}', operationId: 'updateOrgUnitType', permission: 'organization:draft', summary: 'Change a unit type', status: 200, body: named('UpdateOrgUnitType', UpdateOrgUnitTypeV1Schema), response: UnitType },
@@ -79,11 +89,16 @@ export const ORGANIZATION_ROUTES: readonly OrganizationRoute[] = [
   { method: 'patch', path: '/units/{unitId}', operationId: 'updateOrgUnit', permission: 'organization:draft', summary: 'Change a unit', status: 200, body: named('UpdateOrgUnit', UpdateOrgUnitV1Schema), response: Unit },
   { method: 'post', path: '/units/{unitId}/archive', operationId: 'archiveOrgUnit', permission: 'organization:draft', summary: 'Archive a unit outside every live or open version', status: 200, body: StatusChange, response: Unit },
   { method: 'post', path: '/units/{unitId}/restore', operationId: 'restoreOrgUnit', permission: 'organization:draft', summary: 'Restore a unit', status: 200, body: StatusChange, response: Unit },
+  { method: 'get', path: '/units/{unitId}/place-links', operationId: 'listOrgUnitPlaceLinks', permission: 'organization:read', summary: "A unit's place links, newest first", status: 200, response: named('OrgUnitPlaceLinkList', z.array(OrgUnitPlaceLinkV1Schema)) },
+  { method: 'post', path: '/units/{unitId}/place-links', operationId: 'createOrgUnitPlaceLink', permission: 'organization:draft', summary: 'Record that a unit operates or owns a place (never grants place access)', status: 201, body: named('CreateOrgUnitPlaceLink', CreateOrgUnitPlaceLinkV1Schema), response: named('OrgUnitPlaceLink', OrgUnitPlaceLinkV1Schema) },
+  { method: 'post', path: '/place-links/{linkId}/end', operationId: 'endOrgUnitPlaceLink', permission: 'organization:draft', summary: 'End a place link on a date', status: 200, body: named('EndOrgUnitPlaceLink', EndOrgUnitPlaceLinkV1Schema), response: named('OrgUnitPlaceLink', OrgUnitPlaceLinkV1Schema) },
+  { method: 'post', path: '/departments/import', operationId: 'importOrgDepartments', permission: 'organization:draft', summary: 'Bring departments in as units (same ids), placed in the draft, with member grants', status: 200, body: named('ImportOrgDepartments', ImportOrgDepartmentsV1Schema), response: named('OrgDepartmentImport', OrgDepartmentImportV1Schema) },
   { method: 'get', path: '/trees', operationId: 'listOrgTrees', permission: 'organization:read', summary: 'List trees', status: 200, response: named('OrgTreeList', z.array(OrgTreeV1Schema)) },
   { method: 'post', path: '/trees', operationId: 'createOrgTree', permission: 'organization:draft', summary: 'Create the primary tree or an alternate tree', status: 201, body: named('CreateOrgTree', CreateOrgTreeV1Schema), response: named('OrgTree', OrgTreeV1Schema) },
   { method: 'get', path: '/trees/{treeId}/versions', operationId: 'listOrgVersions', permission: 'organization:read', summary: "List a tree's latest 100 versions", status: 200, response: named('OrgHierarchyVersionList', z.array(OrgHierarchyVersionV1Schema)) },
   { method: 'post', path: '/trees/{treeId}/versions', operationId: 'createOrgDraftVersion', permission: 'organization:draft', summary: "Open the tree's draft, copied from the active or a given published version", status: 201, body: named('CreateOrgDraftVersion', CreateOrgDraftVersionV1Schema), response: Version },
   { method: 'get', path: '/trees/{treeId}/active', operationId: 'getActiveOrgVersion', permission: 'organization:read', summary: 'The version in force now or at a given time', status: 200, query: OrgAsOfQuerySchema, response: named('OrgActiveVersion', OrgActiveVersionV1Schema) },
+  { method: 'post', path: '/trees/{treeId}/sync', operationId: 'requestOrgSync', permission: 'organization:activate', summary: 'Send the version in force (and any scheduled one) to the modules again', status: 200, body: named('RequestOrgSync', RequestOrgSyncV1Schema), response: named('OrgSyncRequest', OrgSyncRequestV1Schema) },
   { method: 'get', path: '/trees/{treeId}/activations', operationId: 'listOrgActivations', permission: 'organization:read', summary: "A tree's activation history, newest first", status: 200, response: named('OrgHierarchyActivationList', z.array(OrgHierarchyActivationV1Schema)) },
   { method: 'get', path: '/versions/{versionId}', operationId: 'getOrgVersion', permission: 'organization:read', summary: 'Read a version (ETag carries its lock version)', status: 200, response: named('OrgHierarchyVersionDetail', OrgHierarchyVersionDetailV1Schema) },
   { method: 'get', path: '/versions/{versionId}/edges', operationId: 'listOrgEdges', permission: 'organization:read', summary: 'One level of a version: its roots or the children of a unit', status: 200, query: OrgEdgeListQuerySchema, response: named('OrgEdgePage', orgPageSchema(OrgEdgeViewV1Schema)) },
@@ -101,11 +116,99 @@ export const ORGANIZATION_ROUTES: readonly OrganizationRoute[] = [
   { method: 'post', path: '/grants/{grantId}/revoke', operationId: 'revokeOrgGrant', permission: 'organization:grant', summary: 'Revoke a grant now', status: 200, body: named('RevokeOrgScopeGrant', RevokeOrgScopeGrantV1Schema), response: Grant },
 ];
 
+const operationIds = (...ids: string[]) => ids;
+const field = (
+  path: string,
+  label: string,
+  control: 'TEXT' | 'TEXTAREA' | 'SWITCH' | 'DATE' | 'SELECT' | 'MULTI_SELECT' | 'ENTITY_PICKER',
+  requiredOnCreate: boolean,
+  optionsSource?: 'STATIC' | 'UNIT_TYPES' | 'UNITS' | 'USERS' | 'PLACES',
+) => ({ path, label, control, requiredOnCreate, ...(optionsSource ? { optionsSource } : {}) });
+
+/**
+ * Mobile/API discovery for WI-OI-109f. Operation metadata is derived from the canonical route table so generated
+ * clients cannot silently drift from the REST contract. Form metadata controls presentation only; Zod/server rules
+ * remain authoritative.
+ */
+export const ORGANIZATION_CLIENT_MANIFEST_V1 = OrganizationClientManifestV1Schema.parse({
+  schemaVersion: 1,
+  apiBase: '/api/v1/tenants/current/organization',
+  scopeClaim: 'PlatformContextV1.organization',
+  ownership: { primaryField: 'organizationUnitId', legacyAlias: 'departmentId', tenantSharedMarker: 'tenantShared' },
+  limits: { maxDepth: MAX_ORG_DEPTH, maxUnits: MAX_ORG_UNITS, maxGrantRootsPerMember: MAX_ORG_GRANTS_PER_MEMBER },
+  capabilities: ORGANIZATION_ROUTES.map(({ operationId, method, path, permission }) => ({ operationId, method, path, permission })),
+  surfaces: [
+    {
+      key: 'structure', title: 'Structure', readPermission: 'organization:read', phoneLayout: 'STEP_FLOW', tabletLayout: 'TREE_DETAIL',
+      operationIds: operationIds('listOrgTrees', 'getActiveOrgVersion', 'listOrgVersions', 'listOrgEdges', 'getOrgVersionImpact', 'createOrgDraftVersion', 'updateOrgDraftEdges', 'validateOrgVersion', 'submitOrgVersion', 'approveOrgVersion', 'rejectOrgVersion', 'publishOrgVersion', 'activateOrgHierarchy'),
+    },
+    {
+      key: 'units', title: 'Units', readPermission: 'organization:read', phoneLayout: 'LIST_DETAIL', tabletLayout: 'MASTER_DETAIL',
+      operationIds: operationIds('listOrgUnits', 'getOrgUnit', 'createOrgUnit', 'updateOrgUnit', 'archiveOrgUnit', 'restoreOrgUnit', 'listOrgUnitPlaceLinks', 'createOrgUnitPlaceLink', 'endOrgUnitPlaceLink'),
+    },
+    {
+      key: 'unit-types', title: 'Unit types', readPermission: 'organization:read', phoneLayout: 'LIST_DETAIL', tabletLayout: 'TABLE_DETAIL',
+      operationIds: operationIds('listOrgUnitTypes', 'createOrgUnitType', 'updateOrgUnitType', 'archiveOrgUnitType', 'restoreOrgUnitType'),
+    },
+    {
+      key: 'access', title: 'Access', readPermission: 'organization:grant', phoneLayout: 'LIST_DETAIL', tabletLayout: 'TABLE_DETAIL',
+      operationIds: operationIds('listOrgGrants', 'createOrgGrant', 'revokeOrgGrant'),
+    },
+  ],
+  forms: [
+    {
+      key: 'unit-type', createOperationId: 'createOrgUnitType', updateOperationId: 'updateOrgUnitType',
+      fields: [
+        field('code', 'Code', 'TEXT', true), field('labels.one', 'Singular label', 'TEXT', true), field('labels.other', 'Plural label', 'TEXT', true),
+        field('holdsRecords', 'Can own records', 'SWITCH', true), field('capabilities', 'Capabilities', 'MULTI_SELECT', false, 'STATIC'),
+        field('allowedParentTypeCodes', 'Allowed parent types', 'MULTI_SELECT', false, 'UNIT_TYPES'), field('allowAsRoot', 'May be a root', 'SWITCH', false),
+        field('description', 'Description', 'TEXTAREA', false),
+      ],
+    },
+    {
+      key: 'unit', createOperationId: 'createOrgUnit', updateOperationId: 'updateOrgUnit',
+      fields: [
+        field('typeCode', 'Unit type', 'SELECT', true, 'UNIT_TYPES'), field('code', 'Code', 'TEXT', true), field('name', 'Name', 'TEXT', true),
+        field('effectiveFrom', 'Effective from', 'DATE', true), field('effectiveTo', 'Effective to', 'DATE', false), field('timeZone', 'Time zone', 'SELECT', false, 'STATIC'),
+        field('managerUserId', 'Manager', 'ENTITY_PICKER', false, 'USERS'),
+      ],
+    },
+    {
+      key: 'tree', createOperationId: 'createOrgTree', updateOperationId: null,
+      fields: [field('code', 'Code', 'TEXT', true), field('name', 'Name', 'TEXT', true), field('kind', 'Kind', 'SELECT', true, 'STATIC'), field('purpose', 'Purpose', 'SELECT', true, 'STATIC')],
+    },
+    {
+      key: 'grant', createOperationId: 'createOrgGrant', updateOperationId: null,
+      fields: [
+        field('userId', 'Member', 'ENTITY_PICKER', true, 'USERS'), field('unitId', 'Organization unit', 'ENTITY_PICKER', true, 'UNITS'),
+        field('access', 'Access', 'SELECT', true, 'STATIC'), field('effectiveFrom', 'Effective from', 'DATE', true), field('effectiveTo', 'Effective to', 'DATE', false),
+        field('reason', 'Reason', 'TEXTAREA', true),
+      ],
+    },
+    {
+      key: 'place-link', createOperationId: 'createOrgUnitPlaceLink', updateOperationId: null,
+      fields: [
+        field('placeId', 'Place', 'ENTITY_PICKER', true, 'PLACES'), field('relation', 'Relationship', 'SELECT', true, 'STATIC'),
+        field('effectiveFrom', 'Effective from', 'DATE', true), field('effectiveTo', 'Effective to', 'DATE', false), field('reason', 'Reason', 'TEXTAREA', true),
+      ],
+    },
+  ],
+  authority: {
+    serverAuthoritative: true,
+    primaryTreeOnlyGrantsAccess: true,
+    placeLinksGrantAccess: false,
+    offlineMutationsAllowed: false,
+    clientsMayNarrowScopeOnly: true,
+  },
+});
+
 export const ORGANIZATION_EVENTS = [
   { type: 'organization.unit-type.changed.v1', schema: OrgUnitTypeChangedEventV1Schema, summary: 'A unit type was created, changed, archived or restored.' },
   { type: 'organization.unit.changed.v1', schema: OrgUnitChangedEventV1Schema, summary: 'A unit was created, changed, archived or restored.' },
   { type: 'organization.hierarchy.activated.v1', schema: OrgHierarchyActivatedEventV1Schema, summary: 'A published version takes effect for a tree from a moment.' },
   { type: 'organization.scope-grant.changed.v1', schema: OrgScopeGrantChangedEventV1Schema, summary: 'A member was granted a unit, or a grant was revoked.' },
+  { type: 'organization.unit-place-link.changed.v1', schema: OrgUnitPlaceLinkChangedEventV1Schema, summary: 'A unit began or stopped operating or owning a place.' },
+  { type: 'organization.hierarchy.sync-requested.v1', schema: OrgHierarchySyncRequestedEventV1Schema, summary: 'An administrator asked for the version in force to be sent to the modules again.' },
 ] as const;
 
 type JsonObject = Record<string, unknown>;

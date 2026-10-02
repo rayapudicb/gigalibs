@@ -6,7 +6,7 @@ import {
   unavailable,
 } from './authenticated-upstream';
 import { ACCESS_COOKIE_NAME, UpstreamUnavailableError, controlPlaneUrl } from './control-plane';
-import { SpatialScopePlaceIdsSchema } from '@gigalibs/contracts';
+import { type OrganizationScopeV2, OrganizationScopeV2Schema, SpatialScopePlaceIdsSchema } from '@gigalibs/contracts';
 
 export interface VerifiedSession {
   user: { id: string; email: string; name: string | null; status: 'ACTIVE' };
@@ -32,6 +32,8 @@ export interface VerifiedSession {
     | { mode: 'FLAT_TENANT' }
     | { mode: 'SCOPED_DEPARTMENTS'; departmentIds: string[] };
   spatialScope: { mode: 'UNBOUNDED' } | { mode: 'SCOPED_PLACES'; placeIds: string[] };
+  /** WI-OI-109e: set once the tenant's primary tree has a version in force; signed as the `organization` claim. */
+  organizationScope?: OrganizationScopeV2 | null;
   mfa: {
     required: boolean;
     enrolled: boolean;
@@ -88,6 +90,9 @@ export function isVerifiedSession(value: unknown): value is VerifiedSession {
       (value.orgScope.mode === 'SCOPED_DEPARTMENTS' &&
         Array.isArray(value.orgScope.departmentIds) &&
         value.orgScope.departmentIds.every(text))) &&
+    (value.organizationScope === undefined ||
+      value.organizationScope === null ||
+      OrganizationScopeV2Schema.safeParse(value.organizationScope).success) &&
     record(value.spatialScope) &&
     (value.spatialScope.mode === 'UNBOUNDED' ||
       (value.spatialScope.mode === 'SCOPED_PLACES' &&

@@ -2,11 +2,13 @@
 
 import type {
   OrgActiveVersionV1,
+  OrgDepartmentImportV1,
   OrgEdgeViewV1,
   OrgHierarchyActivationV1,
   OrgHierarchyVersionDetailV1,
   OrgHierarchyVersionV1,
   OrgImpactV1,
+  OrgSyncRequestV1,
   OrgTreeV1,
   OrgUnitV1,
   OrgValidationResultV1,
@@ -116,14 +118,14 @@ export function OrgStructurePanel({ permissions, userId, userNames, onChanged }:
     void loadTree();
   }, [loadTree]);
 
-  const act = async (label: string, request: () => Promise<unknown>, after?: (result: unknown) => void) => {
+  const act = async (label: string | ((result: unknown) => string), request: () => Promise<unknown>, after?: (result: unknown) => void) => {
     setBusy(true);
     setError(null);
     setSuccess(null);
     try {
       const result = await request();
       after?.(result);
-      setSuccess(label);
+      setSuccess(typeof label === 'function' ? label(result) : label);
       setReason('');
       await loadTree();
       onChanged();
@@ -170,6 +172,24 @@ export function OrgStructurePanel({ permissions, userId, userNames, onChanged }:
       setValidation(null);
       setImpact(null);
     });
+
+  // ADR-0018 §4: departments become units with the same ids, placed in this draft, with member grants.
+  const importDepartments = () =>
+    act(
+      (result) => {
+        const summary = result as OrgDepartmentImportV1;
+        return summary.departments === 0
+          ? 'There are no departments to bring in.'
+          : `${summary.departments} departments placed in the draft (${summary.unitsCreated} new units, ${summary.grantsCreated} member grants). Review, validate and submit it; departments become read-only when it is activated.`;
+      },
+      () => orgRequest<OrgDepartmentImportV1>('/departments/import', { method: 'POST', body: { reason: 'Bring departments into the organization' } }),
+    );
+
+  const resend = () =>
+    act(
+      (result) => `Sent again: ${(result as OrgSyncRequestV1).activations} version(s) queued for the modules.`,
+      () => orgRequest<OrgSyncRequestV1>(`/trees/${treeId}/sync`, { method: 'POST', body: { reason: 'Send the organization to the modules again' } }),
+    );
 
   const loadImpact = () => work && act('Impact calculated.', () => orgRequest<OrgImpactV1>(`/versions/${work.id}/impact`), (result) => setImpact(result as OrgImpactV1));
 
@@ -287,7 +307,12 @@ export function OrgStructurePanel({ permissions, userId, userNames, onChanged }:
             {work && <Badge size="2xsmall" color={VERSION_STATUS_COLOR[work.status]}>Version {work.versionNumber} · {work.status.toLowerCase()}</Badge>}
             {work && <Text size="small" className="text-ui-fg-subtle">{work.unitCount} units · drafted by {person(work.createdBy)}{work.submittedBy ? ` · submitted by ${person(work.submittedBy)}` : ''}{work.approvedBy ? ` · approved by ${person(work.approvedBy)}` : ''}</Text>}
           </div>
-          {!work && permissions.draft && <Button size="small" isLoading={busy} onClick={() => void startDraft()}>Start a draft</Button>}
+          <div className="flex gap-2">
+            {permissions.draft && tree?.kind === 'PRIMARY' && (!work || work.status === 'DRAFT' || work.status === 'VALIDATED') && (
+              <Button size="small" variant="secondary" disabled={busy} onClick={() => void importDepartments()}>Bring in departments</Button>
+            )}
+            {!work && permissions.draft && <Button size="small" isLoading={busy} onClick={() => void startDraft()}>Start a draft</Button>}
+          </div>
         </div>
         <OrgSuccess message={success} />
         <OrgErrorAlert error={error} unitNames={names} onReload={() => void loadTree()} onRetry={() => void loadTree()} />
@@ -406,7 +431,13 @@ export function OrgStructurePanel({ permissions, userId, userNames, onChanged }:
       </Container>
 
       <Container className="flex flex-col gap-3 p-6">
-        <Heading level="h3">Activation history</Heading>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <Heading level="h3">Activation history</Heading>
+          {permissions.activate && activations.length > 0 && (
+            <Button size="small" variant="secondary" disabled={busy} onClick={() => void resend()}>Send to modules again</Button>
+          )}
+        </div>
+        <Text size="small" className="text-ui-fg-subtle">Modules keep their own copy of each activated version; send it again after adding a module.</Text>
         {activations.length === 0 ? (
           <Text size="small" className="text-ui-fg-subtle">Nothing has been activated for this tree.</Text>
         ) : (
