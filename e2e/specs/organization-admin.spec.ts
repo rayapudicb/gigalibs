@@ -141,8 +141,7 @@ test('an administrator builds, a second approves, and the tree goes into force f
   const department = await page.request.post('/api/control/tenants/current/departments', { data: { name: 'Sales', code: 'SALES' }, headers: { Origin: origin } });
   expect(department.status()).toBe(409);
   expect(await department.text()).toContain('Settings › Organization');
-  await page.getByRole('button', { name: 'Bring in departments', exact: true }).click();
-  await status(page, 'There are no departments to bring in.');
+  await expect(page.getByRole('button', { name: 'Bring in departments', exact: true })).toHaveCount(0);
   // Modules keep their own copy; an administrator can send the version in force again (WI-OI-109e2).
   await page.getByRole('button', { name: 'Send to modules again', exact: true }).click();
   await status(page, 'Sent again: 1 version(s) queued for the modules.');

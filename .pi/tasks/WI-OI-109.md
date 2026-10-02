@@ -1,6 +1,6 @@
 # WI-OI-109: Universal organization hierarchy and enterprise scope
 
-- **Status:** In progress (109a–109g implemented and locally verified; coordinated deployment, live certification, fresh-install proof and independent review remain)
+- **Status:** In progress (109a–109g deployed to bounded Local Development; native empty-tenant cleanup verified; live certification, fresh-install proof and independent review remain)
 - **Work item:** WI-OI-109. Evidence goes in `.pi/work/WI-OI-109.md`.
 - **Size:** L, delivered as independently verified vertical slices
 

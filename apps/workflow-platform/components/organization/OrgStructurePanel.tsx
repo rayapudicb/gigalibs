@@ -2,7 +2,6 @@
 
 import type {
   OrgActiveVersionV1,
-  OrgDepartmentImportV1,
   OrgEdgeViewV1,
   OrgHierarchyActivationV1,
   OrgHierarchyVersionDetailV1,
@@ -173,18 +172,6 @@ export function OrgStructurePanel({ permissions, userId, userNames, onChanged }:
       setImpact(null);
     });
 
-  // ADR-0018 §4: departments become units with the same ids, placed in this draft, with member grants.
-  const importDepartments = () =>
-    act(
-      (result) => {
-        const summary = result as OrgDepartmentImportV1;
-        return summary.departments === 0
-          ? 'There are no departments to bring in.'
-          : `${summary.departments} departments placed in the draft (${summary.unitsCreated} new units, ${summary.grantsCreated} member grants). Review, validate and submit it; departments become read-only when it is activated.`;
-      },
-      () => orgRequest<OrgDepartmentImportV1>('/departments/import', { method: 'POST', body: { reason: 'Bring departments into the organization' } }),
-    );
-
   const resend = () =>
     act(
       (result) => `Sent again: ${(result as OrgSyncRequestV1).activations} version(s) queued for the modules.`,
@@ -308,9 +295,6 @@ export function OrgStructurePanel({ permissions, userId, userNames, onChanged }:
             {work && <Text size="small" className="text-ui-fg-subtle">{work.unitCount} units · drafted by {person(work.createdBy)}{work.submittedBy ? ` · submitted by ${person(work.submittedBy)}` : ''}{work.approvedBy ? ` · approved by ${person(work.approvedBy)}` : ''}</Text>}
           </div>
           <div className="flex gap-2">
-            {permissions.draft && tree?.kind === 'PRIMARY' && (!work || work.status === 'DRAFT' || work.status === 'VALIDATED') && (
-              <Button size="small" variant="secondary" disabled={busy} onClick={() => void importDepartments()}>Bring in departments</Button>
-            )}
             {!work && permissions.draft && <Button size="small" isLoading={busy} onClick={() => void startDraft()}>Start a draft</Button>}
           </div>
         </div>

@@ -272,6 +272,24 @@ Completed 2026-10-02 for the pre-deployment local slice.
 - `pnpm verify` passed: build, tests, all seven audits, layers and module manifests; 255 test files and 2,177 tests
   passed, 22 files and 165 tests skipped. Only the known `WORKFORCE_API_URL` deployment-profile drift remains. Full
   log: `/var/folders/jp/fkzm1c3s1d52rj_9cvjv6kx00000gn/T/gigalibs-verify/verify-2026-10-02T00-55-04-819Z.log`.
-- This is not release certification. The running stack remains at Analytics schema 25 and Workforce schema 16.
-  Pending: backup and coordinated migration/rebuild/deployment, live HTTP/browser/accessibility and revocation proof,
-  organization-aware WI-OI-103/WI-OI-106 reruns, fresh-install repair/proof and independent specialist decisions.
+- At this pre-deployment checkpoint the running stack remained at Analytics schema 25 and Workforce schema 16.
+  The later bounded local deployment is recorded below; it is still not release certification.
+
+## Bounded local deployment and native-organization cleanup (2026-10-02)
+
+- Before the database change, backup `infra/compose/backups/gigalibs_backup_20261002_083056Z.dump` was created and
+  its SHA-256 sidecar verified. A rollback-only dry run passed before the same bounded transaction was committed.
+- For active tenant `gigalibs-global` (`cmtzhwgew0015v8jbvo1uvcay`), the transaction removed rejected draft history
+  and its cascading edges, alternate test trees `clenaing` and `Power Area`, and imported sample units
+  `OPS-HOUSEKEEPING` and `FLOORCLEANING`. No activation, scope-grant or Place-link record existed for those objects.
+- Post-cleanup SQL proof: exactly one tree remains (`primary`, `Organization`, `PRIMARY`); alternate trees, units,
+  versions, edges and legacy departments are all zero. The primary tree is therefore an empty native starting point.
+- `OrgStructurePanel` no longer imports `OrgDepartmentImportV1`, wires `importDepartments` or renders the
+  `Bring in departments` action. The browser specification now asserts that the migration action is absent. The
+  backend compatibility endpoint remains in place but is no longer advertised in the UI.
+- Exact local images were rebuilt and deployed consumer-first as `3da222030dc2-a0ca08f61655`; every application
+  container reports healthy, the control-plane and web readiness endpoints return ready, Analytics is at schema 29
+  and Workforce at schema 19. A scan of the compiled running `.next` artifact reports `LEGACY_LABEL_ABSENT`.
+- `pnpm --filter @gigalibs/workflow-platform typecheck`, `pnpm verify --audits` and `git diff --check` pass; only the
+  registered `WORKFORCE_API_URL` deployment-profile drift remains. This cleanup does not close WI-OI-109: the wider
+  live organization/vertical-path/accessibility proof, fresh-install repair/proof and independent reviews remain.
