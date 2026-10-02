@@ -1,12 +1,11 @@
 # NOW: where the work stands
 
-Updated 2026-10-02 (WI-OI-109 in progress: 109a–109g are deployed to bounded Local Development; live certification, fresh-install proof and independent review remain). Keep this file to one page.
+Updated 2026-10-02 (WI-OI-109 is in Review: 109a–109g are deployed to bounded Local Development and fresh install/upgrade are proved; live certification and independent review remain). Keep this file to one page.
 Replace old content rather than appending to it, and update it at the end of every task.
 
 ## State
 
-- **Branch:** `feat/gigaops-convergence-core`, local only, never pushed.
-- **Active implementation item:** None currently active. WI-WFO-001–006 are in Review (.pi/work/WI-WFO-006.md); WI-OI-109 is in Review. WI-OI-103 and WI-OI-106 remain in Review; WI-OI-104, 105, 107 remain in Review; WI-OI-108 is Proposed. Next proposed: WI-WFO-007 (Mobile Worker App) or live container certification.
+- **Active implementation item:** None currently active. WI-EAM-001 is In Review (.pi/work/WI-EAM-001.md, .pi/tasks/WI-EAM-001.md). Next proposed: WI-EAM-002 (Technical Asset Engineering Taxonomy & Specs). WI-WFO-001–006 are committed (`94fae89`) and in Review (.pi/work/WI-WFO-006.md); Mobile Worker App (WI-WFO-007) is bookmarked and parked (`docs/architecture/MOBILE_WORKFORCEOPS_FUNCTIONAL_SPEC.md`). WI-OI-109 is in Review; WI-OI-103 and WI-OI-106 remain in Review; WI-OI-104, 105, 107 remain in Review; WI-OI-108 is Proposed.
 - **Wave 0:** WI-OI-080, 081, 082, 083 and 085 are in Review, waiting for human reviews. WI-OI-084 (mobile) has
   not started.
 - **Running locally (2026-10-02 14:16 IST):** every application service is on `3da222030dc2-a0ca08f61655`; the web is healthy on 5180 and the control plane is healthy on 3333.
@@ -34,8 +33,8 @@ Replace old content rather than appending to it, and update it at the end of eve
 ## Next
 
 - Complete live organization administration, Workforce → Analytics → Reports, relay/revocation, tenant/sibling isolation and browser/accessibility certification on the deployed organization-aware stack.
-- Re-run the deferred WI-OI-103 and WI-OI-106 live proofs. Keep WI-OI-109 In Progress until live certification, the known fresh-install blocker and independent reviews are resolved.
-- **Deferred Foundation Close:** WI-OI-103/WI-OI-106 organization-aware live proofs, WI-OI-108, the fresh-install fix (item 7), core push intake (item 8), and F3 engine clean-up (item 9).
+- Re-run the deferred WI-OI-103 and WI-OI-106 live proofs. Keep WI-OI-109 in Review until live certification and independent reviews are resolved.
+- **Deferred Foundation Close:** WI-OI-103/WI-OI-106 organization-aware live proofs, WI-OI-108, core push intake (item 8), and F3 engine clean-up (item 9). Fresh install (item 7) is proved and awaiting commit.
 
 ## Open decisions (owner)
 
@@ -45,7 +44,6 @@ Replace old content rather than appending to it, and update it at the end of eve
 - Removing the unregistered Workforce prototype (packs, payroll and others) is a package-inventory (F7) decision.
 - CMMS and Workforce give a member only their exact assigned place; Analytics (and the platform contract) include
   everything inside it. Align them or keep the stricter rule.
-- Fresh install fails on an empty database (two migration problems, `.pi/tasks/FOUNDATION-CLOSE.md` item 7).
 - Drop the empty `gigalibs_platform` schema; the `platform-rbac` leftovers.
 - The Analyst role has no `analytics:export`, following the plan wording. Change it if the owner wants.
 - Revoke old test sessions: 721 sessions are active, mostly test accounts.

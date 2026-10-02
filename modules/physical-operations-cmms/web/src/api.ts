@@ -6,6 +6,8 @@ import type {
   CmmsPageV1,
   CmmsPartV1,
   CmmsPmScheduleV1,
+  CmmsSpaceTreeV1,
+  CmmsSpaceV1,
   CmmsStockMovementV1,
   CmmsWorkOrderDetailV1,
   CmmsWorkOrderEventV1,
@@ -67,6 +69,17 @@ const id = (value: string) => encodeURIComponent(value);
 export const cmmsApi = {
   overview: () => requestCmms<CmmsWorkOrderOverviewV1>('/analytics/work-orders/overview'),
   inventory: () => requestCmms<CmmsInventorySummaryV1>('/analytics/inventory/summary'),
+  listSpaceTree: () => requestCmms<{ items: CmmsSpaceTreeV1[] }>('/spaces/tree'),
+  getSpace: (spaceId: string) => requestCmms<CmmsSpaceV1>(`/spaces/${id(spaceId)}`),
+  createSpace: (input: Record<string, unknown>) => requestCmms<CmmsSpaceV1>('/spaces', post(input)),
+  updateSpace: (spaceId: string, input: Record<string, unknown>) =>
+    requestCmms<CmmsSpaceV1>(`/spaces/${id(spaceId)}`, patch(input)),
+  deleteSpace: (spaceId: string) =>
+    requestCmms<{ success: boolean }>(`/spaces/${id(spaceId)}`, { method: 'DELETE' }),
+  getSpaceAssets: (spaceId: string) =>
+    requestCmms<{ items: CmmsAssetV1[] }>(`/spaces/${id(spaceId)}/assets`),
+  uploadCadLayer: (spaceId: string, input: Record<string, unknown>) =>
+    requestCmms<CmmsSpaceV1>(`/spaces/${id(spaceId)}/cad-layer`, post(input)),
 
   searchAssets: (query: Record<string, unknown> = {}) =>
     requestCmms<CmmsPageV1<CmmsAssetV1>>('/assets/search', post(query)),

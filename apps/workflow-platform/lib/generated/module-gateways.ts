@@ -483,6 +483,43 @@ export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGat
     "entitlementName": "Asset & Maintenance",
     "routes": [
       {
+        "template": "v1/spaces/tree",
+        "pattern": "^v1/spaces/tree$",
+        "methods": {
+          "GET": "cmms.assets.read"
+        }
+      },
+      {
+        "template": "v1/spaces/{id}",
+        "pattern": "^v1/spaces/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "GET": "cmms.assets.read",
+          "PATCH": "cmms.assets.write",
+          "DELETE": "cmms.assets.write"
+        }
+      },
+      {
+        "template": "v1/spaces/{id}/assets",
+        "pattern": "^v1/spaces/[0-9a-fA-F-]{36}/assets$",
+        "methods": {
+          "GET": "cmms.assets.read"
+        }
+      },
+      {
+        "template": "v1/spaces/{id}/cad-layers",
+        "pattern": "^v1/spaces/[0-9a-fA-F-]{36}/cad-layers$",
+        "methods": {
+          "POST": "cmms.assets.write"
+        }
+      },
+      {
+        "template": "v1/spaces",
+        "pattern": "^v1/spaces$",
+        "methods": {
+          "POST": "cmms.assets.write"
+        }
+      },
+      {
         "template": "v1/assets/search",
         "pattern": "^v1/assets/search$",
         "methods": {

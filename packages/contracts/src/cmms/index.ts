@@ -68,6 +68,7 @@ const AssetFieldsSchema = {
   serialNumber: TextSchema(200).nullable().optional(),
   parentAssetId: UuidSchema.nullable().optional(),
   siteRef: UuidSchema.nullable().optional(),
+  spaceId: UuidSchema.nullable().optional(),
   departmentId: DepartmentIdSchema.nullable().optional(),
   acquisitionCost: z.number().nonnegative().max(1e10).nullable().optional(),
   currencyCode: CurrencyCodeSchema.nullable().optional(),
@@ -102,6 +103,7 @@ export const SearchCmmsAssetsV1Schema = z
     criticality: CmmsCriticalityV1Schema.optional(),
     siteRef: UuidSchema.optional(),
     parentAssetId: UuidSchema.optional(),
+    spaceId: UuidSchema.optional(),
     includeArchived: z.boolean().default(false),
   })
   .strict();
@@ -120,6 +122,7 @@ export interface CmmsAssetV1 {
   readonly serialNumber: string | null;
   readonly parentAssetId: string | null;
   readonly siteRef: string | null;
+  readonly spaceId: string | null;
   readonly departmentId: string | null;
   readonly acquisitionCost: number | null;
   readonly currencyCode: string | null;
@@ -132,6 +135,77 @@ export interface CmmsAssetV1 {
   readonly createdBy: string;
   readonly createdAt: string;
   readonly updatedAt: string;
+}
+
+// ─── Spaces & CAFM Hierarchy (WI-EAM-001) ─────────────────────────────────────────────────
+export const CmmsSpaceTypeV1Schema = z.enum(['SITE', 'BUILDING', 'FLOOR', 'ROOM', 'ZONE']);
+export type CmmsSpaceTypeV1 = z.infer<typeof CmmsSpaceTypeV1Schema>;
+
+export const CreateCmmsSpaceV1Schema = z
+  .object({
+    code: IdentifierSchema,
+    name: TextSchema(200),
+    description: z.string().trim().max(4_000).nullable().optional(),
+    spaceType: CmmsSpaceTypeV1Schema,
+    parentSpaceId: UuidSchema.nullable().optional(),
+    siteRef: UuidSchema.nullable().optional(),
+    floorNumber: z.number().int().min(-20).max(200).nullable().optional(),
+    grossAreaSqm: z.number().nonnegative().max(10_000_000).nullable().optional(),
+    netAreaSqm: z.number().nonnegative().max(10_000_000).nullable().optional(),
+    cadLayer: z.record(z.string(), z.unknown()).optional(),
+    bimGuid: z.string().trim().max(128).nullable().optional(),
+    metadata: z.record(z.string(), z.unknown()).optional(),
+  })
+  .strict();
+export type CreateCmmsSpaceV1 = z.infer<typeof CreateCmmsSpaceV1Schema>;
+
+export const UpdateCmmsSpaceV1Schema = z
+  .object({
+    expectedVersion: z.number().int().positive(),
+    name: TextSchema(200).optional(),
+    description: z.string().trim().max(4_000).nullable().optional(),
+    parentSpaceId: UuidSchema.nullable().optional(),
+    siteRef: UuidSchema.nullable().optional(),
+    floorNumber: z.number().int().min(-20).max(200).nullable().optional(),
+    grossAreaSqm: z.number().nonnegative().max(10_000_000).nullable().optional(),
+    netAreaSqm: z.number().nonnegative().max(10_000_000).nullable().optional(),
+    cadLayer: z.record(z.string(), z.unknown()).optional(),
+    bimGuid: z.string().trim().max(128).nullable().optional(),
+    metadata: z.record(z.string(), z.unknown()).optional(),
+  })
+  .strict();
+export type UpdateCmmsSpaceV1 = z.infer<typeof UpdateCmmsSpaceV1Schema>;
+
+export const UploadCadLayerV1Schema = z
+  .object({
+    cadLayer: z.record(z.string(), z.unknown()),
+  })
+  .strict();
+export type UploadCadLayerV1 = z.infer<typeof UploadCadLayerV1Schema>;
+
+export interface CmmsSpaceV1 {
+  readonly id: string;
+  readonly code: string;
+  readonly name: string;
+  readonly description: string | null;
+  readonly spaceType: CmmsSpaceTypeV1;
+  readonly parentSpaceId: string | null;
+  readonly siteRef: string | null;
+  readonly floorNumber: number | null;
+  readonly grossAreaSqm: number | null;
+  readonly netAreaSqm: number | null;
+  readonly cadLayer: Readonly<Record<string, unknown>>;
+  readonly bimGuid: string | null;
+  readonly metadata: Readonly<Record<string, unknown>>;
+  readonly assetCount: number;
+  readonly version: number;
+  readonly createdBy: string;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+}
+
+export interface CmmsSpaceTreeV1 extends CmmsSpaceV1 {
+  readonly children: readonly CmmsSpaceTreeV1[];
 }
 
 // ─── Work orders ─────────────────────────────────────────────────────────────────────────────────────────

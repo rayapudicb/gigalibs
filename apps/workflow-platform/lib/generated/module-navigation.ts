@@ -57,6 +57,12 @@ export const generatedModuleMenus: Readonly<Record<string, readonly GeneratedMod
       "icon": "wrench"
     },
     {
+      "key": "spaces",
+      "label": "CAFM Spaces",
+      "path": "/cmms/spaces",
+      "icon": "building"
+    },
+    {
       "key": "assets",
       "label": "Assets & Twin",
       "path": "/cmms/assets",

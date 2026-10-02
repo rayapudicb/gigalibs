@@ -21,6 +21,9 @@ import { OUTBOX_RETENTION_CONFIG, OutboxRetention, loadOutboxRetentionConfig } f
 import { WorkOrdersController } from './work-orders/work-orders.controller.js';
 import { WorkOrdersService } from './work-orders/work-orders.service.js';
 
+import { EamSpacesController } from './spaces/spaces.controller.js';
+import { EamSpacesService } from './spaces/spaces.service.js';
+
 /**
  * CMMS core runtime (WI-OI-038, roadmap P4): assets, work orders, preventive maintenance, meters and parts.
  * Staffing goes to Workforce through the outbox relay and inbox (WI-OI-068, ADR-0007 option A). People,
@@ -32,6 +35,7 @@ import { WorkOrdersService } from './work-orders/work-orders.service.js';
   controllers: [
     HealthController,
     AssetsController,
+    EamSpacesController,
     WorkOrdersController,
     PmSchedulesController,
     MetersController,
@@ -42,6 +46,7 @@ import { WorkOrdersService } from './work-orders/work-orders.service.js';
   providers: [
     CmmsAuthorizationGuard,
     AssetsService,
+    EamSpacesService,
     WorkOrdersService,
     PmSchedulesService,
     MetersService,

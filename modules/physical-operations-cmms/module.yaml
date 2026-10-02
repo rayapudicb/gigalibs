@@ -23,6 +23,7 @@ spec:
     - parts-inventory
     - stock-ledger
     - maintenance-overview
+    - cafm-spaces
     - audit-log
     - outbox-events
   # Contained until their own work items: CMMS-local people and dispatch (Workforce owns people, P6 handshake
@@ -67,6 +68,10 @@ spec:
         component: CmmsWorkspace
         props:
           section: inventory
+      - route: /cmms/spaces
+        component: CmmsWorkspace
+        props:
+          section: spaces
       - route: /cmms/requests
         unavailable:
           title: Maintenance request intake is not connected
@@ -174,6 +179,7 @@ spec:
       personas: [OPERATIONS_SUPERVISOR, WORKFORCE_MEMBER]
       menu:
         - { key: work-orders, label: Work Orders, path: /cmms/work-orders, icon: wrench }
+        - { key: spaces, label: CAFM Spaces, path: /cmms/spaces, icon: building }
         - { key: assets, label: Assets & Twin, path: /cmms/assets, icon: factory }
         - { key: schedules, label: PM Schedules, path: /cmms/schedules, icon: clock }
         - { key: inventory, label: MRO Parts, path: /cmms/inventory, icon: boxes }
@@ -200,6 +206,11 @@ spec:
       - { path: 'work-orders/{id}/labour-link', methods: [POST] }
       - { path: 'work-orders/{id}/settle', methods: [POST] }
     routes:
+      - { path: 'v1/spaces/tree', GET: cmms.assets.read }
+      - { path: 'v1/spaces/{id}', GET: cmms.assets.read, PATCH: cmms.assets.write, DELETE: cmms.assets.write }
+      - { path: 'v1/spaces/{id}/assets', GET: cmms.assets.read }
+      - { path: 'v1/spaces/{id}/cad-layers', POST: cmms.assets.write }
+      - { path: 'v1/spaces', POST: cmms.assets.write }
       - { path: 'v1/assets/search', POST: cmms.assets.read }
       - { path: 'v1/assets/{id}', GET: cmms.assets.read, PATCH: cmms.assets.write }
       - { path: 'v1/assets', POST: cmms.assets.write }

@@ -1,6 +1,11 @@
 'use client';
 
-import type { CmmsAssetStatusV1, CmmsAssetV1, CmmsPageV1 } from '@gigalibs/contracts';
+import type {
+  CmmsAssetStatusV1,
+  CmmsAssetV1,
+  CmmsPageV1,
+  CmmsSpaceTreeV1,
+} from '@gigalibs/contracts';
 import { Plus } from '@medusajs/icons';
 import { Button, Container, Heading, Input, StatusBadge, Table, Text } from '@medusajs/ui';
 import { type FormEvent, useCallback, useEffect, useState } from 'react';
@@ -34,6 +39,9 @@ export function CmmsAssets() {
   const [includeArchived, setIncludeArchived] = useState(false);
   const [selected, setSelected] = useState<CmmsAssetV1 | null>(null);
   const [showCreate, setShowCreate] = useState(false);
+  const [spaces, setSpaces] = useState<
+    Array<{ id: string; name: string; code: string; spaceType: string }>
+  >([]);
   const [error, setError] = useState<CmmsApiError | null>(null);
   const [loading, setLoading] = useState(true);
   const { sites, siteName } = useSites();
@@ -42,13 +50,24 @@ export function CmmsAssets() {
     setLoading(true);
     setError(null);
     try {
-      setPage(
-        await cmmsApi.searchAssets({
+      const [assetsRes, spacesRes] = await Promise.all([
+        cmmsApi.searchAssets({
           pageSize: 100,
           includeArchived,
           ...(query.trim() ? { q: query.trim() } : {}),
         }),
-      );
+        cmmsApi.listSpaceTree().catch(() => ({ items: [] })),
+      ]);
+      setPage(assetsRes);
+      const flat: Array<{ id: string; name: string; code: string; spaceType: string }> = [];
+      function recurse(nodes: readonly CmmsSpaceTreeV1[]) {
+        for (const node of nodes) {
+          flat.push({ id: node.id, name: node.name, code: node.code, spaceType: node.spaceType });
+          if (node.children) recurse(node.children);
+        }
+      }
+      recurse(spacesRes.items);
+      setSpaces(flat);
     } catch (reason) {
       setError(reason as CmmsApiError);
     } finally {
@@ -81,6 +100,7 @@ export function CmmsAssets() {
           <AssetForm
             sites={sites}
             assets={assets}
+            spaces={spaces}
             onSaved={async (asset) => {
               setShowCreate(false);
               setSelected(asset);
@@ -164,6 +184,7 @@ export function CmmsAssets() {
         asset={selected}
         sites={sites}
         assets={assets}
+        spaces={spaces}
         siteName={siteName}
         onChanged={async (asset) => {
           setSelected(asset);
@@ -178,11 +199,13 @@ function AssetForm({
   asset,
   sites,
   assets,
+  spaces,
   onSaved,
 }: {
   asset?: CmmsAssetV1;
   sites: readonly SiteOption[];
   assets: readonly CmmsAssetV1[];
+  spaces: readonly { id: string; name: string; code: string; spaceType: string }[];
   onSaved: (asset: CmmsAssetV1) => Promise<void>;
 }) {
   const [saving, setSaving] = useState(false);
@@ -200,6 +223,7 @@ function AssetForm({
       criticality: String(data.get('criticality')),
       status: String(data.get('status')),
       siteRef: optionalText(data.get('siteRef')) ?? null,
+      spaceId: optionalText(data.get('spaceId')) ?? null,
       parentAssetId: optionalText(data.get('parentAssetId')) ?? null,
       manufacturer: optionalText(data.get('manufacturer')) ?? null,
       model: optionalText(data.get('model')) ?? null,
@@ -254,6 +278,21 @@ function AssetForm({
           defaultValue={asset?.siteRef}
           sites={sites}
         />
+      </Field>
+      <Field id={`${prefix}-space`} label="Spatial location (CAFM Space)">
+        <select
+          id={`${prefix}-space`}
+          name="spaceId"
+          defaultValue={asset?.spaceId ?? ''}
+          className={selectClass}
+        >
+          <option value="">None (Unassigned)</option>
+          {spaces.map((s) => (
+            <option key={s.id} value={s.id}>
+              [{s.spaceType}] {s.name} ({s.code})
+            </option>
+          ))}
+        </select>
       </Field>
       <Field id={`${prefix}-parent`} label="Parent asset">
         <select
@@ -382,12 +421,14 @@ function AssetPanel({
   asset,
   sites,
   assets,
+  spaces,
   siteName,
   onChanged,
 }: {
   asset: CmmsAssetV1 | null;
   sites: readonly SiteOption[];
   assets: readonly CmmsAssetV1[];
+  spaces: readonly { id: string; name: string; code: string; spaceType: string }[];
   siteName: (siteRef: string | null) => string;
   onChanged: (asset: CmmsAssetV1) => Promise<void>;
 }) {
@@ -452,6 +493,15 @@ function AssetPanel({
             <dd>{siteName(asset.siteRef)}</dd>
           </div>
           <div>
+            <dt className="text-ui-fg-subtle">Spatial location</dt>
+            <dd>
+              {(() => {
+                const sp = spaces.find((s) => s.id === asset.spaceId);
+                return sp ? `[${sp.spaceType}] ${sp.name} (${sp.code})` : '—';
+              })()}
+            </dd>
+          </div>
+          <div>
             <dt className="text-ui-fg-subtle">Open work orders</dt>
             <dd className="tabular-nums">{asset.openWorkOrderCount}</dd>
           </div>
@@ -501,6 +551,7 @@ function AssetPanel({
             asset={asset}
             sites={sites}
             assets={assets}
+            spaces={spaces}
             onSaved={async (saved) => {
               setEditing(false);
               await onChanged(saved);

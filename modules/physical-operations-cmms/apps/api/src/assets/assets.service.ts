@@ -25,7 +25,7 @@ import {
 import { DatabaseService } from '../database/database.service.js';
 
 const ASSET_COLUMNS = `a.id, a.asset_tag, a.name, a.description, a.category, a.status, a.criticality,
-  a.manufacturer, a.model, a.serial_number, a.parent_asset_id, a.site_ref, a.department_id,
+  a.manufacturer, a.model, a.serial_number, a.parent_asset_id, a.site_ref, a.department_id, a.space_id,
   a.acquisition_cost, a.currency_code, a.purchase_date, a.warranty_expiry, a.specs, a.archived_at,
   a.version, a.created_by, a.created_at, a.updated_at,
   (SELECT COUNT(*)::int FROM gigalibs_cmms.work_orders w
@@ -51,6 +51,7 @@ export class AssetsService {
         ['criticality', query.criticality],
         ['site_ref', query.siteRef],
         ['parent_asset_id', query.parentAssetId],
+        ['space_id', query.spaceId],
       ] as const) {
         if (value !== undefined) {
           values.push(value);
@@ -87,15 +88,17 @@ export class AssetsService {
     const departmentId = input.departmentId ?? null;
     const siteRef = input.siteRef ?? null;
     assertWritableScope(context.principal, { departmentId, siteRef });
+    const spaceId = input.spaceId === undefined ? null : input.spaceId;
+    if (spaceId) assertUuid(spaceId, 'spaceId');
     return this.database.withTenantTransaction(context.principal.tenantId, async (client) => {
       if (input.parentAssetId) await this.visibleAsset(client, context.principal, input.parentAssetId, false);
       try {
         const result = await client.query<{ id: string }>(
           `INSERT INTO gigalibs_cmms.assets
              (tenant_id, asset_tag, name, description, category, status, criticality, manufacturer, model,
-              serial_number, parent_asset_id, site_ref, department_id, acquisition_cost, currency_code,
+              serial_number, parent_asset_id, site_ref, department_id, space_id, acquisition_cost, currency_code,
               purchase_date, warranty_expiry, specs, created_by, updated_by, correlation_id)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18::jsonb, $19, $19, $20)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19::jsonb, $20, $20, $21)
            RETURNING id`,
           [
             context.principal.tenantId,
@@ -111,6 +114,7 @@ export class AssetsService {
             input.parentAssetId ?? null,
             siteRef,
             departmentId,
+            spaceId,
             input.acquisitionCost ?? null,
             input.currencyCode ?? null,
             input.purchaseDate ?? null,
@@ -158,13 +162,15 @@ export class AssetsService {
       if (acquisitionCost !== null && currencyCode === null) {
         throw new BadRequestException({ code: 'CMMS_VALIDATION_FAILED', message: 'A currency is required with an acquisition cost.' });
       }
+      const spaceId = input.spaceId === undefined ? current.space_id : input.spaceId;
+      if (spaceId) assertUuid(spaceId, 'spaceId');
 
       const result = await client.query<{ version: number }>(
         `UPDATE gigalibs_cmms.assets
             SET name = $4, description = $5, category = $6, status = $7, criticality = $8, manufacturer = $9,
                 model = $10, serial_number = $11, parent_asset_id = $12, site_ref = $13, department_id = $14,
-                acquisition_cost = $15, currency_code = $16, purchase_date = $17, warranty_expiry = $18,
-                specs = $19::jsonb, version = version + 1, updated_by = $20, correlation_id = $21, updated_at = now()
+                space_id = $15, acquisition_cost = $16, currency_code = $17, purchase_date = $18, warranty_expiry = $19,
+                specs = $20::jsonb, version = version + 1, updated_by = $21, correlation_id = $22, updated_at = now()
           WHERE tenant_id = $1 AND id = $2 AND version = $3
           RETURNING version`,
         [
@@ -182,6 +188,7 @@ export class AssetsService {
           parentAssetId,
           siteRef,
           departmentId,
+          spaceId,
           acquisitionCost,
           currencyCode,
           pick(input.purchaseDate, current.purchase_date),
@@ -317,6 +324,7 @@ export function mapAsset(row: any): CmmsAssetV1 {
     parentAssetId: row.parent_asset_id ?? null,
     siteRef: row.site_ref ?? null,
     departmentId: row.department_id ?? null,
+    spaceId: row.space_id ?? null,
     acquisitionCost: numberOrNull(row.acquisition_cost),
     currencyCode: row.currency_code ?? null,
     purchaseDate: dateOnlyOrNull(row.purchase_date),

@@ -11,3 +11,4 @@
 000012_cmms_relay_ordering.up.sql
 000013_cmms_relay_function_privileges.up.sql
 000014_cmms_outbox_retention.up.sql
+000015_eam_spatial_cafm_hierarchy.up.sql

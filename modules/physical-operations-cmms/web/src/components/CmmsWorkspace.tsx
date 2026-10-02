@@ -21,6 +21,7 @@ import { CmmsAssets } from './CmmsAssets';
 import { CmmsMeters } from './CmmsMeters';
 import { CmmsParts } from './CmmsParts';
 import { CmmsSchedules } from './CmmsSchedules';
+import { CmmsSpaceExplorer } from './CmmsSpaceExplorer';
 import { EmptyState, ErrorState, LoadingState, formatDate, formatMoney } from './CmmsShared';
 import { CmmsWorkOrders, priorityColor, statusColor } from './CmmsWorkOrders';
 
@@ -28,6 +29,7 @@ export type CmmsSection =
   | 'overview'
   | 'work-orders'
   | 'assets'
+  | 'spaces'
   | 'schedules'
   | 'meters'
   | 'inventory';
@@ -55,6 +57,12 @@ const SECTIONS: ReadonlyArray<{
     label: 'Assets',
     href: '/cmms/assets',
     description: 'The asset register, placed at Geospatial sites.',
+  },
+  {
+    key: 'spaces',
+    label: 'Spatial topology',
+    href: '/cmms/spaces',
+    description: 'CAFM spatial hierarchy (Sites, Buildings, Floors, Rooms) with CAD/BIM containment.',
   },
   {
     key: 'schedules',
@@ -105,6 +113,7 @@ export function CmmsWorkspace({ section }: { section: CmmsSection }) {
         {section === 'overview' ? <Overview /> : null}
         {section === 'work-orders' ? <CmmsWorkOrders /> : null}
         {section === 'assets' ? <CmmsAssets /> : null}
+        {section === 'spaces' ? <CmmsSpaceExplorer /> : null}
         {section === 'schedules' ? <CmmsSchedules /> : null}
         {section === 'meters' ? <CmmsMeters /> : null}
         {section === 'inventory' ? <CmmsParts /> : null}
