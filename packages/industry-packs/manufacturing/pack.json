@@ -1,0 +1,10 @@
+{
+  "id": "manufacturing",
+  "slug": "manufacturing",
+  "name": "Advanced Discrete & Process Manufacturing",
+  "version": "1.0.0",
+  "description": "Plant floor and assembly line workforce operations with machine certification and shift differential governance.",
+  "industry": "Manufacturing",
+  "countryCode": "US",
+  "currency": "USD"
+}

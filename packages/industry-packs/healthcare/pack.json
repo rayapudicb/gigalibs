@@ -1,0 +1,10 @@
+{
+  "id": "healthcare",
+  "slug": "healthcare",
+  "name": "Clinical Healthcare & Acute Hospital Staffing",
+  "version": "1.0.0",
+  "description": "Clinical ward, ICU, and per-diem medical workforce staffing with nurse licensing, credentialing, and patient-to-nurse ratio limits.",
+  "industry": "Healthcare",
+  "countryCode": "US",
+  "currency": "USD"
+}

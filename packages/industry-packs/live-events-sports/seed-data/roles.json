@@ -1,0 +1,45 @@
+{
+  "roles": [
+    {
+      "roleCode": "EVENT_OPS_MANAGER",
+      "name": "Production Coordinator",
+      "permissions": [
+        "workforce:workers:read",
+        "workforce:workers:write",
+        "workforce:engagements:read",
+        "workforce:engagements:write",
+        "workforce:shifts:manage",
+        "workforce:reports:read"
+      ]
+    },
+    {
+      "roleCode": "STAGE_MANAGER",
+      "name": "Stage Manager",
+      "permissions": [
+        "workforce:workers:read",
+        "workforce:engagements:read",
+        "workforce:shifts:manage",
+        "workforce:compliance:verify"
+      ]
+    },
+    {
+      "roleCode": "LEAD_CREW_CHIEF",
+      "name": "Lead Crew Chief",
+      "permissions": [
+        "workforce:workers:read",
+        "workforce:shifts:manage",
+        "workforce:timesheets:approve"
+      ]
+    },
+    {
+      "roleCode": "STAGEHAND",
+      "name": "Stagehand / Crew Member",
+      "permissions": [
+        "workforce:shifts:pickup",
+        "workforce:shifts:swap",
+        "workforce:expenses:submit",
+        "workforce:timesheets:submit"
+      ]
+    }
+  ]
+}

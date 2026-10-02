@@ -1,0 +1,19 @@
+{
+  "workUnit": "Production Line",
+  "role": "Plant Role",
+  "position": "Station Slot",
+  "worker": "Plant Operator",
+  "agreement": "Shop Floor Assignment",
+  "roleLabels": {
+    "workforce_manager": "Plant Operations Manager",
+    "ops_supervisor": "Shift Supervisor",
+    "time_approver": "Line Foreman",
+    "field_worker": "Machine Operator"
+  },
+  "classificationLabels": {
+    "W2": "Full-Time Plant Specialist",
+    "CONTRACTOR": "Contract Technician",
+    "CASUAL": "Seasonal Line Hand",
+    "UNION_W2": "USW Union Operator"
+  }
+}

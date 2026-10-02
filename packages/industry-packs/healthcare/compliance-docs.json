@@ -1,0 +1,34 @@
+{
+  "documentTypes": [
+    {
+      "code": "RN_STATE_LICENSE",
+      "name": "State Registered Nurse License",
+      "validityDays": 730,
+      "mandatory": true
+    },
+    {
+      "code": "BLS_AHA",
+      "name": "Basic Life Support (AHA BLS)",
+      "validityDays": 730,
+      "mandatory": true
+    },
+    {
+      "code": "ACLS_AHA",
+      "name": "Advanced Cardiac Life Support (ACLS)",
+      "validityDays": 730,
+      "mandatory": false
+    },
+    {
+      "code": "TB_SCREENING",
+      "name": "Annual TB (PPD) / QuantiFERON Gold Screening",
+      "validityDays": 365,
+      "mandatory": true
+    },
+    {
+      "code": "DEA_REGISTRATION",
+      "name": "DEA Controlled Substances Registration",
+      "validityDays": 1095,
+      "mandatory": false
+    }
+  ]
+}

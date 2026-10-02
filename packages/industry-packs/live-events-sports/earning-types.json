@@ -1,0 +1,34 @@
+{
+  "earningTypes": [
+    {
+      "code": "REGULAR",
+      "name": "Show Call Regular Hours",
+      "multiplier": 1.0,
+      "isOvertime": false
+    },
+    {
+      "code": "OVERTIME",
+      "name": "Show Call Overtime (Over 8h)",
+      "multiplier": 1.5,
+      "isOvertime": true
+    },
+    {
+      "code": "DOUBLE_TIME",
+      "name": "Midnight / Extended Call (Over 12h)",
+      "multiplier": 2.0,
+      "isOvertime": true
+    },
+    {
+      "code": "PER_DIEM",
+      "name": "Touring Per Diem",
+      "multiplier": 1.0,
+      "isExpense": true
+    },
+    {
+      "code": "LOAD_IN_DIFF",
+      "name": "Midnight Load-In Differential",
+      "multiplier": 1.25,
+      "isOvertime": false
+    }
+  ]
+}

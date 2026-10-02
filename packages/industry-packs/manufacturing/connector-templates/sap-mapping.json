@@ -1,0 +1,18 @@
+{
+  "connectorType": "SAP_IDOC_V1",
+  "exportFormat": "IDOC_XML",
+  "columns": [
+    "PersonnelNumber",
+    "WageType",
+    "CostCenter",
+    "Hours",
+    "PostingDate"
+  ],
+  "mapping": {
+    "PersonnelNumber": "worker.externalId",
+    "WageType": "earning.code",
+    "CostCenter": "engagement.metadata.costCenter",
+    "Hours": "earning.hours",
+    "PostingDate": "payrollPeriod.endDate"
+  }
+}

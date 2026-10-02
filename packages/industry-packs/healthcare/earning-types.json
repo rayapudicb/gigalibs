@@ -1,0 +1,40 @@
+{
+  "earningTypes": [
+    {
+      "code": "BASE_HOURLY",
+      "name": "Base Staff Hourly Rate",
+      "multiplier": 1.0,
+      "isOvertime": false
+    },
+    {
+      "code": "NIGHT_DIFFERENTIAL",
+      "name": "Clinical Night Differential",
+      "multiplier": 1.18,
+      "isOvertime": false
+    },
+    {
+      "code": "WEEKEND_DIFFERENTIAL",
+      "name": "Weekend Ward Differential",
+      "multiplier": 1.12,
+      "isOvertime": false
+    },
+    {
+      "code": "ON_CALL_STANDBY",
+      "name": "Standby On-Call Pager Rate",
+      "multiplier": 0.5,
+      "isOvertime": false
+    },
+    {
+      "code": "PATIENT_VISIT",
+      "name": "Home Health Patient Visit Flat Rate",
+      "multiplier": 1.0,
+      "isOvertime": false
+    },
+    {
+      "code": "CRITICAL_CARE_OT",
+      "name": "Critical Care Overtime",
+      "multiplier": 1.5,
+      "isOvertime": true
+    }
+  ]
+}

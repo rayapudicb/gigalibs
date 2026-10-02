@@ -1,0 +1,21 @@
+{
+  "rules": [
+    {
+      "ruleId": "RULE_NURSE_PATIENT_RATIO",
+      "name": "Mandated Nurse-to-Patient Ratio",
+      "description": "ICU maximum 1:2 ratio; Med-Surg maximum 1:5 ratio enforced at shift scheduling.",
+      "parameters": {
+        "maxPatientsPerNurseIcu": 2,
+        "maxPatientsPerNurseMedSurg": 5
+      }
+    },
+    {
+      "ruleId": "RULE_LICENSE_VERIFICATION",
+      "name": "Hard Verification Stop",
+      "description": "Expired state license immediately disqualifies from clinical shift assignment.",
+      "parameters": {
+        "gracePeriodDays": 0
+      }
+    }
+  ]
+}

@@ -1504,3 +1504,5 @@ export const ShiftHandoverResponseV1Schema = z.object({
   createdAt: z.string(),
 });
 export type ShiftHandoverResponseV1 = z.infer<typeof ShiftHandoverResponseV1Schema>;
+
+export * from './universal.js';

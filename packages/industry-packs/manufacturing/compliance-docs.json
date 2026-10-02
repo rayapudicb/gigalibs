@@ -1,0 +1,28 @@
+{
+  "documentTypes": [
+    {
+      "code": "OSHA_30_GENERAL",
+      "name": "OSHA 30-Hour General Industry Certification",
+      "validityDays": 1825,
+      "mandatory": true
+    },
+    {
+      "code": "FORKLIFT_PROPANE",
+      "name": "Powered Industrial Truck (Forklift) License",
+      "validityDays": 1095,
+      "mandatory": true
+    },
+    {
+      "code": "LOCKOUT_TAGOUT",
+      "name": "Lockout/Tagout (LOTO) Authorized Training",
+      "validityDays": 365,
+      "mandatory": true
+    },
+    {
+      "code": "HAZMAT_AWARENESS",
+      "name": "RCRA Hazardous Waste & HazMat Safety",
+      "validityDays": 365,
+      "mandatory": false
+    }
+  ]
+}

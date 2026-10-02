@@ -1,0 +1,29 @@
+{
+  "rules": [
+    {
+      "ruleId": "RULE_MIN_CALL_HOURS",
+      "name": "Minimum 4-Hour Call Guarantee",
+      "description": "Any crew member called in must be paid a minimum of 4 hours.",
+      "parameters": {
+        "minHours": 4
+      }
+    },
+    {
+      "ruleId": "RULE_MEAL_PENALTY",
+      "name": "Meal Penalty After 5 Hours",
+      "description": "Meal break required every 5 hours or penalty hourly rate applies.",
+      "parameters": {
+        "maxContinuousHours": 5,
+        "penaltyRateMultiplier": 1.5
+      }
+    },
+    {
+      "ruleId": "RULE_TURNAROUND_REST",
+      "name": "8-Hour Turnaround Rest Requirement",
+      "description": "Minimum 8 hours rest between end of load-out and next call.",
+      "parameters": {
+        "minRestHours": 8
+      }
+    }
+  ]
+}

@@ -6,7 +6,7 @@ Replace old content rather than appending to it, and update it at the end of eve
 ## State
 
 - **Branch:** `feat/gigaops-convergence-core`, local only, never pushed.
-- **Active implementation item:** WI-OI-109 (universal organization hierarchy and enterprise scope), owner-approved 2026-10-01. Slices 109a–109g are implemented and deployed to the bounded local stack: governed hierarchy, APIs and administration UI; signed organization scope; Place links; immutable module replicas; the Workforce → Analytics → Reports organization-aware path; and a server-authored mobile/API manifest. Five configurable reference structures and isolation passed on throwaway PostgreSQL. The local tenant was reset to a native empty organization on 2026-10-02: only `Organization` (PRIMARY) remains, with zero units, versions, edges or legacy departments, and the Department-import action is absent from the UI. Evidence is in `.pi/work/WI-OI-109.md`. WI-OI-103 and WI-OI-106 remain in Review and need their organization-aware live proofs; WI-OI-104, 105 and 107 remain in Review; WI-OI-108 is Proposed.
+- **Active implementation item:** None currently active. WI-WFO-001–006 are in Review (.pi/work/WI-WFO-006.md); WI-OI-109 is in Review. WI-OI-103 and WI-OI-106 remain in Review; WI-OI-104, 105, 107 remain in Review; WI-OI-108 is Proposed. Next proposed: WI-WFO-007 (Mobile Worker App) or live container certification.
 - **Wave 0:** WI-OI-080, 081, 082, 083 and 085 are in Review, waiting for human reviews. WI-OI-084 (mobile) has
   not started.
 - **Running locally (2026-10-02 14:16 IST):** every application service is on `3da222030dc2-a0ca08f61655`; the web is healthy on 5180 and the control plane is healthy on 3333.

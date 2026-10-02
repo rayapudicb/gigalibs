@@ -1,0 +1,19 @@
+{
+  "workUnit": "Clinical Unit",
+  "role": "Clinical Specialty",
+  "position": "Bed Assignment",
+  "worker": "Clinician",
+  "agreement": "Clinical Staffing Roster",
+  "roleLabels": {
+    "workforce_manager": "Director of Nursing",
+    "ops_supervisor": "Charge Nurse",
+    "time_approver": "Unit Nurse Manager",
+    "field_worker": "Staff Nurse (RN)"
+  },
+  "classificationLabels": {
+    "W2": "Hospital Core Staff",
+    "CONTRACTOR": "Travel Nurse / Locum Tenens",
+    "CASUAL": "Per-Diem Float Pool",
+    "UNION_W2": "CNA / NNU Member"
+  }
+}

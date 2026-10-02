@@ -1,0 +1,19 @@
+{
+  "workUnit": "Event",
+  "role": "Crew Position",
+  "position": "Call Slot",
+  "worker": "Crew Member",
+  "agreement": "Production Agreement",
+  "roleLabels": {
+    "workforce_manager": "Production Coordinator",
+    "ops_supervisor": "Stage Manager",
+    "time_approver": "Lead Crew Chief",
+    "field_worker": "Stagehand"
+  },
+  "classificationLabels": {
+    "W2": "W2 Production Staff",
+    "CONTRACTOR": "1099 Technician",
+    "CASUAL": "Local Runner",
+    "UNION_W2": "IATSE Crew"
+  }
+}

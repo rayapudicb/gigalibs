@@ -1,0 +1,18 @@
+{
+  "connectorType": "ADP_CSV_V1",
+  "exportFormat": "CSV",
+  "columns": [
+    "EmployeeID",
+    "DeptCode",
+    "PayCode",
+    "Hours",
+    "PayPeriodDate"
+  ],
+  "mapping": {
+    "EmployeeID": "worker.externalId",
+    "DeptCode": "engagement.metadata.departmentCode",
+    "PayCode": "earning.code",
+    "Hours": "earning.hours",
+    "PayPeriodDate": "payrollPeriod.endDate"
+  }
+}

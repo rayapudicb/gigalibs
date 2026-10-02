@@ -1,0 +1,10 @@
+{
+  "id": "live-events-sports",
+  "slug": "live-events-sports",
+  "name": "Live Events & Sports",
+  "version": "1.0.0",
+  "description": "Workforce operations template tailored for stadiums, arenas, touring, and live entertainment productions.",
+  "industry": "Live Events & Sports",
+  "countryCode": "US",
+  "currency": "USD"
+}

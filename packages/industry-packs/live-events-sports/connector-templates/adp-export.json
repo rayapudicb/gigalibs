@@ -1,0 +1,22 @@
+{
+  "connectorType": "ADP_CSV_V1",
+  "exportFormat": "CSV",
+  "columns": [
+    "CompanyCode",
+    "WorkerID",
+    "PayPeriodEnding",
+    "EarningCode",
+    "Hours",
+    "Amount",
+    "CostCenter"
+  ],
+  "mapping": {
+    "CompanyCode": "tenant.metadata.adpCompanyCode",
+    "WorkerID": "worker.externalId",
+    "PayPeriodEnding": "payrollPeriod.endDate",
+    "EarningCode": "earning.code",
+    "Hours": "earning.hours",
+    "Amount": "earning.amount",
+    "CostCenter": "engagement.metadata.costCenter"
+  }
+}

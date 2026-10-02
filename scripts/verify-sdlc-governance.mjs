@@ -58,7 +58,7 @@ for (const id of requiredFr) {
 }
 
 const workItems = read('.pi/WORK_ITEMS.md');
-const rows = workItems.split('\n').filter((line) => /^\| WI-OI-\d{3} \|/.test(line));
+const rows = workItems.split('\n').filter((line) => /^\| (?:WI-OI-\d{3}|WI-WFO-\d{3}) \|/.test(line));
 const workIds = rows.map((line) => line.split('|')[1].trim());
 if (new Set(workIds).size !== workIds.length)
   violation('WORK_ITEM_DUPLICATE', 'Work-item IDs must be unique.');

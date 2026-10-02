@@ -1,0 +1,20 @@
+{
+  "rules": [
+    {
+      "ruleId": "RULE_MAX_WEEKLY_HOURS",
+      "name": "Plant Fatigue Prevention (Max 60 Hours/Week)",
+      "description": "Operators cannot be scheduled or worked in excess of 60 total hours per rolling 7 days.",
+      "parameters": {
+        "maxWeeklyHours": 60
+      }
+    },
+    {
+      "ruleId": "RULE_MANDATORY_LOTO",
+      "name": "LOTO Qualification Guard",
+      "description": "Worker cannot be scheduled on hazardous machine lines without active LOTO certificate.",
+      "parameters": {
+        "requiredCertCode": "LOCKOUT_TAGOUT"
+      }
+    }
+  ]
+}

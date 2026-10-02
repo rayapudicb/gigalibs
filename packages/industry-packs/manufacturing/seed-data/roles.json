@@ -1,0 +1,36 @@
+{
+  "roles": [
+    {
+      "roleCode": "PLANT_MANAGER",
+      "name": "Plant Operations Manager",
+      "permissions": [
+        "workforce:workers:read",
+        "workforce:workers:write",
+        "workforce:engagements:read",
+        "workforce:engagements:write",
+        "workforce:shifts:manage",
+        "workforce:reports:read",
+        "workforce:payroll:manage"
+      ]
+    },
+    {
+      "roleCode": "SHIFT_SUPERVISOR",
+      "name": "Shift Supervisor",
+      "permissions": [
+        "workforce:workers:read",
+        "workforce:shifts:manage",
+        "workforce:timesheets:approve",
+        "workforce:compliance:verify"
+      ]
+    },
+    {
+      "roleCode": "LINE_OPERATOR",
+      "name": "Machine Operator",
+      "permissions": [
+        "workforce:shifts:pickup",
+        "workforce:shifts:swap",
+        "workforce:timesheets:submit"
+      ]
+    }
+  ]
+}

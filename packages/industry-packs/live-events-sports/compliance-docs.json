@@ -1,0 +1,28 @@
+{
+  "documentTypes": [
+    {
+      "code": "ETCP_RIGGING",
+      "name": "ETCP Arena Rigging Certification",
+      "validityDays": 730,
+      "mandatory": true
+    },
+    {
+      "code": "NFPA_70E",
+      "name": "NFPA 70E Electrical Safety",
+      "validityDays": 1095,
+      "mandatory": true
+    },
+    {
+      "code": "STAGE_FORKLIFT",
+      "name": "Stage Forklift Operator License",
+      "validityDays": 1095,
+      "mandatory": false
+    },
+    {
+      "code": "OSHA_10_ENTERTAINMENT",
+      "name": "OSHA 10 General Industry (Entertainment)",
+      "validityDays": 1825,
+      "mandatory": true
+    }
+  ]
+}

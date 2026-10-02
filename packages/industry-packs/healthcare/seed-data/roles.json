@@ -1,0 +1,36 @@
+{
+  "roles": [
+    {
+      "roleCode": "DIRECTOR_OF_NURSING",
+      "name": "Director of Nursing",
+      "permissions": [
+        "workforce:workers:read",
+        "workforce:workers:write",
+        "workforce:engagements:read",
+        "workforce:engagements:write",
+        "workforce:shifts:manage",
+        "workforce:compliance:verify",
+        "workforce:reports:read",
+        "workforce:payroll:manage"
+      ]
+    },
+    {
+      "roleCode": "CHARGE_NURSE",
+      "name": "Charge Nurse",
+      "permissions": [
+        "workforce:workers:read",
+        "workforce:shifts:manage",
+        "workforce:timesheets:approve"
+      ]
+    },
+    {
+      "roleCode": "STAFF_NURSE",
+      "name": "Staff Nurse (RN)",
+      "permissions": [
+        "workforce:shifts:pickup",
+        "workforce:shifts:swap",
+        "workforce:timesheets:submit"
+      ]
+    }
+  ]
+}
