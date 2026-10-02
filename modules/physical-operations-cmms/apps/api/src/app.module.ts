@@ -23,6 +23,8 @@ import { WorkOrdersService } from './work-orders/work-orders.service.js';
 
 import { EamSpacesController } from './spaces/spaces.controller.js';
 import { EamSpacesService } from './spaces/spaces.service.js';
+import { ClassificationsController } from './classifications/classifications.controller.js';
+import { ClassificationsService } from './classifications/classifications.service.js';
 
 /**
  * CMMS core runtime (WI-OI-038, roadmap P4): assets, work orders, preventive maintenance, meters and parts.
@@ -36,6 +38,7 @@ import { EamSpacesService } from './spaces/spaces.service.js';
     HealthController,
     AssetsController,
     EamSpacesController,
+    ClassificationsController,
     WorkOrdersController,
     PmSchedulesController,
     MetersController,
@@ -47,6 +50,7 @@ import { EamSpacesService } from './spaces/spaces.service.js';
     CmmsAuthorizationGuard,
     AssetsService,
     EamSpacesService,
+    ClassificationsService,
     WorkOrdersService,
     PmSchedulesService,
     MetersService,

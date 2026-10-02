@@ -201,9 +201,10 @@ export class CustomFieldsNestService {
     } finally {
       client.release();
     }
-  }
-
-function validateFieldValue(def: CustomFieldDefinition, value: unknown): { isValid: boolean; error?: string } {
+  private validateFieldValue(
+    def: CustomFieldDefinition,
+    value: unknown,
+  ): { isValid: boolean; error?: string } {
   if (def.required && (value === undefined || value === null || value === '')) {
     return { isValid: false, error: `${def.label} is required` };
   }
@@ -254,7 +255,7 @@ function validateFieldValue(def: CustomFieldDefinition, value: unknown): { isVal
         continue;
       }
       if (value !== undefined && value !== null) {
-        const result = validateFieldValue(def, value);
+        const result = this.validateFieldValue(def, value);
         if (!result.isValid && result.error) errors[def.name] = result.error;
       }
     }

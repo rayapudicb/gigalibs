@@ -1,5 +1,9 @@
 import type {
+  CmmsAssetClassificationV1,
+  CmmsAssetSpecValueV1,
   CmmsAssetV1,
+  CmmsClassificationTreeV1,
+  CmmsEquipmentNodeV1,
   CmmsInventorySummaryV1,
   CmmsMeterReadingV1,
   CmmsMeterV1,
@@ -8,6 +12,7 @@ import type {
   CmmsPmScheduleV1,
   CmmsSpaceTreeV1,
   CmmsSpaceV1,
+  CmmsSpecDefinitionV1,
   CmmsStockMovementV1,
   CmmsWorkOrderDetailV1,
   CmmsWorkOrderEventV1,
@@ -89,6 +94,38 @@ export const cmmsApi = {
     requestCmms<CmmsAssetV1>(`/assets/${id(assetId)}`, patch(input)),
   archiveAsset: (assetId: string, input: { expectedVersion: number; reason: string }) =>
     requestCmms<CmmsAssetV1>(`/assets/${id(assetId)}/archive`, post(input)),
+  getAssetSpecs: (assetId: string) =>
+    requestCmms<{ items: CmmsAssetSpecValueV1[] }>(`/assets/${id(assetId)}/specs`),
+  setAssetSpecs: (assetId: string, input: { specs: readonly unknown[] }) =>
+    requestCmms<{ items: CmmsAssetSpecValueV1[] }>(`/assets/${id(assetId)}/specs`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(input),
+    }),
+  getEquipmentTree: (assetId: string) =>
+    requestCmms<CmmsEquipmentNodeV1>(`/assets/${id(assetId)}/equipment-tree`),
+  cascadeStatus: (assetId: string, input: { targetStatus: string; reason: string }) =>
+    requestCmms<{ affectedCount: number; affectedAssetIds: string[]; targetStatus: string }>(
+      `/assets/${id(assetId)}/cascade-status`,
+      post(input),
+    ),
+
+  listClassificationTree: () =>
+    requestCmms<{ items: CmmsClassificationTreeV1[] }>('/classifications/tree'),
+  getClassification: (classificationId: string) =>
+    requestCmms<CmmsAssetClassificationV1>(`/classifications/${id(classificationId)}`),
+  createClassification: (input: Record<string, unknown>) =>
+    requestCmms<CmmsAssetClassificationV1>('/classifications', post(input)),
+  updateClassification: (classificationId: string, input: Record<string, unknown>) =>
+    requestCmms<CmmsAssetClassificationV1>(`/classifications/${id(classificationId)}`, patch(input)),
+  deleteClassification: (classificationId: string) =>
+    requestCmms<{ success: boolean }>(`/classifications/${id(classificationId)}`, { method: 'DELETE' }),
+  listSpecDefs: (classificationId: string) =>
+    requestCmms<{ items: CmmsSpecDefinitionV1[] }>(
+      `/classifications/${id(classificationId)}/spec-definitions`,
+    ),
+  createSpecDef: (input: Record<string, unknown>) =>
+    requestCmms<CmmsSpecDefinitionV1>('/classifications/spec-definitions', post(input)),
 
   searchWorkOrders: (query: Record<string, unknown> = {}) =>
     requestCmms<CmmsPageV1<CmmsWorkOrderV1>>('/work-orders/search', post(query)),

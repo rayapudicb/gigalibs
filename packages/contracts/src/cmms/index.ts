@@ -69,6 +69,7 @@ const AssetFieldsSchema = {
   parentAssetId: UuidSchema.nullable().optional(),
   siteRef: UuidSchema.nullable().optional(),
   spaceId: UuidSchema.nullable().optional(),
+  classificationId: UuidSchema.nullable().optional(),
   departmentId: DepartmentIdSchema.nullable().optional(),
   acquisitionCost: z.number().nonnegative().max(1e10).nullable().optional(),
   currencyCode: CurrencyCodeSchema.nullable().optional(),
@@ -104,6 +105,7 @@ export const SearchCmmsAssetsV1Schema = z
     siteRef: UuidSchema.optional(),
     parentAssetId: UuidSchema.optional(),
     spaceId: UuidSchema.optional(),
+    classificationId: UuidSchema.optional(),
     includeArchived: z.boolean().default(false),
   })
   .strict();
@@ -123,6 +125,7 @@ export interface CmmsAssetV1 {
   readonly parentAssetId: string | null;
   readonly siteRef: string | null;
   readonly spaceId: string | null;
+  readonly classificationId: string | null;
   readonly departmentId: string | null;
   readonly acquisitionCost: number | null;
   readonly currencyCode: string | null;
@@ -206,6 +209,115 @@ export interface CmmsSpaceV1 {
 
 export interface CmmsSpaceTreeV1 extends CmmsSpaceV1 {
   readonly children: readonly CmmsSpaceTreeV1[];
+}
+
+// ─── Classifications & Engineering Specifications (WI-EAM-002) ───────────────────────────
+export const CmmsSpecDataTypeV1Schema = z.enum(['NUMBER', 'TEXT', 'BOOLEAN', 'DATE']);
+export type CmmsSpecDataTypeV1 = z.infer<typeof CmmsSpecDataTypeV1Schema>;
+
+export const CreateCmmsClassificationV1Schema = z
+  .object({
+    code: IdentifierSchema,
+    name: TextSchema(200),
+    description: z.string().trim().max(4_000).nullable().optional(),
+    parentClassId: UuidSchema.nullable().optional(),
+  })
+  .strict();
+export type CreateCmmsClassificationV1 = z.infer<typeof CreateCmmsClassificationV1Schema>;
+
+export const UpdateCmmsClassificationV1Schema = z
+  .object({
+    expectedVersion: z.number().int().positive(),
+    name: TextSchema(200).optional(),
+    description: z.string().trim().max(4_000).nullable().optional(),
+    parentClassId: UuidSchema.nullable().optional(),
+  })
+  .strict();
+export type UpdateCmmsClassificationV1 = z.infer<typeof UpdateCmmsClassificationV1Schema>;
+
+export interface CmmsAssetClassificationV1 {
+  readonly id: string;
+  readonly code: string;
+  readonly name: string;
+  readonly description: string | null;
+  readonly parentClassId: string | null;
+  readonly specCount: number;
+  readonly assetCount: number;
+  readonly version: number;
+  readonly createdBy: string;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+}
+
+export interface CmmsClassificationTreeV1 extends CmmsAssetClassificationV1 {
+  readonly children: readonly CmmsClassificationTreeV1[];
+}
+
+export const CreateCmmsSpecDefinitionV1Schema = z
+  .object({
+    classificationId: UuidSchema,
+    attributeKey: z.string().trim().min(1).max(64).regex(/^[a-z][a-z0-9_]{0,63}$/),
+    label: TextSchema(120),
+    dataType: CmmsSpecDataTypeV1Schema,
+    uom: z.string().trim().max(32).nullable().optional(),
+    required: z.boolean().default(false),
+    minValue: z.number().nullable().optional(),
+    maxValue: z.number().nullable().optional(),
+    defaultValue: z.string().trim().max(500).nullable().optional(),
+  })
+  .strict();
+export type CreateCmmsSpecDefinitionV1 = z.infer<typeof CreateCmmsSpecDefinitionV1Schema>;
+
+export interface CmmsSpecDefinitionV1 {
+  readonly id: string;
+  readonly classificationId: string;
+  readonly attributeKey: string;
+  readonly label: string;
+  readonly dataType: CmmsSpecDataTypeV1;
+  readonly uom: string | null;
+  readonly required: boolean;
+  readonly minValue: number | null;
+  readonly maxValue: number | null;
+  readonly defaultValue: string | null;
+  readonly version: number;
+}
+
+export const SetCmmsAssetSpecsV1Schema = z
+  .object({
+    specs: z.array(
+      z.object({
+        specDefinitionId: UuidSchema,
+        valueText: z.string().trim().max(2000).nullable().optional(),
+        valueNumber: z.number().nullable().optional(),
+        valueBoolean: z.boolean().nullable().optional(),
+      }).strict()
+    ),
+  })
+  .strict();
+export type SetCmmsAssetSpecsV1 = z.infer<typeof SetCmmsAssetSpecsV1Schema>;
+
+export interface CmmsAssetSpecValueV1 {
+  readonly specDefinitionId: string;
+  readonly attributeKey: string;
+  readonly label: string;
+  readonly dataType: CmmsSpecDataTypeV1;
+  readonly uom: string | null;
+  readonly valueText: string | null;
+  readonly valueNumber: number | null;
+  readonly valueBoolean: boolean | null;
+}
+
+export interface CmmsEquipmentNodeV1 {
+  readonly id: string;
+  readonly assetTag: string;
+  readonly name: string;
+  readonly category: string | null;
+  readonly status: CmmsAssetStatusV1;
+  readonly criticality: CmmsCriticalityV1;
+  readonly classificationId: string | null;
+  readonly classificationName: string | null;
+  readonly spaceId: string | null;
+  readonly children: readonly CmmsEquipmentNodeV1[];
 }
 
 // ─── Work orders ─────────────────────────────────────────────────────────────────────────────────────────
