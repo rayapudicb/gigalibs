@@ -298,4 +298,61 @@ describe('Application Dictionary Compiler (WI-OI-110 / AD-1)', () => {
     expect(impact3.classification).toBe('BREAKING');
     expect(impact3.changes.some((c) => c.kind === 'FIELD_TYPE_CHANGED')).toBe(true);
   });
+
+  it('rejects custom non-core entities that use reserved core entity names', () => {
+    const invalidCustomApp: DictionaryPackageDefinitionV1 = {
+      ...validBasePackage,
+      packageKey: 'custom-app',
+      name: 'Custom App With Reserved Name',
+      entities: [
+        {
+          entityKey: 'custom.invoice',
+          moduleKey: 'custom',
+          label: 'Custom Invoice',
+          ownership: 'TENANT_EXTENSION',
+          primaryKeyField: 'id',
+          isVersioned: true,
+          isAuditLogged: true,
+          isSoftDeletable: false,
+        },
+      ],
+      fields: [
+        {
+          fieldKey: 'ref-number',
+          entityKey: 'custom.invoice',
+          label: 'Reference Number',
+          type: 'TEXT',
+          required: true,
+          readOnly: false,
+          isSystemLocked: false,
+          classification: 'INTERNAL',
+          maskOnDisplay: false,
+        },
+      ],
+      views: [
+        {
+          ...validBasePackage.views[0]!,
+          tabs: [
+            {
+              ...validBasePackage.views[0]!.tabs[0]!,
+              targetEntityKey: 'custom.invoice',
+              fields: [
+                {
+                  fieldKey: 'ref-number',
+                  position: 0,
+                  span: 12,
+                  componentKey: 'text-input',
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+
+    const result = compileDictionaryPackage(invalidCustomApp);
+    expect(result.valid).toBe(false);
+    expect(result.findings.some((f) => f.code === 'RESERVED_ENTITY_NAME')).toBe(true);
+  });
 });
+

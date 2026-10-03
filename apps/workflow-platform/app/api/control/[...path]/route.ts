@@ -16,6 +16,7 @@ const ALLOWED_ROOTS = new Set([
   'settings',
   'tenants',
   'value',
+  'parties',
 ]);
 
 function isAllowedAuthPath(path: string[]): boolean {

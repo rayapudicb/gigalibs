@@ -68,7 +68,9 @@ describe('ConfigurationAdapterRegistry', () => {
     });
 
     try {
-      expect(context.get(ConfigurationAdapterRegistry).descriptors()).toHaveLength(1);
+      const descriptors = context.get(ConfigurationAdapterRegistry).descriptors();
+      expect(descriptors).toHaveLength(2);
+      expect(descriptors.some((d) => d.adapterKey === 'party-profile-v1')).toBe(true);
     } finally {
       await context.close();
     }

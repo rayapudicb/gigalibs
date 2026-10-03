@@ -196,7 +196,16 @@
       "ConfigurationSavedFilter",
       "SagaInstance",
       "SagaStep",
-      "TenantRateBucket"
+      "TenantRateBucket",
+      "Party",
+      "PartyRole",
+      "PartyIdentifier",
+      "PartyContactPoint",
+      "PartyAddress",
+      "PartyRelationship",
+      "PartyOrgAssignment",
+      "PartyExtensionSnapshot",
+      "PartyIdempotencyRecord"
     ],
     "moduleOwned": {
       "procurement (to move, WI-OI-092)": [

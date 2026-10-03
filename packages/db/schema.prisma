@@ -577,6 +577,9 @@ model Tenant {
   orgUnitPlaceLinks     OrgUnitPlaceLink[]
   orgScopeGrants        OrgScopeGrant[]
   orgIdempotencyRecords OrgIdempotencyRecord[]
+  // Core Parties (WI-OI-111, ADR-0020)
+  parties               Party[]
+  partyIdempotencyRecords PartyIdempotencyRecord[]
 
   // Saga orchestration instances
   sagaInstances       SagaInstance[]
@@ -3813,3 +3816,191 @@ model OrgIdempotencyRecord {
   @@unique([tenantId, actorId, operation, idempotencyKey], map: "org_idempotency_records_key")
   @@map("org_idempotency_records")
 }
+
+// ═══════════════════════════════════════════════════════════════════════
+// CORE PARTIES (WI-OI-111, ADR-0020)
+// ═══════════════════════════════════════════════════════════════════════
+
+model Party {
+  id              String                  @id @default(uuid()) @db.Uuid
+  tenantId        String
+  tenant          Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  code            String                  @db.VarChar(64)
+  legalName       String                  @db.VarChar(255)
+  displayName     String                  @db.VarChar(255)
+  partyType       String                  @db.VarChar(32)
+  status          String                  @default("ACTIVE") @db.VarChar(32)
+  classification  String?                 @db.VarChar(100)
+  survivorPartyId String?                 @db.Uuid
+  version         Int                     @default(1)
+  createdAt       DateTime                @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime                @updatedAt @db.Timestamptz(3)
+  archivedAt      DateTime?               @db.Timestamptz(3)
+  createdById     String?
+  updatedById     String?
+
+  roles           PartyRole[]
+  identifiers     PartyIdentifier[]
+  contacts        PartyContactPoint[]
+  addresses       PartyAddress[]
+  relationshipsFrom PartyRelationship[]   @relation("PartyRelFrom")
+  relationshipsTo   PartyRelationship[]   @relation("PartyRelTo")
+  orgAssignments  PartyOrgAssignment[]
+  extensionSnapshots PartyExtensionSnapshot[]
+
+  @@unique([tenantId, id])
+  @@unique([tenantId, code])
+  @@index([tenantId, status])
+  @@index([tenantId, partyType])
+  @@map("parties")
+}
+
+model PartyRole {
+  id            String    @id @default(uuid()) @db.Uuid
+  tenantId      String
+  partyId       String    @db.Uuid
+  party         Party     @relation(fields: [tenantId, partyId], references: [tenantId, id], onDelete: Cascade, map: "party_roles_party_fkey")
+  roleType      String    @db.VarChar(32)
+  status        String    @default("ACTIVE") @db.VarChar(32)
+  effectiveFrom DateTime? @db.Timestamptz(3)
+  effectiveTo   DateTime? @db.Timestamptz(3)
+  metadata      Json      @default("{}")
+  version       Int       @default(1)
+  createdAt     DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime  @updatedAt @db.Timestamptz(3)
+
+  @@unique([tenantId, id])
+  @@unique([tenantId, partyId, roleType])
+  @@index([tenantId, roleType])
+  @@map("party_roles")
+}
+
+model PartyIdentifier {
+  id             String    @id @default(uuid()) @db.Uuid
+  tenantId       String
+  partyId        String    @db.Uuid
+  party          Party     @relation(fields: [tenantId, partyId], references: [tenantId, id], onDelete: Cascade, map: "party_identifiers_party_fkey")
+  identifierType String    @db.VarChar(32)
+  value          String    @db.VarChar(128)
+  issuerCountry  String?   @db.VarChar(2)
+  isPrimary      Boolean   @default(false)
+  isRestricted   Boolean   @default(false)
+  validFrom      DateTime? @db.Timestamptz(3)
+  validTo        DateTime? @db.Timestamptz(3)
+  createdAt      DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime  @updatedAt @db.Timestamptz(3)
+
+  @@unique([tenantId, id])
+  @@index([tenantId, partyId])
+  @@index([tenantId, identifierType, value])
+  @@map("party_identifiers")
+}
+
+model PartyContactPoint {
+  id         String    @id @default(uuid()) @db.Uuid
+  tenantId   String
+  partyId    String    @db.Uuid
+  party      Party     @relation(fields: [tenantId, partyId], references: [tenantId, id], onDelete: Cascade, map: "party_contacts_party_fkey")
+  channel    String    @db.VarChar(32)
+  value      String    @db.VarChar(255)
+  label      String?   @db.VarChar(100)
+  isPrimary  Boolean   @default(false)
+  isVerified Boolean   @default(false)
+  validFrom  DateTime? @db.Timestamptz(3)
+  validTo    DateTime? @db.Timestamptz(3)
+  createdAt  DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt  DateTime  @updatedAt @db.Timestamptz(3)
+
+  @@unique([tenantId, id])
+  @@index([tenantId, partyId])
+  @@map("party_contact_points")
+}
+
+model PartyAddress {
+  id              String    @id @default(uuid()) @db.Uuid
+  tenantId        String
+  partyId         String    @db.Uuid
+  party           Party     @relation(fields: [tenantId, partyId], references: [tenantId, id], onDelete: Cascade, map: "party_addresses_party_fkey")
+  addressType     String    @db.VarChar(32)
+  street1         String    @db.VarChar(255)
+  street2         String?   @db.VarChar(255)
+  city            String    @db.VarChar(100)
+  stateOrProvince String?   @db.VarChar(100)
+  postalCode      String?   @db.VarChar(32)
+  countryCode     String    @db.VarChar(2)
+  isPrimary       Boolean   @default(false)
+  isVerified      Boolean   @default(false)
+  createdAt       DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime  @updatedAt @db.Timestamptz(3)
+
+  @@unique([tenantId, id])
+  @@index([tenantId, partyId])
+  @@map("party_addresses")
+}
+
+model PartyRelationship {
+  id               String    @id @default(uuid()) @db.Uuid
+  tenantId         String
+  fromPartyId      String    @db.Uuid
+  fromParty        Party     @relation("PartyRelFrom", fields: [tenantId, fromPartyId], references: [tenantId, id], onDelete: Cascade, map: "party_rel_from_fkey")
+  toPartyId        String    @db.Uuid
+  toParty          Party     @relation("PartyRelTo", fields: [tenantId, toPartyId], references: [tenantId, id], onDelete: Cascade, map: "party_rel_to_fkey")
+  relationshipType String    @db.VarChar(64)
+  status           String    @default("ACTIVE") @db.VarChar(32)
+  validFrom        DateTime? @db.Timestamptz(3)
+  validTo          DateTime? @db.Timestamptz(3)
+  createdAt        DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt        DateTime  @updatedAt @db.Timestamptz(3)
+
+  @@unique([tenantId, id])
+  @@index([tenantId, fromPartyId])
+  @@index([tenantId, toPartyId])
+  @@map("party_relationships")
+}
+
+model PartyOrgAssignment {
+  id                String   @id @default(uuid()) @db.Uuid
+  tenantId          String
+  partyId           String   @db.Uuid
+  party             Party    @relation(fields: [tenantId, partyId], references: [tenantId, id], onDelete: Cascade, map: "party_org_party_fkey")
+  orgUnitId         String
+  assignmentPurpose String   @default("OPERATIONAL") @db.VarChar(100)
+  createdAt         DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime @updatedAt @db.Timestamptz(3)
+
+  @@unique([tenantId, id])
+  @@unique([tenantId, partyId, orgUnitId, assignmentPurpose])
+  @@index([tenantId, orgUnitId])
+  @@map("party_org_assignments")
+}
+
+model PartyExtensionSnapshot {
+  id               String   @id @default(uuid()) @db.Uuid
+  tenantId         String
+  partyId          String   @db.Uuid
+  party            Party    @relation(fields: [tenantId, partyId], references: [tenantId, id], onDelete: Cascade, map: "party_ext_snap_party_fkey")
+  manifestChecksum String   @db.Char(64)
+  snapshotPayload  Json
+  capturedAt       DateTime @default(now()) @db.Timestamptz(3)
+
+  @@unique([tenantId, id])
+  @@index([tenantId, partyId])
+  @@map("party_extension_snapshots")
+}
+
+model PartyIdempotencyRecord {
+  id             String   @id @default(cuid())
+  tenantId       String
+  tenant         Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  actorId        String
+  operation      String   @db.VarChar(80)
+  idempotencyKey String   @db.VarChar(200)
+  requestSha256  String   @db.Char(64)
+  response       Json
+  statusCode     Int
+  createdAt      DateTime @default(now()) @db.Timestamptz(3)
+
+  @@unique([tenantId, actorId, operation, idempotencyKey], map: "party_idempotency_records_key")
+  @@map("party_idempotency_records")
+}
+

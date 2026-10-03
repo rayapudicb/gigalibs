@@ -7,11 +7,15 @@ import {
   type ModuleConfigurationAdapterV1,
   TenantProfileConfigurationAdapterV1,
 } from './tenant-profile-configuration.adapter.js';
+import { PartyConfigurationAdapterV1 } from './parties/party-configuration.adapter.js';
 
 export const CONFIGURATION_ADAPTERS = Symbol('CONFIGURATION_ADAPTERS');
 
 export function defaultConfigurationAdapters(): readonly ModuleConfigurationAdapterV1[] {
-  return Object.freeze([new TenantProfileConfigurationAdapterV1()]);
+  return Object.freeze([
+    new TenantProfileConfigurationAdapterV1(),
+    new PartyConfigurationAdapterV1(),
+  ]);
 }
 
 @Injectable()

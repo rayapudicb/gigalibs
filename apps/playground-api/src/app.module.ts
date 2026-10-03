@@ -18,6 +18,8 @@ import { TenantDataExportService } from './tenant-data-export.service.js';
 import { TenantDataExportWorker } from './tenant-data-export.worker.js';
 import { TenantExportSnapshotService } from './tenant-export-snapshot.service.js';
 import { OutboxRelayProcessor } from './outbox-relay.processor.js';
+import { PartyController } from './parties/party.controller.js';
+import { PartyService } from './parties/party.service.js';
 
 const manifests: ModuleManifest[] = [
   {
@@ -204,9 +206,11 @@ import { WorkflowService } from './workflow.service.js';
     DemoLabController,
     GovernorController,
     ScimController,
+    PartyController,
   ],
   providers: [
     { provide: APP_FILTER, useClass: DatabaseAvailabilityFilter },
+    PartyService,
     WorkflowService,
     ExecutionEventsService,
     ExecutionEventSignatureGuard,

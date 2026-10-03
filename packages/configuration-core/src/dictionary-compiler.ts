@@ -107,7 +107,23 @@ export function compileDictionaryPackage(
     });
   }
 
-  // 2. Uniqueness checks
+  // 2. Uniqueness & Reserved Name checks
+  const RESERVED_CORE_ENTITIES = new Set([
+    'party',
+    'user',
+    'tenant',
+    'account',
+    'invoice',
+    'payment',
+    'supplier-invoice',
+    'asset',
+    'work-order',
+    'journal',
+    'workflow',
+    'audit',
+    'credential',
+  ]);
+
   const entityKeys = new Set<string>();
   for (const entity of pkg.entities) {
     if (entityKeys.has(entity.entityKey)) {
@@ -119,6 +135,16 @@ export function compileDictionaryPackage(
       });
     }
     entityKeys.add(entity.entityKey);
+
+    const entityBase = entity.entityKey.includes('.') ? entity.entityKey.split('.').pop()! : entity.entityKey;
+    if (entity.ownership === 'TENANT_EXTENSION' && RESERVED_CORE_ENTITIES.has(entityBase.toLowerCase())) {
+      findings.push({
+        code: 'RESERVED_ENTITY_NAME',
+        path: `entities.${entity.entityKey}`,
+        message: `Custom non-core entity cannot use reserved core name: '${entityBase}'`,
+        severity: 'ERROR',
+      });
+    }
   }
 
   const fieldKeys = new Set<string>();

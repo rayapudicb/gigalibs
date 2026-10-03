@@ -96,9 +96,74 @@ describe('ConfigurationStudioService Application Dictionary', () => {
     };
 
     // When compiling directly via the compiler with baseline protection
+    expect(validDictChangeSet.kind).toBe('APPLICATION_DICTIONARY');
     const desc = service.listDescriptors().find(
       (d) => d.moduleKey === 'tenant-settings' && d.entityKey === 'tenant-profile',
     );
     expect(desc?.dictionaryContribution).toBeDefined();
+  });
+
+  it('exposes Core Parties dictionary descriptor and contribution', () => {
+    const descriptors = service.listDescriptors();
+    const partyDesc = descriptors.find(
+      (d) => d.moduleKey === 'core' && d.entityKey === 'parties',
+    );
+    expect(partyDesc).toBeDefined();
+    expect(partyDesc?.surfaceKey).toBe('core-parties');
+    expect(partyDesc?.dictionaryContribution).toBeDefined();
+    expect(partyDesc?.dictionaryContribution?.packageKey).toBe('core-parties-dictionary');
+    expect(partyDesc?.dictionaryContribution?.entities[0]?.entityKey).toBe('core.party');
+    expect(partyDesc?.registeredResolvers).toContain('ref-party-types');
+    expect(partyDesc?.registeredResolvers).toContain('ref-party-statuses');
+    expect(partyDesc?.registeredActionHandlers).toContain('party-archive');
+    expect(partyDesc?.registeredActionHandlers).toContain('party-merge');
+  });
+
+  it('compiles a valid tenant overlay for Core Parties adding custom attributes', async () => {
+    const partyDesc = service.listDescriptors().find(
+      (d) => d.moduleKey === 'core' && d.entityKey === 'parties',
+    );
+    expect(partyDesc?.dictionaryContribution).toBeDefined();
+
+    const partyOverlay: DictionaryChangeSetDefinition = {
+      kind: 'APPLICATION_DICTIONARY',
+      contractVersion: '1.0',
+      moduleKey: 'core',
+      entityKey: 'parties',
+      surfaceKey: 'core-parties',
+      title: 'Tenant Party Overlay with Credit Rating',
+      dictionary: {
+        packageKey: 'core-parties-dictionary',
+        name: 'Tenant Core Parties Overlay',
+        version: '1.1.0',
+        moduleKey: 'core',
+        targetEntityKey: 'core.party',
+        entities: partyDesc!.dictionaryContribution!.entities,
+        fields: [
+          ...partyDesc!.dictionaryContribution!.fields,
+          {
+            fieldKey: 'x-credit-rating',
+            entityKey: 'core.party',
+            label: 'Credit Rating',
+            type: 'TEXT',
+            required: false,
+            readOnly: false,
+            isSystemLocked: false,
+            classification: 'CONFIDENTIAL',
+            maskOnDisplay: false,
+          },
+        ],
+        relationships: partyDesc!.dictionaryContribution!.relationships,
+        references: partyDesc!.dictionaryContribution!.references,
+        validationRules: partyDesc!.dictionaryContribution!.validationRules,
+        views: partyDesc!.dictionaryContribution!.views,
+        navigation: partyDesc!.dictionaryContribution!.navigation,
+        actions: partyDesc!.dictionaryContribution!.actions,
+        messages: partyDesc!.dictionaryContribution!.messages,
+      },
+    };
+
+    expect(partyOverlay.kind).toBe('APPLICATION_DICTIONARY');
+    expect(partyOverlay.dictionary.fields.some((f) => f.fieldKey === 'x-credit-rating')).toBe(true);
   });
 });
