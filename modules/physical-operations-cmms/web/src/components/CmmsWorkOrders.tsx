@@ -8,6 +8,7 @@ import type {
   CmmsPartV1,
   CmmsPriorityV1,
   CmmsStaffingV1,
+  CmmsStoreroomV1,
   CmmsTaskStatusV1,
   CmmsWorkOrderBookingV1,
   CmmsWorkOrderDetailV1,
@@ -598,6 +599,7 @@ function WorkOrderPanel({
 
       <LabourCard workOrder={workOrder} busy={busy} run={run} executing={executing} />
       <PartsCard workOrder={workOrder} busy={busy} run={run} executing={executing} />
+      <TcoCard workOrder={workOrder} />
       <FailureAnalysisCard workOrder={workOrder} busy={busy} reload={reload} onChanged={onChanged} />
       <StaffingCard
         workOrder={workOrder}
@@ -920,6 +922,8 @@ function PartsCard({
   run: (action: () => Promise<CmmsWorkOrderDetailV1>) => Promise<boolean>;
 }) {
   const [parts, setParts] = useState<readonly CmmsPartV1[]>([]);
+  const [storerooms, setStorerooms] = useState<readonly CmmsStoreroomV1[]>([]);
+
   useEffect(() => {
     if (!executing) return;
     let active = true;
@@ -927,10 +931,15 @@ function PartsCard({
       (page) => active && setParts(page.items),
       () => undefined,
     );
+    cmmsApi.listStorerooms().then(
+      (res) => active && setStorerooms(res.items),
+      () => undefined,
+    );
     return () => {
       active = false;
     };
   }, [executing]);
+
   return (
     <Container className="p-5">
       <Heading level="h3">Parts used</Heading>
@@ -939,18 +948,62 @@ function PartsCard({
           No parts issued.
         </Text>
       ) : (
-        <ul className="mt-3 space-y-1">
+        <ul className="mt-3 space-y-2">
           {workOrder.parts.map((part) => (
-            <li key={part.movementId} className="flex justify-between gap-2 txt-compact-small">
-              <span>
-                {part.partNumber} · {part.partName}
-              </span>
-              <span className="tabular-nums">
-                {part.quantity}
-                {part.unitCost !== null
-                  ? ` · ${formatMoney(part.quantity * part.unitCost, part.currencyCode)}`
-                  : ''}
-              </span>
+            <li
+              key={part.movementId}
+              className="flex items-center justify-between gap-2 border-b border-ui-border-base pb-2 last:border-0 last:pb-0 txt-compact-small"
+            >
+              <div>
+                <span className="font-medium">
+                  {part.partNumber} · {part.partName}
+                </span>
+                {(part.storeroomName || part.binLocation) && (
+                  <span className="block text-xs text-ui-fg-subtle">
+                    {part.storeroomName ? `Storeroom: ${part.storeroomName}` : ''}
+                    {part.binLocation ? ` [Bin: ${part.binLocation}]` : ''}
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="tabular-nums">
+                  {part.quantity}
+                  {part.unitCost !== null
+                    ? ` · ${formatMoney(part.quantity * part.unitCost, part.currencyCode)}`
+                    : ''}
+                </span>
+                {executing && (
+                  <Button
+                    type="button"
+                    size="small"
+                    variant="secondary"
+                    className="text-xs px-2 py-0.5"
+                    disabled={busy}
+                    onClick={() => {
+                      const qtyStr = window.prompt(
+                        `Return quantity for ${part.partNumber} (max ${part.quantity}):`,
+                        String(part.quantity),
+                      );
+                      if (!qtyStr) return;
+                      const qty = Number(qtyStr);
+                      if (Number.isFinite(qty) && qty > 0) {
+                        void run(async () => {
+                          await cmmsApi.returnPartFromWorkOrder(workOrder.id, {
+                            partId: part.partId,
+                            storeroomId: part.storeroomId ?? undefined,
+                            binLocation: part.binLocation ?? undefined,
+                            quantity: qty,
+                            idempotencyKey: crypto.randomUUID(),
+                          });
+                          return cmmsApi.getWorkOrder(workOrder.id);
+                        });
+                      }
+                    }}
+                  >
+                    Return
+                  </Button>
+                )}
+              </div>
             </li>
           ))}
         </ul>
@@ -966,6 +1019,8 @@ function PartsCard({
               cmmsApi.issuePart(workOrder.id, {
                 partId: String(data.get('partId')),
                 quantity: Number(data.get('quantity')),
+                storeroomId: optionalText(data.get('storeroomId')),
+                binLocation: optionalText(data.get('binLocation')),
                 idempotencyKey: crypto.randomUUID(),
               }),
             ).then((saved) => saved && form.reset());
@@ -975,7 +1030,7 @@ function PartsCard({
             name="partId"
             required
             aria-label="Part"
-            className={`${selectClass} min-w-[200px] flex-1`}
+            className={`${selectClass} min-w-[180px] flex-1`}
             defaultValue=""
           >
             <option value="" disabled>
@@ -988,6 +1043,26 @@ function PartsCard({
               </option>
             ))}
           </select>
+          <select
+            name="storeroomId"
+            aria-label="Storeroom"
+            className={`${selectClass} min-w-[140px]`}
+            defaultValue=""
+          >
+            <option value="">Default store</option>
+            {storerooms.map((store) => (
+              <option key={store.id} value={store.id}>
+                {store.code} ({store.name})
+              </option>
+            ))}
+          </select>
+          <Input
+            name="binLocation"
+            placeholder="Bin (opt)"
+            aria-label="Bin location"
+            className="w-24"
+            maxLength={120}
+          />
           <Input
             name="quantity"
             type="number"
@@ -996,13 +1071,51 @@ function PartsCard({
             required
             placeholder="Qty"
             aria-label="Quantity"
-            className="w-24"
+            className="w-20"
           />
           <Button type="submit" size="small" variant="secondary" isLoading={busy}>
             Issue
           </Button>
         </form>
       ) : null}
+    </Container>
+  );
+}
+
+function TcoCard({ workOrder }: { workOrder: CmmsWorkOrderDetailV1 }) {
+  const tco = workOrder.tco;
+  const currency = tco?.currencyCode ?? 'USD';
+  const totalCost = tco?.totalCost ?? 0;
+  const labourCost = tco?.labourCost ?? 0;
+  const partsCost = tco?.partsCost ?? 0;
+  const labourHours = tco?.labourHours ?? 0;
+  const partsCount = tco?.partsCount ?? 0;
+
+  return (
+    <Container className="p-5">
+      <div className="flex items-center justify-between">
+        <Heading level="h3">Total Cost of Ownership (TCO)</Heading>
+        <span className="font-mono text-base font-semibold text-ui-fg-base tabular-nums">
+          {formatMoney(totalCost, currency)}
+        </span>
+      </div>
+      <Text size="small" className="mt-1 text-ui-fg-subtle">
+        Real-time financial roll-up aggregating logged craft labour and MRO storeroom materials.
+      </Text>
+      <div className="mt-4 grid grid-cols-2 gap-3 txt-compact-small">
+        <div className="rounded-md border border-ui-border-base bg-ui-bg-subtle p-3">
+          <dt className="text-ui-fg-subtle">Labour ({labourHours.toFixed(1)} hrs)</dt>
+          <dd className="mt-1 font-mono text-sm font-medium tabular-nums">
+            {formatMoney(labourCost, currency)}
+          </dd>
+        </div>
+        <div className="rounded-md border border-ui-border-base bg-ui-bg-subtle p-3">
+          <dt className="text-ui-fg-subtle">Parts & Materials ({partsCount} items)</dt>
+          <dd className="mt-1 font-mono text-sm font-medium tabular-nums">
+            {formatMoney(partsCost, currency)}
+          </dd>
+        </div>
+      </div>
     </Container>
   );
 }

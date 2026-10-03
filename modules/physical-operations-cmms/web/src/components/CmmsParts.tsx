@@ -1,6 +1,12 @@
 'use client';
 
-import type { CmmsPageV1, CmmsPartV1, CmmsStockMovementV1 } from '@gigalibs/contracts';
+import type {
+  CmmsPageV1,
+  CmmsPartBalanceV1,
+  CmmsPartV1,
+  CmmsStockMovementV1,
+  CmmsStoreroomV1,
+} from '@gigalibs/contracts';
 import { Plus } from '@medusajs/icons';
 import {
   Button,
@@ -292,6 +298,8 @@ function PartPanel({
   onChanged: (part: CmmsPartV1) => Promise<void>;
 }) {
   const [movements, setMovements] = useState<readonly CmmsStockMovementV1[]>([]);
+  const [balances, setBalances] = useState<readonly CmmsPartBalanceV1[]>([]);
+  const [storerooms, setStorerooms] = useState<readonly CmmsStoreroomV1[]>([]);
   const [type, setType] = useState<'RECEIPT' | 'ADJUSTMENT'>('RECEIPT');
   const [error, setError] = useState<CmmsApiError | null>(null);
   const [busy, setBusy] = useState(false);
@@ -303,6 +311,14 @@ function PartPanel({
     cmmsApi.movements(part.id).then(
       (result) => active && setMovements(result.items),
       (reason) => active && setError(reason as CmmsApiError),
+    );
+    cmmsApi.listPartBalances({ partId: part.id }).then(
+      (result) => active && setBalances(result.items),
+      () => undefined,
+    );
+    cmmsApi.listStorerooms().then(
+      (result) => active && setStorerooms(result.items),
+      () => undefined,
     );
     return () => {
       active = false;
@@ -328,6 +344,8 @@ function PartPanel({
     const data = new FormData(form);
     setBusy(true);
     setError(null);
+    const storeroomId = optionalText(data.get('storeroomId'));
+    const binLocation = optionalText(data.get('binLocation'));
     try {
       const result = await cmmsApi.recordMovement(
         part!.id,
@@ -338,15 +356,21 @@ function PartPanel({
               quantity: Number(data.get('quantity')),
               unitCost: optionalNumber(data.get('unitCost')),
               reason: optionalText(data.get('reason')),
+              storeroomId: storeroomId ?? undefined,
+              binLocation: binLocation ?? undefined,
             }
           : {
               movementType: 'ADJUSTMENT',
               idempotencyKey: crypto.randomUUID(),
               quantityDelta: Number(data.get('quantity')),
               reason: optionalText(data.get('reason')) ?? '',
+              storeroomId: storeroomId ?? undefined,
+              binLocation: binLocation ?? undefined,
             },
       );
       form.reset();
+      const updatedBalances = await cmmsApi.listPartBalances({ partId: part!.id });
+      setBalances(updatedBalances.items);
       await onChanged(result.part);
     } catch (reason) {
       setError(reason as CmmsApiError);
@@ -403,6 +427,26 @@ function PartPanel({
               <option value="RECEIPT">Receive stock</option>
               <option value="ADJUSTMENT">Adjust count (+/−)</option>
             </select>
+            <select
+              name="storeroomId"
+              aria-label="Storeroom"
+              className={`${selectClass} col-span-1`}
+              defaultValue=""
+            >
+              <option value="">Default store</option>
+              {storerooms.map((store) => (
+                <option key={store.id} value={store.id}>
+                  {store.code} ({store.name})
+                </option>
+              ))}
+            </select>
+            <Input
+              name="binLocation"
+              placeholder="Bin location"
+              aria-label="Bin location"
+              className="col-span-1"
+              maxLength={120}
+            />
             <Input
               name="quantity"
               type="number"
@@ -439,6 +483,36 @@ function PartPanel({
           </form>
         )}
         <ActionError error={error} />
+
+        <Heading level="h3" className="mt-5">
+          Storeroom Bin Balances
+        </Heading>
+        {balances.length === 0 ? (
+          <Text size="small" className="mt-2 text-ui-fg-subtle">
+            No storeroom bin allocations recorded yet.
+          </Text>
+        ) : (
+          <div className="mt-2 space-y-1">
+            {balances.map((b) => (
+              <div
+                key={`${b.storeroomId}-${b.binLocation}`}
+                className="flex items-center justify-between rounded border border-ui-border-base bg-ui-bg-subtle px-2.5 py-1.5 txt-compact-small"
+              >
+                <div>
+                  <span className="font-medium">{b.storeroomName ?? b.storeroomCode ?? 'Storeroom'}</span>
+                  <span className="block text-xs text-ui-fg-subtle">
+                    Bin: {b.binLocation}
+                    {b.reorderPoint !== null ? ` · Reorder at ${b.reorderPoint}` : ''}
+                  </span>
+                </div>
+                <span className="font-mono tabular-nums font-semibold">
+                  {b.quantityOnHand}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+
         <Heading level="h3" className="mt-5">
           Ledger
         </Heading>

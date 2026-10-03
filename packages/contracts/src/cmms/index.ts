@@ -551,6 +551,8 @@ export const IssueCmmsPartV1Schema = z
     quantity: z.number().positive().max(1_000_000),
     idempotencyKey: UuidSchema,
     notes: z.string().trim().max(500).optional(),
+    storeroomId: UuidSchema.optional(),
+    binLocation: z.string().trim().max(120).optional(),
   })
   .strict();
 export type IssueCmmsPartV1 = z.infer<typeof IssueCmmsPartV1Schema>;
@@ -606,6 +608,9 @@ export interface CmmsPartIssueV1 {
   readonly quantity: number;
   readonly unitCost: number | null;
   readonly currencyCode: string;
+  readonly storeroomId?: string | null;
+  readonly storeroomName?: string | null;
+  readonly binLocation?: string | null;
   readonly createdAt: string;
 }
 
@@ -674,6 +679,7 @@ export interface CmmsWorkOrderDetailV1 extends CmmsWorkOrderV1 {
   readonly failureCauseCode?: string | null;
   readonly failureRemedyCode?: string | null;
   readonly meterTriggerTitle?: string | null;
+  readonly tco?: CmmsWorkOrderTcoV1 | null;
 }
 
 // ─── Preventive maintenance ──────────────────────────────────────────────────────────────────────────────
@@ -1017,10 +1023,111 @@ export interface CmmsStockMovementV1 {
   readonly workOrderId: string | null;
   readonly unitCost: number | null;
   readonly currencyCode: string;
+  readonly storeroomId?: string | null;
+  readonly binLocation?: string | null;
   readonly reason: string | null;
   readonly createdBy: string;
   readonly createdAt: string;
 }
+
+// ─── Storerooms & MRO Logistics (WI-EAM-005) ─────────────────────────────
+export const CreateCmmsStoreroomV1Schema = z
+  .object({
+    code: IdentifierSchema,
+    name: TextSchema(200),
+    description: z.string().trim().max(1_000).optional(),
+    siteRef: UuidSchema.optional(),
+    isActive: z.boolean().default(true),
+  })
+  .strict();
+export type CreateCmmsStoreroomV1 = z.infer<typeof CreateCmmsStoreroomV1Schema>;
+
+export const UpdateCmmsStoreroomV1Schema = z
+  .object({
+    expectedVersion: z.number().int().positive(),
+    name: TextSchema(200).optional(),
+    description: z.string().trim().max(1_000).nullable().optional(),
+    siteRef: UuidSchema.nullable().optional(),
+    isActive: z.boolean().optional(),
+  })
+  .strict();
+export type UpdateCmmsStoreroomV1 = z.infer<typeof UpdateCmmsStoreroomV1Schema>;
+
+export interface CmmsStoreroomV1 {
+  readonly id: string;
+  readonly code: string;
+  readonly name: string;
+  readonly description: string | null;
+  readonly siteRef: string | null;
+  readonly isActive: boolean;
+  readonly version: number;
+  readonly createdBy: string;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+}
+
+export const SetCmmsPartBalanceV1Schema = z
+  .object({
+    partId: UuidSchema,
+    storeroomId: UuidSchema,
+    binLocation: TextSchema(120).default('DEFAULT'),
+    quantityOnHand: z.number().nonnegative().max(1e9),
+    minQuantity: z.number().nonnegative().max(1e9).default(0),
+    reorderPoint: z.number().nonnegative().max(1e9).nullable().optional(),
+  })
+  .strict();
+export type SetCmmsPartBalanceV1 = z.infer<typeof SetCmmsPartBalanceV1Schema>;
+
+export interface CmmsPartBalanceV1 {
+  readonly id: string;
+  readonly partId: string;
+  readonly storeroomId: string;
+  readonly storeroomCode?: string;
+  readonly storeroomName?: string;
+  readonly binLocation: string;
+  readonly quantityOnHand: number;
+  readonly minQuantity: number;
+  readonly reorderPoint: number | null;
+  readonly version: number;
+  readonly updatedAt: string;
+}
+
+export const IssueCmmsPartToWorkOrderV1Schema = z
+  .object({
+    partId: UuidSchema,
+    quantity: z.number().positive().max(1e9),
+    storeroomId: UuidSchema.optional(),
+    binLocation: TextSchema(120).optional(),
+    notes: z.string().trim().max(500).optional(),
+    idempotencyKey: UuidSchema.optional(),
+  })
+  .strict();
+export type IssueCmmsPartToWorkOrderV1 = z.infer<typeof IssueCmmsPartToWorkOrderV1Schema>;
+
+export const ReturnCmmsPartFromWorkOrderV1Schema = z
+  .object({
+    partId: UuidSchema,
+    quantity: z.number().positive().max(1e9),
+    storeroomId: UuidSchema.optional(),
+    binLocation: TextSchema(120).optional(),
+    notes: z.string().trim().max(500).optional(),
+    idempotencyKey: UuidSchema.optional(),
+  })
+  .strict();
+export type ReturnCmmsPartFromWorkOrderV1 = z.infer<typeof ReturnCmmsPartFromWorkOrderV1Schema>;
+
+export interface CmmsWorkOrderTcoV1 {
+  readonly workOrderId: string;
+  readonly woNumber: string;
+  readonly labourHours: number;
+  readonly labourCost: number;
+  readonly partsCost: number;
+  readonly totalCost: number;
+  readonly currencyCode: string;
+  readonly partsCount: number;
+  readonly labourEntriesCount: number;
+}
+
 
 // ─── Overview ────────────────────────────────────────────────────────────────────────────────────────────
 export interface CmmsWorkOrderOverviewV1 {

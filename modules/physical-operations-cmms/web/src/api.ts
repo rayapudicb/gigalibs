@@ -12,15 +12,18 @@ import type {
   CmmsMeterV1,
   CmmsJobPlanV1,
   CmmsPageV1,
+  CmmsPartBalanceV1,
   CmmsPartV1,
   CmmsPmScheduleV1,
   CmmsSpaceTreeV1,
   CmmsSpaceV1,
   CmmsSpecDefinitionV1,
   CmmsStockMovementV1,
+  CmmsStoreroomV1,
   CmmsWorkOrderDetailV1,
   CmmsWorkOrderEventV1,
   CmmsWorkOrderOverviewV1,
+  CmmsWorkOrderTcoV1,
   CmmsWorkOrderV1,
 } from '@gigalibs/contracts';
 
@@ -212,6 +215,41 @@ export const cmmsApi = {
     ),
   movements: (partId: string) =>
     requestCmms<{ items: CmmsStockMovementV1[] }>(`/parts/${id(partId)}/movements`),
+
+  listStorerooms: () => requestCmms<{ items: CmmsStoreroomV1[] }>('/parts/storerooms'),
+  createStoreroom: (input: Record<string, unknown>) =>
+    requestCmms<CmmsStoreroomV1>('/parts/storerooms', post(input)),
+  updateStoreroom: (storeroomId: string, input: Record<string, unknown>) =>
+    requestCmms<CmmsStoreroomV1>(`/parts/storerooms/${id(storeroomId)}`, patch(input)),
+  deleteStoreroom: (storeroomId: string) =>
+    requestCmms<void>(`/parts/storerooms/${id(storeroomId)}`, { method: 'DELETE' }),
+
+  listPartBalances: (params?: { partId?: string; storeroomId?: string }) => {
+    const q = new URLSearchParams();
+    if (params?.partId) q.set('partId', params.partId);
+    if (params?.storeroomId) q.set('storeroomId', params.storeroomId);
+    const qs = q.toString();
+    return requestCmms<{ items: CmmsPartBalanceV1[] }>(`/parts/balances${qs ? `?${qs}` : ''}`);
+  },
+  setPartBalance: (input: Record<string, unknown>) =>
+    requestCmms<CmmsPartBalanceV1>('/parts/balances', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(input),
+    }),
+
+  issuePartToWorkOrder: (workOrderId: string, input: Record<string, unknown>) =>
+    requestCmms<{ workOrderTco: CmmsWorkOrderTcoV1; movement: CmmsStockMovementV1 }>(
+      `/parts/work-orders/${id(workOrderId)}/issue`,
+      post(input),
+    ),
+  returnPartFromWorkOrder: (workOrderId: string, input: Record<string, unknown>) =>
+    requestCmms<{ workOrderTco: CmmsWorkOrderTcoV1; movement: CmmsStockMovementV1 }>(
+      `/parts/work-orders/${id(workOrderId)}/return`,
+      post(input),
+    ),
+  getWorkOrderTco: (workOrderId: string) =>
+    requestCmms<CmmsWorkOrderTcoV1>(`/parts/work-orders/${id(workOrderId)}/tco`),
 
   // ─── Reliability: Failure Codes ─────────────────────────────────────────────
   listFailureHierarchyTree: (type?: string) =>

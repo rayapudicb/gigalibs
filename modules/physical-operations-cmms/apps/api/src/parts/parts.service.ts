@@ -2,13 +2,21 @@ import { randomUUID } from 'node:crypto';
 import { BadRequestException, ConflictException, Injectable } from '@nestjs/common';
 import {
   CreateCmmsPartV1Schema,
+  CreateCmmsStoreroomV1Schema,
+  IssueCmmsPartToWorkOrderV1Schema,
   RecordCmmsStockMovementV1Schema,
+  ReturnCmmsPartFromWorkOrderV1Schema,
   SearchCmmsPartsV1Schema,
+  SetCmmsPartBalanceV1Schema,
   UpdateCmmsPartV1Schema,
+  UpdateCmmsStoreroomV1Schema,
   type CmmsPageV1,
+  type CmmsPartBalanceV1,
   type CmmsPartV1,
   type CmmsStockMovementTypeV1,
   type CmmsStockMovementV1,
+  type CmmsStoreroomV1,
+  type CmmsWorkOrderTcoV1,
 } from '@gigalibs/contracts';
 import type { PoolClient } from 'pg';
 import type { CmmsCommandContext, CmmsPrincipal } from '../auth/authorization.js';
@@ -30,7 +38,7 @@ const PART_COLUMNS = `p.id, p.part_number, p.name, p.description, p.category, p.
   p.currency_code, p.quantity_on_hand, p.min_quantity, p.reorder_point, p.non_stock, p.barcode, p.site_ref,
   p.bin_location, p.department_id, p.archived_at, p.version, p.created_at, p.updated_at`;
 const MOVEMENT_COLUMNS = `m.id, m.part_id, m.movement_type, m.quantity_delta, m.balance_after, m.work_order_id,
-  m.unit_cost, m.currency_code, m.reason, m.created_by, m.created_at`;
+  m.storeroom_id, m.bin_location, m.unit_cost, m.currency_code, m.reason, m.created_by, m.created_at`;
 
 export interface StockMovementRequest {
   readonly partId: string;
@@ -38,6 +46,8 @@ export interface StockMovementRequest {
   readonly quantityDelta: number;
   readonly idempotencyKey: string;
   readonly workOrderId?: string | null;
+  readonly storeroomId?: string | null;
+  readonly binLocation?: string | null;
   readonly unitCost?: number | null;
   readonly reason?: string | null;
 }
@@ -81,9 +91,9 @@ export class PartsService {
 
   async get(principal: CmmsPrincipal, partId: string): Promise<CmmsPartV1> {
     assertUuid(partId, 'partId');
-    return this.database.withTenantTransaction(principal.tenantId, async (client) =>
-      mapPart(await this.visiblePartRow(client, principal, partId, { lock: false })),
-    );
+    return this.database.withTenantTransaction(principal.tenantId, async (client) => {
+      return mapPart(await this.visiblePartRow(client, principal, partId, { lock: false, includeArchived: true }));
+    });
   }
 
   async movements(principal: CmmsPrincipal, partId: string): Promise<{ readonly items: readonly CmmsStockMovementV1[] }> {
@@ -103,18 +113,16 @@ export class PartsService {
 
   async create(context: CmmsCommandContext, raw: unknown): Promise<CmmsPartV1> {
     const input = parseInput(CreateCmmsPartV1Schema, raw);
-    const departmentId = input.departmentId ?? null;
-    const siteRef = input.siteRef ?? null;
-    assertWritableScope(context.principal, { departmentId, siteRef });
+    assertWritableScope(context.principal, { departmentId: input.departmentId ?? null, siteRef: input.siteRef ?? null });
     return this.database.withTenantTransaction(context.principal.tenantId, async (client) => {
       let id: string;
       try {
         const result = await client.query<{ id: string }>(
           `INSERT INTO gigalibs_cmms.parts
              (tenant_id, part_number, name, description, category, unit_of_measure, unit_cost, currency_code,
-              min_quantity, reorder_point, non_stock, barcode, site_ref, bin_location, department_id,
-              created_by, updated_by, correlation_id)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $16, $17)
+              quantity_on_hand, min_quantity, reorder_point, non_stock, barcode, site_ref, bin_location,
+              department_id, created_by, updated_by, correlation_id)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 0, $9, $10, $11, $12, $13, $14, $15, $16, $16, $17)
            RETURNING id`,
           [
             context.principal.tenantId,
@@ -129,35 +137,38 @@ export class PartsService {
             input.reorderPoint ?? null,
             input.nonStock,
             input.barcode ?? null,
-            siteRef,
+            input.siteRef ?? null,
             input.binLocation ?? null,
-            departmentId,
+            input.departmentId ?? null,
             context.principal.subject,
             context.correlationId,
           ],
         );
         id = result.rows[0]!.id;
       } catch (error) {
-        translateConstraint(error, { unique: `A part with number ${input.partNumber} already exists.` });
+        translateConstraint(error, { unique: 'A part with that part number already exists.' });
       }
+
       await recordMutation(client, context, {
         action: 'CMMS_PART_CREATED',
         aggregateType: 'CMMS_PART',
         aggregateId: id,
         aggregateVersion: 1,
-        payload: { partNumber: input.partNumber, currencyCode: input.currencyCode, nonStock: input.nonStock },
+        payload: { partNumber: input.partNumber, nonStock: input.nonStock, currencyCode: input.currencyCode },
       });
-      if (input.openingQuantity !== undefined) {
+
+      if (input.openingQuantity !== undefined && !input.nonStock) {
         await this.applyMovement(client, context, {
           partId: id,
           movementType: 'RECEIPT',
           quantityDelta: input.openingQuantity,
           idempotencyKey: randomUUID(),
           unitCost: input.unitCost ?? null,
-          reason: 'Opening balance',
+          reason: 'Opening stock balance recorded on part creation.',
         });
       }
-      return mapPart(await this.visiblePartRow(client, context.principal, id, { lock: false, includeArchived: true }));
+
+      return mapPart(await this.visiblePartRow(client, context.principal, id, { lock: false }));
     });
   }
 
@@ -166,7 +177,6 @@ export class PartsService {
     const input = parseInput(UpdateCmmsPartV1Schema, raw);
     return this.database.withTenantTransaction(context.principal.tenantId, async (client) => {
       const current = await this.visiblePartRow(client, context.principal, partId, { lock: true });
-      if (Number(current.version) !== input.expectedVersion) versionConflict('The part');
       const departmentId = input.departmentId === undefined ? current.department_id : input.departmentId;
       const siteRef = input.siteRef === undefined ? current.site_ref : input.siteRef;
       assertWritableScope(context.principal, { departmentId: current.department_id, siteRef: current.site_ref });
@@ -312,13 +322,28 @@ export class PartsService {
     const version = Number(updated.rows[0]!.version);
     const unitCost = request.unitCost ?? numberOrNull(part.unit_cost);
 
+    // Update storeroom bin balance if storeroomId is specified
+    if (request.storeroomId && !part.non_stock) {
+      const bin = request.binLocation ?? 'DEFAULT';
+      await client.query(
+        `INSERT INTO gigalibs_cmms.cmms_part_balances
+           (tenant_id, part_id, storeroom_id, bin_location, quantity_on_hand, version, updated_at)
+         VALUES ($1, $2, $3, $4, GREATEST(0, $5::numeric), 1, now())
+         ON CONFLICT (tenant_id, part_id, storeroom_id, bin_location)
+         DO UPDATE SET quantity_on_hand = gigalibs_cmms.cmms_part_balances.quantity_on_hand + $5::numeric,
+                       version = gigalibs_cmms.cmms_part_balances.version + 1,
+                       updated_at = now()`,
+        [tenantId, request.partId, request.storeroomId, bin, request.quantityDelta],
+      );
+    }
+
     let movementRow;
     try {
       movementRow = await client.query(
         `INSERT INTO gigalibs_cmms.stock_movements AS m
-           (tenant_id, part_id, movement_type, quantity_delta, balance_after, work_order_id, unit_cost,
-            currency_code, reason, idempotency_key, created_by, correlation_id)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+           (tenant_id, part_id, movement_type, quantity_delta, balance_after, work_order_id,
+            storeroom_id, bin_location, unit_cost, currency_code, reason, idempotency_key, created_by, correlation_id)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
          RETURNING ${MOVEMENT_COLUMNS}`,
         [
           tenantId,
@@ -327,6 +352,8 @@ export class PartsService {
           request.quantityDelta,
           balanceAfter,
           request.workOrderId ?? null,
+          request.storeroomId ?? null,
+          request.binLocation ?? null,
           unitCost,
           part.currency_code,
           request.reason ?? null,
@@ -352,31 +379,362 @@ export class PartsService {
         quantityDelta: request.quantityDelta,
         balanceAfter,
         workOrderId: request.workOrderId ?? null,
+        storeroomId: request.storeroomId ?? null,
+        binLocation: request.binLocation ?? null,
         unitCost,
-        currencyCode: part.currency_code,
       },
     });
-
-    const reorderPoint = numberOrNull(part.reorder_point);
-    const before = Number(part.quantity_on_hand);
-    if (
-      !part.non_stock &&
-      reorderPoint !== null &&
-      balanceAfter !== null &&
-      balanceAfter <= reorderPoint &&
-      before > reorderPoint
-    ) {
-      // A request for replenishment, never a purchase or receipt claim (CM-03).
-      await recordMutation(client, context, {
-        action: 'CMMS_PART_REORDER_REQUESTED',
-        aggregateType: 'CMMS_PART',
-        aggregateId: request.partId,
-        aggregateVersion: version,
-        payload: { partNumber: part.part_number, quantityOnHand: balanceAfter, reorderPoint },
-      });
-    }
     return movement;
   }
+
+  // ─── Work Order Part Issue & Return with TCO Roll-Up ─────────────────────────
+
+  async issuePartToWorkOrder(
+    context: CmmsCommandContext,
+    workOrderId: string,
+    raw: unknown,
+  ): Promise<{ readonly workOrderTco: CmmsWorkOrderTcoV1; readonly movement: CmmsStockMovementV1 }> {
+    assertUuid(workOrderId, 'workOrderId');
+    const input = parseInput(IssueCmmsPartToWorkOrderV1Schema, raw);
+    return this.database.withTenantTransaction(context.principal.tenantId, async (client) => {
+      const woRes = await client.query(
+        `SELECT id, wo_number, status, currency_code FROM gigalibs_cmms.work_orders WHERE tenant_id = $1 AND id = $2`,
+        [context.principal.tenantId, workOrderId],
+      );
+      if (!woRes.rows[0]) notFound('The work order');
+      const wo = woRes.rows[0];
+      if (wo.status === 'COMPLETED' || wo.status === 'CANCELLED') {
+        throw new ConflictException({ code: 'CMMS_WO_CLOSED', message: 'Cannot issue parts to a closed work order.' });
+      }
+
+      const movement = await this.applyMovement(client, context, {
+        partId: input.partId,
+        movementType: 'ISSUE',
+        quantityDelta: -input.quantity,
+        idempotencyKey: randomUUID(),
+        workOrderId,
+        storeroomId: input.storeroomId ?? null,
+        binLocation: input.binLocation ?? null,
+        reason: input.notes ?? `Issued to work order ${wo.wo_number}`,
+      });
+
+      const workOrderTco = await this.calculateWorkOrderTco(client, context.principal.tenantId, workOrderId, wo.wo_number);
+      return { workOrderTco, movement };
+    });
+  }
+
+  async returnPartFromWorkOrder(
+    context: CmmsCommandContext,
+    workOrderId: string,
+    raw: unknown,
+  ): Promise<{ readonly workOrderTco: CmmsWorkOrderTcoV1; readonly movement: CmmsStockMovementV1 }> {
+    assertUuid(workOrderId, 'workOrderId');
+    const input = parseInput(ReturnCmmsPartFromWorkOrderV1Schema, raw);
+    return this.database.withTenantTransaction(context.principal.tenantId, async (client) => {
+      const woRes = await client.query(
+        `SELECT id, wo_number, status FROM gigalibs_cmms.work_orders WHERE tenant_id = $1 AND id = $2`,
+        [context.principal.tenantId, workOrderId],
+      );
+      if (!woRes.rows[0]) notFound('The work order');
+      const wo = woRes.rows[0];
+
+      const issued = await client.query<{ net_issued: string | null }>(
+        `SELECT -SUM(quantity_delta) AS net_issued FROM gigalibs_cmms.stock_movements
+          WHERE tenant_id = $1 AND part_id = $2 AND work_order_id = $3 AND movement_type IN ('ISSUE', 'RETURN')`,
+        [context.principal.tenantId, input.partId, workOrderId],
+      );
+      const netIssued = Number(issued.rows[0]?.net_issued ?? 0);
+      if (input.quantity > netIssued) {
+        throw new BadRequestException({
+          code: 'CMMS_RETURN_EXCEEDS_ISSUE',
+          message: `Only ${netIssued} of this part is outstanding on work order ${wo.wo_number}.`,
+        });
+      }
+
+      const movement = await this.applyMovement(client, context, {
+        partId: input.partId,
+        movementType: 'RETURN',
+        quantityDelta: input.quantity,
+        idempotencyKey: randomUUID(),
+        workOrderId,
+        storeroomId: input.storeroomId ?? null,
+        binLocation: input.binLocation ?? null,
+        reason: input.notes ?? `Returned from work order ${wo.wo_number}`,
+      });
+
+      const workOrderTco = await this.calculateWorkOrderTco(client, context.principal.tenantId, workOrderId, wo.wo_number);
+      return { workOrderTco, movement };
+    });
+  }
+
+  async getWorkOrderTco(principal: CmmsPrincipal, workOrderId: string): Promise<CmmsWorkOrderTcoV1> {
+    assertUuid(workOrderId, 'workOrderId');
+    return this.database.withTenantTransaction(principal.tenantId, async (client) => {
+      const woRes = await client.query(
+        `SELECT id, wo_number FROM gigalibs_cmms.work_orders WHERE tenant_id = $1 AND id = $2`,
+        [principal.tenantId, workOrderId],
+      );
+      if (!woRes.rows[0]) notFound('The work order');
+      return this.calculateWorkOrderTco(client, principal.tenantId, workOrderId, woRes.rows[0].wo_number);
+    });
+  }
+
+  async calculateWorkOrderTco(
+    client: PoolClient,
+    tenantId: string,
+    workOrderId: string,
+    woNumber: string,
+  ): Promise<CmmsWorkOrderTcoV1> {
+    const [labourRes, partsRes] = await Promise.all([
+      client.query<{ hours: string; hourly_rate: string | null; currency_code: string | null }>(
+        `SELECT hours, hourly_rate, currency_code FROM gigalibs_cmms.work_order_labour WHERE tenant_id = $1 AND work_order_id = $2`,
+        [tenantId, workOrderId],
+      ),
+      client.query<{ quantity_delta: string; unit_cost: string | null; currency_code: string }>(
+        `SELECT quantity_delta, unit_cost, currency_code FROM gigalibs_cmms.stock_movements
+          WHERE tenant_id = $1 AND work_order_id = $2 AND movement_type IN ('ISSUE', 'RETURN')`,
+        [tenantId, workOrderId],
+      ),
+    ]);
+
+    let labourHours = 0;
+    let labourCost = 0;
+    let currencyCode = 'USD';
+
+    for (const row of labourRes.rows) {
+      const h = Number(row.hours);
+      labourHours += h;
+      if (row.hourly_rate !== null) {
+        labourCost += h * Number(row.hourly_rate);
+        if (row.currency_code) currencyCode = row.currency_code;
+      }
+    }
+
+    let partsCost = 0;
+    for (const row of partsRes.rows) {
+      if (row.unit_cost !== null) {
+        partsCost += -Number(row.quantity_delta) * Number(row.unit_cost);
+        if (row.currency_code) currencyCode = row.currency_code;
+      }
+    }
+
+    const totalCost = Math.round((labourCost + partsCost) * 100) / 100;
+
+    return {
+      workOrderId,
+      woNumber,
+      labourHours: Math.round(labourHours * 10) / 10,
+      labourCost: Math.round(labourCost * 100) / 100,
+      partsCost: Math.round(partsCost * 100) / 100,
+      totalCost,
+      currencyCode,
+      partsCount: partsRes.rows.length,
+      labourEntriesCount: labourRes.rows.length,
+    };
+  }
+
+  // ─── Storerooms CRUD ────────────────────────────────────────────────────────
+
+  async listStorerooms(principal: CmmsPrincipal): Promise<{ readonly items: readonly CmmsStoreroomV1[] }> {
+    return this.database.withTenantTransaction(principal.tenantId, async (client) => {
+      const result = await client.query(
+        `SELECT * FROM gigalibs_cmms.cmms_storerooms WHERE tenant_id = $1 ORDER BY name ASC`,
+        [principal.tenantId],
+      );
+      return { items: result.rows.map(mapStoreroom) };
+    });
+  }
+
+  async createStoreroom(context: CmmsCommandContext, raw: unknown): Promise<CmmsStoreroomV1> {
+    const input = parseInput(CreateCmmsStoreroomV1Schema, raw);
+    return this.database.withTenantTransaction(context.principal.tenantId, async (client) => {
+      try {
+        const result = await client.query<{ id: string }>(
+          `INSERT INTO gigalibs_cmms.cmms_storerooms
+             (tenant_id, code, name, description, site_ref, is_active, created_by, updated_by, correlation_id)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $7, $8)
+           RETURNING id`,
+          [
+            context.principal.tenantId,
+            input.code,
+            input.name,
+            input.description ?? null,
+            input.siteRef ?? null,
+            input.isActive,
+            context.principal.subject,
+            context.correlationId,
+          ],
+        );
+        const id = result.rows[0]!.id;
+        await recordMutation(client, context, {
+          action: 'CMMS_STOREROOM_CREATED',
+          aggregateType: 'CMMS_STOREROOM',
+          aggregateId: id,
+          aggregateVersion: 1,
+          payload: { code: input.code, name: input.name },
+        });
+        const created = await client.query(
+          `SELECT * FROM gigalibs_cmms.cmms_storerooms WHERE tenant_id = $1 AND id = $2`,
+          [context.principal.tenantId, id],
+        );
+        return mapStoreroom(created.rows[0]);
+      } catch (error) {
+        translateConstraint(error, { unique: 'A storeroom with that code already exists.' });
+      }
+    });
+  }
+
+  async updateStoreroom(context: CmmsCommandContext, id: string, raw: unknown): Promise<CmmsStoreroomV1> {
+    assertUuid(id, 'storeroomId');
+    const input = parseInput(UpdateCmmsStoreroomV1Schema, raw);
+    return this.database.withTenantTransaction(context.principal.tenantId, async (client) => {
+      const currentRes = await client.query(
+        `SELECT * FROM gigalibs_cmms.cmms_storerooms WHERE tenant_id = $1 AND id = $2`,
+        [context.principal.tenantId, id],
+      );
+      if (!currentRes.rows[0]) notFound('Storeroom');
+      const current = currentRes.rows[0];
+
+      const result = await client.query<{ version: number }>(
+        `UPDATE gigalibs_cmms.cmms_storerooms
+            SET name = $4, description = $5, site_ref = $6, is_active = $7,
+                version = version + 1, updated_by = $8, correlation_id = $9, updated_at = now()
+          WHERE tenant_id = $1 AND id = $2 AND version = $3
+          RETURNING version`,
+        [
+          context.principal.tenantId,
+          id,
+          input.expectedVersion,
+          input.name ?? current.name,
+          input.description === undefined ? current.description : input.description,
+          input.siteRef === undefined ? current.site_ref : input.siteRef,
+          input.isActive === undefined ? current.is_active : input.isActive,
+          context.principal.subject,
+          context.correlationId,
+        ],
+      );
+      if (result.rowCount === 0) versionConflict('The storeroom');
+      await recordMutation(client, context, {
+        action: 'CMMS_STOREROOM_UPDATED',
+        aggregateType: 'CMMS_STOREROOM',
+        aggregateId: id,
+        aggregateVersion: Number(result.rows[0]!.version),
+        payload: {},
+      });
+      const updated = await client.query(
+        `SELECT * FROM gigalibs_cmms.cmms_storerooms WHERE tenant_id = $1 AND id = $2`,
+        [context.principal.tenantId, id],
+      );
+      return mapStoreroom(updated.rows[0]);
+    });
+  }
+
+  async deleteStoreroom(context: CmmsCommandContext, id: string): Promise<void> {
+    assertUuid(id, 'storeroomId');
+    return this.database.withTenantTransaction(context.principal.tenantId, async (client) => {
+      const stock = await client.query<{ count: string }>(
+        `SELECT COUNT(*) AS count FROM gigalibs_cmms.cmms_part_balances
+          WHERE tenant_id = $1 AND storeroom_id = $2 AND quantity_on_hand > 0`,
+        [context.principal.tenantId, id],
+      );
+      if (Number(stock.rows[0]?.count ?? 0) > 0) {
+        throw new ConflictException({
+          code: 'CMMS_STOREROOM_HAS_STOCK',
+          message: 'Cannot delete storeroom with remaining stock balances.',
+        });
+      }
+      const result = await client.query(
+        `DELETE FROM gigalibs_cmms.cmms_storerooms WHERE tenant_id = $1 AND id = $2`,
+        [context.principal.tenantId, id],
+      );
+      if (result.rowCount === 0) notFound('Storeroom');
+      await recordMutation(client, context, {
+        action: 'CMMS_STOREROOM_DELETED',
+        aggregateType: 'CMMS_STOREROOM',
+        aggregateId: id,
+        aggregateVersion: 0,
+        payload: {},
+      });
+    });
+  }
+
+  // ─── Part Balances (Bins) ───────────────────────────────────────────────────
+
+  async listPartBalances(
+    principal: CmmsPrincipal,
+    partId?: string,
+    storeroomId?: string,
+  ): Promise<{ readonly items: readonly CmmsPartBalanceV1[] }> {
+    if (partId !== undefined) assertUuid(partId, 'partId');
+    if (storeroomId !== undefined) assertUuid(storeroomId, 'storeroomId');
+    return this.database.withTenantTransaction(principal.tenantId, async (client) => {
+      const values: unknown[] = [principal.tenantId];
+      let sql = `SELECT b.*, s.code AS storeroom_code, s.name AS storeroom_name
+                   FROM gigalibs_cmms.cmms_part_balances b
+                   JOIN gigalibs_cmms.cmms_storerooms s ON s.tenant_id = b.tenant_id AND s.id = b.storeroom_id
+                  WHERE b.tenant_id = $1`;
+      if (partId) {
+        values.push(partId);
+        sql += ` AND b.part_id = $${values.length}`;
+      }
+      if (storeroomId) {
+        values.push(storeroomId);
+        sql += ` AND b.storeroom_id = $${values.length}`;
+      }
+      sql += ` ORDER BY s.name ASC, b.bin_location ASC`;
+      const result = await client.query(sql, values);
+      return { items: result.rows.map(mapPartBalance) };
+    });
+  }
+
+  async setPartBalance(context: CmmsCommandContext, raw: unknown): Promise<CmmsPartBalanceV1> {
+    const input = parseInput(SetCmmsPartBalanceV1Schema, raw);
+    return this.database.withTenantTransaction(context.principal.tenantId, async (client) => {
+      await client.query(
+        `INSERT INTO gigalibs_cmms.cmms_part_balances
+           (tenant_id, part_id, storeroom_id, bin_location, quantity_on_hand, min_quantity, reorder_point, version, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, 1, now())
+         ON CONFLICT (tenant_id, part_id, storeroom_id, bin_location)
+         DO UPDATE SET quantity_on_hand = EXCLUDED.quantity_on_hand,
+                       min_quantity = EXCLUDED.min_quantity,
+                       reorder_point = EXCLUDED.reorder_point,
+                       version = gigalibs_cmms.cmms_part_balances.version + 1,
+                       updated_at = now()`,
+        [
+          context.principal.tenantId,
+          input.partId,
+          input.storeroomId,
+          input.binLocation,
+          input.quantityOnHand,
+          input.minQuantity,
+          input.reorderPoint ?? null,
+        ],
+      );
+
+      const sumRes = await client.query<{ total: string }>(
+        `SELECT COALESCE(SUM(quantity_on_hand), 0) AS total FROM gigalibs_cmms.cmms_part_balances
+          WHERE tenant_id = $1 AND part_id = $2`,
+        [context.principal.tenantId, input.partId],
+      );
+      await client.query(
+        `UPDATE gigalibs_cmms.parts
+            SET quantity_on_hand = $3::numeric, version = version + 1, updated_at = now()
+          WHERE tenant_id = $1 AND id = $2 AND NOT non_stock`,
+        [context.principal.tenantId, input.partId, sumRes.rows[0]!.total],
+      );
+
+      const row = await client.query(
+        `SELECT b.*, s.code AS storeroom_code, s.name AS storeroom_name
+           FROM gigalibs_cmms.cmms_part_balances b
+           JOIN gigalibs_cmms.cmms_storerooms s ON s.tenant_id = b.tenant_id AND s.id = b.storeroom_id
+          WHERE b.tenant_id = $1 AND b.part_id = $2 AND b.storeroom_id = $3 AND b.bin_location = $4`,
+        [context.principal.tenantId, input.partId, input.storeroomId, input.binLocation],
+      );
+      return mapPartBalance(row.rows[0]);
+    });
+  }
+
+  // ─── Helpers ────────────────────────────────────────────────────────────────
 
   async replayedMovement(
     client: PoolClient,
@@ -384,15 +742,12 @@ export class PartsService {
     idempotencyKey: string,
     partId: string,
   ): Promise<CmmsStockMovementV1 | null> {
-    const existing = await client.query(
-      `SELECT ${MOVEMENT_COLUMNS} FROM gigalibs_cmms.stock_movements m WHERE m.tenant_id = $1 AND m.idempotency_key = $2`,
-      [tenantId, idempotencyKey],
+    const result = await client.query(
+      `SELECT ${MOVEMENT_COLUMNS} FROM gigalibs_cmms.stock_movements m
+        WHERE m.tenant_id = $1 AND m.idempotency_key = $2 AND m.part_id = $3`,
+      [tenantId, idempotencyKey, partId],
     );
-    if (!existing.rows[0]) return null;
-    if (existing.rows[0].part_id !== partId) {
-      throw new ConflictException({ code: 'CMMS_IDEMPOTENCY_KEY_REUSED', message: 'This request key was used for another part.' });
-    }
-    return mapMovement(existing.rows[0]);
+    return result.rows[0] ? mapMovement(result.rows[0]) : null;
   }
 
   async visiblePartRow(
@@ -450,10 +805,43 @@ export function mapMovement(row: any): CmmsStockMovementV1 {
     quantityDelta: Number(row.quantity_delta),
     balanceAfter: numberOrNull(row.balance_after),
     workOrderId: row.work_order_id ?? null,
+    storeroomId: row.storeroom_id ?? null,
+    binLocation: row.bin_location ?? null,
     unitCost: numberOrNull(row.unit_cost),
     currencyCode: row.currency_code,
     reason: row.reason ?? null,
     createdBy: row.created_by,
     createdAt: iso(row.created_at),
+  };
+}
+
+export function mapStoreroom(row: any): CmmsStoreroomV1 {
+  return {
+    id: row.id,
+    code: row.code,
+    name: row.name,
+    description: row.description ?? null,
+    siteRef: row.site_ref ?? null,
+    isActive: row.is_active === true,
+    version: Number(row.version),
+    createdBy: row.created_by,
+    createdAt: iso(row.created_at),
+    updatedAt: iso(row.updated_at),
+  };
+}
+
+export function mapPartBalance(row: any): CmmsPartBalanceV1 {
+  return {
+    id: row.id,
+    partId: row.part_id,
+    storeroomId: row.storeroom_id,
+    storeroomCode: row.storeroom_code ?? undefined,
+    storeroomName: row.storeroom_name ?? undefined,
+    binLocation: row.bin_location,
+    quantityOnHand: Number(row.quantity_on_hand),
+    minQuantity: Number(row.min_quantity),
+    reorderPoint: numberOrNull(row.reorder_point),
+    version: Number(row.version),
+    updatedAt: iso(row.updated_at),
   };
 }

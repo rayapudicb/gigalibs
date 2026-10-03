@@ -500,6 +500,8 @@ export class WorkOrdersService {
         quantityDelta: -input.quantity,
         idempotencyKey: input.idempotencyKey,
         workOrderId,
+        storeroomId: input.storeroomId ?? null,
+        binLocation: input.binLocation ?? null,
         reason: input.notes ?? null,
       });
       await this.touch(client, context, workOrderId, 'PART_ISSUED', {
@@ -710,9 +712,11 @@ export class WorkOrdersService {
         [principal.tenantId, workOrderId],
       ),
       client.query(
-        `SELECT m.id, m.part_id, m.quantity_delta, m.unit_cost, m.currency_code, m.created_at, p.part_number, p.name
+        `SELECT m.id, m.part_id, m.quantity_delta, m.unit_cost, m.currency_code, m.created_at,
+                m.storeroom_id, m.bin_location, s.name AS storeroom_name, p.part_number, p.name
            FROM gigalibs_cmms.stock_movements m
            JOIN gigalibs_cmms.parts p ON p.tenant_id = m.tenant_id AND p.id = m.part_id
+           LEFT JOIN gigalibs_cmms.cmms_storerooms s ON s.tenant_id = m.tenant_id AND s.id = m.storeroom_id
           WHERE m.tenant_id = $1 AND m.work_order_id = $2 AND m.movement_type IN ('ISSUE', 'RETURN')
           ORDER BY m.created_at DESC`,
         [principal.tenantId, workOrderId],
@@ -741,16 +745,28 @@ export class WorkOrdersService {
       costs.set(currency, (costs.get(currency) ?? 0) + amount);
     };
     let labourHours = 0;
+    let labourCost = 0;
+    let partsCost = 0;
     for (const row of labour.rows) {
       labourHours += Number(row.hours);
-      if (row.hourly_rate !== null) addCost(row.currency_code, Number(row.hours) * Number(row.hourly_rate));
+      if (row.hourly_rate !== null) {
+        const amt = Number(row.hours) * Number(row.hourly_rate);
+        labourCost += amt;
+        addCost(row.currency_code, amt);
+      }
     }
     for (const row of parts.rows) {
-      if (row.unit_cost !== null) addCost(row.currency_code, -Number(row.quantity_delta) * Number(row.unit_cost));
+      if (row.unit_cost !== null) {
+        const amt = -Number(row.quantity_delta) * Number(row.unit_cost);
+        partsCost += amt;
+        addCost(row.currency_code, amt);
+      }
     }
     const costTotals: CmmsCostTotalV1[] = [...costs.entries()]
       .sort(([left], [right]) => left.localeCompare(right))
       .map(([currencyCode, amount]) => ({ currencyCode, amount: Math.round(amount * 100) / 100 }));
+
+    const tcoCurrency = costTotals[0]?.currencyCode ?? 'USD';
 
     return {
       ...mapWorkOrder(header.rows[0]),
@@ -787,6 +803,9 @@ export class WorkOrdersService {
         quantity: -Number(row.quantity_delta),
         unitCost: numberOrNull(row.unit_cost),
         currencyCode: row.currency_code,
+        storeroomId: row.storeroom_id ?? null,
+        storeroomName: row.storeroom_name ?? null,
+        binLocation: row.bin_location ?? null,
         createdAt: iso(row.created_at),
       })),
       notes: notes.rows.map(mapEvent),
@@ -794,6 +813,17 @@ export class WorkOrdersService {
       costs: costTotals,
       staffing: staffing.rows[0] ? mapStaffing(staffing.rows[0]) : null,
       bookings: bookings.rows.map(mapBooking),
+      tco: {
+        workOrderId,
+        woNumber: header.rows[0].wo_number,
+        labourHours: Math.round(labourHours * 10) / 10,
+        labourCost: Math.round(labourCost * 100) / 100,
+        partsCost: Math.round(partsCost * 100) / 100,
+        totalCost: Math.round((labourCost + partsCost) * 100) / 100,
+        currencyCode: tcoCurrency,
+        partsCount: parts.rows.length,
+        labourEntriesCount: labour.rows.length,
+      },
     };
   }
 }

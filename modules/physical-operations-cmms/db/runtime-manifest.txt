@@ -15,3 +15,4 @@
 000016_eam_asset_classification_and_specs.up.sql
 000017_eam_failure_hierarchy_and_job_plans.up.sql
 000018_eam_telemetry_and_meter_triggers.up.sql
+000019_eam_storerooms_and_mro_logistics.up.sql
