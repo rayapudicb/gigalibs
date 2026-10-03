@@ -822,6 +822,13 @@ function hostOverlay(entries) {
       `      ${runtime.prefix}_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64: ${required(`${runtime.prefix}_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64`)}`,
     ]),
     '',
+    '  kernel-worker:',
+    '    environment:',
+    ...entries.flatMap(([, runtime]) => [
+      `      ${runtime.prefix}_API_URL: http://${HOST_SERVICE}:${HOST_PORT}`,
+      `      ${runtime.prefix}_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64: ${required(`${runtime.prefix}_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64`)}`,
+    ]),
+    '',
   ].join('\n');
 }
 function runtimeOverlay(name, runtime) {

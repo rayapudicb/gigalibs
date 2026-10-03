@@ -14,6 +14,7 @@ import {
   createParamDecorator,
 } from '@nestjs/common';
 import type { ModuleDatabase } from './database.js';
+import type { OrganizationClaim } from './organization-access.js';
 
 // WI-OI-085a: the signed-context guard for new modules, following the certified CMMS guard (WI-OI-038). CMMS and
 // Workforce keep their own guards until they adopt this one in a separately certified change.
@@ -40,6 +41,8 @@ export interface ModulePrincipal {
   readonly permissions: readonly string[];
   readonly roles: readonly string[];
   readonly persona: PlatformContextV1['persona_type'];
+  /** Server-resolved WI-OI-109 scope used with the module's own organization replica. */
+  readonly organization?: OrganizationClaim;
   readonly departmentScope: ModuleDepartmentScope;
   readonly placeScope: ModulePlaceScope;
 }
@@ -167,6 +170,20 @@ export function principalFromContext(context: PlatformContextV1): ModulePrincipa
     permissions: Object.freeze([...context.granted_scopes]),
     roles: Object.freeze([...context.roles]),
     persona: context.persona_type,
+    organization: Object.freeze(
+      context.organization?.mode === 'UNITS'
+        ? {
+            mode: 'UNITS' as const,
+            tree_version: context.organization.tree_version,
+            read_roots: Object.freeze([...context.organization.read_roots]),
+            write_roots: Object.freeze([...context.organization.write_roots]),
+          }
+        : context.organization?.mode === 'DENIED'
+          ? { mode: 'DENIED' as const }
+          : context.organization?.tree_version
+            ? { mode: 'TENANT' as const, tree_version: context.organization.tree_version }
+            : { mode: 'TENANT' as const },
+    ),
     departmentScope: Object.freeze(
       org.mode === 'SCOPED_DEPARTMENTS'
         ? { mode: 'DEPARTMENTS' as const, departmentIds: Object.freeze([...org.department_ids]) }

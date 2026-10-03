@@ -25,6 +25,9 @@ services:
       - no-new-privileges:true
     cap_drop:
       - ALL
+    depends_on:
+      migrations:
+        condition: service_completed_successfully
     labels: &module-labels
       com.gigalibs.profile-key: module-runtime-local-development-v1
       com.gigalibs.execution-class: LOCAL_DEVELOPMENT
@@ -102,6 +105,9 @@ services:
       - no-new-privileges:true
     cap_drop:
       - ALL
+    depends_on:
+      migrations:
+        condition: service_completed_successfully
     labels: *module-labels
 
   analytics-api:
@@ -170,6 +176,9 @@ services:
       - no-new-privileges:true
     cap_drop:
       - ALL
+    depends_on:
+      migrations:
+        condition: service_completed_successfully
     labels: *module-labels
 
   cmms-api:

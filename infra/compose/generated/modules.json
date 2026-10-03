@@ -1,1 +1,24 @@
-{}
+{
+  "product-catalogue": {
+    "hosting": "host",
+    "basePath": "/product-catalogue",
+    "package": "@gigalibs/product-catalogue-api",
+    "directory": "modules/product-catalogue",
+    "image": "gigalibs/module-host",
+    "component": "module-host",
+    "title": "Product Catalogue, UOM & Governed Pricing",
+    "workItem": "WI-OI-112",
+    "prefix": "PRODUCT_CATALOGUE",
+    "service": "module-host",
+    "port": 4790,
+    "schema": "gigalibs_product_catalogue",
+    "migrationVersion": 1,
+    "audience": "gigalibs-product-catalogue-api",
+    "appendOnlyTables": [
+      "audit_events"
+    ],
+    "readOnlyTables": [
+      "auth_revocation_events"
+    ]
+  }
+}

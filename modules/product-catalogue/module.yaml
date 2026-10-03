@@ -1,0 +1,138 @@
+apiVersion: modules.gigalibs.io/v1
+kind: Module
+metadata:
+  name: product-catalogue
+  displayName: Product Catalogue, UOM & Governed Pricing
+  version: 0.1.0-dev
+  lifecycle: implementation
+  workItem: WI-OI-112
+spec:
+  standalone: true
+  category: business
+  requiredModules: []
+  optionalModules: [multi-currency]
+  capabilities:
+    - products
+    - product-categories
+    - uoms-and-conversions
+    - product-attributes
+    - catalogues
+    - price-lists
+    - price-resolution
+    - product-reference-mapping
+    - immutable-consumer-snapshots
+    - outbox-events
+    - audit
+  plannedCapabilities:
+    - durable-bulk-import-export
+    - catalogue-syndication
+    - advanced-matrix-pricing
+  ui:
+    basePath: /products
+    package: '@gigalibs/product-catalogue-web'
+    pages:
+      - route: /products
+        component: ProductCatalogueWorkspace
+  api:
+    application: apps/api
+    port: 4790
+    upstream:
+      key: product-catalogue
+      serviceHostname: module-host
+      environmentKey: PRODUCT_CATALOGUE_API_URL
+      basePath: /product-catalogue
+    version: v1
+  events:
+    emits:
+      - product.created.v1
+      - product.updated.v1
+      - product.archived.v1
+      - catalogue.version.published.v1
+      - price-list.version.activated.v1
+      - uom.conversion.changed.v1
+    consumes:
+      - platform.authorization.revoked.v1
+      - platform.organization.version.v1
+  identity:
+    protocol: signed-platform-context-v1
+    tenantClaimRequired: true
+    failClosed: true
+  database:
+    engine: postgresql
+    minimumVersion: '16'
+    ownsSchema: true
+    defaultSchema: gigalibs_product_catalogue
+    crossSchemaAccess: false
+    runtimeManifest: db/runtime-manifest.txt
+  runtime:
+    generated: true
+    hosting: host
+    appendOnlyTables: [audit_events]
+    readOnlyTables: [auth_revocation_events]
+  catalog:
+    - key: product-catalogue
+      name: Product & Catalogue Studio
+      navigationLabel: Products & Catalogues
+      area: Commercial Operations
+      navigationGroup: Workforce & Operations
+      route: /products
+      iconKey: boxes
+      readiness: PLANNED
+      maturity: CORE_IMPLEMENTED
+      entitlementEligible: true
+      trialEligible: false
+      requiredPermission: products:read
+      platformInspection: true
+      reason: The module boundary is implemented under WI-OI-112 and remains PLANNED until live module conformance and independent review are recorded.
+      navigationOrder: 125
+      personas: [OPERATIONS_SUPERVISOR]
+      roles:
+        - key: product-catalogue-manager
+          name: Product Catalogue Manager
+          description: Creates and maintains products, catalogues, UOMs and draft prices.
+          permissions: [products:read, products:create, products:update, products:archive, products:import, products:export, product-categories:manage, uoms:read, uoms:manage, catalogues:read, catalogues:draft, catalogues:submit, pricing:read, pricing:draft, pricing:submit]
+        - key: product-catalogue-approver
+          name: Product Catalogue Approver
+          description: Independently approves and publishes catalogue and price-list versions.
+          permissions: [products:read, uoms:read, catalogues:read, catalogues:approve, catalogues:publish, pricing:read, pricing:approve, pricing:activate]
+  gateway:
+    basePaths: [/api/product-catalogue]
+    catalogKey: product-catalogue
+    audience: gigalibs-product-catalogue-api
+    upstream: product-catalogue
+    signingKeyEnvironment: PRODUCT_CATALOGUE_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64
+    codePrefix: PRODUCT_CATALOGUE
+    routeNoun: Product Catalogue
+    serviceName: Product Catalogue, UOM & Governed Pricing
+    entitlementName: Product Catalogue
+    routes:
+      - { path: 'v1/products', GET: products:read, POST: products:create }
+      - { path: 'v1/products/import/preview', POST: products:import }
+      - { path: 'v1/products/import/commit', POST: products:import }
+      - { path: 'v1/products/export', GET: products:export }
+      - { path: 'v1/products/{id}', GET: products:read, PATCH: products:update }
+      - { path: 'v1/products/{id}/archive', POST: products:archive }
+      - { path: 'v1/products/{id}/restore', POST: products:archive }
+      - { path: 'v1/products/{id}/snapshot', GET: products:read }
+      - { path: 'v1/products/{id}/references', POST: products:update }
+      - { path: 'v1/product-categories', GET: products:read, POST: product-categories:manage }
+      - { path: 'v1/product-categories/{id}', PATCH: product-categories:manage }
+      - { path: 'v1/uoms', GET: uoms:read, POST: uoms:manage }
+      - { path: 'v1/uom-conversions', POST: uoms:manage }
+      - { path: 'v1/uom-conversions/resolve', POST: uoms:read }
+      - { path: 'v1/product-attributes', GET: products:read, POST: products:update }
+      - { path: 'v1/catalogues', GET: catalogues:read, POST: catalogues:draft }
+      - { path: 'v1/catalogues/{id}/versions', POST: catalogues:draft }
+      - { path: 'v1/catalogues/{id}/versions/{id}/entries', POST: catalogues:draft }
+      - { path: 'v1/catalogues/{id}/versions/{id}/submit', POST: catalogues:submit }
+      - { path: 'v1/catalogues/{id}/versions/{id}/approve', POST: catalogues:approve }
+      - { path: 'v1/catalogues/{id}/versions/{id}/publish', POST: catalogues:publish }
+      - { path: 'v1/price-lists', GET: pricing:read, POST: pricing:draft }
+      - { path: 'v1/price-lists/{id}/versions', POST: pricing:draft }
+      - { path: 'v1/price-lists/{id}/versions/{id}/prices', POST: pricing:draft }
+      - { path: 'v1/price-lists/{id}/versions/{id}/submit', POST: pricing:submit }
+      - { path: 'v1/price-lists/{id}/versions/{id}/approve', POST: pricing:approve }
+      - { path: 'v1/price-lists/{id}/versions/{id}/activate', POST: pricing:activate }
+      - { path: 'v1/prices/resolve', POST: pricing:read }
+      - { path: 'v1/organization/versions/{id}/units', POST: 'organization:activate' }
+      - { path: 'v1/organization/versions/{id}/complete', POST: 'organization:activate' }

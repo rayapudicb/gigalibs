@@ -1,11 +1,11 @@
 # NOW: where the work stands
 
-Updated 2026-10-03 (WI-OI-111 is in Review: Enterprise Architecture Phase 3 Reference Adoption, Core Parties, and Bounded Custom Applications; WI-OI-110 is in Review; WI-OI-109 is in Review). Keep this file to one page.
+Updated 2026-10-03 (WI-OI-112 is in Review: Phase 4 Product Catalogue with native Application Dictionary metadata embedding, isolated schema gigalibs_product_catalogue, and executable 8/8 real PostgreSQL proof; WI-OI-111 is in Review committed ad7f83b; WI-OI-110 is in Review). Keep this file to one page.
 Replace old content rather than appending to it, and update it at the end of every task.
 
 ## State
 
-- **Active implementation item:** WI-OI-111 (Enterprise Architecture Phase 3: Reference Adoption, Core Parties, and Bounded Custom Applications — Committed `acf0d51` and in Review; task card in .pi/tasks/WI-OI-111.md, evidence in .pi/work/WI-OI-111.md). Certified with `scripts/verify-core-parties-and-custom-apps.mjs`. WI-OI-110 (Enterprise Architecture Phase 2: Metadata and Application Dictionary Foundation — In Review, committed `917141a`). WI-EAM-005 is committed (`22cfffa`) and in Review (.pi/work/WI-EAM-005.md). WI-EAM-004 is committed (`36f41aa`, `2ad4881`) and in Review (.pi/work/WI-EAM-004.md). WI-EAM-003 is committed (`c4ddefe`, `20297e4`) and in Review (.pi/work/WI-EAM-003.md). WI-EAM-002 is committed (`e4e4a69`, `e6924dc`) and in Review (.pi/work/WI-EAM-002.md). WI-EAM-001 is committed (`a1cea16`) and in Review (.pi/work/WI-EAM-001.md). All 5 EAM transformation phases are fully implemented, committed, and verified. WI-WFO-001–006 are committed (`94fae89`) and in Review (.pi/work/WI-WFO-006.md); Mobile Worker App (WI-WFO-007) is bookmarked and parked (`docs/architecture/MOBILE_WORKFORCEOPS_FUNCTIONAL_SPEC.md`). WI-OI-109 is in Review; WI-OI-103 and WI-OI-106 remain in Review; WI-OI-104, 105, 107 remain in Review; WI-OI-108 is Proposed.
+- **Active implementation item:** WI-OI-112 (Enterprise Architecture Phase 4: Product, Service, UOM, Catalogue and Pricing Foundation — Ready for Review; completed with module-owned schema `gigalibs_product_catalogue`, signed module gateway, `<DictionaryRenderer />` UI integration, Safe AST validation, and passing real-database proof. Task card: `.pi/tasks/WI-OI-112.md`; evidence: `.pi/work/WI-OI-112.md`). Next is Phase 5 (WI-OI-091: Universal Inventory & Warehouses). WI-OI-111 committed `ad7f83b` and in Review. WI-OI-110 in Review, committed `917141a`. WI-EAM-005 is committed (`22cfffa`) and in Review. WI-EAM-004 is committed (`36f41aa`, `2ad4881`) and in Review. WI-EAM-003 is committed (`c4ddefe`, `20297e4`) and in Review. WI-EAM-002 is committed (`e4e4a69`, `e6924dc`) and in Review. WI-EAM-001 is committed (`a1cea16`) and in Review. WI-WFO-001–006 are committed (`94fae89`) and in Review. WI-OI-109 is in Review; WI-OI-103 and WI-OI-106 remain in Review; WI-OI-108 is Proposed.
 - **Wave 0:** WI-OI-080, 081, 082, 083 and 085 are in Review, waiting for human reviews. WI-OI-084 (mobile) has
   not started.
 - **Running locally (2026-10-02 14:16 IST):** every application service is on `3da222030dc2-a0ca08f61655`; the web is healthy on 5180 and the control plane is healthy on 3333.
@@ -32,6 +32,7 @@ Replace old content rather than appending to it, and update it at the end of eve
 
 ## Next
 
+- WI-OI-112 completed with verified real-database certification and metadata embedding; ready for human review and commit. Next is owner authorization to begin Phase 5 (WI-OI-091: Universal Inventory and Warehouse Operations) in Build.
 - Complete live organization administration, Workforce → Analytics → Reports, relay/revocation, tenant/sibling isolation and browser/accessibility certification on the deployed organization-aware stack.
 - Re-run the deferred WI-OI-103 and WI-OI-106 live proofs. Keep WI-OI-109 in Review until live certification and independent reviews are resolved.
 - **Deferred Foundation Close:** WI-OI-103/WI-OI-106 organization-aware live proofs, WI-OI-108, core push intake (item 8), and F3 engine clean-up (item 9). Fresh install (item 7) is proved and awaiting commit.

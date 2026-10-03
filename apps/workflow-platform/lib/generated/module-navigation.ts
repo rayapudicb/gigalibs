@@ -227,6 +227,9 @@ export const generatedModulePersonas: Readonly<Record<string, readonly PlatformC
   "spend-management": [
     "C_LEVEL"
   ],
+  "product-catalogue": [
+    "OPERATIONS_SUPERVISOR"
+  ],
   "tax-configuration": [
     "C_LEVEL"
   ],

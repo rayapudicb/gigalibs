@@ -23,6 +23,8 @@ COPY package.json pnpm-lock.yaml ./
 COPY infra/compose/docker/pnpm-workspace.yaml ./pnpm-workspace.yaml
 COPY packages/db-migrations-runtime/package.json ./packages/db-migrations-runtime/package.json
 COPY packages/db-migrations-runtime/prisma.config.mjs ./packages/db-migrations-runtime/prisma.config.mjs
+COPY packages/db-migrations-runtime/control-migration-policy.mjs ./packages/db-migrations-runtime/control-migration-policy.mjs
+COPY packages/db-migrations-runtime/run-control-migrations.mjs ./packages/db-migrations-runtime/run-control-migrations.mjs
 RUN --mount=type=cache,id=gigalibs-pnpm-store,target=/pnpm/store \
     pnpm config set store-dir /pnpm/store && \
     pnpm config set fetch-timeout 600000 && \
@@ -166,7 +168,7 @@ ENV PATH=/nodejs/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bi
 WORKDIR /app
 COPY --from=migrations-build --chown=65532:65532 /output/migrations/ ./
 USER 65532:65532
-CMD ["node_modules/prisma/build/index.js", "migrate", "deploy", "--config", "prisma.config.mjs"]
+CMD ["run-control-migrations.mjs", "--config", "prisma.config.mjs"]
 
 FROM gcr.io/distroless/nodejs24-debian13@sha256:bb6b03d81066993293a10feda7250e8e1cc034035fe9b61cfceededa7c8bf04d AS connector-hub-api
 ARG SOURCE_REVISION

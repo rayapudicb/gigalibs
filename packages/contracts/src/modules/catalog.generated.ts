@@ -205,6 +205,23 @@ export const generatedPlatformModuleCatalog = [
     platformInspection: true,
     reason: 'The bounded spend slice uses PostgreSQL RLS, tenant authority and optimistic locking; disbursement and full reconciliation remain in review. Frozen and locked (ADR-0016 F6).',
   },
+  // modules/product-catalogue/module.yaml
+  {
+    key: 'product-catalogue',
+    name: 'Product & Catalogue Studio',
+    navigationLabel: 'Products & Catalogues',
+    area: 'Commercial Operations',
+    navigationGroup: 'Workforce & Operations',
+    route: '/products',
+    iconKey: 'boxes',
+    readiness: 'PLANNED',
+    maturity: 'CORE_IMPLEMENTED',
+    entitlementEligible: true,
+    trialEligible: false,
+    requiredPermission: 'products:read',
+    platformInspection: true,
+    reason: 'The module boundary is implemented under WI-OI-112 and remains PLANNED until live module conformance and independent review are recorded.',
+  },
   // modules/tax-configuration/module.yaml
   {
     key: 'tax-configuration',

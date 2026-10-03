@@ -8,6 +8,7 @@ import {
   TenantProfileConfigurationAdapterV1,
 } from './tenant-profile-configuration.adapter.js';
 import { PartyConfigurationAdapterV1 } from './parties/party-configuration.adapter.js';
+import { ProductConfigurationAdapterV1 } from './catalogue/product-configuration.adapter.js';
 
 export const CONFIGURATION_ADAPTERS = Symbol('CONFIGURATION_ADAPTERS');
 
@@ -15,6 +16,7 @@ export function defaultConfigurationAdapters(): readonly ModuleConfigurationAdap
   return Object.freeze([
     new TenantProfileConfigurationAdapterV1(),
     new PartyConfigurationAdapterV1(),
+    new ProductConfigurationAdapterV1(),
   ]);
 }
 

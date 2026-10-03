@@ -29,6 +29,13 @@ export const generatedModuleUpstreams = {
     "serviceHostname": "geospatial-api",
     "basePath": ""
   },
+  "product-catalogue": {
+    "module": "product-catalogue",
+    "environmentKey": "PRODUCT_CATALOGUE_API_URL",
+    "port": "4790",
+    "serviceHostname": "module-host",
+    "basePath": "/product-catalogue"
+  },
   "workforce": {
     "module": "gigaops",
     "environmentKey": "WORKFORCE_API_URL",

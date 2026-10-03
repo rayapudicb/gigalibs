@@ -706,5 +706,240 @@ export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGat
         ]
       }
     ]
+  },
+  "product-catalogue": {
+    "module": "product-catalogue",
+    "basePaths": [
+      "/api/product-catalogue"
+    ],
+    "catalogKey": "product-catalogue",
+    "audience": "gigalibs-product-catalogue-api",
+    "upstream": "product-catalogue",
+    "signingKeyEnvironment": "PRODUCT_CATALOGUE_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64",
+    "codePrefix": "PRODUCT_CATALOGUE",
+    "routeNoun": "Product Catalogue",
+    "serviceName": "Product Catalogue, UOM & Governed Pricing",
+    "entitlementName": "Product Catalogue",
+    "routes": [
+      {
+        "template": "v1/products",
+        "pattern": "^v1/products$",
+        "methods": {
+          "GET": "products:read",
+          "POST": "products:create"
+        }
+      },
+      {
+        "template": "v1/products/import/preview",
+        "pattern": "^v1/products/import/preview$",
+        "methods": {
+          "POST": "products:import"
+        }
+      },
+      {
+        "template": "v1/products/import/commit",
+        "pattern": "^v1/products/import/commit$",
+        "methods": {
+          "POST": "products:import"
+        }
+      },
+      {
+        "template": "v1/products/export",
+        "pattern": "^v1/products/export$",
+        "methods": {
+          "GET": "products:export"
+        }
+      },
+      {
+        "template": "v1/products/{id}",
+        "pattern": "^v1/products/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "GET": "products:read",
+          "PATCH": "products:update"
+        }
+      },
+      {
+        "template": "v1/products/{id}/archive",
+        "pattern": "^v1/products/[0-9a-fA-F-]{36}/archive$",
+        "methods": {
+          "POST": "products:archive"
+        }
+      },
+      {
+        "template": "v1/products/{id}/restore",
+        "pattern": "^v1/products/[0-9a-fA-F-]{36}/restore$",
+        "methods": {
+          "POST": "products:archive"
+        }
+      },
+      {
+        "template": "v1/products/{id}/snapshot",
+        "pattern": "^v1/products/[0-9a-fA-F-]{36}/snapshot$",
+        "methods": {
+          "GET": "products:read"
+        }
+      },
+      {
+        "template": "v1/products/{id}/references",
+        "pattern": "^v1/products/[0-9a-fA-F-]{36}/references$",
+        "methods": {
+          "POST": "products:update"
+        }
+      },
+      {
+        "template": "v1/product-categories",
+        "pattern": "^v1/product-categories$",
+        "methods": {
+          "GET": "products:read",
+          "POST": "product-categories:manage"
+        }
+      },
+      {
+        "template": "v1/product-categories/{id}",
+        "pattern": "^v1/product-categories/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "PATCH": "product-categories:manage"
+        }
+      },
+      {
+        "template": "v1/uoms",
+        "pattern": "^v1/uoms$",
+        "methods": {
+          "GET": "uoms:read",
+          "POST": "uoms:manage"
+        }
+      },
+      {
+        "template": "v1/uom-conversions",
+        "pattern": "^v1/uom-conversions$",
+        "methods": {
+          "POST": "uoms:manage"
+        }
+      },
+      {
+        "template": "v1/uom-conversions/resolve",
+        "pattern": "^v1/uom-conversions/resolve$",
+        "methods": {
+          "POST": "uoms:read"
+        }
+      },
+      {
+        "template": "v1/product-attributes",
+        "pattern": "^v1/product-attributes$",
+        "methods": {
+          "GET": "products:read",
+          "POST": "products:update"
+        }
+      },
+      {
+        "template": "v1/catalogues",
+        "pattern": "^v1/catalogues$",
+        "methods": {
+          "GET": "catalogues:read",
+          "POST": "catalogues:draft"
+        }
+      },
+      {
+        "template": "v1/catalogues/{id}/versions",
+        "pattern": "^v1/catalogues/[0-9a-fA-F-]{36}/versions$",
+        "methods": {
+          "POST": "catalogues:draft"
+        }
+      },
+      {
+        "template": "v1/catalogues/{id}/versions/{id}/entries",
+        "pattern": "^v1/catalogues/[0-9a-fA-F-]{36}/versions/[0-9a-fA-F-]{36}/entries$",
+        "methods": {
+          "POST": "catalogues:draft"
+        }
+      },
+      {
+        "template": "v1/catalogues/{id}/versions/{id}/submit",
+        "pattern": "^v1/catalogues/[0-9a-fA-F-]{36}/versions/[0-9a-fA-F-]{36}/submit$",
+        "methods": {
+          "POST": "catalogues:submit"
+        }
+      },
+      {
+        "template": "v1/catalogues/{id}/versions/{id}/approve",
+        "pattern": "^v1/catalogues/[0-9a-fA-F-]{36}/versions/[0-9a-fA-F-]{36}/approve$",
+        "methods": {
+          "POST": "catalogues:approve"
+        }
+      },
+      {
+        "template": "v1/catalogues/{id}/versions/{id}/publish",
+        "pattern": "^v1/catalogues/[0-9a-fA-F-]{36}/versions/[0-9a-fA-F-]{36}/publish$",
+        "methods": {
+          "POST": "catalogues:publish"
+        }
+      },
+      {
+        "template": "v1/price-lists",
+        "pattern": "^v1/price-lists$",
+        "methods": {
+          "GET": "pricing:read",
+          "POST": "pricing:draft"
+        }
+      },
+      {
+        "template": "v1/price-lists/{id}/versions",
+        "pattern": "^v1/price-lists/[0-9a-fA-F-]{36}/versions$",
+        "methods": {
+          "POST": "pricing:draft"
+        }
+      },
+      {
+        "template": "v1/price-lists/{id}/versions/{id}/prices",
+        "pattern": "^v1/price-lists/[0-9a-fA-F-]{36}/versions/[0-9a-fA-F-]{36}/prices$",
+        "methods": {
+          "POST": "pricing:draft"
+        }
+      },
+      {
+        "template": "v1/price-lists/{id}/versions/{id}/submit",
+        "pattern": "^v1/price-lists/[0-9a-fA-F-]{36}/versions/[0-9a-fA-F-]{36}/submit$",
+        "methods": {
+          "POST": "pricing:submit"
+        }
+      },
+      {
+        "template": "v1/price-lists/{id}/versions/{id}/approve",
+        "pattern": "^v1/price-lists/[0-9a-fA-F-]{36}/versions/[0-9a-fA-F-]{36}/approve$",
+        "methods": {
+          "POST": "pricing:approve"
+        }
+      },
+      {
+        "template": "v1/price-lists/{id}/versions/{id}/activate",
+        "pattern": "^v1/price-lists/[0-9a-fA-F-]{36}/versions/[0-9a-fA-F-]{36}/activate$",
+        "methods": {
+          "POST": "pricing:activate"
+        }
+      },
+      {
+        "template": "v1/prices/resolve",
+        "pattern": "^v1/prices/resolve$",
+        "methods": {
+          "POST": "pricing:read"
+        }
+      },
+      {
+        "template": "v1/organization/versions/{id}/units",
+        "pattern": "^v1/organization/versions/[0-9a-fA-F-]{36}/units$",
+        "methods": {
+          "POST": "organization:activate"
+        }
+      },
+      {
+        "template": "v1/organization/versions/{id}/complete",
+        "pattern": "^v1/organization/versions/[0-9a-fA-F-]{36}/complete$",
+        "methods": {
+          "POST": "organization:activate"
+        }
+      }
+    ],
+    "transformBody": null,
+    "unavailable": []
   }
 };

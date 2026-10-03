@@ -13,6 +13,45 @@ export interface ModuleDefaultRole {
 
 export const moduleDefaultRoles: readonly ModuleDefaultRole[] = [
   {
+    "catalogKey": "product-catalogue",
+    "key": "product-catalogue-manager",
+    "name": "Product Catalogue Manager",
+    "description": "Creates and maintains products, catalogues, UOMs and draft prices.",
+    "permissions": [
+      "products:read",
+      "products:create",
+      "products:update",
+      "products:archive",
+      "products:import",
+      "products:export",
+      "product-categories:manage",
+      "uoms:read",
+      "uoms:manage",
+      "catalogues:read",
+      "catalogues:draft",
+      "catalogues:submit",
+      "pricing:read",
+      "pricing:draft",
+      "pricing:submit"
+    ]
+  },
+  {
+    "catalogKey": "product-catalogue",
+    "key": "product-catalogue-approver",
+    "name": "Product Catalogue Approver",
+    "description": "Independently approves and publishes catalogue and price-list versions.",
+    "permissions": [
+      "products:read",
+      "uoms:read",
+      "catalogues:read",
+      "catalogues:approve",
+      "catalogues:publish",
+      "pricing:read",
+      "pricing:approve",
+      "pricing:activate"
+    ]
+  },
+  {
     "catalogKey": "analytics-studio",
     "key": "analytics-viewer",
     "name": "Analytics viewer",

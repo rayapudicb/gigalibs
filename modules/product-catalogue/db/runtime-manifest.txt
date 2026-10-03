@@ -1,0 +1,2 @@
+# Ordered runtime migrations for gigalibs_product_catalogue. Only these files are copied into the module image.
+000001_product_catalogue_foundation.up.sql

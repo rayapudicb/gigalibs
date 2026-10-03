@@ -97,6 +97,7 @@ describe('SignedContextGuardBase', () => {
     expect(request.modulePrincipal).toMatchObject({
       tenantId: 'tenant000000000000000001',
       subject: 'user00000000000000000001',
+      organization: { mode: 'TENANT' },
       departmentScope: { mode: 'ALL' },
       placeScope: { mode: 'ALL' },
     });
@@ -166,6 +167,7 @@ describe('module command helpers', () => {
       permissions: [],
       roles: [],
       persona: 'TENANT_ADMIN',
+      organization: { mode: 'TENANT' },
       departmentScope: { mode: 'ALL' },
       placeScope: { mode: 'ALL' },
     },
