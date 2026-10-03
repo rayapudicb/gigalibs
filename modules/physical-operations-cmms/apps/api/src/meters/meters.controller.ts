@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import {
   CmmsAuthorizationGuard,
   CommandContext,
@@ -25,6 +25,44 @@ export class MetersController {
   create(@CommandContext() context: CmmsCommandContext, @Body() body: unknown) {
     return this.meters.create(context, body);
   }
+
+  // ─── Telemetry Batch Ingestion ──────────────────────────────────────────────
+
+  @Post('telemetry/batch')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermissions('cmms.meters.write')
+  recordBatch(@CommandContext() context: CmmsCommandContext, @Body() body: unknown) {
+    return this.meters.recordBatchReadings(context, body);
+  }
+
+  // ─── Meter Triggers (Condition-based Automation) ─────────────────────────────
+
+  @Get('triggers')
+  @RequirePermissions('cmms.meters.read')
+  listTriggers(@CurrentPrincipal() principal: CmmsPrincipal, @Query('meterId') meterId?: string) {
+    return this.meters.listTriggers(principal, meterId);
+  }
+
+  @Post('triggers')
+  @RequirePermissions('cmms.meters.write')
+  createTrigger(@CommandContext() context: CmmsCommandContext, @Body() body: unknown) {
+    return this.meters.createTrigger(context, body);
+  }
+
+  @Patch('triggers/:triggerId')
+  @RequirePermissions('cmms.meters.write')
+  updateTrigger(@CommandContext() context: CmmsCommandContext, @Param('triggerId') triggerId: string, @Body() body: unknown) {
+    return this.meters.updateTrigger(context, triggerId, body);
+  }
+
+  @Delete('triggers/:triggerId')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @RequirePermissions('cmms.meters.write')
+  deleteTrigger(@CommandContext() context: CmmsCommandContext, @Param('triggerId') triggerId: string) {
+    return this.meters.deleteTrigger(context, triggerId);
+  }
+
+  // ─── Single Meter Readings ──────────────────────────────────────────────────
 
   @Get(':meterId/readings')
   @RequirePermissions('cmms.meters.read')

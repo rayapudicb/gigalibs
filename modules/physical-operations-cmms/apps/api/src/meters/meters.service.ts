@@ -1,8 +1,12 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import {
+  CreateCmmsMeterTriggerV1Schema,
   CreateCmmsMeterV1Schema,
+  IngestCmmsTelemetryBatchV1Schema,
   RecordCmmsMeterReadingV1Schema,
+  UpdateCmmsMeterTriggerV1Schema,
   type CmmsMeterReadingV1,
+  type CmmsMeterTriggerV1,
   type CmmsMeterV1,
 } from '@gigalibs/contracts';
 import type { PoolClient } from 'pg';
@@ -18,8 +22,10 @@ import {
   parseInput,
   recordMutation,
   translateConstraint,
+  versionConflict,
 } from '../common/command.js';
 import { DatabaseService } from '../database/database.service.js';
+import { WorkOrdersService } from '../work-orders/work-orders.service.js';
 
 const MAX_FUTURE_SKEW_MS = 5 * 60_000;
 
@@ -28,6 +34,7 @@ export class MetersService {
   constructor(
     private readonly database: DatabaseService,
     private readonly assets: AssetsService,
+    private readonly workOrders: WorkOrdersService,
   ) {}
 
   /** Meters on assets the caller can see, optionally for one asset. */
@@ -94,13 +101,18 @@ export class MetersService {
   /**
    * Stores one reading. Readings may arrive out of order: every reading is kept, but only a reading at or
    * after the latest replaces the meter's latest value, and a counter may not run backwards. A repeated request
-   * key returns the stored reading.
+   * key returns the stored reading. Triggers automatic PM work orders if thresholds or intervals fire.
    */
   async recordReading(
     context: CmmsCommandContext,
     meterId: string,
     raw: unknown,
-  ): Promise<{ readonly meter: CmmsMeterV1; readonly reading: CmmsMeterReadingV1; readonly replayed: boolean }> {
+  ): Promise<{
+    readonly meter: CmmsMeterV1;
+    readonly reading: CmmsMeterReadingV1;
+    readonly replayed: boolean;
+    readonly triggeredWorkOrderIds?: readonly string[];
+  }> {
     assertUuid(meterId, 'meterId');
     const input = parseInput(RecordCmmsMeterReadingV1Schema, raw);
     const readAt = input.readAt ? new Date(input.readAt) : new Date();
@@ -153,15 +165,18 @@ export class MetersService {
 
       const inserted = await client.query(
         `INSERT INTO gigalibs_cmms.meter_readings
-           (tenant_id, meter_id, value, read_at, notes, request_key, recorded_by, correlation_id)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+           (tenant_id, meter_id, value, read_at, source, notes, device_id, payload_ref, request_key, recorded_by, correlation_id)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
          RETURNING *`,
         [
           context.principal.tenantId,
           meterId,
           input.value,
           readAt.toISOString(),
+          input.source ?? 'MANUAL',
           input.notes ?? null,
+          input.deviceId ?? null,
+          input.payloadRef ?? null,
           input.requestKey,
           context.principal.subject,
           context.correlationId,
@@ -197,12 +212,106 @@ export class MetersService {
           assetId: meter.asset_id,
           value: input.value,
           readAt: reading.readAt,
+          source: reading.source,
           latest: isLatest,
           outOfRange:
             (minThreshold !== null && input.value < minThreshold) || (maxThreshold !== null && input.value > maxThreshold),
         },
       });
-      return { meter: await this.meterRow(client, context.principal, meterId), reading, replayed: false };
+
+      // Autonomous trigger evaluation
+      const triggeredWorkOrderIds = await this.evaluateTriggersForMeter(client, context, meter, reading);
+
+      return {
+        meter: await this.meterRow(client, context.principal, meterId),
+        reading,
+        replayed: false,
+        triggeredWorkOrderIds,
+      };
+    });
+  }
+
+  /**
+   * Ingests a batch of telemetry readings from IoT gateways, Connector Hub, or SCADA systems.
+   */
+  async recordBatchReadings(
+    context: CmmsCommandContext,
+    raw: unknown,
+  ): Promise<{ readonly processedCount: number; readonly triggeredWorkOrderIds: readonly string[] }> {
+    const input = parseInput(IngestCmmsTelemetryBatchV1Schema, raw);
+    return this.database.withTenantTransaction(context.principal.tenantId, async (client) => {
+      let processedCount = 0;
+      const allTriggeredWoIds: string[] = [];
+
+      for (const item of input.readings) {
+        const readAt = item.readAt ? new Date(item.readAt) : new Date();
+        const values: unknown[] = [context.principal.tenantId, item.meterId];
+        const where = ['m.tenant_id = $1', 'm.id = $2', 'a.archived_at IS NULL', ...scopePredicates(context.principal, values, 'a.')];
+        const locked = await client.query(
+          `SELECT m.*, a.department_id AS asset_department_id, a.site_ref AS asset_site_ref
+             FROM gigalibs_cmms.meters m
+             JOIN gigalibs_cmms.assets a ON a.tenant_id = m.tenant_id AND a.id = m.asset_id
+            WHERE ${where.join(' AND ')}
+            FOR UPDATE OF m`,
+          values,
+        );
+        const meter = locked.rows[0];
+        if (!meter) continue; // Skip inaccessible or deleted meters in batch
+
+        // Replay check
+        const replay = await client.query(
+          `SELECT id FROM gigalibs_cmms.meter_readings WHERE tenant_id = $1 AND meter_id = $2 AND request_key = $3`,
+          [context.principal.tenantId, item.meterId, item.requestKey],
+        );
+        if (replay.rows[0]) continue;
+
+        const lastReadAt = meter.last_read_at ? new Date(meter.last_read_at) : null;
+        const isLatest = lastReadAt === null || readAt.getTime() >= lastReadAt.getTime();
+
+        const inserted = await client.query(
+          `INSERT INTO gigalibs_cmms.meter_readings
+             (tenant_id, meter_id, value, read_at, source, notes, device_id, request_key, recorded_by, correlation_id)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+           RETURNING *`,
+          [
+            context.principal.tenantId,
+            item.meterId,
+            item.value,
+            readAt.toISOString(),
+            input.source,
+            item.notes ?? null,
+            item.deviceId ?? null,
+            item.requestKey,
+            context.principal.subject,
+            context.correlationId,
+          ],
+        );
+
+        await client.query(
+          `UPDATE gigalibs_cmms.meters
+              SET last_value = CASE WHEN $3::boolean THEN $4::numeric ELSE last_value END,
+                  last_read_at = CASE WHEN $3::boolean THEN $5::timestamptz ELSE last_read_at END,
+                  version = version + 1, updated_by = $6, correlation_id = $7, updated_at = now()
+            WHERE tenant_id = $1 AND id = $2`,
+          [
+            context.principal.tenantId,
+            item.meterId,
+            isLatest,
+            item.value,
+            readAt.toISOString(),
+            context.principal.subject,
+            context.correlationId,
+          ],
+        );
+
+        const reading = mapReading(inserted.rows[0]);
+        processedCount++;
+
+        const triggered = await this.evaluateTriggersForMeter(client, context, meter, reading);
+        allTriggeredWoIds.push(...triggered);
+      }
+
+      return { processedCount, triggeredWorkOrderIds: allTriggeredWoIds };
     });
   }
 
@@ -219,6 +328,252 @@ export class MetersService {
     });
   }
 
+  // ─── Meter Triggers CRUD & Policy Evaluation ──────────────────────────────────
+
+  async listTriggers(principal: CmmsPrincipal, meterId?: string): Promise<{ readonly items: readonly CmmsMeterTriggerV1[] }> {
+    if (meterId !== undefined) assertUuid(meterId, 'meterId');
+    return this.database.withTenantTransaction(principal.tenantId, async (client) => {
+      const values: unknown[] = [principal.tenantId];
+      let sql = `SELECT t.*, jp.title AS job_plan_title
+                   FROM gigalibs_cmms.cmms_meter_triggers t
+                   LEFT JOIN gigalibs_cmms.cmms_job_plans jp ON jp.tenant_id = t.tenant_id AND jp.id = t.job_plan_id
+                  WHERE t.tenant_id = $1`;
+      if (meterId) {
+        values.push(meterId);
+        sql += ` AND t.meter_id = $${values.length}`;
+      }
+      sql += ` ORDER BY t.created_at DESC`;
+      const result = await client.query(sql, values);
+      return { items: result.rows.map(mapTrigger) };
+    });
+  }
+
+  async createTrigger(context: CmmsCommandContext, raw: unknown): Promise<CmmsMeterTriggerV1> {
+    const input = parseInput(CreateCmmsMeterTriggerV1Schema, raw);
+    return this.database.withTenantTransaction(context.principal.tenantId, async (client) => {
+      await this.meterRow(client, context.principal, input.meterId);
+      if (input.jobPlanId) {
+        const jp = await client.query(
+          `SELECT id FROM gigalibs_cmms.cmms_job_plans WHERE tenant_id = $1 AND id = $2`,
+          [context.principal.tenantId, input.jobPlanId],
+        );
+        if (!jp.rows[0]) notFound('Job plan');
+      }
+
+      const result = await client.query<{ id: string }>(
+        `INSERT INTO gigalibs_cmms.cmms_meter_triggers
+           (tenant_id, meter_id, trigger_type, threshold_type, threshold_value, interval_value,
+            job_plan_id, work_order_title, work_order_priority, is_active,
+            created_by, updated_by, correlation_id)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $11, $12)
+         RETURNING id`,
+        [
+          context.principal.tenantId,
+          input.meterId,
+          input.triggerType,
+          input.thresholdType ?? null,
+          input.thresholdValue ?? null,
+          input.intervalValue ?? null,
+          input.jobPlanId ?? null,
+          input.workOrderTitle,
+          input.workOrderPriority,
+          input.isActive,
+          context.principal.subject,
+          context.correlationId,
+        ],
+      );
+      const id = result.rows[0]!.id;
+      await recordMutation(client, context, {
+        action: 'CMMS_METER_TRIGGER_CREATED',
+        aggregateType: 'CMMS_METER_TRIGGER',
+        aggregateId: id,
+        aggregateVersion: 1,
+        payload: { meterId: input.meterId, triggerType: input.triggerType },
+      });
+      return this.visibleTrigger(client, context.principal.tenantId, id);
+    });
+  }
+
+  async updateTrigger(context: CmmsCommandContext, id: string, raw: unknown): Promise<CmmsMeterTriggerV1> {
+    assertUuid(id, 'triggerId');
+    const input = parseInput(UpdateCmmsMeterTriggerV1Schema, raw);
+    return this.database.withTenantTransaction(context.principal.tenantId, async (client) => {
+      const current = await this.visibleTrigger(client, context.principal.tenantId, id);
+      const result = await client.query<{ version: number }>(
+        `UPDATE gigalibs_cmms.cmms_meter_triggers
+            SET threshold_type = $4, threshold_value = $5, interval_value = $6,
+                job_plan_id = $7, work_order_title = $8, work_order_priority = $9,
+                is_active = $10, version = version + 1, updated_by = $11, correlation_id = $12, updated_at = now()
+          WHERE tenant_id = $1 AND id = $2 AND version = $3
+          RETURNING version`,
+        [
+          context.principal.tenantId,
+          id,
+          input.expectedVersion,
+          input.thresholdType === undefined ? current.thresholdType : (input.thresholdType ?? null),
+          input.thresholdValue === undefined ? current.thresholdValue : (input.thresholdValue ?? null),
+          input.intervalValue === undefined ? current.intervalValue : (input.intervalValue ?? null),
+          input.jobPlanId === undefined ? current.jobPlanId : (input.jobPlanId ?? null),
+          input.workOrderTitle ?? current.workOrderTitle,
+          input.workOrderPriority ?? current.workOrderPriority,
+          input.isActive === undefined ? current.isActive : input.isActive,
+          context.principal.subject,
+          context.correlationId,
+        ],
+      );
+      if (result.rowCount === 0) versionConflict('The meter trigger');
+      await recordMutation(client, context, {
+        action: 'CMMS_METER_TRIGGER_UPDATED',
+        aggregateType: 'CMMS_METER_TRIGGER',
+        aggregateId: id,
+        aggregateVersion: Number(result.rows[0]!.version),
+        payload: {},
+      });
+      return this.visibleTrigger(client, context.principal.tenantId, id);
+    });
+  }
+
+  async deleteTrigger(context: CmmsCommandContext, id: string): Promise<void> {
+    assertUuid(id, 'triggerId');
+    return this.database.withTenantTransaction(context.principal.tenantId, async (client) => {
+      const result = await client.query(
+        `DELETE FROM gigalibs_cmms.cmms_meter_triggers WHERE tenant_id = $1 AND id = $2`,
+        [context.principal.tenantId, id],
+      );
+      if (result.rowCount === 0) notFound('Meter trigger');
+      await recordMutation(client, context, {
+        action: 'CMMS_METER_TRIGGER_DELETED',
+        aggregateType: 'CMMS_METER_TRIGGER',
+        aggregateId: id,
+        aggregateVersion: 0,
+        payload: {},
+      });
+    });
+  }
+
+  // ─── Trigger Policy Evaluation ────────────────────────────────────────────────
+
+  private async evaluateTriggersForMeter(
+    client: PoolClient,
+    context: CmmsCommandContext,
+    meter: any,
+    reading: CmmsMeterReadingV1,
+  ): Promise<readonly string[]> {
+    const triggersRes = await client.query(
+      `SELECT t.*, jp.title AS job_plan_title
+         FROM gigalibs_cmms.cmms_meter_triggers t
+         LEFT JOIN gigalibs_cmms.cmms_job_plans jp ON jp.tenant_id = t.tenant_id AND jp.id = t.job_plan_id
+        WHERE t.tenant_id = $1 AND t.meter_id = $2 AND t.is_active = true`,
+      [context.principal.tenantId, meter.id],
+    );
+
+    const generatedWorkOrderIds: string[] = [];
+
+    for (const t of triggersRes.rows) {
+      let shouldFire = false;
+      if (t.trigger_type === 'THRESHOLD_BREACH') {
+        const thresholdVal = t.threshold_value !== null ? Number(t.threshold_value) : null;
+        const minThresh = meter.min_threshold !== null ? Number(meter.min_threshold) : null;
+        const maxThresh = meter.max_threshold !== null ? Number(meter.max_threshold) : null;
+
+        if (t.threshold_type === 'UPPER') {
+          const target = thresholdVal ?? maxThresh;
+          if (target !== null && reading.value > target) shouldFire = true;
+        } else if (t.threshold_type === 'LOWER') {
+          const target = thresholdVal ?? minThresh;
+          if (target !== null && reading.value < target) shouldFire = true;
+        } else if (t.threshold_type === 'OUT_OF_BOUNDS') {
+          if ((minThresh !== null && reading.value < minThresh) || (maxThresh !== null && reading.value > maxThresh)) {
+            shouldFire = true;
+          }
+        }
+      } else if (t.trigger_type === 'USAGE_INTERVAL') {
+        const interval = Number(t.interval_value);
+        const lastVal = t.last_triggered_value !== null ? Number(t.last_triggered_value) : 0;
+        if (interval > 0 && reading.value - lastVal >= interval) {
+          shouldFire = true;
+        }
+      }
+
+      if (shouldFire) {
+        // Debounce: don't create multiple work orders for the exact same condition if one is already active
+        const recentWo = await client.query(
+          `SELECT id FROM gigalibs_cmms.work_orders
+            WHERE tenant_id = $1 AND meter_trigger_id = $2
+              AND status IN ('OPEN', 'IN_PROGRESS', 'ON_HOLD')
+            LIMIT 1`,
+          [context.principal.tenantId, t.id],
+        );
+        if (recentWo.rows[0]) {
+          continue;
+        }
+
+        // Fetch job plan tasks if job_plan_id is set
+        let tasks: Array<{ label: string; required: boolean }> = [];
+        if (t.job_plan_id) {
+          const jpTasks = await client.query(
+            `SELECT label, required FROM gigalibs_cmms.cmms_job_plan_tasks
+              WHERE tenant_id = $1 AND job_plan_id = $2
+              ORDER BY sequence ASC`,
+            [context.principal.tenantId, t.job_plan_id],
+          );
+          tasks = jpTasks.rows.map((r) => ({ label: r.label, required: r.required === true }));
+        }
+        if (tasks.length === 0) {
+          tasks = [{ label: `Inspect condition on ${meter.name}`, required: true }];
+        }
+
+        const woTitle = `[Condition Alert] ${t.work_order_title} (${meter.name}: ${reading.value} ${meter.unit})`;
+        const woType = t.trigger_type === 'THRESHOLD_BREACH' && t.threshold_type === 'UPPER' ? 'EMERGENCY' : 'PREVENTIVE';
+
+        const workOrderId = await this.workOrders.createWithClient(
+          client,
+          context,
+          {
+            type: woType,
+            priority: t.work_order_priority,
+            title: woTitle,
+            description: `Automated work order triggered by meter ${meter.name} reading (${reading.value} ${meter.unit}) via source ${reading.source}.`,
+            assetId: meter.asset_id,
+            jobPlanId: t.job_plan_id ?? undefined,
+            requiresSignature: false,
+            tasks,
+          },
+          {
+            triggerSource: 'METER_TRIGGER',
+            pmScheduleId: null,
+            pmOccurrenceAt: null,
+            meterTriggerId: t.id,
+          },
+        );
+
+        // Update trigger last_triggered
+        await client.query(
+          `UPDATE gigalibs_cmms.cmms_meter_triggers
+              SET last_triggered_value = $3, last_triggered_at = now(), version = version + 1, updated_at = now()
+            WHERE tenant_id = $1 AND id = $2`,
+          [context.principal.tenantId, t.id, reading.value],
+        );
+
+        await recordMutation(client, context, {
+          action: 'CMMS_METER_TRIGGER_FIRED',
+          aggregateType: 'CMMS_METER_TRIGGER',
+          aggregateId: t.id,
+          aggregateVersion: Number(t.version) + 1,
+          payload: {
+            meterId: meter.id,
+            readingValue: reading.value,
+            workOrderId,
+          },
+        });
+
+        generatedWorkOrderIds.push(workOrderId);
+      }
+    }
+
+    return generatedWorkOrderIds;
+  }
+
   private async meterRow(client: PoolClient, principal: CmmsPrincipal, meterId: string): Promise<CmmsMeterV1> {
     const values: unknown[] = [principal.tenantId, meterId];
     const where = ['m.tenant_id = $1', 'm.id = $2', ...scopePredicates(principal, values, 'a.')];
@@ -231,6 +586,18 @@ export class MetersService {
     );
     if (!result.rows[0]) notFound('The meter');
     return mapMeter(result.rows[0]);
+  }
+
+  private async visibleTrigger(client: PoolClient, tenantId: string, id: string): Promise<CmmsMeterTriggerV1> {
+    const result = await client.query(
+      `SELECT t.*, jp.title AS job_plan_title
+         FROM gigalibs_cmms.cmms_meter_triggers t
+         LEFT JOIN gigalibs_cmms.cmms_job_plans jp ON jp.tenant_id = t.tenant_id AND jp.id = t.job_plan_id
+        WHERE t.tenant_id = $1 AND t.id = $2`,
+      [tenantId, id],
+    );
+    if (!result.rows[0]) notFound('Meter trigger');
+    return mapTrigger(result.rows[0]);
   }
 }
 
@@ -269,9 +636,33 @@ function mapReading(row: any): CmmsMeterReadingV1 {
     meterId: row.meter_id,
     value: Number(row.value),
     readAt: iso(row.read_at),
-    source: 'MANUAL',
+    source: row.source ?? 'MANUAL',
     notes: row.notes ?? null,
+    deviceId: row.device_id ?? null,
+    payloadRef: row.payload_ref ?? null,
     recordedBy: row.recorded_by,
     recordedAt: iso(row.recorded_at),
+  };
+}
+
+function mapTrigger(row: any): CmmsMeterTriggerV1 {
+  return {
+    id: row.id,
+    meterId: row.meter_id,
+    triggerType: row.trigger_type,
+    thresholdType: row.threshold_type ?? null,
+    thresholdValue: numberOrNull(row.threshold_value),
+    intervalValue: numberOrNull(row.interval_value),
+    lastTriggeredValue: numberOrNull(row.last_triggered_value),
+    lastTriggeredAt: isoOrNull(row.last_triggered_at),
+    jobPlanId: row.job_plan_id ?? null,
+    jobPlanTitle: row.job_plan_title ?? undefined,
+    workOrderTitle: row.work_order_title,
+    workOrderPriority: row.work_order_priority,
+    isActive: row.is_active === true,
+    version: Number(row.version),
+    createdBy: row.created_by,
+    createdAt: iso(row.created_at),
+    updatedAt: iso(row.updated_at),
   };
 }

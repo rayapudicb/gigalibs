@@ -475,6 +475,7 @@ export const CreateCmmsWorkOrderV1Schema = z
     failureProblemId: UuidSchema.nullable().optional(),
     failureCauseId: UuidSchema.nullable().optional(),
     failureRemedyId: UuidSchema.nullable().optional(),
+    meterTriggerId: UuidSchema.nullable().optional(),
     tasks: z
       .array(z.object({ label: TaskLabelSchema, required: z.boolean().default(true) }).strict())
       .max(CMMS_MAX_WORK_ORDER_TASKS)
@@ -496,6 +497,7 @@ export const UpdateCmmsWorkOrderV1Schema = z
     failureProblemId: UuidSchema.nullable().optional(),
     failureCauseId: UuidSchema.nullable().optional(),
     failureRemedyId: UuidSchema.nullable().optional(),
+    meterTriggerId: UuidSchema.nullable().optional(),
   })
   .strict();
 export type UpdateCmmsWorkOrderV1 = z.infer<typeof UpdateCmmsWorkOrderV1Schema>;
@@ -644,12 +646,13 @@ export interface CmmsWorkOrderV1 {
   readonly signed: boolean;
   readonly completionNotes: string | null;
   readonly estimatedHours: number | null;
-  readonly triggerSource: 'MANUAL' | 'PM_SCHEDULE';
+  readonly triggerSource: 'MANUAL' | 'PM_SCHEDULE' | 'METER_TRIGGER';
   readonly pmScheduleId: string | null;
   readonly jobPlanId: string | null;
   readonly failureProblemId: string | null;
   readonly failureCauseId: string | null;
   readonly failureRemedyId: string | null;
+  readonly meterTriggerId: string | null;
   readonly version: number;
   readonly createdBy: string;
   readonly createdAt: string;
@@ -670,6 +673,7 @@ export interface CmmsWorkOrderDetailV1 extends CmmsWorkOrderV1 {
   readonly failureProblemCode?: string | null;
   readonly failureCauseCode?: string | null;
   readonly failureRemedyCode?: string | null;
+  readonly meterTriggerTitle?: string | null;
 }
 
 // ─── Preventive maintenance ──────────────────────────────────────────────────────────────────────────────
@@ -774,16 +778,44 @@ export const CreateCmmsMeterV1Schema = z
   );
 export type CreateCmmsMeterV1 = z.infer<typeof CreateCmmsMeterV1Schema>;
 
+export const CmmsMeterReadingSourceV1Schema = z.enum(['MANUAL', 'IOT_TELEMETRY', 'CONNECTOR_HUB', 'SCADA']);
+export type CmmsMeterReadingSourceV1 = z.infer<typeof CmmsMeterReadingSourceV1Schema>;
+
 export const RecordCmmsMeterReadingV1Schema = z
   .object({
     requestKey: UuidSchema,
     value: z.number().finite(),
     /** Defaults to now; readings may arrive out of order and only a newer reading replaces the latest value. */
     readAt: DateTimeSchema.optional(),
+    source: CmmsMeterReadingSourceV1Schema.optional().default('MANUAL'),
     notes: z.string().trim().max(2_000).optional(),
+    deviceId: z.string().trim().max(128).optional(),
+    payloadRef: z.string().trim().max(256).optional(),
   })
   .strict();
 export type RecordCmmsMeterReadingV1 = z.infer<typeof RecordCmmsMeterReadingV1Schema>;
+
+export const IngestCmmsTelemetryBatchV1Schema = z
+  .object({
+    source: CmmsMeterReadingSourceV1Schema.default('IOT_TELEMETRY'),
+    readings: z
+      .array(
+        z
+          .object({
+            meterId: UuidSchema,
+            requestKey: UuidSchema,
+            value: z.number().finite(),
+            readAt: DateTimeSchema.optional(),
+            notes: z.string().trim().max(2_000).optional(),
+            deviceId: z.string().trim().max(128).optional(),
+          })
+          .strict(),
+      )
+      .min(1)
+      .max(500),
+  })
+  .strict();
+export type IngestCmmsTelemetryBatchV1 = z.infer<typeof IngestCmmsTelemetryBatchV1Schema>;
 
 export interface CmmsMeterV1 {
   readonly id: string;
@@ -808,11 +840,70 @@ export interface CmmsMeterReadingV1 {
   readonly meterId: string;
   readonly value: number;
   readonly readAt: string;
-  readonly source: 'MANUAL';
+  readonly source: CmmsMeterReadingSourceV1;
   readonly notes: string | null;
+  readonly deviceId?: string | null;
+  readonly payloadRef?: string | null;
   readonly recordedBy: string;
   readonly recordedAt: string;
 }
+
+// ─── Meter Triggers (Condition & Interval PM Automation) ───────────────────
+export const CmmsMeterTriggerTypeV1Schema = z.enum(['THRESHOLD_BREACH', 'USAGE_INTERVAL']);
+export type CmmsMeterTriggerTypeV1 = z.infer<typeof CmmsMeterTriggerTypeV1Schema>;
+
+export const CmmsMeterThresholdTypeV1Schema = z.enum(['UPPER', 'LOWER', 'OUT_OF_BOUNDS']);
+export type CmmsMeterThresholdTypeV1 = z.infer<typeof CmmsMeterThresholdTypeV1Schema>;
+
+export const CreateCmmsMeterTriggerV1Schema = z
+  .object({
+    meterId: UuidSchema,
+    triggerType: CmmsMeterTriggerTypeV1Schema,
+    thresholdType: CmmsMeterThresholdTypeV1Schema.optional(),
+    thresholdValue: z.number().finite().optional(),
+    intervalValue: z.number().positive().finite().optional(),
+    jobPlanId: UuidSchema.nullable().optional(),
+    workOrderTitle: TextSchema(200),
+    workOrderPriority: CmmsPriorityV1Schema.default('HIGH'),
+    isActive: z.boolean().default(true),
+  })
+  .strict();
+export type CreateCmmsMeterTriggerV1 = z.infer<typeof CreateCmmsMeterTriggerV1Schema>;
+
+export const UpdateCmmsMeterTriggerV1Schema = z
+  .object({
+    expectedVersion: z.number().int().positive(),
+    thresholdType: CmmsMeterThresholdTypeV1Schema.optional(),
+    thresholdValue: z.number().finite().nullable().optional(),
+    intervalValue: z.number().positive().finite().nullable().optional(),
+    jobPlanId: UuidSchema.nullable().optional(),
+    workOrderTitle: TextSchema(200).optional(),
+    workOrderPriority: CmmsPriorityV1Schema.optional(),
+    isActive: z.boolean().optional(),
+  })
+  .strict();
+export type UpdateCmmsMeterTriggerV1 = z.infer<typeof UpdateCmmsMeterTriggerV1Schema>;
+
+export interface CmmsMeterTriggerV1 {
+  readonly id: string;
+  readonly meterId: string;
+  readonly triggerType: CmmsMeterTriggerTypeV1;
+  readonly thresholdType: CmmsMeterThresholdTypeV1 | null;
+  readonly thresholdValue: number | null;
+  readonly intervalValue: number | null;
+  readonly lastTriggeredValue: number | null;
+  readonly lastTriggeredAt: string | null;
+  readonly jobPlanId: string | null;
+  readonly jobPlanTitle?: string | null;
+  readonly workOrderTitle: string;
+  readonly workOrderPriority: CmmsPriorityV1;
+  readonly isActive: boolean;
+  readonly version: number;
+  readonly createdBy: string;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+}
+
 
 // ─── Parts and stock ─────────────────────────────────────────────────────────────────────────────────────
 const PartFieldsSchema = {

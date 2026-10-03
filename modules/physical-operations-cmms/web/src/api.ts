@@ -8,6 +8,7 @@ import type {
   CmmsFailureHierarchyNodeV1,
   CmmsInventorySummaryV1,
   CmmsMeterReadingV1,
+  CmmsMeterTriggerV1,
   CmmsMeterV1,
   CmmsJobPlanV1,
   CmmsPageV1,
@@ -183,6 +184,21 @@ export const cmmsApi = {
     ),
   readings: (meterId: string) =>
     requestCmms<{ items: CmmsMeterReadingV1[] }>(`/meters/${id(meterId)}/readings`),
+
+  ingestTelemetryBatch: (input: { source?: string; readings: Array<{ meterId: string; requestKey: string; value: number; readAt?: string; notes?: string; deviceId?: string }> }) =>
+    requestCmms<{ processedCount: number; triggeredWorkOrderIds: string[] }>('/meters/telemetry/batch', post(input)),
+
+  listMeterTriggers: (meterId?: string) =>
+    requestCmms<{ items: CmmsMeterTriggerV1[] }>(meterId ? `/meters/triggers?meterId=${encodeURIComponent(meterId)}` : '/meters/triggers'),
+
+  createMeterTrigger: (input: Record<string, unknown>) =>
+    requestCmms<CmmsMeterTriggerV1>('/meters/triggers', post(input)),
+
+  updateMeterTrigger: (triggerId: string, input: Record<string, unknown>) =>
+    requestCmms<CmmsMeterTriggerV1>(`/meters/triggers/${id(triggerId)}`, patch(input)),
+
+  deleteMeterTrigger: (triggerId: string) =>
+    requestCmms<void>(`/meters/triggers/${id(triggerId)}`, { method: 'DELETE' }),
 
   searchParts: (query: Record<string, unknown> = {}) =>
     requestCmms<CmmsPageV1<CmmsPartV1>>('/parts/search', post(query)),
