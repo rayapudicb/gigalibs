@@ -5,7 +5,7 @@ Replace old content rather than appending to it, and update it at the end of eve
 
 ## State
 
-- **Active implementation item:** WI-EAM-002 is committed (`e4e4a69`) and in Review (.pi/work/WI-EAM-002.md). WI-EAM-001 is committed (`a1cea16`) and in Review (.pi/work/WI-EAM-001.md). Next: WI-EAM-003 (Maintenance Manuals, Standard Procedures & Failure Mode Hierarchy). WI-WFO-001–006 are committed (`94fae89`) and in Review (.pi/work/WI-WFO-006.md); Mobile Worker App (WI-WFO-007) is bookmarked and parked (`docs/architecture/MOBILE_WORKFORCEOPS_FUNCTIONAL_SPEC.md`). WI-OI-109 is in Review; WI-OI-103 and WI-OI-106 remain in Review; WI-OI-104, 105, 107 remain in Review; WI-OI-108 is Proposed.
+- **Active implementation item:** WI-EAM-003 (Maintenance Manuals, Standard Procedures & Failure Mode Hierarchy — implementation complete, awaiting commit). WI-EAM-002 is committed (`e4e4a69`) and in Review (.pi/work/WI-EAM-002.md). WI-EAM-001 is committed (`a1cea16`) and in Review (.pi/work/WI-EAM-001.md). WI-WFO-001–006 are committed (`94fae89`) and in Review (.pi/work/WI-WFO-006.md); Mobile Worker App (WI-WFO-007) is bookmarked and parked (`docs/architecture/MOBILE_WORKFORCEOPS_FUNCTIONAL_SPEC.md`). WI-OI-109 is in Review; WI-OI-103 and WI-OI-106 remain in Review; WI-OI-104, 105, 107 remain in Review; WI-OI-108 is Proposed.
 - **Wave 0:** WI-OI-080, 081, 082, 083 and 085 are in Review, waiting for human reviews. WI-OI-084 (mobile) has
   not started.
 - **Running locally (2026-10-02 14:16 IST):** every application service is on `3da222030dc2-a0ca08f61655`; the web is healthy on 5180 and the control plane is healthy on 3333.

@@ -45,9 +45,17 @@ import { PartsService } from '../parts/parts.service.js';
 
 const ACTIVE_STATUSES: readonly CmmsWorkOrderStatusV1[] = ['OPEN', 'IN_PROGRESS', 'ON_HOLD'];
 const EXECUTION_STATUSES: readonly CmmsWorkOrderStatusV1[] = ['IN_PROGRESS', 'ON_HOLD'];
-const WO_COLUMNS = `w.*, a.name AS asset_name`;
+const WO_COLUMNS = `w.*, a.name AS asset_name,
+  jp.title AS job_plan_title,
+  prob.code AS failure_problem_code,
+  cause.code AS failure_cause_code,
+  rem.code AS failure_remedy_code`;
 const WO_FROM = `gigalibs_cmms.work_orders w
-  LEFT JOIN gigalibs_cmms.assets a ON a.tenant_id = w.tenant_id AND a.id = w.asset_id`;
+  LEFT JOIN gigalibs_cmms.assets a ON a.tenant_id = w.tenant_id AND a.id = w.asset_id
+  LEFT JOIN gigalibs_cmms.cmms_job_plans jp ON jp.tenant_id = w.tenant_id AND jp.id = w.job_plan_id
+  LEFT JOIN gigalibs_cmms.cmms_failure_codes prob ON prob.tenant_id = w.tenant_id AND prob.id = w.failure_problem_id
+  LEFT JOIN gigalibs_cmms.cmms_failure_codes cause ON cause.tenant_id = w.tenant_id AND cause.id = w.failure_cause_id
+  LEFT JOIN gigalibs_cmms.cmms_failure_codes rem ON rem.tenant_id = w.tenant_id AND rem.id = w.failure_remedy_id`;
 
 /** Work-order provenance set by the service, never by the caller. */
 export interface WorkOrderOrigin {
@@ -177,8 +185,9 @@ export class WorkOrdersService {
         `INSERT INTO gigalibs_cmms.work_orders
            (tenant_id, wo_number, request_key, type, priority, title, description, asset_id, site_ref,
             department_id, assigned_to, due_at, requires_signature, estimated_hours, trigger_source,
-            pm_schedule_id, pm_occurrence_at, created_by, updated_by, correlation_id)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $18, $19)
+            pm_schedule_id, pm_occurrence_at, job_plan_id, failure_problem_id, failure_cause_id,
+            failure_remedy_id, created_by, updated_by, correlation_id)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $22, $23)
          RETURNING id`,
         [
           context.principal.tenantId,
@@ -198,10 +207,15 @@ export class WorkOrdersService {
           origin.triggerSource,
           origin.pmScheduleId,
           origin.pmOccurrenceAt,
+          input.jobPlanId ?? null,
+          input.failureProblemId ?? null,
+          input.failureCauseId ?? null,
+          input.failureRemedyId ?? null,
           context.principal.subject,
           context.correlationId,
         ],
       );
+
       id = inserted.rows[0]!.id;
     } catch (error) {
       translateConstraint(error, {
@@ -736,6 +750,7 @@ export class WorkOrdersService {
 
     return {
       ...mapWorkOrder(header.rows[0]),
+      ...mapWorkOrderDetailExtras(header.rows[0]),
       tasks: tasks.rows.map((row) => ({
         id: row.id,
         position: Number(row.position),
@@ -829,10 +844,29 @@ export function mapWorkOrder(row: any): CmmsWorkOrderV1 {
     estimatedHours: numberOrNull(row.estimated_hours),
     triggerSource: row.trigger_source,
     pmScheduleId: row.pm_schedule_id ?? null,
+    jobPlanId: row.job_plan_id ?? null,
+    failureProblemId: row.failure_problem_id ?? null,
+    failureCauseId: row.failure_cause_id ?? null,
+    failureRemedyId: row.failure_remedy_id ?? null,
     version: Number(row.version),
     createdBy: row.created_by,
     createdAt: iso(row.created_at),
     updatedAt: iso(row.updated_at),
+  };
+}
+
+/** Extended detail fields populated from JOIN aliases when available. */
+export function mapWorkOrderDetailExtras(row: any): {
+  jobPlanTitle?: string;
+  failureProblemCode?: string;
+  failureCauseCode?: string;
+  failureRemedyCode?: string;
+} {
+  return {
+    jobPlanTitle: row.job_plan_title ?? undefined,
+    failureProblemCode: row.failure_problem_code ?? undefined,
+    failureCauseCode: row.failure_cause_code ?? undefined,
+    failureRemedyCode: row.failure_remedy_code ?? undefined,
   };
 }
 

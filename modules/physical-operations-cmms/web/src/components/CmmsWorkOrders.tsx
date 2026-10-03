@@ -2,6 +2,8 @@
 
 import type {
   CmmsAssetV1,
+  CmmsFailureCodeV1,
+  CmmsJobPlanV1,
   CmmsPageV1,
   CmmsPartV1,
   CmmsPriorityV1,
@@ -596,6 +598,7 @@ function WorkOrderPanel({
 
       <LabourCard workOrder={workOrder} busy={busy} run={run} executing={executing} />
       <PartsCard workOrder={workOrder} busy={busy} run={run} executing={executing} />
+      <FailureAnalysisCard workOrder={workOrder} busy={busy} reload={reload} onChanged={onChanged} />
       <StaffingCard
         workOrder={workOrder}
         busy={busy}
@@ -1173,6 +1176,251 @@ function StaffingCard({
             Request staffing
           </Button>
         </form>
+      ) : null}
+    </Container>
+  );
+}
+// ─── Failure Analysis & Job Plans Card ───────────────────────────────────────
+
+function FailureAnalysisCard({
+  workOrder,
+  busy,
+  reload,
+  onChanged,
+}: {
+  workOrder: CmmsWorkOrderDetailV1;
+  busy: boolean;
+  reload: () => Promise<void>;
+  onChanged: () => Promise<void>;
+}) {
+  const [problems, setProblems] = useState<readonly CmmsFailureCodeV1[]>([]);
+  const [causes, setCauses] = useState<readonly CmmsFailureCodeV1[]>([]);
+  const [remedies, setRemedies] = useState<readonly CmmsFailureCodeV1[]>([]);
+  const [jobPlans, setJobPlans] = useState<readonly CmmsJobPlanV1[]>([]);
+  const [selectedProblem, setSelectedProblem] = useState(workOrder.failureProblemId ?? '');
+  const [selectedCause, setSelectedCause] = useState(workOrder.failureCauseId ?? '');
+  const [selectedRemedy, setSelectedRemedy] = useState(workOrder.failureRemedyId ?? '');
+  const [selectedJobPlan, setSelectedJobPlan] = useState(workOrder.jobPlanId ?? '');
+  const [saving, setSaving] = useState(false);
+  const [applying, setApplying] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [applyError, setApplyError] = useState<string | null>(null);
+  const [safetyNotes, setSafetyNotes] = useState<string[]>([]);
+  const active = ACTIVE.includes(workOrder.status);
+
+  useEffect(() => {
+    void Promise.all([
+      cmmsApi.listFailureCodes('PROBLEM'),
+      cmmsApi.listFailureCodes('CAUSE'),
+      cmmsApi.listFailureCodes('REMEDY'),
+      cmmsApi.listJobPlans(),
+    ]).then(([p, c, r, jp]) => {
+      setProblems(p.items);
+      setCauses(c.items);
+      setRemedies(r.items);
+      setJobPlans(jp.items);
+    });
+  }, []);
+
+  // When job plan selection changes, surface safety notes from plan.safetyGuidelines and SAFETY_CHECK tasks
+  useEffect(() => {
+    const plan = jobPlans.find((p) => p.id === selectedJobPlan);
+    if (plan) {
+      const notes: string[] = [];
+      if (plan.safetyGuidelines) notes.push(`📋 Safety guidelines: ${plan.safetyGuidelines}`);
+      const safetyTasks = plan.tasks.filter((t) => t.taskType === 'SAFETY_CHECK');
+      for (const t of safetyTasks) {
+        notes.push(`⚠️ LOTO/Safety check required: ${t.label} (${t.estimatedMinutes} min)`);
+      }
+      setSafetyNotes(notes);
+    } else {
+      setSafetyNotes([]);
+    }
+  }, [selectedJobPlan, jobPlans]);
+
+
+  async function saveAttribution() {
+    setSaving(true);
+    setError(null);
+    try {
+      await cmmsApi.recordFailureAttribution(workOrder.id, {
+        failureProblemId: selectedProblem || null,
+        failureCauseId: selectedCause || null,
+        failureRemedyId: selectedRemedy || null,
+      });
+      await reload();
+      await onChanged();
+    } catch (reason) {
+      setError((reason as Error).message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function applyJobPlan() {
+    if (!selectedJobPlan) return;
+    setApplying(true);
+    setApplyError(null);
+    try {
+      await cmmsApi.applyJobPlan(selectedJobPlan, workOrder.id);
+      await reload();
+      await onChanged();
+    } catch (reason) {
+      setApplyError((reason as Error).message);
+    } finally {
+      setApplying(false);
+    }
+  }
+
+  return (
+    <Container className="p-5">
+      <Heading level="h3">Failure Analysis & Standard Procedures</Heading>
+
+      {/* Current attribution summary */}
+      {(workOrder.failureProblemCode || workOrder.jobPlanTitle) ? (
+        <dl className="mt-3 grid grid-cols-2 gap-2 txt-compact-small">
+          {workOrder.failureProblemCode ? (
+            <div>
+              <dt className="text-ui-fg-subtle">Problem</dt>
+              <dd>{workOrder.failureProblemCode}</dd>
+            </div>
+          ) : null}
+          {workOrder.failureCauseCode ? (
+            <div>
+              <dt className="text-ui-fg-subtle">Cause</dt>
+              <dd>{workOrder.failureCauseCode}</dd>
+            </div>
+          ) : null}
+          {workOrder.failureRemedyCode ? (
+            <div>
+              <dt className="text-ui-fg-subtle">Remedy</dt>
+              <dd>{workOrder.failureRemedyCode}</dd>
+            </div>
+          ) : null}
+          {workOrder.jobPlanTitle ? (
+            <div>
+              <dt className="text-ui-fg-subtle">SOP / Job Plan</dt>
+              <dd>{workOrder.jobPlanTitle}</dd>
+            </div>
+          ) : null}
+        </dl>
+      ) : (
+        <Text size="small" className="mt-2 text-ui-fg-subtle">
+          No failure attribution or job plan recorded yet.
+        </Text>
+      )}
+
+      {active ? (
+        <>
+          {/* Failure Attribution */}
+          <div className="mt-4 space-y-3">
+            <Text size="small" weight="plus">Record failure codes (Problem → Cause → Remedy)</Text>
+            <div className="grid grid-cols-3 gap-2">
+              <div>
+                <label className="txt-compact-xsmall text-ui-fg-subtle block mb-1">Problem</label>
+                <select
+                  aria-label="Failure problem"
+                  value={selectedProblem}
+                  onChange={(e) => setSelectedProblem(e.target.value)}
+                  className={selectClass}
+                >
+                  <option value="">— none —</option>
+                  {problems.map((p) => (
+                    <option key={p.id} value={p.id}>{p.code} · {p.description}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="txt-compact-xsmall text-ui-fg-subtle block mb-1">Cause</label>
+                <select
+                  aria-label="Failure cause"
+                  value={selectedCause}
+                  onChange={(e) => setSelectedCause(e.target.value)}
+                  className={selectClass}
+                >
+                  <option value="">— none —</option>
+                  {causes.map((c) => (
+                    <option key={c.id} value={c.id}>{c.code} · {c.description}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="txt-compact-xsmall text-ui-fg-subtle block mb-1">Remedy</label>
+                <select
+                  aria-label="Failure remedy"
+                  value={selectedRemedy}
+                  onChange={(e) => setSelectedRemedy(e.target.value)}
+                  className={selectClass}
+                >
+                  <option value="">— none —</option>
+                  {remedies.map((r) => (
+                    <option key={r.id} value={r.id}>{r.code} · {r.description}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            {error ? <Text size="small" className="text-ui-fg-error">{error}</Text> : null}
+            <Button
+              size="small"
+              variant="secondary"
+              isLoading={saving || busy}
+              onClick={() => void saveAttribution()}
+            >
+              Save failure attribution
+            </Button>
+          </div>
+
+          {/* Apply Job Plan / SOP */}
+          <div className="mt-5 space-y-3 border-t border-ui-border-base pt-4">
+            <Text size="small" weight="plus">Apply Standard Operating Procedure / Job Plan</Text>
+            {jobPlans.length === 0 ? (
+              <Text size="small" className="text-ui-fg-subtle">No job plans available.</Text>
+            ) : (
+              <>
+                <select
+                  aria-label="Select job plan"
+                  value={selectedJobPlan}
+                  onChange={(e) => setSelectedJobPlan(e.target.value)}
+                  className={selectClass}
+                >
+                  <option value="">— select a job plan —</option>
+                  {jobPlans.map((jp) => (
+                    <option key={jp.id} value={jp.id}>
+                      {jp.code} · {jp.title}
+                      {jp.estimatedDurationMinutes ? ` (${jp.estimatedDurationMinutes} min)` : ''}
+                    </option>
+                  ))}
+                </select>
+
+                {/* Safety / LOTO guidance */}
+                {safetyNotes.length > 0 ? (
+                  <div className="rounded-md border border-ui-tag-orange-border bg-ui-tag-orange-bg p-3 space-y-1">
+                    <Text size="small" weight="plus" className="text-ui-tag-orange-text">
+                      ⚠️ Safety & LOTO requirements
+                    </Text>
+                    {safetyNotes.map((note, i) => (
+                      <Text key={i} size="xsmall" className="text-ui-tag-orange-text">{note}</Text>
+                    ))}
+                  </div>
+                ) : null}
+
+                {applyError ? (
+                  <Text size="small" className="text-ui-fg-error">{applyError}</Text>
+                ) : null}
+
+                <Button
+                  size="small"
+                  variant="secondary"
+                  isLoading={applying || busy}
+                  disabled={!selectedJobPlan}
+                  onClick={() => void applyJobPlan()}
+                >
+                  Apply SOP tasks to work order
+                </Button>
+              </>
+            )}
+          </div>
+        </>
       ) : null}
     </Container>
   );

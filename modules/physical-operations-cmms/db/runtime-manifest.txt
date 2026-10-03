@@ -13,3 +13,4 @@
 000014_cmms_outbox_retention.up.sql
 000015_eam_spatial_cafm_hierarchy.up.sql
 000016_eam_asset_classification_and_specs.up.sql
+000017_eam_failure_hierarchy_and_job_plans.up.sql

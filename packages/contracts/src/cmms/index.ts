@@ -320,7 +320,139 @@ export interface CmmsEquipmentNodeV1 {
   readonly children: readonly CmmsEquipmentNodeV1[];
 }
 
+// ─── Failure Hierarchy & Job Plans (WI-EAM-003) ──────────────────────────────────────────
+export const CmmsFailureCodeTypeV1Schema = z.enum(['PROBLEM', 'CAUSE', 'REMEDY']);
+export type CmmsFailureCodeTypeV1 = z.infer<typeof CmmsFailureCodeTypeV1Schema>;
+
+export const CreateCmmsFailureCodeV1Schema = z
+  .object({
+    type: CmmsFailureCodeTypeV1Schema,
+    code: IdentifierSchema,
+    description: TextSchema(500),
+    parentCodeId: UuidSchema.nullable().optional(),
+    classificationId: UuidSchema.nullable().optional(),
+  })
+  .strict();
+export type CreateCmmsFailureCodeV1 = z.infer<typeof CreateCmmsFailureCodeV1Schema>;
+
+export const UpdateCmmsFailureCodeV1Schema = z
+  .object({
+    expectedVersion: z.number().int().positive(),
+    description: TextSchema(500).optional(),
+    parentCodeId: UuidSchema.nullable().optional(),
+    classificationId: UuidSchema.nullable().optional(),
+  })
+  .strict();
+export type UpdateCmmsFailureCodeV1 = z.infer<typeof UpdateCmmsFailureCodeV1Schema>;
+
+export interface CmmsFailureCodeV1 {
+  readonly id: string;
+  readonly type: CmmsFailureCodeTypeV1;
+  readonly code: string;
+  readonly description: string;
+  readonly parentCodeId: string | null;
+  readonly classificationId: string | null;
+  readonly version: number;
+  readonly createdBy: string;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+}
+
+export interface CmmsFailureHierarchyNodeV1 extends CmmsFailureCodeV1 {
+  readonly children: readonly CmmsFailureHierarchyNodeV1[];
+}
+
+export const CmmsJobPlanTaskTypeV1Schema = z.enum([
+  'INSPECTION',
+  'LUBRICATION',
+  'REPLACEMENT',
+  'CALIBRATION',
+  'SAFETY_CHECK',
+]);
+export type CmmsJobPlanTaskTypeV1 = z.infer<typeof CmmsJobPlanTaskTypeV1Schema>;
+
+export const CreateCmmsJobPlanTaskV1Schema = z
+  .object({
+    sequence: z.number().int().nonnegative(),
+    label: TextSchema(240),
+    taskType: CmmsJobPlanTaskTypeV1Schema.default('INSPECTION'),
+    required: z.boolean().default(true),
+    estimatedMinutes: z.number().int().positive().max(10_000).default(15),
+  })
+  .strict();
+export type CreateCmmsJobPlanTaskV1 = z.infer<typeof CreateCmmsJobPlanTaskV1Schema>;
+
+export interface CmmsJobPlanTaskV1 {
+  readonly id: string;
+  readonly jobPlanId: string;
+  readonly sequence: number;
+  readonly label: string;
+  readonly taskType: CmmsJobPlanTaskTypeV1;
+  readonly required: boolean;
+  readonly estimatedMinutes: number;
+  readonly createdAt: string;
+}
+
+export const CreateCmmsJobPlanV1Schema = z
+  .object({
+    code: IdentifierSchema,
+    title: TextSchema(200),
+    description: z.string().trim().max(4_000).nullable().optional(),
+    classificationId: UuidSchema.nullable().optional(),
+    estimatedDurationMinutes: z.number().int().positive().max(10_000).default(60),
+    safetyGuidelines: z.string().trim().max(10_000).nullable().optional(),
+    tasks: z.array(CreateCmmsJobPlanTaskV1Schema).max(50).default([]),
+  })
+  .strict();
+export type CreateCmmsJobPlanV1 = z.infer<typeof CreateCmmsJobPlanV1Schema>;
+
+export const UpdateCmmsJobPlanV1Schema = z
+  .object({
+    expectedVersion: z.number().int().positive(),
+    title: TextSchema(200).optional(),
+    description: z.string().trim().max(4_000).nullable().optional(),
+    classificationId: UuidSchema.nullable().optional(),
+    estimatedDurationMinutes: z.number().int().positive().max(10_000).optional(),
+    safetyGuidelines: z.string().trim().max(10_000).nullable().optional(),
+    tasks: z.array(CreateCmmsJobPlanTaskV1Schema).max(50).optional(),
+  })
+  .strict();
+export type UpdateCmmsJobPlanV1 = z.infer<typeof UpdateCmmsJobPlanV1Schema>;
+
+export interface CmmsJobPlanV1 {
+  readonly id: string;
+  readonly code: string;
+  readonly title: string;
+  readonly description: string | null;
+  readonly classificationId: string | null;
+  readonly estimatedDurationMinutes: number;
+  readonly safetyGuidelines: string | null;
+  readonly version: number;
+  readonly tasks: readonly CmmsJobPlanTaskV1[];
+  readonly createdBy: string;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+}
+
+export const ApplyCmmsJobPlanV1Schema = z
+  .object({
+    expectedVersion: z.number().int().positive(),
+  })
+  .strict();
+export type ApplyCmmsJobPlanV1 = z.infer<typeof ApplyCmmsJobPlanV1Schema>;
+
+export const RecordCmmsFailureAttributionV1Schema = z
+  .object({
+    expectedVersion: z.number().int().positive(),
+    failureProblemId: UuidSchema.nullable().optional(),
+    failureCauseId: UuidSchema.nullable().optional(),
+    failureRemedyId: UuidSchema.nullable().optional(),
+  })
+  .strict();
+export type RecordCmmsFailureAttributionV1 = z.infer<typeof RecordCmmsFailureAttributionV1Schema>;
+
 // ─── Work orders ─────────────────────────────────────────────────────────────────────────────────────────
+
 export const CMMS_MAX_WORK_ORDER_TASKS = 50;
 const TaskLabelSchema = TextSchema(240);
 
@@ -339,6 +471,10 @@ export const CreateCmmsWorkOrderV1Schema = z
     dueAt: DateTimeSchema.optional(),
     requiresSignature: z.boolean().default(false),
     estimatedHours: z.number().positive().max(10_000).optional(),
+    jobPlanId: UuidSchema.nullable().optional(),
+    failureProblemId: UuidSchema.nullable().optional(),
+    failureCauseId: UuidSchema.nullable().optional(),
+    failureRemedyId: UuidSchema.nullable().optional(),
     tasks: z
       .array(z.object({ label: TaskLabelSchema, required: z.boolean().default(true) }).strict())
       .max(CMMS_MAX_WORK_ORDER_TASKS)
@@ -356,6 +492,10 @@ export const UpdateCmmsWorkOrderV1Schema = z
     assignedTo: CmmsPrincipalRefSchema.nullable().optional(),
     dueAt: DateTimeSchema.nullable().optional(),
     estimatedHours: z.number().positive().max(10_000).nullable().optional(),
+    jobPlanId: UuidSchema.nullable().optional(),
+    failureProblemId: UuidSchema.nullable().optional(),
+    failureCauseId: UuidSchema.nullable().optional(),
+    failureRemedyId: UuidSchema.nullable().optional(),
   })
   .strict();
 export type UpdateCmmsWorkOrderV1 = z.infer<typeof UpdateCmmsWorkOrderV1Schema>;
@@ -506,6 +646,10 @@ export interface CmmsWorkOrderV1 {
   readonly estimatedHours: number | null;
   readonly triggerSource: 'MANUAL' | 'PM_SCHEDULE';
   readonly pmScheduleId: string | null;
+  readonly jobPlanId: string | null;
+  readonly failureProblemId: string | null;
+  readonly failureCauseId: string | null;
+  readonly failureRemedyId: string | null;
   readonly version: number;
   readonly createdBy: string;
   readonly createdAt: string;
@@ -522,6 +666,10 @@ export interface CmmsWorkOrderDetailV1 extends CmmsWorkOrderV1 {
   /** Latest Workforce staffing request and the bookings Workforce made for it (WI-OI-068). */
   readonly staffing: CmmsStaffingV1 | null;
   readonly bookings: readonly CmmsWorkOrderBookingV1[];
+  readonly jobPlanTitle?: string | null;
+  readonly failureProblemCode?: string | null;
+  readonly failureCauseCode?: string | null;
+  readonly failureRemedyCode?: string | null;
 }
 
 // ─── Preventive maintenance ──────────────────────────────────────────────────────────────────────────────

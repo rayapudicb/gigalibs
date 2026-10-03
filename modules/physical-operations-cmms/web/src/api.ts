@@ -4,9 +4,12 @@ import type {
   CmmsAssetV1,
   CmmsClassificationTreeV1,
   CmmsEquipmentNodeV1,
+  CmmsFailureCodeV1,
+  CmmsFailureHierarchyNodeV1,
   CmmsInventorySummaryV1,
   CmmsMeterReadingV1,
   CmmsMeterV1,
+  CmmsJobPlanV1,
   CmmsPageV1,
   CmmsPartV1,
   CmmsPmScheduleV1,
@@ -193,6 +196,49 @@ export const cmmsApi = {
     ),
   movements: (partId: string) =>
     requestCmms<{ items: CmmsStockMovementV1[] }>(`/parts/${id(partId)}/movements`),
+
+  // ─── Reliability: Failure Codes ─────────────────────────────────────────────
+  listFailureHierarchyTree: (type?: string) =>
+    requestCmms<{ items: CmmsFailureHierarchyNodeV1[] }>(
+      `/failure-codes/tree${type ? `?type=${encodeURIComponent(type)}` : ''}`,
+    ),
+  listFailureCodes: (type?: string) =>
+    requestCmms<{ items: CmmsFailureCodeV1[] }>(
+      `/failure-codes${type ? `?type=${encodeURIComponent(type)}` : ''}`,
+    ),
+  createFailureCode: (input: Record<string, unknown>) =>
+    requestCmms<CmmsFailureCodeV1>('/failure-codes', post(input)),
+  updateFailureCode: (failureCodeId: string, input: Record<string, unknown>) =>
+    requestCmms<CmmsFailureCodeV1>(`/failure-codes/${id(failureCodeId)}`, patch(input)),
+  deleteFailureCode: (failureCodeId: string) =>
+    requestCmms<void>(`/failure-codes/${id(failureCodeId)}`, { method: 'DELETE' }),
+
+  // ─── Reliability: Job Plans ──────────────────────────────────────────────────
+  listJobPlans: (classificationId?: string) =>
+    requestCmms<{ items: CmmsJobPlanV1[] }>(
+      `/job-plans${classificationId ? `?classificationId=${encodeURIComponent(classificationId)}` : ''}`,
+    ),
+  getJobPlan: (jobPlanId: string) =>
+    requestCmms<CmmsJobPlanV1>(`/job-plans/${id(jobPlanId)}`),
+  createJobPlan: (input: Record<string, unknown>) =>
+    requestCmms<CmmsJobPlanV1>('/job-plans', post(input)),
+  updateJobPlan: (jobPlanId: string, input: Record<string, unknown>) =>
+    requestCmms<CmmsJobPlanV1>(`/job-plans/${id(jobPlanId)}`, patch(input)),
+  applyJobPlan: (jobPlanId: string, workOrderId: string) =>
+    requestCmms<{ success: boolean }>(
+      `/job-plans/${id(jobPlanId)}/apply-to-work-order/${id(workOrderId)}`,
+      post({}),
+    ),
+
+  // ─── Reliability: Failure Attribution ───────────────────────────────────────
+  recordFailureAttribution: (
+    workOrderId: string,
+    input: { failureProblemId?: string | null; failureCauseId?: string | null; failureRemedyId?: string | null },
+  ) =>
+    requestCmms<{ success: boolean }>(
+      `/work-orders/${id(workOrderId)}/failure-attribution`,
+      post(input),
+    ),
 };
 
 function text(value: unknown): string | undefined {

@@ -25,6 +25,7 @@ import { EamSpacesController } from './spaces/spaces.controller.js';
 import { EamSpacesService } from './spaces/spaces.service.js';
 import { ClassificationsController } from './classifications/classifications.controller.js';
 import { ClassificationsService } from './classifications/classifications.service.js';
+import { ReliabilityModule } from './reliability/reliability.module.js';
 
 /**
  * CMMS core runtime (WI-OI-038, roadmap P4): assets, work orders, preventive maintenance, meters and parts.
@@ -33,7 +34,7 @@ import { ClassificationsService } from './classifications/classifications.servic
  * mounted.
  */
 @Module({
-  imports: [DatabaseModule],
+  imports: [DatabaseModule, ReliabilityModule],
   controllers: [
     HealthController,
     AssetsController,
