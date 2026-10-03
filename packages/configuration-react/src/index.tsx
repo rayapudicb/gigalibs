@@ -531,3 +531,11 @@ export {
   type GigaFormEngineComponent,
   type GigaFormEngineDocument,
 } from './formengine.js';
+
+export {
+  DictionaryRenderer,
+  evaluateDictionaryCondition,
+  validateDictionaryRules,
+  type DictionaryRendererProps,
+} from './DictionaryRenderer.js';
+

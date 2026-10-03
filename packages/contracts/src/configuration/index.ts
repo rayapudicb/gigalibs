@@ -1,5 +1,9 @@
 import { z } from 'zod';
 import { GovernedCatalogueDefinitionSchema } from './catalogue.js';
+import {
+  DictionaryChangeSetDefinitionSchema,
+  DictionaryPackageDefinitionV1Schema,
+} from './dictionary.js';
 
 // The accepted Configuration Studio performance profile exercises 250 fields.
 // Keep one shared hard ceiling so API parsing and surface registration cannot
@@ -240,10 +244,11 @@ export const ConfigurationDefinitionSchema = z
   })
   .strict();
 
-/** A change set carries either a form-surface definition or a governed catalogue (WI-OI-064c). */
+/** A change set carries a form-surface definition, a governed catalogue, or an application dictionary (WI-OI-110). */
 export const ConfigurationChangeSetDefinitionSchema = z.union([
   ConfigurationDefinitionSchema,
   GovernedCatalogueDefinitionSchema,
+  DictionaryChangeSetDefinitionSchema,
 ]);
 export type ConfigurationChangeSetDefinition = z.infer<typeof ConfigurationChangeSetDefinitionSchema>;
 
@@ -375,6 +380,9 @@ export const ModuleAdapterDescriptorV1Schema = z
       .strict(),
     filterContract: SafeFilterContractDescriptorV1Schema,
     surface: ConfigurationSurfaceRegistrationSchema,
+    dictionaryContribution: DictionaryPackageDefinitionV1Schema.optional(),
+    registeredResolvers: z.array(ConfigurationKeySchema).max(50).optional(),
+    registeredActionHandlers: z.array(z.string().trim().min(1).max(120)).max(50).optional(),
   })
   .strict();
 
@@ -939,3 +947,4 @@ export type ConfigurationSavedFilterResponse = z.infer<
 export * from './catalogue.js';
 export * from './packs.js';
 export * from './packs.generated.js';
+export * from './dictionary.js';

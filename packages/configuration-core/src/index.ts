@@ -513,3 +513,5 @@ export function canonicalJson(value: unknown): string {
 export * from './format.js';
 export * from './catalogue-compiler.js';
 export * from './governed-catalogues.js';
+export * from './dictionary-compiler.js';
+export * from './dictionary-evaluator.js';

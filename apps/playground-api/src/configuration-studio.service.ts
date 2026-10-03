@@ -5,9 +5,11 @@ import {
   canonicalJson,
   bundledGovernedCatalogue,
   classifyConfigurationImpact,
+  classifyDictionaryImpact,
   classifyGovernedCatalogueChange,
   compareConfigurationDefinitions,
   compileConfiguration,
+  compileDictionaryPackage,
   compileGovernedCatalogue,
   listBundledGovernedCatalogues,
   validateConfigurationValues,
@@ -17,6 +19,9 @@ import {
   LEGACY_GOVERNED_CATALOGUE_SCOPES,
   SOLUTION_CONFIGURATION_MODULE_KEY,
   isGovernedCatalogueDefinition,
+  isDictionaryChangeSetDefinition,
+  isDictionaryManifest,
+  type CompiledDictionaryManifestV1,
   normaliseCountryPack,
   normaliseIndustryPack,
   type CountryPackV2,
@@ -547,6 +552,22 @@ export class ConfigurationStudioService {
       return base;
     }
     return this.listDynamicSurfaces(tenantId, base);
+  }
+
+  listDescriptors(): readonly ModuleAdapterDescriptorV1[] {
+    return this.adapterRegistry.descriptors();
+  }
+
+  listDictionaryContributions() {
+    return this.adapterRegistry
+      .descriptors()
+      .filter((d) => d.dictionaryContribution !== undefined)
+      .map((d) => ({
+        moduleKey: d.moduleKey,
+        entityKey: d.entityKey,
+        surfaceKey: d.surfaceKey,
+        dictionaryContribution: d.dictionaryContribution!,
+      }));
   }
 
   private async listDynamicSurfaces(
@@ -1321,7 +1342,12 @@ export class ConfigurationStudioService {
       requestChecksum,
     );
     if (replay) return replay;
-    const compiled = compileChangeSetDefinition(dto.definition);
+    const descriptor = this.adapterRegistry.descriptor(
+      dto.definition.moduleKey,
+      dto.definition.entityKey,
+      dto.definition.surfaceKey,
+    );
+    const compiled = compileChangeSetDefinition(dto.definition, descriptor);
     const result = await prisma.$transaction(async (tx) => {
       const changeSet = await tx.configurationChangeSet.create({
         data: {
@@ -1378,7 +1404,12 @@ export class ConfigurationStudioService {
       throw new ConflictException('Only draft or validated change sets can be edited.');
     if (current.version !== dto.expectedVersion)
       throw new ConflictException('The change set changed; reload before editing.');
-    const compiled = compileChangeSetDefinition(dto.definition);
+    const descriptor = this.adapterRegistry.descriptor(
+      dto.definition.moduleKey,
+      dto.definition.entityKey,
+      dto.definition.surfaceKey,
+    );
+    const compiled = compileChangeSetDefinition(dto.definition, descriptor);
     const updated = await prisma.configurationChangeSet.updateMany({
       where: { id, tenantId, version: dto.expectedVersion },
       data: {
@@ -1906,7 +1937,9 @@ export class ConfigurationStudioService {
       activatedAt: activation.activatedAt,
       manifest: isGovernedCatalogueDefinition(activation.manifest)
         ? activation.manifest
-        : filterManifest(activation.manifest, permissions),
+        : isDictionaryManifest(activation.manifest)
+          ? filterDictionaryManifest(activation.manifest as unknown as CompiledDictionaryManifestV1, permissions)
+          : filterManifest(activation.manifest, permissions),
       checksum: activation.checksum,
     };
   }
@@ -2173,6 +2206,10 @@ export class ConfigurationStudioService {
       // Packs belong to the solution layer (WI-OI-107) and need no module entitlement.
       const { moduleKey } = definition as GovernedCatalogueDefinition;
       if (moduleKey !== SOLUTION_CONFIGURATION_MODULE_KEY) await this.requireEntitlement(tenantId, moduleKey);
+      return;
+    }
+    if (isDictionaryChangeSetDefinition(definition)) {
+      await this.requireEntitlement(tenantId, definition.moduleKey);
       return;
     }
     this.assertRegisteredSurface(definition as ConfigurationDefinition);
@@ -2453,6 +2490,12 @@ export class ConfigurationStudioService {
         definition as GovernedCatalogueDefinition,
       );
     }
+    if (isDictionaryChangeSetDefinition(definition)) {
+      return classifyDictionaryImpact(
+        (latest.manifest as any) ?? {},
+        definition.dictionary,
+      ).classification;
+    }
     return classifyConfigurationImpact(
       compareConfigurationDefinitions(
         latest.manifest as unknown as CompiledConfigurationManifest,
@@ -2494,6 +2537,36 @@ export class ConfigurationStudioService {
         targetChecksum,
         classification: baseline
           ? classifyGovernedCatalogueChange(baseline.manifest as unknown as GovernedCatalogueDefinition, catalogue)
+          : 'COMPATIBLE',
+        changes: [],
+        scanned: { configurationRecords: 0, extensionValues: 0 },
+        incompatible: { configurationRecords: 0, extensionValues: 0, samples: [] },
+        activationAllowed: true,
+      };
+    }
+    if (isDictionaryManifest(target) || isDictionaryChangeSetDefinition(target)) {
+      const targetDict = isDictionaryChangeSetDefinition(target)
+        ? target.dictionary
+        : target;
+      const targetKey = isDictionaryChangeSetDefinition(target)
+        ? { moduleKey: target.moduleKey, entityKey: target.entityKey, surfaceKey: target.surfaceKey }
+        : {
+            moduleKey: (target as any).entities?.[0]?.moduleKey ?? 'tenant-settings',
+            entityKey: (target as any).entities?.[0]?.entityKey ?? 'tenant-profile',
+            surfaceKey: (target as any).packageKey ?? 'tenant-profile-dictionary',
+          };
+      return {
+        moduleKey: targetKey.moduleKey,
+        entityKey: targetKey.entityKey,
+        surfaceKey: targetKey.surfaceKey,
+        baselinePublishedVersionId: baseline?.id ?? null,
+        targetPublishedVersionId,
+        targetChecksum,
+        classification: baseline
+          ? classifyDictionaryImpact(
+              (baseline.manifest as any) ?? {},
+              targetDict as any,
+            ).classification
           : 'COMPATIBLE',
         changes: [],
         scanned: { configurationRecords: 0, extensionValues: 0 },
@@ -3230,8 +3303,44 @@ function assertAuthorizedValues(
   }
 }
 
-function compileChangeSetDefinition(definition: ConfigurationChangeSetDefinition) {
-  return isGovernedCatalogueDefinition(definition)
-    ? compileGovernedCatalogue(definition)
-    : compileConfiguration(definition);
+function compileChangeSetDefinition(
+  definition: ConfigurationChangeSetDefinition,
+  descriptor?: ModuleAdapterDescriptorV1,
+) {
+  if (isGovernedCatalogueDefinition(definition)) {
+    return compileGovernedCatalogue(definition);
+  }
+  if (isDictionaryChangeSetDefinition(definition)) {
+    return compileDictionaryPackage(definition.dictionary, {
+      baseline: descriptor?.dictionaryContribution,
+      registeredActionHandlers: descriptor?.registeredActionHandlers,
+      registeredResolvers: descriptor?.registeredResolvers,
+    });
+  }
+  return compileConfiguration(definition);
+}
+
+function filterDictionaryManifest(
+  manifest: CompiledDictionaryManifestV1,
+  permissions: string[],
+): CompiledDictionaryManifestV1 {
+  const filteredNav = manifest.navigation.filter(
+    (item) =>
+      !item.requiredPermissions?.length ||
+      item.requiredPermissions.every((p) => hasPermission(permissions, p)),
+  );
+  const filteredActions = manifest.actions.filter(
+    (act) =>
+      !act.requiredPermissions?.length ||
+      act.requiredPermissions.every((p) => hasPermission(permissions, p)),
+  );
+  const filteredFields = manifest.fields.filter(
+    (f) => !f.readPermission || hasPermission(permissions, f.readPermission),
+  );
+  return {
+    ...manifest,
+    navigation: filteredNav,
+    actions: filteredActions,
+    fields: filteredFields,
+  };
 }

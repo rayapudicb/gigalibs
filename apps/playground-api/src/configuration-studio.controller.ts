@@ -107,6 +107,18 @@ export class ConfigurationStudioController {
     );
   }
 
+  @Get('dictionary/descriptors')
+  @RequirePermissions('configuration:read')
+  async dictionaryDescriptors() {
+    return this.configuration.listDescriptors();
+  }
+
+  @Get('dictionary/contributions')
+  @RequirePermissions('configuration:read')
+  async dictionaryContributions() {
+    return this.configuration.listDictionaryContributions();
+  }
+
   @Get('change-sets')
   @RequirePermissions('configuration:read')
   async list(@CurrentTenant('tenantId') tenantId: string) {

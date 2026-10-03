@@ -67,8 +67,9 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { ModuleControlBar } from '@/components/layout/ModuleControlBar';
 import { SolutionPacksPanel } from '@/components/configuration/SolutionPacksPanel';
+import { ApplicationDictionaryWorkbench } from '@/components/configuration/ApplicationDictionaryWorkbench';
 
-type StudioTab = 'templates' | 'industry-packs' | 'active-apps' | 'surfaces';
+type StudioTab = 'templates' | 'industry-packs' | 'active-apps' | 'surfaces' | 'dictionary';
 
 type RuntimeApp = {
   entityKey: string;
@@ -287,6 +288,11 @@ export function UniversalDynamicFormsStudio({
               id: 'surfaces',
               label: 'Registered Extension Surfaces',
               badge: surfaces.length,
+            },
+            {
+              id: 'dictionary',
+              label: 'Application Dictionary',
+              icon: <BookOpen className="h-4 w-4 text-emerald-600" />,
             },
           ]}
           activeView={activeTab}
@@ -701,6 +707,16 @@ export function UniversalDynamicFormsStudio({
               </div>
             </div>
           </div>
+        )}
+
+        {/* TAB 5: APPLICATION DICTIONARY */}
+        {activeTab === 'dictionary' && (
+          <ApplicationDictionaryWorkbench
+            currentUserId={currentUserId}
+            permissions={permissions}
+            tenantId={tenantId}
+            tenantName={tenantName}
+          />
         )}
 
         {/* MODAL: LIVE INTERACTIVE PREVIEW */}
