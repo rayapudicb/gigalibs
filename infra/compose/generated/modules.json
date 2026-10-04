@@ -42,5 +42,27 @@
     "readOnlyTables": [
       "auth_revocation_events"
     ]
+  },
+  "universal-procurement": {
+    "hosting": "host",
+    "basePath": "/universal-procurement",
+    "package": "@gigalibs/universal-procurement-api",
+    "directory": "modules/universal-procurement",
+    "image": "gigalibs/module-host",
+    "component": "module-host",
+    "title": "Universal Procurement & Payables",
+    "workItem": "WI-OI-092",
+    "prefix": "UNIVERSAL_PROCUREMENT",
+    "service": "module-host",
+    "port": 4790,
+    "schema": "gigalibs_procurement",
+    "migrationVersion": 1,
+    "audience": "gigalibs-universal-procurement-api",
+    "appendOnlyTables": [
+      "audit_events"
+    ],
+    "readOnlyTables": [
+      "auth_revocation_events"
+    ]
   }
 }

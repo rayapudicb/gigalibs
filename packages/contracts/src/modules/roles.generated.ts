@@ -85,6 +85,52 @@ export const moduleDefaultRoles: readonly ModuleDefaultRole[] = [
     ]
   },
   {
+    "catalogKey": "universal-procurement",
+    "key": "procurement-requester",
+    "name": "Procurement Requester",
+    "description": "Creates and tracks departmental purchase requisitions.",
+    "permissions": [
+      "procurement:read",
+      "procurement:requisitions:manage"
+    ]
+  },
+  {
+    "catalogKey": "universal-procurement",
+    "key": "procurement-approver",
+    "name": "Procurement Approver",
+    "description": "Approves requisitions and orders according to Delegation of Authority policies.",
+    "permissions": [
+      "procurement:read",
+      "procurement:requisitions:approve",
+      "procurement:orders:approve"
+    ]
+  },
+  {
+    "catalogKey": "universal-procurement",
+    "key": "purchasing-agent",
+    "name": "Purchasing Agent",
+    "description": "Converts approved requisitions to purchase orders, issues orders to vendors, and manages revisions.",
+    "permissions": [
+      "procurement:read",
+      "procurement:orders:manage",
+      "procurement:orders:issue",
+      "procurement:vendors:manage"
+    ]
+  },
+  {
+    "catalogKey": "universal-procurement",
+    "key": "ap-clerk",
+    "name": "Accounts Payable Clerk",
+    "description": "Records vendor bills, executes 3-way matching, reviews price variances, and issues debit memos.",
+    "permissions": [
+      "procurement:read",
+      "procurement:match",
+      "procurement:bills:manage",
+      "procurement:variance:override",
+      "procurement:debit-memos:manage"
+    ]
+  },
+  {
     "catalogKey": "analytics-studio",
     "key": "analytics-viewer",
     "name": "Analytics viewer",

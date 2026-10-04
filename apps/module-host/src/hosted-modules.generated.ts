@@ -3,6 +3,7 @@
 import type { Type } from '@nestjs/common';
 import { AppModule as Hosted0 } from '@gigalibs/product-catalogue-api';
 import { AppModule as Hosted1 } from '@gigalibs/universal-inventory-api';
+import { AppModule as Hosted2 } from '@gigalibs/universal-procurement-api';
 
 export interface HostedModule {
   readonly name: string;
@@ -13,4 +14,5 @@ export interface HostedModule {
 export const hostedModules: readonly HostedModule[] = [
   { name: 'product-catalogue', path: 'product-catalogue', module: Hosted0 },
   { name: 'universal-inventory', path: 'universal-inventory', module: Hosted1 },
+  { name: 'universal-procurement', path: 'universal-procurement', module: Hosted2 },
 ];

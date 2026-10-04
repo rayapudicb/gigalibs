@@ -10,6 +10,7 @@ import {
 import { PartyConfigurationAdapterV1 } from './parties/party-configuration.adapter.js';
 import { ProductConfigurationAdapterV1 } from './catalogue/product-configuration.adapter.js';
 import { InventoryConfigurationAdapterV1 } from './inventory/inventory-configuration.adapter.js';
+import { ProcurementConfigurationAdapterV1 } from './procurement/procurement-configuration.adapter.js';
 
 export const CONFIGURATION_ADAPTERS = Symbol('CONFIGURATION_ADAPTERS');
 
@@ -19,6 +20,7 @@ export function defaultConfigurationAdapters(): readonly ModuleConfigurationAdap
     new PartyConfigurationAdapterV1(),
     new ProductConfigurationAdapterV1(),
     new InventoryConfigurationAdapterV1(),
+    new ProcurementConfigurationAdapterV1(),
   ]);
 }
 

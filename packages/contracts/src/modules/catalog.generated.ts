@@ -239,6 +239,23 @@ export const generatedPlatformModuleCatalog = [
     platformInspection: true,
     reason: 'The module boundary is implemented under WI-OI-091 and remains PLANNED until live module conformance and independent review are recorded.',
   },
+  // modules/universal-procurement/module.yaml
+  {
+    key: 'universal-procurement',
+    name: 'Universal Procurement & Payables',
+    navigationLabel: 'Procurement & Payables',
+    area: 'Financial Operations',
+    navigationGroup: 'Financial Operations',
+    route: '/procurement',
+    iconKey: 'shopping-bag',
+    readiness: 'PLANNED',
+    maturity: 'CORE_IMPLEMENTED',
+    entitlementEligible: true,
+    trialEligible: false,
+    requiredPermission: 'procurement:read',
+    platformInspection: true,
+    reason: 'The module boundary is implemented under WI-OI-092 and remains PLANNED until live module conformance and independent review are recorded.',
+  },
   // modules/tax-configuration/module.yaml
   {
     key: 'tax-configuration',

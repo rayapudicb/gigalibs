@@ -37,3 +37,4 @@ export * from './organization/api.js';
 export * from './parties/index.js';
 export * from './catalogue/index.js';
 export * from './inventory/index.js';
+export * from './procurement/index.js';

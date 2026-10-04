@@ -1124,5 +1124,147 @@ export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGat
     ],
     "transformBody": null,
     "unavailable": []
+  },
+  "universal-procurement": {
+    "module": "universal-procurement",
+    "basePaths": [
+      "/api/universal-procurement"
+    ],
+    "catalogKey": "universal-procurement",
+    "audience": "gigalibs-universal-procurement-api",
+    "upstream": "universal-procurement",
+    "signingKeyEnvironment": "UNIVERSAL_PROCUREMENT_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64",
+    "codePrefix": "UNIVERSAL_PROCUREMENT",
+    "routeNoun": "Universal Procurement",
+    "serviceName": "Universal Procurement & Payables",
+    "entitlementName": "Universal Procurement",
+    "routes": [
+      {
+        "template": "v1/requisitions",
+        "pattern": "^v1/requisitions$",
+        "methods": {
+          "GET": "procurement:read",
+          "POST": "procurement:requisitions:manage"
+        }
+      },
+      {
+        "template": "v1/requisitions/{id}",
+        "pattern": "^v1/requisitions/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "GET": "procurement:read"
+        }
+      },
+      {
+        "template": "v1/requisitions/{id}/submit",
+        "pattern": "^v1/requisitions/[0-9a-fA-F-]{36}/submit$",
+        "methods": {
+          "POST": "procurement:requisitions:manage"
+        }
+      },
+      {
+        "template": "v1/requisitions/{id}/approve",
+        "pattern": "^v1/requisitions/[0-9a-fA-F-]{36}/approve$",
+        "methods": {
+          "POST": "procurement:requisitions:approve"
+        }
+      },
+      {
+        "template": "v1/requisitions/{id}/reject",
+        "pattern": "^v1/requisitions/[0-9a-fA-F-]{36}/reject$",
+        "methods": {
+          "POST": "procurement:requisitions:approve"
+        }
+      },
+      {
+        "template": "v1/orders",
+        "pattern": "^v1/orders$",
+        "methods": {
+          "GET": "procurement:read",
+          "POST": "procurement:orders:manage"
+        }
+      },
+      {
+        "template": "v1/orders/{id}",
+        "pattern": "^v1/orders/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "GET": "procurement:read"
+        }
+      },
+      {
+        "template": "v1/orders/{id}/issue",
+        "pattern": "^v1/orders/[0-9a-fA-F-]{36}/issue$",
+        "methods": {
+          "POST": "procurement:orders:issue"
+        }
+      },
+      {
+        "template": "v1/orders/{id}/acknowledge",
+        "pattern": "^v1/orders/[0-9a-fA-F-]{36}/acknowledge$",
+        "methods": {
+          "POST": "procurement:orders:manage"
+        }
+      },
+      {
+        "template": "v1/match/receipt",
+        "pattern": "^v1/match/receipt$",
+        "methods": {
+          "POST": "procurement:match"
+        }
+      },
+      {
+        "template": "v1/match/invoice",
+        "pattern": "^v1/match/invoice$",
+        "methods": {
+          "POST": "procurement:match"
+        }
+      },
+      {
+        "template": "v1/match/variance/{id}/approve",
+        "pattern": "^v1/match/variance/[0-9a-fA-F-]{36}/approve$",
+        "methods": {
+          "POST": "procurement:variance:override"
+        }
+      },
+      {
+        "template": "v1/bills",
+        "pattern": "^v1/bills$",
+        "methods": {
+          "GET": "procurement:read",
+          "POST": "procurement:bills:manage"
+        }
+      },
+      {
+        "template": "v1/bills/{id}",
+        "pattern": "^v1/bills/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "GET": "procurement:read"
+        }
+      },
+      {
+        "template": "v1/bills/{id}/approve",
+        "pattern": "^v1/bills/[0-9a-fA-F-]{36}/approve$",
+        "methods": {
+          "POST": "procurement:bills:manage"
+        }
+      },
+      {
+        "template": "v1/debit-memos",
+        "pattern": "^v1/debit-memos$",
+        "methods": {
+          "GET": "procurement:read",
+          "POST": "procurement:debit-memos:manage"
+        }
+      },
+      {
+        "template": "v1/approval-policies",
+        "pattern": "^v1/approval-policies$",
+        "methods": {
+          "GET": "procurement:read",
+          "POST": "procurement:orders:approve"
+        }
+      }
+    ],
+    "transformBody": null,
+    "unavailable": []
   }
 };

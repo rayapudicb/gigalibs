@@ -233,6 +233,9 @@ export const generatedModulePersonas: Readonly<Record<string, readonly PlatformC
   "universal-inventory": [
     "OPERATIONS_SUPERVISOR"
   ],
+  "universal-procurement": [
+    "OPERATIONS_SUPERVISOR"
+  ],
   "tax-configuration": [
     "C_LEVEL"
   ],

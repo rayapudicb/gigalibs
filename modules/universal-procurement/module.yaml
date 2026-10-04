@@ -1,0 +1,134 @@
+apiVersion: modules.gigalibs.io/v1
+kind: Module
+metadata:
+  name: universal-procurement
+  displayName: Universal Procurement & Payables
+  version: 0.1.0-dev
+  lifecycle: implementation
+  workItem: WI-OI-092
+spec:
+  standalone: true
+  category: business
+  requiredModules: [product-catalogue, universal-inventory]
+  optionalModules: [physical-operations-cmms, universal-connector-hub, analytics-studio]
+  capabilities:
+    - purchase-requisitions
+    - delegation-of-authority
+    - purchase-orders
+    - vendor-management
+    - goods-receipt-matching
+    - 3-way-matching
+    - price-variance-tolerance
+    - vendor-bills
+    - debit-memos
+    - outbox-events
+    - audit
+  plannedCapabilities:
+    - automated-po-generation
+    - vendor-portal
+    - rfq-bidding
+  ui:
+    basePath: /procurement
+    package: '@gigalibs/universal-procurement-web'
+    pages:
+      - route: /procurement
+        component: UniversalProcurementWorkspace
+  api:
+    application: apps/api
+    port: 4790
+    upstream:
+      key: universal-procurement
+      serviceHostname: module-host
+      environmentKey: UNIVERSAL_PROCUREMENT_API_URL
+      basePath: /universal-procurement
+    version: v1
+  events:
+    emits:
+      - procurement.requisition.created.v1
+      - procurement.requisition.approved.v1
+      - procurement.order.issued.v1
+      - procurement.match.receipt.created.v1
+      - procurement.match.invoice.created.v1
+    consumes:
+      - platform.authorization.revoked.v1
+      - platform.organization.version.v1
+      - inventory.receipt.completed.v1
+      - product.created.v1
+  identity:
+    protocol: signed-platform-context-v1
+    tenantClaimRequired: true
+    failClosed: true
+  database:
+    engine: postgresql
+    minimumVersion: '16'
+    ownsSchema: true
+    defaultSchema: gigalibs_procurement
+    crossSchemaAccess: false
+    runtimeManifest: db/runtime-manifest.txt
+  runtime:
+    generated: true
+    hosting: host
+    appendOnlyTables: [audit_events]
+    readOnlyTables: [auth_revocation_events]
+  catalog:
+    - key: universal-procurement
+      name: Universal Procurement & Payables
+      navigationLabel: Procurement & Payables
+      area: Financial Operations
+      navigationGroup: Financial Operations
+      route: /procurement
+      iconKey: shopping-bag
+      readiness: PLANNED
+      maturity: CORE_IMPLEMENTED
+      entitlementEligible: true
+      trialEligible: false
+      requiredPermission: procurement:read
+      platformInspection: true
+      reason: The module boundary is implemented under WI-OI-092 and remains PLANNED until live module conformance and independent review are recorded.
+      navigationOrder: 128
+      personas: [OPERATIONS_SUPERVISOR]
+      roles:
+        - key: procurement-requester
+          name: Procurement Requester
+          description: Creates and tracks departmental purchase requisitions.
+          permissions: [procurement:read, 'procurement:requisitions:manage']
+        - key: procurement-approver
+          name: Procurement Approver
+          description: Approves requisitions and orders according to Delegation of Authority policies.
+          permissions: [procurement:read, 'procurement:requisitions:approve', 'procurement:orders:approve']
+        - key: purchasing-agent
+          name: Purchasing Agent
+          description: Converts approved requisitions to purchase orders, issues orders to vendors, and manages revisions.
+          permissions: [procurement:read, 'procurement:orders:manage', 'procurement:orders:issue', 'procurement:vendors:manage']
+        - key: ap-clerk
+          name: Accounts Payable Clerk
+          description: Records vendor bills, executes 3-way matching, reviews price variances, and issues debit memos.
+          permissions: [procurement:read, procurement:match, 'procurement:bills:manage', 'procurement:variance:override', 'procurement:debit-memos:manage']
+  gateway:
+    basePaths: [/api/universal-procurement]
+    catalogKey: universal-procurement
+    audience: gigalibs-universal-procurement-api
+    upstream: universal-procurement
+    signingKeyEnvironment: UNIVERSAL_PROCUREMENT_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64
+    codePrefix: UNIVERSAL_PROCUREMENT
+    routeNoun: Universal Procurement
+    serviceName: Universal Procurement & Payables
+    entitlementName: Universal Procurement
+    routes:
+      - { path: 'v1/requisitions', GET: procurement:read, POST: 'procurement:requisitions:manage' }
+      - { path: 'v1/requisitions/{id}', GET: procurement:read }
+      - { path: 'v1/requisitions/{id}/submit', POST: 'procurement:requisitions:manage' }
+      - { path: 'v1/requisitions/{id}/approve', POST: 'procurement:requisitions:approve' }
+      - { path: 'v1/requisitions/{id}/reject', POST: 'procurement:requisitions:approve' }
+      - { path: 'v1/orders', GET: procurement:read, POST: 'procurement:orders:manage' }
+      - { path: 'v1/orders/{id}', GET: procurement:read }
+      - { path: 'v1/orders/{id}/issue', POST: 'procurement:orders:issue' }
+      - { path: 'v1/orders/{id}/acknowledge', POST: 'procurement:orders:manage' }
+      - { path: 'v1/match/receipt', POST: procurement:match }
+      - { path: 'v1/match/invoice', POST: procurement:match }
+      - { path: 'v1/match/variance/{id}/approve', POST: 'procurement:variance:override' }
+      - { path: 'v1/bills', GET: procurement:read, POST: 'procurement:bills:manage' }
+      - { path: 'v1/bills/{id}', GET: procurement:read }
+      - { path: 'v1/bills/{id}/approve', POST: 'procurement:bills:manage' }
+      - { path: 'v1/debit-memos', GET: procurement:read, POST: 'procurement:debit-memos:manage' }
+      - { path: 'v1/approval-policies', GET: procurement:read, POST: 'procurement:orders:approve' }

@@ -60,6 +60,35 @@ services:
       org.opencontainers.image.revision: ${SOURCE_REVISION:?SOURCE_REVISION is required}
       com.gigalibs.source-state-sha256: ${SOURCE_STATE_SHA256:?SOURCE_STATE_SHA256 is required}
 
+  universal-procurement-migrations:
+    image: ${MODULE_HOST_IMAGE:?MODULE_HOST_IMAGE is required}
+    pull_policy: never
+    command: ["run-module-migrations.mjs"]
+    restart: "no"
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    environment:
+      DATABASE_URL: ${MODULE_MIGRATIONS_DATABASE_URL:?MODULE_MIGRATIONS_DATABASE_URL is required}
+      MODULE_RUNTIME_DATABASE_URL: ${UNIVERSAL_PROCUREMENT_DATABASE_URL:?UNIVERSAL_PROCUREMENT_DATABASE_URL is required}
+      MODULE_MIGRATIONS_DIRECTORY: /app/modules/universal-procurement/migrations
+      MODULE_SCHEMA: gigalibs_procurement
+      MODULE_EXPECTED_MIGRATION_VERSION: "1"
+      MODULE_APPEND_ONLY_TABLES: audit_events
+      MODULE_READ_ONLY_TABLES: auth_revocation_events
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    labels:
+      com.gigalibs.profile-key: module-runtime-local-development-v1
+      com.gigalibs.execution-class: LOCAL_DEVELOPMENT
+      com.gigalibs.release-id: ${RELEASE_ID:?RELEASE_ID is required}
+      org.opencontainers.image.revision: ${SOURCE_REVISION:?SOURCE_REVISION is required}
+      com.gigalibs.source-state-sha256: ${SOURCE_STATE_SHA256:?SOURCE_STATE_SHA256 is required}
+
   module-host:
     image: ${MODULE_HOST_IMAGE:?MODULE_HOST_IMAGE is required}
     pull_policy: never
@@ -83,12 +112,19 @@ services:
       UNIVERSAL_INVENTORY_EXPECTED_MIGRATION_VERSION: "1"
       UNIVERSAL_INVENTORY_PLATFORM_CONTEXT_AUDIENCE: gigalibs-universal-inventory-api
       UNIVERSAL_INVENTORY_PLATFORM_CONTEXT_PUBLIC_KEY_BASE64: ${UNIVERSAL_INVENTORY_PLATFORM_CONTEXT_PUBLIC_KEY_BASE64:?UNIVERSAL_INVENTORY_PLATFORM_CONTEXT_PUBLIC_KEY_BASE64 is required}
+      UNIVERSAL_PROCUREMENT_DATABASE_URL: ${UNIVERSAL_PROCUREMENT_DATABASE_URL:?UNIVERSAL_PROCUREMENT_DATABASE_URL is required}
+      UNIVERSAL_PROCUREMENT_DATABASE_POOL_SIZE: "5"
+      UNIVERSAL_PROCUREMENT_EXPECTED_MIGRATION_VERSION: "1"
+      UNIVERSAL_PROCUREMENT_PLATFORM_CONTEXT_AUDIENCE: gigalibs-universal-procurement-api
+      UNIVERSAL_PROCUREMENT_PLATFORM_CONTEXT_PUBLIC_KEY_BASE64: ${UNIVERSAL_PROCUREMENT_PLATFORM_CONTEXT_PUBLIC_KEY_BASE64:?UNIVERSAL_PROCUREMENT_PLATFORM_CONTEXT_PUBLIC_KEY_BASE64 is required}
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:
       product-catalogue-migrations:
         condition: service_completed_successfully
       universal-inventory-migrations:
+        condition: service_completed_successfully
+      universal-procurement-migrations:
         condition: service_completed_successfully
     healthcheck:
       test:
@@ -117,6 +153,8 @@ services:
       PRODUCT_CATALOGUE_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64: ${PRODUCT_CATALOGUE_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64:?PRODUCT_CATALOGUE_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64 is required}
       UNIVERSAL_INVENTORY_API_URL: http://module-host:4790
       UNIVERSAL_INVENTORY_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64: ${UNIVERSAL_INVENTORY_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64:?UNIVERSAL_INVENTORY_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64 is required}
+      UNIVERSAL_PROCUREMENT_API_URL: http://module-host:4790
+      UNIVERSAL_PROCUREMENT_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64: ${UNIVERSAL_PROCUREMENT_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64:?UNIVERSAL_PROCUREMENT_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64 is required}
 
   kernel-worker:
     environment:
@@ -124,3 +162,5 @@ services:
       PRODUCT_CATALOGUE_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64: ${PRODUCT_CATALOGUE_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64:?PRODUCT_CATALOGUE_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64 is required}
       UNIVERSAL_INVENTORY_API_URL: http://module-host:4790
       UNIVERSAL_INVENTORY_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64: ${UNIVERSAL_INVENTORY_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64:?UNIVERSAL_INVENTORY_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64 is required}
+      UNIVERSAL_PROCUREMENT_API_URL: http://module-host:4790
+      UNIVERSAL_PROCUREMENT_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64: ${UNIVERSAL_PROCUREMENT_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64:?UNIVERSAL_PROCUREMENT_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64 is required}
