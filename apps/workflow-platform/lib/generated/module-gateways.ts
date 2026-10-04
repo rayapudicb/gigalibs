@@ -134,6 +134,92 @@ export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGat
         "methods": {
           "GET": "finance:reports:view"
         }
+      },
+      {
+        "template": "v1/treasury/bank-accounts",
+        "pattern": "^v1/treasury/bank-accounts$",
+        "methods": {
+          "GET": "finance:read",
+          "POST": "finance:books:manage"
+        }
+      },
+      {
+        "template": "v1/treasury/bank-accounts/{id}",
+        "pattern": "^v1/treasury/bank-accounts/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "GET": "finance:read"
+        }
+      },
+      {
+        "template": "v1/treasury/bank-statements",
+        "pattern": "^v1/treasury/bank-statements$",
+        "methods": {
+          "GET": "finance:read"
+        }
+      },
+      {
+        "template": "v1/treasury/bank-statements/import",
+        "pattern": "^v1/treasury/bank-statements/import$",
+        "methods": {
+          "POST": "finance:journals:manage"
+        }
+      },
+      {
+        "template": "v1/treasury/bank-statements/{id}",
+        "pattern": "^v1/treasury/bank-statements/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "GET": "finance:read"
+        }
+      },
+      {
+        "template": "v1/treasury/reconciliations/sessions",
+        "pattern": "^v1/treasury/reconciliations/sessions$",
+        "methods": {
+          "GET": "finance:read",
+          "POST": "finance:journals:manage"
+        }
+      },
+      {
+        "template": "v1/treasury/reconciliations/auto-match",
+        "pattern": "^v1/treasury/reconciliations/auto-match$",
+        "methods": {
+          "POST": "finance:journals:manage"
+        }
+      },
+      {
+        "template": "v1/treasury/reconciliations/manual-match",
+        "pattern": "^v1/treasury/reconciliations/manual-match$",
+        "methods": {
+          "POST": "finance:journals:manage"
+        }
+      },
+      {
+        "template": "v1/treasury/reconciliations/matches/{id}",
+        "pattern": "^v1/treasury/reconciliations/matches/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "DELETE": "finance:journals:manage"
+        }
+      },
+      {
+        "template": "v1/treasury/reconciliations/fee-adjustments",
+        "pattern": "^v1/treasury/reconciliations/fee-adjustments$",
+        "methods": {
+          "POST": "finance:journals:post"
+        }
+      },
+      {
+        "template": "v1/treasury/reconciliations/seal",
+        "pattern": "^v1/treasury/reconciliations/seal$",
+        "methods": {
+          "POST": "finance:journals:post"
+        }
+      },
+      {
+        "template": "v1/treasury/reconciliations/{id}/report",
+        "pattern": "^v1/treasury/reconciliations/[0-9a-fA-F-]{36}/report$",
+        "methods": {
+          "GET": "finance:reports:view"
+        }
       }
     ],
     "transformBody": null,

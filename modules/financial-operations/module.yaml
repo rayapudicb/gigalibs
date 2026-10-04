@@ -25,8 +25,10 @@ spec:
     - immutable-reversals
     - outbox-events
     - audit
-  plannedCapabilities:
+    - treasury-bank-accounts
+    - bank-statement-ingestion
     - bank-reconciliation
+  plannedCapabilities:
     - fixed-assets-depreciation
     - multi-company-consolidation
   ui:
@@ -49,6 +51,8 @@ spec:
       - finance.journal.posted.v1
       - finance.journal.reversed.v1
       - finance.period.locked.v1
+      - finance.bank.statement.imported.v1
+      - finance.bank.reconciliation.sealed.v1
     consumes:
       - ar.invoice.issued.v1
       - orders.fulfillment.dispatched.v1
@@ -126,3 +130,15 @@ spec:
       - { path: 'v1/reports/trial-balance', GET: 'finance:reports:view' }
       - { path: 'v1/reports/balance-sheet', GET: 'finance:reports:view' }
       - { path: 'v1/reports/income-statement', GET: 'finance:reports:view' }
+      - { path: 'v1/treasury/bank-accounts', GET: finance:read, POST: 'finance:books:manage' }
+      - { path: 'v1/treasury/bank-accounts/{id}', GET: finance:read }
+      - { path: 'v1/treasury/bank-statements', GET: finance:read }
+      - { path: 'v1/treasury/bank-statements/import', POST: 'finance:journals:manage' }
+      - { path: 'v1/treasury/bank-statements/{id}', GET: finance:read }
+      - { path: 'v1/treasury/reconciliations/sessions', GET: finance:read, POST: 'finance:journals:manage' }
+      - { path: 'v1/treasury/reconciliations/auto-match', POST: 'finance:journals:manage' }
+      - { path: 'v1/treasury/reconciliations/manual-match', POST: 'finance:journals:manage' }
+      - { path: 'v1/treasury/reconciliations/matches/{id}', DELETE: 'finance:journals:manage' }
+      - { path: 'v1/treasury/reconciliations/fee-adjustments', POST: 'finance:journals:post' }
+      - { path: 'v1/treasury/reconciliations/seal', POST: 'finance:journals:post' }
+      - { path: 'v1/treasury/reconciliations/{id}/report', GET: 'finance:reports:view' }

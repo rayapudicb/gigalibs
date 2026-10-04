@@ -3,3 +3,7 @@ export * from './config.js';
 export * from './database.service.js';
 export * from './finance/finance.service.js';
 export * from './finance/finance.controller.js';
+export * from './treasury/treasury.service.js';
+export * from './treasury/treasury.controller.js';
+export * from './treasury/statement-parsers.js';
+

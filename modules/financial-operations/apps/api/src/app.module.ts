@@ -6,10 +6,13 @@ import { FinanceController } from './finance/finance.controller.js';
 import { FinanceService } from './finance/finance.service.js';
 import { HealthController } from './health.controller.js';
 import { OrganizationController } from './organization/organization.controller.js';
+import { TreasuryController } from './treasury/treasury.controller.js';
+import { TreasuryService } from './treasury/treasury.service.js';
 
 @Module({
-  controllers: [HealthController, FinanceController, OrganizationController],
-  providers: [runtimeConfigProvider, DatabaseService, AuthorizationGuard, FinanceService],
-  exports: [DatabaseService, FinanceService],
+  controllers: [HealthController, FinanceController, TreasuryController, OrganizationController],
+  providers: [runtimeConfigProvider, DatabaseService, AuthorizationGuard, FinanceService, TreasuryService],
+  exports: [DatabaseService, FinanceService, TreasuryService],
 })
 export class AppModule {}
+

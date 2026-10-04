@@ -30,6 +30,7 @@ const steps = [
     knownDrift: KNOWN_PROFILE_DRIFT,
   },
   { name: 'financial-operations', cmd: process.execPath, args: ['scripts/verify-financial-operations.mjs'] },
+  { name: 'treasury-reconciliation', cmd: process.execPath, args: ['scripts/verify-treasury-reconciliation.mjs'] },
 ];
 
 const logDir = join(tmpdir(), 'gigalibs-verify');
