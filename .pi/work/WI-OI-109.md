@@ -293,3 +293,30 @@ Completed 2026-10-02 for the pre-deployment local slice.
 - `pnpm --filter @gigalibs/workflow-platform typecheck`, `pnpm verify --audits` and `git diff --check` pass; only the
   registered `WORKFORCE_API_URL` deployment-profile drift remains. This cleanup does not close WI-OI-109: the wider
   live organization/vertical-path/accessibility proof, fresh-install repair/proof and independent reviews remain.
+
+## Fresh-install and representative-upgrade closure (2026-10-02)
+
+- The original certified migrations image reproduced PostgreSQL `55P04` from an empty database because
+  `20260924000000_tp2_durable_export_and_outbox` added and consumed `CANCELLED` in one transaction. Forward migration
+  `20260923590000_tp2_cancelled_enum_predecessor` now commits the enum value before that immutable applied migration.
+- Core migrations `20260927110000_phase3_thingsboard_telemetry`, `20260927120000_phase4_workforce_eptw_handover` and
+  `20260927130000_phase5_cmms_workforce_ledger_settlement` historically crossed module ownership. The shell-free
+  migration runner records only this exact allowlist as retired on a new database, refuses unresolved failed history,
+  preserves already-applied history, and then runs Prisma deploy. The historical SQL files remain unchanged.
+- Forward migration `20261002000000_database_extensions_foundation` makes `pgcrypto`, `ltree` and `btree_gist`
+  database foundations in `public`; module migration jobs now wait for the core migration job. The composed local
+  profile validates with the new dependency order.
+- Exact image `gigalibs/control-plane-migrations:wi-oi-109-fresh-proof` (non-root `65532:65532`, source
+  `a2627d8549bedda24f34169172438fc2cadd33a6`, state
+  `e4f842aa4db430deb31769e35ea9922d8fb8c0c32a13434b69aad96eb5aeb6ab`) completed an empty PostgreSQL 16 database:
+  52 successful core migrations, zero failed migrations, the three retired rows at zero applied steps, then Analytics
+  29, CMMS 14, Connector Hub 8, Geospatial 8 and Workforce 19. A second exact-image run reported no pending work.
+- Representative upgrade restored the verified `gigalibs_backup_20261002_083056Z.dump` into an isolated database,
+  advanced the core ledger from 50 to 52, kept all three historical migrations applied, and preserved exact counts and
+  identifier checksums for 272 tenants, 587 users, 382 memberships and 2 organization units. The live application
+  database was never targeted.
+- Policy tests pass 5/5. Full `pnpm verify` passes: build, tests (253 files, 2,167 passed, 22 skipped), seven audits,
+  layers, module manifests and deployment-profile validation; only the registered `WORKFORCE_API_URL` drift remains.
+  Log: `/var/folders/jp/fkzm1c3s1d52rj_9cvjv6kx00000gn/T/gigalibs-verify/verify-2026-10-02T16-53-07-186Z.log`.
+- Fresh-install repair/proof is complete. WI-OI-109 remains in Review for live organization/vertical-path/accessibility
+  certification and named independent reviews; this work does not modify the preserved WI-WFO-001–006 implementation.

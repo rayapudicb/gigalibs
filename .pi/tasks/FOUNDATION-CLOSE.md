@@ -15,12 +15,13 @@ The owner chose to finish the open ADR-0016 foundation work before starting the 
 4. **WI-OI-107** (F10): industry packs at the solution layer; Workforce's packs move into it. **Done and live 2026-10-01 (Review); F10 closed** (`.pi/work/WI-OI-107.md`).
 5. **WI-OI-106** (F17): Reports v2, PDF and Excel.
 6. **WI-OI-108:** rebuild the contained other-stream forms properly.
-7. **Fresh install (found 2026-09-30 by the 104c worker smoke):** `prisma migrate deploy` on an empty database stops
-   at two points, so a new client install fails. Fix before the agriculture package ships.
+7. **Fresh install — fixed and proved 2026-10-02:** the two empty-database blockers found by the 104c worker smoke
+   are resolved with forward migrations and a controlled migration-runtime policy; no applied migration was edited.
    - `20260924000000_tp2_durable_export_and_outbox` adds an enum value and uses it in the same transaction (55P04).
    - D2 finding A1: `20260927110000_phase3`, `…120000_phase4` and `…130000_phase5` alter the CMMS and Workforce schemas
      from the core, so they need those modules' migrations first. Their home is each module's own migrations.
-   - Both are already applied locally; the fix must keep the local history valid (owner review).
+   - Exact-image clean replay reached 52/52 core migrations and all five module ledgers; representative backup upgrade
+     preserved tenant/user/member/unit checksums and advanced 50→52. Evidence is in `.pi/work/WI-OI-109.md`.
 
 8. **Core push intake (named by WI-OI-104f, owner option A, 2026-09-30):** the core API still takes pushed data
    (signed webhooks, checksum-verified file uploads, the events API) into its operational-intelligence data contracts

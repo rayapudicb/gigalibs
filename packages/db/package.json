@@ -21,7 +21,7 @@
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist src/generated *.tsbuildinfo",
     "db:generate": "prisma generate --config prisma.config.ts",
-    "db:migrate": "prisma migrate deploy --config prisma.config.ts",
+    "db:migrate": "node ../db-migrations-runtime/run-control-migrations.mjs --config prisma.config.ts",
     "db:migrate:dev": "prisma migrate dev --config prisma.config.ts"
   },
   "dependencies": {

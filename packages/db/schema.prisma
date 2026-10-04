@@ -580,7 +580,6 @@ model Tenant {
   // Core Parties (WI-OI-111, ADR-0020)
   parties               Party[]
   partyIdempotencyRecords PartyIdempotencyRecord[]
-
   // Saga orchestration instances
   sagaInstances       SagaInstance[]
   // Governor rate bucket (one per tenant)

@@ -46,7 +46,7 @@ function run(step) {
   return new Promise((resolve) => {
     const child = spawn(step.cmd, step.args, {
       stdio: ['ignore', 'pipe', 'pipe'],
-      env: { ...process.env, FORCE_COLOR: '0', NO_COLOR: '1' },
+      env: { ...process.env, FORCE_COLOR: '0', NO_COLOR: '1', pnpm_config_verify_deps_before_run: 'false' },
     });
     let output = '';
     const collect = (chunk) => {

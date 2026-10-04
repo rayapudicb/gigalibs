@@ -11,10 +11,12 @@ const environment = {
   WORKFORCE_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64: key,
   ANALYTICS_API_URL: 'http://analytics-api:4400',
   ANALYTICS_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64: key,
+  PRODUCT_CATALOGUE_API_URL: 'http://module-host:4790',
+  PRODUCT_CATALOGUE_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64: key,
 } as NodeJS.ProcessEnv;
 const owner = (permissions: string[]) => ({
   user: { id: 'admin-1' },
-  tenant: { id: 'tenant-1', entitlements: [{ moduleKey: 'gigaops', status: 'ENABLED', version: 'v1' }, { moduleKey: 'analytics-studio', status: 'ENABLED', version: 'v1' }] },
+  tenant: { id: 'tenant-1', entitlements: [{ moduleKey: 'gigaops', status: 'ENABLED', version: 'v1' }, { moduleKey: 'analytics-studio', status: 'ENABLED', version: 'v1' }, { moduleKey: 'product-catalogue', status: 'ENABLED', version: 'v1' }] },
   roles: ['TENANT_ADMIN'],
   platformRoles: [],
   permissions,
@@ -76,8 +78,26 @@ describe('organization sync jobs', () => {
     await expect(run(['organization:activate'], down as never, source())).rejects.not.toBeInstanceOf(NonRetryableJobError);
   });
 
+  it('delivers the same held version protocol to the hosted Product Catalogue module', async () => {
+    const calls: string[] = [];
+    const fetchImpl = vi.fn(async (url: string, init: RequestInit) => {
+      const claims = verifyPlatformContextToken(String((init.headers as Record<string, string>).Authorization).slice(7), publicKey.export({ format: 'pem', type: 'spki' }).toString(), 'gigalibs-product-catalogue-api');
+      expect(claims).toMatchObject({ tenant_id: 'tenant-1', entitlement: { module_key: 'product-catalogue' } });
+      calls.push(url);
+      return new Response(JSON.stringify({ version_id: 'version-0004', status: url.endsWith('/complete') ? 'READY' : 'RECEIVING', received_units: 1_001 }), { status: 200 });
+    });
+    await run(['organization:activate'], fetchImpl as never, source(), 'product-catalogue.organization-sync');
+    expect(calls).toEqual([
+      'http://module-host:4790/product-catalogue/v1/organization/versions/version-0004/units',
+      'http://module-host:4790/product-catalogue/v1/organization/versions/version-0004/units',
+      'http://module-host:4790/product-catalogue/v1/organization/versions/version-0004/units',
+      'http://module-host:4790/product-catalogue/v1/organization/versions/version-0004/complete',
+    ]);
+  });
+
   it('accepts only organization sync payloads with a version id', () => {
     expect(parseModuleCallPayload({ operation: 'analytics.organization-sync', versionId: 'cmversion0001' })).toEqual({ operation: 'analytics.organization-sync', versionId: 'cmversion0001' });
+    expect(parseModuleCallPayload({ operation: 'product-catalogue.organization-sync', versionId: 'cmversion0001' })).toEqual({ operation: 'product-catalogue.organization-sync', versionId: 'cmversion0001' });
     expect(() => parseModuleCallPayload({ operation: 'analytics.organization-sync', versionId: '../x' })).toThrow();
   });
 });

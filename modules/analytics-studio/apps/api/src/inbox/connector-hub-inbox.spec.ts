@@ -31,6 +31,8 @@ const fact = (overrides: Record<string, unknown> = {}) => ({
 describe('Analytics Workforce position inbox', () => {
   it('validates a complete snapshot and binds it to the envelope aggregate', () => {
     expect(parseWorkforcePositionFact(fact()).fact).toMatchObject({ organizationUnitId: 'store-101', aggregateVersion: 4 });
+    expect(parseWorkforcePositionFact(fact({ eventType: 'WORKFORCE_POSITION_SNAPSHOT_V1' })).fact)
+      .toMatchObject({ entityId: '00000000-0000-4000-8000-000000000092', tenantShared: false });
     expect(() => parseWorkforcePositionFact(fact({ aggregateVersion: 5 }))).toThrow(/does not match/);
     expect(() => parseWorkforcePositionFact(fact({ payload: { ...(fact().payload as object), tenantShared: true } }))).toThrow(/tenantShared/);
   });

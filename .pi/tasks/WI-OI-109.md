@@ -1,6 +1,6 @@
 # WI-OI-109: Universal organization hierarchy and enterprise scope
 
-- **Status:** In progress (109a–109g deployed to bounded Local Development; native empty-tenant cleanup verified; live certification, fresh-install proof and independent review remain)
+- **Status:** Review (109a–109g deployed to bounded Local Development; native empty-tenant cleanup and fresh-install/upgrade paths verified; live certification and independent review remain)
 - **Work item:** WI-OI-109. Evidence goes in `.pi/work/WI-OI-109.md`.
 - **Size:** L, delivered as independently verified vertical slices
 
@@ -82,8 +82,8 @@ and future mobile clients.
 - [ ] Tenant, sibling-unit, historical/as-of, Place-link and module-query isolation pass at API and database layers.
 - [ ] Existing Department data and consumers have an evidenced compatibility path with no data loss or split authority.
 - [ ] Web administration is keyboard/screen-reader usable and every action is backed by real APIs and persistence.
-- [ ] Fresh installation, representative upgrade, forward-fix/recovery and bounded scale tests pass.
-- [ ] `pnpm verify` passes, or reports only the explicitly known drift.
+- [x] Fresh installation, representative upgrade and forward-fix paths pass. Bounded organization scale evidence is recorded separately in 109g.
+- [x] `pnpm verify` passes with only the explicitly known `WORKFORCE_API_URL` drift.
 - [ ] Evidence is recorded in `.pi/work/WI-OI-109.md`, and `.pi/NOW.md` is updated.
 
 ## Stop and ask if

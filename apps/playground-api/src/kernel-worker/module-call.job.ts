@@ -56,7 +56,7 @@ export type ModuleCallPayload =
   | { readonly operation: 'analytics.summaries-build'; readonly datasetVersionId: string }
   /** WI-OI-107: queued when a tenant activates an industry or country pack (never scheduled directly). */
   | { readonly operation: 'workforce.pack-apply' | 'geospatial.pack-apply'; readonly publishedVersionId: string }
-  | { readonly operation: 'workforce.organization-sync' | 'analytics.organization-sync'; readonly versionId: string };
+  | { readonly operation: 'workforce.organization-sync' | 'analytics.organization-sync' | 'product-catalogue.organization-sync'; readonly versionId: string };
 
 /**
  * The pack-apply operation of each module that reads packs, by the module's name in packs (its manifest name), with
@@ -71,6 +71,7 @@ export const PACK_APPLY_OPERATIONS = {
 export const ORGANIZATION_SYNC_OPERATIONS = {
   gigaops: { operation: 'workforce.organization-sync' },
   'analytics-studio': { operation: 'analytics.organization-sync' },
+  'product-catalogue': { operation: 'product-catalogue.organization-sync' },
 } as const;
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -154,6 +155,16 @@ export const MODULE_CALL_OPERATIONS: Readonly<Record<ModuleCallPayload['operatio
     body: () => ({}),
     organizationVersion: true,
   },
+  'product-catalogue.organization-sync': {
+    moduleKey: 'product-catalogue',
+    audience: 'gigalibs-product-catalogue-api',
+    baseUrlEnvironment: 'PRODUCT_CATALOGUE_API_URL',
+    privateKeyEnvironment: 'PRODUCT_CATALOGUE_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64',
+    permission: 'organization:activate',
+    path: (payload) => `product-catalogue/v1/organization/versions/${encodeURIComponent(moduleCallTarget(payload))}`,
+    body: () => ({}),
+    organizationVersion: true,
+  },
 };
 
 export function parseModuleCallPayload(value: unknown): ModuleCallPayload {
@@ -179,7 +190,7 @@ export function parseModuleCallPayload(value: unknown): ModuleCallPayload {
     return { operation: input.operation, publishedVersionId: input.publishedVersionId };
   }
   if (
-    (input.operation === 'workforce.organization-sync' || input.operation === 'analytics.organization-sync') &&
+    (input.operation === 'workforce.organization-sync' || input.operation === 'analytics.organization-sync' || input.operation === 'product-catalogue.organization-sync') &&
     typeof input.versionId === 'string' &&
     /^[A-Za-z0-9_-]{8,64}$/.test(input.versionId)
   ) {
@@ -199,6 +210,7 @@ export function moduleCallPayload(operation: ModuleCallPayload['operation'], tar
     'geospatial.pack-apply': { publishedVersionId: targetId },
     'workforce.organization-sync': { versionId: targetId },
     'analytics.organization-sync': { versionId: targetId },
+    'product-catalogue.organization-sync': { versionId: targetId },
   }[operation];
   return parseModuleCallPayload({ operation, ...target });
 }
@@ -219,6 +231,7 @@ export function moduleCallTarget(payload: ModuleCallPayload): string {
       return payload.publishedVersionId;
     case 'workforce.organization-sync':
     case 'analytics.organization-sync':
+    case 'product-catalogue.organization-sync':
       return payload.versionId;
   }
 }

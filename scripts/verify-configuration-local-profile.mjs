@@ -263,7 +263,7 @@ expect(
 expect(
   dockerfile.includes('CMD ["dist/main.js"]') &&
     dockerfile.includes('CMD ["node_modules/next/dist/bin/next"') &&
-    dockerfile.includes('CMD ["node_modules/prisma/build/index.js"'),
+    dockerfile.includes('CMD ["run-control-migrations.mjs", "--config", "prisma.config.mjs"]'),
   'DISTROLESS_ENTRYPOINTS',
   'Shipped images must use direct JavaScript entrypoints compatible with a shell-free runtime.',
 );

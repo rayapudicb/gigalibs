@@ -25,6 +25,9 @@ services:
       - no-new-privileges:true
     cap_drop:
       - ALL
+    depends_on:
+      migrations:
+        condition: service_completed_successfully
     labels: &geospatial-labels
       com.gigalibs.profile-key: geospatial-runtime-local-development-v1
       com.gigalibs.execution-class: LOCAL_DEVELOPMENT

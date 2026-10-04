@@ -525,4 +525,3 @@ Task card: `.pi/tasks/WI-OI-103e.md`. Owner decisions: system roles now; order e
   - `pnpm verify`: PASSED (only the known WORKFORCE_API_URL drift).
   - `pnpm --filter @gigalibs/analytics-api proof:real-database`: PASSED (all 26 migrations against real PostgreSQL).
   - Live deployment of migration 26 and image rebuild awaiting explicit owner authorization.
-

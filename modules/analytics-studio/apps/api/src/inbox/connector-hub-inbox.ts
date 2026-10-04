@@ -50,6 +50,11 @@ export const ANALYTICS_GEOSPATIAL_RELAY_CONFIG = Symbol('ANALYTICS_GEOSPATIAL_RE
 export const ANALYTICS_WORKFORCE_RELAY_CONFIG = Symbol('ANALYTICS_WORKFORCE_RELAY_CONFIG');
 export const ANALYTICS_RETENTION_CONFIG = Symbol('ANALYTICS_RETENTION_CONFIG');
 export const HUB_RECORDS_TABLE = 'records';
+const WORKFORCE_POSITION_FACT_EVENTS = Object.freeze([
+  'WORKFORCE_POSITION_CREATED_V1',
+  'WORKFORCE_POSITION_UPDATED_V1',
+  'WORKFORCE_POSITION_SNAPSHOT_V1',
+]);
 
 export function loadAnalyticsRelayConfig(environment: NodeJS.ProcessEnv = process.env): RelayConfig {
   return loadRelayConfig(environment, {
@@ -172,7 +177,7 @@ export function parsePulledRecord(envelope: Partial<RelayEnvelope> | null): { en
 export function parseWorkforcePositionFact(envelope: Partial<RelayEnvelope> | null) {
   if (
     !envelope ||
-    !['WORKFORCE_POSITION_CREATED_V1', 'WORKFORCE_POSITION_UPDATED_V1'].includes(String(envelope.eventType)) ||
+    !WORKFORCE_POSITION_FACT_EVENTS.includes(String(envelope.eventType)) ||
     envelope.schemaVersion !== 1 ||
     !text(envelope.messageId, 64) ||
     !text(envelope.tenantId, 64) ||
@@ -199,7 +204,7 @@ export class ConnectorHubInboxService {
     const eventType = (body as { eventType?: unknown } | null)?.eventType;
     if (source === 'geospatial' && eventType === 'SpatialNodeChangedV1') return this.receivePlace(body);
     if (source === 'connector-hub' && eventType === 'CONNECTOR_RECORD_PULLED_V1') return this.receive(body);
-    if (source === 'workforce' && ['WORKFORCE_POSITION_CREATED_V1', 'WORKFORCE_POSITION_UPDATED_V1'].includes(String(eventType))) {
+    if (source === 'workforce' && WORKFORCE_POSITION_FACT_EVENTS.includes(String(eventType))) {
       return this.receiveWorkforcePosition(body);
     }
     throw new BadRequestException(`${String(source)} may not deliver ${String(eventType)} here.`);
