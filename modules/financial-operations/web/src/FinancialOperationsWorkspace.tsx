@@ -28,6 +28,7 @@ import {
   Calculator,
   Globe,
   Package,
+  PieChart,
 } from 'lucide-react';
 import type {
   AccountingBookV1,
@@ -50,6 +51,11 @@ import type {
   CostProfileV1,
   InventoryCostLayerV1,
   LandedCostV1,
+  BudgetStructureV1,
+  BudgetRevisionV1,
+  BudgetLineV1,
+  BudgetCommitmentV1,
+  BudgetVarianceReportV1,
 } from '@gigalibs/contracts';
 import {
   DictionaryRenderer,
@@ -68,6 +74,7 @@ type WorkspaceTab =
   | 'depreciation'
   | 'consolidation'
   | 'costing'
+  | 'budgeting'
   | 'reports'
   | 'extensions';
 
@@ -672,6 +679,106 @@ export function FinancialOperationsWorkspace() {
     },
   ]);
 
+  const [budgetStructures] = useState<BudgetStructureV1[]>([
+    {
+      id: 'bs100000-0000-4000-a000-000000000001',
+      tenantId: 'tenant-primary',
+      code: 'OPEX-2026',
+      name: 'FY2026 Operating Expense Budget',
+      description: 'Corporate operating expenditure allocation with fail-closed spend control',
+      budgetType: 'OPERATING_OPEX',
+      accountingBookId: 'b1000000-0000-4000-a000-000000000001',
+      controlAction: 'HARD_STOP',
+      allowOverspendThresholdPct: 5,
+      isActive: true,
+      version: 1,
+      createdAt: '2026-01-01T00:00:00Z',
+      updatedAt: '2026-10-04T00:00:00Z',
+      createdBy: 'finance-director',
+      updatedBy: null,
+    },
+  ]);
+
+  const [budgetRevisions] = useState<BudgetRevisionV1[]>([
+    {
+      id: 'br100000-0000-4000-a000-000000000001',
+      tenantId: 'tenant-primary',
+      budgetStructureId: 'bs100000-0000-4000-a000-000000000001',
+      revisionNumber: 1,
+      fiscalYearId: 'fy100000-0000-4000-a000-000000000001',
+      status: 'ACTIVE',
+      totalAllocatedMinor: '120000000',
+      checksum: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+      notes: 'Initial approved operational plan with 100% cent conservation across 12 periods',
+      submittedAt: '2026-01-05T09:00:00Z',
+      submittedBy: 'budget-planner',
+      approvedAt: '2026-01-06T14:30:00Z',
+      approvedBy: 'cfo-approver',
+      activatedAt: '2026-01-07T08:00:00Z',
+      activatedBy: 'finance-controller',
+      version: 1,
+      createdAt: '2026-01-05T09:00:00Z',
+      updatedAt: '2026-01-07T08:00:00Z',
+    },
+  ]);
+
+  const [budgetLines] = useState<BudgetLineV1[]>([
+    {
+      id: 'bl100000-0000-4000-a000-000000000001',
+      tenantId: 'tenant-primary',
+      budgetRevisionId: 'br100000-0000-4000-a000-000000000001',
+      fiscalPeriodId: 'f1000000-0000-4000-a000-000000000001',
+      accountId: 'a5000000-0000-4000-a000-000000000001',
+      costCenterId: 'CC-ENG-101',
+      projectCode: 'PRJ-INFRA-REFACTOR',
+      allocatedAmountMinor: '10000000',
+      revisedAmountMinor: null,
+      createdAt: '2026-01-05T09:00:00Z',
+      updatedAt: '2026-01-05T09:00:00Z',
+    },
+    {
+      id: 'bl100000-0000-4000-a000-000000000002',
+      tenantId: 'tenant-primary',
+      budgetRevisionId: 'br100000-0000-4000-a000-000000000001',
+      fiscalPeriodId: 'f1000000-0000-4000-a000-000000000001',
+      accountId: 'a6000000-0000-4000-a000-000000000001',
+      costCenterId: 'CC-MKT-201',
+      projectCode: null,
+      allocatedAmountMinor: '5000000',
+      revisedAmountMinor: null,
+      createdAt: '2026-01-05T09:00:00Z',
+      updatedAt: '2026-01-05T09:00:00Z',
+    },
+  ]);
+
+  const [budgetCommitments] = useState<BudgetCommitmentV1[]>([
+    {
+      id: 'bc100000-0000-4000-a000-000000000001',
+      tenantId: 'tenant-primary',
+      budgetLineId: 'bl100000-0000-4000-a000-000000000001',
+      sourceDocumentType: 'PURCHASE_ORDER',
+      sourceDocumentId: 'po-2026-0042',
+      documentNumber: 'PO-2026-0042',
+      commitmentType: 'ENCUMBRANCE',
+      amountMinor: '2500000',
+      status: 'ACTIVE',
+      createdAt: '2026-01-10T10:00:00Z',
+      updatedAt: '2026-01-10T10:00:00Z',
+    },
+    {
+      id: 'bc100000-0000-4000-a000-000000000002',
+      tenantId: 'tenant-primary',
+      budgetLineId: 'bl100000-0000-4000-a000-000000000001',
+      sourceDocumentType: 'AP_BILL',
+      sourceDocumentId: 'bill-2026-0118',
+      documentNumber: 'BILL-PO-2026-0042',
+      commitmentType: 'ACTUAL_CONSUMPTION',
+      amountMinor: '4500000',
+      status: 'LIQUIDATED',
+      createdAt: '2026-01-15T16:00:00Z',
+      updatedAt: '2026-01-15T16:00:00Z',
+    },
+  ]);
 
   const [customExtensions, setCustomExtensions] = useState<Record<string, unknown>>({
     cost_center_code: 'CC-ENG-101',
@@ -734,6 +841,10 @@ export function FinancialOperationsWorkspace() {
             <Package className="w-3.5 h-3.5 mr-1" />
             Costing & Landed Cost Active
           </span>
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-rose-100 text-rose-800">
+            <PieChart className="w-3.5 h-3.5 mr-1" />
+            Budget Controls Active
+          </span>
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
             <Lock className="w-3.5 h-3.5 mr-1" />
             Immutable Facts
@@ -756,6 +867,7 @@ export function FinancialOperationsWorkspace() {
             ['depreciation', 'Depreciation Studio', Calculator],
             ['consolidation', 'Consolidation Studio', Globe],
             ['costing', 'Costing & Landed Cost', Package],
+            ['budgeting', 'Budgeting & Planning', PieChart],
             ['reports', 'Financial Statements', BarChart3],
             ['extensions', 'Application Dictionary', TrendingUp],
           ] as const
@@ -1624,6 +1736,193 @@ export function FinancialOperationsWorkspace() {
                       <span className="text-xs text-slate-500">Total Absorbed</span>
                       <p className="font-mono text-base font-bold text-emerald-700">
                         ${(parseInt(voucher.totalLandedCostMinor, 10) / 100).toFixed(2)} {voucher.currencyCode}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'budgeting' && (
+          <div className="space-y-6">
+            {/* Top Metric Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="p-4 bg-white rounded-lg border border-slate-200 shadow-sm">
+                <span className="text-xs font-medium text-slate-500">Total Budget Allocated</span>
+                <p className="mt-1 text-2xl font-bold font-mono text-slate-900">$1,200,000.00</p>
+                <span className="text-xs text-indigo-600 font-medium">12-Period Equal Distribution (100% Cent Conserved)</span>
+              </div>
+              <div className="p-4 bg-white rounded-lg border border-slate-200 shadow-sm">
+                <span className="text-xs font-medium text-slate-500">Encumbered Commitments</span>
+                <p className="mt-1 text-2xl font-bold font-mono text-amber-700">$25,000.00</p>
+                <span className="text-xs text-amber-600 font-medium">Active Requisitions & Purchase Orders</span>
+              </div>
+              <div className="p-4 bg-white rounded-lg border border-slate-200 shadow-sm">
+                <span className="text-xs font-medium text-slate-500">Actual Expense Incurred</span>
+                <p className="mt-1 text-2xl font-bold font-mono text-rose-700">$45,000.00</p>
+                <span className="text-xs text-rose-600 font-medium">Liquidated Invoices & General Ledger Debits</span>
+              </div>
+              <div className="p-4 bg-white rounded-lg border border-slate-200 shadow-sm">
+                <span className="text-xs font-medium text-slate-500">Uncommitted Headroom (Avail)</span>
+                <p className="mt-1 text-2xl font-bold font-mono text-emerald-700">$80,000.00</p>
+                <div className="mt-2 w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                  <div className="bg-emerald-600 h-1.5 rounded-full" style={{ width: '46.7%' }}></div>
+                </div>
+                <span className="text-xs text-emerald-600 font-medium mt-1 inline-block">46.7% Period Burn Rate</span>
+              </div>
+            </div>
+
+            {/* Budget Structures & Revisions Overview */}
+            <div className="bg-white rounded-lg border border-slate-200 p-6 shadow-sm">
+              <div className="flex justify-between items-center mb-4">
+                <div>
+                  <h4 className="text-base font-semibold text-slate-900">Budget Structures & Versioned Revisions</h4>
+                  <p className="text-xs text-slate-500">Multi-tier models, maker-checker governance, and fail-closed spend policies</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {budgetStructures.map((bs) => (
+                  <div key={bs.id} className="p-4 bg-slate-50 border border-slate-200 rounded-lg space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <span className="font-mono font-bold text-slate-900">{bs.code}</span>
+                        <span className="px-2 py-0.5 rounded text-xs font-semibold bg-indigo-100 text-indigo-800">
+                          {bs.budgetType}
+                        </span>
+                        <span className="px-2 py-0.5 rounded text-xs font-semibold bg-rose-100 text-rose-800">
+                          POLICY: {bs.controlAction}
+                        </span>
+                      </div>
+                      <span className="text-xs font-medium text-slate-500">Tol: +{bs.allowOverspendThresholdPct}%</span>
+                    </div>
+                    <p className="text-sm font-medium text-slate-800">{bs.name}</p>
+                    <p className="text-xs text-slate-500">{bs.description}</p>
+                  </div>
+                ))}
+
+                {budgetRevisions.map((rev) => (
+                  <div key={rev.id} className="p-4 bg-slate-50 border border-slate-200 rounded-lg space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <span className="font-mono font-bold text-slate-900">Revision #{rev.revisionNumber}</span>
+                        <span className="px-2 py-0.5 rounded text-xs font-semibold bg-emerald-100 text-emerald-800">
+                          {rev.status}
+                        </span>
+                      </div>
+                      <span className="font-mono text-xs text-slate-500">
+                        Total: ${(parseInt(rev.totalAllocatedMinor, 10) / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-600">{rev.notes}</p>
+                    <div className="text-[11px] font-mono text-slate-400 truncate">
+                      SHA-256 Checksum: {rev.checksum}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Dimensional Budget Lines & Burn-Down Grid */}
+            <div className="bg-white rounded-lg border border-slate-200 overflow-hidden shadow-sm">
+              <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center">
+                <div>
+                  <h4 className="text-base font-semibold text-slate-900">Dimensional Budget Allocation Grid</h4>
+                  <p className="text-xs text-slate-500">Segment allocations across Natural Accounts, Cost Centers, and Fiscal Periods</p>
+                </div>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-600 uppercase">
+                    <tr>
+                      <th className="py-3 px-4">Cost Center</th>
+                      <th className="py-3 px-4">Account ID</th>
+                      <th className="py-3 px-4">Project Ref</th>
+                      <th className="py-3 px-4 text-right">Allocated</th>
+                      <th className="py-3 px-4 text-right">Encumbered</th>
+                      <th className="py-3 px-4 text-right">Actual Spent</th>
+                      <th className="py-3 px-4 text-right">Available Headroom</th>
+                      <th className="py-3 px-4 text-center">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {budgetLines.map((line) => {
+                      const allocated = parseInt(line.allocatedAmountMinor, 10);
+                      const isLine1 = line.costCenterId === 'CC-ENG-101';
+                      const enc = isLine1 ? 2500000 : 0;
+                      const act = isLine1 ? 4500000 : 0;
+                      const avail = allocated - (enc + act);
+
+                      return (
+                        <tr key={line.id} className="hover:bg-slate-50">
+                          <td className="py-3 px-4 font-mono font-medium text-slate-900">{line.costCenterId}</td>
+                          <td className="py-3 px-4 font-mono text-slate-600">{line.accountId.substring(0, 8)}...</td>
+                          <td className="py-3 px-4 text-slate-600">{line.projectCode ?? '—'}</td>
+                          <td className="py-3 px-4 text-right font-mono font-bold text-slate-900">
+                            ${(allocated / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                          </td>
+                          <td className="py-3 px-4 text-right font-mono text-amber-700">
+                            ${(enc / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                          </td>
+                          <td className="py-3 px-4 text-right font-mono text-rose-700">
+                            ${(act / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                          </td>
+                          <td className="py-3 px-4 text-right font-mono font-bold text-emerald-700">
+                            ${(avail / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                          </td>
+                          <td className="py-3 px-4 text-center">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-emerald-100 text-emerald-800">
+                              UNDER_BUDGET
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Commitment Accounting Subledger */}
+            <div className="bg-white rounded-lg border border-slate-200 p-6 shadow-sm">
+              <div className="flex justify-between items-center mb-4">
+                <div>
+                  <h4 className="text-base font-semibold text-slate-900">Commitment Accounting & Encumbrance Ledger</h4>
+                  <p className="text-xs text-slate-500">Requisitions, Purchase Orders, and Invoice Liquidations preserving budget availability</p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                {budgetCommitments.map((c) => (
+                  <div key={c.id} className="p-4 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-between">
+                    <div>
+                      <div className="flex items-center space-x-2">
+                        <span className="font-mono font-bold text-slate-900">{c.documentNumber}</span>
+                        <span className="px-2 py-0.5 rounded text-xs font-semibold bg-blue-100 text-blue-800">
+                          {c.sourceDocumentType}
+                        </span>
+                        <span className="px-2 py-0.5 rounded text-xs font-semibold bg-indigo-100 text-indigo-800">
+                          {c.commitmentType}
+                        </span>
+                        <span
+                          className={`px-2 py-0.5 rounded text-xs font-semibold ${
+                            c.status === 'ACTIVE'
+                              ? 'bg-amber-100 text-amber-800'
+                              : 'bg-emerald-100 text-emerald-800'
+                          }`}
+                        >
+                          {c.status}
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-600 mt-1">Source ID: {c.sourceDocumentId}</p>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-xs text-slate-500">Amount</span>
+                      <p className="font-mono text-base font-bold text-slate-900">
+                        ${(parseInt(c.amountMinor, 10) / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                       </p>
                     </div>
                   </div>

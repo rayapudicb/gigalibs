@@ -3,4 +3,5 @@
 000003_finance_fixed_assets.up.sql
 000004_finance_consolidation.up.sql
 000005_finance_inventory_costing.up.sql
+000006_finance_budgeting_commitment_control.up.sql
 

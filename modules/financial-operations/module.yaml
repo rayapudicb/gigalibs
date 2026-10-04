@@ -33,6 +33,9 @@ spec:
     - inventory-costing-valuation
     - landed-cost-allocation
     - cogs-accounting
+    - budgeting-planning
+    - commitment-accounting
+    - budget-variance-control
   ui:
     basePath: /finance
     package: '@gigalibs/financial-operations-web'
@@ -66,6 +69,10 @@ spec:
       - finance.costing.cogs.posted.v1
       - finance.costing.landed_cost.posted.v1
       - finance.costing.revaluation.posted.v1
+      - finance.budget.structure.created.v1
+      - finance.budget.revision.activated.v1
+      - finance.budget.commitment.recorded.v1
+      - finance.budget.threshold.exceeded.v1
     consumes:
       - ar.invoice.issued.v1
       - orders.fulfillment.dispatched.v1
@@ -179,3 +186,18 @@ spec:
       - { path: 'v1/costing/landed-costs', POST: 'finance:journals:manage' }
       - { path: 'v1/costing/revaluations', POST: 'finance:journals:manage' }
       - { path: 'v1/costing/valuation-summary', GET: 'finance:reports:view' }
+      - { path: 'v1/budgeting/structures', GET: finance:read, POST: 'finance:books:manage' }
+      - { path: 'v1/budgeting/structures/{id}', GET: finance:read }
+      - { path: 'v1/budgeting/revisions', POST: 'finance:books:manage' }
+      - { path: 'v1/budgeting/revisions/{id}', GET: finance:read }
+      - { path: 'v1/budgeting/revisions/{id}/submit', POST: 'finance:journals:manage' }
+      - { path: 'v1/budgeting/revisions/{id}/approve', POST: 'finance:journals:post' }
+      - { path: 'v1/budgeting/revisions/{id}/activate', POST: 'finance:journals:post' }
+      - { path: 'v1/budgeting/revisions/{id}/freeze', POST: 'finance:journals:post' }
+      - { path: 'v1/budgeting/lines', POST: 'finance:journals:manage' }
+      - { path: 'v1/budgeting/distribute-annual', POST: 'finance:journals:manage' }
+      - { path: 'v1/budgeting/check-availability', POST: finance:read }
+      - { path: 'v1/budgeting/commitments', POST: 'finance:journals:manage' }
+      - { path: 'v1/budgeting/commitments/liquidate', POST: 'finance:journals:manage' }
+      - { path: 'v1/budgeting/commitments/release', POST: 'finance:journals:manage' }
+      - { path: 'v1/budgeting/revisions/{id}/variance', GET: 'finance:reports:view' }

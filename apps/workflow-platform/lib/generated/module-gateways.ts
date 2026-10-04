@@ -395,6 +395,112 @@ export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGat
         "methods": {
           "GET": "finance:reports:view"
         }
+      },
+      {
+        "template": "v1/budgeting/structures",
+        "pattern": "^v1/budgeting/structures$",
+        "methods": {
+          "GET": "finance:read",
+          "POST": "finance:books:manage"
+        }
+      },
+      {
+        "template": "v1/budgeting/structures/{id}",
+        "pattern": "^v1/budgeting/structures/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "GET": "finance:read"
+        }
+      },
+      {
+        "template": "v1/budgeting/revisions",
+        "pattern": "^v1/budgeting/revisions$",
+        "methods": {
+          "POST": "finance:books:manage"
+        }
+      },
+      {
+        "template": "v1/budgeting/revisions/{id}",
+        "pattern": "^v1/budgeting/revisions/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "GET": "finance:read"
+        }
+      },
+      {
+        "template": "v1/budgeting/revisions/{id}/submit",
+        "pattern": "^v1/budgeting/revisions/[0-9a-fA-F-]{36}/submit$",
+        "methods": {
+          "POST": "finance:journals:manage"
+        }
+      },
+      {
+        "template": "v1/budgeting/revisions/{id}/approve",
+        "pattern": "^v1/budgeting/revisions/[0-9a-fA-F-]{36}/approve$",
+        "methods": {
+          "POST": "finance:journals:post"
+        }
+      },
+      {
+        "template": "v1/budgeting/revisions/{id}/activate",
+        "pattern": "^v1/budgeting/revisions/[0-9a-fA-F-]{36}/activate$",
+        "methods": {
+          "POST": "finance:journals:post"
+        }
+      },
+      {
+        "template": "v1/budgeting/revisions/{id}/freeze",
+        "pattern": "^v1/budgeting/revisions/[0-9a-fA-F-]{36}/freeze$",
+        "methods": {
+          "POST": "finance:journals:post"
+        }
+      },
+      {
+        "template": "v1/budgeting/lines",
+        "pattern": "^v1/budgeting/lines$",
+        "methods": {
+          "POST": "finance:journals:manage"
+        }
+      },
+      {
+        "template": "v1/budgeting/distribute-annual",
+        "pattern": "^v1/budgeting/distribute-annual$",
+        "methods": {
+          "POST": "finance:journals:manage"
+        }
+      },
+      {
+        "template": "v1/budgeting/check-availability",
+        "pattern": "^v1/budgeting/check-availability$",
+        "methods": {
+          "POST": "finance:read"
+        }
+      },
+      {
+        "template": "v1/budgeting/commitments",
+        "pattern": "^v1/budgeting/commitments$",
+        "methods": {
+          "POST": "finance:journals:manage"
+        }
+      },
+      {
+        "template": "v1/budgeting/commitments/liquidate",
+        "pattern": "^v1/budgeting/commitments/liquidate$",
+        "methods": {
+          "POST": "finance:journals:manage"
+        }
+      },
+      {
+        "template": "v1/budgeting/commitments/release",
+        "pattern": "^v1/budgeting/commitments/release$",
+        "methods": {
+          "POST": "finance:journals:manage"
+        }
+      },
+      {
+        "template": "v1/budgeting/revisions/{id}/variance",
+        "pattern": "^v1/budgeting/revisions/[0-9a-fA-F-]{36}/variance$",
+        "methods": {
+          "GET": "finance:reports:view"
+        }
       }
     ],
     "transformBody": null,

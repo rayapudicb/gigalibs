@@ -34,6 +34,7 @@ const steps = [
   { name: 'fixed-assets', cmd: process.execPath, args: ['scripts/verify-fixed-assets.mjs'] },
   { name: 'consolidation', cmd: process.execPath, args: ['scripts/verify-consolidation.mjs'] },
   { name: 'inventory-costing', cmd: process.execPath, args: ['scripts/verify-inventory-costing.mjs'] },
+  { name: 'budgeting-commitment-control', cmd: process.execPath, args: ['scripts/verify-budgeting-and-commitment-control.mjs'] },
 ];
 
 const logDir = join(tmpdir(), 'gigalibs-verify');

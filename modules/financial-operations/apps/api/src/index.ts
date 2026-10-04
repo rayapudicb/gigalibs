@@ -15,4 +15,7 @@ export * from './consolidation/fx-translation-engine.js';
 export * from './costing/costing.service.js';
 export * from './costing/costing.controller.js';
 export * from './costing/costing-engine.js';
+export * from './budgeting/budgeting.service.js';
+export * from './budgeting/budgeting.controller.js';
+export * from './budgeting/budgeting-engine.js';
 
