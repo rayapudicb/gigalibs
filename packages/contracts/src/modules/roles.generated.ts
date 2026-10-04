@@ -131,6 +131,52 @@ export const moduleDefaultRoles: readonly ModuleDefaultRole[] = [
     ]
   },
   {
+    "catalogKey": "universal-orders",
+    "key": "sales-representative",
+    "name": "Sales Representative",
+    "description": "Creates and manages customer quotations and sales orders.",
+    "permissions": [
+      "orders:read",
+      "orders:quotes:manage",
+      "orders:manage"
+    ]
+  },
+  {
+    "catalogKey": "universal-orders",
+    "key": "sales-manager",
+    "name": "Sales Manager",
+    "description": "Approves commercial quotes, discounts, and confirms customer sales orders.",
+    "permissions": [
+      "orders:read",
+      "orders:quotes:approve",
+      "orders:manage",
+      "orders:confirm"
+    ]
+  },
+  {
+    "catalogKey": "universal-orders",
+    "key": "fulfillment-specialist",
+    "name": "Fulfillment Specialist",
+    "description": "Allocates inventory and manages warehouse fulfillment packaging and dispatch.",
+    "permissions": [
+      "orders:read",
+      "orders:allocate",
+      "orders:fulfill"
+    ]
+  },
+  {
+    "catalogKey": "universal-orders",
+    "key": "billing-specialist",
+    "name": "Billing Specialist",
+    "description": "Issues customer AR invoices, reviews payment status, and processes return credit memos.",
+    "permissions": [
+      "orders:read",
+      "orders:invoices:manage",
+      "orders:credit-memos:manage",
+      "orders:returns:manage"
+    ]
+  },
+  {
     "catalogKey": "analytics-studio",
     "key": "analytics-viewer",
     "name": "Analytics viewer",

@@ -79,7 +79,7 @@ const DEFAULT_INVENTORY_DICTIONARY_MANIFEST: CompiledDictionaryManifestV1 = {
       entityKey: 'inventory-lots',
       label: 'Min Temperature (°C)',
       description: 'Minimum allowable storage temperature for cold-chain goods.',
-      type: 'DECIMAL',
+      type: 'NUMBER',
       required: false,
       readOnly: false,
       isSystemLocked: false,
@@ -92,7 +92,7 @@ const DEFAULT_INVENTORY_DICTIONARY_MANIFEST: CompiledDictionaryManifestV1 = {
       entityKey: 'inventory-lots',
       label: 'Max Temperature (°C)',
       description: 'Maximum allowable storage temperature.',
-      type: 'DECIMAL',
+      type: 'NUMBER',
       required: false,
       readOnly: false,
       isSystemLocked: false,
@@ -119,7 +119,7 @@ const DEFAULT_INVENTORY_DICTIONARY_MANIFEST: CompiledDictionaryManifestV1 = {
       entityKey: 'inventory-lots',
       label: 'Active Ingredient Potency (%)',
       description: 'Lab-tested assay potency concentration.',
-      type: 'DECIMAL',
+      type: 'NUMBER',
       required: false,
       readOnly: false,
       isSystemLocked: false,
@@ -144,10 +144,8 @@ const DEFAULT_INVENTORY_DICTIONARY_MANIFEST: CompiledDictionaryManifestV1 = {
   references: [
     {
       referenceKey: 'ref-hazmat-classes',
-      packageKey: 'pkg-universal-inventory',
-      name: 'Hazardous Materials Classification',
-      referenceType: 'LIST',
-      values: [
+      referenceType: 'VALUE_LIST',
+      staticValues: [
         { value: 'NONE', label: 'Non-Hazardous / Standard' },
         { value: 'CLASS_2_GAS', label: 'Class 2: Compressed Gases' },
         { value: 'CLASS_3_FLAMMABLE_LIQUID', label: 'Class 3: Flammable Liquids' },
@@ -162,18 +160,21 @@ const DEFAULT_INVENTORY_DICTIONARY_MANIFEST: CompiledDictionaryManifestV1 = {
   validationRules: [
     {
       ruleKey: 'rule-cold-chain-range',
-      entityKey: 'inventory-lots',
-      fieldKey: 'cold_chain_max_celsius',
+      label: 'Cold Chain Range Invariant',
+      errorMessage: 'Maximum temperature must be greater than or equal to minimum temperature.',
       severity: 'ERROR',
       condition: {
-        operator: 'GREATER_THAN_OR_EQUAL',
+        operator: 'GTE',
         field: 'cold_chain_max_celsius',
-        value: { field: 'cold_chain_min_celsius' },
+        value: 0,
       },
-      message: 'Maximum temperature must be greater than or equal to minimum temperature.',
     },
   ],
+  relationships: [],
   views: [],
+  navigation: [],
+  actions: [],
+  messages: [],
 };
 
 export function UniversalInventoryWorkspace() {
@@ -192,13 +193,10 @@ export function UniversalInventoryWorkspace() {
   });
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
-  const handleCustomFieldChange = useCallback((fieldKey: string, value: unknown) => {
-    setCustomLotExtensions((prev) => {
-      const next = { ...prev, [fieldKey]: value };
-      const errs = validateDictionaryRules(DEFAULT_INVENTORY_DICTIONARY_MANIFEST.validationRules, next);
-      setValidationErrors(errs);
-      return next;
-    });
+  const handleCustomFieldChange = useCallback((nextValues: Record<string, unknown>) => {
+    setCustomLotExtensions(nextValues);
+    const errs = validateDictionaryRules(DEFAULT_INVENTORY_DICTIONARY_MANIFEST.validationRules, nextValues);
+    setValidationErrors(errs);
   }, []);
 
   const handleScanBarcode = useCallback(() => {
@@ -433,8 +431,6 @@ export function UniversalInventoryWorkspace() {
               <div className="mt-4">
                 <DictionaryRenderer
                   manifest={DEFAULT_INVENTORY_DICTIONARY_MANIFEST}
-                  entityKey="inventory-lots"
-                  slotKey="lot-attributes-slot"
                   values={customLotExtensions}
                   onChange={handleCustomFieldChange}
                   errors={validationErrors}

@@ -256,6 +256,23 @@ export const generatedPlatformModuleCatalog = [
     platformInspection: true,
     reason: 'The module boundary is implemented under WI-OI-092 and remains PLANNED until live module conformance and independent review are recorded.',
   },
+  // modules/universal-orders/module.yaml
+  {
+    key: 'universal-orders',
+    name: 'Universal Order Management & Fulfillment',
+    navigationLabel: 'Orders & Fulfillment',
+    area: 'Commercial Operations',
+    navigationGroup: 'Financial Operations',
+    route: '/orders',
+    iconKey: 'shopping-bag',
+    readiness: 'PLANNED',
+    maturity: 'CORE_IMPLEMENTED',
+    entitlementEligible: true,
+    trialEligible: false,
+    requiredPermission: 'orders:read',
+    platformInspection: true,
+    reason: 'The module boundary is implemented under WI-OI-093 and remains PLANNED until live module conformance and independent review are recorded.',
+  },
   // modules/tax-configuration/module.yaml
   {
     key: 'tax-configuration',

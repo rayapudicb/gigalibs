@@ -1125,6 +1125,149 @@ export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGat
     "transformBody": null,
     "unavailable": []
   },
+  "universal-orders": {
+    "module": "universal-orders",
+    "basePaths": [
+      "/api/universal-orders"
+    ],
+    "catalogKey": "universal-orders",
+    "audience": "gigalibs-universal-orders-api",
+    "upstream": "universal-orders",
+    "signingKeyEnvironment": "UNIVERSAL_ORDERS_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64",
+    "codePrefix": "UNIVERSAL_ORDERS",
+    "routeNoun": "Universal Orders",
+    "serviceName": "Universal Order Management & Fulfillment",
+    "entitlementName": "Universal Orders",
+    "routes": [
+      {
+        "template": "v1/quotes",
+        "pattern": "^v1/quotes$",
+        "methods": {
+          "GET": "orders:read",
+          "POST": "orders:quotes:manage"
+        }
+      },
+      {
+        "template": "v1/quotes/{id}",
+        "pattern": "^v1/quotes/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "GET": "orders:read"
+        }
+      },
+      {
+        "template": "v1/quotes/{id}/accept",
+        "pattern": "^v1/quotes/[0-9a-fA-F-]{36}/accept$",
+        "methods": {
+          "POST": "orders:quotes:approve"
+        }
+      },
+      {
+        "template": "v1/quotes/{id}/convert",
+        "pattern": "^v1/quotes/[0-9a-fA-F-]{36}/convert$",
+        "methods": {
+          "POST": "orders:quotes:manage"
+        }
+      },
+      {
+        "template": "v1/orders",
+        "pattern": "^v1/orders$",
+        "methods": {
+          "GET": "orders:read",
+          "POST": "orders:manage"
+        }
+      },
+      {
+        "template": "v1/orders/{id}",
+        "pattern": "^v1/orders/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "GET": "orders:read"
+        }
+      },
+      {
+        "template": "v1/orders/{id}/confirm",
+        "pattern": "^v1/orders/[0-9a-fA-F-]{36}/confirm$",
+        "methods": {
+          "POST": "orders:confirm"
+        }
+      },
+      {
+        "template": "v1/orders/{id}/cancel",
+        "pattern": "^v1/orders/[0-9a-fA-F-]{36}/cancel$",
+        "methods": {
+          "POST": "orders:manage"
+        }
+      },
+      {
+        "template": "v1/orders/{id}/allocate",
+        "pattern": "^v1/orders/[0-9a-fA-F-]{36}/allocate$",
+        "methods": {
+          "POST": "orders:allocate"
+        }
+      },
+      {
+        "template": "v1/fulfillments",
+        "pattern": "^v1/fulfillments$",
+        "methods": {
+          "GET": "orders:read",
+          "POST": "orders:fulfill"
+        }
+      },
+      {
+        "template": "v1/fulfillments/{id}",
+        "pattern": "^v1/fulfillments/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "GET": "orders:read"
+        }
+      },
+      {
+        "template": "v1/fulfillments/{id}/dispatch",
+        "pattern": "^v1/fulfillments/[0-9a-fA-F-]{36}/dispatch$",
+        "methods": {
+          "POST": "orders:fulfill"
+        }
+      },
+      {
+        "template": "v1/invoices",
+        "pattern": "^v1/invoices$",
+        "methods": {
+          "GET": "orders:read",
+          "POST": "orders:invoices:manage"
+        }
+      },
+      {
+        "template": "v1/invoices/{id}",
+        "pattern": "^v1/invoices/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "GET": "orders:read"
+        }
+      },
+      {
+        "template": "v1/invoices/{id}/issue",
+        "pattern": "^v1/invoices/[0-9a-fA-F-]{36}/issue$",
+        "methods": {
+          "POST": "orders:invoices:manage"
+        }
+      },
+      {
+        "template": "v1/credit-memos",
+        "pattern": "^v1/credit-memos$",
+        "methods": {
+          "GET": "orders:read",
+          "POST": "orders:credit-memos:manage"
+        }
+      },
+      {
+        "template": "v1/returns",
+        "pattern": "^v1/returns$",
+        "methods": {
+          "GET": "orders:read",
+          "POST": "orders:returns:manage"
+        }
+      }
+    ],
+    "transformBody": null,
+    "unavailable": []
+  },
   "universal-procurement": {
     "module": "universal-procurement",
     "basePaths": [

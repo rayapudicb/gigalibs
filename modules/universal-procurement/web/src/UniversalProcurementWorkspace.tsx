@@ -127,10 +127,8 @@ const DEFAULT_PROCUREMENT_DICTIONARY_MANIFEST: CompiledDictionaryManifestV1 = {
   references: [
     {
       referenceKey: 'ref-variance-reasons',
-      packageKey: 'pkg-universal-procurement',
-      name: 'Price Variance Justification',
-      referenceType: 'LIST',
-      values: [
+      referenceType: 'VALUE_LIST',
+      staticValues: [
         { value: 'EXCHANGE_RATE', label: 'Currency / FX Fluctuation' },
         { value: 'FREIGHT_SURCHARGE', label: 'Unbudgeted Expedited Freight' },
         { value: 'VOLUME_DISCOUNT_MISMATCH', label: 'Tiered Pricing Bracket Adjustment' },
@@ -142,18 +140,21 @@ const DEFAULT_PROCUREMENT_DICTIONARY_MANIFEST: CompiledDictionaryManifestV1 = {
   validationRules: [
     {
       ruleKey: 'rule-esg-threshold',
-      entityKey: 'purchase-orders',
-      fieldKey: 'vendor_esg_score',
+      label: 'Vendor ESG Score Policy Threshold',
+      errorMessage: 'Vendor ESG score is below policy threshold (50). Requires sustainability officer sign-off.',
       severity: 'WARNING',
       condition: {
-        operator: 'GREATER_THAN_OR_EQUAL',
+        operator: 'GTE',
         field: 'vendor_esg_score',
         value: 50,
       },
-      message: 'Vendor ESG score is below policy threshold (50). Requires sustainability officer sign-off.',
     },
   ],
+  relationships: [],
   views: [],
+  navigation: [],
+  actions: [],
+  messages: [],
 };
 
 export interface UniversalProcurementWorkspaceProps {
@@ -177,13 +178,10 @@ export function UniversalProcurementWorkspace({
   });
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
-  const handleCustomFieldChange = useCallback((fieldKey: string, value: unknown) => {
-    setCustomExtensions((prev) => {
-      const next = { ...prev, [fieldKey]: value };
-      const errs = validateDictionaryRules(DEFAULT_PROCUREMENT_DICTIONARY_MANIFEST.validationRules, next);
-      setValidationErrors(errs);
-      return next;
-    });
+  const handleCustomFieldChange = useCallback((nextValues: Record<string, unknown>) => {
+    setCustomExtensions(nextValues);
+    const errs = validateDictionaryRules(DEFAULT_PROCUREMENT_DICTIONARY_MANIFEST.validationRules, nextValues);
+    setValidationErrors(errs);
   }, []);
 
   return (
@@ -529,7 +527,6 @@ export function UniversalProcurementWorkspace({
               <div className="mt-4">
                 <DictionaryRenderer
                   manifest={DEFAULT_PROCUREMENT_DICTIONARY_MANIFEST}
-                  entityKey="purchase-orders"
                   values={customExtensions}
                   onChange={handleCustomFieldChange}
                   errors={validationErrors}

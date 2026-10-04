@@ -43,6 +43,13 @@ export const generatedModuleUpstreams = {
     "serviceHostname": "module-host",
     "basePath": "/universal-inventory"
   },
+  "universal-orders": {
+    "module": "universal-orders",
+    "environmentKey": "UNIVERSAL_ORDERS_API_URL",
+    "port": "4790",
+    "serviceHostname": "module-host",
+    "basePath": "/universal-orders"
+  },
   "universal-procurement": {
     "module": "universal-procurement",
     "environmentKey": "UNIVERSAL_PROCUREMENT_API_URL",

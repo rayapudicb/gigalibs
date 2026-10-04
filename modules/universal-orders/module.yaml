@@ -1,0 +1,135 @@
+apiVersion: modules.gigalibs.io/v1
+kind: Module
+metadata:
+  name: universal-orders
+  displayName: Universal Order Management & Fulfillment
+  version: 0.1.0-dev
+  lifecycle: implementation
+  workItem: WI-OI-093
+spec:
+  standalone: true
+  category: business
+  requiredModules: [product-catalogue, universal-inventory]
+  optionalModules: [universal-procurement, universal-connector-hub, analytics-studio]
+  capabilities:
+    - sales-quotes
+    - sales-orders
+    - inventory-allocation
+    - available-to-promise
+    - fulfillment-orchestration
+    - customer-invoicing
+    - customer-returns-rma
+    - customer-credit-memos
+    - outbox-events
+    - audit
+  plannedCapabilities:
+    - customer-portal
+    - recurring-subscriptions
+    - automated-drop-ship
+  ui:
+    basePath: /orders
+    package: '@gigalibs/universal-orders-web'
+    pages:
+      - route: /orders
+        component: UniversalOrderWorkspace
+  api:
+    application: apps/api
+    port: 4790
+    upstream:
+      key: universal-orders
+      serviceHostname: module-host
+      environmentKey: UNIVERSAL_ORDERS_API_URL
+      basePath: /universal-orders
+    version: v1
+  events:
+    emits:
+      - orders.quote.created.v1
+      - orders.quote.accepted.v1
+      - orders.order.created.v1
+      - orders.order.confirmed.v1
+      - orders.order.allocated.v1
+      - orders.fulfillment.dispatched.v1
+      - orders.invoice.issued.v1
+    consumes:
+      - platform.authorization.revoked.v1
+      - platform.organization.version.v1
+      - inventory.stock.adjusted.v1
+      - product.created.v1
+  identity:
+    protocol: signed-platform-context-v1
+    tenantClaimRequired: true
+    failClosed: true
+  database:
+    engine: postgresql
+    minimumVersion: '16'
+    ownsSchema: true
+    defaultSchema: gigalibs_orders
+    crossSchemaAccess: false
+    runtimeManifest: db/runtime-manifest.txt
+  runtime:
+    generated: true
+    hosting: host
+    appendOnlyTables: [audit_events]
+    readOnlyTables: [auth_revocation_events]
+  catalog:
+    - key: universal-orders
+      name: Universal Order Management & Fulfillment
+      navigationLabel: Orders & Fulfillment
+      area: Commercial Operations
+      navigationGroup: Financial Operations
+      route: /orders
+      iconKey: shopping-bag
+      readiness: PLANNED
+      maturity: CORE_IMPLEMENTED
+      entitlementEligible: true
+      trialEligible: false
+      requiredPermission: orders:read
+      platformInspection: true
+      reason: The module boundary is implemented under WI-OI-093 and remains PLANNED until live module conformance and independent review are recorded.
+      navigationOrder: 129
+      personas: [OPERATIONS_SUPERVISOR]
+      roles:
+        - key: sales-representative
+          name: Sales Representative
+          description: Creates and manages customer quotations and sales orders.
+          permissions: [orders:read, 'orders:quotes:manage', 'orders:manage']
+        - key: sales-manager
+          name: Sales Manager
+          description: Approves commercial quotes, discounts, and confirms customer sales orders.
+          permissions: [orders:read, 'orders:quotes:approve', 'orders:manage', 'orders:confirm']
+        - key: fulfillment-specialist
+          name: Fulfillment Specialist
+          description: Allocates inventory and manages warehouse fulfillment packaging and dispatch.
+          permissions: [orders:read, 'orders:allocate', 'orders:fulfill']
+        - key: billing-specialist
+          name: Billing Specialist
+          description: Issues customer AR invoices, reviews payment status, and processes return credit memos.
+          permissions: [orders:read, 'orders:invoices:manage', 'orders:credit-memos:manage', 'orders:returns:manage']
+  gateway:
+    basePaths: [/api/universal-orders]
+    catalogKey: universal-orders
+    audience: gigalibs-universal-orders-api
+    upstream: universal-orders
+    signingKeyEnvironment: UNIVERSAL_ORDERS_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64
+    codePrefix: UNIVERSAL_ORDERS
+    routeNoun: Universal Orders
+    serviceName: Universal Order Management & Fulfillment
+    entitlementName: Universal Orders
+    routes:
+      - { path: 'v1/quotes', GET: orders:read, POST: 'orders:quotes:manage' }
+      - { path: 'v1/quotes/{id}', GET: orders:read }
+      - { path: 'v1/quotes/{id}/accept', POST: 'orders:quotes:approve' }
+      - { path: 'v1/quotes/{id}/convert', POST: 'orders:quotes:manage' }
+      - { path: 'v1/orders', GET: orders:read, POST: 'orders:manage' }
+      - { path: 'v1/orders/{id}', GET: orders:read }
+      - { path: 'v1/orders/{id}/confirm', POST: 'orders:confirm' }
+      - { path: 'v1/orders/{id}/cancel', POST: 'orders:manage' }
+      - { path: 'v1/orders/{id}/allocate', POST: 'orders:allocate' }
+      - { path: 'v1/fulfillments', GET: orders:read, POST: 'orders:fulfill' }
+      - { path: 'v1/fulfillments/{id}', GET: orders:read }
+      - { path: 'v1/fulfillments/{id}/dispatch', POST: 'orders:fulfill' }
+      - { path: 'v1/invoices', GET: orders:read, POST: 'orders:invoices:manage' }
+      - { path: 'v1/invoices/{id}', GET: orders:read }
+      - { path: 'v1/invoices/{id}/issue', POST: 'orders:invoices:manage' }
+      - { path: 'v1/credit-memos', GET: orders:read, POST: 'orders:credit-memos:manage' }
+      - { path: 'v1/returns', GET: orders:read, POST: 'orders:returns:manage' }

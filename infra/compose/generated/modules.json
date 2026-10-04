@@ -43,6 +43,28 @@
       "auth_revocation_events"
     ]
   },
+  "universal-orders": {
+    "hosting": "host",
+    "basePath": "/universal-orders",
+    "package": "@gigalibs/universal-orders-api",
+    "directory": "modules/universal-orders",
+    "image": "gigalibs/module-host",
+    "component": "module-host",
+    "title": "Universal Order Management & Fulfillment",
+    "workItem": "WI-OI-093",
+    "prefix": "UNIVERSAL_ORDERS",
+    "service": "module-host",
+    "port": 4790,
+    "schema": "gigalibs_orders",
+    "migrationVersion": 1,
+    "audience": "gigalibs-universal-orders-api",
+    "appendOnlyTables": [
+      "audit_events"
+    ],
+    "readOnlyTables": [
+      "auth_revocation_events"
+    ]
+  },
   "universal-procurement": {
     "hosting": "host",
     "basePath": "/universal-procurement",
