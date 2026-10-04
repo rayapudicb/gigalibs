@@ -20,5 +20,27 @@
     "readOnlyTables": [
       "auth_revocation_events"
     ]
+  },
+  "universal-inventory": {
+    "hosting": "host",
+    "basePath": "/universal-inventory",
+    "package": "@gigalibs/universal-inventory-api",
+    "directory": "modules/universal-inventory",
+    "image": "gigalibs/module-host",
+    "component": "module-host",
+    "title": "Universal Inventory & Warehouse Operations",
+    "workItem": "WI-OI-091",
+    "prefix": "UNIVERSAL_INVENTORY",
+    "service": "module-host",
+    "port": 4790,
+    "schema": "gigalibs_inventory",
+    "migrationVersion": 1,
+    "audience": "gigalibs-universal-inventory-api",
+    "appendOnlyTables": [
+      "audit_events"
+    ],
+    "readOnlyTables": [
+      "auth_revocation_events"
+    ]
   }
 }

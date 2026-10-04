@@ -941,5 +941,188 @@ export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGat
     ],
     "transformBody": null,
     "unavailable": []
+  },
+  "universal-inventory": {
+    "module": "universal-inventory",
+    "basePaths": [
+      "/api/universal-inventory"
+    ],
+    "catalogKey": "universal-inventory",
+    "audience": "gigalibs-universal-inventory-api",
+    "upstream": "universal-inventory",
+    "signingKeyEnvironment": "UNIVERSAL_INVENTORY_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64",
+    "codePrefix": "UNIVERSAL_INVENTORY",
+    "routeNoun": "Universal Inventory",
+    "serviceName": "Universal Inventory & Warehouse Operations",
+    "entitlementName": "Universal Inventory",
+    "routes": [
+      {
+        "template": "v1/warehouses",
+        "pattern": "^v1/warehouses$",
+        "methods": {
+          "GET": "inventory:read",
+          "POST": "inventory:warehouses:manage"
+        }
+      },
+      {
+        "template": "v1/warehouses/{id}",
+        "pattern": "^v1/warehouses/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "GET": "inventory:read",
+          "PATCH": "inventory:warehouses:manage"
+        }
+      },
+      {
+        "template": "v1/locations",
+        "pattern": "^v1/locations$",
+        "methods": {
+          "GET": "inventory:read",
+          "POST": "inventory:warehouses:manage"
+        }
+      },
+      {
+        "template": "v1/items",
+        "pattern": "^v1/items$",
+        "methods": {
+          "GET": "inventory:read",
+          "POST": "inventory:items:manage"
+        }
+      },
+      {
+        "template": "v1/lots",
+        "pattern": "^v1/lots$",
+        "methods": {
+          "GET": "inventory:read",
+          "POST": "inventory:receive"
+        }
+      },
+      {
+        "template": "v1/balances",
+        "pattern": "^v1/balances$",
+        "methods": {
+          "GET": "inventory:read"
+        }
+      },
+      {
+        "template": "v1/ledger",
+        "pattern": "^v1/ledger$",
+        "methods": {
+          "GET": "inventory:ledger:read"
+        }
+      },
+      {
+        "template": "v1/movements",
+        "pattern": "^v1/movements$",
+        "methods": {
+          "POST": "inventory:transfer"
+        }
+      },
+      {
+        "template": "v1/receipts",
+        "pattern": "^v1/receipts$",
+        "methods": {
+          "GET": "inventory:read",
+          "POST": "inventory:receive"
+        }
+      },
+      {
+        "template": "v1/receipts/{id}/complete",
+        "pattern": "^v1/receipts/[0-9a-fA-F-]{36}/complete$",
+        "methods": {
+          "POST": "inventory:receive"
+        }
+      },
+      {
+        "template": "v1/transfers",
+        "pattern": "^v1/transfers$",
+        "methods": {
+          "GET": "inventory:read",
+          "POST": "inventory:transfer"
+        }
+      },
+      {
+        "template": "v1/reservations",
+        "pattern": "^v1/reservations$",
+        "methods": {
+          "GET": "inventory:read",
+          "POST": "inventory:reserve"
+        }
+      },
+      {
+        "template": "v1/reservations/{id}/release",
+        "pattern": "^v1/reservations/[0-9a-fA-F-]{36}/release$",
+        "methods": {
+          "POST": "inventory:reserve"
+        }
+      },
+      {
+        "template": "v1/kits",
+        "pattern": "^v1/kits$",
+        "methods": {
+          "GET": "inventory:kits:read",
+          "POST": "inventory:kits:manage"
+        }
+      },
+      {
+        "template": "v1/kits/{id}/stage",
+        "pattern": "^v1/kits/[0-9a-fA-F-]{36}/stage$",
+        "methods": {
+          "POST": "inventory:kits:manage"
+        }
+      },
+      {
+        "template": "v1/kits/{id}/issue",
+        "pattern": "^v1/kits/[0-9a-fA-F-]{36}/issue$",
+        "methods": {
+          "POST": "inventory:issue"
+        }
+      },
+      {
+        "template": "v1/kits/{id}/return",
+        "pattern": "^v1/kits/[0-9a-fA-F-]{36}/return$",
+        "methods": {
+          "POST": "inventory:return"
+        }
+      },
+      {
+        "template": "v1/count-plans",
+        "pattern": "^v1/count-plans$",
+        "methods": {
+          "GET": "inventory:read",
+          "POST": "inventory:counts:approve"
+        }
+      },
+      {
+        "template": "v1/count-entries",
+        "pattern": "^v1/count-entries$",
+        "methods": {
+          "POST": "inventory:count"
+        }
+      },
+      {
+        "template": "v1/adjustments",
+        "pattern": "^v1/adjustments$",
+        "methods": {
+          "GET": "inventory:read",
+          "POST": "inventory:adjust"
+        }
+      },
+      {
+        "template": "v1/adjustments/{id}/approve",
+        "pattern": "^v1/adjustments/[0-9a-fA-F-]{36}/approve$",
+        "methods": {
+          "POST": "inventory:adjust:approve"
+        }
+      },
+      {
+        "template": "v1/barcodes/resolve",
+        "pattern": "^v1/barcodes/resolve$",
+        "methods": {
+          "POST": "inventory:read"
+        }
+      }
+    ],
+    "transformBody": null,
+    "unavailable": []
   }
 };

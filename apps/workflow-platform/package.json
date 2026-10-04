@@ -25,6 +25,7 @@
     "@gigalibs/logger": "workspace:*",
     "@gigalibs/maps-core": "workspace:*",
     "@gigalibs/product-catalogue-web": "workspace:*",
+    "@gigalibs/universal-inventory-web": "workspace:*",
     "@gigalibs/web-sdk": "workspace:*",
     "@medusajs/icons": "^2.20.1",
     "@medusajs/ui": "^4.2.3",

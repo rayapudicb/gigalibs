@@ -36,6 +36,13 @@ export const generatedModuleUpstreams = {
     "serviceHostname": "module-host",
     "basePath": "/product-catalogue"
   },
+  "universal-inventory": {
+    "module": "universal-inventory",
+    "environmentKey": "UNIVERSAL_INVENTORY_API_URL",
+    "port": "4790",
+    "serviceHostname": "module-host",
+    "basePath": "/universal-inventory"
+  },
   "workforce": {
     "module": "gigaops",
     "environmentKey": "WORKFORCE_API_URL",

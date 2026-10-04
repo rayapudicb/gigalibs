@@ -1,0 +1,136 @@
+apiVersion: modules.gigalibs.io/v1
+kind: Module
+metadata:
+  name: universal-inventory
+  displayName: Universal Inventory & Warehouse Operations
+  version: 0.1.0-dev
+  lifecycle: implementation
+  workItem: WI-OI-091
+spec:
+  standalone: true
+  category: business
+  requiredModules: [product-catalogue]
+  optionalModules: [physical-operations-cmms, universal-connector-hub, analytics-studio]
+  capabilities:
+    - warehouses-and-locations
+    - stock-ledger
+    - stock-balances
+    - lot-and-serial-traceability
+    - receiving-and-putaway
+    - transfers-and-issues
+    - work-order-reservations
+    - maintenance-kitting-and-staging
+    - cycle-counts-and-adjustments
+    - maker-checker-approvals
+    - barcode-scanning
+    - outbox-events
+    - audit
+  plannedCapabilities:
+    - automated-replenishment
+    - operational-valuation-layers
+    - offline-sync-queue
+  ui:
+    basePath: /inventory
+    package: '@gigalibs/universal-inventory-web'
+    pages:
+      - route: /inventory
+        component: UniversalInventoryWorkspace
+  api:
+    application: apps/api
+    port: 4790
+    upstream:
+      key: universal-inventory
+      serviceHostname: module-host
+      environmentKey: UNIVERSAL_INVENTORY_API_URL
+      basePath: /universal-inventory
+    version: v1
+  events:
+    emits:
+      - inventory.receipt.completed.v1
+      - inventory.stock.moved.v1
+      - inventory.balance.changed.v1
+      - inventory.reservation.changed.v1
+      - inventory.kit.staged.v1
+      - inventory.kit.issued.v1
+      - inventory.count.closed.v1
+      - inventory.adjustment.approved.v1
+    consumes:
+      - platform.authorization.revoked.v1
+      - platform.organization.version.v1
+      - product.created.v1
+      - product.updated.v1
+  identity:
+    protocol: signed-platform-context-v1
+    tenantClaimRequired: true
+    failClosed: true
+  database:
+    engine: postgresql
+    minimumVersion: '16'
+    ownsSchema: true
+    defaultSchema: gigalibs_inventory
+    crossSchemaAccess: false
+    runtimeManifest: db/runtime-manifest.txt
+  runtime:
+    generated: true
+    hosting: host
+    appendOnlyTables: [audit_events]
+    readOnlyTables: [auth_revocation_events]
+  catalog:
+    - key: universal-inventory
+      name: Universal Inventory & Warehouses
+      navigationLabel: Inventory & Warehouses
+      area: Workforce & Operations
+      navigationGroup: Workforce & Operations
+      route: /inventory
+      iconKey: boxes
+      readiness: PLANNED
+      maturity: CORE_IMPLEMENTED
+      entitlementEligible: true
+      trialEligible: false
+      requiredPermission: inventory:read
+      platformInspection: true
+      reason: The module boundary is implemented under WI-OI-091 and remains PLANNED until live module conformance and independent review are recorded.
+      navigationOrder: 126
+      personas: [OPERATIONS_SUPERVISOR]
+      roles:
+        - key: inventory-operator
+          name: Inventory Operator
+          description: Executes warehouse receiving, putaway, transfers, picks, kitting and counts.
+          permissions: [inventory:read, inventory:receive, inventory:putaway, inventory:transfer, inventory:issue, inventory:return, inventory:count, 'inventory:kits:read']
+        - key: inventory-controller
+          name: Inventory Controller
+          description: Manages warehouses, locations, reservations, kits, and four-eyes count adjustments.
+          permissions: [inventory:read, 'inventory:ledger:read', 'inventory:warehouses:manage', 'inventory:items:manage', inventory:reserve, 'inventory:counts:approve', inventory:adjust, 'inventory:adjust:approve', 'inventory:kits:manage']
+  gateway:
+    basePaths: [/api/universal-inventory]
+    catalogKey: universal-inventory
+    audience: gigalibs-universal-inventory-api
+    upstream: universal-inventory
+    signingKeyEnvironment: UNIVERSAL_INVENTORY_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64
+    codePrefix: UNIVERSAL_INVENTORY
+    routeNoun: Universal Inventory
+    serviceName: Universal Inventory & Warehouse Operations
+    entitlementName: Universal Inventory
+    routes:
+      - { path: 'v1/warehouses', GET: inventory:read, POST: 'inventory:warehouses:manage' }
+      - { path: 'v1/warehouses/{id}', GET: inventory:read, PATCH: 'inventory:warehouses:manage' }
+      - { path: 'v1/locations', GET: inventory:read, POST: 'inventory:warehouses:manage' }
+      - { path: 'v1/items', GET: inventory:read, POST: 'inventory:items:manage' }
+      - { path: 'v1/lots', GET: inventory:read, POST: inventory:receive }
+      - { path: 'v1/balances', GET: inventory:read }
+      - { path: 'v1/ledger', GET: 'inventory:ledger:read' }
+      - { path: 'v1/movements', POST: inventory:transfer }
+      - { path: 'v1/receipts', GET: inventory:read, POST: inventory:receive }
+      - { path: 'v1/receipts/{id}/complete', POST: inventory:receive }
+      - { path: 'v1/transfers', GET: inventory:read, POST: inventory:transfer }
+      - { path: 'v1/reservations', GET: inventory:read, POST: inventory:reserve }
+      - { path: 'v1/reservations/{id}/release', POST: inventory:reserve }
+      - { path: 'v1/kits', GET: 'inventory:kits:read', POST: 'inventory:kits:manage' }
+      - { path: 'v1/kits/{id}/stage', POST: 'inventory:kits:manage' }
+      - { path: 'v1/kits/{id}/issue', POST: inventory:issue }
+      - { path: 'v1/kits/{id}/return', POST: inventory:return }
+      - { path: 'v1/count-plans', GET: inventory:read, POST: 'inventory:counts:approve' }
+      - { path: 'v1/count-entries', POST: inventory:count }
+      - { path: 'v1/adjustments', GET: inventory:read, POST: inventory:adjust }
+      - { path: 'v1/adjustments/{id}/approve', POST: 'inventory:adjust:approve' }
+      - { path: 'v1/barcodes/resolve', POST: inventory:read }

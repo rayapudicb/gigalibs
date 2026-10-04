@@ -12,6 +12,7 @@
   "dependencies": {
     "@gigalibs/module-sdk": "workspace:*",
     "@gigalibs/product-catalogue-api": "workspace:*",
+    "@gigalibs/universal-inventory-api": "workspace:*",
     "@nestjs/common": "^11.2.3",
     "@nestjs/core": "^11.2.3",
     "@nestjs/platform-express": "^11.2.3",

@@ -1,0 +1,2 @@
+# Ordered runtime migrations for gigalibs_inventory. Only these files are copied into the module image.
+000001_inventory_warehouse_foundation.up.sql

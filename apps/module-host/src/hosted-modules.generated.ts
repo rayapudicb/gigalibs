@@ -2,6 +2,7 @@
 // modules/*/module.yaml (WI-OI-085e). Do not edit: change the owning manifest and regenerate.
 import type { Type } from '@nestjs/common';
 import { AppModule as Hosted0 } from '@gigalibs/product-catalogue-api';
+import { AppModule as Hosted1 } from '@gigalibs/universal-inventory-api';
 
 export interface HostedModule {
   readonly name: string;
@@ -11,4 +12,5 @@ export interface HostedModule {
 
 export const hostedModules: readonly HostedModule[] = [
   { name: 'product-catalogue', path: 'product-catalogue', module: Hosted0 },
+  { name: 'universal-inventory', path: 'universal-inventory', module: Hosted1 },
 ];

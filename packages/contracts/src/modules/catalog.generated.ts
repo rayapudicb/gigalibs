@@ -222,6 +222,23 @@ export const generatedPlatformModuleCatalog = [
     platformInspection: true,
     reason: 'The module boundary is implemented under WI-OI-112 and remains PLANNED until live module conformance and independent review are recorded.',
   },
+  // modules/universal-inventory/module.yaml
+  {
+    key: 'universal-inventory',
+    name: 'Universal Inventory & Warehouses',
+    navigationLabel: 'Inventory & Warehouses',
+    area: 'Workforce & Operations',
+    navigationGroup: 'Workforce & Operations',
+    route: '/inventory',
+    iconKey: 'boxes',
+    readiness: 'PLANNED',
+    maturity: 'CORE_IMPLEMENTED',
+    entitlementEligible: true,
+    trialEligible: false,
+    requiredPermission: 'inventory:read',
+    platformInspection: true,
+    reason: 'The module boundary is implemented under WI-OI-091 and remains PLANNED until live module conformance and independent review are recorded.',
+  },
   // modules/tax-configuration/module.yaml
   {
     key: 'tax-configuration',

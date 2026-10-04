@@ -230,6 +230,9 @@ export const generatedModulePersonas: Readonly<Record<string, readonly PlatformC
   "product-catalogue": [
     "OPERATIONS_SUPERVISOR"
   ],
+  "universal-inventory": [
+    "OPERATIONS_SUPERVISOR"
+  ],
   "tax-configuration": [
     "C_LEVEL"
   ],
