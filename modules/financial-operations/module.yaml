@@ -56,6 +56,9 @@ spec:
       - finance.asset.capitalized.v1
       - finance.depreciation.run.posted.v1
       - finance.asset.disposed.v1
+      - finance.consolidation.group.created.v1
+      - finance.consolidation.run.executed.v1
+      - finance.consolidation.run.sealed.v1
     consumes:
       - ar.invoice.issued.v1
       - orders.fulfillment.dispatched.v1
@@ -153,3 +156,12 @@ spec:
       - { path: 'v1/fixed-assets/assets/{id}/schedules', GET: finance:read }
       - { path: 'v1/fixed-assets/depreciation-runs', POST: 'finance:journals:post' }
       - { path: 'v1/fixed-assets/assets/{id}/dispose', POST: 'finance:journals:post' }
+      - { path: 'v1/consolidation/groups', GET: finance:read, POST: 'finance:books:manage' }
+      - { path: 'v1/consolidation/groups/{id}', GET: finance:read }
+      - { path: 'v1/consolidation/groups/{id}/entities', GET: finance:read, POST: 'finance:books:manage' }
+      - { path: 'v1/consolidation/groups/{id}/fx-rates', GET: finance:read, POST: 'finance:books:manage' }
+      - { path: 'v1/consolidation/groups/{id}/intercompany-pairs', GET: finance:read, POST: 'finance:books:manage' }
+      - { path: 'v1/consolidation/runs', POST: 'finance:journals:post' }
+      - { path: 'v1/consolidation/runs/{id}', GET: finance:read }
+      - { path: 'v1/consolidation/runs/{id}/seal', POST: 'finance:journals:post' }
+      - { path: 'v1/consolidation/runs/{id}/statement', GET: 'finance:reports:view' }

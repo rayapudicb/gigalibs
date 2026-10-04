@@ -278,6 +278,73 @@ export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGat
         "methods": {
           "POST": "finance:journals:post"
         }
+      },
+      {
+        "template": "v1/consolidation/groups",
+        "pattern": "^v1/consolidation/groups$",
+        "methods": {
+          "GET": "finance:read",
+          "POST": "finance:books:manage"
+        }
+      },
+      {
+        "template": "v1/consolidation/groups/{id}",
+        "pattern": "^v1/consolidation/groups/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "GET": "finance:read"
+        }
+      },
+      {
+        "template": "v1/consolidation/groups/{id}/entities",
+        "pattern": "^v1/consolidation/groups/[0-9a-fA-F-]{36}/entities$",
+        "methods": {
+          "GET": "finance:read",
+          "POST": "finance:books:manage"
+        }
+      },
+      {
+        "template": "v1/consolidation/groups/{id}/fx-rates",
+        "pattern": "^v1/consolidation/groups/[0-9a-fA-F-]{36}/fx-rates$",
+        "methods": {
+          "GET": "finance:read",
+          "POST": "finance:books:manage"
+        }
+      },
+      {
+        "template": "v1/consolidation/groups/{id}/intercompany-pairs",
+        "pattern": "^v1/consolidation/groups/[0-9a-fA-F-]{36}/intercompany-pairs$",
+        "methods": {
+          "GET": "finance:read",
+          "POST": "finance:books:manage"
+        }
+      },
+      {
+        "template": "v1/consolidation/runs",
+        "pattern": "^v1/consolidation/runs$",
+        "methods": {
+          "POST": "finance:journals:post"
+        }
+      },
+      {
+        "template": "v1/consolidation/runs/{id}",
+        "pattern": "^v1/consolidation/runs/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "GET": "finance:read"
+        }
+      },
+      {
+        "template": "v1/consolidation/runs/{id}/seal",
+        "pattern": "^v1/consolidation/runs/[0-9a-fA-F-]{36}/seal$",
+        "methods": {
+          "POST": "finance:journals:post"
+        }
+      },
+      {
+        "template": "v1/consolidation/runs/{id}/statement",
+        "pattern": "^v1/consolidation/runs/[0-9a-fA-F-]{36}/statement$",
+        "methods": {
+          "GET": "finance:reports:view"
+        }
       }
     ],
     "transformBody": null,

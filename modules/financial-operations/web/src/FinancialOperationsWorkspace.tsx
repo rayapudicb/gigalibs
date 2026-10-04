@@ -26,6 +26,7 @@ import {
   TrendingUp,
   Landmark,
   Calculator,
+  Globe,
 } from 'lucide-react';
 import type {
   AccountingBookV1,
@@ -41,6 +42,10 @@ import type {
   BankReconciliationSessionV1,
   FixedAssetV1,
   AssetDepreciationScheduleV1,
+  ConsolidationGroupV1,
+  ConsolidationEntityV1,
+  ConsolidationRunV1,
+  ConsolidationEliminationV1,
 } from '@gigalibs/contracts';
 import {
   DictionaryRenderer,
@@ -57,6 +62,7 @@ type WorkspaceTab =
   | 'reconciliation'
   | 'fixed-assets'
   | 'depreciation'
+  | 'consolidation'
   | 'reports'
   | 'extensions';
 
@@ -492,6 +498,95 @@ export function FinancialOperationsWorkspace() {
     },
   ]);
 
+  const [consolidationGroups] = useState<ConsolidationGroupV1[]>([
+    {
+      id: 'cg100000-0000-4000-a000-000000000001',
+      tenantId: 'tenant-primary',
+      code: 'GRP-GLOBAL',
+      name: 'Global Consolidated Holding Group',
+      description: 'Multi-entity corporate consolidation group under IFRS 10 / ASC 810',
+      reportingCurrency: 'USD',
+      parentEntityId: 'b1000000-0000-4000-a000-000000000001',
+      ctaGlAccountId: 'a1000000-0000-4000-a000-000000000005',
+      nciGlAccountId: null,
+      isActive: true,
+      version: 1,
+      createdAt: '2026-01-01T00:00:00Z',
+      updatedAt: '2026-10-04T00:00:00Z',
+      createdBy: 'group-controller',
+      updatedBy: null,
+    },
+  ]);
+
+  const [consolidationEntities] = useState<ConsolidationEntityV1[]>([
+    {
+      id: 'ce100000-0000-4000-a000-000000000001',
+      tenantId: 'tenant-primary',
+      consolidationGroupId: 'cg100000-0000-4000-a000-000000000001',
+      bookId: 'b1000000-0000-4000-a000-000000000001',
+      ownershipPercentage: 100,
+      consolidationMethod: 'FULL',
+      isParent: true,
+      version: 1,
+      createdAt: '2026-01-01T00:00:00Z',
+      updatedAt: '2026-10-04T00:00:00Z',
+    },
+    {
+      id: 'ce100000-0000-4000-a000-000000000002',
+      tenantId: 'tenant-primary',
+      consolidationGroupId: 'cg100000-0000-4000-a000-000000000001',
+      bookId: 'b2000000-0000-4000-a000-000000000002',
+      ownershipPercentage: 100,
+      consolidationMethod: 'FULL',
+      isParent: false,
+      version: 1,
+      createdAt: '2026-01-01T00:00:00Z',
+      updatedAt: '2026-10-04T00:00:00Z',
+    },
+  ]);
+
+  const [consolidationRuns] = useState<ConsolidationRunV1[]>([
+    {
+      id: 'cr100000-0000-4000-a000-000000000001',
+      tenantId: 'tenant-primary',
+      consolidationGroupId: 'cg100000-0000-4000-a000-000000000001',
+      runNumber: 'CRUN-2026-M10-001',
+      fiscalYearId: 'fy100000-0000-4000-a000-000000000001',
+      fiscalPeriodId: 'f1000000-0000-4000-a000-000000000001',
+      status: 'ELIMINATED',
+      totalSubsidiaryDebitMinor: '185000000',
+      totalSubsidiaryCreditMinor: '185000000',
+      totalEliminationDebitMinor: '15000000',
+      totalEliminationCreditMinor: '15000000',
+      totalCtaMinor: '250000',
+      totalConsolidatedDebitMinor: '170000000',
+      totalConsolidatedCreditMinor: '170000000',
+      executedBy: 'group-controller',
+      executedAt: '2026-10-04T12:00:00Z',
+      sealedAt: null,
+      version: 1,
+      createdAt: '2026-10-04T12:00:00Z',
+      updatedAt: '2026-10-04T12:00:00Z',
+    },
+  ]);
+
+  const [consolidationEliminations] = useState<ConsolidationEliminationV1[]>([
+    {
+      id: 'el100000-0000-4000-a000-000000000001',
+      tenantId: 'tenant-primary',
+      consolidationRunId: 'cr100000-0000-4000-a000-000000000001',
+      intercompanyPairId: 'ip100000-0000-4000-a000-000000000001',
+      glJournalId: 'j1000000-0000-4000-a000-000000000001',
+      debitGlAccountId: 'a4000000-0000-4000-a000-000000000004',
+      creditGlAccountId: 'a2000000-0000-4000-a000-000000000002',
+      eliminationAmountMinor: '15000000',
+      currencyCode: 'USD',
+      discrepancyAmountMinor: '0',
+      description: 'Bilateral elimination for intercompany trade accounts between US Parent and UK Subsidiary',
+      createdAt: '2026-10-04T12:00:00Z',
+    },
+  ]);
+
   const [customExtensions, setCustomExtensions] = useState<Record<string, unknown>>({
     cost_center_code: 'CC-ENG-101',
     statutory_reporting_tag: 'SEC-10K-OPEX',
@@ -545,6 +640,10 @@ export function FinancialOperationsWorkspace() {
             <Landmark className="w-3.5 h-3.5 mr-1" />
             Fixed Assets Active
           </span>
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-teal-100 text-teal-800">
+            <Globe className="w-3.5 h-3.5 mr-1" />
+            Consolidation Active
+          </span>
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
             <Lock className="w-3.5 h-3.5 mr-1" />
             Immutable Facts
@@ -565,6 +664,7 @@ export function FinancialOperationsWorkspace() {
             ['reconciliation', 'Reconciliation Studio', RefreshCw],
             ['fixed-assets', 'Fixed Assets', Landmark],
             ['depreciation', 'Depreciation Studio', Calculator],
+            ['consolidation', 'Consolidation Studio', Globe],
             ['reports', 'Financial Statements', BarChart3],
             ['extensions', 'Application Dictionary', TrendingUp],
           ] as const
@@ -1161,6 +1261,139 @@ export function FinancialOperationsWorkspace() {
                     ))}
                   </tbody>
                 </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'consolidation' && (
+          <div className="space-y-6">
+            {/* KPI Summary Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="p-4 bg-white rounded-lg border border-slate-200 shadow-sm">
+                <span className="text-xs font-medium text-slate-500">Consolidation Groups</span>
+                <p className="mt-1 text-2xl font-bold text-slate-900">{consolidationGroups.length}</p>
+                <span className="text-xs text-slate-500 font-medium">Reporting: {consolidationGroups[0]?.reportingCurrency}</span>
+              </div>
+              <div className="p-4 bg-white rounded-lg border border-slate-200 shadow-sm">
+                <span className="text-xs font-medium text-slate-500">Member Legal Entities</span>
+                <p className="mt-1 text-2xl font-bold text-slate-900">{consolidationEntities.length}</p>
+                <span className="text-xs text-emerald-600 font-medium">100% Wholly Owned & Controlled</span>
+              </div>
+              <div className="p-4 bg-white rounded-lg border border-slate-200 shadow-sm">
+                <span className="text-xs font-medium text-slate-500">Intercompany Eliminations</span>
+                <p className="mt-1 text-2xl font-bold text-indigo-600">
+                  ${(Number(consolidationEliminations.reduce((acc, e) => acc + Number(e.eliminationAmountMinor), 0)) / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                </p>
+                <span className="text-xs text-slate-500 font-medium">{consolidationEliminations.length} Active Bilateral Vouchers</span>
+              </div>
+              <div className="p-4 bg-white rounded-lg border border-slate-200 shadow-sm">
+                <span className="text-xs font-medium text-slate-500">Cumulative Translation Adj. (CTA)</span>
+                <p className="mt-1 text-2xl font-bold text-teal-600">
+                  ${(Number(consolidationRuns[0]?.totalCtaMinor ?? '0') / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                </p>
+                <span className="text-xs text-slate-500 font-medium">IAS 21 Equity Balancing Reserve</span>
+              </div>
+            </div>
+
+            {/* Multi-Entity Group Structure Card */}
+            <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+              <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center">
+                <div>
+                  <h4 className="text-sm font-semibold text-slate-900">Consolidation Group Hierarchy & Entity Topology</h4>
+                  <p className="text-xs text-slate-500">Multi-tier holding structure with reporting currency translations</p>
+                </div>
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-teal-100 text-teal-800">
+                  IFRS 10 / ASC 810 Standard
+                </span>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-slate-200 text-sm">
+                  <thead className="bg-slate-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left font-medium text-slate-500">Group Code</th>
+                      <th className="px-6 py-3 text-left font-medium text-slate-500">Group Name</th>
+                      <th className="px-6 py-3 text-left font-medium text-slate-500">Reporting Currency</th>
+                      <th className="px-6 py-3 text-left font-medium text-slate-500">CTA Equity Account</th>
+                      <th className="px-6 py-3 text-left font-medium text-slate-500">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200 bg-white">
+                    {consolidationGroups.map((g) => (
+                      <tr key={g.id}>
+                        <td className="px-6 py-4 font-mono font-bold text-slate-900">{g.code}</td>
+                        <td className="px-6 py-4 font-medium text-slate-900">{g.name}</td>
+                        <td className="px-6 py-4 font-mono text-slate-700">{g.reportingCurrency}</td>
+                        <td className="px-6 py-4 font-mono text-xs text-slate-500">{g.ctaGlAccountId.slice(0, 18)}...</td>
+                        <td className="px-6 py-4">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-800">
+                            ACTIVE
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Bilateral Intercompany Elimination Matrix */}
+            <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+              <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center">
+                <div>
+                  <h4 className="text-sm font-semibold text-slate-900">Bilateral Intercompany Eliminations Matrix</h4>
+                  <p className="text-xs text-slate-500">Automated offsetting of reciprocal intra-group balances and trading accounts</p>
+                </div>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-slate-200 text-sm">
+                  <thead className="bg-slate-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left font-medium text-slate-500">Run Number</th>
+                      <th className="px-6 py-3 text-left font-medium text-slate-500">Debit Account (Clearing)</th>
+                      <th className="px-6 py-3 text-left font-medium text-slate-500">Credit Account (Clearing)</th>
+                      <th className="px-6 py-3 text-right font-medium text-slate-500">Elimination Amount</th>
+                      <th className="px-6 py-3 text-left font-medium text-slate-500">Discrepancy</th>
+                      <th className="px-6 py-3 text-left font-medium text-slate-500">Description</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200 bg-white">
+                    {consolidationEliminations.map((elim) => (
+                      <tr key={elim.id}>
+                        <td className="px-6 py-4 font-mono text-xs text-slate-700">CRUN-2026-M10-001</td>
+                        <td className="px-6 py-4 font-mono text-xs text-slate-600">{elim.debitGlAccountId.slice(0, 18)}...</td>
+                        <td className="px-6 py-4 font-mono text-xs text-slate-600">{elim.creditGlAccountId.slice(0, 18)}...</td>
+                        <td className="px-6 py-4 font-mono text-right font-bold text-indigo-700">
+                          ${(Number(elim.eliminationAmountMinor) / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-800">
+                            $0.00 Variance
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-xs text-slate-600">{elim.description}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Consolidated Financial Statements Preview */}
+            <div className="bg-white rounded-lg border border-slate-200 p-6 shadow-sm">
+              <div className="flex justify-between items-center mb-4">
+                <div>
+                  <h4 className="text-base font-semibold text-slate-900">Consolidated Trial Balance & Group Rollup</h4>
+                  <p className="text-xs text-slate-500">
+                    Net consolidated balance sheet and P&L figures with verified double-entry balancing
+                  </p>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
+                    <ShieldCheck className="w-4 h-4 mr-1.5" />
+                    Consolidated Double-Entry Balanced: $1,700,000.00
+                  </span>
+                </div>
               </div>
             </div>
           </div>

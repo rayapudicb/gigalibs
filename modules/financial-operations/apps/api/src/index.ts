@@ -9,4 +9,7 @@ export * from './treasury/statement-parsers.js';
 export * from './fixed-assets/fixed-assets.service.js';
 export * from './fixed-assets/fixed-assets.controller.js';
 export * from './fixed-assets/depreciation-calculator.js';
+export * from './consolidation/consolidation.service.js';
+export * from './consolidation/consolidation.controller.js';
+export * from './consolidation/fx-translation-engine.js';
 

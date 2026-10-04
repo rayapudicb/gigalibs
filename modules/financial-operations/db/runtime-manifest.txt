@@ -1,4 +1,5 @@
 000001_finance_general_ledger_foundation.up.sql
 000002_finance_treasury_reconciliation.up.sql
 000003_finance_fixed_assets.up.sql
+000004_finance_consolidation.up.sql
 

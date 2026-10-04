@@ -4,6 +4,8 @@ import { runtimeConfigProvider } from './config.js';
 import { DatabaseService } from './database.service.js';
 import { FinanceController } from './finance/finance.controller.js';
 import { FinanceService } from './finance/finance.service.js';
+import { ConsolidationController } from './consolidation/consolidation.controller.js';
+import { ConsolidationService } from './consolidation/consolidation.service.js';
 import { FixedAssetsController } from './fixed-assets/fixed-assets.controller.js';
 import { FixedAssetsService } from './fixed-assets/fixed-assets.service.js';
 import { HealthController } from './health.controller.js';
@@ -17,6 +19,7 @@ import { TreasuryService } from './treasury/treasury.service.js';
     FinanceController,
     TreasuryController,
     FixedAssetsController,
+    ConsolidationController,
     OrganizationController,
   ],
   providers: [
@@ -26,8 +29,9 @@ import { TreasuryService } from './treasury/treasury.service.js';
     FinanceService,
     TreasuryService,
     FixedAssetsService,
+    ConsolidationService,
   ],
-  exports: [DatabaseService, FinanceService, TreasuryService, FixedAssetsService],
+  exports: [DatabaseService, FinanceService, TreasuryService, FixedAssetsService, ConsolidationService],
 })
 export class AppModule {}
 
