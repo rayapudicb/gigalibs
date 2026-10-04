@@ -345,6 +345,56 @@ export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGat
         "methods": {
           "GET": "finance:reports:view"
         }
+      },
+      {
+        "template": "v1/costing/profiles",
+        "pattern": "^v1/costing/profiles$",
+        "methods": {
+          "GET": "finance:read",
+          "POST": "finance:books:manage"
+        }
+      },
+      {
+        "template": "v1/costing/profiles/{id}",
+        "pattern": "^v1/costing/profiles/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "GET": "finance:read"
+        }
+      },
+      {
+        "template": "v1/costing/receipt-layers",
+        "pattern": "^v1/costing/receipt-layers$",
+        "methods": {
+          "POST": "finance:journals:manage"
+        }
+      },
+      {
+        "template": "v1/costing/shipments",
+        "pattern": "^v1/costing/shipments$",
+        "methods": {
+          "POST": "finance:journals:manage"
+        }
+      },
+      {
+        "template": "v1/costing/landed-costs",
+        "pattern": "^v1/costing/landed-costs$",
+        "methods": {
+          "POST": "finance:journals:manage"
+        }
+      },
+      {
+        "template": "v1/costing/revaluations",
+        "pattern": "^v1/costing/revaluations$",
+        "methods": {
+          "POST": "finance:journals:manage"
+        }
+      },
+      {
+        "template": "v1/costing/valuation-summary",
+        "pattern": "^v1/costing/valuation-summary$",
+        "methods": {
+          "GET": "finance:reports:view"
+        }
       }
     ],
     "transformBody": null,

@@ -12,7 +12,7 @@
     "service": "module-host",
     "port": 4790,
     "schema": "gigalibs_finance",
-    "migrationVersion": 4,
+    "migrationVersion": 5,
     "audience": "gigalibs-financial-operations-api",
     "appendOnlyTables": [
       "audit_events"

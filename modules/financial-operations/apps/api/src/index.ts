@@ -12,4 +12,7 @@ export * from './fixed-assets/depreciation-calculator.js';
 export * from './consolidation/consolidation.service.js';
 export * from './consolidation/consolidation.controller.js';
 export * from './consolidation/fx-translation-engine.js';
+export * from './costing/costing.service.js';
+export * from './costing/costing.controller.js';
+export * from './costing/costing-engine.js';
 

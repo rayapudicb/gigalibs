@@ -676,7 +676,7 @@ try {
     `, [outboxId, TENANT_A, randomUUID(), randomUUID()]);
 
     // Lease event
-    const leaseRes = await client.query('SELECT * FROM gigalibs_finance.relay_lease_finance_events(10, 60)');
+    const leaseRes = await client.query('SELECT * FROM gigalibs_finance.relay_lease_finance_events(100, 60)');
     assert.ok(leaseRes.rows.some((r) => r.id === outboxId), 'Event leased by relay_lease_finance_events');
 
     // Settle event

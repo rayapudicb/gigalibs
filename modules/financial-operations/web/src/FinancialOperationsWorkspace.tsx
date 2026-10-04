@@ -27,6 +27,7 @@ import {
   Landmark,
   Calculator,
   Globe,
+  Package,
 } from 'lucide-react';
 import type {
   AccountingBookV1,
@@ -46,6 +47,9 @@ import type {
   ConsolidationEntityV1,
   ConsolidationRunV1,
   ConsolidationEliminationV1,
+  CostProfileV1,
+  InventoryCostLayerV1,
+  LandedCostV1,
 } from '@gigalibs/contracts';
 import {
   DictionaryRenderer,
@@ -63,6 +67,7 @@ type WorkspaceTab =
   | 'fixed-assets'
   | 'depreciation'
   | 'consolidation'
+  | 'costing'
   | 'reports'
   | 'extensions';
 
@@ -587,6 +592,87 @@ export function FinancialOperationsWorkspace() {
     },
   ]);
 
+  const [costProfiles] = useState<CostProfileV1[]>([
+    {
+      id: 'cp100000-0000-4000-a000-000000000001',
+      tenantId: 'tenant-primary',
+      code: 'FIFO-STANDARD',
+      name: 'Perpetual FIFO Costing Profile',
+      description: 'First-in first-out perpetual inventory valuation model',
+      costingMethod: 'FIFO',
+      inventoryGlAccountId: 'a1000000-0000-4000-a000-000000000001',
+      grniGlAccountId: 'a2000000-0000-4000-a000-000000000001',
+      cogsGlAccountId: 'a5000000-0000-4000-a000-000000000001',
+      landedCostClearingGlAccountId: 'a2000000-0000-4000-a000-000000000002',
+      purchasePriceVarianceGlAccountId: 'a5000000-0000-4000-a000-000000000002',
+      scrapGlAccountId: 'a6000000-0000-4000-a000-000000000001',
+      valuationLossGlAccountId: 'a6000000-0000-4000-a000-000000000002',
+      standardUnitCostScaled: null,
+      isDefault: true,
+      isActive: true,
+      version: 1,
+      createdAt: '2026-01-01T00:00:00Z',
+      updatedAt: '2026-10-04T00:00:00Z',
+    },
+  ]);
+
+  const [costLayers] = useState<InventoryCostLayerV1[]>([
+    {
+      id: 'cl100000-0000-4000-a000-000000000001',
+      tenantId: 'tenant-primary',
+      costProfileId: 'cp100000-0000-4000-a000-000000000001',
+      productId: 'p1000000-0000-4000-a000-000000000001',
+      warehouseId: 'WH-MAIN',
+      receiptRef: 'REC-PO-2026-001',
+      receiptDate: '2026-10-01T08:00:00Z',
+      initialQuantity: '500.000000',
+      remainingQuantity: '350.000000',
+      unitCostScaled: '25000000',
+      totalInitialCostMinor: '1250000',
+      totalRemainingCostMinor: '875000',
+      landedCostAddedMinor: '50000',
+      status: 'PARTIALLY_CONSUMED',
+      createdAt: '2026-10-01T08:00:00Z',
+      updatedAt: '2026-10-04T12:00:00Z',
+    },
+    {
+      id: 'cl100000-0000-4000-a000-000000000002',
+      tenantId: 'tenant-primary',
+      costProfileId: 'cp100000-0000-4000-a000-000000000001',
+      productId: 'p1000000-0000-4000-a000-000000000001',
+      warehouseId: 'WH-MAIN',
+      receiptRef: 'REC-PO-2026-002',
+      receiptDate: '2026-10-03T09:00:00Z',
+      initialQuantity: '300.000000',
+      remainingQuantity: '300.000000',
+      unitCostScaled: '28000000',
+      totalInitialCostMinor: '840000',
+      totalRemainingCostMinor: '840000',
+      landedCostAddedMinor: '0',
+      status: 'ACTIVE',
+      createdAt: '2026-10-03T09:00:00Z',
+      updatedAt: '2026-10-03T09:00:00Z',
+    },
+  ]);
+
+  const [landedCostVouchers] = useState<LandedCostV1[]>([
+    {
+      id: 'lc100000-0000-4000-a000-000000000001',
+      tenantId: 'tenant-primary',
+      voucherNumber: 'LCV-2026-10-001',
+      description: 'Inbound ocean freight and customs brokerage',
+      allocationBasis: 'VALUE',
+      totalLandedCostMinor: '50000',
+      currencyCode: 'USD',
+      status: 'POSTED',
+      glJournalId: 'j1000000-0000-4000-a000-000000000001',
+      postedAt: '2026-10-02T10:00:00Z',
+      createdAt: '2026-10-02T10:00:00Z',
+      updatedAt: '2026-10-02T10:00:00Z',
+    },
+  ]);
+
+
   const [customExtensions, setCustomExtensions] = useState<Record<string, unknown>>({
     cost_center_code: 'CC-ENG-101',
     statutory_reporting_tag: 'SEC-10K-OPEX',
@@ -644,6 +730,10 @@ export function FinancialOperationsWorkspace() {
             <Globe className="w-3.5 h-3.5 mr-1" />
             Consolidation Active
           </span>
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+            <Package className="w-3.5 h-3.5 mr-1" />
+            Costing & Landed Cost Active
+          </span>
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
             <Lock className="w-3.5 h-3.5 mr-1" />
             Immutable Facts
@@ -665,6 +755,7 @@ export function FinancialOperationsWorkspace() {
             ['fixed-assets', 'Fixed Assets', Landmark],
             ['depreciation', 'Depreciation Studio', Calculator],
             ['consolidation', 'Consolidation Studio', Globe],
+            ['costing', 'Costing & Landed Cost', Package],
             ['reports', 'Financial Statements', BarChart3],
             ['extensions', 'Application Dictionary', TrendingUp],
           ] as const
@@ -1394,6 +1485,149 @@ export function FinancialOperationsWorkspace() {
                     Consolidated Double-Entry Balanced: $1,700,000.00
                   </span>
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'costing' && (
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900">Costing & Landed Cost Studio</h3>
+                <p className="text-sm text-slate-500">
+                  Perpetual inventory valuation (FIFO, Moving Average, Standard Cost), landed cost capitalization & automated COGS
+                </p>
+              </div>
+              <div className="flex space-x-3">
+                <button className="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-300 rounded-lg shadow-sm hover:bg-slate-50">
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  <span>Revalue Inventory (NRV)</span>
+                </button>
+                <button className="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-medium text-white bg-indigo-600 rounded-lg shadow-sm hover:bg-indigo-700">
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>New Landed Cost Voucher</span>
+                </button>
+              </div>
+            </div>
+
+            {/* KPI Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="p-4 bg-white rounded-lg border border-slate-200 shadow-sm">
+                <span className="text-xs font-medium text-slate-500">Active Valuation Model</span>
+                <p className="mt-1 text-2xl font-bold text-indigo-700">FIFO</p>
+                <span className="text-xs text-slate-500">IAS 2 / ASC 330 Compliant</span>
+              </div>
+              <div className="p-4 bg-white rounded-lg border border-slate-200 shadow-sm">
+                <span className="text-xs font-medium text-slate-500">Total Carrying Asset Value</span>
+                <p className="mt-1 text-2xl font-bold text-slate-900">$17,150.00</p>
+                <span className="text-xs text-emerald-600 font-medium">Reconciled to GL 1400 (100%)</span>
+              </div>
+              <div className="p-4 bg-white rounded-lg border border-slate-200 shadow-sm">
+                <span className="text-xs font-medium text-slate-500">Capitalized Landed Costs</span>
+                <p className="mt-1 text-2xl font-bold text-emerald-600">$500.00</p>
+                <span className="text-xs text-slate-500">Ocean Freight & Brokerage</span>
+              </div>
+              <div className="p-4 bg-white rounded-lg border border-slate-200 shadow-sm">
+                <span className="text-xs font-medium text-slate-500">Active FIFO Layers</span>
+                <p className="mt-1 text-2xl font-bold text-slate-900">{costLayers.length}</p>
+                <span className="text-xs text-slate-500">650 total units in stock</span>
+              </div>
+            </div>
+
+            {/* Active FIFO Cost Layers Queue */}
+            <div className="bg-white rounded-lg border border-slate-200 p-6 shadow-sm">
+              <div className="flex justify-between items-center mb-4">
+                <div>
+                  <h4 className="text-base font-semibold text-slate-900">Active Inbound Cost Layers Queue (FIFO)</h4>
+                  <p className="text-xs text-slate-500">Chronological consumption queue determining exact unit cost on order dispatch</p>
+                </div>
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                  <ShieldCheck className="w-3.5 h-3.5 mr-1" />
+                  Exact Integer Precision (Zero-Float)
+                </span>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-600 uppercase">
+                    <tr>
+                      <th className="py-3 px-4">Receipt Ref</th>
+                      <th className="py-3 px-4">Receipt Date</th>
+                      <th className="py-3 px-4">Warehouse</th>
+                      <th className="py-3 px-4 text-right">Initial Qty</th>
+                      <th className="py-3 px-4 text-right">Remaining Qty</th>
+                      <th className="py-3 px-4 text-right">Unit Cost</th>
+                      <th className="py-3 px-4 text-right">Landed Cost Added</th>
+                      <th className="py-3 px-4 text-right">Carrying Value</th>
+                      <th className="py-3 px-4 text-center">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {costLayers.map((layer) => (
+                      <tr key={layer.id} className="hover:bg-slate-50">
+                        <td className="py-3 px-4 font-mono font-medium text-slate-900">{layer.receiptRef}</td>
+                        <td className="py-3 px-4 text-slate-600">{new Date(layer.receiptDate).toLocaleDateString()}</td>
+                        <td className="py-3 px-4 text-slate-600">{layer.warehouseId}</td>
+                        <td className="py-3 px-4 text-right font-mono text-slate-600">{parseFloat(layer.initialQuantity).toFixed(2)}</td>
+                        <td className="py-3 px-4 text-right font-mono font-bold text-slate-900">{parseFloat(layer.remainingQuantity).toFixed(2)}</td>
+                        <td className="py-3 px-4 text-right font-mono text-indigo-600">
+                          ${(parseInt(layer.unitCostScaled, 10) / 1000000).toFixed(2)}
+                        </td>
+                        <td className="py-3 px-4 text-right font-mono text-emerald-600">
+                          +${(parseInt(layer.landedCostAddedMinor, 10) / 100).toFixed(2)}
+                        </td>
+                        <td className="py-3 px-4 text-right font-mono font-semibold text-slate-900">
+                          ${(parseInt(layer.totalRemainingCostMinor, 10) / 100).toFixed(2)}
+                        </td>
+                        <td className="py-3 px-4 text-center">
+                          <span
+                            className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                              layer.status === 'ACTIVE'
+                                ? 'bg-emerald-100 text-emerald-800'
+                                : 'bg-amber-100 text-amber-800'
+                            }`}
+                          >
+                            {layer.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Landed Cost Vouchers & Capitalization */}
+            <div className="bg-white rounded-lg border border-slate-200 p-6 shadow-sm">
+              <div className="flex justify-between items-center mb-4">
+                <div>
+                  <h4 className="text-base font-semibold text-slate-900">Landed Cost Capitalization Vouchers</h4>
+                  <p className="text-xs text-slate-500">Freight, customs duties, and handling absorbed into inventory carrying costs</p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                {landedCostVouchers.map((voucher) => (
+                  <div key={voucher.id} className="p-4 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-between">
+                    <div>
+                      <div className="flex items-center space-x-2">
+                        <span className="font-mono font-bold text-slate-900">{voucher.voucherNumber}</span>
+                        <span className="px-2 py-0.5 rounded text-xs font-semibold bg-emerald-100 text-emerald-800">
+                          {voucher.status}
+                        </span>
+                        <span className="text-xs text-slate-500">Basis: {voucher.allocationBasis}</span>
+                      </div>
+                      <p className="text-xs text-slate-600 mt-1">{voucher.description}</p>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-xs text-slate-500">Total Absorbed</span>
+                      <p className="font-mono text-base font-bold text-emerald-700">
+                        ${(parseInt(voucher.totalLandedCostMinor, 10) / 100).toFixed(2)} {voucher.currencyCode}
+                      </p>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>

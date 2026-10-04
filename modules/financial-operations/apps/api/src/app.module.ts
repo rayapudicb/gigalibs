@@ -6,6 +6,8 @@ import { FinanceController } from './finance/finance.controller.js';
 import { FinanceService } from './finance/finance.service.js';
 import { ConsolidationController } from './consolidation/consolidation.controller.js';
 import { ConsolidationService } from './consolidation/consolidation.service.js';
+import { CostingController } from './costing/costing.controller.js';
+import { CostingService } from './costing/costing.service.js';
 import { FixedAssetsController } from './fixed-assets/fixed-assets.controller.js';
 import { FixedAssetsService } from './fixed-assets/fixed-assets.service.js';
 import { HealthController } from './health.controller.js';
@@ -20,6 +22,7 @@ import { TreasuryService } from './treasury/treasury.service.js';
     TreasuryController,
     FixedAssetsController,
     ConsolidationController,
+    CostingController,
     OrganizationController,
   ],
   providers: [
@@ -30,8 +33,9 @@ import { TreasuryService } from './treasury/treasury.service.js';
     TreasuryService,
     FixedAssetsService,
     ConsolidationService,
+    CostingService,
   ],
-  exports: [DatabaseService, FinanceService, TreasuryService, FixedAssetsService, ConsolidationService],
+  exports: [DatabaseService, FinanceService, TreasuryService, FixedAssetsService, ConsolidationService, CostingService],
 })
 export class AppModule {}
 

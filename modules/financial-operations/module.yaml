@@ -29,8 +29,10 @@ spec:
     - bank-statement-ingestion
     - bank-reconciliation
     - fixed-assets-depreciation
-  plannedCapabilities:
     - multi-company-consolidation
+    - inventory-costing-valuation
+    - landed-cost-allocation
+    - cogs-accounting
   ui:
     basePath: /finance
     package: '@gigalibs/financial-operations-web'
@@ -59,6 +61,11 @@ spec:
       - finance.consolidation.group.created.v1
       - finance.consolidation.run.executed.v1
       - finance.consolidation.run.sealed.v1
+      - finance.costing.profile.created.v1
+      - finance.costing.layer.created.v1
+      - finance.costing.cogs.posted.v1
+      - finance.costing.landed_cost.posted.v1
+      - finance.costing.revaluation.posted.v1
     consumes:
       - ar.invoice.issued.v1
       - orders.fulfillment.dispatched.v1
@@ -165,3 +172,10 @@ spec:
       - { path: 'v1/consolidation/runs/{id}', GET: finance:read }
       - { path: 'v1/consolidation/runs/{id}/seal', POST: 'finance:journals:post' }
       - { path: 'v1/consolidation/runs/{id}/statement', GET: 'finance:reports:view' }
+      - { path: 'v1/costing/profiles', GET: finance:read, POST: 'finance:books:manage' }
+      - { path: 'v1/costing/profiles/{id}', GET: finance:read }
+      - { path: 'v1/costing/receipt-layers', POST: 'finance:journals:manage' }
+      - { path: 'v1/costing/shipments', POST: 'finance:journals:manage' }
+      - { path: 'v1/costing/landed-costs', POST: 'finance:journals:manage' }
+      - { path: 'v1/costing/revaluations', POST: 'finance:journals:manage' }
+      - { path: 'v1/costing/valuation-summary', GET: 'finance:reports:view' }

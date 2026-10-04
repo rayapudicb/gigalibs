@@ -6,7 +6,7 @@ export const MODULE_KEY = 'financial-operations';
 export const PERMISSION_PREFIX = 'finance';
 export const SCHEMA = 'gigalibs_finance';
 export const TOPIC = 'financial-operations.facts.v1';
-export const SCHEMA_CONTRACT_VERSION = 4;
+export const SCHEMA_CONTRACT_VERSION = 5;
 export const RUNTIME_CONFIG = Symbol('FINANCIAL_OPERATIONS_RUNTIME_CONFIG');
 
 export const runtimeConfigProvider: Provider<ModuleRuntimeConfig> = {
