@@ -24,6 +24,8 @@ import {
   FileText,
   BarChart3,
   TrendingUp,
+  Landmark,
+  Calculator,
 } from 'lucide-react';
 import type {
   AccountingBookV1,
@@ -37,6 +39,8 @@ import type {
   BankAccountV1,
   BankStatementV1,
   BankReconciliationSessionV1,
+  FixedAssetV1,
+  AssetDepreciationScheduleV1,
 } from '@gigalibs/contracts';
 import {
   DictionaryRenderer,
@@ -51,6 +55,8 @@ type WorkspaceTab =
   | 'journals'
   | 'treasury'
   | 'reconciliation'
+  | 'fixed-assets'
+  | 'depreciation'
   | 'reports'
   | 'extensions';
 
@@ -388,6 +394,104 @@ export function FinancialOperationsWorkspace() {
     updatedAt: '2026-10-04T00:00:00Z',
   });
 
+  const [fixedAssets] = useState<FixedAssetV1[]>([
+    {
+      id: 'fa100000-0000-4000-a000-000000000001',
+      tenantId: 'tenant-primary',
+      assetCode: 'ASSET-CNC-001',
+      assetName: '5-Axis CNC Milling Center',
+      description: 'Precision machining center connected to EAM Operations Console',
+      assetClassId: 'fc100000-0000-4000-a000-000000000001',
+      status: 'CAPITALIZED',
+      acquisitionDate: '2026-01-15',
+      capitalizationDate: '2026-01-15',
+      currencyCode: 'USD',
+      acquisitionCostMinor: '12000000',
+      salvageValueMinor: '1200000',
+      usefulLifeMonths: 60,
+      depreciationMethod: 'STRAIGHT_LINE',
+      convention: 'FULL_MONTH',
+      currentBookValueMinor: '10560000',
+      accumulatedDepreciationMinor: '1440000',
+      physicalAssetRef: 'pa100000-0000-4000-a000-000000000001',
+      assetTag: 'TAG-CNC-001',
+      serialNumber: 'SN-HAAS-9921',
+      orgUnitId: 'PLANT-NORTH',
+      placeId: 'FACILITY-MAIN',
+      custodianPartyId: null,
+      version: 1,
+      createdAt: '2026-01-15T00:00:00Z',
+      updatedAt: '2026-10-04T00:00:00Z',
+      createdBy: 'controller',
+      updatedBy: null,
+    },
+    {
+      id: 'fa100000-0000-4000-a000-000000000002',
+      tenantId: 'tenant-primary',
+      assetCode: 'ASSET-BLD-001',
+      assetName: 'Headquarters Facility',
+      description: 'Corporate headquarters and central engineering laboratory',
+      assetClassId: 'fc100000-0000-4000-a000-000000000002',
+      status: 'DEPRECIATING',
+      acquisitionDate: '2025-01-01',
+      capitalizationDate: '2025-01-01',
+      currencyCode: 'USD',
+      acquisitionCostMinor: '150000000',
+      salvageValueMinor: '30000000',
+      usefulLifeMonths: 360,
+      depreciationMethod: 'STRAIGHT_LINE',
+      convention: 'FULL_MONTH',
+      currentBookValueMinor: '143000000',
+      accumulatedDepreciationMinor: '7000000',
+      physicalAssetRef: null,
+      assetTag: 'TAG-HQ-01',
+      serialNumber: null,
+      orgUnitId: 'CORP-HQ',
+      placeId: 'HQ-CAMPUS',
+      custodianPartyId: null,
+      version: 2,
+      createdAt: '2025-01-01T00:00:00Z',
+      updatedAt: '2026-10-04T00:00:00Z',
+      createdBy: 'controller',
+      updatedBy: null,
+    },
+  ]);
+
+  const [depreciationSchedules] = useState<AssetDepreciationScheduleV1[]>([
+    {
+      id: 'ds100000-0000-4000-a000-000000000001',
+      tenantId: 'tenant-primary',
+      assetId: 'fa100000-0000-4000-a000-000000000001',
+      fiscalPeriodId: 'f1000000-0000-4000-a000-000000000001',
+      periodNumber: 10,
+      scheduleDate: '2026-10-31',
+      depreciationAmountMinor: '180000',
+      accumulatedDepreciationMinor: '1620000',
+      bookValueMinor: '10380000',
+      status: 'PROJECTED',
+      journalEntryId: null,
+      version: 1,
+      createdAt: '2026-01-15T00:00:00Z',
+      updatedAt: '2026-10-04T00:00:00Z',
+    },
+    {
+      id: 'ds100000-0000-4000-a000-000000000002',
+      tenantId: 'tenant-primary',
+      assetId: 'fa100000-0000-4000-a000-000000000002',
+      fiscalPeriodId: 'f1000000-0000-4000-a000-000000000001',
+      periodNumber: 22,
+      scheduleDate: '2026-10-31',
+      depreciationAmountMinor: '333333',
+      accumulatedDepreciationMinor: '7333333',
+      bookValueMinor: '142666667',
+      status: 'PROJECTED',
+      journalEntryId: null,
+      version: 1,
+      createdAt: '2025-01-01T00:00:00Z',
+      updatedAt: '2026-10-04T00:00:00Z',
+    },
+  ]);
+
   const [customExtensions, setCustomExtensions] = useState<Record<string, unknown>>({
     cost_center_code: 'CC-ENG-101',
     statutory_reporting_tag: 'SEC-10K-OPEX',
@@ -437,6 +541,10 @@ export function FinancialOperationsWorkspace() {
             <Building className="w-3.5 h-3.5 mr-1" />
             Treasury Reconciled
           </span>
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+            <Landmark className="w-3.5 h-3.5 mr-1" />
+            Fixed Assets Active
+          </span>
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
             <Lock className="w-3.5 h-3.5 mr-1" />
             Immutable Facts
@@ -455,6 +563,8 @@ export function FinancialOperationsWorkspace() {
             ['journals', 'GL Journals', FileText],
             ['treasury', 'Treasury & Accounts', Building],
             ['reconciliation', 'Reconciliation Studio', RefreshCw],
+            ['fixed-assets', 'Fixed Assets', Landmark],
+            ['depreciation', 'Depreciation Studio', Calculator],
             ['reports', 'Financial Statements', BarChart3],
             ['extensions', 'Application Dictionary', TrendingUp],
           ] as const
@@ -873,6 +983,184 @@ export function FinancialOperationsWorkspace() {
                     </div>
                   </div>
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'fixed-assets' && (
+          <div className="space-y-6">
+            {/* KPI Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="p-4 bg-white rounded-lg border border-slate-200 shadow-sm">
+                <span className="text-xs font-medium text-slate-500">Gross Fixed Assets</span>
+                <p className="mt-1 text-2xl font-bold text-slate-900">$1,620,000.00</p>
+                <span className="text-xs text-slate-500 font-medium">{fixedAssets.length} Capitalized Assets</span>
+              </div>
+              <div className="p-4 bg-white rounded-lg border border-slate-200 shadow-sm">
+                <span className="text-xs font-medium text-slate-500">Accumulated Depreciation</span>
+                <p className="mt-1 text-2xl font-bold text-amber-600">-$84,400.00</p>
+                <span className="text-xs text-amber-700 font-medium">Contra-Asset Balance</span>
+              </div>
+              <div className="p-4 bg-white rounded-lg border border-slate-200 shadow-sm">
+                <span className="text-xs font-medium text-slate-500">Net Book Value (NBV)</span>
+                <p className="mt-1 text-2xl font-bold text-emerald-700">$1,535,600.00</p>
+                <span className="text-xs text-emerald-700 font-medium">Balance Sheet Carrying Value</span>
+              </div>
+              <div className="p-4 bg-white rounded-lg border border-slate-200 shadow-sm">
+                <span className="text-xs font-medium text-slate-500">EAM Linkage</span>
+                <p className="mt-1 text-2xl font-bold text-indigo-700">100%</p>
+                <span className="text-xs text-indigo-600 font-medium">Synchronized with /cmms</span>
+              </div>
+            </div>
+
+            {/* Asset Register Table */}
+            <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+              <div className="p-4 border-b border-slate-200 flex justify-between items-center">
+                <div>
+                  <h3 className="text-base font-semibold text-slate-900">Fixed Asset Register</h3>
+                  <p className="text-xs text-slate-500">
+                    Authoritative capital assets register linking physical EAM equipment to balance sheet accounts
+                  </p>
+                </div>
+                <button className="flex items-center space-x-1 px-3 py-1.5 bg-indigo-600 text-white rounded text-xs font-medium hover:bg-indigo-700">
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>New Asset</span>
+                </button>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold">
+                    <tr>
+                      <th className="px-4 py-3">Asset Code</th>
+                      <th className="px-4 py-3">Asset Name</th>
+                      <th className="px-4 py-3">Status</th>
+                      <th className="px-4 py-3">Acquisition Date</th>
+                      <th className="px-4 py-3 text-right">Cost Basis</th>
+                      <th className="px-4 py-3 text-right">Accum. Depr.</th>
+                      <th className="px-4 py-3 text-right">Net Book Value</th>
+                      <th className="px-4 py-3">EAM / CMMS Ref</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {fixedAssets.map((asset) => (
+                      <tr key={asset.id} className="hover:bg-slate-50 transition-colors">
+                        <td className="px-4 py-3 font-mono font-medium text-indigo-600">{asset.assetCode}</td>
+                        <td className="px-4 py-3 font-medium text-slate-900">{asset.assetName}</td>
+                        <td className="px-4 py-3">
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium ${
+                            asset.status === 'CAPITALIZED'
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : 'bg-blue-100 text-blue-800'
+                          }`}>
+                            {asset.status}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-slate-600">{asset.acquisitionDate}</td>
+                        <td className="px-4 py-3 font-mono text-right text-slate-900">
+                          ${(Number(asset.acquisitionCostMinor) / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                        </td>
+                        <td className="px-4 py-3 font-mono text-right text-amber-700">
+                          -${(Number(asset.accumulatedDepreciationMinor) / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                        </td>
+                        <td className="px-4 py-3 font-mono text-right font-bold text-emerald-700">
+                          ${(Number(asset.currentBookValueMinor) / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                        </td>
+                        <td className="px-4 py-3">
+                          {asset.physicalAssetRef ? (
+                            <span className="inline-flex items-center text-xs text-indigo-600 hover:underline">
+                              <ExternalLink className="w-3 h-3 mr-1" />
+                              {asset.assetTag ?? 'CMMS Asset'}
+                            </span>
+                          ) : (
+                            <span className="text-slate-400">Non-Physical</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'depreciation' && (
+          <div className="space-y-6">
+            {/* Depreciation Runner Action Card */}
+            <div className="bg-white rounded-lg border border-slate-200 p-6 shadow-sm">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h3 className="text-base font-semibold text-slate-900">Depreciation Studio & Periodic Posting</h3>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Automated multi-method depreciation calculation with exact integer minor units and balanced General Ledger vouchers
+                  </p>
+                </div>
+                <button className="flex items-center space-x-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition">
+                  <Calculator className="w-4 h-4" />
+                  <span>Post Period Run (2026-10)</span>
+                </button>
+              </div>
+
+              <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-slate-100 text-xs">
+                <div className="p-3 bg-slate-50 rounded border border-slate-200">
+                  <span className="text-slate-500 font-medium">Target Fiscal Period</span>
+                  <p className="text-sm font-bold text-slate-900 mt-0.5">2026-10 (October 2026)</p>
+                </div>
+                <div className="p-3 bg-slate-50 rounded border border-slate-200">
+                  <span className="text-slate-500 font-medium">Forecasted Period Expense</span>
+                  <p className="text-sm font-bold text-amber-700 mt-0.5">$5,133.33</p>
+                </div>
+                <div className="p-3 bg-slate-50 rounded border border-slate-200">
+                  <span className="text-slate-500 font-medium">Posting Rule</span>
+                  <p className="text-sm font-bold text-emerald-700 mt-0.5">Debit: Depr Expense / Credit: Accum Depr</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Projected Schedules Table */}
+            <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+              <div className="p-4 border-b border-slate-200">
+                <h4 className="text-sm font-semibold text-slate-900">Projected Depreciation Schedule (Current Period)</h4>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold">
+                    <tr>
+                      <th className="px-4 py-3">Schedule ID</th>
+                      <th className="px-4 py-3">Schedule Date</th>
+                      <th className="px-4 py-3">Period No.</th>
+                      <th className="px-4 py-3 text-right">Depreciation Expense</th>
+                      <th className="px-4 py-3 text-right">Accumulated Depreciation</th>
+                      <th className="px-4 py-3 text-right">Forecasted Book Value</th>
+                      <th className="px-4 py-3">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {depreciationSchedules.map((sched) => (
+                      <tr key={sched.id} className="hover:bg-slate-50 transition-colors">
+                        <td className="px-4 py-3 font-mono text-slate-600">{sched.id.slice(0, 16)}...</td>
+                        <td className="px-4 py-3 text-slate-900 font-medium">{sched.scheduleDate}</td>
+                        <td className="px-4 py-3 font-mono">Period #{sched.periodNumber}</td>
+                        <td className="px-4 py-3 font-mono text-right font-bold text-amber-700">
+                          ${(Number(sched.depreciationAmountMinor) / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                        </td>
+                        <td className="px-4 py-3 font-mono text-right text-slate-700">
+                          ${(Number(sched.accumulatedDepreciationMinor) / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                        </td>
+                        <td className="px-4 py-3 font-mono text-right text-emerald-700 font-medium">
+                          ${(Number(sched.bookValueMinor) / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-amber-100 text-amber-800">
+                            {sched.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>

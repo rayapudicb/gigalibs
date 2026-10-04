@@ -220,6 +220,64 @@ export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGat
         "methods": {
           "GET": "finance:reports:view"
         }
+      },
+      {
+        "template": "v1/fixed-assets/asset-classes",
+        "pattern": "^v1/fixed-assets/asset-classes$",
+        "methods": {
+          "GET": "finance:read",
+          "POST": "finance:books:manage"
+        }
+      },
+      {
+        "template": "v1/fixed-assets/asset-classes/{id}",
+        "pattern": "^v1/fixed-assets/asset-classes/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "GET": "finance:read"
+        }
+      },
+      {
+        "template": "v1/fixed-assets/assets",
+        "pattern": "^v1/fixed-assets/assets$",
+        "methods": {
+          "GET": "finance:read",
+          "POST": "finance:books:manage"
+        }
+      },
+      {
+        "template": "v1/fixed-assets/assets/{id}",
+        "pattern": "^v1/fixed-assets/assets/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "GET": "finance:read"
+        }
+      },
+      {
+        "template": "v1/fixed-assets/assets/{id}/capitalize",
+        "pattern": "^v1/fixed-assets/assets/[0-9a-fA-F-]{36}/capitalize$",
+        "methods": {
+          "POST": "finance:journals:post"
+        }
+      },
+      {
+        "template": "v1/fixed-assets/assets/{id}/schedules",
+        "pattern": "^v1/fixed-assets/assets/[0-9a-fA-F-]{36}/schedules$",
+        "methods": {
+          "GET": "finance:read"
+        }
+      },
+      {
+        "template": "v1/fixed-assets/depreciation-runs",
+        "pattern": "^v1/fixed-assets/depreciation-runs$",
+        "methods": {
+          "POST": "finance:journals:post"
+        }
+      },
+      {
+        "template": "v1/fixed-assets/assets/{id}/dispose",
+        "pattern": "^v1/fixed-assets/assets/[0-9a-fA-F-]{36}/dispose$",
+        "methods": {
+          "POST": "finance:journals:post"
+        }
       }
     ],
     "transformBody": null,

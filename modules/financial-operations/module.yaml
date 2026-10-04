@@ -28,8 +28,8 @@ spec:
     - treasury-bank-accounts
     - bank-statement-ingestion
     - bank-reconciliation
-  plannedCapabilities:
     - fixed-assets-depreciation
+  plannedCapabilities:
     - multi-company-consolidation
   ui:
     basePath: /finance
@@ -53,6 +53,9 @@ spec:
       - finance.period.locked.v1
       - finance.bank.statement.imported.v1
       - finance.bank.reconciliation.sealed.v1
+      - finance.asset.capitalized.v1
+      - finance.depreciation.run.posted.v1
+      - finance.asset.disposed.v1
     consumes:
       - ar.invoice.issued.v1
       - orders.fulfillment.dispatched.v1
@@ -142,3 +145,11 @@ spec:
       - { path: 'v1/treasury/reconciliations/fee-adjustments', POST: 'finance:journals:post' }
       - { path: 'v1/treasury/reconciliations/seal', POST: 'finance:journals:post' }
       - { path: 'v1/treasury/reconciliations/{id}/report', GET: 'finance:reports:view' }
+      - { path: 'v1/fixed-assets/asset-classes', GET: finance:read, POST: 'finance:books:manage' }
+      - { path: 'v1/fixed-assets/asset-classes/{id}', GET: finance:read }
+      - { path: 'v1/fixed-assets/assets', GET: finance:read, POST: 'finance:books:manage' }
+      - { path: 'v1/fixed-assets/assets/{id}', GET: finance:read }
+      - { path: 'v1/fixed-assets/assets/{id}/capitalize', POST: 'finance:journals:post' }
+      - { path: 'v1/fixed-assets/assets/{id}/schedules', GET: finance:read }
+      - { path: 'v1/fixed-assets/depreciation-runs', POST: 'finance:journals:post' }
+      - { path: 'v1/fixed-assets/assets/{id}/dispose', POST: 'finance:journals:post' }

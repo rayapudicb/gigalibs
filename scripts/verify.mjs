@@ -31,6 +31,7 @@ const steps = [
   },
   { name: 'financial-operations', cmd: process.execPath, args: ['scripts/verify-financial-operations.mjs'] },
   { name: 'treasury-reconciliation', cmd: process.execPath, args: ['scripts/verify-treasury-reconciliation.mjs'] },
+  { name: 'fixed-assets', cmd: process.execPath, args: ['scripts/verify-fixed-assets.mjs'] },
 ];
 
 const logDir = join(tmpdir(), 'gigalibs-verify');

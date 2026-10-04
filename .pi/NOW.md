@@ -1,11 +1,11 @@
 # NOW: where the work stands
 
-Updated 2026-10-04 (WI-OI-095 in Review; WI-OI-094 committed a8207c4 in Review; WI-OI-113 committed e532d98 in Review; WI-OI-093 committed 5d1aa3a in Review; WI-OI-092 committed 155061d in Review; WI-OI-091 committed 2890f10 in Review; WI-OI-112 in Review committed 2f18945; WI-OI-111 committed ad7f83b; WI-OI-110 in Review). Keep this file to one page.
+Updated 2026-10-04 (WI-OI-114 in Review awaiting owner "commit"; WI-OI-095 committed b799abd in Review; WI-OI-094 committed a8207c4 in Review; WI-OI-113 committed e532d98 in Review; WI-OI-093 committed 5d1aa3a in Review; WI-OI-092 committed 155061d in Review; WI-OI-091 committed 2890f10 in Review; WI-OI-112 in Review committed 2f18945; WI-OI-111 committed ad7f83b; WI-OI-110 in Review). Keep this file to one page.
 Replace old content rather than appending to it, and update it at the end of every task.
 
 ## State
 
-- **Active implementation item:** None (WI-OI-095 Phase 9 Treasury Operations, Bank Accounts, Statement Ingestion and Automated Bank Reconciliation is in Review awaiting "commit"; task card `.pi/tasks/WI-OI-095.md`; evidence `.pi/work/WI-OI-095.md`). WI-OI-094 committed `a8207c4` in Review. WI-OI-113 committed `e532d98` in Review. WI-OI-093 committed `5d1aa3a` and in Review. WI-OI-092 committed `155061d` and in Review. WI-OI-091 committed `2890f10` and in Review. WI-OI-112 is committed `2f18945` and in Review. WI-OI-111 committed `ad7f83b` and in Review. WI-OI-110 in Review, committed `917141a`.
+- **Active implementation item:** None (WI-OI-114 completed in Review, awaiting owner "commit"; task card `.pi/tasks/WI-OI-114.md`). WI-OI-095 committed `b799abd` in Review. WI-OI-094 committed `a8207c4` in Review. WI-OI-113 committed `e532d98` in Review. WI-OI-093 committed `5d1aa3a` and in Review. WI-OI-092 committed `155061d` and in Review. WI-OI-091 committed `2890f10` and in Review. WI-OI-112 is committed `2f18945` and in Review. WI-OI-111 committed `ad7f83b` and in Review. WI-OI-110 in Review, committed `917141a`.
 - **Wave 0:** WI-OI-080, 081, 082, 083 and 085 are in Review, waiting for human reviews. WI-OI-084 (mobile) has not started.
 - **Running locally (2026-10-02 14:16 IST):** every application service is on `3da222030dc2-a0ca08f61655`; the web is healthy on 5180 and the control plane is healthy on 3333.
   - Schemas: core organization migration live, Analytics 29, Connector Hub 8, Geospatial 8, CMMS 14, Workforce 19; Redis and the kernel worker run.
@@ -31,10 +31,10 @@ Replace old content rather than appending to it, and update it at the end of eve
 
 ## Next
 
-- **Awaiting Owner "commit" on WI-OI-095:** Phase 9 Treasury Operations & Bank Reconciliation is delivered, verified, and in Review.
-- **Ready for Next Architectural Work Item:** e.g. Fixed Assets & Depreciation Engine (Phase 10) or Multi-Company Financial Consolidation (Phase 11).
-- WI-OI-095 in Review (Phase 9 Treasury Operations, Bank Accounts, Statement Ingestion and Automated Bank Reconciliation).
-- WI-OI-094 in Review (Phase 8 Financial Operations, Subledgers & General Ledger Integration).
+- **Ready for Owner Commit:** WI-OI-114 (Enterprise Architecture Phase 10: Fixed Assets Management, Asset Register & Depreciation Engine).
+- **Next Milestone Candidate:** Enterprise Architecture Phase 11: Multi-Company Financial Consolidation & Intercompany Eliminations (`WI-OI-115`), OR Inventory Valuation, Landed Costs & COGS Accounting (`WI-OI-115`).
+- WI-OI-095 committed `b799abd` in Review (Phase 9 Treasury Operations, Bank Accounts, Statement Ingestion and Automated Bank Reconciliation).
+- WI-OI-094 committed `a8207c4` in Review (Phase 8 Financial Operations, Subledgers & General Ledger Integration).
 - WI-OI-113 committed `e532d98` and in Review (Commercial & Operational Module Convergence and Outbox-Inbox Handshake).
 - WI-OI-093 committed `5d1aa3a` and in Review (Phase 7 Universal Order Management and Customer Fulfillment).
 - WI-OI-092 committed `155061d` and in Review (Phase 6 Universal Procurement, Vendor Operations and 3-Way Matching).
