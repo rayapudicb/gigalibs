@@ -19,10 +19,36 @@ describe('manifest-declared navigation equals the former sidebar tables', () => 
     reports: 'WI-OI-103e (ADR-0016 F11): Analytics owns reports; the contained core Reports entry is removed.',
   };
 
+  // Capability modules intentionally added after the WI-OI-083c freeze. Keeping these separate from the frozen
+  // fixture makes each new navigation surface an explicit, reviewable architecture decision.
+  const INTENDED_ADDITIONS = {
+    'product-catalogue': {
+      group: 'Workforce & Operations',
+      icon: moduleIcons.boxes,
+      personas: ['OPERATIONS_SUPERVISOR'],
+    },
+    'universal-inventory': {
+      group: 'Workforce & Operations',
+      icon: moduleIcons.boxes,
+      personas: ['OPERATIONS_SUPERVISOR'],
+    },
+    'universal-procurement': {
+      group: 'Financial Operations',
+      icon: moduleIcons['shopping-bag'],
+      personas: ['OPERATIONS_SUPERVISOR'],
+    },
+    'universal-orders': {
+      group: 'Financial Operations',
+      icon: moduleIcons['shopping-bag'],
+      personas: ['OPERATIONS_SUPERVISOR'],
+    },
+  } as const;
+
   it('covers exactly the catalogue entries the frozen tables covered, less the intended removals', () => {
     expect(platformModuleCatalog.map((module) => module.key).sort()).toEqual(
       Object.keys(LEGACY_SIDEBAR_NAVIGATION)
         .filter((key) => !(key in INTENDED_REMOVALS))
+        .concat(Object.keys(INTENDED_ADDITIONS))
         .sort(),
     );
   });
@@ -31,8 +57,9 @@ describe('manifest-declared navigation equals the former sidebar tables', () => 
     '%s keeps its sidebar group and icon',
     (key, module) => {
       const legacy = LEGACY_SIDEBAR_NAVIGATION[key];
-      expect(module.navigationGroup).toBe(legacy?.group);
-      expect(moduleIcons[module.iconKey]).toBe(legacy?.icon);
+      const addition = INTENDED_ADDITIONS[key as keyof typeof INTENDED_ADDITIONS];
+      expect(module.navigationGroup).toBe(addition?.group ?? legacy?.group);
+      expect(moduleIcons[module.iconKey]).toBe(addition?.icon ?? legacy?.icon);
     },
   );
 
@@ -49,6 +76,11 @@ describe('manifest-declared navigation equals the former sidebar tables', () => 
       { key: 'reports', label: 'Reports', href: '/analytics/reports', icon: moduleIcons['file-text'] },
       { key: 'sources', label: 'Sources', href: '/analytics/sources', icon: moduleIcons.database },
     ],
+    'asset-maintenance': [
+      LEGACY_MODULE_MENUS['asset-maintenance']![0]!,
+      { key: 'spaces', label: 'CAFM Spaces', href: '/cmms/spaces', icon: moduleIcons.building },
+      ...LEGACY_MODULE_MENUS['asset-maintenance']!.slice(1),
+    ],
   };
 
   it.each(platformModuleCatalog.map((module) => [module.key] as const))(
@@ -63,10 +95,11 @@ describe('manifest-declared navigation equals the former sidebar tables', () => 
     for (const persona of personas) {
       const legacy = LEGACY_PERSONA_MODULE_KEYS[persona];
       for (const module of platformModuleCatalog) {
+        const addition = INTENDED_ADDITIONS[module.key as keyof typeof INTENDED_ADDITIONS];
         expect([persona, module.key, personaSeesModule(persona as never, module.key)]).toEqual([
           persona,
           module.key,
-          legacy === undefined || legacy.includes(module.key),
+          legacy === undefined || legacy.includes(module.key) || addition?.personas.includes(persona as never) === true,
         ]);
       }
     }

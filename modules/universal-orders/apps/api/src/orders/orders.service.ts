@@ -1,3 +1,4 @@
+import { createHash, randomUUID } from 'node:crypto';
 import {
   type AllocateOrderLineInputV1,
   type CreateCustomerCreditMemoInputV1,
@@ -10,6 +11,8 @@ import {
   type FulfillmentOrderV1,
   type SalesOrderV1,
   type SalesQuoteV1,
+  ExactDecimal,
+  SCALE_FACTOR,
 } from '@gigalibs/contracts';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { DatabaseService } from '../database.service.js';
@@ -31,9 +34,9 @@ export class OrderService {
       let taxTotal = 0n;
 
       const processedLines = input.lines.map((line, idx) => {
-        const qty = Number.parseFloat(line.quotedQuantity);
+        const qtyScaled = ExactDecimal.toScaledBigInt(line.quotedQuantity);
         const unitPrice = BigInt(line.unitPriceMinor);
-        const rawSubtotal = BigInt(Math.round(qty * Number(unitPrice)));
+        const rawSubtotal = (qtyScaled * unitPrice) / SCALE_FACTOR;
         const discountBasisPoints = BigInt(line.discountPercentBasisPoints ?? 0);
         const discountAmount = (rawSubtotal * discountBasisPoints) / 10000n;
         const lineSubtotal = rawSubtotal - discountAmount;
@@ -291,9 +294,9 @@ export class OrderService {
       let taxTotal = 0n;
 
       const processedLines = input.lines.map((line, idx) => {
-        const qty = Number.parseFloat(line.orderedQuantity);
+        const qtyScaled = ExactDecimal.toScaledBigInt(line.orderedQuantity);
         const unitPrice = BigInt(line.unitPriceMinor);
-        const rawSubtotal = BigInt(Math.round(qty * Number(unitPrice)));
+        const rawSubtotal = (qtyScaled * unitPrice) / SCALE_FACTOR;
         const discountAmount = BigInt(line.discountMinor ?? '0');
         const lineSubtotal = rawSubtotal - discountAmount;
         const taxBasisPoints = BigInt(line.taxRateBasisPoints ?? 0);
@@ -451,26 +454,28 @@ export class OrderService {
       if (lineRes.rows.length === 0) throw new NotFoundException('Order line not found');
       const line = lineRes.rows[0];
 
-      const orderedQty = Number.parseFloat(line.ordered_quantity);
-      const currentAllocated = Number.parseFloat(line.allocated_quantity);
-      const requestedAlloc = Number.parseFloat(input.allocatedQuantity);
+      const orderedScaled = ExactDecimal.toScaledBigInt(line.ordered_quantity);
+      const currentAllocatedScaled = ExactDecimal.toScaledBigInt(line.allocated_quantity);
+      const requestedAllocScaled = ExactDecimal.toScaledBigInt(input.allocatedQuantity);
 
       // ATP Mathematical Invariant Check: Total Allocated <= Ordered Quantity
-      if (currentAllocated + requestedAlloc > orderedQty) {
+      if (currentAllocatedScaled + requestedAllocScaled > orderedScaled) {
         throw new BadRequestException(
-          `Cannot allocate ${requestedAlloc}. Total allocated (${currentAllocated + requestedAlloc}) would exceed ordered quantity (${orderedQty})`,
+          `Cannot allocate ${input.allocatedQuantity}. Total allocated (${ExactDecimal.fromScaledBigInt(currentAllocatedScaled + requestedAllocScaled)}) would exceed ordered quantity (${line.ordered_quantity})`,
         );
       }
 
+      const allocationId = randomUUID();
       // Record allocation
       await client.query(
         `INSERT INTO gigalibs_orders.order_inventory_allocations (
-          tenant_id, order_id, order_line_id, product_id, warehouse_id, location_id,
+          id, tenant_id, order_id, order_line_id, product_id, warehouse_id, location_id,
           allocated_quantity, uom_id, status, allocated_by
         ) VALUES (
-          $1, $2, $3, $4, $5, $6, $7, $8, 'HARD_RESERVED', $9
+          $1, $2, $3, $4, $5, $6, $7, $8, $9, 'HARD_RESERVED', $10
         )`,
         [
+          allocationId,
           tenantId,
           input.orderId,
           line.id,
@@ -483,13 +488,36 @@ export class OrderService {
         ],
       );
 
-      const newAllocTotal = (currentAllocated + requestedAlloc).toFixed(6);
+      const newAllocTotal = ExactDecimal.fromScaledBigInt(currentAllocatedScaled + requestedAllocScaled);
       await client.query(
         `UPDATE gigalibs_orders.sales_order_lines
          SET allocated_quantity = $3, status = CASE WHEN $3::numeric >= ordered_quantity THEN 'ALLOCATED' ELSE status END,
              updated_at = CURRENT_TIMESTAMP
          WHERE tenant_id = $1 AND id = $2`,
         [tenantId, line.id, newAllocTotal],
+      );
+
+      // Emit orders.allocation.requested.v1 outbox event
+      await client.query(
+        `INSERT INTO gigalibs_orders.outbox_events (
+          id, tenant_id, topic, event_type, aggregate_type, aggregate_id, aggregate_version,
+          correlation_id, schema_version, payload, status, created_at
+        ) VALUES ($1, $2, 'orders.allocation', 'orders.allocation.requested.v1', 'sales_order_line', $3, 1, $4, 1, $5::jsonb, 'PENDING', NOW())`,
+        [
+          randomUUID(),
+          tenantId,
+          line.id,
+          input.orderId,
+          JSON.stringify({
+            allocationKey: allocationId,
+            orderId: input.orderId,
+            orderLineId: line.id,
+            productId: line.product_id,
+            warehouseId: input.warehouseId,
+            requestedQuantity: input.allocatedQuantity,
+            uomId: line.uom_id,
+          }),
+        ],
       );
 
       // Check if all order lines are fully allocated to transition order to PROCESSING
@@ -499,7 +527,7 @@ export class OrderService {
         [tenantId, input.orderId],
       );
       const allAllocated = allLines.rows.every(
-        (l) => Number.parseFloat(l.allocated_quantity) >= Number.parseFloat(l.ordered_quantity),
+        (l) => ExactDecimal.isGreaterThanOrEqual(l.allocated_quantity, l.ordered_quantity),
       );
 
       if (allAllocated) {
@@ -571,14 +599,14 @@ export class OrderService {
         if (oLineRes.rows.length === 0) throw new NotFoundException(`Order line ${line.orderLineId} not found`);
         const oLine = oLineRes.rows[0];
 
-        const shipQty = Number.parseFloat(line.shippedQuantity);
-        const allocatedQty = Number.parseFloat(oLine.allocated_quantity);
-        const currentShipped = Number.parseFloat(oLine.shipped_quantity);
+        const shipScaled = ExactDecimal.toScaledBigInt(line.shippedQuantity);
+        const allocatedScaled = ExactDecimal.toScaledBigInt(oLine.allocated_quantity);
+        const currentShippedScaled = ExactDecimal.toScaledBigInt(oLine.shipped_quantity);
 
         // Fulfillment Invariant Check: Shipped Qty <= Allocated Qty
-        if (currentShipped + shipQty > allocatedQty) {
+        if (currentShippedScaled + shipScaled > allocatedScaled) {
           throw new BadRequestException(
-            `Cannot fulfill ${shipQty}. Total shipped (${currentShipped + shipQty}) would exceed allocated quantity (${allocatedQty})`,
+            `Cannot fulfill ${line.shippedQuantity}. Total shipped (${ExactDecimal.fromScaledBigInt(currentShippedScaled + shipScaled)}) would exceed allocated quantity (${oLine.allocated_quantity})`,
           );
         }
 
@@ -601,10 +629,10 @@ export class OrderService {
           ],
         );
 
-        const newShipped = (currentShipped + shipQty).toFixed(6);
+        const newShipped = ExactDecimal.fromScaledBigInt(currentShippedScaled + shipScaled);
         await client.query(
           `UPDATE gigalibs_orders.sales_order_lines
-           SET shipped_quantity = $3, status = CASE WHEN $3 >= ordered_quantity THEN 'SHIPPED' ELSE 'PARTIALLY_SHIPPED' END,
+           SET shipped_quantity = $3, status = CASE WHEN $3::numeric >= ordered_quantity THEN 'SHIPPED' ELSE 'PARTIALLY_SHIPPED' END,
                updated_at = CURRENT_TIMESTAMP
            WHERE tenant_id = $1 AND id = $2`,
           [tenantId, oLine.id, newShipped],
@@ -642,38 +670,61 @@ export class OrderService {
     });
   }
 
-  async dispatchFulfillment(tenantId: string, actorId: string, fulfillmentId: string): Promise<FulfillmentOrderV1> {
+  async dispatchFulfillment(
+    tenantId: string,
+    actorId: string,
+    fulfillmentId: string,
+    issueId?: string,
+  ): Promise<FulfillmentOrderV1> {
     return this.database.withTenantTransaction(tenantId, async (client) => {
-      const fo = await client.query(
+      const foRes = await client.query(
         `SELECT * FROM gigalibs_orders.fulfillment_orders WHERE tenant_id = $1 AND id = $2 FOR UPDATE`,
         [tenantId, fulfillmentId],
       );
-      if (fo.rows.length === 0) throw new NotFoundException('Fulfillment not found');
+      if (foRes.rows.length === 0) throw new NotFoundException('Fulfillment not found');
+      const fo = foRes.rows[0];
+
+      if (fo.status === 'SHIPPED') {
+        const lines = await client.query(
+          `SELECT * FROM gigalibs_orders.fulfillment_order_lines WHERE tenant_id = $1 AND fulfillment_order_id = $2`,
+          [tenantId, fulfillmentId],
+        );
+        return this.mapFulfillment(fo, lines.rows);
+      }
+
+      // Invariant: Physical stock deduction proof required before dispatching
+      const effectiveIssueId = issueId || fo.custom_extensions?.issueId || fo.custom_extensions?.inventoryIssueId;
+      if (!effectiveIssueId) {
+        throw new BadRequestException(
+          'Cannot dispatch fulfillment without authoritative physical inventory issue proof (issueId required). Physical stock must be deducted first.',
+        );
+      }
 
       const res = await client.query(
         `UPDATE gigalibs_orders.fulfillment_orders
          SET status = 'SHIPPED', dispatched_at = CURRENT_TIMESTAMP, dispatched_by = $3,
+             custom_extensions = jsonb_set(COALESCE(custom_extensions, '{}'::jsonb), '{issueId}', to_jsonb($4::text)),
              updated_at = CURRENT_TIMESTAMP, version = version + 1
          WHERE tenant_id = $1 AND id = $2
          RETURNING *`,
-        [tenantId, fulfillmentId, actorId],
+        [tenantId, fulfillmentId, actorId, effectiveIssueId],
       );
 
       // Check if order is fully fulfilled
       const orderLines = await client.query(
         `SELECT ordered_quantity, shipped_quantity FROM gigalibs_orders.sales_order_lines
          WHERE tenant_id = $1 AND order_id = $2`,
-        [tenantId, fo.rows[0].order_id],
+        [tenantId, fo.order_id],
       );
       const allShipped = orderLines.rows.every(
-        (l) => Number.parseFloat(l.shipped_quantity) >= Number.parseFloat(l.ordered_quantity),
+        (l) => ExactDecimal.isGreaterThanOrEqual(l.shipped_quantity, l.ordered_quantity),
       );
 
       await client.query(
         `UPDATE gigalibs_orders.sales_orders
          SET status = $3, updated_at = CURRENT_TIMESTAMP
          WHERE tenant_id = $1 AND id = $2`,
-        [tenantId, fo.rows[0].order_id, allShipped ? 'FULFILLED' : 'PARTIALLY_FULFILLED'],
+        [tenantId, fo.order_id, allShipped ? 'FULFILLED' : 'PARTIALLY_FULFILLED'],
       );
 
       const lines = await client.query(
@@ -681,7 +732,137 @@ export class OrderService {
         [tenantId, fulfillmentId],
       );
 
+      const orderRes = await client.query(
+        `SELECT order_number, customer_party_id, currency_code FROM gigalibs_orders.sales_orders WHERE tenant_id = $1 AND id = $2`,
+        [tenantId, fo.order_id],
+      );
+      const order = orderRes.rows[0];
+
+      const oLinesRes = await client.query(
+        `SELECT id, product_code, product_name, unit_price_minor FROM gigalibs_orders.sales_order_lines WHERE tenant_id = $1 AND order_id = $2`,
+        [tenantId, fo.order_id],
+      );
+      const oLineMap = new Map(oLinesRes.rows.map((ol) => [ol.id, ol]));
+
+      const dispatchedLines = lines.rows.map((fl) => {
+        const ol = oLineMap.get(fl.order_line_id);
+        return {
+          orderLineId: fl.order_line_id,
+          productId: fl.product_id,
+          productCode: ol?.product_code ?? 'PRODUCT',
+          productName: ol?.product_name ?? 'Product Item',
+          quantity: fl.shipped_quantity,
+          unitPriceMinor: ol?.unit_price_minor?.toString() ?? '0',
+          uomId: fl.uom_id,
+        };
+      });
+
+      // Emit orders.fulfillment.dispatched.v1 outbox event
+      await client.query(
+        `INSERT INTO gigalibs_orders.outbox_events (
+          id, tenant_id, topic, event_type, aggregate_type, aggregate_id, aggregate_version,
+          correlation_id, schema_version, payload, status, created_at
+        ) VALUES ($1, $2, 'orders.fulfillment', 'orders.fulfillment.dispatched.v1', 'fulfillment_order', $3, 1, $4, 1, $5::jsonb, 'PENDING', NOW())`,
+        [
+          randomUUID(),
+          tenantId,
+          fulfillmentId,
+          fo.order_id,
+          JSON.stringify({
+            fulfillmentId,
+            orderId: fo.order_id,
+            orderNumber: order.order_number,
+            customerPartyId: order.customer_party_id,
+            currencyCode: order.currency_code,
+            issueId: effectiveIssueId,
+            lines: dispatchedLines,
+            dispatchedAt: res.rows[0].dispatched_at?.toISOString() || new Date().toISOString(),
+          }),
+        ],
+      );
+
       return this.mapFulfillment(res.rows[0], lines.rows);
+    });
+  }
+
+  async projectArInvoice(
+    tenantId: string,
+    event: {
+      id: string;
+      source?: string;
+      type: string;
+      data: {
+        invoiceId: string;
+        invoiceNumber: string;
+        orderId: string;
+        fulfillmentId: string;
+        customerPartyId: string;
+        totalAmountMinor: string;
+        currencyCode: string;
+        sealHash: string;
+        issuedAt: string;
+      };
+    },
+  ): Promise<{ processed: boolean; duplicate: boolean }> {
+    return this.database.withTenantTransaction(tenantId, async (client) => {
+      const messageId = event.id;
+      const sha256 = createHash('sha256').update(JSON.stringify(event)).digest('hex');
+
+      // Deduplicate inbox
+      const existing = await client.query<{ status: string }>(
+        `SELECT status FROM gigalibs_orders.inbox_receipts
+         WHERE tenant_id = $1 AND consumer_name = 'orders_ar_invoice_consumer' AND message_id = $2`,
+        [tenantId, messageId],
+      );
+      if (existing.rows.length > 0 && existing.rows[0].status === 'PROCESSED') {
+        return { processed: true, duplicate: true };
+      }
+
+      if (existing.rows.length === 0) {
+        await client.query(
+          `INSERT INTO gigalibs_orders.inbox_receipts (
+            id, tenant_id, consumer_name, message_id, event_type, source_module,
+            source_version, correlation_id, payload_sha256, status, created_at
+          ) VALUES ($1, $2, 'orders_ar_invoice_consumer', $3, $4, 'accounts_receivable', 1, $5, $6, 'PROCESSING', NOW())`,
+          [randomUUID(), tenantId, messageId, event.type, event.data.orderId, sha256],
+        );
+      }
+
+      // Upsert into order_ar_invoice_projections
+      await client.query(
+        `INSERT INTO gigalibs_orders.order_ar_invoice_projections (
+          id, tenant_id, order_id, fulfillment_id, ar_invoice_id, ar_invoice_number,
+          total_amount_minor, currency_code, status, seal_hash, issued_at, created_at, updated_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'ISSUED', $9, $10, NOW(), NOW())
+        ON CONFLICT (tenant_id, order_id, fulfillment_id)
+        DO UPDATE SET
+          ar_invoice_id = EXCLUDED.ar_invoice_id,
+          ar_invoice_number = EXCLUDED.ar_invoice_number,
+          total_amount_minor = EXCLUDED.total_amount_minor,
+          seal_hash = EXCLUDED.seal_hash,
+          updated_at = NOW()`,
+        [
+          randomUUID(),
+          tenantId,
+          event.data.orderId,
+          event.data.fulfillmentId,
+          event.data.invoiceId,
+          event.data.invoiceNumber,
+          event.data.totalAmountMinor,
+          event.data.currencyCode,
+          event.data.sealHash,
+          event.data.issuedAt,
+        ],
+      );
+
+      await client.query(
+        `UPDATE gigalibs_orders.inbox_receipts
+         SET status = 'PROCESSED', processed_at = NOW()
+         WHERE tenant_id = $1 AND consumer_name = 'orders_ar_invoice_consumer' AND message_id = $2`,
+        [tenantId, messageId],
+      );
+
+      return { processed: true, duplicate: false };
     });
   }
 
@@ -712,15 +893,15 @@ export class OrderService {
       const invoiceLinesToInsert = [];
 
       for (const oLine of linesRes.rows) {
-        const shippedQty = Number.parseFloat(oLine.shipped_quantity);
-        const invoicedQty = Number.parseFloat(oLine.invoiced_quantity);
-        const billableQty = shippedQty - invoicedQty;
+        const shippedScaled = ExactDecimal.toScaledBigInt(oLine.shipped_quantity);
+        const invoicedScaled = ExactDecimal.toScaledBigInt(oLine.invoiced_quantity);
+        const billableScaled = shippedScaled - invoicedScaled;
 
-        if (billableQty <= 0) continue; // Nothing to bill on this line
+        if (billableScaled <= 0n) continue; // Nothing to bill on this line
 
         // Invoicing Invariant: Invoiced Quantity <= Shipped Quantity
         const unitPrice = BigInt(oLine.unit_price_minor);
-        const rawSubtotal = BigInt(Math.round(billableQty * Number(unitPrice)));
+        const rawSubtotal = (billableScaled * unitPrice) / SCALE_FACTOR;
         const lineTax = (rawSubtotal * BigInt(oLine.tax_rate_basis_points)) / 10000n;
         const lineTotal = rawSubtotal + lineTax;
 
@@ -732,7 +913,7 @@ export class OrderService {
           productId: oLine.product_id,
           productCode: oLine.product_code,
           productName: oLine.product_name,
-          invoicedQuantity: billableQty.toFixed(6),
+          invoicedQuantity: ExactDecimal.fromScaledBigInt(billableScaled),
           uomId: oLine.uom_id,
           unitPriceMinor: oLine.unit_price_minor,
           discountMinor: '0',
@@ -855,9 +1036,9 @@ export class OrderService {
       const creditMemoNumber = `CM-${Date.now().toString().slice(-6)}`;
 
       const processedLines = input.lines.map((line, idx) => {
-        const qty = Number.parseFloat(line.quantity);
+        const qtyScaled = ExactDecimal.toScaledBigInt(line.quantity);
         const unitPrice = BigInt(line.unitPriceMinor);
-        const lineTotal = BigInt(Math.round(qty * Number(unitPrice)));
+        const lineTotal = (qtyScaled * unitPrice) / SCALE_FACTOR;
         totalAmount += lineTotal;
         return {
           ...line,

@@ -27,6 +27,8 @@ import {
   type StockLedgerTransactionV1,
   type SubmitCountEntryInputV1,
   type UpdateWarehouseInputV1,
+  ExactDecimal,
+  SCALE_FACTOR,
 } from '@gigalibs/contracts';
 import {
   type ModuleCommandContext,
@@ -328,7 +330,6 @@ export class InventoryService {
       const txNumber = `MOV-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
       const now = new Date().toISOString();
       const stockStatus = input.stockStatus ?? 'AVAILABLE';
-      const moveQty = parseFloat(input.quantity);
 
       // 1. Insert Transaction Header
       const txRes = await client.query(
@@ -381,20 +382,20 @@ export class InventoryService {
         );
 
         const currentOnHand = srcBalRes.rowCount && srcBalRes.rowCount > 0
-          ? parseFloat(srcBalRes.rows[0].on_hand_quantity)
-          : 0;
+          ? String(srcBalRes.rows[0].on_hand_quantity)
+          : '0.000000';
         const currentReserved = srcBalRes.rowCount && srcBalRes.rowCount > 0
-          ? parseFloat(srcBalRes.rows[0].reserved_quantity)
-          : 0;
+          ? String(srcBalRes.rows[0].reserved_quantity)
+          : '0.000000';
 
-        if (currentOnHand < moveQty && !allowNegative) {
+        if (ExactDecimal.isLessThan(currentOnHand, input.quantity) && !allowNegative) {
           throw new BadRequestException(
-            `Insufficient stock at source location (On Hand: ${currentOnHand}, Requested: ${moveQty}). Negative stock is not permitted.`,
+            `Insufficient stock at source location (On Hand: ${currentOnHand}, Requested: ${input.quantity}). Negative stock is not permitted.`,
           );
         }
 
-        const newOnHand = (currentOnHand - moveQty).toFixed(6);
-        const newAvail = (parseFloat(newOnHand) - currentReserved).toFixed(6);
+        const newOnHand = ExactDecimal.subtract(currentOnHand, input.quantity);
+        const newAvail = ExactDecimal.subtract(newOnHand, currentReserved);
 
         if (srcBalRes.rowCount && srcBalRes.rowCount > 0) {
           await client.query(
@@ -444,7 +445,7 @@ export class InventoryService {
             input.serialId ?? null,
             stockStatus,
             input.unitCostMinor ?? null,
-            input.unitCostMinor ? (BigInt(input.unitCostMinor) * BigInt(Math.round(moveQty))).toString() : null,
+            input.unitCostMinor ? ((BigInt(input.unitCostMinor) * ExactDecimal.toScaledBigInt(input.quantity)) / SCALE_FACTOR).toString() : null,
             now,
           ],
         );
@@ -470,13 +471,13 @@ export class InventoryService {
       );
 
       const targetCurrentOnHand = tgtBalRes.rowCount && tgtBalRes.rowCount > 0
-        ? parseFloat(tgtBalRes.rows[0].on_hand_quantity)
-        : 0;
+        ? String(tgtBalRes.rows[0].on_hand_quantity)
+        : '0.000000';
       const targetCurrentReserved = tgtBalRes.rowCount && tgtBalRes.rowCount > 0
-        ? parseFloat(tgtBalRes.rows[0].reserved_quantity)
-        : 0;
-      const targetNewOnHand = (targetCurrentOnHand + moveQty).toFixed(6);
-      const targetNewAvail = (parseFloat(targetNewOnHand) - targetCurrentReserved).toFixed(6);
+        ? String(tgtBalRes.rows[0].reserved_quantity)
+        : '0.000000';
+      const targetNewOnHand = ExactDecimal.add(targetCurrentOnHand, input.quantity);
+      const targetNewAvail = ExactDecimal.subtract(targetNewOnHand, targetCurrentReserved);
 
       if (tgtBalRes.rowCount && tgtBalRes.rowCount > 0) {
         await client.query(
@@ -526,7 +527,7 @@ export class InventoryService {
           input.serialId ?? null,
           stockStatus,
           input.unitCostMinor ?? null,
-          input.unitCostMinor ? (BigInt(input.unitCostMinor) * BigInt(Math.round(moveQty))).toString() : null,
+          input.unitCostMinor ? ((BigInt(input.unitCostMinor) * ExactDecimal.toScaledBigInt(input.quantity)) / SCALE_FACTOR).toString() : null,
           now,
         ],
       );
@@ -628,8 +629,9 @@ export class InventoryService {
             `INSERT INTO ${SCHEMA}.receipt_lines (
               id, tenant_id, receipt_id, line_number, product_id, uom_id,
               expected_quantity, received_quantity, target_location_id, lot_number,
-              expiry_date, inspection_status, custom_extensions, created_at, updated_at
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, 0, $8, $9, $10, 'PENDING', $11, $12, $12)`,
+              expiry_date, inspection_status, purchase_order_id, purchase_order_line_id,
+              custom_extensions, created_at, updated_at
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, 0, $8, $9, $10, 'PENDING', $11, $12, $13, $14, $14)`,
             [
               randomUUID(),
               principal.tenantId,
@@ -641,6 +643,8 @@ export class InventoryService {
               line.targetLocationId ?? null,
               line.lotNumber ?? null,
               line.expiryDate ?? null,
+              line.purchaseOrderId ?? null,
+              line.purchaseOrderLineId ?? null,
               JSON.stringify(line.customExtensions ?? {}),
               now,
             ],
@@ -805,21 +809,40 @@ export class InventoryService {
         [now, receiptId],
       );
 
-      // Emit receipt completed event
+      const completedLinesRes = await client.query(
+        `SELECT * FROM ${SCHEMA}.receipt_lines WHERE tenant_id = $1 AND receipt_id = $2 ORDER BY line_number ASC`,
+        [principal.tenantId, receiptId],
+      );
+
+      const eventPayload = {
+        receiptId,
+        receiptNumber: receipt.receipt_number,
+        warehouseId: receipt.warehouse_id,
+        receivedAt: now,
+        lines: completedLinesRes.rows.map((l) => ({
+          receiptLineId: l.id,
+          productId: l.product_id,
+          receivedQuantity: ExactDecimal.fromScaledBigInt(ExactDecimal.toScaledBigInt(String(l.received_quantity))),
+          uomId: l.uom_id,
+          purchaseOrderId: l.purchase_order_id ?? null,
+          purchaseOrderLineId: l.purchase_order_line_id ?? null,
+        })),
+      };
+
+      // Emit receipt completed event into Delta-5 outbox
       await client.query(
         `INSERT INTO ${SCHEMA}.outbox_events (
-          id, tenant_id, event_type, payload, status, created_at
-        ) VALUES ($1, $2, $3, $4, 'PENDING', $5)`,
+          id, tenant_id, topic, event_type, aggregate_type, aggregate_id,
+          aggregate_version, correlation_id, schema_version, payload, status, created_at
+        ) VALUES ($1, $2, $3, $4, 'receipt', $5, $6, $5, 1, $7, 'PENDING', $8)`,
         [
           randomUUID(),
           principal.tenantId,
+          TOPIC,
           'inventory.receipt.completed.v1',
-          JSON.stringify({
-            receiptId,
-            receiptNumber: receipt.receipt_number,
-            warehouseId: receipt.warehouse_id,
-            totalLines: linesRes.rowCount,
-          }),
+          receiptId,
+          receipt.version + 1,
+          JSON.stringify(eventPayload),
           now,
         ],
       );
@@ -835,25 +858,78 @@ export class InventoryService {
     input: CreateReservationInputV1,
   ): Promise<InventoryReservationV1> {
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
-      // Check total available stock across the warehouse for this product
-      const availRes = await client.query(
-        `SELECT SUM(available_quantity) as total_avail
+      // 1. Check idempotency if key provided
+      if (input.idempotencyKey) {
+        const existingRec = await client.query(
+          `SELECT response_payload FROM ${SCHEMA}.idempotency_records WHERE tenant_id = $1 AND idempotency_key = $2`,
+          [principal.tenantId, input.idempotencyKey],
+        );
+        if (existingRec.rowCount && existingRec.rowCount > 0) {
+          return existingRec.rows[0].response_payload as InventoryReservationV1;
+        }
+      }
+
+      // Check if active reservation already exists for demand reference
+      const existingRes = await client.query(
+        `SELECT * FROM ${SCHEMA}.inventory_reservations
+         WHERE tenant_id = $1 AND demand_type = $2 AND demand_reference_id = $3
+           AND COALESCE(demand_line_id, '') = COALESCE($4, '') AND status = 'ACTIVE'
+         LIMIT 1`,
+        [principal.tenantId, input.demandType, input.demandReferenceId, input.demandLineId ?? ''],
+      );
+      if (existingRes.rowCount && existingRes.rowCount > 0) {
+        return mapReservation(existingRes.rows[0]);
+      }
+
+      // 2. Lock ALL candidate balance rows deterministically in ascending ID order FOR UPDATE
+      const balRes = await client.query(
+        `SELECT id, on_hand_quantity, reserved_quantity, available_quantity
          FROM ${SCHEMA}.stock_balances
-         WHERE tenant_id = $1 AND warehouse_id = $2 AND product_id = $3 AND uom_id = $4 AND stock_status = 'AVAILABLE'`,
+         WHERE tenant_id = $1 AND warehouse_id = $2 AND product_id = $3 AND uom_id = $4 AND stock_status = 'AVAILABLE'
+         ORDER BY id ASC
+         FOR UPDATE`,
         [principal.tenantId, input.warehouseId, input.productId, input.uomId],
       );
-      const totalAvail = availRes.rows[0]?.total_avail ? parseFloat(availRes.rows[0].total_avail) : 0;
-      const requestedQty = parseFloat(input.quantity);
 
-      if (totalAvail < requestedQty) {
+      let totalAvail = '0.000000';
+      for (const row of balRes.rows) {
+        totalAvail = ExactDecimal.add(totalAvail, String(row.available_quantity));
+      }
+
+      if (ExactDecimal.isLessThan(totalAvail, input.quantity)) {
         throw new BadRequestException(
-          `Shortage detected: Available stock is ${totalAvail}, requested reservation is ${requestedQty}.`,
+          `Shortage detected: Available stock is ${totalAvail}, requested reservation is ${input.quantity}.`,
         );
       }
 
-      const id = randomUUID();
+      // 3. Allocate reserved quantity across the locked balance rows
+      let remainingToReserve = input.quantity;
       const now = new Date().toISOString();
 
+      for (const row of balRes.rows) {
+        if (ExactDecimal.isLessThanOrEqual(remainingToReserve, '0.000000')) break;
+        const rowAvail = String(row.available_quantity);
+        if (ExactDecimal.isLessThanOrEqual(rowAvail, '0.000000')) continue;
+
+        const allocQty = ExactDecimal.isLessThanOrEqual(remainingToReserve, rowAvail)
+          ? remainingToReserve
+          : rowAvail;
+
+        const updatedReserved = ExactDecimal.add(String(row.reserved_quantity), allocQty);
+        const updatedAvail = ExactDecimal.subtract(String(row.on_hand_quantity), updatedReserved);
+
+        await client.query(
+          `UPDATE ${SCHEMA}.stock_balances
+           SET reserved_quantity = $1, available_quantity = $2, updated_at = $3, version = version + 1
+           WHERE id = $4`,
+          [updatedReserved, updatedAvail, now, row.id],
+        );
+
+        remainingToReserve = ExactDecimal.subtract(remainingToReserve, allocQty);
+      }
+
+      // 4. Insert active reservation
+      const id = randomUUID();
       const res = await client.query(
         `INSERT INTO ${SCHEMA}.inventory_reservations (
           id, tenant_id, reservation_type, demand_type, demand_reference_id, demand_line_id,
@@ -878,21 +954,18 @@ export class InventoryService {
         ],
       );
 
-      // Hold reserved quantity on the primary balance row
-      await client.query(
-        `UPDATE ${SCHEMA}.stock_balances
-         SET reserved_quantity = reserved_quantity + $1,
-             available_quantity = on_hand_quantity - (reserved_quantity + $1),
-             updated_at = $2
-         WHERE id = (
-           SELECT id FROM ${SCHEMA}.stock_balances
-           WHERE tenant_id = $3 AND warehouse_id = $4 AND product_id = $5 AND uom_id = $6 AND stock_status = 'AVAILABLE'
-           LIMIT 1
-         )`,
-        [input.quantity, now, principal.tenantId, input.warehouseId, input.productId, input.uomId],
-      );
+      const reservation = mapReservation(res.rows[0]);
 
-      return mapReservation(res.rows[0]);
+      if (input.idempotencyKey) {
+        await client.query(
+          `INSERT INTO ${SCHEMA}.idempotency_records (tenant_id, idempotency_key, resource_id, action, response_payload, created_at)
+           VALUES ($1, $2, $3, 'CREATE_RESERVATION', $4, $5)
+           ON CONFLICT (tenant_id, idempotency_key) DO NOTHING`,
+          [principal.tenantId, input.idempotencyKey, id, JSON.stringify(reservation), now],
+        );
+      }
+
+      return reservation;
     });
   }
 
@@ -905,20 +978,44 @@ export class InventoryService {
       if (resRes.rowCount === 0) throw new NotFoundException('Reservation not found.');
       const res = resRes.rows[0];
 
-      if (res.status === 'RELEASED') return mapReservation(res);
+      if (res.status === 'RELEASED' || res.status === 'CANCELLED') return mapReservation(res);
 
-      const unfulfilledQty = parseFloat(res.quantity) - parseFloat(res.fulfilled_quantity);
+      const unfulfilledQty = ExactDecimal.subtract(String(res.quantity), String(res.fulfilled_quantity));
       const now = new Date().toISOString();
 
-      if (unfulfilledQty > 0) {
-        await client.query(
-          `UPDATE ${SCHEMA}.stock_balances
-           SET reserved_quantity = GREATEST(0, reserved_quantity - $1),
-               available_quantity = on_hand_quantity - GREATEST(0, reserved_quantity - $1),
-               updated_at = $2
-           WHERE tenant_id = $3 AND warehouse_id = $4 AND product_id = $5 AND uom_id = $6`,
-          [unfulfilledQty.toFixed(6), now, principal.tenantId, res.warehouse_id, res.product_id, res.uom_id],
+      if (ExactDecimal.isPositive(unfulfilledQty)) {
+        // Lock balance rows deterministically in ascending ID order
+        const balRes = await client.query(
+          `SELECT id, on_hand_quantity, reserved_quantity, available_quantity
+           FROM ${SCHEMA}.stock_balances
+           WHERE tenant_id = $1 AND warehouse_id = $2 AND product_id = $3 AND uom_id = $4
+           ORDER BY id ASC
+           FOR UPDATE`,
+          [principal.tenantId, res.warehouse_id, res.product_id, res.uom_id],
         );
+
+        let remainingToRelease = unfulfilledQty;
+        for (const row of balRes.rows) {
+          if (ExactDecimal.isLessThanOrEqual(remainingToRelease, '0.000000')) break;
+          const currentReserved = String(row.reserved_quantity);
+          if (ExactDecimal.isLessThanOrEqual(currentReserved, '0.000000')) continue;
+
+          const releaseFromRow = ExactDecimal.isLessThanOrEqual(remainingToRelease, currentReserved)
+            ? remainingToRelease
+            : currentReserved;
+
+          const newReserved = ExactDecimal.subtract(currentReserved, releaseFromRow);
+          const newAvail = ExactDecimal.subtract(String(row.on_hand_quantity), newReserved);
+
+          await client.query(
+            `UPDATE ${SCHEMA}.stock_balances
+             SET reserved_quantity = $1, available_quantity = $2, updated_at = $3, version = version + 1
+             WHERE id = $4`,
+            [newReserved, newAvail, now, row.id],
+          );
+
+          remainingToRelease = ExactDecimal.subtract(remainingToRelease, releaseFromRow);
+        }
       }
 
       const updatedRes = await client.query(
@@ -926,6 +1023,179 @@ export class InventoryService {
         [now, reservationId],
       );
       return mapReservation(updatedRes.rows[0]);
+    });
+  }
+
+  // ─── Physical Stock Issue for Order Fulfillment ─────────────────────────────
+
+  async issueStockForOrderFulfillment(
+    principal: ModulePrincipal,
+    input: {
+      readonly reservationId: string;
+      readonly orderId: string;
+      readonly fulfillmentId: string;
+      readonly quantity?: string;
+      readonly correlationId?: string;
+    },
+  ): Promise<{
+    readonly issueId: string;
+    readonly reservationId: string;
+    readonly orderId: string;
+    readonly fulfillmentId: string;
+    readonly issuedQuantity: string;
+    readonly status: string;
+  }> {
+    return this.database.withTenantTransaction(principal.tenantId, async (client) => {
+      // 1. Lock reservation FOR UPDATE
+      const resRes = await client.query(
+        `SELECT * FROM ${SCHEMA}.inventory_reservations WHERE tenant_id = $1 AND id = $2 FOR UPDATE`,
+        [principal.tenantId, input.reservationId],
+      );
+      if (resRes.rowCount === 0) throw new NotFoundException('Reservation not found.');
+      const res = resRes.rows[0];
+
+      if (res.status !== 'ACTIVE') {
+        throw new BadRequestException(`Cannot issue stock: reservation status is ${res.status}.`);
+      }
+
+      const unfulfilled = ExactDecimal.subtract(String(res.quantity), String(res.fulfilled_quantity));
+      const issueQty = input.quantity ?? unfulfilled;
+
+      if (ExactDecimal.isLessThanOrEqual(issueQty, '0.000000')) {
+        throw new BadRequestException('Issue quantity must be greater than zero.');
+      }
+      if (ExactDecimal.isGreaterThan(issueQty, unfulfilled)) {
+        throw new BadRequestException(
+          `Issue quantity (${issueQty}) exceeds remaining unfulfilled reserved quantity (${unfulfilled}).`,
+        );
+      }
+
+      // 2. Lock balance rows deterministically in ascending ID order
+      const balRes = await client.query(
+        `SELECT id, on_hand_quantity, reserved_quantity, available_quantity, location_id
+         FROM ${SCHEMA}.stock_balances
+         WHERE tenant_id = $1 AND warehouse_id = $2 AND product_id = $3 AND uom_id = $4
+         ORDER BY id ASC
+         FOR UPDATE`,
+        [principal.tenantId, res.warehouse_id, res.product_id, res.uom_id],
+      );
+
+      let remainingToDeduct = issueQty;
+      const now = new Date().toISOString();
+      const issueId = randomUUID();
+      const txId = randomUUID();
+      const txNumber = `ISSUE-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+
+      // Post stock ledger transaction header
+      await client.query(
+        `INSERT INTO ${SCHEMA}.stock_ledger_transactions (
+          id, tenant_id, transaction_number, document_type, document_reference_id,
+          reason, correlation_id, idempotency_key, posted_by, posted_at, created_at
+        ) VALUES ($1, $2, $3, 'ORDER_FULFILLMENT_ISSUE', $4, 'ISSUE', $5, $6, $7, $8, $8)`,
+        [
+          txId,
+          principal.tenantId,
+          txNumber,
+          input.fulfillmentId,
+          input.correlationId ?? input.fulfillmentId,
+          issueId,
+          principal.subject,
+          now,
+        ],
+      );
+
+      for (const row of balRes.rows) {
+        if (ExactDecimal.isLessThanOrEqual(remainingToDeduct, '0.000000')) break;
+        const rowReserved = String(row.reserved_quantity);
+        if (ExactDecimal.isLessThanOrEqual(rowReserved, '0.000000')) continue;
+
+        const deductFromRow = ExactDecimal.isLessThanOrEqual(remainingToDeduct, rowReserved)
+          ? remainingToDeduct
+          : rowReserved;
+
+        const newReserved = ExactDecimal.subtract(rowReserved, deductFromRow);
+        const newOnHand = ExactDecimal.subtract(String(row.on_hand_quantity), deductFromRow);
+        const newAvail = ExactDecimal.subtract(newOnHand, newReserved);
+
+        await client.query(
+          `UPDATE ${SCHEMA}.stock_balances
+           SET on_hand_quantity = $1, reserved_quantity = $2, available_quantity = $3,
+               last_movement_at = $4, updated_at = $4, version = version + 1
+           WHERE id = $5`,
+          [newOnHand, newReserved, newAvail, now, row.id],
+        );
+
+        // Credit stock ledger entry for physical removal
+        await client.query(
+          `INSERT INTO ${SCHEMA}.stock_ledger_entries (
+            id, tenant_id, transaction_id, direction, warehouse_id, location_id, product_id,
+            uom_id, quantity, base_quantity, stock_status, created_at
+          ) VALUES ($1, $2, $3, 'CREDIT', $4, $5, $6, $7, $8, $8, 'AVAILABLE', $9)`,
+          [
+            randomUUID(),
+            principal.tenantId,
+            txId,
+            res.warehouse_id,
+            row.location_id,
+            res.product_id,
+            res.uom_id,
+            deductFromRow,
+            now,
+          ],
+        );
+
+        remainingToDeduct = ExactDecimal.subtract(remainingToDeduct, deductFromRow);
+      }
+
+      // 3. Update reservation fulfilled quantity and status
+      const newFulfilled = ExactDecimal.add(String(res.fulfilled_quantity), issueQty);
+      const isComplete = ExactDecimal.isGreaterThanOrEqual(newFulfilled, String(res.quantity));
+      const resStatus = isComplete ? 'FULFILLED' : 'ACTIVE';
+
+      await client.query(
+        `UPDATE ${SCHEMA}.inventory_reservations
+         SET fulfilled_quantity = $1, status = $2, updated_at = $3, version = version + 1
+         WHERE id = $4`,
+        [newFulfilled, resStatus, now, res.id],
+      );
+
+      // 4. Emit inventory.stock.issued.v1 outbox event
+      const stockIssuedPayload = {
+        issueId,
+        reservationId: res.id,
+        orderId: input.orderId,
+        orderLineId: res.demand_line_id ?? randomUUID(),
+        productId: res.product_id,
+        warehouseId: res.warehouse_id,
+        issuedQuantity: issueQty,
+        issuedAt: now,
+      };
+
+      await client.query(
+        `INSERT INTO ${SCHEMA}.outbox_events (
+          id, tenant_id, topic, event_type, aggregate_type, aggregate_id,
+          aggregate_version, correlation_id, schema_version, payload, status, created_at
+        ) VALUES ($1, $2, $3, $4, 'inventory_issue', $5, 1, $6, 1, $7, 'PENDING', $8)`,
+        [
+          issueId,
+          principal.tenantId,
+          TOPIC,
+          'inventory.stock.issued.v1',
+          input.fulfillmentId,
+          input.correlationId ?? input.fulfillmentId,
+          JSON.stringify(stockIssuedPayload),
+          now,
+        ],
+      );
+
+      return {
+        issueId,
+        reservationId: res.id,
+        orderId: input.orderId,
+        fulfillmentId: input.fulfillmentId,
+        issuedQuantity: issueQty,
+        status: 'ISSUED',
+      };
     });
   }
 
@@ -1061,7 +1331,7 @@ export class InventoryService {
         );
 
         // Update balance at staging location to maintain exact ledger parity
-        const issueQty = parseFloat(line.requestedQuantity);
+        const negativeIssueQty = ExactDecimal.subtract('0.000000', line.requestedQuantity);
         await client.query(
           `INSERT INTO ${SCHEMA}.stock_balances (
             id, tenant_id, warehouse_id, location_id, product_id, uom_id, lot_id, serial_id,
@@ -1085,7 +1355,7 @@ export class InventoryService {
             kit.stagingLocationId,
             line.productId,
             line.uomId,
-            -issueQty,
+            negativeIssueQty,
             now,
           ],
         );
@@ -1168,9 +1438,11 @@ export class InventoryService {
              WHERE tenant_id = $1 AND location_id = $2 AND product_id = $3`,
             [principal.tenantId, input.locationId, input.productId],
           );
-      const snapshotQty = balRes.rowCount && balRes.rowCount > 0 ? parseFloat(balRes.rows[0].on_hand_quantity) : 0;
-      const countedQty = parseFloat(input.countedQuantity);
-      const varianceQty = (countedQty - snapshotQty).toFixed(6);
+      const snapshotQty = balRes.rowCount && balRes.rowCount > 0
+        ? ExactDecimal.fromScaledBigInt(ExactDecimal.toScaledBigInt(String(balRes.rows[0].on_hand_quantity)))
+        : '0.000000';
+      const countedQty = input.countedQuantity;
+      const varianceQty = ExactDecimal.subtract(countedQty, snapshotQty);
 
       const id = randomUUID();
       const now = new Date().toISOString();
@@ -1190,7 +1462,7 @@ export class InventoryService {
           input.productId,
           input.lotId ?? null,
           input.serialId ?? null,
-          snapshotQty.toFixed(6),
+          snapshotQty,
           input.countedQuantity,
           varianceQty,
           principal.subject,
@@ -1199,7 +1471,7 @@ export class InventoryService {
       );
 
       // If there is variance, create a pending adjustment
-      if (parseFloat(varianceQty) !== 0) {
+      if (!ExactDecimal.isZero(varianceQty)) {
         const planRes = await client.query(
           `SELECT warehouse_id FROM ${SCHEMA}.count_plans WHERE tenant_id = $1 AND id = $2`,
           [principal.tenantId, countPlanId],
@@ -1207,7 +1479,7 @@ export class InventoryService {
         const warehouseId = planRes.rows[0].warehouse_id;
         const adjId = randomUUID();
         const adjNumber = `ADJ-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-        const reason = parseFloat(varianceQty) > 0 ? 'COUNT_GAIN' : 'COUNT_LOSS';
+        const reason = ExactDecimal.isPositive(varianceQty) ? 'COUNT_GAIN' : 'COUNT_LOSS';
 
         await client.query(
           `INSERT INTO ${SCHEMA}.inventory_adjustments (
@@ -1225,7 +1497,7 @@ export class InventoryService {
             input.productId,
             input.lotId ?? null,
             input.serialId ?? null,
-            Math.abs(parseFloat(varianceQty)).toFixed(6),
+            ExactDecimal.abs(varianceQty),
             reason,
             principal.subject,
             now,
@@ -1313,18 +1585,30 @@ export class InventoryService {
         ],
       );
 
-      // Adjust balance
-      const delta = direction === 'DEBIT' ? parseFloat(adj.quantity) : -parseFloat(adj.quantity);
-      await client.query(
-        `UPDATE ${SCHEMA}.stock_balances
-         SET on_hand_quantity = on_hand_quantity + $1,
-             available_quantity = (on_hand_quantity + $1) - reserved_quantity,
-             last_movement_at = $2,
-             updated_at = $2,
-             version = version + 1
-         WHERE tenant_id = $3 AND location_id = $4 AND product_id = $5`,
-        [delta.toFixed(6), now, approverPrincipal.tenantId, adj.location_id, adj.product_id],
+      // Adjust balance using ExactDecimal
+      const balRes = await client.query(
+        `SELECT id, on_hand_quantity, reserved_quantity
+         FROM ${SCHEMA}.stock_balances
+         WHERE tenant_id = $1 AND location_id = $2 AND product_id = $3
+         FOR UPDATE`,
+        [approverPrincipal.tenantId, adj.location_id, adj.product_id],
       );
+
+      if (balRes.rowCount && balRes.rowCount > 0) {
+        const curOnHand = String(balRes.rows[0].on_hand_quantity);
+        const curReserved = String(balRes.rows[0].reserved_quantity);
+        const newOnHand = direction === 'DEBIT'
+          ? ExactDecimal.add(curOnHand, adj.quantity)
+          : ExactDecimal.subtract(curOnHand, adj.quantity);
+        const newAvail = ExactDecimal.subtract(newOnHand, curReserved);
+
+        await client.query(
+          `UPDATE ${SCHEMA}.stock_balances
+           SET on_hand_quantity = $1, available_quantity = $2, last_movement_at = $3, updated_at = $3, version = version + 1
+           WHERE id = $4`,
+          [newOnHand, newAvail, now, balRes.rows[0].id],
+        );
+      }
 
       const updatedAdj = await client.query(
         `UPDATE ${SCHEMA}.inventory_adjustments
@@ -1425,7 +1709,7 @@ export class InventoryService {
          WHERE tenant_id = $1 AND warehouse_id = $2`,
         [principal.tenantId, warehouseId],
       );
-      const netLedger = parseFloat(ledgerSumRes.rows[0].net_ledger).toFixed(6);
+      const netLedger = ExactDecimal.fromScaledBigInt(ExactDecimal.toScaledBigInt(String(ledgerSumRes.rows[0].net_ledger)));
 
       // Calculate sum of materialized on_hand_quantity
       const matSumRes = await client.query(
@@ -1434,7 +1718,7 @@ export class InventoryService {
          WHERE tenant_id = $1 AND warehouse_id = $2`,
         [principal.tenantId, warehouseId],
       );
-      const totalMat = parseFloat(matSumRes.rows[0].total_on_hand).toFixed(6);
+      const totalMat = ExactDecimal.fromScaledBigInt(ExactDecimal.toScaledBigInt(String(matSumRes.rows[0].total_on_hand)));
 
       return {
         reconciled: netLedger === totalMat,
@@ -1638,6 +1922,8 @@ function mapReceipt(row: any, linesRows: any[]): InventoryReceiptV1 {
       lotNumber: line.lot_number,
       expiryDate: line.expiry_date ? (line.expiry_date.toISOString ? line.expiry_date.toISOString() : line.expiry_date) : null,
       inspectionStatus: line.inspection_status,
+      purchaseOrderId: line.purchase_order_id ?? null,
+      purchaseOrderLineId: line.purchase_order_line_id ?? null,
       customExtensions: typeof line.custom_extensions === 'string' ? JSON.parse(line.custom_extensions) : (line.custom_extensions ?? {}),
       createdAt: line.created_at.toISOString ? line.created_at.toISOString() : line.created_at,
       updatedAt: line.updated_at.toISOString ? line.updated_at.toISOString() : line.updated_at,

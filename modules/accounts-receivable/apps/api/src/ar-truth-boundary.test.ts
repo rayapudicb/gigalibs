@@ -96,10 +96,10 @@ describe('queryWithTenant ordering', () => {
 // ── bootstrapCheck logic ──────────────────────────────────────────────────────
 
 describe('bootstrapCheck', () => {
-  const REQUIRED = 13;
+  const REQUIRED = 14;
 
-  it('accepts exactly 13 migration rows with a safe role', () => {
-    const row = { migration_count: '13', is_superuser: false, bypasses_rls: false };
+  it('accepts exactly 14 migration rows with a safe role', () => {
+    const row = { migration_count: '14', is_superuser: false, bypasses_rls: false };
     const count = Number(row.migration_count);
     expect(count).toBe(REQUIRED);
     expect(row.is_superuser).toBe(false);
@@ -107,17 +107,17 @@ describe('bootstrapCheck', () => {
   });
 
   it('rejects when migration count is wrong', () => {
-    const row = { migration_count: '12', is_superuser: false, bypasses_rls: false };
+    const row = { migration_count: '13', is_superuser: false, bypasses_rls: false };
     expect(Number(row.migration_count)).not.toBe(REQUIRED);
   });
 
   it('rejects a superuser role', () => {
-    const row = { migration_count: '13', is_superuser: true, bypasses_rls: false };
+    const row = { migration_count: '14', is_superuser: true, bypasses_rls: false };
     expect(row.is_superuser).toBe(true);
   });
 
   it('rejects a BYPASSRLS role', () => {
-    const row = { migration_count: '13', is_superuser: false, bypasses_rls: true };
+    const row = { migration_count: '14', is_superuser: false, bypasses_rls: true };
     expect(row.bypasses_rls).toBe(true);
   });
 });

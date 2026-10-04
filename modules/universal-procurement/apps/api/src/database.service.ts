@@ -2,8 +2,15 @@ import { ModuleDatabase, type ModuleRuntimeConfig } from '@gigalibs/module-sdk';
 import { Inject, Injectable } from '@nestjs/common';
 import { RUNTIME_CONFIG, SCHEMA } from './config.js';
 
+export const PROCUREMENT_DEFINER_FUNCTIONS = [
+  'relay_lease_procurement_events',
+  'relay_settle_procurement_event',
+] as const;
+
+export type ProcurementDefinerFunction = (typeof PROCUREMENT_DEFINER_FUNCTIONS)[number];
+
 @Injectable()
-export class DatabaseService extends ModuleDatabase {
+export class DatabaseService extends ModuleDatabase<ProcurementDefinerFunction> {
   constructor(@Inject(RUNTIME_CONFIG) config: ModuleRuntimeConfig) {
     super({
       label: 'Universal Procurement',
@@ -11,7 +18,7 @@ export class DatabaseService extends ModuleDatabase {
       databaseUrl: config.databaseUrl,
       poolSize: config.databasePoolSize,
       expectedMigrationVersion: config.expectedMigrationVersion,
-      definerFunctions: [],
+      definerFunctions: PROCUREMENT_DEFINER_FUNCTIONS,
       tenantBinding: 'set-local',
       poolOptions: { statement_timeout: 15_000, application_name: 'gigalibs-universal-procurement-api' },
     });

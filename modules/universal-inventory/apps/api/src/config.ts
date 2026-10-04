@@ -6,7 +6,7 @@ export const MODULE_KEY = 'universal-inventory';
 export const PERMISSION_PREFIX = 'inventory';
 export const SCHEMA = 'gigalibs_inventory';
 export const TOPIC = 'universal-inventory.facts.v1';
-export const SCHEMA_CONTRACT_VERSION = 1;
+export const SCHEMA_CONTRACT_VERSION = 2;
 export const RUNTIME_CONFIG = Symbol('UNIVERSAL_INVENTORY_RUNTIME_CONFIG');
 
 export const runtimeConfigProvider: Provider<ModuleRuntimeConfig> = {

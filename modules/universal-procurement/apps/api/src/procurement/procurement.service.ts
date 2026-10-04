@@ -1,24 +1,27 @@
+import { createHash, randomUUID } from 'node:crypto';
 import { validateDictionaryRules } from '@gigalibs/configuration-core';
-import type {
-  ApprovalPolicyV1,
-  ApprovePriceVarianceInputV1,
-  CreateApprovalPolicyInputV1,
-  CreateDebitMemoInputV1,
-  CreatePurchaseOrderInputV1,
-  CreateRequisitionInputV1,
-  CreateVendorBillInputV1,
-  DebitMemoV1,
-  DictionaryValidationRuleV1,
-  MatchInvoiceInputV1,
-  MatchPoInvoiceRecordV1,
-  MatchPoReceiptRecordV1,
-  MatchReceiptInputV1,
-  ProcurementRequisitionLineV1,
-  ProcurementRequisitionV1,
-  PurchaseOrderLineV1,
-  PurchaseOrderV1,
-  VendorBillLineV1,
-  VendorBillV1,
+import {
+  type ApprovalPolicyV1,
+  type ApprovePriceVarianceInputV1,
+  type CreateApprovalPolicyInputV1,
+  type CreateDebitMemoInputV1,
+  type CreatePurchaseOrderInputV1,
+  type CreateRequisitionInputV1,
+  type CreateVendorBillInputV1,
+  type DebitMemoV1,
+  type DictionaryValidationRuleV1,
+  type MatchInvoiceInputV1,
+  type MatchPoInvoiceRecordV1,
+  type MatchPoReceiptRecordV1,
+  type MatchReceiptInputV1,
+  type ProcurementRequisitionLineV1,
+  type ProcurementRequisitionV1,
+  type PurchaseOrderLineV1,
+  type PurchaseOrderV1,
+  type VendorBillLineV1,
+  type VendorBillV1,
+  ExactDecimal,
+  SCALE_FACTOR,
 } from '@gigalibs/contracts';
 import {
   type ModulePrincipal,
@@ -109,9 +112,7 @@ export class ProcurementService {
 
       let totalEstimatedMinor = 0n;
       const computedLines = input.lines.map((l, idx) => {
-        const qty = Number.parseFloat(l.quantity);
-        const unitPrice = BigInt(l.estimatedUnitPriceMinor);
-        const lineTotal = BigInt(Math.round(qty * Number(unitPrice)));
+        const lineTotal = (BigInt(l.estimatedUnitPriceMinor) * ExactDecimal.toScaledBigInt(l.quantity)) / SCALE_FACTOR;
         totalEstimatedMinor += lineTotal;
         return {
           ...l,
@@ -318,9 +319,9 @@ export class ProcurementService {
       let taxTotalMinor = 0n;
 
       const computedLines = input.lines.map((l, idx) => {
-        const qty = Number.parseFloat(l.orderedQuantity);
+        const qtyScaled = ExactDecimal.toScaledBigInt(l.orderedQuantity);
         const unitPrice = BigInt(l.unitPriceMinor);
-        const lineSubtotal = BigInt(Math.round(qty * Number(unitPrice)));
+        const lineSubtotal = (qtyScaled * unitPrice) / SCALE_FACTOR;
         const lineTax = (lineSubtotal * BigInt(l.taxRateBasisPoints ?? 0)) / 10000n;
         const lineTotal = lineSubtotal + lineTax;
 
@@ -535,15 +536,60 @@ export class ProcurementService {
       }
 
       const poLine = lineRes.rows[0];
-      const orderedQty = Number.parseFloat(poLine.ordered_quantity);
-      const currentReceivedQty = Number.parseFloat(poLine.received_quantity);
-      const deltaQty = Number.parseFloat(input.matchedQuantity);
+      const orderedScaled = ExactDecimal.toScaledBigInt(poLine.ordered_quantity);
+      const currentReceivedScaled = ExactDecimal.toScaledBigInt(poLine.received_quantity);
+      const deltaScaled = ExactDecimal.toScaledBigInt(input.matchedQuantity);
 
-      const newReceivedQty = currentReceivedQty + deltaQty;
-      if (newReceivedQty > orderedQty) {
+      const newReceivedScaled = currentReceivedScaled + deltaScaled;
+      if (newReceivedScaled > orderedScaled) {
         throw new BadRequestException(
-          `Cannot match receipt quantity ${deltaQty}: total received (${newReceivedQty}) would exceed ordered quantity (${orderedQty}).`,
+          `Cannot match receipt quantity ${input.matchedQuantity}: total received (${ExactDecimal.fromScaledBigInt(newReceivedScaled)}) would exceed ordered quantity (${poLine.ordered_quantity}).`,
         );
+      }
+
+      // If receipt projection exists, lock it FOR UPDATE and validate consistency
+      if (input.receiptLineId) {
+        const projRes = await client.query<{
+          id: string;
+          received_quantity: string;
+          matched_quantity: string;
+          purchase_order_id: string | null;
+          purchase_order_line_id: string | null;
+        }>(
+          `SELECT id, received_quantity, matched_quantity, purchase_order_id, purchase_order_line_id
+           FROM ${SCHEMA}.procurement_receipt_projections
+           WHERE tenant_id = $1 AND receipt_line_id = $2
+           FOR UPDATE`,
+          [principal.tenantId, input.receiptLineId],
+        );
+
+        if (projRes.rows.length > 0) {
+          const proj = projRes.rows[0];
+          if (proj.purchase_order_id && proj.purchase_order_id !== input.purchaseOrderId) {
+            throw new BadRequestException(
+              `Receipt line ${input.receiptLineId} belongs to PO ${proj.purchase_order_id}, not ${input.purchaseOrderId}.`,
+            );
+          }
+          if (proj.purchase_order_line_id && proj.purchase_order_line_id !== input.purchaseOrderLineId) {
+            throw new BadRequestException(
+              `Receipt line ${input.receiptLineId} belongs to PO line ${proj.purchase_order_line_id}, not ${input.purchaseOrderLineId}.`,
+            );
+          }
+          const projReceivedScaled = ExactDecimal.toScaledBigInt(proj.received_quantity);
+          const projMatchedScaled = ExactDecimal.toScaledBigInt(proj.matched_quantity);
+          const nextProjMatchedScaled = projMatchedScaled + deltaScaled;
+          if (nextProjMatchedScaled > projReceivedScaled) {
+            throw new BadRequestException(
+              `Matched quantity (${ExactDecimal.fromScaledBigInt(nextProjMatchedScaled)}) would exceed received quantity (${proj.received_quantity}) on projection.`,
+            );
+          }
+          await client.query(
+            `UPDATE ${SCHEMA}.procurement_receipt_projections
+             SET matched_quantity = $1, updated_at = NOW()
+             WHERE tenant_id = $2 AND receipt_line_id = $3`,
+            [ExactDecimal.fromScaledBigInt(nextProjMatchedScaled), principal.tenantId, input.receiptLineId],
+          );
+        }
       }
 
       const matchRes = await client.query<{ id: string; created_at: string }>(
@@ -564,12 +610,13 @@ export class ProcurementService {
         ],
       );
 
-      const lineStatus = newReceivedQty >= orderedQty ? 'RECEIVED' : 'PARTIALLY_RECEIVED';
+      const newReceivedQtyStr = ExactDecimal.fromScaledBigInt(newReceivedScaled);
+      const lineStatus = newReceivedScaled >= orderedScaled ? 'RECEIVED' : 'PARTIALLY_RECEIVED';
       await client.query(
         `UPDATE ${SCHEMA}.purchase_order_lines
          SET received_quantity = $1, status = $2, updated_at = NOW()
          WHERE tenant_id = $3 AND id = $4`,
-        [newReceivedQty.toFixed(6), lineStatus, principal.tenantId, input.purchaseOrderLineId],
+        [newReceivedQtyStr, lineStatus, principal.tenantId, input.purchaseOrderLineId],
       );
 
       await client.query(
@@ -593,6 +640,95 @@ export class ProcurementService {
         status: 'FULLY_MATCHED',
         createdAt: matchRes.rows[0].created_at,
       };
+    });
+  }
+
+  async projectInventoryReceipt(
+    principal: ModulePrincipal,
+    event: {
+      id: string;
+      source?: string;
+      type: string;
+      data: {
+        receiptId: string;
+        receiptNumber: string;
+        warehouseId: string;
+        receivedAt: string;
+        lines: Array<{
+          id: string;
+          productId: string;
+          quantity: string;
+          uomId: string;
+          purchaseOrderId?: string | null;
+          purchaseOrderLineId?: string | null;
+        }>;
+      };
+    },
+  ): Promise<{ processed: boolean; duplicate: boolean }> {
+    return this.database.withTenantTransaction(principal.tenantId, async (client) => {
+      const messageId = event.id;
+      const sha256 = createHash('sha256').update(JSON.stringify(event)).digest('hex');
+
+      // Check inbox deduplication
+      const existingInbox = await client.query<{ status: string }>(
+        `SELECT status FROM ${SCHEMA}.inbox_receipts
+         WHERE tenant_id = $1 AND consumer_name = 'procurement_receipt_consumer' AND message_id = $2`,
+        [principal.tenantId, messageId],
+      );
+
+      if (existingInbox.rows.length > 0 && existingInbox.rows[0].status === 'PROCESSED') {
+        return { processed: true, duplicate: true };
+      }
+
+      if (existingInbox.rows.length === 0) {
+        await client.query(
+          `INSERT INTO ${SCHEMA}.inbox_receipts (
+            id, tenant_id, consumer_name, message_id, event_type, source_module,
+            source_version, correlation_id, payload_sha256, status, created_at
+          ) VALUES ($1, $2, 'procurement_receipt_consumer', $3, $4, 'universal_inventory', 1, $5, $6, 'PROCESSING', NOW())`,
+          [randomUUID(), principal.tenantId, messageId, event.type, messageId, sha256],
+        );
+      }
+
+      // Upsert receipt projections for each line
+      for (const line of event.data.lines) {
+        await client.query(
+          `INSERT INTO ${SCHEMA}.procurement_receipt_projections (
+            id, tenant_id, receipt_id, receipt_number, receipt_line_id, product_id,
+            received_quantity, uom_id, purchase_order_id, purchase_order_line_id,
+            warehouse_id, matched_quantity, received_at, created_at, updated_at
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, '0.000000', $12, NOW(), NOW())
+          ON CONFLICT (tenant_id, receipt_id, receipt_line_id)
+          DO UPDATE SET
+            received_quantity = EXCLUDED.received_quantity,
+            purchase_order_id = COALESCE(EXCLUDED.purchase_order_id, ${SCHEMA}.procurement_receipt_projections.purchase_order_id),
+            purchase_order_line_id = COALESCE(EXCLUDED.purchase_order_line_id, ${SCHEMA}.procurement_receipt_projections.purchase_order_line_id),
+            updated_at = NOW()`,
+          [
+            randomUUID(),
+            principal.tenantId,
+            event.data.receiptId,
+            event.data.receiptNumber,
+            line.id,
+            line.productId,
+            line.quantity,
+            line.uomId,
+            line.purchaseOrderId ?? null,
+            line.purchaseOrderLineId ?? null,
+            event.data.warehouseId,
+            event.data.receivedAt || new Date().toISOString(),
+          ],
+        );
+      }
+
+      await client.query(
+        `UPDATE ${SCHEMA}.inbox_receipts
+         SET status = 'PROCESSED', processed_at = NOW()
+         WHERE tenant_id = $1 AND consumer_name = 'procurement_receipt_consumer' AND message_id = $2`,
+        [principal.tenantId, messageId],
+      );
+
+      return { processed: true, duplicate: false };
     });
   }
 
@@ -633,28 +769,27 @@ export class ProcurementService {
       const poLine = poLineRes.rows[0];
       const billLine = billLineRes.rows[0];
 
-      const receivedQty = Number.parseFloat(poLine.received_quantity);
-      const currentInvoicedQty = Number.parseFloat(poLine.invoiced_quantity);
-      const matchQty = Number.parseFloat(input.matchedQuantity);
+      const receivedScaled = ExactDecimal.toScaledBigInt(poLine.received_quantity);
+      const currentInvoicedScaled = ExactDecimal.toScaledBigInt(poLine.invoiced_quantity);
+      const matchScaled = ExactDecimal.toScaledBigInt(input.matchedQuantity);
 
-      const newInvoicedQty = currentInvoicedQty + matchQty;
-      if (newInvoicedQty > receivedQty) {
+      const newInvoicedScaled = currentInvoicedScaled + matchScaled;
+      if (newInvoicedScaled > receivedScaled) {
         throw new BadRequestException(
-          `3-Way Match Invariant Violation: Invoiced quantity (${newInvoicedQty}) cannot exceed physical received quantity (${receivedQty}).`,
+          `3-Way Match Invariant Violation: Invoiced quantity (${ExactDecimal.fromScaledBigInt(newInvoicedScaled)}) cannot exceed physical received quantity (${poLine.received_quantity}).`,
         );
       }
 
       const poUnitPrice = BigInt(poLine.unit_price_minor);
       const billedUnitPrice = BigInt(billLine.unit_price_minor);
       const priceVarianceMinor = billedUnitPrice - poUnitPrice;
+      const absVariance = priceVarianceMinor < 0n ? -priceVarianceMinor : priceVarianceMinor;
 
-      const priceVariancePercent =
-        poUnitPrice > 0n
-          ? (Math.abs(Number(priceVarianceMinor)) / Number(poUnitPrice)) * 100
-          : 0;
-
-      const toleranceExceeded = priceVariancePercent > 1.0;
+      // Tolerance check in integer basis points: 1% = 100 bps
+      const varianceBasisPoints = poUnitPrice > 0n ? (absVariance * 10000n) / poUnitPrice : (billedUnitPrice > 0n ? 10000n : 0n);
+      const toleranceExceeded = varianceBasisPoints > 100n;
       const status = toleranceExceeded ? 'VARIANCE_HOLD' : 'FULLY_MATCHED';
+      const priceVariancePercent = poUnitPrice > 0n ? Number(absVariance * 10000n / poUnitPrice) / 100 : 0;
 
       const matchRes = await client.query<{ id: string; created_at: string }>(
         `INSERT INTO ${SCHEMA}.match_po_invoice_records (
@@ -682,11 +817,12 @@ export class ProcurementService {
         ],
       );
 
+      const newInvoicedQtyStr = ExactDecimal.fromScaledBigInt(newInvoicedScaled);
       await client.query(
         `UPDATE ${SCHEMA}.purchase_order_lines
          SET invoiced_quantity = $1, updated_at = NOW()
          WHERE tenant_id = $2 AND id = $3`,
-        [newInvoicedQty.toFixed(6), principal.tenantId, input.purchaseOrderLineId],
+        [newInvoicedQtyStr, principal.tenantId, input.purchaseOrderLineId],
       );
 
       const billStatus = toleranceExceeded ? 'PRICE_VARIANCE_HOLD' : 'MATCHED';
@@ -811,9 +947,9 @@ export class ProcurementService {
       let taxTotalMinor = 0n;
 
       const computedLines = input.lines.map((l, idx) => {
-        const qty = Number.parseFloat(l.billedQuantity);
+        const qtyScaled = ExactDecimal.toScaledBigInt(l.billedQuantity);
         const unitPrice = BigInt(l.unitPriceMinor);
-        const lineSubtotal = BigInt(Math.round(qty * Number(unitPrice)));
+        const lineSubtotal = (qtyScaled * unitPrice) / SCALE_FACTOR;
         const lineTax = BigInt(l.lineTaxMinor ?? '0');
         const lineTotal = lineSubtotal + lineTax;
 
@@ -985,9 +1121,9 @@ export class ProcurementService {
 
       let totalAmountMinor = 0n;
       const computedLines = input.lines.map((l, idx) => {
-        const qty = Number.parseFloat(l.quantity);
+        const qtyScaled = ExactDecimal.toScaledBigInt(l.quantity);
         const unitPrice = BigInt(l.unitPriceMinor);
-        const lineTotal = BigInt(Math.round(qty * Number(unitPrice)));
+        const lineTotal = (qtyScaled * unitPrice) / SCALE_FACTOR;
         totalAmountMinor += lineTotal;
         return {
           ...l,
@@ -1225,10 +1361,9 @@ export class ProcurementService {
       );
 
       const verificationLines = linesRes.rows.map((row) => {
-        const ord = Number.parseFloat(row.ordered_quantity);
-        const rec = Number.parseFloat(row.received_quantity);
-        const inv = Number.parseFloat(row.invoiced_quantity);
-        const isMatchValid = inv <= rec && rec <= ord;
+        const isMatchValid =
+          ExactDecimal.isLessThanOrEqual(row.invoiced_quantity, row.received_quantity) &&
+          ExactDecimal.isLessThanOrEqual(row.received_quantity, row.ordered_quantity);
         return {
           lineNumber: row.line_number,
           orderedQuantity: row.ordered_quantity,

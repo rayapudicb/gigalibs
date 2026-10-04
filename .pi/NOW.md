@@ -5,9 +5,8 @@ Replace old content rather than appending to it, and update it at the end of eve
 
 ## State
 
-- **Active implementation item:** WI-OI-093 committed `5d1aa3a` (Enterprise Architecture Phase 7: Universal Order Management and Customer Fulfillment — Completed; owner approved 2026-10-04; completed slices P7-0 through P7-9; 11/11 real-database proof scenarios passed; SDLC audits passed; evidence: `.pi/work/WI-OI-093.md`). WI-OI-092 is committed `155061d` and in Review. WI-OI-091 is committed `2890f10` and in Review. WI-OI-112 is committed `2f18945` and in Review. WI-OI-111 committed `ad7f83b` and in Review. WI-OI-110 in Review, committed `917141a`. WI-EAM-005 is committed (`22cfffa`) and in Review. WI-EAM-004 is committed (`36f41aa`, `2ad4881`) and in Review. WI-EAM-003 is committed (`c4ddefe`, `20297e4`) and in Review. WI-EAM-002 is committed (`e4e4a69`, `e6924dc`) and in Review. WI-EAM-001 is committed (`a1cea16`) and in Review. WI-WFO-001–006 are committed (`94fae89`) and in Review. WI-OI-109 is in Review; WI-OI-103 and WI-OI-106 remain in Review; WI-OI-108 is Proposed.
-- **Wave 0:** WI-OI-080, 081, 082, 083 and 085 are in Review, waiting for human reviews. WI-OI-084 (mobile) has
-  not started.
+- **Active implementation item:** WI-OI-094 (Enterprise Architecture Phase 8: Financial Operations, Subledgers, and General Ledger Integration — In Progress; owner approved 2026-10-04; task card `.pi/tasks/WI-OI-094.md`; evidence `.pi/work/WI-OI-094.md`). WI-OI-113 in Review. WI-OI-093 committed `5d1aa3a` and in Review. WI-OI-092 committed `155061d` and in Review. WI-OI-091 committed `2890f10` and in Review. WI-OI-112 is committed `2f18945` and in Review. WI-OI-111 committed `ad7f83b` and in Review. WI-OI-110 in Review, committed `917141a`.
+- **Wave 0:** WI-OI-080, 081, 082, 083 and 085 are in Review, waiting for human reviews. WI-OI-084 (mobile) has not started.
 - **Running locally (2026-10-02 14:16 IST):** every application service is on `3da222030dc2-a0ca08f61655`; the web is healthy on 5180 and the control plane is healthy on 3333.
   - Schemas: core organization migration live, Analytics 29, Connector Hub 8, Geospatial 8, CMMS 14, Workforce 19; Redis and the kernel worker run.
   - Backups are taken before every deploy run (`infra/compose/backups/`).
@@ -32,14 +31,11 @@ Replace old content rather than appending to it, and update it at the end of eve
 
 ## Next
 
-- **Owner commit:** Await owner's command to commit WI-OI-093 (Phase 7: Universal Order Management and Customer Fulfillment).
-- **Next architecture phase:** Phase 8: Financial Operations, Subledgers, Accounts Receivable/Payable and General Ledger Integration (WI-OI-094).
-- WI-OI-093 complete across all slices P7-0 to P7-9; real-database proof passed with 11/11 scenarios.
+- **Awaiting Owner Commit:** WI-OI-113 (Commercial & Operational Module Convergence and Outbox-Inbox Handshake) is 100% verified across all 12 database scenarios and ready for commit when owner says "commit".
+- **Phase 8 Ready for Kickoff:** With authentic operational outbox relays, deterministic ATP stock reservation, local receipt projections, and canonical AR invoice issuance verified, Phase 8 (`WI-OI-094` Financial Operations, Subledgers & General Ledger Integration) is ready to begin upon owner approval.
+- WI-OI-093 committed `5d1aa3a` and in Review (Phase 7 Universal Order Management and Customer Fulfillment).
 - WI-OI-092 committed `155061d` and in Review (Phase 6 Universal Procurement, Vendor Operations and 3-Way Matching).
 - WI-OI-091 committed `2890f10` and in Review (Phase 5 Universal Inventory and Warehouse Operations).
-- Complete live organization administration, Workforce → Analytics → Reports, relay/revocation, tenant/sibling isolation and browser/accessibility certification on the deployed organization-aware stack.
-- Re-run the deferred WI-OI-103 and WI-OI-106 live proofs. Keep WI-OI-109 in Review until live certification and independent reviews are resolved.
-- **Deferred Foundation Close:** WI-OI-103/WI-OI-106 organization-aware live proofs, WI-OI-108, core push intake (item 8), and F3 engine clean-up (item 9). Fresh install (item 7) is proved and awaiting commit.
 
 ## Open decisions (owner)
 

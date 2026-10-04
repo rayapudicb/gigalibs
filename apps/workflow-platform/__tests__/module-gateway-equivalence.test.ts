@@ -18,6 +18,24 @@ const requiredWorkforcePermission = moduleGatewayConfig('gigaops').requiredPermi
 
 const METHODS = ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS', 'HEAD'];
 const ID = '3f2b6c1e-9a4d-4e1f-8b2a-7c5d9e0f1a2b';
+const UUID_SEGMENT = '[0-9a-fA-F-]{36}';
+
+/** WI-EAM-001 routes deliberately added after the frozen CMMS gateway oracle. */
+function intendedCmmsPermission(method: string, path: string): string | null {
+  if (method === 'GET' && path === 'v1/spaces/tree') return 'cmms.assets.read';
+  if (method === 'POST' && path === 'v1/spaces') return 'cmms.assets.write';
+  if (new RegExp(`^v1/spaces/${UUID_SEGMENT}$`).test(path)) {
+    if (method === 'GET') return 'cmms.assets.read';
+    if (method === 'PATCH' || method === 'DELETE') return 'cmms.assets.write';
+  }
+  if (method === 'GET' && new RegExp(`^v1/spaces/${UUID_SEGMENT}/assets$`).test(path)) {
+    return 'cmms.assets.read';
+  }
+  if (method === 'POST' && new RegExp(`^v1/spaces/${UUID_SEGMENT}/cad-layers$`).test(path)) {
+    return 'cmms.assets.write';
+  }
+  return null;
+}
 
 function fromTemplates(module: string): string[] {
   return generatedModuleGateways[module]!.routes.flatMap((route) => {
@@ -138,7 +156,8 @@ describe('manifest-generated gateways equal the hand-written allow-lists', () =>
     let allowed = 0;
     for (const path of corpus) {
       for (const method of METHODS) {
-        const expected = legacyCmmsPermission(method, path.split('/'));
+        const expected =
+          legacyCmmsPermission(method, path.split('/')) ?? intendedCmmsPermission(method, path);
         expect({
           method,
           path,
@@ -194,6 +213,26 @@ describe('manifest-generated gateways equal the hand-written allow-lists', () =>
         environmentKey: 'GEOSPATIAL_API_URL',
         port: '4720',
         serviceHostname: 'geospatial-api',
+      },
+      'product-catalogue': {
+        environmentKey: 'PRODUCT_CATALOGUE_API_URL',
+        port: '4790',
+        serviceHostname: 'module-host',
+      },
+      'universal-inventory': {
+        environmentKey: 'UNIVERSAL_INVENTORY_API_URL',
+        port: '4790',
+        serviceHostname: 'module-host',
+      },
+      'universal-orders': {
+        environmentKey: 'UNIVERSAL_ORDERS_API_URL',
+        port: '4790',
+        serviceHostname: 'module-host',
+      },
+      'universal-procurement': {
+        environmentKey: 'UNIVERSAL_PROCUREMENT_API_URL',
+        port: '4790',
+        serviceHostname: 'module-host',
       },
       workforce: {
         environmentKey: 'WORKFORCE_API_URL',

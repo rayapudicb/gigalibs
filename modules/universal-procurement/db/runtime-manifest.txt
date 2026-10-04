@@ -1,1 +1,2 @@
 000001_procurement_foundation.up.sql
+000002_procurement_outbox_inbox_relay.up.sql

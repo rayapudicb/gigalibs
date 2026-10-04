@@ -29,8 +29,10 @@ import type {
   DebitMemoV1,
   CompiledDictionaryManifestV1,
 } from '@gigalibs/contracts';
-import { DictionaryRenderer } from '@gigalibs/configuration-react';
-import { validateDictionaryRules } from '@gigalibs/configuration-core';
+import {
+  DictionaryRenderer,
+  validateDictionaryRules,
+} from '@gigalibs/configuration-react';
 
 type WorkspaceTab =
   | 'overview'

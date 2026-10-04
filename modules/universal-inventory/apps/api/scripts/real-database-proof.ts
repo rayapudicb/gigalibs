@@ -79,7 +79,7 @@ const postgres = await startThrowawayPostgres(`gigalibs-inventory-proof-${proces
 const db = new DatabaseService({
   databaseUrl: postgres.runtimeUrl,
   databasePoolSize: 5,
-  expectedMigrationVersion: 1,
+  expectedMigrationVersion: 2,
   platformContextAudience: 'proof',
   platformContextPublicKey: 'proof',
   corsOrigins: [],

@@ -213,6 +213,22 @@ export class InventoryController {
     return this.service.releaseReservation(principal, id);
   }
 
+  @Post('reservations/:id/issue')
+  @RequirePermissions('inventory:reserve')
+  async issueStock(
+    @CurrentPrincipal() principal: ModulePrincipal,
+    @Param('id') id: string,
+    @Body() body: any,
+  ) {
+    return this.service.issueStockForOrderFulfillment(principal, {
+      reservationId: id,
+      orderId: body?.orderId,
+      fulfillmentId: body?.fulfillmentId,
+      quantity: body?.quantity,
+      correlationId: body?.correlationId,
+    });
+  }
+
   // ─── Kits & Staging (CMMS) ──────────────────────────────────────────────────
 
   @Post('kits')

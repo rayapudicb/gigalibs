@@ -296,6 +296,8 @@ export const InventoryReceiptLineV1Schema = z
     lotNumber: z.string().max(100).optional().nullable(),
     expiryDate: z.string().datetime().optional().nullable(),
     inspectionStatus: z.enum(['PENDING', 'PASSED', 'FAILED', 'QUARANTINED']).default('PENDING'),
+    purchaseOrderId: z.string().uuid().optional().nullable(),
+    purchaseOrderLineId: z.string().uuid().optional().nullable(),
     customExtensions: z.record(z.string(), z.unknown()).optional(),
     createdAt: z.string().datetime(),
     updatedAt: z.string().datetime(),
@@ -595,6 +597,7 @@ export const CreateReservationInputV1Schema = z
     uomId: z.string().uuid(),
     quantity: PositiveDecimalQuantitySchema,
     expiryDate: z.string().datetime().optional().nullable(),
+    idempotencyKey: z.string().max(128).optional().nullable(),
   })
   .strict();
 export type CreateReservationInputV1 = z.infer<typeof CreateReservationInputV1Schema>;
@@ -637,6 +640,8 @@ export const CreateReceiptLineInputV1Schema = z
     targetLocationId: z.string().uuid().optional().nullable(),
     lotNumber: z.string().max(100).optional().nullable(),
     expiryDate: z.string().datetime().optional().nullable(),
+    purchaseOrderId: z.string().uuid().optional().nullable(),
+    purchaseOrderLineId: z.string().uuid().optional().nullable(),
     customExtensions: z.record(z.string(), z.unknown()).optional(),
   })
   .strict();

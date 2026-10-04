@@ -178,6 +178,16 @@ export class ProcurementController {
     return this.service.matchInvoice(principal, input);
   }
 
+  @Post('inbox/receipts')
+  @HttpCode(200)
+  @RequirePermissions('procurement:match')
+  async ingestReceiptEvent(
+    @CurrentPrincipal() principal: ModulePrincipal,
+    @Body() body: any,
+  ): Promise<{ processed: boolean; duplicate: boolean }> {
+    return this.service.projectInventoryReceipt(principal, body);
+  }
+
   @Post('match/variance/:id/approve')
   @HttpCode(200)
   @RequirePermissions('procurement:variance:override')

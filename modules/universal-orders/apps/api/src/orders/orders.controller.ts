@@ -157,8 +157,36 @@ export class OrderController {
 
   @Post('fulfillments/:id/dispatch')
   @RequirePermissions('orders:fulfill')
-  async dispatchFulfillment(@CurrentPrincipal() principal: ModulePrincipal, @Param('id') id: string) {
-    return this.orderService.dispatchFulfillment(principal.tenantId, principal.subject, id);
+  async dispatchFulfillment(
+    @CurrentPrincipal() principal: ModulePrincipal,
+    @Param('id') id: string,
+    @Body() body?: { issueId?: string },
+  ) {
+    return this.orderService.dispatchFulfillment(principal.tenantId, principal.subject, id, body?.issueId);
+  }
+
+  @Post('inbox/invoices')
+  @RequirePermissions('orders:read')
+  async ingestArInvoice(
+    @CurrentPrincipal() principal: ModulePrincipal,
+    @Body() body: any,
+  ) {
+    return this.orderService.projectArInvoice(principal.tenantId, body);
+  }
+
+  @Get('orders/:id/ar-invoice')
+  @RequirePermissions('orders:read')
+  async getOrderArInvoice(
+    @CurrentPrincipal() principal: ModulePrincipal,
+    @Param('id') id: string,
+  ) {
+    return this.database.withTenantTransaction(principal.tenantId, async (client) => {
+      const res = await client.query(
+        `SELECT * FROM gigalibs_orders.order_ar_invoice_projections WHERE tenant_id = $1 AND order_id = $2`,
+        [principal.tenantId, id],
+      );
+      return res.rows[0] ?? null;
+    });
   }
 
   // ─── Customer Invoices (AR) ────────────────────────────────────────────────
