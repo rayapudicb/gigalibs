@@ -35,6 +35,7 @@ const steps = [
   { name: 'consolidation', cmd: process.execPath, args: ['scripts/verify-consolidation.mjs'] },
   { name: 'inventory-costing', cmd: process.execPath, args: ['scripts/verify-inventory-costing.mjs'] },
   { name: 'budgeting-commitment-control', cmd: process.execPath, args: ['scripts/verify-budgeting-and-commitment-control.mjs'] },
+  { name: 'period-close-forecasting', cmd: process.execPath, args: ['scripts/verify-period-close-and-forecasting.mjs'] },
 ];
 
 const logDir = join(tmpdir(), 'gigalibs-verify');

@@ -501,6 +501,106 @@ export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGat
         "methods": {
           "GET": "finance:reports:view"
         }
+      },
+      {
+        "template": "v1/close/subledgers",
+        "pattern": "^v1/close/subledgers$",
+        "methods": {
+          "GET": "finance:read"
+        }
+      },
+      {
+        "template": "v1/close/subledgers/lock",
+        "pattern": "^v1/close/subledgers/lock$",
+        "methods": {
+          "POST": "finance:periods:manage"
+        }
+      },
+      {
+        "template": "v1/close/checklists",
+        "pattern": "^v1/close/checklists$",
+        "methods": {
+          "GET": "finance:read"
+        }
+      },
+      {
+        "template": "v1/close/checklists/tasks",
+        "pattern": "^v1/close/checklists/tasks$",
+        "methods": {
+          "POST": "finance:periods:manage"
+        }
+      },
+      {
+        "template": "v1/close/amortization/schedules",
+        "pattern": "^v1/close/amortization/schedules$",
+        "methods": {
+          "GET": "finance:read",
+          "POST": "finance:journals:manage"
+        }
+      },
+      {
+        "template": "v1/close/amortization/schedules/{id}/lines",
+        "pattern": "^v1/close/amortization/schedules/[0-9a-fA-F-]{36}/lines$",
+        "methods": {
+          "GET": "finance:read"
+        }
+      },
+      {
+        "template": "v1/close/amortization/lines/execute",
+        "pattern": "^v1/close/amortization/lines/execute$",
+        "methods": {
+          "POST": "finance:journals:post"
+        }
+      },
+      {
+        "template": "v1/close/year-end/preview",
+        "pattern": "^v1/close/year-end/preview$",
+        "methods": {
+          "POST": "finance:read"
+        }
+      },
+      {
+        "template": "v1/close/year-end/execute",
+        "pattern": "^v1/close/year-end/execute$",
+        "methods": {
+          "POST": "finance:periods:manage"
+        }
+      },
+      {
+        "template": "v1/close/forecasting/models",
+        "pattern": "^v1/close/forecasting/models$",
+        "methods": {
+          "GET": "finance:read",
+          "POST": "finance:books:manage"
+        }
+      },
+      {
+        "template": "v1/close/forecasting/models/{id}/lines",
+        "pattern": "^v1/close/forecasting/models/[0-9a-fA-F-]{36}/lines$",
+        "methods": {
+          "GET": "finance:read"
+        }
+      },
+      {
+        "template": "v1/close/forecasting/generate",
+        "pattern": "^v1/close/forecasting/generate$",
+        "methods": {
+          "POST": "finance:journals:manage"
+        }
+      },
+      {
+        "template": "v1/close/financial-health",
+        "pattern": "^v1/close/financial-health$",
+        "methods": {
+          "GET": "finance:reports:view"
+        }
+      },
+      {
+        "template": "v1/close/drill-through",
+        "pattern": "^v1/close/drill-through$",
+        "methods": {
+          "POST": "finance:reports:view"
+        }
       }
     ],
     "transformBody": null,

@@ -18,4 +18,7 @@ export * from './costing/costing-engine.js';
 export * from './budgeting/budgeting.service.js';
 export * from './budgeting/budgeting.controller.js';
 export * from './budgeting/budgeting-engine.js';
+export * from './close/close.service.js';
+export * from './close/close.controller.js';
+export * from './close/close-engine.js';
 

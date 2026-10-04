@@ -10,6 +10,8 @@ import { CostingController } from './costing/costing.controller.js';
 import { CostingService } from './costing/costing.service.js';
 import { BudgetingController } from './budgeting/budgeting.controller.js';
 import { BudgetingService } from './budgeting/budgeting.service.js';
+import { CloseController } from './close/close.controller.js';
+import { CloseService } from './close/close.service.js';
 import { FixedAssetsController } from './fixed-assets/fixed-assets.controller.js';
 import { FixedAssetsService } from './fixed-assets/fixed-assets.service.js';
 import { HealthController } from './health.controller.js';
@@ -26,6 +28,7 @@ import { TreasuryService } from './treasury/treasury.service.js';
     ConsolidationController,
     CostingController,
     BudgetingController,
+    CloseController,
     OrganizationController,
   ],
   providers: [
@@ -38,8 +41,9 @@ import { TreasuryService } from './treasury/treasury.service.js';
     ConsolidationService,
     CostingService,
     BudgetingService,
+    CloseService,
   ],
-  exports: [DatabaseService, FinanceService, TreasuryService, FixedAssetsService, ConsolidationService, CostingService, BudgetingService],
+  exports: [DatabaseService, FinanceService, TreasuryService, FixedAssetsService, ConsolidationService, CostingService, BudgetingService, CloseService],
 })
 export class AppModule {}
 

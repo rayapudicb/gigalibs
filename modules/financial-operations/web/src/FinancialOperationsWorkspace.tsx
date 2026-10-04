@@ -56,6 +56,11 @@ import type {
   BudgetLineV1,
   BudgetCommitmentV1,
   BudgetVarianceReportV1,
+  PeriodSubledgerLockV1,
+  PeriodCloseChecklistV1,
+  AccrualAmortizationScheduleV1,
+  FinancialForecastLineV1,
+  FinancialHealthRatiosV1,
 } from '@gigalibs/contracts';
 import {
   DictionaryRenderer,
@@ -75,6 +80,7 @@ type WorkspaceTab =
   | 'consolidation'
   | 'costing'
   | 'budgeting'
+  | 'close'
   | 'reports'
   | 'extensions';
 
@@ -780,6 +786,299 @@ export function FinancialOperationsWorkspace() {
     },
   ]);
 
+  const [periodSubledgerLocks] = useState<PeriodSubledgerLockV1[]>([
+    {
+      id: 'pl100000-0000-4000-a000-000000000001',
+      tenantId: 'tenant-primary',
+      accountingBookId: 'a1000000-0000-4000-a000-000000000001',
+      fiscalPeriodId: 'f1000000-0000-4000-a000-000000000001',
+      subledgerType: 'AP',
+      lockStatus: 'HARD_LOCKED',
+      lockedAt: '2026-10-04T18:00:00Z',
+      lockedBy: 'cfo-lead',
+      unlockedAt: null,
+      unlockedBy: null,
+      notes: 'Vendor bill cutoff complete',
+      version: 1,
+      createdAt: '2026-10-04T18:00:00Z',
+      updatedAt: '2026-10-04T18:00:00Z',
+    },
+    {
+      id: 'pl100000-0000-4000-a000-000000000002',
+      tenantId: 'tenant-primary',
+      accountingBookId: 'a1000000-0000-4000-a000-000000000001',
+      fiscalPeriodId: 'f1000000-0000-4000-a000-000000000001',
+      subledgerType: 'AR',
+      lockStatus: 'HARD_LOCKED',
+      lockedAt: '2026-10-04T18:15:00Z',
+      lockedBy: 'cfo-lead',
+      unlockedAt: null,
+      unlockedBy: null,
+      notes: 'Sales billing batch finalized',
+      version: 1,
+      createdAt: '2026-10-04T18:15:00Z',
+      updatedAt: '2026-10-04T18:15:00Z',
+    },
+    {
+      id: 'pl100000-0000-4000-a000-000000000003',
+      tenantId: 'tenant-primary',
+      accountingBookId: 'a1000000-0000-4000-a000-000000000001',
+      fiscalPeriodId: 'f1000000-0000-4000-a000-000000000001',
+      subledgerType: 'INVENTORY',
+      lockStatus: 'HARD_LOCKED',
+      lockedAt: '2026-10-04T18:30:00Z',
+      lockedBy: 'inventory-lead',
+      unlockedAt: null,
+      unlockedBy: null,
+      notes: 'Physical counts & landed cost capitalized',
+      version: 1,
+      createdAt: '2026-10-04T18:30:00Z',
+      updatedAt: '2026-10-04T18:30:00Z',
+    },
+    {
+      id: 'pl100000-0000-4000-a000-000000000004',
+      tenantId: 'tenant-primary',
+      accountingBookId: 'a1000000-0000-4000-a000-000000000001',
+      fiscalPeriodId: 'f1000000-0000-4000-a000-000000000001',
+      subledgerType: 'FIXED_ASSETS',
+      lockStatus: 'SOFT_LOCKED',
+      lockedAt: '2026-10-04T18:45:00Z',
+      lockedBy: 'asset-lead',
+      unlockedAt: null,
+      unlockedBy: null,
+      notes: 'Monthly depreciation posted; review in progress',
+      version: 1,
+      createdAt: '2026-10-04T18:45:00Z',
+      updatedAt: '2026-10-04T18:45:00Z',
+    },
+    {
+      id: 'pl100000-0000-4000-a000-000000000005',
+      tenantId: 'tenant-primary',
+      accountingBookId: 'a1000000-0000-4000-a000-000000000001',
+      fiscalPeriodId: 'f1000000-0000-4000-a000-000000000001',
+      subledgerType: 'TREASURY',
+      lockStatus: 'OPEN',
+      lockedAt: null,
+      lockedBy: null,
+      unlockedAt: null,
+      unlockedBy: null,
+      notes: 'Bank reconciliation pending final fee matching',
+      version: 1,
+      createdAt: '2026-10-04T19:00:00Z',
+      updatedAt: '2026-10-04T19:00:00Z',
+    },
+    {
+      id: 'pl100000-0000-4000-a000-000000000006',
+      tenantId: 'tenant-primary',
+      accountingBookId: 'a1000000-0000-4000-a000-000000000001',
+      fiscalPeriodId: 'f1000000-0000-4000-a000-000000000001',
+      subledgerType: 'GL',
+      lockStatus: 'OPEN',
+      lockedAt: null,
+      lockedBy: null,
+      unlockedAt: null,
+      unlockedBy: null,
+      notes: 'Awaiting completion of subledger checklists',
+      version: 1,
+      createdAt: '2026-10-04T19:00:00Z',
+      updatedAt: '2026-10-04T19:00:00Z',
+    },
+  ]);
+
+  const [periodChecklists] = useState<PeriodCloseChecklistV1[]>([
+    {
+      id: 'ck100000-0000-4000-a000-000000000001',
+      tenantId: 'tenant-primary',
+      accountingBookId: 'a1000000-0000-4000-a000-000000000001',
+      fiscalPeriodId: 'f1000000-0000-4000-a000-000000000001',
+      taskType: 'BANK_RECONCILIATION',
+      taskName: 'Reconcile all Bank & Treasury Accounts',
+      taskStatus: 'COMPLETED',
+      sequenceOrder: 1,
+      dependsOnTaskType: null,
+      completedAt: '2026-10-04T17:30:00Z',
+      completedBy: 'treasury-lead',
+      notes: 'All 3 bank accounts reconciled with 0 unverified diff',
+      evidenceRef: 'REC-2026-M10-001',
+      version: 1,
+      createdAt: '2026-10-04T00:00:00Z',
+      updatedAt: '2026-10-04T17:30:00Z',
+    },
+    {
+      id: 'ck100000-0000-4000-a000-000000000002',
+      tenantId: 'tenant-primary',
+      accountingBookId: 'a1000000-0000-4000-a000-000000000001',
+      fiscalPeriodId: 'f1000000-0000-4000-a000-000000000001',
+      taskType: 'INVENTORY_VALUATION',
+      taskName: 'Finalize Inventory Costing & Landed Cost',
+      taskStatus: 'COMPLETED',
+      sequenceOrder: 2,
+      dependsOnTaskType: null,
+      completedAt: '2026-10-04T18:00:00Z',
+      completedBy: 'cost-accountant',
+      notes: 'FIFO depletion layers closed, landed costs absorbed',
+      evidenceRef: 'LCV-2026-10-001',
+      version: 1,
+      createdAt: '2026-10-04T00:00:00Z',
+      updatedAt: '2026-10-04T18:00:00Z',
+    },
+    {
+      id: 'ck100000-0000-4000-a000-000000000003',
+      tenantId: 'tenant-primary',
+      accountingBookId: 'a1000000-0000-4000-a000-000000000001',
+      fiscalPeriodId: 'f1000000-0000-4000-a000-000000000001',
+      taskType: 'DEPRECIATION_RUN',
+      taskName: 'Execute Fixed Asset Depreciation Run',
+      taskStatus: 'COMPLETED',
+      sequenceOrder: 3,
+      dependsOnTaskType: null,
+      completedAt: '2026-10-04T18:20:00Z',
+      completedBy: 'fixed-assets-lead',
+      notes: 'Monthly depreciation batch posted to GL',
+      evidenceRef: 'DEP-RUN-2026-M10',
+      version: 1,
+      createdAt: '2026-10-04T00:00:00Z',
+      updatedAt: '2026-10-04T18:20:00Z',
+    },
+    {
+      id: 'ck100000-0000-4000-a000-000000000004',
+      tenantId: 'tenant-primary',
+      accountingBookId: 'a1000000-0000-4000-a000-000000000001',
+      fiscalPeriodId: 'f1000000-0000-4000-a000-000000000001',
+      taskType: 'ACCRUAL_AMORTIZATION',
+      taskName: 'Post Recurring Accruals & Deferrals',
+      taskStatus: 'COMPLETED',
+      sequenceOrder: 4,
+      dependsOnTaskType: null,
+      completedAt: '2026-10-04T18:35:00Z',
+      completedBy: 'staff-accountant',
+      notes: '12 amortization schedule vouchers posted with cent conservation',
+      evidenceRef: 'SCH-PRE-0001',
+      version: 1,
+      createdAt: '2026-10-04T00:00:00Z',
+      updatedAt: '2026-10-04T18:35:00Z',
+    },
+    {
+      id: 'ck100000-0000-4000-a000-000000000005',
+      tenantId: 'tenant-primary',
+      accountingBookId: 'a1000000-0000-4000-a000-000000000001',
+      fiscalPeriodId: 'f1000000-0000-4000-a000-000000000001',
+      taskType: 'INTERCOMPANY_ELIMINATION',
+      taskName: 'Match & Eliminate Intercompany Balances',
+      taskStatus: 'IN_PROGRESS',
+      sequenceOrder: 5,
+      dependsOnTaskType: null,
+      completedAt: null,
+      completedBy: null,
+      notes: 'Bilateral pair verification in progress',
+      evidenceRef: null,
+      version: 1,
+      createdAt: '2026-10-04T00:00:00Z',
+      updatedAt: '2026-10-04T00:00:00Z',
+    },
+    {
+      id: 'ck100000-0000-4000-a000-000000000006',
+      tenantId: 'tenant-primary',
+      accountingBookId: 'a1000000-0000-4000-a000-000000000001',
+      fiscalPeriodId: 'f1000000-0000-4000-a000-000000000001',
+      taskType: 'TRIAL_BALANCE_VERIFICATION',
+      taskName: 'Verify Balanced Trial Balance',
+      taskStatus: 'PENDING',
+      sequenceOrder: 6,
+      dependsOnTaskType: 'INTERCOMPANY_ELIMINATION',
+      completedAt: null,
+      completedBy: null,
+      notes: 'Awaiting intercompany completion',
+      evidenceRef: null,
+      version: 1,
+      createdAt: '2026-10-04T00:00:00Z',
+      updatedAt: '2026-10-04T00:00:00Z',
+    },
+    {
+      id: 'ck100000-0000-4000-a000-000000000007',
+      tenantId: 'tenant-primary',
+      accountingBookId: 'a1000000-0000-4000-a000-000000000001',
+      fiscalPeriodId: 'f1000000-0000-4000-a000-000000000001',
+      taskType: 'MAKER_CHECKER_APPROVAL',
+      taskName: 'Controller & CFO Close Sign-off',
+      taskStatus: 'PENDING',
+      sequenceOrder: 7,
+      dependsOnTaskType: 'TRIAL_BALANCE_VERIFICATION',
+      completedAt: null,
+      completedBy: null,
+      notes: 'Final sign-off by CFO',
+      evidenceRef: null,
+      version: 1,
+      createdAt: '2026-10-04T00:00:00Z',
+      updatedAt: '2026-10-04T00:00:00Z',
+    },
+  ]);
+
+  const [amortizationSchedules] = useState<AccrualAmortizationScheduleV1[]>([
+    {
+      id: 'as100000-0000-4000-a000-000000000001',
+      tenantId: 'tenant-primary',
+      accountingBookId: 'a1000000-0000-4000-a000-000000000001',
+      scheduleNumber: 'SCH-PRE-0001',
+      scheduleName: 'Annual Corporate Property Insurance',
+      amortizationType: 'PREPAYMENT_AMORTIZATION',
+      sourceDocumentType: 'AP_BILL',
+      sourceDocumentRef: 'BILL-INS-2026',
+      totalAmountMinor: '12000000',
+      recognizedAmountMinor: '3000000',
+      remainingAmountMinor: '9000000',
+      currencyCode: 'USD',
+      expenseAccountId: 'c1000000-0000-4000-a000-000000000003',
+      balanceSheetAccountId: 'c1000000-0000-4000-a000-000000000001',
+      startPeriodId: 'f1000000-0000-4000-a000-000000000001',
+      endPeriodId: null,
+      periodsCount: 12,
+      status: 'ACTIVE',
+      autoReversal: false,
+      notes: 'Monthly straight-line recognition $10,000.00',
+      version: 1,
+      createdAt: '2026-01-01T00:00:00Z',
+      updatedAt: '2026-10-04T00:00:00Z',
+    },
+    {
+      id: 'as100000-0000-4000-a000-000000000002',
+      tenantId: 'tenant-primary',
+      accountingBookId: 'a1000000-0000-4000-a000-000000000001',
+      scheduleNumber: 'SCH-DEF-0002',
+      scheduleName: 'Multi-Year Enterprise SaaS Contract (ASC 606)',
+      amortizationType: 'DEFERRED_REVENUE_AMORTIZATION',
+      sourceDocumentType: 'AR_INVOICE',
+      sourceDocumentRef: 'INV-2026-9002',
+      totalAmountMinor: '4800000',
+      recognizedAmountMinor: '1600000',
+      remainingAmountMinor: '3200000',
+      currencyCode: 'USD',
+      expenseAccountId: 'c1000000-0000-4000-a000-000000000004',
+      balanceSheetAccountId: 'c1000000-0000-4000-a000-000000000002',
+      startPeriodId: 'f1000000-0000-4000-a000-000000000001',
+      endPeriodId: null,
+      periodsCount: 12,
+      status: 'ACTIVE',
+      autoReversal: false,
+      notes: 'ASC 606 ratable performance recognition $4,000.00/mo',
+      version: 1,
+      createdAt: '2026-01-01T00:00:00Z',
+      updatedAt: '2026-10-04T00:00:00Z',
+    },
+  ]);
+
+  const [healthRatios] = useState<FinancialHealthRatiosV1>({
+    tenantId: 'tenant-primary',
+    accountingBookId: 'a1000000-0000-4000-a000-000000000001',
+    fiscalPeriodId: 'f1000000-0000-4000-a000-000000000001',
+    currentRatio: '2.45',
+    quickRatio: '1.80',
+    workingCapitalMinor: '145000000',
+    debtToEquityRatio: '0.65',
+    operatingMarginBps: 2250,
+    computedAt: '2026-10-04T19:30:00Z',
+  });
+
   const [customExtensions, setCustomExtensions] = useState<Record<string, unknown>>({
     cost_center_code: 'CC-ENG-101',
     statutory_reporting_tag: 'SEC-10K-OPEX',
@@ -845,6 +1144,10 @@ export function FinancialOperationsWorkspace() {
             <PieChart className="w-3.5 h-3.5 mr-1" />
             Budget Controls Active
           </span>
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
+            <ShieldCheck className="w-3.5 h-3.5 mr-1" />
+            Period Close & Forecasting Active
+          </span>
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
             <Lock className="w-3.5 h-3.5 mr-1" />
             Immutable Facts
@@ -868,6 +1171,7 @@ export function FinancialOperationsWorkspace() {
             ['consolidation', 'Consolidation Studio', Globe],
             ['costing', 'Costing & Landed Cost', Package],
             ['budgeting', 'Budgeting & Planning', PieChart],
+            ['close', 'Period Close & Forecasting', ShieldCheck],
             ['reports', 'Financial Statements', BarChart3],
             ['extensions', 'Application Dictionary', TrendingUp],
           ] as const
@@ -1927,6 +2231,243 @@ export function FinancialOperationsWorkspace() {
                     </div>
                   </div>
                 ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'close' && (
+          <div className="space-y-6">
+            {/* Header & Financial Health KPIs */}
+            <div className="bg-white rounded-lg border border-slate-200 p-6 space-y-4">
+              <div>
+                <h3 className="text-base font-semibold text-slate-900">Period Close Orchestration & Financial Health</h3>
+                <p className="text-sm text-slate-600">
+                  Subledger lockout guards, milestone checklists with maker-checker approvals, automated accrual amortization schedules, and multi-period forecasting.
+                </p>
+              </div>
+
+              {/* KPI Cards */}
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-3 pt-2">
+                <div className="border border-slate-200 rounded-lg p-3 bg-slate-50">
+                  <span className="text-xs font-medium text-slate-500">Current Ratio</span>
+                  <p className="text-lg font-bold text-slate-900 mt-0.5">{healthRatios.currentRatio}</p>
+                  <span className="text-[10px] text-emerald-600 font-medium">Target: &gt; 2.0 (Healthy)</span>
+                </div>
+                <div className="border border-slate-200 rounded-lg p-3 bg-slate-50">
+                  <span className="text-xs font-medium text-slate-500">Quick Ratio</span>
+                  <p className="text-lg font-bold text-slate-900 mt-0.5">{healthRatios.quickRatio}</p>
+                  <span className="text-[10px] text-emerald-600 font-medium">Target: &gt; 1.0 (Liquid)</span>
+                </div>
+                <div className="border border-slate-200 rounded-lg p-3 bg-slate-50">
+                  <span className="text-xs font-medium text-slate-500">Working Capital</span>
+                  <p className="text-lg font-bold text-slate-900 mt-0.5">
+                    ${(parseInt(healthRatios.workingCapitalMinor, 10) / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                  </p>
+                  <span className="text-[10px] text-indigo-600 font-medium">Current Assets - CL</span>
+                </div>
+                <div className="border border-slate-200 rounded-lg p-3 bg-slate-50">
+                  <span className="text-xs font-medium text-slate-500">Debt-to-Equity</span>
+                  <p className="text-lg font-bold text-slate-900 mt-0.5">{healthRatios.debtToEquityRatio}</p>
+                  <span className="text-[10px] text-emerald-600 font-medium">Target: &lt; 1.5 (Solvent)</span>
+                </div>
+                <div className="border border-slate-200 rounded-lg p-3 bg-slate-50">
+                  <span className="text-xs font-medium text-slate-500">Operating Margin</span>
+                  <p className="text-lg font-bold text-slate-900 mt-0.5">
+                    {(healthRatios.operatingMarginBps / 100).toFixed(2)}%
+                  </p>
+                  <span className="text-[10px] text-emerald-600 font-medium">Operating Profit / Rev</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Subledger Lockouts Grid */}
+            <div className="bg-white rounded-lg border border-slate-200 p-6 space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-sm font-semibold text-slate-900">Subledger Cutoff & Lockout Matrix</h4>
+                  <p className="text-xs text-slate-500">
+                    Granular subledger locks prevent retroactive document postings during close cycles.
+                  </p>
+                </div>
+                <span className="text-xs font-mono px-2 py-1 bg-slate-100 rounded text-slate-700">Period: FY2026-M10 (October)</span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                {periodSubledgerLocks.map((lock) => (
+                  <div key={lock.id} className="border border-slate-200 rounded-lg p-4 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-sm text-slate-900">
+                        {lock.subledgerType === 'AP' && 'Accounts Payable (AP)'}
+                        {lock.subledgerType === 'AR' && 'Accounts Receivable (AR)'}
+                        {lock.subledgerType === 'INVENTORY' && 'Inventory & Costing'}
+                        {lock.subledgerType === 'FIXED_ASSETS' && 'Fixed Assets Register'}
+                        {lock.subledgerType === 'TREASURY' && 'Treasury & Bank Clearing'}
+                        {lock.subledgerType === 'GL' && 'General Ledger (GL)'}
+                      </span>
+                      <span
+                        className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                          lock.lockStatus === 'HARD_LOCKED'
+                            ? 'bg-rose-100 text-rose-800'
+                            : lock.lockStatus === 'SOFT_LOCKED'
+                            ? 'bg-amber-100 text-amber-800'
+                            : 'bg-emerald-100 text-emerald-800'
+                        }`}
+                      >
+                        {lock.lockStatus}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-500">{lock.notes}</p>
+                    <div className="text-[11px] text-slate-400">
+                      {lock.lockedBy ? `Locked by ${lock.lockedBy}` : 'Open for standard transactions'}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Close Checklist & Year-End Rollover (2 Columns) */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Period Close Checklist */}
+              <div className="bg-white rounded-lg border border-slate-200 p-6 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-sm font-semibold text-slate-900">Period Close Checklist</h4>
+                  <span className="text-xs font-medium text-indigo-600">4 / 7 Milestones Completed</span>
+                </div>
+
+                <div className="space-y-2">
+                  {periodChecklists.map((task) => (
+                    <div
+                      key={task.id}
+                      className="flex items-center justify-between p-3 border border-slate-100 rounded-lg bg-slate-50 text-xs"
+                    >
+                      <div className="space-y-0.5">
+                        <div className="flex items-center space-x-2">
+                          <span className="font-mono text-slate-400">#{task.sequenceOrder}</span>
+                          <span className="font-medium text-slate-900">{task.taskName}</span>
+                        </div>
+                        {task.notes && <p className="text-slate-500 text-[11px]">{task.notes}</p>}
+                      </div>
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-[11px] font-medium whitespace-nowrap ${
+                          task.taskStatus === 'COMPLETED'
+                            ? 'bg-emerald-100 text-emerald-800'
+                            : task.taskStatus === 'IN_PROGRESS'
+                            ? 'bg-blue-100 text-blue-800'
+                            : 'bg-slate-200 text-slate-700'
+                        }`}
+                      >
+                        {task.taskStatus}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Year-End Close & Retained Earnings Card */}
+              <div className="bg-white rounded-lg border border-slate-200 p-6 space-y-4">
+                <h4 className="text-sm font-semibold text-slate-900">Year-End Retained Earnings Rollover Engine</h4>
+                <p className="text-xs text-slate-500">
+                  Zeros temporary P&L accounts into the Retained Earnings balance sheet equity account with an immutable closing journal voucher.
+                </p>
+
+                <div className="border border-slate-200 rounded-lg p-4 bg-slate-50 space-y-3">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-slate-500">Total Fiscal Revenue:</span>
+                    <span className="font-mono font-bold text-emerald-700">$600,000.00</span>
+                  </div>
+                  <div className="flex justify-between text-xs">
+                    <span className="text-slate-500">Total Fiscal Operating Expenses:</span>
+                    <span className="font-mono font-bold text-rose-700">$450,000.00</span>
+                  </div>
+                  <div className="pt-2 border-t border-slate-200 flex justify-between text-xs">
+                    <span className="font-semibold text-slate-900">Computed Net Income:</span>
+                    <span className="font-mono font-bold text-indigo-700 text-sm">$150,000.00</span>
+                  </div>
+                  <div className="flex justify-between text-xs">
+                    <span className="text-slate-500">Target Equity Account:</span>
+                    <span className="font-mono text-slate-700">3000 (Retained Earnings)</span>
+                  </div>
+                </div>
+
+                <div className="flex space-x-3 pt-2">
+                  <button className="flex-1 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-xs font-medium">
+                    Preview Zeroing Vouchers
+                  </button>
+                  <button className="flex-1 px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-xs font-medium">
+                    Execute Year-End Close
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Recurring Accruals & Deferrals Amortization Table */}
+            <div className="bg-white rounded-lg border border-slate-200 p-6 space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-sm font-semibold text-slate-900">Recurring Accruals & Deferrals Schedules</h4>
+                  <p className="text-xs text-slate-500">
+                    Cent-conserving straight-line amortization for prepayments, ASC 606 deferred revenue, and day-1 auto-reversing accruals.
+                  </p>
+                </div>
+                <button className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-xs font-medium flex items-center space-x-1">
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>New Schedule</span>
+                </button>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase tracking-wider">
+                    <tr>
+                      <th className="px-3 py-2">Schedule #</th>
+                      <th className="px-3 py-2">Name / Type</th>
+                      <th className="px-3 py-2">Total Amount</th>
+                      <th className="px-3 py-2">Recognized</th>
+                      <th className="px-3 py-2">Remaining</th>
+                      <th className="px-3 py-2">Progress</th>
+                      <th className="px-3 py-2">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {amortizationSchedules.map((sch) => {
+                      const total = parseInt(sch.totalAmountMinor, 10);
+                      const recognized = parseInt(sch.recognizedAmountMinor, 10);
+                      const pct = Math.round((recognized / total) * 100);
+                      return (
+                        <tr key={sch.id} className="hover:bg-slate-50">
+                          <td className="px-3 py-3 font-mono font-medium text-slate-900">{sch.scheduleNumber}</td>
+                          <td className="px-3 py-3">
+                            <span className="font-medium text-slate-900 block">{sch.scheduleName}</span>
+                            <span className="text-[11px] text-slate-400 font-mono">{sch.amortizationType}</span>
+                          </td>
+                          <td className="px-3 py-3 font-mono font-bold text-slate-900">
+                            ${(total / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                          </td>
+                          <td className="px-3 py-3 font-mono text-emerald-700">
+                            ${(recognized / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                          </td>
+                          <td className="px-3 py-3 font-mono text-slate-600">
+                            ${(parseInt(sch.remainingAmountMinor, 10) / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                          </td>
+                          <td className="px-3 py-3 w-36">
+                            <div className="flex items-center space-x-2">
+                              <div className="flex-1 bg-slate-200 rounded-full h-1.5 overflow-hidden">
+                                <div className="bg-indigo-600 h-1.5 rounded-full" style={{ width: `${pct}%` }}></div>
+                              </div>
+                              <span className="text-[10px] font-mono text-slate-500">{pct}%</span>
+                            </div>
+                          </td>
+                          <td className="px-3 py-3">
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-100 text-emerald-800">
+                              {sch.status}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>

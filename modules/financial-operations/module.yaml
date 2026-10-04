@@ -36,6 +36,13 @@ spec:
     - budgeting-planning
     - commitment-accounting
     - budget-variance-control
+    - period-close-orchestration
+    - subledger-lockout
+    - accruals-deferrals-amortization
+    - year-end-close-rollover
+    - financial-forecasting
+    - financial-health-analytics
+    - statement-drill-through
   ui:
     basePath: /finance
     package: '@gigalibs/financial-operations-web'
@@ -73,6 +80,12 @@ spec:
       - finance.budget.revision.activated.v1
       - finance.budget.commitment.recorded.v1
       - finance.budget.threshold.exceeded.v1
+      - finance.subledger_lock.updated.v1
+      - finance.close_checklist.updated.v1
+      - finance.amortization_schedule.created.v1
+      - finance.amortization_line.posted.v1
+      - finance.year_end_close.executed.v1
+      - finance.forecast.generated.v1
     consumes:
       - ar.invoice.issued.v1
       - orders.fulfillment.dispatched.v1
@@ -201,3 +214,17 @@ spec:
       - { path: 'v1/budgeting/commitments/liquidate', POST: 'finance:journals:manage' }
       - { path: 'v1/budgeting/commitments/release', POST: 'finance:journals:manage' }
       - { path: 'v1/budgeting/revisions/{id}/variance', GET: 'finance:reports:view' }
+      - { path: 'v1/close/subledgers', GET: finance:read }
+      - { path: 'v1/close/subledgers/lock', POST: 'finance:periods:manage' }
+      - { path: 'v1/close/checklists', GET: finance:read }
+      - { path: 'v1/close/checklists/tasks', POST: 'finance:periods:manage' }
+      - { path: 'v1/close/amortization/schedules', GET: finance:read, POST: 'finance:journals:manage' }
+      - { path: 'v1/close/amortization/schedules/{id}/lines', GET: finance:read }
+      - { path: 'v1/close/amortization/lines/execute', POST: 'finance:journals:post' }
+      - { path: 'v1/close/year-end/preview', POST: finance:read }
+      - { path: 'v1/close/year-end/execute', POST: 'finance:periods:manage' }
+      - { path: 'v1/close/forecasting/models', GET: finance:read, POST: 'finance:books:manage' }
+      - { path: 'v1/close/forecasting/models/{id}/lines', GET: finance:read }
+      - { path: 'v1/close/forecasting/generate', POST: 'finance:journals:manage' }
+      - { path: 'v1/close/financial-health', GET: 'finance:reports:view' }
+      - { path: 'v1/close/drill-through', POST: 'finance:reports:view' }

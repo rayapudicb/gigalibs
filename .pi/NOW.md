@@ -1,11 +1,11 @@
 # NOW: where the work stands
 
-Updated 2026-10-04 (WI-OI-117 committed d731c05 in Review; WI-OI-116 committed babd0b9 in Review; WI-OI-115 committed 51c9ad8 in Review; WI-OI-114 committed eb7391a in Review; WI-OI-095 committed b799abd in Review; WI-OI-094 committed a8207c4 in Review; WI-OI-113 committed e532d98 in Review; WI-OI-093 committed 5d1aa3a in Review; WI-OI-092 committed 155061d in Review; WI-OI-091 committed 2890f10 in Review; WI-OI-112 in Review committed 2f18945; WI-OI-111 committed ad7f83b; WI-OI-110 in Review). Keep this file to one page.
+Updated 2026-10-04 (WI-OI-118 in Review; WI-OI-117 committed d731c05 in Review; WI-OI-116 committed babd0b9 in Review; WI-OI-115 committed 51c9ad8 in Review; WI-OI-114 committed eb7391a in Review; WI-OI-095 committed b799abd in Review; WI-OI-094 committed a8207c4 in Review; WI-OI-113 committed e532d98 in Review; WI-OI-093 committed 5d1aa3a in Review; WI-OI-092 committed 155061d in Review; WI-OI-091 committed 2890f10 in Review; WI-OI-112 in Review committed 2f18945; WI-OI-111 committed ad7f83b; WI-OI-110 in Review). Keep this file to one page.
 Replace old content rather than appending to it, and update it at the end of every task.
 
 ## State
 
-- **Active implementation item:** None (WI-OI-117 committed `d731c05` in Review; task card `.pi/tasks/WI-OI-117.md`). WI-OI-116 committed `babd0b9` in Review. WI-OI-115 committed `51c9ad8` in Review. WI-OI-114 committed `eb7391a` in Review. WI-OI-095 committed `b799abd` in Review. WI-OI-094 committed `a8207c4` in Review. WI-OI-113 committed `e532d98` in Review. WI-OI-093 committed `5d1aa3a` and in Review. WI-OI-092 committed `155061d` and in Review. WI-OI-091 committed `2890f10` and in Review. WI-OI-112 is committed `2f18945` and in Review. WI-OI-111 committed `ad7f83b` and in Review. WI-OI-110 in Review, committed `917141a`.
+- **Active implementation item:** none (WI-OI-118 in Review; task card `.pi/tasks/WI-OI-118.md`). Phase 14 Period-End Close Orchestration, Accruals/Deferrals, Financial Health & Multi-Period Forecasting Engine complete. All 18 verification steps in `pnpm verify` pass cleanly. WI-OI-117 committed `d731c05` in Review. WI-OI-116 committed `babd0b9` in Review. WI-OI-115 committed `51c9ad8` in Review. WI-OI-114 committed `eb7391a` in Review. WI-OI-095 committed `b799abd` in Review. WI-OI-094 committed `a8207c4` in Review. WI-OI-113 committed `e532d98` in Review. WI-OI-093 committed `5d1aa3a` and in Review. WI-OI-092 committed `155061d` and in Review. WI-OI-091 committed `2890f10` and in Review. WI-OI-112 is committed `2f18945` and in Review. WI-OI-111 committed `ad7f83b` and in Review. WI-OI-110 in Review, committed `917141a`.
 - **Wave 0:** WI-OI-080, 081, 082, 083 and 085 are in Review, waiting for human reviews. WI-OI-084 (mobile) has not started.
 - **Running locally (2026-10-02 14:16 IST):** every application service is on `3da222030dc2-a0ca08f61655`; the web is healthy on 5180 and the control plane is healthy on 3333.
   - Schemas: core organization migration live, Analytics 29, Connector Hub 8, Geospatial 8, CMMS 14, Workforce 19; Redis and the kernel worker run.
@@ -31,6 +31,7 @@ Replace old content rather than appending to it, and update it at the end of eve
 
 ## Next
 
+- WI-OI-118 in Review (Phase 14 Period-End Close Orchestration, Accruals/Deferrals, Financial Health & Multi-Period Forecasting Engine). Ready for owner review and commit.
 - WI-OI-117 committed `d731c05` in Review (Phase 13 Budgeting, Financial Planning & Commitment Control Engine).
 - WI-OI-116 committed `babd0b9` in Review (Phase 12 Inventory Costing, Valuation & Landed Cost Engine).
 - WI-OI-115 committed `51c9ad8` in Review (Phase 11 Multi-Company Financial Consolidation & Intercompany Eliminations).
