@@ -167,7 +167,7 @@ services:
       MODULE_RUNTIME_DATABASE_URL: ${CMMS_DATABASE_URL:?CMMS_DATABASE_URL is required}
       MODULE_MIGRATIONS_DIRECTORY: /app/migrations
       MODULE_SCHEMA: gigalibs_cmms
-      MODULE_EXPECTED_MIGRATION_VERSION: "14"
+      MODULE_EXPECTED_MIGRATION_VERSION: "19"
       MODULE_APPEND_ONLY_TABLES: audit_events,work_order_events,work_order_labour,meter_readings,stock_movements
       MODULE_READ_ONLY_TABLES: auth_revocation_events
     extra_hosts:
@@ -196,7 +196,7 @@ services:
       CMMS_CORS_ORIGINS: ${PUBLIC_ORIGIN:?PUBLIC_ORIGIN is required}
       CMMS_DATABASE_URL: ${CMMS_DATABASE_URL:?CMMS_DATABASE_URL is required}
       CMMS_DATABASE_POOL_SIZE: "10"
-      CMMS_EXPECTED_MIGRATION_VERSION: "14"
+      CMMS_EXPECTED_MIGRATION_VERSION: "19"
       CMMS_PLATFORM_CONTEXT_AUDIENCE: gigalibs-cmms-api
       CMMS_PLATFORM_CONTEXT_PUBLIC_KEY_BASE64: ${CMMS_PLATFORM_CONTEXT_PUBLIC_KEY_BASE64:?CMMS_PLATFORM_CONTEXT_PUBLIC_KEY_BASE64 is required}
       # WI-OI-068 (ADR-0007 option A); keys from scripts/generate-relay-credentials.sh.

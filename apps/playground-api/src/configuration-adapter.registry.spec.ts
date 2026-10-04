@@ -69,10 +69,11 @@ describe('ConfigurationAdapterRegistry', () => {
 
     try {
       const descriptors = context.get(ConfigurationAdapterRegistry).descriptors();
-      expect(descriptors).toHaveLength(6);
+      expect(descriptors).toHaveLength(7);
       expect(descriptors.some((d) => d.adapterKey === 'party-profile-v1')).toBe(true);
       expect(descriptors.some((d) => d.adapterKey === 'universal-procurement-v1')).toBe(true);
       expect(descriptors.some((d) => d.adapterKey === 'universal-orders-v1')).toBe(true);
+      expect(descriptors.some((d) => d.adapterKey === 'financial-operations-v1')).toBe(true);
     } finally {
       await context.close();
     }

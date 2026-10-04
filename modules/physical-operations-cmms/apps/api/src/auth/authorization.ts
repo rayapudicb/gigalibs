@@ -12,6 +12,7 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { PlatformContextError, verifyPlatformContextToken, type PlatformContextV1 } from '@gigalibs/auth-core';
+import type { OrganizationClaim } from '@gigalibs/module-sdk';
 import { CMMS_CONFIG } from '../config.provider.js';
 import { DatabaseService } from '../database/database.service.js';
 import { CMMS_MODULE_KEY, type CmmsRuntimeConfig } from '../runtime-config.js';
@@ -40,6 +41,8 @@ export interface CmmsPrincipal {
   readonly permissions: readonly string[];
   readonly roles: readonly string[];
   readonly persona: PlatformContextV1['persona_type'];
+  /** Server-resolved WI-OI-109 organization scope, kept in parity with the shared module guard. */
+  readonly organization?: OrganizationClaim;
   readonly departmentScope: CmmsDepartmentScope;
   readonly placeScope: CmmsPlaceScope;
 }
@@ -152,6 +155,20 @@ export function principalFromContext(context: PlatformContextV1): CmmsPrincipal 
     permissions: Object.freeze([...context.granted_scopes]),
     roles: Object.freeze([...context.roles]),
     persona: context.persona_type,
+    organization: Object.freeze(
+      context.organization?.mode === 'UNITS'
+        ? {
+            mode: 'UNITS' as const,
+            tree_version: context.organization.tree_version,
+            read_roots: Object.freeze([...context.organization.read_roots]),
+            write_roots: Object.freeze([...context.organization.write_roots]),
+          }
+        : context.organization?.mode === 'DENIED'
+          ? { mode: 'DENIED' as const }
+          : context.organization?.tree_version
+            ? { mode: 'TENANT' as const, tree_version: context.organization.tree_version }
+            : { mode: 'TENANT' as const },
+    ),
     departmentScope: Object.freeze(
       org.mode === 'SCOPED_DEPARTMENTS'
         ? { mode: 'DEPARTMENTS' as const, departmentIds: Object.freeze([...org.department_ids]) }

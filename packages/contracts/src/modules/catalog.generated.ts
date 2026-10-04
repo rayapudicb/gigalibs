@@ -290,6 +290,23 @@ export const generatedPlatformModuleCatalog = [
     platformInspection: true,
     reason: 'A bounded PostgreSQL-backed jurisdiction, rate, exemption and calculation journey is available for controlled local UAT; broader production jurisdiction coverage remains in review. Frozen and locked (ADR-0016 F6).',
   },
+  // modules/financial-operations/module.yaml
+  {
+    key: 'financial-operations',
+    name: 'Financial Operations & General Ledger',
+    navigationLabel: 'General Ledger & Finance',
+    area: 'Financial Operations',
+    navigationGroup: 'Financial Operations',
+    route: '/finance',
+    iconKey: 'scale',
+    readiness: 'PLANNED',
+    maturity: 'CORE_IMPLEMENTED',
+    entitlementEligible: true,
+    trialEligible: false,
+    requiredPermission: 'finance:read',
+    platformInspection: true,
+    reason: 'The module boundary is implemented under WI-OI-094 and remains PLANNED until live module conformance and independent review are recorded.',
+  },
   // modules/multi-currency/module.yaml
   {
     key: 'multi-currency',

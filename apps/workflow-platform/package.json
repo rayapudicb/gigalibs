@@ -28,6 +28,7 @@
     "@gigalibs/universal-inventory-web": "workspace:*",
     "@gigalibs/universal-procurement-web": "workspace:*",
     "@gigalibs/universal-orders-web": "workspace:*",
+    "@gigalibs/financial-operations-web": "workspace:*",
     "@gigalibs/web-sdk": "workspace:*",
     "@medusajs/icons": "^2.20.1",
     "@medusajs/ui": "^4.2.3",

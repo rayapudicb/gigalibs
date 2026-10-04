@@ -42,6 +42,11 @@ describe('manifest-declared navigation equals the former sidebar tables', () => 
       icon: moduleIcons['shopping-bag'],
       personas: ['OPERATIONS_SUPERVISOR'],
     },
+    'financial-operations': {
+      group: 'Financial Operations',
+      icon: moduleIcons.scale,
+      personas: ['OPERATIONS_SUPERVISOR'],
+    },
   } as const;
 
   it('covers exactly the catalogue entries the frozen tables covered, less the intended removals', () => {

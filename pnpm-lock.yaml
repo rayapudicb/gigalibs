@@ -61,6 +61,15 @@ importers:
       '@gigalibs/product-catalogue-api':
         specifier: workspace:*
         version: link:../../modules/product-catalogue/apps/api
+      '@gigalibs/universal-inventory-api':
+        specifier: workspace:*
+        version: link:../../modules/universal-inventory/apps/api
+      '@gigalibs/universal-orders-api':
+        specifier: workspace:*
+        version: link:../../modules/universal-orders/apps/api
+      '@gigalibs/universal-procurement-api':
+        specifier: workspace:*
+        version: link:../../modules/universal-procurement/apps/api
       '@nestjs/common':
         specifier: ^11.2.3
         version: 11.2.3(reflect-metadata@0.2.2)(rxjs@7.8.2)
@@ -231,6 +240,15 @@ importers:
       '@gigalibs/product-catalogue-web':
         specifier: workspace:*
         version: link:../../modules/product-catalogue/web
+      '@gigalibs/universal-inventory-web':
+        specifier: workspace:*
+        version: link:../../modules/universal-inventory/web
+      '@gigalibs/universal-orders-web':
+        specifier: workspace:*
+        version: link:../../modules/universal-orders/web
+      '@gigalibs/universal-procurement-web':
+        specifier: workspace:*
+        version: link:../../modules/universal-procurement/web
       '@gigalibs/web-sdk':
         specifier: workspace:*
         version: link:../../packages/web-sdk
@@ -666,6 +684,89 @@ importers:
         specifier: ^5.8.3
         version: 5.9.3
 
+  modules/financial-operations/apps/api:
+    dependencies:
+      '@gigalibs/auth-core':
+        specifier: workspace:*
+        version: link:../../../../packages/auth-core
+      '@gigalibs/configuration-core':
+        specifier: workspace:*
+        version: link:../../../../packages/configuration-core
+      '@gigalibs/contracts':
+        specifier: workspace:*
+        version: link:../../../../packages/contracts
+      '@gigalibs/module-sdk':
+        specifier: workspace:*
+        version: link:../../../../packages/module-sdk
+      '@nestjs/common':
+        specifier: ^11.2.3
+        version: 11.2.3(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      '@nestjs/core':
+        specifier: ^11.2.3
+        version: 11.2.6(@nestjs/common@11.2.3(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/platform-express@11.2.3)(@nestjs/websockets@11.2.3)(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      '@nestjs/platform-express':
+        specifier: ^11.2.3
+        version: 11.2.3(@nestjs/common@11.2.3(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.2.6)
+      helmet:
+        specifier: ^8.1.0
+        version: 8.3.0
+      pg:
+        specifier: ^8.23.0
+        version: 8.23.0
+      reflect-metadata:
+        specifier: ^0.2.2
+        version: 0.2.2
+      rxjs:
+        specifier: ^7.8.2
+        version: 7.8.2
+      zod:
+        specifier: ^4.5.2
+        version: 4.5.2
+    devDependencies:
+      '@types/node':
+        specifier: ^24.10.0
+        version: 24.13.3
+      '@types/pg':
+        specifier: ^8.23.1
+        version: 8.23.1
+      tsx:
+        specifier: ^4.20.6
+        version: 4.23.12
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.3
+      vitest:
+        specifier: ^3.0.0
+        version: 3.2.7(@types/node@24.13.3)(jiti@2.7.0)(tsx@4.23.12)
+
+  modules/financial-operations/web:
+    dependencies:
+      '@gigalibs/configuration-react':
+        specifier: workspace:*
+        version: link:../../../packages/configuration-react
+      '@gigalibs/contracts':
+        specifier: workspace:*
+        version: link:../../../packages/contracts
+      '@gigalibs/web-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/web-sdk
+      lucide-react:
+        specifier: ^0.468.0
+        version: 0.468.0(react@19.2.8)
+    devDependencies:
+      '@types/react':
+        specifier: 19.2.18
+        version: 19.2.18
+      next:
+        specifier: 15.5.24
+        version: 15.5.24(@playwright/test@1.62.1)(@types/node@24.13.3)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      react:
+        specifier: 19.2.8
+        version: 19.2.8
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.3
+
   modules/geospatial/apps/api:
     dependencies:
       '@gigalibs/auth-core':
@@ -1005,9 +1106,6 @@ importers:
 
   modules/product-catalogue/web:
     dependencies:
-      '@gigalibs/configuration-core':
-        specifier: workspace:*
-        version: link:../../../packages/configuration-core
       '@gigalibs/configuration-react':
         specifier: workspace:*
         version: link:../../../packages/configuration-react
@@ -1251,6 +1349,255 @@ importers:
       tsx:
         specifier: ^4.20.6
         version: 4.23.12
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.3
+
+  modules/universal-inventory/apps/api:
+    dependencies:
+      '@gigalibs/auth-core':
+        specifier: workspace:*
+        version: link:../../../../packages/auth-core
+      '@gigalibs/configuration-core':
+        specifier: workspace:*
+        version: link:../../../../packages/configuration-core
+      '@gigalibs/contracts':
+        specifier: workspace:*
+        version: link:../../../../packages/contracts
+      '@gigalibs/module-sdk':
+        specifier: workspace:*
+        version: link:../../../../packages/module-sdk
+      '@nestjs/common':
+        specifier: ^11.2.3
+        version: 11.2.3(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      '@nestjs/core':
+        specifier: ^11.2.3
+        version: 11.2.6(@nestjs/common@11.2.3(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/platform-express@11.2.3)(@nestjs/websockets@11.2.3)(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      '@nestjs/platform-express':
+        specifier: ^11.2.3
+        version: 11.2.3(@nestjs/common@11.2.3(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.2.6)
+      helmet:
+        specifier: ^8.1.0
+        version: 8.3.0
+      pg:
+        specifier: ^8.23.0
+        version: 8.23.0
+      reflect-metadata:
+        specifier: ^0.2.2
+        version: 0.2.2
+      rxjs:
+        specifier: ^7.8.2
+        version: 7.8.2
+      zod:
+        specifier: ^4.5.2
+        version: 4.5.2
+    devDependencies:
+      '@types/node':
+        specifier: ^24.10.0
+        version: 24.13.3
+      '@types/pg':
+        specifier: ^8.23.1
+        version: 8.23.1
+      tsx:
+        specifier: ^4.20.6
+        version: 4.23.12
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.3
+      vitest:
+        specifier: ^3.0.0
+        version: 3.2.7(@types/node@24.13.3)(jiti@2.7.0)(tsx@4.23.12)
+
+  modules/universal-inventory/web:
+    dependencies:
+      '@gigalibs/configuration-react':
+        specifier: workspace:*
+        version: link:../../../packages/configuration-react
+      '@gigalibs/contracts':
+        specifier: workspace:*
+        version: link:../../../packages/contracts
+      '@gigalibs/web-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/web-sdk
+      lucide-react:
+        specifier: ^0.468.0
+        version: 0.468.0(react@19.2.8)
+    devDependencies:
+      '@types/react':
+        specifier: 19.2.18
+        version: 19.2.18
+      next:
+        specifier: 15.5.24
+        version: 15.5.24(@playwright/test@1.62.1)(@types/node@24.13.3)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      react:
+        specifier: 19.2.8
+        version: 19.2.8
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.3
+
+  modules/universal-orders/apps/api:
+    dependencies:
+      '@gigalibs/auth-core':
+        specifier: workspace:*
+        version: link:../../../../packages/auth-core
+      '@gigalibs/configuration-core':
+        specifier: workspace:*
+        version: link:../../../../packages/configuration-core
+      '@gigalibs/contracts':
+        specifier: workspace:*
+        version: link:../../../../packages/contracts
+      '@gigalibs/module-sdk':
+        specifier: workspace:*
+        version: link:../../../../packages/module-sdk
+      '@nestjs/common':
+        specifier: ^11.2.3
+        version: 11.2.3(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      '@nestjs/core':
+        specifier: ^11.2.3
+        version: 11.2.6(@nestjs/common@11.2.3(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/platform-express@11.2.3)(@nestjs/websockets@11.2.3)(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      '@nestjs/platform-express':
+        specifier: ^11.2.3
+        version: 11.2.3(@nestjs/common@11.2.3(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.2.6)
+      helmet:
+        specifier: ^8.1.0
+        version: 8.3.0
+      pg:
+        specifier: ^8.23.0
+        version: 8.23.0
+      reflect-metadata:
+        specifier: ^0.2.2
+        version: 0.2.2
+      rxjs:
+        specifier: ^7.8.2
+        version: 7.8.2
+      zod:
+        specifier: ^4.5.2
+        version: 4.5.2
+    devDependencies:
+      '@types/node':
+        specifier: ^24.10.0
+        version: 24.13.3
+      '@types/pg':
+        specifier: ^8.23.1
+        version: 8.23.1
+      tsx:
+        specifier: ^4.20.6
+        version: 4.23.12
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.3
+      vitest:
+        specifier: ^3.0.0
+        version: 3.2.7(@types/node@24.13.3)(jiti@2.7.0)(tsx@4.23.12)
+
+  modules/universal-orders/web:
+    dependencies:
+      '@gigalibs/configuration-react':
+        specifier: workspace:*
+        version: link:../../../packages/configuration-react
+      '@gigalibs/contracts':
+        specifier: workspace:*
+        version: link:../../../packages/contracts
+      '@gigalibs/web-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/web-sdk
+      lucide-react:
+        specifier: ^0.468.0
+        version: 0.468.0(react@19.2.8)
+    devDependencies:
+      '@types/react':
+        specifier: 19.2.18
+        version: 19.2.18
+      next:
+        specifier: 15.5.24
+        version: 15.5.24(@playwright/test@1.62.1)(@types/node@24.13.3)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      react:
+        specifier: 19.2.8
+        version: 19.2.8
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.3
+
+  modules/universal-procurement/apps/api:
+    dependencies:
+      '@gigalibs/auth-core':
+        specifier: workspace:*
+        version: link:../../../../packages/auth-core
+      '@gigalibs/configuration-core':
+        specifier: workspace:*
+        version: link:../../../../packages/configuration-core
+      '@gigalibs/contracts':
+        specifier: workspace:*
+        version: link:../../../../packages/contracts
+      '@gigalibs/module-sdk':
+        specifier: workspace:*
+        version: link:../../../../packages/module-sdk
+      '@nestjs/common':
+        specifier: ^11.2.3
+        version: 11.2.3(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      '@nestjs/core':
+        specifier: ^11.2.3
+        version: 11.2.6(@nestjs/common@11.2.3(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/platform-express@11.2.3)(@nestjs/websockets@11.2.3)(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      '@nestjs/platform-express':
+        specifier: ^11.2.3
+        version: 11.2.3(@nestjs/common@11.2.3(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.2.6)
+      helmet:
+        specifier: ^8.1.0
+        version: 8.3.0
+      pg:
+        specifier: ^8.23.0
+        version: 8.23.0
+      reflect-metadata:
+        specifier: ^0.2.2
+        version: 0.2.2
+      rxjs:
+        specifier: ^7.8.2
+        version: 7.8.2
+      zod:
+        specifier: ^4.5.2
+        version: 4.5.2
+    devDependencies:
+      '@types/node':
+        specifier: ^24.10.0
+        version: 24.13.3
+      '@types/pg':
+        specifier: ^8.23.1
+        version: 8.23.1
+      tsx:
+        specifier: ^4.20.6
+        version: 4.23.12
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.3
+      vitest:
+        specifier: ^3.0.0
+        version: 3.2.7(@types/node@24.13.3)(jiti@2.7.0)(tsx@4.23.12)
+
+  modules/universal-procurement/web:
+    dependencies:
+      '@gigalibs/configuration-react':
+        specifier: workspace:*
+        version: link:../../../packages/configuration-react
+      '@gigalibs/contracts':
+        specifier: workspace:*
+        version: link:../../../packages/contracts
+      '@gigalibs/web-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/web-sdk
+      lucide-react:
+        specifier: ^0.468.0
+        version: 0.468.0(react@19.2.8)
+    devDependencies:
+      '@types/react':
+        specifier: 19.2.18
+        version: 19.2.18
+      next:
+        specifier: 15.5.24
+        version: 15.5.24(@playwright/test@1.62.1)(@types/node@24.13.3)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      react:
+        specifier: 19.2.8
+        version: 19.2.8
       typescript:
         specifier: ^5.8.3
         version: 5.9.3

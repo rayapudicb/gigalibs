@@ -1,11 +1,11 @@
 # NOW: where the work stands
 
-Updated 2026-10-04 (WI-OI-093 committed 5d1aa3a in Review; WI-OI-092 committed 155061d in Review; WI-OI-091 committed 2890f10 in Review; WI-OI-112 in Review committed 2f18945; WI-OI-111 committed ad7f83b; WI-OI-110 in Review). Keep this file to one page.
+Updated 2026-10-04 (WI-OI-094 in Review; WI-OI-113 committed e532d98 in Review; WI-OI-093 committed 5d1aa3a in Review; WI-OI-092 committed 155061d in Review; WI-OI-091 committed 2890f10 in Review; WI-OI-112 in Review committed 2f18945; WI-OI-111 committed ad7f83b; WI-OI-110 in Review). Keep this file to one page.
 Replace old content rather than appending to it, and update it at the end of every task.
 
 ## State
 
-- **Active implementation item:** WI-OI-094 (Enterprise Architecture Phase 8: Financial Operations, Subledgers, and General Ledger Integration — In Progress; owner approved 2026-10-04; task card `.pi/tasks/WI-OI-094.md`; evidence `.pi/work/WI-OI-094.md`). WI-OI-113 in Review. WI-OI-093 committed `5d1aa3a` and in Review. WI-OI-092 committed `155061d` and in Review. WI-OI-091 committed `2890f10` and in Review. WI-OI-112 is committed `2f18945` and in Review. WI-OI-111 committed `ad7f83b` and in Review. WI-OI-110 in Review, committed `917141a`.
+- **Active implementation item:** None. WI-OI-094 (Enterprise Architecture Phase 8: Financial Operations, Subledgers, and General Ledger Integration) is complete, 100% verified across 13/13 real-database scenarios, and in Review (task card `.pi/tasks/WI-OI-094.md`; evidence `.pi/work/WI-OI-094.md`). WI-OI-113 committed `e532d98` in Review. WI-OI-093 committed `5d1aa3a` and in Review. WI-OI-092 committed `155061d` and in Review. WI-OI-091 committed `2890f10` and in Review. WI-OI-112 is committed `2f18945` and in Review. WI-OI-111 committed `ad7f83b` and in Review. WI-OI-110 in Review, committed `917141a`.
 - **Wave 0:** WI-OI-080, 081, 082, 083 and 085 are in Review, waiting for human reviews. WI-OI-084 (mobile) has not started.
 - **Running locally (2026-10-02 14:16 IST):** every application service is on `3da222030dc2-a0ca08f61655`; the web is healthy on 5180 and the control plane is healthy on 3333.
   - Schemas: core organization migration live, Analytics 29, Connector Hub 8, Geospatial 8, CMMS 14, Workforce 19; Redis and the kernel worker run.
@@ -31,8 +31,9 @@ Replace old content rather than appending to it, and update it at the end of eve
 
 ## Next
 
-- **Awaiting Owner Commit:** WI-OI-113 (Commercial & Operational Module Convergence and Outbox-Inbox Handshake) is 100% verified across all 12 database scenarios and ready for commit when owner says "commit".
-- **Phase 8 Ready for Kickoff:** With authentic operational outbox relays, deterministic ATP stock reservation, local receipt projections, and canonical AR invoice issuance verified, Phase 8 (`WI-OI-094` Financial Operations, Subledgers & General Ledger Integration) is ready to begin upon owner approval.
+- **Awaiting Owner Authorization for Next Work Item:** Phase 8 (`WI-OI-094`) is delivered and verified. Ready to authorize next architectural work item (e.g. End-to-End Commercial-Financial Integration, Multi-Company Consolidation, or Bank Reconciliation).
+- WI-OI-094 in Review (Phase 8 Financial Operations, Subledgers & General Ledger Integration).
+- WI-OI-113 committed `e532d98` and in Review (Commercial & Operational Module Convergence and Outbox-Inbox Handshake).
 - WI-OI-093 committed `5d1aa3a` and in Review (Phase 7 Universal Order Management and Customer Fulfillment).
 - WI-OI-092 committed `155061d` and in Review (Phase 6 Universal Procurement, Vendor Operations and 3-Way Matching).
 - WI-OI-091 committed `2890f10` and in Review (Phase 5 Universal Inventory and Warehouse Operations).

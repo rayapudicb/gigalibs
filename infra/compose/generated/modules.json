@@ -1,4 +1,26 @@
 {
+  "financial-operations": {
+    "hosting": "host",
+    "basePath": "/financial-operations",
+    "package": "@gigalibs/financial-operations-api",
+    "directory": "modules/financial-operations",
+    "image": "gigalibs/module-host",
+    "component": "module-host",
+    "title": "Financial Operations & General Ledger",
+    "workItem": "WI-OI-094",
+    "prefix": "FINANCIAL_OPERATIONS",
+    "service": "module-host",
+    "port": 4790,
+    "schema": "gigalibs_finance",
+    "migrationVersion": 1,
+    "audience": "gigalibs-financial-operations-api",
+    "appendOnlyTables": [
+      "audit_events"
+    ],
+    "readOnlyTables": [
+      "auth_revocation_events"
+    ]
+  },
   "product-catalogue": {
     "hosting": "host",
     "basePath": "/product-catalogue",
@@ -34,7 +56,7 @@
     "service": "module-host",
     "port": 4790,
     "schema": "gigalibs_inventory",
-    "migrationVersion": 1,
+    "migrationVersion": 2,
     "audience": "gigalibs-universal-inventory-api",
     "appendOnlyTables": [
       "audit_events"
@@ -56,7 +78,7 @@
     "service": "module-host",
     "port": 4790,
     "schema": "gigalibs_orders",
-    "migrationVersion": 1,
+    "migrationVersion": 2,
     "audience": "gigalibs-universal-orders-api",
     "appendOnlyTables": [
       "audit_events"
@@ -78,7 +100,7 @@
     "service": "module-host",
     "port": 4790,
     "schema": "gigalibs_procurement",
-    "migrationVersion": 1,
+    "migrationVersion": 2,
     "audience": "gigalibs-universal-procurement-api",
     "appendOnlyTables": [
       "audit_events"

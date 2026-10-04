@@ -16,7 +16,7 @@ services:
       MODULE_RUNTIME_DATABASE_URL: ${WORKFORCE_DATABASE_URL:?WORKFORCE_DATABASE_URL is required}
       MODULE_MIGRATIONS_DIRECTORY: /app/migrations
       MODULE_SCHEMA: gigalibs_workforce
-      MODULE_EXPECTED_MIGRATION_VERSION: "19"
+      MODULE_EXPECTED_MIGRATION_VERSION: "25"
       MODULE_APPEND_ONLY_TABLES: audit_events,booking_events,punches,punch_voids,time_corrections,earning_lines
       MODULE_READ_ONLY_TABLES: auth_revocation_events
     extra_hosts:
@@ -51,7 +51,7 @@ services:
       WORKFORCE_CORS_ORIGINS: ${PUBLIC_ORIGIN:?PUBLIC_ORIGIN is required}
       WORKFORCE_DATABASE_URL: ${WORKFORCE_DATABASE_URL:?WORKFORCE_DATABASE_URL is required}
       WORKFORCE_DATABASE_POOL_SIZE: "10"
-      WORKFORCE_EXPECTED_MIGRATION_VERSION: "19"
+      WORKFORCE_EXPECTED_MIGRATION_VERSION: "25"
       # WI-OI-070: reference pay packs (not statutory advice) are for this local profile only; production leaves this unset.
       WORKFORCE_PAY_REFERENCE_PACKS: enabled
       WORKFORCE_PLATFORM_CONTEXT_AUDIENCE: gigalibs-workforce-api

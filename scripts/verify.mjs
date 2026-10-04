@@ -29,6 +29,7 @@ const steps = [
     args: ['scripts/verify-configuration-local-profile.mjs'],
     knownDrift: KNOWN_PROFILE_DRIFT,
   },
+  { name: 'financial-operations', cmd: process.execPath, args: ['scripts/verify-financial-operations.mjs'] },
 ];
 
 const logDir = join(tmpdir(), 'gigalibs-verify');

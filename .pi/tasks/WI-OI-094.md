@@ -1,6 +1,6 @@
 # WI-OI-094: Financial Operations, Subledgers, and General Ledger Integration (Phase 8)
 
-- **Status:** In progress (Approved by owner, 2026-10-04)
+- **Status:** Review
 - **Work item:** WI-OI-094 (row in `.pi/WORK_ITEMS.md`). Evidence goes in `.pi/work/WI-OI-094.md`.
 - **Size:** XL, delivered across 10 slices P8-0 through P8-9
 - **Depends on:** WI-OI-109, WI-OI-110, WI-OI-111, WI-OI-112, WI-OI-091, WI-OI-092, WI-OI-093, ADR-0013, ADR-0016, ADR-0018, ADR-0019, ADR-0020, ADR-0021, ADR-0022, ADR-0023, ADR-0024, ADR-0025
@@ -58,17 +58,17 @@ Build one tenant- and organization-aware authority for multi-book accounting sch
 
 ## Done when
 
-- [ ] All 10 slices P8-0 through P8-9 are implemented and verified.
-- [ ] Contracts in `packages/contracts/src/finance` export all schemas and pass Zod validation.
-- [ ] PostgreSQL migration `gigalibs_finance` applies cleanly with forced RLS and immutability triggers.
-- [ ] Double-entry balance invariant $\sum \text{Debits} = \sum \text{Credits}$ is verified at DB trigger and application boundary.
-- [ ] Immutability trigger rejects `UPDATE` and `DELETE` on posted entries.
-- [ ] Subledger ingestion generates balanced GL facts for AP bills, AR invoices, and inventory receipts.
-- [ ] Financial statements (Trial Balance, Balance Sheet, Income Statement) calculate in real-time.
-- [ ] Metadata adapter and `<FinancialOperationsWorkspace />` render with `<DictionaryRenderer />`.
-- [ ] 10+ real-database proof scenarios pass on PostgreSQL 16.
-- [ ] `pnpm verify` passes (or reports only known deployment-profile drift).
-- [ ] Evidence recorded in `.pi/work/WI-OI-094.md` and `.pi/NOW.md` updated.
+- [x] All 10 slices P8-0 through P8-9 are implemented and verified.
+- [x] Contracts in `packages/contracts/src/finance` export all schemas and pass Zod validation.
+- [x] PostgreSQL migration `gigalibs_finance` applies cleanly with forced RLS and immutability triggers.
+- [x] Double-entry balance invariant $\sum \text{Debits} = \sum \text{Credits}$ is verified at DB trigger and application boundary.
+- [x] Immutability trigger rejects `UPDATE` and `DELETE` on posted entries.
+- [x] Subledger ingestion generates balanced GL facts for AP bills, AR invoices, and inventory receipts.
+- [x] Financial statements (Trial Balance, Balance Sheet, Income Statement) calculate in real-time.
+- [x] Metadata adapter and `<FinancialOperationsWorkspace />` render with `<DictionaryRenderer />`.
+- [x] 10+ real-database proof scenarios pass on PostgreSQL 16 (13/13 scenarios passed).
+- [x] `pnpm verify` passes (or reports only known deployment-profile drift).
+- [x] Evidence recorded in `.pi/work/WI-OI-094.md` and `.pi/NOW.md` updated.
 
 ## Stop and ask if
 

@@ -234,6 +234,11 @@ describe('manifest-generated gateways equal the hand-written allow-lists', () =>
         port: '4790',
         serviceHostname: 'module-host',
       },
+      'financial-operations': {
+        environmentKey: 'FINANCIAL_OPERATIONS_API_URL',
+        port: '4790',
+        serviceHostname: 'module-host',
+      },
       workforce: {
         environmentKey: 'WORKFORCE_API_URL',
         port: '4700',

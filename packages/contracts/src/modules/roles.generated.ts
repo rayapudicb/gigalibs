@@ -177,6 +177,43 @@ export const moduleDefaultRoles: readonly ModuleDefaultRole[] = [
     ]
   },
   {
+    "catalogKey": "financial-operations",
+    "key": "chief-accountant",
+    "name": "Chief Accountant",
+    "description": "Oversees chart of accounts, fiscal periods, posted journals, immutable reversals, and financial reporting.",
+    "permissions": [
+      "finance:read",
+      "finance:books:manage",
+      "finance:coa:manage",
+      "finance:periods:manage",
+      "finance:journals:manage",
+      "finance:journals:post",
+      "finance:journals:reverse",
+      "finance:reports:view"
+    ]
+  },
+  {
+    "catalogKey": "financial-operations",
+    "key": "financial-analyst",
+    "name": "Financial Analyst",
+    "description": "Analyzes trial balance, balance sheet, and income statement facts across fiscal periods.",
+    "permissions": [
+      "finance:read",
+      "finance:reports:view"
+    ]
+  },
+  {
+    "catalogKey": "financial-operations",
+    "key": "staff-accountant",
+    "name": "Staff Accountant",
+    "description": "Enters and reviews double-entry general ledger journals and operational distributions.",
+    "permissions": [
+      "finance:read",
+      "finance:journals:manage",
+      "finance:reports:view"
+    ]
+  },
+  {
     "catalogKey": "analytics-studio",
     "key": "analytics-viewer",
     "name": "Analytics viewer",

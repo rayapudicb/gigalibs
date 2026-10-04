@@ -1,0 +1,128 @@
+apiVersion: modules.gigalibs.io/v1
+kind: Module
+metadata:
+  name: financial-operations
+  displayName: Financial Operations & General Ledger
+  version: 0.1.0-dev
+  lifecycle: implementation
+  workItem: WI-OI-094
+spec:
+  standalone: true
+  category: business
+  requiredModules: [accounts-receivable, universal-procurement, universal-orders, universal-inventory]
+  optionalModules: [universal-connector-hub, analytics-studio, tax-configuration, multi-currency]
+  capabilities:
+    - accounting-books
+    - chart-of-accounts
+    - fiscal-periods
+    - double-entry-journal
+    - subledger-ap-ingestion
+    - subledger-ar-ingestion
+    - subledger-inventory-ingestion
+    - trial-balance
+    - balance-sheet
+    - income-statement
+    - immutable-reversals
+    - outbox-events
+    - audit
+  plannedCapabilities:
+    - bank-reconciliation
+    - fixed-assets-depreciation
+    - multi-company-consolidation
+  ui:
+    basePath: /finance
+    package: '@gigalibs/financial-operations-web'
+    pages:
+      - route: /finance
+        component: FinancialOperationsWorkspace
+  api:
+    application: apps/api
+    port: 4790
+    upstream:
+      key: financial-operations
+      serviceHostname: module-host
+      environmentKey: FINANCIAL_OPERATIONS_API_URL
+      basePath: /financial-operations
+    version: v1
+  events:
+    emits:
+      - finance.journal.posted.v1
+      - finance.journal.reversed.v1
+      - finance.period.locked.v1
+    consumes:
+      - ar.invoice.issued.v1
+      - orders.fulfillment.dispatched.v1
+      - inventory.receipt.completed.v1
+      - inventory.stock.issued.v1
+      - platform.authorization.revoked.v1
+      - platform.organization.version.v1
+  identity:
+    protocol: signed-platform-context-v1
+    tenantClaimRequired: true
+    failClosed: true
+  database:
+    engine: postgresql
+    minimumVersion: '16'
+    ownsSchema: true
+    defaultSchema: gigalibs_finance
+    crossSchemaAccess: false
+    runtimeManifest: db/runtime-manifest.txt
+  runtime:
+    generated: true
+    hosting: host
+    appendOnlyTables: [audit_events]
+    readOnlyTables: [auth_revocation_events]
+  catalog:
+    - key: financial-operations
+      name: Financial Operations & General Ledger
+      navigationLabel: General Ledger & Finance
+      area: Financial Operations
+      navigationGroup: Financial Operations
+      route: /finance
+      iconKey: scale
+      readiness: PLANNED
+      maturity: CORE_IMPLEMENTED
+      entitlementEligible: true
+      trialEligible: false
+      requiredPermission: finance:read
+      platformInspection: true
+      reason: The module boundary is implemented under WI-OI-094 and remains PLANNED until live module conformance and independent review are recorded.
+      navigationOrder: 132
+      personas: [OPERATIONS_SUPERVISOR]
+      roles:
+        - key: chief-accountant
+          name: Chief Accountant
+          description: Oversees chart of accounts, fiscal periods, posted journals, immutable reversals, and financial reporting.
+          permissions: [finance:read, 'finance:books:manage', 'finance:coa:manage', 'finance:periods:manage', 'finance:journals:manage', 'finance:journals:post', 'finance:journals:reverse', 'finance:reports:view']
+        - key: financial-analyst
+          name: Financial Analyst
+          description: Analyzes trial balance, balance sheet, and income statement facts across fiscal periods.
+          permissions: [finance:read, 'finance:reports:view']
+        - key: staff-accountant
+          name: Staff Accountant
+          description: Enters and reviews double-entry general ledger journals and operational distributions.
+          permissions: [finance:read, 'finance:journals:manage', 'finance:reports:view']
+  gateway:
+    basePaths: [/api/financial-operations]
+    catalogKey: financial-operations
+    audience: gigalibs-financial-operations-api
+    upstream: financial-operations
+    signingKeyEnvironment: FINANCIAL_OPERATIONS_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64
+    codePrefix: FINANCIAL_OPERATIONS
+    routeNoun: Financial Operations
+    serviceName: Financial Operations & General Ledger
+    entitlementName: Financial Operations
+    routes:
+      - { path: 'v1/books', GET: finance:read, POST: 'finance:books:manage' }
+      - { path: 'v1/books/{id}', GET: finance:read }
+      - { path: 'v1/accounts', GET: finance:read, POST: 'finance:coa:manage' }
+      - { path: 'v1/accounts/{id}', GET: finance:read, PUT: 'finance:coa:manage' }
+      - { path: 'v1/fiscal-years', GET: finance:read, POST: 'finance:periods:manage' }
+      - { path: 'v1/fiscal-periods', GET: finance:read }
+      - { path: 'v1/fiscal-periods/{id}/status', PUT: 'finance:periods:manage' }
+      - { path: 'v1/journals', GET: finance:read, POST: 'finance:journals:post' }
+      - { path: 'v1/journals/{id}', GET: finance:read }
+      - { path: 'v1/journals/{id}/reverse', POST: 'finance:journals:reverse' }
+      - { path: 'v1/reports/trial-balance', GET: 'finance:reports:view' }
+      - { path: 'v1/reports/balance-sheet', GET: 'finance:reports:view' }
+      - { path: 'v1/reports/income-statement', GET: 'finance:reports:view' }

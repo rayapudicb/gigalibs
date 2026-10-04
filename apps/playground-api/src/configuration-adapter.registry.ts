@@ -12,6 +12,7 @@ import { ProductConfigurationAdapterV1 } from './catalogue/product-configuration
 import { InventoryConfigurationAdapterV1 } from './inventory/inventory-configuration.adapter.js';
 import { ProcurementConfigurationAdapterV1 } from './procurement/procurement-configuration.adapter.js';
 import { OrderConfigurationAdapterV1 } from './orders/order-configuration.adapter.js';
+import { FinancialConfigurationAdapterV1 } from './finance/financial-configuration.adapter.js';
 
 export const CONFIGURATION_ADAPTERS = Symbol('CONFIGURATION_ADAPTERS');
 
@@ -23,6 +24,7 @@ export function defaultConfigurationAdapters(): readonly ModuleConfigurationAdap
     new InventoryConfigurationAdapterV1(),
     new ProcurementConfigurationAdapterV1(),
     new OrderConfigurationAdapterV1(),
+    new FinancialConfigurationAdapterV1(),
   ]);
 }
 

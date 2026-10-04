@@ -15,6 +15,7 @@
     "@gigalibs/universal-inventory-api": "workspace:*",
     "@gigalibs/universal-procurement-api": "workspace:*",
     "@gigalibs/universal-orders-api": "workspace:*",
+    "@gigalibs/financial-operations-api": "workspace:*",
     "@nestjs/common": "^11.2.3",
     "@nestjs/core": "^11.2.3",
     "@nestjs/platform-express": "^11.2.3",

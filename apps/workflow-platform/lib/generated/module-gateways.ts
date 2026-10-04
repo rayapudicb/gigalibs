@@ -25,6 +25,120 @@ export interface GeneratedModuleGateway {
   }[];
 }
 export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGateway>> = {
+  "financial-operations": {
+    "module": "financial-operations",
+    "basePaths": [
+      "/api/financial-operations"
+    ],
+    "catalogKey": "financial-operations",
+    "audience": "gigalibs-financial-operations-api",
+    "upstream": "financial-operations",
+    "signingKeyEnvironment": "FINANCIAL_OPERATIONS_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64",
+    "codePrefix": "FINANCIAL_OPERATIONS",
+    "routeNoun": "Financial Operations",
+    "serviceName": "Financial Operations & General Ledger",
+    "entitlementName": "Financial Operations",
+    "routes": [
+      {
+        "template": "v1/books",
+        "pattern": "^v1/books$",
+        "methods": {
+          "GET": "finance:read",
+          "POST": "finance:books:manage"
+        }
+      },
+      {
+        "template": "v1/books/{id}",
+        "pattern": "^v1/books/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "GET": "finance:read"
+        }
+      },
+      {
+        "template": "v1/accounts",
+        "pattern": "^v1/accounts$",
+        "methods": {
+          "GET": "finance:read",
+          "POST": "finance:coa:manage"
+        }
+      },
+      {
+        "template": "v1/accounts/{id}",
+        "pattern": "^v1/accounts/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "GET": "finance:read",
+          "PUT": "finance:coa:manage"
+        }
+      },
+      {
+        "template": "v1/fiscal-years",
+        "pattern": "^v1/fiscal-years$",
+        "methods": {
+          "GET": "finance:read",
+          "POST": "finance:periods:manage"
+        }
+      },
+      {
+        "template": "v1/fiscal-periods",
+        "pattern": "^v1/fiscal-periods$",
+        "methods": {
+          "GET": "finance:read"
+        }
+      },
+      {
+        "template": "v1/fiscal-periods/{id}/status",
+        "pattern": "^v1/fiscal-periods/[0-9a-fA-F-]{36}/status$",
+        "methods": {
+          "PUT": "finance:periods:manage"
+        }
+      },
+      {
+        "template": "v1/journals",
+        "pattern": "^v1/journals$",
+        "methods": {
+          "GET": "finance:read",
+          "POST": "finance:journals:post"
+        }
+      },
+      {
+        "template": "v1/journals/{id}",
+        "pattern": "^v1/journals/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "GET": "finance:read"
+        }
+      },
+      {
+        "template": "v1/journals/{id}/reverse",
+        "pattern": "^v1/journals/[0-9a-fA-F-]{36}/reverse$",
+        "methods": {
+          "POST": "finance:journals:reverse"
+        }
+      },
+      {
+        "template": "v1/reports/trial-balance",
+        "pattern": "^v1/reports/trial-balance$",
+        "methods": {
+          "GET": "finance:reports:view"
+        }
+      },
+      {
+        "template": "v1/reports/balance-sheet",
+        "pattern": "^v1/reports/balance-sheet$",
+        "methods": {
+          "GET": "finance:reports:view"
+        }
+      },
+      {
+        "template": "v1/reports/income-statement",
+        "pattern": "^v1/reports/income-statement$",
+        "methods": {
+          "GET": "finance:reports:view"
+        }
+      }
+    ],
+    "transformBody": null,
+    "unavailable": []
+  },
   "gigaops": {
     "module": "gigaops",
     "basePaths": [

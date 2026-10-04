@@ -242,6 +242,9 @@ export const generatedModulePersonas: Readonly<Record<string, readonly PlatformC
   "tax-configuration": [
     "C_LEVEL"
   ],
+  "financial-operations": [
+    "OPERATIONS_SUPERVISOR"
+  ],
   "multi-currency": [
     "C_LEVEL"
   ],

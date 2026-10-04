@@ -7,7 +7,15 @@ packages:
   - modules/gigaops/apps/api
   - modules/physical-operations-cmms/apps/api
   - modules/physical-operations-cmms/web
+  - modules/product-catalogue/apps/api
+  - modules/product-catalogue/web
   - modules/universal-connector-hub/apps/api
+  - modules/universal-inventory/apps/api
+  - modules/universal-inventory/web
+  - modules/universal-orders/apps/api
+  - modules/universal-orders/web
+  - modules/universal-procurement/apps/api
+  - modules/universal-procurement/web
   - packages/analytics-charts
   - packages/analytics-core
   - packages/audit-core

@@ -22,6 +22,13 @@ export const generatedModuleUpstreams = {
     "serviceHostname": "connector-hub-api",
     "basePath": ""
   },
+  "financial-operations": {
+    "module": "financial-operations",
+    "environmentKey": "FINANCIAL_OPERATIONS_API_URL",
+    "port": "4790",
+    "serviceHostname": "module-host",
+    "basePath": "/financial-operations"
+  },
   "geospatial": {
     "module": "geospatial",
     "environmentKey": "GEOSPATIAL_API_URL",

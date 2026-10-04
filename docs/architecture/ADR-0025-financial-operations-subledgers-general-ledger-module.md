@@ -1,6 +1,6 @@
 # ADR-0025: Financial Operations, Subledgers, and General Ledger Integration — Ownership, Immutability, and Metadata Architecture
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-10-04
 - **Work item:** WI-OI-094
 - **Depends on:** ADR-0002, ADR-0013, ADR-0016, ADR-0018, ADR-0019, ADR-0020, ADR-0021, ADR-0022, ADR-0023, ADR-0024
@@ -96,12 +96,12 @@ Ingests upstream events from operational domains into balanced journal facts:
   - Triggered by `procurement.bill.posted.v1`.
   - Debits: Expense or Inventory Accrual (GRNI - Goods Received Not Invoiced).
   - Credits: Accounts Payable Control Account.
-- **Accounts Receivable (AR) Ingestion (Phase 7):**
-  - Triggered by `orders.invoice.issued.v1`.
+- **Accounts Receivable (AR) Ingestion (Phase 7 / AR Canonical):**
+  - Triggered by `ar.invoice.issued.v1` (per ADR-0026 / WI-OI-113).
   - Debits: Accounts Receivable Control Account.
   - Credits: Revenue Account / Sales Tax Payable.
 - **Inventory Receipts Costing Ingestion (Phase 5):**
-  - Triggered by `inventory.receipt.confirmed.v1`.
+  - Triggered by `inventory.receipt.completed.v1`.
   - Debits: Inventory Asset Account.
   - Credits: Inventory GRNI Clearing Account.
 
