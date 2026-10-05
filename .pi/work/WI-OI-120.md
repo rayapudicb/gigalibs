@@ -698,3 +698,39 @@ removed.
   - all CMMS tables have permissive tenant policies;
   - the tree query runs cleanly as `gigalibs_cmms_runtime` for GigaLibs Global Enterprise and returns 0 spaces.
   - The on-screen symptom is awaited from the owner.
+
+### F0.4 Metadata window (renderer)
+
+- `packages/configuration-react/src/window/`. Exported as `MetadataWindow`, `createRecordClient`,
+  `usePublishedManifest` and `metadataWindowModel`.
+- **`window-model.ts`:** pure, unit-tested window logic:
+  - the LIST view and its main tab;
+  - level-1 child tabs, linked by the declared relationship's foreign-key field;
+  - deny by default: fields without read permission are not drawn, fields without write permission are read-only;
+  - visibility, read-only and required rules;
+  - value lists and lookup resolvers;
+  - actions shown only on their own entity (handler `<entity>.<action>`), when permitted and visible for the record;
+  - exact decimals sent as strings, with their scale checked;
+  - only changed, writable values sent on an update;
+  - API failures as user-facing states.
+- **`record-client.ts`:** calls the module's signed gateway (`/api/<module>/v1/records/...`). It sends a UUID
+  `Idempotency-Key`, made once per form so a retry cannot save twice, and `If-Match` with the version read. Lookups
+  can be served by another module's gateway.
+- **`use-published-manifest.ts`:** loads only the tenant's published manifest for the surface. Missing (404), refused
+  (403) and empty answers are shown as such, never a built-in copy.
+- **`MetadataWindow.tsx`:**
+  - a record list with search, sort and paging;
+  - a create form;
+  - the record view with edit, action buttons (with confirmation) and child tabs that list and create child records;
+  - states: loading, empty, refused, not found, changed by someone else (412), unavailable.
+  - ui-* design tokens only: the design-token audit finds no violations, and every token used exists in the Medusa
+    preset.
+- **Tests:** `apps/workflow-platform/__tests__/metadata-window.test.tsx`, 10 tests (model, client, manifest states, render), through the package's public exports. On-screen interaction is
+  proven by F0.5's Playwright flow on Inventory.
+- Checks:
+  - full `pnpm test` 2,542 passed, 188 skipped;
+  - `pnpm verify` passes (known drift; 8 proofs NOT RUN);
+  - the web app type-checks.
+  - The first verify run failed twice on my own test file: the package build compiled the test and found two typing
+    mistakes, and the dependency audit refused its undeclared `react-dom` and `vitest` imports. Both were fixed by
+    correcting the test and moving it to the web app's tests; no dependency was added.

@@ -539,3 +539,17 @@ export {
   type DictionaryRendererProps,
 } from './DictionaryRenderer.js';
 
+
+// WI-OI-120f (F0.4, ADR-0033 D1): one metadata window for every module.
+export { MetadataWindow, type MetadataWindowProps } from './window/MetadataWindow.js';
+export {
+  createRecordClient,
+  RecordClientError,
+  type LookupOption,
+  type RecordClient,
+  type RecordClientOptions,
+  type RecordListRequest,
+  type RecordPage,
+} from './window/record-client.js';
+export { manifestState, manifestUrl, usePublishedManifest, type ManifestSurface, type PublishedManifestState } from './window/use-published-manifest.js';
+export * as metadataWindowModel from './window/window-model.js';

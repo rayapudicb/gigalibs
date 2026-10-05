@@ -1,6 +1,6 @@
 # WI-OI-120f (F0): metadata-governed windows, proven on Inventory
 
-- **Status:** Approved (owner, 2026-10-05). F0.1 `424a733`, F0.2 `cda291e` committed and deployed; F0.3 implemented, awaiting commit; next F0.4.
+- **Status:** Approved (owner, 2026-10-05). F0.1 `424a733`, F0.2 `cda291e` (deployed), F0.3 `d274976` committed; F0.4 implemented, awaiting commit; next F0.5 (Inventory).
 - **Owner decisions (2026-10-05):**
   - A module's baseline dictionary activates automatically when the module is enabled for a tenant; a tenant's own
     published version stays in force, and customised tenants are told to review baseline changes.
