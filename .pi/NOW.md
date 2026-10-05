@@ -1,6 +1,6 @@
 # NOW: where the work stands
 
-Updated 2026-10-05 (WI-OI-120a U1: part A committed `03ebd0c`; part B deployed 04:57Z for every module except CMMS). Keep this file
+Updated 2026-10-05 (`5ceba59` — U1b, U2, U3.1 — deployed to the UAT instance at 09:08Z). Keep this file
 to one page. Replace old content rather than appending to it, and update it at the end of every task.
 
 ## State
@@ -12,15 +12,17 @@ to one page. Replace old content rather than appending to it, and update it at t
   no product changes or gate upgrades. Distinguishes recorded deployment from local U2 work.
 - **Goal now (owner, 2026-10-05):** every module, Phases 1–14 and the enhancements included, fixed and visible for
   UAT on the existing local instance. Nothing is hidden or removed. UAT data is entered by Playwright business flows.
-- **WI-OI-120d (U3.1 SCIM): Review.** Implementation and 27 targeted tests pass, including isolated PostgreSQL
-  proof. Full `pnpm verify` passes (known drift; eight unrelated proofs NOT RUN). Uncommitted/undeployed;
-  independent Security/QA review pending, P0-06 not closed. Evidence: `.pi/work/WI-OI-120.md` U3.1.
+- **WI-OI-120d (U3.1 SCIM): Review, committed `5ceba59`** after the primary session's review (owner "commit",
+  2026-10-05). SCIM tests 21 passed/6 skipped; full `pnpm test` 2,467 passed/171 skipped. Deployed 09:08Z.
+  P0-06 stays open until the independent Security review (D7). Residual P2: a custom role holding
+  `users:create`/`users:update` can assign TENANT_ADMIN. Evidence: `.pi/work/WI-OI-120.md` U3.1.
+- **One writer:** the owner chose this session (option 1, 2026-10-05); the peer session was told.
 - **U1 remaining recovery/deployment work:**
   - **Part A is committed (`03ebd0c`).** Evidence: `.pi/work/WI-OI-120.md`.
     - Lockfile fixed: the frozen install passes.
     - Finance migration 7 in its runtime list; compose regenerated; new check for this class of defect.
     - Workforce ledger repair migration 000026.
-    - UAT visibility setting `GIGALIBS_UAT_PREVIEW`, with menu labels and a banner.
+    - UAT visibility setting `GIGALIBS_UAT_PREVIEW` (its menu labels and banner were later removed, owner request).
     - Finance proofs refuse the UAT database; `verify` shows them as NOT RUN.
     - `pnpm build`, `pnpm test` (2,431 passed) and the static audits pass.
   - **Open:**
@@ -29,35 +31,35 @@ to one page. Replace old content rather than appending to it, and update it at t
     - part B: deployed on 2026-10-05 (see below). Still open: the CMMS correction and the Playwright smoke test
       (needs a UAT tenant administrator login).
 
-- **WI-OI-120b (U1b, design standard)** approved 2026-10-05, in progress.
+- **WI-OI-120b (U1b, design standard)** approved 2026-10-05; deployed 09:08Z.
   - Done: the design-token check (ratchet; 5,316 → 4,366 hard-coded colours) and Tailwind now scanning module packages.
   - Restyled to tokens: Catalogue, Parties, Application Dictionary and the form renderer.
   - Medusa component swaps move to U5–U7.
-  - Not deployed yet; it goes out with the next deploy.
-- **WI-OI-120c (U2):** committed as `220508e`; tracked worktree clean at handoff. Isolated migration versions
-  3/3/3/8 and HTTP proof recorded; UAT deployment remains pending. Full request-level idempotency remains deferred.
+- **WI-OI-120c (U2):** committed as `220508e`, deployed 09:08Z (ledgers 3/3/3/8 on the UAT instance). Proven by the
+  isolated HTTP proof; not yet exercised on the UAT instance (entitlements). Full request-level idempotency deferred.
 - **Module status board for testers:** `docs/audits/2026-10-04-production-readiness/uat-module-status.md` (what works,
   what does not, what is not deployed, and the plan to UAT and to production).
 
-## What is running locally (UAT instance, deployed 2026-10-05 04:57Z)
+## What is running locally (UAT instance, deployed 2026-10-05 09:08Z)
 
-- Release `03ebd0c366b6-ff554c98771d` (commit `03ebd0c`). The owner ran the deploy; record in
-  `infra/compose/evidence/wi-oi-120a-20261005T045500Z/` (local).
-  - Healthy: web, control-plane API, kernel worker, Analytics, Geospatial, Connector Hub, Workforce (running again,
-    migration 26) and the module host with Catalogue, Inventory, Orders, Procurement and Finance (Finance for the
-    first time, migration 7).
-  - `GIGALIBS_UAT_PREVIEW=enabled`: every module is listed with its UAT label.
-  - Rollback: release `007e686bebee-c1746f0b541b` plus backup `gigalibs_backup_20261005_042254Z`.
+- Release `5ceba59d0963-b53e290e718f` (commit `5ceba59`: U1b, U2, U3.1). The owner ran the deploy; record in
+  `infra/compose/evidence/wi-oi-120c-20261005T090556Z/` (local).
+  - Healthy: web, control-plane API, kernel worker, Analytics, Geospatial, Connector Hub, Workforce (26) and the
+    module host with Catalogue (1), Inventory (3), Orders (3), Procurement (3) and Finance (8).
+  - `GIGALIBS_UAT_PREVIEW=enabled`: every module is listed, without UAT labels.
+  - Rollback: release `03ebd0c366b6-ff554c98771d` plus backup `gigalibs_backup_20261005_084054Z`.
+- **No tenant holds the Catalogue, Inventory, Procurement, Orders or Finance entitlement** (read-only check after the
+  deploy), so those screens still answer 403 and U2 is not yet exercised on this instance.
 - **CMMS is still down** (old image, ledger 16). Migrations 000017–000019 need the correction the session was not
   permitted to make.
-- Known at runtime: U2 fixes (revocation-schema mismatch P1-02, replica RLS P1-18, idempotency P1-23) are committed and ready for deployment.
 - Unattributed proof data from earlier proof runs (including the audit's own run) is still in the database (D5).
 
 ## Next
 
-1. Independently review `.pi/tasks/WI-OI-120d.md` — U3.1 SCIM repair (P0-06), then owner authorizes commit.
-   Other U3 security findings need separate approved cards; independent review precedes defect closure.
-2. Owner: run deploy when ready to promote U2 images to the local UAT instance.
+1. Owner: grant Catalogue, Inventory, Procurement, Orders and Finance to the UAT tenant in Platform Control Tower;
+   then a signed-in check of each module's API on this instance.
+2. Next U3 slices (P0-04, P0-05, P0-07, P0-08, P0-10, P1-20) each on an approved card; independent Security
+   review before any defect closes.
 3. Then U4–U6 (Dictionary & Master Data hardening), U7–U18 (module by module Playwright flows). Plan:
    `docs/audits/2026-10-04-production-readiness/remediation-backlog.md`.
 

@@ -368,3 +368,26 @@ the named human Security review that production requires.
     needs its test database; the authoring session reports 27/27 with it);
   - `pnpm install --frozen-lockfile` succeeds;
   - the deployment profile shows the known drift only (`rbac-core` is in the image workspace).
+
+## Deploy of `5ceba59` (U1b, U2, U3.1) to the UAT instance (2026-10-05 09:05–09:08Z)
+
+- Images built by the primary session from commit `5ceba59` (tag `5ceba59d0963-b53e290e718f`), 07:59–08:42Z.
+  - The first module-image attempt failed on a transient npm-registry error and was rebuilt unchanged.
+  - The first Workforce attempt stopped on stale image names in three local env files; the source-identity refresh
+    was re-run.
+- Backup before the deploy: `gigalibs_backup_20261005_084054Z` (checksum OK, 20 module schemas), labelled with the
+  running release `03ebd0c366b6-ff554c98771d`.
+- The owner ran `deploy-u1.sh`. All migrations jobs exited 0. Inventory, Orders and Procurement are now at 3, Finance
+  at 8. Nine services are healthy on the new tag.
+- Read-only re-check:
+  - the revocation columns exist in all four modules (P1-02);
+  - Finance's three `org_replica_*` tables force row-level security (P1-18);
+  - `uq_gl_journals_source_document` exists (P1-23);
+  - no error-level log lines since 09:06Z.
+- Full record: `infra/compose/evidence/wi-oi-120c-20261005T090556Z/README.md` (local; git-ignored).
+- Open:
+  - the five ERP entitlements (owner, Platform Control Tower), after which U2 can be exercised on this instance;
+  - CMMS (000017–000019 correction);
+  - Playwright smoke (UAT administrator login);
+  - independent Security review of U3.1 before P0-06 closes.
+- Rollback: tag `03ebd0c366b6-ff554c98771d` plus that backup. The disk guard removed the other `007e686…` images.

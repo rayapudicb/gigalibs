@@ -13,18 +13,18 @@ and the status of each item today.
 
 | Fact | Evidence |
 | --- | --- |
-| The UAT instance runs release `03ebd0c366b6-ff554c98771d` (U1), deployed 04:55–04:57Z by the owner | `infra/compose/evidence/wi-oi-120a-20261005T045500Z/README.md` (local); `docker ps` re-check |
-| U2 (`220508e`) is committed but **not deployed**. Inventory, Orders, Procurement and Finance therefore still reject signed-in calls on the UAT instance. | Running images are `03ebd0c…`; U2 images not built |
+| The UAT instance runs release `5ceba59d0963-b53e290e718f` (U1b, U2 and U3.1), deployed 09:05–09:08Z by the owner; ledgers Inventory 3, Orders 3, Procurement 3, Finance 8 | `infra/compose/evidence/wi-oi-120c-20261005T090556Z/README.md` (local); read-only re-check |
+| U2's fixes are proven on an isolated database (39 HTTP checks) but not yet exercised on the UAT instance, because no tenant holds the ERP entitlements | `public.tenant_module_entitlements` (read-only) |
 | CMMS is down (old image, ledger 16); the correction of migrations 000017–000019 awaits the owner | `docker ps -a`; `gigalibs_cmms.schema_migrations` |
 | No tenant holds the Catalogue, Inventory, Procurement, Orders or Finance entitlement, hence "HTTP 403" | `public.tenant_module_entitlements` (read-only) |
 | Thirteen modules have no running backend (nothing listens on their host ports) | `uat-module-status.md` |
-| A second agent session committed U2 and has uncommitted U3.1 (SCIM) work in Review | `git status`; `.pi/tasks/WI-OI-120d.md` |
+| A second agent session committed U2 and wrote U3.1 (SCIM). The owner chose the primary session as the only writer; U3.1 was reviewed and committed as `5ceba59` | `git log`; `.pi/work/WI-OI-120.md` |
 
 ## 2. What QA needs before testing starts
 
 | Need | Status | What closes it |
 | --- | --- | --- |
-| A stable environment running a recorded, immutable release | **Partly.** UAT runs U1; U2 not deployed; CMMS down | Owner deploys U2 (and CMMS after its correction); record digests and migration versions |
+| A stable environment running a recorded, immutable release | **Partly.** UAT runs `5ceba59` with recorded migration versions; CMMS down | CMMS after its correction; record image digests at each deploy |
 | Tester accounts per role in a clearly named UAT tenant, with entitlements | **Missing.** No ERP entitlements granted; no role accounts listed | U28: UAT tenant, roles (admin, buyer, approver, warehouse, sales, accountant, controller, technician, worker), entitlements, credentials handed over securely |
 | Test data entered through the application | **Missing** | Playwright business flows per module card (U4–U21); no SQL seeding |
 | Test cases per action with expected outcomes | **Partly.** Expected outcomes exist (`docs/architecture/MODULE_ACTION_OUTCOMES.md`) but no test cases | Each module card ships its manual test script and Playwright flow from its section of the spec |
@@ -32,7 +32,7 @@ and the status of each item today.
 | Known-issues list per module | **Ready.** `uat-module-status.md` | Keep it current at every deploy |
 | Entry and exit criteria | **Missing** | U28: entry = module card done and deployed, entitlement granted, data flow green; exit = every action in the module's spec section passes and no open P0/P1 |
 | Defect process (severity, owner, fix and re-test) | **Missing** | U28: defect list that names the action, the expected outcome from the spec, steps and evidence |
-| Automated regression | **Partly.** Unit tests (2,446), U2 module-host HTTP proof (39 checks), Playwright smoke (36 checks, needs a UAT admin login) | Browser-level business flows per card; run on every deploy |
+| Automated regression | **Partly.** Unit tests (2,467), U2 module-host HTTP proof (39 checks), Playwright smoke (36 checks, needs a UAT admin login) | Browser-level business flows per card; run on every deploy |
 | Accessibility, performance and security test scope | **Missing for the ERP modules** | Per card: WCAG 2.2 AA checks on its screens; U3 negative security tests; volume tests before production |
 
 **Ready for QA now:** Organization administration (Phase 1), as a traced flow. **Not ready:** every ERP module
@@ -58,10 +58,9 @@ and the status of each item today.
 
 ## 4. Order of work
 
-1. **One writer.** Two agent sessions are active in this repository. Repository rules allow one writer at a time;
-   the owner chooses which session continues.
-2. **Deploy U2 and grant entitlements.** Owner runs the deploy, and grants the five ERP entitlements to the UAT
-   tenant.
+1. **One writer.** Done: the owner chose the primary session (2026-10-05).
+2. **Deploy U2 and grant entitlements.** Deploy done (09:08Z). Still open: the owner grants the five ERP
+   entitlements to the UAT tenant.
 3. **CMMS.** Owner approves the correction of migrations 000017–000019 (or runs it); then deploy CMMS.
 4. **U3 security slices** (P0-06 in Review, then P0-04, P0-05, P0-07, P0-08, P1-20); independent Security review.
 5. **F0, F1 and F2** (revised ADR-0033): metadata-governed screens, lifecycle primitives, asynchronous idempotent

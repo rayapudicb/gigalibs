@@ -1,7 +1,7 @@
 # UAT module status board and plan to production
 
-- **Instance:** the owner's UAT instance (web http://127.0.0.1:5180), release `03ebd0c366b6-ff554c98771d`, deployed
-  2026-10-05 04:57Z.
+- **Instance:** the owner's UAT instance (web http://127.0.0.1:5180), release `5ceba59d0963-b53e290e718f` (U1b, U2
+  and U3.1), deployed 2026-10-05 09:08Z. Previous release `03ebd0c366b6-ff554c98771d` is the rollback.
 - **Production release verdict:** NO-GO.
 - **How each status was established:**
   - running services: `docker ps`;
@@ -60,12 +60,12 @@ labels on 2026-10-05, so this board is where testers see each module's status. *
 | Organization (Settings) | 1 / 109 | REVIEW | Working | Traced end to end in the audit. | U4 (verify) |
 | Application Dictionary | 2 / 110 | REVIEW | Partly working | See Configuration Studio. | U1b, U5 |
 | Core Parties | 3 / 111 | REVIEW | Partly working | No edit controls; no committed role grants `parties:*`; breaks the design standard. | U1b, U6 |
-| Products & Catalogues | 4 / 112 | PLANNED | Not working | "HTTP 403": no tenant holds the entitlement. After the grant, creating fails because the proxy drops `Idempotency-Key` (P1-23). Breaks the design standard (the owner's screenshot). | Grant now, U1b, U2, U7 |
-| Inventory & Warehouses | 5 / 091 | PLANNED | Not working | The screen shows hard-coded figures and simulates barcodes. The API rejects signed-in calls (revocation table mismatch, P1-02). No entitlement granted. | U2, U8 |
-| Procurement & Payables | 6 / 092 | PLANNED | Not working | Hard-coded figures, `default-tenant`; same API rejection; no budget or approval enforcement (P1-06). | U2, U9 |
-| Orders & Fulfillment | 7 / 093 | PLANNED | Not working | Hard-coded figures, `default-tenant`; same API rejection; second partial allocation always fails (P1-09). | U2, U10 |
+| Products & Catalogues | 4 / 112 | PLANNED | Not working | "HTTP 403": no tenant holds the entitlement. The proxy now forwards `Idempotency-Key` and the screen is restyled to the design standard (U2, U1b, both deployed 09:08Z); not yet exercised here because no tenant holds the entitlement. | Grant now, U7 |
+| Inventory & Warehouses | 5 / 091 | PLANNED | Not working | The screen shows hard-coded figures and simulates barcodes. The revocation-table fix (P1-02) is deployed (migration 3) and proven on an isolated database; not yet exercised here. No entitlement granted. | Grant now, U8 |
+| Procurement & Payables | 6 / 092 | PLANNED | Not working | Hard-coded figures, `default-tenant`; the API fix is deployed (migration 3) but not yet exercised here; no budget or approval enforcement (P1-06). | Grant now, U9 |
+| Orders & Fulfillment | 7 / 093 | PLANNED | Not working | Hard-coded figures, `default-tenant`; the API and second-partial-allocation fixes are deployed (migration 3) but not yet exercised here. | Grant now, U10 |
 | Convergence (events between modules) | 113 | — | Not working | No relay or consumer runs for any ERP event (P1-04). | U22 |
-| General Ledger & Finance (Phases 8–14: GL, treasury, fixed assets, consolidation, costing, budgeting, close) | 8–14 / 094, 095, 114–118 | PLANNED | **Not working** | **All finance screens show hard-coded figures.** The API now runs (first time) but rejects signed-in calls (P1-02). Costing, consolidation, budgeting and close commands fail on their event writes, and costing/consolidation can leave orphan journals (P0-09, P1-03). | U2, U12–U18 |
+| General Ledger & Finance (Phases 8–14: GL, treasury, fixed assets, consolidation, costing, budgeting, close) | 8–14 / 094, 095, 114–118 | PLANNED | **Not working** | **All finance screens show hard-coded figures.** U2 is deployed (migration 8): signed-in calls, event writes, one transaction per journal and its event, journal idempotency and replica row security, all proven on an isolated database (39 HTTP checks) but not yet exercised here. | Grant now, U12–U18 |
 
 ### Modules whose backend is not deployed on this instance
 
@@ -115,9 +115,9 @@ Order matters: each stage unblocks the next. One card at a time; each card is sh
 | --- | --- | --- |
 | Now | **Owner action** | Grant the five new modules to the UAT tenant in Platform Control Tower |
 | 1 | **U1 finish** | CMMS correction applied, then CMMS deployed; Playwright smoke with a UAT administrator login |
-| 2 | **U1b** (approved 2026-10-05) | Design-standard check added; Catalogue, Parties, Application Dictionary and the form renderer restyled |
-| 3 | **U2** | Inventory, Orders, Procurement and Finance APIs accept signed-in calls; event writes and journal transactions fixed; proxy forwards `Idempotency-Key`/`If-Match` |
-| 4 | **U3** | Security defects closed (SCIM, webhooks, caller-chosen tenants, rule kernel, login lockout, renderer) |
+| 2 | **U1b** (deployed 2026-10-05 09:08Z) | Design-standard check added; Catalogue, Parties, Application Dictionary and the form renderer restyled |
+| 3 | **U2** (deployed 2026-10-05 09:08Z) | Inventory, Orders, Procurement and Finance APIs accept signed-in calls; event writes and journal transactions fixed; proxy forwards `Idempotency-Key`/`If-Match`. To be exercised here once the entitlements are granted |
+| 4 | **U3** | Security defects closed (SCIM, webhooks, caller-chosen tenants, rule kernel, login lockout, renderer). U3.1 (SCIM, P0-06) deployed 09:08Z; it closes after the independent Security review |
 | 5 | **U29** | The 13 not-deployed modules run as services in this instance's compose stack, with signed platform context, or the owner decides to retire one |
 | 6 | **U4–U21** | Each module's screens on real data, every button working or explained, design standard applied, and a Playwright business flow that enters its UAT data |
 | 7 | **U22–U23** | Modules work together: events, one invoice owner, budget and period-lock enforcement, costing; journey flows (procure-to-pay, order-to-cash and others) |
