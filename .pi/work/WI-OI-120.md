@@ -638,3 +638,63 @@ removed.
 - Checks for both changes: full `pnpm test` 2,518 passed, 184 skipped; `pnpm verify` passes (known drift; 8 proofs
   NOT RUN). The next deploy brings CMMS back (migrations 17–19, then its service) and gives tenant admins the ERP
   modules.
+
+## Deploy of `996abae` to the UAT instance (2026-10-05 13:03–13:05Z)
+
+- The owner ran `deploy-u1.sh`, which now includes CMMS. CMMS migrations 16 → 19, and `cmms-api` healthy: CMMS runs
+  again.
+- Also live:
+  - tenant administrators hold the five licensed ERP modules' permissions and `parties:*`;
+  - F0.1 and F0.2 (no module ships windows yet).
+- Read-only re-check:
+  - ten services healthy;
+  - the six new CMMS tables have PERMISSIVE tenant policies;
+  - no error-level logs.
+- Record: `infra/compose/evidence/wi-oi-120-20261005T130319Z/README.md` (local). Backup
+  `gigalibs_backup_20261005_130000Z`; rollback `828b75af9a28-af904a40a84c`.
+
+### F0.3 Record dispatcher on the module SDK
+
+- **`RecordDispatcher`** (`packages/module-sdk/src/record-dispatcher.ts`): every list, read, create, update, action
+  and lookup goes to a typed adapter that the module registers and that calls its own domain service (ADR-0019 tenet
+  11). Action buttons bind only to registered actions (tenet 13). The dispatcher enforces:
+  - each entity's permission per operation, from the signed principal;
+  - field permissions: undeclared fields are never returned, unreadable ones are left out, and unknown, system-set or
+    unpermitted writes are refused (400/403);
+  - declared search, filter and sort fields only, with pages of at most 100 rows;
+  - `If-Match` on updates (428 when missing, 412 when stale);
+  - an `Idempotency-Key` UUID on creates and actions: a repeat returns the first answer, a different body under the
+    same key gets 409, and a failed request releases its key.
+- **`ModuleIdempotencyStore`**: keys live in each module's own `record_idempotency` table, under forced RLS. A claim
+  abandoned for more than 10 minutes can be taken over.
+- **`createRecordController`**: the six routes under `v1/records` and `v1/lookups`. The module's signed-context guard
+  checks the entitlement and the module's read permission as the floor. Updates and reads return the version as an
+  `ETag`.
+- **Gateway generator:** `spec.gateway.records: true` adds the record routes to the web gateway, with the catalogue
+  entry's read permission. The new `{entity}` and `{key}` path placeholders take dictionary entity keys and
+  action/lookup keys.
+- **Tests:**
+  - `record-dispatcher.test.ts`: 11 tests (idempotent create and replay, field visibility and write refusal, tenant
+    separation, permissions, If-Match, query allow-list, actions, release on failure, lookups, misconfiguration).
+  - `record-idempotency.integration.test.ts`: 4 tests on PostgreSQL 16, as a restricted role under forced RLS (claim
+    and replay, release, abandoned-claim takeover, tenant separation), on the throwaway server.
+  - `apps/module-host/src/record-routes.http.test.ts`: 3 tests over real HTTP (201 and ETag, replay, 412 and 428, the
+    guard floor and entity permissions, tenant separation).
+- Checks: full `pnpm test` 2,532 passed, 188 skipped (the PostgreSQL proofs skip without their test database);
+  `pnpm verify` passes (known drift; 8 proofs NOT RUN). No module mounts the record routes yet: Inventory is first,
+  in F0.5.
+
+### Incident: local CMMS signing key shown in session output (2026-10-05 ~13:30Z)
+
+- While diagnosing `/cmms/spaces`, a session command meant to mask environment values failed to match
+  `CMMS_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64` (its name contains digits). The value of the UAT instance's CMMS
+  platform-context signing key was printed in the session output.
+- Scope: local UAT instance only; the key never left the machine apart from the session transcript.
+- Recommendation: rotate the key pair (web private key, CMMS public key) and redeploy. This is the owner's decision,
+  recorded with D6.
+- The session no longer prints environment values with that masking pattern.
+- `/cmms/spaces`:
+  - CMMS answers on `cmms-api:4200`, and the spaces route refuses unsigned calls (401);
+  - all CMMS tables have permissive tenant policies;
+  - the tree query runs cleanly as `gigalibs_cmms_runtime` for GigaLibs Global Enterprise and returns 0 spaces.
+  - The on-screen symptom is awaited from the owner.

@@ -81,3 +81,21 @@ export {
   type OrganizationClaim,
   type OwnershipPolicy,
 } from './organization-access.js';
+// WI-OI-120f (F0.3, ADR-0033 D1): the record dispatcher behind every metadata window.
+export {
+  RecordDispatcher,
+  RecordVersionConflict,
+  type IdempotencyEntry,
+  type IdempotencyStore,
+  type LookupOption,
+  type LookupResolver,
+  type RecordAction,
+  type RecordAdapter,
+  type RecordCommandContext,
+  type RecordFieldPolicy,
+  type RecordListQuery,
+  type RecordPage,
+  type RecordValues,
+} from './record-dispatcher.js';
+export { ModuleIdempotencyStore, RECORD_IDEMPOTENCY_TABLE } from './record-idempotency.js';
+export { createRecordController, RECORD_DISPATCHER } from './record-controller.js';

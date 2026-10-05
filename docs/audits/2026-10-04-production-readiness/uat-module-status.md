@@ -1,7 +1,8 @@
 # UAT module status board and plan to production
 
-- **Instance:** the owner's UAT instance (web http://127.0.0.1:5180), release `828b75af9a28-af904a40a84c` (U1b, U2,
-  U3.1 and U3.2), deployed 2026-10-05 11:57Z. Previous release `5ceba59d0963-b53e290e718f` is the rollback.
+- **Instance:** the owner's UAT instance (web http://127.0.0.1:5180), release `996abae3f65a-cf90c743456c` (U1b, U2,
+  U3.1, U3.2, F0.1, F0.2, CMMS correction, tenant-admin ERP access), deployed 2026-10-05 13:05Z. Previous release
+  `828b75af9a28-af904a40a84c` is the rollback.
 - **Production release verdict:** NO-GO.
 - **How each status was established:**
   - running services: `docker ps`;
@@ -47,7 +48,7 @@ labels on 2026-10-05, so this board is where testers see each module's status. *
 
 | Module (menu) | Readiness | Status | Why | Fixed by |
 | --- | --- | --- | --- | --- |
-| EAM Operations Console (CMMS) | REVIEW | **Not working** | The service is down: migration 000017 uses an undefined type and 000017–000019 lack ledger rows. The correction is tested but awaits the owner. After it, 37 screen calls still have no route (P1-26). | U1 (CMMS), U19 |
+| EAM Operations Console (CMMS) | REVIEW | Partly working | Running again since 13:05Z (migrations 000017–000019 corrected: type, tenant policies, ledger rows). 37 screen calls still have no route (P1-26); not yet re-tested on screen. | U19 |
 | Universal Workforce & Payroll (GigaOps) | REVIEW | Partly working | Workforce runs again (migration 26). `/wfo/*` screens have no route; GigaOps › Time shows static data (P0-03); the offline punch queue is not per user (P1-25). | U20, U3 |
 | Geospatial & OSM Studio | REVIEW | Working *(not re-verified)* | — | U28 |
 | Universal Analytics Studio and Reports | REVIEW | Working *(not re-verified)* | — | U28 |
@@ -60,7 +61,7 @@ labels on 2026-10-05, so this board is where testers see each module's status. *
 | Organization (Settings) | 1 / 109 | REVIEW | Working | Traced end to end in the audit. | U4 (verify) |
 | Application Dictionary | 2 / 110 | REVIEW | Partly working | See Configuration Studio. | U1b, U5 |
 | Core Parties | 3 / 111 | REVIEW | Partly working | No edit controls; no committed role grants `parties:*`; breaks the design standard. | U1b, U6 |
-| Products & Catalogues | 4 / 112 | PLANNED | Not working | "HTTP 403": no tenant holds the entitlement. The proxy now forwards `Idempotency-Key` and the screen is restyled to the design standard (U2, U1b, both deployed 09:08Z); not yet exercised here because no tenant holds the entitlement. | Grant now, U7 |
+| Products & Catalogues | 4 / 112 | PLANNED | Not working | Enabled for GigaLibs Global Enterprise and its tenant admins (13:05Z); not yet re-tested on screen. The proxy now forwards `Idempotency-Key` and the screen is restyled to the design standard (U2, U1b, both deployed 09:08Z); not yet exercised here because no tenant holds the entitlement. | Grant now, U7 |
 | Inventory & Warehouses | 5 / 091 | PLANNED | Not working | The screen shows hard-coded figures and simulates barcodes. The revocation-table fix (P1-02) is deployed (migration 3) and proven on an isolated database; not yet exercised here. No entitlement granted. | Grant now, U8 |
 | Procurement & Payables | 6 / 092 | PLANNED | Not working | Hard-coded figures, `default-tenant`; the API fix is deployed (migration 3) but not yet exercised here; no budget or approval enforcement (P1-06). | Grant now, U9 |
 | Orders & Fulfillment | 7 / 093 | PLANNED | Not working | Hard-coded figures, `default-tenant`; the API and second-partial-allocation fixes are deployed (migration 3) but not yet exercised here. | Grant now, U10 |
@@ -114,7 +115,7 @@ Order matters: each stage unblocks the next. One card at a time; each card is sh
 | Order | Card | Outcome on the UAT instance |
 | --- | --- | --- |
 | Now | **Owner action** | Grant the five new modules to the UAT tenant in Platform Control Tower |
-| 1 | **U1 finish** | CMMS correction applied, then CMMS deployed; Playwright smoke with a UAT administrator login |
+| 1 | **U1 finish** | CMMS correction applied and deployed (done 13:05Z); Playwright smoke with a UAT administrator login |
 | 2 | **U1b** (deployed 2026-10-05 09:08Z) | Design-standard check added; Catalogue, Parties, Application Dictionary and the form renderer restyled |
 | 3 | **U2** (deployed 2026-10-05 09:08Z) | Inventory, Orders, Procurement and Finance APIs accept signed-in calls; event writes and journal transactions fixed; proxy forwards `Idempotency-Key`/`If-Match`. To be exercised here once the entitlements are granted |
 | 4 | **U3** | Security defects closed (SCIM, webhooks, caller-chosen tenants, rule kernel, login lockout, renderer). U3.1 (SCIM, P0-06) deployed 09:08Z. U3.2 (login lockout P1-20, Rule Studio tenant boundary P0-04, Connector Hub webhook P0-08, punch queue P1-25, renderer default P1-24) deployed 11:57Z. Each closes after the independent Security review |

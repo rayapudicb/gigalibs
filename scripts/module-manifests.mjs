@@ -535,7 +535,10 @@ const upstreamsGenerated = [
 ].join('\n');
 const METHODS = ['GET', 'POST', 'PATCH', 'PUT', 'DELETE'];
 const ID_PATTERN = '[0-9a-fA-F-]{36}';
-const SEGMENT = /^(?:\{id\}|[a-z0-9-]+(?:\|[a-z0-9-]+)*)$/;
+// WI-OI-120f (F0.3): {entity} is a dictionary entity key (inventory.warehouses); {key} an action or lookup key.
+const ENTITY_PATTERN = '[a-z][a-z0-9-]*(?:[.][a-z0-9-]+)*';
+const KEY_PATTERN = '[a-z][a-z0-9-]*';
+const SEGMENT = /^(?:\{id\}|\{entity\}|\{key\}|[a-z0-9-]+(?:\|[a-z0-9-]+)*)$/;
 const escapeRegex = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const compileTemplate = (template) =>
   `^${template
@@ -543,7 +546,11 @@ const compileTemplate = (template) =>
     .map((segment) =>
       segment === '{id}'
         ? ID_PATTERN
-        : segment.includes('|')
+        : segment === '{entity}'
+          ? ENTITY_PATTERN
+          : segment === '{key}'
+            ? KEY_PATTERN
+            : segment.includes('|')
           ? `(?:${segment.split('|').map(escapeRegex).join('|')})`
           : escapeRegex(segment),
     )
@@ -552,7 +559,13 @@ function samplePaths(template) {
   let paths = [''];
   for (const segment of template.split('/')) {
     const options =
-      segment === '{id}' ? ['00000000-0000-4000-8000-000000000000'] : segment.split('|');
+      segment === '{id}'
+        ? ['00000000-0000-4000-8000-000000000000']
+        : segment === '{entity}'
+          ? ['sample.entity']
+          : segment === '{key}'
+            ? ['sample-key']
+            : segment.split('|');
     paths = paths.flatMap((prefix) =>
       options.map((option) => (prefix ? `${prefix}/${option}` : option)),
     );
@@ -604,9 +617,24 @@ for (const [name, manifest] of modules) {
     fail(where, 'routes must list at least one route');
     continue;
   }
+  // WI-OI-120f (F0.3): `records: true` exposes the module SDK's record dispatcher routes for metadata windows. The
+  // gateway asks for the module's read permission; the dispatcher then checks each entity's own permissions.
+  if (gateway.records !== undefined && gateway.records !== true) fail(where, 'records must be true when present');
+  const recordsPermission = (manifest.spec.catalog ?? []).find((entry) => entry.key === gateway.catalogKey)?.requiredPermission;
+  if (gateway.records === true && !isText(recordsPermission))
+    fail(where, 'records needs the catalogue entry of catalogKey to declare requiredPermission');
+  const recordRoutes =
+    gateway.records === true && isText(recordsPermission)
+      ? [
+          { path: 'v1/records/{entity}', GET: recordsPermission, POST: recordsPermission },
+          { path: 'v1/records/{entity}/{id}', GET: recordsPermission, PATCH: recordsPermission },
+          { path: 'v1/records/{entity}/{id}/actions/{key}', POST: recordsPermission },
+          { path: 'v1/lookups/{key}', GET: recordsPermission },
+        ]
+      : [];
   const routes = [];
-  gateway.routes.forEach((route, index) => {
-    const at = `${where} routes[${index}]`;
+  [...gateway.routes, ...recordRoutes].forEach((route, index) => {
+    const at = index < gateway.routes.length ? `${where} routes[${index}]` : `${where} records`;
     const template = route?.path;
     if (
       typeof template !== 'string' ||

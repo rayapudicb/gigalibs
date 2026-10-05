@@ -24,11 +24,11 @@ to one page. Replace old content rather than appending to it, and update it at t
   the control plane) to U3.2?
 - **WI-OI-120f (F0, metadata-governed windows):** approved 2026-10-05. F0.1 (contract, capability checks at publish,
   fail-closed exact evaluator) committed; F0.2 next (module dictionaries, activation when a module is enabled).
-- **CMMS migrations 000017–000019 corrected** (owner-approved; patch applied by the owner): `principal_ref`, permissive
+- **CMMS migrations 000017–000019 corrected and deployed 13:03Z** (owner-approved; patch applied by the owner): `principal_ref`, permissive
   tenant policies (RESTRICTIVE-only denied every row), one transaction, ledger rows. Proven on a throwaway UAT copy.
 - **ERP access by role:** the five ERP modules were enabled for GigaLibs Global Enterprise at 12:31Z (owner ran
   `enable-erp-modules.sh`). Tenant admins now hold the five ERP modules' permissions and `parties:*` (code change,
-  deploys next).
+  deployed 13:05Z).
 - **One writer:** the owner chose this session (option 1, 2026-10-05); the peer session was told.
 - **U1 remaining recovery/deployment work:**
   - **Part A is committed (`03ebd0c`).** Evidence: `.pi/work/WI-OI-120.md`.
@@ -53,16 +53,17 @@ to one page. Replace old content rather than appending to it, and update it at t
 - **Module status board for testers:** `docs/audits/2026-10-04-production-readiness/uat-module-status.md` (what works,
   what does not, what is not deployed, and the plan to UAT and to production).
 
-## What is running locally (UAT instance, deployed 2026-10-05 11:57Z)
+## What is running locally (UAT instance, deployed 2026-10-05 13:05Z)
 
-- Release `828b75af9a28-af904a40a84c` (commit `828b75a`: U1b, U2, U3.1, U3.2). Record:
-  `infra/compose/evidence/wi-oi-120e-20261005T115528Z/` (local).
-  - Healthy: web, control-plane API, kernel worker, Analytics, Geospatial, Connector Hub (9), Workforce (26) and
-    the module host with Catalogue (1), Inventory (3), Orders (3), Procurement (3) and Finance (8).
-  - Rollback: release `5ceba59d0963-b53e290e718f` plus backup `gigalibs_backup_20261005_105426Z`.
-- **Catalogue, Inventory, Procurement, Orders and Finance are enabled for GigaLibs Global Enterprise** (12:31Z). Its
-  tenant admins get "HTTP 403" in them until the role change is deployed.
-- **CMMS is still down** (old image, ledger 16). The migration correction is in the working tree and deploys next.
+- Release `996abae3f65a-cf90c743456c` (commit `996abae`): U1b, U2, U3.1, U3.2, F0.1, F0.2, the CMMS correction and
+  tenant-admin ERP access. Record: `infra/compose/evidence/wi-oi-120-20261005T130319Z/` (local).
+  - Healthy: web, control-plane API, kernel worker, Analytics, Geospatial, Connector Hub (9), Workforce (26), CMMS (19,
+    running again) and the module host with Catalogue (1), Inventory (3), Orders (3), Procurement (3) and Finance (8).
+  - Rollback: release `828b75af9a28-af904a40a84c` plus backup `gigalibs_backup_20261005_130000Z`.
+- Catalogue, Inventory, Procurement, Orders and Finance are enabled for GigaLibs Global Enterprise, and its tenant
+  admins hold their permissions. Inventory, Procurement, Orders and Finance still show their old hand-written screens
+  until their metadata windows land (F0.5, then U7–U18).
+- AR, Spend, Tax, Multi-Currency and the other 9 modules off the module SDK do not run here (U29).
 - Unattributed proof data from earlier proof runs (including the audit's own run) is still in the database (D5).
 
 ## Next
