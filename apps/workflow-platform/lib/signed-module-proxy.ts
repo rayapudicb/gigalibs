@@ -42,6 +42,36 @@ export interface SignedModuleProxyConfig {
 }
 
 const MUTATING_METHODS = new Set(['POST', 'PATCH']);
+
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+// An entity tag (strong or weak) or a plain record version number.
+const IF_MATCH_PATTERN = /^(?:(?:W\/)?"[\x21\x23-\x7e]{1,128}"|\d{1,10})$/;
+
+/**
+ * The write headers a module needs (WI-OI-120c, audit P1-23): `Idempotency-Key` so a retried command is applied once,
+ * and `If-Match` so an update made against a stale version is refused. Malformed values are rejected here instead of
+ * being passed on.
+ */
+export function forwardedWriteHeaders(
+  request: Pick<Request, 'headers'>,
+): { ok: true; headers: Record<string, string> } | { ok: false; code: string; detail: string } {
+  const headers: Record<string, string> = {};
+  const idempotencyKey = request.headers.get('idempotency-key');
+  if (idempotencyKey !== null) {
+    if (!UUID_PATTERN.test(idempotencyKey)) {
+      return { ok: false, code: 'IDEMPOTENCY_KEY_INVALID', detail: 'Idempotency-Key must be a UUID.' };
+    }
+    headers['Idempotency-Key'] = idempotencyKey;
+  }
+  const ifMatch = request.headers.get('if-match');
+  if (ifMatch !== null) {
+    if (!IF_MATCH_PATTERN.test(ifMatch)) {
+      return { ok: false, code: 'IF_MATCH_INVALID', detail: 'If-Match must be an entity tag or a record version.' };
+    }
+    headers['If-Match'] = ifMatch;
+  }
+  return { ok: true, headers };
+}
 const PATH_SEGMENT = /^[A-Za-z0-9._:-]{1,100}$/;
 
 /**
@@ -94,6 +124,8 @@ export function createSignedModuleProxy(config: SignedModuleProxyConfig) {
     if (MUTATING_METHODS.has(method) && !hasSameOrigin(request)) {
       return problem(403, 'CROSS_SITE_REJECTED', 'Cross-site request rejected.');
     }
+    const writeHeaders = MUTATING_METHODS.has(method) ? forwardedWriteHeaders(request) : { ok: true as const, headers: {} };
+    if (!writeHeaders.ok) return problem(400, writeHeaders.code, writeHeaders.detail);
 
     try {
       const target = localModuleUpstreamUrl(config.upstream, path);
@@ -108,6 +140,7 @@ export function createSignedModuleProxy(config: SignedModuleProxyConfig) {
         Accept: 'application/json, application/problem+json',
         Authorization: `Bearer ${moduleToken}`,
         'X-Correlation-Id': request.headers.get('x-correlation-id') ?? randomUUID(),
+        ...writeHeaders.headers,
       });
       if (body) headers.set('Content-Type', 'application/json');
 

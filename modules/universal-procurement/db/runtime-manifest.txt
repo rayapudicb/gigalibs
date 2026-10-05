@@ -1,2 +1,3 @@
 000001_procurement_foundation.up.sql
 000002_procurement_outbox_inbox_relay.up.sql
+000003_procurement_auth_revocation_shape.up.sql

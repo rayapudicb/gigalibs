@@ -26,7 +26,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import type { PoolClient } from 'pg';
-import { SCHEMA, TOPIC } from '../config.js';
+import { SCHEMA } from '../config.js';
+import { appendOutboxEvent } from '../outbox.js';
 import { DatabaseService } from '../database.service.js';
 import { FinanceService } from '../finance/finance.service.js';
 import {
@@ -42,11 +43,17 @@ export class ConsolidationService {
     private readonly financeService: FinanceService,
   ) {}
 
+  /** Runs one statement; pass `client` to run it inside the caller's transaction (WI-OI-120c). */
   private async query<R = Record<string, any>>(
     tenantId: string,
     text: string,
     values?: unknown[],
+    client?: PoolClient,
   ): Promise<{ rows: R[] }> {
+    if (client) {
+      const res = await client.query(text, values);
+      return { rows: res.rows as R[] };
+    }
     return this.database.withTenantTransaction(tenantId, async (client: PoolClient) => {
       const res = await client.query(text, values);
       return { rows: res.rows as R[] };
@@ -60,73 +67,78 @@ export class ConsolidationService {
     actor: string,
     input: CreateConsolidationGroupInputV1,
   ): Promise<ConsolidationGroupV1> {
-    const existing = await this.query(
-      tenantId,
-      `SELECT id FROM ${SCHEMA}.consolidation_groups WHERE tenant_id = $1 AND code = $2`,
-      [tenantId, input.code],
-    );
-    if (existing.rows.length > 0) {
-      throw new ConflictException(`Consolidation group with code ${input.code} already exists.`);
-    }
+    // One transaction: the group, its parent entity and its event commit together (WI-OI-120c).
+    return this.database.withTenantTransaction(tenantId, async (client: PoolClient) => {
+      const existing = await this.query(
+        tenantId,
+        `SELECT id FROM ${SCHEMA}.consolidation_groups WHERE tenant_id = $1 AND code = $2`,
+        [tenantId, input.code],
+        client,
+      );
+      if (existing.rows.length > 0) {
+        throw new ConflictException(`Consolidation group with code ${input.code} already exists.`);
+      }
 
-    const id = randomUUID();
-    const now = new Date().toISOString();
+      const id = randomUUID();
+      const now = new Date().toISOString();
 
-    const insertSql = `
-      INSERT INTO ${SCHEMA}.consolidation_groups (
-        id, tenant_id, code, name, description, reporting_currency,
-        parent_entity_id, cta_gl_account_id, nci_gl_account_id,
-        is_active, version, created_at, updated_at, created_by
-      ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, true, 1, $10, $10, $11
-      ) RETURNING *;
-    `;
+      const insertSql = `
+        INSERT INTO ${SCHEMA}.consolidation_groups (
+          id, tenant_id, code, name, description, reporting_currency,
+          parent_entity_id, cta_gl_account_id, nci_gl_account_id,
+          is_active, version, created_at, updated_at, created_by
+        ) VALUES (
+          $1, $2, $3, $4, $5, $6, $7, $8, $9, true, 1, $10, $10, $11
+        ) RETURNING *;
+      `;
 
-    const res = await this.query(tenantId, insertSql, [
-      id,
-      tenantId,
-      input.code,
-      input.name,
-      input.description ?? null,
-      input.reportingCurrency,
-      input.parentEntityId,
-      input.ctaGlAccountId,
-      input.nciGlAccountId ?? null,
-      now,
-      actor,
-    ]);
+      const res = await this.query(tenantId, insertSql, [
+        id,
+        tenantId,
+        input.code,
+        input.name,
+        input.description ?? null,
+        input.reportingCurrency,
+        input.parentEntityId,
+        input.ctaGlAccountId,
+        input.nciGlAccountId ?? null,
+        now,
+        actor,
+      ], client);
 
-    // Automatically add parent entity as a 100% member entity of the group
-    await this.addConsolidationEntity(tenantId, id, {
-      bookId: input.parentEntityId,
-      ownershipPercentage: 100,
-      consolidationMethod: 'FULL',
-      isParent: true,
+      // Automatically add parent entity as a 100% member entity of the group
+      await this.addConsolidationEntity(tenantId, id, {
+        bookId: input.parentEntityId,
+        ownershipPercentage: 100,
+        consolidationMethod: 'FULL',
+        isParent: true,
+      }, client);
+
+      const event: ConsolidationGroupCreatedEventV1 = {
+        eventId: randomUUID(),
+        tenantId,
+        occurredAt: now,
+        producer: 'financial-operations-api',
+        type: 'finance.consolidation.group.created.v1',
+        data: {
+          groupId: id,
+          code: input.code,
+          name: input.name,
+          reportingCurrency: input.reportingCurrency,
+          parentEntityId: input.parentEntityId,
+        },
+      };
+
+      await appendOutboxEvent(client, tenantId, {
+        id: event.eventId,
+        type: event.type,
+        aggregateType: 'consolidation_group',
+        aggregateId: id,
+        data: event,
+      });
+
+      return this.mapConsolidationGroup(res.rows[0]);
     });
-
-    const event: ConsolidationGroupCreatedEventV1 = {
-      eventId: randomUUID(),
-      tenantId,
-      occurredAt: now,
-      producer: 'financial-operations-api',
-      type: 'finance.consolidation.group.created.v1',
-      data: {
-        groupId: id,
-        code: input.code,
-        name: input.name,
-        reportingCurrency: input.reportingCurrency,
-        parentEntityId: input.parentEntityId,
-      },
-    };
-
-    await this.query(
-      tenantId,
-      `INSERT INTO ${SCHEMA}.outbox (id, tenant_id, topic, event_type, payload, created_at)
-       VALUES ($1, $2, $3, $4, $5, $6)`,
-      [event.eventId, tenantId, TOPIC, event.type, JSON.stringify(event), now],
-    );
-
-    return this.mapConsolidationGroup(res.rows[0]);
   }
 
   async getConsolidationGroups(tenantId: string): Promise<ConsolidationGroupV1[]> {
@@ -138,11 +150,12 @@ export class ConsolidationService {
     return res.rows.map((row) => this.mapConsolidationGroup(row));
   }
 
-  async getConsolidationGroup(tenantId: string, id: string): Promise<ConsolidationGroupV1> {
+  async getConsolidationGroup(tenantId: string, id: string, client?: PoolClient): Promise<ConsolidationGroupV1> {
     const res = await this.query(
       tenantId,
       `SELECT * FROM ${SCHEMA}.consolidation_groups WHERE tenant_id = $1 AND id = $2`,
       [tenantId, id],
+      client,
     );
     if (res.rows.length === 0) {
       throw new NotFoundException(`Consolidation group ${id} not found.`);
@@ -156,8 +169,9 @@ export class ConsolidationService {
     tenantId: string,
     groupId: string,
     input: AddConsolidationEntityInputV1,
+    client?: PoolClient,
   ): Promise<ConsolidationEntityV1> {
-    const group = await this.getConsolidationGroup(tenantId, groupId);
+    const group = await this.getConsolidationGroup(tenantId, groupId, client);
     const id = randomUUID();
     const now = new Date().toISOString();
 
@@ -178,16 +192,12 @@ export class ConsolidationService {
       RETURNING *;
     `;
 
-    const res = await this.query(tenantId, insertSql, [
-      id,
+    const res = await this.query(
       tenantId,
-      group.id,
-      input.bookId,
-      input.ownershipPercentage,
-      input.consolidationMethod,
-      input.isParent,
-      now,
-    ]);
+      insertSql,
+      [id, tenantId, group.id, input.bookId, input.ownershipPercentage, input.consolidationMethod, input.isParent, now],
+      client,
+    );
 
     return this.mapConsolidationEntity(res.rows[0]);
   }
@@ -444,6 +454,8 @@ export class ConsolidationService {
     // 2. Process Intercompany Eliminations
     const pairs = await this.getIntercompanyPairs(tenantId, group.id);
     const eliminationRecords: any[] = [];
+    // Elimination journals are posted in the persistence transaction below, not here (WI-OI-120c).
+    const eliminationJournalInputs = new Map<string, PostJournalInputV1>();
     let totalElimDebitMinor = 0n;
     let totalElimCreditMinor = 0n;
 
@@ -507,12 +519,7 @@ export class ConsolidationService {
               ],
             };
 
-            const postedJournal = await this.financeService.postJournal(
-              tenantId,
-              input.executedBy,
-              postInput,
-            );
-            journalId = postedJournal.id;
+            eliminationJournalInputs.set(pair.id, postInput);
           }
 
           eliminationRecords.push({
@@ -537,127 +544,149 @@ export class ConsolidationService {
     const netConsolidatedDebitMinor = totalConsolidatedDebitMinor - totalElimDebitMinor;
     const netConsolidatedCreditMinor = totalConsolidatedCreditMinor - totalElimCreditMinor;
 
-    // 3. Persist run, entries, and eliminations
-    const insertRunSql = `
-      INSERT INTO ${SCHEMA}.consolidation_runs (
-        id, tenant_id, consolidation_group_id, run_number,
-        fiscal_year_id, fiscal_period_id, status,
-        total_subsidiary_debit_minor, total_subsidiary_credit_minor,
-        total_elimination_debit_minor, total_elimination_credit_minor,
-        total_cta_minor, total_consolidated_debit_minor, total_consolidated_credit_minor,
-        executed_by, executed_at, version, created_at, updated_at
-      ) VALUES (
-        $1, $2, $3, $4, $5, $6, 'ELIMINATED',
-        $7, $8, $9, $10, $11, $12, $13,
-        $14, $15, 1, $15, $15
-      ) RETURNING *;
-    `;
-
-    const runRes = await this.query(tenantId, insertRunSql, [
-      runId,
-      tenantId,
-      group.id,
-      runNumber,
-      input.fiscalYearId,
-      input.fiscalPeriodId,
-      totalSubDebitMinor.toString(),
-      totalSubCreditMinor.toString(),
-      totalElimDebitMinor.toString(),
-      totalElimCreditMinor.toString(),
-      totalCtaMinor.toString(),
-      netConsolidatedDebitMinor.toString(),
-      netConsolidatedCreditMinor.toString(),
-      input.executedBy,
-      now,
-    ]);
-
-    // Batch insert entries
-    for (const e of allTranslatedEntries) {
-      await this.query(
-        tenantId,
-        `INSERT INTO ${SCHEMA}.consolidation_entries (
-          id, tenant_id, consolidation_run_id, book_id, gl_account_id,
-          local_currency, local_debit_minor, local_credit_minor,
-          fx_rate_type, fx_rate_applied_scaled, reporting_currency,
-          reporting_debit_minor, reporting_credit_minor, created_at
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
-        [
-          e.id,
+    // 3. Persist in one transaction: elimination journals, run, entries, eliminations and the event commit together,
+    //    so a failure leaves no orphan journal (WI-OI-120c, audit P0-09).
+    return this.database.withTenantTransaction(tenantId, async (client: PoolClient) => {
+      for (const elimination of eliminationRecords) {
+        const journalInput = eliminationJournalInputs.get(elimination.intercompanyPairId);
+        if (!journalInput) continue;
+        const postedJournal = await this.financeService.postJournal(
           tenantId,
-          e.consolidationRunId,
-          e.bookId,
-          e.glAccountId,
-          e.localCurrency,
-          e.localDebitMinor,
-          e.localCreditMinor,
-          e.fxRateType,
-          e.fxRateAppliedScaled,
-          e.reportingCurrency,
-          e.reportingDebitMinor,
-          e.reportingCreditMinor,
-          now,
-        ],
-      );
-    }
+          input.executedBy,
+          {
+            ...journalInput,
+            sourceDocumentType: 'CONSOLIDATION_ELIMINATION',
+            sourceDocumentId: `${runId}:${elimination.intercompanyPairId}`,
+          },
+          client,
+        );
+        elimination.glJournalId = postedJournal.id;
+      }
 
-    // Batch insert eliminations
-    const savedEliminations: ConsolidationEliminationV1[] = [];
-    for (const elim of eliminationRecords) {
-      const elimRes = await this.query(
-        tenantId,
-        `INSERT INTO ${SCHEMA}.consolidation_eliminations (
-          id, tenant_id, consolidation_run_id, intercompany_pair_id, gl_journal_id,
-          debit_gl_account_id, credit_gl_account_id, elimination_amount_minor,
-          currency_code, discrepancy_amount_minor, description, created_at
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *;`,
-        [
-          elim.id,
-          tenantId,
-          elim.consolidationRunId,
-          elim.intercompanyPairId,
-          elim.glJournalId,
-          elim.debitGlAccountId,
-          elim.creditGlAccountId,
-          elim.eliminationAmountMinor,
-          elim.currencyCode,
-          elim.discrepancyAmountMinor,
-          elim.description,
-          now,
-        ],
-      );
-      savedEliminations.push(this.mapConsolidationElimination(elimRes.rows[0]));
-    }
+      const insertRunSql = `
+        INSERT INTO ${SCHEMA}.consolidation_runs (
+          id, tenant_id, consolidation_group_id, run_number,
+          fiscal_year_id, fiscal_period_id, status,
+          total_subsidiary_debit_minor, total_subsidiary_credit_minor,
+          total_elimination_debit_minor, total_elimination_credit_minor,
+          total_cta_minor, total_consolidated_debit_minor, total_consolidated_credit_minor,
+          executed_by, executed_at, version, created_at, updated_at
+        ) VALUES (
+          $1, $2, $3, $4, $5, $6, 'ELIMINATED',
+          $7, $8, $9, $10, $11, $12, $13,
+          $14, $15, 1, $15, $15
+        ) RETURNING *;
+      `;
 
-    // Outbox event
-    const event: ConsolidationRunExecutedEventV1 = {
-      eventId: randomUUID(),
-      tenantId,
-      occurredAt: now,
-      producer: 'financial-operations-api',
-      type: 'finance.consolidation.run.executed.v1',
-      data: {
+      const runRes = await this.query(tenantId, insertRunSql, [
         runId,
+        tenantId,
+        group.id,
         runNumber,
-        groupId: group.id,
-        fiscalPeriodId: input.fiscalPeriodId,
-        totalConsolidatedDebitMinor: netConsolidatedDebitMinor.toString(),
-        totalConsolidatedCreditMinor: netConsolidatedCreditMinor.toString(),
-        totalCtaMinor: totalCtaMinor.toString(),
-        executedBy: input.executedBy,
-      },
-    };
+        input.fiscalYearId,
+        input.fiscalPeriodId,
+        totalSubDebitMinor.toString(),
+        totalSubCreditMinor.toString(),
+        totalElimDebitMinor.toString(),
+        totalElimCreditMinor.toString(),
+        totalCtaMinor.toString(),
+        netConsolidatedDebitMinor.toString(),
+        netConsolidatedCreditMinor.toString(),
+        input.executedBy,
+        now,
+      ], client);
 
-    await this.query(
-      tenantId,
-      `INSERT INTO ${SCHEMA}.outbox (id, tenant_id, topic, event_type, payload, created_at)
-       VALUES ($1, $2, $3, $4, $5, $6)`,
-      [event.eventId, tenantId, TOPIC, event.type, JSON.stringify(event), now],
-    );
+      // Batch insert entries
+      for (const e of allTranslatedEntries) {
+        await this.query(
+          tenantId,
+          `INSERT INTO ${SCHEMA}.consolidation_entries (
+            id, tenant_id, consolidation_run_id, book_id, gl_account_id,
+            local_currency, local_debit_minor, local_credit_minor,
+            fx_rate_type, fx_rate_applied_scaled, reporting_currency,
+            reporting_debit_minor, reporting_credit_minor, created_at
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
+          [
+            e.id,
+            tenantId,
+            e.consolidationRunId,
+            e.bookId,
+            e.glAccountId,
+            e.localCurrency,
+            e.localDebitMinor,
+            e.localCreditMinor,
+            e.fxRateType,
+            e.fxRateAppliedScaled,
+            e.reportingCurrency,
+            e.reportingDebitMinor,
+            e.reportingCreditMinor,
+            now,
+          ],
+          client,
+        );
+      }
 
-    return {
-      run: this.mapConsolidationRun(runRes.rows[0]),
-      eliminations: savedEliminations,
-    };
+      // Batch insert eliminations
+      const savedEliminations: ConsolidationEliminationV1[] = [];
+      for (const elim of eliminationRecords) {
+        const elimRes = await this.query(
+          tenantId,
+          `INSERT INTO ${SCHEMA}.consolidation_eliminations (
+            id, tenant_id, consolidation_run_id, intercompany_pair_id, gl_journal_id,
+            debit_gl_account_id, credit_gl_account_id, elimination_amount_minor,
+            currency_code, discrepancy_amount_minor, description, created_at
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *;`,
+          [
+            elim.id,
+            tenantId,
+            elim.consolidationRunId,
+            elim.intercompanyPairId,
+            elim.glJournalId,
+            elim.debitGlAccountId,
+            elim.creditGlAccountId,
+            elim.eliminationAmountMinor,
+            elim.currencyCode,
+            elim.discrepancyAmountMinor,
+            elim.description,
+            now,
+          ],
+          client,
+        );
+        savedEliminations.push(this.mapConsolidationElimination(elimRes.rows[0]));
+      }
+
+      // Outbox event
+      const event: ConsolidationRunExecutedEventV1 = {
+        eventId: randomUUID(),
+        tenantId,
+        occurredAt: now,
+        producer: 'financial-operations-api',
+        type: 'finance.consolidation.run.executed.v1',
+        data: {
+          runId,
+          runNumber,
+          groupId: group.id,
+          fiscalPeriodId: input.fiscalPeriodId,
+          totalConsolidatedDebitMinor: netConsolidatedDebitMinor.toString(),
+          totalConsolidatedCreditMinor: netConsolidatedCreditMinor.toString(),
+          totalCtaMinor: totalCtaMinor.toString(),
+          executedBy: input.executedBy,
+        },
+      };
+
+      await appendOutboxEvent(client, tenantId, {
+        id: event.eventId,
+        type: event.type,
+        aggregateType: 'consolidation_run',
+        aggregateId: runId,
+        data: event,
+      });
+
+      return {
+        run: this.mapConsolidationRun(runRes.rows[0]),
+        eliminations: savedEliminations,
+      };
+    });
   }
 
   async getConsolidationRun(tenantId: string, runId: string): Promise<ConsolidationRunV1> {
@@ -681,38 +710,43 @@ export class ConsolidationService {
       return run;
     }
 
-    const now = new Date().toISOString();
-    const res = await this.query(
-      tenantId,
-      `UPDATE ${SCHEMA}.consolidation_runs
-       SET status = 'SEALED', sealed_at = $3, updated_at = $3, version = version + 1
-       WHERE tenant_id = $1 AND id = $2
-       RETURNING *`,
-      [tenantId, runId, now],
-    );
+    // The seal and its event commit together (WI-OI-120c).
+    return this.database.withTenantTransaction(tenantId, async (client: PoolClient) => {
+      const now = new Date().toISOString();
+      const res = await this.query(
+        tenantId,
+        `UPDATE ${SCHEMA}.consolidation_runs
+         SET status = 'SEALED', sealed_at = $3, updated_at = $3, version = version + 1
+         WHERE tenant_id = $1 AND id = $2
+         RETURNING *`,
+        [tenantId, runId, now],
+        client,
+      );
 
-    const event: ConsolidationRunSealedEventV1 = {
-      eventId: randomUUID(),
-      tenantId,
-      occurredAt: now,
-      producer: 'financial-operations-api',
-      type: 'finance.consolidation.run.sealed.v1',
-      data: {
-        runId,
-        runNumber: run.runNumber,
-        groupId: run.consolidationGroupId,
-        sealedAt: now,
-      },
-    };
+      const event: ConsolidationRunSealedEventV1 = {
+        eventId: randomUUID(),
+        tenantId,
+        occurredAt: now,
+        producer: 'financial-operations-api',
+        type: 'finance.consolidation.run.sealed.v1',
+        data: {
+          runId,
+          runNumber: run.runNumber,
+          groupId: run.consolidationGroupId,
+          sealedAt: now,
+        },
+      };
 
-    await this.query(
-      tenantId,
-      `INSERT INTO ${SCHEMA}.outbox (id, tenant_id, topic, event_type, payload, created_at)
-       VALUES ($1, $2, $3, $4, $5, $6)`,
-      [event.eventId, tenantId, TOPIC, event.type, JSON.stringify(event), now],
-    );
+      await appendOutboxEvent(client, tenantId, {
+        id: event.eventId,
+        type: event.type,
+        aggregateType: 'consolidation_run',
+        aggregateId: runId,
+        data: event,
+      });
 
-    return this.mapConsolidationRun(res.rows[0]);
+      return this.mapConsolidationRun(res.rows[0]);
+    });
   }
 
   // ─── 6. Consolidated Financial Statements ───────────────────────────────────

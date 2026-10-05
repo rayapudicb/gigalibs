@@ -218,6 +218,15 @@ The owner chose to **fix every module for UAT rather than contain any of it**. D
 - UAT runs on the existing local instance only.
 - Business data for UAT is entered by Playwright business-flow tests through the application.
 - The never-built spec capabilities (BOM/production, projects, RMA, mobile) are wanted; they must be built first.
+
+## 11. Metadata-proposal follow-up (2026-10-05)
+
+The owner requested a deeper investigation of two pasted metadata/master-data proposals before deciding how to
+proceed. The [follow-up report](metadata-proposals-investigation-2026-10-05.md) reviews the current checkout,
+distinguishes U1's recorded deployment from uncommitted U2 work, carries forward every primary P0/P1 ID and records
+additional dictionary/proposal gaps. It includes all 23 module directories, a phase/WI progress overlay, a master
+data scorecard and repair dispositions that preserve existing assets. It does not upgrade a gate or authorize
+product changes. The baseline counts above are not represented as a freshly reconciled remaining-defect count.
 - The containment card R1 is withdrawn. The first card is U1 (`.pi/tasks/WI-OI-120a.md`).
 - Still open: D5 (local proof-data clean-up), D6 (credential rotation) and D7 (named human reviewers).
 

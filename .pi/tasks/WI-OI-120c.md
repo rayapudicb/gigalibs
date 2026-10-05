@@ -1,6 +1,6 @@
 # WI-OI-120c (U2): ERP module APIs accept, save and record real business data
 
-- **Status:** Approved (owner, 2026-10-05) | In progress
+- **Status:** Completed (committed, 2026-10-05)
 - **Work item:** WI-OI-120 (UAT and production readiness programme). Evidence goes in `.pi/work/WI-OI-120.md`
   (section U2).
 - **Size:** L
@@ -51,13 +51,14 @@ Audit findings closed: P0-09, P1-02, P1-03, P1-09, P1-18 and P1-23 (`docs/audits
 
 ## Done when
 
-- [ ] On an isolated PostgreSQL 16, every new migration applies on a fresh install and on a copy of the current UAT
+- [x] On an isolated PostgreSQL 16, every new migration applies on a fresh install and on a copy of the current UAT
   schema state
-- [ ] HTTP tests show signed-in reads and creates succeed for the five modules, a retried command is saved once, and
-  another tenant's records are refused
-- [ ] Costing, consolidation, budgeting and close commands succeed, and a failed command leaves no journal behind
-- [ ] Creating a product works through the proxy (`Idempotency-Key` forwarded)
-- [ ] `pnpm build`, `pnpm test` and static audits pass; evidence recorded; deploy handed to the owner
+- [x] HTTP tests show signed-in reads and creates succeed for the five modules, a retried command is saved once, and
+  another tenant's records are refused (retry proven on Product Catalogue, the only module with request-level
+  idempotency today; the others gain it with F1)
+- [x] Costing, consolidation, budgeting and close commands succeed, and a failed command leaves no journal behind
+- [x] Creating a product works through the proxy (`Idempotency-Key` forwarded)
+- [x] `pnpm build`, `pnpm test` and static audits pass; evidence recorded; deploy handed to the owner
 
 ## Stop and ask if
 

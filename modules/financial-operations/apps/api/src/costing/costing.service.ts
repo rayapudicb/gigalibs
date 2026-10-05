@@ -26,7 +26,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import type { PoolClient } from 'pg';
-import { SCHEMA, TOPIC } from '../config.js';
+import { SCHEMA } from '../config.js';
+import { appendOutboxEvent } from '../outbox.js';
 import { DatabaseService } from '../database.service.js';
 import { FinanceService } from '../finance/finance.service.js';
 import {
@@ -134,11 +135,13 @@ export class CostingService {
         },
       };
 
-      await client.query(
-        `INSERT INTO ${SCHEMA}.outbox_events (id, tenant_id, topic, event_type, payload, status)
-         VALUES ($1, $2, $3, $4, $5, 'PENDING')`,
-        [event.id, tenantId, TOPIC, event.type, JSON.stringify(event)],
-      );
+      await appendOutboxEvent(client, tenantId, {
+        id: event.id,
+        type: event.type,
+        aggregateType: 'cost_profile',
+        aggregateId: String(event.data.costProfileId),
+        data: event,
+      });
 
       return this.mapCostProfile(res.rows[0]);
     });
@@ -248,10 +251,12 @@ export class CostingService {
           postingDate: input.receiptDate || now,
           entryType: 'SUBLEDGER_INVENTORY',
           description: `Inventory Receipt ${input.receiptRef}`,
+          sourceDocumentType: 'INVENTORY_COST_LAYER',
+          sourceDocumentId: layerId,
           lines,
         };
 
-        const journal = await this.financeService.postJournal(tenantId, actor, journalInput);
+        const journal = await this.financeService.postJournal(tenantId, actor, journalInput, client);
         glJournalId = journal.id;
       }
 
@@ -306,11 +311,13 @@ export class CostingService {
         },
       };
 
-      await client.query(
-        `INSERT INTO ${SCHEMA}.outbox_events (id, tenant_id, topic, event_type, payload, status)
-         VALUES ($1, $2, $3, $4, $5, 'PENDING')`,
-        [event.id, tenantId, TOPIC, event.type, JSON.stringify(event)],
-      );
+      await appendOutboxEvent(client, tenantId, {
+        id: event.id,
+        type: event.type,
+        aggregateType: 'cost_layer',
+        aggregateId: String(event.data.costLayerId),
+        data: event,
+      });
 
       return this.mapCostLayer(res.rows[0]);
     });
@@ -391,7 +398,7 @@ export class CostingService {
           ],
         };
 
-        const journal = await this.financeService.postJournal(tenantId, actor, journalInput);
+        const journal = await this.financeService.postJournal(tenantId, actor, journalInput, client);
         glJournalId = journal.id;
       }
 
@@ -465,11 +472,13 @@ export class CostingService {
         },
       };
 
-      await client.query(
-        `INSERT INTO ${SCHEMA}.outbox_events (id, tenant_id, topic, event_type, payload, status)
-         VALUES ($1, $2, $3, $4, $5, 'PENDING')`,
-        [event.id, tenantId, TOPIC, event.type, JSON.stringify(event)],
-      );
+      await appendOutboxEvent(client, tenantId, {
+        id: event.id,
+        type: event.type,
+        aggregateType: 'cogs_transaction',
+        aggregateId: String(event.data.transactionRef),
+        data: event,
+      });
 
       return {
         transactionRef: input.transactionRef,
@@ -544,6 +553,8 @@ export class CostingService {
           postingDate: now,
           entryType: 'SUBLEDGER_INVENTORY',
           description: `Landed Cost Capitalization: ${input.voucherNumber}`,
+          sourceDocumentType: 'LANDED_COST_VOUCHER',
+          sourceDocumentId: voucherId,
           lines: [
             {
               accountId: profile.inventoryGlAccountId,
@@ -564,7 +575,7 @@ export class CostingService {
           ],
         };
 
-        const journal = await this.financeService.postJournal(tenantId, actor, journalInput);
+        const journal = await this.financeService.postJournal(tenantId, actor, journalInput, client);
         glJournalId = journal.id;
       }
 
@@ -647,11 +658,13 @@ export class CostingService {
         },
       };
 
-      await client.query(
-        `INSERT INTO ${SCHEMA}.outbox_events (id, tenant_id, topic, event_type, payload, status)
-         VALUES ($1, $2, $3, $4, $5, 'PENDING')`,
-        [event.id, tenantId, TOPIC, event.type, JSON.stringify(event)],
-      );
+      await appendOutboxEvent(client, tenantId, {
+        id: event.id,
+        type: event.type,
+        aggregateType: 'landed_cost',
+        aggregateId: String(event.data.landedCostId),
+        data: event,
+      });
 
       return this.mapLandedCost(voucherRes.rows[0]);
     });
@@ -708,6 +721,8 @@ export class CostingService {
           fiscalPeriodId: input.periodId,
           postingDate: input.revaluationDate || now,
           entryType: 'SUBLEDGER_INVENTORY',
+          sourceDocumentType: 'COST_REVALUATION',
+          sourceDocumentId: revalId,
           description: `Inventory Write-down (${input.reason})`,
           lines: [
             {
@@ -736,6 +751,8 @@ export class CostingService {
           fiscalPeriodId: input.periodId,
           postingDate: input.revaluationDate || now,
           entryType: 'SUBLEDGER_INVENTORY',
+          sourceDocumentType: 'COST_REVALUATION',
+          sourceDocumentId: revalId,
           description: `Inventory Revaluation (${input.reason})`,
           lines: [
             {
@@ -758,7 +775,7 @@ export class CostingService {
         };
       }
 
-      const journal = await this.financeService.postJournal(tenantId, actor, journalInput);
+      const journal = await this.financeService.postJournal(tenantId, actor, journalInput, client);
 
       // 3. Update layers to new unit cost
       for (const r of layersRes.rows) {
@@ -817,11 +834,13 @@ export class CostingService {
         },
       };
 
-      await client.query(
-        `INSERT INTO ${SCHEMA}.outbox_events (id, tenant_id, topic, event_type, payload, status)
-         VALUES ($1, $2, $3, $4, $5, 'PENDING')`,
-        [event.id, tenantId, TOPIC, event.type, JSON.stringify(event)],
-      );
+      await appendOutboxEvent(client, tenantId, {
+        id: event.id,
+        type: event.type,
+        aggregateType: 'cost_revaluation',
+        aggregateId: String(event.data.revaluationId),
+        data: event,
+      });
 
       return this.mapRevaluation(revalRes.rows[0]);
     });

@@ -25,8 +25,9 @@ import {
 } from '@gigalibs/contracts';
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import type { PoolClient } from 'pg';
-import { SCHEMA, TOPIC } from '../config.js';
+import { SCHEMA } from '../config.js';
 import { DatabaseService } from '../database.service.js';
+import { appendOutboxEvent } from '../outbox.js';
 
 @Injectable()
 export class FinanceService {
@@ -399,163 +400,211 @@ export class FinanceService {
 
   // ─── 4. Double-Entry General Ledger Journals & Fact Lines ──────────────────
 
-  async postJournal(tenantId: string, actorId: string, input: PostJournalInputV1): Promise<JournalV1> {
-    return this.database.withTenantTransaction(tenantId, async (client) => {
-      // 1. Verify period is open
-      const periodRes = await client.query(
-        `SELECT * FROM ${SCHEMA}.fiscal_periods WHERE tenant_id = $1 AND id = $2`,
-        [tenantId, input.fiscalPeriodId],
+  /**
+   * Posts a balanced journal. Pass `client` to post inside the caller's transaction, so a subledger command and its
+   * journal commit or roll back together (WI-OI-120c, audit P0-09). A journal for a source document is created at
+   * most once per book and entry type: a retry or a redelivered event returns the journal already posted.
+   */
+  async postJournal(
+    tenantId: string,
+    actorId: string,
+    input: PostJournalInputV1,
+    client?: PoolClient,
+  ): Promise<JournalV1> {
+    if (client) return this.postJournalInTransaction(client, tenantId, actorId, input);
+    return this.database.withTenantTransaction(tenantId, (transaction) =>
+      this.postJournalInTransaction(transaction, tenantId, actorId, input),
+    );
+  }
+
+  private async postJournalInTransaction(
+    client: PoolClient,
+    tenantId: string,
+    actorId: string,
+    input: PostJournalInputV1,
+  ): Promise<JournalV1> {
+    // 0. Exactly once per source document, book and entry type (unique index uq_gl_journals_source_document).
+    if (input.sourceDocumentId) {
+      const existing = await client.query(
+        `SELECT * FROM ${SCHEMA}.gl_journals
+          WHERE tenant_id = $1 AND accounting_book_id = $2 AND source_document_type IS NOT DISTINCT FROM $3
+            AND source_document_id = $4 AND entry_type = $5`,
+        [
+          tenantId,
+          input.accountingBookId,
+          input.sourceDocumentType ?? null,
+          input.sourceDocumentId,
+          input.entryType ?? 'STANDARD_MANUAL',
+        ],
       );
-      if (periodRes.rows.length === 0) {
-        throw new NotFoundException(`Fiscal period ${input.fiscalPeriodId} not found`);
-      }
-      const period = this.mapFiscalPeriod(periodRes.rows[0]);
-      if (period.status === 'LOCKED') {
-        throw new BadRequestException(`Cannot post to a LOCKED fiscal period (${period.periodName})`);
-      }
-
-      // 2. Verify book currency
-      const bookRes = await client.query(
-        `SELECT currency_code FROM ${SCHEMA}.accounting_books WHERE tenant_id = $1 AND id = $2`,
-        [tenantId, input.accountingBookId],
-      );
-      if (bookRes.rows.length === 0) {
-        throw new NotFoundException(`Accounting book ${input.accountingBookId} not found`);
-      }
-      const bookCurrency = bookRes.rows[0].currency_code;
-
-      // 3. Mathematical validation of balance using exact BigInt integer minor units
-      let totalDebitBigInt = 0n;
-      let totalCreditBigInt = 0n;
-
-      for (const line of input.lines) {
-        const d = BigInt(line.debitAmountMinor ?? '0');
-        const c = BigInt(line.creditAmountMinor ?? '0');
-        if (d < 0n || c < 0n) {
-          throw new BadRequestException('Debit and credit amounts must be non-negative');
-        }
-        if (d > 0n && c > 0n) {
-          throw new BadRequestException('A single journal line cannot have both debit and credit');
-        }
-        if (d === 0n && c === 0n) {
-          throw new BadRequestException('Each line must have either a positive debit or credit');
-        }
-        totalDebitBigInt += d;
-        totalCreditBigInt += c;
-      }
-
-      if (totalDebitBigInt !== totalCreditBigInt) {
-        throw new BadRequestException(
-          `Journal is out of balance: total debits (${totalDebitBigInt}) != total credits (${totalCreditBigInt})`,
+      if (existing.rows.length > 0) {
+        const lineRows = await client.query(
+          `SELECT * FROM ${SCHEMA}.gl_journal_lines WHERE tenant_id = $1 AND journal_id = $2 ORDER BY line_number`,
+          [tenantId, existing.rows[0].id],
+        );
+        return this.mapJournal(
+          existing.rows[0],
+          lineRows.rows.map((row) => this.mapJournalLine(row)),
         );
       }
-      if (totalDebitBigInt === 0n) {
-        throw new BadRequestException('Journal must have positive debit/credit totals');
+    }
+
+    // 1. Verify period is open
+    const periodRes = await client.query(
+      `SELECT * FROM ${SCHEMA}.fiscal_periods WHERE tenant_id = $1 AND id = $2`,
+      [tenantId, input.fiscalPeriodId],
+    );
+    if (periodRes.rows.length === 0) {
+      throw new NotFoundException(`Fiscal period ${input.fiscalPeriodId} not found`);
+    }
+    const period = this.mapFiscalPeriod(periodRes.rows[0]);
+    if (period.status === 'LOCKED') {
+      throw new BadRequestException(`Cannot post to a LOCKED fiscal period (${period.periodName})`);
+    }
+
+    // 2. Verify book currency
+    const bookRes = await client.query(
+      `SELECT currency_code FROM ${SCHEMA}.accounting_books WHERE tenant_id = $1 AND id = $2`,
+      [tenantId, input.accountingBookId],
+    );
+    if (bookRes.rows.length === 0) {
+      throw new NotFoundException(`Accounting book ${input.accountingBookId} not found`);
+    }
+    const bookCurrency = bookRes.rows[0].currency_code;
+
+    // 3. Mathematical validation of balance using exact BigInt integer minor units
+    let totalDebitBigInt = 0n;
+    let totalCreditBigInt = 0n;
+
+    for (const line of input.lines) {
+      const d = BigInt(line.debitAmountMinor ?? '0');
+      const c = BigInt(line.creditAmountMinor ?? '0');
+      if (d < 0n || c < 0n) {
+        throw new BadRequestException('Debit and credit amounts must be non-negative');
       }
+      if (d > 0n && c > 0n) {
+        throw new BadRequestException('A single journal line cannot have both debit and credit');
+      }
+      if (d === 0n && c === 0n) {
+        throw new BadRequestException('Each line must have either a positive debit or credit');
+      }
+      totalDebitBigInt += d;
+      totalCreditBigInt += c;
+    }
 
-      // 4. Generate journal number
-      const jnlCountRes = await client.query(
-        `SELECT COUNT(*) FROM ${SCHEMA}.gl_journals WHERE tenant_id = $1`,
-        [tenantId],
+    if (totalDebitBigInt !== totalCreditBigInt) {
+      throw new BadRequestException(
+        `Journal is out of balance: total debits (${totalDebitBigInt}) != total credits (${totalCreditBigInt})`,
       );
-      const seq = (parseInt(jnlCountRes.rows[0].count, 10) + 1).toString().padStart(6, '0');
-      const journalNumber = `JNL-${input.postingDate.replace(/-/g, '')}-${seq}`;
+    }
+    if (totalDebitBigInt === 0n) {
+      throw new BadRequestException('Journal must have positive debit/credit totals');
+    }
 
-      // 5. Insert journal header
-      const jnlRes = await client.query(
-        `INSERT INTO ${SCHEMA}.gl_journals (
-          tenant_id, journal_number, accounting_book_id, fiscal_period_id, posting_date,
-          entry_type, source_document_type, source_document_id, description, status,
-          total_debit_minor, total_credit_minor, posted_at, posted_by
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'POSTED', $10, $11, clock_timestamp(), $12)
+    // 4. Generate journal number. The transaction-scoped lock stops two concurrent postings from taking the same
+    //    number (WI-OI-120c).
+    await client.query('SELECT pg_advisory_xact_lock(hashtext($1))', [`${SCHEMA}:journal-number:${tenantId}`]);
+    const jnlCountRes = await client.query(
+      `SELECT COUNT(*) FROM ${SCHEMA}.gl_journals WHERE tenant_id = $1`,
+      [tenantId],
+    );
+    const seq = (parseInt(jnlCountRes.rows[0].count, 10) + 1).toString().padStart(6, '0');
+    const journalNumber = `JNL-${input.postingDate.replace(/-/g, '')}-${seq}`;
+
+    // 5. Insert journal header
+    const jnlRes = await client.query(
+      `INSERT INTO ${SCHEMA}.gl_journals (
+        tenant_id, journal_number, accounting_book_id, fiscal_period_id, posting_date,
+        entry_type, source_document_type, source_document_id, description, status,
+        total_debit_minor, total_credit_minor, posted_at, posted_by
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'POSTED', $10, $11, clock_timestamp(), $12)
+      RETURNING *`,
+      [
+        tenantId,
+        journalNumber,
+        input.accountingBookId,
+        input.fiscalPeriodId,
+        input.postingDate,
+        input.entryType ?? 'STANDARD_MANUAL',
+        input.sourceDocumentType ?? null,
+        input.sourceDocumentId ?? null,
+        input.description,
+        totalDebitBigInt.toString(),
+        totalCreditBigInt.toString(),
+        actorId,
+      ],
+    );
+    const journalId = jnlRes.rows[0].id;
+
+    // 6. Insert journal lines
+    const lines: JournalLineV1[] = [];
+    let lineNum = 1;
+
+    for (const line of input.lines) {
+      const curCode = line.currencyCode ?? bookCurrency;
+      const exRate = line.exchangeRate ?? '1.000000';
+      const dMinor = BigInt(line.debitAmountMinor ?? '0').toString();
+      const cMinor = BigInt(line.creditAmountMinor ?? '0').toString();
+
+      const lineRes = await client.query(
+        `INSERT INTO ${SCHEMA}.gl_journal_lines (
+          tenant_id, journal_id, line_number, account_id,
+          debit_amount_minor, credit_amount_minor, currency_code, exchange_rate,
+          base_debit_amount_minor, base_credit_amount_minor, memo, dimensions
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
         RETURNING *`,
         [
           tenantId,
-          journalNumber,
-          input.accountingBookId,
-          input.fiscalPeriodId,
-          input.postingDate,
-          input.entryType ?? 'STANDARD_MANUAL',
-          input.sourceDocumentType ?? null,
-          input.sourceDocumentId ?? null,
-          input.description,
-          totalDebitBigInt.toString(),
-          totalCreditBigInt.toString(),
-          actorId,
+          journalId,
+          lineNum++,
+          line.accountId,
+          dMinor,
+          cMinor,
+          curCode,
+          exRate,
+          dMinor, // Base minor = line minor for functional currency
+          cMinor,
+          line.memo ?? null,
+          JSON.stringify(line.dimensions ?? {}),
         ],
       );
-      const journalId = jnlRes.rows[0].id;
+      lines.push(this.mapJournalLine(lineRes.rows[0]));
+    }
 
-      // 6. Insert journal lines
-      const lines: JournalLineV1[] = [];
-      let lineNum = 1;
+    const journal = this.mapJournal(jnlRes.rows[0], lines);
 
-      for (const line of input.lines) {
-        const curCode = line.currencyCode ?? bookCurrency;
-        const exRate = line.exchangeRate ?? '1.000000';
-        const dMinor = BigInt(line.debitAmountMinor ?? '0').toString();
-        const cMinor = BigInt(line.creditAmountMinor ?? '0').toString();
+    // 7. Emit JournalPostedEventV1 outbox fact
+    const postedEvent: JournalPostedEventV1 = {
+      specversion: '1.0',
+      id: randomUUID(),
+      source: 'gigalibs.financial-operations',
+      type: 'finance.journal.posted.v1',
+      tenantId,
+      subject: `journal/${journal.id}`,
+      time: new Date().toISOString(),
+      correlationId: randomUUID(),
+      data: {
+        journalId: journal.id,
+        journalNumber: journal.journalNumber,
+        accountingBookId: journal.accountingBookId,
+        fiscalPeriodId: journal.fiscalPeriodId,
+        postingDate: journal.postingDate,
+        entryType: journal.entryType,
+        totalDebitMinor: journal.totalDebitMinor,
+        totalCreditMinor: journal.totalCreditMinor,
+        postedAt: journal.postedAt ?? new Date().toISOString(),
+        postedBy: actorId,
+      },
+    };
+    await this.writeOutbox(client, tenantId, 'journal', journal.id, postedEvent);
 
-        const lineRes = await client.query(
-          `INSERT INTO ${SCHEMA}.gl_journal_lines (
-            tenant_id, journal_id, line_number, account_id,
-            debit_amount_minor, credit_amount_minor, currency_code, exchange_rate,
-            base_debit_amount_minor, base_credit_amount_minor, memo, dimensions
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-          RETURNING *`,
-          [
-            tenantId,
-            journalId,
-            lineNum++,
-            line.accountId,
-            dMinor,
-            cMinor,
-            curCode,
-            exRate,
-            dMinor, // Base minor = line minor for functional currency
-            cMinor,
-            line.memo ?? null,
-            JSON.stringify(line.dimensions ?? {}),
-          ],
-        );
-        lines.push(this.mapJournalLine(lineRes.rows[0]));
-      }
-
-      const journal = this.mapJournal(jnlRes.rows[0], lines);
-
-      // 7. Emit JournalPostedEventV1 outbox fact
-      const postedEvent: JournalPostedEventV1 = {
-        specversion: '1.0',
-        id: randomUUID(),
-        source: 'gigalibs.financial-operations',
-        type: 'finance.journal.posted.v1',
-        tenantId,
-        subject: `journal/${journal.id}`,
-        time: new Date().toISOString(),
-        correlationId: randomUUID(),
-        data: {
-          journalId: journal.id,
-          journalNumber: journal.journalNumber,
-          accountingBookId: journal.accountingBookId,
-          fiscalPeriodId: journal.fiscalPeriodId,
-          postingDate: journal.postingDate,
-          entryType: journal.entryType,
-          totalDebitMinor: journal.totalDebitMinor,
-          totalCreditMinor: journal.totalCreditMinor,
-          postedAt: journal.postedAt ?? new Date().toISOString(),
-          postedBy: actorId,
-        },
-      };
-      await this.writeOutbox(client, tenantId, 'journal', journal.id, postedEvent);
-
-      await this.writeAudit(client, tenantId, 'gl_journal', journal.id, 'POST', actorId, {
-        journalNumber,
-        totalMinor: journal.totalDebitMinor,
-        linesCount: lines.length,
-      });
-
-      return journal;
+    await this.writeAudit(client, tenantId, 'gl_journal', journal.id, 'POST', actorId, {
+      journalNumber,
+      totalMinor: journal.totalDebitMinor,
+      linesCount: lines.length,
     });
+
+    return journal;
   }
 
   // ─── 5. Immutable Reversals (reverseCorrectIt) ──────────────────────────────
@@ -1190,22 +1239,15 @@ export class FinanceService {
     aggregateId: string,
     event: { id: string; type: string; correlationId: string; causationId?: string; data: unknown },
   ): Promise<void> {
-    await client.query(
-      `INSERT INTO ${SCHEMA}.outbox_events (
-        id, tenant_id, topic, event_type, aggregate_type, aggregate_id, aggregate_version,
-        correlation_id, causation_id, schema_version, payload, status
-      ) VALUES ($1, $2, $3, $4, $5, $6, 1, $7, $8, 1, $9, 'PENDING')`,
-      [
-        event.id,
-        tenantId,
-        TOPIC,
-        event.type,
-        aggregateType,
-        aggregateId,
-        event.correlationId,
-        event.causationId ?? null,
-        JSON.stringify(event.data),
-      ],
-    );
+    // WI-OI-120c: the next aggregate version per record, so repeated events for one record never collide.
+    await appendOutboxEvent(client, tenantId, {
+      id: event.id,
+      type: event.type,
+      aggregateType,
+      aggregateId,
+      correlationId: event.correlationId,
+      causationId: event.causationId ?? null,
+      data: event.data,
+    });
   }
 }

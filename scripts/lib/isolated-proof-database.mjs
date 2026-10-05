@@ -29,8 +29,8 @@ export function isolatedProofDatabaseUrl(proofName) {
   const url = process.env.PROOF_DATABASE_URL;
   if (!url) {
     console.log(
-      `NOT RUN: ${proofName} needs PROOF_DATABASE_URL, an isolated PostgreSQL 16 database migrated to the finance ` +
-        'schema. It never uses the UAT instance.',
+      `NOT RUN: ${proofName} needs PROOF_DATABASE_URL, an isolated PostgreSQL 16 database. It never uses the UAT ` +
+        'instance.',
     );
     process.exit(NOT_RUN_EXIT_CODE);
   }

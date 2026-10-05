@@ -602,8 +602,10 @@ export class TreasuryService {
       postingDate: line.transaction_date,
       entryType: 'STANDARD_MANUAL',
       description: `Bank Fee Adjustment: ${input.description}`,
-      sourceDocumentType: 'BANK_STATEMENT',
-      sourceDocumentId: `STMT-LINE-${line.line_number}`,
+      // The statement line's own id: line numbers restart on every statement, so they cannot identify the source
+      // (WI-OI-120c). A retried fee adjustment reuses this journal instead of posting a second one.
+      sourceDocumentType: 'BANK_STATEMENT_LINE',
+      sourceDocumentId: String(line.id),
       lines: [
         {
           accountId: input.expenseAccountId,

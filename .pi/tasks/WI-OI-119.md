@@ -5,6 +5,14 @@
   `.pi/work/WI-OI-119.md`; deliverables in `docs/audits/2026-10-04-production-readiness/`.
 - **Size:** L (read-only audit + governance-document corrections; no product code)
 
+### Owner-requested follow-up, 2026-10-05
+
+Status: **Review**. Investigated both pasted metadata/master-data proposals against the current checkout and the
+existing audit. Report: `docs/audits/2026-10-04-production-readiness/metadata-proposals-investigation-2026-10-05.md`.
+It distinguishes baseline findings, recorded UAT deployment and uncommitted U2 repairs; preserves all 42 primary
+P0/P1 IDs; adds metadata/proposal findings without upgrading any gate. Product code and the running instance were
+not changed. No implementation plan or new architecture is approved by the report.
+
 ## Goal
 
 Establish, from the code and the running system rather than from claims, what every in-scope work item actually

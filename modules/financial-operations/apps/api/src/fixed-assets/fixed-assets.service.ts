@@ -453,6 +453,8 @@ export class FixedAssetsService {
         });
       }
 
+      // The run id is the journal's source document, so the journal drills through to this run (WI-OI-120c).
+      const runId = randomUUID();
       const postJournalInput: PostJournalInputV1 = {
         accountingBookId: periodRow.book_id,
         fiscalPeriodId: input.fiscalPeriodId,
@@ -460,11 +462,11 @@ export class FixedAssetsService {
         entryType: 'STANDARD_MANUAL',
         description: `Periodic Depreciation Run for ${periodRow.period_name}`,
         sourceDocumentType: 'DEPRECIATION_RUN',
-        sourceDocumentId: randomUUID(),
+        sourceDocumentId: runId,
         lines: journalLines,
       };
 
-      const journal = await this.financeService.postJournal(tenantId, actor, postJournalInput);
+      const journal = await this.financeService.postJournal(tenantId, actor, postJournalInput, client);
 
       // 5. Update schedules to POSTED and update fixed asset balances
       for (const row of schedulesRes.rows) {
@@ -491,7 +493,6 @@ export class FixedAssetsService {
       }
 
       // 6. Record Asset Depreciation Run
-      const runId = randomUUID();
       const runCode = `DEPR-${periodRow.period_name}-${Date.now().toString().slice(-4)}`;
       const now = new Date().toISOString();
 
@@ -687,7 +688,7 @@ export class FixedAssetsService {
         lines: journalLines,
       };
 
-      const journal = await this.financeService.postJournal(tenantId, actor, postJournalInput);
+      const journal = await this.financeService.postJournal(tenantId, actor, postJournalInput, client);
 
       // 4. Update asset status and cancel future projected schedules
       const newStatus = input.disposalType === 'SALE' ? 'DISPOSED' : 'WRITTEN_OFF';

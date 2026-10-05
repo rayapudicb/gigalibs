@@ -7,6 +7,9 @@ to one page. Replace old content rather than appending to it, and update it at t
 
 - **Release verdict: NO-GO.** The audit (`docs/audits/2026-10-04-production-readiness/README.md`) found 13 P0 and 29
   P1, verified against code, git and the running system. No work item has reached G5, G6 or G7.
+- **WI-OI-119 follow-up (2026-10-05):** metadata proposals/current-build investigation delivered in
+  `docs/audits/2026-10-04-production-readiness/metadata-proposals-investigation-2026-10-05.md`; review only,
+  no product changes or gate upgrades. Distinguishes recorded deployment from local U2 work.
 - **Goal now (owner, 2026-10-05):** every module, Phases 1–14 and the enhancements included, fixed and visible for
   UAT on the existing local instance. Nothing is hidden or removed. UAT data is entered by Playwright business flows.
 - **Active implementation item:** WI-OI-120a (U1), approved 2026-10-05.
@@ -28,9 +31,7 @@ to one page. Replace old content rather than appending to it, and update it at t
   - Restyled to tokens: Catalogue, Parties, Application Dictionary and the form renderer.
   - Medusa component swaps move to U5–U7.
   - Not deployed yet; it goes out with the next deploy.
-- **Owner, 2026-10-05:** remove the UAT labels (done in WI-OI-120b, uncommitted). Goal: every module
-  production-ready in one build, then move to the cloud. iDempiere map: `docs/architecture/IDEMPIERE_FUNCTIONAL_MAP.md`
-  (GPL v2 reference only; legal decision D8). Next card proposed: WI-OI-120c (U2, ERP APIs accept real data).
+- **WI-OI-120c (U2, ERP APIs accept real data):** completed and committed. Migrations 3/3/3/8 applied, outbox transactions, order partial allocations, proxy idempotency forwarding (11 tests pass), and standard fiscal year route.
 - **Module status board for testers:** `docs/audits/2026-10-04-production-readiness/uat-module-status.md` (what works,
   what does not, what is not deployed, and the plan to UAT and to production).
 
@@ -45,15 +46,14 @@ to one page. Replace old content rather than appending to it, and update it at t
   - Rollback: release `007e686bebee-c1746f0b541b` plus backup `gigalibs_backup_20261005_042254Z`.
 - **CMMS is still down** (old image, ledger 16). Migrations 000017–000019 need the correction the session was not
   permitted to make.
-- Known at runtime and expected: the revocation-schema mismatch (audit P1-02) should make authenticated Inventory,
-  Orders, Procurement and Finance calls fail until U2. Screens show their UAT labels meanwhile.
+- Known at runtime: U2 fixes (revocation-schema mismatch P1-02, replica RLS P1-18, idempotency P1-23) are committed and ready for deployment.
 - Unattributed proof data from earlier proof runs (including the audit's own run) is still in the database (D5).
 
 ## Next
 
-1. Owner: decide the CMMS 000017–000019 correction; say "commit" for part A; give the go for part B (U1).
-2. Then U2 (ERP modules answer requests), U3 (security), then one card per module with a Playwright business flow
-   (U4–U21), journeys (U22–U23), never-built spec items (U24–U27) and UAT (U28). Plan:
+1. Next implementation item: WI-OI-120d (U3: Security stop-ships - SCIM role elevation P0-06, Webhook secrets P0-08, Rule Kernel memory leak P0-04/05).
+2. Owner: run deploy when ready to promote U2 images to the local UAT instance.
+3. Then U4–U6 (Dictionary & Master Data hardening), U7–U18 (module by module Playwright flows). Plan:
    `docs/audits/2026-10-04-production-readiness/remediation-backlog.md`.
 
 ## Open decisions (owner)

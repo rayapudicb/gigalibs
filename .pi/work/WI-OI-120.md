@@ -232,3 +232,64 @@ Card `.pi/tasks/WI-OI-120b.md`, approved by the owner on 2026-10-05.
   - all eight static audits pass, including `audit:design-tokens`; `module-manifests.mjs --check` shows no errors.
 - **Deploy:** not yet. After the owner commits, the images are rebuilt and the owner runs the deploy script (auto mode
   refuses deploys from the session).
+
+## WI-OI-120c (U2): ERP module APIs accept, save and record real data
+
+Card `.pi/tasks/WI-OI-120c.md`, approved by the owner on 2026-10-05.
+
+- **Migrations (forward only; applied migrations untouched):**
+  - Inventory, Orders and Procurement `000003_*_auth_revocation_shape`, and Finance `000008`. They give the
+    revocation table the columns the SDK guard reads (all four tables were empty; `SET NOT NULL` fails loudly if not).
+  - Finance `000008` also forces RLS on the three `org_replica_*` tables (P1-18) and adds the unique index
+    `uq_gl_journals_source_document` (checked: 0 duplicates among 76 sourced journals on the UAT instance).
+  - Contract versions are now Inventory, Orders and Procurement 3 and Finance 8; runtime manifests and compose
+    regenerated.
+  - Isolated PostgreSQL 16: fresh install reaches 3/3/3/8. Upgrade of a restore of the 2026-10-05 UAT backup also
+    reaches 3/3/3/8, the SDK revocation query runs, replica RLS is on, and the index exists. The Orders ledger has
+    no `name` column; caught on the restore and fixed.
+- **One transaction per command (P0-09):**
+  - `postJournal` takes the caller's transaction.
+  - A journal for a source document is created once per book and entry type, and a retry returns it.
+  - Journal numbers are taken under a per-tenant lock (the `COUNT(*)+1` race).
+  - Callers pass their transaction: Costing ×4 (with sources: cost layer, landed-cost voucher, revaluation),
+    Fixed Assets ×2 (the depreciation run id replaces a random id).
+  - Consolidation: group creation, the run (journals, run, entries, eliminations, event) and sealing are each one
+    transaction. Before this every statement was its own transaction.
+  - Treasury fee: source is the statement line id. Line numbers restart per statement and would have falsely
+    matched under the new index.
+- **Events (P1-03):** new `modules/financial-operations/apps/api/src/outbox.ts`.
+  - Every column is set, with the next aggregate version per record under a per-record lock (the unique key made a
+    second event per record fail).
+  - Used by Finance, Costing ×5, Budgeting ×4, Close ×5 (which now have their event type) and Consolidation ×3
+    (which wrote to a table that does not exist).
+- **Orders (P1-09):** allocation and dispatch events take the next version per record, under a lock.
+  - Found during the proof: reusing one parameter in a subquery fails with "inconsistent types". Fixed by reading
+    the version first.
+  - A double comma in the parameter list was also caught before the run.
+- **Proxy (P1-23):** `forwardedWriteHeaders` forwards a UUID `Idempotency-Key` and an entity-tag or version
+  `If-Match` on writes, and rejects malformed values with 400. Unit test: 11 pass.
+- **Finance period creation (found during U2):** no route created fiscal periods, so nothing could ever be posted.
+  Added `POST /v1/fiscal-years/standard` (contract `GenerateStandardFiscalYearInputV1Schema`, permission
+  `finance:periods:manage`).
+- **HTTP proof:** `scripts/verify-u2-module-host-http.mjs`, also in `pnpm verify`, NOT RUN without
+  `PROOF_DATABASE_URL`. It runs the real `apps/module-host/dist` against an isolated database with signed tokens
+  for two tenants. **39/39 PASS:**
+  - migrations for the five modules; host start;
+  - signed-in reads in all five modules;
+  - tenant B gets 404 on tenant A's warehouse;
+  - book, account, consolidation group and budget structure, with both events in the outbox;
+  - fiscal year with 12 periods; seven costing accounts; cost profile;
+  - forced event failure after the journal → the command fails, leaving 0 journals and 0 layers;
+  - receipt layer posts one balanced journal (2,500/2,500) linked to its layer, with one event;
+  - subledger lock and its event;
+  - order created, read back, confirmed, allocated twice (events version 1 and 2);
+  - UOM; product created, then retried with the same key → same id, one row.
+- **Not covered by U2 (recorded, not hidden):**
+  - request-level idempotency for Inventory, Orders, Procurement and Finance commands (F1);
+  - the Treasury fee adjustment's match is still a separate transaction (a retry now reuses the journal);
+  - Finance PUT and DELETE routes are outside the gateway's GET/POST/PATCH contract (F0 standardizes updates on
+    PATCH);
+  - the screens are still the hand-written ones (U7–U18 on F0).
+- **Verification:** `pnpm build` 74/74; `pnpm test` 294 files and 2,446 tests passed (165 skipped); eight static
+  audits pass; manifest check clean; deployment profile shows the known drift only.
+- **Not deployed yet:** waits for the owner's "commit"; then images are rebuilt and the owner runs the deploy.

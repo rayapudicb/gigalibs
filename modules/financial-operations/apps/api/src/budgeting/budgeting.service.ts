@@ -27,7 +27,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import type { PoolClient } from 'pg';
-import { SCHEMA, TOPIC } from '../config.js';
+import { SCHEMA } from '../config.js';
+import { appendOutboxEvent } from '../outbox.js';
 import { DatabaseService } from '../database.service.js';
 import {
   distributeAnnualBudget,
@@ -113,11 +114,13 @@ export class BudgetingService {
         },
       };
 
-      await client.query(
-        `INSERT INTO ${SCHEMA}.outbox_events (id, tenant_id, topic, event_type, payload, status)
-         VALUES ($1, $2, $3, $4, $5, 'PENDING')`,
-        [event.id, tenantId, TOPIC, event.type, JSON.stringify(event)],
-      );
+      await appendOutboxEvent(client, tenantId, {
+        id: event.id,
+        type: event.type,
+        aggregateType: 'budget_structure',
+        aggregateId: String(event.data.budgetStructureId),
+        data: event,
+      });
 
       return this.mapBudgetStructure(res.rows[0]);
     });
@@ -283,11 +286,13 @@ export class BudgetingService {
         },
       };
 
-      await client.query(
-        `INSERT INTO ${SCHEMA}.outbox_events (id, tenant_id, topic, event_type, payload, status)
-         VALUES ($1, $2, $3, $4, $5, 'PENDING')`,
-        [event.id, tenantId, TOPIC, event.type, JSON.stringify(event)],
-      );
+      await appendOutboxEvent(client, tenantId, {
+        id: event.id,
+        type: event.type,
+        aggregateType: 'budget_revision',
+        aggregateId: String(event.data.budgetRevisionId),
+        data: event,
+      });
 
       return activatedRev;
     });
@@ -763,11 +768,13 @@ export class BudgetingService {
         },
       };
 
-      await client.query(
-        `INSERT INTO ${SCHEMA}.outbox_events (id, tenant_id, topic, event_type, payload, status)
-         VALUES ($1, $2, $3, $4, $5, 'PENDING')`,
-        [event.id, tenantId, TOPIC, event.type, JSON.stringify(event)],
-      );
+      await appendOutboxEvent(client, tenantId, {
+        id: event.id,
+        type: event.type,
+        aggregateType: 'budget_commitment',
+        aggregateId: String(event.data.commitmentId),
+        data: event,
+      });
 
       // If spend was allowed but exceeded baseline threshold, emit threshold exceeded event
       if (BigInt(check.resultingAvailableMinor) < 0n) {
@@ -787,11 +794,13 @@ export class BudgetingService {
           },
         };
 
-        await client.query(
-          `INSERT INTO ${SCHEMA}.outbox_events (id, tenant_id, topic, event_type, payload, status)
-           VALUES ($1, $2, $3, $4, $5, 'PENDING')`,
-          [thresholdEvent.id, tenantId, TOPIC, thresholdEvent.type, JSON.stringify(thresholdEvent)],
-        );
+        await appendOutboxEvent(client, tenantId, {
+          id: thresholdEvent.id,
+          type: thresholdEvent.type,
+          aggregateType: 'budget_line',
+          aggregateId: String(thresholdEvent.data.budgetLineId),
+          data: thresholdEvent,
+        });
       }
 
       return commitment;

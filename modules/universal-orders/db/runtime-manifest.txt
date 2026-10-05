@@ -1,2 +1,3 @@
 000001_orders_fulfillment_foundation.up.sql
 000002_orders_outbox_inbox_relay.up.sql
+000003_orders_auth_revocation_shape.up.sql

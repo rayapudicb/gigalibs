@@ -182,6 +182,15 @@ export const CreateFiscalYearInputV1Schema = z
   .strict();
 export type CreateFiscalYearInputV1 = z.infer<typeof CreateFiscalYearInputV1Schema>;
 
+/** A calendar fiscal year with its twelve monthly periods (WI-OI-120c: periods could not be created through the API). */
+export const GenerateStandardFiscalYearInputV1Schema = z
+  .object({
+    accountingBookId: z.string().uuid(),
+    year: z.number().int().min(2000).max(2100),
+  })
+  .strict();
+export type GenerateStandardFiscalYearInputV1 = z.infer<typeof GenerateStandardFiscalYearInputV1Schema>;
+
 export const FiscalPeriodV1Schema = z
   .object({
     id: z.string().uuid(),

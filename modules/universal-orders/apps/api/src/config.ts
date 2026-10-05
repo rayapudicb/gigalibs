@@ -6,7 +6,7 @@ export const MODULE_KEY = 'universal-orders';
 export const PERMISSION_PREFIX = 'orders';
 export const SCHEMA = 'gigalibs_orders';
 export const TOPIC = 'universal-orders.facts.v1';
-export const SCHEMA_CONTRACT_VERSION = 2;
+export const SCHEMA_CONTRACT_VERSION = 3;
 export const RUNTIME_CONFIG = Symbol('UNIVERSAL_ORDERS_RUNTIME_CONFIG');
 
 export const runtimeConfigProvider: Provider<ModuleRuntimeConfig> = {

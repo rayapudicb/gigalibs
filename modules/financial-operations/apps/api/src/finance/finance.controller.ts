@@ -3,6 +3,7 @@ import {
   CreateAccountingBookInputV1Schema,
   CreateFiscalPeriodInputV1Schema,
   CreateFiscalYearInputV1Schema,
+  GenerateStandardFiscalYearInputV1Schema,
   PostJournalInputV1Schema,
   ReverseJournalInputV1Schema,
   UpdateAccountInputV1Schema,
@@ -94,6 +95,13 @@ export class FinanceController {
   async createFiscalYear(@CurrentPrincipal() principal: ModulePrincipal, @Body() body: unknown) {
     const input = parse(CreateFiscalYearInputV1Schema, body);
     return this.service.createFiscalYear(principal.tenantId, principal.subject, input);
+  }
+
+  @Post('fiscal-years/standard')
+  @RequirePermissions('finance:periods:manage')
+  async generateStandardFiscalYear(@CurrentPrincipal() principal: ModulePrincipal, @Body() body: unknown) {
+    const input = parse(GenerateStandardFiscalYearInputV1Schema, body);
+    return this.service.generateStandardPeriods(principal.tenantId, principal.subject, input.accountingBookId, input.year);
   }
 
   @Get('fiscal-periods')

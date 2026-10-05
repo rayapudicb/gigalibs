@@ -27,7 +27,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import type { PoolClient } from 'pg';
-import { SCHEMA, TOPIC } from '../config.js';
+import { SCHEMA } from '../config.js';
+import { appendOutboxEvent } from '../outbox.js';
 import { DatabaseService } from '../database.service.js';
 import {
   distributeAmortization,
@@ -124,15 +125,12 @@ export class CloseService {
       const lockRow = upsertRes.rows[0];
 
       // Emit outbox event
-      await client.query(
-        `INSERT INTO ${SCHEMA}.outbox_events (
-           id, tenant_id, topic, payload, created_at
-         ) VALUES ($1, $2, $3, $4, NOW())`,
-        [
-          randomUUID(),
-          tenantId,
-          TOPIC,
-          JSON.stringify({
+      await appendOutboxEvent(client, tenantId, {
+        id: randomUUID(),
+        type: 'finance.subledger_lock.updated.v1',
+        aggregateType: 'subledger_lock',
+        aggregateId: String(lockRow.id),
+        data: {
             type: 'finance.subledger_lock.updated.v1',
             data: {
               lockId: lockRow.id,
@@ -142,9 +140,8 @@ export class CloseService {
               lockStatus: lockRow.lock_status,
               lockedBy: lockRow.locked_by,
             },
-          }),
-        ],
-      );
+          },
+      });
 
       return this.mapSubledgerLock(lockRow);
     });
@@ -265,15 +262,12 @@ export class CloseService {
       const updated = updateRes.rows[0];
 
       // Emit outbox event
-      await client.query(
-        `INSERT INTO ${SCHEMA}.outbox_events (
-           id, tenant_id, topic, payload, created_at
-         ) VALUES ($1, $2, $3, $4, NOW())`,
-        [
-          randomUUID(),
-          tenantId,
-          TOPIC,
-          JSON.stringify({
+      await appendOutboxEvent(client, tenantId, {
+        id: randomUUID(),
+        type: 'finance.close_checklist.updated.v1',
+        aggregateType: 'close_task',
+        aggregateId: String(updated.id),
+        data: {
             type: 'finance.close_checklist.updated.v1',
             data: {
               taskId: updated.id,
@@ -282,9 +276,8 @@ export class CloseService {
               taskStatus: updated.task_status,
               completedBy: updated.completed_by,
             },
-          }),
-        ],
-      );
+          },
+      });
 
       return this.mapChecklistTask(updated);
     });
@@ -383,15 +376,12 @@ export class CloseService {
       }
 
       // Emit outbox event
-      await client.query(
-        `INSERT INTO ${SCHEMA}.outbox_events (
-           id, tenant_id, topic, payload, created_at
-         ) VALUES ($1, $2, $3, $4, NOW())`,
-        [
-          randomUUID(),
-          tenantId,
-          TOPIC,
-          JSON.stringify({
+      await appendOutboxEvent(client, tenantId, {
+        id: randomUUID(),
+        type: 'finance.amortization_schedule.created.v1',
+        aggregateType: 'amortization_schedule',
+        aggregateId: String(scheduleId),
+        data: {
             type: 'finance.amortization_schedule.created.v1',
             data: {
               scheduleId,
@@ -400,9 +390,8 @@ export class CloseService {
               totalAmountMinor: input.totalAmountMinor,
               periodsCount: input.periodsCount,
             },
-          }),
-        ],
-      );
+          },
+      });
 
       return {
         schedule: this.mapAmortizationSchedule(schedRes.rows[0]),
@@ -597,15 +586,12 @@ export class CloseService {
       );
 
       // 6. Emit event
-      await client.query(
-        `INSERT INTO ${SCHEMA}.outbox_events (
-           id, tenant_id, topic, payload, created_at
-         ) VALUES ($1, $2, $3, $4, NOW())`,
-        [
-          randomUUID(),
-          tenantId,
-          TOPIC,
-          JSON.stringify({
+      await appendOutboxEvent(client, tenantId, {
+        id: randomUUID(),
+        type: 'finance.amortization_line.posted.v1',
+        aggregateType: 'amortization_line',
+        aggregateId: String(line.id),
+        data: {
             type: 'finance.amortization_line.posted.v1',
             data: {
               lineId: line.id,
@@ -613,9 +599,8 @@ export class CloseService {
               glJournalId: journalId,
               amountMinor: line.amount_minor,
             },
-          }),
-        ],
-      );
+          },
+      });
 
       return this.mapAmortizationLine(updatedLineRes.rows[0]);
     });
@@ -780,15 +765,12 @@ export class CloseService {
       );
 
       // 7. Emit outbox event
-      await client.query(
-        `INSERT INTO ${SCHEMA}.outbox_events (
-           id, tenant_id, topic, payload, created_at
-         ) VALUES ($1, $2, $3, $4, NOW())`,
-        [
-          randomUUID(),
-          tenantId,
-          TOPIC,
-          JSON.stringify({
+      await appendOutboxEvent(client, tenantId, {
+        id: randomUUID(),
+        type: 'finance.year_end_close.executed.v1',
+        aggregateType: 'year_end_close_run',
+        aggregateId: String(runId),
+        data: {
             type: 'finance.year_end_close.executed.v1',
             data: {
               runId,
@@ -796,9 +778,8 @@ export class CloseService {
               netIncomeMinor: rollover.netIncomeMinor,
               closingJournalId: journalId,
             },
-          }),
-        ],
-      );
+          },
+      });
 
       return this.mapYearEndCloseRun(runRes.rows[0]);
     });

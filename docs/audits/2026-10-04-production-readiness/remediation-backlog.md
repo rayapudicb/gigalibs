@@ -38,18 +38,28 @@ refer to `README.md` §3–4.
 | U2 (120c) | ERP modules answer requests correctly | P0-09, P1-02, P1-03, P1-09, P1-18, P1-23 | Backend Domain | Forward migrations; owner's go to apply |
 | U3 (120d) | Security fixes that would spoil UAT results | P0-04 to P0-08, P1-10, P1-11, P1-20, P1-24, P1-25 | Security & Privacy with Backend Domain | Independent Security reviewer (named human) |
 
+## Stage 1a: foundations that every module needs (ADR-0033, owner decision 2026-10-05)
+
+| Card | Title | Outcome |
+| --- | --- | --- |
+| F0 | Metadata-driven window engine | Window, tab, field, reference and action metadata; one renderer (grid, form, parent-child tabs, lookups, document actions, every state); generic record API on the module SDK. Proven by rebuilding Inventory's windows. |
+| F1 | Shared document lifecycle (`@gigalibs/document-lifecycle`) | Prepare (period, approval, budget, credit), complete, void, close, reverse, reactivate, in one transaction with the outbox |
+| F2 | Event relay and posting engine | Module relays, Finance inbox, posting rules per accounting schema, exactly-once journals, daily reconciliation |
+
+Precise outcome for every module action: `docs/architecture/MODULE_ACTION_OUTCOMES.md`.
+
 ## Stage 1b: every module's backend running on this instance
 
 | Card | Title | Findings | Owner role | Needs |
 | --- | --- | --- | --- | --- |
-| U29 | The 13 modules with no running backend (AR, Spend, Tax, Multi-Currency, Data Studio, Rules, Workflow Studio, Recovery, E-Signature, Document Scanner, Ontology, Saga, master data) run as services in this instance's compose stack, with signed platform context; nothing listens on their host ports today | `uat-module-status.md` | Release Operations with Backend Domain | U3 first for the modules with caller-chosen tenants; owner decision on Spend vs Procurement and on the prototypes |
+| U29 | The 13 modules with no running backend (AR, Spend, Tax, Multi-Currency, Data Studio, Rules, Workflow Studio, Recovery, E-Signature, Document Scanner, Ontology, Saga, master data) are moved onto the SaaS module foundation (module SDK: signed platform context, tenant row-level security, outbox and inbox) and run as services in this instance's compose stack; none of them uses the module SDK today, and nothing listens on their host ports | `uat-module-status.md` | Release Operations with Backend Domain | U3 first for the modules with caller-chosen tenants; owner decision on Spend vs Procurement and on the prototypes |
 
 ## Stage 2: every screen on real data, each with a Playwright business flow
 
 One card per module, in dependency order. Each card:
 
-1. connects the screens to the BFF and module APIs and replaces the sample figures, restyled to the design standard
-   (Medusa UI and `ui-*` tokens);
+1. replaces the module's hand-written screens with metadata-driven windows (ADR-0033, on F0) backed by the module's
+   record API, implementing its section of `MODULE_ACTION_OUTCOMES.md` with the shared lifecycle (F1) and posting (F2);
 2. wires or explains every button;
 3. adds API tests through HTTP;
 4. adds a Playwright flow that enters the module's UAT data through the screens;

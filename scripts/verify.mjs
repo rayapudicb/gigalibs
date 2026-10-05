@@ -37,6 +37,7 @@ const steps = [
   { name: 'inventory-costing', cmd: process.execPath, args: ['scripts/verify-inventory-costing.mjs'] },
   { name: 'budgeting-commitment-control', cmd: process.execPath, args: ['scripts/verify-budgeting-and-commitment-control.mjs'] },
   { name: 'period-close-forecasting', cmd: process.execPath, args: ['scripts/verify-period-close-and-forecasting.mjs'] },
+  { name: 'module-host-http (U2)', cmd: process.execPath, args: ['scripts/verify-u2-module-host-http.mjs'] },
 ];
 
 const logDir = join(tmpdir(), 'gigalibs-verify');

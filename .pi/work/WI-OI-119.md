@@ -204,3 +204,28 @@ Applied by `scratchpad/apply_corrections.py` with exact-match assertions; 94 cha
 - **Related:** the Products screen's "HTTP 403" comes from the web BFF access check, not the module. No tenant holds
   an entitlement for `product-catalogue`, `universal-inventory`, `universal-procurement`, `universal-orders` or
   `financial-operations` (`public.tenant_module_entitlements`, checked read-only 2026-10-05).
+
+## Metadata/master-data proposals follow-up (2026-10-05)
+
+- Owner requested investigation before deciding how to proceed, then asked to continue. Same WI-OI-119 audit scope;
+  no product implementation. Report:
+  `docs/audits/2026-10-04-production-readiness/metadata-proposals-investigation-2026-10-05.md`.
+- Read both supplied attachments, the existing audit, current task/evidence records, approved metadata/ownership
+  ADRs and the untracked ADR-0033/action proposal. Rechecked current renderer, dictionary contracts, domain adapters,
+  static workspaces, shared event infrastructure and U2 source/evidence boundaries.
+- Checkout HEAD: `f001270`; U2 implementation and ADR-0033 are dirty/untracked work. Preserved them. Report distinguishes
+  source findings, prior audit findings, recorded tests and recorded deployment; no new G5–G7 or closure claim.
+- Main additional findings: renderer does not execute several declared capabilities; weak adapter owner validation
+  and Finance placeholder methods; unsafe renderer defaults; overly broad lifecycle/posting/generic-API language;
+  U2 all-command idempotency goal exceeds its recorded coverage. Single-schema/Client-0 requirements conflict with
+  existing GigaLibs decisions. Existing contracts, domain services and signed relay/inbox infrastructure are reusable.
+- Runtime limitations: Docker socket access denied; loopback web/API unreachable from this execution context.
+  Current service health was not independently re-established. Recorded UAT deployment is not presented as a new
+  live check. No database or service writes were performed.
+- Documentation only: new report, audit index, this evidence, task follow-up and NOW pointer. No canonical WI status
+  upgraded; no changes to U2's task/evidence or product files.
+- Verification: `PROOF_DATABASE_URL= pnpm verify --audits`, exit 0. Eight static audits and the module-manifest
+  check passed; only the known `WORKFORCE_API_URL` deployment-profile drift. Eight database/HTTP proof steps
+  explicitly NOT RUN. Build/test were not repeated for documentation. Log:
+  `/var/folders/jp/fkzm1c3s1d52rj_9cvjv6kx00000gn/T/gigalibs-verify/verify-2026-10-05T06-33-43-984Z.log`.
+  `git diff --check` for the changed tracked documentation passed.

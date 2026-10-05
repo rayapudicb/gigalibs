@@ -6,3 +6,4 @@
 000006_finance_budgeting_commitment_control.up.sql
 
 000007_finance_period_close_accruals_forecasting.up.sql
+000008_finance_auth_replica_rls_journal_idempotency.up.sql

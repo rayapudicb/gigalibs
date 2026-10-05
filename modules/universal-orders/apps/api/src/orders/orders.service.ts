@@ -498,11 +498,21 @@ export class OrderService {
       );
 
       // Emit orders.allocation.requested.v1 outbox event
+      // The next aggregate version per record, under a per-record lock, so a second event for the same sales order line
+      // (for example a second partial allocation) never collides with the unique key (WI-OI-120c, audit P1-09).
+      await client.query('SELECT pg_advisory_xact_lock(hashtext($1))', [
+        `gigalibs_orders:outbox:${tenantId}:sales_order_line:${line.id}`,
+      ]);
+      const allocationEventVersion = await client.query<{ version: number }>(
+        `SELECT COALESCE(MAX(aggregate_version), 0)::int + 1 AS version FROM gigalibs_orders.outbox_events
+          WHERE tenant_id = $1 AND aggregate_type = 'sales_order_line' AND aggregate_id = $2`,
+        [tenantId, line.id],
+      );
       await client.query(
         `INSERT INTO gigalibs_orders.outbox_events (
           id, tenant_id, topic, event_type, aggregate_type, aggregate_id, aggregate_version,
           correlation_id, schema_version, payload, status, created_at
-        ) VALUES ($1, $2, 'orders.allocation', 'orders.allocation.requested.v1', 'sales_order_line', $3, 1, $4, 1, $5::jsonb, 'PENDING', NOW())`,
+        ) VALUES ($1, $2, 'orders.allocation', 'orders.allocation.requested.v1', 'sales_order_line', $3, $6, $4, 1, $5::jsonb, 'PENDING', NOW())`,
         [
           randomUUID(),
           tenantId,
@@ -517,6 +527,7 @@ export class OrderService {
             requestedQuantity: input.allocatedQuantity,
             uomId: line.uom_id,
           }),
+          allocationEventVersion.rows[0]?.version ?? 1,
         ],
       );
 
@@ -758,11 +769,21 @@ export class OrderService {
       });
 
       // Emit orders.fulfillment.dispatched.v1 outbox event
+      // The next aggregate version per record, under a per-record lock, so a second event for the same fulfillment order
+      // (for example a second partial allocation) never collides with the unique key (WI-OI-120c, audit P1-09).
+      await client.query('SELECT pg_advisory_xact_lock(hashtext($1))', [
+        `gigalibs_orders:outbox:${tenantId}:fulfillment_order:${fulfillmentId}`,
+      ]);
+      const dispatchEventVersion = await client.query<{ version: number }>(
+        `SELECT COALESCE(MAX(aggregate_version), 0)::int + 1 AS version FROM gigalibs_orders.outbox_events
+          WHERE tenant_id = $1 AND aggregate_type = 'fulfillment_order' AND aggregate_id = $2`,
+        [tenantId, fulfillmentId],
+      );
       await client.query(
         `INSERT INTO gigalibs_orders.outbox_events (
           id, tenant_id, topic, event_type, aggregate_type, aggregate_id, aggregate_version,
           correlation_id, schema_version, payload, status, created_at
-        ) VALUES ($1, $2, 'orders.fulfillment', 'orders.fulfillment.dispatched.v1', 'fulfillment_order', $3, 1, $4, 1, $5::jsonb, 'PENDING', NOW())`,
+        ) VALUES ($1, $2, 'orders.fulfillment', 'orders.fulfillment.dispatched.v1', 'fulfillment_order', $3, $6, $4, 1, $5::jsonb, 'PENDING', NOW())`,
         [
           randomUUID(),
           tenantId,
@@ -778,6 +799,7 @@ export class OrderService {
             lines: dispatchedLines,
             dispatchedAt: res.rows[0].dispatched_at?.toISOString() || new Date().toISOString(),
           }),
+          dispatchEventVersion.rows[0]?.version ?? 1,
         ],
       );
 
