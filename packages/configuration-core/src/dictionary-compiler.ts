@@ -14,6 +14,7 @@ import {
   type DictionaryValidationRuleV1,
   type DictionaryViewV1,
   CONFIGURATION_MAX_FIELDS,
+  MODULE_BASELINE_PACKAGE_SUFFIX,
 } from '@gigalibs/contracts';
 import { executableCapabilityFindings } from './dictionary-capabilities.js';
 import { canonicalJson, type ConfigurationFinding } from './index.js';
@@ -26,6 +27,8 @@ export interface CompileDictionaryOptions {
   baseline?: Partial<DictionaryPackageDefinitionV1> | undefined;
   registeredActionHandlers?: readonly string[] | undefined;
   registeredResolvers?: readonly string[] | undefined;
+  /** WI-OI-120f (F0.2): true only when the platform publishes a module's own baseline window. */
+  moduleBaseline?: boolean | undefined;
 }
 
 export interface CompileDictionaryResult {
@@ -299,6 +302,16 @@ export function compileDictionaryPackage(
         }
       }
     }
+  }
+
+  // 7b. WI-OI-120f (F0.2): the baseline suffix marks a module's own window, which only the platform publishes.
+  if (pkg.packageKey.endsWith(MODULE_BASELINE_PACKAGE_SUFFIX) && !options.moduleBaseline) {
+    findings.push({
+      code: 'RESERVED_BASELINE_PACKAGE_KEY',
+      path: 'packageKey',
+      message: `Package keys ending in ${MODULE_BASELINE_PACKAGE_SUFFIX} are reserved for module baselines.`,
+      severity: 'ERROR',
+    });
   }
 
   // 8. WI-OI-120f (F0.1): only what the metadata window executes may be published, and every view, tab, placement,

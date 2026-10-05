@@ -1,4 +1,4 @@
-import { createHash, randomBytes } from 'node:crypto';
+import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import type {
   PlatformCreateTenantDto,
   PlatformEntitlementUpdateDto,
@@ -626,6 +626,18 @@ export class PlatformAdministrationService {
           },
           after: { moduleKeys },
           metadata: { reason: dto.reason, source },
+        },
+      });
+      // WI-OI-120f (F0.2): the control plane activates the windows of newly enabled modules from this event, in its
+      // own transaction and with retries, as the administrator recorded on each entitlement.
+      await transaction.controlOutboxEvent.create({
+        data: {
+          eventId: randomUUID(),
+          tenantId,
+          aggregateType: 'tenant-module-entitlements',
+          aggregateId: tenantId,
+          eventType: 'tenant.entitlements.changed.v1',
+          payload: { tenantId, enabledModuleKeys: moduleKeys },
         },
       });
     });

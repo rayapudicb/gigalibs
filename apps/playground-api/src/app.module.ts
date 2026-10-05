@@ -151,6 +151,7 @@ import { ConfigurationStudioService } from './configuration-studio.service.js';
 import { ConnectorCredentialService } from './connector-credential.service.js';
 import { ConnectorProfileService } from './connector-profile.service.js';
 import { ControlOutboxWorker } from './control-outbox.worker.js';
+import { ModuleWindowBaselineService } from './module-window-baselines.service.js';
 import { DataRetentionWorker } from './data-retention.worker.js';
 import { DatabaseAvailabilityFilter } from './database-availability.filter.js';
 import { ExceptionController } from './exception.controller.js';
@@ -233,6 +234,7 @@ import { WorkflowService } from './workflow.service.js';
     ExceptionService,
     ValueLedgerService,
     ControlOutboxWorker,
+    ModuleWindowBaselineService,
     TenantDataExportService,
     KernelSchedulesService,
     KernelPackApplicationsService,

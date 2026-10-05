@@ -12,6 +12,8 @@ import { runtimeConfig } from './config/runtime-config.js';
 import { ConfigurationOutboxPublisher } from './configuration-outbox.publisher.js';
 // biome-ignore lint/style/useImportType: NestJS needs the runtime constructor token for dependency injection.
 import { ExceptionService } from './exception.service.js';
+// biome-ignore lint/style/useImportType: NestJS needs the runtime constructor token for dependency injection.
+import { ModuleWindowBaselineService } from './module-window-baselines.service.js';
 
 interface ClaimedOutboxEvent {
   id: string;
@@ -33,6 +35,7 @@ export class ControlOutboxWorker implements OnApplicationBootstrap, OnApplicatio
     private readonly ingestionService: ApIngestionService,
     private readonly exceptionService: ExceptionService,
     private readonly configurationPublisher: ConfigurationOutboxPublisher,
+    private readonly moduleWindows: ModuleWindowBaselineService,
   ) {}
 
   onApplicationBootstrap() {
@@ -148,6 +151,19 @@ export class ControlOutboxWorker implements OnApplicationBootstrap, OnApplicatio
           if (published.count !== 1) throw new Error('OUTBOX_CLAIM_LOST');
         });
         this.logger.log(`Published Configuration outbox event: ${event.eventType} (${event.id})`);
+      } else if (event.eventType === 'tenant.entitlements.changed.v1') {
+        // WI-OI-120f (F0.2): activate the windows of the tenant's enabled modules. Idempotent, so a retry is safe.
+        const outcomes = await this.moduleWindows.applyForTenant(event.tenantId);
+        await prisma.$transaction(async (transaction) => {
+          const published = await transaction.controlOutboxEvent.updateMany({
+            where: { id: event.id, status: 'PROCESSING', attempts: event.attempts },
+            data: { status: 'PUBLISHED', publishedAt: new Date(), claimedAt: null, lastErrorCode: null },
+          });
+          if (published.count !== 1) throw new Error('OUTBOX_CLAIM_LOST');
+        });
+        this.logger.log(
+          `Applied module windows for tenant ${event.tenantId}: ${outcomes.map((o) => `${o.surfaceKey}=${o.status}`).join(', ') || 'none shipped'}`,
+        );
       } else if (event.eventType.startsWith('saga.') || event.eventType.startsWith('webhook.')) {
         // These legacy event families remain outside WI-OI-039. Their transport must be reconciled by
         // their owning work items before either family can be production-certified.

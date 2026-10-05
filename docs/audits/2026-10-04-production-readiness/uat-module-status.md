@@ -1,7 +1,7 @@
 # UAT module status board and plan to production
 
-- **Instance:** the owner's UAT instance (web http://127.0.0.1:5180), release `5ceba59d0963-b53e290e718f` (U1b, U2
-  and U3.1), deployed 2026-10-05 09:08Z. Previous release `03ebd0c366b6-ff554c98771d` is the rollback.
+- **Instance:** the owner's UAT instance (web http://127.0.0.1:5180), release `828b75af9a28-af904a40a84c` (U1b, U2,
+  U3.1 and U3.2), deployed 2026-10-05 11:57Z. Previous release `5ceba59d0963-b53e290e718f` is the rollback.
 - **Production release verdict:** NO-GO.
 - **How each status was established:**
   - running services: `docker ps`;
@@ -117,7 +117,7 @@ Order matters: each stage unblocks the next. One card at a time; each card is sh
 | 1 | **U1 finish** | CMMS correction applied, then CMMS deployed; Playwright smoke with a UAT administrator login |
 | 2 | **U1b** (deployed 2026-10-05 09:08Z) | Design-standard check added; Catalogue, Parties, Application Dictionary and the form renderer restyled |
 | 3 | **U2** (deployed 2026-10-05 09:08Z) | Inventory, Orders, Procurement and Finance APIs accept signed-in calls; event writes and journal transactions fixed; proxy forwards `Idempotency-Key`/`If-Match`. To be exercised here once the entitlements are granted |
-| 4 | **U3** | Security defects closed (SCIM, webhooks, caller-chosen tenants, rule kernel, login lockout, renderer). U3.1 (SCIM, P0-06) deployed 09:08Z. U3.2 (login lockout P1-20, Rule Studio tenant boundary P0-04, Connector Hub webhook P0-08, punch queue P1-25, renderer default P1-24) implemented and tested, not yet deployed. Each closes after the independent Security review |
+| 4 | **U3** | Security defects closed (SCIM, webhooks, caller-chosen tenants, rule kernel, login lockout, renderer). U3.1 (SCIM, P0-06) deployed 09:08Z. U3.2 (login lockout P1-20, Rule Studio tenant boundary P0-04, Connector Hub webhook P0-08, punch queue P1-25, renderer default P1-24) deployed 11:57Z. Each closes after the independent Security review |
 | 5 | **U29** | The 13 not-deployed modules run as services in this instance's compose stack, with signed platform context, or the owner decides to retire one |
 | 6 | **U4–U21** | Each module's screens on real data, every button working or explained, design standard applied, and a Playwright business flow that enters its UAT data |
 | 7 | **U22–U23** | Modules work together: events, one invoice owner, budget and period-lock enforcement, costing; journey flows (procure-to-pay, order-to-cash and others) |

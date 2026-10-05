@@ -182,3 +182,17 @@ describe('dictionary rules at run time', () => {
     expect(evaluateDictionaryCondition({ field: 'qty', operator: 'LT', value: 5 }, { qty: 'five' })).toBe(false);
   });
 });
+
+// WI-OI-120f (F0.2): every window a module ships (modules/*/dictionary/*.window.json) publishes cleanly.
+describe('shipped module windows', () => {
+  it('compile with no findings under the publish-time capability checks', async () => {
+    const { moduleWindowBaselines } = await import('@gigalibs/contracts');
+    for (const baseline of moduleWindowBaselines()) {
+      const result = compileDictionaryPackage(baseline.definition.dictionary, { moduleBaseline: true });
+      expect({ surface: baseline.definition.surfaceKey, findings: result.findings }).toEqual({
+        surface: baseline.definition.surfaceKey,
+        findings: [],
+      });
+    }
+  });
+});

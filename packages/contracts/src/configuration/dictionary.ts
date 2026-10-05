@@ -390,6 +390,13 @@ export const DictionaryChangeSetDefinitionSchema = z
   .strict();
 export type DictionaryChangeSetDefinition = z.infer<typeof DictionaryChangeSetDefinitionSchema>;
 
+/**
+ * WI-OI-120f (F0.2): a module's own window definitions are published under a package key ending in this suffix. Only
+ * the platform's baseline activation may publish such a key, so an active version with it is known to be the module
+ * baseline rather than a tenant's customisation.
+ */
+export const MODULE_BASELINE_PACKAGE_SUFFIX = '-module-baseline';
+
 export function isDictionaryChangeSetDefinition(
   value: unknown,
 ): value is DictionaryChangeSetDefinition {

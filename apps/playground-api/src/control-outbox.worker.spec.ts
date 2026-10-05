@@ -43,13 +43,18 @@ const event = {
   attempts: 1,
 };
 
-function createWorker(publish = vi.fn().mockResolvedValue(undefined)) {
+function createWorker(
+  publish = vi.fn().mockResolvedValue(undefined),
+  applyForTenant = vi.fn().mockResolvedValue([]),
+) {
   return {
     publish,
+    applyForTenant,
     worker: new ControlOutboxWorker(
       { processSourceEvent: vi.fn() } as never,
       {} as never,
       { publish } as never,
+      { applyForTenant } as never,
     ),
   };
 }
@@ -168,5 +173,36 @@ describe('ControlOutboxWorker Configuration delivery', () => {
     await worker.tick();
 
     expect(database.transaction.auditLog.create).not.toHaveBeenCalled();
+  });
+});
+
+// WI-OI-120f (F0.2): Platform Control Tower's entitlement change activates the enabled modules' windows.
+describe('ControlOutboxWorker module window activation', () => {
+  const entitlementEvent = { ...event, aggregateId: 'tenant_01', eventType: 'tenant.entitlements.changed.v1' };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.useRealTimers();
+    database.$queryRaw.mockResolvedValue([{ ...entitlementEvent }]);
+    database.transaction.controlOutboxEvent.updateMany.mockResolvedValue({ count: 1 });
+  });
+
+  it('applies the windows for the tenant, then marks the exact claimed attempt published', async () => {
+    const { worker, applyForTenant, publish } = createWorker(undefined, vi.fn().mockResolvedValue([{ surfaceKey: 'inventory-warehouses', status: 'ACTIVATED' }]));
+    await worker.tick();
+    expect(applyForTenant).toHaveBeenCalledWith('tenant_01');
+    expect(publish).not.toHaveBeenCalled();
+    expect(database.transaction.controlOutboxEvent.updateMany).toHaveBeenCalledWith({
+      where: { id: entitlementEvent.id, status: 'PROCESSING', attempts: 1 },
+      data: { status: 'PUBLISHED', publishedAt: expect.any(Date), claimedAt: null, lastErrorCode: null },
+    });
+  });
+
+  it('returns the event for retry when activation fails, without marking it published', async () => {
+    const { worker } = createWorker(undefined, vi.fn().mockRejectedValue(new Error('database unavailable')));
+    await worker.tick();
+    expect(database.transaction.controlOutboxEvent.updateMany).toHaveBeenLastCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ status: 'PENDING' }) }),
+    );
   });
 });

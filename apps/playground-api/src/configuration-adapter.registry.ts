@@ -1,6 +1,7 @@
-import type {
-  ConfigurationSurfaceRegistration,
-  ModuleAdapterDescriptorV1,
+import {
+  type ConfigurationSurfaceRegistration,
+  type ModuleAdapterDescriptorV1,
+  moduleWindowBaselines,
 } from '@gigalibs/contracts';
 import { Inject, Injectable } from '@nestjs/common';
 import {
@@ -13,6 +14,7 @@ import { InventoryConfigurationAdapterV1 } from './inventory/inventory-configura
 import { ProcurementConfigurationAdapterV1 } from './procurement/procurement-configuration.adapter.js';
 import { OrderConfigurationAdapterV1 } from './orders/order-configuration.adapter.js';
 import { FinancialConfigurationAdapterV1 } from './finance/financial-configuration.adapter.js';
+import { ModuleWindowConfigurationAdapterV1 } from './module-window-configuration.adapter.js';
 
 export const CONFIGURATION_ADAPTERS = Symbol('CONFIGURATION_ADAPTERS');
 
@@ -25,6 +27,8 @@ export function defaultConfigurationAdapters(): readonly ModuleConfigurationAdap
     new ProcurementConfigurationAdapterV1(),
     new OrderConfigurationAdapterV1(),
     new FinancialConfigurationAdapterV1(),
+    // WI-OI-120f (F0.2): every window a module ships in modules/<module>/dictionary/.
+    ...moduleWindowBaselines().map((baseline) => new ModuleWindowConfigurationAdapterV1(baseline)),
   ]);
 }
 

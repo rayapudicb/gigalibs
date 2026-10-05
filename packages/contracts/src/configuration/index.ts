@@ -321,7 +321,9 @@ export const ModuleAdapterCapabilityV1Schema = z.enum([
   'ADMINISTRATIVE_PREVIEW',
 ]);
 
-export const ModuleAdapterStorageStrategyV1Schema = z.enum(['CONTROL_PLANE_EXTENSION_VALUES']);
+// WI-OI-120f (F0.2): MODULE_RECORD_DISPATCHER surfaces are metadata windows whose records live in the module and are
+// reached through its record dispatcher, not stored as control-plane extension values.
+export const ModuleAdapterStorageStrategyV1Schema = z.enum(['CONTROL_PLANE_EXTENSION_VALUES', 'MODULE_RECORD_DISPATCHER']);
 
 export const ModuleAdapterCompatibilityV1Schema = z
   .object({
@@ -946,5 +948,6 @@ export type ConfigurationSavedFilterResponse = z.infer<
 
 export * from './catalogue.js';
 export * from './packs.js';
+export * from './window-baselines.js';
 export * from './packs.generated.js';
 export * from './dictionary.js';

@@ -53,6 +53,7 @@ import type {
   UpdateConfigurationChangeSetDto,
   UpdateConfigurationRecordDto,
   UpdateConfigurationTemplateDto,
+  ModuleWindowBaselineV1,
 } from '@gigalibs/contracts';
 import { Prisma, prisma } from '@gigalibs/db';
 import {
@@ -2114,6 +2115,143 @@ export class ConfigurationStudioService {
       cohortKey: scope.cohortKey,
     });
     return { ...activation.created, ...(await this.applyPack(tenantId, actorId, activation.created.id, activation.published)) };
+  }
+
+  /**
+   * WI-OI-120f (F0.2, ADR-0033 D1): publishes and activates a module's own window for a tenant that has the module
+   * enabled, as the administrator who enabled it. Writes the same change set, version, activation, audit and outbox
+   * records as the normal lifecycle. Independent approval is not required because the window ships, reviewed, with
+   * the module; the audit reason says so.
+   *
+   * - No active version: the baseline is published and activated.
+   * - The active version is an older baseline: the new baseline replaces it.
+   * - The active version is the tenant's own: it stays in force, and the outcome tells the caller a baseline update
+   *   is waiting for review.
+   */
+  async activateModuleBaseline(
+    tenantId: string,
+    actorId: string,
+    baseline: ModuleWindowBaselineV1,
+  ): Promise<{ status: 'ACTIVATED' | 'UPGRADED' | 'UNCHANGED' | 'CUSTOMISED_KEPT'; checksum: string }> {
+    const { definition } = baseline;
+    const descriptor = this.registeredAdapter(definition.moduleKey, definition.entityKey, definition.surfaceKey);
+    const compiled = compileDictionaryPackage(definition.dictionary, {
+      moduleBaseline: true,
+      registeredResolvers: descriptor.registeredResolvers,
+      registeredActionHandlers: descriptor.registeredActionHandlers,
+    });
+    if (!compiled.valid || !compiled.manifest) {
+      throw new BadRequestException({ message: 'The module window failed compilation.', findings: compiled.findings });
+    }
+    const manifest = compiled.manifest;
+    const scope = this.runtimeScope.resolve(definition.moduleKey);
+    const where = {
+      tenantId,
+      moduleKey: definition.moduleKey,
+      entityKey: definition.entityKey,
+      surfaceKey: definition.surfaceKey,
+      environmentKey: scope.environmentKey,
+      cohortKey: scope.cohortKey,
+    };
+    const reason =
+      `Module window ${definition.surfaceKey} (${definition.dictionary.packageKey} ${definition.dictionary.version}) ` +
+      'activated with the module; shipped and reviewed with the module, so independent approval is not required';
+    const now = new Date();
+    const outcome = await prisma.$transaction(async (tx) => {
+      await this.lockActivationScope(tx, tenantId, where.moduleKey, where.entityKey, where.surfaceKey, where.environmentKey, where.cohortKey);
+      const active = await tx.configurationActivation.findFirst({
+        where: { ...where, status: 'ACTIVE' },
+        include: { publishedVersion: { select: { checksum: true, manifest: true } } },
+      });
+      const activeManifest = active?.publishedVersion.manifest as { packageKey?: unknown } | null | undefined;
+      if (active && activeManifest?.packageKey !== definition.dictionary.packageKey) {
+        // The tenant is told once per baseline version, in its own audit log, that an update waits for review.
+        const resourceId = `${definition.surfaceKey}:${manifest.checksum}`;
+        const told = await tx.auditLog.findFirst({ where: { tenantId, resource: 'configuration-baseline-update', resourceId } });
+        if (!told) {
+          await this.audit(
+            tx,
+            tenantId,
+            actorId,
+            'UPDATE',
+            'configuration-baseline-update',
+            resourceId,
+            `Module window ${definition.surfaceKey} ${definition.dictionary.version} is available; the tenant's own ` +
+              'version stays active until it is reviewed in Configuration Studio',
+            null,
+            { surfaceKey: definition.surfaceKey, version: definition.dictionary.version, checksum: manifest.checksum },
+          );
+        }
+        return { status: 'CUSTOMISED_KEPT' as const };
+      }
+      if (active?.publishedVersion.checksum === manifest.checksum) return { status: 'UNCHANGED' as const };
+
+      // One version per checksum and tenant: a baseline published before (then replaced) is reactivated, not copied.
+      let published = await tx.configurationPublishedVersion.findFirst({ where: { tenantId, checksum: manifest.checksum } });
+      if (!published) {
+        const changeSet = await tx.configurationChangeSet.create({
+          data: {
+            tenantId,
+            moduleKey: where.moduleKey,
+            entityKey: where.entityKey,
+            surfaceKey: where.surfaceKey,
+            status: 'PUBLISHED',
+            definition: definition as unknown as Prisma.InputJsonValue,
+            compiledManifest: jsonInput(manifest),
+            checksum: manifest.checksum,
+            findings: jsonInput(compiled.findings),
+            compatibility: 'COMPATIBLE',
+            reason,
+            createdById: actorId,
+            submittedAt: now,
+            approvedById: actorId,
+            approvedAt: now,
+            publishedAt: now,
+          },
+        });
+        await this.audit(tx, tenantId, actorId, 'CREATE', 'configuration-change-set', changeSet.id, reason, null, changeSet);
+        const latest = await tx.configurationPublishedVersion.findFirst({
+          where: { tenantId, moduleKey: where.moduleKey, entityKey: where.entityKey, surfaceKey: where.surfaceKey },
+          orderBy: { sequence: 'desc' },
+        });
+        published = await tx.configurationPublishedVersion.create({
+          data: {
+            tenantId,
+            changeSetId: changeSet.id,
+            moduleKey: where.moduleKey,
+            entityKey: where.entityKey,
+            surfaceKey: where.surfaceKey,
+            sequence: (latest?.sequence ?? 0) + 1,
+            manifest: jsonInput(manifest),
+            checksum: manifest.checksum,
+            compilerVersion: CONFIGURATION_COMPILER_VERSION,
+            publishedById: actorId,
+          },
+        });
+        await this.audit(tx, tenantId, actorId, 'CREATE', 'configuration-version', published.id, reason, null, published);
+        await this.outbox(tx, tenantId, 'configuration-version', published.id, 'configuration.version.published.v1', {
+          publishedVersionId: published.id,
+          checksum: published.checksum,
+        });
+      }
+      await tx.configurationActivation.updateMany({
+        where: { ...where, status: 'ACTIVE' },
+        data: { status: 'INACTIVE', deactivatedAt: now },
+      });
+      const created = await tx.configurationActivation.create({
+        data: { ...where, publishedVersionId: published.id, reason, activatedById: actorId },
+      });
+      const before = active ? { id: active.id, publishedVersionId: active.publishedVersionId } : null;
+      await this.audit(tx, tenantId, actorId, 'STATUS_CHANGE', 'configuration-activation', created.id, reason, before, created);
+      await this.outbox(tx, tenantId, 'configuration-activation', created.id, 'configuration.activation.changed.v1', {
+        activationId: created.id,
+        publishedVersionId: published.id,
+        checksum: published.checksum,
+      });
+      return { status: active ? ('UPGRADED' as const) : ('ACTIVATED' as const) };
+    });
+    if (outcome.status === 'ACTIVATED' || outcome.status === 'UPGRADED') this.manifestCache.invalidate(where);
+    return { ...outcome, checksum: manifest.checksum };
   }
 
   /**

@@ -547,3 +547,55 @@ removed.
   - The web, control-plane and migrations images were checked clean of F0.1 code.
   - The module images were rebuilt from the clean commit `828b75a` (state hash unchanged throughout); then the work
     was restored.
+
+## Deploy of `828b75a` (U3.2) to the UAT instance (2026-10-05 11:55–11:57Z)
+
+- The owner ran `deploy-u1.sh`. All migrations jobs exited 0. Control plane: `20261005000000_login_throttle` applied.
+  Connector Hub: 9.
+- Read-only re-check:
+  - nine services healthy;
+  - `login_throttles` exists;
+  - 16 of 16 connections have endpoint IDs;
+  - unknown endpoint → 404, slug plus tenant header → 400;
+  - no error-level logs.
+- Record: `infra/compose/evidence/wi-oi-120e-20261005T115528Z/README.md` (local). Backup
+  `gigalibs_backup_20261005_105426Z`; rollback `5ceba59d0963-b53e290e718f`.
+- The five ERP entitlements are still not granted (owner, Platform Control Tower).
+
+### F0.2 Module windows and their activation
+
+- **Window files:**
+  - A module ships each window as `modules/<module>/dictionary/<surface>.window.json`: an Application Dictionary
+    change-set definition plus the window's route, label and read permission.
+  - `pnpm modules:catalog` checks each file against its module and surface, and the reserved package-key suffix
+    `-module-baseline`, then generates `packages/contracts/src/configuration/window-baselines.generated.ts`.
+  - `moduleWindowBaselines()` parses the files with `ModuleWindowBaselineV1Schema`.
+  - A configuration-core test compiles every shipped window with the publish-time capability checks. None ship yet;
+    Inventory's arrive in F0.5.
+- **Reserved key:** the compiler refuses the `-module-baseline` suffix in a tenant's package. An active version
+  carrying it is therefore known to be the module's own baseline, not a tenant customisation.
+- **Control plane:**
+  - Each shipped window registers as a surface through `ModuleWindowConfigurationAdapterV1`: storage
+    `MODULE_RECORD_DISPATCHER` (records live in the module), no extension values, and the module's resolvers and
+    action handlers as the registered set.
+  - `ConfigurationStudioService.activateModuleBaseline` publishes and activates a window in one transaction with the
+    usual change set, version, activation, audit and outbox records, as the administrator recorded on the entitlement:
+    - nothing active → ACTIVATED;
+    - the same baseline → UNCHANGED;
+    - an older baseline → UPGRADED (the previous version is reused when the checksum matches);
+    - the tenant's own version → CUSTOMISED_KEPT, with a tenant audit entry (once per baseline version) saying an
+      update waits for review.
+- **Trigger:**
+  - Platform Control Tower's licensed-module save now writes `tenant.entitlements.changed.v1` to the control outbox
+    in the same transaction.
+  - The control outbox worker applies the windows of the tenant's enabled modules (idempotent; retried on failure).
+  - At start-up, `ModuleWindowBaselineService.reconcileAll` covers tenants that enabled a module before its windows
+    shipped. It can be switched off with `GIGALIBS_MODULE_WINDOW_RECONCILE=disabled`.
+- **Tests:**
+  - `module-window-baselines.spec.ts`: 7 tests (registration, all four outcomes, the reserved key, actor and module
+    selection).
+  - `control-outbox.worker.spec.ts`: 2 new tests (applied then marked published; a failure is retried).
+  - `platform-entitlements-outbox.test.ts`: 1 test (the event is written in the entitlement transaction).
+  - The shipped-window compile test.
+- Checks: full `pnpm test` 2,514 passed, 184 skipped; `pnpm verify` passes (known drift; 8 proofs NOT RUN); the web
+  app and control plane type-check. Not deployed: F0 deploys as a whole after F0.5.

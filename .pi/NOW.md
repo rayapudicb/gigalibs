@@ -16,7 +16,7 @@ to one page. Replace old content rather than appending to it, and update it at t
   2026-10-05). SCIM tests 21 passed/6 skipped; full `pnpm test` 2,467 passed/171 skipped. Deployed 09:08Z.
   P0-06 stays open until the independent Security review (D7). Residual P2: a custom role holding
   `users:create`/`users:update` can assign TENANT_ADMIN. Evidence: `.pi/work/WI-OI-120.md` U3.1.
-- **WI-OI-120e (U3.2): Review, committed, not deployed.** Owner approved 2026-10-05. Login lockout (P1-20), Rule Studio
+- **WI-OI-120e (U3.2): Review, committed `828b75a`, deployed 11:57Z.** Owner approved 2026-10-05. Login lockout (P1-20), Rule Studio
   tenant boundary (P0-04), Connector Hub webhook by endpoint ID with mandatory signature (P0-08), per-person punch
   queue (P1-25), renderer deny-by-default (P1-24). `pnpm build`, `pnpm test` (2,495 passed) and `pnpm verify` pass
   (known drift; 8 proofs NOT RUN). Adds control migration `20261005000000_login_throttle` and Connector Hub
@@ -48,16 +48,15 @@ to one page. Replace old content rather than appending to it, and update it at t
 - **Module status board for testers:** `docs/audits/2026-10-04-production-readiness/uat-module-status.md` (what works,
   what does not, what is not deployed, and the plan to UAT and to production).
 
-## What is running locally (UAT instance, deployed 2026-10-05 09:08Z)
+## What is running locally (UAT instance, deployed 2026-10-05 11:57Z)
 
-- Release `5ceba59d0963-b53e290e718f` (commit `5ceba59`: U1b, U2, U3.1). The owner ran the deploy; record in
-  `infra/compose/evidence/wi-oi-120c-20261005T090556Z/` (local).
-  - Healthy: web, control-plane API, kernel worker, Analytics, Geospatial, Connector Hub, Workforce (26) and the
-    module host with Catalogue (1), Inventory (3), Orders (3), Procurement (3) and Finance (8).
-  - `GIGALIBS_UAT_PREVIEW=enabled`: every module is listed, without UAT labels.
-  - Rollback: release `03ebd0c366b6-ff554c98771d` plus backup `gigalibs_backup_20261005_084054Z`.
-- **No tenant holds the Catalogue, Inventory, Procurement, Orders or Finance entitlement** (read-only check after the
-  deploy), so those screens still answer 403 and U2 is not yet exercised on this instance.
+- Release `828b75af9a28-af904a40a84c` (commit `828b75a`: U1b, U2, U3.1, U3.2). Record:
+  `infra/compose/evidence/wi-oi-120e-20261005T115528Z/` (local).
+  - Healthy: web, control-plane API, kernel worker, Analytics, Geospatial, Connector Hub (9), Workforce (26) and
+    the module host with Catalogue (1), Inventory (3), Orders (3), Procurement (3) and Finance (8).
+  - Rollback: release `5ceba59d0963-b53e290e718f` plus backup `gigalibs_backup_20261005_105426Z`.
+- **No tenant holds the Catalogue, Inventory, Procurement, Orders or Finance entitlement.** The owner enables them for
+  GigaLibs Global Enterprise in Platform Control Tower.
 - **CMMS is still down** (old image, ledger 16). Migrations 000017–000019 need the correction the session was not
   permitted to make.
 - Unattributed proof data from earlier proof runs (including the audit's own run) is still in the database (D5).
@@ -66,8 +65,7 @@ to one page. Replace old content rather than appending to it, and update it at t
 
 1. Owner: grant Catalogue, Inventory, Procurement, Orders and Finance to the UAT tenant in Platform Control Tower;
    then a signed-in check of each module's API on this instance.
-2. U3.2: images, backup and the owner's deploy (control-plane and Connector Hub
-   migrations). P0-05, P0-07, P0-10, P1-10 and the P1-11 prototypes are in modules not running here; they are fixed
+2. F0 (WI-OI-120f): F0.1 committed `424a733`; F0.2 to F0.5 next. P0-05, P0-07, P0-10, P1-10 and the P1-11 prototypes are in modules not running here; they are fixed
    as each module moves onto the module SDK (U29). Independent Security review before any defect closes.
 3. Then U4–U6 (Dictionary & Master Data hardening), U7–U18 (module by module Playwright flows). Plan:
    `docs/audits/2026-10-04-production-readiness/remediation-backlog.md`.
