@@ -3,6 +3,13 @@
 Date: 2026-10-05. Work item: WI-OI-119, owner-requested follow-up. Disposition: **Review; production NO-GO**.
 This is an investigation and repair assessment, not an implementation authorization or a production certificate.
 
+> Subsequent status update, 2026-10-05: U2 is committed as `220508e`; the tracked worktree was clean at the next
+> handoff. References below to dirty/local U2 describe the investigation snapshot, not today's commit status.
+> Deployment remains pending in NOW. Recorded limitations (including full request-level idempotency) remain.
+> SCIM P0-06's first U3 slice, [WI-OI-120d](../../../.pi/tasks/WI-OI-120d.md), is now implemented locally and in
+> Review: 27 targeted tests and full repository verification pass. Independent Security/QA review remains pending;
+> uncommitted/undeployed, no defect closure or production acceptance. Historical findings below remain the snapshot.
+
 ## 1. EXECUTIVE VERDICT
 
 The build contains substantial reusable engineering, but it does not yet deliver the complete business product

@@ -4,7 +4,8 @@ import {
   Delete,
   Get,
   Header,
-  Headers,
+  ForbiddenException,
+  Inject,
   HttpCode,
   HttpStatus,
   Param,
@@ -13,12 +14,11 @@ import {
   Query,
   Res,
 } from '@nestjs/common';
-import {
-  ScimService,
-  ScimUserCreateInput,
-  ScimPatchInput,
-} from './scim.service.js';
-import { Public } from '@gigalibs/auth-nest';
+import { ScimService } from './scim.service.js';
+import { CurrentUser, Public } from '@gigalibs/auth-nest';
+import { CurrentTenant } from '@gigalibs/tenancy-nest';
+import { RequirePermissions } from '@gigalibs/rbac-nest';
+import { parseScim, scimPageNumber, ScimPatchSchema, ScimUserCreateSchema } from './scim.validation.js';
 
 export interface ResponseAdapter {
   setHeader(name: string, value: string | number): void;
@@ -27,7 +27,7 @@ export interface ResponseAdapter {
 
 @Controller('scim/v2')
 export class ScimController {
-  constructor(private readonly scimService: ScimService) {}
+  constructor(@Inject(ScimService) private readonly scimService: ScimService) {}
 
   @Public()
   @Get('ServiceProviderConfig')
@@ -51,45 +51,46 @@ export class ScimController {
   }
 
   @Get('Users')
+  @RequirePermissions('users:read')
   @Header('Content-Type', 'application/scim+json; charset=utf-8')
   async listUsers(
-    @Headers('x-tenant-id') headerTenantId?: string,
-    @Query('tenantId') queryTenantId?: string,
+    @CurrentTenant('tenantId') tenantId: string,
     @Query('filter') filter?: string,
     @Query('startIndex') startIndex?: string,
     @Query('count') count?: string,
   ) {
-    const tenantId = headerTenantId || queryTenantId || 'default-system-tenant';
+    this.requireTenant(tenantId);
     return this.scimService.listUsers({
       tenantId,
       filter,
-      startIndex: startIndex ? parseInt(startIndex, 10) : undefined,
-      count: count ? parseInt(count, 10) : undefined,
+      startIndex: scimPageNumber(startIndex, 1, 1_000_000),
+      count: scimPageNumber(count, 20, 100),
     });
   }
 
   @Get('Users/:id')
+  @RequirePermissions('users:read')
   @Header('Content-Type', 'application/scim+json; charset=utf-8')
   async getUser(
     @Param('id') id: string,
-    @Headers('x-tenant-id') headerTenantId?: string,
-    @Query('tenantId') queryTenantId?: string,
+    @CurrentTenant('tenantId') tenantId: string,
   ) {
-    const tenantId = headerTenantId || queryTenantId || 'default-system-tenant';
+    this.requireTenant(tenantId);
     return this.scimService.getUser(id, tenantId);
   }
 
   @Post('Users')
+  @RequirePermissions('users:create')
   @HttpCode(HttpStatus.CREATED)
   @Header('Content-Type', 'application/scim+json; charset=utf-8')
   async createUser(
-    @Body() input: ScimUserCreateInput,
-    @Headers('x-tenant-id') headerTenantId?: string,
-    @Query('tenantId') queryTenantId?: string,
+    @Body() input: unknown,
+    @CurrentTenant('tenantId') tenantId: string,
+    @CurrentUser('sub') actorId: string,
     @Res({ passthrough: true }) res?: ResponseAdapter,
   ) {
-    const tenantId = headerTenantId || queryTenantId || 'default-system-tenant';
-    const user = await this.scimService.createUser(input, tenantId);
+    this.requireTenant(tenantId);
+    const user = await this.scimService.createUser(parseScim(ScimUserCreateSchema, input), tenantId, actorId);
     if (res && res.setHeader) {
       res.setHeader('Location', `/api/v1/scim/v2/Users/${user.id}`);
     }
@@ -97,35 +98,41 @@ export class ScimController {
   }
 
   @Patch('Users/:id')
+  @RequirePermissions('users:update')
   @Header('Content-Type', 'application/scim+json; charset=utf-8')
   async patchUser(
     @Param('id') id: string,
-    @Body() input: ScimPatchInput,
-    @Headers('x-tenant-id') headerTenantId?: string,
-    @Query('tenantId') queryTenantId?: string,
+    @Body() input: unknown,
+    @CurrentTenant('tenantId') tenantId: string,
+    @CurrentUser('sub') actorId: string,
   ) {
-    const tenantId = headerTenantId || queryTenantId || 'default-system-tenant';
-    return this.scimService.patchUser(id, input, tenantId);
+    this.requireTenant(tenantId);
+    return this.scimService.patchUser(id, parseScim(ScimPatchSchema, input), tenantId, actorId);
   }
 
   @Delete('Users/:id')
+  @RequirePermissions('users:delete')
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteUser(
     @Param('id') id: string,
-    @Headers('x-tenant-id') headerTenantId?: string,
-    @Query('tenantId') queryTenantId?: string,
+    @CurrentTenant('tenantId') tenantId: string,
+    @CurrentUser('sub') actorId: string,
   ) {
-    const tenantId = headerTenantId || queryTenantId || 'default-system-tenant';
-    await this.scimService.deleteUser(id, tenantId);
+    this.requireTenant(tenantId);
+    await this.scimService.deleteUser(id, tenantId, actorId);
   }
 
   @Get('Groups')
+  @RequirePermissions('users:read')
   @Header('Content-Type', 'application/scim+json; charset=utf-8')
   async listGroups(
-    @Headers('x-tenant-id') headerTenantId?: string,
-    @Query('tenantId') queryTenantId?: string,
+    @CurrentTenant('tenantId') tenantId: string,
   ) {
-    const tenantId = headerTenantId || queryTenantId || 'default-system-tenant';
+    this.requireTenant(tenantId);
     return this.scimService.listGroups(tenantId);
+  }
+
+  private requireTenant(tenantId: string) {
+    if (!tenantId) throw new ForbiddenException('Select an authorized tenant before accessing SCIM.');
   }
 }

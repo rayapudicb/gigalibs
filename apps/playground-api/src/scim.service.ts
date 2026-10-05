@@ -1,40 +1,23 @@
 import {
+  BadRequestException,
   ConflictException,
+  ForbiddenException,
+  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { prisma, MemberRole, UserStatus } from '@gigalibs/db';
+import { prisma, type MemberRole, type Prisma, UserStatus } from '@gigalibs/db';
 import { AuditService } from '@gigalibs/audit-nest';
-
-export interface ScimUserCreateInput {
-  schemas?: string[];
-  externalId?: string;
-  userName: string;
-  name?: {
-    formatted?: string;
-    familyName?: string;
-    givenName?: string;
-  };
-  displayName?: string;
-  emails?: Array<{ value: string; type?: string; primary?: boolean }>;
-  active?: boolean;
-  roles?: Array<{ value: string; primary?: boolean }>;
-}
-
-export interface ScimPatchOperation {
-  op: 'add' | 'remove' | 'replace';
-  path?: string;
-  value?: unknown;
-}
-
-export interface ScimPatchInput {
-  schemas?: string[];
-  Operations: ScimPatchOperation[];
-}
+import { isTenantPermissionCode, TenantMemberRoleSchema } from '@gigalibs/contracts';
+import { PermissionEvaluator } from '@gigalibs/rbac-core';
+import { resolveBaseRolePermissions } from '@gigalibs/rbac-nest';
+import { assertTenantAdministratorRetained } from '@gigalibs/tenancy-nest';
+import { parseScim, scimMembershipChanges, ScimPatchSchema, ScimUserCreateSchema } from './scim.validation.js';
+export type { ScimPatchInput, ScimUserCreateInput } from './scim.validation.js';
 
 @Injectable()
 export class ScimService {
-  constructor(private readonly auditService: AuditService) {}
+  constructor(@Inject(AuditService) private readonly auditService: AuditService) {}
 
   getServiceProviderConfig() {
     return {
@@ -100,16 +83,16 @@ export class ScimService {
     startIndex?: number | undefined;
     count?: number | undefined;
   }) {
+    this.requireScope(params.tenantId);
     const startIndex = Math.max(1, params.startIndex || 1);
     const count = Math.min(100, Math.max(1, params.count || 20));
     const skip = startIndex - 1;
 
     let emailFilter: string | undefined;
     if (params.filter) {
-      const match = params.filter.match(/userName\s+eq\s+["']([^"']+)["']/i);
-      if (match) {
-        emailFilter = match[1];
-      }
+      const match = params.filter.match(/^userName\s+eq\s+"([^"\r\n]{1,254})"$/i);
+      if (!match) throw new BadRequestException('Only userName eq "email" is supported as a SCIM filter.');
+      emailFilter = match[1];
     }
 
     const whereCondition = {
@@ -146,6 +129,7 @@ export class ScimService {
   }
 
   async getUser(id: string, tenantId: string) {
+    this.requireScope(tenantId);
     const user = await prisma.user.findFirst({
       where: {
         id,
@@ -167,11 +151,9 @@ export class ScimService {
     return this.formatScimUser(user, tenantId);
   }
 
-  async createUser(input: ScimUserCreateInput, tenantId: string, operatorId?: string) {
-    const email = input.emails?.[0]?.value || input.userName;
-    if (!email) {
-      throw new ConflictException('SCIM User requires userName or emails[0].value');
-    }
+  async createUser(body: unknown, tenantId: string, operatorId: string) {
+    const input = parseScim(ScimUserCreateSchema, body);
+    const email = input.userName;
 
     const displayName =
       input.displayName ||
@@ -179,22 +161,32 @@ export class ScimService {
         ? `${input.name.givenName} ${input.name.familyName}`
         : email.split('@')[0]);
 
-    const role = (input.roles?.[0]?.value as MemberRole) || 'MEMBER';
+    const role = input.roles?.[0]?.value ?? 'MEMBER';
     const status = input.active === false ? 'SUSPENDED' : 'ACTIVE';
 
-    const user = await prisma.$transaction(async (tx) => {
+    const user = await this.mutate(tenantId, operatorId, 'users:create', async (tx) => {
       let existingUser = await tx.user.findUnique({
         where: { email: email.toLowerCase() },
       });
 
+      if (existingUser) {
+        const existingMembership = await tx.tenantMember.findUnique({
+          where: { userId_tenantId: { userId: existingUser.id, tenantId } },
+        });
+        // A create permission must never become an implicit update/elevation path.
+        if (existingMembership) throw new ConflictException('SCIM user already exists in this tenant; use PATCH with update permission.');
+        if (input.externalId) throw new ConflictException('Tenant-scoped externalId mapping for an existing identity is not supported.');
+      }
       if (!existingUser) {
         existingUser = await tx.user.create({
           data: {
             email: email.toLowerCase(),
             name: displayName || email.split('@')[0] || 'SCIM User',
-            status: status === 'ACTIVE' ? UserStatus.ACTIVE : UserStatus.SUSPENDED,
+            // SCIM active controls this tenant membership, not the global identity.
+            status: UserStatus.ACTIVE,
             metadata: {
               scimExternalId: input.externalId,
+              scimTenantId: tenantId,
               familyName: input.name?.familyName,
               givenName: input.name?.givenName,
               provisionedVia: 'SCIM_2_0',
@@ -203,24 +195,18 @@ export class ScimService {
         });
       }
 
-      // Upsert tenant membership
-      const membership = await tx.tenantMember.upsert({
-        where: {
-          userId_tenantId: {
-            userId: existingUser.id,
-            tenantId,
-          },
-        },
-        update: {
-          role,
-          status,
-        },
-        create: {
+      const membership = await tx.tenantMember.create({
+        data: {
           tenantId,
           userId: existingUser.id,
           role,
           status,
         },
+      });
+
+      await this.auditService.log({
+        tx, tenantId, userId: operatorId, chainScope: 'scim', action: 'PROVISION',
+        resource: 'scim.user', resourceId: existingUser.id, after: { role, status },
       });
 
       return {
@@ -229,144 +215,48 @@ export class ScimService {
       };
     });
 
-    await this.auditService.log({
-      tenantId,
-      action: 'PROVISION',
-      resource: 'scim.user',
-      resourceId: user.id,
-      after: {
-        email: user.email,
-        externalId: input.externalId,
-        role,
-        status,
-      },
-      ...(operatorId ? { userId: operatorId } : {}),
-    });
-
     return this.formatScimUser(user, tenantId);
   }
 
-  async patchUser(id: string, input: ScimPatchInput, tenantId: string, operatorId?: string) {
-    const user = await prisma.user.findFirst({
-      where: {
-        id,
-        memberships: { some: { tenantId } },
-      },
-      include: {
-        memberships: { where: { tenantId } },
-      },
-    });
-
-    if (!user) {
-      throw new NotFoundException(`SCIM User '${id}' not found`);
-    }
-
-    let activeState: boolean | undefined;
-    let newRole: MemberRole | undefined;
-
-    for (const op of input.Operations) {
-      if (op.op.toLowerCase() === 'replace' || op.op.toLowerCase() === 'add') {
-        if (op.path === 'active' || op.path === undefined && typeof op.value === 'object' && op.value !== null && 'active' in (op.value as Record<string, unknown>)) {
-          const val = op.path === 'active' ? op.value : (op.value as Record<string, unknown>).active;
-          activeState = val === true || val === 'true';
-        }
-        if (op.path === 'roles' || (typeof op.value === 'object' && op.value !== null && 'roles' in (op.value as Record<string, unknown>))) {
-          const rolesVal = op.path === 'roles' ? op.value : (op.value as Record<string, unknown>).roles;
-          if (Array.isArray(rolesVal) && rolesVal[0]?.value) {
-            newRole = rolesVal[0].value as MemberRole;
-          }
-        }
-      }
-    }
-
-    const updated = await prisma.$transaction(async (tx) => {
-      if (activeState !== undefined) {
-        await tx.tenantMember.updateMany({
-          where: { tenantId, userId: id },
-          data: { status: activeState ? 'ACTIVE' : 'SUSPENDED' },
-        });
-        if (!activeState) {
-          // Deprovision: Revoke active sessions
-          await tx.session.updateMany({
-            where: { userId: id, tenantId },
-            data: { status: 'REVOKED' },
-          });
-        }
-      }
-
-      if (newRole !== undefined) {
-        await tx.tenantMember.updateMany({
-          where: { tenantId, userId: id },
-          data: { role: newRole },
+  async patchUser(id: string, body: unknown, tenantId: string, operatorId: string) {
+    // Validate the complete batch before applying any operation.
+    const changes = scimMembershipChanges(parseScim(ScimPatchSchema, body));
+    const updated = await this.mutate(tenantId, operatorId, 'users:update', async (tx) => {
+      const member = await tx.tenantMember.findUnique({ where: { userId_tenantId: { userId: id, tenantId } } });
+      if (!member) throw new NotFoundException('SCIM user was not found');
+      const next = { role: changes.role ?? member.role, status: changes.active === undefined ? member.status : changes.active ? 'ACTIVE' as const : 'SUSPENDED' as const };
+      await assertTenantAdministratorRetained(tx, tenantId, member, next);
+      if (next.role !== member.role || next.status !== member.status) {
+        await tx.tenantMember.update({ where: { id: member.id }, data: next });
+        await this.revokeSessions(tx, tenantId, id);
+        await this.auditService.log({
+          tx, tenantId, userId: operatorId, chainScope: 'scim', action: 'PERMISSION_CHANGE',
+          resource: 'scim.user', resourceId: id,
+          before: { role: member.role, status: member.status }, after: next,
         });
       }
-
-      return tx.user.findUnique({
-        where: { id },
-        include: { memberships: { where: { tenantId } } },
-      });
+      return tx.user.findUniqueOrThrow({ where: { id }, include: { memberships: { where: { tenantId } } } });
     });
-
-    if (!updated) {
-      throw new NotFoundException(`SCIM User '${id}' not found after update`);
-    }
-
-    await this.auditService.log({
-      tenantId,
-      action: activeState === false ? 'STATUS_CHANGE' : 'PERMISSION_CHANGE',
-      resource: 'scim.user',
-      resourceId: id,
-      before: {
-        active: user.memberships[0]?.status === 'ACTIVE',
-        role: user.memberships[0]?.role,
-      },
-      after: {
-        active: activeState,
-        role: newRole,
-      },
-      ...(operatorId ? { userId: operatorId } : {}),
-    });
-
     return this.formatScimUser(updated, tenantId);
   }
 
-  async deleteUser(id: string, tenantId: string, operatorId?: string) {
-    const membership = await prisma.tenantMember.findFirst({
-      where: { tenantId, userId: id },
-    });
-
-    if (!membership) {
-      throw new NotFoundException(`SCIM User '${id}' membership in tenant '${tenantId}' not found`);
-    }
-
-    await prisma.$transaction(async (tx) => {
-      await tx.session.updateMany({
-        where: { userId: id, tenantId },
-        data: { status: 'REVOKED' },
+  async deleteUser(id: string, tenantId: string, operatorId: string) {
+    await this.mutate(tenantId, operatorId, 'users:delete', async (tx) => {
+      const member = await tx.tenantMember.findUnique({ where: { userId_tenantId: { userId: id, tenantId } } });
+      if (!member) throw new NotFoundException('SCIM user was not found');
+      await assertTenantAdministratorRetained(tx, tenantId, member, null);
+      await this.revokeSessions(tx, tenantId, id);
+      await tx.tenantMember.delete({ where: { id: member.id } });
+      await this.auditService.log({
+        tx, tenantId, userId: operatorId, chainScope: 'scim', action: 'DELETE',
+        resource: 'scim.user', resourceId: id, before: { role: member.role, status: member.status },
       });
-      await tx.tenantMember.deleteMany({
-        where: { tenantId, userId: id },
-      });
-    });
-
-    await this.auditService.log({
-      tenantId,
-      action: 'DELETE',
-      resource: 'scim.user',
-      resourceId: id,
-      ...(operatorId ? { userId: operatorId } : {}),
     });
   }
 
   async listGroups(tenantId: string) {
-    const roles: MemberRole[] = [
-      'SUPER_ADMIN',
-      'TENANT_ADMIN',
-      'MANAGER',
-      'MEMBER',
-      'VIEWER',
-      'GUEST',
-    ];
+    this.requireScope(tenantId);
+    const roles = TenantMemberRoleSchema.options;
 
     const memberships = await prisma.tenantMember.findMany({
       where: { tenantId, status: 'ACTIVE' },
@@ -411,9 +301,9 @@ export class ScimService {
       metadata: unknown;
       createdAt: Date;
       updatedAt: Date;
-      memberships: Array<{ role: MemberRole; status: string }>;
+      memberships: Array<{ role: MemberRole; status: string; updatedAt?: Date }>;
     },
-    _tenantId?: string,
+    tenantId: string,
   ) {
     const membership = user.memberships[0];
     const metaObj = (user.metadata as Record<string, unknown>) || {};
@@ -422,7 +312,7 @@ export class ScimService {
     return {
       schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
       id: user.id,
-      externalId: (metaObj.scimExternalId as string) || undefined,
+      externalId: metaObj.scimTenantId === tenantId ? metaObj.scimExternalId : undefined,
       userName: user.email,
       name: {
         formatted: user.name || user.email,
@@ -449,9 +339,44 @@ export class ScimService {
       meta: {
         resourceType: 'User',
         created: user.createdAt.toISOString(),
-        lastModified: user.updatedAt.toISOString(),
+        lastModified: (membership?.updatedAt ?? user.updatedAt).toISOString(),
         location: `/api/v1/scim/v2/Users/${user.id}`,
       },
     };
+  }
+
+  private requireScope(tenantId: string) {
+    if (!tenantId) throw new ForbiddenException('A verified tenant is required for SCIM.');
+  }
+
+  private revokeSessions(tx: Prisma.TransactionClient, tenantId: string, userId: string) {
+    return tx.session.updateMany({
+      where: { userId, tenantId, status: 'ACTIVE' }, data: { status: 'REVOKED', revokedAt: new Date() },
+    });
+  }
+
+  private async mutate<T>(tenantId: string, actorId: string, permission: string, effect: (tx: Prisma.TransactionClient) => Promise<T>): Promise<T> {
+    this.requireScope(tenantId);
+    if (!actorId) throw new ForbiddenException('A verified actor is required for SCIM.');
+    try {
+      return await prisma.$transaction(async (tx) => {
+        // Same lock as tenant administration: last-admin checks and changes serialize across both entry points.
+        await tx.$queryRaw`SELECT "id" FROM "tenants" WHERE "id" = ${tenantId} FOR UPDATE`;
+        // Recheck authority after acquiring the lock; another administrator may have revoked the actor meanwhile.
+        const actor = await tx.tenantMember.findUnique({
+          where: { userId_tenantId: { userId: actorId, tenantId } },
+          include: { user: { select: { status: true } }, customRole: { select: { permissions: true } } },
+        });
+        if (!actor || actor.status !== 'ACTIVE' || actor.user.status !== 'ACTIVE') throw new ForbiddenException('SCIM actor membership is inactive.');
+        const custom = Array.isArray(actor.customRole?.permissions) ? actor.customRole.permissions.filter(isTenantPermissionCode) : [];
+        const permissions = [...resolveBaseRolePermissions([actor.role]), ...actor.permissions, ...custom];
+        if (!PermissionEvaluator.hasAllPermissions(permissions, [permission], { tenantId, userId: actorId })) throw new ForbiddenException('Insufficient SCIM permission.');
+        return effect(tx);
+      }, { isolationLevel: 'Serializable' });
+    } catch (error) {
+      const code = error && typeof error === 'object' && 'code' in error ? error.code : undefined;
+      if (code === 'P2034' || code === 'P2002') throw new ConflictException('SCIM membership changed concurrently; reload before retrying.');
+      throw error;
+    }
   }
 }

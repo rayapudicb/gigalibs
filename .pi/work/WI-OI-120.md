@@ -293,3 +293,78 @@ Card `.pi/tasks/WI-OI-120c.md`, approved by the owner on 2026-10-05.
 - **Verification:** `pnpm build` 74/74; `pnpm test` 294 files and 2,446 tests passed (165 skipped); eight static
   audits pass; manifest check clean; deployment profile shows the known drift only.
 - **Not deployed yet:** waits for the owner's "commit"; then images are rebuilt and the owner runs the deploy.
+
+## U2 commit handoff and proposed U3.1 (2026-10-05)
+
+- Verified U2 commit `220508e` with `git log`; no tracked modifications at handoff, only the previously protected
+  untracked material. This supersedes the earlier wait-for-commit note; no new deployment was observed or performed.
+- Prepared `.pi/tasks/WI-OI-120d.md` from the task template: Proposed, SCIM P0-06 only. Existing code confirms
+  fallback/caller-selected tenant in the controller and unvalidated role assignment in create/PATCH. Existing
+  tenant-member administration supplies permission, last-admin and revocation patterns to reuse.
+- Product code unchanged while the owner reviews this bounded card, per AGENTS.md session rule 2. Updated NOW and
+  added a dated status note to the investigation without rewriting its historical evidence or claiming closure.
+- Capacity statement: a reported 40% agent allowance is not a measure of remaining engineering effort. The target
+  is one bounded tested slice, with implementation, independent review and deployment tracked separately; no
+  percentage of the 421-line report is promised.
+- Planning-document verification: `PROOF_DATABASE_URL= pnpm verify --audits`, exit 0; eight audits and manifest
+  check passed, known `WORKFORCE_API_URL` drift, eight isolated-database proofs NOT RUN. `git diff --check` passed.
+  Log: `/var/folders/jp/fkzm1c3s1d52rj_9cvjv6kx00000gn/T/gigalibs-verify/verify-2026-10-05T07-11-27-811Z.log`.
+
+## U3.1 SCIM implementation (2026-10-05; WI-OI-120d)
+
+- Owner authorized implementation with "proceed". Scope is P0-06, not all U3. No commit, deployment, migration
+  change, UAT write, credential rotation or production-gate upgrade was performed.
+- Users/Groups obtain tenant authority from verified context, never header/query/default tenant. Permissions:
+  Users GET and Groups GET `users:read`; Users POST `users:create`; PATCH `users:update`; DELETE `users:delete`.
+  Discovery/schema endpoints remain public. Input validates supported tenant roles and complete PATCH batches;
+  platform-only roles, unsupported attributes and malformed states are rejected.
+- Mutation transactions lock the tenant, recheck actor authority and reuse the tenant-administration last-active-
+  administrator invariant. Membership changes, scoped session revocation and actor-attributed audit commit together.
+  Existing multi-tenant identities are not globally suspended/deleted or renamed by this path.
+- Compatibility: POST is create-only (duplicate membership 409), repeated unchanged PATCH is a no-op, repeated
+  DELETE is 404, concurrent conflicts are 409 and require reload. Existing-identity externalId assignment is
+  explicitly unsupported (409); newly created externalIds are only returned to their originating tenant.
+  No external IdP credential/service-account integration or full SCIM interoperability certification is claimed.
+- Targeted verification: 27 tests pass (14 validation, seven HTTP guard tests with storage doubles, six real-
+  PostgreSQL integration tests). Integration covers create/reload, cross-tenant denial, malicious batch atomicity,
+  last-admin protection, multi-tenant session isolation, audit-failure rollback and competing admin removal.
+  The rollback fault-injection case invokes the service directly; the other integration cases use actual HTTP.
+- Proof infrastructure: separate disposable container `wi120d-scim-proof-20261005`, localhost port 55541,
+  database `scim_proof`, committed control-plane migrations applied through the existing runner. Fixtures carry
+  WI/run attribution and do not enter customer reporting. The suite refuses other host/port/database identities.
+- Initial proof uncovered an existing audit-checkpoint ID length constraint: it constructs `tenantId:scope` in a
+  varchar(30) column. Production-generated 25-character CUIDs plus `:scim` fit; oversized test IDs did not. Fixtures
+  now match that production format. Arbitrary longer legacy tenant IDs remain a shared audit compatibility concern,
+  not certified by this slice; no migration or shared audit redesign was silently added.
+- Independent Security/QA review and named human acceptance remain pending. Session revocation proof here covers
+  the control-plane guard; downstream module revocation propagation and other U3 findings are not certified.
+- Full `SCIM_TEST_DATABASE_URL=postgresql://postgres@127.0.0.1:55541/scim_proof pnpm verify` exited 0: build,
+  tests, runtime/security-boundary/static audits and manifests passed; known WORKFORCE_API_URL drift only.
+  Eight unrelated Finance/U2 proofs NOT RUN (no PROOF_DATABASE_URL). Log:
+  `/var/folders/jp/fkzm1c3s1d52rj_9cvjv6kx00000gn/T/gigalibs-verify/verify-2026-10-05T07-41-46-884Z.log`.
+- Full-suite totals: 74/74 build tasks; 297 test files / 2,473 tests passed, 165 tests skipped.
+  The isolated SCIM container was stopped after proof; its data remains available for review. UAT was untouched.
+
+### WI-OI-120d (U3.1): second review by the primary session (2026-10-05)
+
+Reviewed read-only before commit, on the owner's instruction (option 1). This is an independent agent review, not
+the named human Security review that production requires.
+
+- **Controller** (`scim.controller.ts`):
+  - the tenant comes only from the verified login (`CurrentTenant`); header, query and `default-system-tenant`
+    fallbacks are removed;
+  - permissions per action (`users:read`, `create`, `update`, `delete`);
+  - input validated by strict zod schemas (`scim.validation.ts`); page sizes bounded (count ≤ 100).
+- **Service** (`scim.service.ts`): every write re-checks the actor's active membership and permission from the
+  database inside a tenant-locked transaction. Create refuses an existing membership, so create is not an update
+  path.
+- **Last administrator:** protected by `assertTenantAdministratorRetained`.
+- **Roles:** exactly one role from `TenantMemberRoleSchema`; `SUPER_ADMIN` is not assignable. Built-in roles: only
+  `TENANT_ADMIN` holds `users:*`; `MANAGER` has `users:read`.
+- **Residual finding (P2, for U3):** a tenant-defined custom role that includes `users:create` or `users:update`
+  could assign `TENANT_ADMIN`. Role assignment should need its own permission, or be capped at the actor's own role.
+- **Checks run by the primary session:**
+  - `scim.validation`, `scim.controller` and `scim.integration` tests: 21 passed, 6 skipped (the integration suite
+    needs its test database; the authoring session reports 27/27 with it);
+  - `pnpm install --frozen-lockfile` succeeds;
+  - the deployment profile shows the known drift only (`rbac-core` is in the image workspace).

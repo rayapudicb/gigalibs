@@ -12,7 +12,10 @@ to one page. Replace old content rather than appending to it, and update it at t
   no product changes or gate upgrades. Distinguishes recorded deployment from local U2 work.
 - **Goal now (owner, 2026-10-05):** every module, Phases 1–14 and the enhancements included, fixed and visible for
   UAT on the existing local instance. Nothing is hidden or removed. UAT data is entered by Playwright business flows.
-- **Active implementation item:** WI-OI-120a (U1), approved 2026-10-05.
+- **WI-OI-120d (U3.1 SCIM): Review.** Implementation and 27 targeted tests pass, including isolated PostgreSQL
+  proof. Full `pnpm verify` passes (known drift; eight unrelated proofs NOT RUN). Uncommitted/undeployed;
+  independent Security/QA review pending, P0-06 not closed. Evidence: `.pi/work/WI-OI-120.md` U3.1.
+- **U1 remaining recovery/deployment work:**
   - **Part A is committed (`03ebd0c`).** Evidence: `.pi/work/WI-OI-120.md`.
     - Lockfile fixed: the frozen install passes.
     - Finance migration 7 in its runtime list; compose regenerated; new check for this class of defect.
@@ -31,7 +34,8 @@ to one page. Replace old content rather than appending to it, and update it at t
   - Restyled to tokens: Catalogue, Parties, Application Dictionary and the form renderer.
   - Medusa component swaps move to U5–U7.
   - Not deployed yet; it goes out with the next deploy.
-- **WI-OI-120c (U2, ERP APIs accept real data):** completed and committed. Migrations 3/3/3/8 applied, outbox transactions, order partial allocations, proxy idempotency forwarding (11 tests pass), and standard fiscal year route.
+- **WI-OI-120c (U2):** committed as `220508e`; tracked worktree clean at handoff. Isolated migration versions
+  3/3/3/8 and HTTP proof recorded; UAT deployment remains pending. Full request-level idempotency remains deferred.
 - **Module status board for testers:** `docs/audits/2026-10-04-production-readiness/uat-module-status.md` (what works,
   what does not, what is not deployed, and the plan to UAT and to production).
 
@@ -51,7 +55,8 @@ to one page. Replace old content rather than appending to it, and update it at t
 
 ## Next
 
-1. Next implementation item: WI-OI-120d (U3: Security stop-ships - SCIM role elevation P0-06, Webhook secrets P0-08, Rule Kernel memory leak P0-04/05).
+1. Independently review `.pi/tasks/WI-OI-120d.md` — U3.1 SCIM repair (P0-06), then owner authorizes commit.
+   Other U3 security findings need separate approved cards; independent review precedes defect closure.
 2. Owner: run deploy when ready to promote U2 images to the local UAT instance.
 3. Then U4–U6 (Dictionary & Master Data hardening), U7–U18 (module by module Playwright flows). Plan:
    `docs/audits/2026-10-04-production-readiness/remediation-backlog.md`.

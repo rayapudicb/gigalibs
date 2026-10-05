@@ -33,6 +33,7 @@ import {
   resolveDomainVerification,
 } from './domain-verification.js';
 import { tenantSubdomain, trialModuleKeys } from './platform-module-catalog.js';
+import { assertTenantAdministratorRetained } from './tenant-member-safety.js';
 
 @Injectable()
 export class TenancyService {
@@ -1019,23 +1020,7 @@ export class TenancyService {
           dto.employmentType !== undefined ? dto.employmentType : member.employmentType;
         const nextSpatialScopePlaceIds = dto.spatialScopePlaceIds ?? member.spatialScopePlaceIds;
 
-        if (
-          member.role === 'TENANT_ADMIN' &&
-          member.status === 'ACTIVE' &&
-          (nextRole !== 'TENANT_ADMIN' || nextStatus !== 'ACTIVE')
-        ) {
-          const otherAdmins = await transaction.tenantMember.count({
-            where: {
-              tenantId,
-              id: { not: member.id },
-              role: 'TENANT_ADMIN',
-              status: 'ACTIVE',
-            },
-          });
-          if (otherAdmins === 0) {
-            throw new ConflictException('The last active tenant administrator cannot be changed');
-          }
-        }
+        await assertTenantAdministratorRetained(transaction, tenantId, member, { role: nextRole, status: nextStatus });
 
         const changed = await transaction.tenantMember.updateMany({
           where: { id: member.id, tenantId, updatedAt: member.updatedAt },

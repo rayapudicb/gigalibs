@@ -152,6 +152,9 @@ importers:
       '@gigalibs/privacy-gdpr':
         specifier: workspace:*
         version: link:../../packages/privacy-gdpr
+      '@gigalibs/rbac-core':
+        specifier: workspace:*
+        version: link:../../packages/rbac-core
       '@gigalibs/rbac-nest':
         specifier: workspace:*
         version: link:../../packages/rbac-nest
@@ -185,6 +188,9 @@ importers:
       rxjs:
         specifier: ^7.8.2
         version: 7.8.2
+      zod:
+        specifier: ^4.5.2
+        version: 4.5.2
     devDependencies:
       '@gigalibs/module-sdk':
         specifier: workspace:*
@@ -8943,6 +8949,14 @@ snapshots:
     optionalDependencies:
       vite: 5.4.21(@types/node@24.13.3)
 
+  '@vitest/mocker@3.2.7(vite@7.3.6(@types/node@24.13.3)(jiti@1.21.7)(tsx@4.23.12))':
+    dependencies:
+      '@vitest/spy': 3.2.7
+      estree-walker: 3.0.3
+      magic-string: 0.30.21
+    optionalDependencies:
+      vite: 7.3.6(@types/node@24.13.3)(jiti@1.21.7)(tsx@4.23.12)
+
   '@vitest/mocker@3.2.7(vite@7.3.6(@types/node@24.13.3)(jiti@2.7.0)(tsx@4.23.12))':
     dependencies:
       '@vitest/spy': 3.2.7
@@ -11409,7 +11423,7 @@ snapshots:
     dependencies:
       '@types/chai': 5.2.3
       '@vitest/expect': 3.2.7
-      '@vitest/mocker': 3.2.7(vite@7.3.6(@types/node@24.13.3)(jiti@2.7.0)(tsx@4.23.12))
+      '@vitest/mocker': 3.2.7(vite@7.3.6(@types/node@24.13.3)(jiti@1.21.7)(tsx@4.23.12))
       '@vitest/pretty-format': 3.2.7
       '@vitest/runner': 3.2.7
       '@vitest/snapshot': 3.2.7
