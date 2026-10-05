@@ -20,7 +20,7 @@ const steps = [
         { name: 'build', cmd: 'pnpm', args: ['build'], stopOnFail: true },
         { name: 'test', cmd: 'pnpm', args: ['test'] },
       ]),
-  ...['production-data', 'all-runtime-data', 'package-dependencies', 'api-boundary', 'navigation', 'sdlc', 'layers'].map(
+  ...['production-data', 'all-runtime-data', 'package-dependencies', 'api-boundary', 'navigation', 'sdlc', 'layers', 'design-tokens'].map(
     (audit) => ({ name: `audit:${audit}`, cmd: 'pnpm', args: [`audit:${audit}`] }),
   ),
   { name: 'module manifests', cmd: process.execPath, args: ['scripts/module-manifests.mjs', '--check'] },

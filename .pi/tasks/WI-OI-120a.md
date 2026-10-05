@@ -82,13 +82,13 @@ This closes audit findings P0-12, P1-01 and P1-13 to P1-16.
 
 - [x] A clean clone of the commit installs with a frozen lockfile and builds the images (clean worktree of the
   same content; five images, 2026-10-05)
-- [ ] Module host starts with Finance, Inventory, Orders, Procurement and Catalogue; CMMS and Workforce run
+- [ ] Module host starts with Finance, Inventory, Orders, Procurement and Catalogue; CMMS and Workforce run (module host and Workforce: done 2026-10-05; CMMS open)
 - [ ] Every module, Phases 1–14 included, is visible and opens on the UAT instance, with its status label
   (Playwright smoke)
 - [x] Manifest readiness values are unchanged; with the UAT setting off, nothing new is visible
 - [x] Finance proof scripts no longer write to the UAT database
 - [x] `pnpm build`, `pnpm test` and static audits pass (known `WORKFORCE_API_URL` drift only)
-- [ ] The deploy is recorded; evidence in `.pi/work/WI-OI-120.md`; `.pi/NOW.md` updated
+- [x] The deploy is recorded; evidence in `.pi/work/WI-OI-120.md`; `.pi/NOW.md` updated
 
 ## Stop and ask if
 

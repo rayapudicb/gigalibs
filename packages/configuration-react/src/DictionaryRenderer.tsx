@@ -149,7 +149,7 @@ export function DictionaryRenderer({
 
   if (!targetView) {
     return (
-      <div className="rounded-xl border border-zinc-200 bg-white p-6 text-center text-xs text-zinc-500">
+      <div className="rounded-xl border border-ui-border-base bg-ui-bg-base p-6 text-center text-xs text-ui-fg-muted">
         No view layout declared for this application dictionary.
       </div>
     );
@@ -165,7 +165,7 @@ export function DictionaryRenderer({
     >
       {/* Tab Navigation */}
       {targetView.tabs.length > 1 && (
-        <div className="flex border-b border-zinc-200 space-x-2">
+        <div className="flex border-b border-ui-border-base space-x-2">
           {targetView.tabs.map((tab) => {
             const isTabActive = tab.tabKey === (currentTab?.tabKey ?? '');
             return (
@@ -175,8 +175,8 @@ export function DictionaryRenderer({
                 onClick={() => setActiveTabKey(tab.tabKey)}
                 className={`py-2 px-4 text-xs font-medium border-b-2 transition ${
                   isTabActive
-                    ? 'border-emerald-600 text-emerald-700 font-semibold'
-                    : 'border-transparent text-zinc-500 hover:text-zinc-800'
+                    ? 'border-ui-border-interactive text-ui-tag-green-text font-semibold'
+                    : 'border-transparent text-ui-fg-muted hover:text-ui-fg-base'
                 }`}
               >
                 {tab.label}
@@ -196,23 +196,23 @@ export function DictionaryRenderer({
         return (
           <div
             key={section.sectionKey}
-            className="rounded-xl border border-zinc-200 bg-white overflow-hidden shadow-xs"
+            className="rounded-xl border border-ui-border-base bg-ui-bg-base overflow-hidden shadow-xs"
           >
             {/* Section Header */}
             <div
               className={`flex items-center justify-between p-4 ${
-                section.collapsible ? 'cursor-pointer hover:bg-zinc-50 select-none' : ''
+                section.collapsible ? 'cursor-pointer hover:bg-ui-bg-base-hover select-none' : ''
               }`}
               onClick={() => section.collapsible && toggleSection(section.sectionKey)}
             >
               <div>
-                <h3 className="text-sm font-semibold text-zinc-900">{section.label}</h3>
+                <h3 className="text-sm font-semibold text-ui-fg-base">{section.label}</h3>
                 {section.description && (
-                  <p className="text-xs text-zinc-500 mt-0.5">{section.description}</p>
+                  <p className="text-xs text-ui-fg-muted mt-0.5">{section.description}</p>
                 )}
               </div>
               {section.collapsible && (
-                <span className="text-xs text-zinc-400 font-mono">
+                <span className="text-xs text-ui-fg-muted font-mono">
                   {isCollapsed ? '[+]' : '[-]'}
                 </span>
               )}
@@ -220,7 +220,7 @@ export function DictionaryRenderer({
 
             {/* Section Content */}
             {!isCollapsed && (
-              <div className="p-4 pt-0 border-t border-zinc-100">
+              <div className="p-4 pt-0 border-t border-ui-border-base">
                 <div className="grid grid-cols-12 gap-4 mt-3">
                   {sectionFields.map((fieldPlacement) => {
                     const field = fieldMap.get(fieldPlacement.fieldKey);
@@ -240,12 +240,12 @@ export function DictionaryRenderer({
                         className="space-y-1.5"
                       >
                         <div className="flex items-center justify-between">
-                          <label className="text-xs font-semibold text-zinc-700">
+                          <label className="text-xs font-semibold text-ui-fg-subtle">
                             {field.label}
-                            {field.required && <span className="text-rose-500 ml-0.5">*</span>}
+                            {field.required && <span className="text-ui-fg-error ml-0.5">*</span>}
                           </label>
                           {field.isSystemLocked && (
-                            <span className="text-[10px] text-zinc-400 font-medium">Locked</span>
+                            <span className="text-[10px] text-ui-fg-muted font-medium">Locked</span>
                           )}
                         </div>
 
@@ -257,14 +257,14 @@ export function DictionaryRenderer({
                             disabled={!canWrite}
                             readOnly={!canWrite}
                             onChange={(e) => handleFieldChange(field.fieldKey, e.target.value)}
-                            className="w-full rounded-lg border border-zinc-200 px-3 py-1.5 text-xs text-zinc-900 focus:outline-none focus:ring-1 focus:ring-emerald-500 disabled:bg-zinc-50"
+                            className="w-full rounded-lg border border-ui-border-base px-3 py-1.5 text-xs text-ui-fg-base focus:outline-none focus:ring-1 focus:ring-ui-border-interactive disabled:bg-ui-bg-disabled"
                           />
                         ) : field.type === 'SELECT' && ref?.staticValues ? (
                           <select
                             value={String(val ?? '')}
                             disabled={!canWrite}
                             onChange={(e) => handleFieldChange(field.fieldKey, e.target.value)}
-                            className="w-full rounded-lg border border-zinc-200 px-3 py-1.5 text-xs text-zinc-900 focus:outline-none focus:ring-1 focus:ring-emerald-500 disabled:bg-zinc-50"
+                            className="w-full rounded-lg border border-ui-border-base px-3 py-1.5 text-xs text-ui-fg-base focus:outline-none focus:ring-1 focus:ring-ui-border-interactive disabled:bg-ui-bg-disabled"
                           >
                             <option value="">Select…</option>
                             {ref.staticValues.map((opt) => (
@@ -280,9 +280,9 @@ export function DictionaryRenderer({
                               checked={Boolean(val)}
                               disabled={!canWrite}
                               onChange={(e) => handleFieldChange(field.fieldKey, e.target.checked)}
-                              className="h-4 w-4 rounded border-zinc-300 text-emerald-600 focus:ring-emerald-500 disabled:opacity-50"
+                              className="h-4 w-4 rounded border-ui-border-base text-ui-tag-green-text focus:ring-ui-border-interactive disabled:opacity-50"
                             />
-                            <span className="text-xs text-zinc-600">{field.helpText || field.label}</span>
+                            <span className="text-xs text-ui-fg-subtle">{field.helpText || field.label}</span>
                           </div>
                         ) : field.type === 'TEXTAREA' ? (
                           <textarea
@@ -291,7 +291,7 @@ export function DictionaryRenderer({
                             disabled={!canWrite}
                             readOnly={!canWrite}
                             onChange={(e) => handleFieldChange(field.fieldKey, e.target.value)}
-                            className="w-full rounded-lg border border-zinc-200 px-3 py-1.5 text-xs text-zinc-900 focus:outline-none focus:ring-1 focus:ring-emerald-500 disabled:bg-zinc-50"
+                            className="w-full rounded-lg border border-ui-border-base px-3 py-1.5 text-xs text-ui-fg-base focus:outline-none focus:ring-1 focus:ring-ui-border-interactive disabled:bg-ui-bg-disabled"
                           />
                         ) : (
                           <input
@@ -307,17 +307,17 @@ export function DictionaryRenderer({
                                   : e.target.value,
                               )
                             }
-                            className={`w-full rounded-lg border px-3 py-1.5 text-xs text-zinc-900 focus:outline-none focus:ring-1 disabled:bg-zinc-50 ${
+                            className={`w-full rounded-lg border px-3 py-1.5 text-xs text-ui-fg-base focus:outline-none focus:ring-1 disabled:bg-ui-bg-disabled ${
                               error
-                                ? 'border-rose-300 focus:ring-rose-500'
-                                : 'border-zinc-200 focus:ring-emerald-500'
+                                ? 'border-ui-tag-red-border focus:ring-ui-border-error'
+                                : 'border-ui-border-base focus:ring-ui-border-interactive'
                             }`}
                           />
                         )}
 
-                        {error && <p className="text-[11px] text-rose-600 font-medium">{error}</p>}
+                        {error && <p className="text-[11px] text-ui-fg-error font-medium">{error}</p>}
                         {field.helpText && !error && (
-                          <p className="text-[11px] text-zinc-400">{field.helpText}</p>
+                          <p className="text-[11px] text-ui-fg-muted">{field.helpText}</p>
                         )}
                       </div>
                     );
@@ -331,7 +331,7 @@ export function DictionaryRenderer({
 
       {/* Action Handlers */}
       {manifest.actions.length > 0 && (
-        <div className="flex flex-wrap items-center justify-end gap-3 pt-4 border-t border-zinc-100">
+        <div className="flex flex-wrap items-center justify-end gap-3 pt-4 border-t border-ui-border-base">
           {manifest.actions
             .filter((act) => !act.requiredPermissions?.length || act.requiredPermissions.every((p) => hasPermission(p)))
             .map((act) => (
@@ -339,7 +339,7 @@ export function DictionaryRenderer({
                 key={act.actionKey}
                 type="button"
                 onClick={() => onAction && onAction(act.actionKey)}
-                className="rounded-xl border border-zinc-200 bg-white px-4 py-2 text-xs font-semibold text-zinc-800 shadow-2xs hover:bg-zinc-50 transition"
+                className="rounded-xl border border-ui-border-base bg-ui-bg-base px-4 py-2 text-xs font-semibold text-ui-fg-base shadow-2xs hover:bg-ui-bg-base-hover transition"
               >
                 {act.label}
               </button>

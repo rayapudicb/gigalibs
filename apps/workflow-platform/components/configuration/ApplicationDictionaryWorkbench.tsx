@@ -301,25 +301,25 @@ export function ApplicationDictionaryWorkbench({
     switch (classification) {
       case 'RESTRICTED':
         return (
-          <span className="inline-flex items-center rounded-md bg-rose-50 px-2 py-0.5 text-[11px] font-semibold text-rose-700 border border-rose-200">
+          <span className="inline-flex items-center rounded-md bg-ui-tag-red-bg px-2 py-0.5 text-[11px] font-semibold text-ui-fg-error border border-ui-tag-red-border">
             RESTRICTED
           </span>
         );
       case 'CONFIDENTIAL':
         return (
-          <span className="inline-flex items-center rounded-md bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-700 border border-amber-200">
+          <span className="inline-flex items-center rounded-md bg-ui-tag-orange-bg px-2 py-0.5 text-[11px] font-semibold text-ui-tag-orange-text border border-ui-tag-orange-border">
             CONFIDENTIAL
           </span>
         );
       case 'PUBLIC':
         return (
-          <span className="inline-flex items-center rounded-md bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 border border-emerald-200">
+          <span className="inline-flex items-center rounded-md bg-ui-tag-green-bg px-2 py-0.5 text-[11px] font-semibold text-ui-tag-green-text border border-ui-tag-green-border">
             PUBLIC
           </span>
         );
       default:
         return (
-          <span className="inline-flex items-center rounded-md bg-sky-50 px-2 py-0.5 text-[11px] font-semibold text-sky-700 border border-sky-200">
+          <span className="inline-flex items-center rounded-md bg-ui-tag-blue-bg px-2 py-0.5 text-[11px] font-semibold text-ui-tag-blue-text border border-ui-tag-blue-border">
             INTERNAL
           </span>
         );
@@ -330,14 +330,14 @@ export function ApplicationDictionaryWorkbench({
   const renderOwnershipBadge = (ownership: string, isLocked: boolean) => {
     if (ownership === 'MODULE_CORE' || isLocked) {
       return (
-        <span className="inline-flex items-center gap-1 rounded-md bg-zinc-100 px-2 py-0.5 text-[11px] font-medium text-zinc-700 border border-zinc-200">
-          <Lock className="h-3 w-3 text-zinc-500" />
+        <span className="inline-flex items-center gap-1 rounded-md bg-ui-bg-component px-2 py-0.5 text-[11px] font-medium text-ui-fg-subtle border border-ui-border-base">
+          <Lock className="h-3 w-3 text-ui-fg-muted" />
           Core (Locked)
         </span>
       );
     }
     return (
-      <span className="inline-flex items-center gap-1 rounded-md bg-purple-50 px-2 py-0.5 text-[11px] font-medium text-purple-700 border border-purple-200">
+      <span className="inline-flex items-center gap-1 rounded-md bg-ui-tag-purple-bg px-2 py-0.5 text-[11px] font-medium text-ui-tag-purple-text border border-ui-tag-purple-border">
         Tenant Extension
       </span>
     );
@@ -461,20 +461,20 @@ export function ApplicationDictionaryWorkbench({
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-zinc-50/60 pb-16">
+    <div className="flex flex-col min-h-screen bg-ui-bg-subtle pb-16">
       {/* Header Bar */}
-      <div className="border-b border-zinc-200 bg-white px-6 py-5 shadow-xs">
+      <div className="border-b border-ui-border-base bg-ui-bg-base px-6 py-5 shadow-xs">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
             <div className="flex items-center gap-2">
-              <span className="rounded-lg bg-emerald-50 p-2 text-emerald-700">
+              <span className="rounded-lg bg-ui-tag-green-bg p-2 text-ui-tag-green-text">
                 <BookOpen className="h-5 w-5" />
               </span>
               <div>
-                <h1 className="text-xl font-bold tracking-tight text-zinc-900">
+                <h1 className="text-xl font-bold tracking-tight text-ui-fg-base">
                   Application Dictionary
                 </h1>
-                <p className="text-xs text-zinc-500">
+                <p className="text-xs text-ui-fg-muted">
                   Enterprise metadata compiler, module boundaries, locked baselines and governed overlays
                 </p>
               </div>
@@ -486,7 +486,7 @@ export function ApplicationDictionaryWorkbench({
               type="button"
               onClick={loadData}
               disabled={isLoading}
-              className="inline-flex items-center gap-2 rounded-xl border border-zinc-200 bg-white px-3.5 py-2 text-xs font-medium text-zinc-700 shadow-2xs hover:bg-zinc-50 transition"
+              className="inline-flex items-center gap-2 rounded-xl border border-ui-border-base bg-ui-bg-base px-3.5 py-2 text-xs font-medium text-ui-fg-subtle shadow-2xs hover:bg-ui-bg-base-hover transition"
             >
               <RefreshCw className={`h-3.5 w-3.5 ${isLoading ? 'animate-spin' : ''}`} />
               Refresh
@@ -496,7 +496,7 @@ export function ApplicationDictionaryWorkbench({
               <button
                 type="button"
                 onClick={() => setIsCreatingChangeSet(true)}
-                className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-emerald-500 transition"
+                className="inline-flex items-center gap-2 rounded-xl bg-ui-button-inverted px-4 py-2 text-xs font-semibold text-ui-contrast-fg-primary shadow-sm hover:bg-ui-button-inverted-hover transition"
               >
                 <Plus className="h-4 w-4" />
                 New Governed Overlay
@@ -510,8 +510,8 @@ export function ApplicationDictionaryWorkbench({
           <div
             className={`mt-4 flex items-center justify-between rounded-xl p-3 text-xs font-medium ${
               notification.type === 'success'
-                ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-                : 'bg-rose-50 text-rose-800 border border-rose-200'
+                ? 'bg-ui-tag-green-bg text-ui-tag-green-text border border-ui-tag-green-border'
+                : 'bg-ui-tag-red-bg text-ui-fg-error border border-ui-tag-red-border'
             }`}
           >
             <span>{notification.message}</span>
@@ -522,7 +522,7 @@ export function ApplicationDictionaryWorkbench({
         )}
 
         {/* Secondary Navigation Tabs */}
-        <div className="mt-6 flex flex-wrap gap-1 border-b border-zinc-100 pb-px">
+        <div className="mt-6 flex flex-wrap gap-1 border-b border-ui-border-base pb-px">
           {[
             { id: 'entities', label: 'Entities & Fields', icon: Columns },
             { id: 'relationships', label: 'Relationships & References', icon: GitBranch },
@@ -541,11 +541,11 @@ export function ApplicationDictionaryWorkbench({
                 onClick={() => setActiveTab(tab.id as DictionaryTab)}
                 className={`inline-flex items-center gap-2 border-b-2 px-3.5 py-2.5 text-xs font-semibold transition ${
                   isActive
-                    ? 'border-emerald-600 text-emerald-700 bg-emerald-50/40 rounded-t-lg'
-                    : 'border-transparent text-zinc-600 hover:text-zinc-900 hover:border-zinc-300'
+                    ? 'border-ui-border-interactive text-ui-tag-green-text bg-ui-tag-green-bg rounded-t-lg'
+                    : 'border-transparent text-ui-fg-subtle hover:text-ui-fg-base hover:border-ui-border-strong'
                 }`}
               >
-                <Icon className={`h-4 w-4 ${isActive ? 'text-emerald-600' : 'text-zinc-400'}`} />
+                <Icon className={`h-4 w-4 ${isActive ? 'text-ui-tag-green-text' : 'text-ui-fg-muted'}`} />
                 {tab.label}
               </button>
             );
@@ -559,9 +559,9 @@ export function ApplicationDictionaryWorkbench({
         {activeTab === 'entities' && (
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
             {/* Entities Selector */}
-            <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-xs lg:col-span-1">
-              <h2 className="text-sm font-semibold text-zinc-900 mb-3 flex items-center gap-2">
-                <Database className="h-4 w-4 text-emerald-600" />
+            <div className="rounded-2xl border border-ui-border-base bg-ui-bg-base p-5 shadow-xs lg:col-span-1">
+              <h2 className="text-sm font-semibold text-ui-fg-base mb-3 flex items-center gap-2">
+                <Database className="h-4 w-4 text-ui-tag-green-text" />
                 Registered Entities
               </h2>
               <div className="space-y-2">
@@ -572,12 +572,12 @@ export function ApplicationDictionaryWorkbench({
                     onClick={() => setSelectedEntityKey(entity.entityKey)}
                     className={`w-full text-left rounded-xl p-3 text-xs transition border ${
                       selectedEntityKey === entity.entityKey
-                        ? 'border-emerald-500 bg-emerald-50/50 shadow-2xs'
-                        : 'border-zinc-200 hover:bg-zinc-50'
+                        ? 'border-ui-border-interactive bg-ui-tag-green-bg shadow-2xs'
+                        : 'border-ui-border-base hover:bg-ui-bg-base-hover'
                     }`}
                   >
-                    <div className="font-semibold text-zinc-900">{entity.label}</div>
-                    <div className="font-mono text-[11px] text-zinc-500 mt-0.5">{entity.entityKey}</div>
+                    <div className="font-semibold text-ui-fg-base">{entity.label}</div>
+                    <div className="font-mono text-[11px] text-ui-fg-muted mt-0.5">{entity.entityKey}</div>
                     <div className="mt-2 flex items-center gap-1.5">
                       {renderOwnershipBadge(entity.ownership, entity.ownership === 'MODULE_CORE')}
                     </div>
@@ -587,23 +587,23 @@ export function ApplicationDictionaryWorkbench({
             </div>
 
             {/* Field Catalogue */}
-            <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-xs lg:col-span-3">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-zinc-100">
+            <div className="rounded-2xl border border-ui-border-base bg-ui-bg-base p-6 shadow-xs lg:col-span-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-ui-border-base">
                 <div>
-                  <h2 className="text-base font-bold text-zinc-950">Field Catalogue</h2>
-                  <p className="text-xs text-zinc-500">
-                    Fields declared for <span className="font-mono font-medium text-zinc-800">{selectedEntityKey}</span>
+                  <h2 className="text-base font-bold text-ui-fg-base">Field Catalogue</h2>
+                  <p className="text-xs text-ui-fg-muted">
+                    Fields declared for <span className="font-mono font-medium text-ui-fg-base">{selectedEntityKey}</span>
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="relative">
-                    <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-zinc-400" />
+                    <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-ui-fg-muted" />
                     <input
                       type="text"
                       placeholder="Filter fields…"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="rounded-xl border border-zinc-200 bg-zinc-50/50 py-1.5 pl-8 pr-3 text-xs text-zinc-900 placeholder-zinc-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                      className="rounded-xl border border-ui-border-base bg-ui-bg-subtle py-1.5 pl-8 pr-3 text-xs text-ui-fg-base placeholder-ui-fg-muted focus:bg-ui-bg-base focus:outline-none focus:ring-1 focus:ring-ui-border-interactive"
                     />
                   </div>
                 </div>
@@ -612,7 +612,7 @@ export function ApplicationDictionaryWorkbench({
               <div className="mt-4 overflow-x-auto">
                 <table className="w-full text-left text-xs">
                   <thead>
-                    <tr className="border-b border-zinc-200 bg-zinc-50/60 font-semibold text-zinc-600">
+                    <tr className="border-b border-ui-border-base bg-ui-bg-subtle font-semibold text-ui-fg-subtle">
                       <th className="py-2.5 px-3">Field Key</th>
                       <th className="py-2.5 px-3">Label</th>
                       <th className="py-2.5 px-3">Type</th>
@@ -621,7 +621,7 @@ export function ApplicationDictionaryWorkbench({
                       <th className="py-2.5 px-3">Rules & Refs</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-zinc-100">
+                  <tbody className="divide-y divide-ui-border-base">
                     {dictionary.fields
                       .filter(
                         (f) =>
@@ -629,11 +629,11 @@ export function ApplicationDictionaryWorkbench({
                           f.label.toLowerCase().includes(searchQuery.toLowerCase()),
                       )
                       .map((field) => (
-                        <tr key={field.fieldKey} className="hover:bg-zinc-50/80 transition">
-                          <td className="py-3 px-3 font-mono font-medium text-zinc-900">{field.fieldKey}</td>
-                          <td className="py-3 px-3 text-zinc-800">{field.label}</td>
+                        <tr key={field.fieldKey} className="hover:bg-ui-bg-base-hover transition">
+                          <td className="py-3 px-3 font-mono font-medium text-ui-fg-base">{field.fieldKey}</td>
+                          <td className="py-3 px-3 text-ui-fg-base">{field.label}</td>
                           <td className="py-3 px-3">
-                            <span className="rounded bg-zinc-100 px-2 py-0.5 font-mono text-[11px] text-zinc-700">
+                            <span className="rounded bg-ui-bg-component px-2 py-0.5 font-mono text-[11px] text-ui-fg-subtle">
                               {field.type}
                             </span>
                           </td>
@@ -643,12 +643,12 @@ export function ApplicationDictionaryWorkbench({
                           <td className="py-3 px-3">{renderClassificationBadge(field.classification)}</td>
                           <td className="py-3 px-3">
                             {field.referenceKey && (
-                              <span className="inline-block rounded bg-indigo-50 px-2 py-0.5 text-[10px] font-medium text-indigo-700 mr-1">
+                              <span className="inline-block rounded bg-ui-tag-blue-bg px-2 py-0.5 text-[10px] font-medium text-ui-tag-blue-text mr-1">
                                 {field.referenceKey}
                               </span>
                             )}
                             {field.required && (
-                              <span className="inline-block rounded bg-zinc-100 px-1.5 py-0.5 text-[10px] font-medium text-zinc-600">
+                              <span className="inline-block rounded bg-ui-bg-component px-1.5 py-0.5 text-[10px] font-medium text-ui-fg-subtle">
                                 Required
                               </span>
                             )}
@@ -666,21 +666,21 @@ export function ApplicationDictionaryWorkbench({
         {activeTab === 'relationships' && (
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             {/* References & Value Lists */}
-            <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-xs">
-              <h2 className="text-sm font-bold text-zinc-950 flex items-center gap-2 mb-1">
-                <GitBranch className="h-4 w-4 text-emerald-600" />
+            <div className="rounded-2xl border border-ui-border-base bg-ui-bg-base p-6 shadow-xs">
+              <h2 className="text-sm font-bold text-ui-fg-base flex items-center gap-2 mb-1">
+                <GitBranch className="h-4 w-4 text-ui-tag-green-text" />
                 References & Value Lists
               </h2>
-              <p className="text-xs text-zinc-500 mb-4">
+              <p className="text-xs text-ui-fg-muted mb-4">
                 Bounded discrete lists and resolver keys validated server-side
               </p>
 
               <div className="space-y-4">
                 {dictionary.references.map((ref) => (
-                  <div key={ref.referenceKey} className="rounded-xl border border-zinc-200 p-4">
+                  <div key={ref.referenceKey} className="rounded-xl border border-ui-border-base p-4">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="font-mono text-xs font-semibold text-zinc-900">{ref.referenceKey}</span>
-                      <span className="rounded bg-zinc-100 px-2 py-0.5 text-[10px] font-medium text-zinc-700">
+                      <span className="font-mono text-xs font-semibold text-ui-fg-base">{ref.referenceKey}</span>
+                      <span className="rounded bg-ui-bg-component px-2 py-0.5 text-[10px] font-medium text-ui-fg-subtle">
                         {ref.referenceType}
                       </span>
                     </div>
@@ -692,13 +692,13 @@ export function ApplicationDictionaryWorkbench({
                             key={val.value}
                             className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-medium border ${
                               val.isDefault
-                                ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                                : 'bg-zinc-50 text-zinc-700 border-zinc-200'
+                                ? 'bg-ui-tag-green-bg text-ui-tag-green-text border-ui-tag-green-border'
+                                : 'bg-ui-bg-subtle text-ui-fg-subtle border-ui-border-base'
                             }`}
                           >
                             <span className="font-mono">{val.value}</span>
-                            <span className="text-zinc-400">({val.label})</span>
-                            {val.isDefault && <Check className="h-3 w-3 text-emerald-600" />}
+                            <span className="text-ui-fg-muted">({val.label})</span>
+                            {val.isDefault && <Check className="h-3 w-3 text-ui-tag-green-text" />}
                           </span>
                         ))}
                       </div>
@@ -709,26 +709,26 @@ export function ApplicationDictionaryWorkbench({
             </div>
 
             {/* Entity Relationships */}
-            <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-xs">
-              <h2 className="text-sm font-bold text-zinc-950 flex items-center gap-2 mb-1">
-                <Database className="h-4 w-4 text-emerald-600" />
+            <div className="rounded-2xl border border-ui-border-base bg-ui-bg-base p-6 shadow-xs">
+              <h2 className="text-sm font-bold text-ui-fg-base flex items-center gap-2 mb-1">
+                <Database className="h-4 w-4 text-ui-tag-green-text" />
                 Entity Relationships
               </h2>
-              <p className="text-xs text-zinc-500 mb-4">
+              <p className="text-xs text-ui-fg-muted mb-4">
                 Strict foreign keys, parent-child cascades, and relational integrity constraints
               </p>
 
               {dictionary.relationships.length === 0 ? (
-                <div className="rounded-xl border border-dashed border-zinc-200 p-8 text-center text-zinc-400 text-xs">
+                <div className="rounded-xl border border-dashed border-ui-border-base p-8 text-center text-ui-fg-muted text-xs">
                   No relationships declared for this entity baseline.
                 </div>
               ) : (
                 <div className="space-y-3">
                   {dictionary.relationships.map((rel) => (
-                    <div key={rel.relationshipKey} className="rounded-xl border border-zinc-200 p-4">
-                      <div className="font-mono text-xs font-semibold text-zinc-900">{rel.relationshipKey}</div>
-                      <div className="mt-2 text-xs text-zinc-600">
-                        {rel.sourceEntityKey} <span className="font-semibold text-zinc-400">→</span>{' '}
+                    <div key={rel.relationshipKey} className="rounded-xl border border-ui-border-base p-4">
+                      <div className="font-mono text-xs font-semibold text-ui-fg-base">{rel.relationshipKey}</div>
+                      <div className="mt-2 text-xs text-ui-fg-subtle">
+                        {rel.sourceEntityKey} <span className="font-semibold text-ui-fg-muted">→</span>{' '}
                         {rel.targetEntityKey} ({rel.type})
                       </div>
                     </div>
@@ -741,28 +741,28 @@ export function ApplicationDictionaryWorkbench({
 
         {/* TAB 3: VIEWS & LAYOUTS */}
         {activeTab === 'views' && (
-          <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-xs">
-            <h2 className="text-sm font-bold text-zinc-950 flex items-center gap-2 mb-1">
-              <Layout className="h-4 w-4 text-emerald-600" />
+          <div className="rounded-2xl border border-ui-border-base bg-ui-bg-base p-6 shadow-xs">
+            <h2 className="text-sm font-bold text-ui-fg-base flex items-center gap-2 mb-1">
+              <Layout className="h-4 w-4 text-ui-tag-green-text" />
               Views, Tabs & Presentation Layouts
             </h2>
-            <p className="text-xs text-zinc-500 mb-4">
+            <p className="text-xs text-ui-fg-muted mb-4">
               Multi-tab windows, responsive 12-column sections and device variants
             </p>
 
             <div className="space-y-6">
               {dictionary.views.map((view) => (
-                <div key={view.viewKey} className="rounded-xl border border-zinc-200 p-5 bg-zinc-50/40">
-                  <div className="flex items-center justify-between pb-3 border-b border-zinc-200">
+                <div key={view.viewKey} className="rounded-xl border border-ui-border-base p-5 bg-ui-bg-subtle">
+                  <div className="flex items-center justify-between pb-3 border-b border-ui-border-base">
                     <div>
-                      <span className="font-semibold text-sm text-zinc-900">{view.label}</span>
-                      <span className="ml-2 font-mono text-xs text-zinc-500">({view.viewKey})</span>
+                      <span className="font-semibold text-sm text-ui-fg-base">{view.label}</span>
+                      <span className="ml-2 font-mono text-xs text-ui-fg-muted">({view.viewKey})</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="rounded bg-zinc-100 px-2 py-0.5 text-[11px] font-medium text-zinc-700">
+                      <span className="rounded bg-ui-bg-component px-2 py-0.5 text-[11px] font-medium text-ui-fg-subtle">
                         Mode: {view.mode}
                       </span>
-                      <span className="rounded bg-zinc-100 px-2 py-0.5 text-[11px] font-medium text-zinc-700">
+                      <span className="rounded bg-ui-bg-component px-2 py-0.5 text-[11px] font-medium text-ui-fg-subtle">
                         Device: {view.device}
                       </span>
                     </div>
@@ -770,14 +770,14 @@ export function ApplicationDictionaryWorkbench({
 
                   <div className="mt-4 space-y-4">
                     {view.tabs.map((tab) => (
-                      <div key={tab.tabKey} className="rounded-xl border border-zinc-200 bg-white p-4">
-                        <div className="font-semibold text-xs text-zinc-900 mb-2">
-                          Tab: {tab.label} <span className="text-zinc-400 font-normal">({tab.tabKey})</span>
+                      <div key={tab.tabKey} className="rounded-xl border border-ui-border-base bg-ui-bg-base p-4">
+                        <div className="font-semibold text-xs text-ui-fg-base mb-2">
+                          Tab: {tab.label} <span className="text-ui-fg-muted font-normal">({tab.tabKey})</span>
                         </div>
 
                         {tab.sections.map((sec) => (
-                          <div key={sec.sectionKey} className="mt-3 rounded-lg bg-zinc-50 p-3 border border-zinc-100">
-                            <div className="font-medium text-xs text-zinc-800 mb-2">
+                          <div key={sec.sectionKey} className="mt-3 rounded-lg bg-ui-bg-subtle p-3 border border-ui-border-base">
+                            <div className="font-medium text-xs text-ui-fg-base mb-2">
                               Section: {sec.label}
                             </div>
                             <div className="grid grid-cols-12 gap-2">
@@ -787,12 +787,12 @@ export function ApplicationDictionaryWorkbench({
                                   <div
                                     key={f.fieldKey}
                                     style={{ gridColumn: `span ${f.span ?? 6} / span ${f.span ?? 6}` }}
-                                    className="rounded border border-zinc-200 bg-white p-2 text-xs"
+                                    className="rounded border border-ui-border-base bg-ui-bg-base p-2 text-xs"
                                   >
-                                    <div className="font-mono text-[11px] text-zinc-800 font-semibold">
+                                    <div className="font-mono text-[11px] text-ui-fg-base font-semibold">
                                       {f.fieldKey}
                                     </div>
-                                    <div className="text-[10px] text-zinc-400 mt-0.5">
+                                    <div className="text-[10px] text-ui-fg-muted mt-0.5">
                                       Component: {f.componentKey} (Span: {f.span ?? 6})
                                     </div>
                                   </div>
@@ -811,25 +811,25 @@ export function ApplicationDictionaryWorkbench({
 
         {/* TAB 4: NAVIGATION & MENUS */}
         {activeTab === 'navigation' && (
-          <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-xs">
-            <h2 className="text-sm font-bold text-zinc-950 flex items-center gap-2 mb-1">
-              <Menu className="h-4 w-4 text-emerald-600" />
+          <div className="rounded-2xl border border-ui-border-base bg-ui-bg-base p-6 shadow-xs">
+            <h2 className="text-sm font-bold text-ui-fg-base flex items-center gap-2 mb-1">
+              <Menu className="h-4 w-4 text-ui-tag-green-text" />
               Navigation Hierarchy & Contributions
             </h2>
-            <p className="text-xs text-zinc-500 mb-4">
+            <p className="text-xs text-ui-fg-muted mb-4">
               Registered menu contributions with cycle detection and RBAC permission guards
             </p>
 
-            <div className="divide-y divide-zinc-100 border border-zinc-200 rounded-xl overflow-hidden">
+            <div className="divide-y divide-ui-border-base border border-ui-border-base rounded-xl overflow-hidden">
               {dictionary.navigation.map((item) => (
-                <div key={item.itemKey} className="p-4 bg-white flex items-center justify-between hover:bg-zinc-50 transition">
+                <div key={item.itemKey} className="p-4 bg-ui-bg-base flex items-center justify-between hover:bg-ui-bg-base-hover transition">
                   <div className="flex items-center gap-3">
-                    <span className="rounded-lg bg-emerald-50 p-2 text-emerald-600">
+                    <span className="rounded-lg bg-ui-tag-green-bg p-2 text-ui-tag-green-text">
                       <Menu className="h-4 w-4" />
                     </span>
                     <div>
-                      <div className="font-semibold text-xs text-zinc-900">{item.label}</div>
-                      <div className="font-mono text-[11px] text-zinc-400">
+                      <div className="font-semibold text-xs text-ui-fg-base">{item.label}</div>
+                      <div className="font-mono text-[11px] text-ui-fg-muted">
                         {item.route} · Position: {item.position}
                       </div>
                     </div>
@@ -837,7 +837,7 @@ export function ApplicationDictionaryWorkbench({
 
                   <div className="flex items-center gap-2">
                     {item.requiredPermissions?.map((perm) => (
-                      <span key={perm} className="rounded bg-zinc-100 px-2 py-0.5 text-[10px] font-mono text-zinc-700">
+                      <span key={perm} className="rounded bg-ui-bg-component px-2 py-0.5 text-[10px] font-mono text-ui-fg-subtle">
                         {perm}
                       </span>
                     ))}
@@ -850,34 +850,34 @@ export function ApplicationDictionaryWorkbench({
 
         {/* TAB 5: REGISTERED ACTIONS */}
         {activeTab === 'actions' && (
-          <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-xs">
-            <h2 className="text-sm font-bold text-zinc-950 flex items-center gap-2 mb-1">
-              <Zap className="h-4 w-4 text-emerald-600" />
+          <div className="rounded-2xl border border-ui-border-base bg-ui-bg-base p-6 shadow-xs">
+            <h2 className="text-sm font-bold text-ui-fg-base flex items-center gap-2 mb-1">
+              <Zap className="h-4 w-4 text-ui-tag-green-text" />
               Registered Actions & Handlers
             </h2>
-            <p className="text-xs text-zinc-500 mb-4">
+            <p className="text-xs text-ui-fg-muted mb-4">
               Bounded actions mapped to verified server-side code handlers (no arbitrary code execution)
             </p>
 
             <div className="space-y-3">
               {dictionary.actions.map((act) => (
-                <div key={act.actionKey} className="rounded-xl border border-zinc-200 p-4 bg-white flex items-center justify-between">
+                <div key={act.actionKey} className="rounded-xl border border-ui-border-base p-4 bg-ui-bg-base flex items-center justify-between">
                   <div>
-                    <div className="font-semibold text-xs text-zinc-900 flex items-center gap-2">
+                    <div className="font-semibold text-xs text-ui-fg-base flex items-center gap-2">
                       {act.label}
-                      <span className="font-mono text-[11px] text-zinc-400 font-normal">({act.actionKey})</span>
+                      <span className="font-mono text-[11px] text-ui-fg-muted font-normal">({act.actionKey})</span>
                     </div>
-                    <div className="mt-1 font-mono text-[11px] text-emerald-700">
+                    <div className="mt-1 font-mono text-[11px] text-ui-tag-green-text">
                       Handler: {act.handlerKey}
                     </div>
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <span className="rounded bg-zinc-100 px-2 py-0.5 text-[10px] font-medium text-zinc-700">
+                    <span className="rounded bg-ui-bg-component px-2 py-0.5 text-[10px] font-medium text-ui-fg-subtle">
                       Type: {act.type}
                     </span>
                     {act.requiredPermissions?.map((perm) => (
-                      <span key={perm} className="rounded bg-zinc-100 px-2 py-0.5 text-[10px] font-mono text-zinc-700">
+                      <span key={perm} className="rounded bg-ui-bg-component px-2 py-0.5 text-[10px] font-mono text-ui-fg-subtle">
                         {perm}
                       </span>
                     ))}
@@ -890,28 +890,28 @@ export function ApplicationDictionaryWorkbench({
 
         {/* TAB 6: VALIDATION RULES (SAFE AST) */}
         {activeTab === 'validation' && (
-          <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-xs">
-            <h2 className="text-sm font-bold text-zinc-950 flex items-center gap-2 mb-1">
-              <ShieldCheck className="h-4 w-4 text-emerald-600" />
+          <div className="rounded-2xl border border-ui-border-base bg-ui-bg-base p-6 shadow-xs">
+            <h2 className="text-sm font-bold text-ui-fg-base flex items-center gap-2 mb-1">
+              <ShieldCheck className="h-4 w-4 text-ui-tag-green-text" />
               Bounded Validation Rules (Safe AST)
             </h2>
-            <p className="text-xs text-zinc-500 mb-4">
+            <p className="text-xs text-ui-fg-muted mb-4">
               Declarative validation predicates evaluated securely on client and server without SQL or eval
             </p>
 
             <div className="space-y-4">
               {dictionary.validationRules.map((rule) => (
-                <div key={rule.ruleKey} className="rounded-xl border border-zinc-200 p-4 bg-white">
+                <div key={rule.ruleKey} className="rounded-xl border border-ui-border-base p-4 bg-ui-bg-base">
                   <div className="flex items-center justify-between mb-2">
-                    <div className="font-semibold text-xs text-zinc-900">{rule.label}</div>
-                    <span className="rounded bg-rose-50 border border-rose-200 px-2 py-0.5 text-[10px] font-semibold text-rose-700">
+                    <div className="font-semibold text-xs text-ui-fg-base">{rule.label}</div>
+                    <span className="rounded bg-ui-tag-red-bg border border-ui-tag-red-border px-2 py-0.5 text-[10px] font-semibold text-ui-fg-error">
                       {rule.severity}
                     </span>
                   </div>
-                  <p className="text-xs text-zinc-500 mb-3">{rule.errorMessage}</p>
+                  <p className="text-xs text-ui-fg-muted mb-3">{rule.errorMessage}</p>
 
-                  <div className="rounded-lg bg-zinc-50 p-3 font-mono text-[11px] text-zinc-800 border border-zinc-100">
-                    <div className="text-zinc-400 mb-1">// Condition AST (max depth: 10)</div>
+                  <div className="rounded-lg bg-ui-bg-subtle p-3 font-mono text-[11px] text-ui-fg-base border border-ui-border-base">
+                    <div className="text-ui-fg-muted mb-1">// Condition AST (max depth: 10)</div>
                     {JSON.stringify(rule.condition, null, 2)}
                   </div>
                 </div>
@@ -923,49 +923,49 @@ export function ApplicationDictionaryWorkbench({
         {/* TAB 7: MAKER-CHECKER & GOVERNANCE */}
         {activeTab === 'governance' && (
           <div className="space-y-6">
-            <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-xs">
-              <h2 className="text-sm font-bold text-zinc-950 flex items-center gap-2 mb-1">
-                <FileCode className="h-4 w-4 text-emerald-600" />
+            <div className="rounded-2xl border border-ui-border-base bg-ui-bg-base p-6 shadow-xs">
+              <h2 className="text-sm font-bold text-ui-fg-base flex items-center gap-2 mb-1">
+                <FileCode className="h-4 w-4 text-ui-tag-green-text" />
                 Change Sets & Maker-Checker Workflow
               </h2>
-              <p className="text-xs text-zinc-500 mb-4">
+              <p className="text-xs text-ui-fg-muted mb-4">
                 Governed change proposals, multi-eye review, cryptographic SHA-256 checksums, and backward-compatibility audit
               </p>
 
               {changeSets.length === 0 ? (
-                <div className="rounded-xl border border-dashed border-zinc-200 p-8 text-center text-zinc-400 text-xs">
+                <div className="rounded-xl border border-dashed border-ui-border-base p-8 text-center text-ui-fg-muted text-xs">
                   No active change sets found. Click "New Governed Overlay" to author an extension.
                 </div>
               ) : (
-                <div className="divide-y divide-zinc-100 border border-zinc-200 rounded-xl overflow-hidden">
+                <div className="divide-y divide-ui-border-base border border-ui-border-base rounded-xl overflow-hidden">
                   {changeSets.map((cs) => {
                     const isAuthor = cs.createdById === currentUserId;
                     return (
-                      <div key={cs.id} className="p-4 bg-white hover:bg-zinc-50/80 transition flex flex-col gap-3">
+                      <div key={cs.id} className="p-4 bg-ui-bg-base hover:bg-ui-bg-base-hover transition flex flex-col gap-3">
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                           <div>
                             <div className="flex items-center gap-2">
-                              <span className="font-semibold text-xs text-zinc-900">{cs.definition?.title || cs.id}</span>
+                              <span className="font-semibold text-xs text-ui-fg-base">{cs.definition?.title || cs.id}</span>
                               <span
                                 className={`rounded px-2 py-0.5 text-[10px] font-semibold ${
                                   cs.status === 'PUBLISHED'
-                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                    ? 'bg-ui-tag-green-bg text-ui-tag-green-text border border-ui-tag-green-border'
                                     : cs.status === 'APPROVED'
-                                    ? 'bg-sky-50 text-sky-700 border border-sky-200'
+                                    ? 'bg-ui-tag-blue-bg text-ui-tag-blue-text border border-ui-tag-blue-border'
                                     : cs.status === 'SUBMITTED'
-                                    ? 'bg-amber-50 text-amber-700 border border-amber-200'
-                                    : 'bg-zinc-100 text-zinc-700'
+                                    ? 'bg-ui-tag-orange-bg text-ui-tag-orange-text border border-ui-tag-orange-border'
+                                    : 'bg-ui-bg-component text-ui-fg-subtle'
                                 }`}
                               >
                                 {cs.status}
                               </span>
                               {cs.compatibility && (
-                                <span className="rounded bg-emerald-50 text-emerald-800 border border-emerald-200 px-1.5 py-0.5 text-[10px] font-mono">
+                                <span className="rounded bg-ui-tag-green-bg text-ui-tag-green-text border border-ui-tag-green-border px-1.5 py-0.5 text-[10px] font-mono">
                                   {cs.compatibility}
                                 </span>
                               )}
                             </div>
-                            <div className="font-mono text-[11px] text-zinc-400 mt-1">
+                            <div className="font-mono text-[11px] text-ui-fg-muted mt-1">
                               Module: {cs.moduleKey} · Entity: {cs.entityKey} · Checksum: {cs.checksum?.slice(0, 18) ?? 'none'}…
                             </div>
                           </div>
@@ -977,7 +977,7 @@ export function ApplicationDictionaryWorkbench({
                                 type="button"
                                 onClick={() => handleSubmitForReview(cs.id, cs.version)}
                                 disabled={isSubmitting}
-                                className="rounded-lg bg-zinc-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-zinc-800 transition"
+                                className="rounded-lg bg-ui-button-inverted px-3 py-1.5 text-xs font-semibold text-ui-contrast-fg-primary hover:bg-ui-button-inverted-hover transition"
                               >
                                 Submit Review
                               </button>
@@ -986,7 +986,7 @@ export function ApplicationDictionaryWorkbench({
                             {cs.status === 'SUBMITTED' && canApprove && (
                               <>
                                 {isAuthor ? (
-                                  <span className="text-[11px] text-amber-700 bg-amber-50 px-2 py-1 rounded border border-amber-200">
+                                  <span className="text-[11px] text-ui-tag-orange-text bg-ui-tag-orange-bg px-2 py-1 rounded border border-ui-tag-orange-border">
                                     Author cannot approve own change (Maker-Checker rule)
                                   </span>
                                 ) : (
@@ -994,7 +994,7 @@ export function ApplicationDictionaryWorkbench({
                                     type="button"
                                     onClick={() => handleApprove(cs.id, cs.version)}
                                     disabled={isSubmitting}
-                                    className="rounded-lg bg-sky-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-sky-500 transition"
+                                    className="rounded-lg bg-ui-button-inverted px-3 py-1.5 text-xs font-semibold text-ui-contrast-fg-primary hover:bg-ui-button-inverted-hover transition"
                                   >
                                     Approve Change
                                   </button>
@@ -1007,7 +1007,7 @@ export function ApplicationDictionaryWorkbench({
                                 type="button"
                                 onClick={() => handlePublish(cs.id, cs.version)}
                                 disabled={isSubmitting}
-                                className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-500 transition"
+                                className="rounded-lg bg-ui-button-inverted px-3 py-1.5 text-xs font-semibold text-ui-contrast-fg-primary hover:bg-ui-button-inverted-hover transition"
                               >
                                 Publish Version
                               </button>
@@ -1022,27 +1022,27 @@ export function ApplicationDictionaryWorkbench({
             </div>
 
             {/* Published Versions Authority */}
-            <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-xs">
-              <h2 className="text-sm font-bold text-zinc-950 flex items-center gap-2 mb-1">
-                <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+            <div className="rounded-2xl border border-ui-border-base bg-ui-bg-base p-6 shadow-xs">
+              <h2 className="text-sm font-bold text-ui-fg-base flex items-center gap-2 mb-1">
+                <CheckCircle2 className="h-4 w-4 text-ui-tag-green-text" />
                 Immutable Published Manifests
               </h2>
-              <p className="text-xs text-zinc-500 mb-4">
+              <p className="text-xs text-ui-fg-muted mb-4">
                 Checksummed publication records deployed to client runtimes
               </p>
 
-              <div className="divide-y divide-zinc-100 border border-zinc-200 rounded-xl overflow-hidden">
+              <div className="divide-y divide-ui-border-base border border-ui-border-base rounded-xl overflow-hidden">
                 {publishedVersions.map((pv) => (
-                  <div key={pv.id} className="p-4 bg-white flex items-center justify-between hover:bg-zinc-50 transition">
+                  <div key={pv.id} className="p-4 bg-ui-bg-base flex items-center justify-between hover:bg-ui-bg-base-hover transition">
                     <div>
-                      <div className="font-semibold text-xs text-zinc-900">
+                      <div className="font-semibold text-xs text-ui-fg-base">
                         Sequence #{pv.sequence} · {pv.moduleKey} ({pv.surfaceKey})
                       </div>
-                      <div className="font-mono text-[11px] text-zinc-400 mt-0.5">
+                      <div className="font-mono text-[11px] text-ui-fg-muted mt-0.5">
                         Checksum: {pv.checksum}
                       </div>
                     </div>
-                    <span className="text-[10px] text-zinc-500 font-mono">
+                    <span className="text-[10px] text-ui-fg-muted font-mono">
                       {new Date(pv.createdAt).toLocaleDateString()}
                     </span>
                   </div>
@@ -1055,33 +1055,33 @@ export function ApplicationDictionaryWorkbench({
 
       {/* Modal for New Governed Overlay */}
       {isCreatingChangeSet && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4">
-          <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl border border-zinc-200">
-            <h3 className="text-base font-bold text-zinc-950">New Application Dictionary Overlay</h3>
-            <p className="text-xs text-zinc-500 mt-1">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ui-bg-overlay backdrop-blur-xs p-4">
+          <div className="w-full max-w-lg rounded-2xl bg-ui-bg-base p-6 shadow-xl border border-ui-border-base">
+            <h3 className="text-base font-bold text-ui-fg-base">New Application Dictionary Overlay</h3>
+            <p className="text-xs text-ui-fg-muted mt-1">
               Create a tenant change set over the baseline module metadata. All system-locked properties are preserved.
             </p>
 
             <div className="mt-4 space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-zinc-700 mb-1">Overlay Title</label>
+                <label className="block text-xs font-semibold text-ui-fg-subtle mb-1">Overlay Title</label>
                 <input
                   type="text"
                   placeholder="e.g. Workspace Custom Attributes Overlay"
                   value={newChangeSetTitle}
                   onChange={(e) => setNewChangeSetTitle(e.target.value)}
-                  className="w-full rounded-xl border border-zinc-200 px-3.5 py-2 text-xs text-zinc-900 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  className="w-full rounded-xl border border-ui-border-base px-3.5 py-2 text-xs text-ui-fg-base focus:outline-none focus:ring-1 focus:ring-ui-border-interactive"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-zinc-700 mb-1">Business Reason</label>
+                <label className="block text-xs font-semibold text-ui-fg-subtle mb-1">Business Reason</label>
                 <textarea
                   placeholder="Explain why this metadata overlay is needed…"
                   value={newChangeSetReason}
                   onChange={(e) => setNewChangeSetReason(e.target.value)}
                   rows={3}
-                  className="w-full rounded-xl border border-zinc-200 px-3.5 py-2 text-xs text-zinc-900 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  className="w-full rounded-xl border border-ui-border-base px-3.5 py-2 text-xs text-ui-fg-base focus:outline-none focus:ring-1 focus:ring-ui-border-interactive"
                 />
               </div>
             </div>
@@ -1090,7 +1090,7 @@ export function ApplicationDictionaryWorkbench({
               <button
                 type="button"
                 onClick={() => setIsCreatingChangeSet(false)}
-                className="rounded-xl border border-zinc-200 px-4 py-2 text-xs font-medium text-zinc-700 hover:bg-zinc-50"
+                className="rounded-xl border border-ui-border-base px-4 py-2 text-xs font-medium text-ui-fg-subtle hover:bg-ui-bg-base-hover"
               >
                 Cancel
               </button>
@@ -1098,7 +1098,7 @@ export function ApplicationDictionaryWorkbench({
                 type="button"
                 onClick={handleCreateOverlay}
                 disabled={isSubmitting || !newChangeSetTitle.trim()}
-                className="rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-500 disabled:opacity-50"
+                className="rounded-xl bg-ui-button-inverted px-4 py-2 text-xs font-semibold text-ui-contrast-fg-primary hover:bg-ui-button-inverted-hover disabled:opacity-50"
               >
                 {isSubmitting ? 'Creating…' : 'Create Change Set'}
               </button>

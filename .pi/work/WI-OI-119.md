@@ -178,3 +178,29 @@ Applied by `scratchpad/apply_corrections.py` with exact-match assertions; 94 cha
   `vitest` policy test: 5/5 pass.
 - The existing local instance is the UAT instance. AR is in UAT scope. UAT data comes from Playwright business
   flows. The never-built spec capabilities are planned as Stage 4.
+
+## Post-audit finding (2026-10-05, raised by the owner from the UAT instance)
+
+- **Design standard not applied (P1 for UAT, P2 otherwise).** Owner rule (`.pi/handoff/HANDOFF-2026-09-29.md:81`):
+  web screens use `@medusajs/ui` and the `ui-*` tokens, with no hard-coded colours.
+- Every screen added in Phases 2–14 instead uses hard-coded dark Tailwind colours, with no tokens and no Medusa
+  components. Counts of hard-coded colour classes / token classes / Medusa imports:
+
+  | Screen | Hard-coded | Tokens | Medusa |
+  | --- | --- | --- | --- |
+  | `FinancialOperationsWorkspace.tsx` | 664 | 0 | 0 |
+  | `ProductCatalogueWorkspace.tsx` | 359 | 0 | 0 |
+  | `PartyWorkspace.tsx` | 290 | 0 | 0 |
+  | `ApplicationDictionaryWorkbench.tsx` | 251 | 0 | 0 |
+  | `UniversalOrderWorkspace.tsx` | 202 | 0 | 0 |
+  | `UniversalProcurementWorkspace.tsx` | 166 | 0 | 0 |
+  | `DictionaryRenderer.tsx` | 47 | 0 | 0 |
+  | `UniversalInventoryWorkspace.tsx` | 10 | 0 | 0 |
+
+- Compliant for comparison: CMMS (`CmmsWorkOrders.tsx`, 58 token classes, Medusa) and Organization administration.
+- **Effect:** the dark pages clash with the light shell. White headings are invisible on the light page background
+  (WCAG 2.2 AA contrast failure), and error text has low contrast.
+- No automated check enforces the rule, so every audit passed. The WI-OI-119 frontend auditor did not report it.
+- **Related:** the Products screen's "HTTP 403" comes from the web BFF access check, not the module. No tenant holds
+  an entitlement for `product-catalogue`, `universal-inventory`, `universal-procurement`, `universal-orders` or
+  `financial-operations` (`public.tenant_module_entitlements`, checked read-only 2026-10-05).

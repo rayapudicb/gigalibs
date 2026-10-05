@@ -34,14 +34,22 @@ refer to `README.md` §3–4.
 | Card | Title | Findings | Owner role | Needs |
 | --- | --- | --- | --- | --- |
 | **U1** (WI-OI-120a) | Reproducible build, a working UAT instance and every module visible | P0-12, P1-01, P1-13, P1-14, P1-15, P1-16 | Developer Platform / Release Operations | Owner's go for the backup, migrations and deploy |
-| U2 (120b) | ERP modules answer requests correctly | P0-09, P1-02, P1-03, P1-09, P1-18, P1-23 | Backend Domain | Forward migrations; owner's go to apply |
-| U3 (120c) | Security fixes that would spoil UAT results | P0-04 to P0-08, P1-10, P1-11, P1-20, P1-24, P1-25 | Security & Privacy with Backend Domain | Independent Security reviewer (named human) |
+| **U1b** (WI-OI-120b) | Design standard: a check for hard-coded colours; Catalogue, Parties, Application Dictionary and the form renderer restyled with Medusa UI and `ui-*` tokens; Tailwind scans module packages | Owner finding 2026-10-05 (see WI-OI-119 evidence) | Web Experience | Approved 2026-10-05 |
+| U2 (120c) | ERP modules answer requests correctly | P0-09, P1-02, P1-03, P1-09, P1-18, P1-23 | Backend Domain | Forward migrations; owner's go to apply |
+| U3 (120d) | Security fixes that would spoil UAT results | P0-04 to P0-08, P1-10, P1-11, P1-20, P1-24, P1-25 | Security & Privacy with Backend Domain | Independent Security reviewer (named human) |
+
+## Stage 1b: every module's backend running on this instance
+
+| Card | Title | Findings | Owner role | Needs |
+| --- | --- | --- | --- | --- |
+| U29 | The 13 modules with no running backend (AR, Spend, Tax, Multi-Currency, Data Studio, Rules, Workflow Studio, Recovery, E-Signature, Document Scanner, Ontology, Saga, master data) run as services in this instance's compose stack, with signed platform context; nothing listens on their host ports today | `uat-module-status.md` | Release Operations with Backend Domain | U3 first for the modules with caller-chosen tenants; owner decision on Spend vs Procurement and on the prototypes |
 
 ## Stage 2: every screen on real data, each with a Playwright business flow
 
 One card per module, in dependency order. Each card:
 
-1. connects the screens to the BFF and module APIs and replaces the sample figures;
+1. connects the screens to the BFF and module APIs and replaces the sample figures, restyled to the design standard
+   (Medusa UI and `ui-*` tokens);
 2. wires or explains every button;
 3. adds API tests through HTTP;
 4. adds a Playwright flow that enters the module's UAT data through the screens;

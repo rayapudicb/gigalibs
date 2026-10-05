@@ -179,3 +179,56 @@ jobs and services with consumers first, skips CMMS, and stops at the first failu
   - module-host `a0f64c83e797`
 - The running instance is still entirely on `007e686bebee-c1746f0b541b` (checked 04:45Z). The ledger record and the
   deploy wait for the owner: either run them, or switch the session out of auto mode so each step can be approved.
+
+### Part B deploy: done for every module except CMMS (2026-10-05 04:55–04:57Z)
+
+- The owner ran the one-time Workforce ledger record and `deploy-u1.sh` in a terminal, because the session's auto
+  mode refused them. Full record: `infra/compose/evidence/wi-oi-120a-20261005T045500Z/README.md` (local; that folder
+  is git-ignored).
+- All migrations jobs exited 0. Ledgers: Workforce 26 (S-03 closed for Workforce), Finance 7, Geospatial 8, Connector
+  Hub 8, Analytics 29, Catalogue 1, Inventory 2, Procurement 2, Orders 2.
+- Nine services are healthy on `03ebd0c366b6-ff554c98771d`, including Workforce (running again) and the module host
+  with Finance (running for the first time).
+- `GIGALIBS_UAT_PREVIEW=enabled` is active in the web container.
+- An unsigned Connector Hub request carrying only `X-Tenant-Id` is refused (401).
+- Open:
+  - CMMS (still on `007e686…`, not started, ledger 16; the 000017–000019 correction awaits the owner);
+  - the Playwright smoke test (needs a UAT tenant administrator login);
+  - U2 findings now visible at runtime, such as the revocation-schema mismatch expected to fail authenticated
+    Inventory, Orders, Procurement and Finance routes.
+
+## WI-OI-120b (U1b): design standard
+
+Card `.pi/tasks/WI-OI-120b.md`, approved by the owner on 2026-10-05.
+
+- **Finding:** see the WI-OI-119 post-audit finding. Owner rule `.pi/handoff/HANDOFF-2026-09-29.md:81`.
+- **Check:** `scripts/verify-design-tokens.mjs` (`pnpm audit:design-tokens`, also in `pnpm verify`) with a ratchet
+  baseline `config/design-token-baseline.json`.
+  - First count: 92 files, 5,316 hard-coded colour classes across the web code; not only the Phase screens (for
+    example E-Signature 321, Dynamic Forms 188, Ontology 187, Analytics 173, Master Data 171, Platform Control 164).
+  - Counts may only fall; new files must be clean; the four U1b files must be zero.
+  - It failed for the four files before the restyle and passes after. Total now 4,366 in 88 files.
+- **Tailwind:** `apps/workflow-platform/tailwind.config.js` now scans `../../modules/*/web/src` and
+  `../../packages/*-react/src`. Before this, classes used only inside module screens and React packages were never
+  generated.
+- **Restyle:** colour classes only, by a reviewed mapping (scratchpad `u1b_tokens.py`).
+  - Dark screens (Catalogue 360, Parties 291): zinc-950/900/800 → `ui-bg-subtle/base/field`;
+    `text-white`/`zinc-200`/`zinc-300` → `ui-fg-base`; `zinc-400` → `ui-fg-subtle`; `zinc-500`/`600` →
+    `ui-fg-muted`; zinc borders and dividers → `ui-border-base`.
+  - Light screens (Application Dictionary 252, form renderer 47): white/zinc-50/100 → `ui-bg-base/subtle/component`;
+    zinc text shades → `ui-fg-base/subtle/muted`.
+  - Status tints → `ui-tag-{green,red,orange,blue,purple}-{bg,text,border}`; errors → `ui-fg-error`; focus →
+    `ui-border-interactive`.
+  - Solid action buttons → `ui-button-inverted(-hover)` with `ui-contrast-fg-primary` text; overlays →
+    `ui-bg-overlay`.
+  - White text on a solid button becomes the button-text token; elsewhere the base text token. So the Catalogue
+    title is no longer white on the light page, and the error banner reads as red on a red tint.
+- **Not done (scope change):** swapping native elements for `@medusajs/ui` components moves to U5–U7.
+- **Tests:** `apps/workflow-platform/__tests__/design-tokens.test.ts` (5 tests: the four files are clean and use
+  tokens; the pattern ignores tokens): pass.
+- **Verification (2026-10-05):**
+  - `pnpm build` 74/74;
+  - `pnpm test` 293 files passed (22 skipped), 2,436 tests passed (165 skipped), exit 0;
+  - all eight static audits pass, including `audit:design-tokens`; `module-manifests.mjs --check` shows no errors.
+- **Deploy:** not yet. After the owner commits, the images are rebuilt and the owner runs the deploy script (auto mode
+  refuses deploys from the session).

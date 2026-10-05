@@ -47,7 +47,8 @@
     "module:new": "node scripts/module-new.mjs",
     "module:conformance": "node scripts/module-conformance.mjs",
     "audit:anti-duplication": "node scripts/verify-anti-duplication.mjs",
-    "audit:sdlc": "node scripts/verify-sdlc-governance.mjs"
+    "audit:sdlc": "node scripts/verify-sdlc-governance.mjs",
+    "audit:design-tokens": "node scripts/verify-design-tokens.mjs"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",

@@ -353,24 +353,24 @@ export function PartyWorkspace() {
     <div className="flex flex-col gap-6 p-6 max-w-7xl mx-auto w-full">
       {/* Top Banner / Alerts */}
       {notice && (
-        <div className="flex items-center justify-between p-4 bg-emerald-950/40 border border-emerald-800 rounded-lg text-emerald-200 text-sm">
+        <div className="flex items-center justify-between p-4 bg-ui-tag-green-bg border border-ui-tag-green-border rounded-lg text-ui-tag-green-text text-sm">
           <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+            <CheckCircle2 className="w-5 h-5 text-ui-tag-green-text" />
             <span>{notice}</span>
           </div>
-          <button onClick={() => setNotice(null)} className="text-emerald-400 hover:text-emerald-200">
+          <button onClick={() => setNotice(null)} className="text-ui-tag-green-text hover:text-ui-tag-green-icon">
             <X className="w-4 h-4" />
           </button>
         </div>
       )}
 
       {error && (
-        <div className="flex items-center justify-between p-4 bg-rose-950/40 border border-rose-800 rounded-lg text-rose-200 text-sm">
+        <div className="flex items-center justify-between p-4 bg-ui-tag-red-bg border border-ui-tag-red-border rounded-lg text-ui-fg-error text-sm">
           <div className="flex items-center gap-2">
-            <AlertTriangle className="w-5 h-5 text-rose-400" />
+            <AlertTriangle className="w-5 h-5 text-ui-fg-error" />
             <span>{error}</span>
           </div>
-          <button onClick={() => setError(null)} className="text-rose-400 hover:text-rose-200">
+          <button onClick={() => setError(null)} className="text-ui-fg-error hover:text-ui-fg-error">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -379,11 +379,11 @@ export function PartyWorkspace() {
       {/* Header & Primary Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-3">
-            <Users className="w-7 h-7 text-indigo-400" />
+          <h1 className="text-2xl font-bold tracking-tight text-ui-fg-base flex items-center gap-3">
+            <Users className="w-7 h-7 text-ui-fg-interactive" />
             Core Parties & Counterparties
           </h1>
-          <p className="text-sm text-zinc-400 mt-1">
+          <p className="text-sm text-ui-fg-subtle mt-1">
             Canonical master identity for organizations, suppliers, customers, and contractors.
           </p>
         </div>
@@ -391,7 +391,7 @@ export function PartyWorkspace() {
         <div className="flex items-center gap-3">
           <button
             onClick={() => fetchParties()}
-            className="flex items-center gap-2 px-3 py-2 text-sm bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-lg transition"
+            className="flex items-center gap-2 px-3 py-2 text-sm bg-ui-bg-field hover:bg-ui-bg-field-hover text-ui-fg-base rounded-lg transition"
             title="Refresh Directory"
           >
             <RefreshCw className="w-4 h-4" />
@@ -399,7 +399,7 @@ export function PartyWorkspace() {
           </button>
           <button
             onClick={() => setShowCreateModal(true)}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg shadow-sm transition"
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-ui-button-inverted hover:bg-ui-button-inverted-hover text-ui-contrast-fg-primary rounded-lg shadow-sm transition"
           >
             <Plus className="w-4 h-4" />
             New Party
@@ -409,21 +409,21 @@ export function PartyWorkspace() {
 
       {/* Overview Stat Counters */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-xl">
-          <div className="text-xs font-medium text-zinc-400 uppercase tracking-wider">Total Records</div>
-          <div className="text-2xl font-semibold text-white mt-1">{totalCount}</div>
+        <div className="p-4 bg-ui-bg-base border border-ui-border-base rounded-xl">
+          <div className="text-xs font-medium text-ui-fg-subtle uppercase tracking-wider">Total Records</div>
+          <div className="text-2xl font-semibold text-ui-fg-base mt-1">{totalCount}</div>
         </div>
-        <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-xl">
-          <div className="text-xs font-medium text-zinc-400 uppercase tracking-wider">Active Parties</div>
-          <div className="text-2xl font-semibold text-emerald-400 mt-1">{activeCount}</div>
+        <div className="p-4 bg-ui-bg-base border border-ui-border-base rounded-xl">
+          <div className="text-xs font-medium text-ui-fg-subtle uppercase tracking-wider">Active Parties</div>
+          <div className="text-2xl font-semibold text-ui-tag-green-text mt-1">{activeCount}</div>
         </div>
-        <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-xl">
-          <div className="text-xs font-medium text-zinc-400 uppercase tracking-wider">Organizations</div>
-          <div className="text-2xl font-semibold text-indigo-400 mt-1">{orgCount}</div>
+        <div className="p-4 bg-ui-bg-base border border-ui-border-base rounded-xl">
+          <div className="text-xs font-medium text-ui-fg-subtle uppercase tracking-wider">Organizations</div>
+          <div className="text-2xl font-semibold text-ui-fg-interactive mt-1">{orgCount}</div>
         </div>
-        <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-xl">
-          <div className="text-xs font-medium text-zinc-400 uppercase tracking-wider">Individuals</div>
-          <div className="text-2xl font-semibold text-purple-400 mt-1">{personCount}</div>
+        <div className="p-4 bg-ui-bg-base border border-ui-border-base rounded-xl">
+          <div className="text-xs font-medium text-ui-fg-subtle uppercase tracking-wider">Individuals</div>
+          <div className="text-2xl font-semibold text-ui-tag-purple-text mt-1">{personCount}</div>
         </div>
       </div>
 
@@ -432,15 +432,15 @@ export function PartyWorkspace() {
         {/* Left Column: Filter Bar & Table (7 cols on desktop) */}
         <div className="lg:col-span-7 flex flex-col gap-4">
           {/* Filters */}
-          <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-xl flex flex-col sm:flex-row gap-3">
+          <div className="p-4 bg-ui-bg-base border border-ui-border-base rounded-xl flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
-              <Search className="w-4 h-4 absolute left-3 top-3 text-zinc-400" />
+              <Search className="w-4 h-4 absolute left-3 top-3 text-ui-fg-subtle" />
               <input
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search code, legal or display name..."
-                className="w-full pl-9 pr-3 py-2 text-sm bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:border-indigo-500"
+                className="w-full pl-9 pr-3 py-2 text-sm bg-ui-bg-field border border-ui-border-base rounded-lg text-ui-fg-base placeholder-ui-fg-muted focus:outline-none focus:border-ui-border-interactive"
               />
             </div>
 
@@ -449,7 +449,7 @@ export function PartyWorkspace() {
                 value={partyTypeFilter}
                 onChange={(e) => setPartyTypeFilter(e.target.value)}
                 aria-label="Filter by Party Type"
-                className="px-3 py-2 text-sm bg-zinc-800 border border-zinc-700 rounded-lg text-zinc-200 focus:outline-none"
+                className="px-3 py-2 text-sm bg-ui-bg-field border border-ui-border-base rounded-lg text-ui-fg-base focus:outline-none"
               >
                 <option value="ALL">All Types</option>
                 <option value="ORGANIZATION">Organization</option>
@@ -460,7 +460,7 @@ export function PartyWorkspace() {
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
                 aria-label="Filter by Status"
-                className="px-3 py-2 text-sm bg-zinc-800 border border-zinc-700 rounded-lg text-zinc-200 focus:outline-none"
+                className="px-3 py-2 text-sm bg-ui-bg-field border border-ui-border-base rounded-lg text-ui-fg-base focus:outline-none"
               >
                 <option value="ALL">All Statuses</option>
                 <option value="ACTIVE">Active</option>
@@ -473,7 +473,7 @@ export function PartyWorkspace() {
                 value={roleFilter}
                 onChange={(e) => setRoleFilter(e.target.value)}
                 aria-label="Filter by Role"
-                className="px-3 py-2 text-sm bg-zinc-800 border border-zinc-700 rounded-lg text-zinc-200 focus:outline-none"
+                className="px-3 py-2 text-sm bg-ui-bg-field border border-ui-border-base rounded-lg text-ui-fg-base focus:outline-none"
               >
                 <option value="ALL">All Roles</option>
                 <option value="CUSTOMER">Customer</option>
@@ -487,21 +487,21 @@ export function PartyWorkspace() {
           </div>
 
           {/* Table */}
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden shadow-sm">
+          <div className="bg-ui-bg-base border border-ui-border-base rounded-xl overflow-hidden shadow-sm">
             {loading ? (
-              <div className="p-12 text-center text-zinc-400">Loading parties...</div>
+              <div className="p-12 text-center text-ui-fg-subtle">Loading parties...</div>
             ) : parties.length === 0 ? (
               <div className="p-12 text-center">
-                <Users className="w-10 h-10 text-zinc-600 mx-auto mb-3" />
-                <div className="text-zinc-300 font-medium">No parties found</div>
-                <div className="text-sm text-zinc-500 mt-1">
+                <Users className="w-10 h-10 text-ui-fg-muted mx-auto mb-3" />
+                <div className="text-ui-fg-base font-medium">No parties found</div>
+                <div className="text-sm text-ui-fg-muted mt-1">
                   Adjust your search filters or create a new party.
                 </div>
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm text-zinc-300">
-                  <thead className="bg-zinc-800/60 text-xs font-semibold text-zinc-400 uppercase tracking-wider border-b border-zinc-800">
+                <table className="w-full text-left text-sm text-ui-fg-base">
+                  <thead className="bg-ui-bg-subtle text-xs font-semibold text-ui-fg-subtle uppercase tracking-wider border-b border-ui-border-base">
                     <tr>
                       <th className="px-4 py-3">Code / Name</th>
                       <th className="px-3 py-3">Type</th>
@@ -510,27 +510,27 @@ export function PartyWorkspace() {
                       <th className="px-3 py-3 text-right">Action</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-zinc-800">
+                  <tbody className="divide-y divide-ui-border-base">
                     {parties.map((party) => {
                       const isSelected = selectedPartyId === party.id;
                       return (
                         <tr
                           key={party.id}
                           onClick={() => loadPartyDetail(party.id)}
-                          className={`cursor-pointer transition hover:bg-zinc-800/50 ${
-                            isSelected ? 'bg-indigo-950/30 border-l-2 border-indigo-500' : ''
+                          className={`cursor-pointer transition hover:bg-ui-bg-base-hover ${
+                            isSelected ? 'bg-ui-tag-blue-bg border-l-2 border-ui-border-interactive' : ''
                           }`}
                         >
                           <td className="px-4 py-3">
-                            <div className="font-medium text-white">{party.displayName || party.legalName}</div>
-                            <div className="text-xs text-zinc-400 font-mono">{party.code}</div>
+                            <div className="font-medium text-ui-fg-base">{party.displayName || party.legalName}</div>
+                            <div className="text-xs text-ui-fg-subtle font-mono">{party.code}</div>
                           </td>
                           <td className="px-3 py-3 whitespace-nowrap">
-                            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-medium bg-zinc-800 text-zinc-300">
+                            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-medium bg-ui-bg-field text-ui-fg-base">
                               {party.partyType === 'ORGANIZATION' ? (
-                                <Building2 className="w-3.5 h-3.5 text-indigo-400" />
+                                <Building2 className="w-3.5 h-3.5 text-ui-fg-interactive" />
                               ) : (
-                                <User className="w-3.5 h-3.5 text-purple-400" />
+                                <User className="w-3.5 h-3.5 text-ui-tag-purple-text" />
                               )}
                               {party.partyType}
                             </span>
@@ -539,22 +539,22 @@ export function PartyWorkspace() {
                             <span
                               className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${
                                 party.status === 'ACTIVE'
-                                  ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
+                                  ? 'bg-ui-tag-green-bg text-ui-tag-green-text border border-ui-tag-green-border'
                                   : party.status === 'ARCHIVED'
-                                  ? 'bg-zinc-800 text-zinc-400'
+                                  ? 'bg-ui-bg-field text-ui-fg-subtle'
                                   : party.status === 'MERGED'
-                                  ? 'bg-amber-950 text-amber-400 border border-amber-800'
-                                  : 'bg-blue-950 text-blue-400'
+                                  ? 'bg-ui-tag-orange-bg text-ui-tag-orange-text border border-ui-tag-orange-border'
+                                  : 'bg-ui-tag-blue-bg text-ui-tag-blue-text'
                               }`}
                             >
                               {party.status}
                             </span>
                           </td>
-                          <td className="px-3 py-3 text-xs text-zinc-400">
+                          <td className="px-3 py-3 text-xs text-ui-fg-subtle">
                             {party.classification || '—'}
                           </td>
-                          <td className="px-3 py-3 text-right text-xs text-zinc-400">
-                            <ChevronRight className="w-4 h-4 ml-auto text-zinc-500" />
+                          <td className="px-3 py-3 text-right text-xs text-ui-fg-subtle">
+                            <ChevronRight className="w-4 h-4 ml-auto text-ui-fg-muted" />
                           </td>
                         </tr>
                       );
@@ -569,27 +569,27 @@ export function PartyWorkspace() {
         {/* Right Column: Dossier Details (5 cols on desktop) */}
         <div className="lg:col-span-5">
           {selectedPartyId && partyDetail ? (
-            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 flex flex-col gap-4 shadow-sm sticky top-6">
+            <div className="bg-ui-bg-base border border-ui-border-base rounded-xl p-5 flex flex-col gap-4 shadow-sm sticky top-6">
               {/* Dossier Header */}
-              <div className="flex items-start justify-between border-b border-zinc-800 pb-4">
+              <div className="flex items-start justify-between border-b border-ui-border-base pb-4">
                 <div>
                   <div className="flex items-center gap-2">
-                    <h2 className="text-xl font-bold text-white">
+                    <h2 className="text-xl font-bold text-ui-fg-base">
                       {partyDetail.party.displayName || partyDetail.party.legalName}
                     </h2>
                   </div>
                   <div className="flex items-center gap-2 mt-1">
-                    <span className="text-xs font-mono text-zinc-400">{partyDetail.party.code}</span>
-                    <span className="text-xs text-zinc-600">•</span>
-                    <span className="text-xs text-zinc-400">v{partyDetail.party.version}</span>
+                    <span className="text-xs font-mono text-ui-fg-subtle">{partyDetail.party.code}</span>
+                    <span className="text-xs text-ui-fg-muted">•</span>
+                    <span className="text-xs text-ui-fg-subtle">v{partyDetail.party.version}</span>
                   </div>
                 </div>
 
                 <span
                   className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
                     partyDetail.party.status === 'ACTIVE'
-                      ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
-                      : 'bg-zinc-800 text-zinc-400'
+                      ? 'bg-ui-tag-green-bg text-ui-tag-green-text border border-ui-tag-green-border'
+                      : 'bg-ui-bg-field text-ui-fg-subtle'
                   }`}
                 >
                   {partyDetail.party.status}
@@ -597,7 +597,7 @@ export function PartyWorkspace() {
               </div>
 
               {/* Dossier Tabs */}
-              <div className="flex gap-1 overflow-x-auto border-b border-zinc-800 pb-2 text-xs">
+              <div className="flex gap-1 overflow-x-auto border-b border-ui-border-base pb-2 text-xs">
                 {(
                   [
                     'overview',
@@ -615,8 +615,8 @@ export function PartyWorkspace() {
                     onClick={() => setActiveTab(tab)}
                     className={`px-2.5 py-1 rounded-md font-medium capitalize whitespace-nowrap transition ${
                       activeTab === tab
-                        ? 'bg-indigo-600 text-white'
-                        : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800'
+                        ? 'bg-ui-button-inverted text-ui-contrast-fg-primary'
+                        : 'text-ui-fg-subtle hover:text-ui-fg-base hover:bg-ui-bg-base-hover'
                     }`}
                   >
                     {tab}
@@ -629,23 +629,23 @@ export function PartyWorkspace() {
                 {activeTab === 'overview' && (
                   <div className="space-y-3 text-sm">
                     <div>
-                      <div className="text-xs text-zinc-500">Legal Name</div>
-                      <div className="text-zinc-200 font-medium">{partyDetail.party.legalName}</div>
+                      <div className="text-xs text-ui-fg-muted">Legal Name</div>
+                      <div className="text-ui-fg-base font-medium">{partyDetail.party.legalName}</div>
                     </div>
                     <div>
-                      <div className="text-xs text-zinc-500">Party Type</div>
-                      <div className="text-zinc-200">{partyDetail.party.partyType}</div>
+                      <div className="text-xs text-ui-fg-muted">Party Type</div>
+                      <div className="text-ui-fg-base">{partyDetail.party.partyType}</div>
                     </div>
                     <div>
-                      <div className="text-xs text-zinc-500">Classification</div>
-                      <div className="text-zinc-200">{partyDetail.party.classification || 'None'}</div>
+                      <div className="text-xs text-ui-fg-muted">Classification</div>
+                      <div className="text-ui-fg-base">{partyDetail.party.classification || 'None'}</div>
                     </div>
                     <div>
-                      <div className="text-xs text-zinc-500">Created / Updated</div>
-                      <div className="text-xs text-zinc-400">
+                      <div className="text-xs text-ui-fg-muted">Created / Updated</div>
+                      <div className="text-xs text-ui-fg-subtle">
                         Created {new Date(partyDetail.party.createdAt).toLocaleString()}
                       </div>
-                      <div className="text-xs text-zinc-400">
+                      <div className="text-xs text-ui-fg-subtle">
                         Updated {new Date(partyDetail.party.updatedAt).toLocaleString()}
                       </div>
                     </div>
@@ -655,22 +655,22 @@ export function PartyWorkspace() {
                 {activeTab === 'roles' && (
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-medium text-zinc-400">Assigned Business Roles</span>
+                      <span className="text-xs font-medium text-ui-fg-subtle">Assigned Business Roles</span>
                       <button
                         onClick={() => setShowAddRoleModal(true)}
-                        className="text-xs text-indigo-400 hover:underline flex items-center gap-1"
+                        className="text-xs text-ui-fg-interactive hover:underline flex items-center gap-1"
                       >
                         <Plus className="w-3.5 h-3.5" /> Add Role
                       </button>
                     </div>
                     {partyDetail.roles.length === 0 ? (
-                      <div className="text-xs text-zinc-500 italic py-4">No business roles assigned.</div>
+                      <div className="text-xs text-ui-fg-muted italic py-4">No business roles assigned.</div>
                     ) : (
-                      <div className="divide-y divide-zinc-800/80">
+                      <div className="divide-y divide-ui-border-base">
                         {partyDetail.roles.map((r) => (
                           <div key={r.id} className="py-2 flex items-center justify-between text-xs">
-                            <span className="font-semibold text-indigo-300">{r.roleType}</span>
-                            <span className="text-zinc-400">{r.status}</span>
+                            <span className="font-semibold text-ui-fg-interactive">{r.roleType}</span>
+                            <span className="text-ui-fg-subtle">{r.status}</span>
                           </div>
                         ))}
                       </div>
@@ -681,26 +681,26 @@ export function PartyWorkspace() {
                 {activeTab === 'contacts' && (
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-medium text-zinc-400">Contact Points</span>
+                      <span className="text-xs font-medium text-ui-fg-subtle">Contact Points</span>
                       <button
                         onClick={() => setShowAddContactModal(true)}
-                        className="text-xs text-indigo-400 hover:underline flex items-center gap-1"
+                        className="text-xs text-ui-fg-interactive hover:underline flex items-center gap-1"
                       >
                         <Plus className="w-3.5 h-3.5" /> Add Contact
                       </button>
                     </div>
                     {partyDetail.contacts.length === 0 ? (
-                      <div className="text-xs text-zinc-500 italic py-4">No contact points recorded.</div>
+                      <div className="text-xs text-ui-fg-muted italic py-4">No contact points recorded.</div>
                     ) : (
-                      <div className="divide-y divide-zinc-800">
+                      <div className="divide-y divide-ui-border-base">
                         {partyDetail.contacts.map((c) => (
                           <div key={c.id} className="py-2 flex items-start justify-between text-xs">
                             <div>
-                              <div className="font-medium text-zinc-200">{c.value}</div>
-                              <div className="text-zinc-500">{c.channel} ({c.label || 'Default'})</div>
+                              <div className="font-medium text-ui-fg-base">{c.value}</div>
+                              <div className="text-ui-fg-muted">{c.channel} ({c.label || 'Default'})</div>
                             </div>
                             {c.isPrimary && (
-                              <span className="text-[10px] bg-indigo-950 text-indigo-400 px-1.5 py-0.5 rounded">
+                              <span className="text-[10px] bg-ui-tag-blue-bg text-ui-fg-interactive px-1.5 py-0.5 rounded">
                                 Primary
                               </span>
                             )}
@@ -714,25 +714,25 @@ export function PartyWorkspace() {
                 {activeTab === 'addresses' && (
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-medium text-zinc-400">Addresses & Locations</span>
+                      <span className="text-xs font-medium text-ui-fg-subtle">Addresses & Locations</span>
                       <button
                         onClick={() => setShowAddAddressModal(true)}
-                        className="text-xs text-indigo-400 hover:underline flex items-center gap-1"
+                        className="text-xs text-ui-fg-interactive hover:underline flex items-center gap-1"
                       >
                         <Plus className="w-3.5 h-3.5" /> Add Address
                       </button>
                     </div>
                     {partyDetail.addresses.length === 0 ? (
-                      <div className="text-xs text-zinc-500 italic py-4">No addresses recorded.</div>
+                      <div className="text-xs text-ui-fg-muted italic py-4">No addresses recorded.</div>
                     ) : (
-                      <div className="divide-y divide-zinc-800">
+                      <div className="divide-y divide-ui-border-base">
                         {partyDetail.addresses.map((a) => (
                           <div key={a.id} className="py-2 text-xs">
-                            <div className="font-medium text-zinc-200">{a.street1}</div>
-                            <div className="text-zinc-400">
+                            <div className="font-medium text-ui-fg-base">{a.street1}</div>
+                            <div className="text-ui-fg-subtle">
                               {a.city}, {a.countryCode}
                             </div>
-                            <div className="text-[10px] text-zinc-500 uppercase mt-0.5">{a.addressType}</div>
+                            <div className="text-[10px] text-ui-fg-muted uppercase mt-0.5">{a.addressType}</div>
                           </div>
                         ))}
                       </div>
@@ -742,19 +742,19 @@ export function PartyWorkspace() {
 
                 {activeTab === 'identifiers' && (
                   <div className="space-y-3">
-                    <div className="text-xs font-medium text-zinc-400">Registered Identifiers</div>
+                    <div className="text-xs font-medium text-ui-fg-subtle">Registered Identifiers</div>
                     {partyDetail.identifiers.length === 0 ? (
-                      <div className="text-xs text-zinc-500 italic py-4">No tax or registration numbers.</div>
+                      <div className="text-xs text-ui-fg-muted italic py-4">No tax or registration numbers.</div>
                     ) : (
-                      <div className="divide-y divide-zinc-800">
+                      <div className="divide-y divide-ui-border-base">
                         {partyDetail.identifiers.map((i) => (
                           <div key={i.id} className="py-2 flex items-center justify-between text-xs">
                             <div>
-                              <div className="font-mono text-zinc-200">{i.value}</div>
-                              <div className="text-zinc-500">{i.identifierType} ({i.issuerCountry || 'Global'})</div>
+                              <div className="font-mono text-ui-fg-base">{i.value}</div>
+                              <div className="text-ui-fg-muted">{i.identifierType} ({i.issuerCountry || 'Global'})</div>
                             </div>
                             {i.isRestricted && (
-                              <span className="text-[10px] bg-rose-950 text-rose-400 px-1.5 py-0.5 rounded flex items-center gap-1">
+                              <span className="text-[10px] bg-ui-tag-red-bg text-ui-fg-error px-1.5 py-0.5 rounded flex items-center gap-1">
                                 <Shield className="w-3 h-3" /> Restricted
                               </span>
                             )}
@@ -767,17 +767,17 @@ export function PartyWorkspace() {
 
                 {activeTab === 'orgScope' && (
                   <div className="space-y-3">
-                    <div className="text-xs font-medium text-zinc-400">WI-OI-109 Organization Assignments</div>
+                    <div className="text-xs font-medium text-ui-fg-subtle">WI-OI-109 Organization Assignments</div>
                     {partyDetail.orgAssignments.length === 0 ? (
-                      <div className="text-xs text-zinc-500 italic py-4">
+                      <div className="text-xs text-ui-fg-muted italic py-4">
                         Global within tenant (no unit restrictions).
                       </div>
                     ) : (
-                      <div className="divide-y divide-zinc-800">
+                      <div className="divide-y divide-ui-border-base">
                         {partyDetail.orgAssignments.map((o) => (
                           <div key={o.id} className="py-2 text-xs flex justify-between">
-                            <span className="font-mono text-indigo-300">{o.orgUnitId}</span>
-                            <span className="text-zinc-400">{o.assignmentPurpose}</span>
+                            <span className="font-mono text-ui-fg-interactive">{o.orgUnitId}</span>
+                            <span className="text-ui-fg-subtle">{o.assignmentPurpose}</span>
                           </div>
                         ))}
                       </div>
@@ -787,15 +787,15 @@ export function PartyWorkspace() {
 
                 {activeTab === 'extensions' && (
                   <div className="space-y-3">
-                    <div className="text-xs font-medium text-zinc-400">Application Dictionary Overlays</div>
+                    <div className="text-xs font-medium text-ui-fg-subtle">Application Dictionary Overlays</div>
                     {partyDetail.customExtensions && Object.keys(partyDetail.customExtensions).length > 0 ? (
-                      <div className="bg-zinc-800/50 p-3 rounded-lg border border-zinc-800">
-                        <pre className="text-xs font-mono text-zinc-300 overflow-x-auto">
+                      <div className="bg-ui-bg-subtle p-3 rounded-lg border border-ui-border-base">
+                        <pre className="text-xs font-mono text-ui-fg-base overflow-x-auto">
                           {JSON.stringify(partyDetail.customExtensions, null, 2)}
                         </pre>
                       </div>
                     ) : (
-                      <div className="text-xs text-zinc-500 italic py-4">
+                      <div className="text-xs text-ui-fg-muted italic py-4">
                         No custom fields configured for this party.
                       </div>
                     )}
@@ -804,12 +804,12 @@ export function PartyWorkspace() {
 
                 {activeTab === 'actions' && (
                   <div className="space-y-3">
-                    <div className="text-xs font-medium text-zinc-400">Governed Operations</div>
+                    <div className="text-xs font-medium text-ui-fg-subtle">Governed Operations</div>
                     <div className="flex flex-col gap-2 pt-2">
                       {partyDetail.party.status === 'ACTIVE' && (
                         <button
                           onClick={handleArchive}
-                          className="flex items-center gap-2 px-3 py-2 text-xs font-medium bg-zinc-800 hover:bg-zinc-700 text-amber-300 rounded border border-zinc-700 transition"
+                          className="flex items-center gap-2 px-3 py-2 text-xs font-medium bg-ui-bg-field hover:bg-ui-bg-field-hover text-ui-tag-orange-text rounded border border-ui-border-base transition"
                         >
                           <Archive className="w-4 h-4" />
                           Archive Party
@@ -819,7 +819,7 @@ export function PartyWorkspace() {
                       {partyDetail.party.status === 'ARCHIVED' && (
                         <button
                           onClick={handleRestore}
-                          className="flex items-center gap-2 px-3 py-2 text-xs font-medium bg-zinc-800 hover:bg-zinc-700 text-emerald-400 rounded border border-zinc-700 transition"
+                          className="flex items-center gap-2 px-3 py-2 text-xs font-medium bg-ui-bg-field hover:bg-ui-bg-field-hover text-ui-tag-green-text rounded border border-ui-border-base transition"
                         >
                           <RotateCcw className="w-4 h-4" />
                           Restore to Active
@@ -829,7 +829,7 @@ export function PartyWorkspace() {
                       {partyDetail.party.status !== 'MERGED' && (
                         <button
                           onClick={() => setShowMergeModal(true)}
-                          className="flex items-center gap-2 px-3 py-2 text-xs font-medium bg-zinc-800 hover:bg-zinc-700 text-indigo-300 rounded border border-zinc-700 transition"
+                          className="flex items-center gap-2 px-3 py-2 text-xs font-medium bg-ui-bg-field hover:bg-ui-bg-field-hover text-ui-fg-interactive rounded border border-ui-border-base transition"
                         >
                           <GitMerge className="w-4 h-4" />
                           Merge with Another Party...
@@ -841,7 +841,7 @@ export function PartyWorkspace() {
               </div>
             </div>
           ) : (
-            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-8 text-center text-zinc-500">
+            <div className="bg-ui-bg-base border border-ui-border-base rounded-xl p-8 text-center text-ui-fg-muted">
               Select a party from the table to view its dossier.
             </div>
           )}
@@ -850,64 +850,64 @@ export function PartyWorkspace() {
 
       {/* Create Party Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl max-w-lg w-full p-6 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
-              <h3 className="text-lg font-semibold text-white">Create Core Party</h3>
-              <button onClick={() => setShowCreateModal(false)} className="text-zinc-400 hover:text-white">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ui-bg-overlay backdrop-blur-sm p-4">
+          <div className="bg-ui-bg-base border border-ui-border-base rounded-xl max-w-lg w-full p-6 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-ui-border-base pb-3">
+              <h3 className="text-lg font-semibold text-ui-fg-base">Create Core Party</h3>
+              <button onClick={() => setShowCreateModal(false)} className="text-ui-fg-subtle hover:text-ui-fg-base">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {createError && (
-              <div className="mt-3 p-3 bg-rose-950/50 border border-rose-800 text-rose-300 text-xs rounded">
+              <div className="mt-3 p-3 bg-ui-tag-red-bg border border-ui-tag-red-border text-ui-fg-error text-xs rounded">
                 {createError}
               </div>
             )}
 
             <form onSubmit={handleCreateParty} className="space-y-4 mt-4 text-sm">
               <div>
-                <label className="block text-xs font-medium text-zinc-400 mb-1">Party Code *</label>
+                <label className="block text-xs font-medium text-ui-fg-subtle mb-1">Party Code *</label>
                 <input
                   type="text"
                   required
                   value={newParty.code}
                   onChange={(e) => setNewParty({ ...newParty, code: e.target.value })}
                   placeholder="e.g. ACME_CORP"
-                  className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white font-mono uppercase"
+                  className="w-full px-3 py-2 bg-ui-bg-field border border-ui-border-base rounded-lg text-ui-fg-base font-mono uppercase"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-zinc-400 mb-1">Legal Name *</label>
+                <label className="block text-xs font-medium text-ui-fg-subtle mb-1">Legal Name *</label>
                 <input
                   type="text"
                   required
                   value={newParty.legalName}
                   onChange={(e) => setNewParty({ ...newParty, legalName: e.target.value })}
                   placeholder="Official registered name"
-                  className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white"
+                  className="w-full px-3 py-2 bg-ui-bg-field border border-ui-border-base rounded-lg text-ui-fg-base"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-zinc-400 mb-1">Display Name</label>
+                <label className="block text-xs font-medium text-ui-fg-subtle mb-1">Display Name</label>
                 <input
                   type="text"
                   value={newParty.displayName}
                   onChange={(e) => setNewParty({ ...newParty, displayName: e.target.value })}
                   placeholder="Trading or common name"
-                  className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white"
+                  className="w-full px-3 py-2 bg-ui-bg-field border border-ui-border-base rounded-lg text-ui-fg-base"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-medium text-zinc-400 mb-1">Party Type</label>
+                  <label className="block text-xs font-medium text-ui-fg-subtle mb-1">Party Type</label>
                   <select
                     value={newParty.partyType}
                     onChange={(e) => setNewParty({ ...newParty, partyType: e.target.value })}
-                    className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white"
+                    className="w-full px-3 py-2 bg-ui-bg-field border border-ui-border-base rounded-lg text-ui-fg-base"
                   >
                     <option value="ORGANIZATION">Organization</option>
                     <option value="INDIVIDUAL">Individual</option>
@@ -915,11 +915,11 @@ export function PartyWorkspace() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-zinc-400 mb-1">Initial Role</label>
+                  <label className="block text-xs font-medium text-ui-fg-subtle mb-1">Initial Role</label>
                   <select
                     value={newParty.initialRole}
                     onChange={(e) => setNewParty({ ...newParty, initialRole: e.target.value })}
-                    className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white"
+                    className="w-full px-3 py-2 bg-ui-bg-field border border-ui-border-base rounded-lg text-ui-fg-base"
                   >
                     <option value="CUSTOMER">Customer</option>
                     <option value="SUPPLIER">Supplier</option>
@@ -929,18 +929,18 @@ export function PartyWorkspace() {
                 </div>
               </div>
 
-              <div className="flex justify-end gap-3 pt-3 border-t border-zinc-800">
+              <div className="flex justify-end gap-3 pt-3 border-t border-ui-border-base">
                 <button
                   type="button"
                   onClick={() => setShowCreateModal(false)}
-                  className="px-4 py-2 text-sm text-zinc-400 hover:text-white"
+                  className="px-4 py-2 text-sm text-ui-fg-subtle hover:text-ui-fg-base"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={createSubmitting}
-                  className="px-4 py-2 text-sm font-medium bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg disabled:opacity-50"
+                  className="px-4 py-2 text-sm font-medium bg-ui-button-inverted hover:bg-ui-button-inverted-hover text-ui-contrast-fg-primary rounded-lg disabled:opacity-50"
                 >
                   {createSubmitting ? 'Creating...' : 'Create Party'}
                 </button>
@@ -952,34 +952,34 @@ export function PartyWorkspace() {
 
       {/* Governed Merge Modal */}
       {showMergeModal && partyDetail && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl max-w-lg w-full p-6 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
-              <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                <GitMerge className="w-5 h-5 text-indigo-400" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ui-bg-overlay backdrop-blur-sm p-4">
+          <div className="bg-ui-bg-base border border-ui-border-base rounded-xl max-w-lg w-full p-6 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-ui-border-base pb-3">
+              <h3 className="text-lg font-semibold text-ui-fg-base flex items-center gap-2">
+                <GitMerge className="w-5 h-5 text-ui-fg-interactive" />
                 Merge Counterparties
               </h3>
-              <button onClick={() => setShowMergeModal(false)} className="text-zinc-400 hover:text-white">
+              <button onClick={() => setShowMergeModal(false)} className="text-ui-fg-subtle hover:text-ui-fg-base">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <div className="mt-4 space-y-4 text-sm">
-              <div className="p-3 bg-amber-950/40 border border-amber-800 text-amber-200 text-xs rounded">
+              <div className="p-3 bg-ui-tag-orange-bg border border-ui-tag-orange-border text-ui-tag-orange-text text-xs rounded">
                 <strong>Warning:</strong> Merging will permanently retire{' '}
-                <span className="font-mono text-white">{partyDetail.party.code}</span> and point all future operations
+                <span className="font-mono text-ui-fg-base">{partyDetail.party.code}</span> and point all future operations
                 to the selected survivor.
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-zinc-400 mb-1">Target Survivor Party</label>
+                <label className="block text-xs font-medium text-ui-fg-subtle mb-1">Target Survivor Party</label>
                 <select
                   value={targetPartyId}
                   onChange={(e) => {
                     setTargetPartyId(e.target.value);
                     setMergePreview(null);
                   }}
-                  className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white"
+                  className="w-full px-3 py-2 bg-ui-bg-field border border-ui-border-base rounded-lg text-ui-fg-base"
                 >
                   <option value="">Select survivor party...</option>
                   {parties
@@ -996,14 +996,14 @@ export function PartyWorkspace() {
                 <button
                   type="button"
                   onClick={handlePreviewMerge}
-                  className="px-3 py-1.5 text-xs font-medium bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded border border-zinc-700"
+                  className="px-3 py-1.5 text-xs font-medium bg-ui-bg-field hover:bg-ui-bg-field-hover text-ui-fg-base rounded border border-ui-border-base"
                 >
                   Calculate Merge Impact Preview
                 </button>
               )}
 
               {mergePreview && (
-                <div className="p-3 bg-zinc-800/80 rounded-lg text-xs space-y-1 text-zinc-300">
+                <div className="p-3 bg-ui-bg-subtle rounded-lg text-xs space-y-1 text-ui-fg-base">
                   <div>
                     <strong>Transferred Contacts:</strong> {mergePreview.contactsToTransfer}
                   </div>
@@ -1017,22 +1017,22 @@ export function PartyWorkspace() {
               )}
 
               <div>
-                <label className="block text-xs font-medium text-zinc-400 mb-1">Merge Reason *</label>
+                <label className="block text-xs font-medium text-ui-fg-subtle mb-1">Merge Reason *</label>
                 <textarea
                   required
                   rows={2}
                   value={mergeReason}
                   onChange={(e) => setMergeReason(e.target.value)}
                   placeholder="Justification for counterparty consolidation..."
-                  className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-xs"
+                  className="w-full px-3 py-2 bg-ui-bg-field border border-ui-border-base rounded-lg text-ui-fg-base text-xs"
                 />
               </div>
 
-              <div className="flex justify-end gap-3 pt-3 border-t border-zinc-800">
+              <div className="flex justify-end gap-3 pt-3 border-t border-ui-border-base">
                 <button
                   type="button"
                   onClick={() => setShowMergeModal(false)}
-                  className="px-4 py-2 text-sm text-zinc-400 hover:text-white"
+                  className="px-4 py-2 text-sm text-ui-fg-subtle hover:text-ui-fg-base"
                 >
                   Cancel
                 </button>
@@ -1040,7 +1040,7 @@ export function PartyWorkspace() {
                   type="button"
                   onClick={handleExecuteMerge}
                   disabled={!targetPartyId || !mergeReason.trim() || mergeSubmitting}
-                  className="px-4 py-2 text-sm font-medium bg-amber-600 hover:bg-amber-500 text-white rounded-lg disabled:opacity-50"
+                  className="px-4 py-2 text-sm font-medium bg-ui-button-inverted hover:bg-ui-button-inverted-hover text-ui-contrast-fg-primary rounded-lg disabled:opacity-50"
                 >
                   {mergeSubmitting ? 'Merging...' : 'Confirm & Merge'}
                 </button>
@@ -1052,14 +1052,14 @@ export function PartyWorkspace() {
 
       {/* Add Role Modal */}
       {showAddRoleModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl max-w-sm w-full p-6 shadow-2xl">
-            <h3 className="text-base font-semibold text-white mb-3">Add Business Role</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ui-bg-overlay backdrop-blur-sm p-4">
+          <div className="bg-ui-bg-base border border-ui-border-base rounded-xl max-w-sm w-full p-6 shadow-2xl">
+            <h3 className="text-base font-semibold text-ui-fg-base mb-3">Add Business Role</h3>
             <form onSubmit={handleAddRole} className="space-y-3 text-sm">
               <select
                 value={newRole.roleType}
                 onChange={(e) => setNewRole({ roleType: e.target.value })}
-                className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white"
+                className="w-full px-3 py-2 bg-ui-bg-field border border-ui-border-base rounded-lg text-ui-fg-base"
               >
                 <option value="CUSTOMER">Customer</option>
                 <option value="SUPPLIER">Supplier</option>
@@ -1073,13 +1073,13 @@ export function PartyWorkspace() {
                 <button
                   type="button"
                   onClick={() => setShowAddRoleModal(false)}
-                  className="px-3 py-1.5 text-xs text-zinc-400"
+                  className="px-3 py-1.5 text-xs text-ui-fg-subtle"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-3 py-1.5 text-xs font-medium bg-indigo-600 hover:bg-indigo-500 text-white rounded"
+                  className="px-3 py-1.5 text-xs font-medium bg-ui-button-inverted hover:bg-ui-button-inverted-hover text-ui-contrast-fg-primary rounded"
                 >
                   Save Role
                 </button>
@@ -1091,16 +1091,16 @@ export function PartyWorkspace() {
 
       {/* Add Contact Modal */}
       {showAddContactModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl max-w-sm w-full p-6 shadow-2xl">
-            <h3 className="text-base font-semibold text-white mb-3">Add Contact Point</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ui-bg-overlay backdrop-blur-sm p-4">
+          <div className="bg-ui-bg-base border border-ui-border-base rounded-xl max-w-sm w-full p-6 shadow-2xl">
+            <h3 className="text-base font-semibold text-ui-fg-base mb-3">Add Contact Point</h3>
             <form onSubmit={handleAddContact} className="space-y-3 text-sm">
               <div>
-                <label className="text-xs text-zinc-400">Channel</label>
+                <label className="text-xs text-ui-fg-subtle">Channel</label>
                 <select
                   value={newContact.channel}
                   onChange={(e) => setNewContact({ ...newContact, channel: e.target.value })}
-                  className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-xs mt-1"
+                  className="w-full px-3 py-2 bg-ui-bg-field border border-ui-border-base rounded-lg text-ui-fg-base text-xs mt-1"
                 >
                   <option value="EMAIL">Email</option>
                   <option value="PHONE">Phone</option>
@@ -1110,25 +1110,25 @@ export function PartyWorkspace() {
               </div>
 
               <div>
-                <label className="text-xs text-zinc-400">Value *</label>
+                <label className="text-xs text-ui-fg-subtle">Value *</label>
                 <input
                   type="text"
                   required
                   value={newContact.value}
                   onChange={(e) => setNewContact({ ...newContact, value: e.target.value })}
                   placeholder="contact@example.com"
-                  className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-xs mt-1"
+                  className="w-full px-3 py-2 bg-ui-bg-field border border-ui-border-base rounded-lg text-ui-fg-base text-xs mt-1"
                 />
               </div>
 
               <div>
-                <label className="text-xs text-zinc-400">Label</label>
+                <label className="text-xs text-ui-fg-subtle">Label</label>
                 <input
                   type="text"
                   value={newContact.label}
                   onChange={(e) => setNewContact({ ...newContact, label: e.target.value })}
                   placeholder="Billing, Support, Dispatch..."
-                  className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-xs mt-1"
+                  className="w-full px-3 py-2 bg-ui-bg-field border border-ui-border-base rounded-lg text-ui-fg-base text-xs mt-1"
                 />
               </div>
 
@@ -1136,13 +1136,13 @@ export function PartyWorkspace() {
                 <button
                   type="button"
                   onClick={() => setShowAddContactModal(false)}
-                  className="px-3 py-1.5 text-xs text-zinc-400"
+                  className="px-3 py-1.5 text-xs text-ui-fg-subtle"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-3 py-1.5 text-xs font-medium bg-indigo-600 hover:bg-indigo-500 text-white rounded"
+                  className="px-3 py-1.5 text-xs font-medium bg-ui-button-inverted hover:bg-ui-button-inverted-hover text-ui-contrast-fg-primary rounded"
                 >
                   Save Contact
                 </button>
@@ -1154,16 +1154,16 @@ export function PartyWorkspace() {
 
       {/* Add Address Modal */}
       {showAddAddressModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl max-w-sm w-full p-6 shadow-2xl">
-            <h3 className="text-base font-semibold text-white mb-3">Add Address</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ui-bg-overlay backdrop-blur-sm p-4">
+          <div className="bg-ui-bg-base border border-ui-border-base rounded-xl max-w-sm w-full p-6 shadow-2xl">
+            <h3 className="text-base font-semibold text-ui-fg-base mb-3">Add Address</h3>
             <form onSubmit={handleAddAddress} className="space-y-3 text-sm">
               <div>
-                <label className="text-xs text-zinc-400">Address Type</label>
+                <label className="text-xs text-ui-fg-subtle">Address Type</label>
                 <select
                   value={newAddress.addressType}
                   onChange={(e) => setNewAddress({ ...newAddress, addressType: e.target.value })}
-                  className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-xs mt-1"
+                  className="w-full px-3 py-2 bg-ui-bg-field border border-ui-border-base rounded-lg text-ui-fg-base text-xs mt-1"
                 >
                   <option value="HEADQUARTERS">Headquarters</option>
                   <option value="BILLING">Billing</option>
@@ -1174,31 +1174,31 @@ export function PartyWorkspace() {
               </div>
 
               <div>
-                <label className="text-xs text-zinc-400">Street Address *</label>
+                <label className="text-xs text-ui-fg-subtle">Street Address *</label>
                 <input
                   type="text"
                   required
                   value={newAddress.street1}
                   onChange={(e) => setNewAddress({ ...newAddress, street1: e.target.value })}
                   placeholder="100 Main St"
-                  className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-xs mt-1"
+                  className="w-full px-3 py-2 bg-ui-bg-field border border-ui-border-base rounded-lg text-ui-fg-base text-xs mt-1"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="text-xs text-zinc-400">City *</label>
+                  <label className="text-xs text-ui-fg-subtle">City *</label>
                   <input
                     type="text"
                     required
                     value={newAddress.city}
                     onChange={(e) => setNewAddress({ ...newAddress, city: e.target.value })}
                     placeholder="City"
-                    className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-xs mt-1"
+                    className="w-full px-3 py-2 bg-ui-bg-field border border-ui-border-base rounded-lg text-ui-fg-base text-xs mt-1"
                   />
                 </div>
                 <div>
-                  <label className="text-xs text-zinc-400">Country Code *</label>
+                  <label className="text-xs text-ui-fg-subtle">Country Code *</label>
                   <input
                     type="text"
                     required
@@ -1206,7 +1206,7 @@ export function PartyWorkspace() {
                     value={newAddress.countryCode}
                     onChange={(e) => setNewAddress({ ...newAddress, countryCode: e.target.value.toUpperCase() })}
                     placeholder="US"
-                    className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-xs mt-1 uppercase font-mono"
+                    className="w-full px-3 py-2 bg-ui-bg-field border border-ui-border-base rounded-lg text-ui-fg-base text-xs mt-1 uppercase font-mono"
                   />
                 </div>
               </div>
@@ -1215,13 +1215,13 @@ export function PartyWorkspace() {
                 <button
                   type="button"
                   onClick={() => setShowAddAddressModal(false)}
-                  className="px-3 py-1.5 text-xs text-zinc-400"
+                  className="px-3 py-1.5 text-xs text-ui-fg-subtle"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-3 py-1.5 text-xs font-medium bg-indigo-600 hover:bg-indigo-500 text-white rounded"
+                  className="px-3 py-1.5 text-xs font-medium bg-ui-button-inverted hover:bg-ui-button-inverted-hover text-ui-contrast-fg-primary rounded"
                 >
                   Save Address
                 </button>
