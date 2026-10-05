@@ -806,3 +806,24 @@ removed.
     which the session ran: 27/27).
 - **Not deployed yet.** After the deploy, the control plane activates the six Inventory windows for GigaLibs Global
   Enterprise at start-up (F0.2 reconciliation, as the administrator who enabled Inventory).
+
+### F0.5 deploy and the manifest fix (2026-10-05)
+
+- **Deployed by the owner:** `bf049e1f50ca-9e71babfe73c` (api, kernel worker, module host, web: healthy). At start-up the
+  control plane activated the six Inventory windows for GigaLibs Global Enterprise (15:33:51Z, one view each): F0.2
+  reconciliation worked on a real tenant.
+- **Defect found by the owner on /inventory:** every window said "This window is not available — The published
+  definition for this window declares no view."
+  - **Cause:** `manifestState` looked for `manifestVersion` and `views` on the endpoint's answer. The runtime endpoint
+    answers `{ activationId, publishedVersionId, activatedAt, manifest, checksum, scope, adapter }`
+    (`ConfigurationRuntimeManifestCurrentResponseSchema`), so the manifest is its `manifest` member. The F0.4 test
+    passed a bare manifest, which hid the mistake.
+  - **Fix:** `manifestState` reads the `manifest` member and refuses a bare manifest. The test now uses the
+    endpoint's real wrapped answer.
+  - **Checked:** the per-user filter (`filterDictionaryManifest`) keeps views, references and relationships and removes
+    only unreadable fields and unpermitted actions; the renderer skips a placement whose field was removed.
+  - **Same mistake in the Catalogue page's old loader**, which is why it always fell back to its constant manifest.
+    U7 (WI-OI-120g) removes that loader; not patched here.
+- **Checks:** `pnpm build` passes; `pnpm test` 2,542 passed, 188 skipped; `pnpm verify` passes (known drift; 9 proofs
+  NOT RUN without PROOF_DATABASE_URL).
+- **Not deployed yet.** After deploy: /inventory draws all six windows for a tenant administrator.

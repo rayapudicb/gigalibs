@@ -214,10 +214,22 @@ describe('published manifest', () => {
     expect(manifestUrl({ moduleKey: 'universal-inventory', entityKey: 'inventory-receipts', surfaceKey: 'inventory-receipts' })).toBe(
       '/api/control/configuration/runtime/manifest/current?moduleKey=universal-inventory&entityKey=inventory-receipts&surfaceKey=inventory-receipts',
     );
+    // The runtime endpoint wraps the manifest (ConfigurationRuntimeManifestCurrentResponseSchema).
+    const answer = (body: unknown) => ({
+      activationId: 'a-1',
+      publishedVersionId: 'v-1',
+      activatedAt: '2026-10-05T15:33:51.000Z',
+      manifest: body,
+      checksum: `sha256:${'0'.repeat(64)}`,
+      scope: { contractVersion: '1.0', environmentKey: 'local', cohortKey: 'all-users', policyKey: 'ALL_ENTITLED_USERS_V1', entitlementModuleKey: 'universal-inventory', resolutionSource: 'SERVER_POLICY' },
+      adapter: { adapterKey: 'inventory-receipts-window', descriptorVersion: '1.0' },
+    });
     expect(manifestState(404, null).status).toBe('missing');
     expect(manifestState(403, null).status).toBe('forbidden');
-    expect(manifestState(200, { ...manifest, views: [] }).status).toBe('missing');
-    expect(manifestState(200, manifest)).toEqual({ status: 'ready', manifest });
+    expect(manifestState(200, answer({ ...manifest, views: [] })).status).toBe('missing');
+    expect(manifestState(200, answer(manifest))).toEqual({ status: 'ready', manifest });
+    // A bare manifest is not the endpoint's shape and is not accepted.
+    expect(manifestState(200, manifest).status).toBe('missing');
     expect(manifestState(503, null).status).toBe('error');
   });
 

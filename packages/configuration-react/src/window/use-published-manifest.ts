@@ -22,7 +22,11 @@ export function manifestUrl(surface: ManifestSurface): string {
   return `/api/control/configuration/runtime/manifest/current?${query.toString()}`;
 }
 
-/** Turns the control plane's answer into a manifest state. */
+/**
+ * Turns the control plane's answer into a manifest state. The runtime endpoint answers
+ * `{ activationId, publishedVersionId, activatedAt, manifest, checksum, scope, adapter }`
+ * (`ConfigurationRuntimeManifestCurrentResponseSchema`); the manifest is its `manifest` member.
+ */
 export function manifestState(status: number, body: unknown): PublishedManifestState {
   if (status === 403) return { status: 'forbidden', message: 'You do not have access to this window.' };
   if (status === 404) {
@@ -32,7 +36,10 @@ export function manifestState(status: number, body: unknown): PublishedManifestS
     };
   }
   if (status < 200 || status >= 300) return { status: 'error', message: `The window definition could not be loaded (${status}).` };
-  const manifest = body as Partial<CompiledDictionaryManifestV1> | null;
+  const manifest =
+    body && typeof body === 'object' && 'manifest' in body
+      ? ((body as { manifest: unknown }).manifest as Partial<CompiledDictionaryManifestV1> | null)
+      : null;
   if (!manifest || manifest.manifestVersion !== 1 || !Array.isArray(manifest.views) || manifest.views.length === 0) {
     return { status: 'missing', message: 'The published definition for this window declares no view.' };
   }
