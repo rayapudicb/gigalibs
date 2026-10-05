@@ -160,7 +160,8 @@ function formatMinor(minor: string, currency: string = 'USD'): string {
   return `${isNeg ? '-' : ''}${currency} ${formatted}`;
 }
 
-export function FinancialOperationsWorkspace() {
+/** `permissions` are the signed-in user's, for the dictionary renderer (WI-OI-120e). */
+export function FinancialOperationsWorkspace({ permissions = [] }: { readonly permissions?: readonly string[] } = {}) {
   const [activeTab, setActiveTab] = useState<WorkspaceTab>('overview');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -2530,6 +2531,7 @@ export function FinancialOperationsWorkspace() {
 
             <div className="pt-4 border-t border-slate-200">
               <DictionaryRenderer
+                permissions={permissions}
                 manifest={DEFAULT_FINANCE_DICTIONARY_MANIFEST}
                 values={customExtensions}
                 onChange={handleCustomFieldChange}

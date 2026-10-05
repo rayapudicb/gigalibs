@@ -9,6 +9,7 @@
 
 export * from './auth.module.js';
 export * from './auth.service.js';
+export * from './login-throttle.js';
 export * from './organization-scope.js';
 export * from './oidc.service.js';
 export * from './mfa-assisted-recovery.service.js';

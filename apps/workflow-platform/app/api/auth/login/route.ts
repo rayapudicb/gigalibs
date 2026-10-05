@@ -45,18 +45,28 @@ export async function POST(request: Request) {
 
     if (!upstream.ok) {
       const status = upstream.status >= 400 && upstream.status < 500 ? upstream.status : 503;
+      // WI-OI-120e (U3.2, P1-20): a locked sign-in says when it may be tried again.
+      const retryAfterSeconds = status === 429 ? await lockRetryAfterSeconds(upstream) : null;
       return NextResponse.json(
         {
           detail:
             status === 401
               ? 'Invalid email or password.'
               : status === 429
-                ? 'Too many authentication requests. Try again later.'
+                ? retryAfterSeconds
+                  ? `Too many failed sign-in attempts. Try again in ${Math.ceil(retryAfterSeconds / 60)} minute(s).`
+                  : 'Too many authentication requests. Try again later.'
                 : status === 503
                   ? 'Authentication service is unavailable.'
                   : 'The authentication service rejected the request.',
         },
-        { status, headers: { 'Cache-Control': 'no-store' } },
+        {
+          status,
+          headers: {
+            'Cache-Control': 'no-store',
+            ...(retryAfterSeconds ? { 'Retry-After': String(retryAfterSeconds) } : {}),
+          },
+        },
       );
     }
 
@@ -93,4 +103,12 @@ export async function POST(request: Request) {
     console.error('[API AUTH LOGIN ERROR]:', error);
     return unavailable(error);
   }
+}
+
+/** Seconds until a locked sign-in may be tried again, from the control plane's LOGIN_LOCKED answer (1 s to 1 h). */
+async function lockRetryAfterSeconds(upstream: Response): Promise<number | null> {
+  const body: unknown = await upstream.json().catch(() => null);
+  if (!body || typeof body !== 'object' || (body as { code?: unknown }).code !== 'LOGIN_LOCKED') return null;
+  const seconds = (body as { retryAfterSeconds?: unknown }).retryAfterSeconds;
+  return typeof seconds === 'number' && Number.isInteger(seconds) && seconds >= 1 && seconds <= 3_600 ? seconds : null;
 }

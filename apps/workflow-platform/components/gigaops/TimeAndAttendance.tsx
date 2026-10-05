@@ -1,6 +1,7 @@
 'use client';
 
 import { SiteSelect, useSites } from '@/components/geospatial/SitePicker';
+import { discardLegacyPunchQueue, punchQueueKey } from '@/lib/offline-punch-queue';
 import { type WorkforceApiError, workforceApi } from '@/lib/workforce-api';
 import type {
   GeofenceResultV1,
@@ -21,7 +22,6 @@ type Person = WorkforceResourcePageV1['items'][number];
 const selectClass =
   'h-8 w-full rounded-md bg-ui-bg-field px-2 txt-compact-small text-ui-fg-base shadow-borders-base outline-none transition-fg hover:bg-ui-bg-field-hover focus-visible:shadow-borders-interactive-with-active';
 const DEVICE_KEY = 'gigaops.time.device';
-const QUEUE_KEY = 'gigaops.time.pending';
 const fenceColor: Record<GeofenceResultV1, 'green' | 'red' | 'grey' | 'orange'> = {
   INSIDE: 'green',
   OUTSIDE: 'red',
@@ -77,6 +77,24 @@ function deviceId(): string {
   return created;
 }
 
+/** The signed-in tenant and user, whose offline queue this device may read (WI-OI-120e, P1-25). */
+function useQueueKey(): string | null {
+  const [queueKey, setQueueKey] = useState<string | null>(null);
+  useEffect(() => {
+    let active = true;
+    void fetch('/api/auth/context', { cache: 'no-store' })
+      .then(async (response) => (response.ok ? response.json() : null))
+      .then((session: { user?: { id?: string }; tenant?: { id?: string } | null } | null) => {
+        if (active && session?.user?.id && session.tenant?.id) setQueueKey(punchQueueKey(session.tenant.id, session.user.id));
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, []);
+  return queueKey;
+}
+
 /** Whether a failed send should stay queued: no response, busy or a server fault. */
 function retryable(error: WorkforceApiError): boolean {
   return error.status === undefined || error.status === 429 || error.status >= 500;
@@ -107,6 +125,7 @@ function MyClock({ sites, siteName }: { sites: ReturnType<typeof useSites>['site
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<WorkforceApiError | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const queueKey = useQueueKey();
 
   const load = useCallback(async () => {
     const today = new Date();
@@ -120,7 +139,8 @@ function MyClock({ sites, siteName }: { sites: ReturnType<typeof useSites>['site
   }, []);
 
   const flush = useCallback(async () => {
-    const queue = storage<Omit<RecordPunchV1, 'geofence'>[]>(QUEUE_KEY, []);
+    if (!queueKey) return;
+    const queue = storage<Omit<RecordPunchV1, 'geofence'>[]>(queueKey, []);
     const remaining: Omit<RecordPunchV1, 'geofence'>[] = [];
     for (const [index, punch] of queue.entries()) {
       try {
@@ -133,18 +153,21 @@ function MyClock({ sites, siteName }: { sites: ReturnType<typeof useSites>['site
         setError(reason as WorkforceApiError);
       }
     }
-    store(QUEUE_KEY, remaining);
+    store(queueKey, remaining);
     setPending(remaining);
     if (remaining.length < queue.length) await load();
-  }, [load]);
+  }, [load, queueKey]);
 
   useEffect(() => {
-    setPending(storage(QUEUE_KEY, []));
+    if (!queueKey) return;
+    const discarded = discardLegacyPunchQueue();
+    if (discarded > 0) setNotice(`${discarded} punch(es) saved on this device before per-person queues could not be attributed to anyone and were not sent.`);
+    setPending(storage(queueKey, []));
     void load().then(flush);
     const online = () => void flush();
     window.addEventListener('online', online);
     return () => window.removeEventListener('online', online);
-  }, [load, flush]);
+  }, [load, flush, queueKey]);
 
   const effective = (punches ?? []).filter((punch) => !punch.voided);
   const last = [...effective, ...pending.map((punch) => ({ kind: punch.kind, occurredAt: punch.occurredAt }))]
@@ -172,9 +195,9 @@ function MyClock({ sites, siteName }: { sites: ReturnType<typeof useSites>['site
       await load();
     } catch (reason) {
       const failure = reason as WorkforceApiError;
-      if (retryable(failure)) {
-        const queue = [...storage<Omit<RecordPunchV1, 'geofence'>[]>(QUEUE_KEY, []), input];
-        store(QUEUE_KEY, queue);
+      if (retryable(failure) && queueKey) {
+        const queue = [...storage<Omit<RecordPunchV1, 'geofence'>[]>(queueKey, []), input];
+        store(queueKey, queue);
         setPending(queue);
         setNotice('No connection: the punch is kept on this device with its original time and will be sent automatically.');
       } else {

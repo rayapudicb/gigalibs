@@ -1,11 +1,13 @@
 import { NextResponse } from 'next/server';
-import { universalRuleKernelStore } from '@/lib/universal-rule-kernel-store';
+import { isTenantRuleScope, TENANT_RULE_SCOPES, universalRuleKernelStore } from '@/lib/universal-rule-kernel-store';
 import { verifiedSession } from '@/lib/verified-session';
-import { canUseTenantModule } from '@/lib/module-access';
+import { canUseTenantModule, hasPermission } from '@/lib/module-access';
 import { hasSameOrigin } from '@/lib/same-origin';
 import { readBoundedBody } from '@/lib/authenticated-upstream';
 
 export const runtime = 'nodejs';
+
+const RULES_WRITE_PERMISSION = 'rules:write';
 
 export async function GET(req: Request) {
   const session = await verifiedSession(false);
@@ -34,6 +36,10 @@ export async function POST(req: Request) {
   if (!hasSameOrigin(req)) {
     return NextResponse.json({ error: 'Cross-origin mutation forbidden' }, { status: 403 });
   }
+  // WI-OI-120e (U3.2): reading Rule Studio is not enough to change a rule.
+  if (!hasPermission(session.context.permissions, RULES_WRITE_PERMISSION)) {
+    return NextResponse.json({ error: 'Changing rules requires the rules:write permission.' }, { status: 403 });
+  }
 
   const rawBody = await readBoundedBody(req);
   try {
@@ -43,6 +49,14 @@ export async function POST(req: Request) {
     if (!body.name || !body.ruleCode || !Array.isArray(body.conditions) || !body.action) {
       return NextResponse.json(
         { success: false, error: 'Missing required rule parameters (name, ruleCode, conditions, action)' },
+        { status: 400 },
+      );
+    }
+
+    // WI-OI-120e (U3.2, P0-04): a tenant cannot create a GLOBAL_SYSTEM rule, which would run for every tenant.
+    if (body.scope !== undefined && !isTenantRuleScope(body.scope)) {
+      return NextResponse.json(
+        { success: false, error: `A tenant rule may use only the ${TENANT_RULE_SCOPES.join(' or ')} scope` },
         { status: 400 },
       );
     }

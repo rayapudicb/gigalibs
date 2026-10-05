@@ -13,8 +13,10 @@ async function bootstrap() {
   }
   const logger = new Logger('Bootstrap');
   const config = loadConnectorHubRuntimeConfig();
+  // WI-OI-120e (U3.2, P0-08): keep each request's exact bytes, so a webhook signature is checked over what was sent.
   const app = await NestFactory.create(AppModule, {
     logger: ['error', 'warn', 'log'],
+    rawBody: true,
   });
 
   app.use(helmet());

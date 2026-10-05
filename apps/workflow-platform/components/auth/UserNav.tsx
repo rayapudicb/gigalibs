@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation, LanguageSelector } from '@/components/i18n';
 import type { VerifiedSession } from '../../lib/verified-session';
+import { clearOfflinePunchQueues } from '@/lib/offline-punch-queue';
 
 export function UserNav({ session }: { session: VerifiedSession }) {
   const router = useRouter();
@@ -52,6 +53,8 @@ export function UserNav({ session }: { session: VerifiedSession }) {
     try {
       const response = await fetch('/api/auth/logout', { method: 'POST' });
       if (!response.ok) throw new Error('Sign out could not be completed.');
+      // WI-OI-120e (U3.2, P1-25): the next person on this device must not see or send this person's queued punches.
+      clearOfflinePunchQueues();
       router.replace('/login');
       router.refresh();
     } catch (err) {

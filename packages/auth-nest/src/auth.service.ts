@@ -36,6 +36,12 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { type LegacyOrgScope, primaryVersionInForce, resolveTreeScope } from './organization-scope.js';
+import {
+  activeLoginLock,
+  clearLoginFailures,
+  loginThrottleKey,
+  recordLoginFailure,
+} from './login-throttle.js';
 
 @Injectable()
 export class AuthService {
@@ -46,6 +52,7 @@ export class AuthService {
   private readonly mfaEncryptionKey: string;
   private readonly mfaKeyVersion: string;
   private readonly mfaDecryptionKeys: ReadonlyMap<string, string>;
+  private unusablePasswordHashPromise?: Promise<string>;
 
   constructor() {
     const secret = process.env.JWT_ACCESS_SECRET;
@@ -87,18 +94,42 @@ export class AuthService {
   }
 
   async login(dto: LoginWithEmailDto): Promise<AuthResponse> {
+    // WI-OI-120e (U3.2, P1-20): a locked email is refused before any password check, and every failure is counted,
+    // whether or not the account exists.
+    const emailHash = loginThrottleKey(dto.email);
+    const lockedUntil = await activeLoginLock(emailHash);
+    if (lockedUntil) throw this.loginLocked(lockedUntil);
+
     const user = await prisma.user.findUnique({
       where: { email: dto.email },
     });
 
-    if (!user || user.status !== 'ACTIVE' || !user.passwordHash) {
+    // An unknown or unusable account still pays for a password check, so its answer takes as long as a wrong password.
+    const isValid = await verifyPassword(dto.password, user?.passwordHash ?? (await this.unusablePasswordHash()));
+    if (!user || user.status !== 'ACTIVE' || !user.passwordHash || !isValid) {
+      const failure = await recordLoginFailure(emailHash);
+      if (failure.lockedUntil) {
+        this.logger.warn(`Password login locked after ${failure.failedCount} failures. key=${emailHash.slice(0, 12)}`);
+        if (user) {
+          // The answer stays 401 even if the audit write fails, so a known account answers like an unknown one.
+          await prisma.auditLog
+            .create({
+              data: {
+                action: 'LOGIN',
+                resource: 'login_throttle',
+                resourceId: user.id,
+                userId: user.id,
+                metadata: { event: 'LOCKED', failedCount: failure.failedCount, lockedUntil: failure.lockedUntil.toISOString() },
+              },
+            })
+            .catch((error: unknown) =>
+              this.logger.error(`Login lock audit failed. error=${error instanceof Error ? error.name : 'UnknownError'}`),
+            );
+        }
+      }
       throw new UnauthorizedException('Invalid email or password');
     }
-
-    const isValid = await verifyPassword(dto.password, user.passwordHash);
-    if (!isValid) {
-      throw new UnauthorizedException('Invalid email or password');
-    }
+    await clearLoginFailures(emailHash);
 
     const memberships = await prisma.tenantMember.findMany({
       where: {
@@ -117,6 +148,25 @@ export class AuthService {
       user.id,
       selectedMembership?.tenantId,
       selectedMembership ? [selectedMembership.role] : [],
+    );
+  }
+
+  /** A valid hash of a random password nobody knows, so a login for an unknown account costs a full password check. */
+  private unusablePasswordHash(): Promise<string> {
+    this.unusablePasswordHashPromise ??= hashPassword(`${randomUUID()}-Aa1!${randomUUID()}`);
+    return this.unusablePasswordHashPromise;
+  }
+
+  private loginLocked(lockedUntil: Date): HttpException {
+    const retryAfterSeconds = Math.max(1, Math.ceil((lockedUntil.getTime() - Date.now()) / 1_000));
+    return new HttpException(
+      {
+        code: 'LOGIN_LOCKED',
+        message: 'Too many failed sign-in attempts. Try again after the lock expires.',
+        retryAt: lockedUntil.toISOString(),
+        retryAfterSeconds,
+      },
+      429,
     );
   }
 

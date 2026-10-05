@@ -111,6 +111,7 @@
       "TenantIsolationBinding",
       "TenantSubdomainBinding",
       "Session",
+      "LoginThrottle",
       "TotpCredential",
       "MfaRecoveryCode",
       "MfaAssistedRecovery",

@@ -60,6 +60,7 @@ export class ConnectorsService {
       SELECT 
         c.id, c.tenant_id, c.connector_code, c.name, c.slug, c.environment, c.auth_type,
         c.target_workflow_code, c.configuration, c.status, c.last_sync_at, c.events_count, c.deliver_to_analytics, c.place_delivery,
+        c.webhook_endpoint_id, (c.webhook_secret IS NOT NULL) AS webhook_secret_configured,
         c.created_at, c.updated_at,
         d.name AS definition_name, d.category, d.icon, d.supported_events
       FROM gigalibs_connectors.tenant_connections c
@@ -101,7 +102,10 @@ export class ConnectorsService {
       throw new NotFoundException(`Connection '${idOrSlug}' not found for tenant '${tenantId}'`);
     }
 
-    return res.rows[0];
+    // WI-OI-120e (U3.2, P0-08): the signing secret is shown once, when the connection is created, and never again;
+    // anyone holding it could forge this connection's webhooks.
+    const { webhook_secret: webhookSecret, ...connection } = res.rows[0];
+    return { ...connection, webhook_secret_configured: Boolean(webhookSecret) };
   }
 
   async createConnection(tenantId: string, dto: CreateConnectionDto): Promise<any> {
@@ -341,7 +345,7 @@ export class ConnectorsService {
 
     const checks: Record<string, string> = {
       schema_validation: 'PASSED',
-      webhook_listener: conn.webhook_secret ? 'ACTIVE' : 'NOT_CONFIGURED',
+      webhook_listener: conn.webhook_secret_configured ? 'ACTIVE' : 'NOT_CONFIGURED',
       target_pipeline: conn.target_workflow_code ? 'ATTACHED' : 'UNASSIGNED',
     };
 

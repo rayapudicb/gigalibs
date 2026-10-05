@@ -162,11 +162,14 @@ const DEFAULT_PROCUREMENT_DICTIONARY_MANIFEST: CompiledDictionaryManifestV1 = {
 export interface UniversalProcurementWorkspaceProps {
   readonly tenantId?: string;
   readonly orgUnitId?: string;
+  /** The signed-in user's permissions, for the dictionary renderer (WI-OI-120e). */
+  readonly permissions?: readonly string[];
 }
 
 export function UniversalProcurementWorkspace({
   tenantId = 'default-tenant',
   orgUnitId = 'default-org',
+  permissions = [],
 }: UniversalProcurementWorkspaceProps) {
   const [activeTab, setActiveTab] = useState<WorkspaceTab>('overview');
   const [searchTerm, setSearchTerm] = useState('');
@@ -528,6 +531,7 @@ export function UniversalProcurementWorkspace({
 
               <div className="mt-4">
                 <DictionaryRenderer
+                  permissions={permissions}
                   manifest={DEFAULT_PROCUREMENT_DICTIONARY_MANIFEST}
                   values={customExtensions}
                   onChange={handleCustomFieldChange}

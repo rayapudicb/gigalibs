@@ -203,7 +203,8 @@ const DEFAULT_PRODUCT_DICTIONARY_MANIFEST: CompiledDictionaryManifestV1 = {
   messages: [],
 };
 
-export function ProductCatalogueWorkspace() {
+/** `permissions` are the signed-in user's, for the dictionary renderer (WI-OI-120e). */
+export function ProductCatalogueWorkspace({ permissions = [] }: { readonly permissions?: readonly string[] } = {}) {
   const [products, setProducts] = useState<ProductV1[]>([]);
   const [categories, setCategories] = useState<ProductCategoryV1[]>([]);
   const [uoms, setUoms] = useState<UomDefinitionV1[]>([]);
@@ -1147,6 +1148,7 @@ export function ProductCatalogueWorkspace() {
 
                       <div className="p-4 bg-ui-bg-subtle rounded-xl border border-ui-border-base">
                         <DictionaryRenderer
+                          permissions={permissions}
                           manifest={runtimeManifest}
                           values={currentExtensions}
                           errors={extensionErrors}
@@ -1336,6 +1338,7 @@ export function ProductCatalogueWorkspace() {
                 {showCreateExtensions && (
                   <div className="pt-2 border-t border-ui-border-base">
                     <DictionaryRenderer
+                      permissions={permissions}
                       manifest={runtimeManifest}
                       values={createExtensions}
                       errors={createExtensionErrors}

@@ -1,3 +1,4 @@
+import { pruneLoginThrottles } from '@gigalibs/auth-nest';
 import { Prisma, prisma } from '@gigalibs/db';
 import {
   Injectable,
@@ -67,6 +68,10 @@ export class DataRetentionWorker implements OnApplicationBootstrap, OnApplicatio
           );
         }
       }
+      // WI-OI-120e (U3.2): login throttle rows with no live lock or window are removed after a day.
+      await pruneLoginThrottles().catch((error: unknown) =>
+        this.logger.error(`Login throttle pruning failed. error=${error instanceof Error ? error.name : 'UnknownError'}`),
+      );
     } finally {
       this.running = false;
     }

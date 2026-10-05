@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { createHmac } from 'node:crypto';
+import { createHash, createHmac } from 'node:crypto';
+import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 import { WebhooksService } from './webhooks.service.js';
 import type { DatabaseService } from '../database/database.service.js';
 
@@ -69,7 +70,9 @@ describe('WebhooksService (CN-04 Signature & Ingestion)', () => {
     });
   });
 
+  // WI-OI-120e (U3.2, P0-08): the endpoint ID in the URL names the connection and so the tenant; a header never does.
   describe('handleInboundWebhook Ingestion Lifecycle', () => {
+    const endpointId = '6f1c2a7e-4b8d-4c3a-9e2f-0a1b2c3d4e5f';
     const mockConnection = {
       id: 'conn-wh-01',
       tenant_id: 'tenant-corp-01',
@@ -80,14 +83,17 @@ describe('WebhooksService (CN-04 Signature & Ingestion)', () => {
       target_workflow_code: 'WF-O2C',
       connector_code: 'SALESFORCE_CRM',
     };
+    const body = (payload: unknown) => Buffer.from(JSON.stringify(payload));
+    const sign = (raw: Buffer) => createHmac('sha256', mockConnection.webhook_secret).update(raw).digest('hex');
+
+    beforeEach(() => {
+      mockDb.relayCall = vi.fn().mockResolvedValue([{ tenant_id: 'tenant-corp-01', connection_id: 'conn-wh-01' }]);
+    });
 
     it('processes and ingests valid webhook and dispatches to workflow', async () => {
       process.env.WORKFLOW_STUDIO_API_URL = 'http://workflow-studio.gigalibs.internal:4000';
       const payload = { deal_id: 'OPP-101', amount: 75000 };
-      const rawPayload = JSON.stringify(payload);
-      const signature = createHmac('sha256', mockConnection.webhook_secret)
-        .update(rawPayload)
-        .digest('hex');
+      const raw = body(payload);
 
       mockDb.query
         .mockResolvedValueOnce({ rowCount: 1, rows: [mockConnection] }) // find connection
@@ -104,30 +110,49 @@ describe('WebhooksService (CN-04 Signature & Ingestion)', () => {
 
       try {
         const result = await webhooksService.handleInboundWebhook(
-          'salesforce-crm',
+          endpointId,
+          raw,
           payload,
-          { 'x-sfdc-signature': signature },
+          { 'x-sfdc-signature': sign(raw), authorization: 'Basic c2VjcmV0' },
           '192.168.1.1',
-          'tenant-corp-01',
         );
 
+        expect(mockDb.relayCall).toHaveBeenCalledWith('resolve_webhook_endpoint', [endpointId]);
+        expect(mockDb.query.mock.calls[0]?.[0]).toBe('tenant-corp-01');
         expect(result.success).toBe(true);
         expect(result.status).toBe('DISPATCHED');
         expect(result.dispatched_run_id).toBe('run-o2c-01');
         expect(result.pipeline_status).toBe('COMPLETED');
         expect(result.steps_executed).toBe(2);
+        const journalInsert = mockDb.query.mock.calls[2]?.[2] as unknown[];
+        expect(journalInsert[6]).toBe(raw.toString('utf8'));
+        expect(JSON.parse(String(journalInsert[7]))).not.toHaveProperty('authorization');
       } finally {
         global.fetch = originalFetch;
         delete process.env.WORKFLOW_STUDIO_API_URL;
       }
     });
 
+    it('checks the signature over the exact bytes received, not a re-serialised copy', async () => {
+      const raw = Buffer.from('{ "deal_id" : "OPP-SPACED",  "amount": 1 }');
+      mockDb.query
+        .mockResolvedValueOnce({ rowCount: 1, rows: [mockConnection] })
+        .mockResolvedValueOnce({ rowCount: 0, rows: [] })
+        .mockResolvedValue({ rowCount: 1, rows: [] });
+      const result = await webhooksService.handleInboundWebhook(
+        endpointId,
+        raw,
+        JSON.parse(raw.toString('utf8')),
+        { 'x-signature-sha256': `sha256=${sign(raw)}` },
+      );
+      // No Workflow Studio address is configured here, so the delivery is stored and not dispatched.
+      expect(result.status).toBe('INGESTED');
+      expect(result.payload_sha256).toBe(createHash('sha256').update(raw).digest('hex'));
+    });
+
     it('identifies duplicate webhook and returns prior receipt without re-dispatching', async () => {
       const payload = { deal_id: 'OPP-DUP', amount: 5000 };
-      const rawPayload = JSON.stringify(payload);
-      const signature = createHmac('sha256', mockConnection.webhook_secret)
-        .update(rawPayload)
-        .digest('hex');
+      const raw = body(payload);
 
       mockDb.query
         .mockResolvedValueOnce({ rowCount: 1, rows: [mockConnection] }) // find connection
@@ -145,13 +170,10 @@ describe('WebhooksService (CN-04 Signature & Ingestion)', () => {
       global.fetch = vi.fn(); // Should NOT be called
 
       try {
-        const result = await webhooksService.handleInboundWebhook(
-          'salesforce-crm',
-          payload,
-          { 'x-sfdc-signature': signature, 'idempotency-key': 'idemp-opp-dup' },
-          undefined,
-          'tenant-corp-01',
-        );
+        const result = await webhooksService.handleInboundWebhook(endpointId, raw, payload, {
+          'x-sfdc-signature': sign(raw),
+          'idempotency-key': 'idemp-opp-dup',
+        });
 
         expect(result.success).toBe(true);
         expect(result.status).toBe('DUPLICATE');
@@ -164,38 +186,74 @@ describe('WebhooksService (CN-04 Signature & Ingestion)', () => {
     });
 
     it('rejects disabled connection with BadRequestException', async () => {
-      const disabledConn = { ...mockConnection, status: 'DISABLED' };
-      mockDb.query.mockResolvedValueOnce({ rowCount: 1, rows: [disabledConn] });
-
+      mockDb.query.mockResolvedValueOnce({ rowCount: 1, rows: [{ ...mockConnection, status: 'DISABLED' }] });
       await expect(
-        webhooksService.handleInboundWebhook(
-          'salesforce-crm',
-          { any: 'data' },
-          {},
-          undefined,
-          'tenant-corp-01',
-        ),
-      ).rejects.toThrow('currently disabled');
+        webhooksService.handleInboundWebhook(endpointId, body({ any: 'data' }), { any: 'data' }, {}),
+      ).rejects.toThrow('disabled');
     });
 
     it('rejects unauthorized webhook when signature is invalid', async () => {
       mockDb.query.mockResolvedValueOnce({ rowCount: 1, rows: [mockConnection] });
-
       await expect(
-        webhooksService.handleInboundWebhook(
-          'salesforce-crm',
-          { deal_id: 'OPP-1' },
-          { 'x-sfdc-signature': 'invalid_signature_hex_0000000000000000000000000000000000000000000000000000000000000000' },
-          undefined,
-          'tenant-corp-01',
-        ),
+        webhooksService.handleInboundWebhook(endpointId, body({ deal_id: 'OPP-1' }), { deal_id: 'OPP-1' }, {
+          'x-sfdc-signature': 'invalid_signature_hex_0000000000000000000000000000000000000000000000000000000000000000',
+        }),
       ).rejects.toThrow('Webhook authentication failed');
     });
 
-    it('rejects a webhook without a server-resolved tenant', async () => {
+    it('refuses a connection that has no signing secret instead of skipping the check', async () => {
+      mockDb.query.mockResolvedValueOnce({ rowCount: 1, rows: [{ ...mockConnection, webhook_secret: null }] });
       await expect(
-        webhooksService.handleInboundWebhook('salesforce-crm', { any: 'data' }, {}),
-      ).rejects.toThrow('x-tenant-id header is required');
+        webhooksService.handleInboundWebhook(endpointId, body({ deal_id: 'OPP-1' }), { deal_id: 'OPP-1' }, {}),
+      ).rejects.toThrow('no signing secret');
+      expect(mockDb.query).toHaveBeenCalledTimes(1);
+    });
+
+    it('answers 404 for an unknown endpoint and ignores any tenant header', async () => {
+      mockDb.relayCall = vi.fn().mockResolvedValue([]);
+      await expect(
+        webhooksService.handleInboundWebhook(endpointId, body({ any: 'data' }), { any: 'data' }, { 'x-tenant-id': 'tenant-corp-01' }),
+      ).rejects.toBeInstanceOf(NotFoundException);
+      expect(mockDb.query).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('sendTestWebhook', () => {
+    const connection = {
+      id: 'conn-wh-02',
+      tenant_id: 'tenant-a',
+      name: 'Coupa',
+      slug: 'coupa',
+      status: 'READY',
+      webhook_secret: 'whsec_test_delivery',
+      target_workflow_code: null,
+      connector_code: 'COUPA',
+    };
+
+    it("signs the payload with the connection's secret and ingests it for the caller's tenant only", async () => {
+      mockDb.query
+        .mockResolvedValueOnce({ rowCount: 1, rows: [connection] })
+        .mockResolvedValueOnce({ rowCount: 0, rows: [] })
+        .mockResolvedValue({ rowCount: 1, rows: [] });
+      const result = await webhooksService.sendTestWebhook('tenant-a', 'coupa', { event_type: 'test.ping' });
+      expect(result).toMatchObject({ success: true, status: 'INGESTED', test_delivery: true, connection_id: 'conn-wh-02' });
+      expect(mockDb.query.mock.calls.every((call: unknown[]) => call[0] === 'tenant-a')).toBe(true);
+      expect(String(mockDb.query.mock.calls[1]?.[2]?.[1])).toMatch(/^test-/);
+    });
+
+    it("answers 404 for another tenant's connection", async () => {
+      mockDb.query.mockResolvedValueOnce({ rowCount: 0, rows: [] });
+      await expect(webhooksService.sendTestWebhook('tenant-b', 'coupa', { event_type: 'test.ping' })).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
+    });
+
+    it('refuses a connection without a signing secret, and a payload that is not an object', async () => {
+      mockDb.query.mockResolvedValueOnce({ rowCount: 1, rows: [{ ...connection, webhook_secret: null }] });
+      await expect(webhooksService.sendTestWebhook('tenant-a', 'coupa', { event_type: 'x' })).rejects.toBeInstanceOf(ConflictException);
+      await expect(webhooksService.sendTestWebhook('tenant-a', 'coupa', ['not', 'an', 'object'])).rejects.toBeInstanceOf(
+        BadRequestException,
+      );
     });
   });
 });

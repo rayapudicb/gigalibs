@@ -49,6 +49,8 @@ spec:
     pages:
       - route: /finance
         component: FinancialOperationsWorkspace
+        # WI-OI-120e (U3.2): the dictionary renderer gets the signed-in user's permissions.
+        sessionPermissions: true
   api:
     application: apps/api
     port: 4790

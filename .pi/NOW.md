@@ -16,6 +16,12 @@ to one page. Replace old content rather than appending to it, and update it at t
   2026-10-05). SCIM tests 21 passed/6 skipped; full `pnpm test` 2,467 passed/171 skipped. Deployed 09:08Z.
   P0-06 stays open until the independent Security review (D7). Residual P2: a custom role holding
   `users:create`/`users:update` can assign TENANT_ADMIN. Evidence: `.pi/work/WI-OI-120.md` U3.1.
+- **WI-OI-120e (U3.2): Review, committed, not deployed.** Owner approved 2026-10-05. Login lockout (P1-20), Rule Studio
+  tenant boundary (P0-04), Connector Hub webhook by endpoint ID with mandatory signature (P0-08), per-person punch
+  queue (P1-25), renderer deny-by-default (P1-24). `pnpm build`, `pnpm test` (2,495 passed) and `pnpm verify` pass
+  (known drift; 8 proofs NOT RUN). Adds control migration `20261005000000_login_throttle` and Connector Hub
+  migration 9. Evidence: `.pi/work/WI-OI-120.md` U3.2. Owner question open: add the Governor fix (P1-11, deployed in
+  the control plane) to U3.2?
 - **One writer:** the owner chose this session (option 1, 2026-10-05); the peer session was told.
 - **U1 remaining recovery/deployment work:**
   - **Part A is committed (`03ebd0c`).** Evidence: `.pi/work/WI-OI-120.md`.
@@ -58,8 +64,9 @@ to one page. Replace old content rather than appending to it, and update it at t
 
 1. Owner: grant Catalogue, Inventory, Procurement, Orders and Finance to the UAT tenant in Platform Control Tower;
    then a signed-in check of each module's API on this instance.
-2. Next U3 slices (P0-04, P0-05, P0-07, P0-08, P0-10, P1-20) each on an approved card; independent Security
-   review before any defect closes.
+2. U3.2: images, backup and the owner's deploy (control-plane and Connector Hub
+   migrations). P0-05, P0-07, P0-10, P1-10 and the P1-11 prototypes are in modules not running here; they are fixed
+   as each module moves onto the module SDK (U29). Independent Security review before any defect closes.
 3. Then U4–U6 (Dictionary & Master Data hardening), U7–U18 (module by module Playwright flows). Plan:
    `docs/audits/2026-10-04-production-readiness/remediation-backlog.md`.
 

@@ -82,6 +82,38 @@ export interface GenericRule {
   updatedAt: string;
 }
 
+/** A rule that does not exist, or that belongs to another tenant: both answer 404, so IDs reveal nothing. */
+export class RuleNotFoundError extends Error {
+  constructor(id: string) {
+    super(`Rule ${id} not found`);
+    this.name = 'RuleNotFoundError';
+  }
+}
+
+/** Scopes a tenant may give its own rules. GLOBAL_SYSTEM rules apply to every tenant and only the platform owns them. */
+export const TENANT_RULE_SCOPES = ['TENANT_DEFAULT', 'PIPELINE_GATEWAY'] as const satisfies readonly GenericRule['scope'][];
+
+/** The fields a tenant may change on its own rule. Identity, ownership, scope escalation and statistics are not among them. */
+export type TenantRuleUpdate = Partial<
+  Pick<GenericRule, 'ruleCode' | 'name' | 'description' | 'triggerEvent' | 'lifecycleStatus' | 'priority' | 'conditions' | 'action'>
+> & { scope?: (typeof TENANT_RULE_SCOPES)[number] };
+
+const TENANT_UPDATABLE_FIELDS = [
+  'ruleCode',
+  'name',
+  'description',
+  'triggerEvent',
+  'scope',
+  'lifecycleStatus',
+  'priority',
+  'conditions',
+  'action',
+] as const;
+
+export function isTenantRuleScope(scope: unknown): scope is (typeof TENANT_RULE_SCOPES)[number] {
+  return typeof scope === 'string' && (TENANT_RULE_SCOPES as readonly string[]).includes(scope);
+}
+
 export interface EvaluationVerdict {
   evaluationId: string;
   tenantId: string;
@@ -530,16 +562,30 @@ class UniversalRuleKernelStore {
     return newRule;
   }
 
-  updateRule(id: string, updates: Partial<GenericRule>): GenericRule {
+  // WI-OI-120e (U3.2, P0-04): every change names the tenant, and acts only on that tenant's own rules. A rule of
+  // another tenant, and a GLOBAL_SYSTEM rule owned by the platform, answer as not found.
+  private tenantRule(id: string, tenantId: string): GenericRule {
     const rule = this.rules.get(id);
-    if (!rule) throw new Error(`Rule ${id} not found`);
+    if (!rule || rule.tenantId !== tenantId || rule.scope === 'GLOBAL_SYSTEM') throw new RuleNotFoundError(id);
+    return rule;
+  }
+
+  updateRule(id: string, tenantId: string, updates: TenantRuleUpdate): GenericRule {
+    const rule = this.tenantRule(id, tenantId);
+    if (updates.scope !== undefined && !isTenantRuleScope(updates.scope)) {
+      throw new Error(`A tenant rule may use only the ${TENANT_RULE_SCOPES.join(' or ')} scope`);
+    }
     if (rule.systemLocked && updates.lifecycleStatus && updates.lifecycleStatus !== 'ACTIVE') {
       throw new Error(`Rule ${rule.ruleCode} is a statutory system locked rule and cannot be deactivated`);
     }
 
+    const allowed: TenantRuleUpdate = {};
+    for (const field of TENANT_UPDATABLE_FIELDS) {
+      if (updates[field] !== undefined) Object.assign(allowed, { [field]: updates[field] });
+    }
     const updatedRule: GenericRule = {
       ...rule,
-      ...updates,
+      ...allowed,
       updatedAt: new Date().toISOString(),
     };
     this.rules.set(id, updatedRule);
@@ -547,9 +593,8 @@ class UniversalRuleKernelStore {
     return updatedRule;
   }
 
-  toggleHijack(id: string, hijackReason: string): GenericRule {
-    const rule = this.rules.get(id);
-    if (!rule) throw new Error(`Rule ${id} not found`);
+  toggleHijack(id: string, tenantId: string, hijackReason: string): GenericRule {
+    const rule = this.tenantRule(id, tenantId);
     if (rule.systemLocked) throw new Error(`Cannot hijack statutory system rule ${rule.ruleCode}`);
 
     const nextStatus = rule.lifecycleStatus === 'HIJACKED' ? 'ACTIVE' : 'HIJACKED';
@@ -559,9 +604,8 @@ class UniversalRuleKernelStore {
     return rule;
   }
 
-  deleteRule(id: string): boolean {
-    const rule = this.rules.get(id);
-    if (!rule) return false;
+  deleteRule(id: string, tenantId: string): boolean {
+    const rule = this.tenantRule(id, tenantId);
     if (rule.systemLocked) throw new Error(`Cannot delete statutory system rule ${rule.ruleCode}`);
     return this.rules.delete(id);
   }

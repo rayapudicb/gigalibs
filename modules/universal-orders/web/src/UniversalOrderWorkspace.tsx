@@ -166,11 +166,14 @@ const DEFAULT_ORDERS_DICTIONARY_MANIFEST: CompiledDictionaryManifestV1 = {
 export interface UniversalOrderWorkspaceProps {
   readonly tenantId?: string;
   readonly orgUnitId?: string;
+  /** The signed-in user's permissions, for the dictionary renderer (WI-OI-120e). */
+  readonly permissions?: readonly string[];
 }
 
 export function UniversalOrderWorkspace({
   tenantId = 'default-tenant',
   orgUnitId = 'default-org',
+  permissions = [],
 }: UniversalOrderWorkspaceProps) {
   const [activeTab, setActiveTab] = useState<WorkspaceTab>('overview');
   const [searchTerm, setSearchTerm] = useState('');
@@ -592,6 +595,7 @@ export function UniversalOrderWorkspace({
 
               <div className="mt-4">
                 <DictionaryRenderer
+                  permissions={permissions}
                   manifest={DEFAULT_ORDERS_DICTIONARY_MANIFEST}
                   values={customExtensions}
                   onChange={handleCustomFieldChange}

@@ -1132,13 +1132,28 @@ for (const [name, manifest] of modules) {
             .map(([key, value]) => ` ${key}={${JSON.stringify(value)}}`)
             .join('')
         : '';
-      body = [
-        `import { ${page.component} } from '${ui.package}';`,
-        '',
-        'export default function Page() {',
-        `  return <${page.component}${attributes} />;`,
-        '}',
-      ];
+      // WI-OI-120e (U3.2, P1-24): a page that renders dictionary fields passes the signed-in user's permissions, so
+      // the renderer can deny by default. The server still enforces every write.
+      if (page.sessionPermissions !== undefined && page.sessionPermissions !== true)
+        fail(at, 'sessionPermissions must be true when present');
+      body =
+        page.sessionPermissions === true
+          ? [
+              "import { verifiedSession } from '@/lib/verified-session';",
+              `import { ${page.component} } from '${ui.package}';`,
+              '',
+              'export default async function Page() {',
+              '  const session = await verifiedSession(false);',
+              `  return <${page.component}${attributes} permissions={session.context?.permissions ?? []} />;`,
+              '}',
+            ]
+          : [
+              `import { ${page.component} } from '${ui.package}';`,
+              '',
+              'export default function Page() {',
+              `  return <${page.component}${attributes} />;`,
+              '}',
+            ];
     } else if (page.unavailable !== undefined) {
       const status = page.unavailable;
       if (!isText(status?.title) || !isText(status?.summary))

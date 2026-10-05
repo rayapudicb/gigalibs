@@ -50,7 +50,9 @@ interface TenantConnection {
   slug: string;
   environment: string;
   auth_type: string;
-  webhook_secret: string;
+  // WI-OI-120e (U3.2): the signing secret is shown only when a connection is created; reads say whether one is set.
+  webhook_secret_configured?: boolean;
+  webhook_endpoint_id?: string;
   target_workflow_code: string | null;
   configuration: Record<string, any>;
   status: 'READY' | 'SYNCING' | 'ERROR' | 'DISABLED';
@@ -121,6 +123,8 @@ const SAMPLE_WEBHOOK_PAYLOADS: Record<string, any> = {
   },
 };
 
+const TEST_WEBHOOK_PAYLOAD = { event_type: 'test.ping', note: 'Test delivery from the Connections page' };
+
 export default function ConnectionsPage() {
   const { t } = useCurrency();
   const [activeTab, setActiveTab] = useState<'connections' | 'catalog' | 'journal' | 'sandbox'>('connections');
@@ -144,10 +148,8 @@ export default function ConnectionsPage() {
   const [schedulingId, setSchedulingId] = useState<string | null>(null);
   // WI-OI-104d: the pull source (generic REST adapter) of one connection at a time.
   const [pullSourceId, setPullSourceId] = useState<string | null>(null);
-  const [selectedSimSlug, setSelectedSimSlug] = useState<string>('salesforce-crm');
-  const [simPayloadText, setSimPayloadText] = useState<string>(
-    JSON.stringify(SAMPLE_WEBHOOK_PAYLOADS['salesforce-crm'], null, 2)
-  );
+  const [selectedSimSlug, setSelectedSimSlug] = useState<string>('');
+  const [simPayloadText, setSimPayloadText] = useState<string>(JSON.stringify(TEST_WEBHOOK_PAYLOAD, null, 2));
   const [simulating, setSimulating] = useState<boolean>(false);
   const [simResult, setSimResult] = useState<any | null>(null);
 
@@ -197,6 +199,13 @@ export default function ConnectionsPage() {
     void loadData();
   }, [loadData]);
 
+  // The test-webhook panel starts on the tenant's first connection, never on a fixed slug.
+  useEffect(() => {
+    if (connections.length > 0 && !connections.some((connection) => connection.slug === selectedSimSlug)) {
+      setSelectedSimSlug(connections[0]!.slug);
+    }
+  }, [connections, selectedSimSlug]);
+
   // Test connection live
   const handleTestConnection = async (id: string) => {
     setTestingId(id);
@@ -237,7 +246,7 @@ export default function ConnectionsPage() {
   // Change simulation slug
   const handleSelectSimSlug = (slug: string) => {
     setSelectedSimSlug(slug);
-    const preset = SAMPLE_WEBHOOK_PAYLOADS[slug] || { event: 'sample_payload' };
+    const preset = SAMPLE_WEBHOOK_PAYLOADS[slug] || TEST_WEBHOOK_PAYLOAD;
     setSimPayloadText(JSON.stringify(preset, null, 2));
     setSimResult(null);
   };
@@ -256,18 +265,16 @@ export default function ConnectionsPage() {
         throw new Error('Payload must be valid JSON');
       }
 
-      const res = await fetch(`/api/connectors-hub/webhooks/${selectedSimSlug}`, {
+      if (!selectedSimSlug) throw new Error('Create a connection first.');
+      // WI-OI-120e (U3.2, P0-08): the hub signs this test with the connection's secret, for the signed-in tenant only.
+      const res = await fetch(`/api/connectors-hub/connections/${encodeURIComponent(selectedSimSlug)}/test-webhook`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-tenant-id': 'tenant-corp-01',
-          'Idempotency-Key': `sim-${Date.now()}`,
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(parsed),
       });
 
       const data = await res.json();
-      if (!res.ok || !data.success) throw new Error(data.message || 'Webhook rejected');
+      if (!res.ok || !data.success) throw new Error(data.detail || data.message || 'Test webhook rejected');
 
       setSimResult(data);
       if (data.status === 'DISPATCHED') {
@@ -277,7 +284,7 @@ export default function ConnectionsPage() {
       }
       void loadData();
     } catch (err: any) {
-      setError(err.message || 'Webhook simulation failed.');
+      setError(err.message || 'Test webhook failed.');
     } finally {
       setSimulating(false);
     }
@@ -780,10 +787,10 @@ export default function ConnectionsPage() {
             <Container className="p-5 border border-ui-border-base bg-ui-bg-base shadow-elevation-card-rest space-y-4">
               <div className="flex items-center justify-between">
                 <Heading level="h2" className="text-base font-semibold text-ui-fg-base">
-                  Simulate Inbound Webhook
+                  Send Test Webhook
                 </Heading>
                 <Badge color="blue" size="small">
-                  PORT 4100 LIVE
+                  Signed by the hub
                 </Badge>
               </div>
 
@@ -802,6 +809,17 @@ export default function ConnectionsPage() {
                     </option>
                   ))}
                 </select>
+                {(() => {
+                  const selected = connections.find((c) => c.slug === selectedSimSlug);
+                  if (!selected?.webhook_endpoint_id) return null;
+                  return (
+                    <p className="mt-2 text-xs text-ui-fg-subtle break-all">
+                      Inbound webhook path for the provider:{' '}
+                      <code className="font-mono text-ui-fg-base">/api/connectors/v1/webhooks/{selected.webhook_endpoint_id}</code>
+                      {selected.webhook_secret_configured ? '' : ' (no signing secret: webhooks are refused)'}
+                    </p>
+                  );
+                })()}
               </div>
 
               <div>
@@ -826,7 +844,7 @@ export default function ConnectionsPage() {
                 isLoading={simulating}
               >
                 <PlaySolid className="w-4 h-4 mr-2" />
-                Dispatch Inbound Webhook Event
+                Send test webhook
               </Button>
             </Container>
           </div>

@@ -46,6 +46,12 @@ export const TENANT_EXPORT_INVENTORY = Object.freeze([
     'Recovery-code digests remain authentication secrets.',
   ),
   entry(
+    'LoginThrottle',
+    undefined,
+    'EXCLUDE_SECURITY',
+    'Failed-login counters keyed by an email hash are a platform security control, not tenant data.',
+  ),
+  entry(
     'MfaAssistedRecovery',
     'mfa_assisted_recoveries',
     'EXPORT_REDACTED',

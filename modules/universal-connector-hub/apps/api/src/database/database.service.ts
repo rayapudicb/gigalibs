@@ -12,6 +12,8 @@ export const HUB_DEFINER_FUNCTIONS = [
   'relay_lease_geospatial_places',
   'relay_settle_geospatial_place',
   'outbox_sweep',
+  // WI-OI-120e (U3.2, P0-08): the webhook receiver's only cross-tenant read, the owner of one endpoint ID.
+  'resolve_webhook_endpoint',
 ] as const;
 export type HubDefinerFunction = (typeof HUB_DEFINER_FUNCTIONS)[number];
 

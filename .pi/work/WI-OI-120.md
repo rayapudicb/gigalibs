@@ -391,3 +391,124 @@ the named human Security review that production requires.
   - Playwright smoke (UAT administrator login);
   - independent Security review of U3.1 before P0-06 closes.
 - Rollback: tag `03ebd0c366b6-ff554c98771d` plus that backup. The disk guard removed the other `007e686…` images.
+
+## WI-OI-120e (U3.2): security defects in code that runs on the UAT instance (2026-10-05)
+
+Approved by the owner 2026-10-05 with the proposed lockout (5 failures / 15 minutes). Implemented by the primary
+session. Each finding has a test that fails on the old code. Nothing is closed until the named Security reviewer (D7)
+accepts it.
+
+### P1-20 Login throttle and lockout
+
+- **Change:**
+  - `packages/auth-nest/src/login-throttle.ts`, used by `AuthService.login`.
+  - Control migration `20261005000000_login_throttle` and Prisma model `LoginThrottle`.
+  - The control plane's retention worker removes idle rows after a day.
+- **Behaviour:**
+  - Failures are counted per SHA-256 of the normalised email. Unknown, disabled and password-less accounts are counted
+    the same way and pay for a password check against a dummy hash.
+  - The fifth failure within 15 minutes locks the email for 15 minutes. While locked, the login answers 429
+    `LOGIN_LOCKED` before any lookup.
+  - A success clears the count. Times come from the database clock.
+  - A lock on an existing account is audited (`login_throttle`, `LOCKED`). If the audit write fails, the answer is
+    still 401.
+- **Web sign-in:** says "Try again in N minute(s)" and passes `Retry-After`.
+- **Tests:**
+  - `login-throttle.spec.ts`: 8 tests; 6 fail on the old code.
+  - `login-throttle.integration.test.ts`: 7 tests on an isolated PostgreSQL 16 database (`login_throttle_proof` on
+    the throwaway server, port 55433). They cover:
+    - the lock on the fifth failure;
+    - the restart after the lock expires;
+    - the restart after the window passes;
+    - 20 concurrent failures all counted;
+    - clearing after a success;
+    - pruning;
+    - hash-only keys.
+  - `login-lockout-message.test.ts`: 3 tests. `auth-boundary-regression.test.ts` still passes (69 tests).
+- **Limits:**
+  - Per-network-address limits belong at the ingress (production track).
+  - Anyone who knows an email can lock that account for 15 minutes; this is inherent to account lockout.
+
+### P0-04 Rule Studio
+
+- **Change:**
+  - Update, hijack and delete act only on the signed-in tenant's own rules. Another tenant's rule, and a
+    `GLOBAL_SYSTEM` rule, answer 404.
+  - Only listed fields can change: never `id`, `tenantId`, `systemLocked` or the statistics.
+  - A tenant cannot create or move a rule into `GLOBAL_SYSTEM`, which would run for every tenant.
+  - New: changing a rule needs `rules:write`. Before this, `rules:read` was enough.
+- **Tests:**
+  - `rule-kernel-tenant-boundary.test.ts`: 6 tests; 5 fail on the old code. The sixth is the positive control.
+  - `universal-rule-kernel.test.ts` is updated for the tenant argument.
+- **Still open:**
+  - In-memory storage and the seeded rules (U21).
+  - No built-in role holds any `rules:` permission, so only a custom role can open Rule Studio. Which roles should
+    get it is decided in U21.
+
+### P0-08 Connector Hub inbound webhook
+
+- **Change:**
+  - Hub migration `000009_inbound_webhook_endpoints`:
+    - adds an unguessable `webhook_endpoint_id` (UUID) to every connection, backfilling existing ones;
+    - adds a SECURITY DEFINER `resolve_webhook_endpoint` that returns only the tenant and the connection.
+  - Contract 8 → 9 in the runtime config, both compose pins and the tests.
+- **The webhook:**
+  - It is `POST /api/connectors/v1/webhooks/{endpointId}`. The tenant comes only from the endpoint, and `X-Tenant-Id`
+    is ignored.
+  - A connection without a signing secret refuses.
+  - The HMAC is checked over the raw request bytes (Nest `rawBody`). `payload_sha256` hashes those bytes.
+  - `Authorization` and cookie headers are no longer kept in the journal.
+- **New finding, fixed here:** `GET connections/{id}` returned the signing secret to any user with
+  `connections:read`, who could then forge webhooks.
+  - The secret is now shown once, at creation.
+  - Reads give `webhook_secret_configured` and the endpoint ID.
+- **Connections page:**
+  - The simulate panel sent a fixed `tenant-corp-01` to a route the proxy does not expose. It is now "Send test
+    webhook" on the signed route `connections/{id}/test-webhook` (`connections:test`); the hub signs and ingests the
+    test for the caller's tenant.
+  - The panel shows the endpoint path. The "PORT 4100 LIVE" claim and the seeded default slug are gone.
+- **Tests:**
+  - `webhooks.service.test.ts`: 14 tests.
+  - `webhooks.integration.test.ts`: 6 tests over real HTTP on PostgreSQL, using the real migrations and the
+    non-superuser runtime role (RLS forced). They cover:
+    - the header-only forgery (401);
+    - a wrong secret (401);
+    - raw-bytes acceptance once, then a duplicate;
+    - 404 and 400 endpoints;
+    - the test delivery by tenant and permission;
+    - a connection without a secret (401).
+  - Whole hub suite with the integration database: 63 tests.
+  - `connector-hub-boundary.test.ts`: 4 tests.
+- **Migration proof:**
+  - 000001–000009 on an empty database.
+  - 000009 on a restore of backup `gigalibs_backup_20261005_084054Z`: 16 of 16 connections got distinct endpoint IDs,
+    and the ledger is at 9.
+- **Note:** explicit `@Inject` was added to the webhook controllers, the service and the hub guard, so tests can wire
+  Nest without decorator metadata. Production behaviour is unchanged.
+- **Still open:**
+  - Dispatch to Workflow Studio still sends `x-tenant-id`. This is P0-05 scope; Workflow Studio is not deployed.
+  - Webhook secrets are stored unencrypted (new P2).
+  - The generic HMAC does not cover the timestamp header. Replay protection rests on the idempotency key.
+
+### P1-25 Offline punch queue
+
+- **Change:**
+  - `lib/offline-punch-queue.ts`. The queue in `TimeAndAttendance` is keyed by tenant and user.
+  - It is read and replayed only after `/api/auth/context` names that person.
+  - The old shared queue is discarded unsent, because it cannot be attributed to anyone.
+  - Signing out (`UserNav`) removes every queue on the device.
+- **Tests:** `offline-punch-queue.test.ts`, 3 tests. The component wiring has no DOM test, because this repository has
+  no DOM test harness.
+- **Trade-off:** a punch still queued at sign-out is lost.
+
+### P1-24 Dictionary renderer
+
+- **Change:**
+  - `permissions` defaults to none.
+  - New generator option `sessionPermissions: true` (`scripts/module-manifests.mjs`). Catalogue, Inventory, Orders,
+    Procurement and Finance use it: their generated pages read the server-side session and pass the user's
+    permissions to the workspace, which hands them to the renderer.
+- **Tests:** `dictionary-renderer-permissions.test.tsx`, 2 tests. They failed against the previous build of the
+  package.
+- **Note:** the built-in ERP manifests declare no views, so those screens show "No view layout declared"; F0 fixes
+  this.

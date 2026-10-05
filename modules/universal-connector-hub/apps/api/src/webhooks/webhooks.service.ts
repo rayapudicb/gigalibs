@@ -2,25 +2,42 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  ConflictException,
+  Inject,
   UnauthorizedException,
   Logger,
 } from '@nestjs/common';
 import { randomUUID, createHash, createHmac, timingSafeEqual } from 'node:crypto';
 import { DatabaseService } from '../database/database.service.js';
 
+type WebhookHeaders = Record<string, unknown>;
+
+/** Request headers never kept in the ingestion journal: they can carry the sender's own credentials. */
+const UNSTORED_HEADERS = new Set(['authorization', 'proxy-authorization', 'cookie', 'set-cookie']);
+const MAX_TEST_PAYLOAD_BYTES = 64 * 1024;
+
+function isJsonObject(value: unknown): value is Record<string, any> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+/** Constant-time comparison that answers false, instead of throwing, when the lengths differ. */
+function sameBytes(expected: Buffer, actual: Buffer): boolean {
+  return expected.length === actual.length && expected.length > 0 && timingSafeEqual(expected, actual);
+}
+
 @Injectable()
 export class WebhooksService {
   private readonly logger = new Logger(WebhooksService.name);
 
-  constructor(private readonly db: DatabaseService) {}
+  constructor(@Inject(DatabaseService) private readonly db: DatabaseService) {}
 
   /**
    * CN-04: Validate cryptographic signature against raw payload.
    */
   verifySignature(
     secret: string,
-    rawPayload: string,
-    headers: Record<string, any>,
+    rawPayload: Buffer | string,
+    headers: WebhookHeaders,
   ): { valid: boolean; reason?: string } {
     const normHeaders: Record<string, string> = {};
     for (const [k, v] of Object.entries(headers)) {
@@ -51,12 +68,11 @@ export class WebhooksService {
       }
 
       const expected = createHmac('sha256', secret)
-        .update(`${timestamp}.${rawPayload}`)
+        .update(`${timestamp}.`)
+        .update(rawPayload)
         .digest('hex');
 
-      const isValid =
-        expected.length === sig.length &&
-        timingSafeEqual(Buffer.from(expected, 'hex'), Buffer.from(sig, 'hex'));
+      const isValid = /^[0-9a-f]+$/i.test(sig) && sameBytes(Buffer.from(expected, 'hex'), Buffer.from(sig, 'hex'));
 
       return isValid ? { valid: true } : { valid: false, reason: 'Stripe signature mismatch' };
     }
@@ -116,51 +132,103 @@ export class WebhooksService {
     return isValid ? { valid: true } : { valid: false, reason: 'Cryptographic signature mismatch' };
   }
 
+  /**
+   * WI-OI-120e (U3.2, P0-08): an outside delivery. The endpoint ID names the connection, and so the tenant; the
+   * connection must have a signing secret, and the signature must match the exact bytes received.
+   */
   async handleInboundWebhook(
-    slug: string,
-    payload: any,
-    headers: Record<string, any>,
+    endpointId: string,
+    rawBody: Buffer,
+    payload: unknown,
+    headers: WebhookHeaders,
     clientIp: string = 'unknown',
-    tenantHeader?: string,
   ): Promise<any> {
     const startTime = performance.now();
-
-    if (!payload || typeof payload !== 'object') {
+    if (!isJsonObject(payload)) {
       throw new BadRequestException('Webhook payload must be a valid JSON object');
     }
-    if (!tenantHeader?.trim()) {
-      throw new BadRequestException('x-tenant-id header is required');
-    }
-    const tenantId = tenantHeader.trim();
 
-    // 1. Locate connection
-    const connRes = await this.db.queryWithTenant(
+    const [endpoint] = await this.db.relayCall<{ tenant_id: string; connection_id: string }>(
+      'resolve_webhook_endpoint',
+      [endpointId],
+    );
+    const connection = endpoint ? await this.tenantConnection(endpoint.tenant_id, endpoint.connection_id) : undefined;
+    if (!connection) {
+      throw new NotFoundException('Webhook endpoint not found');
+    }
+    if (connection.status === 'DISABLED') {
+      throw new BadRequestException('This connection is disabled');
+    }
+    if (!connection.webhook_secret) {
+      throw new UnauthorizedException('Webhook authentication failed: the connection has no signing secret');
+    }
+    const sigCheck = this.verifySignature(connection.webhook_secret, rawBody, headers);
+    if (!sigCheck.valid) {
+      throw new UnauthorizedException(`Webhook authentication failed: ${sigCheck.reason}`);
+    }
+    return this.ingest(connection, rawBody, payload, headers, clientIp, startTime);
+  }
+
+  /**
+   * A test delivery a signed-in user sends to one of their own tenant's connections. The hub signs the payload with
+   * the connection's secret and ingests it through the same checks as an outside delivery.
+   */
+  async sendTestWebhook(tenantId: string, idOrSlug: string, payload: unknown): Promise<any> {
+    const startTime = performance.now();
+    if (!isJsonObject(payload)) {
+      throw new BadRequestException('The test payload must be a JSON object');
+    }
+    const rawBody = Buffer.from(JSON.stringify(payload));
+    if (rawBody.length > MAX_TEST_PAYLOAD_BYTES) {
+      throw new BadRequestException(`The test payload must be at most ${MAX_TEST_PAYLOAD_BYTES} bytes`);
+    }
+    const connection = await this.tenantConnection(tenantId, idOrSlug);
+    if (!connection) {
+      throw new NotFoundException(`Connection '${idOrSlug}' not found`);
+    }
+    if (connection.status === 'DISABLED') {
+      throw new BadRequestException('This connection is disabled');
+    }
+    if (!connection.webhook_secret) {
+      throw new ConflictException('This connection has no signing secret, so it cannot receive webhooks');
+    }
+    const headers: WebhookHeaders = {
+      'content-type': 'application/json',
+      'x-signature-sha256': createHmac('sha256', connection.webhook_secret).update(rawBody).digest('hex'),
+      'idempotency-key': `test-${randomUUID()}`,
+      'x-gigalibs-test-delivery': 'true',
+    };
+    const sigCheck = this.verifySignature(connection.webhook_secret, rawBody, headers);
+    if (!sigCheck.valid) {
+      throw new Error('The test delivery did not pass its own signature check.');
+    }
+    return { ...(await this.ingest(connection, rawBody, payload, headers, 'test-delivery', startTime)), test_delivery: true };
+  }
+
+  /** One connection of one tenant, by ID or slug, read under that tenant's row-level security. */
+  private async tenantConnection(tenantId: string, idOrSlug: string): Promise<any | undefined> {
+    const result = await this.db.queryWithTenant(
       tenantId,
       `SELECT * FROM gigalibs_connectors.tenant_connections
-       WHERE slug = $1 AND tenant_id = $2`,
-      [slug, tenantId],
+       WHERE tenant_id = $1 AND (id = $2 OR slug = $2)`,
+      [tenantId, idOrSlug],
     );
-    if (connRes.rowCount === 0) {
-      throw new NotFoundException(`Inbound webhook connection for slug '${slug}' not found`);
-    }
+    return result.rows[0];
+  }
 
-    const connection = connRes.rows[0];
-    if (connection.status === 'DISABLED') {
-      throw new BadRequestException(`Connection '${slug}' is currently disabled`);
-    }
-
-    const rawPayload = typeof payload === 'string' ? payload : JSON.stringify(payload);
-
-    // 2. Cryptographic signature verification
-    if (connection.webhook_secret) {
-      const sigCheck = this.verifySignature(connection.webhook_secret, rawPayload, headers);
-      if (!sigCheck.valid) {
-        throw new UnauthorizedException(`Webhook authentication failed: ${sigCheck.reason}`);
-      }
-    }
+  private async ingest(
+    connection: any,
+    rawBody: Buffer,
+    payload: Record<string, any>,
+    headers: WebhookHeaders,
+    clientIp: string,
+    startTime: number,
+  ): Promise<any> {
+    const tenantId: string = connection.tenant_id;
+    const rawPayload = rawBody.toString('utf8');
 
     // 3. Payload SHA-256 and idempotency derivation
-    const payloadSha256 = createHash('sha256').update(rawPayload).digest('hex');
+    const payloadSha256 = createHash('sha256').update(rawBody).digest('hex');
 
     const normHeaders: Record<string, string> = {};
     for (const [k, v] of Object.entries(headers)) {
@@ -226,7 +294,7 @@ export class WebhooksService {
         eventType,
         payloadSha256,
         rawPayload,
-        JSON.stringify(headers || {}),
+        JSON.stringify(Object.fromEntries(Object.entries(headers || {}).filter(([name]) => !UNSTORED_HEADERS.has(name.toLowerCase())))),
         clientIp || 'unknown',
       ],
     );

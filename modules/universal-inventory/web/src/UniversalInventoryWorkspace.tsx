@@ -179,7 +179,8 @@ const DEFAULT_INVENTORY_DICTIONARY_MANIFEST: CompiledDictionaryManifestV1 = {
   messages: [],
 };
 
-export function UniversalInventoryWorkspace() {
+/** `permissions` are the signed-in user's, for the dictionary renderer (WI-OI-120e). */
+export function UniversalInventoryWorkspace({ permissions = [] }: { readonly permissions?: readonly string[] } = {}) {
   const [activeTab, setActiveTab] = useState<WorkspaceTab>('overview');
   const [searchQuery, setSearchQuery] = useState('');
   const [barcodeInput, setBarcodeInput] = useState('');
@@ -432,6 +433,7 @@ export function UniversalInventoryWorkspace() {
 
               <div className="mt-4">
                 <DictionaryRenderer
+                  permissions={permissions}
                   manifest={DEFAULT_INVENTORY_DICTIONARY_MANIFEST}
                   values={customLotExtensions}
                   onChange={handleCustomFieldChange}

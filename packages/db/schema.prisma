@@ -816,6 +816,20 @@ model Session {
   @@map("sessions")
 }
 
+// WI-OI-120e (U3.2, P1-20): failed password logins per account. The key is a SHA-256 of the
+// normalised email, so unknown emails are counted the same way and the answers reveal no accounts.
+// Not tenant data: login happens before a tenant is chosen.
+model LoginThrottle {
+  emailHash       String    @id @db.Char(64)
+  failedCount     Int       @default(0)
+  windowStartedAt DateTime  @db.Timestamptz(3)
+  lockedUntil     DateTime? @db.Timestamptz(3)
+  updatedAt       DateTime  @updatedAt @db.Timestamptz(3)
+
+  @@index([updatedAt], map: "login_throttles_updated_idx")
+  @@map("login_throttles")
+}
+
 // TOTP credentials are encrypted application secrets. The raw secret is returned only
 // during a fresh-password enrollment ceremony and is never written to logs or audit JSON.
 model TotpCredential {

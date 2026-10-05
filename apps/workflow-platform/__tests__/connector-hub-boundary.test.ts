@@ -67,6 +67,9 @@ describe('Connector Hub signed BFF', () => {
       expect((await call(getHub, 'GET', path)).status).toBe(200);
     }
     expect((await call(postHub, 'POST', ['connections', 'c1', 'test'], { headers: sameOrigin, body: '{}' })).status).toBe(200);
+    // WI-OI-120e (U3.2): a test webhook is sent through the signed route with connections:test, never an open endpoint.
+    expect((await call(postHub, 'POST', ['connections', 'c1', 'test-webhook'], { headers: sameOrigin, body: '{}' })).status).toBe(200);
+    expect(String(fetchSpy.mock.calls.at(-1)?.[0])).toBe('http://127.0.0.1:4100/api/connectors/v1/connections/c1/test-webhook');
     const forwarded = fetchSpy.mock.calls.length;
     expect((await call(postHub, 'POST', ['connections'], { headers: sameOrigin, body: '{}' })).status).toBe(403);
     expect((await call(postHub, 'POST', ['connections', 'c1', 'sync'], { headers: sameOrigin, body: '{}' })).status).toBe(403);
@@ -84,6 +87,14 @@ describe('Connector Hub signed BFF', () => {
     expect((await call(postHub, 'POST', ['connections', 'c1', 'source'], { headers: sameOrigin, body: '{}' })).status).toBe(200);
     expect((await call(postHub, 'POST', ['connections', 'c1', 'credentials'], { headers: sameOrigin, body: '{}' })).status).toBe(200);
     expect((await call(postHub, 'POST', ['connections', 'c1', 'delivery'], { headers: sameOrigin, body: '{}' })).status).toBe(200);
+  });
+
+  it('refuses a test webhook to a user who may only read connections', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch');
+    vi.mocked(verifiedSession).mockResolvedValue({ context: context(['connections:read']) } as never);
+    expect((await call(postHub, 'POST', ['connections', 'c1', 'test-webhook'], { headers: sameOrigin, body: '{}' })).status).toBe(403);
+    expect((await call(getHub, 'GET', ['connections', 'c1', 'test-webhook'])).status).toBe(404);
+    expect(fetchSpy).not.toHaveBeenCalled();
   });
 
   it('does not expose webhooks, unknown routes or cross-site changes', async () => {

@@ -164,7 +164,7 @@ describe('Zero-Knowledge Universal Rule Engine Kernel', () => {
     expect(verdict.actionTaken).toBe('BLOCK_DROP');
 
     // 2. Invoke 1-Click Emergency Kill-Switch (HIJACK)
-    const hijacked = universalRuleKernelStore.toggleHijack(rule.id, 'Emergency freeze override by Operations Director');
+    const hijacked = universalRuleKernelStore.toggleHijack(rule.id, 'test-tenant', 'Emergency freeze override by Operations Director');
     expect(hijacked.lifecycleStatus).toBe('HIJACKED');
 
     // 3. Now HIJACKED -> Should PASS normally
@@ -172,7 +172,7 @@ describe('Zero-Knowledge Universal Rule Engine Kernel', () => {
     expect(verdict.actionTaken).toBe('PASS');
 
     // Clean up
-    universalRuleKernelStore.deleteRule(rule.id);
+    universalRuleKernelStore.deleteRule(rule.id, 'test-tenant');
   });
 
   it('runs shadow simulations against historical events and calculates false-positive rates', () => {

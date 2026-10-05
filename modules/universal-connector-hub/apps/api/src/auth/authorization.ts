@@ -1,5 +1,5 @@
 import { SignedContextGuardBase } from '@gigalibs/module-sdk';
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service.js';
 import { loadConnectorHubRuntimeConfig } from '../runtime-config.js';
 
@@ -12,7 +12,7 @@ export const CONNECTOR_HUB_MODULE_KEY = 'connections';
  */
 @Injectable()
 export class ConnectorHubAuthorizationGuard extends SignedContextGuardBase {
-  constructor(database: DatabaseService) {
+  constructor(@Inject(DatabaseService) database: DatabaseService) {
     const config = loadConnectorHubRuntimeConfig();
     super(
       {

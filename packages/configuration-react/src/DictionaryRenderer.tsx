@@ -13,7 +13,8 @@ export interface DictionaryRendererProps {
   disabled?: boolean | undefined;
   device?: 'DESKTOP' | 'TABLET' | 'MOBILE' | 'ALL' | undefined;
   activeViewKey?: string | undefined;
-  permissions?: string[] | undefined;
+  /** The signed-in user's permissions. Without them, fields and actions that name a permission are not shown. */
+  permissions?: readonly string[] | undefined;
   onChange?: ((values: Record<string, unknown>) => void) | undefined;
   onAction?: ((actionKey: string) => void) | undefined;
 }
@@ -102,7 +103,8 @@ export function DictionaryRenderer({
   disabled = false,
   device = 'ALL',
   activeViewKey,
-  permissions = ['*'],
+  // WI-OI-120e (U3.2, P1-24): deny by default. A caller that passes no permissions gets no permission-gated field.
+  permissions = [],
   onChange,
   onAction,
 }: DictionaryRendererProps) {

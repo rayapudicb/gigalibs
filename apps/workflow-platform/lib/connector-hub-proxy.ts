@@ -37,6 +37,9 @@ export function requiredConnectorHubPermission(method: string, path: readonly st
   if (route === 'connections') return method === 'GET' ? 'connections:read' : method === 'POST' ? 'connections:write' : null;
   if (new RegExp(`^connections/${SEGMENT}$`).test(route)) return read;
   if (new RegExp(`^connections/${SEGMENT}/test$`).test(route)) return method === 'POST' ? 'connections:test' : null;
+  // WI-OI-120e (U3.2): a test delivery the hub signs with the connection's secret. Outside senders use the hub's own
+  // endpoint URL, never this proxy.
+  if (new RegExp(`^connections/${SEGMENT}/test-webhook$`).test(route)) return method === 'POST' ? 'connections:test' : null;
   if (new RegExp(`^connections/${SEGMENT}/sync$`).test(route)) return method === 'POST' ? 'connections:sync' : null;
   // WI-OI-104d: pull history and quarantine are read; the pull source and its login secrets are written.
   if (new RegExp(`^connections/${SEGMENT}/(sync-jobs|quarantine)$`).test(route)) return read;

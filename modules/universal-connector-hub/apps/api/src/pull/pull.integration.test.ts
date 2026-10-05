@@ -58,7 +58,7 @@ integration('Connector Hub pulls on PostgreSQL', () => {
       CONNECTORS_DATABASE_URL: databaseUrl,
       CONNECTOR_HUB_DATABASE_POOL_SIZE: '4',
       CONNECTOR_VAULT_KEY: 'integration-test-vault-key-that-is-long-enough',
-      CONNECTOR_HUB_EXPECTED_MIGRATION_VERSION: '8',
+      CONNECTOR_HUB_EXPECTED_MIGRATION_VERSION: '9',
       CONNECTOR_HUB_PLATFORM_CONTEXT_PUBLIC_KEY_BASE64: generateKeyPairSync('ed25519').publicKey.export({ format: 'der', type: 'spki' }).toString('base64'),
       CONNECTOR_HUB_ALLOWED_OUTBOUND_HOSTS: '127.0.0.1',
       CONNECTOR_HUB_ALLOW_INSECURE_OUTBOUND: 'true',
@@ -70,7 +70,7 @@ integration('Connector Hub pulls on PostgreSQL', () => {
       import('../sync/sync.service.js'),
     ]);
     const db = new DatabaseService();
-    await expect(db.readiness()).resolves.toMatchObject({ migrationVersion: 8 });
+    await expect(db.readiness()).resolves.toMatchObject({ migrationVersion: 9 });
     const vault = new VaultCryptoService();
     services = { db, connectors: new ConnectorsService(db, vault), sync: new SyncService(db, vault) };
   });
