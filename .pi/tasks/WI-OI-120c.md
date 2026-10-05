@@ -8,8 +8,9 @@
 ## Goal
 
 Signed-in users can create and read real records in Product Catalogue, Inventory, Procurement, Orders and Finance
-through the web app. Every command saves its data and its event in one transaction, exactly once. This is the backend
-foundation every real business flow (U7–U18) needs.
+through the web app. Every command this card repairs saves its data and its event in one transaction, and a journal
+from a source document is created once. Request-level idempotency for every command is F1, not this card (corrected
+2026-10-05, investigation finding M-06). This is the backend foundation every real business flow (U7–U18) needs.
 
 Audit findings closed: P0-09, P1-02, P1-03, P1-09, P1-18 and P1-23 (`docs/audits/2026-10-04-production-readiness/README.md`).
 

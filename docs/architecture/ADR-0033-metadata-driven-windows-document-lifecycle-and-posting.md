@@ -5,8 +5,11 @@
 - **Date:** 2026-10-05
 - **Work item:** WI-OI-120 (cards F0, F1, F2)
 - **Amends:** ADR-0019 (completes its `AD_Window`/`AD_Tab`/`AD_Field` design).
-- **Supersedes:** "Option A: Enhanced Enterprise Hybrid Standard" in ADR-0021, ADR-0022, ADR-0023 and ADR-0024, and
-  every other ADR that lets a module hand-code its screens.
+- **Supersedes:** "Option A: Enhanced Enterprise Hybrid Standard" in ADR-0021, ADR-0022, ADR-0023 and ADR-0024: a
+  module's business screens are governed by published metadata instead of constants inside the screen.
+- **Revised:** 2026-10-05, after the metadata-proposals investigation
+  (`docs/audits/2026-10-04-production-readiness/metadata-proposals-investigation-2026-10-05.md`, findings M-04 and
+  M-05). The revision keeps ADR-0019's tenets 9, 11 and 13; the first draft conflicted with them.
 - **Reference:** `docs/architecture/IDEMPIERE_FUNCTIONAL_MAP.md` (iDempiere is GPL v2: concepts only, no code).
 
 ## Context
@@ -30,73 +33,85 @@ iDempiere delivers business outcomes through exactly the three mechanisms GigaLi
 
 ## Decision
 
-### D1. Every screen is a metadata-driven window (F0)
+### D1. Business screens are governed by published metadata (F0)
 
-- A module declares its windows as versioned metadata in its own repository folder (`modules/<m>/dictionary/*.json`),
-  compiled by `@gigalibs/configuration-core`:
-  - `WindowV1`: title, menu entry, entity, tabs;
-  - `TabV1`: entity, parent link, level, grid columns, form sections, default sort and filters, read-only rules;
-  - `FieldV1`: column binding, reference type, display rule, mandatory rule, read/write/mask permission;
-  - `ReferenceV1`: list, table lookup through a registered resolver;
-  - `ActionV1`: document actions and processes bound to API commands.
-- The web app has **one** window renderer (`@gigalibs/configuration-react`). It provides:
-  - a grid with search, filter, sort and server paging;
-  - a form with sections;
-  - parent-child tabs;
-  - lookups;
-  - document-action buttons enabled by the record's state and the user's permissions;
-  - loading, empty, validation, permission-denied, conflict (412), stale and dependency-failure states;
-  - design tokens only.
-- Each entity is served by a **generic, permission-checked record API** in its module, built on the module SDK:
-  - `list`, `get`, `create`, `update` and `action` endpoints with tenant and organization scope from the signed
-    platform context;
-  - optimistic concurrency (`If-Match`) and `Idempotency-Key` on every write;
-  - field-level permission and masking on the server.
-- The module keeps ownership of its invariants (ledgers, balances, matching, posting) in its domain services. Metadata
-  never carries SQL, scripts or DDL (ADR-0019 tenets kept).
-- Tenants extend windows and fields through Configuration Studio (draft, approve, publish, roll back) within the
-  existing limits. Tenants never remove module-owned fields or bypass module rules.
-- **Hand-written screens are allowed only** for capabilities a window cannot express (map canvas, chart builder,
-  workflow canvas). Each needs an ADR exception.
+- **No second model.** The existing dictionary contracts and compiler (`DictionaryEntityV1`, `DictionaryFieldV1`,
+  `DictionaryReferenceV1`, `DictionaryViewV1`, actions; ADR-0019) are extended, not replaced. Any new field gets a
+  versioned contract change and a compiler mapping. There is no parallel `WindowV1`/`TabV1` model.
+- **Capabilities the renderer must execute** before they may be published (unsupported ones are rejected at
+  publish time instead of silently ignored):
+  - a grid with server paging, search, filter and sort, bound to records;
+  - forms with sections;
+  - parent-child tabs bound to related records;
+  - lookups through registered resolvers;
+  - display, read-only and mandatory rules;
+  - registered actions.
+- **Each screen loads the published manifest version for its tenant and surface.** There are no constant manifests
+  inside screens and no silent fallback to a built-in dictionary. A missing manifest is a visible error.
+- **Deny by default.** Permissions not granted are not rendered; unknown or unsupported rule leaves fail closed. The
+  server remains the authority for every permission and validation (tenet 9). Exact money and quantity fields keep
+  exact representations end to end.
+- **Record access goes through a typed dispatcher**, not table CRUD (tenet 11). It routes each list, read, create,
+  update and action to an allow-listed module adapter or domain command, with:
+  - tenant and organization scope from the signed context;
+  - object authorization and field permissions;
+  - `If-Match` concurrency;
+  - `Idempotency-Key` on writes.
 
-### D2. One document lifecycle (F1)
+  Action buttons bind only to registered, reviewed handlers (tenet 13).
+- **Module-owned contributions.** Each module ships its dictionary contribution (entities, fields, views, actions) as
+  versioned files in its own folder, published through Configuration Studio. Tenants extend within the existing
+  limits.
+- **Specialized interactions remain components.** Barcode scanning, maps, chart building, work-order execution and
+  offline capture may be hand-built components inside a metadata-governed screen. Their fields, permissions and
+  actions still come from the published manifest. Hand-written React is not the defect; invented business data,
+  dead controls and bypassed domain rules are.
 
-- `@gigalibs/document-lifecycle` (new shared package) defines states `DRAFTED → IN_PROGRESS → COMPLETED → CLOSED`,
-  with `VOIDED`, `REVERSED`, `APPROVED`/`NOT_APPROVED` and `INVALID`, and the actions `prepare`, `approve`, `reject`,
-  `complete`, `void`, `close`, `reverseCorrect`, `reverseAccrual` and `reactivate`.
-- Every transactional document uses it, through one transaction per action:
-  - Inventory: receipt, shipment, movement, physical count, internal use;
-  - Procurement: requisition, purchase order, vendor invoice, debit memo;
-  - Orders: quotation, sales order, credit memo;
-  - AR: customer invoice, payment, allocation;
-  - Treasury: bank statement;
-  - Finance: journal;
-  - Fixed assets: addition, disposal, depreciation run;
-  - Budgeting: budget revision;
-  - CMMS: work order;
-  - Workforce: timesheet.
-- `prepare` always checks:
-  - the period is open for the document's subledger and date (closes P1-07);
-  - the approval rules (delegation of authority, segregation of duties);
-  - budget availability where configured;
-  - credit limits where configured.
+### D2. Shared lifecycle primitives, document-specific state graphs (F1)
 
-  `complete` applies the document's effects and writes its event in the same transaction.
-- Completed documents are immutable. Corrections are reversals that reference the original.
+- **The shared package.** `@gigalibs/document-lifecycle` provides the primitives every transactional document uses:
+  - a transition runner that checks the document's own guard for the requested transition;
+  - the actor's permission for that action;
+  - `Idempotency-Key` handling (same key and payload returns the first result; same key with a different payload is
+    rejected);
+  - version concurrency;
+  - the audit record;
+  - the outbox event, written in the same local transaction as the state change and its effects.
+- **Each document type defines its own transition graph, guards and reversal semantics.** A vendor invoice, a stock
+  movement and a work order do not share one state list.
+- **Checks belong to the documents that need them.** Period-lock, credit, budget and approval checks are guards on
+  the transitions that need them (MODULE_ACTION_OUTCOMES.md). The period-lock guard applies to every
+  financially relevant transition in every module (audit P1-07).
+- **Immutable completion.** Completed financial documents are immutable; corrections are reversals that reference
+  the original.
 
-### D3. Every completed document posts to the ledger (F2)
+### D3. Financially relevant documents post asynchronously and idempotently (F2)
 
-- **Relays.** Module outbox relays (module SDK) deliver `*.completed.v1`, `*.voided.v1` and `*.reversed.v1` events.
-- **Posting.** Finance consumes them through a durable inbox, which gives deduplication, retry with backoff,
-  dead-letter handling and replay. Its posting engine creates a balanced journal from the tenant's accounting schema
-  (default rules: `docs/architecture/MODULE_ACTION_OUTCOMES.md`). Posting is idempotent per source document and line.
-- **Reconciliation.** A daily job compares documents with journals and reports mismatches.
+- **Explicit posting policy.** Each document type declares a posting policy: posts (with its rule),
+  commitment-ledger only, or none. Quotations, sales orders and other operational documents with no ledger effect
+  say so explicitly.
+- **Delivery.** Posting is asynchronous. The owning module completes its document and writes the event in its local
+  transaction. The module SDK's existing signed relay (`outbox-relay.ts`) delivers it. Finance's consumer records
+  the inbox receipt (`inbox-receipts.ts`) and creates the journal in one Finance transaction.
+- **No cross-module ACID claim.** The local completion and the journal are not one transaction across modules. The
+  document shows "awaiting posting", "posted" or "posting rejected". A rejected posting, for example to a closed
+  period, is visible, can be retried after correction and is reported by reconciliation.
+- **Idempotent effect.** Event delivery may repeat. The business effect must not: one journal per source document,
+  version and entry type, enforced by unique constraints (U2 started this with `uq_gl_journals_source_document`).
+- **Reconciliation.** A daily job compares documents with journals and reports differences. Period close does not
+  complete while events for the period are undelivered or rejected.
 
 ## Consequences
 
-- **Module cards change shape.** U7–U18 become: entity and window metadata, record API, domain rules, lifecycle,
-  posting rules and a Playwright flow. They no longer hand-write screens. The hand-written Phase 4–14 screens are
-  replaced, not restyled.
+- **Module cards change shape.** U7–U18 become:
+  - the module's dictionary contribution;
+  - adapters and domain commands behind the dispatcher;
+  - transition graphs on the shared primitives;
+  - posting policies;
+  - a Playwright flow.
+
+  The hand-written Phase 4–14 screens are rebuilt on published metadata. Their useful specialized components are
+  kept inside the governed screen.
 - **Order of work:** U2, then F0 (window engine, proven on Inventory), then F1 and F2, then the module cards.
 - **Security.** The record API widens the attack surface. Field-level permissions, tenant scope and object
   authorization are enforced on the server, and each card carries negative tests.

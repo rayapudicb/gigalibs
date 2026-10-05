@@ -1,7 +1,8 @@
 # Module action outcomes: production specification
 
 The precise, server-side outcome every user action must produce, for every module. Each module card (WI-OI-120,
-cards U4–U29) implements its section exactly. A card is not done until every listed action works through its
+cards U4–U29) implements its section exactly. Revised 2026-10-05 with ADR-0033's corrections (posting policies,
+document-specific state graphs, idempotent rather than exactly-once delivery). A card is not done until every listed action works through its
 metadata-driven window (ADR-0033 D1) and a Playwright business flow proves the outcome in the browser.
 
 > **Accounting review.** The posting rules below are default rules of the tenant's accounting schema, modelled on
@@ -18,8 +19,8 @@ metadata-driven window (ADR-0033 D1) and a Playwright business flow proves the o
 | Concurrency | Updates require `If-Match` (record version). A mismatch returns 412 and the window reloads. |
 | Idempotency | Every create and every document action requires `Idempotency-Key`. A replay returns the first result and changes nothing. |
 | Transaction | The state change, its effects (stock, balances, matching) and its outbox event commit together or not at all. |
-| Lifecycle | Transactional documents use the shared lifecycle (ADR-0033 D2). `prepare` checks the open period, approval rules, budget and credit. Completed documents are immutable; corrections are reversals. |
-| Posting | Completing, voiding or reversing a financially relevant document emits an event. Finance posts a balanced journal from it exactly once (ADR-0033 D3). |
+| Lifecycle | Transactional documents use the shared lifecycle primitives with their own transition graph (ADR-0033 D2). Guards check the open period, approval rules, budget and credit where the document needs them; the period guard applies to every financially relevant transition. Completed financial documents are immutable; corrections are reversals. |
+| Posting | Each document type declares its posting policy (posts, commitment only, or none). For a posting document, completing, voiding or reversing emits an event; Finance posts one balanced journal per source document and version, even if the event is delivered twice (ADR-0033 D3). Until then the document shows "awaiting posting"; a rejected posting is visible and reconciled. |
 | Audit | Actor, tenant, organization, action, document, before and after (or a fact reference), result, correlation id and time, appended to the module's audit chain. |
 | Telemetry | A structured log line per action and metrics for count, latency and failure, with no secrets or personal data in logs. |
 | Money and quantity | Integer minor units (with the currency exponent) and scaled integers for quantities. Rounding rules are explicit; no floating point. |
@@ -171,8 +172,8 @@ Invariants:
    - denial for a missing permission, another tenant and another organization;
    - validation, conflict (412) and replay (same `Idempotency-Key`);
    - the period-closed refusal.
-2. Posting tests: each document's journal balances and is created exactly once, including after a consumer restart
-   and a redelivered event.
+2. Posting tests: each posting document's journal balances and exists once per source document and version, including
+   after a consumer restart and a redelivered event; a posting into a closed period is rejected visibly.
 3. A Playwright business flow in the metadata-driven window as the named role creates the data, completes the
    documents and shows the outcome on screen: stock, balances, journal drill-through.
 4. Reconciliation shows zero mismatches after the flow.
