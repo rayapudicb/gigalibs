@@ -6,7 +6,6 @@ import { CurrencyLocaleProvider } from '@/components/currency/CurrencyLocaleCont
 import { GeospatialPlacesProvider } from '@/components/geospatial/GeospatialPlacesProvider';
 import { AppI18nProvider } from '@/components/i18n/AppI18nProvider';
 import { ModuleHeaderAndDrawer } from '@/components/navigation/ModuleHeaderAndDrawer';
-import { UatPreviewBanner } from '@/components/UatPreviewBanner';
 import { uatPreviewEnabled } from '@/lib/uat-module-status';
 import { verifiedSession } from '@/lib/verified-session';
 import { cookies } from 'next/headers';
@@ -60,7 +59,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     session.context.permissions.includes('*') ||
     session.context.permissions.includes('configuration:*') ||
     session.context.permissions.includes('configuration:draft');
-  // UAT instance only (WI-OI-120a): every module is listed, with labels that say what testers can rely on.
+  // UAT instance only (WI-OI-120a): every module is listed. The owner removed the UAT labels on 2026-10-05 (WI-OI-120b).
   const uatPreview = uatPreviewEnabled();
 
   return (
@@ -85,7 +84,6 @@ export default async function AppLayout({ children }: { children: React.ReactNod
                 <UserNav session={session.context} />
               </div>
             </header>
-            <UatPreviewBanner uatPreview={uatPreview} />
 
             <main
               className="flex-1 overflow-y-auto print:overflow-visible print:h-auto print:p-0"

@@ -21,8 +21,10 @@
 | **Not deployed** | No backend service runs on this instance; the screen can only show an error. |
 | **Not built** | In the iDempiere spec, but no code exists. |
 
-Every module is visible on the UAT instance (`GIGALIBS_UAT_PREVIEW=enabled`), with a UAT label when it is not
-production-ready. **Nothing is hidden or contained.** "CONTAINED" and "PLANNED" below are readiness labels only.
+Every module is visible on the UAT instance (`GIGALIBS_UAT_PREVIEW=enabled`). The owner removed the on-screen UAT
+labels on 2026-10-05, so this board is where testers see each module's status. **Nothing is hidden or contained.**
+"CONTAINED" and "PLANNED" below are catalogue readiness labels only. iDempiere mapping:
+`docs/architecture/IDEMPIERE_FUNCTIONAL_MAP.md`.
 
 ## 1. Status of every module today
 

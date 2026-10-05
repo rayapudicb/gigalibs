@@ -61,6 +61,17 @@ screens use `@medusajs/ui` and the `ui-*` design tokens, with no hard-coded colo
 - [x] `pnpm build`, `pnpm test`, static audits pass (known `WORKFORCE_API_URL` drift only)
 - [ ] Evidence in `.pi/work/WI-OI-120.md`; `.pi/NOW.md` updated; deployment to the UAT instance offered to the owner
 
+## Owner change, 2026-10-05
+
+"Remove UAT label." Done:
+
+- the page banner (`components/UatPreviewBanner.tsx`) is deleted;
+- the menu shows no padlock or UAT mark for locked modules while `GIGALIBS_UAT_PREVIEW=enabled`;
+- module access is unchanged.
+
+Module status for testers is kept in `docs/audits/2026-10-04-production-readiness/uat-module-status.md`. The unit test
+and Playwright smoke were updated (26 unit tests pass; web typecheck clean).
+
 ## Stop and ask if
 
 - restyling would require changing what a screen does, or a Medusa component cannot express an existing control;

@@ -28,6 +28,9 @@ to one page. Replace old content rather than appending to it, and update it at t
   - Restyled to tokens: Catalogue, Parties, Application Dictionary and the form renderer.
   - Medusa component swaps move to U5–U7.
   - Not deployed yet; it goes out with the next deploy.
+- **Owner, 2026-10-05:** remove the UAT labels (done in WI-OI-120b, uncommitted). Goal: every module
+  production-ready in one build, then move to the cloud. iDempiere map: `docs/architecture/IDEMPIERE_FUNCTIONAL_MAP.md`
+  (GPL v2 reference only; legal decision D8). Next card proposed: WI-OI-120c (U2, ERP APIs accept real data).
 - **Module status board for testers:** `docs/audits/2026-10-04-production-readiness/uat-module-status.md` (what works,
   what does not, what is not deployed, and the plan to UAT and to production).
 

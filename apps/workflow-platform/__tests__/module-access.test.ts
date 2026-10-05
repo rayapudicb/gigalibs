@@ -9,7 +9,7 @@ import {
   mostSpecificActiveModuleKey,
   tenantModulePermission,
 } from '../lib/module-access';
-import { UAT_PREVIEW_SETTING, uatPreviewEnabled, uatStatusFor } from '../lib/uat-module-status';
+import { UAT_PREVIEW_SETTING, uatPreviewEnabled } from '../lib/uat-module-status';
 import { isLockedModule } from './helpers/locked-modules';
 
 describe('module access', () => {
@@ -203,13 +203,5 @@ describe('UAT preview (WI-OI-120a)', () => {
     expect(canOpenPlatformModule(finance, { ...session, uatPreview: false })).toBe(false);
     expect(canOpenPlatformModule(finance, { ...session, uatPreview: true })).toBe(true);
     expect(canOpenPlatformModule(finance, { ...session, tenant: null, uatPreview: true })).toBe(false);
-  });
-
-  it('labels the sample-figure workspaces and every other locked module for testers, and leaves the rest unlabelled', () => {
-    for (const key of ['universal-inventory', 'universal-procurement', 'universal-orders', 'financial-operations']) {
-      expect(uatStatusFor(key, 'PLANNED')?.status, key).toBe('sample-figures');
-    }
-    expect(uatStatusFor('esignature', 'CONTAINED')?.status).toBe('not-verified');
-    expect(uatStatusFor('asset-maintenance', 'REVIEW')).toBeNull();
   });
 });

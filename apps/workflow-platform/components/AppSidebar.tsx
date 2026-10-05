@@ -93,7 +93,7 @@ export default function AppSidebar({
   uatPreview = false,
 }: {
   session: VerifiedSession;
-  /** UAT instance only (WI-OI-120a): locked modules are listed with a UAT label instead of hidden. */
+  /** UAT instance only (WI-OI-120a): locked modules are listed like any other module. */
   uatPreview?: boolean;
 }) {
   const pathname = usePathname();
@@ -518,18 +518,12 @@ function SidebarLink({
   );
 }
 
-/** A locked module shows a padlock; on the UAT instance it shows a UAT label instead (WI-OI-120a). */
+/**
+ * A locked module shows a padlock. On the UAT instance it shows no mark: the owner removed the UAT labels on 2026-10-05
+ * (WI-OI-120b) so every module appears as a normal entry.
+ */
 function UnavailableMark({ uatPreview, className }: { uatPreview: boolean; className: string }) {
-  if (uatPreview) {
-    return (
-      <span
-        title="UAT preview: not production-ready"
-        className={`${className} shrink-0 rounded bg-ui-tag-orange-bg px-1 text-[10px] font-semibold uppercase leading-4 text-ui-tag-orange-text`}
-      >
-        UAT
-      </span>
-    );
-  }
+  if (uatPreview) return null;
   return (
     <span title="Not available" className={`${className} shrink-0 text-ui-fg-muted`}>
       <Lock className="h-3 w-3" aria-label="Not available" />
