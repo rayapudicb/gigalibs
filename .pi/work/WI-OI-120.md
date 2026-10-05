@@ -121,7 +121,10 @@ instance) waits for the owner's go.
   - New rule in `scripts/verify-configuration-local-profile.mjs` (`WORKSPACE_DEPENDENCY_MISSING`): every
     `workspace:` dependency of an image-workspace package must be in the image workspace. Shown to report exactly
     this defect before the fix, and only the known `WORKFORCE_API_URL` drift after.
-- **Second run (state `66d281389651`):** see the result below.
+- **Second run (state `66d281389651`, 2026-10-05):** `migrations`, `api`, `web`, `module-host` and
+  `workforce-api` all OK, tagged `u1proof-66d281389651`. The tree was HEAD `de81f82` plus exactly the U1 changes, the
+  same content as commit `03ebd0c` apart from its evidence text. P0-12 (cannot build from git) is closed for these
+  five images; the CMMS, Analytics, Connector Hub and Geospatial images are built by the part B deploy builds.
 
 ### Verification
 
@@ -135,3 +138,44 @@ instance) waits for the owner's go.
   unchanged afterwards (newest finance row still 2026-10-04 16:19:09Z).
 - Playwright smoke spec `e2e/specs/uat-preview-modules.spec.ts` (36 tests: the menu plus one per module, read-only)
   compiles (`--list`). It runs in part B against the UAT instance.
+
+### Part B (UAT instance): status 2026-10-05 ~04:30Z
+
+The owner gave the go on 2026-10-05. Done:
+
+1. Backup `infra/compose/backups/gigalibs_backup_20261005_042254Z.dump`: 7,008,475 bytes; `shasum -c` OK. Its
+   metadata names the running release `local-20261004T065227Z-007e686bebee-c1746f0b541b`, which is also the
+   rollback tag.
+2. `refresh-source-identity.sh`: env files now name commit `03ebd0c`, tag `03ebd0c366b6-ff554c98771d`, release
+   `local-20261005T042338Z-03ebd0c366b6-ff554c98771d`. Secrets preserved.
+3. `generate-generated-module-credentials.sh financial-operations` created `.env.module.financial-operations`:
+   runtime role `gigalibs_finance_runtime`, key pair; values not printed.
+4. `GIGALIBS_UAT_PREVIEW=enabled` appended to `infra/compose/.env`. `docker compose config` with all 10 env files
+   and 5 compose files resolves: every service is on the new tag, and the web receives the setting.
+5. Read-only check: all 13 tables created by Workforce 000020–000025 exist in `gigalibs_workforce`; the ledger is at 19.
+6. Deploy images: the five build scripts are queued after the clean-worktree proof run.
+
+Blocked by the session's permission system (not attempted another way):
+
+- The one-time Workforce ledger record of rows 20–25 (a direct write to the UAT database) was refused ("Remote
+  Shell Writes").
+- A reduced deploy without Workforce was then refused as well ("Modify Shared Resources"). No container was
+  recreated. The running instance is still entirely on `007e686bebee-c1746f0b541b`.
+- The CMMS 000017–000019 correction remains refused (part A).
+
+Prepared for the owner: the deploy script in the session scratchpad (`deploy-u1.sh`). It deploys the migrations
+jobs and services with consumers first, skips CMMS, and stops at the first failure. Its Workforce job needs rows
+20–25 recorded first.
+- Deploy images for commit `03ebd0c` (tag `03ebd0c366b6-ff554c98771d`), built 04:29–04:45Z by the repository's five
+  build scripts; all OK. Image IDs:
+  - control-plane-migrations `1577704e28f0`
+  - playground-api `dea8364f94be`
+  - workflow-platform `726aa028b6a1`
+  - cmms-api `488d84e8ebe1`
+  - analytics-api `fa30b8f8fe8b`
+  - connector-hub-api `10e372fae43b`
+  - workforce-api `f8035c6e1151`
+  - geospatial-api `b3ad9979857c`
+  - module-host `a0f64c83e797`
+- The running instance is still entirely on `007e686bebee-c1746f0b541b` (checked 04:45Z). The ledger record and the
+  deploy wait for the owner: either run them, or switch the session out of auto mode so each step can be approved.

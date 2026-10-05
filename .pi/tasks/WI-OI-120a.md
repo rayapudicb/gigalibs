@@ -80,7 +80,8 @@ This closes audit findings P0-12, P1-01 and P1-13 to P1-16.
 
 ## Done when
 
-- [ ] A clean clone of the commit installs with a frozen lockfile and builds the images
+- [x] A clean clone of the commit installs with a frozen lockfile and builds the images (clean worktree of the
+  same content; five images, 2026-10-05)
 - [ ] Module host starts with Finance, Inventory, Orders, Procurement and Catalogue; CMMS and Workforce run
 - [ ] Every module, Phases 1–14 included, is visible and opens on the UAT instance, with its status label
   (Playwright smoke)

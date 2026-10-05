@@ -20,8 +20,12 @@ to one page. Replace old content rather than appending to it, and update it at t
   - **Open:**
     - the CMMS migrations 000017–000019 fix, which edits never-applied committed files; the permission system
       refused it, so the owner decides;
-    - part B (backup, migrations, deploy and smoke test on the UAT instance), which needs the owner's go;
-    - commit only on the owner's "commit".
+    - part B: the owner gave the go and part A is committed (`03ebd0c`).
+      - Done: the backup (`gigalibs_backup_20261005_042254Z`), the identity refresh to tag
+        `03ebd0c366b6-ff554c98771d`, the Finance credentials and `GIGALIBS_UAT_PREVIEW=enabled` in `.env`.
+      - **Blocked by the session's permission system:** the Workforce ledger record and the deploy itself.
+      - The running instance is still on `007e686bebee-c1746f0b541b`. The env files already name the new tag, so do
+        not run `docker compose up` by hand without the full deploy sequence.
 - **Committed code (HEAD) cannot be built, installed or started.** The image build and migration runner use
   untracked files, the lockfile is stale since `a8207c4`, and the module host rejects Finance's schema version (7 vs 6).
 - **Phases 1–14 (WI-OI-109–118, 091–095):** Review, gate at most local G4. The "G0–G6 Proved" claims for 110 and 111
