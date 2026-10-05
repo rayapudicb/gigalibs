@@ -88,7 +88,14 @@ const PERSONA_CONFIG: Record<
   },
 };
 
-export default function AppSidebar({ session }: { session: VerifiedSession }) {
+export default function AppSidebar({
+  session,
+  uatPreview = false,
+}: {
+  session: VerifiedSession;
+  /** UAT instance only (WI-OI-120a): locked modules are listed with a UAT label instead of hidden. */
+  uatPreview?: boolean;
+}) {
   const pathname = usePathname();
   const { t } = useTranslation('navigation');
   const [tenantApps, setTenantApps] = useState<Array<{ entityKey: string; manifest: { title?: string } }>>([]);
@@ -165,7 +172,7 @@ export default function AppSidebar({ session }: { session: VerifiedSession }) {
   const visibleModules = platformModuleCatalog.filter((module) => {
     if (SIDEBAR_HIDDEN_KEYS.has(module.key)) return false;
     if (!personaSeesModule(activePersona, module.key)) return false;
-    return canOpenPlatformModule(module, session);
+    return canOpenPlatformModule(module, { ...session, uatPreview });
   });
   const activeModuleKey = mostSpecificActiveModuleKey(visibleModules, pathname);
 
@@ -271,6 +278,7 @@ export default function AppSidebar({ session }: { session: VerifiedSession }) {
                   label={moduleLabelByKey[module.key] ?? module.navigationLabel}
                   pathname={pathname}
                   isActive={activeModuleKey === module.key}
+                  uatPreview={uatPreview}
                 />
               ))}
               {group === 'Platform' && hasHierarchyAccess && (
@@ -337,16 +345,18 @@ function ModuleLink({
   label,
   pathname,
   isActive,
+  uatPreview = false,
 }: {
   module: PlatformModuleDefinition;
   label?: string;
   pathname: string;
   isActive: boolean;
+  uatPreview?: boolean;
 }) {
   const isUnavailable = module.readiness === 'CONTAINED' || module.readiness === 'PLANNED';
   const submodules = moduleMenu(module.key);
 
-  if (!isUnavailable && submodules.length > 0) {
+  if ((!isUnavailable || uatPreview) && submodules.length > 0) {
     return (
       <ExpandableModuleItem
         module={module}
@@ -355,6 +365,7 @@ function ModuleLink({
         submodules={submodules}
         isUnavailable={isUnavailable}
         isActive={isActive}
+        uatPreview={uatPreview}
       />
     );
   }
@@ -367,6 +378,7 @@ function ModuleLink({
       pathname={pathname}
       isUnavailable={isUnavailable}
       active={isActive}
+      uatPreview={uatPreview}
     />
   );
 }
@@ -378,6 +390,7 @@ function ExpandableModuleItem({
   submodules,
   isUnavailable,
   isActive,
+  uatPreview = false,
 }: {
   module: PlatformModuleDefinition;
   label?: string;
@@ -385,6 +398,7 @@ function ExpandableModuleItem({
   submodules: readonly ModuleMenuItem[];
   isUnavailable?: boolean;
   isActive: boolean;
+  uatPreview?: boolean;
 }) {
   const isModuleActive = isActive;
   const [isOpen, setIsOpen] = useState(isModuleActive);
@@ -417,11 +431,7 @@ function ExpandableModuleItem({
           <span className="truncate">{label ?? module.navigationLabel}</span>
         </Link>
         <div className="flex items-center gap-0.5">
-          {isUnavailable && (
-            <span title="Not available" className="mr-1 shrink-0 text-ui-fg-muted">
-              <Lock className="h-3 w-3" />
-            </span>
-          )}
+          {isUnavailable && <UnavailableMark uatPreview={uatPreview} className="mr-1" />}
           <button
             type="button"
             onClick={(e) => {
@@ -479,6 +489,7 @@ function SidebarLink({
   pathname,
   isUnavailable,
   active,
+  uatPreview = false,
 }: {
   href: string;
   label: string;
@@ -486,6 +497,7 @@ function SidebarLink({
   pathname: string;
   isUnavailable?: boolean;
   active?: boolean;
+  uatPreview?: boolean;
 }) {
   const isActive = active ?? isNavigationPathActive(pathname, href);
   return (
@@ -501,11 +513,26 @@ function SidebarLink({
         <Icon className={`h-4 w-4 shrink-0 ${isActive ? 'text-ui-fg-base' : 'text-ui-fg-muted'}`} />
         <span className="truncate">{label}</span>
       </span>
-      {isUnavailable && (
-        <span title="Not available" className="ml-1 shrink-0 text-ui-fg-muted">
-          <Lock className="h-3 w-3" />
-        </span>
-      )}
+      {isUnavailable && <UnavailableMark uatPreview={uatPreview} className="ml-1" />}
     </Link>
+  );
+}
+
+/** A locked module shows a padlock; on the UAT instance it shows a UAT label instead (WI-OI-120a). */
+function UnavailableMark({ uatPreview, className }: { uatPreview: boolean; className: string }) {
+  if (uatPreview) {
+    return (
+      <span
+        title="UAT preview: not production-ready"
+        className={`${className} shrink-0 rounded bg-ui-tag-orange-bg px-1 text-[10px] font-semibold uppercase leading-4 text-ui-tag-orange-text`}
+      >
+        UAT
+      </span>
+    );
+  }
+  return (
+    <span title="Not available" className={`${className} shrink-0 text-ui-fg-muted`}>
+      <Lock className="h-3 w-3" aria-label="Not available" />
+    </span>
   );
 }

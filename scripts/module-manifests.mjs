@@ -960,6 +960,22 @@ for (const [name, manifest] of modules) {
     fail(where, `${manifestFile} must list at least one NNNNNN_<name>.up.sql migration`);
     continue;
   }
+  // The image ships the whole migrations directory while the contract version comes from this list, so a file
+  // missing from the list silently lowers the expected version (WI-OI-119 P1-01; WI-OI-120a).
+  const migrationsDirectory = join(dirname(manifestFile), 'migrations');
+  const migrationFiles = existsSync(migrationsDirectory)
+    ? readdirSync(migrationsDirectory).filter((file) => /^\d{6}_.+\.up\.sql$/.test(file)).sort()
+    : [];
+  if (migrationFiles.join('\n') !== migrations.join('\n')) {
+    const missing = migrationFiles.filter((file) => !migrations.includes(file));
+    const extra = migrations.filter((file) => !migrationFiles.includes(file));
+    fail(
+      where,
+      `${manifestFile} must list every ${migrationsDirectory} migration in order` +
+        (missing.length ? `; missing ${missing.join(', ')}` : '') +
+        (extra.length ? `; no such file ${extra.join(', ')}` : ''),
+    );
+  }
   const resolved = {
     hosting,
     basePath: upstream.basePath ?? '',

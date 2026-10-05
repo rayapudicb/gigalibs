@@ -2,11 +2,19 @@ import {
   type PlatformModuleDefinition,
   platformModuleCatalog,
 } from '@gigalibs/contracts';
+import { uatPreviewEnabled } from './uat-module-status';
 
 export interface ModuleAccessContext {
   readonly tenant: { readonly features: readonly string[] } | null;
   readonly permissions: readonly string[];
   readonly platformRoles: readonly string[];
+  /** UAT instance only. Client components pass the server's answer; server code may omit it. */
+  readonly uatPreview?: boolean;
+}
+
+export interface ModuleAccessOptions {
+  /** UAT instance only. When omitted, the server reads the deployment setting; in the browser it is false. */
+  readonly uatPreview?: boolean;
 }
 
 export const tenantModulePermission: Readonly<Record<string, string>> = Object.fromEntries(
@@ -33,21 +41,31 @@ export function hasPermission(granted: readonly string[], required: string): boo
 }
 
 // A frozen or planned entry is locked (ADR-0016 F6; WI-OI-102e/f): its APIs refuse as well as its screens, whatever
-// the tenant's features and the user's permissions.
+// the tenant's features and the user's permissions. On the UAT instance (WI-OI-120a) the lock is lifted so testers
+// can reach every module; readiness, entitlements and permissions still apply.
 const lockedModuleKeys = new Set<string>(
   platformModuleCatalog
     .filter((module) => module.readiness === 'CONTAINED' || module.readiness === 'PLANNED')
     .map((module) => module.key),
 );
 
+export function isLockedModule(moduleKey: string): boolean {
+  return lockedModuleKeys.has(moduleKey);
+}
+
+function previewActive(uatPreview: boolean | undefined): boolean {
+  return uatPreview ?? uatPreviewEnabled();
+}
+
 export function canUseTenantModule(
   moduleKey: string,
   enabledModules: ReadonlySet<string>,
   permissions: readonly string[],
+  options: ModuleAccessOptions = {},
 ): boolean {
   const requiredPermission = tenantModulePermission[moduleKey];
   return (
-    !lockedModuleKeys.has(moduleKey) &&
+    (!lockedModuleKeys.has(moduleKey) || previewActive(options.uatPreview)) &&
     enabledModules.has(moduleKey) &&
     typeof requiredPermission === 'string' &&
     hasPermission(permissions, requiredPermission)
@@ -69,12 +87,14 @@ export function canOpenPlatformModule(
   const hasPlatformAuthority = context.platformRoles.length > 0;
   if (module.key === 'platform-control') return hasPlatformAuthority;
   if (!context.tenant) return false;
-  if (module.readiness !== 'AVAILABLE' && module.readiness !== 'REVIEW') return false;
+  const uatPreview = previewActive(context.uatPreview);
+  if (module.readiness !== 'AVAILABLE' && module.readiness !== 'REVIEW' && !uatPreview) return false;
   if (module.platformInspection && hasPlatformAuthority) return true;
   return canUseTenantModule(
     module.key,
     new Set(context.tenant.features),
     context.permissions,
+    { uatPreview },
   );
 }
 

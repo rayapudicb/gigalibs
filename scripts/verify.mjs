@@ -7,6 +7,7 @@ import { spawn } from 'node:child_process';
 import { appendFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { NOT_RUN_EXIT_CODE } from './lib/isolated-proof-database.mjs';
 
 const auditsOnly = process.argv.includes('--audits');
 // The deployment-profile verifier reports this drift until the owner decides it (see `.pi/NOW.md`).
@@ -89,15 +90,22 @@ function onlyKnownDrift(output, pattern) {
 console.log(`verify: full log ${log}`);
 let failed = 0;
 let known = 0;
+let notRun = 0;
 for (const step of steps) {
   const headerLine = logLines + 1;
   write(`=== ${step.name}\n`);
   const started = Date.now();
   const { code, output } = await run(step);
   const seconds = Math.round((Date.now() - started) / 1000);
-  let status = code === 0 ? 'PASS' : 'FAIL';
+  // A finance proof without an isolated PROOF_DATABASE_URL does not run; it is reported, never counted as a pass
+  // (WI-OI-120a; scripts/lib/isolated-proof-database.mjs).
+  let status = code === 0 ? 'PASS' : code === NOT_RUN_EXIT_CODE ? 'NOT RUN' : 'FAIL';
   if (status === 'FAIL' && step.knownDrift && onlyKnownDrift(output, step.knownDrift)) status = 'KNOWN';
-  console.log(`${status.padEnd(5)} ${step.name.padEnd(27)} ${String(seconds).padStart(4)} s   log line ${headerLine}`);
+  console.log(`${status.padEnd(7)} ${step.name.padEnd(27)} ${String(seconds).padStart(4)} s   log line ${headerLine}`);
+  if (status === 'NOT RUN') {
+    notRun += 1;
+    console.log('        needs PROOF_DATABASE_URL (an isolated database, never the UAT instance)');
+  }
   if (status === 'KNOWN') {
     known += 1;
     console.log('      only the known WORKFORCE_API_URL drift');
@@ -111,9 +119,10 @@ for (const step of steps) {
     }
   }
 }
+const notes = [known ? `${known} known drift` : '', notRun ? `${notRun} not run` : ''].filter(Boolean).join('; ');
 console.log(
   failed === 0
-    ? `RESULT: PASS${known ? ` (${known} known drift)` : ''}`
-    : `RESULT: FAIL (${failed} step${failed === 1 ? '' : 's'})`,
+    ? `RESULT: ${notRun ? 'PASS for the steps that ran' : 'PASS'}${notes ? ` (${notes})` : ''}`
+    : `RESULT: FAIL (${failed} step${failed === 1 ? '' : 's'}${notes ? `; ${notes}` : ''})`,
 );
 process.exit(failed === 0 ? 0 : 1);

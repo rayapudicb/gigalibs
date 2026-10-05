@@ -2,7 +2,7 @@ import { createPublicKey } from 'node:crypto';
 
 const WORKFORCE_AUDIENCE = 'gigalibs-workforce-api';
 // The exact gigalibs_workforce schema this image supports; must equal the last runtime-foundation migration.
-export const WORKFORCE_SCHEMA_CONTRACT_VERSION = 25;
+export const WORKFORCE_SCHEMA_CONTRACT_VERSION = 26;
 
 export interface GigaOpsRuntimeConfig {
   readonly nodeEnv: string;

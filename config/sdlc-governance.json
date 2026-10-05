@@ -37,7 +37,7 @@
   ],
   "workInProgressLimits": {
     "implementationModules": 1,
-    "activeImplementationWorkItems": [],
+    "activeImplementationWorkItems": ["WI-OI-120"],
     "note": "WI-OI-119 audit (2026-10-05): activeImplementationWorkItems was empty while WI-OI-110 to WI-OI-118 were built on 2026-10-03/04, so the WIP limit was not exercised; WI-OI-119 is a read-only audit, not implementation. WI-OI-118 committed 10bbfba in Review (Phase 14 Period Close & Forecasting); WI-OI-117 committed d731c05 in Review; WI-OI-116 committed babd0b9 in Review; WI-OI-115 committed 51c9ad8 in Review; WI-OI-114 committed eb7391a in Review; WI-OI-095 committed b799abd in Review; WI-OI-094 committed a8207c4 in Review; WI-OI-113 committed e532d98 in Review; WI-OI-093 committed 5d1aa3a and in Review; WI-OI-092 is committed 155061d and in Review; WI-OI-091 is committed 2890f10 and in Review; WI-OI-112 is in Review; WI-WFO-001–006 are in Review; WI-OI-109 is in Review.",
     "note_WI-OI-072": "Blocked: waits for owner decisions (place-path option, the other stream's Geospatial changes, forms migrations, UAT tenant).",
     "note_WI-OI-071": "Review: canonical PAYROLL_CSV_V1 export of approved pay runs (immutable, formula-injection safe, SHA-256), line-by-line reconciliation and second-person confirmation with matching control totals; build, tests, six audits, exact image 5abfa667bb10-173c70f53e51, pay+export certification and regression, zero Critical/High (infra/compose/evidence/wi-oi-071-20260927T152200Z). Target system, Connector Hub delivery, web image certification and acceptance open.",

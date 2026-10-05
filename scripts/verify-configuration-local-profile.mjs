@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import yaml from 'js-yaml';
 
@@ -181,6 +181,44 @@ for (const requiredWorkspace of [
     'WORKSPACE_REQUIRED',
     `The Docker workspace must include ${requiredWorkspace}.`,
   );
+}
+// WI-OI-120a: every workspace dependency of a package in the image workspace must itself be in that workspace, or
+// pnpm cannot install inside the image. @gigalibs/financial-operations-web was missing from a8207c4 until 2026-10-05,
+// so the web, API and Workforce images could not be built from a clean checkout.
+const workspacePackageDirectories = new Map();
+for (const parent of ['apps', 'packages', 'packages/integrations']) {
+  const parentPath = join(root, parent);
+  if (!existsSync(parentPath)) continue;
+  for (const name of readdirSync(parentPath)) workspacePackageDirectories.set(`${parent}/${name}`, null);
+}
+for (const moduleName of readdirSync(join(root, 'modules'))) {
+  for (const part of ['domain', 'web']) workspacePackageDirectories.set(`modules/${moduleName}/${part}`, null);
+  const appsPath = join(root, 'modules', moduleName, 'apps');
+  if (existsSync(appsPath)) {
+    for (const app of readdirSync(appsPath)) workspacePackageDirectories.set(`modules/${moduleName}/apps/${app}`, null);
+  }
+}
+const directoryByPackageName = new Map();
+for (const directory of workspacePackageDirectories.keys()) {
+  const manifestPath = join(root, directory, 'package.json');
+  if (!existsSync(manifestPath)) continue;
+  const name = JSON.parse(readFileSync(manifestPath, 'utf8')).name;
+  if (typeof name === 'string') directoryByPackageName.set(name, directory);
+}
+const imageWorkspace = new Set(dockerWorkspace?.packages ?? []);
+for (const directory of imageWorkspace) {
+  const manifestPath = join(root, directory, 'package.json');
+  if (!existsSync(manifestPath)) continue;
+  const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
+  for (const [name, range] of Object.entries({ ...manifest.dependencies, ...manifest.devDependencies })) {
+    if (typeof range !== 'string' || !range.startsWith('workspace:')) continue;
+    const dependencyDirectory = directoryByPackageName.get(name);
+    expect(
+      dependencyDirectory !== undefined && imageWorkspace.has(dependencyDirectory),
+      'WORKSPACE_DEPENDENCY_MISSING',
+      `${directory} depends on ${name}, which is not in the Docker workspace${dependencyDirectory ? ` (add ${dependencyDirectory})` : ''}.`,
+    );
+  }
 }
 // WI-OI-038: only the CMMS core API enters the image workspace, for its own module image; the rest of the
 // CMMS tree (import/export, prototypes) stays out and the control-plane build never filters it in. WI-OI-083b adds

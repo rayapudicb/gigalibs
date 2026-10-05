@@ -33,12 +33,13 @@ import {
   computeRollingForecast,
   computeFinancialHealthRatios,
 } from '../modules/financial-operations/apps/api/dist/close/close-engine.js';
+import { isolatedProofDatabaseUrl } from './lib/isolated-proof-database.mjs';
 
-const DB_URL = process.env.CONTROL_PLANE_DB_URL || 'postgresql://gigalibs:gigalibs_dev@localhost:5440/gigalibs';
+const DB_URL = isolatedProofDatabaseUrl('WI-OI-118 period-close proof');
 
 console.log('================================================================================');
 console.log('WI-OI-118: Period-End Close & Multi-Period Forecasting Engine Certification');
-console.log('Connecting to PostgreSQL database at port 5440...');
+console.log('Connecting to the isolated proof database (PROOF_DATABASE_URL)...');
 
 const client = new pg.Client({ connectionString: DB_URL });
 await client.connect();

@@ -24,12 +24,13 @@ import assert from 'node:assert/strict';
 import { randomUUID, createHash } from 'node:crypto';
 import pg from '../node_modules/.pnpm/pg@8.23.0/node_modules/pg/lib/index.js';
 import * as contracts from '../packages/contracts/dist/index.js';
+import { isolatedProofDatabaseUrl } from './lib/isolated-proof-database.mjs';
 
-const DB_URL = process.env.CONTROL_PLANE_DB_URL || 'postgresql://gigalibs:gigalibs_dev@localhost:5440/gigalibs';
+const DB_URL = isolatedProofDatabaseUrl('WI-OI-094 financial-operations proof');
 
 console.log('================================================================================');
 console.log('WI-OI-094: Financial Operations, Subledgers & General Ledger Certification');
-console.log('Connecting to PostgreSQL database at port 5440...');
+console.log('Connecting to the isolated proof database (PROOF_DATABASE_URL)...');
 
 const client = new pg.Client({ connectionString: DB_URL });
 await client.connect();

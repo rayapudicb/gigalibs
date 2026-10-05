@@ -1,6 +1,6 @@
 # NOW: where the work stands
 
-Updated 2026-10-05 (WI-OI-119 audit delivered, in Review; owner chose UAT readiness for every module; U1 = WI-OI-120a proposed). Keep this file
+Updated 2026-10-05 (WI-OI-120a U1 approved; part A done in the repository, uncommitted; part B waits for the owner's go). Keep this file
 to one page. Replace old content rather than appending to it, and update it at the end of every task.
 
 ## State
@@ -9,8 +9,19 @@ to one page. Replace old content rather than appending to it, and update it at t
   P1, verified against code, git and the running system. No work item has reached G5, G6 or G7.
 - **Goal now (owner, 2026-10-05):** every module, Phases 1–14 and the enhancements included, fixed and visible for
   UAT on the existing local instance. Nothing is hidden or removed. UAT data is entered by Playwright business flows.
-- **Active implementation item:** none. **Next card:** WI-OI-120a (U1: reproducible build, working UAT instance,
-  every module visible), Proposed in `.pi/tasks/WI-OI-120a.md` and waiting for the owner's OK.
+- **Active implementation item:** WI-OI-120a (U1), approved 2026-10-05.
+  - **Part A is done in the repository, uncommitted.** Evidence: `.pi/work/WI-OI-120.md`.
+    - Lockfile fixed: the frozen install passes.
+    - Finance migration 7 in its runtime list; compose regenerated; new check for this class of defect.
+    - Workforce ledger repair migration 000026.
+    - UAT visibility setting `GIGALIBS_UAT_PREVIEW`, with menu labels and a banner.
+    - Finance proofs refuse the UAT database; `verify` shows them as NOT RUN.
+    - `pnpm build`, `pnpm test` (2,431 passed) and the static audits pass.
+  - **Open:**
+    - the CMMS migrations 000017–000019 fix, which edits never-applied committed files; the permission system
+      refused it, so the owner decides;
+    - part B (backup, migrations, deploy and smoke test on the UAT instance), which needs the owner's go;
+    - commit only on the owner's "commit".
 - **Committed code (HEAD) cannot be built, installed or started.** The image build and migration runner use
   untracked files, the lockfile is stale since `a8207c4`, and the module host rejects Finance's schema version (7 vs 6).
 - **Phases 1–14 (WI-OI-109–118, 091–095):** Review, gate at most local G4. The "G0–G6 Proved" claims for 110 and 111
@@ -32,8 +43,7 @@ to one page. Replace old content rather than appending to it, and update it at t
 
 ## Next
 
-1. Owner approves or amends WI-OI-120a (U1). Its part B (backup, migrations, deploy on the UAT instance) needs the
-   owner's go at that moment.
+1. Owner: decide the CMMS 000017–000019 correction; say "commit" for part A; give the go for part B (U1).
 2. Then U2 (ERP modules answer requests), U3 (security), then one card per module with a Playwright business flow
    (U4–U21), journeys (U22–U23), never-built spec items (U24–U27) and UAT (U28). Plan:
    `docs/audits/2026-10-04-production-readiness/remediation-backlog.md`.
@@ -53,7 +63,8 @@ to one page. Replace old content rather than appending to it, and update it at t
 ## Watch-outs
 
 - One agent in the repository at a time. Commit only on the owner's literal "commit".
-- Do not run `pnpm verify` until R2 isolates the Finance proof steps; run the static audits one at a time instead.
+- `pnpm verify` is safe again: the Finance proofs run only with `PROOF_DATABASE_URL` (an isolated database) and
+  otherwise report NOT RUN.
 - `pnpm verify` reports the deployment-profile `WORKFORCE_API_URL` drift as KNOWN. Do not fix it without the owner.
 - Deploy consumers before producers (Analytics, then Geospatial, then Connector Hub).
 - Other agents' work lands here. Review it before deploying it, and record every deploy (the 2026-10-04 one was not).

@@ -1,6 +1,6 @@
 # WI-OI-120a (U1): Reproducible build, a working UAT instance and every module visible
 
-- **Status:** Proposed (2026-10-05). It replaces the withdrawn containment proposal (R1); the owner decided on
+- **Status:** Approved (owner, 2026-10-05) | In progress (part A). It replaces the withdrawn containment proposal (R1); the owner decided on
   2026-10-05 that nothing is hidden or removed.
 - **Work item:** WI-OI-120 (UAT readiness programme from the WI-OI-119 audit). Evidence goes in
   `.pi/work/WI-OI-120.md`.
@@ -84,9 +84,9 @@ This closes audit findings P0-12, P1-01 and P1-13 to P1-16.
 - [ ] Module host starts with Finance, Inventory, Orders, Procurement and Catalogue; CMMS and Workforce run
 - [ ] Every module, Phases 1–14 included, is visible and opens on the UAT instance, with its status label
   (Playwright smoke)
-- [ ] Manifest readiness values are unchanged; with the UAT setting off, nothing new is visible
-- [ ] Finance proof scripts no longer write to the UAT database
-- [ ] `pnpm build`, `pnpm test` and static audits pass (known `WORKFORCE_API_URL` drift only)
+- [x] Manifest readiness values are unchanged; with the UAT setting off, nothing new is visible
+- [x] Finance proof scripts no longer write to the UAT database
+- [x] `pnpm build`, `pnpm test` and static audits pass (known `WORKFORCE_API_URL` drift only)
 - [ ] The deploy is recorded; evidence in `.pi/work/WI-OI-120.md`; `.pi/NOW.md` updated
 
 ## Stop and ask if

@@ -5,3 +5,4 @@
 000005_finance_inventory_costing.up.sql
 000006_finance_budgeting_commitment_control.up.sql
 
+000007_finance_period_close_accruals_forecasting.up.sql

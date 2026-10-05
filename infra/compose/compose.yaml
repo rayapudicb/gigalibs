@@ -130,6 +130,7 @@ services:
       CONTROL_PLANE_API_URL: http://api:3333
       BFF_MAX_REQUEST_BYTES: ${BFF_MAX_REQUEST_BYTES:?BFF_MAX_REQUEST_BYTES is required}
       COOKIE_SECURE: "false"
+      GIGALIBS_UAT_PREVIEW: ${GIGALIBS_UAT_PREVIEW-disabled}
       NEXT_PUBLIC_ENV_LABEL: ${NEXT_PUBLIC_ENV_LABEL-local}
       NEXT_PUBLIC_USE_FORM_ENGINE: ${NEXT_PUBLIC_USE_FORM_ENGINE-false}
       # Module API proxy URLs — each module's backend runs on the host

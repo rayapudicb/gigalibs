@@ -118,6 +118,7 @@
         "COOKIE_SECURE"
       ],
       "optionalEnvironment": [
+        "GIGALIBS_UAT_PREVIEW",
         "NEXT_PUBLIC_ENV_LABEL",
         "NEXT_PUBLIC_USE_FORM_ENGINE",
         "AR_API_URL",

@@ -3,6 +3,7 @@ packages:
   - apps/workflow-platform
   - modules/accounts-receivable/domain
   - modules/analytics-studio/apps/api
+  - modules/financial-operations/web
   - modules/geospatial/apps/api
   - modules/gigaops/apps/api
   - modules/physical-operations-cmms/apps/api

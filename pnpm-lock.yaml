@@ -55,6 +55,9 @@ importers:
 
   apps/module-host:
     dependencies:
+      '@gigalibs/financial-operations-api':
+        specifier: workspace:*
+        version: link:../../modules/financial-operations/apps/api
       '@gigalibs/module-sdk':
         specifier: workspace:*
         version: link:../../packages/module-sdk
@@ -228,6 +231,9 @@ importers:
       '@gigalibs/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@gigalibs/financial-operations-web':
+        specifier: workspace:*
+        version: link:../../modules/financial-operations/web
       '@gigalibs/i18n':
         specifier: workspace:*
         version: link:../../packages/i18n

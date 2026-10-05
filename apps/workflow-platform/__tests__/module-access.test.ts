@@ -1,13 +1,15 @@
 import { platformModuleCatalog } from '@gigalibs/contracts';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   canOpenPlatformModule,
   canInspectPlatformModule,
   canUseTenantModule,
   hasPermission,
+  isLockedModule as isCatalogueLocked,
   mostSpecificActiveModuleKey,
   tenantModulePermission,
 } from '../lib/module-access';
+import { UAT_PREVIEW_SETTING, uatPreviewEnabled, uatStatusFor } from '../lib/uat-module-status';
 import { isLockedModule } from './helpers/locked-modules';
 
 describe('module access', () => {
@@ -155,4 +157,59 @@ describe('module access', () => {
       expect(canUseTenantModule(moduleKey, new Set([moduleKey]), [])).toBe(false);
     },
   );
+});
+
+describe('UAT preview (WI-OI-120a)', () => {
+  const lockedKeys = ['financial-operations', 'universal-procurement', 'accounts-receivable', 'esignature'];
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('keeps locked modules refused unless the setting is exactly "enabled"', () => {
+    for (const value of ['', 'true', '1', 'ENABLED', 'yes']) {
+      vi.stubEnv(UAT_PREVIEW_SETTING, value);
+      expect(uatPreviewEnabled(), value).toBe(false);
+      for (const key of lockedKeys) expect(canUseTenantModule(key, new Set([key]), ['*']), `${key} ${value}`).toBe(false);
+    }
+  });
+
+  it('lifts the readiness lock on the UAT instance but still requires the entitlement and the permission', () => {
+    vi.stubEnv(UAT_PREVIEW_SETTING, 'enabled');
+    expect(uatPreviewEnabled()).toBe(true);
+    for (const key of lockedKeys) {
+      expect(isCatalogueLocked(key), key).toBe(true);
+      expect(canUseTenantModule(key, new Set([key]), ['*']), key).toBe(true);
+      expect(canUseTenantModule(key, new Set(), ['*']), `${key} without entitlement`).toBe(false);
+      expect(canUseTenantModule(key, new Set([key]), []), `${key} without permission`).toBe(false);
+    }
+  });
+
+  it('lets a client component pass the server answer explicitly, overriding its own environment', () => {
+    vi.stubEnv(UAT_PREVIEW_SETTING, '');
+    expect(canUseTenantModule('financial-operations', new Set(['financial-operations']), ['*'], { uatPreview: true })).toBe(
+      true,
+    );
+    vi.stubEnv(UAT_PREVIEW_SETTING, 'enabled');
+    expect(
+      canUseTenantModule('financial-operations', new Set(['financial-operations']), ['*'], { uatPreview: false }),
+    ).toBe(false);
+  });
+
+  it('lists a PLANNED module in navigation only on the UAT instance, and never without a tenant', () => {
+    const finance = platformModuleCatalog.find((module) => module.key === 'financial-operations')!;
+    expect(finance.readiness).toBe('PLANNED');
+    const session = { tenant: { features: ['financial-operations'] }, permissions: ['*'], platformRoles: [] };
+    expect(canOpenPlatformModule(finance, { ...session, uatPreview: false })).toBe(false);
+    expect(canOpenPlatformModule(finance, { ...session, uatPreview: true })).toBe(true);
+    expect(canOpenPlatformModule(finance, { ...session, tenant: null, uatPreview: true })).toBe(false);
+  });
+
+  it('labels the sample-figure workspaces and every other locked module for testers, and leaves the rest unlabelled', () => {
+    for (const key of ['universal-inventory', 'universal-procurement', 'universal-orders', 'financial-operations']) {
+      expect(uatStatusFor(key, 'PLANNED')?.status, key).toBe('sample-figures');
+    }
+    expect(uatStatusFor('esignature', 'CONTAINED')?.status).toBe('not-verified');
+    expect(uatStatusFor('asset-maintenance', 'REVIEW')).toBeNull();
+  });
 });
