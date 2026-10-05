@@ -1,6 +1,6 @@
 # WI-OI-118: Period-End Close Orchestration, Accruals/Deferrals, Financial Health & Multi-Period Forecasting Engine
 
-- **Status:** Done (2026-10-04)
+- **Status:** Review (committed `10bbfba`; migration 000007 is missing from the runtime manifest, so the module host cannot start at HEAD). Corrected by the WI-OI-119 audit (2026-10-05).
 - **Work item:** WI-OI-118 (row 145 in `.pi/WORK_ITEMS.md`). Evidence in `.pi/work/WI-OI-118.md`.
 - **Size:** L
 - **Domain:** SDLC Orchestrator / Period Close, Financial Health & Multi-Period Forecasting Domain (`modules/financial-operations`)

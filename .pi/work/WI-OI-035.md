@@ -1,7 +1,7 @@
 # WI-OI-035: Production-Grade Invoicing & AR Subsystem: Multi-Tier Tax Engine, Ledger Cryptographic Hash-Chained Integrity Seals, Installment Billing, and Triple-Broker Concurrency
 
 **Owner**: Solution Architect & Financial Systems Engineer  
-**Status**: Review  
+**Status**: Blocked (frozen by the owner 2026-09-28; matches the registry). Corrected by the WI-OI-119 audit (2026-10-05).  
 **Gate**: G4 (Execution & Verification)  
 **Requirements**: FR-02, FR-04, FR-06, FR-12, FR-14, FR-16, NFR-FIN-001–004, NFR-SEC-001–005, NFR-REL-001–003  
 

@@ -1,6 +1,6 @@
 # WI-OI-112: Product, Service, UOM, Catalogue and Pricing Foundation (Phase 4)
 
-- **Status:** Ready for Review (2026-10-03)
+- **Status:** Review (committed `2f18945`; not independently reviewed). Corrected by the WI-OI-119 audit (2026-10-05).
 - **Work item:** WI-OI-112 (row in `.pi/WORK_ITEMS.md`). Evidence goes in `.pi/work/WI-OI-112.md`.
 - **Size:** XL, delivered as 10 slices P4-0 through P4-9
 - **Depends on:** WI-OI-109, WI-OI-110, WI-OI-111, ADR-0002, ADR-0013, ADR-0016, ADR-0018, ADR-0019, ADR-0020

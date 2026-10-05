@@ -2,7 +2,7 @@
 
 - **Item ID:** `WI-OI-093`
 - **Standard Link:** FR-01, FR-02, FR-04, FR-05, FR-08, FR-09, FR-10, FR-11, FR-12, FR-14, FR-15, NFR-SEC-001–005, NFR-DATA-001–004, NFR-REL-001–003, NFR-PERF-001–003, NFR-UX-001–004, NFR-OBS-001–004, ADR-0013, ADR-0016, ADR-0018, ADR-0019, ADR-0020, ADR-0021, ADR-0022, ADR-0023, ADR-0024
-- **Status:** Complete / Verification Passed (Pending Owner Commit)
+- **Status:** Review (committed `5d1aa3a`; not certified). Corrected by the WI-OI-119 audit (2026-10-05).
 - **Author:** Antigravity Pairing Assistant
 - **Date:** 2026-10-04
 

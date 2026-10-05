@@ -1,6 +1,6 @@
 # WI-OI-080 — ADR-0013 layering, ownership and layer-boundary audit (Wave 0, C1)
 
-Status: In Progress (sole active item from 2026-09-28)  
+Status: Review (matches the registry; independent review pending). Corrected by the WI-OI-119 audit (2026-10-05).  
 Owner: SDLC Orchestrator / Solution Architecture / Developer Platform  
 Execution: owner-approved plan of action (2026-09-28): core first, freeze outside the manufacturing package  
 Requirements: FR-01, FR-02, FR-12, FR-14, NFR-GOV-001–003, NFR-SEC-001–005, NFR-DATA-001–004, NFR-REL-001–003,

@@ -1,6 +1,6 @@
 # WI-OI-110: Metadata and Application Dictionary Foundation
 
-- **Status:** In Review (implementation complete, all audits and certifications pass)
+- **Status:** Review (local implementation; in-process proof only; no independent review). Corrected by the WI-OI-119 audit (2026-10-05).
 - **Work item:** WI-OI-110 (row in `.pi/WORK_ITEMS.md`). Evidence goes in `.pi/work/WI-OI-110.md`.
 - **Size:** XL
 - **Depends on:** WI-OI-039 (Configuration Studio), WI-OI-109 (Organization Hierarchy & Scope), ADR-0002, ADR-0013, ADR-0016, ADR-0018

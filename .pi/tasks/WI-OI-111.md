@@ -1,6 +1,6 @@
 # WI-OI-111: Core Parties and Bounded Custom Applications (Phase 3 Reference Adoption)
 
-- **Status:** Complete (Awaiting owner commit)
+- **Status:** Review (committed `ad7f83b`; not independently reviewed). Corrected by the WI-OI-119 audit (2026-10-05).
 - **Work item:** WI-OI-111 (row in `.pi/WORK_ITEMS.md`). Evidence goes in `.pi/work/WI-OI-111.md`.
 - **Size:** XL
 - **Depends on:** WI-OI-109 (Organization Hierarchy & Scope), WI-OI-110 (Application Dictionary Foundation), ADR-0002, ADR-0013, ADR-0016, ADR-0018, ADR-0019

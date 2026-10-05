@@ -1,6 +1,6 @@
 # WI-OI-081 — Single module manifest (v1) and generated module catalogue (Wave 0, C2 and C8)
 
-Status: In Progress (sole active item from 2026-09-28)  
+Status: Review (matches the registry; independent review pending). Corrected by the WI-OI-119 audit (2026-10-05).  
 Owner: SDLC Orchestrator / Developer Platform / API Contracts  
 Plan: `docs/plans/manufacturing-package-solution-plan.md` §4 C2 and C8; ADR-0013 §3  
 Independent reviewers: Release Operations, QA/SDET, Product

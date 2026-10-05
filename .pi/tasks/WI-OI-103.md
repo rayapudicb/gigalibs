@@ -1,6 +1,6 @@
 # WI-OI-103: Analytics engine as a common capability (ADR-0016 F13, F16, F11)
 
-- **Status:** In progress (bounded continuation: retiring obsolete chart/query runtime and 103f manufacturing no-developer proof).
+- **Status:** Review (103a–103e); 103f and the old-engine cleanup are not started. Corrected by the WI-OI-119 audit (2026-10-05).
 - **Work item:** WI-OI-103 (its row in `.pi/WORK_ITEMS.md`). Evidence goes in `.pi/work/WI-OI-103.md`.
 - **Requirements:** FR-11, FR-12, FR-13, FR-14, NFR-SEC-001–005, NFR-DATA-001–004, NFR-PERF-001–003, NFR-UX-001–004, NFR-OBS-001–004.
 - **Size:** M

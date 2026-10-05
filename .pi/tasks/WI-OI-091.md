@@ -1,6 +1,6 @@
 # WI-OI-091: Universal Inventory and Warehouse Operations (Phase 5)
 
-- **Status:** Complete / In Review (certified 2026-10-04)
+- **Status:** Review (not certified: service-level proof only; no module tests; static/simulated UI). Corrected by the WI-OI-119 audit (2026-10-05).
 - **Work item:** WI-OI-091 (row in `.pi/WORK_ITEMS.md`). Evidence goes in `.pi/work/WI-OI-091.md`.
 - **Size:** XL, delivered as 10 slices P5-0 through P5-9
 - **Depends on:** WI-OI-109, WI-OI-105, WI-OI-110, WI-OI-111, WI-OI-112, ADR-0002, ADR-0013, ADR-0016, ADR-0018, ADR-0019, ADR-0020, ADR-0021

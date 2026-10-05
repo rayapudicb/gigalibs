@@ -82,8 +82,8 @@ and future mobile clients.
 - [ ] Tenant, sibling-unit, historical/as-of, Place-link and module-query isolation pass at API and database layers.
 - [ ] Existing Department data and consumers have an evidenced compatibility path with no data loss or split authority.
 - [ ] Web administration is keyboard/screen-reader usable and every action is backed by real APIs and persistence.
-- [x] Fresh installation, representative upgrade and forward-fix paths pass. Bounded organization scale evidence is recorded separately in 109g.
-- [x] `pnpm verify` passes with only the explicitly known `WORKFORCE_API_URL` drift.
+- [ ] Fresh installation, representative upgrade and forward-fix paths pass. Bounded organization scale evidence is recorded separately in 109g. (Reopened by the WI-OI-119 audit, 2026-10-05: the fix depends on untracked files and is not reproducible from a commit.)
+- [ ] `pnpm verify` passes with only the explicitly known `WORKFORCE_API_URL` drift. (Reopened by the WI-OI-119 audit, 2026-10-05: it passes only with untracked files present, and the committed lockfile is out of date.)
 - [ ] Evidence is recorded in `.pi/work/WI-OI-109.md`, and `.pi/NOW.md` is updated.
 
 ## Stop and ask if

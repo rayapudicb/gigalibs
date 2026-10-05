@@ -1,6 +1,6 @@
 # WI-OI-092: Universal Procurement, Vendor Operations and 3-Way Matching (Phase 6)
 
-- **Status:** Complete (Implemented, certified with real database proof, and SDLC audits verified 2026-10-04)
+- **Status:** Review (not certified: service-level proof only; no module tests; static UI with a default tenant). Corrected by the WI-OI-119 audit (2026-10-05).
 - **Work item:** WI-OI-092 (row in `.pi/WORK_ITEMS.md`). Evidence goes in `.pi/work/WI-OI-092.md`.
 - **Size:** XL, delivered across 10 slices P6-0 through P6-9
 - **Depends on:** WI-OI-109, WI-OI-110, WI-OI-111, WI-OI-112, WI-OI-091, ADR-0013, ADR-0016, ADR-0018, ADR-0019, ADR-0020, ADR-0021, ADR-0022

@@ -1,6 +1,6 @@
 # WI-OI-040 — Source-backed event billing and supplemental invoicing
 
-Status: Proposed  
+Status: Blocked (frozen by the owner 2026-09-28; matches the registry). Corrected by the WI-OI-119 audit (2026-10-05).  
 Owner: SDLC Orchestrator / AR Backend & Data with Product and Finance/Payroll Domain  
 Requirements: FR-17-EB-01–FR-17-EB-15; FR-04, FR-05, FR-09, FR-10, FR-14, FR-15; NFR-GOV-001–003,
 NFR-SEC-001–005, NFR-DATA-001–004, NFR-REL-001–003, NFR-PERF-001–003, NFR-UX-001–004,

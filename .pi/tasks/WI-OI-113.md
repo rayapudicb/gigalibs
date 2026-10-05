@@ -1,6 +1,6 @@
 # WI-OI-113: Commercial & Operational Module Convergence and Outbox-Inbox Handshake
 
-- **Status:** In progress (Implementation & 12-Step Real Database Certification Complete, awaiting owner commit)
+- **Status:** Review (committed `e532d98`; not certified: the proof hand-writes outbox and inbox rows; ADR-0026 is Proposed). Corrected by the WI-OI-119 audit (2026-10-05).
 - **Work item:** WI-OI-113 (row in `.pi/WORK_ITEMS.md`). Evidence goes in `.pi/work/WI-OI-113.md`.
 - **Size:** XL, delivered across 6 production-ready slices C-1 through C-6
 - **Depends on:** WI-OI-091, WI-OI-092, WI-OI-093, WI-OI-019 (bounded unfreeze for AR inbox), WI-OI-068, ADR-0007, ADR-0013, ADR-0016, ADR-0022, ADR-0023, ADR-0024, ADR-0026

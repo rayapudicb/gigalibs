@@ -1,6 +1,6 @@
 # WI-OI-095: Treasury Operations, Bank Accounts, Statement Ingestion & Automated Bank Reconciliation
 
-- **Status:** Approved (owner, 2026-10-04) | Review
+- **Status:** Review (approved by the owner 2026-10-04; committed `b799abd`; not deployed). Corrected by the WI-OI-119 audit (2026-10-05).
 - **Work item:** WI-OI-095 (row in `.pi/WORK_ITEMS.md`). Evidence goes in `.pi/work/WI-OI-095.md`.
 - **Size:** L
 - **Domain:** SDLC Orchestrator / Treasury & Cash Management Domain (`modules/financial-operations`)

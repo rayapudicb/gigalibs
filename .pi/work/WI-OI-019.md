@@ -1,6 +1,6 @@
 # WI-OI-019 — Standalone Customer Invoicing and Accounts Receivable product
 
-Status: Review
+Status: Blocked (frozen by the owner 2026-09-28; matches the registry). Corrected by the WI-OI-119 audit (2026-10-05).
 Parent requirements: FR-17, FR-14, FR-15, FR-16 and applicable NFRs  
 Producer: SDLC Orchestrator coordinating Product, Finance, Architecture, Backend, Web, Data, Security, QA,
 SRE, Release, and Documentation roles  

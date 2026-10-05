@@ -1,6 +1,6 @@
 # WI-OI-013 — Self-service tenant administration, SSO/MFA, and regional isolation slice
 
-Status: In Progress
+Status: Blocked (No-Go; matches the registry). Corrected by the WI-OI-119 audit (2026-10-05).
 Parent requirements: FR-14, NFR-SEC-001, NFR-SEC-002, NFR-DATA-004  
 Producer: Backend & Data Engineer + Web Experience  
 Independent reviewers: Security & Privacy, Solution Architecture, QA Spec  

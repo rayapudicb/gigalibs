@@ -1,78 +1,68 @@
 # NOW: where the work stands
 
-Updated 2026-10-04 (WI-OI-118 committed 10bbfba in Review; WI-OI-117 committed d731c05 in Review; WI-OI-116 committed babd0b9 in Review; WI-OI-115 committed 51c9ad8 in Review; WI-OI-114 committed eb7391a in Review; WI-OI-095 committed b799abd in Review; WI-OI-094 committed a8207c4 in Review; WI-OI-113 committed e532d98 in Review; WI-OI-093 committed 5d1aa3a in Review; WI-OI-092 committed 155061d in Review; WI-OI-091 committed 2890f10 in Review; WI-OI-112 in Review committed 2f18945; WI-OI-111 committed ad7f83b; WI-OI-110 in Review). Keep this file to one page.
-Replace old content rather than appending to it, and update it at the end of every task.
+Updated 2026-10-05 (WI-OI-119 audit delivered, in Review; owner chose UAT readiness for every module; U1 = WI-OI-120a proposed). Keep this file
+to one page. Replace old content rather than appending to it, and update it at the end of every task.
 
 ## State
 
-- **Active implementation item:** none (WI-OI-118 committed `10bbfba` in Review; task card `.pi/tasks/WI-OI-118.md`). Phase 14 Period-End Close Orchestration, Accruals/Deferrals, Financial Health & Multi-Period Forecasting Engine complete. All 18 verification steps in `pnpm verify` pass cleanly. WI-OI-117 committed `d731c05` in Review. WI-OI-116 committed `babd0b9` in Review. WI-OI-115 committed `51c9ad8` in Review. WI-OI-114 committed `eb7391a` in Review. WI-OI-095 committed `b799abd` in Review. WI-OI-094 committed `a8207c4` in Review. WI-OI-113 committed `e532d98` in Review. WI-OI-093 committed `5d1aa3a` and in Review. WI-OI-092 committed `155061d` and in Review. WI-OI-091 committed `2890f10` and in Review. WI-OI-112 is committed `2f18945` and in Review. WI-OI-111 committed `ad7f83b` and in Review. WI-OI-110 in Review, committed `917141a`.
-- **Wave 0:** WI-OI-080, 081, 082, 083 and 085 are in Review, waiting for human reviews. WI-OI-084 (mobile) has not started.
-- **Running locally (2026-10-02 14:16 IST):** every application service is on `3da222030dc2-a0ca08f61655`; the web is healthy on 5180 and the control plane is healthy on 3333.
-  - Schemas: core organization migration live, Analytics 29, Connector Hub 8, Geospatial 8, CMMS 14, Workforce 19; Redis and the kernel worker run.
-  - Backups are taken before every deploy run (`infra/compose/backups/`).
-  - Live proofs pass: the web proof (14 Playwright tests), the places proof (WI-OI-105) and the packs proof (a pack
-    activated in Configuration Studio reaches Workforce and Geospatial; one industry pack at a time).
+- **Release verdict: NO-GO.** The audit (`docs/audits/2026-10-04-production-readiness/README.md`) found 13 P0 and 29
+  P1, verified against code, git and the running system. No work item has reached G5, G6 or G7.
+- **Goal now (owner, 2026-10-05):** every module, Phases 1–14 and the enhancements included, fixed and visible for
+  UAT on the existing local instance. Nothing is hidden or removed. UAT data is entered by Playwright business flows.
+- **Active implementation item:** none. **Next card:** WI-OI-120a (U1: reproducible build, working UAT instance,
+  every module visible), Proposed in `.pi/tasks/WI-OI-120a.md` and waiting for the owner's OK.
+- **Committed code (HEAD) cannot be built, installed or started.** The image build and migration runner use
+  untracked files, the lockfile is stale since `a8207c4`, and the module host rejects Finance's schema version (7 vs 6).
+- **Phases 1–14 (WI-OI-109–118, 091–095):** Review, gate at most local G4. The "G0–G6 Proved" claims for 110 and 111
+  are withdrawn. Gates and statuses were corrected (downgrade only) in `.pi/WORK_ITEMS.md`.
+- **Wave 0:** WI-OI-080–083 and 085 in Review; WI-OI-084 (mobile) not started.
 
-## What is live for the owner (5180)
+## What is running locally (checked 2026-10-04 16:00Z, read-only)
 
-- **Settings › Organization:** native tenant-defined unit types, units, primary/rollup trees, versioned drafts, validation,
-  maker-checker publication/activation, scope grants and Place links. The current local tenant intentionally starts with
-  one empty primary tree and no migrated Department data.
-
-- **Connections:** Connector Hub pulls (REST, paging, logins, quarantine, schedules); a pull can go to Analytics, and
-  to Geospatial as places (farms, fields, boundaries in GeoJSON or WKT).
-- **Analytics:**
-  - **Sources:** map pulled records into datasets, with unit conversion and "Place of each record" (a point, or a
-    place code); the unplaced count shows on each dataset.
-  - **Explore:** any chart type, a Place filter (a farm and its fields), and **Map (places)**; save the question.
-  - Dashboards, Reports, Places; every answer honours the member's place scope.
-- **Configuration › Industry packs:** the shipped industry and country packs (agriculture starter pack included),
-  installed per tenant, then approved, published and activated in Studio; Workforce and Geospatial receive their part.
+- All app containers run `007e686bebee-c1746f0b541b`, created 2026-10-04 07:06Z by a deploy that nobody recorded
+  (backup `gigalibs_backup_20261004_061720Z` exists). This image has Phases 2–7. It does not have WI-OI-113 or Phases
+  8–14, and no Finance service runs.
+- **CMMS and Workforce are down** since that deploy. Their migration jobs exit 1: CMMS fails with
+  `type "gigalibs_cmms.user_ref" does not exist`; Workforce with "ledger is 19; expected exactly 25".
+- Two untracked migrations (`20260923590000_*`, `20261002000000_*`) were applied to the local database on
+  2026-10-04 06:41Z. Finance migrations 1–7 were applied before their commits.
+- Proof scripts left unattributed test data (83 test tenant IDs in Finance) and a login role `rls_test_user`.
+  `pnpm verify`, including `--audits`, writes to this database. The audit's own run did too (2026-10-04 16:19Z;
+  9 books, 26 journals).
 
 ## Next
 
-- WI-OI-118 committed `10bbfba` in Review (Phase 14 Period-End Close Orchestration, Accruals/Deferrals, Financial Health & Multi-Period Forecasting Engine).
-- WI-OI-117 committed `d731c05` in Review (Phase 13 Budgeting, Financial Planning & Commitment Control Engine).
-- WI-OI-116 committed `babd0b9` in Review (Phase 12 Inventory Costing, Valuation & Landed Cost Engine).
-- WI-OI-115 committed `51c9ad8` in Review (Phase 11 Multi-Company Financial Consolidation & Intercompany Eliminations).
-- WI-OI-114 committed `eb7391a` in Review (Phase 10 Fixed Assets Management, Asset Register & Depreciation Engine).
-- WI-OI-095 committed `b799abd` in Review (Phase 9 Treasury Operations, Bank Accounts, Statement Ingestion and Automated Bank Reconciliation).
-- WI-OI-094 committed `a8207c4` in Review (Phase 8 Financial Operations, Subledgers & General Ledger Integration).
-- WI-OI-113 committed `e532d98` and in Review (Commercial & Operational Module Convergence and Outbox-Inbox Handshake).
-- WI-OI-093 committed `5d1aa3a` and in Review (Phase 7 Universal Order Management and Customer Fulfillment).
-- WI-OI-092 committed `155061d` and in Review (Phase 6 Universal Procurement, Vendor Operations and 3-Way Matching).
-- WI-OI-091 committed `2890f10` and in Review (Phase 5 Universal Inventory and Warehouse Operations).
+1. Owner approves or amends WI-OI-120a (U1). Its part B (backup, migrations, deploy on the UAT instance) needs the
+   owner's go at that moment.
+2. Then U2 (ERP modules answer requests), U3 (security), then one card per module with a Playwright business flow
+   (U4–U21), journeys (U22–U23), never-built spec items (U24–U27) and UAT (U28). Plan:
+   `docs/audits/2026-10-04-production-readiness/remediation-backlog.md`.
 
 ## Open decisions (owner)
 
-- **Owner decision 2026-10-01 (option B) executed locally 2026-10-02:** backup, migrations, exact-image rebuild and consumer-first deployment are complete. Live acceptance proofs remain.
-
-- Replay the 980 place facts dead-lettered during the WI-OI-105 swap (test tenants only), or leave them.
-- Removing the unregistered Workforce prototype (packs, payroll and others) is a package-inventory (F7) decision.
-- CMMS and Workforce give a member only their exact assigned place; Analytics (and the platform contract) include
-  everything inside it. Align them or keep the stricter rule.
-- Drop the empty `gigalibs_platform` schema; the `platform-rbac` leftovers.
-- The Analyst role has no `analytics:export`, following the plan wording. Change it if the owner wants.
-- Revoke old test sessions: 721 sessions are active, mostly test accounts.
-- Confirm ADR-0017 (kernel jobs).
+- Settled 2026-10-05: all phases in UAT scope (D1); AR in scope (D2); mobile and other never-built spec items wanted
+  (D3, Stage 4); runner and migrations committed (D4); UAT on the existing instance.
+- **D5 Local database clean-up:** remove the proof data and `rls_test_user`.
+- **D6 Credentials:** rotate the live third-party credentials in untracked `.env` files under
+  `modules/communications-textfly/`.
+- **D7 Named humans:** independent Security, QA, Product, Accounting and Legal reviewers and a release authority.
+- Still open from before: replay the 980 dead-lettered place facts; remove the unregistered Workforce prototype (F7);
+  align place-scope rules between CMMS/Workforce and Analytics; drop the empty `gigalibs_platform` schema and the
+  `platform-rbac` leftovers; Analyst `analytics:export`; revoke 721 old test sessions; confirm ADR-0017.
 
 ## Watch-outs
 
 - One agent in the repository at a time. Commit only on the owner's literal "commit".
-- `pnpm verify` reports the deployment-profile `WORKFORCE_API_URL` drift as KNOWN. Do not fix it without the
-  owner.
-- Deploy consumers before producers (Analytics, then Geospatial, then Connector Hub), or a relay dead-letters the
-  facts it sends in between (the WI-OI-105 lesson; `deploy-104c.sh` does this now).
-- The Mac's disk sits near the 60 GB build floor; builds may need the cache trimmed first.
-- Other agents' work lands in this repository. Review it before deploying it (the D2 lesson: its migrations had been
-  applied by hand without being recorded).
-- Preserve the uncommitted Gemini corrections in `.pi/work/WI-OI-103.md` and
-  `scripts/verify-manufacturing-no-developer.mjs`; they are not WI-OI-109 changes.
+- Do not run `pnpm verify` until R2 isolates the Finance proof steps; run the static audits one at a time instead.
+- `pnpm verify` reports the deployment-profile `WORKFORCE_API_URL` drift as KNOWN. Do not fix it without the owner.
+- Deploy consumers before producers (Analytics, then Geospatial, then Connector Hub).
+- Other agents' work lands here. Review it before deploying it, and record every deploy (the 2026-10-04 one was not).
+- `pnpm-workspace.yaml` globs pull the untracked `modules/communications-textfly` and `modules/platform-rbac` into
+  local builds.
 
 ## Where things are
 
-- **Rules:** `AGENTS.md` ("Every session: start here"). Owner rules and architecture are in
-  `.pi/handoff/HANDOFF-2026-09-29.md` §1–§3.
-- **Status:** `.pi/WORK_ITEMS.md`; read only your item's row. Evidence is in `.pi/work/WI-OI-*.md`.
-- **Task cards:** `.pi/tasks/` (template: `.pi/tasks/TEMPLATE.md`). Proposals: `.pi/proposals/`.
-- **Vision:** `docs/GIGALIBS_PRODUCT_VISION.md`. Plan: `docs/plans/manufacturing-package-solution-plan.md`.
+- **Rules:** `AGENTS.md`. Owner rules and architecture: `.pi/handoff/HANDOFF-2026-09-29.md` §1–§3.
+- **Status:** `.pi/WORK_ITEMS.md` (canonical). Evidence: `.pi/work/WI-OI-*.md`; this audit: `.pi/work/WI-OI-119.md`.
+- **Audit:** `docs/audits/2026-10-04-production-readiness/` (report, backlog, four appendices).
+- **Task cards:** `.pi/tasks/` (template `.pi/tasks/TEMPLATE.md`).

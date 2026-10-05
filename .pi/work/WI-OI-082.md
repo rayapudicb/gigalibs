@@ -1,6 +1,6 @@
 # WI-OI-082 — Module SDK: shared plumbing extracted from CMMS and Workforce (Wave 0, C3)
 
-Status: In Progress (sole active item from 2026-09-28)  
+Status: Review (matches the registry; independent review pending). Corrected by the WI-OI-119 audit (2026-10-05).  
 Owner: SDLC Orchestrator / Developer Platform / Backend Domain  
 Plan: `docs/plans/manufacturing-package-solution-plan.md` §4 C3; ADR-0013 (the SDK is core)  
 Independent reviewers: Security & Privacy (relay tokens, tenant binding), Backend/Data, QA/SDET
