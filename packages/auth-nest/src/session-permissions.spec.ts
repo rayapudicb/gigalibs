@@ -84,6 +84,23 @@ describe('session permissions for Workforce access', () => {
     expect(context.permissions.some((permission) => permission.startsWith('cmms'))).toBe(false);
   });
 
+  // WI-OI-120 (owner, 2026-10-05): module access is by role. A Tenant Admin runs every licensed ERP module and its core
+  // parties; other base roles get none of it and need the module's own roles.
+  const erpPermissions = ['parties:*', 'products:*', 'product-categories:*', 'uoms:*', 'catalogues:*', 'pricing:*', 'inventory:*', 'procurement:*', 'orders:*', 'finance:*'];
+
+  it('gives a tenant administrator every ERP module permission and the core parties', async () => {
+    prismaMock.tenantMember.findUnique.mockResolvedValue(membership('TENANT_ADMIN'));
+    const context = await new AuthService().getSessionContext('user-1', 'session-1', tenantId);
+    expect(context.permissions).toEqual(expect.arrayContaining(erpPermissions));
+  });
+
+  it.each(['MANAGER', 'MEMBER', 'VIEWER'])('gives %s no ERP module authority from the base role', async (role) => {
+    prismaMock.tenantMember.findUnique.mockResolvedValue(membership(role));
+    const context = await new AuthService().getSessionContext('user-1', 'session-1', tenantId);
+    const prefixes = erpPermissions.map((permission) => permission.slice(0, permission.indexOf(':') + 1));
+    expect(context.permissions.filter((permission) => prefixes.some((prefix) => permission.startsWith(prefix)))).toEqual([]);
+  });
+
   // WI-OI-103e (ADR-0016 F16): module permissions such as analytics:charts:write reach the session through a custom
   // role or a direct grant; platform codes and misplaced wildcards still do not.
   it('keeps three-part module permissions from a custom role and direct grants, and drops invalid codes', async () => {

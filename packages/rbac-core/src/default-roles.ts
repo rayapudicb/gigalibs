@@ -46,6 +46,20 @@ export function createDefaultRoleHierarchy(): RoleHierarchy {
         // WI-OI-038: Tenant Admins run the CMMS core (assets, work orders, PM, meters, parts); custom maintenance
         // roles for managers and technicians follow with custom roles (roadmap P1).
         'cmms:*',
+        // WI-OI-120 (owner, 2026-10-05): module access is by role. Tenant Admins run every licensed ERP module and the
+        // core parties they trade with; the module's entitlement still gates it, and other members get the module's
+        // own roles (Inventory Operator, Product Catalogue Manager, ...). Where a module enforces maker-checker (Catalogue
+        // versions, Inventory adjustments) an admin still cannot approve their own change.
+        'parties:*',
+        'products:*',
+        'product-categories:*',
+        'uoms:*',
+        'catalogues:*',
+        'pricing:*',
+        'inventory:*',
+        'procurement:*',
+        'orders:*',
+        'finance:*',
       ],
     },
     {

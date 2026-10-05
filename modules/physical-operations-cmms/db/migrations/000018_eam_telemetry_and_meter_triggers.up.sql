@@ -1,6 +1,12 @@
 -- WI-EAM-004: Telemetry Ingestion & Meter-Driven PM Triggers (Maximo / openMAINT Parity)
 
 -- 1. Extend meter_readings with telemetry sources and device metadata
+-- WI-OI-120a (owner-approved correction, 2026-10-05; never applied to any database before): one transaction,
+-- permissive tenant policies with WITH CHECK (RESTRICTIVE-only policies denied every row), principal_ref, and
+-- the ledger row the module migration runner requires.
+
+BEGIN;
+
 ALTER TABLE gigalibs_cmms.meter_readings
   DROP CONSTRAINT IF EXISTS meter_readings_source_check;
 
@@ -47,8 +53,9 @@ ALTER TABLE gigalibs_cmms.cmms_meter_triggers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE gigalibs_cmms.cmms_meter_triggers FORCE ROW LEVEL SECURITY;
 
 CREATE POLICY cmms_meter_triggers_tenant_isolation ON gigalibs_cmms.cmms_meter_triggers
-  AS RESTRICTIVE
-  USING (tenant_id = current_setting('app.tenant_id', true));
+  FOR ALL
+  USING (tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::gigalibs_cmms.tenant_ref)
+  WITH CHECK (tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::gigalibs_cmms.tenant_ref);
 
 CREATE INDEX cmms_meter_triggers_meter_idx ON gigalibs_cmms.cmms_meter_triggers (tenant_id, meter_id);
 CREATE INDEX cmms_meter_triggers_active_idx ON gigalibs_cmms.cmms_meter_triggers (tenant_id, is_active);
@@ -67,3 +74,8 @@ ALTER TABLE gigalibs_cmms.work_orders
     REFERENCES gigalibs_cmms.cmms_meter_triggers (tenant_id, id) ON DELETE SET NULL;
 
 CREATE INDEX IF NOT EXISTS work_orders_meter_trigger_idx ON gigalibs_cmms.work_orders (tenant_id, meter_trigger_id);
+
+INSERT INTO gigalibs_cmms.schema_migrations (version, name)
+VALUES (18, '000018_eam_telemetry_and_meter_triggers');
+
+COMMIT;

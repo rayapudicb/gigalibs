@@ -24,6 +24,11 @@ to one page. Replace old content rather than appending to it, and update it at t
   the control plane) to U3.2?
 - **WI-OI-120f (F0, metadata-governed windows):** approved 2026-10-05. F0.1 (contract, capability checks at publish,
   fail-closed exact evaluator) committed; F0.2 next (module dictionaries, activation when a module is enabled).
+- **CMMS migrations 000017–000019 corrected** (owner-approved; patch applied by the owner): `principal_ref`, permissive
+  tenant policies (RESTRICTIVE-only denied every row), one transaction, ledger rows. Proven on a throwaway UAT copy.
+- **ERP access by role:** the five ERP modules were enabled for GigaLibs Global Enterprise at 12:31Z (owner ran
+  `enable-erp-modules.sh`). Tenant admins now hold the five ERP modules' permissions and `parties:*` (code change,
+  deploys next).
 - **One writer:** the owner chose this session (option 1, 2026-10-05); the peer session was told.
 - **U1 remaining recovery/deployment work:**
   - **Part A is committed (`03ebd0c`).** Evidence: `.pi/work/WI-OI-120.md`.
@@ -55,10 +60,9 @@ to one page. Replace old content rather than appending to it, and update it at t
   - Healthy: web, control-plane API, kernel worker, Analytics, Geospatial, Connector Hub (9), Workforce (26) and
     the module host with Catalogue (1), Inventory (3), Orders (3), Procurement (3) and Finance (8).
   - Rollback: release `5ceba59d0963-b53e290e718f` plus backup `gigalibs_backup_20261005_105426Z`.
-- **No tenant holds the Catalogue, Inventory, Procurement, Orders or Finance entitlement.** The owner enables them for
-  GigaLibs Global Enterprise in Platform Control Tower.
-- **CMMS is still down** (old image, ledger 16). Migrations 000017–000019 need the correction the session was not
-  permitted to make.
+- **Catalogue, Inventory, Procurement, Orders and Finance are enabled for GigaLibs Global Enterprise** (12:31Z). Its
+  tenant admins get "HTTP 403" in them until the role change is deployed.
+- **CMMS is still down** (old image, ledger 16). The migration correction is in the working tree and deploys next.
 - Unattributed proof data from earlier proof runs (including the audit's own run) is still in the database (D5).
 
 ## Next

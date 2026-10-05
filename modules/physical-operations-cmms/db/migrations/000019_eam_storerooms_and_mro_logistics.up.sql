@@ -1,6 +1,12 @@
 -- WI-EAM-005: MRO Storeroom Logistics & Multi-Warehouse Bin Tracking (Maximo Parity)
 
 -- 1. Storerooms / Warehouses
+-- WI-OI-120a (owner-approved correction, 2026-10-05; never applied to any database before): one transaction,
+-- permissive tenant policies with WITH CHECK (RESTRICTIVE-only policies denied every row), principal_ref, and
+-- the ledger row the module migration runner requires.
+
+BEGIN;
+
 CREATE TABLE gigalibs_cmms.cmms_storerooms (
   tenant_id       gigalibs_cmms.tenant_ref NOT NULL,
   id              uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -23,8 +29,9 @@ ALTER TABLE gigalibs_cmms.cmms_storerooms ENABLE ROW LEVEL SECURITY;
 ALTER TABLE gigalibs_cmms.cmms_storerooms FORCE ROW LEVEL SECURITY;
 
 CREATE POLICY cmms_storerooms_tenant_isolation ON gigalibs_cmms.cmms_storerooms
-  AS RESTRICTIVE
-  USING (tenant_id = current_setting('app.tenant_id', true));
+  FOR ALL
+  USING (tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::gigalibs_cmms.tenant_ref)
+  WITH CHECK (tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::gigalibs_cmms.tenant_ref);
 
 CREATE INDEX cmms_storerooms_site ON gigalibs_cmms.cmms_storerooms (tenant_id, site_ref);
 
@@ -53,8 +60,9 @@ ALTER TABLE gigalibs_cmms.cmms_part_balances ENABLE ROW LEVEL SECURITY;
 ALTER TABLE gigalibs_cmms.cmms_part_balances FORCE ROW LEVEL SECURITY;
 
 CREATE POLICY cmms_part_balances_tenant_isolation ON gigalibs_cmms.cmms_part_balances
-  AS RESTRICTIVE
-  USING (tenant_id = current_setting('app.tenant_id', true));
+  FOR ALL
+  USING (tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::gigalibs_cmms.tenant_ref)
+  WITH CHECK (tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::gigalibs_cmms.tenant_ref);
 
 CREATE INDEX cmms_part_balances_part ON gigalibs_cmms.cmms_part_balances (tenant_id, part_id);
 CREATE INDEX cmms_part_balances_storeroom ON gigalibs_cmms.cmms_part_balances (tenant_id, storeroom_id);
@@ -67,3 +75,8 @@ ALTER TABLE gigalibs_cmms.stock_movements
     REFERENCES gigalibs_cmms.cmms_storerooms (tenant_id, id) ON DELETE SET NULL;
 
 CREATE INDEX IF NOT EXISTS stock_movements_storeroom ON gigalibs_cmms.stock_movements (tenant_id, storeroom_id);
+
+INSERT INTO gigalibs_cmms.schema_migrations (version, name)
+VALUES (19, '000019_eam_storerooms_and_mro_logistics');
+
+COMMIT;

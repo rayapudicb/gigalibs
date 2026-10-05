@@ -599,3 +599,42 @@ removed.
   - The shipped-window compile test.
 - Checks: full `pnpm test` 2,514 passed, 184 skipped; `pnpm verify` passes (known drift; 8 proofs NOT RUN); the web
   app and control plane type-check. Not deployed: F0 deploys as a whole after F0.5.
+
+## CMMS migrations 000017–000019 corrected; tenant admins get the licensed ERP modules (2026-10-05)
+
+### CMMS (owner-approved, U1 open item; applied by the owner)
+
+- The session's permission system refused edits to committed migrations, so the session wrote a patch
+  (`scratchpad/cmms-fix/cmms-migrations-17-19.patch`) and the owner applied it with `git apply`. The applied files are
+  byte-identical to the tested copies.
+- None of the three had run on any database (UAT ledger 16). Corrections:
+  - 000017 used the undefined domain `gigalibs_cmms.user_ref`; it now uses `principal_ref`, as 000018 and 000019 do.
+  - All six tenant policies were `AS RESTRICTIVE` with no permissive policy, which under FORCE ROW LEVEL SECURITY
+    denies every row to the runtime role. They are now the 000016 pattern: `FOR ALL`, `USING` and `WITH CHECK` on
+    `app.tenant_id`.
+  - Each file now runs in one transaction and writes its own ledger row (17, 18, 19), as the module migration
+    runner requires.
+- Proof on a throwaway restore of backup `gigalibs_backup_20261005_084054Z` (`wi120-migtest`, `uat_copy_u32`):
+  - the real runner moved the copy from 16 to 19;
+  - as the CMMS runtime role (not superuser, no BYPASSRLS), tenant A created and saw one failure code and one
+    storeroom;
+  - tenant B saw none and was refused when writing a row for tenant A.
+
+### Role-based ERP access (owner: "we need to enable for the role")
+
+- **Licences:** the owner ran `scratchpad/enable-erp-modules.sh`, which calls Platform Control Tower's own service as
+  `newuser@gigalibs.io`. The session's permission system refused to run it itself.
+  - The first run refused the retired `reports` key and changed nothing.
+  - The second enabled Catalogue, Inventory, Procurement, Orders and Finance for GigaLibs Global Enterprise at
+    12:31Z, with an audit record.
+- **Tenant administrator role** (`packages/rbac-core/src/default-roles.ts`): now holds `parties:*`, `products:*`,
+  `product-categories:*`, `uoms:*`, `catalogues:*`, `pricing:*`, `inventory:*`, `procurement:*`, `orders:*` and
+  `finance:*`.
+  - The module entitlement still gates each module. Other members get the module's own roles.
+  - Catalogue versions and Inventory adjustments still refuse self-approval. Procurement, Orders and Finance have no
+    approval checks yet (P1-06).
+- **Tests:** `session-permissions.spec.ts` has 2 new tests. The tenant-admin test fails on the old definition; MANAGER,
+  MEMBER and VIEWER get no ERP permission from their base role.
+- Checks for both changes: full `pnpm test` 2,518 passed, 184 skipped; `pnpm verify` passes (known drift; 8 proofs
+  NOT RUN). The next deploy brings CMMS back (migrations 17–19, then its service) and gives tenant admins the ERP
+  modules.
