@@ -6,7 +6,7 @@ export const MODULE_KEY = 'product-catalogue';
 export const PERMISSION_PREFIX = 'products';
 export const SCHEMA = 'gigalibs_product_catalogue';
 export const TOPIC = 'product-catalogue.facts.v1';
-export const SCHEMA_CONTRACT_VERSION = 1;
+export const SCHEMA_CONTRACT_VERSION = 2;
 export const RUNTIME_CONFIG = Symbol('PRODUCT_CATALOGUE_RUNTIME_CONFIG');
 
 export const runtimeConfigProvider: Provider<ModuleRuntimeConfig> = {

@@ -1,4 +1,4 @@
-import type { CompiledDictionaryManifestV1, DictionaryActionV1, DictionaryFieldV1, DictionaryTabV1 } from '@gigalibs/contracts';
+import type { CompiledDictionaryManifestV1, DictionaryActionV1, DictionaryTabV1 } from '@gigalibs/contracts';
 import { type FormEvent, type ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 import { type LookupOption, type RecordClient, RecordClientError, type RecordPage, type RecordValues } from './record-client.js';
 import {
@@ -58,7 +58,13 @@ export function MetadataWindow({ manifest, client, permissions, viewKey }: Metad
   return (
     <section className="space-y-4" data-metadata-window={model.view.viewKey}>
       {screen.kind === 'list' && (
-        <RecordList model={model} client={client} permissions={permissions} onOpen={(id) => setScreen({ kind: 'record', id })} onNew={() => setScreen({ kind: 'create' })} />
+        <RecordList
+          model={model}
+          client={client}
+          permissions={permissions}
+          onOpen={(id) => setScreen({ kind: 'record', id })}
+          onNew={canCreate(model, model.rootTab, permissions) ? () => setScreen({ kind: 'create' }) : undefined}
+        />
       )}
       {screen.kind === 'create' && (
         <RecordForm
@@ -75,6 +81,39 @@ export function MetadataWindow({ manifest, client, permissions, viewKey }: Metad
       )}
     </section>
   );
+}
+
+/** A tab offers New only when the user may fill at least one of its fields. */
+function canCreate(model: WindowModel, tab: DictionaryTabV1, permissions: readonly string[]): boolean {
+  return placedFields(model, tab, {}, permissions, 'CREATE').some((placed) => !placed.readOnly);
+}
+
+/** Labels for the lookup columns of a page: one lookup per column, by the ids on the page. */
+function useLookupLabels(client: RecordClient, columns: readonly PlacedField[], items: readonly RecordValues[] | null) {
+  const [labels, setLabels] = useState<Readonly<Record<string, Readonly<Record<string, string>>>>>({});
+  useEffect(() => {
+    if (!items || items.length === 0) return;
+    let active = true;
+    const lookups = columns.filter((placed) => placed.resolverKey);
+    void Promise.all(
+      lookups.map(async (placed) => {
+        const ids = [...new Set(items.map((item) => item[placed.field.fieldKey]).filter((id): id is string => typeof id === 'string' && id.length > 0))];
+        if (ids.length === 0) return [placed.field.fieldKey, {}] as const;
+        try {
+          const options = await client.lookup(placed.resolverKey!, { ids });
+          return [placed.field.fieldKey, Object.fromEntries(options.map((option) => [option.value, option.label]))] as const;
+        } catch {
+          return [placed.field.fieldKey, {}] as const;
+        }
+      }),
+    ).then((entries) => {
+      if (active) setLabels(Object.fromEntries(entries));
+    });
+    return () => {
+      active = false;
+    };
+  }, [client, columns, items]);
+  return labels;
 }
 
 function Notice({ tone, title, text, action }: { tone: 'error' | 'info'; title: string; text: string; action?: ReactNode }) {
@@ -99,8 +138,8 @@ function RecordList({
   model: WindowModel;
   client: RecordClient;
   permissions: readonly string[];
-  onOpen?: (id: string) => void;
-  onNew?: () => void;
+  onOpen?: ((id: string) => void) | undefined;
+  onNew?: (() => void) | undefined;
   tab?: DictionaryTabV1;
   parentId?: string;
 }) {
@@ -134,6 +173,7 @@ function RecordList({
     void load();
   }, [load]);
 
+  const labels = useLookupLabels(client, columns, state.status === 'ready' ? state.page.items : null);
   const sortable = isRoot && view.defaultSortField ? new Set([view.defaultSortField]) : new Set<string>();
   const searchable = isRoot && (view.searchFields?.length ?? 0) > 0;
   const lastPage = state.status === 'ready' ? Math.max(1, Math.ceil(state.page.total / PAGE_SIZE)) : 1;
@@ -198,9 +238,9 @@ function RecordList({
                   className={`border-b border-ui-border-base last:border-0 ${onOpen ? 'cursor-pointer hover:bg-ui-bg-base-hover' : ''}`}
                   onClick={onOpen ? () => onOpen(String(record.id)) : undefined}
                 >
-                  {columns.map(({ field }) => (
-                    <td key={field.fieldKey} className="px-3 py-2 text-ui-fg-base">
-                      <DisplayValue field={field} value={record[field.fieldKey]} />
+                  {columns.map((placed) => (
+                    <td key={placed.field.fieldKey} className="px-3 py-2 text-ui-fg-base">
+                      <DisplayValue placed={placed} value={record[placed.field.fieldKey]} label={labels[placed.field.fieldKey]?.[String(record[placed.field.fieldKey])]} />
                     </td>
                   ))}
                 </tr>
@@ -226,10 +266,15 @@ function RecordList({
   );
 }
 
-function DisplayValue({ field, value }: { field: DictionaryFieldV1; value: unknown }) {
+function DisplayValue({ placed, value, label }: { placed: PlacedField; value: unknown; label?: string | undefined }) {
+  const { field } = placed;
   if (value === null || value === undefined || value === '') return <span className="text-ui-fg-muted">—</span>;
   if (field.maskOnDisplay) return <span>••••</span>;
   if (field.type === 'BOOLEAN') return <span>{value ? 'Yes' : 'No'}</span>;
+  if (label) return <span>{label}</span>;
+  const option = placed.options?.find((candidate) => candidate.value === String(value));
+  if (option) return <span>{option.label}</span>;
+  if (field.type === 'DATETIME' && typeof value === 'string') return <span>{value.slice(0, 16).replace('T', ' ')}</span>;
   if (typeof value === 'object') return <span className="font-mono text-xs">{JSON.stringify(value)}</span>;
   return <span>{String(value)}</span>;
 }
@@ -614,13 +659,13 @@ function ChildTab({ model, tab, client, permissions, parentId }: { model: Window
             setVersion((current) => current + 1);
           }}
         />
-      ) : (
+      ) : canCreate(model, tab, permissions) ? (
         <div className="flex justify-end">
           <button type="button" className={button} onClick={() => setCreating(true)}>
             New {tab.label}
           </button>
         </div>
-      )}
+      ) : null}
       <RecordList key={version} model={model} tab={tab} client={client} permissions={permissions} parentId={parentId} />
     </div>
   );

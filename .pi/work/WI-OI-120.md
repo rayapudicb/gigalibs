@@ -734,3 +734,75 @@ removed.
   - The first verify run failed twice on my own test file: the package build compiled the test and found two typing
     mistakes, and the dependency audit refused its undeclared `react-dom` and `vitest` imports. Both were fixed by
     correcting the test and moving it to the web app's tests; no dependency was added.
+
+### F0.5 Inventory on metadata windows
+
+- **Backend:**
+  - Inventory migration `000004_inventory_record_idempotency` (contract 3 → 4) and Catalogue migration
+    `000002_catalogue_record_idempotency` (contract 1 → 2), each with forced tenant RLS.
+  - `InventoryRecordsService`:
+    - paged, tenant-bound SQL reads with allow-listed search, filter and sort columns, for warehouses, locations,
+      items, lots, receipts, receipt lines, balances and the ledger;
+    - the missing warehouse update (version-checked);
+    - adding a line to a DRAFT receipt;
+    - warehouse and location lookups.
+  - `inventory-record-adapters.ts`: eight adapters over the existing domain methods and contract schemas, with the
+    same permissions as Inventory's own routes. Receipts have a registered `complete` action.
+  - The Catalogue serves `catalogue-products` and `catalogue-uoms` lookups (`products:read`, `uoms:read`).
+  - Both modules mount the record routes; `spec.gateway.records: true` adds them to the web gateway.
+- **Windows:** `modules/universal-inventory/dictionary/` has six window files:
+  - Warehouses, with a Locations child tab;
+  - Items;
+  - Lots;
+  - Receipts, with a Lines child tab and the "Complete receipt" action (visible only on DRAFT);
+  - Balances;
+  - Stock ledger.
+
+  All six compile with no findings under the publish-time checks. Two definition errors were caught there and fixed:
+  a three-part permission on the ledger window's read setting, and lookups naming an entity outside their package.
+- **Screen:**
+  - The Inventory page is now tabs of `MetadataWindow`, each loading its published manifest, plus a barcode lookup
+    that calls `POST /v1/barcodes/resolve`.
+  - The hand-written screen with hard-coded figures, a simulated scanner and a constant dictionary is removed (owner
+    decision); git keeps it.
+- **Renderer additions:**
+  - "New" appears only when the user may fill a field (none on Balances or the ledger);
+  - lookup columns show labels, one lookup per column per page;
+  - value-list columns show option labels.
+- **Proof:** `scripts/verify-f0-inventory-windows.mjs`, 27 of 27 checks over HTTP through the real module host, on an
+  isolated database (`f0_proof` on the throwaway server). Real migrations and the restricted runtime roles. It
+  covers:
+  - Catalogue lookups per tenant;
+  - idempotent create and key reuse;
+  - a child location;
+  - If-Match 412 and 428;
+  - field and permission refusals and another tenant's 404;
+  - item, receipt and line;
+  - Complete sent twice posting once (one ledger entry, a balance of 5);
+  - a completed receipt refusing lines;
+  - ledger read permission.
+
+  It is part of `pnpm verify` (NOT RUN without PROOF_DATABASE_URL).
+- **Playwright:** `e2e/specs/inventory-business-flow.spec.ts` enters Inventory's UAT data on the windows:
+  - a warehouse with its location;
+  - an item, with the product picked from the Catalogue;
+  - a receipt with a line, completed;
+  - then the balance and ledger.
+
+  The Catalogue unit and product go through the app's Catalogue API. **Not yet run: it needs
+  E2E_UAT_ADMIN_EMAIL/PASSWORD.**
+- **Found for U8 (not changed here):**
+  - `createItem` updates an existing item for the same product;
+  - a receipt with no lines can be completed;
+  - receipt completion compares a numeric string with 0.
+- **Access note:** Inventory roles hold no `products:read`, so only roles that do (tenant admins, catalogue roles) can
+  use the product picker. U8 decides the role grants.
+- **Checks:**
+  - `pnpm build` passes.
+  - Full `pnpm test`: 2,542 passed, 188 skipped. The first run failed one control-plane test that hard-coded seven
+    configuration adapters; it now expects the seven plus one per shipped window, each a MODULE_RECORD_DISPATCHER
+    surface.
+  - `pnpm verify` passes (known drift; 9 proofs NOT RUN without PROOF_DATABASE_URL, including the new Inventory proof,
+    which the session ran: 27/27).
+- **Not deployed yet.** After the deploy, the control plane activates the six Inventory windows for GigaLibs Global
+  Enterprise at start-up (F0.2 reconciliation, as the administrator who enabled Inventory).

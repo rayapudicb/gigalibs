@@ -2,3 +2,4 @@
 000001_inventory_warehouse_foundation.up.sql
 000002_inventory_outbox_inbox_relay.up.sql
 000003_inventory_auth_revocation_shape.up.sql
+000004_inventory_record_idempotency.up.sql

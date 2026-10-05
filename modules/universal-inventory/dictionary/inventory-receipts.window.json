@@ -1,0 +1,491 @@
+{
+  "contractVersion": "1.0",
+  "window": {
+    "route": "/inventory",
+    "label": "Receipts",
+    "description": "Receive goods into warehouse locations.",
+    "readPermission": "inventory:read"
+  },
+  "definition": {
+    "kind": "APPLICATION_DICTIONARY",
+    "contractVersion": "1.0",
+    "moduleKey": "universal-inventory",
+    "entityKey": "inventory-receipts",
+    "surfaceKey": "inventory-receipts",
+    "title": "Goods receipts",
+    "dictionary": {
+      "packageKey": "inventory-receipts-module-baseline",
+      "name": "Goods receipts",
+      "version": "1.0.0",
+      "moduleKey": "universal-inventory",
+      "targetEntityKey": "inventory.receipts",
+      "entities": [
+        {
+          "entityKey": "inventory.receipts",
+          "moduleKey": "universal-inventory",
+          "label": "Receipts",
+          "ownership": "MODULE_CORE",
+          "primaryKeyField": "id",
+          "isVersioned": true,
+          "isAuditLogged": true,
+          "isSoftDeletable": false
+        },
+        {
+          "entityKey": "inventory.receipt-lines",
+          "moduleKey": "universal-inventory",
+          "label": "Receipt lines",
+          "ownership": "MODULE_CORE",
+          "primaryKeyField": "id",
+          "isVersioned": true,
+          "isAuditLogged": true,
+          "isSoftDeletable": false
+        }
+      ],
+      "fields": [
+        {
+          "fieldKey": "receipt-number",
+          "entityKey": "inventory.receipts",
+          "label": "Receipt number",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "warehouse-id",
+          "entityKey": "inventory.receipts",
+          "label": "Warehouse",
+          "type": "REFERENCE",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "warehouse-ref"
+        },
+        {
+          "fieldKey": "external-document-reference",
+          "entityKey": "inventory.receipts",
+          "label": "Supplier document",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "notes",
+          "entityKey": "inventory.receipts",
+          "label": "Notes",
+          "type": "TEXTAREA",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "status",
+          "entityKey": "inventory.receipts",
+          "label": "Status",
+          "type": "SELECT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "receipt-statuses"
+        },
+        {
+          "fieldKey": "created-at",
+          "entityKey": "inventory.receipts",
+          "label": "Created",
+          "type": "DATETIME",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "completed-at",
+          "entityKey": "inventory.receipts",
+          "label": "Completed",
+          "type": "DATETIME",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "receipt-id",
+          "entityKey": "inventory.receipt-lines",
+          "label": "Receipt",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "line-number",
+          "entityKey": "inventory.receipt-lines",
+          "label": "Line",
+          "type": "INTEGER",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "product-id",
+          "entityKey": "inventory.receipt-lines",
+          "label": "Product",
+          "type": "REFERENCE",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "product-ref"
+        },
+        {
+          "fieldKey": "uom-id",
+          "entityKey": "inventory.receipt-lines",
+          "label": "Unit",
+          "type": "REFERENCE",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "uom-ref"
+        },
+        {
+          "fieldKey": "expected-quantity",
+          "entityKey": "inventory.receipt-lines",
+          "label": "Expected quantity",
+          "type": "NUMBER",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "scale": 3
+        },
+        {
+          "fieldKey": "received-quantity",
+          "entityKey": "inventory.receipt-lines",
+          "label": "Received quantity",
+          "type": "NUMBER",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "scale": 3
+        },
+        {
+          "fieldKey": "target-location-id",
+          "entityKey": "inventory.receipt-lines",
+          "label": "Put-away location",
+          "type": "REFERENCE",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "location-ref",
+          "helpText": "Required before the receipt can be completed."
+        },
+        {
+          "fieldKey": "lot-number",
+          "entityKey": "inventory.receipt-lines",
+          "label": "Lot number",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "expiry-date",
+          "entityKey": "inventory.receipt-lines",
+          "label": "Expires",
+          "type": "DATE",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "inspection-status",
+          "entityKey": "inventory.receipt-lines",
+          "label": "Inspection",
+          "type": "SELECT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "inspection-statuses"
+        }
+      ],
+      "relationships": [
+        {
+          "relationshipKey": "receipt-lines",
+          "sourceEntityKey": "inventory.receipts",
+          "targetEntityKey": "inventory.receipt-lines",
+          "type": "ONE_TO_MANY",
+          "foreignKeyField": "receipt-id"
+        }
+      ],
+      "references": [
+        {
+          "referenceKey": "warehouse-ref",
+          "referenceType": "SEARCH_LOOKUP",
+          "resolverKey": "inventory-warehouses"
+        },
+        {
+          "referenceKey": "location-ref",
+          "referenceType": "SEARCH_LOOKUP",
+          "resolverKey": "inventory-locations"
+        },
+        {
+          "referenceKey": "product-ref",
+          "referenceType": "SEARCH_LOOKUP",
+          "resolverKey": "catalogue-products"
+        },
+        {
+          "referenceKey": "uom-ref",
+          "referenceType": "SEARCH_LOOKUP",
+          "resolverKey": "catalogue-uoms"
+        },
+        {
+          "referenceKey": "receipt-statuses",
+          "referenceType": "VALUE_LIST",
+          "staticValues": [
+            {
+              "value": "DRAFT",
+              "label": "Draft"
+            },
+            {
+              "value": "EXPECTED",
+              "label": "Expected"
+            },
+            {
+              "value": "RECEIVING",
+              "label": "Receiving"
+            },
+            {
+              "value": "COMPLETED",
+              "label": "Completed"
+            },
+            {
+              "value": "CANCELLED",
+              "label": "Cancelled"
+            }
+          ]
+        },
+        {
+          "referenceKey": "inspection-statuses",
+          "referenceType": "VALUE_LIST",
+          "staticValues": [
+            {
+              "value": "PENDING",
+              "label": "Pending"
+            },
+            {
+              "value": "PASSED",
+              "label": "Passed"
+            },
+            {
+              "value": "FAILED",
+              "label": "Failed"
+            },
+            {
+              "value": "QUARANTINED",
+              "label": "Quarantined"
+            }
+          ]
+        }
+      ],
+      "validationRules": [],
+      "views": [
+        {
+          "viewKey": "receipts",
+          "label": "Goods receipts",
+          "mode": "LIST",
+          "device": "ALL",
+          "searchFields": [
+            "receipt-number",
+            "external-document-reference"
+          ],
+          "defaultSortField": "created-at",
+          "defaultSortDirection": "DESC",
+          "tabs": [
+            {
+              "tabKey": "receipt",
+              "label": "Receipt",
+              "position": 0,
+              "level": 0,
+              "targetEntityKey": "inventory.receipts",
+              "sections": [
+                {
+                  "sectionKey": "main",
+                  "label": "Receipt",
+                  "collapsible": false,
+                  "defaultCollapsed": false,
+                  "position": 0
+                }
+              ],
+              "fields": [
+                {
+                  "fieldKey": "receipt-number",
+                  "position": 0,
+                  "span": 4,
+                  "componentKey": "text-input",
+                  "sectionKey": "main"
+                },
+                {
+                  "fieldKey": "status",
+                  "position": 1,
+                  "span": 4,
+                  "componentKey": "select",
+                  "sectionKey": "main"
+                },
+                {
+                  "fieldKey": "warehouse-id",
+                  "position": 2,
+                  "span": 4,
+                  "componentKey": "lookup",
+                  "sectionKey": "main"
+                },
+                {
+                  "fieldKey": "external-document-reference",
+                  "position": 3,
+                  "span": 6,
+                  "componentKey": "text-input",
+                  "sectionKey": "main"
+                },
+                {
+                  "fieldKey": "created-at",
+                  "position": 4,
+                  "span": 3,
+                  "componentKey": "datetime-input",
+                  "sectionKey": "main"
+                },
+                {
+                  "fieldKey": "completed-at",
+                  "position": 5,
+                  "span": 3,
+                  "componentKey": "datetime-input",
+                  "sectionKey": "main"
+                },
+                {
+                  "fieldKey": "notes",
+                  "position": 6,
+                  "span": 12,
+                  "componentKey": "textarea",
+                  "sectionKey": "main"
+                }
+              ]
+            },
+            {
+              "tabKey": "lines",
+              "label": "Lines",
+              "position": 1,
+              "level": 1,
+              "targetEntityKey": "inventory.receipt-lines",
+              "sections": [],
+              "fields": [
+                {
+                  "fieldKey": "line-number",
+                  "position": 0,
+                  "span": 2,
+                  "componentKey": "number-input"
+                },
+                {
+                  "fieldKey": "product-id",
+                  "position": 1,
+                  "span": 5,
+                  "componentKey": "lookup"
+                },
+                {
+                  "fieldKey": "uom-id",
+                  "position": 2,
+                  "span": 5,
+                  "componentKey": "lookup"
+                },
+                {
+                  "fieldKey": "expected-quantity",
+                  "position": 3,
+                  "span": 4,
+                  "componentKey": "number-input"
+                },
+                {
+                  "fieldKey": "received-quantity",
+                  "position": 4,
+                  "span": 4,
+                  "componentKey": "number-input"
+                },
+                {
+                  "fieldKey": "target-location-id",
+                  "position": 5,
+                  "span": 4,
+                  "componentKey": "lookup"
+                },
+                {
+                  "fieldKey": "lot-number",
+                  "position": 6,
+                  "span": 4,
+                  "componentKey": "text-input"
+                },
+                {
+                  "fieldKey": "expiry-date",
+                  "position": 7,
+                  "span": 4,
+                  "componentKey": "date-input"
+                },
+                {
+                  "fieldKey": "inspection-status",
+                  "position": 8,
+                  "span": 4,
+                  "componentKey": "select"
+                }
+              ],
+              "parentRelationshipKey": "receipt-lines"
+            }
+          ]
+        }
+      ],
+      "navigation": [],
+      "actions": [
+        {
+          "actionKey": "complete",
+          "label": "Complete receipt",
+          "type": "COMMAND",
+          "handlerKey": "inventory.receipts.complete",
+          "requiredPermissions": [
+            "inventory:receive"
+          ],
+          "confirmationPrompt": "Complete this receipt? The stock is posted to the put-away locations and the receipt can no longer change.",
+          "visibilityCondition": {
+            "field": "status",
+            "operator": "EQ",
+            "value": "DRAFT"
+          }
+        }
+      ],
+      "messages": []
+    }
+  }
+}

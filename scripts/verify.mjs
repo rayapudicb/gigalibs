@@ -38,6 +38,8 @@ const steps = [
   { name: 'budgeting-commitment-control', cmd: process.execPath, args: ['scripts/verify-budgeting-and-commitment-control.mjs'] },
   { name: 'period-close-forecasting', cmd: process.execPath, args: ['scripts/verify-period-close-and-forecasting.mjs'] },
   { name: 'module-host-http (U2)', cmd: process.execPath, args: ['scripts/verify-u2-module-host-http.mjs'] },
+  // WI-OI-120f (F0.5): Inventory's metadata windows over HTTP through the module host (needs PROOF_DATABASE_URL).
+  { name: 'inventory-windows (F0.5)', cmd: process.execPath, args: ['scripts/verify-f0-inventory-windows.mjs'] },
 ];
 
 const logDir = join(tmpdir(), 'gigalibs-verify');

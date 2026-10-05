@@ -113,6 +113,8 @@ spec:
     routeNoun: Universal Inventory
     serviceName: Universal Inventory & Warehouse Operations
     entitlementName: Universal Inventory
+    # WI-OI-120f (F0.3/F0.5): the module SDK's record routes for metadata windows and lookups.
+    records: true
     routes:
       - { path: 'v1/warehouses', GET: inventory:read, POST: 'inventory:warehouses:manage' }
       - { path: 'v1/warehouses/{id}', GET: inventory:read, PATCH: 'inventory:warehouses:manage' }

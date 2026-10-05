@@ -22,8 +22,9 @@ to one page. Replace old content rather than appending to it, and update it at t
   (known drift; 8 proofs NOT RUN). Adds control migration `20261005000000_login_throttle` and Connector Hub
   migration 9. Evidence: `.pi/work/WI-OI-120.md` U3.2. Owner question open: add the Governor fix (P1-11, deployed in
   the control plane) to U3.2?
-- **WI-OI-120f (F0, metadata-governed windows):** approved 2026-10-05. F0.1 (contract, capability checks at publish,
-  fail-closed exact evaluator) committed; F0.2 next (module dictionaries, activation when a module is enabled).
+- **WI-OI-120f (F0, metadata-governed windows):** approved 2026-10-05. F0.1–F0.4 committed (F0.1, F0.2 deployed).
+  F0.5 Inventory on metadata windows implemented and proven end to end (27/27 HTTP checks); awaiting commit and deploy.
+  The Playwright flow `e2e/specs/inventory-business-flow.spec.ts` needs E2E_UAT_ADMIN_EMAIL/PASSWORD to run.
 - **CMMS migrations 000017–000019 corrected and deployed 13:03Z** (owner-approved; patch applied by the owner): `principal_ref`, permissive
   tenant policies (RESTRICTIVE-only denied every row), one transaction, ledger rows. Proven on a throwaway UAT copy.
 - **ERP access by role:** the five ERP modules were enabled for GigaLibs Global Enterprise at 12:31Z (owner ran

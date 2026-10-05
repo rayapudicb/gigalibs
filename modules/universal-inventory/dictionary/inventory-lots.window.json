@@ -1,0 +1,232 @@
+{
+  "contractVersion": "1.0",
+  "window": {
+    "route": "/inventory",
+    "label": "Lots",
+    "description": "Lot and batch traceability.",
+    "readPermission": "inventory:read"
+  },
+  "definition": {
+    "kind": "APPLICATION_DICTIONARY",
+    "contractVersion": "1.0",
+    "moduleKey": "universal-inventory",
+    "entityKey": "inventory-lots",
+    "surfaceKey": "inventory-lots",
+    "title": "Lots and batches",
+    "dictionary": {
+      "packageKey": "inventory-lots-module-baseline",
+      "name": "Lots and batches",
+      "version": "1.0.0",
+      "moduleKey": "universal-inventory",
+      "targetEntityKey": "inventory.lots",
+      "entities": [
+        {
+          "entityKey": "inventory.lots",
+          "moduleKey": "universal-inventory",
+          "label": "Lots",
+          "ownership": "MODULE_CORE",
+          "primaryKeyField": "id",
+          "isVersioned": true,
+          "isAuditLogged": true,
+          "isSoftDeletable": false
+        }
+      ],
+      "fields": [
+        {
+          "fieldKey": "product-id",
+          "entityKey": "inventory.lots",
+          "label": "Product",
+          "type": "REFERENCE",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "product-ref"
+        },
+        {
+          "fieldKey": "lot-number",
+          "entityKey": "inventory.lots",
+          "label": "Lot number",
+          "type": "TEXT",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "batch-code",
+          "entityKey": "inventory.lots",
+          "label": "Batch code",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "supplier-lot-number",
+          "entityKey": "inventory.lots",
+          "label": "Supplier lot number",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "manufactured-date",
+          "entityKey": "inventory.lots",
+          "label": "Manufactured",
+          "type": "DATE",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "expiry-date",
+          "entityKey": "inventory.lots",
+          "label": "Expires",
+          "type": "DATE",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "status",
+          "entityKey": "inventory.lots",
+          "label": "Status",
+          "type": "SELECT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "stock-statuses"
+        }
+      ],
+      "relationships": [],
+      "references": [
+        {
+          "referenceKey": "product-ref",
+          "referenceType": "SEARCH_LOOKUP",
+          "resolverKey": "catalogue-products"
+        },
+        {
+          "referenceKey": "stock-statuses",
+          "referenceType": "VALUE_LIST",
+          "staticValues": [
+            {
+              "value": "AVAILABLE",
+              "label": "Available"
+            },
+            {
+              "value": "RESERVED",
+              "label": "Reserved"
+            },
+            {
+              "value": "QUARANTINED",
+              "label": "Quarantined"
+            },
+            {
+              "value": "INSPECTION",
+              "label": "Inspection"
+            },
+            {
+              "value": "DAMAGED",
+              "label": "Damaged"
+            },
+            {
+              "value": "BLOCKED",
+              "label": "Blocked"
+            },
+            {
+              "value": "EXPIRED",
+              "label": "Expired"
+            }
+          ]
+        }
+      ],
+      "validationRules": [],
+      "views": [
+        {
+          "viewKey": "lots",
+          "label": "Lots and batches",
+          "mode": "LIST",
+          "device": "ALL",
+          "searchFields": [
+            "lot-number",
+            "batch-code",
+            "supplier-lot-number"
+          ],
+          "defaultSortField": "lot-number",
+          "defaultSortDirection": "ASC",
+          "tabs": [
+            {
+              "tabKey": "lot",
+              "label": "Lot",
+              "position": 0,
+              "level": 0,
+              "targetEntityKey": "inventory.lots",
+              "sections": [],
+              "fields": [
+                {
+                  "fieldKey": "lot-number",
+                  "position": 0,
+                  "span": 4,
+                  "componentKey": "text-input"
+                },
+                {
+                  "fieldKey": "product-id",
+                  "position": 1,
+                  "span": 8,
+                  "componentKey": "lookup"
+                },
+                {
+                  "fieldKey": "batch-code",
+                  "position": 2,
+                  "span": 4,
+                  "componentKey": "text-input"
+                },
+                {
+                  "fieldKey": "supplier-lot-number",
+                  "position": 3,
+                  "span": 4,
+                  "componentKey": "text-input"
+                },
+                {
+                  "fieldKey": "status",
+                  "position": 4,
+                  "span": 4,
+                  "componentKey": "select"
+                },
+                {
+                  "fieldKey": "manufactured-date",
+                  "position": 5,
+                  "span": 6,
+                  "componentKey": "date-input"
+                },
+                {
+                  "fieldKey": "expiry-date",
+                  "position": 6,
+                  "span": 6,
+                  "componentKey": "date-input"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "navigation": [],
+      "actions": [],
+      "messages": []
+    }
+  }
+}

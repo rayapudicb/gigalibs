@@ -1,0 +1,272 @@
+{
+  "contractVersion": "1.0",
+  "window": {
+    "route": "/inventory",
+    "label": "Stock ledger",
+    "description": "Every posted stock movement. Reading entries needs inventory:ledger:read.",
+    "readPermission": "inventory:read"
+  },
+  "definition": {
+    "kind": "APPLICATION_DICTIONARY",
+    "contractVersion": "1.0",
+    "moduleKey": "universal-inventory",
+    "entityKey": "inventory-ledger",
+    "surfaceKey": "inventory-ledger",
+    "title": "Stock ledger",
+    "dictionary": {
+      "packageKey": "inventory-ledger-module-baseline",
+      "name": "Stock ledger",
+      "version": "1.0.0",
+      "moduleKey": "universal-inventory",
+      "targetEntityKey": "inventory.ledger",
+      "entities": [
+        {
+          "entityKey": "inventory.ledger",
+          "moduleKey": "universal-inventory",
+          "label": "Stock ledger",
+          "ownership": "MODULE_CORE",
+          "primaryKeyField": "id",
+          "isVersioned": true,
+          "isAuditLogged": true,
+          "isSoftDeletable": false
+        }
+      ],
+      "fields": [
+        {
+          "fieldKey": "created-at",
+          "entityKey": "inventory.ledger",
+          "label": "Posted",
+          "type": "DATETIME",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "direction",
+          "entityKey": "inventory.ledger",
+          "label": "Direction",
+          "type": "SELECT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "directions"
+        },
+        {
+          "fieldKey": "product-id",
+          "entityKey": "inventory.ledger",
+          "label": "Product",
+          "type": "REFERENCE",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "product-ref"
+        },
+        {
+          "fieldKey": "warehouse-id",
+          "entityKey": "inventory.ledger",
+          "label": "Warehouse",
+          "type": "REFERENCE",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "warehouse-ref"
+        },
+        {
+          "fieldKey": "location-id",
+          "entityKey": "inventory.ledger",
+          "label": "Location",
+          "type": "REFERENCE",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "location-ref"
+        },
+        {
+          "fieldKey": "quantity",
+          "entityKey": "inventory.ledger",
+          "label": "Quantity",
+          "type": "NUMBER",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "scale": 3
+        },
+        {
+          "fieldKey": "stock-status",
+          "entityKey": "inventory.ledger",
+          "label": "Status",
+          "type": "SELECT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "stock-statuses"
+        },
+        {
+          "fieldKey": "transaction-id",
+          "entityKey": "inventory.ledger",
+          "label": "Transaction",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        }
+      ],
+      "relationships": [],
+      "references": [
+        {
+          "referenceKey": "warehouse-ref",
+          "referenceType": "SEARCH_LOOKUP",
+          "resolverKey": "inventory-warehouses"
+        },
+        {
+          "referenceKey": "location-ref",
+          "referenceType": "SEARCH_LOOKUP",
+          "resolverKey": "inventory-locations"
+        },
+        {
+          "referenceKey": "product-ref",
+          "referenceType": "SEARCH_LOOKUP",
+          "resolverKey": "catalogue-products"
+        },
+        {
+          "referenceKey": "directions",
+          "referenceType": "VALUE_LIST",
+          "staticValues": [
+            {
+              "value": "DEBIT",
+              "label": "In (debit)"
+            },
+            {
+              "value": "CREDIT",
+              "label": "Out (credit)"
+            }
+          ]
+        },
+        {
+          "referenceKey": "stock-statuses",
+          "referenceType": "VALUE_LIST",
+          "staticValues": [
+            {
+              "value": "AVAILABLE",
+              "label": "Available"
+            },
+            {
+              "value": "RESERVED",
+              "label": "Reserved"
+            },
+            {
+              "value": "QUARANTINED",
+              "label": "Quarantined"
+            },
+            {
+              "value": "INSPECTION",
+              "label": "Inspection"
+            },
+            {
+              "value": "DAMAGED",
+              "label": "Damaged"
+            },
+            {
+              "value": "BLOCKED",
+              "label": "Blocked"
+            },
+            {
+              "value": "EXPIRED",
+              "label": "Expired"
+            }
+          ]
+        }
+      ],
+      "validationRules": [],
+      "views": [
+        {
+          "viewKey": "ledger",
+          "label": "Stock ledger",
+          "mode": "LIST",
+          "device": "ALL",
+          "defaultSortField": "created-at",
+          "defaultSortDirection": "DESC",
+          "tabs": [
+            {
+              "tabKey": "entry",
+              "label": "Entry",
+              "position": 0,
+              "level": 0,
+              "targetEntityKey": "inventory.ledger",
+              "sections": [],
+              "fields": [
+                {
+                  "fieldKey": "created-at",
+                  "position": 0,
+                  "span": 4,
+                  "componentKey": "datetime-input"
+                },
+                {
+                  "fieldKey": "direction",
+                  "position": 1,
+                  "span": 3,
+                  "componentKey": "select"
+                },
+                {
+                  "fieldKey": "product-id",
+                  "position": 2,
+                  "span": 5,
+                  "componentKey": "lookup"
+                },
+                {
+                  "fieldKey": "warehouse-id",
+                  "position": 3,
+                  "span": 4,
+                  "componentKey": "lookup"
+                },
+                {
+                  "fieldKey": "location-id",
+                  "position": 4,
+                  "span": 4,
+                  "componentKey": "lookup"
+                },
+                {
+                  "fieldKey": "quantity",
+                  "position": 5,
+                  "span": 4,
+                  "componentKey": "number-input"
+                },
+                {
+                  "fieldKey": "stock-status",
+                  "position": 6,
+                  "span": 4,
+                  "componentKey": "select"
+                },
+                {
+                  "fieldKey": "transaction-id",
+                  "position": 7,
+                  "span": 12,
+                  "componentKey": "text-input"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "navigation": [],
+      "actions": [],
+      "messages": []
+    }
+  }
+}

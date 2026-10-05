@@ -1,0 +1,489 @@
+{
+  "contractVersion": "1.0",
+  "window": {
+    "route": "/inventory",
+    "label": "Warehouses",
+    "description": "Warehouses and their storage locations.",
+    "readPermission": "inventory:read"
+  },
+  "definition": {
+    "kind": "APPLICATION_DICTIONARY",
+    "contractVersion": "1.0",
+    "moduleKey": "universal-inventory",
+    "entityKey": "inventory-warehouses",
+    "surfaceKey": "inventory-warehouses",
+    "title": "Warehouses and locations",
+    "dictionary": {
+      "packageKey": "inventory-warehouses-module-baseline",
+      "name": "Warehouses and locations",
+      "version": "1.0.0",
+      "moduleKey": "universal-inventory",
+      "targetEntityKey": "inventory.warehouses",
+      "entities": [
+        {
+          "entityKey": "inventory.warehouses",
+          "moduleKey": "universal-inventory",
+          "label": "Warehouses",
+          "ownership": "MODULE_CORE",
+          "primaryKeyField": "id",
+          "isVersioned": true,
+          "isAuditLogged": true,
+          "isSoftDeletable": false
+        },
+        {
+          "entityKey": "inventory.locations",
+          "moduleKey": "universal-inventory",
+          "label": "Locations",
+          "ownership": "MODULE_CORE",
+          "primaryKeyField": "id",
+          "isVersioned": true,
+          "isAuditLogged": true,
+          "isSoftDeletable": false
+        }
+      ],
+      "fields": [
+        {
+          "fieldKey": "code",
+          "entityKey": "inventory.warehouses",
+          "label": "Code",
+          "type": "TEXT",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "helpText": "Short unique code, for example WH-MAIN."
+        },
+        {
+          "fieldKey": "name",
+          "entityKey": "inventory.warehouses",
+          "label": "Name",
+          "type": "TEXT",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "warehouse-type",
+          "entityKey": "inventory.warehouses",
+          "label": "Type",
+          "type": "SELECT",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "warehouse-types"
+        },
+        {
+          "fieldKey": "description",
+          "entityKey": "inventory.warehouses",
+          "label": "Description",
+          "type": "TEXTAREA",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "address",
+          "entityKey": "inventory.warehouses",
+          "label": "Address",
+          "type": "TEXTAREA",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "is-active",
+          "entityKey": "inventory.warehouses",
+          "label": "Active",
+          "type": "BOOLEAN",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "warehouse-id",
+          "entityKey": "inventory.locations",
+          "label": "Warehouse",
+          "type": "REFERENCE",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "warehouse-ref"
+        },
+        {
+          "fieldKey": "code",
+          "entityKey": "inventory.locations",
+          "label": "Code",
+          "type": "TEXT",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "name",
+          "entityKey": "inventory.locations",
+          "label": "Name",
+          "type": "TEXT",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "location-type",
+          "entityKey": "inventory.locations",
+          "label": "Type",
+          "type": "SELECT",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "location-types"
+        },
+        {
+          "fieldKey": "aisle",
+          "entityKey": "inventory.locations",
+          "label": "Aisle",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "rack",
+          "entityKey": "inventory.locations",
+          "label": "Rack",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "shelf",
+          "entityKey": "inventory.locations",
+          "label": "Shelf",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "bin",
+          "entityKey": "inventory.locations",
+          "label": "Bin",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "barcode",
+          "entityKey": "inventory.locations",
+          "label": "Barcode",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "allow-negative",
+          "entityKey": "inventory.locations",
+          "label": "Allow negative stock",
+          "type": "BOOLEAN",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "is-active",
+          "entityKey": "inventory.locations",
+          "label": "Active",
+          "type": "BOOLEAN",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        }
+      ],
+      "relationships": [
+        {
+          "relationshipKey": "warehouse-locations",
+          "sourceEntityKey": "inventory.warehouses",
+          "targetEntityKey": "inventory.locations",
+          "type": "ONE_TO_MANY",
+          "foreignKeyField": "warehouse-id"
+        }
+      ],
+      "references": [
+        {
+          "referenceKey": "warehouse-types",
+          "referenceType": "VALUE_LIST",
+          "staticValues": [
+            {
+              "value": "PHYSICAL",
+              "label": "Physical"
+            },
+            {
+              "value": "VIRTUAL",
+              "label": "Virtual"
+            },
+            {
+              "value": "TRANSIT",
+              "label": "In transit"
+            },
+            {
+              "value": "CONSIGNMENT",
+              "label": "Consignment"
+            },
+            {
+              "value": "QUARANTINE",
+              "label": "Quarantine"
+            },
+            {
+              "value": "VAN_STOCK",
+              "label": "Van stock"
+            }
+          ]
+        },
+        {
+          "referenceKey": "location-types",
+          "referenceType": "VALUE_LIST",
+          "staticValues": [
+            {
+              "value": "RECEIVING",
+              "label": "Receiving"
+            },
+            {
+              "value": "STORAGE",
+              "label": "Storage"
+            },
+            {
+              "value": "PICKING",
+              "label": "Picking"
+            },
+            {
+              "value": "STAGING",
+              "label": "Staging"
+            },
+            {
+              "value": "PACKING",
+              "label": "Packing"
+            },
+            {
+              "value": "SHIPPING",
+              "label": "Shipping"
+            },
+            {
+              "value": "QUARANTINE",
+              "label": "Quarantine"
+            },
+            {
+              "value": "INSPECTION",
+              "label": "Inspection"
+            },
+            {
+              "value": "SCRAP",
+              "label": "Scrap"
+            },
+            {
+              "value": "TRANSIT",
+              "label": "Transit"
+            }
+          ]
+        },
+        {
+          "referenceKey": "warehouse-ref",
+          "referenceType": "SEARCH_LOOKUP",
+          "resolverKey": "inventory-warehouses"
+        }
+      ],
+      "validationRules": [],
+      "views": [
+        {
+          "viewKey": "warehouses",
+          "label": "Warehouses",
+          "mode": "LIST",
+          "device": "ALL",
+          "searchFields": [
+            "code",
+            "name"
+          ],
+          "defaultSortField": "code",
+          "defaultSortDirection": "ASC",
+          "tabs": [
+            {
+              "tabKey": "warehouse",
+              "label": "Warehouse",
+              "position": 0,
+              "level": 0,
+              "targetEntityKey": "inventory.warehouses",
+              "sections": [
+                {
+                  "sectionKey": "main",
+                  "label": "Warehouse",
+                  "collapsible": false,
+                  "defaultCollapsed": false,
+                  "position": 0
+                },
+                {
+                  "sectionKey": "details",
+                  "label": "Details",
+                  "collapsible": false,
+                  "defaultCollapsed": false,
+                  "position": 1
+                }
+              ],
+              "fields": [
+                {
+                  "fieldKey": "code",
+                  "position": 0,
+                  "span": 4,
+                  "componentKey": "text-input",
+                  "sectionKey": "main"
+                },
+                {
+                  "fieldKey": "name",
+                  "position": 1,
+                  "span": 8,
+                  "componentKey": "text-input",
+                  "sectionKey": "main"
+                },
+                {
+                  "fieldKey": "warehouse-type",
+                  "position": 2,
+                  "span": 4,
+                  "componentKey": "select",
+                  "sectionKey": "main"
+                },
+                {
+                  "fieldKey": "is-active",
+                  "position": 3,
+                  "span": 4,
+                  "componentKey": "checkbox",
+                  "sectionKey": "main"
+                },
+                {
+                  "fieldKey": "description",
+                  "position": 4,
+                  "span": 12,
+                  "componentKey": "textarea",
+                  "sectionKey": "details"
+                },
+                {
+                  "fieldKey": "address",
+                  "position": 5,
+                  "span": 12,
+                  "componentKey": "textarea",
+                  "sectionKey": "details"
+                }
+              ]
+            },
+            {
+              "tabKey": "locations",
+              "label": "Locations",
+              "position": 1,
+              "level": 1,
+              "targetEntityKey": "inventory.locations",
+              "sections": [],
+              "fields": [
+                {
+                  "fieldKey": "code",
+                  "position": 0,
+                  "span": 3,
+                  "componentKey": "text-input"
+                },
+                {
+                  "fieldKey": "name",
+                  "position": 1,
+                  "span": 5,
+                  "componentKey": "text-input"
+                },
+                {
+                  "fieldKey": "location-type",
+                  "position": 2,
+                  "span": 4,
+                  "componentKey": "select"
+                },
+                {
+                  "fieldKey": "aisle",
+                  "position": 3,
+                  "span": 3,
+                  "componentKey": "text-input"
+                },
+                {
+                  "fieldKey": "rack",
+                  "position": 4,
+                  "span": 3,
+                  "componentKey": "text-input"
+                },
+                {
+                  "fieldKey": "shelf",
+                  "position": 5,
+                  "span": 3,
+                  "componentKey": "text-input"
+                },
+                {
+                  "fieldKey": "bin",
+                  "position": 6,
+                  "span": 3,
+                  "componentKey": "text-input"
+                },
+                {
+                  "fieldKey": "barcode",
+                  "position": 7,
+                  "span": 6,
+                  "componentKey": "text-input"
+                },
+                {
+                  "fieldKey": "allow-negative",
+                  "position": 8,
+                  "span": 6,
+                  "componentKey": "checkbox"
+                },
+                {
+                  "fieldKey": "is-active",
+                  "position": 9,
+                  "span": 4,
+                  "componentKey": "checkbox"
+                }
+              ],
+              "parentRelationshipKey": "warehouse-locations"
+            }
+          ]
+        }
+      ],
+      "navigation": [],
+      "actions": [],
+      "messages": []
+    }
+  }
+}

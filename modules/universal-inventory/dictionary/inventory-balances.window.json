@@ -1,0 +1,259 @@
+{
+  "contractVersion": "1.0",
+  "window": {
+    "route": "/inventory",
+    "label": "Balances",
+    "description": "Stock on hand, reserved and available by location.",
+    "readPermission": "inventory:read"
+  },
+  "definition": {
+    "kind": "APPLICATION_DICTIONARY",
+    "contractVersion": "1.0",
+    "moduleKey": "universal-inventory",
+    "entityKey": "inventory-balances",
+    "surfaceKey": "inventory-balances",
+    "title": "Stock balances",
+    "dictionary": {
+      "packageKey": "inventory-balances-module-baseline",
+      "name": "Stock balances",
+      "version": "1.0.0",
+      "moduleKey": "universal-inventory",
+      "targetEntityKey": "inventory.balances",
+      "entities": [
+        {
+          "entityKey": "inventory.balances",
+          "moduleKey": "universal-inventory",
+          "label": "Stock balances",
+          "ownership": "MODULE_CORE",
+          "primaryKeyField": "id",
+          "isVersioned": true,
+          "isAuditLogged": true,
+          "isSoftDeletable": false
+        }
+      ],
+      "fields": [
+        {
+          "fieldKey": "warehouse-id",
+          "entityKey": "inventory.balances",
+          "label": "Warehouse",
+          "type": "REFERENCE",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "warehouse-ref"
+        },
+        {
+          "fieldKey": "location-id",
+          "entityKey": "inventory.balances",
+          "label": "Location",
+          "type": "REFERENCE",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "location-ref"
+        },
+        {
+          "fieldKey": "product-id",
+          "entityKey": "inventory.balances",
+          "label": "Product",
+          "type": "REFERENCE",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "product-ref"
+        },
+        {
+          "fieldKey": "stock-status",
+          "entityKey": "inventory.balances",
+          "label": "Status",
+          "type": "SELECT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "stock-statuses"
+        },
+        {
+          "fieldKey": "on-hand-quantity",
+          "entityKey": "inventory.balances",
+          "label": "On hand",
+          "type": "NUMBER",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "scale": 3
+        },
+        {
+          "fieldKey": "reserved-quantity",
+          "entityKey": "inventory.balances",
+          "label": "Reserved",
+          "type": "NUMBER",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "scale": 3
+        },
+        {
+          "fieldKey": "available-quantity",
+          "entityKey": "inventory.balances",
+          "label": "Available",
+          "type": "NUMBER",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "scale": 3
+        },
+        {
+          "fieldKey": "last-movement-at",
+          "entityKey": "inventory.balances",
+          "label": "Last movement",
+          "type": "DATETIME",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        }
+      ],
+      "relationships": [],
+      "references": [
+        {
+          "referenceKey": "warehouse-ref",
+          "referenceType": "SEARCH_LOOKUP",
+          "resolverKey": "inventory-warehouses"
+        },
+        {
+          "referenceKey": "location-ref",
+          "referenceType": "SEARCH_LOOKUP",
+          "resolverKey": "inventory-locations"
+        },
+        {
+          "referenceKey": "product-ref",
+          "referenceType": "SEARCH_LOOKUP",
+          "resolverKey": "catalogue-products"
+        },
+        {
+          "referenceKey": "stock-statuses",
+          "referenceType": "VALUE_LIST",
+          "staticValues": [
+            {
+              "value": "AVAILABLE",
+              "label": "Available"
+            },
+            {
+              "value": "RESERVED",
+              "label": "Reserved"
+            },
+            {
+              "value": "QUARANTINED",
+              "label": "Quarantined"
+            },
+            {
+              "value": "INSPECTION",
+              "label": "Inspection"
+            },
+            {
+              "value": "DAMAGED",
+              "label": "Damaged"
+            },
+            {
+              "value": "BLOCKED",
+              "label": "Blocked"
+            },
+            {
+              "value": "EXPIRED",
+              "label": "Expired"
+            }
+          ]
+        }
+      ],
+      "validationRules": [],
+      "views": [
+        {
+          "viewKey": "balances",
+          "label": "Stock balances",
+          "mode": "LIST",
+          "device": "ALL",
+          "defaultSortField": "last-movement-at",
+          "defaultSortDirection": "DESC",
+          "tabs": [
+            {
+              "tabKey": "balance",
+              "label": "Balance",
+              "position": 0,
+              "level": 0,
+              "targetEntityKey": "inventory.balances",
+              "sections": [],
+              "fields": [
+                {
+                  "fieldKey": "product-id",
+                  "position": 0,
+                  "span": 4,
+                  "componentKey": "lookup"
+                },
+                {
+                  "fieldKey": "warehouse-id",
+                  "position": 1,
+                  "span": 4,
+                  "componentKey": "lookup"
+                },
+                {
+                  "fieldKey": "location-id",
+                  "position": 2,
+                  "span": 4,
+                  "componentKey": "lookup"
+                },
+                {
+                  "fieldKey": "stock-status",
+                  "position": 3,
+                  "span": 3,
+                  "componentKey": "select"
+                },
+                {
+                  "fieldKey": "on-hand-quantity",
+                  "position": 4,
+                  "span": 3,
+                  "componentKey": "number-input"
+                },
+                {
+                  "fieldKey": "reserved-quantity",
+                  "position": 5,
+                  "span": 3,
+                  "componentKey": "number-input"
+                },
+                {
+                  "fieldKey": "available-quantity",
+                  "position": 6,
+                  "span": 3,
+                  "componentKey": "number-input"
+                },
+                {
+                  "fieldKey": "last-movement-at",
+                  "position": 7,
+                  "span": 4,
+                  "componentKey": "datetime-input"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "navigation": [],
+      "actions": [],
+      "messages": []
+    }
+  }
+}

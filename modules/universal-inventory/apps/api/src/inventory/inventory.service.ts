@@ -1731,7 +1731,7 @@ export class InventoryService {
 
 // ─── Mapping Helpers ─────────────────────────────────────────────────────────
 
-function mapWarehouse(row: any): InventoryWarehouseV1 {
+export function mapWarehouse(row: any): InventoryWarehouseV1 {
   return {
     id: row.id,
     tenantId: row.tenant_id,
@@ -1751,7 +1751,7 @@ function mapWarehouse(row: any): InventoryWarehouseV1 {
   };
 }
 
-function mapLocation(row: any): InventoryLocationV1 {
+export function mapLocation(row: any): InventoryLocationV1 {
   return {
     id: row.id,
     tenantId: row.tenant_id,
@@ -1775,7 +1775,7 @@ function mapLocation(row: any): InventoryLocationV1 {
   };
 }
 
-function mapItem(row: any): InventoryItemV1 {
+export function mapItem(row: any): InventoryItemV1 {
   return {
     id: row.id,
     tenantId: row.tenant_id,
@@ -1796,7 +1796,7 @@ function mapItem(row: any): InventoryItemV1 {
   };
 }
 
-function mapLot(row: any): InventoryLotV1 {
+export function mapLot(row: any): InventoryLotV1 {
   return {
     id: row.id,
     tenantId: row.tenant_id,
@@ -1831,7 +1831,7 @@ function mapLedgerTx(row: any): StockLedgerTransactionV1 {
   };
 }
 
-function mapLedgerEntry(row: any): StockLedgerEntryV1 {
+export function mapLedgerEntry(row: any): StockLedgerEntryV1 {
   return {
     id: row.id,
     tenantId: row.tenant_id,
@@ -1852,7 +1852,7 @@ function mapLedgerEntry(row: any): StockLedgerEntryV1 {
   };
 }
 
-function mapBalance(row: any): StockBalanceV1 {
+export function mapBalance(row: any): StockBalanceV1 {
   return {
     id: row.id,
     tenantId: row.tenant_id,
@@ -1894,7 +1894,7 @@ function mapReservation(row: any): InventoryReservationV1 {
   };
 }
 
-function mapReceipt(row: any, linesRows: any[]): InventoryReceiptV1 {
+export function mapReceipt(row: any, linesRows: any[]): InventoryReceiptV1 {
   return {
     id: row.id,
     tenantId: row.tenant_id,

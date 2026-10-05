@@ -34,7 +34,7 @@
     "service": "module-host",
     "port": 4790,
     "schema": "gigalibs_product_catalogue",
-    "migrationVersion": 1,
+    "migrationVersion": 2,
     "audience": "gigalibs-product-catalogue-api",
     "appendOnlyTables": [
       "audit_events"
@@ -56,7 +56,7 @@
     "service": "module-host",
     "port": 4790,
     "schema": "gigalibs_inventory",
-    "migrationVersion": 3,
+    "migrationVersion": 4,
     "audience": "gigalibs-universal-inventory-api",
     "appendOnlyTables": [
       "audit_events"

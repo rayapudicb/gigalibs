@@ -1,5 +1,6 @@
 import type { DynamicModule } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import { moduleWindowBaselines } from '@gigalibs/contracts';
 import { describe, expect, it } from 'vitest';
 import {
   CONFIGURATION_ADAPTERS,
@@ -69,7 +70,12 @@ describe('ConfigurationAdapterRegistry', () => {
 
     try {
       const descriptors = context.get(ConfigurationAdapterRegistry).descriptors();
-      expect(descriptors).toHaveLength(7);
+      // Seven module adapters, plus one per window a module ships (WI-OI-120f F0.2), stored by the module itself.
+      const windows = moduleWindowBaselines();
+      expect(descriptors).toHaveLength(7 + windows.length);
+      for (const window of windows) {
+        expect(descriptors.find((d) => d.surfaceKey === window.definition.surfaceKey)?.storageStrategy).toBe('MODULE_RECORD_DISPATCHER');
+      }
       expect(descriptors.some((d) => d.adapterKey === 'party-profile-v1')).toBe(true);
       expect(descriptors.some((d) => d.adapterKey === 'universal-procurement-v1')).toBe(true);
       expect(descriptors.some((d) => d.adapterKey === 'universal-orders-v1')).toBe(true);

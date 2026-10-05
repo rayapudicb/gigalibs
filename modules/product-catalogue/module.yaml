@@ -107,6 +107,8 @@ spec:
     routeNoun: Product Catalogue
     serviceName: Product Catalogue, UOM & Governed Pricing
     entitlementName: Product Catalogue
+    # WI-OI-120f (F0.3/F0.5): the module SDK's record routes for metadata windows and lookups.
+    records: true
     routes:
       - { path: 'v1/products', GET: products:read, POST: products:create }
       - { path: 'v1/products/import/preview', POST: products:import }
