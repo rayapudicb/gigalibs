@@ -92,8 +92,9 @@ P2 14, P3 8.
   (`scripts/verify.mjs:32-38`, outside the `--audits` switch). They connect to
   `localhost:5440/gigalibs` by default (`scripts/verify-financial-operations.mjs:28`) and insert proof data.
 - **Effect:** 9 accounting books and 26 GL journals (plus dependent rows) created at 2026-10-04 16:19:09Z in
-  `gigalibs_finance`, under unregistered test tenant IDs. No registered tenant's data was affected. These rows are
-  included in RT-6's totals.
+  `gigalibs_finance`, under unregistered test tenant IDs. No registered tenant's data was affected. Correction
+  (2026-10-05): RT-6's 107 books were counted before this run, so these rows are not in RT-6's totals; the table holds
+  116 books afterwards (re-checked 2026-10-05, newest row still 2026-10-04 16:19:09Z).
 - **Containment:** the primary agent will not run `pnpm verify` again under this card. Final verification will run
   the static audit scripts individually. Removing the rows requires owner approval.
 - **Root cause:** the mandatory gate writes to the owner's database (backlog item; see P1 F-10 and S-06).
