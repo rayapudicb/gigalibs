@@ -22,6 +22,8 @@ to one page. Replace old content rather than appending to it, and update it at t
   (known drift; 8 proofs NOT RUN). Adds control migration `20261005000000_login_throttle` and Connector Hub
   migration 9. Evidence: `.pi/work/WI-OI-120.md` U3.2. Owner question open: add the Governor fix (P1-11, deployed in
   the control plane) to U3.2?
+- **WI-OI-120f (F0, metadata-governed windows):** approved 2026-10-05. F0.1 (contract, capability checks at publish,
+  fail-closed exact evaluator) committed; F0.2 next (module dictionaries, activation when a module is enabled).
 - **One writer:** the owner chose this session (option 1, 2026-10-05); the peer session was told.
 - **U1 remaining recovery/deployment work:**
   - **Part A is committed (`03ebd0c`).** Evidence: `.pi/work/WI-OI-120.md`.

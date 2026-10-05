@@ -15,6 +15,7 @@ import {
   type DictionaryViewV1,
   CONFIGURATION_MAX_FIELDS,
 } from '@gigalibs/contracts';
+import { executableCapabilityFindings } from './dictionary-capabilities.js';
 import { canonicalJson, type ConfigurationFinding } from './index.js';
 
 export type { DictionaryPackageDefinitionV1, CompiledDictionaryManifestV1 };
@@ -300,6 +301,10 @@ export function compileDictionaryPackage(
     }
   }
 
+  // 8. WI-OI-120f (F0.1): only what the metadata window executes may be published, and every view, tab, placement,
+  // rule and action must point at something that exists.
+  findings.push(...executableCapabilityFindings(pkg, options.baseline as DictionaryPackageDefinitionV1 | undefined));
+
   if (findings.some((f) => f.severity === 'ERROR')) {
     return {
       valid: false,
@@ -307,11 +312,14 @@ export function compileDictionaryPackage(
     };
   }
 
-  // 8. Deterministic Canonical Ordering
+  // 9. Deterministic Canonical Ordering. A CURRENCY field without a scale keeps two decimal places.
+  const exactFields = pkg.fields.map((field) =>
+    field.type === 'CURRENCY' && field.scale === undefined ? { ...field, scale: 2 } : field,
+  );
   const sortedEntities: DictionaryEntityV1[] = [...pkg.entities].sort((a, b) =>
     a.entityKey.localeCompare(b.entityKey),
   );
-  const sortedFields: DictionaryFieldV1[] = [...pkg.fields].sort((a, b) =>
+  const sortedFields: DictionaryFieldV1[] = [...exactFields].sort((a, b) =>
     a.fieldKey.localeCompare(b.fieldKey),
   );
   const sortedRelationships: DictionaryRelationshipV1[] = [...pkg.relationships].sort((a, b) =>

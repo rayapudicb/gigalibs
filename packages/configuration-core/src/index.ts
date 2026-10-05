@@ -515,3 +515,4 @@ export * from './catalogue-compiler.js';
 export * from './governed-catalogues.js';
 export * from './dictionary-compiler.js';
 export * from './dictionary-evaluator.js';
+export * from './dictionary-capabilities.js';

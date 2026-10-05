@@ -1,10 +1,5 @@
 import { useState, useMemo } from 'react';
-import type {
-  CompiledDictionaryManifestV1,
-  DictionaryValidationExpression,
-  DictionaryValidationRuleV1,
-  DictionaryViewV1,
-} from '@gigalibs/contracts';
+import type { CompiledDictionaryManifestV1, DictionaryViewV1 } from '@gigalibs/contracts';
 
 export interface DictionaryRendererProps {
   manifest: CompiledDictionaryManifestV1;
@@ -19,82 +14,9 @@ export interface DictionaryRendererProps {
   onAction?: ((actionKey: string) => void) | undefined;
 }
 
-/**
- * Client-side Safe AST evaluator for bounded dictionary validation rules.
- */
-export function evaluateDictionaryCondition(
-  expr: DictionaryValidationExpression,
-  values: Record<string, unknown>,
-  currentDepth = 1,
-): boolean {
-  if (currentDepth > 10) return false;
-
-  if (expr.all && expr.all.length > 0) {
-    return expr.all.every((child) => evaluateDictionaryCondition(child, values, currentDepth + 1));
-  }
-  if (expr.any && expr.any.length > 0) {
-    return expr.any.some((child) => evaluateDictionaryCondition(child, values, currentDepth + 1));
-  }
-  if (expr.not) {
-    return !evaluateDictionaryCondition(expr.not, values, currentDepth + 1);
-  }
-
-  if (!expr.field || !expr.operator) return true;
-  const val = values[expr.field];
-
-  switch (expr.operator) {
-    case 'EQ':
-      return val === expr.value;
-    case 'NEQ':
-      return val !== expr.value;
-    case 'IS_NULL':
-      return val === null || val === undefined || val === '';
-    case 'IS_NOT_NULL':
-      return val !== null && val !== undefined && val !== '';
-    case 'GT':
-      return typeof val === 'number' && typeof expr.value === 'number' && val > expr.value;
-    case 'LT':
-      return typeof val === 'number' && typeof expr.value === 'number' && val < expr.value;
-    case 'GTE':
-      return typeof val === 'number' && typeof expr.value === 'number' && val >= expr.value;
-    case 'LTE':
-      return typeof val === 'number' && typeof expr.value === 'number' && val <= expr.value;
-    case 'IN':
-      return Array.isArray(expr.value) && expr.value.includes(val);
-    case 'NOT_IN':
-      return Array.isArray(expr.value) && !expr.value.includes(val);
-    case 'CONTAINS':
-      return typeof val === 'string' && typeof expr.value === 'string' && val.includes(expr.value);
-    case 'MATCHES_REGEX':
-      if (typeof val !== 'string' || typeof expr.value !== 'string') return false;
-      try {
-        const regex = new RegExp(expr.value);
-        return regex.test(val);
-      } catch {
-        return false;
-      }
-    default:
-      return true;
-  }
-}
-
-/**
- * Evaluates all validation rules declared in the manifest against form values.
- */
-export function validateDictionaryRules(
-  rules: readonly DictionaryValidationRuleV1[],
-  values: Record<string, unknown>,
-): Record<string, string> {
-  const errors: Record<string, string> = {};
-  for (const rule of rules) {
-    const passed = evaluateDictionaryCondition(rule.condition, values);
-    if (!passed) {
-      const fieldKey = rule.condition.field || rule.ruleKey;
-      errors[fieldKey] = rule.errorMessage;
-    }
-  }
-  return errors;
-}
+// WI-OI-120f (F0.1): one evaluator for the browser and the server, failing closed (M-03). Re-exported here for the
+// module screens that import it from this package.
+export { evaluateDictionaryCondition, validateDictionaryRules } from '@gigalibs/configuration-core/dictionary-evaluator';
 
 export function DictionaryRenderer({
   manifest,

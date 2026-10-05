@@ -18,6 +18,10 @@
     "./format": {
       "import": "./dist/format.js",
       "types": "./dist/format.d.ts"
+    },
+    "./dictionary-evaluator": {
+      "import": "./dist/dictionary-evaluator.js",
+      "types": "./dist/dictionary-evaluator.d.ts"
     }
 
   },

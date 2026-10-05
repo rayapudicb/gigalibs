@@ -512,3 +512,38 @@ accepts it.
   package.
 - **Note:** the built-in ERP manifests declare no views, so those screens show "No view layout declared"; F0 fixes
   this.
+
+## WI-OI-120f (F0): metadata-governed windows (approved 2026-10-05)
+
+Owner decisions: a module's baseline dictionary activates automatically when the module is enabled for a tenant (a
+tenant's own published version stays in force); the Inventory screen's hard-coded figures and simulated results are
+removed.
+
+### F0.1 Contract and compiler (committed with this entry)
+
+- `DictionaryFieldV1.scale` (0–8) for exact NUMBER and CURRENCY fields; their values travel as decimal strings.
+  CURRENCY without a scale compiles with two decimal places.
+- `DICTIONARY_EXECUTABLE_CAPABILITIES` (version 1) in the contracts lists the field types, component keys, reference
+  types, action types (COMMAND, NAVIGATE) and view modes the metadata window executes.
+- `configuration-core/src/dictionary-capabilities.ts`, called by `compileDictionaryPackage`, refuses at publish time:
+  - unsupported types, components and actions;
+  - lookups without a resolver, and SELECT fields without a value list;
+  - tabs, child tabs, sections, placements and search, filter or sort fields that point at nothing;
+  - incomplete, ambiguous or malformed rule expressions.
+- One evaluator, in `configuration-core` (the renderer's copy is removed and re-exported from the browser-safe
+  `@gigalibs/configuration-core/dictionary-evaluator`). It fails closed (incomplete comparisons, empty groups and
+  unknown operators are false) and compares numbers exactly, as numbers or decimal strings (M-03).
+- Published manifests on the UAT instance use only the TEXT, TEXTAREA, SELECT, BOOLEAN and CURRENCY types, which stay
+  supported.
+- **Tests:**
+  - `dictionary-capabilities.test.ts`: 8 tests.
+  - The configuration suites still pass (267 before this change).
+  - Full `pnpm test`: 2,503 passed, 184 skipped.
+  - The web app and control plane type-check.
+  - `pnpm verify` passes (known drift; 8 proofs NOT RUN).
+- **Process note:** these files were first edited while the U3.2 images were building, and the build reads the
+  working tree.
+  - The build was stopped and this work parked as a patch.
+  - The web, control-plane and migrations images were checked clean of F0.1 code.
+  - The module images were rebuilt from the clean commit `828b75a` (state hash unchanged throughout); then the work
+    was restored.

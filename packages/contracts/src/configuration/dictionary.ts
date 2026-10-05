@@ -90,6 +90,11 @@ export const DictionaryFieldV1Schema = z
     maskOnDisplay: z.boolean().default(false),
     readPermission: z.string().trim().max(100).optional(),
     writePermission: z.string().trim().max(100).optional(),
+    /**
+     * WI-OI-120f (F0.1): decimal places of an exact NUMBER or CURRENCY field. Such a value travels as a decimal
+     * string (for example "12.50"), never as a binary float.
+     */
+    scale: z.number().int().min(0).max(8).optional(),
   })
   .strict();
 export type DictionaryFieldV1 = z.infer<typeof DictionaryFieldV1Schema>;
@@ -407,3 +412,47 @@ export function isDictionaryManifest(value: unknown): value is CompiledDictionar
   );
 }
 
+
+// ─── 9. Executable capabilities (WI-OI-120f, F0.1) ──────────────────────────
+/**
+ * What the metadata window can execute. A package that uses anything else is refused at publish time instead of
+ * being published and silently ignored (ADR-0033 D1; metadata investigation M-01). Raise the version whenever the
+ * list changes.
+ */
+export const DICTIONARY_CAPABILITY_VERSION = 1;
+export const DICTIONARY_EXECUTABLE_CAPABILITIES = Object.freeze({
+  fieldTypes: Object.freeze([
+    'TEXT',
+    'TEXTAREA',
+    'NUMBER',
+    'INTEGER',
+    'BOOLEAN',
+    'DATE',
+    'DATETIME',
+    'EMAIL',
+    'PHONE',
+    'URL',
+    'CURRENCY',
+    'SELECT',
+    'REFERENCE',
+  ] as const satisfies readonly DictionaryFieldType[]),
+  componentKeys: Object.freeze([
+    'text-input',
+    'number-input',
+    'textarea',
+    'select',
+    'select-dropdown',
+    'checkbox',
+    'date-input',
+    'datetime-input',
+    'currency-input',
+    'lookup',
+  ] as const),
+  /** VALUE_LIST is drawn from its static values; every other reference type needs a registered resolver. */
+  referenceTypes: Object.freeze(['VALUE_LIST', 'TABLE_DIR', 'TABLE_QUERY', 'SEARCH_LOOKUP'] as const satisfies readonly DictionaryReferenceType[]),
+  /** COMMAND runs a registered module command; NAVIGATE opens another window. WORKFLOW and REPORT are not executed yet. */
+  actionTypes: Object.freeze(['COMMAND', 'NAVIGATE'] as const satisfies readonly DictionaryActionType[]),
+  viewModes: Object.freeze(['LIST', 'READ', 'EDIT', 'CREATE'] as const satisfies readonly DictionarySurfaceMode[]),
+  /** Types whose values are exact decimal strings when `scale` is set. */
+  exactDecimalTypes: Object.freeze(['NUMBER', 'CURRENCY'] as const satisfies readonly DictionaryFieldType[]),
+});
