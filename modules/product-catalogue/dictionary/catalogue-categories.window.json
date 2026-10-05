@@ -1,0 +1,162 @@
+{
+  "contractVersion": "1.0",
+  "window": {
+    "route": "/products",
+    "label": "Categories",
+    "description": "The category tree products are filed under.",
+    "readPermission": "products:read"
+  },
+  "definition": {
+    "kind": "APPLICATION_DICTIONARY",
+    "contractVersion": "1.0",
+    "moduleKey": "product-catalogue",
+    "entityKey": "catalogue-categories",
+    "surfaceKey": "catalogue-categories",
+    "title": "Product categories",
+    "dictionary": {
+      "packageKey": "catalogue-categories-module-baseline",
+      "name": "Product categories",
+      "version": "1.0.0",
+      "moduleKey": "product-catalogue",
+      "targetEntityKey": "catalogue.categories",
+      "entities": [
+        {
+          "entityKey": "catalogue.categories",
+          "moduleKey": "product-catalogue",
+          "label": "Categories",
+          "ownership": "MODULE_CORE",
+          "primaryKeyField": "id",
+          "isVersioned": true,
+          "isAuditLogged": true,
+          "isSoftDeletable": false
+        }
+      ],
+      "fields": [
+        {
+          "fieldKey": "code",
+          "entityKey": "catalogue.categories",
+          "label": "Code",
+          "type": "TEXT",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "name",
+          "entityKey": "catalogue.categories",
+          "label": "Name",
+          "type": "TEXT",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "description",
+          "entityKey": "catalogue.categories",
+          "label": "Description",
+          "type": "TEXTAREA",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "parent-category-id",
+          "entityKey": "catalogue.categories",
+          "label": "Parent category",
+          "type": "REFERENCE",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "category-ref"
+        },
+        {
+          "fieldKey": "is-default",
+          "entityKey": "catalogue.categories",
+          "label": "Default category",
+          "type": "BOOLEAN",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        }
+      ],
+      "relationships": [],
+      "references": [
+        {
+          "referenceKey": "category-ref",
+          "referenceType": "SEARCH_LOOKUP",
+          "resolverKey": "catalogue-categories"
+        }
+      ],
+      "validationRules": [],
+      "views": [
+        {
+          "viewKey": "categories",
+          "label": "Categories",
+          "mode": "LIST",
+          "device": "ALL",
+          "defaultSortDirection": "ASC",
+          "tabs": [
+            {
+              "tabKey": "category",
+              "label": "Category",
+              "position": 0,
+              "level": 0,
+              "targetEntityKey": "catalogue.categories",
+              "sections": [],
+              "fields": [
+                {
+                  "fieldKey": "code",
+                  "position": 0,
+                  "span": 3,
+                  "componentKey": "text-input"
+                },
+                {
+                  "fieldKey": "name",
+                  "position": 1,
+                  "span": 6,
+                  "componentKey": "text-input"
+                },
+                {
+                  "fieldKey": "is-default",
+                  "position": 2,
+                  "span": 3,
+                  "componentKey": "checkbox"
+                },
+                {
+                  "fieldKey": "parent-category-id",
+                  "position": 3,
+                  "span": 6,
+                  "componentKey": "lookup"
+                },
+                {
+                  "fieldKey": "description",
+                  "position": 4,
+                  "span": 12,
+                  "componentKey": "textarea"
+                }
+              ]
+            }
+          ],
+          "searchFields": [
+            "code",
+            "name"
+          ],
+          "defaultSortField": "name"
+        }
+      ],
+      "navigation": [],
+      "actions": [],
+      "messages": []
+    }
+  }
+}

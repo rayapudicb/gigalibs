@@ -562,8 +562,10 @@ function RecordDetail({ model, client, permissions, id, onBack }: { model: Windo
               <ActionButton
                 key={action.actionKey}
                 action={action}
-                run={async () => {
-                  const result = await client.action(entityKey, String(record.id), actionKey(action, entityKey), {}, newKey());
+                run={async (parameters) => {
+                  // WI-OI-120g: the action carries the version the user read, so a stale screen cannot act.
+                  const read = typeof record.version === 'number' ? { expectedVersion: record.version } : {};
+                  const result = await client.action(entityKey, String(record.id), actionKey(action, entityKey), { ...parameters, ...read }, newKey());
                   setState({ status: 'ready', record: { ...record, ...result } });
                   setNotice({ tone: 'info', text: `${action.label}: done.` });
                 }}
@@ -615,27 +617,73 @@ function RecordDetail({ model, client, permissions, id, onBack }: { model: Windo
   );
 }
 
-function ActionButton({ action, run, onFailure }: { action: DictionaryActionV1; run: () => Promise<void>; onFailure: (message: string) => void }) {
+function ActionButton({ action, run, onFailure }: { action: DictionaryActionV1; run: (parameters: RecordValues) => Promise<void>; onFailure: (message: string) => void }) {
   const [busy, setBusy] = useState(false);
+  const [asking, setAsking] = useState(false);
+  const [values, setValues] = useState<Record<string, string>>({});
+  const parameters = action.parameters ?? [];
+  const go = async (input: RecordValues) => {
+    setBusy(true);
+    try {
+      await run(input);
+      setAsking(false);
+      setValues({});
+    } catch (error) {
+      onFailure(failureOf(error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+  if (!asking) {
+    return (
+      <button
+        type="button"
+        className={primary}
+        disabled={busy}
+        onClick={() => {
+          // WI-OI-120g: an action that declares parameters (a reason, say) asks for them before it runs.
+          if (parameters.length > 0) return setAsking(true);
+          if (action.confirmationPrompt && !globalThis.confirm(action.confirmationPrompt)) return;
+          void go({});
+        }}
+      >
+        {busy ? `${action.label}…` : action.label}
+      </button>
+    );
+  }
+  const missing = parameters.filter((parameter) => parameter.required && !values[parameter.key]?.trim());
   return (
-    <button
-      type="button"
-      className={primary}
-      disabled={busy}
-      onClick={async () => {
-        if (action.confirmationPrompt && !globalThis.confirm(action.confirmationPrompt)) return;
-        setBusy(true);
-        try {
-          await run();
-        } catch (error) {
-          onFailure(failureOf(error).message);
-        } finally {
-          setBusy(false);
-        }
+    <form
+      className={`${box} w-full space-y-2 p-3`}
+      aria-label={action.label}
+      onSubmit={(event) => {
+        event.preventDefault();
+        if (missing.length === 0) void go(Object.fromEntries(parameters.map((parameter) => [parameter.key, values[parameter.key]?.trim() ?? ''])));
       }}
     >
-      {busy ? `${action.label}…` : action.label}
-    </button>
+      {action.confirmationPrompt && <p className="text-sm text-ui-fg-subtle">{action.confirmationPrompt}</p>}
+      {parameters.map((parameter) => (
+        <label key={parameter.key} className="block space-y-1 text-sm">
+          <span className="text-ui-fg-subtle">
+            {parameter.label}
+            {parameter.required ? ' *' : ''}
+          </span>
+          {parameter.type === 'TEXTAREA' ? (
+            <textarea className={inputClass} value={values[parameter.key] ?? ''} onChange={(event) => setValues({ ...values, [parameter.key]: event.target.value })} />
+          ) : (
+            <input className={inputClass} value={values[parameter.key] ?? ''} onChange={(event) => setValues({ ...values, [parameter.key]: event.target.value })} />
+          )}
+        </label>
+      ))}
+      <div className="flex gap-2">
+        <button type="submit" className={primary} disabled={busy || missing.length > 0}>
+          {busy ? `${action.label}…` : action.label}
+        </button>
+        <button type="button" className={button} disabled={busy} onClick={() => setAsking(false)}>
+          Cancel
+        </button>
+      </div>
+    </form>
   );
 }
 

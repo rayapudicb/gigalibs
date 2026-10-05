@@ -1,0 +1,460 @@
+{
+  "contractVersion": "1.0",
+  "window": {
+    "route": "/products",
+    "label": "Products",
+    "description": "Products, services and resources other modules use by reference.",
+    "readPermission": "products:read"
+  },
+  "definition": {
+    "kind": "APPLICATION_DICTIONARY",
+    "contractVersion": "1.0",
+    "moduleKey": "product-catalogue",
+    "entityKey": "catalogue-products",
+    "surfaceKey": "catalogue-products",
+    "title": "Products",
+    "dictionary": {
+      "packageKey": "catalogue-products-module-baseline",
+      "name": "Products",
+      "version": "1.0.0",
+      "moduleKey": "product-catalogue",
+      "targetEntityKey": "catalogue.products",
+      "entities": [
+        {
+          "entityKey": "catalogue.products",
+          "moduleKey": "product-catalogue",
+          "label": "Products",
+          "ownership": "MODULE_CORE",
+          "primaryKeyField": "id",
+          "isVersioned": true,
+          "isAuditLogged": true,
+          "isSoftDeletable": false
+        }
+      ],
+      "fields": [
+        {
+          "fieldKey": "code",
+          "entityKey": "catalogue.products",
+          "label": "Code",
+          "type": "TEXT",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "name",
+          "entityKey": "catalogue.products",
+          "label": "Name",
+          "type": "TEXT",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "display-name",
+          "entityKey": "catalogue.products",
+          "label": "Display name",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "description",
+          "entityKey": "catalogue.products",
+          "label": "Description",
+          "type": "TEXTAREA",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "product-type",
+          "entityKey": "catalogue.products",
+          "label": "Type",
+          "type": "SELECT",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "product-types"
+        },
+        {
+          "fieldKey": "status",
+          "entityKey": "catalogue.products",
+          "label": "Status",
+          "type": "SELECT",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "product-statuses",
+          "helpText": "A new product starts as Draft. Use Archive to retire it."
+        },
+        {
+          "fieldKey": "base-uom-id",
+          "entityKey": "catalogue.products",
+          "label": "Base unit",
+          "type": "REFERENCE",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "uom-ref"
+        },
+        {
+          "fieldKey": "category-id",
+          "entityKey": "catalogue.products",
+          "label": "Category",
+          "type": "REFERENCE",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "category-ref"
+        },
+        {
+          "fieldKey": "is-sold",
+          "entityKey": "catalogue.products",
+          "label": "Sold",
+          "type": "BOOLEAN",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "is-purchased",
+          "entityKey": "catalogue.products",
+          "label": "Purchased",
+          "type": "BOOLEAN",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "is-stocked",
+          "entityKey": "catalogue.products",
+          "label": "Stocked",
+          "type": "BOOLEAN",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "data-classification",
+          "entityKey": "catalogue.products",
+          "label": "Data classification",
+          "type": "SELECT",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "classifications"
+        },
+        {
+          "fieldKey": "updated-at",
+          "entityKey": "catalogue.products",
+          "label": "Last changed",
+          "type": "DATETIME",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        }
+      ],
+      "relationships": [],
+      "references": [
+        {
+          "referenceKey": "product-types",
+          "referenceType": "VALUE_LIST",
+          "staticValues": [
+            {
+              "value": "GOOD",
+              "label": "Good"
+            },
+            {
+              "value": "SERVICE",
+              "label": "Service"
+            },
+            {
+              "value": "DIGITAL",
+              "label": "Digital"
+            },
+            {
+              "value": "RESOURCE",
+              "label": "Resource"
+            },
+            {
+              "value": "BUNDLE",
+              "label": "Bundle"
+            }
+          ]
+        },
+        {
+          "referenceKey": "product-statuses",
+          "referenceType": "VALUE_LIST",
+          "staticValues": [
+            {
+              "value": "DRAFT",
+              "label": "Draft"
+            },
+            {
+              "value": "ACTIVE",
+              "label": "Active"
+            },
+            {
+              "value": "DISCONTINUED",
+              "label": "Discontinued"
+            },
+            {
+              "value": "ARCHIVED",
+              "label": "Archived"
+            }
+          ]
+        },
+        {
+          "referenceKey": "classifications",
+          "referenceType": "VALUE_LIST",
+          "staticValues": [
+            {
+              "value": "PUBLIC",
+              "label": "Public"
+            },
+            {
+              "value": "INTERNAL",
+              "label": "Internal"
+            },
+            {
+              "value": "CONFIDENTIAL",
+              "label": "Confidential"
+            },
+            {
+              "value": "RESTRICTED",
+              "label": "Restricted"
+            }
+          ]
+        },
+        {
+          "referenceKey": "uom-ref",
+          "referenceType": "SEARCH_LOOKUP",
+          "resolverKey": "catalogue-uoms"
+        },
+        {
+          "referenceKey": "category-ref",
+          "referenceType": "SEARCH_LOOKUP",
+          "resolverKey": "catalogue-categories"
+        }
+      ],
+      "validationRules": [],
+      "views": [
+        {
+          "viewKey": "products",
+          "label": "Products",
+          "mode": "LIST",
+          "device": "ALL",
+          "defaultSortDirection": "ASC",
+          "tabs": [
+            {
+              "tabKey": "product",
+              "label": "Product",
+              "position": 0,
+              "level": 0,
+              "targetEntityKey": "catalogue.products",
+              "sections": [
+                {
+                  "sectionKey": "main",
+                  "label": "Product",
+                  "collapsible": false,
+                  "defaultCollapsed": false,
+                  "position": 0
+                },
+                {
+                  "sectionKey": "use",
+                  "label": "Used for",
+                  "collapsible": false,
+                  "defaultCollapsed": false,
+                  "position": 1
+                },
+                {
+                  "sectionKey": "details",
+                  "label": "Details",
+                  "collapsible": false,
+                  "defaultCollapsed": false,
+                  "position": 2
+                }
+              ],
+              "fields": [
+                {
+                  "fieldKey": "code",
+                  "position": 0,
+                  "span": 3,
+                  "componentKey": "text-input",
+                  "sectionKey": "main"
+                },
+                {
+                  "fieldKey": "name",
+                  "position": 1,
+                  "span": 6,
+                  "componentKey": "text-input",
+                  "sectionKey": "main"
+                },
+                {
+                  "fieldKey": "status",
+                  "position": 2,
+                  "span": 3,
+                  "componentKey": "select",
+                  "sectionKey": "main"
+                },
+                {
+                  "fieldKey": "product-type",
+                  "position": 3,
+                  "span": 3,
+                  "componentKey": "select",
+                  "sectionKey": "main"
+                },
+                {
+                  "fieldKey": "base-uom-id",
+                  "position": 4,
+                  "span": 3,
+                  "componentKey": "lookup",
+                  "sectionKey": "main"
+                },
+                {
+                  "fieldKey": "category-id",
+                  "position": 5,
+                  "span": 6,
+                  "componentKey": "lookup",
+                  "sectionKey": "main"
+                },
+                {
+                  "fieldKey": "display-name",
+                  "position": 6,
+                  "span": 6,
+                  "componentKey": "text-input",
+                  "sectionKey": "details"
+                },
+                {
+                  "fieldKey": "data-classification",
+                  "position": 7,
+                  "span": 6,
+                  "componentKey": "select",
+                  "sectionKey": "details"
+                },
+                {
+                  "fieldKey": "description",
+                  "position": 8,
+                  "span": 12,
+                  "componentKey": "textarea",
+                  "sectionKey": "details"
+                },
+                {
+                  "fieldKey": "is-sold",
+                  "position": 9,
+                  "span": 4,
+                  "componentKey": "checkbox",
+                  "sectionKey": "use"
+                },
+                {
+                  "fieldKey": "is-purchased",
+                  "position": 10,
+                  "span": 4,
+                  "componentKey": "checkbox",
+                  "sectionKey": "use"
+                },
+                {
+                  "fieldKey": "is-stocked",
+                  "position": 11,
+                  "span": 4,
+                  "componentKey": "checkbox",
+                  "sectionKey": "use"
+                },
+                {
+                  "fieldKey": "updated-at",
+                  "position": 12,
+                  "span": 6,
+                  "componentKey": "datetime-input",
+                  "sectionKey": "details"
+                }
+              ]
+            }
+          ],
+          "searchFields": [
+            "code",
+            "name"
+          ],
+          "defaultSortField": "name"
+        }
+      ],
+      "navigation": [],
+      "actions": [
+        {
+          "actionKey": "archive",
+          "label": "Archive",
+          "type": "COMMAND",
+          "handlerKey": "catalogue.products.archive",
+          "requiredPermissions": [
+            "products:archive"
+          ],
+          "confirmationPrompt": "Archive this product? It can no longer be picked on new documents.",
+          "parameters": [
+            {
+              "key": "reason",
+              "label": "Reason",
+              "type": "TEXTAREA",
+              "required": true
+            }
+          ],
+          "visibilityCondition": {
+            "field": "status",
+            "operator": "NEQ",
+            "value": "ARCHIVED"
+          }
+        },
+        {
+          "actionKey": "restore",
+          "label": "Restore",
+          "type": "COMMAND",
+          "handlerKey": "catalogue.products.restore",
+          "requiredPermissions": [
+            "products:archive"
+          ],
+          "confirmationPrompt": "Restore this product as a draft?",
+          "parameters": [
+            {
+              "key": "reason",
+              "label": "Reason",
+              "type": "TEXTAREA",
+              "required": true
+            }
+          ],
+          "visibilityCondition": {
+            "field": "status",
+            "operator": "EQ",
+            "value": "ARCHIVED"
+          }
+        }
+      ],
+      "messages": []
+    }
+  }
+}

@@ -47,10 +47,16 @@ spec:
     basePath: /finance
     package: '@gigalibs/financial-operations-web'
     pages:
+      # WI-OI-120g (owner-approved 2026-10-05): the mock-up screen is taken down until U12 to U18 lands its windows.
       - route: /finance
-        component: FinancialOperationsWorkspace
-        # WI-OI-120e (U3.2): the dictionary renderer gets the signed-in user's permissions.
-        sessionPermissions: true
+        unavailable:
+          title: Finance screens are not connected yet
+          summary: The Financial Operations service runs in this instance (books, chart of accounts, periods, journals, treasury, bank reconciliation, fixed assets, consolidation, costing, budgeting and close), but its screens are being rebuilt as metadata windows over that service (U12 to U18). The previous screen showed sample books, banks and balances, so it has been taken down rather than let anyone record its numbers as results.
+          availableForTesting:
+            - Stock movements that will post to the ledger, at /inventory.
+          blockedActions:
+            - Showing sample ledgers, balances or reports as financial facts.
+            - Buttons that look like actions but do nothing.
   api:
     application: apps/api
     port: 4790

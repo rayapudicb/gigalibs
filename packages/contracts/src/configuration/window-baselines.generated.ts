@@ -4,6 +4,3030 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
   {
     "contractVersion": "1.0",
     "window": {
+      "route": "/products",
+      "label": "Attributes",
+      "description": "The attributes products can carry.",
+      "readPermission": "products:read"
+    },
+    "definition": {
+      "kind": "APPLICATION_DICTIONARY",
+      "contractVersion": "1.0",
+      "moduleKey": "product-catalogue",
+      "entityKey": "catalogue-attributes",
+      "surfaceKey": "catalogue-attributes",
+      "title": "Product attributes",
+      "dictionary": {
+        "packageKey": "catalogue-attributes-module-baseline",
+        "name": "Product attributes",
+        "version": "1.0.0",
+        "moduleKey": "product-catalogue",
+        "targetEntityKey": "catalogue.attributes",
+        "entities": [
+          {
+            "entityKey": "catalogue.attributes",
+            "moduleKey": "product-catalogue",
+            "label": "Attributes",
+            "ownership": "MODULE_CORE",
+            "primaryKeyField": "id",
+            "isVersioned": true,
+            "isAuditLogged": true,
+            "isSoftDeletable": false
+          }
+        ],
+        "fields": [
+          {
+            "fieldKey": "code",
+            "entityKey": "catalogue.attributes",
+            "label": "Code",
+            "type": "TEXT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "name",
+            "entityKey": "catalogue.attributes",
+            "label": "Name",
+            "type": "TEXT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "description",
+            "entityKey": "catalogue.attributes",
+            "label": "Description",
+            "type": "TEXTAREA",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "value-type",
+            "entityKey": "catalogue.attributes",
+            "label": "Value type",
+            "type": "SELECT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "value-types"
+          },
+          {
+            "fieldKey": "is-required",
+            "entityKey": "catalogue.attributes",
+            "label": "Required",
+            "type": "BOOLEAN",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "unit",
+            "entityKey": "catalogue.attributes",
+            "label": "Unit",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "allowed-values",
+            "entityKey": "catalogue.attributes",
+            "label": "Allowed values",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "helpText": "For a list of values: the values, separated by commas."
+          },
+          {
+            "fieldKey": "min-value",
+            "entityKey": "catalogue.attributes",
+            "label": "Minimum",
+            "type": "NUMBER",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "scale": 6
+          },
+          {
+            "fieldKey": "max-value",
+            "entityKey": "catalogue.attributes",
+            "label": "Maximum",
+            "type": "NUMBER",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "scale": 6
+          }
+        ],
+        "relationships": [],
+        "references": [
+          {
+            "referenceKey": "value-types",
+            "referenceType": "VALUE_LIST",
+            "staticValues": [
+              {
+                "value": "STRING",
+                "label": "Text"
+              },
+              {
+                "value": "INTEGER",
+                "label": "Whole number"
+              },
+              {
+                "value": "DECIMAL",
+                "label": "Decimal"
+              },
+              {
+                "value": "BOOLEAN",
+                "label": "Yes/no"
+              },
+              {
+                "value": "DATE",
+                "label": "Date"
+              },
+              {
+                "value": "ENUM",
+                "label": "List of values"
+              }
+            ]
+          }
+        ],
+        "validationRules": [],
+        "views": [
+          {
+            "viewKey": "attributes",
+            "label": "Attributes",
+            "mode": "LIST",
+            "device": "ALL",
+            "defaultSortDirection": "ASC",
+            "tabs": [
+              {
+                "tabKey": "attribute",
+                "label": "Attribute",
+                "position": 0,
+                "level": 0,
+                "targetEntityKey": "catalogue.attributes",
+                "sections": [],
+                "fields": [
+                  {
+                    "fieldKey": "code",
+                    "position": 0,
+                    "span": 3,
+                    "componentKey": "text-input"
+                  },
+                  {
+                    "fieldKey": "name",
+                    "position": 1,
+                    "span": 6,
+                    "componentKey": "text-input"
+                  },
+                  {
+                    "fieldKey": "value-type",
+                    "position": 2,
+                    "span": 3,
+                    "componentKey": "select"
+                  },
+                  {
+                    "fieldKey": "is-required",
+                    "position": 3,
+                    "span": 3,
+                    "componentKey": "checkbox"
+                  },
+                  {
+                    "fieldKey": "unit",
+                    "position": 4,
+                    "span": 3,
+                    "componentKey": "text-input"
+                  },
+                  {
+                    "fieldKey": "min-value",
+                    "position": 5,
+                    "span": 3,
+                    "componentKey": "number-input"
+                  },
+                  {
+                    "fieldKey": "max-value",
+                    "position": 6,
+                    "span": 3,
+                    "componentKey": "number-input"
+                  },
+                  {
+                    "fieldKey": "allowed-values",
+                    "position": 7,
+                    "span": 12,
+                    "componentKey": "text-input"
+                  },
+                  {
+                    "fieldKey": "description",
+                    "position": 8,
+                    "span": 12,
+                    "componentKey": "textarea"
+                  }
+                ]
+              }
+            ],
+            "searchFields": [
+              "code",
+              "name"
+            ],
+            "defaultSortField": "code"
+          }
+        ],
+        "navigation": [],
+        "actions": [],
+        "messages": []
+      }
+    }
+  },
+  {
+    "contractVersion": "1.0",
+    "window": {
+      "route": "/products",
+      "label": "Catalogue versions",
+      "description": "Build a catalogue version, then submit, approve and publish it.",
+      "readPermission": "catalogues:read"
+    },
+    "definition": {
+      "kind": "APPLICATION_DICTIONARY",
+      "contractVersion": "1.0",
+      "moduleKey": "product-catalogue",
+      "entityKey": "catalogue-catalogue-versions",
+      "surfaceKey": "catalogue-catalogue-versions",
+      "title": "Catalogue versions",
+      "dictionary": {
+        "packageKey": "catalogue-catalogue-versions-module-baseline",
+        "name": "Catalogue versions",
+        "version": "1.0.0",
+        "moduleKey": "product-catalogue",
+        "targetEntityKey": "catalogue.catalogue-versions",
+        "entities": [
+          {
+            "entityKey": "catalogue.catalogue-versions",
+            "moduleKey": "product-catalogue",
+            "label": "Catalogue versions",
+            "ownership": "MODULE_CORE",
+            "primaryKeyField": "id",
+            "isVersioned": true,
+            "isAuditLogged": true,
+            "isSoftDeletable": false
+          },
+          {
+            "entityKey": "catalogue.catalogue-entries",
+            "moduleKey": "product-catalogue",
+            "label": "Entries",
+            "ownership": "MODULE_CORE",
+            "primaryKeyField": "id",
+            "isVersioned": true,
+            "isAuditLogged": true,
+            "isSoftDeletable": false
+          }
+        ],
+        "fields": [
+          {
+            "fieldKey": "catalogue-id",
+            "entityKey": "catalogue.catalogue-versions",
+            "label": "Catalogue",
+            "type": "REFERENCE",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "catalogue-ref"
+          },
+          {
+            "fieldKey": "version-number",
+            "entityKey": "catalogue.catalogue-versions",
+            "label": "Version",
+            "type": "INTEGER",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "status",
+            "entityKey": "catalogue.catalogue-versions",
+            "label": "Status",
+            "type": "SELECT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "catalogue-statuses"
+          },
+          {
+            "fieldKey": "effective-from",
+            "entityKey": "catalogue.catalogue-versions",
+            "label": "Effective from",
+            "type": "DATE",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "effective-to",
+            "entityKey": "catalogue.catalogue-versions",
+            "label": "Effective to",
+            "type": "DATE",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "notes",
+            "entityKey": "catalogue.catalogue-versions",
+            "label": "Notes",
+            "type": "TEXTAREA",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "submitted-by",
+            "entityKey": "catalogue.catalogue-versions",
+            "label": "Submitted by",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "approved-by",
+            "entityKey": "catalogue.catalogue-versions",
+            "label": "Approved by",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "published-by",
+            "entityKey": "catalogue.catalogue-versions",
+            "label": "Published by",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "checksum",
+            "entityKey": "catalogue.catalogue-versions",
+            "label": "Checksum",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "catalogue-version-id",
+            "entityKey": "catalogue.catalogue-entries",
+            "label": "Version",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "helpText": "Set from the version the entry belongs to."
+          },
+          {
+            "fieldKey": "product-id",
+            "entityKey": "catalogue.catalogue-entries",
+            "label": "Product",
+            "type": "REFERENCE",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "product-ref"
+          },
+          {
+            "fieldKey": "sort-order",
+            "entityKey": "catalogue.catalogue-entries",
+            "label": "Sort order",
+            "type": "INTEGER",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "is-highlighted",
+            "entityKey": "catalogue.catalogue-entries",
+            "label": "Highlighted",
+            "type": "BOOLEAN",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          }
+        ],
+        "relationships": [
+          {
+            "relationshipKey": "version-entries",
+            "sourceEntityKey": "catalogue.catalogue-versions",
+            "targetEntityKey": "catalogue.catalogue-entries",
+            "type": "ONE_TO_MANY",
+            "foreignKeyField": "catalogue-version-id"
+          }
+        ],
+        "references": [
+          {
+            "referenceKey": "catalogue-statuses",
+            "referenceType": "VALUE_LIST",
+            "staticValues": [
+              {
+                "value": "DRAFT",
+                "label": "Draft"
+              },
+              {
+                "value": "SUBMITTED",
+                "label": "Submitted"
+              },
+              {
+                "value": "APPROVED",
+                "label": "Approved"
+              },
+              {
+                "value": "PUBLISHED",
+                "label": "Published"
+              }
+            ]
+          },
+          {
+            "referenceKey": "catalogue-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "catalogue-catalogues"
+          },
+          {
+            "referenceKey": "product-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "catalogue-products"
+          }
+        ],
+        "validationRules": [],
+        "views": [
+          {
+            "viewKey": "catalogue-versions",
+            "label": "Catalogue versions",
+            "mode": "LIST",
+            "device": "ALL",
+            "defaultSortDirection": "ASC",
+            "tabs": [
+              {
+                "tabKey": "version",
+                "label": "Version",
+                "position": 0,
+                "level": 0,
+                "targetEntityKey": "catalogue.catalogue-versions",
+                "sections": [
+                  {
+                    "sectionKey": "main",
+                    "label": "Version",
+                    "collapsible": false,
+                    "defaultCollapsed": false,
+                    "position": 0
+                  },
+                  {
+                    "sectionKey": "approval",
+                    "label": "Approval",
+                    "collapsible": false,
+                    "defaultCollapsed": false,
+                    "position": 1
+                  }
+                ],
+                "fields": [
+                  {
+                    "fieldKey": "catalogue-id",
+                    "position": 0,
+                    "span": 6,
+                    "componentKey": "lookup",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "version-number",
+                    "position": 1,
+                    "span": 3,
+                    "componentKey": "number-input",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "status",
+                    "position": 2,
+                    "span": 3,
+                    "componentKey": "select",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "effective-from",
+                    "position": 3,
+                    "span": 4,
+                    "componentKey": "date-input",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "effective-to",
+                    "position": 4,
+                    "span": 4,
+                    "componentKey": "date-input",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "notes",
+                    "position": 5,
+                    "span": 12,
+                    "componentKey": "textarea",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "submitted-by",
+                    "position": 6,
+                    "span": 4,
+                    "componentKey": "text-input",
+                    "sectionKey": "approval"
+                  },
+                  {
+                    "fieldKey": "approved-by",
+                    "position": 7,
+                    "span": 4,
+                    "componentKey": "text-input",
+                    "sectionKey": "approval"
+                  },
+                  {
+                    "fieldKey": "published-by",
+                    "position": 8,
+                    "span": 4,
+                    "componentKey": "text-input",
+                    "sectionKey": "approval"
+                  },
+                  {
+                    "fieldKey": "checksum",
+                    "position": 9,
+                    "span": 12,
+                    "componentKey": "text-input",
+                    "sectionKey": "approval"
+                  }
+                ]
+              },
+              {
+                "tabKey": "entries",
+                "label": "Entries",
+                "position": 1,
+                "level": 1,
+                "targetEntityKey": "catalogue.catalogue-entries",
+                "sections": [],
+                "fields": [
+                  {
+                    "fieldKey": "product-id",
+                    "position": 0,
+                    "span": 6,
+                    "componentKey": "lookup"
+                  },
+                  {
+                    "fieldKey": "sort-order",
+                    "position": 1,
+                    "span": 3,
+                    "componentKey": "number-input"
+                  },
+                  {
+                    "fieldKey": "is-highlighted",
+                    "position": 2,
+                    "span": 3,
+                    "componentKey": "checkbox"
+                  }
+                ],
+                "parentRelationshipKey": "version-entries"
+              }
+            ],
+            "searchFields": [
+              "notes"
+            ],
+            "defaultSortField": "version-number"
+          }
+        ],
+        "navigation": [],
+        "actions": [
+          {
+            "actionKey": "submit",
+            "label": "Submit for approval",
+            "type": "COMMAND",
+            "handlerKey": "catalogue.catalogue-versions.submit",
+            "requiredPermissions": [
+              "catalogues:submit"
+            ],
+            "confirmationPrompt": "Submit this version? It can no longer change, and someone else must approve it.",
+            "parameters": [
+              {
+                "key": "reason",
+                "label": "Reason",
+                "type": "TEXTAREA",
+                "required": true
+              }
+            ],
+            "visibilityCondition": {
+              "field": "status",
+              "operator": "EQ",
+              "value": "DRAFT"
+            }
+          },
+          {
+            "actionKey": "approve",
+            "label": "Approve",
+            "type": "COMMAND",
+            "handlerKey": "catalogue.catalogue-versions.approve",
+            "requiredPermissions": [
+              "catalogues:approve"
+            ],
+            "confirmationPrompt": "Approve this version? You cannot approve a version you submitted.",
+            "parameters": [
+              {
+                "key": "reason",
+                "label": "Reason",
+                "type": "TEXTAREA",
+                "required": true
+              }
+            ],
+            "visibilityCondition": {
+              "field": "status",
+              "operator": "EQ",
+              "value": "SUBMITTED"
+            }
+          },
+          {
+            "actionKey": "publish",
+            "label": "Publish",
+            "type": "COMMAND",
+            "handlerKey": "catalogue.catalogue-versions.publish",
+            "requiredPermissions": [
+              "catalogues:publish"
+            ],
+            "confirmationPrompt": "Publish this version? It becomes the catalogue in force from its effective date.",
+            "parameters": [
+              {
+                "key": "reason",
+                "label": "Reason",
+                "type": "TEXTAREA",
+                "required": true
+              }
+            ],
+            "visibilityCondition": {
+              "field": "status",
+              "operator": "EQ",
+              "value": "APPROVED"
+            }
+          }
+        ],
+        "messages": []
+      }
+    }
+  },
+  {
+    "contractVersion": "1.0",
+    "window": {
+      "route": "/products",
+      "label": "Catalogues",
+      "description": "Catalogues and their versions.",
+      "readPermission": "catalogues:read"
+    },
+    "definition": {
+      "kind": "APPLICATION_DICTIONARY",
+      "contractVersion": "1.0",
+      "moduleKey": "product-catalogue",
+      "entityKey": "catalogue-catalogues",
+      "surfaceKey": "catalogue-catalogues",
+      "title": "Catalogues",
+      "dictionary": {
+        "packageKey": "catalogue-catalogues-module-baseline",
+        "name": "Catalogues",
+        "version": "1.0.0",
+        "moduleKey": "product-catalogue",
+        "targetEntityKey": "catalogue.catalogues",
+        "entities": [
+          {
+            "entityKey": "catalogue.catalogues",
+            "moduleKey": "product-catalogue",
+            "label": "Catalogues",
+            "ownership": "MODULE_CORE",
+            "primaryKeyField": "id",
+            "isVersioned": true,
+            "isAuditLogged": true,
+            "isSoftDeletable": false
+          },
+          {
+            "entityKey": "catalogue.catalogue-versions",
+            "moduleKey": "product-catalogue",
+            "label": "Versions",
+            "ownership": "MODULE_CORE",
+            "primaryKeyField": "id",
+            "isVersioned": true,
+            "isAuditLogged": true,
+            "isSoftDeletable": false
+          }
+        ],
+        "fields": [
+          {
+            "fieldKey": "code",
+            "entityKey": "catalogue.catalogues",
+            "label": "Code",
+            "type": "TEXT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "name",
+            "entityKey": "catalogue.catalogues",
+            "label": "Name",
+            "type": "TEXT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "description",
+            "entityKey": "catalogue.catalogues",
+            "label": "Description",
+            "type": "TEXTAREA",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "purpose",
+            "entityKey": "catalogue.catalogues",
+            "label": "Purpose",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "audience",
+            "entityKey": "catalogue.catalogues",
+            "label": "Audience",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "is-active",
+            "entityKey": "catalogue.catalogues",
+            "label": "Active",
+            "type": "BOOLEAN",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "catalogue-id",
+            "entityKey": "catalogue.catalogue-versions",
+            "label": "Catalogue",
+            "type": "REFERENCE",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "catalogue-ref"
+          },
+          {
+            "fieldKey": "version-number",
+            "entityKey": "catalogue.catalogue-versions",
+            "label": "Version",
+            "type": "INTEGER",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "status",
+            "entityKey": "catalogue.catalogue-versions",
+            "label": "Status",
+            "type": "SELECT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "catalogue-statuses"
+          },
+          {
+            "fieldKey": "effective-from",
+            "entityKey": "catalogue.catalogue-versions",
+            "label": "Effective from",
+            "type": "DATE",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "effective-to",
+            "entityKey": "catalogue.catalogue-versions",
+            "label": "Effective to",
+            "type": "DATE",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "notes",
+            "entityKey": "catalogue.catalogue-versions",
+            "label": "Notes",
+            "type": "TEXTAREA",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          }
+        ],
+        "relationships": [
+          {
+            "relationshipKey": "catalogue-versions",
+            "sourceEntityKey": "catalogue.catalogues",
+            "targetEntityKey": "catalogue.catalogue-versions",
+            "type": "ONE_TO_MANY",
+            "foreignKeyField": "catalogue-id"
+          }
+        ],
+        "references": [
+          {
+            "referenceKey": "catalogue-statuses",
+            "referenceType": "VALUE_LIST",
+            "staticValues": [
+              {
+                "value": "DRAFT",
+                "label": "Draft"
+              },
+              {
+                "value": "SUBMITTED",
+                "label": "Submitted"
+              },
+              {
+                "value": "APPROVED",
+                "label": "Approved"
+              },
+              {
+                "value": "PUBLISHED",
+                "label": "Published"
+              }
+            ]
+          },
+          {
+            "referenceKey": "catalogue-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "catalogue-catalogues"
+          }
+        ],
+        "validationRules": [],
+        "views": [
+          {
+            "viewKey": "catalogues",
+            "label": "Catalogues",
+            "mode": "LIST",
+            "device": "ALL",
+            "defaultSortDirection": "ASC",
+            "tabs": [
+              {
+                "tabKey": "catalogue",
+                "label": "Catalogue",
+                "position": 0,
+                "level": 0,
+                "targetEntityKey": "catalogue.catalogues",
+                "sections": [],
+                "fields": [
+                  {
+                    "fieldKey": "code",
+                    "position": 0,
+                    "span": 3,
+                    "componentKey": "text-input"
+                  },
+                  {
+                    "fieldKey": "name",
+                    "position": 1,
+                    "span": 6,
+                    "componentKey": "text-input"
+                  },
+                  {
+                    "fieldKey": "is-active",
+                    "position": 2,
+                    "span": 3,
+                    "componentKey": "checkbox"
+                  },
+                  {
+                    "fieldKey": "purpose",
+                    "position": 3,
+                    "span": 6,
+                    "componentKey": "text-input"
+                  },
+                  {
+                    "fieldKey": "audience",
+                    "position": 4,
+                    "span": 6,
+                    "componentKey": "text-input"
+                  },
+                  {
+                    "fieldKey": "description",
+                    "position": 5,
+                    "span": 12,
+                    "componentKey": "textarea"
+                  }
+                ]
+              },
+              {
+                "tabKey": "versions",
+                "label": "Versions",
+                "position": 1,
+                "level": 1,
+                "targetEntityKey": "catalogue.catalogue-versions",
+                "sections": [],
+                "fields": [
+                  {
+                    "fieldKey": "version-number",
+                    "position": 0,
+                    "span": 2,
+                    "componentKey": "number-input"
+                  },
+                  {
+                    "fieldKey": "status",
+                    "position": 1,
+                    "span": 3,
+                    "componentKey": "select"
+                  },
+                  {
+                    "fieldKey": "effective-from",
+                    "position": 2,
+                    "span": 3,
+                    "componentKey": "date-input"
+                  },
+                  {
+                    "fieldKey": "effective-to",
+                    "position": 3,
+                    "span": 3,
+                    "componentKey": "date-input"
+                  },
+                  {
+                    "fieldKey": "notes",
+                    "position": 4,
+                    "span": 12,
+                    "componentKey": "textarea"
+                  }
+                ],
+                "parentRelationshipKey": "catalogue-versions"
+              }
+            ],
+            "searchFields": [
+              "code",
+              "name"
+            ],
+            "defaultSortField": "name"
+          }
+        ],
+        "navigation": [],
+        "actions": [],
+        "messages": []
+      }
+    }
+  },
+  {
+    "contractVersion": "1.0",
+    "window": {
+      "route": "/products",
+      "label": "Categories",
+      "description": "The category tree products are filed under.",
+      "readPermission": "products:read"
+    },
+    "definition": {
+      "kind": "APPLICATION_DICTIONARY",
+      "contractVersion": "1.0",
+      "moduleKey": "product-catalogue",
+      "entityKey": "catalogue-categories",
+      "surfaceKey": "catalogue-categories",
+      "title": "Product categories",
+      "dictionary": {
+        "packageKey": "catalogue-categories-module-baseline",
+        "name": "Product categories",
+        "version": "1.0.0",
+        "moduleKey": "product-catalogue",
+        "targetEntityKey": "catalogue.categories",
+        "entities": [
+          {
+            "entityKey": "catalogue.categories",
+            "moduleKey": "product-catalogue",
+            "label": "Categories",
+            "ownership": "MODULE_CORE",
+            "primaryKeyField": "id",
+            "isVersioned": true,
+            "isAuditLogged": true,
+            "isSoftDeletable": false
+          }
+        ],
+        "fields": [
+          {
+            "fieldKey": "code",
+            "entityKey": "catalogue.categories",
+            "label": "Code",
+            "type": "TEXT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "name",
+            "entityKey": "catalogue.categories",
+            "label": "Name",
+            "type": "TEXT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "description",
+            "entityKey": "catalogue.categories",
+            "label": "Description",
+            "type": "TEXTAREA",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "parent-category-id",
+            "entityKey": "catalogue.categories",
+            "label": "Parent category",
+            "type": "REFERENCE",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "category-ref"
+          },
+          {
+            "fieldKey": "is-default",
+            "entityKey": "catalogue.categories",
+            "label": "Default category",
+            "type": "BOOLEAN",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          }
+        ],
+        "relationships": [],
+        "references": [
+          {
+            "referenceKey": "category-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "catalogue-categories"
+          }
+        ],
+        "validationRules": [],
+        "views": [
+          {
+            "viewKey": "categories",
+            "label": "Categories",
+            "mode": "LIST",
+            "device": "ALL",
+            "defaultSortDirection": "ASC",
+            "tabs": [
+              {
+                "tabKey": "category",
+                "label": "Category",
+                "position": 0,
+                "level": 0,
+                "targetEntityKey": "catalogue.categories",
+                "sections": [],
+                "fields": [
+                  {
+                    "fieldKey": "code",
+                    "position": 0,
+                    "span": 3,
+                    "componentKey": "text-input"
+                  },
+                  {
+                    "fieldKey": "name",
+                    "position": 1,
+                    "span": 6,
+                    "componentKey": "text-input"
+                  },
+                  {
+                    "fieldKey": "is-default",
+                    "position": 2,
+                    "span": 3,
+                    "componentKey": "checkbox"
+                  },
+                  {
+                    "fieldKey": "parent-category-id",
+                    "position": 3,
+                    "span": 6,
+                    "componentKey": "lookup"
+                  },
+                  {
+                    "fieldKey": "description",
+                    "position": 4,
+                    "span": 12,
+                    "componentKey": "textarea"
+                  }
+                ]
+              }
+            ],
+            "searchFields": [
+              "code",
+              "name"
+            ],
+            "defaultSortField": "name"
+          }
+        ],
+        "navigation": [],
+        "actions": [],
+        "messages": []
+      }
+    }
+  },
+  {
+    "contractVersion": "1.0",
+    "window": {
+      "route": "/products",
+      "label": "Price-list versions",
+      "description": "Set prices in a version, then submit, approve and activate it.",
+      "readPermission": "pricing:read"
+    },
+    "definition": {
+      "kind": "APPLICATION_DICTIONARY",
+      "contractVersion": "1.0",
+      "moduleKey": "product-catalogue",
+      "entityKey": "catalogue-price-list-versions",
+      "surfaceKey": "catalogue-price-list-versions",
+      "title": "Price-list versions",
+      "dictionary": {
+        "packageKey": "catalogue-price-list-versions-module-baseline",
+        "name": "Price-list versions",
+        "version": "1.0.0",
+        "moduleKey": "product-catalogue",
+        "targetEntityKey": "catalogue.price-list-versions",
+        "entities": [
+          {
+            "entityKey": "catalogue.price-list-versions",
+            "moduleKey": "product-catalogue",
+            "label": "Price-list versions",
+            "ownership": "MODULE_CORE",
+            "primaryKeyField": "id",
+            "isVersioned": true,
+            "isAuditLogged": true,
+            "isSoftDeletable": false
+          },
+          {
+            "entityKey": "catalogue.prices",
+            "moduleKey": "product-catalogue",
+            "label": "Prices",
+            "ownership": "MODULE_CORE",
+            "primaryKeyField": "id",
+            "isVersioned": true,
+            "isAuditLogged": true,
+            "isSoftDeletable": false
+          }
+        ],
+        "fields": [
+          {
+            "fieldKey": "price-list-id",
+            "entityKey": "catalogue.price-list-versions",
+            "label": "Price list",
+            "type": "REFERENCE",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "price-list-ref"
+          },
+          {
+            "fieldKey": "version-number",
+            "entityKey": "catalogue.price-list-versions",
+            "label": "Version",
+            "type": "INTEGER",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "status",
+            "entityKey": "catalogue.price-list-versions",
+            "label": "Status",
+            "type": "SELECT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "price-statuses"
+          },
+          {
+            "fieldKey": "effective-from",
+            "entityKey": "catalogue.price-list-versions",
+            "label": "Effective from",
+            "type": "DATE",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "effective-to",
+            "entityKey": "catalogue.price-list-versions",
+            "label": "Effective to",
+            "type": "DATE",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "notes",
+            "entityKey": "catalogue.price-list-versions",
+            "label": "Notes",
+            "type": "TEXTAREA",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "submitted-by",
+            "entityKey": "catalogue.price-list-versions",
+            "label": "Submitted by",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "approved-by",
+            "entityKey": "catalogue.price-list-versions",
+            "label": "Approved by",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "activated-by",
+            "entityKey": "catalogue.price-list-versions",
+            "label": "Activated by",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "checksum",
+            "entityKey": "catalogue.price-list-versions",
+            "label": "Checksum",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "price-list-version-id",
+            "entityKey": "catalogue.prices",
+            "label": "Version",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "helpText": "Set from the version the price belongs to."
+          },
+          {
+            "fieldKey": "product-id",
+            "entityKey": "catalogue.prices",
+            "label": "Product",
+            "type": "REFERENCE",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "product-ref"
+          },
+          {
+            "fieldKey": "uom-id",
+            "entityKey": "catalogue.prices",
+            "label": "Unit",
+            "type": "REFERENCE",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "uom-ref"
+          },
+          {
+            "fieldKey": "min-quantity",
+            "entityKey": "catalogue.prices",
+            "label": "From quantity",
+            "type": "NUMBER",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "scale": 6
+          },
+          {
+            "fieldKey": "list-price-minor",
+            "entityKey": "catalogue.prices",
+            "label": "List price (minor units)",
+            "type": "NUMBER",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "scale": 0,
+            "helpText": "In minor units: 1250 is 12.50."
+          },
+          {
+            "fieldKey": "standard-price-minor",
+            "entityKey": "catalogue.prices",
+            "label": "Standard price (minor units)",
+            "type": "NUMBER",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "scale": 0
+          },
+          {
+            "fieldKey": "limit-price-minor",
+            "entityKey": "catalogue.prices",
+            "label": "Limit price (minor units)",
+            "type": "NUMBER",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "scale": 0,
+            "helpText": "List ≥ standard ≥ limit."
+          }
+        ],
+        "relationships": [
+          {
+            "relationshipKey": "version-prices",
+            "sourceEntityKey": "catalogue.price-list-versions",
+            "targetEntityKey": "catalogue.prices",
+            "type": "ONE_TO_MANY",
+            "foreignKeyField": "price-list-version-id"
+          }
+        ],
+        "references": [
+          {
+            "referenceKey": "price-statuses",
+            "referenceType": "VALUE_LIST",
+            "staticValues": [
+              {
+                "value": "DRAFT",
+                "label": "Draft"
+              },
+              {
+                "value": "SUBMITTED",
+                "label": "Submitted"
+              },
+              {
+                "value": "APPROVED",
+                "label": "Approved"
+              },
+              {
+                "value": "ACTIVATED",
+                "label": "Active"
+              }
+            ]
+          },
+          {
+            "referenceKey": "price-list-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "catalogue-price-lists"
+          },
+          {
+            "referenceKey": "product-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "catalogue-products"
+          },
+          {
+            "referenceKey": "uom-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "catalogue-uoms"
+          }
+        ],
+        "validationRules": [],
+        "views": [
+          {
+            "viewKey": "price-list-versions",
+            "label": "Price-list versions",
+            "mode": "LIST",
+            "device": "ALL",
+            "defaultSortDirection": "ASC",
+            "tabs": [
+              {
+                "tabKey": "version",
+                "label": "Version",
+                "position": 0,
+                "level": 0,
+                "targetEntityKey": "catalogue.price-list-versions",
+                "sections": [
+                  {
+                    "sectionKey": "main",
+                    "label": "Version",
+                    "collapsible": false,
+                    "defaultCollapsed": false,
+                    "position": 0
+                  },
+                  {
+                    "sectionKey": "approval",
+                    "label": "Approval",
+                    "collapsible": false,
+                    "defaultCollapsed": false,
+                    "position": 1
+                  }
+                ],
+                "fields": [
+                  {
+                    "fieldKey": "price-list-id",
+                    "position": 0,
+                    "span": 6,
+                    "componentKey": "lookup",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "version-number",
+                    "position": 1,
+                    "span": 3,
+                    "componentKey": "number-input",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "status",
+                    "position": 2,
+                    "span": 3,
+                    "componentKey": "select",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "effective-from",
+                    "position": 3,
+                    "span": 4,
+                    "componentKey": "date-input",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "effective-to",
+                    "position": 4,
+                    "span": 4,
+                    "componentKey": "date-input",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "notes",
+                    "position": 5,
+                    "span": 12,
+                    "componentKey": "textarea",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "submitted-by",
+                    "position": 6,
+                    "span": 4,
+                    "componentKey": "text-input",
+                    "sectionKey": "approval"
+                  },
+                  {
+                    "fieldKey": "approved-by",
+                    "position": 7,
+                    "span": 4,
+                    "componentKey": "text-input",
+                    "sectionKey": "approval"
+                  },
+                  {
+                    "fieldKey": "activated-by",
+                    "position": 8,
+                    "span": 4,
+                    "componentKey": "text-input",
+                    "sectionKey": "approval"
+                  },
+                  {
+                    "fieldKey": "checksum",
+                    "position": 9,
+                    "span": 12,
+                    "componentKey": "text-input",
+                    "sectionKey": "approval"
+                  }
+                ]
+              },
+              {
+                "tabKey": "prices",
+                "label": "Prices",
+                "position": 1,
+                "level": 1,
+                "targetEntityKey": "catalogue.prices",
+                "sections": [],
+                "fields": [
+                  {
+                    "fieldKey": "product-id",
+                    "position": 0,
+                    "span": 4,
+                    "componentKey": "lookup"
+                  },
+                  {
+                    "fieldKey": "uom-id",
+                    "position": 1,
+                    "span": 2,
+                    "componentKey": "lookup"
+                  },
+                  {
+                    "fieldKey": "min-quantity",
+                    "position": 2,
+                    "span": 2,
+                    "componentKey": "number-input"
+                  },
+                  {
+                    "fieldKey": "list-price-minor",
+                    "position": 3,
+                    "span": 4,
+                    "componentKey": "number-input"
+                  },
+                  {
+                    "fieldKey": "standard-price-minor",
+                    "position": 4,
+                    "span": 4,
+                    "componentKey": "number-input"
+                  },
+                  {
+                    "fieldKey": "limit-price-minor",
+                    "position": 5,
+                    "span": 4,
+                    "componentKey": "number-input"
+                  }
+                ],
+                "parentRelationshipKey": "version-prices"
+              }
+            ],
+            "searchFields": [
+              "notes"
+            ],
+            "defaultSortField": "version-number"
+          }
+        ],
+        "navigation": [],
+        "actions": [
+          {
+            "actionKey": "submit",
+            "label": "Submit for approval",
+            "type": "COMMAND",
+            "handlerKey": "catalogue.price-list-versions.submit",
+            "requiredPermissions": [
+              "pricing:submit"
+            ],
+            "confirmationPrompt": "Submit this version? Its prices can no longer change, and someone else must approve it.",
+            "parameters": [
+              {
+                "key": "reason",
+                "label": "Reason",
+                "type": "TEXTAREA",
+                "required": true
+              }
+            ],
+            "visibilityCondition": {
+              "field": "status",
+              "operator": "EQ",
+              "value": "DRAFT"
+            }
+          },
+          {
+            "actionKey": "approve",
+            "label": "Approve",
+            "type": "COMMAND",
+            "handlerKey": "catalogue.price-list-versions.approve",
+            "requiredPermissions": [
+              "pricing:approve"
+            ],
+            "confirmationPrompt": "Approve this version? You cannot approve a version you submitted.",
+            "parameters": [
+              {
+                "key": "reason",
+                "label": "Reason",
+                "type": "TEXTAREA",
+                "required": true
+              }
+            ],
+            "visibilityCondition": {
+              "field": "status",
+              "operator": "EQ",
+              "value": "SUBMITTED"
+            }
+          },
+          {
+            "actionKey": "activate",
+            "label": "Activate",
+            "type": "COMMAND",
+            "handlerKey": "catalogue.price-list-versions.activate",
+            "requiredPermissions": [
+              "pricing:activate"
+            ],
+            "confirmationPrompt": "Activate this version? Its prices resolve from its effective date.",
+            "parameters": [
+              {
+                "key": "reason",
+                "label": "Reason",
+                "type": "TEXTAREA",
+                "required": true
+              }
+            ],
+            "visibilityCondition": {
+              "field": "status",
+              "operator": "EQ",
+              "value": "APPROVED"
+            }
+          }
+        ],
+        "messages": []
+      }
+    }
+  },
+  {
+    "contractVersion": "1.0",
+    "window": {
+      "route": "/products",
+      "label": "Price lists",
+      "description": "Price lists and their versions.",
+      "readPermission": "pricing:read"
+    },
+    "definition": {
+      "kind": "APPLICATION_DICTIONARY",
+      "contractVersion": "1.0",
+      "moduleKey": "product-catalogue",
+      "entityKey": "catalogue-price-lists",
+      "surfaceKey": "catalogue-price-lists",
+      "title": "Price lists",
+      "dictionary": {
+        "packageKey": "catalogue-price-lists-module-baseline",
+        "name": "Price lists",
+        "version": "1.0.0",
+        "moduleKey": "product-catalogue",
+        "targetEntityKey": "catalogue.price-lists",
+        "entities": [
+          {
+            "entityKey": "catalogue.price-lists",
+            "moduleKey": "product-catalogue",
+            "label": "Price lists",
+            "ownership": "MODULE_CORE",
+            "primaryKeyField": "id",
+            "isVersioned": true,
+            "isAuditLogged": true,
+            "isSoftDeletable": false
+          },
+          {
+            "entityKey": "catalogue.price-list-versions",
+            "moduleKey": "product-catalogue",
+            "label": "Versions",
+            "ownership": "MODULE_CORE",
+            "primaryKeyField": "id",
+            "isVersioned": true,
+            "isAuditLogged": true,
+            "isSoftDeletable": false
+          }
+        ],
+        "fields": [
+          {
+            "fieldKey": "code",
+            "entityKey": "catalogue.price-lists",
+            "label": "Code",
+            "type": "TEXT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "name",
+            "entityKey": "catalogue.price-lists",
+            "label": "Name",
+            "type": "TEXT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "description",
+            "entityKey": "catalogue.price-lists",
+            "label": "Description",
+            "type": "TEXTAREA",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "currency-code",
+            "entityKey": "catalogue.price-lists",
+            "label": "Currency",
+            "type": "TEXT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "helpText": "Three-letter code, for example USD."
+          },
+          {
+            "fieldKey": "is-tax-included",
+            "entityKey": "catalogue.price-lists",
+            "label": "Prices include tax",
+            "type": "BOOLEAN",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "enforce-price-limit",
+            "entityKey": "catalogue.price-lists",
+            "label": "Enforce the limit price",
+            "type": "BOOLEAN",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "price-precision",
+            "entityKey": "catalogue.price-lists",
+            "label": "Decimal places",
+            "type": "INTEGER",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "audience",
+            "entityKey": "catalogue.price-lists",
+            "label": "Audience",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "is-active",
+            "entityKey": "catalogue.price-lists",
+            "label": "Active",
+            "type": "BOOLEAN",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "price-list-id",
+            "entityKey": "catalogue.price-list-versions",
+            "label": "Price list",
+            "type": "REFERENCE",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "price-list-ref"
+          },
+          {
+            "fieldKey": "version-number",
+            "entityKey": "catalogue.price-list-versions",
+            "label": "Version",
+            "type": "INTEGER",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "status",
+            "entityKey": "catalogue.price-list-versions",
+            "label": "Status",
+            "type": "SELECT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "price-statuses"
+          },
+          {
+            "fieldKey": "effective-from",
+            "entityKey": "catalogue.price-list-versions",
+            "label": "Effective from",
+            "type": "DATE",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "effective-to",
+            "entityKey": "catalogue.price-list-versions",
+            "label": "Effective to",
+            "type": "DATE",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "notes",
+            "entityKey": "catalogue.price-list-versions",
+            "label": "Notes",
+            "type": "TEXTAREA",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          }
+        ],
+        "relationships": [
+          {
+            "relationshipKey": "price-list-versions",
+            "sourceEntityKey": "catalogue.price-lists",
+            "targetEntityKey": "catalogue.price-list-versions",
+            "type": "ONE_TO_MANY",
+            "foreignKeyField": "price-list-id"
+          }
+        ],
+        "references": [
+          {
+            "referenceKey": "price-statuses",
+            "referenceType": "VALUE_LIST",
+            "staticValues": [
+              {
+                "value": "DRAFT",
+                "label": "Draft"
+              },
+              {
+                "value": "SUBMITTED",
+                "label": "Submitted"
+              },
+              {
+                "value": "APPROVED",
+                "label": "Approved"
+              },
+              {
+                "value": "ACTIVATED",
+                "label": "Active"
+              }
+            ]
+          },
+          {
+            "referenceKey": "price-list-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "catalogue-price-lists"
+          }
+        ],
+        "validationRules": [],
+        "views": [
+          {
+            "viewKey": "price-lists",
+            "label": "Price lists",
+            "mode": "LIST",
+            "device": "ALL",
+            "defaultSortDirection": "ASC",
+            "tabs": [
+              {
+                "tabKey": "price-list",
+                "label": "Price list",
+                "position": 0,
+                "level": 0,
+                "targetEntityKey": "catalogue.price-lists",
+                "sections": [],
+                "fields": [
+                  {
+                    "fieldKey": "code",
+                    "position": 0,
+                    "span": 3,
+                    "componentKey": "text-input"
+                  },
+                  {
+                    "fieldKey": "name",
+                    "position": 1,
+                    "span": 6,
+                    "componentKey": "text-input"
+                  },
+                  {
+                    "fieldKey": "currency-code",
+                    "position": 2,
+                    "span": 3,
+                    "componentKey": "text-input"
+                  },
+                  {
+                    "fieldKey": "price-precision",
+                    "position": 3,
+                    "span": 3,
+                    "componentKey": "number-input"
+                  },
+                  {
+                    "fieldKey": "is-tax-included",
+                    "position": 4,
+                    "span": 3,
+                    "componentKey": "checkbox"
+                  },
+                  {
+                    "fieldKey": "enforce-price-limit",
+                    "position": 5,
+                    "span": 3,
+                    "componentKey": "checkbox"
+                  },
+                  {
+                    "fieldKey": "is-active",
+                    "position": 6,
+                    "span": 3,
+                    "componentKey": "checkbox"
+                  },
+                  {
+                    "fieldKey": "audience",
+                    "position": 7,
+                    "span": 6,
+                    "componentKey": "text-input"
+                  },
+                  {
+                    "fieldKey": "description",
+                    "position": 8,
+                    "span": 12,
+                    "componentKey": "textarea"
+                  }
+                ]
+              },
+              {
+                "tabKey": "versions",
+                "label": "Versions",
+                "position": 1,
+                "level": 1,
+                "targetEntityKey": "catalogue.price-list-versions",
+                "sections": [],
+                "fields": [
+                  {
+                    "fieldKey": "version-number",
+                    "position": 0,
+                    "span": 2,
+                    "componentKey": "number-input"
+                  },
+                  {
+                    "fieldKey": "status",
+                    "position": 1,
+                    "span": 3,
+                    "componentKey": "select"
+                  },
+                  {
+                    "fieldKey": "effective-from",
+                    "position": 2,
+                    "span": 3,
+                    "componentKey": "date-input"
+                  },
+                  {
+                    "fieldKey": "effective-to",
+                    "position": 3,
+                    "span": 3,
+                    "componentKey": "date-input"
+                  },
+                  {
+                    "fieldKey": "notes",
+                    "position": 4,
+                    "span": 12,
+                    "componentKey": "textarea"
+                  }
+                ],
+                "parentRelationshipKey": "price-list-versions"
+              }
+            ],
+            "searchFields": [
+              "code",
+              "name"
+            ],
+            "defaultSortField": "name"
+          }
+        ],
+        "navigation": [],
+        "actions": [],
+        "messages": []
+      }
+    }
+  },
+  {
+    "contractVersion": "1.0",
+    "window": {
+      "route": "/products",
+      "label": "Products",
+      "description": "Products, services and resources other modules use by reference.",
+      "readPermission": "products:read"
+    },
+    "definition": {
+      "kind": "APPLICATION_DICTIONARY",
+      "contractVersion": "1.0",
+      "moduleKey": "product-catalogue",
+      "entityKey": "catalogue-products",
+      "surfaceKey": "catalogue-products",
+      "title": "Products",
+      "dictionary": {
+        "packageKey": "catalogue-products-module-baseline",
+        "name": "Products",
+        "version": "1.0.0",
+        "moduleKey": "product-catalogue",
+        "targetEntityKey": "catalogue.products",
+        "entities": [
+          {
+            "entityKey": "catalogue.products",
+            "moduleKey": "product-catalogue",
+            "label": "Products",
+            "ownership": "MODULE_CORE",
+            "primaryKeyField": "id",
+            "isVersioned": true,
+            "isAuditLogged": true,
+            "isSoftDeletable": false
+          }
+        ],
+        "fields": [
+          {
+            "fieldKey": "code",
+            "entityKey": "catalogue.products",
+            "label": "Code",
+            "type": "TEXT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "name",
+            "entityKey": "catalogue.products",
+            "label": "Name",
+            "type": "TEXT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "display-name",
+            "entityKey": "catalogue.products",
+            "label": "Display name",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "description",
+            "entityKey": "catalogue.products",
+            "label": "Description",
+            "type": "TEXTAREA",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "product-type",
+            "entityKey": "catalogue.products",
+            "label": "Type",
+            "type": "SELECT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "product-types"
+          },
+          {
+            "fieldKey": "status",
+            "entityKey": "catalogue.products",
+            "label": "Status",
+            "type": "SELECT",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "product-statuses",
+            "helpText": "A new product starts as Draft. Use Archive to retire it."
+          },
+          {
+            "fieldKey": "base-uom-id",
+            "entityKey": "catalogue.products",
+            "label": "Base unit",
+            "type": "REFERENCE",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "uom-ref"
+          },
+          {
+            "fieldKey": "category-id",
+            "entityKey": "catalogue.products",
+            "label": "Category",
+            "type": "REFERENCE",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "category-ref"
+          },
+          {
+            "fieldKey": "is-sold",
+            "entityKey": "catalogue.products",
+            "label": "Sold",
+            "type": "BOOLEAN",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "is-purchased",
+            "entityKey": "catalogue.products",
+            "label": "Purchased",
+            "type": "BOOLEAN",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "is-stocked",
+            "entityKey": "catalogue.products",
+            "label": "Stocked",
+            "type": "BOOLEAN",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "data-classification",
+            "entityKey": "catalogue.products",
+            "label": "Data classification",
+            "type": "SELECT",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "classifications"
+          },
+          {
+            "fieldKey": "updated-at",
+            "entityKey": "catalogue.products",
+            "label": "Last changed",
+            "type": "DATETIME",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          }
+        ],
+        "relationships": [],
+        "references": [
+          {
+            "referenceKey": "product-types",
+            "referenceType": "VALUE_LIST",
+            "staticValues": [
+              {
+                "value": "GOOD",
+                "label": "Good"
+              },
+              {
+                "value": "SERVICE",
+                "label": "Service"
+              },
+              {
+                "value": "DIGITAL",
+                "label": "Digital"
+              },
+              {
+                "value": "RESOURCE",
+                "label": "Resource"
+              },
+              {
+                "value": "BUNDLE",
+                "label": "Bundle"
+              }
+            ]
+          },
+          {
+            "referenceKey": "product-statuses",
+            "referenceType": "VALUE_LIST",
+            "staticValues": [
+              {
+                "value": "DRAFT",
+                "label": "Draft"
+              },
+              {
+                "value": "ACTIVE",
+                "label": "Active"
+              },
+              {
+                "value": "DISCONTINUED",
+                "label": "Discontinued"
+              },
+              {
+                "value": "ARCHIVED",
+                "label": "Archived"
+              }
+            ]
+          },
+          {
+            "referenceKey": "classifications",
+            "referenceType": "VALUE_LIST",
+            "staticValues": [
+              {
+                "value": "PUBLIC",
+                "label": "Public"
+              },
+              {
+                "value": "INTERNAL",
+                "label": "Internal"
+              },
+              {
+                "value": "CONFIDENTIAL",
+                "label": "Confidential"
+              },
+              {
+                "value": "RESTRICTED",
+                "label": "Restricted"
+              }
+            ]
+          },
+          {
+            "referenceKey": "uom-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "catalogue-uoms"
+          },
+          {
+            "referenceKey": "category-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "catalogue-categories"
+          }
+        ],
+        "validationRules": [],
+        "views": [
+          {
+            "viewKey": "products",
+            "label": "Products",
+            "mode": "LIST",
+            "device": "ALL",
+            "defaultSortDirection": "ASC",
+            "tabs": [
+              {
+                "tabKey": "product",
+                "label": "Product",
+                "position": 0,
+                "level": 0,
+                "targetEntityKey": "catalogue.products",
+                "sections": [
+                  {
+                    "sectionKey": "main",
+                    "label": "Product",
+                    "collapsible": false,
+                    "defaultCollapsed": false,
+                    "position": 0
+                  },
+                  {
+                    "sectionKey": "use",
+                    "label": "Used for",
+                    "collapsible": false,
+                    "defaultCollapsed": false,
+                    "position": 1
+                  },
+                  {
+                    "sectionKey": "details",
+                    "label": "Details",
+                    "collapsible": false,
+                    "defaultCollapsed": false,
+                    "position": 2
+                  }
+                ],
+                "fields": [
+                  {
+                    "fieldKey": "code",
+                    "position": 0,
+                    "span": 3,
+                    "componentKey": "text-input",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "name",
+                    "position": 1,
+                    "span": 6,
+                    "componentKey": "text-input",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "status",
+                    "position": 2,
+                    "span": 3,
+                    "componentKey": "select",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "product-type",
+                    "position": 3,
+                    "span": 3,
+                    "componentKey": "select",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "base-uom-id",
+                    "position": 4,
+                    "span": 3,
+                    "componentKey": "lookup",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "category-id",
+                    "position": 5,
+                    "span": 6,
+                    "componentKey": "lookup",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "display-name",
+                    "position": 6,
+                    "span": 6,
+                    "componentKey": "text-input",
+                    "sectionKey": "details"
+                  },
+                  {
+                    "fieldKey": "data-classification",
+                    "position": 7,
+                    "span": 6,
+                    "componentKey": "select",
+                    "sectionKey": "details"
+                  },
+                  {
+                    "fieldKey": "description",
+                    "position": 8,
+                    "span": 12,
+                    "componentKey": "textarea",
+                    "sectionKey": "details"
+                  },
+                  {
+                    "fieldKey": "is-sold",
+                    "position": 9,
+                    "span": 4,
+                    "componentKey": "checkbox",
+                    "sectionKey": "use"
+                  },
+                  {
+                    "fieldKey": "is-purchased",
+                    "position": 10,
+                    "span": 4,
+                    "componentKey": "checkbox",
+                    "sectionKey": "use"
+                  },
+                  {
+                    "fieldKey": "is-stocked",
+                    "position": 11,
+                    "span": 4,
+                    "componentKey": "checkbox",
+                    "sectionKey": "use"
+                  },
+                  {
+                    "fieldKey": "updated-at",
+                    "position": 12,
+                    "span": 6,
+                    "componentKey": "datetime-input",
+                    "sectionKey": "details"
+                  }
+                ]
+              }
+            ],
+            "searchFields": [
+              "code",
+              "name"
+            ],
+            "defaultSortField": "name"
+          }
+        ],
+        "navigation": [],
+        "actions": [
+          {
+            "actionKey": "archive",
+            "label": "Archive",
+            "type": "COMMAND",
+            "handlerKey": "catalogue.products.archive",
+            "requiredPermissions": [
+              "products:archive"
+            ],
+            "confirmationPrompt": "Archive this product? It can no longer be picked on new documents.",
+            "parameters": [
+              {
+                "key": "reason",
+                "label": "Reason",
+                "type": "TEXTAREA",
+                "required": true
+              }
+            ],
+            "visibilityCondition": {
+              "field": "status",
+              "operator": "NEQ",
+              "value": "ARCHIVED"
+            }
+          },
+          {
+            "actionKey": "restore",
+            "label": "Restore",
+            "type": "COMMAND",
+            "handlerKey": "catalogue.products.restore",
+            "requiredPermissions": [
+              "products:archive"
+            ],
+            "confirmationPrompt": "Restore this product as a draft?",
+            "parameters": [
+              {
+                "key": "reason",
+                "label": "Reason",
+                "type": "TEXTAREA",
+                "required": true
+              }
+            ],
+            "visibilityCondition": {
+              "field": "status",
+              "operator": "EQ",
+              "value": "ARCHIVED"
+            }
+          }
+        ],
+        "messages": []
+      }
+    }
+  },
+  {
+    "contractVersion": "1.0",
+    "window": {
+      "route": "/products",
+      "label": "Units",
+      "description": "Units of measure and their conversions.",
+      "readPermission": "uoms:read"
+    },
+    "definition": {
+      "kind": "APPLICATION_DICTIONARY",
+      "contractVersion": "1.0",
+      "moduleKey": "product-catalogue",
+      "entityKey": "catalogue-units",
+      "surfaceKey": "catalogue-units",
+      "title": "Units and conversions",
+      "dictionary": {
+        "packageKey": "catalogue-units-module-baseline",
+        "name": "Units and conversions",
+        "version": "1.0.0",
+        "moduleKey": "product-catalogue",
+        "targetEntityKey": "catalogue.uoms",
+        "entities": [
+          {
+            "entityKey": "catalogue.uoms",
+            "moduleKey": "product-catalogue",
+            "label": "Units of measure",
+            "ownership": "MODULE_CORE",
+            "primaryKeyField": "id",
+            "isVersioned": true,
+            "isAuditLogged": true,
+            "isSoftDeletable": false
+          },
+          {
+            "entityKey": "catalogue.uom-conversions",
+            "moduleKey": "product-catalogue",
+            "label": "Conversions",
+            "ownership": "MODULE_CORE",
+            "primaryKeyField": "id",
+            "isVersioned": true,
+            "isAuditLogged": true,
+            "isSoftDeletable": false
+          }
+        ],
+        "fields": [
+          {
+            "fieldKey": "code",
+            "entityKey": "catalogue.uoms",
+            "label": "Code",
+            "type": "TEXT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "helpText": "Short unique code, for example EA or KG."
+          },
+          {
+            "fieldKey": "name",
+            "entityKey": "catalogue.uoms",
+            "label": "Name",
+            "type": "TEXT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "symbol",
+            "entityKey": "catalogue.uoms",
+            "label": "Symbol",
+            "type": "TEXT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "dimension",
+            "entityKey": "catalogue.uoms",
+            "label": "Dimension",
+            "type": "SELECT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "dimensions"
+          },
+          {
+            "fieldKey": "std-precision",
+            "entityKey": "catalogue.uoms",
+            "label": "Decimal places",
+            "type": "INTEGER",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "costing-precision",
+            "entityKey": "catalogue.uoms",
+            "label": "Costing decimal places",
+            "type": "INTEGER",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "iso-code",
+            "entityKey": "catalogue.uoms",
+            "label": "ISO code",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "ucum-code",
+            "entityKey": "catalogue.uoms",
+            "label": "UCUM code",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "is-active",
+            "entityKey": "catalogue.uoms",
+            "label": "Active",
+            "type": "BOOLEAN",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "from-uom-id",
+            "entityKey": "catalogue.uom-conversions",
+            "label": "From unit",
+            "type": "REFERENCE",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "uom-ref"
+          },
+          {
+            "fieldKey": "to-uom-id",
+            "entityKey": "catalogue.uom-conversions",
+            "label": "To unit",
+            "type": "REFERENCE",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "uom-ref"
+          },
+          {
+            "fieldKey": "conversion-rate",
+            "entityKey": "catalogue.uom-conversions",
+            "label": "Rate",
+            "type": "NUMBER",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "scale": 6,
+            "helpText": "How many \"to\" units make one \"from\" unit."
+          },
+          {
+            "fieldKey": "product-id",
+            "entityKey": "catalogue.uom-conversions",
+            "label": "Only for product",
+            "type": "REFERENCE",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "product-ref",
+            "helpText": "Leave empty for a conversion between units of the same dimension."
+          },
+          {
+            "fieldKey": "effective-from",
+            "entityKey": "catalogue.uom-conversions",
+            "label": "Effective from",
+            "type": "DATE",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "effective-to",
+            "entityKey": "catalogue.uom-conversions",
+            "label": "Effective to",
+            "type": "DATE",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "is-active",
+            "entityKey": "catalogue.uom-conversions",
+            "label": "Active",
+            "type": "BOOLEAN",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          }
+        ],
+        "relationships": [
+          {
+            "relationshipKey": "uom-conversions",
+            "sourceEntityKey": "catalogue.uoms",
+            "targetEntityKey": "catalogue.uom-conversions",
+            "type": "ONE_TO_MANY",
+            "foreignKeyField": "from-uom-id"
+          }
+        ],
+        "references": [
+          {
+            "referenceKey": "dimensions",
+            "referenceType": "VALUE_LIST",
+            "staticValues": [
+              {
+                "value": "COUNT",
+                "label": "Count"
+              },
+              {
+                "value": "LENGTH",
+                "label": "Length"
+              },
+              {
+                "value": "WEIGHT",
+                "label": "Weight"
+              },
+              {
+                "value": "VOLUME",
+                "label": "Volume"
+              },
+              {
+                "value": "AREA",
+                "label": "Area"
+              },
+              {
+                "value": "TIME",
+                "label": "Time"
+              },
+              {
+                "value": "TEMPERATURE",
+                "label": "Temperature"
+              },
+              {
+                "value": "DATA",
+                "label": "Data"
+              },
+              {
+                "value": "CURRENCY",
+                "label": "Currency"
+              }
+            ]
+          },
+          {
+            "referenceKey": "uom-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "catalogue-uoms"
+          },
+          {
+            "referenceKey": "product-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "catalogue-products"
+          }
+        ],
+        "validationRules": [],
+        "views": [
+          {
+            "viewKey": "units",
+            "label": "Units of measure",
+            "mode": "LIST",
+            "device": "ALL",
+            "defaultSortDirection": "ASC",
+            "tabs": [
+              {
+                "tabKey": "unit",
+                "label": "Unit",
+                "position": 0,
+                "level": 0,
+                "targetEntityKey": "catalogue.uoms",
+                "sections": [
+                  {
+                    "sectionKey": "main",
+                    "label": "Unit",
+                    "collapsible": false,
+                    "defaultCollapsed": false,
+                    "position": 0
+                  },
+                  {
+                    "sectionKey": "codes",
+                    "label": "Standard codes",
+                    "collapsible": false,
+                    "defaultCollapsed": false,
+                    "position": 1
+                  }
+                ],
+                "fields": [
+                  {
+                    "fieldKey": "code",
+                    "position": 0,
+                    "span": 3,
+                    "componentKey": "text-input",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "name",
+                    "position": 1,
+                    "span": 6,
+                    "componentKey": "text-input",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "symbol",
+                    "position": 2,
+                    "span": 3,
+                    "componentKey": "text-input",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "dimension",
+                    "position": 3,
+                    "span": 4,
+                    "componentKey": "select",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "std-precision",
+                    "position": 4,
+                    "span": 4,
+                    "componentKey": "number-input",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "costing-precision",
+                    "position": 5,
+                    "span": 4,
+                    "componentKey": "number-input",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "iso-code",
+                    "position": 6,
+                    "span": 4,
+                    "componentKey": "text-input",
+                    "sectionKey": "codes"
+                  },
+                  {
+                    "fieldKey": "ucum-code",
+                    "position": 7,
+                    "span": 4,
+                    "componentKey": "text-input",
+                    "sectionKey": "codes"
+                  },
+                  {
+                    "fieldKey": "is-active",
+                    "position": 8,
+                    "span": 4,
+                    "componentKey": "checkbox",
+                    "sectionKey": "codes"
+                  }
+                ]
+              },
+              {
+                "tabKey": "conversions",
+                "label": "Conversions",
+                "position": 1,
+                "level": 1,
+                "targetEntityKey": "catalogue.uom-conversions",
+                "sections": [],
+                "fields": [
+                  {
+                    "fieldKey": "to-uom-id",
+                    "position": 0,
+                    "span": 4,
+                    "componentKey": "lookup"
+                  },
+                  {
+                    "fieldKey": "conversion-rate",
+                    "position": 1,
+                    "span": 3,
+                    "componentKey": "number-input"
+                  },
+                  {
+                    "fieldKey": "product-id",
+                    "position": 2,
+                    "span": 5,
+                    "componentKey": "lookup"
+                  },
+                  {
+                    "fieldKey": "effective-from",
+                    "position": 3,
+                    "span": 3,
+                    "componentKey": "date-input"
+                  },
+                  {
+                    "fieldKey": "effective-to",
+                    "position": 4,
+                    "span": 3,
+                    "componentKey": "date-input"
+                  },
+                  {
+                    "fieldKey": "is-active",
+                    "position": 5,
+                    "span": 3,
+                    "componentKey": "checkbox"
+                  }
+                ],
+                "parentRelationshipKey": "uom-conversions"
+              }
+            ],
+            "searchFields": [
+              "code",
+              "name",
+              "symbol"
+            ],
+            "defaultSortField": "code"
+          }
+        ],
+        "navigation": [],
+        "actions": [],
+        "messages": []
+      }
+    }
+  },
+  {
+    "contractVersion": "1.0",
+    "window": {
       "route": "/inventory",
       "label": "Balances",
       "description": "Stock on hand, reserved and available by location.",

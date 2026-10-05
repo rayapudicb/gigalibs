@@ -83,14 +83,16 @@ export function validateCustomExtensions(
   }
 }
 
-const productColumns = `p.id, p.tenant_id, p.owning_unit_id, p.code, p.name, p.display_name, p.description,
+export const productColumns = `p.id, p.tenant_id, p.owning_unit_id, p.code, p.name, p.display_name, p.description,
   p.product_type, p.status, p.base_uom_id, p.category_id, p.sold, p.purchased, p.stocked,
   p.data_classification, p.extensions, p.version, p.created_by, p.updated_by, p.created_at, p.updated_at,
   COALESCE((SELECT array_agg(a.unit_id ORDER BY a.unit_id) FROM ${SCHEMA}.product_org_availability a
     WHERE a.tenant_id = p.tenant_id AND a.product_id = p.id), ARRAY[]::varchar[]) AS org_unit_ids`;
 
 type Client = pg.PoolClient;
-type Access = Awaited<ReturnType<typeof organizationAccess>>;
+/** The caller's organization access: which units they may read and write (null: all of them). */
+export type CatalogueAccess = Awaited<ReturnType<typeof organizationAccess>>;
+type Access = CatalogueAccess;
 type ListQuery = { search?: string; status?: string; productType?: string; cursor?: string; limit: number };
 
 interface ProductRow extends pg.QueryResultRow {
@@ -111,6 +113,14 @@ export class CatalogueService {
   private readonly organization = new OrganizationReplica(SCHEMA);
 
   constructor(private readonly database: DatabaseService) {}
+
+  /**
+   * WI-OI-120g (U7): runs a read for the metadata windows in the caller's tenant transaction with their organization
+   * access, the same access every list route here applies.
+   */
+  readWithAccess<T>(principal: ModulePrincipal, read: (client: Client, access: CatalogueAccess) => Promise<T>): Promise<T> {
+    return this.database.withTenantTransaction(principal.tenantId, async (client) => read(client, await this.resolveAccess(client, principal)));
+  }
 
   async listProducts(principal: ModulePrincipal, query: ListQuery) {
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
@@ -977,7 +987,7 @@ export class CatalogueService {
   }
 }
 
-function mapProduct(row: ProductRow) {
+export function mapProduct(row: ProductRow) {
   return { id: row.id, tenantId: row.tenant_id, owningUnitId: row.owning_unit_id, code: row.code, name: row.name,
     displayName: row.display_name ?? undefined, description: row.description, productType: row.product_type,
     status: row.status, baseUomId: row.base_uom_id, categoryId: row.category_id, isSold: row.sold,
@@ -985,46 +995,46 @@ function mapProduct(row: ProductRow) {
     version: Number(row.version), orgUnitIds: row.org_unit_ids ?? [], customExtensions: row.extensions ?? {},
     createdAt: iso(row.created_at), updatedAt: iso(row.updated_at), createdBy: row.created_by, updatedBy: row.updated_by };
 }
-function mapUom(row: any) { return { id: row.id, tenantId: row.tenant_id, code: row.code, name: row.name, symbol: row.symbol,
+export function mapUom(row: any) { return { id: row.id, tenantId: row.tenant_id, code: row.code, name: row.name, symbol: row.symbol,
   dimension: row.dimension, stdPrecision: Number(row.standard_precision), costingPrecision: Number(row.costing_precision),
   uomType: row.uom_type, isoCode: row.iso_code ?? undefined, ucumCode: row.ucum_code ?? undefined, isActive: row.active,
   version: Number(row.version), createdAt: iso(row.created_at), updatedAt: iso(row.updated_at), createdBy: row.created_by, updatedBy: row.updated_by }; }
-function mapConversion(row: any) { return { id: row.id, tenantId: row.tenant_id, fromUomId: row.from_uom_id, toUomId: row.to_uom_id,
+export function mapConversion(row: any) { return { id: row.id, tenantId: row.tenant_id, fromUomId: row.from_uom_id, toUomId: row.to_uom_id,
   productId: row.product_id, conversionRate: String(row.conversion_rate), isActive: row.active,
   effectiveFrom: row.effective_from ? iso(row.effective_from) : null, effectiveTo: row.effective_to ? iso(row.effective_to) : null,
   version: Number(row.version), createdAt: iso(row.created_at), updatedAt: iso(row.updated_at) }; }
-function mapCategory(row: any) { return { id: row.id, tenantId: row.tenant_id, code: row.code, name: row.name,
+export function mapCategory(row: any) { return { id: row.id, tenantId: row.tenant_id, code: row.code, name: row.name,
   description: row.description, parentCategoryId: row.parent_category_id, isDefault: row.default_category,
   effectiveFrom: row.effective_from ? iso(row.effective_from) : null, effectiveTo: row.effective_to ? iso(row.effective_to) : null,
   version: Number(row.version), createdAt: iso(row.created_at), updatedAt: iso(row.updated_at) }; }
-function mapAttribute(row: any) { return { id: row.id, tenantId: row.tenant_id, code: row.code, name: row.name,
+export function mapAttribute(row: any) { return { id: row.id, tenantId: row.tenant_id, code: row.code, name: row.name,
   description: row.description, valueType: row.value_type, isRequired: row.required, dataClassification: row.data_classification,
   unit: row.unit, allowedValues: row.allowed_values, minValue: row.minimum === null ? null : String(row.minimum),
   maxValue: row.maximum === null ? null : String(row.maximum), version: Number(row.version),
   createdAt: iso(row.created_at), updatedAt: iso(row.updated_at) }; }
-function mapCatalogue(row: any) { return { id: row.id, tenantId: row.tenant_id, code: row.code, name: row.name,
+export function mapCatalogue(row: any) { return { id: row.id, tenantId: row.tenant_id, code: row.code, name: row.name,
   description: row.description, purpose: row.purpose, audience: row.audience, orgUnitId: row.owning_unit_id,
   isActive: row.active, version: Number(row.version), createdAt: iso(row.created_at), updatedAt: iso(row.updated_at) }; }
-function mapCatalogueVersion(row: any) { return { id: row.id, tenantId: row.tenant_id, catalogueId: row.catalogue_id,
+export function mapCatalogueVersion(row: any) { return { id: row.id, tenantId: row.tenant_id, catalogueId: row.catalogue_id,
   versionNumber: Number(row.version_number), status: row.status, checksum: row.checksum, effectiveFrom: row.effective_from ? iso(row.effective_from) : null,
   effectiveTo: row.effective_to ? iso(row.effective_to) : null, notes: row.notes, submittedAt: row.submitted_at ? iso(row.submitted_at) : null,
   submittedBy: row.submitted_by, approvedAt: row.approved_at ? iso(row.approved_at) : null, approvedBy: row.approved_by,
   publishedAt: row.published_at ? iso(row.published_at) : null, publishedBy: row.published_by,
   version: Number(row.version), createdAt: iso(row.created_at), updatedAt: iso(row.updated_at) }; }
-function mapCatalogueEntry(row: any) { return { id: row.id, tenantId: row.tenant_id, catalogueVersionId: row.catalogue_version_id,
+export function mapCatalogueEntry(row: any) { return { id: row.id, tenantId: row.tenant_id, catalogueVersionId: row.catalogue_version_id,
   productId: row.product_id, sortOrder: Number(row.sort_order), isHighlighted: row.highlighted,
   displayOverrides: row.display_overrides, createdAt: iso(row.created_at), updatedAt: iso(row.created_at) }; }
-function mapPriceList(row: any) { return { id: row.id, tenantId: row.tenant_id, code: row.code, name: row.name,
+export function mapPriceList(row: any) { return { id: row.id, tenantId: row.tenant_id, code: row.code, name: row.name,
   description: row.description, currencyCode: row.currency_code, isTaxIncluded: row.tax_included,
   enforcePriceLimit: row.enforce_price_limit, pricePrecision: Number(row.price_precision), orgUnitId: row.owning_unit_id,
   audience: row.audience, isActive: row.active, version: Number(row.version), createdAt: iso(row.created_at), updatedAt: iso(row.updated_at) }; }
-function mapPriceVersion(row: any) { return { id: row.id, tenantId: row.tenant_id, priceListId: row.price_list_id,
+export function mapPriceVersion(row: any) { return { id: row.id, tenantId: row.tenant_id, priceListId: row.price_list_id,
   versionNumber: Number(row.version_number), status: row.status, effectiveFrom: iso(row.effective_from), effectiveTo: row.effective_to ? iso(row.effective_to) : null,
   checksum: row.checksum, notes: row.notes, submittedAt: row.submitted_at ? iso(row.submitted_at) : null, submittedBy: row.submitted_by,
   approvedAt: row.approved_at ? iso(row.approved_at) : null, approvedBy: row.approved_by,
   activatedAt: row.activated_at ? iso(row.activated_at) : null, activatedBy: row.activated_by,
   version: Number(row.version), createdAt: iso(row.created_at), updatedAt: iso(row.updated_at) }; }
-function mapProductPrice(row: any) { return { id: row.id, tenantId: row.tenant_id, priceListVersionId: row.price_list_version_id,
+export function mapProductPrice(row: any) { return { id: row.id, tenantId: row.tenant_id, priceListVersionId: row.price_list_version_id,
   productId: row.product_id, uomId: row.uom_id, minQuantity: String(row.minimum_quantity), listPriceMinor: String(row.list_price_minor),
   standardPriceMinor: String(row.standard_price_minor), limitPriceMinor: String(row.limit_price_minor),
   createdAt: iso(row.created_at), updatedAt: iso(row.updated_at) }; }

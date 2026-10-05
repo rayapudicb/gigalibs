@@ -43,6 +43,9 @@ const steps = [
   // WI-OI-120h (U19a): every CMMS screen call reaches the built CMMS API through the gateway allow-list (needs
   // PROOF_DATABASE_URL).
   { name: 'cmms-screen-routes (U19a)', cmd: process.execPath, args: ['scripts/verify-u19a-cmms-screen-routes.mjs'] },
+  // WI-OI-120g (U7): the Catalogue's metadata windows over HTTP through the module host, maker and checker (needs
+  // PROOF_DATABASE_URL).
+  { name: 'catalogue-windows (U7)', cmd: process.execPath, args: ['scripts/verify-u7-catalogue-windows.mjs'] },
 ];
 
 const logDir = join(tmpdir(), 'gigalibs-verify');

@@ -189,6 +189,44 @@ describe('RecordDispatcher', () => {
     expect(await status(records.list(manager, 'inventory.anything', {}))).toBe(404);
   });
 
+  it("hands the caller's Idempotency-Key to the adapter on creates and actions (WI-OI-120g)", async () => {
+    const { adapter } = warehouses();
+    const seen: (string | undefined)[] = [];
+    const create = adapter.create!.bind(adapter);
+    const close = adapter.actions!.close!.run.bind(adapter.actions!.close);
+    const records = new RecordDispatcher(
+      [
+        {
+          ...adapter,
+          create: async (c, values) => (seen.push(c.idempotencyKey), create(c, values)),
+          actions: { close: { permission: 'inventory:warehouses:manage', run: async (c, id, p) => (seen.push(c.idempotencyKey), close(c, id, p)) } },
+        },
+      ],
+      [],
+      new MemoryIdempotency(),
+    );
+    const createKey = randomUUID();
+    const actionKey = randomUUID();
+    const created = await records.create(context(manager), 'inventory.warehouses', { code: 'WH-1', name: 'Main' }, createKey);
+    await records.action(context(manager), 'inventory.warehouses', String(created.id), 'close', {}, actionKey);
+    expect(seen).toEqual([createKey, actionKey]);
+  });
+
+  it('answers 412 when an action meets a version conflict, and frees the key for a retry (WI-OI-120g)', async () => {
+    const { adapter } = warehouses();
+    let stale = true;
+    const records = new RecordDispatcher(
+      [{ ...adapter, actions: { close: { permission: 'inventory:warehouses:manage', run: async () => { if (stale) throw new RecordVersionConflict(); return { id: 'x', version: 2 }; } } } }],
+      [],
+      new MemoryIdempotency(),
+    );
+    const created = await records.create(context(manager), 'inventory.warehouses', { code: 'WH-1', name: 'Main' }, randomUUID());
+    const key = randomUUID();
+    expect(await status(records.action(context(manager), 'inventory.warehouses', String(created.id), 'close', { expectedVersion: 1 }, key))).toBe(412);
+    stale = false;
+    expect(await status(records.action(context(manager), 'inventory.warehouses', String(created.id), 'close', { expectedVersion: 1 }, key))).toBe(200);
+  });
+
   it('releases the key when a create fails, so a retry can succeed', async () => {
     const { adapter } = warehouses();
     const store = new MemoryIdempotency();

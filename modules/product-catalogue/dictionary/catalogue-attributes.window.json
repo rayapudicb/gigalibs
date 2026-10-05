@@ -1,0 +1,258 @@
+{
+  "contractVersion": "1.0",
+  "window": {
+    "route": "/products",
+    "label": "Attributes",
+    "description": "The attributes products can carry.",
+    "readPermission": "products:read"
+  },
+  "definition": {
+    "kind": "APPLICATION_DICTIONARY",
+    "contractVersion": "1.0",
+    "moduleKey": "product-catalogue",
+    "entityKey": "catalogue-attributes",
+    "surfaceKey": "catalogue-attributes",
+    "title": "Product attributes",
+    "dictionary": {
+      "packageKey": "catalogue-attributes-module-baseline",
+      "name": "Product attributes",
+      "version": "1.0.0",
+      "moduleKey": "product-catalogue",
+      "targetEntityKey": "catalogue.attributes",
+      "entities": [
+        {
+          "entityKey": "catalogue.attributes",
+          "moduleKey": "product-catalogue",
+          "label": "Attributes",
+          "ownership": "MODULE_CORE",
+          "primaryKeyField": "id",
+          "isVersioned": true,
+          "isAuditLogged": true,
+          "isSoftDeletable": false
+        }
+      ],
+      "fields": [
+        {
+          "fieldKey": "code",
+          "entityKey": "catalogue.attributes",
+          "label": "Code",
+          "type": "TEXT",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "name",
+          "entityKey": "catalogue.attributes",
+          "label": "Name",
+          "type": "TEXT",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "description",
+          "entityKey": "catalogue.attributes",
+          "label": "Description",
+          "type": "TEXTAREA",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "value-type",
+          "entityKey": "catalogue.attributes",
+          "label": "Value type",
+          "type": "SELECT",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "value-types"
+        },
+        {
+          "fieldKey": "is-required",
+          "entityKey": "catalogue.attributes",
+          "label": "Required",
+          "type": "BOOLEAN",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "unit",
+          "entityKey": "catalogue.attributes",
+          "label": "Unit",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "allowed-values",
+          "entityKey": "catalogue.attributes",
+          "label": "Allowed values",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "helpText": "For a list of values: the values, separated by commas."
+        },
+        {
+          "fieldKey": "min-value",
+          "entityKey": "catalogue.attributes",
+          "label": "Minimum",
+          "type": "NUMBER",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "scale": 6
+        },
+        {
+          "fieldKey": "max-value",
+          "entityKey": "catalogue.attributes",
+          "label": "Maximum",
+          "type": "NUMBER",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "scale": 6
+        }
+      ],
+      "relationships": [],
+      "references": [
+        {
+          "referenceKey": "value-types",
+          "referenceType": "VALUE_LIST",
+          "staticValues": [
+            {
+              "value": "STRING",
+              "label": "Text"
+            },
+            {
+              "value": "INTEGER",
+              "label": "Whole number"
+            },
+            {
+              "value": "DECIMAL",
+              "label": "Decimal"
+            },
+            {
+              "value": "BOOLEAN",
+              "label": "Yes/no"
+            },
+            {
+              "value": "DATE",
+              "label": "Date"
+            },
+            {
+              "value": "ENUM",
+              "label": "List of values"
+            }
+          ]
+        }
+      ],
+      "validationRules": [],
+      "views": [
+        {
+          "viewKey": "attributes",
+          "label": "Attributes",
+          "mode": "LIST",
+          "device": "ALL",
+          "defaultSortDirection": "ASC",
+          "tabs": [
+            {
+              "tabKey": "attribute",
+              "label": "Attribute",
+              "position": 0,
+              "level": 0,
+              "targetEntityKey": "catalogue.attributes",
+              "sections": [],
+              "fields": [
+                {
+                  "fieldKey": "code",
+                  "position": 0,
+                  "span": 3,
+                  "componentKey": "text-input"
+                },
+                {
+                  "fieldKey": "name",
+                  "position": 1,
+                  "span": 6,
+                  "componentKey": "text-input"
+                },
+                {
+                  "fieldKey": "value-type",
+                  "position": 2,
+                  "span": 3,
+                  "componentKey": "select"
+                },
+                {
+                  "fieldKey": "is-required",
+                  "position": 3,
+                  "span": 3,
+                  "componentKey": "checkbox"
+                },
+                {
+                  "fieldKey": "unit",
+                  "position": 4,
+                  "span": 3,
+                  "componentKey": "text-input"
+                },
+                {
+                  "fieldKey": "min-value",
+                  "position": 5,
+                  "span": 3,
+                  "componentKey": "number-input"
+                },
+                {
+                  "fieldKey": "max-value",
+                  "position": 6,
+                  "span": 3,
+                  "componentKey": "number-input"
+                },
+                {
+                  "fieldKey": "allowed-values",
+                  "position": 7,
+                  "span": 12,
+                  "componentKey": "text-input"
+                },
+                {
+                  "fieldKey": "description",
+                  "position": 8,
+                  "span": 12,
+                  "componentKey": "textarea"
+                }
+              ]
+            }
+          ],
+          "searchFields": [
+            "code",
+            "name"
+          ],
+          "defaultSortField": "code"
+        }
+      ],
+      "navigation": [],
+      "actions": [],
+      "messages": []
+    }
+  }
+}

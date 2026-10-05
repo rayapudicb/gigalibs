@@ -52,6 +52,11 @@ export interface RecordPage {
 export interface RecordCommandContext {
   readonly principal: ModulePrincipal;
   readonly correlationId: string;
+  /**
+   * The caller's Idempotency-Key, on creates and actions (WI-OI-120g). The dispatcher already runs a key once; a
+   * module whose domain service keeps its own replay record passes the same key on, so both agree.
+   */
+  readonly idempotencyKey?: string;
 }
 
 export interface RecordAction {
@@ -197,7 +202,7 @@ export class RecordDispatcher {
     const values = this.writable(context.principal, adapter, body);
     const create = adapter.create.bind(adapter);
     return this.once(context.principal, idempotencyKey, `create:${entityKey}`, values, async () =>
-      this.readable(context.principal, adapter, await create(context, values)),
+      this.readable(context.principal, adapter, await create({ ...context, ...(idempotencyKey ? { idempotencyKey } : {}) }, values)),
     );
   }
 
@@ -217,13 +222,7 @@ export class RecordDispatcher {
     try {
       return this.readable(context.principal, adapter, await adapter.update(context, id, values, expectedVersion));
     } catch (error) {
-      if (error instanceof RecordVersionConflict) {
-        throw new HttpException(
-          { code: 'RECORD_VERSION_CONFLICT', message: 'The record was changed by someone else; reload it and try again.' },
-          HttpStatus.PRECONDITION_FAILED,
-        );
-      }
-      throw error;
+      throw this.stale(error);
     }
   }
 
@@ -241,8 +240,22 @@ export class RecordDispatcher {
     this.require(context.principal, action.permission);
     this.assertId(id);
     const parameters = body && typeof body === 'object' && !Array.isArray(body) ? (body as RecordValues) : {};
-    return this.once(context.principal, idempotencyKey, `action:${entityKey}:${actionKey}:${id}`, parameters, async () =>
-      this.readable(context.principal, adapter, await action.run(context, id, parameters)),
+    return this.once(context.principal, idempotencyKey, `action:${entityKey}:${actionKey}:${id}`, parameters, async () => {
+      try {
+        return this.readable(context.principal, adapter, await action.run({ ...context, ...(idempotencyKey ? { idempotencyKey } : {}) }, id, parameters));
+      } catch (error) {
+        // WI-OI-120g: an action taken against a version the record has moved past answers 412, as an update does.
+        throw this.stale(error);
+      }
+    });
+  }
+
+  /** A version conflict as 412 Precondition Failed; anything else unchanged. */
+  private stale(error: unknown): unknown {
+    if (!(error instanceof RecordVersionConflict)) return error;
+    return new HttpException(
+      { code: 'RECORD_VERSION_CONFLICT', message: 'The record was changed by someone else; reload it and try again.' },
+      HttpStatus.PRECONDITION_FAILED,
     );
   }
 

@@ -1,0 +1,451 @@
+{
+  "contractVersion": "1.0",
+  "window": {
+    "route": "/products",
+    "label": "Units",
+    "description": "Units of measure and their conversions.",
+    "readPermission": "uoms:read"
+  },
+  "definition": {
+    "kind": "APPLICATION_DICTIONARY",
+    "contractVersion": "1.0",
+    "moduleKey": "product-catalogue",
+    "entityKey": "catalogue-units",
+    "surfaceKey": "catalogue-units",
+    "title": "Units and conversions",
+    "dictionary": {
+      "packageKey": "catalogue-units-module-baseline",
+      "name": "Units and conversions",
+      "version": "1.0.0",
+      "moduleKey": "product-catalogue",
+      "targetEntityKey": "catalogue.uoms",
+      "entities": [
+        {
+          "entityKey": "catalogue.uoms",
+          "moduleKey": "product-catalogue",
+          "label": "Units of measure",
+          "ownership": "MODULE_CORE",
+          "primaryKeyField": "id",
+          "isVersioned": true,
+          "isAuditLogged": true,
+          "isSoftDeletable": false
+        },
+        {
+          "entityKey": "catalogue.uom-conversions",
+          "moduleKey": "product-catalogue",
+          "label": "Conversions",
+          "ownership": "MODULE_CORE",
+          "primaryKeyField": "id",
+          "isVersioned": true,
+          "isAuditLogged": true,
+          "isSoftDeletable": false
+        }
+      ],
+      "fields": [
+        {
+          "fieldKey": "code",
+          "entityKey": "catalogue.uoms",
+          "label": "Code",
+          "type": "TEXT",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "helpText": "Short unique code, for example EA or KG."
+        },
+        {
+          "fieldKey": "name",
+          "entityKey": "catalogue.uoms",
+          "label": "Name",
+          "type": "TEXT",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "symbol",
+          "entityKey": "catalogue.uoms",
+          "label": "Symbol",
+          "type": "TEXT",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "dimension",
+          "entityKey": "catalogue.uoms",
+          "label": "Dimension",
+          "type": "SELECT",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "dimensions"
+        },
+        {
+          "fieldKey": "std-precision",
+          "entityKey": "catalogue.uoms",
+          "label": "Decimal places",
+          "type": "INTEGER",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "costing-precision",
+          "entityKey": "catalogue.uoms",
+          "label": "Costing decimal places",
+          "type": "INTEGER",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "iso-code",
+          "entityKey": "catalogue.uoms",
+          "label": "ISO code",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "ucum-code",
+          "entityKey": "catalogue.uoms",
+          "label": "UCUM code",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "is-active",
+          "entityKey": "catalogue.uoms",
+          "label": "Active",
+          "type": "BOOLEAN",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "from-uom-id",
+          "entityKey": "catalogue.uom-conversions",
+          "label": "From unit",
+          "type": "REFERENCE",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "uom-ref"
+        },
+        {
+          "fieldKey": "to-uom-id",
+          "entityKey": "catalogue.uom-conversions",
+          "label": "To unit",
+          "type": "REFERENCE",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "uom-ref"
+        },
+        {
+          "fieldKey": "conversion-rate",
+          "entityKey": "catalogue.uom-conversions",
+          "label": "Rate",
+          "type": "NUMBER",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "scale": 6,
+          "helpText": "How many \"to\" units make one \"from\" unit."
+        },
+        {
+          "fieldKey": "product-id",
+          "entityKey": "catalogue.uom-conversions",
+          "label": "Only for product",
+          "type": "REFERENCE",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "product-ref",
+          "helpText": "Leave empty for a conversion between units of the same dimension."
+        },
+        {
+          "fieldKey": "effective-from",
+          "entityKey": "catalogue.uom-conversions",
+          "label": "Effective from",
+          "type": "DATE",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "effective-to",
+          "entityKey": "catalogue.uom-conversions",
+          "label": "Effective to",
+          "type": "DATE",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "is-active",
+          "entityKey": "catalogue.uom-conversions",
+          "label": "Active",
+          "type": "BOOLEAN",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        }
+      ],
+      "relationships": [
+        {
+          "relationshipKey": "uom-conversions",
+          "sourceEntityKey": "catalogue.uoms",
+          "targetEntityKey": "catalogue.uom-conversions",
+          "type": "ONE_TO_MANY",
+          "foreignKeyField": "from-uom-id"
+        }
+      ],
+      "references": [
+        {
+          "referenceKey": "dimensions",
+          "referenceType": "VALUE_LIST",
+          "staticValues": [
+            {
+              "value": "COUNT",
+              "label": "Count"
+            },
+            {
+              "value": "LENGTH",
+              "label": "Length"
+            },
+            {
+              "value": "WEIGHT",
+              "label": "Weight"
+            },
+            {
+              "value": "VOLUME",
+              "label": "Volume"
+            },
+            {
+              "value": "AREA",
+              "label": "Area"
+            },
+            {
+              "value": "TIME",
+              "label": "Time"
+            },
+            {
+              "value": "TEMPERATURE",
+              "label": "Temperature"
+            },
+            {
+              "value": "DATA",
+              "label": "Data"
+            },
+            {
+              "value": "CURRENCY",
+              "label": "Currency"
+            }
+          ]
+        },
+        {
+          "referenceKey": "uom-ref",
+          "referenceType": "SEARCH_LOOKUP",
+          "resolverKey": "catalogue-uoms"
+        },
+        {
+          "referenceKey": "product-ref",
+          "referenceType": "SEARCH_LOOKUP",
+          "resolverKey": "catalogue-products"
+        }
+      ],
+      "validationRules": [],
+      "views": [
+        {
+          "viewKey": "units",
+          "label": "Units of measure",
+          "mode": "LIST",
+          "device": "ALL",
+          "defaultSortDirection": "ASC",
+          "tabs": [
+            {
+              "tabKey": "unit",
+              "label": "Unit",
+              "position": 0,
+              "level": 0,
+              "targetEntityKey": "catalogue.uoms",
+              "sections": [
+                {
+                  "sectionKey": "main",
+                  "label": "Unit",
+                  "collapsible": false,
+                  "defaultCollapsed": false,
+                  "position": 0
+                },
+                {
+                  "sectionKey": "codes",
+                  "label": "Standard codes",
+                  "collapsible": false,
+                  "defaultCollapsed": false,
+                  "position": 1
+                }
+              ],
+              "fields": [
+                {
+                  "fieldKey": "code",
+                  "position": 0,
+                  "span": 3,
+                  "componentKey": "text-input",
+                  "sectionKey": "main"
+                },
+                {
+                  "fieldKey": "name",
+                  "position": 1,
+                  "span": 6,
+                  "componentKey": "text-input",
+                  "sectionKey": "main"
+                },
+                {
+                  "fieldKey": "symbol",
+                  "position": 2,
+                  "span": 3,
+                  "componentKey": "text-input",
+                  "sectionKey": "main"
+                },
+                {
+                  "fieldKey": "dimension",
+                  "position": 3,
+                  "span": 4,
+                  "componentKey": "select",
+                  "sectionKey": "main"
+                },
+                {
+                  "fieldKey": "std-precision",
+                  "position": 4,
+                  "span": 4,
+                  "componentKey": "number-input",
+                  "sectionKey": "main"
+                },
+                {
+                  "fieldKey": "costing-precision",
+                  "position": 5,
+                  "span": 4,
+                  "componentKey": "number-input",
+                  "sectionKey": "main"
+                },
+                {
+                  "fieldKey": "iso-code",
+                  "position": 6,
+                  "span": 4,
+                  "componentKey": "text-input",
+                  "sectionKey": "codes"
+                },
+                {
+                  "fieldKey": "ucum-code",
+                  "position": 7,
+                  "span": 4,
+                  "componentKey": "text-input",
+                  "sectionKey": "codes"
+                },
+                {
+                  "fieldKey": "is-active",
+                  "position": 8,
+                  "span": 4,
+                  "componentKey": "checkbox",
+                  "sectionKey": "codes"
+                }
+              ]
+            },
+            {
+              "tabKey": "conversions",
+              "label": "Conversions",
+              "position": 1,
+              "level": 1,
+              "targetEntityKey": "catalogue.uom-conversions",
+              "sections": [],
+              "fields": [
+                {
+                  "fieldKey": "to-uom-id",
+                  "position": 0,
+                  "span": 4,
+                  "componentKey": "lookup"
+                },
+                {
+                  "fieldKey": "conversion-rate",
+                  "position": 1,
+                  "span": 3,
+                  "componentKey": "number-input"
+                },
+                {
+                  "fieldKey": "product-id",
+                  "position": 2,
+                  "span": 5,
+                  "componentKey": "lookup"
+                },
+                {
+                  "fieldKey": "effective-from",
+                  "position": 3,
+                  "span": 3,
+                  "componentKey": "date-input"
+                },
+                {
+                  "fieldKey": "effective-to",
+                  "position": 4,
+                  "span": 3,
+                  "componentKey": "date-input"
+                },
+                {
+                  "fieldKey": "is-active",
+                  "position": 5,
+                  "span": 3,
+                  "componentKey": "checkbox"
+                }
+              ],
+              "parentRelationshipKey": "uom-conversions"
+            }
+          ],
+          "searchFields": [
+            "code",
+            "name",
+            "symbol"
+          ],
+          "defaultSortField": "code"
+        }
+      ],
+      "navigation": [],
+      "actions": [],
+      "messages": []
+    }
+  }
+}

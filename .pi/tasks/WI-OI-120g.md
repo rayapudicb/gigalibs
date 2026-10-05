@@ -1,6 +1,7 @@
 # WI-OI-120g (U7): Product Catalogue on metadata windows
 
-- **Status:** Approved (owner, 2026-10-05). In progress.
+- **Status:** Approved (owner, 2026-10-05). Implemented and checked; awaiting commit. The owner also approved (same
+  day) taking down the Orders, Procurement and Finance mock-up screens in this card's deploy.
 - **Work item:** WI-OI-120 (U7 in `remediation-backlog.md`; `MODULE_ACTION_OUTCOMES.md` §2, Product Catalogue).
   Evidence goes in `.pi/work/WI-OI-120.md`.
 - **Size:** L
@@ -34,6 +35,14 @@ A tester can do all of the following on screen, with every record saved, audited
   - another agent's work;
   - secrets;
   - the web on port 5180.
+
+- **Added during the work (shared packages, needed by the Catalogue's commands):**
+  - `packages/module-sdk`: the dispatcher hands the caller's Idempotency-Key to adapters on creates and actions, and
+    answers 412 when an action meets a version conflict (it answered 500).
+  - `packages/configuration-react`: an action that declares parameters (a reason) asks for them before it runs, and
+    every action carries the version the user read.
+  - `modules/universal-orders`, `universal-procurement`, `financial-operations`: their pages declare an honest
+    "not connected yet" notice instead of the mock-up component (owner decision).
 
 ## Read first
 

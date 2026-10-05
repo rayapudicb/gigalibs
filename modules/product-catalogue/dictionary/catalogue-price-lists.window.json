@@ -1,0 +1,379 @@
+{
+  "contractVersion": "1.0",
+  "window": {
+    "route": "/products",
+    "label": "Price lists",
+    "description": "Price lists and their versions.",
+    "readPermission": "pricing:read"
+  },
+  "definition": {
+    "kind": "APPLICATION_DICTIONARY",
+    "contractVersion": "1.0",
+    "moduleKey": "product-catalogue",
+    "entityKey": "catalogue-price-lists",
+    "surfaceKey": "catalogue-price-lists",
+    "title": "Price lists",
+    "dictionary": {
+      "packageKey": "catalogue-price-lists-module-baseline",
+      "name": "Price lists",
+      "version": "1.0.0",
+      "moduleKey": "product-catalogue",
+      "targetEntityKey": "catalogue.price-lists",
+      "entities": [
+        {
+          "entityKey": "catalogue.price-lists",
+          "moduleKey": "product-catalogue",
+          "label": "Price lists",
+          "ownership": "MODULE_CORE",
+          "primaryKeyField": "id",
+          "isVersioned": true,
+          "isAuditLogged": true,
+          "isSoftDeletable": false
+        },
+        {
+          "entityKey": "catalogue.price-list-versions",
+          "moduleKey": "product-catalogue",
+          "label": "Versions",
+          "ownership": "MODULE_CORE",
+          "primaryKeyField": "id",
+          "isVersioned": true,
+          "isAuditLogged": true,
+          "isSoftDeletable": false
+        }
+      ],
+      "fields": [
+        {
+          "fieldKey": "code",
+          "entityKey": "catalogue.price-lists",
+          "label": "Code",
+          "type": "TEXT",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "name",
+          "entityKey": "catalogue.price-lists",
+          "label": "Name",
+          "type": "TEXT",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "description",
+          "entityKey": "catalogue.price-lists",
+          "label": "Description",
+          "type": "TEXTAREA",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "currency-code",
+          "entityKey": "catalogue.price-lists",
+          "label": "Currency",
+          "type": "TEXT",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "helpText": "Three-letter code, for example USD."
+        },
+        {
+          "fieldKey": "is-tax-included",
+          "entityKey": "catalogue.price-lists",
+          "label": "Prices include tax",
+          "type": "BOOLEAN",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "enforce-price-limit",
+          "entityKey": "catalogue.price-lists",
+          "label": "Enforce the limit price",
+          "type": "BOOLEAN",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "price-precision",
+          "entityKey": "catalogue.price-lists",
+          "label": "Decimal places",
+          "type": "INTEGER",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "audience",
+          "entityKey": "catalogue.price-lists",
+          "label": "Audience",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "is-active",
+          "entityKey": "catalogue.price-lists",
+          "label": "Active",
+          "type": "BOOLEAN",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "price-list-id",
+          "entityKey": "catalogue.price-list-versions",
+          "label": "Price list",
+          "type": "REFERENCE",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "price-list-ref"
+        },
+        {
+          "fieldKey": "version-number",
+          "entityKey": "catalogue.price-list-versions",
+          "label": "Version",
+          "type": "INTEGER",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "status",
+          "entityKey": "catalogue.price-list-versions",
+          "label": "Status",
+          "type": "SELECT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "price-statuses"
+        },
+        {
+          "fieldKey": "effective-from",
+          "entityKey": "catalogue.price-list-versions",
+          "label": "Effective from",
+          "type": "DATE",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "effective-to",
+          "entityKey": "catalogue.price-list-versions",
+          "label": "Effective to",
+          "type": "DATE",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "notes",
+          "entityKey": "catalogue.price-list-versions",
+          "label": "Notes",
+          "type": "TEXTAREA",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        }
+      ],
+      "relationships": [
+        {
+          "relationshipKey": "price-list-versions",
+          "sourceEntityKey": "catalogue.price-lists",
+          "targetEntityKey": "catalogue.price-list-versions",
+          "type": "ONE_TO_MANY",
+          "foreignKeyField": "price-list-id"
+        }
+      ],
+      "references": [
+        {
+          "referenceKey": "price-statuses",
+          "referenceType": "VALUE_LIST",
+          "staticValues": [
+            {
+              "value": "DRAFT",
+              "label": "Draft"
+            },
+            {
+              "value": "SUBMITTED",
+              "label": "Submitted"
+            },
+            {
+              "value": "APPROVED",
+              "label": "Approved"
+            },
+            {
+              "value": "ACTIVATED",
+              "label": "Active"
+            }
+          ]
+        },
+        {
+          "referenceKey": "price-list-ref",
+          "referenceType": "SEARCH_LOOKUP",
+          "resolverKey": "catalogue-price-lists"
+        }
+      ],
+      "validationRules": [],
+      "views": [
+        {
+          "viewKey": "price-lists",
+          "label": "Price lists",
+          "mode": "LIST",
+          "device": "ALL",
+          "defaultSortDirection": "ASC",
+          "tabs": [
+            {
+              "tabKey": "price-list",
+              "label": "Price list",
+              "position": 0,
+              "level": 0,
+              "targetEntityKey": "catalogue.price-lists",
+              "sections": [],
+              "fields": [
+                {
+                  "fieldKey": "code",
+                  "position": 0,
+                  "span": 3,
+                  "componentKey": "text-input"
+                },
+                {
+                  "fieldKey": "name",
+                  "position": 1,
+                  "span": 6,
+                  "componentKey": "text-input"
+                },
+                {
+                  "fieldKey": "currency-code",
+                  "position": 2,
+                  "span": 3,
+                  "componentKey": "text-input"
+                },
+                {
+                  "fieldKey": "price-precision",
+                  "position": 3,
+                  "span": 3,
+                  "componentKey": "number-input"
+                },
+                {
+                  "fieldKey": "is-tax-included",
+                  "position": 4,
+                  "span": 3,
+                  "componentKey": "checkbox"
+                },
+                {
+                  "fieldKey": "enforce-price-limit",
+                  "position": 5,
+                  "span": 3,
+                  "componentKey": "checkbox"
+                },
+                {
+                  "fieldKey": "is-active",
+                  "position": 6,
+                  "span": 3,
+                  "componentKey": "checkbox"
+                },
+                {
+                  "fieldKey": "audience",
+                  "position": 7,
+                  "span": 6,
+                  "componentKey": "text-input"
+                },
+                {
+                  "fieldKey": "description",
+                  "position": 8,
+                  "span": 12,
+                  "componentKey": "textarea"
+                }
+              ]
+            },
+            {
+              "tabKey": "versions",
+              "label": "Versions",
+              "position": 1,
+              "level": 1,
+              "targetEntityKey": "catalogue.price-list-versions",
+              "sections": [],
+              "fields": [
+                {
+                  "fieldKey": "version-number",
+                  "position": 0,
+                  "span": 2,
+                  "componentKey": "number-input"
+                },
+                {
+                  "fieldKey": "status",
+                  "position": 1,
+                  "span": 3,
+                  "componentKey": "select"
+                },
+                {
+                  "fieldKey": "effective-from",
+                  "position": 2,
+                  "span": 3,
+                  "componentKey": "date-input"
+                },
+                {
+                  "fieldKey": "effective-to",
+                  "position": 3,
+                  "span": 3,
+                  "componentKey": "date-input"
+                },
+                {
+                  "fieldKey": "notes",
+                  "position": 4,
+                  "span": 12,
+                  "componentKey": "textarea"
+                }
+              ],
+              "parentRelationshipKey": "price-list-versions"
+            }
+          ],
+          "searchFields": [
+            "code",
+            "name"
+          ],
+          "defaultSortField": "name"
+        }
+      ],
+      "navigation": [],
+      "actions": [],
+      "messages": []
+    }
+  }
+}

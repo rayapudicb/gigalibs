@@ -1,0 +1,327 @@
+{
+  "contractVersion": "1.0",
+  "window": {
+    "route": "/products",
+    "label": "Catalogues",
+    "description": "Catalogues and their versions.",
+    "readPermission": "catalogues:read"
+  },
+  "definition": {
+    "kind": "APPLICATION_DICTIONARY",
+    "contractVersion": "1.0",
+    "moduleKey": "product-catalogue",
+    "entityKey": "catalogue-catalogues",
+    "surfaceKey": "catalogue-catalogues",
+    "title": "Catalogues",
+    "dictionary": {
+      "packageKey": "catalogue-catalogues-module-baseline",
+      "name": "Catalogues",
+      "version": "1.0.0",
+      "moduleKey": "product-catalogue",
+      "targetEntityKey": "catalogue.catalogues",
+      "entities": [
+        {
+          "entityKey": "catalogue.catalogues",
+          "moduleKey": "product-catalogue",
+          "label": "Catalogues",
+          "ownership": "MODULE_CORE",
+          "primaryKeyField": "id",
+          "isVersioned": true,
+          "isAuditLogged": true,
+          "isSoftDeletable": false
+        },
+        {
+          "entityKey": "catalogue.catalogue-versions",
+          "moduleKey": "product-catalogue",
+          "label": "Versions",
+          "ownership": "MODULE_CORE",
+          "primaryKeyField": "id",
+          "isVersioned": true,
+          "isAuditLogged": true,
+          "isSoftDeletable": false
+        }
+      ],
+      "fields": [
+        {
+          "fieldKey": "code",
+          "entityKey": "catalogue.catalogues",
+          "label": "Code",
+          "type": "TEXT",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "name",
+          "entityKey": "catalogue.catalogues",
+          "label": "Name",
+          "type": "TEXT",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "description",
+          "entityKey": "catalogue.catalogues",
+          "label": "Description",
+          "type": "TEXTAREA",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "purpose",
+          "entityKey": "catalogue.catalogues",
+          "label": "Purpose",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "audience",
+          "entityKey": "catalogue.catalogues",
+          "label": "Audience",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "is-active",
+          "entityKey": "catalogue.catalogues",
+          "label": "Active",
+          "type": "BOOLEAN",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "catalogue-id",
+          "entityKey": "catalogue.catalogue-versions",
+          "label": "Catalogue",
+          "type": "REFERENCE",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "catalogue-ref"
+        },
+        {
+          "fieldKey": "version-number",
+          "entityKey": "catalogue.catalogue-versions",
+          "label": "Version",
+          "type": "INTEGER",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "status",
+          "entityKey": "catalogue.catalogue-versions",
+          "label": "Status",
+          "type": "SELECT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "catalogue-statuses"
+        },
+        {
+          "fieldKey": "effective-from",
+          "entityKey": "catalogue.catalogue-versions",
+          "label": "Effective from",
+          "type": "DATE",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "effective-to",
+          "entityKey": "catalogue.catalogue-versions",
+          "label": "Effective to",
+          "type": "DATE",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "notes",
+          "entityKey": "catalogue.catalogue-versions",
+          "label": "Notes",
+          "type": "TEXTAREA",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        }
+      ],
+      "relationships": [
+        {
+          "relationshipKey": "catalogue-versions",
+          "sourceEntityKey": "catalogue.catalogues",
+          "targetEntityKey": "catalogue.catalogue-versions",
+          "type": "ONE_TO_MANY",
+          "foreignKeyField": "catalogue-id"
+        }
+      ],
+      "references": [
+        {
+          "referenceKey": "catalogue-statuses",
+          "referenceType": "VALUE_LIST",
+          "staticValues": [
+            {
+              "value": "DRAFT",
+              "label": "Draft"
+            },
+            {
+              "value": "SUBMITTED",
+              "label": "Submitted"
+            },
+            {
+              "value": "APPROVED",
+              "label": "Approved"
+            },
+            {
+              "value": "PUBLISHED",
+              "label": "Published"
+            }
+          ]
+        },
+        {
+          "referenceKey": "catalogue-ref",
+          "referenceType": "SEARCH_LOOKUP",
+          "resolverKey": "catalogue-catalogues"
+        }
+      ],
+      "validationRules": [],
+      "views": [
+        {
+          "viewKey": "catalogues",
+          "label": "Catalogues",
+          "mode": "LIST",
+          "device": "ALL",
+          "defaultSortDirection": "ASC",
+          "tabs": [
+            {
+              "tabKey": "catalogue",
+              "label": "Catalogue",
+              "position": 0,
+              "level": 0,
+              "targetEntityKey": "catalogue.catalogues",
+              "sections": [],
+              "fields": [
+                {
+                  "fieldKey": "code",
+                  "position": 0,
+                  "span": 3,
+                  "componentKey": "text-input"
+                },
+                {
+                  "fieldKey": "name",
+                  "position": 1,
+                  "span": 6,
+                  "componentKey": "text-input"
+                },
+                {
+                  "fieldKey": "is-active",
+                  "position": 2,
+                  "span": 3,
+                  "componentKey": "checkbox"
+                },
+                {
+                  "fieldKey": "purpose",
+                  "position": 3,
+                  "span": 6,
+                  "componentKey": "text-input"
+                },
+                {
+                  "fieldKey": "audience",
+                  "position": 4,
+                  "span": 6,
+                  "componentKey": "text-input"
+                },
+                {
+                  "fieldKey": "description",
+                  "position": 5,
+                  "span": 12,
+                  "componentKey": "textarea"
+                }
+              ]
+            },
+            {
+              "tabKey": "versions",
+              "label": "Versions",
+              "position": 1,
+              "level": 1,
+              "targetEntityKey": "catalogue.catalogue-versions",
+              "sections": [],
+              "fields": [
+                {
+                  "fieldKey": "version-number",
+                  "position": 0,
+                  "span": 2,
+                  "componentKey": "number-input"
+                },
+                {
+                  "fieldKey": "status",
+                  "position": 1,
+                  "span": 3,
+                  "componentKey": "select"
+                },
+                {
+                  "fieldKey": "effective-from",
+                  "position": 2,
+                  "span": 3,
+                  "componentKey": "date-input"
+                },
+                {
+                  "fieldKey": "effective-to",
+                  "position": 3,
+                  "span": 3,
+                  "componentKey": "date-input"
+                },
+                {
+                  "fieldKey": "notes",
+                  "position": 4,
+                  "span": 12,
+                  "componentKey": "textarea"
+                }
+              ],
+              "parentRelationshipKey": "catalogue-versions"
+            }
+          ],
+          "searchFields": [
+            "code",
+            "name"
+          ],
+          "defaultSortField": "name"
+        }
+      ],
+      "navigation": [],
+      "actions": [],
+      "messages": []
+    }
+  }
+}

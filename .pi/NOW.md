@@ -77,7 +77,10 @@ to one page. Replace old content rather than appending to it, and update it at t
 2. F0 (WI-OI-120f): F0.1–F0.5 and the manifest fix deployed; owner checks /inventory on screen.
    U19a (WI-OI-120h, approved): CMMS screens reach their API. 36 routes added; the gateway forwards PUT and DELETE on
    listed routes; space lists answer `{ items }`; five API commands that failed with 500 and parts issue/return fixed.
-   Proof 56/56; checks pass. Next: commit, build, deploy. Then U7 Catalogue (WI-OI-120g, approved). P0-05, P0-07, P0-10, P1-10 and the P1-11 prototypes are in modules not running here; they are fixed
+   Proof 56/56; committed `b872b9c`, deployed 18:36Z; owner's on-screen CMMS check pending.
+   U7 Catalogue (WI-OI-120g): eight metadata windows, maker-checker actions, price resolver, import/export; Orders,
+   Procurement and Finance mock-ups replaced by honest notices. Proof 26/26; checks pass; awaiting commit.
+   Workforce `wfo` screens: diagnosed (ungated routes, see work log); U20a card to propose. P0-05, P0-07, P0-10, P1-10 and the P1-11 prototypes are in modules not running here; they are fixed
    as each module moves onto the module SDK (U29). Independent Security review before any defect closes.
 3. Then U4–U6 (Dictionary & Master Data hardening), U7–U18 (module by module Playwright flows). Plan:
    `docs/audits/2026-10-04-production-readiness/remediation-backlog.md`.

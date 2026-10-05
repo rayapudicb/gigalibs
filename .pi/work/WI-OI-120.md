@@ -916,3 +916,98 @@ widening the card to fix the API faults the proof found.
   - other modules' routes.
 - **Not deployed yet.**
 
+### b872b9c deploy: U19a (2026-10-05)
+
+- **Deployed by the owner at 18:33–18:36Z:** `b872b9cea154-d464f3b442b8`. All 21 services are on the tag and healthy,
+  every migration job exited 0, and Connector Hub refuses an unsigned request (401).
+- **Backup before the deploy:** `infra/compose/backups/gigalibs_backup_20261005_183154Z.dump`, labelled with the running
+  release `local-20261005T154657Z-2104f91bb696-3f2dc65953ad`; checksum verified.
+- **Read-only checks after the deploy:**
+  - the running web build forwards the new CMMS routes and exports PUT and DELETE;
+  - the CMMS API logged no errors.
+- **Still to confirm:** the owner's on-screen check of Spaces, Assets, Meters, Parts and Work orders. The Reliability
+  and Floor Kiosk pages are honest not-built notices (CM-07, CM-04), as before.
+
+### U7: Product Catalogue on metadata windows (WI-OI-120g, 2026-10-05)
+
+- **Catalogue API:**
+  - `catalogue-records.service.ts`: paged, tenant-bound reads of eleven entities. Products, catalogues, price lists
+    and what hangs off them are read with the caller's organization access, exactly as the list routes read them
+    (`CatalogueService.readWithAccess`). Only declared columns are searched, filtered or sorted.
+  - `catalogue-record-adapters.ts`: adapters over the existing commands and contract schemas, plus five pickers
+    (products, units, categories, catalogues, price lists).
+  - The product picker now applies organization visibility, which the old lookup did not.
+  - `catalogue-lookups.ts` is removed (its pickers moved into the adapters).
+- **Actions, each with a reason and the version the user read:**
+  - products: archive and restore;
+  - catalogue versions: submit, approve and publish;
+  - price-list versions: submit, approve and activate.
+
+  Maker-checker is the existing rule: whoever submitted a version cannot approve it.
+- **Windows:** eight in `modules/product-catalogue/dictionary/`:
+  - units with conversions;
+  - categories;
+  - attributes;
+  - products;
+  - catalogues with versions;
+  - catalogue versions with entries;
+  - price lists with versions;
+  - price-list versions with prices.
+
+  All 14 shipped windows compile with no findings.
+- **Page:**
+  - eight window tabs;
+  - a price resolver;
+  - an import/export panel (shown only with `products:import` or `products:export`).
+
+  The constant dictionary and its silent fallback are gone.
+- **Shared packages:**
+  - the record dispatcher hands the caller's Idempotency-Key to adapters, and answers 412 (not 500) when an action
+    meets a version conflict; 2 new SDK tests;
+  - the window renderer asks for an action's declared parameters and sends the read version with every action.
+- **Orders, Procurement and Finance:** their pages now show a "not connected yet" notice. The screens they replace
+  had no API calls, hard-coded figures (Finance about 69) and buttons without actions. Owner-approved; their windows
+  arrive with U9, U10 and U12–U18. The unreachable mock-up components are left for those cards to delete.
+- **Proof:** `scripts/verify-u7-catalogue-windows.mjs` passes 26/26 through the real module host on an isolated
+  database, signed as a maker and a checker. It covers:
+  - units and a conversion; a conversion across dimensions is refused;
+  - a category update with If-Match, where a stale one gets 412;
+  - an attribute;
+  - a product: an Idempotency-Key replay, an edit to Active, archive (needs a reason) and restore, where a stale
+    restore gets 412;
+  - a catalogue version: an empty submit is refused (409); an entry is added; the maker's approval is refused (403);
+    the checker approves and publishes; then no more entries (409);
+  - a price-list version: a price with list below standard is refused; then submit, maker refused, checker approves
+    and activates;
+  - price resolution gives one answer, and a 404 before the effective date;
+  - the five pickers;
+  - read-only users refused (403);
+  - another tenant sees nothing.
+
+  The F0.5 Inventory proof still passes 27/27 with the new pickers.
+- **Playwright:** `e2e/specs/catalogue-business-flow.spec.ts` (maker and checker on screen; it type-checks). **Not
+  run:** it needs E2E_UAT_ADMIN_* and E2E_UAT_APPROVER_* logins.
+- **Checks:**
+  - `pnpm build` passes;
+  - `pnpm test`: 2,551 passed, 188 skipped;
+  - `pnpm verify` passes (known drift; 11 proofs NOT RUN without PROOF_DATABASE_URL, including U7's, which the
+    session ran: 26/26).
+- **Noted for later:** grid rows open only by mouse (no keyboard access), to fix in the renderer.
+
+### Workforce "Unsupported Workforce route" (owner report, 2026-10-05; diagnosis only)
+
+- **What the owner sees:** the Engagements, Worker Registry, Payroll and Pack Library screens answer "Unsupported
+  Workforce route".
+- **Why:**
+  - **Gateway:** they call 57 `wfo/…` routes of the Workforce service, and the web gateway lists none of them. The
+    service also serves them without the `v1` prefix the gateway adds.
+- **What the routes are:** real service code.
+  - There are 12 controllers, about 60 routes, behind the signed-context guard.
+  - Their tables come from Workforce migrations 20–25, which are installed.
+- **Security finding** (no exposure today, because the gateway does not forward them):
+  - 22 routes name roles (`@RequireRoles`), and the guard deliberately refuses them as "prototype role-based routes
+    contained until migrated to Workforce permissions".
+  - The other 38 name **no permission at all**, so the guard admits any signed-in user of a Workforce tenant.
+  - They must get Workforce permissions before any gateway route is added.
+- **Proposed:** a U20a card. It needs owner approval and an independent Security review.
+
