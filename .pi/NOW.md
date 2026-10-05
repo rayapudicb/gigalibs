@@ -26,7 +26,8 @@ to one page. Replace old content rather than appending to it, and update it at t
   F0.5 Inventory on metadata windows committed `bf049e1` and deployed (`bf049e1f50ca-9e71babfe73c`); the six windows
   were activated for GigaLibs Global Enterprise at start-up. The owner's check found every window saying "declares no
   view": the renderer read the endpoint's wrapper instead of its `manifest`. Fixed and checked (build, 2,542 tests,
-  verify); awaiting image build and deploy. The Playwright flow `e2e/specs/inventory-business-flow.spec.ts` needs E2E_UAT_ADMIN_EMAIL/PASSWORD to run.
+  verify); deployed 17:31Z as `2104f91` (21 services healthy); the owner's on-screen check of /inventory is pending.
+  The Playwright flow `e2e/specs/inventory-business-flow.spec.ts` needs E2E_UAT_ADMIN_EMAIL/PASSWORD to run.
 - **CMMS migrations 000017–000019 corrected and deployed 13:03Z** (owner-approved; patch applied by the owner): `principal_ref`, permissive
   tenant policies (RESTRICTIVE-only denied every row), one transaction, ledger rows. Proven on a throwaway UAT copy.
 - **ERP access by role:** the five ERP modules were enabled for GigaLibs Global Enterprise at 12:31Z (owner ran
@@ -73,8 +74,10 @@ to one page. Replace old content rather than appending to it, and update it at t
 
 1. Owner: grant Catalogue, Inventory, Procurement, Orders and Finance to the UAT tenant in Platform Control Tower;
    then a signed-in check of each module's API on this instance.
-2. F0 (WI-OI-120f): F0.1–F0.5 committed; deploy the manifest fix and check /inventory on screen. Then U7 Catalogue
-   (WI-OI-120g, approved). P0-05, P0-07, P0-10, P1-10 and the P1-11 prototypes are in modules not running here; they are fixed
+2. F0 (WI-OI-120f): F0.1–F0.5 and the manifest fix deployed; owner checks /inventory on screen.
+   U19a (WI-OI-120h, approved): CMMS screens reach their API. 36 routes added; the gateway forwards PUT and DELETE on
+   listed routes; space lists answer `{ items }`; five API commands that failed with 500 and parts issue/return fixed.
+   Proof 56/56; checks pass. Next: commit, build, deploy. Then U7 Catalogue (WI-OI-120g, approved). P0-05, P0-07, P0-10, P1-10 and the P1-11 prototypes are in modules not running here; they are fixed
    as each module moves onto the module SDK (U29). Independent Security review before any defect closes.
 3. Then U4–U6 (Dictionary & Master Data hardening), U7–U18 (module by module Playwright flows). Plan:
    `docs/audits/2026-10-04-production-readiness/remediation-backlog.md`.

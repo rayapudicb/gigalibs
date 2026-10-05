@@ -233,3 +233,27 @@ spec:
       - { path: 'v1/parts', POST: cmms.parts.write }
       - { path: 'v1/analytics/work-orders/overview', GET: cmms.analytics.read }
       - { path: 'v1/analytics/inventory/summary', GET: cmms.analytics.read }
+      # WI-OI-120h (U19a): the routes the CMMS screens call that the API already served (WI-EAM-002 to WI-EAM-005).
+      - { path: 'v1/classifications/tree', GET: cmms.assets.read }
+      - { path: 'v1/classifications', POST: cmms.assets.write }
+      - { path: 'v1/classifications/{id}', GET: cmms.assets.read, PATCH: cmms.assets.write, DELETE: cmms.assets.write }
+      - { path: 'v1/classifications/{id}/spec-definitions', GET: cmms.assets.read }
+      - { path: 'v1/classifications/spec-definitions', POST: cmms.assets.write }
+      - { path: 'v1/assets/{id}/specs', GET: cmms.assets.read, PUT: cmms.assets.write }
+      - { path: 'v1/assets/{id}/equipment-tree', GET: cmms.assets.read }
+      - { path: 'v1/assets/{id}/cascade-status', POST: cmms.assets.write }
+      - { path: 'v1/meters/telemetry/batch', POST: cmms.meters.write }
+      - { path: 'v1/meters/triggers', GET: cmms.meters.read, POST: cmms.meters.write }
+      - { path: 'v1/meters/triggers/{id}', PATCH: cmms.meters.write, DELETE: cmms.meters.write }
+      - { path: 'v1/parts/storerooms', GET: cmms.parts.read, POST: cmms.parts.write }
+      - { path: 'v1/parts/storerooms/{id}', PATCH: cmms.parts.write, DELETE: cmms.parts.write }
+      - { path: 'v1/parts/balances', GET: cmms.parts.read, PUT: cmms.parts.write }
+      - { path: 'v1/parts/work-orders/{id}/issue|return', POST: cmms.parts.write }
+      - { path: 'v1/parts/work-orders/{id}/tco', GET: cmms.parts.read }
+      - { path: 'v1/failure-codes/tree', GET: cmms.assets.read }
+      - { path: 'v1/failure-codes', GET: cmms.assets.read, POST: cmms.assets.write }
+      - { path: 'v1/failure-codes/{id}', PATCH: cmms.assets.write, DELETE: cmms.assets.write }
+      - { path: 'v1/job-plans', GET: cmms.assets.read, POST: cmms.assets.write }
+      - { path: 'v1/job-plans/{id}', GET: cmms.assets.read, PATCH: cmms.assets.write }
+      - { path: 'v1/job-plans/{id}/apply-to-work-order/{id}', POST: cmms.assets.write }
+      - { path: 'v1/work-orders/{id}/failure-attribution', POST: cmms.assets.write }

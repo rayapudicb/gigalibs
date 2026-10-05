@@ -41,7 +41,7 @@ export interface SignedModuleProxyConfig {
   readonly transformBody?: (session: VerifiedSession, method: string, path: readonly string[], body: string) => Promise<string>;
 }
 
-const MUTATING_METHODS = new Set(['POST', 'PATCH']);
+const MUTATING_METHODS = new Set(['POST', 'PATCH', 'PUT', 'DELETE']);
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 // An entity tag (strong or weak) or a plain record version number.

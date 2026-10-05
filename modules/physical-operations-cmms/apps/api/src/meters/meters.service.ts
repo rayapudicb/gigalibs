@@ -436,16 +436,17 @@ export class MetersService {
   async deleteTrigger(context: CmmsCommandContext, id: string): Promise<void> {
     assertUuid(id, 'triggerId');
     return this.database.withTenantTransaction(context.principal.tenantId, async (client) => {
-      const result = await client.query(
-        `DELETE FROM gigalibs_cmms.cmms_meter_triggers WHERE tenant_id = $1 AND id = $2`,
+      const result = await client.query<{ version: number }>(
+        `DELETE FROM gigalibs_cmms.cmms_meter_triggers WHERE tenant_id = $1 AND id = $2 RETURNING version`,
         [context.principal.tenantId, id],
       );
       if (result.rowCount === 0) notFound('Meter trigger');
+      // WI-OI-120h: the deletion is the trigger's next version (outbox events need a positive version).
       await recordMutation(client, context, {
         action: 'CMMS_METER_TRIGGER_DELETED',
         aggregateType: 'CMMS_METER_TRIGGER',
         aggregateId: id,
-        aggregateVersion: 0,
+        aggregateVersion: result.rows[0]!.version + 1,
         payload: {},
       });
     });

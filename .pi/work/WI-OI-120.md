@@ -827,3 +827,92 @@ removed.
 - **Checks:** `pnpm build` passes; `pnpm test` 2,542 passed, 188 skipped; `pnpm verify` passes (known drift; 9 proofs
   NOT RUN without PROOF_DATABASE_URL).
 - **Not deployed yet.** After deploy: /inventory draws all six windows for a tenant administrator.
+
+### 2104f91 deploy (2026-10-05)
+
+- **Deployed by the owner at 17:31Z:** `2104f91bb696-3f2dc65953ad`. All 21 services are on the tag and healthy, every
+  migration job exited 0, and the kernel worker and web logs show no errors (read-only check, 18:09Z).
+- **Backup before the deploy:** `infra/compose/backups/gigalibs_backup_20261005_172250Z.dump`, labelled with the release
+  that was running (`local-20261005T144131Z-bf049e1f50ca-9e71babfe73c`); checksum verified.
+- **Still to confirm:** the owner's on-screen check that /inventory draws the six windows (the control plane does not
+  log individual requests).
+- **Build note:** the first image build stopped because the image identities had not been refreshed for the new
+  commit; the refresh now runs first.
+
+### U19a: CMMS screens reach their API (WI-OI-120h, 2026-10-05)
+
+Approved by the owner, option A (the gateway forwards PUT and DELETE on listed routes). The owner then approved
+widening the card to fix the API faults the proof found.
+
+- **Owner's findings in UAT:**
+  - Assets and Meters said "Unsupported CMMS route";
+  - `/cmms/spaces` crashed in the browser;
+  - deletes and the two PUT updates could not pass the web gateway.
+- **Causes:**
+  - **Missing routes:** 36 routes the CMMS API served and the screens called were missing from the gateway list
+    in `module.yaml`.
+  - **Wrong path:** the screen called `spaces/{id}/cad-layer`; the API serves `cad-layers`.
+  - **Methods:** the web gateway answered GET, POST and PATCH only.
+  - **List shape:** the space tree and a space's assets were plain lists, while the screen reads `{ items }`.
+  - **Empty answers:** the three 204 deletes had no body for the screen's client to read.
+- **API faults found by the new proof** in routes no screen could reach before:
+  - **Version 0:** five commands wrote an outbox event with version 0, which the `aggregate_version > 0`
+    constraint refuses (500). They were deleting a meter trigger, a failure code or a storeroom; applying a job plan;
+    recording failure attribution.
+  - **Missing column:** issuing parts to a work order queried `work_orders.currency_code`, which does not exist
+    (500); returning parts then failed because nothing had been issued.
+  - **Retry keys:** issue and return ignored the caller's retry key, so a retried issue would take stock twice.
+  - **Unused version:** applying a job plan and recording failure attribution required `expectedVersion` but never
+    checked it or advanced the work order's version, and the screens did not send it (400).
+- **Fixes:**
+  - **Gateway:**
+    - 36 routes added to the CMMS gateway list, each with the permission its API controller requires;
+    - `[gateway]` exports PUT and DELETE;
+    - the signed proxy treats them as writes: same-site check, write headers, body.
+  - **CMMS API:**
+    - the space lists answer `{ items }`;
+    - a deletion records the record's next version;
+    - the two work-order commands lock the order, check `expectedVersion`, advance the version and refuse a stale
+      one (409);
+    - issue no longer reads a currency from the work order;
+    - issue and return replay a repeated caller key.
+  - **CMMS screens:**
+    - `cad-layers`;
+    - 204 answers read as empty;
+    - the work order's version sent on both commands.
+- **Tests:** `cmms-gateway-screens.test.ts`, run on every `pnpm test`:
+  - every one of the 76 calls in the screen client has a gateway route with a permission;
+  - every gateway route is served by a CMMS controller. Against the old files it fails and lists the unrouted calls;
+  - PUT forwards body and retry key;
+  - DELETE forwards no body and passes 204 back;
+  - a cross-site DELETE, an unlisted method and a read-only user are refused.
+
+  Also: the equivalence oracle covers the 36 routes, with permissions transcribed from the controllers, and
+  `spaces.controller.spec.ts` checks the `{ items }` answers.
+- **HTTP proof:** `scripts/verify-u19a-cmms-screen-routes.mjs` passes 56/56 on an isolated database (`u19a_proof` on
+  the throwaway server). It installs the migrations the image ships (`db/runtime-manifest.txt`) with the real runner
+  and runs the built CMMS API. Each call passes the generated allow-list and is signed with only the permission the
+  gateway requires. It covers:
+  - spaces, classifications, spec definitions and asset specs (PUT);
+  - the equipment tree and a status cascade;
+  - job plans, meter triggers and telemetry;
+  - failure codes;
+  - a work order with its job plan and failure attribution (a stale version is refused);
+  - storerooms and balances (PUT);
+  - issue and return, where the same issue sent twice takes stock once;
+  - the TCO;
+  - four deletes;
+  - another tenant's 404 and a read-only user's 403.
+
+  It is part of `pnpm verify` (NOT RUN without PROOF_DATABASE_URL).
+- **Checks:**
+  - `pnpm build` passes;
+  - `pnpm test`: 2,549 passed, 188 skipped;
+  - `pnpm verify` passes (known drift; 10 proofs NOT RUN without PROOF_DATABASE_URL, including this one, which the
+    session ran: 56/56).
+- **Not touched:**
+  - the CMMS import/export files;
+  - migrations;
+  - other modules' routes.
+- **Not deployed yet.**
+

@@ -1261,6 +1261,179 @@ export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGat
         "methods": {
           "GET": "cmms.analytics.read"
         }
+      },
+      {
+        "template": "v1/classifications/tree",
+        "pattern": "^v1/classifications/tree$",
+        "methods": {
+          "GET": "cmms.assets.read"
+        }
+      },
+      {
+        "template": "v1/classifications",
+        "pattern": "^v1/classifications$",
+        "methods": {
+          "POST": "cmms.assets.write"
+        }
+      },
+      {
+        "template": "v1/classifications/{id}",
+        "pattern": "^v1/classifications/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "GET": "cmms.assets.read",
+          "PATCH": "cmms.assets.write",
+          "DELETE": "cmms.assets.write"
+        }
+      },
+      {
+        "template": "v1/classifications/{id}/spec-definitions",
+        "pattern": "^v1/classifications/[0-9a-fA-F-]{36}/spec-definitions$",
+        "methods": {
+          "GET": "cmms.assets.read"
+        }
+      },
+      {
+        "template": "v1/classifications/spec-definitions",
+        "pattern": "^v1/classifications/spec-definitions$",
+        "methods": {
+          "POST": "cmms.assets.write"
+        }
+      },
+      {
+        "template": "v1/assets/{id}/specs",
+        "pattern": "^v1/assets/[0-9a-fA-F-]{36}/specs$",
+        "methods": {
+          "GET": "cmms.assets.read",
+          "PUT": "cmms.assets.write"
+        }
+      },
+      {
+        "template": "v1/assets/{id}/equipment-tree",
+        "pattern": "^v1/assets/[0-9a-fA-F-]{36}/equipment-tree$",
+        "methods": {
+          "GET": "cmms.assets.read"
+        }
+      },
+      {
+        "template": "v1/assets/{id}/cascade-status",
+        "pattern": "^v1/assets/[0-9a-fA-F-]{36}/cascade-status$",
+        "methods": {
+          "POST": "cmms.assets.write"
+        }
+      },
+      {
+        "template": "v1/meters/telemetry/batch",
+        "pattern": "^v1/meters/telemetry/batch$",
+        "methods": {
+          "POST": "cmms.meters.write"
+        }
+      },
+      {
+        "template": "v1/meters/triggers",
+        "pattern": "^v1/meters/triggers$",
+        "methods": {
+          "GET": "cmms.meters.read",
+          "POST": "cmms.meters.write"
+        }
+      },
+      {
+        "template": "v1/meters/triggers/{id}",
+        "pattern": "^v1/meters/triggers/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "PATCH": "cmms.meters.write",
+          "DELETE": "cmms.meters.write"
+        }
+      },
+      {
+        "template": "v1/parts/storerooms",
+        "pattern": "^v1/parts/storerooms$",
+        "methods": {
+          "GET": "cmms.parts.read",
+          "POST": "cmms.parts.write"
+        }
+      },
+      {
+        "template": "v1/parts/storerooms/{id}",
+        "pattern": "^v1/parts/storerooms/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "PATCH": "cmms.parts.write",
+          "DELETE": "cmms.parts.write"
+        }
+      },
+      {
+        "template": "v1/parts/balances",
+        "pattern": "^v1/parts/balances$",
+        "methods": {
+          "GET": "cmms.parts.read",
+          "PUT": "cmms.parts.write"
+        }
+      },
+      {
+        "template": "v1/parts/work-orders/{id}/issue|return",
+        "pattern": "^v1/parts/work-orders/[0-9a-fA-F-]{36}/(?:issue|return)$",
+        "methods": {
+          "POST": "cmms.parts.write"
+        }
+      },
+      {
+        "template": "v1/parts/work-orders/{id}/tco",
+        "pattern": "^v1/parts/work-orders/[0-9a-fA-F-]{36}/tco$",
+        "methods": {
+          "GET": "cmms.parts.read"
+        }
+      },
+      {
+        "template": "v1/failure-codes/tree",
+        "pattern": "^v1/failure-codes/tree$",
+        "methods": {
+          "GET": "cmms.assets.read"
+        }
+      },
+      {
+        "template": "v1/failure-codes",
+        "pattern": "^v1/failure-codes$",
+        "methods": {
+          "GET": "cmms.assets.read",
+          "POST": "cmms.assets.write"
+        }
+      },
+      {
+        "template": "v1/failure-codes/{id}",
+        "pattern": "^v1/failure-codes/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "PATCH": "cmms.assets.write",
+          "DELETE": "cmms.assets.write"
+        }
+      },
+      {
+        "template": "v1/job-plans",
+        "pattern": "^v1/job-plans$",
+        "methods": {
+          "GET": "cmms.assets.read",
+          "POST": "cmms.assets.write"
+        }
+      },
+      {
+        "template": "v1/job-plans/{id}",
+        "pattern": "^v1/job-plans/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "GET": "cmms.assets.read",
+          "PATCH": "cmms.assets.write"
+        }
+      },
+      {
+        "template": "v1/job-plans/{id}/apply-to-work-order/{id}",
+        "pattern": "^v1/job-plans/[0-9a-fA-F-]{36}/apply-to-work-order/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "POST": "cmms.assets.write"
+        }
+      },
+      {
+        "template": "v1/work-orders/{id}/failure-attribution",
+        "pattern": "^v1/work-orders/[0-9a-fA-F-]{36}/failure-attribution$",
+        "methods": {
+          "POST": "cmms.assets.write"
+        }
       }
     ],
     "transformBody": null,

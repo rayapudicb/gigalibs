@@ -16,8 +16,10 @@ export class EamSpacesController {
 
   @Get('tree')
   @RequirePermissions('cmms.assets.read')
-  tree(@CurrentPrincipal() principal: CmmsPrincipal) {
-    return this.spaces.tree(principal);
+  async tree(@CurrentPrincipal() principal: CmmsPrincipal) {
+    // WI-OI-120h: lists answer `{ items }`, like every other CMMS list and as the screens read them.
+    const items = await this.spaces.tree(principal);
+    return { items };
   }
 
   @Get(':spaceId')
@@ -28,8 +30,9 @@ export class EamSpacesController {
 
   @Get(':spaceId/assets')
   @RequirePermissions('cmms.assets.read')
-  getAssetsInSpace(@CurrentPrincipal() principal: CmmsPrincipal, @Param('spaceId') spaceId: string) {
-    return this.spaces.getAssetsInSpace(principal, spaceId);
+  async getAssetsInSpace(@CurrentPrincipal() principal: CmmsPrincipal, @Param('spaceId') spaceId: string) {
+    const items = await this.spaces.getAssetsInSpace(principal, spaceId);
+    return { items };
   }
 
   @Post()

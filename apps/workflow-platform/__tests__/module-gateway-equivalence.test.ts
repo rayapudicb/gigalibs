@@ -34,8 +34,54 @@ function intendedCmmsPermission(method: string, path: string): string | null {
   if (method === 'POST' && new RegExp(`^v1/spaces/${UUID_SEGMENT}/cad-layers$`).test(path)) {
     return 'cmms.assets.write';
   }
-  return null;
+  const screenRoute = SCREEN_ROUTES_U19A.find(
+    ([routeMethod, pattern]) => routeMethod === method && new RegExp(`^v1/${pattern.replaceAll('{id}', UUID_SEGMENT)}$`).test(path),
+  );
+  return screenRoute?.[2] ?? null;
 }
+
+/**
+ * WI-OI-120h (U19a): the routes the CMMS screens call that the API already served, with the permission each CMMS API
+ * controller requires (`@RequirePermissions`), transcribed from the controllers rather than the manifest.
+ */
+const SCREEN_ROUTES_U19A: readonly (readonly [string, string, string])[] = [
+  ['GET', 'classifications/tree', 'cmms.assets.read'],
+  ['GET', 'classifications/{id}', 'cmms.assets.read'],
+  ['POST', 'classifications', 'cmms.assets.write'],
+  ['PATCH', 'classifications/{id}', 'cmms.assets.write'],
+  ['DELETE', 'classifications/{id}', 'cmms.assets.write'],
+  ['GET', 'classifications/{id}/spec-definitions', 'cmms.assets.read'],
+  ['POST', 'classifications/spec-definitions', 'cmms.assets.write'],
+  ['GET', 'assets/{id}/specs', 'cmms.assets.read'],
+  ['PUT', 'assets/{id}/specs', 'cmms.assets.write'],
+  ['GET', 'assets/{id}/equipment-tree', 'cmms.assets.read'],
+  ['POST', 'assets/{id}/cascade-status', 'cmms.assets.write'],
+  ['POST', 'meters/telemetry/batch', 'cmms.meters.write'],
+  ['GET', 'meters/triggers', 'cmms.meters.read'],
+  ['POST', 'meters/triggers', 'cmms.meters.write'],
+  ['PATCH', 'meters/triggers/{id}', 'cmms.meters.write'],
+  ['DELETE', 'meters/triggers/{id}', 'cmms.meters.write'],
+  ['GET', 'parts/storerooms', 'cmms.parts.read'],
+  ['POST', 'parts/storerooms', 'cmms.parts.write'],
+  ['PATCH', 'parts/storerooms/{id}', 'cmms.parts.write'],
+  ['DELETE', 'parts/storerooms/{id}', 'cmms.parts.write'],
+  ['GET', 'parts/balances', 'cmms.parts.read'],
+  ['PUT', 'parts/balances', 'cmms.parts.write'],
+  ['POST', 'parts/work-orders/{id}/issue', 'cmms.parts.write'],
+  ['POST', 'parts/work-orders/{id}/return', 'cmms.parts.write'],
+  ['GET', 'parts/work-orders/{id}/tco', 'cmms.parts.read'],
+  ['GET', 'failure-codes/tree', 'cmms.assets.read'],
+  ['GET', 'failure-codes', 'cmms.assets.read'],
+  ['POST', 'failure-codes', 'cmms.assets.write'],
+  ['PATCH', 'failure-codes/{id}', 'cmms.assets.write'],
+  ['DELETE', 'failure-codes/{id}', 'cmms.assets.write'],
+  ['GET', 'job-plans', 'cmms.assets.read'],
+  ['GET', 'job-plans/{id}', 'cmms.assets.read'],
+  ['POST', 'job-plans', 'cmms.assets.write'],
+  ['PATCH', 'job-plans/{id}', 'cmms.assets.write'],
+  ['POST', 'job-plans/{id}/apply-to-work-order/{id}', 'cmms.assets.write'],
+  ['POST', 'work-orders/{id}/failure-attribution', 'cmms.assets.write'],
+];
 
 function fromTemplates(module: string): string[] {
   return generatedModuleGateways[module]!.routes.flatMap((route) => {

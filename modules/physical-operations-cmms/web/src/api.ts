@@ -63,6 +63,8 @@ export async function requestCmms<T>(path: string, options: RequestInit = {}): P
     error.issues = issues;
     throw error;
   }
+  // A delete the API completes with 204 has no body to read.
+  if (response.status === 204) return undefined as T;
   return (await response.json()) as T;
 }
 
@@ -91,7 +93,7 @@ export const cmmsApi = {
   getSpaceAssets: (spaceId: string) =>
     requestCmms<{ items: CmmsAssetV1[] }>(`/spaces/${id(spaceId)}/assets`),
   uploadCadLayer: (spaceId: string, input: Record<string, unknown>) =>
-    requestCmms<CmmsSpaceV1>(`/spaces/${id(spaceId)}/cad-layer`, post(input)),
+    requestCmms<CmmsSpaceV1>(`/spaces/${id(spaceId)}/cad-layers`, post(input)),
 
   searchAssets: (query: Record<string, unknown> = {}) =>
     requestCmms<CmmsPageV1<CmmsAssetV1>>('/assets/search', post(query)),
@@ -278,16 +280,22 @@ export const cmmsApi = {
     requestCmms<CmmsJobPlanV1>('/job-plans', post(input)),
   updateJobPlan: (jobPlanId: string, input: Record<string, unknown>) =>
     requestCmms<CmmsJobPlanV1>(`/job-plans/${id(jobPlanId)}`, patch(input)),
-  applyJobPlan: (jobPlanId: string, workOrderId: string) =>
+  // The API requires the work order's version on both commands (ApplyCmmsJobPlanV1, RecordCmmsFailureAttributionV1).
+  applyJobPlan: (jobPlanId: string, workOrderId: string, expectedVersion: number) =>
     requestCmms<{ success: boolean }>(
       `/job-plans/${id(jobPlanId)}/apply-to-work-order/${id(workOrderId)}`,
-      post({}),
+      post({ expectedVersion }),
     ),
 
   // ─── Reliability: Failure Attribution ───────────────────────────────────────
   recordFailureAttribution: (
     workOrderId: string,
-    input: { failureProblemId?: string | null; failureCauseId?: string | null; failureRemedyId?: string | null },
+    input: {
+      expectedVersion: number;
+      failureProblemId?: string | null;
+      failureCauseId?: string | null;
+      failureRemedyId?: string | null;
+    },
   ) =>
     requestCmms<{ success: boolean }>(
       `/work-orders/${id(workOrderId)}/failure-attribution`,

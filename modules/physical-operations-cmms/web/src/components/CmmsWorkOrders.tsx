@@ -1357,6 +1357,7 @@ function FailureAnalysisCard({
     setError(null);
     try {
       await cmmsApi.recordFailureAttribution(workOrder.id, {
+        expectedVersion: workOrder.version,
         failureProblemId: selectedProblem || null,
         failureCauseId: selectedCause || null,
         failureRemedyId: selectedRemedy || null,
@@ -1375,7 +1376,7 @@ function FailureAnalysisCard({
     setApplying(true);
     setApplyError(null);
     try {
-      await cmmsApi.applyJobPlan(selectedJobPlan, workOrder.id);
+      await cmmsApi.applyJobPlan(selectedJobPlan, workOrder.id, workOrder.version);
       await reload();
       await onChanged();
     } catch (reason) {

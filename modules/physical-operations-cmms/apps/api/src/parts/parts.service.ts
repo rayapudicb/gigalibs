@@ -398,7 +398,8 @@ export class PartsService {
     const input = parseInput(IssueCmmsPartToWorkOrderV1Schema, raw);
     return this.database.withTenantTransaction(context.principal.tenantId, async (client) => {
       const woRes = await client.query(
-        `SELECT id, wo_number, status, currency_code FROM gigalibs_cmms.work_orders WHERE tenant_id = $1 AND id = $2`,
+        // WI-OI-120h: work orders carry no currency (the part and its movements do).
+        `SELECT id, wo_number, status FROM gigalibs_cmms.work_orders WHERE tenant_id = $1 AND id = $2`,
         [context.principal.tenantId, workOrderId],
       );
       if (!woRes.rows[0]) notFound('The work order');
@@ -407,11 +408,15 @@ export class PartsService {
         throw new ConflictException({ code: 'CMMS_WO_CLOSED', message: 'Cannot issue parts to a closed work order.' });
       }
 
-      const movement = await this.applyMovement(client, context, {
+      // WI-OI-120h: a retried issue with the caller's key returns the first movement instead of issuing again.
+      const replay = input.idempotencyKey
+        ? await this.replayedMovement(client, context.principal.tenantId, input.idempotencyKey, input.partId)
+        : null;
+      const movement = replay ?? await this.applyMovement(client, context, {
         partId: input.partId,
         movementType: 'ISSUE',
         quantityDelta: -input.quantity,
-        idempotencyKey: randomUUID(),
+        idempotencyKey: input.idempotencyKey ?? randomUUID(),
         workOrderId,
         storeroomId: input.storeroomId ?? null,
         binLocation: input.binLocation ?? null,
@@ -438,6 +443,15 @@ export class PartsService {
       if (!woRes.rows[0]) notFound('The work order');
       const wo = woRes.rows[0];
 
+      // WI-OI-120h: a retried return with the caller's key returns the first movement instead of returning again.
+      const replay = input.idempotencyKey
+        ? await this.replayedMovement(client, context.principal.tenantId, input.idempotencyKey, input.partId)
+        : null;
+      if (replay) {
+        const workOrderTco = await this.calculateWorkOrderTco(client, context.principal.tenantId, workOrderId, wo.wo_number);
+        return { workOrderTco, movement: replay };
+      }
+
       const issued = await client.query<{ net_issued: string | null }>(
         `SELECT -SUM(quantity_delta) AS net_issued FROM gigalibs_cmms.stock_movements
           WHERE tenant_id = $1 AND part_id = $2 AND work_order_id = $3 AND movement_type IN ('ISSUE', 'RETURN')`,
@@ -455,7 +469,7 @@ export class PartsService {
         partId: input.partId,
         movementType: 'RETURN',
         quantityDelta: input.quantity,
-        idempotencyKey: randomUUID(),
+        idempotencyKey: input.idempotencyKey ?? randomUUID(),
         workOrderId,
         storeroomId: input.storeroomId ?? null,
         binLocation: input.binLocation ?? null,
@@ -643,16 +657,17 @@ export class PartsService {
           message: 'Cannot delete storeroom with remaining stock balances.',
         });
       }
-      const result = await client.query(
-        `DELETE FROM gigalibs_cmms.cmms_storerooms WHERE tenant_id = $1 AND id = $2`,
+      const result = await client.query<{ version: number }>(
+        `DELETE FROM gigalibs_cmms.cmms_storerooms WHERE tenant_id = $1 AND id = $2 RETURNING version`,
         [context.principal.tenantId, id],
       );
       if (result.rowCount === 0) notFound('Storeroom');
+      // WI-OI-120h: the deletion is the storeroom's next version (outbox events need a positive version).
       await recordMutation(client, context, {
         action: 'CMMS_STOREROOM_DELETED',
         aggregateType: 'CMMS_STOREROOM',
         aggregateId: id,
-        aggregateVersion: 0,
+        aggregateVersion: result.rows[0]!.version + 1,
         payload: {},
       });
     });

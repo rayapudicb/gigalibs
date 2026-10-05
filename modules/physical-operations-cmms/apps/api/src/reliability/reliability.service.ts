@@ -149,16 +149,17 @@ export class ReliabilityService {
           message: 'This failure code is referenced by one or more work orders and cannot be deleted.',
         });
       }
-      const result = await client.query(
-        `DELETE FROM gigalibs_cmms.cmms_failure_codes WHERE tenant_id = $1 AND id = $2`,
+      const result = await client.query<{ version: number }>(
+        `DELETE FROM gigalibs_cmms.cmms_failure_codes WHERE tenant_id = $1 AND id = $2 RETURNING version`,
         [context.principal.tenantId, id],
       );
       if (result.rowCount === 0) notFound('Failure code');
+      // WI-OI-120h: the deletion is the code's next version (outbox events need a positive version).
       await recordMutation(client, context, {
         action: 'CMMS_FAILURE_CODE_DELETED',
         aggregateType: 'CMMS_FAILURE_CODE',
         aggregateId: id,
-        aggregateVersion: 0,
+        aggregateVersion: result.rows[0]!.version + 1,
         payload: {},
       });
     });
@@ -328,15 +329,17 @@ export class ReliabilityService {
   ): Promise<void> {
     assertUuid(jobPlanId, 'jobPlanId');
     assertUuid(workOrderId, 'workOrderId');
-    parseInput(ApplyCmmsJobPlanV1Schema, raw);
+    const input = parseInput(ApplyCmmsJobPlanV1Schema, raw);
     return this.database.withTenantTransaction(context.principal.tenantId, async (client) => {
       const plan = await this.fetchJobPlanWithTasks(client, context.principal.tenantId, jobPlanId);
 
-      const woRow = await client.query(
-        `SELECT id, status FROM gigalibs_cmms.work_orders WHERE tenant_id = $1 AND id = $2`,
+      const woRow = await client.query<{ id: string; status: string; version: number }>(
+        `SELECT id, status, version FROM gigalibs_cmms.work_orders WHERE tenant_id = $1 AND id = $2 FOR UPDATE`,
         [context.principal.tenantId, workOrderId],
       );
       if (!woRow.rows[0]) notFound('Work order');
+      // WI-OI-120h: the work order's version is checked and advanced, like every other work-order command.
+      if (woRow.rows[0].version !== input.expectedVersion) versionConflict('The work order');
       if (!['OPEN', 'IN_PROGRESS', 'ON_HOLD'].includes(woRow.rows[0].status)) {
         throw new ConflictException({
           code: 'CMMS_WORK_ORDER_NOT_ACTIVE',
@@ -360,17 +363,20 @@ export class ReliabilityService {
       }
 
       // Set job_plan_id on work order
-      await client.query(
-        `UPDATE gigalibs_cmms.work_orders SET job_plan_id = $3, updated_by = $4, updated_at = now()
-          WHERE tenant_id = $1 AND id = $2`,
-        [context.principal.tenantId, workOrderId, jobPlanId, context.principal.subject],
+      const updated = await client.query<{ version: number }>(
+        `UPDATE gigalibs_cmms.work_orders
+            SET job_plan_id = $4, version = version + 1, updated_by = $5, correlation_id = $6, updated_at = now()
+          WHERE tenant_id = $1 AND id = $2 AND version = $3
+          RETURNING version`,
+        [context.principal.tenantId, workOrderId, input.expectedVersion, jobPlanId, context.principal.subject, context.correlationId],
       );
+      if (updated.rowCount === 0) versionConflict('The work order');
 
       await recordMutation(client, context, {
         action: 'CMMS_JOB_PLAN_APPLIED',
         aggregateType: 'CMMS_WORK_ORDER',
         aggregateId: workOrderId,
-        aggregateVersion: 0,
+        aggregateVersion: updated.rows[0]!.version,
         payload: { jobPlanId, tasksAdded: plan.tasks.length },
       });
     });
@@ -386,11 +392,13 @@ export class ReliabilityService {
     assertUuid(workOrderId, 'workOrderId');
     const input = parseInput(RecordCmmsFailureAttributionV1Schema, raw);
     return this.database.withTenantTransaction(context.principal.tenantId, async (client) => {
-      const woRow = await client.query(
-        `SELECT id FROM gigalibs_cmms.work_orders WHERE tenant_id = $1 AND id = $2`,
+      const woRow = await client.query<{ id: string; version: number }>(
+        `SELECT id, version FROM gigalibs_cmms.work_orders WHERE tenant_id = $1 AND id = $2 FOR UPDATE`,
         [context.principal.tenantId, workOrderId],
       );
       if (!woRow.rows[0]) notFound('Work order');
+      // WI-OI-120h: the work order's version is checked and advanced, like every other work-order command.
+      if (woRow.rows[0].version !== input.expectedVersion) versionConflict('The work order');
 
       for (const [fieldId, label] of [
         [input.failureProblemId, 'Problem'],
@@ -411,26 +419,30 @@ export class ReliabilityService {
         }
       }
 
-      await client.query(
+      const updated = await client.query<{ version: number }>(
         `UPDATE gigalibs_cmms.work_orders
-            SET failure_problem_id = $3, failure_cause_id = $4, failure_remedy_id = $5,
-                updated_by = $6, updated_at = now()
-          WHERE tenant_id = $1 AND id = $2`,
+            SET failure_problem_id = $4, failure_cause_id = $5, failure_remedy_id = $6,
+                version = version + 1, updated_by = $7, correlation_id = $8, updated_at = now()
+          WHERE tenant_id = $1 AND id = $2 AND version = $3
+          RETURNING version`,
         [
           context.principal.tenantId,
           workOrderId,
+          input.expectedVersion,
           input.failureProblemId ?? null,
           input.failureCauseId ?? null,
           input.failureRemedyId ?? null,
           context.principal.subject,
+          context.correlationId,
         ],
       );
+      if (updated.rowCount === 0) versionConflict('The work order');
 
       await recordMutation(client, context, {
         action: 'CMMS_FAILURE_ATTRIBUTION_RECORDED',
         aggregateType: 'CMMS_WORK_ORDER',
         aggregateId: workOrderId,
-        aggregateVersion: 0,
+        aggregateVersion: updated.rows[0]!.version,
         payload: {
           failureProblemId: input.failureProblemId ?? null,
           failureCauseId: input.failureCauseId ?? null,
