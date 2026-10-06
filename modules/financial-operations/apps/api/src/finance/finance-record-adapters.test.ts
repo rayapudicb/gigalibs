@@ -55,13 +55,20 @@ describe('Finance record adapters (U12)', () => {
 
   it("refuses to change an account's book, code, class, subtype or normal balance", async () => {
     const { deps, records } = dispatcher();
+    // WI-OI-120r (S1): a change is checked against the stored record first, then Finance refuses the code change.
+    deps.records.get.mockResolvedValue({ id, version: 1 });
     expect(await status(records.update(context(), 'finance.accounts', id, { 'account-code': '1001' }, '"1"'))).toBe(400);
     expect(deps.finance.updateAccount).not.toHaveBeenCalled();
   });
 
   it("needs a book, date and description for a draft, and never moves a draft to another book", async () => {
     const { deps, records } = dispatcher();
-    expect(await status(records.create(context(), 'finance.journal-drafts', { 'accounting-book-id': id, 'posting-date': '2026-03-01' }, randomUUID()))).toBe(400);
+    // WI-OI-120r (S1): the window requires a description, so the dispatcher refuses first, naming the field.
+    const refused = await records.create(context(), 'finance.journal-drafts', { 'accounting-book-id': id, 'posting-date': '2026-03-01' }, randomUUID()).catch((error: unknown) => error);
+    expect(refused).toBeInstanceOf(HttpException);
+    expect((refused as HttpException).getStatus()).toBe(422);
+    expect((refused as HttpException).getResponse()).toMatchObject({ code: 'RECORD_RULES', fields: { description: 'Description is required.' } });
+    deps.records.get.mockResolvedValue({ id, version: 1 });
     expect(await status(records.update(context(), 'finance.journal-drafts', id, { 'accounting-book-id': randomUUID() }, '"1"'))).toBe(400);
     expect(deps.drafts.create).not.toHaveBeenCalled();
     expect(deps.drafts.update).not.toHaveBeenCalled();

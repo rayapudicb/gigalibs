@@ -11,6 +11,7 @@ import {
   type RecordValues,
   RecordVersionConflict,
 } from '@gigalibs/module-sdk';
+import { shippedRecordRules } from '@gigalibs/configuration-core';
 import { BadRequestException, ConflictException } from '@nestjs/common';
 import type { FinanceEntity, FinancePage, FinanceRecordsService } from './finance-records.service.js';
 import type { FinanceService } from './finance.service.js';
@@ -306,5 +307,6 @@ export function financeRecordDispatcher(deps: FinanceRecordDependencies, idempot
     { key: 'finance-accounts', permission: 'finance:read', resolve: (principal, request) => deps.records.lookup(principal, 'accounts', request) },
   ];
 
-  return new RecordDispatcher([books, accounts, periods, journals, journalLines, drafts, draftLines], resolvers, idempotency);
+  // WI-OI-120r (S1): the field rules of Finance's windows, enforced on every create and change.
+  return new RecordDispatcher([books, accounts, periods, journals, journalLines, drafts, draftLines], resolvers, idempotency, shippedRecordRules('financial-operations'));
 }

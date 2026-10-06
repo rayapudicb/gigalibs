@@ -36,16 +36,23 @@ export interface RecordClient {
   lookup(resolverKey: string, request: { readonly search?: string; readonly ids?: readonly string[] }): Promise<readonly LookupOption[]>;
 }
 
-/** A refused or failed record call, with the HTTP status and the server's code and message. */
+/** A refused or failed record call, with the HTTP status and the server's code, message and per-field messages. */
 export class RecordClientError extends Error {
   constructor(
     readonly status: number | undefined,
     readonly code: string | undefined,
     message: string,
+    /** WI-OI-120r (S1): a `RECORD_RULES` refusal names each field and why, for the form to show under it. */
+    readonly fields: Readonly<Record<string, string>> = {},
   ) {
     super(message);
     this.name = 'RecordClientError';
   }
+}
+
+function fieldMessages(value: unknown): Record<string, string> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+  return Object.fromEntries(Object.entries(value).filter((entry): entry is [string, string] => typeof entry[1] === 'string'));
 }
 
 export interface RecordClientOptions {
@@ -74,10 +81,10 @@ export function createRecordClient(options: RecordClientOptions): RecordClient {
     }
     const body: unknown = await response.json().catch(() => null);
     if (!response.ok) {
-      const detail = body && typeof body === 'object' ? (body as { code?: unknown; message?: unknown; detail?: unknown }) : {};
+      const detail = body && typeof body === 'object' ? (body as { code?: unknown; message?: unknown; detail?: unknown; fields?: unknown }) : {};
       const message =
         typeof detail.message === 'string' ? detail.message : typeof detail.detail === 'string' ? detail.detail : `Request failed (${response.status}).`;
-      throw new RecordClientError(response.status, typeof detail.code === 'string' ? detail.code : undefined, message);
+      throw new RecordClientError(response.status, typeof detail.code === 'string' ? detail.code : undefined, message, fieldMessages(detail.fields));
     }
     return body;
   }

@@ -22,6 +22,10 @@
     "./dictionary-evaluator": {
       "import": "./dist/dictionary-evaluator.js",
       "types": "./dist/dictionary-evaluator.d.ts"
+    },
+    "./record-rules": {
+      "import": "./dist/record-rules.js",
+      "types": "./dist/record-rules.d.ts"
     }
 
   },

@@ -216,6 +216,13 @@ try {
   const both = await record('journal-draft-lines', { 'draft-id': draftId, 'account-id': capital.json?.id, 'debit-amount-minor': '5', 'credit-amount-minor': '5' });
   check('drafts: created as DRAFT; a line with both a debit and a credit is refused (400)', draft.status === 201 && draft.json?.status === 'DRAFT' && debit.status === 201 && wrong.status === 201 && both.status === 400,
     `${shown(draft)} | ${debit.status} ${wrong.status} ${shown(both)}`);
+  // WI-OI-120r (S1): a direct call is refused what the window would prevent, field by field, and nothing is created.
+  const draftsBefore = await call('GET', 'v1/records/finance.journal-drafts?page=1&pageSize=100');
+  const noDescription = await record('journal-drafts', { 'accounting-book-id': bookId, 'posting-date': '2026-03-02' });
+  const draftsAfter = await call('GET', 'v1/records/finance.journal-drafts?page=1&pageSize=100');
+  check('field rules: a direct call without the required description answers 422 RECORD_RULES naming the field, and creates nothing',
+    noDescription.status === 422 && noDescription.json?.code === 'RECORD_RULES' && noDescription.json?.fields?.description === 'Description is required.' && draftsAfter.json?.total === draftsBefore.json?.total,
+    shown(noDescription));
   const afterLines = await read('journal-drafts', draftId);
   const unbalanced = await act('journal-drafts', draftId, 'submit', { expectedVersion: afterLines.json?.version });
   check('drafts: two lines move the version on; an unbalanced submit is refused (400)', afterLines.json?.version === 3 && unbalanced.status === 400 && /balance/.test(unbalanced.text),

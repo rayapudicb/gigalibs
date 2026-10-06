@@ -6,6 +6,7 @@ import {
   type IdempotencyStore,
   type RecordAdapter,
   RecordDispatcher,
+  type RecordRules,
   type RecordValues,
   RecordVersionConflict,
 } from './record-dispatcher.js';
@@ -265,5 +266,76 @@ describe('RecordDispatcher', () => {
     const { adapter } = warehouses();
     expect(() => new RecordDispatcher([{ ...adapter, sortFields: ['undeclared'] }], [], new MemoryIdempotency())).toThrow(/not declared/);
     expect(() => new RecordDispatcher([adapter, adapter], [], new MemoryIdempotency())).toThrow(/Duplicate/);
+  });
+});
+
+// WI-OI-120r (S1): the windows' field rules, enforced by the dispatcher as the window enforces them.
+describe('RecordDispatcher field rules', () => {
+  const calls: Array<{ mode: string; current: RecordValues; changes: RecordValues }> = [];
+  const rules: RecordRules = {
+    defaults: (_entity, values, principal) => (values.name === undefined ? { name: 'Main store', code: `WH-${principal.subject}` } : { code: 'WH-DEFAULT' }),
+    check: (_entity, input) => {
+      calls.push(input);
+      const after = { ...input.current, ...input.changes };
+      const errors: Record<string, string> = {};
+      if (!after.name) errors.name = 'Name is required.';
+      if (input.mode === 'UPDATE' && 'code' in input.changes && input.current.status === 'CLOSED') errors.code = 'Code cannot be changed.';
+      return { errors, warnings: {} };
+    },
+  };
+
+  const rejection = async (promise: Promise<unknown>) => {
+    try {
+      await promise;
+      return null;
+    } catch (error) {
+      return error instanceof HttpException ? { status: error.getStatus(), body: error.getResponse() } : { status: 500, body: null };
+    }
+  };
+
+  it('applies defaults the caller left out, then checks the record as it would be', async () => {
+    const { adapter, created } = warehouses();
+    const records = new RecordDispatcher([adapter], [], new MemoryIdempotency(), rules);
+    await records.create(context(manager), 'inventory.warehouses', { name: 'North' }, randomUUID());
+    expect(created).toHaveBeenLastCalledWith({ code: 'WH-DEFAULT', name: 'North' });
+    expect(calls.at(-1)).toMatchObject({ mode: 'CREATE', current: { code: 'WH-DEFAULT' }, changes: { name: 'North' } });
+  });
+
+  it('never defaults a field the domain sets or the caller may not write', async () => {
+    const { adapter, created } = warehouses();
+    const records = new RecordDispatcher([adapter], [], new MemoryIdempotency(), {
+      ...rules,
+      defaults: () => ({ status: 'OPEN', cost_centre: 'CC-1', code: 'WH-9' }),
+    });
+    await records.create(context(manager), 'inventory.warehouses', { name: 'North' }, randomUUID());
+    expect(created).toHaveBeenLastCalledWith({ code: 'WH-9', name: 'North' });
+  });
+
+  it('answers 422 RECORD_RULES with a message per field, and creates nothing', async () => {
+    const { adapter, created } = warehouses();
+    created.mockClear();
+    const records = new RecordDispatcher([adapter], [], new MemoryIdempotency(), { ...rules, defaults: () => ({}) });
+    const refused = await rejection(records.create(context(manager), 'inventory.warehouses', { code: 'WH-1' }, randomUUID()));
+    expect(refused).toEqual({ status: 422, body: { code: 'RECORD_RULES', message: 'Some fields need attention.', fields: { name: 'Name is required.' } } });
+    expect(created).not.toHaveBeenCalled();
+  });
+
+  it('checks a change against the stored record, so a direct call cannot skip what the window locks', async () => {
+    const { adapter } = warehouses();
+    const records = new RecordDispatcher([adapter], [], new MemoryIdempotency(), rules);
+    const saved = await records.create(context(manager), 'inventory.warehouses', { name: 'North', code: 'WH-1' }, randomUUID());
+    await records.action(context(manager), 'inventory.warehouses', String(saved.id), 'close', {}, randomUUID());
+    const refused = await rejection(records.update(context(manager), 'inventory.warehouses', String(saved.id), { code: 'WH-2' }, '"2"'));
+    expect(refused).toEqual({ status: 422, body: { code: 'RECORD_RULES', message: 'Some fields need attention.', fields: { code: 'Code cannot be changed.' } } });
+    expect(calls.at(-1)).toMatchObject({ mode: 'UPDATE', current: { status: 'CLOSED', code: 'WH-1' }, changes: { code: 'WH-2' } });
+    expect(await status(records.update(context(manager), 'inventory.warehouses', String(saved.id), { name: 'North 2' }, '"2"'))).toBe(200);
+  });
+
+  it('answers 404 for a change to a record of another tenant before checking any rule', async () => {
+    const { adapter } = warehouses();
+    const records = new RecordDispatcher([adapter], [], new MemoryIdempotency(), rules);
+    const saved = await records.create(context(manager), 'inventory.warehouses', { name: 'North' }, randomUUID());
+    const other = principal('tenant-b', ['inventory:read', 'inventory:warehouses:manage']);
+    expect(await status(records.update(context(other), 'inventory.warehouses', String(saved.id), { name: 'X' }, '"1"'))).toBe(404);
   });
 });

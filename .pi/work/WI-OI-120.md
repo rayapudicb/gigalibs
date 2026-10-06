@@ -1588,3 +1588,58 @@ widening the card to fix the API faults the proof found.
     catalogue from a clean working tree before an image build.
 - **Tests after (a):** contracts, tenancy, rbac, module SDK, configuration-core, web and Workforce suites, 1312
   tests passed.
+
+### WI-OI-120r (S1): field rules the server enforces too (2026-10-06, in progress)
+
+- **Engine:** `packages/configuration-core/src/record-rules.ts`.
+  - `entityRules` groups each record type's field rules (shown, locked, required, defaults) and validation rules
+    across a module's windows.
+  - A window's rules count only where it places the field: a child tab's parent link imposes nothing.
+  - Conflicting rules for one field, or a validation rule reading two record types, are refused at start-up and in
+    `record-rules.baselines.test.ts`. Catalogue, Finance and Inventory have none.
+  - `checkRecord` checks a new record or a change as the window does, using the same evaluator:
+    - required, always or by rule;
+    - locked, always or by rule, on the record as changed;
+    - hidden by rule;
+    - not writable for this user;
+    - ERROR rules refuse; WARNING and INFO are reported.
+  - On a change, a field already empty in stored data is required only when the change touches it or makes it
+    required, and a validation rule is checked only when the change touches a field it reads. Records saved before a
+    rule existed can still be edited.
+  - Defaults: fixed, or `{ "$default": "TODAY" | "NOW" | "CURRENT_USER" }`. The tokens are listed in
+    `DICTIONARY_EXECUTABLE_CAPABILITIES.defaultTokens`.
+- **Server:** `RecordDispatcher` takes `RecordRules` (`shippedRecordRules(moduleKey)` from the module's own windows).
+  - On create, it applies defaults for fields the caller left out and may write, then checks.
+  - On update, it reads the stored record, then checks.
+  - Refusals are `422 RECORD_RULES` with `fields: { key: message }`.
+  - Wired into Catalogue, Finance and Inventory; no new dependency.
+- **Screen:**
+  - `RecordClientError.fields` carries the server's per-field messages, shown under each field.
+  - `validateValues` applies only the record type's ERROR rules. Before, every rule of the window applied to every
+    form, child records included.
+  - `formWarnings` shows WARNING rules without blocking.
+  - `newRecordDefaults` fills fixed values, `TODAY` (local date) and `NOW`; the server fills `CURRENT_USER`.
+- **Shipped windows** use only fixed required (53 fields) and read-only (83 fields): no conditional rules, validation
+  rules or defaults yet. So nothing a tester does today changes, except that a direct API call is now refused what the
+  screen prevents. Two Finance adapter tests now expect that earlier refusal.
+- **Found:**
+  - The Finance account window shows the account code as editable, though Finance refuses changing it (400). The
+    window should lock it after creation. That is a window fix, and a check for S16.
+  - The Catalogue, Inventory and Finance window generators are not in the repository (S16 brings them in).
+- **Checks so far:**
+  - `record-rules` tests (17); dispatcher tests (19, 5 new); window tests (16, 4 new).
+  - Wide suites: 1552 passed.
+  - Proofs on the isolated database with the rebuilt module host: module host 39/39, Inventory 27/27, Catalogue
+    27/27, general ledger 28/28. The new check is a direct call without a description answering 422 `RECORD_RULES`
+    naming the field and creating nothing.
+- **Publish check (after the R1 commit):**
+  - `DEFAULT_UNKNOWN` refuses an unknown token.
+  - `DEFAULT_TYPE_MISMATCH` refuses a token on the wrong field type, or a fixed value that does not suit the field: a
+    boolean, a whole number, a decimal within the scale, a date, a date-time, or one of a value list's values.
+  - Tested; every shipped window still publishes.
+- **Checks:**
+  - `pnpm verify` passes (one known drift).
+  - On the fresh build, the isolated proof database passes module host 39/39, Inventory 27/27, Catalogue 27/27,
+    general ledger 28/28 and CMMS routes 56/56.
+- **Ships in:** the module-host image (Catalogue, Finance, Inventory) and the web image (window form). Both are
+  built after the `b7f8a53` deploy.

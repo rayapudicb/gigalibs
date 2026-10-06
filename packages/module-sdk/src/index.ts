@@ -95,6 +95,7 @@ export {
   type RecordFieldPolicy,
   type RecordListQuery,
   type RecordPage,
+  type RecordRules,
   type RecordValues,
 } from './record-dispatcher.js';
 export { ModuleIdempotencyStore, RECORD_IDEMPOTENCY_TABLE } from './record-idempotency.js';

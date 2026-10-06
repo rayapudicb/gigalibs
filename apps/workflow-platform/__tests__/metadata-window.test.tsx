@@ -228,6 +228,63 @@ describe('record client', () => {
     const offline = createRecordClient({ basePath: '/api/x', fetch: (async () => Promise.reject(new TypeError('offline'))) as never });
     await expect(offline.get('inventory.receipts', 'r-1')).rejects.toBeInstanceOf(RecordClientError);
   });
+
+  it("keeps a RECORD_RULES refusal's message for each field (WI-OI-120r)", async () => {
+    const refused = createRecordClient({
+      basePath: '/api/x',
+      fetch: (async () =>
+        Response.json({ code: 'RECORD_RULES', message: 'Some fields need attention.', fields: { notes: 'Notes is required.', bad: 7 } }, { status: 422 })) as never,
+    });
+    await expect(refused.create('inventory.receipts', {}, 'key-2')).rejects.toMatchObject({
+      status: 422,
+      code: 'RECORD_RULES',
+      fields: { notes: 'Notes is required.' },
+    });
+  });
+});
+
+// WI-OI-120r (S1): the window applies the rules of each record type, blocks only on errors, and starts with defaults.
+describe('window field rules', () => {
+  const ruled = {
+    ...manifest,
+    fields: [
+      ...manifest.fields,
+      field('received-on', 'inventory.receipts', { type: 'DATE', defaultValue: { $default: 'TODAY' } }),
+      field('channel', 'inventory.receipts', { defaultValue: 'DOCK' }),
+      field('received-by', 'inventory.receipts', { type: 'REFERENCE', referenceKey: 'warehouses', defaultValue: { $default: 'CURRENT_USER' } }),
+    ],
+    validationRules: [
+      { ruleKey: 'number-format', label: 'Number', errorMessage: 'Use RCV- numbers.', severity: 'ERROR', condition: { field: 'receipt-number', operator: 'MATCHES_REGEX', value: '^RCV-' } },
+      { ruleKey: 'notes-advice', label: 'Notes', errorMessage: 'Notes help the auditors.', severity: 'WARNING', condition: { field: 'notes', operator: 'IS_NOT_NULL' } },
+      { ruleKey: 'quantity-positive', label: 'Quantity', errorMessage: 'Quantity must be positive.', severity: 'ERROR', condition: { field: 'expected-quantity', operator: 'GT', value: 0 } },
+    ],
+    views: manifest.views.map((view) => ({
+      ...view,
+      tabs: view.tabs.map((tab) =>
+        tab.level === 0
+          ? { ...tab, fields: [...tab.fields, { fieldKey: 'received-on', position: 90 }, { fieldKey: 'channel', position: 91 }, { fieldKey: 'received-by', position: 92 }] }
+          : tab,
+      ),
+    })),
+  } as unknown as CompiledDictionaryManifestV1;
+  const ruledModel = windowModel(ruled)!;
+  const header = ruledModel.rootTab;
+  const headerFields = placedFields(ruledModel, header, {}, ['*'], 'CREATE');
+
+  it("applies only the record type's error rules", () => {
+    const errors = metadataWindowModel.validateValues(ruledModel, headerFields, { 'receipt-number': 'X-1', 'warehouse-id': 'w' }, 'inventory.receipts');
+    expect(errors).toEqual({ 'receipt-number': 'Use RCV- numbers.' }); // the line rule and the warning do not block
+  });
+
+  it('reports warning rules without blocking', () => {
+    expect(metadataWindowModel.formWarnings(ruledModel, 'inventory.receipts', {})).toEqual({ notes: 'Notes help the auditors.' });
+    expect(metadataWindowModel.formWarnings(ruledModel, 'inventory.receipts', { notes: 'ok' })).toEqual({});
+  });
+
+  it('starts a new record with fixed and dated defaults; the server fills the current user', () => {
+    const now = new Date(2026, 9, 6, 23, 30);
+    expect(metadataWindowModel.newRecordDefaults(ruledModel, header, now)).toEqual({ 'received-on': '2026-10-06', channel: 'DOCK' });
+  });
 });
 
 describe('published manifest', () => {

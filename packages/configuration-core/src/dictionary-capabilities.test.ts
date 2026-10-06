@@ -225,3 +225,48 @@ describe('permission codes in a dictionary', () => {
     expect(codes).toEqual(['fields.cost.readPermission', 'navigation.home.requiredPermissions.0', 'actions.close.requiredPermissions.1']);
   });
 });
+
+// WI-OI-120r (S1): a default is a token the window computes for a suitable field, or a fixed value of the field's type.
+describe('defaults in a dictionary', () => {
+  it('refuses unknown tokens, tokens on the wrong field type and fixed values that do not fit', async () => {
+    const { executableCapabilityFindings } = await import('./dictionary-capabilities.js');
+    const base = { entityKey: 'probe.things', required: false, readOnly: false, isSystemLocked: false, classification: 'INTERNAL', maskOnDisplay: false };
+    const pkg = {
+      packageKey: 'probe-module-baseline',
+      name: 'Probe',
+      version: '1.0.0',
+      moduleKey: 'probe',
+      targetEntityKey: 'probe.things',
+      entities: [],
+      fields: [
+        { ...base, fieldKey: 'due-on', label: 'Due', type: 'DATE', defaultValue: { $default: 'TODAY' } },
+        { ...base, fieldKey: 'raised-at', label: 'Raised', type: 'DATETIME', defaultValue: { $default: 'NOW' } },
+        { ...base, fieldKey: 'owner', label: 'Owner', type: 'TEXT', defaultValue: { $default: 'CURRENT_USER' } },
+        { ...base, fieldKey: 'amount', label: 'Amount', type: 'NUMBER', scale: 2, defaultValue: '10.50' },
+        { ...base, fieldKey: 'channel', label: 'Channel', type: 'SELECT', referenceKey: 'channels', defaultValue: 'PHONE' },
+        { ...base, fieldKey: 'later', label: 'Later', type: 'DATE', defaultValue: { $default: 'YESTERDAY' } },
+        { ...base, fieldKey: 'count', label: 'Count', type: 'INTEGER', defaultValue: { $default: 'TODAY' } },
+        { ...base, fieldKey: 'price', label: 'Price', type: 'NUMBER', scale: 2, defaultValue: '1.234' },
+        { ...base, fieldKey: 'route', label: 'Route', type: 'SELECT', referenceKey: 'channels', defaultValue: 'FAX' },
+        { ...base, fieldKey: 'urgent', label: 'Urgent', type: 'BOOLEAN', defaultValue: 'yes' },
+      ],
+      relationships: [],
+      references: [{ referenceKey: 'channels', referenceType: 'VALUE_LIST', staticValues: [{ value: 'PHONE', label: 'Phone' }, { value: 'EMAIL', label: 'Email' }] }],
+      validationRules: [],
+      views: [],
+      navigation: [],
+      actions: [],
+      messages: [],
+    } as unknown as Parameters<typeof executableCapabilityFindings>[0];
+    const findings = executableCapabilityFindings(pkg, undefined)
+      .filter((finding) => finding.code.startsWith('DEFAULT_'))
+      .map((finding) => `${finding.code} ${finding.path}`);
+    expect(findings).toEqual([
+      'DEFAULT_UNKNOWN fields.later.defaultValue',
+      'DEFAULT_TYPE_MISMATCH fields.count.defaultValue',
+      'DEFAULT_TYPE_MISMATCH fields.price.defaultValue',
+      'DEFAULT_TYPE_MISMATCH fields.route.defaultValue',
+      'DEFAULT_TYPE_MISMATCH fields.urgent.defaultValue',
+    ]);
+  });
+});

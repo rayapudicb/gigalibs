@@ -18,6 +18,7 @@ import {
   type RecordValues,
   RecordVersionConflict,
 } from '@gigalibs/module-sdk';
+import { shippedRecordRules } from '@gigalibs/configuration-core';
 import { BadRequestException } from '@nestjs/common';
 import { type InventoryEntity, type InventoryPage, type InventoryRecordsService, InventoryVersionConflict } from './inventory-records.service.js';
 import type { InventoryService } from './inventory.service.js';
@@ -330,5 +331,6 @@ export function inventoryRecordDispatcher(deps: InventoryRecordDependencies, ide
     { key: 'inventory-locations', permission: 'inventory:read', resolve: (principal, request) => deps.records.lookup(principal, 'locations', request) },
   ];
 
-  return new RecordDispatcher([warehouses, locations, items, lots, receipts, receiptLines, balances, ledger], resolvers, idempotency);
+  // WI-OI-120r (S1): the field rules of Inventory's windows, enforced on every create and change.
+  return new RecordDispatcher([warehouses, locations, items, lots, receipts, receiptLines, balances, ledger], resolvers, idempotency, shippedRecordRules('universal-inventory'));
 }

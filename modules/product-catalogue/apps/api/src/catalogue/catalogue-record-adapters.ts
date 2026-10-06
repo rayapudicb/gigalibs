@@ -25,6 +25,7 @@ import {
   type RecordValues,
   RecordVersionConflict,
 } from '@gigalibs/module-sdk';
+import { shippedRecordRules } from '@gigalibs/configuration-core';
 import { BadRequestException, ConflictException } from '@nestjs/common';
 import { AddCatalogueEntryV1, VersionTransitionInputV1 } from './catalogue.contract.js';
 import type { CatalogueEntity, CataloguePage, CatalogueRecordsService } from './catalogue-records.service.js';
@@ -494,5 +495,7 @@ export function catalogueRecordDispatcher(deps: CatalogueRecordDependencies, ide
     [uoms, conversions, categories, attributes, products, catalogues, catalogueVersions, catalogueEntries, priceLists, priceListVersions, prices],
     resolvers,
     idempotency,
+    // WI-OI-120r (S1): the field rules of the Catalogue's windows, enforced on every create and change.
+    shippedRecordRules('product-catalogue'),
   );
 }

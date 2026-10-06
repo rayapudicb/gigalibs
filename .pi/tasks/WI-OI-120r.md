@@ -1,6 +1,7 @@
 # WI-OI-120r (S1): Field rules the server enforces too
 
-- **Status:** Approved (owner, 2026-10-06). M1a card of `docs/plans/platform-implementation-plan.md` (moved before CMMS on
+- **Status:** Approved (owner, 2026-10-06). Done 2026-10-06, awaiting "commit"; ships in the next image build. Evidence: `.pi/work/WI-OI-120.md`
+  § WI-OI-120r. M1a card of `docs/plans/platform-implementation-plan.md` (moved before CMMS on
   2026-10-06); starts after R1 (WI-OI-120q). Each slice is shown before it starts.
 - **Work item:** WI-OI-120. Evidence goes in `.pi/work/WI-OI-120.md`.
 - **Size:** M
@@ -62,10 +63,10 @@ declared default.
 
 ## Done when
 
-- [ ] The dispatcher refuses what the screen prevents, with field messages the screen shows.
-- [ ] Defaults are applied on screen and on the server.
-- [ ] The three modules already on metadata still pass.
-- [ ] Checks pass; evidence recorded.
+- [x] The dispatcher refuses what the screen prevents, with field messages the screen shows.
+- [x] Defaults are applied on screen and on the server.
+- [x] The three modules already on metadata still pass.
+- [x] Checks pass; evidence recorded.
 
 ## Stop and ask if
 

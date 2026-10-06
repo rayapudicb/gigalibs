@@ -5,9 +5,11 @@ import { usePublishedManifest } from './use-published-manifest.js';
 import {
   actionKey,
   describeFailure,
+  formWarnings,
   holds,
   gridColumns,
   inputFromValue,
+  newRecordDefaults,
   type PlacedField,
   parentField,
   placedFields,
@@ -396,7 +398,8 @@ function RecordForm({
   onCancel: () => void;
   onSaved: (record: RecordValues) => void;
 }) {
-  const [values, setValues] = useState<Record<string, unknown>>({ ...(record ?? {}), ...fixed });
+  // WI-OI-120r (S1): a new record starts with the window's defaults.
+  const [values, setValues] = useState<Record<string, unknown>>(() => ({ ...(record ?? newRecordDefaults(model, tab)), ...fixed }));
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [failure, setFailure] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -406,7 +409,7 @@ function RecordForm({
 
   async function submit(event: FormEvent) {
     event.preventDefault();
-    const found = validateValues(model, fields, values);
+    const found = validateValues(model, fields, values, tab.targetEntityKey);
     setErrors(found);
     if (Object.keys(found).length > 0) return;
     setBusy(true);
@@ -417,16 +420,25 @@ function RecordForm({
         : await client.create(tab.targetEntityKey, { ...writableValues(fields, values), ...fixed }, idempotencyKey);
       onSaved(saved);
     } catch (error) {
-      setFailure(failureOf(error).message);
+      // WI-OI-120r (S1): the server's field rules name each field, shown under it as the form's own checks are.
+      if (error instanceof RecordClientError && Object.keys(error.fields).length > 0) {
+        setErrors(error.fields);
+        setFailure('Check the highlighted fields.');
+      } else {
+        setFailure(failureOf(error).message);
+      }
     } finally {
       setBusy(false);
     }
   }
 
+  const warnings = Object.values(formWarnings(model, tab.targetEntityKey, values));
+
   return (
     <form className={`${box} space-y-4 p-4`} onSubmit={(event) => void submit(event)} noValidate>
       <h3 className="text-sm font-semibold text-ui-fg-base">{record ? `Edit ${tab.label}` : `New ${tab.label}`}</h3>
       {failure && <Notice tone="error" title="Not saved" text={failure} />}
+      {warnings.length > 0 && <Notice tone="info" title="Please check" text={warnings.join(' ')} />}
       <FieldSections tab={tab} fields={fields} values={values} errors={errors} client={client} onChange={(key, value) => setValues((current) => ({ ...current, [key]: value }))} />
       <div className="flex justify-end gap-2">
         <button type="button" className={button} onClick={onCancel} disabled={busy}>

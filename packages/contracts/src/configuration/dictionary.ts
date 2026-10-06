@@ -475,4 +475,13 @@ export const DICTIONARY_EXECUTABLE_CAPABILITIES = Object.freeze({
   viewModes: Object.freeze(['LIST', 'READ', 'EDIT', 'CREATE'] as const satisfies readonly DictionarySurfaceMode[]),
   /** Types whose values are exact decimal strings when `scale` is set. */
   exactDecimalTypes: Object.freeze(['NUMBER', 'CURRENCY'] as const satisfies readonly DictionaryFieldType[]),
+  /**
+   * WI-OI-120r (S1): computed defaults, written `{ "$default": "TODAY" }`, and the field types each fills. Any other
+   * default is a fixed value of the field's type.
+   */
+  defaultTokens: Object.freeze({
+    TODAY: Object.freeze(['DATE'] as const satisfies readonly DictionaryFieldType[]),
+    NOW: Object.freeze(['DATETIME'] as const satisfies readonly DictionaryFieldType[]),
+    CURRENT_USER: Object.freeze(['REFERENCE', 'TEXT'] as const satisfies readonly DictionaryFieldType[]),
+  }),
 });

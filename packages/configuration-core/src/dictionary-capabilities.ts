@@ -5,6 +5,8 @@ import {
   type DictionaryValidationExpression,
 } from '@gigalibs/contracts';
 import type { ConfigurationFinding } from './index.js';
+import { parseExactDecimal } from './dictionary-evaluator.js';
+import { defaultValueToken } from './record-rules.js';
 
 // WI-OI-120f (F0.1): a dictionary package may publish only what the metadata window executes, and every view, tab,
 // placement, rule and action must point at something that exists (ADR-0033 D1; metadata investigation M-01). Anything
@@ -17,6 +19,49 @@ const LIST_OPERATORS = new Set(['IN', 'NOT_IN']);
 
 function error(code: string, path: string, message: string): ConfigurationFinding {
   return { code, path, message, severity: 'ERROR' };
+}
+
+/**
+ * WI-OI-120r (S1): a default is either a token the window computes for a field of a suitable type, or a fixed value of
+ * the field's type (a value-list field's default must be one of its values).
+ */
+function defaultFindings(
+  field: DictionaryPackageDefinitionV1['fields'][number],
+  allowedValues: readonly string[] | undefined,
+  path: string,
+): ConfigurationFinding[] {
+  const value = field.defaultValue;
+  if (value === undefined || value === null) return [];
+  const token = defaultValueToken(value);
+  if (token === null) {
+    return [error('DEFAULT_UNKNOWN', path, `Only ${Object.keys(capabilities.defaultTokens).join(', ')} can be computed; anything else is a fixed value.`)];
+  }
+  if (token) {
+    const types: readonly string[] = capabilities.defaultTokens[token];
+    return types.includes(field.type) ? [] : [error('DEFAULT_TYPE_MISMATCH', path, `${token} fills ${types.join(' or ')} fields, not ${field.type}.`)];
+  }
+  const fits = (() => {
+    switch (field.type) {
+      case 'BOOLEAN':
+        return typeof value === 'boolean';
+      case 'INTEGER':
+        return Number.isInteger(value);
+      case 'NUMBER':
+      case 'CURRENCY': {
+        const decimal = parseExactDecimal(value);
+        return decimal !== null && (field.scale === undefined || decimal.scale <= field.scale);
+      }
+      case 'DATE':
+        return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value);
+      case 'DATETIME':
+        return typeof value === 'string' && !Number.isNaN(Date.parse(value));
+      case 'SELECT':
+        return typeof value === 'string' && (!allowedValues || allowedValues.includes(value));
+      default:
+        return typeof value === 'string';
+    }
+  })();
+  return fits ? [] : [error('DEFAULT_TYPE_MISMATCH', path, `The default does not suit a ${field.type} field.`)];
 }
 
 /**
@@ -104,6 +149,14 @@ export function executableCapabilityFindings(
     const path = `fields.${field.fieldKey}`;
     findings.push(...permissionFindings(field.readPermission, `${path}.readPermission`));
     findings.push(...permissionFindings(field.writePermission, `${path}.writePermission`));
+    const valueList = field.referenceKey ? references.get(field.referenceKey) : undefined;
+    findings.push(
+      ...defaultFindings(
+        field,
+        valueList?.referenceType === 'VALUE_LIST' ? (valueList.staticValues ?? []).map((option) => option.value) : undefined,
+        `${path}.defaultValue`,
+      ),
+    );
     if (!(capabilities.fieldTypes as readonly string[]).includes(field.type)) {
       findings.push(error('UNSUPPORTED_FIELD_TYPE', `${path}.type`, `Field type ${field.type} is not executed by the metadata window.`));
     }

@@ -6,6 +6,7 @@ import {
   HttpException,
   HttpStatus,
   NotFoundException,
+  UnprocessableEntityException,
 } from '@nestjs/common';
 import { holdsPermission } from '@gigalibs/contracts';
 import type { ModulePrincipal } from './signed-context.js';
@@ -96,6 +97,20 @@ export interface LookupResolver {
   resolve(principal: ModulePrincipal, request: { readonly search?: string; readonly ids?: readonly string[]; readonly limit: number }): Promise<readonly LookupOption[]>;
 }
 
+/**
+ * WI-OI-120r (S1): the field rules of the module's windows (shown, locked, required, defaults, validation rules), which
+ * the dispatcher enforces as the window does. Built by `moduleRecordRules` in `@gigalibs/configuration-core`.
+ */
+export interface RecordRules {
+  /** Values a new record takes for fields the request leaves out. */
+  defaults(entityKey: string, values: RecordValues, principal: { readonly subject: string }): Readonly<Record<string, unknown>>;
+  /** Refusals by field (`errors`) and reported failures (`warnings`) for a new record or a change. */
+  check(
+    entityKey: string,
+    input: { readonly mode: 'CREATE' | 'UPDATE'; readonly current: RecordValues; readonly changes: RecordValues; readonly permissions: readonly string[] },
+  ): { readonly errors: Readonly<Record<string, string>>; readonly warnings: Readonly<Record<string, string>> };
+}
+
 /** Thrown by an adapter when the record changed since the caller read it. */
 export class RecordVersionConflict extends Error {
   constructor() {
@@ -150,6 +165,8 @@ export class RecordDispatcher {
     adapters: readonly RecordAdapter[],
     resolvers: readonly LookupResolver[],
     private readonly idempotency: IdempotencyStore,
+    /** The windows' field rules; without them only permissions and field policies are enforced. */
+    private readonly rules?: RecordRules,
   ) {
     for (const adapter of adapters) {
       if (!ENTITY_KEY.test(adapter.entityKey)) throw new Error(`Invalid entity key ${adapter.entityKey}.`);
@@ -200,9 +217,16 @@ export class RecordDispatcher {
     if (!adapter.create || !adapter.permissions.create) throw this.notSupported(entityKey, 'create');
     this.require(context.principal, adapter.permissions.create);
     const values = this.writable(context.principal, adapter, body);
+    const defaults = this.defaults(context.principal, adapter, values);
+    this.enforce(context.principal, entityKey, 'CREATE', defaults, values);
     const create = adapter.create.bind(adapter);
+    // The replay key covers what the caller sent; defaults are applied each time the record is really created.
     return this.once(context.principal, idempotencyKey, `create:${entityKey}`, values, async () =>
-      this.readable(context.principal, adapter, await create({ ...context, ...(idempotencyKey ? { idempotencyKey } : {}) }, values)),
+      this.readable(
+        context.principal,
+        adapter,
+        await create({ ...context, ...(idempotencyKey ? { idempotencyKey } : {}) }, { ...defaults, ...values }),
+      ),
     );
   }
 
@@ -219,6 +243,12 @@ export class RecordDispatcher {
     this.assertId(id);
     const expectedVersion = this.expectedVersion(ifMatch);
     const values = this.writable(context.principal, adapter, body);
+    if (this.rules) {
+      // The rules read the record as it would be after the change, so the stored record is read first.
+      const current = await adapter.get(context.principal, id);
+      if (!current) throw new NotFoundException({ code: 'RECORD_NOT_FOUND', message: 'The record was not found.' });
+      this.enforce(context.principal, entityKey, 'UPDATE', current, values);
+    }
     try {
       return this.readable(context.principal, adapter, await adapter.update(context, id, values, expectedVersion));
     } catch (error) {
@@ -279,6 +309,26 @@ export class RecordDispatcher {
     const adapter = ENTITY_KEY.test(entityKey) ? this.adapters.get(entityKey) : undefined;
     if (!adapter) throw new NotFoundException({ code: 'RECORD_ENTITY_NOT_FOUND', message: `No records of ${entityKey}.` });
     return adapter;
+  }
+
+  /** The windows' defaults for fields the caller left out and may write; a domain-set field keeps the domain's value. */
+  private defaults(principal: ModulePrincipal, adapter: RecordAdapter, values: RecordValues): Record<string, unknown> {
+    if (!this.rules) return {};
+    const defaults: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(this.rules.defaults(adapter.entityKey, values, principal))) {
+      const policy = adapter.fields[key];
+      if (!policy?.writable || (policy.writePermission && !holds(principal, policy.writePermission))) continue;
+      defaults[key] = value;
+    }
+    return defaults;
+  }
+
+  /** What the window would prevent is refused: 422 with a message per field, which the window shows under each. */
+  private enforce(principal: ModulePrincipal, entityKey: string, mode: 'CREATE' | 'UPDATE', current: RecordValues, changes: RecordValues): void {
+    if (!this.rules) return;
+    const { errors } = this.rules.check(entityKey, { mode, current, changes, permissions: principal.permissions });
+    if (Object.keys(errors).length === 0) return;
+    throw new UnprocessableEntityException({ code: 'RECORD_RULES', message: 'Some fields need attention.', fields: errors });
   }
 
   private require(principal: ModulePrincipal, permission: string): void {

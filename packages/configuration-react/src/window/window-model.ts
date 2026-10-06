@@ -12,6 +12,7 @@ import {
   parseExactDecimal,
   validateDictionaryRules,
 } from '@gigalibs/configuration-core/dictionary-evaluator';
+import { defaultValueToken, entityRules, type EntityRules } from '@gigalibs/configuration-core/record-rules';
 
 // WI-OI-120f (F0.4, ADR-0033 D1): the logic of a metadata window, kept free of React so every rule is unit-tested:
 // which view and tabs to draw, which fields a user may see or change, which actions apply to a record, how child
@@ -150,8 +151,20 @@ export function inputFromValue(field: DictionaryFieldV1, value: unknown): string
   return String(value);
 }
 
-/** Errors before submitting: required fields, exact decimal format and scale, whole numbers, and the manifest's rules. */
-export function validateValues(model: WindowModel, fields: readonly PlacedField[], values: RecordValues): Record<string, string> {
+const rulesByManifest = new WeakMap<CompiledDictionaryManifestV1, Map<string, EntityRules>>();
+
+/** The window's field rules for one record type, as the module's record dispatcher enforces them (WI-OI-120r). */
+function rulesOf(model: WindowModel, entityKey: string): EntityRules | undefined {
+  let rules = rulesByManifest.get(model.manifest);
+  if (!rules) rulesByManifest.set(model.manifest, (rules = entityRules([model.manifest]).rules));
+  return rules.get(entityKey);
+}
+
+/**
+ * Errors before submitting: required fields, exact decimal format and scale, whole numbers, and the validation rules
+ * of the record type that are errors. Without `entityKey` every ERROR rule of the window applies.
+ */
+export function validateValues(model: WindowModel, fields: readonly PlacedField[], values: RecordValues, entityKey?: string): Record<string, string> {
   const errors: Record<string, string> = {};
   for (const { field, readOnly, required } of fields) {
     if (readOnly) continue;
@@ -171,9 +184,40 @@ export function validateValues(model: WindowModel, fields: readonly PlacedField[
       }
     }
   }
-  const ruleErrors = validateDictionaryRules(model.manifest.validationRules, values);
+  const rules = (entityKey ? (rulesOf(model, entityKey)?.validationRules ?? []) : model.manifest.validationRules).filter(
+    (rule) => (rule.severity ?? 'ERROR') === 'ERROR',
+  );
+  const ruleErrors = validateDictionaryRules(rules, values);
   for (const [key, message] of Object.entries(ruleErrors)) errors[key] ??= message;
   return errors;
+}
+
+/** WARNING and INFO rules of the record type that fail for these values: shown, never blocking. */
+export function formWarnings(model: WindowModel, entityKey: string, values: RecordValues): Record<string, string> {
+  const rules = (rulesOf(model, entityKey)?.validationRules ?? []).filter((rule) => (rule.severity ?? 'ERROR') !== 'ERROR');
+  return validateDictionaryRules(rules, values);
+}
+
+/**
+ * The values a new record starts with: each placed field's default, fixed or computed. `TODAY` is the local date and
+ * `NOW` the current time; `CURRENT_USER` is filled in by the server, which knows who is signed in.
+ */
+export function newRecordDefaults(model: WindowModel, tab: DictionaryTabV1, now: Date = new Date()): Record<string, unknown> {
+  const defaults: Record<string, unknown> = {};
+  for (const placement of tab.fields) {
+    const field = fieldOf(model, tab, placement.fieldKey);
+    if (!field || field.defaultValue === undefined) continue;
+    const token = defaultValueToken(field.defaultValue);
+    if (token === undefined) defaults[field.fieldKey] = field.defaultValue;
+    else if (token === 'TODAY') defaults[field.fieldKey] = localDate(now);
+    else if (token === 'NOW') defaults[field.fieldKey] = now.toISOString();
+  }
+  return defaults;
+}
+
+function localDate(now: Date): string {
+  const pad = (value: number) => String(value).padStart(2, '0');
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
 }
 
 /** Only the values a user may write, for the fields shown in the form. */
