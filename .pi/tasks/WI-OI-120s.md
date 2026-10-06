@@ -1,7 +1,7 @@
 # WI-OI-120s (S16): The conversion kit
 
-- **Status:** Approved (owner, 2026-10-06). M1a card of `docs/plans/platform-implementation-plan.md`; after S1
-  (WI-OI-120r). Each slice is shown before it starts.
+- **Status:** Approved (owner, 2026-10-06). Done 2026-10-06, awaiting "commit". M1a card of
+  `docs/plans/platform-implementation-plan.md`; after S1 (WI-OI-120r). Evidence: `.pi/work/WI-OI-120.md` § WI-OI-120s.
 - **Work item:** WI-OI-120. Evidence goes in `.pi/work/WI-OI-120.md`.
 - **Size:** S
 
@@ -49,11 +49,27 @@ A module conversion follows one written template, and one command says whether i
 - The three converted modules pass it.
 - `pnpm verify`.
 
+## As built (differences from the design above)
+
+- **The window generators were only in a session scratch folder.** The Inventory one was stale: running it dropped
+  the F0.6 "Add new" links from six committed windows (restored at once).
+  - They are now `modules/<module>/dictionary/windows.mjs`, on one builder (`scripts/lib/window-builder.mjs`).
+  - All 19 windows regenerate byte for byte, and `node scripts/generate-windows.mjs --check` is in `pnpm verify`.
+- **No "reverse" check.** An adapter may declare fields no window shows, for API use. The check refuses the
+  direction that breaks a screen: a shown field the adapter does not declare, or one editable in the window that the
+  adapter refuses.
+- **"A page still points at a hand-written component" became "each window opens on a module page".** Hand-written
+  panels on a page (the Finance set-up panel and reports) cannot be detected statically. The kit says a walk-through
+  or proof must cover them.
+- **Added:** an action shown for a permission other than the one the server requires; a tab on an unregistered record
+  type; a stale `KNOWN` finding.
+
 ## Done when
 
-- [ ] The template is written; the check runs in `pnpm verify` for converted modules.
-- [ ] Catalogue, Inventory and Finance pass, or each finding is fixed.
-- [ ] Evidence recorded.
+- [x] The template is written; the check runs in `pnpm verify` for converted modules.
+- [x] Catalogue, Inventory and Finance pass, or each finding is listed (Finance: no module role grants journal
+  approval; owner decision).
+- [x] Evidence recorded.
 
 ## Stop and ask if
 

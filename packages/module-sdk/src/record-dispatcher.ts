@@ -182,6 +182,30 @@ export class RecordDispatcher {
     }
   }
 
+  /**
+   * WI-OI-120s (S16): what the module registers, entity by entity: its fields and their policies, its permissions, its
+   * actions and their permissions, and its lookups. The conversion check compares this with the module's windows.
+   */
+  describe(): {
+    entities: ReadonlyArray<{
+      readonly entityKey: string;
+      readonly permissions: RecordAdapter['permissions'];
+      readonly fields: RecordAdapter['fields'];
+      readonly actions: Readonly<Record<string, string>>;
+    }>;
+    resolvers: ReadonlyArray<{ readonly key: string; readonly permission: string }>;
+  } {
+    return {
+      entities: [...this.adapters.values()].map((adapter) => ({
+        entityKey: adapter.entityKey,
+        permissions: adapter.permissions,
+        fields: adapter.fields,
+        actions: Object.fromEntries(Object.entries(adapter.actions ?? {}).map(([key, action]) => [key, action.permission])),
+      })),
+      resolvers: [...this.resolvers.values()].map((resolver) => ({ key: resolver.key, permission: resolver.permission })),
+    };
+  }
+
   /** Entity keys and action handlers the module registers, for the control plane's publish-time checks. */
   registry(): { entities: readonly string[]; actions: readonly string[]; resolvers: readonly string[] } {
     return {

@@ -1657,3 +1657,28 @@ widening the card to fix the API faults the proof found.
     over real HTTP: 7 of 7, including the new refusal case.
   - tenancy-nest suites: 61 passed.
 - **Remaining for R4:** a role creator is not bounded by the permissions they hold.
+
+### WI-OI-120s (S16): the conversion kit (2026-10-06)
+
+- **Template:** `docs/guides/module-conversion-kit.md`. The steps in order: windows from a source; record adapters;
+  gateway and pages; roles; registers, journey and proof; later the lifecycle and posting.
+- **Window sources in the repository:**
+  - The three generators lived only in the session scratch folder. Running the stale Inventory one dropped the F0.6
+    "Add new" links from six committed windows; they were restored from git at once, before anything else ran.
+  - Ported to Node: `scripts/lib/window-builder.mjs`, plus `modules/{product-catalogue,universal-inventory,
+    financial-operations}/dictionary/windows.mjs`.
+  - All 19 windows regenerate byte for byte (`node scripts/generate-windows.mjs --check`).
+- **Check:** `scripts/verify-module-conversion.mjs`, logic in `scripts/lib/conversion-check.mjs`. It loads each
+  converted module's built dispatcher (`RecordDispatcher.describe()`, new) and refuses:
+  - windows that do not compile, or have conflicting rules;
+  - a shown field the adapter does not declare, or one editable in the window that the adapter refuses;
+  - an unregistered tab record type;
+  - an unregistered action, or one with mismatched permissions;
+  - an unserved lookup;
+  - a window on a route that is not a module page, or a gateway without record routes;
+  - a window permission no module role grants.
+  Tested with a valid fixture and one broken copy per failure (`conversion-check.test.ts`, 9 tests).
+- **Results:** Catalogue and Inventory pass. Finance passes with one listed finding: **no module role grants
+  `finance:journals:approve`**, so only a Tenant Admin, or a custom role, can approve journals. That is the owner's
+  decision (add a Finance approver role).
+- **Checks:** `pnpm verify` passes, including the new steps "module windows (S16)" and "module conversions (S16)".

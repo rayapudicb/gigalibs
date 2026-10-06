@@ -24,6 +24,10 @@ const steps = [
     (audit) => ({ name: `audit:${audit}`, cmd: 'pnpm', args: [`audit:${audit}`] }),
   ),
   { name: 'module manifests', cmd: process.execPath, args: ['scripts/module-manifests.mjs', '--check'] },
+  // WI-OI-120s (S16): every committed window is what its module's dictionary/windows.mjs produces, and every converted
+  // module's windows match its dispatcher, gateway, pages and module roles (the latter needs the build).
+  { name: 'module windows (S16)', cmd: process.execPath, args: ['scripts/generate-windows.mjs', '--check'] },
+  ...(auditsOnly ? [] : [{ name: 'module conversions (S16)', cmd: process.execPath, args: ['scripts/verify-module-conversion.mjs'] }]),
   {
     name: 'deployment profile',
     cmd: process.execPath,
