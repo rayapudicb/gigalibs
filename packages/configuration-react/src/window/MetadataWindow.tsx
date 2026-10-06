@@ -610,7 +610,20 @@ function RecordDetail({ model, client, permissions, id, onBack }: { model: Windo
               </button>
             ))}
           </div>
-          {child && <ChildTab key={child.tabKey} model={model} tab={child} client={client} permissions={permissions} parentId={String(record.id)} />}
+          {child && (
+            <ChildTab
+              key={child.tabKey}
+              model={model}
+              tab={child}
+              client={client}
+              permissions={permissions}
+              parentId={String(record.id)}
+              onChanged={() => {
+                // WI-OI-120g: reread the parent quietly, so its version and status stay current for its actions.
+                client.get(entityKey, String(record.id)).then((fresh) => setState({ status: 'ready', record: fresh }), () => undefined);
+              }}
+            />
+          )}
         </div>
       )}
     </div>
@@ -687,7 +700,22 @@ function ActionButton({ action, run, onFailure }: { action: DictionaryActionV1; 
   );
 }
 
-function ChildTab({ model, tab, client, permissions, parentId }: { model: WindowModel; tab: DictionaryTabV1; client: RecordClient; permissions: readonly string[]; parentId: string }) {
+function ChildTab({
+  model,
+  tab,
+  client,
+  permissions,
+  parentId,
+  onChanged,
+}: {
+  model: WindowModel;
+  tab: DictionaryTabV1;
+  client: RecordClient;
+  permissions: readonly string[];
+  parentId: string;
+  /** The parent record may have moved on (a child changes its content, as a price changes its price-list version). */
+  onChanged?: () => void;
+}) {
   const link = parentField(model, tab);
   const [creating, setCreating] = useState(false);
   const [version, setVersion] = useState(0);
@@ -705,6 +733,7 @@ function ChildTab({ model, tab, client, permissions, parentId }: { model: Window
           onSaved={() => {
             setCreating(false);
             setVersion((current) => current + 1);
+            onChanged?.();
           }}
         />
       ) : canCreate(model, tab, permissions) ? (

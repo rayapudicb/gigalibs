@@ -549,9 +549,12 @@ export class CatalogueService {
           JSON.stringify(input.displayOverrides), context.principal.subject],
       );
       const entry = mapCatalogueEntry(inserted.rows[0]);
+      // WI-OI-120g: an entry changes the version's content, so the version moves on and the event carries the new
+      // number (every entry after the first collided on "version 1" in the outbox).
+      const version = await this.advanceVersion(client, context, 'catalogue_versions', versionId);
       await recordMutation(client, { schema: SCHEMA, topic: TOPIC }, context, {
         action: 'CATALOGUE_ENTRY_ADDED', aggregateType: 'catalogue_version', aggregateId: versionId,
-        aggregateVersion: 1, payload: { catalogueId, productId: input.productId },
+        aggregateVersion: version, payload: { catalogueId, productId: input.productId },
       });
       await this.saveReplay(client, context, 'ADD_CATALOGUE_ENTRY', key, { catalogueId, versionId, ...input }, entry, 201);
       return { result: entry, replayed: false };
@@ -642,9 +645,11 @@ export class CatalogueService {
           input.listPriceMinor, input.standardPriceMinor, input.limitPriceMinor, context.principal.subject],
       );
       const price = mapProductPrice(inserted.rows[0]);
+      // WI-OI-120g: a price changes the version's content, so the version moves on and the event carries the new number.
+      const version = await this.advanceVersion(client, context, 'price_list_versions', versionId);
       await recordMutation(client, { schema: SCHEMA, topic: TOPIC }, context, {
         action: 'PRODUCT_PRICE_SET', aggregateType: 'price_list_version', aggregateId: versionId,
-        aggregateVersion: 1, payload: { priceListId, productId: input.productId, uomId: input.uomId, minimumQuantity: input.minQuantity },
+        aggregateVersion: version, payload: { priceListId, productId: input.productId, uomId: input.uomId, minimumQuantity: input.minQuantity },
       });
       await this.saveReplay(client, context, 'SET_PRODUCT_PRICE', key, { priceListId, versionId, ...input }, price, 200);
       return { result: price, replayed: false };
@@ -871,6 +876,15 @@ export class CatalogueService {
       });
       return result;
     });
+  }
+
+  /** Moves a draft catalogue or price-list version to its next version after its content changed. */
+  private async advanceVersion(client: Client, context: ModuleCommandContext, table: 'catalogue_versions' | 'price_list_versions', versionId: string): Promise<number> {
+    const advanced = await client.query<{ version: number }>(
+      `UPDATE ${SCHEMA}.${table} SET version = version + 1, updated_at = now() WHERE tenant_id = $1 AND id = $2 RETURNING version`,
+      [context.principal.tenantId, versionId],
+    );
+    return Number(advanced.rows[0]!.version);
   }
 
   private async assertCatalogueVersionWritable(client: Client, context: ModuleCommandContext, catalogueId: string, versionId: string) {

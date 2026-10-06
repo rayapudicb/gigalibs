@@ -1011,3 +1011,81 @@ widening the card to fix the API faults the proof found.
   - They must get Workforce permissions before any gateway route is added.
 - **Proposed:** a U20a card. It needs owner approval and an independent Security review.
 
+### 830a5a1 deploy: U7 (2026-10-05/06)
+
+- **Images:** the build stalled for about 4.5 hours on a package download inside Docker (the Mac slept), was stopped
+  and rerun from the same commit, and finished at 23:52Z with the source state unchanged. Builds now run under a
+  stall watch.
+- **Backup:** `infra/compose/backups/gigalibs_backup_20261005_235300Z.dump`, labelled with the running release
+  `local-20261005T181124Z-b872b9cea154-d464f3b442b8`; checksum verified.
+- **Deployed by the owner:** `830a5a190e80-100c91553735`. Web and module host are on it.
+
+### UAT walk-through: starter data and screen board (owner-approved 2026-10-06)
+
+- **UAT user:** `uat.admin@gigalibs.io`, which the owner registered and chose a password for.
+  - Self-registration put it in its own trial tenant, "uat.admin".
+  - The owner then ran `add-uat-admin.sh`, which uses `TenancyService.createInvite` then `acceptInvite`: the
+    invitation code path, invited by the platform owner. The user is now a Tenant Admin of GigaLibs Global
+    Enterprise.
+  - The password is passed only as an environment variable to each run. It is in no file and in no log (checked
+    before commit).
+- **Tooling:**
+  - `e2e/run-uat-walkthrough.sh`: asks for the login, checks it once (five failures lock it for 15 minutes), enters
+    the starter data, walks every screen and opens the board.
+  - `e2e/specs/uat-session.ts`: sign-in, choosing the tenant by name.
+  - `uat-starter-data.spec.ts`: idempotent; it runs headed or recorded with UAT_VIDEO=on.
+  - `uat-screen-inventory.spec.ts`: every route of the app plus the 13 Workforce sections.
+- **Starter data, entered on the screens** in GigaLibs Global Enterprise:
+  - units EA, BOX10 (10 EA) and KG;
+  - categories Fasteners and Tools;
+  - products UAT-BOLT-M8, UAT-NUT-M8, UAT-WASHER-M8 and UAT-DRILL-18V;
+  - price list UAT-USD with a draft version and its first price;
+  - warehouse WH-MAIN with locations RCV-01 and STO-A1;
+  - four stocked items;
+  - receipt UAT-ASN-001 (100 bolts, 200 nuts), completed, with balances and ledger.
+- **Defects the walk-through found:**
+  1. **Second price or entry (fixed here):** a second price in a price-list version, and a second entry in a catalogue
+     version, failed with "service unavailable". Each one wrote its outbox event as version 1 of the parent version,
+     and the second collided (duplicate key in the module host log). The U7 proof added only one of each.
+     - **Fix:** a price or entry advances its draft version, and the event carries the new number. After a child is
+       saved, the renderer quietly rereads the parent, so its actions use the current version.
+     - **Proof:** extended to two entries and two prices per version and a stale submit (412): 27/27.
+  2. **Save button covered:** the floating "Softphone & WhatsApp" button covers the Save button of forms at the bottom
+     right (screenshots). It is for the quick-fixes batch.
+- **Screen board** (`e2e/test-results/uat-screen-inventory/index.html`; local, not committed): of 105 screens, 57
+  load without errors, 8 are honest not-built notices, 35 are broken and 5 crash. On every screen, the header's
+  `GET /api/currency/v1/preferences` and `/pairs` answer 503 (Currency is not deployed). The causes:
+  - **Service not deployed (U29):**
+    - Tax (5);
+    - AR (5, 3 of which crash);
+    - Currency;
+    - Spend;
+    - Data Contracts (502);
+    - Recovery.
+  - **Workforce `wfo` routes (U20a):**
+    - Workers;
+    - Engagements;
+    - Expenses;
+    - Analytics;
+    - Compliance (crashes).
+  - **403 (permission or module):**
+    - Communications (6);
+    - Workflows (3);
+    - Rules (2);
+    - Saga;
+    - Ontology;
+    - E-Signature;
+    - Scanner.
+  - **Server error:** Parties, `GET /api/control/parties` → 500.
+  - **Crash:** Marketplace, React hydration error #418.
+  - **Called on load:** Opportunities runs a SAM.gov sync as it opens (503).
+  - **Contained or not set up:**
+    - the Analytics overview is contained (WI-OI-043) but shows as an error;
+    - Places has no active configuration;
+    - Attendance needs the user linked to a Workforce person.
+- **Checks:**
+  - `pnpm build` passes;
+  - `pnpm test`: 2,551 passed, 188 skipped;
+  - `pnpm verify` passes (known drift; 11 proofs NOT RUN without PROOF_DATABASE_URL; U7's proof run by the session:
+    27/27).
+

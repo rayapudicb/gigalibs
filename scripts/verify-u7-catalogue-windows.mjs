@@ -174,6 +174,8 @@ try {
   check('products: archive needs a reason; archive and restore move the version; a stale restore is refused',
     noReason.status === 400 && archived.json?.status === 'ARCHIVED' && staleRestore.status === 412 && restored.json?.status === 'DRAFT' && restored.json?.version === 4,
     `${noReason.status} ${archived.json?.status} ${staleRestore.status} ${restored.json?.status} v${restored.json?.version}`);
+  const nut = await record('products', { code: 'NUT-M8', name: 'Hex nut M8', 'product-type': 'GOOD', 'base-uom-id': each.json?.id });
+  const nutId = nut.json?.id;
   const found = await call('GET', '/v1/records/catalogue.products?search=bolt&page=1&pageSize=10');
   check('products: found by text in a paged list', found.status === 200 && found.json?.total === 1 && found.json.items[0].code === 'BOLT-M8', found.text.slice(0, 120));
 
@@ -185,12 +187,18 @@ try {
   check('catalogues: a draft version under the catalogue; its status cannot be written (400)', version.status === 201 && version.json?.status === 'DRAFT' && statusSet.status === 400, `${shown(version)} | ${statusSet.status}`);
   const emptySubmit = await act('catalogue-versions', versionId, 'submit', { expectedVersion: 1, reason: 'Ready' });
   const entry = await record('catalogue-entries', { 'catalogue-version-id': versionId, 'product-id': productId, 'sort-order': 1, 'is-highlighted': true });
+  const secondEntry = await record('catalogue-entries', { 'catalogue-version-id': versionId, 'product-id': nutId, 'sort-order': 2 });
   const entries = await call('GET', `/v1/records/catalogue.catalogue-entries?parentId=${versionId}`);
-  check('catalogues: an empty version cannot be submitted (409); an entry is added and listed', emptySubmit.status === 409 && entry.status === 201 && entries.json?.total === 1, `${emptySubmit.status} ${shown(entry)}`);
-  const submitted = await act('catalogue-versions', versionId, 'submit', { expectedVersion: 1, reason: 'Ready for review' });
-  const selfApproved = await act('catalogue-versions', versionId, 'approve', { expectedVersion: 2, reason: 'Looks fine' });
-  const approved = await act('catalogue-versions', versionId, 'approve', { expectedVersion: 2, reason: 'Checked' }, { user: CHECKER });
-  const published = await act('catalogue-versions', versionId, 'publish', { expectedVersion: 3, reason: 'Go live' }, { user: CHECKER });
+  const afterEntries = await call('GET', `/v1/records/catalogue.catalogue-versions/${versionId}`);
+  check('catalogues: an empty version cannot be submitted (409); two entries are added and each moves the version on',
+    emptySubmit.status === 409 && entry.status === 201 && secondEntry.status === 201 && entries.json?.total === 2 && afterEntries.json?.version === 3,
+    `${emptySubmit.status} ${entry.status} ${shown(secondEntry)} v${afterEntries.json?.version}`);
+  const staleSubmit = await act('catalogue-versions', versionId, 'submit', { expectedVersion: 1, reason: 'Stale screen' });
+  check('catalogues: a submit against the version before the entries is refused (412)', staleSubmit.status === 412, shown(staleSubmit));
+  const submitted = await act('catalogue-versions', versionId, 'submit', { expectedVersion: 3, reason: 'Ready for review' });
+  const selfApproved = await act('catalogue-versions', versionId, 'approve', { expectedVersion: 4, reason: 'Looks fine' });
+  const approved = await act('catalogue-versions', versionId, 'approve', { expectedVersion: 4, reason: 'Checked' }, { user: CHECKER });
+  const published = await act('catalogue-versions', versionId, 'publish', { expectedVersion: 5, reason: 'Go live' }, { user: CHECKER });
   check('catalogues: submit; the maker cannot approve (403); the checker approves and publishes',
     submitted.json?.status === 'SUBMITTED' && selfApproved.status === 403 && approved.json?.status === 'APPROVED' && published.json?.status === 'PUBLISHED',
     `${submitted.json?.status} ${selfApproved.status} ${approved.json?.status} ${shown(published)}`);
@@ -203,11 +211,15 @@ try {
   const priceVersionId = priceVersion.json?.id;
   const badPrice = await record('prices', { 'price-list-version-id': priceVersionId, 'product-id': productId, 'uom-id': each.json?.id, 'list-price-minor': '1000', 'standard-price-minor': '1200', 'limit-price-minor': '900' });
   const price = await record('prices', { 'price-list-version-id': priceVersionId, 'product-id': productId, 'uom-id': each.json?.id, 'list-price-minor': '1250', 'standard-price-minor': '1200', 'limit-price-minor': '1000' });
-  check('prices: list below standard is refused (400); a valid price is set', priceList.status === 201 && priceVersion.status === 201 && badPrice.status === 400 && price.status === 201, `${badPrice.status} ${shown(price)}`);
-  const priceSubmitted = await act('price-list-versions', priceVersionId, 'submit', { expectedVersion: 1, reason: 'Ready' });
-  const priceSelf = await act('price-list-versions', priceVersionId, 'approve', { expectedVersion: 2, reason: 'Fine' });
-  const priceApproved = await act('price-list-versions', priceVersionId, 'approve', { expectedVersion: 2, reason: 'Checked' }, { user: CHECKER });
-  const priceActive = await act('price-list-versions', priceVersionId, 'activate', { expectedVersion: 3, reason: 'Go live' }, { user: CHECKER });
+  const secondPrice = await record('prices', { 'price-list-version-id': priceVersionId, 'product-id': nutId, 'uom-id': each.json?.id, 'list-price-minor': '120', 'standard-price-minor': '110', 'limit-price-minor': '100' });
+  const afterPrices = await call('GET', `/v1/records/catalogue.price-list-versions/${priceVersionId}`);
+  check('prices: list below standard is refused (400); two prices are set and each moves the version on',
+    priceList.status === 201 && priceVersion.status === 201 && badPrice.status === 400 && price.status === 201 && secondPrice.status === 201 && afterPrices.json?.version === 3,
+    `${badPrice.status} ${price.status} ${shown(secondPrice)} v${afterPrices.json?.version}`);
+  const priceSubmitted = await act('price-list-versions', priceVersionId, 'submit', { expectedVersion: 3, reason: 'Ready' });
+  const priceSelf = await act('price-list-versions', priceVersionId, 'approve', { expectedVersion: 4, reason: 'Fine' });
+  const priceApproved = await act('price-list-versions', priceVersionId, 'approve', { expectedVersion: 4, reason: 'Checked' }, { user: CHECKER });
+  const priceActive = await act('price-list-versions', priceVersionId, 'activate', { expectedVersion: 5, reason: 'Go live' }, { user: CHECKER });
   check('prices: submit; the maker cannot approve (403); the checker approves and activates',
     priceSubmitted.json?.status === 'SUBMITTED' && priceSelf.status === 403 && priceApproved.json?.status === 'APPROVED' && priceActive.json?.status === 'ACTIVATED',
     `${priceSubmitted.json?.status} ${priceSelf.status} ${priceApproved.json?.status} ${shown(priceActive)}`);
@@ -222,7 +234,7 @@ try {
   const pickers = await Promise.all(['catalogue-products', 'catalogue-uoms', 'catalogue-categories', 'catalogue-catalogues', 'catalogue-price-lists'].map((key) => call('GET', `/v1/lookups/${key}`)));
   check('pickers: products, units, categories, catalogues and price lists answer', pickers.every((r) => r.status === 200 && r.json?.length >= 1), pickers.map((r) => r.status).join(' '));
   const readOnly = await record('products', { ...productBody, code: 'BOLT-RO' }, { permissions: ['products:read'] });
-  const noApprove = await act('price-list-versions', priceVersionId, 'approve', { expectedVersion: 4, reason: 'x' }, { user: CHECKER, permissions: ['pricing:read'] });
+  const noApprove = await act('price-list-versions', priceVersionId, 'approve', { expectedVersion: 6, reason: 'x' }, { user: CHECKER, permissions: ['pricing:read'] });
   check('permissions: products:read may not create, pricing:read may not approve (403)', readOnly.status === 403 && noApprove.status === 403, `${readOnly.status} ${noApprove.status}`);
   const otherRead = await call('GET', `/v1/records/catalogue.products/${productId}`, undefined, { tenantId: tenantB });
   const otherList = await call('GET', '/v1/records/catalogue.price-lists', undefined, { tenantId: tenantB });
