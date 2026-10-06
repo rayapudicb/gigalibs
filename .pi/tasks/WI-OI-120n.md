@@ -1,7 +1,9 @@
 # WI-OI-120n: Tenant-to-value fixes, batch 1 (from the WI-OI-120m discovery journey)
 
-- **Status:** Approved (owner, 2026-10-06: "can we fix the issues and retest", then "ok then complete them"; decisions
-  below). Independent Security review before deploy (role permissions change).
+- **Status:** Committed `7485aec`; images built; **not deployed**. Independent Security review before deploy (role
+  permissions change). Owner decision 2026-10-06: GPT performs a read-only security review of the batch-1 diff
+  (`144c010..7485aec`) as an interim independent review **for UAT only**; findings are fixed before the UAT deploy.
+  Production still requires the named D7 Security reviewer.
 - **Work item:** WI-OI-120 (WI-OI-120m journey; U20a is WI-OI-120i, delivered next as its own card). Evidence goes in
   `.pi/work/WI-OI-120.md`.
 - **Size:** L
