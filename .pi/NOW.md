@@ -1,6 +1,6 @@
 # NOW: where the work stands
 
-Updated 2026-10-06 (UAT runs `4d4ef4d`, deployed 03:28Z; U12 general ledger checked, awaiting "commit"). Keep this file
+Updated 2026-10-06 (UAT runs `7fcc5b1`, U12, deployed 04:25Z; the set-up route fix follows). Keep this file
 to one page. Replace old content rather than appending to it, and update it at the end of every task.
 
 ## State
@@ -89,7 +89,8 @@ to one page. Replace old content rather than appending to it, and update it at t
    approvals, inventory flow and module routes pass; `4d4ef4d` deployed 03:28Z, Add-new passes on UAT.
    U12 general ledger (WI-OI-120l, Option A, owner 2026-10-06): draft journals approved by a second person (Finance
    migration 9), five windows, set-up and reports panels. Proof 25/25, 7 unit tests; build, 2,560 tests and
-   `pnpm verify` pass. Awaiting "commit"; then images, deploy, and `run-uat-walkthrough.sh --ledger`. Then U20a; U29.
+   `pnpm verify` pass. Committed `7fcc5b1`, deployed 04:25Z. The UAT walk-through found the set-up panel's fiscal-year
+   route missing from the gateway; fixed (proof now checks the gateway, 27/27), to deploy, then `--ledger`. Then U20a.
    Workforce `wfo` screens: diagnosed (ungated routes, see work log); U20a card to propose. P0-05, P0-07, P0-10, P1-10 and the P1-11 prototypes are in modules not running here; they are fixed
    as each module moves onto the module SDK (U29). Independent Security review before any defect closes.
 3. Then U4–U6 (Dictionary & Master Data hardening), U7–U18 (module by module Playwright flows). Plan:

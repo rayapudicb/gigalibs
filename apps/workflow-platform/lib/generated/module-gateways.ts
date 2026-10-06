@@ -79,6 +79,13 @@ export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGat
         }
       },
       {
+        "template": "v1/fiscal-years/standard",
+        "pattern": "^v1/fiscal-years/standard$",
+        "methods": {
+          "POST": "finance:periods:manage"
+        }
+      },
+      {
         "template": "v1/fiscal-periods",
         "pattern": "^v1/fiscal-periods$",
         "methods": {

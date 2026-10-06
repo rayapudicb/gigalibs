@@ -6,7 +6,8 @@
  *   stock, rent, payroll and depreciation. uat.admin drafts each one, adds its lines and submits it; uat.admin's own
  *   approval is refused; uat.approver approves and posts it.
  * - Reports: the trial balance and balance sheet balance; the income statement shows the month's result.
- * Idempotent: a journal whose description already exists is carried on from where it stands, never entered twice.
+ * Idempotent: a book whose set-up stopped part-way is completed from the panel; a journal whose description already
+ * exists is carried on from where it stands, never entered twice.
  */
 import { type Browser, expect, type Locator, type Page, test } from '@playwright/test';
 import { signInToUat, uatAdmin, uatApprover } from './uat-session';
@@ -141,7 +142,25 @@ test.describe('UAT general ledger', () => {
       await setUp.locator('#setup-currency').fill('USD');
       await setUp.locator('#setup-year').fill(YEAR);
       await setUp.getByRole('button', { name: 'Set up the book' }).click();
-      await expect(maker.getByText(/Starter chart of \d+ accounts created/)).toBeVisible({ timeout: 60000 });
+      await expect(maker.getByText(/^Starter chart: /)).toBeVisible({ timeout: 60000 });
+      await expect(maker.locator('ul[aria-live="polite"] li.text-ui-fg-error'), 'a set-up step was refused').toHaveCount(0);
+    }
+    // A book whose set-up stopped part-way (no periods for the year, or missing accounts) is completed from the panel.
+    const ledger = (await api<{ id: string; bookCode: string }[]>(maker, '/api/financial-operations/v1/books')).find((entry) => entry.bookCode === BOOK)!;
+    const periods = await api<{ startDate: string }[]>(maker, `/api/financial-operations/v1/fiscal-periods?bookId=${ledger.id}`);
+    const accounts = await api<unknown[]>(maker, `/api/financial-operations/v1/accounts?bookId=${ledger.id}`);
+    const hasYear = periods.some((period) => period.startDate.startsWith(`${YEAR}-09`));
+    if (!hasYear || accounts.length < 22) {
+      await openTab(maker, 'Set up a book');
+      const complete = maker.getByRole('form', { name: 'Add a fiscal year' });
+      const option = complete.locator('#year-book option', { hasText: `${BOOK} — ` }).first();
+      await complete.locator('#year-book').selectOption({ label: (await option.textContent()) ?? BOOK });
+      await complete.locator('#year-year').fill(YEAR);
+      await complete.getByRole('checkbox').check();
+      await complete.getByRole('button', { name: 'Add the year' }).click();
+      await expect(maker.getByText(/^Starter chart: /)).toBeVisible({ timeout: 60000 });
+      if (!hasYear) await expect(maker.getByText(`Fiscal year ${YEAR} created with twelve open monthly periods.`)).toBeVisible();
+      else await expect(maker.locator('ul[aria-live="polite"] li.text-ui-fg-error').filter({ hasNotText: /^Fiscal year / })).toHaveCount(0);
     }
     await openTab(maker, 'Books');
     await expect(maker.getByRole('row').filter({ hasText: BOOK })).toHaveCount(1);

@@ -160,6 +160,8 @@ spec:
       - { path: 'v1/accounts', GET: finance:read, POST: 'finance:coa:manage' }
       - { path: 'v1/accounts/{id}', GET: finance:read, PUT: 'finance:coa:manage' }
       - { path: 'v1/fiscal-years', GET: finance:read, POST: 'finance:periods:manage' }
+      # WI-OI-120l (U12): the set-up panel creates a book's standard fiscal year of twelve months.
+      - { path: 'v1/fiscal-years/standard', POST: 'finance:periods:manage' }
       - { path: 'v1/fiscal-periods', GET: finance:read }
       - { path: 'v1/fiscal-periods/{id}/status', PUT: 'finance:periods:manage' }
       - { path: 'v1/journals', GET: finance:read, POST: 'finance:journals:post' }

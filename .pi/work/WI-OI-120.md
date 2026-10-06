@@ -1276,3 +1276,26 @@ widening the card to fix the API faults the proof found.
   Workflows, Rules; U29) and the Workforce `wfo` routes (U20a).
 - **Defect seen:** an Inventory item's page heading is its id (items have no code or name). Logged with the user-id
   defect.
+
+### 7fcc5b1 deploy: U12, and the set-up route fix (2026-10-06)
+
+- **Build and deploy:**
+  - images built for `7fcc5b1` (tag `7fcc5b1d77c7-d6bcd4d77799`, 03:53–04:16Z);
+  - backup `gigalibs_backup_20261006_041714Z` (labelled `4d4ef4d`, checksum verified);
+  - the owner deployed at 04:21–04:25Z. Finance reached migration 9; ten services are healthy on the new tag;
+  - all five Finance windows are published for GigaLibs Global Enterprise (signed-in check).
+- **Defect found by the UAT walk-through:**
+  - the set-up panel created the UAT-GL book, then its fiscal year was refused with "Unsupported Financial
+    Operations route": `v1/fiscal-years/standard` was not on the web gateway's allow-list;
+  - the HTTP proof called the module host directly, so it could not see the gateway;
+  - UAT holds the UAT-GL book without a fiscal year or chart.
+- **Fix:**
+  - the route is listed in `module.yaml` (POST, `finance:periods:manage`); gateways regenerated;
+  - the set-up panel reports the fiscal year and the starter chart separately, so one refusal does not hide the
+    other;
+  - "Add a fiscal year" can also add any standard accounts a book lacks (by code), so a part-way set-up is completed
+    on screen;
+  - the U12 proof checks every call against the generated gateway allow-list. Under the `7fcc5b1` list it flags the
+    set-up call; it now passes 27/27;
+  - the walk-through spec completes a part-way UAT-GL book from the panel.
+- **Checks:** `pnpm verify` passes (build, tests, audits, manifests; known drift); U12 proof 27/27.

@@ -11,7 +11,8 @@
 // - a locked period: no new draft is dated in it, and a submitted draft in it cannot post;
 // - a posted journal reversed with a reason;
 // - the trial balance, income statement and balance sheet from posted entries only;
-// - permissions and another tenant.
+// - permissions and another tenant;
+// - every call is on the web gateway's allow-list for its method.
 // Needs PROOF_DATABASE_URL (never the UAT instance) and a built module host (`pnpm build`).
 import { generateKeyPairSync, randomUUID } from 'node:crypto';
 import { cpSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, symlinkSync } from 'node:fs';
@@ -36,6 +37,21 @@ for (const module of Object.values(modules)) {
     .filter((line) => line && !line.startsWith('#'));
   module.migrationVersion = Number(/^(\d+)_/.exec(listed.at(-1))[1]);
 }
+// The web gateway's allow-list exactly as the web app was generated with it: every call below must pass it for its method
+// (the module host alone would accept a path the gateway refuses, as the first UAT run of the set-up panel showed).
+const generated = readFileSync(join(root, 'apps/workflow-platform/lib/generated/module-gateways.ts'), 'utf8');
+const gatewayStart = generated.indexOf('{', generated.indexOf('generatedModuleGateways'));
+let gatewayEnd = gatewayStart;
+for (let index = gatewayStart, depth = 0; index < generated.length; index += 1) {
+  if (generated[index] === '{') depth += 1;
+  else if (generated[index] === '}' && (depth -= 1) === 0) {
+    gatewayEnd = index;
+    break;
+  }
+}
+const gatewayRoutes = JSON.parse(generated.slice(gatewayStart, gatewayEnd + 1))['financial-operations'].routes.map((route) => ({ pattern: new RegExp(route.pattern), methods: route.methods }));
+const routed = (method, path) => Boolean(gatewayRoutes.find((route) => route.pattern.test(path.replace(/^\//, '').split('?')[0]))?.methods[method]);
+const unrouted = new Set();
 const PORT = Number(process.env.U12_PROOF_PORT ?? 47951);
 const BASE = `http://127.0.0.1:${PORT}`;
 const FINANCE = 'financial-operations';
@@ -124,6 +140,7 @@ function token(tenantId, user, permissions) {
 }
 /** One call to Finance as a user; record creates and actions carry a fresh Idempotency-Key unless one is given. */
 async function call(method, path, body, { tenantId = tenantA, user = MAKER, headers = {}, permissions = ['finance:*'] } = {}) {
+  if (!routed(method, path)) unrouted.add(`${method} ${path.split('?')[0].replace(/[0-9a-f-]{36}/g, '{id}')}`);
   const writes = method === 'POST' && (path.startsWith('/v1/records/') || path.includes('/actions/'));
   const response = await fetch(`${BASE}${modules[FINANCE].basePath}${path}`, {
     method,
@@ -169,6 +186,8 @@ try {
   const periods = await list('periods', `?filter.accounting-book-id=${bookId}&pageSize=50`);
   check('set up: a book and a fiscal year of twelve open monthly periods', book.status === 201 && year.status === 201 && periods.json?.total === 12 && periods.json.items.every((p) => p.status === 'OPEN'),
     `${shown(book)} | ${shown(year)} | ${periods.text.slice(0, 120)}`);
+  const accountsOfBook = await call('GET', `/v1/accounts?bookId=${bookId}`);
+  check("set up: the panel's account check answers the book's accounts (none yet)", accountsOfBook.status === 200 && Array.isArray(accountsOfBook.json) && accountsOfBook.json.length === 0, accountsOfBook.text.slice(0, 120));
   const books = await list('books');
   check('books: the window lists the book', books.status === 200 && books.json?.total === 1 && books.json.items[0]['book-code'] === 'MAIN', books.text.slice(0, 160));
 
@@ -290,6 +309,7 @@ try {
   check("tenants: tenant B gets 404 for tenant A's draft, no journals, no picker options, and cannot add a line to A's draft",
     otherDraft.status === 404 && otherJournals.json?.total === 0 && otherPick.json?.length === 0 && otherLine.status === 404,
     `${otherDraft.status} ${otherJournals.text.slice(0, 60)} ${otherPick.text} ${otherLine.status}`);
+  check('gateway: every call the Finance page and its windows make is on the web gateway allow-list', unrouted.size === 0, [...unrouted].join(', '));
 } finally {
   host.kill('SIGTERM');
   for (const module of Object.values(modules)) {

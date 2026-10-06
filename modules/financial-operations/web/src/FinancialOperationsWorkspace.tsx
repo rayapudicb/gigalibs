@@ -172,7 +172,7 @@ function SetUpBook() {
   const [parties, setParties] = useState<readonly Party[] | null>(null);
   const [partyFailure, setPartyFailure] = useState<string | null>(null);
   const [form, setForm] = useState({ partyId: '', code: 'MAIN', name: 'Main ledger', currency: 'USD', costing: 'STANDARD', year: String(new Date().getFullYear()), chart: true });
-  const [yearForm, setYearForm] = useState({ bookId: '', year: String(new Date().getFullYear() + 1) });
+  const [yearForm, setYearForm] = useState({ bookId: '', year: String(new Date().getFullYear() + 1), chart: false });
   const [busy, setBusy] = useState(false);
   const [log, setLog] = useState<readonly { tone: 'info' | 'error'; text: string }[]>([]);
   const note = useCallback((tone: 'info' | 'error', text: string) => setLog((current) => [...current, { tone, text }]), []);
@@ -182,6 +182,41 @@ function SetUpBook() {
       .then((found) => setParties(found.items))
       .catch((error: Error) => setPartyFailure(error.message));
   }, []);
+
+  /** Adds the standard accounts a book does not have yet (by code); answers how many were added. */
+  async function addStarterChart(bookId: string): Promise<number> {
+    const existing = new Set((await call<readonly { accountCode: string }[]>(`${BASE_PATH}/v1/accounts?bookId=${encodeURIComponent(bookId)}`)).map((account) => account.accountCode));
+    let added = 0;
+    for (const [code, name, accountClass, subtype, normal] of STARTER_CHART) {
+      if (existing.has(code)) continue;
+      await call(`${BASE_PATH}/v1/accounts`, {
+        method: 'POST',
+        body: {
+          accountingBookId: bookId, accountCode: code, accountName: name, accountClass, accountSubtype: subtype, normalBalance: normal,
+          isReconcilable: subtype === 'BANK', isSubledgerControl: subtype === 'ACCOUNTS_RECEIVABLE' || subtype === 'ACCOUNTS_PAYABLE',
+        },
+      });
+      added += 1;
+    }
+    return added;
+  }
+
+  /** The year, then (when asked) the starter chart; each step is reported on its own, so one refusal does not hide the other. */
+  async function completeBook(bookId: string, year: string, chart: boolean) {
+    try {
+      await call(`${BASE_PATH}/v1/fiscal-years/standard`, { method: 'POST', body: { accountingBookId: bookId, year: Number(year) } });
+      note('info', `Fiscal year ${year} created with twelve open monthly periods.`);
+    } catch (error) {
+      note('error', `Fiscal year ${year}: ${(error as Error).message}`);
+    }
+    if (!chart) return;
+    try {
+      const added = await addStarterChart(bookId);
+      note('info', added > 0 ? `Starter chart: ${added} accounts created. Edit or extend it under Chart of accounts.` : 'Starter chart: the book already has every standard account.');
+    } catch (error) {
+      note('error', `Starter chart: ${(error as Error).message}`);
+    }
+  }
 
   async function createBook(event: FormEvent) {
     event.preventDefault();
@@ -194,21 +229,8 @@ function SetUpBook() {
         body: { bookCode: form.code.trim(), bookName: form.name.trim(), legalEntityPartyId: form.partyId, currencyCode: form.currency.trim().toUpperCase(), costingMethod: form.costing, isPrimary: (books ?? []).length === 0 },
       });
       note('info', `Book ${book.bookCode} created.`);
-      await call(`${BASE_PATH}/v1/fiscal-years/standard`, { method: 'POST', body: { accountingBookId: book.id, year: Number(form.year) } });
-      note('info', `Fiscal year ${form.year} created with twelve open monthly periods.`);
-      if (form.chart) {
-        for (const [code, name, accountClass, subtype, normal] of STARTER_CHART) {
-          await call(`${BASE_PATH}/v1/accounts`, {
-            method: 'POST',
-            body: {
-              accountingBookId: book.id, accountCode: code, accountName: name, accountClass, accountSubtype: subtype, normalBalance: normal,
-              isReconcilable: subtype === 'BANK', isSubledgerControl: subtype === 'ACCOUNTS_RECEIVABLE' || subtype === 'ACCOUNTS_PAYABLE',
-            },
-          });
-        }
-        note('info', `Starter chart of ${STARTER_CHART.length} accounts created. Edit or extend it under Chart of accounts.`);
-      }
       setVersion((current) => current + 1);
+      await completeBook(book.id, form.year, form.chart);
     } catch (error) {
       note('error', (error as Error).message);
     } finally {
@@ -220,11 +242,9 @@ function SetUpBook() {
     event.preventDefault();
     if (!yearForm.bookId) return note('error', 'Choose a book.');
     setBusy(true);
+    setLog([]);
     try {
-      await call(`${BASE_PATH}/v1/fiscal-years/standard`, { method: 'POST', body: { accountingBookId: yearForm.bookId, year: Number(yearForm.year) } });
-      note('info', `Fiscal year ${yearForm.year} created.`);
-    } catch (error) {
-      note('error', (error as Error).message);
+      await completeBook(yearForm.bookId, yearForm.year, yearForm.chart);
     } finally {
       setBusy(false);
     }
@@ -291,6 +311,10 @@ function SetUpBook() {
           <Labelled label="Year" htmlFor="year-year">
             <input id="year-year" className={field} inputMode="numeric" value={yearForm.year} onChange={(event) => setYearForm((current) => ({ ...current, year: event.target.value }))} />
           </Labelled>
+          <label className="flex items-center gap-2 text-sm text-ui-fg-base">
+            <input type="checkbox" checked={yearForm.chart} onChange={(event) => setYearForm((current) => ({ ...current, chart: event.target.checked }))} />
+            Also add any standard accounts the book does not have
+          </label>
           <button type="submit" className={primary} disabled={busy}>
             Add the year
           </button>
