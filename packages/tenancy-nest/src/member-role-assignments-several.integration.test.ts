@@ -13,6 +13,7 @@ integration('several roles per member (isolated PostgreSQL)', () => {
   const admin = `admin-${run}`;
   const lead = `lead-${run}`;
   const tech = `tech-${run}`;
+  const newcomer = `new-${run}`;
   let db: typeof import('@gigalibs/db').prisma;
   let service: import('./tenancy.service.js').TenancyService;
   let memberScopeRoles: typeof import('@gigalibs/rbac-nest').memberScopeRoles;
@@ -24,13 +25,14 @@ integration('several roles per member (isolated PostgreSQL)', () => {
     service = new (await import('./tenancy.service.js')).TenancyService();
     await db.tenant.createMany({ data: [{ id: tenantId, slug: tenantId, name: 'R2 2a' }, { id: otherTenantId, slug: otherTenantId, name: 'Other' }] });
     await db.user.createMany({
-      data: [admin, lead, tech].map((id) => ({ id, email: `${id}@r2a.invalid`, name: id })),
+      data: [admin, lead, tech, newcomer].map((id) => ({ id, email: `${id}@r2a.invalid`, name: id })),
     });
     await db.customRole.createMany({
       data: [
         { id: `technician-${run}`, tenantId, name: 'Maintenance technician', permissions: ['cmms:read', 'cmms.work-orders.read'], isSystem: true },
         { id: `worker-${run}`, tenantId, name: 'Workforce member', permissions: ['workforce:read', 'workforce.time.punch'], isSystem: true },
-        { id: `assigner-${run}`, tenantId, name: 'Role assigner', permissions: ['roles:assign'] },
+        // The lead gives roles and edits them, and holds the technician's permissions but not Workforce member's.
+        { id: `assigner-${run}`, tenantId, name: 'Role assigner', permissions: ['roles:assign', 'roles:update', 'cmms:read', 'cmms.work-orders.read'] },
         { id: `nights-${run}`, tenantId, name: 'Night shift', permissions: ['cmms:read'] },
         { id: `foreign-${run}`, tenantId: otherTenantId, name: 'Foreign role', permissions: ['users:read'] },
       ],
@@ -40,6 +42,7 @@ integration('several roles per member (isolated PostgreSQL)', () => {
         { id: `m-admin-${run}`, userId: admin, tenantId, role: 'TENANT_ADMIN' },
         { id: `m-lead-${run}`, userId: lead, tenantId, role: 'MANAGER' },
         { id: `m-tech-${run}`, userId: tech, tenantId, role: 'MEMBER' },
+        { id: `m-new-${run}`, userId: newcomer, tenantId, role: 'MEMBER' },
       ],
     });
   });
@@ -95,6 +98,28 @@ integration('several roles per member (isolated PostgreSQL)', () => {
     const [held] = await live(admin);
     expect(await status(service.revokeMemberRole(tenantId, `m-admin-${run}`, held!.id, lead, { reason: 'Strip the admin' }))).toBe(403);
     expect((await live(admin)).map((assignment) => assignment.customRoleId)).toEqual([`worker-${run}`]);
+  });
+
+  // Owner, 2026-10-06 ("add the grant bound"; Security review of 2a, M3): someone not a Tenant Admin gives only what
+  // they hold. The admin gave Workforce member above without holding its permissions: admins are not bounded.
+  it('lets a non-admin give only a role whose every permission they hold', async () => {
+    const refused = await service
+      .assignMemberRole(tenantId, `m-new-${run}`, lead, { customRoleId: `worker-${run}`, reason: 'Clocks in too' })
+      .catch((error: { getStatus: () => number; getResponse: () => unknown }) => ({ status: error.getStatus(), body: error.getResponse() }));
+    expect(refused).toMatchObject({ status: 403, body: { code: 'GRANT_BEYOND_OWN', missing: ['workforce:read', 'workforce.time.punch'] } });
+    expect(await status(service.assignMemberRole(tenantId, `m-new-${run}`, lead, { customRoleId: `technician-${run}`, reason: 'Joins the plant' }))).toBe(200);
+    expect((await live(newcomer)).map((assignment) => assignment.customRoleId)).toEqual([`technician-${run}`]);
+  });
+
+  it('lets a non-admin add to a role only permissions they hold, even to a role they hold', async () => {
+    const edit = async (roleId: string, permissions: string[]) => {
+      const role = await db.customRole.findUniqueOrThrow({ where: { id: roleId } });
+      return status(service.updateCustomRole(tenantId, roleId, lead, { expectedUpdatedAt: role.updatedAt.toISOString(), permissions, reason: 'Role edit' }));
+    };
+    expect(await edit(`assigner-${run}`, ['roles:assign', 'roles:update', 'cmms:read', 'cmms.work-orders.read', 'roles:*'])).toBe(403);
+    expect(await edit(`nights-${run}`, ['cmms:read', 'workforce:read'])).toBe(403);
+    expect(await edit(`nights-${run}`, ['cmms:read', 'cmms.work-orders.read'])).toBe(200);
+    expect((await db.customRole.findUniqueOrThrow({ where: { id: `assigner-${run}` } })).permissions).not.toContain('roles:*');
   });
 
   it('refuses a reason shorter than three characters, counted as people count them', async () => {

@@ -35,6 +35,7 @@ import {
   resolveDomainVerification,
 } from './domain-verification.js';
 import { tenantSubdomain, trialModuleKeys } from './platform-module-catalog.js';
+import { assertGrantWithinOwn } from './grant-bound.js';
 import { assertTenantAdminAuthority, assertTenantAdministratorRetained } from './tenant-member-safety.js';
 
 @Injectable()
@@ -528,8 +529,9 @@ export class TenancyService {
       async (transaction) => {
         await transaction.$queryRaw`SELECT "id" FROM "tenants" WHERE "id" = ${tenantId} FOR UPDATE`;
         const member = await this.memberForRoleChange(transaction, tenantId, memberId, actorId);
-        const role = await transaction.customRole.findFirst({ where: { id: dto.customRoleId, tenantId }, select: { id: true, name: true } });
+        const role = await transaction.customRole.findFirst({ where: { id: dto.customRoleId, tenantId }, select: { id: true, name: true, permissions: true } });
         if (!role) throw new BadRequestException({ code: 'ROLE_NOT_IN_WORKSPACE', message: 'That role does not belong to this workspace.' });
+        await assertGrantWithinOwn(transaction, tenantId, actorId, Array.isArray(role.permissions) ? role.permissions : []);
         const held = await transaction.memberRoleAssignment.findFirst({
           where: { tenantId, userId: member.userId, customRoleId: role.id, scope: 'MEMBER', revokedAt: null },
           select: { id: true },
@@ -803,6 +805,8 @@ export class TenancyService {
             message: `No screen or service checks ${unknown.join(', ')}; choose from the permission list.`,
           });
         }
+        // WI-OI-120w (grant bound): a permission added to a role reaches everyone holding it, the editor included.
+        await assertGrantWithinOwn(transaction, tenantId, changedById, dto.permissions.filter((code) => !previous.includes(code)));
       }
 
       const changed = await transaction.customRole.updateMany({

@@ -1969,3 +1969,51 @@ widening the card to fix the API faults the proof found.
     access and cannot be removed there; they need a forward fix, or an owner-run revoke.
   - Role holder counts are live assignments. They equal distinct members while only `MEMBER` scope exists; revisit
     in 2b.
+
+##### Grant bound (owner, 2026-10-06: "commit, add the grant bound"; review M3)
+
+- **The rule** (`packages/tenancy-nest/src/grant-bound.ts`, `assertGrantWithinOwn`): someone who is not an active
+  Tenant Admin may:
+  - give a member a role only if they hold every permission of that role;
+  - add a permission to a role only if they hold it.
+- **How "they hold" is counted:** as the guard counts it (base role, live role assignments, direct codes), with
+  `holdsPermission`. Holding specific codes does not cover a wildcard such as `cmms:*`.
+- **On refusal:** 403 `GRANT_BEYOND_OWN`, with the missing codes.
+- **Not bounded:**
+  - creating a role, because a role nobody holds grants nothing and giving it is bounded;
+  - taking a role away.
+- **UAT (read-only, 2026-10-06):**
+  - only Tenant Admins hold `roles:assign` (through `roles:*`), and no custom role carries `roles:`;
+  - two roles carry `users:update` ("develoepr", "QA") and have no holders;
+  - so the bound changes nothing on UAT today.
+- **Tests (several-roles suite, 10 of 10; with the slice 1 suite, 16 of 16):**
+  - a Manager holding the assigner role is refused Workforce member, with the missing workforce codes named, and may
+    give Maintenance technician;
+  - they cannot add `roles:*` to their own role or `workforce:read` to another, and may add a code they hold;
+  - the admin gives Workforce member without holding its permissions.
+
+- **Security review of the bound: "ship".**
+  - **Checked:**
+    - wildcards: specific codes do not cover `cmms:*`, and `roles:assign` does not cover `roles:*`;
+    - spellings: dotted and colon spellings match each other;
+    - malformed codes fail closed;
+    - order: lock, then M1 and the self check, then the role in the workspace, then the bound, all read in the
+      transaction;
+    - the exemption is the WI-OI-120v set;
+    - no other path attaches a role: not PATCH, invites or SCIM.
+  - r2_proof suites: 16 of 16, run twice after the review. The reviewer's first run, during `pnpm verify`, failed in
+    setup and passed on rerun.
+  - `pnpm verify`: PASS for every step that ran (319 files, 2741 tests).
+- **Findings for later cards (not blocking):**
+  - **Medium, predates slice 2a:** base-role changes are not bounded. Someone who is not an admin and holds
+    `users:update` can make a member a Manager, themselves included; with `invites:create` they can invite one; SCIM
+    `patchUser` can do the same. The Manager role carries `workflows:*`, `actions:approve`, `spend:approve` and
+    `exceptions:*`, which the actor may not hold. `assertTenantAdminAuthority` covers only Tenant Admin. The fix is to
+    apply the grant bound to the base role's permissions and refuse a non-admin changing their own base role.
+  - **Low:** creating and renaming roles are not bounded, so a broad role can carry an innocent name, such as a
+    module role's name before the module is enabled, and an admin may grant it by name. The fix is to show a role's
+    permissions in the "Add a role" picker, or bound create and rename.
+  - **Info, R4:**
+    - someone who is not an admin and holds `roles:update` can remove permissions from a role a Tenant Admin holds;
+    - someone holding `roles:assign` can take from non-admins roles that exceed their own.
+  - **UAT exposure today: none.** Only Tenant Admins hold `users:update`, `invites:create` or `roles:*`.
