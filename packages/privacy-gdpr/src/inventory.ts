@@ -119,6 +119,8 @@ export const TENANT_EXPORT_INVENTORY = Object.freeze([
   ),
   entry('OrgUnitPlaceLink', 'org_unit_place_links', 'EXPORT', 'Which places each organization unit operates or owns.'),
   entry('OrgScopeGrant', 'org_scope_grants', 'EXPORT', 'Tenant-owned member access assignments to organization units.'),
+  // WI-OI-120w (R2, ADR-0034): the roles each member holds, each at a scope; granted and revoked, never edited.
+  entry('MemberRoleAssignment', 'member_role_assignments', 'EXPORT', 'Tenant-owned member role assignments, each a role held at a scope.'),
   entry('OrgIdempotencyRecord', undefined, 'EXCLUDE_SECURITY', 'Short-lived mutation idempotency tokens and execution cache.'),
   entry('Party', 'parties', 'EXPORT', 'Tenant-owned canonical customer, supplier, worker and partner master records.'),
   entry('PartyRole', 'party_roles', 'EXPORT', 'Effective-dated business roles assigned to tenant-owned parties.'),

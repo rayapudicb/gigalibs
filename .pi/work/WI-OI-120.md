@@ -1729,3 +1729,97 @@ widening the card to fix the API faults the proof found.
   Not removed: removing them is a write to UAT and waits for the owner.
 - **UX finding:** a search with no match shows "No records yet. Use New to create the first one". It should say that
   nothing matches the search. For the window polish card.
+- **Owner clean-up, 2026-10-06 ("clean up"):**
+  - Backup `gigalibs_backup_20261006_130635Z` taken first.
+  - The owner ran the five-draft clean-up script, in one transaction refusing anything but the exact five unposted
+    drafts with six lines: `INSERT 0 5` audit entries `JOURNAL_DRAFT_REMOVED` (actor `owner-cleanup`, with the
+    reason and the backup name), `DELETE 6` lines, `DELETE 5` drafts, `COMMIT`.
+  - Read-only check: six September drafts remain, each posted; no orphaned lines; six posted journals in the ledger.
+- **Build of the next release** (`f330d32a4a65-c5601b2ae070`) started 13:07Z: R1, S1, WI-OI-120v, S16, the Journal
+  Approver role and the walk-through fix.
+- **Release `f330d32a4a65-c5601b2ae070` built**, all nine images.
+  - **Disk:** the disk guard refused the module images at 57 GB free (minimum 60).
+  - **Owner, 2026-10-06:** "remove 7485aec, and if still short use 50 GB for this build". The nine `7485aec`
+    images were removed (no container used them; `b7f8a53`, running, stays as the rollback). Module images then
+    passed the guard. Workforce, Geospatial and module host ran with `GIGALIBS_MIN_FREE_GB=50`.
+  - **Content check:** each image holds this release's code (`holdsPermission` in Workforce and Geospatial,
+    `TENANT_ADMIN_ONLY` in the control plane, `shippedRecordRules` in the module host, `holdsAnyPermission` in the
+    web).
+  - Backup `gigalibs_backup_20261006_133904Z` of the running `b7f8a53` taken; deploy files name `f330d32`. Handed to
+    the owner.
+
+### f330d32 deploy, walk-throughs and journey (2026-10-06)
+
+- **Deployed by the owner** at 14:01–14:02Z (backup `gigalibs_backup_20261006_133904Z` first).
+  - Migrations: nothing pending.
+  - All nine services healthy on `f330d32a4a65-c5601b2ae070`; `/api/health/ready` 200; Connector Hub refuses
+    unsigned requests (401).
+  - Read-only check: no error lines in the new logs.
+- **Ledger walk-through on f330d32:** passes in 13 s, with the S1 field rules now enforced by the server.
+- **Tenant-to-value journey (owner's password, environment only).** The first two runs found two faults in the
+  journey itself, not the product:
+  - **Invitations:** it chose the invitation role by label using the role code (`MANAGER`). Since WI-OI-120n the
+    labels are words ("Manager"), so no invitation was sent, and every later people step failed for want of members.
+    Fixed: it chooses by the option's value, the code.
+  - **Acceptance:** it read the address straight after accepting, while the person was being taken into the
+    workspace (WI-OI-120n), and then waited for a chooser button that never appears. The screenshot shows the
+    invitee in the workspace as Manager. Fixed: it waits for whichever happens first.
+  - **Remaining product findings,** each owned by a planned card:
+    - `/wfo/workers` answers 404 (U20a, WI-OI-120u);
+    - no maintenance request screen (M-CM1, WI-OI-120t);
+    - the auditor's work-order screen calls Geospatial and is refused without its entitlement (T3);
+    - the administrator, not being a Workforce person, is refused the timesheet preview (an expected answer for the
+      recorder).
+
+### WI-OI-120w (R2) slice 1: the model and the move (2026-10-06, in progress)
+
+- **Migration `20261006000000_member_role_assignments`:**
+  - creates `member_role_assignments` (role at a scope; `MEMBER`, `WORKSPACE`, `UNITS` or `PLACES`; granted and
+    revoked, never edited; checks on scope, reason and revocation; one live assignment of a role at a scope);
+  - adds `custom_roles_tenantId_id_key` for the same-tenant foreign key;
+  - **the move:** each `customRoleId` becomes one `MEMBER` assignment, with an id derived from the membership and
+    the role.
+  - Applied on the isolated `r2_proof` database after every earlier migration, with seeded members: three
+    assignments for the three members with a custom role, none for the member without, and the second workspace
+    kept apart.
+- **Readers moved to assignments:**
+  - the session (`auth.service.ts`: permissions and role names);
+  - the control-plane guard (`rbac.service.ts`);
+  - SCIM's actor check.
+  All three go through `memberScopeRoles` (`packages/rbac-nest`), which reads only live `MEMBER` assignments and
+  tenant codes.
+- **Writer:** the member update (Settings → Team) revokes the old assignment, with who and why, grants the new one,
+  and keeps `customRoleId` in step, so the previous release reads the same role on rollback.
+- **Reconciliation report** (`scripts/verify-r2-assignments.mjs`, read-only): on `r2_proof`, 4 members, 3 with a
+  custom role, 0 differences. A deliberately revoked assignment shows as 1 difference, then 0 once restored.
+- **Tests:**
+  - unit: session roles from several assignments; mocks updated (`session-permissions.spec.ts`,
+    `scim.controller.test.ts`). Packages and control plane: 298 passed.
+  - real PostgreSQL: `member-role-assignments.integration.test.ts` (4: grant, change, clear with history, a deleted
+    role removes its assignments);
+  - the SCIM integration suite on its disposable database with the migration applied (7 of 7, through the guard
+    that now reads assignments).
+- **Journey, made reliable (owner's password, environment only; each run creates its own workspace).**
+  Further journey faults, found by reading each failing step's screenshot and call log:
+  - **Accepting an invitation:** the chooser shows the workspace for a moment while the person is taken in; the
+    journey now waits for the move.
+  - **A pinned form:** "the first form not yet seen" moved to another form; the opened form is now pinned with its
+    own marker.
+  - **Styled checkboxes:** they are buttons with the checkbox role beside a hidden input that takes no clicks; they
+    are now found by role.
+  - **Parent types:** a unit type's parents are checkboxes labelled with the parent's code (an Area under `SITE`).
+  - **The primary tree** is created in one step with no form.
+  - **A reload returns Settings to its first tab;** the journey now looks again on the right tab before calling
+    data lost.
+- **Run `wt03e0` on f330d32:** 71 steps, 7 blockers (from 15). Every blocker is a known product gap owned by a card:
+  - `/wfo/workers` 404, and so clock-in, the week and its approval (U20a, M-WF1, M-WF2);
+  - no maintenance request screen, no technician labour, no supervisor close (M-CM1).
+  New product findings:
+  - **Structure:** the draft's Submit answers 400 "Request validation failed" (the screen does not ask for what the
+    server requires);
+  - **Settings:** a reload loses the tab (UX).
+- **R2 slice 1 checks:**
+  - `MemberRoleAssignment` classified as a core model (`config/package-layers.json`); it was refused as
+    unclassified by the layer audit;
+  - the privacy inventory lists it as `EXPORT`;
+  - `pnpm verify` passes (one known drift).

@@ -24,7 +24,7 @@ import type {
 import { isTenantPermissionCode } from '@gigalibs/contracts';
 import { decrypt, encrypt, parseAes256KeyRing, requireAes256KeyVersion } from '@gigalibs/crypto';
 import { type Prisma, prisma } from '@gigalibs/db';
-import { resolveBaseRolePermissions } from '@gigalibs/rbac-nest';
+import { memberScopeRoles, resolveBaseRolePermissions } from '@gigalibs/rbac-nest';
 import {
   BadRequestException,
   ConflictException,
@@ -435,7 +435,6 @@ export class AuthService {
     const membership = tenantId
       ? await prisma.tenantMember.findUnique({
           where: { userId_tenantId: { userId, tenantId } },
-          include: { customRole: { select: { name: true, permissions: true } } },
         })
       : null;
 
@@ -443,9 +442,9 @@ export class AuthService {
       throw new ForbiddenException('Tenant membership is inactive or has been revoked');
     }
 
-    const customPermissions = Array.isArray(membership?.customRole?.permissions)
-      ? membership.customRole.permissions.filter(isTenantPermissionCode)
-      : [];
+    // WI-OI-120w (R2 slice 1, ADR-0034): the member's roles come from their live role assignments.
+    const assigned = membership && tenantId ? await memberScopeRoles(prisma, tenantId, userId) : { names: [], permissions: [] };
+    const customPermissions = assigned.permissions;
     const directPermissions = (membership?.permissions ?? []).filter(isTenantPermissionCode);
     const rolePermissions = membership ? resolveBaseRolePermissions([membership.role]) : [];
     const recoveryCodesRemaining = session.user.totpCredential?.verifiedAt
@@ -463,9 +462,7 @@ export class AuthService {
       })
     ).map((assignment) => assignment.role);
     const roles = membership
-      ? [membership.role, membership.customRole?.name].filter(
-          (role): role is string => typeof role === 'string' && role.length > 0,
-        )
+      ? [membership.role, ...assigned.names].filter((role): role is string => typeof role === 'string' && role.length > 0)
       : [];
     const { orgScope, organizationScope } = await this.resolveOrganizationScope({
       tenantId,

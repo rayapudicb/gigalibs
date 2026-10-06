@@ -131,6 +131,7 @@
       "OrgHierarchyClosure",
       "OrgUnitPlaceLink",
       "OrgScopeGrant",
+      "MemberRoleAssignment",
       "OrgIdempotencyRecord",
       "TenantInvite",
       "AuditLog",

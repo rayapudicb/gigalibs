@@ -92,7 +92,9 @@ async function labelOf(control: Locator): Promise<string> {
  */
 async function fill(form: Locator, values: ReadonlyArray<[RegExp, string]>): Promise<string[]> {
   const filled: string[] = [];
-  const boxes = form.locator('input[type=checkbox]');
+  // By role, as a person (or a screen reader) finds them: styled checkboxes are buttons with role=checkbox beside a
+  // hidden native input that takes no clicks; ticking that input timed out (2026-10-06, Unit types).
+  const boxes = form.getByRole('checkbox');
   for (let index = 0; index < (await boxes.count()); index += 1) {
     const box = boxes.nth(index);
     if (!(await box.isVisible()) || !(await box.isEnabled())) continue;
@@ -152,11 +154,21 @@ async function markForms(page: Page): Promise<void> {
   await page.evaluate(() => document.querySelectorAll('form, [role=dialog]').forEach((element) => element.setAttribute('data-journey-seen', '1')));
 }
 
-/** The form a button just opened: a new dialog or form, else the last visible one. */
+/**
+ * The form a button just opened: a new dialog or form, else the last visible one. It is pinned with its own marker:
+ * a query for "the first unseen form" can move to another form that appears later (2026-10-06, Unit types).
+ */
 async function openedForm(page: Page): Promise<Locator> {
   const fresh = page.locator('[role=dialog]:not([data-journey-seen]), form:not([data-journey-seen])').filter({ visible: true });
-  if (await fresh.count()) return fresh.first();
-  return lastForm(page);
+  return pin(page, (await fresh.count()) ? fresh.first() : await lastForm(page));
+}
+
+let pinned = 0;
+async function pin(page: Page, form: Locator): Promise<Locator> {
+  pinned += 1;
+  const id = `form-${pinned}`;
+  await form.evaluate((element, value) => element.setAttribute('data-journey-form', value), id);
+  return page.locator(`[data-journey-form="${id}"]`);
 }
 
 /**
@@ -183,10 +195,18 @@ async function submit(page: Page, form: Locator, recorder: JourneyRecorder, butt
 
 /** Opens a create form with the first matching button, fills it and submits it; throws with the screen's message on failure. */
 async function create(page: Page, recorder: JourneyRecorder, opener: RegExp, values: ReadonlyArray<[RegExp, string]>, button?: RegExp): Promise<string> {
-  await markForms(page);
-  if (!(await press(page, opener))) throw new Error(`No "${opener.source}" control on ${new URL(page.url()).pathname}`);
-  await settle(page);
-  const form = await openedForm(page);
+  // A page with nothing in it yet may show its form already (Unit types does); pressing the opener would close it.
+  // Use the open form when it has the first field; whether it is open depends on load timing (2026-10-06).
+  const alreadyOpen = page.locator('form').filter({ visible: true }).filter({ has: page.getByLabel(values[0]![0]) });
+  let form: Locator;
+  if (values.length > 0 && (await alreadyOpen.count()) === 1) {
+    form = await pin(page, alreadyOpen.first());
+  } else {
+    await markForms(page);
+    if (!(await press(page, opener))) throw new Error(`No "${opener.source}" control on ${new URL(page.url()).pathname}`);
+    await settle(page);
+    form = await openedForm(page);
+  }
   const filled = await fill(form, values);
   const before = recorder.failedWrites(page).length;
   const error = await submit(page, form, recorder, button);
@@ -197,10 +217,17 @@ async function create(page: Page, recorder: JourneyRecorder, opener: RegExp, val
 }
 
 /** After a reload, is this text still on the page? A save that does not survive a reload is a data-flow finding. */
-async function survivesReload(page: Page, recorder: JourneyRecorder, text: string, what: string): Promise<boolean> {
+async function survivesReload(page: Page, recorder: JourneyRecorder, text: string, what: string, reopen?: () => Promise<void>): Promise<boolean> {
   await page.reload();
   await settle(page);
-  const found = (await page.getByText(text, { exact: false }).count()) > 0;
+  let found = (await page.getByText(text, { exact: false }).count()) > 0;
+  if (!found && reopen) {
+    // A reload that returns to the first tab is a usability finding, not lost data: go back and look again.
+    recorder.add('UX', 'A reload loses the tab you were on', `after reloading ${new URL(page.url()).pathname} the page opened on its first tab`, page);
+    await reopen();
+    await settle(page);
+    found = (await page.getByText(text, { exact: false }).count()) > 0;
+  }
   if (!found) recorder.add('DATA FLOW', `${what} is not shown after a reload`, `looked for "${text}"`, page);
   return found;
 }
@@ -300,7 +327,8 @@ test('a new customer from sign-up to maintenance work, as five people', async ({
       await settle(admin);
       const notes: string[] = [];
       for (const [code, name] of [['SITE', 'Site'], ['AREA', 'Area']]) {
-        notes.push(await create(admin, recorder, /add unit type/i, [[/code/i, code!], [/^name|name$/i, name!], [/description/i, `${name} (journey ${RUN})`], [/top|root/i, code === 'SITE' ? 'check' : ''], [/under|parent/i, code === 'AREA' ? 'Site' : '']]));
+        // A Site sits at the top; an Area sits under a Site, a checkbox labelled with the parent type's code.
+        notes.push(await create(admin, recorder, /add unit type/i, [[/code/i, code!], [/^name|name$/i, name!], [/description/i, `${name} (journey ${RUN})`], [/top|root/i, code === 'SITE' ? 'check' : ''], [/^SITE$/, code === 'AREA' ? 'check' : '']]));
       }
       return notes.join(' · ');
     });
@@ -315,7 +343,11 @@ test('a new customer from sign-up to maintenance work, as five people', async ({
       ] as const) {
         notes.push(await create(admin, recorder, /add unit/i, [[/type/i, type], [/code/i, code], [/^name|name$/i, name], ...(parent ? ([[/parent|under/i, parent]] as [RegExp, string][]) : [])]));
       }
-      await survivesReload(admin, recorder, `North plant ${RUN}`, 'A new organization unit');
+      await survivesReload(admin, recorder, `North plant ${RUN}`, 'A new organization unit', async () => {
+        await press(admin, /organization/i);
+        await settle(admin);
+        await press(admin, /^units$/i);
+      });
       return notes.join(' · ');
     });
     await recorder.do(S2, 'Structure: the primary tree, a draft and placing units', admin, async () => {
@@ -329,10 +361,15 @@ test('a new customer from sign-up to maintenance work, as five people', async ({
       await markForms(admin);
       if (await press(admin, /create the primary tree/i)) {
         await settle(admin);
-        const form = await openedForm(admin);
-        await fill(form, [[/code/i, `MAIN${RUN}`], [/name/i, `Main structure ${RUN}`]]);
-        const error = await submit(admin, form, recorder, /^create$/i);
-        notes.push(error ? `tree refused: ${error}` : 'tree created');
+        // The primary tree may be created in one step (no form) or through a short form.
+        if (await admin.locator('[role=dialog] form, [role=dialog], form').filter({ visible: true }).count()) {
+          const form = await openedForm(admin);
+          await fill(form, [[/code/i, `MAIN${RUN}`], [/name/i, `Main structure ${RUN}`]]);
+          const error = await submit(admin, form, recorder, /^create$/i);
+          notes.push(error ? `tree refused: ${error}` : 'tree created');
+        } else {
+          notes.push('tree created in one step');
+        }
       }
       if (await press(admin, /start a draft/i)) {
         await settle(admin);
@@ -366,7 +403,8 @@ test('a new customer from sign-up to maintenance work, as five people', async ({
         await settle(admin);
         const form = admin.locator('form').filter({ has: admin.getByRole('button', { name: /create invitation/i }) }).first();
         await form.getByLabel(/email/i).fill(persona.email);
-        await form.getByLabel(/role/i).selectOption({ label: persona.role });
+        // The option's value is the role code; its label is the role's name in words (WI-OI-120n).
+        await form.getByLabel(/role/i).selectOption(persona.role);
         const error = await submit(admin, form, recorder, /create invitation/i);
         if (error) throw new Error(error);
         const link = admin.getByLabel('One-time invitation link');
@@ -394,11 +432,17 @@ test('a new customer from sign-up to maintenance work, as five people', async ({
           await token.fill(new URLSearchParams(link.hash.slice(1)).get('invite') ?? link.searchParams.get('invite') ?? '');
         }
         if (!(await press(page, /accept|join/i))) throw new Error('No accept button');
-        await settle(page);
-        if (new URL(page.url()).pathname.startsWith('/select-tenant')) {
+        // Accepting takes the person into the workspace (WI-OI-120n); wait for that, or for the chooser to offer the
+        // workspace, before deciding which happened. Reading the address at once raced the move (2026-10-06).
+        // The chooser can show the workspace for a moment while the move happens, so only a person still there after
+        // the wait is "not taken into the workspace".
+        const entered = await page.waitForURL((url) => !url.pathname.startsWith('/select-tenant'), { timeout: 15000 }).then(
+          () => true,
+          () => false,
+        );
+        if (!entered) {
           recorder.add('UX', 'After accepting, the person is not taken into the workspace', 'they must find and click the workspace on the chooser', page);
-          const card = page.getByRole('button', { name: new RegExp(WORKSPACE) }).or(page.getByRole('link', { name: new RegExp(WORKSPACE) })).first();
-          await card.click();
+          await page.getByRole('button', { name: new RegExp(WORKSPACE) }).or(page.getByRole('link', { name: new RegExp(WORKSPACE) })).first().click();
         }
         await page.waitForURL((url) => !url.pathname.startsWith('/select-tenant'), { timeout: 20000 });
         await settle(page);

@@ -9,6 +9,7 @@
 
 export * from './rbac.module.js';
 export * from './rbac.service.js';
+export * from './member-role-assignments.js';
 export * from './guards/rbac.guard.js';
 export * from './decorators/require-permissions.decorator.js';
 export * from './decorators/require-roles.decorator.js';

@@ -10,7 +10,7 @@ import { prisma, type MemberRole, type Prisma, UserStatus } from '@gigalibs/db';
 import { AuditService } from '@gigalibs/audit-nest';
 import { isTenantPermissionCode, TenantMemberRoleSchema } from '@gigalibs/contracts';
 import { PermissionEvaluator } from '@gigalibs/rbac-core';
-import { resolveBaseRolePermissions } from '@gigalibs/rbac-nest';
+import { memberScopeRoles, resolveBaseRolePermissions } from '@gigalibs/rbac-nest';
 import { assertTenantAdminAuthority, assertTenantAdministratorRetained } from '@gigalibs/tenancy-nest';
 import { parseScim, scimMembershipChanges, ScimPatchSchema, ScimUserCreateSchema } from './scim.validation.js';
 export type { ScimPatchInput, ScimUserCreateInput } from './scim.validation.js';
@@ -373,10 +373,11 @@ export class ScimService {
         // Recheck authority after acquiring the lock; another administrator may have revoked the actor meanwhile.
         const actor = await tx.tenantMember.findUnique({
           where: { userId_tenantId: { userId: actorId, tenantId } },
-          include: { user: { select: { status: true } }, customRole: { select: { permissions: true } } },
+          include: { user: { select: { status: true } } },
         });
         if (!actor || actor.status !== 'ACTIVE' || actor.user.status !== 'ACTIVE') throw new ForbiddenException('SCIM actor membership is inactive.');
-        const custom = Array.isArray(actor.customRole?.permissions) ? actor.customRole.permissions.filter(isTenantPermissionCode) : [];
+        // WI-OI-120w (R2 slice 1): the actor's roles come from their live role assignments.
+        const custom = (await memberScopeRoles(tx, tenantId, actorId)).permissions;
         const permissions = [...resolveBaseRolePermissions([actor.role]), ...actor.permissions.filter(isTenantPermissionCode), ...custom];
         if (!PermissionEvaluator.hasAllPermissions(permissions, [permission], { tenantId, userId: actorId })) throw new ForbiddenException('Insufficient SCIM permission.');
         return effect(tx);

@@ -19,6 +19,8 @@ vi.mock('@gigalibs/db', () => ({
       user: { status: 'ACTIVE' },
       tenant: { id: state.tenant, slug: 'scim-test-a-slug', status: 'ACTIVE', features: [], plan: 'ENTERPRISE' },
     }) },
+    // WI-OI-120w (R2): roles come from role assignments; these tests hold none.
+    memberRoleAssignment: { findMany: async () => [] },
   },
 }));
 

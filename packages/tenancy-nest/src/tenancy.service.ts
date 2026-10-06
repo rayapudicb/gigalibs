@@ -1057,6 +1057,21 @@ export class TenancyService {
         if (changed.count !== 1) {
           throw new ConflictException('Tenant member changed; reload before retrying');
         }
+        // WI-OI-120w (R2 slice 1, ADR-0034): the custom role is held as a role assignment at the member's own scope.
+        // The old assignment is revoked (never edited) and the new one granted; `customRoleId` stays in step so an
+        // earlier release still reads the same role, until a later card drops the column.
+        if (nextCustomRoleId !== member.customRoleId) {
+          const reason = (dto.reason?.trim().length ?? 0) >= 3 ? dto.reason!.trim().slice(0, 500) : 'Changed in Settings → Team';
+          await transaction.memberRoleAssignment.updateMany({
+            where: { tenantId, userId: member.userId, scope: 'MEMBER', revokedAt: null },
+            data: { revokedAt: new Date(), revokedById: changedById, revokeReason: reason },
+          });
+          if (nextCustomRoleId) {
+            await transaction.memberRoleAssignment.create({
+              data: { tenantId, userId: member.userId, customRoleId: nextCustomRoleId, scope: 'MEMBER', reason, grantedById: changedById },
+            });
+          }
+        }
         const updated = await transaction.tenantMember.findUniqueOrThrow({
           where: { id: member.id },
           select: {

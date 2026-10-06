@@ -1064,6 +1064,8 @@ model TenantMember {
   spatialScopePlaceIds String[] @default([])
   // Organization scope grants (WI-OI-109, ADR-0018): this member's units, each with everything below it.
   orgScopeGrants       OrgScopeGrant[]
+  // WI-OI-120w (R2, ADR-0034): the roles this member holds, each at a scope.
+  roleAssignments      MemberRoleAssignment[]
 
   @@unique([userId, tenantId])
   @@index([tenantId])
@@ -2769,13 +2771,47 @@ model CustomRole {
   isSystem    Boolean        @default(false)
   permissions Json // Validated array of tenant-scoped permission codes
   members     TenantMember[]
+  assignments MemberRoleAssignment[]
 
   createdAt DateTime @default(now()) @db.Timestamptz(3)
   updatedAt DateTime @updatedAt @db.Timestamptz(3)
 
   @@unique([tenantId, name])
+  @@unique([tenantId, id], map: "custom_roles_tenantId_id_key")
   @@index([tenantId])
   @@map("custom_roles")
+}
+
+/// WI-OI-120w (R2, ADR-0034): a role a member holds at a scope. `MEMBER` is the member's own scope as today;
+/// `WORKSPACE`, `UNITS` (with everything below each) and `PLACES` (with everything inside each) are explicit.
+enum MemberRoleScope {
+  MEMBER
+  WORKSPACE
+  UNITS
+  PLACES
+}
+
+/// Granted and revoked, never edited. Access is decided per assignment, never across them (ADR-0034 §1).
+model MemberRoleAssignment {
+  id           String          @id @default(cuid())
+  tenantId     String
+  userId       String
+  member       TenantMember    @relation(fields: [userId, tenantId], references: [userId, tenantId], onDelete: Cascade, map: "member_role_assignments_member_fkey")
+  customRoleId String
+  customRole   CustomRole      @relation(fields: [tenantId, customRoleId], references: [tenantId, id], onDelete: Cascade, map: "member_role_assignments_role_fkey")
+  scope        MemberRoleScope
+  unitIds      String[]        @default([])
+  placeIds     String[]        @default([])
+  reason       String          @db.VarChar(500)
+  grantedById  String
+  createdAt    DateTime        @default(now()) @db.Timestamptz(3)
+  revokedAt    DateTime?       @db.Timestamptz(3)
+  revokedById  String?
+  revokeReason String?         @db.VarChar(500)
+
+  @@index([tenantId, userId], map: "member_role_assignments_member_idx")
+  @@index([tenantId, customRoleId], map: "member_role_assignments_role_idx")
+  @@map("member_role_assignments")
 }
 
 model UserGroup {

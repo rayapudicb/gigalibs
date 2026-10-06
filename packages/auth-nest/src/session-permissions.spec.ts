@@ -8,6 +8,8 @@ const prismaMock = vi.hoisted(() => ({
   tenantMember: { findUnique: vi.fn() },
   mfaRecoveryCode: { count: vi.fn() },
   platformRoleAssignment: { findMany: vi.fn() },
+  // WI-OI-120w (R2): custom roles reach the session through role assignments at the member's own scope.
+  memberRoleAssignment: { findMany: vi.fn() },
   // WI-OI-109e1: no primary tree in force unless a test says otherwise, so department scope applies.
   $queryRaw: vi.fn(async (): Promise<Array<Record<string, unknown>>> => []),
 }));
@@ -57,6 +59,7 @@ describe('session permissions for Workforce access', () => {
     vi.stubEnv('CONTROL_PAYLOAD_ENCRYPTION_KEY', randomBytes(32).toString('base64'));
     prismaMock.session.findFirst.mockResolvedValue(activeSession());
     prismaMock.platformRoleAssignment.findMany.mockResolvedValue([]);
+    prismaMock.memberRoleAssignment.findMany.mockResolvedValue([]);
     prismaMock.mfaRecoveryCode.count.mockResolvedValue(0);
   });
 
@@ -107,8 +110,10 @@ describe('session permissions for Workforce access', () => {
     prismaMock.tenantMember.findUnique.mockResolvedValue({
       ...membership('MEMBER'),
       permissions: ['analytics:export', 'analytics:charts:*', 'platform:tenants:write'],
-      customRole: { permissions: ['analytics:charts:write', 'analytics:models:publish', 'platform:admin', 'Analytics:read'] },
     });
+    prismaMock.memberRoleAssignment.findMany.mockResolvedValue([
+      { customRole: { name: 'Charts', permissions: ['analytics:charts:write', 'analytics:models:publish', 'platform:admin', 'Analytics:read'] } },
+    ]);
     const context = await new AuthService().getSessionContext('user-1', 'session-1', tenantId);
     expect(context.permissions).toEqual(
       expect.arrayContaining(['analytics:charts:write', 'analytics:models:publish', 'analytics:export']),
@@ -127,6 +132,7 @@ describe('session spatial scope', () => {
     vi.stubEnv('CONTROL_PAYLOAD_KEY_VERSION', 'v1');
     vi.stubEnv('CONTROL_PAYLOAD_ENCRYPTION_KEY', randomBytes(32).toString('base64'));
     prismaMock.platformRoleAssignment.findMany.mockResolvedValue([]);
+    prismaMock.memberRoleAssignment.findMany.mockResolvedValue([]);
     prismaMock.mfaRecoveryCode.count.mockResolvedValue(0);
   });
 
@@ -186,6 +192,7 @@ describe('subject context for scheduled work', () => {
     prismaMock.user.findUnique.mockResolvedValue(session.user);
     prismaMock.tenant.findUnique.mockResolvedValue(session.tenant);
     prismaMock.platformRoleAssignment.findMany.mockResolvedValue([]);
+    prismaMock.memberRoleAssignment.findMany.mockResolvedValue([]);
     prismaMock.mfaRecoveryCode.count.mockResolvedValue(0);
   });
   afterEach(() => {
@@ -194,11 +201,10 @@ describe('subject context for scheduled work', () => {
   });
 
   it('resolves the owner membership, custom role and scopes, with a fresh auth version and the job context id', async () => {
-    prismaMock.tenantMember.findUnique.mockResolvedValue({
-      ...membership('MEMBER'),
-      permissions: [],
-      customRole: { name: 'Analytics analyst', permissions: ['analytics:reports:write'] },
-    });
+    prismaMock.tenantMember.findUnique.mockResolvedValue({ ...membership('MEMBER'), permissions: [] });
+    prismaMock.memberRoleAssignment.findMany.mockResolvedValue([
+      { customRole: { name: 'Analytics analyst', permissions: ['analytics:reports:write'] } },
+    ]);
     const before = Math.floor(Date.now() / 1000);
     const context = await new AuthService().getSubjectContext('user-1', tenantId, 'job:abc');
     expect(context.permissions).toContain('analytics:reports:write');
@@ -236,5 +242,38 @@ describe('subject context for scheduled work', () => {
     prismaMock.user.findUnique.mockResolvedValue(activeSession().user);
     prismaMock.tenant.findUnique.mockResolvedValue({ ...activeSession().tenant, status: 'SUSPENDED' });
     await expect(new AuthService().getSubjectContext('user-1', tenantId, 'job:3')).rejects.toThrow('tenant is not active');
+  });
+});
+
+// WI-OI-120w (R2 slice 1): a member holds several roles at their own scope; each one's permissions reach the session.
+describe('session roles from role assignments', () => {
+  beforeEach(() => {
+    vi.stubEnv('JWT_ACCESS_SECRET', 'x'.repeat(48));
+    vi.stubEnv('JWT_ACCESS_EXPIRES_IN', '15m');
+    vi.stubEnv('JWT_REFRESH_EXPIRES_IN', '30d');
+    vi.stubEnv('CONTROL_PAYLOAD_KEY_VERSION', 'v1');
+    vi.stubEnv('CONTROL_PAYLOAD_ENCRYPTION_KEY', randomBytes(32).toString('base64'));
+    prismaMock.session.findFirst.mockResolvedValue(activeSession());
+    prismaMock.platformRoleAssignment.findMany.mockResolvedValue([]);
+    prismaMock.mfaRecoveryCode.count.mockResolvedValue(0);
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.clearAllMocks();
+  });
+
+  it('unites the roles a member holds at their own scope, asking only for live ones', async () => {
+    prismaMock.tenantMember.findUnique.mockResolvedValue({ ...membership('MEMBER'), permissions: [] });
+    prismaMock.memberRoleAssignment.findMany.mockResolvedValue([
+      { customRole: { name: 'Maintenance technician', permissions: ['cmms:read', 'cmms.work-orders.read'] } },
+      { customRole: { name: 'Workforce member', permissions: ['workforce:read', 'workforce.time.punch'] } },
+    ]);
+    const context = await new AuthService().getSessionContext('user-1', 'session-1', tenantId);
+    expect(context.permissions).toEqual(expect.arrayContaining(['cmms.work-orders.read', 'workforce.time.punch']));
+    expect(context.roles).toEqual(['MEMBER', 'Maintenance technician', 'Workforce member']);
+    expect(prismaMock.memberRoleAssignment.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { tenantId, userId: 'user-1', revokedAt: null, scope: 'MEMBER' } }),
+    );
   });
 });
