@@ -1,6 +1,8 @@
 import { createHash, randomBytes } from 'node:crypto';
 import type {
   AcceptTenantInviteDto,
+  AssignMemberRoleDto,
+  RevokeMemberRoleDto,
   ChangeTenantStatusDto,
   CreateCustomRoleDto,
   CreateDepartmentDto,
@@ -498,8 +500,133 @@ export class TenancyService {
         customRole: {
           select: { id: true, name: true, color: true, permissions: true },
         },
+        // WI-OI-120w (R2 slice 2a): the roles the member holds, oldest first.
+        roleAssignments: {
+          where: { revokedAt: null },
+          orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+          select: {
+            id: true,
+            customRoleId: true,
+            scope: true,
+            reason: true,
+            grantedById: true,
+            createdAt: true,
+            customRole: { select: { name: true, color: true } },
+          },
+        },
       },
     });
+  }
+
+  /**
+   * WI-OI-120w (R2 slice 2a, ADR-0034): gives a member one more role, held at their own scope. A role of another
+   * workspace, a role already held, and a role given to oneself by anyone but a Tenant Admin are refused. The reason is
+   * kept on the assignment and in the audit log; the member's next request has the role.
+   */
+  async assignMemberRole(tenantId: string, memberId: string, actorId: string, dto: AssignMemberRoleDto) {
+    return prisma.$transaction(
+      async (transaction) => {
+        await transaction.$queryRaw`SELECT "id" FROM "tenants" WHERE "id" = ${tenantId} FOR UPDATE`;
+        const member = await this.memberForRoleChange(transaction, tenantId, memberId, actorId);
+        const role = await transaction.customRole.findFirst({ where: { id: dto.customRoleId, tenantId }, select: { id: true, name: true } });
+        if (!role) throw new BadRequestException({ code: 'ROLE_NOT_IN_WORKSPACE', message: 'That role does not belong to this workspace.' });
+        const held = await transaction.memberRoleAssignment.findFirst({
+          where: { tenantId, userId: member.userId, customRoleId: role.id, scope: 'MEMBER', revokedAt: null },
+          select: { id: true },
+        });
+        if (held) throw new ConflictException({ code: 'ROLE_ALREADY_HELD', message: `${role.name} is already held by this member.` });
+        const reason = characterReason(dto.reason);
+        const assignment = await transaction.memberRoleAssignment.create({
+          data: { tenantId, userId: member.userId, customRoleId: role.id, scope: 'MEMBER', reason, grantedById: actorId },
+          select: { id: true, customRoleId: true, scope: true, reason: true, grantedById: true, createdAt: true },
+        });
+        await this.followOldestRole(transaction, tenantId, member, actorId, reason);
+        await transaction.auditLog.create({
+          data: {
+            action: 'PERMISSION_CHANGE',
+            resource: 'member_role_assignment',
+            resourceId: assignment.id,
+            userId: actorId,
+            tenantId,
+            after: { memberId: member.id, customRoleId: role.id, roleName: role.name, scope: 'MEMBER' },
+            metadata: { reason },
+          },
+        });
+        return { ...assignment, roleName: role.name, createdAt: assignment.createdAt.toISOString() };
+      },
+      { isolationLevel: 'Serializable' },
+    );
+  }
+
+  /** WI-OI-120w (R2 slice 2a): takes one role away from a member; their other roles stay. The history is kept. */
+  async revokeMemberRole(tenantId: string, memberId: string, assignmentId: string, actorId: string, dto: RevokeMemberRoleDto) {
+    return prisma.$transaction(
+      async (transaction) => {
+        await transaction.$queryRaw`SELECT "id" FROM "tenants" WHERE "id" = ${tenantId} FOR UPDATE`;
+        const member = await this.memberForRoleChange(transaction, tenantId, memberId, actorId);
+        const assignment = await transaction.memberRoleAssignment.findFirst({
+          where: { id: assignmentId, tenantId, userId: member.userId, revokedAt: null },
+          select: { id: true, customRoleId: true, scope: true, customRole: { select: { name: true } } },
+        });
+        if (!assignment) throw new NotFoundException({ code: 'ROLE_ASSIGNMENT_NOT_FOUND', message: 'This member does not hold that role.' });
+        const reason = characterReason(dto.reason);
+        await transaction.memberRoleAssignment.update({
+          where: { id: assignment.id },
+          data: { revokedAt: new Date(), revokedById: actorId, revokeReason: reason },
+        });
+        await this.followOldestRole(transaction, tenantId, member, actorId, reason);
+        await transaction.auditLog.create({
+          data: {
+            action: 'PERMISSION_CHANGE',
+            resource: 'member_role_assignment',
+            resourceId: assignment.id,
+            userId: actorId,
+            tenantId,
+            before: { memberId: member.id, customRoleId: assignment.customRoleId, roleName: assignment.customRole.name, scope: assignment.scope },
+            metadata: { reason },
+          },
+        });
+        return { id: assignment.id, revoked: true };
+      },
+      { isolationLevel: 'Serializable' },
+    );
+  }
+
+  /** The member whose roles change; giving oneself a role is refused unless the actor is a Tenant Admin. */
+  private async memberForRoleChange(transaction: Prisma.TransactionClient, tenantId: string, memberId: string, actorId: string) {
+    const member = await transaction.tenantMember.findFirst({
+      where: { id: memberId, tenantId },
+      select: { id: true, userId: true, customRoleId: true },
+    });
+    if (!member) throw new NotFoundException('Tenant member was not found');
+    if (member.userId === actorId) {
+      const actor = await transaction.tenantMember.findUnique({ where: { userId_tenantId: { userId: actorId, tenantId } }, select: { role: true, status: true } });
+      if (!(actor?.status === 'ACTIVE' && (actor.role === 'TENANT_ADMIN' || actor.role === 'SUPER_ADMIN')))
+        throw new ForbiddenException({ code: 'ROLE_SELF_ASSIGNMENT', message: 'You cannot change your own roles; ask another administrator.' });
+    }
+    return member;
+  }
+
+  /**
+   * Keeps `customRoleId` on the member's oldest live role, for display and for an earlier release. The trigger then
+   * finds the assignments already in step, and records this actor and reason if it acts.
+   */
+  private async followOldestRole(
+    transaction: Prisma.TransactionClient,
+    tenantId: string,
+    member: { id: string; userId: string; customRoleId: string | null },
+    actorId: string,
+    reason: string,
+  ) {
+    const oldest = await transaction.memberRoleAssignment.findFirst({
+      where: { tenantId, userId: member.userId, scope: 'MEMBER', revokedAt: null },
+      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+      select: { customRoleId: true },
+    });
+    const next = oldest?.customRoleId ?? null;
+    if (next === member.customRoleId) return;
+    await transaction.$queryRaw`SELECT set_config('app.role_change_actor', ${actorId}, true), set_config('app.role_change_reason', ${reason}, true)`;
+    await transaction.tenantMember.update({ where: { id: member.id }, data: { customRoleId: next } });
   }
 
   async listCustomRoles(tenantId: string) {
@@ -1058,8 +1185,7 @@ export class TenancyService {
         // release writes; this release tells it who changed the role and why (transaction-local settings). The reason
         // is counted in characters, as the database counts it.
         if (nextCustomRoleId !== member.customRoleId) {
-          const characters = [...(dto.reason ?? '').trim()];
-          const reason = characters.length >= 3 ? characters.slice(0, 500).join('') : 'Changed in Settings → Team';
+          const reason = characterReason(dto.reason);
           await transaction.$queryRaw`SELECT set_config('app.role_change_actor', ${changedById}, true), set_config('app.role_change_reason', ${reason}, true)`;
         }
 
@@ -1526,4 +1652,10 @@ async function assertDepartmentsEditable(db: Pick<typeof prisma, '$queryRaw'>, t
     throw new ConflictException(
       "Departments are read-only: this workspace's organization is managed in Settings › Organization (units and access).",
     );
+}
+
+/** A reason counted in characters, as the database counts it (WI-OI-120w review, L3). */
+function characterReason(value: string | undefined): string {
+  const characters = [...(value ?? '').trim()];
+  return characters.length >= 3 ? characters.slice(0, 500).join('') : 'Changed in Settings → Team';
 }

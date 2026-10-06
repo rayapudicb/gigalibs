@@ -39,6 +39,8 @@ interface Member {
   updatedAt: string;
   user: { id: string; email: string; name: string | null; status: string };
   customRole: Pick<CustomRole, 'id' | 'name' | 'color' | 'permissions'> | null;
+  /** WI-OI-120w (R2 slice 2a): the roles the member holds, oldest first. */
+  roleAssignments?: Array<{ id: string; customRoleId: string; customRole: { name: string; color: string } }>;
 }
 
 interface CustomRole {
@@ -124,22 +126,20 @@ interface MemberRowProps {
   canUpdate: boolean;
   /** WI-OI-120v: only a workspace administrator grants, changes or suspends the Tenant Admin role (the server refuses). */
   isAdministrator: boolean;
+  /** WI-OI-120w (R2 slice 2a): holds `roles:assign`; one's own roles change only through another administrator. */
+  canAssignRoles: boolean;
   customRoles: CustomRole[];
   onSaved: () => Promise<void>;
 }
 
-function MemberRow({ member, currentUserId, canUpdate: mayUpdate, isAdministrator, customRoles, onSaved }: MemberRowProps) {
+function MemberRow({ member, currentUserId, canUpdate: mayUpdate, isAdministrator, canAssignRoles, customRoles, onSaved }: MemberRowProps) {
   const canUpdate = mayUpdate && (isAdministrator || member.role !== 'TENANT_ADMIN');
   const [role, setRole] = useState<MemberRole>(member.role);
   const [status, setStatus] = useState<MemberStatus>(member.status);
-  const [customRoleId, setCustomRoleId] = useState(member.customRole?.id ?? '');
   const [reason, setReason] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const changed =
-    role !== member.role ||
-    status !== member.status ||
-    customRoleId !== (member.customRole?.id ?? '');
+  const changed = role !== member.role || status !== member.status;
 
   const save = async () => {
     setSaving(true);
@@ -151,9 +151,6 @@ function MemberRow({ member, currentUserId, canUpdate: mayUpdate, isAdministrato
         body: JSON.stringify({
           ...(role !== member.role ? { role } : {}),
           ...(status !== member.status ? { status } : {}),
-          ...(customRoleId !== (member.customRole?.id ?? '')
-            ? { customRoleId: customRoleId || null }
-            : {}),
           expectedUpdatedAt: member.updatedAt,
           reason,
         }),
@@ -181,7 +178,7 @@ function MemberRow({ member, currentUserId, canUpdate: mayUpdate, isAdministrato
         {canUpdate ? (
           <select
             aria-label={`Role for ${member.user.email}`}
-            className="h-8 rounded-md border border-zinc-200 bg-white px-2"
+            className="h-8 rounded-md border border-ui-border-base bg-ui-bg-field px-2"
             value={role}
             onChange={(event) => setRole(event.target.value as MemberRole)}
           >
@@ -204,7 +201,7 @@ function MemberRow({ member, currentUserId, canUpdate: mayUpdate, isAdministrato
         {canUpdate ? (
           <select
             aria-label={`Status for ${member.user.email}`}
-            className="h-8 rounded-md border border-zinc-200 bg-white px-2"
+            className="h-8 rounded-md border border-ui-border-base bg-ui-bg-field px-2"
             value={status}
             onChange={(event) => setStatus(event.target.value as MemberStatus)}
           >
@@ -219,31 +216,20 @@ function MemberRow({ member, currentUserId, canUpdate: mayUpdate, isAdministrato
         )}
       </TableCell>
       <TableCell>{formatDate(member.joinedAt)}</TableCell>
-      <TableCell>
-        {canUpdate ? (
-          <select
-            aria-label={`Custom role for ${member.user.email}`}
-            className="h-8 rounded-md border border-zinc-200 bg-white px-2"
-            value={customRoleId}
-            onChange={(event) => setCustomRoleId(event.target.value)}
-          >
-            <option value="">None</option>
-            {customRoles.map((customRole) => (
-              <option key={customRole.id} value={customRole.id}>
-                {customRole.name}
-              </option>
-            ))}
-          </select>
-        ) : (
-          (member.customRole?.name ?? 'None')
-        )}
+      <TableCell className="min-w-64">
+        <MemberRoles
+          member={member}
+          customRoles={customRoles}
+          canAssign={canAssignRoles && (isAdministrator || member.user.id !== currentUserId)}
+          onSaved={onSaved}
+        />
       </TableCell>
       {canUpdate ? (
         <TableCell className="min-w-64">
           <div className="flex flex-col gap-2">
             <input
               aria-label={`Reason for changing ${member.user.email}`}
-              className="h-8 rounded-md border border-zinc-200 px-2"
+              className="h-8 rounded-md border border-ui-border-base bg-ui-bg-field px-2"
               placeholder="Reason for this change"
               value={reason}
               onChange={(event) => setReason(event.target.value)}
@@ -267,6 +253,110 @@ function MemberRow({ member, currentUserId, canUpdate: mayUpdate, isAdministrato
         </TableCell>
       ) : null}
     </TableRow>
+  );
+}
+
+/**
+ * WI-OI-120w (R2 slice 2a): the roles a member holds, each removable, and a picker to add another. Every change has a
+ * reason; the member's next request has the change.
+ */
+function MemberRoles({
+  member,
+  customRoles,
+  canAssign,
+  onSaved,
+}: {
+  member: Member;
+  customRoles: CustomRole[];
+  canAssign: boolean;
+  onSaved: () => Promise<void>;
+}) {
+  const held = member.roleAssignments ?? [];
+  const [adding, setAdding] = useState('');
+  const [reason, setReason] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const email = member.user.email;
+  const reasonGiven = reason.trim().length >= 3;
+
+  const change = async (path: string, body: Record<string, string>, fallback: string) => {
+    setBusy(true);
+    setError(null);
+    try {
+      const response = await fetch(`/api/control/tenants/current/members/${member.id}/role-assignments${path}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...body, reason }),
+      });
+      if (!response.ok) throw new Error(await readError(response, fallback));
+      setAdding('');
+      setReason('');
+      await onSaved();
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : fallback);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (!canAssign) return <>{held.length > 0 ? held.map((assignment) => assignment.customRole.name).join(', ') : 'None'}</>;
+  const available = customRoles.filter((role) => !held.some((assignment) => assignment.customRoleId === role.id));
+  return (
+    <div className="flex flex-col gap-2">
+      <ul aria-label={`Roles of ${email}`} className="flex flex-wrap gap-1">
+        {held.length === 0 ? <li className="text-ui-fg-muted">None</li> : null}
+        {held.map((assignment) => (
+          <li key={assignment.id} className="flex items-center gap-1 rounded-full border border-ui-border-base bg-ui-bg-subtle px-2 py-0.5 text-xs">
+            {assignment.customRole.name}
+            <button
+              type="button"
+              aria-label={`Remove ${assignment.customRole.name} from ${email}`}
+              title={reasonGiven ? 'Remove this role' : 'Give a reason first'}
+              className="rounded px-1 text-ui-fg-muted hover:text-ui-fg-error disabled:opacity-40"
+              disabled={busy || !reasonGiven}
+              onClick={() => void change(`/${assignment.id}/revoke`, {}, 'The role could not be removed.')}
+            >
+              ×
+            </button>
+          </li>
+        ))}
+      </ul>
+      <select
+        aria-label={`Add a role for ${email}`}
+        className="h-8 rounded-md border border-ui-border-base bg-ui-bg-field px-2"
+        value={adding}
+        onChange={(event) => setAdding(event.target.value)}
+      >
+        <option value="">Add a role…</option>
+        {available.map((role) => (
+          <option key={role.id} value={role.id}>
+            {role.name}
+          </option>
+        ))}
+      </select>
+      <input
+        aria-label={`Reason for the role change for ${email}`}
+        className="h-8 rounded-md border border-ui-border-base bg-ui-bg-field px-2"
+        placeholder="Reason for the role change"
+        value={reason}
+        onChange={(event) => setReason(event.target.value)}
+      />
+      <Button
+        type="button"
+        size="small"
+        variant="secondary"
+        disabled={!adding || !reasonGiven || busy}
+        isLoading={busy}
+        onClick={() => void change('', { customRoleId: adding }, 'The role could not be added.')}
+      >
+        Add role
+      </Button>
+      {error ? (
+        <p className="text-xs text-rose-700" role="alert">
+          {error}
+        </p>
+      ) : null}
+    </div>
   );
 }
 
@@ -488,6 +578,7 @@ export function TenantAccessManager({
   const canReadRoles = hasPermission(effectivePermissions, 'roles:read');
   const canCreateRoles = hasPermission(effectivePermissions, 'roles:create');
   const canUpdateRoles = hasPermission(effectivePermissions, 'roles:update');
+  const canAssignRoles = hasPermission(effectivePermissions, 'roles:assign');
   const canDeleteRoles = hasPermission(effectivePermissions, 'roles:delete');
   const canReadSettings = hasPermission(effectivePermissions, 'settings:read');
   const canUpdateSettings = hasPermission(effectivePermissions, 'settings:update');
@@ -1228,7 +1319,7 @@ export function TenantAccessManager({
                   <TableHead>Role</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Joined</TableHead>
-                  <TableHead>Custom role</TableHead>
+                  <TableHead>Roles</TableHead>
                   {canUpdateMembers ? <TableHead>Change control</TableHead> : null}
                 </TableRow>
               </TableHeader>
@@ -1240,6 +1331,7 @@ export function TenantAccessManager({
                     currentUserId={currentUserId}
                     canUpdate={canUpdateMembers}
                     isAdministrator={isAdministrator}
+                    canAssignRoles={canAssignRoles}
                     customRoles={customRoles}
                     onSaved={load}
                   />

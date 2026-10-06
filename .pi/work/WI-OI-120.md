@@ -1877,3 +1877,44 @@ widening the card to fix the API faults the proof found.
     - set `search_path` on the trigger function when slice 2 replaces it;
     - slice 2 must replace the trigger and the `MEMBER`-only check before members hold several roles;
     - run the cross-tenant pre-flight query on production before deploying there.
+- **Release `2323b99860ac-dd5f6baf396c` built** (R2 slice 1 and its review fixes).
+  - `build-images` passed with the owner's `GIGALIBS_MIN_FREE_GB=50` (57 GiB free); the module images passed the
+    guard normally.
+  - The images hold `memberScopeRoles` and `isReservedRoleName` (control plane); both migrations are in the
+    control-plane migrations image.
+  - Backup `gigalibs_backup_20261006_160704Z` of the running `f330d32`.
+  - UAT pre-flight: 0 cross-tenant custom roles; 28 members with a custom role.
+  - Handed to the owner. After deploy: the read-only reconciliation on UAT (each of the 28 roles moved, no access
+    changed).
+
+#### WI-OI-120w slice 2a: several roles per person (2026-10-06, owner "approved 2a")
+
+- **Migration `20261006020000_member_role_assignments_several`:**
+  - the trigger now revokes only the role the column named and grants the one it names; the member's other roles
+    stay;
+  - `search_path` is set on the function (review note);
+  - explicit scopes stay refused until slice 2b.
+- **API:**
+  - `POST current/members/:memberId/role-assignments` and `…/:assignmentId/revoke`, both `roles:assign` (a new
+    control-plane permission, catalogued; Tenant Admins hold it through `roles:*`);
+  - the member list returns each member's live roles, oldest first.
+  - Refused: a role of another workspace (400); a role already held (409); changing one's own roles unless a Tenant
+    Admin (403 `ROLE_SELF_ASSIGNMENT`). Before this, anyone with `users:update` could set their own role through the
+    single picker; bounds on what an assigner may grant come with R4.
+  - Each change is audited (`member_role_assignment`, with reason). `customRoleId` follows the oldest live role, for
+    display and for an earlier release.
+- **Settings → Team:** each member's roles are tags with a remove button, plus "Add a role", a reason and "Add role".
+  The single custom-role picker is gone.
+- **Journey:** the technician receives Maintenance technician and Workforce member through the new cell. It runs
+  after this slice is deployed.
+- **Checks:**
+  - real PostgreSQL: the several-roles suite 5 of 5, the slice 1 suite 6 of 6 (run one after the other);
+  - `pnpm test`: 318 files and 2739 tests passed (28 files skipped);
+  - `pnpm verify`: build and every audit pass. The deployment profile shows only the known `WORKFORCE_API_URL`
+    drift, and the 12 proof steps need `PROOF_DATABASE_URL`.
+  - The first verify flagged 7 hard-coded colours in the new roles cell; they are now `ui-*` tokens.
+  - The second verify's test step failed on five timeouts with swap nearly full (12.7 of 13.3 GB) and no failed
+    assertion. All five files pass alone, together, and in the full rerun above.
+  - control plane and web typecheck.
+- **When a change applies:** control-plane checks read live assignments on every request. A signed module context
+  keeps the roles it was signed with for at most 300 s. Bumping the session version stays in slice 2b.

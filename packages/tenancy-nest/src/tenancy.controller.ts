@@ -2,6 +2,10 @@ import { AllowMfaPending, CurrentUser } from '@gigalibs/auth-nest';
 import {
   type AcceptTenantInviteDto,
   AcceptTenantInviteSchema,
+  type AssignMemberRoleDto,
+  AssignMemberRoleSchema,
+  type RevokeMemberRoleDto,
+  RevokeMemberRoleSchema,
   type ChangeTenantStatusDto,
   ChangeTenantStatusSchema,
   type CreateCustomRoleDto,
@@ -213,6 +217,30 @@ export class TenancyController {
     @Body(new ZodValidationPipe(UpdateTenantMemberSchema)) dto: UpdateTenantMemberDto,
   ) {
     return this.tenancyService.updateMember(tenantId, memberId, userId, dto);
+  }
+
+  // WI-OI-120w (R2 slice 2a): a member may hold several roles; each is given and taken away on its own, with a reason.
+  @Post('current/members/:memberId/role-assignments')
+  @RequirePermissions('roles:assign')
+  assignMemberRole(
+    @CurrentTenant('tenantId') tenantId: string,
+    @CurrentUser('sub') userId: string,
+    @Param('memberId') memberId: string,
+    @Body(new ZodValidationPipe(AssignMemberRoleSchema)) dto: AssignMemberRoleDto,
+  ) {
+    return this.tenancyService.assignMemberRole(tenantId, memberId, userId, dto);
+  }
+
+  @Post('current/members/:memberId/role-assignments/:assignmentId/revoke')
+  @RequirePermissions('roles:assign')
+  revokeMemberRole(
+    @CurrentTenant('tenantId') tenantId: string,
+    @CurrentUser('sub') userId: string,
+    @Param('memberId') memberId: string,
+    @Param('assignmentId') assignmentId: string,
+    @Body(new ZodValidationPipe(RevokeMemberRoleSchema)) dto: RevokeMemberRoleDto,
+  ) {
+    return this.tenancyService.revokeMemberRole(tenantId, memberId, assignmentId, userId, dto);
   }
 
   @Get('current/departments')

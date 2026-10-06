@@ -233,11 +233,12 @@ async function survivesReload(page: Page, recorder: JourneyRecorder, text: strin
 }
 
 /** The workspace role each person is given on Settings → Team (WI-OI-120n module roles). */
-const MODULE_ROLE: Readonly<Record<string, string>> = {
-  supervisor: 'Maintenance planner',
-  technician: 'Maintenance technician',
-  approver: 'Workforce supervisor',
-  auditor: 'Maintenance viewer',
+// WI-OI-120w (R2 slice 2a): a person may hold several roles; the technician repairs and clocks in.
+const MODULE_ROLE: Readonly<Record<string, readonly string[]>> = {
+  supervisor: ['Maintenance planner'],
+  technician: ['Maintenance technician', 'Workforce member'],
+  approver: ['Workforce supervisor'],
+  auditor: ['Maintenance viewer'],
 };
 
 /** Back into the workspace: signs in again when a role change ended the session, and records that it did. */
@@ -462,23 +463,26 @@ test('a new customer from sign-up to maintenance work, as five people', async ({
       return `${missing.length - absent.length} of ${missing.length} invitees listed`;
     });
     for (const persona of [people.supervisor!, people.technician!, people.approver!, people.auditor!]) {
-      const role = MODULE_ROLE[persona.key]!;
-      await recorder.do(S3, `Give ${persona.name} the role "${role}"`, admin, async () => {
-        await admin.goto('/settings');
-        await settle(admin);
-        await press(admin, /team/i);
-        await settle(admin);
-        const select = admin.getByLabel(`Custom role for ${persona.email}`);
-        const offered = (await select.locator('option').allTextContents()).map((option) => option.trim());
-        if (!offered.includes(role)) throw new Error(`"${role}" is not offered on Settings → Team (offered: ${offered.join(', ')})`);
-        await select.selectOption({ label: role });
-        await admin.getByLabel(`Reason for changing ${persona.email}`).fill(`Journey ${RUN}: ${role}`);
-        const before = recorder.failedWrites(admin).length;
-        await admin.getByRole('row').filter({ hasText: persona.email }).getByRole('button', { name: 'Save change' }).click();
-        await settle(admin);
-        const refused = recorder.failedWrites(admin).slice(before);
-        if (refused.length) throw new Error(`The server refused the role: ${refused.map((call) => `${call.status} ${call.message}`).join('; ')}`);
-      });
+      for (const role of MODULE_ROLE[persona.key]!) {
+        await recorder.do(S3, `Give ${persona.name} the role "${role}"`, admin, async () => {
+          await admin.goto('/settings');
+          await settle(admin);
+          await press(admin, /team/i);
+          await settle(admin);
+          const select = admin.getByLabel(`Add a role for ${persona.email}`);
+          const offered = (await select.locator('option').allTextContents()).map((option) => option.trim());
+          if (!offered.includes(role)) throw new Error(`"${role}" is not offered on Settings → Team (offered: ${offered.join(', ')})`);
+          await select.selectOption({ label: role });
+          await admin.getByLabel(`Reason for the role change for ${persona.email}`).fill(`Journey ${RUN}: ${role}`);
+          const before = recorder.failedWrites(admin).length;
+          await admin.getByRole('row').filter({ hasText: persona.email }).getByRole('button', { name: 'Add role' }).click();
+          await settle(admin);
+          const refused = recorder.failedWrites(admin).slice(before);
+          if (refused.length) throw new Error(`The server refused the role: ${refused.map((call) => `${call.status} ${call.message}`).join('; ')}`);
+          await expect(admin.getByRole('list', { name: `Roles of ${persona.email}` })).toContainText(role);
+          return `roles: ${(await admin.getByRole('list', { name: `Roles of ${persona.email}` }).innerText()).replace(/×/g, '').replace(/\s+/g, ' ').trim()}`;
+        });
+      }
       const page = persona.page;
       if (!page) continue;
       await recorder.do(S3, `${persona.name} opens the workspace with the new role`, page, async () => {

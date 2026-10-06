@@ -2,8 +2,12 @@
 
 - **Status:** Approved (owner, 2026-10-06). M1a card of `docs/plans/platform-implementation-plan.md`, after R1
   (WI-OI-120q), S1 and S16. Implements ADR-0034 §1, §2 (inclusion), §5, §6 and §7. Each slice is shown before it
-  starts. **Slice 1 done** (committed 2026-10-06; Security review requested by the owner before deploy); slices 2 and
-  3 next. Evidence: `.pi/work/WI-OI-120.md` § WI-OI-120w. Independent Security review before deploy (access change).
+  starts.
+  - **Slice 1:** done (committed c6e96e2 and 2323b99; Security review recorded; release built, awaiting the owner's
+    deploy).
+  - **Slice 2a:** built and checked (owner "approved 2a"); awaiting "commit".
+  - **Next:** slices 3 and 2b.
+  - Evidence: `.pi/work/WI-OI-120.md` § WI-OI-120w. Independent Security review before deploy (access change).
 - **Work item:** WI-OI-120. Evidence goes in `.pi/work/WI-OI-120.md`.
 - **Size:** L (three slices)
 
@@ -46,7 +50,33 @@ everything under them), or some places (with everything inside them).
 - **Reconciliation report:** for every member, effective access before and after the move (permission by
   permission, scope by scope) must be identical. Any difference stops the release.
 
-### Slice 2: managing assignments (Settings → Team)
+### Slice 2a (approved 2026-10-06; built): several roles per person, at their own scope
+
+- **As built:**
+  - there is no separate `GET`: the member list Settings → Team already reads (`users:read`) carries each member's
+    live roles, oldest first;
+  - nobody changes their own roles unless they are a Tenant Admin (403 `ROLE_SELF_ASSIGNMENT`);
+  - a change reaches control-plane checks on the member's next request, which reads live assignments. A signed
+    module context carries the roles it was signed with for at most 300 s. No session version is bumped yet; that
+    stays in slice 2b.
+
+- **Why first:** slice 1's session already enforces `MEMBER` assignments, so several of them are safe today. This
+  removes the one-extra-role limit (Maintenance technician and Workforce member; Journal Approver and Maintenance
+  planner) before any new scope exists.
+- **Endpoints:**
+  - `GET current/members/:memberId/role-assignments` (`users:read`);
+  - `POST current/members/:memberId/role-assignments` (`roles:assign`, with role and reason);
+  - `POST …/role-assignments/:id/revoke` (`roles:assign`, with reason).
+  - `roles:assign` is a new control-plane permission; Tenant Admins hold it through `roles:*`.
+- **The trigger is replaced:**
+  - the column becomes the oldest live `MEMBER` assignment, kept for display and rollback;
+  - a write to the column from an earlier release revokes only the role it names, never the others;
+  - `search_path` is set on the function (review note).
+- **Settings → Team:** each member's roles appear as removable tags, with "Add role" and a reason on every change.
+  The single role picker goes. Every grant and revoke is audited and takes effect on the member's next request.
+- **The journey:** the technician holds Maintenance technician and Workforce member.
+
+### Slice 2b: explicit scopes, switched on once slice 3 enforces them (the rest of the original slice 2)
 
 - **On a member:**
   - list their assignments (role, scope, granted by, since);
@@ -106,7 +136,8 @@ everything under them), or some places (with everything inside them).
 ## Done when
 
 - [x] Assignments exist, with the move proven to change no one's access (proof database; UAT after deploy).
-- [ ] Settings → Team manages several assignments per person, with the transition rule.
+- [ ] Settings → Team manages several assignments per person, with the transition rule. (2a: several roles at the
+      member's own scope, built; explicit scopes and the transition rule in 2b.)
 - [ ] The context carries assignments; `scopeFor` passes the North/South test.
 - [ ] Checks pass; Security review recorded; evidence recorded; images built and handed to the owner.
 

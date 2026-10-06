@@ -163,6 +163,31 @@ const CustomRoleFieldsSchema = z.object({
  * WI-OI-120q (R1): a new role holds only permissions some screen, route or service checks (PERMISSION_CATALOGUE). An
  * existing role keeps what it already holds; the update path refuses only additions (`uncataloguedAdditions`).
  */
+/**
+ * WI-OI-120w (R2 slice 2a): giving a member a role, or taking one away. A member may hold several roles; each is a role
+ * assignment at the member's own scope. Every change carries a reason.
+ */
+export const AssignMemberRoleSchema = z
+  .object({
+    customRoleId: z.string().trim().min(1).max(64),
+    reason: z.string().trim().min(3).max(500),
+  })
+  .strict();
+export const RevokeMemberRoleSchema = z.object({ reason: z.string().trim().min(3).max(500) }).strict();
+export type AssignMemberRoleDto = z.infer<typeof AssignMemberRoleSchema>;
+export type RevokeMemberRoleDto = z.infer<typeof RevokeMemberRoleSchema>;
+
+/** A role a member holds, as Settings → Team lists it. */
+export interface MemberRoleAssignmentView {
+  readonly id: string;
+  readonly customRoleId: string;
+  readonly roleName: string;
+  readonly scope: 'MEMBER' | 'WORKSPACE' | 'UNITS' | 'PLACES';
+  readonly reason: string;
+  readonly grantedById: string;
+  readonly createdAt: string;
+}
+
 export const CreateCustomRoleSchema = CustomRoleFieldsSchema.superRefine((role, context) => {
   role.permissions.forEach((permission, index) => {
     if (!isCataloguedPermission(permission))

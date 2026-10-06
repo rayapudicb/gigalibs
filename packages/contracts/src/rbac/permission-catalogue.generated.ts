@@ -1177,6 +1177,12 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
     ]
   },
   {
+    "code": "roles:assign",
+    "entries": [
+      "platform"
+    ]
+  },
+  {
     "code": "roles:create",
     "entries": [
       "platform"
