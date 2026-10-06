@@ -95,11 +95,10 @@ async function openDraft(page: Page, description: string): Promise<boolean> {
   return true;
 }
 
+/** The open draft's status, from its Status field's chosen value (every status is also an option of that field). */
 async function draftStatus(page: Page): Promise<string> {
-  for (const status of ['Posted', 'Submitted for approval', 'Draft']) {
-    if (await page.getByText(status, { exact: true }).count()) return status;
-  }
-  return 'unknown';
+  const value = await page.locator('#field-status').inputValue({ timeout: 10000 });
+  return ({ DRAFT: 'Draft', SUBMITTED: 'Submitted for approval', POSTED: 'Posted' } as Record<string, string>)[value] ?? value;
 }
 
 /** Runs a record action; answers the notice shown after it. */

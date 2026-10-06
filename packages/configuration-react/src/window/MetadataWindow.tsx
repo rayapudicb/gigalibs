@@ -651,6 +651,9 @@ function RecordDetail({ model, client, permissions, id, onBack }: { model: Windo
   const [editing, setEditing] = useState(false);
   const [notice, setNotice] = useState<{ tone: 'error' | 'info'; text: string } | null>(null);
   const [activeChild, setActiveChild] = useState(model.childTabs[0]?.tabKey);
+  // WI-OI-120l: while the record is reread after a child change, its actions wait, so they never carry the version
+  // from before that change (which answered "someone else changed this record" to the person who made it).
+  const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(async () => {
     setState({ status: 'loading' });
@@ -686,7 +689,7 @@ function RecordDetail({ model, client, permissions, id, onBack }: { model: Windo
         </div>
         <div className="flex flex-wrap gap-2">
           {canEdit && !editing && (
-            <button type="button" className={button} onClick={() => setEditing(true)}>
+            <button type="button" className={button} disabled={refreshing} onClick={() => setEditing(true)}>
               Edit
             </button>
           )}
@@ -695,6 +698,7 @@ function RecordDetail({ model, client, permissions, id, onBack }: { model: Windo
               <ActionButton
                 key={action.actionKey}
                 action={action}
+                waiting={refreshing}
                 run={async (parameters) => {
                   // WI-OI-120g: the action carries the version the user read, so a stale screen cannot act.
                   const read = typeof record.version === 'number' ? { expectedVersion: record.version } : {};
@@ -753,7 +757,11 @@ function RecordDetail({ model, client, permissions, id, onBack }: { model: Windo
               parentId={String(record.id)}
               onChanged={() => {
                 // WI-OI-120g: reread the parent quietly, so its version and status stay current for its actions.
-                client.get(entityKey, String(record.id)).then((fresh) => setState({ status: 'ready', record: fresh }), () => undefined);
+                setRefreshing(true);
+                client
+                  .get(entityKey, String(record.id))
+                  .then((fresh) => setState({ status: 'ready', record: fresh }), () => undefined)
+                  .finally(() => setRefreshing(false));
               }}
             />
           )}
@@ -763,7 +771,18 @@ function RecordDetail({ model, client, permissions, id, onBack }: { model: Windo
   );
 }
 
-function ActionButton({ action, run, onFailure }: { action: DictionaryActionV1; run: (parameters: RecordValues) => Promise<void>; onFailure: (message: string) => void }) {
+function ActionButton({
+  action,
+  run,
+  onFailure,
+  waiting = false,
+}: {
+  action: DictionaryActionV1;
+  run: (parameters: RecordValues) => Promise<void>;
+  onFailure: (message: string) => void;
+  /** The record is being reread; the action waits for the current version. */
+  waiting?: boolean;
+}) {
   const [busy, setBusy] = useState(false);
   const [asking, setAsking] = useState(false);
   const [values, setValues] = useState<Record<string, string>>({});
@@ -785,7 +804,7 @@ function ActionButton({ action, run, onFailure }: { action: DictionaryActionV1; 
       <button
         type="button"
         className={primary}
-        disabled={busy}
+        disabled={busy || waiting}
         onClick={() => {
           // WI-OI-120g: an action that declares parameters (a reason, say) asks for them before it runs.
           if (parameters.length > 0) return setAsking(true);
@@ -822,7 +841,7 @@ function ActionButton({ action, run, onFailure }: { action: DictionaryActionV1; 
         </label>
       ))}
       <div className="flex gap-2">
-        <button type="submit" className={primary} disabled={busy || missing.length > 0}>
+        <button type="submit" className={primary} disabled={busy || waiting || missing.length > 0}>
           {busy ? `${action.label}…` : action.label}
         </button>
         <button type="button" className={button} disabled={busy} onClick={() => setAsking(false)}>

@@ -1,5 +1,18 @@
 # WI-OI-120 evidence: UAT readiness programme
 
+## Proposed all-module tenant-to-value acceptance plan — 2026-10-06
+
+Owner requested an implementation and Playwright plan across all existing modules, starting with CMMS/EAM.
+Created `docs/plans/tenant-to-value-all-modules-implementation-and-e2e-plan.md` and proposed WI-OI-120m.
+Read current NOW, task template, orchestrator role, lifecycle/requirements/completeness guidance, U19a/EAM scope,
+23 committed manifests and existing e2e harness/spec inventory. Plan includes explicit discovery denominator,
+all-module journeys, shared controls, cross-module reconciliation, isolated test safety and independent gates.
+No runtime checks, product changes, database writes, deployments or status/gate upgrades performed. Existing
+approved work remains active; WI-OI-120m requires approval. Historical status contradictions remain explicit.
+Documentation verification: `pnpm verify --audits` exited 0; audits/manifests passed, known WORKFORCE_API_URL
+drift, 12 isolated proofs NOT RUN. No Playwright tests executed. `git diff --check` passed. Log:
+`/var/folders/jp/fkzm1c3s1d52rj_9cvjv6kx00000gn/T/gigalibs-verify/verify-2026-10-06T04-45-12-790Z.log`.
+
 Programme from the WI-OI-119 audit; plan in `docs/audits/2026-10-04-production-readiness/remediation-backlog.md`.
 Owner decisions of 2026-10-05: fix every module for UAT and hide nothing; UAT on the existing local instance; UAT data
 entered by Playwright business flows.
@@ -1299,3 +1312,27 @@ widening the card to fix the API faults the proof found.
     set-up call; it now passes 27/27;
   - the walk-through spec completes a part-way UAT-GL book from the panel.
 - **Checks:** `pnpm verify` passes (build, tests, audits, manifests; known drift); U12 proof 27/27.
+
+### 144c010 deploy, and a renderer race found by the ledger walk-through (2026-10-06)
+
+- **Build and deploy:**
+  - images built for `144c010` (04:40–05:06Z);
+  - backup `gigalibs_backup_20261006_050906Z` (labelled `7fcc5b1`, checksum verified);
+  - the owner deployed at 05:09–05:13Z; ten services are healthy on the new tag.
+- **Walk-through rerun on UAT** (`uat-general-ledger`):
+  - "Add a fiscal year" completed the part-way UAT-GL book (2026 periods and the starter chart), so the gateway
+    route fix works on screen.
+  - The spec read a journal's status from text that every status dropdown contains, so it skipped every journal.
+    Fixed: it reads the Status field's value.
+- **Product defect** (shared window renderer):
+  - after a line is added, the record is reread in the background;
+  - an action clicked before that reread lands carried the old version, and the person who added the line was told
+    "Someone else changed this record";
+  - seen on "Submit for approval" straight after the fourth line of the opening-balances journal.
+- **Fix:** `MetadataWindow` disables the record's Edit button and actions (including an action's reason form) while
+  the reread is pending. It applies to every window with child tabs: Catalogue and price-list versions, Inventory
+  and Finance.
+- **Checks:**
+  - `pnpm verify` passes (known drift);
+  - the renderer has no unit tests; the regression test is the ledger spec, which submits straight after adding
+    lines (to run after deploy).

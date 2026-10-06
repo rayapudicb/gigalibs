@@ -1,6 +1,6 @@
 # NOW: where the work stands
 
-Updated 2026-10-06 (UAT runs `7fcc5b1`, U12, deployed 04:25Z; the set-up route fix follows). Keep this file
+Updated 2026-10-06 (UAT runs `144c010`, deployed 05:13Z; renderer race fix pending; WI-OI-120m approved). Keep this file
 to one page. Replace old content rather than appending to it, and update it at the end of every task.
 
 ## State
@@ -72,6 +72,14 @@ to one page. Replace old content rather than appending to it, and update it at t
 
 ## Next
 
+- **Proposed acceptance plan (2026-10-06):** `docs/plans/tenant-to-value-all-modules-implementation-and-e2e-plan.md`
+  covers all 23 registered modules plus shared controls and integration journeys, CMMS first. WI-OI-120m is
+  Proposed (read-only assessment/test design); no product changes or test-data writes authorized by the plan.
+  Schedule after the active approved repair; do not replace existing U19/U22/U23 or EAM cards.
+  **Update (owner "proceed", 2026-10-06):** WI-OI-120m approved with a wider scope: a Playwright discovery journey
+  from sign-up through organization, people, workers, CMMS and role approvals, recording bugs, data flow, UX and
+  layout findings, writing only in workspaces it creates. Starts after U12 closes.
+
 1. Owner: grant Catalogue, Inventory, Procurement, Orders and Finance to the UAT tenant in Platform Control Tower;
    then a signed-in check of each module's API on this instance.
 2. F0 (WI-OI-120f): F0.1–F0.5 and the manifest fix deployed; owner checks /inventory on screen.
@@ -90,7 +98,8 @@ to one page. Replace old content rather than appending to it, and update it at t
    U12 general ledger (WI-OI-120l, Option A, owner 2026-10-06): draft journals approved by a second person (Finance
    migration 9), five windows, set-up and reports panels. Proof 25/25, 7 unit tests; build, 2,560 tests and
    `pnpm verify` pass. Committed `7fcc5b1`, deployed 04:25Z. The UAT walk-through found the set-up panel's fiscal-year
-   route missing from the gateway; fixed (proof now checks the gateway, 27/27), to deploy, then `--ledger`. Then U20a.
+   route missing from the gateway; fixed and deployed (`144c010`, 05:13Z). The rerun found a renderer race (an
+   action straight after adding a line answered "someone else changed this record"); fixed, to commit and deploy.
    Workforce `wfo` screens: diagnosed (ungated routes, see work log); U20a card to propose. P0-05, P0-07, P0-10, P1-10 and the P1-11 prototypes are in modules not running here; they are fixed
    as each module moves onto the module SDK (U29). Independent Security review before any defect closes.
 3. Then U4–U6 (Dictionary & Master Data hardening), U7–U18 (module by module Playwright flows). Plan:
