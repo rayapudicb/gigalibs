@@ -80,25 +80,33 @@ async function pick(form: Locator, label: string, fieldKey: string, search: stri
   await select.selectOption({ label: (await option.textContent()) ?? shown });
 }
 
-/** Opens the journal draft with this description from the Journal entry list; false when there is none. */
-async function openDraft(page: Page, description: string): Promise<boolean> {
+const STATUS_LABEL = { DRAFT: 'Draft', SUBMITTED: 'Submitted for approval', POSTED: 'Posted' } as const;
+type DraftCode = keyof typeof STATUS_LABEL;
+
+/**
+ * The statuses of the journal drafts with this description, from the records API the Journal entry list itself calls.
+ * Decisions (create, complete, approve) are made on this, never on a list still loading: reading the list once took
+ * an unanswered search for "none" and drafted the same journal twice (2026-10-06).
+ */
+async function draftsNamed(page: Page, description: string): Promise<DraftCode[]> {
+  if (!page.url().includes('/finance')) await openTab(page, 'Journal entry'); // the call is made from the app's origin
+  const found = await api<{ items: Array<{ description?: string; status?: string }> }>(
+    page,
+    `/api/financial-operations/v1/records/finance.journal-drafts?search=${encodeURIComponent(description)}&pageSize=100`,
+  );
+  return found.items.filter((item) => item.description === description).map((item) => item.status as DraftCode);
+}
+
+/** Opens a journal draft with this description and status from the Journal entry list, once the list shows it. */
+async function openDraft(page: Page, description: string, status: DraftCode): Promise<void> {
   await openTab(page, 'Journal entry');
   const search = page.getByLabel('Search Journal entry', { exact: true });
   await search.fill(description);
   await search.press('Enter');
-  await page.waitForLoadState('networkidle').catch(() => undefined);
-  await page.waitForTimeout(500);
-  const row = page.getByRole('row').filter({ hasText: description }).first();
-  if ((await row.count()) === 0) return false;
+  const row = page.getByRole('row').filter({ hasText: description }).filter({ hasText: STATUS_LABEL[status] }).first();
+  await expect(row).toBeVisible({ timeout: 15000 });
   await row.click();
   await expect(page.getByRole('heading', { level: 2 }).first()).toBeVisible();
-  return true;
-}
-
-/** The open draft's status, from its Status field's chosen value (every status is also an option of that field). */
-async function draftStatus(page: Page): Promise<string> {
-  const value = await page.locator('#field-status').inputValue({ timeout: 10000 });
-  return ({ DRAFT: 'Draft', SUBMITTED: 'Submitted for approval', POSTED: 'Posted' } as Record<string, string>)[value] ?? value;
 }
 
 /** Runs a record action; answers the notice shown after it. */
@@ -164,9 +172,12 @@ test.describe('UAT general ledger', () => {
     await openTab(maker, 'Books');
     await expect(maker.getByRole('row').filter({ hasText: BOOK })).toHaveCount(1);
 
-    // 2. Each journal: drafted, lined and submitted by uat.admin.
+    // 2. Each journal: drafted, lined and submitted by uat.admin. A journal already submitted or posted (an earlier
+    // run) is left as it is; an unfinished draft is completed.
     for (const journal of JOURNALS) {
-      if (!(await openDraft(maker, journal.description))) {
+      const existing = await draftsNamed(maker, journal.description);
+      if (existing.some((status) => status !== 'DRAFT')) continue;
+      if (existing.length === 0) {
         await openTab(maker, 'Journal entry');
         await maker.getByRole('button', { name: 'New', exact: true }).click();
         const form = maker.locator('form').filter({ has: maker.getByRole('heading', { name: 'New Journal', exact: true }) });
@@ -175,9 +186,9 @@ test.describe('UAT general ledger', () => {
         if (journal.kind) await form.locator('#field-entry-type').selectOption(journal.kind);
         await form.locator('#field-description').fill(journal.description);
         await save(form);
-        expect(await openDraft(maker, journal.description)).toBe(true);
+        await expect.poll(() => draftsNamed(maker, journal.description)).toEqual(['DRAFT']);
       }
-      if ((await draftStatus(maker)) !== 'Draft') continue;
+      await openDraft(maker, journal.description, 'DRAFT');
       await maker.getByRole('tab', { name: 'Lines', exact: true }).click();
       await maker.waitForLoadState('networkidle').catch(() => undefined);
       await maker.waitForTimeout(500);
@@ -195,15 +206,17 @@ test.describe('UAT general ledger', () => {
     }
 
     // 3. uat.admin may not approve their own journal.
-    expect(await openDraft(maker, JOURNALS[1]!.description)).toBe(true);
-    if ((await draftStatus(maker)) === 'Submitted for approval') {
+    const own = await draftsNamed(maker, JOURNALS[1]!.description);
+    if (own.includes('SUBMITTED') && !own.includes('POSTED')) {
+      await openDraft(maker, JOURNALS[1]!.description, 'SUBMITTED');
       expect(await act(maker, 'Approve and post', 'My own journal')).toMatch(/cannot approve/);
     }
 
-    // 4. uat.approver approves and posts each one.
+    // 4. uat.approver approves and posts each one, once: a journal already posted is never posted again.
     for (const journal of JOURNALS) {
-      expect(await openDraft(checker, journal.description)).toBe(true);
-      if ((await draftStatus(checker)) !== 'Submitted for approval') continue;
+      const statuses = await draftsNamed(checker, journal.description);
+      if (statuses.includes('POSTED') || !statuses.includes('SUBMITTED')) continue;
+      await openDraft(checker, journal.description, 'SUBMITTED');
       expect(await act(checker, 'Approve and post', 'Checked against the source document')).toBe('Approve and post: done.');
     }
     await openTab(checker, 'Posted journals');

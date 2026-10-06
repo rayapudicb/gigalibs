@@ -1707,3 +1707,25 @@ widening the card to fix the API faults the proof found.
 - Live: the WI-OI-120n security fixes (admin-only login links, narrower module roles, another manager decides one's
   own absence), ADR-0034 and ADR-0006 accepted.
 - Next on UAT: one release with R1, S1, WI-OI-120v, S16 and the Journal Approver role.
+
+### U12 ledger walk-through on UAT (b7f8a53), and a walk-through race (2026-10-06)
+
+- **Passes:** `e2e/run-uat-walkthrough.sh --ledger`, 1 passed in 28 s. The six September journals are each posted
+  once (checked read-only in `gigalibs_finance.gl_journal_drafts`), and the reports read from posted journals. U12
+  is accepted on UAT.
+- **The walk-through had a race; it is fixed.**
+  - It searched the Journal entry list and decided after a fixed half-second pause. Twice the search had not
+    answered yet, so it read "none" and drafted the same journal again. The approver then opened the empty duplicate
+    and skipped it.
+  - Two reruns while diagnosing added more duplicates. None was posted: the ledger and reports are unaffected.
+  - **Fix (`e2e/specs/uat-general-ledger.spec.ts`):**
+    - decisions (create, complete, approve) come from the records API the list itself calls;
+    - the screen opens a draft only once the list shows the row with that description and status;
+    - the approver never approves a journal that is already posted, so a duplicate can never post twice.
+- **Left on UAT, five unposted duplicate drafts:**
+  - office rent: one submitted, one draft;
+  - opening balances: one submitted;
+  - depreciation: two drafts.
+  Not removed: removing them is a write to UAT and waits for the owner.
+- **UX finding:** a search with no match shows "No records yet. Use New to create the first one". It should say that
+  nothing matches the search. For the window polish card.
