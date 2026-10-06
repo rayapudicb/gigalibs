@@ -1,5 +1,6 @@
 'use client';
 
+import { holdsPermission } from '@gigalibs/contracts';
 import { createRecordClient, type LookupOption, MetadataWindow, type RecordClient, usePublishedManifest } from '@gigalibs/configuration-react';
 import { type FormEvent, type ReactNode, useEffect, useMemo, useState } from 'react';
 
@@ -36,8 +37,7 @@ export interface ProductCatalogueWorkspaceProps {
 }
 
 function holds(permissions: readonly string[], permission: string): boolean {
-  const prefix = permission.slice(0, permission.indexOf(':'));
-  return permissions.includes('*') || permissions.includes(permission) || permissions.includes(`${prefix}:*`);
+  return holdsPermission(permissions, permission);
 }
 
 export function ProductCatalogueWorkspace({ permissions = [] }: ProductCatalogueWorkspaceProps = {}) {

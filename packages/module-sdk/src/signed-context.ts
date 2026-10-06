@@ -4,6 +4,7 @@ import {
   type PlatformContextV1,
   verifyPlatformContextToken,
 } from '@gigalibs/auth-core';
+import { holdsPermission } from '@gigalibs/contracts';
 import {
   type CanActivate,
   type ExecutionContext,
@@ -59,7 +60,10 @@ export interface SignedContextGuardOptions {
   readonly moduleKey: string;
   /** Shown when the entitlement is not active, for example "Inspections & Safety". */
   readonly entitlementName: string;
-  /** `<prefix>:*` grants every `<prefix>.<area>.<action>` permission. */
+  /**
+   * The module's permission family. Kept for callers: since WI-OI-120q the one permission rule decides, so `<prefix>:*`
+   * covers the `<prefix>` family's codes and no others, as everywhere else.
+   */
   readonly permissionPrefix: string;
   /** Ed25519 public key (PEM) of the web BFF's signing key for this module. */
   readonly publicKey: string;
@@ -205,13 +209,16 @@ export function extractBearerToken(header: string | string[] | undefined): strin
   return match[1];
 }
 
-/** `*`, `<prefix>:*` or the exact permission. */
+/**
+ * The one permission rule (WI-OI-120q): `*`, the exact code, or its family's wildcard. `prefix` is kept for callers;
+ * a module's own wildcard is its family's, and another family's wildcard now covers that family's codes here too.
+ */
 export function hasModulePermission(
   granted: readonly string[],
   required: string,
-  prefix: string,
+  _prefix?: string,
 ): boolean {
-  return granted.includes('*') || granted.includes(`${prefix}:*`) || granted.includes(required);
+  return holdsPermission(granted, required);
 }
 
 function correlationIdFrom(header: string | string[] | undefined): string {

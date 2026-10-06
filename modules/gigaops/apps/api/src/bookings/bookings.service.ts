@@ -24,7 +24,7 @@ import {
   type WorkRequirementV1,
 } from '@gigalibs/contracts';
 import type { PoolClient } from 'pg';
-import type { GigaOpsPrincipal } from '../auth/authorization.js';
+import { hasWorkforcePermission, type GigaOpsPrincipal } from '../auth/authorization.js';
 import { AvailabilityService } from '../availability/availability.service.js';
 import { type CommandContext, assertUuid, bumpVersion, conflict, iso, parse, recordMutation, translate } from '../common/commands.js';
 import { WorkforceDatabaseService } from '../database/database.service.js';
@@ -536,7 +536,7 @@ function assertPlaceScope(principal: GigaOpsPrincipal, siteRef: string | null): 
 }
 
 function hasPermission(principal: GigaOpsPrincipal, permission: string): boolean {
-  return principal.permissions.includes('*') || principal.permissions.includes('workforce:*') || principal.permissions.includes(permission);
+  return hasWorkforcePermission(principal.permissions, permission);
 }
 
 function mapRequirement(row: any): WorkRequirementV1 {

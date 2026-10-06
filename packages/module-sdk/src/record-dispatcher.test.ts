@@ -157,6 +157,19 @@ describe('RecordDispatcher', () => {
     expect(await status(records.list(principal('tenant-a', ['inventory:*']), 'inventory.warehouses', {}))).toBe(200);
   });
 
+  it("lets a family wildcard cover that family's dotted codes, and nothing else (WI-OI-120q)", async () => {
+    const { adapter } = warehouses();
+    const dotted: RecordAdapter = { ...adapter, entityKey: 'cmms.work-orders', permissions: { read: 'cmms.work-orders.read' } };
+    const records = new RecordDispatcher([dotted], [], new MemoryIdempotency());
+    const list = (permissions: string[]) => status(records.list(principal('tenant-a', permissions), 'cmms.work-orders', {}));
+    expect(await list(['cmms:*'])).toBe(200); // refused before R1: the family was read up to a colon the code lacks
+    expect(await list(['cmms.work-orders.read'])).toBe(200);
+    expect(await list(['cmms:work-orders:read'])).toBe(200); // the colon spelling of the same code
+    expect(await list(['cmms.work-orders'])).toBe(403);
+    expect(await list(['cmmsx:*'])).toBe(403);
+    expect(await list(['cmms.work-orders.rea:*'])).toBe(403);
+  });
+
   it('needs If-Match on update and answers 412 for a stale version', async () => {
     const { adapter } = warehouses();
     const records = new RecordDispatcher([adapter], [], new MemoryIdempotency());

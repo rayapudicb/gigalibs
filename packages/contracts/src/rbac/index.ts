@@ -48,3 +48,7 @@ export type RoleDefinition = z.infer<typeof RoleDefinitionSchema>;
 // Convenience builder
 export const perm = (resource: string, action: PermissionAction, scope: 'own' | 'team' | 'all' = 'all'): PermissionString =>
   `${resource}:${action}:${scope}`;
+
+export * from './permission-match.js';
+export * from './permission-catalogue.generated.js';
+export * from './control-plane-permissions.js';

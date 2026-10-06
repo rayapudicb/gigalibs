@@ -7,6 +7,7 @@ import {
   HttpStatus,
   NotFoundException,
 } from '@nestjs/common';
+import { holdsPermission } from '@gigalibs/contracts';
 import type { ModulePrincipal } from './signed-context.js';
 
 // WI-OI-120f (F0.3, ADR-0033 D1; ADR-0019 tenets 9, 11, 13): the record dispatcher behind every metadata window. It
@@ -122,13 +123,12 @@ const MAX_PAGE_SIZE = 100;
 const MAX_TEXT = 200;
 const ALWAYS_RETURNED = ['id', 'version'];
 
+/**
+ * The one permission rule (WI-OI-120q). Before it, a dotted code's family was read up to a colon it does not have, so
+ * `cmms:*` never covered `cmms.work-orders.read` here.
+ */
 function holds(principal: ModulePrincipal, permission: string): boolean {
-  const prefix = permission.slice(0, permission.indexOf(':'));
-  return (
-    principal.permissions.includes('*') ||
-    principal.permissions.includes(permission) ||
-    principal.permissions.includes(`${prefix}:*`)
-  );
+  return holdsPermission(principal.permissions, permission);
 }
 
 function stableJson(value: unknown): string {

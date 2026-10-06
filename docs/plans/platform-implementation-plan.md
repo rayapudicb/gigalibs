@@ -24,6 +24,16 @@ work starts. Production stays NO-GO until G5, G6 and G7 (§6).
   *Accepted* = G5. A claim of "ahead of iDempiere" needs Verified plus the comparative task evidence of X2.
 - **No parallel engines.** Extensions complete ADR-0019 and ADR-0033 (dictionary, renderer, document lifecycle,
   posting) and ADR-0018 (scope); nothing is rebuilt beside them.
+- **Metadata first (owner, 2026-10-05 and 2026-10-06: every module on the metadata foundation).** Every business
+  screen, module and platform alike, is a published metadata window: its fields, field rules, menus, actions,
+  reports, processes, translations and printable documents come from the dictionary and can be adjusted per
+  workspace. No new or changed business screen is hand-written; a hand-written screen receives only fixes, each
+  linked to its conversion card. **Named exceptions** (ADR-0033 D1): specialised interactions that are components
+  *inside* a metadata-governed screen, whose fields, permissions and actions still come from metadata (maps and CAD
+  layers, the CMMS floor kiosk, dispatch and scheduling boards, the clock-in panel, barcode scanning, chart and
+  dashboard builders, the workflow designer canvas); Configuration Studio's own designers (they edit the metadata);
+  sign-in, sign-up, the workspace chooser and the application frame (they run before or around every screen).
+  Anything else hand-written is a defect.
 
 ## 2. Stage 0: decisions and registers (before any dependent card)
 
@@ -60,7 +70,8 @@ work starts. Production stays NO-GO until G5, G6 and G7 (§6).
 | S13 | Numbering | Workspace sequences per document type (prefix, period, gap policy) through the document engine | E1 | S | Journals and work orders take numbers from the workspace sequence |
 | S14 | Import and export | One import for every entity through the dispatcher: map, preview, hold back bad rows, commit idempotently; export under R10 | S1, R10 | L | Products, accounts, assets and people import the same way |
 | S15 | Gateway from declared routes | Gateway routes generated only from routes a module explicitly exports with their permission and entitlement; internal routes never exposed | R1 | M | Tests prove no internal route is exposed, every exported route enforces entitlement and method permission, and the generated set equals today's approved list |
-| S16 | Conversion kit | The template every module conversion follows: contribution, adapters, lifecycle graph, posting policy, register rows, journey section | S1, E1 | S | Two modules convert with it unchanged |
+| S16 | Conversion kit | The template every module conversion follows: contribution, adapters, register rows, journey section; lifecycle graphs and posting policies are added to it when E1 and E2 land | S1 | S | CMMS and Workforce convert with it |
+| S17 | Platform screens on metadata | Settings (team, organization, access, plan), Parties and administration as metadata windows over control-plane record adapters | S16 | L | No hand-written platform screen remains outside the named exceptions |
 
 ### Area 2. Access control (R)
 
@@ -79,7 +90,7 @@ work starts. Production stays NO-GO until G5, G6 and G7 (§6).
 | R10 | Export, report and query rights | Permissions for export and reports; row limits per role | R1 | S | A role without export cannot export by any path |
 | R11 | Platform support access | D2 implemented: consented, time-boxed, audited support sessions | D2, R1 | M | Without a session a platform operator sees no workspace data; with one, every read is audited and ends on time |
 | R12 | Explainable access | A refusal names the missing permission, role or scope and who can grant it, only within what the person may already see | R1, R5 | M | Explanations never reveal a record or unit the person cannot see |
-| R13 | Delegated people administration | Department allowances; heads add people only into their units with allowed roles (WI-OI-120p slices 3–4) | R2, T2 | M | A head cannot assign outside their units or above the allowance |
+| R13 | Delegated people administration | Department allowances; heads add people only into their units with allowed roles (WI-OI-120p slices 3–4) | R2, T2, S17 | M | A head cannot assign outside their units or above the allowance |
 | R14 | Bulk people | CSV or pasted list checked before anything is created; invitations together; links until email exists; join tracker; bulk grants; offboarding (120p slices 5–7) | R13 | L | 200 people added and granted in one import; bad rows held back; offboarding revokes at once |
 | R15 | Directory groups | SCIM groups map to scoped role assignments (120p slice 8) | R2, R14 | M | A directory change moves a person's assignments |
 | R16 | Personas from roles | Default landing and menu lens derived from assignments; "View As" for administrators only | R2 | S | A technician lands on their work without choosing a persona |
@@ -124,8 +135,8 @@ first (deploy on the module SDK), then its conversion.
 
 | # | Card | Needs | Size |
 | --- | --- | --- | --- |
-| M-CM1 | CMMS first value: request, work order, assign, execute, close; "do my work" separated from "manage any work order" | R5 (CMMS), T3 | L |
-| M-WF1 | Workforce U20a: WFO routes, permissions, ownership | R1 | L |
+| M-CM1 | CMMS onto metadata windows and first value: assets, spaces, work orders (request, assign, execute, close; "do my own work" separated from "manage any work order"), schedules, meters, parts, requests; kiosk, maps and CAD stay components | R5 (CMMS), T3, S16 | L |
+| M-WF1 | Workforce onto metadata windows with U20a: people (login link administrator-only), skills, jobs and positions, availability, absences, bookings; WFO routes, permissions and ownership; clock-in and dispatch stay components | R1, S16 | L |
 | M-WF2 | Workforce time and timesheet approval for linked workers | T1a, M-WF1 | M |
 | M-INV1 | Inventory: transfers, issues, counts, adjustments, reservations; barcode in the window | E1, S3, S4 | L |
 | M-FIN1 | Finance GL completion: chart import, recurring journals, posting rules (Accounting review) | E2 | M |
@@ -142,8 +153,8 @@ first (deploy on the module SDK), then its conversion.
 | M-CM2 | CMMS complete: reliability (U19b), kiosk (U19c), EAM-001–005 | M-CM1, T5 | L |
 | M-WF3 | Workforce complete: scheduling, pay readiness, compliance | M-WF2 | L |
 | M-U21 | Communications, Connectors, Rule Studio | S7 | L |
-| M-ANA | Analytics acceptance: sources, datasets, measures, reports, freshness, scope | R5 (Analytics) | M |
-| M-GEO | Geospatial acceptance: places, boundaries, scoped queries | T3 | M |
+| M-ANA | Analytics onto metadata windows (sources, datasets, measures, reports; builders stay components) and its acceptance: freshness, scope | R5 (Analytics) | M |
+| M-GEO | Geospatial onto metadata windows (places, node types, boundaries; the map stays a component) and its acceptance: scoped queries | T3 | M |
 | M-U29 | One card per remaining module (Tax, Currency, Spend, eSign, Scanner, Ontology, Saga, Recovery, Workflow Studio, Data Studio and others): runtime slice, then conversion | R1, E1 | M–L each |
 | M-NEW | Manufacturing (U24), projects (U25), returns (U26) | E1, M-INV1, M-ORD | L each |
 
@@ -176,10 +187,10 @@ first (deploy on the module SDK), then its conversion.
 One writer; one card at a time; read-only discovery (registers, migration designs, threat models) may run beside it.
 
 1. **Stage 0 → M0.** D1, D2, D3, D4, D5, D6, D7, D8, D9 decided or delivered; O1 design and O7 started; X2 baseline.
-2. **M1a minimum maintenance.** R0 (after its review) → R1 → R2 → R5 (CMMS) → T3 → M-CM1.
+2. **M1a minimum maintenance.** R0 (after its review) → R1 → S1 → S16 → R2 → R5 (CMMS) → T3 → M-CM1.
 3. **M1b Workforce and departments.** M-WF1 → T1a → M-WF2 → T1b → T1c → T2 → R5 (Workforce, Geospatial) → R3 → R4.
-4. **M1c enterprise onboarding.** R13 → R14 → R15 → R16 → R11 → T11.
-5. **M2 engine and customization.** E1 → S1 → S2 → S3 → S4 → S5 → S16 → S6 → S15 → R10 → R6 → R7.
+4. **M1c enterprise onboarding.** S17 → R13 → R14 → R15 → R16 → R11 → T11.
+5. **M2 engine and customization.** E1 → S2 → S3 → S4 → S5 → S6 → S15 → R10 → R6 → R7.
 6. **M3 first posting.** E2 → M-INV1 → E3 → E5 (pilot) → M-FIN1.
 7. **M4 procure to pay.** T4 → T5 → R5 (Inventory, Procurement, Finance) → M-PROC → E6 → E4 (procure to pay).
 8. **M5 quote to cash.** T7 → M-ORD → M-AR0 → M-AR → M-TRE → R5 (Orders, AR) → E4 (quote to cash).
@@ -189,8 +200,27 @@ One writer; one card at a time; read-only discovery (registers, migration design
 11. **Release.** G5 acceptance → G6 authorized rollout → G7 observed production. O2–O6 are required at each milestone
     exit for the flows that milestone releases, not left to the end.
 
-Every card's "Needs" appears earlier in this order, checked mechanically against the tables above (one violation found
-and fixed: S7 now precedes M-U21).
+Every card's "Needs" appears earlier in this order, checked mechanically against the tables above (violations found
+and fixed: S7 now precedes M-U21; on 2026-10-06 the conversion kit S16 and field rules S1 moved before CMMS, whose
+card had omitted them).
+
+## 4a. Phases at a glance (what each release delivers)
+
+| Phase | Goes in | The release delivers | Modules on metadata |
+| --- | --- | --- | --- |
+| 0 Decisions | D1–D9 (D1, D4 for places and D5 for ADR-0006 decided 2026-10-06); registers; migration template; cloud design; iDempiere baseline | No release | 3 (Catalogue, Inventory, Finance GL) |
+| 1a Minimum maintenance | Batch 1 (R0); one permission checker (R1); field rules and conversion kit (S1, S16); roles per unit or site (R2); CMMS access (R5); one place list (T3); **CMMS onto metadata** (M-CM1) | A CMMS-only customer runs maintenance on metadata screens, each person with a scoped role | 4 |
+| 1b Workforce and departments | **Workforce onto metadata with U20a** (M-WF1, M-WF2); worker links and one worker record (T1a–T1c); departments as units (T2); access (R5, R3, R4) | Technicians clock in; supervisors approve weeks; departments kept apart | 5 |
+| 1c Enterprise onboarding | **Platform screens onto metadata** (S17); delegated heads, bulk people, directory groups, personas, support access (R13–R16, R11); set-up wizard (T11) | A company onboards 200 people by department through guided set-up | 5 plus platform screens |
+| 2 Engine | Document lifecycle (E1); accessibility, money and quantity, workspace customization, menus, safe gateway (S2–S6, S15); export rights, approval policies, action access (R10, R6, R7) | Approvals by policy; customization with preview and rollback | 5 |
+| 3 First posting | Posting rules, goods receipt to ledger, reconciliation (E2, E3, E5); Inventory and Finance GL completed | Stock receipts reach the ledger once, failures visible | 5 |
+| 4 Procure to pay | Parties everywhere, one stock authority (T4, T5); **Procurement onto metadata**; budget control and relays (E6, E4) | Request, order, receive, invoice, match, post | 6 |
+| 5 Quote to cash | Invoice owners (T7); **Orders and AR onto metadata**; Treasury | Quote, order, ship, invoice, collect, post | 8 |
+| 6 Record to report | Costing, budgets, fixed assets, close, consolidation; asset link and legal entities (T6, T12) | Monthly close and consolidated statements | 8 |
+| 7 Full platform | CMMS and Workforce completed; **the remaining 15 modules onto metadata** (Communications, Connector Hub, Rule Studio, Tax, Multi-Currency, Spend, eSignature, Document Scanner, Ontology, Saga, Recovery Studio, Workflow Studio, Data Studio, Analytics, Geospatial); processes, reports, history, attachments, translations, documents, numbering, import and export (S7–S14); record and field rules, explainable access; lifecycle, privacy, legacy import; inbox, search, embedded analytics, offline mobile; manufacturing, projects, returns | The full platform | 23, plus 3 new |
+| Release | G5 acceptance → G6 authorized rollout → G7 observed production | Production | — |
+
+Operations (O2–O7) and the experience rules and benchmark (X1, X2) apply in every phase to what it releases.
 
 ## 5. Milestones
 

@@ -1,6 +1,7 @@
 # WI-OI-120q (R1): One permission vocabulary and one matcher
 
-- **Status:** Approved (owner, 2026-10-06: "R1 approved"); starts after the batch 1 images are built. First M1a card
+- **Status:** Approved (owner, 2026-10-06: "R1 approved"). Implemented 2026-10-06, uncommitted; awaiting the
+  Security review and the owner's decisions below. Evidence: `.pi/work/WI-OI-120.md` § WI-OI-120q. First M1a card
   of `docs/plans/platform-implementation-plan.md` v2; ADR-0034 accepted in direction 2026-10-06. Independent Security
   review before deploy (access change).
 - **Work item:** WI-OI-120. Evidence goes in `.pi/work/WI-OI-120.md`.
@@ -74,11 +75,19 @@ One vocabulary, one matcher, used everywhere; a catalogue of real permissions fo
   test.
 - `pnpm build`, `pnpm test`, `pnpm verify`; the WI-OI-120m journey after deploy.
 
+## Found during the work (for the owner)
+
+The inventory was larger than twelve. Seventeen matchers now delegate. Three groups are left as they are because
+converting them widens access beyond the list above:
+- the configuration `DictionaryRenderer`: Tenant Admins would gain 236 field permissions, Managers 5;
+- the Ontology, Saga and Document Scanner guards: they would honour their family wildcard;
+- about 15 inline checks in web pages: equivalent today for the colon codes they check.
+
 ## Done when
 
-- [ ] One matcher; every listed call site delegates to it.
-- [ ] The equivalence report shows only the intended behaviour changes.
-- [ ] The role editor lists catalogue permissions only.
+- [x] One matcher; every listed call site delegates to it (17 sites; three groups above left for the owner).
+- [x] The equivalence report shows only the intended behaviour changes (0 differences for shipped roles).
+- [x] The role editor lists catalogue permissions only.
 - [ ] Checks pass; Security review recorded before deploy; evidence recorded; images built and handed to the owner.
 
 ## Stop and ask if

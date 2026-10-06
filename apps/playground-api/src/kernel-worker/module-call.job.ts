@@ -8,6 +8,7 @@
 import { createPrivateKey } from 'node:crypto';
 import { buildPlatformContext, signPlatformContextToken } from '@gigalibs/auth-core';
 import {
+  holdsPermission,
   ORG_REPLICA_PAGE_SIZE,
   type OrgReplicaCompletionV1,
   type OrgReplicaUnitV1,
@@ -244,9 +245,9 @@ export function isOwnerRefusal(error: unknown): boolean {
   return error instanceof HttpException && [401, 403].includes(error.getStatus());
 }
 
-/** `*`, `<prefix>:*` or the exact permission, as the modules check it (`maps:*` grants `maps.node-types.manage`). */
+/** The one permission rule (WI-OI-120q), as the modules check it (`maps:*` grants `maps.node-types.manage`). */
 export function grants(permissions: readonly string[], required: string): boolean {
-  return permissions.includes('*') || permissions.includes(required) || permissions.includes(`${required.split(/[:.]/)[0]}:*`);
+  return holdsPermission(permissions, required);
 }
 
 export function moduleCallJob(

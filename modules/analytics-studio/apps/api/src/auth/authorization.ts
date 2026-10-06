@@ -15,6 +15,7 @@ import {
   verifyPlatformContextToken,
   type PlatformContextV1,
 } from '@gigalibs/auth-core';
+import { holdsPermission } from '@gigalibs/contracts';
 import { ANALYTICS_CONFIG } from '../config.provider.js';
 import { DatabaseService } from '../database/database.service.js';
 import type { AnalyticsRuntimeConfig } from '../runtime-config.js';
@@ -184,15 +185,7 @@ export function extractBearerToken(header: string | string[] | undefined): strin
   return match[1];
 }
 
-/**
- * `*`, `analytics:*` or the exact permission; `analytics:*` also covers `analytics:connectors:write`. Another family's
- * wildcard (`organization:*`) covers its own permissions, as in the core and web (WI-OI-109e2).
- */
+/** The one permission rule (WI-OI-120q): `*`, the exact code, or its family's wildcard (`analytics:*`). */
 function hasPermission(granted: readonly string[], required: string): boolean {
-  return (
-    granted.includes('*') ||
-    granted.includes('analytics:*') ||
-    granted.includes(required) ||
-    granted.includes(`${required.split(/[:.]/)[0]}:*`)
-  );
+  return holdsPermission(granted, required);
 }

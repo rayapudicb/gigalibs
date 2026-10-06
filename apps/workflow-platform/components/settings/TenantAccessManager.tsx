@@ -2,6 +2,7 @@
 
 import { PageShell } from '@/components/page-shell';
 import { memberStatusLabel, roleLabel } from '@/lib/role-labels';
+import { holdsPermission, isCataloguedPermission, PERMISSION_CATALOGUE } from '@gigalibs/contracts';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -19,49 +20,13 @@ import { TenantOidcManager } from './TenantOidcManager';
 
 const ROLES = ['TENANT_ADMIN', 'MANAGER', 'MEMBER', 'VIEWER', 'GUEST'] as const;
 const STATUSES = ['ACTIVE', 'SUSPENDED'] as const;
-const TENANT_PERMISSIONS = [
-  'users:read',
-  'users:update',
-  'invites:read',
-  'invites:create',
-  'invites:delete',
-  'settings:read',
-  'settings:update',
-  'workflows:read',
-  'workflows:create',
-  'workflows:update',
-  'workflows:execute',
-  'runs:read',
-  'runs:cancel',
-  'connections:read',
-  'connections:test',
-  'connections:profile',
-  'contracts:read',
-  'contracts:update',
-  'events:read',
-  'ap:read',
-  'ap:evaluate',
-  'actions:read',
-  'actions:approve',
-  'exceptions:read',
-  'exceptions:assign',
-  'exceptions:recover',
-  'exceptions:resolve',
-  'value:read',
-  'value:verify',
-  'retention:read',
-  'tenant:export',
-  // WI-OI-103e (ADR-0016 F16): Analytics permissions, grantable one by one.
-  'analytics:read',
-  'analytics:connectors:write',
-  'analytics:mappings:write',
-  'analytics:models:write',
-  'analytics:models:publish',
-  'analytics:charts:write',
-  'analytics:dashboards:write',
-  'analytics:reports:write',
-  'analytics:export',
-] as const;
+// WI-OI-120q (R1): the permissions a role may hold are those some screen, route or service checks, grouped by family.
+const PERMISSION_GROUPS = Object.entries(
+  PERMISSION_CATALOGUE.reduce<Record<string, string[]>>((groups, entry) => {
+    (groups[entry.family] ??= []).push(entry.code);
+    return groups;
+  }, {}),
+);
 type AssignableMemberRole = (typeof ROLES)[number];
 type MemberRole = AssignableMemberRole | 'SUPER_ADMIN';
 type MemberStatus = (typeof STATUSES)[number];
@@ -130,9 +95,7 @@ interface TenantDomainChallenge extends TenantDomainStatus {
 }
 
 function hasPermission(permissions: string[], requested: string): boolean {
-  if (permissions.includes('*') || permissions.includes(requested)) return true;
-  const [resource] = requested.split(':');
-  return permissions.includes(`${resource}:*`);
+  return holdsPermission(permissions, requested);
 }
 
 async function readError(response: Response, fallback: string): Promise<string> {
@@ -304,6 +267,29 @@ function MemberRow({ member, currentUserId, canUpdate, customRoles, onSaved }: M
   );
 }
 
+/** The catalogue by family, plus any code the role already holds that nothing checks, so it can be removed. */
+function PermissionOptions({ held }: { held: readonly string[] }) {
+  const unchecked = held.filter((code) => !isCataloguedPermission(code));
+  return (
+    <>
+      {PERMISSION_GROUPS.map(([family, codes]) => (
+        <optgroup key={family} label={family}>
+          {codes.map((code) => (
+            <option key={code}>{code}</option>
+          ))}
+        </optgroup>
+      ))}
+      {unchecked.length > 0 ? (
+        <optgroup label="Checked nowhere: remove before saving">
+          {unchecked.map((code) => (
+            <option key={code}>{code}</option>
+          ))}
+        </optgroup>
+      ) : null}
+    </>
+  );
+}
+
 function selectedPermissions(event: ChangeEvent<HTMLSelectElement>): string[] {
   return Array.from(event.target.selectedOptions, (option) => option.value);
 }
@@ -419,9 +405,7 @@ function CustomRoleRow({
           value={permissions}
           onChange={(event) => setPermissions(selectedPermissions(event))}
         >
-          {TENANT_PERMISSIONS.map((permission) => (
-            <option key={permission}>{permission}</option>
-          ))}
+          <PermissionOptions held={permissions} />
         </select>
       </label>
       <label className="text-xs font-medium text-zinc-700">
@@ -1162,9 +1146,7 @@ export function TenantAccessManager({
                   value={newRolePermissions}
                   onChange={(event) => setNewRolePermissions(selectedPermissions(event))}
                 >
-                  {TENANT_PERMISSIONS.map((permission) => (
-                    <option key={permission}>{permission}</option>
-                  ))}
+                  <PermissionOptions held={newRolePermissions} />
                 </select>
               </label>
               <Button className="self-end" type="submit" variant="primary" isLoading={creatingRole}>

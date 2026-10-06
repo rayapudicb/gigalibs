@@ -22,7 +22,7 @@ import {
   type TimesheetV1,
 } from '@gigalibs/contracts';
 import type { PoolClient } from 'pg';
-import type { GigaOpsPrincipal } from '../auth/authorization.js';
+import { hasWorkforcePermission, type GigaOpsPrincipal } from '../auth/authorization.js';
 import { type CommandContext, assertUuid, conflict, iso, parse, recordMutation } from '../common/commands.js';
 import { WorkforceDatabaseService } from '../database/database.service.js';
 import {
@@ -706,7 +706,7 @@ function replay(row: any, workerId: string): PunchV1 & { readonly replayed: bool
 }
 
 function hasPermission(principal: GigaOpsPrincipal, permission: string): boolean {
-  return principal.permissions.includes('*') || principal.permissions.includes('workforce:*') || principal.permissions.includes(permission);
+  return hasWorkforcePermission(principal.permissions, permission);
 }
 
 function inScope(principal: GigaOpsPrincipal, siteRef: string | null): boolean {

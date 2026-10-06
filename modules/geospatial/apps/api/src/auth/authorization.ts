@@ -15,6 +15,7 @@ import {
   verifyPlatformContextToken,
   type PlatformContextV1,
 } from '@gigalibs/auth-core';
+import { holdsPermission } from '@gigalibs/contracts';
 import { GEOSPATIAL_CONFIG } from '../config.provider.js';
 import { GeospatialDatabaseService } from '../database/database.service.js';
 import type { GeospatialRuntimeConfig } from '../runtime-config.js';
@@ -142,6 +143,7 @@ export function extractBearerToken(header: string | string[] | undefined): strin
   return match[1];
 }
 
+/** The one permission rule (WI-OI-120q): `*`, the exact code, or its family's wildcard (`maps:*`). */
 function hasPermission(granted: readonly string[], required: string): boolean {
-  return granted.includes('*') || granted.includes('maps:*') || granted.includes(required);
+  return holdsPermission(granted, required);
 }

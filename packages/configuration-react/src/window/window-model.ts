@@ -6,6 +6,7 @@ import type {
   DictionaryTabV1,
   DictionaryViewV1,
 } from '@gigalibs/contracts';
+import { holdsPermission } from '@gigalibs/contracts';
 import {
   evaluateDictionaryCondition,
   parseExactDecimal,
@@ -39,12 +40,9 @@ export interface PlacedField {
   readonly createWith?: { readonly moduleKey: string; readonly surfaceKey: string; readonly permission: string };
 }
 
-/** A permission is held exactly, through `*`, or through `<resource>:*` (also for `resource.entity.action`). */
+/** No permission named means open; otherwise the one permission rule (WI-OI-120q, `permissionMatches`). */
 export function holds(permissions: readonly string[], permission: string | undefined): boolean {
-  if (!permission) return true;
-  if (permissions.includes('*') || permissions.includes(permission)) return true;
-  const separator = permission.search(/[:.]/);
-  return separator > 0 && permissions.includes(`${permission.slice(0, separator)}:*`);
+  return !permission || holdsPermission(permissions, permission);
 }
 
 /** The window for a LIST view (or the requested view); null when the manifest declares none. */

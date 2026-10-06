@@ -133,3 +133,24 @@ describe('default tenant finance authority', () => {
     expect(permissions.some((permission) => permission.startsWith('ar:'))).toBe(false);
   });
 });
+
+// WI-OI-120q (R1): the control-plane guard and SCIM use the one permission rule.
+describe('PermissionEvaluator.match', () => {
+  it('covers with `*`, the same code in either spelling, or the family wildcard', () => {
+    expect(PermissionEvaluator.match('*', 'users:read')).toBe(true);
+    expect(PermissionEvaluator.match('users:read', 'users:read')).toBe(true);
+    expect(PermissionEvaluator.match('parties:identifiers:manage', 'parties:identifiers.manage')).toBe(true);
+    expect(PermissionEvaluator.match('users:*', 'users:read')).toBe(true);
+    expect(PermissionEvaluator.match('organization:*', 'organization.units.read')).toBe(true);
+  });
+
+  it('no longer treats `all`, `*:action`, a shorter grant or a third part as a wildcard or a scope', () => {
+    expect(PermissionEvaluator.match('all', 'users:read')).toBe(false);
+    expect(PermissionEvaluator.match('*:read', 'users:read')).toBe(false);
+    expect(PermissionEvaluator.match('finance:journals', 'finance:journals:post')).toBe(false);
+    expect(PermissionEvaluator.match('finance:journals:post', 'finance:journals:approve')).toBe(false);
+    expect(PermissionEvaluator.match('users:delete:own', 'users:delete', { userId: 'u1', resourceOwnerId: 'u1' })).toBe(false);
+    expect(PermissionEvaluator.hasAllPermissions(['users:read', 'users:*'], ['users:read', 'users:update'])).toBe(true);
+    expect(PermissionEvaluator.hasAllPermissions(['users:read'], ['users:read', 'users:update'])).toBe(false);
+  });
+});

@@ -1,4 +1,5 @@
 import {
+  holdsPermission,
   type PlatformModuleDefinition,
   platformModuleCatalog,
 } from '@gigalibs/contracts';
@@ -31,13 +32,9 @@ export function canInspectPlatformModule(path: string, platformRoles: readonly s
   return platformRoles.length > 0 && platformInspectionPaths.has(path);
 }
 
+/** The one permission rule (WI-OI-120q, `permissionMatches` in `@gigalibs/contracts`). */
 export function hasPermission(granted: readonly string[], required: string): boolean {
-  if (granted.includes('*') || granted.includes(required)) return true;
-  // A resource wildcard covers `resource:action` and granular `resource.entity.action`
-  // permissions alike (workforce:* → workforce.resources.read), matching the module APIs.
-  const separator = required.search(/[:.]/);
-  if (separator <= 0) return false;
-  return granted.includes(`${required.slice(0, separator)}:*`);
+  return holdsPermission(granted, required);
 }
 
 // A frozen or planned entry is locked (ADR-0016 F6; WI-OI-102e/f): its APIs refuse as well as its screens, whatever

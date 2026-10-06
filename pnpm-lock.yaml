@@ -2234,6 +2234,9 @@ importers:
       '@gigalibs/auth-core':
         specifier: workspace:*
         version: link:../auth-core
+      '@gigalibs/contracts':
+        specifier: workspace:*
+        version: link:../contracts
       pg:
         specifier: ^8.23.0
         version: 8.23.0
@@ -2373,6 +2376,10 @@ importers:
         version: 3.2.7(@types/node@24.13.3)(jiti@2.7.0)(tsx@4.23.12)
 
   packages/rbac-core:
+    dependencies:
+      '@gigalibs/contracts':
+        specifier: workspace:*
+        version: link:../contracts
     devDependencies:
       typescript:
         specifier: ^5.8.3

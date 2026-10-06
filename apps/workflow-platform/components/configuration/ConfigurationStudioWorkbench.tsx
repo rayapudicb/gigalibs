@@ -16,6 +16,7 @@ import type {
   ConfigurationField,
   ConfigurationImpactReport,
 } from '@gigalibs/contracts';
+import { holdsPermission } from '@gigalibs/contracts';
 import { Button, Input, toast as medusaToast } from '@medusajs/ui';
 import {
   AlignLeft,
@@ -2134,12 +2135,7 @@ function Labeled({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 function hasPermission(permissions: string[], required: string) {
-  const [resource] = required.split(':');
-  return (
-    permissions.includes('*') ||
-    permissions.includes(required) ||
-    permissions.includes(`${resource}:*`)
-  );
+  return holdsPermission(permissions, required);
 }
 function makeField(key: string): ConfigurationField {
   return {

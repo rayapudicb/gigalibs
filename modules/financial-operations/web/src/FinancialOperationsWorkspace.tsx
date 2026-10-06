@@ -1,5 +1,6 @@
 'use client';
 
+import { holdsPermission } from '@gigalibs/contracts';
 import { createRecordClient, MetadataWindow, type RecordClient, usePublishedManifest } from '@gigalibs/configuration-react';
 import { type FormEvent, type ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 
@@ -28,8 +29,7 @@ const primary =
 const box = 'rounded-lg border border-ui-border-base bg-ui-bg-base p-4';
 
 function holds(permissions: readonly string[], permission: string): boolean {
-  const prefix = permission.slice(0, permission.indexOf(':'));
-  return permissions.includes('*') || permissions.includes(permission) || permissions.includes(`${prefix}:*`);
+  return holdsPermission(permissions, permission);
 }
 
 export interface FinancialOperationsWorkspaceProps {

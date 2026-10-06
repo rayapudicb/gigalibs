@@ -1,3 +1,4 @@
+import { permissionMatches } from '@gigalibs/contracts';
 import type {
   PermissionContext,
   EnterpriseRole,
@@ -9,46 +10,13 @@ import type {
 
 export class PermissionEvaluator {
   /**
-   * Matches a granted permission string against a required permission.
+   * Matches a granted permission against a required one with the one permission rule (WI-OI-120q,
+   * `permissionMatches`): `*`, the same code in either spelling, or the family wildcard. A third part is a part of the
+   * code, never a scope; ownership and team scope are decided by `evaluateEnterpriseAccess` and the organization scope
+   * (ADR-0018, ADR-0034), not here. `context` is kept for callers.
    */
-  static match(granted: string, required: string, context?: PermissionContext): boolean {
-    if (granted === '*' || granted === 'all') return true;
-    if (granted === required) return true;
-
-    const [gResource, gAction, gScope] = granted.split(':');
-    const [rResource, rAction, rScope] = required.split(':');
-
-    // Check resource match
-    if (gResource !== '*' && gResource !== rResource) {
-      return false;
-    }
-
-    // Check action match
-    if (gAction !== '*' && gAction !== rAction) {
-      return false;
-    }
-
-    // If granted has no scope requirement, it's global
-    if (!gScope || gScope === 'all' || gScope === 'ALL') {
-      return true;
-    }
-
-    // Check Scoped ABAC Context
-    if (gScope === 'own' || gScope === 'OWN') {
-      if (context?.userId && context?.resourceOwnerId) {
-        return context.userId === context.resourceOwnerId;
-      }
-      return rScope === 'own' || rScope === 'OWN';
-    }
-
-    if (gScope === 'team' || gScope === 'TEAM') {
-      if (context?.userSquadId && context?.resourceSquadId) {
-        return context.userSquadId === context.resourceSquadId;
-      }
-      return rScope === 'team' || rScope === 'TEAM';
-    }
-
-    return false;
+  static match(granted: string, required: string, _context?: PermissionContext): boolean {
+    return permissionMatches(granted, required);
   }
 
   /**

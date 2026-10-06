@@ -15,6 +15,7 @@ import {
   verifyPlatformContextToken,
   type PlatformContextV1,
 } from '@gigalibs/auth-core';
+import { holdsPermission } from '@gigalibs/contracts';
 import { GIGAOPS_CONFIG } from '../config.provider.js';
 import { WorkforceDatabaseService } from '../database/database.service.js';
 import type { GigaOpsRuntimeConfig } from '../runtime-config.js';
@@ -181,12 +182,7 @@ export function hasWorkforcePermission(granted: readonly string[], required: str
   return hasPermission(granted, required);
 }
 
+/** The one permission rule (WI-OI-120q): `*`, the exact code, or its family's wildcard (`workforce:*`). */
 function hasPermission(granted: readonly string[], required: string): boolean {
-  return (
-    granted.includes('*') ||
-    granted.includes('workforce:*') ||
-    granted.includes(required) ||
-    // WI-OI-109e2: another family's wildcard (`organization:*`) covers its own permissions, as in the core and web.
-    granted.includes(`${required.split(/[:.]/)[0]}:*`)
-  );
+  return holdsPermission(granted, required);
 }

@@ -13,6 +13,7 @@ import {
 import { Reflector } from '@nestjs/core';
 import { PlatformContextError, verifyPlatformContextToken, type PlatformContextV1 } from '@gigalibs/auth-core';
 import type { OrganizationClaim } from '@gigalibs/module-sdk';
+import { holdsPermission } from '@gigalibs/contracts';
 import { CMMS_CONFIG } from '../config.provider.js';
 import { DatabaseService } from '../database/database.service.js';
 import { CMMS_MODULE_KEY, type CmmsRuntimeConfig } from '../runtime-config.js';
@@ -189,7 +190,7 @@ export function extractBearerToken(header: string | string[] | undefined): strin
   return match[1];
 }
 
-/** `*`, `cmms:*` or the exact permission; `cmms:*` covers every `cmms.<area>.<action>`. */
+/** The one permission rule (WI-OI-120q): `*`, the exact code, or its family's wildcard (`cmms:*`). */
 export function hasCmmsPermission(granted: readonly string[], required: string): boolean {
-  return granted.includes('*') || granted.includes('cmms:*') || granted.includes(required);
+  return holdsPermission(granted, required);
 }

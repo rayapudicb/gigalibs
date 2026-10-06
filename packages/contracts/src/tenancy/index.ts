@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { EmailSchema, SlugSchema, UrlSchema } from '../common/index.js';
 import { SpatialScopePlaceIdsSchema } from '../geospatial/index.js';
+import { isCataloguedPermission } from '../rbac/control-plane-permissions.js';
 
 // ─── Tenancy Schemas ─────────────────────────────────────────────────────────
 
@@ -130,8 +131,13 @@ const CustomRoleFieldsSchema = z.object({
     .string()
     .regex(/^#[0-9a-fA-F]{6}$/)
     .default('#6366f1'),
+  // WI-OI-120q (R1): a role holds only permissions some screen, route or service checks (PERMISSION_CATALOGUE).
   permissions: z
-    .array(TenantPermissionSchema)
+    .array(
+      TenantPermissionSchema.refine(isCataloguedPermission, {
+        message: 'No screen or service checks this permission; choose one from the permission list',
+      }),
+    )
     .max(100)
     .transform((permissions) => [...new Set(permissions)]),
 });

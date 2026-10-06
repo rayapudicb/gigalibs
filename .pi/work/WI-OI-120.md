@@ -1424,3 +1424,75 @@ widening the card to fix the API faults the proof found.
   (`workforce-resources.service.spec.ts`); own-absence refusal (`availability-decisions.spec.ts`); no module role
   carries workspace administration or the login link (`permission-code.test.ts`).
 - **Checks:** `pnpm verify` passes (known drift).
+
+### WI-OI-120q (R1): one permission matcher (2026-10-06)
+
+- **Built** (`b7f8a53` images, backup `gigalibs_backup_20261006_091127Z` of the running `7485aec`; handed to the
+  owner for deploy). UAT was already on batch 1 (`7485aec`), not `5ee536a` as said earlier in the session.
+- **The matcher:** `permissionMatches` / `holdsPermission` in `packages/contracts/src/rbac/permission-match.ts`. A code
+  is a family plus one to three parts, colons or dots (both spellings are the same code); a grant covers a code when it
+  is `*`, the same code, or the family wildcard. Nothing else: no `all`, no `*:action`, no prefix, no shorter grant
+  covering a longer code, no third part read as a scope. 46 table cases.
+- **Delegating to it (17 sites):**
+  - web `module-access.ts`;
+  - renderer `window-model.ts`;
+  - the CMMS, Geospatial, Analytics and Workforce guards;
+  - Workforce bookings and time;
+  - the module SDK guard (`hasModulePermission`) and record dispatcher (`holds`);
+  - the control-plane evaluator (`PermissionEvaluator.match`; the rbac-nest guard and SCIM);
+  - the Configuration Studio service;
+  - the kernel module-call check;
+  - Settings → Team;
+  - the Configuration Studio workbench;
+  - the Catalogue and Finance web.
+  The inventory was larger than the card's twelve.
+- **Dispatcher defect fixed and tested:** `cmms:*` now covers `cmms.work-orders.read` there
+  (`record-dispatcher.test.ts`).
+- **Equivalence check:** `pnpm exec tsx scripts/permission-equivalence.mts`. It evaluates 29 roles (6 base roles
+  with inheritance and 23 module roles) against 296 permission codes, under each replaced rule and the new one. Codes
+  come from manifest gateways, catalogue entries, windows, control-plane and module route decorators, and role grants.
+  - **Result: 0 differences.** No shipped role gains or loses anything.
+  - `--probe` adds grant sets no shipped role holds. It shows the intended changes and nothing else:
+    - `all` and `*:read` stop matching in the control plane and Configuration Studio;
+    - both spellings match;
+    - another family's wildcard covers its own codes in the CMMS, Geospatial, Workforce bookings and time, and SDK
+      guards.
+  - A custom role holding only a module wildcard (for example `products:*`) no longer covers other families' codes at
+    that module's API (`catalogues:read`, `uoms:manage`, `organization:activate`). Nothing a person can do changes:
+    the web gateway (every routed call) and the kernel (`module-call.job.ts:278`, before signing) already refuse them
+    with the same rule.
+  - The check found three false alarms in its own first runs, each corrected before the result was read:
+    - the eSignature guard does honour `esign:*`;
+    - module-role grants are not API checks;
+    - decorators in module APIs needed scanning.
+- **Not changed, for the owner** (each would widen access, so it is outside the card's list):
+  - **The configuration `DictionaryRenderer`** (exact match only). With the one rule, Tenant Admins would see 236 and
+    Managers 5 dictionary-form field permissions they hold through a family wildcard but cannot use today (run
+    `--unconverted`).
+  - **The Ontology, Saga and Document Scanner guards** (exact only). They would start honouring their family
+    wildcard, for custom roles that hold one; no shipped role does.
+  - **About 15 inline checks in web pages** (`includes('*') || includes('x:*') || includes('x:y')`). They are
+    equivalent for the colon codes they check.
+- **Catalogue:**
+  - Module permissions are generated into `packages/contracts/src/rbac/permission-catalogue.generated.ts` (140
+    codes, from gateways, catalogue entries, module roles and windows).
+  - Control-plane permissions are in `control-plane-permissions.ts` (72 codes). A test fails if any route decorator
+    names a code missing from it.
+  - Settings → Team lists the catalogue by family instead of 42 fixed codes. Two of those fixed codes are checked
+    nowhere (`runs:cancel`, `contracts:update`) and are dropped. A role already holding one shows it under "Checked
+    nowhere: remove before saving".
+  - Saving a role with an uncatalogued code is refused (`CreateCustomRoleSchema`, `UpdateCustomRoleSchema`).
+- **Dependencies:** `@gigalibs/contracts` added to `module-sdk` and `rbac-core` (two lockfile links only; frozen
+  install passes).
+- **Checks:**
+  - `pnpm verify` passes (one known drift; database proofs not run without an isolated database).
+  - The dispatcher-backed proofs pass on the isolated proof database (127.0.0.1:55433, never UAT):
+    - module host over HTTP: 39/39;
+    - Inventory windows: 27/27;
+    - Catalogue windows: 27/27;
+    - general ledger: 27/27;
+    - CMMS screen routes: 56/56.
+  - Touched suites: 192 files and 1912 tests pass. New tests: `permission-match.test.ts` (46),
+    `permission-catalogue.test.ts` (7), evaluator cases in `rbac.test.ts`, and the dotted-code case in
+    `record-dispatcher.test.ts`.
+  - Not yet done: the independent Security review, and the journey after deploy.

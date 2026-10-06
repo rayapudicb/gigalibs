@@ -15,6 +15,7 @@ import {
   validateConfigurationValues,
 } from '@gigalibs/configuration-core';
 import {
+  holdsPermission,
   GOVERNED_CATALOGUE_SCOPES,
   LEGACY_GOVERNED_CATALOGUE_SCOPES,
   SOLUTION_CONFIGURATION_MODULE_KEY,
@@ -3330,17 +3331,12 @@ function nullableJsonInput(value: unknown): Prisma.InputJsonValue | typeof Prism
   return value === null || value === undefined ? Prisma.JsonNull : jsonInput(value);
 }
 
+/**
+ * No permission named means open; otherwise the one permission rule (WI-OI-120q). `all`, `*:action` and a two-part
+ * grant covering a three-part code no longer match; no role grants them.
+ */
 function hasPermission(permissions: string[], required: string | undefined): boolean {
-  if (!required) return true;
-  const [requiredResource, requiredAction] = required.split(':');
-  return permissions.some((permission) => {
-    if (permission === '*' || permission === 'all' || permission === required) return true;
-    const [resource, action] = permission.split(':');
-    return (
-      (resource === '*' || resource === requiredResource) &&
-      (action === '*' || action === requiredAction)
-    );
-  });
+  return !required || holdsPermission(permissions, required);
 }
 
 function filterManifest(

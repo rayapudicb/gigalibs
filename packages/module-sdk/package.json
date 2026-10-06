@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "@gigalibs/auth-core": "workspace:*",
+    "@gigalibs/contracts": "workspace:*",
     "pg": "^8.23.0"
   },
   "peerDependencies": {
