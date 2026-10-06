@@ -9,6 +9,7 @@
 #         bash e2e/run-uat-walkthrough.sh --tour       # guided tour of Automate & Run and Intelligence, visible
 #         bash e2e/run-uat-walkthrough.sh --approvals  # maker-checker with the second (approver) login
 #         bash e2e/run-uat-walkthrough.sh --ledger     # general ledger: a book, a month of journals, the reports
+#         bash e2e/run-uat-walkthrough.sh --journey    # a new customer from sign-up to maintenance work, as five people
 #         bash e2e/run-uat-walkthrough.sh --all        # data, approvals, ledger, Add new, modules, inventory flow, screens
 # The login is asked for here and lives only in this shell: it is never written to a file or printed.
 # E2E_UAT_TENANT picks the tenant when the login has several (default "GigaLibs Global Enterprise").
@@ -60,6 +61,13 @@ case "$mode" in
     exit "$status" ;;
   --ledger)
     run specs/uat-general-ledger.spec.ts
+    exit "$status" ;;
+  --journey)
+    # Signs up new people (journey.<role>.<run>@gigalibs.test) with the admin password and writes only in the
+    # workspace it creates. Board: e2e/test-results/journey/index.html
+    E2E_JOURNEY_PASSWORD="$E2E_UAT_ADMIN_PASSWORD" run specs/journey-tenant-to-value.spec.ts
+    board="$(pwd)/test-results/journey/index.html"
+    [ -f "$board" ] && { echo "Journey board: $board"; open "$board"; }
     exit "$status" ;;
   --screens) ;;
   --all)

@@ -148,13 +148,19 @@ const DICTIONARY: Record<SupportedLocale, Record<string, string>> = {
 
 const CurrencyLocaleContext = createContext<CurrencyLocaleContextType | undefined>(undefined);
 
-export function CurrencyLocaleProvider({ children }: { children: React.ReactNode }) {
+/**
+ * WI-OI-120n: `enabled` is false when the workspace does not have Multi-Currency or the person may not read it; the
+ * provider then keeps its defaults and the person's choices in the page, and makes no Currency calls (a trial
+ * workspace otherwise sent two refused calls from every page).
+ */
+export function CurrencyLocaleProvider({ children, enabled = true }: { children: React.ReactNode; enabled?: boolean }) {
   const [currency, setCurrencyState] = useState<SupportedCurrency>('USD');
   const [locale, setLocaleState] = useState<SupportedLocale>('en-US');
   const [rates, setRates] = useState<CurrencyPair[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(enabled);
 
   const loadPreferencesAndRates = useCallback(async () => {
+    if (!enabled) return;
     try {
       setIsLoading(true);
       const [pairsData, prefsData] = await Promise.all([
@@ -183,22 +189,28 @@ export function CurrencyLocaleProvider({ children }: { children: React.ReactNode
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [enabled]);
 
   useEffect(() => {
     void loadPreferencesAndRates();
   }, [loadPreferencesAndRates]);
+
+  /** Saves the presentation preference to Currency, when the workspace has it. */
+  const savePreference = (body: Record<string, string>) => {
+    if (!enabled) return;
+    void requestCurrency('v1/preferences', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    }).catch(() => {});
+  };
 
   // Synchronized Currency & Country/Locale: setting currency also aligns country locale in parallel
   const setCurrency = (newCurrency: SupportedCurrency) => {
     const linkedLocale = CURRENCY_TO_LOCALE_MAP[newCurrency] || 'en-US';
     setCurrencyState(newCurrency);
     setLocaleState(linkedLocale);
-    void requestCurrency('v1/preferences', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ presentationCurrency: newCurrency, defaultLocale: linkedLocale }),
-    }).catch(() => {});
+    savePreference({ presentationCurrency: newCurrency, defaultLocale: linkedLocale });
   };
 
   // Synchronized Country/Locale & Currency: setting locale also aligns presentation currency in parallel
@@ -206,22 +218,14 @@ export function CurrencyLocaleProvider({ children }: { children: React.ReactNode
     const linkedCurrency = LOCALE_TO_CURRENCY_MAP[newLocale] || 'USD';
     setLocaleState(newLocale);
     setCurrencyState(linkedCurrency);
-    void requestCurrency('v1/preferences', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ defaultLocale: newLocale, presentationCurrency: linkedCurrency }),
-    }).catch(() => {});
+    savePreference({ defaultLocale: newLocale, presentationCurrency: linkedCurrency });
   };
 
   const setCountryAndCurrency = (newCurrency: SupportedCurrency, newLocale?: SupportedLocale) => {
     const targetLocale = newLocale || CURRENCY_TO_LOCALE_MAP[newCurrency] || 'en-US';
     setCurrencyState(newCurrency);
     setLocaleState(targetLocale);
-    void requestCurrency('v1/preferences', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ presentationCurrency: newCurrency, defaultLocale: targetLocale }),
-    }).catch(() => {});
+    savePreference({ presentationCurrency: newCurrency, defaultLocale: targetLocale });
   };
 
   const convert = useCallback(

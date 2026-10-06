@@ -223,12 +223,12 @@ export class ImportJobService {
       await this.updateJobStatus(tenantId, jobId, 'COMMITTING');
       let batchResult: { committed: number; failed: Array<{ rowNumber: number; error: string }> };
       if (IAM_ENTITY_TYPES.includes(entityType)) {
-        batchResult = await this.iamUserImportService.processUserRows(
-          tenantId,
-          actorId,
-          sorted,
-          allOrNothing,
-        );
+        // WI-OI-120n (owner authorised, 2026-10-06): the user import is switched off (it wrote the control plane's
+        // invitations from this module). A job started before the switch commits nothing.
+        batchResult = {
+          committed: 0,
+          failed: sorted.map((row) => ({ rowNumber: row.rowNumber, error: 'Importing users is switched off; invite people on Settings → Team.' })),
+        };
       } else {
         batchResult = await this.batchWriter.writeBatches(
           tenantId,

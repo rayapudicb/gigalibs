@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { roleLabel } from '@/lib/role-labels';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation, LanguageSelector } from '@/components/i18n';
@@ -18,8 +19,8 @@ export function UserNav({ session }: { session: VerifiedSession }) {
   const hasPlatformAuthority = session.platformRoles.length > 0;
   const primaryPlatformRole = session.platformRoles[0];
   const primaryRole =
-    primaryPlatformRole?.replaceAll('_', ' ') ??
-    session.roles[0]?.replaceAll('_', ' ') ??
+    (primaryPlatformRole ? roleLabel(primaryPlatformRole) : undefined) ??
+    (session.roles[0] ? roleLabel(session.roles[0]) : undefined) ??
     'MEMBER';
 
   const userInitials = (session.user.name || session.user.email || 'U')
@@ -126,7 +127,7 @@ export function UserNav({ session }: { session: VerifiedSession }) {
               )}
               {session.roles[0] && (
                 <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-50 text-blue-700 border border-blue-200">
-                  {session.roles[0]}
+                  {roleLabel(session.roles[0])}
                 </span>
               )}
             </div>

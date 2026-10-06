@@ -1,6 +1,7 @@
 import { UserNav } from '@/components/auth/UserNav';
 import { CurrencyLocaleProvider } from '@/components/currency/CurrencyLocaleContext';
 import { AppI18nProvider } from '@/components/i18n/AppI18nProvider';
+import { hasPermission } from '@/lib/module-access';
 import { verifiedSession } from '@/lib/verified-session';
 import { cookies } from 'next/headers';
 import Link from 'next/link';
@@ -37,7 +38,12 @@ export default async function StudioLayout({ children }: { children: React.React
           <UserNav session={session.context} />
         </header>
         <main className="min-h-0 flex-1 overflow-y-auto" data-module-content-root>
-          <CurrencyLocaleProvider>{children}</CurrencyLocaleProvider>
+          {/* WI-OI-120n: Currency is asked only when the workspace has it and the person may read it. */}
+          <CurrencyLocaleProvider
+            enabled={Boolean(session.context.tenant.features?.includes('multi-currency')) && hasPermission(session.context.permissions, 'currency:read')}
+          >
+            {children}
+          </CurrencyLocaleProvider>
         </main>
       </div>
     </AppI18nProvider>

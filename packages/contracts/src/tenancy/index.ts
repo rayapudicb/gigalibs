@@ -102,17 +102,24 @@ export const AcceptTenantInviteSchema = z.object({
  * A tenant permission code: `resource:action`, `resource:*`, or (WI-OI-103e, ADR-0016 F16) `module:resource:action`
  * such as `analytics:charts:write`. `resource:*` covers the three-part codes of that resource. A wildcard is only
  * allowed as the whole action of a two-part code, and `platform:` codes are never delegated by a tenant role.
+ *
+ * WI-OI-120n: also the dotted codes CMMS, Workforce and Geospatial check, such as `cmms.work-orders.write`,
+ * `workforce.time.punch` or `maps.nodes.read` (two to four parts, never a wildcard), so a tenant role can carry them.
+ * Before this, no custom role could hold a CMMS or Workforce permission.
  */
-export const TENANT_PERMISSION_CODE_PATTERN = /^[a-z][a-z0-9-]*:(?:\*|[a-z][a-z0-9-]*(?::[a-z][a-z0-9-]*)?)$/;
+export const TENANT_PERMISSION_CODE_PATTERN =
+  /^(?:[a-z][a-z0-9-]*:(?:\*|[a-z][a-z0-9-]*(?::[a-z][a-z0-9-]*)?)|[a-z][a-z0-9-]*(?:\.[a-z][a-z0-9-]*){1,3})$/;
+
+const isPlatformCode = (value: string) => value.startsWith('platform:') || value.startsWith('platform.');
 
 export function isTenantPermissionCode(value: unknown): value is string {
-  return typeof value === 'string' && TENANT_PERMISSION_CODE_PATTERN.test(value) && !value.startsWith('platform:');
+  return typeof value === 'string' && TENANT_PERMISSION_CODE_PATTERN.test(value) && !isPlatformCode(value);
 }
 
 export const TenantPermissionSchema = z
   .string()
   .regex(TENANT_PERMISSION_CODE_PATTERN, 'Invalid tenant permission code')
-  .refine((permission) => !permission.startsWith('platform:'), {
+  .refine((permission) => !isPlatformCode(permission), {
     message: 'Platform permissions cannot be delegated by a tenant role',
   });
 

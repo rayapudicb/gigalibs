@@ -212,11 +212,9 @@ export default function ExecutiveControlTower({
       {/* ── Action Toolbar & Persona Lens Bar ────────────────────────── */}
       <div className="flex flex-wrap items-center justify-between gap-4 p-3 rounded-xl border border-ui-border-base bg-ui-bg-subtle shadow-2xs">
         <div className="flex flex-wrap items-center gap-2">
-          <Badge color="purple" size="small" className="font-mono text-[10px] font-bold">
-            ADR-0003 Phase 6
-          </Badge>
-          <Badge color="blue" size="small" className="font-mono text-[10px]">
-            Scope: {initialDepartment === 'ALL' ? 'FLAT_TENANT' : 'SCOPED_DEPARTMENTS'}
+          {/* WI-OI-120n: words, not codes (this badge showed FLAT_TENANT, beside an internal design reference). */}
+          <Badge color="blue" size="small" className="text-[11px]">
+            Showing: {initialDepartment === 'ALL' ? 'the whole workspace' : 'your departments'}
           </Badge>
         </div>
 

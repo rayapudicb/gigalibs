@@ -386,8 +386,8 @@ function ResourceDirectory({ initial, capabilities, reload }: {
                       <span className="block txt-compact-small-plus">{resource.displayName}</span>
                       <span className="font-mono text-xs text-ui-fg-subtle">{resource.referenceCode}</span>
                     </Table.Cell>
-                    <Table.Cell>{resource.resourceType}</Table.Cell>
-                    <Table.Cell><StatusBadge color={resource.status === 'ACTIVE' ? 'green' : 'grey'}>{resource.status}</StatusBadge></Table.Cell>
+                    <Table.Cell>{typeLabel(resource.resourceType)}</Table.Cell>
+                    <Table.Cell><StatusBadge color={resource.status === 'ACTIVE' ? 'green' : 'grey'}>{statusLabel(resource.status)}</StatusBadge></Table.Cell>
                     <Table.Cell className="tabular-nums">{resource.qualificationCount}</Table.Cell>
                   </Table.Row>
                 ))}
@@ -401,6 +401,38 @@ function ResourceDirectory({ initial, capabilities, reload }: {
   );
 }
 
+// WI-OI-120n: a Workforce person is linked to the login of the workspace member who is that person, so they can see
+// their own jobs, punch time and request absence (one person per login). Members come from the workspace's own list.
+interface WorkspaceMember {
+  readonly id: string;
+  readonly user: { readonly id: string; readonly email: string; readonly name: string | null };
+}
+
+function useWorkspaceMembers(): { members: readonly WorkspaceMember[]; failure: string } {
+  const [members, setMembers] = useState<readonly WorkspaceMember[]>([]);
+  const [failure, setFailure] = useState('');
+  useEffect(() => {
+    let active = true;
+    fetch('/api/control/tenants/current/members', { cache: 'no-store', headers: { Accept: 'application/json' } })
+      .then(async (response) => {
+        if (!response.ok) throw new Error('Workspace members could not be loaded, so a login cannot be chosen.');
+        const payload: unknown = await response.json();
+        if (active) setMembers(Array.isArray(payload) ? (payload as WorkspaceMember[]) : []);
+      })
+      .catch((reason: Error) => active && setFailure(reason.message));
+    return () => {
+      active = false;
+    };
+  }, []);
+  return { members, failure };
+}
+
+const memberLabel = (member: WorkspaceMember) => (member.user.name ? `${member.user.name} (${member.user.email})` : member.user.email);
+const RESOURCE_TYPE_LABELS: Readonly<Record<string, string>> = { HUMAN: 'Person', TEAM: 'Team', POOL: 'Resource pool' };
+const STATUS_LABELS: Readonly<Record<string, string>> = { ACTIVE: 'Active', INACTIVE: 'Inactive', ARCHIVED: 'Archived' };
+const typeLabel = (value: string) => RESOURCE_TYPE_LABELS[value] ?? value;
+const statusLabel = (value: string) => STATUS_LABELS[value] ?? value;
+
 function Field({ id, label, className = '', children }: { id: string; label: string; className?: string; children: ReactNode }) {
   return (
     <div className={`flex flex-col gap-y-1.5 ${className}`}>
@@ -413,14 +445,18 @@ function Field({ id, label, className = '', children }: { id: string; label: str
 function CreateResourceForm({ onCreated }: { onCreated: (resource: WorkforceResourceDetailV1) => Promise<void> }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [resourceType, setResourceType] = useState<WorkforceResourceTypeV1>('HUMAN');
+  const { members, failure } = useWorkspaceMembers();
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); setSaving(true); setError('');
     const data = new FormData(event.currentTarget);
+    const platformUserId = resourceType === 'HUMAN' ? String(data.get('platformUserId') ?? '') : '';
     try {
       const resource = await workforceApi.createResource({
         referenceCode: String(data.get('referenceCode') ?? ''),
         displayName: String(data.get('displayName') ?? ''),
-        resourceType: String(data.get('resourceType')) as WorkforceResourceTypeV1,
+        resourceType,
+        ...(platformUserId ? { platformUserId } : {}),
       });
       await onCreated(resource);
     } catch (reason) { setError((reason as Error).message); }
@@ -431,14 +467,69 @@ function CreateResourceForm({ onCreated }: { onCreated: (resource: WorkforceReso
       <Field id="resource-reference" label="Reference code"><Input id="resource-reference" required name="referenceCode" maxLength={64} className="uppercase" /></Field>
       <Field id="resource-name" label="Display name"><Input id="resource-name" required name="displayName" maxLength={200} /></Field>
       <Field id="resource-type" label="Resource type">
-        <select id="resource-type" name="resourceType" className={selectClass}>
+        <select id="resource-type" name="resourceType" className={selectClass} value={resourceType} onChange={(event) => setResourceType(event.target.value as WorkforceResourceTypeV1)}>
           <option value="HUMAN">Person</option>
           <option value="TEAM">Team</option>
           <option value="POOL">Resource pool</option>
         </select>
       </Field>
+      {resourceType === 'HUMAN' ? (
+        <Field id="resource-login" label="Login (optional)" className="md:col-span-3">
+          <select id="resource-login" name="platformUserId" className={selectClass} defaultValue="">
+            <option value="">Not linked yet</option>
+            {members.map((member) => (
+              <option key={member.user.id} value={member.user.id}>{memberLabel(member)}</option>
+            ))}
+          </select>
+          <Text size="xsmall" className="text-ui-fg-subtle">The workspace member who is this person. Linked people see their own jobs, punch time and request absence.</Text>
+          {failure ? <Text size="xsmall" className="text-ui-fg-error">{failure}</Text> : null}
+        </Field>
+      ) : null}
       {error ? <Alert variant="error" role="alert" className="md:col-span-3">{error}</Alert> : null}
       <Button type="submit" isLoading={saving} className="md:col-span-3">Create persisted resource</Button>
+    </form>
+  );
+}
+
+/** Who this person is in the workspace: link, change or clear the login, with the version the screen read. */
+function LoginLink({ resource, onChanged }: { resource: WorkforceResourceDetailV1; onChanged: () => Promise<void> }) {
+  const { members, failure } = useWorkspaceMembers();
+  const [choice, setChoice] = useState(resource.platformUserId ?? '');
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState<{ tone: 'error' | 'info'; text: string } | null>(null);
+  useEffect(() => setChoice(resource.platformUserId ?? ''), [resource.platformUserId]);
+  const linked = members.find((member) => member.user.id === resource.platformUserId);
+  async function save(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSaving(true);
+    setMessage(null);
+    try {
+      await workforceApi.updateResource(resource.id, { expectedVersion: resource.version, platformUserId: choice || null });
+      setMessage({ tone: 'info', text: choice ? 'Login linked.' : 'Login unlinked.' });
+      await onChanged();
+    } catch (reason) {
+      setMessage({ tone: 'error', text: (reason as Error).message });
+    } finally {
+      setSaving(false);
+    }
+  }
+  return (
+    <form onSubmit={(event) => void save(event)} className="mt-5 space-y-2" aria-label="Login">
+      <Label htmlFor={`resource-login-${resource.id}`} size="xsmall" weight="plus">Login</Label>
+      <Text size="xsmall" className="text-ui-fg-subtle">
+        {resource.platformUserId ? `Linked to ${linked ? memberLabel(linked) : 'a member who has left the workspace'}.` : 'Not linked: this person cannot see their own jobs or punch time yet.'}
+      </Text>
+      <div className="flex gap-2">
+        <select id={`resource-login-${resource.id}`} className={selectClass} value={choice} onChange={(event) => setChoice(event.target.value)}>
+          <option value="">Not linked</option>
+          {members.map((member) => (
+            <option key={member.user.id} value={member.user.id}>{memberLabel(member)}</option>
+          ))}
+        </select>
+        <Button type="submit" size="small" variant="secondary" isLoading={saving} disabled={choice === (resource.platformUserId ?? '')}>Save</Button>
+      </div>
+      {failure ? <Text size="xsmall" className="text-ui-fg-error">{failure}</Text> : null}
+      {message ? <Text size="xsmall" role={message.tone === 'error' ? 'alert' : 'status'} className={message.tone === 'error' ? 'text-ui-fg-error' : 'text-ui-fg-subtle'}>{message.text}</Text> : null}
     </form>
   );
 }
@@ -471,12 +562,13 @@ function ResourceDetail({ resource, capabilities, notice, onChanged }: { resourc
             <Heading level="h2">{resource.displayName}</Heading>
             <p className="mt-1 font-mono text-xs text-ui-fg-subtle">{resource.referenceCode}</p>
           </div>
-          <StatusBadge color={resource.status === 'ACTIVE' ? 'green' : 'grey'}>{resource.status}</StatusBadge>
+          <StatusBadge color={resource.status === 'ACTIVE' ? 'green' : 'grey'}>{statusLabel(resource.status)}</StatusBadge>
         </div>
         <dl className="mt-5 grid grid-cols-2 gap-3 txt-compact-small">
-          <div><dt className="text-ui-fg-subtle">Type</dt><dd className="mt-1 txt-compact-small-plus">{resource.resourceType}</dd></div>
+          <div><dt className="text-ui-fg-subtle">Type</dt><dd className="mt-1 txt-compact-small-plus">{typeLabel(resource.resourceType)}</dd></div>
           <div><dt className="text-ui-fg-subtle">Version</dt><dd className="mt-1 txt-compact-small-plus">{resource.version}</dd></div>
         </dl>
+        {resource.resourceType === 'HUMAN' ? <LoginLink resource={resource} onChanged={onChanged} /> : null}
         <Heading level="h3" className="mt-6">Qualifications</Heading>
         {resource.qualifications.length === 0 ? <Text size="small" className="mt-2 text-ui-fg-subtle">No qualifications assigned.</Text> : (
           <ul className="mt-3 space-y-2">

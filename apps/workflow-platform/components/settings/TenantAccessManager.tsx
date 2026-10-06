@@ -1,6 +1,7 @@
 'use client';
 
 import { PageShell } from '@/components/page-shell';
+import { memberStatusLabel, roleLabel } from '@/lib/role-labels';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -220,17 +221,17 @@ function MemberRow({ member, currentUserId, canUpdate, customRoles, onSaved }: M
           >
             {member.role === 'SUPER_ADMIN' ? (
               <option value="SUPER_ADMIN" disabled>
-                SUPER ADMIN (operator managed)
+                {roleLabel('SUPER_ADMIN')} (managed by GigaLibs)
               </option>
             ) : null}
             {ROLES.map((option) => (
               <option key={option} value={option}>
-                {option.replaceAll('_', ' ')}
+                {roleLabel(option)}
               </option>
             ))}
           </select>
         ) : (
-          member.role.replaceAll('_', ' ')
+          roleLabel(member.role)
         )}
       </TableCell>
       <TableCell>
@@ -242,11 +243,13 @@ function MemberRow({ member, currentUserId, canUpdate, customRoles, onSaved }: M
             onChange={(event) => setStatus(event.target.value as MemberStatus)}
           >
             {STATUSES.map((option) => (
-              <option key={option}>{option}</option>
+              <option key={option} value={option}>
+                {memberStatusLabel(option)}
+              </option>
             ))}
           </select>
         ) : (
-          member.status
+          memberStatusLabel(member.status)
         )}
       </TableCell>
       <TableCell>{formatDate(member.joinedAt)}</TableCell>
@@ -1060,7 +1063,9 @@ export function TenantAccessManager({
                   onChange={(event) => setRole(event.target.value as AssignableMemberRole)}
                 >
                   {ROLES.map((option) => (
-                    <option key={option}>{option}</option>
+                    <option key={option} value={option}>
+                      {roleLabel(option)}
+                    </option>
                   ))}
                 </select>
               </label>
@@ -1280,7 +1285,7 @@ export function TenantAccessManager({
                   return (
                     <TableRow key={invitation.id}>
                       <TableCell>{invitation.email}</TableCell>
-                      <TableCell>{invitation.role}</TableCell>
+                      <TableCell>{roleLabel(invitation.role)}</TableCell>
                       <TableCell>{status}</TableCell>
                       <TableCell>{formatDate(invitation.expiresAt)}</TableCell>
                       {canDeleteInvites ? (

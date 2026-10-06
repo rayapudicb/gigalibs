@@ -85,7 +85,9 @@ const entryFields = [
 const manifestOnlyFields = ['navigationOrder', 'hostedFor', 'menu', 'personas', 'roles'];
 // The kernel's tenant permission grammar (contracts isTenantPermissionCode), without wildcards: a default role names
 // every permission it grants.
-const ROLE_PERMISSION = /^[a-z][a-z0-9-]*:[a-z][a-z0-9-]*(?::[a-z][a-z0-9-]*)?$/;
+// A module role's permission: `module:action`, `module:resource:action`, or (WI-OI-120n) the dotted codes CMMS,
+// Workforce and Geospatial check, such as `cmms.work-orders.write`. Never a wildcard.
+const ROLE_PERMISSION = /^(?:[a-z][a-z0-9-]*:[a-z][a-z0-9-]*(?::[a-z][a-z0-9-]*)?|[a-z][a-z0-9-]*(?:\.[a-z][a-z0-9-]*){1,3})$/;
 const roleNames = new Set();
 // Platform Operators and Tenant Admins see every entry; these personas see only the entries that list them.
 const restrictedPersonas = ['C_LEVEL', 'OPERATIONS_SUPERVISOR', 'WORKFORCE_MEMBER', 'CUSTOMER_GUEST'];
@@ -163,7 +165,7 @@ function checkEntry(where, entry, kind) {
       else {
         if (new Set(permissions).size !== permissions.length) fail(at, 'permissions must be distinct');
         for (const permission of permissions)
-          if (typeof permission !== 'string' || !ROLE_PERMISSION.test(permission) || permission.startsWith('platform:'))
+          if (typeof permission !== 'string' || !ROLE_PERMISSION.test(permission) || /^platform[:.]/.test(permission))
             fail(at, `permission ${JSON.stringify(permission)} must be a tenant permission such as analytics:read, without wildcards`);
       }
     });

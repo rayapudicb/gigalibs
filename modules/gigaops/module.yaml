@@ -75,6 +75,17 @@ spec:
         - { key: pay, label: Pay-ready Outputs, path: /gigaops/pay, icon: coins }
         - { key: compliance, label: Compliance, path: /gigaops/compliance, icon: scale }
         - { key: analytics, label: Workforce Analytics, path: /gigaops/analytics, icon: bar-chart }
+      # WI-OI-120n (owner, 2026-10-06): Workforce roles for people outside maintenance, copied into a workspace when
+      # Workforce is switched on and assigned on Settings -> Team.
+      roles:
+        - key: workforce-member
+          name: Workforce member
+          description: Sees their own jobs, punches time, reads their own timesheets and requests absence.
+          permissions: [workforce:read, workforce.resources.read, workforce.jobs.read, workforce.time.read, workforce.time.punch, workforce.absences.request]
+        - key: workforce-supervisor
+          name: Workforce supervisor
+          description: Manages people, jobs, bookings and availability, and approves timesheets and absence for the team.
+          permissions: [workforce:read, workforce.resources.read, workforce.resources.manage, workforce.jobs.read, workforce.jobs.manage, workforce.bookings.read, workforce.bookings.manage, workforce.availability.read, workforce.availability.manage, workforce.calendars.read, workforce.capabilities.read, workforce.time.read, workforce.time.punch, workforce.time.manage, workforce.timesheets.approve, workforce.absences.read, workforce.absences.request, workforce.absences.approve]
   # Web gateway (WI-OI-083): the BFF reaches only these routes, as the user, with a freshly signed context. A list
   # means any one of the permissions. Workers reach their own time; managers read, correct and approve others'.
   gateway:

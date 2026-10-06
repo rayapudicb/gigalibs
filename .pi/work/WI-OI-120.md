@@ -1336,3 +1336,56 @@ widening the card to fix the API faults the proof found.
   - `pnpm verify` passes (known drift);
   - the renderer has no unit tests; the regression test is the ledger spec, which submits straight after adding
     lines (to run after deploy).
+
+### WI-OI-120m discovery journey and WI-OI-120n batch 1 (2026-10-06)
+
+- **Journey** (`e2e/specs/journey-tenant-to-value.spec.ts` with `journey-recorder.ts`; `run-uat-walkthrough.sh
+  --journey`):
+  - a new customer signs up and creates a trial workspace; builds the organization; invites a supervisor, technician,
+    approver and auditor, who sign up and accept in their own browsers; assigns module roles; adds workers and links
+    logins; runs CMMS from request to closure; the technician clocks in, out and submits a week; the approver approves
+    it; the auditor reads but cannot change, and a direct API attempt is refused; modules outside the plan; phone width.
+  - At every step it records the calls (data flow), refused or slow calls, page and console errors, technical messages
+    and raw codes on screen, covered controls, overflow, unlabelled controls, an axe scan, and data not kept after a
+    reload. A blocked step is recorded and the journey carries on. Board: `e2e/test-results/journey/index.html`.
+  - Writes only inside the workspace it creates (`journey.<role>.<run>@gigalibs.test`).
+- **Runs on UAT before the fixes** (`144c010`): `w9gxgq` (59 steps, 13 blocked) and `w9vlls` (59 steps, 9 blocked;
+  journey faults fixed between the runs). Main findings:
+  - **Every role but Tenant Admin had no CMMS, Workforce, Geospatial or Organization permission**: the supervisor,
+    technician and auditor were refused on every maintenance screen. No custom role could carry those permissions
+    either: the tenant permission check accepted only colon codes, and CMMS, Workforce and Geospatial check dotted
+    codes, so such permissions were silently dropped from the session.
+  - Workers cannot be added ("Add worker" calls WFO routes the gateway answers "Unsupported Workforce route": U20a).
+    "Add worker" and Resources are separate worker records; CMMS keeps a third, and its own departments.
+  - No screen linked a Workforce person to a login.
+  - Modules outside the plan opened by link; every page called Currency, which trial workspaces lack.
+  - Accepting an invitation left the person on the workspace chooser; raw codes on screen (TENANT_ADMIN, FLAT_TENANT,
+    HUMAN, ACTIVE; an internal "ADR-0003 Phase 6" badge on the dashboard); Attendance refused non-worker administrators.
+  - Layout: the side menu's workspace card covers the last menu items on every page; the Softphone button and other
+    overlaps. Accessibility: serious colour-contrast failures, unlabelled inputs, a scrollable table without keyboard
+    access. ~3.5 s first calls on CMMS and Workforce screens.
+  - Not defects (handled in the screens' own words): Settings' "No active configured tenant fields" and Structure's
+    "No version is in force yet".
+- **Security finding (owner decided 2026-10-06):** the CMMS user import (protected import/export files) wrote
+  workspace invitations into `public.tenant_invites` from the CMMS connection, accepted TENANT_ADMIN and returned no
+  links. Switched off in batch 1; replaced by WI-OI-120p.
+- **Owner decisions (2026-10-06):** worker link by picker now and by email later (WI-OI-120o); module roles rather than
+  widening the generic roles (departments stay separate); modules outside the plan hidden and explained; department
+  heads assign from an admin-approved list; no seats for now. Access model and bulk, delegated people administration:
+  WI-OI-120p (proposed).
+- **Batch 1 (WI-OI-120n), implemented:**
+  - tenant and manifest permission checks accept dotted module codes (never wildcards or platform codes); a test
+    keeps every module role whole in the session;
+  - module roles: Maintenance technician, planner and viewer (CMMS) and Workforce member and supervisor, copied into
+    a workspace when the module is on and assigned on Settings → Team; CMMS's menu also shows to read-only people;
+  - Resources: an optional Login picker when adding a person, and link, change or clear on the person's details;
+  - a page gate shows "not in your plan" or "you don't have access" with the menu's own decision (no data calls);
+  - Currency is called only when the workspace has it and the person may read it;
+  - accepting an invitation enters the workspace;
+  - role, status, resource type and dashboard scope shown in words; the internal badge removed;
+  - Attendance: a non-worker chooses a person for the week instead of a refusal;
+  - the CMMS user import is refused at start and at commit;
+  - the disk guard always keeps the images the current `.env` files name (it had removed `5ee536a`'s freshly tagged
+    migrations image, which was rebuilt with the same command and checks).
+- **Checks:** `pnpm verify` passes (build, tests, audits, manifests; known drift). The navigation test records the CMMS
+  lens widening as an intended change. The journey reruns on UAT after deploy. Security review: pending (D7).

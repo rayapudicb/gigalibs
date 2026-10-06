@@ -76,6 +76,10 @@ export class ImportExportController {
   async initiateImport(@Req() req: AuthenticatedRequest, @Body() dto: InitiateImportDto) {
     const { tenantId, subject: actorId } = req.principal!;
     assertValidEntityType(dto.entityType);
+    // WI-OI-120n (owner authorised, 2026-10-06): the user import wrote workspace invitations straight into the control
+    // plane's table from this module, accepted the administrator role and returned no links. It is switched off; people
+    // are invited on Settings -> Team, and bulk adding comes through the control plane (WI-OI-120p).
+    if (dto.entityType === 'users') throw new BadRequestException(USER_IMPORT_OFF);
 
     if (dto.historical) {
       const roles = req.principal!.roles ?? [];
@@ -271,6 +275,9 @@ export class ImportExportController {
 }
 
 // ─── Guard helper ─────────────────────────────────────────────────────────────
+
+const USER_IMPORT_OFF =
+  'Importing users is switched off. Invite people on Settings → Team; adding many people at once is coming to the workspace settings.';
 
 function assertValidEntityType(entityType: string): asserts entityType is ImportableEntityType {
   if (!(IMPORTABLE_ENTITY_TYPES as readonly string[]).includes(entityType)) {

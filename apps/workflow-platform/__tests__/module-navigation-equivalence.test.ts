@@ -95,6 +95,14 @@ describe('manifest-declared navigation equals the former sidebar tables', () => 
     },
   );
 
+  // Persona lenses widened after the freeze, each with its reason (the module's permission still decides).
+  const INTENDED_LENS_ADDITIONS: Readonly<Record<string, { readonly personas: readonly string[]; readonly reason: string }>> = {
+    'asset-maintenance': {
+      personas: ['CUSTOMER_GUEST'],
+      reason: 'WI-OI-120n: a Viewer holding the Maintenance viewer role (an auditor) sees CMMS; cmms:read still decides.',
+    },
+  };
+
   it('shows each persona lens exactly the entries it showed before', () => {
     const personas = ['PLATFORM_OPERATOR', 'TENANT_ADMIN', ...Object.keys(LEGACY_PERSONA_MODULE_KEYS)] as const;
     for (const persona of personas) {
@@ -104,7 +112,10 @@ describe('manifest-declared navigation equals the former sidebar tables', () => 
         expect([persona, module.key, personaSeesModule(persona as never, module.key)]).toEqual([
           persona,
           module.key,
-          legacy === undefined || legacy.includes(module.key) || addition?.personas.includes(persona as never) === true,
+          legacy === undefined ||
+            legacy.includes(module.key) ||
+            addition?.personas.includes(persona as never) === true ||
+            INTENDED_LENS_ADDITIONS[module.key]?.personas.includes(persona) === true,
         ]);
       }
     }

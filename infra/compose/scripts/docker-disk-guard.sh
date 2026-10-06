@@ -6,7 +6,8 @@
 #   docker-disk-guard.sh prune            remove superseded gigalibs/* images and trim the build cache
 #   docker-disk-guard.sh prune --dry-run  list what prune would remove
 #
-# Kept: every image a container (running or stopped) uses, the newest GIGALIBS_KEEP_IMAGE_VERSIONS tags of
+# Kept: every image the local .env files name (the release being built), every image a container (running or
+# stopped) uses, the newest GIGALIBS_KEEP_IMAGE_VERSIONS tags of
 # each gigalibs/* repository and build series (default 2: current and rollback; full and solution builds count
 # separately), the pinned base images, and every image outside gigalibs/*. Volumes are never touched.
 set -euo pipefail
@@ -33,6 +34,17 @@ container_image_ids() {
   fi
 }
 
+# WI-OI-120n: the images the current release names in the local .env files (the release being built or about to be
+# deployed). They are always kept: an unchanged image is reused with its old creation time, so ordering by creation
+# time alone once removed a release's freshly tagged migrations image before it was deployed.
+release_images() {
+  local file
+  for file in "${COMPOSE_DIR}"/.env "${COMPOSE_DIR}"/.env.*; do
+    [[ -f "${file}" && "${file}" != *.example ]] || continue
+    grep -hE '^[A-Z0-9_]+_IMAGE=gigalibs/' "${file}" | cut -d= -f2- || true
+  done | sort -u
+}
+
 pinned_base_images() {
   node -e \
     'const fs=require("node:fs"); const policy=JSON.parse(fs.readFileSync(process.argv[1], "utf8")).artifactPolicy ?? {}; for (const key of ["baseImage", "finalRuntimeImage"]) if (policy[key]) console.log(policy[key]);' \
@@ -42,8 +54,9 @@ pinned_base_images() {
 }
 
 prune() {
-  local in_use repo created tag id ref versions removed=0 kept_refs=""
+  local in_use repo created tag id ref versions removed=0 kept_refs="" release
   in_use="$(container_image_ids)"
+  release="$(release_images)"
 
   for repo in $(docker images --format '{{.Repository}}' | grep '^gigalibs/' | sort -u); do
     local series current_series="-"
@@ -59,6 +72,10 @@ prune() {
         ref="${id}"
       else
         ref="${repo}:${tag}"
+        if grep -qxF "${ref}" <<<"${release}"; then
+          kept_refs="${kept_refs}${ref}"$'\n'
+          continue
+        fi
         versions=$((versions + 1))
         if ((versions <= KEEP_VERSIONS)); then
           kept_refs="${kept_refs}${ref}"$'\n'

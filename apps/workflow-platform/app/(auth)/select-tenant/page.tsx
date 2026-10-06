@@ -161,6 +161,8 @@ export default function SelectTenantPage() {
       setInviteAccepted(`You now have access to ${payload.tenant.name}.`);
       setInviteToken('');
       await loadTenants();
+      // WI-OI-120n: the person accepted to work in this workspace, so they go straight in (as after creating one).
+      if (payload.tenant.id) await selectTenant(payload.tenant.id);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Invitation could not be accepted.');
     } finally {

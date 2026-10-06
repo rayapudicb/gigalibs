@@ -246,5 +246,121 @@ export const moduleDefaultRoles: readonly ModuleDefaultRole[] = [
       "analytics:models:write",
       "analytics:models:publish"
     ]
+  },
+  {
+    "catalogKey": "asset-maintenance",
+    "key": "maintenance-technician",
+    "name": "Maintenance technician",
+    "description": "Carries out work orders, records meter readings and labour, punches time and requests absence.",
+    "permissions": [
+      "cmms:read",
+      "cmms.work-orders.read",
+      "cmms.work-orders.write",
+      "cmms.assets.read",
+      "cmms.meters.read",
+      "cmms.meters.write",
+      "cmms.pm.read",
+      "cmms.parts.read",
+      "maps.nodes.read",
+      "workforce:read",
+      "workforce.resources.read",
+      "workforce.jobs.read",
+      "workforce.time.read",
+      "workforce.time.punch",
+      "workforce.absences.request"
+    ]
+  },
+  {
+    "catalogKey": "asset-maintenance",
+    "key": "maintenance-planner",
+    "name": "Maintenance planner",
+    "description": "Plans, assigns and closes work; manages assets, preventive schedules, parts and the maintenance team's time and absence.",
+    "permissions": [
+      "cmms:read",
+      "cmms.work-orders.read",
+      "cmms.work-orders.write",
+      "cmms.assets.read",
+      "cmms.assets.write",
+      "cmms.meters.read",
+      "cmms.meters.write",
+      "cmms.pm.read",
+      "cmms.pm.write",
+      "cmms.parts.read",
+      "cmms.parts.write",
+      "cmms.analytics.read",
+      "maps:read",
+      "maps.nodes.read",
+      "workforce:read",
+      "workforce.resources.read",
+      "workforce.resources.manage",
+      "workforce.jobs.read",
+      "workforce.jobs.manage",
+      "workforce.bookings.read",
+      "workforce.bookings.manage",
+      "workforce.availability.read",
+      "workforce.availability.manage",
+      "workforce.time.read",
+      "workforce.time.punch",
+      "workforce.timesheets.approve",
+      "workforce.absences.read",
+      "workforce.absences.request",
+      "workforce.absences.approve"
+    ]
+  },
+  {
+    "catalogKey": "asset-maintenance",
+    "key": "maintenance-viewer",
+    "name": "Maintenance viewer",
+    "description": "Reads assets, work orders, schedules, meters, parts and reliability figures without changing them.",
+    "permissions": [
+      "cmms:read",
+      "cmms.work-orders.read",
+      "cmms.assets.read",
+      "cmms.meters.read",
+      "cmms.pm.read",
+      "cmms.parts.read",
+      "cmms.analytics.read",
+      "maps.nodes.read"
+    ]
+  },
+  {
+    "catalogKey": "gigaops",
+    "key": "workforce-member",
+    "name": "Workforce member",
+    "description": "Sees their own jobs, punches time, reads their own timesheets and requests absence.",
+    "permissions": [
+      "workforce:read",
+      "workforce.resources.read",
+      "workforce.jobs.read",
+      "workforce.time.read",
+      "workforce.time.punch",
+      "workforce.absences.request"
+    ]
+  },
+  {
+    "catalogKey": "gigaops",
+    "key": "workforce-supervisor",
+    "name": "Workforce supervisor",
+    "description": "Manages people, jobs, bookings and availability, and approves timesheets and absence for the team.",
+    "permissions": [
+      "workforce:read",
+      "workforce.resources.read",
+      "workforce.resources.manage",
+      "workforce.jobs.read",
+      "workforce.jobs.manage",
+      "workforce.bookings.read",
+      "workforce.bookings.manage",
+      "workforce.availability.read",
+      "workforce.availability.manage",
+      "workforce.calendars.read",
+      "workforce.capabilities.read",
+      "workforce.time.read",
+      "workforce.time.punch",
+      "workforce.time.manage",
+      "workforce.timesheets.approve",
+      "workforce.absences.read",
+      "workforce.absences.request",
+      "workforce.absences.approve"
+    ]
   }
 ];

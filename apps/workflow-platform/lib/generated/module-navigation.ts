@@ -264,7 +264,8 @@ export const generatedModulePersonas: Readonly<Record<string, readonly PlatformC
   ],
   "asset-maintenance": [
     "OPERATIONS_SUPERVISOR",
-    "WORKFORCE_MEMBER"
+    "WORKFORCE_MEMBER",
+    "CUSTOMER_GUEST"
   ],
   "gigaops": [
     "OPERATIONS_SUPERVISOR",

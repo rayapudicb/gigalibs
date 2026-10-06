@@ -282,6 +282,9 @@ function WeekSheet({ people, siteName }: { people: readonly Person[]; siteName: 
   const [preview, setPreview] = useState<TimesheetPreviewV1 | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<WorkforceApiError | null>(null);
+  // WI-OI-120n: an administrator or supervisor who is not a Workforce person has no week of their own; they choose a
+  // person instead of being shown the refusal of "my week".
+  const notAWorker = resourceId === '' && error?.errorCode === 'WORKFORCE_NOT_A_WORKER';
 
   const load = useCallback(async () => {
     try {
@@ -321,7 +324,7 @@ function WeekSheet({ people, siteName }: { people: readonly Person[]; siteName: 
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
         <Field id="sheet-person" label="Person">
           <select id="sheet-person" value={resourceId} onChange={(event) => setResourceId(event.target.value)} className={selectClass}>
-            <option value="">Me</option>
+            {notAWorker ? <option value="" disabled>Choose a person</option> : <option value="">Me</option>}
             {people.map((person) => <option key={person.id} value={person.id}>{person.displayName}</option>)}
           </select>
         </Field>
@@ -329,7 +332,11 @@ function WeekSheet({ people, siteName }: { people: readonly Person[]; siteName: 
           <Input id="sheet-week" type="date" value={periodStart} onChange={(event) => event.target.value && setPeriodStart(mondayOf(new Date(`${event.target.value}T12:00:00`)))} />
         </Field>
       </div>
-      {error ? <Alert variant="error" className="mt-3">{error.message}</Alert> : null}
+      {notAWorker ? (
+        <Text size="small" className="mt-3 text-ui-fg-subtle">You are not a Workforce person yourself, so there is no week of your own. Choose a person to see their week.</Text>
+      ) : error ? (
+        <Alert variant="error" className="mt-3">{error.message}</Alert>
+      ) : null}
       {preview ? (
         <>
           <Table className="mt-4">

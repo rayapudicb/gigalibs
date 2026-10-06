@@ -1,6 +1,6 @@
 # NOW: where the work stands
 
-Updated 2026-10-06 (UAT runs `144c010`, deployed 05:13Z; renderer race fix pending; WI-OI-120m approved). Keep this file
+Updated 2026-10-06 (UAT runs `144c010`; `5ee536a` and WI-OI-120n batch 1 to build and deploy together). Keep this file
 to one page. Replace old content rather than appending to it, and update it at the end of every task.
 
 ## State
@@ -98,8 +98,10 @@ to one page. Replace old content rather than appending to it, and update it at t
    U12 general ledger (WI-OI-120l, Option A, owner 2026-10-06): draft journals approved by a second person (Finance
    migration 9), five windows, set-up and reports panels. Proof 25/25, 7 unit tests; build, 2,560 tests and
    `pnpm verify` pass. Committed `7fcc5b1`, deployed 04:25Z. The UAT walk-through found the set-up panel's fiscal-year
-   route missing from the gateway; fixed and deployed (`144c010`, 05:13Z). The rerun found a renderer race (an
-   action straight after adding a line answered "someone else changed this record"); fixed, to commit and deploy.
+   route missing from the gateway; fixed and deployed (`144c010`, 05:13Z). The renderer race fix is `5ee536a` (built;
+   ships with batch 1). WI-OI-120m journey (new customer to maintenance work, five people) found that no role but
+   Tenant Admin could use CMMS or Workforce; WI-OI-120n batch 1 fixes it with module roles and nine other fixes
+   (verify passes; awaiting "commit"). Next: deploy, journey rerun, U12 ledger rerun; then WI-OI-120p, U20a.
    Workforce `wfo` screens: diagnosed (ungated routes, see work log); U20a card to propose. P0-05, P0-07, P0-10, P1-10 and the P1-11 prototypes are in modules not running here; they are fixed
    as each module moves onto the module SDK (U29). Independent Security review before any defect closes.
 3. Then U4–U6 (Dictionary & Master Data hardening), U7–U18 (module by module Playwright flows). Plan:

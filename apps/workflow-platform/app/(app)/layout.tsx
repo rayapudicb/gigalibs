@@ -5,7 +5,9 @@ import { StudioModeProvider, StudioModeToggle } from '@/components/configuration
 import { CurrencyLocaleProvider } from '@/components/currency/CurrencyLocaleContext';
 import { GeospatialPlacesProvider } from '@/components/geospatial/GeospatialPlacesProvider';
 import { AppI18nProvider } from '@/components/i18n/AppI18nProvider';
+import { ModuleAccessGate } from '@/components/navigation/ModuleAccessGate';
 import { ModuleHeaderAndDrawer } from '@/components/navigation/ModuleHeaderAndDrawer';
+import { hasPermission } from '@/lib/module-access';
 import { uatPreviewEnabled } from '@/lib/uat-module-status';
 import { verifiedSession } from '@/lib/verified-session';
 import { cookies } from 'next/headers';
@@ -61,6 +63,17 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     session.context.permissions.includes('configuration:draft');
   // UAT instance only (WI-OI-120a): every module is listed. The owner removed the UAT labels on 2026-10-05 (WI-OI-120b).
   const uatPreview = uatPreviewEnabled();
+  // WI-OI-120n: what this person may open, for the page gate (the same decision as the menu's).
+  const access = {
+    tenant: session.context.tenant ? { features: [...(session.context.tenant.features ?? [])] } : null,
+    permissions: [...session.context.permissions],
+    platformRoles: [...session.context.platformRoles],
+    uatPreview,
+  };
+  // WI-OI-120n: the shell asks Currency for rates and preferences only when the workspace has it and the person may read
+  // it (a trial workspace otherwise sent two refused calls from every page).
+  const currencyEnabled =
+    Boolean(session.context.tenant?.features?.includes('multi-currency')) && hasPermission(session.context.permissions, 'currency:read');
 
   return (
     <AppI18nProvider initialLocale={initialLocale}>
@@ -89,8 +102,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
               className="flex-1 overflow-y-auto pb-24 print:overflow-visible print:h-auto print:p-0 print:pb-0"
               data-module-content-root
             >
-              <CurrencyLocaleProvider>
-                <GeospatialPlacesProvider>{children}</GeospatialPlacesProvider>
+              <CurrencyLocaleProvider enabled={currencyEnabled}>
+                <GeospatialPlacesProvider>
+                  <ModuleAccessGate access={access}>{children}</ModuleAccessGate>
+                </GeospatialPlacesProvider>
               </CurrencyLocaleProvider>
             </main>
           </div>
