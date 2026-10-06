@@ -257,12 +257,22 @@
         {
           "referenceKey": "uom-ref",
           "referenceType": "SEARCH_LOOKUP",
-          "resolverKey": "catalogue-uoms"
+          "resolverKey": "catalogue-uoms",
+          "createWith": {
+            "moduleKey": "product-catalogue",
+            "surfaceKey": "catalogue-units",
+            "permission": "uoms:manage"
+          }
         },
         {
           "referenceKey": "category-ref",
           "referenceType": "SEARCH_LOOKUP",
-          "resolverKey": "catalogue-categories"
+          "resolverKey": "catalogue-categories",
+          "createWith": {
+            "moduleKey": "product-catalogue",
+            "surfaceKey": "catalogue-categories",
+            "permission": "product-categories:manage"
+          }
         }
       ],
       "validationRules": [],

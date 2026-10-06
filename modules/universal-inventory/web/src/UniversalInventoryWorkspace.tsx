@@ -9,8 +9,9 @@ import { type FormEvent, useMemo, useState } from 'react';
 // hard-coded figures and a simulated barcode scanner is gone; the barcode resolver now asks Inventory's API.
 
 const BASE_PATH = '/api/universal-inventory';
+const CATALOGUE_PATH = '/api/product-catalogue';
 // Product and unit pickers are served by the Product Catalogue through its own gateway.
-const LOOKUP_BASE_PATHS = { 'catalogue-products': '/api/product-catalogue', 'catalogue-uoms': '/api/product-catalogue' };
+const LOOKUP_BASE_PATHS = { 'catalogue-products': CATALOGUE_PATH, 'catalogue-uoms': CATALOGUE_PATH };
 
 const WINDOWS = [
   { surface: 'inventory-warehouses', label: 'Warehouses' },
@@ -31,6 +32,8 @@ export interface UniversalInventoryWorkspaceProps {
 export function UniversalInventoryWorkspace({ permissions = [] }: UniversalInventoryWorkspaceProps = {}) {
   const [tab, setTab] = useState<Tab>('inventory-warehouses');
   const client = useMemo(() => createRecordClient({ basePath: BASE_PATH, lookupBasePaths: LOOKUP_BASE_PATHS }), []);
+  // WI-OI-120 (F0.6): "Add new product" or "Add new unit" from a picker opens the Catalogue's own window.
+  const clients = useMemo(() => ({ 'product-catalogue': createRecordClient({ basePath: CATALOGUE_PATH }) }), []);
   return (
     <div className="space-y-6 p-6">
       <header className="space-y-1">
@@ -51,12 +54,22 @@ export function UniversalInventoryWorkspace({ permissions = [] }: UniversalInven
           </button>
         ))}
       </nav>
-      {tab === 'barcode' ? <BarcodeLookup /> : <InventoryWindow key={tab} surface={tab} client={client} permissions={permissions} />}
+      {tab === 'barcode' ? <BarcodeLookup /> : <InventoryWindow key={tab} surface={tab} client={client} clients={clients} permissions={permissions} />}
     </div>
   );
 }
 
-function InventoryWindow({ surface, client, permissions }: { surface: string; client: ReturnType<typeof createRecordClient>; permissions: readonly string[] }) {
+function InventoryWindow({
+  surface,
+  client,
+  clients,
+  permissions,
+}: {
+  surface: string;
+  client: ReturnType<typeof createRecordClient>;
+  clients: Readonly<Record<string, ReturnType<typeof createRecordClient>>>;
+  permissions: readonly string[];
+}) {
   const state = usePublishedManifest({ moduleKey: 'universal-inventory', entityKey: surface, surfaceKey: surface });
   if (state.status === 'loading') return <p className="text-sm text-ui-fg-muted">Loading the window…</p>;
   if (state.status !== 'ready') {
@@ -67,7 +80,7 @@ function InventoryWindow({ surface, client, permissions }: { surface: string; cl
       </div>
     );
   }
-  return <MetadataWindow manifest={state.manifest} client={client} permissions={permissions} />;
+  return <MetadataWindow manifest={state.manifest} client={client} clients={clients} permissions={permissions} />;
 }
 
 function BarcodeLookup() {

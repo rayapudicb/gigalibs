@@ -94,7 +94,12 @@
         {
           "referenceKey": "category-ref",
           "referenceType": "SEARCH_LOOKUP",
-          "resolverKey": "catalogue-categories"
+          "resolverKey": "catalogue-categories",
+          "createWith": {
+            "moduleKey": "product-catalogue",
+            "surfaceKey": "catalogue-categories",
+            "permission": "product-categories:manage"
+          }
         }
       ],
       "validationRules": [],

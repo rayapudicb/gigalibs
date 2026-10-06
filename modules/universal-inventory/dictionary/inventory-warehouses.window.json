@@ -323,7 +323,12 @@
         {
           "referenceKey": "warehouse-ref",
           "referenceType": "SEARCH_LOOKUP",
-          "resolverKey": "inventory-warehouses"
+          "resolverKey": "inventory-warehouses",
+          "createWith": {
+            "moduleKey": "universal-inventory",
+            "surfaceKey": "inventory-warehouses",
+            "permission": "inventory:warehouses:manage"
+          }
         }
       ],
       "validationRules": [],

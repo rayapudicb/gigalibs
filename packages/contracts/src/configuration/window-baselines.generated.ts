@@ -497,12 +497,22 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
           {
             "referenceKey": "catalogue-ref",
             "referenceType": "SEARCH_LOOKUP",
-            "resolverKey": "catalogue-catalogues"
+            "resolverKey": "catalogue-catalogues",
+            "createWith": {
+              "moduleKey": "product-catalogue",
+              "surfaceKey": "catalogue-catalogues",
+              "permission": "catalogues:draft"
+            }
           },
           {
             "referenceKey": "product-ref",
             "referenceType": "SEARCH_LOOKUP",
-            "resolverKey": "catalogue-products"
+            "resolverKey": "catalogue-products",
+            "createWith": {
+              "moduleKey": "product-catalogue",
+              "surfaceKey": "catalogue-products",
+              "permission": "products:create"
+            }
           }
         ],
         "validationRules": [],
@@ -935,7 +945,12 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
           {
             "referenceKey": "catalogue-ref",
             "referenceType": "SEARCH_LOOKUP",
-            "resolverKey": "catalogue-catalogues"
+            "resolverKey": "catalogue-catalogues",
+            "createWith": {
+              "moduleKey": "product-catalogue",
+              "surfaceKey": "catalogue-catalogues",
+              "permission": "catalogues:draft"
+            }
           }
         ],
         "validationRules": [],
@@ -1144,7 +1159,12 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
           {
             "referenceKey": "category-ref",
             "referenceType": "SEARCH_LOOKUP",
-            "resolverKey": "catalogue-categories"
+            "resolverKey": "catalogue-categories",
+            "createWith": {
+              "moduleKey": "product-catalogue",
+              "surfaceKey": "catalogue-categories",
+              "permission": "product-categories:manage"
+            }
           }
         ],
         "validationRules": [],
@@ -1488,17 +1508,32 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
           {
             "referenceKey": "price-list-ref",
             "referenceType": "SEARCH_LOOKUP",
-            "resolverKey": "catalogue-price-lists"
+            "resolverKey": "catalogue-price-lists",
+            "createWith": {
+              "moduleKey": "product-catalogue",
+              "surfaceKey": "catalogue-price-lists",
+              "permission": "pricing:draft"
+            }
           },
           {
             "referenceKey": "product-ref",
             "referenceType": "SEARCH_LOOKUP",
-            "resolverKey": "catalogue-products"
+            "resolverKey": "catalogue-products",
+            "createWith": {
+              "moduleKey": "product-catalogue",
+              "surfaceKey": "catalogue-products",
+              "permission": "products:create"
+            }
           },
           {
             "referenceKey": "uom-ref",
             "referenceType": "SEARCH_LOOKUP",
-            "resolverKey": "catalogue-uoms"
+            "resolverKey": "catalogue-uoms",
+            "createWith": {
+              "moduleKey": "product-catalogue",
+              "surfaceKey": "catalogue-units",
+              "permission": "uoms:manage"
+            }
           }
         ],
         "validationRules": [],
@@ -1983,7 +2018,12 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
           {
             "referenceKey": "price-list-ref",
             "referenceType": "SEARCH_LOOKUP",
-            "resolverKey": "catalogue-price-lists"
+            "resolverKey": "catalogue-price-lists",
+            "createWith": {
+              "moduleKey": "product-catalogue",
+              "surfaceKey": "catalogue-price-lists",
+              "permission": "pricing:draft"
+            }
           }
         ],
         "validationRules": [],
@@ -2373,12 +2413,22 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
           {
             "referenceKey": "uom-ref",
             "referenceType": "SEARCH_LOOKUP",
-            "resolverKey": "catalogue-uoms"
+            "resolverKey": "catalogue-uoms",
+            "createWith": {
+              "moduleKey": "product-catalogue",
+              "surfaceKey": "catalogue-units",
+              "permission": "uoms:manage"
+            }
           },
           {
             "referenceKey": "category-ref",
             "referenceType": "SEARCH_LOOKUP",
-            "resolverKey": "catalogue-categories"
+            "resolverKey": "catalogue-categories",
+            "createWith": {
+              "moduleKey": "product-catalogue",
+              "surfaceKey": "catalogue-categories",
+              "permission": "product-categories:manage"
+            }
           }
         ],
         "validationRules": [],
@@ -2858,12 +2908,22 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
           {
             "referenceKey": "uom-ref",
             "referenceType": "SEARCH_LOOKUP",
-            "resolverKey": "catalogue-uoms"
+            "resolverKey": "catalogue-uoms",
+            "createWith": {
+              "moduleKey": "product-catalogue",
+              "surfaceKey": "catalogue-units",
+              "permission": "uoms:manage"
+            }
           },
           {
             "referenceKey": "product-ref",
             "referenceType": "SEARCH_LOOKUP",
-            "resolverKey": "catalogue-products"
+            "resolverKey": "catalogue-products",
+            "createWith": {
+              "moduleKey": "product-catalogue",
+              "surfaceKey": "catalogue-products",
+              "permission": "products:create"
+            }
           }
         ],
         "validationRules": [],
@@ -3160,7 +3220,12 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
           {
             "referenceKey": "warehouse-ref",
             "referenceType": "SEARCH_LOOKUP",
-            "resolverKey": "inventory-warehouses"
+            "resolverKey": "inventory-warehouses",
+            "createWith": {
+              "moduleKey": "universal-inventory",
+              "surfaceKey": "inventory-warehouses",
+              "permission": "inventory:warehouses:manage"
+            }
           },
           {
             "referenceKey": "location-ref",
@@ -3170,7 +3235,12 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
           {
             "referenceKey": "product-ref",
             "referenceType": "SEARCH_LOOKUP",
-            "resolverKey": "catalogue-products"
+            "resolverKey": "catalogue-products",
+            "createWith": {
+              "moduleKey": "product-catalogue",
+              "surfaceKey": "catalogue-products",
+              "permission": "products:create"
+            }
           },
           {
             "referenceKey": "stock-statuses",
@@ -3453,12 +3523,22 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
           {
             "referenceKey": "product-ref",
             "referenceType": "SEARCH_LOOKUP",
-            "resolverKey": "catalogue-products"
+            "resolverKey": "catalogue-products",
+            "createWith": {
+              "moduleKey": "product-catalogue",
+              "surfaceKey": "catalogue-products",
+              "permission": "products:create"
+            }
           },
           {
             "referenceKey": "warehouse-ref",
             "referenceType": "SEARCH_LOOKUP",
-            "resolverKey": "inventory-warehouses"
+            "resolverKey": "inventory-warehouses",
+            "createWith": {
+              "moduleKey": "universal-inventory",
+              "surfaceKey": "inventory-warehouses",
+              "permission": "inventory:warehouses:manage"
+            }
           },
           {
             "referenceKey": "location-ref",
@@ -3752,7 +3832,12 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
           {
             "referenceKey": "warehouse-ref",
             "referenceType": "SEARCH_LOOKUP",
-            "resolverKey": "inventory-warehouses"
+            "resolverKey": "inventory-warehouses",
+            "createWith": {
+              "moduleKey": "universal-inventory",
+              "surfaceKey": "inventory-warehouses",
+              "permission": "inventory:warehouses:manage"
+            }
           },
           {
             "referenceKey": "location-ref",
@@ -3762,7 +3847,12 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
           {
             "referenceKey": "product-ref",
             "referenceType": "SEARCH_LOOKUP",
-            "resolverKey": "catalogue-products"
+            "resolverKey": "catalogue-products",
+            "createWith": {
+              "moduleKey": "product-catalogue",
+              "surfaceKey": "catalogue-products",
+              "permission": "products:create"
+            }
           },
           {
             "referenceKey": "directions",
@@ -4009,7 +4099,12 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
           {
             "referenceKey": "product-ref",
             "referenceType": "SEARCH_LOOKUP",
-            "resolverKey": "catalogue-products"
+            "resolverKey": "catalogue-products",
+            "createWith": {
+              "moduleKey": "product-catalogue",
+              "surfaceKey": "catalogue-products",
+              "permission": "products:create"
+            }
           },
           {
             "referenceKey": "stock-statuses",
@@ -4376,7 +4471,12 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
           {
             "referenceKey": "warehouse-ref",
             "referenceType": "SEARCH_LOOKUP",
-            "resolverKey": "inventory-warehouses"
+            "resolverKey": "inventory-warehouses",
+            "createWith": {
+              "moduleKey": "universal-inventory",
+              "surfaceKey": "inventory-warehouses",
+              "permission": "inventory:warehouses:manage"
+            }
           },
           {
             "referenceKey": "location-ref",
@@ -4386,12 +4486,22 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
           {
             "referenceKey": "product-ref",
             "referenceType": "SEARCH_LOOKUP",
-            "resolverKey": "catalogue-products"
+            "resolverKey": "catalogue-products",
+            "createWith": {
+              "moduleKey": "product-catalogue",
+              "surfaceKey": "catalogue-products",
+              "permission": "products:create"
+            }
           },
           {
             "referenceKey": "uom-ref",
             "referenceType": "SEARCH_LOOKUP",
-            "resolverKey": "catalogue-uoms"
+            "resolverKey": "catalogue-uoms",
+            "createWith": {
+              "moduleKey": "product-catalogue",
+              "surfaceKey": "catalogue-units",
+              "permission": "uoms:manage"
+            }
           },
           {
             "referenceKey": "receipt-statuses",
@@ -4938,7 +5048,12 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
           {
             "referenceKey": "warehouse-ref",
             "referenceType": "SEARCH_LOOKUP",
-            "resolverKey": "inventory-warehouses"
+            "resolverKey": "inventory-warehouses",
+            "createWith": {
+              "moduleKey": "universal-inventory",
+              "surfaceKey": "inventory-warehouses",
+              "permission": "inventory:warehouses:manage"
+            }
           }
         ],
         "validationRules": [],

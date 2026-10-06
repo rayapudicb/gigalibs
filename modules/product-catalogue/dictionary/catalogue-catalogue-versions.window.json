@@ -236,12 +236,22 @@
         {
           "referenceKey": "catalogue-ref",
           "referenceType": "SEARCH_LOOKUP",
-          "resolverKey": "catalogue-catalogues"
+          "resolverKey": "catalogue-catalogues",
+          "createWith": {
+            "moduleKey": "product-catalogue",
+            "surfaceKey": "catalogue-catalogues",
+            "permission": "catalogues:draft"
+          }
         },
         {
           "referenceKey": "product-ref",
           "referenceType": "SEARCH_LOOKUP",
-          "resolverKey": "catalogue-products"
+          "resolverKey": "catalogue-products",
+          "createWith": {
+            "moduleKey": "product-catalogue",
+            "surfaceKey": "catalogue-products",
+            "permission": "products:create"
+          }
         }
       ],
       "validationRules": [],

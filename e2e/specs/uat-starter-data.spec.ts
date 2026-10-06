@@ -77,6 +77,13 @@ async function create(page: Page, title: string, fill: (form: Locator) => Promis
   await save(form);
 }
 
+/** Opens a child tab and waits for its list, so "does it exist?" checks see the saved records. */
+async function openChildTab(page: Page, label: string) {
+  await page.getByRole('tab', { name: label, exact: true }).click();
+  await page.waitForLoadState('networkidle').catch(() => undefined);
+  await page.waitForTimeout(500);
+}
+
 async function createChild(page: Page, tabLabel: string, fill: (form: Locator) => Promise<void>) {
   await page.getByRole('tab', { name: tabLabel, exact: true }).click();
   await page.getByRole('button', { name: `New ${tabLabel}`, exact: true }).click();
@@ -123,7 +130,7 @@ test.describe('UAT starter data, entered on the screens', () => {
     }
     await open(page, '/products', 'Units');
     await openRow(page, 'Units of measure', 'BOX10');
-    await page.getByRole('tab', { name: 'Conversions', exact: true }).click();
+    await openChildTab(page, 'Conversions');
     if ((await page.getByRole('row').filter({ hasText: 'EA' }).count()) === 0) {
       await createChild(page, 'Conversions', async (form) => {
         await pick(form, 'To unit', 'to-uom-id', 'Each', 'EA — Each');
@@ -166,7 +173,7 @@ test.describe('UAT starter data, entered on the screens', () => {
       await open(page, '/products', 'Price lists');
     }
     await openRow(page, 'Price lists', 'UAT-USD');
-    await page.getByRole('tab', { name: 'Versions', exact: true }).click();
+    await openChildTab(page, 'Versions');
     if ((await page.getByRole('row').filter({ hasText: /Draft|Submitted|Approved|Active/ }).count()) === 0) {
       await createChild(page, 'Versions', async (form) => {
         await form.locator('#field-effective-from').fill(today);
@@ -176,7 +183,7 @@ test.describe('UAT starter data, entered on the screens', () => {
     // A version's list row shows its price list, not its notes (long text stays off lists).
     await open(page, '/products', 'Price-list versions');
     await openRow(page, 'Price-list versions', 'UAT-USD', false);
-    await page.getByRole('tab', { name: 'Prices', exact: true }).click();
+    await openChildTab(page, 'Prices');
     for (const product of PRODUCTS) {
       if ((await page.getByRole('row').filter({ hasText: product.code }).count()) > 0) continue;
       if ((await page.getByRole('button', { name: 'New Prices', exact: true }).count()) === 0) break; // no longer a draft
@@ -205,7 +212,7 @@ test.describe('UAT starter data, entered on the screens', () => {
       { code: 'RCV-01', name: 'Receiving dock', type: 'RECEIVING' },
       { code: 'STO-A1', name: 'Aisle A, shelf 1', type: 'STORAGE' },
     ]) {
-      await page.getByRole('tab', { name: 'Locations', exact: true }).click();
+      await openChildTab(page, 'Locations');
       if ((await page.getByRole('row').filter({ hasText: location.code }).count()) > 0) continue;
       await createChild(page, 'Locations', async (form) => {
         await form.locator('#field-code').fill(location.code);

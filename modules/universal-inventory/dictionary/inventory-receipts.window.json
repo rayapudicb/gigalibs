@@ -252,7 +252,12 @@
         {
           "referenceKey": "warehouse-ref",
           "referenceType": "SEARCH_LOOKUP",
-          "resolverKey": "inventory-warehouses"
+          "resolverKey": "inventory-warehouses",
+          "createWith": {
+            "moduleKey": "universal-inventory",
+            "surfaceKey": "inventory-warehouses",
+            "permission": "inventory:warehouses:manage"
+          }
         },
         {
           "referenceKey": "location-ref",
@@ -262,12 +267,22 @@
         {
           "referenceKey": "product-ref",
           "referenceType": "SEARCH_LOOKUP",
-          "resolverKey": "catalogue-products"
+          "resolverKey": "catalogue-products",
+          "createWith": {
+            "moduleKey": "product-catalogue",
+            "surfaceKey": "catalogue-products",
+            "permission": "products:create"
+          }
         },
         {
           "referenceKey": "uom-ref",
           "referenceType": "SEARCH_LOOKUP",
-          "resolverKey": "catalogue-uoms"
+          "resolverKey": "catalogue-uoms",
+          "createWith": {
+            "moduleKey": "product-catalogue",
+            "surfaceKey": "catalogue-units",
+            "permission": "uoms:manage"
+          }
         },
         {
           "referenceKey": "receipt-statuses",

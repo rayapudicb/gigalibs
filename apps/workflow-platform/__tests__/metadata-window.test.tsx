@@ -145,6 +145,21 @@ describe('window model', () => {
     expect(gridColumns(model, model.rootTab, clerk).map((placed) => placed.field.fieldKey)).not.toContain('notes');
   });
 
+  it('hands a picker the window that creates its records, only when the reference names one (WI-OI-120, F0.6)', async () => {
+    const { DictionaryReferenceV1Schema } = await import('@gigalibs/contracts');
+    const createWith = { moduleKey: 'universal-inventory', surfaceKey: 'inventory-warehouses', permission: 'inventory:warehouses:manage' };
+    const withCreate = metadataWindowModel.windowModel({
+      ...manifest,
+      references: manifest.references.map((reference) => (reference.referenceKey === 'warehouses' ? { ...reference, createWith } : reference)),
+    })!;
+    const picker = (m: typeof model) => placedFields(m, m.rootTab, { status: 'DRAFT' }, clerk, 'EDIT').find((placed) => placed.field.fieldKey === 'warehouse-id');
+    expect(picker(withCreate)?.createWith).toEqual(createWith);
+    expect(picker(model)?.createWith).toBeUndefined();
+    const reference = { referenceKey: 'warehouses', referenceType: 'SEARCH_LOOKUP', resolverKey: 'warehouses' };
+    expect(DictionaryReferenceV1Schema.safeParse({ ...reference, createWith }).success).toBe(true);
+    expect(DictionaryReferenceV1Schema.safeParse({ ...reference, createWith: { moduleKey: 'universal-inventory', surfaceKey: 'inventory-warehouses' } }).success).toBe(false);
+  });
+
   it('offers an action only on its own entity, when permitted and visible for the record', () => {
     expect(recordActions(model, 'inventory.receipts', { status: 'DRAFT' }, clerk).map((action) => action.actionKey)).toEqual(['complete']);
     expect(recordActions(model, 'inventory.receipts', { status: 'COMPLETED' }, clerk)).toEqual([]);

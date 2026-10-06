@@ -1,9 +1,11 @@
 import type { CompiledDictionaryManifestV1, DictionaryActionV1, DictionaryTabV1 } from '@gigalibs/contracts';
-import { type FormEvent, type ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
+import { createContext, type FormEvent, type ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { type LookupOption, type RecordClient, RecordClientError, type RecordPage, type RecordValues } from './record-client.js';
+import { usePublishedManifest } from './use-published-manifest.js';
 import {
   actionKey,
   describeFailure,
+  holds,
   gridColumns,
   inputFromValue,
   type PlacedField,
@@ -28,7 +30,29 @@ export interface MetadataWindowProps {
   readonly client: RecordClient;
   readonly permissions: readonly string[];
   readonly viewKey?: string;
+  /**
+   * WI-OI-120 (F0.6): record clients by module key, for the windows a picker may open with "Add new" or "Open"
+   * (another module's, such as the Catalogue's product window from Inventory). A module without a client is not offered.
+   */
+  readonly clients?: Readonly<Record<string, RecordClient>>;
 }
+
+/** A window opened from a picker, over the current one: create a record, or open the chosen one. */
+interface QuickDialog {
+  readonly kind: 'create' | 'open';
+  readonly target: { readonly moduleKey: string; readonly surfaceKey: string };
+  readonly label: string;
+  readonly id?: string;
+  readonly onCreated?: (id: string) => void;
+}
+
+interface WindowEnvironment {
+  readonly clients: Readonly<Record<string, RecordClient>>;
+  readonly permissions: readonly string[];
+  readonly open: (dialog: QuickDialog) => void;
+}
+
+const Environment = createContext<WindowEnvironment | null>(null);
 
 type Screen = { readonly kind: 'list' } | { readonly kind: 'create' } | { readonly kind: 'record'; readonly id: string };
 
@@ -49,13 +73,27 @@ function newKey(): string {
   return globalThis.crypto.randomUUID();
 }
 
-export function MetadataWindow({ manifest, client, permissions, viewKey }: MetadataWindowProps) {
+export function MetadataWindow({ manifest, client, permissions, viewKey, clients }: MetadataWindowProps) {
   const model = useMemo(() => windowModel(manifest, viewKey), [manifest, viewKey]);
   const [screen, setScreen] = useState<Screen>({ kind: 'list' });
+  const [dialogs, setDialogs] = useState<readonly QuickDialog[]>([]);
+  const outer = useContext(Environment);
+  // A window shown inside another's dialog reuses that window's dialog stack, so dialogs never nest inside forms.
+  const ownModule = manifest.entities[0]?.moduleKey;
+  const environment = useMemo<WindowEnvironment>(
+    () =>
+      outer ?? {
+        clients: { ...(clients ?? {}), ...(ownModule ? { [ownModule]: client } : {}) },
+        permissions,
+        open: (dialog) => setDialogs((current) => [...current, dialog]),
+      },
+    [outer, clients, ownModule, client, permissions],
+  );
   if (!model) {
     return <Notice tone="error" title="This window cannot be drawn" text="The published definition declares no view with a main tab." />;
   }
   return (
+    <Environment.Provider value={environment}>
     <section className="space-y-4" data-metadata-window={model.view.viewKey}>
       {screen.kind === 'list' && (
         <RecordList
@@ -79,7 +117,65 @@ export function MetadataWindow({ manifest, client, permissions, viewKey }: Metad
       {screen.kind === 'record' && (
         <RecordDetail model={model} client={client} permissions={permissions} id={screen.id} onBack={() => setScreen({ kind: 'list' })} />
       )}
+      {dialogs.map((dialog, index) => (
+        <QuickDialogView key={index} dialog={dialog} onClose={() => setDialogs((current) => current.slice(0, index))} />
+      ))}
     </section>
+    </Environment.Provider>
+  );
+}
+
+/**
+ * WI-OI-120 (F0.6): the window that owns a picked record, over the current one. "Add new" shows its create form and
+ * hands the new record back to the picker; "Open" shows the chosen record. Same fields, rules and permissions as the
+ * window on its own screen, because it is that window.
+ */
+function QuickDialogView({ dialog, onClose }: { dialog: QuickDialog; onClose: () => void }) {
+  const environment = useContext(Environment);
+  const client = environment?.clients[dialog.target.moduleKey];
+  const state = usePublishedManifest({ moduleKey: dialog.target.moduleKey, entityKey: dialog.target.surfaceKey, surfaceKey: dialog.target.surfaceKey });
+  const model = state.status === 'ready' ? windowModel(state.manifest) : null;
+  const title = dialog.kind === 'create' ? `New ${dialog.label}` : dialog.label;
+  let content: ReactNode;
+  if (!client || !environment) content = <Notice tone="error" title="Not available here" text={`This screen cannot open ${dialog.label} records.`} />;
+  else if (state.status === 'loading') content = <p className="text-sm text-ui-fg-muted">Loading…</p>;
+  else if (state.status !== 'ready' || !model) content = <Notice tone="error" title="This window is not available" text={state.status === 'ready' ? 'Its definition declares no view.' : state.message} />;
+  else if (dialog.kind === 'open' && dialog.id) content = <RecordDetail model={model} client={client} permissions={environment.permissions} id={dialog.id} onBack={onClose} />;
+  else if (!canCreate(model, model.rootTab, environment.permissions)) content = <Notice tone="error" title="No access" text={`You may not create ${dialog.label} records.`} />;
+  else
+    content = (
+      <RecordForm
+        model={model}
+        tab={model.rootTab}
+        client={client}
+        permissions={environment.permissions}
+        onCancel={onClose}
+        onSaved={(record) => {
+          dialog.onCreated?.(String(record.id));
+          onClose();
+        }}
+      />
+    );
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={title}
+      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-ui-bg-overlay p-4 sm:p-8"
+      onKeyDown={(event) => {
+        if (event.key === 'Escape') onClose();
+      }}
+    >
+      <div className={`${box} w-full max-w-3xl space-y-3 p-4 shadow-xl`}>
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-base font-semibold text-ui-fg-base">{title}</h2>
+          <button type="button" className={button} onClick={onClose}>
+            Close
+          </button>
+        </div>
+        {content}
+      </div>
+    </div>
   );
 }
 
@@ -495,6 +591,12 @@ function LookupInput({
       active = false;
     };
   }, [client, resolverKey, search, value]);
+  const environment = useContext(Environment);
+  const target = placed.createWith;
+  const targetClient = target ? environment?.clients[target.moduleKey] : undefined;
+  const label = placed.field.label;
+  const canAdd = Boolean(!disabled && target && targetClient && environment && holds(environment.permissions, target.permission));
+  const canOpen = Boolean(target && targetClient && typeof value === 'string' && value);
   if (!resolverKey) return <p className="text-xs text-ui-fg-error">This field has no lookup.</p>;
   return (
     <div className="space-y-1">
@@ -508,6 +610,37 @@ function LookupInput({
         ))}
       </select>
       {failure ? <p className="text-xs text-ui-fg-error">{failure}</p> : null}
+      {!disabled && !failure && options.length === 0 && (
+        <p className="text-xs text-ui-fg-muted">{search ? `No ${label} matches “${search}”.` : `No ${label} records yet.`}</p>
+      )}
+      {(canAdd || canOpen) && environment && target && (
+        <div className="flex flex-wrap gap-3 text-xs">
+          {canAdd && (
+            <button
+              type="button"
+              className="font-medium text-ui-fg-interactive hover:underline"
+              onClick={() =>
+                environment.open({
+                  kind: 'create',
+                  target,
+                  label,
+                  onCreated: (created) => {
+                    setSearch('');
+                    onChange(created);
+                  },
+                })
+              }
+            >
+              + Add new {label}
+            </button>
+          )}
+          {canOpen && (
+            <button type="button" className="text-ui-fg-interactive hover:underline" onClick={() => environment.open({ kind: 'open', target, label, id: String(value) })}>
+              Open
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }

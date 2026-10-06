@@ -83,7 +83,9 @@ to one page. Replace old content rather than appending to it, and update it at t
    version failed (outbox version collision): fixed, proof 27/27, committed with the walk-through tooling.
    UAT walk-through: `uat.admin@gigalibs.io` (Tenant Admin, GigaLibs Global Enterprise); starter data entered on the
    screens; board of 105 screens: 57 load, 8 not built, 35 broken, 5 crash (causes and batches in the work log).
-   Next: build and deploy the fix; F0.6 Add new from pickers; quick-fixes batch; U20a; permissions batch; U29.
+   Fix deployed (`bed4aa1`, 01:30Z); starter data complete (four prices).
+   F0.6 "Add new" from pickers (WI-OI-120j): implemented, checks pass; committed; next build, deploy and the UAT
+   Add-new step. Then the quick-fixes batch; U20a; permissions batch; U29.
    Workforce `wfo` screens: diagnosed (ungated routes, see work log); U20a card to propose. P0-05, P0-07, P0-10, P1-10 and the P1-11 prototypes are in modules not running here; they are fixed
    as each module moves onto the module SDK (U29). Independent Security review before any defect closes.
 3. Then U4–U6 (Dictionary & Master Data hardening), U7–U18 (module by module Playwright flows). Plan:

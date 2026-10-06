@@ -117,7 +117,12 @@
         {
           "referenceKey": "product-ref",
           "referenceType": "SEARCH_LOOKUP",
-          "resolverKey": "catalogue-products"
+          "resolverKey": "catalogue-products",
+          "createWith": {
+            "moduleKey": "product-catalogue",
+            "surfaceKey": "catalogue-products",
+            "permission": "products:create"
+          }
         },
         {
           "referenceKey": "stock-statuses",

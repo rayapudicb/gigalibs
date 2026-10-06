@@ -246,7 +246,12 @@
         {
           "referenceKey": "price-list-ref",
           "referenceType": "SEARCH_LOOKUP",
-          "resolverKey": "catalogue-price-lists"
+          "resolverKey": "catalogue-price-lists",
+          "createWith": {
+            "moduleKey": "product-catalogue",
+            "surfaceKey": "catalogue-price-lists",
+            "permission": "pricing:draft"
+          }
         }
       ],
       "validationRules": [],

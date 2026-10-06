@@ -212,7 +212,12 @@
         {
           "referenceKey": "catalogue-ref",
           "referenceType": "SEARCH_LOOKUP",
-          "resolverKey": "catalogue-catalogues"
+          "resolverKey": "catalogue-catalogues",
+          "createWith": {
+            "moduleKey": "product-catalogue",
+            "surfaceKey": "catalogue-catalogues",
+            "permission": "catalogues:draft"
+          }
         }
       ],
       "validationRules": [],

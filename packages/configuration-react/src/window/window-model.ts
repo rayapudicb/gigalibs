@@ -35,6 +35,8 @@ export interface PlacedField {
   readonly options?: readonly { readonly value: string; readonly label: string }[];
   /** A REFERENCE field's lookup resolver, served by the module's record dispatcher. */
   readonly resolverKey?: string;
+  /** WI-OI-120 (F0.6): the window that creates the reference's records, for "Add new" and "Open" from the picker. */
+  readonly createWith?: { readonly moduleKey: string; readonly surfaceKey: string; readonly permission: string };
 }
 
 /** A permission is held exactly, through `*`, or through `<resource>:*` (also for `resource.entity.action`). */
@@ -93,6 +95,7 @@ export function placedFields(
           required,
           ...(reference?.referenceType === 'VALUE_LIST' ? { options: (reference.staticValues ?? []).map(({ value, label }) => ({ value, label })) } : {}),
           ...(reference && reference.referenceType !== 'VALUE_LIST' && reference.resolverKey ? { resolverKey: reference.resolverKey } : {}),
+          ...(reference?.createWith ? { createWith: reference.createWith } : {}),
         },
       ];
     });

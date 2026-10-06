@@ -147,6 +147,19 @@ export const DictionaryReferenceV1Schema = z
     targetDisplayField: z.string().trim().min(1).max(64).optional(),
     staticValues: z.array(DictionaryReferenceOptionSchema).max(200).optional(),
     resolverKey: ConfigurationKeySchema.optional(),
+    /**
+     * WI-OI-120 (F0.6): the published window that creates this reference's records, offered from a picker as
+     * "Add new" (and "Open" for the chosen record) to a user holding `permission`. The module generator refuses a
+     * window no module ships.
+     */
+    createWith: z
+      .object({
+        moduleKey: ConfigurationKeySchema,
+        surfaceKey: ConfigurationKeySchema,
+        permission: z.string().trim().min(1).max(120),
+      })
+      .strict()
+      .optional(),
   })
   .strict();
 export type DictionaryReferenceV1 = z.infer<typeof DictionaryReferenceV1Schema>;

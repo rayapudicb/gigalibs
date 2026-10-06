@@ -1089,3 +1089,45 @@ widening the card to fix the API faults the proof found.
   - `pnpm verify` passes (known drift; 11 proofs NOT RUN without PROOF_DATABASE_URL; U7's proof run by the session:
     27/27).
 
+### bed4aa1 deploy and F0.6 "Add new" from pickers (2026-10-06)
+
+- **bed4aa1 deploy:**
+  - Deployed by the owner at 01:27–01:30Z: `bed4aa1d5fff-7f0b15eb3ad3`. All services are healthy, and every migration
+    job exited 0.
+  - Backup: `gigalibs_backup_20261006_012547Z.dump`, under the running release
+    `local-20261005T233725Z-830a5a190e80-100c91553735`; checksum verified.
+- **Starter data after the deploy:** the rerun added the remaining prices, so the UAT-USD draft version now holds four
+  (read back through the API).
+  - Locations: a check that read a child list before it loaded tried RCV-01 again. The warehouse refused the duplicate
+    correctly, and child checks now wait for their list.
+  - Two empty draft price-list versions were left by earlier runs. There is no command to delete a version.
+- **UAT login note:** `uat.admin@gigalibs.io` belongs to GigaLibs Global Enterprise and to its own trial workspace,
+  "uat.admin". Sign-in asks which, and the trial workspace has neither Catalogue nor Inventory. The owner was told to
+  choose GigaLibs Global Enterprise.
+- **F0.6 (WI-OI-120j):**
+  - **Contract and field model:** `DictionaryReferenceV1.createWith { moduleKey, surfaceKey, permission }`;
+    `PlacedField.createWith`.
+  - **Generator:** refuses a `createWith` that names a window no module ships (checked by pointing one at a missing
+    window: refused with the file and reference named).
+  - **Renderer:**
+    - each window keeps a dialog stack outside its forms;
+    - a picker offers "+ Add new <label>" when the user holds the permission, and "Open" for the chosen record;
+    - an empty picker says "No <label> records yet";
+    - a created record is selected.
+  - **Windows:** 13 shipped windows name their creating window:
+    - product → `catalogue-products`;
+    - unit → `catalogue-units`;
+    - category → `catalogue-categories`;
+    - catalogue → `catalogue-catalogues`;
+    - price list → `catalogue-price-lists`;
+    - warehouse → `inventory-warehouses`.
+
+    Locations stay without, because they are added under their warehouse.
+  - **Pages:** Inventory gives its windows the Catalogue's client.
+  - **Tests:** a window-model test checks that the picker gets `createWith` and that the schema needs its permission.
+    `e2e/specs/uat-add-new.spec.ts` runs on UAT after deploy.
+  - **Checks:**
+    - `pnpm build` passes;
+    - `pnpm test`: 2,552 passed, 188 skipped;
+    - `pnpm verify` passes (known drift; 11 proofs NOT RUN).
+
