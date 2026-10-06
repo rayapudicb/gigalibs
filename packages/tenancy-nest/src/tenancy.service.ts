@@ -500,7 +500,8 @@ export class TenancyService {
         customRole: {
           select: { id: true, name: true, color: true, permissions: true },
         },
-        // WI-OI-120w (R2 slice 2a): the roles the member holds, oldest first.
+        // WI-OI-120w (R2 slice 2a): the roles the member holds, oldest first. Who granted each and why stay in the audit
+        // log: every member may read this list (Security review of 2a, L3).
         roleAssignments: {
           where: { revokedAt: null },
           orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
@@ -508,8 +509,6 @@ export class TenancyService {
             id: true,
             customRoleId: true,
             scope: true,
-            reason: true,
-            grantedById: true,
             createdAt: true,
             customRole: { select: { name: true, color: true } },
           },
@@ -524,7 +523,8 @@ export class TenancyService {
    * kept on the assignment and in the audit log; the member's next request has the role.
    */
   async assignMemberRole(tenantId: string, memberId: string, actorId: string, dto: AssignMemberRoleDto) {
-    return prisma.$transaction(
+    const reason = requireReason(dto.reason);
+    return roleChangeConflicts(() => prisma.$transaction(
       async (transaction) => {
         await transaction.$queryRaw`SELECT "id" FROM "tenants" WHERE "id" = ${tenantId} FOR UPDATE`;
         const member = await this.memberForRoleChange(transaction, tenantId, memberId, actorId);
@@ -535,7 +535,6 @@ export class TenancyService {
           select: { id: true },
         });
         if (held) throw new ConflictException({ code: 'ROLE_ALREADY_HELD', message: `${role.name} is already held by this member.` });
-        const reason = characterReason(dto.reason);
         const assignment = await transaction.memberRoleAssignment.create({
           data: { tenantId, userId: member.userId, customRoleId: role.id, scope: 'MEMBER', reason, grantedById: actorId },
           select: { id: true, customRoleId: true, scope: true, reason: true, grantedById: true, createdAt: true },
@@ -555,12 +554,13 @@ export class TenancyService {
         return { ...assignment, roleName: role.name, createdAt: assignment.createdAt.toISOString() };
       },
       { isolationLevel: 'Serializable' },
-    );
+    ));
   }
 
   /** WI-OI-120w (R2 slice 2a): takes one role away from a member; their other roles stay. The history is kept. */
   async revokeMemberRole(tenantId: string, memberId: string, assignmentId: string, actorId: string, dto: RevokeMemberRoleDto) {
-    return prisma.$transaction(
+    const reason = requireReason(dto.reason);
+    return roleChangeConflicts(() => prisma.$transaction(
       async (transaction) => {
         await transaction.$queryRaw`SELECT "id" FROM "tenants" WHERE "id" = ${tenantId} FOR UPDATE`;
         const member = await this.memberForRoleChange(transaction, tenantId, memberId, actorId);
@@ -569,7 +569,6 @@ export class TenancyService {
           select: { id: true, customRoleId: true, scope: true, customRole: { select: { name: true } } },
         });
         if (!assignment) throw new NotFoundException({ code: 'ROLE_ASSIGNMENT_NOT_FOUND', message: 'This member does not hold that role.' });
-        const reason = characterReason(dto.reason);
         await transaction.memberRoleAssignment.update({
           where: { id: assignment.id },
           data: { revokedAt: new Date(), revokedById: actorId, revokeReason: reason },
@@ -589,16 +588,20 @@ export class TenancyService {
         return { id: assignment.id, revoked: true };
       },
       { isolationLevel: 'Serializable' },
-    );
+    ));
   }
 
-  /** The member whose roles change; giving oneself a role is refused unless the actor is a Tenant Admin. */
+  /**
+   * The member whose roles change. Giving oneself a role is refused unless the actor is a Tenant Admin, and only a
+   * Tenant Admin changes a Tenant Admin's roles (WI-OI-120v; Security review of 2a, M1).
+   */
   private async memberForRoleChange(transaction: Prisma.TransactionClient, tenantId: string, memberId: string, actorId: string) {
     const member = await transaction.tenantMember.findFirst({
       where: { id: memberId, tenantId },
-      select: { id: true, userId: true, customRoleId: true },
+      select: { id: true, userId: true, role: true, customRoleId: true },
     });
     if (!member) throw new NotFoundException('Tenant member was not found');
+    await assertTenantAdminAuthority(transaction, tenantId, actorId, { grantsAdmin: false, touchesAdmin: member.role === 'TENANT_ADMIN' });
     if (member.userId === actorId) {
       const actor = await transaction.tenantMember.findUnique({ where: { userId_tenantId: { userId: actorId, tenantId } }, select: { role: true, status: true } });
       if (!(actor?.status === 'ACTIVE' && (actor.role === 'TENANT_ADMIN' || actor.role === 'SUPER_ADMIN')))
@@ -643,9 +646,9 @@ export class TenancyService {
         permissions: true,
         createdAt: true,
         updatedAt: true,
-        _count: { select: { members: true } },
+        _count: { select: ROLE_HOLDERS },
       },
-    });
+    }).then((roles) => roles.map(withHolderCount));
   }
 
   /**
@@ -825,7 +828,7 @@ export class TenancyService {
           permissions: true,
           createdAt: true,
           updatedAt: true,
-          _count: { select: { members: true } },
+          _count: { select: ROLE_HOLDERS },
         },
       });
       await transaction.auditLog.create({
@@ -850,7 +853,7 @@ export class TenancyService {
           metadata: { reason: dto.reason },
         },
       });
-      return updated;
+      return withHolderCount(updated);
     });
   }
 
@@ -859,11 +862,12 @@ export class TenancyService {
       await transaction.$queryRaw`SELECT "id" FROM "tenants" WHERE "id" = ${tenantId} FOR UPDATE`;
       const role = await transaction.customRole.findFirst({
         where: { id: roleId, tenantId },
-        include: { _count: { select: { members: true } } },
+        include: { _count: { select: { members: true, ...ROLE_HOLDERS } } },
       });
       if (!role) throw new NotFoundException('Custom role was not found');
       if (role.isSystem) throw new ConflictException('System roles cannot be deleted');
-      if (role._count.members > 0) {
+      // A role held only as someone's second role is in use too (Security review of 2a, L2).
+      if (role._count.members > 0 || role._count.assignments > 0) {
         throw new ConflictException('Remove this custom role from all members before deleting it');
       }
       // WI-OI-120w review (L1): the role's assignment history goes with it, so it is kept in the audit entry first.
@@ -1133,7 +1137,6 @@ export class TenancyService {
             userId: true,
             role: true,
             status: true,
-            customRoleId: true,
             departmentId: true,
             employmentType: true,
             spatialScopePlaceIds: true,
@@ -1147,16 +1150,6 @@ export class TenancyService {
 
         const nextRole = dto.role ?? member.role;
         const nextStatus = dto.status ?? member.status;
-        const nextCustomRoleId =
-          dto.customRoleId !== undefined ? dto.customRoleId : member.customRoleId;
-        if (nextCustomRoleId) {
-          const customRole = await transaction.customRole.findFirst({
-            where: { id: nextCustomRoleId, tenantId },
-            select: { id: true },
-          });
-          if (!customRole)
-            throw new BadRequestException('Custom role does not belong to this tenant');
-        }
 
         if (dto.departmentId !== undefined && dto.departmentId !== member.departmentId)
           await assertDepartmentsEditable(transaction, tenantId);
@@ -1181,20 +1174,14 @@ export class TenancyService {
         });
         await assertTenantAdministratorRetained(transaction, tenantId, member, { role: nextRole, status: nextStatus });
 
-        // WI-OI-120w (R2 slice 1): the trigger on `customRoleId` keeps the member's role assignment in step whichever
-        // release writes; this release tells it who changed the role and why (transaction-local settings). The reason
-        // is counted in characters, as the database counts it.
-        if (nextCustomRoleId !== member.customRoleId) {
-          const reason = characterReason(dto.reason);
-          await transaction.$queryRaw`SELECT set_config('app.role_change_actor', ${changedById}, true), set_config('app.role_change_reason', ${reason}, true)`;
-        }
+        // WI-OI-120w (Security review of 2a, M2): roles are not changed here. They are given and taken away through
+        // role assignments (`assignMemberRole`, `revokeMemberRole`), behind `roles:assign`.
 
         const changed = await transaction.tenantMember.updateMany({
           where: { id: member.id, tenantId, updatedAt: member.updatedAt },
           data: {
             role: nextRole,
             status: nextStatus,
-            customRoleId: nextCustomRoleId,
             departmentId: nextDepartmentId,
             employmentType: nextEmploymentType,
             spatialScopePlaceIds: [...nextSpatialScopePlaceIds],
@@ -1239,7 +1226,6 @@ export class TenancyService {
             before: {
               role: member.role,
               status: member.status,
-              customRoleId: member.customRoleId,
               departmentId: member.departmentId,
               employmentType: member.employmentType,
               spatialScopePlaceIds: member.spatialScopePlaceIds,
@@ -1247,7 +1233,6 @@ export class TenancyService {
             after: {
               role: updated.role,
               status: updated.status,
-              customRoleId: updated.customRole?.id ?? null,
               departmentId: updated.departmentId,
               employmentType: updated.employmentType,
               spatialScopePlaceIds: updated.spatialScopePlaceIds,
@@ -1654,8 +1639,34 @@ async function assertDepartmentsEditable(db: Pick<typeof prisma, '$queryRaw'>, t
     );
 }
 
-/** A reason counted in characters, as the database counts it (WI-OI-120w review, L3). */
-function characterReason(value: string | undefined): string {
-  const characters = [...(value ?? '').trim()];
-  return characters.length >= 3 ? characters.slice(0, 500).join('') : 'Changed in Settings → Team';
+/**
+ * A role change's reason, counted in characters as the database counts it. A reason outside 3 to 500 characters is
+ * refused, never replaced (Security review of 2a, Info).
+ */
+function requireReason(value: string | undefined): string {
+  const reason = (value ?? '').trim();
+  const characters = [...reason].length;
+  if (characters < 3 || characters > 500)
+    throw new BadRequestException({ code: 'ROLE_CHANGE_REASON', message: 'Give a reason of 3 to 500 characters.' });
+  return reason;
+}
+
+/** Two role changes for one workspace at once: the later is told to reload, never shown a server error. */
+async function roleChangeConflicts<T>(change: () => Promise<T>): Promise<T> {
+  try {
+    return await change();
+  } catch (error) {
+    const code = error && typeof error === 'object' && 'code' in error ? error.code : undefined;
+    if (code === 'P2034' || code === 'P2002')
+      throw new ConflictException({ code: 'ROLES_CHANGED', message: 'Roles changed at the same time; reload before retrying.' });
+    throw error;
+  }
+}
+
+/** The members holding a role: live role assignments, which include roles held besides the oldest (2a, L2). */
+const ROLE_HOLDERS = { assignments: { where: { revokedAt: null } } } as const;
+
+function withHolderCount<T extends { _count: { assignments: number } }>(role: T) {
+  const { _count, ...rest } = role;
+  return { ...rest, _count: { members: _count.assignments } };
 }

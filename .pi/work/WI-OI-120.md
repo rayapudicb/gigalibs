@@ -1899,8 +1899,9 @@ widening the card to fix the API faults the proof found.
     control-plane permission, catalogued; Tenant Admins hold it through `roles:*`);
   - the member list returns each member's live roles, oldest first.
   - Refused: a role of another workspace (400); a role already held (409); changing one's own roles unless a Tenant
-    Admin (403 `ROLE_SELF_ASSIGNMENT`). Before this, anyone with `users:update` could set their own role through the
-    single picker; bounds on what an assigner may grant come with R4.
+    Admin (403 `ROLE_SELF_ASSIGNMENT`). Bounds on what an assigner may grant come with R4.
+  - The old path was still open in 060d3cb: anyone with `users:update` could set their own role through the member
+    update. The review fixes close it (M2 below).
   - Each change is audited (`member_role_assignment`, with reason). `customRoleId` follows the oldest live role, for
     display and for an earlier release.
 - **Settings → Team:** each member's roles are tags with a remove button, plus "Add a role", a reason and "Add role".
@@ -1918,3 +1919,53 @@ widening the card to fix the API faults the proof found.
   - control plane and web typecheck.
 - **When a change applies:** control-plane checks read live assignments on every request. A signed module context
   keeps the roles it was signed with for at most 300 s. Bumping the session version stays in slice 2b.
+
+##### Security review of 060d3cb (owner "yes for security")
+
+**Verdict: "ship after fixes".** No Critical or High findings. Fixed in the working tree:
+
+- **M1, new in 060d3cb:**
+  - **Finding:** someone holding `roles:assign` could add roles to, or take them from, a Tenant Admin, getting
+    around WI-OI-120v.
+  - **Fix:** the role-change endpoints now apply `assertTenantAdminAuthority` (touches an admin).
+  - **Test:** a Manager holding the assigner role gets 403 on both endpoints.
+- **M2, predates 060d3cb:**
+  - **Finding:** the member update still accepted `customRoleId`, so `users:update` alone gave roles, including to
+    oneself.
+  - **Fix:** the contract refuses any `customRoleId` on the member update, and the service no longer writes the
+    column. Roles change only through role assignments (`roles:assign`).
+  - **Also closes L1:** a later change no longer silently revokes a role the old path added.
+- **L2:**
+  - **Finding:** a role held only as someone's second role showed "0 members" and could be deleted.
+  - **Fix:** the role list counts live assignments, and deletion is refused while any are live.
+- **L3:**
+  - **Finding:** every member could read the reasons and grantors of role assignments.
+  - **Fix:** the member list returns neither; both stay in the audit log.
+- **Info:**
+  - reasons are counted in characters, and an out-of-range reason is refused (400) rather than replaced;
+  - a serialization conflict or a duplicate is 409 `ROLES_CHANGED`, not 500.
+- **Left open for the owner:** M3, bounds on what an assigner may grant (card R4). Two holders of `roles:assign`, or
+  one holder with an invited second address, can give each other a role carrying `roles:*`, and so reach every
+  catalogued permission. They never reach Tenant Admin. This is no worse than `users:update` was before. The cheap
+  interim rule is: a non-admin may grant only a role whose every permission they hold.
+- **Not changed:** `search_path` is `public` without `pg_temp`. The reviewer judged it harmless, because the
+  function is not SECURITY DEFINER.
+- **Checks after the fixes:**
+  - r2_proof: the several-roles suite 8 of 8 and the slice 1 suite 6 of 6;
+  - contracts tenancy tests: 80;
+  - affected suites: 111 files and 1137 tests;
+  - control plane and web typecheck; design-tokens audit.
+- **Re-check of the fixes: "ship".**
+  - Every fix was verified in code. In this release the only runtime writer of `customRoleId` is
+    `followOldestRole`: SCIM, OIDC sign-up, platform administration, tenant creation and invite acceptance do not
+    set it.
+  - r2_proof suites: 14 of 14; contracts and authority tests: 10 of 10.
+  - `pnpm verify` on the fixes: PASS for every step that ran (build, tests, all audits, S16). Only the known
+    `WORKFORCE_API_URL` drift shows; the 12 proof steps need `PROOF_DATABASE_URL`.
+- **Deploy and rollback notes (reviewer, Info):**
+  - While 2323b99 still serves, or after a rollback to it, its member update can write the column. A later role
+    change then revokes that role without its own audit-log row.
+  - After a rollback to 2323b99, Settings → Team shows only each member's oldest role. Their other roles still grant
+    access and cannot be removed there; they need a forward fix, or an owner-run revoke.
+  - Role holder counts are live assignments. They equal distinct members while only `MEMBER` scope exists; revisit
+    in 2b.

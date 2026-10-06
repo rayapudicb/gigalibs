@@ -277,7 +277,7 @@ function MemberRoles({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const email = member.user.email;
-  const reasonGiven = reason.trim().length >= 3;
+  const reasonGiven = [...reason.trim()].length >= 3; // characters, as the server counts them
 
   const change = async (path: string, body: Record<string, string>, fallback: string) => {
     setBusy(true);
@@ -352,7 +352,7 @@ function MemberRoles({
         Add role
       </Button>
       {error ? (
-        <p className="text-xs text-rose-700" role="alert">
+        <p className="text-xs text-ui-fg-error" role="alert">
           {error}
         </p>
       ) : null}

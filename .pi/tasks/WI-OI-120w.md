@@ -5,7 +5,9 @@
   starts.
   - **Slice 1:** done (committed c6e96e2 and 2323b99; Security review recorded; release built, awaiting the owner's
     deploy).
-  - **Slice 2a:** built and checked (owner "approved 2a"); awaiting "commit".
+  - **Slice 2a:** committed 060d3cb (owner "approved 2a").
+    - Security review: "ship after fixes". M1, M2, L1–L3 and the Info items are fixed; M3 (grant bounds) awaits the
+      owner.
   - **Next:** slices 3 and 2b.
   - Evidence: `.pi/work/WI-OI-120.md` § WI-OI-120w. Independent Security review before deploy (access change).
 - **Work item:** WI-OI-120. Evidence goes in `.pi/work/WI-OI-120.md`.
@@ -55,7 +57,9 @@ everything under them), or some places (with everything inside them).
 - **As built:**
   - there is no separate `GET`: the member list Settings → Team already reads (`users:read`) carries each member's
     live roles, oldest first;
-  - nobody changes their own roles unless they are a Tenant Admin (403 `ROLE_SELF_ASSIGNMENT`);
+  - nobody changes their own roles unless they are a Tenant Admin (403 `ROLE_SELF_ASSIGNMENT`), and only a Tenant
+    Admin changes a Tenant Admin's roles (WI-OI-120v);
+  - the member update no longer takes a role: roles change only through role assignments (review M2);
   - a change reaches control-plane checks on the member's next request, which reads live assignments. A signed
     module context carries the roles it was signed with for at most 300 s. No session version is bumped yet; that
     stays in slice 2b.

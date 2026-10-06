@@ -31,6 +31,7 @@ integration('several roles per member (isolated PostgreSQL)', () => {
         { id: `technician-${run}`, tenantId, name: 'Maintenance technician', permissions: ['cmms:read', 'cmms.work-orders.read'], isSystem: true },
         { id: `worker-${run}`, tenantId, name: 'Workforce member', permissions: ['workforce:read', 'workforce.time.punch'], isSystem: true },
         { id: `assigner-${run}`, tenantId, name: 'Role assigner', permissions: ['roles:assign'] },
+        { id: `nights-${run}`, tenantId, name: 'Night shift', permissions: ['cmms:read'] },
         { id: `foreign-${run}`, tenantId: otherTenantId, name: 'Foreign role', permissions: ['users:read'] },
       ],
     });
@@ -88,9 +89,30 @@ integration('several roles per member (isolated PostgreSQL)', () => {
     expect(await status(service.assignMemberRole(tenantId, `m-admin-${run}`, admin, { customRoleId: `worker-${run}`, reason: 'Admin also clocks in' }))).toBe(200);
   });
 
+  // Security review of 2a, M1: holding `roles:assign` does not reach a Tenant Admin (WI-OI-120v).
+  it("refuses a non-admin assigner changing a Tenant Admin's roles", async () => {
+    expect(await status(service.assignMemberRole(tenantId, `m-admin-${run}`, lead, { customRoleId: `technician-${run}`, reason: 'Over the admin' }))).toBe(403);
+    const [held] = await live(admin);
+    expect(await status(service.revokeMemberRole(tenantId, `m-admin-${run}`, held!.id, lead, { reason: 'Strip the admin' }))).toBe(403);
+    expect((await live(admin)).map((assignment) => assignment.customRoleId)).toEqual([`worker-${run}`]);
+  });
+
+  it('refuses a reason shorter than three characters, counted as people count them', async () => {
+    expect(await status(service.assignMemberRole(tenantId, `m-lead-${run}`, admin, { customRoleId: `technician-${run}`, reason: '👍👍' }))).toBe(400);
+  });
+
   it('lets an earlier release replace only the role the column names; the others stay', async () => {
     // The technician holds Workforce member (column, oldest) and Maintenance technician.
     await db.tenantMember.update({ where: { id: `m-tech-${run}` }, data: { customRoleId: `assigner-${run}` } });
     expect((await live(tech)).map((assignment) => assignment.customRoleId).sort()).toEqual([`assigner-${run}`, `technician-${run}`].sort());
+  });
+
+  // Security review of 2a, L2: a role held besides the oldest is in use, in the role list and when deleting.
+  it('counts a role held besides the oldest as in use; it cannot be deleted', async () => {
+    await service.assignMemberRole(tenantId, `m-lead-${run}`, admin, { customRoleId: `nights-${run}`, reason: 'Covers nights' });
+    expect(await column(`m-lead-${run}`)).toBe(`assigner-${run}`);
+    expect(await status(service.deleteCustomRole(tenantId, `nights-${run}`, admin, 'No longer needed'))).toBe(409);
+    const roles = await service.listCustomRoles(tenantId);
+    expect(roles.find((role) => role.id === `nights-${run}`)?._count.members).toBe(1);
   });
 });

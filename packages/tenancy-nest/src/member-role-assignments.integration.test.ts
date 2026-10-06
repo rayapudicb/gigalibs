@@ -1,7 +1,8 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-// WI-OI-120w (R2 slice 1): changing a member's role in Settings → Team revokes the old role assignment and grants the
-// new one, keeps `customRoleId` in step, and the session reads the role from the assignment. Runs only against the
+// WI-OI-120w (R2 slice 1): a change of `customRoleId` revokes the old role assignment and grants the new one, and the
+// session reads the role from the assignment. Since slice 2a only an earlier release writes the column (release
+// 2323b99's member update, as `change` does here); the trigger still has to keep it in step. Runs only against the
 // throwaway `r2_proof` database (127.0.0.1:55433); skipped without R2_TEST_DATABASE_URL.
 const databaseUrl = process.env.R2_TEST_DATABASE_URL;
 if (databaseUrl && new URL(databaseUrl).pathname !== '/r2_proof') throw new Error('Refusing: only the r2_proof database is allowed.');
@@ -11,14 +12,12 @@ integration('member role assignments (isolated PostgreSQL)', () => {
   const run = Date.now().toString(36);
   const tenantId = `t-r2-${run}`;
   let db: typeof import('@gigalibs/db').prisma;
-  let service: import('./tenancy.service.js').TenancyService;
   let memberScopeRoles: typeof import('@gigalibs/rbac-nest').memberScopeRoles;
 
   beforeAll(async () => {
     process.env.DATABASE_URL = databaseUrl;
     ({ prisma: db } = await import('@gigalibs/db'));
     ({ memberScopeRoles } = await import('@gigalibs/rbac-nest'));
-    service = new (await import('./tenancy.service.js')).TenancyService();
     await db.tenant.create({ data: { id: tenantId, slug: tenantId, name: 'R2 proof' } });
     await db.user.createMany({
       data: [
@@ -44,14 +43,12 @@ integration('member role assignments (isolated PostgreSQL)', () => {
     await db?.$disconnect();
   });
 
-  const change = async (customRoleId: string | null) => {
-    const member = await db.tenantMember.findUniqueOrThrow({ where: { id: `m-tech-${run}` } });
-    return service.updateMember(tenantId, member.id, `admin-${run}`, {
-      expectedUpdatedAt: member.updatedAt.toISOString(),
-      customRoleId,
-      reason: 'R2 proof: role change',
-    } as never);
-  };
+  // Release 2323b99's member update: it writes the column and tells the trigger who changed the role and why.
+  const change = (customRoleId: string | null) =>
+    db.$transaction(async (transaction) => {
+      await transaction.$queryRaw`SELECT set_config('app.role_change_actor', ${`admin-${run}`}, true), set_config('app.role_change_reason', ${'R2 proof: role change'}, true)`;
+      await transaction.tenantMember.update({ where: { id: `m-tech-${run}` }, data: { customRoleId } });
+    });
   const live = () => db.memberRoleAssignment.findMany({ where: { tenantId, userId: `tech-${run}`, revokedAt: null } });
 
   it('grants the role as an assignment at the member scope and keeps the column in step', async () => {

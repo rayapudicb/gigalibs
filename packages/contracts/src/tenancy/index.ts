@@ -167,25 +167,31 @@ const CustomRoleFieldsSchema = z.object({
  * WI-OI-120w (R2 slice 2a): giving a member a role, or taking one away. A member may hold several roles; each is a role
  * assignment at the member's own scope. Every change carries a reason.
  */
+// Counted in characters, as the database's CHECK counts it (Security review of 2a, Info): two emoji are two characters.
+const RoleChangeReasonSchema = z
+  .string()
+  .trim()
+  .refine((value) => [...value].length >= 3 && [...value].length <= 500, { error: 'Give a reason of 3 to 500 characters.' });
 export const AssignMemberRoleSchema = z
   .object({
     customRoleId: z.string().trim().min(1).max(64),
-    reason: z.string().trim().min(3).max(500),
+    reason: RoleChangeReasonSchema,
   })
   .strict();
-export const RevokeMemberRoleSchema = z.object({ reason: z.string().trim().min(3).max(500) }).strict();
+export const RevokeMemberRoleSchema = z.object({ reason: RoleChangeReasonSchema }).strict();
 export type AssignMemberRoleDto = z.infer<typeof AssignMemberRoleSchema>;
 export type RevokeMemberRoleDto = z.infer<typeof RevokeMemberRoleSchema>;
 
-/** A role a member holds, as Settings → Team lists it. */
+/**
+ * A role a member holds, as Settings → Team lists it to anyone with `users:read`. Who granted it and why stay in the
+ * audit log (Security review of 2a, L3).
+ */
 export interface MemberRoleAssignmentView {
   readonly id: string;
   readonly customRoleId: string;
-  readonly roleName: string;
   readonly scope: 'MEMBER' | 'WORKSPACE' | 'UNITS' | 'PLACES';
-  readonly reason: string;
-  readonly grantedById: string;
   readonly createdAt: string;
+  readonly customRole: { readonly name: string; readonly color: string };
 }
 
 export const CreateCustomRoleSchema = CustomRoleFieldsSchema.superRefine((role, context) => {
@@ -231,7 +237,11 @@ export const UpdateTenantMemberSchema = z
   .object({
     role: TenantMemberRoleSchema.optional(),
     status: z.enum(['ACTIVE', 'SUSPENDED']).optional(),
-    customRoleId: z.string().min(1).nullable().optional(),
+    // WI-OI-120w (Security review of 2a, M2): roles are given and taken away only through role assignments, behind
+    // `roles:assign`. Setting the single column here bypassed that permission and the self-assignment rule.
+    customRoleId: z
+      .never({ error: 'Roles are given and taken away one at a time (role assignments in Settings → Team).' })
+      .optional(),
     departmentId: z.string().min(1).nullable().optional(),
     employmentType: EmploymentTypeSchema.nullable().optional(),
     /** Places (with everything inside them) the member may reach once the tenant opts in to spatial scoping. */
@@ -243,7 +253,6 @@ export const UpdateTenantMemberSchema = z
     (value) =>
       value.role !== undefined ||
       value.status !== undefined ||
-      value.customRoleId !== undefined ||
       value.departmentId !== undefined ||
       value.employmentType !== undefined ||
       value.spatialScopePlaceIds !== undefined,
