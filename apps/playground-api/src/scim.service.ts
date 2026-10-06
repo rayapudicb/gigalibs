@@ -11,7 +11,7 @@ import { AuditService } from '@gigalibs/audit-nest';
 import { isTenantPermissionCode, TenantMemberRoleSchema } from '@gigalibs/contracts';
 import { PermissionEvaluator } from '@gigalibs/rbac-core';
 import { resolveBaseRolePermissions } from '@gigalibs/rbac-nest';
-import { assertTenantAdministratorRetained } from '@gigalibs/tenancy-nest';
+import { assertTenantAdminAuthority, assertTenantAdministratorRetained } from '@gigalibs/tenancy-nest';
 import { parseScim, scimMembershipChanges, ScimPatchSchema, ScimUserCreateSchema } from './scim.validation.js';
 export type { ScimPatchInput, ScimUserCreateInput } from './scim.validation.js';
 
@@ -195,6 +195,7 @@ export class ScimService {
         });
       }
 
+      await assertTenantAdminAuthority(tx, tenantId, operatorId, { grantsAdmin: role === 'TENANT_ADMIN', touchesAdmin: false });
       const membership = await tx.tenantMember.create({
         data: {
           tenantId,
@@ -225,6 +226,12 @@ export class ScimService {
       const member = await tx.tenantMember.findUnique({ where: { userId_tenantId: { userId: id, tenantId } } });
       if (!member) throw new NotFoundException('SCIM user was not found');
       const next = { role: changes.role ?? member.role, status: changes.active === undefined ? member.status : changes.active ? 'ACTIVE' as const : 'SUSPENDED' as const };
+      if (next.role !== member.role || next.status !== member.status) {
+        await assertTenantAdminAuthority(tx, tenantId, operatorId, {
+          grantsAdmin: next.role === 'TENANT_ADMIN' && member.role !== 'TENANT_ADMIN',
+          touchesAdmin: member.role === 'TENANT_ADMIN',
+        });
+      }
       await assertTenantAdministratorRetained(tx, tenantId, member, next);
       if (next.role !== member.role || next.status !== member.status) {
         await tx.tenantMember.update({ where: { id: member.id }, data: next });
@@ -244,6 +251,7 @@ export class ScimService {
     await this.mutate(tenantId, operatorId, 'users:delete', async (tx) => {
       const member = await tx.tenantMember.findUnique({ where: { userId_tenantId: { userId: id, tenantId } } });
       if (!member) throw new NotFoundException('SCIM user was not found');
+      await assertTenantAdminAuthority(tx, tenantId, operatorId, { grantsAdmin: false, touchesAdmin: member.role === 'TENANT_ADMIN' });
       await assertTenantAdministratorRetained(tx, tenantId, member, null);
       await this.revokeSessions(tx, tenantId, id);
       await tx.tenantMember.delete({ where: { id: member.id } });

@@ -111,6 +111,24 @@ describe.skipIf(!proofUrl)('SCIM HTTP and PostgreSQL persistence proof (isolated
     expect((await db.session.findUniqueOrThrow({ where: { id: sessionIds.get('admin-a')! } })).status).toBe('ACTIVE');
   });
 
+  // WI-OI-120v: SCIM user permissions manage members, but only a Tenant Admin grants or changes the Tenant Admin role.
+  it('refuses a non-administrator who grants, demotes, suspends or removes a Tenant Admin', async () => {
+    const hr = await addUser('hr', tenantA, 'MEMBER', undefined, ['users:create', 'users:update', 'users:delete']);
+    const target = `member-${run}`;
+    const admin = `admin-a-${run}`;
+    const role = (value: string) => ({ Operations: [{ op: 'replace', path: 'roles', value: [{ value }] }] });
+    expect((await call('hr', `/Users/${target}`, 'PATCH', role('TENANT_ADMIN'))).status).toBe(403);
+    expect((await call('hr', `/Users/${hr}`, 'PATCH', role('TENANT_ADMIN'))).status).toBe(403);
+    expect((await call('hr', '/Users', 'POST', { userName: `boss-${run}@example.invalid`, roles: [{ value: 'TENANT_ADMIN' }] })).status).toBe(403);
+    await addUser('admin-a2', tenantA);
+    expect((await call('hr', `/Users/${admin}`, 'PATCH', patch(false))).status).toBe(403);
+    expect((await call('hr', `/Users/${admin}`, 'PATCH', role('MEMBER'))).status).toBe(403);
+    expect((await call('hr', `/Users/${admin}`, 'DELETE')).status).toBe(403);
+    expect((await db.tenantMember.findUniqueOrThrow({ where: { userId_tenantId: { userId: admin, tenantId: tenantA } } })).role).toBe('TENANT_ADMIN');
+    expect((await call('hr', `/Users/${target}`, 'PATCH', role('VIEWER'))).status).toBe(200);
+    expect((await call('admin-a', `/Users/${target}`, 'PATCH', role('MEMBER'))).status).toBe(200);
+  });
+
   it('changes only one membership and its sessions for a multi-tenant identity', async () => {
     const id = await addUser('shared-a', tenantA, 'MEMBER');
     await addUser('shared-b', tenantB, 'MEMBER', id);

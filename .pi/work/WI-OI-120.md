@@ -1643,3 +1643,17 @@ widening the card to fix the API faults the proof found.
     general ledger 28/28 and CMMS routes 56/56.
 - **Ships in:** the module-host image (Catalogue, Finance, Inventory) and the web image (window form). Both are
   built after the `b7f8a53` deploy.
+
+### WI-OI-120v: only a Tenant Admin grants or changes the Tenant Admin role (2026-10-06)
+
+- **Owner:** "fix now" (found by the R1 Security review; it predates R1).
+- **Change:** see `.pi/tasks/WI-OI-120v.md`.
+  - `assertTenantAdminAuthority` is applied to member update, invitation, invitation acceptance (the sender must
+    still be an active administrator), and SCIM create, change and delete.
+  - Settings → Team offers "Tenant Admin" only to administrators.
+- **Proof:**
+  - Unit tests: 8.
+  - SCIM integration on the disposable `wi120d-scim-proof-20261005` database (started for the run, stopped after),
+    over real HTTP: 7 of 7, including the new refusal case.
+  - tenancy-nest suites: 61 passed.
+- **Remaining for R4:** a role creator is not bounded by the permissions they hold.

@@ -122,11 +122,14 @@ interface MemberRowProps {
   member: Member;
   currentUserId: string;
   canUpdate: boolean;
+  /** WI-OI-120v: only a workspace administrator grants, changes or suspends the Tenant Admin role (the server refuses). */
+  isAdministrator: boolean;
   customRoles: CustomRole[];
   onSaved: () => Promise<void>;
 }
 
-function MemberRow({ member, currentUserId, canUpdate, customRoles, onSaved }: MemberRowProps) {
+function MemberRow({ member, currentUserId, canUpdate: mayUpdate, isAdministrator, customRoles, onSaved }: MemberRowProps) {
+  const canUpdate = mayUpdate && (isAdministrator || member.role !== 'TENANT_ADMIN');
   const [role, setRole] = useState<MemberRole>(member.role);
   const [status, setStatus] = useState<MemberStatus>(member.status);
   const [customRoleId, setCustomRoleId] = useState(member.customRole?.id ?? '');
@@ -187,7 +190,7 @@ function MemberRow({ member, currentUserId, canUpdate, customRoles, onSaved }: M
                 {roleLabel('SUPER_ADMIN')} (managed by GigaLibs)
               </option>
             ) : null}
-            {ROLES.map((option) => (
+            {ROLES.filter((option) => isAdministrator || option !== 'TENANT_ADMIN').map((option) => (
               <option key={option} value={option}>
                 {roleLabel(option)}
               </option>
@@ -475,11 +478,8 @@ export function TenantAccessManager({
   tenantName: string;
   displaySection?: 'all' | 'team' | 'security';
 }) {
-  const effectivePermissions = roles.some(
-    (role) => role === 'TENANT_ADMIN' || role === 'SUPER_ADMIN',
-  )
-    ? [...permissions, '*']
-    : permissions;
+  const isAdministrator = roles.some((role) => role === 'TENANT_ADMIN' || role === 'SUPER_ADMIN');
+  const effectivePermissions = isAdministrator ? [...permissions, '*'] : permissions;
   const canReadMembers = hasPermission(effectivePermissions, 'users:read');
   const canUpdateMembers = hasPermission(effectivePermissions, 'users:update');
   const canReadInvites = hasPermission(effectivePermissions, 'invites:read');
@@ -1059,7 +1059,7 @@ export function TenantAccessManager({
                   value={role}
                   onChange={(event) => setRole(event.target.value as AssignableMemberRole)}
                 >
-                  {ROLES.map((option) => (
+                  {ROLES.filter((option) => isAdministrator || option !== 'TENANT_ADMIN').map((option) => (
                     <option key={option} value={option}>
                       {roleLabel(option)}
                     </option>
@@ -1239,6 +1239,7 @@ export function TenantAccessManager({
                     member={member}
                     currentUserId={currentUserId}
                     canUpdate={canUpdateMembers}
+                    isAdministrator={isAdministrator}
                     customRoles={customRoles}
                     onSaved={load}
                   />

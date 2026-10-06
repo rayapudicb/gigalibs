@@ -33,7 +33,7 @@ import {
   resolveDomainVerification,
 } from './domain-verification.js';
 import { tenantSubdomain, trialModuleKeys } from './platform-module-catalog.js';
-import { assertTenantAdministratorRetained } from './tenant-member-safety.js';
+import { assertTenantAdminAuthority, assertTenantAdministratorRetained } from './tenant-member-safety.js';
 
 @Injectable()
 export class TenancyService {
@@ -794,6 +794,7 @@ export class TenancyService {
       if (existingMember) {
         throw new ConflictException('A membership for this email already exists in the tenant');
       }
+      await assertTenantAdminAuthority(transaction, tenantId, invitedById, { grantsAdmin: dto.role === 'TENANT_ADMIN', touchesAdmin: false });
 
       await transaction.tenantInvite.updateMany({
         where: {
@@ -924,6 +925,11 @@ export class TenancyService {
           where: { userId_tenantId: { userId, tenantId: invitation.tenantId } },
         });
         if (existingMember) throw new ConflictException('A tenant membership already exists');
+        // WI-OI-120v: an invitation to be a Tenant Admin counts only while its sender is an active administrator, so one
+        // sent before that rule (or by someone since demoted) cannot make anyone an administrator.
+        if (invitation.role === 'TENANT_ADMIN') {
+          await assertTenantAdminAuthority(transaction, invitation.tenantId, invitation.invitedById, { grantsAdmin: true, touchesAdmin: false });
+        }
 
         const acceptedAt = new Date();
         const accepted = await transaction.tenantInvite.updateMany({
@@ -1031,6 +1037,10 @@ export class TenancyService {
           dto.employmentType !== undefined ? dto.employmentType : member.employmentType;
         const nextSpatialScopePlaceIds = dto.spatialScopePlaceIds ?? member.spatialScopePlaceIds;
 
+        await assertTenantAdminAuthority(transaction, tenantId, changedById, {
+          grantsAdmin: nextRole === 'TENANT_ADMIN' && member.role !== 'TENANT_ADMIN',
+          touchesAdmin: member.role === 'TENANT_ADMIN',
+        });
         await assertTenantAdministratorRetained(transaction, tenantId, member, { role: nextRole, status: nextStatus });
 
         const changed = await transaction.tenantMember.updateMany({
