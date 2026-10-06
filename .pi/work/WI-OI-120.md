@@ -1682,3 +1682,28 @@ widening the card to fix the API faults the proof found.
   `finance:journals:approve`**, so only a Tenant Admin, or a custom role, can approve journals. That is the owner's
   decision (add a Finance approver role).
 - **Checks:** `pnpm verify` passes, including the new steps "module windows (S16)" and "module conversions (S16)".
+- **Owner, 2026-10-06: "add approver role".** Finance gains the module role **Journal Approver** (`journal-approver`):
+  - it holds `finance:read`, `finance:journals:approve` and `finance:reports:view`, so it can approve and post, or
+    return, journals someone else submitted;
+  - it cannot draft, submit or post one itself; approving one's own journal stays refused by Finance.
+  - The `KNOWN` entry is removed, and the conversion check passes all three modules with nothing listed.
+  - The equivalence check grows by one code; its one new difference is the already-approved DictionaryRenderer case
+    for Tenant Admin.
+  - Like every module role, it becomes assignable in workspaces entitled to Finance the next time roles are listed;
+    nobody gets it automatically.
+- **Checks:**
+  - `pnpm verify` passes.
+  - A first run made during the owner's deploy timed out one Workforce test (`pay.rules.spec.ts`, 5 s, under load).
+    It passed 3 of 3 alone, and the full rerun passes.
+
+### b7f8a53 deploy (2026-10-06)
+
+- Deployed by the owner at about 12:27Z, after the fresh backup `gigalibs_backup_20261006_122530Z` of `7485aec`.
+- Read-only check:
+  - all nine services run `b7f8a533f0b7-005b390612a5`, and every UAT container reports healthy;
+  - `/login` answers 200;
+  - the module migrations exited 0;
+  - no error lines in the new containers' logs (the matches were route names containing "exception").
+- Live: the WI-OI-120n security fixes (admin-only login links, narrower module roles, another manager decides one's
+  own absence), ADR-0034 and ADR-0006 accepted.
+- Next on UAT: one release with R1, S1, WI-OI-120v, S16 and the Journal Approver role.

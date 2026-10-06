@@ -22,12 +22,7 @@ const CONVERTED = {
 };
 
 /** Findings seen by the owner and closed by a named later card. */
-const KNOWN = {
-  'financial-operations': [
-    // Journal approval (U12) has no module role yet; a Tenant Admin or a custom role approves. Owner decision pending.
-    'permission finance:journals:approve is granted by no module role',
-  ],
-};
+const KNOWN = {};
 
 /** A stand-in for a module's domain services: building the dispatcher only registers adapters, it calls nothing. */
 const stub = new Proxy(function stub() {}, { get: (_target, key) => (key === 'then' ? undefined : stub), apply: () => stub });

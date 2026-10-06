@@ -214,6 +214,17 @@ export const moduleDefaultRoles: readonly ModuleDefaultRole[] = [
     ]
   },
   {
+    "catalogKey": "financial-operations",
+    "key": "journal-approver",
+    "name": "Journal Approver",
+    "description": "Approves and posts, or returns, journals someone else submitted; cannot draft or submit journals.",
+    "permissions": [
+      "finance:read",
+      "finance:journals:approve",
+      "finance:reports:view"
+    ]
+  },
+  {
     "catalogKey": "analytics-studio",
     "key": "analytics-viewer",
     "name": "Analytics viewer",
