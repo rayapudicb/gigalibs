@@ -14,7 +14,7 @@ import {
   ConfigurationForm,
   type ConfigurationValues,
 } from '@gigalibs/configuration-react';
-import type { ConfigurationDefinition } from '@gigalibs/contracts';
+import { type ConfigurationDefinition, holdsAnyPermission } from '@gigalibs/contracts';
 import { Button, Input, toast as medusaToast } from '@medusajs/ui';
 import {
   Activity,
@@ -151,10 +151,7 @@ export function UniversalDynamicFormsStudio({
   const [surfaces, setSurfaces] = useState<SurfaceItem[]>([]);
   const [isLoadingMetadata, setIsLoadingMetadata] = useState(true);
 
-  const canDraft =
-    permissions.includes('*') ||
-    permissions.includes('configuration:*') ||
-    permissions.includes('configuration:draft');
+  const canDraft = holdsAnyPermission(permissions, ['configuration:draft']);
 
   useEffect(() => {
     let mounted = true;
@@ -489,7 +486,7 @@ export function UniversalDynamicFormsStudio({
           <div className="space-y-6">
             {/* WI-OI-107: the packs shipped at the solution layer; the form templates below are layer 2 (WI-OI-075). */}
             <SolutionPacksPanel
-              canInstall={permissions.includes('*') || permissions.includes('configuration:*') || permissions.includes('configuration:draft')}
+              canInstall={canDraft}
             />
             <div className="rounded-xl border border-purple-200 bg-purple-50/40 p-5">
               <div className="flex items-center gap-2">

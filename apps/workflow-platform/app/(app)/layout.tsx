@@ -14,6 +14,7 @@ import { cookies } from 'next/headers';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import type React from 'react';
+import { holdsAnyPermission } from '@gigalibs/contracts';
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const session = await verifiedSession(false);
@@ -57,10 +58,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const cookieStore = await cookies();
   const userLocale = cookieStore.get('gigalibs_locale')?.value;
   const initialLocale = userLocale || 'en-US';
-  const canUseStudioMode =
-    session.context.permissions.includes('*') ||
-    session.context.permissions.includes('configuration:*') ||
-    session.context.permissions.includes('configuration:draft');
+  const canUseStudioMode = holdsAnyPermission(session.context.permissions, ['configuration:draft']);
   // UAT instance only (WI-OI-120a): every module is listed. The owner removed the UAT labels on 2026-10-05 (WI-OI-120b).
   const uatPreview = uatPreviewEnabled();
   // WI-OI-120n: what this person may open, for the page gate (the same decision as the menu's).

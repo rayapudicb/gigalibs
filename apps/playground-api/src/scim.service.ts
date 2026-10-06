@@ -369,7 +369,7 @@ export class ScimService {
         });
         if (!actor || actor.status !== 'ACTIVE' || actor.user.status !== 'ACTIVE') throw new ForbiddenException('SCIM actor membership is inactive.');
         const custom = Array.isArray(actor.customRole?.permissions) ? actor.customRole.permissions.filter(isTenantPermissionCode) : [];
-        const permissions = [...resolveBaseRolePermissions([actor.role]), ...actor.permissions, ...custom];
+        const permissions = [...resolveBaseRolePermissions([actor.role]), ...actor.permissions.filter(isTenantPermissionCode), ...custom];
         if (!PermissionEvaluator.hasAllPermissions(permissions, [permission], { tenantId, userId: actorId })) throw new ForbiddenException('Insufficient SCIM permission.');
         return effect(tx);
       }, { isolationLevel: 'Serializable' });

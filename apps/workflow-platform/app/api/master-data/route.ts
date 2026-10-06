@@ -118,10 +118,7 @@ export async function POST(request: NextRequest) {
   }
 
   const permissions = session.context.permissions;
-  const hasWritePermission =
-    hasPermission(permissions, 'master-data:write') ||
-    hasPermission(permissions, 'master-data:admin') ||
-    permissions.includes('*');
+  const hasWritePermission = hasPermission(permissions, 'master-data:write') || hasPermission(permissions, 'master-data:admin');
 
   if (!hasWritePermission) {
     return NextResponse.json(

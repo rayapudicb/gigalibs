@@ -196,3 +196,32 @@ describe('shipped module windows', () => {
     }
   });
 });
+
+// WI-OI-120q (R1): a permission a window names must be a permission code.
+describe('permission codes in a dictionary', () => {
+  it('refuses a malformed field, navigation or action permission', async () => {
+    const { executableCapabilityFindings } = await import('./dictionary-capabilities.js');
+    const pkg = {
+      packageKey: 'probe-module-baseline',
+      name: 'Probe',
+      version: '1.0.0',
+      moduleKey: 'probe',
+      targetEntityKey: 'probe.things',
+      entities: [],
+      fields: [
+        { fieldKey: 'cost', entityKey: 'probe.things', label: 'Cost', type: 'TEXT', required: false, readOnly: false, isSystemLocked: false, classification: 'INTERNAL', maskOnDisplay: false, readPermission: 'Finance Read', writePermission: 'finance:costs:write' },
+      ],
+      relationships: [],
+      references: [],
+      validationRules: [],
+      views: [],
+      navigation: [{ itemKey: 'home', label: 'Home', position: 0, requiredPermissions: ['all'] }],
+      actions: [{ actionKey: 'close', label: 'Close', type: 'NAVIGATE', requiredPermissions: ['probe:things:close', '*:close'] }],
+      messages: [],
+    } as unknown as Parameters<typeof executableCapabilityFindings>[0];
+    const codes = executableCapabilityFindings(pkg, undefined)
+      .filter((finding) => finding.code === 'PERMISSION_INVALID')
+      .map((finding) => finding.path);
+    expect(codes).toEqual(['fields.cost.readPermission', 'navigation.home.requiredPermissions.0', 'actions.close.requiredPermissions.1']);
+  });
+});

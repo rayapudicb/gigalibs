@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import type { CompiledDictionaryManifestV1, DictionaryViewV1 } from '@gigalibs/contracts';
+import { type CompiledDictionaryManifestV1, type DictionaryViewV1, holdsPermission } from '@gigalibs/contracts';
 
 export interface DictionaryRendererProps {
   manifest: CompiledDictionaryManifestV1;
@@ -30,10 +30,9 @@ export function DictionaryRenderer({
   onChange,
   onAction,
 }: DictionaryRendererProps) {
-  const hasPermission = (perm?: string) => {
-    if (!perm) return true;
-    return permissions.includes('*') || permissions.includes(perm);
-  };
+  // The one permission rule (WI-OI-120q). Before it only exact codes counted here, so a family wildcard such as
+  // `users:*` hid fields the same person could use everywhere else.
+  const hasPermission = (perm?: string) => !perm || holdsPermission(permissions, perm);
 
   // Find target view
   const targetView: DictionaryViewV1 | undefined = useMemo(() => {

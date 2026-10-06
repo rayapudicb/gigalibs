@@ -9,9 +9,23 @@ export interface ModulePermissionCatalogueEntry {
 
 export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[] = [
   {
+    "code": "actions:approve",
+    "entries": [
+      "platform"
+    ]
+  },
+  {
     "code": "actions:read",
     "entries": [
-      "approval-queue"
+      "approval-queue",
+      "platform"
+    ]
+  },
+  {
+    "code": "analytics:action",
+    "entries": [
+      "analytics-studio",
+      "platform"
     ]
   },
   {
@@ -33,9 +47,16 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
     ]
   },
   {
-    "code": "analytics:mappings:write",
+    "code": "analytics:export",
     "entries": [
       "analytics-studio"
+    ]
+  },
+  {
+    "code": "analytics:mappings:write",
+    "entries": [
+      "analytics-studio",
+      "platform"
     ]
   },
   {
@@ -53,7 +74,8 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
   {
     "code": "analytics:read",
     "entries": [
-      "analytics-studio"
+      "analytics-studio",
+      "platform"
     ]
   },
   {
@@ -63,15 +85,107 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
     ]
   },
   {
+    "code": "ap:configure",
+    "entries": [
+      "platform"
+    ]
+  },
+  {
+    "code": "ap:evaluate",
+    "entries": [
+      "platform"
+    ]
+  },
+  {
     "code": "ap:read",
     "entries": [
-      "invoice-matching"
+      "invoice-matching",
+      "platform"
     ]
   },
   {
     "code": "ar:read",
     "entries": [
+      "accounts-receivable",
+      "platform"
+    ]
+  },
+  {
+    "code": "ar.customers.read",
+    "entries": [
       "accounts-receivable"
+    ]
+  },
+  {
+    "code": "ar.customers.write",
+    "entries": [
+      "accounts-receivable"
+    ]
+  },
+  {
+    "code": "ar.invoices.collect",
+    "entries": [
+      "accounts-receivable"
+    ]
+  },
+  {
+    "code": "ar.invoices.credit-note",
+    "entries": [
+      "accounts-receivable"
+    ]
+  },
+  {
+    "code": "ar.invoices.deliver",
+    "entries": [
+      "accounts-receivable"
+    ]
+  },
+  {
+    "code": "ar.invoices.issue",
+    "entries": [
+      "accounts-receivable"
+    ]
+  },
+  {
+    "code": "ar.invoices.pay",
+    "entries": [
+      "accounts-receivable"
+    ]
+  },
+  {
+    "code": "ar.invoices.read",
+    "entries": [
+      "accounts-receivable"
+    ]
+  },
+  {
+    "code": "ar.invoices.void",
+    "entries": [
+      "accounts-receivable"
+    ]
+  },
+  {
+    "code": "ar.invoices.write",
+    "entries": [
+      "accounts-receivable"
+    ]
+  },
+  {
+    "code": "ar.settings.manage",
+    "entries": [
+      "accounts-receivable"
+    ]
+  },
+  {
+    "code": "ar.settings.read",
+    "entries": [
+      "accounts-receivable"
+    ]
+  },
+  {
+    "code": "audit:read",
+    "entries": [
+      "platform"
     ]
   },
   {
@@ -129,6 +243,30 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
     ]
   },
   {
+    "code": "cmms.export.read",
+    "entries": [
+      "asset-maintenance"
+    ]
+  },
+  {
+    "code": "cmms.export.write",
+    "entries": [
+      "asset-maintenance"
+    ]
+  },
+  {
+    "code": "cmms.import.read",
+    "entries": [
+      "asset-maintenance"
+    ]
+  },
+  {
+    "code": "cmms.import.write",
+    "entries": [
+      "asset-maintenance"
+    ]
+  },
+  {
     "code": "cmms.meters.read",
     "entries": [
       "asset-maintenance"
@@ -177,34 +315,234 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
     ]
   },
   {
+    "code": "comments:create",
+    "entries": [
+      "platform"
+    ]
+  },
+  {
+    "code": "communications:action",
+    "entries": [
+      "platform"
+    ]
+  },
+  {
     "code": "communications:read",
     "entries": [
-      "communications-textfly"
+      "communications-textfly",
+      "platform"
+    ]
+  },
+  {
+    "code": "configuration-apps:read",
+    "entries": [
+      "platform"
+    ]
+  },
+  {
+    "code": "configuration-apps:write",
+    "entries": [
+      "platform"
+    ]
+  },
+  {
+    "code": "configuration-runtime:read",
+    "entries": [
+      "platform"
+    ]
+  },
+  {
+    "code": "configuration-values:read",
+    "entries": [
+      "platform"
+    ]
+  },
+  {
+    "code": "configuration-values:update",
+    "entries": [
+      "platform"
+    ]
+  },
+  {
+    "code": "configuration-values:write",
+    "entries": [
+      "platform"
+    ]
+  },
+  {
+    "code": "configuration:activate",
+    "entries": [
+      "platform"
+    ]
+  },
+  {
+    "code": "configuration:approve",
+    "entries": [
+      "platform"
+    ]
+  },
+  {
+    "code": "configuration:draft",
+    "entries": [
+      "platform"
+    ]
+  },
+  {
+    "code": "configuration:export",
+    "entries": [
+      "platform"
+    ]
+  },
+  {
+    "code": "configuration:export-sensitive",
+    "entries": [
+      "platform"
+    ]
+  },
+  {
+    "code": "configuration:import",
+    "entries": [
+      "platform"
+    ]
+  },
+  {
+    "code": "configuration:publish",
+    "entries": [
+      "platform"
     ]
   },
   {
     "code": "configuration:read",
     "entries": [
-      "dynamic-forms"
+      "dynamic-forms",
+      "platform"
+    ]
+  },
+  {
+    "code": "configuration:rollback",
+    "entries": [
+      "platform"
+    ]
+  },
+  {
+    "code": "configuration:submit",
+    "entries": [
+      "platform"
+    ]
+  },
+  {
+    "code": "configuration:unmask-sensitive",
+    "entries": [
+      "platform"
+    ]
+  },
+  {
+    "code": "configuration:write",
+    "entries": [
+      "platform"
+    ]
+  },
+  {
+    "code": "connections:create",
+    "entries": [
+      "platform"
+    ]
+  },
+  {
+    "code": "connections:credentials",
+    "entries": [
+      "platform"
+    ]
+  },
+  {
+    "code": "connections:profile",
+    "entries": [
+      "platform"
     ]
   },
   {
     "code": "connections:read",
     "entries": [
       "connections",
-      "connector-hub"
+      "connector-hub",
+      "platform",
+      "universal-connector-hub"
+    ]
+  },
+  {
+    "code": "connections:sync",
+    "entries": [
+      "universal-connector-hub"
+    ]
+  },
+  {
+    "code": "connections:test",
+    "entries": [
+      "platform",
+      "universal-connector-hub"
+    ]
+  },
+  {
+    "code": "connections:write",
+    "entries": [
+      "universal-connector-hub"
+    ]
+  },
+  {
+    "code": "content:read",
+    "entries": [
+      "platform"
+    ]
+  },
+  {
+    "code": "contracts:create",
+    "entries": [
+      "platform"
+    ]
+  },
+  {
+    "code": "contracts:publish",
+    "entries": [
+      "platform"
     ]
   },
   {
     "code": "contracts:read",
     "entries": [
-      "data-contracts"
+      "data-contracts",
+      "platform"
+    ]
+  },
+  {
+    "code": "currency:admin",
+    "entries": [
+      "multi-currency"
+    ]
+  },
+  {
+    "code": "currency:convert",
+    "entries": [
+      "multi-currency",
+      "platform"
     ]
   },
   {
     "code": "currency:read",
     "entries": [
-      "multi-currency"
+      "multi-currency",
+      "platform"
+    ]
+  },
+  {
+    "code": "dashboard:read",
+    "entries": [
+      "platform"
+    ]
+  },
+  {
+    "code": "documents:create",
+    "entries": [
+      "document-scanner"
     ]
   },
   {
@@ -214,15 +552,61 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
     ]
   },
   {
+    "code": "esign:create",
+    "entries": [
+      "esignature",
+      "platform"
+    ]
+  },
+  {
     "code": "esign:read",
     "entries": [
-      "esignature"
+      "esignature",
+      "platform"
+    ]
+  },
+  {
+    "code": "esign:sign",
+    "entries": [
+      "esignature",
+      "platform"
+    ]
+  },
+  {
+    "code": "events:ingest",
+    "entries": [
+      "platform"
+    ]
+  },
+  {
+    "code": "events:read",
+    "entries": [
+      "platform"
+    ]
+  },
+  {
+    "code": "exceptions:assign",
+    "entries": [
+      "platform"
     ]
   },
   {
     "code": "exceptions:read",
     "entries": [
-      "exceptions-recovery"
+      "exceptions-recovery",
+      "platform"
+    ]
+  },
+  {
+    "code": "exceptions:recover",
+    "entries": [
+      "platform"
+    ]
+  },
+  {
+    "code": "exceptions:resolve",
+    "entries": [
+      "platform"
     ]
   },
   {
@@ -233,6 +617,18 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
   },
   {
     "code": "finance:coa:manage",
+    "entries": [
+      "financial-operations"
+    ]
+  },
+  {
+    "code": "finance:journals:approve",
+    "entries": [
+      "financial-operations"
+    ]
+  },
+  {
+    "code": "finance:journals:create",
     "entries": [
       "financial-operations"
     ]
@@ -256,6 +652,12 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
     ]
   },
   {
+    "code": "finance:manage",
+    "entries": [
+      "platform"
+    ]
+  },
+  {
     "code": "finance:periods:manage",
     "entries": [
       "financial-operations"
@@ -263,6 +665,13 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
   },
   {
     "code": "finance:read",
+    "entries": [
+      "financial-operations",
+      "platform"
+    ]
+  },
+  {
+    "code": "finance:reports:read",
     "entries": [
       "financial-operations"
     ]
@@ -336,12 +745,14 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
   {
     "code": "inventory:read",
     "entries": [
+      "platform",
       "universal-inventory"
     ]
   },
   {
     "code": "inventory:receive",
     "entries": [
+      "platform",
       "universal-inventory"
     ]
   },
@@ -370,16 +781,50 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
     ]
   },
   {
+    "code": "invites:create",
+    "entries": [
+      "platform"
+    ]
+  },
+  {
+    "code": "invites:delete",
+    "entries": [
+      "platform"
+    ]
+  },
+  {
+    "code": "invites:read",
+    "entries": [
+      "platform"
+    ]
+  },
+  {
     "code": "maps:read",
     "entries": [
       "asset-maintenance",
+      "geospatial",
       "geospatial-studio"
+    ]
+  },
+  {
+    "code": "maps.node-types.manage",
+    "entries": [
+      "geospatial",
+      "platform"
+    ]
+  },
+  {
+    "code": "maps.nodes.manage",
+    "entries": [
+      "geospatial"
     ]
   },
   {
     "code": "maps.nodes.read",
     "entries": [
-      "asset-maintenance"
+      "asset-maintenance",
+      "geospatial",
+      "platform"
     ]
   },
   {
@@ -389,15 +834,35 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
     ]
   },
   {
+    "code": "master-data:admin",
+    "entries": [
+      "platform"
+    ]
+  },
+  {
     "code": "master-data:read",
     "entries": [
-      "master-data"
+      "master-data",
+      "platform"
+    ]
+  },
+  {
+    "code": "master-data:write",
+    "entries": [
+      "platform"
     ]
   },
   {
     "code": "ontology:read",
     "entries": [
+      "ontology",
       "operational-ontology"
+    ]
+  },
+  {
+    "code": "ontology:write",
+    "entries": [
+      "ontology"
     ]
   },
   {
@@ -433,6 +898,7 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
   {
     "code": "orders:manage",
     "entries": [
+      "platform",
       "universal-orders"
     ]
   },
@@ -451,6 +917,7 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
   {
     "code": "orders:read",
     "entries": [
+      "platform",
       "universal-orders"
     ]
   },
@@ -463,7 +930,74 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
   {
     "code": "organization:activate",
     "entries": [
-      "product-catalogue"
+      "analytics-studio",
+      "financial-operations",
+      "gigaops",
+      "platform",
+      "product-catalogue",
+      "universal-inventory",
+      "universal-orders",
+      "universal-procurement"
+    ]
+  },
+  {
+    "code": "organization:approve",
+    "entries": [
+      "platform"
+    ]
+  },
+  {
+    "code": "organization:draft",
+    "entries": [
+      "platform"
+    ]
+  },
+  {
+    "code": "organization:grant",
+    "entries": [
+      "platform"
+    ]
+  },
+  {
+    "code": "organization:read",
+    "entries": [
+      "platform"
+    ]
+  },
+  {
+    "code": "parties:archive",
+    "entries": [
+      "platform"
+    ]
+  },
+  {
+    "code": "parties:create",
+    "entries": [
+      "platform"
+    ]
+  },
+  {
+    "code": "parties:identifiers.manage",
+    "entries": [
+      "platform"
+    ]
+  },
+  {
+    "code": "parties:merge",
+    "entries": [
+      "platform"
+    ]
+  },
+  {
+    "code": "parties:read",
+    "entries": [
+      "platform"
+    ]
+  },
+  {
+    "code": "parties:update",
+    "entries": [
+      "platform"
     ]
   },
   {
@@ -523,6 +1057,7 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
   {
     "code": "procurement:orders:issue",
     "entries": [
+      "platform",
       "universal-procurement"
     ]
   },
@@ -535,6 +1070,7 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
   {
     "code": "procurement:read",
     "entries": [
+      "platform",
       "universal-procurement"
     ]
   },
@@ -548,6 +1084,12 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
     "code": "procurement:requisitions:manage",
     "entries": [
       "universal-procurement"
+    ]
+  },
+  {
+    "code": "procurement:update",
+    "entries": [
+      "platform"
     ]
   },
   {
@@ -596,19 +1138,66 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
   {
     "code": "products:read",
     "entries": [
+      "platform",
       "product-catalogue"
     ]
   },
   {
     "code": "products:update",
     "entries": [
+      "platform",
       "product-catalogue"
+    ]
+  },
+  {
+    "code": "recovery:action",
+    "entries": [
+      "autonomous-recovery-studio",
+      "platform"
     ]
   },
   {
     "code": "recovery:read",
     "entries": [
-      "autonomous-recovery"
+      "autonomous-recovery",
+      "autonomous-recovery-studio",
+      "platform"
+    ]
+  },
+  {
+    "code": "retention:manage",
+    "entries": [
+      "platform"
+    ]
+  },
+  {
+    "code": "retention:read",
+    "entries": [
+      "platform"
+    ]
+  },
+  {
+    "code": "roles:create",
+    "entries": [
+      "platform"
+    ]
+  },
+  {
+    "code": "roles:delete",
+    "entries": [
+      "platform"
+    ]
+  },
+  {
+    "code": "roles:read",
+    "entries": [
+      "platform"
+    ]
+  },
+  {
+    "code": "roles:update",
+    "entries": [
+      "platform"
     ]
   },
   {
@@ -620,7 +1209,8 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
   {
     "code": "runs:read",
     "entries": [
-      "execution-runs"
+      "execution-runs",
+      "platform"
     ]
   },
   {
@@ -630,13 +1220,116 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
     ]
   },
   {
+    "code": "saga:write",
+    "entries": [
+      "saga-orchestrator"
+    ]
+  },
+  {
+    "code": "settings:read",
+    "entries": [
+      "platform"
+    ]
+  },
+  {
+    "code": "settings:update",
+    "entries": [
+      "platform"
+    ]
+  },
+  {
     "code": "solutions:read",
     "entries": [
       "solution-packs"
     ]
   },
   {
+    "code": "spend:approve",
+    "entries": [
+      "platform"
+    ]
+  },
+  {
     "code": "spend:read",
+    "entries": [
+      "platform",
+      "spend-management"
+    ]
+  },
+  {
+    "code": "spend.analytics.read",
+    "entries": [
+      "spend-management"
+    ]
+  },
+  {
+    "code": "spend.budgets.read",
+    "entries": [
+      "spend-management"
+    ]
+  },
+  {
+    "code": "spend.budgets.write",
+    "entries": [
+      "spend-management"
+    ]
+  },
+  {
+    "code": "spend.expenses.approve",
+    "entries": [
+      "spend-management"
+    ]
+  },
+  {
+    "code": "spend.expenses.read",
+    "entries": [
+      "spend-management"
+    ]
+  },
+  {
+    "code": "spend.expenses.write",
+    "entries": [
+      "spend-management"
+    ]
+  },
+  {
+    "code": "spend.imprest.read",
+    "entries": [
+      "spend-management"
+    ]
+  },
+  {
+    "code": "spend.imprest.write",
+    "entries": [
+      "spend-management"
+    ]
+  },
+  {
+    "code": "spend.settings.manage",
+    "entries": [
+      "spend-management"
+    ]
+  },
+  {
+    "code": "spend.subscriptions.read",
+    "entries": [
+      "spend-management"
+    ]
+  },
+  {
+    "code": "spend.subscriptions.write",
+    "entries": [
+      "spend-management"
+    ]
+  },
+  {
+    "code": "spend.travel.read",
+    "entries": [
+      "spend-management"
+    ]
+  },
+  {
+    "code": "spend.travel.write",
     "entries": [
       "spend-management"
     ]
@@ -644,13 +1337,93 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
   {
     "code": "tax:read",
     "entries": [
+      "platform",
       "tax-configuration"
+    ]
+  },
+  {
+    "code": "tax.calculate",
+    "entries": [
+      "tax-configuration"
+    ]
+  },
+  {
+    "code": "tax.exemptions.read",
+    "entries": [
+      "tax-configuration"
+    ]
+  },
+  {
+    "code": "tax.exemptions.verify",
+    "entries": [
+      "tax-configuration"
+    ]
+  },
+  {
+    "code": "tax.exemptions.write",
+    "entries": [
+      "tax-configuration"
+    ]
+  },
+  {
+    "code": "tax.jurisdictions.read",
+    "entries": [
+      "tax-configuration"
+    ]
+  },
+  {
+    "code": "tax.jurisdictions.write",
+    "entries": [
+      "tax-configuration"
+    ]
+  },
+  {
+    "code": "tax.ledger.read",
+    "entries": [
+      "tax-configuration"
+    ]
+  },
+  {
+    "code": "tax.monitor.read",
+    "entries": [
+      "tax-configuration"
+    ]
+  },
+  {
+    "code": "tax.rates.read",
+    "entries": [
+      "tax-configuration"
+    ]
+  },
+  {
+    "code": "tax.rates.write",
+    "entries": [
+      "tax-configuration"
+    ]
+  },
+  {
+    "code": "tax.settings.manage",
+    "entries": [
+      "tax-configuration"
+    ]
+  },
+  {
+    "code": "tenant:export",
+    "entries": [
+      "platform"
     ]
   },
   {
     "code": "tenant:read",
     "entries": [
+      "platform",
       "tenant-access"
+    ]
+  },
+  {
+    "code": "tenant:update",
+    "entries": [
+      "platform"
     ]
   },
   {
@@ -667,15 +1440,77 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
     ]
   },
   {
+    "code": "users:create",
+    "entries": [
+      "platform"
+    ]
+  },
+  {
+    "code": "users:delete",
+    "entries": [
+      "platform"
+    ]
+  },
+  {
+    "code": "users:read",
+    "entries": [
+      "platform"
+    ]
+  },
+  {
+    "code": "users:update",
+    "entries": [
+      "platform"
+    ]
+  },
+  {
+    "code": "value:configure",
+    "entries": [
+      "platform"
+    ]
+  },
+  {
     "code": "value:read",
     "entries": [
+      "platform",
       "value-ledger"
+    ]
+  },
+  {
+    "code": "value:verify",
+    "entries": [
+      "platform"
+    ]
+  },
+  {
+    "code": "workflows:create",
+    "entries": [
+      "platform"
+    ]
+  },
+  {
+    "code": "workflows:execute",
+    "entries": [
+      "platform"
+    ]
+  },
+  {
+    "code": "workflows:publish",
+    "entries": [
+      "platform"
     ]
   },
   {
     "code": "workflows:read",
     "entries": [
+      "platform",
       "workflow-definitions"
+    ]
+  },
+  {
+    "code": "workflows:update",
+    "entries": [
+      "platform"
     ]
   },
   {
@@ -728,6 +1563,12 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
     ]
   },
   {
+    "code": "workforce.bookings.override",
+    "entries": [
+      "gigaops"
+    ]
+  },
+  {
     "code": "workforce.bookings.read",
     "entries": [
       "asset-maintenance",
@@ -756,6 +1597,13 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
     "code": "workforce.capabilities.read",
     "entries": [
       "gigaops"
+    ]
+  },
+  {
+    "code": "workforce.configuration.manage",
+    "entries": [
+      "gigaops",
+      "platform"
     ]
   },
   {
@@ -822,6 +1670,12 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
   },
   {
     "code": "workforce.positions.read",
+    "entries": [
+      "gigaops"
+    ]
+  },
+  {
+    "code": "workforce.resources.link",
     "entries": [
       "gigaops"
     ]

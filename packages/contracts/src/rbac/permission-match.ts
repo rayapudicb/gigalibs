@@ -47,3 +47,8 @@ export function permissionMatches(granted: unknown, required: unknown): boolean 
 export function holdsPermission(granted: readonly unknown[] | null | undefined, required: unknown): boolean {
   return Array.isArray(granted) && granted.some((code) => permissionMatches(code, required));
 }
+
+/** Whether the granted codes cover at least one of the required codes. */
+export function holdsAnyPermission(granted: readonly unknown[] | null | undefined, required: readonly unknown[]): boolean {
+  return required.some((code) => holdsPermission(granted, code));
+}

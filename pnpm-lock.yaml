@@ -352,6 +352,9 @@ importers:
       '@gigalibs/configuration-core':
         specifier: workspace:*
         version: link:../../../../packages/configuration-core
+      '@gigalibs/contracts':
+        specifier: workspace:*
+        version: link:../../../../packages/contracts
       '@gigalibs/custom-fields-nest':
         specifier: workspace:*
         version: link:../../../../packages/custom-fields-nest
@@ -566,6 +569,9 @@ importers:
 
   modules/autonomous-recovery-studio/apps/api:
     dependencies:
+      '@gigalibs/contracts':
+        specifier: workspace:*
+        version: link:../../../../packages/contracts
       '@nestjs/common':
         specifier: ^11.2.3
         version: 11.2.3(reflect-metadata@0.2.2)(rxjs@7.8.2)
@@ -609,6 +615,9 @@ importers:
 
   modules/document-scanner/apps/api:
     dependencies:
+      '@gigalibs/contracts':
+        specifier: workspace:*
+        version: link:../../../../packages/contracts
       '@nestjs/common':
         specifier: ^11.2.3
         version: 11.2.3(reflect-metadata@0.2.2)(rxjs@7.8.2)
@@ -655,6 +664,9 @@ importers:
 
   modules/esignature/apps/api:
     dependencies:
+      '@gigalibs/contracts':
+        specifier: workspace:*
+        version: link:../../../../packages/contracts
       '@nestjs/common':
         specifier: ^11.2.3
         version: 11.2.3(reflect-metadata@0.2.2)(rxjs@7.8.2)
@@ -873,6 +885,9 @@ importers:
 
   modules/multi-currency/apps/api:
     dependencies:
+      '@gigalibs/contracts':
+        specifier: workspace:*
+        version: link:../../../../packages/contracts
       '@nestjs/common':
         specifier: ^11.2.3
         version: 11.2.3(reflect-metadata@0.2.2)(rxjs@7.8.2)
@@ -916,6 +931,9 @@ importers:
 
   modules/ontology/apps/api:
     dependencies:
+      '@gigalibs/contracts':
+        specifier: workspace:*
+        version: link:../../../../packages/contracts
       '@gigalibs/maps-core':
         specifier: workspace:*
         version: link:../../../../packages/maps-core
@@ -1146,6 +1164,9 @@ importers:
 
   modules/saga-orchestrator/apps/api:
     dependencies:
+      '@gigalibs/contracts':
+        specifier: workspace:*
+        version: link:../../../../packages/contracts
       '@gigalibs/maps-core':
         specifier: workspace:*
         version: link:../../../../packages/maps-core
@@ -1195,6 +1216,9 @@ importers:
 
   modules/spend-management/apps/api:
     dependencies:
+      '@gigalibs/contracts':
+        specifier: workspace:*
+        version: link:../../../../packages/contracts
       '@nestjs/common':
         specifier: ^11.2.3
         version: 11.2.3(reflect-metadata@0.2.2)(rxjs@7.8.2)
@@ -1238,6 +1262,9 @@ importers:
 
   modules/tax-configuration/apps/api:
     dependencies:
+      '@gigalibs/contracts':
+        specifier: workspace:*
+        version: link:../../../../packages/contracts
       '@nestjs/common':
         specifier: ^11.2.3
         version: 11.2.3(reflect-metadata@0.2.2)(rxjs@7.8.2)

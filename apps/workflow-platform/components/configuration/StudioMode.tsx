@@ -5,7 +5,7 @@ import {
   decodeConfigurationSurfaces,
 } from '@/lib/configuration-surface-registry';
 import { parseOptionsInput } from '@/lib/form-options-parser';
-import type { ConfigurationField } from '@gigalibs/contracts';
+import { type ConfigurationField, holdsAnyPermission } from '@gigalibs/contracts';
 import {
   CheckCircle,
   ChevronDown,
@@ -374,10 +374,7 @@ function StudioSurfacePanel({
   const [saveResult, setSaveResult] = useState<SaveResult | null>(null);
   const labelInputRef = useRef<HTMLInputElement>(null);
 
-  const canDraft =
-    permissions.includes('*') ||
-    permissions.includes('configuration:*') ||
-    permissions.includes('configuration:draft');
+  const canDraft = holdsAnyPermission(permissions, ['configuration:draft']);
 
   // ── Fetch surface + manifest ──────────────────────────────────────────────
 

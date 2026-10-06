@@ -34,7 +34,8 @@ export class RbacService {
       });
 
       if (member?.status === 'ACTIVE' && member.user.status === 'ACTIVE') {
-        const customPermissions = member.permissions ?? [];
+        // As the session does (auth.service.ts): only tenant permission codes, never a platform code.
+        const customPermissions = (member.permissions ?? []).filter(isTenantPermissionCode);
         const assignedRolePermissions = Array.isArray(member.customRole?.permissions)
           ? member.customRole.permissions.filter(isTenantPermissionCode)
           : [];

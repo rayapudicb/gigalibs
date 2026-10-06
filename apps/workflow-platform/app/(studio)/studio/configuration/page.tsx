@@ -2,6 +2,7 @@ import { ConfigurationStudioWorkbench } from '@/components/configuration/Configu
 import { verifiedSession } from '@/lib/verified-session';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { holdsAnyPermission } from '@gigalibs/contracts';
 
 export default async function StudioConfigurationPage({
   searchParams,
@@ -13,11 +14,7 @@ export default async function StudioConfigurationPage({
   if (session.response) redirect('/modules');
   if (!session.context.tenant) redirect('/select-tenant');
 
-  const canUseStudioMode =
-    session.context.permissions.includes('*') ||
-    session.context.permissions.includes('configuration:*') ||
-    session.context.permissions.includes('configuration:draft') ||
-    session.context.permissions.includes('configuration:read');
+  const canUseStudioMode = holdsAnyPermission(session.context.permissions, ['configuration:draft', 'configuration:read']);
 
   if (!canUseStudioMode) redirect('/modules');
 

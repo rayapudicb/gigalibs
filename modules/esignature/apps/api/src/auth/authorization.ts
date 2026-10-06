@@ -11,6 +11,7 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { type JWTPayload, createRemoteJWKSet, jwtVerify } from 'jose';
+import { holdsPermission } from '@gigalibs/contracts';
 import { ESIGN_CONFIG } from '../config.provider.js';
 import type { EsignRuntimeConfig } from '../runtime-config.js';
 
@@ -94,12 +95,8 @@ export class OidcAuthorizationGuard implements CanActivate {
     );
 
     if (required && required.length > 0) {
-      const hasAll = required.every(
-        (perm) =>
-          principal.permissions.includes('*') ||
-          principal.permissions.includes('esign:*') ||
-          principal.permissions.includes(perm),
-      );
+      // The one permission rule (WI-OI-120q): `*`, the exact code, or its family's wildcard (`esign:*`).
+      const hasAll = required.every((perm) => holdsPermission(principal.permissions, perm));
       if (!hasAll) {
         throw new ForbiddenException(`Missing required permissions: ${required.join(', ')}`);
       }

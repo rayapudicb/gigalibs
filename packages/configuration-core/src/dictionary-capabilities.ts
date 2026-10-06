@@ -1,5 +1,6 @@
 import {
   DICTIONARY_EXECUTABLE_CAPABILITIES,
+  permissionParts,
   type DictionaryPackageDefinitionV1,
   type DictionaryValidationExpression,
 } from '@gigalibs/contracts';
@@ -16,6 +17,15 @@ const LIST_OPERATORS = new Set(['IN', 'NOT_IN']);
 
 function error(code: string, path: string, message: string): ConfigurationFinding {
   return { code, path, message, severity: 'ERROR' };
+}
+
+/**
+ * WI-OI-120q (R1): a permission a window names must be a permission code. Anything else would match nobody, not even
+ * `*`, and hide the field or action from everyone.
+ */
+function permissionFindings(permission: string | undefined, path: string): ConfigurationFinding[] {
+  if (permission === undefined || permission === '*' || permissionParts(permission)) return [];
+  return [error('PERMISSION_INVALID', path, `${permission} is not a permission code such as finance:journals:post or cmms.work-orders.read.`)];
 }
 
 /** Checks one expression tree: every leaf names a known field and a usable operator and value. */
@@ -92,6 +102,8 @@ export function executableCapabilityFindings(
 
   for (const field of pkg.fields) {
     const path = `fields.${field.fieldKey}`;
+    findings.push(...permissionFindings(field.readPermission, `${path}.readPermission`));
+    findings.push(...permissionFindings(field.writePermission, `${path}.writePermission`));
     if (!(capabilities.fieldTypes as readonly string[]).includes(field.type)) {
       findings.push(error('UNSUPPORTED_FIELD_TYPE', `${path}.type`, `Field type ${field.type} is not executed by the metadata window.`));
     }
@@ -124,8 +136,15 @@ export function executableCapabilityFindings(
     findings.push(...expressionFindings(rule.condition, everyFieldKey, `validationRules.${rule.ruleKey}.condition`));
   }
 
+  for (const item of pkg.navigation) {
+    (item.requiredPermissions ?? []).forEach((permission, index) =>
+      findings.push(...permissionFindings(permission, `navigation.${item.itemKey}.requiredPermissions.${index}`)),
+    );
+  }
+
   for (const action of pkg.actions) {
     const path = `actions.${action.actionKey}`;
+    action.requiredPermissions.forEach((permission, index) => findings.push(...permissionFindings(permission, `${path}.requiredPermissions.${index}`)));
     if (!(capabilities.actionTypes as readonly string[]).includes(action.type)) {
       findings.push(error('UNSUPPORTED_ACTION_TYPE', `${path}.type`, `Action type ${action.type} is not executed yet.`));
     }

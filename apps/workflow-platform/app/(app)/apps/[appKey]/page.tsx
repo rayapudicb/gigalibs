@@ -2,6 +2,7 @@ import { TenantApplicationWorkbench } from '@/components/configuration/TenantApp
 import { StudioSurfaceBoundary } from '@/components/configuration/StudioMode';
 import { verifiedSession } from '@/lib/verified-session';
 import { notFound } from 'next/navigation';
+import { holdsAnyPermission } from '@gigalibs/contracts';
 
 export default async function TenantApplicationPage({ params }: { params: Promise<{ appKey: string }> }) {
   const session = await verifiedSession(false);
@@ -9,7 +10,7 @@ export default async function TenantApplicationPage({ params }: { params: Promis
   const appKey = (await params).appKey;
   if (!/^[a-z][a-z0-9-]{1,79}$/.test(appKey)) notFound();
   const permissions = session.context.permissions;
-  const canWrite = permissions.includes('*') || permissions.includes('configuration-apps:*') || permissions.includes('configuration-apps:write');
+  const canWrite = holdsAnyPermission(permissions, ['configuration-apps:write']);
   return (
     <StudioSurfaceBoundary
       registrationKey="tenant-record-application"

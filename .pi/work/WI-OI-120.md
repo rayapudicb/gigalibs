@@ -1465,14 +1465,15 @@ widening the card to fix the API faults the proof found.
     - the eSignature guard does honour `esign:*`;
     - module-role grants are not API checks;
     - decorators in module APIs needed scanning.
-- **Not changed, for the owner** (each would widen access, so it is outside the card's list):
-  - **The configuration `DictionaryRenderer`** (exact match only). With the one rule, Tenant Admins would see 236 and
-    Managers 5 dictionary-form field permissions they hold through a family wildcard but cannot use today (run
-    `--unconverted`).
-  - **The Ontology, Saga and Document Scanner guards** (exact only). They would start honouring their family
-    wildcard, for custom roles that hold one; no shipped role does.
-  - **About 15 inline checks in web pages** (`includes('*') || includes('x:*') || includes('x:y')`). They are
-    equivalent for the colon codes they check.
+- **Included by the owner's decision (2026-10-06, "include them"; first left out because each widens access):**
+  - **The configuration `DictionaryRenderer`** (exact match only before). Tenant Admins now see 236 and Managers 5
+    (`workflows:*`) dictionary-form field permissions they already held through a family wildcard. The equivalence
+    check lists exactly these 241 differences; test `dictionary-renderer-permissions.test.tsx`.
+  - **The eSignature, Ontology, Saga and Document Scanner guards.** They now honour their family wildcard, for custom
+    roles that hold one; no shipped role changes. `@gigalibs/contracts` was added to these four API packages (lockfile
+    links only; none of them ships an image).
+  - **15 inline checks in 10 web files**, now `holdsAnyPermission`. They are equivalent for the colon codes they
+    check.
 - **Catalogue:**
   - Module permissions are generated into `packages/contracts/src/rbac/permission-catalogue.generated.ts` (140
     codes, from gateways, catalogue entries, module roles and windows).
@@ -1496,3 +1497,94 @@ widening the card to fix the API faults the proof found.
     `permission-catalogue.test.ts` (7), evaluator cases in `rbac.test.ts`, and the dotted-code case in
     `record-dispatcher.test.ts`.
   - Not yet done: the independent Security review, and the journey after deploy.
+
+#### WI-OI-120q (R1): owner decisions, independent Security review and fixes (2026-10-06)
+
+- **Owner, 2026-10-06:**
+  - "include them": the three groups left out above;
+  - Security review: yes;
+  - cards WI-OI-120r, s, t and u: approved.
+- **Included:**
+  - the configuration `DictionaryRenderer` (Tenant Admin gains 236 field permissions, Manager 5 through
+    `workflows:*`; test in `dictionary-renderer-permissions.test.tsx`);
+  - the eSignature, Ontology, Saga and Document Scanner guards;
+  - 15 inline web checks, now `holdsAnyPermission`.
+- **Independent read-only Security review: "ship after fixes".** No widening beyond the intended changes, and no
+  shipped role, kernel job or system path loses access at runtime. Findings and what was done:
+  - **Medium M1, fixed: the catalogue was incomplete.**
+    - It missed module-API decorator codes, `@RequireAnyPermission`, kernel run permissions and checks outside
+      decorators: about 72 codes, including `analytics:export`, which the old editor offered.
+    - Saving a role would have refused real permissions, and the editor told admins to remove them.
+    - **Fix:**
+      - one source scanner, `scripts/lib/permission-scan.mjs`, finds codes in decorators, permission-check calls,
+        permission keys and `permissions.includes(...)` across module APIs and web, the control plane, packages and
+        the web;
+      - the generator adds what it finds, so the catalogue now holds 274 module and platform codes plus the
+        control-plane list;
+      - the drift test uses the same scanner over all source (more than 200 codes, none missing).
+    - **Saving:**
+      - a new role is still refused an unchecked code;
+      - an existing role keeps what it holds, and the update refuses only additions
+        (`uncataloguedAdditions`, `tenancy.service.ts` `ROLE_PERMISSION_UNKNOWN`);
+      - every catalogue entry is offered in a spelling a role can store (tested).
+  - **Low L1, fixed:** the editor shows the whole-area grants a role holds (`cmms:*`), and any held code in another
+    spelling or not in the list, so editing never drops them silently.
+  - **Low L2, fixed: the matchers the first pass missed now delegate.**
+    - AR, Spend and Tax: exact only, not even `*`. Tenant Admins (`ar:*`, `spend:*`, `tax:*`) were refused there
+      although the web let them in. They now gain 13, 14 and 12 codes there, and Super Admin likewise.
+    - Recovery and Currency (own family; Super Admin gains through `*`).
+    - The four configuration adapters' `isAuthorizedForScope`.
+    - The module-context guard's `@RequireScopes`.
+    - `components/auth/Can.tsx`.
+    - None of these five modules ships an image. `@gigalibs/contracts` was added to their API packages (lockfile
+      links only).
+    - Left as is: the communications route's `includes('*')` super-admin flag, which is equivalent under the rule.
+  - **Low L3, fixed in the equivalence script:**
+    - a malformed code in a permission position now fails the script;
+    - the Analytics and Workforce main guards are modelled with their own wildcard covering every code. A holder of
+      only `analytics:*` or `workforce:*` loses `organization:activate` at those APIs. That is harmless: the routes
+      are in no gateway, and the kernel requires `organization:activate` before signing.
+    - The script's Inventory attribution of `products:create` and `uoms:manage` (Catalogue inline-create codes) is
+      noted, not changed.
+  - **Low L4, fixed:** publishing a dictionary refuses a field, navigation or action permission that is not a
+    permission code (`PERMISSION_INVALID`, `dictionary-capabilities.ts`).
+  - **Low L5, fixed:** the unused own/team/all vocabulary is removed (`perm()`, the scope in `PermissionSchema`).
+    `PermissionStringSchema` follows the one rule.
+  - **Low L6, fixed:** rbac-nest `getUserPermissions` and SCIM filter a member's direct permissions with
+    `isTenantPermissionCode`, as the session does.
+- **Equivalence check after the fixes:** 29 roles × 296 codes, 325 differences, all intended:
+  - the DictionaryRenderer: 241;
+  - AR, Spend and Tax for Tenant Admin and Super Admin: 78;
+  - Recovery and Currency for Super Admin: 6.
+  No losses.
+- **Raised by the review, outside R1 (for the owner):**
+  - **A member with `users:update` can make anyone a Tenant Admin, themselves included**
+    (`tenancy.service.ts` member update). No role creator is checked against what they hold either. Base Managers do
+    not hold `users:update`; a custom role can, and the old editor already offered it. This belongs with R4
+    (delegation), unless fixed sooner.
+  - The Ontology, Saga and Document Scanner guards default to read/write/admin when a verified token carries no
+    permissions claim, and in insecure mode. These modules ship no image.
+- **Checks after the fixes:**
+  - `pnpm verify` passes (one known drift).
+  - The five dispatcher-backed proofs pass again on the isolated proof database: 39/39, 27/27, 27/27, 27/27 and
+    56/56.
+  - Contracts tests: 55, including the catalogue drift and saveability tests. Configuration-core tests: 72,
+    including `PERMISSION_INVALID`.
+- **Re-check by the same reviewer:** every finding resolved, with one cosmetic leftover in L3 (the Inventory
+  attribution, noted). Its suites: 417 tests passed. Verdict: ship after one fix, (a) below.
+  - **(a) Medium, fixed:** the scanner made `workforce.resources.link` an ordinary choice in the role editor.
+    - The WI-OI-120n High fix relies on it being held only through `workforce:*` (administrators). With punch and
+      timesheet approval it reopens "link your own login to a worker, punch as them, approve the week".
+    - **Fix:** `NOT_DELEGABLE_PERMISSIONS` in `control-plane-permissions.ts`. It is excluded from the catalogue,
+      refused on create, and refused as an update even on a role that held it. `workforce:*` stays assignable as
+      the whole area. Tested.
+  - (b) The scanner also reads the base-role grant arrays: `comments:create`, `content:read` and `dashboard:read`
+    are catalogued although nothing checks them. Harmless; noted.
+  - (c) `uncataloguedAdditions` has no spelling trick: one canonical form per code; the check runs inside the locked
+    transaction.
+  - (d) No shipped role gains more than the script reports. The AR gains cannot happen in practice yet: AR's claim
+    check refuses any token containing `*` (before R1).
+  - (e) Low, fixed: the drift test scans only folders with a manifest, as the generator does. Generate the
+    catalogue from a clean working tree before an image build.
+- **Tests after (a):** contracts, tenancy, rbac, module SDK, configuration-core, web and Workforce suites, 1312
+  tests passed.

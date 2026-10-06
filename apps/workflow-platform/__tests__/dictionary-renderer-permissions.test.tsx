@@ -74,4 +74,11 @@ describe('DictionaryRenderer permissions', () => {
     expect(render(['hr:salary:read'])).toContain('Salary band');
     expect(render(['*'])).toContain('Salary band');
   });
+
+  it('shows it through the family wildcard, as every other check does (WI-OI-120q)', () => {
+    expect(render(['hr:*'])).toContain('Salary band');
+    expect(render(['hr.salary.read'])).toContain('Salary band');
+    expect(render(['hr:salary'])).not.toContain('Salary band');
+    expect(render(['hrx:*'])).not.toContain('Salary band');
+  });
 });

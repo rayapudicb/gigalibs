@@ -1,7 +1,7 @@
 # WI-OI-120r (S1): Field rules the server enforces too
 
-- **Status:** Proposed (2026-10-06). M1a card of `docs/plans/platform-implementation-plan.md` (moved before CMMS on
-  2026-10-06); starts after R1 (WI-OI-120q). Needs the owner's approval.
+- **Status:** Approved (owner, 2026-10-06). M1a card of `docs/plans/platform-implementation-plan.md` (moved before CMMS on
+  2026-10-06); starts after R1 (WI-OI-120q). Each slice is shown before it starts.
 - **Work item:** WI-OI-120. Evidence goes in `.pi/work/WI-OI-120.md`.
 - **Size:** M
 

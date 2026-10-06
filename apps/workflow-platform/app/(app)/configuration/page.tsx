@@ -2,6 +2,7 @@ import { UniversalDynamicFormsStudio } from '@/components/configuration/Universa
 import { verifiedSession } from '@/lib/verified-session';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { holdsAnyPermission } from '@gigalibs/contracts';
 
 export default async function ConfigurationStudioPage() {
   const session = await verifiedSession(false);
@@ -9,11 +10,7 @@ export default async function ConfigurationStudioPage() {
   if (session.response) redirect('/modules');
   if (!session.context.tenant) redirect('/select-tenant');
 
-  const canRead =
-    session.context.permissions.includes('*') ||
-    session.context.permissions.includes('configuration:*') ||
-    session.context.permissions.includes('configuration:read') ||
-    session.context.permissions.includes('configuration:draft');
+  const canRead = holdsAnyPermission(session.context.permissions, ['configuration:read', 'configuration:draft']);
 
   if (!canRead) redirect('/modules');
 

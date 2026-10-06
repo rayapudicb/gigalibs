@@ -1,7 +1,8 @@
 # WI-OI-120q (R1): One permission vocabulary and one matcher
 
-- **Status:** Approved (owner, 2026-10-06: "R1 approved"). Implemented 2026-10-06, uncommitted; awaiting the
-  Security review and the owner's decisions below. Evidence: `.pi/work/WI-OI-120.md` § WI-OI-120q. First M1a card
+- **Status:** Approved (owner, 2026-10-06: "R1 approved"). Implemented 2026-10-06 (8631f02, plus the review fixes,
+  uncommitted). The independent Security review and its re-check are recorded; the one remaining finding is fixed.
+  Evidence: `.pi/work/WI-OI-120.md` § WI-OI-120q. First M1a card
   of `docs/plans/platform-implementation-plan.md` v2; ADR-0034 accepted in direction 2026-10-06. Independent Security
   review before deploy (access change).
 - **Work item:** WI-OI-120. Evidence goes in `.pi/work/WI-OI-120.md`.
@@ -75,20 +76,23 @@ One vocabulary, one matcher, used everywhere; a catalogue of real permissions fo
   test.
 - `pnpm build`, `pnpm test`, `pnpm verify`; the WI-OI-120m journey after deploy.
 
-## Found during the work (for the owner)
+## Found during the work
 
-The inventory was larger than twelve. Seventeen matchers now delegate. Three groups are left as they are because
-converting them widens access beyond the list above:
-- the configuration `DictionaryRenderer`: Tenant Admins would gain 236 field permissions, Managers 5;
-- the Ontology, Saga and Document Scanner guards: they would honour their family wildcard;
-- about 15 inline checks in web pages: equivalent today for the colon codes they check.
+The inventory was larger than twelve. Three groups would widen access beyond the list above; the owner chose to
+include them (2026-10-06, "include them"):
+- the configuration `DictionaryRenderer`: Tenant Admins now see 236 and Managers 5 field permissions they already
+  hold through a family wildcard (Managers: `workflows:*`);
+- the eSignature, Ontology, Saga and Document Scanner guards: they honour the family wildcard;
+- 15 inline checks in web pages, now `holdsAnyPermission` (equivalent for the colon codes they check).
 
 ## Done when
 
-- [x] One matcher; every listed call site delegates to it (17 sites; three groups above left for the owner).
-- [x] The equivalence report shows only the intended behaviour changes (0 differences for shipped roles).
+- [x] One matcher; every call site delegates to it (17 matchers, 5 module guards and the renderer, 15 inline checks).
+- [x] The equivalence report shows only the intended behaviour changes: no losses; the gains are the owner's
+  "include them" (DictionaryRenderer 241; AR, Spend, Tax, Recovery and Currency 84).
 - [x] The role editor lists catalogue permissions only.
-- [ ] Checks pass; Security review recorded before deploy; evidence recorded; images built and handed to the owner.
+- [x] Checks pass; Security review recorded before deploy; evidence recorded.
+- [ ] Images built and handed to the owner (after commit, and after the b7f8a53 deploy).
 
 ## Stop and ask if
 

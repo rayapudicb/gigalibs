@@ -1,4 +1,5 @@
 import {
+  holdsPermission,
   ModuleAdapterDescriptorV1Schema,
   type ModuleAdapterDescriptorV1,
 } from '@gigalibs/contracts';
@@ -265,9 +266,10 @@ export class InventoryConfigurationAdapterV1 implements ModuleConfigurationAdapt
     if (!tenantId) return false;
     const required = this.descriptor.permissions[action];
     if (!required) return true;
+    // The one permission rule (WI-OI-120q).
     if (Array.isArray(required)) {
-      return required.every((req) => permissions.includes(req));
+      return required.every((req) => holdsPermission(permissions, req));
     }
-    return permissions.includes(required);
+    return holdsPermission(permissions, required);
   }
 }

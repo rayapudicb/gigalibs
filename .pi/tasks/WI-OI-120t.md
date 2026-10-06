@@ -1,7 +1,7 @@
 # WI-OI-120t (M-CM1): CMMS on metadata windows, first value
 
-- **Status:** Proposed (2026-10-06). Last M1a card of `docs/plans/platform-implementation-plan.md`; needs S16
-  (WI-OI-120s) and, per slice, R5 (CMMS access paths) and T3 (one place identity). Needs the owner's approval.
+- **Status:** Approved (owner, 2026-10-06). Last M1a card of `docs/plans/platform-implementation-plan.md`; needs S16
+  (WI-OI-120s) and, per slice, R5 (CMMS access paths) and T3 (one place identity). Each slice is shown before it starts.
 - **Work item:** WI-OI-120. Evidence goes in `.pi/work/WI-OI-120.md`.
 - **Size:** L (four slices, each shown and approved before it starts)
 

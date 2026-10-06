@@ -17,6 +17,8 @@ const family = (code: string) => code.split(/[:.]/)[0];
 const legacy = {
   /** web (module-access), renderer (window-model), Analytics and Workforce main guards, kernel module calls. */
   anyFamily: (g: Grants, r: string) => g.includes('*') || g.includes(r) || (/[:.]/.test(r) && r.search(/[:.]/) > 0 && g.includes(`${family(r)}:*`)),
+  /** Analytics and Workforce main guards: the module's own wildcard covered every code, and any family's its own. */
+  ownOrAnyFamily: (own: string) => (g: Grants, r: string) => g.includes(`${own}:*`) || legacy.anyFamily(g, r),
   /** CMMS, Geospatial, Workforce bookings and time, module SDK guard, Connector Hub: only the module's own wildcard. */
   ownFamily: (own: string) => (g: Grants, r: string) => g.includes('*') || g.includes(`${own}:*`) || g.includes(r),
   /** record dispatcher `holds`, Catalogue and Finance web: the family is everything before the first colon. */
@@ -56,10 +58,10 @@ const MODULE_API_RULES: Record<string, Array<[string, Rule]>> = {
   'physical-operations-cmms': [['CMMS API (cmms:*)', legacy.ownFamily('cmms')]],
   geospatial: [['Geospatial API (maps:*)', legacy.ownFamily('maps')]],
   gigaops: [
-    ['Workforce API', legacy.anyFamily],
+    ['Workforce API', legacy.ownOrAnyFamily('workforce')],
     ['Workforce bookings and time (workforce:*)', legacy.ownFamily('workforce')],
   ],
-  'analytics-studio': [['Analytics API', legacy.anyFamily]],
+  'analytics-studio': [['Analytics API', legacy.ownOrAnyFamily('analytics')]],
   'universal-connector-hub': [['Connector Hub API (connections:*)', legacy.ownFamily('connections')]],
   'universal-orders': [['Orders API guard (orders:*)', legacy.ownFamily('orders')], ['Orders record dispatcher', legacy.beforeColon]],
   'universal-procurement': [['Procurement API guard (procurement:*)', legacy.ownFamily('procurement')], ['Procurement record dispatcher', legacy.beforeColon]],
@@ -67,15 +69,27 @@ const MODULE_API_RULES: Record<string, Array<[string, Rule]>> = {
   'financial-operations': [['Finance API guard (finance:*)', legacy.ownFamily('finance')], ['Finance dispatcher and web', legacy.beforeColon]],
   'universal-inventory': [['Inventory API guard (inventory:*)', legacy.ownFamily('inventory')], ['Inventory record dispatcher', legacy.beforeColon]],
   esignature: [['eSignature API (esign:*)', legacy.ownFamily('esign')]],
+  // Exact only before R1; the owner chose to include them (2026-10-06), so family wildcards now count here.
   ontology: [['Ontology API', legacy.exact]],
   'saga-orchestrator': [['Saga API', legacy.exact]],
   'document-scanner': [['Document Scanner API', legacy.exact]],
+  // Exact only (not even `*`) before R1; converted with the owner's "include them" (2026-10-06). None ships an image.
+  'accounts-receivable': [['AR API (exact, no *)', (g, r) => g.includes(r)]],
+  'spend-management': [['Spend API (exact, no *)', (g, r) => g.includes(r)]],
+  'tax-configuration': [['Tax API (exact, no *)', (g, r) => g.includes(r)]],
+  'autonomous-recovery-studio': [['Recovery API (recovery:*)', (g, r) => g.includes(r) || g.includes('recovery:*')]],
+  'multi-currency': [['Currency API (currency:*)', (g, r) => g.includes(r) || g.includes('currency:*')]],
 };
 const PERMISSION_KEYS = new Set(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'permission', 'permissions', 'requiredPermission', 'readPermission', 'writePermission']);
 
 const codes = new Map<string, Set<string>>(); // code → owners (module directory, 'core', 'control')
+const malformed = new Set<string>(); // in a permission position but not a code: unreachable even for `*`
 const add = (code: unknown, owner: string) => {
-  if (typeof code !== 'string' || code === '*' || !permissionParts(code)) return;
+  if (typeof code !== 'string' || code === '*') return;
+  if (!permissionParts(code)) {
+    malformed.add(`${owner}: ${code}`);
+    return;
+  }
   if (!codes.has(code)) codes.set(code, new Set());
   codes.get(code)!.add(owner);
 };
@@ -145,8 +159,9 @@ interface Difference { site: string; role: string; code: string; before: boolean
 const differences: Difference[] = [];
 for (const [code, owners] of codes) {
   const sites: Array<[string, Rule]> = [['web and renderer', legacy.anyFamily]];
-  // `--unconverted` also compares matchers R1 leaves alone pending the owner's decision.
-  if (process.argv.includes('--unconverted')) sites.push(['configuration DictionaryRenderer', legacy.exact]);
+  // Every code can gate a field of a workspace's own dictionary form. Exact only before R1; included by the owner's
+  // decision (2026-10-06), so the differences here are intended: a family wildcard now shows those fields.
+  sites.push(['configuration DictionaryRenderer', legacy.exact]);
   for (const owner of owners) sites.push(...(MODULE_API_RULES[owner] ?? []));
   if (owners.has('control')) sites.push(['control-plane guard', legacy.evaluator], ['Configuration Studio service', legacy.configurationStudio]);
   if (owners.has('core')) sites.push(['Settings and Studio web', legacy.splitColon]);
@@ -159,6 +174,10 @@ for (const [code, owners] of codes) {
   }
 }
 
+if (malformed.size > 0) {
+  console.error(`Permission positions holding something that is not a permission code:\n${[...malformed].join('\n')}`);
+  process.exitCode = 1;
+}
 if (process.argv.includes('--json')) {
   console.log(JSON.stringify({ roles: roles.length, codes: codes.size, differences }, null, 2));
 } else {

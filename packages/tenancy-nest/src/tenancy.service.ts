@@ -12,7 +12,7 @@ import type {
   UpdateTenantMemberDto,
   UpdateTenantOrganizationSettingsDto,
 } from '@gigalibs/contracts';
-import { type ModuleDefaultRole, moduleDefaultRoles } from '@gigalibs/contracts';
+import { type ModuleDefaultRole, moduleDefaultRoles, uncataloguedAdditions } from '@gigalibs/contracts';
 import { primaryVersionInForce } from '@gigalibs/auth-nest';
 import { type Prisma, prisma } from '@gigalibs/db';
 import { PlatformSettingsEngine } from '@gigalibs/platform-settings';
@@ -662,6 +662,17 @@ export class TenancyService {
           select: { id: true },
         });
         if (duplicate) throw new ConflictException('A custom role with this name already exists');
+      }
+      // WI-OI-120q (R1): a role keeps what it holds; it may not gain a permission no screen or service checks.
+      if (dto.permissions !== undefined) {
+        const previous = Array.isArray(role.permissions) ? (role.permissions as unknown[]) : [];
+        const unknown = uncataloguedAdditions(previous, dto.permissions);
+        if (unknown.length > 0) {
+          throw new BadRequestException({
+            code: 'ROLE_PERMISSION_UNKNOWN',
+            message: `No screen or service checks ${unknown.join(', ')}; choose from the permission list.`,
+          });
+        }
       }
 
       const changed = await transaction.customRole.updateMany({

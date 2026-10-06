@@ -2,7 +2,7 @@
 
 import { PageShell } from '@/components/page-shell';
 import { memberStatusLabel, roleLabel } from '@/lib/role-labels';
-import { holdsPermission, isCataloguedPermission, PERMISSION_CATALOGUE } from '@gigalibs/contracts';
+import { holdsPermission, PERMISSION_CATALOGUE } from '@gigalibs/contracts';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -267,11 +267,23 @@ function MemberRow({ member, currentUserId, canUpdate, customRoles, onSaved }: M
   );
 }
 
-/** The catalogue by family, plus any code the role already holds that nothing checks, so it can be removed. */
+/**
+ * The catalogue by family. A role's whole-area grants (`cmms:*`) and any older code it holds that is not in the list
+ * are shown too, so editing the role keeps them unless they are deselected.
+ */
 function PermissionOptions({ held }: { held: readonly string[] }) {
-  const unchecked = held.filter((code) => !isCataloguedPermission(code));
+  const listed = new Set(PERMISSION_CATALOGUE.map((entry) => entry.code));
+  const wholeAreas = held.filter((code) => /^[a-z][a-z0-9-]*[:.]\*$/.test(code));
+  const unlisted = held.filter((code) => !listed.has(code) && !wholeAreas.includes(code));
   return (
     <>
+      {wholeAreas.length > 0 ? (
+        <optgroup label="Whole areas this role holds">
+          {wholeAreas.map((code) => (
+            <option key={code}>{code}</option>
+          ))}
+        </optgroup>
+      ) : null}
       {PERMISSION_GROUPS.map(([family, codes]) => (
         <optgroup key={family} label={family}>
           {codes.map((code) => (
@@ -279,9 +291,9 @@ function PermissionOptions({ held }: { held: readonly string[] }) {
           ))}
         </optgroup>
       ))}
-      {unchecked.length > 0 ? (
-        <optgroup label="Checked nowhere: remove before saving">
-          {unchecked.map((code) => (
+      {unlisted.length > 0 ? (
+        <optgroup label="Also held by this role (another spelling, or not in the list)">
+          {unlisted.map((code) => (
             <option key={code}>{code}</option>
           ))}
         </optgroup>

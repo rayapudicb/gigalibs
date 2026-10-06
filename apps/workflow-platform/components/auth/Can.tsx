@@ -1,5 +1,6 @@
 'use client';
 
+import { holdsPermission } from '@gigalibs/contracts';
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import type { VerifiedSession } from '../../lib/verified-session';
 
@@ -27,7 +28,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     tenantSlug: session?.tenant?.slug ?? '',
     userRole: session?.roles?.[0] ?? '',
     permissions,
-    hasPermission: permission => permissions.includes(permission),
+    hasPermission: permission => holdsPermission(permissions, permission),
   }}>{children}</AuthContext.Provider>;
 }
 export function useAuth() { return useContext(AuthContext); }

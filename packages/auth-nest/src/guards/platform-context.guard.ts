@@ -8,7 +8,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import type { PlatformContextV1 } from '@gigalibs/contracts';
+import { holdsPermission, type PlatformContextV1 } from '@gigalibs/contracts';
 import {
   verifyPlatformContextToken,
   PlatformContextError,
@@ -115,8 +115,9 @@ export class PlatformContextGuard implements CanActivate {
         context.getClass(),
       ]) ?? [];
 
+    // The one permission rule (WI-OI-120q).
     for (const scope of requiredScopes) {
-      if (!payload.granted_scopes.includes(scope)) {
+      if (!holdsPermission(payload.granted_scopes, scope)) {
         throw new ForbiddenException(`Missing required scope: ${scope}`);
       }
     }

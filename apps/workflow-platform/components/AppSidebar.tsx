@@ -12,6 +12,7 @@ import {
   type PlatformModuleDefinition,
   type PlatformModuleReadiness,
   type PlatformContextPersona,
+  holdsAnyPermission,
   platformModuleCatalog,
 } from '@gigalibs/contracts';
 import { determinePersona } from '@/lib/persona-utils';
@@ -100,7 +101,7 @@ export default function AppSidebar({
   const { t } = useTranslation('navigation');
   const [tenantApps, setTenantApps] = useState<Array<{ entityKey: string; manifest: { title?: string } }>>([]);
   const hasPlatformAuthority = session.platformRoles.length > 0;
-  const mayReadTenantApps = session.permissions.includes('*') || session.permissions.includes('configuration-apps:*') || session.permissions.includes('configuration-apps:read');
+  const mayReadTenantApps = holdsAnyPermission(session.permissions, ['configuration-apps:read']);
 
   const moduleLabelByKey: Record<string, string> = {
     gigaops: 'GigaOps Workforce',
@@ -164,10 +165,7 @@ export default function AppSidebar({
 
   const hasHierarchyAccess =
     Boolean(session.tenant?.features?.includes('organization-hierarchy')) ||
-    session.permissions.includes('*') ||
-    session.permissions.includes('tenant:*') ||
-    session.permissions.includes('tenant:read') ||
-    session.permissions.includes('users:read');
+    holdsAnyPermission(session.permissions, ['tenant:read', 'users:read']);
 
   const visibleModules = platformModuleCatalog.filter((module) => {
     if (SIDEBAR_HIDDEN_KEYS.has(module.key)) return false;

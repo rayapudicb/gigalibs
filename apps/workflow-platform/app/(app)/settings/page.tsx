@@ -1,6 +1,7 @@
 import { StudioSurfaceBoundary } from '@/components/configuration/StudioMode';
 import { TenantSettingsView } from '@/components/settings/TenantSettingsView';
 import { verifiedSession } from '@/lib/verified-session';
+import { holdsAnyPermission } from '@gigalibs/contracts';
 
 export default async function TenantSettingsPage() {
   const session = await verifiedSession(false);
@@ -14,10 +15,7 @@ export default async function TenantSettingsPage() {
 
   const tenantId = session.context.tenant?.id ?? '';
   const permissions = session.context.permissions;
-  const canUpdateConfiguredValues =
-    permissions.includes('*') ||
-    permissions.includes('configuration-values:*') ||
-    permissions.includes('configuration-values:update');
+  const canUpdateConfiguredValues = holdsAnyPermission(permissions, ['configuration-values:update']);
 
   return (
     <StudioSurfaceBoundary

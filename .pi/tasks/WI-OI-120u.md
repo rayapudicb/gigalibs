@@ -1,7 +1,7 @@
 # WI-OI-120u (M-WF1): Workforce on metadata windows, with U20a
 
-- **Status:** Proposed (2026-10-06). First M1b card of `docs/plans/platform-implementation-plan.md`; needs R1
-  (WI-OI-120q) and S16 (WI-OI-120s). Needs the owner's approval.
+- **Status:** Approved (owner, 2026-10-06). First M1b card of `docs/plans/platform-implementation-plan.md`; needs R1
+  (WI-OI-120q) and S16 (WI-OI-120s). Each slice is shown before it starts.
 - **Work item:** WI-OI-120 (U20a in `remediation-backlog.md`). Evidence goes in `.pi/work/WI-OI-120.md`.
 - **Size:** L (three slices, each shown and approved before it starts)
 

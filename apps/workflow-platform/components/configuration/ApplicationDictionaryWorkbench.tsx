@@ -12,6 +12,7 @@ import {
   type DictionaryActionV1,
   type DictionaryPackageDefinitionV1,
   type DictionaryChangeSetDefinition,
+  holdsAnyPermission,
 } from '@gigalibs/contracts';
 import {
   BookOpen,
@@ -78,25 +79,10 @@ export function ApplicationDictionaryWorkbench({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
-  const canAuthor =
-    permissions.includes('*') ||
-    permissions.includes('configuration:*') ||
-    permissions.includes('configuration:draft');
-
-  const canApprove =
-    permissions.includes('*') ||
-    permissions.includes('configuration:*') ||
-    permissions.includes('configuration:approve');
-
-  const canPublish =
-    permissions.includes('*') ||
-    permissions.includes('configuration:*') ||
-    permissions.includes('configuration:publish');
-
-  const canActivate =
-    permissions.includes('*') ||
-    permissions.includes('configuration:*') ||
-    permissions.includes('configuration:activate');
+  const canAuthor = holdsAnyPermission(permissions, ['configuration:draft']);
+  const canApprove = holdsAnyPermission(permissions, ['configuration:approve']);
+  const canPublish = holdsAnyPermission(permissions, ['configuration:publish']);
+  const canActivate = holdsAnyPermission(permissions, ['configuration:activate']);
 
   const loadData = async () => {
     setIsLoading(true);

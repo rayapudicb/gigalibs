@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { permissionParts } from './permission-match.js';
 
 // ─── RBAC Enums ───────────────────────────────────────────────────────────────
 
@@ -18,15 +19,14 @@ export const PermissionActionSchema = z.enum([
 export const PermissionSchema = z.object({
   resource: z.string(),    // e.g. 'users', 'invoices', 'tickets'
   action: PermissionActionSchema,
-  scope: z.enum(['own', 'team', 'all']).default('all'),
 });
 
-// Format: "resource:action" or "resource:action:scope"
-// e.g. "invoices:create", "users:delete:own"
-export const PermissionStringSchema = z.string().regex(
-  /^[a-z-]+:[a-z]+(:own|:team|:all)?$/,
-  'Format: resource:action or resource:action:scope',
-);
+// WI-OI-120q (R1): a permission code is a family and one to three parts, with colons or dots
+// (`finance:journals:post`, `cmms.work-orders.read`); a third part is part of the code, never an own/team/all scope.
+// Scope comes from organization and place grants (ADR-0018, ADR-0006, ADR-0034).
+export const PermissionStringSchema = z
+  .string()
+  .refine((code) => code !== '*' && permissionParts(code) !== null, 'A permission code such as finance:journals:post');
 
 export const RoleDefinitionSchema = z.object({
   name: z.string(),
@@ -45,9 +45,6 @@ export type Permission = z.infer<typeof PermissionSchema>;
 export type PermissionString = z.infer<typeof PermissionStringSchema>;
 export type RoleDefinition = z.infer<typeof RoleDefinitionSchema>;
 
-// Convenience builder
-export const perm = (resource: string, action: PermissionAction, scope: 'own' | 'team' | 'all' = 'all'): PermissionString =>
-  `${resource}:${action}:${scope}`;
 
 export * from './permission-match.js';
 export * from './permission-catalogue.generated.js';

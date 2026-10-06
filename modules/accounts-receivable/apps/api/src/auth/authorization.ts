@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { type JWTPayload, createRemoteJWKSet, jwtVerify } from 'jose';
+import { holdsPermission } from '@gigalibs/contracts';
 import { AR_CONFIG } from '../config.provider.js';
 import type { ArRuntimeConfig } from '../runtime-config.js';
 
@@ -86,7 +87,8 @@ export class OidcAuthorizationGuard implements CanActivate {
         context.getHandler(),
         context.getClass(),
       ]) ?? [];
-    if (required.some((permission) => !permissions.includes(permission))) {
+    // The one permission rule (WI-OI-120q): `*`, the exact code, or its family's wildcard, as the web decides.
+    if (required.some((permission) => !holdsPermission(permissions, permission))) {
       throw new ForbiddenException('The caller lacks a required AR permission.');
     }
 

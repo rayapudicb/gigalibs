@@ -131,18 +131,26 @@ const CustomRoleFieldsSchema = z.object({
     .string()
     .regex(/^#[0-9a-fA-F]{6}$/)
     .default('#6366f1'),
-  // WI-OI-120q (R1): a role holds only permissions some screen, route or service checks (PERMISSION_CATALOGUE).
   permissions: z
-    .array(
-      TenantPermissionSchema.refine(isCataloguedPermission, {
-        message: 'No screen or service checks this permission; choose one from the permission list',
-      }),
-    )
+    .array(TenantPermissionSchema)
     .max(100)
     .transform((permissions) => [...new Set(permissions)]),
 });
 
-export const CreateCustomRoleSchema = CustomRoleFieldsSchema;
+/**
+ * WI-OI-120q (R1): a new role holds only permissions some screen, route or service checks (PERMISSION_CATALOGUE). An
+ * existing role keeps what it already holds; the update path refuses only additions (`uncataloguedAdditions`).
+ */
+export const CreateCustomRoleSchema = CustomRoleFieldsSchema.superRefine((role, context) => {
+  role.permissions.forEach((permission, index) => {
+    if (!isCataloguedPermission(permission))
+      context.addIssue({
+        code: 'custom',
+        path: ['permissions', index],
+        message: 'No screen or service checks this permission; choose one from the permission list',
+      });
+  });
+});
 
 export const UpdateCustomRoleSchema = CustomRoleFieldsSchema.partial()
   .extend({

@@ -10,6 +10,7 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { type JWTPayload, createRemoteJWKSet, jwtVerify } from 'jose';
+import { holdsPermission } from '@gigalibs/contracts';
 import { SCANNER_CONFIG } from '../config.provider.js';
 import type { ScannerRuntimeConfig } from '../runtime-config.js';
 
@@ -125,8 +126,10 @@ export class OidcAuthorizationGuard implements CanActivate {
         context.getClass(),
       ]) ?? [];
 
+    // The one permission rule (WI-OI-120q): `*`, the exact code, or its family's wildcard. Before it, a family
+    // wildcard such as `ontology:*` was refused here although the web allowed it.
     for (const permission of requiredPermissions) {
-      if (!permissions.includes(permission) && !permissions.includes('*')) {
+      if (!holdsPermission(permissions, permission)) {
         throw new ForbiddenException(`Missing required permission: ${permission}`);
       }
     }
