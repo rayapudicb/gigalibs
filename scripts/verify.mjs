@@ -46,6 +46,9 @@ const steps = [
   // WI-OI-120g (U7): the Catalogue's metadata windows over HTTP through the module host, maker and checker (needs
   // PROOF_DATABASE_URL).
   { name: 'catalogue-windows (U7)', cmd: process.execPath, args: ['scripts/verify-u7-catalogue-windows.mjs'] },
+  // WI-OI-120l (U12): the general ledger's windows over HTTP through the module host: drafts, maker and checker,
+  // locked periods, reversal and reports (needs PROOF_DATABASE_URL).
+  { name: 'general-ledger (U12)', cmd: process.execPath, args: ['scripts/verify-u12-general-ledger.mjs'] },
 ];
 
 const logDir = join(tmpdir(), 'gigalibs-verify');

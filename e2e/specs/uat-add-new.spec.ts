@@ -54,7 +54,9 @@ test.describe('Add new from a picker', () => {
     await item.locator('#field-valuation-method').selectOption('STANDARD');
     await item.evaluate((form) => (form as HTMLFormElement).requestSubmit());
     await expect(item).toHaveCount(0);
-    await page.getByRole('tab', { name: 'Items', exact: true }).click();
+    // The window opens the saved item; back in the list, its row shows the product.
+    await expect(page.locator('#field-product-id option:checked')).toContainText(`UAT-AN-${run}`);
+    await page.getByRole('button', { name: '← Stocked items' }).click();
     await expect(page.getByRole('row').filter({ hasText: `UAT-AN-${run}` }).first()).toBeVisible();
   });
 });

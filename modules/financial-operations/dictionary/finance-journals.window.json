@@ -1,0 +1,531 @@
+{
+  "contractVersion": "1.0",
+  "window": {
+    "route": "/finance",
+    "label": "Posted journals",
+    "description": "The journals in the ledger, with their lines; reverse a posted one.",
+    "readPermission": "finance:read"
+  },
+  "definition": {
+    "kind": "APPLICATION_DICTIONARY",
+    "contractVersion": "1.0",
+    "moduleKey": "financial-operations",
+    "entityKey": "finance-journals",
+    "surfaceKey": "finance-journals",
+    "title": "Posted journals",
+    "dictionary": {
+      "packageKey": "finance-journals-module-baseline",
+      "name": "Posted journals",
+      "version": "1.0.0",
+      "moduleKey": "financial-operations",
+      "targetEntityKey": "finance.journals",
+      "entities": [
+        {
+          "entityKey": "finance.journals",
+          "moduleKey": "financial-operations",
+          "label": "Journals",
+          "ownership": "MODULE_CORE",
+          "primaryKeyField": "id",
+          "isVersioned": true,
+          "isAuditLogged": true,
+          "isSoftDeletable": false
+        },
+        {
+          "entityKey": "finance.journal-lines",
+          "moduleKey": "financial-operations",
+          "label": "Lines",
+          "ownership": "MODULE_CORE",
+          "primaryKeyField": "id",
+          "isVersioned": true,
+          "isAuditLogged": true,
+          "isSoftDeletable": false
+        }
+      ],
+      "fields": [
+        {
+          "fieldKey": "journal-number",
+          "entityKey": "finance.journals",
+          "label": "Number",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "description",
+          "entityKey": "finance.journals",
+          "label": "Description",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "accounting-book-id",
+          "entityKey": "finance.journals",
+          "label": "Book",
+          "type": "REFERENCE",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "book-ref"
+        },
+        {
+          "fieldKey": "posting-date",
+          "entityKey": "finance.journals",
+          "label": "Posting date",
+          "type": "DATE",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "entry-type",
+          "entityKey": "finance.journals",
+          "label": "Kind",
+          "type": "SELECT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "entry-types"
+        },
+        {
+          "fieldKey": "status",
+          "entityKey": "finance.journals",
+          "label": "Status",
+          "type": "SELECT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "journal-statuses"
+        },
+        {
+          "fieldKey": "total-debit-minor",
+          "entityKey": "finance.journals",
+          "label": "Total debits (minor units)",
+          "type": "NUMBER",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "scale": 0
+        },
+        {
+          "fieldKey": "total-credit-minor",
+          "entityKey": "finance.journals",
+          "label": "Total credits (minor units)",
+          "type": "NUMBER",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "scale": 0
+        },
+        {
+          "fieldKey": "source-document-type",
+          "entityKey": "finance.journals",
+          "label": "Source",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "posted-by",
+          "entityKey": "finance.journals",
+          "label": "Posted by",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "reversed-journal-id",
+          "entityKey": "finance.journals",
+          "label": "Reverses journal",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "journal-id",
+          "entityKey": "finance.journal-lines",
+          "label": "Journal",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "line-number",
+          "entityKey": "finance.journal-lines",
+          "label": "Line",
+          "type": "INTEGER",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "account-id",
+          "entityKey": "finance.journal-lines",
+          "label": "Account",
+          "type": "REFERENCE",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "account-ref"
+        },
+        {
+          "fieldKey": "debit-amount-minor",
+          "entityKey": "finance.journal-lines",
+          "label": "Debit (minor units)",
+          "type": "NUMBER",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "scale": 0
+        },
+        {
+          "fieldKey": "credit-amount-minor",
+          "entityKey": "finance.journal-lines",
+          "label": "Credit (minor units)",
+          "type": "NUMBER",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "scale": 0
+        },
+        {
+          "fieldKey": "currency-code",
+          "entityKey": "finance.journal-lines",
+          "label": "Currency",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "memo",
+          "entityKey": "finance.journal-lines",
+          "label": "Memo",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        }
+      ],
+      "relationships": [
+        {
+          "relationshipKey": "journal-lines",
+          "sourceEntityKey": "finance.journals",
+          "targetEntityKey": "finance.journal-lines",
+          "type": "ONE_TO_MANY",
+          "foreignKeyField": "journal-id"
+        }
+      ],
+      "references": [
+        {
+          "referenceKey": "entry-types",
+          "referenceType": "VALUE_LIST",
+          "staticValues": [
+            {
+              "value": "STANDARD_MANUAL",
+              "label": "Manual"
+            },
+            {
+              "value": "SUBLEDGER_AP",
+              "label": "Payables"
+            },
+            {
+              "value": "SUBLEDGER_AR",
+              "label": "Receivables"
+            },
+            {
+              "value": "SUBLEDGER_INVENTORY",
+              "label": "Inventory"
+            },
+            {
+              "value": "REVERSAL",
+              "label": "Reversal"
+            },
+            {
+              "value": "YEAR_END_CLOSE",
+              "label": "Year-end close"
+            },
+            {
+              "value": "OPENING_BALANCE",
+              "label": "Opening balance"
+            }
+          ]
+        },
+        {
+          "referenceKey": "journal-statuses",
+          "referenceType": "VALUE_LIST",
+          "staticValues": [
+            {
+              "value": "DRAFT",
+              "label": "Draft"
+            },
+            {
+              "value": "POSTED",
+              "label": "Posted"
+            },
+            {
+              "value": "REVERSED",
+              "label": "Reversed"
+            }
+          ]
+        },
+        {
+          "referenceKey": "book-ref",
+          "referenceType": "SEARCH_LOOKUP",
+          "resolverKey": "finance-books"
+        },
+        {
+          "referenceKey": "account-ref",
+          "referenceType": "SEARCH_LOOKUP",
+          "resolverKey": "finance-accounts",
+          "createWith": {
+            "moduleKey": "financial-operations",
+            "surfaceKey": "finance-accounts",
+            "permission": "finance:coa:manage"
+          }
+        }
+      ],
+      "validationRules": [],
+      "views": [
+        {
+          "viewKey": "journals",
+          "label": "Posted journals",
+          "mode": "LIST",
+          "device": "ALL",
+          "defaultSortDirection": "ASC",
+          "tabs": [
+            {
+              "tabKey": "journal",
+              "label": "Journal",
+              "position": 0,
+              "level": 0,
+              "targetEntityKey": "finance.journals",
+              "sections": [
+                {
+                  "sectionKey": "main",
+                  "label": "Journal",
+                  "collapsible": false,
+                  "defaultCollapsed": false,
+                  "position": 0
+                },
+                {
+                  "sectionKey": "more",
+                  "label": "Origin",
+                  "collapsible": false,
+                  "defaultCollapsed": false,
+                  "position": 1
+                }
+              ],
+              "fields": [
+                {
+                  "fieldKey": "journal-number",
+                  "position": 0,
+                  "span": 3,
+                  "componentKey": "text-input",
+                  "sectionKey": "main"
+                },
+                {
+                  "fieldKey": "description",
+                  "position": 1,
+                  "span": 9,
+                  "componentKey": "text-input",
+                  "sectionKey": "main"
+                },
+                {
+                  "fieldKey": "posting-date",
+                  "position": 2,
+                  "span": 3,
+                  "componentKey": "date-input",
+                  "sectionKey": "main"
+                },
+                {
+                  "fieldKey": "entry-type",
+                  "position": 3,
+                  "span": 3,
+                  "componentKey": "select",
+                  "sectionKey": "main"
+                },
+                {
+                  "fieldKey": "status",
+                  "position": 4,
+                  "span": 3,
+                  "componentKey": "select",
+                  "sectionKey": "main"
+                },
+                {
+                  "fieldKey": "accounting-book-id",
+                  "position": 5,
+                  "span": 3,
+                  "componentKey": "lookup",
+                  "sectionKey": "main"
+                },
+                {
+                  "fieldKey": "total-debit-minor",
+                  "position": 6,
+                  "span": 6,
+                  "componentKey": "number-input",
+                  "sectionKey": "main"
+                },
+                {
+                  "fieldKey": "total-credit-minor",
+                  "position": 7,
+                  "span": 6,
+                  "componentKey": "number-input",
+                  "sectionKey": "main"
+                },
+                {
+                  "fieldKey": "source-document-type",
+                  "position": 8,
+                  "span": 4,
+                  "componentKey": "text-input",
+                  "sectionKey": "more"
+                },
+                {
+                  "fieldKey": "posted-by",
+                  "position": 9,
+                  "span": 4,
+                  "componentKey": "text-input",
+                  "sectionKey": "more"
+                },
+                {
+                  "fieldKey": "reversed-journal-id",
+                  "position": 10,
+                  "span": 4,
+                  "componentKey": "text-input",
+                  "sectionKey": "more"
+                }
+              ]
+            },
+            {
+              "tabKey": "lines",
+              "label": "Lines",
+              "position": 1,
+              "level": 1,
+              "targetEntityKey": "finance.journal-lines",
+              "sections": [],
+              "fields": [
+                {
+                  "fieldKey": "line-number",
+                  "position": 0,
+                  "span": 2,
+                  "componentKey": "number-input"
+                },
+                {
+                  "fieldKey": "account-id",
+                  "position": 1,
+                  "span": 4,
+                  "componentKey": "lookup"
+                },
+                {
+                  "fieldKey": "debit-amount-minor",
+                  "position": 2,
+                  "span": 3,
+                  "componentKey": "number-input"
+                },
+                {
+                  "fieldKey": "credit-amount-minor",
+                  "position": 3,
+                  "span": 3,
+                  "componentKey": "number-input"
+                },
+                {
+                  "fieldKey": "currency-code",
+                  "position": 4,
+                  "span": 2,
+                  "componentKey": "text-input"
+                },
+                {
+                  "fieldKey": "memo",
+                  "position": 5,
+                  "span": 10,
+                  "componentKey": "text-input"
+                }
+              ],
+              "parentRelationshipKey": "journal-lines"
+            }
+          ],
+          "searchFields": [
+            "journal-number",
+            "description"
+          ],
+          "defaultSortField": "posting-date"
+        }
+      ],
+      "navigation": [],
+      "actions": [
+        {
+          "actionKey": "reverse",
+          "label": "Reverse",
+          "type": "COMMAND",
+          "handlerKey": "finance.journals.reverse",
+          "requiredPermissions": [
+            "finance:journals:reverse"
+          ],
+          "confirmationPrompt": "Reverse this journal? A reversing journal is posted; the original stays in the ledger.",
+          "visibilityCondition": {
+            "field": "status",
+            "operator": "EQ",
+            "value": "POSTED"
+          },
+          "parameters": [
+            {
+              "key": "reason",
+              "label": "Reason",
+              "type": "TEXTAREA",
+              "required": true
+            },
+            {
+              "key": "reversal-date",
+              "label": "Reversal date (YYYY-MM-DD, default today)",
+              "type": "TEXT",
+              "required": false
+            }
+          ]
+        }
+      ],
+      "messages": []
+    }
+  }
+}

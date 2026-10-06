@@ -1,0 +1,207 @@
+{
+  "contractVersion": "1.0",
+  "window": {
+    "route": "/finance",
+    "label": "Books",
+    "description": "The books your organization keeps its ledger in.",
+    "readPermission": "finance:read"
+  },
+  "definition": {
+    "kind": "APPLICATION_DICTIONARY",
+    "contractVersion": "1.0",
+    "moduleKey": "financial-operations",
+    "entityKey": "finance-books",
+    "surfaceKey": "finance-books",
+    "title": "Accounting books",
+    "dictionary": {
+      "packageKey": "finance-books-module-baseline",
+      "name": "Accounting books",
+      "version": "1.0.0",
+      "moduleKey": "financial-operations",
+      "targetEntityKey": "finance.books",
+      "entities": [
+        {
+          "entityKey": "finance.books",
+          "moduleKey": "financial-operations",
+          "label": "Books",
+          "ownership": "MODULE_CORE",
+          "primaryKeyField": "id",
+          "isVersioned": true,
+          "isAuditLogged": true,
+          "isSoftDeletable": false
+        }
+      ],
+      "fields": [
+        {
+          "fieldKey": "book-code",
+          "entityKey": "finance.books",
+          "label": "Code",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "book-name",
+          "entityKey": "finance.books",
+          "label": "Name",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "currency-code",
+          "entityKey": "finance.books",
+          "label": "Currency",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "costing-method",
+          "entityKey": "finance.books",
+          "label": "Costing method",
+          "type": "SELECT",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "costing"
+        },
+        {
+          "fieldKey": "is-primary",
+          "entityKey": "finance.books",
+          "label": "Primary book",
+          "type": "BOOLEAN",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "status",
+          "entityKey": "finance.books",
+          "label": "Status",
+          "type": "SELECT",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "book-statuses"
+        }
+      ],
+      "relationships": [],
+      "references": [
+        {
+          "referenceKey": "costing",
+          "referenceType": "VALUE_LIST",
+          "staticValues": [
+            {
+              "value": "STANDARD",
+              "label": "Standard"
+            },
+            {
+              "value": "FIFO",
+              "label": "FIFO"
+            },
+            {
+              "value": "AVERAGE",
+              "label": "Moving average"
+            }
+          ]
+        },
+        {
+          "referenceKey": "book-statuses",
+          "referenceType": "VALUE_LIST",
+          "staticValues": [
+            {
+              "value": "ACTIVE",
+              "label": "Active"
+            },
+            {
+              "value": "INACTIVE",
+              "label": "Inactive"
+            }
+          ]
+        }
+      ],
+      "validationRules": [],
+      "views": [
+        {
+          "viewKey": "books",
+          "label": "Accounting books",
+          "mode": "LIST",
+          "device": "ALL",
+          "defaultSortDirection": "ASC",
+          "tabs": [
+            {
+              "tabKey": "book",
+              "label": "Book",
+              "position": 0,
+              "level": 0,
+              "targetEntityKey": "finance.books",
+              "sections": [],
+              "fields": [
+                {
+                  "fieldKey": "book-code",
+                  "position": 0,
+                  "span": 3,
+                  "componentKey": "text-input"
+                },
+                {
+                  "fieldKey": "book-name",
+                  "position": 1,
+                  "span": 6,
+                  "componentKey": "text-input"
+                },
+                {
+                  "fieldKey": "currency-code",
+                  "position": 2,
+                  "span": 3,
+                  "componentKey": "text-input"
+                },
+                {
+                  "fieldKey": "costing-method",
+                  "position": 3,
+                  "span": 4,
+                  "componentKey": "select"
+                },
+                {
+                  "fieldKey": "is-primary",
+                  "position": 4,
+                  "span": 4,
+                  "componentKey": "checkbox"
+                },
+                {
+                  "fieldKey": "status",
+                  "position": 5,
+                  "span": 4,
+                  "componentKey": "select"
+                }
+              ]
+            }
+          ],
+          "searchFields": [
+            "book-code",
+            "book-name"
+          ],
+          "defaultSortField": "book-code"
+        }
+      ],
+      "navigation": [],
+      "actions": [],
+      "messages": []
+    }
+  }
+}

@@ -4,6 +4,2014 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
   {
     "contractVersion": "1.0",
     "window": {
+      "route": "/finance",
+      "label": "Chart of accounts",
+      "description": "The accounts journals post to, by book.",
+      "readPermission": "finance:read"
+    },
+    "definition": {
+      "kind": "APPLICATION_DICTIONARY",
+      "contractVersion": "1.0",
+      "moduleKey": "financial-operations",
+      "entityKey": "finance-accounts",
+      "surfaceKey": "finance-accounts",
+      "title": "Chart of accounts",
+      "dictionary": {
+        "packageKey": "finance-accounts-module-baseline",
+        "name": "Chart of accounts",
+        "version": "1.0.0",
+        "moduleKey": "financial-operations",
+        "targetEntityKey": "finance.accounts",
+        "entities": [
+          {
+            "entityKey": "finance.accounts",
+            "moduleKey": "financial-operations",
+            "label": "Accounts",
+            "ownership": "MODULE_CORE",
+            "primaryKeyField": "id",
+            "isVersioned": true,
+            "isAuditLogged": true,
+            "isSoftDeletable": false
+          }
+        ],
+        "fields": [
+          {
+            "fieldKey": "accounting-book-id",
+            "entityKey": "finance.accounts",
+            "label": "Book",
+            "type": "REFERENCE",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "book-ref"
+          },
+          {
+            "fieldKey": "account-code",
+            "entityKey": "finance.accounts",
+            "label": "Code",
+            "type": "TEXT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "helpText": "For example 1000 for cash at bank."
+          },
+          {
+            "fieldKey": "account-name",
+            "entityKey": "finance.accounts",
+            "label": "Name",
+            "type": "TEXT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "account-class",
+            "entityKey": "finance.accounts",
+            "label": "Class",
+            "type": "SELECT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "account-classes"
+          },
+          {
+            "fieldKey": "account-subtype",
+            "entityKey": "finance.accounts",
+            "label": "Subtype",
+            "type": "SELECT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "account-subtypes"
+          },
+          {
+            "fieldKey": "normal-balance",
+            "entityKey": "finance.accounts",
+            "label": "Normal balance",
+            "type": "SELECT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "balances",
+            "helpText": "Assets and expenses are usually debit; the others credit."
+          },
+          {
+            "fieldKey": "parent-account-id",
+            "entityKey": "finance.accounts",
+            "label": "Parent account",
+            "type": "REFERENCE",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "account-ref"
+          },
+          {
+            "fieldKey": "is-reconcilable",
+            "entityKey": "finance.accounts",
+            "label": "Reconciled with a bank or statement",
+            "type": "BOOLEAN",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "is-subledger-control",
+            "entityKey": "finance.accounts",
+            "label": "Subledger control account",
+            "type": "BOOLEAN",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "active",
+            "entityKey": "finance.accounts",
+            "label": "Active",
+            "type": "BOOLEAN",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          }
+        ],
+        "relationships": [],
+        "references": [
+          {
+            "referenceKey": "account-classes",
+            "referenceType": "VALUE_LIST",
+            "staticValues": [
+              {
+                "value": "ASSET",
+                "label": "Asset"
+              },
+              {
+                "value": "LIABILITY",
+                "label": "Liability"
+              },
+              {
+                "value": "EQUITY",
+                "label": "Equity"
+              },
+              {
+                "value": "REVENUE",
+                "label": "Revenue"
+              },
+              {
+                "value": "EXPENSE",
+                "label": "Expense"
+              }
+            ]
+          },
+          {
+            "referenceKey": "account-subtypes",
+            "referenceType": "VALUE_LIST",
+            "staticValues": [
+              {
+                "value": "BANK",
+                "label": "Bank"
+              },
+              {
+                "value": "ACCOUNTS_RECEIVABLE",
+                "label": "Accounts receivable"
+              },
+              {
+                "value": "CURRENT_ASSET",
+                "label": "Current asset"
+              },
+              {
+                "value": "FIXED_ASSET",
+                "label": "Fixed asset"
+              },
+              {
+                "value": "OTHER_ASSET",
+                "label": "Other asset"
+              },
+              {
+                "value": "ACCOUNTS_PAYABLE",
+                "label": "Accounts payable"
+              },
+              {
+                "value": "CURRENT_LIABILITY",
+                "label": "Current liability"
+              },
+              {
+                "value": "LONG_TERM_LIABILITY",
+                "label": "Long-term liability"
+              },
+              {
+                "value": "EQUITY",
+                "label": "Equity"
+              },
+              {
+                "value": "RETAINED_EARNINGS",
+                "label": "Retained earnings"
+              },
+              {
+                "value": "OPERATING_REVENUE",
+                "label": "Operating revenue"
+              },
+              {
+                "value": "OTHER_REVENUE",
+                "label": "Other revenue"
+              },
+              {
+                "value": "COST_OF_GOODS_SOLD",
+                "label": "Cost of goods sold"
+              },
+              {
+                "value": "OPERATING_EXPENSE",
+                "label": "Operating expense"
+              },
+              {
+                "value": "TAX_EXPENSE",
+                "label": "Tax expense"
+              },
+              {
+                "value": "OTHER_EXPENSE",
+                "label": "Other expense"
+              }
+            ]
+          },
+          {
+            "referenceKey": "balances",
+            "referenceType": "VALUE_LIST",
+            "staticValues": [
+              {
+                "value": "DEBIT",
+                "label": "Debit"
+              },
+              {
+                "value": "CREDIT",
+                "label": "Credit"
+              }
+            ]
+          },
+          {
+            "referenceKey": "book-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "finance-books"
+          },
+          {
+            "referenceKey": "account-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "finance-accounts",
+            "createWith": {
+              "moduleKey": "financial-operations",
+              "surfaceKey": "finance-accounts",
+              "permission": "finance:coa:manage"
+            }
+          }
+        ],
+        "validationRules": [],
+        "views": [
+          {
+            "viewKey": "accounts",
+            "label": "Chart of accounts",
+            "mode": "LIST",
+            "device": "ALL",
+            "defaultSortDirection": "ASC",
+            "tabs": [
+              {
+                "tabKey": "account",
+                "label": "Account",
+                "position": 0,
+                "level": 0,
+                "targetEntityKey": "finance.accounts",
+                "sections": [
+                  {
+                    "sectionKey": "main",
+                    "label": "Account",
+                    "collapsible": false,
+                    "defaultCollapsed": false,
+                    "position": 0
+                  },
+                  {
+                    "sectionKey": "more",
+                    "label": "Reporting and control",
+                    "collapsible": false,
+                    "defaultCollapsed": false,
+                    "position": 1
+                  }
+                ],
+                "fields": [
+                  {
+                    "fieldKey": "account-code",
+                    "position": 0,
+                    "span": 3,
+                    "componentKey": "text-input",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "account-name",
+                    "position": 1,
+                    "span": 6,
+                    "componentKey": "text-input",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "active",
+                    "position": 2,
+                    "span": 3,
+                    "componentKey": "checkbox",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "accounting-book-id",
+                    "position": 3,
+                    "span": 6,
+                    "componentKey": "lookup",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "account-class",
+                    "position": 4,
+                    "span": 3,
+                    "componentKey": "select",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "normal-balance",
+                    "position": 5,
+                    "span": 3,
+                    "componentKey": "select",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "account-subtype",
+                    "position": 6,
+                    "span": 6,
+                    "componentKey": "select",
+                    "sectionKey": "more"
+                  },
+                  {
+                    "fieldKey": "parent-account-id",
+                    "position": 7,
+                    "span": 6,
+                    "componentKey": "lookup",
+                    "sectionKey": "more"
+                  },
+                  {
+                    "fieldKey": "is-reconcilable",
+                    "position": 8,
+                    "span": 6,
+                    "componentKey": "checkbox",
+                    "sectionKey": "more"
+                  },
+                  {
+                    "fieldKey": "is-subledger-control",
+                    "position": 9,
+                    "span": 6,
+                    "componentKey": "checkbox",
+                    "sectionKey": "more"
+                  }
+                ]
+              }
+            ],
+            "searchFields": [
+              "account-code",
+              "account-name"
+            ],
+            "defaultSortField": "account-code"
+          }
+        ],
+        "navigation": [],
+        "actions": [],
+        "messages": []
+      }
+    }
+  },
+  {
+    "contractVersion": "1.0",
+    "window": {
+      "route": "/finance",
+      "label": "Books",
+      "description": "The books your organization keeps its ledger in.",
+      "readPermission": "finance:read"
+    },
+    "definition": {
+      "kind": "APPLICATION_DICTIONARY",
+      "contractVersion": "1.0",
+      "moduleKey": "financial-operations",
+      "entityKey": "finance-books",
+      "surfaceKey": "finance-books",
+      "title": "Accounting books",
+      "dictionary": {
+        "packageKey": "finance-books-module-baseline",
+        "name": "Accounting books",
+        "version": "1.0.0",
+        "moduleKey": "financial-operations",
+        "targetEntityKey": "finance.books",
+        "entities": [
+          {
+            "entityKey": "finance.books",
+            "moduleKey": "financial-operations",
+            "label": "Books",
+            "ownership": "MODULE_CORE",
+            "primaryKeyField": "id",
+            "isVersioned": true,
+            "isAuditLogged": true,
+            "isSoftDeletable": false
+          }
+        ],
+        "fields": [
+          {
+            "fieldKey": "book-code",
+            "entityKey": "finance.books",
+            "label": "Code",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "book-name",
+            "entityKey": "finance.books",
+            "label": "Name",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "currency-code",
+            "entityKey": "finance.books",
+            "label": "Currency",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "costing-method",
+            "entityKey": "finance.books",
+            "label": "Costing method",
+            "type": "SELECT",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "costing"
+          },
+          {
+            "fieldKey": "is-primary",
+            "entityKey": "finance.books",
+            "label": "Primary book",
+            "type": "BOOLEAN",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "status",
+            "entityKey": "finance.books",
+            "label": "Status",
+            "type": "SELECT",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "book-statuses"
+          }
+        ],
+        "relationships": [],
+        "references": [
+          {
+            "referenceKey": "costing",
+            "referenceType": "VALUE_LIST",
+            "staticValues": [
+              {
+                "value": "STANDARD",
+                "label": "Standard"
+              },
+              {
+                "value": "FIFO",
+                "label": "FIFO"
+              },
+              {
+                "value": "AVERAGE",
+                "label": "Moving average"
+              }
+            ]
+          },
+          {
+            "referenceKey": "book-statuses",
+            "referenceType": "VALUE_LIST",
+            "staticValues": [
+              {
+                "value": "ACTIVE",
+                "label": "Active"
+              },
+              {
+                "value": "INACTIVE",
+                "label": "Inactive"
+              }
+            ]
+          }
+        ],
+        "validationRules": [],
+        "views": [
+          {
+            "viewKey": "books",
+            "label": "Accounting books",
+            "mode": "LIST",
+            "device": "ALL",
+            "defaultSortDirection": "ASC",
+            "tabs": [
+              {
+                "tabKey": "book",
+                "label": "Book",
+                "position": 0,
+                "level": 0,
+                "targetEntityKey": "finance.books",
+                "sections": [],
+                "fields": [
+                  {
+                    "fieldKey": "book-code",
+                    "position": 0,
+                    "span": 3,
+                    "componentKey": "text-input"
+                  },
+                  {
+                    "fieldKey": "book-name",
+                    "position": 1,
+                    "span": 6,
+                    "componentKey": "text-input"
+                  },
+                  {
+                    "fieldKey": "currency-code",
+                    "position": 2,
+                    "span": 3,
+                    "componentKey": "text-input"
+                  },
+                  {
+                    "fieldKey": "costing-method",
+                    "position": 3,
+                    "span": 4,
+                    "componentKey": "select"
+                  },
+                  {
+                    "fieldKey": "is-primary",
+                    "position": 4,
+                    "span": 4,
+                    "componentKey": "checkbox"
+                  },
+                  {
+                    "fieldKey": "status",
+                    "position": 5,
+                    "span": 4,
+                    "componentKey": "select"
+                  }
+                ]
+              }
+            ],
+            "searchFields": [
+              "book-code",
+              "book-name"
+            ],
+            "defaultSortField": "book-code"
+          }
+        ],
+        "navigation": [],
+        "actions": [],
+        "messages": []
+      }
+    }
+  },
+  {
+    "contractVersion": "1.0",
+    "window": {
+      "route": "/finance",
+      "label": "Journal entry",
+      "description": "Draft a journal, add its lines and submit it; a second person approves and posts it.",
+      "readPermission": "finance:read"
+    },
+    "definition": {
+      "kind": "APPLICATION_DICTIONARY",
+      "contractVersion": "1.0",
+      "moduleKey": "financial-operations",
+      "entityKey": "finance-journal-drafts",
+      "surfaceKey": "finance-journal-drafts",
+      "title": "Journal entry",
+      "dictionary": {
+        "packageKey": "finance-journal-drafts-module-baseline",
+        "name": "Journal entry",
+        "version": "1.0.0",
+        "moduleKey": "financial-operations",
+        "targetEntityKey": "finance.journal-drafts",
+        "entities": [
+          {
+            "entityKey": "finance.journal-drafts",
+            "moduleKey": "financial-operations",
+            "label": "Journal drafts",
+            "ownership": "MODULE_CORE",
+            "primaryKeyField": "id",
+            "isVersioned": true,
+            "isAuditLogged": true,
+            "isSoftDeletable": false
+          },
+          {
+            "entityKey": "finance.journal-draft-lines",
+            "moduleKey": "financial-operations",
+            "label": "Lines",
+            "ownership": "MODULE_CORE",
+            "primaryKeyField": "id",
+            "isVersioned": true,
+            "isAuditLogged": true,
+            "isSoftDeletable": false
+          }
+        ],
+        "fields": [
+          {
+            "fieldKey": "accounting-book-id",
+            "entityKey": "finance.journal-drafts",
+            "label": "Book",
+            "type": "REFERENCE",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "book-ref"
+          },
+          {
+            "fieldKey": "posting-date",
+            "entityKey": "finance.journal-drafts",
+            "label": "Posting date",
+            "type": "DATE",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "helpText": "The period is found from this date."
+          },
+          {
+            "fieldKey": "entry-type",
+            "entityKey": "finance.journal-drafts",
+            "label": "Kind",
+            "type": "SELECT",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "manual-types"
+          },
+          {
+            "fieldKey": "description",
+            "entityKey": "finance.journal-drafts",
+            "label": "Description",
+            "type": "TEXT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "status",
+            "entityKey": "finance.journal-drafts",
+            "label": "Status",
+            "type": "SELECT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "draft-statuses"
+          },
+          {
+            "fieldKey": "total-debit-minor",
+            "entityKey": "finance.journal-drafts",
+            "label": "Total debits (minor units)",
+            "type": "NUMBER",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "scale": 0
+          },
+          {
+            "fieldKey": "total-credit-minor",
+            "entityKey": "finance.journal-drafts",
+            "label": "Total credits (minor units)",
+            "type": "NUMBER",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "scale": 0
+          },
+          {
+            "fieldKey": "line-count",
+            "entityKey": "finance.journal-drafts",
+            "label": "Lines",
+            "type": "INTEGER",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "submitted-by",
+            "entityKey": "finance.journal-drafts",
+            "label": "Submitted by",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "approved-by",
+            "entityKey": "finance.journal-drafts",
+            "label": "Approved by",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "returned-reason",
+            "entityKey": "finance.journal-drafts",
+            "label": "Returned because",
+            "type": "TEXTAREA",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "posted-journal-id",
+            "entityKey": "finance.journal-drafts",
+            "label": "Posted journal",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "updated-at",
+            "entityKey": "finance.journal-drafts",
+            "label": "Last changed",
+            "type": "DATETIME",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "draft-id",
+            "entityKey": "finance.journal-draft-lines",
+            "label": "Journal",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "helpText": "Set from the journal the line belongs to."
+          },
+          {
+            "fieldKey": "line-number",
+            "entityKey": "finance.journal-draft-lines",
+            "label": "Line",
+            "type": "INTEGER",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "account-id",
+            "entityKey": "finance.journal-draft-lines",
+            "label": "Account",
+            "type": "REFERENCE",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "account-ref"
+          },
+          {
+            "fieldKey": "debit-amount-minor",
+            "entityKey": "finance.journal-draft-lines",
+            "label": "Debit (minor units)",
+            "type": "NUMBER",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "scale": 0,
+            "helpText": "1250 is 12.50. A line has a debit or a credit."
+          },
+          {
+            "fieldKey": "credit-amount-minor",
+            "entityKey": "finance.journal-draft-lines",
+            "label": "Credit (minor units)",
+            "type": "NUMBER",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "scale": 0
+          },
+          {
+            "fieldKey": "memo",
+            "entityKey": "finance.journal-draft-lines",
+            "label": "Memo",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "draft-status",
+            "entityKey": "finance.journal-draft-lines",
+            "label": "Journal status",
+            "type": "SELECT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "draft-statuses"
+          }
+        ],
+        "relationships": [
+          {
+            "relationshipKey": "draft-lines",
+            "sourceEntityKey": "finance.journal-drafts",
+            "targetEntityKey": "finance.journal-draft-lines",
+            "type": "ONE_TO_MANY",
+            "foreignKeyField": "draft-id"
+          }
+        ],
+        "references": [
+          {
+            "referenceKey": "manual-types",
+            "referenceType": "VALUE_LIST",
+            "staticValues": [
+              {
+                "value": "STANDARD_MANUAL",
+                "label": "Manual"
+              },
+              {
+                "value": "OPENING_BALANCE",
+                "label": "Opening balance"
+              }
+            ]
+          },
+          {
+            "referenceKey": "draft-statuses",
+            "referenceType": "VALUE_LIST",
+            "staticValues": [
+              {
+                "value": "DRAFT",
+                "label": "Draft"
+              },
+              {
+                "value": "SUBMITTED",
+                "label": "Submitted for approval"
+              },
+              {
+                "value": "POSTED",
+                "label": "Posted"
+              }
+            ]
+          },
+          {
+            "referenceKey": "book-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "finance-books"
+          },
+          {
+            "referenceKey": "account-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "finance-accounts",
+            "createWith": {
+              "moduleKey": "financial-operations",
+              "surfaceKey": "finance-accounts",
+              "permission": "finance:coa:manage"
+            }
+          }
+        ],
+        "validationRules": [],
+        "views": [
+          {
+            "viewKey": "journal-drafts",
+            "label": "Journal entry",
+            "mode": "LIST",
+            "device": "ALL",
+            "defaultSortDirection": "ASC",
+            "tabs": [
+              {
+                "tabKey": "draft",
+                "label": "Journal",
+                "position": 0,
+                "level": 0,
+                "targetEntityKey": "finance.journal-drafts",
+                "sections": [
+                  {
+                    "sectionKey": "main",
+                    "label": "Journal",
+                    "collapsible": false,
+                    "defaultCollapsed": false,
+                    "position": 0
+                  },
+                  {
+                    "sectionKey": "totals",
+                    "label": "Totals",
+                    "collapsible": false,
+                    "defaultCollapsed": false,
+                    "position": 1
+                  },
+                  {
+                    "sectionKey": "approval",
+                    "label": "Approval",
+                    "collapsible": false,
+                    "defaultCollapsed": false,
+                    "position": 2
+                  }
+                ],
+                "fields": [
+                  {
+                    "fieldKey": "description",
+                    "position": 0,
+                    "span": 6,
+                    "componentKey": "text-input",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "status",
+                    "position": 1,
+                    "span": 3,
+                    "componentKey": "select",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "entry-type",
+                    "position": 2,
+                    "span": 3,
+                    "componentKey": "select",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "accounting-book-id",
+                    "position": 3,
+                    "span": 6,
+                    "componentKey": "lookup",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "posting-date",
+                    "position": 4,
+                    "span": 3,
+                    "componentKey": "date-input",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "line-count",
+                    "position": 5,
+                    "span": 3,
+                    "componentKey": "number-input",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "total-debit-minor",
+                    "position": 6,
+                    "span": 6,
+                    "componentKey": "number-input",
+                    "sectionKey": "totals"
+                  },
+                  {
+                    "fieldKey": "total-credit-minor",
+                    "position": 7,
+                    "span": 6,
+                    "componentKey": "number-input",
+                    "sectionKey": "totals"
+                  },
+                  {
+                    "fieldKey": "submitted-by",
+                    "position": 8,
+                    "span": 4,
+                    "componentKey": "text-input",
+                    "sectionKey": "approval"
+                  },
+                  {
+                    "fieldKey": "approved-by",
+                    "position": 9,
+                    "span": 4,
+                    "componentKey": "text-input",
+                    "sectionKey": "approval"
+                  },
+                  {
+                    "fieldKey": "posted-journal-id",
+                    "position": 10,
+                    "span": 4,
+                    "componentKey": "text-input",
+                    "sectionKey": "approval"
+                  },
+                  {
+                    "fieldKey": "returned-reason",
+                    "position": 11,
+                    "span": 12,
+                    "componentKey": "textarea",
+                    "sectionKey": "approval"
+                  },
+                  {
+                    "fieldKey": "updated-at",
+                    "position": 12,
+                    "span": 4,
+                    "componentKey": "datetime-input",
+                    "sectionKey": "approval"
+                  }
+                ]
+              },
+              {
+                "tabKey": "lines",
+                "label": "Lines",
+                "position": 1,
+                "level": 1,
+                "targetEntityKey": "finance.journal-draft-lines",
+                "sections": [],
+                "fields": [
+                  {
+                    "fieldKey": "line-number",
+                    "position": 0,
+                    "span": 2,
+                    "componentKey": "number-input"
+                  },
+                  {
+                    "fieldKey": "account-id",
+                    "position": 1,
+                    "span": 4,
+                    "componentKey": "lookup"
+                  },
+                  {
+                    "fieldKey": "debit-amount-minor",
+                    "position": 2,
+                    "span": 3,
+                    "componentKey": "number-input"
+                  },
+                  {
+                    "fieldKey": "credit-amount-minor",
+                    "position": 3,
+                    "span": 3,
+                    "componentKey": "number-input"
+                  },
+                  {
+                    "fieldKey": "memo",
+                    "position": 4,
+                    "span": 12,
+                    "componentKey": "text-input"
+                  }
+                ],
+                "parentRelationshipKey": "draft-lines"
+              }
+            ],
+            "searchFields": [
+              "description"
+            ],
+            "defaultSortField": "updated-at"
+          }
+        ],
+        "navigation": [],
+        "actions": [
+          {
+            "actionKey": "submit",
+            "label": "Submit for approval",
+            "type": "COMMAND",
+            "handlerKey": "finance.journal-drafts.submit",
+            "requiredPermissions": [
+              "finance:journals:post"
+            ],
+            "confirmationPrompt": "Submit this journal? Someone else must approve it before it posts.",
+            "visibilityCondition": {
+              "field": "status",
+              "operator": "EQ",
+              "value": "DRAFT"
+            }
+          },
+          {
+            "actionKey": "approve",
+            "label": "Approve and post",
+            "type": "COMMAND",
+            "handlerKey": "finance.journal-drafts.approve",
+            "requiredPermissions": [
+              "finance:journals:approve"
+            ],
+            "confirmationPrompt": "Approve and post this journal to the ledger? You cannot approve a journal you submitted.",
+            "visibilityCondition": {
+              "field": "status",
+              "operator": "EQ",
+              "value": "SUBMITTED"
+            },
+            "parameters": [
+              {
+                "key": "reason",
+                "label": "Reason",
+                "type": "TEXTAREA",
+                "required": true
+              }
+            ]
+          },
+          {
+            "actionKey": "return",
+            "label": "Return to author",
+            "type": "COMMAND",
+            "handlerKey": "finance.journal-drafts.return",
+            "requiredPermissions": [
+              "finance:journals:approve"
+            ],
+            "confirmationPrompt": "Send this journal back to its author as a draft?",
+            "visibilityCondition": {
+              "field": "status",
+              "operator": "EQ",
+              "value": "SUBMITTED"
+            },
+            "parameters": [
+              {
+                "key": "reason",
+                "label": "Reason",
+                "type": "TEXTAREA",
+                "required": true
+              }
+            ]
+          },
+          {
+            "actionKey": "remove",
+            "label": "Remove line",
+            "type": "COMMAND",
+            "handlerKey": "finance.journal-draft-lines.remove",
+            "requiredPermissions": [
+              "finance:journals:post"
+            ],
+            "confirmationPrompt": "Remove this line?",
+            "visibilityCondition": {
+              "field": "draft-status",
+              "operator": "EQ",
+              "value": "DRAFT"
+            }
+          }
+        ],
+        "messages": []
+      }
+    }
+  },
+  {
+    "contractVersion": "1.0",
+    "window": {
+      "route": "/finance",
+      "label": "Posted journals",
+      "description": "The journals in the ledger, with their lines; reverse a posted one.",
+      "readPermission": "finance:read"
+    },
+    "definition": {
+      "kind": "APPLICATION_DICTIONARY",
+      "contractVersion": "1.0",
+      "moduleKey": "financial-operations",
+      "entityKey": "finance-journals",
+      "surfaceKey": "finance-journals",
+      "title": "Posted journals",
+      "dictionary": {
+        "packageKey": "finance-journals-module-baseline",
+        "name": "Posted journals",
+        "version": "1.0.0",
+        "moduleKey": "financial-operations",
+        "targetEntityKey": "finance.journals",
+        "entities": [
+          {
+            "entityKey": "finance.journals",
+            "moduleKey": "financial-operations",
+            "label": "Journals",
+            "ownership": "MODULE_CORE",
+            "primaryKeyField": "id",
+            "isVersioned": true,
+            "isAuditLogged": true,
+            "isSoftDeletable": false
+          },
+          {
+            "entityKey": "finance.journal-lines",
+            "moduleKey": "financial-operations",
+            "label": "Lines",
+            "ownership": "MODULE_CORE",
+            "primaryKeyField": "id",
+            "isVersioned": true,
+            "isAuditLogged": true,
+            "isSoftDeletable": false
+          }
+        ],
+        "fields": [
+          {
+            "fieldKey": "journal-number",
+            "entityKey": "finance.journals",
+            "label": "Number",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "description",
+            "entityKey": "finance.journals",
+            "label": "Description",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "accounting-book-id",
+            "entityKey": "finance.journals",
+            "label": "Book",
+            "type": "REFERENCE",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "book-ref"
+          },
+          {
+            "fieldKey": "posting-date",
+            "entityKey": "finance.journals",
+            "label": "Posting date",
+            "type": "DATE",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "entry-type",
+            "entityKey": "finance.journals",
+            "label": "Kind",
+            "type": "SELECT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "entry-types"
+          },
+          {
+            "fieldKey": "status",
+            "entityKey": "finance.journals",
+            "label": "Status",
+            "type": "SELECT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "journal-statuses"
+          },
+          {
+            "fieldKey": "total-debit-minor",
+            "entityKey": "finance.journals",
+            "label": "Total debits (minor units)",
+            "type": "NUMBER",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "scale": 0
+          },
+          {
+            "fieldKey": "total-credit-minor",
+            "entityKey": "finance.journals",
+            "label": "Total credits (minor units)",
+            "type": "NUMBER",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "scale": 0
+          },
+          {
+            "fieldKey": "source-document-type",
+            "entityKey": "finance.journals",
+            "label": "Source",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "posted-by",
+            "entityKey": "finance.journals",
+            "label": "Posted by",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "reversed-journal-id",
+            "entityKey": "finance.journals",
+            "label": "Reverses journal",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "journal-id",
+            "entityKey": "finance.journal-lines",
+            "label": "Journal",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "line-number",
+            "entityKey": "finance.journal-lines",
+            "label": "Line",
+            "type": "INTEGER",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "account-id",
+            "entityKey": "finance.journal-lines",
+            "label": "Account",
+            "type": "REFERENCE",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "account-ref"
+          },
+          {
+            "fieldKey": "debit-amount-minor",
+            "entityKey": "finance.journal-lines",
+            "label": "Debit (minor units)",
+            "type": "NUMBER",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "scale": 0
+          },
+          {
+            "fieldKey": "credit-amount-minor",
+            "entityKey": "finance.journal-lines",
+            "label": "Credit (minor units)",
+            "type": "NUMBER",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "scale": 0
+          },
+          {
+            "fieldKey": "currency-code",
+            "entityKey": "finance.journal-lines",
+            "label": "Currency",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "memo",
+            "entityKey": "finance.journal-lines",
+            "label": "Memo",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          }
+        ],
+        "relationships": [
+          {
+            "relationshipKey": "journal-lines",
+            "sourceEntityKey": "finance.journals",
+            "targetEntityKey": "finance.journal-lines",
+            "type": "ONE_TO_MANY",
+            "foreignKeyField": "journal-id"
+          }
+        ],
+        "references": [
+          {
+            "referenceKey": "entry-types",
+            "referenceType": "VALUE_LIST",
+            "staticValues": [
+              {
+                "value": "STANDARD_MANUAL",
+                "label": "Manual"
+              },
+              {
+                "value": "SUBLEDGER_AP",
+                "label": "Payables"
+              },
+              {
+                "value": "SUBLEDGER_AR",
+                "label": "Receivables"
+              },
+              {
+                "value": "SUBLEDGER_INVENTORY",
+                "label": "Inventory"
+              },
+              {
+                "value": "REVERSAL",
+                "label": "Reversal"
+              },
+              {
+                "value": "YEAR_END_CLOSE",
+                "label": "Year-end close"
+              },
+              {
+                "value": "OPENING_BALANCE",
+                "label": "Opening balance"
+              }
+            ]
+          },
+          {
+            "referenceKey": "journal-statuses",
+            "referenceType": "VALUE_LIST",
+            "staticValues": [
+              {
+                "value": "DRAFT",
+                "label": "Draft"
+              },
+              {
+                "value": "POSTED",
+                "label": "Posted"
+              },
+              {
+                "value": "REVERSED",
+                "label": "Reversed"
+              }
+            ]
+          },
+          {
+            "referenceKey": "book-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "finance-books"
+          },
+          {
+            "referenceKey": "account-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "finance-accounts",
+            "createWith": {
+              "moduleKey": "financial-operations",
+              "surfaceKey": "finance-accounts",
+              "permission": "finance:coa:manage"
+            }
+          }
+        ],
+        "validationRules": [],
+        "views": [
+          {
+            "viewKey": "journals",
+            "label": "Posted journals",
+            "mode": "LIST",
+            "device": "ALL",
+            "defaultSortDirection": "ASC",
+            "tabs": [
+              {
+                "tabKey": "journal",
+                "label": "Journal",
+                "position": 0,
+                "level": 0,
+                "targetEntityKey": "finance.journals",
+                "sections": [
+                  {
+                    "sectionKey": "main",
+                    "label": "Journal",
+                    "collapsible": false,
+                    "defaultCollapsed": false,
+                    "position": 0
+                  },
+                  {
+                    "sectionKey": "more",
+                    "label": "Origin",
+                    "collapsible": false,
+                    "defaultCollapsed": false,
+                    "position": 1
+                  }
+                ],
+                "fields": [
+                  {
+                    "fieldKey": "journal-number",
+                    "position": 0,
+                    "span": 3,
+                    "componentKey": "text-input",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "description",
+                    "position": 1,
+                    "span": 9,
+                    "componentKey": "text-input",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "posting-date",
+                    "position": 2,
+                    "span": 3,
+                    "componentKey": "date-input",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "entry-type",
+                    "position": 3,
+                    "span": 3,
+                    "componentKey": "select",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "status",
+                    "position": 4,
+                    "span": 3,
+                    "componentKey": "select",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "accounting-book-id",
+                    "position": 5,
+                    "span": 3,
+                    "componentKey": "lookup",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "total-debit-minor",
+                    "position": 6,
+                    "span": 6,
+                    "componentKey": "number-input",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "total-credit-minor",
+                    "position": 7,
+                    "span": 6,
+                    "componentKey": "number-input",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "source-document-type",
+                    "position": 8,
+                    "span": 4,
+                    "componentKey": "text-input",
+                    "sectionKey": "more"
+                  },
+                  {
+                    "fieldKey": "posted-by",
+                    "position": 9,
+                    "span": 4,
+                    "componentKey": "text-input",
+                    "sectionKey": "more"
+                  },
+                  {
+                    "fieldKey": "reversed-journal-id",
+                    "position": 10,
+                    "span": 4,
+                    "componentKey": "text-input",
+                    "sectionKey": "more"
+                  }
+                ]
+              },
+              {
+                "tabKey": "lines",
+                "label": "Lines",
+                "position": 1,
+                "level": 1,
+                "targetEntityKey": "finance.journal-lines",
+                "sections": [],
+                "fields": [
+                  {
+                    "fieldKey": "line-number",
+                    "position": 0,
+                    "span": 2,
+                    "componentKey": "number-input"
+                  },
+                  {
+                    "fieldKey": "account-id",
+                    "position": 1,
+                    "span": 4,
+                    "componentKey": "lookup"
+                  },
+                  {
+                    "fieldKey": "debit-amount-minor",
+                    "position": 2,
+                    "span": 3,
+                    "componentKey": "number-input"
+                  },
+                  {
+                    "fieldKey": "credit-amount-minor",
+                    "position": 3,
+                    "span": 3,
+                    "componentKey": "number-input"
+                  },
+                  {
+                    "fieldKey": "currency-code",
+                    "position": 4,
+                    "span": 2,
+                    "componentKey": "text-input"
+                  },
+                  {
+                    "fieldKey": "memo",
+                    "position": 5,
+                    "span": 10,
+                    "componentKey": "text-input"
+                  }
+                ],
+                "parentRelationshipKey": "journal-lines"
+              }
+            ],
+            "searchFields": [
+              "journal-number",
+              "description"
+            ],
+            "defaultSortField": "posting-date"
+          }
+        ],
+        "navigation": [],
+        "actions": [
+          {
+            "actionKey": "reverse",
+            "label": "Reverse",
+            "type": "COMMAND",
+            "handlerKey": "finance.journals.reverse",
+            "requiredPermissions": [
+              "finance:journals:reverse"
+            ],
+            "confirmationPrompt": "Reverse this journal? A reversing journal is posted; the original stays in the ledger.",
+            "visibilityCondition": {
+              "field": "status",
+              "operator": "EQ",
+              "value": "POSTED"
+            },
+            "parameters": [
+              {
+                "key": "reason",
+                "label": "Reason",
+                "type": "TEXTAREA",
+                "required": true
+              },
+              {
+                "key": "reversal-date",
+                "label": "Reversal date (YYYY-MM-DD, default today)",
+                "type": "TEXT",
+                "required": false
+              }
+            ]
+          }
+        ],
+        "messages": []
+      }
+    }
+  },
+  {
+    "contractVersion": "1.0",
+    "window": {
+      "route": "/finance",
+      "label": "Periods",
+      "description": "Open, soft-close and lock the periods journals post to.",
+      "readPermission": "finance:read"
+    },
+    "definition": {
+      "kind": "APPLICATION_DICTIONARY",
+      "contractVersion": "1.0",
+      "moduleKey": "financial-operations",
+      "entityKey": "finance-periods",
+      "surfaceKey": "finance-periods",
+      "title": "Fiscal periods",
+      "dictionary": {
+        "packageKey": "finance-periods-module-baseline",
+        "name": "Fiscal periods",
+        "version": "1.0.0",
+        "moduleKey": "financial-operations",
+        "targetEntityKey": "finance.periods",
+        "entities": [
+          {
+            "entityKey": "finance.periods",
+            "moduleKey": "financial-operations",
+            "label": "Periods",
+            "ownership": "MODULE_CORE",
+            "primaryKeyField": "id",
+            "isVersioned": true,
+            "isAuditLogged": true,
+            "isSoftDeletable": false
+          }
+        ],
+        "fields": [
+          {
+            "fieldKey": "accounting-book-id",
+            "entityKey": "finance.periods",
+            "label": "Book",
+            "type": "REFERENCE",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "book-ref"
+          },
+          {
+            "fieldKey": "period-number",
+            "entityKey": "finance.periods",
+            "label": "Period",
+            "type": "INTEGER",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "period-name",
+            "entityKey": "finance.periods",
+            "label": "Name",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "start-date",
+            "entityKey": "finance.periods",
+            "label": "Starts",
+            "type": "DATE",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "end-date",
+            "entityKey": "finance.periods",
+            "label": "Ends",
+            "type": "DATE",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "status",
+            "entityKey": "finance.periods",
+            "label": "Status",
+            "type": "SELECT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "period-statuses"
+          }
+        ],
+        "relationships": [],
+        "references": [
+          {
+            "referenceKey": "period-statuses",
+            "referenceType": "VALUE_LIST",
+            "staticValues": [
+              {
+                "value": "FUTURE",
+                "label": "Future"
+              },
+              {
+                "value": "OPEN",
+                "label": "Open"
+              },
+              {
+                "value": "SOFT_CLOSED",
+                "label": "Soft-closed"
+              },
+              {
+                "value": "LOCKED",
+                "label": "Locked"
+              }
+            ]
+          },
+          {
+            "referenceKey": "book-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "finance-books"
+          }
+        ],
+        "validationRules": [],
+        "views": [
+          {
+            "viewKey": "periods",
+            "label": "Fiscal periods",
+            "mode": "LIST",
+            "device": "ALL",
+            "defaultSortDirection": "ASC",
+            "tabs": [
+              {
+                "tabKey": "period",
+                "label": "Period",
+                "position": 0,
+                "level": 0,
+                "targetEntityKey": "finance.periods",
+                "sections": [],
+                "fields": [
+                  {
+                    "fieldKey": "period-name",
+                    "position": 0,
+                    "span": 4,
+                    "componentKey": "text-input"
+                  },
+                  {
+                    "fieldKey": "accounting-book-id",
+                    "position": 1,
+                    "span": 4,
+                    "componentKey": "lookup"
+                  },
+                  {
+                    "fieldKey": "status",
+                    "position": 2,
+                    "span": 4,
+                    "componentKey": "select"
+                  },
+                  {
+                    "fieldKey": "period-number",
+                    "position": 3,
+                    "span": 2,
+                    "componentKey": "number-input"
+                  },
+                  {
+                    "fieldKey": "start-date",
+                    "position": 4,
+                    "span": 3,
+                    "componentKey": "date-input"
+                  },
+                  {
+                    "fieldKey": "end-date",
+                    "position": 5,
+                    "span": 3,
+                    "componentKey": "date-input"
+                  }
+                ]
+              }
+            ],
+            "searchFields": [
+              "period-name"
+            ],
+            "defaultSortField": "start-date"
+          }
+        ],
+        "navigation": [],
+        "actions": [
+          {
+            "actionKey": "open",
+            "label": "Open",
+            "type": "COMMAND",
+            "handlerKey": "finance.periods.open",
+            "requiredPermissions": [
+              "finance:periods:manage"
+            ],
+            "confirmationPrompt": "Open this period for posting?",
+            "visibilityCondition": {
+              "field": "status",
+              "operator": "IN",
+              "value": [
+                "FUTURE",
+                "SOFT_CLOSED"
+              ]
+            },
+            "parameters": [
+              {
+                "key": "reason",
+                "label": "Reason",
+                "type": "TEXTAREA",
+                "required": false
+              }
+            ]
+          },
+          {
+            "actionKey": "soft-close",
+            "label": "Soft-close",
+            "type": "COMMAND",
+            "handlerKey": "finance.periods.soft-close",
+            "requiredPermissions": [
+              "finance:periods:manage"
+            ],
+            "confirmationPrompt": "Soft-close this period? Only adjustments should post to it now.",
+            "visibilityCondition": {
+              "field": "status",
+              "operator": "EQ",
+              "value": "OPEN"
+            },
+            "parameters": [
+              {
+                "key": "reason",
+                "label": "Reason",
+                "type": "TEXTAREA",
+                "required": true
+              }
+            ]
+          },
+          {
+            "actionKey": "lock",
+            "label": "Lock",
+            "type": "COMMAND",
+            "handlerKey": "finance.periods.lock",
+            "requiredPermissions": [
+              "finance:periods:manage"
+            ],
+            "confirmationPrompt": "Lock this period? Nothing can post to it once locked.",
+            "visibilityCondition": {
+              "field": "status",
+              "operator": "NEQ",
+              "value": "LOCKED"
+            },
+            "parameters": [
+              {
+                "key": "reason",
+                "label": "Reason",
+                "type": "TEXTAREA",
+                "required": true
+              }
+            ]
+          }
+        ],
+        "messages": []
+      }
+    }
+  },
+  {
+    "contractVersion": "1.0",
+    "window": {
       "route": "/products",
       "label": "Attributes",
       "description": "The attributes products can carry.",

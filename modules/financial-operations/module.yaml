@@ -47,16 +47,11 @@ spec:
     basePath: /finance
     package: '@gigalibs/financial-operations-web'
     pages:
-      # WI-OI-120g (owner-approved 2026-10-05): the mock-up screen is taken down until U12 to U18 lands its windows.
+      # WI-OI-120l (U12): the general ledger on metadata windows (the mock-up was taken down in WI-OI-120g).
       - route: /finance
-        unavailable:
-          title: Finance screens are not connected yet
-          summary: The Financial Operations service runs in this instance (books, chart of accounts, periods, journals, treasury, bank reconciliation, fixed assets, consolidation, costing, budgeting and close), but its screens are being rebuilt as metadata windows over that service (U12 to U18). The previous screen showed sample books, banks and balances, so it has been taken down rather than let anyone record its numbers as results.
-          availableForTesting:
-            - Stock movements that will post to the ledger, at /inventory.
-          blockedActions:
-            - Showing sample ledgers, balances or reports as financial facts.
-            - Buttons that look like actions but do nothing.
+        component: FinancialOperationsWorkspace
+        # WI-OI-120e (U3.2): the dictionary renderer gets the signed-in user's permissions.
+        sessionPermissions: true
   api:
     application: apps/api
     port: 4790
@@ -157,6 +152,8 @@ spec:
     routeNoun: Financial Operations
     serviceName: Financial Operations & General Ledger
     entitlementName: Financial Operations
+    # WI-OI-120l (U12): the module SDK's record routes for the general ledger's metadata windows and pickers.
+    records: true
     routes:
       - { path: 'v1/books', GET: finance:read, POST: 'finance:books:manage' }
       - { path: 'v1/books/{id}', GET: finance:read }

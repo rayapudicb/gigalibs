@@ -1164,3 +1164,115 @@ widening the card to fix the API faults the proof found.
   - Its screen was a mock-up, taken down in U7. The missing parts are the Finance metadata windows (U12–U18) and the
     postings from Inventory, Procurement and Orders (U22).
 
+
+### U12: General ledger on metadata windows (WI-OI-120l, 2026-10-06)
+
+- **Owner decision:** Option A. A manual journal is drafted, submitted and approved by a second person before it
+  posts.
+- **Finance migration 9** (`000009_finance_journal_drafts`, forward only):
+  - `gl_journal_drafts` and `gl_journal_draft_lines`, plus `record_idempotency` for the record routes;
+  - forced row-level security and tenant policies on all three;
+  - a check that the approver is not the submitter.
+
+  Verified with the real runner, down and up. The schema contract is 9.
+- **Finance API:**
+  - `journal-drafts.service.ts`:
+    - create, edit, add and remove lines;
+    - submit: at least two lines, balanced, non-zero, a period that is not locked;
+    - approve: not by the submitter. Posts through `postJournal` in the same transaction, with the draft as the
+      source document, so it posts exactly once;
+    - return to the author with a reason.
+  - `finance-records.service.ts`: paged, tenant-bound reads of books, accounts, periods, journals and drafts (with
+    their lines), and the book and account pickers.
+  - `finance-record-adapters.ts`: the record dispatcher. Each command keeps the permission of Finance's own route:
+    - accounts (create, rename; book, code, class, subtype and balance cannot change);
+    - periods: open, soft-close and lock (a reason is needed to close or lock);
+    - journals: reverse (with a reason);
+    - drafts: submit, approve and return.
+- **Windows:** five in `modules/financial-operations/dictionary/`:
+  - Journal entry (with lines);
+  - Posted journals (with lines);
+  - Chart of accounts;
+  - Periods ("Open" shows only on future or soft-closed periods);
+  - Books.
+
+  All pass the window checks, and the gateway serves `records`.
+- **Page** (`/finance`):
+  - the five window tabs;
+  - **Reports:** trial balance, income statement and balance sheet, by book and date, from posted journals only;
+  - **Set up a book** (shown with `finance:books:manage`): pick the legal entity from Parties (organizations), then
+    the book, its standard fiscal year and an optional 22-account starter chart (no amounts).
+
+  The 2,546-line mock-up with sample figures is gone.
+- **Proof:** `scripts/verify-u12-general-ledger.mjs` passes 25/25 through the real module host on an isolated
+  database, as a maker and a checker. It covers:
+  - set-up: book and twelve open periods;
+  - accounts: an If-Match rename, where a stale one gets 412; a code change is refused;
+  - pickers;
+  - a draft: a line with both sides is refused; an unbalanced submit is refused; a line is removed;
+  - submit: a stale submit gets 412; no lines after submit (409);
+  - approval: the maker's own is refused (403); a reason is required; the checker approves; a retry replays; a second
+    approval is refused (409); one journal is posted;
+  - a draft returned with a reason, edited, resubmitted and posted;
+  - a locked period: locking needs a reason; no reopen; no new draft in it; a submitted draft in it cannot post;
+  - reversal: needs a reason;
+  - trial balance and balance sheet balance; net income is correct;
+  - permissions: read cannot draft, post cannot approve, approve cannot reverse (403);
+  - another tenant gets 404, sees no journals and no picker options, and cannot add lines.
+
+  Registered in `pnpm verify` as "general-ledger (U12)". The proof takes each module's migration version from its
+  runtime manifest; `module-manifests --check` keeps the generated file in step.
+- **Unit tests:** `finance-record-adapters.test.ts` (7). Every entity, action and picker the five windows name is
+  registered. The rules that hold before any database call: fixed account fields, a draft's book, reasons, the 412
+  mapping, and permissions.
+- **Playwright on UAT:** `e2e/specs/uat-general-ledger.spec.ts`, run with `run-uat-walkthrough.sh --ledger` (also
+  in `--all`):
+  - creates the party UAT-CO;
+  - creates the book UAT-GL from the set-up panel;
+  - enters September of 2026 (opening balances, credit sale, stock purchase, rent, payroll, depreciation), each
+    drafted and submitted by uat.admin;
+  - shows uat.admin's own approval refused, then has uat.approver post each journal;
+  - checks the three reports.
+
+  It parses and type-checks. **Not run yet:** it needs the U12 deploy.
+- **Checks** (after the `4d4ef4d` deploy, with `infra/compose/generated` regenerated for Finance migration 9):
+  - `pnpm build` passes;
+  - `pnpm test`: 2,560 passed, 188 skipped;
+  - `pnpm verify` passes (known drift; 12 proofs NOT RUN without PROOF_DATABASE_URL).
+  - With PROOF_DATABASE_URL (the throwaway server), the five HTTP proofs pass: U2, F0.5, U19a, U7 and U12.
+  - The seven older Finance proofs (WI-OI-094 to 118) fail in that mode because they never install the Finance
+    schema. Given a database migrated to 9 they all pass, exactly as at 8.
+  - Two pre-existing faults in those scripts, unrelated to U12, are proposed for a separate fix:
+    - they do not install the schema;
+    - `verify-financial-operations.mjs` grants `rls_test_user` only when it creates the role, so its first run on a
+      new database fails with "permission denied for schema gigalibs_finance".
+- **Noted for later:**
+  - amounts are typed in minor units (1250 is 12.50), as in the Catalogue and Inventory windows; a money field in the
+    renderer would let people type 12.50;
+  - "Submitted by" and "Approved by" show user ids (the people-lookup defect logged in QF1).
+
+### 4d4ef4d deploy: F0.6 and QF1 (2026-10-06)
+
+- **Deploy:** the owner deployed `4d4ef4d` (tag `4d4ef4d3cb4a-654f6f744c72`) at 03:26–03:28Z.
+  - Every migration job exited 0; Finance stays at migration 8.
+  - Ten services are healthy on the new tag; the 5180 checks answer 200.
+  - Connector Hub refuses an unsigned request (401).
+  - Backup beforehand: `gigalibs_backup_20261006_023322Z`.
+  - Before the deploy, the images were checked to contain none of the uncommitted U12 work (built 02:24–02:33Z,
+    before any U12 file was written; no Finance migration 9 or draft services in the module-host image).
+- **Playwright on UAT:**
+  - `uat-add-new` passes. Inside a new Inventory item, a product is created from its picker, and a unit from the
+    product's picker over it; both are selected and the item saves.
+  - The spec's last step was wrong: after saving, the window opens the item, so the spec now checks the opened item
+    and returns to the list.
+- **Screen board** (105 screens, after the app-wide Currency failure is set aside):
+  - 38 work;
+  - 21 load without data calls;
+  - 10 not built (honest notices);
+  - 31 broken;
+  - 5 crash.
+
+  The broken and crashing screens are modules not running here (AR, Tax, Currency, Spend, Communications, eSign,
+  Workflows, Rules; U29) and the Workforce `wfo` routes (U20a).
+- **Defect seen:** an Inventory item's page heading is its id (items have no code or name). Logged with the user-id
+  defect.

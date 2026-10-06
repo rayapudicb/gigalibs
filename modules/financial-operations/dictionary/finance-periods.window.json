@@ -1,0 +1,274 @@
+{
+  "contractVersion": "1.0",
+  "window": {
+    "route": "/finance",
+    "label": "Periods",
+    "description": "Open, soft-close and lock the periods journals post to.",
+    "readPermission": "finance:read"
+  },
+  "definition": {
+    "kind": "APPLICATION_DICTIONARY",
+    "contractVersion": "1.0",
+    "moduleKey": "financial-operations",
+    "entityKey": "finance-periods",
+    "surfaceKey": "finance-periods",
+    "title": "Fiscal periods",
+    "dictionary": {
+      "packageKey": "finance-periods-module-baseline",
+      "name": "Fiscal periods",
+      "version": "1.0.0",
+      "moduleKey": "financial-operations",
+      "targetEntityKey": "finance.periods",
+      "entities": [
+        {
+          "entityKey": "finance.periods",
+          "moduleKey": "financial-operations",
+          "label": "Periods",
+          "ownership": "MODULE_CORE",
+          "primaryKeyField": "id",
+          "isVersioned": true,
+          "isAuditLogged": true,
+          "isSoftDeletable": false
+        }
+      ],
+      "fields": [
+        {
+          "fieldKey": "accounting-book-id",
+          "entityKey": "finance.periods",
+          "label": "Book",
+          "type": "REFERENCE",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "book-ref"
+        },
+        {
+          "fieldKey": "period-number",
+          "entityKey": "finance.periods",
+          "label": "Period",
+          "type": "INTEGER",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "period-name",
+          "entityKey": "finance.periods",
+          "label": "Name",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "start-date",
+          "entityKey": "finance.periods",
+          "label": "Starts",
+          "type": "DATE",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "end-date",
+          "entityKey": "finance.periods",
+          "label": "Ends",
+          "type": "DATE",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "status",
+          "entityKey": "finance.periods",
+          "label": "Status",
+          "type": "SELECT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "period-statuses"
+        }
+      ],
+      "relationships": [],
+      "references": [
+        {
+          "referenceKey": "period-statuses",
+          "referenceType": "VALUE_LIST",
+          "staticValues": [
+            {
+              "value": "FUTURE",
+              "label": "Future"
+            },
+            {
+              "value": "OPEN",
+              "label": "Open"
+            },
+            {
+              "value": "SOFT_CLOSED",
+              "label": "Soft-closed"
+            },
+            {
+              "value": "LOCKED",
+              "label": "Locked"
+            }
+          ]
+        },
+        {
+          "referenceKey": "book-ref",
+          "referenceType": "SEARCH_LOOKUP",
+          "resolverKey": "finance-books"
+        }
+      ],
+      "validationRules": [],
+      "views": [
+        {
+          "viewKey": "periods",
+          "label": "Fiscal periods",
+          "mode": "LIST",
+          "device": "ALL",
+          "defaultSortDirection": "ASC",
+          "tabs": [
+            {
+              "tabKey": "period",
+              "label": "Period",
+              "position": 0,
+              "level": 0,
+              "targetEntityKey": "finance.periods",
+              "sections": [],
+              "fields": [
+                {
+                  "fieldKey": "period-name",
+                  "position": 0,
+                  "span": 4,
+                  "componentKey": "text-input"
+                },
+                {
+                  "fieldKey": "accounting-book-id",
+                  "position": 1,
+                  "span": 4,
+                  "componentKey": "lookup"
+                },
+                {
+                  "fieldKey": "status",
+                  "position": 2,
+                  "span": 4,
+                  "componentKey": "select"
+                },
+                {
+                  "fieldKey": "period-number",
+                  "position": 3,
+                  "span": 2,
+                  "componentKey": "number-input"
+                },
+                {
+                  "fieldKey": "start-date",
+                  "position": 4,
+                  "span": 3,
+                  "componentKey": "date-input"
+                },
+                {
+                  "fieldKey": "end-date",
+                  "position": 5,
+                  "span": 3,
+                  "componentKey": "date-input"
+                }
+              ]
+            }
+          ],
+          "searchFields": [
+            "period-name"
+          ],
+          "defaultSortField": "start-date"
+        }
+      ],
+      "navigation": [],
+      "actions": [
+        {
+          "actionKey": "open",
+          "label": "Open",
+          "type": "COMMAND",
+          "handlerKey": "finance.periods.open",
+          "requiredPermissions": [
+            "finance:periods:manage"
+          ],
+          "confirmationPrompt": "Open this period for posting?",
+          "visibilityCondition": {
+            "field": "status",
+            "operator": "IN",
+            "value": [
+              "FUTURE",
+              "SOFT_CLOSED"
+            ]
+          },
+          "parameters": [
+            {
+              "key": "reason",
+              "label": "Reason",
+              "type": "TEXTAREA",
+              "required": false
+            }
+          ]
+        },
+        {
+          "actionKey": "soft-close",
+          "label": "Soft-close",
+          "type": "COMMAND",
+          "handlerKey": "finance.periods.soft-close",
+          "requiredPermissions": [
+            "finance:periods:manage"
+          ],
+          "confirmationPrompt": "Soft-close this period? Only adjustments should post to it now.",
+          "visibilityCondition": {
+            "field": "status",
+            "operator": "EQ",
+            "value": "OPEN"
+          },
+          "parameters": [
+            {
+              "key": "reason",
+              "label": "Reason",
+              "type": "TEXTAREA",
+              "required": true
+            }
+          ]
+        },
+        {
+          "actionKey": "lock",
+          "label": "Lock",
+          "type": "COMMAND",
+          "handlerKey": "finance.periods.lock",
+          "requiredPermissions": [
+            "finance:periods:manage"
+          ],
+          "confirmationPrompt": "Lock this period? Nothing can post to it once locked.",
+          "visibilityCondition": {
+            "field": "status",
+            "operator": "NEQ",
+            "value": "LOCKED"
+          },
+          "parameters": [
+            {
+              "key": "reason",
+              "label": "Reason",
+              "type": "TEXTAREA",
+              "required": true
+            }
+          ]
+        }
+      ],
+      "messages": []
+    }
+  }
+}

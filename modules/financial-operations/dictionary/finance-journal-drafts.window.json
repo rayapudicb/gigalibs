@@ -1,0 +1,598 @@
+{
+  "contractVersion": "1.0",
+  "window": {
+    "route": "/finance",
+    "label": "Journal entry",
+    "description": "Draft a journal, add its lines and submit it; a second person approves and posts it.",
+    "readPermission": "finance:read"
+  },
+  "definition": {
+    "kind": "APPLICATION_DICTIONARY",
+    "contractVersion": "1.0",
+    "moduleKey": "financial-operations",
+    "entityKey": "finance-journal-drafts",
+    "surfaceKey": "finance-journal-drafts",
+    "title": "Journal entry",
+    "dictionary": {
+      "packageKey": "finance-journal-drafts-module-baseline",
+      "name": "Journal entry",
+      "version": "1.0.0",
+      "moduleKey": "financial-operations",
+      "targetEntityKey": "finance.journal-drafts",
+      "entities": [
+        {
+          "entityKey": "finance.journal-drafts",
+          "moduleKey": "financial-operations",
+          "label": "Journal drafts",
+          "ownership": "MODULE_CORE",
+          "primaryKeyField": "id",
+          "isVersioned": true,
+          "isAuditLogged": true,
+          "isSoftDeletable": false
+        },
+        {
+          "entityKey": "finance.journal-draft-lines",
+          "moduleKey": "financial-operations",
+          "label": "Lines",
+          "ownership": "MODULE_CORE",
+          "primaryKeyField": "id",
+          "isVersioned": true,
+          "isAuditLogged": true,
+          "isSoftDeletable": false
+        }
+      ],
+      "fields": [
+        {
+          "fieldKey": "accounting-book-id",
+          "entityKey": "finance.journal-drafts",
+          "label": "Book",
+          "type": "REFERENCE",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "book-ref"
+        },
+        {
+          "fieldKey": "posting-date",
+          "entityKey": "finance.journal-drafts",
+          "label": "Posting date",
+          "type": "DATE",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "helpText": "The period is found from this date."
+        },
+        {
+          "fieldKey": "entry-type",
+          "entityKey": "finance.journal-drafts",
+          "label": "Kind",
+          "type": "SELECT",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "manual-types"
+        },
+        {
+          "fieldKey": "description",
+          "entityKey": "finance.journal-drafts",
+          "label": "Description",
+          "type": "TEXT",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "status",
+          "entityKey": "finance.journal-drafts",
+          "label": "Status",
+          "type": "SELECT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "draft-statuses"
+        },
+        {
+          "fieldKey": "total-debit-minor",
+          "entityKey": "finance.journal-drafts",
+          "label": "Total debits (minor units)",
+          "type": "NUMBER",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "scale": 0
+        },
+        {
+          "fieldKey": "total-credit-minor",
+          "entityKey": "finance.journal-drafts",
+          "label": "Total credits (minor units)",
+          "type": "NUMBER",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "scale": 0
+        },
+        {
+          "fieldKey": "line-count",
+          "entityKey": "finance.journal-drafts",
+          "label": "Lines",
+          "type": "INTEGER",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "submitted-by",
+          "entityKey": "finance.journal-drafts",
+          "label": "Submitted by",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "approved-by",
+          "entityKey": "finance.journal-drafts",
+          "label": "Approved by",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "returned-reason",
+          "entityKey": "finance.journal-drafts",
+          "label": "Returned because",
+          "type": "TEXTAREA",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "posted-journal-id",
+          "entityKey": "finance.journal-drafts",
+          "label": "Posted journal",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "updated-at",
+          "entityKey": "finance.journal-drafts",
+          "label": "Last changed",
+          "type": "DATETIME",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "draft-id",
+          "entityKey": "finance.journal-draft-lines",
+          "label": "Journal",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "helpText": "Set from the journal the line belongs to."
+        },
+        {
+          "fieldKey": "line-number",
+          "entityKey": "finance.journal-draft-lines",
+          "label": "Line",
+          "type": "INTEGER",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "account-id",
+          "entityKey": "finance.journal-draft-lines",
+          "label": "Account",
+          "type": "REFERENCE",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "account-ref"
+        },
+        {
+          "fieldKey": "debit-amount-minor",
+          "entityKey": "finance.journal-draft-lines",
+          "label": "Debit (minor units)",
+          "type": "NUMBER",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "scale": 0,
+          "helpText": "1250 is 12.50. A line has a debit or a credit."
+        },
+        {
+          "fieldKey": "credit-amount-minor",
+          "entityKey": "finance.journal-draft-lines",
+          "label": "Credit (minor units)",
+          "type": "NUMBER",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "scale": 0
+        },
+        {
+          "fieldKey": "memo",
+          "entityKey": "finance.journal-draft-lines",
+          "label": "Memo",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "draft-status",
+          "entityKey": "finance.journal-draft-lines",
+          "label": "Journal status",
+          "type": "SELECT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "draft-statuses"
+        }
+      ],
+      "relationships": [
+        {
+          "relationshipKey": "draft-lines",
+          "sourceEntityKey": "finance.journal-drafts",
+          "targetEntityKey": "finance.journal-draft-lines",
+          "type": "ONE_TO_MANY",
+          "foreignKeyField": "draft-id"
+        }
+      ],
+      "references": [
+        {
+          "referenceKey": "manual-types",
+          "referenceType": "VALUE_LIST",
+          "staticValues": [
+            {
+              "value": "STANDARD_MANUAL",
+              "label": "Manual"
+            },
+            {
+              "value": "OPENING_BALANCE",
+              "label": "Opening balance"
+            }
+          ]
+        },
+        {
+          "referenceKey": "draft-statuses",
+          "referenceType": "VALUE_LIST",
+          "staticValues": [
+            {
+              "value": "DRAFT",
+              "label": "Draft"
+            },
+            {
+              "value": "SUBMITTED",
+              "label": "Submitted for approval"
+            },
+            {
+              "value": "POSTED",
+              "label": "Posted"
+            }
+          ]
+        },
+        {
+          "referenceKey": "book-ref",
+          "referenceType": "SEARCH_LOOKUP",
+          "resolverKey": "finance-books"
+        },
+        {
+          "referenceKey": "account-ref",
+          "referenceType": "SEARCH_LOOKUP",
+          "resolverKey": "finance-accounts",
+          "createWith": {
+            "moduleKey": "financial-operations",
+            "surfaceKey": "finance-accounts",
+            "permission": "finance:coa:manage"
+          }
+        }
+      ],
+      "validationRules": [],
+      "views": [
+        {
+          "viewKey": "journal-drafts",
+          "label": "Journal entry",
+          "mode": "LIST",
+          "device": "ALL",
+          "defaultSortDirection": "ASC",
+          "tabs": [
+            {
+              "tabKey": "draft",
+              "label": "Journal",
+              "position": 0,
+              "level": 0,
+              "targetEntityKey": "finance.journal-drafts",
+              "sections": [
+                {
+                  "sectionKey": "main",
+                  "label": "Journal",
+                  "collapsible": false,
+                  "defaultCollapsed": false,
+                  "position": 0
+                },
+                {
+                  "sectionKey": "totals",
+                  "label": "Totals",
+                  "collapsible": false,
+                  "defaultCollapsed": false,
+                  "position": 1
+                },
+                {
+                  "sectionKey": "approval",
+                  "label": "Approval",
+                  "collapsible": false,
+                  "defaultCollapsed": false,
+                  "position": 2
+                }
+              ],
+              "fields": [
+                {
+                  "fieldKey": "description",
+                  "position": 0,
+                  "span": 6,
+                  "componentKey": "text-input",
+                  "sectionKey": "main"
+                },
+                {
+                  "fieldKey": "status",
+                  "position": 1,
+                  "span": 3,
+                  "componentKey": "select",
+                  "sectionKey": "main"
+                },
+                {
+                  "fieldKey": "entry-type",
+                  "position": 2,
+                  "span": 3,
+                  "componentKey": "select",
+                  "sectionKey": "main"
+                },
+                {
+                  "fieldKey": "accounting-book-id",
+                  "position": 3,
+                  "span": 6,
+                  "componentKey": "lookup",
+                  "sectionKey": "main"
+                },
+                {
+                  "fieldKey": "posting-date",
+                  "position": 4,
+                  "span": 3,
+                  "componentKey": "date-input",
+                  "sectionKey": "main"
+                },
+                {
+                  "fieldKey": "line-count",
+                  "position": 5,
+                  "span": 3,
+                  "componentKey": "number-input",
+                  "sectionKey": "main"
+                },
+                {
+                  "fieldKey": "total-debit-minor",
+                  "position": 6,
+                  "span": 6,
+                  "componentKey": "number-input",
+                  "sectionKey": "totals"
+                },
+                {
+                  "fieldKey": "total-credit-minor",
+                  "position": 7,
+                  "span": 6,
+                  "componentKey": "number-input",
+                  "sectionKey": "totals"
+                },
+                {
+                  "fieldKey": "submitted-by",
+                  "position": 8,
+                  "span": 4,
+                  "componentKey": "text-input",
+                  "sectionKey": "approval"
+                },
+                {
+                  "fieldKey": "approved-by",
+                  "position": 9,
+                  "span": 4,
+                  "componentKey": "text-input",
+                  "sectionKey": "approval"
+                },
+                {
+                  "fieldKey": "posted-journal-id",
+                  "position": 10,
+                  "span": 4,
+                  "componentKey": "text-input",
+                  "sectionKey": "approval"
+                },
+                {
+                  "fieldKey": "returned-reason",
+                  "position": 11,
+                  "span": 12,
+                  "componentKey": "textarea",
+                  "sectionKey": "approval"
+                },
+                {
+                  "fieldKey": "updated-at",
+                  "position": 12,
+                  "span": 4,
+                  "componentKey": "datetime-input",
+                  "sectionKey": "approval"
+                }
+              ]
+            },
+            {
+              "tabKey": "lines",
+              "label": "Lines",
+              "position": 1,
+              "level": 1,
+              "targetEntityKey": "finance.journal-draft-lines",
+              "sections": [],
+              "fields": [
+                {
+                  "fieldKey": "line-number",
+                  "position": 0,
+                  "span": 2,
+                  "componentKey": "number-input"
+                },
+                {
+                  "fieldKey": "account-id",
+                  "position": 1,
+                  "span": 4,
+                  "componentKey": "lookup"
+                },
+                {
+                  "fieldKey": "debit-amount-minor",
+                  "position": 2,
+                  "span": 3,
+                  "componentKey": "number-input"
+                },
+                {
+                  "fieldKey": "credit-amount-minor",
+                  "position": 3,
+                  "span": 3,
+                  "componentKey": "number-input"
+                },
+                {
+                  "fieldKey": "memo",
+                  "position": 4,
+                  "span": 12,
+                  "componentKey": "text-input"
+                }
+              ],
+              "parentRelationshipKey": "draft-lines"
+            }
+          ],
+          "searchFields": [
+            "description"
+          ],
+          "defaultSortField": "updated-at"
+        }
+      ],
+      "navigation": [],
+      "actions": [
+        {
+          "actionKey": "submit",
+          "label": "Submit for approval",
+          "type": "COMMAND",
+          "handlerKey": "finance.journal-drafts.submit",
+          "requiredPermissions": [
+            "finance:journals:post"
+          ],
+          "confirmationPrompt": "Submit this journal? Someone else must approve it before it posts.",
+          "visibilityCondition": {
+            "field": "status",
+            "operator": "EQ",
+            "value": "DRAFT"
+          }
+        },
+        {
+          "actionKey": "approve",
+          "label": "Approve and post",
+          "type": "COMMAND",
+          "handlerKey": "finance.journal-drafts.approve",
+          "requiredPermissions": [
+            "finance:journals:approve"
+          ],
+          "confirmationPrompt": "Approve and post this journal to the ledger? You cannot approve a journal you submitted.",
+          "visibilityCondition": {
+            "field": "status",
+            "operator": "EQ",
+            "value": "SUBMITTED"
+          },
+          "parameters": [
+            {
+              "key": "reason",
+              "label": "Reason",
+              "type": "TEXTAREA",
+              "required": true
+            }
+          ]
+        },
+        {
+          "actionKey": "return",
+          "label": "Return to author",
+          "type": "COMMAND",
+          "handlerKey": "finance.journal-drafts.return",
+          "requiredPermissions": [
+            "finance:journals:approve"
+          ],
+          "confirmationPrompt": "Send this journal back to its author as a draft?",
+          "visibilityCondition": {
+            "field": "status",
+            "operator": "EQ",
+            "value": "SUBMITTED"
+          },
+          "parameters": [
+            {
+              "key": "reason",
+              "label": "Reason",
+              "type": "TEXTAREA",
+              "required": true
+            }
+          ]
+        },
+        {
+          "actionKey": "remove",
+          "label": "Remove line",
+          "type": "COMMAND",
+          "handlerKey": "finance.journal-draft-lines.remove",
+          "requiredPermissions": [
+            "finance:journals:post"
+          ],
+          "confirmationPrompt": "Remove this line?",
+          "visibilityCondition": {
+            "field": "draft-status",
+            "operator": "EQ",
+            "value": "DRAFT"
+          }
+        }
+      ],
+      "messages": []
+    }
+  }
+}

@@ -8,7 +8,8 @@
 #         bash e2e/run-uat-walkthrough.sh --screens    # every screen only (creates nothing)
 #         bash e2e/run-uat-walkthrough.sh --tour       # guided tour of Automate & Run and Intelligence, visible
 #         bash e2e/run-uat-walkthrough.sh --approvals  # maker-checker with the second (approver) login
-#         bash e2e/run-uat-walkthrough.sh --all        # data, approvals, Add new, modules, inventory flow, screens
+#         bash e2e/run-uat-walkthrough.sh --ledger     # general ledger: a book, a month of journals, the reports
+#         bash e2e/run-uat-walkthrough.sh --all        # data, approvals, ledger, Add new, modules, inventory flow, screens
 # The login is asked for here and lives only in this shell: it is never written to a file or printed.
 # E2E_UAT_TENANT picks the tenant when the login has several (default "GigaLibs Global Enterprise").
 set -euo pipefail
@@ -39,7 +40,7 @@ for attempt in 1 2; do
 done
 
 mode="${1:-}"
-if [ "$mode" = "--approvals" ] || [ "$mode" = "--all" ]; then
+if [ "$mode" = "--approvals" ] || [ "$mode" = "--ledger" ] || [ "$mode" = "--all" ]; then
   if [ -z "${E2E_UAT_APPROVER_EMAIL:-}" ]; then read -r -p "UAT approver email: " E2E_UAT_APPROVER_EMAIL; fi
   if [ -z "${E2E_UAT_APPROVER_PASSWORD:-}" ]; then read -r -s -p "Approver password (not shown): " E2E_UAT_APPROVER_PASSWORD; echo; fi
   export E2E_UAT_APPROVER_EMAIL E2E_UAT_APPROVER_PASSWORD
@@ -57,10 +58,14 @@ case "$mode" in
   --approvals)
     UAT_SLOWMO="${UAT_SLOWMO:-150}" run specs/uat-approvals.spec.ts --headed
     exit "$status" ;;
+  --ledger)
+    run specs/uat-general-ledger.spec.ts
+    exit "$status" ;;
   --screens) ;;
   --all)
     echo "== Starter data";            run specs/uat-starter-data.spec.ts
     echo "== Maker-checker approvals"; run specs/uat-approvals.spec.ts
+    echo "== General ledger";          run specs/uat-general-ledger.spec.ts
     echo "== Add new from a picker";   run specs/uat-add-new.spec.ts
     echo "== Every module opens";      run specs/uat-preview-modules.spec.ts
     echo "== Inventory business flow"; run specs/inventory-business-flow.spec.ts ;;

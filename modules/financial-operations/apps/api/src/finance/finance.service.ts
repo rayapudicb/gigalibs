@@ -1095,7 +1095,7 @@ export class FinanceService {
 
   // ─── Helpers & Mappers ──────────────────────────────────────────────────────
 
-  private mapAccountingBook(row: Record<string, unknown>): AccountingBookV1 {
+  mapAccountingBook(row: Record<string, unknown>): AccountingBookV1 {
     return {
       id: row.id as string,
       tenantId: row.tenant_id as string,
@@ -1112,7 +1112,7 @@ export class FinanceService {
     };
   }
 
-  private mapAccount(row: Record<string, unknown>): AccountV1 {
+  mapAccount(row: Record<string, unknown>): AccountV1 {
     return {
       id: row.id as string,
       tenantId: row.tenant_id as string,
@@ -1150,7 +1150,7 @@ export class FinanceService {
     };
   }
 
-  private mapFiscalPeriod(row: Record<string, unknown>): FiscalPeriodV1 {
+  mapFiscalPeriod(row: Record<string, unknown>): FiscalPeriodV1 {
     const start = row.start_date instanceof Date ? row.start_date.toISOString().split('T')[0] : String(row.start_date);
     const end = row.end_date instanceof Date ? row.end_date.toISOString().split('T')[0] : String(row.end_date);
     return {
@@ -1169,7 +1169,7 @@ export class FinanceService {
     };
   }
 
-  private mapJournalLine(row: Record<string, unknown>): JournalLineV1 {
+  mapJournalLine(row: Record<string, unknown>): JournalLineV1 {
     return {
       id: row.id as string,
       tenantId: row.tenant_id as string,
@@ -1190,7 +1190,7 @@ export class FinanceService {
     };
   }
 
-  private mapJournal(row: Record<string, unknown>, lines: JournalLineV1[]): JournalV1 {
+  mapJournal(row: Record<string, unknown>, lines: JournalLineV1[]): JournalV1 {
     const pDate = row.posting_date instanceof Date ? row.posting_date.toISOString().split('T')[0] : String(row.posting_date);
     return {
       id: row.id as string,
