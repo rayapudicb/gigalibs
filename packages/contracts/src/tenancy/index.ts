@@ -124,8 +124,30 @@ export const TenantPermissionSchema = z
     message: 'Platform permissions cannot be delegated by a tenant role',
   });
 
+/**
+ * WI-OI-120w review (High P1): names a custom role may not take, compared without case, spaces or hyphens. A custom
+ * role's name reaches the session's role list, from which personas and tenant-wide authority were read; a role named
+ * "Tenant admin" must never pass for the base role. Base roles, platform roles and the persona words that carry
+ * authority are reserved.
+ */
+export const RESERVED_ROLE_NAMES: ReadonlySet<string> = new Set([
+  'SUPER_ADMIN', 'TENANT_ADMIN', 'MANAGER', 'MEMBER', 'VIEWER', 'GUEST',
+  'PLATFORM_OWNER', 'PLATFORM_ADMIN', 'PLATFORM_AUDITOR', 'PLATFORM_OPERATOR', 'PLATFORM_SUPPORT',
+  'ADMIN', 'ADMINISTRATOR', 'OWNER', 'C_LEVEL', 'EXECUTIVE', 'CEO', 'CFO', 'CTO', 'COO',
+]);
+
+/** Whether a role name collides with a reserved one ("tenant admin", "Tenant-Admin" and "TENANT_ADMIN" do). */
+export function isReservedRoleName(name: string): boolean {
+  return RESERVED_ROLE_NAMES.has(name.trim().toUpperCase().replace(/[\s-]+/g, '_'));
+}
+
 const CustomRoleFieldsSchema = z.object({
-  name: z.string().trim().min(2).max(80),
+  name: z
+    .string()
+    .trim()
+    .min(2)
+    .max(80)
+    .refine((name) => !isReservedRoleName(name), { message: 'This name belongs to a built-in role; choose another' }),
   description: z.string().trim().max(500).nullable().optional(),
   color: z
     .string()

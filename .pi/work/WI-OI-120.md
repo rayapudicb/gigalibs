@@ -1823,3 +1823,57 @@ widening the card to fix the API faults the proof found.
     unclassified by the layer audit;
   - the privacy inventory lists it as `EXPORT`;
   - `pnpm verify` passes (one known drift).
+
+#### WI-OI-120w slice 1: independent Security review and fixes (2026-10-06)
+
+- **Owner:** "yes for security". The read-only reviewer read commit `c6e96e2`: **ship after fixes**.
+  - No defect in the access logic.
+  - The session, the guard and SCIM give the same permissions and role names as before for every well-formed
+    member.
+  - Tenant isolation is enforced by the database (composite keys) and by every query.
+  - Reserved scopes are ignored fail-safe.
+- **UAT pre-flight, read-only:**
+  - 0 custom roles pointing at another workspace, so the migration cannot fail on UAT;
+  - 28 members with a custom role;
+  - no custom role named like a built-in role. The 8 near-matches are the module role "Workforce member" in journey
+    workspaces, a persona word, not privileged, held by no one.
+- **Fixed:**
+  - **Medium M1, a removed role coming back.** A role removed through an earlier release (deploy window or
+    rollback) would have come back on roll-forward.
+    - New forward migration `20261006010000_member_role_assignments_follow_column`: a trigger on
+      `tenant_members.customRoleId` keeps the member's `MEMBER` assignment in step whoever writes the column. The
+      new release passes the actor and reason as transaction settings; an earlier release is recorded as
+      `system:customRoleId`. A one-time alignment runs too.
+    - The member update now hands the change to the trigger.
+    - Real-database test: a column write that skips the service is followed, and the removed role stays removed.
+  - **High P1, older than this commit: a custom role's name passed for a built-in role.**
+    - The risk: a role named "tenant_admin" gave tenant-wide organization and place scope and the Tenant Admin
+      persona. If named exactly `TENANT_ADMIN`, it also gave CMMS historical import.
+    - Fixed: `RESERVED_ROLE_NAMES` / `isReservedRoleName` (contracts). Saving a custom role with a reserved name is
+      refused, on create and update. The session leaves reserved names out of its role list, and organization and
+      place scope are decided from the base role and platform roles only.
+    - Tests: names refused in every spelling; the session ignores a legacy role named `TENANT_ADMIN`; a member stays
+      scoped to their places.
+  - **Low L1, history lost on delete.** Deleting a role, or SCIM deleting a member, now records the assignments in
+    the audit entry before they cascade.
+  - **Low L3, reasons counted differently.** The reason is counted in characters, as the database counts it.
+  - **Low L4, explicit scopes.** `CHECK (scope = 'MEMBER')` until slice 2.
+  - **Low L5, test gaps.** Unit tests for `RbacService.getUserPermissions` with assignments.
+  - **Low L2, cross-tenant roles.** Pre-flight query run on UAT: 0.
+- **Checks:**
+  - suites 455 passed;
+  - real PostgreSQL: assignments integration 6 of 6, SCIM integration 7 of 7;
+  - reconciliation 0 differences;
+  - `pnpm verify` passes.
+- **Revocation note (ADR-0034 §4):** a role change takes effect on the next control-plane request and within
+  300 s in modules, unchanged. The session-version bump comes with slice 2.
+- **Re-check by the same reviewer: "ship".** Every finding is resolved and no fix introduced a problem.
+  - The trigger covers writes before, between and after the two migrations, from any release.
+  - The reserved-name filter changes only persona and sidebar for names it was meant to stop; no lockout. None of
+    the 24 module role names is reserved; a test now guards that.
+  - **Notes for later:**
+    - personas still read non-reserved custom role names (navigation only; card R16 derives personas from
+      assignments);
+    - set `search_path` on the trigger function when slice 2 replaces it;
+    - slice 2 must replace the trigger and the `MEMBER`-only check before members hold several roles;
+    - run the cross-tenant pre-flight query on production before deploying there.

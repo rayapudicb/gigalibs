@@ -159,6 +159,13 @@ describe('session spatial scope', () => {
     await expect(scopeFor('MEMBER', [bengaluru], ['gigaops'])).resolves.toEqual({ mode: 'UNBOUNDED' });
   });
 
+  // Security review P1: a custom role named TENANT_ADMIN does not lift the member's place limits.
+  it('keeps a member scoped whatever their custom roles are named', async () => {
+    prismaMock.memberRoleAssignment.findMany.mockResolvedValue([{ customRole: { name: 'TENANT_ADMIN', permissions: [] } }]);
+    const scope = await scopeFor('MEMBER', [bengaluru]);
+    expect(scope).toMatchObject({ mode: 'SCOPED_PLACES' });
+  });
+
   it('limits an opted-in member to the assigned places', async () => {
     await expect(scopeFor('MEMBER', [bengaluru, emea])).resolves.toEqual({
       mode: 'SCOPED_PLACES',
@@ -261,6 +268,20 @@ describe('session roles from role assignments', () => {
   afterEach(() => {
     vi.unstubAllEnvs();
     vi.clearAllMocks();
+  });
+
+  // Security review P1: a custom role named like a built-in role (a row saved before names were reserved) never passes
+  // for it: its name is left out, and tenant-wide reach comes from the base role.
+  it('ignores a custom role that is named like a built-in role', async () => {
+    prismaMock.tenant.findUnique.mockResolvedValue(null);
+    prismaMock.tenantMember.findUnique.mockResolvedValue({ ...membership('MEMBER'), permissions: [], spatialScopePlaceIds: ['place-1'] });
+    prismaMock.memberRoleAssignment.findMany.mockResolvedValue([
+      { customRole: { name: 'TENANT_ADMIN', permissions: ['users:read'] } },
+      { customRole: { name: 'Maintenance planner', permissions: ['cmms:read'] } },
+    ]);
+    const context = await new AuthService().getSessionContext('user-1', 'session-1', tenantId);
+    expect(context.roles).toEqual(['MEMBER', 'Maintenance planner']);
+    expect(context.permissions).toEqual(expect.arrayContaining(['users:read', 'cmms:read']));
   });
 
   it('unites the roles a member holds at their own scope, asking only for live ones', async () => {

@@ -739,6 +739,12 @@ export class TenancyService {
       if (role._count.members > 0) {
         throw new ConflictException('Remove this custom role from all members before deleting it');
       }
+      // WI-OI-120w review (L1): the role's assignment history goes with it, so it is kept in the audit entry first.
+      const assignments = await transaction.memberRoleAssignment.findMany({
+        where: { tenantId, customRoleId: role.id },
+        select: { userId: true, scope: true, grantedById: true, createdAt: true, revokedAt: true, revokedById: true, revokeReason: true },
+        orderBy: { createdAt: 'asc' },
+      });
       await transaction.customRole.delete({ where: { id: role.id } });
       await transaction.auditLog.create({
         data: {
@@ -752,6 +758,11 @@ export class TenancyService {
             description: role.description,
             color: role.color,
             permissions: role.permissions,
+            assignments: assignments.map((assignment) => ({
+              ...assignment,
+              createdAt: assignment.createdAt.toISOString(),
+              revokedAt: assignment.revokedAt?.toISOString() ?? null,
+            })),
           },
           metadata: { reason },
         },
@@ -1043,6 +1054,15 @@ export class TenancyService {
         });
         await assertTenantAdministratorRetained(transaction, tenantId, member, { role: nextRole, status: nextStatus });
 
+        // WI-OI-120w (R2 slice 1): the trigger on `customRoleId` keeps the member's role assignment in step whichever
+        // release writes; this release tells it who changed the role and why (transaction-local settings). The reason
+        // is counted in characters, as the database counts it.
+        if (nextCustomRoleId !== member.customRoleId) {
+          const characters = [...(dto.reason ?? '').trim()];
+          const reason = characters.length >= 3 ? characters.slice(0, 500).join('') : 'Changed in Settings → Team';
+          await transaction.$queryRaw`SELECT set_config('app.role_change_actor', ${changedById}, true), set_config('app.role_change_reason', ${reason}, true)`;
+        }
+
         const changed = await transaction.tenantMember.updateMany({
           where: { id: member.id, tenantId, updatedAt: member.updatedAt },
           data: {
@@ -1056,21 +1076,6 @@ export class TenancyService {
         });
         if (changed.count !== 1) {
           throw new ConflictException('Tenant member changed; reload before retrying');
-        }
-        // WI-OI-120w (R2 slice 1, ADR-0034): the custom role is held as a role assignment at the member's own scope.
-        // The old assignment is revoked (never edited) and the new one granted; `customRoleId` stays in step so an
-        // earlier release still reads the same role, until a later card drops the column.
-        if (nextCustomRoleId !== member.customRoleId) {
-          const reason = (dto.reason?.trim().length ?? 0) >= 3 ? dto.reason!.trim().slice(0, 500) : 'Changed in Settings → Team';
-          await transaction.memberRoleAssignment.updateMany({
-            where: { tenantId, userId: member.userId, scope: 'MEMBER', revokedAt: null },
-            data: { revokedAt: new Date(), revokedById: changedById, revokeReason: reason },
-          });
-          if (nextCustomRoleId) {
-            await transaction.memberRoleAssignment.create({
-              data: { tenantId, userId: member.userId, customRoleId: nextCustomRoleId, scope: 'MEMBER', reason, grantedById: changedById },
-            });
-          }
         }
         const updated = await transaction.tenantMember.findUniqueOrThrow({
           where: { id: member.id },

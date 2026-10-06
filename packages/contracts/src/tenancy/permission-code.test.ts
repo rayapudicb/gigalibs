@@ -68,3 +68,26 @@ describe('module default roles', () => {
     );
   });
 });
+
+// WI-OI-120w Security review (P1): a custom role may not take a built-in role's name.
+describe('reserved role names', () => {
+  it('refuses names that pass for a built-in, platform or authority role, whatever the spelling', async () => {
+    const { CreateCustomRoleSchema, UpdateCustomRoleSchema, isReservedRoleName } = await import('./index.js');
+    for (const name of ['TENANT_ADMIN', 'Tenant admin', 'tenant-admin', 'Super Admin', 'Owner', 'Platform admin', 'CEO', 'admin', 'Manager'])
+      expect(isReservedRoleName(name), name).toBe(true);
+    for (const name of ['Workforce member', 'Maintenance planner', 'Journal Approver', 'Regional manager'])
+      expect(isReservedRoleName(name), name).toBe(false);
+    expect(CreateCustomRoleSchema.safeParse({ name: 'Tenant Admin', permissions: [] }).success).toBe(false);
+    expect(UpdateCustomRoleSchema.safeParse({ expectedUpdatedAt: '2026-10-06T00:00:00.000Z', reason: 'rename', name: 'tenant_admin' }).success).toBe(false);
+    expect(CreateCustomRoleSchema.safeParse({ name: 'Maintenance lead', permissions: [] }).success).toBe(true);
+  });
+});
+
+// Security review note: module roles are created without the custom-role schema, so none may take a reserved name;
+// the session would leave such a name out of the role list.
+describe('module role names', () => {
+  it('never use a reserved role name', async () => {
+    const { isReservedRoleName } = await import('./index.js');
+    expect(moduleDefaultRoles.filter((role) => isReservedRoleName(role.name)).map((role) => role.name)).toEqual([]);
+  });
+});

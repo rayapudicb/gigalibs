@@ -254,10 +254,26 @@ export class ScimService {
       await assertTenantAdminAuthority(tx, tenantId, operatorId, { grantsAdmin: false, touchesAdmin: member.role === 'TENANT_ADMIN' });
       await assertTenantAdministratorRetained(tx, tenantId, member, null);
       await this.revokeSessions(tx, tenantId, id);
+      // WI-OI-120w review (L1): the member's role assignments go with the membership, so they are kept in the audit first.
+      const assignments = await tx.memberRoleAssignment.findMany({
+        where: { tenantId, userId: id },
+        select: { customRoleId: true, scope: true, createdAt: true, revokedAt: true },
+        orderBy: { createdAt: 'asc' },
+      });
       await tx.tenantMember.delete({ where: { id: member.id } });
       await this.auditService.log({
         tx, tenantId, userId: operatorId, chainScope: 'scim', action: 'DELETE',
-        resource: 'scim.user', resourceId: id, before: { role: member.role, status: member.status },
+        resource: 'scim.user', resourceId: id,
+        before: {
+          role: member.role,
+          status: member.status,
+          assignments: assignments.map((assignment) => ({
+            customRoleId: assignment.customRoleId,
+            scope: assignment.scope,
+            createdAt: assignment.createdAt.toISOString(),
+            revokedAt: assignment.revokedAt?.toISOString() ?? null,
+          })),
+        },
       });
     });
   }

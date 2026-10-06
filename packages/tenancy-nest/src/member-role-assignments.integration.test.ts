@@ -77,6 +77,23 @@ integration('member role assignments (isolated PostgreSQL)', () => {
     expect(await memberScopeRoles(db, tenantId, `tech-${run}`)).toEqual({ names: [], permissions: [] });
   });
 
+  // Security review M1: an earlier release writes only the column; the trigger keeps the assignment in step.
+  it('follows a write to customRoleId that skips the service, as an earlier release makes', async () => {
+    await db.tenantMember.update({ where: { id: `m-tech-${run}` }, data: { customRoleId: `technician-${run}` } });
+    expect(await live()).toEqual([expect.objectContaining({ customRoleId: `technician-${run}`, grantedById: 'system:customRoleId' })]);
+    await db.tenantMember.update({ where: { id: `m-tech-${run}` }, data: { customRoleId: null } });
+    expect(await live()).toEqual([]); // removed through the old path: it cannot come back
+    expect(await memberScopeRoles(db, tenantId, `tech-${run}`)).toEqual({ names: [], permissions: [] });
+  });
+
+  it('refuses an explicit scope until slice 2', async () => {
+    await expect(
+      db.memberRoleAssignment.create({
+        data: { tenantId, userId: `tech-${run}`, customRoleId: `technician-${run}`, scope: 'WORKSPACE', reason: 'probe', grantedById: 'probe' },
+      }),
+    ).rejects.toThrow();
+  });
+
   it("removes a deleted role's assignments with the role", async () => {
     await change(`planner-${run}`);
     await db.customRole.delete({ where: { id: `planner-${run}` } });

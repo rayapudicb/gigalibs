@@ -21,7 +21,7 @@ import type {
   ResetPasswordDto,
   UpdateProfileDto,
 } from '@gigalibs/contracts';
-import { isTenantPermissionCode } from '@gigalibs/contracts';
+import { isReservedRoleName, isTenantPermissionCode } from '@gigalibs/contracts';
 import { decrypt, encrypt, parseAes256KeyRing, requireAes256KeyVersion } from '@gigalibs/crypto';
 import { type Prisma, prisma } from '@gigalibs/db';
 import { memberScopeRoles, resolveBaseRolePermissions } from '@gigalibs/rbac-nest';
@@ -461,22 +461,27 @@ export class AuthService {
         orderBy: { createdAt: 'asc' },
       })
     ).map((assignment) => assignment.role);
+    // A custom role's name never passes for a built-in role (WI-OI-120w review, P1): reserved names are dropped here,
+    // and tenant-wide authority below is read from the base role and platform roles only.
     const roles = membership
-      ? [membership.role, ...assigned.names].filter((role): role is string => typeof role === 'string' && role.length > 0)
+      ? [membership.role, ...assigned.names.filter((name) => !isReservedRoleName(name))].filter(
+          (role): role is string => typeof role === 'string' && role.length > 0,
+        )
       : [];
+    const baseRoles = membership ? [membership.role] : [];
     const { orgScope, organizationScope } = await this.resolveOrganizationScope({
       tenantId,
       userId,
       hierarchyEnabled: !!session.tenant?.features.includes('organization-hierarchy'),
       departmentId: membership?.departmentId ?? null,
-      roles,
+      roles: baseRoles,
       platformRoles,
     });
     const spatialScope = resolveSpatialScope({
       tenantId,
       spatialScopingEnabled: !!session.tenant?.features.includes('spatial-scoping'),
       spatialScopePlaceIds: membership?.spatialScopePlaceIds ?? [],
-      roles,
+      roles: baseRoles,
       platformRoles,
     });
     const mfaRequired = this.mfaRequiredFromSecurity(
