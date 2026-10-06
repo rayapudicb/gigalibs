@@ -160,6 +160,12 @@ describe('window model', () => {
     expect(DictionaryReferenceV1Schema.safeParse({ ...reference, createWith: { moduleKey: 'universal-inventory', surfaceKey: 'inventory-warehouses' } }).success).toBe(false);
   });
 
+  it('titles a record by its text field, never by a reference id or a status code (WI-OI-120k)', () => {
+    const warehouse = '6d3f1a52-7f5b-4f2a-9a61-1f0b8c1d2e3f';
+    expect(metadataWindowModel.recordTitle(model, { id: 'r-1', 'receipt-number': 'GR-7', status: 'DRAFT', 'warehouse-id': warehouse })).toBe('GR-7');
+    expect(metadataWindowModel.recordTitle(model, { id: 'r-1', status: 'DRAFT', 'warehouse-id': warehouse })).toBe('r-1');
+  });
+
   it('offers an action only on its own entity, when permitted and visible for the record', () => {
     expect(recordActions(model, 'inventory.receipts', { status: 'DRAFT' }, clerk).map((action) => action.actionKey)).toEqual(['complete']);
     expect(recordActions(model, 'inventory.receipts', { status: 'COMPLETED' }, clerk)).toEqual([]);

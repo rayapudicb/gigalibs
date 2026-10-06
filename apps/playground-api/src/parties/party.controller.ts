@@ -10,6 +10,8 @@ import {
   HttpCode,
 } from '@nestjs/common';
 import { CurrentUser } from '@gigalibs/auth-nest';
+import { PartyListQueryV1Schema } from '@gigalibs/contracts';
+import { ZodValidationPipe } from '@gigalibs/validation-nest';
 import { CurrentTenant } from '@gigalibs/tenancy-nest';
 import { RequirePermissions } from '@gigalibs/rbac-nest';
 import { PartyService } from './party.service.js';
@@ -38,7 +40,8 @@ export class PartyController {
   @RequirePermissions('parties:read')
   async listParties(
     @CurrentTenant('tenantId') tenantId: string,
-    @Query() query: PartyListQueryV1,
+    // WI-OI-120k (QF1): validated, so `limit` is a number and unknown filters are refused.
+    @Query(new ZodValidationPipe(PartyListQueryV1Schema)) query: PartyListQueryV1,
   ) {
     return this.partyService.listParties(tenantId, query);
   }

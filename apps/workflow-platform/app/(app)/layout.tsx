@@ -86,7 +86,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             </header>
 
             <main
-              className="flex-1 overflow-y-auto print:overflow-visible print:h-auto print:p-0"
+              className="flex-1 overflow-y-auto pb-24 print:overflow-visible print:h-auto print:p-0 print:pb-0"
               data-module-content-root
             >
               <CurrencyLocaleProvider>

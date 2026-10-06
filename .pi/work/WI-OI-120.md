@@ -1131,3 +1131,36 @@ widening the card to fix the API faults the proof found.
     - `pnpm test`: 2,552 passed, 188 skipped;
     - `pnpm verify` passes (known drift; 11 proofs NOT RUN).
 
+### QF1, Playwright status and the owner's Finance question (2026-10-06)
+
+- **Approver user:** `uat.approver@gigalibs.io`, which the owner registered (shared to the session, passed only as
+  an environment variable). It was added to GigaLibs Global Enterprise as Tenant Admin with `add-uat-admin.sh`.
+- **Playwright on UAT** (passing):
+  - starter data 6/6;
+  - `uat-approvals` 2/2:
+    - price list UAT-USD: uat.admin submits; uat.admin's own approval is refused; uat.approver approves and
+      activates; the bolt resolves to 2.40 USD;
+    - catalogue UAT-TRADE: built with four products and submitted; uat.approver approves and publishes;
+  - `inventory-business-flow`;
+  - `uat-preview-modules` 36/36.
+- **Earlier failures in those specs were test-side:**
+  - no workspace chosen (the UAT logins belong to two workspaces);
+  - labels matching several fields ("Code" also matches "Barcode");
+  - the persona-filtered side menu.
+- **Tour:** `uat-tour-automate-intelligence.spec.ts` (shown to the owner) visits Execution Telemetry, Exceptions,
+  Approval Queues, Workflow Studio, Value, Analytics, Explore and Data Contracts with captions. Automate & Run is
+  empty because Workflow Studio is not deployed (U29). Analytics is contained until WI-OI-043. Data Contracts needs
+  Data Studio (U29).
+- **Defects seen:**
+  - a version's title showed its catalogue's id (fixed in QF1);
+  - "Submitted/Approved by" show user ids (needs a people lookup; open).
+- **QF1 checks:**
+  - `pnpm build` passes;
+  - `pnpm test`: 2,553 passed, 188 skipped;
+  - `pnpm verify` passes (known drift; 11 proofs NOT RUN).
+- **The owner's Finance question:** "not a single module is working".
+  - The Financial Operations service runs in UAT (migration 8, 78 gateway routes, seven proofs). Its areas are the
+    general ledger, treasury and bank reconciliation, fixed assets, consolidation, costing, budgeting and close.
+  - Its screen was a mock-up, taken down in U7. The missing parts are the Finance metadata windows (U12–U18) and the
+    postings from Inventory, Procurement and Orders (U22).
+

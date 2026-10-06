@@ -13,9 +13,14 @@ export const uatAdmin = {
 export const uatTenantName = process.env.E2E_UAT_TENANT ?? 'GigaLibs Global Enterprise';
 export const hasUatLogin = Boolean(uatAdmin.email && uatAdmin.password);
 
+export const uatApprover = {
+  email: process.env.E2E_UAT_APPROVER_EMAIL ?? '',
+  password: process.env.E2E_UAT_APPROVER_PASSWORD ?? '',
+};
+
 /** Signs the page's browser context in, choosing the UAT tenant when the login has several. */
-export async function signInToUat(page: Page, origin: string): Promise<void> {
-  const login = await page.request.post('/api/auth/login', { data: uatAdmin, headers: { Origin: origin } });
+export async function signInToUat(page: Page, origin: string, user: { email: string; password: string } = uatAdmin): Promise<void> {
+  const login = await page.request.post('/api/auth/login', { data: user, headers: { Origin: origin } });
   expect(login.status(), `Sign-in failed: ${await login.text()}`).toBe(200);
   const answer = (await login.json()) as { requiresTenantSelection?: boolean; requiresMfa?: boolean };
   if (answer.requiresMfa) throw new Error('This login asks for MFA; use a UAT tenant administrator without MFA for the walk-through.');

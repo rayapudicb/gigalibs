@@ -71,18 +71,26 @@ export function PlaceDrilldownExplorer({ demoLab, canManageDemo, canDeleteDemo }
 
   useEffect(() => {
     (async () => {
+      let catalogues: { items: Array<{ kind: string; surfaceKey: string; activation: unknown }> } = { items: [] };
       try {
-        const current = await requestJson<{ manifest: { catalogue: MetricCatalogueV1 } }>(
-          '/api/control/configuration/catalogues/current?kind=METRIC_CATALOGUE&surfaceKey=operations',
-        );
-        setCatalogue(current.manifest.catalogue);
+        catalogues = await requestJson<typeof catalogues>('/api/control/configuration/catalogues');
       } catch (reason) {
         setCatalogueError((reason as Error).message);
       }
+      // WI-OI-120k (QF1): read the operations metric catalogue only once it is activated; until then, say how to set it up.
+      if (catalogues.items.some((item) => item.kind === 'METRIC_CATALOGUE' && item.surfaceKey === 'operations' && item.activation)) {
+        try {
+          const current = await requestJson<{ manifest: { catalogue: MetricCatalogueV1 } }>(
+            '/api/control/configuration/catalogues/current?kind=METRIC_CATALOGUE&surfaceKey=operations',
+          );
+          setCatalogue(current.manifest.catalogue);
+        } catch (reason) {
+          setCatalogueError((reason as Error).message);
+        }
+      } else if (catalogues.items.length > 0) {
+        setCatalogueError('Places is not set up yet: an administrator activates the Operations metric catalogue in Configuration Studio → Catalogues.');
+      }
       try {
-        const catalogues = await requestJson<{ items: Array<{ kind: string; surfaceKey: string; activation: unknown }> }>(
-          '/api/control/configuration/catalogues',
-        );
         const country = catalogues.items.find((item) => item.kind === 'COUNTRY_PACK' && item.activation);
         if (country) {
           const pack = await requestJson<{ manifest: { catalogue: { currency: string } } }>(

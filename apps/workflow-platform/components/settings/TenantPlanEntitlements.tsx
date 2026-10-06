@@ -7,6 +7,8 @@ import { canUseTenantModule } from '@/lib/module-access';
 import { platformModuleCatalog } from '@gigalibs/contracts';
 import { MaturityBadge } from '@/components/modules/MaturityBadge';
 
+const TRIAL_DATE = new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeZone: 'UTC' });
+
 interface TenantPlanEntitlementsProps {
   session: VerifiedSession;
   planName?: string | null;
@@ -86,7 +88,9 @@ export function TenantPlanEntitlements({
           <div className="p-3.5 rounded-xl border border-ui-border-base bg-ui-bg-subtle">
             <p className="text-[10px] uppercase tracking-wider font-semibold text-ui-fg-muted">Trial / Contract Expiration</p>
             <p className="mt-1 text-sm font-bold text-ui-fg-base">
-              {trialEndsAt ? new Date(trialEndsAt).toLocaleDateString(undefined, { dateStyle: 'medium' }) : 'Not provided'}
+              {/* WI-OI-120k (QF1): a fixed locale and time zone; the server's default ("Dec 16, 2026") differed from an
+                  Indian browser's ("16 Dec 2026") and React refused the page (error #418). */}
+              {trialEndsAt ? TRIAL_DATE.format(new Date(trialEndsAt)) : 'Not provided'}
             </p>
           </div>
           <div className="p-3.5 rounded-xl border border-ui-border-base bg-ui-bg-subtle">

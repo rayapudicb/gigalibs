@@ -201,11 +201,23 @@ export function describeFailure(status: number | undefined, message: string | un
   return { kind: 'UNAVAILABLE', message: 'The service is unavailable. Try again shortly.' };
 }
 
-/** The record's display title: its first text field value, or its id. */
+/**
+ * The record's display title: its first plain text field (a code or name), else its tab and first whole number
+ * ("Version 3"), else its id. A reference, a value-list code or a date is never a title (WI-OI-120k: a catalogue
+ * version showed its catalogue's id).
+ */
 export function recordTitle(model: WindowModel, record: RecordValues): string {
-  for (const placement of [...model.rootTab.fields].sort((a, b) => a.position - b.position)) {
+  const placements = [...model.rootTab.fields].sort((a, b) => a.position - b.position);
+  const typeOf = (fieldKey: string) => model.fields.get(`${model.rootTab.targetEntityKey}/${fieldKey}`)?.type;
+  for (const placement of placements) {
     const value = record[placement.fieldKey];
-    if (typeof value === 'string' && value.trim()) return value;
+    if (typeOf(placement.fieldKey) === 'TEXT' && typeof value === 'string' && value.trim()) return value;
+  }
+  for (const placement of placements) {
+    const value = record[placement.fieldKey];
+    if (typeOf(placement.fieldKey) === 'INTEGER' && (typeof value === 'number' || (typeof value === 'string' && value.trim()))) {
+      return `${model.rootTab.label} ${value}`;
+    }
   }
   return String(record.id ?? '');
 }

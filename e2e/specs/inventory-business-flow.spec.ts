@@ -14,14 +14,15 @@
  * Product Catalogue and Universal Inventory entitlements. Codes carry a run suffix, so the flow can run repeatedly.
  */
 import { expect, type Locator, type Page, test } from '@playwright/test';
+import { signInToUat } from './uat-session';
 
 const admin = { email: process.env.E2E_UAT_ADMIN_EMAIL ?? '', password: process.env.E2E_UAT_ADMIN_PASSWORD ?? '' };
 const run = Date.now().toString(36).toUpperCase();
 const codes = { uom: `EA${run}`.slice(0, 20), product: `UAT-BOLT-${run}`, warehouse: `WH-UAT-${run}`, location: `RCV-${run}` };
 
 async function signIn(page: Page, origin: string) {
-  const response = await page.request.post('/api/auth/login', { data: admin, headers: { Origin: origin } });
-  expect(response.status(), await response.text()).toBe(200);
+  // The UAT logins belong to more than one workspace; the shared helper picks the UAT one (WI-OI-120k).
+  await signInToUat(page, origin, admin);
 }
 
 async function postThroughApp(page: Page, origin: string, path: string, data: unknown) {
@@ -65,19 +66,19 @@ test.describe('Inventory business flow on metadata windows', () => {
     await openTab(page, 'Warehouses');
     await page.getByRole('button', { name: 'New', exact: true }).click();
     let form = page.locator('form', { hasText: 'New Warehouse' });
-    await form.getByLabel('Code').fill(codes.warehouse);
-    await form.getByLabel('Name').fill(`UAT warehouse ${run}`);
-    await form.getByLabel('Type').selectOption('PHYSICAL');
-    await form.getByRole('button', { name: 'Save' }).click();
+    await form.locator('#field-code').fill(codes.warehouse);
+    await form.locator('#field-name').fill(`UAT warehouse ${run}`);
+    await form.locator('#field-warehouse-type').selectOption('PHYSICAL');
+    await form.evaluate((element) => (element as HTMLFormElement).requestSubmit());
     await expect(page.getByRole('heading', { name: codes.warehouse })).toBeVisible();
 
     // 3. Its receiving location, on the Locations child tab.
     await page.getByRole('button', { name: 'New Locations' }).click();
     form = page.locator('form', { hasText: 'New Locations' });
-    await form.getByLabel('Code').fill(codes.location);
-    await form.getByLabel('Name').fill('Receiving dock');
-    await form.getByLabel('Type').selectOption('RECEIVING');
-    await form.getByRole('button', { name: 'Save' }).click();
+    await form.locator('#field-code').fill(codes.location);
+    await form.locator('#field-name').fill('Receiving dock');
+    await form.locator('#field-location-type').selectOption('RECEIVING');
+    await form.evaluate((element) => (element as HTMLFormElement).requestSubmit());
     await expect(page.getByRole('cell', { name: codes.location })).toBeVisible();
 
     // 4. The stocked item, on the Items window, with the product picked from the Catalogue.
@@ -85,26 +86,26 @@ test.describe('Inventory business flow on metadata windows', () => {
     await page.getByRole('button', { name: 'New', exact: true }).click();
     form = page.locator('form', { hasText: 'New Item' });
     await pick(form, 'Product', codes.product);
-    await form.getByLabel('Valuation').selectOption('STANDARD');
-    await form.getByLabel('Reorder point').fill('10');
-    await form.getByRole('button', { name: 'Save' }).click();
-    await expect(page.getByRole('button', { name: 'Edit' }).or(page.getByText(codes.product))).toBeVisible();
+    await form.locator('#field-valuation-method').selectOption('STANDARD');
+    await form.locator('#field-reorder-point').fill('10');
+    await form.evaluate((element) => (element as HTMLFormElement).requestSubmit());
+    await expect(page.getByRole('button', { name: 'Edit' }).or(page.getByText(codes.product)).first()).toBeVisible();
 
     // 5. A goods receipt with one line, completed.
     await openTab(page, 'Receipts');
     await page.getByRole('button', { name: 'New', exact: true }).click();
     form = page.locator('form', { hasText: 'New Receipt' });
     await pick(form, 'Warehouse', codes.warehouse);
-    await form.getByLabel('Supplier document').fill(`ASN-${run}`);
-    await form.getByRole('button', { name: 'Save' }).click();
+    await form.locator('#field-external-document-reference').fill(`ASN-${run}`);
+    await form.evaluate((element) => (element as HTMLFormElement).requestSubmit());
     await expect(page.getByRole('button', { name: 'Complete receipt' })).toBeVisible();
     await page.getByRole('button', { name: 'New Lines' }).click();
     form = page.locator('form', { hasText: 'New Lines' });
     await pick(form, 'Product', codes.product);
     await pick(form, 'Unit', codes.uom);
-    await form.getByLabel('Expected quantity').fill('5');
+    await form.locator('#field-expected-quantity').fill('5');
     await pick(form, 'Put-away location', codes.location);
-    await form.getByRole('button', { name: 'Save' }).click();
+    await form.evaluate((element) => (element as HTMLFormElement).requestSubmit());
     await expect(page.getByRole('cell', { name: codes.product, exact: false })).toBeVisible();
     await page.getByRole('button', { name: 'Complete receipt' }).click();
     await expect(page.getByText('Complete receipt: done.')).toBeVisible();

@@ -54,6 +54,8 @@ interface ScreenResult {
   readonly errors: readonly string[];
   readonly messages: readonly string[];
   readonly dataCalls: number;
+  /** Every data call the screen made, as `METHOD path`. */
+  readonly calls: readonly string[];
   readonly screenshot: string;
   readonly finalUrl: string;
 }
@@ -64,6 +66,7 @@ const MARKERS = [
   /This window is not available/g,
   /[A-Z][^.\n]{0,80} (?:is|are) not connected yet/g,
   /[A-Z][^.\n]{0,80} is not connected/g,
+  /[A-Z][^.\n:]{0,80} is not set up yet/g,
   /Could not load [^.\n]{0,80}/g,
   /Application error: a client-side exception has occurred/g,
   /service (?:is )?(?:temporarily )?unavailable/gi,
@@ -89,11 +92,13 @@ async function inspect(page: Page, route: string, index: number): Promise<Screen
   const failed: string[] = [];
   const errors: string[] = [];
   let dataCalls = 0;
+  const calls: string[] = [];
   const pending: Promise<void>[] = [];
   const onResponse = (response: Response) => {
     const url = new URL(response.url());
     if (!url.pathname.startsWith('/api/') || url.pathname.startsWith('/api/auth/') || url.pathname.startsWith('/api/health')) return;
     dataCalls += 1;
+    calls.push(`${response.request().method()} ${url.pathname}`);
     if (response.status() >= 400) {
       pending.push(message(response).then((text) => void failed.push(`${response.request().method()} ${url.pathname} → ${response.status()}${text ? ` ${text}` : ''}`)));
     }
@@ -133,7 +138,7 @@ async function inspect(page: Page, route: string, index: number): Promise<Screen
   else if (failed.length > 0 || messages.some((m) => !/not connected/.test(m))) outcome = 'BROKEN';
   else if (notice || messages.length > 0) outcome = 'NOT BUILT';
   else if (dataCalls === 0) outcome = 'NO DATA CALLS';
-  return { route, outcome, heading, failedCalls: failed, errors, messages, dataCalls, screenshot, finalUrl };
+  return { route, outcome, heading, failedCalls: failed, errors, messages, dataCalls, calls: [...new Set(calls)], screenshot, finalUrl };
 }
 
 const escape = (text: string) => text.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
@@ -146,17 +151,27 @@ function appWide(results: readonly ScreenResult[]): Set<string> {
   return new Set([...seen].filter(([, count]) => results.length >= 6 && count >= results.length / 2).map(([call]) => call));
 }
 
-/** The screen's outcome once app-wide failures are set aside. */
-function reclassify(result: ScreenResult, shell: Set<string>): ScreenResult {
+/** Calls made on at least half of the screens: the app shell's (header, menus), not the screen's. */
+function shellCalls(results: readonly ScreenResult[]): Set<string> {
+  const seen = new Map<string, number>();
+  for (const result of results) for (const call of result.calls ?? []) seen.set(call, (seen.get(call) ?? 0) + 1);
+  return new Set([...seen].filter(([, count]) => results.length >= 6 && count >= results.length / 2).map(([call]) => call));
+}
+
+/** The screen's outcome once app-wide failures and shell calls are set aside. */
+function reclassify(result: ScreenResult, shell: Set<string>, shared: Set<string> = new Set()): ScreenResult {
+  const ownCalls = (result.calls ?? []).filter((call) => !shared.has(call));
+  if (result.outcome === 'WORKS' && ownCalls.length === 0) return { ...result, outcome: 'NO DATA CALLS' };
   const own = result.failedCalls.filter((call) => !shell.has(call.replace(/ → (\d+).*$/, ' → $1')));
-  if (result.outcome !== 'BROKEN' || own.length > 0 || result.messages.some((m) => !/not connected|loopback/.test(m))) return { ...result, failedCalls: own };
-  const notice = result.messages.some((m) => /not connected/.test(m));
-  return { ...result, failedCalls: own, outcome: notice ? 'NOT BUILT' : result.dataCalls > own.length ? 'WORKS' : 'NO DATA CALLS' };
+  if (result.outcome !== 'BROKEN' || own.length > 0 || result.messages.some((m) => !/not connected|not set up|loopback/.test(m))) return { ...result, failedCalls: own };
+  const notice = result.messages.some((m) => /not connected|not set up/.test(m));
+  return { ...result, failedCalls: own, outcome: notice ? 'NOT BUILT' : ownCalls.length > own.length ? 'WORKS' : 'NO DATA CALLS' };
 }
 
 function board(all: readonly ScreenResult[], needsRecord: readonly string[], origin: string): string {
   const shell = appWide(all);
-  const results = all.map((result) => reclassify(result, shell));
+  const shared = shellCalls(all);
+  const results = all.map((result) => reclassify(result, shell, shared));
   const counts = results.reduce<Record<string, number>>((all, r) => ({ ...all, [r.outcome]: (all[r.outcome] ?? 0) + 1 }), {});
   const order: Outcome[] = ['CRASHES', 'BROKEN', 'NO ACCESS', 'NOT FOUND', 'NO DATA CALLS', 'NOT BUILT', 'WORKS'];
   const tone: Record<Outcome, string> = {
@@ -233,7 +248,7 @@ test.describe('UAT screen inventory', () => {
     const results: ScreenResult[] = [];
     for (const [index, route] of visit.entries()) {
       const result = await within(inspect(page, route, index), 60000, {
-        route, outcome: 'BROKEN' as Outcome, heading: '', failedCalls: [], errors: ['The screen did not finish loading within 60 seconds.'], messages: [], dataCalls: 0, screenshot: '', finalUrl: route,
+        route, outcome: 'BROKEN' as Outcome, heading: '', failedCalls: [], errors: ['The screen did not finish loading within 60 seconds.'], messages: [], dataCalls: 0, calls: [], screenshot: '', finalUrl: route,
       });
       results.push(result);
       console.log(`${result.outcome.padEnd(13)} ${route}${result.failedCalls[0] ? `  ${result.failedCalls[0]}` : result.messages[0] ? `  ${result.messages[0]}` : ''}`);

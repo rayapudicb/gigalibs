@@ -121,31 +121,13 @@ export function AnalyticsStudioWorkbench() {
   const loadAnalyticsData = async () => {
     try {
       setError(null);
-      const [sumRes, tsRes, actRes] = await Promise.all([
-        fetch('/api/analytics/v1/metrics/summary'),
-        fetch('/api/analytics/v1/metrics/timeseries'),
-        fetch('/api/analytics/v1/actions'),
-      ]);
-      if (sumRes.ok) {
-        setSummary(await sumRes.json());
-      } else {
-        setSummary(null);
-      }
-      if (tsRes.ok) {
-        setTimeSeries(await tsRes.json());
-      } else {
-        setTimeSeries([]);
-      }
+      // WI-OI-120k (QF1): cross-module summary and time-series metrics are contained until WI-OI-043 certifies their
+      // analytical datasets; they are not requested, and their panel says so instead of reporting a refusal.
+      setSummary(null);
+      setTimeSeries([]);
+      const actRes = await fetch('/api/analytics/v1/actions');
       if (actRes.ok) setActions(await actRes.json());
-      const unavailable = [sumRes, tsRes].find((response) => !response.ok);
-      if (unavailable) {
-        const payload = await unavailable.json().catch(() => null);
-        setError(
-          payload && typeof payload === 'object' && typeof payload.message === 'string'
-            ? payload.message
-            : 'Certified analytical datasets are not available for this tenant yet.',
-        );
-      }
+      setError('Cross-module metrics are not connected yet: they arrive with certified analytical datasets (WI-OI-043).');
     } catch (err: any) {
       console.error('Failed to load analytics data', err);
     }
