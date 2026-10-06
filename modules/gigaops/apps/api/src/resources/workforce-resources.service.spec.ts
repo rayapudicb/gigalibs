@@ -96,3 +96,75 @@ describe('WorkforceResourcesService', () => {
     expect(client.query).toHaveBeenCalledTimes(2);
   });
 });
+
+// WI-OI-120n (security review): a person's login link decides whose time is punched and whose week is submitted, so
+// only holders of workforce.resources.link (administrators, through workforce:*) set or change it, and every change
+// is audited with the link before and after.
+describe('WorkforceResourcesService login links', () => {
+  const manager = { ...principal, subject: 'manager-1', permissions: ['workforce.resources.read', 'workforce.resources.manage'] };
+  const resourceId = '00000000-0000-4000-8000-000000000009';
+  const detailRow = {
+    id: resourceId,
+    reference_code: 'TECH-09',
+    display_name: 'Technician Nine',
+    resource_type: 'HUMAN',
+    platform_user_id: 'user-new',
+    status: 'ACTIVE',
+    version: 3,
+    created_at: new Date('2026-10-06T00:00:00.000Z'),
+    updated_at: new Date('2026-10-06T00:00:00.000Z'),
+  };
+
+  function harness() {
+    const client = { query: vi.fn() };
+    const database = { withTenantTransaction: vi.fn(async (_tenant: string, callback: (value: unknown) => unknown) => callback(client)) };
+    return { client, database, service: new WorkforceResourcesService(database as unknown as WorkforceDatabaseService) };
+  }
+
+  it('refuses a manager who links a new person to a login', async () => {
+    const { database, service } = harness();
+    await expect(
+      service.createResource({ principal: manager, correlationId: 'c-1' } as never, { referenceCode: 'TECH-10', displayName: 'Ten', resourceType: 'HUMAN', platformUserId: 'manager-1' }),
+    ).rejects.toMatchObject({ response: { code: 'WORKFORCE_LINK_FORBIDDEN' } });
+    expect(database.withTenantTransaction).not.toHaveBeenCalled();
+  });
+
+  it("refuses a manager who re-points or clears someone's link", async () => {
+    const { database, service } = harness();
+    for (const platformUserId of ['manager-1', null]) {
+      await expect(
+        service.updateResource({ principal: manager, correlationId: 'c-2' } as never, resourceId, { expectedVersion: 2, platformUserId }),
+      ).rejects.toMatchObject({ response: { code: 'WORKFORCE_LINK_FORBIDDEN' } });
+    }
+    expect(database.withTenantTransaction).not.toHaveBeenCalled();
+  });
+
+  it('lets a manager rename a person without touching the link', async () => {
+    const { client, service } = harness();
+    client.query.mockImplementation(async (sql: string) => {
+      if (/^\s*UPDATE/.test(sql)) return { rowCount: 1, rows: [{ version: 3 }] };
+      if (/INSERT/.test(sql)) return { rowCount: 1, rows: [] };
+      if (/FOR UPDATE/.test(sql)) throw new Error('the link is not read when it does not change');
+      // The person's qualifications (no COUNT); the person row itself carries a qualification count.
+      if (/resource_capabilities rc/.test(sql) && !/COUNT\(/.test(sql)) return { rowCount: 0, rows: [] };
+      return { rowCount: 1, rows: [detailRow] };
+    });
+    await service.updateResource({ principal: manager, correlationId: 'c-3' } as never, resourceId, { expectedVersion: 2, displayName: 'Technician 9' });
+    const audit = client.query.mock.calls.find(([sql]) => /audit_events/.test(sql as string))!;
+    expect(JSON.parse(audit[1][7] as string)).not.toHaveProperty('platformUserId');
+  });
+
+  it('audits the link before and after when an administrator changes it', async () => {
+    const { client, service } = harness();
+    client.query.mockImplementation(async (sql: string) => {
+      if (/FOR UPDATE/.test(sql)) return { rowCount: 1, rows: [{ platform_user_id: 'user-old' }] };
+      if (/^\s*UPDATE/.test(sql)) return { rowCount: 1, rows: [{ version: 3 }] };
+      if (/INSERT/.test(sql)) return { rowCount: 1, rows: [] };
+      if (/resource_capabilities rc/.test(sql) && !/COUNT\(/.test(sql)) return { rowCount: 0, rows: [] };
+      return { rowCount: 1, rows: [detailRow] };
+    });
+    await service.updateResource({ principal, correlationId: 'c-4' } as never, resourceId, { expectedVersion: 2, platformUserId: 'user-new' });
+    const audit = client.query.mock.calls.find(([sql]) => /audit_events/.test(sql as string))!;
+    expect(JSON.parse(audit[1][7] as string)).toMatchObject({ platformUserId: { before: 'user-old', after: 'user-new' } });
+  });
+});

@@ -1389,3 +1389,38 @@ widening the card to fix the API faults the proof found.
     migrations image, which was rebuilt with the same command and checks).
 - **Checks:** `pnpm verify` passes (build, tests, audits, manifests; known drift). The navigation test records the CMMS
   lens widening as an intended change. The journey reruns on UAT after deploy. Security review: pending (D7).
+
+### WI-OI-120n batch 1: independent security review and fixes (2026-10-06)
+
+- **Review:** a separate read-only reviewer agent (owner decision: interim independent review for UAT, GPT being
+  unavailable), against `144c010..7485aec`. Verdict: **deploy after fixes**. I checked every High and Medium finding
+  against the code before fixing.
+- **High: login links could be re-pointed by any holder of `workforce.resources.manage`**, which the new Maintenance
+  planner and Workforce supervisor roles held. A planner could link their own login to a worker's person, punch as
+  that worker, re-link, and approve the week; the approval check compares only the submitter and the current link.
+  **Fixed:** setting, changing or clearing a login link needs `workforce.resources.link`, held only through
+  `workforce:*` (workspace administrators); every create and update audits the link before and after
+  (`modules/gigaops/apps/api/src/resources/workforce-resources.service.ts`).
+- **Medium: "own time" roles read everyone's time** (`workforce.time.read`). **Fixed:** removed from Maintenance
+  technician and Workforce member; punching gives a person their own time and week.
+- **Medium: `workforce.absences.request` acted on anyone's absence**, and approval compared only the requester.
+  **Fixed:** removed from technician and member; nobody may decide an absence of the person linked to them
+  (`availability.service.ts`).
+- **Medium: Maintenance technician can change any work order** (`cmms.work-orders.write`). **Not fixed in batch 1**:
+  needs "execute my own" in CMMS (M-CM1). **Accepted by the owner for UAT only, 2026-10-06**; closed before
+  production by M-CM1.
+- **Low, fixed:** role descriptions state their real reach (whole workspace until roles are held per unit,
+  ADR-0034); the manifest check refuses module roles carrying workspace administration (users, roles, invitations,
+  settings, billing, configuration, audit, organization); invitation links carry the token after `#` (never sent to a
+  server or proxy log; old `?invite=` links still work); the journey asks for its own password for new sign-ups.
+- **Low, deferred:** show the workspace name prominently after an accepted invitation switches workspace
+  (WI-OI-120p); workspace-membership check on login links (WI-OI-120o); refuse a decision when the decider recorded
+  punches in that week (U20a); `workforce.resources.read` lists linked user ids (M-WF1).
+- **Correction to the batch 1 evidence:** "no custom role could hold a CMMS or Workforce permission" was inaccurate.
+  Custom roles could already hold the wildcards `cmms:*` and `workforce:*`; what was impossible was holding a specific
+  dotted permission (for example `cmms.work-orders.read` alone). The reviewer confirmed the wider pattern lets no code
+  match more than an exact grant, and that no access decision is made only in the browser.
+- **Tests added:** login-link refusals for managers, rename without touching the link, audit before and after
+  (`workforce-resources.service.spec.ts`); own-absence refusal (`availability-decisions.spec.ts`); no module role
+  carries workspace administration or the login link (`permission-code.test.ts`).
+- **Checks:** `pnpm verify` passes (known drift).

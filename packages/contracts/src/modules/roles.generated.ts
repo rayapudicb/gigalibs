@@ -251,7 +251,7 @@ export const moduleDefaultRoles: readonly ModuleDefaultRole[] = [
     "catalogKey": "asset-maintenance",
     "key": "maintenance-technician",
     "name": "Maintenance technician",
-    "description": "Carries out work orders, records meter readings and labour, punches time and requests absence.",
+    "description": "Carries out work orders, records meter readings and labour, and punches their own time.",
     "permissions": [
       "cmms:read",
       "cmms.work-orders.read",
@@ -265,16 +265,14 @@ export const moduleDefaultRoles: readonly ModuleDefaultRole[] = [
       "workforce:read",
       "workforce.resources.read",
       "workforce.jobs.read",
-      "workforce.time.read",
-      "workforce.time.punch",
-      "workforce.absences.request"
+      "workforce.time.punch"
     ]
   },
   {
     "catalogKey": "asset-maintenance",
     "key": "maintenance-planner",
     "name": "Maintenance planner",
-    "description": "Plans, assigns and closes work; manages assets, preventive schedules, parts and the maintenance team's time and absence.",
+    "description": "Plans, assigns and closes work; manages assets, preventive schedules and parts; manages people and approves time and absence for everyone in the workspace (not only the maintenance team) until roles are held per unit (ADR-0034). Linking logins stays with administrators.",
     "permissions": [
       "cmms:read",
       "cmms.work-orders.read",
@@ -327,21 +325,19 @@ export const moduleDefaultRoles: readonly ModuleDefaultRole[] = [
     "catalogKey": "gigaops",
     "key": "workforce-member",
     "name": "Workforce member",
-    "description": "Sees their own jobs, punches time, reads their own timesheets and requests absence.",
+    "description": "Punches their own time and sees their own week; reads job profiles.",
     "permissions": [
       "workforce:read",
       "workforce.resources.read",
       "workforce.jobs.read",
-      "workforce.time.read",
-      "workforce.time.punch",
-      "workforce.absences.request"
+      "workforce.time.punch"
     ]
   },
   {
     "catalogKey": "gigaops",
     "key": "workforce-supervisor",
     "name": "Workforce supervisor",
-    "description": "Manages people, jobs, bookings and availability, and approves timesheets and absence for the team.",
+    "description": "Manages people, jobs, bookings and availability, and approves timesheets and absence for everyone in the workspace until roles are held per unit (ADR-0034). Linking logins stays with administrators.",
     "permissions": [
       "workforce:read",
       "workforce.resources.read",

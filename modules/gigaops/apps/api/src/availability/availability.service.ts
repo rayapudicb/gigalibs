@@ -256,6 +256,14 @@ export class AvailabilityService {
       if (absence.requested_by === context.principal.subject) {
         throw new ForbiddenException({ code: 'WORKFORCE_FOUR_EYES', message: 'Someone other than the requester must decide this absence.' });
       }
+      // WI-OI-120n (security review): nor may anyone decide an absence of their own person, whoever requested it.
+      const person = await client.query<{ platform_user_id: string | null }>(
+        `SELECT platform_user_id FROM gigalibs_workforce.workforce_resources WHERE tenant_id = $1 AND id = $2`,
+        [tenantId, absence.resource_id],
+      );
+      if (person.rows[0]?.platform_user_id === context.principal.subject) {
+        throw new ForbiddenException({ code: 'WORKFORCE_FOUR_EYES', message: 'Another manager must decide an absence of your own.' });
+      }
       await client.query(
         `UPDATE gigalibs_workforce.absences SET status = $3, decided_by = $4, decided_at = now(), decision_reason = $5 WHERE tenant_id = $1 AND id = $2`,
         [tenantId, absenceId, decision, context.principal.subject, input.reason ?? null],

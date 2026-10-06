@@ -176,6 +176,11 @@ export function extractBearerToken(header: string | string[] | undefined): strin
   return match[1];
 }
 
+/** The Workforce permission rule, exported for checks a route-level permission cannot express (WI-OI-120n). */
+export function hasWorkforcePermission(granted: readonly string[], required: string): boolean {
+  return hasPermission(granted, required);
+}
+
 function hasPermission(granted: readonly string[], required: string): boolean {
   return (
     granted.includes('*') ||

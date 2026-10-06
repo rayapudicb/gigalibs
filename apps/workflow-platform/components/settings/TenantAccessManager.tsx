@@ -823,7 +823,8 @@ export function TenantAccessManager({
 
   const invitationLink =
     createdInvitation && typeof window !== 'undefined'
-      ? `${window.location.origin}/select-tenant?invite=${encodeURIComponent(createdInvitation.token)}`
+      ? // WI-OI-120n (security review): the token travels after `#`, which browsers never send to a server or proxy log.
+        `${window.location.origin}/select-tenant#invite=${encodeURIComponent(createdInvitation.token)}`
       : '';
 
   const showSecurity = displaySection === 'all' || displaySection === 'security';

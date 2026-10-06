@@ -80,11 +80,13 @@ spec:
       roles:
         - key: workforce-member
           name: Workforce member
-          description: Sees their own jobs, punches time, reads their own timesheets and requests absence.
-          permissions: [workforce:read, workforce.resources.read, workforce.jobs.read, workforce.time.read, workforce.time.punch, workforce.absences.request]
+          # WI-OI-120n security review: no workforce.time.read (everyone's time) or absences.request (anyone's
+          # absence); punching gives a person their own time and week.
+          description: Punches their own time and sees their own week; reads job profiles.
+          permissions: [workforce:read, workforce.resources.read, workforce.jobs.read, workforce.time.punch]
         - key: workforce-supervisor
           name: Workforce supervisor
-          description: Manages people, jobs, bookings and availability, and approves timesheets and absence for the team.
+          description: Manages people, jobs, bookings and availability, and approves timesheets and absence for everyone in the workspace until roles are held per unit (ADR-0034). Linking logins stays with administrators.
           permissions: [workforce:read, workforce.resources.read, workforce.resources.manage, workforce.jobs.read, workforce.jobs.manage, workforce.bookings.read, workforce.bookings.manage, workforce.availability.read, workforce.availability.manage, workforce.calendars.read, workforce.capabilities.read, workforce.time.read, workforce.time.punch, workforce.time.manage, workforce.timesheets.approve, workforce.absences.read, workforce.absences.request, workforce.absences.approve]
   # Web gateway (WI-OI-083): the BFF reaches only these routes, as the user, with a freshly signed context. A list
   # means any one of the permissions. Workers reach their own time; managers read, correct and approve others'.

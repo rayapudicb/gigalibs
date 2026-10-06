@@ -65,7 +65,10 @@ case "$mode" in
   --journey)
     # Signs up new people (journey.<role>.<run>@gigalibs.test) with the admin password and writes only in the
     # workspace it creates. Board: e2e/test-results/journey/index.html
-    E2E_JOURNEY_PASSWORD="$E2E_UAT_ADMIN_PASSWORD" run specs/journey-tenant-to-value.spec.ts
+    # WI-OI-120n (security review): the new sign-ups get their own password, asked here and never stored.
+    if [ -z "${E2E_JOURNEY_PASSWORD:-}" ]; then read -r -s -p "Password for the journey's new sign-ups (12+ characters, not shown): " E2E_JOURNEY_PASSWORD; echo; fi
+    export E2E_JOURNEY_PASSWORD
+    run specs/journey-tenant-to-value.spec.ts
     board="$(pwd)/test-results/journey/index.html"
     [ -f "$board" ] && { echo "Journey board: $board"; open "$board"; }
     exit "$status" ;;

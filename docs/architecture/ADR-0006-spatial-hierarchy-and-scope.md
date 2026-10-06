@@ -1,6 +1,8 @@
 # ADR-0006: Spatial hierarchy, jurisdiction and spatial scope
 
-- Status: Proposed (G2 draft for WI-OI-063; independent reviews pending)
+- Status: **Accepted by the owner, 2026-10-06** (decision D5 of `docs/plans/platform-implementation-plan.md`: Geospatial
+  owns the identity of sites, buildings, floors and zones; CMMS keeps facility details keyed by place). Independent
+  Architecture and Security reviews pending (D7). Originally Proposed as the G2 draft for WI-OI-063.
 - Date: 2026-09-26
 - Programme: WI-OI-062, phase P2
 - Related: ADR-0003 (identity, lexicon, workforce primitives), ADR-0005 and the Delta 5 North Star

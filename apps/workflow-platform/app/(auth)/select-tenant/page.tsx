@@ -94,7 +94,9 @@ export default function SelectTenantPage() {
 
   useEffect(() => {
     void loadTenants();
-    const invitation = new URL(window.location.href).searchParams.get('invite');
+    // WI-OI-120n: links carry the token after `#` (never sent to the server); older links used `?invite=`.
+    const current = new URL(window.location.href);
+    const invitation = new URLSearchParams(current.hash.slice(1)).get('invite') ?? current.searchParams.get('invite');
     if (invitation) {
       setInviteToken(invitation);
       window.history.replaceState({}, '', '/select-tenant');

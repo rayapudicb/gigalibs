@@ -194,11 +194,14 @@ spec:
       roles:
         - key: maintenance-technician
           name: Maintenance technician
-          description: Carries out work orders, records meter readings and labour, punches time and requests absence.
-          permissions: [cmms:read, cmms.work-orders.read, cmms.work-orders.write, cmms.assets.read, cmms.meters.read, cmms.meters.write, cmms.pm.read, cmms.parts.read, maps.nodes.read, workforce:read, workforce.resources.read, workforce.jobs.read, workforce.time.read, workforce.time.punch, workforce.absences.request]
+          # WI-OI-120n security review: no workforce.time.read (it reads everyone's time) and no absences.request (it
+          # acts on anyone's absence); punching gives a person their own time. cmms.work-orders.write still reaches any
+          # work order until "execute my own" is separated (M-CM1).
+          description: Carries out work orders, records meter readings and labour, and punches their own time.
+          permissions: [cmms:read, cmms.work-orders.read, cmms.work-orders.write, cmms.assets.read, cmms.meters.read, cmms.meters.write, cmms.pm.read, cmms.parts.read, maps.nodes.read, workforce:read, workforce.resources.read, workforce.jobs.read, workforce.time.punch]
         - key: maintenance-planner
           name: Maintenance planner
-          description: Plans, assigns and closes work; manages assets, preventive schedules, parts and the maintenance team's time and absence.
+          description: Plans, assigns and closes work; manages assets, preventive schedules and parts; manages people and approves time and absence for everyone in the workspace (not only the maintenance team) until roles are held per unit (ADR-0034). Linking logins stays with administrators.
           permissions: [cmms:read, cmms.work-orders.read, cmms.work-orders.write, cmms.assets.read, cmms.assets.write, cmms.meters.read, cmms.meters.write, cmms.pm.read, cmms.pm.write, cmms.parts.read, cmms.parts.write, cmms.analytics.read, maps:read, maps.nodes.read, workforce:read, workforce.resources.read, workforce.resources.manage, workforce.jobs.read, workforce.jobs.manage, workforce.bookings.read, workforce.bookings.manage, workforce.availability.read, workforce.availability.manage, workforce.time.read, workforce.time.punch, workforce.timesheets.approve, workforce.absences.read, workforce.absences.request, workforce.absences.approve]
         - key: maintenance-viewer
           name: Maintenance viewer

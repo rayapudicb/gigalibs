@@ -1,6 +1,8 @@
 # WI-OI-120n: Tenant-to-value fixes, batch 1 (from the WI-OI-120m discovery journey)
 
-- **Status:** Committed `7485aec`; images built; **not deployed**. Independent Security review before deploy (role
+- **Status:** Committed `7485aec`; independent review done 2026-10-06 (deploy after fixes); High and Medium findings
+  fixed except the technician's reach over any work order, which the owner **accepted for UAT only** on 2026-10-06
+  ("accept the technician gap for UAT"); it must be closed by M-CM1 before production. **Not deployed yet.** Independent Security review before deploy (role
   permissions change). Owner decision 2026-10-06: GPT performs a read-only security review of the batch-1 diff
   (`144c010..7485aec`) as an interim independent review **for UAT only**; findings are fixed before the UAT deploy.
   Production still requires the named D7 Security reviewer.

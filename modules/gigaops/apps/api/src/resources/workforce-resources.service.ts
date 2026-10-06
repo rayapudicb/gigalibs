@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -23,7 +24,7 @@ import {
   type WorkforceResourceV1,
 } from '@gigalibs/contracts';
 import type { PoolClient } from 'pg';
-import type { GigaOpsPrincipal } from '../auth/authorization.js';
+import { type GigaOpsPrincipal, hasWorkforcePermission } from '../auth/authorization.js';
 import { WorkforceDatabaseService } from '../database/database.service.js';
 
 interface CommandContext {
@@ -95,6 +96,7 @@ export class WorkforceResourcesService {
     rawInput: unknown,
   ): Promise<WorkforceResourceDetailV1> {
     const input = parse(CreateWorkforceResourceV1Schema, rawInput);
+    if (input.platformUserId) assertMayLinkLogin(context.principal);
     return this.database.withTenantTransaction(context.principal.tenantId, async (client) => {
       try {
         const result = await client.query(
@@ -117,6 +119,7 @@ export class WorkforceResourcesService {
         await this.recordMutation(client, context, 'WORKFORCE_RESOURCE_CREATED', 'WORKFORCE_RESOURCE', id, 1, {
           resourceType: input.resourceType,
           status: 'ACTIVE',
+          ...(input.platformUserId ? { platformUserId: { before: null, after: input.platformUserId } } : {}),
         });
         return this.getResourceWithClient(client, context.principal.tenantId, id);
       } catch (error) {
@@ -132,8 +135,19 @@ export class WorkforceResourcesService {
   ): Promise<WorkforceResourceDetailV1> {
     assertUuid(resourceId, 'resourceId');
     const input = parse(UpdateWorkforceResourceV1Schema, rawInput);
+    const changesLink = input.platformUserId !== undefined;
+    if (changesLink) assertMayLinkLogin(context.principal);
     return this.database.withTenantTransaction(context.principal.tenantId, async (client) => {
       try {
+        // WI-OI-120n: the link before the change, for the audit record (who was linked, and to whom it now points).
+        const previousLink = changesLink
+          ? ((
+              await client.query(
+                `SELECT platform_user_id FROM gigalibs_workforce.workforce_resources WHERE tenant_id = $1 AND id = $2 FOR UPDATE`,
+                [context.principal.tenantId, resourceId],
+              )
+            ).rows[0]?.platform_user_id ?? null)
+          : null;
         const result = await client.query(
           `UPDATE gigalibs_workforce.workforce_resources
               SET display_name = CASE WHEN $4::boolean THEN $5 ELSE display_name END,
@@ -168,6 +182,7 @@ export class WorkforceResourcesService {
         const version = Number(result.rows[0]!.version);
         await this.recordMutation(client, context, 'WORKFORCE_RESOURCE_UPDATED', 'WORKFORCE_RESOURCE', resourceId, version, {
           status: input.status,
+          ...(changesLink ? { platformUserId: { before: previousLink, after: input.platformUserId ?? null } } : {}),
         });
         return this.getResourceWithClient(client, context.principal.tenantId, resourceId);
       } catch (error) {
@@ -453,4 +468,18 @@ function mapQualification(row: any): ResourceQualificationV1 {
     createdAt: new Date(row.created_at).toISOString(),
     updatedAt: new Date(row.updated_at).toISOString(),
   };
+}
+
+/**
+ * WI-OI-120n (security review): who a Workforce person is decides whose time they punch and whose week they submit,
+ * and the "never decide your own" checks rely on it. Only holders of `workforce.resources.link` (workspace
+ * administrators, through `workforce:*`) may set, change or clear it; managing people does not include it.
+ */
+function assertMayLinkLogin(principal: GigaOpsPrincipal): void {
+  if (!hasWorkforcePermission(principal.permissions, 'workforce.resources.link')) {
+    throw new ForbiddenException({
+      code: 'WORKFORCE_LINK_FORBIDDEN',
+      message: 'Only a workspace administrator can link a person to a login.',
+    });
+  }
 }

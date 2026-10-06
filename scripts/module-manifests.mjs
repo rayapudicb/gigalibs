@@ -87,6 +87,10 @@ const manifestOnlyFields = ['navigationOrder', 'hostedFor', 'menu', 'personas', 
 // every permission it grants.
 // A module role's permission: `module:action`, `module:resource:action`, or (WI-OI-120n) the dotted codes CMMS,
 // Workforce and Geospatial check, such as `cmms.work-orders.write`. Never a wildcard.
+const WORKSPACE_ADMIN_FAMILIES = new Set([
+  'users', 'roles', 'invites', 'tenant', 'settings', 'billing', 'audit', 'retention', 'security', 'scim',
+  'configuration', 'configuration-apps', 'configuration-runtime', 'configuration-values', 'organization',
+]);
 const ROLE_PERMISSION = /^(?:[a-z][a-z0-9-]*:[a-z][a-z0-9-]*(?::[a-z][a-z0-9-]*)?|[a-z][a-z0-9-]*(?:\.[a-z][a-z0-9-]*){1,3})$/;
 const roleNames = new Set();
 // Platform Operators and Tenant Admins see every entry; these personas see only the entries that list them.
@@ -164,9 +168,14 @@ function checkEntry(where, entry, kind) {
       if (!Array.isArray(permissions) || permissions.length === 0) fail(at, 'permissions must be a non-empty list');
       else {
         if (new Set(permissions).size !== permissions.length) fail(at, 'permissions must be distinct');
-        for (const permission of permissions)
+        for (const permission of permissions) {
           if (typeof permission !== 'string' || !ROLE_PERMISSION.test(permission) || /^platform[:.]/.test(permission))
             fail(at, `permission ${JSON.stringify(permission)} must be a tenant permission such as analytics:read, without wildcards`);
+          // WI-OI-120n (security review): every workspace receives module roles and cannot edit them, so they never
+          // carry workspace administration (people, roles, invitations, settings, billing, configuration, audit).
+          else if (WORKSPACE_ADMIN_FAMILIES.has(permission.split(/[:.]/)[0]))
+            fail(at, `permission ${permission} administers the workspace; module roles may not carry it`);
+        }
       }
     });
   }

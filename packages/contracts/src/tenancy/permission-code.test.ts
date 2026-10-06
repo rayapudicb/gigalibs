@@ -55,6 +55,13 @@ describe('module default roles', () => {
     expect(permissions.filter((code) => !isTenantPermissionCode(code))).toEqual([]);
   });
 
+  // WI-OI-120n (security review): every workspace receives module roles and cannot edit them, so they never carry
+  // workspace administration, and none carries the administrator-only login link.
+  it.each(moduleDefaultRoles.map((role) => [role.name, role.permissions] as const))('%s carries no workspace administration', (_name, permissions) => {
+    const admin = /^(users|roles|invites|tenant|settings|billing|audit|retention|security|scim|configuration(-apps|-runtime|-values)?|organization)[:.]/;
+    expect(permissions.filter((code) => admin.test(code) || code === 'workforce.resources.link')).toEqual([]);
+  });
+
   it('includes the maintenance and Workforce roles', () => {
     expect(moduleDefaultRoles.map((role) => role.name)).toEqual(
       expect.arrayContaining(['Maintenance technician', 'Maintenance planner', 'Maintenance viewer', 'Workforce member', 'Workforce supervisor']),

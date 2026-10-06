@@ -9,14 +9,14 @@
  * findings at every step; the journey carries on past a blocked step where it can and says what it could not reach.
  *
  * Writes only inside the workspace it creates (sign-ups `journey.<role>.<run>@gigalibs.test`). The password comes from
- * E2E_JOURNEY_PASSWORD (or the UAT admin password) and is never written anywhere. Board: test-results/journey/.
+ * E2E_JOURNEY_PASSWORD (its own, not the admin's) and is never written anywhere. Board: test-results/journey/.
  */
 import { type Browser, expect, type Locator, type Page, test } from '@playwright/test';
 import { join } from 'node:path';
 import { JourneyRecorder } from './journey-recorder';
 
 const RUN = Date.now().toString(36).slice(-6);
-const PASSWORD = process.env.E2E_JOURNEY_PASSWORD ?? process.env.E2E_UAT_ADMIN_PASSWORD ?? '';
+const PASSWORD = process.env.E2E_JOURNEY_PASSWORD ?? '';
 const WORKSPACE = `Journey Works ${RUN}`;
 const SLUG = `journey-${RUN}`;
 const OUT = process.env.JOURNEY_OUT ?? join(__dirname, '..', 'test-results', 'journey');
@@ -240,7 +240,7 @@ async function menu(page: Page): Promise<string[]> {
 // ─── The journey ────────────────────────────────────────────────────────────────────────────────────────────────
 
 test('a new customer from sign-up to maintenance work, as five people', async ({ browser, baseURL }, testInfo) => {
-  test.skip(!PASSWORD, 'Set E2E_JOURNEY_PASSWORD (or E2E_UAT_ADMIN_PASSWORD); it is never stored.');
+  test.skip(!PASSWORD, 'Set E2E_JOURNEY_PASSWORD for the new sign-ups; it is never stored.');
   const origin = new URL(baseURL ?? 'http://127.0.0.1:5180').origin;
   const recorder = new JourneyRecorder(OUT, RUN, testInfo);
   const write = () => recorder.write({ origin, workspace: `${WORKSPACE} (${SLUG})`, when: new Date().toISOString() });
@@ -390,7 +390,8 @@ test('a new customer from sign-up to maintenance work, as five people', async ({
         const token = page.getByLabel('Invitation token');
         if ((await token.count()) && !(await token.inputValue())) {
           recorder.add('UX', 'The invitation link does not fill in its token', 'the person must paste it by hand', page);
-          await token.fill(new URL(persona.invite!).searchParams.get('invite') ?? '');
+          const link = new URL(persona.invite!);
+          await token.fill(new URLSearchParams(link.hash.slice(1)).get('invite') ?? link.searchParams.get('invite') ?? '');
         }
         if (!(await press(page, /accept|join/i))) throw new Error('No accept button');
         await settle(page);
