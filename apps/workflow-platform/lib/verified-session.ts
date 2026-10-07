@@ -7,7 +7,6 @@ import {
 } from './authenticated-upstream';
 import { ACCESS_COOKIE_NAME, UpstreamUnavailableError, controlPlaneUrl } from './control-plane';
 import {
-  MAX_CONTEXT_ASSIGNMENTS,
   type OrganizationScopeV2,
   OrganizationScopeV2Schema,
   type PlatformContextAssignmentScope,
@@ -102,9 +101,10 @@ export function isVerifiedSession(value: unknown): value is VerifiedSession {
     (value.organizationScope === undefined ||
       value.organizationScope === null ||
       OrganizationScopeV2Schema.safeParse(value.organizationScope).success) &&
+    // Shape only (Security review of slice 3, M2): a member over the role limit loses module calls, where the context
+    // is signed and refused, never the whole application.
     (value.assignments === undefined ||
       (Array.isArray(value.assignments) &&
-        value.assignments.length <= MAX_CONTEXT_ASSIGNMENTS &&
         value.assignments.every(
           (assignment) =>
             record(assignment) &&

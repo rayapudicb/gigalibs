@@ -60,16 +60,29 @@ describe('scopeFor', () => {
       { permissions: ['workforce:read'], scope: { kind: 'MEMBER' } },
       { permissions: ['cmms:read'], scope: { kind: 'TENANT' } },
     ]);
-    const member = { kind: 'MEMBER', organization: person.organization, places: person.placeScope };
+    const member = { kind: 'MEMBER', organization: person.organization, places: person.placeScope, departments: person.departmentScope };
     expect(scopeFor(person, 'workforce:read').coverage).toEqual([member]);
     expect(scopeFor(person, 'cmms:read').coverage).toEqual([member, { kind: 'TENANT' }]);
     expect(member.organization).toEqual({ mode: 'UNITS', tree_version: 'version-7', read_roots: ['north', 'south'], write_roots: ['north'] });
   });
 
+  // Security review of slice 3, L2: a module still on departments keeps them through the member coverage.
+  it('carries the legacy department scope in the member coverage', () => {
+    const person = principal([{ permissions: ['cmms:read'], scope: { kind: 'MEMBER' } }], {
+      orgScope: { mode: 'SCOPED_DEPARTMENTS', departmentIds: ['dept-ops'] },
+      organizationScope: null,
+    });
+    expect(scopeFor(person, 'cmms:read').coverage).toEqual([
+      { kind: 'MEMBER', organization: { mode: 'TENANT' }, places: { mode: 'ALL' }, departments: { mode: 'DEPARTMENTS', departmentIds: ['dept-ops'] } },
+    ]);
+  });
+
   it('treats a context without assignment claims as before: a held permission applies at the member scope', () => {
     const person = principal(undefined, { permissions: ['finance:read'] });
     expect(person.assignments).toBeUndefined();
-    expect(scopeFor(person, 'finance:read').coverage).toEqual([{ kind: 'MEMBER', organization: person.organization, places: person.placeScope }]);
+    expect(scopeFor(person, 'finance:read').coverage).toEqual([
+      { kind: 'MEMBER', organization: person.organization, places: person.placeScope, departments: person.departmentScope },
+    ]);
     expect(scopeFor(person, 'finance:journals:approve').coverage).toEqual([]);
   });
 });

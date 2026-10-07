@@ -8,8 +8,8 @@
     2026-10-07). The journey's technician holds two module roles.
     - Security review: "ship after fixes". The fixes are committed in e07cdba (re-check: "ship").
     - M3: the owner said "add the grant bound" (2026-10-06); it is built and awaits "commit".
-  - **Slice 3:** approved by the owner on 2026-10-07 ("approved slice 3"); built and checked, awaiting "commit" and the
-    Security review.
+  - **Slice 3:** approved by the owner on 2026-10-07 ("approved slice 3"). Committed f395dbd. Security review: "ship
+    after fixes"; the fixes (cap 20, compact claim, size guard, web shape check, department scope) await "commit".
   - **Next:** slice 2b.
   - Evidence: `.pi/work/WI-OI-120.md` § WI-OI-120w. Independent Security review before deploy (access change).
 - **Work item:** WI-OI-120. Evidence goes in `.pi/work/WI-OI-120.md`.
@@ -110,8 +110,9 @@ everything under them), or some places (with everything inside them).
 
 - **As built (2026-10-07):**
   - **The claim.** `PlatformContextV1.assignments` = `{ version: 1, items: [{ grants, scope }] }`.
-    - `grants` is a hex bitmap over the context's `granted_scopes`, so an assignment can name only what the context
-      grants. Its length and trailing bits are checked when the token is signed and when it is verified.
+    - `grants` is an unpadded base64url bitmap over the context's `granted_scopes`, so an assignment can name only
+      what the context grants. Only the one canonical encoding is accepted, checked when the token is signed and when
+      it is verified. An absent `scope` is `MEMBER`.
     - `scope` is `MEMBER` (the member's own scope, the existing `organization` and `spatial_scope` claims), `TENANT`,
       `UNITS` (tree version and unit roots) or `PLACES`.
     - The session puts the base role, with direct codes, first, then each role. Every one is `MEMBER` until
@@ -121,8 +122,10 @@ everything under them), or some places (with everything inside them).
   - **The SDK.** `principal.assignments` and `scopeFor(principal, permission)` give the coverage of each assignment
     that grants the permission. A context without the claim answers as before: a held permission applies at the
     member's own scope.
-  - **Size.** A member holds at most 30 live roles (409 `ROLE_LIMIT`). A Manager holding 20 real module roles has a
-    7.1 KB token, of which this claim is 2.1 KB; at the cap it stays under 12 KB (Node's header limit is 16 KB).
+  - **Size.** A member holds at most 20 live roles (409 `ROLE_LIMIT`). The worst configuration (20 roles with
+    100-character names, the whole catalogue) signs under 14 KB. A token over 15 KB is refused when minted
+    (`CONTEXT_TOO_LARGE`), so no module answers 431 (Node's header limit is 16 KB). The web checks only the
+    assignments' shape, so a member over a limit keeps the application.
   - **The control plane.** No control-plane record list is scoped by unit today; organization scope is used only for
     module contexts. Nothing changed there; R5 uses `scopeFor` module by module.
 

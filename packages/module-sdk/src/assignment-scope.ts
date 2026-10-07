@@ -7,11 +7,21 @@ import type { OrganizationClaim } from './organization-access.js';
 
 /** Spatial scope as the principal carries it (`ModulePlaceScope`). */
 type PlaceScope = { readonly mode: 'ALL' } | { readonly mode: 'PLACES'; readonly placeIds: readonly string[] };
+/** Legacy department scope as the principal carries it (`ModuleDepartmentScope`). */
+type DepartmentScope = { readonly mode: 'ALL' } | { readonly mode: 'DEPARTMENTS'; readonly departmentIds: readonly string[] };
 
 /** Where one assignment applies, in module terms. */
 export type AssignmentCoverage =
-  /** The member's own scope: their organization claim and their places, as every module reads them today. */
-  | { readonly kind: 'MEMBER'; readonly organization: OrganizationClaim; readonly places: PlaceScope }
+  /**
+   * The member's own scope: their organization claim, their places and, for modules still on departments, their
+   * departments, exactly as every module reads them today (Security review of slice 3, L2: departments kept).
+   */
+  | {
+      readonly kind: 'MEMBER';
+      readonly organization: OrganizationClaim;
+      readonly places: PlaceScope;
+      readonly departments: DepartmentScope;
+    }
   /** The whole workspace. */
   | { readonly kind: 'TENANT' }
   /** These units and everything below them in the named tree version. */
@@ -37,6 +47,7 @@ export interface ScopedPrincipal {
   readonly permissions: readonly string[];
   readonly organization?: OrganizationClaim;
   readonly placeScope: PlaceScope;
+  readonly departmentScope: DepartmentScope;
   readonly assignments?: readonly ModuleAssignment[];
 }
 
@@ -48,7 +59,9 @@ export function scopeFor(principal: ScopedPrincipal, permission: string): Permis
   if (!principal.assignments) {
     return Object.freeze({
       permission,
-      coverage: Object.freeze(holdsPermission(principal.permissions, permission) ? [memberCoverage(principal.organization, principal.placeScope)] : []),
+      coverage: Object.freeze(
+        holdsPermission(principal.permissions, permission) ? [memberCoverage(principal.organization, principal.placeScope, principal.departmentScope)] : [],
+      ),
     });
   }
   const coverage: AssignmentCoverage[] = [];
@@ -70,13 +83,14 @@ export function assignmentsFromContext(
   context: PlatformContextV1,
   organization: OrganizationClaim,
   places: PlaceScope,
+  departments: DepartmentScope,
 ): readonly ModuleAssignment[] | undefined {
   if (!context.assignments) return undefined;
   return Object.freeze(
     context.assignments.items.map((item) =>
       Object.freeze({
         permissions: Object.freeze(decodeAssignmentGrants(context.granted_scopes, item.grants)),
-        coverage: coverageFromClaim(item.scope, organization, places),
+        coverage: coverageFromClaim(item.scope, organization, places, departments),
       }),
     ),
   );
@@ -86,13 +100,15 @@ function coverageFromClaim(
   scope: NonNullable<PlatformContextV1['assignments']>['items'][number]['scope'],
   organization: OrganizationClaim,
   places: PlaceScope,
+  departments: DepartmentScope,
 ): AssignmentCoverage {
-  if (scope.kind === 'UNITS') return Object.freeze({ kind: 'UNITS', treeVersion: scope.tree_version, unitIds: Object.freeze([...scope.unit_ids]) });
-  if (scope.kind === 'PLACES') return Object.freeze({ kind: 'PLACES', placeIds: Object.freeze([...scope.place_ids]) });
-  if (scope.kind === 'TENANT') return Object.freeze({ kind: 'TENANT' });
-  return memberCoverage(organization, places);
+  // An absent scope is `MEMBER`, the default the control plane leaves out.
+  if (scope?.kind === 'UNITS') return Object.freeze({ kind: 'UNITS', treeVersion: scope.tree_version, unitIds: Object.freeze([...scope.unit_ids]) });
+  if (scope?.kind === 'PLACES') return Object.freeze({ kind: 'PLACES', placeIds: Object.freeze([...scope.place_ids]) });
+  if (scope?.kind === 'TENANT') return Object.freeze({ kind: 'TENANT' });
+  return memberCoverage(organization, places, departments);
 }
 
-function memberCoverage(organization: OrganizationClaim | undefined, places: PlaceScope): AssignmentCoverage {
-  return Object.freeze({ kind: 'MEMBER', organization: organization ?? Object.freeze({ mode: 'TENANT' as const }), places });
+function memberCoverage(organization: OrganizationClaim | undefined, places: PlaceScope, departments: DepartmentScope): AssignmentCoverage {
+  return Object.freeze({ kind: 'MEMBER', organization: organization ?? Object.freeze({ mode: 'TENANT' as const }), places, departments });
 }

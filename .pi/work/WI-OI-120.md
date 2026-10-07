@@ -2211,3 +2211,56 @@ widening the card to fix the API faults the proof found.
   - **Typecheck:** control plane, web and CMMS.
 - **`pnpm verify`:** build, tests (2753), every other audit and S16 pass. Design tokens fail only on another
   session's uncommitted `AuthAtmosphere.tsx`, which is not part of this slice.
+- **Security review of f395dbd: "ship after fixes".** Nothing widens access.
+  - **Verified:**
+    - bitmap encode and decode agree, and bad bitmaps are refused at signing and on verification;
+    - the signature is checked before parsing;
+    - no assignment exceeds the union;
+    - only `MEMBER` is emitted (the database CHECK too), and no power comes from names;
+    - a rolling deploy is safe, because every verifier goes through the non-strict schema;
+    - the fallback without the claim is exact.
+  - **Findings and fixes:**
+    - **M1 (size).** At the 30-role cap, with 100-character names and the whole catalogue, the token reached 17.4 KB
+      and a module answered 431. Fixes:
+      - the cap is now 20;
+      - the bitmap is unpadded base64url, with only the canonical encoding accepted;
+      - a `MEMBER` scope travels as an absent scope;
+      - `signPlatformContextToken` refuses a token over 15 KB with `CONTEXT_TOO_LARGE`.
+      The worst configuration now signs under 14 KB, which a test proves.
+    - **M2 (lockout).** The web checked the assignment count, so an over-cap member lost the whole application. It
+      now checks only the shape; an over-cap member loses only module calls. UAT pre-flight (read-only): at most 2
+      live roles per member, names of at most 26 characters, at most 40 codes per role.
+    - **L1:** the deploy order is documented on the claim schema: modules must verify a new shape before the
+      control plane signs it.
+    - **L2:** `MEMBER` coverage now carries the legacy department scope.
+    - **I1:** a kernel job whose context is too large stops (`NonRetryableJobError CONTEXT_TOO_LARGE`) instead of
+      retrying.
+  - **Checks after the fixes:**
+    - contracts, auth-core and SDK unit tests pass, including bitmap edges, canonical refusals, the worst case and
+      the guard;
+    - r2_proof 21 of 21, with the cap at 20;
+    - affected suites: 125 files, 1236 tests;
+    - control plane and web typecheck.
+  - **`pnpm verify` on the fixes:** build, tests (2755), every other audit and S16 pass. Design tokens fail only on
+    another session's uncommitted `AuthAtmosphere.tsx`.
+- **Re-check of the fixes: "ship".**
+  - **Verified by probe:**
+    - the decoder takes only the canonical encoding: for up to 16 codes, exactly 2^n strings are accepted;
+    - an absent scope decodes exactly as `MEMBER`, and nothing wider;
+    - the size guard is on every module signing path.
+  - **Reviewer's sizes:**
+    - like UAT (2 roles, 26-character names): 4.9 KB;
+    - 20 roles with 80-character names: 12.9 KB;
+    - 20 roles with 80 CJK characters, and 200 organization roots: refused with `CONTEXT_TOO_LARGE`. The 200-root
+      case already exceeded 16 KB before this slice.
+  - Reviewer's runs: 243 unit tests and r2_proof 21 (one earlier run failed, not captured; I reran it twice, 21 of 21
+    both times).
+  - **Info, both fixed:**
+    - the proxy forwarded any client `X-Correlation-Id`; it now forwards only the SDK's form (1–128 characters of
+      `A-Za-z0-9._:-`) and replaces anything else;
+    - a too-large context surfaced as 502 "temporarily unavailable"; the proxy now answers 431 `ACCESS_TOO_LARGE`
+      with the reason.
+  - **Not a concern:** a context in f395dbd's hex format is now refused. That format was never deployed (UAT runs
+    c5e6cb3).
+  - **Final `pnpm verify`:** build, tests (2756), every other audit and S16 pass. Design tokens fail only on another
+    session's uncommitted `AuthAtmosphere.tsx`.

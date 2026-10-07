@@ -6,7 +6,7 @@
  */
 
 import { createPrivateKey } from 'node:crypto';
-import { buildPlatformContext, signPlatformContextToken } from '@gigalibs/auth-core';
+import { buildPlatformContext, PlatformContextError, signPlatformContextToken } from '@gigalibs/auth-core';
 import {
   holdsPermission,
   ORG_REPLICA_PAGE_SIZE,
@@ -292,7 +292,14 @@ export function moduleCallJob(
         if (!application) throw new NonRetryableJobError('PACK_NOT_FOUND', `The pack version has no ${operation.packSection} section for this workspace.`);
         requestBody = application;
       }
-      const token = signPlatformContextToken(claims, signingKey(environment, operation.privateKeyEnvironment));
+      let token: string;
+      try {
+        token = signPlatformContextToken(claims, signingKey(environment, operation.privateKeyEnvironment));
+      } catch (error) {
+        // WI-OI-120w (Security review of slice 3, I1): an owner whose access is too large to send cannot succeed on a retry.
+        if (error instanceof PlatformContextError && error.code === 'CONTEXT_TOO_LARGE') throw new NonRetryableJobError('CONTEXT_TOO_LARGE', error.message);
+        throw error;
+      }
       const baseUrl = environment[operation.baseUrlEnvironment]?.replace(/\/+$/, '');
       if (!baseUrl) throw new NonRetryableJobError('WORKER_NOT_CONFIGURED', `${operation.baseUrlEnvironment} is not configured for the kernel worker.`);
       if (operation.organizationVersion) {

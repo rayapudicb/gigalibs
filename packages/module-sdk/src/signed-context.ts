@@ -191,7 +191,12 @@ export function principalFromContext(context: PlatformContextV1): ModulePrincipa
       ? { mode: 'PLACES' as const, placeIds: Object.freeze([...spatial.place_ids]) }
       : { mode: 'ALL' as const },
   );
-  const assignments = assignmentsFromContext(context, organization, placeScope);
+  const departmentScope: ModuleDepartmentScope = Object.freeze(
+    org.mode === 'SCOPED_DEPARTMENTS'
+      ? { mode: 'DEPARTMENTS' as const, departmentIds: Object.freeze([...org.department_ids]) }
+      : { mode: 'ALL' as const },
+  );
+  const assignments = assignmentsFromContext(context, organization, placeScope, departmentScope);
   return Object.freeze({
     tenantId: context.tenant_id,
     subject: context.sub,
@@ -201,11 +206,7 @@ export function principalFromContext(context: PlatformContextV1): ModulePrincipa
     roles: Object.freeze([...context.roles]),
     persona: context.persona_type,
     organization,
-    departmentScope: Object.freeze(
-      org.mode === 'SCOPED_DEPARTMENTS'
-        ? { mode: 'DEPARTMENTS' as const, departmentIds: Object.freeze([...org.department_ids]) }
-        : { mode: 'ALL' as const },
-    ),
+    departmentScope,
     placeScope,
     ...(assignments ? { assignments } : {}),
   });

@@ -45,8 +45,14 @@ export const PlatformContextEntitlementSchema = z.object({
 });
 export type PlatformContextEntitlement = z.infer<typeof PlatformContextEntitlementSchema>;
 
-/** WI-OI-120w (R2 slice 3): a member holds at most this many live roles, so their signed context stays small. */
-export const MAX_MEMBER_ROLE_ASSIGNMENTS = 30;
+/**
+ * WI-OI-120w (R2 slice 3): a member holds at most this many live roles, so their signed context fits a request header
+ * (Security review M1: 20 roles with 100-character names over the whole catalogue sign at about 13 KB; Node refuses
+ * headers over 16 KB).
+ */
+export const MAX_MEMBER_ROLE_ASSIGNMENTS = 20;
+/** A signed context longer than this is refused when it is minted, so a module never answers 431 instead. */
+export const MAX_PLATFORM_CONTEXT_TOKEN_LENGTH = 15 * 1024;
 /** The base role (with the member's direct codes) travels as one more assignment beside the roles. */
 export const MAX_CONTEXT_ASSIGNMENTS = MAX_MEMBER_ROLE_ASSIGNMENTS + 1;
 
@@ -75,14 +81,17 @@ export const PlatformContextAssignmentScopeSchema = z.discriminatedUnion('kind',
 export type PlatformContextAssignmentScope = z.infer<typeof PlatformContextAssignmentScopeSchema>;
 
 /**
- * One assignment: which of the context's `granted_scopes` it grants, as a compact reference (a bitmap in hex; bit i,
- * lowest first in each byte, is `granted_scopes[i]`), and where it applies. Permissions are evaluated per assignment,
- * never across them (ADR-0034 §1).
+ * One assignment: which of the context's `granted_scopes` it grants, as a compact reference (a bitmap, unpadded
+ * base64url; bit i, lowest first in each byte, is `granted_scopes[i]`), and where it applies. An absent `scope` is
+ * `MEMBER`. Permissions are evaluated per assignment, never across them (ADR-0034 §1).
+ *
+ * Deploy order (Security review L1): today's verifiers refuse an unknown version, scope kind or field, so modules must
+ * run a verifier that knows a new shape before the control plane signs it.
  */
 export const PlatformContextAssignmentSchema = z
   .object({
-    grants: z.string().regex(/^(?:[0-9a-f]{2})*$/).max(2_048),
-    scope: PlatformContextAssignmentScopeSchema,
+    grants: z.string().regex(/^[A-Za-z0-9_-]*$/).max(2_048),
+    scope: PlatformContextAssignmentScopeSchema.optional(),
   })
   .strict();
 export type PlatformContextAssignment = z.infer<typeof PlatformContextAssignmentSchema>;
@@ -91,31 +100,57 @@ export const PlatformContextAssignmentsSchema = z
   .object({ version: z.literal(1), items: z.array(PlatformContextAssignmentSchema).max(MAX_CONTEXT_ASSIGNMENTS) })
   .strict();
 
-/** The hex bitmap of which `grantedScopes` an assignment's `permissions` are; a code not among them is left out. */
+const BASE64URL = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+
+/** The bitmap of which `grantedScopes` an assignment's `permissions` are; a code not among them is left out. */
 export function encodeAssignmentGrants(grantedScopes: readonly string[], permissions: readonly string[]): string {
   const held = new Set(permissions);
   const bytes = new Array<number>(Math.ceil(grantedScopes.length / 8)).fill(0);
   grantedScopes.forEach((code, index) => {
     if (held.has(code)) bytes[index >> 3]! |= 1 << (index & 7);
   });
-  return bytes.map((byte) => byte.toString(16).padStart(2, '0')).join('');
+  let text = '';
+  for (let index = 0; index < bytes.length; index += 3) {
+    const value = (bytes[index]! << 16) | ((bytes[index + 1] ?? 0) << 8) | (bytes[index + 2] ?? 0);
+    const characters = Math.min(4, Math.ceil(((bytes.length - index) * 8) / 6));
+    for (let position = 0; position < characters; position += 1) text += BASE64URL[(value >> (18 - 6 * position)) & 63];
+  }
+  return text;
 }
 
 /** The permissions an assignment's bitmap names. A bitmap of the wrong length, or with bits past the end, is refused. */
 export function decodeAssignmentGrants(grantedScopes: readonly string[], grants: string): string[] {
-  if (!assignmentGrantsFit(grantedScopes.length, grants)) throw new Error('An assignment names permissions the context does not hold.');
-  const permissions: string[] = [];
-  grantedScopes.forEach((code, index) => {
-    if ((Number.parseInt(grants.slice((index >> 3) * 2, (index >> 3) * 2 + 2), 16) >> (index & 7)) & 1) permissions.push(code);
-  });
-  return permissions;
+  const bytes = assignmentGrantBytes(grantedScopes.length, grants);
+  if (!bytes) throw new Error('An assignment names permissions the context does not hold.');
+  return grantedScopes.filter((_, index) => (bytes[index >> 3]! >> (index & 7)) & 1);
+}
+
+/** The bitmap's bytes when it is the one canonical encoding for `count` codes with no bit past the last; else null. */
+function assignmentGrantBytes(count: number, grants: string): number[] | null {
+  const byteCount = Math.ceil(count / 8);
+  if (grants.length !== Math.ceil((byteCount * 8) / 6)) return null;
+  const bytes: number[] = [];
+  let carry = 0;
+  let bits = 0;
+  for (const character of grants) {
+    const value = BASE64URL.indexOf(character);
+    if (value < 0) return null;
+    carry = (carry << 6) | value;
+    bits += 6;
+    if (bits >= 8) {
+      bits -= 8;
+      bytes.push((carry >> bits) & 0xff);
+      carry &= (1 << bits) - 1;
+    }
+  }
+  if (carry !== 0 || bytes.length !== byteCount) return null;
+  const used = count % 8;
+  if (used !== 0 && bytes[byteCount - 1]! >> used !== 0) return null;
+  return bytes;
 }
 
 function assignmentGrantsFit(count: number, grants: string): boolean {
-  if (!/^(?:[0-9a-f]{2})*$/.test(grants) || grants.length !== 2 * Math.ceil(count / 8)) return false;
-  const used = count % 8;
-  if (used === 0) return true;
-  return (Number.parseInt(grants.slice(-2), 16) >> used) === 0;
+  return assignmentGrantBytes(count, grants) !== null;
 }
 
 export const PlatformContextV1Schema = z.object({

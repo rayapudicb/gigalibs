@@ -1,6 +1,8 @@
 import { generateKeyPairSync } from 'node:crypto';
 import {
   MAX_CONTEXT_ASSIGNMENTS,
+  MAX_PLATFORM_CONTEXT_TOKEN_LENGTH,
+  PERMISSION_CATALOGUE,
   type PlatformContextAssignmentScope,
   baseRolePermissions,
   decodeAssignmentGrants,
@@ -58,8 +60,9 @@ describe('assignment claims in the signed context', () => {
     );
     const context = verifyPlatformContextToken(token, publicKey, AUDIENCE);
     expect(context.assignments?.items.map((item) => decodeAssignmentGrants(context.granted_scopes, item.grants))).toEqual([base, approver, reader]);
+    // `MEMBER`, the default, travels as an absent scope.
     expect(context.assignments?.items.map((item) => item.scope)).toEqual([
-      member,
+      undefined,
       { kind: 'UNITS', tree_version: 'version-1', unit_ids: ['north'] },
       { kind: 'UNITS', tree_version: 'version-1', unit_ids: ['south'] },
     ]);
@@ -75,8 +78,31 @@ describe('assignment claims in the signed context', () => {
     const context = buildPlatformContext(subject([{ permissions: ['finance:read', 'finance:journals:post'], scope: member }], ['finance:read']), 'finance', AUDIENCE);
     expect(decodeAssignmentGrants(context.granted_scopes, context.assignments!.items[0]!.grants)).toEqual(['finance:read']);
     // A forged bitmap that points past granted_scopes, or has the wrong length, is refused at signing and on arrival.
-    for (const grants of ['ff', '0101'])
+    for (const grants of ['_w', 'AQE', 'AQ=='])
       expect(() => signPlatformContextToken({ ...context, assignments: { version: 1, items: [{ grants, scope: member }] } }, privateKey)).toThrow(/assignment/);
+  });
+
+  // Security review M1: the worst a workspace can configure (the cap, 100-character names, the whole catalogue) still
+  // fits a request header; anything larger is refused when minted, with a reason.
+  it('fits the worst configuration under the header limit, and refuses a larger context with a reason', () => {
+    const catalogue = PERMISSION_CATALOGUE.map((entry) => entry.code);
+    const roles = Array.from({ length: MAX_CONTEXT_ASSIGNMENTS - 1 }, (_, index) => ({
+      name: `Role ${index} `.padEnd(100, 'x'),
+      permissions: catalogue.filter((_, code) => code % (MAX_CONTEXT_ASSIGNMENTS - 1) === index || code % 7 === index % 7),
+    }));
+    const base = baseRolePermissions('MANAGER');
+    const worst: PlatformContextSubject = {
+      ...subject(
+        [{ permissions: base, scope: member }, ...roles.map((role) => ({ permissions: role.permissions, scope: member }))],
+        [...new Set([...base, ...catalogue])],
+        'MANAGER',
+      ),
+      roles: ['MANAGER', ...roles.map((role) => role.name)],
+    };
+    expect(mint(worst).length).toBeLessThan(14 * 1024);
+    const oversized: PlatformContextSubject = { ...worst, roles: [...worst.roles, ...worst.roles, ...worst.roles] };
+    expect(() => mint(oversized)).toThrow(expect.objectContaining({ code: 'CONTEXT_TOO_LARGE' }));
+    expect(MAX_PLATFORM_CONTEXT_TOKEN_LENGTH).toBeLessThan(16 * 1024);
   });
 
   it('keeps a realistic member small: Manager with 20 module roles under 8 KB, and the cap under 12 KB', () => {

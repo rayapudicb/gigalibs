@@ -1,8 +1,18 @@
 import { describe, expect, it } from 'vitest';
-import { forwardedWriteHeaders } from '../lib/signed-module-proxy';
+import { forwardedCorrelationId, forwardedWriteHeaders } from '../lib/signed-module-proxy';
 
 // WI-OI-120c (audit P1-23): module writes keep their retry key and the version they were made against.
 const request = (headers: Record<string, string>) => ({ headers: new Headers(headers) });
+
+// WI-OI-120w (slice 3 review, Info 1): a caller cannot grow the module request with its correlation id.
+describe('signed module proxy correlation id', () => {
+  it('keeps a well-formed id and replaces anything else with a new one', () => {
+    expect(forwardedCorrelationId(request({ 'X-Correlation-Id': 'web-123:abc.def_9' }))).toBe('web-123:abc.def_9');
+    for (const value of ['x'.repeat(129), 'has space', 'semi;colon', ''])
+      expect(forwardedCorrelationId(request({ 'X-Correlation-Id': value }))).toMatch(/^[0-9a-f-]{36}$/);
+    expect(forwardedCorrelationId(request({}))).toMatch(/^[0-9a-f-]{36}$/);
+  });
+});
 
 describe('signed module proxy write headers', () => {
   it('forwards a UUID Idempotency-Key and an If-Match entity tag or version', () => {

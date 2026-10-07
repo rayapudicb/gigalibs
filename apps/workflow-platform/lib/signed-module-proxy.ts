@@ -1,4 +1,5 @@
 import { createPrivateKey, randomUUID } from 'node:crypto';
+import { PlatformContextError } from '@gigalibs/auth-core';
 import { RequestBodyError, readBoundedBody } from '@/lib/authenticated-upstream';
 import { type LocalModuleUpstream, localModuleUpstreamUrl } from '@/lib/local-module-upstream';
 import { canUseTenantModule, hasPermission } from '@/lib/module-access';
@@ -46,6 +47,15 @@ const MUTATING_METHODS = new Set(['POST', 'PATCH', 'PUT', 'DELETE']);
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 // An entity tag (strong or weak) or a plain record version number.
 const IF_MATCH_PATTERN = /^(?:(?:W\/)?"[\x21\x23-\x7e]{1,128}"|\d{1,10})$/;
+
+/** The module SDK's correlation id form; anything else is replaced, so a caller cannot grow the module request. */
+const CORRELATION_ID = /^[A-Za-z0-9._:-]{1,128}$/;
+
+/** The caller's correlation id when it is well formed; otherwise a new one (WI-OI-120w slice 3 review, Info 1). */
+export function forwardedCorrelationId(request: Pick<Request, 'headers'>): string {
+  const value = request.headers.get('x-correlation-id')?.trim() ?? '';
+  return CORRELATION_ID.test(value) ? value : randomUUID();
+}
 
 /**
  * The write headers a module needs (WI-OI-120c, audit P1-23): `Idempotency-Key` so a retried command is applied once,
@@ -139,7 +149,7 @@ export function createSignedModuleProxy(config: SignedModuleProxyConfig) {
       const headers = new Headers({
         Accept: 'application/json, application/problem+json',
         Authorization: `Bearer ${moduleToken}`,
-        'X-Correlation-Id': request.headers.get('x-correlation-id') ?? randomUUID(),
+        'X-Correlation-Id': forwardedCorrelationId(request),
         ...writeHeaders.headers,
       });
       if (body) headers.set('Content-Type', 'application/json');
@@ -165,6 +175,10 @@ export function createSignedModuleProxy(config: SignedModuleProxyConfig) {
       }
       if (error instanceof Error && error.message.startsWith('Local module runtime')) {
         return problem(503, 'RUNTIME_NOT_CONFIGURED', `${config.serviceName} is not configured for this local runtime.`);
+      }
+      // WI-OI-120w (slice 3 review, Info 2): the member's access is too large to send; say so instead of "unavailable".
+      if (error instanceof PlatformContextError && error.code === 'CONTEXT_TOO_LARGE') {
+        return problem(431, 'ACCESS_TOO_LARGE', error.message);
       }
       return problem(502, 'RUNTIME_UNAVAILABLE', `The ${config.serviceName} service is temporarily unavailable.`);
     }

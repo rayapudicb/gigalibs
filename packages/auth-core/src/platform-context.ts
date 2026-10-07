@@ -12,6 +12,7 @@ import {
   PlatformContextV1Schema,
   determinePersona,
   encodeAssignmentGrants,
+  MAX_PLATFORM_CONTEXT_TOKEN_LENGTH,
 } from '@gigalibs/contracts';
 export type { PlatformContextV1 };
 
@@ -48,8 +49,15 @@ export function signPlatformContextToken(
   const encodedPayload = base64UrlEncode(JSON.stringify(payload));
   const data = `${encodedHeader}.${encodedPayload}`;
   const signature = signBytes(null, Buffer.from(data), privateKey).toString('base64url');
-
-  return `${data}.${signature}`;
+  const token = `${data}.${signature}`;
+  // WI-OI-120w (Security review of slice 3, M1): a context too long for a request header is refused here, with a
+  // reason, instead of reaching a module that would answer 431.
+  if (token.length > MAX_PLATFORM_CONTEXT_TOKEN_LENGTH)
+    throw new PlatformContextError(
+      `This member's access is too large to send to a module (${token.length} characters); ask an administrator to combine their roles.`,
+      'CONTEXT_TOO_LARGE',
+    );
+  return token;
 }
 
 export function verifyPlatformContextToken(
@@ -240,9 +248,10 @@ export function buildPlatformContext(
       ? {
           assignments: {
             version: 1 as const,
+            // `MEMBER`, the default, is left out to keep the claim small.
             items: subject.assignments.map((assignment) => ({
               grants: encodeAssignmentGrants(grantedScopes, assignment.permissions),
-              scope: assignmentScopeClaim(assignment.scope),
+              ...(assignment.scope.kind === 'MEMBER' ? {} : { scope: assignmentScopeClaim(assignment.scope) }),
             })),
           },
         }

@@ -143,8 +143,8 @@ integration('several roles per member (isolated PostgreSQL)', () => {
   });
 
   // WI-OI-120w (R2 slice 3): the signed context names each assignment's own permissions, and a member holds at most
-  // 30 roles so that context stays small.
-  it('reads each live role on its own, oldest first, and caps a member at 30 roles', async () => {
+  // 20 roles so that context fits a request header.
+  it('reads each live role on its own, oldest first, and caps a member at 20 roles', async () => {
     const grants = await memberRoleGrants(db, tenantId, lead);
     expect(grants.names).toEqual(['Role assigner', 'Night shift']);
     expect(grants.assignments.map((assignment) => assignment.permissions)).toEqual([
@@ -155,9 +155,9 @@ integration('several roles per member (isolated PostgreSQL)', () => {
       data: Array.from({ length: 30 }, (_, index) => ({ id: `extra-${index}-${run}`, tenantId, name: `Extra role ${index}`, permissions: ['cmms:read'] })),
     });
     const held = (await live(newcomer)).length;
-    for (let index = 0; index < 30 - held; index += 1)
+    for (let index = 0; index < 20 - held; index += 1)
       await service.assignMemberRole(tenantId, `m-new-${run}`, admin, { customRoleId: `extra-${index}-${run}`, reason: 'Fills the cap' });
-    expect(await live(newcomer)).toHaveLength(30);
+    expect(await live(newcomer)).toHaveLength(20);
     const refused = await service
       .assignMemberRole(tenantId, `m-new-${run}`, admin, { customRoleId: `extra-29-${run}`, reason: 'One more' })
       .catch((error: { getResponse: () => unknown }) => error.getResponse());
