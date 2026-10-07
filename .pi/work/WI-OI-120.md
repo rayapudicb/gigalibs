@@ -2057,3 +2057,72 @@ widening the card to fix the API faults the proof found.
   - **audit:design-tokens fails on one file only:** `apps/workflow-platform/components/auth/AuthAtmosphere.tsx` (6
     hard-coded colours). It is not part of this card. Another session changed it, uncommitted, at 23:58, together
     with the untracked `apps/workflow-platform/public/images/`. Left untouched for its owner.
+- **Security review of 75dc2a8: "ship".** No regression, and nothing widens access.
+  - **Verified:** the role table is identical; the resolver matches the hierarchy; wildcard additions are correct;
+    the self check cannot be dodged by reordering places or by nulls; a suspended admin is not exempt; the
+    acceptance wrapper leaks nothing; every check runs inside the tenant lock.
+  - **Reviewer's runs:** unit 24; r2_proof 19; org 11 (`organization.integration.test.ts` only; the commit's 17
+    includes the reference-structures suite); SCIM 8 (container stopped after); typecheck clean.
+  - **Findings, all predating this commit:**
+    - **M1:** the department import (`POST organization/departments/import`, `organization:draft` only) recreates
+      READ_WRITE unit grants for every member with a department, the caller included. It skips the self check, and
+      a revoked grant counts as missing, so a non-admin holding `organization:draft` can bring back a grant an admin
+      revoked. Until this is fixed, the card's "unit grants" self-widening claim is not fully true.
+    - **M2:** reactivating a suspended member (SUSPENDED to ACTIVE, by member update or SCIM) runs no bound. It
+      restores their base role and live assignments.
+    - **L1:** the CMMS user import (`iam-user-import.service.ts`, `cmms.import.write`) writes invitations directly,
+      Manager and Tenant Admin included. Acceptance now re-checks the sender, which is the only stop. The fix lies
+      in the CMMS import/export files, which no card may touch without the owner's say-so.
+    - **L2:** some powers come from the role's name rather than its permissions: MANAGER is an AP approver
+      (`ap-action.service.ts:195`), and it sets the supervisor persona.
+    - **L3:** `touchesAdmin` covers only TENANT_ADMIN, so a non-admin holding `users:update` can demote or suspend a
+      SUPER_ADMIN tenant member. UAT has one active SUPER_ADMIN member, and no non-admin holds `users:update`.
+    - **L4:** a colleague or a second account can still widen someone's places or department. This belongs to R4
+      (explicit-scope bounds).
+  - **Info:**
+    - `createGrant` takes no tenant lock;
+    - a revoked invitation can return 403 before 409;
+    - pending invitations from removed senders now fail, except GUEST ones.
+- **Review fixes (owner, 2026-10-07: "fix M1, M2 and L3", "and L1", which authorizes the CMMS import files):**
+  - **M1:**
+    - the department import now needs permission to grant units (403 `ORG_GRANT_REQUIRED`; admins hold it);
+    - it never grants a non-admin caller their own unit;
+    - it never gives back a grant a member held on that unit before, live, revoked or ended.
+    - The org integration test was rewritten to prove all of this.
+  - **M2:** bringing a suspended member back, by member update or SCIM, is bounded as a new grant of their base role,
+    their live role assignments and their direct codes (`assertReactivationWithinOwn`).
+  - **L3:** a Super Admin member is protected as a Tenant Admin is (`isWorkspaceAdministrator`), in role changes,
+    the member update, SCIM patch and delete, and the Settings row.
+  - **L1:** the CMMS user import had been refused at the job level since 7485aec, and the service it no longer called
+    used column names the table does not have (`tenant_id` against `"tenantId"`), so it never worked. The dead writer
+    and its spec are deleted and unwired. Bulk invitations come with R14.
+  - **Shared:** `ownAuthority` is the one "what the actor holds" (the guard's union); `assertGrantWithinOwn` uses it
+    and lists each missing code once.
+  - **Proof databases:** the org proof database was brought up to the current migrations (it had stopped at
+    20261001000000; the import's check reads role assignments). The SCIM proof container was started for the run
+    and stopped after.
+  - **Checks:**
+    - unit 15;
+    - r2_proof 20, including a suspended member holding an assigned CMMS role, refused with both codes named;
+    - org 17;
+    - SCIM over HTTP 9: reactivating a suspended Manager is refused; suspending or demoting a Super Admin member is
+      refused;
+    - CMMS import-export 48;
+    - typecheck: api, web and CMMS;
+    - affected unit suites: 106 files, 1078 tests.
+  - **`pnpm verify` on the fixes:** build, tests (319 files, 2740 tests; one file fewer, the deleted spec), every
+    other audit and S16 pass. Design tokens fail only on another session's uncommitted `AuthAtmosphere.tsx`, as before.
+- **Re-check of the fixes: "ship".**
+  - M1, M2 and L3 were verified in code. `ownAuthority` inside `control()` reads tables that have no row-level
+    security. The "ever held" skip never blocks a first grant. Reactivation fires only on a move from not-ACTIVE to
+    ACTIVE. No other path reactivates a member (OIDC refuses a suspended one) or touches a Super Admin.
+  - The reviewer withdrew L1: the job never called the service. Deleting it is sound.
+  - Reviewer's runs: unit 26, r2_proof 20, org 17, SCIM 9 (container stopped after); typecheck clean on four
+    packages.
+  - **Info, both done:**
+    - the import route's documented summary now says the service also requires `organization:grant` and never
+      grants the caller. `docs/contracts/organization/openapi.json` was regenerated with
+      `scripts/write-organization-contracts.mjs`; one line changed. The route keeps `organization:draft` in the
+      route table, whose test reads one permission per route.
+    - Settings no longer offers add-role controls on a Tenant Admin's or Super Admin's row to a non-admin. The server
+      already refused them.

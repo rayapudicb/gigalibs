@@ -144,6 +144,24 @@ describe.skipIf(!proofUrl)('SCIM HTTP and PostgreSQL persistence proof (isolated
     expect((await call('admin-a', `/Users/${target}`, 'PATCH', role('MEMBER'))).status).toBe(200);
   });
 
+  // Security review of 75dc2a8: bringing a suspended member back is a new grant (M2); a Super Admin member is
+  // protected as a Tenant Admin is (L3).
+  it('refuses a non-administrator who brings back a suspended Manager or changes a Super Admin', async () => {
+    const target = `member-${run}`;
+    const role = (value: string) => ({ Operations: [{ op: 'replace', path: 'roles', value: [{ value }] }] });
+    expect((await call('admin-a', `/Users/${target}`, 'PATCH', role('MANAGER'))).status).toBe(200);
+    expect((await call('admin-a', `/Users/${target}`, 'PATCH', patch(false))).status).toBe(200);
+    expect((await call('scim-lead', `/Users/${target}`, 'PATCH', patch(true))).status).toBe(403);
+    expect((await db.tenantMember.findUniqueOrThrow({ where: { userId_tenantId: { userId: target, tenantId: tenantA } } })).status).toBe('SUSPENDED');
+    expect((await call('admin-a', `/Users/${target}`, 'PATCH', patch(true))).status).toBe(200);
+    expect((await call('admin-a', `/Users/${target}`, 'PATCH', role('MEMBER'))).status).toBe(200);
+    const superAdmin = await addUser('super', tenantA, 'MEMBER');
+    await db.tenantMember.update({ where: { userId_tenantId: { userId: superAdmin, tenantId: tenantA } }, data: { role: 'SUPER_ADMIN' } });
+    expect((await call('scim-lead', `/Users/${superAdmin}`, 'PATCH', patch(false))).status).toBe(403);
+    expect((await call('scim-lead', `/Users/${superAdmin}`, 'PATCH', role('MANAGER'))).status).toBe(403);
+    expect((await db.tenantMember.findUniqueOrThrow({ where: { userId_tenantId: { userId: superAdmin, tenantId: tenantA } } })).role).toBe('SUPER_ADMIN');
+  });
+
   it('changes only one membership and its sessions for a multi-tenant identity', async () => {
     const id = await addUser('shared-a', tenantA, 'MEMBER');
     await addUser('shared-b', tenantB, 'MEMBER', id);

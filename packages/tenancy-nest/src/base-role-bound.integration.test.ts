@@ -14,6 +14,7 @@ integration('base-role bound (isolated PostgreSQL)', () => {
   const lead = `lead-${run}`;
   const worker = `worker-${run}`;
   const newcomer = `new-${run}`;
+  const nina = `nina-${run}`;
   let db: typeof import('@gigalibs/db').prisma;
   let service: import('./tenancy.service.js').TenancyService;
 
@@ -22,15 +23,17 @@ integration('base-role bound (isolated PostgreSQL)', () => {
     ({ prisma: db } = await import('@gigalibs/db'));
     service = new (await import('./tenancy.service.js')).TenancyService();
     await db.tenant.create({ data: { id: tenantId, slug: tenantId, name: 'WI-OI-120x', status: 'ACTIVE' } });
-    await db.user.createMany({ data: [admin, lead, worker, newcomer].map((id) => ({ id, email: `${id}@r2x.invalid`, name: id, status: 'ACTIVE' as const })) });
+    await db.user.createMany({ data: [admin, lead, worker, newcomer, nina].map((id) => ({ id, email: `${id}@r2x.invalid`, name: id, status: 'ACTIVE' as const })) });
     await db.tenantMember.createMany({
       data: [
         { id: `m-admin-${run}`, userId: admin, tenantId, role: 'TENANT_ADMIN' },
         // A Member who manages people: `users:update` and `invites:create` given directly.
         { id: `m-lead-${run}`, userId: lead, tenantId, role: 'MEMBER', permissions: ['users:update', 'invites:create'] },
         { id: `m-worker-${run}`, userId: worker, tenantId, role: 'VIEWER' },
+        { id: `m-nina-${run}`, userId: nina, tenantId, role: 'VIEWER' },
       ],
     });
+    await db.customRole.create({ data: { id: `tech-${run}`, tenantId, name: 'Maintenance technician', permissions: ['cmms:read', 'cmms.work-orders.read'], isSystem: true } });
   });
 
   afterAll(async () => {
@@ -61,6 +64,16 @@ integration('base-role bound (isolated PostgreSQL)', () => {
     expect(await code(update(`m-lead-${run}`, lead, { spatialScopePlaceIds: ['place-1'] }))).toBe('SELF_ACCESS_CHANGE');
     expect(await code(update(`m-lead-${run}`, lead, { employmentType: 'CONTRACTOR' }))).toBe('OK');
     expect(await code(update(`m-admin-${run}`, admin, { spatialScopePlaceIds: ['place-1'] }))).toBe('OK');
+  });
+
+  // Security review of 75dc2a8, M2: bringing a suspended member back gives them their role and roles again.
+  it('bounds bringing a suspended member back as a new grant, roles included', async () => {
+    await service.assignMemberRole(tenantId, `m-nina-${run}`, admin, { customRoleId: `tech-${run}`, reason: 'Fixes the plant' });
+    expect(await code(update(`m-nina-${run}`, admin, { status: 'SUSPENDED' }))).toBe('OK');
+    const refused = await update(`m-nina-${run}`, lead, { status: 'ACTIVE' }).catch((error: { getResponse: () => unknown }) => error.getResponse());
+    expect(refused).toMatchObject({ code: 'GRANT_BEYOND_OWN', missing: ['cmms:read', 'cmms.work-orders.read'] });
+    expect((await db.tenantMember.findUniqueOrThrow({ where: { id: `m-nina-${run}` } })).status).toBe('SUSPENDED');
+    expect(await code(update(`m-nina-${run}`, admin, { status: 'ACTIVE' }))).toBe('OK');
   });
 
   it('refuses an invitation beyond its sender, and checks it again when it is accepted', async () => {

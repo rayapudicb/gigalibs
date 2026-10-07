@@ -14,6 +14,7 @@ const author = `author-${run}`;
 const checker = `checker-${run}`;
 const member = `member-${run}`;
 const outsider = `outsider-${run}`;
+const steward = `steward-${run}`; // Tenant Admin of B (WI-OI-120x)
 
 integration('organization service', () => {
   let service: OrganizationServiceType;
@@ -42,6 +43,8 @@ integration('organization service', () => {
       await db.$executeRaw`INSERT INTO users (id, email, name, "updatedAt") VALUES (${userId}, ${`${userId}@example.invalid`}, ${userId}, now())`;
     for (const [userId, tenantId] of [[author, A], [checker, A], [member, A], [outsider, B]] as const)
       await db.$executeRaw`INSERT INTO tenant_members (id, "userId", "tenantId", "updatedAt") VALUES (${randomUUID()}, ${userId}, ${tenantId}, now())`;
+    await db.$executeRaw`INSERT INTO users (id, email, name, "updatedAt") VALUES (${steward}, ${`${steward}@example.invalid`}, ${steward}, now())`;
+    await db.$executeRaw`INSERT INTO tenant_members (id, "userId", "tenantId", role, "updatedAt") VALUES (${randomUUID()}, ${steward}, ${B}, 'TENANT_ADMIN', now())`;
   });
   afterAll(async () => {
     await db?.$disconnect();
@@ -235,17 +238,28 @@ integration('organization service', () => {
     await db.$executeRaw`INSERT INTO departments (id, "tenantId", name, code, "updatedAt") VALUES (${parent}, ${B}, 'Operations', ${`OPS-${run}`}, now())`;
     await db.$executeRaw`INSERT INTO departments (id, "tenantId", name, code, "parentId", "updatedAt") VALUES (${child}, ${B}, 'Field teams', ${`FIELD-${run}`}, ${parent}, now())`;
     await db.$executeRaw`UPDATE tenant_members SET "departmentId" = ${child} WHERE "tenantId" = ${B} AND "userId" = ${outsider}`;
+    // WI-OI-120x (review M1): bringing departments in grants units, so it needs permission to grant them.
+    await expectStatus(service.importDepartments(B, outsider, { reason: 'Adopt the organization model' }), 403, /grant units/);
+    await db.$executeRaw`UPDATE tenant_members SET permissions = ARRAY['organization:grant'] WHERE "tenantId" = ${B} AND "userId" = ${outsider}`;
     await expectStatus(service.importDepartments(B, outsider, { reason: 'Adopt the organization model' }), 422, /primary tree/);
     await service.createTree(B, outsider, { code: 'primary', name: 'Organization', kind: 'PRIMARY', purpose: 'AUTHORITY' });
+    // A member who may grant units, but is not a Tenant Admin, does not grant themselves their own department.
     const first = await service.importDepartments(B, outsider, { reason: 'Adopt the organization model' });
-    expect(first).toMatchObject({ departments: 2, unitsCreated: 2, placed: 2, grantsCreated: 1 });
+    expect(first).toMatchObject({ departments: 2, unitsCreated: 2, placed: 2, grantsCreated: 0 });
     expect((await service.getUnit(B, child)).typeCode).toBe('DEPARTMENT');
     const roots = await service.listEdges(B, first.draftVersionId as string, { limit: 50 });
     expect(roots.items.map((edge) => edge.unitId)).toEqual([parent]);
     expect((await service.listEdges(B, first.draftVersionId as string, { parentUnitId: parent, limit: 50 })).items.map((edge) => edge.unitId)).toEqual([child]);
-    expect((await service.listGrants(B, { userId: outsider, includeRevoked: false, limit: 10 })).items).toEqual([expect.objectContaining({ unitId: child, access: 'READ_WRITE' })]);
-    // Running it again adds nothing.
-    expect(await service.importDepartments(B, outsider, { reason: 'Again' })).toMatchObject({ unitsCreated: 0, grantsCreated: 0, draftVersionId: first.draftVersionId });
+    expect((await service.listGrants(B, { userId: outsider, includeRevoked: false, limit: 10 })).items).toEqual([]);
+    // The administrator's run grants the member their department once.
+    expect(await service.importDepartments(B, steward, { reason: 'Again, by the administrator' })).toMatchObject({ unitsCreated: 0, grantsCreated: 1, draftVersionId: first.draftVersionId });
+    const [grant] = (await service.listGrants(B, { userId: outsider, includeRevoked: false, limit: 10 })).items;
+    expect(grant).toMatchObject({ unitId: child, access: 'READ_WRITE' });
+    // Running it again adds nothing, and a grant the administrator revokes is not given back.
+    expect(await service.importDepartments(B, steward, { reason: 'Again' })).toMatchObject({ unitsCreated: 0, grantsCreated: 0 });
+    await service.revokeGrant(B, steward, grant!.id, { reason: 'Moved off the field team' });
+    expect(await service.importDepartments(B, steward, { reason: 'Once more' })).toMatchObject({ grantsCreated: 0 });
+    expect((await service.listGrants(B, { userId: outsider, includeRevoked: false, limit: 10 })).items).toEqual([]);
   });
 
   it('revokes once, and records every change in the audit log and outbox', async () => {

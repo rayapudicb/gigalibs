@@ -35,7 +35,13 @@ import {
   resolveDomainVerification,
 } from './domain-verification.js';
 import { tenantSubdomain, trialModuleKeys } from './platform-module-catalog.js';
-import { assertBaseRoleWithinOwn, assertGrantWithinOwn, assertNotOwnAccess } from './grant-bound.js';
+import {
+  assertBaseRoleWithinOwn,
+  assertGrantWithinOwn,
+  assertNotOwnAccess,
+  assertReactivationWithinOwn,
+  isWorkspaceAdministrator,
+} from './grant-bound.js';
 import { assertTenantAdminAuthority, assertTenantAdministratorRetained } from './tenant-member-safety.js';
 
 @Injectable()
@@ -603,7 +609,7 @@ export class TenancyService {
       select: { id: true, userId: true, role: true, customRoleId: true },
     });
     if (!member) throw new NotFoundException('Tenant member was not found');
-    await assertTenantAdminAuthority(transaction, tenantId, actorId, { grantsAdmin: false, touchesAdmin: member.role === 'TENANT_ADMIN' });
+    await assertTenantAdminAuthority(transaction, tenantId, actorId, { grantsAdmin: false, touchesAdmin: isWorkspaceAdministrator(member.role) });
     if (member.userId === actorId) {
       const actor = await transaction.tenantMember.findUnique({ where: { userId_tenantId: { userId: actorId, tenantId } }, select: { role: true, status: true } });
       if (!(actor?.status === 'ACTIVE' && (actor.role === 'TENANT_ADMIN' || actor.role === 'SUPER_ADMIN')))
@@ -1155,6 +1161,7 @@ export class TenancyService {
             userId: true,
             role: true,
             status: true,
+            permissions: true,
             departmentId: true,
             employmentType: true,
             spatialScopePlaceIds: true,
@@ -1188,7 +1195,8 @@ export class TenancyService {
 
         await assertTenantAdminAuthority(transaction, tenantId, changedById, {
           grantsAdmin: nextRole === 'TENANT_ADMIN' && member.role !== 'TENANT_ADMIN',
-          touchesAdmin: member.role === 'TENANT_ADMIN',
+          // WI-OI-120x (review L3): a Super Admin member is protected as a Tenant Admin is.
+          touchesAdmin: isWorkspaceAdministrator(member.role),
         });
         // WI-OI-120x: nobody but a Tenant Admin changes their own role, department or places, or gives a base role
         // beyond what they hold.
@@ -1198,6 +1206,9 @@ export class TenancyService {
         if (nextRole !== member.role || nextDepartmentId !== member.departmentId || placesChanged)
           await assertNotOwnAccess(transaction, tenantId, changedById, member.userId);
         await assertBaseRoleWithinOwn(transaction, tenantId, changedById, member.role, nextRole);
+        // WI-OI-120x (review M2): bringing a suspended member back is bounded as a new grant.
+        if (member.status !== 'ACTIVE' && nextStatus === 'ACTIVE')
+          await assertReactivationWithinOwn(transaction, tenantId, changedById, { userId: member.userId, role: nextRole, permissions: member.permissions });
         await assertTenantAdministratorRetained(transaction, tenantId, member, { role: nextRole, status: nextStatus });
 
         // WI-OI-120w (Security review of 2a, M2): roles are not changed here. They are given and taken away through

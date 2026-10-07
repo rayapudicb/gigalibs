@@ -148,7 +148,8 @@ interface MemberRowProps {
 }
 
 function MemberRow({ member, currentUserId, canUpdate: mayUpdate, isAdministrator, canAssignRoles, viewerPermissions, customRoles, onSaved }: MemberRowProps) {
-  const canUpdate = mayUpdate && (isAdministrator || member.role !== 'TENANT_ADMIN');
+  // WI-OI-120v, 120x (review L3): a Tenant Admin's or Super Admin's row is read-only for anyone but an administrator.
+  const canUpdate = mayUpdate && (isAdministrator || (member.role !== 'TENANT_ADMIN' && member.role !== 'SUPER_ADMIN'));
   // WI-OI-120x: only an administrator changes their own base role; anyone else asks another administrator.
   const canChangeRole = canUpdate && (isAdministrator || member.user.id !== currentUserId);
   const [role, setRole] = useState<MemberRole>(member.role);
@@ -237,7 +238,10 @@ function MemberRow({ member, currentUserId, canUpdate: mayUpdate, isAdministrato
         <MemberRoles
           member={member}
           customRoles={customRoles}
-          canAssign={canAssignRoles && (isAdministrator || member.user.id !== currentUserId)}
+          canAssign={
+            canAssignRoles &&
+            (isAdministrator || (member.user.id !== currentUserId && member.role !== 'TENANT_ADMIN' && member.role !== 'SUPER_ADMIN'))
+          }
           onSaved={onSaved}
         />
       </TableCell>

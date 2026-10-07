@@ -48,7 +48,7 @@ import {
   NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
-import { assertNotOwnAccess } from './grant-bound.js';
+import { assertNotOwnAccess, ownAuthority } from './grant-bound.js';
 
 // WI-OI-109c (ADR-0018): the organization hierarchy's administration. Every transaction runs as the NOLOGIN
 // `gigalibs_org_tenant` role with the tenant set, so forced row-level security bounds every organization query;
@@ -843,6 +843,15 @@ export class OrganizationService {
    */
   async importDepartments(tenantId: string, actorId: string, dto: ImportOrgDepartmentsV1): Promise<OrgDepartmentImportV1> {
     return this.run(tenantId, async (tx, control) => {
+      // WI-OI-120x (review M1): bringing departments in also grants members their units, so it needs permission to
+      // grant units. Someone who is not a Tenant Admin never grants themselves, and a grant on a unit that was
+      // revoked or ended is never given back: that decision stands.
+      const authority = await control(() => ownAuthority(tx, tenantId, actorId));
+      if (!authority.holds('organization:grant'))
+        throw new ForbiddenException({
+          code: 'ORG_GRANT_REQUIRED',
+          message: 'Bringing departments in also gives members their units; that needs permission to grant units.',
+        });
       const departments = await control(() =>
         tx.department.findMany({ where: { tenantId }, select: { id: true, code: true, name: true, parentId: true, managerId: true, isActive: true, createdAt: true } }),
       );
@@ -896,8 +905,10 @@ export class OrganizationService {
       let grantsCreated = 0;
       for (const assignment of assignments) {
         const unitId = assignment.departmentId as string;
+        if (assignment.userId === actorId && !authority.administrator) continue;
         const current = { tenantId, userId: assignment.userId, revokedAt: null, OR: [{ effectiveTo: null }, { effectiveTo: { gt: new Date() } }] };
-        if (await tx.orgScopeGrant.findFirst({ where: { ...current, unitId }, select: { id: true } })) continue;
+        // Any grant this member ever held on the unit, live, revoked or ended.
+        if (await tx.orgScopeGrant.findFirst({ where: { tenantId, userId: assignment.userId, unitId }, select: { id: true } })) continue;
         if ((await tx.orgScopeGrant.count({ where: current })) >= MAX_ORG_GRANTS_PER_MEMBER) continue;
         const grant = await tx.orgScopeGrant.create({
           data: { tenantId, userId: assignment.userId, unitId, access: 'READ_WRITE', effectiveFrom: new Date(), reason: 'Brought in from department membership', grantedById: actorId },

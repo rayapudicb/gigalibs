@@ -11,7 +11,14 @@ import { AuditService } from '@gigalibs/audit-nest';
 import { isTenantPermissionCode, TenantMemberRoleSchema } from '@gigalibs/contracts';
 import { PermissionEvaluator } from '@gigalibs/rbac-core';
 import { memberScopeRoles, resolveBaseRolePermissions } from '@gigalibs/rbac-nest';
-import { assertBaseRoleWithinOwn, assertNotOwnAccess, assertTenantAdminAuthority, assertTenantAdministratorRetained } from '@gigalibs/tenancy-nest';
+import {
+  assertBaseRoleWithinOwn,
+  assertNotOwnAccess,
+  assertReactivationWithinOwn,
+  assertTenantAdminAuthority,
+  assertTenantAdministratorRetained,
+  isWorkspaceAdministrator,
+} from '@gigalibs/tenancy-nest';
 import { parseScim, scimMembershipChanges, ScimPatchSchema, ScimUserCreateSchema } from './scim.validation.js';
 export type { ScimPatchInput, ScimUserCreateInput } from './scim.validation.js';
 
@@ -231,7 +238,8 @@ export class ScimService {
       if (next.role !== member.role || next.status !== member.status) {
         await assertTenantAdminAuthority(tx, tenantId, operatorId, {
           grantsAdmin: next.role === 'TENANT_ADMIN' && member.role !== 'TENANT_ADMIN',
-          touchesAdmin: member.role === 'TENANT_ADMIN',
+          // WI-OI-120x (review L3): a Super Admin member is protected as a Tenant Admin is.
+          touchesAdmin: isWorkspaceAdministrator(member.role),
         });
       }
       // WI-OI-120x: no operator but a Tenant Admin changes their own role or gives one beyond what they hold.
@@ -239,6 +247,9 @@ export class ScimService {
         await assertNotOwnAccess(tx, tenantId, operatorId, member.userId);
         await assertBaseRoleWithinOwn(tx, tenantId, operatorId, member.role, next.role);
       }
+      // WI-OI-120x (review M2): bringing a suspended member back is bounded as a new grant.
+      if (member.status !== 'ACTIVE' && next.status === 'ACTIVE')
+        await assertReactivationWithinOwn(tx, tenantId, operatorId, { userId: member.userId, role: next.role, permissions: member.permissions });
       await assertTenantAdministratorRetained(tx, tenantId, member, next);
       if (next.role !== member.role || next.status !== member.status) {
         await tx.tenantMember.update({ where: { id: member.id }, data: next });
@@ -258,7 +269,7 @@ export class ScimService {
     await this.mutate(tenantId, operatorId, 'users:delete', async (tx) => {
       const member = await tx.tenantMember.findUnique({ where: { userId_tenantId: { userId: id, tenantId } } });
       if (!member) throw new NotFoundException('SCIM user was not found');
-      await assertTenantAdminAuthority(tx, tenantId, operatorId, { grantsAdmin: false, touchesAdmin: member.role === 'TENANT_ADMIN' });
+      await assertTenantAdminAuthority(tx, tenantId, operatorId, { grantsAdmin: false, touchesAdmin: isWorkspaceAdministrator(member.role) });
       await assertTenantAdministratorRetained(tx, tenantId, member, null);
       await this.revokeSessions(tx, tenantId, id);
       // WI-OI-120w review (L1): the member's role assignments go with the membership, so they are kept in the audit first.

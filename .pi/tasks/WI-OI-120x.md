@@ -1,7 +1,8 @@
 # WI-OI-120x: A non-admin gives no base role or scope beyond their own
 
-- **Status:** Approved (owner, 2026-10-06: "approved", after "card the base-role bound"). Built and checked
-  2026-10-07; awaiting "commit" and the Security review. Found by the independent Security review of the WI-OI-120w
+- **Status:** Approved (owner, 2026-10-06: "approved", after "card the base-role bound"). Committed 75dc2a8
+  (2026-10-07). Security review: "ship". Review fixes for M1, M2, L3 and L1 (owner, 2026-10-07, "and L1", which authorizes the
+  CMMS import files) are built and await "commit". Found by the independent Security review of the WI-OI-120w
   grant bound. It predates R2.
 - **Work item:** WI-OI-120. Evidence goes in `.pi/work/WI-OI-120.md`.
 - **Size:** S
@@ -89,9 +90,11 @@ still unbounded:
 
 ## Done when
 
-- [ ] The base-role bound is applied to the member update, invitations, acceptance and SCIM.
-- [ ] Self-widening is refused for role, department, places and unit grants.
-- [ ] Settings → Team offers only the roles a non-admin may give, and their own row is read-only.
+- [x] The base-role bound is applied to the member update, invitations, acceptance, SCIM and reactivation (review M2
+      fixed 2026-10-07).
+- [x] Self-widening is refused for role, department, places and unit grants, the department import included
+      (review M1 fixed 2026-10-07).
+- [x] Settings → Team offers only the roles a non-admin may give, and their own row is read-only (75dc2a8).
 - [ ] Checks pass; Security review recorded; evidence recorded; images built and handed to the owner.
 
 ## Stop and ask if

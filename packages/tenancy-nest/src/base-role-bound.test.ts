@@ -26,11 +26,12 @@ import { TenancyService } from './tenancy.service.js';
 
 const tenantId = 'tenant-1';
 const updatedAt = new Date('2026-10-07T10:00:00.000Z');
-const member = (id: string, role: string) => ({
+const member = (id: string, role: string, status = 'ACTIVE') => ({
   id,
   userId: `user-${id}`,
   role,
-  status: 'ACTIVE',
+  status,
+  permissions: [] as string[],
   departmentId: null,
   employmentType: null,
   spatialScopePlaceIds: [] as string[],
@@ -84,6 +85,24 @@ describe('base roles and own access (WI-OI-120x)', () => {
     await update(member('m-1', 'VIEWER'), 'user-admin', { role: 'MANAGER' });
     await update(member('admin', 'TENANT_ADMIN'), 'user-admin', { spatialScopePlaceIds: ['place-1'] });
     expect(prismaMock.tenantMember.updateMany).toHaveBeenCalledTimes(2);
+  });
+
+  it('bounds bringing a suspended member back as a new grant (review M2)', async () => {
+    await expect(update(member('m-3', 'MANAGER', 'SUSPENDED'), 'user-lead', { status: 'ACTIVE' })).rejects.toMatchObject({
+      response: { code: 'GRANT_BEYOND_OWN', missing: expect.arrayContaining(['workflows:*']) },
+    });
+    await expect(update({ ...member('m-4', 'VIEWER', 'SUSPENDED'), permissions: ['finance:read'] }, 'user-lead', { status: 'ACTIVE' })).rejects.toMatchObject({
+      response: { code: 'GRANT_BEYOND_OWN', missing: ['finance:read'] },
+    });
+    await update(member('m-5', 'VIEWER', 'SUSPENDED'), 'user-lead', { status: 'ACTIVE' });
+    await update(member('m-3', 'MANAGER', 'SUSPENDED'), 'user-admin', { status: 'ACTIVE' });
+    expect(prismaMock.tenantMember.updateMany).toHaveBeenCalledTimes(2);
+  });
+
+  it('protects a Super Admin member as a Tenant Admin is (review L3)', async () => {
+    for (const changes of [{ role: 'MANAGER' }, { status: 'SUSPENDED' }])
+      await expect(update(member('super', 'SUPER_ADMIN'), 'user-lead', changes)).rejects.toMatchObject({ response: { code: 'TENANT_ADMIN_ONLY' } });
+    expect(prismaMock.tenantMember.updateMany).not.toHaveBeenCalled();
   });
 
   it('refuses an invitation to a base role beyond what its sender holds', async () => {

@@ -7,7 +7,6 @@ import { FkResolverService } from './fk-resolver.js';
 import { HierarchyResolverService } from './hierarchy-resolver.js';
 import { RowValidatorService } from './row-validator.js';
 import { BatchWriterService } from './batch-writer.js';
-import { IamUserImportService } from './iam-user-import.service.js';
 import { ImportStorageService } from './import-storage.service.js';
 import { XlsxStreamReader } from './xlsx-stream-reader.js';
 import { XlsxMultiSheetReader } from './xlsx-multisheet-reader.js';
@@ -27,7 +26,6 @@ export class ImportJobService {
     private readonly hierarchyResolver: HierarchyResolverService,
     private readonly rowValidator: RowValidatorService,
     private readonly batchWriter: BatchWriterService,
-    private readonly iamUserImportService: IamUserImportService,
     private readonly storage: ImportStorageService,
   ) {}
 
@@ -219,12 +217,13 @@ export class ImportJobService {
         return;
       }
 
-      // 8. Commit — IAM entity types go through IamUserImportService; others use BatchWriterService
+      // 8. Commit — IAM entity types are refused (the user import is switched off); others use BatchWriterService
       await this.updateJobStatus(tenantId, jobId, 'COMMITTING');
       let batchResult: { committed: number; failed: Array<{ rowNumber: number; error: string }> };
       if (IAM_ENTITY_TYPES.includes(entityType)) {
         // WI-OI-120n (owner authorised, 2026-10-06): the user import is switched off (it wrote the control plane's
-        // invitations from this module). A job started before the switch commits nothing.
+        // invitations from this module). A job started before the switch commits nothing. WI-OI-120x (owner, "and L1",
+        // 2026-10-07): the writer itself is removed, so it cannot be wired back; bulk invitations come with R14.
         batchResult = {
           committed: 0,
           failed: sorted.map((row) => ({ rowNumber: row.rowNumber, error: 'Importing users is switched off; invite people on Settings → Team.' })),

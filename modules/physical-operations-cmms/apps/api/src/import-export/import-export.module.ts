@@ -8,7 +8,6 @@ import { FkResolverService } from './fk-resolver.js';
 import { HierarchyResolverService } from './hierarchy-resolver.js';
 import { RowValidatorService } from './row-validator.js';
 import { BatchWriterService } from './batch-writer.js';
-import { IamUserImportService } from './iam-user-import.service.js';
 import { DatabaseModule } from '../database/database.module.js';
 
 @Module({
@@ -23,7 +22,6 @@ import { DatabaseModule } from '../database/database.module.js';
     HierarchyResolverService,
     RowValidatorService,
     BatchWriterService,
-    IamUserImportService,
   ],
   exports: [ImportJobService, ExportJobService],
 })

@@ -839,7 +839,7 @@
     "/departments/import": {
       "post": {
         "operationId": "importOrgDepartments",
-        "summary": "Bring departments in as units (same ids), placed in the draft, with member grants",
+        "summary": "Bring departments in as units (same ids), placed in the draft, with member grants; the service also requires organization:grant and never grants the caller (WI-OI-120x)",
         "x-permission": "organization:draft",
         "requestBody": {
           "required": true,
