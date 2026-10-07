@@ -4,6 +4,7 @@ import {
   assignmentScopeConflicts,
   assignmentScopeKey,
   baseRolePermissions,
+  explicitScopeRefusal,
   holdsPermission,
   isTenantPermissionCode,
   platformModuleCatalog,
@@ -40,6 +41,9 @@ export async function resolveRoleScope(
       code: 'ROLE_SCOPE_WORKSPACE_ONLY',
       message: `This role carries workspace permissions (${controlPlane.slice(0, 5).join(', ')}${controlPlane.length > 5 ? ', …' : ''}); give it for the whole workspace or the person's own scope.`,
     });
+  // Security review of 2b (H1, H2): only a module proven to limit its records by units or places may receive a role
+  // given there; anything else would act everywhere while the screen said otherwise.
+  assertScopeEnforced(rolePermissions, scope.kind === 'UNITS' ? 'units' : 'places');
   if (scope.kind === 'PLACES') return { scope: 'PLACES', unitIds: [], placeIds: [...scope.placeIds] };
   const versionId = await primaryVersionInForce(tx, tenantId);
   if (!versionId)
@@ -63,6 +67,18 @@ export async function resolveRoleScope(
       missing,
     });
   return { scope: 'UNITS', unitIds: [...scope.unitIds], placeIds: [] };
+}
+
+/** Refuses permissions at units or places unless every module that checks them is proven to limit by that dimension. */
+export function assertScopeEnforced(permissions: readonly string[], dimension: 'units' | 'places'): void {
+  const refusal = explicitScopeRefusal(permissions, dimension);
+  if (!refusal) return;
+  const owners = refusal.owners.map((owner) => (owner === 'platform' ? 'the platform' : platformModuleCatalog.find((module) => module.key === owner)?.name ?? owner));
+  throw new UnprocessableEntityException({
+    code: 'ROLE_SCOPE_NOT_ENFORCED',
+    message: `${refusal.code} is checked by ${owners.join(', ')}, which does not yet limit records by ${dimension}; give this role for the whole workspace or the person's own scope.`,
+    permission: refusal.code,
+  });
 }
 
 /**

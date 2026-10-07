@@ -87,7 +87,15 @@ everything under them), or some places (with everything inside them).
   The single role picker goes. Every grant and revoke is audited and takes effect on the member's next request.
 - **The journey:** the technician holds Maintenance technician and Workforce member.
 
-### Slice 2b (approved by the owner 2026-10-07: "approved 2b"; built and checked; slice 2c to be confirmed)
+### Slice 2b (approved by the owner 2026-10-07: "approved 2b"; committed 645a72e; review fixes built; slice 2c to be confirmed)
+
+- **After the Security review ("do not ship as is", H1 and H2), units and places are gated per module.** A role can be
+  given at units or places only once every module checking its codes is proven, by its R5 card, to limit records by
+  that dimension (`SCOPE_ENFORCING_MODULES`, empty today), and no code is checked by the platform. Until then, only
+  the member's own scope and the whole workspace can be given. The plumbing (session claims, per-module contexts, the
+  transition rule) is in place for R5 to switch on.
+- **Each R5 card must:** fix its module's context key so it matches the catalogue (Geospatial, Connector Hub), prove
+  enforcement per dimension, and add its entry.
 
 - **As built:**
   - **Migration:** `20261007000000_member_role_assignments_scoped` lifts the `MEMBER`-only constraint and bounds the
@@ -158,6 +166,31 @@ everything under them), or some places (with everything inside them).
     Workforce context the member's own scope.
   - **Rest:** SCIM unaffected; the journey; `pnpm verify`; Security review before deploy (an access change).
 - **Size:** L, about 2–3 working days. Slice 2c: M, about 1 day.
+
+### Slice 2c plan: roles that include other roles (owner: "approved 2c", 2026-10-07; starts after the 2b fixes are committed)
+
+- **Data:** a forward migration adds `custom_role_inclusions` (role, included role, who, when).
+  - Both ends must be roles of the same workspace (composite foreign keys).
+  - No self-inclusion; each pair once.
+  - At most 10 inclusions per role.
+- **Rules on save:**
+  - the inclusion graph must stay acyclic and at most 5 deep;
+  - a role that is included elsewhere cannot be deleted until it is removed from those roles (409, naming them).
+- **What a role grants:** its own permissions plus, transitively, those of the roles it includes, computed in one
+  place (rbac-nest). Included permissions take the including assignment's scope (ADR-0034 §2). Every consumer reads
+  the expanded set: the session and its context claims, the control-plane guard, the grant bound, the transition rule,
+  the units-and-places gate, and the role-edit holder checks.
+- **Editing inclusions is a grant.** Adding an inclusion gives every holder the included role's permissions, so it is
+  checked like adding permissions: the grant bound for a non-admin editor, the transition rule for every holder, and
+  the gate for holders at units or places. Removing an inclusion is never blocked.
+- **The role editor:** "Includes" lists roles the editor may include, and a role shows the roles it includes and
+  what it grants in total.
+- **Proof:**
+  - unit tests: cycle and depth refusals, expansion;
+  - r2_proof: "Maintenance lead" includes Maintenance planner and Workforce supervisor, and a holder's session holds
+    both; a cycle is refused; a non-admin cannot include a role beyond what they hold;
+  - `pnpm verify`; Security review before deploy.
+- **Size:** M, about 1 working day.
 
 ### Slice 2b: explicit scopes, switched on once slice 3 enforces them (the rest of the original slice 2)
 

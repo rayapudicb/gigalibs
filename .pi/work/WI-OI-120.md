@@ -2347,3 +2347,50 @@ widening the card to fix the API faults the proof found.
   "Workforce member" at own scope, because CMMS also checks Workforce codes. R5 for CMMS lifts this.
 - **`pnpm verify`:** build, tests (2765), every other audit and S16 pass. Design tokens fail only on another
   session's uncommitted `AuthAtmosphere.tsx`.
+- **Security review of 645a72e: "do not ship as is".** Accepted; fixed in the working tree.
+  - **H1:** contexts are minted under keys that differ from how the catalogue files a module's codes
+    (`geospatial-studio` against `geospatial`; `connections` against `universal-connector-hub`). A place-scoped
+    Maintenance technician got an unbounded Geospatial context and read every place.
+  - **H2:** units or places were accepted for codes that the platform checks without units (configuration unmask and
+    export, extension values, master data, the pack-apply job), and for modules that read no scope claim (Finance,
+    Orders, Procurement). So "Journal Approver at North" would approve everywhere.
+  - **The fix for H1 and H2.** A role can be given at units or places only when every module checking its codes is
+    proven to limit records by that dimension, and no code is platform-checked:
+    - `SCOPE_ENFORCING_MODULES` (empty) and `explicitScopeRefusal` in contracts;
+    - `assertScopeEnforced` in tenancy-nest, refusing with 422 `ROLE_SCOPE_NOT_ENFORCED`;
+    - so today only the member's own scope and the whole workspace can be given, and the UI offers units and places
+      only once some module enforces them;
+    - each module's R5 card adds its entry, after fixing its context key and proving that the key covers the codes
+      its API checks.
+  - **M1:** the grant bound counted roles held only at units or places. It now counts only own-scope and workspace
+    roles, plus base and direct codes.
+  - **M2:** a role edit re-validated every holder's units and blocked even removals. Now only additions are checked.
+  - **Info:** the unit claim now carries only resolved roots.
+  - **Recorded as known:**
+    - L1: module-role rewrites from manifests (`syncDefaultRoles`) bypass the rule. Today this can only cause
+      own-scope against workspace conflicts, which fail closed.
+    - L2: a SCIM PATCH that raises the role and deactivates in one request fails entirely on a conflict.
+  - **Checks:** contracts 5; r2_proof 26 of 26; org proof 18 of 18 (organization 12 plus reference structures 6;
+    the reviewer ran the 12); affected suites 128 files, 1268 tests; api and web typecheck.
+- **Re-check of the fixes: "ship", on three conditions.**
+  1. The fixes ship together with 645a72e, which was never deployed (UAT runs a6e79e0).
+  2. `pnpm verify` passes.
+  3. No live unit- or place-scoped assignment exists where 645a72e ran. UAT, read-only: 0 non-MEMBER live
+     assignments, and its own-scope-only constraint is still present (645a72e has not run there).
+  - **Verified:**
+    - a wildcard (`cmms:*`) is refused at units or places;
+    - only the service creates explicit scopes, and the trigger writes own-scope rows only;
+    - the whole-workspace scope cannot widen through the context-key mismatch: the mismatched keys check a subset of
+      the module's own codes, so the rule refuses any conflict, and otherwise the module gets the member's own
+      claims.
+  - **Done after the re-check:**
+    - the gate is now an allow-list: a code the catalogue does not know is refused at units or places;
+    - a guard test fails if an enforcing module is added without its R5 coverage test.
+  - **Known:** L1 (manifest role rewrites bypass the rule; today this only causes fail-closed conflicts), and a
+    non-admin passing own-scope codes to someone whose own scope is wider (this predates the slice; it belongs to R4).
+- **`pnpm verify` on the final code**, with machine load averages of 36–42:
+  - build, every other audit and S16 pass; 2767 tests pass;
+  - one test timed out at its 5-second limit: the Workforce pay rules "reference pack gating" test, which has nothing
+    to do with this slice; it and the execution-events spec pass alone (17 of 17);
+  - design tokens fail only on another session's uncommitted `AuthAtmosphere.tsx`.
+  - To repeat once the machine is quieter, so condition 2 holds cleanly.

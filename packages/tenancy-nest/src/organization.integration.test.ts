@@ -174,7 +174,7 @@ integration('organization service', () => {
 
   // WI-OI-120w (R2 slice 2b): a role given at units of the organization in force, and the claims a module that still
   // reads one scope receives for it: the units as roots, and the legacy department list with everything below them.
-  it('gives a role at units in force, refuses unknown units, and resolves it as modules read it', async () => {
+  it('refuses a role at units until a module enforces them, and resolves units as modules read them', async () => {
     const admin = `admin-2b-${run}`;
     const roleId = `north-technician-${run}`;
     await db.$executeRaw`INSERT INTO users (id, email, name, "updatedAt") VALUES (${admin}, ${`${admin}@example.invalid`}, ${admin}, now())`;
@@ -182,15 +182,12 @@ integration('organization service', () => {
     await db.customRole.create({ data: { id: roleId, tenantId: A, name: 'North technician', permissions: ['cmms:read', 'cmms.work-orders.read'] } });
     const tenancy = new (await import('./tenancy.service.js')).TenancyService();
     const membership = await db.tenantMember.findFirstOrThrow({ where: { tenantId: A, userId: checker } });
-    await expectStatus(
-      tenancy.assignMemberRole(A, membership.id, admin, { customRoleId: roleId, reason: 'Unknown unit', scope: { kind: 'UNITS', unitIds: ['no-such-unit'] } }),
-      422,
-    );
-    await tenancy.assignMemberRole(A, membership.id, admin, { customRoleId: roleId, reason: 'North only', scope: { kind: 'UNITS', unitIds: [ids.north] } });
-    expect(await db.memberRoleAssignment.findFirstOrThrow({ where: { tenantId: A, userId: checker, customRoleId: roleId, revokedAt: null } })).toMatchObject({
-      scope: 'UNITS',
-      unitIds: [ids.north],
-    });
+    // Security review of 2b (H1, H2): no module is proven to limit records by units yet, so the role is refused at North.
+    const refused = await tenancy
+      .assignMemberRole(A, membership.id, admin, { customRoleId: roleId, reason: 'North only', scope: { kind: 'UNITS', unitIds: [ids.north] } })
+      .catch((error: { getResponse: () => unknown }) => error.getResponse());
+    expect(refused).toMatchObject({ code: 'ROLE_SCOPE_NOT_ENFORCED' });
+    expect(await db.memberRoleAssignment.count({ where: { tenantId: A, userId: checker, customRoleId: roleId, revokedAt: null } })).toBe(0);
     const { resolveUnitRootsScope } = await import('@gigalibs/auth-nest');
     const north = await resolveUnitRootsScope(db, { tenantId: A, versionId: ids.v1, unitIds: [ids.north] });
     expect(north.organizationScope).toEqual({ mode: 'UNITS', tree_version: ids.v1, read_roots: [ids.north], write_roots: [ids.north] });

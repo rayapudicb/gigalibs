@@ -2,7 +2,14 @@
 
 import { PageShell } from '@/components/page-shell';
 import { memberStatusLabel, roleLabel } from '@/lib/role-labels';
-import { baseRoleAdditions, holdsPermission, type OrgUnitV1, PERMISSION_CATALOGUE, type SpatialNodeV1 } from '@gigalibs/contracts';
+import {
+  baseRoleAdditions,
+  holdsPermission,
+  type OrgUnitV1,
+  PERMISSION_CATALOGUE,
+  SCOPE_ENFORCING_MODULES,
+  type SpatialNodeV1,
+} from '@gigalibs/contracts';
 import { OrgUnitPicker, useUnitNames } from '@/components/organization/OrgShared';
 import { geospatialApi } from '@/lib/geospatial-api';
 import { Button } from '@/components/ui/button';
@@ -289,11 +296,16 @@ function MemberRow({ member, currentUserId, canUpdate: mayUpdate, isAdministrato
 
 /** WI-OI-120w (R2 slice 2b): where a role applies when it is given. */
 type RoleScopeKind = 'MEMBER' | 'WORKSPACE' | 'UNITS' | 'PLACES';
+// Units and places are offered once a module is proven to limit its records by them (Security review of slice 2b).
+const ENFORCED = {
+  units: Object.values(SCOPE_ENFORCING_MODULES).some((module) => module.units),
+  places: Object.values(SCOPE_ENFORCING_MODULES).some((module) => module.places),
+};
 const SCOPE_CHOICES: ReadonlyArray<{ value: RoleScopeKind; label: string }> = [
-  { value: 'MEMBER', label: 'Their own scope' },
-  { value: 'WORKSPACE', label: 'The whole workspace' },
-  { value: 'UNITS', label: 'Chosen units' },
-  { value: 'PLACES', label: 'Chosen places' },
+  { value: 'MEMBER' as const, label: 'Their own scope' },
+  { value: 'WORKSPACE' as const, label: 'The whole workspace' },
+  ...(ENFORCED.units ? [{ value: 'UNITS' as const, label: 'Chosen units' }] : []),
+  ...(ENFORCED.places ? [{ value: 'PLACES' as const, label: 'Chosen places' }] : []),
 ];
 
 /**

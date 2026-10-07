@@ -70,3 +70,37 @@ export function moduleGrantScope(grants: readonly ScopedGrant[], moduleKey: stri
   }
   return found;
 }
+
+/** Which dimensions a module limits its records by, from the claims it receives (proven by its R5 card). */
+export interface ScopeEnforcement {
+  readonly units: boolean;
+  readonly places: boolean;
+}
+
+/**
+ * WI-OI-120w (Security review of slice 2b, H1 and H2): the modules proven to limit their records by the units or places
+ * of the claims they receive, keyed as the permission catalogue files their codes. Empty: no module is proven yet, so a
+ * role cannot be given at units or places. Each module's R5 card adds its entry, with the test that its minted context
+ * key covers the codes its API checks.
+ */
+export const SCOPE_ENFORCING_MODULES: Readonly<Record<string, ScopeEnforcement>> = {};
+
+/**
+ * Why `permissions` cannot be limited to units or places, or null when they can. A code checked by the platform (which
+ * has no units or places), or by any module not proven to enforce that dimension, would act everywhere while the screen
+ * said otherwise, so the scope is refused.
+ */
+export function explicitScopeRefusal(
+  permissions: readonly string[],
+  dimension: keyof ScopeEnforcement,
+  enforcing: Readonly<Record<string, ScopeEnforcement>> = SCOPE_ENFORCING_MODULES,
+): { readonly code: string; readonly owners: readonly string[] } | null {
+  for (const entry of modulePermissionCatalogue) {
+    if (!holdsPermission(permissions, entry.code)) continue;
+    if (entry.entries.some((owner) => owner === 'platform' || !enforcing[owner]?.[dimension])) return { code: entry.code, owners: entry.entries };
+  }
+  // An allow-list, not a deny-list (re-check of 2b): a code the catalogue does not know is checked by nothing proven.
+  for (const code of permissions)
+    if (!modulePermissionCatalogue.some((entry) => holdsPermission([code], entry.code))) return { code, owners: [] };
+  return null;
+}

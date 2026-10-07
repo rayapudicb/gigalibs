@@ -32,6 +32,7 @@ integration('roles at a scope (isolated PostgreSQL)', () => {
         { id: `worker-${run}`, tenantId, name: 'Workforce member', permissions: ['workforce:read', 'workforce.time.punch'] },
         { id: `people-${run}`, tenantId, name: 'People desk', permissions: ['users:read', 'users:update'] },
         { id: `reader-${run}`, tenantId, name: 'Finance reader', permissions: ['finance:read'] },
+        { id: `writer-${run}`, tenantId, name: 'Work order writer', permissions: ['cmms.work-orders.write'] },
       ],
     });
     await db.tenantMember.createMany({
@@ -65,15 +66,16 @@ integration('roles at a scope (isolated PostgreSQL)', () => {
       );
   };
 
-  it('gives a role at chosen places or the whole workspace, and only an administrator chooses', async () => {
+  it('gives a role for the whole workspace, only as an administrator, and units or places only where enforced', async () => {
     expect(await give(`m-tech-${run}`, lead, `technician-${run}`, { kind: 'WORKSPACE' })).toBe('ROLE_SCOPE_ADMIN_ONLY');
-    expect(await give(`m-tech-${run}`, admin, `technician-${run}`, { kind: 'PLACES', placeIds: [place] })).toBe('OK');
-    const [assignment] = await db.memberRoleAssignment.findMany({ where: { tenantId, userId: tech, revokedAt: null } });
-    expect(assignment).toMatchObject({ scope: 'PLACES', placeIds: [place], unitIds: [] });
+    // Security review of 2b (H1, H2): no module is proven to limit records by places or units yet.
+    expect(await give(`m-tech-${run}`, admin, `technician-${run}`, { kind: 'PLACES', placeIds: [place] })).toBe('ROLE_SCOPE_NOT_ENFORCED');
+    expect(await give(`m-tech-${run}`, admin, `technician-${run}`, { kind: 'UNITS', unitIds: ['north'] })).toBe('ROLE_SCOPE_NOT_ENFORCED');
+    expect(await give(`m-tech-${run}`, admin, `technician-${run}`, { kind: 'WORKSPACE' })).toBe('OK');
     expect(await give(`m-other-${run}`, admin, `people-${run}`, { kind: 'WORKSPACE' })).toBe('OK');
     // The session sees each role with its scope.
     expect((await memberRoleGrants(db, tenantId, tech)).assignments).toEqual([
-      { permissions: ['cmms:read', 'cmms.work-orders.read'], scope: 'PLACES', unitIds: [], placeIds: [place] },
+      { permissions: ['cmms:read', 'cmms.work-orders.read'], scope: 'WORKSPACE', unitIds: [], placeIds: [] },
     ]);
   });
 
@@ -87,13 +89,13 @@ integration('roles at a scope (isolated PostgreSQL)', () => {
     expect(await give(`m-tech-${run}`, admin, `reader-${run}`)).toBe('OK');
   });
 
-  it('keeps workspace permissions for the whole workspace, and units for an organization in force', async () => {
+  it('keeps workspace permissions, and codes the platform checks, off units and places', async () => {
     expect(await give(`m-tech-${run}`, admin, `people-${run}`, { kind: 'PLACES', placeIds: [place] })).toBe('ROLE_SCOPE_WORKSPACE_ONLY');
-    expect(await give(`m-other-${run}`, admin, `reader-${run}`, { kind: 'UNITS', unitIds: ['north'] })).toBe('ROLE_SCOPE_NO_ORGANIZATION');
+    expect(await give(`m-other-${run}`, admin, `reader-${run}`, { kind: 'UNITS', unitIds: ['north'] })).toBe('ROLE_SCOPE_NOT_ENFORCED');
   });
 
   it('refuses a base role or a role edit that would give a module a second scope', async () => {
-    // Tenant Admin's base role grants CMMS everywhere, beside the technician role at a place.
+    // Tenant Admin's base role grants CMMS at the member's own scope, beside the technician role for the whole workspace.
     expect(await update(`m-tech-${run}`, admin, { role: 'TENANT_ADMIN' })).toBe('ROLE_SCOPE_CONFLICT');
     // A Manager's base role checks nothing CMMS checks.
     expect(await update(`m-tech-${run}`, admin, { role: 'MANAGER' })).toBe('OK');
@@ -105,9 +107,23 @@ integration('roles at a scope (isolated PostgreSQL)', () => {
         (error: { getResponse?: () => unknown }) => (error.getResponse?.() as { code?: string } | undefined)?.code ?? String(error),
       );
     expect(await edit(`reader-${run}`, ['finance:read', 'cmms:read'], reader.updatedAt)).toBe('ROLE_SCOPE_CONFLICT');
-    // The technician role, held at a place, may not gain a workspace permission.
-    const technician = await db.customRole.findUniqueOrThrow({ where: { id: `technician-${run}` } });
-    expect(await edit(`technician-${run}`, ['cmms:read', 'cmms.work-orders.read', 'users:read'], technician.updatedAt)).toBe('ROLE_SCOPE_WORKSPACE_ONLY');
+    // Held for the whole workspace, the technician role may gain codes; removing codes is never blocked (review M2).
+    let technician = await db.customRole.findUniqueOrThrow({ where: { id: `technician-${run}` } });
     expect(await edit(`technician-${run}`, ['cmms:read', 'cmms.work-orders.read', 'cmms.assets.read'], technician.updatedAt)).toBe('OK');
+    technician = await db.customRole.findUniqueOrThrow({ where: { id: `technician-${run}` } });
+    expect(await edit(`technician-${run}`, ['cmms:read'], technician.updatedAt)).toBe('OK');
+  });
+
+  // Security review of 2b (M1): a role held only at some units gives nothing to pass on.
+  it('counts only own-scope and workspace roles in what a non-admin may give', async () => {
+    await db.memberRoleAssignment.create({
+      data: { tenantId, userId: lead, customRoleId: `writer-${run}`, scope: 'UNITS', unitIds: ['north'], reason: 'Held at North only', grantedById: admin },
+    });
+    expect(await give(`m-other-${run}`, lead, `writer-${run}`)).toBe('GRANT_BEYOND_OWN');
+    await db.memberRoleAssignment.updateMany({ where: { tenantId, userId: lead, customRoleId: `writer-${run}` }, data: { revokedAt: new Date(), revokedById: admin, revokeReason: 'Proof' } });
+    await db.memberRoleAssignment.create({
+      data: { tenantId, userId: lead, customRoleId: `writer-${run}`, scope: 'WORKSPACE', reason: 'Held everywhere', grantedById: admin },
+    });
+    expect(await give(`m-other-${run}`, lead, `writer-${run}`)).toBe('OK');
   });
 });

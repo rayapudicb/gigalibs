@@ -588,11 +588,21 @@ export class AuthService {
         const units = await resolveUnitRootsScope(prisma, { tenantId, versionId, unitIds: role.unitIds });
         if (units.legacyOverflow)
           this.logger.warn(`A unit-scoped role in tenant ${tenantId} exceeds the legacy department list; legacy modules see shared records only.`);
-        assignments.push({
-          permissions,
-          scope: { kind: 'UNITS', tree_version: versionId, unit_ids: [...role.unitIds] },
-          legacy: { orgScope: units.orgScope, organizationScope: units.organizationScope, spatialScope: { mode: 'UNBOUNDED' } },
-        });
+        // The claim names only the units that resolved (active, placed in the version in force); none: nothing.
+        const roots = units.organizationScope.mode === 'UNITS' ? units.organizationScope.read_roots : [];
+        assignments.push(
+          roots.length > 0
+            ? {
+                permissions,
+                scope: { kind: 'UNITS', tree_version: versionId, unit_ids: [...roots] },
+                legacy: { orgScope: units.orgScope, organizationScope: units.organizationScope, spatialScope: { mode: 'UNBOUNDED' } },
+              }
+            : {
+                permissions,
+                scope: { kind: 'UNITS', tree_version: 'none-in-force', unit_ids: [...role.unitIds] },
+                legacy: { orgScope: { mode: 'SCOPED_DEPARTMENTS', departmentIds: [] }, organizationScope: { mode: 'DENIED' }, spatialScope: { mode: 'SCOPED_PLACES', placeIds: [] } },
+              },
+        );
       } else
         assignments.push({
           permissions,

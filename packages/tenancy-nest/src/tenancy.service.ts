@@ -15,6 +15,8 @@ import type {
   UpdateTenantOrganizationSettingsDto,
 } from '@gigalibs/contracts';
 import {
+  CONTROL_PLANE_PERMISSIONS,
+  holdsPermission,
   isTenantPermissionCode,
   MAX_MEMBER_ROLE_ASSIGNMENTS,
   type ModuleDefaultRole,
@@ -33,6 +35,7 @@ import {
   Injectable,
   NotFoundException,
   ServiceUnavailableException,
+  UnprocessableEntityException,
 } from '@nestjs/common';
 import {
   domainVerificationDigest,
@@ -49,7 +52,7 @@ import {
   isWorkspaceAdministrator,
   ownAuthority,
 } from './grant-bound.js';
-import { assertScopesConsistent, resolveRoleScope } from './role-scopes.js';
+import { assertScopeEnforced, assertScopesConsistent, resolveRoleScope } from './role-scopes.js';
 import { assertTenantAdminAuthority, assertTenantAdministratorRetained } from './tenant-member-safety.js';
 
 @Injectable()
@@ -847,21 +850,26 @@ export class TenancyService {
         }
         // WI-OI-120w (grant bound): a permission added to a role reaches everyone holding it, the editor included.
         await assertGrantWithinOwn(transaction, tenantId, changedById, dto.permissions.filter((code) => !previous.includes(code)));
-        // WI-OI-120w (R2 slice 2b): the role's new permissions must keep every holder's scopes consistent, and a role held
-        // at units or places may not gain a workspace permission.
-        const holders = await transaction.memberRoleAssignment.findMany({
-          where: { tenantId, customRoleId: role.id, revokedAt: null },
-          select: { userId: true, scope: true, unitIds: true, placeIds: true },
-        });
-        for (const holder of holders) {
-          if (holder.scope === 'UNITS' || holder.scope === 'PLACES')
-            await resolveRoleScope(
-              transaction,
-              tenantId,
-              holder.scope === 'UNITS' ? { kind: 'UNITS', unitIds: holder.unitIds } : { kind: 'PLACES', placeIds: holder.placeIds },
-              dto.permissions,
-            );
-          await assertScopesConsistent(transaction, tenantId, holder.userId, { role: { id: role.id, permissions: dto.permissions } });
+        // WI-OI-120w (R2 slice 2b): permissions added to a role must keep every holder's scopes consistent, and a role
+        // held at units or places may only gain what is enforced there. Removing permissions is never blocked (review M2).
+        const added = dto.permissions.filter((code) => !previous.includes(code));
+        if (added.length > 0) {
+          const holders = await transaction.memberRoleAssignment.findMany({
+            where: { tenantId, customRoleId: role.id, revokedAt: null },
+            select: { userId: true, scope: true },
+          });
+          for (const holder of holders) {
+            if (holder.scope === 'UNITS' || holder.scope === 'PLACES') {
+              const controlPlane = CONTROL_PLANE_PERMISSIONS.filter((code) => holdsPermission(added, code));
+              if (controlPlane.length > 0)
+                throw new UnprocessableEntityException({
+                  code: 'ROLE_SCOPE_WORKSPACE_ONLY',
+                  message: `This role is held at units or places; it cannot gain workspace permissions (${controlPlane.slice(0, 5).join(', ')}).`,
+                });
+              assertScopeEnforced(added, holder.scope === 'UNITS' ? 'units' : 'places');
+            }
+            await assertScopesConsistent(transaction, tenantId, holder.userId, { role: { id: role.id, permissions: dto.permissions } });
+          }
         }
       }
 

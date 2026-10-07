@@ -1,6 +1,6 @@
 import { baseRoleAdditions, baseRolePermissions, holdsPermission, isTenantPermissionCode } from '@gigalibs/contracts';
 import type { Prisma } from '@gigalibs/db';
-import { memberScopeRoles, resolveBaseRolePermissions } from '@gigalibs/rbac-nest';
+import { memberRoleGrants, memberScopeRoles, resolveBaseRolePermissions } from '@gigalibs/rbac-nest';
 import { ForbiddenException } from '@nestjs/common';
 
 const WORKSPACE_ADMINISTRATORS = new Set(['TENANT_ADMIN', 'SUPER_ADMIN']);
@@ -25,9 +25,12 @@ export async function ownAuthority(
   });
   if (actor?.status !== 'ACTIVE') return { administrator: false, holds: () => false };
   if (isWorkspaceAdministrator(actor.role)) return { administrator: true, holds: () => true };
+  // Security review of slice 2b (M1): a role held only at some units or places gives nothing to pass on to others,
+  // whose scope may be wider; only roles held at the actor's own scope or the whole workspace count.
+  const { assignments } = await memberRoleGrants(tx, tenantId, actorUserId);
   const own = [
     ...resolveBaseRolePermissions([actor.role]),
-    ...(await memberScopeRoles(tx, tenantId, actorUserId)).permissions,
+    ...assignments.filter((assignment) => assignment.scope === 'MEMBER' || assignment.scope === 'WORKSPACE').flatMap((assignment) => assignment.permissions),
     ...(actor.permissions ?? []).filter(isTenantPermissionCode),
   ];
   return { administrator: false, holds: (code) => holdsPermission(own, code) };
