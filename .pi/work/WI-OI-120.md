@@ -2264,3 +2264,40 @@ widening the card to fix the API faults the proof found.
     c5e6cb3).
   - **Final `pnpm verify`:** build, tests (2756), every other audit and S16 pass. Design tokens fail only on another
     session's uncommitted `AuthAtmosphere.tsx`.
+
+#### Release a6e79e0074b3-3fada9b415ef (R2 slice 3 and its review fixes), built 2026-10-07
+
+- **Before the build:** the owner set aside another session's uncommitted sign-in change with `git stash`;
+  checksums were recorded before. The tree was clean at a6e79e0.
+- **Builds:** `refresh-source-identity.sh`, then the five image builds 12:24–12:57Z, all exit 0. Nine images are
+  tagged `a6e79e0074b3-3fada9b415ef`. The web image's labels: revision a6e79e0, source state 3fada9b4….
+- **Backup of UAT as it runs (c5e6cb3):** `gigalibs_backup_20261007_125801Z`, checksum verified, in
+  `infra/compose/backups`.
+- **Deploy files:** they name only the new tag.
+- **Migrations:** none new; this release changes only what the session and module contexts carry.
+- **Deploy, run by the owner 2026-10-07 14:47–14:52Z:**
+  - all migration jobs exited 0 (control plane: no pending migrations); every service was healthy on
+    `a6e79e0074b3-3fada9b415ef`;
+  - `/api/health/ready` returned 200; the Connector Hub refused an unsigned request with a tenant named (401).
+  - The owner restored the sign-in change with `git stash pop` first. `AuthAtmosphere.tsx` and the four carousel
+    images match the recorded checksums.
+- **Read-only checks after:**
+  - every running container is on the new release;
+  - reconciliation: 438 members (the journey's five new people included), 0 differences among single-role members;
+    one member holds two roles (the journey's technician, by design); at most 2 live roles per member.
+- **Ledger walk-through:** 1 of 1 passed in 21 s. Its Finance module calls carried the new assignment claim.
+- **Journey after the deploy, under heavy machine load** (load average 16–21, swap 16.7 of 18.4 GB; Docker's VM at
+  89% CPU, with other applications and other projects' containers running; the GigaLibs containers themselves nearly
+  idle):
+  - **First run (y8adrr), 14:54Z:** stopped at "Create the workspace". The workspace was created (TRIAL, 14:54:21),
+    but the call took 12.4 s and the page did not move on within 20 s.
+  - **Second run (y8c560):** passed, 72 steps in 11.8 minutes, 129 findings, 13 blockers. Calls took 3–12 s
+    throughout, including control-plane reads untouched by this release; three returned 503 "Service is temporarily
+    synchronizing" (the BFF's timeout reply).
+  - **The 6 blockers beyond the known 7, all from the load:**
+    - three are direct timeouts: the unit-types form, the roles list (503 after 11 s), and the Resources page (8–10 s);
+    - three follow from them: Sam never received Maintenance planner, so no work-order create control was offered,
+      so the technician had nothing to start.
+  - **This slice's checks pass:** no module call was refused with 401 or 431, so every module accepted the new claim.
+    Tia holds Maintenance technician and Workforce member, and her menu shows both modules.
+  - **To do:** a clean journey run once the machine is quieter.
