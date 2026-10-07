@@ -136,6 +136,19 @@ describe('canonical session verification and outage recovery', () => {
   ])('rejects a missing or malformed spatial scope', (value) => {
     expect(isVerifiedSession(value)).toBe(false);
   });
+  // WI-OI-120w (R2 slice 3): the session's role assignments, signed into module contexts.
+  it('accepts a session with role assignments and refuses malformed ones', () => {
+    const member = { permissions: ['cmms:read'], scope: { kind: 'MEMBER' } };
+    expect(isVerifiedSession({ ...context(), assignments: [member, { permissions: ['finance:read'], scope: { kind: 'UNITS', tree_version: 'v1', unit_ids: ['north'] } }] })).toBe(true);
+    for (const assignments of [
+      'all',
+      [{ permissions: 'cmms:read', scope: { kind: 'MEMBER' } }],
+      [{ permissions: ['cmms:read'], scope: { kind: 'EVERYWHERE' } }],
+      [{ permissions: ['cmms:read'], scope: { kind: 'UNITS', tree_version: 'v1', unit_ids: [] } }],
+      Array.from({ length: 32 }, () => member),
+    ])
+      expect(isVerifiedSession({ ...context(), assignments })).toBe(false);
+  });
   it('accepts a spatially scoped session, including the fail-closed empty scope', () => {
     expect(isVerifiedSession({ ...context(), spatialScope: { mode: 'SCOPED_PLACES', placeIds: [PLACE_ID] } })).toBe(true);
     expect(isVerifiedSession({ ...context(), spatialScope: { mode: 'SCOPED_PLACES', placeIds: [] } })).toBe(true);

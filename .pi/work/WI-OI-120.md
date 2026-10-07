@@ -2184,3 +2184,30 @@ widening the card to fix the API faults the proof found.
     - no screen links a worker to their login (T1a);
     - the timesheet preview is refused for an admin who is not a worker;
     - the auditor is refused `maps.nodes.read` (Geospatial entitlement).
+
+#### WI-OI-120w slice 3: the signed context carries assignments (owner "approved slice 3", 2026-10-07)
+
+- **The claim** (contracts `PlatformContextV1.assignments`, version 1): per assignment, a hex bitmap of the
+  `granted_scopes` it grants, plus its scope (`MEMBER`, `TENANT`, `UNITS` or `PLACES`). A wrong length, or a bit past
+  the end, is refused at signing and on verification. The existing `organization` and `spatial_scope` claims stay.
+- **What the control plane emits:**
+  - the session (`AuthService.assembleContext`) lists the base role with direct codes first, then each live role
+    (`memberRoleGrants`); every one is `MEMBER`, so nothing widens or narrows;
+  - the web BFF validates `assignments` in the verified session; the kernel worker's subject carries them too;
+  - `buildPlatformContext` writes the claim.
+- **The SDK:** `scopeFor(principal, permission)`; a context without the claim answers as before.
+- **Cap:** a member holds at most 30 live roles (409 `ROLE_LIMIT`).
+- **The control plane** scopes no record list by unit today (search of playground-api and the packages). R5 applies
+  `scopeFor` module by module.
+- **Tests:**
+  - **North and South** (module SDK, through the real builder): approve covers North only; read covers North and
+    South; anything else, nowhere. A family wildcard applies only where its assignment does. `MEMBER` roles list the
+    member scope once. A context without the claim behaves as before.
+  - **auth-core:** sign and verify round trip; no claim for an older subject; forged bitmaps refused; size (a
+    Manager with 20 real module roles 7.1 KB, under 8 KB; at the cap under 12 KB; one over the cap refused).
+  - **contracts:** bitmap edges. **auth-nest:** the session order, direct codes, and codes that are not tenant codes
+    left out. **web:** the session check accepts assignments and refuses malformed ones.
+  - **r2_proof:** per-assignment reads, oldest first; the 31st role refused. 21 of 21 with the other R2 suites.
+  - **Typecheck:** control plane, web and CMMS.
+- **`pnpm verify`:** build, tests (2753), every other audit and S16 pass. Design tokens fail only on another
+  session's uncommitted `AuthAtmosphere.tsx`, which is not part of this slice.

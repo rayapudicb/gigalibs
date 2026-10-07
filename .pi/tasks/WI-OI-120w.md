@@ -8,7 +8,9 @@
     2026-10-07). The journey's technician holds two module roles.
     - Security review: "ship after fixes". The fixes are committed in e07cdba (re-check: "ship").
     - M3: the owner said "add the grant bound" (2026-10-06); it is built and awaits "commit".
-  - **Next:** slices 3 and 2b.
+  - **Slice 3:** approved by the owner on 2026-10-07 ("approved slice 3"); built and checked, awaiting "commit" and the
+    Security review.
+  - **Next:** slice 2b.
   - Evidence: `.pi/work/WI-OI-120.md` § WI-OI-120w. Independent Security review before deploy (access change).
 - **Work item:** WI-OI-120. Evidence goes in `.pi/work/WI-OI-120.md`.
 - **Size:** L (three slices)
@@ -106,6 +108,24 @@ everything under them), or some places (with everything inside them).
 
 ### Slice 3: the signed context carries assignments
 
+- **As built (2026-10-07):**
+  - **The claim.** `PlatformContextV1.assignments` = `{ version: 1, items: [{ grants, scope }] }`.
+    - `grants` is a hex bitmap over the context's `granted_scopes`, so an assignment can name only what the context
+      grants. Its length and trailing bits are checked when the token is signed and when it is verified.
+    - `scope` is `MEMBER` (the member's own scope, the existing `organization` and `spatial_scope` claims), `TENANT`,
+      `UNITS` (tree version and unit roots) or `PLACES`.
+    - The session puts the base role, with direct codes, first, then each role. Every one is `MEMBER` until
+      slice 2b. The other kinds are defined and tested but not yet emitted.
+  - **Helpers.** `encodeAssignmentGrants` and `decodeAssignmentGrants` (contracts); `memberRoleGrants` (rbac-nest).
+    Both the session and the kernel worker's subject carry the assignments.
+  - **The SDK.** `principal.assignments` and `scopeFor(principal, permission)` give the coverage of each assignment
+    that grants the permission. A context without the claim answers as before: a held permission applies at the
+    member's own scope.
+  - **Size.** A member holds at most 30 live roles (409 `ROLE_LIMIT`). A Manager holding 20 real module roles has a
+    7.1 KB token, of which this claim is 2.1 KB; at the cap it stays under 12 KB (Node's header limit is 16 KB).
+  - **The control plane.** No control-plane record list is scoped by unit today; organization scope is used only for
+    module contexts. Nothing changed there; R5 uses `scopeFor` module by module.
+
 - **`PlatformContextV1` gains `assignments`** (optional, additive): for each assignment, its permissions and its
   scope (`WORKSPACE`, unit roots with the tree version, or place roots).
   - `granted_scopes`, `organization` and `spatial_scope` stay, derived as today, for modules that have not moved.
@@ -147,7 +167,7 @@ everything under them), or some places (with everything inside them).
 - [x] Assignments exist, with the move proven to change no one's access (proof database; UAT after deploy).
 - [ ] Settings → Team manages several assignments per person, with the transition rule. (2a: several roles at the
       member's own scope, built; explicit scopes and the transition rule in 2b.)
-- [ ] The context carries assignments; `scopeFor` passes the North/South test.
+- [x] The context carries assignments; `scopeFor` passes the North/South test (slice 3, 2026-10-07).
 - [ ] Checks pass; Security review recorded; evidence recorded; images built and handed to the owner.
 
 ## Stop and ask if

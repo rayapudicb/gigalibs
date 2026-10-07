@@ -14,17 +14,36 @@ export async function memberScopeRoles(
   tenantId: string,
   userId: string,
 ): Promise<{ readonly names: string[]; readonly permissions: string[] }> {
-  const assignments = await db.memberRoleAssignment.findMany({
+  const { names, permissions } = await memberRoleGrants(db, tenantId, userId);
+  return { names, permissions };
+}
+
+/**
+ * WI-OI-120w (R2 slice 3, ADR-0034 §5): the same live `MEMBER` assignments, also one by one, for the signed context's
+ * assignment claims: each assignment's own tenant permission codes, oldest first.
+ */
+export async function memberRoleGrants(
+  db: AssignmentReader,
+  tenantId: string,
+  userId: string,
+): Promise<{
+  readonly names: string[];
+  readonly permissions: string[];
+  readonly assignments: readonly { readonly permissions: readonly string[] }[];
+}> {
+  const rows = await db.memberRoleAssignment.findMany({
     where: { tenantId, userId, revokedAt: null, scope: 'MEMBER' },
     select: { customRole: { select: { name: true, permissions: true } } },
     orderBy: { createdAt: 'asc' },
   });
   const names: string[] = [];
   const permissions = new Set<string>();
-  for (const { customRole } of assignments) {
+  const assignments: { permissions: string[] }[] = [];
+  for (const { customRole } of rows) {
     names.push(customRole.name);
-    if (Array.isArray(customRole.permissions))
-      for (const code of customRole.permissions) if (isTenantPermissionCode(code)) permissions.add(code);
+    const own = Array.isArray(customRole.permissions) ? [...new Set(customRole.permissions.filter(isTenantPermissionCode))] : [];
+    for (const code of own) permissions.add(code);
+    assignments.push({ permissions: own });
   }
-  return { names, permissions: [...permissions] };
+  return { names, permissions: [...permissions], assignments };
 }

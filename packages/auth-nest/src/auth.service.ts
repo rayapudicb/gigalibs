@@ -24,7 +24,7 @@ import type {
 import { isReservedRoleName, isTenantPermissionCode } from '@gigalibs/contracts';
 import { decrypt, encrypt, parseAes256KeyRing, requireAes256KeyVersion } from '@gigalibs/crypto';
 import { type Prisma, prisma } from '@gigalibs/db';
-import { memberScopeRoles, resolveBaseRolePermissions } from '@gigalibs/rbac-nest';
+import { memberRoleGrants, resolveBaseRolePermissions } from '@gigalibs/rbac-nest';
 import {
   BadRequestException,
   ConflictException,
@@ -443,7 +443,7 @@ export class AuthService {
     }
 
     // WI-OI-120w (R2 slice 1, ADR-0034): the member's roles come from their live role assignments.
-    const assigned = membership && tenantId ? await memberScopeRoles(prisma, tenantId, userId) : { names: [], permissions: [] };
+    const assigned = membership && tenantId ? await memberRoleGrants(prisma, tenantId, userId) : { names: [], permissions: [], assignments: [] };
     const customPermissions = assigned.permissions;
     const directPermissions = (membership?.permissions ?? []).filter(isTenantPermissionCode);
     const rolePermissions = membership ? resolveBaseRolePermissions([membership.role]) : [];
@@ -517,6 +517,17 @@ export class AuthService {
       permissions: Array.from(
         new Set([...rolePermissions, ...directPermissions, ...customPermissions]),
       ),
+      // WI-OI-120w (R2 slice 3, ADR-0034 §5): the same permissions, assignment by assignment, for the module context:
+      // the base role with the member's direct codes first, then each role. All apply at the member's own scope
+      // (`MEMBER`) until explicit scopes are switched on (slice 2b).
+      ...(membership
+        ? {
+            assignments: [
+              { permissions: Array.from(new Set([...rolePermissions, ...directPermissions])), scope: { kind: 'MEMBER' as const } },
+              ...assigned.assignments.map((assignment) => ({ permissions: [...assignment.permissions], scope: { kind: 'MEMBER' as const } })),
+            ],
+          }
+        : {}),
       session: { id: session.id, expiresAt: session.expiresAt },
       authVersion: Math.floor(session.createdAt.getTime() / 1_000),
       orgScope,

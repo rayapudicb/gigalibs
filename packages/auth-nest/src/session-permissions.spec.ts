@@ -297,4 +297,29 @@ describe('session roles from role assignments', () => {
       expect.objectContaining({ where: { tenantId, userId: 'user-1', revokedAt: null, scope: 'MEMBER' } }),
     );
   });
+
+  // WI-OI-120w (R2 slice 3): the same permissions, assignment by assignment, for the signed module context.
+  it('lists the base role with direct codes first, then each role, all at the member scope', async () => {
+    prismaMock.tenantMember.findUnique.mockResolvedValue({ ...membership('VIEWER'), permissions: ['finance:read', 'not a code'] });
+    prismaMock.memberRoleAssignment.findMany.mockResolvedValue([
+      { customRole: { name: 'Maintenance technician', permissions: ['cmms:read', 'cmms.work-orders.read', 'cmms:read'] } },
+      { customRole: { name: 'Workforce member', permissions: ['workforce:read', 'platform:admin'] } },
+    ]);
+    const context = await new AuthService().getSessionContext('user-1', 'session-1', tenantId);
+    expect(context.assignments).toEqual([
+      { permissions: expect.arrayContaining(['dashboard:read', 'finance:read']), scope: { kind: 'MEMBER' } },
+      { permissions: ['cmms:read', 'cmms.work-orders.read'], scope: { kind: 'MEMBER' } },
+      { permissions: ['workforce:read'], scope: { kind: 'MEMBER' } },
+    ]);
+    expect(context.assignments![0]!.permissions).not.toContain('not a code');
+    // Every assignment's codes are among the session's permissions, so the context can name them.
+    for (const assignment of context.assignments!) expect(context.permissions).toEqual(expect.arrayContaining([...assignment.permissions]));
+  });
+
+  it('lists no assignments outside a workspace', async () => {
+    prismaMock.session.findFirst.mockResolvedValue({ ...activeSession(), tenantId: null, tenant: null });
+    prismaMock.tenantMember.findUnique.mockResolvedValue(null);
+    const context = await new AuthService().getSessionContext('user-1', 'session-1');
+    expect(context.assignments).toBeUndefined();
+  });
 });

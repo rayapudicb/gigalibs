@@ -17,11 +17,12 @@ integration('several roles per member (isolated PostgreSQL)', () => {
   let db: typeof import('@gigalibs/db').prisma;
   let service: import('./tenancy.service.js').TenancyService;
   let memberScopeRoles: typeof import('@gigalibs/rbac-nest').memberScopeRoles;
+  let memberRoleGrants: typeof import('@gigalibs/rbac-nest').memberRoleGrants;
 
   beforeAll(async () => {
     process.env.DATABASE_URL = databaseUrl;
     ({ prisma: db } = await import('@gigalibs/db'));
-    ({ memberScopeRoles } = await import('@gigalibs/rbac-nest'));
+    ({ memberScopeRoles, memberRoleGrants } = await import('@gigalibs/rbac-nest'));
     service = new (await import('./tenancy.service.js')).TenancyService();
     await db.tenant.createMany({ data: [{ id: tenantId, slug: tenantId, name: 'R2 2a' }, { id: otherTenantId, slug: otherTenantId, name: 'Other' }] });
     await db.user.createMany({
@@ -139,5 +140,27 @@ integration('several roles per member (isolated PostgreSQL)', () => {
     expect(await status(service.deleteCustomRole(tenantId, `nights-${run}`, admin, 'No longer needed'))).toBe(409);
     const roles = await service.listCustomRoles(tenantId);
     expect(roles.find((role) => role.id === `nights-${run}`)?._count.members).toBe(1);
+  });
+
+  // WI-OI-120w (R2 slice 3): the signed context names each assignment's own permissions, and a member holds at most
+  // 30 roles so that context stays small.
+  it('reads each live role on its own, oldest first, and caps a member at 30 roles', async () => {
+    const grants = await memberRoleGrants(db, tenantId, lead);
+    expect(grants.names).toEqual(['Role assigner', 'Night shift']);
+    expect(grants.assignments.map((assignment) => assignment.permissions)).toEqual([
+      ['roles:assign', 'roles:update', 'cmms:read', 'cmms.work-orders.read'],
+      ['cmms:read', 'cmms.work-orders.read'],
+    ]);
+    await db.customRole.createMany({
+      data: Array.from({ length: 30 }, (_, index) => ({ id: `extra-${index}-${run}`, tenantId, name: `Extra role ${index}`, permissions: ['cmms:read'] })),
+    });
+    const held = (await live(newcomer)).length;
+    for (let index = 0; index < 30 - held; index += 1)
+      await service.assignMemberRole(tenantId, `m-new-${run}`, admin, { customRoleId: `extra-${index}-${run}`, reason: 'Fills the cap' });
+    expect(await live(newcomer)).toHaveLength(30);
+    const refused = await service
+      .assignMemberRole(tenantId, `m-new-${run}`, admin, { customRoleId: `extra-29-${run}`, reason: 'One more' })
+      .catch((error: { getResponse: () => unknown }) => error.getResponse());
+    expect(refused).toMatchObject({ code: 'ROLE_LIMIT' });
   });
 });

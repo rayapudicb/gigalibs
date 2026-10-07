@@ -15,6 +15,7 @@ import {
   createParamDecorator,
 } from '@nestjs/common';
 import type { ModuleDatabase } from './database.js';
+import { assignmentsFromContext, type ModuleAssignment } from './assignment-scope.js';
 import type { OrganizationClaim } from './organization-access.js';
 
 // WI-OI-085a: the signed-context guard for new modules, following the certified CMMS guard (WI-OI-038). CMMS and
@@ -46,6 +47,11 @@ export interface ModulePrincipal {
   readonly organization?: OrganizationClaim;
   readonly departmentScope: ModuleDepartmentScope;
   readonly placeScope: ModulePlaceScope;
+  /**
+   * WI-OI-120w (R2 slice 3, ADR-0034 §5): the member's role assignments, each with its own permissions and coverage.
+   * Absent when the context carries none. Ask `scopeFor(principal, permission)` where a permission may be used.
+   */
+  readonly assignments?: readonly ModuleAssignment[];
 }
 
 export interface ModuleCommandContext {
@@ -166,15 +172,7 @@ export class SignedContextGuardBase implements CanActivate {
 export function principalFromContext(context: PlatformContextV1): ModulePrincipal {
   const org = context.org_scope;
   const spatial = context.spatial_scope ?? { mode: 'UNBOUNDED' as const };
-  return Object.freeze({
-    tenantId: context.tenant_id,
-    subject: context.sub,
-    sessionId: context.session_id,
-    authVersion: context.auth_version,
-    permissions: Object.freeze([...context.granted_scopes]),
-    roles: Object.freeze([...context.roles]),
-    persona: context.persona_type,
-    organization: Object.freeze(
+  const organization: OrganizationClaim = Object.freeze(
       context.organization?.mode === 'UNITS'
         ? {
             mode: 'UNITS' as const,
@@ -187,17 +185,29 @@ export function principalFromContext(context: PlatformContextV1): ModulePrincipa
           : context.organization?.tree_version
             ? { mode: 'TENANT' as const, tree_version: context.organization.tree_version }
             : { mode: 'TENANT' as const },
-    ),
+  );
+  const placeScope: ModulePlaceScope = Object.freeze(
+    spatial.mode === 'SCOPED_PLACES'
+      ? { mode: 'PLACES' as const, placeIds: Object.freeze([...spatial.place_ids]) }
+      : { mode: 'ALL' as const },
+  );
+  const assignments = assignmentsFromContext(context, organization, placeScope);
+  return Object.freeze({
+    tenantId: context.tenant_id,
+    subject: context.sub,
+    sessionId: context.session_id,
+    authVersion: context.auth_version,
+    permissions: Object.freeze([...context.granted_scopes]),
+    roles: Object.freeze([...context.roles]),
+    persona: context.persona_type,
+    organization,
     departmentScope: Object.freeze(
       org.mode === 'SCOPED_DEPARTMENTS'
         ? { mode: 'DEPARTMENTS' as const, departmentIds: Object.freeze([...org.department_ids]) }
         : { mode: 'ALL' as const },
     ),
-    placeScope: Object.freeze(
-      spatial.mode === 'SCOPED_PLACES'
-        ? { mode: 'PLACES' as const, placeIds: Object.freeze([...spatial.place_ids]) }
-        : { mode: 'ALL' as const },
-    ),
+    placeScope,
+    ...(assignments ? { assignments } : {}),
   });
 }
 

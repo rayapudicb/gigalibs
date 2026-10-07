@@ -81,6 +81,14 @@ export {
   type OrganizationClaim,
   type OwnershipPolicy,
 } from './organization-access.js';
+// WI-OI-120w (R2 slice 3): where a person may use a permission, decided per role assignment (ADR-0034).
+export {
+  scopeFor,
+  type AssignmentCoverage,
+  type ModuleAssignment,
+  type PermissionScope,
+  type ScopedPrincipal,
+} from './assignment-scope.js';
 // WI-OI-120f (F0.3, ADR-0033 D1): the record dispatcher behind every metadata window.
 export {
   RecordDispatcher,

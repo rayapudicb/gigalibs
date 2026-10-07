@@ -14,7 +14,7 @@ import type {
   UpdateTenantMemberDto,
   UpdateTenantOrganizationSettingsDto,
 } from '@gigalibs/contracts';
-import { type ModuleDefaultRole, moduleDefaultRoles, uncataloguedAdditions } from '@gigalibs/contracts';
+import { MAX_MEMBER_ROLE_ASSIGNMENTS, type ModuleDefaultRole, moduleDefaultRoles, uncataloguedAdditions } from '@gigalibs/contracts';
 import { primaryVersionInForce } from '@gigalibs/auth-nest';
 import { type Prisma, prisma } from '@gigalibs/db';
 import { PlatformSettingsEngine } from '@gigalibs/platform-settings';
@@ -543,6 +543,12 @@ export class TenancyService {
           select: { id: true },
         });
         if (held) throw new ConflictException({ code: 'ROLE_ALREADY_HELD', message: `${role.name} is already held by this member.` });
+        // WI-OI-120w (R2 slice 3): every role travels in the member's signed context, which stays small.
+        if ((await transaction.memberRoleAssignment.count({ where: { tenantId, userId: member.userId, revokedAt: null } })) >= MAX_MEMBER_ROLE_ASSIGNMENTS)
+          throw new ConflictException({
+            code: 'ROLE_LIMIT',
+            message: `A member holds at most ${MAX_MEMBER_ROLE_ASSIGNMENTS} roles; take one away before adding another.`,
+          });
         const assignment = await transaction.memberRoleAssignment.create({
           data: { tenantId, userId: member.userId, customRoleId: role.id, scope: 'MEMBER', reason, grantedById: actorId },
           select: { id: true, customRoleId: true, scope: true, reason: true, grantedById: true, createdAt: true },

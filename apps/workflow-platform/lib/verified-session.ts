@@ -6,7 +6,14 @@ import {
   unavailable,
 } from './authenticated-upstream';
 import { ACCESS_COOKIE_NAME, UpstreamUnavailableError, controlPlaneUrl } from './control-plane';
-import { type OrganizationScopeV2, OrganizationScopeV2Schema, SpatialScopePlaceIdsSchema } from '@gigalibs/contracts';
+import {
+  MAX_CONTEXT_ASSIGNMENTS,
+  type OrganizationScopeV2,
+  OrganizationScopeV2Schema,
+  type PlatformContextAssignmentScope,
+  PlatformContextAssignmentScopeSchema,
+  SpatialScopePlaceIdsSchema,
+} from '@gigalibs/contracts';
 
 export interface VerifiedSession {
   user: { id: string; email: string; name: string | null; status: 'ACTIVE' };
@@ -34,6 +41,8 @@ export interface VerifiedSession {
   spatialScope: { mode: 'UNBOUNDED' } | { mode: 'SCOPED_PLACES'; placeIds: string[] };
   /** WI-OI-109e: set once the tenant's primary tree has a version in force; signed as the `organization` claim. */
   organizationScope?: OrganizationScopeV2 | null;
+  /** WI-OI-120w (R2 slice 3): the member's assignments, signed as the `assignments` claim (ADR-0034 §5). */
+  assignments?: Array<{ permissions: string[]; scope: PlatformContextAssignmentScope }>;
   mfa: {
     required: boolean;
     enrolled: boolean;
@@ -93,6 +102,16 @@ export function isVerifiedSession(value: unknown): value is VerifiedSession {
     (value.organizationScope === undefined ||
       value.organizationScope === null ||
       OrganizationScopeV2Schema.safeParse(value.organizationScope).success) &&
+    (value.assignments === undefined ||
+      (Array.isArray(value.assignments) &&
+        value.assignments.length <= MAX_CONTEXT_ASSIGNMENTS &&
+        value.assignments.every(
+          (assignment) =>
+            record(assignment) &&
+            Array.isArray(assignment.permissions) &&
+            assignment.permissions.every(text) &&
+            PlatformContextAssignmentScopeSchema.safeParse(assignment.scope).success,
+        ))) &&
     record(value.spatialScope) &&
     (value.spatialScope.mode === 'UNBOUNDED' ||
       (value.spatialScope.mode === 'SCOPED_PLACES' &&

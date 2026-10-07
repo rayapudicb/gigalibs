@@ -5,7 +5,14 @@ import {
   sign as signBytes,
   verify as verifyBytes,
 } from 'node:crypto';
-import { type OrganizationScopeV2, type PlatformContextV1, PlatformContextV1Schema, determinePersona } from '@gigalibs/contracts';
+import {
+  type OrganizationScopeV2,
+  type PlatformContextAssignmentScope,
+  type PlatformContextV1,
+  PlatformContextV1Schema,
+  determinePersona,
+  encodeAssignmentGrants,
+} from '@gigalibs/contracts';
 export type { PlatformContextV1 };
 
 function base64UrlEncode(str: string): string {
@@ -180,6 +187,14 @@ export interface PlatformContextSubject {
   readonly spatialScope: { readonly mode: 'UNBOUNDED' } | { readonly mode: 'SCOPED_PLACES'; readonly placeIds: readonly string[] };
   /** Present once the tenant's primary tree has a version in force (WI-OI-109e). */
   readonly organizationScope?: OrganizationScopeV2 | null;
+  /**
+   * WI-OI-120w (R2 slice 3): the member's assignments (the base role first), each with its permissions and scope.
+   * Absent for a subject resolved before this field existed; the context then carries no assignment claim.
+   */
+  readonly assignments?: readonly {
+    readonly permissions: readonly string[];
+    readonly scope: PlatformContextAssignmentScope;
+  }[] | null;
 }
 
 /**
@@ -200,6 +215,7 @@ export function buildPlatformContext(
   if (!entitlement) throw new Error(`Module '${moduleKey}' is not actively entitled for this workspace.`);
   const now = options.nowSeconds ?? Math.floor(Date.now() / 1000);
   const ttl = Math.min(options.ttlSeconds ?? 300, 300);
+  const grantedScopes = [...subject.permissions];
   return {
     iss: 'gigalibs-control-plane',
     aud: audience,
@@ -208,7 +224,7 @@ export function buildPlatformContext(
     session_id: subject.session?.id ?? randomUUID(),
     auth_version: subject.authVersion,
     roles: [...subject.roles],
-    granted_scopes: [...subject.permissions],
+    granted_scopes: grantedScopes,
     persona_type: determinePersona([...subject.roles], [...subject.platformRoles]),
     org_scope:
       subject.orgScope.mode === 'SCOPED_DEPARTMENTS'
@@ -219,11 +235,29 @@ export function buildPlatformContext(
         ? { mode: 'SCOPED_PLACES', place_ids: [...subject.spatialScope.placeIds] }
         : { mode: 'UNBOUNDED' },
     ...(subject.organizationScope ? { organization: organizationClaim(subject.organizationScope) } : {}),
+    // ADR-0034 §5: each assignment names its permissions among `granted_scopes` (never more) and where they apply.
+    ...(subject.assignments
+      ? {
+          assignments: {
+            version: 1 as const,
+            items: subject.assignments.map((assignment) => ({
+              grants: encodeAssignmentGrants(grantedScopes, assignment.permissions),
+              scope: assignmentScopeClaim(assignment.scope),
+            })),
+          },
+        }
+      : {}),
     entitlement: { module_key: moduleKey, status: 'ENABLED', version: entitlement.version },
     iat: now,
     exp: now + ttl,
     jti: randomUUID(),
   };
+}
+
+function assignmentScopeClaim(scope: PlatformContextAssignmentScope): PlatformContextAssignmentScope {
+  if (scope.kind === 'UNITS') return { kind: 'UNITS', tree_version: scope.tree_version, unit_ids: [...scope.unit_ids] };
+  if (scope.kind === 'PLACES') return { kind: 'PLACES', place_ids: [...scope.place_ids] };
+  return { kind: scope.kind };
 }
 
 function organizationClaim(scope: OrganizationScopeV2): OrganizationScopeV2 {
