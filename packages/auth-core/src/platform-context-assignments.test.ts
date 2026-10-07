@@ -125,3 +125,79 @@ describe('assignment claims in the signed context', () => {
     expect(() => mint(subject([...atCap, { permissions: base, scope: member }], undefined, 'MANAGER'))).toThrow();
   });
 });
+
+// WI-OI-120w (R2 slice 2b, ADR-0034 §6): a module still reading one scope receives the claims of the one scope its
+// permissions come from; other modules keep the member's own; a conflict gives the module nothing.
+describe('scope claims per module', () => {
+  const own: Pick<PlatformContextSubject, 'orgScope' | 'organizationScope' | 'spatialScope'> = {
+    orgScope: { mode: 'SCOPED_DEPARTMENTS', departmentIds: ['own-dept'] },
+    organizationScope: { mode: 'UNITS', tree_version: 'version-1', read_roots: ['own'], write_roots: ['own'] },
+    spatialScope: { mode: 'UNBOUNDED' },
+  };
+  type Assignment = NonNullable<PlatformContextSubject['assignments']>[number];
+  const technicianAtNorth: Assignment = {
+    permissions: ['cmms:read', 'cmms.work-orders.read'],
+    scope: { kind: 'UNITS', tree_version: 'version-1', unit_ids: ['north'] },
+    legacy: {
+      orgScope: { mode: 'SCOPED_DEPARTMENTS', departmentIds: ['north', 'store-1'] },
+      organizationScope: { mode: 'UNITS', tree_version: 'version-1', read_roots: ['north'], write_roots: ['north'] },
+      spatialScope: { mode: 'UNBOUNDED' },
+    },
+  };
+  const base: Assignment = { permissions: ['users:read'], scope: member };
+  const financeReader: Assignment = { permissions: ['finance:read'], scope: member };
+  const context = (assignments: NonNullable<PlatformContextSubject['assignments']>, moduleKey: string) =>
+    buildPlatformContext(
+      {
+        ...subject(assignments),
+        ...own,
+        tenant: { id: 'tenant-1', entitlements: [{ moduleKey, status: 'ENABLED', version: 'v1' }] },
+      },
+      moduleKey,
+      AUDIENCE,
+    );
+
+  it('gives CMMS the claims of the North role and Finance the member scope', () => {
+    const cmms = context([base, technicianAtNorth, financeReader], 'asset-maintenance');
+    expect(cmms.org_scope).toEqual({ mode: 'SCOPED_DEPARTMENTS', department_ids: ['north', 'store-1'] });
+    expect(cmms.organization).toEqual({ mode: 'UNITS', tree_version: 'version-1', read_roots: ['north'], write_roots: ['north'] });
+    expect(cmms.spatial_scope).toEqual({ mode: 'UNBOUNDED' });
+    const finance = context([base, technicianAtNorth, financeReader], 'financial-operations');
+    expect(finance.org_scope).toEqual({ mode: 'SCOPED_DEPARTMENTS', department_ids: ['own-dept'] });
+    expect(finance.organization).toEqual(own.organizationScope);
+  });
+
+  it('gives a module whose permissions come from two scopes nothing', () => {
+    const worker: Assignment = { permissions: ['workforce:read'], scope: member };
+    const cmms = context([base, technicianAtNorth, worker], 'asset-maintenance');
+    expect(cmms.org_scope).toEqual({ mode: 'SCOPED_DEPARTMENTS', department_ids: [] });
+    expect(cmms.organization).toEqual({ mode: 'DENIED' });
+    expect(cmms.spatial_scope).toEqual({ mode: 'SCOPED_PLACES', place_ids: [] });
+  });
+
+  it('gives the whole workspace or the chosen places when the role is given there', () => {
+    const workspace = context(
+      [base, { ...technicianAtNorth, scope: { kind: 'TENANT' }, legacy: { orgScope: { mode: 'FLAT_TENANT' }, organizationScope: { mode: 'TENANT', tree_version: 'version-1' }, spatialScope: { mode: 'UNBOUNDED' } } }],
+      'asset-maintenance',
+    );
+    expect(workspace.org_scope).toEqual({ mode: 'FLAT_TENANT' });
+    expect(workspace.organization).toEqual({ mode: 'TENANT', tree_version: 'version-1' });
+    const place = '5f0c6a0e-6a8e-4c1b-9b1e-2f7c3c9d1a11';
+    const places = context(
+      [base, { ...technicianAtNorth, scope: { kind: 'PLACES', place_ids: [place] }, legacy: { orgScope: { mode: 'FLAT_TENANT' }, organizationScope: null, spatialScope: { mode: 'SCOPED_PLACES', placeIds: [place] } } }],
+      'asset-maintenance',
+    );
+    expect(places.spatial_scope).toEqual({ mode: 'SCOPED_PLACES', place_ids: [place] });
+    expect(places.org_scope).toEqual({ mode: 'FLAT_TENANT' });
+  });
+
+  it('keeps the member scope when every role is at it, and fails closed for an explicit scope without its claims', () => {
+    expect(context([base, { permissions: technicianAtNorth.permissions, scope: member }], 'asset-maintenance').org_scope).toEqual({
+      mode: 'SCOPED_DEPARTMENTS',
+      department_ids: ['own-dept'],
+    });
+    expect(context([base, { permissions: technicianAtNorth.permissions, scope: technicianAtNorth.scope }], 'asset-maintenance').organization).toEqual({
+      mode: 'DENIED',
+    });
+  });
+});

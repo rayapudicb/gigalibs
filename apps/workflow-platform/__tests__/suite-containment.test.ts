@@ -140,6 +140,19 @@ describe('canonical session verification and outage recovery', () => {
   it('accepts a session with role assignments and refuses malformed ones', () => {
     const member = { permissions: ['cmms:read'], scope: { kind: 'MEMBER' } };
     expect(isVerifiedSession({ ...context(), assignments: [member, { permissions: ['finance:read'], scope: { kind: 'UNITS', tree_version: 'v1', unit_ids: ['north'] } }] })).toBe(true);
+    // WI-OI-120w (R2 slice 2b): a role at an explicit scope carries the claims a module receives for it.
+    const scoped = {
+      permissions: ['cmms:read'],
+      scope: { kind: 'UNITS', tree_version: 'v1', unit_ids: ['north'] },
+      legacy: {
+        orgScope: { mode: 'SCOPED_DEPARTMENTS', departmentIds: ['north', 'store-1'] },
+        organizationScope: { mode: 'UNITS', tree_version: 'v1', read_roots: ['north'], write_roots: ['north'] },
+        spatialScope: { mode: 'UNBOUNDED' },
+      },
+    };
+    expect(isVerifiedSession({ ...context(), assignments: [member, scoped] })).toBe(true);
+    for (const legacy of [{}, { ...scoped.legacy, orgScope: { mode: 'EVERYWHERE' } }, { ...scoped.legacy, spatialScope: { mode: 'SCOPED_PLACES', placeIds: ['not-a-place'] } }])
+      expect(isVerifiedSession({ ...context(), assignments: [{ ...scoped, legacy }] })).toBe(false);
     // Shape only (review M2): a member over the role limit keeps the application; only module calls are refused.
     expect(isVerifiedSession({ ...context(), assignments: Array.from({ length: 40 }, () => member) })).toBe(true);
     for (const assignments of [

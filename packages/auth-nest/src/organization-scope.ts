@@ -75,3 +75,39 @@ export async function resolveTreeScope(
     legacyOverflow,
   };
 }
+
+/**
+ * WI-OI-120w (R2 slice 2b): the scope of a role given at some units, in the forms a module reads today. The units that
+ * are active and placed in the version in force are the roots; the legacy department list holds them and everything
+ * below them (past its limit it fails closed, empty). The role's own permissions decide read or write, so every root
+ * is both a read and a write root here.
+ */
+export async function resolveUnitRootsScope(
+  db: Reader,
+  input: { tenantId: string; versionId: string; unitIds: readonly string[] },
+): Promise<TreeScope> {
+  const roots = (
+    await db.$queryRaw<Array<{ unitId: string }>>`
+      SELECT u.id AS "unitId" FROM org_units u
+        JOIN org_hierarchy_edges e ON e."tenantId" = u."tenantId" AND e."versionId" = ${input.versionId} AND e."unitId" = u.id
+       WHERE u."tenantId" = ${input.tenantId} AND u.id = ANY(${[...input.unitIds]}::text[]) AND u.status = 'ACTIVE'
+       ORDER BY u.id
+       LIMIT ${MAX_ORG_GRANTS_PER_MEMBER}`
+  ).map((row) => row.unitId);
+  let departmentIds: string[] = [];
+  let legacyOverflow = false;
+  if (roots.length > 0) {
+    const covered = await db.$queryRaw<Array<{ unitId: string }>>`
+      SELECT DISTINCT c."descendantUnitId" AS "unitId" FROM org_hierarchy_closure c
+       WHERE c."tenantId" = ${input.tenantId} AND c."versionId" = ${input.versionId} AND c."ancestorUnitId" = ANY(${roots}::text[])
+       ORDER BY 1
+       LIMIT ${LEGACY_DEPARTMENT_SCOPE_LIMIT + 1}`;
+    legacyOverflow = covered.length > LEGACY_DEPARTMENT_SCOPE_LIMIT;
+    departmentIds = legacyOverflow ? [] : covered.map((row) => row.unitId);
+  }
+  return {
+    orgScope: { mode: 'SCOPED_DEPARTMENTS', departmentIds },
+    organizationScope: roots.length > 0 ? { mode: 'UNITS', tree_version: input.versionId, read_roots: roots, write_roots: roots } : { mode: 'DENIED' },
+    legacyOverflow,
+  };
+}

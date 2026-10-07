@@ -14,7 +14,13 @@ import type {
   UpdateTenantMemberDto,
   UpdateTenantOrganizationSettingsDto,
 } from '@gigalibs/contracts';
-import { MAX_MEMBER_ROLE_ASSIGNMENTS, type ModuleDefaultRole, moduleDefaultRoles, uncataloguedAdditions } from '@gigalibs/contracts';
+import {
+  isTenantPermissionCode,
+  MAX_MEMBER_ROLE_ASSIGNMENTS,
+  type ModuleDefaultRole,
+  moduleDefaultRoles,
+  uncataloguedAdditions,
+} from '@gigalibs/contracts';
 import { primaryVersionInForce } from '@gigalibs/auth-nest';
 import { type Prisma, prisma } from '@gigalibs/db';
 import { PlatformSettingsEngine } from '@gigalibs/platform-settings';
@@ -41,7 +47,9 @@ import {
   assertNotOwnAccess,
   assertReactivationWithinOwn,
   isWorkspaceAdministrator,
+  ownAuthority,
 } from './grant-bound.js';
+import { assertScopesConsistent, resolveRoleScope } from './role-scopes.js';
 import { assertTenantAdminAuthority, assertTenantAdministratorRetained } from './tenant-member-safety.js';
 
 @Injectable()
@@ -516,6 +524,8 @@ export class TenancyService {
             id: true,
             customRoleId: true,
             scope: true,
+            unitIds: true,
+            placeIds: true,
             createdAt: true,
             customRole: { select: { name: true, color: true } },
           },
@@ -537,12 +547,21 @@ export class TenancyService {
         const member = await this.memberForRoleChange(transaction, tenantId, memberId, actorId);
         const role = await transaction.customRole.findFirst({ where: { id: dto.customRoleId, tenantId }, select: { id: true, name: true, permissions: true } });
         if (!role) throw new BadRequestException({ code: 'ROLE_NOT_IN_WORKSPACE', message: 'That role does not belong to this workspace.' });
-        await assertGrantWithinOwn(transaction, tenantId, actorId, Array.isArray(role.permissions) ? role.permissions : []);
+        const rolePermissions = Array.isArray(role.permissions) ? role.permissions.filter(isTenantPermissionCode) : [];
+        await assertGrantWithinOwn(transaction, tenantId, actorId, rolePermissions);
+        // WI-OI-120w (R2 slice 2b): a role at an explicit scope is given by a Tenant Admin, at a valid scope, and never so
+        // that a module still reading one scope would receive this person's access from two.
+        const requested = dto.scope ?? { kind: 'MEMBER' as const };
+        if (requested.kind !== 'MEMBER' && !(await ownAuthority(transaction, tenantId, actorId)).administrator)
+          throw new ForbiddenException({ code: 'ROLE_SCOPE_ADMIN_ONLY', message: 'Only a workspace administrator gives a role for a chosen scope.' });
+        const scope = await resolveRoleScope(transaction, tenantId, requested, rolePermissions);
+        // One live assignment per role: to change where it applies, take it away and give it again.
         const held = await transaction.memberRoleAssignment.findFirst({
-          where: { tenantId, userId: member.userId, customRoleId: role.id, scope: 'MEMBER', revokedAt: null },
+          where: { tenantId, userId: member.userId, customRoleId: role.id, revokedAt: null },
           select: { id: true },
         });
         if (held) throw new ConflictException({ code: 'ROLE_ALREADY_HELD', message: `${role.name} is already held by this member.` });
+        await assertScopesConsistent(transaction, tenantId, member.userId, { add: { permissions: rolePermissions, scope } });
         // WI-OI-120w (R2 slice 3): every role travels in the member's signed context, which stays small.
         if ((await transaction.memberRoleAssignment.count({ where: { tenantId, userId: member.userId, revokedAt: null } })) >= MAX_MEMBER_ROLE_ASSIGNMENTS)
           throw new ConflictException({
@@ -550,8 +569,17 @@ export class TenancyService {
             message: `A member holds at most ${MAX_MEMBER_ROLE_ASSIGNMENTS} roles; take one away before adding another.`,
           });
         const assignment = await transaction.memberRoleAssignment.create({
-          data: { tenantId, userId: member.userId, customRoleId: role.id, scope: 'MEMBER', reason, grantedById: actorId },
-          select: { id: true, customRoleId: true, scope: true, reason: true, grantedById: true, createdAt: true },
+          data: {
+            tenantId,
+            userId: member.userId,
+            customRoleId: role.id,
+            scope: scope.scope,
+            unitIds: scope.unitIds,
+            placeIds: scope.placeIds,
+            reason,
+            grantedById: actorId,
+          },
+          select: { id: true, customRoleId: true, scope: true, unitIds: true, placeIds: true, reason: true, grantedById: true, createdAt: true },
         });
         await this.followOldestRole(transaction, tenantId, member, actorId, reason);
         await transaction.auditLog.create({
@@ -561,7 +589,7 @@ export class TenancyService {
             resourceId: assignment.id,
             userId: actorId,
             tenantId,
-            after: { memberId: member.id, customRoleId: role.id, roleName: role.name, scope: 'MEMBER' },
+            after: { memberId: member.id, customRoleId: role.id, roleName: role.name, scope: scope.scope, unitIds: scope.unitIds, placeIds: scope.placeIds },
             metadata: { reason },
           },
         });
@@ -819,6 +847,22 @@ export class TenancyService {
         }
         // WI-OI-120w (grant bound): a permission added to a role reaches everyone holding it, the editor included.
         await assertGrantWithinOwn(transaction, tenantId, changedById, dto.permissions.filter((code) => !previous.includes(code)));
+        // WI-OI-120w (R2 slice 2b): the role's new permissions must keep every holder's scopes consistent, and a role held
+        // at units or places may not gain a workspace permission.
+        const holders = await transaction.memberRoleAssignment.findMany({
+          where: { tenantId, customRoleId: role.id, revokedAt: null },
+          select: { userId: true, scope: true, unitIds: true, placeIds: true },
+        });
+        for (const holder of holders) {
+          if (holder.scope === 'UNITS' || holder.scope === 'PLACES')
+            await resolveRoleScope(
+              transaction,
+              tenantId,
+              holder.scope === 'UNITS' ? { kind: 'UNITS', unitIds: holder.unitIds } : { kind: 'PLACES', placeIds: holder.placeIds },
+              dto.permissions,
+            );
+          await assertScopesConsistent(transaction, tenantId, holder.userId, { role: { id: role.id, permissions: dto.permissions } });
+        }
       }
 
       const changed = await transaction.customRole.updateMany({
@@ -1212,6 +1256,8 @@ export class TenancyService {
         if (nextRole !== member.role || nextDepartmentId !== member.departmentId || placesChanged)
           await assertNotOwnAccess(transaction, tenantId, changedById, member.userId);
         await assertBaseRoleWithinOwn(transaction, tenantId, changedById, member.role, nextRole);
+        // WI-OI-120w (R2 slice 2b): a new base role must not give a module this person's access at a second scope.
+        if (nextRole !== member.role) await assertScopesConsistent(transaction, tenantId, member.userId, { baseRole: nextRole });
         // WI-OI-120x (review M2): bringing a suspended member back is bounded as a new grant.
         if (member.status !== 'ACTIVE' && nextStatus === 'ACTIVE')
           await assertReactivationWithinOwn(transaction, tenantId, changedById, { userId: member.userId, role: nextRole, permissions: member.permissions });

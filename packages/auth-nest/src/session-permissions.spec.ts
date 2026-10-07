@@ -112,7 +112,7 @@ describe('session permissions for Workforce access', () => {
       permissions: ['analytics:export', 'analytics:charts:*', 'platform:tenants:write'],
     });
     prismaMock.memberRoleAssignment.findMany.mockResolvedValue([
-      { customRole: { name: 'Charts', permissions: ['analytics:charts:write', 'analytics:models:publish', 'platform:admin', 'Analytics:read'] } },
+      { scope: 'MEMBER', unitIds: [], placeIds: [], customRole: { name: 'Charts', permissions: ['analytics:charts:write', 'analytics:models:publish', 'platform:admin', 'Analytics:read'] } },
     ]);
     const context = await new AuthService().getSessionContext('user-1', 'session-1', tenantId);
     expect(context.permissions).toEqual(
@@ -161,7 +161,7 @@ describe('session spatial scope', () => {
 
   // Security review P1: a custom role named TENANT_ADMIN does not lift the member's place limits.
   it('keeps a member scoped whatever their custom roles are named', async () => {
-    prismaMock.memberRoleAssignment.findMany.mockResolvedValue([{ customRole: { name: 'TENANT_ADMIN', permissions: [] } }]);
+    prismaMock.memberRoleAssignment.findMany.mockResolvedValue([{ scope: 'MEMBER', unitIds: [], placeIds: [], customRole: { name: 'TENANT_ADMIN', permissions: [] } }]);
     const scope = await scopeFor('MEMBER', [bengaluru]);
     expect(scope).toMatchObject({ mode: 'SCOPED_PLACES' });
   });
@@ -210,7 +210,7 @@ describe('subject context for scheduled work', () => {
   it('resolves the owner membership, custom role and scopes, with a fresh auth version and the job context id', async () => {
     prismaMock.tenantMember.findUnique.mockResolvedValue({ ...membership('MEMBER'), permissions: [] });
     prismaMock.memberRoleAssignment.findMany.mockResolvedValue([
-      { customRole: { name: 'Analytics analyst', permissions: ['analytics:reports:write'] } },
+      { scope: 'MEMBER', unitIds: [], placeIds: [], customRole: { name: 'Analytics analyst', permissions: ['analytics:reports:write'] } },
     ]);
     const before = Math.floor(Date.now() / 1000);
     const context = await new AuthService().getSubjectContext('user-1', tenantId, 'job:abc');
@@ -276,8 +276,8 @@ describe('session roles from role assignments', () => {
     prismaMock.tenant.findUnique.mockResolvedValue(null);
     prismaMock.tenantMember.findUnique.mockResolvedValue({ ...membership('MEMBER'), permissions: [], spatialScopePlaceIds: ['place-1'] });
     prismaMock.memberRoleAssignment.findMany.mockResolvedValue([
-      { customRole: { name: 'TENANT_ADMIN', permissions: ['users:read'] } },
-      { customRole: { name: 'Maintenance planner', permissions: ['cmms:read'] } },
+      { scope: 'MEMBER', unitIds: [], placeIds: [], customRole: { name: 'TENANT_ADMIN', permissions: ['users:read'] } },
+      { scope: 'MEMBER', unitIds: [], placeIds: [], customRole: { name: 'Maintenance planner', permissions: ['cmms:read'] } },
     ]);
     const context = await new AuthService().getSessionContext('user-1', 'session-1', tenantId);
     expect(context.roles).toEqual(['MEMBER', 'Maintenance planner']);
@@ -287,14 +287,14 @@ describe('session roles from role assignments', () => {
   it('unites the roles a member holds at their own scope, asking only for live ones', async () => {
     prismaMock.tenantMember.findUnique.mockResolvedValue({ ...membership('MEMBER'), permissions: [] });
     prismaMock.memberRoleAssignment.findMany.mockResolvedValue([
-      { customRole: { name: 'Maintenance technician', permissions: ['cmms:read', 'cmms.work-orders.read'] } },
-      { customRole: { name: 'Workforce member', permissions: ['workforce:read', 'workforce.time.punch'] } },
+      { scope: 'MEMBER', unitIds: [], placeIds: [], customRole: { name: 'Maintenance technician', permissions: ['cmms:read', 'cmms.work-orders.read'] } },
+      { scope: 'MEMBER', unitIds: [], placeIds: [], customRole: { name: 'Workforce member', permissions: ['workforce:read', 'workforce.time.punch'] } },
     ]);
     const context = await new AuthService().getSessionContext('user-1', 'session-1', tenantId);
     expect(context.permissions).toEqual(expect.arrayContaining(['cmms.work-orders.read', 'workforce.time.punch']));
     expect(context.roles).toEqual(['MEMBER', 'Maintenance technician', 'Workforce member']);
     expect(prismaMock.memberRoleAssignment.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { tenantId, userId: 'user-1', revokedAt: null, scope: 'MEMBER' } }),
+      expect.objectContaining({ where: { tenantId, userId: 'user-1', revokedAt: null } }),
     );
   });
 
@@ -302,8 +302,8 @@ describe('session roles from role assignments', () => {
   it('lists the base role with direct codes first, then each role, all at the member scope', async () => {
     prismaMock.tenantMember.findUnique.mockResolvedValue({ ...membership('VIEWER'), permissions: ['finance:read', 'not a code'] });
     prismaMock.memberRoleAssignment.findMany.mockResolvedValue([
-      { customRole: { name: 'Maintenance technician', permissions: ['cmms:read', 'cmms.work-orders.read', 'cmms:read'] } },
-      { customRole: { name: 'Workforce member', permissions: ['workforce:read', 'platform:admin'] } },
+      { scope: 'MEMBER', unitIds: [], placeIds: [], customRole: { name: 'Maintenance technician', permissions: ['cmms:read', 'cmms.work-orders.read', 'cmms:read'] } },
+      { scope: 'MEMBER', unitIds: [], placeIds: [], customRole: { name: 'Workforce member', permissions: ['workforce:read', 'platform:admin'] } },
     ]);
     const context = await new AuthService().getSessionContext('user-1', 'session-1', tenantId);
     expect(context.assignments).toEqual([
@@ -314,6 +314,36 @@ describe('session roles from role assignments', () => {
     expect(context.assignments![0]!.permissions).not.toContain('not a code');
     // Every assignment's codes are among the session's permissions, so the context can name them.
     for (const assignment of context.assignments!) expect(context.permissions).toEqual(expect.arrayContaining([...assignment.permissions]));
+  });
+
+  // WI-OI-120w (R2 slice 2b): a role at an explicit scope carries the claims a module still reading one scope receives.
+  it('lists roles at the whole workspace or at places with their claims, and a unit role without a version covers nothing', async () => {
+    const place = '5f0c6a0e-6a8e-4c1b-9b1e-2f7c3c9d1a11';
+    prismaMock.tenantMember.findUnique.mockResolvedValue({ ...membership('MEMBER'), permissions: [] });
+    prismaMock.memberRoleAssignment.findMany.mockResolvedValue([
+      { scope: 'WORKSPACE', unitIds: [], placeIds: [], customRole: { name: 'Finance reader', permissions: ['finance:read'] } },
+      { scope: 'PLACES', unitIds: [], placeIds: [place], customRole: { name: 'Maintenance technician', permissions: ['cmms:read'] } },
+      { scope: 'UNITS', unitIds: ['north'], placeIds: [], customRole: { name: 'Analyst', permissions: ['analytics:read'] } },
+    ]);
+    const context = await new AuthService().getSessionContext('user-1', 'session-1', tenantId);
+    expect(context.assignments!.slice(1)).toEqual([
+      {
+        permissions: ['finance:read'],
+        scope: { kind: 'TENANT' },
+        legacy: { orgScope: { mode: 'FLAT_TENANT' }, organizationScope: null, spatialScope: { mode: 'UNBOUNDED' } },
+      },
+      {
+        permissions: ['cmms:read'],
+        scope: { kind: 'PLACES', place_ids: [place] },
+        legacy: { orgScope: { mode: 'FLAT_TENANT' }, organizationScope: null, spatialScope: { mode: 'SCOPED_PLACES', placeIds: [place] } },
+      },
+      {
+        permissions: ['analytics:read'],
+        scope: { kind: 'UNITS', tree_version: 'none-in-force', unit_ids: ['north'] },
+        legacy: { orgScope: { mode: 'SCOPED_DEPARTMENTS', departmentIds: [] }, organizationScope: { mode: 'DENIED' }, spatialScope: { mode: 'SCOPED_PLACES', placeIds: [] } },
+      },
+    ]);
+    expect(context.permissions).toEqual(expect.arrayContaining(['finance:read', 'cmms:read', 'analytics:read']));
   });
 
   it('lists no assignments outside a workspace', async () => {

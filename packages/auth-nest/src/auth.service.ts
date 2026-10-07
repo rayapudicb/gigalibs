@@ -17,6 +17,7 @@ import type {
   ChangePasswordDto,
   LoginWithEmailDto,
   OrganizationScopeV2,
+  PlatformContextAssignmentScope,
   RegisterWithEmailDto,
   ResetPasswordDto,
   UpdateProfileDto,
@@ -35,13 +36,25 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { type LegacyOrgScope, primaryVersionInForce, resolveTreeScope } from './organization-scope.js';
+import { type LegacyOrgScope, primaryVersionInForce, resolveTreeScope, resolveUnitRootsScope } from './organization-scope.js';
 import {
   activeLoginLock,
   clearLoginFailures,
   loginThrottleKey,
   recordLoginFailure,
 } from './login-throttle.js';
+
+
+/** WI-OI-120w (R2 slice 2b): one assignment as the session carries it to the module context builder. */
+type SessionAssignment = {
+  permissions: string[];
+  scope: PlatformContextAssignmentScope;
+  legacy?: {
+    orgScope: LegacyOrgScope;
+    organizationScope: OrganizationScopeV2 | null;
+    spatialScope: { mode: 'UNBOUNDED' } | { mode: 'SCOPED_PLACES'; placeIds: string[] };
+  };
+};
 
 @Injectable()
 export class AuthService {
@@ -517,16 +530,11 @@ export class AuthService {
       permissions: Array.from(
         new Set([...rolePermissions, ...directPermissions, ...customPermissions]),
       ),
-      // WI-OI-120w (R2 slice 3, ADR-0034 §5): the same permissions, assignment by assignment, for the module context:
-      // the base role with the member's direct codes first, then each role. All apply at the member's own scope
-      // (`MEMBER`) until explicit scopes are switched on (slice 2b).
-      ...(membership
-        ? {
-            assignments: [
-              { permissions: Array.from(new Set([...rolePermissions, ...directPermissions])), scope: { kind: 'MEMBER' as const } },
-              ...assigned.assignments.map((assignment) => ({ permissions: [...assignment.permissions], scope: { kind: 'MEMBER' as const } })),
-            ],
-          }
+      // WI-OI-120w (R2 slices 3 and 2b, ADR-0034 §5): the same permissions, assignment by assignment, for the module
+      // context: the base role with the member's direct codes first (at the member's own scope), then each role at its
+      // scope.
+      ...(membership && tenantId
+        ? { assignments: await this.sessionAssignments(tenantId, [...rolePermissions, ...directPermissions], assigned.assignments) }
         : {}),
       session: { id: session.id, expiresAt: session.expiresAt },
       authVersion: Math.floor(session.createdAt.getTime() / 1_000),
@@ -540,6 +548,59 @@ export class AuthService {
         recoveryCodesRemaining,
       },
     };
+  }
+
+  /**
+   * WI-OI-120w (R2 slice 2b): each assignment with its claim scope and, for an explicit scope, the organization, place
+   * and legacy department claims a module that still reads one scope receives for this role's permissions. Units are
+   * resolved in the primary version in force, as a member's own unit grants are; without one, a unit-scoped role covers
+   * nothing (the service refuses to give one then).
+   */
+  private async sessionAssignments(
+    tenantId: string,
+    basePermissions: readonly string[],
+    roles: readonly {
+      readonly permissions: readonly string[];
+      readonly scope: 'MEMBER' | 'WORKSPACE' | 'UNITS' | 'PLACES';
+      readonly unitIds: readonly string[];
+      readonly placeIds: readonly string[];
+    }[],
+  ): Promise<SessionAssignment[]> {
+    const versionId = roles.some((role) => role.scope !== 'MEMBER') ? await primaryVersionInForce(prisma, tenantId) : null;
+    const tenantWide: OrganizationScopeV2 | null = versionId ? { mode: 'TENANT', tree_version: versionId } : null;
+    const assignments: SessionAssignment[] = [{ permissions: [...new Set(basePermissions)], scope: { kind: 'MEMBER' } }];
+    for (const role of roles) {
+      const permissions = [...role.permissions];
+      if (role.scope === 'MEMBER') assignments.push({ permissions, scope: { kind: 'MEMBER' } });
+      else if (role.scope === 'WORKSPACE')
+        assignments.push({
+          permissions,
+          scope: { kind: 'TENANT' },
+          legacy: { orgScope: { mode: 'FLAT_TENANT' }, organizationScope: tenantWide, spatialScope: { mode: 'UNBOUNDED' } },
+        });
+      else if (role.scope === 'PLACES')
+        assignments.push({
+          permissions,
+          scope: { kind: 'PLACES', place_ids: [...role.placeIds] },
+          legacy: { orgScope: { mode: 'FLAT_TENANT' }, organizationScope: tenantWide, spatialScope: { mode: 'SCOPED_PLACES', placeIds: [...role.placeIds] } },
+        });
+      else if (versionId) {
+        const units = await resolveUnitRootsScope(prisma, { tenantId, versionId, unitIds: role.unitIds });
+        if (units.legacyOverflow)
+          this.logger.warn(`A unit-scoped role in tenant ${tenantId} exceeds the legacy department list; legacy modules see shared records only.`);
+        assignments.push({
+          permissions,
+          scope: { kind: 'UNITS', tree_version: versionId, unit_ids: [...role.unitIds] },
+          legacy: { orgScope: units.orgScope, organizationScope: units.organizationScope, spatialScope: { mode: 'UNBOUNDED' } },
+        });
+      } else
+        assignments.push({
+          permissions,
+          scope: { kind: 'UNITS', tree_version: 'none-in-force', unit_ids: [...role.unitIds] },
+          legacy: { orgScope: { mode: 'SCOPED_DEPARTMENTS', departmentIds: [] }, organizationScope: { mode: 'DENIED' }, spatialScope: { mode: 'SCOPED_PLACES', placeIds: [] } },
+        });
+    }
+    return assignments;
   }
 
   private async resolveOrganizationScope(input: {

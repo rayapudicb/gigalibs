@@ -40,8 +40,19 @@ export interface VerifiedSession {
   spatialScope: { mode: 'UNBOUNDED' } | { mode: 'SCOPED_PLACES'; placeIds: string[] };
   /** WI-OI-109e: set once the tenant's primary tree has a version in force; signed as the `organization` claim. */
   organizationScope?: OrganizationScopeV2 | null;
-  /** WI-OI-120w (R2 slice 3): the member's assignments, signed as the `assignments` claim (ADR-0034 §5). */
-  assignments?: Array<{ permissions: string[]; scope: PlatformContextAssignmentScope }>;
+  /**
+   * WI-OI-120w (R2 slices 3 and 2b): the member's assignments, signed as the `assignments` claim (ADR-0034 §5); a role at
+   * an explicit scope also carries the claims a module that still reads one scope receives for it.
+   */
+  assignments?: Array<{
+    permissions: string[];
+    scope: PlatformContextAssignmentScope;
+    legacy?: {
+      orgScope: { mode: 'FLAT_TENANT' } | { mode: 'SCOPED_DEPARTMENTS'; departmentIds: string[] };
+      organizationScope?: OrganizationScopeV2 | null;
+      spatialScope: { mode: 'UNBOUNDED' } | { mode: 'SCOPED_PLACES'; placeIds: string[] };
+    };
+  }>;
   mfa: {
     required: boolean;
     enrolled: boolean;
@@ -56,6 +67,31 @@ function record(value: unknown): value is Record<string, unknown> {
 function text(value: unknown): value is string {
   return typeof value === 'string' && value.length > 0;
 }
+function validOrgScope(value: unknown): boolean {
+  return (
+    record(value) &&
+    (value.mode === 'FLAT_TENANT' ||
+      (value.mode === 'SCOPED_DEPARTMENTS' && Array.isArray(value.departmentIds) && value.departmentIds.every(text)))
+  );
+}
+function validSpatialScope(value: unknown): boolean {
+  return (
+    record(value) &&
+    (value.mode === 'UNBOUNDED' || (value.mode === 'SCOPED_PLACES' && SpatialScopePlaceIdsSchema.safeParse(value.placeIds).success))
+  );
+}
+/** The organization, place and department claims a role at an explicit scope carries (WI-OI-120w slice 2b). */
+function validScopeClaims(value: unknown): boolean {
+  return (
+    record(value) &&
+    validOrgScope(value.orgScope) &&
+    validSpatialScope(value.spatialScope) &&
+    (value.organizationScope === undefined ||
+      value.organizationScope === null ||
+      OrganizationScopeV2Schema.safeParse(value.organizationScope).success)
+  );
+}
+
 export function isVerifiedSession(value: unknown): value is VerifiedSession {
   if (!record(value) || !record(value.user) || !record(value.session) || !record(value.mfa))
     return false;
@@ -110,7 +146,8 @@ export function isVerifiedSession(value: unknown): value is VerifiedSession {
             record(assignment) &&
             Array.isArray(assignment.permissions) &&
             assignment.permissions.every(text) &&
-            PlatformContextAssignmentScopeSchema.safeParse(assignment.scope).success,
+            PlatformContextAssignmentScopeSchema.safeParse(assignment.scope).success &&
+            (assignment.legacy === undefined || validScopeClaims(assignment.legacy)),
         ))) &&
     record(value.spatialScope) &&
     (value.spatialScope.mode === 'UNBOUNDED' ||

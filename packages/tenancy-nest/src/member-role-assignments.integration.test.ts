@@ -83,10 +83,11 @@ integration('member role assignments (isolated PostgreSQL)', () => {
     expect(await memberScopeRoles(db, tenantId, `tech-${run}`)).toEqual({ names: [], permissions: [] });
   });
 
-  it('refuses an explicit scope until slice 2', async () => {
+  // Slice 2b lifted the own-scope-only constraint; the database still refuses a unit scope that names no unit.
+  it('refuses a unit scope without units', async () => {
     await expect(
       db.memberRoleAssignment.create({
-        data: { tenantId, userId: `tech-${run}`, customRoleId: `technician-${run}`, scope: 'WORKSPACE', reason: 'probe', grantedById: 'probe' },
+        data: { tenantId, userId: `tech-${run}`, customRoleId: `technician-${run}`, scope: 'UNITS', reason: 'probe', grantedById: 'probe' },
       }),
     ).rejects.toThrow();
   });

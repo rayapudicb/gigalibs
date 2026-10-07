@@ -15,6 +15,7 @@ import {
   assertBaseRoleWithinOwn,
   assertNotOwnAccess,
   assertReactivationWithinOwn,
+  assertScopesConsistent,
   assertTenantAdminAuthority,
   assertTenantAdministratorRetained,
   isWorkspaceAdministrator,
@@ -246,6 +247,8 @@ export class ScimService {
       if (next.role !== member.role) {
         await assertNotOwnAccess(tx, tenantId, operatorId, member.userId);
         await assertBaseRoleWithinOwn(tx, tenantId, operatorId, member.role, next.role);
+        // WI-OI-120w (R2 slice 2b): a new base role must not give a module this person's access at a second scope.
+        await assertScopesConsistent(tx, tenantId, member.userId, { baseRole: next.role });
       }
       // WI-OI-120x (review M2): bringing a suspended member back is bounded as a new grant.
       if (member.status !== 'ACTIVE' && next.status === 'ACTIVE')

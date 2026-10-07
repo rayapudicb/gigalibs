@@ -11,8 +11,10 @@ import {
   type PlatformContextV1,
   PlatformContextV1Schema,
   determinePersona,
+  assignmentScopeKey,
   encodeAssignmentGrants,
   MAX_PLATFORM_CONTEXT_TOKEN_LENGTH,
+  moduleGrantScope,
 } from '@gigalibs/contracts';
 export type { PlatformContextV1 };
 
@@ -202,7 +204,52 @@ export interface PlatformContextSubject {
   readonly assignments?: readonly {
     readonly permissions: readonly string[];
     readonly scope: PlatformContextAssignmentScope;
+    /**
+     * WI-OI-120w (R2 slice 2b): for an explicit scope, the claims a module that still reads one scope receives for
+     * this role's permissions (resolved by the control plane). Absent for `MEMBER`: the member's own claims apply.
+     */
+    readonly legacy?: {
+      readonly orgScope: PlatformContextSubject['orgScope'];
+      readonly organizationScope?: OrganizationScopeV2 | null;
+      readonly spatialScope: PlatformContextSubject['spatialScope'];
+    };
   }[] | null;
+}
+
+/** The claims refused to a module whose permissions come from conflicting scopes (never expected; fail closed). */
+const DENIED_SCOPE = {
+  orgScope: { mode: 'SCOPED_DEPARTMENTS', departmentIds: [] },
+  organizationScope: { mode: 'DENIED' },
+  spatialScope: { mode: 'SCOPED_PLACES', placeIds: [] },
+} as const;
+
+/**
+ * WI-OI-120w (R2 slice 2b, ADR-0034 §6): the organization, place and department claims for `moduleKey`. A module still
+ * reads one scope per request, and the transition rule lets its permissions come from one scope only: the member's own
+ * (their claims, as before) or a role's explicit scope (that role's claims). Conflicting scopes fail closed.
+ */
+function moduleScope(subject: PlatformContextSubject, moduleKey: string) {
+  const own = { orgScope: subject.orgScope, organizationScope: subject.organizationScope ?? null, spatialScope: subject.spatialScope };
+  const assignments = subject.assignments ?? [];
+  if (!assignments.some((assignment) => assignment.scope.kind !== 'MEMBER')) return own;
+  const chosen = moduleGrantScope(
+    assignments.map((assignment) => ({
+      permissions: assignment.permissions,
+      scopeKey: assignmentScopeKey({
+        kind: assignment.scope.kind,
+        ...(assignment.scope.kind === 'UNITS' ? { unitIds: assignment.scope.unit_ids } : {}),
+        ...(assignment.scope.kind === 'PLACES' ? { placeIds: assignment.scope.place_ids } : {}),
+      }),
+    })),
+    moduleKey,
+  );
+  if (chosen === 'CONFLICT') return DENIED_SCOPE;
+  if (chosen === null) return own;
+  const assignment = assignments[chosen]!;
+  if (assignment.scope.kind === 'MEMBER') return own;
+  return assignment.legacy
+    ? { orgScope: assignment.legacy.orgScope, organizationScope: assignment.legacy.organizationScope ?? null, spatialScope: assignment.legacy.spatialScope }
+    : DENIED_SCOPE;
 }
 
 /**
@@ -224,6 +271,7 @@ export function buildPlatformContext(
   const now = options.nowSeconds ?? Math.floor(Date.now() / 1000);
   const ttl = Math.min(options.ttlSeconds ?? 300, 300);
   const grantedScopes = [...subject.permissions];
+  const scope = moduleScope(subject, moduleKey);
   return {
     iss: 'gigalibs-control-plane',
     aud: audience,
@@ -235,14 +283,14 @@ export function buildPlatformContext(
     granted_scopes: grantedScopes,
     persona_type: determinePersona([...subject.roles], [...subject.platformRoles]),
     org_scope:
-      subject.orgScope.mode === 'SCOPED_DEPARTMENTS'
-        ? { mode: 'SCOPED_DEPARTMENTS', department_ids: [...subject.orgScope.departmentIds] }
+      scope.orgScope.mode === 'SCOPED_DEPARTMENTS'
+        ? { mode: 'SCOPED_DEPARTMENTS', department_ids: [...scope.orgScope.departmentIds] }
         : { mode: 'FLAT_TENANT' },
     spatial_scope:
-      subject.spatialScope.mode === 'SCOPED_PLACES'
-        ? { mode: 'SCOPED_PLACES', place_ids: [...subject.spatialScope.placeIds] }
+      scope.spatialScope.mode === 'SCOPED_PLACES'
+        ? { mode: 'SCOPED_PLACES', place_ids: [...scope.spatialScope.placeIds] }
         : { mode: 'UNBOUNDED' },
-    ...(subject.organizationScope ? { organization: organizationClaim(subject.organizationScope) } : {}),
+    ...(scope.organizationScope ? { organization: organizationClaim(scope.organizationScope) } : {}),
     // ADR-0034 §5: each assignment names its permissions among `granted_scopes` (never more) and where they apply.
     ...(subject.assignments
       ? {

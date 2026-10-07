@@ -87,6 +87,78 @@ everything under them), or some places (with everything inside them).
   The single role picker goes. Every grant and revoke is audited and takes effect on the member's next request.
 - **The journey:** the technician holds Maintenance technician and Workforce member.
 
+### Slice 2b (approved by the owner 2026-10-07: "approved 2b"; built and checked; slice 2c to be confirmed)
+
+- **As built:**
+  - **Migration:** `20261007000000_member_role_assignments_scoped` lifts the `MEMBER`-only constraint and bounds the
+    id lists.
+  - **Rules** (`packages/contracts/src/rbac/assignment-scopes.ts`):
+    - `moduleCheckedCodes` reads the codes each module checks from the generated catalogue, including other
+      families it reads (CMMS checks Workforce codes);
+    - `assignmentScopeConflicts` implements the transition rule, skipping modules listed in
+      `PER_ASSIGNMENT_SCOPE_MODULES` (empty until R5);
+    - `moduleGrantScope` finds the one scope a module's permissions come from.
+  - **Service** (`role-scopes.ts`):
+    - `resolveRoleScope` validates a scope: units must be active and placed in the version in force; a role carrying
+      a control-plane code applies to the whole workspace or own scope only.
+    - `assertScopesConsistent` applies the rule when a role is given, when a role's permissions are edited (for every
+      holder), when a base role changes, and on SCIM role changes.
+    - Explicit scopes are given by Tenant Admins only (403 `ROLE_SCOPE_ADMIN_ONLY`), and a role is held once whatever
+      its scope.
+  - **Session:**
+    - each assignment carries its claim scope; a role at an explicit scope also carries the claims a module still
+      reading one scope receives for it;
+    - units resolve like a member's own grants (`resolveUnitRootsScope`: roots, plus the legacy department list with
+      descendants);
+    - without a version in force, a unit role covers nothing.
+  - **Contexts:** `buildPlatformContext` gives each module the claims of the one scope its permissions come from:
+    the member's own, or the role's. A conflict gets an empty scope.
+  - **Settings → Team:** administrators choose "Where" (own scope, whole workspace, units through the unit picker, or
+    places), and tags read "Role · North plant".
+  - **Session freshness:** contexts are minted per request and the guard reads live assignments, so no
+    session-version bump is needed (recorded in the evidence).
+
+
+
+- **Explicit scopes on an assignment.** A role can be given at the member's own scope (as today), the whole
+  workspace, some units, or some places.
+  - **Data:** a forward migration lifts the `MEMBER`-only constraint; the scope check from slice 1 stays.
+  - **Validation:** units must be active units of the workspace's primary tree; places are checked as member places
+    are today.
+  - **Who:** only a Tenant Admin gives an explicit scope. Anyone else gives own-scope roles only, within the grant
+    bound. Scoped delegation is R4.
+- **The transition rule (ADR-0034 §6).** Until a module enforces per-assignment scope (its R5 card), a member may not
+  hold assignments with **different scopes that grant that module's own permissions** (the module's permission
+  families). The base role counts as own scope.
+  - The refusal names the module.
+  - It is checked when a role is given, and when permissions are added to a role someone holds.
+  - A list of modules that enforce per-assignment scope starts empty; each R5 card adds its module.
+- **Contexts per module.** Each context is minted for one module.
+  - **Modules not yet moved:** the existing `organization` and `spatial_scope` claims come from the one scope the
+    transition rule allows for that module: own scope as today; a unit list; a place list; or the whole workspace.
+    So "technician only at North plant" works now, without touching the member's unit grants.
+  - **Fail-safe:** if the scopes ever disagree, the module gets an empty scope.
+  - **Moved modules:** they read the assignment claims through `scopeFor`.
+  - **Session order:** the session lists each assignment with its real scope.
+- **Settings → Team.**
+  - Adding a role (administrators) offers "Where": their own scope, the whole workspace, units (unit picker) or
+    places (place picker).
+  - Tags show the scope, for example "Maintenance technician · North plant".
+  - The transition-rule refusal is explained in words.
+- **Session freshness.** The control-plane guard reads live assignments on every request; the web fetches the session
+  without a cache and mints each module context per request; jobs re-read their owner on each run. So a role change
+  applies on the next request. The plan is to prove this with a test and record it, not to add a session-version bump.
+  The bump stays in R4 if delegation needs it.
+- **Role inclusion moves to its own slice 2c** (a role that includes other roles, an acyclic check, and included
+  permissions taking the including assignment's scope). It touches the role editor and every permission computation.
+- **Proof:**
+  - **Units:** scope validation; the transition rule's refusal; per-module legacy claims from each scope; the
+    fail-safe on a conflict.
+  - **r2_proof:** an admin gives "Maintenance technician" at North only. The CMMS context carries North, and the
+    Workforce context the member's own scope.
+  - **Rest:** SCIM unaffected; the journey; `pnpm verify`; Security review before deploy (an access change).
+- **Size:** L, about 2–3 working days. Slice 2c: M, about 1 day.
+
 ### Slice 2b: explicit scopes, switched on once slice 3 enforces them (the rest of the original slice 2)
 
 - **On a member:**

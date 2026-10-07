@@ -2301,3 +2301,49 @@ widening the card to fix the API faults the proof found.
   - **This slice's checks pass:** no module call was refused with 401 or 431, so every module accepted the new claim.
     Tia holds Maintenance technician and Workforce member, and her menu shows both modules.
   - **To do:** a clean journey run once the machine is quieter.
+
+#### WI-OI-120w slice 2b: roles at an explicit scope, with the transition rule (owner "approved 2b", 2026-10-07)
+
+- **What it does:**
+  - a Tenant Admin can give a role for the member's own scope, the whole workspace, chosen units (active and placed
+    in the primary version in force) or chosen places;
+  - a role carrying a control-plane permission applies to the whole workspace or own scope only.
+- **The transition rule (ADR-0034 §6):** a module that still reads one scope per request must receive a member's
+  permissions from one scope. It is judged on the codes the module checks, from the generated catalogue (CMMS also
+  checks Workforce and maps codes). It is checked:
+  - when a role is given;
+  - when a role's permissions are edited (for every holder);
+  - when a base role changes (member update and SCIM).
+  The refusal (409 `ROLE_SCOPE_CONFLICT`) names the module. `PER_ASSIGNMENT_SCOPE_MODULES` is empty; each R5 card adds
+  its module.
+- **Module contexts:**
+  - each module gets the organization, place and legacy department claims of the one scope its permissions come from;
+  - a unit-scoped role resolves like a member's own grants: roots, plus the legacy department list with everything
+    below;
+  - a conflict, or an explicit scope without its claims, gets an empty scope (fail closed);
+  - other modules keep the member's own scope.
+- **Session freshness (no session-version bump needed):**
+  - the control-plane guard reads live assignments on every request;
+  - the web fetches the session with `no-store` and mints a module context per request;
+  - kernel jobs re-read the owner on each run;
+  - so a role change applies on the next request.
+- **Settings → Team:** administrators choose "Where" (own scope, the whole workspace, units with the existing unit
+  picker, or places), and tags show the scope.
+- **Tests:**
+  - **unit:** the transition rule and scope keys; per-module claims (CMMS gets North, Finance the member scope,
+    conflicts get nothing, the whole workspace and places); session claims for workspace, places and units with no
+    version; web session validation;
+  - **r2_proof** (after applying the new migration): 25 of 25, including:
+    - an administrator-only scope; places and the whole workspace;
+    - Technician at a place plus Workforce member at own scope refused, naming "Asset & Maintenance (CMMS)";
+    - a workspace permission at places refused; units with no organization refused;
+    - becoming Tenant Admin with a place-scoped CMMS role refused, while Manager is allowed;
+    - a role edit adding a CMMS code refused for a holder; a place-scoped role gaining `users:read` refused;
+  - **org proof** (after applying the new migration): 18 of 18, including a role given at North in the version in
+    force, an unknown unit refused, North resolving to North plus its stores, and an unplaced unit covering nothing;
+  - **SCIM proof over HTTP** (migration applied, container stopped after): 9 of 9;
+  - affected suites: 128 files, 1267 tests; typecheck clean for the control plane, web and CMMS.
+- **Known limit, by design:** until CMMS's R5 card, "Maintenance technician at North" cannot be held beside
+  "Workforce member" at own scope, because CMMS also checks Workforce codes. R5 for CMMS lifts this.
+- **`pnpm verify`:** build, tests (2765), every other audit and S16 pass. Design tokens fail only on another
+  session's uncommitted `AuthAtmosphere.tsx`.

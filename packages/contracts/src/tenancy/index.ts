@@ -172,14 +172,38 @@ const RoleChangeReasonSchema = z
   .string()
   .trim()
   .refine((value) => [...value].length >= 3 && [...value].length <= 500, { error: 'Give a reason of 3 to 500 characters.' });
+/**
+ * WI-OI-120w (R2 slice 2b, ADR-0034 §1): where a role applies. `MEMBER` (the default) is the member's own scope as
+ * today; the others are given by a Tenant Admin: the whole workspace, some units (each with everything below it in the
+ * primary tree) or some places (each with everything inside it).
+ */
+export const MemberRoleScopeSchema = z.discriminatedUnion('kind', [
+  z.object({ kind: z.literal('MEMBER') }).strict(),
+  z.object({ kind: z.literal('WORKSPACE') }).strict(),
+  z
+    .object({
+      kind: z.literal('UNITS'),
+      unitIds: z
+        .array(z.string().trim().min(1).max(64))
+        .min(1)
+        .max(200)
+        .refine((ids) => new Set(ids).size === ids.length, 'List each unit once.'),
+    })
+    .strict(),
+  z.object({ kind: z.literal('PLACES'), placeIds: SpatialScopePlaceIdsSchema.refine((ids) => ids.length > 0, 'Choose at least one place.') }).strict(),
+]);
+export type MemberRoleScope = z.infer<typeof MemberRoleScopeSchema>;
+
 export const AssignMemberRoleSchema = z
   .object({
     customRoleId: z.string().trim().min(1).max(64),
     reason: RoleChangeReasonSchema,
+    scope: MemberRoleScopeSchema.default({ kind: 'MEMBER' }),
   })
   .strict();
 export const RevokeMemberRoleSchema = z.object({ reason: RoleChangeReasonSchema }).strict();
-export type AssignMemberRoleDto = z.infer<typeof AssignMemberRoleSchema>;
+/** The request: `scope` may be left out, meaning the member's own scope. */
+export type AssignMemberRoleDto = z.input<typeof AssignMemberRoleSchema>;
 export type RevokeMemberRoleDto = z.infer<typeof RevokeMemberRoleSchema>;
 
 /**
@@ -190,6 +214,9 @@ export interface MemberRoleAssignmentView {
   readonly id: string;
   readonly customRoleId: string;
   readonly scope: 'MEMBER' | 'WORKSPACE' | 'UNITS' | 'PLACES';
+  /** The units or places an explicit scope names (WI-OI-120w slice 2b); empty otherwise. */
+  readonly unitIds: readonly string[];
+  readonly placeIds: readonly string[];
   readonly createdAt: string;
   readonly customRole: { readonly name: string; readonly color: string };
 }

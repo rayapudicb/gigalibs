@@ -2,7 +2,9 @@
 
 import { PageShell } from '@/components/page-shell';
 import { memberStatusLabel, roleLabel } from '@/lib/role-labels';
-import { baseRoleAdditions, holdsPermission, PERMISSION_CATALOGUE } from '@gigalibs/contracts';
+import { baseRoleAdditions, holdsPermission, type OrgUnitV1, PERMISSION_CATALOGUE, type SpatialNodeV1 } from '@gigalibs/contracts';
+import { OrgUnitPicker, useUnitNames } from '@/components/organization/OrgShared';
+import { geospatialApi } from '@/lib/geospatial-api';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -39,8 +41,15 @@ interface Member {
   updatedAt: string;
   user: { id: string; email: string; name: string | null; status: string };
   customRole: Pick<CustomRole, 'id' | 'name' | 'color' | 'permissions'> | null;
-  /** WI-OI-120w (R2 slice 2a): the roles the member holds, oldest first. */
-  roleAssignments?: Array<{ id: string; customRoleId: string; customRole: { name: string; color: string } }>;
+  /** WI-OI-120w (R2 slices 2a and 2b): the roles the member holds, oldest first, each with where it applies. */
+  roleAssignments?: Array<{
+    id: string;
+    customRoleId: string;
+    scope?: 'MEMBER' | 'WORKSPACE' | 'UNITS' | 'PLACES';
+    unitIds?: string[];
+    placeIds?: string[];
+    customRole: { name: string; color: string };
+  }>;
 }
 
 interface CustomRole {
@@ -242,6 +251,7 @@ function MemberRow({ member, currentUserId, canUpdate: mayUpdate, isAdministrato
             canAssignRoles &&
             (isAdministrator || (member.user.id !== currentUserId && member.role !== 'TENANT_ADMIN' && member.role !== 'SUPER_ADMIN'))
           }
+          canChooseScope={isAdministrator}
           onSaved={onSaved}
         />
       </TableCell>
@@ -277,30 +287,76 @@ function MemberRow({ member, currentUserId, canUpdate: mayUpdate, isAdministrato
   );
 }
 
+/** WI-OI-120w (R2 slice 2b): where a role applies when it is given. */
+type RoleScopeKind = 'MEMBER' | 'WORKSPACE' | 'UNITS' | 'PLACES';
+const SCOPE_CHOICES: ReadonlyArray<{ value: RoleScopeKind; label: string }> = [
+  { value: 'MEMBER', label: 'Their own scope' },
+  { value: 'WORKSPACE', label: 'The whole workspace' },
+  { value: 'UNITS', label: 'Chosen units' },
+  { value: 'PLACES', label: 'Chosen places' },
+];
+
 /**
- * WI-OI-120w (R2 slice 2a): the roles a member holds, each removable, and a picker to add another. Every change has a
- * reason; the member's next request has the change.
+ * WI-OI-120w (R2 slices 2a and 2b): the roles a member holds, each removable and labelled with where it applies, and a
+ * picker to add another. An administrator also chooses where: the member's own scope, the whole workspace, units or
+ * places. Every change has a reason; the member's next request has the change.
  */
 function MemberRoles({
   member,
   customRoles,
   canAssign,
+  canChooseScope,
   onSaved,
 }: {
   member: Member;
   customRoles: CustomRole[];
   canAssign: boolean;
+  canChooseScope: boolean;
   onSaved: () => Promise<void>;
 }) {
   const held = member.roleAssignments ?? [];
   const [adding, setAdding] = useState('');
   const [reason, setReason] = useState('');
+  const [where, setWhere] = useState<RoleScopeKind>('MEMBER');
+  const [units, setUnits] = useState<OrgUnitV1[]>([]);
+  const [placeIds, setPlaceIds] = useState<string[]>([]);
+  const [places, setPlaces] = useState<SpatialNodeV1[] | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const email = member.user.email;
   const reasonGiven = [...reason.trim()].length >= 3; // characters, as the server counts them
+  const unitNames = useUnitNames(held.flatMap((assignment) => assignment.unitIds ?? []));
+  const needsPlaces = where === 'PLACES' || held.some((assignment) => (assignment.placeIds ?? []).length > 0);
 
-  const change = async (path: string, body: Record<string, string>, fallback: string) => {
+  useEffect(() => {
+    if (!needsPlaces || places) return;
+    let cancelled = false;
+    void geospatialApi
+      .listNodes({ pageSize: 200 })
+      .then((page) => {
+        if (!cancelled) setPlaces(page.items);
+      })
+      .catch(() => {
+        if (!cancelled) setPlaces([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [needsPlaces, places]);
+
+  const placeName = (id: string) => places?.find((place) => place.id === id)?.displayName ?? 'a place';
+  const scopeLabel = (assignment: NonNullable<Member['roleAssignments']>[number]) => {
+    if (assignment.scope === 'WORKSPACE') return 'the whole workspace';
+    if (assignment.scope === 'UNITS') return (assignment.unitIds ?? []).map((id) => unitNames[id] ?? 'a unit').join(', ');
+    if (assignment.scope === 'PLACES') return (assignment.placeIds ?? []).map(placeName).join(', ');
+    return '';
+  };
+  const tagLabel = (assignment: NonNullable<Member['roleAssignments']>[number]) => {
+    const label = scopeLabel(assignment);
+    return label ? `${assignment.customRole.name} · ${label}` : assignment.customRole.name;
+  };
+
+  const change = async (path: string, body: Record<string, unknown>, fallback: string) => {
     setBusy(true);
     setError(null);
     try {
@@ -312,6 +368,9 @@ function MemberRoles({
       if (!response.ok) throw new Error(await readError(response, fallback));
       setAdding('');
       setReason('');
+      setWhere('MEMBER');
+      setUnits([]);
+      setPlaceIds([]);
       await onSaved();
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : fallback);
@@ -320,15 +379,24 @@ function MemberRoles({
     }
   };
 
-  if (!canAssign) return <>{held.length > 0 ? held.map((assignment) => assignment.customRole.name).join(', ') : 'None'}</>;
+  if (!canAssign) return <>{held.length > 0 ? held.map(tagLabel).join(', ') : 'None'}</>;
   const available = customRoles.filter((role) => !held.some((assignment) => assignment.customRoleId === role.id));
+  const scope =
+    where === 'WORKSPACE'
+      ? { kind: 'WORKSPACE' }
+      : where === 'UNITS'
+        ? { kind: 'UNITS', unitIds: units.map((unit) => unit.id) }
+        : where === 'PLACES'
+          ? { kind: 'PLACES', placeIds }
+          : undefined;
+  const scopeReady = (where !== 'UNITS' || units.length > 0) && (where !== 'PLACES' || placeIds.length > 0);
   return (
     <div className="flex flex-col gap-2">
       <ul aria-label={`Roles of ${email}`} className="flex flex-wrap gap-1">
         {held.length === 0 ? <li className="text-ui-fg-muted">None</li> : null}
         {held.map((assignment) => (
           <li key={assignment.id} className="flex items-center gap-1 rounded-full border border-ui-border-base bg-ui-bg-subtle px-2 py-0.5 text-xs">
-            {assignment.customRole.name}
+            {tagLabel(assignment)}
             <button
               type="button"
               aria-label={`Remove ${assignment.customRole.name} from ${email}`}
@@ -355,6 +423,65 @@ function MemberRoles({
           </option>
         ))}
       </select>
+      {canChooseScope && adding ? (
+        <select
+          aria-label={`Where the role applies for ${email}`}
+          className="h-8 rounded-md border border-ui-border-base bg-ui-bg-field px-2"
+          value={where}
+          onChange={(event) => setWhere(event.target.value as RoleScopeKind)}
+        >
+          {SCOPE_CHOICES.map((choice) => (
+            <option key={choice.value} value={choice.value}>
+              {choice.label}
+            </option>
+          ))}
+        </select>
+      ) : null}
+      {canChooseScope && adding && where === 'UNITS' ? (
+        <div className="flex flex-col gap-1">
+          <OrgUnitPicker
+            label={`Add a unit for ${email}`}
+            value={null}
+            onChange={(unit) => {
+              if (unit) setUnits((previous) => (previous.some((chosen) => chosen.id === unit.id) ? previous : [...previous, unit]));
+            }}
+          />
+          <ul aria-label={`Chosen units for ${email}`} className="flex flex-wrap gap-1 text-xs">
+            {units.map((unit) => (
+              <li key={unit.id} className="flex items-center gap-1 rounded-full border border-ui-border-base px-2 py-0.5">
+                {unit.code} · {unit.name}
+                <button
+                  type="button"
+                  aria-label={`Remove ${unit.name}`}
+                  className="px-1 text-ui-fg-muted"
+                  onClick={() => setUnits((previous) => previous.filter((chosen) => chosen.id !== unit.id))}
+                >
+                  ×
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+      {canChooseScope && adding && where === 'PLACES' ? (
+        places && places.length > 0 ? (
+          <select
+            multiple
+            aria-label={`Places for ${email}`}
+            className="min-h-24 rounded-md border border-ui-border-base bg-ui-bg-field px-2 text-xs"
+            value={placeIds}
+            onChange={(event) => setPlaceIds([...event.target.selectedOptions].map((option) => option.value).slice(0, 50))}
+          >
+            {places.map((place) => (
+              <option key={place.id} value={place.id} title={place.path}>
+                {place.displayName}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <p className="text-xs text-ui-fg-muted">{places ? 'No places to choose from (Geospatial is needed).' : 'Loading places…'}</p>
+        )
+      ) : null}
       <input
         aria-label={`Reason for the role change for ${email}`}
         className="h-8 rounded-md border border-ui-border-base bg-ui-bg-field px-2"
@@ -366,9 +493,9 @@ function MemberRoles({
         type="button"
         size="small"
         variant="secondary"
-        disabled={!adding || !reasonGiven || busy}
+        disabled={!adding || !reasonGiven || !scopeReady || busy}
         isLoading={busy}
-        onClick={() => void change('', { customRoleId: adding }, 'The role could not be added.')}
+        onClick={() => void change('', { customRoleId: adding, ...(scope ? { scope } : {}) }, 'The role could not be added.')}
       >
         Add role
       </Button>

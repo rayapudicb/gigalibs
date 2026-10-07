@@ -172,6 +172,33 @@ integration('organization service', () => {
     expect((await resolveTreeScope(db, { tenantId: A, userId: checker, versionId: ids.v1, tenantWide: false })).organizationScope).toMatchObject({ read_roots: [] });
   });
 
+  // WI-OI-120w (R2 slice 2b): a role given at units of the organization in force, and the claims a module that still
+  // reads one scope receives for it: the units as roots, and the legacy department list with everything below them.
+  it('gives a role at units in force, refuses unknown units, and resolves it as modules read it', async () => {
+    const admin = `admin-2b-${run}`;
+    const roleId = `north-technician-${run}`;
+    await db.$executeRaw`INSERT INTO users (id, email, name, "updatedAt") VALUES (${admin}, ${`${admin}@example.invalid`}, ${admin}, now())`;
+    await db.$executeRaw`INSERT INTO tenant_members (id, "userId", "tenantId", role, "updatedAt") VALUES (${randomUUID()}, ${admin}, ${A}, 'TENANT_ADMIN', now())`;
+    await db.customRole.create({ data: { id: roleId, tenantId: A, name: 'North technician', permissions: ['cmms:read', 'cmms.work-orders.read'] } });
+    const tenancy = new (await import('./tenancy.service.js')).TenancyService();
+    const membership = await db.tenantMember.findFirstOrThrow({ where: { tenantId: A, userId: checker } });
+    await expectStatus(
+      tenancy.assignMemberRole(A, membership.id, admin, { customRoleId: roleId, reason: 'Unknown unit', scope: { kind: 'UNITS', unitIds: ['no-such-unit'] } }),
+      422,
+    );
+    await tenancy.assignMemberRole(A, membership.id, admin, { customRoleId: roleId, reason: 'North only', scope: { kind: 'UNITS', unitIds: [ids.north] } });
+    expect(await db.memberRoleAssignment.findFirstOrThrow({ where: { tenantId: A, userId: checker, customRoleId: roleId, revokedAt: null } })).toMatchObject({
+      scope: 'UNITS',
+      unitIds: [ids.north],
+    });
+    const { resolveUnitRootsScope } = await import('@gigalibs/auth-nest');
+    const north = await resolveUnitRootsScope(db, { tenantId: A, versionId: ids.v1, unitIds: [ids.north] });
+    expect(north.organizationScope).toEqual({ mode: 'UNITS', tree_version: ids.v1, read_roots: [ids.north], write_roots: [ids.north] });
+    expect([...(north.orgScope.mode === 'SCOPED_DEPARTMENTS' ? north.orgScope.departmentIds : [])].sort()).toEqual([ids.north, ids.store1, ids.store2].sort());
+    // A unit that is not placed in the version in force covers nothing.
+    expect((await resolveUnitRootsScope(db, { tenantId: A, versionId: ids.v1, unitIds: [ids.spare] })).organizationScope).toEqual({ mode: 'DENIED' });
+  });
+
   it('previews what the next version changes, including whose access moves', async () => {
     const draft = await service.createDraft(A, author, ids.tree, { reason: 'Open the South region' });
     ids.v2 = draft.id;
