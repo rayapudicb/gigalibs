@@ -32,9 +32,12 @@ interface Member {
 interface Props {
   tenantId: string;
   canManage: boolean;
+  /** WI-OI-120x: only an administrator changes their own department. */
+  currentUserId: string;
+  isAdministrator: boolean;
 }
 
-export function TenantOrganizationHierarchyManager({ tenantId, canManage }: Props) {
+export function TenantOrganizationHierarchyManager({ tenantId, canManage, currentUserId, isAdministrator }: Props) {
   const [hierarchyEnabled, setHierarchyEnabled] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
   const [departments, setDepartments] = useState<Department[]>([]);
@@ -670,6 +673,8 @@ export function TenantOrganizationHierarchyManager({ tenantId, canManage }: Prop
                   </label>
                   <select
                     value={assignDeptId}
+                    disabled={!isAdministrator && assigningMember.user.id === currentUserId}
+                    title={!isAdministrator && assigningMember.user.id === currentUserId ? 'An administrator changes your own department.' : undefined}
                     onChange={(e) => setAssignDeptId(e.target.value)}
                     className="w-full text-xs px-3 py-2 rounded-lg border border-ui-border-base bg-ui-bg-subtle text-ui-fg-base focus:outline-hidden focus:ring-1 focus:ring-zinc-950"
                   >

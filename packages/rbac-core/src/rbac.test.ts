@@ -1,3 +1,4 @@
+import { BASE_ROLE_DEFINITIONS, baseRoleAdditions, baseRolePermissions } from '@gigalibs/contracts';
 import { describe, expect, it } from 'vitest';
 import { createDefaultRoleHierarchy } from './default-roles.js';
 import { PermissionEvaluator } from './evaluator.js';
@@ -154,3 +155,22 @@ describe('PermissionEvaluator.match', () => {
     expect(PermissionEvaluator.hasAllPermissions(['users:read'], ['users:read', 'users:update'])).toBe(false);
   });
 });
+
+// WI-OI-120x: the web reads base roles from @gigalibs/contracts; the control plane resolves them here. Both agree.
+describe('base roles shared with the web', () => {
+  it('resolves every base role to the same permissions as the hierarchy', () => {
+    const hierarchy = createDefaultRoleHierarchy();
+    for (const role of [...BASE_ROLE_DEFINITIONS.map((definition) => definition.name), 'GUEST'])
+      expect(new Set(baseRolePermissions(role))).toEqual(new Set(hierarchy.resolveUserPermissions([role])));
+    expect(baseRolePermissions('GUEST')).toEqual([]);
+  });
+
+  it('adds only what the next role holds beyond the current one', () => {
+    expect(baseRoleAdditions('MANAGER', 'VIEWER')).toEqual([]);
+    expect(baseRoleAdditions('MEMBER', 'MANAGER')).toEqual(expect.arrayContaining(['workflows:*', 'spend:approve']));
+    expect(baseRoleAdditions('MEMBER', 'MANAGER')).not.toContain('users:read');
+    expect(baseRoleAdditions(null, 'VIEWER').sort()).toEqual(baseRolePermissions('VIEWER').sort());
+    expect(baseRoleAdditions('VIEWER', 'GUEST')).toEqual([]);
+  });
+});
+

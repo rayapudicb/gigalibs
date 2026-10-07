@@ -1,119 +1,15 @@
+import { BASE_ROLE_DEFINITIONS } from '@gigalibs/contracts';
 import { RoleHierarchy } from './role-hierarchy.js';
 
+// WI-OI-120x: the base roles are defined once in @gigalibs/contracts (BASE_ROLE_DEFINITIONS), shared with the web.
 export function createDefaultRoleHierarchy(): RoleHierarchy {
   const hierarchy = new RoleHierarchy();
-  hierarchy.registerRoles([
-    { name: 'SUPER_ADMIN', permissions: ['*'] },
-    {
-      name: 'TENANT_ADMIN',
-      permissions: [
-        'tenant:*',
-        'users:*',
-        'billing:*',
-        'roles:*',
-        'invites:*',
-        'settings:*',
-        'audit:*',
-        'workflows:*',
-        'runs:*',
-        'connections:*',
-        'contracts:*',
-        'events:*',
-        'ap:*',
-        'ar:*',
-        'spend:*',
-        'currency:*',
-        'recovery:*',
-        'analytics:*',
-        'esign:*',
-        'reports:*',
-        'tax:*',
-        'actions:*',
-        'exceptions:*',
-        'value:*',
-        'retention:*',
-        'profile:*',
-        'master-data:*',
-        'communications:*',
-        'configuration:*',
-        'configuration-apps:*',
-        'configuration-runtime:*',
-        'configuration-values:*',
-        // WI-OI-109 (ADR-0018): Tenant Admins hold every organization permission; a steward is a custom role.
-        'organization:*',
-        'workforce:*',
-        'maps:*',
-        // WI-OI-038: Tenant Admins run the CMMS core (assets, work orders, PM, meters, parts); custom maintenance
-        // roles for managers and technicians follow with custom roles (roadmap P1).
-        'cmms:*',
-        // WI-OI-120 (owner, 2026-10-05): module access is by role. Tenant Admins run every licensed ERP module and the
-        // core parties they trade with; the module's entitlement still gates it, and other members get the module's
-        // own roles (Inventory Operator, Product Catalogue Manager, ...). Where a module enforces maker-checker (Catalogue
-        // versions, Inventory adjustments) an admin still cannot approve their own change.
-        'parties:*',
-        'products:*',
-        'product-categories:*',
-        'uoms:*',
-        'catalogues:*',
-        'pricing:*',
-        'inventory:*',
-        'procurement:*',
-        'orders:*',
-        'finance:*',
-      ],
-    },
-    {
-      name: 'MANAGER',
-      permissions: [
-        'users:read',
-        'reports:*',
-        'workflows:*',
-        'runs:read',
-        'comments:*',
-        'connections:read',
-        'connections:test',
-        'connections:profile',
-        'contracts:read',
-        'events:read',
-        'ap:read',
-        'ap:evaluate',
-        'ar:read',
-        'spend:read',
-        'spend:approve',
-        'currency:read',
-        'currency:convert',
-        'recovery:read',
-        'recovery:action',
-        'analytics:read',
-        'master-data:read',
-        'communications:read',
-        'communications:action',
-        'analytics:action',
-        'esign:read',
-        'esign:sign',
-        'esign:create',
-        'tax:read',
-        'actions:read',
-        'actions:approve',
-        'exceptions:read',
-        'exceptions:assign',
-        'exceptions:recover',
-        'exceptions:resolve',
-        'value:read',
-        'value:verify',
-        'retention:read',
-        'configuration:read',
-        'configuration-apps:read',
-        'configuration-runtime:read',
-      ],
-      inherits: ['MEMBER'],
-    },
-    {
-      name: 'MEMBER',
-      permissions: ['users:read', 'chat:*', 'comments:create', 'profile:*'],
-      inherits: ['VIEWER'],
-    },
-    { name: 'VIEWER', permissions: ['dashboard:read', 'content:read', 'profile:*', 'configuration-runtime:read'] },
-  ]);
+  hierarchy.registerRoles(
+    BASE_ROLE_DEFINITIONS.map((role) => ({
+      name: role.name,
+      permissions: [...role.permissions],
+      ...(role.inherits ? { inherits: [...role.inherits] } : {}),
+    })),
+  );
   return hierarchy;
 }

@@ -11,7 +11,7 @@ import { AuditService } from '@gigalibs/audit-nest';
 import { isTenantPermissionCode, TenantMemberRoleSchema } from '@gigalibs/contracts';
 import { PermissionEvaluator } from '@gigalibs/rbac-core';
 import { memberScopeRoles, resolveBaseRolePermissions } from '@gigalibs/rbac-nest';
-import { assertTenantAdminAuthority, assertTenantAdministratorRetained } from '@gigalibs/tenancy-nest';
+import { assertBaseRoleWithinOwn, assertNotOwnAccess, assertTenantAdminAuthority, assertTenantAdministratorRetained } from '@gigalibs/tenancy-nest';
 import { parseScim, scimMembershipChanges, ScimPatchSchema, ScimUserCreateSchema } from './scim.validation.js';
 export type { ScimPatchInput, ScimUserCreateInput } from './scim.validation.js';
 
@@ -196,6 +196,8 @@ export class ScimService {
       }
 
       await assertTenantAdminAuthority(tx, tenantId, operatorId, { grantsAdmin: role === 'TENANT_ADMIN', touchesAdmin: false });
+      // WI-OI-120x: a SCIM operator who is not a Tenant Admin gives only the permissions they hold.
+      await assertBaseRoleWithinOwn(tx, tenantId, operatorId, null, role);
       const membership = await tx.tenantMember.create({
         data: {
           tenantId,
@@ -231,6 +233,11 @@ export class ScimService {
           grantsAdmin: next.role === 'TENANT_ADMIN' && member.role !== 'TENANT_ADMIN',
           touchesAdmin: member.role === 'TENANT_ADMIN',
         });
+      }
+      // WI-OI-120x: no operator but a Tenant Admin changes their own role or gives one beyond what they hold.
+      if (next.role !== member.role) {
+        await assertNotOwnAccess(tx, tenantId, operatorId, member.userId);
+        await assertBaseRoleWithinOwn(tx, tenantId, operatorId, member.role, next.role);
       }
       await assertTenantAdministratorRetained(tx, tenantId, member, next);
       if (next.role !== member.role || next.status !== member.status) {

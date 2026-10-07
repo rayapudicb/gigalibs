@@ -22,7 +22,13 @@ const TENANT_WIDE_ROLES = new Set(['SUPER_ADMIN', 'TENANT_ADMIN']);
 const SETTINGS_URL = '/api/control/tenants/current/organization/settings';
 
 // WI-OI-063b: opt-in spatial scoping. Geospatial enforces it; this screen only records the choice.
-export function TenantSpatialScopeManager({ canToggle, canAssign }: { canToggle: boolean; canAssign: boolean }) {
+// WI-OI-120x: only an administrator changes their own places; `currentUserId` and `isAdministrator` say who is looking.
+export function TenantSpatialScopeManager({ canToggle, canAssign, currentUserId, isAdministrator }: {
+  canToggle: boolean;
+  canAssign: boolean;
+  currentUserId: string;
+  isAdministrator: boolean;
+}) {
   const [enabled, setEnabled] = useState<boolean | null>(null);
   const [members, setMembers] = useState<ScopedMember[]>([]);
   const [places, setPlaces] = useState<Map<string, PlaceLabel>>(new Map());
@@ -162,7 +168,7 @@ export function TenantSpatialScopeManager({ canToggle, canAssign }: { canToggle:
                     )}
                   </Table.Cell>
                   <Table.Cell className="text-right">
-                    {canAssign && !tenantWide && member.status === 'ACTIVE' && !placesError ? (
+                    {canAssign && (isAdministrator || member.user.id !== currentUserId) && !tenantWide && member.status === 'ACTIVE' && !placesError ? (
                       <Button type="button" size="small" variant="secondary" onClick={() => { setNotice(null); setEditing(member); }}>
                         Assign places
                       </Button>

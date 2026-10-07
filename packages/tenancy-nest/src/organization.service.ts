@@ -48,6 +48,7 @@ import {
   NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
+import { assertNotOwnAccess } from './grant-bound.js';
 
 // WI-OI-109c (ADR-0018): the organization hierarchy's administration. Every transaction runs as the NOLOGIN
 // `gigalibs_org_tenant` role with the tenant set, so forced row-level security bounds every organization query;
@@ -722,6 +723,8 @@ export class OrganizationService {
     return this.idempotent(tenantId, actorId, 'organization.grant', dto, async (tx, control) => {
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`org-grants:${tenantId}:${dto.userId}`}, 0))`;
       await this.assertActiveMember(tx, control, tenantId, dto.userId, 'The member');
+      // WI-OI-120x: nobody but a Tenant Admin grants themselves a unit.
+      await control(() => assertNotOwnAccess(tx, tenantId, actorId, dto.userId));
       const unit = await this.requireUnit(tx, tenantId, dto.unitId);
       if (unit.status === 'ARCHIVED') throw new UnprocessableEntityException('An archived unit cannot be granted.');
       const effectiveFrom = dto.effectiveFrom ? new Date(dto.effectiveFrom) : new Date();

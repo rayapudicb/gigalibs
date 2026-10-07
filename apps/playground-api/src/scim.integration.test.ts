@@ -129,6 +129,21 @@ describe.skipIf(!proofUrl)('SCIM HTTP and PostgreSQL persistence proof (isolated
     expect((await call('admin-a', `/Users/${target}`, 'PATCH', role('MEMBER'))).status).toBe(200);
   });
 
+  // WI-OI-120x: a SCIM operator who is not a Tenant Admin gives no base role beyond what they hold, nor changes their own.
+  it('refuses a non-administrator who gives a base role beyond their own or changes their own role', async () => {
+    const lead = await addUser('scim-lead', tenantA, 'MEMBER', undefined, ['users:create', 'users:update']);
+    const target = `member-${run}`;
+    const role = (value: string) => ({ Operations: [{ op: 'replace', path: 'roles', value: [{ value }] }] });
+    expect((await call('scim-lead', `/Users/${target}`, 'PATCH', role('MANAGER'))).status).toBe(403);
+    expect((await call('scim-lead', '/Users', 'POST', { userName: `manager-${run}@example.invalid`, roles: [{ value: 'MANAGER' }] })).status).toBe(403);
+    expect((await call('scim-lead', `/Users/${lead}`, 'PATCH', role('VIEWER'))).status).toBe(403);
+    expect((await db.tenantMember.findUniqueOrThrow({ where: { userId_tenantId: { userId: target, tenantId: tenantA } } })).role).toBe('MEMBER');
+    expect((await call('scim-lead', `/Users/${target}`, 'PATCH', role('VIEWER'))).status).toBe(200);
+    expect((await call('scim-lead', '/Users', 'POST', { userName: `viewer-${run}@example.invalid`, roles: [{ value: 'VIEWER' }] })).status).toBe(201);
+    expect((await call('admin-a', `/Users/${target}`, 'PATCH', role('MANAGER'))).status).toBe(200);
+    expect((await call('admin-a', `/Users/${target}`, 'PATCH', role('MEMBER'))).status).toBe(200);
+  });
+
   it('changes only one membership and its sessions for a multi-tenant identity', async () => {
     const id = await addUser('shared-a', tenantA, 'MEMBER');
     await addUser('shared-b', tenantB, 'MEMBER', id);

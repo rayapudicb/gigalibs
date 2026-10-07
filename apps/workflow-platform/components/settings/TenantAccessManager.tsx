@@ -2,7 +2,7 @@
 
 import { PageShell } from '@/components/page-shell';
 import { memberStatusLabel, roleLabel } from '@/lib/role-labels';
-import { holdsPermission, PERMISSION_CATALOGUE } from '@gigalibs/contracts';
+import { baseRoleAdditions, holdsPermission, PERMISSION_CATALOGUE } from '@gigalibs/contracts';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -100,6 +100,19 @@ function hasPermission(permissions: string[], requested: string): boolean {
   return holdsPermission(permissions, requested);
 }
 
+/**
+ * WI-OI-120x: the base roles this viewer may give a member whose role is `current` (null: an invitation), as the server
+ * checks it. Only an administrator gives Tenant Admin; anyone else gives a role only when they hold what it adds.
+ */
+function givableRoles(current: MemberRole | null, viewerPermissions: string[], isAdministrator: boolean): AssignableMemberRole[] {
+  return ROLES.filter(
+    (option) =>
+      option === current ||
+      isAdministrator ||
+      (option !== 'TENANT_ADMIN' && baseRoleAdditions(current, option).every((code) => hasPermission(viewerPermissions, code))),
+  );
+}
+
 async function readError(response: Response, fallback: string): Promise<string> {
   const payload = (await response.json().catch(() => null)) as ApiErrorPayload | null;
   if (typeof payload?.detail === 'string') return payload.detail;
@@ -128,12 +141,16 @@ interface MemberRowProps {
   isAdministrator: boolean;
   /** WI-OI-120w (R2 slice 2a): holds `roles:assign`; one's own roles change only through another administrator. */
   canAssignRoles: boolean;
+  /** WI-OI-120x: the viewer's permissions, to offer only the base roles they may give. */
+  viewerPermissions: string[];
   customRoles: CustomRole[];
   onSaved: () => Promise<void>;
 }
 
-function MemberRow({ member, currentUserId, canUpdate: mayUpdate, isAdministrator, canAssignRoles, customRoles, onSaved }: MemberRowProps) {
+function MemberRow({ member, currentUserId, canUpdate: mayUpdate, isAdministrator, canAssignRoles, viewerPermissions, customRoles, onSaved }: MemberRowProps) {
   const canUpdate = mayUpdate && (isAdministrator || member.role !== 'TENANT_ADMIN');
+  // WI-OI-120x: only an administrator changes their own base role; anyone else asks another administrator.
+  const canChangeRole = canUpdate && (isAdministrator || member.user.id !== currentUserId);
   const [role, setRole] = useState<MemberRole>(member.role);
   const [status, setStatus] = useState<MemberStatus>(member.status);
   const [reason, setReason] = useState('');
@@ -175,7 +192,7 @@ function MemberRow({ member, currentUserId, canUpdate: mayUpdate, isAdministrato
         <p className="text-zinc-500">{member.user.email}</p>
       </TableCell>
       <TableCell>
-        {canUpdate ? (
+        {canChangeRole ? (
           <select
             aria-label={`Role for ${member.user.email}`}
             className="h-8 rounded-md border border-ui-border-base bg-ui-bg-field px-2"
@@ -187,7 +204,7 @@ function MemberRow({ member, currentUserId, canUpdate: mayUpdate, isAdministrato
                 {roleLabel('SUPER_ADMIN')} (managed by GigaLibs)
               </option>
             ) : null}
-            {ROLES.filter((option) => isAdministrator || option !== 'TENANT_ADMIN').map((option) => (
+            {givableRoles(member.role, viewerPermissions, isAdministrator).map((option) => (
               <option key={option} value={option}>
                 {roleLabel(option)}
               </option>
@@ -579,6 +596,8 @@ export function TenantAccessManager({
   const canCreateRoles = hasPermission(effectivePermissions, 'roles:create');
   const canUpdateRoles = hasPermission(effectivePermissions, 'roles:update');
   const canAssignRoles = hasPermission(effectivePermissions, 'roles:assign');
+  // WI-OI-120x: an invitation offers only the base roles this viewer may give.
+  const inviteRoles = givableRoles(null, effectivePermissions, isAdministrator);
   const canDeleteRoles = hasPermission(effectivePermissions, 'roles:delete');
   const canReadSettings = hasPermission(effectivePermissions, 'settings:read');
   const canUpdateSettings = hasPermission(effectivePermissions, 'settings:update');
@@ -727,7 +746,7 @@ export function TenantAccessManager({
       const response = await fetch('/api/control/tenants/current/invitations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, role, expiresInHours }),
+        body: JSON.stringify({ email, role: inviteRoles.includes(role) ? role : inviteRoles[0], expiresInHours }),
       });
       if (!response.ok)
         throw new Error(await readError(response, 'Invitation could not be created.'));
@@ -1147,10 +1166,10 @@ export function TenantAccessManager({
                 Role
                 <select
                   className="mt-1 h-9 w-full rounded-md border border-zinc-200 bg-white px-2"
-                  value={role}
+                  value={inviteRoles.includes(role) ? role : inviteRoles[0]}
                   onChange={(event) => setRole(event.target.value as AssignableMemberRole)}
                 >
-                  {ROLES.filter((option) => isAdministrator || option !== 'TENANT_ADMIN').map((option) => (
+                  {inviteRoles.map((option) => (
                     <option key={option} value={option}>
                       {roleLabel(option)}
                     </option>
@@ -1332,6 +1351,7 @@ export function TenantAccessManager({
                     canUpdate={canUpdateMembers}
                     isAdministrator={isAdministrator}
                     canAssignRoles={canAssignRoles}
+                    viewerPermissions={effectivePermissions}
                     customRoles={customRoles}
                     onSaved={load}
                   />

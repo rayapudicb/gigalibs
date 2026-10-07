@@ -8,7 +8,14 @@ import { OrgErrorAlert, OrgSuccess, OrgUnitPicker, ReasonField, selectClassName,
 import type { OrgMember } from './OrgUnitsPanel';
 
 /** Who may see and change what: a grant covers its unit and everything below it in the primary tree in force. */
-export function OrgAccessPanel({ members, permissions, userNames }: { members: OrgMember[]; permissions: OrgPermissions; userNames: Record<string, string> }) {
+export function OrgAccessPanel({ members, permissions, userNames, userId, isAdministrator }: {
+  members: OrgMember[];
+  permissions: OrgPermissions;
+  userNames: Record<string, string>;
+  /** WI-OI-120x: only an administrator grants themselves a unit. */
+  userId: string;
+  isAdministrator: boolean;
+}) {
   const ids = { member: useId(), filter: useId(), access: useId(), until: useId() };
   const [filterUser, setFilterUser] = useState('');
   const [includeRevoked, setIncludeRevoked] = useState(false);
@@ -40,7 +47,7 @@ export function OrgAccessPanel({ members, permissions, userNames }: { members: O
   }, [load]);
 
   const unitNames = useUnitNames(page?.items.map((grant) => grant.unitId) ?? []);
-  const activeMembers = members.filter((member) => member.status === 'ACTIVE');
+  const activeMembers = members.filter((member) => member.status === 'ACTIVE' && (isAdministrator || member.user.id !== userId));
 
   const create = async () => {
     if (!form?.unit) return;

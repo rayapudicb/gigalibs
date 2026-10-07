@@ -49,3 +49,4 @@ export type RoleDefinition = z.infer<typeof RoleDefinitionSchema>;
 export * from './permission-match.js';
 export * from './permission-catalogue.generated.js';
 export * from './control-plane-permissions.js';
+export * from './base-roles.js';

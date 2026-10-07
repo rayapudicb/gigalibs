@@ -35,7 +35,7 @@ import {
   resolveDomainVerification,
 } from './domain-verification.js';
 import { tenantSubdomain, trialModuleKeys } from './platform-module-catalog.js';
-import { assertGrantWithinOwn } from './grant-bound.js';
+import { assertBaseRoleWithinOwn, assertGrantWithinOwn, assertNotOwnAccess } from './grant-bound.js';
 import { assertTenantAdminAuthority, assertTenantAdministratorRetained } from './tenant-member-safety.js';
 
 @Injectable()
@@ -941,6 +941,8 @@ export class TenancyService {
         throw new ConflictException('A membership for this email already exists in the tenant');
       }
       await assertTenantAdminAuthority(transaction, tenantId, invitedById, { grantsAdmin: dto.role === 'TENANT_ADMIN', touchesAdmin: false });
+      // WI-OI-120x: an invitation gives its role's permissions; someone not a Tenant Admin gives only what they hold.
+      await assertBaseRoleWithinOwn(transaction, tenantId, invitedById, null, dto.role);
 
       await transaction.tenantInvite.updateMany({
         where: {
@@ -1076,6 +1078,18 @@ export class TenancyService {
         if (invitation.role === 'TENANT_ADMIN') {
           await assertTenantAdminAuthority(transaction, invitation.tenantId, invitation.invitedById, { grantsAdmin: true, touchesAdmin: false });
         }
+        // WI-OI-120x: likewise the sender must still hold what the invited role gives, which also covers invitations
+        // sent before the bound. The refusal is told to the person accepting.
+        await assertBaseRoleWithinOwn(transaction, invitation.tenantId, invitation.invitedById, null, invitation.role).catch(
+          (error: unknown) => {
+            if (error instanceof ForbiddenException)
+              throw new ForbiddenException({
+                code: 'INVITATION_NO_LONGER_VALID',
+                message: 'This invitation is no longer valid: its sender can no longer give this role. Ask for a new invitation.',
+              });
+            throw error;
+          },
+        );
 
         const acceptedAt = new Date();
         const accepted = await transaction.tenantInvite.updateMany({
@@ -1176,6 +1190,14 @@ export class TenancyService {
           grantsAdmin: nextRole === 'TENANT_ADMIN' && member.role !== 'TENANT_ADMIN',
           touchesAdmin: member.role === 'TENANT_ADMIN',
         });
+        // WI-OI-120x: nobody but a Tenant Admin changes their own role, department or places, or gives a base role
+        // beyond what they hold.
+        const placesChanged =
+          dto.spatialScopePlaceIds !== undefined &&
+          [...dto.spatialScopePlaceIds].sort().join('\n') !== [...member.spatialScopePlaceIds].sort().join('\n');
+        if (nextRole !== member.role || nextDepartmentId !== member.departmentId || placesChanged)
+          await assertNotOwnAccess(transaction, tenantId, changedById, member.userId);
+        await assertBaseRoleWithinOwn(transaction, tenantId, changedById, member.role, nextRole);
         await assertTenantAdministratorRetained(transaction, tenantId, member, { role: nextRole, status: nextStatus });
 
         // WI-OI-120w (Security review of 2a, M2): roles are not changed here. They are given and taken away through

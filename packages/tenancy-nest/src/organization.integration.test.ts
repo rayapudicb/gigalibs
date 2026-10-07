@@ -145,6 +145,8 @@ integration('organization service', () => {
     ids.grant = grant.id;
     await expectStatus(service.createGrant(A, author, { userId: member, unitId: ids.north, access: 'READ', reason: 'again', idempotencyKey: `grant-${run}-2` }), 409, /already holds/);
     await expectStatus(service.createGrant(A, author, { userId: outsider, unitId: ids.north, access: 'READ', reason: 'other tenant', idempotencyKey: `grant-${run}-3` }), 422, /active member/);
+    // WI-OI-120x: nobody but a Tenant Admin grants themselves a unit (the author is a Member).
+    await expectStatus(service.createGrant(A, author, { userId: author, unitId: ids.north, access: 'READ_WRITE', reason: 'myself', idempotencyKey: `grant-${run}-self` }), 403, /own role/);
     expect((await service.listGrants(A, { userId: member, includeRevoked: false, limit: 100 })).items.map((item) => item.id)).toEqual([grant.id]);
     expect((await service.listGrants(B, { includeRevoked: true, limit: 100 })).items).toEqual([]);
   });

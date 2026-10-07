@@ -20,7 +20,11 @@ const SECTIONS: Array<{ key: Section; label: string }> = [
 ];
 
 /** WI-OI-109d (ADR-0018): organization administration on the governed hierarchy APIs. */
-export function OrganizationAdministration({ grantedPermissions, userId }: { grantedPermissions: readonly string[]; userId: string }) {
+export function OrganizationAdministration({ grantedPermissions, userId, isAdministrator }: {
+  grantedPermissions: readonly string[];
+  userId: string;
+  isAdministrator: boolean;
+}) {
   const permissions = useMemo(() => orgPermissions(grantedPermissions), [grantedPermissions]);
   const [section, setSection] = useState<Section>('structure');
   const [unitTypes, setUnitTypes] = useState<OrgUnitTypeV1[] | null>(null);
@@ -86,7 +90,7 @@ export function OrganizationAdministration({ grantedPermissions, userId }: { gra
         {section === 'structure' && <OrgStructurePanel permissions={permissions} userId={userId} userNames={userNames} onChanged={() => void loadShared()} />}
         {section === 'units' && (unitTypes ? <OrgUnitsPanel unitTypes={unitTypes} members={members} permissions={permissions} /> : <Loading />)}
         {section === 'types' && (unitTypes ? <OrgUnitTypesPanel unitTypes={unitTypes} permissions={permissions} onChanged={() => void loadShared()} /> : <Loading />)}
-        {section === 'access' && <OrgAccessPanel members={members} permissions={permissions} userNames={userNames} />}
+        {section === 'access' && <OrgAccessPanel members={members} permissions={permissions} userNames={userNames} userId={userId} isAdministrator={isAdministrator} />}
       </div>
     </section>
   );

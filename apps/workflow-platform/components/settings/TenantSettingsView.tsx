@@ -49,6 +49,8 @@ export function TenantSettingsView({
     router.replace(`/settings?tab=${tab}`, { scroll: false });
   };
   const hasPlatformAuthority = session.platformRoles.length > 0;
+  // WI-OI-120x: a workspace administrator may change their own access; anyone else asks one.
+  const isWorkspaceAdministrator = session.roles.some((role) => role === 'TENANT_ADMIN' || role === 'SUPER_ADMIN');
   const tenantName = session.tenant?.name ?? 'Current workspace';
 
   return (
@@ -153,7 +155,7 @@ export function TenantSettingsView({
 
         {activeTab === 'hierarchy' && (
           <div className="space-y-6">
-            <OrganizationAdministration grantedPermissions={session.permissions} userId={session.user.id} />
+            <OrganizationAdministration grantedPermissions={session.permissions} userId={session.user.id} isAdministrator={isWorkspaceAdministrator} />
             {/* WI-OI-109d: departments stay reachable until the 109e bridge turns them into units and grants;
                 member department and employment-type assignment still lives here. */}
             <details className="rounded-lg border border-ui-border-base bg-ui-bg-base">
@@ -164,6 +166,8 @@ export function TenantSettingsView({
                 <TenantOrganizationHierarchyManager
                   tenantId={tenantId}
                   canManage={canUpdateConfiguredValues}
+                  currentUserId={session.user.id}
+                  isAdministrator={isWorkspaceAdministrator}
                 />
               </div>
             </details>
@@ -171,6 +175,8 @@ export function TenantSettingsView({
               <TenantSpatialScopeManager
                 canToggle={hasPermission(session.permissions, 'tenant:update')}
                 canAssign={hasPermission(session.permissions, 'users:update')}
+                currentUserId={session.user.id}
+                isAdministrator={isWorkspaceAdministrator}
               />
             ) : null}
           </div>

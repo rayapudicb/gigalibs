@@ -12,6 +12,8 @@ const prismaMock = vi.hoisted(() => {
       updateMany: vi.fn(),
     },
     customRole: { findFirst: vi.fn() },
+    // WI-OI-120x: the grant bound reads the actor's live role assignments (none here).
+    memberRoleAssignment: { findMany: vi.fn().mockResolvedValue([]) },
     department: { findFirst: vi.fn() },
     tenantInvite: { updateMany: vi.fn(), create: vi.fn(), findUnique: vi.fn() },
     user: { findUnique: vi.fn() },

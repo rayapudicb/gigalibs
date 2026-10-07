@@ -2017,3 +2017,43 @@ widening the card to fix the API faults the proof found.
     - someone who is not an admin and holds `roles:update` can remove permissions from a role a Tenant Admin holds;
     - someone holding `roles:assign` can take from non-admins roles that exceed their own.
   - **UAT exposure today: none.** Only Tenant Admins hold `users:update`, `invites:create` or `roles:*`.
+- **Carded:** the Medium finding is `.pi/tasks/WI-OI-120x.md` (owner: "card the base-role bound", 2026-10-06). It
+  adds a check that `organization:grant` has no self check (`OrganizationService.createGrant`). Proposed; it awaits
+  the owner's approval.
+
+#### WI-OI-120x: a non-admin gives no base role or scope beyond their own (owner "approved", 2026-10-06)
+
+- **The shared definition:** `BASE_ROLE_DEFINITIONS` moved, as data and unchanged, from rbac-core to contracts. The
+  old and new tables are identical, all 111 lines. rbac-core builds its hierarchy from it. A test proves the
+  contracts resolver and the hierarchy give every role, GUEST included, the same permissions.
+- **The server:**
+  - **Base roles:** someone who is not an active Tenant Admin may move a member up only by permissions they hold.
+    This applies to the member update, invitations and SCIM create and patch. Lowering a role is not bounded.
+  - **Acceptance:** an invitation is checked again when it is accepted. If its sender no longer holds what it gives,
+    or has left, it is refused with 403 `INVITATION_NO_LONGER_VALID`.
+  - **Own access:** a non-admin may not change their own base role, department or places (member update and SCIM), or
+    grant themselves a unit (403 `SELF_ACCESS_CHANGE`). Their employment type stays theirs to change.
+- **Settings:** only the base roles the viewer may give are offered, in the member row and the invite form. A
+  non-admin's own role, places, department and unit grants are not offered to them.
+- **Checks:**
+  - unit: `base-role-bound.test.ts` 5, the WI-OI-120v authority tests 8 (their mock now has role assignments), and the
+    rbac-core equivalence tests;
+  - r2_proof: `base-role-bound.integration.test.ts` 3, including a real invitation token refused after its sender
+    was lowered. With the slice 1 and 2a suites, 19 of 19.
+  - org proof database (127.0.0.1:55499, which carries the org proof marker): a Member granting themselves a unit
+    gets 403. Both organization suites pass 17 of 17.
+  - SCIM proof database: the 2a migration was applied first, because the database had stopped at 20261006010000. The
+    SCIM suite over HTTP passes 8 of 8; its new case refuses a non-admin operator giving Manager by PATCH and by POST,
+    and changing their own role. The container was stopped after the run.
+  - typecheck: control plane and web.
+  - affected unit suites: 105 files.
+- **UAT (read-only):**
+  - no one outside Tenant Admins holds `users:update`, `invites:create`, `organization:grant` or SCIM permissions;
+  - there are no pending invitations;
+  - so nothing changes there today.
+- **`pnpm verify`:**
+  - build, tests (320 files, 2748 tests), every other audit and S16 pass. The deployment profile shows only the
+    known drift.
+  - **audit:design-tokens fails on one file only:** `apps/workflow-platform/components/auth/AuthAtmosphere.tsx` (6
+    hard-coded colours). It is not part of this card. Another session changed it, uncommitted, at 23:58, together
+    with the untracked `apps/workflow-platform/public/images/`. Left untouched for its owner.

@@ -10,6 +10,7 @@
 export * from './tenancy.module.js';
 export * from './tenancy.service.js';
 export * from './tenant-member-safety.js';
+export * from './grant-bound.js';
 export * from './guards/tenant-boundary.guard.js';
 export * from './tenancy.controller.js';
 export * from './middleware/tenant.middleware.js';
