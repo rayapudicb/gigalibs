@@ -2126,3 +2126,61 @@ widening the card to fix the API faults the proof found.
       route table, whose test reads one permission per route.
     - Settings no longer offers add-role controls on a Tenant Admin's or Super Admin's row to a non-admin. The server
       already refused them.
+
+#### Deploy of 2323b99 (R2 slice 1), run by the owner 2026-10-07 03:24–03:27Z
+
+- **Owner's run:** all 11 migration jobs exited 0; every service was replaced and healthy on
+  `2323b99860ac-dd5f6baf396c`; `/api/health/ready` returned 200; the Connector Hub refused an unsigned request with
+  only a tenant named (401).
+- **Read-only checks after:**
+  - every running container is on 2323b99;
+  - `20261006000000_member_role_assignments` and `20261006010000_member_role_assignments_follow_column` are applied;
+  - the trigger `tenant_members_custom_role_follow` is enabled.
+- **Reconciliation on UAT (read-only transaction, the rule of `scripts/verify-r2-assignments.mjs`):**
+  - 433 members, 28 with a custom role, **0 differences** in roles or permissions between before (the column) and
+    after (live assignments);
+  - 28 live assignments, 28 in all, none across tenants;
+  - no explicit scopes.
+- **Ledger walk-through after the deploy** (`e2e/run-uat-walkthrough.sh --ledger`; logins as environment variables
+  only): 1 of 1 passed in 21 s. The approver, whose Journal Approver role now comes from a role assignment, approved
+  the month's journals. Read-only check: each of the six September journals exists once, posted; nothing was
+  posted twice.
+
+#### Release c5e6cb388538-d322d4799752 (R2 slice 2a, grant bound, WI-OI-120x and its review fixes), built 2026-10-07
+
+- **Before the build:** the owner set aside another session's uncommitted sign-in change (`AuthAtmosphere.tsx`,
+  `public/images/`) with `git stash`, so it is not in these images; the stash was recorded before. The tree was
+  clean at c5e6cb3 apart from this evidence note.
+- **Builds:** `refresh-source-identity.sh`, then the five image builds 07:47–08:20Z, all exit 0. Nine images are
+  tagged `c5e6cb388538-d322d4799752`. The web image's labels: revision c5e6cb3, source state d322d479….
+- **Backup of UAT as it runs (2323b99):** `gigalibs_backup_20261007_082029Z`, checksum verified, in
+  `infra/compose/backups`.
+- **Deploy files:** they name only `c5e6cb388538-d322d4799752`.
+- **Migration this release adds:** `20261006020000_member_role_assignments_several`, which only replaces the trigger
+  function; there is no data change.
+- **Deploy, run by the owner 2026-10-07 10:58–11:02Z:**
+  - all migration jobs exited 0; every service was healthy on `c5e6cb388538-d322d4799752`;
+  - `/api/health/ready` returned 200; the Connector Hub refused an unsigned request with a tenant named (401).
+  - The owner restored the sign-in change with `git stash pop` first. `AuthAtmosphere.tsx` and the four carousel
+    images match the checksums recorded before the stash, byte for byte.
+- **Read-only checks after:**
+  - every running container is on the new release;
+  - `20261006020000_member_role_assignments_several` is applied;
+  - the function `member_role_assignments_follow_column` has `search_path=public` and is not SECURITY DEFINER; the
+    trigger is enabled.
+  - Reconciliation rerun: 433 members, 28 with a custom role, **0 differences**; 28 live assignments of 28.
+- **Journey after the deploy** (run y09g6u; passwords as environment variables only): 72 steps in 7 minutes, 72
+  findings, 7 blockers.
+  - **Several roles per person work end to end.** The admin gave Tia Technician "Maintenance technician", then
+    "Workforce member", through the new "Add role" control; the row then showed both. Her next sign-in had both
+    modules in the menu (EAM Operations Console and GigaOps Workforce), which one role per person could not do.
+  - The other personas each received their module role (Maintenance planner, Workforce supervisor, Maintenance
+    viewer) the same way.
+  - **The 7 blockers are unchanged**, all owned by planned cards:
+    - clock-in and out, the week, and its approval (M-WF1, M-WF2, U20a);
+    - a request, labour, completion and the supervisor's close (M-CM1).
+  - **Bugs, all known:**
+    - `/api/workforce/wfo/workers` returns 404 (U20a);
+    - no screen links a worker to their login (T1a);
+    - the timesheet preview is refused for an admin who is not a worker;
+    - the auditor is refused `maps.nodes.read` (Geospatial entitlement).

@@ -3,9 +3,9 @@
 - **Status:** Approved (owner, 2026-10-06). M1a card of `docs/plans/platform-implementation-plan.md`, after R1
   (WI-OI-120q), S1 and S16. Implements ADR-0034 §1, §2 (inclusion), §5, §6 and §7. Each slice is shown before it
   starts.
-  - **Slice 1:** done (committed c6e96e2 and 2323b99; Security review recorded; release built, awaiting the owner's
-    deploy).
-  - **Slice 2a:** committed 060d3cb (owner "approved 2a").
+  - **Slice 1:** done and on UAT (2323b99, deployed 2026-10-07). Reconciliation: 433 members, 0 differences.
+  - **Slice 2a:** done and on UAT (060d3cb, e07cdba and the grant bound 1237c9d, in release c5e6cb3, deployed
+    2026-10-07). The journey's technician holds two module roles.
     - Security review: "ship after fixes". The fixes are committed in e07cdba (re-check: "ship").
     - M3: the owner said "add the grant bound" (2026-10-06); it is built and awaits "commit".
   - **Next:** slices 3 and 2b.
