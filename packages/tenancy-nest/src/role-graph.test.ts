@@ -25,8 +25,8 @@ describe('role graph', () => {
   );
 
   it('grants what a role includes, transitively', () => {
-    expect(expandRole(roles, 'lead').sort()).toEqual(['cmms.work-orders.write', 'cmms:read', 'workforce.timesheets.approve'].sort());
-    expect(expandRole(roles, 'planner').sort()).toEqual(['cmms.work-orders.write', 'cmms:read'].sort());
+    expect([...expandRole(roles, 'lead')].sort()).toEqual(['cmms.work-orders.write', 'cmms:read', 'workforce.timesheets.approve'].sort());
+    expect([...expandRole(roles, 'planner')].sort()).toEqual(['cmms.work-orders.write', 'cmms:read'].sort());
     expect(expandRole(roles, 'reader')).toEqual(['cmms:read']);
   });
 
@@ -51,4 +51,26 @@ describe('role graph', () => {
     expect(refusal(() => assertInclusionsValid(chain, 'c4'))).toBe('OK');
     expect(refusal(() => assertInclusionsValid(withRole(chain, 'c5', { includes: ['c6'] }), 'c5'))).toBe('ROLE_INCLUSION_TOO_DEEP');
   });
+
+  // Security review of 2c (M1): the largest graph the limits allow is checked in milliseconds, not seconds.
+  it('expands and validates the largest allowed graph quickly', () => {
+    const own: Record<string, string[]> = {};
+    const includes: Record<string, string[]> = {};
+    for (let layer = 0; layer < 5; layer += 1)
+      for (let index = 0; index < 10; index += 1) {
+        own[`l${layer}-${index}`] = [`x.layer-${layer}:read`, `x.role-${layer}-${index}:read`];
+        if (layer < 4) includes[`l${layer}-${index}`] = Array.from({ length: 10 }, (_, next) => `l${layer + 1}-${next}`);
+      }
+    for (let top = 0; top < 200; top += 1) {
+      own[`top-${top}`] = [];
+      includes[`top-${top}`] = Array.from({ length: 10 }, (_, next) => `l0-${next}`);
+    }
+    const large = graph(own, includes);
+    const started = Date.now();
+    for (let top = 0; top < 200; top += 1) expect(expandRole(large, `top-${top}`)).toHaveLength(55); // 5 layers × (1 shared + 10 own codes)
+    expect(refusal(() => assertInclusionsValid(withRole(large, 'l4-0', { includes: [] }), 'l4-0'))).toBe('OK');
+    expect(rolesIncluding(large, 'l4-0')).toHaveLength(240);
+    expect(Date.now() - started).toBeLessThan(1_000);
+  });
 });
+

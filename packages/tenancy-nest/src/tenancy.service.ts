@@ -989,6 +989,10 @@ export class TenancyService {
       if (role._count.members > 0 || role._count.assignments > 0) {
         throw new ConflictException('Remove this custom role from all members before deleting it');
       }
+      // WI-OI-120w (slice 2c review, I1): the roles it includes go with it (cascade), so they are kept in the entry too.
+      const includes = (await transaction.customRoleInclusion.findMany({ where: { tenantId, roleId: role.id }, select: { includedRoleId: true } })).map(
+        (inclusion) => inclusion.includedRoleId,
+      );
       // WI-OI-120w review (L1): the role's assignment history goes with it, so it is kept in the audit entry first.
       const assignments = await transaction.memberRoleAssignment.findMany({
         where: { tenantId, customRoleId: role.id },
@@ -1008,6 +1012,7 @@ export class TenancyService {
             description: role.description,
             color: role.color,
             permissions: role.permissions,
+            includes,
             assignments: assignments.map((assignment) => ({
               ...assignment,
               createdAt: assignment.createdAt.toISOString(),

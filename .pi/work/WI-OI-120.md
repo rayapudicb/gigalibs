@@ -2430,3 +2430,44 @@ widening the card to fix the API faults the proof found.
 - **`pnpm verify`** (slice 2c on top of the 2b fixes; load average 32): build, every test (2771) and every other audit
   and S16 pass. Design tokens fail only on another session's uncommitted `AuthAtmosphere.tsx`. This also meets the
   slice 2b re-check's condition 2.
+- **Security review of cd9ea3a: "ship after fixes".** No way to gain or widen access was found.
+  - **Verified:**
+    - inclusion cannot escalate: giving a role uses its expanded permissions; edits check the expanded additions of
+      every including role; system roles cannot gain inclusions;
+    - cross-tenant inclusions are refused by the composite keys and the service;
+    - every write takes the tenant lock before reading the graph;
+    - the depth rule agrees in the session query, the service and the UI;
+    - every check uses expanded permissions.
+  - **The reviewer's first two attempts** stopped: once on the account's session limit, once stalled. The third
+    completed.
+  - **Findings and fixes:**
+    - **M1 (new):** the graph walks enumerated every path. On a graph the limits allow, one role edit cost about 22 s
+      of CPU while holding the workspace lock (a denial of service for anyone with role-edit rights). Fix:
+      `expandRole` is breadth first (each role once, the same reach as the session's recursive query) and remembered
+      per graph; the including roles come from a reverse map; the depth check is a remembered longest path with
+      cycle detection. A unit test on the reviewer's worst case (five layers of ten, plus 200 top roles) runs in
+      milliseconds.
+    - **L2 (new):** the included-role foreign key made a whole-workspace delete depend on row order. A forward
+      migration, `20261007020000_custom_role_inclusions_deferred`, makes it deferred. Probe on r2_proof (rolled
+      back): the included role then the including role now passes; the included role alone still fails.
+    - **I1:** the delete audit entry now records the role's inclusions.
+    - **L1 (known, recorded):** a manifest change to a module role reaches holders of roles that include it, without
+      the transition rule. It already reached the module role's direct holders. The units-and-places gate refuses
+      every code today, so no widening is possible; a conflict fails closed. Including module roles is the main use
+      case, so it stays allowed.
+    - **I2 (unverified, fail-closed):** a context near the size limit could grow with old uncatalogued codes.
+    - **Outside 2c, predating it:** `workforce:*` is catalogued and covers the never-delegable
+      `workforce.resources.link`, so a role may hold the family wildcard. For R1 or R4 follow-up.
+  - **Checks:** graph unit 4 of 4; r2_proof 30 of 30; org proof 18 of 18; SCIM proof 9 of 9 (the new migration
+    applied to each proof database; SCIM stopped after); affected suites 130 files, 1278 tests; api and web typecheck.
+- **Re-check of the 2c fixes: "ship".**
+  - **The reviewer's checks:**
+    - the breadth-first expansion reaches the same roles as the old walk and the session's recursive query (3,000
+      random graphs, 0 differences);
+    - the memo cannot go stale (`withRole` copies; graphs are never mutated);
+    - the new cycle and depth check gives the same outcomes as before (5,000 random graphs, 0 differences).
+  - **One note, done:** the cached expansion is now frozen and typed read-only. The compiler then found the only
+    caller that changed it, a test that sorted it in place; the test now sorts a copy.
+  - **`pnpm verify`** (load average 42): every test passes (2772); design tokens fail only on another session's
+    uncommitted `AuthAtmosphere.tsx`.
+  - **After the freeze:** tenancy-nest suites 72; r2_proof scope and inclusion suites 9 of 9; api typecheck clean.

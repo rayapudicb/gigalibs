@@ -167,7 +167,7 @@ everything under them), or some places (with everything inside them).
   - **Rest:** SCIM unaffected; the journey; `pnpm verify`; Security review before deploy (an access change).
 - **Size:** L, about 2–3 working days. Slice 2c: M, about 1 day.
 
-### Slice 2c: roles that include other roles (owner: "approved 2c", 2026-10-07; built and checked, awaiting "commit" and the Security review)
+### Slice 2c: roles that include other roles (owner: "approved 2c", 2026-10-07; committed cd9ea3a; review "ship after fixes", fixes built)
 
 - **As built:**
   - **Data:** migration `20261007010000_custom_role_inclusions` (both ends in one workspace, no self-inclusion, each

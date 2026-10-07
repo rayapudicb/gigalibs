@@ -43,26 +43,48 @@ export function withRole(
   return { own, includes, names };
 }
 
-/** What `roleId` grants: its own codes and those of every role it includes, at most MAX_ROLE_INCLUSION_DEPTH deep. */
-export function expandRole(graph: RoleGraph, roleId: string): string[] {
-  const codes = new Set<string>();
-  const visit = (id: string, depth: number, path: ReadonlySet<string>) => {
-    for (const code of graph.own.get(id) ?? []) codes.add(code);
-    if (depth >= MAX_ROLE_INCLUSION_DEPTH) return;
-    for (const next of graph.includes.get(id) ?? []) if (!path.has(next)) visit(next, depth + 1, new Set([...path, next]));
-  };
-  visit(roleId, 0, new Set([roleId]));
-  return [...codes];
+// Security review of 2c (M1): every walk visits each role once. Expansions are kept per graph, so the many holder checks
+// of one request share them; a graph is never mutated (`withRole` builds a new one).
+const expansions = new WeakMap<RoleGraph, Map<string, readonly string[]>>();
+
+/**
+ * What `roleId` grants: its own codes and those of every role it includes within MAX_ROLE_INCLUSION_DEPTH steps (the
+ * same reach as the session's recursive query). Breadth first, so each role is visited once, at its nearest distance.
+ */
+export function expandRole(graph: RoleGraph, roleId: string): readonly string[] {
+  let cache = expansions.get(graph);
+  if (!cache) expansions.set(graph, (cache = new Map()));
+  const cached = cache.get(roleId);
+  if (cached) return cached;
+  const codes = new Set<string>(graph.own.get(roleId) ?? []);
+  const seen = new Set<string>([roleId]);
+  let frontier = [roleId];
+  for (let depth = 0; depth < MAX_ROLE_INCLUSION_DEPTH && frontier.length > 0; depth += 1) {
+    const next: string[] = [];
+    for (const id of frontier)
+      for (const included of graph.includes.get(id) ?? [])
+        if (!seen.has(included)) {
+          seen.add(included);
+          next.push(included);
+          for (const code of graph.own.get(included) ?? []) codes.add(code);
+        }
+    frontier = next;
+  }
+  // Frozen: the same array is shared by every check of this request (re-check of 2c).
+  const result = Object.freeze([...codes]);
+  cache.set(roleId, result);
+  return result;
 }
 
-/** Every role that includes `roleId`, directly or through others. */
+/** Every role that includes `roleId`, directly or through others (each role visited once). */
 export function rolesIncluding(graph: RoleGraph, roleId: string): string[] {
+  const includedBy = new Map<string, string[]>();
+  for (const [id, included] of graph.includes) for (const target of included) includedBy.set(target, [...(includedBy.get(target) ?? []), id]);
   const found = new Set<string>();
   const queue = [roleId];
   while (queue.length > 0) {
-    const target = queue.shift()!;
-    for (const [id, included] of graph.includes)
-      if (included.includes(target) && !found.has(id) && id !== roleId) {
+    for (const id of includedBy.get(queue.shift()!) ?? [])
+      if (id !== roleId && !found.has(id)) {
         found.add(id);
         queue.push(id);
       }
@@ -70,16 +92,28 @@ export function rolesIncluding(graph: RoleGraph, roleId: string): string[] {
   return [...found];
 }
 
-/** The longest chain of inclusions starting at `roleId` (null when it reaches a cycle). */
-function chainLength(graph: RoleGraph, roleId: string, path: ReadonlySet<string> = new Set([roleId])): number | null {
-  let longest = 0;
-  for (const next of graph.includes.get(roleId) ?? []) {
-    if (path.has(next)) return null;
-    const below = chainLength(graph, next, new Set([...path, next]));
-    if (below === null) return null;
-    longest = Math.max(longest, below + 1);
-  }
-  return longest;
+/** The longest chain of inclusions from each role, remembered; null for a role that reaches a cycle. */
+function chainLengths(graph: RoleGraph): (roleId: string) => number | null {
+  const done = new Map<string, number | null>();
+  const onPath = new Set<string>();
+  const visit = (id: string): number | null => {
+    if (done.has(id)) return done.get(id)!;
+    if (onPath.has(id)) return null;
+    onPath.add(id);
+    let longest: number | null = 0;
+    for (const next of graph.includes.get(id) ?? []) {
+      const below = visit(next);
+      if (below === null) {
+        longest = null;
+        break;
+      }
+      longest = Math.max(longest, below + 1);
+    }
+    onPath.delete(id);
+    done.set(id, longest);
+    return longest;
+  };
+  return visit;
 }
 
 /** Refuses inclusions of `roleId` that name a role outside the workspace, itself, too many, a cycle or too deep. */
@@ -91,8 +125,9 @@ export function assertInclusionsValid(graph: RoleGraph, roleId: string): void {
   const unknown = includes.filter((id) => !graph.own.has(id));
   if (unknown.length > 0)
     throw new UnprocessableEntityException({ code: 'ROLE_INCLUSION_UNKNOWN', message: 'Include roles of this workspace only.', missing: unknown });
+  const lengthOf = chainLengths(graph);
   for (const root of [roleId, ...rolesIncluding(graph, roleId)]) {
-    const length = chainLength(graph, root);
+    const length = lengthOf(root);
     if (length === null)
       throw new UnprocessableEntityException({
         code: 'ROLE_INCLUSION_CYCLE',
