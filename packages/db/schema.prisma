@@ -2772,6 +2772,9 @@ model CustomRole {
   permissions Json // Validated array of tenant-scoped permission codes
   members     TenantMember[]
   assignments MemberRoleAssignment[]
+  /// WI-OI-120w (R2 slice 2c): the roles this role includes, and the roles that include it.
+  includes    CustomRoleInclusion[] @relation("RoleIncludes")
+  includedBy  CustomRoleInclusion[] @relation("RoleIncludedBy")
 
   createdAt DateTime @default(now()) @db.Timestamptz(3)
   updatedAt DateTime @updatedAt @db.Timestamptz(3)
@@ -2780,6 +2783,23 @@ model CustomRole {
   @@unique([tenantId, id], map: "custom_roles_tenantId_id_key")
   @@index([tenantId])
   @@map("custom_roles")
+}
+
+/// WI-OI-120w (R2 slice 2c, ADR-0034 §2): a custom role includes another role of the same workspace; it grants the
+/// included role's permissions too, at the scope it is held. Acyclic and at most 5 deep (service).
+model CustomRoleInclusion {
+  id             String     @id @default(cuid())
+  tenantId       String
+  roleId         String
+  includedRoleId String
+  createdById    String
+  createdAt      DateTime   @default(now()) @db.Timestamptz(3)
+  role           CustomRole @relation("RoleIncludes", fields: [tenantId, roleId], references: [tenantId, id], onDelete: Cascade)
+  includedRole   CustomRole @relation("RoleIncludedBy", fields: [tenantId, includedRoleId], references: [tenantId, id], onDelete: NoAction)
+
+  @@unique([roleId, includedRoleId])
+  @@index([tenantId, includedRoleId])
+  @@map("custom_role_inclusions")
 }
 
 /// WI-OI-120w (R2, ADR-0034): a role a member holds at a scope. `MEMBER` is the member's own scope as today;

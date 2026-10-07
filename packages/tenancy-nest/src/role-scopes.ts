@@ -12,6 +12,7 @@ import {
 import { primaryVersionInForce } from '@gigalibs/auth-nest';
 import type { Prisma } from '@gigalibs/db';
 import { ConflictException, UnprocessableEntityException } from '@nestjs/common';
+import { expandRole, loadRoleGraph, type RoleGraph } from './role-graph.js';
 
 // WI-OI-120w (R2 slice 2b, ADR-0034 §1 and §6): where a role applies, checked where it is given, and the transition
 // rule checked wherever a member's access can change scope (a role given, a role's permissions edited, a base role
@@ -91,7 +92,8 @@ export async function assertScopesConsistent(
   userId: string,
   change: {
     readonly baseRole?: string;
-    readonly role?: { readonly id: string; readonly permissions: readonly string[] };
+    /** The workspace's roles as they will be (a role edit); by default as they are. */
+    readonly graph?: RoleGraph;
     readonly add?: { readonly permissions: readonly string[]; readonly scope: ResolvedRoleScope };
   } = {},
 ): Promise<void> {
@@ -102,17 +104,17 @@ export async function assertScopesConsistent(
   if (!member) return;
   const live = await tx.memberRoleAssignment.findMany({
     where: { tenantId, userId, revokedAt: null },
-    select: { customRoleId: true, scope: true, unitIds: true, placeIds: true, customRole: { select: { permissions: true } } },
+    select: { customRoleId: true, scope: true, unitIds: true, placeIds: true },
   });
-  const permissionsOf = (roleId: string, stored: unknown): string[] =>
-    change.role?.id === roleId ? [...change.role.permissions] : Array.isArray(stored) ? stored.filter(isTenantPermissionCode) : [];
+  // WI-OI-120w (R2 slice 2c): each role with everything it includes (read only when the member holds roles).
+  const graph = live.length > 0 ? (change.graph ?? (await loadRoleGraph(tx, tenantId))) : undefined;
   const grants = [
     {
       permissions: [...baseRolePermissions(change.baseRole ?? member.role), ...(member.permissions ?? []).filter(isTenantPermissionCode)],
       scopeKey: 'MEMBER',
     },
     ...live.map((assignment) => ({
-      permissions: permissionsOf(assignment.customRoleId, assignment.customRole.permissions),
+      permissions: expandRole(graph!, assignment.customRoleId),
       scopeKey: assignmentScopeKey({ kind: assignment.scope, unitIds: assignment.unitIds, placeIds: assignment.placeIds }),
     })),
     ...(change.add ? [{ permissions: [...change.add.permissions], scopeKey: assignmentScopeKey({ kind: change.add.scope.scope, unitIds: change.add.scope.unitIds, placeIds: change.add.scope.placeIds }) }] : []),

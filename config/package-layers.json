@@ -180,6 +180,7 @@
       "Client",
       "ClientContact",
       "CustomRole",
+      "CustomRoleInclusion",
       "UserGroup",
       "FormSchema",
       "FormSubmission",

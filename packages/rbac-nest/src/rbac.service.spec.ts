@@ -5,6 +5,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const prismaMock = vi.hoisted(() => ({
   tenantMember: { findUnique: vi.fn() },
   memberRoleAssignment: { findMany: vi.fn() },
+  // WI-OI-120w (R2 slice 2c): no role includes another here.
+  $queryRaw: vi.fn(async (): Promise<unknown[]> => []),
 }));
 vi.mock('@gigalibs/db', () => ({ prisma: prismaMock }));
 

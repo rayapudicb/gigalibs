@@ -381,6 +381,7 @@ export const TENANT_EXPORT_INVENTORY = Object.freeze([
   entry('JournalEntry', 'journal_entries', 'EXPORT', 'Tenant journal entries.'),
   entry('JournalLineItem', 'journal_line_items', 'EXPORT', 'Children of tenant journal entries.'),
   entry('CustomRole', 'custom_roles', 'EXPORT', 'Tenant authorization configuration.'),
+  entry('CustomRoleInclusion', 'custom_role_inclusions', 'EXPORT', 'Tenant authorization configuration: which roles include which.'),
   entry('UserGroup', 'user_groups', 'EXPORT', 'Tenant user-group configuration.'),
   entry('FormSchema', 'form_schemas', 'EXPORT', 'Tenant dynamic-form definitions.'),
   entry('FormSubmission', 'form_submissions', 'EXPORT', 'Children of tenant forms.'),

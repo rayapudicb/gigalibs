@@ -157,7 +157,20 @@ const CustomRoleFieldsSchema = z.object({
     .array(TenantPermissionSchema)
     .max(100)
     .transform((permissions) => [...new Set(permissions)]),
+  /**
+   * WI-OI-120w (R2 slice 2c, ADR-0034 §2): other roles of the workspace this role includes; it grants their permissions
+   * too, at the scope it is held. The service keeps the graph acyclic and at most MAX_ROLE_INCLUSION_DEPTH deep.
+   */
+  includes: z
+    .array(z.string().trim().min(1).max(64))
+    .max(10)
+    .transform((ids) => [...new Set(ids)])
+    .optional(),
 });
+
+/** WI-OI-120w (R2 slice 2c): how many roles one role may include, and how deep inclusion may go. */
+export const MAX_ROLE_INCLUSIONS = 10;
+export const MAX_ROLE_INCLUSION_DEPTH = 5;
 
 /**
  * WI-OI-120q (R1): a new role holds only permissions some screen, route or service checks (PERMISSION_CATALOGUE). An
@@ -242,7 +255,8 @@ export const UpdateCustomRoleSchema = CustomRoleFieldsSchema.partial()
       value.name !== undefined ||
       value.description !== undefined ||
       value.color !== undefined ||
-      value.permissions !== undefined,
+      value.permissions !== undefined ||
+      value.includes !== undefined,
     { message: 'A custom role change is required' },
   );
 

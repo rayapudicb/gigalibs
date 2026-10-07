@@ -66,9 +66,21 @@ interface CustomRole {
   color: string;
   isSystem: boolean;
   permissions: string[];
+  /** WI-OI-120w (R2 slice 2c): the roles this role includes. */
+  includes?: string[];
   createdAt: string;
   updatedAt: string;
   _count: { members: number };
+}
+
+/** What a role grants with everything it includes (the server computes the same, at most five deep). */
+function grantedInTotal(roleId: string, roles: readonly CustomRole[], depth = 0, path: ReadonlySet<string> = new Set([roleId])): Set<string> {
+  const role = roles.find((candidate) => candidate.id === roleId);
+  const codes = new Set(role?.permissions ?? []);
+  if (depth < 5)
+    for (const included of role?.includes ?? [])
+      if (!path.has(included)) for (const code of grantedInTotal(included, roles, depth + 1, new Set([...path, included]))) codes.add(code);
+  return codes;
 }
 
 interface Invitation {
@@ -586,16 +598,22 @@ function BuiltInRoleRow({ role }: { role: CustomRole }) {
 
 function CustomRoleRow({
   role,
+  roles,
   canDelete,
   onSaved,
 }: {
   role: CustomRole;
+  /** Every role of the workspace, for the roles this one may include (WI-OI-120w slice 2c). */
+  roles: readonly CustomRole[];
   canDelete: boolean;
   onSaved: () => Promise<void>;
 }) {
   const [name, setName] = useState(role.name);
   const [description, setDescription] = useState(role.description ?? '');
   const [permissions, setPermissions] = useState<string[]>(role.permissions);
+  const [includes, setIncludes] = useState<string[]>(role.includes ?? []);
+  const includesChanged = [...includes].sort().join(',') !== [...(role.includes ?? [])].sort().join(',');
+  const total = grantedInTotal(role.id, roles.map((candidate) => (candidate.id === role.id ? { ...candidate, permissions, includes } : candidate))).size;
   const [reason, setReason] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -611,6 +629,7 @@ function CustomRoleRow({
           name,
           description: description || null,
           permissions,
+          ...(includesChanged ? { includes } : {}),
           expectedUpdatedAt: role.updatedAt,
           reason,
         }),
@@ -672,6 +691,23 @@ function CustomRoleRow({
         >
           <PermissionOptions held={permissions} />
         </select>
+        <span className="mt-2 block font-normal">Includes (it also grants what they grant)</span>
+        <select
+          multiple
+          aria-label={`Roles ${role.name} includes`}
+          className="mt-1 h-20 w-full rounded-md border border-ui-border-base bg-ui-bg-field p-2"
+          value={includes}
+          onChange={(event) => setIncludes(selectedPermissions(event))}
+        >
+          {roles
+            .filter((candidate) => candidate.id !== role.id)
+            .map((candidate) => (
+              <option key={candidate.id} value={candidate.id}>
+                {candidate.name}
+              </option>
+            ))}
+        </select>
+        <span className="mt-1 block font-normal text-ui-fg-muted">Grants {total} permission(s) in total</span>
       </label>
       <label className="text-xs font-medium text-zinc-700">
         Change reason
@@ -1440,6 +1476,7 @@ export function TenantAccessManager({
               <CustomRoleRow
                 key={customRole.id}
                 role={customRole}
+                roles={customRoles}
                 canDelete={canDeleteRoles}
                 onSaved={load}
               />

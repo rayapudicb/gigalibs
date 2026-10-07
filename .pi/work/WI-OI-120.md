@@ -2394,3 +2394,39 @@ widening the card to fix the API faults the proof found.
     to do with this slice; it and the execution-events spec pass alone (17 of 17);
   - design tokens fail only on another session's uncommitted `AuthAtmosphere.tsx`.
   - To repeat once the machine is quieter, so condition 2 holds cleanly.
+
+#### WI-OI-120w slice 2c: roles that include other roles (owner "approved 2c", 2026-10-07)
+
+- **What it does:**
+  - a workspace role may include up to 10 other roles of the workspace;
+  - it grants their permissions too, transitively and at most 5 deep, at the scope where it is held (ADR-0034 §2);
+  - the graph must stay acyclic;
+  - a role another includes cannot be deleted until it is taken out (409 `ROLE_INCLUDED`).
+- **Editing inclusions is a grant.** Additions, by permissions or by inclusions, are checked for the edited role and
+  every role including it:
+  - the editor's grant bound;
+  - the transition rule for every holder;
+  - the control-plane and units-and-places gate for holders at units or places.
+  Removals are never blocked.
+- **Where expansion happens:**
+  - rbac-nest `includedRolePermissions` (one recursive query) feeds `memberRoleGrants`, so the session, the context
+    claims and the guard grant the included permissions;
+  - tenancy-nest `role-graph.ts` validates and expands for the service.
+- **Settings:** an "Includes" picker on each workspace role, and the total it grants.
+- **Data:** migration `20261007010000_custom_role_inclusions`; the model is classified in the package layers and the
+  privacy inventory (EXPORT).
+- **Tests:**
+  - **unit:** expansion, the including roles, cycle, self, unknown, limit and depth refusals (3 tests);
+  - **r2_proof** (migration applied): 4 new, 30 of 30 across the R2 suites:
+    - a Maintenance lead including the planner and supervisor gives its holder both, through the session;
+    - a cycle is refused; deleting an included role is refused;
+    - a non-admin editor cannot include a role beyond what they hold, but can include one they hold;
+    - including Workforce codes in an own-scope role beside a workspace-wide CMMS role is refused by the rule;
+    - removing inclusions is allowed;
+  - **org proof** (migration applied): 18 of 18; one earlier run timed out at a load average of 28, and that test took
+    0.6 s on the rerun;
+  - **SCIM proof** (migration applied, container stopped after): 9 of 9;
+  - affected suites: 130 files, 1277 tests; typecheck clean for the control plane, web and CMMS.
+- **`pnpm verify`** (slice 2c on top of the 2b fixes; load average 32): build, every test (2771) and every other audit
+  and S16 pass. Design tokens fail only on another session's uncommitted `AuthAtmosphere.tsx`. This also meets the
+  slice 2b re-check's condition 2.

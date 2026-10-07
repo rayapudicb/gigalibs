@@ -17,7 +17,6 @@ import type {
 import {
   CONTROL_PLANE_PERMISSIONS,
   holdsPermission,
-  isTenantPermissionCode,
   MAX_MEMBER_ROLE_ASSIGNMENTS,
   type ModuleDefaultRole,
   moduleDefaultRoles,
@@ -52,6 +51,7 @@ import {
   isWorkspaceAdministrator,
   ownAuthority,
 } from './grant-bound.js';
+import { assertInclusionsValid, expandRole, loadRoleGraph, rolesIncluding, withRole } from './role-graph.js';
 import { assertScopeEnforced, assertScopesConsistent, resolveRoleScope } from './role-scopes.js';
 import { assertTenantAdminAuthority, assertTenantAdministratorRetained } from './tenant-member-safety.js';
 
@@ -550,7 +550,8 @@ export class TenancyService {
         const member = await this.memberForRoleChange(transaction, tenantId, memberId, actorId);
         const role = await transaction.customRole.findFirst({ where: { id: dto.customRoleId, tenantId }, select: { id: true, name: true, permissions: true } });
         if (!role) throw new BadRequestException({ code: 'ROLE_NOT_IN_WORKSPACE', message: 'That role does not belong to this workspace.' });
-        const rolePermissions = Array.isArray(role.permissions) ? role.permissions.filter(isTenantPermissionCode) : [];
+        // WI-OI-120w (R2 slice 2c): giving a role gives everything it includes too.
+        const rolePermissions = expandRole(await loadRoleGraph(transaction, tenantId), role.id);
         await assertGrantWithinOwn(transaction, tenantId, actorId, rolePermissions);
         // WI-OI-120w (R2 slice 2b): a role at an explicit scope is given by a Tenant Admin, at a valid scope, and never so
         // that a module still reading one scope would receive this person's access from two.
@@ -691,9 +692,10 @@ export class TenancyService {
         permissions: true,
         createdAt: true,
         updatedAt: true,
+        includes: { select: { includedRoleId: true } },
         _count: { select: ROLE_HOLDERS },
       },
-    }).then((roles) => roles.map(withHolderCount));
+    }).then((roles) => roles.map((role) => ({ ...withHolderCount(role), includes: role.includes.map((inclusion) => inclusion.includedRoleId) })));
   }
 
   /**
@@ -796,6 +798,14 @@ export class TenancyService {
           updatedAt: true,
         },
       });
+      // WI-OI-120w (R2 slice 2c): the roles it includes, checked like any edit of the graph. A new role has no holders.
+      const includes = dto.includes ?? [];
+      if (includes.length > 0) {
+        assertInclusionsValid(withRole(await loadRoleGraph(transaction, tenantId), role.id, { includes }), role.id);
+        await transaction.customRoleInclusion.createMany({
+          data: includes.map((includedRoleId) => ({ tenantId, roleId: role.id, includedRoleId, createdById })),
+        });
+      }
       await transaction.auditLog.create({
         data: {
           action: 'CREATE',
@@ -808,10 +818,11 @@ export class TenancyService {
             description: role.description,
             color: role.color,
             permissions: role.permissions,
+            includes,
           },
         },
       });
-      return { ...role, _count: { members: 0 } };
+      return { ...role, includes, _count: { members: 0 } };
     });
   }
 
@@ -848,27 +859,45 @@ export class TenancyService {
             message: `No screen or service checks ${unknown.join(', ')}; choose from the permission list.`,
           });
         }
-        // WI-OI-120w (grant bound): a permission added to a role reaches everyone holding it, the editor included.
-        await assertGrantWithinOwn(transaction, tenantId, changedById, dto.permissions.filter((code) => !previous.includes(code)));
-        // WI-OI-120w (R2 slice 2b): permissions added to a role must keep every holder's scopes consistent, and a role
-        // held at units or places may only gain what is enforced there. Removing permissions is never blocked (review M2).
-        const added = dto.permissions.filter((code) => !previous.includes(code));
-        if (added.length > 0) {
+      }
+      // WI-OI-120w (grant bound, R2 slices 2b and 2c): what the role newly grants, by its own permissions or through the
+      // roles it includes, reaches everyone holding it and every role that includes it. The editor must hold it; each
+      // holder's scopes must stay consistent; a holder at units or places may gain only what is enforced there.
+      // Removing permissions or inclusions is never blocked (review M2).
+      let previousIncludes: string[] = [];
+      if (dto.permissions !== undefined || dto.includes !== undefined) {
+        const before = await loadRoleGraph(transaction, tenantId);
+        previousIncludes = [...(before.includes.get(role.id) ?? [])];
+        const after = withRole(before, role.id, {
+          ...(dto.permissions !== undefined ? { permissions: dto.permissions } : {}),
+          ...(dto.includes !== undefined ? { includes: dto.includes } : {}),
+        });
+        if (dto.includes !== undefined) assertInclusionsValid(after, role.id);
+        const addedTo = (id: string) => {
+          const held = new Set(expandRole(before, id));
+          return expandRole(after, id).filter((code) => !held.has(code));
+        };
+        await assertGrantWithinOwn(transaction, tenantId, changedById, addedTo(role.id));
+        const affected = [role.id, ...rolesIncluding(after, role.id)]
+          .map((id) => ({ id, added: addedTo(id) }))
+          .filter((entry) => entry.added.length > 0);
+        if (affected.length > 0) {
           const holders = await transaction.memberRoleAssignment.findMany({
-            where: { tenantId, customRoleId: role.id, revokedAt: null },
-            select: { userId: true, scope: true },
+            where: { tenantId, customRoleId: { in: affected.map((entry) => entry.id) }, revokedAt: null },
+            select: { userId: true, scope: true, customRoleId: true },
           });
           for (const holder of holders) {
+            const added = affected.find((entry) => entry.id === holder.customRoleId)?.added ?? [];
             if (holder.scope === 'UNITS' || holder.scope === 'PLACES') {
               const controlPlane = CONTROL_PLANE_PERMISSIONS.filter((code) => holdsPermission(added, code));
               if (controlPlane.length > 0)
                 throw new UnprocessableEntityException({
                   code: 'ROLE_SCOPE_WORKSPACE_ONLY',
-                  message: `This role is held at units or places; it cannot gain workspace permissions (${controlPlane.slice(0, 5).join(', ')}).`,
+                  message: `A role held at units or places cannot gain workspace permissions (${controlPlane.slice(0, 5).join(', ')}).`,
                 });
               assertScopeEnforced(added, holder.scope === 'UNITS' ? 'units' : 'places');
             }
-            await assertScopesConsistent(transaction, tenantId, holder.userId, { role: { id: role.id, permissions: dto.permissions } });
+            await assertScopesConsistent(transaction, tenantId, holder.userId, { graph: after });
           }
         }
       }
@@ -880,10 +909,19 @@ export class TenancyService {
           ...(dto.description !== undefined ? { description: dto.description } : {}),
           ...(dto.color !== undefined ? { color: dto.color } : {}),
           ...(dto.permissions !== undefined ? { permissions: dto.permissions } : {}),
+          ...(dto.includes !== undefined ? { updatedAt: new Date() } : {}),
         },
       });
       if (changed.count !== 1) {
         throw new ConflictException('Custom role changed; reload before retrying');
+      }
+      if (dto.includes !== undefined) {
+        await transaction.customRoleInclusion.deleteMany({ where: { tenantId, roleId: role.id, includedRoleId: { notIn: dto.includes } } });
+        const fresh = dto.includes.filter((id) => !previousIncludes.includes(id));
+        if (fresh.length > 0)
+          await transaction.customRoleInclusion.createMany({
+            data: fresh.map((includedRoleId) => ({ tenantId, roleId: role.id, includedRoleId, createdById: changedById })),
+          });
       }
       const updated = await transaction.customRole.findUniqueOrThrow({
         where: { id: role.id },
@@ -896,6 +934,7 @@ export class TenancyService {
           permissions: true,
           createdAt: true,
           updatedAt: true,
+          includes: { select: { includedRoleId: true } },
           _count: { select: ROLE_HOLDERS },
         },
       });
@@ -911,17 +950,19 @@ export class TenancyService {
             description: role.description,
             color: role.color,
             permissions: role.permissions,
+            includes: previousIncludes,
           },
           after: {
             name: updated.name,
             description: updated.description,
             color: updated.color,
             permissions: updated.permissions,
+            includes: updated.includes.map((inclusion) => inclusion.includedRoleId),
           },
           metadata: { reason: dto.reason },
         },
       });
-      return withHolderCount(updated);
+      return { ...withHolderCount(updated), includes: updated.includes.map((inclusion) => inclusion.includedRoleId) };
     });
   }
 
@@ -935,6 +976,16 @@ export class TenancyService {
       if (!role) throw new NotFoundException('Custom role was not found');
       if (role.isSystem) throw new ConflictException('System roles cannot be deleted');
       // A role held only as someone's second role is in use too (Security review of 2a, L2).
+      // WI-OI-120w (R2 slice 2c): a role other roles include stays until it is taken out of them.
+      const including = await transaction.customRoleInclusion.findMany({
+        where: { tenantId, includedRoleId: role.id },
+        select: { role: { select: { name: true } } },
+      });
+      if (including.length > 0)
+        throw new ConflictException({
+          code: 'ROLE_INCLUDED',
+          message: `${role.name} is included by ${including.map((inclusion) => inclusion.role.name).join(', ')}; take it out of them first.`,
+        });
       if (role._count.members > 0 || role._count.assignments > 0) {
         throw new ConflictException('Remove this custom role from all members before deleting it');
       }

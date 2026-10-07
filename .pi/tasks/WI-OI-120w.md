@@ -167,7 +167,25 @@ everything under them), or some places (with everything inside them).
   - **Rest:** SCIM unaffected; the journey; `pnpm verify`; Security review before deploy (an access change).
 - **Size:** L, about 2–3 working days. Slice 2c: M, about 1 day.
 
-### Slice 2c plan: roles that include other roles (owner: "approved 2c", 2026-10-07; starts after the 2b fixes are committed)
+### Slice 2c: roles that include other roles (owner: "approved 2c", 2026-10-07; built and checked, awaiting "commit" and the Security review)
+
+- **As built:**
+  - **Data:** migration `20261007010000_custom_role_inclusions` (both ends in one workspace, no self-inclusion, each
+    pair once, an included role kept until it is taken out); the `CustomRoleInclusion` model, classified in the
+    package layers and the privacy inventory.
+  - **Expansion:** rbac-nest `includedRolePermissions` (one recursive query, at most five deep) feeds
+    `memberRoleGrants`, so the session, the context claims and the control-plane guard see what each assignment grants
+    with its inclusions, at its scope.
+  - **The graph:** tenancy-nest `role-graph.ts` (load, expand, the including roles, validation). Inclusions must be
+    roles of the workspace, not the role itself, at most 10, with no cycle and at most 5 deep, checked from every root
+    that includes the edited role.
+  - **Edits are grants.** Expanded additions are checked for the edited role and every role including it: the
+    editor's grant bound, the transition rule for every holder, and the control-plane and units-and-places gate for
+    holders at units or places. Giving a role uses its expanded permissions. Removals are never blocked.
+  - **Deleting** a role another includes is refused (409 `ROLE_INCLUDED`, naming the including roles).
+  - **Role editor:** an "Includes" picker on each workspace role, and "Grants N permission(s) in total".
+  - **Performance:** the role graph is read only when the member holds roles.
+
 
 - **Data:** a forward migration adds `custom_role_inclusions` (role, included role, who, when).
   - Both ends must be roles of the same workspace (composite foreign keys).
