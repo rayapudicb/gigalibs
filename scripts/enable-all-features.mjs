@@ -38,6 +38,7 @@ const trialModuleKeys = [
   'master-data',
   'solution-packs',
   'communications-textfly',
+  'gigalibs-assistant',
 ];
 
 const urlsToTry = [

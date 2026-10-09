@@ -67,6 +67,7 @@ export const BASE_ROLE_DEFINITIONS: readonly BaseRoleDefinition[] = [
       'procurement:*',
       'orders:*',
       'finance:*',
+      'assistant:*',
     ],
   },
   {
@@ -112,12 +113,14 @@ export const BASE_ROLE_DEFINITIONS: readonly BaseRoleDefinition[] = [
       'configuration:read',
       'configuration-apps:read',
       'configuration-runtime:read',
+      'assistant:read',
+      'assistant:action',
     ],
     inherits: ['MEMBER'],
   },
   {
     name: 'MEMBER',
-    permissions: ['users:read', 'chat:*', 'comments:create', 'profile:*'],
+    permissions: ['users:read', 'chat:*', 'comments:create', 'profile:*', 'assistant:read'],
     inherits: ['VIEWER'],
   },
   { name: 'VIEWER', permissions: ['dashboard:read', 'content:read', 'profile:*', 'configuration-runtime:read'] },

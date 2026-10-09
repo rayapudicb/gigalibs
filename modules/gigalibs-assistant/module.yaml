@@ -1,0 +1,51 @@
+apiVersion: modules.gigalibs.io/v1
+kind: Module
+metadata:
+  name: gigalibs-assistant
+  displayName: Sovereign Operational Assistant
+  version: 0.1.0-preview
+  lifecycle: implementation
+  workItem: WI-OI-121
+spec:
+  standalone: true
+  category: capability
+  requiredModules: []
+  optionalModules:
+    - physical-operations-cmms
+    - universal-inventory
+    - workflow-studio
+  capabilities:
+    - sovereign-ai-copilot
+    - cross-module-generative-ui
+    - floor-inspections
+    - meter-telemetry
+    - role-scoped-tools
+  ui:
+    application: apps/workflow-platform
+    basePath: /assistant
+  api:
+    application: apps/workflow-platform
+    port: 5180
+    version: v1
+  catalog:
+    - key: gigalibs-assistant
+      name: GigaLibs Assistant
+      navigationLabel: Sovereign AI Assistant
+      area: Intelligence
+      navigationGroup: Intelligence
+      route: /assistant
+      iconKey: sparkles
+      readiness: REVIEW
+      maturity: CORE_IMPLEMENTED
+      entitlementEligible: true
+      trialEligible: true
+      requiredPermission: assistant:read
+      platformInspection: true
+      reason: Sovereign AI assistant connected via same-origin SSE with CopilotKit Generative UI and multi-tenant RBAC enforcement.
+      navigationOrder: 275
+      personas: [C_LEVEL, OPERATIONS_SUPERVISOR, WORKFORCE_MEMBER, CUSTOMER_GUEST]
+      menu:
+        - { key: chat, label: AI Workspace, path: /assistant, icon: sparkles }
+        - { key: configuration, label: Agent Settings & Config, path: /assistant/configuration, icon: settings }
+        - { key: tools, label: Operational Tool Allowlist, path: /assistant/tools, icon: wrench }
+        - { key: audit, label: Telemetry & Audit Logs, path: /assistant/audit, icon: shield-check }

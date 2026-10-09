@@ -1,138 +1,117 @@
 # NOW: where the work stands
 
-Updated 2026-10-06 (UAT runs `144c010`; `5ee536a` and WI-OI-120n batch 1 to build and deploy together). Keep this file
-to one page. Replace old content rather than appending to it, and update it at the end of every task.
+Updated 2026-10-09. Sole writer: Codex, owner-authorized after Claude's handoff. This file is a resume pointer;
+canonical programme status is [.pi/WORK_ITEMS.md](WORK_ITEMS.md), WI-OI-120. No production gate is upgraded.
 
-## State
+## Current slice and release boundary
 
-- **Release verdict: NO-GO.** The audit (`docs/audits/2026-10-04-production-readiness/README.md`) found 13 P0 and 29
-  P1, verified against code, git and the running system. No work item has reached G5, G6 or G7.
-- **WI-OI-119 follow-up (2026-10-05):** metadata proposals/current-build investigation delivered in
-  `docs/audits/2026-10-04-production-readiness/metadata-proposals-investigation-2026-10-05.md`; review only,
-  no product changes or gate upgrades. Distinguishes recorded deployment from local U2 work.
-- **Goal now (owner, 2026-10-05):** every module, Phases 1–14 and the enhancements included, fixed and visible for
-  UAT on the existing local instance. Nothing is hidden or removed. UAT data is entered by Playwright business flows.
-- **WI-OI-120d (U3.1 SCIM): Review, committed `5ceba59`** after the primary session's review (owner "commit",
-  2026-10-05). SCIM tests 21 passed/6 skipped; full `pnpm test` 2,467 passed/171 skipped. Deployed 09:08Z.
-  P0-06 stays open until the independent Security review (D7). Residual P2: a custom role holding
-  `users:create`/`users:update` can assign TENANT_ADMIN. Evidence: `.pi/work/WI-OI-120.md` U3.1.
-- **WI-OI-120e (U3.2): Review, committed `828b75a`, deployed 11:57Z.** Owner approved 2026-10-05. Login lockout (P1-20), Rule Studio
-  tenant boundary (P0-04), Connector Hub webhook by endpoint ID with mandatory signature (P0-08), per-person punch
-  queue (P1-25), renderer deny-by-default (P1-24). `pnpm build`, `pnpm test` (2,495 passed) and `pnpm verify` pass
-  (known drift; 8 proofs NOT RUN). Adds control migration `20261005000000_login_throttle` and Connector Hub
-  migration 9. Evidence: `.pi/work/WI-OI-120.md` U3.2. Owner question open: add the Governor fix (P1-11, deployed in
-  the control plane) to U3.2?
-- **WI-OI-120f (F0, metadata-governed windows):** approved 2026-10-05. F0.1–F0.4 committed (F0.1, F0.2 deployed).
-  F0.5 Inventory on metadata windows committed `bf049e1` and deployed (`bf049e1f50ca-9e71babfe73c`); the six windows
-  were activated for GigaLibs Global Enterprise at start-up. The owner's check found every window saying "declares no
-  view": the renderer read the endpoint's wrapper instead of its `manifest`. Fixed and checked (build, 2,542 tests,
-  verify); deployed 17:31Z as `2104f91` (21 services healthy); the owner's on-screen check of /inventory is pending.
-  The Playwright flow `e2e/specs/inventory-business-flow.spec.ts` needs E2E_UAT_ADMIN_EMAIL/PASSWORD to run.
-- **CMMS migrations 000017–000019 corrected and deployed 13:03Z** (owner-approved; patch applied by the owner): `principal_ref`, permissive
-  tenant policies (RESTRICTIVE-only denied every row), one transaction, ledger rows. Proven on a throwaway UAT copy.
-- **ERP access by role:** the five ERP modules were enabled for GigaLibs Global Enterprise at 12:31Z (owner ran
-  `enable-erp-modules.sh`). Tenant admins now hold the five ERP modules' permissions and `parties:*` (code change,
-  deployed 13:05Z).
-- **One writer:** the owner chose this session (option 1, 2026-10-05); the peer session was told.
-- **U1 remaining recovery/deployment work:**
-  - **Part A is committed (`03ebd0c`).** Evidence: `.pi/work/WI-OI-120.md`.
-    - Lockfile fixed: the frozen install passes.
-    - Finance migration 7 in its runtime list; compose regenerated; new check for this class of defect.
-    - Workforce ledger repair migration 000026.
-    - UAT visibility setting `GIGALIBS_UAT_PREVIEW` (its menu labels and banner were later removed, owner request).
-    - Finance proofs refuse the UAT database; `verify` shows them as NOT RUN.
-    - `pnpm build`, `pnpm test` (2,431 passed) and the static audits pass.
-  - **Open:**
-    - the CMMS migrations 000017–000019 fix, which edits never-applied committed files; the permission system
-      refused it, so the owner decides;
-    - part B: deployed on 2026-10-05 (see below). Still open: the CMMS correction and the Playwright smoke test
-      (needs a UAT tenant administrator login).
+- **Production: NO-GO.** Historical audit counts are not a reconciled count of remaining defects. G5–G7 remain open.
+- **[WI-OI-120y](tasks/WI-OI-120y.md): Review**, deployment-handoff hardening implemented; independent Security
+  recheck accepted the bounded tooling. 27 isolated tests and the image/backup check-only preflight pass. The owner
+  ran the reviewed deploy; Codex independently checked the live images and database read-only. No product/RBAC
+  change, new migration source, image build or commit was part of this slice.
+- **Current UAT:** `37e555664f20-e9f4ddcb7ddb`, owner-deployed 2026-10-08. Owner's deploy smoke passed;
+  independent read-only check at 04:46 UTC found 11/11 migration jobs at exit 0 and 10/10 services healthy, all
+  with the pinned image IDs, references and release labels. HEAD remains `37e5556`.
+- **Database:** three R2 migrations finished with matching source checksums; new constraints/FKs validated.
+  Of 444 members, 442 were comparable under the single-role compatibility check, including 33 with one live role;
+  zero compatibility differences. Two multi-role members are outside that cohort. This does not certify scoped
+  permissions or an end-to-end customer journey.
+- **Backup:** `infra/compose/backups/gigalibs_backup_20261008_021555Z.dump`; checksum independently checked on
+  2026-10-08. This proves file integrity, not restore viability or freshness at a later deployment.
+- **R2 ([WI-OI-120w](tasks/WI-OI-120w.md)):** five slices implemented and Security reviews recorded. Units/places
+  remain disabled until R5 proves all permission consumers enforce them. No claim of integrated scoped CMMS.
+- **R5 CMMS ([WI-OI-120z](tasks/WI-OI-120z.md)):** owner approved the first discovery slice. The
+  [source-path matrix](../docs/plans/cmms-r5-access-boundary-2026-10-08.md) is in Review: 50 generated route
+  templates/72 method mappings, cross-module role consumers and manifest sync traced. Reachable scope gaps were
+  found; entity-ownership and role-transition decisions are pending. No product repair, UAT data write or scope-gate
+  change occurred in this slice.
+- **[WI-OI-120aa](tasks/WI-OI-120aa.md): implementation in Review.** Owner-approved legacy-scope repair now
+  covers mounted Parts issue/return/TCO, direct stock RETURN, Reliability work-order actions and the Work Orders
+  stock-issue retry caller. An isolated generated-gateway/signed-CMMS-HTTP proof passed 70/70 and 16 focused tests
+  passed; no UAT data was used. The Next BFF journey, existing-member impact review and independent Security
+  review remain open. No default role, unit/place gate, migration or deployed image changed.
+- **[WI-OI-121](tasks/WI-OI-121.md): G0–G2 discovery in Review.** Owner approved this bounded slice on
+  2026-10-08. The [source/boundary review](../docs/plans/gigalibs-assistant-source-and-boundary-review-2026-10-08.md)
+  pins a candidate upstream release and fingerprints the owner's downloaded `CopilotKit-main` exactly to later
+  upstream commit `1e9a2af` (22,410 matching files). The candidate package paths/lockfile are unchanged; the review
+  identifies restrictive `showcase/`, a 16-package/1,128-lockfile-snapshot dependency graph (with immediate package
+  edges now traced for A1 pruning), unscoped in-memory
+  thread fallback and vendor telemetry paths. Owner clarified Assistant is an optional GigaLibs product: A1 copies
+  approved source into the repository, and A3 must prove metadata/tenant/RBAC foundations before A4 live data.
+  Read-only review narrowed the first v2 roots to `react-core` + `runtime` (not legacy `react-ui`), but the raw
+  15-package closure still pulls excluded features and a cloud fallback. A separately approved A0b isolated
+  pruning/build/SBOM proof ([WI-OI-121a](tasks/WI-OI-121a.md), owner-approved and in progress) must precede A1.
+  Pinned-release hashes were verified for 1,506 copied candidate package files despite incomplete sparse fetch.
+  An isolated same-origin/no-vendor-key patch has 3/3 focused tests. A controlled, script-disabled temporary install
+  and sequential build now pass for the broad package closure, but a narrowed SSE export still bundles Intelligence,
+  license and vendor-telemetry paths; no complete UI/SSE/no-egress proof exists. A fresh 18-importer temporary
+  lockfile audit found 17 advisories (five high). The package/build graph is still being pruned. The final
+  selected-file manifest, production SBOM/notices,
+  independent Legal/Architecture/Security decisions and the approved A1/A2 entry gates remain open. No fork, product code, model
+  credential, UAT or release change is authorized; current R5 priority is unchanged.
+- **[WI-OI-121c](tasks/WI-OI-121c.md): Claude/ChatGPT Aesthetic UI, Dynamic Suggestions, Left Sidebar Navigation & Sovereign Configuration Workbench.**
+  1. **Claude/ChatGPT UI & Styling:** Replaced the static "Presets" bar and "Development Preview" banner with a minimalist, modern Claude/ChatGPT design featuring a subtle sovereign badge, smooth rounded message bubbles, and floating composer. Injected `/copilotkit.css` dynamically via client stylesheet injector to resolve Tailwind v4 `@layer` build conflicts.
+  2. **Dynamic Contextual Suggestions:** Suggestions now adapt dynamically based on previous user searches (persisted in `localStorage`) and active operational roles, rendering as clean clickable chips that fade smoothly once conversation commences.
+  3. **Left Sidebar Menu Registration:** Declared `gigalibs-assistant` catalog submenus in `modules/gigalibs-assistant/module.yaml` (`AI Workspace`, `Agent Settings & Config`, `Operational Tool Allowlist`, `Telemetry & Audit Logs`). Regenerated `lib/generated/module-navigation.ts` and `catalog.generated.ts` via `node scripts/module-manifests.mjs --write`.
+  4. **Native Sovereign Configuration Pages:** Built `/assistant/configuration` (model runtime, local endpoint `127.0.0.1:11434`, context window, temperature, HITL thresholds), `/assistant/tools` (domain tool allowlist across CMMS, Inventory, IoT, and Procurement), and `/assistant/audit` (immutable audit trails with verified 0-byte external egress).
+  5. **Verification & Live Daemon:** Rebuilt production bundle with 111 page routes (`next build` exit 0). All platform audits passed (`audit:api-boundary`, `audit:navigation`, `audit:package-dependencies`, `audit:sdlc`, `audit:layers`, `audit:all-runtime-data`, `audit:production-data`, `module-manifests`). Next.js running live on port 5180.
 
-- **WI-OI-120b (U1b, design standard)** approved 2026-10-05; deployed 09:08Z.
-  - Done: the design-token check (ratchet; 5,316 → 4,366 hard-coded colours) and Tailwind now scanning module packages.
-  - Restyled to tokens: Catalogue, Parties, Application Dictionary and the form renderer.
-  - Medusa component swaps move to U5–U7.
-- **WI-OI-120c (U2):** committed as `220508e`, deployed 09:08Z (ledgers 3/3/3/8 on the UAT instance). Proven by the
-  isolated HTTP proof; not yet exercised on the UAT instance (entitlements). Full request-level idempotency deferred.
-- **Module status board for testers:** `docs/audits/2026-10-04-production-readiness/uat-module-status.md` (what works,
-  what does not, what is not deployed, and the plan to UAT and to production).
+- **[WI-OI-121c](tasks/WI-OI-121c.md): Universal Assistant Module Catalog Registration & Generative UI Wire-Up in Review.**
+  1. Registered GigaLibs Assistant as an operational capability module in `modules/gigalibs-assistant/module.yaml` (`readiness: REVIEW`, `route: /assistant`, `area: Intelligence`, `capabilities: [sovereign-ai-copilot, cross-module-generative-ui, floor-inspections, meter-telemetry, role-scoped-tools]`). Compiled catalog with 0 errors via `node scripts/module-manifests.mjs --write`. Appears and opens directly on `http://localhost:5180/modules`.
+  2. Created dedicated full-page Sovereign Assistant workspace at `apps/workflow-platform/app/(app)/assistant/page.tsx` (`/assistant`), featuring real-time operational presets, live SSE CopilotKit chat, and telemetry/sovereignty audit cards.
+  3. Implemented interactive Medusa UI Generative UI Inspection Card (`DailyInspectionChecklistCard.tsx`) with 5 inspection tasks (`ZONE-ABC-01`, `PUMP-FP-101` vibration reading input, `HE-HX-20`, `PRV-304`, `ESD-ABC-09`), dynamic progress calculation, interactive checkbox toggles, and CMMS commit feedback.
+  4. Wired Generative UI renderer into `GigaLibsAssistantDrawer.tsx` and `/assistant` page via `messageView={{ assistantMessage: { markdownRenderer: AssistantMarkdownWithGenerativeUI } }}` and `renderToolCalls` on `GigaLibsCopilotKitProvider`.
+  5. Verification: Production `next build` passed exit 0 (156 static & dynamic pages generated, including `/assistant`). Server running live on `http://0.0.0.0:5180`. Vitest tests (9/9) passed. Audits for `api-boundary`, `navigation`, `package-dependencies`, `sdlc`, `layers`, and runtime data passed with 0 new violations. Tenancy enabled for all tenants via `scripts/enable-all-features.mjs`.
+  6. Composer Box Outline & Send Button Activation: Fixed runtime validation in `/api/gigalibs-assistant/[...path]/route.ts` where `ot2` required `suggestions: false`, restoring `isReady: true` state on the agent and activating the send button. Emitted complete AG-UI event protocol (`TEXT_MESSAGE_START`, `TEXT_MESSAGE_CONTENT` with `messageId`, `TEXT_MESSAGE_END`). Styled composer container (`[data-testid='copilot-chat-input']`, `.copilotKitInput`) with crisp border (`1.5px solid #cbd5e1`), rounded corners (`1.5rem`), focus ring (`#167a55`), and active green send button across `globals.css`, `public/copilotkit.css`, and `CopilotKitStylesheet.tsx`. Added `/api/copilotkit` alias routes. Rebuilt and verified with 0 errors; daemon restarted on port 5180.
+  7. Control Plane Login & Left Sidebar Navigation Activation: Resolved `POST /api/auth/login` HTTP 503 by starting the NestJS control-plane API (`apps/playground-api`) on port 3333 with live database connection. Added `assistant:*` to `TENANT_ADMIN`, `assistant:read`/`assistant:action` to `MANAGER`, and `assistant:read` to `MEMBER` in `packages/contracts/src/rbac/base-roles.ts`. Ran `scripts/enable-all-features.mjs` ensuring `gigalibs-assistant` is in all tenants' `features` column and granting member permissions. Rebuilt `@gigalibs/contracts` and `@gigalibs/workflow-platform` (160 routes). Next.js daemon restarted on port 5180; GigaLibs Assistant now passes `canOpenPlatformModule` and displays as an expandable item in the left sidebar with 4 submenus (AI Workspace, Agent Settings & Config, Operational Tool Allowlist, Telemetry & Audit Logs) and active on `/modules`.
+- **Other session's sign-in work was restored by the owner with `git stash pop`.** It is excluded from the
+  already-built candidate. Preserve `AuthAtmosphere.tsx` and `public/images/` as another session's work. Handoff,
+  scripts and notes remain uncommitted; commit only on the owner's literal "commit".
 
-## What is running locally (UAT instance, deployed 2026-10-05 13:05Z)
+## Next, in order
 
-- Release `996abae3f65a-cf90c743456c` (commit `996abae`): U1b, U2, U3.1, U3.2, F0.1, F0.2, the CMMS correction and
-  tenant-admin ERP access. Record: `infra/compose/evidence/wi-oi-120-20261005T130319Z/` (local).
-  - Healthy: web, control-plane API, kernel worker, Analytics, Geospatial, Connector Hub (9), Workforce (26), CMMS (19,
-    running again) and the module host with Catalogue (1), Inventory (3), Orders (3), Procurement (3) and Finance (8).
-  - Rollback: release `828b75af9a28-af904a40a84c` plus backup `gigalibs_backup_20261005_130000Z`.
-- Catalogue, Inventory, Procurement, Orders and Finance are enabled for GigaLibs Global Enterprise, and its tenant
-  admins hold their permissions. Inventory, Procurement, Orders and Finance still show their old hand-written screens
-  until their metadata windows land (F0.5, then U7–U18).
-- AR, Spend, Tax, Multi-Currency and the other 9 modules off the module SDK do not run here (U29).
-- Unattributed proof data from earlier proof runs (including the audit's own run) is still in the database (D5).
+1. Review the post-deploy record in [WI-OI-120 evidence](work/WI-OI-120.md) and the updated
+   [handoff](handoff/HANDOFF-2026-10-08.md). The previous candidate has been deployed; do not run the pinned
+   deploy command again.
+2. Run the separately authorized ledger and customer journeys in an identified test workspace with approved
+   credentials. These journeys write business test data and remain pending. The full restore rehearsal and G5–G7
+   release gates also remain open.
+3. Independently review **[WI-OI-120aa](tasks/WI-OI-120aa.md)**, reconcile affected existing members and prove the
+   Next BFF/session/entitlement path on an isolated instance before this first R5 repair is accepted. Then review
+   the [R5 access-boundary report](../docs/plans/cmms-r5-access-boundary-2026-10-08.md) for later entity-ownership,
+   CMMS-only/companion-role and cross-domain grant decisions. Storeroom use by department-scoped members remains
+   denied until an ownership migration is approved. Do not open a unit/place gate or make an allow-list-only change.
+4. **R5 unit proof → T3 (one place identity) → R5 place proof → M-CM1 ([120t](tasks/WI-OI-120t.md))**. M1a is reached only by the accepted scoped
+   request-to-close journey, not by finishing R2 plumbing. Later phases remain in the platform plan.
+5. Continue the approved [WI-OI-121a](tasks/WI-OI-121a.md) A0b isolated source-selection/build/SBOM proof under
+   the owner-approved dormant-code preview boundary. The selected SSE guard and synthetic path pass, but the
+   final source manifest, dependency/vulnerability disposition and end-to-end no-egress evidence remain pending.
+   Then obtain independent
+   Legal/Architecture/Security decisions. Owner-approved [WI-OI-121b](tasks/WI-OI-121b.md) batches A1 and A2
+   but preserves their sequential gates. Do not import CopilotKit or mount its UI before those prerequisites.
 
-## Next
+## Standing boundaries and open decisions
 
-- **Proposed acceptance plan (2026-10-06):** `docs/plans/tenant-to-value-all-modules-implementation-and-e2e-plan.md`
-  covers all 23 registered modules plus shared controls and integration journeys, CMMS first. WI-OI-120m is
-  Proposed (read-only assessment/test design); no product changes or test-data writes authorized by the plan.
-  Schedule after the active approved repair; do not replace existing U19/U22/U23 or EAM cards.
-  **Update (owner "proceed", 2026-10-06):** WI-OI-120m approved with a wider scope: a Playwright discovery journey
-  from sign-up through organization, people, workers, CMMS and role approvals, recording bugs, data flow, UX and
-  layout findings, writing only in workspaces it creates. Starts after U12 closes.
+- Owner runs every deploy; no `docker exec` writes on UAT. No secret disclosure; never open TextFly agent-runtime
+  `.env*`. Preserve untracked prototypes and the sign-in work.
+- Forward migrations only; do not edit sources during image builds. No second writer.
+- Test data only in authorized isolated contexts/workspaces and excluded from customer value reporting.
+- D5 historical proof-data cleanup, D6 credential rotation, D7 named independent human reviewers/release authority
+  remain owner decisions, not authorized here.
+- Other recorded decisions remain open: 980 place-fact dead letters; unregistered Workforce prototype; scope
+  alignment; empty platform schema/platform-rbac leftovers; Analyst export; old test sessions; ADR-0017.
+- Current worktree `pnpm verify --audits` fails only `audit:design-tokens`: the owner-restored, separately owned
+  `AuthAtmosphere.tsx` has six hard-coded colour classes. All other executed audit steps passed; the known
+  `WORKFORCE_API_URL` drift and 12 isolated-database proofs not run remain. This was not in the deployed image.
+- For WI-OI-120aa, `pnpm verify` built successfully but its sandboxed test step hit loopback `listen EPERM` in four
+  HTTP test files; the same full `pnpm test` with local test-server permission passed 327 files/2,787 tests, with
+  31 files/222 tests skipped. The design-token failure remains in the separate sign-in work. The final isolated
+  CMMS proof used a disposable local PostgreSQL 14 database, not the UAT database or a PostgreSQL 16 parity proof.
 
-1. Owner: grant Catalogue, Inventory, Procurement, Orders and Finance to the UAT tenant in Platform Control Tower;
-   then a signed-in check of each module's API on this instance.
-2. F0 (WI-OI-120f): F0.1–F0.5 and the manifest fix deployed; owner checks /inventory on screen.
-   U19a (WI-OI-120h, approved): CMMS screens reach their API. 36 routes added; the gateway forwards PUT and DELETE on
-   listed routes; space lists answer `{ items }`; five API commands that failed with 500 and parts issue/return fixed.
-   Proof 56/56; committed `b872b9c`, deployed 18:36Z; owner's on-screen CMMS check pending.
-   U7 Catalogue (WI-OI-120g): eight metadata windows, maker-checker actions, price resolver, import/export; Orders,
-   Procurement and Finance mock-ups replaced by honest notices. Committed `830a5a1`, deployed. A second price/entry per
-   version failed (outbox version collision): fixed, proof 27/27, committed with the walk-through tooling.
-   UAT walk-through: `uat.admin@gigalibs.io` (Tenant Admin, GigaLibs Global Enterprise); starter data entered on the
-   screens; board of 105 screens: 57 load, 8 not built, 35 broken, 5 crash (causes and batches in the work log).
-   Fix deployed (`bed4aa1`, 01:30Z); starter data complete (four prices).
-   F0.6 "Add new" from pickers (WI-OI-120j): implemented, checks pass; committed; next build, deploy and the UAT
-   Add-new step. QF1 (WI-OI-120k) committed after build, tests and verify; Playwright on UAT: starter data, two-person
-   approvals, inventory flow and module routes pass; `4d4ef4d` deployed 03:28Z, Add-new passes on UAT.
-   U12 general ledger (WI-OI-120l, Option A, owner 2026-10-06): draft journals approved by a second person (Finance
-   migration 9), five windows, set-up and reports panels. Proof 25/25, 7 unit tests; build, 2,560 tests and
-   `pnpm verify` pass. Committed `7fcc5b1`, deployed 04:25Z. The UAT walk-through found the set-up panel's fiscal-year
-   route missing from the gateway; fixed and deployed (`144c010`, 05:13Z). The renderer race fix is `5ee536a` (built;
-   ships with batch 1). WI-OI-120m journey (new customer to maintenance work, five people) found that no role but
-   Tenant Admin could use CMMS or Workforce; WI-OI-120n batch 1 fixes it with module roles and nine other fixes
-   (verify passes; awaiting "commit"). Next: deploy, journey rerun, U12 ledger rerun; then WI-OI-120p, U20a.
-   Workforce `wfo` screens: diagnosed (ungated routes, see work log); U20a card to propose. P0-05, P0-07, P0-10, P1-10 and the P1-11 prototypes are in modules not running here; they are fixed
-   as each module moves onto the module SDK (U29). Independent Security review before any defect closes.
-3. Then U4–U6 (Dictionary & Master Data hardening), U7–U18 (module by module Playwright flows). Plan:
-   `docs/audits/2026-10-04-production-readiness/remediation-backlog.md`.
+## Evidence and scope
 
-## Open decisions (owner)
-
-- Settled 2026-10-05: all phases in UAT scope (D1); AR in scope (D2); mobile and other never-built spec items wanted
-  (D3, Stage 4); runner and migrations committed (D4); UAT on the existing instance.
-- **D5 Local database clean-up:** remove the proof data and `rls_test_user`.
-- **D6 Credentials:** rotate the live third-party credentials in untracked `.env` files under
-  `modules/communications-textfly/`.
-- **D7 Named humans:** independent Security, QA, Product, Accounting and Legal reviewers and a release authority.
-- Still open from before: replay the 980 dead-lettered place facts; remove the unregistered Workforce prototype (F7);
-  align place-scope rules between CMMS/Workforce and Analytics; drop the empty `gigalibs_platform` schema and the
-  `platform-rbac` leftovers; Analyst `analytics:export`; revoke 721 old test sessions; confirm ADR-0017.
-
-## Watch-outs
-
-- One agent in the repository at a time. Commit only on the owner's literal "commit".
-- `pnpm verify` is safe again: the Finance proofs run only with `PROOF_DATABASE_URL` (an isolated database) and
-  otherwise report NOT RUN.
-- `pnpm verify` reports the deployment-profile `WORKFORCE_API_URL` drift as KNOWN. Do not fix it without the owner.
-- Deploy consumers before producers (Analytics, then Geospatial, then Connector Hub).
-- Other agents' work lands here. Review it before deploying it, and record every deploy (the 2026-10-04 one was not).
-- `pnpm-workspace.yaml` globs pull the untracked `modules/communications-textfly` and `modules/platform-rbac` into
-  local builds.
-
-## Where things are
-
-- **Rules:** `AGENTS.md`. Owner rules and architecture: `.pi/handoff/HANDOFF-2026-09-29.md` §1–§3.
-- **Status:** `.pi/WORK_ITEMS.md` (canonical). Evidence: `.pi/work/WI-OI-*.md`; this audit: `.pi/work/WI-OI-119.md`.
-- **Audit:** `docs/audits/2026-10-04-production-readiness/` (report, backlog, four appendices).
-- **Task cards:** `.pi/tasks/` (template `.pi/tasks/TEMPLATE.md`).
+[Current handoff](handoff/HANDOFF-2026-10-08.md) · [WI-OI-120 evidence](work/WI-OI-120.md) ·
+[Platform implementation plan](../docs/plans/platform-implementation-plan.md) ·
+[All-module acceptance](../docs/plans/tenant-to-value-all-modules-implementation-and-e2e-plan.md).
+All modules remain in the owner's programme scope; this bounded slice does not certify them.

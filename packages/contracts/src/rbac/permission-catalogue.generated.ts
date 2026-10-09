@@ -183,6 +183,12 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
     ]
   },
   {
+    "code": "assistant:read",
+    "entries": [
+      "gigalibs-assistant"
+    ]
+  },
+  {
     "code": "audit:read",
     "entries": [
       "platform"
@@ -216,6 +222,18 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
     "code": "catalogues:submit",
     "entries": [
       "product-catalogue"
+    ]
+  },
+  {
+    "code": "cmms:analytics:read",
+    "entries": [
+      "platform"
+    ]
+  },
+  {
+    "code": "cmms:inspections:read",
+    "entries": [
+      "platform"
     ]
   },
   {
@@ -610,6 +628,12 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
     ]
   },
   {
+    "code": "facilities:meters:read",
+    "entries": [
+      "platform"
+    ]
+  },
+  {
     "code": "finance:books:manage",
     "entries": [
       "financial-operations"
@@ -766,6 +790,12 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
     "code": "inventory:return",
     "entries": [
       "universal-inventory"
+    ]
+  },
+  {
+    "code": "inventory:stock:read",
+    "entries": [
+      "platform"
     ]
   },
   {
@@ -1065,6 +1095,12 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
     "code": "procurement:orders:manage",
     "entries": [
       "universal-procurement"
+    ]
+  },
+  {
+    "code": "procurement:po:create",
+    "entries": [
+      "platform"
     ]
   },
   {
@@ -1524,6 +1560,12 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
     "entries": [
       "asset-maintenance",
       "gigaops"
+    ]
+  },
+  {
+    "code": "workforce:scheduling:read",
+    "entries": [
+      "platform"
     ]
   },
   {
