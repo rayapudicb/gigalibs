@@ -100,12 +100,15 @@ for (const url of urlsToTry) {
     for (const m of membersRes.rows) {
       const perms = new Set(m.permissions || []);
       perms.add('*');
+      perms.add('assistant:*');
+      perms.add('assistant:read');
+      perms.add('assistant:action');
       await client.query('UPDATE tenant_members SET permissions = $1 WHERE id = $2;', [
         Array.from(perms),
         m.id,
       ]);
     }
-    console.log('✓ All tenant members granted wildcard access.');
+    console.log('✓ All tenant members granted wildcard and assistant access.');
 
     await client.end();
     connected = true;
