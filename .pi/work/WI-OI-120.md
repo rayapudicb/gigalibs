@@ -2740,3 +2740,27 @@ widening the card to fix the API faults the proof found.
   - `verify.mjs --audits` passed all platform audits (production data, runtime data, package dependencies, api boundary, navigation, sdlc, layers, manifests, windows). Only pre-existing design token violations in `AuthAtmosphere.tsx` and `PlantSpatial3DViewer.tsx` remain.
 - **Status:** **Review**. Scope gates (`SCOPE_ENFORCING_MODULES`, `PER_ASSIGNMENT_SCOPE_MODULES`) remain closed.
 
+#### WI-OI-120ad (T3 Canonical Place Identity & CMMS Place-Scope Projection Proof) implementation verified, 2026-10-11; in Review
+
+- **Scope & Output:**
+  - Established canonical place projection module in `modules/physical-operations-cmms/apps/api/src/auth/place-projection.ts`:
+    - Defined `CmmsPlaceNode` and `CmmsPlaceTree` immutable snapshot contracts.
+    - `expandPlaceRoots`: Breadth-first descendant traversal expanding parent place nodes (sites, buildings, floors, rooms, zones) to all transitive descendant place IDs.
+    - `verifyPlaceVersion`: Placeholder for active place version validation and consistency checking.
+  - Updated `modules/physical-operations-cmms/apps/api/src/auth/scope.ts`:
+    - `scopePredicates`: Accepts optional `placeTree?: CmmsPlaceTree`, expands place scope roots using `expandPlaceRoots`, and parameterizes `site_ref = ANY($N::uuid[])` with expanded place IDs. Emits `['FALSE']` if place scope yields no matching nodes.
+    - `assertWritableScope`: Enforces that mutations requiring a `siteRef` must match the caller's expanded place hierarchy when place-scoped. Rejects writes with null `siteRef` or unassigned places with 403 `CMMS_OUT_OF_SCOPE`.
+  - Authoritative unit test suite in `modules/physical-operations-cmms/apps/api/src/auth/r5-place-projection.spec.ts`:
+    - Proved multi-level hierarchical place expansion (site → building → floor → room/zone).
+    - Proved multi-root disjoint site expansion unions descendants cleanly.
+    - Proved queries against unassigned sites return `['FALSE']` with zero parameter leakage.
+    - Proved writes to descendant sites succeed while writes to sibling sites or null sites throw 403.
+- **Verification Evidence:**
+  - 13/13 tests pass in `modules/physical-operations-cmms/apps/api/src/auth/r5-place-projection.spec.ts`.
+  - All 29 CMMS API test suites pass (229/229 tests).
+  - All 12 active tenancy-nest test suites pass (74/74 tests).
+  - All 4 contracts RBAC test suites pass (69/69 tests).
+  - Next BFF tests pass (9/9 tests in `cmms-r5-repaired-paths.test.ts`).
+  - Platform audits passed (package-dependencies, api-boundary, navigation-boundary, layer-boundaries, module-manifests).
+- **Status:** **Review**. Scope gates (`SCOPE_ENFORCING_MODULES`, `PER_ASSIGNMENT_SCOPE_MODULES`) remain closed until formal sign-off.
+

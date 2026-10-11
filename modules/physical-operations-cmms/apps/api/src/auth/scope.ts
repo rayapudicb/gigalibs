@@ -1,6 +1,7 @@
 import { ForbiddenException } from '@nestjs/common';
 import type { CmmsPrincipal } from './authorization.js';
 import { type CmmsOrganizationTree, expandUnitRoots } from './organization-projection.js';
+import { type CmmsPlaceTree, expandPlaceRoots } from './place-projection.js';
 
 /**
  * Read predicates for the caller's department, organization unit, and place scope, appended to `values` as bound parameters.
@@ -13,6 +14,7 @@ export function scopePredicates(
   values: unknown[],
   alias = '',
   tree?: CmmsOrganizationTree,
+  placeTree?: CmmsPlaceTree,
 ): string[] {
   if (principal.organization?.mode === 'DENIED') {
     return ['FALSE'];
@@ -38,7 +40,10 @@ export function scopePredicates(
   }
 
   if (principal.placeScope.mode === 'PLACES') {
-    values.push([...principal.placeScope.placeIds]);
+    const rawPlaces = principal.placeScope.placeIds;
+    const expandedPlaces = placeTree ? expandPlaceRoots(placeTree, rawPlaces) : [...rawPlaces];
+    if (expandedPlaces.length === 0) return ['FALSE'];
+    values.push(expandedPlaces);
     predicates.push(`${alias}site_ref = ANY($${values.length}::uuid[])`);
   }
   return predicates;
@@ -52,6 +57,7 @@ export function assertWritableScope(
   principal: CmmsPrincipal,
   target: { readonly departmentId: string | null; readonly siteRef: string | null },
   tree?: CmmsOrganizationTree,
+  placeTree?: CmmsPlaceTree,
 ): void {
   if (principal.organization?.mode === 'DENIED') {
     throw new ForbiddenException({
@@ -94,10 +100,15 @@ export function assertWritableScope(
     });
   }
 
-  if (
-    principal.placeScope.mode === 'PLACES' &&
-    (target.siteRef === null || !principal.placeScope.placeIds.includes(target.siteRef))
-  ) {
-    throw new ForbiddenException({ code: 'CMMS_OUT_OF_SCOPE', message: 'The record must belong to one of your places.' });
+  if (principal.placeScope.mode === 'PLACES') {
+    if (target.siteRef === null) {
+      throw new ForbiddenException({ code: 'CMMS_OUT_OF_SCOPE', message: 'The record must belong to one of your places.' });
+    }
+    const rawPlaces = principal.placeScope.placeIds;
+    const expandedPlaces = placeTree ? expandPlaceRoots(placeTree, rawPlaces) : [...rawPlaces];
+    if (!expandedPlaces.includes(target.siteRef)) {
+      throw new ForbiddenException({ code: 'CMMS_OUT_OF_SCOPE', message: 'The record belongs to a place outside your access.' });
+    }
   }
 }
+
