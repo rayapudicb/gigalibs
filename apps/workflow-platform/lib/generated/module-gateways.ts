@@ -1289,6 +1289,13 @@ export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGat
         }
       },
       {
+        "template": "v1/meters/{id}",
+        "pattern": "^v1/meters/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "GET": "cmms.meters.read"
+        }
+      },
+      {
         "template": "v1/meters/{id}/readings",
         "pattern": "^v1/meters/[0-9a-fA-F-]{36}/readings$",
         "methods": {

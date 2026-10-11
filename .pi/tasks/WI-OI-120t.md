@@ -1,6 +1,6 @@
 # WI-OI-120t (M-CM1): CMMS on metadata windows, first value
 
-- **Status:** In progress (Slice 1 & Slice 2 verified in Review, 2026-10-11). Last M1a card of `docs/plans/platform-implementation-plan.md`; needs S16
+- **Status:** In progress (Slice 1, Slice 2 & Slice 3 verified in Review, 2026-10-11). Last M1a card of `docs/plans/platform-implementation-plan.md`; needs S16
   (WI-OI-120s) and, per slice, R5 (CMMS access paths) and T3 (one place identity). Each slice is shown before it starts.
 - **Work item:** WI-OI-120. Evidence goes in `.pi/work/WI-OI-120.md`.
 - **Size:** L (four slices, each shown and approved before it starts)
@@ -72,7 +72,7 @@ Each workspace can adjust these screens without a release.
 
 ## Done when
  
-- [ ] Work orders, requests, schedules, meters and parts are metadata windows (slices 1–3); assets after T3.
+- [x] Work orders, requests, schedules, meters and parts are metadata windows (slices 1–3 verified in source); assets after T3.
 - [x] Technicians can change only their own work orders; the UAT gap is closed (Slice 1 verified in source).
 - [x] Requests service over canonical maintenance_requests with submit, triage, cancel and metadata window (Slice 2 verified in source).
 - [ ] The journey passes the request-to-close path.

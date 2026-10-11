@@ -49,6 +49,42 @@ const REQUEST_STATUSES = [
   ['CANCELLED', 'Cancelled'],
 ];
 
+const INTERVAL_UNITS = [
+  ['DAY', 'Day(s)'],
+  ['WEEK', 'Week(s)'],
+  ['MONTH', 'Month(s)'],
+  ['YEAR', 'Year(s)'],
+];
+
+const READING_TYPES = [
+  ['GAUGE', 'Gauge (continuous)'],
+  ['COUNTER', 'Counter (cumulative)'],
+];
+
+const PART_CATEGORIES = [
+  ['MECHANICAL', 'Mechanical'],
+  ['ELECTRICAL', 'Electrical'],
+  ['HYDRAULIC', 'Hydraulic'],
+  ['PNEUMATIC', 'Pneumatic'],
+  ['SAFETY', 'Safety'],
+  ['CONSUMABLE', 'Consumable'],
+  ['OTHER', 'Other'],
+];
+
+const MOVEMENT_TYPES = [
+  ['RECEIPT', 'Receipt'],
+  ['ISSUE', 'Issue'],
+  ['RETURN', 'Return'],
+  ['ADJUSTMENT', 'Adjustment'],
+  ['CYCLE_COUNT', 'Cycle count'],
+];
+
+const CURRENCIES = [
+  ['USD', 'USD'],
+  ['EUR', 'EUR'],
+  ['GBP', 'GBP'],
+];
+
 export function windowSource(builderFor) {
   const {
     entity,
@@ -69,6 +105,9 @@ export function windowSource(builderFor) {
     createWith: {
       'cmms-work-orders': ['physical-operations-cmms', 'cmms-work-orders', 'cmms.work-orders.write'],
       'cmms-requests': ['physical-operations-cmms', 'cmms-requests', 'cmms.requests.create'],
+      'cmms-schedules': ['physical-operations-cmms', 'cmms-schedules', 'cmms.pm.write'],
+      'cmms-meters': ['physical-operations-cmms', 'cmms-meters', 'cmms.meters.write'],
+      'cmms-parts': ['physical-operations-cmms', 'cmms-parts', 'cmms.parts.write'],
     },
   });
 
@@ -410,6 +449,246 @@ export function windowSource(builderFor) {
       ],
     ),
     { route: '/cmms/requests' },
+  );
+
+  // 3. Preventive maintenance schedules (Slice 3)
+  const PMS = 'cmms.pm-schedules';
+  const pmsf = [
+    field(PMS, 'name', 'Schedule name', 'TEXT', { required: true, help: 'Descriptive title for this preventive maintenance schedule.' }),
+    field(PMS, 'description', 'Description', 'TEXTAREA'),
+    field(PMS, 'asset-id', 'Asset', 'REFERENCE', { required: true, ref: 'asset-ref' }),
+    field(PMS, 'is-active', 'Active', 'BOOLEAN', { default: true }),
+    field(PMS, 'interval-count', 'Frequency count', 'NUMBER', { required: true, default: 1 }),
+    field(PMS, 'interval-unit', 'Frequency unit', 'SELECT', { required: true, ref: 'interval-units', default: 'MONTH' }),
+    field(PMS, 'time-zone', 'Time zone', 'TEXT', { default: 'UTC' }),
+    field(PMS, 'next-due-at', 'Next due date', 'DATETIME', { required: true }),
+    field(PMS, 'last-generated-at', 'Last generated at', 'DATETIME', { readOnly: true }),
+    field(PMS, 'overdue', 'Overdue', 'BOOLEAN', { readOnly: true }),
+    field(PMS, 'wo-title', 'Work order title', 'TEXT', { required: true }),
+    field(PMS, 'wo-description', 'Work order description', 'TEXTAREA'),
+    field(PMS, 'wo-priority', 'Priority', 'SELECT', { required: true, ref: 'priorities', default: 'MEDIUM' }),
+    field(PMS, 'estimated-hours', 'Estimated hours', 'NUMBER'),
+    field(PMS, 'requires-signature', 'Requires signature', 'BOOLEAN', { default: false }),
+  ];
+
+  windows['cmms-schedules'] = window(
+    'cmms-schedules',
+    'Preventive maintenance schedules',
+    'PM Schedules',
+    'Manage recurring maintenance schedules and trigger preventive work orders.',
+    'cmms:read',
+    dictionary(
+      'cmms-schedules',
+      'Preventive maintenance schedules',
+      PMS,
+      [entity(PMS, 'Preventive schedules')],
+      pmsf,
+      [],
+      [
+        values('interval-units', INTERVAL_UNITS),
+        values('priorities', PRIORITIES),
+        ASSET_REF,
+      ],
+      [
+        view('schedules', 'PM Schedules', [
+          tab('schedule', 'Schedule', 0, PMS, [
+            ['name', 6, 'main'],
+            ['asset-id', 6, 'main'],
+            ['is-active', 3, 'main'],
+            ['interval-count', 3, 'cadence'],
+            ['interval-unit', 3, 'cadence'],
+            ['time-zone', 3, 'cadence'],
+            ['next-due-at', 3, 'cadence'],
+            ['last-generated-at', 4, 'cadence'],
+            ['overdue', 2, 'cadence'],
+            ['description', 12, 'main'],
+            ['wo-title', 6, 'work-order'],
+            ['wo-priority', 3, 'work-order'],
+            ['estimated-hours', 3, 'work-order'],
+            ['requires-signature', 3, 'work-order'],
+            ['wo-description', 12, 'work-order'],
+          ], pmsf, {
+            sections: [
+              section('main', 'Schedule information', 0),
+              section('cadence', 'Recurrence & Scheduling', 1),
+              section('work-order', 'Generated work order template', 2),
+            ],
+          }),
+        ], { search: ['name', 'wo-title'], sort: 'next-due-at' }),
+      ],
+      [
+        action(
+          PMS,
+          'generate',
+          'Generate work order',
+          'cmms.pm.write',
+          ['is-active', 'EQ', true],
+          'Generate a work order for the current occurrence and advance the schedule?',
+        ),
+      ],
+    ),
+    { route: '/cmms/schedules' },
+  );
+
+  // 4. Meters and readings (Slice 3)
+  const MTR = 'cmms.meters';
+  const MRD = 'cmms.meter-readings';
+  const mtrf = [
+    field(MTR, 'name', 'Meter name', 'TEXT', { required: true, help: 'Tag or identifier for this asset sensor.' }),
+    field(MTR, 'description', 'Description', 'TEXTAREA'),
+    field(MTR, 'asset-id', 'Asset', 'REFERENCE', { required: true, ref: 'asset-ref' }),
+    field(MTR, 'unit', 'Unit', 'TEXT', { required: true, help: 'e.g. hours, psi, celsius, km' }),
+    field(MTR, 'reading-type', 'Reading type', 'SELECT', { required: true, ref: 'reading-types', default: 'GAUGE' }),
+    field(MTR, 'last-reading-value', 'Latest value', 'NUMBER', { readOnly: true }),
+    field(MTR, 'last-reading-at', 'Latest reading at', 'DATETIME', { readOnly: true }),
+    field(MTR, 'min-threshold', 'Min threshold', 'NUMBER'),
+    field(MTR, 'max-threshold', 'Max threshold', 'NUMBER'),
+  ];
+  const mrdf = [
+    field(MRD, 'meter-id', 'Meter ID', 'TEXT', { readOnly: true }),
+    field(MRD, 'value', 'Reading value', 'NUMBER', { required: true }),
+    field(MRD, 'read-at', 'Timestamp', 'DATETIME', { required: true }),
+    field(MRD, 'notes', 'Notes', 'TEXTAREA'),
+    field(MRD, 'recorded-by', 'Recorded by', 'TEXT', { readOnly: true }),
+    field(MRD, 'recorded-at', 'Recorded at', 'DATETIME', { readOnly: true }),
+  ];
+
+  const meterFields = [...mtrf, ...mrdf];
+
+  windows['cmms-meters'] = window(
+    'cmms-meters',
+    'Meters and telemetry',
+    'Meters',
+    'Asset counters, run hours and operational gauges.',
+    'cmms:read',
+    dictionary(
+      'cmms-meters',
+      'Meters and telemetry',
+      MTR,
+      [entity(MTR, 'Meters'), entity(MRD, 'Meter readings')],
+      meterFields,
+      [relationship('meter-readings', MTR, MRD, 'meter-id')],
+      [values('reading-types', READING_TYPES), ASSET_REF],
+      [
+        view('meters', 'Meters', [
+          tab('meter', 'Meter', 0, MTR, [
+            ['name', 6, 'main'],
+            ['asset-id', 6, 'main'],
+            ['unit', 3, 'main'],
+            ['reading-type', 3, 'main'],
+            ['last-reading-value', 3, 'telemetry'],
+            ['last-reading-at', 3, 'telemetry'],
+            ['min-threshold', 3, 'telemetry'],
+            ['max-threshold', 3, 'telemetry'],
+            ['description', 12, 'main'],
+          ], meterFields, {
+            sections: [
+              section('main', 'Meter specification', 0),
+              section('telemetry', 'Latest telemetry & thresholds', 1),
+            ],
+          }),
+          tab('readings', 'Readings', 1, MRD, [
+            ['value', 3],
+            ['read-at', 3],
+            ['notes', 4],
+            ['recorded-by', 2],
+          ], meterFields, { parent: 'meter-readings' }),
+        ], { search: ['name', 'unit'], sort: 'name' }),
+      ],
+      [],
+    ),
+    { route: '/cmms/meters' },
+  );
+
+  // 5. MRO parts and stock movements (Slice 3)
+  const PRT = 'cmms.parts';
+  const PMV = 'cmms.part-movements';
+  const prtf = [
+    field(PRT, 'part-number', 'Part number', 'TEXT', { required: true, help: 'Stock-keeping unit or manufacturer part number.' }),
+    field(PRT, 'name', 'Part name', 'TEXT', { required: true }),
+    field(PRT, 'description', 'Description', 'TEXTAREA'),
+    field(PRT, 'category', 'Category', 'SELECT', { ref: 'part-categories' }),
+    field(PRT, 'unit-of-measure', 'Unit of measure', 'TEXT', { required: true, default: 'EA' }),
+    field(PRT, 'unit-cost', 'Unit cost', 'NUMBER'),
+    field(PRT, 'currency-code', 'Currency', 'SELECT', { ref: 'currencies', default: 'USD' }),
+    field(PRT, 'quantity-on-hand', 'Quantity on hand', 'NUMBER', { readOnly: true }),
+    field(PRT, 'min-quantity', 'Min stock level', 'NUMBER', { default: 0 }),
+    field(PRT, 'reorder-point', 'Reorder point', 'NUMBER'),
+    field(PRT, 'non-stock', 'Non-stock item', 'BOOLEAN', { default: false }),
+    field(PRT, 'bin-location', 'Bin location', 'TEXT'),
+    field(PRT, 'barcode', 'Barcode / UPC', 'TEXT'),
+  ];
+  const pmvf = [
+    field(PMV, 'part-id', 'Part ID', 'TEXT', { readOnly: true }),
+    field(PMV, 'movement-type', 'Movement type', 'SELECT', { required: true, ref: 'movement-types' }),
+    field(PMV, 'quantity-delta', 'Quantity change', 'NUMBER', { required: true }),
+    field(PMV, 'balance-after', 'Balance after', 'NUMBER', { readOnly: true }),
+    field(PMV, 'unit-cost', 'Unit cost', 'NUMBER'),
+    field(PMV, 'currency-code', 'Currency', 'SELECT', { ref: 'currencies' }),
+    field(PMV, 'storeroom-id', 'Storeroom ID', 'TEXT'),
+    field(PMV, 'bin-location', 'Bin location', 'TEXT'),
+    field(PMV, 'reason', 'Reason', 'TEXTAREA'),
+    field(PMV, 'created-by', 'Transacted by', 'TEXT', { readOnly: true }),
+    field(PMV, 'created-at', 'Transacted at', 'DATETIME', { readOnly: true }),
+  ];
+
+  const partFields = [...prtf, ...pmvf];
+
+  windows['cmms-parts'] = window(
+    'cmms-parts',
+    'MRO parts and inventory',
+    'MRO Parts',
+    'Spare parts, inventory balances, and storeroom movements.',
+    'cmms:read',
+    dictionary(
+      'cmms-parts',
+      'MRO parts and inventory',
+      PRT,
+      [entity(PRT, 'MRO parts'), entity(PMV, 'Stock movements')],
+      partFields,
+      [relationship('part-movements', PRT, PMV, 'part-id')],
+      [
+        values('part-categories', PART_CATEGORIES),
+        values('movement-types', MOVEMENT_TYPES),
+        values('currencies', CURRENCIES),
+      ],
+      [
+        view('parts', 'MRO Parts', [
+          tab('part', 'Part', 0, PRT, [
+            ['part-number', 4, 'main'],
+            ['name', 5, 'main'],
+            ['category', 3, 'main'],
+            ['quantity-on-hand', 3, 'stock'],
+            ['unit-of-measure', 3, 'stock'],
+            ['min-quantity', 3, 'stock'],
+            ['reorder-point', 3, 'stock'],
+            ['unit-cost', 3, 'financial'],
+            ['currency-code', 3, 'financial'],
+            ['non-stock', 3, 'financial'],
+            ['bin-location', 3, 'location'],
+            ['barcode', 4, 'location'],
+            ['description', 12, 'main'],
+          ], partFields, {
+            sections: [
+              section('main', 'Part details', 0),
+              section('stock', 'Inventory position', 1),
+              section('financial', 'Costing & Stock type', 2),
+              section('location', 'Storeroom & Barcode', 3),
+            ],
+          }),
+          tab('movements', 'Stock movements', 1, PMV, [
+            ['movement-type', 2],
+            ['quantity-delta', 2],
+            ['balance-after', 2],
+            ['unit-cost', 2],
+            ['bin-location', 2],
+            ['reason', 2],
+          ], partFields, { parent: 'part-movements' }),
+        ], { search: ['part-number', 'name', 'bin-location'], sort: 'part-number' }),
+      ],
+      [],
+    ),
+    { route: '/cmms/inventory' },
   );
 
   return windows;

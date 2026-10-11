@@ -1,0 +1,604 @@
+{
+  "contractVersion": "1.0",
+  "window": {
+    "route": "/cmms/inventory",
+    "label": "MRO Parts",
+    "description": "Spare parts, inventory balances, and storeroom movements.",
+    "readPermission": "cmms:read"
+  },
+  "definition": {
+    "kind": "APPLICATION_DICTIONARY",
+    "contractVersion": "1.0",
+    "moduleKey": "physical-operations-cmms",
+    "entityKey": "cmms-parts",
+    "surfaceKey": "cmms-parts",
+    "title": "MRO parts and inventory",
+    "dictionary": {
+      "packageKey": "cmms-parts-module-baseline",
+      "name": "MRO parts and inventory",
+      "version": "1.0.0",
+      "moduleKey": "physical-operations-cmms",
+      "targetEntityKey": "cmms.parts",
+      "entities": [
+        {
+          "entityKey": "cmms.parts",
+          "moduleKey": "physical-operations-cmms",
+          "label": "MRO parts",
+          "ownership": "MODULE_CORE",
+          "primaryKeyField": "id",
+          "isVersioned": true,
+          "isAuditLogged": true,
+          "isSoftDeletable": false
+        },
+        {
+          "entityKey": "cmms.part-movements",
+          "moduleKey": "physical-operations-cmms",
+          "label": "Stock movements",
+          "ownership": "MODULE_CORE",
+          "primaryKeyField": "id",
+          "isVersioned": true,
+          "isAuditLogged": true,
+          "isSoftDeletable": false
+        }
+      ],
+      "fields": [
+        {
+          "fieldKey": "part-number",
+          "entityKey": "cmms.parts",
+          "label": "Part number",
+          "type": "TEXT",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "helpText": "Stock-keeping unit or manufacturer part number."
+        },
+        {
+          "fieldKey": "name",
+          "entityKey": "cmms.parts",
+          "label": "Part name",
+          "type": "TEXT",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "description",
+          "entityKey": "cmms.parts",
+          "label": "Description",
+          "type": "TEXTAREA",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "category",
+          "entityKey": "cmms.parts",
+          "label": "Category",
+          "type": "SELECT",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "part-categories"
+        },
+        {
+          "fieldKey": "unit-of-measure",
+          "entityKey": "cmms.parts",
+          "label": "Unit of measure",
+          "type": "TEXT",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "unit-cost",
+          "entityKey": "cmms.parts",
+          "label": "Unit cost",
+          "type": "NUMBER",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "currency-code",
+          "entityKey": "cmms.parts",
+          "label": "Currency",
+          "type": "SELECT",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "currencies"
+        },
+        {
+          "fieldKey": "quantity-on-hand",
+          "entityKey": "cmms.parts",
+          "label": "Quantity on hand",
+          "type": "NUMBER",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "min-quantity",
+          "entityKey": "cmms.parts",
+          "label": "Min stock level",
+          "type": "NUMBER",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "reorder-point",
+          "entityKey": "cmms.parts",
+          "label": "Reorder point",
+          "type": "NUMBER",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "non-stock",
+          "entityKey": "cmms.parts",
+          "label": "Non-stock item",
+          "type": "BOOLEAN",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "bin-location",
+          "entityKey": "cmms.parts",
+          "label": "Bin location",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "barcode",
+          "entityKey": "cmms.parts",
+          "label": "Barcode / UPC",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "part-id",
+          "entityKey": "cmms.part-movements",
+          "label": "Part ID",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "movement-type",
+          "entityKey": "cmms.part-movements",
+          "label": "Movement type",
+          "type": "SELECT",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "movement-types"
+        },
+        {
+          "fieldKey": "quantity-delta",
+          "entityKey": "cmms.part-movements",
+          "label": "Quantity change",
+          "type": "NUMBER",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "balance-after",
+          "entityKey": "cmms.part-movements",
+          "label": "Balance after",
+          "type": "NUMBER",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "unit-cost",
+          "entityKey": "cmms.part-movements",
+          "label": "Unit cost",
+          "type": "NUMBER",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "currency-code",
+          "entityKey": "cmms.part-movements",
+          "label": "Currency",
+          "type": "SELECT",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "currencies"
+        },
+        {
+          "fieldKey": "storeroom-id",
+          "entityKey": "cmms.part-movements",
+          "label": "Storeroom ID",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "bin-location",
+          "entityKey": "cmms.part-movements",
+          "label": "Bin location",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "reason",
+          "entityKey": "cmms.part-movements",
+          "label": "Reason",
+          "type": "TEXTAREA",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "created-by",
+          "entityKey": "cmms.part-movements",
+          "label": "Transacted by",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "created-at",
+          "entityKey": "cmms.part-movements",
+          "label": "Transacted at",
+          "type": "DATETIME",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        }
+      ],
+      "relationships": [
+        {
+          "relationshipKey": "part-movements",
+          "sourceEntityKey": "cmms.parts",
+          "targetEntityKey": "cmms.part-movements",
+          "type": "ONE_TO_MANY",
+          "foreignKeyField": "part-id"
+        }
+      ],
+      "references": [
+        {
+          "referenceKey": "part-categories",
+          "referenceType": "VALUE_LIST",
+          "staticValues": [
+            {
+              "value": "MECHANICAL",
+              "label": "Mechanical"
+            },
+            {
+              "value": "ELECTRICAL",
+              "label": "Electrical"
+            },
+            {
+              "value": "HYDRAULIC",
+              "label": "Hydraulic"
+            },
+            {
+              "value": "PNEUMATIC",
+              "label": "Pneumatic"
+            },
+            {
+              "value": "SAFETY",
+              "label": "Safety"
+            },
+            {
+              "value": "CONSUMABLE",
+              "label": "Consumable"
+            },
+            {
+              "value": "OTHER",
+              "label": "Other"
+            }
+          ]
+        },
+        {
+          "referenceKey": "movement-types",
+          "referenceType": "VALUE_LIST",
+          "staticValues": [
+            {
+              "value": "RECEIPT",
+              "label": "Receipt"
+            },
+            {
+              "value": "ISSUE",
+              "label": "Issue"
+            },
+            {
+              "value": "RETURN",
+              "label": "Return"
+            },
+            {
+              "value": "ADJUSTMENT",
+              "label": "Adjustment"
+            },
+            {
+              "value": "CYCLE_COUNT",
+              "label": "Cycle count"
+            }
+          ]
+        },
+        {
+          "referenceKey": "currencies",
+          "referenceType": "VALUE_LIST",
+          "staticValues": [
+            {
+              "value": "USD",
+              "label": "USD"
+            },
+            {
+              "value": "EUR",
+              "label": "EUR"
+            },
+            {
+              "value": "GBP",
+              "label": "GBP"
+            }
+          ]
+        }
+      ],
+      "validationRules": [],
+      "views": [
+        {
+          "viewKey": "parts",
+          "label": "MRO Parts",
+          "mode": "LIST",
+          "device": "ALL",
+          "defaultSortDirection": "ASC",
+          "tabs": [
+            {
+              "tabKey": "part",
+              "label": "Part",
+              "position": 0,
+              "level": 0,
+              "targetEntityKey": "cmms.parts",
+              "sections": [
+                {
+                  "sectionKey": "main",
+                  "label": "Part details",
+                  "collapsible": false,
+                  "defaultCollapsed": false,
+                  "position": 0
+                },
+                {
+                  "sectionKey": "stock",
+                  "label": "Inventory position",
+                  "collapsible": false,
+                  "defaultCollapsed": false,
+                  "position": 1
+                },
+                {
+                  "sectionKey": "financial",
+                  "label": "Costing & Stock type",
+                  "collapsible": false,
+                  "defaultCollapsed": false,
+                  "position": 2
+                },
+                {
+                  "sectionKey": "location",
+                  "label": "Storeroom & Barcode",
+                  "collapsible": false,
+                  "defaultCollapsed": false,
+                  "position": 3
+                }
+              ],
+              "fields": [
+                {
+                  "fieldKey": "part-number",
+                  "position": 0,
+                  "span": 4,
+                  "componentKey": "text-input",
+                  "sectionKey": "main"
+                },
+                {
+                  "fieldKey": "name",
+                  "position": 1,
+                  "span": 5,
+                  "componentKey": "text-input",
+                  "sectionKey": "main"
+                },
+                {
+                  "fieldKey": "category",
+                  "position": 2,
+                  "span": 3,
+                  "componentKey": "select",
+                  "sectionKey": "main"
+                },
+                {
+                  "fieldKey": "quantity-on-hand",
+                  "position": 3,
+                  "span": 3,
+                  "componentKey": "number-input",
+                  "sectionKey": "stock"
+                },
+                {
+                  "fieldKey": "unit-of-measure",
+                  "position": 4,
+                  "span": 3,
+                  "componentKey": "text-input",
+                  "sectionKey": "stock"
+                },
+                {
+                  "fieldKey": "min-quantity",
+                  "position": 5,
+                  "span": 3,
+                  "componentKey": "number-input",
+                  "sectionKey": "stock"
+                },
+                {
+                  "fieldKey": "reorder-point",
+                  "position": 6,
+                  "span": 3,
+                  "componentKey": "number-input",
+                  "sectionKey": "stock"
+                },
+                {
+                  "fieldKey": "unit-cost",
+                  "position": 7,
+                  "span": 3,
+                  "componentKey": "number-input",
+                  "sectionKey": "financial"
+                },
+                {
+                  "fieldKey": "currency-code",
+                  "position": 8,
+                  "span": 3,
+                  "componentKey": "select",
+                  "sectionKey": "financial"
+                },
+                {
+                  "fieldKey": "non-stock",
+                  "position": 9,
+                  "span": 3,
+                  "componentKey": "checkbox",
+                  "sectionKey": "financial"
+                },
+                {
+                  "fieldKey": "bin-location",
+                  "position": 10,
+                  "span": 3,
+                  "componentKey": "text-input",
+                  "sectionKey": "location"
+                },
+                {
+                  "fieldKey": "barcode",
+                  "position": 11,
+                  "span": 4,
+                  "componentKey": "text-input",
+                  "sectionKey": "location"
+                },
+                {
+                  "fieldKey": "description",
+                  "position": 12,
+                  "span": 12,
+                  "componentKey": "textarea",
+                  "sectionKey": "main"
+                }
+              ]
+            },
+            {
+              "tabKey": "movements",
+              "label": "Stock movements",
+              "position": 1,
+              "level": 1,
+              "targetEntityKey": "cmms.part-movements",
+              "sections": [],
+              "fields": [
+                {
+                  "fieldKey": "movement-type",
+                  "position": 0,
+                  "span": 2,
+                  "componentKey": "select"
+                },
+                {
+                  "fieldKey": "quantity-delta",
+                  "position": 1,
+                  "span": 2,
+                  "componentKey": "number-input"
+                },
+                {
+                  "fieldKey": "balance-after",
+                  "position": 2,
+                  "span": 2,
+                  "componentKey": "number-input"
+                },
+                {
+                  "fieldKey": "unit-cost",
+                  "position": 3,
+                  "span": 2,
+                  "componentKey": "number-input"
+                },
+                {
+                  "fieldKey": "bin-location",
+                  "position": 4,
+                  "span": 2,
+                  "componentKey": "text-input"
+                },
+                {
+                  "fieldKey": "reason",
+                  "position": 5,
+                  "span": 2,
+                  "componentKey": "textarea"
+                }
+              ],
+              "parentRelationshipKey": "part-movements"
+            }
+          ],
+          "searchFields": [
+            "part-number",
+            "name",
+            "bin-location"
+          ],
+          "defaultSortField": "part-number"
+        }
+      ],
+      "navigation": [],
+      "actions": [],
+      "messages": []
+    }
+  }
+}

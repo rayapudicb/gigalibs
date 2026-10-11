@@ -35,6 +35,8 @@ import type { WorkOrdersService } from './work-orders.service.js';
 import type { AssetsService } from '../assets/assets.service.js';
 import type { PartsService } from '../parts/parts.service.js';
 import type { RequestsService } from '../requests/requests.service.js';
+import type { PmSchedulesService } from '../pm-schedules/pm-schedules.service.js';
+import type { MetersService } from '../meters/meters.service.js';
 
 // WI-OI-120t (M-CM1, ADR-0033 D1): CMMS work-order record adapters behind metadata windows.
 // Window field keys are the dictionary's kebab-case keys; the domain speaks camelCase.
@@ -118,8 +120,10 @@ export function assertCanExecute(principal: ModulePrincipal, workOrder: CmmsWork
 export interface CmmsRecordDependencies {
   readonly workOrders: WorkOrdersService;
   readonly assets: Pick<AssetsService, 'search'>;
-  readonly parts: Pick<PartsService, 'search'>;
+  readonly parts: PartsService;
   readonly requests?: RequestsService;
+  readonly pmSchedules?: PmSchedulesService;
+  readonly meters?: MetersService;
 }
 
 const WORK_ORDER_FIELDS: readonly FieldSpec[] = [
@@ -210,6 +214,76 @@ const REQUEST_FIELDS: readonly FieldSpec[] = [
   { key: 'converted-wo-id' },
   { key: 'triaged-by' },
   { key: 'triaged-at' },
+  { key: 'created-at' },
+];
+
+const SCHEDULE_FIELDS: readonly FieldSpec[] = [
+  { key: 'name', writable: true },
+  { key: 'description', writable: true },
+  { key: 'asset-id', writable: true },
+  { key: 'is-active', writable: true },
+  { key: 'interval-count', writable: true },
+  { key: 'interval-unit', writable: true },
+  { key: 'time-zone', writable: true },
+  { key: 'next-due-at', writable: true },
+  { key: 'last-generated-at' },
+  { key: 'overdue' },
+  { key: 'wo-title', writable: true },
+  { key: 'wo-description', writable: true },
+  { key: 'wo-priority', writable: true },
+  { key: 'estimated-hours', writable: true },
+  { key: 'requires-signature', writable: true },
+];
+
+const METER_FIELDS: readonly FieldSpec[] = [
+  { key: 'name', writable: true },
+  { key: 'description', writable: true },
+  { key: 'asset-id', writable: true },
+  { key: 'unit', writable: true },
+  { key: 'reading-type', writable: true },
+  { key: 'last-reading-value' },
+  { key: 'last-reading-at' },
+  { key: 'min-threshold', writable: true },
+  { key: 'max-threshold', writable: true },
+];
+
+const READING_FIELDS: readonly FieldSpec[] = [
+  { key: 'meter-id', writable: true },
+  { key: 'value', writable: true },
+  { key: 'delta' },
+  { key: 'read-at', writable: true },
+  { key: 'notes', writable: true },
+  { key: 'recorded-by' },
+  { key: 'recorded-at' },
+];
+
+const PART_FIELDS: readonly FieldSpec[] = [
+  { key: 'part-number', writable: true },
+  { key: 'name', writable: true },
+  { key: 'description', writable: true },
+  { key: 'category', writable: true },
+  { key: 'unit-of-measure', writable: true },
+  { key: 'unit-cost', writable: true },
+  { key: 'currency-code', writable: true },
+  { key: 'quantity-on-hand' },
+  { key: 'min-quantity', writable: true },
+  { key: 'reorder-point', writable: true },
+  { key: 'non-stock', writable: true },
+  { key: 'bin-location', writable: true },
+  { key: 'barcode', writable: true },
+];
+
+const MOVEMENT_FIELDS: readonly FieldSpec[] = [
+  { key: 'part-id', writable: true },
+  { key: 'movement-type', writable: true },
+  { key: 'quantity-delta', writable: true },
+  { key: 'balance-after' },
+  { key: 'unit-cost', writable: true },
+  { key: 'currency-code', writable: true },
+  { key: 'storeroom-id', writable: true },
+  { key: 'bin-location', writable: true },
+  { key: 'reason', writable: true },
+  { key: 'created-by' },
   { key: 'created-at' },
 ];
 
@@ -425,7 +499,7 @@ export function cmmsRecordDispatcher(deps: CmmsRecordDependencies, idempotency?:
     },
   };
 
-  const parts: RecordAdapter = {
+  const workOrderParts: RecordAdapter = {
     entityKey: 'cmms.work-order-parts',
     parentField: 'work-order-id',
     permissions: {
@@ -614,6 +688,206 @@ export function cmmsRecordDispatcher(deps: CmmsRecordDependencies, idempotency?:
     },
   };
 
+  const pmSchedules: RecordAdapter = {
+    entityKey: 'cmms.pm-schedules',
+    permissions: {
+      read: 'cmms.pm.read',
+      create: 'cmms.pm.write',
+      update: 'cmms.pm.write',
+    },
+    fields: fieldPolicies(SCHEDULE_FIELDS),
+    searchFields: ['name', 'wo-title'],
+    sortFields: ['name', 'next-due-at'],
+    async list(principal: ModulePrincipal, query: RecordListQuery): Promise<RecordPage> {
+      if (!deps.pmSchedules) return { items: [], total: 0, page: 1, pageSize: query.pageSize };
+      const assetId = query.filters?.assetId;
+      const res = await deps.pmSchedules.list(principal as any, assetId);
+      const items = res.items.map((s) => toWindow(SCHEDULE_FIELDS, s));
+      return { items, total: items.length, page: 1, pageSize: query.pageSize };
+    },
+    async get(principal: ModulePrincipal, id: string): Promise<RecordValues | null> {
+      if (!deps.pmSchedules) return null;
+      const s = await deps.pmSchedules.get(principal as any, id);
+      return toWindow(SCHEDULE_FIELDS, s);
+    },
+    async create(context: RecordCommandContext, values: RecordValues): Promise<RecordValues> {
+      if (!deps.pmSchedules) throw new BadRequestException('PM schedules service unavailable');
+      const input = toDomain(SCHEDULE_FIELDS, values);
+      if (input.nextDueAt && !input.firstDueAt) {
+        input.firstDueAt = input.nextDueAt;
+      }
+      const created = await deps.pmSchedules.create(context as any, input);
+      return toWindow(SCHEDULE_FIELDS, created);
+    },
+    async update(context: RecordCommandContext, id: string, values: RecordValues, expectedVersion: number): Promise<RecordValues> {
+      if (!deps.pmSchedules) throw new BadRequestException('PM schedules service unavailable');
+      const input = toDomain(SCHEDULE_FIELDS, values);
+      const updated = await deps.pmSchedules.update(context as any, id, { ...input, expectedVersion });
+      return toWindow(SCHEDULE_FIELDS, updated);
+    },
+    actions: {
+      generate: {
+        permission: 'cmms.pm.write',
+        run: async (context: RecordCommandContext, id: string, parameters: RecordValues): Promise<RecordValues> => {
+          if (!deps.pmSchedules) throw new BadRequestException('PM schedules service unavailable');
+          const expectedVersion = typeof parameters.expectedVersion === 'number' ? parameters.expectedVersion : 1;
+          const res = await deps.pmSchedules.generate(context as any, id, { expectedVersion });
+          return toWindow(SCHEDULE_FIELDS, res.schedule);
+        },
+      },
+    },
+  };
+
+  const meters: RecordAdapter = {
+    entityKey: 'cmms.meters',
+    permissions: {
+      read: 'cmms.meters.read',
+      create: 'cmms.meters.write',
+    },
+    fields: fieldPolicies(METER_FIELDS),
+    searchFields: ['name', 'unit'],
+    sortFields: ['name'],
+    async list(principal: ModulePrincipal, query: RecordListQuery): Promise<RecordPage> {
+      if (!deps.meters) return { items: [], total: 0, page: 1, pageSize: query.pageSize };
+      const assetId = query.filters?.assetId;
+      const res = await deps.meters.list(principal as any, assetId);
+      const items = res.items.map((m) => toWindow(METER_FIELDS, m));
+      return { items, total: items.length, page: 1, pageSize: query.pageSize };
+    },
+    async get(principal: ModulePrincipal, id: string): Promise<RecordValues | null> {
+      if (!deps.meters) return null;
+      const m = await deps.meters.get(principal as any, id);
+      return toWindow(METER_FIELDS, m);
+    },
+    async create(context: RecordCommandContext, values: RecordValues): Promise<RecordValues> {
+      if (!deps.meters) throw new BadRequestException('Meters service unavailable');
+      const input = toDomain(METER_FIELDS, values);
+      const created = await deps.meters.create(context as any, input);
+      return toWindow(METER_FIELDS, created);
+    },
+  };
+
+  const meterReadings: RecordAdapter = {
+    entityKey: 'cmms.meter-readings',
+    parentField: 'meter-id',
+    permissions: {
+      read: 'cmms.meters.read',
+      create: 'cmms.meters.write',
+    },
+    fields: fieldPolicies(READING_FIELDS),
+    async list(principal: ModulePrincipal, query: RecordListQuery): Promise<RecordPage> {
+      if (!deps.meters || !query.parentId) return { items: [], total: 0, page: 1, pageSize: query.pageSize };
+      const res = await deps.meters.readings(principal as any, query.parentId);
+      const items = res.items.map((r) => toWindow(READING_FIELDS, r));
+      return { items, total: items.length, page: 1, pageSize: query.pageSize };
+    },
+    async get(): Promise<RecordValues | null> {
+      return null;
+    },
+    async create(context: RecordCommandContext, values: RecordValues): Promise<RecordValues> {
+      if (!deps.meters) throw new BadRequestException('Meters service unavailable');
+      const meterId = values['meter-id'] as string;
+      if (!meterId) throw new BadRequestException({ code: 'CMMS_VALIDATION_FAILED', message: 'meter-id is required' });
+      const requestKey = (values.requestKey as string) || randomUUID();
+      const res = await deps.meters.recordReading(context as any, meterId, {
+        value: Number(values.value),
+        readAt: values['read-at'] as string | undefined,
+        notes: (values.notes as string) || undefined,
+        requestKey,
+      });
+      return toWindow(READING_FIELDS, res.reading);
+    },
+  };
+
+  const parts: RecordAdapter = {
+    entityKey: 'cmms.parts',
+    permissions: {
+      read: 'cmms.parts.read',
+      create: 'cmms.parts.write',
+      update: 'cmms.parts.write',
+    },
+    fields: fieldPolicies(PART_FIELDS),
+    searchFields: ['part-number', 'name', 'bin-location'],
+    sortFields: ['part-number', 'name'],
+    async list(principal: ModulePrincipal, query: RecordListQuery): Promise<RecordPage> {
+      const page = await deps.parts.search(principal as any, domainQuery(query));
+      return {
+        items: page.items.map((p) => toWindow(PART_FIELDS, p)),
+        total: page.total,
+        page: page.page,
+        pageSize: page.pageSize,
+      };
+    },
+    async get(principal: ModulePrincipal, id: string): Promise<RecordValues | null> {
+      const p = await deps.parts.get(principal as any, id);
+      return toWindow(PART_FIELDS, p);
+    },
+    async create(context: RecordCommandContext, values: RecordValues): Promise<RecordValues> {
+      const input = toDomain(PART_FIELDS, values);
+      if (!input.currencyCode) input.currencyCode = 'USD';
+      const created = await deps.parts.create(context as any, input);
+      return toWindow(PART_FIELDS, created);
+    },
+    async update(context: RecordCommandContext, id: string, values: RecordValues, expectedVersion: number): Promise<RecordValues> {
+      const input = toDomain(PART_FIELDS, values);
+      const updated = await deps.parts.update(context as any, id, { ...input, expectedVersion });
+      return toWindow(PART_FIELDS, updated);
+    },
+  };
+
+  const partMovements: RecordAdapter = {
+    entityKey: 'cmms.part-movements',
+    parentField: 'part-id',
+    permissions: {
+      read: 'cmms.parts.read',
+      create: 'cmms.parts.write',
+    },
+    fields: fieldPolicies(MOVEMENT_FIELDS),
+    async list(principal: ModulePrincipal, query: RecordListQuery): Promise<RecordPage> {
+      if (!query.parentId) return { items: [], total: 0, page: 1, pageSize: query.pageSize };
+      const res = await deps.parts.movements(principal as any, query.parentId);
+      const items = res.items.map((m) => toWindow(MOVEMENT_FIELDS, m));
+      return { items, total: items.length, page: 1, pageSize: query.pageSize };
+    },
+    async get(): Promise<RecordValues | null> {
+      return null;
+    },
+    async create(context: RecordCommandContext, values: RecordValues): Promise<RecordValues> {
+      const partId = values['part-id'] as string;
+      if (!partId) throw new BadRequestException({ code: 'CMMS_VALIDATION_FAILED', message: 'part-id is required' });
+      const idempotencyKey = (context.idempotencyKey as string) || (values.idempotencyKey as string) || randomUUID();
+      const movementType = (values['movement-type'] as string) || 'RECEIPT';
+      const quantity = Math.abs(Number(values['quantity-delta'] ?? 1));
+      let rawPayload: Record<string, unknown>;
+      if (movementType === 'ADJUSTMENT') {
+        rawPayload = {
+          movementType: 'ADJUSTMENT',
+          idempotencyKey,
+          quantityDelta: Number(values['quantity-delta']),
+          reason: (values.reason as string) || 'Manual adjustment',
+        };
+      } else if (movementType === 'RETURN') {
+        rawPayload = {
+          movementType: 'RETURN',
+          idempotencyKey,
+          quantity,
+          workOrderId: values['work-order-id'] as string,
+          reason: (values.reason as string) || undefined,
+        };
+      } else {
+        rawPayload = {
+          movementType: 'RECEIPT',
+          idempotencyKey,
+          quantity,
+          unitCost: values['unit-cost'] !== undefined && values['unit-cost'] !== null ? Number(values['unit-cost']) : undefined,
+          reason: (values.reason as string) || undefined,
+        };
+      }
+      const res = await deps.parts.recordMovement(context as any, partId, rawPayload);
+      return toWindow(MOVEMENT_FIELDS, res.movement);
+    },
+  };
+
   const resolvers: LookupResolver[] = [
     {
       key: 'cmms-assets',
@@ -687,7 +961,20 @@ export function cmmsRecordDispatcher(deps: CmmsRecordDependencies, idempotency?:
   }
 
   return new RecordDispatcher(
-    [workOrders, tasks, labour, parts, notes, history, maintenanceRequests],
+    [
+      workOrders,
+      tasks,
+      labour,
+      workOrderParts,
+      notes,
+      history,
+      maintenanceRequests,
+      pmSchedules,
+      meters,
+      meterReadings,
+      parts,
+      partMovements,
+    ],
     resolvers,
     idempotency ?? new MemoryIdempotencyStore(),
     shippedRecordRules('physical-operations-cmms'),

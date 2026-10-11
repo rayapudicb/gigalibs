@@ -1,5 +1,22 @@
 # NOW: where the work stands
 
+> **CMMS PM Schedules, Meters & MRO Parts on Metadata Windows (WI-OI-120t Slice 3, 2026-10-11):**
+> Completed Slice 3 of [WI-OI-120t](tasks/WI-OI-120t.md) (**Review**):
+> 1. Defined metadata window baselines in `windows.mjs` and generated: `cmms-schedules.window.json` (route
+>    `/cmms/schedules`, action `generate` for work-order generation), `cmms-meters.window.json` (route `/cmms/meters`,
+>    child tab `readings` over `cmms.meter-readings`), and `cmms-parts.window.json` (route `/cmms/inventory`,
+>    child tab `movements` over `cmms.part-movements`).
+> 2. Implemented 5 record adapters in `cmms-record-adapters.ts`: `cmms.pm-schedules` (permissions: `cmms.pm.read`,
+>    `cmms.pm.write`; `generate` action), `cmms.meters` (`cmms.meters.read`, `cmms.meters.write`), `cmms.meter-readings`
+>    (`parentField: meter-id`), `cmms.parts` (`cmms.parts.read`, `cmms.parts.write`), and `cmms.part-movements`
+>    (`parentField: part-id`). All 12 adapters registered in `RecordDispatcher`.
+> 3. Wired `PmSchedulesService` and `MetersService` into `cmmsRecordDispatcher` and CMMS `AppModule` provider.
+>    Exposed GET `/v1/meters/{id}` route in `MetersController`, `MetersService`, and `module.yaml`.
+> 4. Evidence: 15/15 unit tests pass in `cmms-record-adapters.spec.ts` (257/257 CMMS API tests pass across 31 suites);
+>    role reconciliation tests pass in `r5-cmms-role-reconciliation.spec.ts`; S16 conversion verifier passes
+>    (`PASS physical-operations-cmms: 5 windows, 12 record types, 5 permissions`); `node scripts/verify.mjs --audits`
+>    passes all audits except pre-existing design tokens.
+
 > **CMMS Maintenance Requests Service & Triage Window (WI-OI-120t Slice 2, 2026-10-11):**
 > Completed Slice 2 of [WI-OI-120t](tasks/WI-OI-120t.md) (**Review**):
 > 1. Created canonical forward database migration `000020_canonical_maintenance_requests` for `maintenance_requests`
@@ -223,8 +240,8 @@ canonical programme status is [.pi/WORK_ITEMS.md](WORK_ITEMS.md), WI-OI-120. No 
 3. **[WI-OI-120aa](tasks/WI-OI-120aa.md), [WI-OI-120ab](tasks/WI-OI-120ab.md), [WI-OI-120ac](tasks/WI-OI-120ac.md), and [WI-OI-120ad](tasks/WI-OI-120ad.md) verified in Review.**
    Legacy scope repair, unit-tree proof, role reconciliation, and T3 canonical place identity projection proof are
    complete in source.
-4. **M-CM1 ([120t](tasks/WI-OI-120t.md)): Slice 1 (Work Orders) & Slice 2 (Requests) verified in Review.**
-   Next is Slice 3: Preventive maintenance schedules (with work-order generation), meters (readings child tab), and MRO parts (movements child tab).
+4. **M-CM1 ([120t](tasks/WI-OI-120t.md)): Slice 1 (Work Orders), Slice 2 (Requests) & Slice 3 (Plans & Stock) verified in Review.**
+   Next is Slice 4: Assets and facilities (with specifications by classification and Geospatial place linkage, after T3) and tenant-to-value journey execution.
 
 5. Continue the approved [WI-OI-121a](tasks/WI-OI-121a.md) A0b isolated source-selection/build/SBOM proof under
    the owner-approved dormant-code preview boundary. The selected SSE guard and synthetic path pass, but the

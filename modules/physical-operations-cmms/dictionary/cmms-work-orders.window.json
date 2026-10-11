@@ -883,7 +883,12 @@
         {
           "referenceKey": "part-ref",
           "referenceType": "SEARCH_LOOKUP",
-          "resolverKey": "cmms-parts"
+          "resolverKey": "cmms-parts",
+          "createWith": {
+            "moduleKey": "physical-operations-cmms",
+            "surfaceKey": "cmms-parts",
+            "permission": "cmms.parts.write"
+          }
         },
         {
           "referenceKey": "work-order-ref",

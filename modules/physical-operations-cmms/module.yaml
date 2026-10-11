@@ -251,6 +251,7 @@ spec:
       - { path: 'v1/pm-schedules/{id}', GET: cmms.pm.read, PATCH: cmms.pm.write }
       - { path: 'v1/pm-schedules/{id}/generate', POST: cmms.pm.write }
       - { path: 'v1/meters', GET: cmms.meters.read, POST: cmms.meters.write }
+      - { path: 'v1/meters/{id}', GET: cmms.meters.read }
       - { path: 'v1/meters/{id}/readings', GET: cmms.meters.read, POST: cmms.meters.write }
       - { path: 'v1/parts/search', POST: cmms.parts.read }
       - { path: 'v1/parts/{id}', GET: cmms.parts.read, PATCH: cmms.parts.write }

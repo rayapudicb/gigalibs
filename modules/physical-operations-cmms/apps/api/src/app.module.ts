@@ -75,9 +75,15 @@ const CmmsRecordController = createRecordController({ guard: CmmsAuthorizationGu
     { provide: OUTBOX_RETENTION_CONFIG, useFactory: () => loadOutboxRetentionConfig() },
     {
       provide: RECORD_DISPATCHER,
-      inject: [WorkOrdersService, AssetsService, PartsService, RequestsService],
-      useFactory: (workOrders: WorkOrdersService, assets: AssetsService, parts: PartsService, requests: RequestsService) =>
-        cmmsRecordDispatcher({ workOrders, assets, parts, requests }),
+      inject: [WorkOrdersService, AssetsService, PartsService, RequestsService, PmSchedulesService, MetersService],
+      useFactory: (
+        workOrders: WorkOrdersService,
+        assets: AssetsService,
+        parts: PartsService,
+        requests: RequestsService,
+        pmSchedules: PmSchedulesService,
+        meters: MetersService,
+      ) => cmmsRecordDispatcher({ workOrders, assets, parts, requests, pmSchedules, meters }),
     },
   ],
 })

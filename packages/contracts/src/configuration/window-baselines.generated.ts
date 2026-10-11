@@ -2012,6 +2012,1000 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
   {
     "contractVersion": "1.0",
     "window": {
+      "route": "/cmms/meters",
+      "label": "Meters",
+      "description": "Asset counters, run hours and operational gauges.",
+      "readPermission": "cmms:read"
+    },
+    "definition": {
+      "kind": "APPLICATION_DICTIONARY",
+      "contractVersion": "1.0",
+      "moduleKey": "physical-operations-cmms",
+      "entityKey": "cmms-meters",
+      "surfaceKey": "cmms-meters",
+      "title": "Meters and telemetry",
+      "dictionary": {
+        "packageKey": "cmms-meters-module-baseline",
+        "name": "Meters and telemetry",
+        "version": "1.0.0",
+        "moduleKey": "physical-operations-cmms",
+        "targetEntityKey": "cmms.meters",
+        "entities": [
+          {
+            "entityKey": "cmms.meters",
+            "moduleKey": "physical-operations-cmms",
+            "label": "Meters",
+            "ownership": "MODULE_CORE",
+            "primaryKeyField": "id",
+            "isVersioned": true,
+            "isAuditLogged": true,
+            "isSoftDeletable": false
+          },
+          {
+            "entityKey": "cmms.meter-readings",
+            "moduleKey": "physical-operations-cmms",
+            "label": "Meter readings",
+            "ownership": "MODULE_CORE",
+            "primaryKeyField": "id",
+            "isVersioned": true,
+            "isAuditLogged": true,
+            "isSoftDeletable": false
+          }
+        ],
+        "fields": [
+          {
+            "fieldKey": "name",
+            "entityKey": "cmms.meters",
+            "label": "Meter name",
+            "type": "TEXT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "helpText": "Tag or identifier for this asset sensor."
+          },
+          {
+            "fieldKey": "description",
+            "entityKey": "cmms.meters",
+            "label": "Description",
+            "type": "TEXTAREA",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "asset-id",
+            "entityKey": "cmms.meters",
+            "label": "Asset",
+            "type": "REFERENCE",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "asset-ref"
+          },
+          {
+            "fieldKey": "unit",
+            "entityKey": "cmms.meters",
+            "label": "Unit",
+            "type": "TEXT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "helpText": "e.g. hours, psi, celsius, km"
+          },
+          {
+            "fieldKey": "reading-type",
+            "entityKey": "cmms.meters",
+            "label": "Reading type",
+            "type": "SELECT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "reading-types"
+          },
+          {
+            "fieldKey": "last-reading-value",
+            "entityKey": "cmms.meters",
+            "label": "Latest value",
+            "type": "NUMBER",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "last-reading-at",
+            "entityKey": "cmms.meters",
+            "label": "Latest reading at",
+            "type": "DATETIME",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "min-threshold",
+            "entityKey": "cmms.meters",
+            "label": "Min threshold",
+            "type": "NUMBER",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "max-threshold",
+            "entityKey": "cmms.meters",
+            "label": "Max threshold",
+            "type": "NUMBER",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "meter-id",
+            "entityKey": "cmms.meter-readings",
+            "label": "Meter ID",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "value",
+            "entityKey": "cmms.meter-readings",
+            "label": "Reading value",
+            "type": "NUMBER",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "read-at",
+            "entityKey": "cmms.meter-readings",
+            "label": "Timestamp",
+            "type": "DATETIME",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "notes",
+            "entityKey": "cmms.meter-readings",
+            "label": "Notes",
+            "type": "TEXTAREA",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "recorded-by",
+            "entityKey": "cmms.meter-readings",
+            "label": "Recorded by",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "recorded-at",
+            "entityKey": "cmms.meter-readings",
+            "label": "Recorded at",
+            "type": "DATETIME",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          }
+        ],
+        "relationships": [
+          {
+            "relationshipKey": "meter-readings",
+            "sourceEntityKey": "cmms.meters",
+            "targetEntityKey": "cmms.meter-readings",
+            "type": "ONE_TO_MANY",
+            "foreignKeyField": "meter-id"
+          }
+        ],
+        "references": [
+          {
+            "referenceKey": "reading-types",
+            "referenceType": "VALUE_LIST",
+            "staticValues": [
+              {
+                "value": "GAUGE",
+                "label": "Gauge (continuous)"
+              },
+              {
+                "value": "COUNTER",
+                "label": "Counter (cumulative)"
+              }
+            ]
+          },
+          {
+            "referenceKey": "asset-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "cmms-assets"
+          }
+        ],
+        "validationRules": [],
+        "views": [
+          {
+            "viewKey": "meters",
+            "label": "Meters",
+            "mode": "LIST",
+            "device": "ALL",
+            "defaultSortDirection": "ASC",
+            "tabs": [
+              {
+                "tabKey": "meter",
+                "label": "Meter",
+                "position": 0,
+                "level": 0,
+                "targetEntityKey": "cmms.meters",
+                "sections": [
+                  {
+                    "sectionKey": "main",
+                    "label": "Meter specification",
+                    "collapsible": false,
+                    "defaultCollapsed": false,
+                    "position": 0
+                  },
+                  {
+                    "sectionKey": "telemetry",
+                    "label": "Latest telemetry & thresholds",
+                    "collapsible": false,
+                    "defaultCollapsed": false,
+                    "position": 1
+                  }
+                ],
+                "fields": [
+                  {
+                    "fieldKey": "name",
+                    "position": 0,
+                    "span": 6,
+                    "componentKey": "text-input",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "asset-id",
+                    "position": 1,
+                    "span": 6,
+                    "componentKey": "lookup",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "unit",
+                    "position": 2,
+                    "span": 3,
+                    "componentKey": "text-input",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "reading-type",
+                    "position": 3,
+                    "span": 3,
+                    "componentKey": "select",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "last-reading-value",
+                    "position": 4,
+                    "span": 3,
+                    "componentKey": "number-input",
+                    "sectionKey": "telemetry"
+                  },
+                  {
+                    "fieldKey": "last-reading-at",
+                    "position": 5,
+                    "span": 3,
+                    "componentKey": "datetime-input",
+                    "sectionKey": "telemetry"
+                  },
+                  {
+                    "fieldKey": "min-threshold",
+                    "position": 6,
+                    "span": 3,
+                    "componentKey": "number-input",
+                    "sectionKey": "telemetry"
+                  },
+                  {
+                    "fieldKey": "max-threshold",
+                    "position": 7,
+                    "span": 3,
+                    "componentKey": "number-input",
+                    "sectionKey": "telemetry"
+                  },
+                  {
+                    "fieldKey": "description",
+                    "position": 8,
+                    "span": 12,
+                    "componentKey": "textarea",
+                    "sectionKey": "main"
+                  }
+                ]
+              },
+              {
+                "tabKey": "readings",
+                "label": "Readings",
+                "position": 1,
+                "level": 1,
+                "targetEntityKey": "cmms.meter-readings",
+                "sections": [],
+                "fields": [
+                  {
+                    "fieldKey": "value",
+                    "position": 0,
+                    "span": 3,
+                    "componentKey": "number-input"
+                  },
+                  {
+                    "fieldKey": "read-at",
+                    "position": 1,
+                    "span": 3,
+                    "componentKey": "datetime-input"
+                  },
+                  {
+                    "fieldKey": "notes",
+                    "position": 2,
+                    "span": 4,
+                    "componentKey": "textarea"
+                  },
+                  {
+                    "fieldKey": "recorded-by",
+                    "position": 3,
+                    "span": 2,
+                    "componentKey": "text-input"
+                  }
+                ],
+                "parentRelationshipKey": "meter-readings"
+              }
+            ],
+            "searchFields": [
+              "name",
+              "unit"
+            ],
+            "defaultSortField": "name"
+          }
+        ],
+        "navigation": [],
+        "actions": [],
+        "messages": []
+      }
+    }
+  },
+  {
+    "contractVersion": "1.0",
+    "window": {
+      "route": "/cmms/inventory",
+      "label": "MRO Parts",
+      "description": "Spare parts, inventory balances, and storeroom movements.",
+      "readPermission": "cmms:read"
+    },
+    "definition": {
+      "kind": "APPLICATION_DICTIONARY",
+      "contractVersion": "1.0",
+      "moduleKey": "physical-operations-cmms",
+      "entityKey": "cmms-parts",
+      "surfaceKey": "cmms-parts",
+      "title": "MRO parts and inventory",
+      "dictionary": {
+        "packageKey": "cmms-parts-module-baseline",
+        "name": "MRO parts and inventory",
+        "version": "1.0.0",
+        "moduleKey": "physical-operations-cmms",
+        "targetEntityKey": "cmms.parts",
+        "entities": [
+          {
+            "entityKey": "cmms.parts",
+            "moduleKey": "physical-operations-cmms",
+            "label": "MRO parts",
+            "ownership": "MODULE_CORE",
+            "primaryKeyField": "id",
+            "isVersioned": true,
+            "isAuditLogged": true,
+            "isSoftDeletable": false
+          },
+          {
+            "entityKey": "cmms.part-movements",
+            "moduleKey": "physical-operations-cmms",
+            "label": "Stock movements",
+            "ownership": "MODULE_CORE",
+            "primaryKeyField": "id",
+            "isVersioned": true,
+            "isAuditLogged": true,
+            "isSoftDeletable": false
+          }
+        ],
+        "fields": [
+          {
+            "fieldKey": "part-number",
+            "entityKey": "cmms.parts",
+            "label": "Part number",
+            "type": "TEXT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "helpText": "Stock-keeping unit or manufacturer part number."
+          },
+          {
+            "fieldKey": "name",
+            "entityKey": "cmms.parts",
+            "label": "Part name",
+            "type": "TEXT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "description",
+            "entityKey": "cmms.parts",
+            "label": "Description",
+            "type": "TEXTAREA",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "category",
+            "entityKey": "cmms.parts",
+            "label": "Category",
+            "type": "SELECT",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "part-categories"
+          },
+          {
+            "fieldKey": "unit-of-measure",
+            "entityKey": "cmms.parts",
+            "label": "Unit of measure",
+            "type": "TEXT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "unit-cost",
+            "entityKey": "cmms.parts",
+            "label": "Unit cost",
+            "type": "NUMBER",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "currency-code",
+            "entityKey": "cmms.parts",
+            "label": "Currency",
+            "type": "SELECT",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "currencies"
+          },
+          {
+            "fieldKey": "quantity-on-hand",
+            "entityKey": "cmms.parts",
+            "label": "Quantity on hand",
+            "type": "NUMBER",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "min-quantity",
+            "entityKey": "cmms.parts",
+            "label": "Min stock level",
+            "type": "NUMBER",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "reorder-point",
+            "entityKey": "cmms.parts",
+            "label": "Reorder point",
+            "type": "NUMBER",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "non-stock",
+            "entityKey": "cmms.parts",
+            "label": "Non-stock item",
+            "type": "BOOLEAN",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "bin-location",
+            "entityKey": "cmms.parts",
+            "label": "Bin location",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "barcode",
+            "entityKey": "cmms.parts",
+            "label": "Barcode / UPC",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "part-id",
+            "entityKey": "cmms.part-movements",
+            "label": "Part ID",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "movement-type",
+            "entityKey": "cmms.part-movements",
+            "label": "Movement type",
+            "type": "SELECT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "movement-types"
+          },
+          {
+            "fieldKey": "quantity-delta",
+            "entityKey": "cmms.part-movements",
+            "label": "Quantity change",
+            "type": "NUMBER",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "balance-after",
+            "entityKey": "cmms.part-movements",
+            "label": "Balance after",
+            "type": "NUMBER",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "unit-cost",
+            "entityKey": "cmms.part-movements",
+            "label": "Unit cost",
+            "type": "NUMBER",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "currency-code",
+            "entityKey": "cmms.part-movements",
+            "label": "Currency",
+            "type": "SELECT",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "currencies"
+          },
+          {
+            "fieldKey": "storeroom-id",
+            "entityKey": "cmms.part-movements",
+            "label": "Storeroom ID",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "bin-location",
+            "entityKey": "cmms.part-movements",
+            "label": "Bin location",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "reason",
+            "entityKey": "cmms.part-movements",
+            "label": "Reason",
+            "type": "TEXTAREA",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "created-by",
+            "entityKey": "cmms.part-movements",
+            "label": "Transacted by",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "created-at",
+            "entityKey": "cmms.part-movements",
+            "label": "Transacted at",
+            "type": "DATETIME",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          }
+        ],
+        "relationships": [
+          {
+            "relationshipKey": "part-movements",
+            "sourceEntityKey": "cmms.parts",
+            "targetEntityKey": "cmms.part-movements",
+            "type": "ONE_TO_MANY",
+            "foreignKeyField": "part-id"
+          }
+        ],
+        "references": [
+          {
+            "referenceKey": "part-categories",
+            "referenceType": "VALUE_LIST",
+            "staticValues": [
+              {
+                "value": "MECHANICAL",
+                "label": "Mechanical"
+              },
+              {
+                "value": "ELECTRICAL",
+                "label": "Electrical"
+              },
+              {
+                "value": "HYDRAULIC",
+                "label": "Hydraulic"
+              },
+              {
+                "value": "PNEUMATIC",
+                "label": "Pneumatic"
+              },
+              {
+                "value": "SAFETY",
+                "label": "Safety"
+              },
+              {
+                "value": "CONSUMABLE",
+                "label": "Consumable"
+              },
+              {
+                "value": "OTHER",
+                "label": "Other"
+              }
+            ]
+          },
+          {
+            "referenceKey": "movement-types",
+            "referenceType": "VALUE_LIST",
+            "staticValues": [
+              {
+                "value": "RECEIPT",
+                "label": "Receipt"
+              },
+              {
+                "value": "ISSUE",
+                "label": "Issue"
+              },
+              {
+                "value": "RETURN",
+                "label": "Return"
+              },
+              {
+                "value": "ADJUSTMENT",
+                "label": "Adjustment"
+              },
+              {
+                "value": "CYCLE_COUNT",
+                "label": "Cycle count"
+              }
+            ]
+          },
+          {
+            "referenceKey": "currencies",
+            "referenceType": "VALUE_LIST",
+            "staticValues": [
+              {
+                "value": "USD",
+                "label": "USD"
+              },
+              {
+                "value": "EUR",
+                "label": "EUR"
+              },
+              {
+                "value": "GBP",
+                "label": "GBP"
+              }
+            ]
+          }
+        ],
+        "validationRules": [],
+        "views": [
+          {
+            "viewKey": "parts",
+            "label": "MRO Parts",
+            "mode": "LIST",
+            "device": "ALL",
+            "defaultSortDirection": "ASC",
+            "tabs": [
+              {
+                "tabKey": "part",
+                "label": "Part",
+                "position": 0,
+                "level": 0,
+                "targetEntityKey": "cmms.parts",
+                "sections": [
+                  {
+                    "sectionKey": "main",
+                    "label": "Part details",
+                    "collapsible": false,
+                    "defaultCollapsed": false,
+                    "position": 0
+                  },
+                  {
+                    "sectionKey": "stock",
+                    "label": "Inventory position",
+                    "collapsible": false,
+                    "defaultCollapsed": false,
+                    "position": 1
+                  },
+                  {
+                    "sectionKey": "financial",
+                    "label": "Costing & Stock type",
+                    "collapsible": false,
+                    "defaultCollapsed": false,
+                    "position": 2
+                  },
+                  {
+                    "sectionKey": "location",
+                    "label": "Storeroom & Barcode",
+                    "collapsible": false,
+                    "defaultCollapsed": false,
+                    "position": 3
+                  }
+                ],
+                "fields": [
+                  {
+                    "fieldKey": "part-number",
+                    "position": 0,
+                    "span": 4,
+                    "componentKey": "text-input",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "name",
+                    "position": 1,
+                    "span": 5,
+                    "componentKey": "text-input",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "category",
+                    "position": 2,
+                    "span": 3,
+                    "componentKey": "select",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "quantity-on-hand",
+                    "position": 3,
+                    "span": 3,
+                    "componentKey": "number-input",
+                    "sectionKey": "stock"
+                  },
+                  {
+                    "fieldKey": "unit-of-measure",
+                    "position": 4,
+                    "span": 3,
+                    "componentKey": "text-input",
+                    "sectionKey": "stock"
+                  },
+                  {
+                    "fieldKey": "min-quantity",
+                    "position": 5,
+                    "span": 3,
+                    "componentKey": "number-input",
+                    "sectionKey": "stock"
+                  },
+                  {
+                    "fieldKey": "reorder-point",
+                    "position": 6,
+                    "span": 3,
+                    "componentKey": "number-input",
+                    "sectionKey": "stock"
+                  },
+                  {
+                    "fieldKey": "unit-cost",
+                    "position": 7,
+                    "span": 3,
+                    "componentKey": "number-input",
+                    "sectionKey": "financial"
+                  },
+                  {
+                    "fieldKey": "currency-code",
+                    "position": 8,
+                    "span": 3,
+                    "componentKey": "select",
+                    "sectionKey": "financial"
+                  },
+                  {
+                    "fieldKey": "non-stock",
+                    "position": 9,
+                    "span": 3,
+                    "componentKey": "checkbox",
+                    "sectionKey": "financial"
+                  },
+                  {
+                    "fieldKey": "bin-location",
+                    "position": 10,
+                    "span": 3,
+                    "componentKey": "text-input",
+                    "sectionKey": "location"
+                  },
+                  {
+                    "fieldKey": "barcode",
+                    "position": 11,
+                    "span": 4,
+                    "componentKey": "text-input",
+                    "sectionKey": "location"
+                  },
+                  {
+                    "fieldKey": "description",
+                    "position": 12,
+                    "span": 12,
+                    "componentKey": "textarea",
+                    "sectionKey": "main"
+                  }
+                ]
+              },
+              {
+                "tabKey": "movements",
+                "label": "Stock movements",
+                "position": 1,
+                "level": 1,
+                "targetEntityKey": "cmms.part-movements",
+                "sections": [],
+                "fields": [
+                  {
+                    "fieldKey": "movement-type",
+                    "position": 0,
+                    "span": 2,
+                    "componentKey": "select"
+                  },
+                  {
+                    "fieldKey": "quantity-delta",
+                    "position": 1,
+                    "span": 2,
+                    "componentKey": "number-input"
+                  },
+                  {
+                    "fieldKey": "balance-after",
+                    "position": 2,
+                    "span": 2,
+                    "componentKey": "number-input"
+                  },
+                  {
+                    "fieldKey": "unit-cost",
+                    "position": 3,
+                    "span": 2,
+                    "componentKey": "number-input"
+                  },
+                  {
+                    "fieldKey": "bin-location",
+                    "position": 4,
+                    "span": 2,
+                    "componentKey": "text-input"
+                  },
+                  {
+                    "fieldKey": "reason",
+                    "position": 5,
+                    "span": 2,
+                    "componentKey": "textarea"
+                  }
+                ],
+                "parentRelationshipKey": "part-movements"
+              }
+            ],
+            "searchFields": [
+              "part-number",
+              "name",
+              "bin-location"
+            ],
+            "defaultSortField": "part-number"
+          }
+        ],
+        "navigation": [],
+        "actions": [],
+        "messages": []
+      }
+    }
+  },
+  {
+    "contractVersion": "1.0",
+    "window": {
       "route": "/cmms/requests",
       "label": "Requests",
       "description": "Intake, track and triage maintenance requests.",
@@ -2492,6 +3486,438 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
               "field": "status",
               "operator": "EQ",
               "value": "PENDING"
+            }
+          }
+        ],
+        "messages": []
+      }
+    }
+  },
+  {
+    "contractVersion": "1.0",
+    "window": {
+      "route": "/cmms/schedules",
+      "label": "PM Schedules",
+      "description": "Manage recurring maintenance schedules and trigger preventive work orders.",
+      "readPermission": "cmms:read"
+    },
+    "definition": {
+      "kind": "APPLICATION_DICTIONARY",
+      "contractVersion": "1.0",
+      "moduleKey": "physical-operations-cmms",
+      "entityKey": "cmms-schedules",
+      "surfaceKey": "cmms-schedules",
+      "title": "Preventive maintenance schedules",
+      "dictionary": {
+        "packageKey": "cmms-schedules-module-baseline",
+        "name": "Preventive maintenance schedules",
+        "version": "1.0.0",
+        "moduleKey": "physical-operations-cmms",
+        "targetEntityKey": "cmms.pm-schedules",
+        "entities": [
+          {
+            "entityKey": "cmms.pm-schedules",
+            "moduleKey": "physical-operations-cmms",
+            "label": "Preventive schedules",
+            "ownership": "MODULE_CORE",
+            "primaryKeyField": "id",
+            "isVersioned": true,
+            "isAuditLogged": true,
+            "isSoftDeletable": false
+          }
+        ],
+        "fields": [
+          {
+            "fieldKey": "name",
+            "entityKey": "cmms.pm-schedules",
+            "label": "Schedule name",
+            "type": "TEXT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "helpText": "Descriptive title for this preventive maintenance schedule."
+          },
+          {
+            "fieldKey": "description",
+            "entityKey": "cmms.pm-schedules",
+            "label": "Description",
+            "type": "TEXTAREA",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "asset-id",
+            "entityKey": "cmms.pm-schedules",
+            "label": "Asset",
+            "type": "REFERENCE",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "asset-ref"
+          },
+          {
+            "fieldKey": "is-active",
+            "entityKey": "cmms.pm-schedules",
+            "label": "Active",
+            "type": "BOOLEAN",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "interval-count",
+            "entityKey": "cmms.pm-schedules",
+            "label": "Frequency count",
+            "type": "NUMBER",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "interval-unit",
+            "entityKey": "cmms.pm-schedules",
+            "label": "Frequency unit",
+            "type": "SELECT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "interval-units"
+          },
+          {
+            "fieldKey": "time-zone",
+            "entityKey": "cmms.pm-schedules",
+            "label": "Time zone",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "next-due-at",
+            "entityKey": "cmms.pm-schedules",
+            "label": "Next due date",
+            "type": "DATETIME",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "last-generated-at",
+            "entityKey": "cmms.pm-schedules",
+            "label": "Last generated at",
+            "type": "DATETIME",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "overdue",
+            "entityKey": "cmms.pm-schedules",
+            "label": "Overdue",
+            "type": "BOOLEAN",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "wo-title",
+            "entityKey": "cmms.pm-schedules",
+            "label": "Work order title",
+            "type": "TEXT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "wo-description",
+            "entityKey": "cmms.pm-schedules",
+            "label": "Work order description",
+            "type": "TEXTAREA",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "wo-priority",
+            "entityKey": "cmms.pm-schedules",
+            "label": "Priority",
+            "type": "SELECT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "priorities"
+          },
+          {
+            "fieldKey": "estimated-hours",
+            "entityKey": "cmms.pm-schedules",
+            "label": "Estimated hours",
+            "type": "NUMBER",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "requires-signature",
+            "entityKey": "cmms.pm-schedules",
+            "label": "Requires signature",
+            "type": "BOOLEAN",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          }
+        ],
+        "relationships": [],
+        "references": [
+          {
+            "referenceKey": "interval-units",
+            "referenceType": "VALUE_LIST",
+            "staticValues": [
+              {
+                "value": "DAY",
+                "label": "Day(s)"
+              },
+              {
+                "value": "WEEK",
+                "label": "Week(s)"
+              },
+              {
+                "value": "MONTH",
+                "label": "Month(s)"
+              },
+              {
+                "value": "YEAR",
+                "label": "Year(s)"
+              }
+            ]
+          },
+          {
+            "referenceKey": "priorities",
+            "referenceType": "VALUE_LIST",
+            "staticValues": [
+              {
+                "value": "LOW",
+                "label": "Low"
+              },
+              {
+                "value": "MEDIUM",
+                "label": "Medium"
+              },
+              {
+                "value": "HIGH",
+                "label": "High"
+              },
+              {
+                "value": "EMERGENCY",
+                "label": "Emergency"
+              }
+            ]
+          },
+          {
+            "referenceKey": "asset-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "cmms-assets"
+          }
+        ],
+        "validationRules": [],
+        "views": [
+          {
+            "viewKey": "schedules",
+            "label": "PM Schedules",
+            "mode": "LIST",
+            "device": "ALL",
+            "defaultSortDirection": "ASC",
+            "tabs": [
+              {
+                "tabKey": "schedule",
+                "label": "Schedule",
+                "position": 0,
+                "level": 0,
+                "targetEntityKey": "cmms.pm-schedules",
+                "sections": [
+                  {
+                    "sectionKey": "main",
+                    "label": "Schedule information",
+                    "collapsible": false,
+                    "defaultCollapsed": false,
+                    "position": 0
+                  },
+                  {
+                    "sectionKey": "cadence",
+                    "label": "Recurrence & Scheduling",
+                    "collapsible": false,
+                    "defaultCollapsed": false,
+                    "position": 1
+                  },
+                  {
+                    "sectionKey": "work-order",
+                    "label": "Generated work order template",
+                    "collapsible": false,
+                    "defaultCollapsed": false,
+                    "position": 2
+                  }
+                ],
+                "fields": [
+                  {
+                    "fieldKey": "name",
+                    "position": 0,
+                    "span": 6,
+                    "componentKey": "text-input",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "asset-id",
+                    "position": 1,
+                    "span": 6,
+                    "componentKey": "lookup",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "is-active",
+                    "position": 2,
+                    "span": 3,
+                    "componentKey": "checkbox",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "interval-count",
+                    "position": 3,
+                    "span": 3,
+                    "componentKey": "number-input",
+                    "sectionKey": "cadence"
+                  },
+                  {
+                    "fieldKey": "interval-unit",
+                    "position": 4,
+                    "span": 3,
+                    "componentKey": "select",
+                    "sectionKey": "cadence"
+                  },
+                  {
+                    "fieldKey": "time-zone",
+                    "position": 5,
+                    "span": 3,
+                    "componentKey": "text-input",
+                    "sectionKey": "cadence"
+                  },
+                  {
+                    "fieldKey": "next-due-at",
+                    "position": 6,
+                    "span": 3,
+                    "componentKey": "datetime-input",
+                    "sectionKey": "cadence"
+                  },
+                  {
+                    "fieldKey": "last-generated-at",
+                    "position": 7,
+                    "span": 4,
+                    "componentKey": "datetime-input",
+                    "sectionKey": "cadence"
+                  },
+                  {
+                    "fieldKey": "overdue",
+                    "position": 8,
+                    "span": 2,
+                    "componentKey": "checkbox",
+                    "sectionKey": "cadence"
+                  },
+                  {
+                    "fieldKey": "description",
+                    "position": 9,
+                    "span": 12,
+                    "componentKey": "textarea",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "wo-title",
+                    "position": 10,
+                    "span": 6,
+                    "componentKey": "text-input",
+                    "sectionKey": "work-order"
+                  },
+                  {
+                    "fieldKey": "wo-priority",
+                    "position": 11,
+                    "span": 3,
+                    "componentKey": "select",
+                    "sectionKey": "work-order"
+                  },
+                  {
+                    "fieldKey": "estimated-hours",
+                    "position": 12,
+                    "span": 3,
+                    "componentKey": "number-input",
+                    "sectionKey": "work-order"
+                  },
+                  {
+                    "fieldKey": "requires-signature",
+                    "position": 13,
+                    "span": 3,
+                    "componentKey": "checkbox",
+                    "sectionKey": "work-order"
+                  },
+                  {
+                    "fieldKey": "wo-description",
+                    "position": 14,
+                    "span": 12,
+                    "componentKey": "textarea",
+                    "sectionKey": "work-order"
+                  }
+                ]
+              }
+            ],
+            "searchFields": [
+              "name",
+              "wo-title"
+            ],
+            "defaultSortField": "next-due-at"
+          }
+        ],
+        "navigation": [],
+        "actions": [
+          {
+            "actionKey": "generate",
+            "label": "Generate work order",
+            "type": "COMMAND",
+            "handlerKey": "cmms.pm-schedules.generate",
+            "requiredPermissions": [
+              "cmms.pm.write"
+            ],
+            "confirmationPrompt": "Generate a work order for the current occurrence and advance the schedule?",
+            "visibilityCondition": {
+              "field": "is-active",
+              "operator": "EQ",
+              "value": true
             }
           }
         ],
@@ -3384,7 +4810,12 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
           {
             "referenceKey": "part-ref",
             "referenceType": "SEARCH_LOOKUP",
-            "resolverKey": "cmms-parts"
+            "resolverKey": "cmms-parts",
+            "createWith": {
+              "moduleKey": "physical-operations-cmms",
+              "surfaceKey": "cmms-parts",
+              "permission": "cmms.parts.write"
+            }
           },
           {
             "referenceKey": "work-order-ref",

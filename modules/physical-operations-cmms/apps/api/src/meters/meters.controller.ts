@@ -20,6 +20,12 @@ export class MetersController {
     return this.meters.list(principal, assetId);
   }
 
+  @Get(':meterId')
+  @RequirePermissions('cmms.meters.read')
+  get(@CurrentPrincipal() principal: CmmsPrincipal, @Param('meterId') meterId: string) {
+    return this.meters.get(principal, meterId);
+  }
+
   @Post()
   @RequirePermissions('cmms.meters.write')
   create(@CommandContext() context: CmmsCommandContext, @Body() body: unknown) {

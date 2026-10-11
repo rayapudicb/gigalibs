@@ -60,6 +60,11 @@ export class MetersService {
     });
   }
 
+  async get(principal: CmmsPrincipal, meterId: string): Promise<CmmsMeterV1> {
+    assertUuid(meterId, 'meterId');
+    return this.database.withTenantTransaction(principal.tenantId, (client) => this.meterRow(client, principal, meterId));
+  }
+
   async create(context: CmmsCommandContext, raw: unknown): Promise<CmmsMeterV1> {
     const input = parseInput(CreateCmmsMeterV1Schema, raw);
     return this.database.withTenantTransaction(context.principal.tenantId, async (client) => {
