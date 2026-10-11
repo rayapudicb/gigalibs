@@ -2714,3 +2714,29 @@ widening the card to fix the API faults the proof found.
   - Next BFF gateway tests verified in `apps/workflow-platform/__tests__/cmms-r5-repaired-paths.test.ts` (9/9 pass), validating session authentication, module entitlement, granular permissions (`cmms.parts.write`, `cmms.meters.write`, `cmms.assets.write`), CSRF rejection, and Ed25519-signed upstream token forwarding.
   - Platform verification (`node scripts/verify-sdlc-governance.mjs` and `node scripts/verify.mjs --audits`) passed all governance, API boundary, navigation, package dependencies, layers, and data audits. Only pre-existing design token violations in `AuthAtmosphere.tsx` and `PlantSpatial3DViewer.tsx` remain.
   - Status is in **Review**. Scope gates (`SCOPE_ENFORCING_MODULES`, `PER_ASSIGNMENT_SCOPE_MODULES`) remain `{}` / `[]` until all R5 slices pass.
+
+#### WI-OI-120ac (R5 CMMS Unit-Tree Scope Proof & Manifest Role Reconciliation) implementation verified, 2026-10-11; in Review
+
+- **Scope & Output:**
+  - Hardened manifest role synchronization (`syncDefaultRoles`) in `packages/tenancy-nest/src/tenancy.service.ts` to acquire tenant transaction lock (`SELECT id FROM tenants ... FOR UPDATE`) and validate updated system role permissions against all active assignment holders using `assertScopeEnforced` and `assertScopesConsistent`. Any update granting unproved or conflicting permissions to scoped holders fails closed (422 `ROLE_SCOPE_NOT_ENFORCED`, `ROLE_SCOPE_WORKSPACE_ONLY`, or `ROLE_SCOPE_CONFLICT`).
+  - Created CMMS organization unit-tree projection and version validation helper in `modules/physical-operations-cmms/apps/api/src/auth/organization-projection.ts`:
+    - `expandUnitRoots`: BFS traversal expanding ancestor unit nodes to all descendant unit IDs.
+    - `verifyOrganizationVersion`: asserts that required `tree_version` matches the active converging version; throws 503 `ORGANIZATION_VERSION_PENDING` on mismatch or missing active version, and 403 `CMMS_OUT_OF_SCOPE` on explicitly `DENIED` organization scope.
+  - Updated `modules/physical-operations-cmms/apps/api/src/auth/scope.ts`:
+    - `scopePredicates`: fails closed (`['FALSE']`) for `DENIED` organization scope; expands read roots through the unit-tree projection and applies SQL predicate for unit-scoped callers.
+    - `assertWritableScope`: rejects mutations for `DENIED` callers (403); rejects tenant-wide (null department) mutations for unit-scoped callers; validates that write targets belong to expanded write roots.
+  - Authoritative role reconciliation proof in `packages/contracts/src/rbac/r5-cmms-role-reconciliation.spec.ts`:
+    - Verified all 3 default CMMS roles (`Maintenance technician`, `Maintenance planner`, `Maintenance viewer`) are refused at units and places while explicit scope gate remains empty.
+    - Proved that cross-module permissions (`maps.nodes.read` owned by platform, `workforce:*` owned by gigaops) cause `explicitScopeRefusal` to refuse default roles even if `asset-maintenance.units` were opened.
+    - Proved that pure CMMS core permissions (`cmms:*`, 11 codes) pass `explicitScopeRefusal` 100% once `asset-maintenance.units = true`, while preserving place refusal until T3 place proof.
+- **Verification Evidence:**
+  - 16/16 tests pass in `modules/physical-operations-cmms/apps/api/src/auth/r5-unit-tree-projection.spec.ts`.
+  - 6/6 tests pass in `packages/tenancy-nest/src/default-roles.test.ts`.
+  - 6/6 tests pass in `packages/contracts/src/rbac/r5-cmms-role-reconciliation.spec.ts`.
+  - All 28 CMMS API test suites pass (216/216 tests).
+  - All 12 active tenancy-nest test suites pass (74/74 tests).
+  - All 4 contracts RBAC test suites pass (69/69 tests).
+  - Next BFF tests pass (9/9 tests in `cmms-r5-repaired-paths.test.ts`).
+  - `verify.mjs --audits` passed all platform audits (production data, runtime data, package dependencies, api boundary, navigation, sdlc, layers, manifests, windows). Only pre-existing design token violations in `AuthAtmosphere.tsx` and `PlantSpatial3DViewer.tsx` remain.
+- **Status:** **Review**. Scope gates (`SCOPE_ENFORCING_MODULES`, `PER_ASSIGNMENT_SCOPE_MODULES`) remain closed.
+

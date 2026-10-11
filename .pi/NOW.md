@@ -114,6 +114,14 @@ canonical programme status is [.pi/WORK_ITEMS.md](WORK_ITEMS.md), WI-OI-120. No 
   gateway tests passed 9/9 in `cmms-r5-repaired-paths.test.ts`. Department-scoped storeroom and space mutations fail closed (403),
   and out-of-scope sites/departments are rejected. All platform audits pass except pre-existing design tokens.
   Scope gates remain closed.
+- **[WI-OI-120ac](tasks/WI-OI-120ac.md): implementation verified, in Review.** Unit-tree scope proof, manifest role
+  synchronization hardening and role reconciliation verified. `syncDefaultRoles` locks the tenant and validates
+  scope enforcement and consistency for current holders against explicit scopes. CMMS unit-tree projection expands
+  ancestor units to descendants and fails closed on stale/missing tree versions (503) or DENIED scopes (403). Role
+  reconciliation proves default CMMS roles are refused at units due to companion cross-module permissions (`maps.nodes.read`,
+  `workforce.*`), while pure CMMS core permissions pass unit scope 100% once `asset-maintenance.units = true`.
+  All 28 CMMS API test suites (216 tests), 12 tenancy suites (74 tests), and 4 contracts RBAC suites (69 tests) pass.
+  Scope gates remain closed.
 - **[WI-OI-121](tasks/WI-OI-121.md): G0–G2 discovery in Review.** Owner approved this bounded slice on
   2026-10-08. The [source/boundary review](../docs/plans/gigalibs-assistant-source-and-boundary-review-2026-10-08.md)
   pins a candidate upstream release and fingerprints the owner's downloaded `CopilotKit-main` exactly to later
@@ -165,9 +173,10 @@ canonical programme status is [.pi/WORK_ITEMS.md](WORK_ITEMS.md), WI-OI-120. No 
 2. Run the separately authorized ledger and customer journeys in an identified test workspace with approved
    credentials. These journeys write business test data and remain pending. The full restore rehearsal and G5–G7
    release gates also remain open.
-3. **[WI-OI-120aa](tasks/WI-OI-120aa.md) and [WI-OI-120ab](tasks/WI-OI-120ab.md) verified in Review.** Next is
-   R5 unit proof, role reconciliation, and T3 (canonical place identity) before proceeding to R5 place proof → M-CM1 ([120t](tasks/WI-OI-120t.md)).
-4. **R5 unit proof → T3 (one place identity) → R5 place proof → M-CM1 ([120t](tasks/WI-OI-120t.md))**. M1a is reached only by the accepted scoped
+3. **[WI-OI-120aa](tasks/WI-OI-120aa.md), [WI-OI-120ab](tasks/WI-OI-120ab.md), and [WI-OI-120ac](tasks/WI-OI-120ac.md) verified in Review.**
+   Legacy scope repair, unit-tree proof, role reconciliation and manifest sync hardening are complete in source. Next
+   is T3 (canonical place identity) before proceeding to R5 place proof → M-CM1 ([120t](tasks/WI-OI-120t.md)).
+4. **T3 (one place identity) → R5 place proof → M-CM1 ([120t](tasks/WI-OI-120t.md))**. M1a is reached only by the accepted scoped
    request-to-close journey, not by finishing R2 plumbing. Later phases remain in the platform plan.
 5. Continue the approved [WI-OI-121a](tasks/WI-OI-121a.md) A0b isolated source-selection/build/SBOM proof under
    the owner-approved dormant-code preview boundary. The selected SSE guard and synthetic path pass, but the

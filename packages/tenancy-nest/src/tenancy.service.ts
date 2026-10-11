@@ -715,6 +715,7 @@ export class TenancyService {
     if (wanted.length === 0) return;
     try {
       await prisma.$transaction(async (transaction) => {
+        await transaction.$queryRaw`SELECT "id" FROM "tenants" WHERE "id" = ${tenantId} FOR UPDATE`;
         const existing = await transaction.customRole.findMany({
           where: { tenantId, name: { in: wanted.map((role) => role.name) } },
           select: { id: true, name: true, description: true, isSystem: true, permissions: true },
@@ -746,6 +747,37 @@ export class TenancyService {
             current.description === role.description &&
             JSON.stringify(current.permissions) === JSON.stringify(permissions);
           if (same) continue;
+
+          // WI-OI-120ac: protect current holders against unverified explicit scope widening before updating manifest role
+          const before = await loadRoleGraph(transaction, tenantId);
+          const after = withRole(before, current.id, { permissions });
+          const addedTo = (id: string) => {
+            const was = new Set(expandRole(before, id));
+            return expandRole(after, id).filter((code) => !was.has(code));
+          };
+          const affected = [current.id, ...rolesIncluding(after, current.id)]
+            .map((id) => ({ id, added: addedTo(id) }))
+            .filter((entry) => entry.added.length > 0);
+          if (affected.length > 0) {
+            const holders = await transaction.memberRoleAssignment.findMany({
+              where: { tenantId, customRoleId: { in: affected.map((entry) => entry.id) }, revokedAt: null },
+              select: { userId: true, scope: true, customRoleId: true },
+            });
+            for (const holder of holders) {
+              const added = affected.find((entry) => entry.id === holder.customRoleId)?.added ?? [];
+              if (holder.scope === 'UNITS' || holder.scope === 'PLACES') {
+                const controlPlane = CONTROL_PLANE_PERMISSIONS.filter((code) => holdsPermission(added, code));
+                if (controlPlane.length > 0)
+                  throw new UnprocessableEntityException({
+                    code: 'ROLE_SCOPE_WORKSPACE_ONLY',
+                    message: `A role held at units or places cannot gain workspace permissions (${controlPlane.slice(0, 5).join(', ')}).`,
+                  });
+                assertScopeEnforced(added, holder.scope === 'UNITS' ? 'units' : 'places');
+              }
+              await assertScopesConsistent(transaction, tenantId, holder.userId, { graph: after });
+            }
+          }
+
           await transaction.customRole.update({
             where: { id: current.id },
             data: { description: role.description, permissions },

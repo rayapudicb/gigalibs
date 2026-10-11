@@ -5,8 +5,12 @@ const prismaMock = vi.hoisted(() => {
   const mock: any = {
     tenantModuleEntitlement: { findMany: vi.fn() },
     customRole: { findMany: vi.fn(), create: vi.fn(), update: vi.fn() },
+    customRoleInclusion: { findMany: vi.fn() },
+    memberRoleAssignment: { findMany: vi.fn() },
+    tenantMember: { findUnique: vi.fn() },
     auditLog: { create: vi.fn() },
     $transaction: vi.fn(),
+    $queryRaw: vi.fn(),
   };
   mock.$transaction.mockImplementation(async (callback: any) => callback(mock));
   return mock;
@@ -33,8 +37,12 @@ describe('TenancyService.syncDefaultRoles', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    prismaMock.$queryRaw.mockResolvedValue([]);
     prismaMock.tenantModuleEntitlement.findMany.mockResolvedValue([{ moduleKey: 'analytics-studio' }]);
     prismaMock.customRole.findMany.mockResolvedValue([]);
+    prismaMock.customRoleInclusion.findMany.mockResolvedValue([]);
+    prismaMock.memberRoleAssignment.findMany.mockResolvedValue([]);
+    prismaMock.tenantMember.findUnique.mockResolvedValue(null);
     prismaMock.customRole.create.mockImplementation(async ({ data }: any) => ({ id: `role-${data.name}` }));
   });
 
@@ -92,6 +100,38 @@ describe('TenancyService.syncDefaultRoles', () => {
     await expect(service.syncDefaultRoles(tenantId, [viewer])).rejects.toThrow('database down');
   });
 
+  it('refuses updating a built-in role if an existing holder has explicit unit scope and new permissions are not scope-enforced', async () => {
+    prismaMock.customRole.findMany.mockResolvedValue([
+      { id: 'r-steward', name: 'Analytics data steward', description: 'Old.', isSystem: true, permissions: ['analytics:read'] },
+    ]);
+    // Member holds this role at UNITS
+    prismaMock.memberRoleAssignment.findMany.mockResolvedValue([
+      { userId: 'u-1', scope: 'UNITS', customRoleId: 'r-steward' },
+    ]);
+    // analytics:models:publish is checked by analytics-studio which is not in SCOPE_ENFORCING_MODULES
+    await expect(service.syncDefaultRoles(tenantId, [steward])).rejects.toMatchObject({
+      response: expect.objectContaining({ code: 'ROLE_SCOPE_NOT_ENFORCED' }),
+    });
+    expect(prismaMock.customRole.update).not.toHaveBeenCalled();
+  });
+
+  it('refuses updating a built-in role if an existing holder at units would gain control-plane permissions', async () => {
+    prismaMock.customRole.findMany.mockResolvedValue([
+      { id: 'r-viewer', name: 'Analytics viewer', description: 'Views.', isSystem: true, permissions: ['analytics:read'] },
+    ]);
+    prismaMock.memberRoleAssignment.findMany.mockResolvedValue([
+      { userId: 'u-1', scope: 'UNITS', customRoleId: 'r-viewer' },
+    ]);
+    const driftedViewer = {
+      ...viewer,
+      permissions: ['analytics:read', 'users:create'], // users:create is control-plane
+    };
+    await expect(service.syncDefaultRoles(tenantId, [driftedViewer])).rejects.toMatchObject({
+      response: expect.objectContaining({ code: 'ROLE_SCOPE_WORKSPACE_ONLY' }),
+    });
+    expect(prismaMock.customRole.update).not.toHaveBeenCalled();
+  });
+
   it('ships the three Analytics roles of ADR-0016 F16 from the manifest', () => {
     const analytics = moduleDefaultRoles.filter((role) => role.catalogKey === 'analytics-studio');
     expect(analytics.map((role) => [role.name, [...role.permissions].sort()])).toEqual([
@@ -104,3 +144,4 @@ describe('TenancyService.syncDefaultRoles', () => {
     ]);
   });
 });
+
