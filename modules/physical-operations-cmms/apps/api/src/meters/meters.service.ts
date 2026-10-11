@@ -256,7 +256,23 @@ export class MetersService {
           values,
         );
         const meter = locked.rows[0];
-        if (!meter) continue; // Skip inaccessible or deleted meters in batch
+        if (!meter) {
+          const tenantCheck = await client.query<{ department_id: string | null; site_ref: string | null }>(
+            `SELECT a.department_id, a.site_ref
+               FROM gigalibs_cmms.meters m
+               JOIN gigalibs_cmms.assets a ON a.tenant_id = m.tenant_id AND a.id = m.asset_id
+              WHERE m.tenant_id = $1 AND m.id = $2 AND a.archived_at IS NULL`,
+            [context.principal.tenantId, item.meterId],
+          );
+          if (tenantCheck.rows[0]) {
+            assertWritableScope(context.principal, {
+              departmentId: tenantCheck.rows[0].department_id,
+              siteRef: tenantCheck.rows[0].site_ref,
+            });
+          }
+          continue; // Skip inaccessible or deleted meters in batch
+        }
+        assertWritableScope(context.principal, { departmentId: meter.asset_department_id, siteRef: meter.asset_site_ref });
 
         // Replay check
         const replay = await client.query(
@@ -334,15 +350,22 @@ export class MetersService {
     if (meterId !== undefined) assertUuid(meterId, 'meterId');
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
       const values: unknown[] = [principal.tenantId];
-      let sql = `SELECT t.*, jp.title AS job_plan_title
-                   FROM gigalibs_cmms.cmms_meter_triggers t
-                   LEFT JOIN gigalibs_cmms.cmms_job_plans jp ON jp.tenant_id = t.tenant_id AND jp.id = t.job_plan_id
-                  WHERE t.tenant_id = $1`;
+      const where = [
+        't.tenant_id = $1',
+        'a.archived_at IS NULL',
+        ...scopePredicates(principal, values, 'a.'),
+      ];
       if (meterId) {
         values.push(meterId);
-        sql += ` AND t.meter_id = $${values.length}`;
+        where.push(`t.meter_id = $${values.length}`);
       }
-      sql += ` ORDER BY t.created_at DESC`;
+      const sql = `SELECT t.*, jp.title AS job_plan_title
+                     FROM gigalibs_cmms.cmms_meter_triggers t
+                     JOIN gigalibs_cmms.meters m ON m.tenant_id = t.tenant_id AND m.id = t.meter_id
+                     JOIN gigalibs_cmms.assets a ON a.tenant_id = m.tenant_id AND a.id = m.asset_id
+                     LEFT JOIN gigalibs_cmms.cmms_job_plans jp ON jp.tenant_id = t.tenant_id AND jp.id = t.job_plan_id
+                    WHERE ${where.join(' AND ')}
+                    ORDER BY t.created_at DESC`;
       const result = await client.query(sql, values);
       return { items: result.rows.map(mapTrigger) };
     });
@@ -351,7 +374,19 @@ export class MetersService {
   async createTrigger(context: CmmsCommandContext, raw: unknown): Promise<CmmsMeterTriggerV1> {
     const input = parseInput(CreateCmmsMeterTriggerV1Schema, raw);
     return this.database.withTenantTransaction(context.principal.tenantId, async (client) => {
-      await this.meterRow(client, context.principal, input.meterId);
+      const values: unknown[] = [context.principal.tenantId, input.meterId];
+      const where = ['m.tenant_id = $1', 'm.id = $2', 'a.archived_at IS NULL', ...scopePredicates(context.principal, values, 'a.')];
+      const meterRes = await client.query(
+        `SELECT m.id, a.department_id, a.site_ref
+           FROM gigalibs_cmms.meters m
+           JOIN gigalibs_cmms.assets a ON a.tenant_id = m.tenant_id AND a.id = m.asset_id
+          WHERE ${where.join(' AND ')}`,
+        values,
+      );
+      if (!meterRes.rows[0]) notFound('The meter');
+      const meter = meterRes.rows[0];
+      assertWritableScope(context.principal, { departmentId: meter.department_id, siteRef: meter.site_ref });
+
       if (input.jobPlanId) {
         const jp = await client.query(
           `SELECT id FROM gigalibs_cmms.cmms_job_plans WHERE tenant_id = $1 AND id = $2`,
@@ -390,7 +425,7 @@ export class MetersService {
         aggregateVersion: 1,
         payload: { meterId: input.meterId, triggerType: input.triggerType },
       });
-      return this.visibleTrigger(client, context.principal.tenantId, id);
+      return (await this.visibleTriggerRow(client, context.principal, id)).trigger;
     });
   }
 
@@ -398,7 +433,9 @@ export class MetersService {
     assertUuid(id, 'triggerId');
     const input = parseInput(UpdateCmmsMeterTriggerV1Schema, raw);
     return this.database.withTenantTransaction(context.principal.tenantId, async (client) => {
-      const current = await this.visibleTrigger(client, context.principal.tenantId, id);
+      const current = await this.visibleTriggerRow(client, context.principal, id, { lock: true });
+      assertWritableScope(context.principal, { departmentId: current.assetDepartmentId, siteRef: current.assetSiteRef });
+
       const result = await client.query<{ version: number }>(
         `UPDATE gigalibs_cmms.cmms_meter_triggers
             SET threshold_type = $4, threshold_value = $5, interval_value = $6,
@@ -410,13 +447,13 @@ export class MetersService {
           context.principal.tenantId,
           id,
           input.expectedVersion,
-          input.thresholdType === undefined ? current.thresholdType : (input.thresholdType ?? null),
-          input.thresholdValue === undefined ? current.thresholdValue : (input.thresholdValue ?? null),
-          input.intervalValue === undefined ? current.intervalValue : (input.intervalValue ?? null),
-          input.jobPlanId === undefined ? current.jobPlanId : (input.jobPlanId ?? null),
-          input.workOrderTitle ?? current.workOrderTitle,
-          input.workOrderPriority ?? current.workOrderPriority,
-          input.isActive === undefined ? current.isActive : input.isActive,
+          input.thresholdType === undefined ? current.trigger.thresholdType : (input.thresholdType ?? null),
+          input.thresholdValue === undefined ? current.trigger.thresholdValue : (input.thresholdValue ?? null),
+          input.intervalValue === undefined ? current.trigger.intervalValue : (input.intervalValue ?? null),
+          input.jobPlanId === undefined ? current.trigger.jobPlanId : (input.jobPlanId ?? null),
+          input.workOrderTitle ?? current.trigger.workOrderTitle,
+          input.workOrderPriority ?? current.trigger.workOrderPriority,
+          input.isActive === undefined ? current.trigger.isActive : input.isActive,
           context.principal.subject,
           context.correlationId,
         ],
@@ -429,13 +466,15 @@ export class MetersService {
         aggregateVersion: Number(result.rows[0]!.version),
         payload: {},
       });
-      return this.visibleTrigger(client, context.principal.tenantId, id);
+      return (await this.visibleTriggerRow(client, context.principal, id)).trigger;
     });
   }
 
   async deleteTrigger(context: CmmsCommandContext, id: string): Promise<void> {
     assertUuid(id, 'triggerId');
     return this.database.withTenantTransaction(context.principal.tenantId, async (client) => {
+      const current = await this.visibleTriggerRow(client, context.principal, id, { lock: true });
+      assertWritableScope(context.principal, { departmentId: current.assetDepartmentId, siteRef: current.assetSiteRef });
       const result = await client.query<{ version: number }>(
         `DELETE FROM gigalibs_cmms.cmms_meter_triggers WHERE tenant_id = $1 AND id = $2 RETURNING version`,
         [context.principal.tenantId, id],
@@ -589,16 +628,39 @@ export class MetersService {
     return mapMeter(result.rows[0]);
   }
 
-  private async visibleTrigger(client: PoolClient, tenantId: string, id: string): Promise<CmmsMeterTriggerV1> {
+  private async visibleTriggerRow(
+    client: PoolClient,
+    principal: CmmsPrincipal,
+    id: string,
+    options?: { readonly lock?: boolean },
+  ): Promise<{
+    readonly trigger: CmmsMeterTriggerV1;
+    readonly assetDepartmentId: string | null;
+    readonly assetSiteRef: string | null;
+  }> {
+    const values: unknown[] = [principal.tenantId, id];
+    const where = [
+      't.tenant_id = $1',
+      't.id = $2',
+      'a.archived_at IS NULL',
+      ...scopePredicates(principal, values, 'a.'),
+    ];
     const result = await client.query(
-      `SELECT t.*, jp.title AS job_plan_title
+      `SELECT t.*, jp.title AS job_plan_title,
+              a.department_id AS asset_department_id, a.site_ref AS asset_site_ref
          FROM gigalibs_cmms.cmms_meter_triggers t
+         JOIN gigalibs_cmms.meters m ON m.tenant_id = t.tenant_id AND m.id = t.meter_id
+         JOIN gigalibs_cmms.assets a ON a.tenant_id = m.tenant_id AND a.id = m.asset_id
          LEFT JOIN gigalibs_cmms.cmms_job_plans jp ON jp.tenant_id = t.tenant_id AND jp.id = t.job_plan_id
-        WHERE t.tenant_id = $1 AND t.id = $2`,
-      [tenantId, id],
+        WHERE ${where.join(' AND ')}${options?.lock ? ' FOR UPDATE OF t' : ''}`,
+      values,
     );
     if (!result.rows[0]) notFound('Meter trigger');
-    return mapTrigger(result.rows[0]);
+    return {
+      trigger: mapTrigger(result.rows[0]),
+      assetDepartmentId: result.rows[0].asset_department_id,
+      assetSiteRef: result.rows[0].asset_site_ref,
+    };
   }
 }
 

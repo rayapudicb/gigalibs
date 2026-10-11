@@ -12,6 +12,7 @@ import {
   type CmmsJobPlanV1,
 } from '@gigalibs/contracts';
 import type { CmmsCommandContext, CmmsPrincipal } from '../auth/authorization.js';
+import { assertWritableScope } from '../auth/scope.js';
 import {
   assertUuid,
   iso,
@@ -333,11 +334,16 @@ export class ReliabilityService {
     return this.database.withTenantTransaction(context.principal.tenantId, async (client) => {
       const plan = await this.fetchJobPlanWithTasks(client, context.principal.tenantId, jobPlanId);
 
-      const woRow = await client.query<{ id: string; status: string; version: number }>(
-        `SELECT id, status, version FROM gigalibs_cmms.work_orders WHERE tenant_id = $1 AND id = $2 FOR UPDATE`,
+      const woRow = await client.query<{ id: string; status: string; version: number; department_id: string | null; site_ref: string | null }>(
+        `SELECT id, status, version, department_id, site_ref
+           FROM gigalibs_cmms.work_orders WHERE tenant_id = $1 AND id = $2 FOR UPDATE`,
         [context.principal.tenantId, workOrderId],
       );
       if (!woRow.rows[0]) notFound('Work order');
+      assertWritableScope(context.principal, {
+        departmentId: woRow.rows[0]!.department_id,
+        siteRef: woRow.rows[0]!.site_ref,
+      });
       // WI-OI-120h: the work order's version is checked and advanced, like every other work-order command.
       if (woRow.rows[0].version !== input.expectedVersion) versionConflict('The work order');
       if (!['OPEN', 'IN_PROGRESS', 'ON_HOLD'].includes(woRow.rows[0].status)) {
@@ -392,11 +398,16 @@ export class ReliabilityService {
     assertUuid(workOrderId, 'workOrderId');
     const input = parseInput(RecordCmmsFailureAttributionV1Schema, raw);
     return this.database.withTenantTransaction(context.principal.tenantId, async (client) => {
-      const woRow = await client.query<{ id: string; version: number }>(
-        `SELECT id, version FROM gigalibs_cmms.work_orders WHERE tenant_id = $1 AND id = $2 FOR UPDATE`,
+      const woRow = await client.query<{ id: string; version: number; department_id: string | null; site_ref: string | null }>(
+        `SELECT id, version, department_id, site_ref
+           FROM gigalibs_cmms.work_orders WHERE tenant_id = $1 AND id = $2 FOR UPDATE`,
         [context.principal.tenantId, workOrderId],
       );
       if (!woRow.rows[0]) notFound('Work order');
+      assertWritableScope(context.principal, {
+        departmentId: woRow.rows[0]!.department_id,
+        siteRef: woRow.rows[0]!.site_ref,
+      });
       // WI-OI-120h: the work order's version is checked and advanced, like every other work-order command.
       if (woRow.rows[0].version !== input.expectedVersion) versionConflict('The work order');
 

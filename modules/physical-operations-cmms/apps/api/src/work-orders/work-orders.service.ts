@@ -486,14 +486,20 @@ export class WorkOrdersService {
     const input = parseInput(IssueCmmsPartV1Schema, raw);
     return this.database.withTenantTransaction(context.principal.tenantId, async (client) => {
       await this.lockForChange(client, context, workOrderId, null, EXECUTION_STATUSES);
+      const part = await this.parts.visiblePartRow(client, context.principal, input.partId, { lock: false });
+      assertWritableScope(context.principal, { departmentId: part.department_id, siteRef: part.site_ref });
+      if (input.storeroomId) await this.parts.assertWritableStoreroom(client, context.principal, input.storeroomId);
       const replay = await this.parts.replayedMovement(client, context.principal.tenantId, input.idempotencyKey, input.partId);
       if (replay) {
-        if (replay.workOrderId !== workOrderId) {
-          throw new ConflictException({ code: 'CMMS_IDEMPOTENCY_KEY_REUSED', message: 'This request key was used for another work order.' });
+        if (
+          replay.workOrderId !== workOrderId || replay.movementType !== 'ISSUE' ||
+          replay.quantityDelta !== -input.quantity || replay.storeroomId !== (input.storeroomId ?? null) ||
+          replay.binLocation !== (input.binLocation ?? null)
+        ) {
+          throw new ConflictException({ code: 'CMMS_IDEMPOTENCY_KEY_REUSED', message: 'This request key was used for a different stock movement.' });
         }
         return this.detailWithClient(client, context.principal, workOrderId);
       }
-      const part = await this.parts.visiblePartRow(client, context.principal, input.partId, { lock: false });
       const movement = await this.parts.applyMovement(client, context, {
         partId: input.partId,
         movementType: 'ISSUE',

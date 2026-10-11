@@ -9,6 +9,7 @@ import {
 } from '@gigalibs/contracts';
 import type { PoolClient } from 'pg';
 import type { CmmsCommandContext, CmmsPrincipal } from '../auth/authorization.js';
+import { assertWritableScope, scopePredicates } from '../auth/scope.js';
 import {
   assertUuid,
   iso,
@@ -42,9 +43,11 @@ export class EamSpacesService {
 
   async create(context: CmmsCommandContext, raw: unknown): Promise<CmmsSpaceV1> {
     const input = parseInput(CreateCmmsSpaceV1Schema, raw);
+    assertWritableScope(context.principal, { departmentId: null, siteRef: input.siteRef ?? null });
     return this.database.withTenantTransaction(context.principal.tenantId, async (client) => {
       if (input.parentSpaceId) {
-        await this.visibleSpace(client, context.principal.tenantId, input.parentSpaceId);
+        const parent = await this.visibleSpace(client, context.principal, input.parentSpaceId);
+        assertWritableScope(context.principal, { departmentId: null, siteRef: parent.siteRef });
       }
       try {
         const result = await client.query<{ id: string }>(
@@ -80,7 +83,7 @@ export class EamSpacesService {
           aggregateVersion: 1,
           payload: { code: input.code, name: input.name, spaceType: input.spaceType },
         });
-        return this.visibleSpace(client, context.principal.tenantId, id);
+        return this.visibleSpace(client, context.principal, id);
       } catch (error) {
         translateConstraint(error, { unique: `A space with code ${input.code} already exists.` });
       }
@@ -90,7 +93,7 @@ export class EamSpacesService {
   async get(principal: CmmsPrincipal, spaceId: string): Promise<CmmsSpaceV1> {
     assertUuid(spaceId, 'spaceId');
     return this.database.withTenantTransaction(principal.tenantId, (client) =>
-      this.visibleSpace(client, principal.tenantId, spaceId),
+      this.visibleSpace(client, principal, spaceId),
     );
   }
 
@@ -98,12 +101,17 @@ export class EamSpacesService {
     assertUuid(spaceId, 'spaceId');
     const input = parseInput(UpdateCmmsSpaceV1Schema, raw);
     return this.database.withTenantTransaction(context.principal.tenantId, async (client) => {
-      const current = await this.visibleSpace(client, context.principal.tenantId, spaceId);
+      const current = await this.visibleSpace(client, context.principal, spaceId);
+      assertWritableScope(context.principal, { departmentId: null, siteRef: current.siteRef });
+      if (input.siteRef !== undefined && input.siteRef !== current.siteRef) {
+        assertWritableScope(context.principal, { departmentId: null, siteRef: input.siteRef ?? null });
+      }
       if (current.version !== input.expectedVersion) versionConflict('The space');
 
       const parentSpaceId = input.parentSpaceId === undefined ? current.parentSpaceId : input.parentSpaceId;
       if (parentSpaceId && parentSpaceId !== current.parentSpaceId) {
-        await this.visibleSpace(client, context.principal.tenantId, parentSpaceId);
+        const parent = await this.visibleSpace(client, context.principal, parentSpaceId);
+        assertWritableScope(context.principal, { departmentId: null, siteRef: parent.siteRef });
         await assertNoSpaceCycle(client, context.principal.tenantId, spaceId, parentSpaceId);
       }
 
@@ -151,14 +159,15 @@ export class EamSpacesService {
         payload: { name: input.name ?? current.name, parentSpaceId },
       });
 
-      return this.visibleSpace(client, context.principal.tenantId, spaceId);
+      return this.visibleSpace(client, context.principal, spaceId);
     });
   }
 
   async delete(context: CmmsCommandContext, spaceId: string): Promise<{ deleted: boolean }> {
     assertUuid(spaceId, 'spaceId');
     return this.database.withTenantTransaction(context.principal.tenantId, async (client) => {
-      const space = await this.visibleSpace(client, context.principal.tenantId, spaceId);
+      const space = await this.visibleSpace(client, context.principal, spaceId);
+      assertWritableScope(context.principal, { departmentId: null, siteRef: space.siteRef });
 
       // Guard: Cannot delete if child spaces exist
       const childCount = await client.query<{ count: string }>(
@@ -199,12 +208,18 @@ export class EamSpacesService {
 
   async tree(principal: CmmsPrincipal): Promise<readonly CmmsSpaceTreeV1[]> {
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
+      const values: unknown[] = [principal.tenantId];
+      const where = ['s.tenant_id = $1'];
+      if (principal.placeScope.mode === 'PLACES') {
+        values.push([...principal.placeScope.placeIds]);
+        where.push(`s.site_ref = ANY($${values.length}::uuid[])`);
+      }
       const result = await client.query(
         `SELECT ${SPACE_COLUMNS}
            FROM gigalibs_cmms.cmms_spaces s
-          WHERE s.tenant_id = $1
+          WHERE ${where.join(' AND ')}
           ORDER BY s.floor_number ASC NULLS FIRST, s.code ASC`,
-        [principal.tenantId],
+        values,
       );
 
       const spaces = result.rows.map(mapSpace);
@@ -215,13 +230,20 @@ export class EamSpacesService {
   async getAssetsInSpace(principal: CmmsPrincipal, spaceId: string): Promise<readonly CmmsAssetV1[]> {
     assertUuid(spaceId, 'spaceId');
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
-      await this.visibleSpace(client, principal.tenantId, spaceId);
+      await this.visibleSpace(client, principal, spaceId);
+      const values: unknown[] = [principal.tenantId, spaceId];
+      const where = [
+        'a.tenant_id = $1',
+        'a.space_id = $2',
+        'a.archived_at IS NULL',
+        ...scopePredicates(principal, values, 'a.'),
+      ];
       const result = await client.query(
         `SELECT ${ASSET_COLUMNS}
            FROM gigalibs_cmms.assets a
-          WHERE a.tenant_id = $1 AND a.space_id = $2 AND a.archived_at IS NULL
+          WHERE ${where.join(' AND ')}
           ORDER BY a.name ASC`,
-        [principal.tenantId, spaceId],
+        values,
       );
       return result.rows.map(mapAsset);
     });
@@ -231,7 +253,8 @@ export class EamSpacesService {
     assertUuid(spaceId, 'spaceId');
     const input = parseInput(UploadCadLayerV1Schema, raw);
     return this.database.withTenantTransaction(context.principal.tenantId, async (client) => {
-      const current = await this.visibleSpace(client, context.principal.tenantId, spaceId);
+      const current = await this.visibleSpace(client, context.principal, spaceId);
+      assertWritableScope(context.principal, { departmentId: null, siteRef: current.siteRef });
       await client.query(
         `UPDATE gigalibs_cmms.cmms_spaces
             SET cad_layer = $3::jsonb,
@@ -257,17 +280,23 @@ export class EamSpacesService {
         payload: { spaceId },
       });
 
-      return this.visibleSpace(client, context.principal.tenantId, spaceId);
+      return this.visibleSpace(client, context.principal, spaceId);
     });
   }
 
-  private async visibleSpace(client: PoolClient, tenantId: string, spaceId: string): Promise<CmmsSpaceV1> {
+  private async visibleSpace(client: PoolClient, principal: CmmsPrincipal, spaceId: string): Promise<CmmsSpaceV1> {
     assertUuid(spaceId, 'spaceId');
+    const values: unknown[] = [principal.tenantId, spaceId];
+    const where = ['s.tenant_id = $1', 's.id = $2'];
+    if (principal.placeScope.mode === 'PLACES') {
+      values.push([...principal.placeScope.placeIds]);
+      where.push(`s.site_ref = ANY($${values.length}::uuid[])`);
+    }
     const result = await client.query(
       `SELECT ${SPACE_COLUMNS}
          FROM gigalibs_cmms.cmms_spaces s
-        WHERE s.tenant_id = $1 AND s.id = $2`,
-      [tenantId, spaceId],
+        WHERE ${where.join(' AND ')}`,
+      values,
     );
     if (!result.rows[0]) notFound('Space');
     return mapSpace(result.rows[0]);

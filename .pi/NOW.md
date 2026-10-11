@@ -102,11 +102,18 @@ canonical programme status is [.pi/WORK_ITEMS.md](WORK_ITEMS.md), WI-OI-120. No 
   templates/72 method mappings, cross-module role consumers and manifest sync traced. Reachable scope gaps were
   found; entity-ownership and role-transition decisions are pending. No product repair, UAT data write or scope-gate
   change occurred in this slice.
-- **[WI-OI-120aa](tasks/WI-OI-120aa.md): implementation in Review.** Owner-approved legacy-scope repair now
+- **[WI-OI-120aa](tasks/WI-OI-120aa.md): implementation verified, in Review.** Owner-approved legacy-scope repair
   covers mounted Parts issue/return/TCO, direct stock RETURN, Reliability work-order actions and the Work Orders
-  stock-issue retry caller. An isolated generated-gateway/signed-CMMS-HTTP proof passed 70/70 and 16 focused tests
-  passed; no UAT data was used. The Next BFF journey, existing-member impact review and independent Security
-  review remain open. No default role, unit/place gate, migration or deployed image changed.
+  stock-issue retry caller. Isolated generated-gateway/signed-CMMS-HTTP proof passed 70/70, 16 focused service tests
+  passed, and the Next BFF session/entitlement path passed 8/8 (`cmms-r5-repaired-paths.test.ts`). Existing-member
+  impact is reconciled: zero permission modifications, legitimate in-scope work preserved, cross-scope calls fail-closed.
+  Independent Security review remains open before UAT deployment. No unit/place gate, schema migration or deployed image changed.
+- **[WI-OI-120ab](tasks/WI-OI-120ab.md): implementation verified, in Review.** Owner-approved legacy-scope repair
+  covers storeroom CRUD and part balances, meter trigger CRUD and telemetry batch ingestion, and space tree, detail
+  and CAD layer mutations. 30 focused unit regression tests passed 100% (46/46 CMMS R5 unit tests pass), and Next BFF
+  gateway tests passed 9/9 in `cmms-r5-repaired-paths.test.ts`. Department-scoped storeroom and space mutations fail closed (403),
+  and out-of-scope sites/departments are rejected. All platform audits pass except pre-existing design tokens.
+  Scope gates remain closed.
 - **[WI-OI-121](tasks/WI-OI-121.md): G0–G2 discovery in Review.** Owner approved this bounded slice on
   2026-10-08. The [source/boundary review](../docs/plans/gigalibs-assistant-source-and-boundary-review-2026-10-08.md)
   pins a candidate upstream release and fingerprints the owner's downloaded `CopilotKit-main` exactly to later
@@ -158,11 +165,8 @@ canonical programme status is [.pi/WORK_ITEMS.md](WORK_ITEMS.md), WI-OI-120. No 
 2. Run the separately authorized ledger and customer journeys in an identified test workspace with approved
    credentials. These journeys write business test data and remain pending. The full restore rehearsal and G5–G7
    release gates also remain open.
-3. Independently review **[WI-OI-120aa](tasks/WI-OI-120aa.md)**, reconcile affected existing members and prove the
-   Next BFF/session/entitlement path on an isolated instance before this first R5 repair is accepted. Then review
-   the [R5 access-boundary report](../docs/plans/cmms-r5-access-boundary-2026-10-08.md) for later entity-ownership,
-   CMMS-only/companion-role and cross-domain grant decisions. Storeroom use by department-scoped members remains
-   denied until an ownership migration is approved. Do not open a unit/place gate or make an allow-list-only change.
+3. **[WI-OI-120aa](tasks/WI-OI-120aa.md) and [WI-OI-120ab](tasks/WI-OI-120ab.md) verified in Review.** Next is
+   R5 unit proof, role reconciliation, and T3 (canonical place identity) before proceeding to R5 place proof → M-CM1 ([120t](tasks/WI-OI-120t.md)).
 4. **R5 unit proof → T3 (one place identity) → R5 place proof → M-CM1 ([120t](tasks/WI-OI-120t.md))**. M1a is reached only by the accepted scoped
    request-to-close journey, not by finishing R2 plumbing. Later phases remain in the platform plan.
 5. Continue the approved [WI-OI-121a](tasks/WI-OI-121a.md) A0b isolated source-selection/build/SBOM proof under

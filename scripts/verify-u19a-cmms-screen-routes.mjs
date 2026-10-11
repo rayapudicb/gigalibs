@@ -7,7 +7,9 @@
 //   for and the gateway does not grant fails here;
 // - lists answer `{ items }`, which is what the screens read;
 // - the deletes answer 204 or 200, and PUT updates are applied.
-// It also checks that another tenant's record answers 404 and that a read-only user cannot write.
+// WI-OI-120aa adds scoped Parts/Reliability/Work Orders paths, denial rollback and concurrent retry checks.
+// It also checks that another tenant's record answers 404 and that a read-only user cannot write. It checks the
+// generated gateway allow-list and the signed module HTTP API, not a browser session or the live Next.js BFF.
 // Needs PROOF_DATABASE_URL (never the UAT instance) and a built CMMS API (`pnpm build`).
 import { generateKeyPairSync, randomUUID } from 'node:crypto';
 import { mkdirSync, mkdtempSync, readFileSync, readdirSync, cpSync, symlinkSync } from 'node:fs';
@@ -120,7 +122,7 @@ if (!ready) {
 
 const tenantA = randomUUID();
 const tenantB = randomUUID();
-function token(tenantId, permissions) {
+function token(tenantId, permissions, scope) {
   const subject = {
     user: { id: randomUUID() },
     tenant: { id: tenantId, entitlements: [{ moduleKey: MODULE_KEY, status: 'ENABLED', version: '1' }] },
@@ -129,22 +131,26 @@ function token(tenantId, permissions) {
     permissions,
     authVersion: 1,
     session: { id: randomUUID() },
-    orgScope: { mode: 'FLAT_TENANT' },
-    spatialScope: { mode: 'UNBOUNDED' },
+    orgScope: scope?.departmentIds
+      ? { mode: 'SCOPED_DEPARTMENTS', departmentIds: scope.departmentIds }
+      : { mode: 'FLAT_TENANT' },
+    spatialScope: scope?.placeIds
+      ? { mode: 'SCOPED_PLACES', placeIds: scope.placeIds }
+      : { mode: 'UNBOUNDED' },
     organizationScope: { mode: 'TENANT' },
   };
   return signPlatformContextToken(buildPlatformContext(subject, MODULE_KEY, gateway.audience), privateKeyPem);
 }
 
 /** One screen call: allowed by the gateway for its method, signed with only the permission the gateway requires. */
-async function screen(method, path, body, { tenantId = tenantA, permissions } = {}) {
+async function screen(method, path, body, { tenantId = tenantA, permissions, scope } = {}) {
   const required = gatewayPermission(method, path);
   const granted = permissions ?? (required ? [required].flat().slice(0, 1) : []);
   const response = await fetch(`${BASE}/${path}`, {
     method,
     headers: {
       Accept: 'application/json',
-      Authorization: `Bearer ${token(tenantId, granted)}`,
+      Authorization: `Bearer ${token(tenantId, granted, scope)}`,
       'X-Correlation-Id': randomUUID(),
       ...(body ? { 'Content-Type': 'application/json' } : {}),
     },
@@ -311,6 +317,129 @@ try {
   check("another tenant's classification answers 404", otherTenant.status === 404, shown(otherTenant));
   const readOnly = await screen('POST', 'v1/classifications', { code: 'NOPE', name: 'Refused' }, { permissions: ['cmms.assets.read'] });
   check('a read-only user cannot create a classification (403)', readOnly.status === 403, shown(readOnly));
+
+  // 12. WI-OI-120aa: two departments/sites and two tenants, using real signed contexts through routed CMMS HTTP.
+  // All records are isolated proof data. The old U19a tenant-wide cases above remain as compatibility coverage.
+  const northSite = randomUUID();
+  const southSite = randomUUID();
+  const northScope = { departmentIds: ['north'], placeIds: [northSite] };
+  const southScope = { departmentIds: ['south'], placeIds: [southSite] };
+  const northPart = await screen('POST', 'v1/parts', {
+    partNumber: 'R5-NORTH', name: 'North seal', currencyCode: 'USD', openingQuantity: 5,
+    departmentId: 'north', siteRef: northSite,
+  });
+  const southPart = await screen('POST', 'v1/parts', {
+    partNumber: 'R5-SOUTH', name: 'South seal', currencyCode: 'USD', openingQuantity: 5,
+    departmentId: 'south', siteRef: southSite,
+  });
+  const northOrder = await screen('POST', 'v1/work-orders', {
+    requestKey: randomUUID(), type: 'REACTIVE', title: 'North scoped repair', departmentId: 'north', siteRef: northSite,
+  });
+  const southOrder = await screen('POST', 'v1/work-orders', {
+    requestKey: randomUUID(), type: 'REACTIVE', title: 'South scoped repair', departmentId: 'south', siteRef: southSite,
+  });
+  check('R5 fixtures: two owned parts and work orders',
+    [northPart, southPart, northOrder, southOrder].every((response) => success(response) && response.json?.id));
+
+  const scopedIssue = { partId: northPart.json?.id, quantity: 1, idempotencyKey: randomUUID() };
+  const firstScopedIssue = await screen('POST', `v1/parts/work-orders/${northOrder.json?.id}/issue`, scopedIssue, { scope: northScope });
+  const retriedScopedIssue = await screen('POST', `v1/parts/work-orders/${northOrder.json?.id}/issue`, scopedIssue, { scope: northScope });
+  check('R5 in-scope issue and identical retry produce one movement', success(firstScopedIssue) && success(retriedScopedIssue)
+    && firstScopedIssue.json?.movement?.id === retriedScopedIssue.json?.movement?.id, shown(retriedScopedIssue));
+  const changedRetry = await screen('POST', `v1/parts/work-orders/${northOrder.json?.id}/issue`,
+    { ...scopedIssue, quantity: 2 }, { scope: northScope });
+  check('R5 same key with changed quantity is a conflict', changedRetry.status === 409, shown(changedRetry));
+  const beforeConcurrent = await screen('GET', `v1/parts/${northPart.json?.id}`);
+  const concurrentIssue = { partId: northPart.json?.id, quantity: 1, idempotencyKey: randomUUID() };
+  const [parallelA, parallelB] = await Promise.all([
+    screen('POST', `v1/parts/work-orders/${northOrder.json?.id}/issue`, concurrentIssue, { scope: northScope }),
+    screen('POST', `v1/parts/work-orders/${northOrder.json?.id}/issue`, concurrentIssue, { scope: northScope }),
+  ]);
+  const afterConcurrent = await screen('GET', `v1/parts/${northPart.json?.id}`);
+  check('R5 concurrent same-key issues commit one stock movement',
+    success(parallelA) && success(parallelB) && parallelA.json?.movement?.id === parallelB.json?.movement?.id
+    && afterConcurrent.json?.quantityOnHand === beforeConcurrent.json?.quantityOnHand - 1,
+    [parallelA, parallelB, afterConcurrent].map(shown).join(' | '));
+
+  const beforePart = await screen('GET', `v1/parts/${northPart.json?.id}`);
+  const beforeMovements = await screen('GET', `v1/parts/${northPart.json?.id}/movements`);
+  const beforeTco = await screen('GET', `v1/parts/work-orders/${northOrder.json?.id}/tco`);
+  const wrongOrderIssue = await screen('POST', `v1/parts/work-orders/${southOrder.json?.id}/issue`,
+    { partId: northPart.json?.id, quantity: 1, idempotencyKey: randomUUID() }, { scope: northScope });
+  const wrongOrderReturn = await screen('POST', `v1/parts/work-orders/${southOrder.json?.id}/return`,
+    { partId: northPart.json?.id, quantity: 1, idempotencyKey: randomUUID() }, { scope: northScope });
+  const wrongDirectReturn = await screen('POST', `v1/parts/${northPart.json?.id}/movements`,
+    { movementType: 'RETURN', workOrderId: southOrder.json?.id, quantity: 1, idempotencyKey: randomUUID() },
+    { scope: northScope });
+  const wrongPartIssue = await screen('POST', `v1/parts/work-orders/${northOrder.json?.id}/issue`,
+    { partId: southPart.json?.id, quantity: 1, idempotencyKey: randomUUID() }, { scope: northScope });
+  const wrongSiteIssue = await screen('POST', `v1/parts/work-orders/${southOrder.json?.id}/issue`,
+    { partId: southPart.json?.id, quantity: 1, idempotencyKey: randomUUID() },
+    { scope: { placeIds: [northSite] } });
+  const wrongTenantIssue = await screen('POST', `v1/parts/work-orders/${northOrder.json?.id}/issue`,
+    { partId: northPart.json?.id, quantity: 1, idempotencyKey: randomUUID() }, { tenantId: tenantB });
+  check('R5 direct-ID issues/return deny other department, site, part and tenant',
+    wrongOrderIssue.status === 403 && wrongOrderReturn.status === 403 && wrongDirectReturn.status === 403
+    && wrongPartIssue.status === 404
+    && wrongSiteIssue.status === 403 && wrongTenantIssue.status === 404,
+    [wrongOrderIssue, wrongOrderReturn, wrongDirectReturn, wrongPartIssue, wrongSiteIssue, wrongTenantIssue].map(shown).join(' | '));
+  const hiddenTco = await screen('GET', `v1/parts/work-orders/${southOrder.json?.id}/tco`, undefined, { scope: northScope });
+  check('R5 direct-ID TCO for another department is hidden', hiddenTco.status === 404, shown(hiddenTco));
+  const applyOther = await screen('POST', `v1/job-plans/${plan.json?.id}/apply-to-work-order/${southOrder.json?.id}`,
+    { expectedVersion: southOrder.json?.version }, { scope: northScope });
+  const failureOther = await screen('POST', `v1/work-orders/${southOrder.json?.id}/failure-attribution`,
+    { expectedVersion: southOrder.json?.version }, { scope: northScope });
+  check('R5 Reliability actions cannot change another department work order',
+    applyOther.status === 403 && failureOther.status === 403, `${shown(applyOther)} | ${shown(failureOther)}`);
+
+  const northStore = await screen('POST', 'v1/parts/storerooms', { code: 'R5-NORTH', name: 'North store', siteRef: northSite });
+  const storeIssue = await screen('POST', `v1/parts/work-orders/${northOrder.json?.id}/issue`,
+    { partId: northPart.json?.id, storeroomId: northStore.json?.id, quantity: 1, idempotencyKey: randomUUID() },
+    { scope: northScope });
+  check('R5 department-scoped storeroom issue is denied until storerooms have department owners',
+    success(northStore) && storeIssue.status === 403, shown(storeIssue));
+
+  const afterPart = await screen('GET', `v1/parts/${northPart.json?.id}`);
+  const afterMovements = await screen('GET', `v1/parts/${northPart.json?.id}/movements`);
+  const afterTco = await screen('GET', `v1/parts/work-orders/${northOrder.json?.id}/tco`);
+  check('R5 denied calls and changed retry leave part, ledger and TCO unchanged',
+    success(beforePart) && success(afterPart) && beforePart.json?.quantityOnHand === afterPart.json?.quantityOnHand
+    && JSON.stringify(beforeMovements.json?.items) === JSON.stringify(afterMovements.json?.items)
+    && JSON.stringify(beforeTco.json) === JSON.stringify(afterTco.json),
+    `${shown(afterPart)} | ${shown(afterTco)}`);
+
+  const southVisible = await screen('GET', `v1/parts/${southPart.json?.id}`, undefined, { scope: southScope });
+  check('R5 the other site still sees its own part', success(southVisible), shown(southVisible));
+
+  // The other mounted issue caller has its own retry branch. Exercise it after the denial snapshot above.
+  const startExecution = await screen('POST', `v1/work-orders/${northOrder.json?.id}/status`,
+    { expectedVersion: northOrder.json?.version, status: 'IN_PROGRESS' }, { scope: northScope });
+  check('R5 north work order enters execution inside its scope', success(startExecution), shown(startExecution));
+  const coreIssue = { partId: northPart.json?.id, quantity: 1, idempotencyKey: randomUUID() };
+  const coreFirst = await screen('POST', `v1/work-orders/${northOrder.json?.id}/parts`, coreIssue, { scope: northScope });
+  const coreRetry = await screen('POST', `v1/work-orders/${northOrder.json?.id}/parts`, coreIssue, { scope: northScope });
+  const coreWrongPart = await screen('POST', `v1/work-orders/${northOrder.json?.id}/parts`,
+    { partId: southPart.json?.id, quantity: 1, idempotencyKey: randomUUID() }, { scope: northScope });
+  const coreChangedRetry = await screen('POST', `v1/work-orders/${northOrder.json?.id}/parts`,
+    { ...coreIssue, quantity: 2 }, { scope: northScope });
+  check('R5 Work Orders issue allows in-scope retry but denies cross-scope part and changed key',
+    success(coreFirst) && success(coreRetry) && coreWrongPart.status === 404 && coreChangedRetry.status === 409,
+    [coreFirst, coreRetry, coreWrongPart, coreChangedRetry].map(shown).join(' | '));
+
+  const southStore = await screen('POST', 'v1/parts/storerooms', { code: 'R5-SOUTH', name: 'South store', siteRef: southSite });
+  const wrongStore = await screen('POST', `v1/parts/work-orders/${northOrder.json?.id}/issue`,
+    { partId: northPart.json?.id, storeroomId: southStore.json?.id, quantity: 1, idempotencyKey: randomUUID() },
+    { scope: { placeIds: [northSite] } });
+  check('R5 place-scoped issue refuses a storeroom at another site', success(southStore) && wrongStore.status === 403, shown(wrongStore));
+  const stockBeforeStore = await screen('GET', `v1/parts/${northPart.json?.id}`);
+  const balanceSetup = await screen('PUT', 'v1/parts/balances', {
+    partId: northPart.json?.id, storeroomId: northStore.json?.id,
+    quantityOnHand: stockBeforeStore.json?.quantityOnHand,
+  });
+  const placeStoreIssue = await screen('POST', `v1/parts/work-orders/${northOrder.json?.id}/issue`,
+    { partId: northPart.json?.id, storeroomId: northStore.json?.id, quantity: 1, idempotencyKey: randomUUID() },
+    { scope: { placeIds: [northSite] } });
+  check('R5 place-scoped issue at the matching site still works', success(balanceSetup) && success(placeStoreIssue), shown(placeStoreIssue));
 } finally {
   api.kill();
   await admin.end();

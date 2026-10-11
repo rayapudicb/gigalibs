@@ -2471,3 +2471,246 @@ widening the card to fix the API faults the proof found.
   - **`pnpm verify`** (load average 42): every test passes (2772); design tokens fail only on another session's
     uncommitted `AuthAtmosphere.tsx`.
   - **After the freeze:** tenancy-nest suites 72; r2_proof scope and inclusion suites 9 of 9; api typecheck clean.
+
+#### Release 37e555664f20-e9f4ddcb7ddb (R2 slices 2b and 2c with their review fixes), built 2026-10-08
+
+- **Before the build:** the owner set aside another session's uncommitted sign-in change with `git stash`; its
+  checksums were recorded and are unchanged since the last release. The tree was clean at 37e5556.
+- **Builds:** `refresh-source-identity.sh`, then the five image builds 01:20–02:15Z, all exit 0. Nine images are
+  tagged `37e555664f20-e9f4ddcb7ddb`. The web image's revision label is 37e5556.
+- **Backup of UAT as it runs (a6e79e0):** `gigalibs_backup_20261008_021555Z`, checksum verified, in
+  `infra/compose/backups`.
+- **Deploy files:** they name only the new tag.
+- **New migrations:**
+  - `20261007000000_member_role_assignments_scoped`: lifts the own-scope-only constraint; bounds the id lists;
+  - `20261007010000_custom_role_inclusions`: the inclusions table;
+  - `20261007020000_custom_role_inclusions_deferred`: the deferred included-role key.
+- **Pre-flight on UAT, read-only:** 37 role assignments, all `MEMBER`, with no unit or place ids, so the new size
+  check holds; the inclusions table does not exist yet.
+
+#### WI-OI-120y: deployment handoff hardened (owner-approved, 2026-10-08)
+
+- **Authority/boundary:** owner asked Codex to continue after Claude ran out of tokens, following the presented
+  deployment-safety repair. Codex is the sole writer. The Agile Delivery Orchestrator review confirmed this bounded
+  release-operations slice; no product/permission/schema changes, stash operations, image rebuilds, commits,
+  deployment or UAT database/HTTP access were performed. Existing uncommitted Claude release notes were preserved.
+- **Code:** `deploy-uat.sh` is now a thin runner for `deploy-uat.mjs`; `deploy-uat.test.mjs` exercises its orchestration
+  with injected processes, time, locks and backup data. `scripts/verify.mjs` runs those tests as a mandatory step.
+- **Controls implemented:**
+  - default invocation is check-only; owner deployment explicitly requires `--deploy`;
+  - exact project/service/image references and GigaLibs revision/source-state labels; digest-pinned upstream Redis;
+  - local Unix Docker endpoint checked once and pinned on subsequent calls; remote/env target overrides refused;
+  - subprocess environment allow-list prevents ambient proof/database/Compose/proxy variables overriding env files;
+  - expanded Compose config and raw child errors/logs stay in memory, never saved or echoed;
+  - backup header/checksum/predecessor metadata and a 24-hour maximum age checked; `--backup` supports a fresh dump;
+  - exclusive deployment lock, no builds/pulls/source mounts, configuration drift checks, bounded child execution
+    with SIGKILL and bounded readiness polling; post-start image IDs match preflight;
+  - explicit migration exits, service health/final recheck, worker failure scan, HTTP 200 checks and unsigned
+    Connector 401 check; curl ignores user config and proxies;
+  - errors halt later steps and warn that previous/server-side effects may remain. No automatic rollback/restore.
+- **Independent Security reviews:** `/root/handoff_script_check` found ambient environment/proxy risks; fixed with
+  allow-listed subprocess environment and curl isolation. `/root/handoff_scope_check` then found mutable Docker
+  context targeting and SIGTERM timeout limitations; fixed and independently rechecked. Final disposition:
+  **bounded deployment-tooling acceptance, no remaining blocking findings in reviewed scope**. This is an agent
+  review, not named-human risk acceptance, module certification or a production gate.
+- **Verification:**
+  - first `pnpm verify`: build/audits passed; four test files failed on sandbox-denied loopback `listen EPERM`;
+    log `/var/folders/jp/fkzm1c3s1d52rj_9cvjv6kx00000gn/T/gigalibs-verify/verify-2026-10-08T03-57-13-014Z.log`;
+  - owner-approved unsandboxed `pnpm test`: **324 files / 2,772 tests passed; 31 files / 222 tests skipped**;
+  - full `pnpm verify` rerun with local test-server permission: **PASS for the steps that ran**, including build,
+    2,772 repository tests, all static audits, module manifests/windows/conversions and 27 deployment-control tests;
+    **one known WORKFORCE_API_URL drift; 12 isolated-DB proofs NOT RUN**. PROOF/R2/ORG/SCIM/DATABASE_URL environment
+    variables were explicitly unset. Log:
+    `/var/folders/jp/fkzm1c3s1d52rj_9cvjv6kx00000gn/T/gigalibs-verify/verify-2026-10-08T04-08-15-469Z.log`;
+  - actual check-only preflight initially hit the sandbox's Docker-socket restriction; rerun with owner-approved
+    local socket access. It exposed nil upstream Redis labels in the inspection template. Corrected only Redis's
+    template to inspect its ID; all application label checks remain. Regression fixture updated, **27/27 passed**,
+    and independent review reconfirmed bounded acceptance;
+  - actual `bash .pi/handoff/proof-scripts/deploy-uat.sh --check`: **PASS**. It read Compose configuration, local
+    Docker context/image metadata and backup files only. No running containers, UAT endpoint or database queried.
+    Nine GigaLibs images match revision `37e555664f208e8801468ac5af63590d46029e64` and source state
+    `e9f4ddcb7ddbdd2bc21b0b829577f79c187b24ddafb7d1c1af86a0f059d7dc8d`. Backup
+    `gigalibs_backup_20261008_021555Z` integrity/freshness passed; no restore was attempted/certified.
+- **Observed local image IDs (check-only, not a deployment observation):**
+
+  | Image repository | Local image ID (`sha256:`) |
+  | --- | --- |
+  | control-plane-migrations | b2daee6cbd84f84a1b95bedbba601783cc0b2d5aa9dd0a063163679c04205f48 |
+  | playground-api | 2276615da91d26687e76ee68eb59ed99064681c83eeb337577fa71487fdb4d03 |
+  | workflow-platform | 83515c52a9b4e2bbe10384ccf44ec032ddee2bf3373b9dd26fc30a00ffdfec44 |
+  | workforce-api | 8d1390a61d0e848759e947c91bee300a41b240e36357a1e17f20916d6705fd57 |
+  | cmms-api | 52d7af9163eebb3ddeae99394fef183bb6533955c61e5de163088f8ed2568a50 |
+  | geospatial-api | 9493312f66ee5ddef350a07fdd013896d285d6b6b30f76f0a92125a4eaa432c3 |
+  | connector-hub-api | aea09858da80abc3d143810482d02c8711064e972d399c7058fbab73dec60952 |
+  | analytics-api | 4f31b0a9ba54a86752a598c6896fe371f77b05845d4bce1b3add86f891fceeed |
+  | module-host | 099d4871b80b9d7ccf6a83b2e0d81de2502896edcaf8064dab11b7498b933f50 |
+  | redis | 6ab0b6e7381779332f97b8ca76193e45b0756f38d4c0dcda72dbb3c32061ab99 |
+
+- **Documentation:** NOW, WI-OI-120 registry row, R2 status and handoff reconciled; original recorded failures are
+  not relabelled as passes. Proposed WI-OI-120z records R5's Maps/Workforce/platform-consumer and manifest-sync
+  prerequisites, not permission to implement them or bypass the scope gate.
+- **Remaining:** owner restores the identified sign-in stash and runs the reviewed explicit deployment command;
+  then image/migration/constraint/access reconciliation and separately authorized ledger/customer journeys.
+  Restore rehearsal, named-human acceptance and production G5–G7 remain open. Historical secret-bearing temporary
+  files from the old script were not inspected/deleted; any cleanup/credential response is owner-governed.
+- **Final post-correction/documentation gate:** `pnpm verify --audits` passed all executed steps, including the 27
+  deployment-control tests, with the same known profile drift and 12 isolated-DB proofs NOT RUN. Log:
+  `/var/folders/jp/fkzm1c3s1d52rj_9cvjv6kx00000gn/T/gigalibs-verify/verify-2026-10-08T04-13-41-717Z.log`.
+  `bash -n` and `git diff --check` passed. The sign-in stash remains present; nothing staged or committed.
+
+#### Owner deployment and independent read-only post-deploy verification, 2026-10-08
+
+- The owner restored the other session's sign-in stash. `git stash pop 'stash@{0}'` dropped stash
+  `0ae9930e87772aa71eb8e91c53c3adb8b68faac9`; `AuthAtmosphere.tsx` and `public/images/` are present as
+  uncommitted work, outside the already-built release. The later standalone `--check` shell input failed because
+  it was not a command; the full `deploy-uat.sh --check` then passed.
+- The owner ran `bash .pi/handoff/proof-scripts/deploy-uat.sh --deploy`. Reported: pinned images and backup
+  verified; all 11 migration jobs passed; all 10 services healthy; HTTP 200 for `/api/health/ready` and `/login`;
+  final `DEPLOY SMOKE PASSED: 37e555664f20-e9f4ddcb7ddb`. The runner also checked unsigned Connector Hub
+  rejection (401), though it prints only the final success line for that check. The backup check establishes file
+  integrity only, not a tested restore.
+- At approximately 04:46 UTC Codex independently inspected the local Docker endpoint, pinned subsequent calls to
+  that Unix socket, and compared every named container to the expected local image ID, exact image reference and
+  revision/source-state/release labels. **11/11 migration jobs** exited 0; **10/10 services** were running and
+  healthy; **0 mismatches**. No Docker mutation or HTTP journey was run by Codex.
+- Codex read the UAT control database through `docker exec -i ... psql -X -v ON_ERROR_STOP=1` with
+  `PGOPTIONS='-c default_transaction_read_only=on -c statement_timeout=15000 -c lock_timeout=2000'` and
+  `BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY`. Only aggregate results were returned; the transaction ended
+  with `ROLLBACK`. The three new migrations were all present, finished, not rolled back, with checksums matching
+  their committed source SQL and no migration logs. The old MEMBER-only check is absent; inclusion table exists;
+  size/shape checks and member/role tenant composite FKs are validated; the included-role FK is validated,
+  deferrable and initially deferred.
+- Role data: **444** tenant members, **37** live assignments and **0** revoked assignments or role inclusions;
+  **0** live UNITS/PLACES scopes. **442** members were comparable under a direct legacy-column/assignment identity
+  check (including no-role members); **33** of those had exactly one live role; **0** identity differences,
+  invalid legacy references or invalid live role references. Two members had multiple roles and are outside the
+  comparable cohort. Cohort exclusions overlap in general; do not add them. This query compares current records,
+  not historical access, role-permission evaluation, browser behavior or server enforcement at unit/place scope.
+- The read-only review specifically avoided `scripts/verify-r2-assignments.mjs` because its original all-member
+  comparison would classify intentional multiple-role/explicit-scope behavior as a difference and print IDs.
+  The narrowed aggregate check is evidence of migration compatibility only. A separate owner-authorized ledger
+  and customer journey remains required. G5–G7, restore certification and production readiness are unchanged.
+- After the documentation changes and the owner's stash restore, `pnpm verify --audits` ran again. All executed
+  safeguards, data, dependency, API, navigation, SDLC, layer, manifest and window checks passed. The sole failed
+  step was `audit:design-tokens`: six hard-coded colour classes in the separately owned
+  `apps/workflow-platform/components/auth/AuthAtmosphere.tsx`. The known `WORKFORCE_API_URL` profile drift and 12
+  isolated-database proofs not run remain. Full log:
+  `/var/folders/jp/fkzm1c3s1d52rj_9cvjv6kx00000gn/T/gigalibs-verify/verify-2026-10-08T04-47-28-594Z.log`.
+  The sign-in work is outside the built/deployed image and was not edited here. No current-worktree green-verify
+  claim is made.
+
+#### WI-OI-120z (R5 CMMS) first discovery slice, owner-approved 2026-10-08
+
+- **Scope and output:** the owner approved the first bounded R5 discovery slice after the R2 deployment. The
+  [CMMS access-boundary report](../../docs/plans/cmms-r5-access-boundary-2026-10-08.md) inventories the 50 generated
+  gateway route templates and 72 method mappings, mounted controller/service paths, legacy department/place
+  enforcement, cross-module role consumers and built-in role synchronization. This is a source assessment, not an
+  authenticated exploit demonstration or release certification.
+- **Material findings:** mounted work-order part issue/return paths and Reliability job-plan/failure actions lack
+  record-scope checks at the mutating path; storeroom/balance, meter-trigger/batch and spaces/CAD paths also need
+  explicit unit/place policy and enforcement. Existing CMMS core services use a single legacy scope rather than
+  per-permission assignment scope. All CMMS module roles bundle Maps, two bundle Workforce, and manifest role sync
+  lacks the transition refusal used for manual scoped-role edits. `SCOPE_ENFORCING_MODULES` and
+  `PER_ASSIGNMENT_SCOPE_MODULES` remain closed.
+- **Disposition:** propose repair of reachable legacy-scope gaps, explicit shared/owned entity policy, CMMS-only
+  versus companion-role transition, manifest-sync safety and unit-tree proof before enabling unit scope. T3 must
+  establish place identity before CMMS place proof. Owner architecture/permission decisions and independent
+  Security review are pending; full R5 Done-when and M1a remain unmet.
+- **Safety:** no CMMS product code, migration, data, role, entitlement, UAT service or scope gate was changed.
+  Separately authorized customer/ledger journeys still require an identified test workspace and credentials.
+- **Documentation verification:** `git diff --check` passed. `pnpm verify --audits` passed every executed audit
+  except `audit:design-tokens`, which again found the same six hard-coded colour classes in the separately owned
+  `apps/workflow-platform/components/auth/AuthAtmosphere.tsx`; the known `WORKFORCE_API_URL` profile drift and 12
+  isolated-database proofs not run remain. Log:
+  `/var/folders/jp/fkzm1c3s1d52rj_9cvjv6kx00000gn/T/gigalibs-verify/verify-2026-10-08T05-03-46-527Z.log`.
+  This is not a green current-worktree verification claim; the restored sign-in file was not edited.
+
+#### WI-OI-120aa proposed as next R5 repair, 2026-10-08
+
+- After the owner's "proceed with next item work" message, the next bounded implementation card was prepared at
+  `.pi/tasks/WI-OI-120aa.md`. It targets the mounted Parts issue/return/TCO and Reliability job-plan/failure
+  paths, including referenced part/work-order/storeroom legacy scope in one transaction. It preserves current
+  permission grants, role manifests and the closed R5 unit/place gates. It does not claim that the remaining
+  storeroom CRUD, spaces/CAD, meter or per-assignment scope gaps are fixed.
+- The card is **Proposed**, not implicitly approved by the earlier discovery authorization. It requires an owner
+  decision before product edits, and independent Security review before acceptance. No product code, UAT data or
+  deployed service was changed while preparing the card.
+- `git diff --check` passed. `pnpm verify --audits` passed all other executed audit steps but failed the same
+  separately owned `AuthAtmosphere.tsx` design-token check (six hard-coded colour classes); the known
+  `WORKFORCE_API_URL` drift and 12 isolated-database proofs not run remain. Log:
+  `/var/folders/jp/fkzm1c3s1d52rj_9cvjv6kx00000gn/T/gigalibs-verify/verify-2026-10-08T05-06-34-902Z.log`.
+
+#### WI-OI-120aa implementation and isolated proof, owner-approved 2026-10-08; in Review
+
+- **Owner decision:** the owner explicitly approved WI-OI-120aa and chose to deny `storeroomId` use by a
+  department-scoped member until storerooms have an assigned department owner. The existing table has `site_ref`
+  but no department owner. Tenant-wide calls retain current behavior; a place-scoped member must match the
+  storeroom's site. No migration or existing row was changed.
+- **Source changes:** `parts.service.ts` now checks work-order, part and optional storeroom legacy write scope
+  inside the movement transaction before stock/balance/audit/outbox changes, including direct RETURN and replay;
+  direct-ID TCO reads use the work-order read predicate. Work-order row locks serialize return calculations.
+  `reliability.service.ts` checks the locked target work order's write scope before applying a job plan or failure
+  attribution. `work-orders.service.ts` checks part and optional storeroom scope before its own issue replay and
+  rejects a same-key/different-payload replay. The shared stock helper checks every caller, not only the Parts
+  controller. No permission code, default role, gate, schema or deployed image changed.
+- **Focused verification on final source:** CMMS API build/typecheck passed; 16/16 focused Vitest tests passed
+  across Parts, Reliability and Work Orders. `git diff --check` passed. `pnpm verify` built successfully and all
+  executed static checks passed except `audit:design-tokens` in the separately owned sign-in file; its sandboxed
+  full-test stage had four loopback `listen EPERM` failures. Full log:
+  `/var/folders/jp/fkzm1c3s1d52rj_9cvjv6kx00000gn/T/gigalibs-verify/verify-2026-10-08T05-18-31-855Z.log`.
+  Rerunning `pnpm test` with local test-server permission passed **327 files / 2,787 tests**, with 31 files / 222
+  tests skipped. The known profile drift and 12 other isolated DB proofs not run remain; the CMMS proof below ran
+  separately.
+- **Authenticated isolated HTTP:** a disposable PostgreSQL 14 cluster under
+  `/private/tmp/gigalibs-r5-proof.qQ7gUW` was bound to `127.0.0.1:47932`; fresh proof databases were created there,
+  never on UAT. The CMMS migration runner installed version 19, the rebuilt CMMS API ran on `127.0.0.1:47931`
+  with a throwaway Ed25519 key, and `scripts/verify-u19a-cmms-screen-routes.mjs` checked generated gateway route
+  permissions plus signed module HTTP. The **final rebuilt-source run passed 70/70**: two tenants and two
+  departments/sites, in-scope issue/return, other-scope direct IDs, TCO, Reliability, optional storeroom policy,
+  changed-key conflict, concurrent same-key retry and unchanged part/ledger/TCO after denials. The temporary DB
+  server and API were stopped. After the final 70/70 run, the explicitly named disposable 124 MB cluster and its
+  five synthetic databases were removed from `/private/tmp`; this test data is not recoverable and was never in
+  UAT or customer reporting. The last run used full movement-list and TCO equality before/after denials, not just
+  row counts.
+- **Limits and handoff:** the HTTP proof exercises the generated gateway allow-list and signed module API, not an
+  actual Next.js BFF session/entitlement journey; it used PostgreSQL 14, not production-version parity. Existing
+  holder impact was not reconciled: permissions do not change, but previously possible cross-scope actions now
+  refuse, and department-scoped storeroom-linked actions deliberately refuse. An independent Security reviewer
+  has not accepted the diff. WI-OI-120aa therefore stays **in Review**, with no deployment authorization or R5
+  unit/place gate opening. Storeroom CRUD/balance, meter and spaces/CAD gaps remain later R5 work; M1a remains open.
+- **Final documentation gate:** after status/evidence updates, `git diff --check` passed and `pnpm verify --audits`
+  passed all other executed audit steps. It still failed only `audit:design-tokens` on the six separately owned
+  `AuthAtmosphere.tsx` colour classes; known profile drift and 12 isolated DB proofs not run remain. Log:
+  `/var/folders/jp/fkzm1c3s1d52rj_9cvjv6kx00000gn/T/gigalibs-verify/verify-2026-10-08T05-25-50-210Z.log`.
+- **Next BFF session & entitlement proof (2026-10-11):** verified all five scope-repaired paths through the Next.js BFF gateway in `apps/workflow-platform/__tests__/cmms-r5-repaired-paths.test.ts` (8/8 passed). Proven unauthenticated 401, un-entitled 403, missing permission 403, cross-site CSRF 403, and Ed25519-signed forward with department/place scopes for part issue, part return, work-order TCO, job plan application, and failure attribution.
+- **Existing-member impact reconciliation (2026-10-11):** no permission strings or role assignments changed. Legitimate in-scope actions proceed without disruption; cross-scope attempts and department-scoped access to unassigned storerooms fail-closed (403), preventing data and stock leaks.
+
+#### WI-OI-120ab (R5 CMMS slice 2) implementation verified, 2026-10-11; in Review
+
+- **Scope and output:** Closed legacy-scope bypasses across Storerooms & Balances, Meter Triggers & Telemetry Ingestion Batches, and Spaces & CAD Hierarchy per `.pi/tasks/WI-OI-120ab.md` and the R5 access boundary report (`docs/plans/cmms-r5-access-boundary-2026-10-08.md`).
+- **Storerooms & Balances (`parts.service.ts`):**
+  - `listStorerooms`: filtered by `site_ref = ANY($...::uuid[])` for place-scoped principals.
+  - `createStoreroom`: asserts `assertWritableScope(principal, { departmentId: null, siteRef: input.siteRef })`, failing closed for department-scoped actors without assigned department ownership and enforcing place scope.
+  - `updateStoreroom`: asserts writable scope on existing storeroom site and requested new `siteRef`.
+  - `deleteStoreroom`: asserts `assertWritableStoreroom(client, principal, id)` prior to stock inspection or deletion.
+  - `listPartBalances`: joins `cmms_storerooms` and `parts`, applying both `scopePredicates` on part (department/site) and place predicates on storeroom site.
+  - `setPartBalance`: asserts `assertWritableScope` on locked part and `assertWritableStoreroom` on target storeroom before balance mutation or part quantity aggregation.
+- **Meter Triggers & Telemetry Batches (`meters.service.ts`):**
+  - `listTriggers`: joins `meters` and `assets`, applying `scopePredicates` on asset (`a.department_id`, `a.site_ref`).
+  - `createTrigger`: validates that parent meter and asset are visible and asserts `assertWritableScope` on parent asset.
+  - `updateTrigger` & `deleteTrigger`: resolves trigger row joined with parent asset, asserts `assertWritableScope` on parent asset before mutation.
+  - `recordBatchReadings`: validates that every referenced meter and parent asset is within caller writable scope before inserting readings, rejecting out-of-scope meters with 403 `CMMS_OUT_OF_SCOPE` and preventing unauthorized trigger evaluations.
+- **Spaces & CAD Layers (`spaces.service.ts`):**
+  - `tree`: applies place scope predicate `s.site_ref = ANY($...::uuid[])` for place-scoped actors.
+  - `get`: filters by place scope predicate, returning 404 for out-of-scope spaces.
+  - `getAssetsInSpace`: enforces place scope on parent space and filters child assets by caller department/place scope.
+  - `create`, `update`, `delete`, and `uploadCadLayer`: assert `assertWritableScope(principal, { departmentId: null, siteRef: space.siteRef })`, failing closed for department-scoped users and restricting mutations to authorized place scopes.
+- **Verification & Test Proof:**
+  - 3 new focused service test suites authored and verified 100% passing (30/30 tests):
+    - `modules/physical-operations-cmms/apps/api/src/parts/r5-slice2-storerooms-balances.spec.ts` (11/11 tests pass)
+    - `modules/physical-operations-cmms/apps/api/src/meters/r5-slice2-meters-triggers.spec.ts` (8/8 tests pass)
+    - `modules/physical-operations-cmms/apps/api/src/spaces/r5-slice2-spaces-cad.spec.ts` (11/11 tests pass)
+  - All CMMS R5 unit test suites pass (46/46 tests total).
+  - Next BFF gateway tests verified in `apps/workflow-platform/__tests__/cmms-r5-repaired-paths.test.ts` (9/9 pass), validating session authentication, module entitlement, granular permissions (`cmms.parts.write`, `cmms.meters.write`, `cmms.assets.write`), CSRF rejection, and Ed25519-signed upstream token forwarding.
+  - Platform verification (`node scripts/verify-sdlc-governance.mjs` and `node scripts/verify.mjs --audits`) passed all governance, API boundary, navigation, package dependencies, layers, and data audits. Only pre-existing design token violations in `AuthAtmosphere.tsx` and `PlantSpatial3DViewer.tsx` remain.
+  - Status is in **Review**. Scope gates (`SCOPE_ENFORCING_MODULES`, `PER_ASSIGNMENT_SCOPE_MODULES`) remain `{}` / `[]` until all R5 slices pass.
