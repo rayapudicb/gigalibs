@@ -47,6 +47,11 @@ describe('manifest-declared navigation equals the former sidebar tables', () => 
       icon: moduleIcons.scale,
       personas: ['OPERATIONS_SUPERVISOR'],
     },
+    'gigalibs-assistant': {
+      group: 'Intelligence',
+      icon: moduleIcons.sparkles,
+      personas: ['C_LEVEL', 'OPERATIONS_SUPERVISOR', 'WORKFORCE_MEMBER', 'CUSTOMER_GUEST'],
+    },
   } as const;
 
   it('covers exactly the catalogue entries the frozen tables covered, less the intended removals', () => {
@@ -71,6 +76,10 @@ describe('manifest-declared navigation equals the former sidebar tables', () => 
   // Deliberate navigation changes made after the freeze, each with its work item. Every other entry must still match
   // the frozen tables exactly.
   const INTENDED_MENU_CHANGES: Readonly<Record<string, ReturnType<typeof moduleMenu>>> = {
+    // WI-OI-121f: only the synthetic preview remains navigable; fake settings, tools and audit are contained.
+    'gigalibs-assistant': [
+      { key: 'chat', label: 'Synthetic Preview', href: '/assistant', icon: moduleIcons.sparkles },
+    ],
     // WI-OI-103d: Analytics gains Overview, Places and the new Explore screen; WI-OI-103e adds Dashboards and Reports;
     // WI-OI-104e adds Sources (no-code mapping of pulled records into datasets).
     'analytics-studio': [

@@ -68,6 +68,7 @@ export const BASE_ROLE_DEFINITIONS: readonly BaseRoleDefinition[] = [
       'orders:*',
       'finance:*',
       'assistant:*',
+      'assistant:preview',
     ],
   },
   {

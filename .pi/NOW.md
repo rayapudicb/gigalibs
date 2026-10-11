@@ -1,5 +1,18 @@
 # NOW: where the work stands
 
+> **GigaLibs Assistant Preview Enablement & Control Plane Unshadowing, 2026-10-11:**
+> Resolved the "Not available" locked card for GigaLibs Assistant Preview on `/modules`:
+> 1. Diagnosed that port 3333 was shadowed by a 3-day-old Docker container (`gigalibs-configuration-local-api-1`),
+>    preventing updated RBAC role definitions and database entitlements from reaching the Next.js BFF.
+> 2. Stopped the shadowing Docker container and updated `apps/playground-api/.env` to connect directly to the
+>    active PostgreSQL database on port 5440.
+> 3. Recompiled `@gigalibs/contracts`, `@gigalibs/rbac-core`, `@gigalibs/rbac-nest`, `@gigalibs/tenancy-nest`,
+>    `@gigalibs/auth-nest`, and `apps/playground-api`.
+> 4. Restarted the native NestJS control plane on port 3333 and Next.js dev server on port 5180 with
+>    `GIGALIBS_ASSISTANT_DEV_PREVIEW_ENABLED=true`.
+> 5. End-to-end verification confirmed: `/modules` renders **GigaLibs Assistant Preview** as open (`"Open capability →"`)
+>    with 0 lock icons, and `/assistant` serves HTTP 200 OK.
+
 > **Assistant G6/G7 Staged Rollout, Observability & Production Runbook increment, 2026-10-10:**
 > Completed Phase 8 G5 Release Qualification ([WI-OI-121i](tasks/WI-OI-121i.md), **Done**): automated Playwright
 > browser journey passed on `http://127.0.0.1:5180/assistant`, automated `@axe-core/playwright` WCAG 2.2 AA audit

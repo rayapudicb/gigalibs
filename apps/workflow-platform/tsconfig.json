@@ -46,6 +46,9 @@
       ],
       "@gigalibs/db": [
         "../../packages/db/dist/index.d.ts"
+      ],
+      "@gigalibs/vendor-copilotkit": [
+        "../../vendor/copilotkit/dist/copilotkit.d.ts"
       ]
     }
   },

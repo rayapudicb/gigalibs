@@ -1,19 +1,20 @@
 # WI-OI-120w (R2): Roles held per department or site
 
-- **Status:** Approved (owner, 2026-10-06). M1a card of `docs/plans/platform-implementation-plan.md`, after R1
+- **Status:** Approved (owner, 2026-10-06); five implementation slices and Security reviews recorded. Release `37e555664f20-e9f4ddcb7ddb` owner-deployed and read-only image/database checks passed 2026-10-08; business-journey acceptance pending. M1a card of `docs/plans/platform-implementation-plan.md`, after R1
   (WI-OI-120q), S1 and S16. Implements ADR-0034 §1, §2 (inclusion), §5, §6 and §7. Each slice is shown before it
   starts.
   - **Slice 1:** done and on UAT (2323b99, deployed 2026-10-07). Reconciliation: 433 members, 0 differences.
   - **Slice 2a:** done and on UAT (060d3cb, e07cdba and the grant bound 1237c9d, in release c5e6cb3, deployed
     2026-10-07). The journey's technician holds two module roles.
     - Security review: "ship after fixes". The fixes are committed in e07cdba (re-check: "ship").
-    - M3: the owner said "add the grant bound" (2026-10-06); it is built and awaits "commit".
+    - M3: the owner said "add the grant bound" (2026-10-06); committed 1237c9d and recorded deployed in c5e6cb3.
   - **Slice 3:** approved by the owner on 2026-10-07 ("approved slice 3"). Committed f395dbd. Security review: "ship
-    after fixes"; the fixes (cap 20, compact claim, size guard, web shape check, department scope) await "commit".
-  - **Next:** slice 2b.
+    after fixes"; fixes committed a6e79e0 and recorded deployed 2026-10-07.
+  - **Slices 2b/2c:** committed 645a72e/4ec2796 and cd9ea3a/37e5556; review re-checks recorded "ship" with the evidence qualifications below.
+  - **Next:** Authorized ledger/customer journeys, then R5 CMMS. Unit/place enforcement remains gated until R5; R2 is not scoped-module acceptance.
   - Evidence: `.pi/work/WI-OI-120.md` § WI-OI-120w. Independent Security review before deploy (access change).
 - **Work item:** WI-OI-120. Evidence goes in `.pi/work/WI-OI-120.md`.
-- **Size:** L (three slices)
+- **Size:** L (five implementation slices)
 
 ## Why
 
@@ -87,7 +88,7 @@ everything under them), or some places (with everything inside them).
   The single role picker goes. Every grant and revoke is audited and takes effect on the member's next request.
 - **The journey:** the technician holds Maintenance technician and Workforce member.
 
-### Slice 2b (approved by the owner 2026-10-07: "approved 2b"; committed 645a72e; review fixes built; slice 2c to be confirmed)
+### Slice 2b (approved 2026-10-07; committed 645a72e; review fixes committed 4ec2796; deployed 2026-10-08)
 
 - **After the Security review ("do not ship as is", H1 and H2), units and places are gated per module.** A role can be
   given at units or places only once every module checking its codes is proven, by its R5 card, to limit records by
@@ -144,7 +145,7 @@ everything under them), or some places (with everything inside them).
 - **Contexts per module.** Each context is minted for one module.
   - **Modules not yet moved:** the existing `organization` and `spatial_scope` claims come from the one scope the
     transition rule allows for that module: own scope as today; a unit list; a place list; or the whole workspace.
-    So "technician only at North plant" works now, without touching the member's unit grants.
+    This is the plumbing for "technician only at North plant"; unit/place gates still refuse it until every consuming module's enforcement is proved by R5.
   - **Fail-safe:** if the scopes ever disagree, the module gets an empty scope.
   - **Moved modules:** they read the assignment claims through `scopeFor`.
   - **Session order:** the session lists each assignment with its real scope.
@@ -167,7 +168,7 @@ everything under them), or some places (with everything inside them).
   - **Rest:** SCIM unaffected; the journey; `pnpm verify`; Security review before deploy (an access change).
 - **Size:** L, about 2–3 working days. Slice 2c: M, about 1 day.
 
-### Slice 2c: roles that include other roles (owner: "approved 2c", 2026-10-07; committed cd9ea3a; review "ship after fixes", fixes built)
+### Slice 2c: roles that include other roles (approved 2026-10-07; committed cd9ea3a; fixes committed 37e5556; deployed 2026-10-08)
 
 - **As built:**
   - **Data:** migration `20261007010000_custom_role_inclusions` (both ends in one workspace, no self-inclusion, each
@@ -210,7 +211,10 @@ everything under them), or some places (with everything inside them).
   - `pnpm verify`; Security review before deploy.
 - **Size:** M, about 1 working day.
 
-### Slice 2b: explicit scopes, switched on once slice 3 enforces them (the rest of the original slice 2)
+### Historical slice-2 design (superseded by the as-built 2b/2c rules above)
+
+The original design below is retained for traceability, not a current completion claim. R5 gates explicit
+units/places and current-request authorization replaces the proposed session-version bump.
 
 - **On a member:**
   - list their assignments (role, scope, granted by, since);
@@ -238,8 +242,8 @@ everything under them), or some places (with everything inside them).
       it is verified. An absent `scope` is `MEMBER`.
     - `scope` is `MEMBER` (the member's own scope, the existing `organization` and `spatial_scope` claims), `TENANT`,
       `UNITS` (tree version and unit roots) or `PLACES`.
-    - The session puts the base role, with direct codes, first, then each role. Every one is `MEMBER` until
-      slice 2b. The other kinds are defined and tested but not yet emitted.
+    - The session puts the base role, with direct codes, first, then each role. At the slice-3 snapshot every one was
+      `MEMBER`; slice 2b adds workspace scope. Unit/place assignments remain gated until R5.
   - **Helpers.** `encodeAssignmentGrants` and `decodeAssignmentGrants` (contracts); `memberRoleGrants` (rbac-nest).
     Both the session and the kernel worker's subject carry the assignments.
   - **The SDK.** `principal.assignments` and `scopeFor(principal, permission)` give the coverage of each assignment
@@ -283,7 +287,7 @@ everything under them), or some places (with everything inside them).
   - removing one assignment;
   - the transition rule's refusal;
   - an inclusion cycle refused;
-  - session version bumped on change;
+  - fresh authorization on the next request (as-built current-request reads; no session-version bump);
   - context size.
 - **The tenant-to-value journey**, with its personas holding two module roles each.
 - `pnpm build`, `pnpm test`, `pnpm verify`; Security review before deploy.
@@ -291,10 +295,14 @@ everything under them), or some places (with everything inside them).
 ## Done when
 
 - [x] Assignments exist, with the move proven to change no one's access (proof database; UAT after deploy).
-- [ ] Settings → Team manages several assignments per person, with the transition rule. (2a: several roles at the
-      member's own scope, built; explicit scopes and the transition rule in 2b.)
+- [ ] Settings → Team manages several assignments per person, with the transition rule. Implemented/reviewed in
+      2a/2b and owner-deployed; integrated journey acceptance pending; units/places deliberately gated for R5.
 - [x] The context carries assignments; `scopeFor` passes the North/South test (slice 3, 2026-10-07).
 - [ ] Checks pass; Security review recorded; evidence recorded; images built and handed to the owner.
+
+The final historical full verification recorded 2,772 passing tests but a design-token failure in the separately
+stashed sign-in change. Do not rewrite that run as unconditionally green. The owner deployed the candidate and
+read-only database/access reconciliation passed for the comparable cohort; business journeys remain outstanding.
 
 ## Stop and ask if
 

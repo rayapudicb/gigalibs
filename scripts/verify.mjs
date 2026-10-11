@@ -14,6 +14,8 @@ const auditsOnly = process.argv.includes('--audits');
 const KNOWN_PROFILE_DRIFT = /WORKFORCE_API_URL/;
 
 const steps = [
+  // WI-OI-120y: isolated deployment-control tests; never invoke Docker, UAT or a database.
+  { name: 'UAT deploy safeguards', cmd: process.execPath, args: ['--test', '--test-reporter=dot', '.pi/handoff/proof-scripts/deploy-uat.test.mjs'] },
   ...(auditsOnly
     ? []
     : [
