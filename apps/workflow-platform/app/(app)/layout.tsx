@@ -1,6 +1,10 @@
 import AppSidebar from '@/components/AppSidebar';
 import { UserNav } from '@/components/auth/UserNav';
-import { OmnichannelSoftphoneDrawer } from '@/components/communications/OmnichannelSoftphoneDrawer';
+import {
+  OmnichannelSoftphoneDrawer,
+  OmnichannelHeaderTrigger,
+} from '@/components/communications/OmnichannelSoftphoneDrawer';
+import { AssistantLauncher } from '@/components/assistant/AssistantLauncher';
 import { StudioModeProvider, StudioModeToggle } from '@/components/configuration/StudioMode';
 import { CurrencyLocaleProvider } from '@/components/currency/CurrencyLocaleContext';
 import { GeospatialPlacesProvider } from '@/components/geospatial/GeospatialPlacesProvider';
@@ -8,6 +12,7 @@ import { AppI18nProvider } from '@/components/i18n/AppI18nProvider';
 import { ModuleAccessGate } from '@/components/navigation/ModuleAccessGate';
 import { ModuleHeaderAndDrawer } from '@/components/navigation/ModuleHeaderAndDrawer';
 import { hasPermission } from '@/lib/module-access';
+import { canUseAssistantPreview } from '@/lib/assistant-preview-access';
 import { uatPreviewEnabled } from '@/lib/uat-module-status';
 import { verifiedSession } from '@/lib/verified-session';
 import { cookies } from 'next/headers';
@@ -72,6 +77,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   // it (a trial workspace otherwise sent two refused calls from every page).
   const currencyEnabled =
     Boolean(session.context.tenant?.features?.includes('multi-currency')) && hasPermission(session.context.permissions, 'currency:read');
+  const assistantPreviewEnabled = canUseAssistantPreview(session.context);
 
   return (
     <AppI18nProvider initialLocale={initialLocale}>
@@ -84,14 +90,15 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       >
         <div className="flex h-screen overflow-hidden bg-ui-bg-subtle text-ui-fg-base print:h-auto print:overflow-visible print:bg-white print:block">
           <aside className="print:hidden">
-            <AppSidebar session={session.context} uatPreview={uatPreview} />
+            <AppSidebar session={session.context} uatPreview={uatPreview} assistantPreviewEnabled={assistantPreviewEnabled} />
           </aside>
           <div className="flex-1 flex flex-col min-w-0 overflow-hidden print:overflow-visible print:h-auto print:block">
             {/* Global Top Platform Header */}
             <header className="h-14 border-b border-ui-border-base bg-ui-bg-base px-6 flex items-center justify-between shrink-0 z-30 print:hidden">
               <ModuleHeaderAndDrawer />
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3">
                 {canUseStudioMode ? <StudioModeToggle /> : null}
+                <OmnichannelHeaderTrigger />
                 <UserNav session={session.context} />
               </div>
             </header>
@@ -108,6 +115,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             </main>
           </div>
           <OmnichannelSoftphoneDrawer />
+          {assistantPreviewEnabled ? <AssistantLauncher /> : null}
         </div>
       </StudioModeProvider>
     </AppI18nProvider>

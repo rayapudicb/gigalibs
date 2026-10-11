@@ -94,6 +94,21 @@ describe('governed catalogue compiler', () => {
     expect(bundledGovernedCatalogue('INDUSTRY_PACK', 'shipbuilding')).toBeUndefined();
     expect(bundledGovernedCatalogue('COUNTRY_PACK', 'zz')).toBeUndefined();
   });
+
+  it('ships a disabled Assistant policy and classifies every policy-value change for review', () => {
+    const baseline = bundledGovernedCatalogue('ASSISTANT_POLICY', 'assistant-default');
+    expect(baseline).toMatchObject({
+      moduleKey: 'gigalibs-assistant', entityKey: 'tenant-policy',
+      catalogue: { enabled: false, retentionDays: 30, model: { mode: 'DISABLED' }, allowedToolKeys: [] },
+    });
+    const compiled = compileGovernedCatalogue(baseline);
+    expect(compiled.valid).toBe(true);
+    if (!baseline || baseline.kind !== 'ASSISTANT_POLICY') throw new Error('unexpected Assistant policy');
+    const changed = { ...baseline, catalogue: { ...baseline.catalogue, enabled: true } };
+    expect(classifyGovernedCatalogueChange(baseline, changed)).toBe('BREAKING');
+    expect(classifyGovernedCatalogueChange(baseline, structuredClone(baseline))).toBe('COMPATIBLE');
+    expect(bundledGovernedCatalogue('ASSISTANT_POLICY', 'other')).toBeUndefined();
+  });
 });
 
 describe('catalogue metric resolution', () => {

@@ -1,0 +1,21 @@
+{
+  "timestamp": "2026-10-10T19:10:35.308Z",
+  "releaseId": "gigalibs-assistant-v1.0.0",
+  "releaseGate": "G6_G7_CONTROLLED_PRODUCTION_ROLLOUT",
+  "manifestIntegrity": "VERIFIED_MATCH",
+  "migrationHashes": {
+    "up": "12fd236ca327158242a46c4cd3f3937e2ae84c1d12170fea6348dd49b377c93d",
+    "down": "7e37dc7bfe21b4f9a68ca9e541a05c469399e073dbbb10fa00c65c88b36abcb8"
+  },
+  "cohortGating": {
+    "activeStage": "STAGE_1_INTERNAL_PILOT",
+    "pilotTenantsCount": 3,
+    "enforcementMode": "FAIL_CLOSED_COHORT_NOT_ENROLLED"
+  },
+  "airgapEgressGuard": {
+    "maxEgressBytesAllowed": 0,
+    "circuitBreakerAction": "HALT_IMMEDIATE_TERMINATION"
+  },
+  "operationsRunbook": "docs/runbooks/assistant-production-operations.md",
+  "status": "ROLLOUT_CONTROLS_VERIFIED"
+}

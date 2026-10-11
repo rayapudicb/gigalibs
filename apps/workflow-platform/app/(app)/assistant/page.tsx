@@ -1,305 +1,503 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
+import Link from 'next/link';
 import {
   Bot,
-  ShieldCheck,
-  Cpu,
-  Database,
-  Lock,
-  Sparkles,
-  ClipboardList,
+  Send,
+  Plus,
+  MessageSquare,
   Clock,
-  Zap,
-  Wrench,
-  Package,
-  Layers,
+  ShieldCheck,
+  AlertCircle,
+  ExternalLink,
+  Sparkles,
+  RefreshCw,
+  Cpu,
 } from 'lucide-react';
-import { StatusBadge, Badge } from '@medusajs/ui';
-import {
-  GigaLibsCopilotKitProvider,
-  CopilotChat,
-} from '../../../../../vendor/copilotkit/dist/copilotkit.mjs';
-import { DailyInspectionChecklistCard } from '@/components/assistant/DailyInspectionChecklistCard';
-import { CopilotKitStylesheet } from '@/components/assistant/CopilotKitStylesheet';
+import { StatusBadge } from '@medusajs/ui';
 
-function AssistantMarkdownWithGenerativeUI({
-  content,
-  className,
-}: {
+interface Thread {
+  id: string;
+  title: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface Message {
+  id: string;
+  threadId: string;
+  role: 'USER' | 'ASSISTANT';
   content: string;
-  className?: string;
-}) {
-  const isDailyInspection =
-    content.includes('Daily Inspection Checklist') ||
-    content.includes('INSP-2026-ABC-09');
+  createdAt: string;
+}
 
-  return (
-    <div className={className}>
-      <div style={{ whiteSpace: 'pre-wrap' }}>{content}</div>
-      {isDailyInspection && (
-        <div className="mt-4">
-          <DailyInspectionChecklistCard />
-        </div>
-      )}
-    </div>
-  );
+function renderFormattedContent(text: string) {
+  // Parse markdown links [text](url)
+  const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
+  const parts: React.ReactNode[] = [];
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = linkRegex.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(text.substring(lastIndex, match.index));
+    }
+    const label = match[1];
+    const href = match[2];
+    parts.push(
+      <Link
+        key={`${match.index}-${href}`}
+        href={href}
+        className="inline-flex items-center gap-1 font-medium text-ui-tag-blue-icon underline hover:text-ui-fg-interactive"
+      >
+        {label}
+        <ExternalLink className="inline h-3 w-3" />
+      </Link>
+    );
+    lastIndex = match.index + match[0].length;
+  }
+  if (lastIndex < text.length) {
+    parts.push(text.substring(lastIndex));
+  }
+
+  return <span className="whitespace-pre-wrap">{parts}</span>;
 }
 
 export default function AssistantPage() {
-  const [dynamicSuggestions, setDynamicSuggestions] = React.useState<string[]>([
-    'Tell me my todays daily inspection tasks in unit abc',
-    'Get me the downtimes for all the equipments in the plant',
-    'Total electricity consumption of the last 24 hrs',
-    'Status of work orders in substation 4',
-  ]);
-  const [hasInteracted, setHasInteracted] = React.useState(false);
+  const [threads, setThreads] = useState<Thread[]>([]);
+  const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [inputValue, setInputValue] = useState('');
+  const [loadingThreads, setLoadingThreads] = useState(true);
+  const [loadingMessages, setLoadingMessages] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [policyError, setPolicyError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  React.useEffect(() => {
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, sending]);
+
+  // Load threads
+  const loadThreads = async () => {
+    setLoadingThreads(true);
+    setPolicyError(null);
+    setError(null);
     try {
-      const stored = localStorage.getItem('gigalibs_assistant_recent_queries');
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setDynamicSuggestions(Array.from(new Set([...parsed, ...dynamicSuggestions])).slice(0, 5));
-        }
+      const res = await fetch('/api/assistant/threads', { cache: 'no-store' });
+      if (res.status === 503) {
+        const data = await res.json().catch(() => ({}));
+        setPolicyError(
+          data.error ||
+            'Assistant Policy Required: This tenant does not have an active published Assistant policy in Configuration Studio.'
+        );
+        setLoadingThreads(false);
+        return;
       }
-    } catch {
-      // ignore
-    }
-  }, []);
-
-  const handleSendPreset = (promptText: string) => {
-    setHasInteracted(true);
-    try {
-      const stored = localStorage.getItem('gigalibs_assistant_recent_queries');
-      const existing = stored ? JSON.parse(stored) : [];
-      const updated = Array.from(new Set([promptText, ...existing])).slice(0, 8);
-      localStorage.setItem('gigalibs_assistant_recent_queries', JSON.stringify(updated));
-    } catch {
-      // ignore
-    }
-
-    const container = document.querySelector('[data-copilotkit]');
-    if (!container) return;
-    const textarea = container.querySelector('textarea') as HTMLTextAreaElement | null;
-    if (textarea) {
-      const nativeSetter = Object.getOwnPropertyDescriptor(
-        window.HTMLTextAreaElement.prototype,
-        'value'
-      )?.set;
-      if (nativeSetter) {
-        nativeSetter.call(textarea, promptText);
-      } else {
-        textarea.value = promptText;
+      if (!res.ok) {
+        throw new Error(`Failed to load threads (${res.status})`);
       }
-      textarea.dispatchEvent(new Event('input', { bubbles: true }));
-      textarea.focus();
-
-      setTimeout(() => {
-        const sendBtn = container.querySelector(
-          '[data-testid="copilot-send-button"]'
-        ) as HTMLButtonElement | null;
-        if (sendBtn && !sendBtn.disabled) {
-          sendBtn.click();
-        } else {
-          textarea.dispatchEvent(
-            new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', bubbles: true })
-          );
-        }
-      }, 50);
+      const data = await res.json();
+      const items: Thread[] = data.items || [];
+      setThreads(items);
+      if (items.length > 0 && !activeThreadId) {
+        setActiveThreadId(items[0].id);
+      }
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Error loading threads');
+    } finally {
+      setLoadingThreads(false);
     }
   };
 
-  const toolRenderers = useMemo(
-    () => [
-      {
-        name: 'render_daily_inspection_checklist',
-        render: () => <DailyInspectionChecklistCard />,
-      },
-      {
-        name: 'daily_inspections',
-        render: () => <DailyInspectionChecklistCard />,
-      },
-    ],
-    []
-  );
+  useEffect(() => {
+    loadThreads();
+  }, []);
+
+  // Load messages when activeThreadId changes
+  useEffect(() => {
+    if (!activeThreadId) {
+      setMessages([]);
+      return;
+    }
+
+    let isMounted = true;
+    const fetchMessages = async () => {
+      setLoadingMessages(true);
+      setError(null);
+      try {
+        const res = await fetch(`/api/assistant/threads/${activeThreadId}/messages`, {
+          cache: 'no-store',
+        });
+        if (!res.ok) throw new Error(`Failed to load messages (${res.status})`);
+        const data = await res.json();
+        if (isMounted) {
+          setMessages(data.items || []);
+        }
+      } catch (err: unknown) {
+        if (isMounted) {
+          setError(err instanceof Error ? err.message : 'Error loading messages');
+        }
+      } finally {
+        if (isMounted) setLoadingMessages(false);
+      }
+    };
+
+    fetchMessages();
+    return () => {
+      isMounted = false;
+    };
+  }, [activeThreadId]);
+
+  // Create new thread
+  const handleCreateThread = async (initialTitle?: string) => {
+    setError(null);
+    try {
+      const res = await fetch('/api/assistant/threads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: initialTitle || `Operations Session ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Failed to create thread');
+      }
+      const newThread: Thread = await res.json();
+      setThreads((prev) => [newThread, ...prev]);
+      setActiveThreadId(newThread.id);
+      setMessages([]);
+      return newThread.id;
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Error creating conversation');
+      return null;
+    }
+  };
+
+  // Send message
+  const handleSendMessage = async (textToSend?: string) => {
+    const text = (textToSend ?? inputValue).trim();
+    if (!text || sending) return;
+
+    setInputValue('');
+    setError(null);
+    setSending(true);
+
+    let targetThreadId = activeThreadId;
+    if (!targetThreadId) {
+      const createdId = await handleCreateThread(
+        text.slice(0, 32) + (text.length > 32 ? '...' : '')
+      );
+      if (!createdId) {
+        setSending(false);
+        return;
+      }
+      targetThreadId = createdId;
+    }
+
+    // Optimistic user message
+    const tempUserMsg: Message = {
+      id: `temp-${Date.now()}`,
+      threadId: targetThreadId,
+      role: 'USER',
+      content: text,
+      createdAt: new Date().toISOString(),
+    };
+    setMessages((prev) => [...prev, tempUserMsg]);
+
+    try {
+      const res = await fetch(`/api/assistant/threads/${targetThreadId}/messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: text }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || `Request failed (${res.status})`);
+      }
+
+      const botReply: Message = await res.json();
+      setMessages((prev) => [...prev, botReply]);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to send message');
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
+
+  const suggestions = [
+    'Please check my assigned work orders in CMMS',
+    'What open maintenance tasks exist in the plant?',
+    'What is the recommended viscosity index for heavy pump bearings?',
+    'Review asset vibration standards according to ISO 10816',
+  ];
+
+  if (policyError) {
+    return (
+      <main className="mx-auto max-w-4xl p-8 text-ui-fg-base">
+        <div className="rounded-xl border border-ui-border-error/40 bg-ui-bg-base p-6 shadow-sm">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="mt-0.5 h-6 w-6 text-ui-fg-error shrink-0" />
+            <div>
+              <h1 className="text-lg font-semibold text-ui-fg-base">Tenant Policy Inactive</h1>
+              <p className="mt-2 text-sm text-ui-fg-muted">{policyError}</p>
+              <div className="mt-4 flex items-center gap-3">
+                <Link
+                  href="/configuration"
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-ui-button-inverted px-3 py-1.5 text-xs font-medium text-ui-fg-on-inverted hover:bg-ui-button-inverted-hover"
+                >
+                  Open Configuration Studio
+                </Link>
+                <button
+                  type="button"
+                  onClick={loadThreads}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-ui-border-base bg-ui-bg-base px-3 py-1.5 text-xs font-medium text-ui-fg-base hover:bg-ui-bg-subtle"
+                >
+                  <RefreshCw className="h-3.5 w-3.5" />
+                  Retry
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] flex-col bg-ui-bg-subtle/40 p-4 md:p-6 overflow-hidden">
-      <CopilotKitStylesheet />
-      {/* Top Header */}
-      <header className="mb-4 flex flex-col justify-between gap-4 rounded-xl border border-ui-border-base bg-ui-bg-base p-4 shadow-xs md:flex-row md:items-center">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-ui-button-inverted text-ui-fg-on-inverted shadow-xs">
-              <Bot className="h-5 w-5" />
+    <div className="flex h-[calc(100vh-4rem)] w-full overflow-hidden bg-ui-bg-subtle text-ui-fg-base">
+      {/* Thread Sidebar */}
+      <aside aria-label="Conversation threads" className="flex w-72 flex-col border-r border-ui-border-base bg-ui-bg-base shrink-0">
+        <div className="flex h-14 items-center justify-between border-b border-ui-border-base px-4">
+          <div className="flex items-center gap-2">
+            <Bot className="h-5 w-5 text-ui-fg-base" />
+            <h2 className="text-sm font-semibold tracking-tight">Conversations</h2>
+          </div>
+          <button
+            type="button"
+            onClick={() => handleCreateThread()}
+            title="Start new conversation"
+            aria-label="Start new conversation"
+            className="flex h-8 w-8 items-center justify-center rounded-lg border border-ui-border-base text-ui-fg-muted hover:bg-ui-bg-subtle hover:text-ui-fg-base transition-colors"
+          >
+            <Plus className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-2 space-y-1">
+          {loadingThreads ? (
+            <div className="p-4 text-xs text-ui-fg-muted">Loading private threads...</div>
+          ) : threads.length === 0 ? (
+            <div className="p-4 text-center text-xs text-ui-fg-muted">
+              No private threads found.
+              <button
+                type="button"
+                onClick={() => handleCreateThread()}
+                className="mt-2 block w-full rounded-md bg-ui-button-neutral px-2 py-1 text-xs text-ui-fg-base hover:bg-ui-bg-subtle-hover"
+              >
+                Create First Thread
+              </button>
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-lg font-bold tracking-tight text-ui-fg-base">
-                  GigaLibs Sovereign Operational Assistant
-                </h1>
-                <Badge color="blue" size="small">
-                  CORE IMPLEMENTED
-                </Badge>
-                <StatusBadge color="green">ONLINE</StatusBadge>
+          ) : (
+            threads.map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => setActiveThreadId(t.id)}
+                className={`flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-xs transition-colors ${
+                  activeThreadId === t.id
+                    ? 'bg-ui-bg-subtle font-medium text-ui-fg-base border border-ui-border-base shadow-xs'
+                    : 'text-ui-fg-muted hover:bg-ui-bg-subtle/50 hover:text-ui-fg-base'
+                }`}
+              >
+                <MessageSquare className="h-3.5 w-3.5 shrink-0 opacity-70" />
+                <span className="truncate flex-1">{t.title}</span>
+              </button>
+            ))
+          )}
+        </div>
+
+        {/* Sidebar Footer Metadata */}
+        <div className="border-t border-ui-border-base p-3 text-[11px] text-ui-fg-muted bg-ui-bg-subtle/30">
+          <div className="flex items-center gap-1.5 font-medium">
+            <ShieldCheck className="h-3.5 w-3.5 text-ui-tag-green-icon" />
+            <span>Sovereign & Isolated</span>
+          </div>
+          <p className="mt-1 text-[10px] text-ui-fg-muted/80">
+            Encrypted RLS PostgreSQL persistence. Zero external egress.
+          </p>
+        </div>
+      </aside>
+
+      {/* Main Conversation Canvas */}
+      <section aria-label="Conversation workspace" className="flex flex-1 flex-col min-w-0 bg-ui-bg-base">
+        {/* Header Bar */}
+        <header className="flex h-14 items-center justify-between border-b border-ui-border-base px-6">
+          <div className="flex items-center gap-3">
+            <h1 className="text-sm font-semibold text-ui-fg-base truncate">
+              {threads.find((t) => t.id === activeThreadId)?.title || 'Operational Intelligence Assistant'}
+            </h1>
+            <div className="flex items-center gap-2">
+              <StatusBadge color="green">Local llama3.2</StatusBadge>
+              <StatusBadge color="blue">CMMS Grounded</StatusBadge>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 text-xs text-ui-fg-muted">
+            <Cpu className="h-3.5 w-3.5 text-ui-tag-green-icon" />
+            <span>0-Byte Egress</span>
+          </div>
+        </header>
+
+        {/* Message Thread Viewport */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          {error && (
+            <div className="rounded-lg border border-ui-border-error/50 bg-ui-bg-error/10 p-3 text-xs text-ui-fg-error flex items-center justify-between">
+              <span>{error}</span>
+              <button
+                type="button"
+                onClick={() => setError(null)}
+                className="font-bold underline ml-2"
+              >
+                Dismiss
+              </button>
+            </div>
+          )}
+
+          {loadingMessages ? (
+            <div className="flex h-32 items-center justify-center text-xs text-ui-fg-muted">
+              Loading conversation history...
+            </div>
+          ) : messages.length === 0 ? (
+            <div className="mx-auto max-w-xl py-12 text-center">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-ui-bg-subtle text-ui-fg-base border border-ui-border-base shadow-xs mb-4">
+                <Sparkles className="h-6 w-6 text-ui-fg-interactive" />
               </div>
-              <p className="text-xs text-ui-fg-muted">
-                Deterministic cross-module operational intelligence with sovereign tenancy and zero third-party telemetry.
+              <h2 className="text-base font-semibold text-ui-fg-base">
+                Operational Assistant
+              </h2>
+              <p className="mt-2 text-xs text-ui-fg-muted leading-relaxed">
+                Directly connected to verified CMMS work order records and sovereign local inference.
+                Answers are grounded in live records with real citations.
               </p>
+
+              <div className="mt-8 grid grid-cols-1 gap-2 sm:grid-cols-2 text-left">
+                {suggestions.map((s, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => handleSendMessage(s)}
+                    className="rounded-xl border border-ui-border-base bg-ui-bg-base p-3 text-xs text-ui-fg-base hover:bg-ui-bg-subtle hover:border-ui-border-interactive/40 transition-all shadow-xs"
+                  >
+                    💡 {s}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          ) : (
+            messages.map((m) => (
+              <div
+                key={m.id}
+                className={`flex gap-3.5 max-w-3xl ${
+                  m.role === 'USER' ? 'ml-auto flex-row-reverse' : ''
+                }`}
+              >
+                <div
+                  className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-xs font-semibold shadow-xs ${
+                    m.role === 'USER'
+                      ? 'bg-ui-bg-subtle text-ui-fg-base border border-ui-border-base'
+                      : 'bg-ui-button-inverted text-ui-fg-on-inverted'
+                  }`}
+                >
+                  {m.role === 'USER' ? 'U' : <Bot className="h-4 w-4" />}
+                </div>
+
+                <div
+                  className={`flex flex-col rounded-2xl p-4 text-xs leading-relaxed shadow-xs ${
+                    m.role === 'USER'
+                      ? 'bg-ui-button-inverted text-ui-fg-on-inverted rounded-tr-xs max-w-lg'
+                      : 'bg-ui-bg-subtle/80 text-ui-fg-base border border-ui-border-base rounded-tl-xs flex-1'
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-4 mb-1.5 opacity-70 text-[10px]">
+                    <span className="font-semibold uppercase tracking-wider">
+                      {m.role === 'USER' ? 'You' : 'GigaLibs Sovereign Assistant'}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Clock className="h-2.5 w-2.5" />
+                      {new Date(m.createdAt).toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </span>
+                  </div>
+
+                  <div className="text-xs">{renderFormattedContent(m.content)}</div>
+                </div>
+              </div>
+            ))
+          )}
+
+          {sending && (
+            <div className="flex gap-3.5 max-w-3xl">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-ui-button-inverted text-ui-fg-on-inverted shadow-xs">
+                <Bot className="h-4 w-4 animate-spin" />
+              </div>
+              <div className="flex items-center gap-2 rounded-2xl bg-ui-bg-subtle/80 border border-ui-border-base p-4 text-xs text-ui-fg-muted">
+                <span className="h-2 w-2 rounded-full bg-ui-fg-interactive animate-pulse" />
+                <span>Consulting CMMS and sovereign local model...</span>
+              </div>
+            </div>
+          )}
+
+          <div ref={messagesEndRef} />
         </div>
 
-        {/* Boundary Badges */}
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 rounded-lg border border-ui-border-subtle bg-ui-bg-subtle px-2.5 py-1 text-xs font-medium text-ui-fg-subtle">
-            <ShieldCheck className="h-3.5 w-3.5 text-ui-fg-interactive" /> Zero Egress
-          </span>
-          <span className="inline-flex items-center gap-1.5 rounded-lg border border-ui-border-subtle bg-ui-bg-subtle px-2.5 py-1 text-xs font-medium text-ui-fg-subtle">
-            <Lock className="h-3.5 w-3.5 text-ui-fg-interactive" /> Tenant RBAC
-          </span>
-          <span className="inline-flex items-center gap-1.5 rounded-lg border border-ui-border-subtle bg-ui-bg-subtle px-2.5 py-1 text-xs font-medium text-ui-fg-subtle">
-            <Cpu className="h-3.5 w-3.5 text-ui-fg-interactive" /> Same-Origin SSE
-          </span>
-        </div>
-      </header>
-
-      {/* Main Workspace Layout */}
-      <div className="grid flex-1 grid-cols-1 gap-4 overflow-hidden lg:grid-cols-4">
-        {/* Left / Center Chat Column (3 cols on large) */}
-        <div className="flex flex-col rounded-xl border border-ui-border-base bg-ui-bg-base shadow-xs overflow-hidden lg:col-span-3">
-          {/* CopilotChat Body */}
-          <div className="flex-1 overflow-hidden h-full flex flex-col min-h-0 relative" data-copilotkit>
-            <GigaLibsCopilotKitProvider renderToolCalls={toolRenderers}>
-              <CopilotChat
-                className="flex-1 h-full flex flex-col min-h-0"
-                messageView={{
-                  assistantMessage: {
-                    markdownRenderer: AssistantMarkdownWithGenerativeUI,
-                  },
-                }}
-                labels={{
-                  welcomeMessageText:
-                    'How can I assist your operations today? Query assets, work orders, storeroom inventory, or plant telemetry.',
-                  chatInputPlaceholder: 'Ask GigaLibs Sovereign Assistant...',
-                  chatDisclaimerText:
-                    'GigaLibs Sovereign Intelligence • Multi-Tenant Operational Platform',
-                }}
+        {/* Input Composer */}
+        <div className="border-t border-ui-border-base bg-ui-bg-base p-4">
+          <div className="mx-auto max-w-3xl">
+            <div className="relative flex items-center rounded-2xl border border-ui-border-base bg-ui-bg-subtle/50 px-4 py-2 focus-within:border-ui-border-interactive focus-within:ring-1 focus-within:ring-ui-border-interactive shadow-xs">
+              <textarea
+                aria-label="Ask about work orders or operational guidelines"
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Ask about work orders or operational guidelines (e.g., 'Check my assigned work orders')..."
+                rows={1}
+                className="flex-1 resize-none bg-transparent text-xs text-ui-fg-base placeholder:text-ui-fg-muted focus:outline-none min-h-[28px] max-h-32"
               />
-            </GigaLibsCopilotKitProvider>
-
-            {/* Dynamic Suggestion Pills */}
-            {!hasInteracted && dynamicSuggestions.length > 0 && (
-              <div className="px-4 pb-3 pt-2 border-t border-ui-border-subtle bg-ui-bg-subtle/40 shrink-0">
-                <div className="text-[11px] font-medium text-ui-fg-muted mb-2 flex items-center justify-between">
-                  <span>Contextual Suggestions:</span>
-                  <span className="text-[10px] text-ui-fg-muted/70">Click to execute query</span>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {dynamicSuggestions.map((suggestion, idx) => (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => handleSendPreset(suggestion)}
-                      className="inline-flex items-center gap-1 rounded-full border border-ui-border-base bg-ui-bg-base px-3 py-1.5 text-xs font-medium text-ui-fg-base hover:bg-ui-bg-base-hover hover:border-ui-border-interactive transition-colors cursor-pointer shadow-2xs"
-                    >
-                      <Sparkles className="h-3 w-3 text-ui-fg-interactive" /> {suggestion}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
+              <button
+                type="button"
+                disabled={sending || !inputValue.trim()}
+                onClick={() => handleSendMessage()}
+                title="Send message"
+                aria-label="Send message"
+                className="ml-2 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-ui-button-inverted text-ui-fg-on-inverted disabled:opacity-30 hover:bg-ui-button-inverted-hover transition-all"
+              >
+                <Send className="h-3.5 w-3.5" />
+              </button>
+            </div>
+            <p className="mt-2 text-center text-[10px] text-ui-fg-muted">
+              Sovereign Operational Intelligence • Verified Live CMMS Records • Encrypted Private Persistence
+            </p>
           </div>
         </div>
-
-        {/* Right Info Column (1 col on large) */}
-        <div className="flex flex-col gap-4 overflow-y-auto">
-          {/* Sovereign Runtime Card */}
-          <div className="rounded-xl border border-ui-border-base bg-ui-bg-base p-4 shadow-xs">
-            <h2 className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-ui-fg-base">
-              <ShieldCheck className="h-4 w-4 text-ui-fg-interactive" /> Sovereign Runtime
-            </h2>
-            <div className="mt-3 divide-y divide-ui-border-subtle text-xs">
-              <div className="flex justify-between py-2">
-                <span className="text-ui-fg-muted">Protocol:</span>
-                <span className="font-mono font-semibold text-ui-fg-base">SSE / REST</span>
-              </div>
-              <div className="flex justify-between py-2">
-                <span className="text-ui-fg-muted">Endpoint:</span>
-                <span className="font-mono text-ui-fg-base">/api/gigalibs-assistant</span>
-              </div>
-              <div className="flex justify-between py-2">
-                <span className="text-ui-fg-muted">Telemetry Egress:</span>
-                <span className="font-semibold text-ui-fg-interactive">0 Bytes (Disabled)</span>
-              </div>
-              <div className="flex justify-between py-2">
-                <span className="text-ui-fg-muted">Tenancy:</span>
-                <span className="font-semibold text-ui-fg-base">PostgreSQL RLS</span>
-              </div>
-              <div className="flex justify-between py-2">
-                <span className="text-ui-fg-muted">Port Binding:</span>
-                <span className="font-mono text-ui-fg-base">5180 Exclusive</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Connected Operational Domains Card */}
-          <div className="rounded-xl border border-ui-border-base bg-ui-bg-base p-4 shadow-xs">
-            <h2 className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-ui-fg-base">
-              <Database className="h-4 w-4 text-ui-fg-interactive" /> Operational Domains
-            </h2>
-            <div className="mt-3 space-y-2 text-xs">
-              <div className="flex items-center justify-between rounded-lg border border-ui-border-subtle bg-ui-bg-subtle p-2">
-                <div className="flex items-center gap-2">
-                  <ClipboardList className="h-3.5 w-3.5 text-ui-fg-interactive" />
-                  <span className="font-medium text-ui-fg-base">CMMS Inspections</span>
-                </div>
-                <Badge color="green" size="small">
-                  CONNECTED
-                </Badge>
-              </div>
-              <div className="flex items-center justify-between rounded-lg border border-ui-border-subtle bg-ui-bg-subtle p-2">
-                <div className="flex items-center gap-2">
-                  <Clock className="h-3.5 w-3.5 text-ui-fg-interactive" />
-                  <span className="font-medium text-ui-fg-base">Equipment Downtimes</span>
-                </div>
-                <Badge color="green" size="small">
-                  CONNECTED
-                </Badge>
-              </div>
-              <div className="flex items-center justify-between rounded-lg border border-ui-border-subtle bg-ui-bg-subtle p-2">
-                <div className="flex items-center gap-2">
-                  <Zap className="h-3.5 w-3.5 text-ui-fg-interactive" />
-                  <span className="font-medium text-ui-fg-base">Smart Meters (24h)</span>
-                </div>
-                <Badge color="green" size="small">
-                  CONNECTED
-                </Badge>
-              </div>
-              <div className="flex items-center justify-between rounded-lg border border-ui-border-subtle bg-ui-bg-subtle p-2">
-                <div className="flex items-center gap-2">
-                  <Wrench className="h-3.5 w-3.5 text-ui-fg-interactive" />
-                  <span className="font-medium text-ui-fg-base">Work Orders</span>
-                </div>
-                <Badge color="green" size="small">
-                  CONNECTED
-                </Badge>
-              </div>
-              <div className="flex items-center justify-between rounded-lg border border-ui-border-subtle bg-ui-bg-subtle p-2">
-                <div className="flex items-center gap-2">
-                  <Package className="h-3.5 w-3.5 text-ui-fg-interactive" />
-                  <span className="font-medium text-ui-fg-base">MRO Inventory</span>
-                </div>
-                <Badge color="green" size="small">
-                  CONNECTED
-                </Badge>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      </section>
     </div>
   );
 }

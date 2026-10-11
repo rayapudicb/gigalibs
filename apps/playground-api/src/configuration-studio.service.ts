@@ -30,6 +30,7 @@ import {
 } from '@gigalibs/contracts';
 import type {
   ActivateConfigurationDto,
+  AssistantPolicyV1,
   ConfigurationChangeSetDefinition,
   ConfigurationCondition,
   ConfigurationDefinition,
@@ -84,6 +85,37 @@ import {
   configurationPackageSigningKey,
   trustedConfigurationPackageKey,
 } from './configuration-package-signing.js';
+
+async function projectAssistantPolicy(
+  tx: Prisma.TransactionClient,
+  tenantId: string,
+  manifest: unknown,
+  publishedVersionId: string,
+  rawChecksumWithPrefix: string,
+  publishedAt: Date,
+): Promise<void> {
+  if (isGovernedCatalogueDefinition(manifest) && manifest.kind === 'ASSISTANT_POLICY') {
+    const policy = (manifest as unknown as { catalogue: AssistantPolicyV1 }).catalogue;
+    const cleanChecksum = rawChecksumWithPrefix.startsWith('sha256:')
+      ? rawChecksumWithPrefix.slice(7)
+      : rawChecksumWithPrefix;
+    await tx.$executeRaw`
+      INSERT INTO gigalibs_assistant.tenant_policies (
+        tenant_id, source_manifest_version, source_checksum, retention_days, status, published_at, updated_at
+      ) VALUES (
+        ${tenantId}, ${publishedVersionId}, ${cleanChecksum}, ${policy.retentionDays},
+        ${policy.enabled ? 'PUBLISHED' : 'DISABLED'}, ${publishedAt}, now()
+      )
+      ON CONFLICT (tenant_id) DO UPDATE SET
+        source_manifest_version = EXCLUDED.source_manifest_version,
+        source_checksum = EXCLUDED.source_checksum,
+        retention_days = EXCLUDED.retention_days,
+        status = EXCLUDED.status,
+        published_at = EXCLUDED.published_at,
+        updated_at = now()
+    `;
+  }
+}
 
 function registeredCoreField(
   key: string,
@@ -1541,6 +1573,10 @@ export class ConfigurationStudioService {
 
   async activate(tenantId: string, actorId: string, dto: ActivateConfigurationDto) {
     const requestChecksum = checksum(dto);
+    const published = await prisma.configurationPublishedVersion.findFirst({
+      where: { id: dto.publishedVersionId, tenantId },
+    });
+    if (!published) throw new NotFoundException('Published configuration version was not found.');
     const replay = await this.idempotentReplay(
       tenantId,
       actorId,
@@ -1549,10 +1585,6 @@ export class ConfigurationStudioService {
       requestChecksum,
     );
     if (replay) return replay;
-    const published = await prisma.configurationPublishedVersion.findFirst({
-      where: { id: dto.publishedVersionId, tenantId },
-    });
-    if (!published) throw new NotFoundException('Published configuration version was not found.');
     const activation = await prisma.$transaction(async (tx) => {
       await this.lockActivationScope(
         tx,
@@ -1617,6 +1649,14 @@ export class ConfigurationStudioService {
           activatedById: actorId,
         },
       });
+      await projectAssistantPolicy(
+        tx,
+        tenantId,
+        published.manifest,
+        published.id,
+        published.checksum,
+        published.publishedAt,
+      );
       await this.audit(
         tx,
         tenantId,
@@ -1667,6 +1707,10 @@ export class ConfigurationStudioService {
   async rollback(tenantId: string, actorId: string, dto: ActivateConfigurationDto) {
     const requestChecksum = checksum(dto);
     const operation = 'activation.rollback';
+    const target = await prisma.configurationPublishedVersion.findFirst({
+      where: { id: dto.publishedVersionId, tenantId },
+    });
+    if (!target) throw new NotFoundException('Rollback configuration version was not found.');
     const replay = await this.idempotentReplay(
       tenantId,
       actorId,
@@ -1675,10 +1719,6 @@ export class ConfigurationStudioService {
       requestChecksum,
     );
     if (replay) return replay;
-    const target = await prisma.configurationPublishedVersion.findFirst({
-      where: { id: dto.publishedVersionId, tenantId },
-    });
-    if (!target) throw new NotFoundException('Rollback configuration version was not found.');
     const activation = await prisma.$transaction(async (tx) => {
       await this.lockActivationScope(
         tx,
@@ -1741,6 +1781,14 @@ export class ConfigurationStudioService {
           activatedById: actorId,
         },
       });
+      await projectAssistantPolicy(
+        tx,
+        tenantId,
+        target.manifest,
+        target.id,
+        target.checksum,
+        target.publishedAt,
+      );
       await this.audit(
         tx,
         tenantId,
@@ -1965,7 +2013,8 @@ export class ConfigurationStudioService {
     ]);
     return listBundledGovernedCatalogues().map((item) => {
       const scope = GOVERNED_CATALOGUE_SCOPES[item.kind];
-      const legacy = item.kind === 'METRIC_CATALOGUE' ? null : LEGACY_GOVERNED_CATALOGUE_SCOPES[item.kind];
+      const legacy = item.kind === 'INDUSTRY_PACK' || item.kind === 'COUNTRY_PACK'
+        ? LEGACY_GOVERNED_CATALOGUE_SCOPES[item.kind] : null;
       const inScope = (target: { moduleKey: string; entityKey: string } | null) => (row: { moduleKey: string; entityKey: string; surfaceKey: string }) =>
         target !== null && row.moduleKey === target.moduleKey && row.entityKey === target.entityKey && row.surfaceKey === item.surfaceKey;
       return {
@@ -2001,7 +2050,8 @@ export class ConfigurationStudioService {
         return { ...(await load(moduleKey)), scope };
       } catch (error) {
         // A pack installed under Workforce before WI-OI-107 is still read.
-        if (kind === 'METRIC_CATALOGUE' || !(error instanceof HttpException) || error.getStatus() !== 404) throw error;
+        if ((kind !== 'INDUSTRY_PACK' && kind !== 'COUNTRY_PACK') ||
+          !(error instanceof HttpException) || error.getStatus() !== 404) throw error;
         return { ...(await load(LEGACY_GOVERNED_CATALOGUE_SCOPES[kind].moduleKey)), scope };
       }
     });
@@ -2013,6 +2063,8 @@ export class ConfigurationStudioService {
    * approval is skipped because demo tenants hold only synthetic data; the audit reason says so on every record.
    */
   async provisionDemoCatalogue(tenantId: string, actorId: string, kind: GovernedCatalogueKind, surfaceKey: string) {
+    if (kind === 'ASSISTANT_POLICY')
+      throw new ForbiddenException('Assistant policy requires independent review and cannot use Demo Lab auto-activation.');
     const tenant = await prisma.tenant.findUnique({ where: { id: tenantId }, select: { features: true } });
     if (!tenant?.features.includes('demo-lab')) {
       throw new ForbiddenException('Only Demo Lab tenants may activate catalogues without independent approval.');

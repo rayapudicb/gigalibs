@@ -148,7 +148,20 @@ export const CountryPackV1Schema = z
   });
 export type CountryPackV1 = z.infer<typeof CountryPackV1Schema>;
 
-export const GovernedCatalogueKindSchema = z.enum(['METRIC_CATALOGUE', 'INDUSTRY_PACK', 'COUNTRY_PACK']);
+/** WI-OI-121h: A3 accepts policy values only; inference, tools and credentials remain disabled. */
+export const AssistantPolicyV1Schema = z.object({
+  formatVersion: z.literal(1),
+  enabled: z.boolean(),
+  retentionDays: z.number().int().min(1).max(365),
+  model: z.object({ mode: z.literal('DISABLED') }).strict(),
+  allowedToolKeys: z.tuple([]),
+  credentialReference: z.null(),
+  displayName: z.string().trim().min(1).max(80),
+  locale: z.string().trim().min(2).max(35).regex(/^[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$/),
+}).strict();
+export type AssistantPolicyV1 = z.infer<typeof AssistantPolicyV1Schema>;
+
+export const GovernedCatalogueKindSchema = z.enum(['METRIC_CATALOGUE', 'INDUSTRY_PACK', 'COUNTRY_PACK', 'ASSISTANT_POLICY']);
 export type GovernedCatalogueKind = z.infer<typeof GovernedCatalogueKindSchema>;
 
 /** The Configuration Studio scope of solution-level catalogues: they belong to no module (WI-OI-107). */
@@ -159,6 +172,7 @@ export const GOVERNED_CATALOGUE_SCOPES = Object.freeze({
   METRIC_CATALOGUE: Object.freeze({ moduleKey: 'analytics-studio', entityKey: 'metric-catalogue' }),
   INDUSTRY_PACK: Object.freeze({ moduleKey: SOLUTION_CONFIGURATION_MODULE_KEY, entityKey: 'industry-pack' }),
   COUNTRY_PACK: Object.freeze({ moduleKey: SOLUTION_CONFIGURATION_MODULE_KEY, entityKey: 'country-pack' }),
+  ASSISTANT_POLICY: Object.freeze({ moduleKey: 'gigalibs-assistant', entityKey: 'tenant-policy' }),
 } satisfies Record<GovernedCatalogueKind, { moduleKey: string; entityKey: string }>);
 
 /** Where packs were installed before WI-OI-107 (under Workforce); still read, never written. */
@@ -187,6 +201,14 @@ export const GovernedCatalogueDefinitionSchema = z
       moduleKey: z.literal('analytics-studio'),
       entityKey: z.literal('metric-catalogue'),
       catalogue: MetricCatalogueV1Schema,
+    }).strict(),
+    z.object({
+      ...catalogueEnvelope,
+      kind: z.literal('ASSISTANT_POLICY'),
+      moduleKey: z.literal('gigalibs-assistant'),
+      entityKey: z.literal('tenant-policy'),
+      surfaceKey: z.literal('assistant-default'),
+      catalogue: AssistantPolicyV1Schema,
     }).strict(),
     // WI-OI-107: packs at the solution layer.
     z.object({

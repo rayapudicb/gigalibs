@@ -61,6 +61,7 @@ import {
   type DuplicateConfigurationTemplateDto,
   type CreateSavedFilterDto,
   GovernedCatalogueQuerySchema,
+  type GovernedCatalogueKind,
   InstallGovernedCatalogueSchema,
   type InstallGovernedCatalogueDto,
 } from '@gigalibs/contracts';
@@ -417,7 +418,7 @@ export class ConfigurationStudioController {
     );
   }
 
-  // WI-OI-064c: governed catalogues (metric catalogue, industry and country packs).
+  // WI-OI-064c/121h: typed catalogues and the bounded Assistant tenant policy.
   @Get('catalogues')
   @RequirePermissions('configuration:read')
   async catalogues(@CurrentTenant('tenantId') tenantId: string) {
@@ -442,7 +443,7 @@ export class ConfigurationStudioController {
   @RequirePermissions('configuration-runtime:read')
   async currentCatalogue(
     @CurrentTenant('tenantId') tenantId: string,
-    @Query(new ZodValidationPipe(GovernedCatalogueQuerySchema)) query: { kind: 'METRIC_CATALOGUE' | 'INDUSTRY_PACK' | 'COUNTRY_PACK'; surfaceKey: string },
+    @Query(new ZodValidationPipe(GovernedCatalogueQuerySchema)) query: { kind: GovernedCatalogueKind; surfaceKey: string },
   ) {
     return this.configuration.currentGovernedCatalogue(tenantId, query.kind, query.surfaceKey);
   }

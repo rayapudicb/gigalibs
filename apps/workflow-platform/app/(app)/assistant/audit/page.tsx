@@ -1,101 +1,72 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   ShieldCheck,
-  FileCheck,
   Search,
-  Filter,
-  CheckCircle2,
-  Clock,
-  ExternalLink,
-  Cpu,
-  Database,
-  Lock,
   Download,
-  Terminal,
+  RefreshCw,
+  Cpu,
+  Layers,
 } from 'lucide-react';
 import { Badge, Button, StatusBadge } from '@medusajs/ui';
 
-interface AuditLogEntry {
+interface AuditItem {
   id: string;
   timestamp: string;
-  user: string;
-  role: string;
-  promptSummary: string;
-  toolInvoked: string;
+  actorUserId: string;
+  threadId: string | null;
+  action: string;
+  correlationId: string;
+  status: string;
+  provider: string;
+  model: string;
   egressBytes: number;
-  durationMs: number;
-  status: 'COMMITTED' | 'CONFIRMED' | 'REJECTED';
 }
 
-const SAMPLE_LOGS: AuditLogEntry[] = [
-  {
-    id: 'aud-8921-a',
-    timestamp: '2026-10-09 10:28:14 UTC',
-    user: 'newuser@gigalibs.io',
-    role: 'OPERATIONS_SUPERVISOR',
-    promptSummary: 'Tell me my todays daily inspection tasks in unit abc',
-    toolInvoked: 'render_daily_inspection_checklist',
-    egressBytes: 0,
-    durationMs: 42,
-    status: 'COMMITTED',
-  },
-  {
-    id: 'aud-8920-b',
-    timestamp: '2026-10-09 10:14:02 UTC',
-    user: 'newuser@gigalibs.io',
-    role: 'OPERATIONS_SUPERVISOR',
-    promptSummary: 'Get me the downtimes for all the equipments in the plant',
-    toolInvoked: 'plant_downtimes',
-    egressBytes: 0,
-    durationMs: 38,
-    status: 'COMMITTED',
-  },
-  {
-    id: 'aud-8919-c',
-    timestamp: '2026-10-09 09:55:20 UTC',
-    user: 'floor.tech@gigalibs.io',
-    role: 'WORKFORCE_MEMBER',
-    promptSummary: 'Total electricity consumption of the last 24 hrs',
-    toolInvoked: 'smart_meter_telemetry',
-    egressBytes: 0,
-    durationMs: 29,
-    status: 'COMMITTED',
-  },
-  {
-    id: 'aud-8918-d',
-    timestamp: '2026-10-09 09:22:45 UTC',
-    user: 'supervisor@gigalibs.io',
-    role: 'OPERATIONS_SUPERVISOR',
-    promptSummary: 'Generate work order for motor vibration exceeding 4.2 mm/s',
-    toolInvoked: 'cmms_work_orders',
-    egressBytes: 0,
-    durationMs: 84,
-    status: 'CONFIRMED',
-  },
-  {
-    id: 'aud-8917-e',
-    timestamp: '2026-10-09 08:41:10 UTC',
-    user: 'storekeeper@gigalibs.io',
-    role: 'WORKFORCE_MEMBER',
-    promptSummary: 'Check inventory for transformer parts and bushings',
-    toolInvoked: 'inventory_mro_check',
-    egressBytes: 0,
-    durationMs: 31,
-    status: 'COMMITTED',
-  },
-];
+interface AuditSummary {
+  tenantId: string;
+  totalRuns: number;
+  toolQueries: number;
+  llmGenerations: number;
+  egressBytes: number;
+  sovereignMode: string;
+  verifiedAt: string;
+}
 
 export default function AssistantAuditPage() {
-  const [logs] = useState<AuditLogEntry>(SAMPLE_LOGS as any);
+  const [items, setItems] = useState<AuditItem[]>([]);
+  const [summary, setSummary] = useState<AuditSummary | null>(null);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
-  const filteredLogs = SAMPLE_LOGS.filter(
+  const fetchAuditLogs = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/assistant/audit', { cache: 'no-store' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      setItems(data.items || []);
+      setSummary(data.summary || null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch audit logs');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAuditLogs();
+  }, []);
+
+  const filteredLogs = items.filter(
     (l) =>
-      l.promptSummary.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      l.user.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      l.toolInvoked.toLowerCase().includes(searchTerm.toLowerCase())
+      l.action.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      l.actorUserId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      l.model.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      l.correlationId.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -118,20 +89,23 @@ export default function AssistantAuditPage() {
                 <StatusBadge color="green">0 BYTES EGRESS</StatusBadge>
               </div>
               <p className="mt-0.5 text-xs text-ui-fg-muted">
-                Immutable record of prompt executions, tool invocations, and zero-egress cryptographic verification.
+                Immutable PostgreSQL audit records of runs, tool queries, and zero-egress cryptographic verification.
               </p>
             </div>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          <Button variant="secondary" size="small" onClick={() => alert('Audit logs exported as CSV.')}>
+          <Button variant="secondary" size="small" onClick={fetchAuditLogs}>
+            <RefreshCw className={`mr-1.5 h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} /> Refresh
+          </Button>
+          <Button variant="secondary" size="small" onClick={() => alert('Audit logs exported.')}>
             <Download className="mr-1.5 h-3.5 w-3.5" /> Export Audit CSV
           </Button>
         </div>
       </header>
 
-      {/* Summary Stats */}
+      {/* Summary Stats (Phase 7 Usage Ledger) */}
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-4">
         <div className="rounded-xl border border-ui-border-base bg-ui-bg-base p-4 shadow-xs">
           <span className="text-[11px] font-semibold uppercase tracking-wider text-ui-fg-muted">
@@ -145,19 +119,21 @@ export default function AssistantAuditPage() {
 
         <div className="rounded-xl border border-ui-border-base bg-ui-bg-base p-4 shadow-xs">
           <span className="text-[11px] font-semibold uppercase tracking-wider text-ui-fg-muted">
-            Inference Protocol
+            Total Governed Runs
           </span>
           <div className="mt-1 flex items-baseline gap-2">
-            <span className="text-xl font-bold text-ui-fg-base">Same-Origin SSE</span>
+            <span className="text-2xl font-bold text-ui-fg-base">{summary?.totalRuns ?? 0}</span>
+            <span className="text-[11px] text-ui-fg-muted">recorded runs</span>
           </div>
         </div>
 
         <div className="rounded-xl border border-ui-border-base bg-ui-bg-base p-4 shadow-xs">
           <span className="text-[11px] font-semibold uppercase tracking-wider text-ui-fg-muted">
-            Average Tool Latency
+            CMMS Work Order Queries
           </span>
           <div className="mt-1 flex items-baseline gap-2">
-            <span className="text-2xl font-bold text-ui-fg-base">44.8 ms</span>
+            <span className="text-2xl font-bold text-ui-fg-base">{summary?.toolQueries ?? 0}</span>
+            <span className="text-[11px] text-ui-fg-muted">signed calls</span>
           </div>
         </div>
 
@@ -177,7 +153,8 @@ export default function AssistantAuditPage() {
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-ui-fg-muted" />
           <input
             type="text"
-            placeholder="Search audit events by user, tool, or prompt..."
+            aria-label="Search audit events by action, user, or correlation"
+            placeholder="Search audit events by action, user, or correlation..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-9 pr-3 py-2 rounded-lg border border-ui-border-base bg-ui-bg-base text-xs text-ui-fg-base focus:border-ui-border-interactive focus:outline-none"
@@ -187,56 +164,57 @@ export default function AssistantAuditPage() {
 
       {/* Audit Log Table */}
       <div className="rounded-xl border border-ui-border-base bg-ui-bg-base shadow-xs overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-ui-bg-subtle border-b border-ui-border-base text-ui-fg-muted uppercase font-semibold text-[10px] tracking-wider">
-              <tr>
-                <th className="px-4 py-3">Timestamp & ID</th>
-                <th className="px-4 py-3">User & Persona</th>
-                <th className="px-4 py-3">Operational Prompt</th>
-                <th className="px-4 py-3">Tool Invocations</th>
-                <th className="px-4 py-3">Latency</th>
-                <th className="px-4 py-3">Egress Traffic</th>
-                <th className="px-4 py-3 text-right">Commit State</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-ui-border-subtle">
-              {filteredLogs.map((entry) => (
-                <tr key={entry.id} className="hover:bg-ui-bg-subtle/50 transition-colors">
-                  <td className="px-4 py-3.5 whitespace-nowrap">
-                    <div className="font-mono text-[11px] text-ui-fg-base">{entry.timestamp}</div>
-                    <div className="font-mono text-[10px] text-ui-fg-muted">{entry.id}</div>
-                  </td>
-                  <td className="px-4 py-3.5 whitespace-nowrap">
-                    <div className="font-medium text-ui-fg-base">{entry.user}</div>
-                    <div className="text-[10px] text-ui-fg-muted">{entry.role}</div>
-                  </td>
-                  <td className="px-4 py-3.5 max-w-xs">
-                    <div className="text-ui-fg-base font-medium line-clamp-1">
-                      {entry.promptSummary}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3.5 whitespace-nowrap font-mono text-[11px] text-ui-fg-subtle">
-                    {entry.toolInvoked}
-                  </td>
-                  <td className="px-4 py-3.5 whitespace-nowrap font-mono text-[11px] text-ui-fg-muted">
-                    {entry.durationMs} ms
-                  </td>
-                  <td className="px-4 py-3.5 whitespace-nowrap">
-                    <span className="font-mono font-semibold text-ui-fg-interactive">
-                      {entry.egressBytes} B
-                    </span>
-                  </td>
-                  <td className="px-4 py-3.5 whitespace-nowrap text-right">
-                    <Badge color="green" size="small">
-                      {entry.status}
-                    </Badge>
-                  </td>
+        {error ? (
+          <div className="p-6 text-center text-xs text-ui-fg-error">{error}</div>
+        ) : loading && items.length === 0 ? (
+          <div className="p-6 text-center text-xs text-ui-fg-muted">Loading audit records from PostgreSQL...</div>
+        ) : filteredLogs.length === 0 ? (
+          <div className="p-6 text-center text-xs text-ui-fg-muted">No audit events match your search.</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table aria-label="Assistant Audit Logs" className="w-full text-left text-xs">
+              <thead className="bg-ui-bg-subtle border-b border-ui-border-base text-ui-fg-subtle uppercase font-semibold text-xs tracking-wider">
+                <tr>
+                  <th className="px-4 py-3">Timestamp & Correlation ID</th>
+                  <th className="px-4 py-3">Actor / User</th>
+                  <th className="px-4 py-3">Action Type</th>
+                  <th className="px-4 py-3">Provider & Model</th>
+                  <th className="px-4 py-3">Egress Traffic</th>
+                  <th className="px-4 py-3 text-right">Run Status</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-ui-border-subtle">
+                {filteredLogs.map((entry) => (
+                  <tr key={entry.id} className="hover:bg-ui-bg-subtle/50 transition-colors">
+                    <td className="px-4 py-3.5 whitespace-nowrap">
+                      <div className="font-mono text-[11px] text-ui-fg-base">{new Date(entry.timestamp).toLocaleString()}</div>
+                      <div className="font-mono text-[10px] text-ui-fg-muted truncate max-w-xs">{entry.correlationId}</div>
+                    </td>
+                    <td className="px-4 py-3.5 whitespace-nowrap">
+                      <div className="font-medium text-ui-fg-base">{entry.actorUserId}</div>
+                    </td>
+                    <td className="px-4 py-3.5 whitespace-nowrap font-mono text-[11px] text-ui-fg-subtle">
+                      {entry.action}
+                    </td>
+                    <td className="px-4 py-3.5 whitespace-nowrap font-mono text-[11px] text-ui-fg-muted">
+                      {entry.provider} • {entry.model}
+                    </td>
+                    <td className="px-4 py-3.5 whitespace-nowrap">
+                      <span className="font-mono font-semibold text-ui-fg-interactive">
+                        {entry.egressBytes} B
+                      </span>
+                    </td>
+                    <td className="px-4 py-3.5 whitespace-nowrap text-right">
+                      <Badge color={entry.status === 'SUCCEEDED' ? 'green' : 'red'} size="small">
+                        {entry.status}
+                      </Badge>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );

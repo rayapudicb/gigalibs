@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "releaseId": "gigalibs-assistant-v1.0.0",
+  "releaseGate": "G6_G7_CONTROLLED_PRODUCTION_ROLLOUT",
+  "targetCommit": "7c15655c6ab311881b5b26e37fa0dcdce94cf750",
+  "generatedAt": "2026-10-10T13:30:00.000Z",
+  "productBoundary": {
+    "name": "GigaLibs Sovereign Operational Assistant",
+    "edition": "CMMS Work Orders & Plant Diagnostics Edition",
+    "scope": "Read-only CMMS work-order grounding with clickable citations and air-gapped local model inference; zero external data egress.",
+    "excludedCapabilities": [
+      "mutation_actions",
+      "external_cloud_ai_providers",
+      "tenant_wide_unauthenticated_chats"
+    ]
+  },
+  "migrations": {
+    "version": "000001",
+    "targetSchema": "gigalibs_assistant",
+    "tablesCount": 6,
+    "rlsPolicyMode": "FORCE_ROW_LEVEL_SECURITY",
+    "upScript": {
+      "path": "modules/gigalibs-assistant/db/migrations/000001_assistant_private_threads.up.sql",
+      "sha256": "12fd236ca327158242a46c4cd3f3937e2ae84c1d12170fea6348dd49b377c93d"
+    },
+    "downScript": {
+      "path": "modules/gigalibs-assistant/db/migrations/000001_assistant_private_threads.down.sql",
+      "sha256": "7e37dc7bfe21b4f9a68ca9e541a05c469399e073dbbb10fa00c65c88b36abcb8"
+    },
+    "idempotencyVerified": true,
+    "rollbackVerified": true
+  },
+  "modelRuntime": {
+    "engine": "Ollama",
+    "model": "llama3.2:3b",
+    "loopbackEndpoint": "http://127.0.0.1:11434",
+    "externalEgressAllowed": false,
+    "maxContextTokens": 4096,
+    "temperature": 0.2
+  },
+  "serviceDependencies": {
+    "controlPlane": {
+      "service": "NestJS Playground API",
+      "port": 3333,
+      "protocol": "HTTP/Signed-Session"
+    },
+    "workflowPlatform": {
+      "service": "Next.js BFF",
+      "port": 5180,
+      "protocol": "HTTP"
+    },
+    "cmmsModule": {
+      "service": "Physical Operations CMMS",
+      "port": 4200,
+      "protocol": "HTTP/Ed25519-Platform-Signature"
+    }
+  },
+  "rolloutStrategy": {
+    "initialStage": "STAGE_1_INTERNAL_PILOT",
+    "cohorts": [
+      {
+        "id": "PILOT_INTERNAL",
+        "description": "Internal test and operational validation tenants",
+        "tenants": ["test-tenant", "synthetic-tenant", "pilot-plant-01"]
+      },
+      {
+        "id": "EARLY_ADOPTER_TENANTS",
+        "description": "Controlled customer cohort for CMMS work order read-only pilot",
+        "tenants": []
+      },
+      {
+        "id": "GENERAL_AVAILABILITY",
+        "description": "Full multi-tenant availability upon independent release authority sign-off",
+        "tenants": ["*"]
+      }
+    ],
+    "serviceLevelObjectives": {
+      "availability": "99.9%",
+      "maxEgressBytes": 0,
+      "p95InferenceLatencyMs": 4500,
+      "maxErrorRatePercent": 1.0
+    },
+    "emergencyHaltCriteria": {
+      "egressViolation": {
+        "condition": "Egress detected > 0 bytes",
+        "action": "HALT_IMMEDIATE_TERMINATION"
+      },
+      "modelUnavailable": {
+        "condition": "Local Ollama connection failure",
+        "action": "FAIL_CLOSED_ABSTAIN"
+      },
+      "errorRateSpike": {
+        "condition": "Error rate > 2.0% over 5-minute rolling window",
+        "action": "CIRCUIT_BREAKER_TRIPPED"
+      }
+    }
+  }
+}

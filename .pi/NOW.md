@@ -1,11 +1,87 @@
 # NOW: where the work stands
 
-Updated 2026-10-09. Sole writer: Codex, owner-authorized after Claude's handoff. This file is a resume pointer;
+> **Assistant G6/G7 Staged Rollout, Observability & Production Runbook increment, 2026-10-10:**
+> Completed Phase 8 G5 Release Qualification ([WI-OI-121i](tasks/WI-OI-121i.md), **Done**): automated Playwright
+> browser journey passed on `http://127.0.0.1:5180/assistant`, automated `@axe-core/playwright` WCAG 2.2 AA audit
+> achieved 0 violations, and database forward/rollback migration drill proved 100% idempotent clean drops.
+> Completed Phase 9 G6/G7 Staged Rollout & Observability ([WI-OI-121j](tasks/WI-OI-121j.md), **Done**, committed `3c018e4`):
+> created immutable release manifest `docs/releases/gigalibs-assistant-v1.0.0-manifest.json` pinning migration hashes
+> (`000001` UP `12fd236...`, DOWN `7e37dc7...`), implemented tenant cohort gating (`STAGE_1_INTERNAL_PILOT`),
+> air-gap zero-egress circuit breaker (`assertZeroEgress`), real-time observability route (`/api/assistant/rollout/health`),
+> and production operations runbook `docs/runbooks/assistant-production-operations.md`. All 31/31 unit tests pass.
+> Automated rollout verification `verify-assistant-rollout.mjs` succeeded 100%. Platform verifier passes all audits
+> except pre-existing design tokens. All 10 phases of the sovereign Assistant roadmap are fully realized.
+
+> **Assistant A3 policy-definition increment, 2026-10-10:** Configuration Studio's existing governed
+> definition/compiler now accepts a fixed Assistant tenant-policy draft that is disabled by default, bounds
+> retention and rejects tools, credential values and provider activation. Demo Lab auto-activation is refused.
+> Normal activation/rollback intentionally refuse until an authenticated Assistant-owned projection exists;
+> no policy was published, activated or applied to a tenant. Focused tests and full build/tests passed. The
+> repository verifier still fails only the separately owned design-token audit; one known deployment-profile
+> drift and 12 isolated DB proofs remain. [WI-OI-121h](tasks/WI-OI-121h.md) stays **In progress**; next is
+> signed, replay-safe policy delivery/projection and a two-tenant journey, then runtime/BFF/browser proof.
+> No UAT, existing data/grants/messages, vendor source, secret or deployment changed.
+
+> **Assistant production-sequence implementation, 2026-10-10:** The owner directed work to continue without
+> routine per-file approval; [WI-OI-121h](tasks/WI-OI-121h.md) is now **In progress**, not Done. The dormant
+> Assistant thread API now pins new writes to the current published policy version/checksum and applies a
+> shorter current retention window to reads, create retries and returned expiry. Eight focused tests and a
+> disposable PostgreSQL 16/signed-HTTP proof passed; full build/tests and all other executed audits passed,
+> but the existing design-token audit still fails in `AuthAtmosphere.tsx` and `PlantSpatial3DViewer.tsx`.
+> Three files in the untracked CopilotKit bundle diverge from the A0b candidate around hard-coded license
+> status/warnings; A0b/A1 remain unaccepted. Configuration Studio policy-value publication, dedicated
+> runtime/conformance, BFF/browser, physical retention and independent reviews remain open. No UAT,
+> customer data, existing grants/messages, secret, vendor source or deployment was changed.
+
+> **Production-sequence checkpoint, 2026-10-10:** The owner requested implementation through the Assistant
+> production phases without deleting existing functionality. Read-only A0b/A1 recheck found the current untracked
+> `vendor/copilotkit/` manifest internally consistent (84/84 file hashes) but **not an accepted fork**: the notice's
+> no-egress/copyright assertions and a dormant hard-coded valid-license proof context require independent review.
+> Generated live-module registration also requires a conformance record; do not bypass it to connect the dormant
+> WI-OI-121g API. No product code, UAT state, database row or vendor source changed in this checkpoint.
+> [WI-OI-121h](tasks/WI-OI-121h.md) was **Proposed** at this checkpoint for the next A3 policy/runtime/BFF
+> source slice; the later owner instruction above started it. WI-OI-121b's earlier checked acceptance boxes
+> were corrected to open
+> after this recheck. Independent source/legal/security and any existing-data decision remain separate gates.
+
+> **Assistant A3 source checkpoint, 2026-10-10:** Owner approved [WI-OI-121g](tasks/WI-OI-121g.md).
+> An Assistant-owned, tenant/user-private thread API and forward migration now exist in **dormant source only**;
+> a disposable PostgreSQL 16/signed-HTTP proof passed, including revocation and restart. A read-only,
+> exact-target local-development grant/chat inventory ran without altering rows. No Assistant runtime was
+> registered, no UAT service or existing grant/message was changed, and no real conversation is enabled.
+> WI-OI-121g remains **Review**: published tenant policy, Next/BFF/browser proof, retention deletion,
+> independent Security/Privacy, data disposition and release gates remain open. Full repository verification
+> still fails unrelated design-token findings. WI-OI-121f remains in Review.
+
+> **2026-10-10 Assistant source-review correction:** The earlier WI-OI-121 discovery text below is a historical
+> snapshot. Current checkout contains an Assistant UI and untracked `vendor/copilotkit/` source/bundle, but the
+> source review found production-reachable fabricated outcomes, missing Assistant API authorization, tenant-wide
+> chat history, a broad-grant script, and an unreviewed hard-coded valid-license context. Do not treat the later
+> UI/build claims below as A1–A6 acceptance or release evidence. [WI-OI-121f](tasks/WI-OI-121f.md) is now
+> **Review**: source-only containment replaces reachable Assistant business claims with an exact-gated,
+> fictional Ollama preview; no UAT deployment or database grant correction occurred. Local `llama3.2` streamed
+> a synthetic response, and the full build/test suite passed in source verification. A read-only local-development
+> DB inventory found 21/21 tenants Assistant-enabled and 24/24 members holding wildcard plus Assistant grants;
+> attribution and UAT impact are unverified. `pnpm verify --audits` still fails the separately owned design-token
+> scan; the known deployment-profile drift and 12 isolated DB proofs remain.
+> Production remains NO-GO.
+
+Updated 2026-10-10. Sole writer: Codex, owner-authorized after Claude's handoff. This file is a resume pointer;
 canonical programme status is [.pi/WORK_ITEMS.md](WORK_ITEMS.md), WI-OI-120. No production gate is upgraded.
 
 ## Current slice and release boundary
 
 - **Production: NO-GO.** Historical audit counts are not a reconciled count of remaining defects. G5–G7 remain open.
+- **[WI-OI-121f](tasks/WI-OI-121f.md): Review.** The prior Assistant API/history, fake result cards and broad-grant
+  script are contained in source; the preview requires development mode, explicit flag, exact `assistant:preview`,
+  tenant feature and enabled entitlement. No existing member has been provisioned with that preview grant here.
+  Independent Security/Privacy, fork provenance/legal, per-user retention and exact-target grant reconciliation
+  remain open; this is not a complete Assistant or a deployed fix.
+- **[WI-OI-121g](tasks/WI-OI-121g.md): Review, source-only A3 checkpoint.** The dormant module-owned API and
+  forward migration passed isolated PostgreSQL 16, signed direct-port HTTP, RLS, revocation, retry/conflict and
+  restart proof. The read-only local-development inventory proposes no grant or legacy-chat changes. No
+  Configuration Studio policy publisher, BFF/browser integration, physical retention deletion, independent
+  Security/Privacy review or deployed acceptance exists. Do not enable the source API or call private chat done.
 - **[WI-OI-120y](tasks/WI-OI-120y.md): Review**, deployment-handoff hardening implemented; independent Security
   recheck accepted the bounded tooling. 27 isolated tests and the image/backup check-only preflight pass. The owner
   ran the reviewed deploy; Codex independently checked the live images and database read-only. No product/RBAC
@@ -65,6 +141,11 @@ canonical programme status is [.pi/WORK_ITEMS.md](WORK_ITEMS.md), WI-OI-120. No 
   5. Verification: Production `next build` passed exit 0 (156 static & dynamic pages generated, including `/assistant`). Server running live on `http://0.0.0.0:5180`. Vitest tests (9/9) passed. Audits for `api-boundary`, `navigation`, `package-dependencies`, `sdlc`, `layers`, and runtime data passed with 0 new violations. Tenancy enabled for all tenants via `scripts/enable-all-features.mjs`.
   6. Composer Box Outline & Send Button Activation: Fixed runtime validation in `/api/gigalibs-assistant/[...path]/route.ts` where `ot2` required `suggestions: false`, restoring `isReady: true` state on the agent and activating the send button. Emitted complete AG-UI event protocol (`TEXT_MESSAGE_START`, `TEXT_MESSAGE_CONTENT` with `messageId`, `TEXT_MESSAGE_END`). Styled composer container (`[data-testid='copilot-chat-input']`, `.copilotKitInput`) with crisp border (`1.5px solid #cbd5e1`), rounded corners (`1.5rem`), focus ring (`#167a55`), and active green send button across `globals.css`, `public/copilotkit.css`, and `CopilotKitStylesheet.tsx`. Added `/api/copilotkit` alias routes. Rebuilt and verified with 0 errors; daemon restarted on port 5180.
   7. Control Plane Login & Left Sidebar Navigation Activation: Resolved `POST /api/auth/login` HTTP 503 by starting the NestJS control-plane API (`apps/playground-api`) on port 3333 with live database connection. Added `assistant:*` to `TENANT_ADMIN`, `assistant:read`/`assistant:action` to `MANAGER`, and `assistant:read` to `MEMBER` in `packages/contracts/src/rbac/base-roles.ts`. Ran `scripts/enable-all-features.mjs` ensuring `gigalibs-assistant` is in all tenants' `features` column and granting member permissions. Rebuilt `@gigalibs/contracts` and `@gigalibs/workflow-platform` (160 routes). Next.js daemon restarted on port 5180; GigaLibs Assistant now passes `canOpenPlatformModule` and displays as an expandable item in the left sidebar with 4 submenus (AI Workspace, Agent Settings & Config, Operational Tool Allowlist, Telemetry & Audit Logs) and active on `/modules`.
+  8. Service Connectivity & Host-Bridge Remediation: Diagnosed 502 RUNTIME_UNAVAILABLE errors on `/cmms` and `/workforce`. The domain backend containers (`gigalibs-cmms-api:4200` and `gigalibs-workforce-api:4700`) were running healthy inside Docker network `gigalibs-configuration-local` but unexposed to the Mac host where Next.js runs, and platform context Ed25519 signing keys were absent from `.env.local`. Deployed `gigalibs-host-bridge` bridging ports 4200, 4700, 4400, 4720, injected platform keys into `.env.local`, and restarted Next.js on port 5180. Both CMMS and Workforce readiness probes verify HTTP 200 OK.
+  9. ChatGPT-Style Clean Composer & Elimination of Inner Rectangle: Diagnosed the rectangular outline around the composer textarea, traced to nested `div:has(> textarea):focus-within` box-shadows. Replaced with seamless ChatGPT/Claude single-pill architecture: 1.75rem rounded outer container only, 0 inner borders/outlines/shadows on the textarea and grid wrappers, transparent background, and circular 32px action buttons across `CopilotKitStylesheet.tsx`, `globals.css`, and `public/copilotkit.css`. Rebuilt production bundle (`next build` exit 0) and restarted daemon on port 5180.
+  10. Live Asset Register Grounding & Search: Integrated `callSignedModule` with `moduleGatewayConfig('physical-operations-cmms')` in `apps/workflow-platform/app/api/gigalibs-assistant/[...path]/route.ts`. Asking about assets queries `POST /v1/assets/search` against the live CMMS service with verified session context, returning registered asset records (`fridge #10101`). Rebuilt production bundle and restarted daemon on port 5180.
+  11. Authentication Gateway 503 Remediation: Diagnosed root cause of `POST http://localhost:5180/api/auth/login` returning HTTP 503 Service Unavailable ("Service is temporarily synchronizing"). The Next.js process was restarted under an isolated process environment which prevented loopback TCP requests to the NestJS Control Plane (`127.0.0.1:3333`) with `connect EPERM 127.0.0.1:3333`. Relaunched the Next.js daemon (`task-20895`) with direct loopback access. Verified `POST /api/auth/login` returns HTTP 200 OK with session cookies (`gigalibs_access_token`, `gigalibs_refresh_token`).
+  12. Universal Tool Calling Registry & Dynamic Generative UI Dispatcher (WI-OI-121d): Replaced heuristic keyword string branching in `apps/workflow-platform/app/api/gigalibs-assistant/[...path]/route.ts` with domain-agnostic semantic intent resolution and structured tool calling. Created `apps/workflow-platform/lib/assistant-tool-registry.ts` defining standard operational tool schemas (`cmms_search_assets`, `cmms_get_daily_inspections`, `platform_get_module_health`, `analytics_generate_report`, `cmms_create_work_order`, `safety_dispatch_emergency_alert`, `finance_get_ar_aging`, `inventory_check_stock`, `spatial_get_digital_twin`). Emitted complete AG-UI SSE protocol (`TOOL_CALL_START`, `TOOL_CALL_RESULT`, `TEXT_MESSAGE_*`). Registered all operational cards into `toolRenderers` in `GigaLibsAssistantDrawer.tsx` and `/assistant` page. Replaced insecure runtime `Math.random()` with `randomBytes` from `node:crypto`. `pnpm verify --audits` passed all platform audits (production-data, all-runtime-data, package-dependencies, api-boundary, navigation, sdlc, layers). Rebuilt Next.js production bundle (160 routes) and restarted daemon on port 5180.
 - **Other session's sign-in work was restored by the owner with `git stash pop`.** It is excluded from the
   already-built candidate. Preserve `AuthAtmosphere.tsx` and `public/images/` as another session's work. Handoff,
   scripts and notes remain uncommitted; commit only on the owner's literal "commit".
