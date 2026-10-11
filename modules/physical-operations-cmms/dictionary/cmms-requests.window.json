@@ -1,0 +1,490 @@
+{
+  "contractVersion": "1.0",
+  "window": {
+    "route": "/cmms/requests",
+    "label": "Requests",
+    "description": "Intake, track and triage maintenance requests.",
+    "readPermission": "cmms:read"
+  },
+  "definition": {
+    "kind": "APPLICATION_DICTIONARY",
+    "contractVersion": "1.0",
+    "moduleKey": "physical-operations-cmms",
+    "entityKey": "cmms-requests",
+    "surfaceKey": "cmms-requests",
+    "title": "Maintenance requests",
+    "dictionary": {
+      "packageKey": "cmms-requests-module-baseline",
+      "name": "Maintenance requests",
+      "version": "1.0.0",
+      "moduleKey": "physical-operations-cmms",
+      "targetEntityKey": "cmms.maintenance-requests",
+      "entities": [
+        {
+          "entityKey": "cmms.maintenance-requests",
+          "moduleKey": "physical-operations-cmms",
+          "label": "Maintenance requests",
+          "ownership": "MODULE_CORE",
+          "primaryKeyField": "id",
+          "isVersioned": true,
+          "isAuditLogged": true,
+          "isSoftDeletable": false
+        }
+      ],
+      "fields": [
+        {
+          "fieldKey": "request-number",
+          "entityKey": "cmms.maintenance-requests",
+          "label": "Request number",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "title",
+          "entityKey": "cmms.maintenance-requests",
+          "label": "Title",
+          "type": "TEXT",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "helpText": "Summary of the issue or maintenance request."
+        },
+        {
+          "fieldKey": "description",
+          "entityKey": "cmms.maintenance-requests",
+          "label": "Description",
+          "type": "TEXTAREA",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "priority",
+          "entityKey": "cmms.maintenance-requests",
+          "label": "Priority",
+          "type": "SELECT",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "priorities"
+        },
+        {
+          "fieldKey": "status",
+          "entityKey": "cmms.maintenance-requests",
+          "label": "Status",
+          "type": "SELECT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "request-statuses"
+        },
+        {
+          "fieldKey": "asset-id",
+          "entityKey": "cmms.maintenance-requests",
+          "label": "Asset",
+          "type": "REFERENCE",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "asset-ref"
+        },
+        {
+          "fieldKey": "requester-name",
+          "entityKey": "cmms.maintenance-requests",
+          "label": "Requester name",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "requester-email",
+          "entityKey": "cmms.maintenance-requests",
+          "label": "Requester email",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "requester-phone",
+          "entityKey": "cmms.maintenance-requests",
+          "label": "Requester phone",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "requester-subject",
+          "entityKey": "cmms.maintenance-requests",
+          "label": "Requester login",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "rejection-reason",
+          "entityKey": "cmms.maintenance-requests",
+          "label": "Rejection reason",
+          "type": "TEXTAREA",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "converted-wo-id",
+          "entityKey": "cmms.maintenance-requests",
+          "label": "Work order",
+          "type": "REFERENCE",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "work-order-ref"
+        },
+        {
+          "fieldKey": "triaged-by",
+          "entityKey": "cmms.maintenance-requests",
+          "label": "Triaged by",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "triaged-at",
+          "entityKey": "cmms.maintenance-requests",
+          "label": "Triaged at",
+          "type": "DATETIME",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "created-at",
+          "entityKey": "cmms.maintenance-requests",
+          "label": "Submitted at",
+          "type": "DATETIME",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        }
+      ],
+      "relationships": [],
+      "references": [
+        {
+          "referenceKey": "request-statuses",
+          "referenceType": "VALUE_LIST",
+          "staticValues": [
+            {
+              "value": "PENDING",
+              "label": "Pending"
+            },
+            {
+              "value": "ACCEPTED",
+              "label": "Accepted"
+            },
+            {
+              "value": "REJECTED",
+              "label": "Rejected"
+            },
+            {
+              "value": "CANCELLED",
+              "label": "Cancelled"
+            }
+          ]
+        },
+        {
+          "referenceKey": "priorities",
+          "referenceType": "VALUE_LIST",
+          "staticValues": [
+            {
+              "value": "LOW",
+              "label": "Low"
+            },
+            {
+              "value": "MEDIUM",
+              "label": "Medium"
+            },
+            {
+              "value": "HIGH",
+              "label": "High"
+            },
+            {
+              "value": "EMERGENCY",
+              "label": "Emergency"
+            }
+          ]
+        },
+        {
+          "referenceKey": "asset-ref",
+          "referenceType": "SEARCH_LOOKUP",
+          "resolverKey": "cmms-assets"
+        },
+        {
+          "referenceKey": "work-order-ref",
+          "referenceType": "SEARCH_LOOKUP",
+          "resolverKey": "cmms-work-orders",
+          "createWith": {
+            "moduleKey": "physical-operations-cmms",
+            "surfaceKey": "cmms-work-orders",
+            "permission": "cmms.work-orders.write"
+          }
+        }
+      ],
+      "validationRules": [],
+      "views": [
+        {
+          "viewKey": "requests",
+          "label": "Maintenance requests",
+          "mode": "LIST",
+          "device": "ALL",
+          "defaultSortDirection": "ASC",
+          "tabs": [
+            {
+              "tabKey": "request",
+              "label": "Request",
+              "position": 0,
+              "level": 0,
+              "targetEntityKey": "cmms.maintenance-requests",
+              "sections": [
+                {
+                  "sectionKey": "main",
+                  "label": "General information",
+                  "collapsible": false,
+                  "defaultCollapsed": false,
+                  "position": 0
+                },
+                {
+                  "sectionKey": "details",
+                  "label": "Issue description",
+                  "collapsible": false,
+                  "defaultCollapsed": false,
+                  "position": 1
+                },
+                {
+                  "sectionKey": "contact",
+                  "label": "Contact information",
+                  "collapsible": false,
+                  "defaultCollapsed": false,
+                  "position": 2
+                },
+                {
+                  "sectionKey": "triage",
+                  "label": "Triage resolution",
+                  "collapsible": false,
+                  "defaultCollapsed": false,
+                  "position": 3
+                }
+              ],
+              "fields": [
+                {
+                  "fieldKey": "request-number",
+                  "position": 0,
+                  "span": 3,
+                  "componentKey": "text-input",
+                  "sectionKey": "main"
+                },
+                {
+                  "fieldKey": "title",
+                  "position": 1,
+                  "span": 6,
+                  "componentKey": "text-input",
+                  "sectionKey": "main"
+                },
+                {
+                  "fieldKey": "priority",
+                  "position": 2,
+                  "span": 3,
+                  "componentKey": "select",
+                  "sectionKey": "main"
+                },
+                {
+                  "fieldKey": "status",
+                  "position": 3,
+                  "span": 3,
+                  "componentKey": "select",
+                  "sectionKey": "main"
+                },
+                {
+                  "fieldKey": "asset-id",
+                  "position": 4,
+                  "span": 5,
+                  "componentKey": "lookup",
+                  "sectionKey": "main"
+                },
+                {
+                  "fieldKey": "requester-name",
+                  "position": 5,
+                  "span": 4,
+                  "componentKey": "text-input",
+                  "sectionKey": "main"
+                },
+                {
+                  "fieldKey": "description",
+                  "position": 6,
+                  "span": 12,
+                  "componentKey": "textarea",
+                  "sectionKey": "details"
+                },
+                {
+                  "fieldKey": "requester-email",
+                  "position": 7,
+                  "span": 6,
+                  "componentKey": "text-input",
+                  "sectionKey": "contact"
+                },
+                {
+                  "fieldKey": "requester-phone",
+                  "position": 8,
+                  "span": 6,
+                  "componentKey": "text-input",
+                  "sectionKey": "contact"
+                },
+                {
+                  "fieldKey": "converted-wo-id",
+                  "position": 9,
+                  "span": 4,
+                  "componentKey": "lookup",
+                  "sectionKey": "triage"
+                },
+                {
+                  "fieldKey": "rejection-reason",
+                  "position": 10,
+                  "span": 8,
+                  "componentKey": "textarea",
+                  "sectionKey": "triage"
+                },
+                {
+                  "fieldKey": "triaged-by",
+                  "position": 11,
+                  "span": 4,
+                  "componentKey": "text-input",
+                  "sectionKey": "triage"
+                },
+                {
+                  "fieldKey": "triaged-at",
+                  "position": 12,
+                  "span": 4,
+                  "componentKey": "datetime-input",
+                  "sectionKey": "triage"
+                },
+                {
+                  "fieldKey": "created-at",
+                  "position": 13,
+                  "span": 4,
+                  "componentKey": "datetime-input",
+                  "sectionKey": "triage"
+                }
+              ]
+            }
+          ],
+          "searchFields": [
+            "request-number",
+            "title",
+            "requester-name"
+          ],
+          "defaultSortField": "request-number"
+        }
+      ],
+      "navigation": [],
+      "actions": [
+        {
+          "actionKey": "accept",
+          "label": "Accept into work order",
+          "type": "COMMAND",
+          "handlerKey": "cmms.maintenance-requests.accept",
+          "requiredPermissions": [
+            "cmms.requests.write"
+          ],
+          "confirmationPrompt": "Accept this request and generate a work order?",
+          "visibilityCondition": {
+            "field": "status",
+            "operator": "EQ",
+            "value": "PENDING"
+          }
+        },
+        {
+          "actionKey": "reject",
+          "label": "Reject request",
+          "type": "COMMAND",
+          "handlerKey": "cmms.maintenance-requests.reject",
+          "requiredPermissions": [
+            "cmms.requests.write"
+          ],
+          "confirmationPrompt": "Reject this request? A reason is required.",
+          "parameters": [
+            {
+              "key": "reason",
+              "label": "Reason",
+              "type": "TEXTAREA",
+              "required": true
+            }
+          ],
+          "visibilityCondition": {
+            "field": "status",
+            "operator": "EQ",
+            "value": "PENDING"
+          }
+        },
+        {
+          "actionKey": "cancel",
+          "label": "Cancel request",
+          "type": "COMMAND",
+          "handlerKey": "cmms.maintenance-requests.cancel",
+          "requiredPermissions": [
+            "cmms.requests.create"
+          ],
+          "confirmationPrompt": "Cancel this request? This cannot be undone.",
+          "parameters": [
+            {
+              "key": "reason",
+              "label": "Reason",
+              "type": "TEXTAREA",
+              "required": false
+            }
+          ],
+          "visibilityCondition": {
+            "field": "status",
+            "operator": "EQ",
+            "value": "PENDING"
+          }
+        }
+      ],
+      "messages": []
+    }
+  }
+}

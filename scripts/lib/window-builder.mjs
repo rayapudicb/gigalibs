@@ -124,9 +124,9 @@ export function windowBuilder({ moduleKey, route, createWith = {} }) {
   });
 
   /** The window baseline: the route it opens on, its label and read permission, and its dictionary package. */
-  const window = (surface, title, label, description, permission, pkg, { entityKey = surface } = {}) => ({
+  const window = (surface, title, label, description, permission, pkg, { entityKey = surface, route: windowRoute } = {}) => ({
     contractVersion: '1.0',
-    window: { route, label, description, readPermission: permission },
+    window: { route: windowRoute ?? route, label, description, readPermission: permission },
     definition: {
       kind: 'APPLICATION_DICTIONARY',
       contractVersion: '1.0',

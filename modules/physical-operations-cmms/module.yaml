@@ -73,12 +73,9 @@ spec:
         props:
           section: spaces
       - route: /cmms/requests
-        unavailable:
-          title: Maintenance request intake is not connected
-          summary: Request intake is contained until authenticated create, review, approval, conversion, and audit endpoints are available.
-          blockedActions:
-            - Submitting or approving a maintenance request.
-            - Claiming a request was routed or converted to a work order.
+        component: CmmsWorkspace
+        props:
+          section: requests
       - route: /cmms/requests/portal
         unavailable:
           title: Maintenance request portal is not connected
@@ -180,6 +177,7 @@ spec:
       # permission still decides.
       personas: [OPERATIONS_SUPERVISOR, WORKFORCE_MEMBER, CUSTOMER_GUEST]
       menu:
+        - { key: requests, label: Maintenance Requests, path: /cmms/requests, icon: file-text }
         - { key: work-orders, label: Work Orders, path: /cmms/work-orders, icon: wrench }
         - { key: spaces, label: CAFM Spaces, path: /cmms/spaces, icon: building }
         - { key: assets, label: Assets & Twin, path: /cmms/assets, icon: factory }
@@ -194,19 +192,18 @@ spec:
       roles:
         - key: maintenance-technician
           name: Maintenance technician
-          # WI-OI-120n security review: no workforce.time.read (it reads everyone's time) and no absences.request (it
-          # acts on anyone's absence); punching gives a person their own time. cmms.work-orders.write still reaches any
-          # work order until "execute my own" is separated (M-CM1).
+          # WI-OI-120t (M-CM1): maintenance technicians execute only their own work orders (cmms.work-orders.execute-own);
+          # cmms.work-orders.write stays with planners.
           description: Carries out work orders, records meter readings and labour, and punches their own time.
-          permissions: [cmms:read, cmms.work-orders.read, cmms.work-orders.write, cmms.assets.read, cmms.meters.read, cmms.meters.write, cmms.pm.read, cmms.parts.read, maps.nodes.read, workforce:read, workforce.resources.read, workforce.jobs.read, workforce.time.punch]
+          permissions: [cmms:read, cmms.work-orders.read, cmms.work-orders.execute-own, cmms.requests.read, cmms.requests.create, cmms.assets.read, cmms.meters.read, cmms.meters.write, cmms.pm.read, cmms.parts.read, maps.nodes.read, workforce:read, workforce.resources.read, workforce.jobs.read, workforce.time.punch]
         - key: maintenance-planner
           name: Maintenance planner
           description: Plans, assigns and closes work; manages assets, preventive schedules and parts; manages people and approves time and absence for everyone in the workspace (not only the maintenance team) until roles are held per unit (ADR-0034). Linking logins stays with administrators.
-          permissions: [cmms:read, cmms.work-orders.read, cmms.work-orders.write, cmms.assets.read, cmms.assets.write, cmms.meters.read, cmms.meters.write, cmms.pm.read, cmms.pm.write, cmms.parts.read, cmms.parts.write, cmms.analytics.read, maps:read, maps.nodes.read, workforce:read, workforce.resources.read, workforce.resources.manage, workforce.jobs.read, workforce.jobs.manage, workforce.bookings.read, workforce.bookings.manage, workforce.availability.read, workforce.availability.manage, workforce.time.read, workforce.time.punch, workforce.timesheets.approve, workforce.absences.read, workforce.absences.request, workforce.absences.approve]
+          permissions: [cmms:read, cmms.work-orders.read, cmms.work-orders.write, cmms.work-orders.execute-own, cmms.requests.read, cmms.requests.create, cmms.requests.write, cmms.assets.read, cmms.assets.write, cmms.meters.read, cmms.meters.write, cmms.pm.read, cmms.pm.write, cmms.parts.read, cmms.parts.write, cmms.analytics.read, maps:read, maps.nodes.read, workforce:read, workforce.resources.read, workforce.resources.manage, workforce.jobs.read, workforce.jobs.manage, workforce.bookings.read, workforce.bookings.manage, workforce.availability.read, workforce.availability.manage, workforce.time.read, workforce.time.punch, workforce.timesheets.approve, workforce.absences.read, workforce.absences.request, workforce.absences.approve]
         - key: maintenance-viewer
           name: Maintenance viewer
           description: Reads assets, work orders, schedules, meters, parts and reliability figures without changing them.
-          permissions: [cmms:read, cmms.work-orders.read, cmms.assets.read, cmms.meters.read, cmms.pm.read, cmms.parts.read, cmms.analytics.read, maps.nodes.read]
+          permissions: [cmms:read, cmms.work-orders.read, cmms.requests.read, cmms.requests.create, cmms.assets.read, cmms.meters.read, cmms.pm.read, cmms.parts.read, cmms.analytics.read, maps.nodes.read]
   # Web gateway (WI-OI-083): the BFF reaches only these routes, as the user, with a freshly signed context.
   # Templates: `{id}` is an identifier; `a|b` is one of several segment values. Generated by `pnpm modules:catalog`.
   gateway:
@@ -219,6 +216,8 @@ spec:
     routeNoun: CMMS
     serviceName: Asset & Maintenance
     entitlementName: Asset & Maintenance
+    # WI-OI-120t (M-CM1): the module SDK's record routes for metadata windows and lookups.
+    records: true
     # Contained 2026-09-28 (WI-OI-083 security finding, owner-approved): these answer "unavailable" to a signed-in
     # tenant user (503, no business action) until rebuilt through the module API with RBAC (WI-OI-083d moved them
     # from hand-written shell routes).
@@ -236,13 +235,18 @@ spec:
       - { path: 'v1/assets/{id}', GET: cmms.assets.read, PATCH: cmms.assets.write }
       - { path: 'v1/assets', POST: cmms.assets.write }
       - { path: 'v1/assets/{id}/archive', POST: cmms.assets.write }
+      - { path: 'v1/requests/search', POST: cmms.requests.read }
+      - { path: 'v1/requests/{id}', GET: cmms.requests.read }
+      - { path: 'v1/requests', POST: cmms.requests.create }
+      - { path: 'v1/requests/{id}/triage', POST: cmms.requests.write }
+      - { path: 'v1/requests/{id}/cancel', POST: cmms.requests.create }
       - { path: 'v1/work-orders/search', POST: cmms.work-orders.read }
       - { path: 'v1/work-orders/{id}', GET: cmms.work-orders.read, PATCH: cmms.work-orders.write }
       - { path: 'v1/work-orders/{id}/history', GET: cmms.work-orders.read }
       - { path: 'v1/work-orders', POST: cmms.work-orders.write }
-      - { path: 'v1/work-orders/{id}/status|tasks|labour|parts|notes|staffing', POST: cmms.work-orders.write }
+      - { path: 'v1/work-orders/{id}/status|tasks|labour|parts|notes|staffing', POST: [cmms.work-orders.write, cmms.work-orders.execute-own] }
       - { path: 'v1/work-orders/{id}/staffing/cancel', POST: cmms.work-orders.write }
-      - { path: 'v1/work-orders/{id}/tasks/{id}', PATCH: cmms.work-orders.write }
+      - { path: 'v1/work-orders/{id}/tasks/{id}', PATCH: [cmms.work-orders.write, cmms.work-orders.execute-own] }
       - { path: 'v1/pm-schedules', GET: cmms.pm.read, POST: cmms.pm.write }
       - { path: 'v1/pm-schedules/{id}', GET: cmms.pm.read, PATCH: cmms.pm.write }
       - { path: 'v1/pm-schedules/{id}/generate', POST: cmms.pm.write }

@@ -346,6 +346,30 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
     ]
   },
   {
+    "code": "cmms.requests.create",
+    "entries": [
+      "asset-maintenance"
+    ]
+  },
+  {
+    "code": "cmms.requests.read",
+    "entries": [
+      "asset-maintenance"
+    ]
+  },
+  {
+    "code": "cmms.requests.write",
+    "entries": [
+      "asset-maintenance"
+    ]
+  },
+  {
+    "code": "cmms.work-orders.execute-own",
+    "entries": [
+      "asset-maintenance"
+    ]
+  },
+  {
     "code": "cmms.work-orders.read",
     "entries": [
       "asset-maintenance"

@@ -20,12 +20,19 @@ import { CMMS_RELAY_CONFIG, loadCmmsRelayConfig } from './relay/relay-config.js'
 import { OUTBOX_RETENTION_CONFIG, OutboxRetention, loadOutboxRetentionConfig } from './relay/outbox-retention.js';
 import { WorkOrdersController } from './work-orders/work-orders.controller.js';
 import { WorkOrdersService } from './work-orders/work-orders.service.js';
+import { RequestsController } from './requests/requests.controller.js';
+import { RequestsService } from './requests/requests.service.js';
 
 import { EamSpacesController } from './spaces/spaces.controller.js';
 import { EamSpacesService } from './spaces/spaces.service.js';
 import { ClassificationsController } from './classifications/classifications.controller.js';
 import { ClassificationsService } from './classifications/classifications.service.js';
 import { ReliabilityModule } from './reliability/reliability.module.js';
+
+import { createRecordController, RECORD_DISPATCHER } from '@gigalibs/module-sdk';
+import { cmmsRecordDispatcher } from './work-orders/cmms-record-adapters.js';
+
+const CmmsRecordController = createRecordController({ guard: CmmsAuthorizationGuard, readPermission: 'cmms:read' });
 
 /**
  * CMMS core runtime (WI-OI-038, roadmap P4): assets, work orders, preventive maintenance, meters and parts.
@@ -41,11 +48,13 @@ import { ReliabilityModule } from './reliability/reliability.module.js';
     EamSpacesController,
     ClassificationsController,
     WorkOrdersController,
+    RequestsController,
     PmSchedulesController,
     MetersController,
     PartsController,
     AnalyticsController,
     CmmsInboxController,
+    CmmsRecordController,
   ],
   providers: [
     CmmsAuthorizationGuard,
@@ -53,6 +62,7 @@ import { ReliabilityModule } from './reliability/reliability.module.js';
     EamSpacesService,
     ClassificationsService,
     WorkOrdersService,
+    RequestsService,
     PmSchedulesService,
     MetersService,
     PartsService,
@@ -63,6 +73,12 @@ import { ReliabilityModule } from './reliability/reliability.module.js';
     { provide: CMMS_RELAY_CONFIG, useFactory: () => loadCmmsRelayConfig() },
     OutboxRetention,
     { provide: OUTBOX_RETENTION_CONFIG, useFactory: () => loadOutboxRetentionConfig() },
+    {
+      provide: RECORD_DISPATCHER,
+      inject: [WorkOrdersService, AssetsService, PartsService, RequestsService],
+      useFactory: (workOrders: WorkOrdersService, assets: AssetsService, parts: PartsService, requests: RequestsService) =>
+        cmmsRecordDispatcher({ workOrders, assets, parts, requests }),
+    },
   ],
 })
 export class AppModule {}

@@ -51,6 +51,12 @@ export const generatedModuleMenus: Readonly<Record<string, readonly GeneratedMod
   ],
   "asset-maintenance": [
     {
+      "key": "requests",
+      "label": "Maintenance Requests",
+      "path": "/cmms/requests",
+      "icon": "file-text"
+    },
+    {
       "key": "work-orders",
       "label": "Work Orders",
       "path": "/cmms/work-orders",

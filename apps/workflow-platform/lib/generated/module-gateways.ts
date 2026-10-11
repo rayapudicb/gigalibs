@@ -1167,6 +1167,41 @@ export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGat
         }
       },
       {
+        "template": "v1/requests/search",
+        "pattern": "^v1/requests/search$",
+        "methods": {
+          "POST": "cmms.requests.read"
+        }
+      },
+      {
+        "template": "v1/requests/{id}",
+        "pattern": "^v1/requests/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "GET": "cmms.requests.read"
+        }
+      },
+      {
+        "template": "v1/requests",
+        "pattern": "^v1/requests$",
+        "methods": {
+          "POST": "cmms.requests.create"
+        }
+      },
+      {
+        "template": "v1/requests/{id}/triage",
+        "pattern": "^v1/requests/[0-9a-fA-F-]{36}/triage$",
+        "methods": {
+          "POST": "cmms.requests.write"
+        }
+      },
+      {
+        "template": "v1/requests/{id}/cancel",
+        "pattern": "^v1/requests/[0-9a-fA-F-]{36}/cancel$",
+        "methods": {
+          "POST": "cmms.requests.create"
+        }
+      },
+      {
         "template": "v1/work-orders/search",
         "pattern": "^v1/work-orders/search$",
         "methods": {
@@ -1199,7 +1234,10 @@ export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGat
         "template": "v1/work-orders/{id}/status|tasks|labour|parts|notes|staffing",
         "pattern": "^v1/work-orders/[0-9a-fA-F-]{36}/(?:status|tasks|labour|parts|notes|staffing)$",
         "methods": {
-          "POST": "cmms.work-orders.write"
+          "POST": [
+            "cmms.work-orders.write",
+            "cmms.work-orders.execute-own"
+          ]
         }
       },
       {
@@ -1213,7 +1251,10 @@ export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGat
         "template": "v1/work-orders/{id}/tasks/{id}",
         "pattern": "^v1/work-orders/[0-9a-fA-F-]{36}/tasks/[0-9a-fA-F-]{36}$",
         "methods": {
-          "PATCH": "cmms.work-orders.write"
+          "PATCH": [
+            "cmms.work-orders.write",
+            "cmms.work-orders.execute-own"
+          ]
         }
       },
       {
@@ -1470,6 +1511,36 @@ export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGat
         "pattern": "^v1/work-orders/[0-9a-fA-F-]{36}/failure-attribution$",
         "methods": {
           "POST": "cmms.assets.write"
+        }
+      },
+      {
+        "template": "v1/records/{entity}",
+        "pattern": "^v1/records/[a-z][a-z0-9-]*(?:[.][a-z0-9-]+)*$",
+        "methods": {
+          "GET": "cmms:read",
+          "POST": "cmms:read"
+        }
+      },
+      {
+        "template": "v1/records/{entity}/{id}",
+        "pattern": "^v1/records/[a-z][a-z0-9-]*(?:[.][a-z0-9-]+)*/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "GET": "cmms:read",
+          "PATCH": "cmms:read"
+        }
+      },
+      {
+        "template": "v1/records/{entity}/{id}/actions/{key}",
+        "pattern": "^v1/records/[a-z][a-z0-9-]*(?:[.][a-z0-9-]+)*/[0-9a-fA-F-]{36}/actions/[a-z][a-z0-9-]*$",
+        "methods": {
+          "POST": "cmms:read"
+        }
+      },
+      {
+        "template": "v1/lookups/{key}",
+        "pattern": "^v1/lookups/[a-z][a-z0-9-]*$",
+        "methods": {
+          "GET": "cmms:read"
         }
       }
     ],

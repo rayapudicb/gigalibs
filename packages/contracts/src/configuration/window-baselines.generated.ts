@@ -2012,6 +2012,1932 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
   {
     "contractVersion": "1.0",
     "window": {
+      "route": "/cmms/requests",
+      "label": "Requests",
+      "description": "Intake, track and triage maintenance requests.",
+      "readPermission": "cmms:read"
+    },
+    "definition": {
+      "kind": "APPLICATION_DICTIONARY",
+      "contractVersion": "1.0",
+      "moduleKey": "physical-operations-cmms",
+      "entityKey": "cmms-requests",
+      "surfaceKey": "cmms-requests",
+      "title": "Maintenance requests",
+      "dictionary": {
+        "packageKey": "cmms-requests-module-baseline",
+        "name": "Maintenance requests",
+        "version": "1.0.0",
+        "moduleKey": "physical-operations-cmms",
+        "targetEntityKey": "cmms.maintenance-requests",
+        "entities": [
+          {
+            "entityKey": "cmms.maintenance-requests",
+            "moduleKey": "physical-operations-cmms",
+            "label": "Maintenance requests",
+            "ownership": "MODULE_CORE",
+            "primaryKeyField": "id",
+            "isVersioned": true,
+            "isAuditLogged": true,
+            "isSoftDeletable": false
+          }
+        ],
+        "fields": [
+          {
+            "fieldKey": "request-number",
+            "entityKey": "cmms.maintenance-requests",
+            "label": "Request number",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "title",
+            "entityKey": "cmms.maintenance-requests",
+            "label": "Title",
+            "type": "TEXT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "helpText": "Summary of the issue or maintenance request."
+          },
+          {
+            "fieldKey": "description",
+            "entityKey": "cmms.maintenance-requests",
+            "label": "Description",
+            "type": "TEXTAREA",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "priority",
+            "entityKey": "cmms.maintenance-requests",
+            "label": "Priority",
+            "type": "SELECT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "priorities"
+          },
+          {
+            "fieldKey": "status",
+            "entityKey": "cmms.maintenance-requests",
+            "label": "Status",
+            "type": "SELECT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "request-statuses"
+          },
+          {
+            "fieldKey": "asset-id",
+            "entityKey": "cmms.maintenance-requests",
+            "label": "Asset",
+            "type": "REFERENCE",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "asset-ref"
+          },
+          {
+            "fieldKey": "requester-name",
+            "entityKey": "cmms.maintenance-requests",
+            "label": "Requester name",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "requester-email",
+            "entityKey": "cmms.maintenance-requests",
+            "label": "Requester email",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "requester-phone",
+            "entityKey": "cmms.maintenance-requests",
+            "label": "Requester phone",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "requester-subject",
+            "entityKey": "cmms.maintenance-requests",
+            "label": "Requester login",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "rejection-reason",
+            "entityKey": "cmms.maintenance-requests",
+            "label": "Rejection reason",
+            "type": "TEXTAREA",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "converted-wo-id",
+            "entityKey": "cmms.maintenance-requests",
+            "label": "Work order",
+            "type": "REFERENCE",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "work-order-ref"
+          },
+          {
+            "fieldKey": "triaged-by",
+            "entityKey": "cmms.maintenance-requests",
+            "label": "Triaged by",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "triaged-at",
+            "entityKey": "cmms.maintenance-requests",
+            "label": "Triaged at",
+            "type": "DATETIME",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "created-at",
+            "entityKey": "cmms.maintenance-requests",
+            "label": "Submitted at",
+            "type": "DATETIME",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          }
+        ],
+        "relationships": [],
+        "references": [
+          {
+            "referenceKey": "request-statuses",
+            "referenceType": "VALUE_LIST",
+            "staticValues": [
+              {
+                "value": "PENDING",
+                "label": "Pending"
+              },
+              {
+                "value": "ACCEPTED",
+                "label": "Accepted"
+              },
+              {
+                "value": "REJECTED",
+                "label": "Rejected"
+              },
+              {
+                "value": "CANCELLED",
+                "label": "Cancelled"
+              }
+            ]
+          },
+          {
+            "referenceKey": "priorities",
+            "referenceType": "VALUE_LIST",
+            "staticValues": [
+              {
+                "value": "LOW",
+                "label": "Low"
+              },
+              {
+                "value": "MEDIUM",
+                "label": "Medium"
+              },
+              {
+                "value": "HIGH",
+                "label": "High"
+              },
+              {
+                "value": "EMERGENCY",
+                "label": "Emergency"
+              }
+            ]
+          },
+          {
+            "referenceKey": "asset-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "cmms-assets"
+          },
+          {
+            "referenceKey": "work-order-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "cmms-work-orders",
+            "createWith": {
+              "moduleKey": "physical-operations-cmms",
+              "surfaceKey": "cmms-work-orders",
+              "permission": "cmms.work-orders.write"
+            }
+          }
+        ],
+        "validationRules": [],
+        "views": [
+          {
+            "viewKey": "requests",
+            "label": "Maintenance requests",
+            "mode": "LIST",
+            "device": "ALL",
+            "defaultSortDirection": "ASC",
+            "tabs": [
+              {
+                "tabKey": "request",
+                "label": "Request",
+                "position": 0,
+                "level": 0,
+                "targetEntityKey": "cmms.maintenance-requests",
+                "sections": [
+                  {
+                    "sectionKey": "main",
+                    "label": "General information",
+                    "collapsible": false,
+                    "defaultCollapsed": false,
+                    "position": 0
+                  },
+                  {
+                    "sectionKey": "details",
+                    "label": "Issue description",
+                    "collapsible": false,
+                    "defaultCollapsed": false,
+                    "position": 1
+                  },
+                  {
+                    "sectionKey": "contact",
+                    "label": "Contact information",
+                    "collapsible": false,
+                    "defaultCollapsed": false,
+                    "position": 2
+                  },
+                  {
+                    "sectionKey": "triage",
+                    "label": "Triage resolution",
+                    "collapsible": false,
+                    "defaultCollapsed": false,
+                    "position": 3
+                  }
+                ],
+                "fields": [
+                  {
+                    "fieldKey": "request-number",
+                    "position": 0,
+                    "span": 3,
+                    "componentKey": "text-input",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "title",
+                    "position": 1,
+                    "span": 6,
+                    "componentKey": "text-input",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "priority",
+                    "position": 2,
+                    "span": 3,
+                    "componentKey": "select",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "status",
+                    "position": 3,
+                    "span": 3,
+                    "componentKey": "select",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "asset-id",
+                    "position": 4,
+                    "span": 5,
+                    "componentKey": "lookup",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "requester-name",
+                    "position": 5,
+                    "span": 4,
+                    "componentKey": "text-input",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "description",
+                    "position": 6,
+                    "span": 12,
+                    "componentKey": "textarea",
+                    "sectionKey": "details"
+                  },
+                  {
+                    "fieldKey": "requester-email",
+                    "position": 7,
+                    "span": 6,
+                    "componentKey": "text-input",
+                    "sectionKey": "contact"
+                  },
+                  {
+                    "fieldKey": "requester-phone",
+                    "position": 8,
+                    "span": 6,
+                    "componentKey": "text-input",
+                    "sectionKey": "contact"
+                  },
+                  {
+                    "fieldKey": "converted-wo-id",
+                    "position": 9,
+                    "span": 4,
+                    "componentKey": "lookup",
+                    "sectionKey": "triage"
+                  },
+                  {
+                    "fieldKey": "rejection-reason",
+                    "position": 10,
+                    "span": 8,
+                    "componentKey": "textarea",
+                    "sectionKey": "triage"
+                  },
+                  {
+                    "fieldKey": "triaged-by",
+                    "position": 11,
+                    "span": 4,
+                    "componentKey": "text-input",
+                    "sectionKey": "triage"
+                  },
+                  {
+                    "fieldKey": "triaged-at",
+                    "position": 12,
+                    "span": 4,
+                    "componentKey": "datetime-input",
+                    "sectionKey": "triage"
+                  },
+                  {
+                    "fieldKey": "created-at",
+                    "position": 13,
+                    "span": 4,
+                    "componentKey": "datetime-input",
+                    "sectionKey": "triage"
+                  }
+                ]
+              }
+            ],
+            "searchFields": [
+              "request-number",
+              "title",
+              "requester-name"
+            ],
+            "defaultSortField": "request-number"
+          }
+        ],
+        "navigation": [],
+        "actions": [
+          {
+            "actionKey": "accept",
+            "label": "Accept into work order",
+            "type": "COMMAND",
+            "handlerKey": "cmms.maintenance-requests.accept",
+            "requiredPermissions": [
+              "cmms.requests.write"
+            ],
+            "confirmationPrompt": "Accept this request and generate a work order?",
+            "visibilityCondition": {
+              "field": "status",
+              "operator": "EQ",
+              "value": "PENDING"
+            }
+          },
+          {
+            "actionKey": "reject",
+            "label": "Reject request",
+            "type": "COMMAND",
+            "handlerKey": "cmms.maintenance-requests.reject",
+            "requiredPermissions": [
+              "cmms.requests.write"
+            ],
+            "confirmationPrompt": "Reject this request? A reason is required.",
+            "parameters": [
+              {
+                "key": "reason",
+                "label": "Reason",
+                "type": "TEXTAREA",
+                "required": true
+              }
+            ],
+            "visibilityCondition": {
+              "field": "status",
+              "operator": "EQ",
+              "value": "PENDING"
+            }
+          },
+          {
+            "actionKey": "cancel",
+            "label": "Cancel request",
+            "type": "COMMAND",
+            "handlerKey": "cmms.maintenance-requests.cancel",
+            "requiredPermissions": [
+              "cmms.requests.create"
+            ],
+            "confirmationPrompt": "Cancel this request? This cannot be undone.",
+            "parameters": [
+              {
+                "key": "reason",
+                "label": "Reason",
+                "type": "TEXTAREA",
+                "required": false
+              }
+            ],
+            "visibilityCondition": {
+              "field": "status",
+              "operator": "EQ",
+              "value": "PENDING"
+            }
+          }
+        ],
+        "messages": []
+      }
+    }
+  },
+  {
+    "contractVersion": "1.0",
+    "window": {
+      "route": "/cmms/work-orders",
+      "label": "Work orders",
+      "description": "Raise, execute and complete maintenance work with evidence.",
+      "readPermission": "cmms:read"
+    },
+    "definition": {
+      "kind": "APPLICATION_DICTIONARY",
+      "contractVersion": "1.0",
+      "moduleKey": "physical-operations-cmms",
+      "entityKey": "cmms-work-orders",
+      "surfaceKey": "cmms-work-orders",
+      "title": "Maintenance work orders",
+      "dictionary": {
+        "packageKey": "cmms-work-orders-module-baseline",
+        "name": "Maintenance work orders",
+        "version": "1.0.0",
+        "moduleKey": "physical-operations-cmms",
+        "targetEntityKey": "cmms.work-orders",
+        "entities": [
+          {
+            "entityKey": "cmms.work-orders",
+            "moduleKey": "physical-operations-cmms",
+            "label": "Work orders",
+            "ownership": "MODULE_CORE",
+            "primaryKeyField": "id",
+            "isVersioned": true,
+            "isAuditLogged": true,
+            "isSoftDeletable": false
+          },
+          {
+            "entityKey": "cmms.work-order-tasks",
+            "moduleKey": "physical-operations-cmms",
+            "label": "Tasks",
+            "ownership": "MODULE_CORE",
+            "primaryKeyField": "id",
+            "isVersioned": true,
+            "isAuditLogged": true,
+            "isSoftDeletable": false
+          },
+          {
+            "entityKey": "cmms.work-order-labour",
+            "moduleKey": "physical-operations-cmms",
+            "label": "Labour",
+            "ownership": "MODULE_CORE",
+            "primaryKeyField": "id",
+            "isVersioned": true,
+            "isAuditLogged": true,
+            "isSoftDeletable": false
+          },
+          {
+            "entityKey": "cmms.work-order-parts",
+            "moduleKey": "physical-operations-cmms",
+            "label": "Parts",
+            "ownership": "MODULE_CORE",
+            "primaryKeyField": "id",
+            "isVersioned": true,
+            "isAuditLogged": true,
+            "isSoftDeletable": false
+          },
+          {
+            "entityKey": "cmms.work-order-notes",
+            "moduleKey": "physical-operations-cmms",
+            "label": "Notes",
+            "ownership": "MODULE_CORE",
+            "primaryKeyField": "id",
+            "isVersioned": true,
+            "isAuditLogged": true,
+            "isSoftDeletable": false
+          },
+          {
+            "entityKey": "cmms.work-order-history",
+            "moduleKey": "physical-operations-cmms",
+            "label": "History",
+            "ownership": "MODULE_CORE",
+            "primaryKeyField": "id",
+            "isVersioned": true,
+            "isAuditLogged": true,
+            "isSoftDeletable": false
+          }
+        ],
+        "fields": [
+          {
+            "fieldKey": "wo-number",
+            "entityKey": "cmms.work-orders",
+            "label": "WO number",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "title",
+            "entityKey": "cmms.work-orders",
+            "label": "Title",
+            "type": "TEXT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "helpText": "Brief description of the maintenance work required."
+          },
+          {
+            "fieldKey": "description",
+            "entityKey": "cmms.work-orders",
+            "label": "Description",
+            "type": "TEXTAREA",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "type",
+            "entityKey": "cmms.work-orders",
+            "label": "Type",
+            "type": "SELECT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "work-order-types"
+          },
+          {
+            "fieldKey": "priority",
+            "entityKey": "cmms.work-orders",
+            "label": "Priority",
+            "type": "SELECT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "priorities"
+          },
+          {
+            "fieldKey": "status",
+            "entityKey": "cmms.work-orders",
+            "label": "Status",
+            "type": "SELECT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "work-order-statuses"
+          },
+          {
+            "fieldKey": "asset-id",
+            "entityKey": "cmms.work-orders",
+            "label": "Asset",
+            "type": "REFERENCE",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "asset-ref"
+          },
+          {
+            "fieldKey": "assigned-to",
+            "entityKey": "cmms.work-orders",
+            "label": "Assigned technician",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "helpText": "Login of the technician assigned to execute this work order."
+          },
+          {
+            "fieldKey": "due-at",
+            "entityKey": "cmms.work-orders",
+            "label": "Due date",
+            "type": "DATETIME",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "estimated-hours",
+            "entityKey": "cmms.work-orders",
+            "label": "Estimated hours",
+            "type": "NUMBER",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "scale": 1
+          },
+          {
+            "fieldKey": "requires-signature",
+            "entityKey": "cmms.work-orders",
+            "label": "Requires signature",
+            "type": "BOOLEAN",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "trigger-source",
+            "entityKey": "cmms.work-orders",
+            "label": "Trigger source",
+            "type": "SELECT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "trigger-sources"
+          },
+          {
+            "fieldKey": "started-at",
+            "entityKey": "cmms.work-orders",
+            "label": "Started at",
+            "type": "DATETIME",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "completed-at",
+            "entityKey": "cmms.work-orders",
+            "label": "Completed at",
+            "type": "DATETIME",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "completion-notes",
+            "entityKey": "cmms.work-orders",
+            "label": "Completion notes",
+            "type": "TEXTAREA",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "created-by",
+            "entityKey": "cmms.work-orders",
+            "label": "Created by",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "created-at",
+            "entityKey": "cmms.work-orders",
+            "label": "Created at",
+            "type": "DATETIME",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "work-order-id",
+            "entityKey": "cmms.work-order-tasks",
+            "label": "Work order",
+            "type": "REFERENCE",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "work-order-ref"
+          },
+          {
+            "fieldKey": "position",
+            "entityKey": "cmms.work-order-tasks",
+            "label": "Position",
+            "type": "INTEGER",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "label",
+            "entityKey": "cmms.work-order-tasks",
+            "label": "Task description",
+            "type": "TEXT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "required",
+            "entityKey": "cmms.work-order-tasks",
+            "label": "Required",
+            "type": "BOOLEAN",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "status",
+            "entityKey": "cmms.work-order-tasks",
+            "label": "Status",
+            "type": "SELECT",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "task-statuses"
+          },
+          {
+            "fieldKey": "result-value",
+            "entityKey": "cmms.work-order-tasks",
+            "label": "Result value",
+            "type": "NUMBER",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "scale": 2
+          },
+          {
+            "fieldKey": "notes",
+            "entityKey": "cmms.work-order-tasks",
+            "label": "Notes",
+            "type": "TEXTAREA",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "completed-by",
+            "entityKey": "cmms.work-order-tasks",
+            "label": "Completed by",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "completed-at",
+            "entityKey": "cmms.work-order-tasks",
+            "label": "Completed at",
+            "type": "DATETIME",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "work-order-id",
+            "entityKey": "cmms.work-order-labour",
+            "label": "Work order",
+            "type": "REFERENCE",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "work-order-ref"
+          },
+          {
+            "fieldKey": "worker-ref",
+            "entityKey": "cmms.work-order-labour",
+            "label": "Technician",
+            "type": "TEXT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "hours",
+            "entityKey": "cmms.work-order-labour",
+            "label": "Hours",
+            "type": "NUMBER",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "scale": 2
+          },
+          {
+            "fieldKey": "hourly-rate",
+            "entityKey": "cmms.work-order-labour",
+            "label": "Hourly rate",
+            "type": "NUMBER",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "scale": 2
+          },
+          {
+            "fieldKey": "currency-code",
+            "entityKey": "cmms.work-order-labour",
+            "label": "Currency",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "time-category",
+            "entityKey": "cmms.work-order-labour",
+            "label": "Category",
+            "type": "SELECT",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "time-categories"
+          },
+          {
+            "fieldKey": "performed-on",
+            "entityKey": "cmms.work-order-labour",
+            "label": "Date performed",
+            "type": "DATE",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "notes",
+            "entityKey": "cmms.work-order-labour",
+            "label": "Notes",
+            "type": "TEXTAREA",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "created-at",
+            "entityKey": "cmms.work-order-labour",
+            "label": "Logged at",
+            "type": "DATETIME",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "work-order-id",
+            "entityKey": "cmms.work-order-parts",
+            "label": "Work order",
+            "type": "REFERENCE",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "work-order-ref"
+          },
+          {
+            "fieldKey": "part-id",
+            "entityKey": "cmms.work-order-parts",
+            "label": "Part",
+            "type": "REFERENCE",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "part-ref"
+          },
+          {
+            "fieldKey": "part-number",
+            "entityKey": "cmms.work-order-parts",
+            "label": "Part number",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "part-name",
+            "entityKey": "cmms.work-order-parts",
+            "label": "Part name",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "quantity",
+            "entityKey": "cmms.work-order-parts",
+            "label": "Quantity",
+            "type": "NUMBER",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "scale": 2
+          },
+          {
+            "fieldKey": "unit-cost",
+            "entityKey": "cmms.work-order-parts",
+            "label": "Unit cost",
+            "type": "NUMBER",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "scale": 2
+          },
+          {
+            "fieldKey": "currency-code",
+            "entityKey": "cmms.work-order-parts",
+            "label": "Currency",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "storeroom-id",
+            "entityKey": "cmms.work-order-parts",
+            "label": "Storeroom",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "bin-location",
+            "entityKey": "cmms.work-order-parts",
+            "label": "Bin location",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "created-at",
+            "entityKey": "cmms.work-order-parts",
+            "label": "Issued at",
+            "type": "DATETIME",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "work-order-id",
+            "entityKey": "cmms.work-order-notes",
+            "label": "Work order",
+            "type": "REFERENCE",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "work-order-ref"
+          },
+          {
+            "fieldKey": "body",
+            "entityKey": "cmms.work-order-notes",
+            "label": "Note",
+            "type": "TEXTAREA",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "actor-subject",
+            "entityKey": "cmms.work-order-notes",
+            "label": "Author",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "occurred-at",
+            "entityKey": "cmms.work-order-notes",
+            "label": "Posted at",
+            "type": "DATETIME",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "work-order-id",
+            "entityKey": "cmms.work-order-history",
+            "label": "Work order",
+            "type": "REFERENCE",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "work-order-ref"
+          },
+          {
+            "fieldKey": "event-type",
+            "entityKey": "cmms.work-order-history",
+            "label": "Event",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "from-status",
+            "entityKey": "cmms.work-order-history",
+            "label": "From status",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "to-status",
+            "entityKey": "cmms.work-order-history",
+            "label": "To status",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "actor-subject",
+            "entityKey": "cmms.work-order-history",
+            "label": "User",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "occurred-at",
+            "entityKey": "cmms.work-order-history",
+            "label": "Occurred at",
+            "type": "DATETIME",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          }
+        ],
+        "relationships": [
+          {
+            "relationshipKey": "work-order-tasks",
+            "sourceEntityKey": "cmms.work-orders",
+            "targetEntityKey": "cmms.work-order-tasks",
+            "type": "ONE_TO_MANY",
+            "foreignKeyField": "work-order-id"
+          },
+          {
+            "relationshipKey": "work-order-labour",
+            "sourceEntityKey": "cmms.work-orders",
+            "targetEntityKey": "cmms.work-order-labour",
+            "type": "ONE_TO_MANY",
+            "foreignKeyField": "work-order-id"
+          },
+          {
+            "relationshipKey": "work-order-parts",
+            "sourceEntityKey": "cmms.work-orders",
+            "targetEntityKey": "cmms.work-order-parts",
+            "type": "ONE_TO_MANY",
+            "foreignKeyField": "work-order-id"
+          },
+          {
+            "relationshipKey": "work-order-notes",
+            "sourceEntityKey": "cmms.work-orders",
+            "targetEntityKey": "cmms.work-order-notes",
+            "type": "ONE_TO_MANY",
+            "foreignKeyField": "work-order-id"
+          },
+          {
+            "relationshipKey": "work-order-history",
+            "sourceEntityKey": "cmms.work-orders",
+            "targetEntityKey": "cmms.work-order-history",
+            "type": "ONE_TO_MANY",
+            "foreignKeyField": "work-order-id"
+          }
+        ],
+        "references": [
+          {
+            "referenceKey": "work-order-types",
+            "referenceType": "VALUE_LIST",
+            "staticValues": [
+              {
+                "value": "REACTIVE",
+                "label": "Reactive"
+              },
+              {
+                "value": "PREVENTIVE",
+                "label": "Preventive"
+              },
+              {
+                "value": "INSPECTION",
+                "label": "Inspection"
+              },
+              {
+                "value": "EMERGENCY",
+                "label": "Emergency"
+              }
+            ]
+          },
+          {
+            "referenceKey": "priorities",
+            "referenceType": "VALUE_LIST",
+            "staticValues": [
+              {
+                "value": "LOW",
+                "label": "Low"
+              },
+              {
+                "value": "MEDIUM",
+                "label": "Medium"
+              },
+              {
+                "value": "HIGH",
+                "label": "High"
+              },
+              {
+                "value": "EMERGENCY",
+                "label": "Emergency"
+              }
+            ]
+          },
+          {
+            "referenceKey": "work-order-statuses",
+            "referenceType": "VALUE_LIST",
+            "staticValues": [
+              {
+                "value": "OPEN",
+                "label": "Open"
+              },
+              {
+                "value": "IN_PROGRESS",
+                "label": "In progress"
+              },
+              {
+                "value": "ON_HOLD",
+                "label": "On hold"
+              },
+              {
+                "value": "COMPLETED",
+                "label": "Completed"
+              },
+              {
+                "value": "CANCELLED",
+                "label": "Cancelled"
+              }
+            ]
+          },
+          {
+            "referenceKey": "task-statuses",
+            "referenceType": "VALUE_LIST",
+            "staticValues": [
+              {
+                "value": "PENDING",
+                "label": "Pending"
+              },
+              {
+                "value": "DONE",
+                "label": "Done"
+              },
+              {
+                "value": "FAILED",
+                "label": "Failed"
+              },
+              {
+                "value": "NOT_APPLICABLE",
+                "label": "Not applicable"
+              }
+            ]
+          },
+          {
+            "referenceKey": "time-categories",
+            "referenceType": "VALUE_LIST",
+            "staticValues": [
+              {
+                "value": "REGULAR",
+                "label": "Regular"
+              },
+              {
+                "value": "OVERTIME",
+                "label": "Overtime"
+              },
+              {
+                "value": "TRAVEL",
+                "label": "Travel"
+              }
+            ]
+          },
+          {
+            "referenceKey": "trigger-sources",
+            "referenceType": "VALUE_LIST",
+            "staticValues": [
+              {
+                "value": "MANUAL",
+                "label": "Manual"
+              },
+              {
+                "value": "PM_SCHEDULE",
+                "label": "PM schedule"
+              },
+              {
+                "value": "METER_TRIGGER",
+                "label": "Meter trigger"
+              }
+            ]
+          },
+          {
+            "referenceKey": "asset-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "cmms-assets"
+          },
+          {
+            "referenceKey": "part-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "cmms-parts"
+          },
+          {
+            "referenceKey": "work-order-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "cmms-work-orders",
+            "createWith": {
+              "moduleKey": "physical-operations-cmms",
+              "surfaceKey": "cmms-work-orders",
+              "permission": "cmms.work-orders.write"
+            }
+          }
+        ],
+        "validationRules": [],
+        "views": [
+          {
+            "viewKey": "work-orders",
+            "label": "Work orders",
+            "mode": "LIST",
+            "device": "ALL",
+            "defaultSortDirection": "ASC",
+            "tabs": [
+              {
+                "tabKey": "work-order",
+                "label": "Work order",
+                "position": 0,
+                "level": 0,
+                "targetEntityKey": "cmms.work-orders",
+                "sections": [
+                  {
+                    "sectionKey": "main",
+                    "label": "General information",
+                    "collapsible": false,
+                    "defaultCollapsed": false,
+                    "position": 0
+                  },
+                  {
+                    "sectionKey": "planning",
+                    "label": "Planning & Assignment",
+                    "collapsible": false,
+                    "defaultCollapsed": false,
+                    "position": 1
+                  },
+                  {
+                    "sectionKey": "execution",
+                    "label": "Execution status",
+                    "collapsible": false,
+                    "defaultCollapsed": false,
+                    "position": 2
+                  },
+                  {
+                    "sectionKey": "meta",
+                    "label": "Audit trail",
+                    "collapsible": false,
+                    "defaultCollapsed": false,
+                    "position": 3
+                  }
+                ],
+                "fields": [
+                  {
+                    "fieldKey": "wo-number",
+                    "position": 0,
+                    "span": 3,
+                    "componentKey": "text-input",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "title",
+                    "position": 1,
+                    "span": 6,
+                    "componentKey": "text-input",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "status",
+                    "position": 2,
+                    "span": 3,
+                    "componentKey": "select",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "type",
+                    "position": 3,
+                    "span": 3,
+                    "componentKey": "select",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "priority",
+                    "position": 4,
+                    "span": 3,
+                    "componentKey": "select",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "asset-id",
+                    "position": 5,
+                    "span": 6,
+                    "componentKey": "lookup",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "description",
+                    "position": 6,
+                    "span": 12,
+                    "componentKey": "textarea",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "assigned-to",
+                    "position": 7,
+                    "span": 4,
+                    "componentKey": "text-input",
+                    "sectionKey": "planning"
+                  },
+                  {
+                    "fieldKey": "due-at",
+                    "position": 8,
+                    "span": 4,
+                    "componentKey": "datetime-input",
+                    "sectionKey": "planning"
+                  },
+                  {
+                    "fieldKey": "estimated-hours",
+                    "position": 9,
+                    "span": 4,
+                    "componentKey": "number-input",
+                    "sectionKey": "planning"
+                  },
+                  {
+                    "fieldKey": "requires-signature",
+                    "position": 10,
+                    "span": 4,
+                    "componentKey": "checkbox",
+                    "sectionKey": "planning"
+                  },
+                  {
+                    "fieldKey": "trigger-source",
+                    "position": 11,
+                    "span": 4,
+                    "componentKey": "select",
+                    "sectionKey": "planning"
+                  },
+                  {
+                    "fieldKey": "started-at",
+                    "position": 12,
+                    "span": 4,
+                    "componentKey": "datetime-input",
+                    "sectionKey": "execution"
+                  },
+                  {
+                    "fieldKey": "completed-at",
+                    "position": 13,
+                    "span": 4,
+                    "componentKey": "datetime-input",
+                    "sectionKey": "execution"
+                  },
+                  {
+                    "fieldKey": "completion-notes",
+                    "position": 14,
+                    "span": 12,
+                    "componentKey": "textarea",
+                    "sectionKey": "execution"
+                  },
+                  {
+                    "fieldKey": "created-by",
+                    "position": 15,
+                    "span": 6,
+                    "componentKey": "text-input",
+                    "sectionKey": "meta"
+                  },
+                  {
+                    "fieldKey": "created-at",
+                    "position": 16,
+                    "span": 6,
+                    "componentKey": "datetime-input",
+                    "sectionKey": "meta"
+                  }
+                ]
+              },
+              {
+                "tabKey": "tasks",
+                "label": "Tasks",
+                "position": 1,
+                "level": 1,
+                "targetEntityKey": "cmms.work-order-tasks",
+                "sections": [],
+                "fields": [
+                  {
+                    "fieldKey": "position",
+                    "position": 0,
+                    "span": 1,
+                    "componentKey": "number-input"
+                  },
+                  {
+                    "fieldKey": "label",
+                    "position": 1,
+                    "span": 5,
+                    "componentKey": "text-input"
+                  },
+                  {
+                    "fieldKey": "required",
+                    "position": 2,
+                    "span": 2,
+                    "componentKey": "checkbox"
+                  },
+                  {
+                    "fieldKey": "status",
+                    "position": 3,
+                    "span": 2,
+                    "componentKey": "select"
+                  },
+                  {
+                    "fieldKey": "result-value",
+                    "position": 4,
+                    "span": 2,
+                    "componentKey": "number-input"
+                  },
+                  {
+                    "fieldKey": "notes",
+                    "position": 5,
+                    "span": 6,
+                    "componentKey": "textarea"
+                  },
+                  {
+                    "fieldKey": "completed-by",
+                    "position": 6,
+                    "span": 3,
+                    "componentKey": "text-input"
+                  },
+                  {
+                    "fieldKey": "completed-at",
+                    "position": 7,
+                    "span": 3,
+                    "componentKey": "datetime-input"
+                  }
+                ],
+                "parentRelationshipKey": "work-order-tasks"
+              },
+              {
+                "tabKey": "labour",
+                "label": "Labour",
+                "position": 1,
+                "level": 1,
+                "targetEntityKey": "cmms.work-order-labour",
+                "sections": [],
+                "fields": [
+                  {
+                    "fieldKey": "worker-ref",
+                    "position": 0,
+                    "span": 3,
+                    "componentKey": "text-input"
+                  },
+                  {
+                    "fieldKey": "hours",
+                    "position": 1,
+                    "span": 2,
+                    "componentKey": "number-input"
+                  },
+                  {
+                    "fieldKey": "time-category",
+                    "position": 2,
+                    "span": 2,
+                    "componentKey": "select"
+                  },
+                  {
+                    "fieldKey": "performed-on",
+                    "position": 3,
+                    "span": 2,
+                    "componentKey": "date-input"
+                  },
+                  {
+                    "fieldKey": "hourly-rate",
+                    "position": 4,
+                    "span": 3,
+                    "componentKey": "number-input"
+                  },
+                  {
+                    "fieldKey": "currency-code",
+                    "position": 5,
+                    "span": 2,
+                    "componentKey": "text-input"
+                  },
+                  {
+                    "fieldKey": "notes",
+                    "position": 6,
+                    "span": 6,
+                    "componentKey": "textarea"
+                  },
+                  {
+                    "fieldKey": "created-at",
+                    "position": 7,
+                    "span": 4,
+                    "componentKey": "datetime-input"
+                  }
+                ],
+                "parentRelationshipKey": "work-order-labour"
+              },
+              {
+                "tabKey": "parts",
+                "label": "Parts",
+                "position": 1,
+                "level": 1,
+                "targetEntityKey": "cmms.work-order-parts",
+                "sections": [],
+                "fields": [
+                  {
+                    "fieldKey": "part-id",
+                    "position": 0,
+                    "span": 4,
+                    "componentKey": "lookup"
+                  },
+                  {
+                    "fieldKey": "part-number",
+                    "position": 1,
+                    "span": 3,
+                    "componentKey": "text-input"
+                  },
+                  {
+                    "fieldKey": "part-name",
+                    "position": 2,
+                    "span": 3,
+                    "componentKey": "text-input"
+                  },
+                  {
+                    "fieldKey": "quantity",
+                    "position": 3,
+                    "span": 2,
+                    "componentKey": "number-input"
+                  },
+                  {
+                    "fieldKey": "unit-cost",
+                    "position": 4,
+                    "span": 2,
+                    "componentKey": "number-input"
+                  },
+                  {
+                    "fieldKey": "currency-code",
+                    "position": 5,
+                    "span": 2,
+                    "componentKey": "text-input"
+                  },
+                  {
+                    "fieldKey": "storeroom-id",
+                    "position": 6,
+                    "span": 3,
+                    "componentKey": "text-input"
+                  },
+                  {
+                    "fieldKey": "bin-location",
+                    "position": 7,
+                    "span": 3,
+                    "componentKey": "text-input"
+                  },
+                  {
+                    "fieldKey": "created-at",
+                    "position": 8,
+                    "span": 2,
+                    "componentKey": "datetime-input"
+                  }
+                ],
+                "parentRelationshipKey": "work-order-parts"
+              },
+              {
+                "tabKey": "notes",
+                "label": "Notes",
+                "position": 1,
+                "level": 1,
+                "targetEntityKey": "cmms.work-order-notes",
+                "sections": [],
+                "fields": [
+                  {
+                    "fieldKey": "body",
+                    "position": 0,
+                    "span": 8,
+                    "componentKey": "textarea"
+                  },
+                  {
+                    "fieldKey": "actor-subject",
+                    "position": 1,
+                    "span": 2,
+                    "componentKey": "text-input"
+                  },
+                  {
+                    "fieldKey": "occurred-at",
+                    "position": 2,
+                    "span": 2,
+                    "componentKey": "datetime-input"
+                  }
+                ],
+                "parentRelationshipKey": "work-order-notes"
+              },
+              {
+                "tabKey": "history",
+                "label": "History",
+                "position": 1,
+                "level": 1,
+                "targetEntityKey": "cmms.work-order-history",
+                "sections": [],
+                "fields": [
+                  {
+                    "fieldKey": "event-type",
+                    "position": 0,
+                    "span": 3,
+                    "componentKey": "text-input"
+                  },
+                  {
+                    "fieldKey": "from-status",
+                    "position": 1,
+                    "span": 2,
+                    "componentKey": "text-input"
+                  },
+                  {
+                    "fieldKey": "to-status",
+                    "position": 2,
+                    "span": 2,
+                    "componentKey": "text-input"
+                  },
+                  {
+                    "fieldKey": "actor-subject",
+                    "position": 3,
+                    "span": 2,
+                    "componentKey": "text-input"
+                  },
+                  {
+                    "fieldKey": "occurred-at",
+                    "position": 4,
+                    "span": 3,
+                    "componentKey": "datetime-input"
+                  }
+                ],
+                "parentRelationshipKey": "work-order-history"
+              }
+            ],
+            "searchFields": [
+              "wo-number",
+              "title"
+            ],
+            "defaultSortField": "wo-number"
+          }
+        ],
+        "navigation": [],
+        "actions": [
+          {
+            "actionKey": "start",
+            "label": "Start work",
+            "type": "COMMAND",
+            "handlerKey": "cmms.work-orders.start",
+            "requiredPermissions": [
+              "cmms.work-orders.execute-own"
+            ],
+            "confirmationPrompt": "Start work on this work order?",
+            "visibilityCondition": {
+              "field": "status",
+              "operator": "EQ",
+              "value": "OPEN"
+            }
+          },
+          {
+            "actionKey": "hold",
+            "label": "Put on hold",
+            "type": "COMMAND",
+            "handlerKey": "cmms.work-orders.hold",
+            "requiredPermissions": [
+              "cmms.work-orders.execute-own"
+            ],
+            "confirmationPrompt": "Put this work order on hold?",
+            "parameters": [
+              {
+                "key": "reason",
+                "label": "Reason",
+                "type": "TEXTAREA",
+                "required": true
+              }
+            ],
+            "visibilityCondition": {
+              "field": "status",
+              "operator": "EQ",
+              "value": "IN_PROGRESS"
+            }
+          },
+          {
+            "actionKey": "resume",
+            "label": "Resume work",
+            "type": "COMMAND",
+            "handlerKey": "cmms.work-orders.resume",
+            "requiredPermissions": [
+              "cmms.work-orders.execute-own"
+            ],
+            "confirmationPrompt": "Resume work on this work order?",
+            "visibilityCondition": {
+              "field": "status",
+              "operator": "EQ",
+              "value": "ON_HOLD"
+            }
+          },
+          {
+            "actionKey": "complete",
+            "label": "Complete work",
+            "type": "COMMAND",
+            "handlerKey": "cmms.work-orders.complete",
+            "requiredPermissions": [
+              "cmms.work-orders.execute-own"
+            ],
+            "confirmationPrompt": "Complete this work order? All required tasks must be recorded.",
+            "parameters": [
+              {
+                "key": "reason",
+                "label": "Reason",
+                "type": "TEXTAREA",
+                "required": false
+              }
+            ],
+            "visibilityCondition": {
+              "field": "status",
+              "operator": "EQ",
+              "value": "IN_PROGRESS"
+            }
+          },
+          {
+            "actionKey": "cancel",
+            "label": "Cancel",
+            "type": "COMMAND",
+            "handlerKey": "cmms.work-orders.cancel",
+            "requiredPermissions": [
+              "cmms.work-orders.execute-own"
+            ],
+            "confirmationPrompt": "Cancel this work order? This cannot be undone.",
+            "parameters": [
+              {
+                "key": "reason",
+                "label": "Reason",
+                "type": "TEXTAREA",
+                "required": true
+              }
+            ],
+            "visibilityCondition": {
+              "field": "status",
+              "operator": "IN",
+              "value": [
+                "OPEN",
+                "IN_PROGRESS",
+                "ON_HOLD"
+              ]
+            }
+          }
+        ],
+        "messages": []
+      }
+    }
+  },
+  {
+    "contractVersion": "1.0",
+    "window": {
       "route": "/products",
       "label": "Attributes",
       "description": "The attributes products can carry.",

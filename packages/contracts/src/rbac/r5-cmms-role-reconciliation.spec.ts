@@ -9,11 +9,15 @@ import {
 describe('WI-OI-120ac: CMMS Default Role Reconciliation & explicitScopeRefusal Proof', () => {
   const cmmsRoles = moduleDefaultRoles.filter((role) => role.catalogKey === 'asset-maintenance');
 
-  // The 11 core CMMS permissions exclusively owned by asset-maintenance
+  // The 15 core CMMS permissions exclusively owned by asset-maintenance
   const CORE_CMMS_PERMISSIONS = [
     'cmms:read',
     'cmms.work-orders.read',
     'cmms.work-orders.write',
+    'cmms.work-orders.execute-own',
+    'cmms.requests.read',
+    'cmms.requests.create',
+    'cmms.requests.write',
     'cmms.assets.read',
     'cmms.assets.write',
     'cmms.meters.read',
@@ -84,7 +88,9 @@ describe('WI-OI-120ac: CMMS Default Role Reconciliation & explicitScopeRefusal P
     const techCore = [
       'cmms:read',
       'cmms.work-orders.read',
-      'cmms.work-orders.write',
+      'cmms.work-orders.execute-own',
+      'cmms.requests.read',
+      'cmms.requests.create',
       'cmms.assets.read',
       'cmms.meters.read',
       'cmms.meters.write',

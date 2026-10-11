@@ -1217,3 +1217,85 @@ export const LinkCmmsLabourToBookingV1Schema = z
   })
   .strict();
 export type LinkCmmsLabourToBookingV1 = z.infer<typeof LinkCmmsLabourToBookingV1Schema>;
+
+// ─── MAINTENANCE REQUESTS (WI-OI-120t Slice 2) ───────────────────────────────
+
+export const CMMS_REQUEST_STATUSES = ['PENDING', 'ACCEPTED', 'REJECTED', 'CANCELLED'] as const;
+export type CmmsRequestStatusV1 = (typeof CMMS_REQUEST_STATUSES)[number];
+
+export const CMMS_REQUEST_PRIORITIES = ['LOW', 'MEDIUM', 'HIGH', 'EMERGENCY'] as const;
+export type CmmsRequestPriorityV1 = (typeof CMMS_REQUEST_PRIORITIES)[number];
+
+export const CreateCmmsRequestV1Schema = z
+  .object({
+    title: TextSchema(240),
+    description: TextSchema(10_000).optional(),
+    priority: z.enum(CMMS_REQUEST_PRIORITIES).default('MEDIUM'),
+    assetId: UuidSchema.optional(),
+    locationId: UuidSchema.optional(),
+    requesterName: TextSchema(240).optional(),
+    requesterEmail: z.string().trim().email().max(240).optional(),
+    requesterPhone: TextSchema(64).optional(),
+  })
+  .strict();
+export type CreateCmmsRequestV1 = z.infer<typeof CreateCmmsRequestV1Schema>;
+
+export const TriageCmmsRequestV1Schema = z
+  .object({
+    action: z.enum(['ACCEPT', 'REJECT']),
+    reason: TextSchema(4_000).optional(),
+    workOrderType: z.enum(['REACTIVE', 'PREVENTIVE', 'INSPECTION', 'EMERGENCY']).optional(),
+    priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'EMERGENCY']).optional(),
+    assignedTo: TextSchema(128).optional(),
+    expectedVersion: z.number().int().positive().optional(),
+  })
+  .strict();
+export type TriageCmmsRequestV1 = z.infer<typeof TriageCmmsRequestV1Schema>;
+
+export const CancelCmmsRequestV1Schema = z
+  .object({
+    expectedVersion: z.number().int().positive().optional(),
+    reason: TextSchema(4_000).optional(),
+  })
+  .strict();
+export type CancelCmmsRequestV1 = z.infer<typeof CancelCmmsRequestV1Schema>;
+
+export const SearchCmmsRequestsV1Schema = z
+  .object({
+    page: z.number().int().min(1).default(1),
+    pageSize: z.number().int().min(1).max(100).default(20),
+    q: z.string().trim().max(100).optional(),
+    status: z.enum(CMMS_REQUEST_STATUSES).optional(),
+    priority: z.enum(CMMS_REQUEST_PRIORITIES).optional(),
+    assetId: UuidSchema.optional(),
+    requesterSubject: TextSchema(128).optional(),
+    openOnly: z.boolean().optional(),
+  })
+  .strict();
+export type SearchCmmsRequestsV1 = z.infer<typeof SearchCmmsRequestsV1Schema>;
+
+export interface CmmsMaintenanceRequestV1 {
+  readonly id: string;
+  readonly requestNumber: string;
+  readonly title: string;
+  readonly description: string | null;
+  readonly priority: CmmsRequestPriorityV1;
+  readonly status: CmmsRequestStatusV1;
+  readonly assetId: string | null;
+  readonly assetName?: string | null;
+  readonly locationId: string | null;
+  readonly requesterSubject: string;
+  readonly requesterName: string | null;
+  readonly requesterEmail: string | null;
+  readonly requesterPhone: string | null;
+  readonly rejectionReason: string | null;
+  readonly convertedWoId: string | null;
+  readonly convertedWoNumber?: string | null;
+  readonly triagedBy: string | null;
+  readonly triagedAt: string | null;
+  readonly cancelledAt: string | null;
+  readonly version: number;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+}
+

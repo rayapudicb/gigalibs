@@ -141,6 +141,7 @@ export class CmmsAuthorizationGuard implements CanActivate {
     }
 
     request.cmmsPrincipal = principalFromContext(platformContext);
+    (request as any).modulePrincipal = request.cmmsPrincipal;
     return true;
   }
 }

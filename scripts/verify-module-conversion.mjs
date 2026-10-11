@@ -19,6 +19,7 @@ const CONVERTED = {
   'product-catalogue': { dispatcher: 'apps/api/dist/catalogue/catalogue-record-adapters.js', factory: 'catalogueRecordDispatcher' },
   'universal-inventory': { dispatcher: 'apps/api/dist/inventory/inventory-record-adapters.js', factory: 'inventoryRecordDispatcher' },
   'financial-operations': { dispatcher: 'apps/api/dist/finance/finance-record-adapters.js', factory: 'financeRecordDispatcher' },
+  'physical-operations-cmms': { dispatcher: 'apps/api/dist/work-orders/cmms-record-adapters.js', factory: 'cmmsRecordDispatcher' },
 };
 
 /** Findings seen by the owner and closed by a named later card. */

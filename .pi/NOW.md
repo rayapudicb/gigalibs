@@ -1,5 +1,33 @@
 # NOW: where the work stands
 
+> **CMMS Maintenance Requests Service & Triage Window (WI-OI-120t Slice 2, 2026-10-11):**
+> Completed Slice 2 of [WI-OI-120t](tasks/WI-OI-120t.md) (**Review**):
+> 1. Created canonical forward database migration `000020_canonical_maintenance_requests` for `maintenance_requests`
+>    and `request_counters` with forced RLS and tenant isolation.
+> 2. Defined Zod contracts & types in `@gigalibs/contracts`: `CreateCmmsRequestV1Schema`, `TriageCmmsRequestV1Schema`,
+>    `CancelCmmsRequestV1Schema`, `SearchCmmsRequestsV1Schema`, and `CmmsMaintenanceRequestV1`.
+> 3. Implemented domain `RequestsService` and `RequestsController`: handles submission (`REQ-NNNNNN`), triage
+>    (accept into work order or reject with required reason), cancel, and strict scope isolation (requesters only view/cancel own).
+> 4. Generated metadata window `cmms-requests.window.json` with route `/cmms/requests`, root tab `request`, and actions
+>    (`accept`, `reject`, `cancel`). Registered `cmms.maintenance-requests` record adapter and `cmms-requests` lookup in dispatcher.
+> 5. Evidence: 13/13 unit tests pass in `requests.service.spec.ts` (254/254 CMMS API tests pass across 31 suites);
+>    role reconciliation tests pass in `r5-cmms-role-reconciliation.spec.ts`; S16 conversion verifier passes
+>    (`PASS physical-operations-cmms: 2 windows, 7 record types, 4 permissions`); `node scripts/verify.mjs --audits` passes all audits except pre-existing design tokens.
+
+> **CMMS Work Orders on Metadata Windows & Technician Scope Isolation (WI-OI-120t Slice 1, 2026-10-11):**
+> Completed Slice 1 of [WI-OI-120t](tasks/WI-OI-120t.md) (**Review**):
+> 1. Implemented metadata window baseline `cmms-work-orders.window.json` via `windows.mjs` with route `/cmms/work-orders`,
+>    root tab `work-order` and 5 child tabs (`tasks`, `labour`, `parts`, `notes`, `history`).
+> 2. Implemented all 5 status transition actions (`start`, `hold`, `resume`, `complete`, `cancel`) with reason forms.
+> 3. Enforced granular permission `cmms.work-orders.execute-own`: moved Maintenance technician from `cmms.work-orders.write`
+>    to `execute-own`; planners hold both. Technicians attempting actions, tasks, labour, parts, or notes on work orders
+>    assigned to others or unassigned are refused with HTTP 403 `CMMS_OUT_OF_SCOPE`.
+> 4. Implemented typed record adapters and resolvers (`cmms-assets`, `cmms-parts`, `cmms-work-orders`) in `cmms-record-adapters.ts`.
+>    Mounted `CmmsRecordController` and `RECORD_DISPATCHER` in CMMS `AppModule`.
+> 5. Evidence: 12/12 unit tests pass in `cmms-record-adapters.spec.ts` (241/241 CMMS API tests pass across 30 suites);
+>    role reconciliation tests pass in `r5-cmms-role-reconciliation.spec.ts`; S16 conversion verifier passes (`PASS physical-operations-cmms`);
+>    `node scripts/verify.mjs --audits` passes all audits except pre-existing design tokens.
+
 > **GigaLibs Assistant Preview Enablement & Control Plane Unshadowing, 2026-10-11:**
 > Resolved the "Not available" locked card for GigaLibs Assistant Preview on `/modules`:
 > 1. Diagnosed that port 3333 was shadowed by a 3-day-old Docker container (`gigalibs-configuration-local-api-1`),
@@ -194,9 +222,9 @@ canonical programme status is [.pi/WORK_ITEMS.md](WORK_ITEMS.md), WI-OI-120. No 
    release gates also remain open.
 3. **[WI-OI-120aa](tasks/WI-OI-120aa.md), [WI-OI-120ab](tasks/WI-OI-120ab.md), [WI-OI-120ac](tasks/WI-OI-120ac.md), and [WI-OI-120ad](tasks/WI-OI-120ad.md) verified in Review.**
    Legacy scope repair, unit-tree proof, role reconciliation, and T3 canonical place identity projection proof are
-   complete in source. Next is CMMS on metadata windows, first value: M-CM1 ([120t](tasks/WI-OI-120t.md)).
-4. **M-CM1 ([120t](tasks/WI-OI-120t.md))**. M1a is reached only by the accepted scoped request-to-close journey,
-   not by finishing R2 plumbing. Later phases remain in the platform plan.
+   complete in source.
+4. **M-CM1 ([120t](tasks/WI-OI-120t.md)): Slice 1 (Work Orders) & Slice 2 (Requests) verified in Review.**
+   Next is Slice 3: Preventive maintenance schedules (with work-order generation), meters (readings child tab), and MRO parts (movements child tab).
 
 5. Continue the approved [WI-OI-121a](tasks/WI-OI-121a.md) A0b isolated source-selection/build/SBOM proof under
    the owner-approved dormant-code preview boundary. The selected SSE guard and synthetic path pass, but the
