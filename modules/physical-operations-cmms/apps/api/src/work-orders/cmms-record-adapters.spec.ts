@@ -885,4 +885,501 @@ describe('WI-OI-120t (M-CM1 Slice 1): Technician Scope Isolation & CMMS Record A
       );
     });
   });
+
+  describe('WI-OI-120t (M-CM1 Slice 4): Assets, CAFM Spaces & Classifications Record Adapters', () => {
+    function createSlice4Deps() {
+      const assetId = '11111111-1111-4111-8111-111111111111';
+      const spaceId = '22222222-2222-4222-8222-222222222222';
+      const classId = '33333333-3333-4333-8333-333333333333';
+      const specDefId = '44444444-4444-4444-8444-444444444444';
+
+      const mockAsset = {
+        id: assetId,
+        assetTag: 'AST-PUMP-001',
+        name: 'Primary Centrifugal Pump',
+        description: 'Main feedwater circulation pump',
+        category: 'PUMPS',
+        status: 'OPERATIONAL',
+        criticality: 'HIGH',
+        manufacturer: 'Sulzer',
+        model: 'CP-200',
+        serialNumber: 'SN-987654',
+        parentAssetId: null,
+        siteRef: 'site-alpha',
+        spaceId,
+        classificationId: classId,
+        acquisitionCost: 15000,
+        currencyCode: 'USD',
+        purchaseDate: '2024-01-15',
+        warrantyExpiry: '2027-01-15',
+        specs: {},
+        archivedAt: null,
+        openWorkOrderCount: 0,
+        version: 1,
+        createdBy: 'admin',
+        createdAt: '2024-01-15T08:00:00.000Z',
+        updatedAt: '2024-01-15T08:00:00.000Z',
+      };
+
+      const mockAssetsService = {
+        search: vi.fn().mockResolvedValue({
+          items: [mockAsset],
+          total: 1,
+          page: 1,
+          pageSize: 10,
+        }),
+        get: vi.fn().mockResolvedValue(mockAsset),
+        create: vi.fn().mockImplementation((_ctx, input) =>
+          Promise.resolve({
+            ...mockAsset,
+            ...input,
+            id: randomUUID(),
+            version: 1,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          }),
+        ),
+        update: vi.fn().mockImplementation((_ctx, id, input) =>
+          Promise.resolve({
+            ...mockAsset,
+            ...input,
+            id,
+            version: 2,
+            updatedAt: new Date().toISOString(),
+          }),
+        ),
+        archive: vi.fn().mockImplementation((_ctx, id, input) =>
+          Promise.resolve({
+            ...mockAsset,
+            id,
+            status: 'DECOMMISSIONED',
+            archivedAt: new Date().toISOString(),
+            version: 2,
+          }),
+        ),
+      };
+
+      const mockSpace = {
+        id: spaceId,
+        code: 'B01-F02-R101',
+        name: 'Pump Room A',
+        description: 'North utility wing pump gallery',
+        spaceType: 'ROOM',
+        parentSpaceId: null,
+        siteRef: 'site-alpha',
+        floorNumber: 2,
+        grossAreaSqm: 120.5,
+        netAreaSqm: 110.0,
+        cadLayer: {},
+        bimGuid: 'GUID-12345',
+        metadata: {},
+        assetCount: 1,
+        version: 1,
+        createdBy: 'admin',
+        createdAt: '2024-01-15T08:00:00.000Z',
+        updatedAt: '2024-01-15T08:00:00.000Z',
+      };
+
+      const mockSpacesService = {
+        tree: vi.fn().mockResolvedValue([mockSpace]),
+        get: vi.fn().mockResolvedValue(mockSpace),
+        create: vi.fn().mockImplementation((_ctx, input) =>
+          Promise.resolve({
+            ...mockSpace,
+            ...input,
+            id: randomUUID(),
+            version: 1,
+          }),
+        ),
+        update: vi.fn().mockImplementation((_ctx, id, input) =>
+          Promise.resolve({
+            ...mockSpace,
+            ...input,
+            id,
+            version: 2,
+          }),
+        ),
+        delete: vi.fn().mockResolvedValue({ deleted: true }),
+        getAssetsInSpace: vi.fn().mockResolvedValue([mockAsset]),
+      };
+
+      const mockClassification = {
+        id: classId,
+        code: 'ROT-PUMP',
+        name: 'Rotating Equipment - Pumps',
+        description: 'Mechanical fluid pumps',
+        parentClassId: null,
+        specCount: 1,
+        assetCount: 1,
+        version: 1,
+        createdBy: 'admin',
+        createdAt: '2024-01-15T08:00:00.000Z',
+        updatedAt: '2024-01-15T08:00:00.000Z',
+      };
+
+      const mockSpecDef = {
+        id: specDefId,
+        classificationId: classId,
+        attributeKey: 'flow_rate_gpm',
+        label: 'Flow Rate (GPM)',
+        dataType: 'NUMBER',
+        uom: 'GPM',
+        required: true,
+        minValue: 10,
+        maxValue: 500,
+        defaultValue: '100',
+        version: 1,
+      };
+
+      const mockSpecValue = {
+        specDefinitionId: specDefId,
+        attributeKey: 'flow_rate_gpm',
+        label: 'Flow Rate (GPM)',
+        dataType: 'NUMBER',
+        uom: 'GPM',
+        valueText: null,
+        valueNumber: 250,
+        valueBoolean: null,
+      };
+
+      const mockClassificationsService = {
+        listTree: vi.fn().mockResolvedValue([mockClassification]),
+        get: vi.fn().mockResolvedValue(mockClassification),
+        create: vi.fn().mockImplementation((_ctx, input) =>
+          Promise.resolve({
+            ...mockClassification,
+            ...input,
+            id: randomUUID(),
+            version: 1,
+          }),
+        ),
+        update: vi.fn().mockImplementation((_ctx, id, input) =>
+          Promise.resolve({
+            ...mockClassification,
+            ...input,
+            id,
+            version: 2,
+          }),
+        ),
+        delete: vi.fn().mockResolvedValue({ success: true }),
+        listSpecDefinitions: vi.fn().mockResolvedValue([mockSpecDef]),
+        createSpecDefinition: vi.fn().mockImplementation((_ctx, input) =>
+          Promise.resolve({
+            ...mockSpecDef,
+            ...input,
+            id: randomUUID(),
+            version: 1,
+          }),
+        ),
+        getAssetSpecs: vi.fn().mockResolvedValue([mockSpecValue]),
+        setAssetSpecs: vi.fn().mockResolvedValue([mockSpecValue]),
+      };
+
+      const deps: CmmsRecordDependencies = {
+        workOrders: {} as any,
+        assets: mockAssetsService as any,
+        parts: {} as any,
+        spaces: mockSpacesService as any,
+        classifications: mockClassificationsService as any,
+      };
+
+      return {
+        deps,
+        assetId,
+        spaceId,
+        classId,
+        specDefId,
+        mockAssetsService,
+        mockSpacesService,
+        mockClassificationsService,
+      };
+    }
+
+    it('manages Assets & Specifications: lists, gets, creates, updates, and archives via action', async () => {
+      const { deps, assetId, mockAssetsService, mockClassificationsService } = createSlice4Deps();
+      const dispatcher = cmmsRecordDispatcher(deps);
+      const planner = makePrincipal('planner-carol', [
+        'cmms:read',
+        'cmms.assets.read',
+        'cmms.assets.write',
+      ]);
+
+      // 1. Search/list assets
+      const listRes = await dispatcher.list(planner, 'cmms.assets', {
+        page: 1,
+        pageSize: 10,
+        filters: {},
+      });
+      expect(listRes.items).toHaveLength(1);
+      expect(listRes.items[0]?.['asset-tag']).toBe('AST-PUMP-001');
+      expect(listRes.items[0]?.['criticality']).toBe('HIGH');
+
+      // 2. Get asset
+      const getRes = await dispatcher.get(planner, 'cmms.assets', assetId);
+      expect(getRes?.['name']).toBe('Primary Centrifugal Pump');
+      expect(getRes?.['manufacturer']).toBe('Sulzer');
+
+      // 3. Create asset
+      const created = await dispatcher.create(
+        { principal: planner, tenantId: 'tenant-test' },
+        'cmms.assets',
+        {
+          'asset-tag': 'AST-MOT-002',
+          name: '400kW Drive Motor',
+          category: 'MOTORS',
+          criticality: 'CRITICAL',
+          status: 'OPERATIONAL',
+          manufacturer: 'Siemens',
+        },
+        randomUUID(),
+      );
+      expect(created['asset-tag']).toBe('AST-MOT-002');
+      expect(mockAssetsService.create).toHaveBeenCalled();
+
+      // 4. Update asset
+      const updated = await dispatcher.update(
+        { principal: planner, tenantId: 'tenant-test' },
+        'cmms.assets',
+        assetId,
+        { description: 'Overhauled motor and shaft alignment' },
+        '"1"',
+        randomUUID(),
+      );
+      expect(mockAssetsService.update).toHaveBeenCalledWith(
+        expect.anything(),
+        assetId,
+        expect.objectContaining({ description: 'Overhauled motor and shaft alignment', expectedVersion: 1 }),
+      );
+
+      // 5. Archive action
+      const archived = await dispatcher.action(
+        { principal: planner, tenantId: 'tenant-test' },
+        'cmms.assets',
+        assetId,
+        'archive',
+        { reason: 'End of useful plant service life' },
+        randomUUID(),
+      );
+      expect(archived['status']).toBe('DECOMMISSIONED');
+      expect(mockAssetsService.archive).toHaveBeenCalledWith(
+        expect.anything(),
+        assetId,
+        expect.objectContaining({ reason: 'End of useful plant service life' }),
+      );
+
+      // 6. Child tab: asset specifications
+      const specsList = await dispatcher.list(planner, 'cmms.asset-specs', {
+        parentId: assetId,
+        page: 1,
+        pageSize: 10,
+        filters: {},
+      });
+      expect(specsList.items).toHaveLength(1);
+      expect(specsList.items[0]?.['attribute-key']).toBe('flow_rate_gpm');
+      expect(specsList.items[0]?.['value-number']).toBe(250);
+
+      // 7. Child tab: set / update specification
+      const specUpdated = await dispatcher.create(
+        { principal: planner, tenantId: 'tenant-test' },
+        'cmms.asset-specs',
+        {
+          'asset-id': assetId,
+          'spec-definition-id': '44444444-4444-4444-8444-444444444444',
+          'value-number': 300,
+        },
+        randomUUID(),
+      );
+      expect(mockClassificationsService.setAssetSpecs).toHaveBeenCalled();
+    });
+
+    it('manages CAFM Spaces & Located Assets: lists, gets, creates, updates, and deletes via action', async () => {
+      const { deps, spaceId, mockSpacesService } = createSlice4Deps();
+      const dispatcher = cmmsRecordDispatcher(deps);
+      const planner = makePrincipal('planner-carol', [
+        'cmms:read',
+        'cmms.assets.read',
+        'cmms.assets.write',
+      ]);
+
+      // 1. List spaces (flattens tree)
+      const listRes = await dispatcher.list(planner, 'cmms.spaces', {
+        page: 1,
+        pageSize: 10,
+        filters: {},
+      });
+      expect(listRes.items).toHaveLength(1);
+      expect(listRes.items[0]?.['code']).toBe('B01-F02-R101');
+      expect(listRes.items[0]?.['space-type']).toBe('ROOM');
+
+      // 2. Get space
+      const getRes = await dispatcher.get(planner, 'cmms.spaces', spaceId);
+      expect(getRes?.['name']).toBe('Pump Room A');
+      expect(getRes?.['floor-number']).toBe(2);
+
+      // 3. Create space
+      const created = await dispatcher.create(
+        { principal: planner, tenantId: 'tenant-test' },
+        'cmms.spaces',
+        {
+          code: 'B01-F02-R102',
+          name: 'Control Room B',
+          'space-type': 'ROOM',
+          'floor-number': 2,
+        },
+        randomUUID(),
+      );
+      expect(created['code']).toBe('B01-F02-R102');
+      expect(mockSpacesService.create).toHaveBeenCalled();
+
+      // 4. Update space
+      await dispatcher.update(
+        { principal: planner, tenantId: 'tenant-test' },
+        'cmms.spaces',
+        spaceId,
+        { description: 'Expanded control room' },
+        '"1"',
+        randomUUID(),
+      );
+      expect(mockSpacesService.update).toHaveBeenCalledWith(
+        expect.anything(),
+        spaceId,
+        expect.objectContaining({ description: 'Expanded control room', expectedVersion: 1 }),
+      );
+
+      // 5. Delete space action
+      const deleted = await dispatcher.action(
+        { principal: planner, tenantId: 'tenant-test' },
+        'cmms.spaces',
+        spaceId,
+        'delete',
+        {},
+        randomUUID(),
+      );
+      expect(deleted['code']).toBe('B01-F02-R101');
+      expect(mockSpacesService.delete).toHaveBeenCalledWith(expect.anything(), spaceId);
+
+      // 6. Child tab: space assets
+      const spaceAssetsList = await dispatcher.list(planner, 'cmms.space-assets', {
+        parentId: spaceId,
+        page: 1,
+        pageSize: 10,
+        filters: {},
+      });
+      expect(spaceAssetsList.items).toHaveLength(1);
+      expect(spaceAssetsList.items[0]?.['asset-tag']).toBe('AST-PUMP-001');
+      expect(mockSpacesService.getAssetsInSpace).toHaveBeenCalledWith(expect.anything(), spaceId);
+    });
+
+    it('manages Classifications & Spec Definitions: lists, gets, creates, updates, and deletes via action', async () => {
+      const { deps, classId, mockClassificationsService } = createSlice4Deps();
+      const dispatcher = cmmsRecordDispatcher(deps);
+      const planner = makePrincipal('planner-carol', [
+        'cmms:read',
+        'cmms.assets.read',
+        'cmms.assets.write',
+      ]);
+
+      // 1. List classifications (flattens tree)
+      const listRes = await dispatcher.list(planner, 'cmms.classifications', {
+        page: 1,
+        pageSize: 10,
+        filters: {},
+      });
+      expect(listRes.items).toHaveLength(1);
+      expect(listRes.items[0]?.['code']).toBe('ROT-PUMP');
+      expect(listRes.items[0]?.['name']).toBe('Rotating Equipment - Pumps');
+
+      // 2. Get classification
+      const getRes = await dispatcher.get(planner, 'cmms.classifications', classId);
+      expect(getRes?.['code']).toBe('ROT-PUMP');
+
+      // 3. Create classification
+      const created = await dispatcher.create(
+        { principal: planner, tenantId: 'tenant-test' },
+        'cmms.classifications',
+        {
+          code: 'ROT-COMP',
+          name: 'Rotating Equipment - Compressors',
+        },
+        randomUUID(),
+      );
+      expect(created['code']).toBe('ROT-COMP');
+      expect(mockClassificationsService.create).toHaveBeenCalled();
+
+      // 4. Update classification
+      await dispatcher.update(
+        { principal: planner, tenantId: 'tenant-test' },
+        'cmms.classifications',
+        classId,
+        { description: 'Updated pump classification description' },
+        '"1"',
+        randomUUID(),
+      );
+      expect(mockClassificationsService.update).toHaveBeenCalledWith(
+        expect.anything(),
+        classId,
+        expect.objectContaining({ description: 'Updated pump classification description', expectedVersion: 1 }),
+      );
+
+      // 5. Delete classification action
+      const deleted = await dispatcher.action(
+        { principal: planner, tenantId: 'tenant-test' },
+        'cmms.classifications',
+        classId,
+        'delete',
+        {},
+        randomUUID(),
+      );
+      expect(deleted['code']).toBe('ROT-PUMP');
+      expect(mockClassificationsService.delete).toHaveBeenCalledWith(expect.anything(), classId);
+
+      // 6. Child tab: specification definitions
+      const specDefs = await dispatcher.list(planner, 'cmms.spec-definitions', {
+        parentId: classId,
+        page: 1,
+        pageSize: 10,
+        filters: {},
+      });
+      expect(specDefs.items).toHaveLength(1);
+      expect(specDefs.items[0]?.['attribute-key']).toBe('flow_rate_gpm');
+      expect(mockClassificationsService.listSpecDefinitions).toHaveBeenCalledWith(expect.anything(), classId);
+
+      // 7. Child tab: create spec definition
+      const newDef = await dispatcher.create(
+        { principal: planner, tenantId: 'tenant-test' },
+        'cmms.spec-definitions',
+        {
+          'classification-id': classId,
+          'attribute-key': 'impeller_diameter_in',
+          label: 'Impeller Diameter (in)',
+          'data-type': 'NUMBER',
+          uom: 'in',
+          required: false,
+        },
+        randomUUID(),
+      );
+      expect(mockClassificationsService.createSpecDefinition).toHaveBeenCalled();
+    });
+
+    it('resolves cmms-spaces and cmms-classifications lookups', async () => {
+      const { deps, spaceId, classId } = createSlice4Deps();
+      const dispatcher = cmmsRecordDispatcher(deps);
+      const viewer = makePrincipal('viewer-dave', ['cmms:read', 'cmms.assets.read']);
+
+      const spaceLookup = await dispatcher.lookup(viewer, 'cmms-spaces', { limit: 10 });
+      expect(spaceLookup).toHaveLength(1);
+      expect(spaceLookup[0]).toEqual({
+        value: spaceId,
+        label: 'B01-F02-R101 - Pump Room A (ROOM)',
+      });
+
+      const classLookup = await dispatcher.lookup(viewer, 'cmms-classifications', { limit: 10 });
+      expect(classLookup).toHaveLength(1);
+      expect(classLookup[0]).toEqual({
+        value: classId,
+        label: 'ROT-PUMP - Rotating Equipment - Pumps',
+      });
+    });
+  });
 });
+

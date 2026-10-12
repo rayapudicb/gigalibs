@@ -1,0 +1,577 @@
+{
+  "contractVersion": "1.0",
+  "window": {
+    "route": "/cmms/spaces",
+    "label": "Spaces",
+    "description": "Manage facility spaces, architectural hierarchy, and located assets.",
+    "readPermission": "cmms:read"
+  },
+  "definition": {
+    "kind": "APPLICATION_DICTIONARY",
+    "contractVersion": "1.0",
+    "moduleKey": "physical-operations-cmms",
+    "entityKey": "cmms-spaces",
+    "surfaceKey": "cmms-spaces",
+    "title": "CAFM spaces and spatial twin",
+    "dictionary": {
+      "packageKey": "cmms-spaces-module-baseline",
+      "name": "CAFM spaces and spatial twin",
+      "version": "1.0.0",
+      "moduleKey": "physical-operations-cmms",
+      "targetEntityKey": "cmms.spaces",
+      "entities": [
+        {
+          "entityKey": "cmms.spaces",
+          "moduleKey": "physical-operations-cmms",
+          "label": "Spaces",
+          "ownership": "MODULE_CORE",
+          "primaryKeyField": "id",
+          "isVersioned": true,
+          "isAuditLogged": true,
+          "isSoftDeletable": false
+        },
+        {
+          "entityKey": "cmms.space-assets",
+          "moduleKey": "physical-operations-cmms",
+          "label": "Located assets",
+          "ownership": "MODULE_CORE",
+          "primaryKeyField": "id",
+          "isVersioned": true,
+          "isAuditLogged": true,
+          "isSoftDeletable": false
+        }
+      ],
+      "fields": [
+        {
+          "fieldKey": "code",
+          "entityKey": "cmms.spaces",
+          "label": "Space code",
+          "type": "TEXT",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "helpText": "Unique room or zone code."
+        },
+        {
+          "fieldKey": "name",
+          "entityKey": "cmms.spaces",
+          "label": "Space name",
+          "type": "TEXT",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "description",
+          "entityKey": "cmms.spaces",
+          "label": "Description",
+          "type": "TEXTAREA",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "space-type",
+          "entityKey": "cmms.spaces",
+          "label": "Space type",
+          "type": "SELECT",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "space-types"
+        },
+        {
+          "fieldKey": "parent-space-id",
+          "entityKey": "cmms.spaces",
+          "label": "Parent space",
+          "type": "REFERENCE",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "space-ref"
+        },
+        {
+          "fieldKey": "site-ref",
+          "entityKey": "cmms.spaces",
+          "label": "Site reference",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "floor-number",
+          "entityKey": "cmms.spaces",
+          "label": "Floor number",
+          "type": "INTEGER",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "gross-area-sqm",
+          "entityKey": "cmms.spaces",
+          "label": "Gross area (sqm)",
+          "type": "NUMBER",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "net-area-sqm",
+          "entityKey": "cmms.spaces",
+          "label": "Net area (sqm)",
+          "type": "NUMBER",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "bim-guid",
+          "entityKey": "cmms.spaces",
+          "label": "BIM GUID",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "asset-count",
+          "entityKey": "cmms.spaces",
+          "label": "Asset count",
+          "type": "INTEGER",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "created-by",
+          "entityKey": "cmms.spaces",
+          "label": "Created by",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "created-at",
+          "entityKey": "cmms.spaces",
+          "label": "Created at",
+          "type": "DATETIME",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "updated-at",
+          "entityKey": "cmms.spaces",
+          "label": "Updated at",
+          "type": "DATETIME",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "space-id",
+          "entityKey": "cmms.space-assets",
+          "label": "Space ID",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "asset-tag",
+          "entityKey": "cmms.space-assets",
+          "label": "Asset tag",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "name",
+          "entityKey": "cmms.space-assets",
+          "label": "Asset name",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "category",
+          "entityKey": "cmms.space-assets",
+          "label": "Category",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "status",
+          "entityKey": "cmms.space-assets",
+          "label": "Status",
+          "type": "SELECT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "asset-statuses"
+        },
+        {
+          "fieldKey": "criticality",
+          "entityKey": "cmms.space-assets",
+          "label": "Criticality",
+          "type": "SELECT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "criticalities"
+        }
+      ],
+      "relationships": [
+        {
+          "relationshipKey": "space-assets",
+          "sourceEntityKey": "cmms.spaces",
+          "targetEntityKey": "cmms.space-assets",
+          "type": "ONE_TO_MANY",
+          "foreignKeyField": "space-id"
+        }
+      ],
+      "references": [
+        {
+          "referenceKey": "space-types",
+          "referenceType": "VALUE_LIST",
+          "staticValues": [
+            {
+              "value": "SITE",
+              "label": "Site"
+            },
+            {
+              "value": "BUILDING",
+              "label": "Building"
+            },
+            {
+              "value": "FLOOR",
+              "label": "Floor"
+            },
+            {
+              "value": "ROOM",
+              "label": "Room"
+            },
+            {
+              "value": "ZONE",
+              "label": "Zone"
+            }
+          ]
+        },
+        {
+          "referenceKey": "asset-statuses",
+          "referenceType": "VALUE_LIST",
+          "staticValues": [
+            {
+              "value": "OPERATIONAL",
+              "label": "Operational"
+            },
+            {
+              "value": "UNDER_MAINTENANCE",
+              "label": "Under maintenance"
+            },
+            {
+              "value": "OFFLINE",
+              "label": "Offline"
+            },
+            {
+              "value": "DECOMMISSIONED",
+              "label": "Decommissioned"
+            }
+          ]
+        },
+        {
+          "referenceKey": "criticalities",
+          "referenceType": "VALUE_LIST",
+          "staticValues": [
+            {
+              "value": "LOW",
+              "label": "Low"
+            },
+            {
+              "value": "MEDIUM",
+              "label": "Medium"
+            },
+            {
+              "value": "HIGH",
+              "label": "High"
+            },
+            {
+              "value": "CRITICAL",
+              "label": "Critical"
+            }
+          ]
+        },
+        {
+          "referenceKey": "space-ref",
+          "referenceType": "SEARCH_LOOKUP",
+          "resolverKey": "cmms-spaces",
+          "createWith": {
+            "moduleKey": "physical-operations-cmms",
+            "surfaceKey": "cmms-spaces",
+            "permission": "cmms.assets.write"
+          }
+        }
+      ],
+      "validationRules": [],
+      "views": [
+        {
+          "viewKey": "spaces",
+          "label": "Spaces",
+          "mode": "LIST",
+          "device": "ALL",
+          "defaultSortDirection": "ASC",
+          "tabs": [
+            {
+              "tabKey": "space",
+              "label": "Space",
+              "position": 0,
+              "level": 0,
+              "targetEntityKey": "cmms.spaces",
+              "sections": [
+                {
+                  "sectionKey": "main",
+                  "label": "Space identification",
+                  "collapsible": false,
+                  "defaultCollapsed": false,
+                  "position": 0
+                },
+                {
+                  "sectionKey": "location",
+                  "label": "Spatial hierarchy",
+                  "collapsible": false,
+                  "defaultCollapsed": false,
+                  "position": 1
+                },
+                {
+                  "sectionKey": "dimensions",
+                  "label": "Dimensions & CAD/BIM",
+                  "collapsible": false,
+                  "defaultCollapsed": false,
+                  "position": 2
+                },
+                {
+                  "sectionKey": "meta",
+                  "label": "Statistics & Audit",
+                  "collapsible": false,
+                  "defaultCollapsed": false,
+                  "position": 3
+                }
+              ],
+              "fields": [
+                {
+                  "fieldKey": "code",
+                  "position": 0,
+                  "span": 4,
+                  "componentKey": "text-input",
+                  "sectionKey": "main"
+                },
+                {
+                  "fieldKey": "name",
+                  "position": 1,
+                  "span": 5,
+                  "componentKey": "text-input",
+                  "sectionKey": "main"
+                },
+                {
+                  "fieldKey": "space-type",
+                  "position": 2,
+                  "span": 3,
+                  "componentKey": "select",
+                  "sectionKey": "main"
+                },
+                {
+                  "fieldKey": "parent-space-id",
+                  "position": 3,
+                  "span": 6,
+                  "componentKey": "lookup",
+                  "sectionKey": "location"
+                },
+                {
+                  "fieldKey": "floor-number",
+                  "position": 4,
+                  "span": 3,
+                  "componentKey": "number-input",
+                  "sectionKey": "location"
+                },
+                {
+                  "fieldKey": "site-ref",
+                  "position": 5,
+                  "span": 3,
+                  "componentKey": "text-input",
+                  "sectionKey": "location"
+                },
+                {
+                  "fieldKey": "gross-area-sqm",
+                  "position": 6,
+                  "span": 4,
+                  "componentKey": "number-input",
+                  "sectionKey": "dimensions"
+                },
+                {
+                  "fieldKey": "net-area-sqm",
+                  "position": 7,
+                  "span": 4,
+                  "componentKey": "number-input",
+                  "sectionKey": "dimensions"
+                },
+                {
+                  "fieldKey": "bim-guid",
+                  "position": 8,
+                  "span": 4,
+                  "componentKey": "text-input",
+                  "sectionKey": "dimensions"
+                },
+                {
+                  "fieldKey": "asset-count",
+                  "position": 9,
+                  "span": 3,
+                  "componentKey": "number-input",
+                  "sectionKey": "meta"
+                },
+                {
+                  "fieldKey": "created-by",
+                  "position": 10,
+                  "span": 3,
+                  "componentKey": "text-input",
+                  "sectionKey": "meta"
+                },
+                {
+                  "fieldKey": "created-at",
+                  "position": 11,
+                  "span": 3,
+                  "componentKey": "datetime-input",
+                  "sectionKey": "meta"
+                },
+                {
+                  "fieldKey": "updated-at",
+                  "position": 12,
+                  "span": 3,
+                  "componentKey": "datetime-input",
+                  "sectionKey": "meta"
+                },
+                {
+                  "fieldKey": "description",
+                  "position": 13,
+                  "span": 12,
+                  "componentKey": "textarea",
+                  "sectionKey": "main"
+                }
+              ]
+            },
+            {
+              "tabKey": "assets",
+              "label": "Located assets",
+              "position": 1,
+              "level": 1,
+              "targetEntityKey": "cmms.space-assets",
+              "sections": [],
+              "fields": [
+                {
+                  "fieldKey": "asset-tag",
+                  "position": 0,
+                  "span": 3,
+                  "componentKey": "text-input"
+                },
+                {
+                  "fieldKey": "name",
+                  "position": 1,
+                  "span": 4,
+                  "componentKey": "text-input"
+                },
+                {
+                  "fieldKey": "category",
+                  "position": 2,
+                  "span": 2,
+                  "componentKey": "text-input"
+                },
+                {
+                  "fieldKey": "status",
+                  "position": 3,
+                  "span": 2,
+                  "componentKey": "select"
+                },
+                {
+                  "fieldKey": "criticality",
+                  "position": 4,
+                  "span": 1,
+                  "componentKey": "select"
+                }
+              ],
+              "parentRelationshipKey": "space-assets"
+            }
+          ],
+          "searchFields": [
+            "code",
+            "name"
+          ],
+          "defaultSortField": "code"
+        }
+      ],
+      "navigation": [],
+      "actions": [
+        {
+          "actionKey": "delete",
+          "label": "Delete space",
+          "type": "COMMAND",
+          "handlerKey": "cmms.spaces.delete",
+          "requiredPermissions": [
+            "cmms.assets.write"
+          ],
+          "confirmationPrompt": "Delete this space? It must have no child spaces or active assets.",
+          "visibilityCondition": {
+            "field": "code",
+            "operator": "IS_NOT_NULL"
+          }
+        }
+      ],
+      "messages": []
+    }
+  }
+}

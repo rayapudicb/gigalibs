@@ -76,6 +76,10 @@ spec:
         component: CmmsWorkspace
         props:
           section: requests
+      - route: /cmms/classifications
+        component: CmmsWorkspace
+        props:
+          section: classifications
       - route: /cmms/requests/portal
         unavailable:
           title: Maintenance request portal is not connected
@@ -181,6 +185,7 @@ spec:
         - { key: work-orders, label: Work Orders, path: /cmms/work-orders, icon: wrench }
         - { key: spaces, label: CAFM Spaces, path: /cmms/spaces, icon: building }
         - { key: assets, label: Assets & Twin, path: /cmms/assets, icon: factory }
+        - { key: classifications, label: Classifications, path: /cmms/classifications, icon: layers }
         - { key: schedules, label: PM Schedules, path: /cmms/schedules, icon: clock }
         - { key: inventory, label: MRO Parts, path: /cmms/inventory, icon: boxes }
         - { key: meters, label: Meters & IoT, path: /cmms/meters, icon: gauge }

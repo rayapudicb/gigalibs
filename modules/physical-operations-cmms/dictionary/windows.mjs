@@ -85,6 +85,35 @@ const CURRENCIES = [
   ['GBP', 'GBP'],
 ];
 
+const ASSET_STATUSES = [
+  ['OPERATIONAL', 'Operational'],
+  ['UNDER_MAINTENANCE', 'Under maintenance'],
+  ['OFFLINE', 'Offline'],
+  ['DECOMMISSIONED', 'Decommissioned'],
+];
+
+const CRITICALITIES = [
+  ['LOW', 'Low'],
+  ['MEDIUM', 'Medium'],
+  ['HIGH', 'High'],
+  ['CRITICAL', 'Critical'],
+];
+
+const SPACE_TYPES = [
+  ['SITE', 'Site'],
+  ['BUILDING', 'Building'],
+  ['FLOOR', 'Floor'],
+  ['ROOM', 'Room'],
+  ['ZONE', 'Zone'],
+];
+
+const SPEC_DATA_TYPES = [
+  ['NUMBER', 'Number'],
+  ['TEXT', 'Text'],
+  ['BOOLEAN', 'Boolean'],
+  ['DATE', 'Date'],
+];
+
 export function windowSource(builderFor) {
   const {
     entity,
@@ -108,6 +137,9 @@ export function windowSource(builderFor) {
       'cmms-schedules': ['physical-operations-cmms', 'cmms-schedules', 'cmms.pm.write'],
       'cmms-meters': ['physical-operations-cmms', 'cmms-meters', 'cmms.meters.write'],
       'cmms-parts': ['physical-operations-cmms', 'cmms-parts', 'cmms.parts.write'],
+      'cmms-assets': ['physical-operations-cmms', 'cmms-assets', 'cmms.assets.write'],
+      'cmms-spaces': ['physical-operations-cmms', 'cmms-spaces', 'cmms.assets.write'],
+      'cmms-classifications': ['physical-operations-cmms', 'cmms-classifications', 'cmms.assets.write'],
     },
   });
 
@@ -115,6 +147,8 @@ export function windowSource(builderFor) {
   const PART_REF = lookup('part-ref', 'cmms-parts');
   const WORK_ORDER_REF = lookup('work-order-ref', 'cmms-work-orders');
   const REQUEST_REF = lookup('request-ref', 'cmms-requests');
+  const SPACE_REF = lookup('space-ref', 'cmms-spaces');
+  const CLASSIFICATION_REF = lookup('classification-ref', 'cmms-classifications');
 
   const windows = {};
 
@@ -689,6 +723,309 @@ export function windowSource(builderFor) {
       [],
     ),
     { route: '/cmms/inventory' },
+  );
+
+  // 6. Assets and specifications (Slice 4)
+  const AST = 'cmms.assets';
+  const ASP = 'cmms.asset-specs';
+  const astf = [
+    field(AST, 'asset-tag', 'Asset tag', 'TEXT', { required: true, help: 'Unique asset identifier or barcode.' }),
+    field(AST, 'name', 'Asset name', 'TEXT', { required: true }),
+    field(AST, 'description', 'Description', 'TEXTAREA'),
+    field(AST, 'category', 'Category', 'TEXT'),
+    field(AST, 'status', 'Status', 'SELECT', { ref: 'asset-statuses', default: 'OPERATIONAL' }),
+    field(AST, 'criticality', 'Criticality', 'SELECT', { ref: 'criticalities', default: 'MEDIUM' }),
+    field(AST, 'manufacturer', 'Manufacturer', 'TEXT'),
+    field(AST, 'model', 'Model', 'TEXT'),
+    field(AST, 'serial-number', 'Serial number', 'TEXT'),
+    field(AST, 'parent-asset-id', 'Parent asset', 'REFERENCE', { ref: 'asset-ref' }),
+    field(AST, 'site-ref', 'Site reference', 'TEXT'),
+    field(AST, 'space-id', 'CAFM space', 'REFERENCE', { ref: 'space-ref' }),
+    field(AST, 'classification-id', 'Classification', 'REFERENCE', { ref: 'classification-ref' }),
+    field(AST, 'acquisition-cost', 'Acquisition cost', 'NUMBER'),
+    field(AST, 'currency-code', 'Currency', 'SELECT', { ref: 'currencies' }),
+    field(AST, 'purchase-date', 'Purchase date', 'DATE'),
+    field(AST, 'warranty-expiry', 'Warranty expiry', 'DATE'),
+    field(AST, 'archived-at', 'Archived at', 'DATETIME', { readOnly: true }),
+    field(AST, 'open-work-order-count', 'Open work orders', 'INTEGER', { readOnly: true }),
+    field(AST, 'created-by', 'Created by', 'TEXT', { readOnly: true }),
+    field(AST, 'created-at', 'Created at', 'DATETIME', { readOnly: true }),
+    field(AST, 'updated-at', 'Updated at', 'DATETIME', { readOnly: true }),
+  ];
+  const aspf = [
+    field(ASP, 'asset-id', 'Asset ID', 'TEXT', { readOnly: true }),
+    field(ASP, 'spec-definition-id', 'Spec definition ID', 'TEXT', { readOnly: true }),
+    field(ASP, 'attribute-key', 'Attribute key', 'TEXT', { readOnly: true }),
+    field(ASP, 'label', 'Specification', 'TEXT', { readOnly: true }),
+    field(ASP, 'data-type', 'Data type', 'TEXT', { readOnly: true }),
+    field(ASP, 'uom', 'Unit', 'TEXT', { readOnly: true }),
+    field(ASP, 'value-text', 'Text value', 'TEXT'),
+    field(ASP, 'value-number', 'Numeric value', 'NUMBER'),
+    field(ASP, 'value-boolean', 'Boolean value', 'BOOLEAN'),
+  ];
+
+  const assetFields = [...astf, ...aspf];
+
+  windows['cmms-assets'] = window(
+    'cmms-assets',
+    'Asset register and specifications',
+    'Assets',
+    'Equipment register, hierarchical twin, and engineering specifications.',
+    'cmms:read',
+    dictionary(
+      'cmms-assets',
+      'Asset register and specifications',
+      AST,
+      [entity(AST, 'Assets'), entity(ASP, 'Specifications')],
+      assetFields,
+      [relationship('asset-specs', AST, ASP, 'asset-id')],
+      [
+        values('asset-statuses', ASSET_STATUSES),
+        values('criticalities', CRITICALITIES),
+        values('currencies', CURRENCIES),
+        ASSET_REF,
+        SPACE_REF,
+        CLASSIFICATION_REF,
+      ],
+      [
+        view('assets', 'Assets', [
+          tab('asset', 'Asset', 0, AST, [
+            ['asset-tag', 4, 'main'],
+            ['name', 5, 'main'],
+            ['category', 3, 'main'],
+            ['status', 3, 'main'],
+            ['criticality', 3, 'main'],
+            ['classification-id', 6, 'main'],
+            ['parent-asset-id', 6, 'hierarchy'],
+            ['space-id', 6, 'hierarchy'],
+            ['manufacturer', 4, 'equipment'],
+            ['model', 4, 'equipment'],
+            ['serial-number', 4, 'equipment'],
+            ['acquisition-cost', 3, 'commercial'],
+            ['currency-code', 3, 'commercial'],
+            ['purchase-date', 3, 'commercial'],
+            ['warranty-expiry', 3, 'commercial'],
+            ['site-ref', 6, 'hierarchy'],
+            ['open-work-order-count', 3, 'meta'],
+            ['archived-at', 3, 'meta'],
+            ['created-by', 3, 'meta'],
+            ['created-at', 3, 'meta'],
+            ['updated-at', 3, 'meta'],
+            ['description', 12, 'main'],
+          ], assetFields, {
+            sections: [
+              section('main', 'Asset identification', 0),
+              section('hierarchy', 'Location & Hierarchy', 1),
+              section('equipment', 'Manufacturer & Model', 2),
+              section('commercial', 'Commercial & Warranty', 3),
+              section('meta', 'Status & Lifecycle', 4),
+            ],
+          }),
+          tab('specs', 'Specifications', 1, ASP, [
+            ['label', 3],
+            ['data-type', 2],
+            ['value-text', 3],
+            ['value-number', 2],
+            ['value-boolean', 2],
+          ], assetFields, { parent: 'asset-specs' }),
+        ], { search: ['asset-tag', 'name', 'category'], sort: 'asset-tag' }),
+      ],
+      [
+        action(
+          AST,
+          'archive',
+          'Archive asset',
+          'cmms.assets.write',
+          ['status', 'NEQ', 'DECOMMISSIONED'],
+          'Archive and decommission this asset? Open work orders and active child assets must be cleared first.',
+          REASON_REQUIRED,
+        ),
+      ],
+    ),
+    { route: '/cmms/assets' },
+  );
+
+  // 7. CAFM spaces and space assets (Slice 4)
+  const SPC = 'cmms.spaces';
+  const SPA = 'cmms.space-assets';
+  const spcf = [
+    field(SPC, 'code', 'Space code', 'TEXT', { required: true, help: 'Unique room or zone code.' }),
+    field(SPC, 'name', 'Space name', 'TEXT', { required: true }),
+    field(SPC, 'description', 'Description', 'TEXTAREA'),
+    field(SPC, 'space-type', 'Space type', 'SELECT', { required: true, ref: 'space-types', default: 'ROOM' }),
+    field(SPC, 'parent-space-id', 'Parent space', 'REFERENCE', { ref: 'space-ref' }),
+    field(SPC, 'site-ref', 'Site reference', 'TEXT'),
+    field(SPC, 'floor-number', 'Floor number', 'INTEGER'),
+    field(SPC, 'gross-area-sqm', 'Gross area (sqm)', 'NUMBER'),
+    field(SPC, 'net-area-sqm', 'Net area (sqm)', 'NUMBER'),
+    field(SPC, 'bim-guid', 'BIM GUID', 'TEXT'),
+    field(SPC, 'asset-count', 'Asset count', 'INTEGER', { readOnly: true }),
+    field(SPC, 'created-by', 'Created by', 'TEXT', { readOnly: true }),
+    field(SPC, 'created-at', 'Created at', 'DATETIME', { readOnly: true }),
+    field(SPC, 'updated-at', 'Updated at', 'DATETIME', { readOnly: true }),
+  ];
+  const spaf = [
+    field(SPA, 'space-id', 'Space ID', 'TEXT', { readOnly: true }),
+    field(SPA, 'asset-tag', 'Asset tag', 'TEXT', { readOnly: true }),
+    field(SPA, 'name', 'Asset name', 'TEXT', { readOnly: true }),
+    field(SPA, 'category', 'Category', 'TEXT', { readOnly: true }),
+    field(SPA, 'status', 'Status', 'SELECT', { ref: 'asset-statuses', readOnly: true }),
+    field(SPA, 'criticality', 'Criticality', 'SELECT', { ref: 'criticalities', readOnly: true }),
+  ];
+
+  const spaceFields = [...spcf, ...spaf];
+
+  windows['cmms-spaces'] = window(
+    'cmms-spaces',
+    'CAFM spaces and spatial twin',
+    'Spaces',
+    'Manage facility spaces, architectural hierarchy, and located assets.',
+    'cmms:read',
+    dictionary(
+      'cmms-spaces',
+      'CAFM spaces and spatial twin',
+      SPC,
+      [entity(SPC, 'Spaces'), entity(SPA, 'Located assets')],
+      spaceFields,
+      [relationship('space-assets', SPC, SPA, 'space-id')],
+      [
+        values('space-types', SPACE_TYPES),
+        values('asset-statuses', ASSET_STATUSES),
+        values('criticalities', CRITICALITIES),
+        SPACE_REF,
+      ],
+      [
+        view('spaces', 'Spaces', [
+          tab('space', 'Space', 0, SPC, [
+            ['code', 4, 'main'],
+            ['name', 5, 'main'],
+            ['space-type', 3, 'main'],
+            ['parent-space-id', 6, 'location'],
+            ['floor-number', 3, 'location'],
+            ['site-ref', 3, 'location'],
+            ['gross-area-sqm', 4, 'dimensions'],
+            ['net-area-sqm', 4, 'dimensions'],
+            ['bim-guid', 4, 'dimensions'],
+            ['asset-count', 3, 'meta'],
+            ['created-by', 3, 'meta'],
+            ['created-at', 3, 'meta'],
+            ['updated-at', 3, 'meta'],
+            ['description', 12, 'main'],
+          ], spaceFields, {
+            sections: [
+              section('main', 'Space identification', 0),
+              section('location', 'Spatial hierarchy', 1),
+              section('dimensions', 'Dimensions & CAD/BIM', 2),
+              section('meta', 'Statistics & Audit', 3),
+            ],
+          }),
+          tab('assets', 'Located assets', 1, SPA, [
+            ['asset-tag', 3],
+            ['name', 4],
+            ['category', 2],
+            ['status', 2],
+            ['criticality', 1],
+          ], spaceFields, { parent: 'space-assets' }),
+        ], { search: ['code', 'name'], sort: 'code' }),
+      ],
+      [
+        action(
+          SPC,
+          'delete',
+          'Delete space',
+          'cmms.assets.write',
+          ['code', 'IS_NOT_NULL'],
+          'Delete this space? It must have no child spaces or active assets.',
+        ),
+      ],
+    ),
+    { route: '/cmms/spaces' },
+  );
+
+  // 8. Classifications and spec definitions (Slice 4)
+  const CLS = 'cmms.classifications';
+  const SDF = 'cmms.spec-definitions';
+  const clsf = [
+    field(CLS, 'code', 'Classification code', 'TEXT', { required: true, help: 'Classification identifier.' }),
+    field(CLS, 'name', 'Classification name', 'TEXT', { required: true }),
+    field(CLS, 'description', 'Description', 'TEXTAREA'),
+    field(CLS, 'parent-class-id', 'Parent classification', 'REFERENCE', { ref: 'classification-ref' }),
+    field(CLS, 'spec-count', 'Specification count', 'INTEGER', { readOnly: true }),
+    field(CLS, 'asset-count', 'Asset count', 'INTEGER', { readOnly: true }),
+    field(CLS, 'created-by', 'Created by', 'TEXT', { readOnly: true }),
+    field(CLS, 'created-at', 'Created at', 'DATETIME', { readOnly: true }),
+    field(CLS, 'updated-at', 'Updated at', 'DATETIME', { readOnly: true }),
+  ];
+  const sdff = [
+    field(SDF, 'classification-id', 'Classification ID', 'TEXT', { readOnly: true }),
+    field(SDF, 'attribute-key', 'Attribute key', 'TEXT', { required: true }),
+    field(SDF, 'label', 'Label', 'TEXT', { required: true }),
+    field(SDF, 'data-type', 'Data type', 'SELECT', { required: true, ref: 'spec-data-types', default: 'TEXT' }),
+    field(SDF, 'uom', 'Unit of measure', 'TEXT'),
+    field(SDF, 'required', 'Required', 'BOOLEAN', { default: false }),
+    field(SDF, 'min-value', 'Min value', 'NUMBER'),
+    field(SDF, 'max-value', 'Max value', 'NUMBER'),
+    field(SDF, 'default-value', 'Default value', 'TEXT'),
+  ];
+
+  const classFields = [...clsf, ...sdff];
+
+  windows['cmms-classifications'] = window(
+    'cmms-classifications',
+    'Asset classifications and specifications',
+    'Classifications',
+    'Engineering taxonomies and specification schemas for equipment classes.',
+    'cmms:read',
+    dictionary(
+      'cmms-classifications',
+      'Asset classifications and specifications',
+      CLS,
+      [entity(CLS, 'Classifications'), entity(SDF, 'Specification definitions')],
+      classFields,
+      [relationship('spec-definitions', CLS, SDF, 'classification-id')],
+      [
+        values('spec-data-types', SPEC_DATA_TYPES),
+        CLASSIFICATION_REF,
+      ],
+      [
+        view('classifications', 'Classifications', [
+          tab('classification', 'Classification', 0, CLS, [
+            ['code', 4, 'main'],
+            ['name', 5, 'main'],
+            ['parent-class-id', 6, 'main'],
+            ['spec-count', 3, 'stats'],
+            ['asset-count', 3, 'stats'],
+            ['created-by', 3, 'stats'],
+            ['created-at', 3, 'stats'],
+            ['updated-at', 3, 'stats'],
+            ['description', 12, 'main'],
+          ], classFields, {
+            sections: [
+              section('main', 'Classification taxonomy', 0),
+              section('stats', 'Metrics & Audit', 1),
+            ],
+          }),
+          tab('specs', 'Specification definitions', 1, SDF, [
+            ['attribute-key', 3],
+            ['label', 3],
+            ['data-type', 2],
+            ['uom', 2],
+            ['required', 2],
+          ], classFields, { parent: 'spec-definitions' }),
+        ], { search: ['code', 'name'], sort: 'code' }),
+      ],
+      [
+        action(
+          CLS,
+          'delete',
+          'Delete classification',
+          'cmms.assets.write',
+          ['code', 'IS_NOT_NULL'],
+          'Delete this classification? It must have no child classifications or assigned assets.',
+        ),
+      ],
+    ),
+    { route: '/cmms/classifications' },
   );
 
   return windows;

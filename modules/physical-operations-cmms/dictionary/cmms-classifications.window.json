@@ -1,0 +1,456 @@
+{
+  "contractVersion": "1.0",
+  "window": {
+    "route": "/cmms/classifications",
+    "label": "Classifications",
+    "description": "Engineering taxonomies and specification schemas for equipment classes.",
+    "readPermission": "cmms:read"
+  },
+  "definition": {
+    "kind": "APPLICATION_DICTIONARY",
+    "contractVersion": "1.0",
+    "moduleKey": "physical-operations-cmms",
+    "entityKey": "cmms-classifications",
+    "surfaceKey": "cmms-classifications",
+    "title": "Asset classifications and specifications",
+    "dictionary": {
+      "packageKey": "cmms-classifications-module-baseline",
+      "name": "Asset classifications and specifications",
+      "version": "1.0.0",
+      "moduleKey": "physical-operations-cmms",
+      "targetEntityKey": "cmms.classifications",
+      "entities": [
+        {
+          "entityKey": "cmms.classifications",
+          "moduleKey": "physical-operations-cmms",
+          "label": "Classifications",
+          "ownership": "MODULE_CORE",
+          "primaryKeyField": "id",
+          "isVersioned": true,
+          "isAuditLogged": true,
+          "isSoftDeletable": false
+        },
+        {
+          "entityKey": "cmms.spec-definitions",
+          "moduleKey": "physical-operations-cmms",
+          "label": "Specification definitions",
+          "ownership": "MODULE_CORE",
+          "primaryKeyField": "id",
+          "isVersioned": true,
+          "isAuditLogged": true,
+          "isSoftDeletable": false
+        }
+      ],
+      "fields": [
+        {
+          "fieldKey": "code",
+          "entityKey": "cmms.classifications",
+          "label": "Classification code",
+          "type": "TEXT",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "helpText": "Classification identifier."
+        },
+        {
+          "fieldKey": "name",
+          "entityKey": "cmms.classifications",
+          "label": "Classification name",
+          "type": "TEXT",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "description",
+          "entityKey": "cmms.classifications",
+          "label": "Description",
+          "type": "TEXTAREA",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "parent-class-id",
+          "entityKey": "cmms.classifications",
+          "label": "Parent classification",
+          "type": "REFERENCE",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "classification-ref"
+        },
+        {
+          "fieldKey": "spec-count",
+          "entityKey": "cmms.classifications",
+          "label": "Specification count",
+          "type": "INTEGER",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "asset-count",
+          "entityKey": "cmms.classifications",
+          "label": "Asset count",
+          "type": "INTEGER",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "created-by",
+          "entityKey": "cmms.classifications",
+          "label": "Created by",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "created-at",
+          "entityKey": "cmms.classifications",
+          "label": "Created at",
+          "type": "DATETIME",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "updated-at",
+          "entityKey": "cmms.classifications",
+          "label": "Updated at",
+          "type": "DATETIME",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "classification-id",
+          "entityKey": "cmms.spec-definitions",
+          "label": "Classification ID",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "attribute-key",
+          "entityKey": "cmms.spec-definitions",
+          "label": "Attribute key",
+          "type": "TEXT",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "label",
+          "entityKey": "cmms.spec-definitions",
+          "label": "Label",
+          "type": "TEXT",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "data-type",
+          "entityKey": "cmms.spec-definitions",
+          "label": "Data type",
+          "type": "SELECT",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "spec-data-types"
+        },
+        {
+          "fieldKey": "uom",
+          "entityKey": "cmms.spec-definitions",
+          "label": "Unit of measure",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "required",
+          "entityKey": "cmms.spec-definitions",
+          "label": "Required",
+          "type": "BOOLEAN",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "min-value",
+          "entityKey": "cmms.spec-definitions",
+          "label": "Min value",
+          "type": "NUMBER",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "max-value",
+          "entityKey": "cmms.spec-definitions",
+          "label": "Max value",
+          "type": "NUMBER",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "default-value",
+          "entityKey": "cmms.spec-definitions",
+          "label": "Default value",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        }
+      ],
+      "relationships": [
+        {
+          "relationshipKey": "spec-definitions",
+          "sourceEntityKey": "cmms.classifications",
+          "targetEntityKey": "cmms.spec-definitions",
+          "type": "ONE_TO_MANY",
+          "foreignKeyField": "classification-id"
+        }
+      ],
+      "references": [
+        {
+          "referenceKey": "spec-data-types",
+          "referenceType": "VALUE_LIST",
+          "staticValues": [
+            {
+              "value": "NUMBER",
+              "label": "Number"
+            },
+            {
+              "value": "TEXT",
+              "label": "Text"
+            },
+            {
+              "value": "BOOLEAN",
+              "label": "Boolean"
+            },
+            {
+              "value": "DATE",
+              "label": "Date"
+            }
+          ]
+        },
+        {
+          "referenceKey": "classification-ref",
+          "referenceType": "SEARCH_LOOKUP",
+          "resolverKey": "cmms-classifications",
+          "createWith": {
+            "moduleKey": "physical-operations-cmms",
+            "surfaceKey": "cmms-classifications",
+            "permission": "cmms.assets.write"
+          }
+        }
+      ],
+      "validationRules": [],
+      "views": [
+        {
+          "viewKey": "classifications",
+          "label": "Classifications",
+          "mode": "LIST",
+          "device": "ALL",
+          "defaultSortDirection": "ASC",
+          "tabs": [
+            {
+              "tabKey": "classification",
+              "label": "Classification",
+              "position": 0,
+              "level": 0,
+              "targetEntityKey": "cmms.classifications",
+              "sections": [
+                {
+                  "sectionKey": "main",
+                  "label": "Classification taxonomy",
+                  "collapsible": false,
+                  "defaultCollapsed": false,
+                  "position": 0
+                },
+                {
+                  "sectionKey": "stats",
+                  "label": "Metrics & Audit",
+                  "collapsible": false,
+                  "defaultCollapsed": false,
+                  "position": 1
+                }
+              ],
+              "fields": [
+                {
+                  "fieldKey": "code",
+                  "position": 0,
+                  "span": 4,
+                  "componentKey": "text-input",
+                  "sectionKey": "main"
+                },
+                {
+                  "fieldKey": "name",
+                  "position": 1,
+                  "span": 5,
+                  "componentKey": "text-input",
+                  "sectionKey": "main"
+                },
+                {
+                  "fieldKey": "parent-class-id",
+                  "position": 2,
+                  "span": 6,
+                  "componentKey": "lookup",
+                  "sectionKey": "main"
+                },
+                {
+                  "fieldKey": "spec-count",
+                  "position": 3,
+                  "span": 3,
+                  "componentKey": "number-input",
+                  "sectionKey": "stats"
+                },
+                {
+                  "fieldKey": "asset-count",
+                  "position": 4,
+                  "span": 3,
+                  "componentKey": "number-input",
+                  "sectionKey": "stats"
+                },
+                {
+                  "fieldKey": "created-by",
+                  "position": 5,
+                  "span": 3,
+                  "componentKey": "text-input",
+                  "sectionKey": "stats"
+                },
+                {
+                  "fieldKey": "created-at",
+                  "position": 6,
+                  "span": 3,
+                  "componentKey": "datetime-input",
+                  "sectionKey": "stats"
+                },
+                {
+                  "fieldKey": "updated-at",
+                  "position": 7,
+                  "span": 3,
+                  "componentKey": "datetime-input",
+                  "sectionKey": "stats"
+                },
+                {
+                  "fieldKey": "description",
+                  "position": 8,
+                  "span": 12,
+                  "componentKey": "textarea",
+                  "sectionKey": "main"
+                }
+              ]
+            },
+            {
+              "tabKey": "specs",
+              "label": "Specification definitions",
+              "position": 1,
+              "level": 1,
+              "targetEntityKey": "cmms.spec-definitions",
+              "sections": [],
+              "fields": [
+                {
+                  "fieldKey": "attribute-key",
+                  "position": 0,
+                  "span": 3,
+                  "componentKey": "text-input"
+                },
+                {
+                  "fieldKey": "label",
+                  "position": 1,
+                  "span": 3,
+                  "componentKey": "text-input"
+                },
+                {
+                  "fieldKey": "data-type",
+                  "position": 2,
+                  "span": 2,
+                  "componentKey": "select"
+                },
+                {
+                  "fieldKey": "uom",
+                  "position": 3,
+                  "span": 2,
+                  "componentKey": "text-input"
+                },
+                {
+                  "fieldKey": "required",
+                  "position": 4,
+                  "span": 2,
+                  "componentKey": "checkbox"
+                }
+              ],
+              "parentRelationshipKey": "spec-definitions"
+            }
+          ],
+          "searchFields": [
+            "code",
+            "name"
+          ],
+          "defaultSortField": "code"
+        }
+      ],
+      "navigation": [],
+      "actions": [
+        {
+          "actionKey": "delete",
+          "label": "Delete classification",
+          "type": "COMMAND",
+          "handlerKey": "cmms.classifications.delete",
+          "requiredPermissions": [
+            "cmms.assets.write"
+          ],
+          "confirmationPrompt": "Delete this classification? It must have no child classifications or assigned assets.",
+          "visibilityCondition": {
+            "field": "code",
+            "operator": "IS_NOT_NULL"
+          }
+        }
+      ],
+      "messages": []
+    }
+  }
+}

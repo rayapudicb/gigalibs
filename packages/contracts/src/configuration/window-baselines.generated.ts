@@ -2012,6 +2012,1247 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
   {
     "contractVersion": "1.0",
     "window": {
+      "route": "/cmms/assets",
+      "label": "Assets",
+      "description": "Equipment register, hierarchical twin, and engineering specifications.",
+      "readPermission": "cmms:read"
+    },
+    "definition": {
+      "kind": "APPLICATION_DICTIONARY",
+      "contractVersion": "1.0",
+      "moduleKey": "physical-operations-cmms",
+      "entityKey": "cmms-assets",
+      "surfaceKey": "cmms-assets",
+      "title": "Asset register and specifications",
+      "dictionary": {
+        "packageKey": "cmms-assets-module-baseline",
+        "name": "Asset register and specifications",
+        "version": "1.0.0",
+        "moduleKey": "physical-operations-cmms",
+        "targetEntityKey": "cmms.assets",
+        "entities": [
+          {
+            "entityKey": "cmms.assets",
+            "moduleKey": "physical-operations-cmms",
+            "label": "Assets",
+            "ownership": "MODULE_CORE",
+            "primaryKeyField": "id",
+            "isVersioned": true,
+            "isAuditLogged": true,
+            "isSoftDeletable": false
+          },
+          {
+            "entityKey": "cmms.asset-specs",
+            "moduleKey": "physical-operations-cmms",
+            "label": "Specifications",
+            "ownership": "MODULE_CORE",
+            "primaryKeyField": "id",
+            "isVersioned": true,
+            "isAuditLogged": true,
+            "isSoftDeletable": false
+          }
+        ],
+        "fields": [
+          {
+            "fieldKey": "asset-tag",
+            "entityKey": "cmms.assets",
+            "label": "Asset tag",
+            "type": "TEXT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "helpText": "Unique asset identifier or barcode."
+          },
+          {
+            "fieldKey": "name",
+            "entityKey": "cmms.assets",
+            "label": "Asset name",
+            "type": "TEXT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "description",
+            "entityKey": "cmms.assets",
+            "label": "Description",
+            "type": "TEXTAREA",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "category",
+            "entityKey": "cmms.assets",
+            "label": "Category",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "status",
+            "entityKey": "cmms.assets",
+            "label": "Status",
+            "type": "SELECT",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "asset-statuses"
+          },
+          {
+            "fieldKey": "criticality",
+            "entityKey": "cmms.assets",
+            "label": "Criticality",
+            "type": "SELECT",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "criticalities"
+          },
+          {
+            "fieldKey": "manufacturer",
+            "entityKey": "cmms.assets",
+            "label": "Manufacturer",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "model",
+            "entityKey": "cmms.assets",
+            "label": "Model",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "serial-number",
+            "entityKey": "cmms.assets",
+            "label": "Serial number",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "parent-asset-id",
+            "entityKey": "cmms.assets",
+            "label": "Parent asset",
+            "type": "REFERENCE",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "asset-ref"
+          },
+          {
+            "fieldKey": "site-ref",
+            "entityKey": "cmms.assets",
+            "label": "Site reference",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "space-id",
+            "entityKey": "cmms.assets",
+            "label": "CAFM space",
+            "type": "REFERENCE",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "space-ref"
+          },
+          {
+            "fieldKey": "classification-id",
+            "entityKey": "cmms.assets",
+            "label": "Classification",
+            "type": "REFERENCE",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "classification-ref"
+          },
+          {
+            "fieldKey": "acquisition-cost",
+            "entityKey": "cmms.assets",
+            "label": "Acquisition cost",
+            "type": "NUMBER",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "currency-code",
+            "entityKey": "cmms.assets",
+            "label": "Currency",
+            "type": "SELECT",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "currencies"
+          },
+          {
+            "fieldKey": "purchase-date",
+            "entityKey": "cmms.assets",
+            "label": "Purchase date",
+            "type": "DATE",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "warranty-expiry",
+            "entityKey": "cmms.assets",
+            "label": "Warranty expiry",
+            "type": "DATE",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "archived-at",
+            "entityKey": "cmms.assets",
+            "label": "Archived at",
+            "type": "DATETIME",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "open-work-order-count",
+            "entityKey": "cmms.assets",
+            "label": "Open work orders",
+            "type": "INTEGER",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "created-by",
+            "entityKey": "cmms.assets",
+            "label": "Created by",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "created-at",
+            "entityKey": "cmms.assets",
+            "label": "Created at",
+            "type": "DATETIME",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "updated-at",
+            "entityKey": "cmms.assets",
+            "label": "Updated at",
+            "type": "DATETIME",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "asset-id",
+            "entityKey": "cmms.asset-specs",
+            "label": "Asset ID",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "spec-definition-id",
+            "entityKey": "cmms.asset-specs",
+            "label": "Spec definition ID",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "attribute-key",
+            "entityKey": "cmms.asset-specs",
+            "label": "Attribute key",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "label",
+            "entityKey": "cmms.asset-specs",
+            "label": "Specification",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "data-type",
+            "entityKey": "cmms.asset-specs",
+            "label": "Data type",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "uom",
+            "entityKey": "cmms.asset-specs",
+            "label": "Unit",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "value-text",
+            "entityKey": "cmms.asset-specs",
+            "label": "Text value",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "value-number",
+            "entityKey": "cmms.asset-specs",
+            "label": "Numeric value",
+            "type": "NUMBER",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "value-boolean",
+            "entityKey": "cmms.asset-specs",
+            "label": "Boolean value",
+            "type": "BOOLEAN",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          }
+        ],
+        "relationships": [
+          {
+            "relationshipKey": "asset-specs",
+            "sourceEntityKey": "cmms.assets",
+            "targetEntityKey": "cmms.asset-specs",
+            "type": "ONE_TO_MANY",
+            "foreignKeyField": "asset-id"
+          }
+        ],
+        "references": [
+          {
+            "referenceKey": "asset-statuses",
+            "referenceType": "VALUE_LIST",
+            "staticValues": [
+              {
+                "value": "OPERATIONAL",
+                "label": "Operational"
+              },
+              {
+                "value": "UNDER_MAINTENANCE",
+                "label": "Under maintenance"
+              },
+              {
+                "value": "OFFLINE",
+                "label": "Offline"
+              },
+              {
+                "value": "DECOMMISSIONED",
+                "label": "Decommissioned"
+              }
+            ]
+          },
+          {
+            "referenceKey": "criticalities",
+            "referenceType": "VALUE_LIST",
+            "staticValues": [
+              {
+                "value": "LOW",
+                "label": "Low"
+              },
+              {
+                "value": "MEDIUM",
+                "label": "Medium"
+              },
+              {
+                "value": "HIGH",
+                "label": "High"
+              },
+              {
+                "value": "CRITICAL",
+                "label": "Critical"
+              }
+            ]
+          },
+          {
+            "referenceKey": "currencies",
+            "referenceType": "VALUE_LIST",
+            "staticValues": [
+              {
+                "value": "USD",
+                "label": "USD"
+              },
+              {
+                "value": "EUR",
+                "label": "EUR"
+              },
+              {
+                "value": "GBP",
+                "label": "GBP"
+              }
+            ]
+          },
+          {
+            "referenceKey": "asset-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "cmms-assets",
+            "createWith": {
+              "moduleKey": "physical-operations-cmms",
+              "surfaceKey": "cmms-assets",
+              "permission": "cmms.assets.write"
+            }
+          },
+          {
+            "referenceKey": "space-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "cmms-spaces",
+            "createWith": {
+              "moduleKey": "physical-operations-cmms",
+              "surfaceKey": "cmms-spaces",
+              "permission": "cmms.assets.write"
+            }
+          },
+          {
+            "referenceKey": "classification-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "cmms-classifications",
+            "createWith": {
+              "moduleKey": "physical-operations-cmms",
+              "surfaceKey": "cmms-classifications",
+              "permission": "cmms.assets.write"
+            }
+          }
+        ],
+        "validationRules": [],
+        "views": [
+          {
+            "viewKey": "assets",
+            "label": "Assets",
+            "mode": "LIST",
+            "device": "ALL",
+            "defaultSortDirection": "ASC",
+            "tabs": [
+              {
+                "tabKey": "asset",
+                "label": "Asset",
+                "position": 0,
+                "level": 0,
+                "targetEntityKey": "cmms.assets",
+                "sections": [
+                  {
+                    "sectionKey": "main",
+                    "label": "Asset identification",
+                    "collapsible": false,
+                    "defaultCollapsed": false,
+                    "position": 0
+                  },
+                  {
+                    "sectionKey": "hierarchy",
+                    "label": "Location & Hierarchy",
+                    "collapsible": false,
+                    "defaultCollapsed": false,
+                    "position": 1
+                  },
+                  {
+                    "sectionKey": "equipment",
+                    "label": "Manufacturer & Model",
+                    "collapsible": false,
+                    "defaultCollapsed": false,
+                    "position": 2
+                  },
+                  {
+                    "sectionKey": "commercial",
+                    "label": "Commercial & Warranty",
+                    "collapsible": false,
+                    "defaultCollapsed": false,
+                    "position": 3
+                  },
+                  {
+                    "sectionKey": "meta",
+                    "label": "Status & Lifecycle",
+                    "collapsible": false,
+                    "defaultCollapsed": false,
+                    "position": 4
+                  }
+                ],
+                "fields": [
+                  {
+                    "fieldKey": "asset-tag",
+                    "position": 0,
+                    "span": 4,
+                    "componentKey": "text-input",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "name",
+                    "position": 1,
+                    "span": 5,
+                    "componentKey": "text-input",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "category",
+                    "position": 2,
+                    "span": 3,
+                    "componentKey": "text-input",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "status",
+                    "position": 3,
+                    "span": 3,
+                    "componentKey": "select",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "criticality",
+                    "position": 4,
+                    "span": 3,
+                    "componentKey": "select",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "classification-id",
+                    "position": 5,
+                    "span": 6,
+                    "componentKey": "lookup",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "parent-asset-id",
+                    "position": 6,
+                    "span": 6,
+                    "componentKey": "lookup",
+                    "sectionKey": "hierarchy"
+                  },
+                  {
+                    "fieldKey": "space-id",
+                    "position": 7,
+                    "span": 6,
+                    "componentKey": "lookup",
+                    "sectionKey": "hierarchy"
+                  },
+                  {
+                    "fieldKey": "manufacturer",
+                    "position": 8,
+                    "span": 4,
+                    "componentKey": "text-input",
+                    "sectionKey": "equipment"
+                  },
+                  {
+                    "fieldKey": "model",
+                    "position": 9,
+                    "span": 4,
+                    "componentKey": "text-input",
+                    "sectionKey": "equipment"
+                  },
+                  {
+                    "fieldKey": "serial-number",
+                    "position": 10,
+                    "span": 4,
+                    "componentKey": "text-input",
+                    "sectionKey": "equipment"
+                  },
+                  {
+                    "fieldKey": "acquisition-cost",
+                    "position": 11,
+                    "span": 3,
+                    "componentKey": "number-input",
+                    "sectionKey": "commercial"
+                  },
+                  {
+                    "fieldKey": "currency-code",
+                    "position": 12,
+                    "span": 3,
+                    "componentKey": "select",
+                    "sectionKey": "commercial"
+                  },
+                  {
+                    "fieldKey": "purchase-date",
+                    "position": 13,
+                    "span": 3,
+                    "componentKey": "date-input",
+                    "sectionKey": "commercial"
+                  },
+                  {
+                    "fieldKey": "warranty-expiry",
+                    "position": 14,
+                    "span": 3,
+                    "componentKey": "date-input",
+                    "sectionKey": "commercial"
+                  },
+                  {
+                    "fieldKey": "site-ref",
+                    "position": 15,
+                    "span": 6,
+                    "componentKey": "text-input",
+                    "sectionKey": "hierarchy"
+                  },
+                  {
+                    "fieldKey": "open-work-order-count",
+                    "position": 16,
+                    "span": 3,
+                    "componentKey": "number-input",
+                    "sectionKey": "meta"
+                  },
+                  {
+                    "fieldKey": "archived-at",
+                    "position": 17,
+                    "span": 3,
+                    "componentKey": "datetime-input",
+                    "sectionKey": "meta"
+                  },
+                  {
+                    "fieldKey": "created-by",
+                    "position": 18,
+                    "span": 3,
+                    "componentKey": "text-input",
+                    "sectionKey": "meta"
+                  },
+                  {
+                    "fieldKey": "created-at",
+                    "position": 19,
+                    "span": 3,
+                    "componentKey": "datetime-input",
+                    "sectionKey": "meta"
+                  },
+                  {
+                    "fieldKey": "updated-at",
+                    "position": 20,
+                    "span": 3,
+                    "componentKey": "datetime-input",
+                    "sectionKey": "meta"
+                  },
+                  {
+                    "fieldKey": "description",
+                    "position": 21,
+                    "span": 12,
+                    "componentKey": "textarea",
+                    "sectionKey": "main"
+                  }
+                ]
+              },
+              {
+                "tabKey": "specs",
+                "label": "Specifications",
+                "position": 1,
+                "level": 1,
+                "targetEntityKey": "cmms.asset-specs",
+                "sections": [],
+                "fields": [
+                  {
+                    "fieldKey": "label",
+                    "position": 0,
+                    "span": 3,
+                    "componentKey": "text-input"
+                  },
+                  {
+                    "fieldKey": "data-type",
+                    "position": 1,
+                    "span": 2,
+                    "componentKey": "text-input"
+                  },
+                  {
+                    "fieldKey": "value-text",
+                    "position": 2,
+                    "span": 3,
+                    "componentKey": "text-input"
+                  },
+                  {
+                    "fieldKey": "value-number",
+                    "position": 3,
+                    "span": 2,
+                    "componentKey": "number-input"
+                  },
+                  {
+                    "fieldKey": "value-boolean",
+                    "position": 4,
+                    "span": 2,
+                    "componentKey": "checkbox"
+                  }
+                ],
+                "parentRelationshipKey": "asset-specs"
+              }
+            ],
+            "searchFields": [
+              "asset-tag",
+              "name",
+              "category"
+            ],
+            "defaultSortField": "asset-tag"
+          }
+        ],
+        "navigation": [],
+        "actions": [
+          {
+            "actionKey": "archive",
+            "label": "Archive asset",
+            "type": "COMMAND",
+            "handlerKey": "cmms.assets.archive",
+            "requiredPermissions": [
+              "cmms.assets.write"
+            ],
+            "confirmationPrompt": "Archive and decommission this asset? Open work orders and active child assets must be cleared first.",
+            "parameters": [
+              {
+                "key": "reason",
+                "label": "Reason",
+                "type": "TEXTAREA",
+                "required": true
+              }
+            ],
+            "visibilityCondition": {
+              "field": "status",
+              "operator": "NEQ",
+              "value": "DECOMMISSIONED"
+            }
+          }
+        ],
+        "messages": []
+      }
+    }
+  },
+  {
+    "contractVersion": "1.0",
+    "window": {
+      "route": "/cmms/classifications",
+      "label": "Classifications",
+      "description": "Engineering taxonomies and specification schemas for equipment classes.",
+      "readPermission": "cmms:read"
+    },
+    "definition": {
+      "kind": "APPLICATION_DICTIONARY",
+      "contractVersion": "1.0",
+      "moduleKey": "physical-operations-cmms",
+      "entityKey": "cmms-classifications",
+      "surfaceKey": "cmms-classifications",
+      "title": "Asset classifications and specifications",
+      "dictionary": {
+        "packageKey": "cmms-classifications-module-baseline",
+        "name": "Asset classifications and specifications",
+        "version": "1.0.0",
+        "moduleKey": "physical-operations-cmms",
+        "targetEntityKey": "cmms.classifications",
+        "entities": [
+          {
+            "entityKey": "cmms.classifications",
+            "moduleKey": "physical-operations-cmms",
+            "label": "Classifications",
+            "ownership": "MODULE_CORE",
+            "primaryKeyField": "id",
+            "isVersioned": true,
+            "isAuditLogged": true,
+            "isSoftDeletable": false
+          },
+          {
+            "entityKey": "cmms.spec-definitions",
+            "moduleKey": "physical-operations-cmms",
+            "label": "Specification definitions",
+            "ownership": "MODULE_CORE",
+            "primaryKeyField": "id",
+            "isVersioned": true,
+            "isAuditLogged": true,
+            "isSoftDeletable": false
+          }
+        ],
+        "fields": [
+          {
+            "fieldKey": "code",
+            "entityKey": "cmms.classifications",
+            "label": "Classification code",
+            "type": "TEXT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "helpText": "Classification identifier."
+          },
+          {
+            "fieldKey": "name",
+            "entityKey": "cmms.classifications",
+            "label": "Classification name",
+            "type": "TEXT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "description",
+            "entityKey": "cmms.classifications",
+            "label": "Description",
+            "type": "TEXTAREA",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "parent-class-id",
+            "entityKey": "cmms.classifications",
+            "label": "Parent classification",
+            "type": "REFERENCE",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "classification-ref"
+          },
+          {
+            "fieldKey": "spec-count",
+            "entityKey": "cmms.classifications",
+            "label": "Specification count",
+            "type": "INTEGER",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "asset-count",
+            "entityKey": "cmms.classifications",
+            "label": "Asset count",
+            "type": "INTEGER",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "created-by",
+            "entityKey": "cmms.classifications",
+            "label": "Created by",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "created-at",
+            "entityKey": "cmms.classifications",
+            "label": "Created at",
+            "type": "DATETIME",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "updated-at",
+            "entityKey": "cmms.classifications",
+            "label": "Updated at",
+            "type": "DATETIME",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "classification-id",
+            "entityKey": "cmms.spec-definitions",
+            "label": "Classification ID",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "attribute-key",
+            "entityKey": "cmms.spec-definitions",
+            "label": "Attribute key",
+            "type": "TEXT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "label",
+            "entityKey": "cmms.spec-definitions",
+            "label": "Label",
+            "type": "TEXT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "data-type",
+            "entityKey": "cmms.spec-definitions",
+            "label": "Data type",
+            "type": "SELECT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "spec-data-types"
+          },
+          {
+            "fieldKey": "uom",
+            "entityKey": "cmms.spec-definitions",
+            "label": "Unit of measure",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "required",
+            "entityKey": "cmms.spec-definitions",
+            "label": "Required",
+            "type": "BOOLEAN",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "min-value",
+            "entityKey": "cmms.spec-definitions",
+            "label": "Min value",
+            "type": "NUMBER",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "max-value",
+            "entityKey": "cmms.spec-definitions",
+            "label": "Max value",
+            "type": "NUMBER",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "default-value",
+            "entityKey": "cmms.spec-definitions",
+            "label": "Default value",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          }
+        ],
+        "relationships": [
+          {
+            "relationshipKey": "spec-definitions",
+            "sourceEntityKey": "cmms.classifications",
+            "targetEntityKey": "cmms.spec-definitions",
+            "type": "ONE_TO_MANY",
+            "foreignKeyField": "classification-id"
+          }
+        ],
+        "references": [
+          {
+            "referenceKey": "spec-data-types",
+            "referenceType": "VALUE_LIST",
+            "staticValues": [
+              {
+                "value": "NUMBER",
+                "label": "Number"
+              },
+              {
+                "value": "TEXT",
+                "label": "Text"
+              },
+              {
+                "value": "BOOLEAN",
+                "label": "Boolean"
+              },
+              {
+                "value": "DATE",
+                "label": "Date"
+              }
+            ]
+          },
+          {
+            "referenceKey": "classification-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "cmms-classifications",
+            "createWith": {
+              "moduleKey": "physical-operations-cmms",
+              "surfaceKey": "cmms-classifications",
+              "permission": "cmms.assets.write"
+            }
+          }
+        ],
+        "validationRules": [],
+        "views": [
+          {
+            "viewKey": "classifications",
+            "label": "Classifications",
+            "mode": "LIST",
+            "device": "ALL",
+            "defaultSortDirection": "ASC",
+            "tabs": [
+              {
+                "tabKey": "classification",
+                "label": "Classification",
+                "position": 0,
+                "level": 0,
+                "targetEntityKey": "cmms.classifications",
+                "sections": [
+                  {
+                    "sectionKey": "main",
+                    "label": "Classification taxonomy",
+                    "collapsible": false,
+                    "defaultCollapsed": false,
+                    "position": 0
+                  },
+                  {
+                    "sectionKey": "stats",
+                    "label": "Metrics & Audit",
+                    "collapsible": false,
+                    "defaultCollapsed": false,
+                    "position": 1
+                  }
+                ],
+                "fields": [
+                  {
+                    "fieldKey": "code",
+                    "position": 0,
+                    "span": 4,
+                    "componentKey": "text-input",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "name",
+                    "position": 1,
+                    "span": 5,
+                    "componentKey": "text-input",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "parent-class-id",
+                    "position": 2,
+                    "span": 6,
+                    "componentKey": "lookup",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "spec-count",
+                    "position": 3,
+                    "span": 3,
+                    "componentKey": "number-input",
+                    "sectionKey": "stats"
+                  },
+                  {
+                    "fieldKey": "asset-count",
+                    "position": 4,
+                    "span": 3,
+                    "componentKey": "number-input",
+                    "sectionKey": "stats"
+                  },
+                  {
+                    "fieldKey": "created-by",
+                    "position": 5,
+                    "span": 3,
+                    "componentKey": "text-input",
+                    "sectionKey": "stats"
+                  },
+                  {
+                    "fieldKey": "created-at",
+                    "position": 6,
+                    "span": 3,
+                    "componentKey": "datetime-input",
+                    "sectionKey": "stats"
+                  },
+                  {
+                    "fieldKey": "updated-at",
+                    "position": 7,
+                    "span": 3,
+                    "componentKey": "datetime-input",
+                    "sectionKey": "stats"
+                  },
+                  {
+                    "fieldKey": "description",
+                    "position": 8,
+                    "span": 12,
+                    "componentKey": "textarea",
+                    "sectionKey": "main"
+                  }
+                ]
+              },
+              {
+                "tabKey": "specs",
+                "label": "Specification definitions",
+                "position": 1,
+                "level": 1,
+                "targetEntityKey": "cmms.spec-definitions",
+                "sections": [],
+                "fields": [
+                  {
+                    "fieldKey": "attribute-key",
+                    "position": 0,
+                    "span": 3,
+                    "componentKey": "text-input"
+                  },
+                  {
+                    "fieldKey": "label",
+                    "position": 1,
+                    "span": 3,
+                    "componentKey": "text-input"
+                  },
+                  {
+                    "fieldKey": "data-type",
+                    "position": 2,
+                    "span": 2,
+                    "componentKey": "select"
+                  },
+                  {
+                    "fieldKey": "uom",
+                    "position": 3,
+                    "span": 2,
+                    "componentKey": "text-input"
+                  },
+                  {
+                    "fieldKey": "required",
+                    "position": 4,
+                    "span": 2,
+                    "componentKey": "checkbox"
+                  }
+                ],
+                "parentRelationshipKey": "spec-definitions"
+              }
+            ],
+            "searchFields": [
+              "code",
+              "name"
+            ],
+            "defaultSortField": "code"
+          }
+        ],
+        "navigation": [],
+        "actions": [
+          {
+            "actionKey": "delete",
+            "label": "Delete classification",
+            "type": "COMMAND",
+            "handlerKey": "cmms.classifications.delete",
+            "requiredPermissions": [
+              "cmms.assets.write"
+            ],
+            "confirmationPrompt": "Delete this classification? It must have no child classifications or assigned assets.",
+            "visibilityCondition": {
+              "field": "code",
+              "operator": "IS_NOT_NULL"
+            }
+          }
+        ],
+        "messages": []
+      }
+    }
+  },
+  {
+    "contractVersion": "1.0",
+    "window": {
       "route": "/cmms/meters",
       "label": "Meters",
       "description": "Asset counters, run hours and operational gauges.",
@@ -2250,7 +3491,12 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
           {
             "referenceKey": "asset-ref",
             "referenceType": "SEARCH_LOOKUP",
-            "resolverKey": "cmms-assets"
+            "resolverKey": "cmms-assets",
+            "createWith": {
+              "moduleKey": "physical-operations-cmms",
+              "surfaceKey": "cmms-assets",
+              "permission": "cmms.assets.write"
+            }
           }
         ],
         "validationRules": [],
@@ -3257,7 +4503,12 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
           {
             "referenceKey": "asset-ref",
             "referenceType": "SEARCH_LOOKUP",
-            "resolverKey": "cmms-assets"
+            "resolverKey": "cmms-assets",
+            "createWith": {
+              "moduleKey": "physical-operations-cmms",
+              "surfaceKey": "cmms-assets",
+              "permission": "cmms.assets.write"
+            }
           },
           {
             "referenceKey": "work-order-ref",
@@ -3746,7 +4997,12 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
           {
             "referenceKey": "asset-ref",
             "referenceType": "SEARCH_LOOKUP",
-            "resolverKey": "cmms-assets"
+            "resolverKey": "cmms-assets",
+            "createWith": {
+              "moduleKey": "physical-operations-cmms",
+              "surfaceKey": "cmms-assets",
+              "permission": "cmms.assets.write"
+            }
           }
         ],
         "validationRules": [],
@@ -3918,6 +5174,583 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
               "field": "is-active",
               "operator": "EQ",
               "value": true
+            }
+          }
+        ],
+        "messages": []
+      }
+    }
+  },
+  {
+    "contractVersion": "1.0",
+    "window": {
+      "route": "/cmms/spaces",
+      "label": "Spaces",
+      "description": "Manage facility spaces, architectural hierarchy, and located assets.",
+      "readPermission": "cmms:read"
+    },
+    "definition": {
+      "kind": "APPLICATION_DICTIONARY",
+      "contractVersion": "1.0",
+      "moduleKey": "physical-operations-cmms",
+      "entityKey": "cmms-spaces",
+      "surfaceKey": "cmms-spaces",
+      "title": "CAFM spaces and spatial twin",
+      "dictionary": {
+        "packageKey": "cmms-spaces-module-baseline",
+        "name": "CAFM spaces and spatial twin",
+        "version": "1.0.0",
+        "moduleKey": "physical-operations-cmms",
+        "targetEntityKey": "cmms.spaces",
+        "entities": [
+          {
+            "entityKey": "cmms.spaces",
+            "moduleKey": "physical-operations-cmms",
+            "label": "Spaces",
+            "ownership": "MODULE_CORE",
+            "primaryKeyField": "id",
+            "isVersioned": true,
+            "isAuditLogged": true,
+            "isSoftDeletable": false
+          },
+          {
+            "entityKey": "cmms.space-assets",
+            "moduleKey": "physical-operations-cmms",
+            "label": "Located assets",
+            "ownership": "MODULE_CORE",
+            "primaryKeyField": "id",
+            "isVersioned": true,
+            "isAuditLogged": true,
+            "isSoftDeletable": false
+          }
+        ],
+        "fields": [
+          {
+            "fieldKey": "code",
+            "entityKey": "cmms.spaces",
+            "label": "Space code",
+            "type": "TEXT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "helpText": "Unique room or zone code."
+          },
+          {
+            "fieldKey": "name",
+            "entityKey": "cmms.spaces",
+            "label": "Space name",
+            "type": "TEXT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "description",
+            "entityKey": "cmms.spaces",
+            "label": "Description",
+            "type": "TEXTAREA",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "space-type",
+            "entityKey": "cmms.spaces",
+            "label": "Space type",
+            "type": "SELECT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "space-types"
+          },
+          {
+            "fieldKey": "parent-space-id",
+            "entityKey": "cmms.spaces",
+            "label": "Parent space",
+            "type": "REFERENCE",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "space-ref"
+          },
+          {
+            "fieldKey": "site-ref",
+            "entityKey": "cmms.spaces",
+            "label": "Site reference",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "floor-number",
+            "entityKey": "cmms.spaces",
+            "label": "Floor number",
+            "type": "INTEGER",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "gross-area-sqm",
+            "entityKey": "cmms.spaces",
+            "label": "Gross area (sqm)",
+            "type": "NUMBER",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "net-area-sqm",
+            "entityKey": "cmms.spaces",
+            "label": "Net area (sqm)",
+            "type": "NUMBER",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "bim-guid",
+            "entityKey": "cmms.spaces",
+            "label": "BIM GUID",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "asset-count",
+            "entityKey": "cmms.spaces",
+            "label": "Asset count",
+            "type": "INTEGER",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "created-by",
+            "entityKey": "cmms.spaces",
+            "label": "Created by",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "created-at",
+            "entityKey": "cmms.spaces",
+            "label": "Created at",
+            "type": "DATETIME",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "updated-at",
+            "entityKey": "cmms.spaces",
+            "label": "Updated at",
+            "type": "DATETIME",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "space-id",
+            "entityKey": "cmms.space-assets",
+            "label": "Space ID",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "asset-tag",
+            "entityKey": "cmms.space-assets",
+            "label": "Asset tag",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "name",
+            "entityKey": "cmms.space-assets",
+            "label": "Asset name",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "category",
+            "entityKey": "cmms.space-assets",
+            "label": "Category",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "status",
+            "entityKey": "cmms.space-assets",
+            "label": "Status",
+            "type": "SELECT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "asset-statuses"
+          },
+          {
+            "fieldKey": "criticality",
+            "entityKey": "cmms.space-assets",
+            "label": "Criticality",
+            "type": "SELECT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "criticalities"
+          }
+        ],
+        "relationships": [
+          {
+            "relationshipKey": "space-assets",
+            "sourceEntityKey": "cmms.spaces",
+            "targetEntityKey": "cmms.space-assets",
+            "type": "ONE_TO_MANY",
+            "foreignKeyField": "space-id"
+          }
+        ],
+        "references": [
+          {
+            "referenceKey": "space-types",
+            "referenceType": "VALUE_LIST",
+            "staticValues": [
+              {
+                "value": "SITE",
+                "label": "Site"
+              },
+              {
+                "value": "BUILDING",
+                "label": "Building"
+              },
+              {
+                "value": "FLOOR",
+                "label": "Floor"
+              },
+              {
+                "value": "ROOM",
+                "label": "Room"
+              },
+              {
+                "value": "ZONE",
+                "label": "Zone"
+              }
+            ]
+          },
+          {
+            "referenceKey": "asset-statuses",
+            "referenceType": "VALUE_LIST",
+            "staticValues": [
+              {
+                "value": "OPERATIONAL",
+                "label": "Operational"
+              },
+              {
+                "value": "UNDER_MAINTENANCE",
+                "label": "Under maintenance"
+              },
+              {
+                "value": "OFFLINE",
+                "label": "Offline"
+              },
+              {
+                "value": "DECOMMISSIONED",
+                "label": "Decommissioned"
+              }
+            ]
+          },
+          {
+            "referenceKey": "criticalities",
+            "referenceType": "VALUE_LIST",
+            "staticValues": [
+              {
+                "value": "LOW",
+                "label": "Low"
+              },
+              {
+                "value": "MEDIUM",
+                "label": "Medium"
+              },
+              {
+                "value": "HIGH",
+                "label": "High"
+              },
+              {
+                "value": "CRITICAL",
+                "label": "Critical"
+              }
+            ]
+          },
+          {
+            "referenceKey": "space-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "cmms-spaces",
+            "createWith": {
+              "moduleKey": "physical-operations-cmms",
+              "surfaceKey": "cmms-spaces",
+              "permission": "cmms.assets.write"
+            }
+          }
+        ],
+        "validationRules": [],
+        "views": [
+          {
+            "viewKey": "spaces",
+            "label": "Spaces",
+            "mode": "LIST",
+            "device": "ALL",
+            "defaultSortDirection": "ASC",
+            "tabs": [
+              {
+                "tabKey": "space",
+                "label": "Space",
+                "position": 0,
+                "level": 0,
+                "targetEntityKey": "cmms.spaces",
+                "sections": [
+                  {
+                    "sectionKey": "main",
+                    "label": "Space identification",
+                    "collapsible": false,
+                    "defaultCollapsed": false,
+                    "position": 0
+                  },
+                  {
+                    "sectionKey": "location",
+                    "label": "Spatial hierarchy",
+                    "collapsible": false,
+                    "defaultCollapsed": false,
+                    "position": 1
+                  },
+                  {
+                    "sectionKey": "dimensions",
+                    "label": "Dimensions & CAD/BIM",
+                    "collapsible": false,
+                    "defaultCollapsed": false,
+                    "position": 2
+                  },
+                  {
+                    "sectionKey": "meta",
+                    "label": "Statistics & Audit",
+                    "collapsible": false,
+                    "defaultCollapsed": false,
+                    "position": 3
+                  }
+                ],
+                "fields": [
+                  {
+                    "fieldKey": "code",
+                    "position": 0,
+                    "span": 4,
+                    "componentKey": "text-input",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "name",
+                    "position": 1,
+                    "span": 5,
+                    "componentKey": "text-input",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "space-type",
+                    "position": 2,
+                    "span": 3,
+                    "componentKey": "select",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "parent-space-id",
+                    "position": 3,
+                    "span": 6,
+                    "componentKey": "lookup",
+                    "sectionKey": "location"
+                  },
+                  {
+                    "fieldKey": "floor-number",
+                    "position": 4,
+                    "span": 3,
+                    "componentKey": "number-input",
+                    "sectionKey": "location"
+                  },
+                  {
+                    "fieldKey": "site-ref",
+                    "position": 5,
+                    "span": 3,
+                    "componentKey": "text-input",
+                    "sectionKey": "location"
+                  },
+                  {
+                    "fieldKey": "gross-area-sqm",
+                    "position": 6,
+                    "span": 4,
+                    "componentKey": "number-input",
+                    "sectionKey": "dimensions"
+                  },
+                  {
+                    "fieldKey": "net-area-sqm",
+                    "position": 7,
+                    "span": 4,
+                    "componentKey": "number-input",
+                    "sectionKey": "dimensions"
+                  },
+                  {
+                    "fieldKey": "bim-guid",
+                    "position": 8,
+                    "span": 4,
+                    "componentKey": "text-input",
+                    "sectionKey": "dimensions"
+                  },
+                  {
+                    "fieldKey": "asset-count",
+                    "position": 9,
+                    "span": 3,
+                    "componentKey": "number-input",
+                    "sectionKey": "meta"
+                  },
+                  {
+                    "fieldKey": "created-by",
+                    "position": 10,
+                    "span": 3,
+                    "componentKey": "text-input",
+                    "sectionKey": "meta"
+                  },
+                  {
+                    "fieldKey": "created-at",
+                    "position": 11,
+                    "span": 3,
+                    "componentKey": "datetime-input",
+                    "sectionKey": "meta"
+                  },
+                  {
+                    "fieldKey": "updated-at",
+                    "position": 12,
+                    "span": 3,
+                    "componentKey": "datetime-input",
+                    "sectionKey": "meta"
+                  },
+                  {
+                    "fieldKey": "description",
+                    "position": 13,
+                    "span": 12,
+                    "componentKey": "textarea",
+                    "sectionKey": "main"
+                  }
+                ]
+              },
+              {
+                "tabKey": "assets",
+                "label": "Located assets",
+                "position": 1,
+                "level": 1,
+                "targetEntityKey": "cmms.space-assets",
+                "sections": [],
+                "fields": [
+                  {
+                    "fieldKey": "asset-tag",
+                    "position": 0,
+                    "span": 3,
+                    "componentKey": "text-input"
+                  },
+                  {
+                    "fieldKey": "name",
+                    "position": 1,
+                    "span": 4,
+                    "componentKey": "text-input"
+                  },
+                  {
+                    "fieldKey": "category",
+                    "position": 2,
+                    "span": 2,
+                    "componentKey": "text-input"
+                  },
+                  {
+                    "fieldKey": "status",
+                    "position": 3,
+                    "span": 2,
+                    "componentKey": "select"
+                  },
+                  {
+                    "fieldKey": "criticality",
+                    "position": 4,
+                    "span": 1,
+                    "componentKey": "select"
+                  }
+                ],
+                "parentRelationshipKey": "space-assets"
+              }
+            ],
+            "searchFields": [
+              "code",
+              "name"
+            ],
+            "defaultSortField": "code"
+          }
+        ],
+        "navigation": [],
+        "actions": [
+          {
+            "actionKey": "delete",
+            "label": "Delete space",
+            "type": "COMMAND",
+            "handlerKey": "cmms.spaces.delete",
+            "requiredPermissions": [
+              "cmms.assets.write"
+            ],
+            "confirmationPrompt": "Delete this space? It must have no child spaces or active assets.",
+            "visibilityCondition": {
+              "field": "code",
+              "operator": "IS_NOT_NULL"
             }
           }
         ],
@@ -4805,7 +6638,12 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
           {
             "referenceKey": "asset-ref",
             "referenceType": "SEARCH_LOOKUP",
-            "resolverKey": "cmms-assets"
+            "resolverKey": "cmms-assets",
+            "createWith": {
+              "moduleKey": "physical-operations-cmms",
+              "surfaceKey": "cmms-assets",
+              "permission": "cmms.assets.write"
+            }
           },
           {
             "referenceKey": "part-ref",

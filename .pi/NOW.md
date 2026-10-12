@@ -1,5 +1,23 @@
 # NOW: where the work stands
 
+> **CMMS Assets, Spaces & Classifications on Metadata Windows (WI-OI-120t Slice 4, 2026-10-11):**
+> Completed Slice 4 of [WI-OI-120t](tasks/WI-OI-120t.md) (**Review**):
+> 1. Defined metadata window baselines in `windows.mjs` and generated: `cmms-assets.window.json` (route
+>    `/cmms/assets`, child tab `specs` over `cmms.asset-specs`, action `archive`), `cmms-spaces.window.json` (route
+>    `/cmms/spaces`, child tab `assets` over `cmms.space-assets`, action `delete`), and `cmms-classifications.window.json`
+>    (route `/cmms/classifications`, child tab `specs` over `cmms.spec-definitions`, action `delete`).
+> 2. Implemented 6 record adapters in `cmms-record-adapters.ts`: `cmms.assets` (permissions: `cmms.assets.read`,
+>    `cmms.assets.write`), `cmms.asset-specs` (`parentField: asset-id`), `cmms.spaces` (`cmms.assets.read`, `cmms.assets.write`),
+>    `cmms.space-assets` (`parentField: space-id`), `cmms.classifications` (`cmms.assets.read`, `cmms.assets.write`),
+>    and `cmms.spec-definitions` (`parentField: classification-id`). Registered lookups: `cmms-spaces` and `cmms-classifications`.
+>    All 18 adapters registered in `RecordDispatcher`.
+> 3. Wired `EamSpacesService` and `ClassificationsService` into `cmmsRecordDispatcher` and CMMS `AppModule` provider.
+>    Added `/cmms/classifications` to `ui.pages` and `catalog.menu` in `module.yaml`.
+> 4. Evidence: 19/19 unit tests pass in `cmms-record-adapters.spec.ts` (261/261 CMMS API tests pass across 31 suites);
+>    role reconciliation tests pass in `r5-cmms-role-reconciliation.spec.ts`; S16 conversion verifier passes
+>    (`PASS physical-operations-cmms: 8 windows, 18 record types, 6 permissions`); `node scripts/verify.mjs --audits`
+>    passes all audits except pre-existing design tokens.
+
 > **CMMS PM Schedules, Meters & MRO Parts on Metadata Windows (WI-OI-120t Slice 3, 2026-10-11):**
 > Completed Slice 3 of [WI-OI-120t](tasks/WI-OI-120t.md) (**Review**):
 > 1. Defined metadata window baselines in `windows.mjs` and generated: `cmms-schedules.window.json` (route
@@ -240,8 +258,8 @@ canonical programme status is [.pi/WORK_ITEMS.md](WORK_ITEMS.md), WI-OI-120. No 
 3. **[WI-OI-120aa](tasks/WI-OI-120aa.md), [WI-OI-120ab](tasks/WI-OI-120ab.md), [WI-OI-120ac](tasks/WI-OI-120ac.md), and [WI-OI-120ad](tasks/WI-OI-120ad.md) verified in Review.**
    Legacy scope repair, unit-tree proof, role reconciliation, and T3 canonical place identity projection proof are
    complete in source.
-4. **M-CM1 ([120t](tasks/WI-OI-120t.md)): Slice 1 (Work Orders), Slice 2 (Requests) & Slice 3 (Plans & Stock) verified in Review.**
-   Next is Slice 4: Assets and facilities (with specifications by classification and Geospatial place linkage, after T3) and tenant-to-value journey execution.
+4. **M-CM1 ([120t](tasks/WI-OI-120t.md)): All 4 Slices (Work Orders, Requests, Plans & Stock, Assets & Facilities) verified in Review.**
+   Next is tenant-to-value journey execution and formal closure.
 
 5. Continue the approved [WI-OI-121a](tasks/WI-OI-121a.md) A0b isolated source-selection/build/SBOM proof under
    the owner-approved dormant-code preview boundary. The selected SSE guard and synthetic path pass, but the

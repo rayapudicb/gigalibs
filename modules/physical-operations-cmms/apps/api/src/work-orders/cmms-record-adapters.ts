@@ -37,6 +37,9 @@ import type { PartsService } from '../parts/parts.service.js';
 import type { RequestsService } from '../requests/requests.service.js';
 import type { PmSchedulesService } from '../pm-schedules/pm-schedules.service.js';
 import type { MetersService } from '../meters/meters.service.js';
+import type { EamSpacesService } from '../spaces/spaces.service.js';
+import type { ClassificationsService } from '../classifications/classifications.service.js';
+import type { CmmsSpaceV1, CmmsAssetClassificationV1 } from '@gigalibs/contracts';
 
 // WI-OI-120t (M-CM1, ADR-0033 D1): CMMS work-order record adapters behind metadata windows.
 // Window field keys are the dictionary's kebab-case keys; the domain speaks camelCase.
@@ -119,11 +122,13 @@ export function assertCanExecute(principal: ModulePrincipal, workOrder: CmmsWork
 
 export interface CmmsRecordDependencies {
   readonly workOrders: WorkOrdersService;
-  readonly assets: Pick<AssetsService, 'search'>;
+  readonly assets: AssetsService;
   readonly parts: PartsService;
   readonly requests?: RequestsService;
   readonly pmSchedules?: PmSchedulesService;
   readonly meters?: MetersService;
+  readonly spaces?: EamSpacesService;
+  readonly classifications?: ClassificationsService;
 }
 
 const WORK_ORDER_FIELDS: readonly FieldSpec[] = [
@@ -286,6 +291,117 @@ const MOVEMENT_FIELDS: readonly FieldSpec[] = [
   { key: 'created-by' },
   { key: 'created-at' },
 ];
+
+const ASSET_FIELDS: readonly FieldSpec[] = [
+  { key: 'asset-tag', writable: true },
+  { key: 'name', writable: true },
+  { key: 'description', writable: true },
+  { key: 'category', writable: true },
+  { key: 'status', writable: true },
+  { key: 'criticality', writable: true },
+  { key: 'manufacturer', writable: true },
+  { key: 'model', writable: true },
+  { key: 'serial-number', writable: true },
+  { key: 'parent-asset-id', writable: true },
+  { key: 'site-ref', writable: true },
+  { key: 'space-id', writable: true },
+  { key: 'classification-id', writable: true },
+  { key: 'acquisition-cost', writable: true },
+  { key: 'currency-code', writable: true },
+  { key: 'purchase-date', writable: true, ...DATE },
+  { key: 'warranty-expiry', writable: true, ...DATE },
+  { key: 'archived-at' },
+  { key: 'open-work-order-count' },
+  { key: 'created-by' },
+  { key: 'created-at' },
+  { key: 'updated-at' },
+];
+
+const ASSET_SPEC_FIELDS: readonly FieldSpec[] = [
+  { key: 'asset-id', writable: true },
+  { key: 'spec-definition-id', writable: true },
+  { key: 'attribute-key' },
+  { key: 'label' },
+  { key: 'data-type' },
+  { key: 'uom' },
+  { key: 'value-text', writable: true },
+  { key: 'value-number', writable: true },
+  { key: 'value-boolean', writable: true },
+];
+
+const SPACE_FIELDS: readonly FieldSpec[] = [
+  { key: 'code', writable: true },
+  { key: 'name', writable: true },
+  { key: 'description', writable: true },
+  { key: 'space-type', writable: true },
+  { key: 'parent-space-id', writable: true },
+  { key: 'site-ref', writable: true },
+  { key: 'floor-number', writable: true },
+  { key: 'gross-area-sqm', writable: true },
+  { key: 'net-area-sqm', writable: true },
+  { key: 'bim-guid', writable: true },
+  { key: 'asset-count' },
+  { key: 'created-by' },
+  { key: 'created-at' },
+  { key: 'updated-at' },
+];
+
+const SPACE_ASSET_FIELDS: readonly FieldSpec[] = [
+  { key: 'space-id' },
+  { key: 'asset-tag' },
+  { key: 'name' },
+  { key: 'category' },
+  { key: 'status' },
+  { key: 'criticality' },
+];
+
+const CLASSIFICATION_FIELDS: readonly FieldSpec[] = [
+  { key: 'code', writable: true },
+  { key: 'name', writable: true },
+  { key: 'description', writable: true },
+  { key: 'parent-class-id', writable: true },
+  { key: 'spec-count' },
+  { key: 'asset-count' },
+  { key: 'created-by' },
+  { key: 'created-at' },
+  { key: 'updated-at' },
+];
+
+const SPEC_DEF_FIELDS: readonly FieldSpec[] = [
+  { key: 'classification-id', writable: true },
+  { key: 'attribute-key', writable: true },
+  { key: 'label', writable: true },
+  { key: 'data-type', writable: true },
+  { key: 'uom', writable: true },
+  { key: 'required', writable: true },
+  { key: 'min-value', writable: true },
+  { key: 'max-value', writable: true },
+  { key: 'default-value', writable: true },
+];
+
+function flattenSpaces(spaces: readonly any[]): CmmsSpaceV1[] {
+  const result: CmmsSpaceV1[] = [];
+  function recurse(nodes: readonly any[]) {
+    for (const node of nodes) {
+      result.push(node);
+      if (node.children?.length) recurse(node.children);
+    }
+  }
+  recurse(spaces);
+  return result;
+}
+
+function flattenClassifications(classes: readonly any[]): CmmsAssetClassificationV1[] {
+  const result: CmmsAssetClassificationV1[] = [];
+  function recurse(nodes: readonly any[]) {
+    for (const node of nodes) {
+      result.push(node);
+      if (node.children?.length) recurse(node.children);
+    }
+  }
+  recurse(classes);
+  return result;
+}
 
 async function executeStatusTransition(
   deps: CmmsRecordDependencies,
@@ -888,6 +1004,314 @@ export function cmmsRecordDispatcher(deps: CmmsRecordDependencies, idempotency?:
     },
   };
 
+  const assets: RecordAdapter = {
+    entityKey: 'cmms.assets',
+    permissions: {
+      read: 'cmms.assets.read',
+      create: 'cmms.assets.write',
+      update: 'cmms.assets.write',
+    },
+    fields: fieldPolicies(ASSET_FIELDS),
+    searchFields: ['asset-tag', 'name', 'category'],
+    filterFields: ['status', 'criticality', 'category'],
+    sortFields: ['asset-tag', 'name', 'created-at'],
+    async list(principal: ModulePrincipal, query: RecordListQuery): Promise<RecordPage> {
+      const page = await deps.assets.search(principal as any, domainQuery(query));
+      return {
+        items: page.items.map((a) => toWindow(ASSET_FIELDS, a)),
+        total: page.total,
+        page: page.page,
+        pageSize: page.pageSize,
+      };
+    },
+    async get(principal: ModulePrincipal, id: string): Promise<RecordValues | null> {
+      try {
+        const a = await deps.assets.get(principal as any, id);
+        return toWindow(ASSET_FIELDS, a);
+      } catch (error) {
+        if (error instanceof NotFoundException) return null;
+        throw error;
+      }
+    },
+    async create(context: RecordCommandContext, values: RecordValues): Promise<RecordValues> {
+      const input = toDomain(ASSET_FIELDS, values);
+      const created = await deps.assets.create(context as any, input);
+      return toWindow(ASSET_FIELDS, created);
+    },
+    async update(context: RecordCommandContext, id: string, values: RecordValues, expectedVersion: number): Promise<RecordValues> {
+      const input = toDomain(ASSET_FIELDS, values);
+      const updated = await deps.assets.update(context as any, id, { ...input, expectedVersion });
+      return toWindow(ASSET_FIELDS, updated);
+    },
+    actions: {
+      archive: {
+        permission: 'cmms.assets.write',
+        run: async (context: RecordCommandContext, id: string, parameters: RecordValues): Promise<RecordValues> => {
+          const reason = (parameters.reason as string) || (parameters.notes as string) || 'Asset archived via window';
+          const current = await deps.assets.get(context.principal as any, id);
+          const expectedVersion = typeof parameters.expectedVersion === 'number' ? parameters.expectedVersion : current.version;
+          const archived = await deps.assets.archive(context as any, id, { reason, expectedVersion });
+          return toWindow(ASSET_FIELDS, archived);
+        },
+      },
+    },
+  };
+
+  const assetSpecs: RecordAdapter = {
+    entityKey: 'cmms.asset-specs',
+    parentField: 'asset-id',
+    permissions: {
+      read: 'cmms.assets.read',
+      create: 'cmms.assets.write',
+      update: 'cmms.assets.write',
+    },
+    fields: fieldPolicies(ASSET_SPEC_FIELDS),
+    async list(principal: ModulePrincipal, query: RecordListQuery): Promise<RecordPage> {
+      if (!deps.classifications || !query.parentId) return { items: [], total: 0, page: 1, pageSize: query.pageSize };
+      const specs = await deps.classifications.getAssetSpecs(principal as any, query.parentId);
+      const items = specs.map((s) =>
+        toWindow(ASSET_SPEC_FIELDS, {
+          id: s.specDefinitionId,
+          assetId: query.parentId,
+          specDefinitionId: s.specDefinitionId,
+          attributeKey: s.attributeKey,
+          label: s.label,
+          dataType: s.dataType,
+          uom: s.uom,
+          valueText: s.valueText,
+          valueNumber: s.valueNumber,
+          valueBoolean: s.valueBoolean,
+        }),
+      );
+      return { items, total: items.length, page: 1, pageSize: query.pageSize };
+    },
+    async get(): Promise<RecordValues | null> {
+      return null;
+    },
+    async create(context: RecordCommandContext, values: RecordValues): Promise<RecordValues> {
+      if (!deps.classifications) throw new BadRequestException('Classifications service unavailable');
+      const assetId = values['asset-id'] as string;
+      if (!assetId) throw new BadRequestException({ code: 'CMMS_VALIDATION_FAILED', message: 'asset-id is required' });
+      const specDefinitionId = values['spec-definition-id'] as string;
+      if (!specDefinitionId) throw new BadRequestException({ code: 'CMMS_VALIDATION_FAILED', message: 'spec-definition-id is required' });
+      const valueText = values['value-text'] !== undefined ? (values['value-text'] as string) : undefined;
+      const valueNumber = values['value-number'] !== undefined && values['value-number'] !== null ? Number(values['value-number']) : undefined;
+      const valueBoolean = values['value-boolean'] !== undefined && values['value-boolean'] !== null ? Boolean(values['value-boolean']) : undefined;
+      await deps.classifications.setAssetSpecs(context as any, assetId, {
+        specs: [{ specDefinitionId, valueText, valueNumber, valueBoolean }],
+      });
+      const specs = await deps.classifications.getAssetSpecs(context.principal as any, assetId);
+      const updated = specs.find((s) => s.specDefinitionId === specDefinitionId);
+      return toWindow(ASSET_SPEC_FIELDS, {
+        id: specDefinitionId,
+        assetId,
+        ...(updated ?? { specDefinitionId, valueText, valueNumber, valueBoolean }),
+      });
+    },
+    async update(context: RecordCommandContext, id: string, values: RecordValues, expectedVersion: number): Promise<RecordValues> {
+      if (!deps.classifications) throw new BadRequestException('Classifications service unavailable');
+      const assetId = values['asset-id'] as string;
+      if (!assetId) throw new BadRequestException({ code: 'CMMS_VALIDATION_FAILED', message: 'asset-id is required' });
+      const specDefinitionId = (values['spec-definition-id'] as string) || id;
+      const valueText = values['value-text'] !== undefined ? (values['value-text'] as string) : undefined;
+      const valueNumber = values['value-number'] !== undefined && values['value-number'] !== null ? Number(values['value-number']) : undefined;
+      const valueBoolean = values['value-boolean'] !== undefined && values['value-boolean'] !== null ? Boolean(values['value-boolean']) : undefined;
+      await deps.classifications.setAssetSpecs(context as any, assetId, {
+        specs: [{ specDefinitionId, valueText, valueNumber, valueBoolean }],
+      });
+      const specs = await deps.classifications.getAssetSpecs(context.principal as any, assetId);
+      const updated = specs.find((s) => s.specDefinitionId === specDefinitionId);
+      return toWindow(ASSET_SPEC_FIELDS, {
+        id: specDefinitionId,
+        assetId,
+        ...(updated ?? { specDefinitionId, valueText, valueNumber, valueBoolean }),
+      });
+    },
+  };
+
+  const spaces: RecordAdapter = {
+    entityKey: 'cmms.spaces',
+    permissions: {
+      read: 'cmms.assets.read',
+      create: 'cmms.assets.write',
+      update: 'cmms.assets.write',
+    },
+    fields: fieldPolicies(SPACE_FIELDS),
+    searchFields: ['code', 'name'],
+    sortFields: ['code', 'name', 'floor-number'],
+    async list(principal: ModulePrincipal, query: RecordListQuery): Promise<RecordPage> {
+      if (!deps.spaces) return { items: [], total: 0, page: 1, pageSize: query.pageSize };
+      const tree = await deps.spaces.tree(principal as any);
+      const flattened = flattenSpaces(tree);
+      let filtered = flattened;
+      if (query.search) {
+        const q = query.search.toLowerCase();
+        filtered = filtered.filter((s) => s.code.toLowerCase().includes(q) || s.name.toLowerCase().includes(q));
+      }
+      const total = filtered.length;
+      const start = ((query.page ?? 1) - 1) * (query.pageSize ?? 25);
+      const pageItems = filtered.slice(start, start + (query.pageSize ?? 25));
+      return {
+        items: pageItems.map((s) => toWindow(SPACE_FIELDS, s)),
+        total,
+        page: query.page ?? 1,
+        pageSize: query.pageSize ?? 25,
+      };
+    },
+    async get(principal: ModulePrincipal, id: string): Promise<RecordValues | null> {
+      if (!deps.spaces) return null;
+      try {
+        const s = await deps.spaces.get(principal as any, id);
+        return toWindow(SPACE_FIELDS, s);
+      } catch (error) {
+        if (error instanceof NotFoundException) return null;
+        throw error;
+      }
+    },
+    async create(context: RecordCommandContext, values: RecordValues): Promise<RecordValues> {
+      if (!deps.spaces) throw new BadRequestException('Spaces service unavailable');
+      const input = toDomain(SPACE_FIELDS, values);
+      const created = await deps.spaces.create(context as any, input);
+      return toWindow(SPACE_FIELDS, created);
+    },
+    async update(context: RecordCommandContext, id: string, values: RecordValues, expectedVersion: number): Promise<RecordValues> {
+      if (!deps.spaces) throw new BadRequestException('Spaces service unavailable');
+      const input = toDomain(SPACE_FIELDS, values);
+      const updated = await deps.spaces.update(context as any, id, { ...input, expectedVersion });
+      return toWindow(SPACE_FIELDS, updated);
+    },
+    actions: {
+      delete: {
+        permission: 'cmms.assets.write',
+        run: async (context: RecordCommandContext, id: string): Promise<RecordValues> => {
+          if (!deps.spaces) throw new BadRequestException('Spaces service unavailable');
+          const current = await deps.spaces.get(context.principal as any, id);
+          await deps.spaces.delete(context as any, id);
+          return toWindow(SPACE_FIELDS, current);
+        },
+      },
+    },
+  };
+
+  const spaceAssets: RecordAdapter = {
+    entityKey: 'cmms.space-assets',
+    parentField: 'space-id',
+    permissions: {
+      read: 'cmms.assets.read',
+    },
+    fields: fieldPolicies(SPACE_ASSET_FIELDS),
+    async list(principal: ModulePrincipal, query: RecordListQuery): Promise<RecordPage> {
+      if (!deps.spaces || !query.parentId) return { items: [], total: 0, page: 1, pageSize: query.pageSize };
+      const assetsInSpace = await deps.spaces.getAssetsInSpace(principal as any, query.parentId);
+      const items = assetsInSpace.map((a) =>
+        toWindow(SPACE_ASSET_FIELDS, {
+          id: a.id,
+          spaceId: query.parentId,
+          assetTag: a.assetTag,
+          name: a.name,
+          category: a.category,
+          status: a.status,
+          criticality: a.criticality,
+        }),
+      );
+      return { items, total: items.length, page: 1, pageSize: query.pageSize };
+    },
+    async get(): Promise<RecordValues | null> {
+      return null;
+    },
+  };
+
+  const classifications: RecordAdapter = {
+    entityKey: 'cmms.classifications',
+    permissions: {
+      read: 'cmms.assets.read',
+      create: 'cmms.assets.write',
+      update: 'cmms.assets.write',
+    },
+    fields: fieldPolicies(CLASSIFICATION_FIELDS),
+    searchFields: ['code', 'name'],
+    sortFields: ['code', 'name'],
+    async list(principal: ModulePrincipal, query: RecordListQuery): Promise<RecordPage> {
+      if (!deps.classifications) return { items: [], total: 0, page: 1, pageSize: query.pageSize };
+      const tree = await deps.classifications.listTree(principal as any);
+      const flattened = flattenClassifications(tree);
+      let filtered = flattened;
+      if (query.search) {
+        const q = query.search.toLowerCase();
+        filtered = filtered.filter((c) => c.code.toLowerCase().includes(q) || c.name.toLowerCase().includes(q));
+      }
+      const total = filtered.length;
+      const start = ((query.page ?? 1) - 1) * (query.pageSize ?? 25);
+      const pageItems = filtered.slice(start, start + (query.pageSize ?? 25));
+      return {
+        items: pageItems.map((c) => toWindow(CLASSIFICATION_FIELDS, c)),
+        total,
+        page: query.page ?? 1,
+        pageSize: query.pageSize ?? 25,
+      };
+    },
+    async get(principal: ModulePrincipal, id: string): Promise<RecordValues | null> {
+      if (!deps.classifications) return null;
+      try {
+        const c = await deps.classifications.get(principal as any, id);
+        return toWindow(CLASSIFICATION_FIELDS, c);
+      } catch (error) {
+        if (error instanceof NotFoundException) return null;
+        throw error;
+      }
+    },
+    async create(context: RecordCommandContext, values: RecordValues): Promise<RecordValues> {
+      if (!deps.classifications) throw new BadRequestException('Classifications service unavailable');
+      const input = toDomain(CLASSIFICATION_FIELDS, values);
+      const created = await deps.classifications.create(context as any, input);
+      return toWindow(CLASSIFICATION_FIELDS, created);
+    },
+    async update(context: RecordCommandContext, id: string, values: RecordValues, expectedVersion: number): Promise<RecordValues> {
+      if (!deps.classifications) throw new BadRequestException('Classifications service unavailable');
+      const input = toDomain(CLASSIFICATION_FIELDS, values);
+      const updated = await deps.classifications.update(context as any, id, { ...input, expectedVersion });
+      return toWindow(CLASSIFICATION_FIELDS, updated);
+    },
+    actions: {
+      delete: {
+        permission: 'cmms.assets.write',
+        run: async (context: RecordCommandContext, id: string): Promise<RecordValues> => {
+          if (!deps.classifications) throw new BadRequestException('Classifications service unavailable');
+          const current = await deps.classifications.get(context.principal as any, id);
+          await deps.classifications.delete(context as any, id);
+          return toWindow(CLASSIFICATION_FIELDS, current);
+        },
+      },
+    },
+  };
+
+  const specDefinitions: RecordAdapter = {
+    entityKey: 'cmms.spec-definitions',
+    parentField: 'classification-id',
+    permissions: {
+      read: 'cmms.assets.read',
+      create: 'cmms.assets.write',
+    },
+    fields: fieldPolicies(SPEC_DEF_FIELDS),
+    async list(principal: ModulePrincipal, query: RecordListQuery): Promise<RecordPage> {
+      if (!deps.classifications || !query.parentId) return { items: [], total: 0, page: 1, pageSize: query.pageSize };
+      const defs = await deps.classifications.listSpecDefinitions(principal as any, query.parentId);
+      const items = defs.map((d) => toWindow(SPEC_DEF_FIELDS, d));
+      return { items, total: items.length, page: 1, pageSize: query.pageSize };
+    },
+    async get(): Promise<RecordValues | null> {
+      return null;
+    },
+    async create(context: RecordCommandContext, values: RecordValues): Promise<RecordValues> {
+      if (!deps.classifications) throw new BadRequestException('Classifications service unavailable');
+      const classificationId = values['classification-id'] as string;
+      if (!classificationId) throw new BadRequestException({ code: 'CMMS_VALIDATION_FAILED', message: 'classification-id is required' });
+      const input = toDomain(SPEC_DEF_FIELDS, values);
+      const created = await deps.classifications.createSpecDefinition(context as any, { ...input, classificationId });
+      return toWindow(SPEC_DEF_FIELDS, created);
+    },
+  };
+
   const resolvers: LookupResolver[] = [
     {
       key: 'cmms-assets',
@@ -934,6 +1358,42 @@ export function cmmsRecordDispatcher(deps: CmmsRecordDependencies, idempotency?:
         }));
       },
     },
+    {
+      key: 'cmms-spaces',
+      permission: 'cmms.assets.read',
+      async resolve(principal, request): Promise<readonly LookupOption[]> {
+        if (!deps.spaces) return [];
+        const tree = await deps.spaces.tree(principal as any);
+        const flattened = flattenSpaces(tree);
+        let list = flattened;
+        if (request.search) {
+          const q = request.search.toLowerCase();
+          list = list.filter((s) => s.code.toLowerCase().includes(q) || s.name.toLowerCase().includes(q));
+        }
+        return list.slice(0, request.limit).map((s) => ({
+          value: s.id,
+          label: `${s.code} - ${s.name} (${s.spaceType})`,
+        }));
+      },
+    },
+    {
+      key: 'cmms-classifications',
+      permission: 'cmms.assets.read',
+      async resolve(principal, request): Promise<readonly LookupOption[]> {
+        if (!deps.classifications) return [];
+        const tree = await deps.classifications.listTree(principal as any);
+        const flattened = flattenClassifications(tree);
+        let list = flattened;
+        if (request.search) {
+          const q = request.search.toLowerCase();
+          list = list.filter((c) => c.code.toLowerCase().includes(q) || c.name.toLowerCase().includes(q));
+        }
+        return list.slice(0, request.limit).map((c) => ({
+          value: c.id,
+          label: `${c.code} - ${c.name}`,
+        }));
+      },
+    },
   ];
 
   class MemoryIdempotencyStore implements IdempotencyStore {
@@ -974,6 +1434,12 @@ export function cmmsRecordDispatcher(deps: CmmsRecordDependencies, idempotency?:
       meterReadings,
       parts,
       partMovements,
+      assets,
+      assetSpecs,
+      spaces,
+      spaceAssets,
+      classifications,
+      specDefinitions,
     ],
     resolvers,
     idempotency ?? new MemoryIdempotencyStore(),

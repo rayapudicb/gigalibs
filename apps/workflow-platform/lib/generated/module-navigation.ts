@@ -75,6 +75,12 @@ export const generatedModuleMenus: Readonly<Record<string, readonly GeneratedMod
       "icon": "factory"
     },
     {
+      "key": "classifications",
+      "label": "Classifications",
+      "path": "/cmms/classifications",
+      "icon": "layers"
+    },
+    {
       "key": "schedules",
       "label": "PM Schedules",
       "path": "/cmms/schedules",

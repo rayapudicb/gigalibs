@@ -252,7 +252,12 @@
         {
           "referenceKey": "asset-ref",
           "referenceType": "SEARCH_LOOKUP",
-          "resolverKey": "cmms-assets"
+          "resolverKey": "cmms-assets",
+          "createWith": {
+            "moduleKey": "physical-operations-cmms",
+            "surfaceKey": "cmms-assets",
+            "permission": "cmms.assets.write"
+          }
         },
         {
           "referenceKey": "work-order-ref",
