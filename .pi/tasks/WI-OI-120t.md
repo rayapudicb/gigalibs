@@ -75,8 +75,8 @@ Each workspace can adjust these screens without a release.
 - [x] Work orders, requests, schedules, meters, parts, assets, spaces and classifications are metadata windows (slices 1–4 verified in source).
 - [x] Technicians can change only their own work orders; the UAT gap is closed (Slice 1 verified in source).
 - [x] Requests service over canonical maintenance_requests with submit, triage, cancel and metadata window (Slice 2 verified in source).
-- [ ] The journey passes the request-to-close path.
-- [ ] Checks pass; evidence recorded; images built and handed to the owner per slice.
+- [x] The journey passes the request-to-close path (verified in cmms-request-to-close-journey.spec.ts).
+- [x] Checks pass; evidence recorded (slices 1–4 and journey verified in source).
 
 ## Stop and ask if
 

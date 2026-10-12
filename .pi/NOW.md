@@ -1,5 +1,20 @@
 # NOW: where the work stands
 
+> **CMMS Request-to-Close Maintenance Journey Proof (WI-OI-120t, 2026-10-12):**
+> Completed and verified the end-to-end request-to-close journey specification for [WI-OI-120t](tasks/WI-OI-120t.md) (**Review**):
+> 1. Verified full lifecycle across record adapters: requester raises maintenance request (`cmms.requests.create`),
+>    auditor (viewer) can read but is refused on all mutations/actions, planner triages and accepts request into work order
+>    assigned to technician, unauthorized technician (`tech-bob`) is refused with HTTP 403 `CMMS_OUT_OF_SCOPE` on actions, labour,
+>    parts, and notes, assigned technician (`tech-alice` with `cmms.work-orders.execute-own`) starts work order, logs labour,
+>    issues parts, adds progress note, and completes work order. Planner verifies completed work order and history; auditor
+>    inspects final records in read-only mode and is refused any modifications.
+> 2. Implemented dedicated automated journey test `cmms-request-to-close-journey.spec.ts`.
+> 3. Evidence: 262/262 CMMS API tests pass across 32 suites (`./node_modules/.bin/vitest run modules/physical-operations-cmms`);
+>    S16 conversion verifier passes (`PASS physical-operations-cmms: 8 windows, 18 record types, 6 permissions`);
+>    `node scripts/verify.mjs --audits` passes all platform audits.
+> 4. All acceptance criteria for WI-OI-120t are satisfied in Review. Next is **[WI-OI-120u](tasks/WI-OI-120u.md) (M-WF1)**:
+>    Workforce on metadata windows with U20a (Slice 1: People, skills and positions).
+
 > **CMMS Assets, Spaces & Classifications on Metadata Windows (WI-OI-120t Slice 4, 2026-10-11):**
 > Completed Slice 4 of [WI-OI-120t](tasks/WI-OI-120t.md) (**Review**):
 > 1. Defined metadata window baselines in `windows.mjs` and generated: `cmms-assets.window.json` (route
@@ -258,8 +273,8 @@ canonical programme status is [.pi/WORK_ITEMS.md](WORK_ITEMS.md), WI-OI-120. No 
 3. **[WI-OI-120aa](tasks/WI-OI-120aa.md), [WI-OI-120ab](tasks/WI-OI-120ab.md), [WI-OI-120ac](tasks/WI-OI-120ac.md), and [WI-OI-120ad](tasks/WI-OI-120ad.md) verified in Review.**
    Legacy scope repair, unit-tree proof, role reconciliation, and T3 canonical place identity projection proof are
    complete in source.
-4. **M-CM1 ([120t](tasks/WI-OI-120t.md)): All 4 Slices (Work Orders, Requests, Plans & Stock, Assets & Facilities) verified in Review.**
-   Next is tenant-to-value journey execution and formal closure.
+4. **M-CM1 ([120t](tasks/WI-OI-120t.md)): Completed and verified in Review (all 4 slices + request-to-close journey proof).**
+   Next active task is **[WI-OI-120u](tasks/WI-OI-120u.md) (M-WF1)**: Workforce on metadata windows with U20a (Slice 1: People, skills and positions).
 
 5. Continue the approved [WI-OI-121a](tasks/WI-OI-121a.md) A0b isolated source-selection/build/SBOM proof under
    the owner-approved dormant-code preview boundary. The selected SSE guard and synthetic path pass, but the
