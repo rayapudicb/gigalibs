@@ -2817,3 +2817,55 @@ widening the card to fix the API faults the proof found.
 - **Before deploy:** Security review (the lookup route, the field-level link permission, `workforce.capabilities.manage`
   for the supervisor role). The deploy runs the Workforce migration (expected version 27); going back to an older
   Workforce image needs `000027_workforce_record_idempotency.down.sql` first. The Workforce journey is rerun after.
+
+#### WI-OI-120u Slice 2: availability, absences and bookings on metadata windows, 2026-10-13; awaiting "commit"
+
+- **Owner decisions:** "approved 2, D1a, D2a". D1a: own absences with `workforce.absences.request-own`. D2a: a
+  `workspace-sites` platform lookup over Geospatial.
+- **Found while building, and how it is handled:**
+  - A child tab cannot open its records (`MetadataWindow` gives child lists no `onOpen`), so a child record's actions
+    are unreachable there. People's Working weeks and Absences tabs add and list; ending a week, deciding or
+    cancelling an absence and withdrawing a closure are on the windows where those records are the main record.
+  - Windows send date-times as wall-clock text with no zone (the old screens used the browser's zone). Absence and
+    booking times are now read and shown in the person's working time zone (their working week's IANA zone; UTC
+    without one), shown on each record; `common/local-time.ts` converts, daylight-saving tested.
+  - A working week (up to 28 slots) is one line of text in the window, for example "Mon-Fri 09:00-17:00; Sat
+    10:00-14:00" (`availability/working-week.ts`); the domain still checks the slots.
+  - The journey spec still drove Slice 1's old People screen; it now uses the window (New/Save, member picker) and adds
+    the card's journey: an absence type, the technician's day off (My absences), the supervisor's working week for the
+    technician, and the supervisor's approval.
+- **Now:**
+  - Record types: `wf.availability-patterns`, `wf.absences`, `wf.my-absences`, `wf.absence-types`, `wf.calendars`,
+    `wf.calendar-closures`, `wf.bookings` (read only); pickers `wf-absence-types` (`workforce:read`: a person picks a
+    type for their own request) and `wf-calendars`. Shared adapter helpers moved to `common/record-kit.ts`.
+  - Service: `requestOwnAbsence`, `cancelOwnAbsence`, `listOwnAbsences`, `getOwnAbsence` find the person linked to the
+    caller's login themselves (`RequestOwnAbsenceV1Schema` has no person; a named one is refused); `getAbsence`,
+    `listAllPatterns`, `getPattern`, `workingTimeZones`, `ownTimeZone`; `BookingsService.getBooking` under the same
+    place scope as the list.
+  - Windows: People + Working weeks and Absences tabs; Absence requests, My absences, Working weeks, Absence types,
+    Site calendars, Closures (`/gigaops/availability`, replacing the workbench section) and Bookings
+    (`/gigaops/bookings`, new menu entry). `WorkforceWorkspace` shows a section's windows as tabs, by permission; "Who
+    is available" is a named exception on the Availability page (`v1/availability`, as before).
+  - `workspace-sites`: `app/api/control/v1/lookups/[key]` calls the signed Geospatial proxy server-side (session,
+    Geospatial entitlement, `maps.nodes.read`); places named by id are read one by one, at most 25.
+  - Roles: Workforce member + `workforce.absences.request-own`; Workforce supervisor + `workforce.calendars.manage`
+    (absence types and calendars were administrator-only). Window builder emits `defaultValue`.
+- **Verification:**
+  - 375 tests in 44 files (Workforce, configuration-core, lookup route, Workforce section and navigation). New: 15
+    availability adapter tests through the real dispatcher and shipped rules (member refused everyone's absences, own
+    request in the person's zone with no person named, decisions with the version read, conflict 412, required fields
+    422, read-only bookings); 3 own-absence service tests; 4 local-time tests (a year of hours round-trips in
+    Europe/Berlin; spring gap and autumn repeat in London); 3 working-week tests; 2 site-lookup route tests.
+  - On the throwaway PostgreSQL 16 at migration 27, as the runtime role through the real services (13 checks): no
+    linked person refused; naming another refused; an own request is for the linked person; each sees only their own;
+    another cannot read or cancel it; the requester cannot decide it; someone else approves; the person cancels before
+    it starts; working and own time zones; everyone's weeks; `getBooking` under both place scopes. Container stopped.
+  - S16: PASS for all five converted modules, `gigaops: 8 windows, 11 record types, 8 permissions`, no KNOWN. Windows
+    `--check`, module manifests, package dependencies, API boundary, navigation, layers, anti-duplication, SDLC and
+    runtime data audits pass; `pnpm install --frozen-lockfile` passes (no dependency change). The journey spec compiles
+    and lists in Playwright; it runs after deploy.
+  - Unchanged and not from this slice: web typecheck (two CMMS pages), the CMMS web equivalence tests, the design-token
+    audit (other files).
+- **Before deploy:** Security review of Slices 1 and 2 together: the member's `request-own`, the supervisor's
+  `calendars.manage` and `capabilities.manage`, the platform lookups (members, units, places), the login field. Slice 1
+  brings the Workforce migration (27). The CMMS web typecheck still blocks a web image build.

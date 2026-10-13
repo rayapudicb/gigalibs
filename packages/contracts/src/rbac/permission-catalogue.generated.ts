@@ -1639,6 +1639,12 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
     ]
   },
   {
+    "code": "workforce.absences.request-own",
+    "entries": [
+      "gigaops"
+    ]
+  },
+  {
     "code": "workforce.availability.manage",
     "entries": [
       "asset-maintenance",

@@ -344,19 +344,20 @@ export const moduleDefaultRoles: readonly ModuleDefaultRole[] = [
     "catalogKey": "gigaops",
     "key": "workforce-member",
     "name": "Workforce member",
-    "description": "Punches their own time and sees their own week; reads job profiles.",
+    "description": "Punches their own time and sees their own week; asks for their own absence; reads job profiles.",
     "permissions": [
       "workforce:read",
       "workforce.resources.read",
       "workforce.jobs.read",
-      "workforce.time.punch"
+      "workforce.time.punch",
+      "workforce.absences.request-own"
     ]
   },
   {
     "catalogKey": "gigaops",
     "key": "workforce-supervisor",
     "name": "Workforce supervisor",
-    "description": "Manages people, jobs, bookings and availability, and approves timesheets and absence for everyone in the workspace until roles are held per unit (ADR-0034). Linking logins stays with administrators.",
+    "description": "Manages people, jobs, bookings, availability, absence types and calendars, and approves timesheets and absence for everyone in the workspace until roles are held per unit (ADR-0034). Linking logins stays with administrators.",
     "permissions": [
       "workforce:read",
       "workforce.resources.read",
@@ -368,6 +369,7 @@ export const moduleDefaultRoles: readonly ModuleDefaultRole[] = [
       "workforce.availability.read",
       "workforce.availability.manage",
       "workforce.calendars.read",
+      "workforce.calendars.manage",
       "workforce.capabilities.read",
       "workforce.capabilities.manage",
       "workforce.time.read",

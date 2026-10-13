@@ -252,6 +252,18 @@ export class BookingsService {
     });
   }
 
+  /** One booking, under the same place scope as the list (WI-OI-120u: the Bookings window reads one). */
+  async getBooking(principal: GigaOpsPrincipal, bookingId: string): Promise<BookingV1> {
+    assertUuid(bookingId, 'bookingId');
+    return this.database.withTenantTransaction(principal.tenantId, async (client) => {
+      const values: unknown[] = [principal.tenantId, bookingId];
+      const where = ['b.tenant_id = $1', 'b.id = $2', ...placePredicates(principal, values, 'r.')];
+      const result = await client.query(`${BOOKING_SELECT} WHERE ${where.join(' AND ')}`, values);
+      if (!result.rows[0]) throw new NotFoundException('The booking was not found.');
+      return mapBooking(result.rows[0]);
+    });
+  }
+
   async createBooking(context: CommandContext, rawInput: unknown): Promise<BookingV1 & { readonly replayed: boolean }> {
     const input = parse(CreateBookingV1Schema, rawInput);
     const tenantId = context.principal.tenantId;

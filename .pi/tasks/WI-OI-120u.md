@@ -42,6 +42,19 @@ screens are reachable, permissioned and owned, or retired.
      (kept from b7f8a53).
    - Bookings list and read.
    - Clock-in and the scheduling and dispatch board stay components (named exceptions) inside governed screens.
+
+   **Owner decisions, 2026-10-13** (plan approved "approved 2, D1a, D2a"):
+   - **D1a:** a person asks for and cancels their own absence with `workforce.absences.request-own` (Workforce member
+     role). The service finds the person linked to the caller's login; nobody can name another. Deciding stays
+     four-eyes.
+   - **D2a:** a `workspace-sites` platform lookup reads Geospatial's places through its signed proxy, as the user.
+   - As built: People gains Working weeks and Absences tabs (add and list). `/gigaops/availability` replaces the
+     workbench section with windows for Absence requests (approve, reject, cancel), My absences, Working weeks (end),
+     Absence types, Site calendars and Closures (withdraw), and the "Who is available" check as a named exception. A
+     child tab cannot open its records, so each record's actions are on the window where it is the main record.
+     `/gigaops/bookings` is a read-only Bookings window. Times are shown and taken in the person's working time zone.
+     The Workforce supervisor role gains `workforce.calendars.manage` (absence types and calendars), for the Security
+     review.
 3. **Slice 3, U20a.** For each WFO surface, one of:
    - **adopt:** a route, a `workforce.*` permission, a module-role grant and a metadata window. Workers are adopted
      only as a read-only list until T1b moves them onto resources;

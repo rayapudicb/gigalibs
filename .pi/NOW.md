@@ -1,20 +1,18 @@
 # NOW: where the work stands
 
-> **Workforce People on a metadata window (WI-OI-120u Slice 1, 2026-10-13), awaiting the owner's "commit":**
-> Slice 1 of [WI-OI-120u](tasks/WI-OI-120u.md) was drafted by another agent and reworked after review (evidence in
-> [WI-OI-120.md](work/WI-OI-120.md), "WI-OI-120u Slice 1"). Owner decisions 2026-10-13: the login picker is a platform
-> lookup over workspace members (option A); **People only** replaces its workbench screen now, Jobs & positions keeps the
-> workbench until its window can revise profiles, place people in positions and pick a site (held in
-> `modules/gigaops/dictionary/jobs-window.held.mjs`; its adapters are registered and tested).
-> 1. `/gigaops/resources` renders the People window from the new `@gigalibs/gigaops-web` package (`MetadataWindow`), not
->    the module-scaffold placeholder; skills are its child tab with a skill picker; "Linked login" is a member picker that
->    only holders of `workforce.resources.link` can change (dispatcher, window and service all refuse others).
-> 2. Platform lookups `workspace-members` and `organization-units` (`PLATFORM_LOOKUPS`, contracts) are served by
->    `app/api/control/v1/lookups/[key]` as the signed-in user; the control plane's permission decides.
-> 3. Idempotency-Key answers in Workforce's own `record_idempotency` table (forward migration 000027; contract version 27).
-> 4. Proof: 272 tests (Workforce, configuration-core, lookup route); S16 `PASS gigaops: 1 windows, 4 record types, 3
->    permissions` with no KNOWN exceptions; migration 26 → 27 and the store proven on a throwaway PostgreSQL 16.
->    Security review before deploy. Deploy runs the Workforce migration (expected version 27).
+> **Workforce availability, absences and bookings on metadata windows (WI-OI-120u Slice 2, 2026-10-13), awaiting "commit":**
+> Slice 1 (People, platform member lookup, record idempotency table) is committed (5b38e4d). Slice 2 per the owner's
+> "approved 2, D1a, D2a" (evidence in [WI-OI-120.md](work/WI-OI-120.md), "WI-OI-120u Slice 2"):
+> 1. People gains Working weeks and Absences tabs. `/gigaops/availability` is now windows: Absence requests (approve,
+>    reject, cancel; four-eyes), My absences (`workforce.absences.request-own`, the person linked to your login only),
+>    Working weeks (end), Absence types, Site calendars (site picker), Closures (withdraw) and the "Who is available"
+>    check. `/gigaops/bookings` is a read-only Bookings window. Times are in the person's working time zone.
+> 2. `workspace-sites` platform lookup over Geospatial's places (signed proxy, `maps.nodes.read`).
+> 3. Roles: Workforce member + `workforce.absences.request-own`; Workforce supervisor + `workforce.calendars.manage`.
+> 4. Proof: 375 tests (Workforce, configuration-core, lookup route, navigation); S16 `PASS gigaops: 8 windows, 11
+>    record types, 8 permissions`; own absences, four-eyes and time zones proven on a throwaway PostgreSQL 16. The
+>    journey spec drives the new screens (rerun after deploy). Security review before deploy; Slice 1 still needs its
+>    review and the Workforce migration (27) at deploy.
 
 > **CMMS Request-to-Close Maintenance Journey Proof (WI-OI-120t, 2026-10-12):**
 > Completed and verified the end-to-end request-to-close journey specification for [WI-OI-120t](tasks/WI-OI-120t.md) (**Review**):
@@ -289,8 +287,9 @@ canonical programme status is [.pi/WORK_ITEMS.md](WORK_ITEMS.md), WI-OI-120. No 
 3. **[WI-OI-120aa](tasks/WI-OI-120aa.md), [WI-OI-120ab](tasks/WI-OI-120ab.md), [WI-OI-120ac](tasks/WI-OI-120ac.md), and [WI-OI-120ad](tasks/WI-OI-120ad.md) verified in Review.**
    Legacy scope repair, unit-tree proof, role reconciliation, and T3 canonical place identity projection proof are
    complete in source.
-4. **M-WF1 ([120u](tasks/WI-OI-120u.md)): Slice 1 (People and skills) reworked and verified; awaiting "commit" and a
-   Security review.** Slice 2 (availability, absences, bookings) is shown to the owner before it starts.
+4. **M-WF1 ([120u](tasks/WI-OI-120u.md)): Slice 1 committed (5b38e4d); Slice 2 (availability, absences, bookings)
+   built and verified, awaiting "commit".** Both need the Security review before deploy. Slice 3 (U20a) is shown to the
+   owner before it starts.
 
 5. Continue the approved [WI-OI-121a](tasks/WI-OI-121a.md) A0b isolated source-selection/build/SBOM proof under
    the owner-approved dormant-code preview boundary. The selected SSE guard and synthetic path pass, but the

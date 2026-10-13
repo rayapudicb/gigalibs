@@ -18,6 +18,12 @@ import { JourneyRecorder } from './journey-recorder';
 const RUN = Date.now().toString(36).slice(-6);
 const PASSWORD = process.env.E2E_JOURNEY_PASSWORD ?? '';
 const WORKSPACE = `Journey Works ${RUN}`;
+/** WI-OI-120u: the technician's day off, a weekday about two weeks ahead. */
+const DAY_OFF = (() => {
+  const day = new Date(Date.now() + 14 * 86_400_000);
+  while (day.getUTCDay() === 0 || day.getUTCDay() === 6) day.setUTCDate(day.getUTCDate() + 1);
+  return day.toISOString().slice(0, 10);
+})();
 const SLUG = `journey-${RUN}`;
 const OUT = process.env.JOURNEY_OUT ?? join(__dirname, '..', 'test-results', 'journey');
 
@@ -140,6 +146,8 @@ async function fill(form: Locator, values: ReadonlyArray<[RegExp, string]>): Pro
     }
     await control.fill(value);
     filled.push(`${label}=${value}`);
+    // A metadata window's picker is a search box and a list; the list fills once the search has answered (WI-OI-120u).
+    if (/^search /i.test(label)) await settle(form.page());
   }
   return filled;
 }
@@ -511,16 +519,25 @@ test('a new customer from sign-up to maintenance work, as five people', async ({
         return note;
       });
     }
+    // WI-OI-120u: People is a metadata window; the login is a picker of workspace members only administrators change.
     for (const persona of [people.technician!, people.supervisor!]) {
-      await recorder.do(S4, `Add ${persona.name} on Resources, linked to their login`, admin, async () => {
+      await recorder.do(S4, `Add ${persona.name} on People, linked to their login`, admin, async () => {
         await admin.goto('/gigaops/resources');
         await settle(admin);
-        const note = await create(admin, recorder, /add resource/i, [[/reference/i, `${persona.key.slice(0, 4).toUpperCase()}-${RUN}`], [/display name/i, persona.name], [/resource type/i, 'Person'], [/login/i, persona.email]], /create persisted resource/i);
+        const note = await create(admin, recorder, /^new$/i, [[/reference/i, `${persona.key.slice(0, 4).toUpperCase()}-${RUN}`], [/display name/i, persona.name], [/^type/i, 'Human'], [/login/i, persona.email]], /^save$/i);
         await survivesReload(admin, recorder, persona.name, 'A new Workforce person');
         return note;
       });
     }
-    for (const section of ['overview', 'resources', 'jobs', 'scheduling', 'time', 'attendance']) {
+    // WI-OI-120u Slice 2: absence types are kept on the Availability page; a person asks for their own absence there.
+    await recorder.do(S4, 'Add an absence type', admin, async () => {
+      await admin.goto('/gigaops/availability');
+      await settle(admin);
+      await press(admin, /^absence types$/i);
+      await settle(admin);
+      return create(admin, recorder, /^new$/i, [[/code/i, `VAC${RUN}`.slice(0, 16).toUpperCase()], [/name/i, `Vacation ${RUN}`]], /^save$/i);
+    });
+    for (const section of ['overview', 'resources', 'jobs', 'availability', 'bookings', 'scheduling', 'time', 'attendance']) {
       await recorder.do(S4, `Workforce: ${section}, as the administrator`, admin, async () => {
         await admin.goto(section === 'overview' ? '/gigaops' : `/gigaops/${section}`);
         await settle(admin);
@@ -544,6 +561,16 @@ test('a new customer from sign-up to maintenance work, as five people', async ({
         if (recorder.failedWrites(technician).length) throw new Error(`The week was refused: ${recorder.failedWrites(technician).map((call) => `${call.status} ${call.message}`).join('; ')}`);
         const own = await technician.getByRole('button', { name: /^approve$/i }).count();
         if (own) recorder.add('BUG', 'A technician is offered "Approve" on timesheets', 'a Maintenance technician cannot approve timesheets', technician);
+      });
+      await recorder.do(S4, 'The technician asks for a day off', technician, async () => {
+        await technician.goto('/gigaops/availability');
+        await settle(technician);
+        // Shown as a tab only when the person may also see other parts of Availability.
+        await press(technician, /^my absences$/i);
+        await settle(technician);
+        const note = await create(technician, recorder, /^new$/i, [[/^absence type/i, `Vacation ${RUN}`], [/^from/i, `${DAY_OFF}T09:00`], [/^until/i, `${DAY_OFF}T17:00`], [/note/i, `Journey ${RUN}`]], /^save$/i);
+        if (await technician.getByRole('button', { name: /^approve$/i }).count()) recorder.add('BUG', 'A person is offered "Approve" on their own absence', 'someone else must decide it', technician);
+        return note;
       });
     }
 
@@ -656,6 +683,32 @@ test('a new customer from sign-up to maintenance work, as five people', async ({
         await sheet.getByRole('button', { name: /^approve$/i }).click();
         await settle(approver);
         if (recorder.failedWrites(approver).length) throw new Error(`The approval was refused: ${recorder.failedWrites(approver).map((call) => `${call.status} ${call.message}`).join('; ')}`);
+      });
+      await recorder.do(S6, "The approver records the technician's working week", approver, async () => {
+        await approver.goto('/gigaops/resources');
+        await settle(approver);
+        await approver.getByRole('row').filter({ hasText: people.technician!.name }).first().click();
+        await settle(approver);
+        if (!(await press(approver, /^working weeks$/i))) throw new Error('No "Working weeks" tab on the person');
+        await settle(approver);
+        return create(approver, recorder, /^new working weeks$/i, [[/time zone/i, 'Europe/London'], [/working hours/i, 'Mon-Fri 08:00-16:00']], /^save$/i);
+      });
+      await recorder.do(S6, "The approver decides the technician's absence", approver, async () => {
+        await approver.goto('/gigaops/availability');
+        await settle(approver);
+        await press(approver, /^absence requests$/i);
+        await settle(approver);
+        const request = approver.getByRole('row').filter({ hasText: people.technician!.name }).filter({ hasText: /requested/i }).first();
+        if (!(await request.count())) throw new Error("The technician's absence request is not in the approver's list");
+        await request.click();
+        await settle(approver);
+        if (!(await press(approver, /^approve$/i))) throw new Error('No "Approve" on the request');
+        await settle(approver);
+        // Approve asks for an optional reason first.
+        await press(approver.locator('form[aria-label="Approve"]'), /^approve$/i);
+        await settle(approver);
+        if (recorder.failedWrites(approver).length) throw new Error(`The decision was refused: ${recorder.failedWrites(approver).map((call) => `${call.status} ${call.message}`).join('; ')}`);
+        if (!(await approver.getByText(/approved/i).count())) throw new Error('The absence does not show as approved');
       });
       await recorder.do(S6, 'The approver opens the approval queue', approver, async () => {
         await approver.goto('/actions');

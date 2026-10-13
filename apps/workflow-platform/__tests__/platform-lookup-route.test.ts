@@ -3,16 +3,20 @@
  * answer `[{ value, label }]`: active entries matching the search, or the entries named by id whatever their status.
  * The control plane's refusal reaches the window unchanged, so the lookup adds no authority.
  */
+import { NextResponse } from 'next/server';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { GET } from '../app/api/control/v1/lookups/[key]/route';
 import { authenticatedUpstream } from '../lib/authenticated-upstream';
+import { proxyGeospatial } from '../lib/geospatial-proxy';
 
 vi.mock('../lib/authenticated-upstream', async (original) => ({
   ...(await original<typeof import('../lib/authenticated-upstream')>()),
   authenticatedUpstream: vi.fn(),
 }));
+vi.mock('../lib/geospatial-proxy', () => ({ proxyGeospatial: vi.fn() }));
 
 const upstream = vi.mocked(authenticatedUpstream);
+const places = vi.mocked(proxyGeospatial);
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
 const call = (key: string, query = '') =>
@@ -34,7 +38,10 @@ const members = [
   },
 ];
 
-afterEach(() => upstream.mockReset());
+afterEach(() => {
+  upstream.mockReset();
+  places.mockReset();
+});
 
 describe('platform lookup route', () => {
   it('answers 404 for a lookup the platform does not serve, without calling the control plane', async () => {
@@ -114,5 +121,58 @@ describe('platform lookup route', () => {
       'control',
       '/api/v1/tenants/current/organization/units?limit=200&ids=unit-2',
     );
+  });
+
+  // WI-OI-120u Slice 2 (owner D2a): places come from Geospatial through its signed proxy, as the signed-in user.
+  it('searches active places on Geospatial and names places by id one by one', async () => {
+    const site = { id: 'site-1', code: 'NP', displayName: 'North plant', status: 'ACTIVE' };
+    places.mockResolvedValue(
+      NextResponse.json({
+        items: [site, { id: 'site-0', code: 'X', displayName: 'Closed yard', status: 'ARCHIVED' }],
+      }),
+    );
+    expect(await (await call('workspace-sites', '?search=north')).json()).toEqual([
+      { value: 'site-1', label: 'North plant (NP)' },
+    ]);
+    const [request, context] = places.mock.calls[0] ?? [];
+    if (!request || !context) throw new Error('Geospatial was not asked');
+    expect(new URL(request.url).pathname + new URL(request.url).search).toBe(
+      '/api/maps/nodes?status=ACTIVE&pageSize=50&q=north',
+    );
+    expect(await context.params).toEqual({ path: ['nodes'] });
+
+    places.mockReset();
+    places.mockImplementation(async (_request, context) => {
+      const [, id] = (await context.params).path;
+      return id === 'site-gone'
+        ? NextResponse.json({}, { status: 404 })
+        : NextResponse.json({ id, code: 'OLD', displayName: 'Old works', status: 'ARCHIVED' });
+    });
+    expect(await (await call('workspace-sites', '?ids=site-9,site-gone')).json()).toEqual([
+      { value: 'site-9', label: 'Old works (OLD)' },
+    ]);
+    expect(places).toHaveBeenCalledTimes(2);
+  });
+
+  it('passes the Geospatial refusal through and reads at most 25 places by id', async () => {
+    places.mockResolvedValue(
+      NextResponse.json({ code: 'GEOSPATIAL_ACCESS_DENIED' }, { status: 403 }),
+    );
+    expect((await call('workspace-sites', '?search=x')).status).toBe(403);
+    places.mockReset();
+    places.mockImplementation(async (_request, context) =>
+      NextResponse.json({
+        id: (await context.params).path[1],
+        code: 'P',
+        displayName: 'Place',
+        status: 'ACTIVE',
+      }),
+    );
+    await call(
+      'workspace-sites',
+      `?ids=${Array.from({ length: 40 }, (_, index) => `p${index}`).join(',')}`,
+    );
+    expect(places).toHaveBeenCalledTimes(25);
+    expect(upstream).not.toHaveBeenCalled();
   });
 });

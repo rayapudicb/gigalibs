@@ -33,15 +33,25 @@ spec:
     application: apps/workflow-platform
     basePath: /gigaops
     package: '@gigalibs/gigaops-web'
-    # WI-OI-120u (owner, 2026-10-13): People is a metadata window; the other sections stay on the Workforce workbench
-    # (`app/(app)/gigaops/[section]`) until their windows can do what those screens do (Jobs: revisions, people in
-    # positions and a site picker).
+    # WI-OI-120u (owner, 2026-10-13): People, Availability and Bookings are metadata windows; the other sections stay
+    # on the Workforce workbench (`app/(app)/gigaops/[section]`) until their windows can do what those screens do
+    # (Jobs: revisions, people in positions and a site picker). The dictionary renderer gets the signed-in user's
+    # permissions (WI-OI-120e).
     pages:
       - route: /gigaops/resources
         component: WorkforceWorkspace
         props:
-          surface: wf-resources
-        # The dictionary renderer gets the signed-in user's permissions (WI-OI-120e).
+          section: people
+        sessionPermissions: true
+      - route: /gigaops/availability
+        component: WorkforceWorkspace
+        props:
+          section: availability
+        sessionPermissions: true
+      - route: /gigaops/bookings
+        component: WorkforceWorkspace
+        props:
+          section: bookings
         sessionPermissions: true
   api:
     application: apps/api
@@ -81,6 +91,7 @@ spec:
         - { key: jobs, label: Jobs & Positions, path: /gigaops/jobs, icon: layers }
         - { key: capabilities, label: Skills & Qualifications, path: /gigaops/capabilities, icon: shield-check }
         - { key: availability, label: Availability, path: /gigaops/availability, icon: calendar }
+        - { key: bookings, label: Bookings, path: /gigaops/bookings, icon: layers }
         - { key: scheduling, label: Scheduling & Dispatch, path: /gigaops/scheduling, icon: calendar }
         - { key: time, label: Time & Attendance, path: /gigaops/time, icon: clock }
         - { key: pay, label: Pay-ready Outputs, path: /gigaops/pay, icon: coins }
@@ -92,13 +103,14 @@ spec:
         - key: workforce-member
           name: Workforce member
           # WI-OI-120n security review: no workforce.time.read (everyone's time) or absences.request (anyone's
-          # absence); punching gives a person their own time and week.
-          description: Punches their own time and sees their own week; reads job profiles.
-          permissions: [workforce:read, workforce.resources.read, workforce.jobs.read, workforce.time.punch]
+          # absence); punching gives a person their own time and week. WI-OI-120u (owner D1a): absences.request-own
+          # reaches only the person linked to their own login.
+          description: Punches their own time and sees their own week; asks for their own absence; reads job profiles.
+          permissions: [workforce:read, workforce.resources.read, workforce.jobs.read, workforce.time.punch, workforce.absences.request-own]
         - key: workforce-supervisor
           name: Workforce supervisor
-          description: Manages people, jobs, bookings and availability, and approves timesheets and absence for everyone in the workspace until roles are held per unit (ADR-0034). Linking logins stays with administrators.
-          permissions: [workforce:read, workforce.resources.read, workforce.resources.manage, workforce.jobs.read, workforce.jobs.manage, workforce.bookings.read, workforce.bookings.manage, workforce.availability.read, workforce.availability.manage, workforce.calendars.read, workforce.capabilities.read, workforce.capabilities.manage, workforce.time.read, workforce.time.punch, workforce.time.manage, workforce.timesheets.approve, workforce.absences.read, workforce.absences.request, workforce.absences.approve]
+          description: Manages people, jobs, bookings, availability, absence types and calendars, and approves timesheets and absence for everyone in the workspace until roles are held per unit (ADR-0034). Linking logins stays with administrators.
+          permissions: [workforce:read, workforce.resources.read, workforce.resources.manage, workforce.jobs.read, workforce.jobs.manage, workforce.bookings.read, workforce.bookings.manage, workforce.availability.read, workforce.availability.manage, workforce.calendars.read, workforce.calendars.manage, workforce.capabilities.read, workforce.capabilities.manage, workforce.time.read, workforce.time.punch, workforce.time.manage, workforce.timesheets.approve, workforce.absences.read, workforce.absences.request, workforce.absences.approve]
   # Web gateway (WI-OI-083): the BFF reaches only these routes, as the user, with a freshly signed context. A list
   # means any one of the permissions. Workers reach their own time; managers read, correct and approve others'.
   gateway:

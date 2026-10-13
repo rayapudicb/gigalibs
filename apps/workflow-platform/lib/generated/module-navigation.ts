@@ -143,6 +143,12 @@ export const generatedModuleMenus: Readonly<Record<string, readonly GeneratedMod
       "icon": "calendar"
     },
     {
+      "key": "bookings",
+      "label": "Bookings",
+      "path": "/gigaops/bookings",
+      "icon": "layers"
+    },
+    {
       "key": "scheduling",
       "label": "Scheduling & Dispatch",
       "path": "/gigaops/scheduling",

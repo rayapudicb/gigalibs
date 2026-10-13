@@ -712,18 +712,29 @@ export interface AbsenceTypeV1 {
 export const AbsenceStatusV1Schema = z.enum(['REQUESTED', 'APPROVED', 'REJECTED', 'CANCELLED']);
 export type AbsenceStatusV1 = z.infer<typeof AbsenceStatusV1Schema>;
 
+const AbsenceSpanFields = {
+  absenceTypeId: z.string().uuid(),
+  startsAt: z.string().datetime({ offset: true }),
+  endsAt: z.string().datetime({ offset: true }),
+  note: z.string().trim().max(1000).optional(),
+};
+const endsAfterStart = (value: { readonly startsAt: string; readonly endsAt: string }) => Date.parse(value.endsAt) > Date.parse(value.startsAt);
+const atMostAYear = (value: { readonly startsAt: string; readonly endsAt: string }) => Date.parse(value.endsAt) - Date.parse(value.startsAt) <= 366 * 86_400_000;
+
 export const RequestAbsenceV1Schema = z
-  .object({
-    resourceId: z.string().uuid(),
-    absenceTypeId: z.string().uuid(),
-    startsAt: z.string().datetime({ offset: true }),
-    endsAt: z.string().datetime({ offset: true }),
-    note: z.string().trim().max(1000).optional(),
-  })
+  .object({ resourceId: z.string().uuid(), ...AbsenceSpanFields })
   .strict()
-  .refine((value) => Date.parse(value.endsAt) > Date.parse(value.startsAt), { message: 'The end must be after the start.', path: ['endsAt'] })
-  .refine((value) => Date.parse(value.endsAt) - Date.parse(value.startsAt) <= 366 * 86_400_000, { message: 'An absence can span at most 366 days.', path: ['endsAt'] });
+  .refine(endsAfterStart, { message: 'The end must be after the start.', path: ['endsAt'] })
+  .refine(atMostAYear, { message: 'An absence can span at most 366 days.', path: ['endsAt'] });
 export type RequestAbsenceV1 = z.infer<typeof RequestAbsenceV1Schema>;
+
+/** WI-OI-120u (owner D1a): an absence for the person linked to the caller's own login (`workforce.absences.request-own`). */
+export const RequestOwnAbsenceV1Schema = z
+  .object(AbsenceSpanFields)
+  .strict()
+  .refine(endsAfterStart, { message: 'The end must be after the start.', path: ['endsAt'] })
+  .refine(atMostAYear, { message: 'An absence can span at most 366 days.', path: ['endsAt'] });
+export type RequestOwnAbsenceV1 = z.infer<typeof RequestOwnAbsenceV1Schema>;
 
 export const DecideAbsenceV1Schema = z
   .object({ expectedVersion: z.number().int().positive(), reason: z.string().trim().min(1).max(500).optional() })

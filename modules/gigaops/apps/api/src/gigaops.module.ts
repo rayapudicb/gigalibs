@@ -144,9 +144,14 @@ const GigaOpsRecordController = createRecordController({ guard: GigaOpsAuthoriza
     // WI-OI-120u (M-WF1): the metadata windows' record dispatcher; Idempotency-Key answers live in record_idempotency.
     {
       provide: RECORD_DISPATCHER,
-      inject: [WorkforceResourcesService, JobsService, WorkforceDatabaseService],
-      useFactory: (resources: WorkforceResourcesService, jobs: JobsService, database: WorkforceDatabaseService) =>
-        workforceRecordDispatcher({ resources, jobs }, new ModuleIdempotencyStore(database)),
+      inject: [WorkforceResourcesService, JobsService, AvailabilityService, BookingsService, WorkforceDatabaseService],
+      useFactory: (
+        resources: WorkforceResourcesService,
+        jobs: JobsService,
+        availability: AvailabilityService,
+        bookings: BookingsService,
+        database: WorkforceDatabaseService,
+      ) => workforceRecordDispatcher({ resources, jobs, availability, bookings }, new ModuleIdempotencyStore(database)),
     },
   ],
 })

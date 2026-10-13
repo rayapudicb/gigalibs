@@ -2012,6 +2012,1447 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
   {
     "contractVersion": "1.0",
     "window": {
+      "route": "/gigaops/availability",
+      "label": "Absence types",
+      "description": "The kinds of absence people can ask for, and whether each is paid and needs a decision.",
+      "readPermission": "workforce:read"
+    },
+    "definition": {
+      "kind": "APPLICATION_DICTIONARY",
+      "contractVersion": "1.0",
+      "moduleKey": "gigaops",
+      "entityKey": "wf-absence-types",
+      "surfaceKey": "wf-absence-types",
+      "title": "Absence types",
+      "dictionary": {
+        "packageKey": "wf-absence-types-module-baseline",
+        "name": "Absence types",
+        "version": "1.0.0",
+        "moduleKey": "gigaops",
+        "targetEntityKey": "wf.absence-types",
+        "entities": [
+          {
+            "entityKey": "wf.absence-types",
+            "moduleKey": "gigaops",
+            "label": "Absence types",
+            "ownership": "MODULE_CORE",
+            "primaryKeyField": "id",
+            "isVersioned": true,
+            "isAuditLogged": true,
+            "isSoftDeletable": false
+          }
+        ],
+        "fields": [
+          {
+            "fieldKey": "code",
+            "entityKey": "wf.absence-types",
+            "label": "Code",
+            "type": "TEXT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "helpText": "Short code, for example VACATION. It cannot change later."
+          },
+          {
+            "fieldKey": "name",
+            "entityKey": "wf.absence-types",
+            "label": "Name",
+            "type": "TEXT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "paid",
+            "entityKey": "wf.absence-types",
+            "label": "Paid",
+            "type": "BOOLEAN",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "defaultValue": false
+          },
+          {
+            "fieldKey": "requires-approval",
+            "entityKey": "wf.absence-types",
+            "label": "Needs approval",
+            "type": "BOOLEAN",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "helpText": "Without it, a request is approved at once.",
+            "defaultValue": true
+          },
+          {
+            "fieldKey": "status",
+            "entityKey": "wf.absence-types",
+            "label": "Status",
+            "type": "SELECT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "record-statuses"
+          }
+        ],
+        "relationships": [],
+        "references": [
+          {
+            "referenceKey": "record-statuses",
+            "referenceType": "VALUE_LIST",
+            "staticValues": [
+              {
+                "value": "ACTIVE",
+                "label": "Active"
+              },
+              {
+                "value": "INACTIVE",
+                "label": "Inactive"
+              }
+            ]
+          }
+        ],
+        "validationRules": [],
+        "views": [
+          {
+            "viewKey": "absence-types",
+            "label": "Absence types",
+            "mode": "LIST",
+            "device": "ALL",
+            "defaultSortDirection": "ASC",
+            "tabs": [
+              {
+                "tabKey": "absence-type",
+                "label": "Absence type",
+                "position": 0,
+                "level": 0,
+                "targetEntityKey": "wf.absence-types",
+                "sections": [],
+                "fields": [
+                  {
+                    "fieldKey": "code",
+                    "position": 0,
+                    "span": 3,
+                    "componentKey": "text-input"
+                  },
+                  {
+                    "fieldKey": "name",
+                    "position": 1,
+                    "span": 5,
+                    "componentKey": "text-input"
+                  },
+                  {
+                    "fieldKey": "paid",
+                    "position": 2,
+                    "span": 2,
+                    "componentKey": "checkbox"
+                  },
+                  {
+                    "fieldKey": "requires-approval",
+                    "position": 3,
+                    "span": 2,
+                    "componentKey": "checkbox"
+                  },
+                  {
+                    "fieldKey": "status",
+                    "position": 4,
+                    "span": 3,
+                    "componentKey": "select"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "navigation": [],
+        "actions": [
+          {
+            "actionKey": "deactivate",
+            "label": "Deactivate",
+            "type": "COMMAND",
+            "handlerKey": "wf.absence-types.deactivate",
+            "requiredPermissions": [
+              "workforce.calendars.manage"
+            ],
+            "confirmationPrompt": "Deactivate this absence type? Nobody can ask for it after.",
+            "visibilityCondition": {
+              "field": "status",
+              "operator": "EQ",
+              "value": "ACTIVE"
+            }
+          },
+          {
+            "actionKey": "activate",
+            "label": "Activate",
+            "type": "COMMAND",
+            "handlerKey": "wf.absence-types.activate",
+            "requiredPermissions": [
+              "workforce.calendars.manage"
+            ],
+            "confirmationPrompt": "Reactivate this absence type?",
+            "visibilityCondition": {
+              "field": "status",
+              "operator": "EQ",
+              "value": "INACTIVE"
+            }
+          }
+        ],
+        "messages": []
+      }
+    }
+  },
+  {
+    "contractVersion": "1.0",
+    "window": {
+      "route": "/gigaops/availability",
+      "label": "Absence requests",
+      "description": "Everyone's absences, requests waiting for a decision first. Nobody decides their own.",
+      "readPermission": "workforce:read"
+    },
+    "definition": {
+      "kind": "APPLICATION_DICTIONARY",
+      "contractVersion": "1.0",
+      "moduleKey": "gigaops",
+      "entityKey": "wf-absences",
+      "surfaceKey": "wf-absences",
+      "title": "Absence requests",
+      "dictionary": {
+        "packageKey": "wf-absences-module-baseline",
+        "name": "Absence requests",
+        "version": "1.0.0",
+        "moduleKey": "gigaops",
+        "targetEntityKey": "wf.absences",
+        "entities": [
+          {
+            "entityKey": "wf.absences",
+            "moduleKey": "gigaops",
+            "label": "Absences",
+            "ownership": "MODULE_CORE",
+            "primaryKeyField": "id",
+            "isVersioned": true,
+            "isAuditLogged": true,
+            "isSoftDeletable": false
+          }
+        ],
+        "fields": [
+          {
+            "fieldKey": "resource-id",
+            "entityKey": "wf.absences",
+            "label": "Person",
+            "type": "REFERENCE",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "resource-ref"
+          },
+          {
+            "fieldKey": "absence-type-id",
+            "entityKey": "wf.absences",
+            "label": "Absence type",
+            "type": "REFERENCE",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "absence-type-ref"
+          },
+          {
+            "fieldKey": "starts-at",
+            "entityKey": "wf.absences",
+            "label": "From",
+            "type": "DATETIME",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "helpText": "In the person's working time zone (that of their working week; UTC if they have none)."
+          },
+          {
+            "fieldKey": "ends-at",
+            "entityKey": "wf.absences",
+            "label": "Until",
+            "type": "DATETIME",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "helpText": "In the person's working time zone (that of their working week; UTC if they have none)."
+          },
+          {
+            "fieldKey": "time-zone",
+            "entityKey": "wf.absences",
+            "label": "Time zone",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "status",
+            "entityKey": "wf.absences",
+            "label": "Status",
+            "type": "SELECT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "absence-statuses"
+          },
+          {
+            "fieldKey": "note",
+            "entityKey": "wf.absences",
+            "label": "Note",
+            "type": "TEXTAREA",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "decided-at",
+            "entityKey": "wf.absences",
+            "label": "Decided at",
+            "type": "DATETIME",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "decision-reason",
+            "entityKey": "wf.absences",
+            "label": "Reason",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "created-at",
+            "entityKey": "wf.absences",
+            "label": "Requested at",
+            "type": "DATETIME",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          }
+        ],
+        "relationships": [],
+        "references": [
+          {
+            "referenceKey": "absence-statuses",
+            "referenceType": "VALUE_LIST",
+            "staticValues": [
+              {
+                "value": "REQUESTED",
+                "label": "Requested"
+              },
+              {
+                "value": "APPROVED",
+                "label": "Approved"
+              },
+              {
+                "value": "REJECTED",
+                "label": "Rejected"
+              },
+              {
+                "value": "CANCELLED",
+                "label": "Cancelled"
+              }
+            ]
+          },
+          {
+            "referenceKey": "resource-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "wf-resources",
+            "createWith": {
+              "moduleKey": "gigaops",
+              "surfaceKey": "wf-resources",
+              "permission": "workforce.resources.manage"
+            }
+          },
+          {
+            "referenceKey": "absence-type-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "wf-absence-types",
+            "createWith": {
+              "moduleKey": "gigaops",
+              "surfaceKey": "wf-absence-types",
+              "permission": "workforce.calendars.manage"
+            }
+          }
+        ],
+        "validationRules": [],
+        "views": [
+          {
+            "viewKey": "absences",
+            "label": "Absences",
+            "mode": "LIST",
+            "device": "ALL",
+            "defaultSortDirection": "ASC",
+            "tabs": [
+              {
+                "tabKey": "absence",
+                "label": "Absence",
+                "position": 0,
+                "level": 0,
+                "targetEntityKey": "wf.absences",
+                "sections": [],
+                "fields": [
+                  {
+                    "fieldKey": "resource-id",
+                    "position": 0,
+                    "span": 4,
+                    "componentKey": "lookup"
+                  },
+                  {
+                    "fieldKey": "absence-type-id",
+                    "position": 1,
+                    "span": 4,
+                    "componentKey": "lookup"
+                  },
+                  {
+                    "fieldKey": "status",
+                    "position": 2,
+                    "span": 4,
+                    "componentKey": "select"
+                  },
+                  {
+                    "fieldKey": "starts-at",
+                    "position": 3,
+                    "span": 4,
+                    "componentKey": "datetime-input"
+                  },
+                  {
+                    "fieldKey": "ends-at",
+                    "position": 4,
+                    "span": 4,
+                    "componentKey": "datetime-input"
+                  },
+                  {
+                    "fieldKey": "time-zone",
+                    "position": 5,
+                    "span": 4,
+                    "componentKey": "text-input"
+                  },
+                  {
+                    "fieldKey": "decided-at",
+                    "position": 6,
+                    "span": 4,
+                    "componentKey": "datetime-input"
+                  },
+                  {
+                    "fieldKey": "decision-reason",
+                    "position": 7,
+                    "span": 8,
+                    "componentKey": "text-input"
+                  },
+                  {
+                    "fieldKey": "note",
+                    "position": 8,
+                    "span": 12,
+                    "componentKey": "textarea"
+                  }
+                ]
+              }
+            ],
+            "searchFields": [
+              "resource-id"
+            ]
+          }
+        ],
+        "navigation": [],
+        "actions": [
+          {
+            "actionKey": "approve",
+            "label": "Approve",
+            "type": "COMMAND",
+            "handlerKey": "wf.absences.approve",
+            "requiredPermissions": [
+              "workforce.absences.approve"
+            ],
+            "confirmationPrompt": "Approve this absence?",
+            "parameters": [
+              {
+                "key": "reason",
+                "label": "Reason",
+                "type": "TEXTAREA",
+                "required": false
+              }
+            ],
+            "visibilityCondition": {
+              "field": "status",
+              "operator": "EQ",
+              "value": "REQUESTED"
+            }
+          },
+          {
+            "actionKey": "reject",
+            "label": "Reject",
+            "type": "COMMAND",
+            "handlerKey": "wf.absences.reject",
+            "requiredPermissions": [
+              "workforce.absences.approve"
+            ],
+            "confirmationPrompt": "Reject this absence?",
+            "parameters": [
+              {
+                "key": "reason",
+                "label": "Reason",
+                "type": "TEXTAREA",
+                "required": true
+              }
+            ],
+            "visibilityCondition": {
+              "field": "status",
+              "operator": "EQ",
+              "value": "REQUESTED"
+            }
+          },
+          {
+            "actionKey": "cancel",
+            "label": "Cancel",
+            "type": "COMMAND",
+            "handlerKey": "wf.absences.cancel",
+            "requiredPermissions": [
+              "workforce.absences.request"
+            ],
+            "confirmationPrompt": "Cancel this absence? An approved one can be cancelled until it starts.",
+            "parameters": [
+              {
+                "key": "reason",
+                "label": "Reason",
+                "type": "TEXTAREA",
+                "required": false
+              }
+            ],
+            "visibilityCondition": {
+              "field": "status",
+              "operator": "IN",
+              "value": [
+                "REQUESTED",
+                "APPROVED"
+              ]
+            }
+          }
+        ],
+        "messages": []
+      }
+    }
+  },
+  {
+    "contractVersion": "1.0",
+    "window": {
+      "route": "/gigaops/bookings",
+      "label": "Bookings",
+      "description": "Who is booked on which work, when and where. Bookings are made and moved on Scheduling & dispatch.",
+      "readPermission": "workforce:read"
+    },
+    "definition": {
+      "kind": "APPLICATION_DICTIONARY",
+      "contractVersion": "1.0",
+      "moduleKey": "gigaops",
+      "entityKey": "wf-bookings",
+      "surfaceKey": "wf-bookings",
+      "title": "Bookings",
+      "dictionary": {
+        "packageKey": "wf-bookings-module-baseline",
+        "name": "Bookings",
+        "version": "1.0.0",
+        "moduleKey": "gigaops",
+        "targetEntityKey": "wf.bookings",
+        "entities": [
+          {
+            "entityKey": "wf.bookings",
+            "moduleKey": "gigaops",
+            "label": "Bookings",
+            "ownership": "MODULE_CORE",
+            "primaryKeyField": "id",
+            "isVersioned": true,
+            "isAuditLogged": true,
+            "isSoftDeletable": false
+          }
+        ],
+        "fields": [
+          {
+            "fieldKey": "requirement-title",
+            "entityKey": "wf.bookings",
+            "label": "Work",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "resource-id",
+            "entityKey": "wf.bookings",
+            "label": "Person",
+            "type": "REFERENCE",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "resource-ref"
+          },
+          {
+            "fieldKey": "site-ref",
+            "entityKey": "wf.bookings",
+            "label": "Site",
+            "type": "REFERENCE",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "site-ref"
+          },
+          {
+            "fieldKey": "starts-at",
+            "entityKey": "wf.bookings",
+            "label": "From",
+            "type": "DATETIME",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "helpText": "In the person's working time zone (that of their working week; UTC if they have none)."
+          },
+          {
+            "fieldKey": "ends-at",
+            "entityKey": "wf.bookings",
+            "label": "Until",
+            "type": "DATETIME",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "helpText": "In the person's working time zone (that of their working week; UTC if they have none)."
+          },
+          {
+            "fieldKey": "time-zone",
+            "entityKey": "wf.bookings",
+            "label": "Time zone",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "status",
+            "entityKey": "wf.bookings",
+            "label": "Status",
+            "type": "SELECT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "booking-statuses"
+          },
+          {
+            "fieldKey": "override-reason",
+            "entityKey": "wf.bookings",
+            "label": "Booked despite",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "cancel-reason",
+            "entityKey": "wf.bookings",
+            "label": "Cancelled because",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "created-at",
+            "entityKey": "wf.bookings",
+            "label": "Booked at",
+            "type": "DATETIME",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          }
+        ],
+        "relationships": [],
+        "references": [
+          {
+            "referenceKey": "booking-statuses",
+            "referenceType": "VALUE_LIST",
+            "staticValues": [
+              {
+                "value": "DRAFT",
+                "label": "Draft"
+              },
+              {
+                "value": "CONFIRMED",
+                "label": "Confirmed"
+              },
+              {
+                "value": "DISPATCHED",
+                "label": "Dispatched"
+              },
+              {
+                "value": "ON_SITE",
+                "label": "On site"
+              },
+              {
+                "value": "COMPLETED",
+                "label": "Completed"
+              },
+              {
+                "value": "CANCELLED",
+                "label": "Cancelled"
+              }
+            ]
+          },
+          {
+            "referenceKey": "resource-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "wf-resources",
+            "createWith": {
+              "moduleKey": "gigaops",
+              "surfaceKey": "wf-resources",
+              "permission": "workforce.resources.manage"
+            }
+          },
+          {
+            "referenceKey": "site-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "workspace-sites"
+          }
+        ],
+        "validationRules": [],
+        "views": [
+          {
+            "viewKey": "bookings",
+            "label": "Bookings",
+            "mode": "LIST",
+            "device": "ALL",
+            "defaultSortDirection": "ASC",
+            "tabs": [
+              {
+                "tabKey": "booking",
+                "label": "Booking",
+                "position": 0,
+                "level": 0,
+                "targetEntityKey": "wf.bookings",
+                "sections": [],
+                "fields": [
+                  {
+                    "fieldKey": "requirement-title",
+                    "position": 0,
+                    "span": 4,
+                    "componentKey": "text-input"
+                  },
+                  {
+                    "fieldKey": "resource-id",
+                    "position": 1,
+                    "span": 4,
+                    "componentKey": "lookup"
+                  },
+                  {
+                    "fieldKey": "status",
+                    "position": 2,
+                    "span": 4,
+                    "componentKey": "select"
+                  },
+                  {
+                    "fieldKey": "starts-at",
+                    "position": 3,
+                    "span": 4,
+                    "componentKey": "datetime-input"
+                  },
+                  {
+                    "fieldKey": "ends-at",
+                    "position": 4,
+                    "span": 4,
+                    "componentKey": "datetime-input"
+                  },
+                  {
+                    "fieldKey": "time-zone",
+                    "position": 5,
+                    "span": 4,
+                    "componentKey": "text-input"
+                  },
+                  {
+                    "fieldKey": "site-ref",
+                    "position": 6,
+                    "span": 4,
+                    "componentKey": "lookup"
+                  },
+                  {
+                    "fieldKey": "override-reason",
+                    "position": 7,
+                    "span": 4,
+                    "componentKey": "text-input"
+                  },
+                  {
+                    "fieldKey": "cancel-reason",
+                    "position": 8,
+                    "span": 4,
+                    "componentKey": "text-input"
+                  },
+                  {
+                    "fieldKey": "created-at",
+                    "position": 9,
+                    "span": 4,
+                    "componentKey": "datetime-input"
+                  }
+                ]
+              }
+            ],
+            "searchFields": [
+              "requirement-title"
+            ],
+            "defaultSortField": "starts-at"
+          }
+        ],
+        "navigation": [],
+        "actions": [],
+        "messages": []
+      }
+    }
+  },
+  {
+    "contractVersion": "1.0",
+    "window": {
+      "route": "/gigaops/availability",
+      "label": "Site calendars",
+      "description": "The workspace calendar and one per site; their closures take working time away.",
+      "readPermission": "workforce:read"
+    },
+    "definition": {
+      "kind": "APPLICATION_DICTIONARY",
+      "contractVersion": "1.0",
+      "moduleKey": "gigaops",
+      "entityKey": "wf-calendars",
+      "surfaceKey": "wf-calendars",
+      "title": "Site calendars",
+      "dictionary": {
+        "packageKey": "wf-calendars-module-baseline",
+        "name": "Site calendars",
+        "version": "1.0.0",
+        "moduleKey": "gigaops",
+        "targetEntityKey": "wf.calendars",
+        "entities": [
+          {
+            "entityKey": "wf.calendars",
+            "moduleKey": "gigaops",
+            "label": "Calendars",
+            "ownership": "MODULE_CORE",
+            "primaryKeyField": "id",
+            "isVersioned": true,
+            "isAuditLogged": true,
+            "isSoftDeletable": false
+          }
+        ],
+        "fields": [
+          {
+            "fieldKey": "code",
+            "entityKey": "wf.calendars",
+            "label": "Code",
+            "type": "TEXT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "name",
+            "entityKey": "wf.calendars",
+            "label": "Name",
+            "type": "TEXT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "site-ref",
+            "entityKey": "wf.calendars",
+            "label": "Site",
+            "type": "REFERENCE",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "site-ref",
+            "helpText": "Leave empty for the calendar of the whole workspace."
+          },
+          {
+            "fieldKey": "closure-count",
+            "entityKey": "wf.calendars",
+            "label": "Closures",
+            "type": "INTEGER",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          }
+        ],
+        "relationships": [],
+        "references": [
+          {
+            "referenceKey": "site-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "workspace-sites"
+          }
+        ],
+        "validationRules": [],
+        "views": [
+          {
+            "viewKey": "calendars",
+            "label": "Calendars",
+            "mode": "LIST",
+            "device": "ALL",
+            "defaultSortDirection": "ASC",
+            "tabs": [
+              {
+                "tabKey": "calendar",
+                "label": "Calendar",
+                "position": 0,
+                "level": 0,
+                "targetEntityKey": "wf.calendars",
+                "sections": [],
+                "fields": [
+                  {
+                    "fieldKey": "code",
+                    "position": 0,
+                    "span": 3,
+                    "componentKey": "text-input"
+                  },
+                  {
+                    "fieldKey": "name",
+                    "position": 1,
+                    "span": 5,
+                    "componentKey": "text-input"
+                  },
+                  {
+                    "fieldKey": "site-ref",
+                    "position": 2,
+                    "span": 5,
+                    "componentKey": "lookup"
+                  },
+                  {
+                    "fieldKey": "closure-count",
+                    "position": 3,
+                    "span": 2,
+                    "componentKey": "number-input"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "navigation": [],
+        "actions": [],
+        "messages": []
+      }
+    }
+  },
+  {
+    "contractVersion": "1.0",
+    "window": {
+      "route": "/gigaops/availability",
+      "label": "Closures",
+      "description": "Days a calendar closes; nobody on it is available then.",
+      "readPermission": "workforce:read"
+    },
+    "definition": {
+      "kind": "APPLICATION_DICTIONARY",
+      "contractVersion": "1.0",
+      "moduleKey": "gigaops",
+      "entityKey": "wf-closures",
+      "surfaceKey": "wf-closures",
+      "title": "Closures",
+      "dictionary": {
+        "packageKey": "wf-closures-module-baseline",
+        "name": "Closures",
+        "version": "1.0.0",
+        "moduleKey": "gigaops",
+        "targetEntityKey": "wf.calendar-closures",
+        "entities": [
+          {
+            "entityKey": "wf.calendar-closures",
+            "moduleKey": "gigaops",
+            "label": "Closures",
+            "ownership": "MODULE_CORE",
+            "primaryKeyField": "id",
+            "isVersioned": true,
+            "isAuditLogged": true,
+            "isSoftDeletable": false
+          }
+        ],
+        "fields": [
+          {
+            "fieldKey": "calendar-id",
+            "entityKey": "wf.calendar-closures",
+            "label": "Calendar",
+            "type": "REFERENCE",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "calendar-ref"
+          },
+          {
+            "fieldKey": "closure-date",
+            "entityKey": "wf.calendar-closures",
+            "label": "Date",
+            "type": "DATE",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "label",
+            "entityKey": "wf.calendar-closures",
+            "label": "Label",
+            "type": "TEXT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "helpText": "For example New Year or Site shutdown."
+          },
+          {
+            "fieldKey": "status",
+            "entityKey": "wf.calendar-closures",
+            "label": "Status",
+            "type": "SELECT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "closure-statuses"
+          }
+        ],
+        "relationships": [],
+        "references": [
+          {
+            "referenceKey": "closure-statuses",
+            "referenceType": "VALUE_LIST",
+            "staticValues": [
+              {
+                "value": "ACTIVE",
+                "label": "Active"
+              },
+              {
+                "value": "WITHDRAWN",
+                "label": "Withdrawn"
+              }
+            ]
+          },
+          {
+            "referenceKey": "calendar-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "wf-calendars",
+            "createWith": {
+              "moduleKey": "gigaops",
+              "surfaceKey": "wf-calendars",
+              "permission": "workforce.calendars.manage"
+            }
+          }
+        ],
+        "validationRules": [],
+        "views": [
+          {
+            "viewKey": "closures",
+            "label": "Closures",
+            "mode": "LIST",
+            "device": "ALL",
+            "defaultSortDirection": "ASC",
+            "tabs": [
+              {
+                "tabKey": "closure",
+                "label": "Closure",
+                "position": 0,
+                "level": 0,
+                "targetEntityKey": "wf.calendar-closures",
+                "sections": [],
+                "fields": [
+                  {
+                    "fieldKey": "calendar-id",
+                    "position": 0,
+                    "span": 4,
+                    "componentKey": "lookup"
+                  },
+                  {
+                    "fieldKey": "closure-date",
+                    "position": 1,
+                    "span": 3,
+                    "componentKey": "date-input"
+                  },
+                  {
+                    "fieldKey": "label",
+                    "position": 2,
+                    "span": 5,
+                    "componentKey": "text-input"
+                  },
+                  {
+                    "fieldKey": "status",
+                    "position": 3,
+                    "span": 2,
+                    "componentKey": "select"
+                  }
+                ]
+              }
+            ],
+            "searchFields": [
+              "label"
+            ]
+          }
+        ],
+        "navigation": [],
+        "actions": [
+          {
+            "actionKey": "withdraw",
+            "label": "Withdraw",
+            "type": "COMMAND",
+            "handlerKey": "wf.calendar-closures.withdraw",
+            "requiredPermissions": [
+              "workforce.calendars.manage"
+            ],
+            "confirmationPrompt": "Withdraw this closure? The day becomes a working day again.",
+            "visibilityCondition": {
+              "field": "status",
+              "operator": "EQ",
+              "value": "ACTIVE"
+            }
+          }
+        ],
+        "messages": []
+      }
+    }
+  },
+  {
+    "contractVersion": "1.0",
+    "window": {
+      "route": "/gigaops/availability",
+      "label": "My absences",
+      "description": "Your own absences: ask for time off and follow the decision. Someone else decides.",
+      "readPermission": "workforce:read"
+    },
+    "definition": {
+      "kind": "APPLICATION_DICTIONARY",
+      "contractVersion": "1.0",
+      "moduleKey": "gigaops",
+      "entityKey": "wf-my-absences",
+      "surfaceKey": "wf-my-absences",
+      "title": "My absences",
+      "dictionary": {
+        "packageKey": "wf-my-absences-module-baseline",
+        "name": "My absences",
+        "version": "1.0.0",
+        "moduleKey": "gigaops",
+        "targetEntityKey": "wf.my-absences",
+        "entities": [
+          {
+            "entityKey": "wf.my-absences",
+            "moduleKey": "gigaops",
+            "label": "My absences",
+            "ownership": "MODULE_CORE",
+            "primaryKeyField": "id",
+            "isVersioned": true,
+            "isAuditLogged": true,
+            "isSoftDeletable": false
+          }
+        ],
+        "fields": [
+          {
+            "fieldKey": "absence-type-id",
+            "entityKey": "wf.my-absences",
+            "label": "Absence type",
+            "type": "REFERENCE",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "absence-type-ref"
+          },
+          {
+            "fieldKey": "starts-at",
+            "entityKey": "wf.my-absences",
+            "label": "From",
+            "type": "DATETIME",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "helpText": "In your working time zone (that of your working week; UTC if you have none)."
+          },
+          {
+            "fieldKey": "ends-at",
+            "entityKey": "wf.my-absences",
+            "label": "Until",
+            "type": "DATETIME",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "helpText": "In your working time zone (that of your working week; UTC if you have none)."
+          },
+          {
+            "fieldKey": "time-zone",
+            "entityKey": "wf.my-absences",
+            "label": "Time zone",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "status",
+            "entityKey": "wf.my-absences",
+            "label": "Status",
+            "type": "SELECT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "absence-statuses"
+          },
+          {
+            "fieldKey": "note",
+            "entityKey": "wf.my-absences",
+            "label": "Note",
+            "type": "TEXTAREA",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "decided-at",
+            "entityKey": "wf.my-absences",
+            "label": "Decided at",
+            "type": "DATETIME",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "decision-reason",
+            "entityKey": "wf.my-absences",
+            "label": "Reason",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "created-at",
+            "entityKey": "wf.my-absences",
+            "label": "Requested at",
+            "type": "DATETIME",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          }
+        ],
+        "relationships": [],
+        "references": [
+          {
+            "referenceKey": "absence-statuses",
+            "referenceType": "VALUE_LIST",
+            "staticValues": [
+              {
+                "value": "REQUESTED",
+                "label": "Requested"
+              },
+              {
+                "value": "APPROVED",
+                "label": "Approved"
+              },
+              {
+                "value": "REJECTED",
+                "label": "Rejected"
+              },
+              {
+                "value": "CANCELLED",
+                "label": "Cancelled"
+              }
+            ]
+          },
+          {
+            "referenceKey": "absence-type-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "wf-absence-types",
+            "createWith": {
+              "moduleKey": "gigaops",
+              "surfaceKey": "wf-absence-types",
+              "permission": "workforce.calendars.manage"
+            }
+          }
+        ],
+        "validationRules": [],
+        "views": [
+          {
+            "viewKey": "my-absences",
+            "label": "My absences",
+            "mode": "LIST",
+            "device": "ALL",
+            "defaultSortDirection": "ASC",
+            "tabs": [
+              {
+                "tabKey": "my-absence",
+                "label": "Absence",
+                "position": 0,
+                "level": 0,
+                "targetEntityKey": "wf.my-absences",
+                "sections": [],
+                "fields": [
+                  {
+                    "fieldKey": "absence-type-id",
+                    "position": 0,
+                    "span": 4,
+                    "componentKey": "lookup"
+                  },
+                  {
+                    "fieldKey": "status",
+                    "position": 1,
+                    "span": 4,
+                    "componentKey": "select"
+                  },
+                  {
+                    "fieldKey": "time-zone",
+                    "position": 2,
+                    "span": 4,
+                    "componentKey": "text-input"
+                  },
+                  {
+                    "fieldKey": "starts-at",
+                    "position": 3,
+                    "span": 6,
+                    "componentKey": "datetime-input"
+                  },
+                  {
+                    "fieldKey": "ends-at",
+                    "position": 4,
+                    "span": 6,
+                    "componentKey": "datetime-input"
+                  },
+                  {
+                    "fieldKey": "decided-at",
+                    "position": 5,
+                    "span": 4,
+                    "componentKey": "datetime-input"
+                  },
+                  {
+                    "fieldKey": "decision-reason",
+                    "position": 6,
+                    "span": 8,
+                    "componentKey": "text-input"
+                  },
+                  {
+                    "fieldKey": "note",
+                    "position": 7,
+                    "span": 12,
+                    "componentKey": "textarea"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "navigation": [],
+        "actions": [
+          {
+            "actionKey": "cancel",
+            "label": "Cancel",
+            "type": "COMMAND",
+            "handlerKey": "wf.my-absences.cancel",
+            "requiredPermissions": [
+              "workforce.absences.request-own"
+            ],
+            "confirmationPrompt": "Cancel this absence? An approved one can be cancelled until it starts.",
+            "parameters": [
+              {
+                "key": "reason",
+                "label": "Reason",
+                "type": "TEXTAREA",
+                "required": false
+              }
+            ],
+            "visibilityCondition": {
+              "field": "status",
+              "operator": "IN",
+              "value": [
+                "REQUESTED",
+                "APPROVED"
+              ]
+            }
+          }
+        ],
+        "messages": []
+      }
+    }
+  },
+  {
+    "contractVersion": "1.0",
+    "window": {
       "route": "/gigaops/resources",
       "label": "People",
       "description": "People, teams and resource pools in the workforce.",
@@ -2045,6 +3486,26 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "entityKey": "wf.resource-skills",
             "moduleKey": "gigaops",
             "label": "Skills",
+            "ownership": "MODULE_CORE",
+            "primaryKeyField": "id",
+            "isVersioned": true,
+            "isAuditLogged": true,
+            "isSoftDeletable": false
+          },
+          {
+            "entityKey": "wf.availability-patterns",
+            "moduleKey": "gigaops",
+            "label": "Working weeks",
+            "ownership": "MODULE_CORE",
+            "primaryKeyField": "id",
+            "isVersioned": true,
+            "isAuditLogged": true,
+            "isSoftDeletable": false
+          },
+          {
+            "entityKey": "wf.absences",
+            "moduleKey": "gigaops",
+            "label": "Absences",
             "ownership": "MODULE_CORE",
             "primaryKeyField": "id",
             "isVersioned": true,
@@ -2250,6 +3711,207 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "isSystemLocked": false,
             "classification": "INTERNAL",
             "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "resource-id",
+            "entityKey": "wf.availability-patterns",
+            "label": "Person",
+            "type": "REFERENCE",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "resource-ref"
+          },
+          {
+            "fieldKey": "effective-from",
+            "entityKey": "wf.availability-patterns",
+            "label": "Starts on",
+            "type": "DATE",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "defaultValue": {
+              "$default": "TODAY"
+            }
+          },
+          {
+            "fieldKey": "effective-to",
+            "entityKey": "wf.availability-patterns",
+            "label": "First day without it",
+            "type": "DATE",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "helpText": "Leave empty for a week with no end."
+          },
+          {
+            "fieldKey": "time-zone",
+            "entityKey": "wf.availability-patterns",
+            "label": "Time zone",
+            "type": "TEXT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "helpText": "Where the person works, for example Europe/London or America/Chicago."
+          },
+          {
+            "fieldKey": "working-hours",
+            "entityKey": "wf.availability-patterns",
+            "label": "Working hours",
+            "type": "TEXT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "helpText": "Days and hours, for example \"Mon-Fri 09:00-17:00; Sat 10:00-14:00\". An end before the start runs past midnight.",
+            "defaultValue": "Mon-Fri 09:00-17:00"
+          },
+          {
+            "fieldKey": "weekly-hours",
+            "entityKey": "wf.availability-patterns",
+            "label": "Hours a week",
+            "type": "NUMBER",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "scale": 2
+          },
+          {
+            "fieldKey": "created-at",
+            "entityKey": "wf.availability-patterns",
+            "label": "Created at",
+            "type": "DATETIME",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "resource-id",
+            "entityKey": "wf.absences",
+            "label": "Person",
+            "type": "REFERENCE",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "resource-ref"
+          },
+          {
+            "fieldKey": "absence-type-id",
+            "entityKey": "wf.absences",
+            "label": "Absence type",
+            "type": "REFERENCE",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "absence-type-ref"
+          },
+          {
+            "fieldKey": "starts-at",
+            "entityKey": "wf.absences",
+            "label": "From",
+            "type": "DATETIME",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "helpText": "In the person's working time zone (that of their working week; UTC if they have none)."
+          },
+          {
+            "fieldKey": "ends-at",
+            "entityKey": "wf.absences",
+            "label": "Until",
+            "type": "DATETIME",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "helpText": "In the person's working time zone (that of their working week; UTC if they have none)."
+          },
+          {
+            "fieldKey": "time-zone",
+            "entityKey": "wf.absences",
+            "label": "Time zone",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "status",
+            "entityKey": "wf.absences",
+            "label": "Status",
+            "type": "SELECT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "absence-statuses"
+          },
+          {
+            "fieldKey": "note",
+            "entityKey": "wf.absences",
+            "label": "Note",
+            "type": "TEXTAREA",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "decided-at",
+            "entityKey": "wf.absences",
+            "label": "Decided at",
+            "type": "DATETIME",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "decision-reason",
+            "entityKey": "wf.absences",
+            "label": "Reason",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "created-at",
+            "entityKey": "wf.absences",
+            "label": "Requested at",
+            "type": "DATETIME",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
           }
         ],
         "relationships": [
@@ -2257,6 +3919,20 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "relationshipKey": "resource-skills",
             "sourceEntityKey": "wf.resources",
             "targetEntityKey": "wf.resource-skills",
+            "type": "ONE_TO_MANY",
+            "foreignKeyField": "resource-id"
+          },
+          {
+            "relationshipKey": "resource-working-weeks",
+            "sourceEntityKey": "wf.resources",
+            "targetEntityKey": "wf.availability-patterns",
+            "type": "ONE_TO_MANY",
+            "foreignKeyField": "resource-id"
+          },
+          {
+            "relationshipKey": "resource-absences",
+            "sourceEntityKey": "wf.resources",
+            "targetEntityKey": "wf.absences",
             "type": "ONE_TO_MANY",
             "foreignKeyField": "resource-id"
           }
@@ -2339,6 +4015,28 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             ]
           },
           {
+            "referenceKey": "absence-statuses",
+            "referenceType": "VALUE_LIST",
+            "staticValues": [
+              {
+                "value": "REQUESTED",
+                "label": "Requested"
+              },
+              {
+                "value": "APPROVED",
+                "label": "Approved"
+              },
+              {
+                "value": "REJECTED",
+                "label": "Rejected"
+              },
+              {
+                "value": "CANCELLED",
+                "label": "Cancelled"
+              }
+            ]
+          },
+          {
             "referenceKey": "resource-ref",
             "referenceType": "SEARCH_LOOKUP",
             "resolverKey": "wf-resources",
@@ -2357,6 +4055,16 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "referenceKey": "member-ref",
             "referenceType": "SEARCH_LOOKUP",
             "resolverKey": "workspace-members"
+          },
+          {
+            "referenceKey": "absence-type-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "wf-absence-types",
+            "createWith": {
+              "moduleKey": "gigaops",
+              "surfaceKey": "wf-absence-types",
+              "permission": "workforce.calendars.manage"
+            }
           }
         ],
         "validationRules": [],
@@ -2514,6 +4222,100 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
                   }
                 ],
                 "parentRelationshipKey": "resource-skills"
+              },
+              {
+                "tabKey": "working-weeks",
+                "label": "Working weeks",
+                "position": 1,
+                "level": 1,
+                "targetEntityKey": "wf.availability-patterns",
+                "sections": [],
+                "fields": [
+                  {
+                    "fieldKey": "effective-from",
+                    "position": 0,
+                    "span": 2,
+                    "componentKey": "date-input"
+                  },
+                  {
+                    "fieldKey": "effective-to",
+                    "position": 1,
+                    "span": 2,
+                    "componentKey": "date-input"
+                  },
+                  {
+                    "fieldKey": "working-hours",
+                    "position": 2,
+                    "span": 4,
+                    "componentKey": "text-input"
+                  },
+                  {
+                    "fieldKey": "time-zone",
+                    "position": 3,
+                    "span": 2,
+                    "componentKey": "text-input"
+                  },
+                  {
+                    "fieldKey": "weekly-hours",
+                    "position": 4,
+                    "span": 2,
+                    "componentKey": "number-input"
+                  }
+                ],
+                "parentRelationshipKey": "resource-working-weeks"
+              },
+              {
+                "tabKey": "absences",
+                "label": "Absences",
+                "position": 1,
+                "level": 1,
+                "targetEntityKey": "wf.absences",
+                "sections": [],
+                "fields": [
+                  {
+                    "fieldKey": "absence-type-id",
+                    "position": 0,
+                    "span": 3,
+                    "componentKey": "lookup"
+                  },
+                  {
+                    "fieldKey": "starts-at",
+                    "position": 1,
+                    "span": 3,
+                    "componentKey": "datetime-input"
+                  },
+                  {
+                    "fieldKey": "ends-at",
+                    "position": 2,
+                    "span": 3,
+                    "componentKey": "datetime-input"
+                  },
+                  {
+                    "fieldKey": "time-zone",
+                    "position": 3,
+                    "span": 2,
+                    "componentKey": "text-input"
+                  },
+                  {
+                    "fieldKey": "status",
+                    "position": 4,
+                    "span": 2,
+                    "componentKey": "select"
+                  },
+                  {
+                    "fieldKey": "decision-reason",
+                    "position": 5,
+                    "span": 3,
+                    "componentKey": "text-input"
+                  },
+                  {
+                    "fieldKey": "note",
+                    "position": 6,
+                    "span": 12,
+                    "componentKey": "textarea"
+                  }
+                ],
+                "parentRelationshipKey": "resource-absences"
               }
             ],
             "searchFields": [
@@ -2561,6 +4363,231 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
               "field": "status",
               "operator": "EQ",
               "value": "INACTIVE"
+            }
+          }
+        ],
+        "messages": []
+      }
+    }
+  },
+  {
+    "contractVersion": "1.0",
+    "window": {
+      "route": "/gigaops/availability",
+      "label": "Working weeks",
+      "description": "Everyone's working weeks: the hours each person is available, from which date.",
+      "readPermission": "workforce:read"
+    },
+    "definition": {
+      "kind": "APPLICATION_DICTIONARY",
+      "contractVersion": "1.0",
+      "moduleKey": "gigaops",
+      "entityKey": "wf-working-weeks",
+      "surfaceKey": "wf-working-weeks",
+      "title": "Working weeks",
+      "dictionary": {
+        "packageKey": "wf-working-weeks-module-baseline",
+        "name": "Working weeks",
+        "version": "1.0.0",
+        "moduleKey": "gigaops",
+        "targetEntityKey": "wf.availability-patterns",
+        "entities": [
+          {
+            "entityKey": "wf.availability-patterns",
+            "moduleKey": "gigaops",
+            "label": "Working weeks",
+            "ownership": "MODULE_CORE",
+            "primaryKeyField": "id",
+            "isVersioned": true,
+            "isAuditLogged": true,
+            "isSoftDeletable": false
+          }
+        ],
+        "fields": [
+          {
+            "fieldKey": "resource-id",
+            "entityKey": "wf.availability-patterns",
+            "label": "Person",
+            "type": "REFERENCE",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "resource-ref"
+          },
+          {
+            "fieldKey": "effective-from",
+            "entityKey": "wf.availability-patterns",
+            "label": "Starts on",
+            "type": "DATE",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "defaultValue": {
+              "$default": "TODAY"
+            }
+          },
+          {
+            "fieldKey": "effective-to",
+            "entityKey": "wf.availability-patterns",
+            "label": "First day without it",
+            "type": "DATE",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "helpText": "Leave empty for a week with no end."
+          },
+          {
+            "fieldKey": "time-zone",
+            "entityKey": "wf.availability-patterns",
+            "label": "Time zone",
+            "type": "TEXT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "helpText": "Where the person works, for example Europe/London or America/Chicago."
+          },
+          {
+            "fieldKey": "working-hours",
+            "entityKey": "wf.availability-patterns",
+            "label": "Working hours",
+            "type": "TEXT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "helpText": "Days and hours, for example \"Mon-Fri 09:00-17:00; Sat 10:00-14:00\". An end before the start runs past midnight.",
+            "defaultValue": "Mon-Fri 09:00-17:00"
+          },
+          {
+            "fieldKey": "weekly-hours",
+            "entityKey": "wf.availability-patterns",
+            "label": "Hours a week",
+            "type": "NUMBER",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "scale": 2
+          },
+          {
+            "fieldKey": "created-at",
+            "entityKey": "wf.availability-patterns",
+            "label": "Created at",
+            "type": "DATETIME",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          }
+        ],
+        "relationships": [],
+        "references": [
+          {
+            "referenceKey": "resource-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "wf-resources",
+            "createWith": {
+              "moduleKey": "gigaops",
+              "surfaceKey": "wf-resources",
+              "permission": "workforce.resources.manage"
+            }
+          }
+        ],
+        "validationRules": [],
+        "views": [
+          {
+            "viewKey": "working-weeks",
+            "label": "Working weeks",
+            "mode": "LIST",
+            "device": "ALL",
+            "defaultSortDirection": "ASC",
+            "tabs": [
+              {
+                "tabKey": "working-week",
+                "label": "Working week",
+                "position": 0,
+                "level": 0,
+                "targetEntityKey": "wf.availability-patterns",
+                "sections": [],
+                "fields": [
+                  {
+                    "fieldKey": "resource-id",
+                    "position": 0,
+                    "span": 4,
+                    "componentKey": "lookup"
+                  },
+                  {
+                    "fieldKey": "effective-from",
+                    "position": 1,
+                    "span": 4,
+                    "componentKey": "date-input"
+                  },
+                  {
+                    "fieldKey": "effective-to",
+                    "position": 2,
+                    "span": 4,
+                    "componentKey": "date-input"
+                  },
+                  {
+                    "fieldKey": "working-hours",
+                    "position": 3,
+                    "span": 4,
+                    "componentKey": "text-input"
+                  },
+                  {
+                    "fieldKey": "time-zone",
+                    "position": 4,
+                    "span": 4,
+                    "componentKey": "text-input"
+                  },
+                  {
+                    "fieldKey": "weekly-hours",
+                    "position": 5,
+                    "span": 4,
+                    "componentKey": "number-input"
+                  }
+                ]
+              }
+            ],
+            "searchFields": [
+              "resource-id"
+            ]
+          }
+        ],
+        "navigation": [],
+        "actions": [
+          {
+            "actionKey": "end",
+            "label": "End",
+            "type": "COMMAND",
+            "handlerKey": "wf.availability-patterns.end",
+            "requiredPermissions": [
+              "workforce.availability.manage"
+            ],
+            "confirmationPrompt": "End this working week so a new one can follow?",
+            "parameters": [
+              {
+                "key": "effective-to",
+                "label": "First day without this week (YYYY-MM-DD)",
+                "type": "DATE",
+                "required": true
+              }
+            ],
+            "visibilityCondition": {
+              "field": "effective-to",
+              "operator": "IS_NULL",
+              "value": null
             }
           }
         ],

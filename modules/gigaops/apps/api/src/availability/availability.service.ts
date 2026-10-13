@@ -9,12 +9,14 @@ import {
   EndAvailabilityPatternV1Schema,
   ListAbsencesV1QuerySchema,
   RequestAbsenceV1Schema,
+  RequestOwnAbsenceV1Schema,
   UpdateAbsenceTypeV1Schema,
   WEEKDAYS,
   type AbsenceTypeV1,
   type AbsenceV1,
   type AvailabilityPatternV1,
   type AvailabilityV1,
+  type RequestAbsenceV1,
   type WeeklySlotV1,
   type WorkingCalendarV1,
 } from '@gigalibs/contracts';
@@ -55,6 +57,31 @@ export class AvailabilityService {
         [principal.tenantId, resourceId],
       );
       return { items: result.rows.map(mapPattern) };
+    });
+  }
+
+  /** Everyone's working patterns, by person then newest first (WI-OI-120u: the Working weeks window). */
+  async listAllPatterns(principal: GigaOpsPrincipal): Promise<{ readonly items: readonly (AvailabilityPatternV1 & { readonly resourceName: string })[] }> {
+    return this.database.withTenantTransaction(principal.tenantId, async (client) => {
+      const result = await client.query(
+        `SELECT p.*, r.display_name AS resource_name
+           FROM gigalibs_workforce.availability_patterns p
+           JOIN gigalibs_workforce.workforce_resources r ON r.tenant_id = p.tenant_id AND r.id = p.resource_id
+          WHERE p.tenant_id = $1
+          ORDER BY r.display_name, p.effective_from DESC
+          LIMIT 1000`,
+        [principal.tenantId],
+      );
+      return { items: result.rows.map((row) => ({ ...mapPattern(row), resourceName: String(row.resource_name) })) };
+    });
+  }
+
+  async getPattern(principal: GigaOpsPrincipal, patternId: string): Promise<AvailabilityPatternV1> {
+    assertUuid(patternId, 'patternId');
+    return this.database.withTenantTransaction(principal.tenantId, async (client) => {
+      const result = await client.query(`SELECT * FROM gigalibs_workforce.availability_patterns WHERE tenant_id = $1 AND id = $2`, [principal.tenantId, patternId]);
+      if (!result.rows[0]) throw new NotFoundException('The working pattern was not found.');
+      return mapPattern(result.rows[0]);
     });
   }
 
@@ -193,11 +220,24 @@ export class AvailabilityService {
     });
   }
 
+  async getAbsence(principal: GigaOpsPrincipal, absenceId: string): Promise<AbsenceV1> {
+    assertUuid(absenceId, 'absenceId');
+    return this.database.withTenantTransaction(principal.tenantId, async (client) => {
+      const result = await client.query(`${ABSENCE_SELECT} WHERE a.tenant_id = $1 AND a.id = $2`, [principal.tenantId, absenceId]);
+      if (!result.rows[0]) throw new NotFoundException('The absence was not found.');
+      return mapAbsence(result.rows[0]);
+    });
+  }
+
   /** Requests an absence; a type that needs no approval is approved at once, attributed to the requester. */
   async requestAbsence(context: CommandContext, rawInput: unknown): Promise<AbsenceV1> {
     const input = parse(RequestAbsenceV1Schema, rawInput);
+    return this.database.withTenantTransaction(context.principal.tenantId, (client) => this.insertAbsence(client, context, input));
+  }
+
+  private async insertAbsence(client: PoolClient, context: CommandContext, input: RequestAbsenceV1): Promise<AbsenceV1> {
     const tenantId = context.principal.tenantId;
-    return this.database.withTenantTransaction(tenantId, async (client) => {
+    {
       await assertPerson(client, tenantId, input.resourceId);
       const type = await client.query(`SELECT * FROM gigalibs_workforce.absence_types WHERE tenant_id = $1 AND id = $2`, [tenantId, input.absenceTypeId]);
       if (!type.rows[0]) throw new NotFoundException('The absence type was not found.');
@@ -237,7 +277,7 @@ export class AvailabilityService {
         status: autoApproved ? 'APPROVED' : 'REQUESTED',
       });
       return this.absence(client, tenantId, id);
-    });
+    }
   }
 
   /** Approves or rejects a request. The decider must be someone other than the requester (four-eyes). */
@@ -282,20 +322,109 @@ export class AvailabilityService {
   async cancelAbsence(context: CommandContext, absenceId: string, rawInput: unknown): Promise<AbsenceV1> {
     assertUuid(absenceId, 'absenceId');
     const input = parse(DecideAbsenceV1Schema, rawInput);
+    return this.database.withTenantTransaction(context.principal.tenantId, async (client) => {
+      const absence = await lockAbsence(client, context.principal.tenantId, absenceId, input.expectedVersion);
+      return this.cancelLocked(client, context, absence, input.reason);
+    });
+  }
+
+  private async cancelLocked(client: PoolClient, context: CommandContext, absence: any, reason: string | undefined): Promise<AbsenceV1> {
     const tenantId = context.principal.tenantId;
-    return this.database.withTenantTransaction(tenantId, async (client) => {
-      const absence = await lockAbsence(client, tenantId, absenceId, input.expectedVersion);
+    const absenceId = String(absence.id);
+    {
       const startedApproved = absence.status === 'APPROVED' && new Date(absence.starts_at).getTime() <= Date.now();
       if (!['REQUESTED', 'APPROVED'].includes(absence.status) || startedApproved) {
         throw new ConflictException({ code: 'WORKFORCE_ABSENCE_STATE', message: 'Only a request, or an approved absence that has not started, can be cancelled.' });
       }
       await client.query(
         `UPDATE gigalibs_workforce.absences SET status = 'CANCELLED', decision_reason = COALESCE($3, decision_reason) WHERE tenant_id = $1 AND id = $2`,
-        [tenantId, absenceId, input.reason ?? null],
+        [tenantId, absenceId, reason ?? null],
       );
       const version = await bumpVersion(client, context, 'absences', absenceId);
       await recordMutation(client, context, 'WORKFORCE_ABSENCE_CANCELLED', 'WORKFORCE_ABSENCE', absenceId, version, { resourceId: absence.resource_id });
       return this.absence(client, tenantId, absenceId);
+    }
+  }
+
+  // ─── Own absences (WI-OI-120u Slice 2, owner D1a) ──────────────────────────────────────────────────────
+  // `workforce.absences.request-own` reaches only the person linked to the caller's login; the checks are here, so
+  // no caller can widen them. Deciding stays four-eyes (decideAbsence).
+
+  /** The caller's own absences; none when their login is linked to no active person. */
+  async listOwnAbsences(principal: GigaOpsPrincipal): Promise<{ readonly items: readonly AbsenceV1[] }> {
+    return this.database.withTenantTransaction(principal.tenantId, async (client) => {
+      const own = await ownPerson(client, principal);
+      if (!own) return { items: [] };
+      const result = await client.query(`${ABSENCE_SELECT} WHERE a.tenant_id = $1 AND a.resource_id = $2 ORDER BY a.starts_at DESC LIMIT 500`, [
+        principal.tenantId,
+        own,
+      ]);
+      return { items: result.rows.map(mapAbsence) };
+    });
+  }
+
+  /** One of the caller's own absences; not found when it is someone else's. */
+  async getOwnAbsence(principal: GigaOpsPrincipal, absenceId: string): Promise<AbsenceV1> {
+    assertUuid(absenceId, 'absenceId');
+    return this.database.withTenantTransaction(principal.tenantId, async (client) => {
+      const own = await ownPerson(client, principal);
+      const result = own
+        ? await client.query(`${ABSENCE_SELECT} WHERE a.tenant_id = $1 AND a.id = $2 AND a.resource_id = $3`, [principal.tenantId, absenceId, own])
+        : { rows: [] };
+      if (!result.rows[0]) throw new NotFoundException('The absence was not found.');
+      return mapAbsence(result.rows[0]);
+    });
+  }
+
+  /** Requests an absence for the person linked to the caller's login. */
+  async requestOwnAbsence(context: CommandContext, rawInput: unknown): Promise<AbsenceV1> {
+    const input = parse(RequestOwnAbsenceV1Schema, rawInput);
+    return this.database.withTenantTransaction(context.principal.tenantId, async (client) => {
+      const own = await ownPerson(client, context.principal);
+      if (!own) throw notLinked();
+      return this.insertAbsence(client, context, { ...input, resourceId: own });
+    });
+  }
+
+  /** Withdraws one of the caller's own requests, or an own approved absence that has not started. */
+  async cancelOwnAbsence(context: CommandContext, absenceId: string, rawInput: unknown): Promise<AbsenceV1> {
+    assertUuid(absenceId, 'absenceId');
+    const input = parse(DecideAbsenceV1Schema, rawInput);
+    return this.database.withTenantTransaction(context.principal.tenantId, async (client) => {
+      const own = await ownPerson(client, context.principal);
+      if (!own) throw notLinked();
+      const absence = await lockAbsence(client, context.principal.tenantId, absenceId, input.expectedVersion);
+      if (absence.resource_id !== own) {
+        throw new ForbiddenException({ code: 'WORKFORCE_NOT_OWN_ABSENCE', message: 'You can only cancel your own absences.' });
+      }
+      return this.cancelLocked(client, context, absence, input.reason);
+    });
+  }
+
+  /** The working time zone of the person linked to the caller's login (UTC when unlinked or without a pattern). */
+  async ownTimeZone(principal: GigaOpsPrincipal): Promise<string> {
+    const own = await this.database.withTenantTransaction(principal.tenantId, (client) => ownPerson(client, principal));
+    return own ? ((await this.workingTimeZones(principal, [own])).get(own) ?? 'UTC') : 'UTC';
+  }
+
+  /**
+   * The time zone each person works in: that of their working pattern in force today, else their latest one; people
+   * without a pattern are left out (UTC applies). Metadata windows show and take absence and booking times in it.
+   */
+  async workingTimeZones(principal: GigaOpsPrincipal, resourceIds: readonly string[]): Promise<ReadonlyMap<string, string>> {
+    const ids = [...new Set(resourceIds)];
+    if (ids.length === 0) return new Map();
+    return this.database.withTenantTransaction(principal.tenantId, async (client) => {
+      const result = await client.query<{ resource_id: string; time_zone: string }>(
+        `SELECT DISTINCT ON (resource_id) resource_id, time_zone
+           FROM gigalibs_workforce.availability_patterns
+          WHERE tenant_id = $1 AND resource_id = ANY($2::uuid[])
+          ORDER BY resource_id,
+                   (effective_from <= current_date AND (effective_to IS NULL OR effective_to > current_date)) DESC,
+                   effective_from DESC`,
+        [principal.tenantId, ids],
+      );
+      return new Map(result.rows.map((row) => [row.resource_id, row.time_zone]));
     });
   }
 
@@ -584,6 +713,18 @@ async function assertPerson(client: PoolClient, tenantId: string, resourceId: st
   }
   if (requireActive && resource.status !== 'ACTIVE') throw new ConflictException({ code: 'WORKFORCE_RESOURCE_INACTIVE', message: 'The person is inactive.' });
 }
+
+/** The active person linked to the caller's login (one person per login, WI-OI-120n), or null. */
+async function ownPerson(client: PoolClient, principal: GigaOpsPrincipal): Promise<string | null> {
+  const result = await client.query<{ id: string }>(
+    `SELECT id FROM gigalibs_workforce.workforce_resources WHERE tenant_id = $1 AND platform_user_id = $2 AND status = 'ACTIVE'`,
+    [principal.tenantId, principal.subject],
+  );
+  return result.rows[0]?.id ?? null;
+}
+
+const notLinked = () =>
+  new ForbiddenException({ code: 'WORKFORCE_NOT_A_WORKER', message: 'Your login is not linked to a Workforce person; ask an administrator to link it.' });
 
 async function lockAbsence(client: PoolClient, tenantId: string, absenceId: string, expectedVersion: number): Promise<any> {
   const result = await client.query(`SELECT * FROM gigalibs_workforce.absences WHERE tenant_id = $1 AND id = $2 FOR UPDATE`, [tenantId, absenceId]);

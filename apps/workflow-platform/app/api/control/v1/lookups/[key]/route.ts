@@ -4,16 +4,20 @@ import {
   proxyUpstream,
   unavailable,
 } from '@/lib/authenticated-upstream';
+import { proxyGeospatial } from '@/lib/geospatial-proxy';
 import { type PlatformLookupKey, isPlatformLookupKey } from '@gigalibs/contracts';
 import { NextResponse } from 'next/server';
 
 // WI-OI-120u (M-WF1): the platform lookups of the metadata windows (PLATFORM_LOOKUPS in @gigalibs/contracts). Each reads
-// one control-plane list as the signed-in user, so the control plane's own permission decides who may read it, and
-// answers the window's lookup shape `[{ value, label }]`: the active entries matching `search`, or the entries named by
-// `ids` whatever their status (so a record shows the name of the login or unit it already holds).
+// one list of the service that owns it (the control plane, or Geospatial through its signed proxy) as the signed-in
+// user, so that service's own permission decides who may read it, and answers the window's lookup shape
+// `[{ value, label }]`: the active entries matching `search`, or the entries named by `ids` whatever their status (so a
+// record shows the name of the login, unit or place it already holds).
 
 const MAX_OPTIONS = 50;
 const MAX_IDS = 100;
+/** Places named by id are read one by one; a window page names at most this many. */
+const MAX_PLACE_IDS = 25;
 const ID = /^[A-Za-z0-9_-]{1,64}$/;
 
 interface Option {
@@ -39,17 +43,54 @@ interface Unit {
   readonly status?: unknown;
 }
 
-const text = (value: unknown) => (typeof value === 'string' && value.trim() ? value.trim() : null);
+interface Place {
+  readonly id?: unknown;
+  readonly code?: unknown;
+  readonly displayName?: unknown;
+  readonly status?: unknown;
+}
 
-const SOURCES: Readonly<
-  Record<
-    PlatformLookupKey,
-    { path(request: LookupRequest): string; options(body: unknown): Option[] }
-  >
-> = {
+interface Source {
+  /** The owning service's answer, as the signed-in user; null without a session. */
+  load(lookup: LookupRequest, request: Request): Promise<Response | null>;
+  options(body: unknown): Option[];
+}
+
+const text = (value: unknown) => (typeof value === 'string' && value.trim() ? value.trim() : null);
+const itemsOf = <T>(body: unknown): T[] =>
+  body && typeof body === 'object' && Array.isArray((body as { items?: unknown }).items)
+    ? (body as { items: T[] }).items
+    : [];
+const control = (path: string) => authenticatedUpstream('control', path);
+
+/** Geospatial's own route, through the signed proxy the Maps screens use (maps.nodes.read, the Geospatial entitlement). */
+const geospatial = (request: Request, path: readonly string[], query = '') =>
+  proxyGeospatial(
+    new Request(new URL(`/api/maps/${path.join('/')}${query}`, request.url), {
+      headers: request.headers,
+    }),
+    {
+      params: Promise.resolve({ path: [...path] }),
+    },
+  );
+
+/** The places named by id; the first refusal or failure is passed on, a place that is gone is left out. */
+async function placesById(request: Request, ids: readonly string[]): Promise<Response> {
+  const answers = await Promise.all(
+    ids.slice(0, MAX_PLACE_IDS).map((id) => geospatial(request, ['nodes', id])),
+  );
+  const refused = answers.find((answer) => !answer.ok && answer.status !== 404);
+  if (refused) return refused;
+  const items = await Promise.all(
+    answers.filter((answer) => answer.ok).map((answer) => answer.json() as Promise<Place>),
+  );
+  return NextResponse.json({ items });
+}
+
+const SOURCES: Readonly<Record<PlatformLookupKey, Source>> = {
   // users:read. A person is linked to the login of a member, who is identified by their user id.
   'workspace-members': {
-    path: () => '/api/v1/tenants/current/members',
+    load: () => control('/api/v1/tenants/current/members'),
     options: (body) =>
       (Array.isArray(body) ? (body as Member[]) : []).flatMap((member) => {
         const id = text(member.user?.id);
@@ -67,24 +108,43 @@ const SOURCES: Readonly<
   },
   // organization:read.
   'organization-units': {
-    path: ({ search, ids }) => {
+    load: ({ search, ids }) => {
       const query = new URLSearchParams({ limit: '200' });
       if (ids?.length) query.set('ids', ids.join(','));
       else if (search) query.set('q', search);
-      return `/api/v1/tenants/current/organization/units?${query.toString()}`;
+      return control(`/api/v1/tenants/current/organization/units?${query.toString()}`);
     },
     options: (body) =>
-      (
-        (body && typeof body === 'object' && Array.isArray((body as { items?: unknown }).items)
-          ? (body as { items: Unit[] }).items
-          : []) as Unit[]
-      ).flatMap((unit) => {
+      itemsOf<Unit>(body).flatMap((unit) => {
         const id = text(unit.id);
         const name = text(unit.name);
         if (!id || !name) return [];
         const code = text(unit.code);
         return [
           { value: id, label: code ? `${name} (${code})` : name, active: unit.status === 'ACTIVE' },
+        ];
+      }),
+  },
+  // maps.nodes.read, through Geospatial's signed proxy. Sites and the places within them.
+  'workspace-sites': {
+    load: ({ search, ids }, request) => {
+      if (ids?.length) return placesById(request, ids);
+      const query = new URLSearchParams({ status: 'ACTIVE', pageSize: '50' });
+      if (search) query.set('q', search);
+      return geospatial(request, ['nodes'], `?${query.toString()}`);
+    },
+    options: (body) =>
+      itemsOf<Place>(body).flatMap((place) => {
+        const id = text(place.id);
+        const name = text(place.displayName);
+        if (!id || !name) return [];
+        const code = text(place.code);
+        return [
+          {
+            value: id,
+            label: code ? `${name} (${code})` : name,
+            active: place.status === 'ACTIVE',
+          },
         ];
       }),
   },
@@ -134,9 +194,9 @@ export async function GET(request: Request, context: { params: Promise<{ key: st
         { status: 400, headers: { 'Cache-Control': 'no-store' } },
       );
     const source = SOURCES[key];
-    const response = await authenticatedUpstream('control', source.path(lookup));
+    const response = await source.load(lookup, request);
     if (!response) return authenticationRequired();
-    // A refusal (403 without the permission) or a failure reaches the window as the control plane gave it.
+    // A refusal (403 without the permission) or a failure reaches the window as the owning service gave it.
     if (!response.ok) return proxyUpstream(response);
     const body: unknown = await response.json().catch(() => null);
     return NextResponse.json(choose(source.options(body), lookup), {

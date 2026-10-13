@@ -39,10 +39,14 @@ pnpm build && node scripts/verify-module-conversion.mjs <module>
   that shows it.
 - Lookups name a resolver (`lookup('book-ref', 'finance-books')`). `createWith` offers "Add new" through the window
   that creates the records (F0.6). Workspace data no module holds comes from the platform lookups (`PLATFORM_LOOKUPS`
-  in contracts: `workspace-members`, `organization-units`); the module's web package routes them with
+  in contracts: `workspace-members`, `organization-units`, `workspace-sites`); the module's web package routes them with
   `lookupBasePaths: PLATFORM_LOOKUP_BASE_PATHS` (WI-OI-120u).
 - A field only some people may change takes `writePermission` (for example a login link): the window shows it
   read-only without it, and the adapter's field policy carries the same permission so the dispatcher refuses it too.
+- A child tab adds and lists its records but cannot open one, so a record's actions belong on a window where it is the
+  main record (Workforce shows absences under each person and decides them on Absence requests).
+- Date-times in a window are wall-clock text with no zone; say in which zone the module reads them (Workforce: the
+  person's working time zone, shown on the record).
 
 ### 2. Record adapters
 

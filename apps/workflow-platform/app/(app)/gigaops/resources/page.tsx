@@ -4,5 +4,5 @@ import { WorkforceWorkspace } from '@gigalibs/gigaops-web';
 
 export default async function Page() {
   const session = await verifiedSession(false);
-  return <WorkforceWorkspace surface={"wf-resources"} permissions={session.context?.permissions ?? []} />;
+  return <WorkforceWorkspace section={"people"} permissions={session.context?.permissions ?? []} />;
 }

@@ -1,0 +1,180 @@
+{
+  "contractVersion": "1.0",
+  "window": {
+    "route": "/gigaops/availability",
+    "label": "Closures",
+    "description": "Days a calendar closes; nobody on it is available then.",
+    "readPermission": "workforce:read"
+  },
+  "definition": {
+    "kind": "APPLICATION_DICTIONARY",
+    "contractVersion": "1.0",
+    "moduleKey": "gigaops",
+    "entityKey": "wf-closures",
+    "surfaceKey": "wf-closures",
+    "title": "Closures",
+    "dictionary": {
+      "packageKey": "wf-closures-module-baseline",
+      "name": "Closures",
+      "version": "1.0.0",
+      "moduleKey": "gigaops",
+      "targetEntityKey": "wf.calendar-closures",
+      "entities": [
+        {
+          "entityKey": "wf.calendar-closures",
+          "moduleKey": "gigaops",
+          "label": "Closures",
+          "ownership": "MODULE_CORE",
+          "primaryKeyField": "id",
+          "isVersioned": true,
+          "isAuditLogged": true,
+          "isSoftDeletable": false
+        }
+      ],
+      "fields": [
+        {
+          "fieldKey": "calendar-id",
+          "entityKey": "wf.calendar-closures",
+          "label": "Calendar",
+          "type": "REFERENCE",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "calendar-ref"
+        },
+        {
+          "fieldKey": "closure-date",
+          "entityKey": "wf.calendar-closures",
+          "label": "Date",
+          "type": "DATE",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "label",
+          "entityKey": "wf.calendar-closures",
+          "label": "Label",
+          "type": "TEXT",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "helpText": "For example New Year or Site shutdown."
+        },
+        {
+          "fieldKey": "status",
+          "entityKey": "wf.calendar-closures",
+          "label": "Status",
+          "type": "SELECT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "closure-statuses"
+        }
+      ],
+      "relationships": [],
+      "references": [
+        {
+          "referenceKey": "closure-statuses",
+          "referenceType": "VALUE_LIST",
+          "staticValues": [
+            {
+              "value": "ACTIVE",
+              "label": "Active"
+            },
+            {
+              "value": "WITHDRAWN",
+              "label": "Withdrawn"
+            }
+          ]
+        },
+        {
+          "referenceKey": "calendar-ref",
+          "referenceType": "SEARCH_LOOKUP",
+          "resolverKey": "wf-calendars",
+          "createWith": {
+            "moduleKey": "gigaops",
+            "surfaceKey": "wf-calendars",
+            "permission": "workforce.calendars.manage"
+          }
+        }
+      ],
+      "validationRules": [],
+      "views": [
+        {
+          "viewKey": "closures",
+          "label": "Closures",
+          "mode": "LIST",
+          "device": "ALL",
+          "defaultSortDirection": "ASC",
+          "tabs": [
+            {
+              "tabKey": "closure",
+              "label": "Closure",
+              "position": 0,
+              "level": 0,
+              "targetEntityKey": "wf.calendar-closures",
+              "sections": [],
+              "fields": [
+                {
+                  "fieldKey": "calendar-id",
+                  "position": 0,
+                  "span": 4,
+                  "componentKey": "lookup"
+                },
+                {
+                  "fieldKey": "closure-date",
+                  "position": 1,
+                  "span": 3,
+                  "componentKey": "date-input"
+                },
+                {
+                  "fieldKey": "label",
+                  "position": 2,
+                  "span": 5,
+                  "componentKey": "text-input"
+                },
+                {
+                  "fieldKey": "status",
+                  "position": 3,
+                  "span": 2,
+                  "componentKey": "select"
+                }
+              ]
+            }
+          ],
+          "searchFields": [
+            "label"
+          ]
+        }
+      ],
+      "navigation": [],
+      "actions": [
+        {
+          "actionKey": "withdraw",
+          "label": "Withdraw",
+          "type": "COMMAND",
+          "handlerKey": "wf.calendar-closures.withdraw",
+          "requiredPermissions": [
+            "workforce.calendars.manage"
+          ],
+          "confirmationPrompt": "Withdraw this closure? The day becomes a working day again.",
+          "visibilityCondition": {
+            "field": "status",
+            "operator": "EQ",
+            "value": "ACTIVE"
+          }
+        }
+      ],
+      "messages": []
+    }
+  }
+}

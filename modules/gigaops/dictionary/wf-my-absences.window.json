@@ -1,0 +1,276 @@
+{
+  "contractVersion": "1.0",
+  "window": {
+    "route": "/gigaops/availability",
+    "label": "My absences",
+    "description": "Your own absences: ask for time off and follow the decision. Someone else decides.",
+    "readPermission": "workforce:read"
+  },
+  "definition": {
+    "kind": "APPLICATION_DICTIONARY",
+    "contractVersion": "1.0",
+    "moduleKey": "gigaops",
+    "entityKey": "wf-my-absences",
+    "surfaceKey": "wf-my-absences",
+    "title": "My absences",
+    "dictionary": {
+      "packageKey": "wf-my-absences-module-baseline",
+      "name": "My absences",
+      "version": "1.0.0",
+      "moduleKey": "gigaops",
+      "targetEntityKey": "wf.my-absences",
+      "entities": [
+        {
+          "entityKey": "wf.my-absences",
+          "moduleKey": "gigaops",
+          "label": "My absences",
+          "ownership": "MODULE_CORE",
+          "primaryKeyField": "id",
+          "isVersioned": true,
+          "isAuditLogged": true,
+          "isSoftDeletable": false
+        }
+      ],
+      "fields": [
+        {
+          "fieldKey": "absence-type-id",
+          "entityKey": "wf.my-absences",
+          "label": "Absence type",
+          "type": "REFERENCE",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "absence-type-ref"
+        },
+        {
+          "fieldKey": "starts-at",
+          "entityKey": "wf.my-absences",
+          "label": "From",
+          "type": "DATETIME",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "helpText": "In your working time zone (that of your working week; UTC if you have none)."
+        },
+        {
+          "fieldKey": "ends-at",
+          "entityKey": "wf.my-absences",
+          "label": "Until",
+          "type": "DATETIME",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "helpText": "In your working time zone (that of your working week; UTC if you have none)."
+        },
+        {
+          "fieldKey": "time-zone",
+          "entityKey": "wf.my-absences",
+          "label": "Time zone",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "status",
+          "entityKey": "wf.my-absences",
+          "label": "Status",
+          "type": "SELECT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "absence-statuses"
+        },
+        {
+          "fieldKey": "note",
+          "entityKey": "wf.my-absences",
+          "label": "Note",
+          "type": "TEXTAREA",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "decided-at",
+          "entityKey": "wf.my-absences",
+          "label": "Decided at",
+          "type": "DATETIME",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "decision-reason",
+          "entityKey": "wf.my-absences",
+          "label": "Reason",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "created-at",
+          "entityKey": "wf.my-absences",
+          "label": "Requested at",
+          "type": "DATETIME",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        }
+      ],
+      "relationships": [],
+      "references": [
+        {
+          "referenceKey": "absence-statuses",
+          "referenceType": "VALUE_LIST",
+          "staticValues": [
+            {
+              "value": "REQUESTED",
+              "label": "Requested"
+            },
+            {
+              "value": "APPROVED",
+              "label": "Approved"
+            },
+            {
+              "value": "REJECTED",
+              "label": "Rejected"
+            },
+            {
+              "value": "CANCELLED",
+              "label": "Cancelled"
+            }
+          ]
+        },
+        {
+          "referenceKey": "absence-type-ref",
+          "referenceType": "SEARCH_LOOKUP",
+          "resolverKey": "wf-absence-types",
+          "createWith": {
+            "moduleKey": "gigaops",
+            "surfaceKey": "wf-absence-types",
+            "permission": "workforce.calendars.manage"
+          }
+        }
+      ],
+      "validationRules": [],
+      "views": [
+        {
+          "viewKey": "my-absences",
+          "label": "My absences",
+          "mode": "LIST",
+          "device": "ALL",
+          "defaultSortDirection": "ASC",
+          "tabs": [
+            {
+              "tabKey": "my-absence",
+              "label": "Absence",
+              "position": 0,
+              "level": 0,
+              "targetEntityKey": "wf.my-absences",
+              "sections": [],
+              "fields": [
+                {
+                  "fieldKey": "absence-type-id",
+                  "position": 0,
+                  "span": 4,
+                  "componentKey": "lookup"
+                },
+                {
+                  "fieldKey": "status",
+                  "position": 1,
+                  "span": 4,
+                  "componentKey": "select"
+                },
+                {
+                  "fieldKey": "time-zone",
+                  "position": 2,
+                  "span": 4,
+                  "componentKey": "text-input"
+                },
+                {
+                  "fieldKey": "starts-at",
+                  "position": 3,
+                  "span": 6,
+                  "componentKey": "datetime-input"
+                },
+                {
+                  "fieldKey": "ends-at",
+                  "position": 4,
+                  "span": 6,
+                  "componentKey": "datetime-input"
+                },
+                {
+                  "fieldKey": "decided-at",
+                  "position": 5,
+                  "span": 4,
+                  "componentKey": "datetime-input"
+                },
+                {
+                  "fieldKey": "decision-reason",
+                  "position": 6,
+                  "span": 8,
+                  "componentKey": "text-input"
+                },
+                {
+                  "fieldKey": "note",
+                  "position": 7,
+                  "span": 12,
+                  "componentKey": "textarea"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "navigation": [],
+      "actions": [
+        {
+          "actionKey": "cancel",
+          "label": "Cancel",
+          "type": "COMMAND",
+          "handlerKey": "wf.my-absences.cancel",
+          "requiredPermissions": [
+            "workforce.absences.request-own"
+          ],
+          "confirmationPrompt": "Cancel this absence? An approved one can be cancelled until it starts.",
+          "parameters": [
+            {
+              "key": "reason",
+              "label": "Reason",
+              "type": "TEXTAREA",
+              "required": false
+            }
+          ],
+          "visibilityCondition": {
+            "field": "status",
+            "operator": "IN",
+            "value": [
+              "REQUESTED",
+              "APPROVED"
+            ]
+          }
+        }
+      ],
+      "messages": []
+    }
+  }
+}

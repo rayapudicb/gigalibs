@@ -32,13 +32,23 @@ export function windowBuilder({ moduleKey, route, createWith = {} }) {
     isSoftDeletable: false,
   });
 
-  /** A field; `writePermission` shows it read-only to anyone without that permission (the dispatcher also refuses it). */
-  const field = (entityKey, key, label, type = 'TEXT', { required = false, readOnly = false, ref, scale, help, classification = 'INTERNAL', writePermission } = {}) => {
+  /**
+   * A field; `writePermission` shows it read-only to anyone without that permission (the dispatcher also refuses it);
+   * `defaultValue` fills a new record (a fixed value, or a token such as `{ $default: 'TODAY' }`).
+   */
+  const field = (
+    entityKey,
+    key,
+    label,
+    type = 'TEXT',
+    { required = false, readOnly = false, ref, scale, help, classification = 'INTERNAL', writePermission, defaultValue } = {},
+  ) => {
     const value = { fieldKey: key, entityKey, label, type, required, readOnly, isSystemLocked: false, classification, maskOnDisplay: false };
     if (ref) value.referenceKey = ref;
     if (scale !== undefined && scale !== null) value.scale = scale;
     if (help) value.helpText = help;
     if (writePermission) value.writePermission = writePermission;
+    if (defaultValue !== undefined) value.defaultValue = defaultValue;
     return value;
   };
 

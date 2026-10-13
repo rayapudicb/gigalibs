@@ -95,6 +95,12 @@ describe('manifest-declared navigation equals the former sidebar tables', () => 
       { key: 'spaces', label: 'CAFM Spaces', href: '/cmms/spaces', icon: moduleIcons.building },
       ...LEGACY_MODULE_MENUS['asset-maintenance']!.slice(1),
     ],
+    // WI-OI-120u Slice 2: Bookings, a read-only metadata window, follows Availability.
+    gigaops: [
+      ...LEGACY_MODULE_MENUS.gigaops!.slice(0, 5),
+      { key: 'bookings', label: 'Bookings', href: '/gigaops/bookings', icon: moduleIcons.layers },
+      ...LEGACY_MODULE_MENUS.gigaops!.slice(5),
+    ],
   };
 
   it.each(platformModuleCatalog.map((module) => [module.key] as const))(

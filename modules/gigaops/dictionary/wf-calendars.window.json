@@ -1,0 +1,141 @@
+{
+  "contractVersion": "1.0",
+  "window": {
+    "route": "/gigaops/availability",
+    "label": "Site calendars",
+    "description": "The workspace calendar and one per site; their closures take working time away.",
+    "readPermission": "workforce:read"
+  },
+  "definition": {
+    "kind": "APPLICATION_DICTIONARY",
+    "contractVersion": "1.0",
+    "moduleKey": "gigaops",
+    "entityKey": "wf-calendars",
+    "surfaceKey": "wf-calendars",
+    "title": "Site calendars",
+    "dictionary": {
+      "packageKey": "wf-calendars-module-baseline",
+      "name": "Site calendars",
+      "version": "1.0.0",
+      "moduleKey": "gigaops",
+      "targetEntityKey": "wf.calendars",
+      "entities": [
+        {
+          "entityKey": "wf.calendars",
+          "moduleKey": "gigaops",
+          "label": "Calendars",
+          "ownership": "MODULE_CORE",
+          "primaryKeyField": "id",
+          "isVersioned": true,
+          "isAuditLogged": true,
+          "isSoftDeletable": false
+        }
+      ],
+      "fields": [
+        {
+          "fieldKey": "code",
+          "entityKey": "wf.calendars",
+          "label": "Code",
+          "type": "TEXT",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "name",
+          "entityKey": "wf.calendars",
+          "label": "Name",
+          "type": "TEXT",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "site-ref",
+          "entityKey": "wf.calendars",
+          "label": "Site",
+          "type": "REFERENCE",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "site-ref",
+          "helpText": "Leave empty for the calendar of the whole workspace."
+        },
+        {
+          "fieldKey": "closure-count",
+          "entityKey": "wf.calendars",
+          "label": "Closures",
+          "type": "INTEGER",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        }
+      ],
+      "relationships": [],
+      "references": [
+        {
+          "referenceKey": "site-ref",
+          "referenceType": "SEARCH_LOOKUP",
+          "resolverKey": "workspace-sites"
+        }
+      ],
+      "validationRules": [],
+      "views": [
+        {
+          "viewKey": "calendars",
+          "label": "Calendars",
+          "mode": "LIST",
+          "device": "ALL",
+          "defaultSortDirection": "ASC",
+          "tabs": [
+            {
+              "tabKey": "calendar",
+              "label": "Calendar",
+              "position": 0,
+              "level": 0,
+              "targetEntityKey": "wf.calendars",
+              "sections": [],
+              "fields": [
+                {
+                  "fieldKey": "code",
+                  "position": 0,
+                  "span": 3,
+                  "componentKey": "text-input"
+                },
+                {
+                  "fieldKey": "name",
+                  "position": 1,
+                  "span": 5,
+                  "componentKey": "text-input"
+                },
+                {
+                  "fieldKey": "site-ref",
+                  "position": 2,
+                  "span": 5,
+                  "componentKey": "lookup"
+                },
+                {
+                  "fieldKey": "closure-count",
+                  "position": 3,
+                  "span": 2,
+                  "componentKey": "number-input"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "navigation": [],
+      "actions": [],
+      "messages": []
+    }
+  }
+}

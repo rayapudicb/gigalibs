@@ -234,13 +234,14 @@ describe('Workforce record dispatcher (WI-OI-120u)', () => {
   it('registers People, skills, job profiles and positions, and their pickers', () => {
     const { records } = setup();
     const description = records.describe();
-    expect(description.entities.map((entity) => entity.entityKey)).toEqual([
+    // Availability and bookings follow (availability-record-adapters.spec.ts).
+    expect(description.entities.map((entity) => entity.entityKey).slice(0, 4)).toEqual([
       'wf.resources',
       'wf.resource-skills',
       'wf.job-profiles',
       'wf.positions',
     ]);
-    expect(description.resolvers.map((resolver) => resolver.key)).toEqual([
+    expect(description.resolvers.map((resolver) => resolver.key).slice(0, 3)).toEqual([
       'wf-resources',
       'wf-capabilities',
       'wf-jobs',

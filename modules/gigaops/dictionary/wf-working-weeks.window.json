@@ -1,0 +1,225 @@
+{
+  "contractVersion": "1.0",
+  "window": {
+    "route": "/gigaops/availability",
+    "label": "Working weeks",
+    "description": "Everyone's working weeks: the hours each person is available, from which date.",
+    "readPermission": "workforce:read"
+  },
+  "definition": {
+    "kind": "APPLICATION_DICTIONARY",
+    "contractVersion": "1.0",
+    "moduleKey": "gigaops",
+    "entityKey": "wf-working-weeks",
+    "surfaceKey": "wf-working-weeks",
+    "title": "Working weeks",
+    "dictionary": {
+      "packageKey": "wf-working-weeks-module-baseline",
+      "name": "Working weeks",
+      "version": "1.0.0",
+      "moduleKey": "gigaops",
+      "targetEntityKey": "wf.availability-patterns",
+      "entities": [
+        {
+          "entityKey": "wf.availability-patterns",
+          "moduleKey": "gigaops",
+          "label": "Working weeks",
+          "ownership": "MODULE_CORE",
+          "primaryKeyField": "id",
+          "isVersioned": true,
+          "isAuditLogged": true,
+          "isSoftDeletable": false
+        }
+      ],
+      "fields": [
+        {
+          "fieldKey": "resource-id",
+          "entityKey": "wf.availability-patterns",
+          "label": "Person",
+          "type": "REFERENCE",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "resource-ref"
+        },
+        {
+          "fieldKey": "effective-from",
+          "entityKey": "wf.availability-patterns",
+          "label": "Starts on",
+          "type": "DATE",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "defaultValue": {
+            "$default": "TODAY"
+          }
+        },
+        {
+          "fieldKey": "effective-to",
+          "entityKey": "wf.availability-patterns",
+          "label": "First day without it",
+          "type": "DATE",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "helpText": "Leave empty for a week with no end."
+        },
+        {
+          "fieldKey": "time-zone",
+          "entityKey": "wf.availability-patterns",
+          "label": "Time zone",
+          "type": "TEXT",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "helpText": "Where the person works, for example Europe/London or America/Chicago."
+        },
+        {
+          "fieldKey": "working-hours",
+          "entityKey": "wf.availability-patterns",
+          "label": "Working hours",
+          "type": "TEXT",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "helpText": "Days and hours, for example \"Mon-Fri 09:00-17:00; Sat 10:00-14:00\". An end before the start runs past midnight.",
+          "defaultValue": "Mon-Fri 09:00-17:00"
+        },
+        {
+          "fieldKey": "weekly-hours",
+          "entityKey": "wf.availability-patterns",
+          "label": "Hours a week",
+          "type": "NUMBER",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "scale": 2
+        },
+        {
+          "fieldKey": "created-at",
+          "entityKey": "wf.availability-patterns",
+          "label": "Created at",
+          "type": "DATETIME",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        }
+      ],
+      "relationships": [],
+      "references": [
+        {
+          "referenceKey": "resource-ref",
+          "referenceType": "SEARCH_LOOKUP",
+          "resolverKey": "wf-resources",
+          "createWith": {
+            "moduleKey": "gigaops",
+            "surfaceKey": "wf-resources",
+            "permission": "workforce.resources.manage"
+          }
+        }
+      ],
+      "validationRules": [],
+      "views": [
+        {
+          "viewKey": "working-weeks",
+          "label": "Working weeks",
+          "mode": "LIST",
+          "device": "ALL",
+          "defaultSortDirection": "ASC",
+          "tabs": [
+            {
+              "tabKey": "working-week",
+              "label": "Working week",
+              "position": 0,
+              "level": 0,
+              "targetEntityKey": "wf.availability-patterns",
+              "sections": [],
+              "fields": [
+                {
+                  "fieldKey": "resource-id",
+                  "position": 0,
+                  "span": 4,
+                  "componentKey": "lookup"
+                },
+                {
+                  "fieldKey": "effective-from",
+                  "position": 1,
+                  "span": 4,
+                  "componentKey": "date-input"
+                },
+                {
+                  "fieldKey": "effective-to",
+                  "position": 2,
+                  "span": 4,
+                  "componentKey": "date-input"
+                },
+                {
+                  "fieldKey": "working-hours",
+                  "position": 3,
+                  "span": 4,
+                  "componentKey": "text-input"
+                },
+                {
+                  "fieldKey": "time-zone",
+                  "position": 4,
+                  "span": 4,
+                  "componentKey": "text-input"
+                },
+                {
+                  "fieldKey": "weekly-hours",
+                  "position": 5,
+                  "span": 4,
+                  "componentKey": "number-input"
+                }
+              ]
+            }
+          ],
+          "searchFields": [
+            "resource-id"
+          ]
+        }
+      ],
+      "navigation": [],
+      "actions": [
+        {
+          "actionKey": "end",
+          "label": "End",
+          "type": "COMMAND",
+          "handlerKey": "wf.availability-patterns.end",
+          "requiredPermissions": [
+            "workforce.availability.manage"
+          ],
+          "confirmationPrompt": "End this working week so a new one can follow?",
+          "parameters": [
+            {
+              "key": "effective-to",
+              "label": "First day without this week (YYYY-MM-DD)",
+              "type": "DATE",
+              "required": true
+            }
+          ],
+          "visibilityCondition": {
+            "field": "effective-to",
+            "operator": "IS_NULL",
+            "value": null
+          }
+        }
+      ],
+      "messages": []
+    }
+  }
+}
