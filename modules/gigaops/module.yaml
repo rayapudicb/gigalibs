@@ -95,8 +95,6 @@ spec:
         - { key: scheduling, label: Scheduling & Dispatch, path: /gigaops/scheduling, icon: calendar }
         - { key: time, label: Time & Attendance, path: /gigaops/time, icon: clock }
         - { key: pay, label: Pay-ready Outputs, path: /gigaops/pay, icon: coins }
-        - { key: compliance, label: Compliance, path: /gigaops/compliance, icon: scale }
-        - { key: analytics, label: Workforce Analytics, path: /gigaops/analytics, icon: bar-chart }
       # WI-OI-120n (owner, 2026-10-06): Workforce roles for people outside maintenance, copied into a workspace when
       # Workforce is switched on and assigned on Settings -> Team.
       roles:

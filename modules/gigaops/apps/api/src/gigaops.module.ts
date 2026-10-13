@@ -43,29 +43,17 @@ import { WorkforcePackController } from './pack/pack.controller.js';
 import { WorkforcePackService } from './pack/pack.service.js';
 import { WorkforceOrganizationReplicaController } from './organization/organization-replica.controller.js';
 import { WorkforceOrganizationReplicaService } from './organization/organization-replica.service.js';
-import { WfoWorkersController } from './workers/wfo-workers.controller.js';
 import { WfoWorkersService } from './workers/wfo-workers.service.js';
-import { WfoEngagementsController } from './engagements/wfo-engagements.controller.js';
 import { WfoEngagementsService } from './engagements/wfo-engagements.service.js';
-import { WfoStaffingController } from './staffing/wfo-staffing.controller.js';
 import { WfoStaffingService } from './staffing/wfo-staffing.service.js';
-import { WfoExpensesController } from './expenses/wfo-expenses.controller.js';
 import { WfoExpensesService } from './expenses/wfo-expenses.service.js';
-import { WfoPayrollAdminController } from './payroll/wfo-payroll-admin.controller.js';
 import { WfoPayrollAdminService } from './payroll/wfo-payroll-admin.service.js';
-import { WfoForecastingController } from './forecasting/wfo-forecasting.controller.js';
 import { WfoForecastingService } from './forecasting/wfo-forecasting.service.js';
-import { WfoShiftsController } from './shifts/wfo-shifts.controller.js';
 import { WfoShiftsService } from './shifts/wfo-shifts.service.js';
-import { WfoComplianceController } from './compliance/wfo-compliance.controller.js';
 import { WfoComplianceService } from './compliance/wfo-compliance.service.js';
-import { WfoCommsController } from './comms/wfo-comms.controller.js';
 import { WfoCommsService } from './comms/wfo-comms.service.js';
-import { WfoVendorsController } from './vendors/wfo-vendors.controller.js';
 import { WfoVendorsService } from './vendors/wfo-vendors.service.js';
-import { WfoPacksController } from './packs/wfo-packs.controller.js';
 import { WfoPacksService } from './packs/wfo-packs.service.js';
-import { WfoReportsController } from './reports/wfo-reports.controller.js';
 import { WfoReportsService } from './reports/wfo-reports.service.js';
 
 const GigaOpsRecordController = createRecordController({ guard: GigaOpsAuthorizationGuard, readPermission: 'workforce:read' });
@@ -94,18 +82,9 @@ const GigaOpsRecordController = createRecordController({ guard: GigaOpsAuthoriza
     PayController,
     WorkforcePackController,
     WorkforceOrganizationReplicaController,
-    WfoWorkersController,
-    WfoEngagementsController,
-    WfoStaffingController,
-    WfoExpensesController,
-    WfoPayrollAdminController,
-    WfoForecastingController,
-    WfoShiftsController,
-    WfoComplianceController,
-    WfoCommsController,
-    WfoVendorsController,
-    WfoPacksController,
-    WfoReportsController,
+    // WI-OI-120u Slice 3 (U20a; owner "retire all", 2026-10-13): the WFO controllers (workers, engagements, staffing,
+    // expenses, payroll admin, forecasting, shifts, compliance, comms, vendors, packs, reports) are retired: no route,
+    // nothing new written. Their services and empty tables stay until they are removed after T1b.
     GigaOpsRecordController,
   ],
   providers: [

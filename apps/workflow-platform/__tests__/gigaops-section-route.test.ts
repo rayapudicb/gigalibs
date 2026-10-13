@@ -30,6 +30,14 @@ describe('GigaOps section route', () => {
     }
   });
 
+  // WI-OI-120u Slice 3 (U20a; owner "retire all"): the WFO sections are retired.
+  it('returns not found for the retired WFO sections', async () => {
+    for (const section of ['workers', 'engagements', 'expenses', 'compliance', 'analytics']) {
+      expect(isGigaOpsSection(section)).toBe(false);
+      await expect(render(section)).rejects.toThrow('NEXT_NOT_FOUND');
+    }
+  });
+
   it('returns not found for overview and unknown sections', async () => {
     expect(isGigaOpsSection('payroll')).toBe(false);
     await expect(render('overview')).rejects.toThrow('NEXT_NOT_FOUND');

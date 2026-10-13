@@ -165,18 +165,6 @@ export const generatedModuleMenus: Readonly<Record<string, readonly GeneratedMod
       "label": "Pay-ready Outputs",
       "path": "/gigaops/pay",
       "icon": "coins"
-    },
-    {
-      "key": "compliance",
-      "label": "Compliance",
-      "path": "/gigaops/compliance",
-      "icon": "scale"
-    },
-    {
-      "key": "analytics",
-      "label": "Workforce Analytics",
-      "path": "/gigaops/analytics",
-      "icon": "bar-chart"
     }
   ],
   "gigalibs-assistant": [

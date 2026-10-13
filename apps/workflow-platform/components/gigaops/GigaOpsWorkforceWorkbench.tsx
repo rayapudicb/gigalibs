@@ -45,16 +45,6 @@ import { DispatchBoard } from './DispatchBoard';
 import { JobsAndPositions } from './JobsAndPositions';
 import { PayReadiness } from './PayReadiness';
 import { TimeAndAttendance } from './TimeAndAttendance';
-import { WfoWorkerDirectory } from './WfoWorkerDirectory';
-import { WfoEngagementCalendar } from './WfoEngagementCalendar';
-import { WfoPayrollAdminGrid } from './WfoPayrollAdminGrid';
-import { WfoForecastDashboard } from './WfoForecastDashboard';
-import { WfoShiftMarketplace } from './WfoShiftMarketplace';
-import { WfoComplianceDashboard } from './WfoComplianceDashboard';
-import { WfoCommsCenter } from './WfoCommsCenter';
-import { WfoVendorDirectory } from './WfoVendorDirectory';
-import { WfoPackLibrary } from './WfoPackLibrary';
-import { WfoReportsHub } from './WfoReportsHub';
 import { GIGAOPS_SECTIONS, type GigaOpsSection } from './sections';
 
 const sectionMeta: Readonly<Record<GigaOpsSection, {
@@ -63,8 +53,6 @@ const sectionMeta: Readonly<Record<GigaOpsSection, {
   available: boolean;
 }>> = {
   overview: { label: 'Operations overview', description: 'Live tenant workforce foundation status.', available: true },
-  workers: { label: 'Worker registry', description: 'Universal worker identity, compliance docs, onboarding progress and skills.', available: true },
-  engagements: { label: 'Engagements', description: 'Events, projects, work orders, roster periods and position quotas.', available: true },
   resources: { label: 'Resource directory', description: 'People, teams and shared labor pools.', available: true },
   jobs: { label: 'Jobs & positions', description: 'Dated job profiles, positions at your sites and the people engaged in them.', available: true },
   capabilities: { label: 'Skills & qualifications', description: 'Reusable capabilities and verified assignments.', available: true },
@@ -73,9 +61,6 @@ const sectionMeta: Readonly<Record<GigaOpsSection, {
   time: { label: 'Time & attendance', description: 'Frontline clock-in, geofence muster, and operator rounds.', available: true },
   attendance: { label: 'Clock & timesheets', description: 'Punches checked against the site boundary, weekly timesheets, four-eyes approval and time exceptions.', available: true },
   pay: { label: 'Pay-ready outputs', description: 'Policy packs, dated pay rates and weekly earning lines with a rule trace and four-eyes approval.', available: true },
-  expenses: { label: 'Expenses & Payroll Admin', description: 'Period reconciliation, frontline expense claims, and ERP GL journal batches.', available: true },
-  compliance: { label: 'Compliance & Vendors', description: 'Qualification verification, communications broadcasts, and vendor partnerships.', available: true },
-  analytics: { label: 'Workforce analytics & Packs', description: 'Analytics Studio reports and industry pack operational templates.', available: true },
 };
 
 // Native selects keep FormData and empty-value options; this matches the Medusa Input field style.
@@ -147,10 +132,6 @@ export function GigaOpsWorkforceWorkbench({ section }: { section: GigaOpsSection
         {loading ? <LoadingState /> : error ? <ErrorState error={error} retry={load} /> :
           section === 'overview' ? (
             <Overview resources={resources} capabilities={capabilities} generatedAt={generatedAt} />
-          ) : section === 'workers' ? (
-            <WfoWorkerDirectory />
-          ) : section === 'engagements' ? (
-            <WfoEngagementCalendar />
           ) : section === 'resources' ? (
             <ResourceDirectory initial={resources} capabilities={capabilities} reload={load} />
           ) : section === 'capabilities' ? (
@@ -160,124 +141,18 @@ export function GigaOpsWorkforceWorkbench({ section }: { section: GigaOpsSection
           ) : section === 'availability' ? (
             <AvailabilityAndAbsence resources={resources?.items ?? []} />
           ) : section === 'scheduling' ? (
-            <SchedulingHub capabilities={capabilities} />
+            <DispatchBoard capabilities={capabilities} />
           ) : section === 'time' ? (
             <PlantOperationsHub initialTab="time" />
           ) : section === 'attendance' ? (
             <TimeAndAttendance resources={resources?.items ?? []} />
           ) : section === 'pay' ? (
             <PayReadiness resources={resources?.items ?? []} />
-          ) : section === 'expenses' ? (
-            <WfoPayrollAdminGrid />
-          ) : section === 'compliance' ? (
-            <ComplianceHub />
-          ) : section === 'analytics' ? (
-            <AnalyticsHub />
           ) : (
             <PlannedSection section={section} />
           )}
       </div>
     </section>
-  );
-}
-
-function SchedulingHub({ capabilities }: { capabilities: readonly CapabilityDefinitionV1[] }) {
-  const [tab, setTab] = useState<'dispatch' | 'forecasting' | 'marketplace'>('dispatch');
-
-  return (
-    <div className="space-y-4">
-      <div className="flex gap-2 border-b border-ui-border-base pb-3">
-        <Button
-          size="small"
-          variant={tab === 'dispatch' ? 'primary' : 'secondary'}
-          onClick={() => setTab('dispatch')}
-        >
-          Dispatch Board
-        </Button>
-        <Button
-          size="small"
-          variant={tab === 'forecasting' ? 'primary' : 'secondary'}
-          onClick={() => setTab('forecasting')}
-        >
-          Demand Forecasting
-        </Button>
-        <Button
-          size="small"
-          variant={tab === 'marketplace' ? 'primary' : 'secondary'}
-          onClick={() => setTab('marketplace')}
-        >
-          Shift Marketplace & Swaps
-        </Button>
-      </div>
-
-      {tab === 'dispatch' && <DispatchBoard capabilities={capabilities} />}
-      {tab === 'forecasting' && <WfoForecastDashboard />}
-      {tab === 'marketplace' && <WfoShiftMarketplace />}
-    </div>
-  );
-}
-
-function ComplianceHub() {
-  const [tab, setTab] = useState<'compliance' | 'comms' | 'vendors'>('compliance');
-
-  return (
-    <div className="space-y-4">
-      <div className="flex gap-2 border-b border-ui-border-base pb-3">
-        <Button
-          size="small"
-          variant={tab === 'compliance' ? 'primary' : 'secondary'}
-          onClick={() => setTab('compliance')}
-        >
-          Compliance Dashboard
-        </Button>
-        <Button
-          size="small"
-          variant={tab === 'comms' ? 'primary' : 'secondary'}
-          onClick={() => setTab('comms')}
-        >
-          Communications Center
-        </Button>
-        <Button
-          size="small"
-          variant={tab === 'vendors' ? 'primary' : 'secondary'}
-          onClick={() => setTab('vendors')}
-        >
-          Staffing Agencies & Vendors
-        </Button>
-      </div>
-
-      {tab === 'compliance' && <WfoComplianceDashboard />}
-      {tab === 'comms' && <WfoCommsCenter />}
-      {tab === 'vendors' && <WfoVendorDirectory />}
-    </div>
-  );
-}
-
-function AnalyticsHub() {
-  const [tab, setTab] = useState<'reports' | 'packs'>('reports');
-
-  return (
-    <div className="space-y-4">
-      <div className="flex gap-2 border-b border-ui-border-base pb-3">
-        <Button
-          size="small"
-          variant={tab === 'reports' ? 'primary' : 'secondary'}
-          onClick={() => setTab('reports')}
-        >
-          Workforce Analytics & Reports
-        </Button>
-        <Button
-          size="small"
-          variant={tab === 'packs' ? 'primary' : 'secondary'}
-          onClick={() => setTab('packs')}
-        >
-          Industry Pack Library
-        </Button>
-      </div>
-
-      {tab === 'reports' && <WfoReportsHub />}
-      {tab === 'packs' && <WfoPackLibrary />}
-    </div>
   );
 }
 

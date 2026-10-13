@@ -508,17 +508,7 @@ test('a new customer from sign-up to maintenance work, as five people', async ({
 
     // 4. Workers.
     const S4 = '4. Workforce';
-    for (const persona of [people.technician!, people.supervisor!]) {
-      await recorder.do(S4, `Add ${persona.name} as a worker`, admin, async () => {
-        await admin.goto('/gigaops/workers');
-        await settle(admin);
-        const note = await create(admin, recorder, /add worker|create (universal )?worker/i, [[/first|given|^jane$/i, persona.name.split(' ')[0]!], [/last|family|surname|^doe$/i, persona.name.split(' ').slice(1).join(' ')], [/^name|full name|display/i, persona.name], [/email|@/i, persona.email], [/user|login|account/i, persona.email]]);
-        const offersLink = (await admin.getByText(/link.*(user|login|account)|platform user/i).count()) > 0;
-        if (!offersLink) recorder.add('DATA FLOW', 'No screen links a worker to their login', 'the worker cannot use time, punches or "my jobs" (the API answers WORKFORCE_NOT_A_WORKER)', admin);
-        await survivesReload(admin, recorder, persona.name.split(' ')[0]!, 'A new worker');
-        return note;
-      });
-    }
+    // WI-OI-120u Slice 3 (owner "retire all"): the WFO worker registry is retired; people are added on People.
     // WI-OI-120u: People is a metadata window; the login is a picker of workspace members only administrators change.
     for (const persona of [people.technician!, people.supervisor!]) {
       await recorder.do(S4, `Add ${persona.name} on People, linked to their login`, admin, async () => {
@@ -728,7 +718,7 @@ test('a new customer from sign-up to maintenance work, as five people', async ({
       });
     }
     await admin.setViewportSize({ width: 390, height: 844 });
-    for (const path of ['/dashboard', '/settings', '/cmms/work-orders', '/gigaops/workers']) {
+    for (const path of ['/dashboard', '/settings', '/cmms/work-orders', '/gigaops/resources']) {
       await recorder.do(S7, `Phone width: ${path}`, admin, async () => {
         await admin.goto(path);
         await settle(admin);
