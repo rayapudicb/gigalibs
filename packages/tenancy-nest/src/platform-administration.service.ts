@@ -1,4 +1,4 @@
-import { createHash, randomBytes, randomUUID } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
 import type {
   PlatformCreateTenantDto,
   PlatformEntitlementUpdateDto,
@@ -12,6 +12,7 @@ import type {
   PlatformUserStatusChangeDto,
 } from '@gigalibs/contracts';
 import { type Prisma, prisma } from '@gigalibs/db';
+import { recordEntitlementsChanged } from './entitlement-events.js';
 import { PlatformSettingsEngine } from '@gigalibs/platform-settings';
 import {
   BadRequestException,
@@ -422,6 +423,8 @@ export class PlatformAdministrationService {
             updatedById: actorUserId,
           })),
         });
+        // The trial modules' windows are activated from this event, as for any later change of modules.
+        await recordEntitlementsChanged(transaction, tenant.id, moduleKeys);
         await transaction.tenantIsolationBinding.create({
           data: {
             tenantId: tenant.id,
@@ -630,16 +633,7 @@ export class PlatformAdministrationService {
       });
       // WI-OI-120f (F0.2): the control plane activates the windows of newly enabled modules from this event, in its
       // own transaction and with retries, as the administrator recorded on each entitlement.
-      await transaction.controlOutboxEvent.create({
-        data: {
-          eventId: randomUUID(),
-          tenantId,
-          aggregateType: 'tenant-module-entitlements',
-          aggregateId: tenantId,
-          eventType: 'tenant.entitlements.changed.v1',
-          payload: { tenantId, enabledModuleKeys: moduleKeys },
-        },
-      });
+      await recordEntitlementsChanged(transaction, tenantId, moduleKeys);
     });
     return this.getTenant(tenantId);
   }

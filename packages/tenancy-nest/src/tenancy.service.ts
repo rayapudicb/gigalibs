@@ -24,6 +24,7 @@ import {
 } from '@gigalibs/contracts';
 import { primaryVersionInForce } from '@gigalibs/auth-nest';
 import { type Prisma, prisma } from '@gigalibs/db';
+import { recordEntitlementsChanged } from './entitlement-events.js';
 import { PlatformSettingsEngine } from '@gigalibs/platform-settings';
 import {
   BadRequestException,
@@ -134,6 +135,8 @@ export class TenancyService {
           updatedById: ownerUserId,
         })),
       });
+      // The trial modules' windows are activated from this event, as for any later change of modules (WI-OI-120f).
+      await recordEntitlementsChanged(tx, tenant.id, trialModuleKeys);
 
       await tx.tenantIsolationBinding.create({
         data: {
