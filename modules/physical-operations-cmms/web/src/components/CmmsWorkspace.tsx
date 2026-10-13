@@ -22,6 +22,7 @@ import { CmmsMeters } from './CmmsMeters';
 import { CmmsParts } from './CmmsParts';
 import { CmmsSchedules } from './CmmsSchedules';
 import { CmmsSpaceExplorer } from './CmmsSpaceExplorer';
+import { CmmsWindow } from './CmmsWindow';
 import { EmptyState, ErrorState, LoadingState, formatDate, formatMoney } from './CmmsShared';
 import { CmmsWorkOrders, priorityColor, statusColor } from './CmmsWorkOrders';
 
@@ -32,7 +33,9 @@ export type CmmsSection =
   | 'spaces'
   | 'schedules'
   | 'meters'
-  | 'inventory';
+  | 'inventory'
+  | 'requests'
+  | 'classifications';
 
 const SECTIONS: ReadonlyArray<{
   key: CmmsSection;
@@ -82,10 +85,26 @@ const SECTIONS: ReadonlyArray<{
     href: '/cmms/inventory',
     description: 'Spare parts and the stock ledger.',
   },
+  // WI-OI-120t windows, drawn here since 2026-10-13 (their pages had no section).
+  {
+    key: 'requests',
+    label: 'Requests',
+    href: '/cmms/requests',
+    description: 'Intake, track and triage maintenance requests.',
+  },
+  {
+    key: 'classifications',
+    label: 'Classifications',
+    href: '/cmms/classifications',
+    description: 'Engineering taxonomies and specification schemas for equipment classes.',
+  },
 ];
 
-/** Asset & Maintenance core (WI-OI-038): every figure is read from the tenant's CMMS records. */
-export function CmmsWorkspace({ section }: { section: CmmsSection }) {
+/**
+ * Asset & Maintenance core (WI-OI-038): every figure is read from the tenant's CMMS records. Window sections get the
+ * signed-in user's permissions for the windows' deny-by-default rules (the server still decides).
+ */
+export function CmmsWorkspace({ section, permissions = [] }: { section: CmmsSection; permissions?: readonly string[] }) {
   const meta = SECTIONS.find((item) => item.key === section)!;
   return (
     <section
@@ -117,6 +136,8 @@ export function CmmsWorkspace({ section }: { section: CmmsSection }) {
         {section === 'schedules' ? <CmmsSchedules /> : null}
         {section === 'meters' ? <CmmsMeters /> : null}
         {section === 'inventory' ? <CmmsParts /> : null}
+        {section === 'requests' ? <CmmsWindow surface="cmms-requests" permissions={permissions} /> : null}
+        {section === 'classifications' ? <CmmsWindow surface="cmms-classifications" permissions={permissions} /> : null}
       </div>
     </section>
   );

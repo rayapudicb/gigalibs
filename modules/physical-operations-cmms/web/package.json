@@ -13,6 +13,7 @@
     }
   },
   "dependencies": {
+    "@gigalibs/configuration-react": "workspace:*",
     "@gigalibs/contracts": "workspace:*",
     "@gigalibs/web-sdk": "workspace:*"
   },

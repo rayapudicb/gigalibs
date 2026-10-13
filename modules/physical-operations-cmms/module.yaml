@@ -76,10 +76,14 @@ spec:
         component: CmmsWorkspace
         props:
           section: requests
+        # A metadata window: the renderer gets the signed-in user's permissions (WI-OI-120e).
+        sessionPermissions: true
       - route: /cmms/classifications
         component: CmmsWorkspace
         props:
           section: classifications
+        # A metadata window: the renderer gets the signed-in user's permissions (WI-OI-120e).
+        sessionPermissions: true
       - route: /cmms/requests/portal
         unavailable:
           title: Maintenance request portal is not connected
