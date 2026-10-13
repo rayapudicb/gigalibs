@@ -1,5 +1,11 @@
 # NOW: where the work stands
 
+> **The order of all work is the [execution plan v3](../docs/plans/gigalibs-execution-plan-v3.md), approved by the owner on
+> 2026-10-13.** It replaces the order in the v2 plan. Rules: one card at a time; UAT is production, so every card passes the
+> plan's Done checklist (§2) instead of separate G5–G7 gates; zero hard-coding and zero mock; generative UI from metadata.
+> **Current step: 0.1**, the read-only check of Workforce Slice 3 release `4e6f9efa3b03-e9e9b32dc427` (owner-deployed
+> 2026-10-13, all ten services healthy at 14:13Z) and the Workforce journey rerun.
+
 > **WI-OI-120u on UAT: release `4b8db72eae10-c90a7bebc734` (2026-10-13), and the Workforce journey passes.** The journey
 > found that new workspaces got no module windows (creating a workspace wrote no `tenant.entitlements.changed.v1`).
 > Fixed: feature da77c98, release 4b8db72. Journey 2 (`6luh84`): People with linked logins, absence type, own day off,
@@ -299,25 +305,18 @@ canonical programme status is [.pi/WORK_ITEMS.md](WORK_ITEMS.md), WI-OI-120. No 
 
 ## Next, in order
 
-1. Review the post-deploy record in [WI-OI-120 evidence](work/WI-OI-120.md) and the updated
-   [handoff](handoff/HANDOFF-2026-10-08.md). The previous candidate has been deployed; do not run the pinned
-   deploy command again.
-2. Run the separately authorized ledger and customer journeys in an identified test workspace with approved
-   credentials. These journeys write business test data and remain pending. The full restore rehearsal and G5–G7
-   release gates also remain open.
-3. **[WI-OI-120aa](tasks/WI-OI-120aa.md), [WI-OI-120ab](tasks/WI-OI-120ab.md), [WI-OI-120ac](tasks/WI-OI-120ac.md), and [WI-OI-120ad](tasks/WI-OI-120ad.md) verified in Review.**
-   Legacy scope repair, unit-tree proof, role reconciliation, and T3 canonical place identity projection proof are
-   complete in source.
-4. **M-WF1 ([120u](tasks/WI-OI-120u.md)): Slices 1 (5b38e4d) and 2 (d45a8aa) committed; Security review fixes built and
-   verified, awaiting "commit" and the reviewer's re-check before deploy.** Slice 3 (U20a) is shown to the owner
-   before it starts.
+Phase 0 of the [execution plan v3](../docs/plans/gigalibs-execution-plan-v3.md) (each step is shown to the owner before it
+starts; no new features):
 
-5. Continue the approved [WI-OI-121a](tasks/WI-OI-121a.md) A0b isolated source-selection/build/SBOM proof under
-   the owner-approved dormant-code preview boundary. The selected SSE guard and synthetic path pass, but the
-   final source manifest, dependency/vulnerability disposition and end-to-end no-egress evidence remain pending.
-   Then obtain independent
-   Legal/Architecture/Security decisions. Owner-approved [WI-OI-121b](tasks/WI-OI-121b.md) batches A1 and A2
-   but preserves their sequential gates. Do not import CopilotKit or mount its UI before those prerequisites.
+1. **0.1** Workforce Slice 3 ([120u](tasks/WI-OI-120u.md)): read-only check on UAT, Workforce journey rerun, evidence.
+2. **0.2** [WI-OI-120ai](tasks/WI-OI-120ai.md) card committed (2026-10-13).
+3. **0.3** Branch repair: decide the 12 unreviewed other-session commits; fix the `0d4585e` build and the `0e2f119`
+   migration mismatch; revert `507e7fa`; releases from the branch again.
+4. **0.4** Zero-mock sweep: [120ah](tasks/WI-OI-120ah.md) first, then the inventory, audit extension and removals.
+5. **0.5** Security fixes: [120ag](tasks/WI-OI-120ag.md), [120ae](tasks/WI-OI-120ae.md),
+   [120af](tasks/WI-OI-120af.md), [120ai](tasks/WI-OI-120ai.md).
+6. **0.6** Status truth for every Review item, and this page back to one page.
+7. **0.7** Owner decisions a–h (plan §4, Phase 0).
 
 ## Standing boundaries and open decisions
 

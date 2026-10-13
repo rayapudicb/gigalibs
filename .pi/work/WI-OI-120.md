@@ -3024,3 +3024,23 @@ widening the card to fix the API faults the proof found.
       fixed "ON DUTY / Tap to Clock Out"). That is a production-reachable mock (AGENTS.md); the real punch and
       timesheet screen is `/gigaops/attendance` (`TimeAndAttendance`);
     - three CMMS blockers (requests, completion, closure; the CMMS request work is not in this release).
+
+## Execution plan v3 approved (owner, 2026-10-13)
+
+- The owner asked for one ordered list of every pending item, in phases, with no timelines and no separate release
+  gates ("UAT = production"), zero hard-coding and zero mock, and every module in step with generative UI on the
+  metadata foundation, starting with CMMS.
+- `docs/plans/gigalibs-execution-plan-v3.md` answers it:
+  - §1 rules and the §2 Done checklist;
+  - §3 status on 2026-10-13;
+  - Phases 0–6 in order;
+  - §5, where each older work item (001–121) goes;
+  - §7, the inventory of 14 platform items, 24 business modules, future modules and 60 package folders;
+  - §8, the three module tiers.
+- The owner approved it ("approve v3, commit"). The order in `platform-implementation-plan.md` §4 is superseded; its
+  card definitions remain the reference.
+- Corrections found while building the inventory:
+  - Multi-Currency moves into Phase 5A, Tax into 5C and Spend into 5B;
+  - email delivery becomes step 1.12.
+- Still owner decisions: step 0.7 a–h, including the "Proposed" tier rows in §8.
+

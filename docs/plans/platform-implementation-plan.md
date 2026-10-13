@@ -6,6 +6,9 @@ control, and tenancy and master data). Version 2 answers the read-only review of
 GigaLibs `7485aec` and iDempiere `9a80664`); §9 traces every finding. Analysis and parity matrix:
 `platform-parity-and-beyond-plan.md`.
 
+**Order superseded (owner, 2026-10-13):** `gigalibs-execution-plan-v3.md` sets the order and status of every card; the
+card definitions in §3 remain the reference.
+
 This plan grants no implementation, deployment or data authority. Each card is written, shown and approved before
 work starts. Production stays NO-GO until G5, G6 and G7 (§6).
 
