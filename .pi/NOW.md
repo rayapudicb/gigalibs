@@ -1,6 +1,10 @@
 # NOW: where the work stands
 
-> **WI-OI-120u Security review fixes (2026-10-13), awaiting "commit" and a re-check:** Slices 1 (5b38e4d) and 2
+> **WI-OI-120u (2026-10-13): fixes committed (481af92); re-check "ship".** The CMMS sections that blocked the web build
+> are fixed, the I-new-1 start-up check is added and I-new-3 is carded (WI-OI-120ag); these await "commit". Then images
+> are built and backed up, and the deploy is handed to the owner (it runs the Workforce migration, 27).
+>
+> **WI-OI-120u Security review fixes (2026-10-13):** Slices 1 (5b38e4d) and 2
 > (d45a8aa) are committed. The independent review found a deploy blocker, B1 (every record route answered 401: the
 > Workforce guard did not pass the caller on to the SDK's record routes). It is fixed and proven over HTTP, together
 > with M1, M2a, M3, L1, L2, L3a and I2. I1 is accepted, and I3/I4 are carded (WI-OI-120ae, WI-OI-120af). Evidence in

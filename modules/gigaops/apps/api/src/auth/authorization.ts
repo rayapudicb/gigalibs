@@ -22,6 +22,11 @@ import { WorkforceDatabaseService } from '../database/database.service.js';
 import type { GigaOpsRuntimeConfig } from '../runtime-config.js';
 
 const PERMISSIONS_METADATA = 'workforce.required-permissions';
+// WI-OI-120u re-check (I-new-1): built against a module SDK without this export, the guard would skip the record routes'
+// baseline permission without a word. Refuse to start instead.
+if (typeof MODULE_PERMISSIONS_METADATA !== 'string' || MODULE_PERMISSIONS_METADATA.length === 0) {
+  throw new Error('@gigalibs/module-sdk does not export MODULE_PERMISSIONS_METADATA; rebuild it before Workforce.');
+}
 const ANY_PERMISSION_METADATA = 'workforce.any-permission';
 const LEGACY_ROLES_METADATA = 'workforce.legacy-role-boundary';
 const TENANT_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/;

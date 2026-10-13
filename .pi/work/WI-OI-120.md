@@ -2910,3 +2910,24 @@ widening the card to fix the API faults the proof found.
     else's absence answers 404 at any version; a stale own version answers a conflict; a supervisor cannot qualify
     their own person but can qualify someone else. Container stopped.
 - **Next:** "commit", then a re-check by the reviewer before deploy.
+
+#### WI-OI-120u: re-check "ship", the CMMS web build blocker, I-new-1 and I-new-3, 2026-10-13; awaiting "commit"
+
+- **Re-check of 481af92:** independent and read-only. Every finding fixed or carded as the owner decided, no new
+  Medium or High; verdict "ship". New informational notes: I-new-1 (an SDK built without the export would skip the
+  baseline check silently), I-new-2 (places beyond the first 200 cost one call each, one at a time), and I-new-3 (the
+  CMMS guard has the baseline gap B1 closed for Workforce). Owner: "a, add I-new-1, card I-new-3, both in sequence".
+- **CMMS web build blocker (owner, option a).** WI-OI-120t generated `/cmms/requests` and `/cmms/classifications` pages
+  for sections `CmmsWorkspace` did not have, so the web typecheck, and with it `next build`, failed and the pages
+  could not draw.
+  - `CmmsWorkspace` gains both sections. They draw the published `cmms-requests` and `cmms-classifications` windows
+    through a new `CmmsWindow` (MetadataWindow over `/api/cmms`) with the signed-in user's permissions; both pages
+    now pass them (`sessionPermissions: true`).
+  - `@gigalibs/cmms-web` depends on `@gigalibs/configuration-react` (lockfile +3 lines; frozen install passes).
+  - The web typecheck has no CMMS errors left. The only remaining error is the local, stale `.next/types` reference to
+    the removed Workforce Jobs page, and `.next` is not in the image build context (`.dockerignore`).
+  - Web tests: the same four CMMS equivalence and boundary failures as before WI-OI-120u (they predate the CMMS
+    Requests and Classifications sections), no new ones. S16 passes for all five modules.
+- **I-new-1:** the Workforce guard refuses to load when `MODULE_PERMISSIONS_METADATA` is missing; guard and record-route
+  tests pass (12).
+- **I-new-3** carded as [WI-OI-120ag](../tasks/WI-OI-120ag.md).
