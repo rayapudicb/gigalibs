@@ -1,8 +1,13 @@
 # NOW: where the work stands
 
-> **WI-OI-120u (2026-10-13): fixes committed (481af92); re-check "ship".** The CMMS sections that blocked the web build
-> are fixed, the I-new-1 start-up check is added and I-new-3 is carded (WI-OI-120ag); these await "commit". Then images
-> are built and backed up, and the deploy is handed to the owner (it runs the Workforce migration, 27).
+> **WI-OI-120u deployed to UAT (2026-10-13): release `667d55782539-098b76512a04`, Workforce only.** Built from
+> `release/wi120u-workforce` (667d557 = UAT's 37e5556 plus the reviewed Workforce commits), in the sibling worktree
+> `../gigalibs-release-wf120u`, because HEAD carries twelve unreviewed other-agent commits, two of them broken
+> (0d4585e needs an uncommitted drawer change; 0e2f119 lists CMMS migration 20 with the contract at 19). Deploy smoke
+> passed; read-only checks: Workforce ledger 27, `record_idempotency` with forced RLS, all ten services healthy.
+> Next: the Workforce journey with the UAT personas, and the owner's `git stash pop` (102 checksums to verify). Do not
+> run compose from the main worktree until the next build (its env identity names unbuilt 9d8d812 images).
+> Feature branch: 473b655 (CMMS sections) and 9d8d812 (start-up check; WI-OI-120ag carded) are committed.
 >
 > **WI-OI-120u Security review fixes (2026-10-13):** Slices 1 (5b38e4d) and 2
 > (d45a8aa) are committed. The independent review found a deploy blocker, B1 (every record route answered 401: the

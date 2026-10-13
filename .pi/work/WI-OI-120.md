@@ -2931,3 +2931,54 @@ widening the card to fix the API faults the proof found.
 - **I-new-1:** the Workforce guard refuses to load when `MODULE_PERMISSIONS_METADATA` is missing; guard and record-route
   tests pass (12).
 - **I-new-3** carded as [WI-OI-120ag](../tasks/WI-OI-120ag.md).
+
+#### WI-OI-120u release 667d55782539-098b76512a04 deployed to UAT (Workforce only), 2026-10-13
+
+- **Why a release branch.** The first build from `feat/gigaops-convergence-core` (9d8d812) failed in `next build`.
+  - Assistant commit 0d4585e imports `OmnichannelHeaderTrigger`, which exists only in another session's uncommitted
+    softphone drawer change.
+  - CMMS commit 0e2f119 lists migration 20 but leaves the CMMS schema contract and compose pin at 19.
+  - Twelve other-agent commits had landed since the UAT release (CMMS WI-OI-120t/ab/ac/ad, assistant WI-OI-121), all
+    still in Review.
+  - Owner chose option A: a Workforce-only release on top of the UAT release.
+- **Release:** `release/wi120u-workforce` in the sibling worktree `/Users/rayapudi/dev/gigalibs-release-wf120u`,
+  commit **667d557** = 37e5556 plus 5b38e4d, d45a8aa, 481af92 and 9d8d812. Release-only adjustments:
+  - the lockfile without the CMMS `configuration-core` link;
+  - the S16 list with the Workforce entry only;
+  - the window builder's per-window route option (two lines from 0e2f119);
+  - generated catalogues regenerated, with Workforce windows equal to main's;
+  - `.pi` docs as on 37e5556.
+  On that tree: 1356 tests in 140 files pass; S16 PASS for all converted modules; web typecheck clean; frozen
+  lockfile install passes. Owner: "commit".
+- **Build:** the owner stashed other sessions' uncommitted files (`other-sessions-before-wi120u-build-2026-10-13`;
+  102 file checksums recorded). The env files were copied (mode 600) into the release worktree, then
+  `refresh-source-identity.sh` and the five builds ran there.
+  - All nine images: tag `667d55782539-098b76512a04`, revision 667d557…, source state 098b76512a04….
+  - The Workforce image holds 27 runtime migrations and schema contract 27.
+- **Backup:** `gigalibs_backup_20261013_084006Z`, checksum verified. Metadata names the predecessor 37e5556
+  (release `local-20261008T012020Z-37e555664f20-e9f4ddcb7ddb`).
+- **Deploy tool:** a copy of the WI-OI-120y `deploy-uat.mjs` in the release worktree, with only its `RELEASE` values
+  changed (and the copied tests' clock and backup fixture moved to this backup). 27/27 tool tests pass, and `--check`
+  passed. Codex's original in the main worktree is unchanged.
+- **Deploy (owner, `--deploy --backup gigalibs_backup_20261013_084006Z`):**
+  - Migration jobs: all 11 passed.
+  - Services: all 10 healthy.
+  - HTTP 200 on `/api/health/ready` and `/login`.
+  - Output: "DEPLOY SMOKE PASSED: 667d55782539-098b76512a04".
+- **Read-only verification (2026-10-13):**
+  - Containers: all ten on `667d55782539-098b76512a04`, healthy.
+  - Workforce migrations: the job applied `000027_workforce_record_idempotency`. The ledger maximum is 27 (named
+    row), and the API logs "ready at migration 27".
+  - The new table: `record_idempotency` has RLS enabled and forced, the tenant policy, and runtime grants
+    SELECT/INSERT/UPDATE/DELETE.
+  - CMMS ledger: still 19 (no CMMS change in this release).
+  - Web, signed out: `/gigaops/resources`, `/gigaops/availability`, `/gigaops/bookings` and `/gigaops/jobs` redirect
+    to `/login`; `/api/control/v1/lookups/workspace-members` and `/api/workforce/v1/records/wf.resources` answer 401.
+  - Database queries ran with `default_transaction_read_only=on`.
+- **Notes:**
+  - The running release's compose env files are in the release worktree. The main worktree's env identity was
+    refreshed to 9d8d812, whose images were never built, so do not run compose from the main worktree until the next
+    build refreshes it.
+  - The other twelve commits stay on the feature branch until their owners fix 0d4585e/0e2f119 and review them.
+- **Still required:** the Workforce journey (the spec drives People, absences, working weeks and the approval) with the
+  UAT personas, and business acceptance. Production NO-GO stands.
