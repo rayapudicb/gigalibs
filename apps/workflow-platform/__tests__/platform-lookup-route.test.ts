@@ -141,38 +141,45 @@ describe('platform lookup route', () => {
     );
     expect(await context.params).toEqual({ path: ['nodes'] });
 
+    // By id (security review L2): one list of up to 200 places, then the ones not on it one at a time.
     places.mockReset();
+    let inFlight = 0;
+    let mostAtOnce = 0;
     places.mockImplementation(async (_request, context) => {
+      inFlight += 1;
+      mostAtOnce = Math.max(mostAtOnce, inFlight);
+      await new Promise((resolve) => setTimeout(resolve, 1));
+      inFlight -= 1;
       const [, id] = (await context.params).path;
+      if (id === undefined)
+        return NextResponse.json({
+          items: [{ id: 'site-1', code: 'NP', displayName: 'North plant', status: 'ACTIVE' }],
+        });
       return id === 'site-gone'
         ? NextResponse.json({}, { status: 404 })
         : NextResponse.json({ id, code: 'OLD', displayName: 'Old works', status: 'ARCHIVED' });
     });
-    expect(await (await call('workspace-sites', '?ids=site-9,site-gone')).json()).toEqual([
+    expect(await (await call('workspace-sites', '?ids=site-1,site-9,site-gone')).json()).toEqual([
+      { value: 'site-1', label: 'North plant (NP)' },
       { value: 'site-9', label: 'Old works (OLD)' },
     ]);
-    expect(places).toHaveBeenCalledTimes(2);
+    expect(places).toHaveBeenCalledTimes(3);
+    expect(mostAtOnce).toBe(1);
   });
 
-  it('passes the Geospatial refusal through and reads at most 25 places by id', async () => {
-    places.mockResolvedValue(
+  it('passes the Geospatial refusal through, and refuses more than 25 places by id', async () => {
+    places.mockImplementation(async () =>
       NextResponse.json({ code: 'GEOSPATIAL_ACCESS_DENIED' }, { status: 403 }),
     );
     expect((await call('workspace-sites', '?search=x')).status).toBe(403);
+    expect((await call('workspace-sites', '?ids=site-1')).status).toBe(403);
     places.mockReset();
-    places.mockImplementation(async (_request, context) =>
-      NextResponse.json({
-        id: (await context.params).path[1],
-        code: 'P',
-        displayName: 'Place',
-        status: 'ACTIVE',
-      }),
-    );
-    await call(
+    const many = await call(
       'workspace-sites',
-      `?ids=${Array.from({ length: 40 }, (_, index) => `p${index}`).join(',')}`,
+      `?ids=${Array.from({ length: 26 }, (_, index) => `p${index}`).join(',')}`,
     );
-    expect(places).toHaveBeenCalledTimes(25);
+    expect(many.status).toBe(400);
+    expect(places).not.toHaveBeenCalled();
     expect(upstream).not.toHaveBeenCalled();
   });
 });

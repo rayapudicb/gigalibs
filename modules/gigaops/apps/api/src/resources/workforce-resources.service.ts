@@ -290,7 +290,12 @@ export class WorkforceResourcesService {
     assertUuid(resourceId, 'resourceId');
     const input = parse(AssignResourceCapabilityV1Schema, rawInput);
     return this.database.withTenantTransaction(context.principal.tenantId, async (client) => {
-      await this.requireActiveResource(client, context.principal.tenantId, resourceId);
+      const linkedTo = await this.requireActiveResource(client, context.principal.tenantId, resourceId);
+      // Security review L3 (owner, L3a): someone else records your qualifications, as someone else decides your absence;
+      // otherwise a supervisor could qualify themselves for work and pass the booking check.
+      if (linkedTo !== null && linkedTo === context.principal.subject) {
+        throw new ForbiddenException({ code: 'WORKFORCE_FOUR_EYES', message: 'Someone else must record a qualification of your own.' });
+      }
       await this.requireActiveCapability(client, context.principal.tenantId, input.capabilityDefinitionId);
       try {
         const result = await client.query(
@@ -356,13 +361,15 @@ export class WorkforceResourcesService {
     return mapQualification(result.rows[0]);
   }
 
-  private async requireActiveResource(client: PoolClient, tenantId: string, id: string) {
-    const result = await client.query(
-      `SELECT 1 FROM gigalibs_workforce.workforce_resources
+  /** The active resource's linked login (null when none); not found when it is missing or inactive. */
+  private async requireActiveResource(client: PoolClient, tenantId: string, id: string): Promise<string | null> {
+    const result = await client.query<{ platform_user_id: string | null }>(
+      `SELECT platform_user_id FROM gigalibs_workforce.workforce_resources
         WHERE tenant_id = $1 AND id = $2 AND status = 'ACTIVE'`,
       [tenantId, id],
     );
     if (result.rowCount === 0) throw new NotFoundException('Active Workforce resource was not found.');
+    return result.rows[0]?.platform_user_id ?? null;
   }
 
   private async requireActiveCapability(client: PoolClient, tenantId: string, id: string) {

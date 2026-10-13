@@ -149,6 +149,7 @@ export class AvailabilityService {
 
   async createAbsenceType(context: CommandContext, rawInput: unknown): Promise<AbsenceTypeV1> {
     const input = parse(CreateAbsenceTypeV1Schema, rawInput);
+    assertWorkspaceWide(context.principal, 'absence types');
     const tenantId = context.principal.tenantId;
     return this.database.withTenantTransaction(tenantId, async (client) => {
       let row;
@@ -174,6 +175,7 @@ export class AvailabilityService {
   async updateAbsenceType(context: CommandContext, typeId: string, rawInput: unknown): Promise<AbsenceTypeV1> {
     assertUuid(typeId, 'absenceTypeId');
     const input = parse(UpdateAbsenceTypeV1Schema, rawInput);
+    assertWorkspaceWide(context.principal, 'absence types');
     const tenantId = context.principal.tenantId;
     return this.database.withTenantTransaction(tenantId, async (client) => {
       const current = await client.query(`SELECT * FROM gigalibs_workforce.absence_types WHERE tenant_id = $1 AND id = $2 FOR UPDATE`, [tenantId, typeId]);
@@ -238,11 +240,14 @@ export class AvailabilityService {
   private async insertAbsence(client: PoolClient, context: CommandContext, input: RequestAbsenceV1): Promise<AbsenceV1> {
     const tenantId = context.principal.tenantId;
     {
-      await assertPerson(client, tenantId, input.resourceId);
+      const person = await assertPerson(client, tenantId, input.resourceId);
       const type = await client.query(`SELECT * FROM gigalibs_workforce.absence_types WHERE tenant_id = $1 AND id = $2`, [tenantId, input.absenceTypeId]);
       if (!type.rows[0]) throw new NotFoundException('The absence type was not found.');
       if (type.rows[0].status !== 'ACTIVE') throw new ConflictException({ code: 'WORKFORCE_ABSENCE_TYPE_INACTIVE', message: 'The absence type is inactive.' });
-      const autoApproved = type.rows[0].requires_approval === false;
+      // Security review M2 (owner, M2a): an absence of your own person always waits for someone else, whatever its type;
+      // a type without approval is approved at once only when someone else files it.
+      const ownPersonRequest = person.platformUserId !== null && person.platformUserId === context.principal.subject;
+      const autoApproved = type.rows[0].requires_approval === false && !ownPersonRequest;
       let id: string;
       try {
         const created = await client.query<{ id: string }>(
@@ -393,10 +398,15 @@ export class AvailabilityService {
     return this.database.withTenantTransaction(context.principal.tenantId, async (client) => {
       const own = await ownPerson(client, context.principal);
       if (!own) throw notLinked();
-      const absence = await lockAbsence(client, context.principal.tenantId, absenceId, input.expectedVersion);
-      if (absence.resource_id !== own) {
-        throw new ForbiddenException({ code: 'WORKFORCE_NOT_OWN_ABSENCE', message: 'You can only cancel your own absences.' });
-      }
+      // Security review I2: only the caller's own absence is looked up, so someone else's answers "not found" whatever
+      // its state or version.
+      const locked = await client.query(
+        `SELECT * FROM gigalibs_workforce.absences WHERE tenant_id = $1 AND id = $2 AND resource_id = $3 FOR UPDATE`,
+        [context.principal.tenantId, absenceId, own],
+      );
+      const absence = locked.rows[0];
+      if (!absence) throw new NotFoundException('The absence was not found.');
+      if (Number(absence.version) !== input.expectedVersion) conflict('absence');
       return this.cancelLocked(client, context, absence, input.reason);
     });
   }
@@ -701,9 +711,15 @@ const ABSENCE_SELECT = `
     JOIN gigalibs_workforce.workforce_resources r ON r.tenant_id = a.tenant_id AND r.id = a.resource_id
     JOIN gigalibs_workforce.absence_types t ON t.tenant_id = a.tenant_id AND t.id = a.absence_type_id`;
 
-async function assertPerson(client: PoolClient, tenantId: string, resourceId: string, requireActive = true): Promise<void> {
-  const result = await client.query<{ resource_type: string; status: string }>(
-    `SELECT resource_type, status FROM gigalibs_workforce.workforce_resources WHERE tenant_id = $1 AND id = $2`,
+/** The person, checked to be a person (and active unless told otherwise); answers the login linked to them. */
+async function assertPerson(
+  client: PoolClient,
+  tenantId: string,
+  resourceId: string,
+  requireActive = true,
+): Promise<{ readonly platformUserId: string | null }> {
+  const result = await client.query<{ resource_type: string; status: string; platform_user_id: string | null }>(
+    `SELECT resource_type, status, platform_user_id FROM gigalibs_workforce.workforce_resources WHERE tenant_id = $1 AND id = $2`,
     [tenantId, resourceId],
   );
   const resource = result.rows[0];
@@ -712,6 +728,7 @@ async function assertPerson(client: PoolClient, tenantId: string, resourceId: st
     throw new BadRequestException({ code: 'WORKFORCE_NOT_A_PERSON', message: 'Availability and absence apply to people, not teams or pools.' });
   }
   if (requireActive && resource.status !== 'ACTIVE') throw new ConflictException({ code: 'WORKFORCE_RESOURCE_INACTIVE', message: 'The person is inactive.' });
+  return { platformUserId: resource.platform_user_id ?? null };
 }
 
 /** The active person linked to the caller's login (one person per login, WI-OI-120n), or null. */
@@ -732,6 +749,16 @@ async function lockAbsence(client: PoolClient, tenantId: string, absenceId: stri
   if (!absence) throw new NotFoundException('The absence was not found.');
   if (Number(absence.version) !== expectedVersion) conflict('absence');
   return absence;
+}
+
+/**
+ * Security review M2 (owner, M2a): absence types apply to the whole workspace, so, as for the tenant-wide calendar, only a
+ * manager not bound to some places changes them.
+ */
+function assertWorkspaceWide(principal: GigaOpsPrincipal, what: string): void {
+  if (principal.spatialScope.mode === 'SCOPED_PLACES') {
+    throw new ForbiddenException({ code: 'WORKFORCE_OUT_OF_SCOPE', message: `Only a manager for the whole workspace changes ${what}.` });
+  }
 }
 
 /** Site calendars follow place scope; only an unscoped manager maintains the tenant-wide calendar. */

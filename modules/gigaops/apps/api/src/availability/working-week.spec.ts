@@ -33,6 +33,16 @@ describe('working week as text', () => {
     expect(formatWeek([])).toBe('');
   });
 
+  // Security review M3: long or crafted text is refused quickly, never parsed for seconds.
+  it('refuses long text and too many slots at once', () => {
+    const started = performance.now();
+    expect(() => parseWeek(`a${' '.repeat(99_000)}a`)).toThrow(/longer than 500/);
+    const crafted = `a${' '.repeat(490)}a`;
+    expect(() => parseWeek(crafted)).toThrow(/is not days and hours/);
+    expect(() => parseWeek(`${'Mon-Sun 09:00-10:00; '.repeat(5)}`)).toThrow(/at most 28 slots/);
+    expect(performance.now() - started).toBeLessThan(50);
+  });
+
   it('refuses what is not days and hours, with an example', () => {
     for (const text of [
       '',

@@ -41,6 +41,11 @@ const supervisor = principal('supervisor-1', [
   'workforce.jobs.read',
   'workforce.jobs.manage',
 ]);
+const positionsManager = principal('planner-1', [
+  'workforce:read',
+  'workforce.positions.read',
+  'workforce.positions.manage',
+]);
 // A workspace administrator holds the whole area, which is the only way to hold workforce.resources.link.
 const admin = principal('admin-1', ['workforce:*']);
 const member = principal('member-1', [
@@ -456,6 +461,16 @@ describe('Workforce record dispatcher (WI-OI-120u)', () => {
   });
 
   describe('Skills (child tab of People)', () => {
+    // Security review L1: as REST (GET v1/resources/:id), a person's qualifications need workforce.resources.read too.
+    it('keeps qualifications from a holder of capabilities.read alone', async () => {
+      const { records, resources } = setup();
+      const skillsOnly = principal('auditor-1', ['workforce:read', 'workforce.capabilities.read']);
+      expect(
+        await status(records.list(skillsOnly, 'wf.resource-skills', { parentId: RESOURCE_ID })),
+      ).toBe(403);
+      expect(resources.getResource).not.toHaveBeenCalled();
+    });
+
     it('lists the skills of one person, with dates as the window shows them', async () => {
       const { records } = setup();
       const page = await records.list(supervisor, 'wf.resource-skills', { parentId: RESOURCE_ID });
@@ -558,10 +573,32 @@ describe('Workforce record dispatcher (WI-OI-120u)', () => {
       });
     });
 
+    // Security review M1: as REST v1/positions, positions need their own permissions, not the job profiles'.
+    it("keeps positions to holders of the positions permissions, not the job profiles'", async () => {
+      const { records, jobs } = setup();
+      expect(await status(records.list(supervisor, 'wf.positions', { parentId: PROFILE_ID }))).toBe(
+        403,
+      );
+      expect(
+        await status(
+          records.create(
+            as(supervisor),
+            'wf.positions',
+            { 'job-profile-id': PROFILE_ID, code: 'POS-009', 'effective-from': '2026-11-01' },
+            randomUUID(),
+          ),
+        ),
+      ).toBe(403);
+      expect(jobs.createPosition).not.toHaveBeenCalled();
+      expect(
+        (await records.list(positionsManager, 'wf.positions', { parentId: PROFILE_ID })).total,
+      ).toBe(1);
+    });
+
     it('creates a position with dates as days and the FTE as a number', async () => {
       const { records, jobs } = setup();
       await records.create(
-        as(supervisor),
+        as(positionsManager),
         'wf.positions',
         {
           'job-profile-id': PROFILE_ID,

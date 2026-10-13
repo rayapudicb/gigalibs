@@ -55,6 +55,10 @@ screens are reachable, permissioned and owned, or retired.
      `/gigaops/bookings` is a read-only Bookings window. Times are shown and taken in the person's working time zone.
      The Workforce supervisor role gains `workforce.calendars.manage` (absence types and calendars), for the Security
      review.
+   - **Security review of Slices 1–2 (2026-10-13):** B1, M1, M2a, M3, L1, L2, L3a and I2 fixed; I1 accepted; I3 and I4
+     carded as WI-OI-120ae and WI-OI-120af. M2a: your own absence always waits for someone else, and only a manager
+     not bound to places changes absence types. L3a: someone else records your qualifications. Evidence in
+     `.pi/work/WI-OI-120.md`. A re-check follows the commit, before deploy.
 3. **Slice 3, U20a.** For each WFO surface, one of:
    - **adopt:** a route, a `workforce.*` permission, a module-role grant and a metadata window. Workers are adopted
      only as a read-only list until T1b moves them onto resources;

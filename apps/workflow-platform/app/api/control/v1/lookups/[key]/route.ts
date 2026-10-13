@@ -16,7 +16,7 @@ import { NextResponse } from 'next/server';
 
 const MAX_OPTIONS = 50;
 const MAX_IDS = 100;
-/** Places named by id are read one by one; a window page names at most this many. */
+/** A window page names at most this many places; more is refused rather than silently dropped. */
 const MAX_PLACE_IDS = 25;
 const ID = /^[A-Za-z0-9_-]{1,64}$/;
 
@@ -75,15 +75,28 @@ const geospatial = (request: Request, path: readonly string[], query = '') =>
   );
 
 /** The places named by id; the first refusal or failure is passed on, a place that is gone is left out. */
+/**
+ * The places named by id. Security review L2: one list of up to 200 places first; any not on it are read one at a time,
+ * so a session near expiry is refreshed once, not by many calls at the same moment. A refusal is passed on; a place
+ * that is gone is left out.
+ */
 async function placesById(request: Request, ids: readonly string[]): Promise<Response> {
-  const answers = await Promise.all(
-    ids.slice(0, MAX_PLACE_IDS).map((id) => geospatial(request, ['nodes', id])),
+  const listed = await geospatial(request, ['nodes'], '?pageSize=200');
+  if (!listed.ok) return listed;
+  const known = new Map(
+    itemsOf<Place>(await listed.json()).map((place) => [text(place.id), place]),
   );
-  const refused = answers.find((answer) => !answer.ok && answer.status !== 404);
-  if (refused) return refused;
-  const items = await Promise.all(
-    answers.filter((answer) => answer.ok).map((answer) => answer.json() as Promise<Place>),
-  );
+  const items: Place[] = [];
+  for (const id of ids) {
+    const place = known.get(id);
+    if (place) {
+      items.push(place);
+      continue;
+    }
+    const answer = await geospatial(request, ['nodes', id]);
+    if (answer.ok) items.push((await answer.json()) as Place);
+    else if (answer.status !== 404) return answer;
+  }
   return NextResponse.json({ items });
 }
 
@@ -188,6 +201,18 @@ export async function GET(request: Request, context: { params: Promise<{ key: st
         { status: 404, headers: { 'Cache-Control': 'no-store' } },
       );
     const lookup = lookupRequest(new URL(request.url));
+    if (
+      typeof lookup !== 'string' &&
+      key === 'workspace-sites' &&
+      (lookup.ids?.length ?? 0) > MAX_PLACE_IDS
+    )
+      return NextResponse.json(
+        {
+          code: 'LOOKUP_QUERY_INVALID',
+          message: `Name at most ${MAX_PLACE_IDS} places at a time.`,
+        },
+        { status: 400, headers: { 'Cache-Control': 'no-store' } },
+      );
     if (typeof lookup === 'string')
       return NextResponse.json(
         { code: 'LOOKUP_QUERY_INVALID', message: lookup },

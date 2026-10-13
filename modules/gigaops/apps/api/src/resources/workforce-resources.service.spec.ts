@@ -168,3 +168,34 @@ describe('WorkforceResourcesService login links', () => {
     expect(JSON.parse(audit[1][7] as string)).toMatchObject({ platformUserId: { before: 'user-old', after: 'user-new' } });
   });
 });
+
+// WI-OI-120u security review L3 (owner, L3a): someone else records your qualifications, or a supervisor could qualify
+// themselves for work and pass the booking check.
+describe('WorkforceResourcesService own qualifications', () => {
+  const supervisor = { ...principal, subject: 'supervisor-1', permissions: ['workforce.capabilities.manage'] };
+  const resourceId = '00000000-0000-4000-8000-000000000011';
+  const assignment = { capabilityDefinitionId: '00000000-0000-4000-8000-000000000021', validFrom: '2026-10-13T00:00:00.000Z' };
+
+  function harness(linkedTo: string | null) {
+    const client = {
+      query: vi.fn(async (sql: string) => {
+        if (/SELECT platform_user_id FROM gigalibs_workforce\.workforce_resources/.test(sql)) return { rowCount: 1, rows: [{ platform_user_id: linkedTo }] };
+        throw new Error(`past the check: ${sql.slice(0, 60)}`);
+      }),
+    };
+    const database = { withTenantTransaction: vi.fn(async (_tenant: string, callback: (value: unknown) => unknown) => callback(client)) };
+    return new WorkforceResourcesService(database as unknown as WorkforceDatabaseService);
+  }
+
+  it('refuses a qualification for the person linked to your own login', async () => {
+    await expect(harness('supervisor-1').assignCapability({ principal: supervisor, correlationId: 'c' } as never, resourceId, assignment)).rejects.toMatchObject({
+      response: { code: 'WORKFORCE_FOUR_EYES' },
+    });
+  });
+
+  it("goes past the check for someone else's person, or one with no login", async () => {
+    for (const linkedTo of ['technician-1', null]) {
+      await expect(harness(linkedTo).assignCapability({ principal: supervisor, correlationId: 'c' } as never, resourceId, assignment)).rejects.toThrow(/past the check/);
+    }
+  });
+});

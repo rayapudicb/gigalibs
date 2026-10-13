@@ -35,6 +35,7 @@ export {
 export {
   CommandContext,
   CurrentPrincipal,
+  MODULE_PERMISSIONS_METADATA,
   RequirePermissions,
   SignedContextGuardBase,
   extractBearerToken,

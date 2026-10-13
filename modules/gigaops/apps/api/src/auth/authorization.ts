@@ -16,6 +16,7 @@ import {
   type PlatformContextV1,
 } from '@gigalibs/auth-core';
 import { holdsPermission } from '@gigalibs/contracts';
+import { MODULE_PERMISSIONS_METADATA } from '@gigalibs/module-sdk';
 import { GIGAOPS_CONFIG } from '../config.provider.js';
 import { WorkforceDatabaseService } from '../database/database.service.js';
 import type { GigaOpsRuntimeConfig } from '../runtime-config.js';
@@ -43,6 +44,8 @@ export interface GigaOpsPrincipal {
 export interface AuthenticatedGigaOpsRequest {
   readonly headers: Record<string, string | string[] | undefined>;
   principal?: GigaOpsPrincipal;
+  /** The same principal, where the module SDK's record routes read it. */
+  modulePrincipal?: GigaOpsPrincipal;
 }
 
 export const RequirePermissions = (...permissions: string[]) =>
@@ -77,7 +80,7 @@ export class GigaOpsAuthorizationGuard implements CanActivate {
   constructor(
     @Inject(GIGAOPS_CONFIG) private readonly config: GigaOpsRuntimeConfig,
     @Inject(Reflector) private readonly reflector: Reflector,
-    private readonly database: WorkforceDatabaseService,
+    @Inject(WorkforceDatabaseService) private readonly database: WorkforceDatabaseService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -118,11 +121,12 @@ export class GigaOpsAuthorizationGuard implements CanActivate {
       );
     }
 
-    const requiredPermissions =
-      this.reflector.getAllAndOverride<string[] | undefined>(PERMISSIONS_METADATA, [
-        context.getHandler(),
-        context.getClass(),
-      ]) ?? [];
+    // WI-OI-120u security review (B1): the module SDK's controllers (the metadata windows' record routes) declare their
+    // baseline with the SDK's own RequirePermissions; this guard enforces it as well as Workforce's.
+    const requiredPermissions = [
+      ...(this.reflector.getAllAndOverride<string[] | undefined>(PERMISSIONS_METADATA, [context.getHandler(), context.getClass()]) ?? []),
+      ...(this.reflector.getAllAndOverride<string[] | undefined>(MODULE_PERMISSIONS_METADATA, [context.getHandler(), context.getClass()]) ?? []),
+    ];
     const anyPermission =
       this.reflector.getAllAndOverride<string[] | undefined>(ANY_PERMISSION_METADATA, [
         context.getHandler(),
@@ -162,6 +166,9 @@ export class GigaOpsAuthorizationGuard implements CanActivate {
       ...(platformContext.organization ? { organization: Object.freeze(platformContext.organization) } : {}),
       spatialScope: Object.freeze(platformContext.spatial_scope ?? { mode: 'UNBOUNDED' as const }),
     });
+    // B1: the SDK's record routes read the caller from `modulePrincipal`. The same Workforce principal is passed on (its
+    // adapters hand it back to the Workforce services, which read its place scope).
+    request.modulePrincipal = request.principal;
     return true;
   }
 }

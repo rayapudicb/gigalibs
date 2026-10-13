@@ -1,6 +1,12 @@
 # NOW: where the work stands
 
-> **Workforce availability, absences and bookings on metadata windows (WI-OI-120u Slice 2, 2026-10-13), awaiting "commit":**
+> **WI-OI-120u Security review fixes (2026-10-13), awaiting "commit" and a re-check:** Slices 1 (5b38e4d) and 2
+> (d45a8aa) are committed. The independent review found a deploy blocker, B1 (every record route answered 401: the
+> Workforce guard did not pass the caller on to the SDK's record routes). It is fixed and proven over HTTP, together
+> with M1, M2a, M3, L1, L2, L3a and I2. I1 is accepted, and I3/I4 are carded (WI-OI-120ae, WI-OI-120af). Evidence in
+> [WI-OI-120.md](work/WI-OI-120.md).
+>
+> **Workforce availability, absences and bookings on metadata windows (WI-OI-120u Slice 2, 2026-10-13), committed d45a8aa:**
 > Slice 1 (People, platform member lookup, record idempotency table) is committed (5b38e4d). Slice 2 per the owner's
 > "approved 2, D1a, D2a" (evidence in [WI-OI-120.md](work/WI-OI-120.md), "WI-OI-120u Slice 2"):
 > 1. People gains Working weeks and Absences tabs. `/gigaops/availability` is now windows: Absence requests (approve,
@@ -287,9 +293,9 @@ canonical programme status is [.pi/WORK_ITEMS.md](WORK_ITEMS.md), WI-OI-120. No 
 3. **[WI-OI-120aa](tasks/WI-OI-120aa.md), [WI-OI-120ab](tasks/WI-OI-120ab.md), [WI-OI-120ac](tasks/WI-OI-120ac.md), and [WI-OI-120ad](tasks/WI-OI-120ad.md) verified in Review.**
    Legacy scope repair, unit-tree proof, role reconciliation, and T3 canonical place identity projection proof are
    complete in source.
-4. **M-WF1 ([120u](tasks/WI-OI-120u.md)): Slice 1 committed (5b38e4d); Slice 2 (availability, absences, bookings)
-   built and verified, awaiting "commit".** Both need the Security review before deploy. Slice 3 (U20a) is shown to the
-   owner before it starts.
+4. **M-WF1 ([120u](tasks/WI-OI-120u.md)): Slices 1 (5b38e4d) and 2 (d45a8aa) committed; Security review fixes built and
+   verified, awaiting "commit" and the reviewer's re-check before deploy.** Slice 3 (U20a) is shown to the owner
+   before it starts.
 
 5. Continue the approved [WI-OI-121a](tasks/WI-OI-121a.md) A0b isolated source-selection/build/SBOM proof under
    the owner-approved dormant-code preview boundary. The selected SSE guard and synthetic path pass, but the

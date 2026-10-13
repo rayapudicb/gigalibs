@@ -21,7 +21,12 @@ import type { OrganizationClaim } from './organization-access.js';
 // WI-OI-085a: the signed-context guard for new modules, following the certified CMMS guard (WI-OI-038). CMMS and
 // Workforce keep their own guards until they adopt this one in a separately certified change.
 
-const PERMISSIONS_METADATA = 'gigalibs.module-sdk.required-permissions';
+/**
+ * The metadata `RequirePermissions` writes. A module with its own guard (rather than `SignedContextGuardBase`) reads it
+ * too, so the SDK's controllers keep their baseline permission (WI-OI-120u security review, B1).
+ */
+export const MODULE_PERMISSIONS_METADATA = 'gigalibs.module-sdk.required-permissions';
+const PERMISSIONS_METADATA = MODULE_PERMISSIONS_METADATA;
 const TENANT_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/;
 const CORRELATION_ID_PATTERN = /^[A-Za-z0-9._:-]{1,128}$/;
 

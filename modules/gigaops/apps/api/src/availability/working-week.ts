@@ -6,7 +6,11 @@ import { BadRequestException } from '@nestjs/common';
 // past midnight. The domain still checks the slots (no overlap, a start before the end).
 
 const SHORT = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const;
-const ENTRY = /^(.+?)\s+(\d{1,2}:\d{2})\s*[-–]\s*(\d{1,2}:\d{2})$/;
+// Security review M3: the hours are found at the end of an entry (no pattern over the day part, which backtracked
+// quadratically on long input), and the text is short: a week is at most 28 slots.
+const HOURS = /(\d{1,2}:\d{2})\s*[-–]\s*(\d{1,2}:\d{2})$/;
+const MAX_LENGTH = 500;
+const MAX_SLOTS = 28;
 
 const invalid = (message: string) =>
   new BadRequestException({
@@ -26,15 +30,19 @@ const time = (text: string) => (text.length === 4 ? `0${text}` : text);
 
 /** The slots of a week written as text. */
 export function parseWeek(text: string): WeeklySlotV1[] {
+  if (text.length > MAX_LENGTH)
+    throw invalid(`The working hours are longer than ${MAX_LENGTH} characters.`);
   const entries = text
     .split(/[;\n]/)
     .map((entry) => entry.trim())
     .filter(Boolean);
   if (entries.length === 0) throw invalid('Give the working hours.');
-  return entries.flatMap((entry) => {
-    const match = ENTRY.exec(entry);
-    if (!match) throw invalid(`"${entry}" is not days and hours.`);
-    const [, days, start, end] = match as unknown as [string, string, string, string];
+  const slots = entries.flatMap((entry) => {
+    const match = HOURS.exec(entry);
+    const days = match ? entry.slice(0, match.index) : '';
+    if (!match || !/\s$/.test(days) || !days.trim())
+      throw invalid(`"${entry}" is not days and hours.`);
+    const [, start, end] = match as unknown as [string, string, string];
     const indexes = days.split(',').flatMap((item) => {
       const [from, to, ...rest] = item.split(/[-–]/);
       if (rest.length > 0 || from === undefined)
@@ -51,6 +59,8 @@ export function parseWeek(text: string): WeeklySlotV1[] {
       end: time(end),
     }));
   });
+  if (slots.length > MAX_SLOTS) throw invalid(`A week has at most ${MAX_SLOTS} slots.`);
+  return slots;
 }
 
 /** A week's slots as text, with days of the same hours run together: "Mon-Fri 09:00-17:00; Sat 10:00-14:00". */

@@ -1,4 +1,5 @@
 import { shippedRecordRules } from '@gigalibs/configuration-core';
+import { holdsPermission } from '@gigalibs/contracts';
 import type {
   CapabilityDefinitionV1,
   JobProfileV1,
@@ -14,7 +15,7 @@ import {
   RecordDispatcher,
   type RecordValues,
 } from '@gigalibs/module-sdk';
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import {
   type AvailabilityRecordDependencies,
   availabilityAdapters,
@@ -162,6 +163,14 @@ function skillAdapter(deps: WorkforceRecordDependencies): RecordAdapter {
     parentField: 'resource-id',
     fields: fieldPolicies(SKILL_FIELDS),
     async list(principal, query) {
+      // Security review L1: a person's qualifications are part of their record, which REST shows to holders of
+      // workforce.resources.read (GET v1/resources/:id); the skills list asks for it as well.
+      if (!holdsPermission(principal.permissions, 'workforce.resources.read')) {
+        throw new ForbiddenException({
+          code: 'RECORD_PERMISSION_DENIED',
+          message: 'Missing required permission: workforce.resources.read',
+        });
+      }
       // Skills are always listed under their person; the person's record carries them.
       const parentId = query.parentId;
       if (!parentId) return { items: [], total: 0, page: query.page, pageSize: query.pageSize };
@@ -297,10 +306,11 @@ const POSITION_FIELDS: readonly FieldSpec[] = [
 function positionAdapter(deps: WorkforceRecordDependencies): RecordAdapter {
   return {
     entityKey: 'wf.positions',
+    // As REST v1/positions (security review M1): positions have their own permissions, not the job profiles'.
     permissions: {
-      read: 'workforce.jobs.read',
-      create: 'workforce.jobs.manage',
-      update: 'workforce.jobs.manage',
+      read: 'workforce.positions.read',
+      create: 'workforce.positions.manage',
+      update: 'workforce.positions.manage',
     },
     parentField: 'job-profile-id',
     fields: fieldPolicies(POSITION_FIELDS),

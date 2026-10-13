@@ -2869,3 +2869,44 @@ widening the card to fix the API faults the proof found.
 - **Before deploy:** Security review of Slices 1 and 2 together: the member's `request-own`, the supervisor's
   `calendars.manage` and `capabilities.manage`, the platform lookups (members, units, places), the login field. Slice 1
   brings the Workforce migration (27). The CMMS web typecheck still blocks a web image build.
+
+#### WI-OI-120u Slices 1–2: independent Security review and fixes, 2026-10-13; fixes awaiting "commit"
+
+- **Review:** independent, read-only, of 5b38e4d and d45a8aa against 21e13da. Owner: "fix all, M2a, L3a, accept I1,
+  card I3/I4".
+- **B1 (deploy blocker, fails closed).** Every record and lookup route answered 401. The module SDK's routes read the
+  caller from `request.modulePrincipal`, which the Workforce guard never set. The guard also ignored the SDK's
+  `RequirePermissions` metadata (the routes' baseline `workforce:read`). Fix:
+  - The guard passes its principal on as `modulePrincipal` and enforces the SDK's metadata, now exported from
+    `@gigalibs/module-sdk` as `MODULE_PERMISSIONS_METADATA`. Its database is injected by token.
+  - `resources/record-routes.spec.ts` boots the real guard and record routes over HTTP with signed tokens. It fails
+    without the fix (checked).
+  - Note: the CMMS guard bridges the principal but also reads only its own metadata key. Outside this card.
+- **M1:** `wf.positions` used the job profiles' permissions. It now uses `workforce.positions.read`/`.manage`, as REST
+  `v1/positions` does; tested.
+- **M2 (M2a):** four-eyes was bypassable through a type that needs no approval.
+  - An absence of the caller's own linked person is always filed as REQUESTED, whatever the type (supervisor or
+    D1a). A type without approval is approved at once only when someone else files it.
+  - Creating or changing absence types needs a manager not bound to places, as the tenant-wide calendar does.
+- **M3:** the working-week pattern backtracked quadratically (99k characters took 5 s). The text is now capped at 500
+  characters and 28 slots, and the hours are found at the end of each entry with no pattern over the days. A
+  99k-character input is refused in under 50 ms; tested.
+- **L1:** the Skills tab also requires `workforce.resources.read`, as REST `GET v1/resources/:id` does.
+- **L2:** places named by id are read from one list of up to 200 first, then any missing ones one at a time (no
+  parallel session refreshes). More than 25 ids is refused (400).
+- **L3 (L3a):** a qualification for the person linked to your own login is refused (`WORKFORCE_FOUR_EYES`), on REST and
+  the window.
+- **I2:** cancelling an own absence locks only the caller's own row, so someone else's always answers 404.
+- **I1 accepted** by the owner: the `wf-absence-types` picker is open at `workforce:read` (names only; D1a needs it).
+- **I3 and I4 carded:** [WI-OI-120ae](../tasks/WI-OI-120ae.md) (idempotency answers bound to the caller and swept),
+  [WI-OI-120af](../tasks/WI-OI-120af.md) (S16 compares record permissions with REST).
+- **Verification:**
+  - 688 tests pass (Workforce, module SDK, configuration-core, contracts, lookup route).
+  - S16 passes for all five converted modules; windows `--check` and manifests pass.
+  - Web typecheck: only the known CMMS errors.
+  - On the throwaway PostgreSQL 16, as the runtime role through the real services (11 checks): own requests of a
+    no-approval type wait (supervisor and D1a); filed for someone else they are approved at once; a place-bound
+    manager cannot create a type or switch it to no approval; the supervisor still cannot decide their own; someone
+    else's absence answers 404 at any version; a stale own version answers a conflict; a supervisor cannot qualify
+    their own person but can qualify someone else. Container stopped.
+- **Next:** "commit", then a re-check by the reviewer before deploy.
