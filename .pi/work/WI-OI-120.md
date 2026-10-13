@@ -2982,3 +2982,45 @@ widening the card to fix the API faults the proof found.
   - The other twelve commits stay on the feature branch until their owners fix 0d4585e/0e2f119 and review them.
 - **Still required:** the Workforce journey (the spec drives People, absences, working weeks and the approval) with the
   UAT personas, and business acceptance. Production NO-GO stands.
+
+#### WI-OI-120u journey on UAT, the new-workspace window fix, and release 4b8db72eae10-c90a7bebc734, 2026-10-13
+
+- **Journey 1 (release 667d557, run `6jqlzt`):** 86 findings (13 blockers); 65/78 steps done.
+  - Every Workforce window answered 404, "No active runtime configuration", for the journey's new workspace. It had
+    `gigaops` ENABLED and no `configuration_activations`.
+  - Root cause: creating a workspace (self-service sign-up and Platform Control Tower provisioning) enabled its trial
+    modules without writing `tenant.entitlements.changed.v1`. `ModuleWindowBaselineService` therefore activated
+    nothing until the next API start.
+  - Workforce is the first trial module on windows. Existing workspaces were activated by the post-deploy start-up
+    pass.
+- **Fix (owner: "approved fix"):** `recordEntitlementsChanged` (`packages/tenancy-nest/src/entitlement-events.ts`),
+  written in both creation paths in the same transaction after the trial entitlements, and used by the existing
+  licensed-modules change.
+  - Tests: both paths write the event after the entitlements, and the sign-up test fails without the fix.
+  - Commits: feature branch da77c98; release branch 4b8db72 (owner: "commit" for each).
+- **Release 4b8db72eae10-c90a7bebc734:**
+  - Built from the release worktree; all ten images verified. The API image contains the fix
+    (`entitlement-events.js`, and sign-up writes the event).
+  - Backup `gigalibs_backup_20261013_105505Z`, whose predecessor is 667d557.
+  - The deploy tool copy was updated (27/27 tests, `--check` passed).
+  - Owner deploy: 11 migration jobs passed, 10 services healthy, smoke passed.
+  - Read-only checks: all ten on the release; Workforce ledger 27; the start-up pass activated the eight windows of the
+    earlier journey workspace (`journey-6jqlzt`).
+- **Journey 2 (release 4b8db72, run `6luh84`):** 80 findings (8 blockers); 70/78 steps done.
+  - The control outbox worker logged "Applied module windows for tenant …: wf-absence-types=ACTIVATED, wf-absences=ACTIVATED, …"
+    for the new workspace.
+  - **The card's journey passes:**
+    - an administrator adds the technician and the supervisor on People, each linked to their login through the member
+      picker;
+    - adds an absence type;
+    - the technician asks for a day off (My absences, `POST wf.my-absences` 201);
+    - the approver records the technician's working week ("Mon-Fri 08:00-16:00", Europe/London) and approves the
+      absence (`POST …/actions/approve` 200).
+  - No findings at all on `/gigaops/resources`, `/gigaops/availability` or `/gigaops/bookings`.
+  - **Blockers left, none from this release:**
+    - "add as a worker" (`POST /api/workforce/wfo/workers` 404; old WFO surface, Slice 3/U20a);
+    - the technician's clock-in and week, and the approver's week approval. `/gigaops/time` renders `PlantOperationsHub`
+      (since c104dbf, 2026-09-28) with hard-coded demo data ("Samalkot Plant", "Ramana Rao" and others; 16 names, a
+      fixed "ON DUTY / Tap to Clock Out"). That is a production-reachable mock (AGENTS.md); the real punch and
+      timesheet screen is `/gigaops/attendance` (`TimeAndAttendance`);
+    - three CMMS blockers (requests, completion, closure; the CMMS request work is not in this release).

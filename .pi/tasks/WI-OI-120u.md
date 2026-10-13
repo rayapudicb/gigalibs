@@ -55,8 +55,10 @@ screens are reachable, permissioned and owned, or retired.
      `/gigaops/bookings` is a read-only Bookings window. Times are shown and taken in the person's working time zone.
      The Workforce supervisor role gains `workforce.calendars.manage` (absence types and calendars), for the Security
      review.
-   - **On UAT (2026-10-13):** release `667d55782539-098b76512a04` (Workforce only, from `release/wi120u-workforce`),
-     deployed by the owner; smoke and read-only checks passed. The Workforce journey and acceptance remain.
+   - **On UAT (2026-10-13):** release `4b8db72eae10-c90a7bebc734` (Workforce only, from `release/wi120u-workforce`;
+     first 667d557, then the new-workspace window fix), deployed by the owner. **The card's journey passes on UAT**
+     (journey `6luh84`): an administrator adds a person and links their login; a supervisor records availability; the
+     person requests an absence; another supervisor decides it. Business acceptance remains.
    - **Security review of Slices 1–2 (2026-10-13):** B1, M1, M2a, M3, L1, L2, L3a and I2 fixed; I1 accepted; I3 and I4
      carded as WI-OI-120ae and WI-OI-120af. M2a: your own absence always waits for someone else, and only a manager
      not bound to places changes absence types. L3a: someone else records your qualifications. Evidence in

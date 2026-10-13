@@ -1,5 +1,11 @@
 # NOW: where the work stands
 
+> **WI-OI-120u on UAT: release `4b8db72eae10-c90a7bebc734` (2026-10-13), and the Workforce journey passes.** The journey
+> found that new workspaces got no module windows (creating a workspace wrote no `tenant.entitlements.changed.v1`).
+> Fixed: feature da77c98, release 4b8db72. Journey 2 (`6luh84`): People with linked logins, absence type, own day off,
+> working week and approval all pass; 80 findings (8 blockers), none on the new windows. Left: WFO workers (Slice 3);
+> `/gigaops/time` is a hard-coded demo screen (`PlantOperationsHub`, since c104dbf), to card; CMMS (not released).
+>
 > **WI-OI-120u deployed to UAT (2026-10-13): release `667d55782539-098b76512a04`, Workforce only.** Built from
 > `release/wi120u-workforce` (667d557 = UAT's 37e5556 plus the reviewed Workforce commits), in the sibling worktree
 > `../gigalibs-release-wf120u`, because HEAD carries twelve unreviewed other-agent commits, two of them broken
