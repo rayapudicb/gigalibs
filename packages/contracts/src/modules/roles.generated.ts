@@ -369,6 +369,7 @@ export const moduleDefaultRoles: readonly ModuleDefaultRole[] = [
       "workforce.availability.manage",
       "workforce.calendars.read",
       "workforce.capabilities.read",
+      "workforce.capabilities.manage",
       "workforce.time.read",
       "workforce.time.punch",
       "workforce.time.manage",

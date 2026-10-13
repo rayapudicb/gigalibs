@@ -28,6 +28,15 @@ screens are reachable, permissioned and owned, or retired.
    - jobs and positions.
    The login link is an action that only an administrator holds (`workforce.resources.link`, kept from b7f8a53). The
    login picker becomes a lookup over workspace members.
+
+   **Owner decisions, 2026-10-13** (after review of the first draft):
+   - The member picker is a platform lookup (`workspace-members`, served by the web app as the signed-in user; option
+     A). "Linked login" is a picker field only holders of `workforce.resources.link` can change, rather than a separate
+     action: the same authority, one path.
+   - **People only** replaces its workbench screen in Slice 1. Jobs & positions keeps the workbench at `/gigaops/jobs`
+     until its window can revise job profiles, place people in positions (a window of its own: a window has one level
+     of child tabs) and pick a site. Its window source is held in `dictionary/jobs-window.held.mjs`; its record adapters
+     are registered and tested. That work is a follow-up slice, shown before it starts.
 2. **Slice 2, availability, absences, bookings.**
    - Availability, and absence requests with approve and reject actions. Another manager must decide your own absence
      (kept from b7f8a53).

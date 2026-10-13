@@ -951,3 +951,4 @@ export * from './packs.js';
 export * from './window-baselines.js';
 export * from './packs.generated.js';
 export * from './dictionary.js';
+export * from './platform-lookups.js';

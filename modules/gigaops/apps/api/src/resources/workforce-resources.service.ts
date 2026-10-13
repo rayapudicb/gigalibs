@@ -57,6 +57,7 @@ export class WorkforceResourcesService {
         where.push(`r.status = $${values.length}`);
       }
       values.push(query.pageSize, (query.page - 1) * query.pageSize);
+      const direction = query.direction === 'DESC' ? 'DESC' : 'ASC';
       const result = await client.query(
         `SELECT r.*, COUNT(*) OVER()::int AS total_count,
                 (SELECT COUNT(*)::int
@@ -67,7 +68,7 @@ export class WorkforceResourcesService {
                     AND (rc.expires_at IS NULL OR rc.expires_at > now())) AS qualification_count
            FROM gigalibs_workforce.workforce_resources r
           WHERE ${where.join(' AND ')}
-          ORDER BY r.display_name ASC, r.id ASC
+          ORDER BY r.display_name ${direction}, r.id ${direction}
           LIMIT $${values.length - 1} OFFSET $${values.length}`,
         values,
       );
@@ -78,6 +79,37 @@ export class WorkforceResourcesService {
         pageSize: query.pageSize,
         generatedAt: new Date().toISOString(),
       };
+    });
+  }
+
+  /**
+   * WI-OI-120u: the resource picker of the metadata windows. Finds resources by name or code, or by id so a window can
+   * show the names of the resources it already refers to.
+   */
+  async lookupResources(
+    principal: GigaOpsPrincipal,
+    request: { readonly search?: string; readonly ids?: readonly string[]; readonly limit: number },
+  ): Promise<readonly WorkforceResourceV1[]> {
+    return this.database.withTenantTransaction(principal.tenantId, async (client) => {
+      const values: unknown[] = [principal.tenantId];
+      const where = ['r.tenant_id = $1'];
+      if (request.ids?.length) {
+        values.push(request.ids);
+        where.push(`r.id = ANY($${values.length}::uuid[])`);
+      } else if (request.search) {
+        values.push(`%${request.search}%`);
+        where.push(`(r.display_name ILIKE $${values.length} OR r.reference_code ILIKE $${values.length})`);
+      }
+      values.push(Math.min(Math.max(request.limit, 1), 100));
+      const result = await client.query(
+        `SELECT r.*, 0 AS qualification_count
+           FROM gigalibs_workforce.workforce_resources r
+          WHERE ${where.join(' AND ')}
+          ORDER BY r.display_name ASC, r.id ASC
+          LIMIT $${values.length}`,
+        values,
+      );
+      return result.rows.map(mapResource);
     });
   }
 
@@ -183,6 +215,7 @@ export class WorkforceResourcesService {
         await this.recordMutation(client, context, 'WORKFORCE_RESOURCE_UPDATED', 'WORKFORCE_RESOURCE', resourceId, version, {
           status: input.status,
           ...(changesLink ? { platformUserId: { before: previousLink, after: input.platformUserId ?? null } } : {}),
+          ...(input.reason ? { reason: input.reason } : {}),
         });
         return this.getResourceWithClient(client, context.principal.tenantId, resourceId);
       } catch (error) {

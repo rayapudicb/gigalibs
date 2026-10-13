@@ -51,6 +51,8 @@ export const UpdateWorkforceResourceV1Schema = z
     resourceType: WorkforceResourceTypeV1Schema.optional(),
     platformUserId: z.string().trim().min(1).max(128).nullable().optional(),
     status: WorkforceRecordStatusV1Schema.optional(),
+    // WI-OI-120u: why a resource was deactivated or reactivated, kept in its audit record.
+    reason: z.string().trim().min(1).max(500).optional(),
   })
   .refine(
     (value) =>
@@ -146,6 +148,8 @@ export const ListWorkforceResourcesV1QuerySchema = z.object({
   status: WorkforceRecordStatusV1Schema.optional(),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(25),
+  /** WI-OI-120u: resources are listed by display name, A to Z unless DESC. */
+  direction: z.enum(['ASC', 'DESC']).optional(),
 });
 export type ListWorkforceResourcesV1Query = z.infer<
   typeof ListWorkforceResourcesV1QuerySchema
@@ -406,7 +410,12 @@ export const ReviseJobProfileV1Schema = z
 export type ReviseJobProfileV1 = z.infer<typeof ReviseJobProfileV1Schema>;
 
 export const UpdateJobProfileStatusV1Schema = z
-  .object({ expectedVersion: z.number().int().positive(), status: WorkforceRecordStatusV1Schema })
+  .object({
+    expectedVersion: z.number().int().positive(),
+    status: WorkforceRecordStatusV1Schema,
+    // WI-OI-120u: why the profile was deactivated or reactivated, kept in its audit record.
+    reason: z.string().trim().min(1).max(500).optional(),
+  })
   .strict();
 
 export const ListJobProfilesV1QuerySchema = z.object({

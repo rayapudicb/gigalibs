@@ -240,6 +240,9 @@ importers:
       '@gigalibs/financial-operations-web':
         specifier: workspace:*
         version: link:../../modules/financial-operations/web
+      '@gigalibs/gigaops-web':
+        specifier: workspace:*
+        version: link:../../modules/gigaops/web
       '@gigalibs/i18n':
         specifier: workspace:*
         version: link:../../packages/i18n
@@ -842,6 +845,9 @@ importers:
       '@gigalibs/auth-core':
         specifier: workspace:*
         version: link:../../../../packages/auth-core
+      '@gigalibs/configuration-core':
+        specifier: workspace:*
+        version: link:../../../../packages/configuration-core
       '@gigalibs/contracts':
         specifier: workspace:*
         version: link:../../../../packages/contracts
@@ -882,6 +888,25 @@ importers:
       vitest:
         specifier: ^2.0.0
         version: 2.1.9(@types/node@24.13.3)
+
+  modules/gigaops/web:
+    dependencies:
+      '@gigalibs/configuration-react':
+        specifier: workspace:*
+        version: link:../../../packages/configuration-react
+      '@gigalibs/contracts':
+        specifier: workspace:*
+        version: link:../../../packages/contracts
+    devDependencies:
+      '@types/react':
+        specifier: 19.2.18
+        version: 19.2.18
+      react:
+        specifier: 19.2.8
+        version: 19.2.8
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.3
 
   modules/multi-currency/apps/api:
     dependencies:
@@ -986,6 +1011,9 @@ importers:
       '@gigalibs/auth-core':
         specifier: workspace:*
         version: link:../../../../packages/auth-core
+      '@gigalibs/configuration-core':
+        specifier: workspace:*
+        version: link:../../../../packages/configuration-core
       '@gigalibs/contracts':
         specifier: workspace:*
         version: link:../../../../packages/contracts

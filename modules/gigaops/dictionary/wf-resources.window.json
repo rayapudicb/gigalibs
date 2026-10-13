@@ -1,0 +1,559 @@
+{
+  "contractVersion": "1.0",
+  "window": {
+    "route": "/gigaops/resources",
+    "label": "People",
+    "description": "People, teams and resource pools in the workforce.",
+    "readPermission": "workforce:read"
+  },
+  "definition": {
+    "kind": "APPLICATION_DICTIONARY",
+    "contractVersion": "1.0",
+    "moduleKey": "gigaops",
+    "entityKey": "wf-resources",
+    "surfaceKey": "wf-resources",
+    "title": "Workforce resources",
+    "dictionary": {
+      "packageKey": "wf-resources-module-baseline",
+      "name": "Workforce resources",
+      "version": "1.0.0",
+      "moduleKey": "gigaops",
+      "targetEntityKey": "wf.resources",
+      "entities": [
+        {
+          "entityKey": "wf.resources",
+          "moduleKey": "gigaops",
+          "label": "Resources",
+          "ownership": "MODULE_CORE",
+          "primaryKeyField": "id",
+          "isVersioned": true,
+          "isAuditLogged": true,
+          "isSoftDeletable": false
+        },
+        {
+          "entityKey": "wf.resource-skills",
+          "moduleKey": "gigaops",
+          "label": "Skills",
+          "ownership": "MODULE_CORE",
+          "primaryKeyField": "id",
+          "isVersioned": true,
+          "isAuditLogged": true,
+          "isSoftDeletable": false
+        }
+      ],
+      "fields": [
+        {
+          "fieldKey": "reference-code",
+          "entityKey": "wf.resources",
+          "label": "Reference code",
+          "type": "TEXT",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "helpText": "Unique code identifying this person or resource. It cannot change later."
+        },
+        {
+          "fieldKey": "display-name",
+          "entityKey": "wf.resources",
+          "label": "Display name",
+          "type": "TEXT",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "resource-type",
+          "entityKey": "wf.resources",
+          "label": "Type",
+          "type": "SELECT",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "resource-types"
+        },
+        {
+          "fieldKey": "platform-user-id",
+          "entityKey": "wf.resources",
+          "label": "Linked login",
+          "type": "REFERENCE",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "member-ref",
+          "helpText": "The workspace member who is this person: they then see their own jobs, punch time and request absence. Only administrators link or change a login.",
+          "writePermission": "workforce.resources.link"
+        },
+        {
+          "fieldKey": "status",
+          "entityKey": "wf.resources",
+          "label": "Status",
+          "type": "SELECT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "record-statuses"
+        },
+        {
+          "fieldKey": "qualification-count",
+          "entityKey": "wf.resources",
+          "label": "Skills",
+          "type": "INTEGER",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "created-at",
+          "entityKey": "wf.resources",
+          "label": "Created at",
+          "type": "DATETIME",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "updated-at",
+          "entityKey": "wf.resources",
+          "label": "Updated at",
+          "type": "DATETIME",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "resource-id",
+          "entityKey": "wf.resource-skills",
+          "label": "Resource",
+          "type": "REFERENCE",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "resource-ref"
+        },
+        {
+          "fieldKey": "capability-definition-id",
+          "entityKey": "wf.resource-skills",
+          "label": "Skill",
+          "type": "REFERENCE",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "capability-ref",
+          "helpText": "A skill or qualification defined under Skills & qualifications."
+        },
+        {
+          "fieldKey": "proficiency",
+          "entityKey": "wf.resource-skills",
+          "label": "Proficiency",
+          "type": "SELECT",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "proficiencies"
+        },
+        {
+          "fieldKey": "status",
+          "entityKey": "wf.resource-skills",
+          "label": "Status",
+          "type": "SELECT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "qualification-statuses"
+        },
+        {
+          "fieldKey": "valid-from",
+          "entityKey": "wf.resource-skills",
+          "label": "Valid from",
+          "type": "DATE",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "expires-at",
+          "entityKey": "wf.resource-skills",
+          "label": "Expires",
+          "type": "DATE",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "issuing-authority",
+          "entityKey": "wf.resource-skills",
+          "label": "Issuing authority",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "evidence-reference",
+          "entityKey": "wf.resource-skills",
+          "label": "Evidence reference",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "created-at",
+          "entityKey": "wf.resource-skills",
+          "label": "Created at",
+          "type": "DATETIME",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        }
+      ],
+      "relationships": [
+        {
+          "relationshipKey": "resource-skills",
+          "sourceEntityKey": "wf.resources",
+          "targetEntityKey": "wf.resource-skills",
+          "type": "ONE_TO_MANY",
+          "foreignKeyField": "resource-id"
+        }
+      ],
+      "references": [
+        {
+          "referenceKey": "resource-types",
+          "referenceType": "VALUE_LIST",
+          "staticValues": [
+            {
+              "value": "HUMAN",
+              "label": "Human"
+            },
+            {
+              "value": "TEAM",
+              "label": "Team"
+            },
+            {
+              "value": "POOL",
+              "label": "Pool"
+            }
+          ]
+        },
+        {
+          "referenceKey": "record-statuses",
+          "referenceType": "VALUE_LIST",
+          "staticValues": [
+            {
+              "value": "ACTIVE",
+              "label": "Active"
+            },
+            {
+              "value": "INACTIVE",
+              "label": "Inactive"
+            }
+          ]
+        },
+        {
+          "referenceKey": "proficiencies",
+          "referenceType": "VALUE_LIST",
+          "staticValues": [
+            {
+              "value": "STANDARD",
+              "label": "Standard"
+            },
+            {
+              "value": "ADVANCED",
+              "label": "Advanced"
+            },
+            {
+              "value": "EXPERT",
+              "label": "Expert"
+            },
+            {
+              "value": "MASTER",
+              "label": "Master"
+            }
+          ]
+        },
+        {
+          "referenceKey": "qualification-statuses",
+          "referenceType": "VALUE_LIST",
+          "staticValues": [
+            {
+              "value": "ACTIVE",
+              "label": "Active"
+            },
+            {
+              "value": "SUSPENDED",
+              "label": "Suspended"
+            },
+            {
+              "value": "EXPIRED",
+              "label": "Expired"
+            },
+            {
+              "value": "REVOKED",
+              "label": "Revoked"
+            }
+          ]
+        },
+        {
+          "referenceKey": "resource-ref",
+          "referenceType": "SEARCH_LOOKUP",
+          "resolverKey": "wf-resources",
+          "createWith": {
+            "moduleKey": "gigaops",
+            "surfaceKey": "wf-resources",
+            "permission": "workforce.resources.manage"
+          }
+        },
+        {
+          "referenceKey": "capability-ref",
+          "referenceType": "SEARCH_LOOKUP",
+          "resolverKey": "wf-capabilities"
+        },
+        {
+          "referenceKey": "member-ref",
+          "referenceType": "SEARCH_LOOKUP",
+          "resolverKey": "workspace-members"
+        }
+      ],
+      "validationRules": [],
+      "views": [
+        {
+          "viewKey": "resources",
+          "label": "Resources",
+          "mode": "LIST",
+          "device": "ALL",
+          "defaultSortDirection": "ASC",
+          "tabs": [
+            {
+              "tabKey": "resource",
+              "label": "Resource",
+              "position": 0,
+              "level": 0,
+              "targetEntityKey": "wf.resources",
+              "sections": [
+                {
+                  "sectionKey": "main",
+                  "label": "General information",
+                  "collapsible": false,
+                  "defaultCollapsed": false,
+                  "position": 0
+                },
+                {
+                  "sectionKey": "details",
+                  "label": "Details",
+                  "collapsible": false,
+                  "defaultCollapsed": false,
+                  "position": 1
+                },
+                {
+                  "sectionKey": "meta",
+                  "label": "Audit trail",
+                  "collapsible": false,
+                  "defaultCollapsed": false,
+                  "position": 2
+                }
+              ],
+              "fields": [
+                {
+                  "fieldKey": "reference-code",
+                  "position": 0,
+                  "span": 3,
+                  "componentKey": "text-input",
+                  "sectionKey": "main"
+                },
+                {
+                  "fieldKey": "display-name",
+                  "position": 1,
+                  "span": 5,
+                  "componentKey": "text-input",
+                  "sectionKey": "main"
+                },
+                {
+                  "fieldKey": "resource-type",
+                  "position": 2,
+                  "span": 4,
+                  "componentKey": "select",
+                  "sectionKey": "main"
+                },
+                {
+                  "fieldKey": "status",
+                  "position": 3,
+                  "span": 3,
+                  "componentKey": "select",
+                  "sectionKey": "details"
+                },
+                {
+                  "fieldKey": "platform-user-id",
+                  "position": 4,
+                  "span": 5,
+                  "componentKey": "lookup",
+                  "sectionKey": "details"
+                },
+                {
+                  "fieldKey": "qualification-count",
+                  "position": 5,
+                  "span": 2,
+                  "componentKey": "number-input",
+                  "sectionKey": "details"
+                },
+                {
+                  "fieldKey": "created-at",
+                  "position": 6,
+                  "span": 6,
+                  "componentKey": "datetime-input",
+                  "sectionKey": "meta"
+                },
+                {
+                  "fieldKey": "updated-at",
+                  "position": 7,
+                  "span": 6,
+                  "componentKey": "datetime-input",
+                  "sectionKey": "meta"
+                }
+              ]
+            },
+            {
+              "tabKey": "skills",
+              "label": "Skills",
+              "position": 1,
+              "level": 1,
+              "targetEntityKey": "wf.resource-skills",
+              "sections": [],
+              "fields": [
+                {
+                  "fieldKey": "capability-definition-id",
+                  "position": 0,
+                  "span": 4,
+                  "componentKey": "lookup"
+                },
+                {
+                  "fieldKey": "proficiency",
+                  "position": 1,
+                  "span": 2,
+                  "componentKey": "select"
+                },
+                {
+                  "fieldKey": "status",
+                  "position": 2,
+                  "span": 2,
+                  "componentKey": "select"
+                },
+                {
+                  "fieldKey": "valid-from",
+                  "position": 3,
+                  "span": 2,
+                  "componentKey": "date-input"
+                },
+                {
+                  "fieldKey": "expires-at",
+                  "position": 4,
+                  "span": 2,
+                  "componentKey": "date-input"
+                },
+                {
+                  "fieldKey": "issuing-authority",
+                  "position": 5,
+                  "span": 3,
+                  "componentKey": "text-input"
+                },
+                {
+                  "fieldKey": "evidence-reference",
+                  "position": 6,
+                  "span": 3,
+                  "componentKey": "text-input"
+                },
+                {
+                  "fieldKey": "created-at",
+                  "position": 7,
+                  "span": 3,
+                  "componentKey": "datetime-input"
+                }
+              ],
+              "parentRelationshipKey": "resource-skills"
+            }
+          ],
+          "searchFields": [
+            "reference-code",
+            "display-name"
+          ],
+          "defaultSortField": "display-name"
+        }
+      ],
+      "navigation": [],
+      "actions": [
+        {
+          "actionKey": "deactivate",
+          "label": "Deactivate",
+          "type": "COMMAND",
+          "handlerKey": "wf.resources.deactivate",
+          "requiredPermissions": [
+            "workforce.resources.manage"
+          ],
+          "confirmationPrompt": "Deactivate this resource?",
+          "parameters": [
+            {
+              "key": "reason",
+              "label": "Reason",
+              "type": "TEXTAREA",
+              "required": true
+            }
+          ],
+          "visibilityCondition": {
+            "field": "status",
+            "operator": "EQ",
+            "value": "ACTIVE"
+          }
+        },
+        {
+          "actionKey": "activate",
+          "label": "Activate",
+          "type": "COMMAND",
+          "handlerKey": "wf.resources.activate",
+          "requiredPermissions": [
+            "workforce.resources.manage"
+          ],
+          "confirmationPrompt": "Reactivate this resource?",
+          "visibilityCondition": {
+            "field": "status",
+            "operator": "EQ",
+            "value": "INACTIVE"
+          }
+        }
+      ],
+      "messages": []
+    }
+  }
+}

@@ -6,6 +6,7 @@ packages:
   - modules/financial-operations/web
   - modules/geospatial/apps/api
   - modules/gigaops/apps/api
+  - modules/gigaops/web
   - modules/physical-operations-cmms/apps/api
   - modules/physical-operations-cmms/web
   - modules/product-catalogue/apps/api

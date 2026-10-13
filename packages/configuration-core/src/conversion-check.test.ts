@@ -144,6 +144,15 @@ describe('conversion check', () => {
     expect(check(input)).toEqual(['permission probe:things:close is granted by no module role']);
   });
 
+  // WI-OI-120u: a permission held only by administrators (NOT_DELEGABLE_PERMISSIONS) is not asked of a module role.
+  it('does not ask a module role for a permission that is never delegable', () => {
+    const input = valid();
+    dictionaryOf(input).fields[2] = field('owner', { type: 'REFERENCE', referenceKey: 'owner-ref', writePermission: 'probe:owners:link' }) as never;
+    expect(check(input)).toEqual(['permission probe:owners:link is granted by no module role']);
+    const notDelegable = (permission: string) => permission === 'probe:owners:link';
+    expect(check({ ...input, engine: { ...input.engine, notDelegable } } as never)).toEqual([]);
+  });
+
   it('fails a window that does not compile', () => {
     const input = valid();
     dictionaryOf(input).fields[0] = field('name', { required: true, readPermission: 'Not A Code' }) as never;

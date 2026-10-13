@@ -165,7 +165,10 @@ export class JobsService {
       await lockProfile(client, tenantId, profileId, input.expectedVersion);
       await client.query(`UPDATE gigalibs_workforce.job_profiles SET status = $3 WHERE tenant_id = $1 AND id = $2`, [tenantId, profileId, input.status]);
       const version = await bumpVersion(client, context, 'job_profiles', profileId);
-      await recordMutation(client, context, 'WORKFORCE_JOB_PROFILE_STATUS_CHANGED', 'WORKFORCE_JOB_PROFILE', profileId, version, { status: input.status });
+      await recordMutation(client, context, 'WORKFORCE_JOB_PROFILE_STATUS_CHANGED', 'WORKFORCE_JOB_PROFILE', profileId, version, {
+        status: input.status,
+        ...(input.reason ? { reason: input.reason } : {}),
+      });
       return this.profileDetail(client, tenantId, profileId, today());
     });
   }

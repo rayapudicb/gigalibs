@@ -2764,3 +2764,56 @@ widening the card to fix the API faults the proof found.
   - Platform audits passed (package-dependencies, api-boundary, navigation-boundary, layer-boundaries, module-manifests).
 - **Status:** **Review**. Scope gates (`SCOPE_ENFORCING_MODULES`, `PER_ASSIGNMENT_SCOPE_MODULES`) remain closed until formal sign-off.
 
+
+#### WI-OI-120u Slice 1: People on a metadata window, reworked after review, 2026-10-13; awaiting "commit"
+
+- **What was found in the first draft** (another agent's, uncommitted), checked before any commit:
+  - The two new pages rendered `RecordsWorkspace` (the module-scaffold placeholder), not `MetadataWindow`; and as static
+    routes they took over the workbench's working `resources` and `jobs` sections (`app/(app)/gigaops/[section]`).
+  - The People list always sends `sort=display-name`; no sortable or searchable field was declared, so the dispatcher
+    refused the first load. Actions read `version` (the window sends `expectedVersion`) and fell back to 1.
+  - Adding a skill could not work: the start date was read-only and never sent, the parent link was read-only (refused
+    by the window rules) and date-times were sent in a form the API refuses. Positions sent date-times where the domain
+    takes days, and the FTE as text.
+  - Idempotency was kept in process memory (AGENTS.md: no local-only persistence); the deactivate reason was discarded;
+    raw ids were typed for login, skill and department; `pnpm-lock.yaml` lacked `@gigalibs/configuration-core` for
+    Workforce (and, from 0e2f119, for CMMS), so every `--frozen-lockfile` image build would stop.
+- **Owner decisions:** option A (a platform members lookup); People only now, Jobs held (card, 2026-10-13).
+- **Now:**
+  - `/gigaops/resources` renders `WorkforceWorkspace` from the new `modules/gigaops/web` (`@gigalibs/gigaops-web`):
+    the published `wf-resources` window over Workforce's record dispatcher, as Inventory's screens are.
+  - "Linked login" is a `workspace-members` picker with `writePermission: workforce.resources.link`: read-only in the
+    window without it, refused by the dispatcher (403) and still checked by the service. Administrators can link,
+    change or clear it. The separate link action is gone (same authority, one path).
+  - Platform lookups: `PLATFORM_LOOKUPS` in contracts (`workspace-members`, `organization-units`), served by
+    `app/api/control/v1/lookups/[key]/route.ts`, which reads the control plane's own list as the signed-in user
+    (`users:read`, `organization:read`) and answers `[{ value, label }]`. It adds no authority; refusals pass through.
+  - Skills: a skill picker (`wf-capabilities`, active ones by search, any by id), days for validity, required start.
+  - Idempotency in `gigalibs_workforce.record_idempotency` (forward migration `000027`, forced RLS) through the SDK's
+    `ModuleIdempotencyStore`; `WORKFORCE_SCHEMA_CONTRACT_VERSION` and both compose pins are 27.
+  - Reasons for deactivating or reactivating a person or job profile are kept in the audit record (optional `reason`
+    on the two Workforce contracts); version conflicts answer 412 as the window expects; a reference code cannot change.
+  - Resources list by name in either direction (optional `direction` on the list contract).
+  - Jobs & positions window held in `dictionary/jobs-window.held.mjs`; its adapters stay registered and are fixed
+    (paging, sort, dates as days, FTE as a number, version, reason).
+  - Tooling: the window builder emits a field's `writePermission`; the S16 check counts platform lookups as served and
+    does not ask a module role for a never-delegable permission, so Workforce carries no KNOWN exception.
+  - Lockfile: +28 lines only (the two missing links and the new package); `pnpm install --frozen-lockfile` passes.
+- **Verification:**
+  - Workforce, configuration-core and the lookup route: 272/272 tests (39 files); contracts and module SDK 378/378.
+    The adapter tests run the real dispatcher with the shipped window rules (19 tests: link refused to a supervisor on
+    create and edit; administrator links, changes, clears; stale edit 412; action without version 400; replayed
+    create runs once; skill required fields 422; pickers by search and id).
+  - `node scripts/verify-module-conversion.mjs`: PASS for all five converted modules; `gigaops: 1 windows, 4 record
+    types, 3 permissions`, no KNOWN. Windows `--check`, module manifests, package dependencies, API boundary,
+    navigation, layers, anti-duplication, SDLC and runtime data audits pass.
+  - Migration on a throwaway PostgreSQL 16 (`wi120u-workforce-proof`, stopped after): the module runner takes the
+    schema 26 → 27 and a rerun is a no-op; as the runtime role through `WorkforceDatabaseService`: claim, in-progress,
+    replay, per-workspace keys, own rows only, cross-workspace write refused (42501), nothing without a workspace,
+    role neither superuser nor BYPASSRLS; an image pinned to 26 refuses the schema at 27.
+  - Known and not from this slice: web typecheck fails at HEAD on two CMMS pages (`classifications`, `requests`);
+    four web equivalence tests predate the CMMS Requests and Classifications sections; `verify-configuration-contracts`
+    (OpenAPI vs the Configuration Studio controller) and the design-token audit (other files) fail.
+- **Before deploy:** Security review (the lookup route, the field-level link permission, `workforce.capabilities.manage`
+  for the supervisor role). The deploy runs the Workforce migration (expected version 27); going back to an older
+  Workforce image needs `000027_workforce_record_idempotency.down.sql` first. The Workforce journey is rerun after.

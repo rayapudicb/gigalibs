@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
+import { createRecordController, ModuleIdempotencyStore, RECORD_DISPATCHER } from '@gigalibs/module-sdk';
 import { GigaOpsAuthorizationGuard } from './auth/authorization.js';
+import { workforceRecordDispatcher } from './resources/workforce-record-adapters.js';
 import { GigaOpsConfigProvider } from './config.provider.js';
 import { WorkforceDatabaseService } from './database/database.service.js';
 import { WorkforceHealthController } from './health/health.controller.js';
@@ -66,6 +68,8 @@ import { WfoPacksService } from './packs/wfo-packs.service.js';
 import { WfoReportsController } from './reports/wfo-reports.controller.js';
 import { WfoReportsService } from './reports/wfo-reports.service.js';
 
+const GigaOpsRecordController = createRecordController({ guard: GigaOpsAuthorizationGuard, readPermission: 'workforce:read' });
+
 @Module({
   controllers: [
     WorkforceHealthController,
@@ -102,6 +106,7 @@ import { WfoReportsService } from './reports/wfo-reports.service.js';
     WfoVendorsController,
     WfoPacksController,
     WfoReportsController,
+    GigaOpsRecordController,
   ],
   providers: [
     GigaOpsConfigProvider,
@@ -136,6 +141,13 @@ import { WfoReportsService } from './reports/wfo-reports.service.js';
     { provide: WORKFORCE_ANALYTICS_RELAY_CONFIG, useFactory: () => loadWorkforceAnalyticsRelayConfig() },
     OutboxRetention,
     { provide: OUTBOX_RETENTION_CONFIG, useFactory: () => loadOutboxRetentionConfig() },
+    // WI-OI-120u (M-WF1): the metadata windows' record dispatcher; Idempotency-Key answers live in record_idempotency.
+    {
+      provide: RECORD_DISPATCHER,
+      inject: [WorkforceResourcesService, JobsService, WorkforceDatabaseService],
+      useFactory: (resources: WorkforceResourcesService, jobs: JobsService, database: WorkforceDatabaseService) =>
+        workforceRecordDispatcher({ resources, jobs }, new ModuleIdempotencyStore(database)),
+    },
   ],
 })
 export class GigaOpsModule {}

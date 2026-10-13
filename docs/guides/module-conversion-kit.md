@@ -38,7 +38,11 @@ pnpm build && node scripts/verify-module-conversion.mjs <module>
   The record dispatcher enforces all of these as the window does. A field must have the same rules in every window
   that shows it.
 - Lookups name a resolver (`lookup('book-ref', 'finance-books')`). `createWith` offers "Add new" through the window
-  that creates the records (F0.6).
+  that creates the records (F0.6). Workspace data no module holds comes from the platform lookups (`PLATFORM_LOOKUPS`
+  in contracts: `workspace-members`, `organization-units`); the module's web package routes them with
+  `lookupBasePaths: PLATFORM_LOOKUP_BASE_PATHS` (WI-OI-120u).
+- A field only some people may change takes `writePermission` (for example a login link): the window shows it
+  read-only without it, and the adapter's field policy carries the same permission so the dispatcher refuses it too.
 
 ### 2. Record adapters
 
@@ -86,9 +90,10 @@ pnpm build && node scripts/verify-module-conversion.mjs <module>
 - A field shown that the adapter does not declare, or one editable in the window that the adapter does not accept.
 - A tab on a record type the dispatcher does not register.
 - An action the dispatcher does not register, or one shown for a permission other than the one the server requires.
-- A lookup no converted module serves.
+- A lookup no converted module, and not the platform, serves.
 - A window whose route is not a module page, or a gateway without record routes.
-- A window permission no module role grants.
+- A window permission no module role grants (a permission in `NOT_DELEGABLE_PERMISSIONS` is exempt: only
+  administrators hold it).
 
 Findings the owner has accepted until a named card closes them go in `KNOWN`. They print as `KNOWN` and do not fail;
 a `KNOWN` finding that no longer occurs fails until it is removed.

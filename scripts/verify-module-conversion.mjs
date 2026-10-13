@@ -11,7 +11,9 @@ import yaml from 'js-yaml';
 import { conversionFindings } from './lib/conversion-check.mjs';
 
 const root = resolve(import.meta.dirname, '..');
-const { moduleWindowBaselines, moduleDefaultRoles, holdsPermission } = await import(pathToFileURL(join(root, 'packages/contracts/dist/index.js')).href);
+const { moduleWindowBaselines, moduleDefaultRoles, holdsPermission, canonicalPermission, NOT_DELEGABLE_PERMISSIONS, PLATFORM_LOOKUPS } = await import(
+  pathToFileURL(join(root, 'packages/contracts/dist/index.js')).href
+);
 const { executableCapabilityFindings, entityRules } = await import(pathToFileURL(join(root, 'packages/configuration-core/dist/index.js')).href);
 
 /** Converted modules: where their record dispatcher is built. */
@@ -20,10 +22,14 @@ const CONVERTED = {
   'universal-inventory': { dispatcher: 'apps/api/dist/inventory/inventory-record-adapters.js', factory: 'inventoryRecordDispatcher' },
   'financial-operations': { dispatcher: 'apps/api/dist/finance/finance-record-adapters.js', factory: 'financeRecordDispatcher' },
   'physical-operations-cmms': { dispatcher: 'apps/api/dist/work-orders/cmms-record-adapters.js', factory: 'cmmsRecordDispatcher' },
+  'gigaops': { dispatcher: 'apps/api/dist/resources/workforce-record-adapters.js', factory: 'workforceRecordDispatcher' },
 };
 
 /** Findings seen by the owner and closed by a named later card. */
 const KNOWN = {};
+
+/** Held only by administrators (a whole-area grant), never by a module role. */
+const notDelegable = (permission) => (canonicalPermission(permission) ?? permission) in NOT_DELEGABLE_PERMISSIONS;
 
 /** A stand-in for a module's domain services: building the dispatcher only registers adapters, it calls nothing. */
 const stub = new Proxy(function stub() {}, { get: (_target, key) => (key === 'then' ? undefined : stub), apply: () => stub });
@@ -32,8 +38,9 @@ const requested = process.argv.slice(2).filter((arg) => !arg.startsWith('--'));
 const modules = requested.length > 0 ? requested : Object.keys(CONVERTED);
 const baselines = moduleWindowBaselines();
 
-// Lookups another converted module serves are usable everywhere (the window client routes them to that module).
-const servedLookups = new Map();
+// Lookups another converted module serves are usable everywhere (the window client routes them to that module), as are
+// the platform's own lookups over workspace data (WI-OI-120u; the web app serves them).
+const servedLookups = new Map(Object.keys(PLATFORM_LOOKUPS).map((key) => [key, 'platform']));
 const described = new Map();
 for (const [name, { dispatcher, factory }] of Object.entries(CONVERTED)) {
   const path = join(root, 'modules', name, dispatcher);
@@ -66,7 +73,7 @@ for (const name of modules) {
     manifest,
     roles,
     servedLookups: new Set(servedLookups.keys()),
-    engine: { executableCapabilityFindings, entityRules, holdsPermission },
+    engine: { executableCapabilityFindings, entityRules, holdsPermission, notDelegable },
   });
 
   const known = new Set(KNOWN[name] ?? []);

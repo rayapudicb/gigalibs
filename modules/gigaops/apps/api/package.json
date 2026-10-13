@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@gigalibs/auth-core": "workspace:*",
+    "@gigalibs/configuration-core": "workspace:*",
     "@gigalibs/contracts": "workspace:*",
     "@gigalibs/module-sdk": "workspace:*",
     "@nestjs/common": "^11.2.3",

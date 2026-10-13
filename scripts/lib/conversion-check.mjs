@@ -11,12 +11,12 @@ const ALWAYS = new Set(['id', 'version']);
  * @param {object} input.description  `RecordDispatcher.describe()`
  * @param {object} input.manifest     the module's parsed module.yaml
  * @param {Array} input.roles         the module's default roles
- * @param {Set<string>} input.servedLookups  lookup keys served by any converted module
- * @param {object} input.engine       `{ executableCapabilityFindings, entityRules, holdsPermission }`
+ * @param {Set<string>} input.servedLookups  lookup keys served by any converted module or by the platform
+ * @param {object} input.engine       `{ executableCapabilityFindings, entityRules, holdsPermission, notDelegable? }`
  * @returns {{ findings: string[], permissions: string[] }}
  */
 export function conversionFindings({ windows, description, manifest, roles, servedLookups, engine }) {
-  const { executableCapabilityFindings, entityRules, holdsPermission } = engine;
+  const { executableCapabilityFindings, entityRules, holdsPermission, notDelegable = () => false } = engine;
   const findings = [];
   const fail = (message) => findings.push(message);
   const adapters = new Map(description.entities.map((entity) => [entity.entityKey, entity]));
@@ -68,7 +68,7 @@ export function conversionFindings({ windows, description, manifest, roles, serv
         fail(`${surface}: action ${action.handlerKey} is shown for ${action.requiredPermissions.join(', ')} but the server requires ${serverPermission}`);
     }
 
-    // 4. Every lookup is served, by this module or another converted one.
+    // 4. Every lookup is served, by this module, another converted one or the platform.
     for (const reference of dictionary.references.filter((candidate) => candidate.resolverKey))
       if (!servedLookups.has(reference.resolverKey)) fail(`${surface}: lookup ${reference.resolverKey} is registered by no converted module`);
 
@@ -80,9 +80,11 @@ export function conversionFindings({ windows, description, manifest, roles, serv
   // 6. The gateway exposes the record routes.
   if (manifest.spec.gateway?.records !== true) fail('the gateway does not expose the record routes (records: true)');
 
-  // 7. A module role grants every permission the windows ask for, so someone other than a Tenant Admin can work.
+  // 7. A module role grants every permission the windows ask for, so someone other than a Tenant Admin can work. A
+  //    permission that is never delegable (NOT_DELEGABLE_PERMISSIONS) is held only by administrators, never by a role.
   for (const permission of [...permissions].sort())
-    if (!roles.some((role) => holdsPermission(role.permissions, permission))) fail(`permission ${permission} is granted by no module role`);
+    if (!notDelegable(permission) && !roles.some((role) => holdsPermission(role.permissions, permission)))
+      fail(`permission ${permission} is granted by no module role`);
 
   return { findings, permissions: [...permissions].sort() };
 }
