@@ -549,7 +549,7 @@ export const generatedPlatformModuleCatalog = [
   {
     key: 'gigalibs-assistant',
     name: 'GigaLibs Assistant',
-    navigationLabel: 'AI Assistant Config',
+    navigationLabel: 'Sovereign AI Assistant',
     area: 'Intelligence',
     navigationGroup: 'Intelligence',
     route: '/assistant',

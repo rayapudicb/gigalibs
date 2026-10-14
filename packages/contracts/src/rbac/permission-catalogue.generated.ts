@@ -183,16 +183,9 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
     ]
   },
   {
-    "code": "assistant:action",
-    "entries": [
-      "platform"
-    ]
-  },
-  {
     "code": "assistant:read",
     "entries": [
-      "gigalibs-assistant",
-      "platform"
+      "gigalibs-assistant"
     ]
   },
   {
