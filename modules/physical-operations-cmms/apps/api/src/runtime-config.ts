@@ -5,7 +5,7 @@ export const CMMS_AUDIENCE = 'gigalibs-cmms-api';
 /** Catalogue key of the entitlement the signed context must carry. */
 export const CMMS_MODULE_KEY = 'asset-maintenance';
 /** Last migration in `db/runtime-manifest.txt`; readiness requires the database to be exactly here. */
-export const CMMS_SCHEMA_CONTRACT_VERSION = 19;
+export const CMMS_SCHEMA_CONTRACT_VERSION = 20;
 
 export interface CmmsRuntimeConfig {
   readonly nodeEnv: string;
