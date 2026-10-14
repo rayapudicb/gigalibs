@@ -545,23 +545,6 @@ export const generatedPlatformModuleCatalog = [
     platformInspection: false,
     reason: 'Ontology service code with a test. Not running in the local stack. Frozen and locked (ADR-0016 F6).',
   },
-  // modules/gigalibs-assistant/module.yaml
-  {
-    key: 'gigalibs-assistant',
-    name: 'GigaLibs Assistant',
-    navigationLabel: 'Sovereign AI Assistant',
-    area: 'Intelligence',
-    navigationGroup: 'Intelligence',
-    route: '/assistant',
-    iconKey: 'sparkles',
-    readiness: 'REVIEW',
-    maturity: 'CORE_IMPLEMENTED',
-    entitlementEligible: true,
-    trialEligible: true,
-    requiredPermission: 'assistant:read',
-    platformInspection: true,
-    reason: 'Sovereign AI assistant connected via same-origin SSE with CopilotKit Generative UI and multi-tenant RBAC enforcement.',
-  },
   // modules/saga-orchestrator/module.yaml
   {
     key: 'saga-orchestrator',

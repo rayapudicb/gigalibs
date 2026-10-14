@@ -167,32 +167,6 @@ export const generatedModuleMenus: Readonly<Record<string, readonly GeneratedMod
       "icon": "coins"
     }
   ],
-  "gigalibs-assistant": [
-    {
-      "key": "chat",
-      "label": "AI Workspace",
-      "path": "/assistant",
-      "icon": "sparkles"
-    },
-    {
-      "key": "configuration",
-      "label": "Agent Settings & Config",
-      "path": "/assistant/configuration",
-      "icon": "settings"
-    },
-    {
-      "key": "tools",
-      "label": "Operational Tool Allowlist",
-      "path": "/assistant/tools",
-      "icon": "wrench"
-    },
-    {
-      "key": "audit",
-      "label": "Telemetry & Audit Logs",
-      "path": "/assistant/audit",
-      "icon": "shield-check"
-    }
-  ],
   "communications-textfly": [
     {
       "key": "inbox",
@@ -312,12 +286,6 @@ export const generatedModulePersonas: Readonly<Record<string, readonly PlatformC
     "CUSTOMER_GUEST"
   ],
   "document-scanner": [
-    "OPERATIONS_SUPERVISOR",
-    "WORKFORCE_MEMBER",
-    "CUSTOMER_GUEST"
-  ],
-  "gigalibs-assistant": [
-    "C_LEVEL",
     "OPERATIONS_SUPERVISOR",
     "WORKFORCE_MEMBER",
     "CUSTOMER_GUEST"
