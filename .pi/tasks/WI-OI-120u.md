@@ -2,6 +2,9 @@
 
 - **Status:** Approved (owner, 2026-10-06). First M1b card of `docs/plans/platform-implementation-plan.md`; needs R1
   (WI-OI-120q) and S16 (WI-OI-120s). Each slice is shown before it starts.
+  **2026-10-14: Slices 1–3 on UAT** (release `4e6f9efa3b03-e9e9b32dc427`, owner-deployed 2026-10-13; read-only check and
+  journey `7i0v43` pass for the Workforce windows). Left: the Jobs & positions window (held back; execution plan v3 step
+  2.1). Time and week approval move to WI-OI-120ah (v3 step 0.4).
 - **Work item:** WI-OI-120 (U20a in `remediation-backlog.md`). Evidence goes in `.pi/work/WI-OI-120.md`.
 - **Size:** L (three slices, each shown and approved before it starts)
 

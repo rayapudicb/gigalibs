@@ -3044,3 +3044,41 @@ widening the card to fix the API faults the proof found.
   - email delivery becomes step 1.12.
 - Still owner decisions: step 0.7 a–h, including the "Proposed" tier rows in §8.
 
+## WI-OI-120u Slice 3 on UAT: release `4e6f9efa3b03-e9e9b32dc427` (execution plan v3 step 0.1, 2026-10-13/14)
+
+- **Build and check.**
+  - The release worktree (`release/wi120u-workforce` at 4e6f9ef) built all five image sets.
+  - `deploy-uat.sh --check --backup gigalibs_backup_20261013_133222Z` passed: 9 images plus the pinned redis, backup
+    integrity only. The deploy tool's tests passed 27/27.
+- **Owner deploy, 2026-10-13 ~14:09–14:12Z. Read-only check afterwards:**
+  - All 10 services run release `local-20261013T133217Z-4e6f9efa3b03-e9e9b32dc427` (revision `4e6f9efa3b03`), healthy,
+    with 0 restarts. All 11 migration jobs exited 0.
+  - Workforce ledger 27/27. `record_idempotency` has row security and forced row security. `/login` answers 200.
+  - The 13 retired `wfo_*` tables remain in `gigalibs_workforce`, with exactly 0 rows in `wfo_workers`,
+    `wfo_engagements` and `wfo_invitations` (estimates 0 for all 13). T1b (v3 step 2.4) has nothing to migrate; a
+    forward migration can drop them.
+- **Journey `7i0v43`, owner-run, 2026-10-14: 76 steps, 71 done, 5 blocked; 68 findings, 5 of them blockers.**
+  - The previous run (`6luh84`) had 80 findings, 8 of them blockers.
+  - The "add as a worker" blocker is gone: the WFO screen is retired, and people are added on People, linked to their
+    login (DONE).
+  - Blockers left:
+    - the technician's clock-in and their week, and the approver's week approval, all on `/gigaops/time` (demo
+      `PlantOperationsHub`, WI-OI-120ah, v3 step 0.4);
+    - CMMS: raise a request, and the supervisor closing the work order (CMMS work not released; v3 step 1.3).
+  - Bugs:
+    - `POST …/organization/versions/{id}/submit` answers 400 "Request validation failed";
+    - `GET /api/workforce/timesheets/preview` answers 403 for an administrator with no linked person, on
+      `/gigaops/attendance`;
+    - `GET /api/maps/nodes` answers 403 for the CMMS viewer on `/cmms/work-orders`.
+  - UX findings:
+    - internal codes are shown (`TENANT_ADMIN`);
+    - a reload loses the Settings tab;
+    - the invitation link does not fill in its token;
+    - a viewer is offered "New work order".
+  - The remaining findings are 37 layout and 17 accessibility items.
+- **Tooling:**
+  - `e2e/run-uat-walkthrough.sh --journey` asks for an administrator sign-in that the journey never uses. The owner
+    ran the spec directly instead.
+  - `uat.admin@gigalibs.io` is active but has never signed in, and its password is unknown (one refused attempt).
+  - Both are v3 step 0.8.
+

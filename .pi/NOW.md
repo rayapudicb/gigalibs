@@ -3,8 +3,9 @@
 > **The order of all work is the [execution plan v3](../docs/plans/gigalibs-execution-plan-v3.md), approved by the owner on
 > 2026-10-13.** It replaces the order in the v2 plan. Rules: one card at a time; UAT is production, so every card passes the
 > plan's Done checklist (§2) instead of separate G5–G7 gates; zero hard-coding and zero mock; generative UI from metadata.
-> **Current step: 0.1**, the read-only check of Workforce Slice 3 release `4e6f9efa3b03-e9e9b32dc427` (owner-deployed
-> 2026-10-13, all ten services healthy at 14:13Z) and the Workforce journey rerun.
+> **Steps 0.1 and 0.2 done (2026-10-14).** Workforce Slice 3 release `4e6f9efa3b03-e9e9b32dc427` is on UAT. The
+> read-only check passed, and journey `7i0v43` had 5 blockers (previously 8): 3 on the demo `/gigaops/time` (step 0.4)
+> and 2 on unreleased CMMS (step 1.3). **Current step: 0.3, branch repair**, shown to the owner before it starts.
 
 > **WI-OI-120u on UAT: release `4b8db72eae10-c90a7bebc734` (2026-10-13), and the Workforce journey passes.** The journey
 > found that new workspaces got no module windows (creating a workspace wrote no `tenant.entitlements.changed.v1`).
@@ -308,7 +309,7 @@ canonical programme status is [.pi/WORK_ITEMS.md](WORK_ITEMS.md), WI-OI-120. No 
 Phase 0 of the [execution plan v3](../docs/plans/gigalibs-execution-plan-v3.md) (each step is shown to the owner before it
 starts; no new features):
 
-1. **0.1** Workforce Slice 3 ([120u](tasks/WI-OI-120u.md)): read-only check on UAT, Workforce journey rerun, evidence.
+1. **0.1** Done 2026-10-14: Workforce Slice 3 on UAT, read-only check, journey `7i0v43` (evidence in WI-OI-120).
 2. **0.2** [WI-OI-120ai](tasks/WI-OI-120ai.md) card committed (2026-10-13).
 3. **0.3** Branch repair: decide the 12 unreviewed other-session commits; fix the `0d4585e` build and the `0e2f119`
    migration mismatch; revert `507e7fa`; releases from the branch again.
@@ -317,6 +318,7 @@ starts; no new features):
    [120af](tasks/WI-OI-120af.md), [120ai](tasks/WI-OI-120ai.md).
 6. **0.6** Status truth for every Review item, and this page back to one page.
 7. **0.7** Owner decisions a–h (plan §4, Phase 0).
+8. **0.8** Journey `7i0v43` follow-ups (plan §4, Phase 0).
 
 ## Standing boundaries and open decisions
 

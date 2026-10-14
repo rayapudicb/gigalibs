@@ -88,13 +88,14 @@ Goal: a branch that builds, true statuses, no demo data, and the open decisions 
 
 | # | Step | Cards | Status now |
 | --- | --- | --- | --- |
-| 0.1 | Workforce Slice 3: read-only check on UAT, rerun the Workforce journey, record the evidence | WI-OI-120u | Deployed 2026-10-13; check pending |
-| 0.2 | Commit the trial-extension card | WI-OI-120ai (card only) | Waiting for "commit" |
+| 0.1 | Workforce Slice 3: read-only check on UAT, rerun the Workforce journey, record the evidence | WI-OI-120u | Done 2026-10-14 (journey `7i0v43`) |
+| 0.2 | Commit the trial-extension card | WI-OI-120ai (card only) | Done (`4b33173`) |
 | 0.3 | **Branch repair.** Decide each of the 12 unreviewed commits from other sessions: keep after review, fix, or revert. Fix the `0d4585e` build break and the `0e2f119` CMMS migration 20 vs contract 19 mismatch. Revert `507e7fa` (`assistant:*` granted to every member). HEAD then builds, and releases come from the branch again instead of the release worktree. | WI-OI-120a closes here | Not started |
 | 0.4 | **Zero-mock sweep** (details below) | WI-OI-120ah first, then new card WI-OI-120aj | 120ah carded |
 | 0.5 | **Security fixes the reviews found** (details below) | WI-OI-120ag, 120ae, 120af, 120ai | Carded |
 | 0.6 | **Status truth.** Re-label every Review item by evidence (Built, On UAT, Done). Correct WI-OI-121a–j, which claim G6/G7 for a preview. Close each item that §5 replaces, with a pointer to its replacement. Shorten `NOW.md` back to one page. | WI-OI-119 follow-up | Not started |
 | 0.7 | **Owner decisions** (details below; no code) | — | Open |
+| 0.8 | **Journey `7i0v43` follow-ups** (details below) | new cards as needed | Found 2026-10-14 |
 
 Step 0.3, the 12 commits to decide: Assistant `e0ec197`, `507e7fa`, `7c15655`, `0d4585e`, `eee6276`; CMMS
 `f7cfa7b`, `e1246f8`, `c80ea2b`, `0e2f119`, `54d33bc`, `e723ba1`, `21e13da`.
@@ -143,6 +144,18 @@ Step 0.7, the owner decisions:
   - ADR-0017.
 - h. **Module tiers (§8).** Confirm the "Proposed" rows: core for every workspace, foundations switched on
   automatically, and optional modules by plan.
+
+Step 0.8, the journey `7i0v43` follow-ups, routed by where they belong:
+- **Core bug now:** saving the organization structure draft answers 400 (`…/organization/versions/{id}/submit`).
+- **Core UX now:** the invitation link does not fill in its token; a reload loses the Settings tab.
+- **Tooling now:**
+  - the `--journey` wrapper should not ask for an administrator sign-in;
+  - an owner-run password reset for `uat.admin@gigalibs.io` (active, never signed in, password unknown).
+- **With 120ah (0.4):** `/gigaops/attendance` calls the timesheet preview for an administrator with no linked person
+  (403).
+- **With R5 CMMS (1.1):** the CMMS viewer is offered "New work order", and its page calls `/api/maps/nodes` without
+  Geospatial access (403).
+- **With X1 (3.9):** internal codes such as `TENANT_ADMIN` are shown; 37 layout and 17 accessibility findings.
 
 **Exit:** HEAD builds; the zero-mock audit passes on HEAD; every card has a true status; decisions a–f are recorded.
 
