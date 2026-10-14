@@ -1,7 +1,7 @@
 # WI-OI-120ah: Retire the demo Time & Attendance screen; Time goes to the real punch screen
 
-- **Status:** Released as `e785f9d` (release worktree), built, Security-reviewed (approve with conditions) and checked;
-  waiting for the owner's deploy (2026-10-14). Feature commit `e2bef03`. The review's two findings are
+- **Status:** On UAT: release `e785f9d` (`local-20261014T103138Z-e785f9d99315-49ef670a411f`), deployed by the owner
+  2026-10-14 (~12:11Z); DEPLOY SMOKE PASSED. Waiting for the journey. Feature commit `e2bef03`. The review's two findings are
   [WI-OI-120an](WI-OI-120an.md).
 - **Found by:** the WI-OI-120u Workforce journey on UAT (run `6luh84`, release `4b8db72eae10-c90a7bebc734`).
 - **Work item:** WI-OI-120 (U20a neighbour). Evidence goes in `.pi/work/WI-OI-120.md`.

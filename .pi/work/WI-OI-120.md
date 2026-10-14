@@ -3472,3 +3472,18 @@ widening the card to fix the API faults the proof found.
   record and table-count checks stay). Tests 33 of 33. `--check`: CHECK PASSED, nothing deployed.
 - **Correction:** the 712 MB `gigalibs_analytics.operational_facts` table is in the old development database; UAT's
   copy is 32 kB and the UAT database is 121 MB in all.
+
+## WI-OI-120ah on UAT: release e785f9d deployed (2026-10-14 ~12:11Z, owner-run)
+
+- **Deploy:** `deploy-uat.sh --deploy --backup gigalibs_backup_20261014_120803Z`: images and backup verified;
+  `uat-postgres` healthy with 546 tables (the cutover copied 546); all 11 migrations passed; 10 services healthy;
+  HTTP 200 on `/api/health/ready` and `/login`; DEPLOY SMOKE PASSED `e785f9d99315-49ef670a411f`.
+- **Read-only verification afterwards:**
+  - all 11 containers run release `local-20261014T103138Z-e785f9d99315-49ef670a411f` and are healthy;
+  - `uat-postgres` was recreated for its new release label, on the same volume `gigalibs-uat-database`, with no
+    published port;
+  - signed out, `/gigaops/time` and `/gigaops/attendance` both answer 307 to `/login`;
+  - the live web build (744 files) holds none of the demo names or `INITIAL_SHIFTS`, and holds the real screen
+    ("Waiting for approval", `workforce.timesheets.approve`);
+  - no error lines in `web`, `workforce-api` or `api` since the deploy.
+- **Next:** the journey; the three Time blockers are expected to clear. WI-OI-120an waits for the owner's approval.
