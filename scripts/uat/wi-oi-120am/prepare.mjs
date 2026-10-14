@@ -12,7 +12,7 @@ import { execFileSync } from 'node:child_process';
 import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { BOOTSTRAP_ROLE, CARD, SKIPPED_ROLES, connectGrantees, databaseUrls, rewriteEnv, rolesSql } from './lib.mjs';
+import { BOOTSTRAP_ROLE, CARD, SKIPPED_ROLES, connectGrantees, databaseUrls, lossyRoleFeatures, rewriteEnv, rolesSql } from './lib.mjs';
 
 const argv = process.argv.slice(2);
 const option = (name, fallback) => {
@@ -54,7 +54,21 @@ const memberships = JSON.parse(readOnly(`SELECT coalesce(json_agg(m), '[]') FROM
     JOIN pg_roles r ON r.oid = a.roleid JOIN pg_roles m ON m.oid = a.member WHERE r.rolname NOT LIKE 'pg\\_%') m;`));
 const settings = readOnly(`SELECT count(*) FROM pg_db_role_setting;`);
 if (settings !== '0') throw new Error(`${CARD}: the old cluster has ${settings} role settings; copy them by hand first`);
-const connectGrants = connectGrantees(readOnly(`SELECT datacl::text FROM pg_database WHERE datname = 'gigalibs';`));
+const datacl = readOnly(`SELECT datacl::text FROM pg_database WHERE datname = 'gigalibs';`);
+const connectGrants = connectGrantees(datacl);
+// Security review L4: stop if the old cluster uses anything the role copy would lose.
+const lossy = lossyRoleFeatures({
+  systemMemberships: JSON.parse(readOnly(`SELECT coalesce(json_agg(m), '[]') FROM (
+    SELECT r.rolname AS role, m.rolname AS member FROM pg_auth_members a JOIN pg_roles r ON r.oid = a.roleid
+      JOIN pg_roles m ON m.oid = a.member WHERE r.rolname LIKE 'pg\\_%' AND m.rolname NOT LIKE 'pg\\_%') m;`)),
+  limitedRoles: JSON.parse(readOnly(`SELECT coalesce(json_agg(r), '[]') FROM (SELECT rolname FROM pg_roles
+    WHERE rolname NOT LIKE 'pg\\_%' AND (rolconnlimit <> -1 OR rolvaliduntil IS NOT NULL)) r;`)),
+  datacl,
+});
+if (lossy.length) throw new Error(`${CARD}: the role copy would lose: ${lossy.join('; ')}`);
+// Security review H2: the release running before the cutover; --rollback refuses once any service runs another one.
+const preCutoverReleaseId = execFileSync('docker', ['inspect', `${PROJECT}-web-1`, '--format',
+  '{{index .Config.Labels "com.gigalibs.release-id"}}'], { encoding: 'utf8' }).trim();
 
 const passwords = {};
 for (const role of roles) {
@@ -63,7 +77,8 @@ for (const role of roles) {
 
 mkdirSync(OUT, { recursive: true, mode: 0o700 });
 chmodSync(OUT, 0o700);
-const record = { card: CARD, createdAt: new Date().toISOString(), oldContainer: OLD, newContainer: NEW_CONTAINER, files: {}, envChanges: {} };
+const record = { card: CARD, createdAt: new Date().toISOString(), oldContainer: OLD, newContainer: NEW_CONTAINER,
+  preCutoverReleaseId, files: {}, sources: {}, envChanges: {} };
 
 write600(join(COMPOSE_DIR, '.env.database'), `# ${CARD}: the superuser password of uat-postgres (compose.database.yaml).\nUAT_DATABASE_SUPERUSER_PASSWORD=${passwords[BOOTSTRAP_ROLE]}\n`);
 record.files['.env.database'] = sha256(readFileSync(join(COMPOSE_DIR, '.env.database'), 'utf8'));
@@ -72,6 +87,8 @@ for (const file of ENV_FILES) {
   const path = join(COMPOSE_DIR, file);
   if (!existsSync(path)) throw new Error(`${CARD}: ${file} is missing`);
   const text = readFileSync(path, 'utf8');
+  // Security review M1: the cutover refuses if a source env file changes after this.
+  record.sources[file] = sha256(text);
   for (const url of databaseUrls(text)) {
     if (!passwords[url.user]) throw new Error(`${CARD}: ${file} ${url.name} connects as ${url.user}, which cannot log in`);
   }
@@ -90,6 +107,7 @@ write600(join(OUT, 'prepare.json'), `${JSON.stringify(record, null, 2)}\n`);
 
 console.log(JSON.stringify({
   prepared: OUT,
+  preCutoverReleaseId,
   roles: record.roles.length,
   loginRolesWithNewPasswords: Object.keys(passwords).length,
   skippedRoles: record.skippedRoles,

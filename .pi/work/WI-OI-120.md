@@ -3300,3 +3300,20 @@ widening the card to fix the API faults the proof found.
   - `docker/docker-compose.dev.yml` describes the development database again, bound to `127.0.0.1`, to apply after
     the cutover.
 
+## WI-OI-120am Security review and second rehearsal (2026-10-14)
+
+- **Independent review: PASS WITH CONDITIONS, no blocker.**
+  - Fixed: H1, H2, M1–M3 and L1–L10 (see the card). L11 is noted.
+  - Owner conditions C1–C7 are on the card.
+  - Deploy tool tests: 32 of 32 pass. Library tests: 7 of 7 pass.
+- **Second rehearsal** (fresh fake UAT, the real backup `…052230Z`, dummy services labelled with the pre-cutover
+  release):
+  - prepare recorded the pre-cutover release and 12 new login passwords;
+  - refusals proven: a shell override (M2), a changed source env file (M1) and a leftover volume (L6);
+  - `--run` took **24 s**: 546 tables, 22 ledgers and 5 catalog checks identical; no other client and no write on the
+    old database during the copy; `roles.sql` deleted; `cutover.json` written;
+  - the new database is on the override's network and volume, with no published port;
+  - a connected client is detected by the H1 query; 14 of 14 logins work over the network;
+  - `--rollback` is refused after a recreated service (H2) and works before any deploy;
+  - all artefacts deleted, including two empty volumes from replaced dummy containers.
+

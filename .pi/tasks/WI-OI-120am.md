@@ -85,6 +85,48 @@
   - **a (recommended):** a separate follow-up card, with its own review.
   - **b:** in this card.
 
+## Security review (2026-10-14): PASS WITH CONDITIONS, no blocker
+
+**Fixed** in code, and rehearsed again on a fresh fake UAT:
+- **H1:** the cutover proves no other client is connected to the old database after stopping the services and after
+  the copy, and that its write counters do not move.
+- **H2:** `--rollback` refuses once the deploy has recreated any service (it compares the pre-cutover release id
+  recorded by prepare) and prints the way forward.
+- **M1:** prepare records each source env file's sha256, and the preflight refuses if one changed.
+- **M2:**
+  - the cutover passes a clean environment to docker and refuses exported overrides;
+  - the volume name is fixed;
+  - the rehearsal renames the volume and network only through `rehearsal.override.yaml`.
+- **M3:** the deploy tool requires the volume `gigalibs-uat-database` (not external). Before any migration it requires
+  `uat-postgres` to hold at least the tables `cutover.json` recorded.
+- **L1:** `roles.sql` sets `log_min_error_statement = panic`, so no password reaches the server log, and the cutover
+  deletes it on success.
+- **L2:** the drop guard uses `pg_shdepend`.
+- **L3:** five catalog checks join the inventory: sequences, policies, row security, large objects and extensions.
+- **L4:** prepare refuses role features the copy would lose.
+- **L5:** the env swap is all or nothing.
+- **L6:** the preflight refuses a leftover volume.
+- **L7:** the database joins the named UAT network.
+- **L8:** a 60-second stop grace, a 3 GB memory limit, connection logging.
+- **L9:** the deploy tool checks every database URL in the rendered configuration.
+- **L10:** the development database service is behind the `dev-database` profile.
+
+**Owner conditions for the window:**
+- **C1:** run everything from the release worktree, with absolute paths. `--check` must verify the postgres image.
+- **C2:** no env-file changes between prepare and `--run` (enforced by M1).
+- **C3:** stop development servers and remove the host bridge (D5a) before `--run`. H1 enforces no other client.
+- **C4:** no `--rollback` after any deploy output (enforced by H2).
+- **C5:** a clean shell (enforced by M2).
+- **C6:** right after the journey passes:
+  - delete the `.prev` files on a set date;
+  - bind the old database to `127.0.0.1`;
+  - rotate or disable all 13 of its logins, not only `gigalibs`.
+- **C7:** before the D3a reset: a verified backup and a restore drill of `uat-postgres`, and how long to keep the final
+  pre-cutover dump.
+
+**Noted:** L11, the release branch still holds the old password in 11 files. It is moot after rotation; do not push
+that branch before then.
+
 ## Proof
 
 - The rehearsal: 0 restore errors; counts and ledgers equal; migrations are a no-op.

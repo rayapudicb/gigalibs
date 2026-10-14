@@ -22,7 +22,10 @@ services:
       POSTGRES_PASSWORD: ${UAT_DATABASE_SUPERUSER_PASSWORD:?UAT_DATABASE_SUPERUSER_PASSWORD is required}
       POSTGRES_INITDB_ARGS: --auth-host=scram-sha-256 --auth-local=trust
       PGDATA: /var/lib/postgresql/data/pgdata
-    command: ["postgres", "-c", "password_encryption=scram-sha-256"]
+    command: ["postgres", "-c", "password_encryption=scram-sha-256", "-c", "log_connections=on"]
+    # Security review L8: a clean shutdown with time to checkpoint, and a ceiling on memory.
+    stop_grace_period: 60s
+    mem_limit: 3g
     volumes:
       - uat-database:/var/lib/postgresql/data
     healthcheck:
@@ -51,5 +54,10 @@ services:
 
 volumes:
   uat-database:
-    # Overridden only by the rehearsal, so it can never touch UAT's volume.
-    name: ${UAT_DATABASE_VOLUME:-gigalibs-uat-database}
+    # Fixed (security review M2): the rehearsal renames it only through its own override file.
+    name: gigalibs-uat-database
+
+# Security review L7: the same network as the other UAT compose files, so the deploy does not recreate the container.
+networks:
+  default:
+    name: gigalibs-configuration-local

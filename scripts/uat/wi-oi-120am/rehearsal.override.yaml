@@ -1,0 +1,7 @@
+# WI-OI-120am rehearsal only: keeps a rehearsal's database volume and network away from UAT's. Never used on UAT.
+volumes:
+  uat-database:
+    name: gl120am-rehearsal-database
+networks:
+  default:
+    name: gl120am-rehearsal-net

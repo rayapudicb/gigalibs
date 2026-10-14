@@ -1,7 +1,7 @@
 // node --test scripts/uat/wi-oi-120am/lib.test.mjs
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { compareInventories, connectGrantees, databaseUrls, dropSkippedRolesSql, rewriteEnv, rolesSql } from './lib.mjs';
+import { compareInventories, connectGrantees, databaseUrls, dropSkippedRolesSql, lossyRoleFeatures, rewriteEnv, rolesSql } from './lib.mjs';
 
 const env = [
   '# comment with host.docker.internal for the module APIs',
@@ -63,7 +63,10 @@ test('recreates roles, memberships and connect grants; skips the test role; one 
   assert.doesNotMatch(sql, /TO "rls_test_user"|CREATE ROLE "gigalibs" /);
   assert.equal((sql.match(/rls_test_user/g) ?? []).length, 1);
   const drop = dropSkippedRolesSql();
+  assert.match(drop, /pg_shdepend .* d\.deptype = 'o'/s);
   assert.match(drop, /RAISE EXCEPTION .*rls_test_user owns objects/);
+  // A failing CREATE ROLE must not reach the server log with its password.
+  assert.ok(sql.indexOf('SET log_min_error_statement = panic;') < sql.indexOf('CREATE ROLE'));
   assert.match(drop, /DROP OWNED BY "rls_test_user";\nDROP ROLE "rls_test_user";/);
   assert.throws(() => rolesSql({ roles: [{ ...roles[1], rolsuper: true }], memberships: [], connectGrants: [] }, { gigalibs_cmms_runtime: 'x' }), /superuser/);
   assert.throws(() => rolesSql({ roles: [roles[1]], memberships: [], connectGrants: [] }, {}), /no new password/);
@@ -76,7 +79,7 @@ test('reads CONNECT grantees from a database ACL', () => {
 
 test('compares inventories exactly', () => {
   const a = 'count|public.tenants|320\ncount|gigalibs_cmms.assets|10\nledger|gigalibs_cmms.schema_migrations|abc\n';
-  assert.deepEqual(compareInventories(a, a), { differences: [], tables: 2, ledgers: 1 });
+  assert.deepEqual(compareInventories(a, a), { differences: [], tables: 2, ledgers: 1, catalogChecks: 0 });
   const b = 'count|public.tenants|319\ncount|gigalibs_cmms.assets|10\nledger|gigalibs_cmms.schema_migrations|abd\ncount|public.extra|0\n';
   assert.deepEqual(compareInventories(a, b).differences, [
     'count|public.tenants: 320 → 319',
@@ -84,3 +87,13 @@ test('compares inventories exactly', () => {
     'count|public.extra: only in the new database',
   ]);
 });
+
+test('refuses role features the copy would lose', () => {
+  const clean = { systemMemberships: [], limitedRoles: [], datacl: '{=Tc/gigalibs,gigalibs=CTc/gigalibs,gigalibs_cmms_runtime=c/gigalibs}' };
+  assert.deepEqual(lossyRoleFeatures(clean), []);
+  assert.deepEqual(lossyRoleFeatures({ ...clean, systemMemberships: [{ role: 'pg_read_all_data', member: 'x' }] }), ['x is a member of pg_read_all_data']);
+  assert.deepEqual(lossyRoleFeatures({ ...clean, limitedRoles: [{ rolname: 'y' }] }), ['y has a connection limit or an expiry']);
+  assert.match(lossyRoleFeatures({ ...clean, datacl: '{=c/gigalibs,gigalibs=CTc/gigalibs}' }).join(), /PUBLIC holds =c\/gigalibs/);
+  assert.match(lossyRoleFeatures({ ...clean, datacl: '{=Tc/gigalibs,gigalibs=CTc/gigalibs,z=CTc/gigalibs}' }).join(), /z holds CTc/);
+});
+

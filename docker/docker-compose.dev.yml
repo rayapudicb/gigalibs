@@ -4,6 +4,8 @@ services:
   # has its own database (infra/compose/compose.database.yaml). This one is for development only and listens on this
   # machine only. Apply this definition only after the cutover; recreating the container keeps its data volume.
   postgres:
+    # Security review L10: behind a profile until it is applied after the cutover, so no other compose call touches it.
+    profiles: ["dev-database"]
     image: postgres:16-alpine
     container_name: gigalibs-postgres
     restart: unless-stopped
