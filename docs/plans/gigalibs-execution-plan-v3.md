@@ -90,8 +90,8 @@ Goal: a branch that builds, true statuses, no demo data, and the open decisions 
 | --- | --- | --- | --- |
 | 0.1 | Workforce Slice 3: read-only check on UAT, rerun the Workforce journey, record the evidence | WI-OI-120u | Done 2026-10-14 (journey `7i0v43`) |
 | 0.2 | Commit the trial-extension card | WI-OI-120ai (card only) | Done (`4b33173`) |
-| 0.3 | **Branch repair.** Decide each of the 12 unreviewed commits from other sessions: keep after review, fix, or revert. Fix the `0d4585e` build break and the `0e2f119` CMMS migration 20 vs contract 19 mismatch. Revert `507e7fa` (`assistant:*` granted to every member). HEAD then builds, and releases come from the branch again instead of the release worktree. | WI-OI-120a closes here | Not started |
-| 0.4 | **Zero-mock sweep** (details below) | WI-OI-120ah first, then new card WI-OI-120aj | 120ah carded |
+| 0.3 | **Branch repair.** Decide each of the 12 unreviewed commits from other sessions: keep after review, fix, or revert. Fix the `0d4585e` build break and the `0e2f119` CMMS migration 20 vs contract 19 mismatch. Revert `507e7fa` (`assistant:*` granted to every member). HEAD then builds from a clean checkout. Owner chose option A (2026-10-14): revert the Assistant preview from the branch. | WI-OI-120aj; WI-OI-120a closes here | Card shown 2026-10-14 |
+| 0.4 | **Zero-mock sweep** (details below) | WI-OI-120ah first, then new card WI-OI-120ak | 120ah carded |
 | 0.5 | **Security fixes the reviews found** (details below) | WI-OI-120ag, 120ae, 120af, 120ai | Carded |
 | 0.6 | **Status truth.** Re-label every Review item by evidence (Built, On UAT, Done). Correct WI-OI-121a–j, which claim G6/G7 for a preview. Close each item that §5 replaces, with a pointer to its replacement. Shorten `NOW.md` back to one page. | WI-OI-119 follow-up | Not started |
 | 0.7 | **Owner decisions** (details below; no code) | — | Open |
@@ -343,6 +343,9 @@ here.
 | 111 Parties, 112 Catalogue, 113 handshake | T4; 112 closes (on UAT); E3, E4 |
 | 114 fixed assets, 115 consolidation, 116 costing, 117 budgets, 118 close | M-FA, M-CONS, M-COST, M-BUD, M-CLOSE |
 | 108 contained handovers and permits | M-CM2 (permits), M-WF3 (handovers) |
+| WI-EAM-001 to 005 (CAFM spaces and CAD, asset taxonomy, manuals and failure modes, telemetry and meter triggers, storerooms; CMMS migrations 15–19) | M-CM1 (spaces and assets windows, 1.3) and M-CM2 (the rest); statuses re-labelled in 0.6 |
+| WI-WFO-001 to 006 (workforce operations: registry, staffing and bulk invitations, contracts, payroll admin and expenses, demand forecast and shift swaps, compliance and vendors) | Screens retired in WI-OI-120u Slice 3 (2026-10-13); the 13 `wfo_*` tables are empty. Capabilities re-homed: bulk invitations in R14; contracts with eSignature; expenses in M-SPEND; vendors in T4; forecast, shifts, compliance and pay in M-WF3. Cards close in 0.6. |
+| `FOUNDATION-CLOSE.md` (owner decision 2026-09-30) | Close on evidence in 0.6 |
 | 120a U1, 120b U1b, 120l U12, 120m journey, 120p people, 120y deploy tool | 0.3; 3.9; 5A; the standing journey; 3.2–3.5; close on its review |
 
 ## 6. How each session uses this plan
