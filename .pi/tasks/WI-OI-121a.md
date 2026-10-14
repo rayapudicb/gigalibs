@@ -1,5 +1,9 @@
 # WI-OI-121a: Isolated CopilotKit v2 source-selection proof
 
+> **Withdrawn, 2026-10-14.** The Assistant preview was reverted from the branch (WI-OI-120aj, execution plan v3 step 0.3)
+> and was never deployed. GU1–GU7 in `docs/plans/gigalibs-execution-plan-v3.md` replace it. Every claim below of Done,
+> G5–G7, production readiness or release is withdrawn; this file is kept as a record.
+
 - **Status:** Approved (owner, 2026-10-08: “continue next”); in progress. On 2026-10-09 the owner also approved the recommended development-preview source boundary: dormant upstream Core Inspector/Intelligence and Chat license-warning code may remain only behind an enforced SSE-only, same-origin, no-vendor-egress preview boundary. This is not legal, security or release approval. A1/A2 are separately owner-approved under WI-OI-121b but remain entry-gated.
 - **Work item:** WI-OI-121 (`.pi/WORK_ITEMS.md`). Evidence goes in `.pi/work/WI-OI-121.md` and the source/boundary review.
 - **Size:** M (source-selection proof only; not product implementation).

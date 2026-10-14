@@ -1,5 +1,9 @@
 # WI-OI-121b: Curated CopilotKit fork and GigaLibs UI preview
 
+> **Withdrawn, 2026-10-14.** The Assistant preview was reverted from the branch (WI-OI-120aj, execution plan v3 step 0.3)
+> and was never deployed. GU1–GU7 in `docs/plans/gigalibs-execution-plan-v3.md` replace it. Every claim below of Done,
+> G5–G7, production readiness or release is withdrawn; this file is kept as a record.
+
 - **Status:** Review (owner approved implementation direction on 2026-10-08; A1/A2 entry and acceptance gates remain open). Untracked source/UI appeared after approval without accepted provenance or independent review; WI-OI-121f contains the reachable UI as a development-only fictional preview.
 - **Work item:** WI-OI-121 (`.pi/WORK_ITEMS.md`). Evidence: `.pi/work/WI-OI-121.md`.
 - **Size:** L (bounded technical import and development-only UI; not a customer Assistant release).

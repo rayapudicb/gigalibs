@@ -1,5 +1,9 @@
 # WI-OI-121g: Assistant tenant/user data boundary and grant reconciliation
 
+> **Withdrawn, 2026-10-14.** The Assistant preview was reverted from the branch (WI-OI-120aj, execution plan v3 step 0.3)
+> and was never deployed. GU1–GU7 in `docs/plans/gigalibs-execution-plan-v3.md` replace it. Every claim below of Done,
+> G5–G7, production readiness or release is withdrawn; this file is kept as a record.
+
 - **Status:** Review (source-only private-thread checkpoint, 2026-10-10; A3 activation/acceptance open).
 - **Work item:** WI-OI-121 (`.pi/WORK_ITEMS.md`); evidence in `.pi/work/WI-OI-121.md`.
 - **Size:** L, executed in source-only checkpoints. This is A3 security/data foundation, not A1–A6 acceptance.

@@ -1,5 +1,9 @@
 # WI-OI-121f: Assistant P0 containment, access, and local-model truth
 
+> **Withdrawn, 2026-10-14.** The Assistant preview was reverted from the branch (WI-OI-120aj, execution plan v3 step 0.3)
+> and was never deployed. GU1–GU7 in `docs/plans/gigalibs-execution-plan-v3.md` replace it. Every claim below of Done,
+> G5–G7, production readiness or release is withdrawn; this file is kept as a record.
+
 - **Status:** Review (source containment implemented 2026-10-10; independent Security/Privacy and deployed/browser acceptance pending).
 - **Work item:** WI-OI-121 (`.pi/WORK_ITEMS.md`). Evidence belongs in `.pi/work/WI-OI-121.md`.
 - **Size:** L, executed as one bounded containment slice before tenant-product expansion.

@@ -1,5 +1,9 @@
 # Sovereign GigaLibs Assistant: Production Operations & Runbook
 
+> **Withdrawn, 2026-10-14.** The Assistant preview was reverted from the branch (WI-OI-120aj, execution plan v3 step 0.3)
+> and was never deployed. GU1–GU7 in `docs/plans/gigalibs-execution-plan-v3.md` replace it. Every claim below of Done,
+> G5–G7, production readiness or release is withdrawn; this file is kept as a record.
+
 **Standard:** FR-07, FR-14–FR-16, NFR-SEC-001–006, NFR-DATA-001–004, NFR-REL-001–003, NFR-OBS-001–004  
 **Lifecycle Gate:** G6 / G7 Controlled Production Rollout  
 **Work Item:** WI-OI-121j (`.pi/WORK_ITEMS.md`)  

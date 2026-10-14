@@ -1,5 +1,9 @@
 # WI-OI-121c: Universal Sovereign Assistant Module & Interactive Generative UI Wire-Up
 
+> **Withdrawn, 2026-10-14.** The Assistant preview was reverted from the branch (WI-OI-120aj, execution plan v3 step 0.3)
+> and was never deployed. GU1–GU7 in `docs/plans/gigalibs-execution-plan-v3.md` replace it. Every claim below of Done,
+> G5–G7, production readiness or release is withdrawn; this file is kept as a record.
+
 - **Status:** Implemented (In Review)
 - **Work item:** WI-OI-121 (`.pi/WORK_ITEMS.md`). Evidence: `.pi/work/WI-OI-121.md`.
 - **Size:** M (Module registration, Configuration Studio reflection, and Generative UI interactive checklist card wire-up)

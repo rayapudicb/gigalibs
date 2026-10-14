@@ -1,5 +1,9 @@
 # WI-OI-121j: Assistant Staged Rollout, Observability & Production Runbook (G6/G7)
 
+> **Withdrawn, 2026-10-14.** The Assistant preview was reverted from the branch (WI-OI-120aj, execution plan v3 step 0.3)
+> and was never deployed. GU1–GU7 in `docs/plans/gigalibs-execution-plan-v3.md` replace it. Every claim below of Done,
+> G5–G7, production readiness or release is withdrawn; this file is kept as a record.
+
 - **Status:** Done (owner approved and committed, 2026-10-11).
 - **Work item:** WI-OI-121 (`.pi/WORK_ITEMS.md`); evidence in `.pi/work/WI-OI-121.md`.
 - **Size:** M, bounded G6/G7 rollout controls, observability and operational runbook.

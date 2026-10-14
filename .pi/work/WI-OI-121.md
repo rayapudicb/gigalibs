@@ -1,5 +1,9 @@
 # WI-OI-121 evidence: Assistant source and architecture discovery
 
+> **Withdrawn, 2026-10-14.** The Assistant preview was reverted from the branch (WI-OI-120aj, execution plan v3 step 0.3)
+> and was never deployed. GU1–GU7 in `docs/plans/gigalibs-execution-plan-v3.md` replace it. Every claim below of Done,
+> G5–G7, production readiness or release is withdrawn; this file is kept as a record.
+
 Date: 2026-10-08. Status: **Review for G0–G2 decisions; A1 import NO-GO**. Owner approved discovery in chat on 2026-10-08. No product code, vendor source in GigaLibs, dependency install, model call, UAT service/database, credential or deployment was changed.
 
 ## Outcome and requirements
