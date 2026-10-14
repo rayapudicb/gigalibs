@@ -3436,7 +3436,39 @@ widening the card to fix the API faults the proof found.
   - the technician is not offered Approve.
 - **Routed to WI-OI-120ak (step 0.4, the sweep), found during 120ah:**
   - Analytics Studio's Demo Lab: `modules/analytics-studio/apps/api/src/places/sample-farm.service.ts` generates
-    synthetic data, behind the `demo-lab` feature. UAT holds about 712 MB of synthetic `operational_facts` from it
-    (read-only size check). Removing or keeping it is the owner's decision;
+    synthetic data, behind the `demo-lab` feature. Removing or keeping it is the owner's decision. (Corrected later the
+    same day: the 712 MB `gigalibs_analytics.operational_facts` table is in the old development database; UAT's copy is
+    32 kB. Read-only size checks.);
   - UAT workspaces named after real companies (Netflix, Paramount, Warner);
   - widening the `INITIAL_`/`DEMO_`/`SAMPLE_`/`SEED_` fixture rule from Workforce to every module.
+
+## WI-OI-120ah release built, reviewed and checked; deploy waits for the owner (2026-10-14)
+
+- **Commits:** feature `e2bef03` (owner: "commit"); release `e785f9d` on `release/wi120u-workforce`, a cherry-pick onto
+  the running d435c58 (code only; `.pi` and docs as on the base; owner: "if commit then commit").
+  - On the release: the 8 screen and spec files are byte-identical to e2bef03; the audit script and the generated
+    permission catalogue merged onto the release's own versions, and `module-manifests --check` passes.
+  - Web tests on the release: 62 files and 693 tests passed (11 files skipped); route test 6 of 6; type-check clean
+    outside `.next/types`; audits pass except the runtime-data audit's three `QUARANTINED_PACKAGE_MISSING` findings
+    (the owner's untracked TextFly apps). The base d435c58 fails the same way; the feature branch fixed it in 9b0c477
+    (E3a), which the release does not carry.
+- **Build:** release `local-20261014T103138Z-e785f9d99315-49ef670a411f`. The release worktree's env files are UAT's live
+  ones from the WI-OI-120am cutover (`uat-postgres`); nothing was copied from the main worktree. All nine image tags
+  matched; the five builds passed (10:31–10:49Z).
+- **Independent Security review: approve with conditions.**
+  - Verified: the Workforce API, its gateway routes and the BFF are unchanged; the new screen checks only hide
+    controls; the catalogue's `platform` owner changes nothing that can be granted or enforced (`CODES_BY_MODULE` skips
+    `platform`); the redirect target is a constant; the punch queue stays scoped to tenant and user; the audit's
+    `paths` filter cannot weaken other rules, and its patterns cannot backtrack badly.
+  - M1 (Medium, existing before this change): the `/gigaops/time` help drawer describes the deleted demo screen and
+    claims signed GPS and an anti-tamper clock that do not exist.
+  - L1 (Low): an administrator with no person still gets a 403 on first load, and a second one from the clock panel.
+    The commit message's and the first evidence's "no longer calls the timesheet preview" is therefore corrected above.
+  - Both are [WI-OI-120an](../tasks/WI-OI-120an.md), carded for the owner.
+- **Backup:** `gigalibs_backup_20261014_120803Z` of `uat-postgres` (running release d435c58), checksum verified, 546
+  tables, the same as the cutover's copy. `backup-uat.sh` now records the container it dumped.
+- **Deploy tool (release worktree copy):** `RELEASE` moved to e785f9d with predecessor d435c58. The 120am-only rule
+  "the backup must be the cutover's final backup" is replaced by "the backup must be of `uat-postgres`" (the cutover
+  record and table-count checks stay). Tests 33 of 33. `--check`: CHECK PASSED, nothing deployed.
+- **Correction:** the 712 MB `gigalibs_analytics.operational_facts` table is in the old development database; UAT's
+  copy is 32 kB and the UAT database is 121 MB in all.

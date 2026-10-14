@@ -93,7 +93,7 @@ Goal: a branch that builds, true statuses, no demo data, and the open decisions 
 | 0.3 | **Branch repair.** Decide each of the 12 unreviewed commits from other sessions: keep after review, fix, or revert. Fix the `0d4585e` build break and the `0e2f119` CMMS migration 20 vs contract 19 mismatch. Revert `507e7fa` (`assistant:*` granted to every member). HEAD then builds from a clean checkout. Owner chose option A (2026-10-14): revert the Assistant preview from the branch. | WI-OI-120aj; WI-OI-120a closes here | Part 1 done 2026-10-14 (`9b0c477`) |
 | 0.3b | **Undo the development script's writes on the UAT database:** modules switched on in 288 workspaces, and `*` and `assistant:` codes on members. A reconciliation report against the 2026-10-08 backup, then an owner-run script after a Security review. | WI-OI-120al (absorbs 120aj D1a, D2a) | Applied on UAT 2026-10-14; Q2a → WI-OI-120am |
 | 0.3c | **UAT gets its own database** (Q2a): `uat-postgres` with no published port, new passwords, the data moved and verified; the old database is development-only, bound to `127.0.0.1` with rotated logins | WI-OI-120am | Done 2026-10-14 (journey `7xqjy6`); C7, the D3a reset and the `.prev` deletion from 2026-10-21 |
-| 0.4 | **Zero-mock sweep** (details below) | WI-OI-120ah first, then new card WI-OI-120ak | 120ah built, not released |
+| 0.4 | **Zero-mock sweep** (details below) | WI-OI-120ah first, then WI-OI-120an, then new card WI-OI-120ak | 120ah built and reviewed, deploy pending; 120an carded |
 | 0.5 | **Security fixes the reviews found** (details below) | WI-OI-120ag, 120ae, 120af, 120ai | Carded |
 | 0.6 | **Status truth.** Re-label every Review item by evidence (Built, On UAT, Done). Correct WI-OI-121a–j, which claim G6/G7 for a preview. Close each item that §5 replaces, with a pointer to its replacement. Shorten `NOW.md` back to one page. | WI-OI-119 follow-up | Not started |
 | 0.7 | **Owner decisions** (details below; no code) | — | Open |
@@ -115,8 +115,10 @@ Step 0.4, the zero-mock sweep:
   - Assistant routes with no permission check: any signed-in user can publish the workspace's Assistant policy or
     halt the Assistant;
   - sample payloads on the connections and rules-studio pages (are they test inputs, or mock?);
-  - Analytics Studio's Demo Lab generates synthetic data (`sample-farm.service.ts`, behind `demo-lab`); UAT holds
-    about 712 MB of it. Remove or keep: owner decision (found with 120ah);
+  - Analytics Studio's Demo Lab generates synthetic data (`sample-farm.service.ts`, behind `demo-lab`). Remove or
+    keep: owner decision (found with 120ah). Its 712 MB table is in the old development database, not on UAT;
+  - the screens' help drawer (`lib/module-knowledge-registry.ts`) describes features and guarantees that do not exist
+    (120ah review M1; the Time entry is WI-OI-120an, the rest is here);
   - UAT workspaces named after real companies (Netflix, Paramount, Warner);
   - 120ah's fixture rule covers Workforce only; widen it to every module.
 
@@ -158,7 +160,7 @@ Step 0.8, the journey `7i0v43` follow-ups, routed by where they belong:
   - the `--journey` wrapper should not ask for an administrator sign-in;
   - an owner-run password reset for `uat.admin@gigalibs.io` (active, never signed in, password unknown).
 - **With 120ah (0.4):** `/gigaops/attendance` calls the timesheet preview for an administrator with no linked person
-  (403). Fixed in 120ah (built 2026-10-14).
+  (403). Partly fixed in 120ah; the first-load 403s are WI-OI-120an (120ah Security review L1).
 - **With R5 CMMS (1.1):** the CMMS viewer is offered "New work order", and its page calls `/api/maps/nodes` without
   Geospatial access (403).
 - **With X1 (3.9):** internal codes such as `TENANT_ADMIN` are shown; 37 layout and 17 accessibility findings.

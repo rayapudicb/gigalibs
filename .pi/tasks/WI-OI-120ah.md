@@ -1,7 +1,8 @@
 # WI-OI-120ah: Retire the demo Time & Attendance screen; Time goes to the real punch screen
 
-- **Status:** Built and verified locally, not committed (2026-10-14; owner: "commit, approve 120ah"). Next: the owner's
-  "commit", then the release build, an independent Security review, the owner's deploy and the journey.
+- **Status:** Released as `e785f9d` (release worktree), built, Security-reviewed (approve with conditions) and checked;
+  waiting for the owner's deploy (2026-10-14). Feature commit `e2bef03`. The review's two findings are
+  [WI-OI-120an](WI-OI-120an.md).
 - **Found by:** the WI-OI-120u Workforce journey on UAT (run `6luh84`, release `4b8db72eae10-c90a7bebc734`).
 - **Work item:** WI-OI-120 (U20a neighbour). Evidence goes in `.pi/work/WI-OI-120.md`.
 - **Size:** S
@@ -59,9 +60,9 @@
   - Proof: HEAD (which still has the demo screen) plus the new rules fails with 2 fixtures and 18 invented names, all in
     `PlantOperationsHub.tsx`; with the screen removed, both modes pass.
   - Widening the fixture rule to every module is WI-OI-120ak's.
-- **Plan v3 step 0.8 item (journey `7i0v43`):** an administrator with no person of their own no longer calls the
-  timesheet preview (403). The screen knows the user has no person only when the whole people list is loaded
-  (`complete`); otherwise it asks, and the answer decides, as before.
+- **Plan v3 step 0.8 item (journey `7i0v43`), partly:** once the screen knows that the administrator has no person, it
+  stops asking for their week. **Not fixed (Security review L1):** on the first load it still asks before the session
+  and the people list arrive (one 403), and the clock panel's own punch list is a second 403. Moved to WI-OI-120an.
 - **Additions, within the same screen (to review):**
   - "Waiting for approval" shows only with `workforce.timesheets.approve`. Resolve, Void punch and the missed-punch
     form show only with `workforce.time.manage`. These are the server's own rules (`modules/gigaops/module.yaml`).
