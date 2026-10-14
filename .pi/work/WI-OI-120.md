@@ -3523,3 +3523,20 @@ widening the card to fix the API faults the proof found.
   - all web tests: 65 files and 710 tests passed;
   - type-check clean outside `.next/types`; lint unchanged;
   - audits on HEAD plus the fixes alone (throwaway worktree, removed): all ten pass.
+
+## WI-OI-120an release 9e9273d (2026-10-14)
+
+- **The 195a605 build stopped on the disk guard,** not on code: 58 GB free against a 60 GB minimum. The guard's own
+  cleanup removed nothing. It keeps the running release and one rollback, and its build-cache trim did not take
+  effect: the cache stayed at 118 GB, all reclaimable. The owner ran `docker builder prune -a -f` (build cache only;
+  no images, containers or volumes). Afterwards: build cache 0 B, 165 GB free. The guard's trim is listed under plan v3
+  step 0.8.
+- **Release `9e9273d`** (cherry-pick of 07ff14e onto 195a605; code byte-identical; owner: "commit"): 697 web tests
+  passed in 63 files; type-check clean outside `.next/types`; audits as on e785f9d (TextFly quarantine only).
+  Identity `local-20261014T141406Z-9e9273d37ced-c2931b59594a`; all nine image tags match. Builds started 14:14Z
+  without cache. The fixes have a focused re-review.
+- **Re-review of 07ff14e / 9e9273d: approve.** One Low regression of the L-1 fix (a day in the same week blanked the
+  week with a false "not submitted" badge) and one wording note: both fixed (card, "Re-review"). Verification: the
+  time-screen test now covers both; all web tests 710 passed in 65 files; type-check clean outside `.next/types`;
+  lint unchanged; audits on HEAD plus the fix alone: all ten pass. The 9e9273d build, already running, warms the cache
+  for the release that carries this fix.

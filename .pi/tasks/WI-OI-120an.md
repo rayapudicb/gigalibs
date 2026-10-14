@@ -102,3 +102,14 @@
   - site-less punches raise no exception. Whether they should is an owner decision (the API is out of scope here);
   - other help entries (`/gigaops` "biometric punches", Sites "muster") and the green shield on every guardrail, even a
     warning: WI-OI-120ak.
+
+## Re-review of the fixes (2026-10-14): approve
+
+- Release `9e9273d` matches 07ff14e exactly. Every sentence of the Time help is true against the code, including the
+  complete list of what is flagged and what is not checked. L-1 is fixed: no wrong person's or week's data can be
+  shown or submitted, and the choices cannot stay locked.
+- **Low, a regression of the L-1 fix, fixed:** picking another day of the week already shown cleared the week but did
+  not reload it (the Monday is the same), so the table stayed blank with a false "not submitted" badge. Now a day in
+  the same week changes nothing; a different week or person also clears the old error; the badge shows only with a
+  loaded week.
+- **Info, fixed:** "at a site without a location" now reads "at a site with no location shared".

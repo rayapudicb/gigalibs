@@ -53,6 +53,9 @@ describe('Time & attendance screen', () => {
     expect(screen).toMatch(
       /id="sheet-week" type="date" value=\{periodStart\} disabled=\{busy\}[^\n]*setPreview\(null\);/,
     );
+    // Re-review: another day of the same week keeps the week shown, and the badge needs a loaded week.
+    expect(screen).toMatch(/if \(next === periodStart\) return; setPreview\(null\);/);
+    expect(screen).toMatch(/\{preview \? status \? <StatusBadge/);
     const workbench = readFileSync(
       join(__dirname, '../components/gigaops/GigaOpsWorkforceWorkbench.tsx'),
       'utf8',
@@ -85,6 +88,7 @@ describe('Time & attendance screen', () => {
       /Not checked: punches with no site, and punches at a site with no boundary drawn/,
     );
     expect(text).not.toMatch(/each punch is checked/);
+    expect(text).toMatch(/at a site with no location shared/);
     expect(text).toMatch(/nobody approves a week they submitted or their own/);
     // Review L-2: the server locks the punch's own week.
     expect(text).toMatch(

@@ -85,7 +85,7 @@ export const MODULE_KNOWLEDGE_REGISTRY: Record<string, ModuleKnowledgeEntry> = {
     ],
     guardrails: [
       'Location and time come from the device\'s browser and are not tamper-proof',
-      'Flagged for a manager: punches outside the chosen site, at a site that could not be checked, at a site without a location, sent late, or after the week was submitted',
+      'Flagged for a manager: punches outside the chosen site, at a site that could not be checked, at a site with no location shared, sent late, or after the week was submitted',
       'Not checked: punches with no site, and punches at a site with no boundary drawn',
       'A punch made offline is kept on this device and sent later with its original time; a resend never records twice',
       'Another manager decides, corrects or resolves your own time; nobody approves a week they submitted or their own',

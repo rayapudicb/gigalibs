@@ -399,18 +399,20 @@ function WeekSheet({ people, siteName, own }: {
     <Container className="p-5">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <Heading level="h2">Timesheet</Heading>
-        {status ? <StatusBadge color={sheetColor[status]}>{status.toLowerCase()}</StatusBadge> : <StatusBadge color="grey">not submitted</StatusBadge>}
+        {/* The badge shows only with a loaded week, so it never says "not submitted" for a week it has not read. */}
+        {preview ? status ? <StatusBadge color={sheetColor[status]}>{status.toLowerCase()}</StatusBadge> : <StatusBadge color="grey">not submitted</StatusBadge> : null}
       </div>
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
         <Field id="sheet-person" label="Person">
           {/* WI-OI-120an (review L-1): a new choice clears the shown week, and choices wait while a week is submitted. */}
-          <select id="sheet-person" value={resourceId} disabled={busy} onChange={(event) => { setPreview(null); setResourceId(event.target.value); }} className={selectClass}>
+          <select id="sheet-person" value={resourceId} disabled={busy} onChange={(event) => { setPreview(null); setError(null); setResourceId(event.target.value); }} className={selectClass}>
             {notAWorker ? <option value="" disabled>Choose a person</option> : <option value="">Me</option>}
             {people.map((person) => <option key={person.id} value={person.id}>{person.displayName}</option>)}
           </select>
         </Field>
         <Field id="sheet-week" label="Week starting (Monday)">
-          <Input id="sheet-week" type="date" value={periodStart} disabled={busy} onChange={(event) => { if (!event.target.value) return; setPreview(null); setPeriodStart(mondayOf(new Date(`${event.target.value}T12:00:00`))); }} />
+          {/* Another day of the same week keeps the week shown; only a different week is cleared and loaded. */}
+          <Input id="sheet-week" type="date" value={periodStart} disabled={busy} onChange={(event) => { if (!event.target.value) return; const next = mondayOf(new Date(`${event.target.value}T12:00:00`)); if (next === periodStart) return; setPreview(null); setError(null); setPeriodStart(next); }} />
         </Field>
       </div>
       {notAWorker ? (

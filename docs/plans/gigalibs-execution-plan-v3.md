@@ -158,6 +158,8 @@ Step 0.8, the journey `7i0v43` follow-ups, routed by where they belong:
 - **Core UX now:** the invitation link does not fill in its token; a reload loses the Settings tab.
 - **Tooling now:**
   - the `--journey` wrapper should not ask for an administrator sign-in;
+  - `docker-disk-guard.sh` claims to trim the build cache to 20 GB but left 118 GB (found 2026-10-14, when a build
+    stopped at 58 GB free; the owner cleared the cache by hand);
   - an owner-run password reset for `uat.admin@gigalibs.io` (active, never signed in, password unknown).
 - **With 120ah (0.4):** `/gigaops/attendance` calls the timesheet preview for an administrator with no linked person
   (403). Partly fixed in 120ah; the first-load 403s are WI-OI-120an (120ah Security review L1).
