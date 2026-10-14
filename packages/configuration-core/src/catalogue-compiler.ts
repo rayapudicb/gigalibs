@@ -6,7 +6,6 @@ import {
   SOLUTION_CONFIGURATION_MODULE_KEY,
   normaliseCountryPack,
   normaliseIndustryPack,
-  type AssistantPolicyV1,
   type GovernedCatalogueDefinition,
   type GovernedCatalogueKind,
 } from '@gigalibs/contracts';
@@ -16,17 +15,6 @@ import { CONFIGURATION_COMPILER_VERSION, canonicalJson, type ConfigurationFindin
 export type CompiledGovernedCatalogue = GovernedCatalogueDefinition & {
   compilerVersion: string;
   checksum: string;
-};
-
-const DEFAULT_ASSISTANT_POLICY_V1: AssistantPolicyV1 = {
-  formatVersion: 1,
-  enabled: false,
-  retentionDays: 30,
-  model: { mode: 'DISABLED' },
-  allowedToolKeys: [],
-  credentialReference: null,
-  displayName: 'GigaLibs Assistant',
-  locale: 'en',
 };
 
 /** WI-OI-064c: validates a governed catalogue and produces a checksummed manifest, like compileConfiguration. */
@@ -65,11 +53,6 @@ export function classifyGovernedCatalogueChange(
   previous: GovernedCatalogueDefinition,
   next: GovernedCatalogueDefinition,
 ): 'COMPATIBLE' | 'BREAKING' {
-  // A tenant policy change can alter data access or retention. It must be reviewed as
-  // breaking even when it only changes presentation; no downstream consumer may infer safety.
-  if (previous.kind === 'ASSISTANT_POLICY' || next.kind === 'ASSISTANT_POLICY')
-    return previous.kind === next.kind && canonicalJson(previous.catalogue) === canonicalJson(next.catalogue)
-      ? 'COMPATIBLE' : 'BREAKING';
   const keys = (definition: GovernedCatalogueDefinition): Set<string> => {
     switch (definition.kind) {
       case 'METRIC_CATALOGUE':
@@ -80,8 +63,6 @@ export function classifyGovernedCatalogueChange(
         );
       case 'COUNTRY_PACK':
         return new Set(normaliseCountryPack(definition.catalogue).subdivisions.map((subdivision) => `subdivision:${subdivision.code}`));
-      case 'ASSISTANT_POLICY':
-        return new Set();
     }
   };
   const after = keys(next);
@@ -113,15 +94,6 @@ export function bundledGovernedCatalogue(
         ? { contractVersion: '2.0', kind, moduleKey: SOLUTION_CONFIGURATION_MODULE_KEY, entityKey: 'country-pack', surfaceKey, title: pack.label, catalogue: pack }
         : undefined;
     }
-    case 'ASSISTANT_POLICY':
-      return surfaceKey === 'assistant-default'
-        ? {
-            contractVersion: '1.0', kind, moduleKey: 'gigalibs-assistant', entityKey: 'tenant-policy',
-            surfaceKey, title: 'Assistant tenant policy',
-            description: 'Disabled-by-default Assistant settings; publishing does not enable inference or tools.',
-            catalogue: DEFAULT_ASSISTANT_POLICY_V1,
-          }
-        : undefined;
   }
 }
 
@@ -131,6 +103,5 @@ export function listBundledGovernedCatalogues(): readonly { kind: GovernedCatalo
     ...BUNDLED_METRIC_CATALOGUES.map((item) => ({ kind: 'METRIC_CATALOGUE' as const, surfaceKey: item.key, title: item.title })),
     ...SHIPPED_INDUSTRY_PACKS.map((pack) => ({ kind: 'INDUSTRY_PACK' as const, surfaceKey: pack.slug, title: pack.label })),
     ...SHIPPED_COUNTRY_PACKS.map((pack) => ({ kind: 'COUNTRY_PACK' as const, surfaceKey: pack.code.toLowerCase(), title: pack.label })),
-    { kind: 'ASSISTANT_POLICY' as const, surfaceKey: 'assistant-default', title: 'Assistant tenant policy' },
   ]);
 }

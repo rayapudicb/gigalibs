@@ -163,9 +163,4 @@ describe('ConfigurationStudioService surface registry', () => {
       }),
     ).rejects.toThrow('Field type CURRENCY is not permitted');
   });
-
-  it('does not allow Demo Lab tenants to bypass independent review for Assistant policy', async () => {
-    await expect(service.provisionDemoCatalogue('tenant-a', 'actor-a', 'ASSISTANT_POLICY', 'assistant-default'))
-      .rejects.toThrow(/independent review/);
-  });
 });

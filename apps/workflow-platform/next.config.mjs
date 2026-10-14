@@ -13,7 +13,6 @@ const nextConfig = {
       ...config.resolve.alias,
       '@gigalibs/logger': path.resolve(currentDirectory, '../../packages/logger/dist/logger.js'),
       '@gigalibs/broker': path.resolve(currentDirectory, '../../packages/broker/dist/index.js'),
-      '@gigalibs/vendor-copilotkit': path.resolve(currentDirectory, '../../vendor/copilotkit/dist/copilotkit.mjs'),
       // data-import-export-react quarantined — alias removed
     };
     // Allow webpack to resolve .js imports as .ts/.tsx when transpiling workspace source packages.

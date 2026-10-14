@@ -92,13 +92,10 @@ const PERSONA_CONFIG: Record<
 export default function AppSidebar({
   session,
   uatPreview = false,
-  assistantPreviewEnabled = false,
 }: {
   session: VerifiedSession;
   /** UAT instance only (WI-OI-120a): locked modules are listed like any other module. */
   uatPreview?: boolean;
-  /** WI-OI-121f: do not advertise the contained Assistant outside the exact preview gate. */
-  assistantPreviewEnabled?: boolean;
 }) {
   const pathname = usePathname();
   const { t } = useTranslation('navigation');
@@ -171,7 +168,6 @@ export default function AppSidebar({
     holdsAnyPermission(session.permissions, ['tenant:read', 'users:read']);
 
   const visibleModules = platformModuleCatalog.filter((module) => {
-    if (module.key === 'gigalibs-assistant' && !assistantPreviewEnabled) return false;
     if (SIDEBAR_HIDDEN_KEYS.has(module.key)) return false;
     if (!personaSeesModule(activePersona, module.key)) return false;
     return canOpenPlatformModule(module, { ...session, uatPreview });

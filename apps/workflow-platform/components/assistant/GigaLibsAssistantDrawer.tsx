@@ -3,22 +3,36 @@
 import React, { useEffect, useMemo } from 'react';
 import { Bot, ShieldAlert, X } from 'lucide-react';
 import { GigaLibsCopilotKitProvider, CopilotChat } from '../../../../vendor/copilotkit/dist/copilotkit.mjs';
-import { CopilotKitStylesheet } from './CopilotKitStylesheet';
-import { ClaudeStyleMessageRenderer } from './ClaudeStyleMessageRenderer';
 import { DailyInspectionChecklistCard } from './DailyInspectionChecklistCard';
-import { SpatialEquipmentCard } from './SpatialEquipmentCard';
-import { ReportArtifactCard } from './ReportArtifactCard';
-import { EmergencyAlertCard } from './EmergencyAlertCard';
-import { ModuleHealthMatrixCard } from './ModuleHealthMatrixCard';
-import { WorkOrderDraftCard } from './WorkOrderDraftCard';
-import { ARAgingSummaryCard } from './ARAgingSummaryCard';
-import { InventoryStockCard } from './InventoryStockCard';
-import { ProcurementRequisitionCard } from './ProcurementRequisitionCard';
+import { CopilotKitStylesheet } from './CopilotKitStylesheet';
 import { StatusBadge } from '@medusajs/ui';
 
 interface GigaLibsAssistantDrawerProps {
   isOpen: boolean;
   onClose: () => void;
+}
+
+function AssistantMarkdownWithGenerativeUI({
+  content,
+  className,
+}: {
+  content: string;
+  className?: string;
+}) {
+  const isDailyInspection =
+    content.includes('Daily Inspection Checklist') ||
+    content.includes('INSP-2026-ABC-09');
+
+  return (
+    <div className={className}>
+      <div style={{ whiteSpace: 'pre-wrap' }}>{content}</div>
+      {isDailyInspection && (
+        <div className="mt-3">
+          <DailyInspectionChecklistCard />
+        </div>
+      )}
+    </div>
+  );
 }
 
 export function GigaLibsAssistantDrawer({
@@ -104,52 +118,12 @@ export function GigaLibsAssistantDrawer({
   const toolRenderers = useMemo(
     () => [
       {
-        name: 'cmms_get_daily_inspections',
-        render: () => <DailyInspectionChecklistCard />,
-      },
-      {
         name: 'render_daily_inspection_checklist',
         render: () => <DailyInspectionChecklistCard />,
       },
       {
         name: 'daily_inspections',
         render: () => <DailyInspectionChecklistCard />,
-      },
-      {
-        name: 'cmms_search_assets',
-        render: () => <SpatialEquipmentCard />,
-      },
-      {
-        name: 'spatial_get_digital_twin',
-        render: () => <SpatialEquipmentCard />,
-      },
-      {
-        name: 'analytics_generate_report',
-        render: () => <ReportArtifactCard />,
-      },
-      {
-        name: 'platform_get_module_health',
-        render: () => <ModuleHealthMatrixCard />,
-      },
-      {
-        name: 'cmms_create_work_order',
-        render: () => <WorkOrderDraftCard />,
-      },
-      {
-        name: 'safety_dispatch_emergency_alert',
-        render: () => <EmergencyAlertCard />,
-      },
-      {
-        name: 'finance_get_ar_aging',
-        render: () => <ARAgingSummaryCard />,
-      },
-      {
-        name: 'inventory_check_stock',
-        render: () => <InventoryStockCard />,
-      },
-      {
-        name: 'procurement_create_requisition',
-        render: () => <ProcurementRequisitionCard />,
       },
     ],
     []
@@ -165,7 +139,7 @@ export function GigaLibsAssistantDrawer({
       className="fixed inset-0 z-50 flex justify-end bg-ui-bg-overlay/40 backdrop-blur-xs transition-opacity duration-200"
     >
       <CopilotKitStylesheet />
-      <div className="relative flex h-full w-full max-w-xl flex-col border-l border-ui-border-base bg-ui-bg-base shadow-2xl animate-in slide-in-from-right duration-200">
+      <div className="relative flex h-full w-full max-w-lg flex-col border-l border-ui-border-base bg-ui-bg-base shadow-2xl animate-in slide-in-from-right duration-200">
         {/* Minimal Claude/ChatGPT Style Header */}
         <header className="flex h-14 items-center justify-between border-b border-ui-border-base bg-ui-bg-base px-4 shrink-0">
           <div className="flex items-center gap-2.5">
@@ -200,7 +174,7 @@ export function GigaLibsAssistantDrawer({
               className="flex-1 h-full flex flex-col min-h-0"
               messageView={{
                 assistantMessage: {
-                  markdownRenderer: ClaudeStyleMessageRenderer,
+                  markdownRenderer: AssistantMarkdownWithGenerativeUI,
                 },
               }}
               labels={{

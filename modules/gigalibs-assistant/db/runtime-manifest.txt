@@ -1,2 +1,0 @@
-# WI-OI-121g: Assistant-owned persistence. Not applied to UAT by this change.
-000001_assistant_private_threads.up.sql

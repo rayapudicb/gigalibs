@@ -548,19 +548,19 @@ export const generatedPlatformModuleCatalog = [
   // modules/gigalibs-assistant/module.yaml
   {
     key: 'gigalibs-assistant',
-    name: 'GigaLibs Assistant Preview',
-    navigationLabel: 'Assistant Preview',
+    name: 'GigaLibs Assistant',
+    navigationLabel: 'AI Assistant Config',
     area: 'Intelligence',
     navigationGroup: 'Intelligence',
     route: '/assistant',
     iconKey: 'sparkles',
     readiness: 'REVIEW',
-    maturity: 'UI_PROTOTYPE',
+    maturity: 'CORE_IMPLEMENTED',
     entitlementEligible: true,
     trialEligible: true,
-    requiredPermission: 'assistant:preview',
-    platformInspection: false,
-    reason: 'Contained development-only synthetic Ollama preview; private-thread source is dormant pending published policy and safe runtime registration.',
+    requiredPermission: 'assistant:read',
+    platformInspection: true,
+    reason: 'Sovereign AI assistant connected via same-origin SSE with CopilotKit Generative UI and multi-tenant RBAC enforcement.',
   },
   // modules/saga-orchestrator/module.yaml
   {

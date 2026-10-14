@@ -1,5 +1,4 @@
 import { canOpenPlatformModule } from '@/lib/module-access';
-import { canUseAssistantPreview } from '@/lib/assistant-preview-access';
 import { moduleIconGlyphs } from '@/lib/module-icons';
 import { MaturityBadge } from '@/components/modules/MaturityBadge';
 import { verifiedSession } from '@/lib/verified-session';
@@ -20,11 +19,7 @@ export default async function ModulesPage() {
 
   const context = session.context;
   const canOpen = (module: PlatformModuleDefinition) =>
-    Boolean(
-      context &&
-      (module.key !== 'gigalibs-assistant' || canUseAssistantPreview(context)) &&
-      canOpenPlatformModule(module, context),
-    );
+    Boolean(context && canOpenPlatformModule(module, context));
   const enabledForSession = platformModuleCatalog.filter(canOpen).length;
 
   return (

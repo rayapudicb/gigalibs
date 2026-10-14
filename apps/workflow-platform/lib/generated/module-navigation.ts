@@ -170,9 +170,27 @@ export const generatedModuleMenus: Readonly<Record<string, readonly GeneratedMod
   "gigalibs-assistant": [
     {
       "key": "chat",
-      "label": "Synthetic Preview",
+      "label": "AI Workspace",
       "path": "/assistant",
       "icon": "sparkles"
+    },
+    {
+      "key": "configuration",
+      "label": "Agent Settings & Config",
+      "path": "/assistant/configuration",
+      "icon": "settings"
+    },
+    {
+      "key": "tools",
+      "label": "Operational Tool Allowlist",
+      "path": "/assistant/tools",
+      "icon": "wrench"
+    },
+    {
+      "key": "audit",
+      "label": "Telemetry & Audit Logs",
+      "path": "/assistant/audit",
+      "icon": "shield-check"
     }
   ],
   "communications-textfly": [

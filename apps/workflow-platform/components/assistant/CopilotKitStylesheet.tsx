@@ -3,45 +3,18 @@
 import { useEffect } from 'react';
 
 const COMPOSER_OVERRIDE_CSS = `
-/* GigaLibs Sovereign AI Assistant - ChatGPT-Style Clean Composer Styling */
-[data-copilotkit] [data-testid="copilot-chat-input"],
-[data-copilotkit] .copilotKitInput {
-  border: 1.5px solid #cbd5e1 !important;
-  border-radius: 1.75rem !important;
-  background-color: #ffffff !important;
-  box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.05), 0 1px 4px -1px rgba(0, 0, 0, 0.03) !important;
-  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out !important;
-}
-
-[data-copilotkit] [data-testid="copilot-chat-input"]:focus-within,
-[data-copilotkit] .copilotKitInput:focus-within {
-  border-color: #167a55 !important;
-  box-shadow: 0 0 0 2px rgba(22, 122, 85, 0.15), 0 2px 8px -2px rgba(0, 0, 0, 0.05) !important;
-}
-
-/* Eliminate ALL inner rectangular boxes, borders, outlines, and box-shadows */
-[data-copilotkit] [data-testid="copilot-chat-input"] *,
-[data-copilotkit] .copilotKitInput *,
-[data-copilotkit] textarea,
-[data-copilotkit] [data-testid="copilot-chat-textarea"] {
-  border: none !important;
-  outline: none !important;
-  box-shadow: none !important;
-}
-
-/* Textarea - completely transparent and seamless like ChatGPT */
+/* GigaLibs Sovereign AI Assistant - Composer Container & Send Button Styling */
 [data-copilotkit] textarea,
 [data-copilotkit] [data-testid="copilot-chat-textarea"] {
   border: none !important;
   outline: none !important;
   box-shadow: none !important;
   background: transparent !important;
-  background-color: transparent !important;
   resize: none !important;
-  font-size: 0.9375rem !important;
+  font-size: 0.875rem !important;
   line-height: 1.5 !important;
   color: #0f172a !important;
-  padding: 0.5rem 0.5rem !important;
+  padding: 0.75rem 1rem !important;
 }
 
 [data-copilotkit] textarea::placeholder,
@@ -49,16 +22,26 @@ const COMPOSER_OVERRIDE_CSS = `
   color: #94a3b8 !important;
 }
 
-[data-copilotkit] textarea:focus,
-[data-copilotkit] [data-testid="copilot-chat-textarea"]:focus,
-[data-copilotkit] textarea:focus-visible,
-[data-copilotkit] [data-testid="copilot-chat-textarea"]:focus-visible {
-  border: none !important;
-  outline: none !important;
-  box-shadow: none !important;
+[data-copilotkit] form,
+[data-copilotkit] [data-slot="input-container"],
+[data-copilotkit] [data-testid="copilot-chat-input"],
+[data-copilotkit] .copilotKitInput {
+  border: 1.5px solid #cbd5e1 !important;
+  border-radius: 1.5rem !important;
+  background-color: #ffffff !important;
+  box-shadow: 0 2px 8px -1px rgba(0, 0, 0, 0.08), 0 1px 3px -1px rgba(0, 0, 0, 0.06) !important;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out !important;
 }
 
-/* Plus / Add Menu button */
+[data-copilotkit] form:focus-within,
+[data-copilotkit] [data-slot="input-container"]:focus-within,
+[data-copilotkit] [data-testid="copilot-chat-input"]:focus-within,
+[data-copilotkit] .copilotKitInput:focus-within,
+[data-copilotkit] div:has(> textarea):focus-within {
+  border-color: #167a55 !important;
+  box-shadow: 0 0 0 3px rgba(22, 122, 85, 0.18), 0 2px 8px -1px rgba(0, 0, 0, 0.08) !important;
+}
+
 [data-copilotkit] [data-testid="copilot-add-menu-button"] {
   width: 32px !important;
   height: 32px !important;
@@ -69,7 +52,6 @@ const COMPOSER_OVERRIDE_CSS = `
   align-items: center !important;
   justify-content: center !important;
   transition: all 0.15s ease-in-out !important;
-  border: none !important;
 }
 
 [data-copilotkit] [data-testid="copilot-add-menu-button"]:hover:not(:disabled) {
@@ -77,11 +59,10 @@ const COMPOSER_OVERRIDE_CSS = `
   background-color: #f1f5f9 !important;
 }
 
-/* Send button - modern circular action button like ChatGPT */
 [data-copilotkit] button[type="submit"],
 [data-copilotkit] [data-testid="copilot-send-button"] {
-  width: 32px !important;
-  height: 32px !important;
+  width: 34px !important;
+  height: 34px !important;
   border-radius: 9999px !important;
   display: flex !important;
   align-items: center !important;
@@ -112,7 +93,7 @@ const COMPOSER_OVERRIDE_CSS = `
 
 [data-copilotkit] button[type="submit"]:disabled,
 [data-copilotkit] [data-testid="copilot-send-button"]:disabled {
-  background-color: #f1f5f9 !important;
+  background-color: #e2e8f0 !important;
   color: #94a3b8 !important;
   cursor: not-allowed !important;
   opacity: 0.6 !important;
@@ -122,18 +103,6 @@ const COMPOSER_OVERRIDE_CSS = `
 [data-copilotkit] [data-testid="copilot-send-button"]:disabled svg {
   color: #94a3b8 !important;
   stroke: #94a3b8 !important;
-}
-
-/* Claude/Generative UI Presentation & Spacing Rules */
-[data-copilotkit] .copilotKitMessages,
-[data-copilotkit] [data-testid="copilot-chat-messages"] {
-  padding-bottom: 2.5rem !important;
-  scroll-behavior: smooth !important;
-}
-
-[data-copilotkit] .copilotKitAssistantMessage {
-  max-width: 100% !important;
-  width: 100% !important;
 }
 `;
 
