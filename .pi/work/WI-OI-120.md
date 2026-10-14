@@ -3390,3 +3390,16 @@ widening the card to fix the API faults the proof found.
   - C7 (backup and restore drill of `uat-postgres`) before the D3a reset; the reset and the `.prev` deletion are
     planned no earlier than 2026-10-21.
 
+## Journey after the WI-OI-120am cutover (2026-10-14 09:59Z, owner-run)
+
+- **Journey `7xqjy6`** on release d435c58 with `uat-postgres`: 76 steps, 71 done and 5 blocked; 69 findings.
+  - The same 5 blockers: clock-in, submit week and week approval on the demo `/gigaops/time` (step 0.4); a CMMS
+    request and the work-order close (step 1.3).
+  - The same 3 bugs and 6 UX findings.
+  - Accessibility 18, one more than before: colour contrast and markup on `/settings`, `/modules`, `/gigaops/time`,
+    `/cmms/*`, `/gigaops/resources` and `/dashboard`. Data-dependent, and not from the database (step 0.8).
+- WI-OI-120am's last proof passes: moving UAT to its own database changed nothing in a new customer's journey.
+- **The owner deleted `dev-database.env` without copying the new development credentials** (per the pasted
+  session). Local development servers therefore cannot log in to the development database until its password is reset
+  (offered).
+

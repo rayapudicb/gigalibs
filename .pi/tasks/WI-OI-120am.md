@@ -5,8 +5,9 @@
   - Built and rehearsed: `compose.database.yaml`; `scripts/uat/wi-oi-120am/` (prepare, cutover with preflight, run and
     rollback; lib, 6 tests); the deploy tool copy (31 tests); passwords removed from tracked code.
   - **Cutover done, 2026-10-14 09:31–09:40Z (owner-run):** UAT runs release d435c58 on `uat-postgres`; verified read-only.
-    C6 done (2026-10-14): the old database is bound to `127.0.0.1` with all 13 logins rotated. Next: the journey; C7 and
-    the D3a reset, with the `.prev` deletion, no earlier than 2026-10-21.
+    C6 done (2026-10-14): the old database is bound to `127.0.0.1` with all 13 logins rotated. Journey `7xqjy6` after
+    the cutover: the same 5 blockers and 3 bugs as before. Left: C7, the D3a reset and the `.prev` deletion, no earlier
+    than 2026-10-21.
 - **Plan step:** execution plan v3 step 0.3c. It is the owner's decision Q2a in WI-OI-120al and the first slice of O1,
   brought forward.
 - **Work item:** WI-OI-120. Evidence goes in `.pi/work/WI-OI-120.md`.
