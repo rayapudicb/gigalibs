@@ -3371,3 +3371,22 @@ widening the card to fix the API faults the proof found.
   - C7: before the D3a reset (no earlier than 2026-10-21), a verified backup and a restore drill of `uat-postgres`.
   - The owner reruns the journey.
 
+## WI-OI-120am condition C6 done (2026-10-14, owner-run)
+
+- **`rotate-old.mjs --apply`:** all 13 login roles of the old database (now development-only) have new passwords,
+  `rls_test_user` included. The passwords are only in `infra/compose/backups/wi-oi-120am/dev-database.env` (mode 600,
+  git-ignored), for the owner's local `.env` files. Nothing secret was printed. The script refuses while any UAT
+  container uses the old database (dry run proven).
+- **Rebind:** `docker compose -f docker/docker-compose.dev.yml --project-name gigalibs-dev --env-file .env --profile
+  dev-database up -d postgres` recreated `gigalibs-postgres` on `127.0.0.1:5440`, healthy, on the same volume
+  `gigalibs_dev_postgres_data`. The data is intact (321 workspaces, the cutover-time copy).
+- **Read-only proof:**
+  - the old superuser password from git history is rejected (tested through stdin, never on a command line);
+  - containers still reach the port through `host.docker.internal:5440`, as the review expected; only the new
+    password opens it.
+- **Open:**
+  - the owner copies the new development credentials into the local `.env` files and deletes `dev-database.env`;
+  - the journey after the cutover;
+  - C7 (backup and restore drill of `uat-postgres`) before the D3a reset; the reset and the `.prev` deletion are
+    planned no earlier than 2026-10-21.
+

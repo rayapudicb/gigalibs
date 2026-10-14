@@ -1,7 +1,7 @@
 // node --test scripts/uat/wi-oi-120am/lib.test.mjs
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { compareInventories, connectGrantees, databaseUrls, dropSkippedRolesSql, lossyRoleFeatures, rewriteEnv, rolesSql } from './lib.mjs';
+import { compareInventories, connectGrantees, databaseUrls, dropSkippedRolesSql, lossyRoleFeatures, rewriteEnv, rolesSql, rotateSql } from './lib.mjs';
 
 const env = [
   '# comment with host.docker.internal for the module APIs',
@@ -95,5 +95,13 @@ test('refuses role features the copy would lose', () => {
   assert.deepEqual(lossyRoleFeatures({ ...clean, limitedRoles: [{ rolname: 'y' }] }), ['y has a connection limit or an expiry']);
   assert.match(lossyRoleFeatures({ ...clean, datacl: '{=c/gigalibs,gigalibs=CTc/gigalibs}' }).join(), /PUBLIC holds =c\/gigalibs/);
   assert.match(lossyRoleFeatures({ ...clean, datacl: '{=Tc/gigalibs,gigalibs=CTc/gigalibs,z=CTc/gigalibs}' }).join(), /z holds CTc/);
+});
+
+test('rotates every login role and never logs a failing statement', () => {
+  const sql = rotateSql(['gigalibs', 'rls_test_user'], { gigalibs: 'Aa1', rls_test_user: "B'2" });
+  assert.ok(sql.indexOf('SET log_min_error_statement = panic;') < sql.indexOf('ALTER ROLE'));
+  assert.match(sql, /ALTER ROLE "gigalibs" WITH PASSWORD 'Aa1';/);
+  assert.match(sql, /ALTER ROLE "rls_test_user" WITH PASSWORD 'B''2';/);
+  assert.throws(() => rotateSql(['gigalibs'], {}), /no new password/);
 });
 

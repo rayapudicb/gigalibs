@@ -194,3 +194,18 @@ export function compareInventories(oldText, newText) {
     catalogChecks: [...a.keys()].filter((k) => k.startsWith('catalog|')).length,
   };
 }
+
+/**
+ * Card condition C6: SQL that gives every login role of the old (now development-only) cluster a new password. Never
+ * logs a failing statement (it would carry the password).
+ */
+export function rotateSql(loginRoles, passwords) {
+  const lines = ['SET log_min_error_statement = panic;', 'SET log_statement = none;'];
+  for (const name of loginRoles) {
+    const password = passwords[name];
+    if (!password) throw new Error(`${CARD}: no new password for ${name}`);
+    lines.push(`ALTER ROLE ${quoteIdent(name)} WITH PASSWORD ${quoteLiteral(password)};`);
+  }
+  return `${lines.join('\n')}\n`;
+}
+
