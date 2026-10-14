@@ -5,8 +5,11 @@
 > plan's Done checklist (§2) instead of separate G5–G7 gates; zero hard-coding and zero mock; generative UI from metadata.
 > **Steps 0.1 and 0.2 done (2026-10-14).** Workforce Slice 3 release `4e6f9efa3b03-e9e9b32dc427` is on UAT. The
 > read-only check passed, and journey `7i0v43` had 5 blockers (previously 8): 3 on the demo `/gigaops/time` (step 0.4)
-> and 2 on unreleased CMMS (step 1.3). **Current step: 0.3, branch repair:** card [WI-OI-120aj](tasks/WI-OI-120aj.md) approved 2026-10-14 (D1a, D2a, D3a); part 1 in progress. It also
-> reports unreleased Assistant grants, entitlements and a stray schema on the UAT database (owner decisions D1–D3).
+> and 2 on unreleased CMMS (step 1.3). **Step 0.3 part 1 done (2026-10-14):** the Assistant preview is reverted from the branch, the
+> CMMS pin is at 20, and a clean checkout installs, builds, tests and audits ([WI-OI-120aj](tasks/WI-OI-120aj.md)).
+> **Current step: 0.3b, [WI-OI-120al](tasks/WI-OI-120al.md)** (Proposed). It undoes the old development script's
+> writes on the UAT database: modules switched on in 288 workspaces, and `*` on 444 members. Waiting for the owner's
+> OK, then a reconciliation report, the Security review and an owner-run script.
 
 > **WI-OI-120u on UAT: release `4b8db72eae10-c90a7bebc734` (2026-10-13), and the Workforce journey passes.** The journey
 > found that new workspaces got no module windows (creating a workspace wrote no `tenant.entitlements.changed.v1`).

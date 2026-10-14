@@ -3082,3 +3082,46 @@ widening the card to fix the API faults the proof found.
   - `uat.admin@gigalibs.io` is active but has never signed in, and its password is unknown (one refused attempt).
   - Both are v3 step 0.8.
 
+## WI-OI-120aj part 1: branch repair (execution plan v3 step 0.3, 2026-10-14)
+
+- **Commits**, made on a scratch branch in a clean worktree and fast-forwarded on the owner's "commit":
+  - `0ad402a`, `5a3a8f7`, `131fb05`, `26493c7`: the Assistant preview commits `eee6276`, `0d4585e`, `7c15655` and
+    `e0ec197` reverted. `507e7fa` needed no revert: it only changed `scripts/enable-all-features.mjs`, which stays the
+    stub that refuses to run.
+  - Kept as they were: every record under `.pi/` and `docs/`, and the refusing stub. Reverting blindly would have
+    brought back the script that switched on every module and granted `*` to every member.
+  - `7bbcc51`: CMMS `CMMS_SCHEMA_CONTRACT_VERSION` and compose `CMMS_EXPECTED_MIGRATION_VERSION` raised to 20, to match
+    migration `000020`, which 0e2f119 had added.
+  - `9816b7f`: the WI-OI-121 cards, evidence, runbook and release manifest carry a "withdrawn" banner. The WORK_ITEMS
+    row says the same.
+  - `9b0c477`: owner decisions E1a, E2a and E3a for three problems that predate this card, which local trees had
+    hidden:
+    - E1a: the frozen AR API is left out of the root build until M-AR0. Its helper packages have no build script,
+      and `custom-fields-nest` has a syntax error and type drift (e4e4a69 and earlier). Local trees used a stale
+      `dist/` from 2026-09-14.
+    - E2a: four CMMS gateway and menu equivalence tests are `it.fails`, until the CMMS Security review (steps 1.1–1.3).
+      They cover an any-of work-order permission, six new record routes, one changed POST permission, and the menu
+      growing from 8 entries to 10.
+    - E3a: the runtime-data audit accepts an absent quarantined root (the owner's untracked TextFly apps) and lists
+      it.
+- **Clean-checkout proof** (a fresh worktree at 9b0c477; no untracked files and no `vendor/`):
+  - `pnpm install --frozen-lockfile` passes.
+  - `pnpm verify`: build PASS (88 tasks), all audits PASS including design tokens, module manifests PASS, S16
+    windows and conversions PASS; deployment profile KNOWN (`WORKFORCE_API_URL`); 12 proofs not run (they need
+    `PROOF_DATABASE_URL`).
+  - Tests: 2,960 passed and 226 skipped. Two control-plane suites need a configured root `.env` (a real 32-byte
+    payload key; `.env.example` has a placeholder). With the local `.env` loaded they pass in the same tree (9/9).
+  - `git grep` finds no `vendor/copilotkit` import, no `OmnichannelHeaderTrigger` and no Assistant permission in
+    the base roles. The catalogue lists no Assistant.
+- **Not touched:** other sessions' uncommitted and untracked work. The untracked
+  `__tests__/vendor-copilotkit.test.ts` (another session's file) will now fail in local trees; the owning session
+  decides.
+- **Releases:** they still come from the release worktree, built from reviewed commits only, until the CMMS commits
+  pass steps 1.1–1.3.
+- **UAT data findings** (read-only, 2026-10-14), moved to card WI-OI-120al:
+  - from the old enable-all-features script: on 2026-10-09, 7,776 entitlements ENABLED in 288 workspaces (6,979
+    created, 797 overwritten);
+  - on 2026-10-11, `*` and `assistant:*`, `assistant:read` and `assistant:action` on 444 to 452 members;
+  - `assistant:preview` on 468 members.
+  - The released sign-in code drops a bare `*` (`isTenantPermissionCode`). The switched-on modules do take effect.
+

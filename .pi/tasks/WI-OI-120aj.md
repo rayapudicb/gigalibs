@@ -1,7 +1,8 @@
 # WI-OI-120aj: Branch repair: the branch builds from a clean checkout, and the Assistant preview leaves it
 
-- **Status:** Approved (owner, 2026-10-14: "approve 120aj, D1a, D2a, D3a, commit"). Part 1 in progress; part 2 is an
-  owner-run script after the Security review.
+- **Status:** Part 1 done (2026-10-14; commits 0ad402a to 9b0c477, with owner decisions E1a, E2a and E3a). Part 2
+  (the UAT data) moved into WI-OI-120al, which absorbs D1a and D2a; D3a is unchanged. The Security review is still due
+  before the next deploy that includes part 1.
 - **Plan step:** execution plan v3 step 0.3 (`docs/plans/gigalibs-execution-plan-v3.md`).
 - **Work items:** WI-OI-120; WI-OI-121 for the Assistant records. Evidence goes in `.pi/work/WI-OI-120.md`.
 - **Size:** M (part 1); part 2 is an owner-run data change, only if the owner chooses it.
