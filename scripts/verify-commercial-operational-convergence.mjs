@@ -33,7 +33,9 @@ import {
 } from '../modules/accounts-receivable/apps/api/dist/invoices/invoice-ledger-seal.js';
 import { calculateInvoiceDraft, formatInvoiceNumber } from '../modules/accounts-receivable/domain/dist/index.js';
 
-const DB_URL = process.env.CONTROL_PLANE_DB_URL || 'postgresql://gigalibs:gigalibs_dev@localhost:5440/gigalibs';
+// WI-OI-120am: no fallback address or password in code.
+const DB_URL = process.env.CONTROL_PLANE_DB_URL;
+if (!DB_URL) throw new Error('Set CONTROL_PLANE_DB_URL to an isolated proof database');
 
 console.log('================================================================================');
 console.log('WI-OI-113: Commercial & Operational Convergence Certification');

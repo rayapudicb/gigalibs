@@ -11,10 +11,9 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
   private pool: pg.Pool;
 
   constructor() {
-    const connectionString =
-      process.env.RULES_DATABASE_URL ??
-      process.env.DATABASE_URL ??
-      'postgresql://gigalibs:gigalibs_dev@localhost:5440/gigalibs';
+    // WI-OI-120am: no fallback address or password in code; the deployment supplies the URL.
+    const connectionString = process.env.RULES_DATABASE_URL ?? process.env.DATABASE_URL;
+    if (!connectionString) throw new Error('RULES_DATABASE_URL or DATABASE_URL is required');
 
     this.pool = new Pool({
       connectionString,

@@ -3259,3 +3259,44 @@ widening the card to fix the API faults the proof found.
     `docker/docker-compose.dev.yml` (project `gigalibs-dev`). UAT services reach it as `host.docker.internal:5440`, it
     is published on `0.0.0.0:5440`, and local development `.env` files use it.
 
+## Journey after WI-OI-120al, and WI-OI-120am built and rehearsed (2026-10-14)
+
+- **Journey `7phudp`, owner-run after the 120al data fix:** 76 steps, 71 done and 5 blocked; 68 findings. Identical
+  to `7i0v43`: the same 5 blockers (3 on the demo `/gigaops/time`, step 0.4; 2 on unreleased CMMS, step 1.3), the same
+  3 bugs, and the same layout, accessibility and UX counts. The data fix changed nothing in a new customer's journey.
+- **WI-OI-120am facts:**
+  - UAT's database is `gigalibs-postgres` (made 2026-08-30 from an old dev compose; volume
+    `gigalibs_dev_postgres_data`), published on `0.0.0.0:5440`. UAT reaches it as `host.docker.internal:5440` in 14
+    `*_DATABASE_URL` settings across 10 env files.
+  - 22 roles, 14 of them able to log in; the control plane and every migration connect as the superuser `gigalibs`.
+  - `rls_test_user` holds grants (all on schema `gigalibs_finance`, 336 table grants) and owns nothing.
+  - `gigalibs-host-bridge` (2026-10-09, another session) proxies the UAT module APIs to the Mac (D5a: remove it).
+- **Built:**
+  - `infra/compose/compose.database.yaml`: `uat-postgres`, pinned digest, no published port, read-only root,
+    capabilities dropped except those initdb needs, SCRAM passwords, a named volume.
+  - `scripts/uat/wi-oi-120am/`: prepare.mjs (new passwords into mode-600 `.next` env files and `roles.sql`, nothing
+    printed); cutover.mjs (preflight, `--run` in 7 steps, `--rollback`); lib.mjs with 6 tests.
+  - The deploy tool copy: a database stage before migrations, a volume only for the database, no port, an upstream pin,
+    and `--deploy` refused while any env file names the old database. 31 tests.
+- **Rehearsal** (an isolated fake UAT: an old database restored from `gigalibs_backup_20261014_052230Z`, dummy
+  application containers, synthetic env files):
+  - prepare wrote 10 `.next` files, `.env.database` and `roles.sql`, all mode 600;
+  - cutover: new database healthy and empty, 22 roles, application stopped, final backup verified, restore with
+    `--exit-on-error` and **no error**, `rls_test_user` dropped (D2a), **546 tables equal and 22 migration ledgers
+    identical**, env files swapped;
+  - all 14 service logins connect over the network with new SCRAM passwords; 395 row-security policies present;
+  - the release's control-plane migrations report "No pending migrations"; CMMS reports "ready at migration 19";
+  - rollback restored the env files and restarted the services; a second attempt is refused while the new database
+    holds data;
+  - everything is deleted afterwards (11 containers, the volume, the network, the folder).
+  - The rehearsal found that a strict restore needs `rls_test_user`: it is now created NOLOGIN for the restore and
+    dropped after.
+- **Passwords removed from tracked code:**
+  - the three module `database.service.ts` (Data Studio, Rule Pro, Workflow Studio), migrate-communications-db,
+    verify-local-tp2-runtime (two copies), verify-commercial-operational-convergence, the financial-operations proof
+    script, a recovery test fixture, and the WI-OI-027 note;
+  - 0 tracked files contain the old password; the three APIs compile; audits pass (except the known design-tokens
+    file of another session).
+  - `docker/docker-compose.dev.yml` describes the development database again, bound to `127.0.0.1`, to apply after
+    the cutover.
+

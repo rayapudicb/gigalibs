@@ -45,7 +45,7 @@ Verified in live PostgreSQL: `rowsecurity = t` on all 5 tenant tables, ledger ha
 - `setup.service.ts`: `setupTenant` switched to `withTenantTransaction`.
 - `scanner.service.ts`: `getScans` switched to `queryWithTenant`.
 - `claims.service.ts`: `getClaims` switched to `queryWithTenant`.
-- `.env`: DB URL corrected to `postgresql://gigalibs:gigalibs_dev@localhost:5440/gigalibs`.
+- `.env`: DB URL corrected to `postgresql://gigalibs:<redacted, WI-OI-120am>@localhost:5440/gigalibs`.
 
 ### Tests
 

@@ -1,0 +1,55 @@
+# WI-OI-120am (owner-approved 2026-10-14): UAT's own database. Until now UAT used `gigalibs-postgres`, a container made
+# from an old development compose file and published on every interface at port 5440. Development servers reached it
+# the same way (WI-OI-120al).
+#
+# This service publishes no port. Only the services on the UAT network reach it, as `uat-postgres:5432`. Administration
+# runs inside the container (`docker exec … psql`, trusted on the local socket only). Passwords: the superuser's comes
+# from `.env.database`; the module roles' are set by the owner-run cutover (scripts/uat/wi-oi-120am). All live only in
+# the UAT env files (mode 600).
+services:
+  uat-postgres:
+    image: postgres:16-alpine@sha256:16bc17c64a573ef34162af9298258d1aec548232985b33ed7b1eac33ba35c229
+    pull_policy: never
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /var/run/postgresql:rw,noexec,nosuid,size=16m
+      - /tmp:rw,noexec,nosuid,size=128m
+    shm_size: 256m
+    environment:
+      POSTGRES_USER: gigalibs
+      POSTGRES_DB: gigalibs
+      POSTGRES_PASSWORD: ${UAT_DATABASE_SUPERUSER_PASSWORD:?UAT_DATABASE_SUPERUSER_PASSWORD is required}
+      POSTGRES_INITDB_ARGS: --auth-host=scram-sha-256 --auth-local=trust
+      PGDATA: /var/lib/postgresql/data/pgdata
+    command: ["postgres", "-c", "password_encryption=scram-sha-256"]
+    volumes:
+      - uat-database:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gigalibs -d gigalibs"]
+      interval: 5s
+      timeout: 5s
+      retries: 24
+      start_period: 10s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    # The entrypoint prepares the data directory as root, then runs as `postgres`.
+    cap_add:
+      - CHOWN
+      - DAC_OVERRIDE
+      - FOWNER
+      - SETGID
+      - SETUID
+    labels:
+      com.gigalibs.profile-key: ${PROFILE_KEY:?PROFILE_KEY is required}
+      com.gigalibs.execution-class: ${EXECUTION_CLASS:?EXECUTION_CLASS is required}
+      com.gigalibs.release-id: ${RELEASE_ID:?RELEASE_ID is required}
+      org.opencontainers.image.revision: ${SOURCE_REVISION:?SOURCE_REVISION is required}
+      com.gigalibs.source-state-sha256: ${SOURCE_STATE_SHA256:?SOURCE_STATE_SHA256 is required}
+
+volumes:
+  uat-database:
+    # Overridden only by the rehearsal, so it can never touch UAT's volume.
+    name: ${UAT_DATABASE_VOLUME:-gigalibs-uat-database}

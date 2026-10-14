@@ -19,8 +19,9 @@ if (!['localhost', '127.0.0.1', '::1'].includes(parsedApiUrl.hostname)) {
 if (!process.env.EVIDENCE_PATH) {
   process.env.EVIDENCE_PATH = `/Users/rayapudi/dev/gigalibs/infra/compose/evidence/wi-oi-048-tp2-${new Date().toISOString().replace(/[:.]/g, '')}/runtime-results.json`;
 }
+// WI-OI-120am: no fallback address or password in code. Point DATABASE_URL at a loopback development database.
 if (!process.env.DATABASE_URL || !URL.canParse(process.env.DATABASE_URL)) {
-  process.env.DATABASE_URL = 'postgresql://gigalibs:gigalibs_dev@127.0.0.1:5440/gigalibs';
+  throw new Error('Set DATABASE_URL to a loopback development database');
 }
 const databaseUrl = new URL(process.env.DATABASE_URL);
 if (databaseUrl.hostname === 'host.docker.internal') databaseUrl.hostname = '127.0.0.1';

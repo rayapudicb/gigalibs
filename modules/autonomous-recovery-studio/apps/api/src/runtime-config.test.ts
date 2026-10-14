@@ -6,7 +6,7 @@ const validEnv = {
   RECOVERY_API_HOST: '127.0.0.1',
   RECOVERY_API_PORT: '4200',
   RECOVERY_CORS_ORIGINS: 'http://localhost:5180',
-  RECOVERY_DATABASE_URL: 'postgresql://gigalibs:gigalibs_dev@localhost:5440/gigalibs',
+  RECOVERY_DATABASE_URL: 'postgresql://gigalibs:test-only-password@localhost:5440/gigalibs',
   RECOVERY_DATABASE_POOL_SIZE: '10',
   RECOVERY_ALLOW_INSECURE_OIDC: 'true',
   RECOVERY_OIDC_ISSUER: 'http://127.0.0.1:4200/oidc',
@@ -21,7 +21,7 @@ describe('Recovery runtime config validation', () => {
   it('accepts a fully valid configuration', () => {
     const config = loadRuntimeConfig(validEnv);
     expect(config.apiPort).toBe(4200);
-    expect(config.databaseUrl).toBe('postgresql://gigalibs:gigalibs_dev@localhost:5440/gigalibs');
+    expect(config.databaseUrl).toBe('postgresql://gigalibs:test-only-password@localhost:5440/gigalibs');
     expect(config.oidcAlgorithms).toEqual(['RS256']);
   });
 

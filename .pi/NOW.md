@@ -9,9 +9,9 @@
 > CMMS pin is at 20, and a clean checkout installs, builds, tests and audits ([WI-OI-120aj](tasks/WI-OI-120aj.md)).
 > **Step 0.3b applied on UAT (2026-10-14 05:50Z, owner-run):** [WI-OI-120al](tasks/WI-OI-120al.md) undid
 > the development script's writes. 0 members hold `*` or Assistant codes; enabled entitlements went from 8,596 to
-> 1,558; 314 events were published with no error; UAT is healthy. **Next: WI-OI-120am (Q2a)**, card to be shown: UAT
-> gets its own database. Today it uses the development compose's `gigalibs-postgres`, published on `0.0.0.0:5440`,
-> whose password is in git history. Then step 0.4.
+> 1,558; 314 events were published with no error; UAT is healthy. **Now: WI-OI-120am (Q2a)**, approved (D2a–D5a). Built and rehearsed end to end on an isolated fake UAT:
+> restore with no error, 546 tables equal, 14 logins work, migrations a no-op, rollback works. Next: the release build,
+> the deploy check, the Security review, then the owner's window for the cutover. Then step 0.4.
 
 > **WI-OI-120u on UAT: release `4b8db72eae10-c90a7bebc734` (2026-10-13), and the Workforce journey passes.** The journey
 > found that new workspaces got no module windows (creating a workspace wrote no `tenant.entitlements.changed.v1`).

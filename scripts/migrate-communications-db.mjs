@@ -18,13 +18,9 @@ const migrationFile = resolve(
 );
 const sql = readFileSync(migrationFile, 'utf8');
 
-// Try configured DATABASE_URL or common local ports (5440 / 5432)
-const urlsToTry = [
-  process.env.DATABASE_URL,
-  'postgresql://gigalibs_dev_runtime@127.0.0.1:5432/gigalibs_dev_runtime',
-  'postgresql://gigalibs:gigalibs_dev@127.0.0.1:5440/gigalibs',
-  'postgresql://postgres:postgres@127.0.0.1:5432/textfly',
-].filter(Boolean);
+// WI-OI-120am: only the configured database; no fallback addresses or passwords in code.
+if (!process.env.DATABASE_URL) throw new Error('Set DATABASE_URL to the development database');
+const urlsToTry = [process.env.DATABASE_URL];
 
 let connected = false;
 

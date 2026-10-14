@@ -3,7 +3,9 @@ import { randomUUID } from 'node:crypto';
 import pg from 'pg';
 import * as contracts from '@gigalibs/contracts';
 
-const DB_URL = process.env.CONTROL_PLANE_DB_URL || process.env.DATABASE_URL || 'postgresql://gigalibs:gigalibs_dev@localhost:5440/gigalibs';
+// WI-OI-120am: no fallback address or password in code.
+const DB_URL = process.env.CONTROL_PLANE_DB_URL || process.env.DATABASE_URL;
+if (!DB_URL) throw new Error('Set CONTROL_PLANE_DB_URL or DATABASE_URL to an isolated proof database');
 
 console.log('== Financial Operations Real Database Certification ==');
 const client = new pg.Client({ connectionString: DB_URL });

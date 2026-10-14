@@ -1,4 +1,26 @@
 services:
+  # WI-OI-120am: the development database. Until the WI-OI-120am cutover it also served UAT: container
+  # gigalibs-postgres, created 2026-08-30 from an older version of this file and published on every interface. UAT now
+  # has its own database (infra/compose/compose.database.yaml). This one is for development only and listens on this
+  # machine only. Apply this definition only after the cutover; recreating the container keeps its data volume.
+  postgres:
+    image: postgres:16-alpine
+    container_name: gigalibs-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${CONTROL_DB_USER:?CONTROL_DB_USER is required}
+      POSTGRES_PASSWORD: ${CONTROL_DB_PASSWORD:?CONTROL_DB_PASSWORD is required}
+      POSTGRES_DB: ${CONTROL_DB_NAME:?CONTROL_DB_NAME is required}
+    ports:
+      - "127.0.0.1:${CONTROL_DB_PORT:?CONTROL_DB_PORT is required}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
   control-postgres:
     image: postgres:16-alpine
     profiles: ["bootstrap-control"]
@@ -91,6 +113,10 @@ services:
       - meilisearch_data:/meili_data
 
 volumes:
+  # The existing development data (created 2026-08-30), adopted by its exact name.
+  postgres_data:
+    name: gigalibs_dev_postgres_data
+    external: true
   control_pgdata:
   execution_pgdata:
   control_redisdata:
