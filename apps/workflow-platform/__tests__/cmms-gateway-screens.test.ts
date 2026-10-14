@@ -76,17 +76,24 @@ describe('CMMS screens reach their API through the gateway', () => {
     expect(unrouted).toEqual([]);
   });
 
-  // Known failure (WI-OI-120aj, owner decision E2a, 2026-10-14): the unreviewed CMMS metadata-window commits
-  // (WI-OI-120t) added record routes (`v1/records/{entity}` and five more) to the CMMS gateway. The CMMS Security review (execution plan v3 steps 1.1–1.3) approves or rejects that
-  // change, updates this reviewed list, and removes `.fails`; `.fails` makes the test fail as soon as it passes.
-  it.fails('routes only paths the CMMS API serves, with the methods it serves', () => {
+  // WI-OI-120aj (Security review M2, 2026-10-14): the record and lookup routes come from the module SDK's
+  // `createRecordController`, not from a `*.controller.ts` file. They count as served only while the CMMS app registers
+  // it. Their gateway permission (`cmms:read`; the API checks each record type's own permission) is finding W1 for the
+  // CMMS Security review (execution plan v3 steps 1.1–1.3).
+  const SDK_RECORD_ROUTES = [
+    'GET v1/records/{entity}', 'POST v1/records/{entity}', 'GET v1/records/{entity}/{id}', 'PATCH v1/records/{entity}/{id}',
+    'POST v1/records/{entity}/{id}/actions/{key}', 'GET v1/lookups/{key}',
+  ];
+  it('routes only paths the CMMS API serves, with the methods it serves', () => {
     const served = apiRoutes();
+    const appModule = readFileSync(join(CMMS, 'apps/api/src/app.module.ts'), 'utf8');
+    const sdkServed = new Set(appModule.includes('createRecordController(') ? SDK_RECORD_ROUTES : []);
     const missing = generatedModuleGateways['physical-operations-cmms']!.routes.flatMap((route) =>
       route.template
         .split('/')
         .reduce<string[]>((paths, segment) => paths.flatMap((prefix) => segment.split('|').map((option) => (prefix ? `${prefix}/${option}` : option))), [''])
         .flatMap((path) => Object.keys(route.methods).map((method) => `${method} ${path}`))
-        .filter((route) => !served.has(route)),
+        .filter((route) => !served.has(route) && !sdkServed.has(route)),
     );
     expect(missing).toEqual([]);
   });

@@ -270,8 +270,23 @@ function verifyQuarantineBoundary() {
     // WI-OI-120aj (owner decision E3a, 2026-10-14): a quarantined root that is not in the checkout at all has nothing to
     // contain; the TextFly apps live in the owner's untracked folder. It keeps its workspace exclusion, so it stays out
     // of the build if it appears. A root that is present must still have a named package manifest.
+    // Security review L1: the registry records each package's name (`packageNames`), so imports of and dependencies on
+    // it are still refused while the root is absent, and a present root must carry that name.
+    const recordedName = quarantineRegistry.packageNames?.[configuredRoot];
     if (!existsSync(join(repositoryRoot, configuredRoot))) {
       absentQuarantinedRoots.push(configuredRoot);
+      if (typeof recordedName !== 'string' || !recordedName) {
+        violations.push({
+          code: 'QUARANTINED_PACKAGE_NAME_UNRECORDED',
+          file: 'config/runtime-quarantine.json',
+          line: 1,
+          excerpt: `${configuredRoot} is absent and has no entry in packageNames.`,
+        });
+      } else if (packageNames.has(recordedName)) {
+        violations.push({ code: 'QUARANTINED_PACKAGE_NAME_DUPLICATE', file: 'config/runtime-quarantine.json', line: 1, excerpt: recordedName });
+      } else {
+        packageNames.set(recordedName, configuredRoot);
+      }
       if (!workspaceConfig.split('\n').some((line) => line.trim() === expectedExclusion)) {
         violations.push({
           code: 'QUARANTINED_PACKAGE_STILL_IN_WORKSPACE',
@@ -312,6 +327,14 @@ function verifyQuarantineBoundary() {
       });
       continue;
     }
+    if (recordedName && recordedName !== manifest.name) {
+      violations.push({
+        code: 'QUARANTINED_PACKAGE_NAME_MISMATCH',
+        file: relative(repositoryRoot, manifestPath),
+        line: 1,
+        excerpt: `${manifest.name} differs from the recorded ${recordedName}`,
+      });
+    }
     if (packageNames.has(manifest.name)) {
       violations.push({
         code: 'QUARANTINED_PACKAGE_NAME_DUPLICATE',
@@ -328,6 +351,15 @@ function verifyQuarantineBoundary() {
     const packageRoot = repoManifestPath.replace(/\/package\.json$/, '');
     if (quarantinedPaths.has(packageRoot) || retiredApplications.includes(packageRoot)) continue;
     const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
+    // Security review L1: a package outside the registered path may not take a quarantined name (a renamed copy).
+    if (typeof manifest.name === 'string' && packageNames.has(manifest.name)) {
+      violations.push({
+        code: 'QUARANTINED_PACKAGE_NAME_REUSED',
+        file: repoManifestPath,
+        line: 1,
+        excerpt: `${manifest.name} is quarantined at ${packageNames.get(manifest.name)}`,
+      });
+    }
     for (const section of [
       'dependencies',
       'devDependencies',

@@ -194,27 +194,44 @@ function withNegatives(paths: string[]): string[] {
 }
 
 describe('manifest-generated gateways equal the hand-written allow-lists', () => {
-  // Known failure (WI-OI-120aj, owner decision E2a, 2026-10-14): the unreviewed CMMS metadata-window commits
-  // (WI-OI-120t) changed a CMMS route's permission from the hand-written allow-list. The CMMS Security review (execution plan v3 steps 1.1–1.3) approves or rejects that
-  // change, updates this reviewed list, and removes `.fails`; `.fails` makes the test fail as soon as it passes.
-  it.fails('CMMS: every method and path in the corpus', () => {
+  // Under review (WI-OI-120aj, owner decision E2a; its Security review M2, 2026-10-14). The unreviewed CMMS commits
+  // (WI-OI-120t) differ from the reviewed hand-written allow-list (37e5556) in exactly these method-paths. Any other
+  // difference, or a change to one of these, fails. The CMMS Security review (execution plan v3 steps 1.1–1.3) moves
+  // each one it accepts into `intendedCmmsPermission`, or restores it, and then empties this list.
+  const CMMS_UNDER_REVIEW: Array<{ method: string; path: string; permission: unknown; reviewed: unknown }> = [
+    { method: 'POST', path: 'v1/requests/search', permission: 'cmms.requests.read', reviewed: null },
+    { method: 'POST', path: 'v1/requests', permission: 'cmms.requests.create', reviewed: null },
+    { method: 'GET', path: 'v1/requests/{id}', permission: 'cmms.requests.read', reviewed: null },
+    { method: 'POST', path: 'v1/requests/{id}/triage', permission: 'cmms.requests.write', reviewed: null },
+    { method: 'POST', path: 'v1/requests/{id}/cancel', permission: 'cmms.requests.create', reviewed: null },
+    { method: 'POST', path: 'v1/work-orders/{id}/status', permission: ['cmms.work-orders.write', 'cmms.work-orders.execute-own'], reviewed: 'cmms.work-orders.write' },
+    { method: 'POST', path: 'v1/work-orders/{id}/tasks', permission: ['cmms.work-orders.write', 'cmms.work-orders.execute-own'], reviewed: 'cmms.work-orders.write' },
+    { method: 'POST', path: 'v1/work-orders/{id}/labour', permission: ['cmms.work-orders.write', 'cmms.work-orders.execute-own'], reviewed: 'cmms.work-orders.write' },
+    { method: 'POST', path: 'v1/work-orders/{id}/parts', permission: ['cmms.work-orders.write', 'cmms.work-orders.execute-own'], reviewed: 'cmms.work-orders.write' },
+    { method: 'POST', path: 'v1/work-orders/{id}/notes', permission: ['cmms.work-orders.write', 'cmms.work-orders.execute-own'], reviewed: 'cmms.work-orders.write' },
+    { method: 'POST', path: 'v1/work-orders/{id}/staffing', permission: ['cmms.work-orders.write', 'cmms.work-orders.execute-own'], reviewed: 'cmms.work-orders.write' },
+    { method: 'PATCH', path: 'v1/work-orders/{id}/tasks/{id}', permission: ['cmms.work-orders.write', 'cmms.work-orders.execute-own'], reviewed: 'cmms.work-orders.write' },
+    { method: 'GET', path: 'v1/meters/{id}', permission: 'cmms.meters.read', reviewed: null },
+  ];
+  it('CMMS: every method and path in the corpus', () => {
     const legacyPaths = LEGACY_CMMS_ROUTES.flatMap(([, pattern]) =>
       fromLegacyRegex(pattern.source),
     );
     const corpus = withNegatives([...fromTemplates('physical-operations-cmms'), ...legacyPaths]);
     let allowed = 0;
+    const differences: Array<{ method: string; path: string; permission: unknown; reviewed: unknown }> = [];
     for (const path of corpus) {
       for (const method of METHODS) {
         const expected =
           legacyCmmsPermission(method, path.split('/')) ?? intendedCmmsPermission(method, path);
-        expect({
-          method,
-          path,
-          permission: requiredCmmsPermission(method, path.split('/')),
-        }).toEqual({ method, path, permission: expected });
+        const permission = requiredCmmsPermission(method, path.split('/'));
+        const template = path.replace(/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/g, '{id}');
+        const seen = differences.some((d) => d.method === method && d.path === template);
+        if (!seen && JSON.stringify(permission) !== JSON.stringify(expected)) differences.push({ method, path: template, permission, reviewed: expected });
         if (expected) allowed += 1;
       }
     }
+    expect(differences).toEqual(CMMS_UNDER_REVIEW);
     expect(legacyPaths.length).toBeGreaterThanOrEqual(30);
     expect(allowed).toBeGreaterThanOrEqual(30);
   });

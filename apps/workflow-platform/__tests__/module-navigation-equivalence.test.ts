@@ -104,13 +104,20 @@ describe('manifest-declared navigation equals the former sidebar tables', () => 
     },
   );
 
-  // Known failure (WI-OI-120aj, owner decision E2a, 2026-10-14): the unreviewed CMMS metadata-window commits
-  // (WI-OI-120t) grew the CMMS menu from eight entries to ten, with Requests first. The CMMS Security review (execution plan v3 steps 1.1–1.3) approves or rejects that
-  // change, updates this reviewed list, and removes `.fails`; `.fails` makes the test fail as soon as it passes.
-  it.fails(`${CMMS_MENU_UNDER_REVIEW} keeps its sub-menu`, () => {
-    expect(moduleMenu(CMMS_MENU_UNDER_REVIEW)).toEqual(
-      INTENDED_MENU_CHANGES[CMMS_MENU_UNDER_REVIEW] ?? LEGACY_MODULE_MENUS[CMMS_MENU_UNDER_REVIEW] ?? [],
-    );
+  // Under review (WI-OI-120aj, owner decision E2a; its Security review M2, 2026-10-14). The unreviewed CMMS commits
+  // (WI-OI-120t) added Maintenance Requests (first) and Classifications (after Assets) to the reviewed menu. The menu is
+  // pinned exactly, so any other change fails. The CMMS Security review (execution plan v3 steps 1.1–1.3) accepts them
+  // into INTENDED_MENU_CHANGES or removes them.
+  it(`${CMMS_MENU_UNDER_REVIEW} keeps its sub-menu, with two entries under review`, () => {
+    const reviewed = INTENDED_MENU_CHANGES[CMMS_MENU_UNDER_REVIEW]!;
+    const assetsAt = reviewed.findIndex((item) => item.key === 'assets');
+    expect(assetsAt).toBeGreaterThan(0);
+    expect(moduleMenu(CMMS_MENU_UNDER_REVIEW)).toEqual([
+      { key: 'requests', label: 'Maintenance Requests', href: '/cmms/requests', icon: moduleIcons['file-text'] },
+      ...reviewed.slice(0, assetsAt + 1),
+      { key: 'classifications', label: 'Classifications', href: '/cmms/classifications', icon: moduleIcons.layers },
+      ...reviewed.slice(assetsAt + 1),
+    ]);
   });
 
   // Persona lenses widened after the freeze, each with its reason (the module's permission still decides).

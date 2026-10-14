@@ -4,6 +4,11 @@
   "unimplementedStubs": [],
   "fabricatedAdapters": [],
   "showcaseOnlyPackages": [],
+  "packageNames": {
+    "modules/communications-textfly/apps/admin-console": "@textfly/admin-console",
+    "modules/communications-textfly/apps/agent-runtime": "@textfly/agent-runtime",
+    "modules/communications-textfly/apps/embed-demo-host": "@textfly/embed-demo-host"
+  },
   "incompleteApplications": [
     "modules/communications-textfly/apps/admin-console",
     "modules/communications-textfly/apps/agent-runtime",

@@ -1,8 +1,8 @@
 # WI-OI-120aj: Branch repair: the branch builds from a clean checkout, and the Assistant preview leaves it
 
 - **Status:** Part 1 done (2026-10-14; commits 0ad402a to 9b0c477, with owner decisions E1a, E2a and E3a). Part 2
-  (the UAT data) moved into WI-OI-120al, which absorbs D1a and D2a; D3a is unchanged. The Security review is still due
-  before the next deploy that includes part 1.
+  (the UAT data) moved into WI-OI-120al, which absorbs D1a and D2a; D3a is unchanged. Security review 2026-10-14: PASS WITH CONDITIONS
+  (C1–C5); its findings M1–M4, L1 and L2 are fixed (evidence in `.pi/work/WI-OI-120.md`).
 - **Plan step:** execution plan v3 step 0.3 (`docs/plans/gigalibs-execution-plan-v3.md`).
 - **Work items:** WI-OI-120; WI-OI-121 for the Assistant records. Evidence goes in `.pi/work/WI-OI-120.md`.
 - **Size:** M (part 1); part 2 is an owner-run data change, only if the owner chooses it.
@@ -61,8 +61,9 @@
      - The runbook and the release manifest get a "Withdrawn" banner.
 3. **Generated files regenerated** (`pnpm modules:catalog`, the window generator), so the catalogue, navigation and
    permission catalogue no longer list the Assistant.
-4. **CMMS version pin raised to 20** (`CMMS_SCHEMA_CONTRACT_VERSION` and `CMMS_EXPECTED_MIGRATION_VERSION`), to match
-   migration `000020`. The migration's own review stays with step 1.3. No other CMMS code changes.
+4. **CMMS version pin raised to 20** for the API (`CMMS_SCHEMA_CONTRACT_VERSION` and cmms-api's
+   `CMMS_EXPECTED_MIGRATION_VERSION`), to match migration `000020`. The cmms-migrations runner stays at 19 until step 1.3
+   (Security review M3), so a branch-head deploy stops before the unreviewed migration. The migration's own review stays with step 1.3. No other CMMS code changes.
 5. **Lockfile:** `pnpm install --frozen-lockfile` passes on a clean checkout.
 6. **Not touched:** other sessions' uncommitted and untracked work:
    - the maps page, `AuthAtmosphere.tsx`, the softphone drawer, `PlantSpatial3DViewer.tsx`, `public/images/`;
