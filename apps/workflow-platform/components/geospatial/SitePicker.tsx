@@ -1,7 +1,7 @@
 'use client';
 
 import { useAuthContext } from '@/components/auth/use-auth-context';
-import { type PlacesAccessContext, canReadPlaces } from '@/lib/geospatial-access';
+import { type PlacesAccessContext, placesDecision } from '@/lib/geospatial-access';
 import { requestGeospatial } from '@/lib/geospatial-api';
 import type { SpatialNodePageV1 } from '@gigalibs/contracts';
 import { useEffect, useState } from 'react';
@@ -25,18 +25,18 @@ export function useSites(): { sites: readonly SiteOption[]; siteName: (siteRef: 
 
 /**
  * WI-OI-120ao: places for a screen that already holds the session. They are asked for only when the user may read
- * them (`canReadPlaces`, the proxy's own rule), so a workspace without Geospatial Studio is never refused. `available`
- * is null while the session is unknown, false when places cannot be read here.
+ * them (`placesDecision`, the proxy's own rule), so a workspace without Geospatial Studio is never refused. `available`
+ * is false when places cannot be read here, null when that is not known.
  */
 export function useSitesFor(context: PlacesAccessContext | null | undefined): {
   sites: readonly SiteOption[];
   siteName: (siteRef: string | null) => string;
   available: boolean | null;
 } {
-  const available = context === undefined ? null : canReadPlaces(context);
+  const { ask, available } = placesDecision(context);
   const [sites, setSites] = useState<readonly SiteOption[]>([]);
   useEffect(() => {
-    if (!available) return;
+    if (!ask) return;
     let active = true;
     requestGeospatial<SpatialNodePageV1>('/nodes?pageSize=200')
       .then((page) => {
@@ -48,8 +48,8 @@ export function useSitesFor(context: PlacesAccessContext | null | undefined): {
     return () => {
       active = false;
     };
-  }, [available]);
-  const shown = available ? sites : [];
+  }, [ask]);
+  const shown = available === false ? [] : sites;
   return {
     sites: shown,
     siteName: (siteRef) => (siteRef ? shown.find((site) => site.id === siteRef)?.label ?? `Place ${siteRef.slice(0, 8)}` : 'No site'),

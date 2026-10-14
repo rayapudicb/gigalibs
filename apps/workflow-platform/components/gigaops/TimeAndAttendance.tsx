@@ -196,9 +196,11 @@ function MyClock({ sites, sitesAvailable, siteName, session, own, onRecorded }: 
     if (!queueKey) return;
     const queue = storage<Omit<RecordPunchV1, 'geofence'>[]>(queueKey, []);
     const remaining: Omit<RecordPunchV1, 'geofence'>[] = [];
+    let sent = 0;
     for (const [index, punch] of queue.entries()) {
       try {
         await workforceApi.recordPunch(punch);
+        sent += 1;
       } catch (reason) {
         if (retryable(reason as WorkforceApiError)) {
           remaining.push(...queue.slice(index));
@@ -209,10 +211,9 @@ function MyClock({ sites, sitesAvailable, siteName, session, own, onRecorded }: 
     }
     store(queueKey, remaining);
     setPending(remaining);
-    if (remaining.length < queue.length) {
-      await load();
-      onRecorded();
-    }
+    if (remaining.length < queue.length) await load();
+    // Only punches the server recorded change the week; a refused one is dropped without a reload.
+    if (sent > 0) onRecorded();
   }, [load, queueKey, onRecorded]);
 
   // WI-OI-120an: the user's own punches are asked for only once they may have a person.
@@ -431,8 +432,9 @@ function WeekSheet({ people, siteName, own, recorded }: {
         <Alert variant="error" className="mt-3">{error.message}</Alert>
       ) : null}
       {preview && preview.lines.length === 0 ? (
-        // WI-OI-120ao: an empty week says so instead of showing an empty table.
-        <Text size="small" className="mt-4 text-ui-fg-subtle">No punches in this week yet.</Text>
+        // WI-OI-120ao: an empty week says so instead of showing an empty table. Lines are completed shifts only; an
+        // open clock-in shows as an issue below (review Low-1).
+        <Text size="small" className="mt-4 text-ui-fg-subtle">No completed shifts in this week yet.</Text>
       ) : null}
       {preview ? (
         <>

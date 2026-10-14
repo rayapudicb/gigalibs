@@ -72,8 +72,10 @@ describe('Time & attendance screen', () => {
       join(__dirname, '../components/gigaops/TimeAndAttendance.tsx'),
       'utf8',
     );
-    // The clock reports a punch it records and the queued punches it sends.
-    expect(screen.match(/await load\(\);\s*onRecorded\(\);/g)).toHaveLength(2);
+    // The clock reports a punch it records and queued punches the server recorded (review I-1: not refused ones).
+    expect(screen).toMatch(/await load\(\);\s*onRecorded\(\);/);
+    expect(screen).toMatch(/sent \+= 1;/);
+    expect(screen).toMatch(/if \(sent > 0\) onRecorded\(\);/);
     // The week and the inbox reload when it changes, and only then.
     expect(
       screen.match(
@@ -87,7 +89,9 @@ describe('Time & attendance screen', () => {
       /const \{ sites, siteName, available: sitesAvailable \} = useSitesFor\(context\);/,
     );
     expect(screen).not.toMatch(/fetch\('\/api\/auth\/context'/);
-    expect(screen).toContain('No punches in this week yet.');
+    // Review Low-1: lines are completed shifts only, so the message says that.
+    expect(screen).toContain('No completed shifts in this week yet.');
+    expect(screen).not.toContain('No punches in this week yet.');
     expect(screen).toContain('Sites come from Geospatial Studio, which you cannot use here');
   });
 

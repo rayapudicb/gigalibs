@@ -32,3 +32,18 @@ export function canReadPlaces(context: PlacesAccessContext | null): boolean {
     hasPermission(context.permissions, PLACES_READ_PERMISSION)
   );
 }
+
+/**
+ * Whether a screen asks for places, and what it may say about them. While the session is being asked: nothing yet.
+ * If the session could not be read, the screen cannot decide, so it asks and the proxy decides, as before WI-OI-120ao
+ * (review Low-2), and says nothing. Otherwise it asks only when `canReadPlaces` allows, and says so when it does not.
+ */
+export function placesDecision(context: PlacesAccessContext | null | undefined): {
+  ask: boolean;
+  available: boolean | null;
+} {
+  if (context === undefined) return { ask: false, available: null };
+  if (context === null) return { ask: true, available: null };
+  const allowed = canReadPlaces(context);
+  return { ask: allowed, available: allowed };
+}

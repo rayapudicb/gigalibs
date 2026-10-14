@@ -1,7 +1,12 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { PLACES_MODULE_KEY, PLACES_READ_PERMISSION, canReadPlaces } from '../lib/geospatial-access';
+import {
+  PLACES_MODULE_KEY,
+  PLACES_READ_PERMISSION,
+  canReadPlaces,
+  placesDecision,
+} from '../lib/geospatial-access';
 import { isLockedModule, tenantModulePermission } from '../lib/module-access';
 
 // WI-OI-120ao (journey 89ac2g): screens ask Geospatial for places only when the proxy would answer.
@@ -51,16 +56,38 @@ describe('who may read Geospatial places', () => {
     expect(isLockedModule(PLACES_MODULE_KEY)).toBe(false);
   });
 
-  it('asks for places only when they may be read, for every screen that lists sites', () => {
+  it('asks for places only when they may be read; an unreadable session leaves it to the proxy', () => {
+    // Still asking: nothing yet.
+    expect(placesDecision(undefined)).toEqual({ ask: false, available: null });
+    // The session could not be read (review Low-2): ask, and say nothing untrue.
+    expect(placesDecision(null)).toEqual({ ask: true, available: null });
+    expect(placesDecision(allowed)).toEqual({ ask: true, available: true });
+    // The journey's workspace: no Geospatial Studio, so no request and no 403.
+    expect(placesDecision({ ...allowed, tenant: { features: [], entitlements: [] } })).toEqual({
+      ask: false,
+      available: false,
+    });
     const picker = readFileSync(join(__dirname, '../components/geospatial/SitePicker.tsx'), 'utf8');
+    expect(picker).toMatch(/const \{ ask, available \} = placesDecision\(context\);/);
     expect(picker).toMatch(
-      /const available = context === undefined \? null : canReadPlaces\(context\);/,
-    );
-    expect(picker).toMatch(
-      /useEffect\(\(\) => \{\s*if \(!available\) return;\s*let active = true;\s*requestGeospatial/,
+      /useEffect\(\(\) => \{\s*if \(!ask\) return;\s*let active = true;\s*requestGeospatial/,
     );
     expect(picker).toMatch(
       /export function useSites\(\)[^\n]*\{\s*return useSitesFor\(useAuthContext\(\)\);/,
+    );
+  });
+
+  // Review I-3: the proxy's own gate, so a change to it shows up here.
+  it('mirrors the gate in the signed module proxy', () => {
+    const gate = readFileSync(join(__dirname, '../lib/signed-module-proxy.ts'), 'utf8');
+    expect(gate).toMatch(
+      /!canUseTenantModule\(config\.moduleKey, new Set\(session\.context\.tenant\.features\), session\.context\.permissions\) \|\|/,
+    );
+    expect(gate).toMatch(
+      /entitlement\.moduleKey === config\.moduleKey && entitlement\.status === 'ENABLED'/,
+    );
+    expect(gate).toMatch(
+      /!acceptedPermissions\.some\(\(permission\) => hasPermission\(session\.context\.permissions, permission\)\)/,
     );
   });
 });

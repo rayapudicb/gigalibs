@@ -1,6 +1,7 @@
 # WI-OI-120ao: The week follows the clock, and site lists ask Geospatial only when allowed
 
-- **Status:** Built and verified locally, not committed (2026-10-14; owner: "approved").
+- **Status:** Feature `df82260`; release `46edcba` built for review. The Security review approved; its two Low and two
+  Info notes are fixed locally, not committed (2026-10-14). A new release follows.
 - **Found by:** journey `89ac2g` on release `63178f6` (WI-OI-120ah and WI-OI-120an on UAT).
 - **Work item:** WI-OI-120. Evidence goes in `.pi/work/WI-OI-120.md`.
 - **Size:** S
@@ -77,3 +78,19 @@
   - an empty week says "No punches in this week yet." instead of showing an empty table.
 - **Scope note:** CMMS's place provider uses the shared hook, so its viewer's `/api/maps/nodes` 403 (plan v3 step
   1.1) also stops, without any change to CMMS code.
+
+## Security review (2026-10-14): approve; notes fixed
+
+- Verified: `canReadPlaces` matches the proxy exactly (same module rule, entitlement, permission and wildcard
+  handling); no new data exposure (`/api/auth/context` was already read in the browser); the `recorded` counter
+  makes one week and one inbox call per punch, with no loop and no repeat of the offline queue; `ownPerson` keeps
+  its meaning; no authorization change; the release matches df82260 exactly.
+- **Low-1, fixed:** "No punches in this week yet." was untrue after a clock-in with no clock-out (lines are completed
+  shifts only; the open clock-in shows as an issue). It now reads "No completed shifts in this week yet."
+- **Low-2, fixed:** a session that could not be read was treated as "not allowed". The clock then wrongly said
+  Geospatial was not available, and other screens lost their sites until a reload. Now `placesDecision` lets the proxy
+  decide when the session is unreadable (the worst case is the old 403) and says nothing.
+- **I-1, fixed:** the clock now reports only queued punches the server recorded, not refused ones.
+- **I-3, fixed:** the drift test also checks the gate in `signed-module-proxy.ts`. The extra session request per
+  site-listing screen remains (speed, not safety); a shared session for all screens is a later cleanup.
+- **I-2:** the scope note above records the CMMS effect.

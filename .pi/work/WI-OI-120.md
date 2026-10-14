@@ -3600,3 +3600,11 @@ widening the card to fix the API faults the proof found.
   - audits on HEAD plus 120ao's six files alone (throwaway worktree, removed): all ten pass.
 - **Next:** commit, release, Security review, the owner's deploy, the journey (the technician submits, the approver
   approves).
+- **Release `46edcba`** (cherry-pick of df82260 onto 63178f6; code byte-identical; owner: "commit"): 702 web tests
+  passed in 64 files; type-check clean; audits as on 63178f6. Identity
+  `local-20261014T154036Z-46edcbadd241-bf1d172c0680`; built for review.
+- **Security review of df82260 / 46edcba: approve.** Two Low notes (the empty-week wording after a clock-in; an
+  unreadable session treated as "not allowed") and two Info notes (a refused queued punch reported as recorded; the
+  drift test not covering the proxy's gate). All four fixed (card, "Security review"). Verification: all web tests 716
+  passed in 66 files; type-check clean; lint unchanged; module manifests pass; audits on HEAD plus the fixes alone: all
+  ten pass.
