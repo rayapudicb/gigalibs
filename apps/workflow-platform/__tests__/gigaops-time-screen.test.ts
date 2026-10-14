@@ -66,6 +66,31 @@ describe('Time & attendance screen', () => {
     );
   });
 
+  // WI-OI-120ao (journey 89ac2g): the week stayed empty after clocking in and out, so it could not be submitted.
+  it('reloads the week and the exceptions after each punch, and explains an empty week and site list', () => {
+    const screen = readFileSync(
+      join(__dirname, '../components/gigaops/TimeAndAttendance.tsx'),
+      'utf8',
+    );
+    // The clock reports a punch it records and the queued punches it sends.
+    expect(screen.match(/await load\(\);\s*onRecorded\(\);/g)).toHaveLength(2);
+    // The week and the inbox reload when it changes, and only then.
+    expect(
+      screen.match(
+        /if \(recorded === seenRecorded\.current\) return;\s*seenRecorded\.current = recorded;\s*void load\(\);/g,
+      ),
+    ).toHaveLength(2);
+    expect(screen).toMatch(/<WeekSheet [^>]*recorded=\{recorded\}/);
+    expect(screen).toMatch(/<ExceptionInbox [^>]*recorded=\{recorded\}/);
+    // One session for the screen and its sites.
+    expect(screen).toMatch(
+      /const \{ sites, siteName, available: sitesAvailable \} = useSitesFor\(context\);/,
+    );
+    expect(screen).not.toMatch(/fetch\('\/api\/auth\/context'/);
+    expect(screen).toContain('No punches in this week yet.');
+    expect(screen).toContain('Sites come from Geospatial Studio, which you cannot use here');
+  });
+
   it('describes the real screen in its help and claims only what the server enforces', () => {
     const entry = getKnowledgeEntry('/gigaops/time');
     expect(entry.businessTitle).toBe('Time & Attendance');

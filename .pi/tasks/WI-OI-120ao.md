@@ -1,6 +1,6 @@
 # WI-OI-120ao: The week follows the clock, and site lists ask Geospatial only when allowed
 
-- **Status:** Carded, not started (2026-10-14). Shown to the owner before it starts.
+- **Status:** Built and verified locally, not committed (2026-10-14; owner: "approved").
 - **Found by:** journey `89ac2g` on release `63178f6` (WI-OI-120ah and WI-OI-120an on UAT).
 - **Work item:** WI-OI-120. Evidence goes in `.pi/work/WI-OI-120.md`.
 - **Size:** S
@@ -24,7 +24,7 @@
   - Without places, the clock offers only "No site" and does not say why.
 - **UX:** an empty week has no guidance ("An empty table with no guidance").
 
-## Design (to be confirmed with the owner)
+## Design (approved by the owner, 2026-10-14)
 
 1. The Time screen keeps a "recorded" counter:
    - the clock raises it after each punch it records and each queued punch it sends;
@@ -53,3 +53,27 @@
   `maps.nodes.read`.
 - [ ] An empty week says so.
 - [ ] Evidence recorded; built, reviewed and deployed by the owner.
+
+## What was built (2026-10-14)
+
+- **The week follows the clock:**
+  - the Time screen keeps a `recorded` counter. The clock raises it after each punch it records and after sending
+    queued punches;
+  - "my week" and the exception inbox reload when it changes, and only then. Each keeps the last value it saw, so
+    other reloads are not doubled.
+- **Places only when they can be read:**
+  - `lib/geospatial-access.ts` `canReadPlaces` applies the Geospatial proxy's rule: the module switched on, its
+    entitlement enabled, `maps:read` and `maps.nodes.read`;
+  - a test checks it against the proxy's module key and route permission, and that the module is not locked (the
+    browser cannot see the server-only UAT preview);
+  - `useSitesFor(context)` asks for places only then and reports `available`. `useSites()` reads the session itself
+    (`components/auth/use-auth-context.ts`) for the other screens: Availability, Jobs, Dispatch, the organization
+    places panel and CMMS's place provider.
+- **On the Time screen:**
+  - one session is shared by the clock, the week and the site list. The screen no longer fetches the session on its
+    own;
+  - when places cannot be read, the clock says "Sites come from Geospatial Studio, which you cannot use here, so
+    punches are recorded without a site check";
+  - an empty week says "No punches in this week yet." instead of showing an empty table.
+- **Scope note:** CMMS's place provider uses the shared hook, so its viewer's `/api/maps/nodes` 403 (plan v3 step
+  1.1) also stops, without any change to CMMS code.

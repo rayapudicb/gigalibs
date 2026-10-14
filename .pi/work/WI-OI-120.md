@@ -3583,3 +3583,20 @@ widening the card to fix the API faults the proof found.
   site list asks Geospatial whatever the workspace has (WI-OI-120ao). The CMMS viewer's 403 stays with step 1.1.
 - **Unchanged (step 0.8):** the organization draft 400, the invitation token, the reload tab, internal codes shown.
 - **Cards:** WI-OI-120ah and WI-OI-120an are done. WI-OI-120ao is carded for the owner.
+
+## WI-OI-120ao built: the week follows the clock; site lists ask Geospatial only when allowed (2026-10-14). Not yet committed.
+
+- **Change** (card: [WI-OI-120ao](../tasks/WI-OI-120ao.md), "What was built"):
+  - `TimeAndAttendance.tsx`: the `recorded` counter reloads the week and the exceptions after each punch; one session
+    for the screen; the clock explains an empty site list; an empty week says so;
+  - `SitePicker.tsx`: `useSitesFor` and `useSites`;
+  - new `lib/geospatial-access.ts` and `components/auth/use-auth-context.ts`.
+- **Verification:**
+  - new `geospatial-places-access.test.ts`: 4 tests (allowed, the refusals, agreement with the proxy, the hook's
+    gate); the time-screen test gains the reload and the messages (5 tests);
+  - all web tests: 66 files and 715 tests passed (11 files and 109 tests skipped);
+  - web type-check: no errors outside `.next/types`; Biome lint: nothing new (the one existing non-null assertion);
+  - the module manifest check passes;
+  - audits on HEAD plus 120ao's six files alone (throwaway worktree, removed): all ten pass.
+- **Next:** commit, release, Security review, the owner's deploy, the journey (the technician submits, the approver
+  approves).

@@ -1,6 +1,7 @@
 'use client';
 
-import { SiteSelect, useSites } from '@/components/geospatial/SitePicker';
+import { useAuthContext } from '@/components/auth/use-auth-context';
+import { SiteSelect, type useSites, useSitesFor } from '@/components/geospatial/SitePicker';
 import { hasPermission } from '@/lib/module-access';
 import { discardLegacyPunchQueue, punchQueueKey } from '@/lib/offline-punch-queue';
 import { type WorkforceApiError, workforceApi } from '@/lib/workforce-api';
@@ -81,26 +82,11 @@ function deviceId(): string {
 /** The signed-in user and tenant: undefined while it is being asked, null if it could not be read. */
 type Session = { userId: string; tenantId: string; permissions: readonly string[] };
 
-function useSession(): Session | null | undefined {
-  const [session, setSession] = useState<Session | null | undefined>(undefined);
-  useEffect(() => {
-    let active = true;
-    void fetch('/api/auth/context', { cache: 'no-store' })
-      .then(async (response) => (response.ok ? response.json() : null))
-      .then((context: { user?: { id?: string }; tenant?: { id?: string } | null; permissions?: string[] } | null) => {
-        if (!active) return;
-        setSession(context?.user?.id && context.tenant?.id
-          ? { userId: context.user.id, tenantId: context.tenant.id, permissions: context.permissions ?? [] }
-          : null);
-      })
-      .catch(() => {
-        if (active) setSession(null);
-      });
-    return () => {
-      active = false;
-    };
-  }, []);
-  return session;
+function sessionOf(context: ReturnType<typeof useAuthContext>): Session | null | undefined {
+  if (context === undefined) return undefined;
+  return context?.user?.id && context.tenant?.id
+    ? { userId: context.user.id, tenantId: context.tenant.id, permissions: context.permissions ?? [] }
+    : null;
 }
 
 /**
@@ -156,27 +142,34 @@ function retryable(error: WorkforceApiError): boolean {
  * no refusal.
  */
 export function TimeAndAttendance({ resources, list }: { resources: readonly Person[]; list: PeopleList }) {
-  const { sites, siteName } = useSites();
+  // WI-OI-120ao: one session for the clock, the week and the site list; places only when the user may read them.
+  const context = useAuthContext();
+  const session = useMemo(() => sessionOf(context), [context]);
+  const { sites, siteName, available: sitesAvailable } = useSitesFor(context);
   const people = useMemo(() => resources.filter((resource) => resource.resourceType === 'HUMAN'), [resources]);
-  const session = useSession();
+  // WI-OI-120ao: raised by the clock after each punch it records or sends; the week and the exceptions follow it.
+  const [recorded, setRecorded] = useState(0);
+  const onRecorded = useCallback(() => setRecorded((count) => count + 1), []);
   // Any linked resource counts: the server then says whether it is an active person (WORKFORCE_WORKER_INACTIVE).
   const own = ownPerson(session, resources, list);
   const actions = timeActions(session?.permissions ?? null);
   return (
     <div className="grid gap-4 xl:grid-cols-2">
-      <MyClock sites={sites} siteName={siteName} session={session} own={own} />
-      <WeekSheet people={people} siteName={siteName} own={own} />
+      <MyClock sites={sites} sitesAvailable={sitesAvailable} siteName={siteName} session={session} own={own} onRecorded={onRecorded} />
+      <WeekSheet people={people} siteName={siteName} own={own} recorded={recorded} />
       {actions.approve ? <Approvals /> : null}
-      <ExceptionInbox people={people} sites={sites} canManage={actions.manage} />
+      <ExceptionInbox people={people} sites={sites} canManage={actions.manage} recorded={recorded} />
     </div>
   );
 }
 
-function MyClock({ sites, siteName, session, own }: {
+function MyClock({ sites, sitesAvailable, siteName, session, own, onRecorded }: {
   sites: ReturnType<typeof useSites>['sites'];
+  sitesAvailable: boolean | null;
   siteName: (siteRef: string | null) => string;
   session: Session | null | undefined;
   own: OwnPerson;
+  onRecorded: () => void;
 }) {
   const [punches, setPunches] = useState<readonly PunchV1[] | null>(null);
   const [pending, setPending] = useState<readonly Omit<RecordPunchV1, 'geofence'>[]>([]);
@@ -216,8 +209,11 @@ function MyClock({ sites, siteName, session, own }: {
     }
     store(queueKey, remaining);
     setPending(remaining);
-    if (remaining.length < queue.length) await load();
-  }, [load, queueKey]);
+    if (remaining.length < queue.length) {
+      await load();
+      onRecorded();
+    }
+  }, [load, queueKey, onRecorded]);
 
   // WI-OI-120an: the user's own punches are asked for only once they may have a person.
   const mine = own === 'yes' || own === 'ask';
@@ -256,6 +252,7 @@ function MyClock({ sites, siteName, session, own }: {
       const saved = await workforceApi.recordPunch(input);
       if (saved.exceptions.length) setNotice(`Recorded, flagged for review: ${saved.exceptions.map((item) => item.replaceAll('_', ' ').toLowerCase()).join(', ')}.`);
       await load();
+      onRecorded();
     } catch (reason) {
       const failure = reason as WorkforceApiError;
       if (retryable(failure) && queueKey) {
@@ -290,6 +287,10 @@ function MyClock({ sites, siteName, session, own }: {
                 <option value="">No site</option>
                 {sites.map((site) => <option key={site.id} value={site.id}>{site.label}</option>)}
               </select>
+              {/* WI-OI-120ao: say why there is nothing to choose, instead of a silent "No site". */}
+              {sitesAvailable === false ? (
+                <Text size="small" className="mt-1 text-ui-fg-subtle">Sites come from Geospatial Studio, which you cannot use here, so punches are recorded without a site check.</Text>
+              ) : null}
             </Field>
             <div className="flex items-end gap-2 pb-1">
               <Checkbox id="clock-location" checked={shareLocation} onCheckedChange={(value) => setShareLocation(value === true)} />
@@ -339,10 +340,11 @@ function position(): Promise<RecordPunchV1['location']> {
   });
 }
 
-function WeekSheet({ people, siteName, own }: {
+function WeekSheet({ people, siteName, own, recorded }: {
   people: readonly Person[];
   siteName: (siteRef: string | null) => string;
   own: OwnPerson;
+  recorded: number;
 }) {
   const [resourceId, setResourceId] = useState('');
   const [periodStart, setPeriodStart] = useState(() => mondayOf(new Date()));
@@ -379,6 +381,14 @@ function WeekSheet({ people, siteName, own }: {
   useEffect(() => {
     void load();
   }, [load]);
+
+  // WI-OI-120ao (journey 89ac2g): the week follows the clock; each punch recorded on this screen reloads it.
+  const seenRecorded = useRef(recorded);
+  useEffect(() => {
+    if (recorded === seenRecorded.current) return;
+    seenRecorded.current = recorded;
+    void load();
+  }, [recorded, load]);
 
   async function submit() {
     if (!preview) return;
@@ -420,32 +430,38 @@ function WeekSheet({ people, siteName, own }: {
       ) : error ? (
         <Alert variant="error" className="mt-3">{error.message}</Alert>
       ) : null}
+      {preview && preview.lines.length === 0 ? (
+        // WI-OI-120ao: an empty week says so instead of showing an empty table.
+        <Text size="small" className="mt-4 text-ui-fg-subtle">No punches in this week yet.</Text>
+      ) : null}
       {preview ? (
         <>
-          <Table className="mt-4">
-            <Table.Header>
-              <Table.Row>
-                <Table.HeaderCell>Day</Table.HeaderCell>
-                <Table.HeaderCell>In</Table.HeaderCell>
-                <Table.HeaderCell>Out</Table.HeaderCell>
-                <Table.HeaderCell>Break</Table.HeaderCell>
-                <Table.HeaderCell>Worked</Table.HeaderCell>
-                <Table.HeaderCell>Site</Table.HeaderCell>
-              </Table.Row>
-            </Table.Header>
-            <Table.Body>
-              {preview.lines.map((line) => (
-                <Table.Row key={line.clockInPunchId}>
-                  <Table.Cell>{day(line.workDate)}</Table.Cell>
-                  <Table.Cell>{time(line.clockInAt)}</Table.Cell>
-                  <Table.Cell>{time(line.clockOutAt)}</Table.Cell>
-                  <Table.Cell className="tabular-nums">{line.breakMinutes}m</Table.Cell>
-                  <Table.Cell className="tabular-nums">{hours(line.workedMinutes)}</Table.Cell>
-                  <Table.Cell>{siteName(line.siteRef)}</Table.Cell>
+          {preview.lines.length > 0 ? (
+            <Table className="mt-4">
+              <Table.Header>
+                <Table.Row>
+                  <Table.HeaderCell>Day</Table.HeaderCell>
+                  <Table.HeaderCell>In</Table.HeaderCell>
+                  <Table.HeaderCell>Out</Table.HeaderCell>
+                  <Table.HeaderCell>Break</Table.HeaderCell>
+                  <Table.HeaderCell>Worked</Table.HeaderCell>
+                  <Table.HeaderCell>Site</Table.HeaderCell>
                 </Table.Row>
-              ))}
-            </Table.Body>
-          </Table>
+              </Table.Header>
+              <Table.Body>
+                {preview.lines.map((line) => (
+                  <Table.Row key={line.clockInPunchId}>
+                    <Table.Cell>{day(line.workDate)}</Table.Cell>
+                    <Table.Cell>{time(line.clockInAt)}</Table.Cell>
+                    <Table.Cell>{time(line.clockOutAt)}</Table.Cell>
+                    <Table.Cell className="tabular-nums">{line.breakMinutes}m</Table.Cell>
+                    <Table.Cell className="tabular-nums">{hours(line.workedMinutes)}</Table.Cell>
+                    <Table.Cell>{siteName(line.siteRef)}</Table.Cell>
+                  </Table.Row>
+                ))}
+              </Table.Body>
+            </Table>
+          ) : null}
           <Text size="small" className="mt-3 tabular-nums">Total {hours(preview.workedMinutes)} worked, {preview.breakMinutes}m breaks.</Text>
           {preview.issues.length > 0 ? (
             <ul className="mt-2 space-y-1">
@@ -524,7 +540,12 @@ function Approvals() {
   );
 }
 
-function ExceptionInbox({ people, sites, canManage }: { people: readonly Person[]; sites: ReturnType<typeof useSites>['sites']; canManage: boolean }) {
+function ExceptionInbox({ people, sites, canManage, recorded }: {
+  people: readonly Person[];
+  sites: ReturnType<typeof useSites>['sites'];
+  canManage: boolean;
+  recorded: number;
+}) {
   const [items, setItems] = useState<readonly TimeExceptionV1[] | null>(null);
   const [active, setActive] = useState<{ id: string; mode: 'resolve' | 'void' } | null>(null);
   const [error, setError] = useState<WorkforceApiError | null>(null);
@@ -541,6 +562,14 @@ function ExceptionInbox({ people, sites, canManage }: { people: readonly Person[
   useEffect(() => {
     void load();
   }, [load]);
+
+  // WI-OI-120ao: a punch can raise an exception, so the inbox follows the clock too.
+  const seenRecorded = useRef(recorded);
+  useEffect(() => {
+    if (recorded === seenRecorded.current) return;
+    seenRecorded.current = recorded;
+    void load();
+  }, [recorded, load]);
 
   async function run(action: () => Promise<unknown>) {
     try {
