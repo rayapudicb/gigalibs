@@ -20,7 +20,8 @@ import { hasUatLogin, signInToUat, uatTenantName } from './uat-session';
 
 const APP = join(__dirname, '../../apps/workflow-platform/app');
 const OUT = join(__dirname, '../test-results/uat-screen-inventory');
-const WORKFORCE_SECTIONS = ['workers', 'engagements', 'resources', 'jobs', 'capabilities', 'availability', 'scheduling', 'time', 'attendance', 'pay', 'expenses', 'compliance', 'analytics'];
+// WI-OI-120ah: the workbench sections today (WFO sections retired in WI-OI-120u Slice 3; 'attendance' redirects to 'time').
+const WORKFORCE_SECTIONS = ['resources', 'jobs', 'capabilities', 'availability', 'scheduling', 'time', 'pay'];
 
 /** Every page route of the app: `(group)` folders dropped, sign-in pages and API routes left out. */
 function routes(): { visit: string[]; needsRecord: string[] } {

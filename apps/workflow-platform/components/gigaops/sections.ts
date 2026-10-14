@@ -2,8 +2,9 @@
 // 'use client' so server components receive the real array, not a client reference.
 // WI-OI-120u Slice 3 (U20a; owner "retire all", 2026-10-13): the WFO sections (workers, engagements, expenses,
 // compliance, analytics) are retired; their screens showed WFO data that the API no longer serves.
+// WI-OI-120ah: 'attendance' is gone; /gigaops/attendance redirects to /gigaops/time, the one Time & Attendance screen.
 export const GIGAOPS_SECTIONS = [
-  'overview', 'resources', 'jobs', 'capabilities', 'availability', 'scheduling', 'time', 'attendance', 'pay',
+  'overview', 'resources', 'jobs', 'capabilities', 'availability', 'scheduling', 'time', 'pay',
 ] as const;
 export type GigaOpsSection = (typeof GIGAOPS_SECTIONS)[number];
 

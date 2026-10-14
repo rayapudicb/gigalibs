@@ -39,7 +39,6 @@ import {
 } from '@medusajs/ui';
 import Link from 'next/link';
 import { type FormEvent, type ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
-import { PlantOperationsHub } from './PlantOperationsHub';
 import { AvailabilityAndAbsence } from './AvailabilityAndAbsence';
 import { DispatchBoard } from './DispatchBoard';
 import { JobsAndPositions } from './JobsAndPositions';
@@ -58,8 +57,8 @@ const sectionMeta: Readonly<Record<GigaOpsSection, {
   capabilities: { label: 'Skills & qualifications', description: 'Reusable capabilities and verified assignments.', available: true },
   availability: { label: 'Availability', description: 'Working weeks, absences with a four-eyes decision, site calendars and who is available.', available: true },
   scheduling: { label: 'Scheduling & dispatch', description: 'Demand from any source, ranked qualified and available people, and guarded bookings.', available: true },
-  time: { label: 'Time & attendance', description: 'Frontline clock-in, geofence muster, and operator rounds.', available: true },
-  attendance: { label: 'Clock & timesheets', description: 'Punches checked against the site boundary, weekly timesheets, four-eyes approval and time exceptions.', available: true },
+  // WI-OI-120ah: Time & attendance is the real punch and timesheet screen; the demo Time screen is retired.
+  time: { label: 'Time & attendance', description: 'Punches checked against the site boundary, weekly timesheets, four-eyes approval and time exceptions.', available: true },
   pay: { label: 'Pay-ready outputs', description: 'Policy packs, dated pay rates and weekly earning lines with a rule trace and four-eyes approval.', available: true },
 };
 
@@ -87,7 +86,7 @@ export function GigaOpsWorkforceWorkbench({ section }: { section: GigaOpsSection
       setError(null);
       return;
     }
-    if (section === 'scheduling' || section === 'time' || section === 'attendance' || section === 'pay') {
+    if (section === 'scheduling' || section === 'time' || section === 'pay') {
       setLoading(false);
       setError(null);
       workforceApi.listResources({ pageSize: 100 }).then((r) => setResources(r)).catch(() => {});
@@ -143,9 +142,7 @@ export function GigaOpsWorkforceWorkbench({ section }: { section: GigaOpsSection
           ) : section === 'scheduling' ? (
             <DispatchBoard capabilities={capabilities} />
           ) : section === 'time' ? (
-            <PlantOperationsHub initialTab="time" />
-          ) : section === 'attendance' ? (
-            <TimeAndAttendance resources={resources?.items ?? []} />
+            <TimeAndAttendance resources={resources?.items ?? []} complete={!!resources && resources.total <= resources.items.length} />
           ) : section === 'pay' ? (
             <PayReadiness resources={resources?.items ?? []} />
           ) : (
@@ -523,7 +520,7 @@ function CapabilityDirectory({ capabilities, reload }: { capabilities: readonly 
   );
 }
 
-function PlannedSection({ section }: { section: Exclude<GigaOpsSection, 'overview' | 'workers' | 'engagements' | 'resources' | 'capabilities' | 'jobs' | 'availability' | 'scheduling' | 'attendance' | 'pay' | 'expenses' | 'compliance' | 'analytics'> }) {
+function PlannedSection({ section }: { section: Exclude<GigaOpsSection, 'overview' | 'workers' | 'engagements' | 'resources' | 'capabilities' | 'jobs' | 'availability' | 'scheduling' | 'pay' | 'expenses' | 'compliance' | 'analytics'> }) {
   const icons = { jobs: IdBadge, availability: Calendar, scheduling: Calendar, time: Clock, pay: Cash, compliance: ShieldCheck, analytics: SquareTwoStack };
   const Icon = icons[section];
   return (

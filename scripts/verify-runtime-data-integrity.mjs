@@ -131,6 +131,18 @@ const forbiddenContent = [
     code: 'FABRICATED_DOCUMENT_EVIDENCE',
     pattern: /RFC 3161 PKI Certified|digestSha256\s*\|\|\s*['"]inv_verified['"]/gi,
   },
+  // WI-OI-120ah: business records kept in memory on a screen. The demo Time & Attendance screen (PlantOperationsHub)
+  // held INITIAL_SHIFTS, INITIAL_INSPECTIONS and INITIAL_HANDOVER: invented people and plants, changed only in the browser.
+  // Scoped to the Workforce screens (the card's guard); the zero-mock sweep (WI-OI-120ak) widens it module by module.
+  {
+    code: 'IN_MEMORY_BUSINESS_FIXTURE',
+    pattern: /\b(?:const|let)\s+(?:INITIAL|DEMO|SAMPLE|SEED)_[A-Z0-9_]+\s*(?::[^=;]+)?=\s*\[\s*\{/g,
+    paths: ['apps/workflow-platform/components/gigaops/', 'apps/workflow-platform/app/(app)/gigaops/', 'modules/gigaops/'],
+  },
+  {
+    code: 'FABRICATED_PEOPLE_OR_PLACES',
+    pattern: /Samalkot|Ramana Rao|Suresh Kumar|Prakash Naidu|Anil Varma/g,
+  },
   {
     code: 'HARDCODED_COMPANY_OR_BANK_PROFILE',
     pattern:
@@ -218,6 +230,7 @@ function walk(path) {
       }
     }
     for (const rule of forbiddenContent) {
+      if (rule.paths && !rule.paths.some((prefix) => repoPath.startsWith(prefix))) continue;
       rule.pattern.lastIndex = 0;
       for (const match of source.matchAll(rule.pattern)) {
         const before = source.slice(0, match.index);

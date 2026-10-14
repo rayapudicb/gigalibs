@@ -527,7 +527,8 @@ test('a new customer from sign-up to maintenance work, as five people', async ({
       await settle(admin);
       return create(admin, recorder, /^new$/i, [[/code/i, `VAC${RUN}`.slice(0, 16).toUpperCase()], [/name/i, `Vacation ${RUN}`]], /^save$/i);
     });
-    for (const section of ['overview', 'resources', 'jobs', 'availability', 'bookings', 'scheduling', 'time', 'attendance']) {
+    // WI-OI-120ah: 'attendance' redirects to 'time', the real Time & Attendance screen.
+    for (const section of ['overview', 'resources', 'jobs', 'availability', 'bookings', 'scheduling', 'time']) {
       await recorder.do(S4, `Workforce: ${section}, as the administrator`, admin, async () => {
         await admin.goto(section === 'overview' ? '/gigaops' : `/gigaops/${section}`);
         await settle(admin);

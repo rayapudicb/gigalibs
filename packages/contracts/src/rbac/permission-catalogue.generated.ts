@@ -1733,7 +1733,8 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
   {
     "code": "workforce.time.manage",
     "entries": [
-      "gigaops"
+      "gigaops",
+      "platform"
     ]
   },
   {
@@ -1754,7 +1755,8 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
     "code": "workforce.timesheets.approve",
     "entries": [
       "asset-maintenance",
-      "gigaops"
+      "gigaops",
+      "platform"
     ]
   }
 ];

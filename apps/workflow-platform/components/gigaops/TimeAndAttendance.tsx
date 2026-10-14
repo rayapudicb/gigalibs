@@ -1,6 +1,7 @@
 'use client';
 
 import { SiteSelect, useSites } from '@/components/geospatial/SitePicker';
+import { hasPermission } from '@/lib/module-access';
 import { discardLegacyPunchQueue, punchQueueKey } from '@/lib/offline-punch-queue';
 import { type WorkforceApiError, workforceApi } from '@/lib/workforce-api';
 import type {
@@ -77,22 +78,37 @@ function deviceId(): string {
   return created;
 }
 
-/** The signed-in tenant and user, whose offline queue this device may read (WI-OI-120e, P1-25). */
-function useQueueKey(): string | null {
-  const [queueKey, setQueueKey] = useState<string | null>(null);
+/** The signed-in user and tenant, or null until known. */
+type Session = { userId: string; tenantId: string; permissions: readonly string[] };
+
+function useSession(): Session | null {
+  const [session, setSession] = useState<Session | null>(null);
   useEffect(() => {
     let active = true;
     void fetch('/api/auth/context', { cache: 'no-store' })
       .then(async (response) => (response.ok ? response.json() : null))
-      .then((session: { user?: { id?: string }; tenant?: { id?: string } | null } | null) => {
-        if (active && session?.user?.id && session.tenant?.id) setQueueKey(punchQueueKey(session.tenant.id, session.user.id));
+      .then((context: { user?: { id?: string }; tenant?: { id?: string } | null; permissions?: string[] } | null) => {
+        if (active && context?.user?.id && context.tenant?.id) {
+          setSession({ userId: context.user.id, tenantId: context.tenant.id, permissions: context.permissions ?? [] });
+        }
       })
       .catch(() => undefined);
     return () => {
       active = false;
     };
   }, []);
-  return queueKey;
+  return session;
+}
+
+/**
+ * WI-OI-120ah: what the screen offers, from the user's permissions. The server decides; the screen offers only what it
+ * would allow. A technician lists their own sheets and exceptions but may not approve or correct them.
+ */
+export function timeActions(permissions: readonly string[] | null): { approve: boolean; manage: boolean } {
+  return {
+    approve: !!permissions && hasPermission(permissions, 'workforce.timesheets.approve'),
+    manage: !!permissions && hasPermission(permissions, 'workforce.time.manage'),
+  };
 }
 
 /** Whether a failed send should stay queued: no response, busy or a server fault. */
@@ -104,20 +120,34 @@ function retryable(error: WorkforceApiError): boolean {
  * Clock & timesheets (WI-OI-069): a worker's clock with an offline queue (each tap keeps its event id, so a
  * resend never records twice), the weekly timesheet, approvals, and the exception inbox with corrections.
  */
-export function TimeAndAttendance({ resources }: { resources: readonly Person[] }) {
+/**
+ * WI-OI-120ah: Time & Attendance, at /gigaops/time (the demo PlantOperationsHub is retired). `complete` says the list
+ * holds every person in the workspace; only then can the screen know the signed-in user has no person of their own.
+ */
+export function TimeAndAttendance({ resources, complete = false }: { resources: readonly Person[]; complete?: boolean }) {
   const { sites, siteName } = useSites();
   const people = useMemo(() => resources.filter((resource) => resource.resourceType === 'HUMAN'), [resources]);
+  const session = useSession();
+  // true or false when known; null while unknown (the request is then made and its answer decides).
+  const ownPerson = session
+    ? people.some((person) => person.platformUserId === session.userId) ? true : complete ? false : null
+    : null;
+  const actions = timeActions(session?.permissions ?? null);
   return (
     <div className="grid gap-4 xl:grid-cols-2">
-      <MyClock sites={sites} siteName={siteName} />
-      <WeekSheet people={people} siteName={siteName} />
-      <Approvals />
-      <ExceptionInbox people={people} sites={sites} />
+      <MyClock sites={sites} siteName={siteName} session={session} />
+      <WeekSheet people={people} siteName={siteName} ownPerson={ownPerson} />
+      {actions.approve ? <Approvals /> : null}
+      <ExceptionInbox people={people} sites={sites} canManage={actions.manage} />
     </div>
   );
 }
 
-function MyClock({ sites, siteName }: { sites: ReturnType<typeof useSites>['sites']; siteName: (siteRef: string | null) => string }) {
+function MyClock({ sites, siteName, session }: {
+  sites: ReturnType<typeof useSites>['sites'];
+  siteName: (siteRef: string | null) => string;
+  session: Session | null;
+}) {
   const [punches, setPunches] = useState<readonly PunchV1[] | null>(null);
   const [pending, setPending] = useState<readonly Omit<RecordPunchV1, 'geofence'>[]>([]);
   const [siteRef, setSiteRef] = useState('');
@@ -125,7 +155,8 @@ function MyClock({ sites, siteName }: { sites: ReturnType<typeof useSites>['site
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<WorkforceApiError | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
-  const queueKey = useQueueKey();
+  // The signed-in tenant and user, whose offline queue this device may read (WI-OI-120e, P1-25).
+  const queueKey = session ? punchQueueKey(session.tenantId, session.userId) : null;
 
   const load = useCallback(async () => {
     const today = new Date();
@@ -276,7 +307,11 @@ function position(): Promise<RecordPunchV1['location']> {
   });
 }
 
-function WeekSheet({ people, siteName }: { people: readonly Person[]; siteName: (siteRef: string | null) => string }) {
+function WeekSheet({ people, siteName, ownPerson }: {
+  people: readonly Person[];
+  siteName: (siteRef: string | null) => string;
+  ownPerson: boolean | null;
+}) {
   const [resourceId, setResourceId] = useState('');
   const [periodStart, setPeriodStart] = useState(() => mondayOf(new Date()));
   const [preview, setPreview] = useState<TimesheetPreviewV1 | null>(null);
@@ -284,9 +319,16 @@ function WeekSheet({ people, siteName }: { people: readonly Person[]; siteName: 
   const [error, setError] = useState<WorkforceApiError | null>(null);
   // WI-OI-120n: an administrator or supervisor who is not a Workforce person has no week of their own; they choose a
   // person instead of being shown the refusal of "my week".
-  const notAWorker = resourceId === '' && error?.errorCode === 'WORKFORCE_NOT_A_WORKER';
+  // WI-OI-120ah (journey finding): when it is known that the user has no person, "my week" is not requested at all.
+  const skipOwn = resourceId === '' && ownPerson === false;
+  const notAWorker = resourceId === '' && (skipOwn || error?.errorCode === 'WORKFORCE_NOT_A_WORKER');
 
   const load = useCallback(async () => {
+    if (skipOwn) {
+      setPreview(null);
+      setError(null);
+      return;
+    }
     try {
       setPreview(await workforceApi.timesheetPreview({ periodStart, ...(resourceId ? { resourceId } : {}) }));
       setError(null);
@@ -294,7 +336,7 @@ function WeekSheet({ people, siteName }: { people: readonly Person[]; siteName: 
       setPreview(null);
       setError(reason as WorkforceApiError);
     }
-  }, [periodStart, resourceId]);
+  }, [periodStart, resourceId, skipOwn]);
 
   useEffect(() => {
     void load();
@@ -441,7 +483,7 @@ function Approvals() {
   );
 }
 
-function ExceptionInbox({ people, sites }: { people: readonly Person[]; sites: ReturnType<typeof useSites>['sites'] }) {
+function ExceptionInbox({ people, sites, canManage }: { people: readonly Person[]; sites: ReturnType<typeof useSites>['sites']; canManage: boolean }) {
   const [items, setItems] = useState<readonly TimeExceptionV1[] | null>(null);
   const [active, setActive] = useState<{ id: string; mode: 'resolve' | 'void' } | null>(null);
   const [error, setError] = useState<WorkforceApiError | null>(null);
@@ -513,16 +555,16 @@ function ExceptionInbox({ people, sites }: { people: readonly Person[]; sites: R
                 <Input name="note" aria-label="Note" required minLength={3} maxLength={500} placeholder="Note for the record" />
                 <Button type="submit" size="small" variant={active.mode === 'void' ? 'danger' : 'primary'}>{active.mode === 'void' ? 'Void punch' : 'Resolve'}</Button>
               </form>
-            ) : (
+            ) : canManage ? (
               <div className="mt-2 flex gap-2">
                 <Button type="button" size="small" variant="secondary" onClick={() => setActive({ id: item.id, mode: 'resolve' })}>Resolve…</Button>
                 {item.punchId ? <Button type="button" size="small" variant="secondary" onClick={() => setActive({ id: item.id, mode: 'void' })}>Void punch…</Button> : null}
               </div>
-            )}
+            ) : null}
           </li>
         ))}
       </ul>
-      <MissedPunch people={people} sites={sites} onSaved={load} onError={setError} />
+      {canManage ? <MissedPunch people={people} sites={sites} onSaved={load} onError={setError} /> : null}
     </Container>
   );
 }

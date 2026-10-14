@@ -42,7 +42,8 @@ async function audit(page: Page, name: string) {
 
 test('Clock & timesheets: a punch from the browser is checked against the site boundary', async ({ page, baseURL }) => {
   await signIn(page, baseURL);
-  await page.goto('/gigaops/attendance');
+  // WI-OI-120ah: Time & Attendance lives at /gigaops/time (/gigaops/attendance redirects there).
+  await page.goto('/gigaops/time');
   await expect(page.getByRole('heading', { name: 'My clock' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Timesheet' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Time exceptions' })).toBeVisible();

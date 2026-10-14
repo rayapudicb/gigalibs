@@ -3403,3 +3403,40 @@ widening the card to fix the API faults the proof found.
   session). Local development servers therefore cannot log in to the development database until its password is reset
   (offered).
 
+
+## WI-OI-120ah built: one real Time screen; the demo screen is gone (v3 step 0.4, 2026-10-14). Not yet committed.
+
+- **Change** (card: [WI-OI-120ah](../tasks/WI-OI-120ah.md), "What was built"):
+  - `/gigaops/time` draws the real `TimeAndAttendance`; `/gigaops/attendance` redirects there;
+  - `PlantOperationsHub.tsx` (911 lines of in-memory demo data) is deleted;
+  - the runtime-data audit fails on in-memory Workforce fixtures and on the demo names;
+  - the step 0.8 item: an administrator with no person no longer calls the timesheet preview;
+  - Approve shows only with `workforce.timesheets.approve`, and Resolve, Void and missed punch only with
+    `workforce.time.manage`.
+- **Verification** (the shared worktree holds other sessions' files, so the audits also ran on HEAD plus 120ah's 11
+  files alone, in a throwaway worktree, since removed):
+  - `gigaops-section-route.test.ts`: 6 of 6, including the redirect, the retired screen and `timeActions` against
+    the shipped default roles (maintenance technician and Workforce member: neither; maintenance planner: approve;
+    Workforce supervisor and `workforce.*`: both; no session: neither);
+  - all web tests: 64 files and 706 tests passed (11 files and 109 tests skipped, as before);
+  - `packages/contracts/src/rbac` tests: 69 passed;
+  - web type-check: no errors outside `.next/types`. The errors there are stale generated route types for Assistant
+    pages that this branch does not have; they come from an earlier build;
+  - audits on HEAD plus 120ah: production-data, all-runtime-data, package-dependencies, api-boundary, navigation, sdlc,
+    layers, design-tokens, module manifests and module windows all pass; the deployment profile is the known drift.
+    The proof steps need an isolated database (`PROOF_DATABASE_URL`) and did not run;
+  - the guard: HEAD plus only the new rules fails, in both modes, with 2 in-memory fixtures and 18 invented names,
+    all in `PlantOperationsHub.tsx`.
+- **In the shared worktree,** `audit:design-tokens` fails on other sessions' uncommitted files only:
+  `components/auth/AuthAtmosphere.tsx`, `app/(app)/maps/page.tsx` and `components/geospatial/PlantSpatial3DViewer.tsx`.
+  They are not touched or staged by this card.
+- **Expected on the next journey:**
+  - the 3 Time blockers clear (clock in and out, submit week, approve week); the real screen has those controls and
+    the approver's list shows the person's name;
+  - the technician is not offered Approve.
+- **Routed to WI-OI-120ak (step 0.4, the sweep), found during 120ah:**
+  - Analytics Studio's Demo Lab: `modules/analytics-studio/apps/api/src/places/sample-farm.service.ts` generates
+    synthetic data, behind the `demo-lab` feature. UAT holds about 712 MB of synthetic `operational_facts` from it
+    (read-only size check). Removing or keeping it is the owner's decision;
+  - UAT workspaces named after real companies (Netflix, Paramount, Warner);
+  - widening the `INITIAL_`/`DEMO_`/`SAMPLE_`/`SEED_` fixture rule from Workforce to every module.
