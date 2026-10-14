@@ -3608,3 +3608,21 @@ widening the card to fix the API faults the proof found.
   drift test not covering the proxy's gate). All four fixed (card, "Security review"). Verification: all web tests 716
   passed in 66 files; type-check clean; lint unchanged; module manifests pass; audits on HEAD plus the fixes alone: all
   ten pass.
+- **Release `d75ccba`** (cherry-pick of 2c4a45a onto 46edcba; code byte-identical; owner: "commit"): 703 web tests
+  passed in 64 files; type-check clean; audits as on 63178f6 (TextFly quarantine only). Identity
+  `local-20261014T155740Z-d75ccba532b5-6e517ae084ef`; nine image tags match; builds started 15:57Z.
+- **Builds** of `d75ccba` passed (15:57–16:12Z). **Backup** `gigalibs_backup_20261014_161237Z` of `uat-postgres`
+  (running 63178f6), checksum verified, 546 tables. **Deploy tool:** retargeted to d75ccba from 63178f6 (a general
+  retarget script that refuses unless the tool's current release is the predecessor); tests 33 of 33; `--check`:
+  CHECK PASSED, nothing deployed. Waiting for the owner's deploy.
+
+## WI-OI-120ao on UAT: release d75ccba (2026-10-14 ~16:14Z, owner-run); journey 8cho6n
+
+- **Deploy and checks:** see the card, "On UAT, and the journey's own race". Release `d75ccba`; the second, pasted run
+  was refused before any change; all 11 containers healthy with 546 tables; the live build holds the new texts; no
+  errors and no `maps/nodes` requests since the deploy.
+- **Journey `8cho6n`:** 64 findings (5 blockers, 1 bug, 6 UX, 15 accessibility, 37 layout).
+  - The `/api/maps/nodes` 403s and the empty-table finding are gone.
+  - Three Time blockers come from a race in the journey's `press`, not from the screen. Screenshot 046: "Working",
+    "Clock out" shown, and the week showing the open shift.
+  - `press` now waits up to 5 s for a control (journey spec only; nothing to deploy). The journey is to be run again.

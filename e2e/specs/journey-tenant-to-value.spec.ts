@@ -66,16 +66,35 @@ async function settle(page: Page): Promise<void> {
   await page.waitForTimeout(400);
 }
 
-/** Clicks the first visible button or link whose name matches; answers false when there is none. */
-async function press(scope: Page | Locator, name: RegExp): Promise<boolean> {
-  for (const role of ['button', 'link', 'tab'] as const) {
-    const control = scope.getByRole(role, { name }).filter({ visible: true }).first();
-    if (await control.count()) {
-      await control.click({ timeout: 8000 });
-      return true;
+/**
+ * Clicks the first visible button, link or tab whose name matches; answers false when there is none. WI-OI-120ao
+ * (journey 8cho6n): a control can appear a moment after the previous answer (for example "Clock out" once "Clock in"
+ * is recorded), and `settle` cannot see that wait in a page already idle once, so a missing control is waited for
+ * briefly, as a person would, before it counts as missing.
+ */
+async function press(scope: Page | Locator, name: RegExp, waitMs = 5000): Promise<boolean> {
+  const find = async (): Promise<Locator | null> => {
+    for (const role of ['button', 'link', 'tab'] as const) {
+      const control = scope.getByRole(role, { name }).filter({ visible: true }).first();
+      if (await control.count()) return control;
     }
+    return null;
+  };
+  let control = await find();
+  if (!control && waitMs > 0) {
+    await scope
+      .getByRole('button', { name })
+      .or(scope.getByRole('link', { name }))
+      .or(scope.getByRole('tab', { name }))
+      .filter({ visible: true })
+      .first()
+      .waitFor({ state: 'visible', timeout: waitMs })
+      .catch(() => undefined);
+    control = await find();
   }
-  return false;
+  if (!control) return false;
+  await control.click({ timeout: 8000 });
+  return true;
 }
 
 /** The label a person sees for a control. */

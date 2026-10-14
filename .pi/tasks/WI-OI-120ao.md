@@ -1,7 +1,8 @@
 # WI-OI-120ao: The week follows the clock, and site lists ask Geospatial only when allowed
 
-- **Status:** Feature `df82260`; release `46edcba` built for review. The Security review approved; its two Low and two
-  Info notes are fixed locally, not committed (2026-10-14). A new release follows.
+- **Status:** On UAT: release `d75ccba` (`local-20261014T155740Z-d75ccba532b5-6e517ae084ef`), deployed by the owner
+  2026-10-14 (~16:14Z). Journey `8cho6n` exposed a race in the journey itself, now fixed (not committed); the journey
+  is to be run again. Feature commits `df82260`, `2c4a45a`.
 - **Found by:** journey `89ac2g` on release `63178f6` (WI-OI-120ah and WI-OI-120an on UAT).
 - **Work item:** WI-OI-120. Evidence goes in `.pi/work/WI-OI-120.md`.
 - **Size:** S
@@ -50,9 +51,9 @@
 ## Done when
 
 - [ ] On UAT, the journey's technician submits their week and the approver approves it.
-- [ ] No Workforce screen calls `/api/maps/nodes` for a workspace without Geospatial Studio, or for a user without
-  `maps.nodes.read`.
-- [ ] An empty week says so.
+- [x] No Workforce screen calls `/api/maps/nodes` for a workspace without Geospatial Studio, or for a user without
+  `maps.nodes.read`. (Journey `8cho6n`: no such 403.)
+- [x] An empty week says so.
 - [ ] Evidence recorded; built, reviewed and deployed by the owner.
 
 ## What was built (2026-10-14)
@@ -94,3 +95,24 @@
 - **I-3, fixed:** the drift test also checks the gate in `signed-module-proxy.ts`. The extra session request per
   site-listing screen remains (speed, not safety); a shared session for all screens is a later cleanup.
 - **I-2:** the scope note above records the CMMS effect.
+
+## On UAT, and the journey's own race (2026-10-14)
+
+- **Deploy:** `d75ccba` deployed (~16:14Z). The owner's pasted run was a repeat, refused before any change ("UAT no
+  longer matches the backed-up predecessor"; no lock left).
+- **Read-only checks:**
+  - all 11 containers run `d75ccba`, healthy, with 546 tables;
+  - the live build holds "No completed shifts in this week yet." and the site message, and no longer holds "No
+    punches in this week yet.";
+  - no error lines and no `maps/nodes` requests in the logs since the deploy.
+- **Journey `8cho6n`** (5 blockers, 1 bug, 6 UX):
+  - the `/api/maps/nodes` 403s and the empty-table finding are gone;
+  - "The technician clocks in and out" failed with "No Clock out button". Screenshot `046`, taken when the step
+    ended, shows the clock "Working" with "Clock out", and the week already showing the open shift. So the screen
+    worked, and the journey looked too early;
+  - cause: the journey's `press` looked once, straight away. `settle` waits on `waitForLoadState('networkidle')`,
+    which returns at once in a page that has been idle once. After "Clock in" it therefore waited only 400 ms, while
+    the punch, the punch list and then the "Clock out" button take longer. The previous run passed by timing luck;
+  - the submit and approve blockers follow from it: no clock-out, so the week has only an open shift.
+- **Fix (journey spec, not deployed):** `press` waits up to 5 s for a matching control before it counts as missing,
+  and still prefers buttons, then links, then tabs. The spec type-checks in strict mode and lists.
