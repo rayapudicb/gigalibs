@@ -3642,3 +3642,15 @@ widening the card to fix the API faults the proof found.
   - 15 accessibility and 37 layout findings (step 3.9).
 - **WI-OI-120ah, WI-OI-120an and WI-OI-120ao are done.** Next in step 0.4: WI-OI-120ak, the rest of the zero-mock
   sweep.
+
+## WI-OI-120ak approved (2026-10-15: D1a–D7a); S1, the guard, built (not yet committed)
+
+- Six new audit rules over every module, and a shrinking baseline (`config/runtime-data-baseline.json`: 22 entries,
+  57 matches, each with card, slice, reason and exact count). Details and the proof: card WI-OI-120ak, "S1".
+- Proof in a throwaway copy:
+  - each new kind of mock fails;
+  - the placeholder hint and empty rows pass;
+  - an extra match in a baselined file fails;
+  - a stale entry fails;
+  - an older rule cannot be baselined.
+- All ten audits pass on HEAD plus S1; both audit modes pass. No release: the audit runs in the repository.

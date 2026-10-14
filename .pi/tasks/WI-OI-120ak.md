@@ -1,6 +1,7 @@
 # WI-OI-120ak: Zero-mock sweep, the rest (plan v3 step 0.4)
 
-- **Status:** Approved (owner, 2026-10-15: "approved 120ak, D1a, D2a, D3a, D4a, D5a, D6a, D7a"). S1 in progress.
+- **Status:** Approved (owner, 2026-10-15: "approved 120ak, D1a, D2a, D3a, D4a, D5a, D6a, D7a"). S1 committed; S2 in
+  progress.
 - **Follows:** WI-OI-120ah, WI-OI-120an and WI-OI-120ao (the Time screen, done).
 - **Work item:** WI-OI-120. Evidence goes in `.pi/work/WI-OI-120.md`.
 - **Size:** L, delivered as slices S1 to S7, each with its own commit, release, review and check.
@@ -161,7 +162,43 @@ journey are run again.
 
 ## Done when
 
-- [ ] The audit fails on each kind of mock listed in G, and its baseline is empty.
+- [ ] The audit fails on each kind of mock listed in G (S1: done locally), and its baseline holds no entry for code a
+  user can reach. Entries may stay only for code that D1a/D3a lock or that is not deployed, each naming the plan step
+  that replaces it.
 - [ ] No page or API on UAT shows invented data, fakes a result, or keeps business data only in the web app's memory.
 - [ ] Each decision D1 to D7 is applied as chosen.
 - [ ] Evidence recorded; each slice released, reviewed and deployed by the owner; journey and screen inventory rerun.
+
+## S1, the guard (2026-10-15): built and verified locally
+
+- **New rules** in `scripts/verify-runtime-data-integrity.mjs`, all modules:
+  - `IN_MEMORY_BUSINESS_FIXTURE`, widened from Workforce to every module, for lists and maps;
+  - `IN_MEMORY_BUSINESS_STORE`: record maps or lists in web-app store classes, and their seed methods;
+  - `SIMULATED_RESULT`: "simulate success" and fake waits on screens;
+  - `DEV_SEED_SOURCE`;
+  - `IN_MEMORY_SCREEN_RECORDS`: screens that start with invented records (empty editable rows pass);
+  - `PLACEHOLDER_PEOPLE_OR_COMPANIES` (an input's placeholder hint passes).
+- **Baseline** `config/runtime-data-baseline.json`: 22 entries, 57 matches. Each entry gives the card, the slice, the
+  reason and the exact count:
+  - more matches fail as new mock;
+  - fewer fail until the entry is lowered;
+  - the older rules cannot be baselined;
+  - an entry is judged only in a scope that scans its file.
+- **The baseline by slice:**
+  - S2: 6 dead files;
+  - S3: the connectors, connections and rules-studio pages;
+  - S4: the Communications store, its screen and the Softphone drawer;
+  - S5: the Demo Lab sample farm;
+  - locked: the rule kernel store (D3a), master data and its template (D1a), the AR new-invoice form (D1a);
+  - not deployed: the Spend seed SQL (M-SPEND).
+- **Proof** in a throwaway copy:
+  - each new kind of mock fails with its code;
+  - the placeholder hint and empty rows pass;
+  - an extra match in a baselined file fails;
+  - a removed match with its entry left fails as stale;
+  - baselining an older rule fails.
+- **Audits** on HEAD plus S1 alone: all ten pass; both audit modes pass in the shared worktree.
+- **Found during S1, not mock:** four web-app services that query the database directly and that nothing imports
+  (`telemetry-bridge-service.ts`, `workforce-safety-service.ts`, `prisma-saga-service.ts`, `forms-engine-service.ts`).
+  Deleted with S2 (owner, 2026-10-15: "S2 with the four").
+- **No release:** the audit is a repository check and does not run on UAT.

@@ -133,11 +133,39 @@ const forbiddenContent = [
   },
   // WI-OI-120ah: business records kept in memory on a screen. The demo Time & Attendance screen (PlantOperationsHub)
   // held INITIAL_SHIFTS, INITIAL_INSPECTIONS and INITIAL_HANDOVER: invented people and plants, changed only in the browser.
-  // Scoped to the Workforce screens (the card's guard); the zero-mock sweep (WI-OI-120ak) widens it module by module.
+  // WI-OI-120ak (S1): every module, and maps of records (`= {`) as well as lists.
   {
     code: 'IN_MEMORY_BUSINESS_FIXTURE',
-    pattern: /\b(?:const|let)\s+(?:INITIAL|DEMO|SAMPLE|SEED)_[A-Z0-9_]+\s*(?::[^=;]+)?=\s*\[\s*\{/g,
-    paths: ['apps/workflow-platform/components/gigaops/', 'apps/workflow-platform/app/(app)/gigaops/', 'modules/gigaops/'],
+    pattern: /\b(?:const|let)\s+(?:INITIAL|DEMO|SAMPLE|SEED|FAKE|DUMMY)_[A-Z0-9_]+\s*(?::[^=;]+)?=\s*[[{]\s*[{'"A-Za-z]/g,
+  },
+  // WI-OI-120ak (S1): business data kept in the web app's memory behind its API or screens (lost on restart, not shared
+  // between instances): store classes with record maps or lists, and the methods that seed them with invented data.
+  {
+    code: 'IN_MEMORY_BUSINESS_STORE',
+    pattern:
+      /\bprivate\s+\w+\s*:\s*(?:Map<[^=;]+|\w+\[\])\s*=\s*(?:new Map\(\)|\[\])|\bseed(?:Defaults|Initial\w*|Test\w*|Platform\w*)\s*\(/g,
+    paths: ['apps/workflow-platform/'],
+  },
+  // WI-OI-120ak (S1): a screen that pretends an action succeeded, or waits to look busy instead of calling a service.
+  {
+    code: 'SIMULATED_RESULT',
+    pattern:
+      /\bsimulat(?:e|es|ed|ing)\s+(?:a\s+|the\s+)?(?:success|response|result|delivery|send|save)\b|\bnew Promise\(\(?\w*\)?\s*=>\s*setTimeout\(\w+,\s*\d+\)\)/gi,
+    paths: ['apps/workflow-platform/app/', 'apps/workflow-platform/components/'],
+  },
+  // WI-OI-120ak (S1): a file that says it must not run in production.
+  { code: 'DEV_SEED_SOURCE', pattern: /DEV SEED ONLY|Do NOT use in production/gi },
+  // WI-OI-120ak (S1): a screen that starts with invented records instead of loading them (empty editable rows pass).
+  {
+    code: 'IN_MEMORY_SCREEN_RECORDS',
+    pattern: /\buseState(?:<[^>]+>)?\(\[\s*\{\s*\w+:\s*(?:'[^']+'|"[^"]+"|\d)/g,
+    paths: ['apps/workflow-platform/app/', 'apps/workflow-platform/components/'],
+  },
+  // WI-OI-120ak (S1): placeholder people and companies from the seed data (an input's placeholder hint passes).
+  {
+    code: 'PLACEHOLDER_PEOPLE_OR_COMPANIES',
+    pattern:
+      /(?<!placeholder[=:]\s*['"])\b(?:Acme Corp(?:oration)?|Jane Doe|John Doe|Sarah Jenkins|Apex Tactical Logistics)\b|\b(?:sarah\.connor|evelyn\.reed)@/g,
   },
   {
     code: 'FABRICATED_PEOPLE_OR_PLACES',
@@ -149,6 +177,22 @@ const forbiddenContent = [
       /Warner Bros Discovery Operations LLC|US-EIN-95-1298412|4000 Warner Blvd|JPMorgan Chase Commercial Banking/gi,
   },
 ];
+
+// WI-OI-120ak (S1): the known items of the newer rules, removed slice by slice. Each entry names its card, slice and
+// reason, and the exact number of matches in its file: more fails as new mock, fewer fails until the entry is lowered
+// or removed, so the list only shrinks. The older rules cannot be baselined.
+const BASELINE_PATH = 'config/runtime-data-baseline.json';
+const BASELINE_CODES = new Set([
+  'IN_MEMORY_BUSINESS_FIXTURE',
+  'IN_MEMORY_BUSINESS_STORE',
+  'SIMULATED_RESULT',
+  'DEV_SEED_SOURCE',
+  'IN_MEMORY_SCREEN_RECORDS',
+  'PLACEHOLDER_PEOPLE_OR_COMPANIES',
+]);
+const runtimeBaseline = existsSync(join(repositoryRoot, BASELINE_PATH))
+  ? JSON.parse(readFileSync(join(repositoryRoot, BASELINE_PATH), 'utf8'))
+  : { schemaVersion: 1, entries: [] };
 
 const violations = [];
 const absentQuarantinedRoots = [];
@@ -409,6 +453,60 @@ function collectPackageManifests(root) {
   return manifests;
 }
 
+const baselined = applyRuntimeBaseline();
+
+function applyRuntimeBaseline() {
+  const problem = (excerpt) => ({ code: 'RUNTIME_BASELINE_INVALID', file: BASELINE_PATH, line: 1, excerpt });
+  if (runtimeBaseline.schemaVersion !== 1) {
+    violations.push(problem(`Expected schemaVersion 1, received ${String(runtimeBaseline.schemaVersion)}`));
+    return 0;
+  }
+  const key = (code, file) => `${code}\u0000${file}`;
+  const entries = new Map();
+  for (const entry of runtimeBaseline.entries ?? []) {
+    const valid =
+      BASELINE_CODES.has(entry.code) &&
+      typeof entry.file === 'string' &&
+      Number.isInteger(entry.count) &&
+      entry.count > 0 &&
+      /^WI-OI-[0-9a-z]+$/.test(entry.card ?? '') &&
+      typeof entry.slice === 'string' &&
+      typeof entry.reason === 'string' &&
+      entry.reason.length > 10;
+    if (!valid || entries.has(key(entry.code, entry.file))) {
+      violations.push(problem(`invalid or repeated entry: ${entry.code} ${entry.file}`));
+      continue;
+    }
+    entries.set(key(entry.code, entry.file), entry);
+  }
+  const found = new Map();
+  for (const violation of violations) {
+    const id = key(violation.code, violation.file);
+    if (entries.has(id)) found.set(id, [...(found.get(id) ?? []), violation]);
+  }
+  let tolerated = 0;
+  for (const [id, entry] of entries) {
+    // An entry for a file this scope does not scan (packages/ outside --all-runtime) is judged only in the scope that does.
+    if (!roots.some((root) => entry.file.startsWith(`${root}/`))) continue;
+    const matches = found.get(id) ?? [];
+    if (matches.length === entry.count) {
+      tolerated += matches.length;
+      for (const match of matches) violations.splice(violations.indexOf(match), 1);
+    } else if (matches.length < entry.count) {
+      violations.push({
+        code: 'RUNTIME_BASELINE_STALE',
+        file: BASELINE_PATH,
+        line: 1,
+        excerpt: `${entry.code} ${entry.file}: ${matches.length} left, baseline says ${entry.count}; lower or remove it (${entry.card} ${entry.slice})`,
+      });
+      tolerated += matches.length;
+      for (const match of matches) violations.splice(violations.indexOf(match), 1);
+    }
+    // More matches than the entry allows: every match stays reported, so new mock fails.
+  }
+  return tolerated;
+}
+
 if (violations.length > 0) {
   console.error(
     JSON.stringify(
@@ -426,6 +524,7 @@ if (violations.length > 0) {
         scope: includeLegacy ? 'all-runtime' : 'production',
         scannedRoots: roots,
         retiredApplications,
+        baseline: { file: BASELINE_PATH, entries: (runtimeBaseline.entries ?? []).length, toleratedMatches: baselined },
         quarantinedPackages: {
           count: quarantinedPackages.length,
           absent: absentQuarantinedRoots,

@@ -1,0 +1,182 @@
+{
+  "schemaVersion": 1,
+  "comment": "WI-OI-120ak (S1): known mock still in the code. Each slice removes its own entries; an entry for locked or undeployed code names the plan step that replaces it. Read by scripts/verify-runtime-data-integrity.mjs.",
+  "entries": [
+    {
+      "code": "DEV_SEED_SOURCE",
+      "file": "apps/workflow-platform/lib/master-data-catalog.ts",
+      "count": 2,
+      "card": "WI-OI-120ak",
+      "slice": "locked",
+      "reason": "Master data seed, CONTAINED and locked on UAT by D1a; replaced by T4 parties (plan v3 5B)"
+    },
+    {
+      "code": "IN_MEMORY_BUSINESS_FIXTURE",
+      "file": "apps/workflow-platform/app/(app)/connections/page.tsx",
+      "count": 1,
+      "card": "WI-OI-120ak",
+      "slice": "S3",
+      "reason": "S3: test-event presets; labelled as editable test inputs or removed"
+    },
+    {
+      "code": "IN_MEMORY_BUSINESS_FIXTURE",
+      "file": "modules/analytics-studio/apps/api/src/places/sample-farm.service.ts",
+      "count": 2,
+      "card": "WI-OI-120ak",
+      "slice": "S5",
+      "reason": "S5 (D5a): the Demo Lab synthetic sample farm; removed"
+    },
+    {
+      "code": "IN_MEMORY_BUSINESS_STORE",
+      "file": "apps/workflow-platform/lib/ar-ledger-store.ts",
+      "count": 1,
+      "card": "WI-OI-120ak",
+      "slice": "S2",
+      "reason": "S2: dead in-memory code, no importer; deleted"
+    },
+    {
+      "code": "IN_MEMORY_BUSINESS_STORE",
+      "file": "apps/workflow-platform/lib/communications-store.ts",
+      "count": 9,
+      "card": "WI-OI-120ak",
+      "slice": "S4",
+      "reason": "S4 (D2a): in-memory Communications store with seeded invented data and silent fallback; removed"
+    },
+    {
+      "code": "IN_MEMORY_BUSINESS_STORE",
+      "file": "apps/workflow-platform/lib/event-fabric-queue.ts",
+      "count": 3,
+      "card": "WI-OI-120ak",
+      "slice": "S2",
+      "reason": "S2: dead in-memory code, no importer; deleted"
+    },
+    {
+      "code": "IN_MEMORY_BUSINESS_STORE",
+      "file": "apps/workflow-platform/lib/master-data-store.ts",
+      "count": 4,
+      "card": "WI-OI-120ak",
+      "slice": "locked",
+      "reason": "Master data, CONTAINED and locked on UAT by D1a; replaced by T4 parties (plan v3 5B)"
+    },
+    {
+      "code": "IN_MEMORY_BUSINESS_STORE",
+      "file": "apps/workflow-platform/lib/ontology-store.ts",
+      "count": 5,
+      "card": "WI-OI-120ak",
+      "slice": "S2",
+      "reason": "S2: dead in-memory code, no importer; deleted"
+    },
+    {
+      "code": "IN_MEMORY_BUSINESS_STORE",
+      "file": "apps/workflow-platform/lib/saga-orchestrator.ts",
+      "count": 3,
+      "card": "WI-OI-120ak",
+      "slice": "S2",
+      "reason": "S2: dead in-memory code, no importer; deleted"
+    },
+    {
+      "code": "IN_MEMORY_BUSINESS_STORE",
+      "file": "apps/workflow-platform/lib/tenant-ingestion-store.ts",
+      "count": 2,
+      "card": "WI-OI-120ak",
+      "slice": "S2",
+      "reason": "S2: dead in-memory code, no importer; deleted"
+    },
+    {
+      "code": "IN_MEMORY_BUSINESS_STORE",
+      "file": "apps/workflow-platform/lib/universal-rule-kernel-store.ts",
+      "count": 2,
+      "card": "WI-OI-120ak",
+      "slice": "locked",
+      "reason": "Rule studio, locked by D3a (CONTAINED) until rules have real storage (its own card)"
+    },
+    {
+      "code": "IN_MEMORY_SCREEN_RECORDS",
+      "file": "apps/workflow-platform/app/(app)/ar/invoices/new/page.tsx",
+      "count": 2,
+      "card": "WI-OI-120ak",
+      "slice": "locked",
+      "reason": "Accounts Receivable, CONTAINED and locked on UAT by D1a; rebuilt in M-AR (plan v3 5C)"
+    },
+    {
+      "code": "IN_MEMORY_SCREEN_RECORDS",
+      "file": "apps/workflow-platform/components/communications/OmnichannelSoftphoneDrawer.tsx",
+      "count": 1,
+      "card": "WI-OI-120ak",
+      "slice": "S4",
+      "reason": "S4 (D4a): the Softphone & WhatsApp button with invented chat; taken off the layout"
+    },
+    {
+      "code": "PLACEHOLDER_PEOPLE_OR_COMPANIES",
+      "file": "apps/workflow-platform/app/(app)/rules/studio/page.tsx",
+      "count": 1,
+      "card": "WI-OI-120ak",
+      "slice": "S3",
+      "reason": "S3: sample payload for a rule test; labelled as an editable test input or removed"
+    },
+    {
+      "code": "PLACEHOLDER_PEOPLE_OR_COMPANIES",
+      "file": "apps/workflow-platform/components/communications/CommunicationsWorkbench.tsx",
+      "count": 3,
+      "card": "WI-OI-120ak",
+      "slice": "S4",
+      "reason": "S4 (D2a): invented recipient defaults on the Communications screen"
+    },
+    {
+      "code": "PLACEHOLDER_PEOPLE_OR_COMPANIES",
+      "file": "apps/workflow-platform/lib/ar-ledger-store.ts",
+      "count": 1,
+      "card": "WI-OI-120ak",
+      "slice": "S2",
+      "reason": "S2: dead in-memory code, no importer; deleted"
+    },
+    {
+      "code": "PLACEHOLDER_PEOPLE_OR_COMPANIES",
+      "file": "apps/workflow-platform/lib/communications-store.ts",
+      "count": 4,
+      "card": "WI-OI-120ak",
+      "slice": "S4",
+      "reason": "S4 (D2a): in-memory Communications store with seeded invented data and silent fallback; removed"
+    },
+    {
+      "code": "PLACEHOLDER_PEOPLE_OR_COMPANIES",
+      "file": "apps/workflow-platform/lib/master-data-catalog.ts",
+      "count": 4,
+      "card": "WI-OI-120ak",
+      "slice": "locked",
+      "reason": "Master data seed, CONTAINED and locked on UAT by D1a; replaced by T4 parties (plan v3 5B)"
+    },
+    {
+      "code": "PLACEHOLDER_PEOPLE_OR_COMPANIES",
+      "file": "apps/workflow-platform/lib/ootb-client-workbench-store.ts",
+      "count": 2,
+      "card": "WI-OI-120ak",
+      "slice": "S2",
+      "reason": "S2: dead in-memory code, no importer; deleted"
+    },
+    {
+      "code": "PLACEHOLDER_PEOPLE_OR_COMPANIES",
+      "file": "modules/spend-management/db/migrations/seed_spend_data.sql",
+      "count": 1,
+      "card": "WI-OI-120ak",
+      "slice": "not deployed",
+      "reason": "Spend seed, not in any UAT compose file and not a numbered migration; replaced in M-SPEND (plan v3 5B)"
+    },
+    {
+      "code": "PLACEHOLDER_PEOPLE_OR_COMPANIES",
+      "file": "packages/contracts/src/master-data/templates.ts",
+      "count": 2,
+      "card": "WI-OI-120ak",
+      "slice": "locked",
+      "reason": "Master data import template example row, CONTAINED and locked on UAT by D1a; replaced by T4 parties (plan v3 5B)"
+    },
+    {
+      "code": "SIMULATED_RESULT",
+      "file": "apps/workflow-platform/app/(app)/connectors/[slug]/page.tsx",
+      "count": 2,
+      "card": "WI-OI-120ak",
+      "slice": "S3",
+      "reason": "S3: saving credentials fakes success; it goes to the Connector Hub or says it cannot save yet"
+    }
+  ]
+}
