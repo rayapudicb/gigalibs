@@ -3268,7 +3268,7 @@ widening the card to fix the API faults the proof found.
   - UAT's database is `gigalibs-postgres` (made 2026-08-30 from an old dev compose; volume
     `gigalibs_dev_postgres_data`), published on `0.0.0.0:5440`. UAT reaches it as `host.docker.internal:5440` in 14
     `*_DATABASE_URL` settings across 10 env files.
-  - 22 roles, 14 of them able to log in; the control plane and every migration connect as the superuser `gigalibs`.
+  - 22 roles, 13 of them able to log in (`gigalibs`, 11 service roles, `rls_test_user`); the control plane and every migration connect as the superuser `gigalibs`.
   - `rls_test_user` holds grants (all on schema `gigalibs_finance`, 336 table grants) and owns nothing.
   - `gigalibs-host-bridge` (2026-10-09, another session) proxies the UAT module APIs to the Mac (D5a: remove it).
 - **Built:**
@@ -3316,4 +3316,58 @@ widening the card to fix the API faults the proof found.
   - a connected client is detected by the H1 query; 14 of 14 logins work over the network;
   - `--rollback` is refused after a recreated service (H2) and works before any deploy;
   - all artefacts deleted, including two empty volumes from replaced dummy containers.
+
+## WI-OI-120am ready for the owner's window (2026-10-14)
+
+- **Re-check by the same reviewer: PASS WITH CONDITIONS.** No blocker, high or medium finding remains open.
+  - Its Low finding is fixed in the deploy tool: `--deploy` requires `--backup` to equal `cutover.json`'s final
+    backup, checked before any change. 33 tests.
+- **Release d435c58** (`d435c58d8dc5-b92cab19b772`): 9 images built and labelled. The deploy tool's RELEASE block
+  is set to its seven values; the predecessor is 4e6f9ef.
+- **prepare.mjs**, run in the release worktree, read-only on UAT:
+  - pre-cutover release `local-20261013T133217Z-4e6f9efa3b03-e9e9b32dc427`;
+  - 21 roles, 12 new login passwords, `rls_test_user` skipped;
+  - 14 database URLs and the container name rewritten in the `.next` files;
+  - all 11 files mode 600 and git-ignored; nothing secret printed.
+- **Checks before the window:**
+  - `deploy-uat.sh --check --backup gigalibs_backup_20261014_083158Z`: CHECK PASSED. All 11 images verified,
+    including `postgres:16-alpine@sha256:16bc…`; it notes that 33 of 33 database URLs are still at the old database.
+  - The configuration rendered from the `.next` files: 33 of 33 database URLs at `uat-postgres:5432`; volume
+    `gigalibs-uat-database`; no port; network `gigalibs-configuration-local`.
+  - A compose dry run of step 1 creates only the volume and the container, and reuses the network.
+  - The cutover preflight passed on UAT.
+  - The old database's current clients are the UAT services only, all through the Docker gateway.
+
+## WI-OI-120am cutover done: UAT runs on its own database (2026-10-14 09:31–09:40Z, owner-run)
+
+- **Owner run:**
+  - `docker rm -f gigalibs-host-bridge` (D5a);
+  - `cutover.mjs` preflight passed;
+  - `cutover.mjs --run`, 09:31:45–09:32:13Z:
+    - `uat-postgres` healthy and empty; 22 roles;
+    - 9 services stopped, with no other client on the old database;
+    - final backup `gigalibs_backup_20261014_093158Z` verified;
+    - restore with no error; `rls_test_user` dropped;
+    - 546 tables, 22 ledgers and 5 catalog checks identical, with no client and no write on the old database during
+      the copy;
+    - env files swapped, `cutover.json` written, `roles.sql` deleted. UAT was down from 09:31:58Z.
+  - `deploy-uat.sh --deploy --backup gigalibs_backup_20261014_093158Z`:
+    - all 11 images verified;
+    - `uat-postgres` healthy and holding 546 tables (546 copied);
+    - all 11 migrations passed (no-op); all 10 services healthy;
+    - `/api/health/ready` and `/login` answer 200;
+    - DEPLOY SMOKE PASSED for `d435c58d8dc5-b92cab19b772`.
+  - The first deploy attempt was the literal placeholder; zsh refused it and nothing ran.
+- **Read-only proof afterwards:**
+  - all application containers run d435c58 and are healthy; `uat-postgres` publishes no host port;
+  - 0 UAT containers name `host.docker.internal:5440`;
+  - every service is connected to `uat-postgres` with its own login, and the old database has 0 clients;
+  - new database: 321 workspaces and 493 members (journey 7phudp's additions included), 1,577 enabled entitlements, 0
+    members with `*` or Assistant codes, control-plane migrations 61, Workforce ledger 27, `rls_test_user` absent;
+  - the host bridge is removed.
+- **Still to do (card conditions):**
+  - C6: bind the old database (still `0.0.0.0:5440`, now development-only) to `127.0.0.1`; rotate every login role on
+    it (by query, `rls_test_user` included); set the date to delete the `.prev` env files.
+  - C7: before the D3a reset (no earlier than 2026-10-21), a verified backup and a restore drill of `uat-postgres`.
+  - The owner reruns the journey.
 

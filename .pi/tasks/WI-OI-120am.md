@@ -4,7 +4,8 @@
   not chosen yet: the owner names it after the review.
   - Built and rehearsed: `compose.database.yaml`; `scripts/uat/wi-oi-120am/` (prepare, cutover with preflight, run and
     rollback; lib, 6 tests); the deploy tool copy (31 tests); passwords removed from tracked code.
-  - Next: the release build, the deploy check, the Security review, then the owner's window.
+  - **Cutover done, 2026-10-14 09:31–09:40Z (owner-run):** UAT runs release d435c58 on `uat-postgres`; verified read-only.
+    Next: the journey, then C6 (old database to `127.0.0.1` with rotated logins; a date to delete the `.prev` files) and C7.
 - **Plan step:** execution plan v3 step 0.3c. It is the owner's decision Q2a in WI-OI-120al and the first slice of O1,
   brought forward.
 - **Work item:** WI-OI-120. Evidence goes in `.pi/work/WI-OI-120.md`.
@@ -27,7 +28,7 @@
   - The control plane and every migration runner connect as `gigalibs`, a superuser that bypasses row security.
   - A test role, `rls_test_user`, can log in.
 - **Contents:** one database, `gigalibs`: 1.17 GB, 21 schemas, the extensions pgcrypto, ltree and btree_gist, and 22
-  roles (14 can log in).
+  roles (13 can log in: `gigalibs`, 11 service roles, and `rls_test_user`).
 
 ## Design (to be confirmed with the owner)
 
@@ -120,12 +121,23 @@
 - **C6:** right after the journey passes:
   - delete the `.prev` files on a set date;
   - bind the old database to `127.0.0.1`;
-  - rotate or disable all 13 of its logins, not only `gigalibs`.
+  - rotate or disable every role that can log in there (selected by query, `rls_test_user` included), not only `gigalibs`.
 - **C7:** before the D3a reset: a verified backup and a restore drill of `uat-postgres`, and how long to keep the final
   pre-cutover dump.
 
 **Noted:** L11, the release branch still holds the old password in 11 files. It is moot after rotation; do not push
 that branch before then.
+
+**Re-check (2026-10-14): PASS WITH CONDITIONS.** No blocker, high or medium finding remains open.
+- Still open, low: the deploy should require `--backup` to equal `cutover.json`'s final backup. It is added to the
+  deploy tool after the build.
+- Info:
+  - step 1's join of the existing UAT network was not rehearsed (a compose dry run comes first in the window);
+  - the roll-forward hint does not cover a halt after `web` was recreated;
+  - PostgreSQL 16 membership options are not copied.
+- The login count is corrected: 13 roles can log in on the old cluster; with `rls_test_user` left out, prepare gives 12
+  new passwords.
+- Remove the host bridge before `--run`.
 
 ## Proof
 
