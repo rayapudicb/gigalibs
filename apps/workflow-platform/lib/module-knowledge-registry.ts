@@ -302,26 +302,16 @@ export const MODULE_KNOWLEDGE_REGISTRY: Record<string, ModuleKnowledgeEntry> = {
       schema: 'gigalibs_data_studio',
     },
   },
+  // WI-OI-120ak (S3): the page says connecting to outside services is not available yet; this entry claimed pre-built SAP,
+  // NetSuite and Salesforce connectors, AES-256-GCM credential storage and an internal port.
   '/connectors': {
     category: 'Studio & Orchestration',
-    businessTitle: 'Enterprise Integrations',
-    summary: 'Pre-built enterprise connectors linking GigaLibs to SAP S/4HANA, NetSuite, Salesforce, AVEVA PI, and IoT broker endpoints.',
-    actions: [
-      'Configure bi-directional sync with corporate ERP and financial backends',
-      'Establish authenticated webhook endpoints for industrial SCADA and edge gateways',
-      'Monitor real-time connector health, API latency, and quota utilization',
-      'Rotate OAuth credentials and API tokens with zero integration downtime',
-    ],
-    guardrails: [
-      'Credentials encrypted at rest using AES-256-GCM envelope encryption',
-      'Automated exponential backoff and jitter on external provider rate limits',
-    ],
-    technicalSpec: {
-      serviceName: 'Universal Connector Hub',
-      port: '4100',
-      schema: 'gigalibs_connector',
-    },
+    businessTitle: 'Connectors',
+    summary: 'Connecting to outside services is planned in the Connector Hub and not available yet. Webhooks and scheduled pulls are under Connections.',
+    actions: ['Open Connections to receive signed webhooks or set up a scheduled pull'],
+    guardrails: ['Nothing can be connected from this page'],
   },
+
 
   // ── Communications & Dispatch ──
   '/communications': {

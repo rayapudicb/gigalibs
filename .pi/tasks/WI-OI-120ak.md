@@ -1,7 +1,7 @@
 # WI-OI-120ak: Zero-mock sweep, the rest (plan v3 step 0.4)
 
-- **Status:** Approved (owner, 2026-10-15: "approved 120ak, D1a, D2a, D3a, D4a, D5a, D6a, D7a"). S1 and S2 committed; S3 in
-  progress.
+- **Status:** Approved (owner, 2026-10-15: "approved 120ak, D1a, D2a, D3a, D4a, D5a, D6a, D7a"). S1, S2 and S3 committed; their
+  release (one, with S1's audit) is being prepared.
 - **Follows:** WI-OI-120ah, WI-OI-120an and WI-OI-120ao (the Time screen, done).
 - **Work item:** WI-OI-120. Evidence goes in `.pi/work/WI-OI-120.md`.
 - **Size:** L, delivered as slices S1 to S7, each with its own commit, release, review and check.
@@ -227,3 +227,32 @@ journey are run again.
   skipped unchanged); both audit modes pass; all ten audits pass on HEAD plus S2 alone; the lockfile passes a frozen
   check.
 - **No behaviour change.** Next.js bundles only what is imported, so S2 goes to UAT with the next release (S3).
+
+## S3, connectors and test inputs (2026-10-15): built and verified locally
+
+- **Connectors** (owner: "S3 a", then "S3 b", read as one result):
+  - a: the hard-coded catalogue (`lib/connector-catalog.ts`, eight outside services called "production-ready") and the
+    per-connector page, whose "Connect" pretended to save credentials ("Here we simulate success"), are deleted;
+  - b: `/connectors` stays as an honest page. Connecting to outside services is planned in the Connector Hub
+    (outbound logins, WI-OI-104) and not available yet; webhooks and scheduled pulls are under Connections;
+  - the page had no menu entry, no owning module and no links to it;
+  - its help entry no longer claims pre-built SAP, NetSuite and Salesforce connectors, AES-256-GCM storage or a port.
+- **Connections:** "Send test webhook" is real: the hub signs it and records it in the workspace's intake journal. It
+  now always starts from the neutral `test.ping`, editable, and says the test is real. It used to pre-fill invented
+  SAP, AWS and Delta Air Lines transactions for three connection types (`SAMPLE_WEBHOOK_PAYLOADS`, removed).
+- **Workflows runner:** "Execute" runs a real workflow. The runner used to:
+  - pre-select a hard-coded `WF-O2C-CROSS-BORDER`;
+  - pre-fill invented inputs (`PRESET_PAYLOADS`: `VEND-ACME-CORP`, `SO-2026-8819`, …);
+  - show a "PORT 4000 LIVE" badge.
+
+  Now it picks the workspace's first workflow once loaded and starts from `{}`, with a note that the run is real;
+  "Reset Preset" became "Clear"; the badge is gone.
+- **Guard gap fixed:** S1's fixture rule missed both pages: a type annotation with ";" and the `PRESET_` prefix. It now
+  catches them. It also caught the rules studio's `SAMPLE_PAYLOADS`, baselined as "locked" with the rest of the rule
+  studio (D3a, S5).
+- **Baseline:** 15 → 14 entries (38 matches): the connections and connectors entries are gone; the rules studio's
+  entries are "locked".
+- **Verification:** web type-check clean; web tests 694 passed; lint compared with HEAD under the same config shows
+  nothing new (one `any` fewer in each changed page); both audit modes pass; all ten audits pass on HEAD plus S3
+  alone.
+- **Release:** S2 and S3 go to UAT together (with S1's audit script), as the next release.

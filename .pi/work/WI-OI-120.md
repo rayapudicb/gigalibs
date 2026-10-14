@@ -3658,3 +3658,7 @@ widening the card to fix the API faults the proof found.
   2 tests and 3 unwired scripts deleted (6,304 lines); 3 mixed tests trimmed to their live contract checks;
   `@gigalibs/db` dropped from the web app. Baseline 22 → 15 entries. Type-check clean; 694 web tests passed; all
   audits pass on HEAD plus S2. No behaviour change; goes to UAT with S3's release.
+- **S3 built (not yet committed):** the connector catalogue and its fake "Connect" deleted; `/connectors` says outside
+  connections are not available yet. Connections' test webhook starts from the neutral ping; the workflows runner from
+  the workspace's own workflow and `{}`; both say the action is real. The fixture rule now catches `PRESET_` and
+  object-typed constants. Baseline 14 entries. Type-check clean; 694 web tests passed; all audits pass on HEAD plus S3.

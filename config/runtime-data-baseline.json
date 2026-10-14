@@ -12,11 +12,11 @@
     },
     {
       "code": "IN_MEMORY_BUSINESS_FIXTURE",
-      "file": "apps/workflow-platform/app/(app)/connections/page.tsx",
+      "file": "apps/workflow-platform/app/(app)/rules/studio/page.tsx",
       "count": 1,
       "card": "WI-OI-120ak",
-      "slice": "S3",
-      "reason": "S3: test-event presets; labelled as editable test inputs or removed"
+      "slice": "locked",
+      "reason": "Rule studio sample payloads for its in-memory introspector; locked by D3a (CONTAINED) until rules have real storage (its own card)"
     },
     {
       "code": "IN_MEMORY_BUSINESS_FIXTURE",
@@ -71,8 +71,8 @@
       "file": "apps/workflow-platform/app/(app)/rules/studio/page.tsx",
       "count": 1,
       "card": "WI-OI-120ak",
-      "slice": "S3",
-      "reason": "S3: sample payload for a rule test; labelled as an editable test input or removed"
+      "slice": "locked",
+      "reason": "Rule studio sample payloads for its in-memory introspector; locked by D3a (CONTAINED) until rules have real storage (its own card)"
     },
     {
       "code": "PLACEHOLDER_PEOPLE_OR_COMPANIES",
@@ -113,14 +113,6 @@
       "card": "WI-OI-120ak",
       "slice": "locked",
       "reason": "Master data import template example row, CONTAINED and locked on UAT by D1a; replaced by T4 parties (plan v3 5B)"
-    },
-    {
-      "code": "SIMULATED_RESULT",
-      "file": "apps/workflow-platform/app/(app)/connectors/[slug]/page.tsx",
-      "count": 2,
-      "card": "WI-OI-120ak",
-      "slice": "S3",
-      "reason": "S3: saving credentials fakes success; it goes to the Connector Hub or says it cannot save yet"
     }
   ]
 }

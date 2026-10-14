@@ -95,34 +95,8 @@ interface HubStats {
   avg_latency_ms: number;
 }
 
-const SAMPLE_WEBHOOK_PAYLOADS: Record<string, any> = {
-  'salesforce-crm': {
-    deal_id: 'OPP-EMEA-9021',
-    amount: 185000,
-    currency: 'EUR',
-    customer_country: 'DE',
-    customer_name: 'SAP SE Enterprise Group',
-    close_date: '2026-09-05',
-    product_tier: 'ENTERPRISE_PLATFORM_TIER_1',
-  },
-  'coupa-procure': {
-    requisition_id: 'REQ-NA-7712',
-    department: 'CLOUD_INFRASTRUCTURE',
-    amount: 92000,
-    currency: 'USD',
-    vendor: 'Amazon Web Services Inc',
-    description: 'Annual Reserved GPU Instances',
-  },
-  'plaid-cards': {
-    transaction_id: 'txn_plaid_991823',
-    account_id: 'acc_corp_visa_01',
-    amount: 3450,
-    currency: 'USD',
-    merchant_name: 'Delta Air Lines',
-    category: 'TRAVEL_EXPENSE',
-  },
-};
-
+// WI-OI-120ak (S3): every test starts from this neutral ping; the person may edit it. The test is real: the hub signs it
+// and records it in this workspace's intake journal, so it must not carry invented business records.
 const TEST_WEBHOOK_PAYLOAD = { event_type: 'test.ping', note: 'Test delivery from the Connections page' };
 
 export default function ConnectionsPage() {
@@ -246,8 +220,7 @@ export default function ConnectionsPage() {
   // Change simulation slug
   const handleSelectSimSlug = (slug: string) => {
     setSelectedSimSlug(slug);
-    const preset = SAMPLE_WEBHOOK_PAYLOADS[slug] || TEST_WEBHOOK_PAYLOAD;
-    setSimPayloadText(JSON.stringify(preset, null, 2));
+    setSimPayloadText(JSON.stringify(TEST_WEBHOOK_PAYLOAD, null, 2));
     setSimResult(null);
   };
 
@@ -826,6 +799,9 @@ export default function ConnectionsPage() {
                 <Label className="text-xs font-medium text-ui-fg-subtle mb-1 block">
                   Webhook Payload Data (JSON)
                 </Label>
+                <Text size="xsmall" className="mb-1 text-ui-fg-subtle">
+                  The test is real: it is signed and recorded in this workspace's intake journal.
+                </Text>
                 <textarea
                   value={simPayloadText}
                   onChange={(e) => setSimPayloadText(e.target.value)}

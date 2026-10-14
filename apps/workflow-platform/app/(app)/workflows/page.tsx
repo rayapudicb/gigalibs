@@ -96,35 +96,6 @@ interface WorkflowStats {
   avg_duration_ms: number;
 }
 
-const PRESET_PAYLOADS: Record<string, Record<string, any>> = {
-  'WF-O2C-CROSS-BORDER': {
-    order_id: 'SO-2026-8819',
-    customer_id: 'CUST-EU-901',
-    customer_country: 'DE',
-    currency: 'EUR',
-    gross_amount: 145000,
-    items: [
-      { sku: 'ENTERPRISE-CLOUD-SLA', quantity: 1, unit_price: 145000 },
-    ],
-  },
-  'WF-P2P-SPEND-APPROVAL': {
-    requisition_id: 'REQ-2026-4401',
-    vendor_id: 'VEND-ACME-CORP',
-    department: 'ENGINEERING',
-    amount: 78500,
-    currency: 'USD',
-    description: 'GPU Cluster Capacity Expansion',
-  },
-  'WF-TREASURY-AUTO-HEDGE': {
-    portfolio_id: 'PORT-EMEA-01',
-    base_currency: 'USD',
-    unhedged_positions: [
-      { currency: 'EUR', amount: 2500000, value_date: '2026-10-15' },
-      { currency: 'GBP', amount: 1800000, value_date: '2026-11-01' },
-    ],
-  },
-};
-
 // Zero-simulation policy: honest empty state shown when service is unavailable.
 
 export default function WorkflowsPage() {
@@ -144,10 +115,10 @@ export default function WorkflowsPage() {
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
 
   // Live Runner state
-  const [selectedWfCode, setSelectedWfCode] = useState<string>('WF-O2C-CROSS-BORDER');
-  const [runnerPayload, setRunnerPayload] = useState<string>(
-    JSON.stringify(PRESET_PAYLOADS['WF-O2C-CROSS-BORDER'], null, 2)
-  );
+  // WI-OI-120ak (S3): no workflow or input is assumed. The first workflow of this workspace is chosen once loaded, and
+  // the person writes the input; the run is real and recorded here.
+  const [selectedWfCode, setSelectedWfCode] = useState<string>('');
+  const [runnerPayload, setRunnerPayload] = useState<string>('{}');
   const [runningPipeline, setRunningPipeline] = useState<boolean>(false);
   const [executionResult, setExecutionResult] = useState<{
     run: WorkflowRun;
@@ -172,6 +143,7 @@ export default function WorkflowsPage() {
       ]);
 
       setWorkflows(wfRes.workflows ?? []);
+      setSelectedWfCode((current) => current || wfRes.workflows?.[0]?.workflow_code || '');
       setRuns(runsRes.runs ?? []);
       setStats(statsRes.stats ?? null);
     } catch {
@@ -191,8 +163,7 @@ export default function WorkflowsPage() {
   // Update runner payload when user selects workflow
   const handleWorkflowSelect = (wfCode: string) => {
     setSelectedWfCode(wfCode);
-    const preset = PRESET_PAYLOADS[wfCode] || { input: 'test_payload' };
-    setRunnerPayload(JSON.stringify(preset, null, 2));
+    setRunnerPayload('{}');
     setExecutionResult(null);
   };
 
@@ -202,6 +173,7 @@ export default function WorkflowsPage() {
     setError(null);
     setActionSuccess(null);
     try {
+      if (!selectedWfCode) throw new Error('Choose a workflow first.');
       let parsedInput = {};
       try {
         parsedInput = JSON.parse(runnerPayload);
@@ -637,9 +609,6 @@ export default function WorkflowsPage() {
                 <Heading level="h2" className="text-base font-semibold text-ui-fg-base">
                   Pipeline Execution Input
                 </Heading>
-                <Badge color="blue" size="small">
-                  PORT 4000 LIVE
-                </Badge>
               </div>
 
               <div>
@@ -666,15 +635,15 @@ export default function WorkflowsPage() {
                   </Label>
                   <button
                     type="button"
-                    onClick={() => {
-                      const preset = PRESET_PAYLOADS[selectedWfCode] || {};
-                      setRunnerPayload(JSON.stringify(preset, null, 2));
-                    }}
+                    onClick={() => setRunnerPayload('{}')}
                     className="text-xs text-ui-fg-interactive hover:underline cursor-pointer"
                   >
-                    Reset Preset
+                    Clear
                   </button>
                 </div>
+                <Text size="xsmall" className="mb-1 text-ui-fg-subtle">
+                  Write the input this workflow expects. The run is real and is recorded in this workspace.
+                </Text>
                 <textarea
                   value={runnerPayload}
                   onChange={(e) => setRunnerPayload(e.target.value)}

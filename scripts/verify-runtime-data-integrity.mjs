@@ -136,7 +136,8 @@ const forbiddenContent = [
   // WI-OI-120ak (S1): every module, and maps of records (`= {`) as well as lists.
   {
     code: 'IN_MEMORY_BUSINESS_FIXTURE',
-    pattern: /\b(?:const|let)\s+(?:INITIAL|DEMO|SAMPLE|SEED|FAKE|DUMMY)_[A-Z0-9_]+\s*(?::[^=;]+)?=\s*[[{]\s*[{'"A-Za-z]/g,
+    // S3: the type may contain ";" (object types), and PRESET_ joins the prefixes (the workflows runner's presets).
+    pattern: /\b(?:const|let)\s+(?:INITIAL|DEMO|SAMPLE|SEED|FAKE|DUMMY|PRESET)_[A-Z0-9_]+\s*(?::[^=]+?)?=\s*[[{]\s*[{'"A-Za-z]/g,
   },
   // WI-OI-120ak (S1): business data kept in the web app's memory behind its API or screens (lost on restart, not shared
   // between instances): store classes with record maps or lists, and the methods that seed them with invented data.
