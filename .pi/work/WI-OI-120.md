@@ -3540,3 +3540,10 @@ widening the card to fix the API faults the proof found.
   time-screen test now covers both; all web tests 710 passed in 65 files; type-check clean outside `.next/types`;
   lint unchanged; audits on HEAD plus the fix alone: all ten pass. The 9e9273d build, already running, warms the cache
   for the release that carries this fix.
+- **Release `63178f6`** (cherry-pick of ba88d3c onto 9e9273d; code byte-identical; owner: "commit"): 697 web tests
+  passed in 63 files; type-check clean outside `.next/types`; audits as on e785f9d. Identity
+  `local-20261014T143934Z-63178f6bc6bb-5a799c519cd1`; nine image tags match; the five builds passed (14:39–14:58Z,
+  warm cache).
+- **Backup:** `gigalibs_backup_20261014_145848Z` of `uat-postgres` (running e785f9d), checksum verified, 546 tables.
+- **Deploy tool:** `RELEASE` moved to 63178f6, predecessor e785f9d; tests 33 of 33; `--check`: CHECK PASSED, nothing
+  deployed. Waiting for the owner's deploy.

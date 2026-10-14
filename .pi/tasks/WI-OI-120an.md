@@ -1,7 +1,7 @@
 # WI-OI-120an: The Time screen's help tells the truth, and an administrator with no person gets no 403
 
-- **Status:** Feature `460de34`; release `195a605` built for review. The Security review approved with conditions; its
-  fixes are made and verified locally, not committed (2026-10-14). A new release follows them.
+- **Status:** Release `63178f6` built, reviewed (re-review: approve; its one Low fixed) and checked; waiting for the
+  owner's deploy (2026-10-14). Feature commits `460de34`, `07ff14e`, `ba88d3c`.
 - **Found by:** the independent Security review of [WI-OI-120ah](WI-OI-120ah.md) (release `e785f9d`), findings M1 and L1.
 - **Work item:** WI-OI-120. Evidence goes in `.pi/work/WI-OI-120.md`.
 - **Size:** S
