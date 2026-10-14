@@ -16,9 +16,6 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head>
-        <link rel="stylesheet" href={['/', 'copilotkit.css'].join('')} />
-      </head>
       <body className="min-h-screen bg-ui-bg-subtle text-ui-fg-base antialiased selection:bg-ui-bg-interactive selection:text-white">
         {children}
         <Toaster />
