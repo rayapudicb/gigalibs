@@ -7,9 +7,10 @@
 > read-only check passed, and journey `7i0v43` had 5 blockers (previously 8): 3 on the demo `/gigaops/time` (step 0.4)
 > and 2 on unreleased CMMS (step 1.3). **Step 0.3 part 1 done (2026-10-14):** the Assistant preview is reverted from the branch, the
 > CMMS pin is at 20, and a clean checkout installs, builds, tests and audits ([WI-OI-120aj](tasks/WI-OI-120aj.md)).
-> **Current step: 0.3b, [WI-OI-120al](tasks/WI-OI-120al.md)** (Proposed). It undoes the old development script's
-> writes on the UAT database: modules switched on in 288 workspaces, and `*` on 444 members. Waiting for the owner's
-> OK, then a reconciliation report, the Security review and an owner-run script.
+> **Current step: 0.3b, [WI-OI-120al](tasks/WI-OI-120al.md)**, approved with Q1a, Q2a and Q3a.
+> Scripts built, rehearsed twice, Security review PASS WITH CONDITIONS with its fixes made. Next: the rebuilt plan's
+> re-check, a fresh backup and the owner's run. Then Q2a: a separate development database, the UAT database bound to
+> `127.0.0.1`, and its password rotated.
 
 > **WI-OI-120u on UAT: release `4b8db72eae10-c90a7bebc734` (2026-10-13), and the Workforce journey passes.** The journey
 > found that new workspaces got no module windows (creating a workspace wrote no `tenant.entitlements.changed.v1`).

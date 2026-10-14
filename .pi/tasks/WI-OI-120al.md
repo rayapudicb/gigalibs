@@ -1,6 +1,9 @@
 # WI-OI-120al: Undo the development script's writes on the UAT database
 
-- **Status:** Proposed (owner, 2026-10-14: "card 120al"). Shown to the owner before work starts.
+- **Status:** Approved (owner, 2026-10-14: "approved 120al, Q1a, Q2a, yes for security").
+  - The plan is built, rehearsed twice and reviewed: Security review PASS WITH CONDITIONS, with its fixes made.
+  - Q3a chosen: the plan is rebuilt with `--remove-legacy-wildcard`. Next: the reviewer's re-check, a fresh backup
+    and the owner's run.
 - **Plan step:** execution plan v3 step 0.3b. It runs after WI-OI-120aj part 1 and before step 0.4.
 - **Work item:** WI-OI-120. Evidence goes in `.pi/work/WI-OI-120.md`.
 - **Absorbs:** WI-OI-120aj part 2, decisions D1a and D2a. D3a is unchanged: the stray `gigalibs_assistant` schema is
@@ -47,7 +50,14 @@ sessions ran it from development servers against the UAT database:
      - **D, anything the report cannot place:** listed for the owner, never changed.
    - **`tenants.features`:** restore the backup's list for workspaces that existed then. Workspaces created later keep
      what their creation gave them, minus module keys the script added.
-3. **One owner-run script** (`infra/compose/scripts/wi-oi-120al-undo-bootstrap-writes.sh`):
+3. **Owner-run scripts** (`scripts/uat/wi-oi-120al/`):
+   - `reconcile.mjs` builds the plan. It reads the reference from the backup in a container with no network, and the
+     live tables in one REPEATABLE READ, read-only transaction.
+   - `apply.mjs` checks the plan read-only by default, and also has `--verify`, `--apply` and `--revert`.
+   - `lib.mjs` holds the rules and the SQL, and is tested by `lib.test.mjs`.
+
+   As built (security review L8): features lose only the script's 27 keys, not a full restore of the backup's list.
+   Every entitlement row another actor wrote, at any date, is left alone. `apply.mjs`:
    - It shows the counts first and changes nothing (dry run).
    - `--apply` needs the name of a fresh, verified backup.
    - One transaction makes every change, writes an audit record per workspace, and writes a
@@ -57,6 +67,16 @@ sessions ran it from development servers against the UAT database:
 
 ## Owner decisions
 
+Recorded (owner, 2026-10-14: "Q3a, accept, commit, Q2a confirmed"): **Q1a**, **Q2a** (all five parts), **Q3a**
+(the older `*` are removed too), and the two effects in condition 5 are accepted.
+
+- **Q3, the 137 older `*`.** They predate the script (written by September scripts) and are stored on 137 members,
+  134 of them in reference workspaces. Released code ignores them: a bare `*` is not a valid workspace permission, and
+  no product path writes one.
+  - **a (recommended; the review's finding I5 supports it):** remove them too. This means rebuilding the plan with
+    `--remove-legacy-wildcard`.
+  - **b:** keep them; the plan as built.
+
 - **Q1, cancelled workspaces (101):**
   - **a (recommended):** treat them like the rest; their entitlements return to the backup's state.
   - **b:** disable every module for cancelled workspaces.
@@ -64,6 +84,30 @@ sessions ran it from development servers against the UAT database:
   - **a (recommended):** a separate development database now. UAT's database credentials appear in no development
     `.env` file. This is the first slice of O1 (step 1.17), brought forward.
   - **b:** wait for step 1.17.
+
+## Conditions from the Security review (2026-10-14, PASS WITH CONDITIONS)
+
+1. Run only the reviewed plan and code. `--apply` requires `--expect-plan-sha256`. A rebuilt plan goes back to the
+   reviewer.
+2. Q1 and Q3 are recorded here first.
+3. A fresh backup is taken just before the run. `apply.mjs` requires one taken after the plan snapshot and less than
+   an hour old. No development server reaches UAT during the run.
+4. The old writing scripts become refusing stubs in the release worktree (H1).
+5. The owner accepts two effects:
+   - `gigalibs-global` returns to its own 2026-10-05 setup: esignature, workflow-definitions and
+     communications-textfly switched off again, and the Assistant switched off;
+   - 117 reference workspaces keep module keys in `tenants.features`, which the web also uses to open modules
+     (follow-up F2).
+6. Afterwards: the read-only proof, and the scratchpad extracts and rehearsal copies deleted. The evidence in `.pi`
+   keeps counts and hashes only.
+
+## Follow-ups found by the review (separate cards, read-only first)
+
+- **F1 (M3):** `syncDefaultRoles` created built-in roles (analytics-studio and asset-maintenance, three each) in
+  workspaces the script wrongly entitled. Count them in `audit_logs` (resource `custom_role`, CREATE, source
+  `module-manifest`, since 2026-10-09T04:34Z), then decide.
+- **F2 (M4):** workspaces whose feature list names modules with no entitlement. 117 reference workspaces list 26–27
+  keys, predating the script. Align features with entitlements.
 
 ## Proof
 

@@ -3090,8 +3090,8 @@ widening the card to fix the API faults the proof found.
     stub that refuses to run.
   - Kept as they were: every record under `.pi/` and `docs/`, and the refusing stub. Reverting blindly would have
     brought back the script that switched on every module and granted `*` to every member.
-  - `7bbcc51`: CMMS `CMMS_SCHEMA_CONTRACT_VERSION` and compose `CMMS_EXPECTED_MIGRATION_VERSION` raised to 20, to match
-    migration `000020`, which 0e2f119 had added.
+  - `7bbcc51`: CMMS `CMMS_SCHEMA_CONTRACT_VERSION` and cmms-api's `CMMS_EXPECTED_MIGRATION_VERSION` raised to 20, to
+    match migration `000020`, which 0e2f119 had added. The cmms-migrations runner stays at 19 on purpose (review M3).
   - `9816b7f`: the WI-OI-121 cards, evidence, runbook and release manifest carry a "withdrawn" banner. The WORK_ITEMS
     row says the same.
   - `9b0c477`: owner decisions E1a, E2a and E3a for three problems that predate this card, which local trees had
@@ -3099,9 +3099,8 @@ widening the card to fix the API faults the proof found.
     - E1a: the frozen AR API is left out of the root build until M-AR0. Its helper packages have no build script,
       and `custom-fields-nest` has a syntax error and type drift (e4e4a69 and earlier). Local trees used a stale
       `dist/` from 2026-09-14.
-    - E2a: four CMMS gateway and menu equivalence tests are `it.fails`, until the CMMS Security review (steps 1.1–1.3).
-      They cover an any-of work-order permission, six new record routes, one changed POST permission, and the menu
-      growing from 8 entries to 10.
+    - E2a: four CMMS gateway and menu equivalence tests marked as known failures until the CMMS Security review
+      (steps 1.1–1.3). Superseded by the review fixes below: each test now pins the exact differences.
     - E3a: the runtime-data audit accepts an absent quarantined root (the owner's untracked TextFly apps) and lists
       it.
 - **Clean-checkout proof** (a fresh worktree at 9b0c477; no untracked files and no `vendor/`):
@@ -3124,4 +3123,103 @@ widening the card to fix the API faults the proof found.
   - on 2026-10-11, `*` and `assistant:*`, `assistant:read` and `assistant:action` on 444 to 452 members;
   - `assistant:preview` on 468 members.
   - The released sign-in code drops a bare `*` (`isTenantPermissionCode`). The switched-on modules do take effect.
+
+## WI-OI-120aj independent Security review and fixes (2026-10-14)
+
+- **Verdict:** PASS WITH CONDITIONS. A read-only reviewer agent, approved by the owner ("yes for security").
+  - The 7 commits widen no route, grant, permission or gateway entry.
+  - All 16 shared files the reverts touched are byte-identical to 37e5556.
+  - The refusing stub is in place; nothing grants `*` or `assistant:*`; no Assistant code remains tracked.
+  - E1a hides nothing deployed. The AR API has no compose service and no gateway; the BFF answers 503.
+- **Conditions:**
+  - C1: no deploy of the branch head, or of any build with the CMMS commits `0e2f119` to `21e13da`, before steps
+    1.1–1.3. Releases come from the release worktree.
+  - C2: never cherry-pick `7bbcc51` alone.
+  - C3: images are built from a clean worktree. The Dockerfile's `COPY . .` picks up uncommitted and untracked work.
+  - C4: M1 fixed, or the owner accepts it.
+  - C5: WI-OI-120al runs before any Assistant or GU code is deployed.
+- **Fixes, from the card's own review:**
+  - **M1:** the containment manifest no longer exempts the `assistant`, `copilotkit` and `gigalibs-assistant` API
+    roots. It is identical to 37e5556. The suite-containment test passes (165).
+  - **M2:** no `it.fails` remains. Each CMMS test pins the exact difference, so any further change fails:
+    - `cmms-boundary`: `status` and `staffing` are any of write or execute-own.
+    - `cmms-gateway-screens`: the six record and lookup routes count as served while the CMMS app registers the module
+      SDK's `createRecordController`.
+    - `module-gateway-equivalence`: exactly 13 template differences. Requests: search, create, read, triage, cancel.
+      Work orders `status`, `tasks`, `labour`, `parts`, `notes`, `staffing` and PATCH `tasks/{id}`: any of write or
+      execute-own. `GET meters/{id}`.
+    - Navigation: the reviewed menu plus Maintenance Requests (first) and Classifications (after Assets).
+    - The four tests pass (87).
+  - **M3:** the cmms-migrations pin stays at 19, with a compose comment saying why. A branch-head deploy stops before
+    the unreviewed migration 000020; it is raised only in step 1.3.
+  - **M4:** `scripts/enable-cmms-feature.mjs` and `scripts/enable-communications-feature.mjs` are refusing stubs (exit
+    1, no database access, no embedded connection strings).
+  - **L1:** `config/runtime-quarantine.json` records `packageNames` for the three TextFly apps. The audit:
+    - refuses an absent root with no recorded name;
+    - checks that a present root's name matches the recorded one;
+    - refuses any other package reusing a quarantined name.
+
+    Proven in a throwaway checkout without TextFly: it passes clean, and an injected `@textfly/admin-console`
+    dependency fails with `ACTIVE_PACKAGE_DEPENDS_ON_QUARANTINE` and `QUARANTINED_PACKAGE_IMPORT`.
+  - **L2:** this record and the pinned tests carry the exact list.
+- **Handed to the CMMS Security review (steps 1.1–1.3):**
+  - W1: records are gated only by `cmms:read` at the gateway; the API checks each record type's own permission.
+  - W2: staffing should not take execute-own.
+  - W3: technicians gain cancel and parts issue on their own work orders.
+  - W4: maintenance-viewer gets `cmms.requests.create`.
+  - W5: requester contact data is readable with `cmms.work-orders.read`; there is no field read rule, and no entry in
+    the privacy inventory.
+  - W6: `verify-cmms-http.sh` still expects Requests to answer 404.
+  - Migration 000020: forced row security and tenant policies, the same as migrations 18 and 19.
+- **Info:**
+  - I2: ignored build output of the reverted module is left in the owner's worktree (`modules/gigalibs-assistant/apps/api`).
+    It is unreachable (`.dockerignore`).
+  - I3: the reverted read-only grant inventory script is superseded by `scripts/uat/wi-oi-120al/`.
+
+## WI-OI-120al: undo the development script's UAT writes (v3 step 0.3b, 2026-10-14). Prepared, not yet run.
+
+- **Found** (read-only). The old `scripts/enable-all-features.mjs` (993730b to e0ec197) ran from development servers
+  against the UAT database:
+  - 2026-10-09: created 6,979 entitlements at 04:34:09–04:34:12Z, and at 06:47Z overwrote all 7,776 (27 modules × 288
+    workspaces) as ENABLED, PLATFORM_OVERRIDE, `endsAt` NULL, actor `local-development-bootstrap`. It also added the
+    keys to `tenants.features`.
+  - 2026-10-11 05:20Z: added `*`, `assistant:*`, `assistant:read` and `assistant:action` to members' own
+    permissions. `assistant:preview` came from other development flows.
+- **Reference:** `gigalibs_backup_20261008_021555Z` (checksum verified). It holds 0 script rows and 137 older bare
+  `*` (decision Q3).
+- **Plan** (from UAT, read-only, `infra/compose/backups/wi-oi-120al-plan-20261014_042332Z.json`, sha256
+  `43512252e8c0572510e3a4005245603667362abb000af692c230497244f9b545`), 0 unplaced:
+  - entitlements: 6,979 created by the script switched off, 797 overwritten restored from the reference, 26 Assistant
+    switched off; 800 the script did not write, left alone;
+  - members: 468 changed (307 lose `*`); 137 older `*` kept;
+  - feature lists: 314 workspaces.
+- **Scripts:** `scripts/uat/wi-oi-120al/` (reconcile, apply with check, verify, apply and revert; lib; 11 tests pass).
+- **Rehearsals** on isolated, network-less copies restored from fresh UAT backups (`…20261014_042146Z`,
+  `…20261014_044828Z`):
+  - apply took about 1 s, and every row read back at target: 0 Assistant codes, 137 `*`, 0 script rows, enabled
+    entitlements 8,596 → 1,558, audit 468 + 314, outbox 314;
+  - a second apply was refused;
+  - with one planned row altered, the in-transaction guard rolled everything back;
+  - after the review fixes: apply, verify, revert (back to the start exactly), apply again and verify all passed; the
+    audit carries the actor and the mode.
+  - Both copies and their volumes are deleted.
+- **Independent Security review: PASS WITH CONDITIONS.**
+  - No blocker.
+  - The plan was rebuilt independently and matched byte for byte.
+  - No SQL injection or partial apply is possible, and the audit chain is unaffected.
+  - The 314 outbox events cannot switch any window off.
+  - Fixed:
+    - M1: the backup must be taken after the plan snapshot and be under an hour old; `--revert`.
+    - M2: `--expect-plan-sha256` and `validatePlan`.
+    - M4: the report labels, plus features columns.
+    - L1–L6: `psql -X`; an explicit container, with the target printed; a clean report when psql fails; `--verify`;
+      one read-only snapshot; instant comparison; a single COPY block; backup metadata and a `pg_restore --list`
+      check; the actor in audit metadata.
+    - L8: the card matches the code.
+    - L9: the missing tests.
+  - Prepared for the owner's "commit": H1, refusing stubs for the three writing scripts in the release worktree.
+  - Follow-ups F1 (roles created in wrongly entitled workspaces) and F2 (features without entitlements) are on the
+    card.
+- **Also found:** the UAT database is published on `0.0.0.0:5440`. Local development `.env` files point at it, and its
+  password is in tracked scripts and in git history (Q2a).
 
