@@ -3505,3 +3505,21 @@ widening the card to fix the API faults the proof found.
     known drift.
 - **Next:** commit, release build, Security review, the owner's deploy. One journey run afterwards can check both
   WI-OI-120ah (the three Time blockers) and WI-OI-120an (no 403).
+
+## WI-OI-120an Security review and fixes (2026-10-14)
+
+- **Release `195a605`** (cherry-pick of 460de34 onto e785f9d; 4 files, byte-identical): tests on the release 697
+  passed in 63 files; type-check clean outside `.next/types`; audits as on e785f9d (TextFly quarantine only). Built
+  for review; superseded by the fixes below.
+- **Independent Security review: approve with conditions.** Verified sentence by sentence against the server: the
+  resend rule, self-approval, self-correction and self-resolution refusals, the approved-week triggers, append-only
+  corrections with reason and note, the exception kinds. Verified the five own-person paths (no person; linked; over
+  100 resources; failed list; failed session): a worker is never wrongly told they have no person. The offline queue
+  loses nothing; the request counter is correct; no authorization change.
+  - M-1, L-1 and L-2: fixed (card, "Security review").
+  - Info items are listed on the card for later cards.
+- **Verification of the fixes:**
+  - `gigaops-time-screen.test.ts` covers the corrected help claims and the locked choices;
+  - all web tests: 65 files and 710 tests passed;
+  - type-check clean outside `.next/types`; lint unchanged;
+  - audits on HEAD plus the fixes alone (throwaway worktree, removed): all ten pass.

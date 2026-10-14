@@ -403,13 +403,14 @@ function WeekSheet({ people, siteName, own }: {
       </div>
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
         <Field id="sheet-person" label="Person">
-          <select id="sheet-person" value={resourceId} onChange={(event) => setResourceId(event.target.value)} className={selectClass}>
+          {/* WI-OI-120an (review L-1): a new choice clears the shown week, and choices wait while a week is submitted. */}
+          <select id="sheet-person" value={resourceId} disabled={busy} onChange={(event) => { setPreview(null); setResourceId(event.target.value); }} className={selectClass}>
             {notAWorker ? <option value="" disabled>Choose a person</option> : <option value="">Me</option>}
             {people.map((person) => <option key={person.id} value={person.id}>{person.displayName}</option>)}
           </select>
         </Field>
         <Field id="sheet-week" label="Week starting (Monday)">
-          <Input id="sheet-week" type="date" value={periodStart} onChange={(event) => event.target.value && setPeriodStart(mondayOf(new Date(`${event.target.value}T12:00:00`)))} />
+          <Input id="sheet-week" type="date" value={periodStart} disabled={busy} onChange={(event) => { if (!event.target.value) return; setPreview(null); setPeriodStart(mondayOf(new Date(`${event.target.value}T12:00:00`))); }} />
         </Field>
       </div>
       {notAWorker ? (

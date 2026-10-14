@@ -1,6 +1,7 @@
 # WI-OI-120an: The Time screen's help tells the truth, and an administrator with no person gets no 403
 
-- **Status:** Built and verified locally, not committed (2026-10-14; owner: "commit and approved").
+- **Status:** Feature `460de34`; release `195a605` built for review. The Security review approved with conditions; its
+  fixes are made and verified locally, not committed (2026-10-14). A new release follows them.
 - **Found by:** the independent Security review of [WI-OI-120ah](WI-OI-120ah.md) (release `e785f9d`), findings M1 and L1.
 - **Work item:** WI-OI-120. Evidence goes in `.pi/work/WI-OI-120.md`.
 - **Size:** S
@@ -79,3 +80,25 @@
   - any linked resource counts as `yes`, so an inactive or non-person link still gets the server's own message
     (`WORKFORCE_WORKER_INACTIVE`).
 - **Late answers:** the week panel numbers its requests and drops any answer that is not the latest.
+
+## Security review (2026-10-14): approve with conditions, fixed
+
+- **M-1 (Medium), fixed:** the new help said every punch with location is checked against the site boundary, and
+  every unverified location is flagged. In fact the clock starts on "No site". The check runs only with a chosen site
+  and a shared location (`lib/punch-geofence.ts`). Punches with no site, or at a site with no boundary drawn, raise no
+  exception (`time.service.ts`, `geofenceOf` and the raised list). The entry now says what is flagged and what is not
+  checked.
+- **L-1 (Low), fixed:** submitting a week could bring back the previous person's week if the choice changed during the
+  submit. Now a new person or week clears the shown week at once, and both choices wait while a week is submitted.
+- **L-2 (Low), fixed in the text:** the server locks the corrected punch's own week. The help now says "corrections are
+  refused for punches dated in a submitted or approved week" instead of "never touch a submitted or approved week" (an
+  overnight shift's Monday clock-out belongs to the next week).
+- **Role labels:** "(approvers)" and "(time managers)" are now "if your role may approve timesheets / manage time".
+- **Left, for later cards (Info):**
+  - the no-403 rule covers workspaces of up to 100 resources. Beyond that, or without `workforce.resources.read`, the
+    screen asks the server, as before. Closing that needs a server "my person" answer;
+  - an administrator holding both the login-link and time-manage permissions could unlink their own person, correct
+    its time and relink it (audited). Self-approval stays blocked;
+  - site-less punches raise no exception. Whether they should is an owner decision (the API is out of scope here);
+  - other help entries (`/gigaops` "biometric punches", Sites "muster") and the green shield on every guardrail, even a
+    warning: WI-OI-120ak.

@@ -46,6 +46,13 @@ describe('Time & attendance screen', () => {
       /const hold = resourceId === '' && \(own === 'wait' \|\| own === 'no'\);/,
     );
     expect(screen.match(/if \(request !== latest\.current\) return;/g)).toHaveLength(2);
+    // Review L-1: a new choice clears the shown week, and no choice can change while a week is being submitted.
+    expect(screen).toMatch(
+      /id="sheet-person" value=\{resourceId\} disabled=\{busy\} onChange=\{\(event\) => \{ setPreview\(null\);/,
+    );
+    expect(screen).toMatch(
+      /id="sheet-week" type="date" value=\{periodStart\} disabled=\{busy\}[^\n]*setPreview\(null\);/,
+    );
     const workbench = readFileSync(
       join(__dirname, '../components/gigaops/GigaOpsWorkforceWorkbench.tsx'),
       'utf8',
@@ -72,7 +79,18 @@ describe('Time & attendance screen', () => {
       expect(text).not.toMatch(claim);
     }
     expect(text).toMatch(/not tamper-proof/);
-    expect(text).toMatch(/nobody approves their own week/);
+    // Review M-1: the site check runs only with a chosen site and a shared location; the help says what is not checked.
+    expect(entry.actions[0]).toMatch(/when you pick a site and share your location/);
+    expect(text).toMatch(
+      /Not checked: punches with no site, and punches at a site with no boundary drawn/,
+    );
+    expect(text).not.toMatch(/each punch is checked/);
+    expect(text).toMatch(/nobody approves a week they submitted or their own/);
+    // Review L-2: the server locks the punch's own week.
+    expect(text).toMatch(
+      /corrections are refused for punches dated in a submitted or approved week/,
+    );
+    expect(text).not.toMatch(/approvers\)|time managers\)/);
     // No internal port, schema or unproven standard.
     expect(entry.technicalSpec).toBeUndefined();
   });
