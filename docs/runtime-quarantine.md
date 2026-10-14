@@ -32,7 +32,9 @@ The machine-readable authority is `config/runtime-quarantine.json`.
 
 The integrity script verifies all of the following:
 
-- every quarantine path exists, has a package identity, and appears exactly once in the registry;
+- every quarantine path appears exactly once in the registry and has an exact workspace exclusion; a path that is
+  present has a package identity, and a path absent from the checkout has nothing to contain and is listed as absent
+  (WI-OI-120aj, owner decision E3a, 2026-10-14);
 - every quarantine path has an exact exclusion in `pnpm-workspace.yaml`;
 - active source cannot import a quarantined package name;
 - active manifests cannot depend on a quarantined package;

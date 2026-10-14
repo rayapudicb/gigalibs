@@ -95,12 +95,23 @@ describe('manifest-declared navigation equals the former sidebar tables', () => 
     ],
   };
 
-  it.each(platformModuleCatalog.map((module) => [module.key] as const))(
+  const CMMS_MENU_UNDER_REVIEW = 'asset-maintenance';
+
+  it.each(platformModuleCatalog.filter((module) => module.key !== CMMS_MENU_UNDER_REVIEW).map((module) => [module.key] as const))(
     '%s keeps its sub-menu',
     (key) => {
       expect(moduleMenu(key)).toEqual(INTENDED_MENU_CHANGES[key] ?? LEGACY_MODULE_MENUS[key] ?? []);
     },
   );
+
+  // Known failure (WI-OI-120aj, owner decision E2a, 2026-10-14): the unreviewed CMMS metadata-window commits
+  // (WI-OI-120t) grew the CMMS menu from eight entries to ten, with Requests first. The CMMS Security review (execution plan v3 steps 1.1–1.3) approves or rejects that
+  // change, updates this reviewed list, and removes `.fails`; `.fails` makes the test fail as soon as it passes.
+  it.fails(`${CMMS_MENU_UNDER_REVIEW} keeps its sub-menu`, () => {
+    expect(moduleMenu(CMMS_MENU_UNDER_REVIEW)).toEqual(
+      INTENDED_MENU_CHANGES[CMMS_MENU_UNDER_REVIEW] ?? LEGACY_MODULE_MENUS[CMMS_MENU_UNDER_REVIEW] ?? [],
+    );
+  });
 
   // Persona lenses widened after the freeze, each with its reason (the module's permission still decides).
   const INTENDED_LENS_ADDITIONS: Readonly<Record<string, { readonly personas: readonly string[]; readonly reason: string }>> = {

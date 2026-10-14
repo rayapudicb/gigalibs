@@ -70,7 +70,10 @@ describe('CMMS BFF boundary', () => {
     vi.unstubAllEnvs();
   });
 
-  it('grants the module to cmms:* holders and maps granular permissions', () => {
+  // Known failure (WI-OI-120aj, owner decision E2a, 2026-10-14): the unreviewed CMMS metadata-window commits
+  // (WI-OI-120t) made a work-order route's permission an any-of list. The CMMS Security review (execution plan v3 steps 1.1–1.3) approves or rejects that
+  // change, updates this reviewed list, and removes `.fails`; `.fails` makes the test fail as soon as it passes.
+  it.fails('grants the module to cmms:* holders and maps granular permissions', () => {
     expect(canUseTenantModule('asset-maintenance', new Set(['asset-maintenance']), ['cmms:*'])).toBe(true);
     expect(canUseTenantModule('asset-maintenance', new Set(['asset-maintenance']), ['workforce:*'])).toBe(false);
     expect(hasPermission(['cmms:*'], 'cmms.work-orders.write')).toBe(true);

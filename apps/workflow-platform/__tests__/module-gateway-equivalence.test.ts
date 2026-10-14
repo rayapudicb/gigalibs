@@ -194,7 +194,10 @@ function withNegatives(paths: string[]): string[] {
 }
 
 describe('manifest-generated gateways equal the hand-written allow-lists', () => {
-  it('CMMS: every method and path in the corpus', () => {
+  // Known failure (WI-OI-120aj, owner decision E2a, 2026-10-14): the unreviewed CMMS metadata-window commits
+  // (WI-OI-120t) changed a CMMS route's permission from the hand-written allow-list. The CMMS Security review (execution plan v3 steps 1.1–1.3) approves or rejects that
+  // change, updates this reviewed list, and removes `.fails`; `.fails` makes the test fail as soon as it passes.
+  it.fails('CMMS: every method and path in the corpus', () => {
     const legacyPaths = LEGACY_CMMS_ROUTES.flatMap(([, pattern]) =>
       fromLegacyRegex(pattern.source),
     );

@@ -76,7 +76,10 @@ describe('CMMS screens reach their API through the gateway', () => {
     expect(unrouted).toEqual([]);
   });
 
-  it('routes only paths the CMMS API serves, with the methods it serves', () => {
+  // Known failure (WI-OI-120aj, owner decision E2a, 2026-10-14): the unreviewed CMMS metadata-window commits
+  // (WI-OI-120t) added record routes (`v1/records/{entity}` and five more) to the CMMS gateway. The CMMS Security review (execution plan v3 steps 1.1–1.3) approves or rejects that
+  // change, updates this reviewed list, and removes `.fails`; `.fails` makes the test fail as soon as it passes.
+  it.fails('routes only paths the CMMS API serves, with the methods it serves', () => {
     const served = apiRoutes();
     const missing = generatedModuleGateways['physical-operations-cmms']!.routes.flatMap((route) =>
       route.template

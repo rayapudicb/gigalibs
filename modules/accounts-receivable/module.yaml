@@ -1,3 +1,8 @@
+# WI-OI-120aj (owner decision E1a, 2026-10-14): the AR API (`apps/api`) is left out of the default build (root
+# `package.json` `build`) until it is rebuilt on the module SDK as M-AR0 (execution plan v3 step 5C). From a clean
+# checkout it cannot compile: `@gigalibs/custom-fields-nest` and `@gigalibs/forms-engine-nest` have no build script,
+# the former has a syntax error and type drift (e4e4a69 and earlier), and the API passes options their types lack.
+# Local trees hid this with a stale `dist/` from 2026-09-14. The module is CONTAINED and not deployed.
 apiVersion: modules.gigalibs.io/v1
 kind: Module
 metadata:

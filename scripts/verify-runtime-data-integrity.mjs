@@ -139,6 +139,7 @@ const forbiddenContent = [
 ];
 
 const violations = [];
+const absentQuarantinedRoots = [];
 const quarantinedPackageNames = verifyQuarantineBoundary();
 for (const retiredApplication of retiredApplications) {
   verifyRetiredApplication(retiredApplication);
@@ -265,6 +266,23 @@ function verifyQuarantineBoundary() {
     }
     seenPaths.add(configuredRoot);
 
+    const expectedExclusion = `- "!${configuredRoot}"`;
+    // WI-OI-120aj (owner decision E3a, 2026-10-14): a quarantined root that is not in the checkout at all has nothing to
+    // contain; the TextFly apps live in the owner's untracked folder. It keeps its workspace exclusion, so it stays out
+    // of the build if it appears. A root that is present must still have a named package manifest.
+    if (!existsSync(join(repositoryRoot, configuredRoot))) {
+      absentQuarantinedRoots.push(configuredRoot);
+      if (!workspaceConfig.split('\n').some((line) => line.trim() === expectedExclusion)) {
+        violations.push({
+          code: 'QUARANTINED_PACKAGE_STILL_IN_WORKSPACE',
+          file: 'pnpm-workspace.yaml',
+          line: 1,
+          excerpt: `Missing exact exclusion ${expectedExclusion}`,
+        });
+      }
+      continue;
+    }
+
     const manifestPath = join(repositoryRoot, configuredRoot, 'package.json');
     if (!existsSync(manifestPath)) {
       violations.push({
@@ -275,7 +293,6 @@ function verifyQuarantineBoundary() {
       });
       continue;
     }
-    const expectedExclusion = `- "!${configuredRoot}"`;
     if (!workspaceConfig.split('\n').some((line) => line.trim() === expectedExclusion)) {
       violations.push({
         code: 'QUARANTINED_PACKAGE_STILL_IN_WORKSPACE',
@@ -366,6 +383,7 @@ if (violations.length > 0) {
         retiredApplications,
         quarantinedPackages: {
           count: quarantinedPackages.length,
+          absent: absentQuarantinedRoots,
           registry: 'config/runtime-quarantine.json',
         },
       },

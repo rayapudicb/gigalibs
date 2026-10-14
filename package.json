@@ -9,7 +9,7 @@
     "pnpm": ">=10.0.0"
   },
   "scripts": {
-    "build": "turbo run build",
+    "build": "turbo run build --filter=!@gigalibs/ar-api",
     "dev": "turbo run dev",
     "test": "vitest run --config vitest.config.ts",
     "verify": "node scripts/verify.mjs",
