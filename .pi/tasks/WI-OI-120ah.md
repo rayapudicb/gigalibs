@@ -1,8 +1,8 @@
 # WI-OI-120ah: Retire the demo Time & Attendance screen; Time goes to the real punch screen
 
-- **Status:** On UAT: release `e785f9d` (`local-20261014T103138Z-e785f9d99315-49ef670a411f`), deployed by the owner
-  2026-10-14 (~12:11Z); DEPLOY SMOKE PASSED. Waiting for the journey. Feature commit `e2bef03`. The review's two findings are
-  [WI-OI-120an](WI-OI-120an.md).
+- **Status:** Done (2026-10-14). On UAT since release `e785f9d`, now `63178f6`. Journey `89ac2g`: the technician
+  clocks in and out on the real screen. The week and approval steps are blocked by a gap now carded as
+  [WI-OI-120ao](WI-OI-120ao.md).
 - **Found by:** the WI-OI-120u Workforce journey on UAT (run `6luh84`, release `4b8db72eae10-c90a7bebc734`).
 - **Work item:** WI-OI-120 (U20a neighbour). Evidence goes in `.pi/work/WI-OI-120.md`.
 - **Size:** S
@@ -44,8 +44,9 @@
 
 - [x] No Workforce screen shows hard-coded demo data; the guard fails if one comes back.
 - [x] The sidebar's Time & Attendance opens the real punch and timesheet screen.
-- [ ] The journey's clock-in, week and approval steps pass on UAT, or each remaining gap is reported.
-- [ ] Evidence recorded; built and handed to the owner as a release. (Evidence recorded; the release is next.)
+- [x] The journey's clock-in, week and approval steps pass on UAT, or each remaining gap is reported. (Journey
+  `89ac2g`: clock-in passes; week and approval: WI-OI-120ao.)
+- [x] Evidence recorded; built and handed to the owner as a release.
 
 ## What was built (2026-10-14)
 

@@ -1,0 +1,55 @@
+# WI-OI-120ao: The week follows the clock, and site lists ask Geospatial only when allowed
+
+- **Status:** Carded, not started (2026-10-14). Shown to the owner before it starts.
+- **Found by:** journey `89ac2g` on release `63178f6` (WI-OI-120ah and WI-OI-120an on UAT).
+- **Work item:** WI-OI-120. Evidence goes in `.pi/work/WI-OI-120.md`.
+- **Size:** S
+
+## Why
+
+- **Two of the journey's four blockers come from one gap: the week does not follow the clock.**
+  - Screenshot `047`: the clock lists the technician's clock-in and clock-out (8:51 PM), while the Timesheet next to it
+    shows an empty week (0h 00m, no rows) with "Submit week" disabled.
+  - The server builds a row even for a zero-minute shift (`time.rules.ts`, the `CLOCK_OUT` case). So the empty week is
+    the one loaded when the page opened, before the punches.
+  - In `TimeAndAttendance.tsx`, the clock, the week and the exception inbox load on their own. Nothing tells the week
+    or the inbox that a punch was recorded.
+  - Consequences: the technician cannot submit ("The technician submits their week"), and the approver has nothing to
+    approve ("The approver approves the technician's week").
+- **New bug: `GET /api/maps/nodes` answers 403** on `/gigaops/time` for the technician and the approver ("An active
+  Geospatial Studio entitlement and maps.nodes.read permission are required").
+  - The shared `useSites` (`components/geospatial/SitePicker.tsx`) asks Geospatial for places whatever the workspace
+    has. The journey's workspace has no Geospatial Studio.
+  - The same hook is used by Availability, Jobs, Dispatch and the organization places panel.
+  - Without places, the clock offers only "No site" and does not say why.
+- **UX:** an empty week has no guidance ("An empty table with no guidance").
+
+## Design (to be confirmed with the owner)
+
+1. The Time screen keeps a "recorded" counter:
+   - the clock raises it after each punch it records and each queued punch it sends;
+   - "my week" and the exception inbox reload when it changes.
+2. `useSites` asks for places only when the workspace has Geospatial Studio and the user holds `maps.nodes.read`. It
+   reads both from the session context, as the module gate does. Otherwise it returns no places and says so
+   (`available: false`).
+   - On the clock: "The site check needs Geospatial Studio" in place of a silent "No site" only.
+3. An empty week says so: "No punches in this week yet."
+4. Tests:
+   - the counter wiring;
+   - `useSites`'s rule as a pure function: entitled and permitted asks; otherwise it does not;
+   - the journey's submit and approve steps.
+
+## Scope
+
+- **May change:** `apps/workflow-platform/components/gigaops/TimeAndAttendance.tsx`,
+  `apps/workflow-platform/components/geospatial/SitePicker.tsx` (`useSites`), their tests, the journey spec if needed.
+- **Must not change:** the Workforce and Geospatial APIs; CMMS's own place loading (`GeospatialPlacesProvider`), whose
+  viewer 403 stays with plan v3 step 1.1; other agents' work.
+
+## Done when
+
+- [ ] On UAT, the journey's technician submits their week and the approver approves it.
+- [ ] No Workforce screen calls `/api/maps/nodes` for a workspace without Geospatial Studio, or for a user without
+  `maps.nodes.read`.
+- [ ] An empty week says so.
+- [ ] Evidence recorded; built, reviewed and deployed by the owner.

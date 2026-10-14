@@ -1,7 +1,7 @@
 # WI-OI-120an: The Time screen's help tells the truth, and an administrator with no person gets no 403
 
-- **Status:** Release `63178f6` built, reviewed (re-review: approve; its one Low fixed) and checked; waiting for the
-  owner's deploy (2026-10-14). Feature commits `460de34`, `07ff14e`, `ba88d3c`.
+- **Status:** Done (2026-10-14). On UAT as release `63178f6`. Journey `89ac2g`: the administrator with no person sees
+  both panels say so, with no error and no 403. Feature commits `460de34`, `07ff14e`, `ba88d3c`.
 - **Found by:** the independent Security review of [WI-OI-120ah](WI-OI-120ah.md) (release `e785f9d`), findings M1 and L1.
 - **Work item:** WI-OI-120. Evidence goes in `.pi/work/WI-OI-120.md`.
 - **Size:** S
@@ -54,9 +54,9 @@
 ## Done when
 
 - [x] The Time help drawer describes only what exists and claims only what the server enforces.
-- [ ] An administrator with no person opens `/gigaops/time` with no 403 (journey check, after the deploy).
+- [x] An administrator with no person opens `/gigaops/time` with no 403 (journey `89ac2g`, screenshot 045).
 - [x] A late answer never overwrites the week of the person now shown.
-- [ ] Evidence recorded; built, reviewed and deployed by the owner. (Evidence recorded; the release is next.)
+- [x] Evidence recorded; built, reviewed and deployed by the owner.
 
 ## What was built (2026-10-14)
 

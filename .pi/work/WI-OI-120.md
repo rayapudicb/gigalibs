@@ -3547,3 +3547,39 @@ widening the card to fix the API faults the proof found.
 - **Backup:** `gigalibs_backup_20261014_145848Z` of `uat-postgres` (running e785f9d), checksum verified, 546 tables.
 - **Deploy tool:** `RELEASE` moved to 63178f6, predecessor e785f9d; tests 33 of 33; `--check`: CHECK PASSED, nothing
   deployed. Waiting for the owner's deploy.
+
+## WI-OI-120an on UAT: release 63178f6 deployed (2026-10-14 ~15:05Z, owner-run)
+
+- **Deploy:** `deploy-uat.sh --deploy --backup gigalibs_backup_20261014_145848Z`: images and backup verified;
+  `uat-postgres` healthy with 546 tables; all 11 migrations passed; 10 services healthy; HTTP 200 on
+  `/api/health/ready` and `/login`; DEPLOY SMOKE PASSED `63178f6bc6bb-5a799c519cd1`.
+- **A second, repeated run** was refused before any change: "UAT no longer matches the backed-up predecessor" (UAT
+  already ran 63178f6, not e785f9d). The predecessor check works as designed; no lock was left behind.
+- **Read-only verification afterwards:**
+  - all 11 containers run `local-20261014T143934Z-63178f6bc6bb-5a799c519cd1` and are healthy;
+  - `uat-postgres` is on the same volume with no published port and 546 tables;
+  - signed out, `/gigaops/time` and `/gigaops/attendance` answer 307 to `/login`;
+  - the live web build (744 files) holds none of the demo names or the old claims ("cryptographically signed",
+    "Anti-tamper hardware", "Frontline Attendance"), and holds the new help text ("with no location shared",
+    "Not checked: punches with no site");
+  - no error lines in `web`, `workforce-api` or `api` since the deploy.
+- **Next:** one journey for WI-OI-120ah and WI-OI-120an.
+
+## Journey after WI-OI-120ah and WI-OI-120an (2026-10-14 ~15:20Z, owner-run)
+
+- **Journey `89ac2g`** on release 63178f6: 75 steps; 67 findings (4 blockers, 4 bugs, 7 UX, 15 accessibility,
+  37 layout). Before: `7xqjy6`, 69 findings, 5 blockers.
+- **Fixed on UAT:**
+  - "The technician clocks in and out" passes on the real Time screen (was a blocker on the demo screen);
+  - the administrator with no person opens `/gigaops/time` and sees both panels say so, with no 403 (screenshot 045;
+    120an);
+  - the old demo content is gone.
+- **Still blocked:**
+  - "The technician submits their week" and "The approver approves the technician's week". One gap causes both: the
+    week panel loads once when the page opens and does not follow the clock (screenshot 047: punches at 8:51 PM, week
+    0h 00m with no rows; the server builds a row even for a zero-minute shift). Carded as WI-OI-120ao;
+  - two CMMS blockers (CMMS is not released; plan v3 step 1.3).
+- **New bug:** `GET /api/maps/nodes` answers 403 on `/gigaops/time` for the technician and the approver. The shared
+  site list asks Geospatial whatever the workspace has (WI-OI-120ao). The CMMS viewer's 403 stays with step 1.1.
+- **Unchanged (step 0.8):** the organization draft 400, the invitation token, the reload tab, internal codes shown.
+- **Cards:** WI-OI-120ah and WI-OI-120an are done. WI-OI-120ao is carded for the owner.

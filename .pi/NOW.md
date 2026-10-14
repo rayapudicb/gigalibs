@@ -14,8 +14,9 @@
 > logins. Journey `7xqjy6`: unchanged (5 blockers). From 2026-10-21: C7 (restore drill), the D3a reset and the `.prev`
 > deletion. **Current step: 0.4, the zero-mock sweep.** [WI-OI-120ah](tasks/WI-OI-120ah.md) is on UAT (release `e785f9d`:
 > one real Time screen, the demo screen deleted, a guard in the runtime-data audit). [WI-OI-120an](tasks/WI-OI-120an.md)
-> (its review's findings: truthful Time help, no 403 for a user with no person) is built; next its release, then one
-> journey for both, then WI-OI-120ak.
+> (its review's findings: truthful Time help, no 403 for a user with no person) is done too (release `63178f6`).
+> Journey `89ac2g`: 4 blockers (was 5); clock-in passes. Next: [WI-OI-120ao](tasks/WI-OI-120ao.md) (the week follows
+> the clock; site lists ask Geospatial only when allowed), then WI-OI-120ak.
 
 > **WI-OI-120u on UAT: release `4b8db72eae10-c90a7bebc734` (2026-10-13), and the Workforce journey passes.** The journey
 > found that new workspaces got no module windows (creating a workspace wrote no `tenant.entitlements.changed.v1`).
