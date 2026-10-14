@@ -7,10 +7,11 @@
 > read-only check passed, and journey `7i0v43` had 5 blockers (previously 8): 3 on the demo `/gigaops/time` (step 0.4)
 > and 2 on unreleased CMMS (step 1.3). **Step 0.3 part 1 done (2026-10-14):** the Assistant preview is reverted from the branch, the
 > CMMS pin is at 20, and a clean checkout installs, builds, tests and audits ([WI-OI-120aj](tasks/WI-OI-120aj.md)).
-> **Current step: 0.3b, [WI-OI-120al](tasks/WI-OI-120al.md)**, approved with Q1a, Q2a and Q3a.
-> Scripts built, rehearsed twice, Security review PASS WITH CONDITIONS with its fixes made. Next: the rebuilt plan's
-> re-check, a fresh backup and the owner's run. Then Q2a: a separate development database, the UAT database bound to
-> `127.0.0.1`, and its password rotated.
+> **Step 0.3b applied on UAT (2026-10-14 05:50Z, owner-run):** [WI-OI-120al](tasks/WI-OI-120al.md) undid
+> the development script's writes. 0 members hold `*` or Assistant codes; enabled entitlements went from 8,596 to
+> 1,558; 314 events were published with no error; UAT is healthy. **Next: WI-OI-120am (Q2a)**, card to be shown: UAT
+> gets its own database. Today it uses the development compose's `gigalibs-postgres`, published on `0.0.0.0:5440`,
+> whose password is in git history. Then step 0.4.
 
 > **WI-OI-120u on UAT: release `4b8db72eae10-c90a7bebc734` (2026-10-13), and the Workforce journey passes.** The journey
 > found that new workspaces got no module windows (creating a workspace wrote no `tenant.entitlements.changed.v1`).

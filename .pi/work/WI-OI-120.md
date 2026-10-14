@@ -3223,3 +3223,39 @@ widening the card to fix the API faults the proof found.
 - **Also found:** the UAT database is published on `0.0.0.0:5440`. Local development `.env` files point at it, and its
   password is in tracked scripts and in git history (Q2a).
 
+## WI-OI-120al applied on UAT (2026-10-14 05:50Z, owner-run)
+
+- **Plan** (Q3a, rebuilt read-only at 05:19:52Z): `infra/compose/backups/wi-oi-120al-plan-20261014_051952Z.json`,
+  sha256 `5e4e414a2936c7002a2989490e840382cd33a8791290c82037a6994c142284f9`.
+  - It differs from the first reviewed plan (`43512252…f545`) only by the 137 older `*` removals.
+  - Members: 468 changed, `*` removed from all 444, older `*` kept 0. Entitlements and feature lists are unchanged
+    from the first plan.
+- **Re-check by the same independent reviewer: PASS WITH CONDITIONS.** All first-review findings are closed. The code
+  ran unchanged from 52d64e8 (`lib.mjs` `6b146034…`, `apply.mjs` `0e913be3…`).
+- **Owner run:**
+  - `apply.mjs` check: CHECK PASSED (7802, 468, 314 rows).
+  - `--apply --expect-plan-sha256 5e4e414a… --container gigalibs-postgres --backup gigalibs_backup_20261014_052230Z`
+    (taken 05:22:30Z, after the plan): backup verified (checksum, metadata, restorable listing), one transaction,
+    APPLIED. Every planned row read back at target.
+- **Read-only proof afterwards:**
+  - members with `*` or `assistant:` codes: 0;
+  - rows still marked `local-development-bootstrap`: 0;
+  - Assistant enabled: 0; feature lists with the Assistant: 0;
+  - enabled entitlements: 8,596 → 1,558;
+  - audit records: 468 `tenant_member` + 314 `tenant_module_entitlement`, actor `owner-run:wi-oi-120al`;
+  - 314 `tenant.entitlements.changed.v1` events, all PUBLISHED with 0 errors;
+  - `gigalibs-global` has 31 modules enabled;
+  - all 10 UAT services healthy; `/login` answers 200.
+- **Cleanup:** the scratchpad extracts (live and reference rows, rehearsal plans) are deleted, and no rehearsal
+  container or volume remains. The reviewed plans and reports stay mode 600 in the git-ignored backups folder.
+- **Rollback, if ever needed:** the same command with `--revert`, after a new backup taken after the plan, puts every
+  row back exactly.
+- **Follow-ups:**
+  - F1: built-in roles created in workspaces that were wrongly entitled;
+  - F2: feature lists that name modules with no entitlement;
+  - F3, the re-check's Low: the SQL matches rows by id only. Before the script is reused, also match `moduleKey` and
+    `tenantId`. The sha256 pin covered it for this run.
+  - Q2a becomes card WI-OI-120am, with the owner's OK. The UAT database is `gigalibs-postgres` from
+    `docker/docker-compose.dev.yml` (project `gigalibs-dev`). UAT services reach it as `host.docker.internal:5440`, it
+    is published on `0.0.0.0:5440`, and local development `.env` files use it.
+

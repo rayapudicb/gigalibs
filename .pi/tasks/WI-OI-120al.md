@@ -2,8 +2,11 @@
 
 - **Status:** Approved (owner, 2026-10-14: "approved 120al, Q1a, Q2a, yes for security").
   - The plan is built, rehearsed twice and reviewed: Security review PASS WITH CONDITIONS, with its fixes made.
-  - Q3a chosen: the plan is rebuilt with `--remove-legacy-wildcard`. Next: the reviewer's re-check, a fresh backup
-    and the owner's run.
+  - **Applied on UAT, 2026-10-14 05:50Z (owner-run), and verified read-only** (evidence in `.pi/work/WI-OI-120.md`):
+    plan `5e4e414a…84f9`, backup `gigalibs_backup_20261014_052230Z`.
+  - Q2a moves to card WI-OI-120am. The UAT database turned out to be the development compose's `gigalibs-postgres`,
+    so "a separate development database" means UAT gets its own.
+  - Follow-ups: F1, F2 and F3.
 - **Plan step:** execution plan v3 step 0.3b. It runs after WI-OI-120aj part 1 and before step 0.4.
 - **Work item:** WI-OI-120. Evidence goes in `.pi/work/WI-OI-120.md`.
 - **Absorbs:** WI-OI-120aj part 2, decisions D1a and D2a. D3a is unchanged: the stray `gigalibs_assistant` schema is
@@ -106,6 +109,8 @@ Recorded (owner, 2026-10-14: "Q3a, accept, commit, Q2a confirmed"): **Q1a**, **Q
 - **F1 (M3):** `syncDefaultRoles` created built-in roles (analytics-studio and asset-maintenance, three each) in
   workspaces the script wrongly entitled. Count them in `audit_logs` (resource `custom_role`, CREATE, source
   `module-manifest`, since 2026-10-09T04:34Z), then decide.
+- **F3 (re-check Low):** the generated SQL matches rows by id only. Before any reuse, also match `moduleKey` and
+  `tenantId` (members: `tenantId`). For this run, the sha256 pin covered it.
 - **F2 (M4):** workspaces whose feature list names modules with no entitlement. 117 reference workspaces list 26–27
   keys, predating the script. Align features with entitlements.
 
