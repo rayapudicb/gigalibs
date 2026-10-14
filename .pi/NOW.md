@@ -12,9 +12,10 @@
 > 1,558; 314 events were published with no error; UAT is healthy. **WI-OI-120am done (2026-10-14):** UAT runs release `d435c58d8dc5-b92cab19b772` on its own database
 > `uat-postgres` (no published port, new passwords); the old database is development-only on `127.0.0.1` with rotated
 > logins. Journey `7xqjy6`: unchanged (5 blockers). From 2026-10-21: C7 (restore drill), the D3a reset and the `.prev`
-> deletion. **Current step: 0.4, the zero-mock sweep, starting with [WI-OI-120ah](tasks/WI-OI-120ah.md)**: built and
-> verified locally (one real Time screen; the demo screen deleted; a guard in the runtime-data audit). Next: commit,
-> release build, Security review, the owner's deploy, the journey.
+> deletion. **Current step: 0.4, the zero-mock sweep.** [WI-OI-120ah](tasks/WI-OI-120ah.md) is on UAT (release `e785f9d`:
+> one real Time screen, the demo screen deleted, a guard in the runtime-data audit). [WI-OI-120an](tasks/WI-OI-120an.md)
+> (its review's findings: truthful Time help, no 403 for a user with no person) is built; next its release, then one
+> journey for both, then WI-OI-120ak.
 
 > **WI-OI-120u on UAT: release `4b8db72eae10-c90a7bebc734` (2026-10-13), and the Workforce journey passes.** The journey
 > found that new workspaces got no module windows (creating a workspace wrote no `tenant.entitlements.changed.v1`).

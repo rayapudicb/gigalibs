@@ -70,27 +70,26 @@ export const MODULE_KNOWLEDGE_REGISTRY: Record<string, ModuleKnowledgeEntry> = {
       primaryStandards: ['Working Time Directive', 'OSHA Rest Period Guidelines'],
     },
   },
+  // WI-OI-120an: describes the real Time & attendance screen and only what the Workforce API enforces
+  // (modules/gigaops/apps/api/src/time/time.service.ts). It used to describe a retired demo screen and promise signed
+  // GPS and an anti-tamper clock that do not exist.
   '/gigaops/time': {
     category: 'Workforce Operations',
-    businessTitle: 'Frontline Attendance & Muster',
-    summary: 'Touchless GPS-verified mobile attendance, real-time floor headcount muster, and digital operator round checklists.',
+    businessTitle: 'Time & Attendance',
+    summary: 'Clock in and out at a site, review and submit the weekly timesheet, approve the weeks of others, and resolve time exceptions.',
     actions: [
-      'Execute touchless mobile clock-in verified against physical plant geofences',
-      'Monitor real-time supervisor muster roll for live on-site emergency headcount',
-      'Perform digital operator rounds with instant anomaly threshold detection',
-      'Approve and lock daily shift time punches for payroll transfer',
+      'Clock in, take breaks and clock out at a site; with location shared, each punch is checked against the site boundary',
+      'Review the week built from your punches and submit it for approval',
+      'Approve or return the submitted weeks of others (approvers)',
+      'Resolve time exceptions, void a wrong punch or add a missed one, with a reason (time managers)',
     ],
     guardrails: [
-      'Anti-tamper hardware monotonic clock prevents clock manipulation',
-      'GPS coordinates cryptographically signed at the mobile hardware boundary',
-      'Operator inspection thresholds trigger automated defect work orders on breach',
+      'Location and time come from the device\'s browser and are not tamper-proof: punches outside the site, without a verified location, sent late or after submission are flagged for a manager',
+      'A punch made offline is kept on this device and sent later with its original time; a resend never records twice',
+      'Another manager decides, corrects or resolves your own time; nobody approves their own week',
+      'An approved week cannot change, and corrections never touch a submitted or approved week',
+      'Corrections are added, never overwritten, and each carries a reason code and a note',
     ],
-    technicalSpec: {
-      serviceName: 'GigaOps Workforce Plane',
-      port: '4700',
-      schema: 'gigalibs_workforce',
-      primaryStandards: ['DCAA Timekeeping', 'OSHA 1904 Muster Assurance'],
-    },
   },
   '/gigaops/resources': {
     category: 'Workforce Operations',

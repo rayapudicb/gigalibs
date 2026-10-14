@@ -1,6 +1,6 @@
 # WI-OI-120an: The Time screen's help tells the truth, and an administrator with no person gets no 403
 
-- **Status:** Carded, not started (2026-10-14). Shown to the owner before it starts.
+- **Status:** Built and verified locally, not committed (2026-10-14; owner: "commit and approved").
 - **Found by:** the independent Security review of [WI-OI-120ah](WI-OI-120ah.md) (release `e785f9d`), findings M1 and L1.
 - **Work item:** WI-OI-120. Evidence goes in `.pi/work/WI-OI-120.md`.
 - **Size:** S
@@ -25,7 +25,7 @@
   - The clock panel lists the caller's own punches, which is a second 403.
   - A late 403 can replace the week of a person the user has just picked, because out-of-date answers are not ignored.
 
-## Design (to be confirmed with the owner)
+## Design (approved by the owner, 2026-10-14)
 
 1. Rewrite the `/gigaops/time` help entry to describe the real screen:
    - punches checked against the site boundary using the browser's location;
@@ -52,7 +52,30 @@
 
 ## Done when
 
-- [ ] The Time help drawer describes only what exists and claims only what the server enforces.
-- [ ] An administrator with no person opens `/gigaops/time` with no 403 (journey check).
-- [ ] A late answer never overwrites the week of the person now shown.
-- [ ] Evidence recorded; built, reviewed and deployed by the owner.
+- [x] The Time help drawer describes only what exists and claims only what the server enforces.
+- [ ] An administrator with no person opens `/gigaops/time` with no 403 (journey check, after the deploy).
+- [x] A late answer never overwrites the week of the person now shown.
+- [ ] Evidence recorded; built, reviewed and deployed by the owner. (Evidence recorded; the release is next.)
+
+## What was built (2026-10-14)
+
+- **Help (M1):** the `/gigaops/time` entry of `lib/module-knowledge-registry.ts` now describes the real screen. Each
+  guardrail is a rule of `time.service.ts` or the contracts:
+  - location and time come from the browser and are not tamper-proof, which is why out-of-fence, unverified,
+    missing-location, late and after-submission punches become exceptions;
+  - the offline queue keeps the original time, and a resend never records twice;
+  - nobody decides, corrects or resolves their own time;
+  - approved weeks cannot change, and corrections never touch a submitted or approved week;
+  - corrections are append-only, with a reason code and a note.
+
+  No port, schema or standards claim.
+- **No 403 for a user with no person (L1):**
+  - the workbench reports the people list as `loading`, `complete` or `unknown` (`peopleList`; a failed request is no
+    longer swallowed silently);
+  - the session hook tells "still asking" (`undefined`) from "could not be read" (`null`);
+  - `ownPerson` answers `wait`, `yes`, `no` or `ask`;
+  - the clock's own punches and "my week" are asked for only on `yes` or `ask`; on `no`, both panels say the user is
+    not a Workforce person;
+  - any linked resource counts as `yes`, so an inactive or non-person link still gets the server's own message
+    (`WORKFORCE_WORKER_INACTIVE`).
+- **Late answers:** the week panel numbers its requests and drops any answer that is not the latest.

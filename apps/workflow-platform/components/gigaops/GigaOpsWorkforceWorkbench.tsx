@@ -43,7 +43,7 @@ import { AvailabilityAndAbsence } from './AvailabilityAndAbsence';
 import { DispatchBoard } from './DispatchBoard';
 import { JobsAndPositions } from './JobsAndPositions';
 import { PayReadiness } from './PayReadiness';
-import { TimeAndAttendance } from './TimeAndAttendance';
+import { TimeAndAttendance, peopleList } from './TimeAndAttendance';
 import { GIGAOPS_SECTIONS, type GigaOpsSection } from './sections';
 
 const sectionMeta: Readonly<Record<GigaOpsSection, {
@@ -75,6 +75,8 @@ const qualificationColor: Record<WorkforceQualificationStatusV1, 'green' | 'oran
 
 export function GigaOpsWorkforceWorkbench({ section }: { section: GigaOpsSection }) {
   const [resources, setResources] = useState<WorkforceResourcePageV1 | null>(null);
+  // WI-OI-120an: a failed people list is told apart from one still loading.
+  const [resourcesFailed, setResourcesFailed] = useState(false);
   const [capabilities, setCapabilities] = useState<readonly CapabilityDefinitionV1[]>([]);
   const [generatedAt, setGeneratedAt] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -89,7 +91,8 @@ export function GigaOpsWorkforceWorkbench({ section }: { section: GigaOpsSection
     if (section === 'scheduling' || section === 'time' || section === 'pay') {
       setLoading(false);
       setError(null);
-      workforceApi.listResources({ pageSize: 100 }).then((r) => setResources(r)).catch(() => {});
+      setResourcesFailed(false);
+      workforceApi.listResources({ pageSize: 100 }).then((r) => setResources(r)).catch(() => setResourcesFailed(true));
       return;
     }
     setLoading(true);
@@ -142,7 +145,7 @@ export function GigaOpsWorkforceWorkbench({ section }: { section: GigaOpsSection
           ) : section === 'scheduling' ? (
             <DispatchBoard capabilities={capabilities} />
           ) : section === 'time' ? (
-            <TimeAndAttendance resources={resources?.items ?? []} complete={!!resources && resources.total <= resources.items.length} />
+            <TimeAndAttendance resources={resources?.items ?? []} list={peopleList(resources, resourcesFailed)} />
           ) : section === 'pay' ? (
             <PayReadiness resources={resources?.items ?? []} />
           ) : (

@@ -3487,3 +3487,21 @@ widening the card to fix the API faults the proof found.
     ("Waiting for approval", `workforce.timesheets.approve`);
   - no error lines in `web`, `workforce-api` or `api` since the deploy.
 - **Next:** the journey; the three Time blockers are expected to clear. WI-OI-120an waits for the owner's approval.
+
+## WI-OI-120an built: the Time help tells the truth; no 403 for a user with no person (2026-10-14). Not yet committed.
+
+- **Change** (card: [WI-OI-120an](../tasks/WI-OI-120an.md), "What was built"):
+  - `TimeAndAttendance.tsx`: `peopleList` and `ownPerson`; the clock and the week wait for them; late answers are
+    dropped;
+  - `GigaOpsWorkforceWorkbench.tsx`: a failed people list is reported;
+  - `lib/module-knowledge-registry.ts`: the `/gigaops/time` entry is rewritten from the server's rules.
+- **Verification:**
+  - new `gigaops-time-screen.test.ts`: 4 tests (list states, the own-person rule, the wiring, the help's claims);
+    the route test still 6 of 6;
+  - all web tests: 65 files and 710 tests passed (11 files and 109 tests skipped);
+  - web type-check: no errors outside `.next/types`;
+  - Biome lint: the same findings as HEAD on each changed file (none new); the new test is formatted;
+  - audits on HEAD plus 120an's files alone (throwaway worktree, removed): all ten pass; the deployment profile is the
+    known drift.
+- **Next:** commit, release build, Security review, the owner's deploy. One journey run afterwards can check both
+  WI-OI-120ah (the three Time blockers) and WI-OI-120an (no 403).

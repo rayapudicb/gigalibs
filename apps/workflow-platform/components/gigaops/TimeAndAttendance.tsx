@@ -16,7 +16,7 @@ import type {
   WorkforceResourcePageV1,
 } from '@gigalibs/contracts';
 import { Alert, Button, Checkbox, Container, Heading, Input, Label, StatusBadge, Table, Text } from '@medusajs/ui';
-import { type ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 type Person = WorkforceResourcePageV1['items'][number];
 
@@ -78,21 +78,24 @@ function deviceId(): string {
   return created;
 }
 
-/** The signed-in user and tenant, or null until known. */
+/** The signed-in user and tenant: undefined while it is being asked, null if it could not be read. */
 type Session = { userId: string; tenantId: string; permissions: readonly string[] };
 
-function useSession(): Session | null {
-  const [session, setSession] = useState<Session | null>(null);
+function useSession(): Session | null | undefined {
+  const [session, setSession] = useState<Session | null | undefined>(undefined);
   useEffect(() => {
     let active = true;
     void fetch('/api/auth/context', { cache: 'no-store' })
       .then(async (response) => (response.ok ? response.json() : null))
       .then((context: { user?: { id?: string }; tenant?: { id?: string } | null; permissions?: string[] } | null) => {
-        if (active && context?.user?.id && context.tenant?.id) {
-          setSession({ userId: context.user.id, tenantId: context.tenant.id, permissions: context.permissions ?? [] });
-        }
+        if (!active) return;
+        setSession(context?.user?.id && context.tenant?.id
+          ? { userId: context.user.id, tenantId: context.tenant.id, permissions: context.permissions ?? [] }
+          : null);
       })
-      .catch(() => undefined);
+      .catch(() => {
+        if (active) setSession(null);
+      });
     return () => {
       active = false;
     };
@@ -111,6 +114,33 @@ export function timeActions(permissions: readonly string[] | null): { approve: b
   };
 }
 
+/** The workbench's people list: still loading, holding everyone, or failed or cut short. */
+export type PeopleList = 'loading' | 'complete' | 'unknown';
+
+/** WI-OI-120an: the list's state from the workbench's page, or `unknown` if the request failed. */
+export function peopleList(page: { total: number; items: readonly unknown[] } | null, failed: boolean): PeopleList {
+  if (page) return page.total <= page.items.length ? 'complete' : 'unknown';
+  return failed ? 'unknown' : 'loading';
+}
+
+/**
+ * WI-OI-120an: whether the signed-in user has a Workforce person of their own. `wait` until both the session and the
+ * people list have answered; `no` only when the complete list holds no person linked to the user; `ask` when that
+ * cannot be known here (the list failed or was cut short, or the session could not be read), so the server decides.
+ */
+export type OwnPerson = 'wait' | 'yes' | 'no' | 'ask';
+
+export function ownPerson(
+  session: { userId: string } | null | undefined,
+  people: readonly { platformUserId?: string | null }[],
+  list: PeopleList,
+): OwnPerson {
+  if (session === undefined || list === 'loading') return 'wait';
+  if (session === null) return 'ask';
+  if (people.some((person) => person.platformUserId === session.userId)) return 'yes';
+  return list === 'complete' ? 'no' : 'ask';
+}
+
 /** Whether a failed send should stay queued: no response, busy or a server fault. */
 function retryable(error: WorkforceApiError): boolean {
   return error.status === undefined || error.status === 429 || error.status >= 500;
@@ -121,32 +151,32 @@ function retryable(error: WorkforceApiError): boolean {
  * resend never records twice), the weekly timesheet, approvals, and the exception inbox with corrections.
  */
 /**
- * WI-OI-120ah: Time & Attendance, at /gigaops/time (the demo PlantOperationsHub is retired). `complete` says the list
- * holds every person in the workspace; only then can the screen know the signed-in user has no person of their own.
+ * WI-OI-120ah: Time & Attendance, at /gigaops/time (the demo PlantOperationsHub is retired). WI-OI-120an: the user's own
+ * punches and week are asked for only once it is known they may have a person (`ownPerson`), so a user with none gets
+ * no refusal.
  */
-export function TimeAndAttendance({ resources, complete = false }: { resources: readonly Person[]; complete?: boolean }) {
+export function TimeAndAttendance({ resources, list }: { resources: readonly Person[]; list: PeopleList }) {
   const { sites, siteName } = useSites();
   const people = useMemo(() => resources.filter((resource) => resource.resourceType === 'HUMAN'), [resources]);
   const session = useSession();
-  // true or false when known; null while unknown (the request is then made and its answer decides).
-  const ownPerson = session
-    ? people.some((person) => person.platformUserId === session.userId) ? true : complete ? false : null
-    : null;
+  // Any linked resource counts: the server then says whether it is an active person (WORKFORCE_WORKER_INACTIVE).
+  const own = ownPerson(session, resources, list);
   const actions = timeActions(session?.permissions ?? null);
   return (
     <div className="grid gap-4 xl:grid-cols-2">
-      <MyClock sites={sites} siteName={siteName} session={session} />
-      <WeekSheet people={people} siteName={siteName} ownPerson={ownPerson} />
+      <MyClock sites={sites} siteName={siteName} session={session} own={own} />
+      <WeekSheet people={people} siteName={siteName} own={own} />
       {actions.approve ? <Approvals /> : null}
       <ExceptionInbox people={people} sites={sites} canManage={actions.manage} />
     </div>
   );
 }
 
-function MyClock({ sites, siteName, session }: {
+function MyClock({ sites, siteName, session, own }: {
   sites: ReturnType<typeof useSites>['sites'];
   siteName: (siteRef: string | null) => string;
-  session: Session | null;
+  session: Session | null | undefined;
+  own: OwnPerson;
 }) {
   const [punches, setPunches] = useState<readonly PunchV1[] | null>(null);
   const [pending, setPending] = useState<readonly Omit<RecordPunchV1, 'geofence'>[]>([]);
@@ -189,8 +219,10 @@ function MyClock({ sites, siteName, session }: {
     if (remaining.length < queue.length) await load();
   }, [load, queueKey]);
 
+  // WI-OI-120an: the user's own punches are asked for only once they may have a person.
+  const mine = own === 'yes' || own === 'ask';
   useEffect(() => {
-    if (!queueKey) return;
+    if (!queueKey || !mine) return;
     const discarded = discardLegacyPunchQueue();
     if (discarded > 0) setNotice(`${discarded} punch(es) saved on this device before per-person queues could not be attributed to anyone and were not sent.`);
     setPending(storage(queueKey, []));
@@ -198,7 +230,7 @@ function MyClock({ sites, siteName, session }: {
     const online = () => void flush();
     window.addEventListener('online', online);
     return () => window.removeEventListener('online', online);
-  }, [load, flush, queueKey]);
+  }, [load, flush, queueKey, mine]);
 
   const effective = (punches ?? []).filter((punch) => !punch.voided);
   const last = [...effective, ...pending.map((punch) => ({ kind: punch.kind, occurredAt: punch.occurredAt }))]
@@ -239,7 +271,7 @@ function MyClock({ sites, siteName, session }: {
     }
   }
 
-  const unlinked = error?.errorCode === 'WORKFORCE_NOT_A_WORKER';
+  const unlinked = own === 'no' || error?.errorCode === 'WORKFORCE_NOT_A_WORKER';
   return (
     <Container className="p-5">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -307,10 +339,10 @@ function position(): Promise<RecordPunchV1['location']> {
   });
 }
 
-function WeekSheet({ people, siteName, ownPerson }: {
+function WeekSheet({ people, siteName, own }: {
   people: readonly Person[];
   siteName: (siteRef: string | null) => string;
-  ownPerson: boolean | null;
+  own: OwnPerson;
 }) {
   const [resourceId, setResourceId] = useState('');
   const [periodStart, setPeriodStart] = useState(() => mondayOf(new Date()));
@@ -319,24 +351,30 @@ function WeekSheet({ people, siteName, ownPerson }: {
   const [error, setError] = useState<WorkforceApiError | null>(null);
   // WI-OI-120n: an administrator or supervisor who is not a Workforce person has no week of their own; they choose a
   // person instead of being shown the refusal of "my week".
-  // WI-OI-120ah (journey finding): when it is known that the user has no person, "my week" is not requested at all.
-  const skipOwn = resourceId === '' && ownPerson === false;
-  const notAWorker = resourceId === '' && (skipOwn || error?.errorCode === 'WORKFORCE_NOT_A_WORKER');
+  // WI-OI-120an (journey finding): "my week" is asked for only once the user may have a person; a user known to have
+  // none is never refused. A late answer never replaces the week of the person now chosen.
+  const hold = resourceId === '' && (own === 'wait' || own === 'no');
+  const notAWorker = resourceId === '' && (own === 'no' || error?.errorCode === 'WORKFORCE_NOT_A_WORKER');
+  const latest = useRef(0);
 
   const load = useCallback(async () => {
-    if (skipOwn) {
+    const request = ++latest.current;
+    if (hold) {
       setPreview(null);
       setError(null);
       return;
     }
     try {
-      setPreview(await workforceApi.timesheetPreview({ periodStart, ...(resourceId ? { resourceId } : {}) }));
+      const next = await workforceApi.timesheetPreview({ periodStart, ...(resourceId ? { resourceId } : {}) });
+      if (request !== latest.current) return;
+      setPreview(next);
       setError(null);
     } catch (reason) {
+      if (request !== latest.current) return;
       setPreview(null);
       setError(reason as WorkforceApiError);
     }
-  }, [periodStart, resourceId, skipOwn]);
+  }, [periodStart, resourceId, hold]);
 
   useEffect(() => {
     void load();
