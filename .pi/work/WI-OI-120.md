@@ -3626,3 +3626,19 @@ widening the card to fix the API faults the proof found.
   - Three Time blockers come from a race in the journey's `press`, not from the screen. Screenshot 046: "Working",
     "Clock out" shown, and the week showing the open shift.
   - `press` now waits up to 5 s for a control (journey spec only; nothing to deploy). The journey is to be run again.
+
+## Journey after WI-OI-120ao (2026-10-15, owner-run): the Time flow passes on UAT
+
+- **Journey `8gti7u`** on release d75ccba, with the journey's `press` fix: 75 steps; 61 findings (2 blockers, 1 bug,
+  6 UX, 15 accessibility, 37 layout). Before: `8cho6n`, 5 blockers; `89ac2g`, 4; `7xqjy6`, 5.
+- **The whole Time flow passes:** the technician clocks in and out, submits the week, and the approver approves it.
+  - Read-only check of the database: Tia Technician 8gti7u's week of 2026-10-12 is APPROVED, with a submitter and a
+    decider (four-eyes).
+  - On `/gigaops/time`, the only finding left is the shared sidebar overlap (layout, every page).
+- **Left:**
+  - the two CMMS blockers (plan v3 step 1.3);
+  - the step 0.8 items: the organization draft 400, the invitation token, the reload tab, internal codes;
+  - the CMMS viewer offered "New work order" (step 1.1);
+  - 15 accessibility and 37 layout findings (step 3.9).
+- **WI-OI-120ah, WI-OI-120an and WI-OI-120ao are done.** Next in step 0.4: WI-OI-120ak, the rest of the zero-mock
+  sweep.

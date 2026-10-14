@@ -1,8 +1,8 @@
 # WI-OI-120ao: The week follows the clock, and site lists ask Geospatial only when allowed
 
-- **Status:** On UAT: release `d75ccba` (`local-20261014T155740Z-d75ccba532b5-6e517ae084ef`), deployed by the owner
-  2026-10-14 (~16:14Z). Journey `8cho6n` exposed a race in the journey itself, now fixed (not committed); the journey
-  is to be run again. Feature commits `df82260`, `2c4a45a`.
+- **Status:** Done (2026-10-15). On UAT as release `d75ccba`. Journey `8gti7u`: the technician clocks in and out and
+  submits the week, and the approver approves it (the database shows the week APPROVED). Feature commits `df82260`,
+  `2c4a45a`, `831ac8b` (journey).
 - **Found by:** journey `89ac2g` on release `63178f6` (WI-OI-120ah and WI-OI-120an on UAT).
 - **Work item:** WI-OI-120. Evidence goes in `.pi/work/WI-OI-120.md`.
 - **Size:** S
@@ -50,11 +50,11 @@
 
 ## Done when
 
-- [ ] On UAT, the journey's technician submits their week and the approver approves it.
+- [x] On UAT, the journey's technician submits their week and the approver approves it. (Journey `8gti7u`.)
 - [x] No Workforce screen calls `/api/maps/nodes` for a workspace without Geospatial Studio, or for a user without
   `maps.nodes.read`. (Journey `8cho6n`: no such 403.)
 - [x] An empty week says so.
-- [ ] Evidence recorded; built, reviewed and deployed by the owner.
+- [x] Evidence recorded; built, reviewed and deployed by the owner.
 
 ## What was built (2026-10-14)
 
