@@ -20,7 +20,6 @@
     "@gigalibs/configuration-react": "workspace:*",
     "@gigalibs/analytics-charts": "workspace:*",
     "@gigalibs/contracts": "workspace:*",
-    "@gigalibs/db": "workspace:*",
     "@gigalibs/gigaops-web": "workspace:*",
     "@gigalibs/i18n": "workspace:*",
     "@gigalibs/logger": "workspace:*",

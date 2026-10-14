@@ -1,6 +1,6 @@
 # WI-OI-120ak: Zero-mock sweep, the rest (plan v3 step 0.4)
 
-- **Status:** Approved (owner, 2026-10-15: "approved 120ak, D1a, D2a, D3a, D4a, D5a, D6a, D7a"). S1 committed; S2 in
+- **Status:** Approved (owner, 2026-10-15: "approved 120ak, D1a, D2a, D3a, D4a, D5a, D6a, D7a"). S1 and S2 committed; S3 in
   progress.
 - **Follows:** WI-OI-120ah, WI-OI-120an and WI-OI-120ao (the Time screen, done).
 - **Work item:** WI-OI-120. Evidence goes in `.pi/work/WI-OI-120.md`.
@@ -202,3 +202,28 @@ journey are run again.
   (`telemetry-bridge-service.ts`, `workforce-safety-service.ts`, `prisma-saga-service.ts`, `forms-engine-service.ts`).
   Deleted with S2 (owner, 2026-10-15: "S2 with the four").
 - **No release:** the audit is a repository check and does not run on UAT.
+
+## S2, dead code (2026-10-15): built and verified locally
+
+- **Deleted** (owner: "S2 with the four"; nothing imported any of them; 6,304 lines):
+  - from `apps/workflow-platform/lib/`:
+    - ten in-memory modules: `ontology-store`, `event-fabric-queue`, `governor`, `ootb-client-workbench-store`,
+      `oauth-handshake-store`, `saga-orchestrator`, `tenant-ingestion-store`, `reports-engine`, `ar-ledger-store`,
+      `tax-ledger-store`;
+    - four services that queried the database from the web app: `telemetry-bridge-service`,
+      `workforce-safety-service`, `prisma-saga-service`, `forms-engine-service`;
+  - their two tests (`ootb-client-workbench`, `reports-engine`);
+  - three unwired scripts that exercised them only (`verify-saga-and-event-fabric`, `verify-governor-limits`,
+    `verify-saga-persistent`).
+- **Trimmed:** three mixed tests now keep only their live contract checks. `forms-dual-mode` covers
+  `isFormFieldVisible`, which PublicFormRenderer uses; `workforce-safety-eptw` covers the permit and handover
+  schemas; `thingsboard-telemetry-cbm` covers the alert schema.
+- **Database package dropped from the web app:** those services were the web app's only users of `@gigalibs/db`.
+  It is removed from its `package.json`, its `tsconfig` paths and the lockfile (pnpm also re-resolved one Vitest helper
+  to the workspace's `jiti` 2.7.0). The web app now carries no database code.
+- **Baseline:** the seven S2 entries are removed (the audit reported all seven as stale until then). Now 15 entries,
+  40 matches.
+- **Verification:** web type-check clean; web tests 694 passed in 64 files (22 tests of dead code removed; the 109
+  skipped unchanged); both audit modes pass; all ten audits pass on HEAD plus S2 alone; the lockfile passes a frozen
+  check.
+- **No behaviour change.** Next.js bundles only what is imported, so S2 goes to UAT with the next release (S3).

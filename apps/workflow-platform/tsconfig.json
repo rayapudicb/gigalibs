@@ -43,9 +43,6 @@
       ],
       "@gigalibs/i18n": [
         "../../packages/i18n/dist/index.d.ts"
-      ],
-      "@gigalibs/db": [
-        "../../packages/db/dist/index.d.ts"
       ]
     }
   },

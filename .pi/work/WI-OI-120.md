@@ -3654,3 +3654,7 @@ widening the card to fix the API faults the proof found.
   - a stale entry fails;
   - an older rule cannot be baselined.
 - All ten audits pass on HEAD plus S1; both audit modes pass. No release: the audit runs in the repository.
+- **S2 built (not yet committed):** 14 dead web modules (10 in memory, 4 querying the database from the web app),
+  2 tests and 3 unwired scripts deleted (6,304 lines); 3 mixed tests trimmed to their live contract checks;
+  `@gigalibs/db` dropped from the web app. Baseline 22 → 15 entries. Type-check clean; 694 web tests passed; all
+  audits pass on HEAD plus S2. No behaviour change; goes to UAT with S3's release.
