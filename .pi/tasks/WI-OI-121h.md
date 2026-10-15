@@ -4,7 +4,7 @@
 > and was never deployed. GU1–GU7 in `docs/plans/gigalibs-execution-plan-v3.md` replace it. Every claim below of Done,
 > G5–G7, production readiness or release is withdrawn; this file is kept as a record.
 
-- **Status:** Done (owner approved on 2026-10-10; implementation complete, unit test suite passing, end-to-end multi-tenant isolation, live CMMS grounding and audit telemetry verified).
+- **Status:** Replaced by GU1–GU7, steps 1.4–1.10 (plan v3 §5; step 0.6, 2026-10-15). Withdrawn 2026-10-14 (WI-OI-120aj). Was: Done (owner approved on 2026-10-10; implementation complete, unit test suite passing, end-to-end multi-tenant isolation, live CMMS grounding and audit telemetry verified).
 - **Work item:** WI-OI-121 (`.pi/WORK_ITEMS.md`); evidence in `.pi/work/WI-OI-121.md`.
 - **Size:** L, bounded A3 integration. This does not approve A1 source, live CMMS tools, customer activation or release.
 

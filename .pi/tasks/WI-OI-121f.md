@@ -4,7 +4,7 @@
 > and was never deployed. GU1–GU7 in `docs/plans/gigalibs-execution-plan-v3.md` replace it. Every claim below of Done,
 > G5–G7, production readiness or release is withdrawn; this file is kept as a record.
 
-- **Status:** Review (source containment implemented 2026-10-10; independent Security/Privacy and deployed/browser acceptance pending).
+- **Status:** Replaced by GU1–GU7, steps 1.4–1.10 (plan v3 §5; step 0.6, 2026-10-15). Withdrawn 2026-10-14 (WI-OI-120aj). Was: Review (source containment implemented 2026-10-10; independent Security/Privacy and deployed/browser acceptance pending).
 - **Work item:** WI-OI-121 (`.pi/WORK_ITEMS.md`). Evidence belongs in `.pi/work/WI-OI-121.md`.
 - **Size:** L, executed as one bounded containment slice before tenant-product expansion.
 - **Preparation evidence (read-only, 2026-10-10):** `ollama list` found `llama3.2:latest` (2.0 GB) and `ollama ps` showed no loaded runner. `pnpm verify --audits` passed the other executed audits but failed `audit:design-tokens` on separately owned `AuthAtmosphere.tsx` (6 classes) and untracked `PlantSpatial3DViewer.tsx` (59 classes); 12 isolated-database proofs were not run. No Assistant repair or runtime/model inference was performed.

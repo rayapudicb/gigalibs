@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { workStatusFindings } from './lib/work-status.mjs';
 
 const root = new URL('../', import.meta.url).pathname;
 const configPath = join(root, 'config/sdlc-governance.json');
@@ -70,16 +71,13 @@ for (const row of rows) {
     .map((cell) => cell.trim());
   const [id, requirementCell, status, owner, reviewers, gate, evidence] = cells;
   workStatusById.set(id, status);
-  if (!(governance.statusValues ?? []).includes(status))
-    violation('WORK_STATUS', `${id} has invalid status ${status}.`);
+  for (const [code, message] of workStatusFindings({ id, status, evidence: evidence ?? '' }, governance.statusValues ?? []))
+    violation(code, message);
   if (!/(?:FR-\d{2}|NFR-[A-Z]+-\d{3})/.test(requirementCell)) {
     violation('WORK_REQUIREMENT', `${id} has no requirement linkage.`);
   }
   if (!owner || !reviewers || !gate || !evidence)
     violation('WORK_HANDOFF', `${id} has incomplete handoff metadata.`);
-  if (['Accepted', 'Released'].includes(status) && !/human/i.test(evidence)) {
-    violation('HUMAN_AUTHORITY', `${id} cannot be ${status} without recorded human authority.`);
-  }
 }
 if (rows.length === 0) violation('WORK_ITEMS_EMPTY', 'No canonical work items were found.');
 

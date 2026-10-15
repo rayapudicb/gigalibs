@@ -4007,3 +4007,17 @@ widening the card to fix the API faults the proof found.
   - type-checks clean in seven packages;
   - only the new lines changed (an accidental whole-file reformat of the dispatcher test was undone);
   - whole repository: 2,962 tests passed, 234 skipped, none failed (378 files).
+
+## Plan v3 step 0.6, status truth (2026-10-15; owner: "approved 120aq as recommended"): built locally
+
+- **S1:**
+  - statuses Proposed, Ready, In Progress, Built, Review, On UAT, Done, Blocked, Replaced (Accepted and Released
+    retired);
+  - rules in `scripts/lib/work-status.mjs` (On UAT names a release, Done records the owner's acceptance, Replaced
+    names its replacement), used by the governance check and tested.
+- **S2:** 94 rows Replaced with pointers (plan v3 §5, X7 for 084, 0.7a for 044, the TP slices for 045). WI-OI-121
+  and 121a–j point to GU1–GU7. All 22 Blocked items are among them.
+- **S3:** 24 rows by evidence (git ancestry into `d17db37`, plus read-only UAT counts): 14 On UAT and 8 Built, each
+  with its reason. None is Done.
+- **S4:** `NOW.md` is one page (67 lines); the old 360 lines are archived unchanged.
+- **Checks:** the governance check passes; the rules' test passes 4/4. Details: card WI-OI-120aq.

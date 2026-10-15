@@ -1,6 +1,6 @@
 # WI-OI-120aq: Status truth (plan v3 step 0.6)
 
-- **Status:** Carded, not started. Shown to the owner before it starts.
+- **Status:** Built (2026-10-15): S1–S4 done locally; owner approved D1a, D2, D3 and D4 ("approved 120aq as recommended").
 - **Plan v3:** step 0.6. "Re-label every Review item by evidence (Built, On UAT, Done). Correct WI-OI-121a–j, which
   claim G6/G7 for a preview. Close each item that §5 replaces, with a pointer to its replacement. Shorten `NOW.md`
   back to one page." (WI-OI-119 follow-up.)
@@ -73,8 +73,74 @@ CI and in `pnpm verify`.
 
 ## Done when
 
-- [ ] Every registry row has a status the evidence supports, with a pointer; none says Review without waiting for a
+- [x] Every registry row has a status the evidence supports, with a pointer; none says Review without waiting for a
   review.
-- [ ] Each item §5 replaces is Replaced with its pointer; WI-OI-121 and 121a–j included.
-- [ ] The governance check passes, with the new rules tested.
-- [ ] `NOW.md` is one page and current; the old text is archived unchanged.
+- [x] Each item §5 replaces is Replaced with its pointer; WI-OI-121 and 121a–j included.
+- [x] The governance check passes, with the new rules tested.
+- [x] `NOW.md` is one page and current; the old text is archived unchanged.
+
+## S1, the vocabulary (2026-10-15): built and verified locally
+
+- `config/sdlc-governance.json` `statusValues`: Proposed, Ready, In Progress, Built, Review, On UAT, Done, Blocked,
+  Replaced, with a note on each. Accepted and Released are retired; no item used them.
+- `scripts/lib/work-status.mjs` holds the rules; `scripts/verify-sdlc-governance.mjs` uses it in place of its status
+  and human-authority checks:
+  - On UAT names a release (`release <commit>`);
+  - Done records the owner's acceptance;
+  - Replaced says what replaces it (`Replaced by …`).
+- Test `packages/configuration-core/src/work-status.test.ts` (4 tests): the new statuses pass, the retired and unknown
+  ones fail, and each claim fails without its evidence.
+- The governance check passes on today's registry.
+
+## S2, Replaced (2026-10-15)
+
+- 94 rows are Replaced, each naming its replacement:
+  - 92 from plan v3 §5's table;
+  - 084, mobile and offline, which plan v3 places under X7;
+  - 044, its stack decision, which plan v3's "UAT is production" replaces.
+
+  The existing evidence text is kept after the pointer.
+- WI-OI-045 points to WI-OI-046 to WI-OI-052, the TP slices it designed.
+- All 22 Blocked items were among them, so their blockers move to the new cards (D4).
+- WI-OI-121 and 121a–j: each card's status line starts "Replaced by GU1–GU7" and keeps its old wording after "Was:".
+
+## S3, re-labelled by evidence (2026-10-15, D2)
+
+The 24 remaining rows were checked by git ancestry (each item's tagged commits are in the running release
+`d17db37`) and, where needed, read-only on UAT.
+
+| Status | Items |
+| --- | --- |
+| **On UAT (14)** | 039, 042, 046, 049, 058, 059, 081, 082, 083, 085, 102, 109, 110, 112. |
+| **Built (8)** | 002, 047, 048, 050, 051, 052, 080, 101 (reasons below). |
+
+Notes on the On UAT items:
+- 049: the inbox is in use (1,636 events);
+- 058: the gutter is in `globals.css`;
+- 109: carries its open organization-draft 400 (step 0.8);
+- 112: opens only through the UAT preview.
+
+Why the Built items are not On UAT:
+- 002: no tagged commits;
+- 047 and 080: repository tooling;
+- 048: no exports ever made on UAT;
+- 050: admission control has no caller;
+- 051: the audit chain is empty;
+- 052: certifies the Built TP slices;
+- 101: two open defects, for step 0.8.
+
+None is Done: the owner has not recorded an acceptance. The registry legend states the new statuses.
+
+## S4, `NOW.md` (2026-10-15, D3)
+
+- The 360-line page is archived unchanged at `.pi/archive/NOW-2026-10-15.md`.
+- `NOW.md` is now one page (67 lines): the current step, what runs on UAT, what is built, what waits for the owner,
+  known and accepted items (the `WORKFORCE_API_URL` profile drift `scripts/verify.mjs` points to), the next three
+  steps and the standing rules.
+
+## Verification
+
+- `scripts/verify-sdlc-governance.mjs` passes, with the new rules on every row.
+- The rules' test passes (4/4).
+- Registry: 94 Replaced, 14 On UAT, 8 Built, 1 In Progress.
+

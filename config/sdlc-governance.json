@@ -30,11 +30,14 @@
     "Proposed",
     "Ready",
     "In Progress",
+    "Built",
     "Review",
+    "On UAT",
+    "Done",
     "Blocked",
-    "Accepted",
-    "Released"
+    "Replaced"
   ],
+  "note_statusValues": "WI-OI-120aq (plan v3 step 0.6, owner D1a, 2026-10-15): Built = the code exists (plan v3 rule 8), not yet deployed and verified on UAT; Review = built, waiting for its independent review; On UAT = in the running release (name it); Done = on UAT and accepted by the owner (recorded); Blocked = with the named blocker; Replaced = closed, naming what replaces it (plan v3 section 5). Accepted and Released are retired: UAT is production.",
   "workInProgressLimits": {
     "implementationModules": 1,
     "activeImplementationWorkItems": ["WI-OI-120"],
