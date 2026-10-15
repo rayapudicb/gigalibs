@@ -98,7 +98,9 @@ describe('Time & attendance screen', () => {
   it('describes the real screen in its help and claims only what the server enforces', () => {
     const entry = getKnowledgeEntry('/gigaops/time');
     expect(entry.businessTitle).toBe('Time & Attendance');
-    const text = [entry.summary, ...entry.actions, ...entry.guardrails].join('\n');
+    const text = [entry.summary, ...entry.actions, ...entry.guardrails, ...entry.limitations].join(
+      '\n',
+    );
     for (const claim of [
       /cryptograph/i,
       /anti-tamper/i,
@@ -125,6 +127,9 @@ describe('Time & attendance screen', () => {
     );
     expect(text).not.toMatch(/approvers\)|time managers\)/);
     // No internal port, schema or unproven standard.
-    expect(entry.technicalSpec).toBeUndefined();
+    expect('technicalSpec' in entry).toBe(false);
+    // WI-OI-120ak (S6): limits are listed as limits, not as rules the system enforces.
+    expect(entry.guardrails.join('\n')).not.toMatch(/not tamper-proof|Not checked/);
+    expect(entry.limitations.join('\n')).toMatch(/not tamper-proof/);
   });
 });

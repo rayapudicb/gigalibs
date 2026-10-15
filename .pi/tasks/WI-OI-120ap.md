@@ -51,6 +51,8 @@ A table of every TextFly folder, route group and table, each marked keep, adapt,
 - **Later, to decide:** `call-transcription`; `skills` and `tools` (they overlap the Assistant's GU cards).
 - **Security, before any connection:** the GigaLibs proxy must send a signed platform context, not the plain
   `x-tenant-id` and `x-user-id` headers used today (WI-OI-120ak S4 note).
+- **Security, before any connection (WI-OI-120ak review L1):** remove the Communications route's bypass for platform
+  operators and `*` holders, so the module lock, entitlement and permission apply to everyone.
 - **Source of truth:** the standalone repository, not the untracked `modules/communications-textfly` copy inside
   GigaLibs (owner to confirm).
 

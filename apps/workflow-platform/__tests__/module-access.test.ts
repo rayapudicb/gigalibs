@@ -2,7 +2,6 @@ import { platformModuleCatalog } from '@gigalibs/contracts';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   canOpenPlatformModule,
-  canInspectPlatformModule,
   canUseTenantModule,
   hasPermission,
   isLockedModule as isCatalogueLocked,
@@ -38,18 +37,6 @@ describe('module access', () => {
     const enabled = new Set(['tenant-access', 'personal-security']);
     expect(canUseTenantModule('tenant-access', enabled, ['profile:*'])).toBe(false);
     expect(canUseTenantModule('personal-security', enabled, ['profile:*'])).toBe(true);
-  });
-
-  it.each(['/ar', '/spend', '/tax', '/currency', '/recovery'])(
-    'lets a persisted platform role inspect contained finance route %s',
-    (path) => {
-      expect(canInspectPlatformModule(path, ['PLATFORM_ADMIN'])).toBe(true);
-      expect(canInspectPlatformModule(path, [])).toBe(false);
-    },
-  );
-
-  it('does not extend platform inspection to unrelated contained routes', () => {
-    expect(canInspectPlatformModule('/scanner', ['PLATFORM_ADMIN'])).toBe(false);
   });
 
   it('derives every tenant permission from the canonical module catalogue', () => {

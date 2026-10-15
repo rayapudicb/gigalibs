@@ -5,7 +5,6 @@ import { verifiedSession } from '@/lib/verified-session';
 import { ExploreWorkbench } from '../../../../components/analytics/explore/ExploreWorkbench';
 
 // WI-OI-103d: ask questions of a semantic model and see them as any chart that fits; charts store questions, not data.
-// Demo Lab workspaces can also load the labelled sample farm source here (d7).
 export default async function AnalyticsExplorePage() {
   const session = await verifiedSession(false);
   if (session.response?.status === 401) redirect('/login');

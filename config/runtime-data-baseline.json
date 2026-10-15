@@ -11,6 +11,7 @@
       ],
       "card": "WI-OI-120ak",
       "slice": "locked",
+      "module": "master-data",
       "reason": "Master data (CONTAINED) seed and in-memory store; locked everywhere, UAT included, since S5 (D1b); replaced by T4 parties (plan v3 5B)"
     },
     {
@@ -21,6 +22,7 @@
       ],
       "card": "WI-OI-120ak",
       "slice": "locked",
+      "module": "rule-studio",
       "reason": "Rule studio keeps tenant rules only in the web process memory; CONTAINED since S5 (D3a) and locked everywhere, UAT included (D1b); replaced when rules get real storage (its own card)"
     },
     {
@@ -34,6 +36,7 @@
       ],
       "card": "WI-OI-120ak",
       "slice": "locked",
+      "module": "master-data",
       "reason": "Master data (CONTAINED) seed and in-memory store; locked everywhere, UAT included, since S5 (D1b); replaced by T4 parties (plan v3 5B)"
     },
     {
@@ -49,6 +52,7 @@
       ],
       "card": "WI-OI-120ak",
       "slice": "locked",
+      "module": "rule-studio",
       "reason": "Rule studio keeps tenant rules only in the web process memory; CONTAINED since S5 (D3a) and locked everywhere, UAT included (D1b); replaced when rules get real storage (its own card)"
     },
     {
@@ -60,6 +64,7 @@
       ],
       "card": "WI-OI-120ak",
       "slice": "locked",
+      "module": "accounts-receivable",
       "reason": "Accounts Receivable (CONTAINED) new-invoice form pre-fills an invented line; locked everywhere, UAT included, since S5 (D1b); rebuilt in M-AR (plan v3 5C)"
     },
     {
@@ -80,6 +85,7 @@
       ],
       "card": "WI-OI-120ak",
       "slice": "locked",
+      "module": "rule-studio",
       "reason": "Rule studio keeps tenant rules only in the web process memory; CONTAINED since S5 (D3a) and locked everywhere, UAT included (D1b); replaced when rules get real storage (its own card)"
     },
     {
@@ -93,6 +99,7 @@
       ],
       "card": "WI-OI-120ak",
       "slice": "locked",
+      "module": "master-data",
       "reason": "Master data (CONTAINED) seed and in-memory store; locked everywhere, UAT included, since S5 (D1b); replaced by T4 parties (plan v3 5B)"
     },
     {
@@ -114,6 +121,7 @@
       ],
       "card": "WI-OI-120ak",
       "slice": "locked",
+      "module": "master-data",
       "reason": "Master data (CONTAINED) seed and in-memory store; locked everywhere, UAT included, since S5 (D1b); replaced by T4 parties (plan v3 5B)"
     }
   ]

@@ -31,7 +31,7 @@ import { analyticsApi } from '../explore/analytics-api';
 const selectClass =
   'w-full rounded-md border border-ui-border-base bg-ui-bg-field px-2 py-1 text-sm text-ui-fg-base focus:outline-none focus:ring-2 focus:ring-ui-border-interactive';
 const TYPES: AnalyticalType[] = ['string', 'number', 'date', 'timestamp', 'boolean'];
-const SOURCE_KIND: Record<string, string> = { CONNECTOR_HUB: 'Connector Hub', POSTGRES: 'Postgres', SYNTHETIC: 'Demo Lab' };
+const SOURCE_KIND: Record<string, string> = { CONNECTOR_HUB: 'Connector Hub', POSTGRES: 'Postgres', SYNTHETIC: 'Synthetic (not real data)' };
 
 interface Source {
   id: string;

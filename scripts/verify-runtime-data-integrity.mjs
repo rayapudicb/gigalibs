@@ -534,6 +534,18 @@ function applyRuntimeBaseline() {
     entries.set(key(entry.code, entry.file), entry);
   }
   if (baselineSince !== null) checkBaselineGrowth(entries, key);
+  // S5b (review): an entry tolerated as "locked" names its catalogue module, which must still be CONTAINED; reviving the
+  // module without removing its mock then fails here instead of keeping the mock tolerated.
+  const catalogue = readFileSync(join(repositoryRoot, 'packages/contracts/src/modules/catalog.generated.ts'), 'utf8');
+  const readinessOf = (moduleKey) =>
+    new RegExp(`key: '${moduleKey.replace(/[^a-z0-9-]/g, '')}',[\\s\\S]*?readiness: '([A-Z]+)'`).exec(catalogue)?.[1] ?? null;
+  for (const entry of entries.values()) {
+    if (entry.slice !== 'locked') continue;
+    const readiness = typeof entry.module === 'string' ? readinessOf(entry.module) : null;
+    if (readiness !== 'CONTAINED') {
+      violations.push(problem(`${entry.code} ${entry.file} is tolerated as locked, but module ${entry.module ?? '(none)'} is ${readiness ?? 'unknown'}`));
+    }
+  }
   let tolerated = 0;
   for (const [id, entry] of entries) {
     // An entry for a file this scope does not scan (packages/ outside --all-runtime) is judged only in the scope that does.

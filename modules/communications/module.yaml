@@ -38,7 +38,7 @@ spec:
       readiness: CONTAINED
       maturity: CONCEPT
       entitlementEligible: true
-      trialEligible: true
+      trialEligible: false
       requiredPermission: communications:read
       platformInspection: true
       reason: The TextFly communications product is a separate project and is not integrated into GigaLibs. Contained until its service is connected (WI-OI-120ak, owner decision D2a); without it the API answers 503.

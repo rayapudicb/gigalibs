@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { GET as getComm, POST as postComm } from '../app/api/communications/[...path]/route';
 import { verifiedSession } from '../lib/verified-session';
+import { isLockedModule } from './helpers/locked-modules';
 
 vi.mock('../lib/verified-session', () => ({
   verifiedSession: vi.fn(),
@@ -73,19 +74,30 @@ describe('Omnichannel Communications boundary', () => {
     expect(res.status).toBe(403);
   });
 
-  // The route keeps its existing platform-operator path (checked by the access rule, not changed here); through it,
-  // the answers below are the only ones the route gives.
-  describe('for a platform operator', () => {
-    beforeEach(() => {
+  // WI-OI-120ak (S5b, review L1): no bypass for platform operators or `*` holders while the module is contained.
+  it('refuses a platform operator and a `*` holder too while the module is contained', async () => {
+    vi.stubEnv('GIGALIBS_UAT_PREVIEW', 'enabled');
+    for (const context of [
+      { platformRoles: ['PLATFORM_ADMIN'], permissions: [] as string[] },
+      { platformRoles: [] as string[], permissions: ['*'] },
+    ]) {
       vi.mocked(verifiedSession).mockResolvedValue({
         response: null,
         context: {
           user: { id: 'usr-1', email: 'operator@example.com' },
-          tenant: { id: 'tenant-a', features: [] },
-          permissions: [],
-          platformRoles: ['PLATFORM_ADMIN'],
+          tenant: { id: 'tenant-a', features: ['communications-textfly'] },
+          ...context,
         },
       } as never);
+      const res = await getComm(get('channels'), params('channels'));
+      expect(res.status).toBe(403);
+    }
+  });
+
+  // The service answers below are reachable only once the module is revived (isLockedModule convention).
+  describe.skipIf(isLockedModule('communications-textfly'))('once the module is revived', () => {
+    beforeEach(() => {
+      vi.mocked(verifiedSession).mockResolvedValue(entitled());
     });
 
     it('answers 503 without its service, with no invented data', async () => {

@@ -2198,7 +2198,7 @@ export class ConfigurationStudioService {
 
   /**
    * WI-OI-107: the tenant's active industry and country packs, in the solution-layer format whichever scope they were
-   * installed in, for server-side readers such as Demo Lab.
+   * installed in, for server-side readers.
    */
   async activePacks(tenantId: string): Promise<{
     industry: { surfaceKey: string; publishedVersionId: string; activatedAt: Date; pack: IndustryPackV2 } | null;

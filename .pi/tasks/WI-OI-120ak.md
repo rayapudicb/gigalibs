@@ -1,7 +1,8 @@
 # WI-OI-120ak: Zero-mock sweep, the rest (plan v3 step 0.4)
 
-- **Status:** S1–S3 on UAT (release `85fdbcc`). S3b and S4 in release a4ac027 (owner deploy pending). S4b committed; S5 built (2026-10-15). Release S4b+S5 next, then S6, S7.
-  Then S5–S7. Decisions D1a–D7a approved 2026-10-15.
+- **Status:** S1–S5 on UAT (release `162508b`, owner deploy 2026-10-15; journey rerun pending). S5b, S6 and L2
+  built locally (2026-10-15). S7 is owner actions only (below). Decisions D1a–D7a approved
+  2026-10-15 (D1b replaced D1a).
 - **Follows:** WI-OI-120ah, WI-OI-120an and WI-OI-120ao (the Time screen, done).
 - **Work item:** WI-OI-120. Evidence goes in `.pi/work/WI-OI-120.md`.
 - **Size:** L, delivered as slices S1 to S7, each with its own commit, release, review and check.
@@ -491,3 +492,141 @@ Follow-ups are slice **S4b**, released with S5.
   - both audit modes and the growth check against HEAD pass;
   - all ten audits pass on HEAD plus S5's 36 files alone;
   - lint against HEAD: unchanged, except fewer findings in the drill-down explorer and the Analytics controller.
+
+## Security review of S4b and S5 / release 162508b (2026-10-15): approve with conditions
+
+No High or Medium findings; nothing blocks the deploy. Follow-ups, slice **S5b**, to land with S6 or S7:
+
+- **Correction, L1:** "nothing opens a CONTAINED module, not even platform inspection" (S5) is not true for one route.
+  `app/api/communications/[...path]/route.ts` still lets platform operators and `*` holders past the module lock, the
+  entitlement and the permission. Today they reach only the 503: compose never passes `COMMUNICATIONS_API_URL` to web.
+  Fix before Communications is ever connected (a condition of WI-OI-120ap): remove the bypass so the route uses
+  `canUseTenantModule` and `hasPermission`, as the other 12 CONTAINED routes do.
+- **L2:** the deployed migration's `gigalibs_analytics.reset_synthetic_facts` (SECURITY DEFINER) stays callable by the
+  analytics runtime role, and its tenant guard relies on a session setting. Fix: a forward migration that drops it,
+  after S7's cleanup.
+- **Correction, L3:** "`test/support/proof-farm.ts` is never shipped" (S5). It is never compiled or loaded, but the
+  image very likely contains it as inert TypeScript source: the package has no `files` field, and `pnpm deploy` copies
+  the package, as it already does for `scripts/`. Fix: `"files": ["dist"]` in the Analytics API package.
+- **Info, to fold into S5b, S6 or S7:**
+  - the app and studio layouts switch Currency on from feature and permission, ignoring the lock, so on UAT a
+    `multi-currency` workspace sends two refused calls from every page; gate them with `canUseTenantModule`;
+  - `rule-studio` and `communications-textfly` are CONTAINED but still `trialEligible: true`; set false;
+  - `canInspectPlatformModule` has no readiness check and no production caller; remove it;
+  - Demo Lab leftovers: `docs/runbooks/demo-lab-sandbox.md`, two comments, and the `SYNTHETIC: 'Demo Lab'` label in
+    `SourcesWorkbench.tsx`;
+  - **S7 must remove the 4 demo workspaces' synthetic facts and sources**, not only switch the feature off: they now
+    show in the place drill-down without the "synthetic" badge;
+  - `ModuleAccessGate` tells a CONTAINED module's user "not in your plan"; it should say the module is not available;
+  - the audit's `locked` label is not checked against the catalogue (record the module key and assert it is
+    CONTAINED); only the two record rules fingerprint whole literals; `balancedEnd` ignores comments and regex
+    literals (it affects only how much a fingerprint covers); CODEOWNERS for `scripts/` and `config/`.
+- **Verified by the review:**
+  - D1b is correct in both rules, and every caller was checked: the 13 CONTAINED API routes, the signed proxy's 7
+    gateways, the sidebar, the module gate and `/modules`;
+  - UAT loses 13 modules: 11 opened by the preview, plus Communications and Rule studio. None is used by the journey,
+    the module host or any REVIEW screen;
+  - D3a: all 8 Rule handlers check the lock first;
+  - D5a: no Demo Lab code path remains, and the approval bypass is gone;
+  - the audit passes in every mode, and the growth check passes against eight refs;
+  - `public/` is empty;
+  - the release matches 63dd8ad except the audit script's release-base section.
+
+## S5b, the third review's follow-ups (2026-10-15): built and verified locally (not in release 162508b)
+
+- **L1:** `/api/communications/*` no longer lets platform operators or `*` holders past the module lock, the entitlement
+  or the permission; it uses `canUseTenantModule` and `hasPermission`, as the other contained routes do. Test: both are
+  refused while the module is contained. The service-answer tests skip until the module is revived.
+- **L3:** the Analytics API package ships only `dist` (`"files": ["dist"]`), so the test-support generator stays out of
+  the image. At runtime it reads only an optional `.env`; migrations are copied into the image separately. Confirmed by
+  the next release build.
+- **Currency:** the app and studio layouts ask Currency only when `canUseTenantModule('multi-currency', …)` allows. It
+  is CONTAINED, so a workspace no longer sends two refused calls from every page on UAT.
+- **Trials:** `rule-studio` and `communications-textfly` are no longer trial-eligible (catalogue regenerated).
+- **Inspection:** `canInspectPlatformModule` is removed, with its tests. It had no readiness check and no production
+  caller, and its tests asserted the opposite of D1b.
+- **Access gate:** an unreleased module (CONTAINED, or PLANNED outside the preview) says "not available yet", never
+  "not in your plan" or "your role". New test: `module-access-gate.test.tsx`.
+- **Demo Lab leftovers:**
+  - `docs/runbooks/demo-lab-sandbox.md` is marked retired;
+  - two comments are corrected;
+  - the Sources label for synthetic sources reads "Synthetic (not real data)";
+  - WI-OI-011 (FR-13) is "Retired" in `WORK_ITEMS.md`.
+- **Audit:** a baseline entry tolerated as `locked` names its catalogue module, which must be CONTAINED. Proof:
+  pointing an entry at a released module fails.
+- **Left for later:** L2 (drop `reset_synthetic_facts`, after S7's cleanup); CODEOWNERS for `scripts/` and `config/`
+  (needs the owner's GitHub handles); fingerprints for the non-record rules; `balancedEnd` comment and regex awareness.
+- **Verification:** type-checks clean; 1,520 tests passed (149 files); both audit modes and the growth check pass; the
+  module manifests are current.
+
+## S6, the help panel (2026-10-15): built and verified locally (D7a; not in release 162508b)
+
+- **Help comes from the catalogue.** `lib/module-knowledge-registry.ts` no longer holds 27 hand-written entries. For a
+  page inside a module (the most specific route wins), the help gives:
+  - the catalogue's name, area and status line (`reason` in `module.yaml`), shown as written;
+  - the module's pages, from the generated menu;
+  - the rule the access check enforces, in words: "Only platform operators can open it" (Platform Control Tower);
+    "Nobody can open it until it is released" (CONTAINED); otherwise the permission and the plan, plus "Platform
+    operators can also open it inside a workspace" where the catalogue allows inspection;
+  - a limit for a module that is not released: in review; on the UAT instance only, for testing (PLANNED); not
+    released (CONTAINED).
+- **Gone:** internal ports, schemas, "Audit Standards", "immutable audit trail", "data isolation enforced at the
+  database layer", "biometric punches", and the fallback that claimed them for every other page. A page outside every
+  module now says "No help is written for this page yet." and nothing else.
+- **Kept as written:** `/gigaops/time` (checked against the Workforce API, WI-OI-120an) and `/connectors` (it repeats
+  what the page itself says, S3). The Time entry's two warnings moved from the rules to the limits.
+- **The drawer:** a section shows only when it has content; the green shield marks only rules the system enforces;
+  limits get a neutral icon. The "Operational Guide" badge, the numbered steps, the technical-specifications panel and
+  the "Tenant-Isolated Scope Active" footer are removed. Headings: "What this is", "What you can do here", "Rules the
+  system enforces", "Limits to know".
+- **Tests:** new `module-knowledge-registry.test.ts`:
+  - each module's help matches its catalogue fields and generated menu;
+  - the access sentence is checked against `canOpenPlatformModule` for every module (member, member without the
+    permission or the plan, operator, preview);
+  - the readiness limits match;
+  - the fallback claims nothing;
+  - the help's own words make none of the old claims. A module's status line is the catalogue's and is not checked
+    here: Dynamic Forms' says "immutable publication".
+
+  `gigaops-time-screen.test.ts` now reads the limits, and checks that the warnings are not listed as rules.
+- **Lint:** the drawer's findings go from 12 at HEAD to 4. All 4 were reported at HEAD too: the backdrop's click
+  handler (2), the route-change effect and the import order.
+- **Verification:**
+  - web type-check clean;
+  - web suite: 686 tests passed, 118 skipped (the locked modules' suites);
+  - whole repository, with S5b: 2,942 tests passed, 231 skipped, none failed (376 files);
+  - the audit and its growth check pass.
+
+## S7, re-scoped from UAT's data (2026-10-15, read-only)
+
+What UAT holds today changes how S7 is done, not what D5a and D6a decided:
+- **No synthetic data is left.** `gigalibs_analytics.operational_facts` is empty, and no source is SYNTHETIC; the Demo
+  Lab's 8 resets removed them. Nothing is deleted.
+- **D5a, the `demo-lab` switch:** the 4 workspaces are CANCELLED, with no members and no `demo-lab` entitlement rows.
+  Only the key in `tenants.features` is left, and no code reads it since S5. It is removed by one guarded statement,
+  after a backup. The statement changes exactly those 4 rows, or nothing.
+- **D6a, the brand workspaces** (Netflix Studios Europe, Paramount Pictures Corp, Warner Bros Discovery): ACTIVE, no
+  members. The product already does this, so no script is written. In Platform Control Tower, open the workspace,
+  give a reason, and press **Suspend Workspace** (`PATCH /platform/tenants/:id/status`). The action:
+  - writes a `STATUS_CHANGE` audit record with the reason;
+  - revokes the workspace's sessions;
+  - is undone with **Reactivate**.
+
+  Seeded rows stay as they are.
+- **Checked afterwards, read-only:** 3 SUSPENDED, 4 without `demo-lab`, 3 audit records, no active session in the 7.
+
+## L2, the synthetic-reset function dropped (2026-10-15): built and verified locally (not in release 162508b)
+
+- New forward migration `000030_drop_synthetic_reset.up.sql` drops `gigalibs_analytics.reset_synthetic_facts`.
+  Nothing calls it, and UAT holds no SYNTHETIC facts. On UAT any role can execute it (`=X`, public), it runs as its
+  superuser owner, and its tenant check trusts a session setting.
+- `refresh_place_rollup_statistics` (same migration 000015) stays, because place rollups call it. It is also
+  public-executable, but only runs `ANALYZE` on one table. Recorded as Info; not changed here.
+- The expected Analytics migration version is now 30 in `runtime-config.ts` and `compose.modules.local.yaml`. The
+  Analytics `.env.example` still says 29: the owner keeps `.env*` files closed to agents.
+- **Verification:**
+  - Analytics type-check clean; 368 Analytics tests pass;
+  - the real-database proof applies all 30 migrations to a throwaway PostgreSQL and passes;
+  - the audit and its growth check pass;
+  - UAT's ledger is at 29, so the next deploy runs migration 30.
+

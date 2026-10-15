@@ -1,28 +1,14 @@
 'use client';
 
-import {
-  getKnowledgeEntry,
-  type ModuleKnowledgeEntry,
-} from '@/lib/module-knowledge-registry';
-import {
-  BadgeCheck,
-  CheckCircle,
-  ChevronDown,
-  ChevronRight,
-  ExclamationCircle,
-  InformationCircle,
-  Server,
-  ShieldCheck,
-  XMark,
-} from '@medusajs/icons';
-import { Badge, Button, Heading, StatusBadge, Text } from '@medusajs/ui';
+import { getKnowledgeEntry, type ModuleKnowledgeEntry } from '@/lib/module-knowledge-registry';
+import { ExclamationCircle, InformationCircle, ShieldCheck, XMark } from '@medusajs/icons';
+import { Badge, Button, Heading, Text } from '@medusajs/ui';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 export function ModuleHeaderAndDrawer() {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
-  const [showTechSpec, setShowTechSpec] = useState(false);
 
   // Close drawer on route change
   useEffect(() => {
@@ -83,7 +69,7 @@ export function ModuleHeaderAndDrawer() {
               <div className="p-5 border-b border-ui-border-base flex items-start justify-between bg-ui-bg-subtle/50">
                 <div>
                   <Badge color="blue" size="small" className="gap-1 mb-1.5">
-                    <InformationCircle className="w-3 h-3" /> Module Knowledge Hub
+                    <InformationCircle className="w-3 h-3" /> Help
                   </Badge>
                   <Heading level="h2" className="text-lg">
                     {entry.businessTitle}
@@ -103,113 +89,93 @@ export function ModuleHeaderAndDrawer() {
 
               {/* Drawer Scrollable Content */}
               <div className="flex-1 overflow-y-auto p-5 space-y-6">
-                {/* 1. Plain Business Summary */}
+                {/* WI-OI-120ak (S6, D7a): the catalogue's own words; nothing here is claimed beyond it. */}
                 <div className="space-y-2">
-                  <Text size="xsmall" weight="plus" className="uppercase tracking-wider text-ui-fg-muted font-bold">
-                    Executive Purpose
+                  <Text
+                    size="xsmall"
+                    weight="plus"
+                    className="uppercase tracking-wider text-ui-fg-muted font-bold"
+                  >
+                    What this is
                   </Text>
                   <div className="p-4 rounded-lg bg-ui-bg-subtle border border-ui-border-base leading-relaxed text-sm text-ui-fg-base">
                     {entry.summary}
                   </div>
                 </div>
 
-                {/* 2. Key Actions to Perform */}
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <Text size="xsmall" weight="plus" className="uppercase tracking-wider text-ui-fg-muted font-bold">
-                      Key Actions to Perform
-                    </Text>
-                    <Badge size="small" color="green">
-                      Operational Guide
-                    </Badge>
-                  </div>
-                  <div className="space-y-2">
-                    {entry.actions.map((action, idx) => (
-                      <div
-                        key={idx}
-                        className="flex items-start gap-2.5 p-3 rounded-lg border border-ui-border-base bg-ui-bg-base hover:bg-ui-bg-subtle transition-colors"
-                      >
-                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-ui-bg-interactive text-[11px] font-bold text-ui-fg-on-color mt-0.5">
-                          {idx + 1}
-                        </span>
-                        <Text size="small" className="text-ui-fg-base">
-                          {action}
-                        </Text>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* 3. Operational Guardrails & Compliance */}
-                <div className="space-y-2">
-                  <Text size="xsmall" weight="plus" className="uppercase tracking-wider text-ui-fg-muted font-bold">
-                    Governance & Guardrails
-                  </Text>
-                  <div className="rounded-lg border border-ui-border-base divide-y divide-ui-border-base bg-ui-bg-base">
-                    {entry.guardrails.map((guard, idx) => (
-                      <div key={idx} className="flex items-start gap-2 p-3 text-xs text-ui-fg-subtle">
-                        <ShieldCheck className="w-4 h-4 text-ui-fg-success shrink-0 mt-0.5" />
-                        <span>{guard}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* 4. Collapsible Technical Specifications (for engineers/auditors) */}
-                {entry.technicalSpec && (
-                  <div className="pt-2 border-t border-ui-border-base">
-                    <button
-                      type="button"
-                      onClick={() => setShowTechSpec(!showTechSpec)}
-                      className="w-full flex items-center justify-between py-2 text-xs font-semibold text-ui-fg-muted hover:text-ui-fg-base transition-colors"
+                {entry.actions.length > 0 ? (
+                  <div className="space-y-3">
+                    <Text
+                      size="xsmall"
+                      weight="plus"
+                      className="uppercase tracking-wider text-ui-fg-muted font-bold"
                     >
-                      <span className="flex items-center gap-1.5">
-                        <Server className="w-3.5 h-3.5" /> Technical Specifications
-                      </span>
-                      {showTechSpec ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
-                    </button>
-
-                    {showTechSpec && (
-                      <div className="mt-2 p-3 rounded-lg bg-ui-bg-subtle border border-ui-border-base text-xs space-y-1.5 font-mono">
-                        <div className="flex justify-between">
-                          <span className="text-ui-fg-muted">Service Plane:</span>
-                          <span className="text-ui-fg-base">{entry.technicalSpec.serviceName}</span>
+                      What you can do here
+                    </Text>
+                    <div className="space-y-2">
+                      {entry.actions.map((action) => (
+                        <div
+                          key={action}
+                          className="flex items-start gap-2.5 p-3 rounded-lg border border-ui-border-base bg-ui-bg-base"
+                        >
+                          <Text size="small" className="text-ui-fg-base">
+                            {action}
+                          </Text>
                         </div>
-                        {entry.technicalSpec.port && (
-                          <div className="flex justify-between">
-                            <span className="text-ui-fg-muted">Loopback Port:</span>
-                            <span className="text-ui-fg-base">:{entry.technicalSpec.port}</span>
-                          </div>
-                        )}
-                        {entry.technicalSpec.schema && (
-                          <div className="flex justify-between">
-                            <span className="text-ui-fg-muted">PostgreSQL Schema:</span>
-                            <span className="text-ui-fg-base">{entry.technicalSpec.schema}</span>
-                          </div>
-                        )}
-                        {entry.technicalSpec.primaryStandards && (
-                          <div className="pt-1.5 border-t border-ui-border-base/50">
-                            <span className="text-ui-fg-muted block mb-1">Audit Standards:</span>
-                            <div className="flex flex-wrap gap-1 font-sans">
-                              {entry.technicalSpec.primaryStandards.map((std, i) => (
-                                <Badge key={i} size="small" color="grey">
-                                  {std}
-                                </Badge>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
+                      ))}
+                    </div>
                   </div>
-                )}
+                ) : null}
+
+                {entry.guardrails.length > 0 ? (
+                  <div className="space-y-2">
+                    <Text
+                      size="xsmall"
+                      weight="plus"
+                      className="uppercase tracking-wider text-ui-fg-muted font-bold"
+                    >
+                      Rules the system enforces
+                    </Text>
+                    <div className="rounded-lg border border-ui-border-base divide-y divide-ui-border-base bg-ui-bg-base">
+                      {entry.guardrails.map((guard) => (
+                        <div
+                          key={guard}
+                          className="flex items-start gap-2 p-3 text-xs text-ui-fg-subtle"
+                        >
+                          <ShieldCheck className="w-4 h-4 text-ui-fg-success shrink-0 mt-0.5" />
+                          <span>{guard}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+
+                {entry.limitations.length > 0 ? (
+                  <div className="space-y-2">
+                    <Text
+                      size="xsmall"
+                      weight="plus"
+                      className="uppercase tracking-wider text-ui-fg-muted font-bold"
+                    >
+                      Limits to know
+                    </Text>
+                    <div className="rounded-lg border border-ui-border-base divide-y divide-ui-border-base bg-ui-bg-base">
+                      {entry.limitations.map((limit) => (
+                        <div
+                          key={limit}
+                          className="flex items-start gap-2 p-3 text-xs text-ui-fg-subtle"
+                        >
+                          <ExclamationCircle className="w-4 h-4 text-ui-fg-muted shrink-0 mt-0.5" />
+                          <span>{limit}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
               </div>
 
               {/* Drawer Footer */}
-              <div className="p-4 border-t border-ui-border-base bg-ui-bg-subtle flex items-center justify-between">
-                <Text size="xsmall" className="text-ui-fg-muted">
-                  Tenant-Isolated Scope Active
-                </Text>
+              <div className="p-4 border-t border-ui-border-base bg-ui-bg-subtle flex items-center justify-end">
                 <Button size="small" variant="secondary" onClick={() => setIsOpen(false)}>
                   Close Hub
                 </Button>

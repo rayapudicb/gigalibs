@@ -24,13 +24,8 @@ export const tenantModulePermission: Readonly<Record<string, string>> = Object.f
   ),
 );
 
-const platformInspectionPaths = new Set<string>(
-  platformModuleCatalog.filter((module) => module.platformInspection).map((module) => module.route),
-);
-
-export function canInspectPlatformModule(path: string, platformRoles: readonly string[]): boolean {
-  return platformRoles.length > 0 && platformInspectionPaths.has(path);
-}
+// WI-OI-120ak (S5b): `canInspectPlatformModule` is removed. It let a platform role inspect a CONTAINED route with no
+// readiness check, and nothing in production called it; inspection goes through `canOpenPlatformModule` (D1b).
 
 /** The one permission rule (WI-OI-120q, `permissionMatches` in `@gigalibs/contracts`). */
 export function hasPermission(granted: readonly string[], required: string): boolean {

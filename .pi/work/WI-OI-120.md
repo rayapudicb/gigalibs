@@ -3732,3 +3732,77 @@ widening the card to fix the API faults the proof found.
   catalogue-approval bypass for demo workspaces. Its generator is kept as Analytics test support.
 - Verification: type-checks clean; 1,526 tests passed; all audits pass on HEAD plus S5; lint unchanged or better.
   Details: card WI-OI-120ak, "S5".
+- **Release `162508b`** = a4ac027 (never deployed) + S4b + S5 (code of 2697a69 and 63dd8ad; three-way apply, no
+  conflict; owner: "commit"). Files equal to 63dd8ad except the audit script (release base). Checks on the release:
+  type-checks clean in four layers; 1,498 tests passed; two control-plane suites fail at import for want of
+  `CONTROL_PAYLOAD_KEY_VERSION`, identically on a4ac027 (pre-existing, environment); audits as before (TextFly only).
+  Identity `local-20261015T044831Z-162508b78930-d6a5381e0b1c`. One deploy takes UAT from 85fdbcc to 162508b. Builds
+  and an independent Security review started; the deploy retarget now supersedes an undeployed release (dry run 33/33;
+  an unrelated predecessor is refused).
+
+## WI-OI-120ak release 162508b ready; S5b and S6 built (2026-10-15; owner: "proceed")
+
+- **Release `162508b` ready:**
+  - five builds passed (04:48Z to about 06:09Z);
+  - backup `gigalibs_backup_20261015_060956Z` of `uat-postgres` (running 85fdbcc);
+  - deploy tool retargeted from 85fdbcc, 33 of 33 tests;
+  - `--check` passed, every image and the backup verified.
+
+  Waiting for the owner's deploy. Security review: approve with conditions, which became S5b.
+- **S5b** (the review's follow-ups, not in 162508b):
+  - L1: the Communications route's operator bypass is removed;
+  - L3: the Analytics API package ships only `dist`;
+  - Currency is gated by the lock;
+  - `rule-studio` and `communications-textfly` are no longer trial-eligible;
+  - `canInspectPlatformModule` is removed;
+  - the access gate says "not available yet" for unreleased modules;
+  - Demo Lab leftovers are removed;
+  - `locked` baseline entries are checked against the catalogue.
+
+  L2 waits for S7.
+- **S6** (D7a, not in 162508b): the help panel is built from the module catalogue (name, area, status line, generated
+  pages, and the access rule in words, checked against `canOpenPlatformModule`). The 27 hand-written entries and their
+  unchecked claims are gone. `/gigaops/time` and `/connectors` are kept as written. A page outside every module claims
+  nothing.
+- **Verification:** web type-check clean; web suite 686 passed and 118 skipped; whole repository 2,942 passed, 231
+  skipped, none failed; the audit and growth check pass.
+  Details: card WI-OI-120ak, "S5b" and "S6".
+
+## WI-OI-120ak release 162508b on UAT (2026-10-15, owner-run)
+
+- **Deploy:** the owner ran `deploy-uat.sh --deploy --backup gigalibs_backup_20261015_060956Z`. Images and backup were
+  verified; `uat-postgres` was healthy with 546 tables; all 11 migration jobs and all 11 services passed; the smoke
+  test passed (`/api/health/ready` and `/login` return 200).
+- **Read-only check afterwards:**
+  - all 11 services run `local-20261015T044831Z-162508b78930-d6a5381e0b1c`, healthy, with no restarts;
+  - the UAT preview setting is `enabled` (D1b: PLANNED modules only);
+  - the web bundle (955 files) has none of the removed texts: the delivery-success card, "Real-time sync", the
+    Communications store's invented contact, `demo-lab`, `sample-farm`. The S4 503 text is present. `public/demo` is
+    gone, and `/demo/index.html` and `/platform-admin/demo-lab` answer 404;
+  - the control plane image (234 files) has no Demo Lab code;
+  - 0 error lines in 20 minutes from web, the API, Analytics, the Connector Hub and the kernel worker;
+  - the database is still 546 tables; 4 workspaces still have `demo-lab` switched on (S7 cleans them up).
+- **Known, and fixed in S5b, not in this release:**
+  - the Sources label `SYNTHETIC: "Demo Lab"`;
+  - the Analytics image still holds `test/support/proof-farm.ts` and two proof scripts as inert TypeScript (review
+    L3; `"files": ["dist"]`).
+- **Next:** the owner reruns the journey (last: 8w9h29, 2 CMMS blockers known).
+
+## Findings while answering the owner's questions (2026-10-15, read-only)
+
+- **Disk guard retention (new, for plan step 0.8 "Tooling now"):** `docker-disk-guard.sh` keeps the newest
+  `GIGALIBS_KEEP_IMAGE_VERSIONS` (2) builds by creation time, not the running release and the one it replaced. Its
+  dry run today would remove all of `85fdbcc` (the rollback for `162508b`) and keep `a4ac027`, which was never
+  deployed. 74 GiB is free and the guard cleans automatically below 60 GiB, so a coming build could trigger it.
+  Until it is fixed, builds run with `GIGALIBS_KEEP_IMAGE_VERSIONS=3`.
+- **Docker disk:** images 115 GB (77 GB reclaimable, 11 releases kept); build cache 79 GB (the 20 GB trim of step 0.8
+  still does not hold). The web image is 2.23 GB on disk for 580 MB of files: almost all of it is `node_modules`, with
+  Next's SWC compiler (129 MB), two lucide-react versions, TypeScript, Playwright, and the `__tests__`, `docs` and
+  `scripts` folders. Next.js `standalone` output is a candidate card.
+- **S7 data on UAT:**
+  - `gigalibs_analytics.operational_facts` is empty, and no source is SYNTHETIC. The Demo Lab's 8 resets left
+    nothing, so S7 has no facts or sources to delete.
+  - The 4 `demo-lab` workspaces are CANCELLED, with no members and no `demo-lab` entitlement rows; only the feature
+    key is left in `tenants.features`.
+  - The 3 brand workspaces (Netflix Studios Europe, Paramount Pictures Corp, Warner Bros Discovery) are ACTIVE, with
+    no members. Seeded rows (invoices, budgets, configuration and others) and 4 sessions reference the 7 workspaces.

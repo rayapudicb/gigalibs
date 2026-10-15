@@ -24,24 +24,15 @@ async function handleCommunications(request: Request, context: RouteContext): Pr
   const method = request.method.toUpperCase();
   const pathSegments = (await context.params).path;
 
-  const hasPlatformAuthority = session.context.platformRoles.length > 0;
-  const isSuperAdmin = session.context.permissions.includes('*');
-
-  // Authorize communications-textfly module access
-  if (
-    !hasPlatformAuthority &&
-    !isSuperAdmin &&
-    !canUseTenantModule(
-      'communications-textfly',
-      new Set(session.context.tenant.features),
-      session.context.permissions,
-    )
-  ) {
+  // WI-OI-120ak (S5b, Security review L1): the module lock, the entitlement and the permission apply to everyone, as on
+  // the other contained module routes; platform operators and `*` holders no longer bypass them (`hasPermission` already
+  // honours `*`).
+  if (!canUseTenantModule('communications-textfly', new Set(session.context.tenant.features), session.context.permissions)) {
     return problem(403, 'Omnichannel Communications module is not enabled for this tenant.');
   }
 
   const required = method === 'GET' ? 'communications:read' : 'communications:write';
-  if (!hasPlatformAuthority && !isSuperAdmin && !hasPermission(session.context.permissions, required)) {
+  if (!hasPermission(session.context.permissions, required)) {
     return problem(403, `Permission ${required} is required.`);
   }
 

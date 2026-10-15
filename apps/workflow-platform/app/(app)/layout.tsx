@@ -6,7 +6,7 @@ import { GeospatialPlacesProvider } from '@/components/geospatial/GeospatialPlac
 import { AppI18nProvider } from '@/components/i18n/AppI18nProvider';
 import { ModuleAccessGate } from '@/components/navigation/ModuleAccessGate';
 import { ModuleHeaderAndDrawer } from '@/components/navigation/ModuleHeaderAndDrawer';
-import { hasPermission } from '@/lib/module-access';
+import { canUseTenantModule, hasPermission } from '@/lib/module-access';
 import { uatPreviewEnabled } from '@/lib/uat-module-status';
 import { verifiedSession } from '@/lib/verified-session';
 import { cookies } from 'next/headers';
@@ -68,9 +68,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     uatPreview,
   };
   // WI-OI-120n: the shell asks Currency for rates and preferences only when the workspace has it and the person may read
-  // it (a trial workspace otherwise sent two refused calls from every page).
+  // it (a trial workspace otherwise sent two refused calls from every page). WI-OI-120ak (S5b): and only while the module
+  // may be used at all; Currency is CONTAINED, so it stays locked even on UAT.
   const currencyEnabled =
-    Boolean(session.context.tenant?.features?.includes('multi-currency')) && hasPermission(session.context.permissions, 'currency:read');
+    canUseTenantModule('multi-currency', new Set(session.context.tenant?.features ?? []), session.context.permissions, { uatPreview }) &&
+    hasPermission(session.context.permissions, 'currency:read');
 
   return (
     <AppI18nProvider initialLocale={initialLocale}>

@@ -1,5 +1,9 @@
 # Demo Lab & Ephemeral Workspace Sandbox Runbook
 
+> **Retired (2026-10-15).** The Demo Lab is removed from the product by WI-OI-120ak (owner decision D5a, zero-mock
+> sweep): no screen, API or service creates demo workspaces or synthetic data any more. This runbook is kept as history
+> only; nothing in it can be run.
+
 Owner: Product Requirements + Solution Architecture  
 Work item: WI-OI-011  
 Standard: FR-13, NFR-SEC-001, NFR-DATA-004

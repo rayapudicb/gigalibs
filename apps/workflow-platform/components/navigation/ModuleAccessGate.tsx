@@ -28,6 +28,28 @@ export function ModuleAccessGate({ access, children }: { access: ModuleAccessCon
   const module = moduleForPath(pathname);
   if (!module || canOpenPlatformModule(module, access)) return <>{children}</>;
   const bought = Boolean(access.tenant?.features.includes(module.key));
+  // WI-OI-120ak (S5b): a module that is not released (CONTAINED, or PLANNED outside the UAT preview) cannot be opened in
+  // any workspace; saying "not in your plan" or "your role" would be untrue.
+  const unreleased = module.readiness !== 'AVAILABLE' && module.readiness !== 'REVIEW';
+  if (unreleased) {
+    return (
+      <section className="mx-auto max-w-xl p-8" aria-labelledby="module-access-title">
+        <div className="rounded-lg border border-ui-border-base bg-ui-bg-base p-6">
+          <h1 id="module-access-title" className="text-lg font-semibold text-ui-fg-base">
+            {`${module.navigationLabel} is not available yet`}
+          </h1>
+          <p className="mt-2 text-sm text-ui-fg-subtle">
+            This module is not released, so it cannot be opened in any workspace. It becomes available when it is.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-3 text-sm">
+            <Link className="rounded-md border border-ui-border-base px-3 py-1.5 text-ui-fg-base hover:bg-ui-bg-base-hover" href="/modules">
+              All modules
+            </Link>
+          </div>
+        </div>
+      </section>
+    );
+  }
   return (
     <section className="mx-auto max-w-xl p-8" aria-labelledby="module-access-title">
       <div className="rounded-lg border border-ui-border-base bg-ui-bg-base p-6">
