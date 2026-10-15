@@ -13,6 +13,7 @@ import {
   type RelayConfig,
   loadOutboxRetentionConfig,
   loadRelayConfig,
+  createRelayHealthController,
 } from '@gigalibs/module-sdk';
 import { Inject, Injectable, Module } from '@nestjs/common';
 import { DatabaseService, type HubDefinerFunction } from '../database/database.service.js';
@@ -80,6 +81,8 @@ export class HubOutboxRetention extends OutboxRetentionSweeper {
 }
 
 @Module({
+  // WI-OI-120as: GET api/connectors/v1/health/relays, beside the hub's own health routes.
+  controllers: [createRelayHealthController('api/connectors/v1/health')],
   providers: [
     { provide: HUB_RELAY_CONFIG, useFactory: () => loadHubRelayConfig() },
     { provide: HUB_GEOSPATIAL_RELAY_CONFIG, useFactory: () => loadHubGeospatialRelayConfig() },

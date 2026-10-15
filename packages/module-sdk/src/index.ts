@@ -109,6 +109,17 @@ export {
   type RecordValues,
 } from './record-dispatcher.js';
 export {
+  createRelayHealthController,
+  RelayHealthController,
+  type RelayHealth,
+  type RelayHealthSnapshot,
+  type RelayState,
+  registerRelayHealth,
+  relayHealthReport,
+  relayState,
+  resetRelayHealth,
+} from './relay-health.js';
+export {
   DEFAULT_IDEMPOTENCY_RETENTION_DAYS,
   ModuleIdempotencyStore,
   RECORD_IDEMPOTENCY_TABLE,

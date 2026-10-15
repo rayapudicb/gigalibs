@@ -169,8 +169,12 @@ Step 0.8, the journey `7i0v43` follow-ups, routed by where they belong:
   Geospatial access (403).
 - **With X1 (3.9):** internal codes such as `TENANT_ADMIN` are shown; 37 layout and 17 accessibility findings.
 - **Added 2026-10-15** (owner decisions 0.7g and "proceed" on two-level master data):
-  - [WI-OI-120as](../../.pi/tasks/WI-OI-120as.md): the cross-module relays have delivered nothing since 2026-10-01
-    (carded; awaits approval). Recommended first, since CMMS staffing (1.1, 1.3) depends on it.
+  - [WI-OI-120as](../../.pi/tasks/WI-OI-120as.md): cross-module relays. Investigated 2026-10-15: no stall (no routed
+    event since 2026-10-01; the dead letters are certification test data). Relay health built
+    (`v1/health/relays`).
+  - [WI-OI-120aw](../../.pi/tasks/WI-OI-120aw.md): suspend the certification and test workspaces on UAT (57
+    certification and 61 journey or test workspaces are active or on trial), from a plan the owner approves, and
+    delete the dead letters of tenants that no longer exist.
   - [WI-OI-120at](../../.pi/tasks/WI-OI-120at.md): retire the Master Data Hub prototype.
   - [WI-OI-120au](../../.pi/tasks/WI-OI-120au.md): one "Master data" menu, with a platform section (locked) and a
     workspace section linking each module's own screen.
@@ -305,6 +309,13 @@ the Accounting reviewer.
 | 5B | Procure to pay | T4 parties everywhere → T5 one stock authority → R5 Inventory, Procurement, Finance → M-PROC, with 3-way match → M-SPEND Spend into AP → E6 budget control → E4 relays |
 | 5C | Quote to cash | M-TAX Tax (tax on order and invoice lines) → T7 invoice owners → M-ORD → M-AR0 → M-AR, with FR-17 event billing (WI-OI-040) → M-TRE treasury → R5 Orders, AR → E4 relays |
 | 5D | Record to report | M-COST → M-BUD → T6 asset link → M-FA → M-CLOSE → T12 legal entities → M-CONS |
+
+
+**Release condition for every module-host module (WI-OI-120as B, owner 2026-10-15).** Finance, Inventory, Orders,
+Procurement and Catalogue have relay lease functions in their schemas, but no relay in code and no relay settings on
+UAT. Their 33 leased and 18 pending rows from 2026-10-04 to 10-06 predate the cutover. A module that publishes facts
+is released only with its relay built on the module SDK's `OutboxRelay`, configured on UAT, and visible in
+`v1/health/relays`, or with a recorded "no consumer yet".
 
 ### Phase 6. Every remaining module, one at a time (M7)
 

@@ -4051,3 +4051,27 @@ widening the card to fix the API faults the proof found.
   - WI-OI-120av: platform reference data (start of Phase 5A, before M-CUR).
 
   Placed in plan v3 (step 0.8's added list; the 5A row).
+
+## WI-OI-120as investigated (2026-10-15, read-only; owner: "approved 120as")
+
+- **Correction: the relays are not stalled.** Each relay leases only the event types routed to its peer, and for
+  every relay the routed-and-pending count is 0. Nothing routed has happened since 2026-10-01 (no CMMS staffing
+  requests, node changes or positions).
+- **The pending rows are unrouted facts by design;** retention sweeps them after 30 days.
+- **The dead letters are all certification test data:**
+  - Geospatial 980: `wi-oi-063-cert-*` tenants that have no workspace row;
+  - Workforce 122: tenants that no longer exist, and `wi-oi-065-web-*` test workspaces.
+
+  None is replayed.
+- **The module host has no relay on UAT;** this matters when those modules are released.
+- **What is really missing:** relay health. A relay logs nothing on an empty pass.
+- **UAT holds 57 ACTIVE certification workspaces** (329 workspaces in all).
+- **Re-scoped proposals:** relay health (small code); module-host relay configuration as a release condition; a
+  proof-data clean-up card. Plan v3 step 0.8 updated.
+- **WI-OI-120as A, B, C (owner: "approved A, B, C"):**
+  - **A:** relay health. The module SDK records each relay's passes; `v1/health/relays` reports every relay and
+    answers 503 when a configured one is stalled. Mounted in Workforce, CMMS and Geospatial, and in Connector Hub at
+    `api/connectors/v1/health/relays`. Tests: 5 unit tests and 1 HTTP test; the whole repository passes 2,972 tests.
+  - **B:** plan v3 Phase 5 makes a built, configured, visible relay a release condition for module-host modules.
+  - **C:** carded as WI-OI-120aw, a UAT test-workspace clean-up by an owner-approved plan, suspension through the
+    product path, and dead letters of non-existent tenants deleted.

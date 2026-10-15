@@ -1,6 +1,7 @@
-# WI-OI-120as: Cross-module relays have delivered nothing since 2026-10-01
+# WI-OI-120as: Cross-module relays: no stall found; make their health visible
 
-- **Status:** Carded, not started (found 2026-10-15 in WI-OI-120ar S2, read-only). Shown to the owner before it starts.
+- **Status:** Approved (owner, 2026-10-15: "approved 120as", then "approved A, B, C"). Investigated: no stall. A built
+  locally; B in plan v3; C carded as WI-OI-120aw.
 - **Plan v3:** belongs with step 0.8 (the journey follow-ups), before Phase 1. CMMS staffing (1.1, 1.3) depends on it.
 - **Work item:** WI-OI-120. Evidence goes in `.pi/work/WI-OI-120.md`.
 - **Size:** S to M, depending on the cause.
@@ -81,3 +82,88 @@ outbox rows held LEASED since 2026-10-04, and never published.
 - [ ] The backlog and dead letters are replayed or discarded by the owner's choice, with counts recorded.
 - [ ] A stalled relay shows up in health or metrics.
 - [ ] Journey rerun.
+
+## Investigation (2026-10-15, read-only): the relays are not stalled
+
+The first reading ("delivered nothing since 2026-10-01", WI-OI-120ar S2) was wrong about the cause.
+
+- **Each relay leases only the event types routed to its peer.** The rules are in its definer function on UAT:
+
+  | Relay | Function | Leases |
+  | --- | --- | --- |
+  | Workforce → CMMS | `relay_lease_cmms_events` | Work-requirement and booking events whose `sourceType` is `CMMS_WORK_ORDER` |
+  | Workforce → Analytics | `relay_lease_analytics_positions` | Position facts |
+  | CMMS → Workforce | `relay_lease_workforce_events` | `CMMS_STAFFING_REQUESTED_V1` and `CMMS_STAFFING_CANCELLED_V1` |
+  | Geospatial → Analytics | `relay_lease_analytics_places` | `SpatialNodeChangedV1` |
+
+- **Routed and pending right now: 0 for every relay.** Nothing routed has happened since 2026-10-01:
+  - 22 CMMS work orders were created, but no staffing requests;
+  - no node changes and no positions.
+- **The thousands of PENDING rows are unrouted facts, by design:**
+  - punches, resources and time events;
+  - the 210 bookings, all `MANUAL`;
+  - CMMS work-order events;
+  - Geospatial node-type events.
+
+  No consumer is routed for them. The retention sweeper deletes them after 30 days (from about 2026-10-26).
+- **The dead letters are certification test data, so none is to be replayed (zero mock):**
+  - **Geospatial 980** (HTTP 401, 2026-09-26): tenant IDs `wi-oi-063-cert-a-20260926T…`, which have no workspace
+    row.
+  - **Workforce 122:**
+    - 114 belong to tenants that no longer exist;
+    - 8 belong to `wi-oi-065-web-…` test workspaces.
+    - The 61 `…POSITION_CREATED_V1` also have a pre-2026-10-02 shape that Analytics' strict schema refuses.
+  - They stay as dead letters (retention keeps dead letters), or go with the proof-data clean-up below.
+- **The module host has no relay configured on UAT** (Finance, Inventory, Orders, Procurement). 33 leased and 18
+  pending rows date from 2026-10-04 to 10-06, before the cutover. Their leases have expired, so a configured relay
+  would pick them up. This matters when those modules are released; it is noted for M-FIN1, M-INV1, M-ORD and M-PROC.
+- **What is really missing:** a relay logs nothing on an empty pass, so "running with nothing to do" cannot be told
+  from "not running". That is how this looked like a stall.
+- **Wider finding, for the owner's proof-data decision:** UAT has 329 workspaces. 57 certification workspaces are
+  still ACTIVE: `wi-oi-038` (6), `wi-oi-063` (22), `wi-oi-064` (8), `wi-oi-064c` (10), `wi-oi-064e` (4), `wi-oi-065`
+  (7). Many trial and journey workspaces are active as well.
+
+## Re-scoped work (for the owner)
+
+1. **Relay health (code, small).** Each relay records its last pass and its last delivery, and a routed backlog
+   older than a threshold shows in `/health` or the metrics (O3, step 1.19, can alert on it). This also proves the
+   relays run.
+2. **Module-host relays:** configured when those modules are released, as a condition on their cards.
+3. **Dead letters:** none replayed; they go with the proof-data clean-up.
+4. **New card, if the owner wants it:** an owner-run, backed-up clean-up of certification and old test workspaces on
+   UAT. Suspend or cancel them, as for the brand workspaces; the old decision D5 on historical proof data.
+
+## A, relay health (2026-10-15): built and verified locally
+
+- **Module SDK** (`relay-health.ts`):
+  - each `OutboxRelay` registers itself on start-up and records its last finished pass (also when it leased
+    nothing), what it leased, its deliveries and its last failure (code and time);
+  - its state is `not-configured`, `starting`, `running`, or `stalled` (no finished pass for three intervals plus a
+    30-second grace);
+  - `createRelayHealthController(basePath)` answers `GET <basePath>/relays` with every relay in the process, and 503
+    when any configured relay is stalled;
+  - it carries no tenant data, and readiness is unchanged, so the deploy smoke test is unaffected.
+- **Mounted in:**
+  - Workforce, CMMS and Geospatial at `v1/health/relays`;
+  - Connector Hub at `api/connectors/v1/health/relays`, beside its own health routes.
+
+  The module host runs no relay yet (B).
+- **Tests:**
+  - `relay-health.test.ts` (5): the state rules; real passes (an empty pass reads as running, a delivery counts, a
+    400 is recorded); a missing target is not-configured, not a fault; 503 when stalled;
+  - the hub's HTTP test (`relay-health-route.spec.ts`): 200 with the relays, and 503 when one is stalled.
+- **Verification:**
+  - type-checks clean (SDK and the four services);
+  - 649 tests pass across them;
+  - whole repository: 2,972 tests passed, 234 skipped, none failed (381 files); the audits and the pin check pass.
+
+## B, release condition (2026-10-15)
+
+Plan v3 Phase 5 states it: a module-host module that publishes facts is released only with its relay built on
+`OutboxRelay`, configured on UAT and visible in `v1/health/relays`, or with a recorded "no consumer yet".
+
+## C (2026-10-15)
+
+Carded as [WI-OI-120aw](WI-OI-120aw.md): clean up certification and test workspaces on UAT. The dead letters go with
+it.
+

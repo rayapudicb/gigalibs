@@ -4,6 +4,7 @@ import {
   loadIdempotencyRetentionDays,
   ModuleIdempotencyStore,
   RECORD_DISPATCHER,
+  RelayHealthController,
 } from '@gigalibs/module-sdk';
 import { GigaOpsAuthorizationGuard } from './auth/authorization.js';
 import { workforceRecordDispatcher } from './resources/workforce-record-adapters.js';
@@ -66,6 +67,8 @@ const GigaOpsRecordController = createRecordController({ guard: GigaOpsAuthoriza
 @Module({
   controllers: [
     WorkforceHealthController,
+    // WI-OI-120as: GET v1/health/relays for its two relays.
+    RelayHealthController,
     WorkforceRuntimeController,
     WorkforceResourcesController,
     WorkforceCapabilitiesController,

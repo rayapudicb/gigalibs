@@ -2,6 +2,7 @@ import { signRelayToken } from '@gigalibs/auth-core';
 import { Logger, type OnApplicationBootstrap, type OnApplicationShutdown } from '@nestjs/common';
 import type pg from 'pg';
 import type { RelayConfig } from './relay-config.js';
+import { registerRelayHealth } from './relay-health.js';
 
 const BATCH = 20;
 const LEASE_SECONDS = 60;
@@ -53,6 +54,14 @@ export class OutboxRelay<F extends string = string>
   private timer?: NodeJS.Timeout;
   private running = false;
   private stopping = false;
+  // WI-OI-120as: what `GET v1/health/relays` reports for this relay.
+  private readonly startedAt = Date.now();
+  private lastPassAt: string | null = null;
+  private lastPassLeased = 0;
+  private lastDeliveredAt: string | null = null;
+  private deliveredSinceStart = 0;
+  private lastFailureAt: string | null = null;
+  private lastFailureCode: string | null = null;
 
   constructor(
     private readonly relayDatabase: RelayDatabase<F>,
@@ -61,6 +70,18 @@ export class OutboxRelay<F extends string = string>
   ) {}
 
   onApplicationBootstrap(): void {
+    registerRelayHealth(`${this.relayOptions.source} -> ${this.relayOptions.audience}`, () => ({
+      relay: `${this.relayOptions.source} -> ${this.relayOptions.audience}`,
+      configured: Boolean(this.relayConfig.outbound),
+      intervalMs: this.relayConfig.outbound ? this.relayConfig.intervalMs : null,
+      startedAt: this.startedAt,
+      lastPassAt: this.lastPassAt,
+      lastPassLeased: this.lastPassLeased,
+      lastDeliveredAt: this.lastDeliveredAt,
+      deliveredSinceStart: this.deliveredSinceStart,
+      lastFailureAt: this.lastFailureAt,
+      lastFailureCode: this.lastFailureCode,
+    }));
     if (!this.relayConfig.outbound) {
       this.logger.log(this.relayOptions.notConfiguredMessage);
       return;
@@ -85,6 +106,7 @@ export class OutboxRelay<F extends string = string>
     try {
       // biome-ignore lint/suspicious/noExplicitAny: rows come from the definer function's SETOF outbox row.
       const rows = await this.relayDatabase.relayCall<any>(leaseFunction, [BATCH, LEASE_SECONDS]);
+      this.lastPassLeased = rows.length;
       // The lease takes at most one pending fact per aggregate; order the batch by when facts happened.
       rows.sort(
         (left, right) =>
@@ -122,13 +144,23 @@ export class OutboxRelay<F extends string = string>
           outcome.ok ? 0 : retrySeconds,
           MAX_ATTEMPTS,
         ]);
-        if (outcome.ok) published += 1;
-        else
+        if (outcome.ok) {
+          published += 1;
+          this.deliveredSinceStart += 1;
+          this.lastDeliveredAt = new Date().toISOString();
+        } else {
+          this.lastFailureAt = new Date().toISOString();
+          this.lastFailureCode = outcome.code;
           this.logger.warn(
             `Relay of ${row.event_type} ${row.id} failed: ${outcome.code}${outcome.permanent ? ' (dead letter)' : ''}.`,
           );
+        }
       }
+      // A pass counts as done only when it ran to the end, whether or not anything was routed.
+      this.lastPassAt = new Date().toISOString();
     } catch (error) {
+      this.lastFailureAt = new Date().toISOString();
+      this.lastFailureCode = 'RELAY_PASS_FAILED';
       this.logger.error(
         'The outbox relay pass failed.',
         error instanceof Error ? error.stack : undefined,

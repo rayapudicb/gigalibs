@@ -72,6 +72,8 @@
 
   Carded as **[WI-OI-120as](WI-OI-120as.md)** for step 0.8. Replaying or discarding the dead letters waits for its
   cause.
+  **Corrected 2026-10-15 (WI-OI-120as, read-only):** not a stall. No routed event has happened since 2026-10-01; the
+  pending rows are unrouted by design, and the dead letters are certification test data (not to be replayed).
 - **`platform-rbac`** (untracked):
   - no source and no `package.json`, only build output (`dist/`, `.turbo`, `tsbuildinfo`, 2026-09-29) and an
     `apps/api/.env`, which was not opened;

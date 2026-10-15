@@ -1,3 +1,4 @@
+import { RelayHealthController } from '@gigalibs/module-sdk';
 import { Module } from '@nestjs/common';
 import { GeospatialAuthorizationGuard } from './auth/authorization.js';
 import { GeospatialConfigProvider } from './config.provider.js';
@@ -13,6 +14,8 @@ import { GEOSPATIAL_RELAY_PROVIDERS } from './relay/analytics-relay.js';
 
 @Module({
   controllers: [
+    // WI-OI-120as: GET v1/health/relays for the Analytics relay.
+    RelayHealthController,
     GeospatialHealthController,
     GeospatialRuntimeController,
     SpatialNodeTypesController,

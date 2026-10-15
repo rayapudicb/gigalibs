@@ -29,7 +29,7 @@ import { ClassificationsController } from './classifications/classifications.con
 import { ClassificationsService } from './classifications/classifications.service.js';
 import { ReliabilityModule } from './reliability/reliability.module.js';
 
-import { createRecordController, RECORD_DISPATCHER } from '@gigalibs/module-sdk';
+import { createRecordController, RECORD_DISPATCHER, RelayHealthController } from '@gigalibs/module-sdk';
 import { cmmsRecordDispatcher } from './work-orders/cmms-record-adapters.js';
 
 const CmmsRecordController = createRecordController({ guard: CmmsAuthorizationGuard, readPermission: 'cmms:read' });
@@ -44,6 +44,8 @@ const CmmsRecordController = createRecordController({ guard: CmmsAuthorizationGu
   imports: [DatabaseModule, ReliabilityModule],
   controllers: [
     HealthController,
+    // WI-OI-120as: GET v1/health/relays for the Workforce relay.
+    RelayHealthController,
     AssetsController,
     EamSpacesController,
     ClassificationsController,
