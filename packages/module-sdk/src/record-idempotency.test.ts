@@ -58,7 +58,7 @@ describe('idempotency answer retention', () => {
     expect(queries[0]?.text).toMatch(
       /state = 'COMPLETED' AND completed_at < now\(\) - make_interval\(days => \$2\)/,
     );
-    expect(queries[0]?.text).toMatch(/LIMIT \$3/);
+    expect(queries[0]?.text).toMatch(/LIMIT \$3\s+FOR UPDATE SKIP LOCKED/);
     expect(queries[0]?.values).toEqual(['tenant-a', 14, 500]);
     expect(queries[1]?.text).toMatch(/INSERT INTO record_idempotency/);
   });

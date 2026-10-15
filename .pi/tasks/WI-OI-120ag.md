@@ -56,3 +56,9 @@ Workforce had the same gap and closed it in 481af92 (WI-OI-120u, B1).
 - **Verification:** CMMS type-check clean; 265 CMMS tests pass (33 files). Lint on the guard is unchanged from HEAD
   (3 errors, 1 warning, all pre-existing); the new spec is clean.
 
+## Release note (2026-10-15)
+
+Not in the step 0.5 release. The release branch's CMMS has no record routes yet: no `createRecordController`, no
+windows, not in the conversion check. They arrive with the CMMS work of plan v3 step 1.3, so UAT has nothing for this
+guard to protect, and the new test needs those routes. 120ag ships with them.
+

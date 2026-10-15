@@ -142,6 +142,30 @@ describe.skipIf(!adminUrl)('record idempotency store on PostgreSQL (isolated)', 
     expect(await store.claim('tenant-a', recent, 'create:x', 'e'.repeat(64))).toMatchObject({ state: 'COMPLETED' });
   });
 
+  // Security review of d17db37 (Low 3): rows another transaction holds are skipped, so a claim never waits on them.
+  it('does not wait for an expired answer another transaction is holding', async () => {
+    const held = randomUUID();
+    await store.claim('tenant-a', held, 'create:x', '7'.repeat(64));
+    await store.complete('tenant-a', held, { id: held });
+    await admin.query(`UPDATE proof_records.record_idempotency SET completed_at = now() - interval '9 days' WHERE idempotency_key = $1`, [held]);
+    const locker = new pg.Client({ connectionString: adminUrl });
+    await locker.connect();
+    try {
+      await locker.query('BEGIN');
+      await locker.query('SELECT 1 FROM proof_records.record_idempotency WHERE idempotency_key = $1 FOR UPDATE', [held]);
+      const started = Date.now();
+      expect(await store.claim('tenant-a', randomUUID(), 'create:x', '8'.repeat(64))).toBeNull();
+      expect(Date.now() - started).toBeLessThan(2000);
+      await locker.query('ROLLBACK');
+      // Once released, the next claim removes it.
+      await store.claim('tenant-a', randomUUID(), 'create:x', '8'.repeat(64));
+      const left = await admin.query('SELECT 1 FROM proof_records.record_idempotency WHERE idempotency_key = $1', [held]);
+      expect(left.rowCount).toBe(0);
+    } finally {
+      await locker.end();
+    }
+  });
+
   it('keeps answers for the configured window', async () => {
     const longer = new ModuleIdempotencyStore(tenantDatabase as never, { retentionDays: 30 });
     const key = randomUUID();

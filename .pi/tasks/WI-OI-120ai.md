@@ -1,6 +1,7 @@
 # WI-OI-120ai: Extending a trial keeps the administrator's choice of modules
 
-- **Status:** Built and verified locally (2026-10-15); owner approved plan v3 step 0.5 "as recommended".
+- **Status:** On UAT (release `d17db37`, owner deploy 2026-10-15; journey `9jh56k` passed; Security review approved,
+  three Low follow-ups proposed).
 - **Found by:** the independent Security review of da77c98 and 711d32f (finding I1, informational; pre-existing and
   confirmed in code).
 - **Work item:** WI-OI-120. Evidence goes in `.pi/work/WI-OI-120.md`.
@@ -60,3 +61,16 @@ In Platform Control Tower (`packages/tenancy-nest/src/platform-administration.se
   - tenancy suite 79 passed (48 skipped: database integration tests);
   - lint on both files as at HEAD (the service's pre-existing import order and format), with the new lines formatted.
 
+## Security review of release d17db37 (2026-10-15): approve
+
+- **Verified:**
+  - no update sets a status (the enum is ENABLED or DISABLED);
+  - the enabled-set rule matches `auth.service.ts`;
+  - both sets are computed after `lockTenant`, so there is no race with `updateEntitlements`;
+  - the event is written last, and only on a change;
+  - `tenant.features` stays consistent; before the fix it drifted.
+- **Info:**
+  - the event payload means "ENABLED" in `updateEntitlements` but "in force now" here; the consumer re-reads the
+    rows;
+  - pre-existing: an extension also sets a SUSPENDED or ACTIVE tenant to TRIAL, which lifts a suspension; it needs
+    the same platform roles as `changeStatus`.

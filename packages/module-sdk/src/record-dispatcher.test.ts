@@ -133,6 +133,16 @@ describe('RecordDispatcher', () => {
     expect(await status(records.create(context(manager), 'inventory.warehouses', { code: 'WH-1', name: 'Main' }, key))).toBe(200);
   });
 
+  // Security review of d17db37 (Low 1): a permission that names nothing would let everyone through.
+  it('refuses an adapter whose read list is empty or whose permission is blank', () => {
+    const { adapter } = warehouses();
+    const build = (changed: RecordAdapter) => () => new RecordDispatcher([changed], [], new MemoryIdempotency());
+    const message = 'every declared permission must name a permission';
+    expect(build({ ...adapter, permissions: { read: [] } })).toThrow(message);
+    expect(build({ ...adapter, permissions: { read: 'inventory:read', create: ' ' } })).toThrow(message);
+    expect(build({ ...adapter, actions: { close: { permission: '', run: async () => ({}) } } })).toThrow(message);
+  });
+
   it('never returns undeclared fields, and hides fields the reader may not see', async () => {
     const { adapter } = warehouses();
     const records = new RecordDispatcher([adapter], [], new MemoryIdempotency());

@@ -189,6 +189,17 @@ export class RecordDispatcher {
     for (const adapter of adapters) {
       if (!ENTITY_KEY.test(adapter.entityKey)) throw new Error(`Invalid entity key ${adapter.entityKey}.`);
       if (this.adapters.has(adapter.entityKey)) throw new Error(`Duplicate record adapter ${adapter.entityKey}.`);
+      // Security review of d17db37 (Low 1): an empty read list would require nothing, so every permission an adapter
+      // declares must name something.
+      const read = typeof adapter.permissions.read === 'string' ? [adapter.permissions.read] : adapter.permissions.read;
+      const declared = [
+        ...read,
+        ...(adapter.permissions.create !== undefined ? [adapter.permissions.create] : []),
+        ...(adapter.permissions.update !== undefined ? [adapter.permissions.update] : []),
+        ...Object.values(adapter.actions ?? {}).map((action) => action.permission),
+      ];
+      if (read.length === 0 || declared.some((permission) => typeof permission !== 'string' || permission.trim() === ''))
+        throw new Error(`${adapter.entityKey}: every declared permission must name a permission; read needs at least one.`);
       for (const field of [...(adapter.searchFields ?? []), ...(adapter.filterFields ?? []), ...(adapter.sortFields ?? [])]) {
         if (!adapter.fields[field]) throw new Error(`${adapter.entityKey}: ${field} is searchable, filterable or sortable but not declared.`);
       }

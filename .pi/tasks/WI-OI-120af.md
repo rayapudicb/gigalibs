@@ -1,6 +1,7 @@
 # WI-OI-120af: The conversion check compares record permissions with the module's REST routes
 
-- **Status:** Built and verified locally (2026-10-15); owner approved plan v3 step 0.5 "as recommended".
+- **Status:** On UAT (release `d17db37`, owner deploy 2026-10-15; journey `9jh56k` passed; Security review approved,
+  three Low follow-ups proposed).
 - **Found by:** the independent Security review of WI-OI-120u Slices 1–2 (finding I4, informational). It is why M1
   (Workforce positions under the job profiles' permissions) passed S16.
 - **Work item:** WI-OI-120 (S16 follow-up). Evidence goes in `.pi/work/WI-OI-120.md`.
@@ -88,3 +89,35 @@ and module roles. Two things it does not check:
   - lint as at HEAD on every touched file, except the check's test file, which gains non-null assertions and
     `delete` in its existing style.
 
+## Security review of release d17db37 (2026-10-15): approve
+
+No High or Medium.
+- **Verified:**
+  - every `rest` mapping in Inventory, Catalogue, Finance and Workforce against the gateway routes: each permission
+    is equal to its route's or narrower;
+  - the nulls are truthful (Finance maker-checker four-eyes in service and database; My absences limited to the
+    caller's linked person);
+  - any-of matches the web gateway;
+  - nothing outside the dispatcher and the check reads `permissions.read`;
+  - skills `list` is unchanged; `get` now answers 403 instead of 404 without `resources.read`, still with no data.
+- **Low 1:** an empty `read` list would pass `require` and serve anyone past the gateway; rule 8 misses it when
+  `rest.read` is null. No adapter does this. Fix: refuse empty or blank permissions when the dispatcher is built.
+- **Low 2:** rule 8 does not check the HTTP method. A write mapped to a GET route would pass under a read permission.
+  All current mappings use the right methods. Fix: `read` must be GET; create, update and actions must be POST, PUT,
+  PATCH or DELETE.
+- **Info:** rule 8 does not cover lookup resolvers (documented; labels only). REST `POST v1/journals` lets any
+  `journals:post` holder skip maker-checker (pre-existing).
+- **Proposed follow-up slice (owner to approve):** Low 1 and Low 2 here, Low 3 on WI-OI-120ae.
+
+## Step 0.5b, the review's Low items (2026-10-15; owner: "proceed"): built and verified locally
+
+- **Low 1:**
+  - the `RecordDispatcher` constructor refuses an adapter with an empty read list, or with any declared
+    permission (read, create, update, action) that is blank;
+  - building the dispatchers of all five modules shows none trips it;
+  - test: an empty read, a blank create and a blank action permission are each refused.
+- **Low 2:**
+  - rule 8 checks the method: a read mirrors a GET or a POST search route (`…/search`, which CMMS uses for its
+    reads); create, update and actions mirror a write route;
+  - tests: a create mapped to a GET and a read mapped to a write POST fail, and a POST search read passes;
+  - all five modules still pass.

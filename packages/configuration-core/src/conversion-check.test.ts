@@ -221,6 +221,21 @@ describe('conversion check', () => {
     ]);
   });
 
+  // Security review of d17db37 (Low 2): a write is never mirrored by a read route, nor a read by a write route.
+  it('fails an operation mapped to a route of the other kind, and accepts a POST search for a read', () => {
+    const write = valid();
+    // GET v1/things asks only probe:read, so without the method check a create would be gated by a read permission.
+    write.description.entities[0]!.rest.create = 'GET v1/things';
+    expect(check(write)).toEqual(['probe.things: create mirrors GET v1/things, which is a read route']);
+    const read = valid();
+    read.description.entities[0]!.rest.read = 'POST v1/things';
+    expect(check(read)).toEqual(['probe.things: read mirrors POST v1/things, which is a write route']);
+    const search = valid();
+    search.manifest.spec.gateway.routes.push({ path: 'v1/things/search', POST: 'probe:read' });
+    search.description.entities[0]!.rest.read = 'POST v1/things/search';
+    expect(check(search)).toEqual([]);
+  });
+
   it('compares a read that needs several permissions, and a route that accepts any of a list', () => {
     const input = valid();
     // The record read asks for both; REST asks for the second alone, so the record API is not wider.

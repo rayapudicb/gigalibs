@@ -109,8 +109,13 @@ export function conversionFindings({ windows, description, manifest, roles, serv
       const held = typeof permission === 'string' ? [permission] : permission;
       const value = route ? gateway.get(route) : undefined;
       const accepted = Array.isArray(value) ? value : [value];
+      // Security review of d17db37 (Low 2): a read mirrors a GET (or a POST search); a write mirrors a write.
+      const [method, path = ''] = route ? route.split(' ') : [];
+      const readRoute = method === 'GET' || (method === 'POST' && path.endsWith('/search'));
       if (route === undefined) fail(`${entity.entityKey}: ${operation} names no REST route (null when there is none)`);
       else if (route !== null && !gateway.has(route)) fail(`${entity.entityKey}: ${operation} mirrors ${route}, which the gateway does not declare`);
+      else if (route !== null && (operation === 'read') !== readRoute)
+        fail(`${entity.entityKey}: ${operation} mirrors ${route}, which is a ${readRoute ? 'read' : 'write'} route`);
       else if (route !== null && !accepted.some((required) => holdsPermission(held, required)))
         fail(`${entity.entityKey}: ${operation} needs ${held.join(' + ')}, wider than ${route} (${accepted.join(' or ')})`);
     }

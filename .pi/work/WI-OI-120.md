@@ -3935,3 +3935,75 @@ widening the card to fix the API faults the proof found.
   - whole repository: 2,960 tests passed, 233 skipped, none failed (378 files).
 
   Details on the four cards.
+- **Release prepared** (feature commit `fdf32da`, owner: "commit"):
+  - the code of `4f04746..fdf32da` (step 0.5 and the pin step in `pnpm verify`) applied three-way onto `f41702b`;
+  - 21 files, no conflict, staged;
+  - 120ag is left out: the release branch's CMMS has no record routes until step 1.3.
+- **On the release:**
+  - type-checks clean in 8 packages;
+  - the conversion check passes for its 4 converted modules;
+  - pins and the 4 governance checks pass;
+  - the audit fails only on the absent TextFly roots, as before;
+  - the PostgreSQL idempotency proof passes, 6/6;
+  - the full suite passes 2,818 tests; only the two known `CONTROL_PAYLOAD_KEY_VERSION` control-plane suites fail at
+    import (environment), as on every release.
+- **Release commit `d17db37`** (owner: "commit") = `f41702b` + step 0.5 (120ai, 120ae, 120af) + the pin step in
+  `pnpm verify`. Identity: revision `d17db3741e45`, state `42d7929e7f62`, release ID
+  `local-20261015T100844Z-d17db3741e45-42d7929e7f62` (time from the env file, to be confirmed by `--check`). Five
+  builds started with `GIGALIBS_KEEP_IMAGE_VERSIONS=3`; an independent read-only Security review of `d17db37` started.
+- **Security review of `d17db37`: approve.** No High or Medium.
+  - Verified: 120ai's statuses, the lock and the event; 120ae's subject binding and RLS-bound sweep; 120af's 37
+    mappings (equal or narrower, nulls truthful); release parity (21 files byte-equal to `fdf32da` except the
+    conversion script's missing CMMS entry; no 120ag or CMMS adapter files).
+  - Low:
+    - 1: an empty read list would allow anyone;
+    - 2: rule 8 does not check the HTTP method;
+    - 3: the sweep's locking and missing index.
+
+    None is reachable today; proposed as a follow-up slice. Details on the three cards.
+- **Release `d17db37` ready:**
+  - five builds passed (10:08–10:21Z; the disk guard found 154–170 GB free and removed nothing);
+  - 9 new images, and the rollback `f41702b` keeps all 9;
+  - backup `gigalibs_backup_20261015_102136Z` (running `f41702b`);
+  - deploy tool retarget: 33/33 tests;
+  - pins agree; `--check` passed, which confirms the release ID;
+  - no migration and no compose change.
+
+  Waiting for the owner's deploy.
+
+## Plan v3 step 0.5 on UAT: release d17db37 (2026-10-15, owner-run)
+
+- **Deploy:** the owner ran `deploy-uat.sh --deploy --backup gigalibs_backup_20261015_102136Z`. Images and backup
+  were verified, all 11 migration jobs passed (nothing new to apply), all 11 services are healthy, and the smoke test
+  passed.
+- **Read-only check afterwards:**
+  - all 11 services run `local-20261015T100844Z-d17db3741e45-42d7929e7f62`, healthy, with no restarts;
+  - 546 tables, the Analytics ledger at 30 (unchanged);
+  - `record_idempotency` holds about 24–45 rows per module. None is older than the 7-day window yet (UAT replies
+    date from 2026-10-13), so the sweep has nothing to remove so far;
+  - no `*_IDEMPOTENCY_RETENTION_DAYS` is set, so the default is 7;
+  - `/api/health/ready` and `/login` answer 200, and communications 401 signed out;
+  - 0 error lines in 10 minutes across web, the API, Analytics, the Connector Hub, the kernel worker, the module
+    host, Workforce and CMMS.
+- **Journey `9jh56k`** (owner-run on `d17db37`): passed in 4.4 minutes.
+  - Findings: 55, the same mix as `9bud1q` (29 layout, 17 accessibility, 6 UX, 1 bug, 2 blockers).
+  - The blockers are the known CMMS ones, and the bug is the known organization-draft submit 400. Nothing regressed.
+  - The journey's record creates worked under the caller-bound replies: Workforce stored 66 replies, the latest at
+    12:56Z.
+  - No `RECORD_IDEMPOTENCY_KEY_REUSED` and no error lines in Workforce, the module host, CMMS or web.
+- **Step 0.5 done on UAT** for 120ai, 120ae and 120af; 120ag ships with the CMMS record routes (step 1.3). The
+  review's three Low items wait for the owner's approval of a follow-up slice. The brand workspaces are still ACTIVE.
+
+## Plan v3 step 0.5b, the d17db37 review's Low items (2026-10-15; owner: "proceed"): built locally
+
+- **Low 1:** the dispatcher refuses an empty read list or a blank declared permission.
+- **Low 2:** the conversion check's rule 8 requires a read to mirror a GET or a POST search route, and a write a write
+  route.
+- **Low 3:** the idempotency sweep skips rows another claim holds (`FOR UPDATE SKIP LOCKED`). Proven on a throwaway
+  PostgreSQL: without it the claim waited until the test's 8-second timeout.
+- **Checks:**
+  - the conversion check passes all five modules;
+  - 42 targeted tests pass and the PostgreSQL proof passes 7/7;
+  - type-checks clean in seven packages;
+  - only the new lines changed (an accidental whole-file reformat of the dispatcher test was undone);
+  - whole repository: 2,962 tests passed, 234 skipped, none failed (378 files).

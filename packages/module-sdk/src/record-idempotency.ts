@@ -33,6 +33,7 @@ export function loadIdempotencyRetentionDays(
  * - WI-OI-120ae: answers completed more than `retentionDays` ago are removed, the tenant's own, as part of its next
  *   claim. They hold what the request returned (absence notes, decision reasons); a retry inside the window still
  *   replays. The runtime role sees one tenant at a time, so no cross-tenant job or definer function is needed.
+ *   Rows another claim is already removing are skipped (SKIP LOCKED), so concurrent claims never wait on each other.
  */
 export class ModuleIdempotencyStore implements IdempotencyStore {
   private readonly retentionDays: number;
@@ -54,7 +55,8 @@ export class ModuleIdempotencyStore implements IdempotencyStore {
          WHERE (tenant_id, idempotency_key) IN (
            SELECT tenant_id, idempotency_key FROM record_idempotency
            WHERE tenant_id = $1 AND state = 'COMPLETED' AND completed_at < now() - make_interval(days => $2)
-           LIMIT $3)`,
+           LIMIT $3
+           FOR UPDATE SKIP LOCKED)`,
         [tenantId, this.retentionDays, SWEEP_BATCH],
       );
       const claimed = await client.query(

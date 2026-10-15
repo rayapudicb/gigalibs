@@ -1,7 +1,7 @@
 # WI-OI-120ae: Idempotency-Key answers belong to their caller, and are swept
 
-- **Status:** Built and verified locally (2026-10-15); owner approved plan v3 step 0.5 "as recommended" (409 for
-  another caller; 7-day window, configurable per module).
+- **Status:** On UAT (release `d17db37`, owner deploy 2026-10-15; journey `9jh56k` passed; Security review approved,
+  three Low follow-ups proposed). Owner decisions: 409 for another caller; a 7-day window, configurable per module.
 - **Found by:** the independent Security review of WI-OI-120u Slices 1–2 (finding I3, informational).
 - **Work item:** WI-OI-120. Evidence goes in `.pi/work/WI-OI-120.md`.
 - **Size:** S
@@ -83,3 +83,27 @@ The module SDK's record dispatcher runs a create or an action once per Idempoten
   - 339 tests pass in the SDK and the four modules;
   - lint: the same findings as HEAD on the touched files, with the new lines wrapped.
 
+## Security review of release d17db37 (2026-10-15): approve
+
+No High or Medium.
+- **Verified:**
+  - the subject comes from the signed context's required `sub`;
+  - claims are tenant-scoped;
+  - the sweep runs in the tenant transaction under forced RLS, deletes only COMPLETED rows past the window, bounded,
+    and the runtime role may delete;
+  - the bounds and the four modules' wiring are correct.
+- **Low 3:** the sweep's subquery has no supporting index, so each claim scans about a window's worth of the tenant's
+  rows; concurrent claims can wait on each other's row locks, and a deadlock is possible in theory (the claim fails
+  once and can be retried). Fix: `FOR UPDATE SKIP LOCKED` in the subquery; later, if volume grows, a forward
+  migration with a partial index on `(tenant_id, completed_at) WHERE state = 'COMPLETED'`.
+- **Info:** at the deploy, a client that resubmits with a new key after a 409 could create a duplicate, for requests
+  in flight across the deploy only.
+
+## Step 0.5b, the review's Low 3 (2026-10-15; owner: "proceed"): built and verified locally
+
+- The sweep's subquery takes `FOR UPDATE SKIP LOCKED`, so a claim never waits on rows another claim is removing.
+- **New PostgreSQL test:** another transaction holds an expired answer. The claim returns at once (under 2 seconds)
+  and the row goes with the next claim. Against the store without `SKIP LOCKED`, the same test waited until its
+  8-second timeout. 7/7 pass on a throwaway database.
+- The partial index (`(tenant_id, completed_at) WHERE state = 'COMPLETED'`) waits until volume needs it (about 24–66
+  rows per module on UAT today), as a forward migration.
