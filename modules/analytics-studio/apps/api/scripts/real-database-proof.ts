@@ -13,7 +13,7 @@ import type { AnalyticsQueryInputV1, AnalyticsQueryResultV1 } from '@gigalibs/co
 import type { AnalyticsPrincipal } from '../src/auth/authorization.js';
 import { DatabaseService } from '../src/database/database.service.js';
 import { DatasetService } from '../src/datasets/dataset.service.js';
-import { SampleFarmService } from '../src/places/sample-farm.service.js';
+import { SampleFarmService } from '../test/support/proof-farm.js';
 import { ChartViewService } from '../src/query-engine/chart-view.service.js';
 import { DashboardService } from '../src/query-engine/dashboard.service.js';
 import { FormulaMeasureService } from '../src/query-engine/formula-measure.service.js';
@@ -64,7 +64,7 @@ try {
   const reports = new ReportService(db, chartViews, dashboards);
   const sampleFarm = new SampleFarmService(db, new SchemaDiscoveryService(db), new DatasetService(db), formulas);
 
-  step('1. Demo Lab sample farm loads through source, discovery, mapping, dataset and model');
+  step('1. the proof farm (test data) loads through source, discovery, mapping, dataset and model');
   const loaded = await sampleFarm.load(maker, 'proof-load-1');
   assert.equal(loaded.loaded, true);
   assert.equal(loaded.rawRecords, 960);

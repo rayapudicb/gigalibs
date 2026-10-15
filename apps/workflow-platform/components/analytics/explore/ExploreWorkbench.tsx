@@ -25,7 +25,6 @@ import { chartTypeLabel, compatibleChartTypes, resultShape } from '@/lib/analyti
 import { AnalyticsChart, ResultTable } from './AnalyticsChart';
 import { analyticsApi as api } from './analytics-api';
 import { FormulaReviewPanel } from './FormulaReviewPanel';
-import { SampleFarmPanel } from './SampleFarmPanel';
 
 type FilterOp = AnalyticsFilterV1['op'];
 interface FilterRow {
@@ -44,7 +43,7 @@ function coerce(raw: string, type: AnalyticsFieldType): string | number | boolea
   return raw.trim();
 }
 
-export function ExploreWorkbench({ demoLab = false, canLoadSample = false }: { demoLab?: boolean; canLoadSample?: boolean }) {
+export function ExploreWorkbench() {
   const [models, setModels] = useState<AnalyticsModelSummaryV1[] | null>(null);
   const [modelId, setModelId] = useState('');
   const [catalog, setCatalog] = useState<AnalyticsModelCatalogV1 | null>(null);
@@ -185,14 +184,6 @@ export function ExploreWorkbench({ demoLab = false, canLoadSample = false }: { d
 
   return (
     <div className="flex flex-col gap-4">
-      {demoLab && (
-        <SampleFarmPanel
-          canLoad={canLoadSample}
-          onLoaded={(semanticModelId) => {
-            void refreshModels().then(() => setModelId(semanticModelId));
-          }}
-        />
-      )}
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
         <Container className="flex w-full flex-col gap-5 lg:w-80 lg:shrink-0">
           <div className="flex flex-col gap-1.5">

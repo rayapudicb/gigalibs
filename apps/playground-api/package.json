@@ -21,7 +21,6 @@
     "verify:spatial-scope-session": "node scripts/verify-spatial-scope-session.mjs",
     "verify:analytics-web-path": "node scripts/verify-analytics-web-path.mjs",
     "verify:governed-catalogues": "node scripts/verify-governed-catalogues.mjs",
-    "verify:demo-lab": "node scripts/verify-demo-lab.mjs",
     "verify:configuration-studio": "node scripts/verify-configuration-studio.mjs",
     "verify:configuration-studio-http": "node scripts/verify-configuration-studio-http.mjs",
     "verify:configuration-studio-http-local": "node scripts/verify-configuration-studio-http-local.mjs",

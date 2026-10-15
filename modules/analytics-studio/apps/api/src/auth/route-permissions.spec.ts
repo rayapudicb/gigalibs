@@ -99,11 +99,6 @@ const EXPECTED: Record<string, string> = {
   'GET v1/places/drilldown': 'analytics:read',
   'POST v1/places/metric-drilldown': 'analytics:read',
   'POST v1/places/rollups/rebuild': 'analytics:action',
-  'GET v1/demo-lab/dataset': 'analytics:read',
-  'POST v1/demo-lab/generate': 'analytics:action',
-  'POST v1/demo-lab/reset': 'analytics:action',
-  'GET v1/demo-lab/sample-farm': 'analytics:read',
-  'POST v1/demo-lab/sample-farm': 'analytics:action',
   'POST v1/organization/versions/:versionId/units': 'organization:activate',
   'POST v1/organization/versions/:versionId/complete': 'organization:activate',
 };

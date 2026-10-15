@@ -1,5 +1,6 @@
 // UAT preview (WI-OI-120a; owner decision 2026-10-05: on the UAT instance every module is visible and nothing is
-// hidden). The preview never changes a module's readiness in the catalogue. The owner removed the on-screen UAT labels
+// hidden). Narrowed by WI-OI-120ak (owner decision D1b, 2026-10-15): the preview opens PLANNED modules only; CONTAINED
+// prototypes stay locked on UAT as everywhere (lib/module-access.ts). The preview never changes a module's readiness in the catalogue. The owner removed the on-screen UAT labels
 // on 2026-10-05 (WI-OI-120b); module status for testers lives in
 // docs/audits/2026-10-04-production-readiness/uat-module-status.md.
 

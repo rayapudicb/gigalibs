@@ -65,10 +65,27 @@ describe('Omnichannel Communications boundary', () => {
     expect(res.status).toBe(403);
   });
 
-  describe('where the preview opens the module (UAT today)', () => {
+  // WI-OI-120ak (S5, D1b): the UAT preview opens PLANNED modules only, so a tenant is refused there too.
+  it('refuses an entitled workspace on UAT as well, where the preview no longer opens contained modules', async () => {
+    vi.stubEnv('GIGALIBS_UAT_PREVIEW', 'enabled');
+    vi.mocked(verifiedSession).mockResolvedValue(entitled());
+    const res = await getComm(get('channels'), params('channels'));
+    expect(res.status).toBe(403);
+  });
+
+  // The route keeps its existing platform-operator path (checked by the access rule, not changed here); through it,
+  // the answers below are the only ones the route gives.
+  describe('for a platform operator', () => {
     beforeEach(() => {
-      vi.stubEnv('GIGALIBS_UAT_PREVIEW', 'enabled');
-      vi.mocked(verifiedSession).mockResolvedValue(entitled());
+      vi.mocked(verifiedSession).mockResolvedValue({
+        response: null,
+        context: {
+          user: { id: 'usr-1', email: 'operator@example.com' },
+          tenant: { id: 'tenant-a', features: [] },
+          permissions: [],
+          platformRoles: ['PLATFORM_ADMIN'],
+        },
+      } as never);
     });
 
     it('answers 503 without its service, with no invented data', async () => {
@@ -109,14 +126,12 @@ describe('Omnichannel Communications boundary', () => {
 
     it('passes the service answer through, for the signed-in tenant and user', async () => {
       vi.stubEnv('COMMUNICATIONS_API_URL', 'https://communications.example.invalid');
-      const upstream = vi
-        .fn()
-        .mockResolvedValue(
-          new Response(JSON.stringify({ channels: [] }), {
-            status: 200,
-            headers: { 'content-type': 'application/json' },
-          }),
-        );
+      const upstream = vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ channels: [] }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        }),
+      );
       vi.stubGlobal('fetch', upstream);
       const res = await getComm(get('channels?limit=5'), params('channels'));
       expect(res.status).toBe(200);

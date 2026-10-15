@@ -300,12 +300,6 @@ export default function PlatformTenantControl({ session }: { session: VerifiedSe
             >
               ⚙️ Infrastructure
             </a>
-            <a
-              href="/platform-admin/demo-lab"
-              className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900 transition"
-            >
-              🧪 Demo Lab
-            </a>
           </div>
 
           <div className="flex items-center gap-3">

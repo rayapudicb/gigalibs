@@ -3,7 +3,7 @@ import { canUseTenantModule, hasPermission } from '@/lib/module-access';
 import { verifiedSession } from '@/lib/verified-session';
 import { redirect } from 'next/navigation';
 
-// WI-OI-064f: governed place drill-down; Demo Lab controls appear only in workspaces labelled demo-lab.
+// WI-OI-064f: governed place drill-down. WI-OI-120ak (S5, D5a): the Demo Lab controls are removed.
 export default async function PlaceDrilldownPage() {
   const session = await verifiedSession(false);
   if (session.response?.status === 401) redirect('/login');
@@ -14,12 +14,5 @@ export default async function PlaceDrilldownPage() {
   if (!canUseTenantModule('analytics-studio', features, context.permissions) || !hasPermission(context.permissions, 'analytics:read')) {
     redirect('/modules');
   }
-  const demoLab = features.has('demo-lab');
-  return (
-    <PlaceDrilldownExplorer
-      demoLab={demoLab}
-      canManageDemo={demoLab && hasPermission(context.permissions, 'analytics:action')}
-      canDeleteDemo={demoLab && context.platformRoles.length > 0}
-    />
-  );
+  return <PlaceDrilldownExplorer />;
 }

@@ -145,8 +145,6 @@ import { ConfigurationOutboxPublisher } from './configuration-outbox.publisher.j
 import { ConfigurationRuntimeMetrics } from './configuration-runtime.metrics.js';
 import { ConfigurationRuntimeScopeResolver } from './configuration-runtime-scope.resolver.js';
 import { ConfigurationStudioController } from './configuration-studio.controller.js';
-import { DemoLabController } from './demo-lab.controller.js';
-import { DemoLabService } from './demo-lab.service.js';
 import { ConfigurationStudioService } from './configuration-studio.service.js';
 import { ConnectorCredentialService } from './connector-credential.service.js';
 import { ConnectorProfileService } from './connector-profile.service.js';
@@ -204,7 +202,6 @@ import { WorkflowService } from './workflow.service.js';
     TenantDataExportController,
     KernelSchedulesController,
     ConfigurationStudioController,
-    DemoLabController,
     GovernorController,
     ScimController,
     PartyController,
@@ -252,7 +249,6 @@ import { WorkflowService } from './workflow.service.js';
     ConfigurationInvalidationConsumer,
     ConfigurationOutboxPublisher,
     ConfigurationStudioService,
-    DemoLabService,
     GovernorService,
     GovernorThrottlingGuard,
     GovernorPersistentService,

@@ -136,10 +136,9 @@ export const MetricDrilldownV1Schema = z.object({
 });
 export type MetricDrilldownV1 = z.infer<typeof MetricDrilldownV1Schema>;
 
-// ─── Demo Lab synthetic data (WI-OI-064e) ────────────────────────────────────
-
-/** Most synthetic facts one demo tenant may hold. */
-export const MAX_DEMO_LAB_FACTS = 1_000_000;
+// ─── Industry-pack demo profiles ─────────────────────────────────────────────
+// Part of the industry pack's data model. The Demo Lab that generated synthetic facts from them is removed
+// (WI-OI-120ak, owner decision D5a); nothing in the product generates demo data now.
 
 export const DemoPlaceTypeV1Schema = z
   .object({ code: z.string().regex(/^[A-Z][A-Z0-9_]{0,40}$/), label: z.string().trim().min(1).max(120) })
@@ -161,60 +160,11 @@ export const DemoProfileV1Schema = z
   .strict();
 export type DemoProfileV1 = z.infer<typeof DemoProfileV1Schema>;
 
-/** Facts one generation writes: hours, cost and carbon per zone (or site) per day; spend and downtime per site. */
-export function estimateDemoLabFacts(profile: DemoProfileV1, days: number): number {
-  const sites = profile.regions * profile.sitesPerRegion;
-  const leaves = sites * Math.max(profile.zonesPerSite, 1);
-  return days * (leaves * 3 + sites * 2);
-}
-
-export const DemoLabGenerateRequestV1Schema = z
-  .object({
-    /** Place levels from the industry pack: region, site and, when zonesPerSite > 0, zone. */
-    placeTypes: z.array(DemoPlaceTypeV1Schema).min(2).max(6),
-    demoProfile: DemoProfileV1Schema,
-    days: z.number().int().min(7).max(MAX_PLACE_ANALYTICS_WINDOW_DAYS),
-    endDate: IsoDateSchema,
-    seed: z.number().int().min(0).max(2_147_483_647),
-  })
-  .strict()
-  .superRefine((value, context) => {
-    if (value.demoProfile.zonesPerSite > 0 && value.placeTypes.length < 3) {
-      context.addIssue({ code: 'custom', path: ['placeTypes'], message: 'A profile with zones needs region, site and zone levels.' });
-    }
-    const facts = estimateDemoLabFacts(value.demoProfile, value.days);
-    if (facts > MAX_DEMO_LAB_FACTS) {
-      context.addIssue({ code: 'custom', path: ['days'], message: `This would generate ${facts} facts; the Demo Lab limit is ${MAX_DEMO_LAB_FACTS}. Use fewer days.` });
-    }
-  });
-export type DemoLabGenerateRequestV1 = z.infer<typeof DemoLabGenerateRequestV1Schema>;
-
-export const DemoLabDatasetV1Schema = z.object({
-  facts: z.number().int().nonnegative(),
-  rollupRows: z.number().int().nonnegative(),
-  from: z.string().nullable(),
-  to: z.string().nullable(),
-});
-export type DemoLabDatasetV1 = z.infer<typeof DemoLabDatasetV1Schema>;
-
-/** Platform action: create an isolated, labelled Demo Lab tenant for one industry and country. */
-export const CreateDemoLabTenantSchema = z
-  .object({
-    industry: z.string().regex(/^[a-z][a-z0-9-]{0,62}$/),
-    country: z.string().regex(/^[a-z]{2}$/),
-    reason: z.string().trim().min(3).max(500),
-  })
-  .strict();
-export type CreateDemoLabTenantDto = z.infer<typeof CreateDemoLabTenantSchema>;
-
-export const DeleteDemoLabTenantSchema = z.object({ reason: z.string().trim().min(3).max(500) }).strict();
-export type DeleteDemoLabTenantDto = z.infer<typeof DeleteDemoLabTenantSchema>;
 export * from './query.js';
 export * from './catalog.js';
 export * from './chart-view.js';
 export * from './chart-shape.js';
 export * from './formula-measure.js';
-export * from './sample-farm.js';
 export * from './dashboard.js';
 export * from './report.js';
 export * from './units.js';

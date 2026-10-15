@@ -50,6 +50,12 @@ export function isLockedModule(moduleKey: string): boolean {
   return lockedModuleKeys.has(moduleKey);
 }
 
+// WI-OI-120ak (S5, owner decision D1b): the UAT preview lifts the lock only for PLANNED modules (real modules on metadata,
+// tested on UAT before release). CONTAINED modules are prototypes, many backed by invented data, and stay locked everywhere.
+const containedModuleKeys = new Set<string>(
+  platformModuleCatalog.filter((module) => module.readiness === 'CONTAINED').map((module) => module.key),
+);
+
 function previewActive(uatPreview: boolean | undefined): boolean {
   return uatPreview ?? uatPreviewEnabled();
 }
@@ -62,7 +68,7 @@ export function canUseTenantModule(
 ): boolean {
   const requiredPermission = tenantModulePermission[moduleKey];
   return (
-    (!lockedModuleKeys.has(moduleKey) || previewActive(options.uatPreview)) &&
+    (!lockedModuleKeys.has(moduleKey) || (!containedModuleKeys.has(moduleKey) && previewActive(options.uatPreview))) &&
     enabledModules.has(moduleKey) &&
     typeof requiredPermission === 'string' &&
     hasPermission(permissions, requiredPermission)
@@ -85,7 +91,10 @@ export function canOpenPlatformModule(
   if (module.key === 'platform-control') return hasPlatformAuthority;
   if (!context.tenant) return false;
   const uatPreview = previewActive(context.uatPreview);
-  if (module.readiness !== 'AVAILABLE' && module.readiness !== 'REVIEW' && !uatPreview) return false;
+  // D1b: the preview opens a PLANNED module; nothing opens a CONTAINED one, not even platform inspection.
+  const openable =
+    module.readiness === 'AVAILABLE' || module.readiness === 'REVIEW' || (uatPreview && module.readiness === 'PLANNED');
+  if (!openable) return false;
   if (module.platformInspection && hasPlatformAuthority) return true;
   return canUseTenantModule(
     module.key,

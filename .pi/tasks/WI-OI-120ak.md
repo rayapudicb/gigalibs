@@ -1,6 +1,6 @@
 # WI-OI-120ak: Zero-mock sweep, the rest (plan v3 step 0.4)
 
-- **Status:** S1–S3 on UAT (release `85fdbcc`). S3b and S4 committed (2026-10-15); their release is being prepared.
+- **Status:** S1–S3 on UAT (release `85fdbcc`). S3b and S4 in release a4ac027 (owner deploy pending). S4b committed; S5 built (2026-10-15). Release S4b+S5 next, then S6, S7.
   Then S5–S7. Decisions D1a–D7a approved 2026-10-15.
 - **Follows:** WI-OI-120ah, WI-OI-120an and WI-OI-120ao (the Time screen, done).
 - **Work item:** WI-OI-120. Evidence goes in `.pi/work/WI-OI-120.md`.
@@ -458,3 +458,36 @@ Follow-ups are slice **S4b**, released with S5.
   - the Demo Lab code goes from every layer: control plane, web, Analytics API and contracts;
   - the deployed migration 000015 (the synthetic-reset function) stays: deployed migrations are never edited;
   - the `demo-lab` switch, on in 4 UAT workspaces, is switched off by S7's owner-run cleanup.
+
+## S5, the preview, Rule studio and the Demo Lab (2026-10-15): built and verified locally
+
+- **D1b:** `lib/module-access.ts`. The UAT preview lifts the lock only for PLANNED modules: Product Catalogue,
+  Inventory, Procurement, Orders and Finance. CONTAINED modules stay locked on UAT as everywhere, for tenants and for
+  platform inspection, in both the API rule (`canUseTenantModule`) and the screen and menu rule
+  (`canOpenPlatformModule`). The setting stays on. Tests: `module-access.test.ts` proves PLANNED opens and five
+  CONTAINED modules (AR, E-Signature, Communications, Master Data, Rule studio) stay closed.
+- **D3a:** `rule-studio` is CONTAINED in `modules/universal-rule-pro/module.yaml` (catalogue regenerated). Its tenant
+  boundary suite skips while locked, by the repository's `isLockedModule` convention, and runs again when the module
+  is revived.
+- **D5a, Demo Lab removed** (WI-OI-064e, 064f and 103d d7): the platform-admin tool that created labelled demo
+  workspaces and filled Analytics with generated facts and a "sample farm".
+  - Control plane: `demo-lab.controller.ts`, `demo-lab.service.ts` and `scripts/verify-demo-lab.mjs` are deleted.
+    `ConfigurationStudioService.provisionDemoCatalogue` is removed: it let any `demo-lab` workspace activate a
+    catalogue without independent approval.
+  - Web: the Demo Lab admin page, its API route, `DemoLabConsole`, the Explore `SampleFarmPanel`, the drill-down's
+    Demo Lab panel and badge, and the admin link are gone; `analyticsPageAccess` no longer reports `demoLab`.
+  - Analytics API: `demo-lab.service.ts`, the `v1/demo-lab` controller and their specs are deleted. The sample-farm
+    generator moved to `test/support/proof-farm.ts`, which is never compiled into the build or shipped. The two
+    database proofs use it as their test data.
+  - Contracts: the Demo Lab schemas and `sample-farm.ts` are removed. The industry packs' demo profiles stay, as part
+    of the pack data model.
+  - The deployed migration 000015 stays (forward-only). The `demo-lab` switch in 4 UAT workspaces goes off in S7.
+- **Baseline:** 10 entries, 24 fingerprints. The sample-farm entry is gone, and the AR, Master Data and Rule-studio
+  entries are now "locked".
+- **Verification:**
+  - type-checks clean: web, control plane, Analytics API, contracts. The moved generator and proofs check too, except
+    a type error in `real-database-proof.ts` line 171 that is the same at HEAD;
+  - 1,526 tests passed across web, contracts, Analytics API and control plane (130 skipped);
+  - both audit modes and the growth check against HEAD pass;
+  - all ten audits pass on HEAD plus S5's 36 files alone;
+  - lint against HEAD: unchanged, except fewer findings in the drill-down explorer and the Analytics controller.

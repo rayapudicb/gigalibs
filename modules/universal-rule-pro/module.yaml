@@ -45,12 +45,12 @@ spec:
       navigationGroup: Studio & Build
       route: /rules
       iconKey: scale
-      readiness: REVIEW
+      readiness: CONTAINED
       maturity: CORE_IMPLEMENTED
       entitlementEligible: true
       trialEligible: true
       requiredPermission: rules:read
       platformInspection: false
-      reason: Rules service code with tests; no rules stored. Not running; it becomes the one Rules capability (ADR-0016 F3).
+      reason: Rules service code with tests; no rules stored. Not running; it becomes the one Rules capability (ADR-0016 F3). Contained (WI-OI-120ak, owner decision D3a) while the web app keeps tenant rules only in its memory.
       navigationOrder: 160
       personas: [OPERATIONS_SUPERVISOR]

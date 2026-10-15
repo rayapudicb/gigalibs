@@ -3723,3 +3723,12 @@ widening the card to fix the API faults the proof found.
   `local-20261015T035421Z-a4ac0276c185-4d657d1c2a1a`). Five builds passed (03:54–04:12Z). Backup
   `gigalibs_backup_20261015_041255Z` of `uat-postgres` (running 85fdbcc). Deploy tool retargeted from 85fdbcc; 33 of
   33 tests; `--check` passed. Waiting for the owner's deploy.
+
+## WI-OI-120ak S5 built (2026-10-15; owner: "D1b, Demo Lab as proposed")
+
+- D1b: the UAT preview opens PLANNED modules only; CONTAINED modules stay locked on UAT too.
+- D3a: Rule studio is CONTAINED.
+- D5a: the Demo Lab is removed from the control plane, the web, the Analytics API and the contracts, including a
+  catalogue-approval bypass for demo workspaces. Its generator is kept as Analytics test support.
+- Verification: type-checks clean; 1,526 tests passed; all audits pass on HEAD plus S5; lint unchanged or better.
+  Details: card WI-OI-120ak, "S5".

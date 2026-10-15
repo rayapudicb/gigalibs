@@ -7,7 +7,7 @@ import {
   type MetricDrilldownV1,
   type MetricUnit,
 } from '@gigalibs/contracts';
-import { ArrowPath, ChevronRight, ExclamationCircle, Spinner } from '@medusajs/icons';
+import { ArrowPath, ChevronRight, Spinner } from '@medusajs/icons';
 import { Alert, Badge, Button, Container, Heading, Table, Text } from '@medusajs/ui';
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -21,12 +21,6 @@ const WINDOWS = [
 
 const selectClass =
   'h-8 rounded-md bg-ui-bg-field px-2 txt-compact-small text-ui-fg-base shadow-borders-base outline-none transition-fg hover:bg-ui-bg-field-hover focus-visible:shadow-borders-interactive-with-active';
-
-interface Props {
-  demoLab: boolean;
-  canManageDemo: boolean;
-  canDeleteDemo: boolean;
-}
 
 /** Turns a place code such as STORE_012 into "Store 012" for display; the code itself stays visible. */
 function placeLabel(code: string): string {
@@ -57,7 +51,7 @@ function dayOffset(days: number): string {
 }
 
 // WI-OI-064f: estate → region → site drill-down over place rollups, metrics from the activated catalogue.
-export function PlaceDrilldownExplorer({ demoLab, canManageDemo, canDeleteDemo }: Props) {
+export function PlaceDrilldownExplorer() {
   const [catalogue, setCatalogue] = useState<MetricCatalogueV1 | null>(null);
   const [catalogueError, setCatalogueError] = useState<string | null>(null);
   const [currency, setCurrency] = useState<string | null>(null);
@@ -148,7 +142,6 @@ export function PlaceDrilldownExplorer({ demoLab, canManageDemo, canDeleteDemo }
               </Text>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              {demoLab ? <Badge color="orange" size="small">Demo Lab · synthetic data</Badge> : null}
               <Button asChild size="small" variant="secondary"><Link href="/analytics">Analytics overview</Link></Button>
             </div>
           </div>
@@ -179,8 +172,6 @@ export function PlaceDrilldownExplorer({ demoLab, canManageDemo, canDeleteDemo }
           </Alert>
         ) : null}
 
-        {demoLab ? <DemoLabPanel canManage={canManageDemo} canDelete={canDeleteDemo} onChanged={() => { setPath([]); void load(); }} /> : null}
-
         <Container className="p-5">
           <nav aria-label="Place path" className="flex flex-wrap items-center gap-1 txt-compact-small">
             <button type="button" className="rounded px-1 text-ui-fg-interactive hover:underline disabled:text-ui-fg-base disabled:no-underline" disabled={path.length === 0} onClick={() => setPath([])}>Estate</button>
@@ -209,7 +200,7 @@ export function PlaceDrilldownExplorer({ demoLab, canManageDemo, canDeleteDemo }
             <div className="mt-5 rounded-lg border border-dashed border-ui-border-strong p-6 text-center">
               <Text weight="plus">No data for this place and window</Text>
               <Text size="small" className="mt-1 text-ui-fg-subtle">
-                {demoLab ? 'Generate synthetic data in the Demo Lab panel above.' : 'Facts arrive from connected modules; try a longer window.'}
+                Facts arrive from connected modules; try a longer window.
               </Text>
             </div>
           ) : null}
@@ -344,82 +335,5 @@ function DrilldownChart({ items, unit, currency, onSelect }: {
       className="mt-4 w-full"
       style={{ height: Math.min(520, 60 + items.length * 28) }}
     />
-  );
-}
-
-function DemoLabPanel({ canManage, canDelete, onChanged }: { canManage: boolean; canDelete: boolean; onChanged: () => void }) {
-  const [dataset, setDataset] = useState<{ facts: number; rollupRows: number; from: string | null; to: string | null } | null>(null);
-  const [days, setDays] = useState(180);
-  const [busy, setBusy] = useState<'generate' | 'reset' | 'delete' | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  const refresh = useCallback(async () => {
-    try {
-      setDataset(await requestJson('/api/demo-lab/dataset'));
-    } catch (reason) {
-      setError((reason as Error).message);
-    }
-  }, []);
-  useEffect(() => { void refresh(); }, [refresh]);
-
-  async function run(action: 'generate' | 'reset' | 'delete') {
-    if (action === 'delete' && !window.confirm('Retire this Demo Lab workspace? Its synthetic data is deleted and nobody can open it again; the audit trail is kept.')) return;
-    setBusy(action);
-    setError(null);
-    setMessage(null);
-    const started = performance.now();
-    try {
-      const result = await requestJson<{ facts?: number; rollupRows?: number }>(`/api/demo-lab/${action}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(action === 'generate' ? { days } : {}),
-      });
-      if (action === 'delete') {
-        window.location.assign('/login');
-        return;
-      }
-      const seconds = ((performance.now() - started) / 1000).toFixed(1);
-      setMessage(action === 'generate'
-        ? `Generated ${(result.facts ?? 0).toLocaleString()} synthetic facts in ${seconds} s.`
-        : 'Synthetic data removed.');
-      await refresh();
-      onChanged();
-    } catch (reason) {
-      setError((reason as Error).message);
-    } finally {
-      setBusy(null);
-    }
-  }
-
-  return (
-    <Container className="space-y-3 border-l-4 border-l-ui-tag-orange-icon p-5">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <Heading level="h2">Demo Lab</Heading>
-          <Text size="small" className="mt-1 max-w-3xl text-ui-fg-subtle">
-            This workspace holds synthetic data only, generated from its industry pack. It is excluded from value
-            reporting and can be reset or deleted at any time.
-          </Text>
-        </div>
-        <Text size="small" className="tabular-nums text-ui-fg-subtle">
-          {dataset ? `${dataset.facts.toLocaleString()} synthetic facts${dataset.from ? ` · ${dataset.from} to ${dataset.to}` : ''}` : '—'}
-        </Text>
-      </div>
-      {canManage ? (
-        <div className="flex flex-wrap items-center gap-2">
-          <select aria-label="Days of synthetic history" className={selectClass} value={days} onChange={(event) => setDays(Number(event.target.value))}>
-            {[30, 90, 180, 365].map((value) => <option key={value} value={value}>{value} days</option>)}
-          </select>
-          <Button type="button" size="small" isLoading={busy === 'generate'} disabled={busy !== null} onClick={() => void run('generate')}>Generate synthetic data</Button>
-          <Button type="button" size="small" variant="secondary" isLoading={busy === 'reset'} disabled={busy !== null} onClick={() => void run('reset')}>Reset</Button>
-          {canDelete ? (
-            <Button type="button" size="small" variant="danger" isLoading={busy === 'delete'} disabled={busy !== null} onClick={() => void run('delete')}>Retire workspace</Button>
-          ) : null}
-        </div>
-      ) : null}
-      {message ? <Alert variant="success" role="status">{message}</Alert> : null}
-      {error ? <Alert variant="error" role="alert"><ExclamationCircle className="inline" /> {error}</Alert> : null}
-    </Container>
   );
 }

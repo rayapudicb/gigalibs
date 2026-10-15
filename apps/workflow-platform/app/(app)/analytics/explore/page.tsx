@@ -16,7 +16,6 @@ export default async function AnalyticsExplorePage() {
   if (!canUseTenantModule('analytics-studio', features, context.permissions) || !hasPermission(context.permissions, 'analytics:read')) {
     redirect('/modules');
   }
-  const demoLab = features.has('demo-lab');
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-1">
@@ -25,7 +24,7 @@ export default async function AnalyticsExplorePage() {
           Pick measures, group-bys and time; switch chart types in one click; save the question as a chart.
         </Text>
       </div>
-      <ExploreWorkbench demoLab={demoLab} canLoadSample={demoLab && hasPermission(context.permissions, 'analytics:action')} />
+      <ExploreWorkbench />
     </div>
   );
 }

@@ -12,7 +12,7 @@ import { DatabaseService } from '../src/database/database.service.js';
 import { DatasetService } from '../src/datasets/dataset.service.js';
 import { ConnectorHubInboxService, HUB_RECORDS_TABLE } from '../src/inbox/connector-hub-inbox.js';
 import { PlaceAnalyticsService } from '../src/places/place-analytics.service.js';
-import { SampleFarmService } from '../src/places/sample-farm.service.js';
+import { SampleFarmService } from '../test/support/proof-farm.js';
 import { ChartViewService } from '../src/query-engine/chart-view.service.js';
 import { FormulaMeasureService } from '../src/query-engine/formula-measure.service.js';
 import { QueryEngineService } from '../src/query-engine/query-engine.service.js';
@@ -296,7 +296,7 @@ try {
   assert.ok(compatibleChartTypes(resultShape(mapAnswer)).includes('place_map'));
   await chartViews.create(farm, { name: 'Pests on Farm B', query: byPlaceId, visual: { type: 'place_map' } });
 
-  step('7. the Demo Lab sample farm (synthetic source) still loads under the new source rule');
+  step('7. the proof farm (test data) still loads under the new source rule');
   const formulas = new FormulaMeasureService(db);
   const sample = new SampleFarmService(db, discovery, datasets, formulas);
   const loaded = await sample.load(principal('demo-farm'), 'inbox-proof');

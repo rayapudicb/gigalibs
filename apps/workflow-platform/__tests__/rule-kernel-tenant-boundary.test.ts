@@ -3,6 +3,7 @@ import { DELETE as deleteRule, PATCH as patchRule } from '../app/api/rules/kerne
 import { POST as createRule } from '../app/api/rules/kernel/rules/route';
 import { RuleNotFoundError, universalRuleKernelStore } from '../lib/universal-rule-kernel-store';
 import { verifiedSession } from '../lib/verified-session';
+import { isLockedModule } from './helpers/locked-modules';
 
 // WI-OI-120e (U3.2, P0-04): Rule Studio changes act only on the signed-in tenant's own rules.
 vi.mock('../lib/verified-session', () => ({ verifiedSession: vi.fn() }));
@@ -42,7 +43,9 @@ function tenantRule(tenantId: string) {
   });
 }
 
-describe('Rule Studio tenant boundary', () => {
+// WI-OI-120ak (S5, D3a): Rule studio is CONTAINED, so its routes refuse every caller; this suite runs again when it is
+// revived (module-access.test.ts proves the lock).
+describe.skipIf(isLockedModule('rule-studio'))('Rule Studio tenant boundary', () => {
   const created: Array<{ id: string; tenantId: string }> = [];
 
   beforeEach(() => {

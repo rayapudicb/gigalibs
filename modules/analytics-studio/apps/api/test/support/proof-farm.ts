@@ -1,12 +1,30 @@
+// WI-OI-120ak (S5, owner decision D5a): test support only. This generator was the Demo Lab's "sample farm" service; the
+// Demo Lab is removed from the product, and the Analytics proofs keep it as their input data. It lives under test/,
+// which the build (tsconfig include: src) never compiles and the image never ships.
 import { createHash } from 'node:crypto';
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
-import type { FormulaMeasureDefinitionV1, FormulaMeasureV1, SampleFarmStatusV1 } from '@gigalibs/contracts';
-import type { AnalyticsPrincipal } from '../auth/authorization.js';
-import { DatabaseService } from '../database/database.service.js';
-import { DatasetService, type SemanticMeasureDto } from '../datasets/dataset.service.js';
-import { FormulaMeasureService } from '../query-engine/formula-measure.service.js';
-import { SchemaDiscoveryService, type FieldMappingEntry } from '../schema-discovery/schema-discovery.service.js';
-import { assertUnscoped } from './demo-lab.service.js';
+import { ForbiddenException, InternalServerErrorException } from '@nestjs/common';
+import type { FormulaMeasureDefinitionV1, FormulaMeasureV1, FormulaMeasureVersionStateV1 } from '@gigalibs/contracts';
+import type { AnalyticsPrincipal } from '../../src/auth/authorization.js';
+import { DatabaseService } from '../../src/database/database.service.js';
+import { DatasetService, type SemanticMeasureDto } from '../../src/datasets/dataset.service.js';
+import { FormulaMeasureService } from '../../src/query-engine/formula-measure.service.js';
+import { SchemaDiscoveryService, type FieldMappingEntry } from '../../src/schema-discovery/schema-discovery.service.js';
+
+/** What a proof load reports (it was the contracts' SampleFarmStatusV1). */
+export interface SampleFarmStatusV1 {
+  loaded: boolean;
+  connectionId: string | null;
+  rawRecords: number;
+  datasetVersionId: string | null;
+  semanticModelId: string | null;
+  formula: { id: string; versionId: string; state: FormulaMeasureVersionStateV1 } | null;
+}
+
+function assertUnscoped(principal: AnalyticsPrincipal): void {
+  if (principal.spatialScope.mode !== 'UNBOUNDED') {
+    throw new ForbiddenException({ code: 'SPATIAL_SCOPE_DENIED', message: 'The proof farm is loaded by unscoped members only.' });
+  }
+}
 
 export const SAMPLE_FARM_SOURCE_NAME = 'Sample farm harvests (synthetic)';
 export const SAMPLE_FARM_TABLE = 'sample_farm_harvests';
@@ -55,7 +73,6 @@ const YIELD_PER_HECTARE: FormulaMeasureDefinitionV1 = {
  *
  * Loading is idempotent and resumable: each step reuses what an earlier load already produced.
  */
-@Injectable()
 export class SampleFarmService {
   constructor(
     private readonly db: DatabaseService,

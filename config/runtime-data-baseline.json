@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "comment": "WI-OI-120ak: known mock still in the code, fingerprinted per match (rule, file, and the matched text; for record rules the whole literal). Each slice removes its own entries; S5-lock entries stay reachable on UAT until S5 applies D1a/D3a. CI fails if a pull request or push adds a fingerprint (--baseline-since). Read by scripts/verify-runtime-data-integrity.mjs.",
+  "comment": "WI-OI-120ak: known mock still in the code, fingerprinted per match (rule, file, and the matched text; for record rules the whole literal). Each slice removes its own entries; locked entries cannot be reached: CONTAINED modules are locked everywhere, UAT included (D1b). CI fails if a pull request or push adds a fingerprint (--baseline-since). Read by scripts/verify-runtime-data-integrity.mjs.",
   "entries": [
     {
       "code": "DEV_SEED_SOURCE",
@@ -10,8 +10,8 @@
         "f83f8b9a6c70d772"
       ],
       "card": "WI-OI-120ak",
-      "slice": "S5-lock",
-      "reason": "Master data (CONTAINED) seed and in-memory store; reachable on UAT until D1a turns the UAT preview off in S5; replaced by T4 parties (plan v3 5B)"
+      "slice": "locked",
+      "reason": "Master data (CONTAINED) seed and in-memory store; locked everywhere, UAT included, since S5 (D1b); replaced by T4 parties (plan v3 5B)"
     },
     {
       "code": "IN_MEMORY_BUSINESS_FIXTURE",
@@ -20,19 +20,8 @@
         "96de1d4397f9e30f"
       ],
       "card": "WI-OI-120ak",
-      "slice": "S5-lock",
-      "reason": "Rule studio (REVIEW) keeps tenant rules only in the web process memory; reachable on UAT until D3a sets it CONTAINED in S5; replaced when rules get real storage (its own card)"
-    },
-    {
-      "code": "IN_MEMORY_BUSINESS_FIXTURE",
-      "file": "modules/analytics-studio/apps/api/src/places/sample-farm.service.ts",
-      "fingerprints": [
-        "398ef0a3559f1986",
-        "426023dfa50fcf6a"
-      ],
-      "card": "WI-OI-120ak",
-      "slice": "S5",
-      "reason": "S5 (D5a): the Demo Lab synthetic sample farm; removed"
+      "slice": "locked",
+      "reason": "Rule studio keeps tenant rules only in the web process memory; CONTAINED since S5 (D3a) and locked everywhere, UAT included (D1b); replaced when rules get real storage (its own card)"
     },
     {
       "code": "IN_MEMORY_BUSINESS_STORE",
@@ -44,8 +33,8 @@
         "e58633f3a370c585"
       ],
       "card": "WI-OI-120ak",
-      "slice": "S5-lock",
-      "reason": "Master data (CONTAINED) seed and in-memory store; reachable on UAT until D1a turns the UAT preview off in S5; replaced by T4 parties (plan v3 5B)"
+      "slice": "locked",
+      "reason": "Master data (CONTAINED) seed and in-memory store; locked everywhere, UAT included, since S5 (D1b); replaced by T4 parties (plan v3 5B)"
     },
     {
       "code": "IN_MEMORY_BUSINESS_STORE",
@@ -59,8 +48,8 @@
         "aa045eb60aebe920"
       ],
       "card": "WI-OI-120ak",
-      "slice": "S5-lock",
-      "reason": "Rule studio (REVIEW) keeps tenant rules only in the web process memory; reachable on UAT until D3a sets it CONTAINED in S5; replaced when rules get real storage (its own card)"
+      "slice": "locked",
+      "reason": "Rule studio keeps tenant rules only in the web process memory; CONTAINED since S5 (D3a) and locked everywhere, UAT included (D1b); replaced when rules get real storage (its own card)"
     },
     {
       "code": "IN_MEMORY_SCREEN_RECORDS",
@@ -70,8 +59,8 @@
         "f7d5a344e53d57d1"
       ],
       "card": "WI-OI-120ak",
-      "slice": "S5-lock",
-      "reason": "Accounts Receivable (CONTAINED) new-invoice form pre-fills an invented line; reachable on UAT until D1a in S5; rebuilt in M-AR (plan v3 5C)"
+      "slice": "locked",
+      "reason": "Accounts Receivable (CONTAINED) new-invoice form pre-fills an invented line; locked everywhere, UAT included, since S5 (D1b); rebuilt in M-AR (plan v3 5C)"
     },
     {
       "code": "IN_MEMORY_SCREEN_RECORDS",
@@ -90,8 +79,8 @@
         "8860caeb24704c11"
       ],
       "card": "WI-OI-120ak",
-      "slice": "S5-lock",
-      "reason": "Rule studio (REVIEW) keeps tenant rules only in the web process memory; reachable on UAT until D3a sets it CONTAINED in S5; replaced when rules get real storage (its own card)"
+      "slice": "locked",
+      "reason": "Rule studio keeps tenant rules only in the web process memory; CONTAINED since S5 (D3a) and locked everywhere, UAT included (D1b); replaced when rules get real storage (its own card)"
     },
     {
       "code": "PLACEHOLDER_PEOPLE_OR_COMPANIES",
@@ -103,8 +92,8 @@
         "99404e755101fd92"
       ],
       "card": "WI-OI-120ak",
-      "slice": "S5-lock",
-      "reason": "Master data (CONTAINED) seed and in-memory store; reachable on UAT until D1a turns the UAT preview off in S5; replaced by T4 parties (plan v3 5B)"
+      "slice": "locked",
+      "reason": "Master data (CONTAINED) seed and in-memory store; locked everywhere, UAT included, since S5 (D1b); replaced by T4 parties (plan v3 5B)"
     },
     {
       "code": "PLACEHOLDER_PEOPLE_OR_COMPANIES",
@@ -124,8 +113,8 @@
         "29a7cca596b258f8"
       ],
       "card": "WI-OI-120ak",
-      "slice": "S5-lock",
-      "reason": "Master data (CONTAINED) seed and in-memory store; reachable on UAT until D1a turns the UAT preview off in S5; replaced by T4 parties (plan v3 5B)"
+      "slice": "locked",
+      "reason": "Master data (CONTAINED) seed and in-memory store; locked everywhere, UAT included, since S5 (D1b); replaced by T4 parties (plan v3 5B)"
     }
   ]
 }

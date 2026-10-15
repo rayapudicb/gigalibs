@@ -161,6 +161,9 @@ describe('module access', () => {
 
 describe('UAT preview (WI-OI-120a)', () => {
   const lockedKeys = ['financial-operations', 'universal-procurement', 'accounts-receivable', 'esignature'];
+  // WI-OI-120ak (S5, D1b): the preview opens PLANNED modules only; CONTAINED ones stay locked.
+  const plannedKeys = ['financial-operations', 'universal-procurement'];
+  const containedKeys = ['accounts-receivable', 'esignature', 'communications-textfly', 'master-data', 'rule-studio'];
 
   afterEach(() => {
     vi.unstubAllEnvs();
@@ -174,14 +177,26 @@ describe('UAT preview (WI-OI-120a)', () => {
     }
   });
 
-  it('lifts the readiness lock on the UAT instance but still requires the entitlement and the permission', () => {
+  it('lifts the lock of a PLANNED module on the UAT instance but still requires the entitlement and the permission', () => {
     vi.stubEnv(UAT_PREVIEW_SETTING, 'enabled');
     expect(uatPreviewEnabled()).toBe(true);
-    for (const key of lockedKeys) {
+    for (const key of plannedKeys) {
       expect(isCatalogueLocked(key), key).toBe(true);
       expect(canUseTenantModule(key, new Set([key]), ['*']), key).toBe(true);
       expect(canUseTenantModule(key, new Set(), ['*']), `${key} without entitlement`).toBe(false);
       expect(canUseTenantModule(key, new Set([key]), []), `${key} without permission`).toBe(false);
+    }
+  });
+
+  it('keeps a CONTAINED module locked even on the UAT instance, for tenants and for platform inspection', () => {
+    vi.stubEnv(UAT_PREVIEW_SETTING, 'enabled');
+    for (const key of containedKeys) {
+      const entry = platformModuleCatalog.find((module) => module.key === key)!;
+      expect(entry.readiness, key).toBe('CONTAINED');
+      expect(canUseTenantModule(key, new Set([key]), ['*']), key).toBe(false);
+      expect(canUseTenantModule(key, new Set([key]), ['*'], { uatPreview: true }), `${key} explicit`).toBe(false);
+      const session = { tenant: { features: [key] }, permissions: ['*'], platformRoles: ['PLATFORM_ADMIN'], uatPreview: true };
+      expect(canOpenPlatformModule(entry, session), `${key} screen`).toBe(false);
     }
   });
 
