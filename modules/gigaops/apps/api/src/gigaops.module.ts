@@ -1,5 +1,10 @@
 import { Module } from '@nestjs/common';
-import { createRecordController, ModuleIdempotencyStore, RECORD_DISPATCHER } from '@gigalibs/module-sdk';
+import {
+  createRecordController,
+  loadIdempotencyRetentionDays,
+  ModuleIdempotencyStore,
+  RECORD_DISPATCHER,
+} from '@gigalibs/module-sdk';
 import { GigaOpsAuthorizationGuard } from './auth/authorization.js';
 import { workforceRecordDispatcher } from './resources/workforce-record-adapters.js';
 import { GigaOpsConfigProvider } from './config.provider.js';
@@ -130,7 +135,9 @@ const GigaOpsRecordController = createRecordController({ guard: GigaOpsAuthoriza
         availability: AvailabilityService,
         bookings: BookingsService,
         database: WorkforceDatabaseService,
-      ) => workforceRecordDispatcher({ resources, jobs, availability, bookings }, new ModuleIdempotencyStore(database)),
+      ) => workforceRecordDispatcher({ resources, jobs, availability, bookings }, new ModuleIdempotencyStore(database, {
+        retentionDays: loadIdempotencyRetentionDays(process.env, 'WORKFORCE'),
+      })),
     },
   ],
 })

@@ -104,8 +104,14 @@ export {
   type RecordFieldPolicy,
   type RecordListQuery,
   type RecordPage,
+  type RecordRestMirror,
   type RecordRules,
   type RecordValues,
 } from './record-dispatcher.js';
-export { ModuleIdempotencyStore, RECORD_IDEMPOTENCY_TABLE } from './record-idempotency.js';
+export {
+  DEFAULT_IDEMPOTENCY_RETENTION_DAYS,
+  ModuleIdempotencyStore,
+  RECORD_IDEMPOTENCY_TABLE,
+  loadIdempotencyRetentionDays,
+} from './record-idempotency.js';
 export { createRecordController, RECORD_DISPATCHER } from './record-controller.js';

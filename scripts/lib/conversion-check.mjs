@@ -13,9 +13,10 @@ const ALWAYS = new Set(['id', 'version']);
  * @param {Array} input.roles         the module's default roles
  * @param {Set<string>} input.servedLookups  lookup keys served by any converted module or by the platform
  * @param {object} input.engine       `{ executableCapabilityFindings, entityRules, holdsPermission, notDelegable? }`
+ * @param {Map<string, string>} [input.heldBack]  record types registered but shown by no window yet, with their card
  * @returns {{ findings: string[], permissions: string[] }}
  */
-export function conversionFindings({ windows, description, manifest, roles, servedLookups, engine }) {
+export function conversionFindings({ windows, description, manifest, roles, servedLookups, engine, heldBack = new Map() }) {
   const { executableCapabilityFindings, entityRules, holdsPermission, notDelegable = () => false } = engine;
   const findings = [];
   const fail = (message) => findings.push(message);
@@ -85,6 +86,45 @@ export function conversionFindings({ windows, description, manifest, roles, serv
   for (const permission of [...permissions].sort())
     if (!notDelegable(permission) && !roles.some((role) => holdsPermission(role.permissions, permission)))
       fail(`permission ${permission} is granted by no module role`);
+
+  // 8. WI-OI-120af: a record operation is never wider than the REST route it mirrors. Each record type names, per
+  //    operation, the gateway route it mirrors (`METHOD path`) or null when there is none, and holding the record
+  //    permission must imply holding the route's.
+  const gateway = new Map();
+  for (const route of manifest.spec.gateway?.routes ?? [])
+    for (const method of ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']) if (route[method]) gateway.set(`${method} ${route.path}`, route[method]);
+  for (const entity of description.entities) {
+    if (!entity.rest) {
+      fail(`${entity.entityKey}: names no REST routes it mirrors (rest)`);
+      continue;
+    }
+    const operations = [['read', entity.permissions.read, entity.rest.read]];
+    if (entity.permissions.create) operations.push(['create', entity.permissions.create, entity.rest.create]);
+    if (entity.permissions.update) operations.push(['update', entity.permissions.update, entity.rest.update]);
+    for (const [action, permission] of Object.entries(entity.actions))
+      operations.push([`action ${action}`, permission, entity.rest.actions?.[action]]);
+    for (const [operation, permission, route] of operations) {
+      // A read may need several permissions, all of them; a gateway route given a list accepts any one of them, as the
+      // web gateway does (lib/signed-module-proxy.ts).
+      const held = typeof permission === 'string' ? [permission] : permission;
+      const value = route ? gateway.get(route) : undefined;
+      const accepted = Array.isArray(value) ? value : [value];
+      if (route === undefined) fail(`${entity.entityKey}: ${operation} names no REST route (null when there is none)`);
+      else if (route !== null && !gateway.has(route)) fail(`${entity.entityKey}: ${operation} mirrors ${route}, which the gateway does not declare`);
+      else if (route !== null && !accepted.some((required) => holdsPermission(held, required)))
+        fail(`${entity.entityKey}: ${operation} needs ${held.join(' + ')}, wider than ${route} (${accepted.join(' or ')})`);
+    }
+  }
+
+  // 9. WI-OI-120af: every record type the dispatcher serves is shown by a window, or is held back by a named card.
+  const shown = new Set(windows.flatMap((baseline) => baseline.definition.dictionary.views.flatMap((view) => view.tabs.map((tab) => tab.targetEntityKey))));
+  for (const entity of description.entities)
+    if (!shown.has(entity.entityKey) && !heldBack.has(entity.entityKey))
+      fail(`${entity.entityKey} is served by the record API but shown by no window; show it, or hold it back with its card`);
+  for (const [entityKey, card] of heldBack) {
+    if (!adapters.has(entityKey)) fail(`held back ${entityKey} (${card}) is not registered; remove it from the held-back list`);
+    else if (shown.has(entityKey)) fail(`held back ${entityKey} (${card}) is shown by a window; remove it from the held-back list`);
+  }
 
   return { findings, permissions: [...permissions].sort() };
 }

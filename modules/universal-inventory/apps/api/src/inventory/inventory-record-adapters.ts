@@ -218,6 +218,11 @@ function readAdapter(
 /** Inventory's record dispatcher: the entities and lookups its windows use. */
 export function inventoryRecordDispatcher(deps: InventoryRecordDependencies, idempotency: IdempotencyStore): RecordDispatcher {
   const warehouses: RecordAdapter = {
+    rest: {
+      read: 'GET v1/warehouses',
+      create: 'POST v1/warehouses',
+      update: 'PATCH v1/warehouses/{id}',
+    },
     ...readAdapter(deps, 'inventory.warehouses', 'warehouses', WAREHOUSE_FIELDS, 'inventory:read', {
       search: ['code', 'name'],
       filter: ['warehouse-type'],
@@ -242,6 +247,7 @@ export function inventoryRecordDispatcher(deps: InventoryRecordDependencies, ide
   };
 
   const locations: RecordAdapter = {
+    rest: { read: 'GET v1/locations', create: 'POST v1/locations' },
     ...readAdapter(deps, 'inventory.locations', 'locations', LOCATION_FIELDS, 'inventory:read', {
       search: ['code', 'name', 'barcode'],
       filter: ['location-type'],
@@ -256,6 +262,7 @@ export function inventoryRecordDispatcher(deps: InventoryRecordDependencies, ide
   };
 
   const items: RecordAdapter = {
+    rest: { read: 'GET v1/items', create: 'POST v1/items' },
     ...readAdapter(deps, 'inventory.items', 'items', ITEM_FIELDS, 'inventory:read', { filter: ['valuation-method'] }),
     permissions: { read: 'inventory:read', create: 'inventory:items:manage' },
     async create(context, values) {
@@ -266,6 +273,7 @@ export function inventoryRecordDispatcher(deps: InventoryRecordDependencies, ide
   };
 
   const lots: RecordAdapter = {
+    rest: { read: 'GET v1/lots', create: 'POST v1/lots' },
     ...readAdapter(deps, 'inventory.lots', 'lots', LOT_FIELDS, 'inventory:read', {
       search: ['lot-number', 'batch-code', 'supplier-lot-number'],
       filter: ['status'],
@@ -279,6 +287,11 @@ export function inventoryRecordDispatcher(deps: InventoryRecordDependencies, ide
   };
 
   const receipts: RecordAdapter = {
+    rest: {
+      read: 'GET v1/receipts',
+      create: 'POST v1/receipts',
+      actions: { complete: 'POST v1/receipts/{id}/complete' },
+    },
     ...readAdapter(deps, 'inventory.receipts', 'receipts', RECEIPT_FIELDS, 'inventory:read', {
       search: ['receipt-number', 'external-document-reference'],
       filter: ['status'],
@@ -302,6 +315,8 @@ export function inventoryRecordDispatcher(deps: InventoryRecordDependencies, ide
   };
 
   const receiptLines: RecordAdapter = {
+    // A line is received with its receipt: REST adds lines when it creates the receipt.
+    rest: { read: 'GET v1/receipts', create: 'POST v1/receipts' },
     ...readAdapter(deps, 'inventory.receipt-lines', 'receiptLines', RECEIPT_LINE_FIELDS, 'inventory:read', {
       search: ['lot-number'],
       filter: ['inspection-status'],
@@ -317,14 +332,20 @@ export function inventoryRecordDispatcher(deps: InventoryRecordDependencies, ide
     },
   };
 
-  const balances = readAdapter(deps, 'inventory.balances', 'balances', BALANCE_FIELDS, 'inventory:read', {
-    filter: ['stock-status'],
-    sort: ['last-movement-at'],
-  });
-  const ledger = readAdapter(deps, 'inventory.ledger', 'ledger', LEDGER_FIELDS, 'inventory:ledger:read', {
-    filter: ['direction', 'stock-status'],
-    sort: ['created-at'],
-  });
+  const balances: RecordAdapter = {
+    rest: { read: 'GET v1/balances' },
+    ...readAdapter(deps, 'inventory.balances', 'balances', BALANCE_FIELDS, 'inventory:read', {
+      filter: ['stock-status'],
+      sort: ['last-movement-at'],
+    }),
+  };
+  const ledger: RecordAdapter = {
+    rest: { read: 'GET v1/ledger' },
+    ...readAdapter(deps, 'inventory.ledger', 'ledger', LEDGER_FIELDS, 'inventory:ledger:read', {
+      filter: ['direction', 'stock-status'],
+      sort: ['created-at'],
+    }),
+  };
 
   const resolvers: LookupResolver[] = [
     { key: 'inventory-warehouses', permission: 'inventory:read', resolve: (principal, request) => deps.records.lookup(principal, 'warehouses', request) },

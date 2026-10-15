@@ -97,6 +97,11 @@ function patternToWindow(pattern: AvailabilityPatternV1): RecordValues {
 
 function patternAdapter(deps: AvailabilityRecordDependencies): RecordAdapter {
   return {
+    rest: {
+      read: 'GET v1/availability-patterns',
+      create: 'POST v1/availability-patterns',
+      actions: { end: 'POST v1/availability-patterns/{id}/end' },
+    },
     entityKey: 'wf.availability-patterns',
     permissions: { read: 'workforce.availability.read', create: 'workforce.availability.manage' },
     parentField: 'resource-id',
@@ -221,6 +226,15 @@ function absenceAdapter(deps: AvailabilityRecordDependencies): RecordAdapter {
     },
   });
   return {
+    rest: {
+      read: 'GET v1/absences',
+      create: 'POST v1/absences',
+      actions: {
+        approve: 'POST v1/absences/{id}/approve|reject',
+        reject: 'POST v1/absences/{id}/approve|reject',
+        cancel: 'POST v1/absences/{id}/cancel',
+      },
+    },
     entityKey: 'wf.absences',
     permissions: { read: 'workforce.absences.read', create: 'workforce.absences.request' },
     parentField: 'resource-id',
@@ -288,6 +302,8 @@ function ownAbsenceAdapter(deps: AvailabilityRecordDependencies): RecordAdapter 
     return values;
   };
   return {
+    // Self-service on the caller's own absences only; REST has no routes for one's own absences.
+    rest: { read: null, create: null, actions: { cancel: null } },
     entityKey: 'wf.my-absences',
     permissions: {
       read: 'workforce.absences.request-own',
@@ -369,6 +385,15 @@ function absenceTypeAdapter(deps: AvailabilityRecordDependencies): RecordAdapter
       ),
   });
   return {
+    rest: {
+      read: 'GET v1/absence-types',
+      create: 'POST v1/absence-types',
+      update: 'PATCH v1/absence-types/{id}',
+      actions: {
+        deactivate: 'PATCH v1/absence-types/{id}',
+        activate: 'PATCH v1/absence-types/{id}',
+      },
+    },
     entityKey: 'wf.absence-types',
     permissions: {
       read: 'workforce.absences.read',
@@ -434,6 +459,7 @@ function calendarToWindow(calendar: WorkingCalendarV1): RecordValues {
 
 function calendarAdapter(deps: AvailabilityRecordDependencies): RecordAdapter {
   return {
+    rest: { read: 'GET v1/working-calendars', create: 'POST v1/working-calendars' },
     entityKey: 'wf.calendars',
     permissions: { read: 'workforce.calendars.read', create: 'workforce.calendars.manage' },
     fields: policy(['code', 'name', 'site-ref'], ['closure-count']),
@@ -493,6 +519,11 @@ function closureAdapter(deps: AvailabilityRecordDependencies): RecordAdapter {
       (closure) => closure.id === id,
     ) ?? null;
   return {
+    rest: {
+      read: 'GET v1/working-calendars',
+      create: 'POST v1/working-calendars/{id}/closures',
+      actions: { withdraw: 'POST v1/working-calendars/{id}/closures/{id}/withdraw' },
+    },
     entityKey: 'wf.calendar-closures',
     permissions: { read: 'workforce.calendars.read', create: 'workforce.calendars.manage' },
     fields: policy(['calendar-id', 'closure-date', 'label'], ['status']),
@@ -572,6 +603,7 @@ function bookingAdapter(deps: AvailabilityRecordDependencies): RecordAdapter {
     return bookings.map((booking) => bookingToWindow(booking, zoneOf(booking.resourceId)));
   };
   return {
+    rest: { read: 'GET v1/bookings' },
     entityKey: 'wf.bookings',
     permissions: { read: 'workforce.bookings.read' },
     fields: policy(

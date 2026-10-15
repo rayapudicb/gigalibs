@@ -66,10 +66,28 @@ export interface RecordAction {
   run(context: RecordCommandContext, id: string, parameters: RecordValues): Promise<RecordValues>;
 }
 
+/**
+ * WI-OI-120af: the module's REST route that each record operation mirrors, as `METHOD path` from the module manifest's
+ * gateway routes (for example `POST v1/warehouses`), or null when no REST route does the same. The conversion check
+ * (scripts/lib/conversion-check.mjs) compares the permissions, so the record API is never wider than REST.
+ */
+export interface RecordRestMirror {
+  /** The collection read (list and get share `permissions.read`). */
+  readonly read: string | null;
+  readonly create?: string | null;
+  readonly update?: string | null;
+  readonly actions?: Readonly<Record<string, string | null>>;
+}
+
 export interface RecordAdapter {
   /** The dictionary entity key, for example `inventory.warehouses`. */
   readonly entityKey: string;
-  readonly permissions: { readonly read: string; readonly create?: string; readonly update?: string };
+  /**
+   * WI-OI-120af: `read` may list several permissions, all required, when a record type's data needs more than one (as
+   * its REST route does); the conversion check then sees every one of them.
+   */
+  readonly permissions: { readonly read: string | readonly string[]; readonly create?: string; readonly update?: string };
+  readonly rest?: RecordRestMirror;
   /** Every field a window may show. Anything else an adapter returns is dropped. */
   readonly fields: Readonly<Record<string, RecordFieldPolicy>>;
   readonly searchFields?: readonly string[];
@@ -192,6 +210,7 @@ export class RecordDispatcher {
       readonly permissions: RecordAdapter['permissions'];
       readonly fields: RecordAdapter['fields'];
       readonly actions: Readonly<Record<string, string>>;
+      readonly rest?: RecordRestMirror;
     }>;
     resolvers: ReadonlyArray<{ readonly key: string; readonly permission: string }>;
   } {
@@ -201,6 +220,7 @@ export class RecordDispatcher {
         permissions: adapter.permissions,
         fields: adapter.fields,
         actions: Object.fromEntries(Object.entries(adapter.actions ?? {}).map(([key, action]) => [key, action.permission])),
+        ...(adapter.rest ? { rest: adapter.rest } : {}),
       })),
       resolvers: [...this.resolvers.values()].map((resolver) => ({ key: resolver.key, permission: resolver.permission })),
     };
@@ -355,9 +375,11 @@ export class RecordDispatcher {
     throw new UnprocessableEntityException({ code: 'RECORD_RULES', message: 'Some fields need attention.', fields: errors });
   }
 
-  private require(principal: ModulePrincipal, permission: string): void {
-    if (!holds(principal, permission)) {
-      throw new ForbiddenException({ code: 'RECORD_PERMISSION_DENIED', message: `Missing required permission: ${permission}` });
+  private require(principal: ModulePrincipal, required: string | readonly string[]): void {
+    for (const permission of typeof required === 'string' ? [required] : required) {
+      if (!holds(principal, permission)) {
+        throw new ForbiddenException({ code: 'RECORD_PERMISSION_DENIED', message: `Missing required permission: ${permission}` });
+      }
     }
   }
 
@@ -471,7 +493,11 @@ export class RecordDispatcher {
     if (!key || !UUID.test(key)) {
       throw new BadRequestException({ code: 'RECORD_IDEMPOTENCY_KEY_REQUIRED', message: 'A create or action needs an Idempotency-Key UUID.' });
     }
-    const requestHash = createHash('sha256').update(`${operation}\u0000${stableJson(payload)}`).digest('hex');
+    // WI-OI-120ae: the caller is part of the request, so another person's same key and body is a different request
+    // (409), never a replay of someone else's answer.
+    const requestHash = createHash('sha256')
+      .update(`${operation}\u0000${principal.subject}\u0000${stableJson(payload)}`)
+      .digest('hex');
     const existing = await this.idempotency.claim(principal.tenantId, key, operation, requestHash);
     if (existing) {
       if (existing.requestHash !== requestHash) {

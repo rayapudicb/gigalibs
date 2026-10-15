@@ -439,6 +439,18 @@ async function executeStatusTransition(
 /** CMMS record dispatcher: work orders and their child entities (tasks, labour, parts, notes, history). */
 export function cmmsRecordDispatcher(deps: CmmsRecordDependencies, idempotency?: IdempotencyStore): RecordDispatcher {
   const workOrders: RecordAdapter = {
+    rest: {
+      read: 'POST v1/work-orders/search',
+      create: 'POST v1/work-orders',
+      update: 'PATCH v1/work-orders/{id}',
+      actions: {
+        start: 'POST v1/work-orders/{id}/status|tasks|labour|parts|notes|staffing',
+        hold: 'POST v1/work-orders/{id}/status|tasks|labour|parts|notes|staffing',
+        resume: 'POST v1/work-orders/{id}/status|tasks|labour|parts|notes|staffing',
+        complete: 'POST v1/work-orders/{id}/status|tasks|labour|parts|notes|staffing',
+        cancel: 'POST v1/work-orders/{id}/status|tasks|labour|parts|notes|staffing',
+      },
+    },
     entityKey: 'cmms.work-orders',
     permissions: {
       read: 'cmms.work-orders.read',
@@ -520,6 +532,11 @@ export function cmmsRecordDispatcher(deps: CmmsRecordDependencies, idempotency?:
   };
 
   const tasks: RecordAdapter = {
+    rest: {
+      read: 'GET v1/work-orders/{id}',
+      create: 'POST v1/work-orders/{id}/status|tasks|labour|parts|notes|staffing',
+      update: 'PATCH v1/work-orders/{id}/tasks/{id}',
+    },
     entityKey: 'cmms.work-order-tasks',
     parentField: 'work-order-id',
     permissions: {
@@ -572,6 +589,10 @@ export function cmmsRecordDispatcher(deps: CmmsRecordDependencies, idempotency?:
   };
 
   const labour: RecordAdapter = {
+    rest: {
+      read: 'GET v1/work-orders/{id}',
+      create: 'POST v1/work-orders/{id}/status|tasks|labour|parts|notes|staffing',
+    },
     entityKey: 'cmms.work-order-labour',
     parentField: 'work-order-id',
     permissions: {
@@ -616,6 +637,10 @@ export function cmmsRecordDispatcher(deps: CmmsRecordDependencies, idempotency?:
   };
 
   const workOrderParts: RecordAdapter = {
+    rest: {
+      read: 'GET v1/work-orders/{id}',
+      create: 'POST v1/work-orders/{id}/status|tasks|labour|parts|notes|staffing',
+    },
     entityKey: 'cmms.work-order-parts',
     parentField: 'work-order-id',
     permissions: {
@@ -665,6 +690,10 @@ export function cmmsRecordDispatcher(deps: CmmsRecordDependencies, idempotency?:
   };
 
   const notes: RecordAdapter = {
+    rest: {
+      read: 'GET v1/work-orders/{id}',
+      create: 'POST v1/work-orders/{id}/status|tasks|labour|parts|notes|staffing',
+    },
     entityKey: 'cmms.work-order-notes',
     parentField: 'work-order-id',
     permissions: {
@@ -711,6 +740,7 @@ export function cmmsRecordDispatcher(deps: CmmsRecordDependencies, idempotency?:
   };
 
   const history: RecordAdapter = {
+    rest: { read: 'GET v1/work-orders/{id}/history' },
     entityKey: 'cmms.work-order-history',
     parentField: 'work-order-id',
     permissions: {
@@ -731,6 +761,15 @@ export function cmmsRecordDispatcher(deps: CmmsRecordDependencies, idempotency?:
   };
 
   const maintenanceRequests: RecordAdapter = {
+    rest: {
+      read: 'POST v1/requests/search',
+      create: 'POST v1/requests',
+      actions: {
+        accept: 'POST v1/requests/{id}/triage',
+        reject: 'POST v1/requests/{id}/triage',
+        cancel: 'POST v1/requests/{id}/cancel',
+      },
+    },
     entityKey: 'cmms.maintenance-requests',
     permissions: {
       read: 'cmms.requests.read',
@@ -805,6 +844,12 @@ export function cmmsRecordDispatcher(deps: CmmsRecordDependencies, idempotency?:
   };
 
   const pmSchedules: RecordAdapter = {
+    rest: {
+      read: 'GET v1/pm-schedules',
+      create: 'POST v1/pm-schedules',
+      update: 'PATCH v1/pm-schedules/{id}',
+      actions: { generate: 'POST v1/pm-schedules/{id}/generate' },
+    },
     entityKey: 'cmms.pm-schedules',
     permissions: {
       read: 'cmms.pm.read',
@@ -855,6 +900,7 @@ export function cmmsRecordDispatcher(deps: CmmsRecordDependencies, idempotency?:
   };
 
   const meters: RecordAdapter = {
+    rest: { read: 'GET v1/meters', create: 'POST v1/meters' },
     entityKey: 'cmms.meters',
     permissions: {
       read: 'cmms.meters.read',
@@ -884,6 +930,7 @@ export function cmmsRecordDispatcher(deps: CmmsRecordDependencies, idempotency?:
   };
 
   const meterReadings: RecordAdapter = {
+    rest: { read: 'GET v1/meters/{id}/readings', create: 'POST v1/meters/{id}/readings' },
     entityKey: 'cmms.meter-readings',
     parentField: 'meter-id',
     permissions: {
@@ -916,6 +963,7 @@ export function cmmsRecordDispatcher(deps: CmmsRecordDependencies, idempotency?:
   };
 
   const parts: RecordAdapter = {
+    rest: { read: 'POST v1/parts/search', create: 'POST v1/parts', update: 'PATCH v1/parts/{id}' },
     entityKey: 'cmms.parts',
     permissions: {
       read: 'cmms.parts.read',
@@ -952,6 +1000,7 @@ export function cmmsRecordDispatcher(deps: CmmsRecordDependencies, idempotency?:
   };
 
   const partMovements: RecordAdapter = {
+    rest: { read: 'GET v1/parts/{id}/movements', create: 'POST v1/parts/{id}/movements' },
     entityKey: 'cmms.part-movements',
     parentField: 'part-id',
     permissions: {
@@ -1005,6 +1054,12 @@ export function cmmsRecordDispatcher(deps: CmmsRecordDependencies, idempotency?:
   };
 
   const assets: RecordAdapter = {
+    rest: {
+      read: 'POST v1/assets/search',
+      create: 'POST v1/assets',
+      update: 'PATCH v1/assets/{id}',
+      actions: { archive: 'POST v1/assets/{id}/archive' },
+    },
     entityKey: 'cmms.assets',
     permissions: {
       read: 'cmms.assets.read',
@@ -1058,6 +1113,11 @@ export function cmmsRecordDispatcher(deps: CmmsRecordDependencies, idempotency?:
   };
 
   const assetSpecs: RecordAdapter = {
+    rest: {
+      read: 'GET v1/assets/{id}/specs',
+      create: 'PUT v1/assets/{id}/specs',
+      update: 'PUT v1/assets/{id}/specs',
+    },
     entityKey: 'cmms.asset-specs',
     parentField: 'asset-id',
     permissions: {
@@ -1130,6 +1190,12 @@ export function cmmsRecordDispatcher(deps: CmmsRecordDependencies, idempotency?:
   };
 
   const spaces: RecordAdapter = {
+    rest: {
+      read: 'GET v1/spaces/tree',
+      create: 'POST v1/spaces',
+      update: 'PATCH v1/spaces/{id}',
+      actions: { delete: 'DELETE v1/spaces/{id}' },
+    },
     entityKey: 'cmms.spaces',
     permissions: {
       read: 'cmms.assets.read',
@@ -1194,6 +1260,7 @@ export function cmmsRecordDispatcher(deps: CmmsRecordDependencies, idempotency?:
   };
 
   const spaceAssets: RecordAdapter = {
+    rest: { read: 'GET v1/spaces/{id}/assets' },
     entityKey: 'cmms.space-assets',
     parentField: 'space-id',
     permissions: {
@@ -1222,6 +1289,12 @@ export function cmmsRecordDispatcher(deps: CmmsRecordDependencies, idempotency?:
   };
 
   const classifications: RecordAdapter = {
+    rest: {
+      read: 'GET v1/classifications/tree',
+      create: 'POST v1/classifications',
+      update: 'PATCH v1/classifications/{id}',
+      actions: { delete: 'DELETE v1/classifications/{id}' },
+    },
     entityKey: 'cmms.classifications',
     permissions: {
       read: 'cmms.assets.read',
@@ -1286,6 +1359,10 @@ export function cmmsRecordDispatcher(deps: CmmsRecordDependencies, idempotency?:
   };
 
   const specDefinitions: RecordAdapter = {
+    rest: {
+      read: 'GET v1/classifications/{id}/spec-definitions',
+      create: 'POST v1/classifications/spec-definitions',
+    },
     entityKey: 'cmms.spec-definitions',
     parentField: 'classification-id',
     permissions: {

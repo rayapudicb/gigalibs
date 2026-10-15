@@ -19,6 +19,7 @@ describe.skipIf(!adminUrl)('record idempotency store on PostgreSQL (isolated)', 
   let admin: pg.Client;
   let pool: pg.Pool;
   let store: ModuleIdempotencyStore;
+  let tenantDatabase: unknown;
 
   beforeAll(async () => {
     admin = new pg.Client({ connectionString: adminUrl });
@@ -69,6 +70,7 @@ describe.skipIf(!adminUrl)('record idempotency store on PostgreSQL (isolated)', 
         }
       },
     };
+    tenantDatabase = database;
     store = new ModuleIdempotencyStore(database as never);
   });
 
@@ -111,6 +113,42 @@ describe.skipIf(!adminUrl)('record idempotency store on PostgreSQL (isolated)', 
     await admin.query(`UPDATE proof_records.record_idempotency SET created_at = now() - interval '11 minutes' WHERE idempotency_key = ANY($1::uuid[])`, [[abandoned, completed]]);
     expect(await store.claim('tenant-a', abandoned, 'create:x', 'c'.repeat(64))).toBeNull();
     expect(await store.claim('tenant-a', completed, 'create:x', 'c'.repeat(64))).toMatchObject({ state: 'COMPLETED' });
+  });
+
+  // WI-OI-120ae: completed answers older than the window go with the tenant's next claim; recent ones still replay.
+  it("removes a tenant's completed answers past the window on its next claim, and nothing else", async () => {
+    const expired = randomUUID();
+    const recent = randomUUID();
+    const stuck = randomUUID();
+    const otherTenant = randomUUID();
+    for (const key of [expired, recent]) {
+      await store.claim('tenant-a', key, 'create:x', 'e'.repeat(64));
+      await store.complete('tenant-a', key, { id: key });
+    }
+    await store.claim('tenant-a', stuck, 'create:x', 'e'.repeat(64)); // still IN_PROGRESS
+    await store.claim('tenant-b', otherTenant, 'create:x', 'e'.repeat(64));
+    await store.complete('tenant-b', otherTenant, { id: otherTenant });
+    await admin.query(
+      `UPDATE proof_records.record_idempotency SET created_at = now() - interval '8 days', completed_at = now() - interval '8 days'
+       WHERE idempotency_key = ANY($1::uuid[])`,
+      [[expired, stuck, otherTenant]],
+    );
+
+    expect(await store.claim('tenant-a', randomUUID(), 'create:x', 'f'.repeat(64))).toBeNull(); // any claim sweeps
+    const left = await admin.query<{ idempotency_key: string }>('SELECT idempotency_key FROM proof_records.record_idempotency');
+    const keys = left.rows.map((row) => row.idempotency_key);
+    expect(keys).not.toContain(expired);
+    expect(keys).toEqual(expect.arrayContaining([recent, stuck, otherTenant]));
+    expect(await store.claim('tenant-a', recent, 'create:x', 'e'.repeat(64))).toMatchObject({ state: 'COMPLETED' });
+  });
+
+  it('keeps answers for the configured window', async () => {
+    const longer = new ModuleIdempotencyStore(tenantDatabase as never, { retentionDays: 30 });
+    const key = randomUUID();
+    await store.claim('tenant-a', key, 'create:x', '9'.repeat(64));
+    await store.complete('tenant-a', key, { id: key });
+    await admin.query(`UPDATE proof_records.record_idempotency SET completed_at = now() - interval '8 days' WHERE idempotency_key = $1`, [key]);
+    expect(await longer.claim('tenant-a', key, 'create:x', '9'.repeat(64))).toMatchObject({ state: 'COMPLETED' });
   });
 
   it("keeps tenants apart: the same key in another tenant is a new claim, and it cannot see the first tenant's answer", async () => {

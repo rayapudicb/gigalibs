@@ -28,6 +28,17 @@ const CONVERTED = {
 /** Findings seen by the owner and closed by a named later card. */
 const KNOWN = {};
 
+/**
+ * WI-OI-120af: record types the record API serves before any window shows them, with the card that brings the window.
+ * Their permissions are still checked against the REST routes they mirror.
+ */
+const HELD_BACK = {
+  gigaops: {
+    'wf.job-profiles': 'WI-OI-120u, the Jobs & positions window (plan v3 step 2.1)',
+    'wf.positions': 'WI-OI-120u, the Jobs & positions window (plan v3 step 2.1)',
+  },
+};
+
 /** Held only by administrators (a whole-area grant), never by a module role. */
 const notDelegable = (permission) => (canonicalPermission(permission) ?? permission) in NOT_DELEGABLE_PERMISSIONS;
 
@@ -74,6 +85,7 @@ for (const name of modules) {
     roles,
     servedLookups: new Set(servedLookups.keys()),
     engine: { executableCapabilityFindings, entityRules, holdsPermission, notDelegable },
+    heldBack: new Map(Object.entries(HELD_BACK[name] ?? {})),
   });
 
   const known = new Set(KNOWN[name] ?? []);

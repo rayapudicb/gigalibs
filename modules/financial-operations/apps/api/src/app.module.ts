@@ -1,4 +1,9 @@
-import { createRecordController, ModuleIdempotencyStore, RECORD_DISPATCHER } from '@gigalibs/module-sdk';
+import {
+  createRecordController,
+  loadIdempotencyRetentionDays,
+  ModuleIdempotencyStore,
+  RECORD_DISPATCHER,
+} from '@gigalibs/module-sdk';
 import { Module } from '@nestjs/common';
 import { AuthorizationGuard } from './authorization.js';
 import { runtimeConfigProvider } from './config.js';
@@ -50,7 +55,9 @@ const FinanceRecordController = createRecordController({ guard: AuthorizationGua
       provide: RECORD_DISPATCHER,
       inject: [DatabaseService, FinanceService, JournalDraftsService, FinanceRecordsService],
       useFactory: (database: DatabaseService, finance: FinanceService, drafts: JournalDraftsService, records: FinanceRecordsService) =>
-        financeRecordDispatcher({ finance, drafts, records }, new ModuleIdempotencyStore(database)),
+        financeRecordDispatcher({ finance, drafts, records }, new ModuleIdempotencyStore(database, {
+          retentionDays: loadIdempotencyRetentionDays(process.env, 'FINANCIAL_OPERATIONS'),
+        })),
     },
     TreasuryService,
     FixedAssetsService,

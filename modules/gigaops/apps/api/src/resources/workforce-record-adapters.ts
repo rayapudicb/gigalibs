@@ -1,5 +1,4 @@
 import { shippedRecordRules } from '@gigalibs/configuration-core';
-import { holdsPermission } from '@gigalibs/contracts';
 import type {
   CapabilityDefinitionV1,
   JobProfileV1,
@@ -15,7 +14,7 @@ import {
   RecordDispatcher,
   type RecordValues,
 } from '@gigalibs/module-sdk';
-import { BadRequestException, ForbiddenException } from '@nestjs/common';
+import { BadRequestException } from '@nestjs/common';
 import {
   type AvailabilityRecordDependencies,
   availabilityAdapters,
@@ -83,6 +82,12 @@ function resourceAdapter(deps: WorkforceRecordDependencies): RecordAdapter {
       ),
   });
   return {
+    rest: {
+      read: 'GET v1/resources',
+      create: 'POST v1/resources',
+      update: 'PATCH v1/resources/{id}',
+      actions: { deactivate: 'PATCH v1/resources/{id}', activate: 'PATCH v1/resources/{id}' },
+    },
     entityKey: 'wf.resources',
     permissions: {
       read: 'workforce.resources.read',
@@ -158,19 +163,18 @@ const SKILL_FIELDS: readonly FieldSpec[] = [
 
 function skillAdapter(deps: WorkforceRecordDependencies): RecordAdapter {
   return {
+    rest: { read: 'GET v1/resources/{id}', create: 'POST v1/resources/{id}/capabilities' },
     entityKey: 'wf.resource-skills',
-    permissions: { read: 'workforce.capabilities.read', create: 'workforce.capabilities.manage' },
+    // Security review L1: a person's qualifications are part of their record, which REST shows to holders of
+    // workforce.resources.read (GET v1/resources/:id); reading skills needs it as well as the skills permission.
+    // WI-OI-120af: declared here, so the dispatcher enforces it and the conversion check sees it.
+    permissions: {
+      read: ['workforce.capabilities.read', 'workforce.resources.read'],
+      create: 'workforce.capabilities.manage',
+    },
     parentField: 'resource-id',
     fields: fieldPolicies(SKILL_FIELDS),
     async list(principal, query) {
-      // Security review L1: a person's qualifications are part of their record, which REST shows to holders of
-      // workforce.resources.read (GET v1/resources/:id); the skills list asks for it as well.
-      if (!holdsPermission(principal.permissions, 'workforce.resources.read')) {
-        throw new ForbiddenException({
-          code: 'RECORD_PERMISSION_DENIED',
-          message: 'Missing required permission: workforce.resources.read',
-        });
-      }
       // Skills are always listed under their person; the person's record carries them.
       const parentId = query.parentId;
       if (!parentId) return { items: [], total: 0, page: query.page, pageSize: query.pageSize };
@@ -250,6 +254,11 @@ function jobProfileAdapter(deps: WorkforceRecordDependencies): RecordAdapter {
       ),
   });
   return {
+    rest: {
+      read: 'GET v1/job-profiles',
+      create: 'POST v1/job-profiles',
+      actions: { deactivate: 'PATCH v1/job-profiles/{id}', activate: 'PATCH v1/job-profiles/{id}' },
+    },
     entityKey: 'wf.job-profiles',
     permissions: { read: 'workforce.jobs.read', create: 'workforce.jobs.manage' },
     fields: fieldPolicies(JOB_PROFILE_FIELDS),
@@ -305,6 +314,11 @@ const POSITION_FIELDS: readonly FieldSpec[] = [
 
 function positionAdapter(deps: WorkforceRecordDependencies): RecordAdapter {
   return {
+    rest: {
+      read: 'GET v1/positions',
+      create: 'POST v1/positions',
+      update: 'PATCH v1/positions/{id}',
+    },
     entityKey: 'wf.positions',
     // As REST v1/positions (security review M1): positions have their own permissions, not the job profiles'.
     permissions: {

@@ -1,4 +1,9 @@
-import { createRecordController, ModuleIdempotencyStore, RECORD_DISPATCHER } from '@gigalibs/module-sdk';
+import {
+  createRecordController,
+  loadIdempotencyRetentionDays,
+  ModuleIdempotencyStore,
+  RECORD_DISPATCHER,
+} from '@gigalibs/module-sdk';
 import { Module } from '@nestjs/common';
 import { AuthorizationGuard } from './authorization.js';
 import {
@@ -31,7 +36,9 @@ const CatalogueRecordController = createRecordController({ guard: AuthorizationG
       provide: RECORD_DISPATCHER,
       inject: [DatabaseService, CatalogueService, CatalogueRecordsService],
       useFactory: (database: DatabaseService, catalogue: CatalogueService, records: CatalogueRecordsService) =>
-        catalogueRecordDispatcher({ catalogue, records }, new ModuleIdempotencyStore(database)),
+        catalogueRecordDispatcher({ catalogue, records }, new ModuleIdempotencyStore(database, {
+          retentionDays: loadIdempotencyRetentionDays(process.env, 'PRODUCT_CATALOGUE'),
+        })),
     },
   ],
 })

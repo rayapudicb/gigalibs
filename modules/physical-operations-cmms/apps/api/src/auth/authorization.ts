@@ -12,13 +12,18 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { PlatformContextError, verifyPlatformContextToken, type PlatformContextV1 } from '@gigalibs/auth-core';
-import type { OrganizationClaim } from '@gigalibs/module-sdk';
+import { MODULE_PERMISSIONS_METADATA, type OrganizationClaim } from '@gigalibs/module-sdk';
 import { holdsPermission } from '@gigalibs/contracts';
 import { CMMS_CONFIG } from '../config.provider.js';
 import { DatabaseService } from '../database/database.service.js';
 import { CMMS_MODULE_KEY, type CmmsRuntimeConfig } from '../runtime-config.js';
 
 const PERMISSIONS_METADATA = 'cmms.required-permissions';
+// WI-OI-120ag: built against a module SDK without this export, the guard would skip the record routes' baseline
+// permission without a word. Refuse to start instead (as Workforce does, WI-OI-120u I-new-1).
+if (typeof MODULE_PERMISSIONS_METADATA !== 'string' || MODULE_PERMISSIONS_METADATA.length === 0) {
+  throw new Error('@gigalibs/module-sdk does not export MODULE_PERMISSIONS_METADATA; rebuild it before CMMS.');
+}
 const TENANT_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/;
 const CORRELATION_ID_PATTERN = /^[A-Za-z0-9._:-]{1,128}$/;
 
@@ -116,11 +121,18 @@ export class CmmsAuthorizationGuard implements CanActivate {
       throw new UnauthorizedException('Platform context contains an invalid tenant identifier.');
     }
 
-    const required =
-      this.reflector.getAllAndOverride<string[] | undefined>(PERMISSIONS_METADATA, [
+    // WI-OI-120ag: the module SDK's record routes declare their baseline (`cmms:read`) with the SDK's own
+    // RequirePermissions; this guard enforces it as well as CMMS's.
+    const required = [
+      ...(this.reflector.getAllAndOverride<string[] | undefined>(PERMISSIONS_METADATA, [
         context.getHandler(),
         context.getClass(),
-      ]) ?? [];
+      ]) ?? []),
+      ...(this.reflector.getAllAndOverride<string[] | undefined>(MODULE_PERMISSIONS_METADATA, [
+        context.getHandler(),
+        context.getClass(),
+      ]) ?? []),
+    ];
     for (const permission of required) {
       if (!hasCmmsPermission(platformContext.granted_scopes, permission)) {
         throw new ForbiddenException(`Missing required permission: ${permission}`);

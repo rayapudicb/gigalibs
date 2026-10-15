@@ -7,7 +7,12 @@ const tx = vi.hoisted(() => ({
   tenant: { findUnique: vi.fn(), update: vi.fn(), create: vi.fn() },
   tenantMember: { create: vi.fn() },
   tenantSettings: { create: vi.fn() },
-  tenantModuleEntitlement: { findMany: vi.fn(), upsert: vi.fn(), createMany: vi.fn() },
+  tenantModuleEntitlement: {
+    findMany: vi.fn(),
+    upsert: vi.fn(),
+    createMany: vi.fn(),
+    updateMany: vi.fn(),
+  },
   tenantIsolationBinding: { create: vi.fn() },
   tenantSubdomainBinding: { create: vi.fn() },
   auditLog: { create: vi.fn() },
@@ -132,5 +137,87 @@ describe('a new workspace', () => {
     );
 
     expectEventAfterEntitlements('tenant-provisioned', ['gigaops']);
+  });
+});
+
+// WI-OI-120ai: extending a trial moves the end of the trial modules and keeps each module's status; a module the
+// administrator switched off stays off. The event is written only when the enabled set changes.
+describe('a trial extension', () => {
+  afterEach(() => {
+    vi.clearAllMocks();
+    vi.restoreAllMocks();
+  });
+
+  const DAY = 24 * 60 * 60 * 1000;
+  const entitlement = (
+    moduleKey: string,
+    status: 'ENABLED' | 'DISABLED',
+    endsAt: Date | null,
+    source = 'TRIAL',
+  ) => ({
+    moduleKey,
+    status,
+    source,
+    startsAt: new Date(Date.now() - 30 * DAY),
+    endsAt,
+  });
+
+  async function extend(rows: ReturnType<typeof entitlement>[], trialEndsAt: Date) {
+    tx.tenant.findUnique.mockResolvedValue({ id: 'tenant-1', status: 'TRIAL', trialEndsAt });
+    tx.tenantModuleEntitlement.findMany.mockResolvedValue(rows);
+    const service = new PlatformAdministrationService();
+    vi.spyOn(service, 'getTenant').mockResolvedValue({} as never);
+    await service.extendTrial('tenant-1', { days: 14, reason: 'UAT: more time' }, 'admin-1');
+  }
+
+  it('keeps a module the administrator switched off switched off', async () => {
+    const end = new Date(Date.now() + 3 * DAY);
+    await extend(
+      [entitlement('gigaops', 'ENABLED', end), entitlement('asset-maintenance', 'DISABLED', end)],
+      end,
+    );
+
+    const calls = tx.tenantModuleEntitlement.updateMany.mock.calls.map(([call]) => call);
+    // No update sets a status: each module keeps its own.
+    for (const call of calls) expect(call.data).not.toHaveProperty('status');
+    expect(calls).toContainEqual({
+      where: { tenantId: 'tenant-1', source: 'TRIAL', status: 'ENABLED' },
+      data: expect.objectContaining({ updatedById: 'admin-1', reason: 'UAT: more time' }),
+    });
+    // The switched-off module keeps who switched it off and why; only its end moves.
+    const switchedOff = calls.find((call) => call.where.status?.not === 'ENABLED');
+    expect(Object.keys(switchedOff?.data ?? {})).toEqual(['endsAt']);
+  });
+
+  it('writes no event when the enabled modules stay the same', async () => {
+    const end = new Date(Date.now() + 3 * DAY);
+    await extend(
+      [entitlement('gigaops', 'ENABLED', end), entitlement('asset-maintenance', 'DISABLED', end)],
+      end,
+    );
+    expect(tx.controlOutboxEvent.create).not.toHaveBeenCalled();
+  });
+
+  it('writes the event, after the rows, when a lapsed trial comes back into force', async () => {
+    const lapsed = new Date(Date.now() - DAY);
+    await extend(
+      [
+        entitlement('gigaops', 'ENABLED', lapsed),
+        entitlement('asset-maintenance', 'DISABLED', lapsed),
+        entitlement('tenant-access', 'ENABLED', null, 'PLATFORM_OVERRIDE'),
+      ],
+      lapsed,
+    );
+    expect(tx.controlOutboxEvent.create).toHaveBeenCalledTimes(1);
+    expect(tx.controlOutboxEvent.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        eventType: 'tenant.entitlements.changed.v1',
+        payload: { tenantId: 'tenant-1', enabledModuleKeys: ['gigaops', 'tenant-access'] },
+      }),
+    });
+    const lastRowUpdate = Math.max(
+      ...tx.tenantModuleEntitlement.updateMany.mock.invocationCallOrder,
+    );
+    expect(tx.controlOutboxEvent.create.mock.invocationCallOrder[0]).toBeGreaterThan(lastRowUpdate);
   });
 });

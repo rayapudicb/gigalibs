@@ -182,9 +182,13 @@ function readAdapter(
 
 /** The general ledger's record dispatcher: books, accounts, periods, posted journals and journal drafts. */
 export function financeRecordDispatcher(deps: FinanceRecordDependencies, idempotency: IdempotencyStore): RecordDispatcher {
-  const books = readAdapter(deps, 'finance.books', 'books', BOOK_FIELDS, { search: ['book-code', 'book-name'], filter: ['status'], sort: ['book-code', 'book-name'] });
+  const books: RecordAdapter = {
+    rest: { read: 'GET v1/books' },
+    ...readAdapter(deps, 'finance.books', 'books', BOOK_FIELDS, { search: ['book-code', 'book-name'], filter: ['status'], sort: ['book-code', 'book-name'] }),
+  };
 
   const accounts: RecordAdapter = {
+    rest: { read: 'GET v1/accounts', create: 'POST v1/accounts', update: 'PUT v1/accounts/{id}' },
     ...readAdapter(deps, 'finance.accounts', 'accounts', ACCOUNT_FIELDS, {
       search: ['account-code', 'account-name'], filter: ['accounting-book-id', 'account-class', 'account-subtype'], sort: ['account-code', 'account-name'],
     }),
@@ -213,11 +217,20 @@ export function financeRecordDispatcher(deps: FinanceRecordDependencies, idempot
     },
   });
   const periods: RecordAdapter = {
+    rest: {
+      read: 'GET v1/fiscal-periods',
+      actions: {
+        open: 'PUT v1/fiscal-periods/{id}/status',
+        'soft-close': 'PUT v1/fiscal-periods/{id}/status',
+        lock: 'PUT v1/fiscal-periods/{id}/status',
+      },
+    },
     ...readAdapter(deps, 'finance.periods', 'periods', PERIOD_FIELDS, { search: ['period-name'], filter: ['accounting-book-id', 'status'], sort: ['start-date', 'period-name'] }),
     actions: { open: periodAction('OPEN'), 'soft-close': periodAction('SOFT_CLOSED'), lock: periodAction('LOCKED') },
   };
 
   const journals: RecordAdapter = {
+    rest: { read: 'GET v1/journals', actions: { reverse: 'POST v1/journals/{id}/reverse' } },
     ...readAdapter(deps, 'finance.journals', 'journals', JOURNAL_FIELDS, {
       search: ['journal-number', 'description'], filter: ['accounting-book-id', 'status', 'entry-type'], sort: ['posting-date', 'journal-number'],
     }),
@@ -234,9 +247,20 @@ export function financeRecordDispatcher(deps: FinanceRecordDependencies, idempot
       },
     },
   };
-  const journalLines = readAdapter(deps, 'finance.journal-lines', 'journalLines', JOURNAL_LINE_FIELDS, { sort: ['line-number'], parent: 'journal-id' });
+  const journalLines: RecordAdapter = {
+    rest: { read: 'GET v1/journals' },
+    ...readAdapter(deps, 'finance.journal-lines', 'journalLines', JOURNAL_LINE_FIELDS, { sort: ['line-number'], parent: 'journal-id' }),
+  };
 
   const drafts: RecordAdapter = {
+    // A draft prepares a journal, which REST posts directly (POST v1/journals). Approving and returning are
+    // the maker-checker step, which REST does not have.
+    rest: {
+      read: 'GET v1/journals',
+      create: 'POST v1/journals',
+      update: 'POST v1/journals',
+      actions: { submit: 'POST v1/journals', approve: null, return: null },
+    },
     ...readAdapter(deps, 'finance.journal-drafts', 'drafts', DRAFT_FIELDS, { search: ['description'], filter: ['accounting-book-id', 'status'], sort: ['posting-date', 'updated-at'] }),
     permissions: { read: 'finance:read', create: 'finance:journals:post', update: 'finance:journals:post' },
     async create(context, values) {
@@ -279,6 +303,12 @@ export function financeRecordDispatcher(deps: FinanceRecordDependencies, idempot
   };
 
   const draftLines: RecordAdapter = {
+    // A draft's lines prepare a journal's lines, which REST posts with the journal (POST v1/journals).
+    rest: {
+      read: 'GET v1/journals',
+      create: 'POST v1/journals',
+      actions: { remove: 'POST v1/journals' },
+    },
     ...readAdapter(deps, 'finance.journal-draft-lines', 'draftLines', DRAFT_LINE_FIELDS, { sort: ['line-number'], parent: 'draft-id' }),
     permissions: { read: 'finance:read', create: 'finance:journals:post' },
     async create(context, values) {

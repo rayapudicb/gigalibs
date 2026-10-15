@@ -1,4 +1,9 @@
-import { createRecordController, ModuleIdempotencyStore, RECORD_DISPATCHER } from '@gigalibs/module-sdk';
+import {
+  createRecordController,
+  loadIdempotencyRetentionDays,
+  ModuleIdempotencyStore,
+  RECORD_DISPATCHER,
+} from '@gigalibs/module-sdk';
 import { Module } from '@nestjs/common';
 import { AuthorizationGuard } from './authorization.js';
 import { runtimeConfigProvider } from './config.js';
@@ -26,7 +31,9 @@ const InventoryRecordController = createRecordController({ guard: AuthorizationG
       provide: RECORD_DISPATCHER,
       inject: [InventoryService, InventoryRecordsService, DatabaseService],
       useFactory: (inventory: InventoryService, records: InventoryRecordsService, database: DatabaseService) =>
-        inventoryRecordDispatcher({ inventory, records }, new ModuleIdempotencyStore(database)),
+        inventoryRecordDispatcher({ inventory, records }, new ModuleIdempotencyStore(database, {
+          retentionDays: loadIdempotencyRetentionDays(process.env, 'UNIVERSAL_INVENTORY'),
+        })),
     },
   ],
   exports: [DatabaseService, InventoryService],

@@ -545,18 +545,38 @@ export class PlatformAdministrationService {
       const previousEnd = tenant.trialEndsAt;
       const base = previousEnd && previousEnd > new Date() ? previousEnd : new Date();
       const trialEndsAt = addDays(base, dto.days);
+      // WI-OI-120ai: the extension moves the end of the trial modules and keeps each module's own status, so a module
+      // the administrator switched off stays off. The enabled set changes only when a lapsed trial comes back into
+      // force; that change writes the same event as any other entitlement change.
+      const now = new Date();
+      const entitlements = await transaction.tenantModuleEntitlement.findMany({
+        where: { tenantId },
+        select: { moduleKey: true, status: true, source: true, startsAt: true, endsAt: true },
+      });
+      const inForce = (entitlement: (typeof entitlements)[number], endsAt: Date | null) =>
+        entitlement.status === 'ENABLED' && entitlement.startsAt <= now && (endsAt === null || endsAt > now);
+      const enabledBefore = entitlements
+        .filter((entitlement) => inForce(entitlement, entitlement.endsAt))
+        .map((entitlement) => entitlement.moduleKey)
+        .sort();
+      const enabledAfter = entitlements
+        .filter((entitlement) =>
+          inForce(entitlement, entitlement.source === 'TRIAL' ? trialEndsAt : entitlement.endsAt),
+        )
+        .map((entitlement) => entitlement.moduleKey)
+        .sort();
       await transaction.tenant.update({
         where: { id: tenantId },
         data: { status: 'TRIAL', plan: 'TRIAL', trialEndsAt },
       });
       await transaction.tenantModuleEntitlement.updateMany({
-        where: { tenantId, source: 'TRIAL' },
-        data: {
-          status: 'ENABLED',
-          endsAt: trialEndsAt,
-          updatedById: actorUserId,
-          reason: dto.reason,
-        },
+        where: { tenantId, source: 'TRIAL', status: 'ENABLED' },
+        data: { endsAt: trialEndsAt, updatedById: actorUserId, reason: dto.reason },
+      });
+      // A switched-off module keeps who switched it off and why; only its end moves with the trial.
+      await transaction.tenantModuleEntitlement.updateMany({
+        where: { tenantId, source: 'TRIAL', status: { not: 'ENABLED' } },
+        data: { endsAt: trialEndsAt },
       });
       await transaction.auditLog.create({
         data: {
@@ -570,6 +590,9 @@ export class PlatformAdministrationService {
           metadata: { reason: dto.reason, days: dto.days },
         },
       });
+      if (enabledBefore.join('\n') !== enabledAfter.join('\n')) {
+        await recordEntitlementsChanged(transaction, tenantId, enabledAfter);
+      }
     });
     return this.getTenant(tenantId);
   }

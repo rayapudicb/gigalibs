@@ -3909,3 +3909,29 @@ widening the card to fix the API faults the proof found.
   Nothing regressed.
 - **Still open:** the brand workspaces are ACTIVE (the owner suspends them in Platform Control Tower). Then the card
   closes.
+
+## Plan v3 step 0.5, the security fixes (2026-10-15; owner: "approved 0.5 as recommended")
+
+- **WI-OI-120ag:** the CMMS guard enforces the record routes' baseline `cmms:read` (the module SDK's permission
+  marker) and refuses to start without the SDK constant. HTTP test through the real guard; at HEAD a caller with only
+  `cmms.assets.read` got 200.
+- **WI-OI-120ai:** a trial extension keeps each module's status, so a switched-off module stays off. It writes
+  `tenant.entitlements.changed.v1` only when the enabled set changes, such as a lapsed trial coming back. At HEAD the
+  switched-off module came back on.
+- **WI-OI-120ae:** an Idempotency-Key answer belongs to its caller; another person's same key and body gets 409. Each
+  claim sweeps the tenant's completed answers older than `<PREFIX>_IDEMPOTENCY_RETENTION_DAYS` (default 7), bounded,
+  with no migration. PostgreSQL test on a throwaway database. At HEAD the colleague got the first person's answer.
+- **WI-OI-120af:**
+  - every record operation of the 55 record types names the REST route it mirrors, or null with a reason;
+  - the conversion check fails a record permission wider than that route, and a record type no window shows unless
+    held back by its card;
+  - all five converted modules pass;
+  - the skills read now declares the `workforce.resources.read` it enforced inline;
+  - proof: the original 120u M1 bug is caught.
+- **Checks:**
+  - type-checks clean in every touched package;
+  - both audits, the migration pins, the 4 boundary and governance checks, and the manifest, window and conversion
+    checks all pass;
+  - whole repository: 2,960 tests passed, 233 skipped, none failed (378 files).
+
+  Details on the four cards.

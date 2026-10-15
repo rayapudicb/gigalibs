@@ -120,6 +120,19 @@ describe('RecordDispatcher', () => {
     expect(await status(records.create(context(manager), 'inventory.warehouses', { code: 'WH-3' }, undefined))).toBe(400);
   });
 
+  // WI-OI-120ae: a stored answer belongs to its caller.
+  it("refuses another person's same Idempotency-Key and body with 409, never replaying the first answer", async () => {
+    const { adapter, created } = warehouses();
+    const records = new RecordDispatcher([adapter], [], new MemoryIdempotency());
+    const key = randomUUID();
+    const colleague = { ...manager, subject: 'user-colleague' } as ModulePrincipal;
+    await records.create(context(manager), 'inventory.warehouses', { code: 'WH-1', name: 'Main' }, key);
+    expect(await status(records.create(context(colleague), 'inventory.warehouses', { code: 'WH-1', name: 'Main' }, key))).toBe(409);
+    expect(created).toHaveBeenCalledTimes(1);
+    // The first caller still gets their own answer back.
+    expect(await status(records.create(context(manager), 'inventory.warehouses', { code: 'WH-1', name: 'Main' }, key))).toBe(200);
+  });
+
   it('never returns undeclared fields, and hides fields the reader may not see', async () => {
     const { adapter } = warehouses();
     const records = new RecordDispatcher([adapter], [], new MemoryIdempotency());

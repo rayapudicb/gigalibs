@@ -322,6 +322,7 @@ function transition(
 /** The Catalogue's record dispatcher: its eleven entities and the pickers its own and other modules' windows use. */
 export function catalogueRecordDispatcher(deps: CatalogueRecordDependencies, idempotency: IdempotencyStore): RecordDispatcher {
   const uoms: RecordAdapter = {
+    rest: { read: 'GET v1/uoms', create: 'POST v1/uoms' },
     ...readAdapter(deps, 'catalogue.uoms', 'uoms', UOM_FIELDS, { read: 'uoms:read', create: 'uoms:manage' }, {
       search: ['code', 'name', 'symbol'], filter: ['dimension'], sort: ['code', 'name'],
     }),
@@ -332,6 +333,7 @@ export function catalogueRecordDispatcher(deps: CatalogueRecordDependencies, ide
   };
 
   const conversions: RecordAdapter = {
+    rest: { read: 'GET v1/uoms', create: 'POST v1/uom-conversions' },
     ...readAdapter(deps, 'catalogue.uom-conversions', 'conversions', CONVERSION_FIELDS, { read: 'uoms:read', create: 'uoms:manage' }, {
       sort: ['effective-from'], parent: 'from-uom-id',
     }),
@@ -342,6 +344,11 @@ export function catalogueRecordDispatcher(deps: CatalogueRecordDependencies, ide
   };
 
   const categories: RecordAdapter = {
+    rest: {
+      read: 'GET v1/product-categories',
+      create: 'POST v1/product-categories',
+      update: 'PATCH v1/product-categories/{id}',
+    },
     ...readAdapter(deps, 'catalogue.categories', 'categories', CATEGORY_FIELDS,
       { read: 'products:read', create: 'product-categories:manage', update: 'product-categories:manage' },
       { search: ['code', 'name'], sort: ['code', 'name'] }),
@@ -357,6 +364,7 @@ export function catalogueRecordDispatcher(deps: CatalogueRecordDependencies, ide
   };
 
   const attributes: RecordAdapter = {
+    rest: { read: 'GET v1/product-attributes', create: 'POST v1/product-attributes' },
     ...readAdapter(deps, 'catalogue.attributes', 'attributes', ATTRIBUTE_FIELDS, { read: 'products:read', create: 'products:update' }, {
       search: ['code', 'name'], filter: ['value-type'], sort: ['code', 'name'],
     }),
@@ -374,6 +382,15 @@ export function catalogueRecordDispatcher(deps: CatalogueRecordDependencies, ide
     },
   });
   const products: RecordAdapter = {
+    rest: {
+      read: 'GET v1/products',
+      create: 'POST v1/products',
+      update: 'PATCH v1/products/{id}',
+      actions: {
+        archive: 'POST v1/products/{id}/archive',
+        restore: 'POST v1/products/{id}/restore',
+      },
+    },
     ...readAdapter(deps, 'catalogue.products', 'products', PRODUCT_FIELDS,
       { read: 'products:read', create: 'products:create', update: 'products:update' },
       { search: ['code', 'name'], filter: ['status', 'product-type', 'category-id'], sort: ['code', 'name', 'updated-at'] }),
@@ -395,6 +412,7 @@ export function catalogueRecordDispatcher(deps: CatalogueRecordDependencies, ide
   };
 
   const catalogues: RecordAdapter = {
+    rest: { read: 'GET v1/catalogues', create: 'POST v1/catalogues' },
     ...readAdapter(deps, 'catalogue.catalogues', 'catalogues', CATALOGUE_FIELDS, { read: 'catalogues:read', create: 'catalogues:draft' }, {
       search: ['code', 'name'], sort: ['code', 'name'],
     }),
@@ -405,6 +423,15 @@ export function catalogueRecordDispatcher(deps: CatalogueRecordDependencies, ide
   };
 
   const catalogueVersions: RecordAdapter = {
+    rest: {
+      read: 'GET v1/catalogues',
+      create: 'POST v1/catalogues/{id}/versions',
+      actions: {
+        submit: 'POST v1/catalogues/{id}/versions/{id}/submit',
+        approve: 'POST v1/catalogues/{id}/versions/{id}/approve',
+        publish: 'POST v1/catalogues/{id}/versions/{id}/publish',
+      },
+    },
     ...readAdapter(deps, 'catalogue.catalogue-versions', 'catalogueVersions', CATALOGUE_VERSION_FIELDS,
       { read: 'catalogues:read', create: 'catalogues:draft' },
       { search: ['notes'], filter: ['status'], sort: ['version-number', 'effective-from'], parent: 'catalogue-id' }),
@@ -422,6 +449,7 @@ export function catalogueRecordDispatcher(deps: CatalogueRecordDependencies, ide
   };
 
   const catalogueEntries: RecordAdapter = {
+    rest: { read: 'GET v1/catalogues', create: 'POST v1/catalogues/{id}/versions/{id}/entries' },
     ...readAdapter(deps, 'catalogue.catalogue-entries', 'catalogueEntries', ENTRY_FIELDS, { read: 'catalogues:read', create: 'catalogues:draft' }, {
       sort: ['sort-order'], parent: 'catalogue-version-id',
     }),
@@ -437,6 +465,7 @@ export function catalogueRecordDispatcher(deps: CatalogueRecordDependencies, ide
   };
 
   const priceLists: RecordAdapter = {
+    rest: { read: 'GET v1/price-lists', create: 'POST v1/price-lists' },
     ...readAdapter(deps, 'catalogue.price-lists', 'priceLists', PRICE_LIST_FIELDS, { read: 'pricing:read', create: 'pricing:draft' }, {
       search: ['code', 'name'], filter: ['currency-code'], sort: ['code', 'name'],
     }),
@@ -447,6 +476,15 @@ export function catalogueRecordDispatcher(deps: CatalogueRecordDependencies, ide
   };
 
   const priceListVersions: RecordAdapter = {
+    rest: {
+      read: 'GET v1/price-lists',
+      create: 'POST v1/price-lists/{id}/versions',
+      actions: {
+        submit: 'POST v1/price-lists/{id}/versions/{id}/submit',
+        approve: 'POST v1/price-lists/{id}/versions/{id}/approve',
+        activate: 'POST v1/price-lists/{id}/versions/{id}/activate',
+      },
+    },
     ...readAdapter(deps, 'catalogue.price-list-versions', 'priceListVersions', PRICE_VERSION_FIELDS,
       { read: 'pricing:read', create: 'pricing:draft' },
       { search: ['notes'], filter: ['status'], sort: ['version-number', 'effective-from'], parent: 'price-list-id' }),
@@ -464,6 +502,7 @@ export function catalogueRecordDispatcher(deps: CatalogueRecordDependencies, ide
   };
 
   const prices: RecordAdapter = {
+    rest: { read: 'GET v1/price-lists', create: 'POST v1/price-lists/{id}/versions/{id}/prices' },
     ...readAdapter(deps, 'catalogue.prices', 'prices', PRICE_FIELDS, { read: 'pricing:read', create: 'pricing:draft' }, {
       filter: ['product-id'], sort: ['min-quantity'], parent: 'price-list-version-id',
     }),
