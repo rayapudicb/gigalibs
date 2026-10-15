@@ -1,107 +1,117 @@
 {
-  "schemaVersion": 1,
-  "comment": "WI-OI-120ak (S1): known mock still in the code. Each slice removes its own entries; an entry for locked or undeployed code names the plan step that replaces it. Read by scripts/verify-runtime-data-integrity.mjs.",
+  "schemaVersion": 2,
+  "comment": "WI-OI-120ak: known mock still in the code, fingerprinted per match (rule, file, line text). Each slice removes its own entries; S5-lock entries stay reachable on UAT until S5 applies D1a/D3a. CI fails if a pull request or push adds a fingerprint (--baseline-since). Read by scripts/verify-runtime-data-integrity.mjs.",
   "entries": [
     {
       "code": "DEV_SEED_SOURCE",
       "file": "apps/workflow-platform/lib/master-data-catalog.ts",
-      "count": 2,
+      "fingerprints": [
+        "445b8403c2d86d3c",
+        "56f96d602541d520"
+      ],
       "card": "WI-OI-120ak",
-      "slice": "locked",
-      "reason": "Master data seed, CONTAINED and locked on UAT by D1a; replaced by T4 parties (plan v3 5B)"
+      "slice": "S5-lock",
+      "reason": "Master data (CONTAINED) seed and in-memory store; reachable on UAT until D1a turns the UAT preview off in S5; replaced by T4 parties (plan v3 5B)"
     },
     {
       "code": "IN_MEMORY_BUSINESS_FIXTURE",
       "file": "apps/workflow-platform/app/(app)/rules/studio/page.tsx",
-      "count": 1,
+      "fingerprints": [
+        "af002d78947ac51d"
+      ],
       "card": "WI-OI-120ak",
-      "slice": "locked",
-      "reason": "Rule studio sample payloads for its in-memory introspector; locked by D3a (CONTAINED) until rules have real storage (its own card)"
+      "slice": "S5-lock",
+      "reason": "Rule studio (REVIEW) keeps tenant rules only in the web process memory; reachable on UAT until D3a sets it CONTAINED in S5; replaced when rules get real storage (its own card)"
     },
     {
       "code": "IN_MEMORY_BUSINESS_FIXTURE",
       "file": "modules/analytics-studio/apps/api/src/places/sample-farm.service.ts",
-      "count": 2,
+      "fingerprints": [
+        "217f22658e12c583",
+        "248ec4da3e3ed5a0"
+      ],
       "card": "WI-OI-120ak",
       "slice": "S5",
       "reason": "S5 (D5a): the Demo Lab synthetic sample farm; removed"
     },
     {
       "code": "IN_MEMORY_BUSINESS_STORE",
-      "file": "apps/workflow-platform/lib/communications-store.ts",
-      "count": 9,
-      "card": "WI-OI-120ak",
-      "slice": "S4",
-      "reason": "S4 (D2a): in-memory Communications store with seeded invented data and silent fallback; removed"
-    },
-    {
-      "code": "IN_MEMORY_BUSINESS_STORE",
       "file": "apps/workflow-platform/lib/master-data-store.ts",
-      "count": 4,
+      "fingerprints": [
+        "00334c96a2cecea4",
+        "2cb8c38e7a9840d9",
+        "53b3a0c73932bf40",
+        "f95f316e1a3db8ce"
+      ],
       "card": "WI-OI-120ak",
-      "slice": "locked",
-      "reason": "Master data, CONTAINED and locked on UAT by D1a; replaced by T4 parties (plan v3 5B)"
+      "slice": "S5-lock",
+      "reason": "Master data (CONTAINED) seed and in-memory store; reachable on UAT until D1a turns the UAT preview off in S5; replaced by T4 parties (plan v3 5B)"
     },
     {
       "code": "IN_MEMORY_BUSINESS_STORE",
       "file": "apps/workflow-platform/lib/universal-rule-kernel-store.ts",
-      "count": 2,
+      "fingerprints": [
+        "0ca8a970a77b27f7",
+        "1ec0059f1599f6dc",
+        "2b60021ef32f9c52",
+        "794d4f300ceb211d",
+        "7b89fd9e6f0a80ca",
+        "7c75a40b134d69e9"
+      ],
       "card": "WI-OI-120ak",
-      "slice": "locked",
-      "reason": "Rule studio, locked by D3a (CONTAINED) until rules have real storage (its own card)"
+      "slice": "S5-lock",
+      "reason": "Rule studio (REVIEW) keeps tenant rules only in the web process memory; reachable on UAT until D3a sets it CONTAINED in S5; replaced when rules get real storage (its own card)"
     },
     {
       "code": "IN_MEMORY_SCREEN_RECORDS",
       "file": "apps/workflow-platform/app/(app)/ar/invoices/new/page.tsx",
-      "count": 2,
+      "fingerprints": [
+        "3e4df031e10b3df5",
+        "9a5d1d4c47156274"
+      ],
       "card": "WI-OI-120ak",
-      "slice": "locked",
-      "reason": "Accounts Receivable, CONTAINED and locked on UAT by D1a; rebuilt in M-AR (plan v3 5C)"
+      "slice": "S5-lock",
+      "reason": "Accounts Receivable (CONTAINED) new-invoice form pre-fills an invented line; reachable on UAT until D1a in S5; rebuilt in M-AR (plan v3 5C)"
     },
     {
       "code": "IN_MEMORY_SCREEN_RECORDS",
       "file": "apps/workflow-platform/components/communications/OmnichannelSoftphoneDrawer.tsx",
-      "count": 1,
+      "fingerprints": [
+        "bb322200325f56f3"
+      ],
       "card": "WI-OI-120ak",
-      "slice": "S4",
-      "reason": "S4 (D4a): the Softphone & WhatsApp button with invented chat; taken off the layout"
+      "slice": "S4-unmounted",
+      "reason": "Softphone & WhatsApp drawer with an invented chat; no page mounts it since S4 (D4a). The file has another session's uncommitted edits; deleted once the owner settles them"
     },
     {
       "code": "PLACEHOLDER_PEOPLE_OR_COMPANIES",
       "file": "apps/workflow-platform/app/(app)/rules/studio/page.tsx",
-      "count": 1,
+      "fingerprints": [
+        "4a6934c7d49ce1ff"
+      ],
       "card": "WI-OI-120ak",
-      "slice": "locked",
-      "reason": "Rule studio sample payloads for its in-memory introspector; locked by D3a (CONTAINED) until rules have real storage (its own card)"
-    },
-    {
-      "code": "PLACEHOLDER_PEOPLE_OR_COMPANIES",
-      "file": "apps/workflow-platform/components/communications/CommunicationsWorkbench.tsx",
-      "count": 3,
-      "card": "WI-OI-120ak",
-      "slice": "S4",
-      "reason": "S4 (D2a): invented recipient defaults on the Communications screen"
-    },
-    {
-      "code": "PLACEHOLDER_PEOPLE_OR_COMPANIES",
-      "file": "apps/workflow-platform/lib/communications-store.ts",
-      "count": 4,
-      "card": "WI-OI-120ak",
-      "slice": "S4",
-      "reason": "S4 (D2a): in-memory Communications store with seeded invented data and silent fallback; removed"
+      "slice": "S5-lock",
+      "reason": "Rule studio (REVIEW) keeps tenant rules only in the web process memory; reachable on UAT until D3a sets it CONTAINED in S5; replaced when rules get real storage (its own card)"
     },
     {
       "code": "PLACEHOLDER_PEOPLE_OR_COMPANIES",
       "file": "apps/workflow-platform/lib/master-data-catalog.ts",
-      "count": 4,
+      "fingerprints": [
+        "60962f01fd3b7ce2",
+        "f2670a8e57129fe8",
+        "f4d2058c1e4f5e92",
+        "fe1906ee0fb43dfe"
+      ],
       "card": "WI-OI-120ak",
-      "slice": "locked",
-      "reason": "Master data seed, CONTAINED and locked on UAT by D1a; replaced by T4 parties (plan v3 5B)"
+      "slice": "S5-lock",
+      "reason": "Master data (CONTAINED) seed and in-memory store; reachable on UAT until D1a turns the UAT preview off in S5; replaced by T4 parties (plan v3 5B)"
     },
     {
       "code": "PLACEHOLDER_PEOPLE_OR_COMPANIES",
       "file": "modules/spend-management/db/migrations/seed_spend_data.sql",
-      "count": 1,
+      "fingerprints": [
+        "c90bcccffa3a5fca"
+      ],
       "card": "WI-OI-120ak",
       "slice": "not deployed",
       "reason": "Spend seed, not in any UAT compose file and not a numbered migration; replaced in M-SPEND (plan v3 5B)"
@@ -109,10 +119,13 @@
     {
       "code": "PLACEHOLDER_PEOPLE_OR_COMPANIES",
       "file": "packages/contracts/src/master-data/templates.ts",
-      "count": 2,
+      "fingerprints": [
+        "079ae9fb71af0e7e",
+        "1035e876825adee5"
+      ],
       "card": "WI-OI-120ak",
-      "slice": "locked",
-      "reason": "Master data import template example row, CONTAINED and locked on UAT by D1a; replaced by T4 parties (plan v3 5B)"
+      "slice": "S5-lock",
+      "reason": "Master data (CONTAINED) seed and in-memory store; reachable on UAT until D1a turns the UAT preview off in S5; replaced by T4 parties (plan v3 5B)"
     }
   ]
 }

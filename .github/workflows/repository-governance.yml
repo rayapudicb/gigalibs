@@ -13,6 +13,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # WI-OI-120ak (S3b): the runtime-data baseline is compared with the base of the change.
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -20,6 +23,12 @@ jobs:
         run: node scripts/verify-runtime-data-integrity.mjs
       - name: All active runtime data audit
         run: node scripts/verify-runtime-data-integrity.mjs --all-runtime
+      - name: Runtime data baseline adds no new mock (pull request)
+        if: github.event_name == 'pull_request'
+        run: node scripts/verify-runtime-data-integrity.mjs --all-runtime --baseline-since "origin/${{ github.base_ref }}"
+      - name: Runtime data baseline adds no new mock (push)
+        if: github.event_name == 'push'
+        run: node scripts/verify-runtime-data-integrity.mjs --all-runtime --baseline-since "${{ github.event.before }}"
       - name: Package dependency audit
         run: node scripts/verify-package-dependencies.mjs
       - name: API boundary audit

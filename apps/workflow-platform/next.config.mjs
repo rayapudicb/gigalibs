@@ -7,12 +7,11 @@ const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
 const nextConfig = {
   reactStrictMode: true,
   distDir: process.env.NEXT_DIST_DIR?.trim() || '.next',
-  transpilePackages: ['@gigalibs/contracts', '@gigalibs/broker', '@gigalibs/logger', '@gigalibs/web-sdk', '@gigalibs/cmms-web'], // data-import-export-react quarantined
+  transpilePackages: ['@gigalibs/contracts', '@gigalibs/logger', '@gigalibs/web-sdk', '@gigalibs/cmms-web'], // data-import-export-react quarantined
   webpack: (config) => {
     config.resolve.alias = {
       ...config.resolve.alias,
       '@gigalibs/logger': path.resolve(currentDirectory, '../../packages/logger/dist/logger.js'),
-      '@gigalibs/broker': path.resolve(currentDirectory, '../../packages/broker/dist/index.js'),
       // data-import-export-react quarantined — alias removed
     };
     // Allow webpack to resolve .js imports as .ts/.tsx when transpiling workspace source packages.

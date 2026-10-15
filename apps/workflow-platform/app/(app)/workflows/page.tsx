@@ -130,27 +130,33 @@ export default function WorkflowsPage() {
     setLoading(true);
     setError(null);
     try {
+      // WI-OI-120ak (S3b, review L5): a refused or failed answer is reported, not shown as an empty list.
+      const studio = async (path: string) => {
+        const response = await fetch(path);
+        const body = await response.json().catch(() => null);
+        if (!response.ok) throw new Error(body?.title || `Workflow Studio answered ${response.status}.`);
+        return body ?? {};
+      };
       const [wfRes, runsRes, statsRes] = await Promise.all([
-        fetch('/api/workflow-studio/workflows')
-          .then((r) => r.json())
-          .catch(() => ({ workflows: [] })),
-        fetch('/api/workflow-studio/runs')
-          .then((r) => r.json())
-          .catch(() => ({ runs: [] })),
-        fetch('/api/workflow-studio/stats')
-          .then((r) => r.json())
-          .catch(() => ({ stats: null })),
+        studio('/api/workflow-studio/workflows'),
+        studio('/api/workflow-studio/runs'),
+        studio('/api/workflow-studio/stats'),
       ]);
 
-      setWorkflows(wfRes.workflows ?? []);
-      setSelectedWfCode((current) => current || wfRes.workflows?.[0]?.workflow_code || '');
+      const loaded: WorkflowDefinition[] = wfRes.workflows ?? [];
+      setWorkflows(loaded);
+      // Review I6: keep the choice only while that workflow still exists.
+      setSelectedWfCode((current) =>
+        loaded.some((workflow) => workflow.workflow_code === current) ? current : loaded[0]?.workflow_code ?? '',
+      );
       setRuns(runsRes.runs ?? []);
       setStats(statsRes.stats ?? null);
-    } catch {
-      // Honest empty state — service temporarily unavailable
+    } catch (reason) {
       setWorkflows([]);
+      setRuns([]);
       setStats(null);
-      setError('Workflow Studio service is temporarily unavailable. Retry when the service is running.');
+      setSelectedWfCode('');
+      setError(`Workflow Studio is not available: ${reason instanceof Error ? reason.message : 'no answer'}`);
     } finally {
       setLoading(false);
     }

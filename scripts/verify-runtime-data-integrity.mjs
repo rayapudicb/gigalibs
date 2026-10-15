@@ -1,3 +1,5 @@
+import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { extname, join, relative } from 'node:path';
 
@@ -18,24 +20,15 @@ const quarantinedPackages = quarantineCategories.flatMap((category) =>
   (quarantineRegistry[category] ?? []).map((path) => ({ category, path })),
 );
 const quarantinedPaths = new Set(quarantinedPackages.map(({ path }) => path));
+// WI-OI-120ak (S3b, Security review M1): every tracked app and module is scanned, so a new module cannot be missed. The
+// list comes from git (untracked folders, such as an owner's work in progress, are not part of the product); the
+// retired app keeps its own check below.
+const trackedRoots = execFileSync('git', ['ls-files', '-z', '--', 'apps', 'modules'], { cwd: repositoryRoot, encoding: 'utf8' })
+  .split('\0')
+  .filter(Boolean)
+  .map((file) => file.split('/').slice(0, 2).join('/'));
 const roots = [
-  'apps/workflow-platform',
-  'apps/playground-api',
-  'apps/workflow-api',
-  'modules/accounts-receivable',
-  'modules/spend-management',
-  'modules/tax-configuration',
-  'modules/multi-currency',
-  'modules/universal-data-studio',
-  'modules/universal-rule-pro',
-  'modules/workflow-studio',
-  'modules/universal-connector-hub',
-  'modules/autonomous-recovery-studio',
-  'modules/analytics-studio',
-  'modules/esignature',
-  'modules/physical-operations-cmms',
-  'modules/gigaops',
-  'modules/geospatial',
+  ...[...new Set(trackedRoots)].filter((root) => root !== 'apps/playground-web').sort(),
   ...(includeLegacy ? ['packages'] : []),
 ];
 const retiredApplications = ['apps/playground-web'];
@@ -143,8 +136,11 @@ const forbiddenContent = [
   // between instances): store classes with record maps or lists, and the methods that seed them with invented data.
   {
     code: 'IN_MEMORY_BUSINESS_STORE',
+    // S3b (review L1): any field modifier, `readonly`, `#private` and untyped `new Map<…>()` fields (a field ends with ";",
+    // a constructor parameter with ","), and `initialize…Default…` set-up methods. Module-level maps are left out:
+    // in the web app they are token and handler caches.
     pattern:
-      /\bprivate\s+\w+\s*:\s*(?:Map<[^=;]+|\w+\[\])\s*=\s*(?:new Map\(\)|\[\])|\bseed(?:Defaults|Initial\w*|Test\w*|Platform\w*)\s*\(/g,
+      /\b(?:private|protected|public|static|readonly)\s+(?:(?:static|readonly)\s+)*#?\w+\s*(?::[^=;]+)?=\s*(?:new Map(?:<[^>]*>)?\(\)|\[\])\s*;|^\s*#\w+\s*(?::[^=;]+)?=\s*(?:new Map(?:<[^>]*>)?\(\)|\[\])\s*;|\b(?:seed(?:Defaults|Initial\w*|Test\w*|Platform\w*)|initialize\w*Default\w*)\s*\(/gm,
     paths: ['apps/workflow-platform/'],
   },
   // WI-OI-120ak (S1): a screen that pretends an action succeeded, or waits to look busy instead of calling a service.
@@ -193,7 +189,13 @@ const BASELINE_CODES = new Set([
 ]);
 const runtimeBaseline = existsSync(join(repositoryRoot, BASELINE_PATH))
   ? JSON.parse(readFileSync(join(repositoryRoot, BASELINE_PATH), 'utf8'))
-  : { schemaVersion: 1, entries: [] };
+  : { schemaVersion: 2, entries: [] };
+// S3b (review L2): each tolerated match is fingerprinted by its rule, file and line text, so one match cannot be traded
+// for another; `--baseline-since <git ref>` (CI: the pull request's base, or the previous commit of a push) fails when
+// the baseline holds a fingerprint the ref did not.
+const fingerprint = (code, file, excerpt) => createHash('sha256').update(`${code}\u0000${file}\u0000${excerpt}`).digest('hex').slice(0, 16);
+const sinceArgument = process.argv.indexOf('--baseline-since');
+const baselineSince = sinceArgument >= 0 ? process.argv[sinceArgument + 1] : null;
 
 const violations = [];
 const absentQuarantinedRoots = [];
@@ -243,10 +245,18 @@ function verifyRetiredApplication(configuredRoot) {
   }
 }
 
+// S3b (review L3): a folder named like a test inside a route tree (`app/…/test/route.ts`) is a live route, and generated
+// code ships too, so both are scanned; elsewhere test folders are skipped as before.
+function skipDirectory(entry, path) {
+  if (entry === 'generated') return false;
+  if (!ignoredDirectories.has(entry)) return false;
+  return !(['test', 'tests', 'e2e'].includes(entry) && /(?:^|\/)app\//.test(`${relative(repositoryRoot, path)}/`));
+}
+
 function walk(path) {
   if (quarantinedPaths.has(relative(repositoryRoot, path))) return;
   for (const entry of readdirSync(path)) {
-    if (ignoredDirectories.has(entry)) continue;
+    if (skipDirectory(entry, path)) continue;
     const absolute = join(path, entry);
     const stat = statSync(absolute);
     if (stat.isDirectory()) {
@@ -458,8 +468,8 @@ const baselined = applyRuntimeBaseline();
 
 function applyRuntimeBaseline() {
   const problem = (excerpt) => ({ code: 'RUNTIME_BASELINE_INVALID', file: BASELINE_PATH, line: 1, excerpt });
-  if (runtimeBaseline.schemaVersion !== 1) {
-    violations.push(problem(`Expected schemaVersion 1, received ${String(runtimeBaseline.schemaVersion)}`));
+  if (runtimeBaseline.schemaVersion !== 2) {
+    violations.push(problem(`Expected schemaVersion 2, received ${String(runtimeBaseline.schemaVersion)}`));
     return 0;
   }
   const key = (code, file) => `${code}\u0000${file}`;
@@ -468,8 +478,9 @@ function applyRuntimeBaseline() {
     const valid =
       BASELINE_CODES.has(entry.code) &&
       typeof entry.file === 'string' &&
-      Number.isInteger(entry.count) &&
-      entry.count > 0 &&
+      Array.isArray(entry.fingerprints) &&
+      entry.fingerprints.length > 0 &&
+      entry.fingerprints.every((value) => /^[0-9a-f]{16}$/.test(value)) &&
       /^WI-OI-[0-9a-z]+$/.test(entry.card ?? '') &&
       typeof entry.slice === 'string' &&
       typeof entry.reason === 'string' &&
@@ -480,32 +491,79 @@ function applyRuntimeBaseline() {
     }
     entries.set(key(entry.code, entry.file), entry);
   }
-  const found = new Map();
-  for (const violation of violations) {
-    const id = key(violation.code, violation.file);
-    if (entries.has(id)) found.set(id, [...(found.get(id) ?? []), violation]);
-  }
+  if (baselineSince) checkBaselineGrowth(entries, key);
   let tolerated = 0;
   for (const [id, entry] of entries) {
     // An entry for a file this scope does not scan (packages/ outside --all-runtime) is judged only in the scope that does.
     if (!roots.some((root) => entry.file.startsWith(`${root}/`))) continue;
-    const matches = found.get(id) ?? [];
-    if (matches.length === entry.count) {
-      tolerated += matches.length;
-      for (const match of matches) violations.splice(violations.indexOf(match), 1);
-    } else if (matches.length < entry.count) {
+    const open = [...entry.fingerprints];
+    for (const violation of violations.filter((item) => key(item.code, item.file) === id)) {
+      const at = open.indexOf(fingerprint(violation.code, violation.file, violation.excerpt));
+      if (at < 0) continue; // not in the baseline: stays reported as new mock
+      open.splice(at, 1);
+      violations.splice(violations.indexOf(violation), 1);
+      tolerated += 1;
+    }
+    if (open.length > 0) {
       violations.push({
         code: 'RUNTIME_BASELINE_STALE',
         file: BASELINE_PATH,
         line: 1,
-        excerpt: `${entry.code} ${entry.file}: ${matches.length} left, baseline says ${entry.count}; lower or remove it (${entry.card} ${entry.slice})`,
+        excerpt: `${entry.code} ${entry.file}: ${open.length} fingerprint(s) no longer match; remove them (${entry.card} ${entry.slice})`,
       });
-      tolerated += matches.length;
-      for (const match of matches) violations.splice(violations.indexOf(match), 1);
     }
-    // More matches than the entry allows: every match stays reported, so new mock fails.
   }
   return tolerated;
+}
+
+function checkBaselineGrowth(entries, key) {
+  if (/^0+$/.test(baselineSince)) return; // a new branch has no earlier baseline
+  const git = (...args) => execFileSync('git', args, { cwd: repositoryRoot, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+  try {
+    git('rev-parse', '--verify', `${baselineSince}^{commit}`);
+  } catch {
+    violations.push({ code: 'RUNTIME_BASELINE_REF_UNKNOWN', file: BASELINE_PATH, line: 1, excerpt: `cannot read ${baselineSince}` });
+    return;
+  }
+  let earlier = { entries: [] };
+  try {
+    earlier = JSON.parse(git('show', `${baselineSince}:${BASELINE_PATH}`));
+  } catch {
+    // the ref has no baseline: every tolerated match must be a line that already existed there
+  }
+  const allowedBefore = new Map((earlier.entries ?? []).map((entry) => [key(entry.code, entry.file), [...(entry.fingerprints ?? [])]]));
+  const sourceAt = new Map();
+  const existedAt = (file, excerpt) => {
+    if (!sourceAt.has(file)) {
+      try {
+        sourceAt.set(file, git('show', `${baselineSince}:${file}`));
+      } catch {
+        sourceAt.set(file, '');
+      }
+    }
+    return excerpt.length > 0 && sourceAt.get(file).includes(excerpt);
+  };
+  // A fingerprint is new only if neither the earlier baseline held it nor its line already existed at the ref: a widened
+  // rule may baseline mock that was already there, but no pull request or push may add a mock line and baseline it.
+  for (const [id, entry] of entries) {
+    const open = [...(allowedBefore.get(id) ?? [])];
+    const current = violations.filter((item) => key(item.code, item.file) === id);
+    for (const value of entry.fingerprints) {
+      const at = open.indexOf(value);
+      if (at >= 0) {
+        open.splice(at, 1);
+        continue;
+      }
+      const match = current.find((item) => fingerprint(item.code, item.file, item.excerpt) === value);
+      if (match && existedAt(entry.file, match.excerpt)) continue;
+      violations.push({
+        code: 'RUNTIME_BASELINE_GREW',
+        file: BASELINE_PATH,
+        line: 1,
+        excerpt: `${entry.code} ${entry.file}: a tolerated line that is not in ${baselineSince}${match ? ` (${match.file}:${match.line})` : ''}`,
+      });
+    }
+  }
 }
 
 if (violations.length > 0) {

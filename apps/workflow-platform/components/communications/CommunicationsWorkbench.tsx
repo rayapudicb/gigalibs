@@ -43,7 +43,7 @@ import type {
   MessageTemplate,
   ReachCampaign,
   ChannelType,
-} from '@/lib/communications-store';
+} from '@/lib/communications-types';
 import { VoiceCallPanel } from './softphone/VoiceCallPanel';
 import { DeliveryReceiptTicks } from './DeliveryReceiptTicks';
 
@@ -106,12 +106,13 @@ export function CommunicationsWorkbench({
 
   // Cross-Module Trigger Simulator
   const [triggerModule, setTriggerModule] = useState<'AR' | 'ESIGN' | 'SPEND' | 'CMMS'>('AR');
-  const [triggerRecipient, setTriggerRecipient] = useState('+1 (415) 890-1200');
-  const [triggerRecipientName, setTriggerRecipientName] = useState('Acme Corp Controller');
-  const [triggerEntityId, setTriggerEntityId] = useState('INV-2026-0099');
+  // WI-OI-120ak (S4): no invented recipient, record or variables; the person fills them in.
+  const [triggerRecipient, setTriggerRecipient] = useState('');
+  const [triggerRecipientName, setTriggerRecipientName] = useState('');
+  const [triggerEntityId, setTriggerEntityId] = useState('');
   const [triggerTemplate, setTriggerTemplate] = useState('AR_INVOICE_DISPATCH');
   const [triggerChannel, setTriggerChannel] = useState<ChannelType>('SMS');
-  const [triggerVariables, setTriggerVariables] = useState('{"customer_name": "Acme Corp", "invoice_number": "INV-2026-0099", "amount": "$55,000.00", "due_date": "2026-10-01", "payment_link": "https://pay.gigalibs.io/inv/INV-2026-0099"}');
+  const [triggerVariables, setTriggerVariables] = useState('{}');
   const [isTriggering, setIsTriggering] = useState(false);
   const [lastTriggerResult, setLastTriggerResult] = useState<any>(null);
 
@@ -127,6 +128,12 @@ export function CommunicationsWorkbench({
         fetch('/api/communications/templates'),
         fetch('/api/communications/reach/campaigns'),
       ]);
+      // WI-OI-120ak (S4): a refused answer (for example "not available on this instance") is shown, not hidden as empty.
+      const refused = [convRes, chanRes, tplRes, cmpRes].find((res) => !res.ok);
+      if (refused) {
+        const body = await refused.json().catch(() => null);
+        throw new Error(body?.title || `Communications answered ${refused.status}.`);
+      }
 
       if (convRes.ok) {
         const convData = await convRes.json();
@@ -802,27 +809,18 @@ export function CommunicationsWorkbench({
                         onChange={(e) => {
                           const m = e.target.value as any;
                           setTriggerModule(m);
-                          if (m === 'AR') {
-                            setTriggerTemplate('AR_INVOICE_DISPATCH');
-                            setTriggerChannel('SMS');
-                            setTriggerEntityId('INV-2026-0099');
-                            setTriggerVariables('{"customer_name": "Acme Corp", "invoice_number": "INV-2026-0099", "amount": "$55,000.00", "due_date": "2026-10-01", "payment_link": "https://pay.gigalibs.io/inv/INV-2026-0099"}');
-                          } else if (m === 'ESIGN') {
-                            setTriggerTemplate('ESIGN_OTP_CHALLENGE');
-                            setTriggerChannel('SMS');
-                            setTriggerEntityId('DOC-2026-088');
-                            setTriggerVariables('{"document_number": "DOC-2026-088", "otp_code": "651920"}');
-                          } else if (m === 'SPEND') {
-                            setTriggerTemplate('SPEND_APPROVAL_ALERT');
-                            setTriggerChannel('EMAIL');
-                            setTriggerEntityId('PO-99120');
-                            setTriggerVariables('{"po_number": "PO-99120", "vendor_name": "Apex Cloud Systems", "amount": "14,200.00", "approval_link": "https://ops.gigalibs.io/spend/approve/PO-99120"}');
-                          } else if (m === 'CMMS') {
-                            setTriggerTemplate('CMMS_WORKORDER_DISPATCH');
-                            setTriggerChannel('WHATSAPP');
-                            setTriggerEntityId('WO-4401');
-                            setTriggerVariables('{"work_order_number": "WO-4401", "priority": "EMERGENCY", "asset_tag": "CHILLER-02", "location": "Building B Plant Room", "task_link": "https://ops.gigalibs.io/cmms/wo-4401"}');
-                          }
+                          // WI-OI-120ak (S4): the module sets the template and channel only; no invented record.
+                          const presets = {
+                            AR: ['AR_INVOICE_DISPATCH', 'SMS'],
+                            ESIGN: ['ESIGN_OTP_CHALLENGE', 'SMS'],
+                            SPEND: ['SPEND_APPROVAL_ALERT', 'EMAIL'],
+                            CMMS: ['CMMS_WORKORDER_DISPATCH', 'WHATSAPP'],
+                          } as const;
+                          const [template, channel] = presets[m as keyof typeof presets];
+                          setTriggerTemplate(template);
+                          setTriggerChannel(channel);
+                          setTriggerEntityId('');
+                          setTriggerVariables('{}');
                         }}
                       >
                         <option value="AR">Accounts Receivable (/ar) - Dunning & Invoices</option>

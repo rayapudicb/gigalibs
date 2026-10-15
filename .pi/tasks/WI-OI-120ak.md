@@ -1,7 +1,7 @@
 # WI-OI-120ak: Zero-mock sweep, the rest (plan v3 step 0.4)
 
-- **Status:** S1–S3 on UAT (release `85fdbcc`, deployed by the owner 2026-10-15). Next: S3b (review follow-ups) with
-  S4, then S5–S7. Decisions D1a–D7a approved 2026-10-15.
+- **Status:** S1–S3 on UAT (release `85fdbcc`). S3b and S4 committed (2026-10-15); their release is being prepared.
+  Then S5–S7. Decisions D1a–D7a approved 2026-10-15.
 - **Follows:** WI-OI-120ah, WI-OI-120an and WI-OI-120ao (the Time screen, done).
 - **Work item:** WI-OI-120. Evidence goes in `.pi/work/WI-OI-120.md`.
 - **Size:** L, delivered as slices S1 to S7, each with its own commit, release, review and check.
@@ -301,3 +301,73 @@ conditions are follow-ups, slice **S3b**, done before the card closes.
   - the release has 31 of its 33 files identical to the feature branch, and the other two differ only by the release
     base;
   - no authorization change.
+
+## S3b, the review's follow-ups (2026-10-15): built and verified locally
+
+- **M1, coverage:** the audit's roots now come from git's tracked `apps/*` and `modules/*`: 27 roots instead of 17,
+  adding the module host and nine modules. The only new finding was in Inventory: nine document numbers (movements,
+  receipts, kits, counts, adjustments) built from `Date.now()` plus `Math.random()` from 0 to 999. That is
+  predictable, and with per-tenant unique numbers a multi-line receipt could fail one time in a thousand. They now use
+  8 hex characters of a random UUID; columns are `varchar(64)` and the longest number is about 30 characters.
+- **Dead code found by the wider store rule:** `lib/tenant-infra-orchestrator.ts`, a simulated broker fleet for
+  invented "defense", "energy" and "treasury" tenants that nothing imported, is deleted (S2's approval for dead mock).
+  With it the web app no longer uses `@gigalibs/broker`, which is removed from its `package.json`, `tsconfig` paths,
+  Next transpile list and alias, and the lockfile.
+- **M2, Connections targets:** the three invented workflow codes are gone. The target list is this workspace's
+  workflows from Workflow Studio, defaulting to "No workflow (intake journal only)". When the service is unavailable,
+  the form says events are recorded in the intake journal only.
+- **M3:** the baseline reasons now say the master data, AR and rule-studio items stay reachable on UAT until S5
+  (slice `S5-lock`).
+- **L1:** the store rule now catches any field modifier, `readonly`, `#private`, untyped `new Map<…>()` and
+  `initialize…Default…` methods. Constructor parameters (ending in ",") and module-level caches are left out. It now
+  matches the rule kernel's real storage, not only its test seed.
+- **L2:** the baseline is schema 2.
+  - Every tolerated match is fingerprinted (rule, file, line text), so one cannot be traded for another.
+  - `--baseline-since <ref>` fails when a fingerprint is new and its line did not already exist at the ref. A widened
+    rule may baseline mock that was already there; no change may add a mock line and baseline it.
+  - CI runs it with a full checkout, against the pull request's base or the push's previous commit.
+- **L3:** folders named `test`, `tests` or `e2e` inside a route tree (`app/…`) and every `generated` folder are now
+  scanned (no new findings).
+- **L4:** three stale lines for deleted files removed from `config/layer-boundary-baseline.json`.
+- **L5 and I6, Workflows:**
+  - the Workflow Studio proxy no longer falls back to `127.0.0.1:4000`; without its address it answers 503 "not
+    available on this instance";
+  - the runner reports a refused answer instead of an empty list;
+  - a selection that a reload removed is dropped.
+- **I5:** the connection-test message says what the hub checked (the credential or webhook secret, and a network probe
+  only when the connection has an address), not "DNS, credentials, and webhook listener are active".
+- **For the Connector Hub's own card:** its test hard-codes `schema_validation: 'PASSED'`.
+
+## S4, Communications and the Softphone button (2026-10-15): built and verified locally
+
+- **D2a:**
+  - `/api/communications/*` answers only from the Communications service. Without `COMMUNICATIONS_API_URL` (UAT
+    today) it answers 503 "not available on this instance"; if the service fails it answers 502. There is no
+    fallback;
+  - `lib/communications-store.ts` is deleted: seeded invented channels, conversations, messages and campaigns, sends
+    that went nowhere, a fabricated WebRTC token and invented call metering;
+  - a body too large to read is refused (413) instead of being read unbounded;
+  - the screen's types moved to the types-only `lib/communications-types.ts`;
+  - the screen shows a refused answer instead of empty lists;
+  - its trigger form starts empty, with no invented phone number, "Acme Corp", invoice, OTP code, vendor or work
+    order; choosing a module sets only its template and channel;
+  - `communications-textfly` is CONTAINED in `modules/communications/module.yaml` (catalogue regenerated). Until S5
+    turns the preview off, UAT still opens it and the API answers 503.
+- **D4a:** the Softphone & WhatsApp button is off the app layout. The drawer file is untouched: it has another
+  session's uncommitted edits, which the owner settles. Its baseline entry stays as `S4-unmounted` until the file is
+  deleted.
+- **For the TextFly card:** the route sends the tenant and user to the service as plain headers. A signed context, as
+  for the other module proxies, is needed before the service is connected.
+- **Tests:** `communications-boundary.test.ts` used to check the store's invented token, calls and metering. It now
+  checks 401; 403 without the module; 403 for an entitled workspace while the module is contained; 503 without the
+  service, with no invented data and no outbound call; 502 when the service fails; and the pass-through with the
+  tenant and user. The rating keeps its own test in the contracts package.
+
+## S3b and S4: verification
+
+- Baseline: 11 entries, 26 fingerprints. Both audit modes pass, and the growth check passes against HEAD.
+- Web type-check clean. Web and contracts tests: 1,006 passed in 96 files (109 skipped). The contracts package was
+  rebuilt for the catalogue change.
+- Lint compared with HEAD under the same config: unchanged on every file except one `any` fewer in the Communications
+  route.
+- All ten audits pass on HEAD plus the 21 files alone (throwaway worktree, removed).

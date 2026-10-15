@@ -1,6 +1,5 @@
 import AppSidebar from '@/components/AppSidebar';
 import { UserNav } from '@/components/auth/UserNav';
-import { OmnichannelSoftphoneDrawer } from '@/components/communications/OmnichannelSoftphoneDrawer';
 import { StudioModeProvider, StudioModeToggle } from '@/components/configuration/StudioMode';
 import { CurrencyLocaleProvider } from '@/components/currency/CurrencyLocaleContext';
 import { GeospatialPlacesProvider } from '@/components/geospatial/GeospatialPlacesProvider';
@@ -107,7 +106,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
               </CurrencyLocaleProvider>
             </main>
           </div>
-          <OmnichannelSoftphoneDrawer />
+          {/* WI-OI-120ak (S4, owner decision D4a): the Softphone & WhatsApp button is off every page until Communications is
+              connected; it showed an invented chat. */}
         </div>
       </StudioModeProvider>
     </AppI18nProvider>

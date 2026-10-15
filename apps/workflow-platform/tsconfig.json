@@ -26,9 +26,6 @@
       "@/*": [
         "./*"
       ],
-      "@gigalibs/broker": [
-        "../../packages/broker/dist/index.d.ts"
-      ],
       "@gigalibs/logger": [
         "../../packages/logger/dist/index.d.ts"
       ],

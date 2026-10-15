@@ -15,7 +15,6 @@
   "dependencies": {
     "@gigalibs/ar-domain": "workspace:*",
     "@gigalibs/auth-core": "workspace:*",
-    "@gigalibs/broker": "workspace:*",
     "@gigalibs/cmms-web": "workspace:*",
     "@gigalibs/configuration-react": "workspace:*",
     "@gigalibs/analytics-charts": "workspace:*",

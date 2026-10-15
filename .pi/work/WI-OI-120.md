@@ -3693,3 +3693,22 @@ widening the card to fix the API faults the proof found.
   - the `/connectors/[slug]` route is not built, and the image has no `@gigalibs/db`;
   - no error lines in web, api or connector-hub-api.
 - **Journey `8w9h29`:** 61 findings, 2 blockers (both CMMS), the same as `8gti7u`. Nothing regressed.
+
+## WI-OI-120ak S3b and S4 built (2026-10-15; owner: "commit, start S3b and S4"; drawer option a by default)
+
+- **S3b:**
+  - every tracked app and module is audited (27 roots); Inventory document numbers no longer use `Math.random`;
+  - the dead tenant-infra simulator is deleted and `@gigalibs/broker` dropped from the web app;
+  - Connections offers only real workflow targets;
+  - the baseline is fingerprinted, with a no-growth check in CI;
+  - folders named `test` inside routes are scanned;
+  - stale layer-baseline lines are removed;
+  - the Workflow Studio proxy has no local fallback, and the runner reports an unavailable service;
+  - the connection-test message is truthful.
+- **S4 (D2a, D4a):**
+  - Communications answers only from its service (503 or 502, never a fallback); its in-memory store is deleted;
+    the module is CONTAINED;
+  - the Softphone button is off every page (the drawer file is untouched: another session's edits).
+- **Verification:** type-check clean; 1,006 web and contracts tests passed; lint unchanged against HEAD; both audit
+  modes pass; all ten audits pass on HEAD plus the change. Details: card WI-OI-120ak, "S3b", "S4" and "S3b and S4:
+  verification".

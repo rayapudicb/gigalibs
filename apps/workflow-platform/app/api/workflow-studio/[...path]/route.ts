@@ -104,7 +104,8 @@ function configuredWorkflowStudioBaseUrl(): string {
     }
     return configured.replace(/\/$/, '');
   }
-  return 'http://127.0.0.1:4000';
+  // WI-OI-120ak (S3b, review L5): no local fallback; without its address the service is not available here (503).
+  throw new Error('WORKFLOW_STUDIO_API_URL is not configured: Workflow Studio is not available on this instance.');
 }
 
 function problem(status: number, title: string): NextResponse {

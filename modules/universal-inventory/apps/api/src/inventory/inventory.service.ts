@@ -51,6 +51,13 @@ import type pg from 'pg';
 import { SCHEMA, TOPIC } from '../config.js';
 import { DatabaseService } from '../database.service.js';
 
+/**
+ * WI-OI-120ak (S3b): the suffix of a document number (MOV-, REC-, ISSUE-, KIT-, CNT-, ADJ-). It was a non-crypto
+ * random number from 0 to 999, predictable and, within one millisecond, colliding one time in a thousand with the per-tenant unique
+ * numbers (a multi-line receipt could fail). Eight hex characters from a random UUID.
+ */
+const documentSuffix = (): string => randomUUID().slice(0, 8);
+
 export const errors = moduleErrors('UNIVERSAL_INVENTORY', 'Universal Inventory');
 
 /**
@@ -327,7 +334,7 @@ export class InventoryService {
       }
 
       const txId = randomUUID();
-      const txNumber = `MOV-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+      const txNumber = `MOV-${Date.now()}-${documentSuffix()}`;
       const now = new Date().toISOString();
       const stockStatus = input.stockStatus ?? 'AVAILABLE';
 
@@ -601,7 +608,7 @@ export class InventoryService {
   ): Promise<InventoryReceiptV1> {
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
       const receiptId = randomUUID();
-      const receiptNumber = `REC-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+      const receiptNumber = `REC-${Date.now()}-${documentSuffix()}`;
       const now = new Date().toISOString();
 
       await client.query(
@@ -730,7 +737,7 @@ export class InventoryService {
 
         // Post stock movement directly inside this transaction
         const txId = randomUUID();
-        const txNumber = `REC-MOV-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+        const txNumber = `REC-MOV-${Date.now()}-${documentSuffix()}`;
 
         await client.query(
           `INSERT INTO ${SCHEMA}.stock_ledger_transactions (
@@ -1084,7 +1091,7 @@ export class InventoryService {
       const now = new Date().toISOString();
       const issueId = randomUUID();
       const txId = randomUUID();
-      const txNumber = `ISSUE-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+      const txNumber = `ISSUE-${Date.now()}-${documentSuffix()}`;
 
       // Post stock ledger transaction header
       await client.query(
@@ -1204,7 +1211,7 @@ export class InventoryService {
   async createKit(principal: ModulePrincipal, input: CreateKitInputV1): Promise<InventoryKitV1> {
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
       const kitId = randomUUID();
-      const kitNumber = `KIT-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+      const kitNumber = `KIT-${Date.now()}-${documentSuffix()}`;
       const now = new Date().toISOString();
 
       await client.query(
@@ -1302,7 +1309,7 @@ export class InventoryService {
       // Post ISSUE movement for each line
       for (const line of kit.lines ?? []) {
         const txId = randomUUID();
-        const txNumber = `ISS-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+        const txNumber = `ISS-${Date.now()}-${documentSuffix()}`;
 
         await client.query(
           `INSERT INTO ${SCHEMA}.stock_ledger_transactions (
@@ -1395,7 +1402,7 @@ export class InventoryService {
   async createCountPlan(principal: ModulePrincipal, input: CreateCountPlanInputV1): Promise<CountPlanV1> {
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
       const id = randomUUID();
-      const planNumber = `CNT-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+      const planNumber = `CNT-${Date.now()}-${documentSuffix()}`;
       const now = new Date().toISOString();
 
       const res = await client.query(
@@ -1478,7 +1485,7 @@ export class InventoryService {
         );
         const warehouseId = planRes.rows[0].warehouse_id;
         const adjId = randomUUID();
-        const adjNumber = `ADJ-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+        const adjNumber = `ADJ-${Date.now()}-${documentSuffix()}`;
         const reason = ExactDecimal.isPositive(varianceQty) ? 'COUNT_GAIN' : 'COUNT_LOSS';
 
         await client.query(
@@ -1534,7 +1541,7 @@ export class InventoryService {
 
       const now = new Date().toISOString();
       const txId = randomUUID();
-      const txNumber = `ADJ-MOV-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+      const txNumber = `ADJ-MOV-${Date.now()}-${documentSuffix()}`;
 
       // Post compensating movement through the ledger
       await client.query(

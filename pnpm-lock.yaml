@@ -222,9 +222,6 @@ importers:
       '@gigalibs/auth-core':
         specifier: workspace:*
         version: link:../../packages/auth-core
-      '@gigalibs/broker':
-        specifier: workspace:*
-        version: link:../../packages/broker
       '@gigalibs/cmms-web':
         specifier: workspace:*
         version: link:../../modules/physical-operations-cmms/web

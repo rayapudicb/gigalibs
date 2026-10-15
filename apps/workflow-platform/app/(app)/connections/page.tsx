@@ -132,7 +132,10 @@ export default function ConnectionsPage() {
   const [newConnectorCode, setNewConnectorCode] = useState<string>('SALESFORCE_CRM');
   const [newConnName, setNewConnName] = useState<string>('');
   const [newConnSlug, setNewConnSlug] = useState<string>('');
-  const [newTargetWorkflow, setNewTargetWorkflow] = useState<string>('WF-O2C-CROSS-BORDER');
+  // WI-OI-120ak (S3b, review M2): targets are this workspace's own workflows; none is assumed. null: Workflow Studio is
+  // not available here, so a connection only records to the intake journal.
+  const [newTargetWorkflow, setNewTargetWorkflow] = useState<string>('');
+  const [workflowTargets, setWorkflowTargets] = useState<{ workflow_code: string; name: string }[] | null>(null);
   const [creating, setCreating] = useState<boolean>(false);
 
   const loadData = useCallback(async () => {
@@ -158,12 +161,16 @@ export default function ConnectionsPage() {
         fetch('/api/connectors-hub/stats').then(safeJson),
       ]);
 
+      fetch('/api/workflow-studio/workflows')
+        .then(async (res) => (res.ok ? res.json() : null))
+        .then((body) => setWorkflowTargets(Array.isArray(body?.workflows) ? body.workflows : null))
+        .catch(() => setWorkflowTargets(null));
       if (connRes.connections) setConnections(connRes.connections);
       if (catRes.catalog) setCatalog(catRes.catalog);
       if (jourRes.journal) setJournal(jourRes.journal);
       if (statRes.stats) setStats(statRes.stats);
     } catch (err: any) {
-      setError(err.message || 'Failed to communicate with Connector Hub API on Port 4100.');
+      setError(err.message || 'The Connector Hub did not answer.');
     } finally {
       setLoading(false);
     }
@@ -189,7 +196,11 @@ export default function ConnectionsPage() {
       const res = await fetch(`/api/connectors-hub/connections/${id}/test`, { method: 'POST' });
       const data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.message || 'Test failed');
-      setActionSuccess(`Connection test passed in ${data.latency_ms}ms! DNS, credentials, and webhook listener are active.`);
+      // WI-OI-120ak (S3b): say what the hub checked: the stored credential or webhook secret, and a network probe only
+      // when the connection has an address.
+      const checks = data.checks ?? {};
+      const said = (value: unknown) => String(value ?? 'not reported').replaceAll('_', ' ').toLowerCase();
+      setActionSuccess(`Connection test passed in ${data.latency_ms} ms. Credentials: ${said(checks.credential_vault)}. Network: ${said(checks.network_probe)}.`);
     } catch (err: any) {
       setError(err.message || 'Connection test failed.');
     } finally {
@@ -276,7 +287,7 @@ export default function ConnectionsPage() {
           connector_code: newConnectorCode,
           name: newConnName,
           slug: newConnSlug,
-          target_workflow_code: newTargetWorkflow,
+          target_workflow_code: newTargetWorkflow || null,
         }),
       });
       const data = await res.json();
@@ -958,14 +969,22 @@ export default function ConnectionsPage() {
                 <Label className="mb-1 block text-xs font-medium text-ui-fg-subtle">
                   Target Automation Pipeline
                 </Label>
+                {workflowTargets === null ? (
+                  <Text size="xsmall" className="mb-1 text-ui-fg-subtle">
+                    Workflow Studio is not available here, so events are only recorded in the intake journal.
+                  </Text>
+                ) : null}
                 <select
                   value={newTargetWorkflow}
                   onChange={(e) => setNewTargetWorkflow(e.target.value)}
                   className="w-full rounded-md border border-ui-border-base bg-ui-bg-field px-3 py-2 text-sm text-ui-fg-base focus:border-ui-border-interactive focus:outline-none"
                 >
-                  <option value="WF-O2C-CROSS-BORDER">Global Cross-Border Order-to-Cash Pipeline</option>
-                  <option value="WF-P2P-SPEND-APPROVAL">Procure-to-Pay Dual Executive Approval Pipeline</option>
-                  <option value="WF-TREASURY-AUTO-HEDGE">Daily Multi-Currency FX Exposure &amp; Auto-Hedging</option>
+                  <option value="">No workflow (intake journal only)</option>
+                  {(workflowTargets ?? []).map((workflow) => (
+                    <option key={workflow.workflow_code} value={workflow.workflow_code}>
+                      {workflow.name} ({workflow.workflow_code})
+                    </option>
+                  ))}
                 </select>
               </div>
 
