@@ -3662,3 +3662,34 @@ widening the card to fix the API faults the proof found.
   connections are not available yet. Connections' test webhook starts from the neutral ping; the workflows runner from
   the workspace's own workflow and `{}`; both say the action is real. The fixture rule now catches `PRESET_` and
   object-typed constants. Baseline 14 entries. Type-check clean; 694 web tests passed; all audits pass on HEAD plus S3.
+- **S3 committed (`e74e4f3`); release `85fdbcc`** applies S1–S3 (the code of 869b91f, 672b44b and e74e4f3) onto d75ccba
+  with a three-way merge, with no conflict. Owner: "commit".
+  - Every file equals the feature version except the audit script (the release still lacks the E3a section) and the
+    lockfile.
+  - Frozen offline install in the release worktree: the web app no longer links `@gigalibs/db`.
+  - Checks on the release: 681 web tests passed in 62 files; type-check clean; audits as on d75ccba (TextFly only);
+    the dependency audit passes; the baseline balances.
+  - Identity `local-20261014T193551Z-85fdbcc70002-fd6731cef974`; nine image tags match. Builds and an independent
+    Security review started.
+- **Security review of S1–S3 / 85fdbcc: approve with conditions.** Safe to deploy. Follow-ups, slice S3b (card):
+  - M1: the guard's roots miss the module host, its five modules and four others. This corrects S1's "every module";
+  - M2: invented workflow targets when creating a connection;
+  - M3: the "locked" items stay reachable until S5;
+  - L1–L5: store-rule forms, baseline fingerprints and a growth check, test-folder skipping, stale layer-baseline
+    lines, the runner's silent empty list on UAT.
+- **Release 85fdbcc ready:** the five builds passed (19:36–19:53Z). Backup `gigalibs_backup_20261014_195314Z` of
+  `uat-postgres` (running d75ccba), checksum verified, 546 tables. Deploy tool retargeted to 85fdbcc from d75ccba;
+  tests 33 of 33; `--check`: CHECK PASSED, nothing deployed. Waiting for the owner's deploy.
+
+## WI-OI-120ak S1–S3 on UAT: release 85fdbcc deployed (2026-10-15, owner-run)
+
+- **Deploy:** DEPLOY SMOKE PASSED `85fdbcc70002-fd6731cef974` (546 tables; 11 migrations; 10 services healthy;
+  HTTP 200 on `/api/health/ready` and `/login`).
+- **Read-only checks afterwards:**
+  - all 11 containers on the new release and healthy; 546 tables;
+  - the live web build (737 files) no longer holds "production-ready connectors", "Here we simulate success",
+    `VEND-ACME-CORP`, "Delta Air Lines" or "PORT 4000 LIVE";
+  - it holds the new connectors page, the runner's "The run is real…" and the test webhook's "signed and recorded…";
+  - the `/connectors/[slug]` route is not built, and the image has no `@gigalibs/db`;
+  - no error lines in web, api or connector-hub-api.
+- **Journey `8w9h29`:** 61 findings, 2 blockers (both CMMS), the same as `8gti7u`. Nothing regressed.

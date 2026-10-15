@@ -1,7 +1,7 @@
 # WI-OI-120ak: Zero-mock sweep, the rest (plan v3 step 0.4)
 
-- **Status:** Approved (owner, 2026-10-15: "approved 120ak, D1a, D2a, D3a, D4a, D5a, D6a, D7a"). S1, S2 and S3 committed; their
-  release (one, with S1's audit) is being prepared.
+- **Status:** S1–S3 on UAT (release `85fdbcc`, deployed by the owner 2026-10-15). Next: S3b (review follow-ups) with
+  S4, then S5–S7. Decisions D1a–D7a approved 2026-10-15.
 - **Follows:** WI-OI-120ah, WI-OI-120an and WI-OI-120ao (the Time screen, done).
 - **Work item:** WI-OI-120. Evidence goes in `.pi/work/WI-OI-120.md`.
 - **Size:** L, delivered as slices S1 to S7, each with its own commit, release, review and check.
@@ -256,3 +256,48 @@ journey are run again.
   nothing new (one `any` fewer in each changed page); both audit modes pass; all ten audits pass on HEAD plus S3
   alone.
 - **Release:** S2 and S3 go to UAT together (with S1's audit script), as the next release.
+
+## Security review of S1–S3 and release 85fdbcc (2026-10-15): approve with conditions
+
+The release is safe to deploy: every change removes or hides mock data, and none touches authorization. The
+conditions are follow-ups, slice **S3b**, done before the card closes.
+
+- **Correction to S1, M1:** the guard does not cover every module, though the S1 commit said it does. The audit's
+  `roots` list predates S1 and leaves out:
+  - `apps/module-host` and the five modules it hosts on UAT (financial-operations, product-catalogue,
+    universal-inventory, universal-orders, universal-procurement);
+  - document-scanner, ontology, saga-orchestrator and communications.
+
+  Example of what it misses: `Math.random` in `modules/universal-inventory/.../inventory.service.ts`. Fix: build the
+  roots from the tracked `apps/*` and `modules/*` (quarantined ones excepted), then fix or baseline what appears.
+- **M2:** creating a connection still offers three invented workflow codes (`WF-O2C-CROSS-BORDER` and two others) as
+  its target, and saves one. Fix: load the targets from Workflow Studio, with no default.
+- **M3:** the "locked" entries can still be reached on UAT until S5 applies D1a and D3a. Rule Studio is REVIEW, not
+  CONTAINED, and keeps tenant rules only in the web process's memory. Acceptable as an interim state only. Fix: S5
+  before the card closes; reasons reworded to "to be locked by D1a/D3a in S5".
+- **L1:** the store rule misses `readonly` fields, untyped `new Map`, `#private`, `protected`, `static`, module-level
+  `new Map()` and `initialize…` set-up methods. In the rule kernel store it matches only the test seed, not the real
+  storage. Widen it.
+- **L2:** the baseline is counted per rule and file, so swapping one match for another passes, and nothing stops
+  entries being added. Fix: fingerprint each tolerated match, and add a check that the baseline never grows against
+  the merge base.
+- **L3:** the audit skips every folder named `test`, `tests`, `e2e` or `generated`, including live routes such as
+  `app/api/connectors/sam-gov/test/`. Skip test folders only outside `app/`, or skip test files by name.
+- **L4:** `config/layer-boundary-baseline.json` still lists two files S2 deleted. Remove the lines.
+- **L5:** on UAT Workflow Studio is not deployed. Its proxy falls back to `127.0.0.1:4000` (502), and the runner shows
+  an empty list under "The run is real…" with no error. Fix: check `r.ok`, say the service is unavailable, and drop
+  the local fallback.
+- **Info:**
+  - the Connections "Test" message overstates what the hub checked ("DNS, credentials, and webhook listener are
+    active"; the hub hard-codes `schema_validation: 'PASSED'`). It predates S3; add it to S3b;
+  - the runner keeps a selection that a reload removed;
+  - two trimmed tests cover contract schemas that no runtime code uses now;
+  - a web script imports `packages/db/dist` by path without declaring it.
+- **Verified by the review:**
+  - the baseline balances in both modes, older rules cannot be baselined, and stale or extra matches fail;
+  - the S2 deletions are unused, statically and dynamically, and the frozen Docker install still works;
+  - the lockfile change only drops a duplicate dev-only variant;
+  - the S3 texts match the hub;
+  - the release has 31 of its 33 files identical to the feature branch, and the other two differ only by the release
+    base;
+  - no authorization change.
