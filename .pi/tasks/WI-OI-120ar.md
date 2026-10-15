@@ -140,7 +140,9 @@
   - the local-profile check fails only on the known `WORKFORCE_API_URL` drift;
   - whole repository: 2,966 tests passed, 234 skipped, none failed (379 files).
 - **Still to do in S4:**
-  - Master Data Hub retirement, its own slice;
+  - Master Data Hub retirement, now card [WI-OI-120at](WI-OI-120at.md), with the "Master data" menu
+    ([120au](WI-OI-120au.md)) and platform reference data ([120av](WI-OI-120av.md)) from the owner's two-level
+    decision (2026-10-15);
   - the owner-run session clean-up (306 expired sessions);
   - the owner deletes `modules/platform-rbac`.
 - **Session clean-up, prepared for the owner:**

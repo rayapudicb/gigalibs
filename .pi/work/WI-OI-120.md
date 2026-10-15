@@ -4043,3 +4043,11 @@ widening the card to fix the API faults the proof found.
   - 2,966 tests pass.
 - **Session clean-up:** backup `gigalibs_backup_20261015_134343Z` and an owner-run `UPDATE` for 306 expired ACTIVE
   sessions.
+- **Master data, two levels (owner, 2026-10-15: "proceed").** Platform master data is locked (kernel-owned, from
+  ISO and UN/ECE standards, changed only in Platform Control Tower); module master data is edited in each module's
+  own screen; one "Master data" menu leads to both. Carded:
+  - WI-OI-120at: retire the Master Data Hub prototype (step 0.8);
+  - WI-OI-120au: the menu (step 0.8);
+  - WI-OI-120av: platform reference data (start of Phase 5A, before M-CUR).
+
+  Placed in plan v3 (step 0.8's added list; the 5A row).
