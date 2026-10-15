@@ -1,7 +1,7 @@
 import { platformModuleCatalog } from '@gigalibs/contracts';
 import { describe, expect, it } from 'vitest';
 import { generatedModuleMenus } from '../lib/generated/module-navigation';
-import { canOpenPlatformModule } from '../lib/module-access';
+import { canOpenPlatformModule, canUseTenantModule } from '../lib/module-access';
 import { getKnowledgeEntry } from '../lib/module-knowledge-registry';
 
 // WI-OI-120ak (S6, owner decision D7a): help comes from the module catalogue and says only what the access check enforces.
@@ -88,10 +88,16 @@ describe('module help (Knowledge Hub)', () => {
         expect(canOpenPlatformModule(module, member)).toBe(true);
         expect(canOpenPlatformModule(module, { ...member, permissions: [] })).toBe(false);
         expect(canOpenPlatformModule(module, { ...member, tenant: { features: [] } })).toBe(false);
-        expect(rule.includes('Platform operators can also open it')).toBe(
+        expect(rule.includes('Platform operators can also open its pages')).toBe(
           module.platformInspection,
         );
         expect(canOpenPlatformModule(module, operator)).toBe(module.platformInspection);
+        // The data behind the pages still needs the plan and the permission (every API route uses this rule).
+        expect(
+          canUseTenantModule(module.key, new Set(operator.tenant.features), operator.permissions, {
+            uatPreview: preview,
+          }),
+        ).toBe(false);
       }
     }
   });

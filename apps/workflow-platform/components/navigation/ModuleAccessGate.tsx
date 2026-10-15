@@ -30,7 +30,9 @@ export function ModuleAccessGate({ access, children }: { access: ModuleAccessCon
   const bought = Boolean(access.tenant?.features.includes(module.key));
   // WI-OI-120ak (S5b): a module that is not released (CONTAINED, or PLANNED outside the UAT preview) cannot be opened in
   // any workspace; saying "not in your plan" or "your role" would be untrue.
-  const unreleased = module.readiness !== 'AVAILABLE' && module.readiness !== 'REVIEW';
+  // Security review of f6123bf (L1): on the UAT instance the preview opens a PLANNED module, so there it is the plan or
+  // the role that is missing, as for a released module.
+  const unreleased = module.readiness === 'CONTAINED' || (module.readiness === 'PLANNED' && access.uatPreview !== true);
   if (unreleased) {
     return (
       <section className="mx-auto max-w-xl p-8" aria-labelledby="module-access-title">

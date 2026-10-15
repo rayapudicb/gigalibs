@@ -33,6 +33,8 @@ jobs:
         env:
           BEFORE: ${{ github.event.before }}
         run: node scripts/verify-runtime-data-integrity.mjs --all-runtime --baseline-since "$BEFORE"
+      - name: Migration pin audit
+        run: node scripts/verify-migration-pins.mjs
       - name: Package dependency audit
         run: node scripts/verify-package-dependencies.mjs
       - name: API boundary audit

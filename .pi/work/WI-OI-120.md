@@ -3806,3 +3806,48 @@ widening the card to fix the API faults the proof found.
     key is left in `tenants.features`.
   - The 3 brand workspaces (Netflix Studios Europe, Paramount Pictures Corp, Warner Bros Discovery) are ACTIVE, with
     no members. Seeded rows (invoices, budgets, configuration and others) and 4 sessions reference the 7 workspaces.
+
+## WI-OI-120ak S7, the demo-lab switch (2026-10-15, owner-run)
+
+- After backup `gigalibs_backup_20261015_063423Z`, the owner ran the guarded statement: `UPDATE 4`, and the check
+  passed.
+- Read-only afterwards: no workspace has `demo-lab`; the 4 workspaces are still CANCELLED (updated 06:36:32Z); no
+  active session in the 7 workspaces.
+- The brand workspaces are still ACTIVE: suspending them in Platform Control Tower is the owner's next step.
+
+## WI-OI-120ak release prepared: S5b, S6 and L2 on top of 162508b (2026-10-15; owner: "commit")
+
+- **Feature commit:** `4ba6bab` (S5b, S6, L2; the three other sessions' files are left out).
+- **Release worktree:** the code of `63dd8ad..4ba6bab` (no `.pi` or `docs`) applied three-way onto `162508b`: 24 files,
+  no conflict, staged and not committed. Every file equals `4ba6bab`, except the two differences the release branch
+  always carries: the CMMS migration pin (19, until step 1.3) and the audit script's release-base section.
+- **Checks on the release:**
+  - type-checks clean in four layers (contracts, web, control plane, Analytics);
+  - 2,803 tests pass;
+  - two control-plane suites fail at import for want of `CONTROL_PAYLOAD_KEY_VERSION`, as on `a4ac027` and
+    `162508b` (environment);
+  - `module-host/host.spec.ts` failed only until its module dependencies were built locally (their `dist` is
+    gitignored; images build it), then passed 3/3;
+  - the real-database proof (all 30 Analytics migrations) passes;
+  - the audit fails only on the absent TextFly roots, as on `162508b`.
+- **Waiting for:** the owner's "commit" for the release commit; then builds with `GIGALIBS_KEEP_IMAGE_VERSIONS=3`,
+  backup, Security review and `--check`.
+- **Release commit `f6123bf`** (owner: "commit"). Source identity refreshed: revision `f6123bfb60a4`, state
+  `adef53217cc9`. Five builds started with `GIGALIBS_KEEP_IMAGE_VERSIONS=3`, so `85fdbcc` survives the disk guard.
+  An independent read-only Security review of `f6123bf` started.
+
+## WI-OI-120ak release f6123bf stopped; S5c built (2026-10-15)
+
+- **Security review of `f6123bf`: approve with conditions.** M1 (deploy blocker, fails closed): `analytics-migrations`
+  still expected 29 against a directory ending at 30, so the deploy would stop at that job. The build was stopped in
+  its first stage (cancelled cleanly; no image tagged). `f6123bf` is never built or deployed. Details: card,
+  "Security review of release f6123bf".
+- **S5c** fixes:
+  - M1: the job expects 30, and a new CI check, `scripts/verify-migration-pins.mjs`, guards every module's job, API
+    and code pins, with the CMMS hold declared;
+  - L1: the access gate on the UAT preview;
+  - I1: the help's inspection sentence;
+  - the WI-OI-011 status that broke the SDLC governance check at `4ba6bab`.
+- **I5, read-only on UAT:** the brand workspaces have no Connector Hub, connection, credential or outbox activity.
+- **Checks:** the 7 CI governance checks pass, the web type-check is clean, and the whole repository suite passes:
+  2,943 tests, 231 skipped, none failed.

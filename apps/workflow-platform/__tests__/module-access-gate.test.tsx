@@ -27,6 +27,19 @@ describe('module access gate', () => {
     expect(html).not.toContain('secret');
   });
 
+  // Security review of f6123bf (L1): the UAT preview opens PLANNED modules, so there the plan is what is missing.
+  it('says a planned module is not in the plan on the UAT preview, and not available yet elsewhere', () => {
+    pathname = '/inventory';
+    const onUat = renderToStaticMarkup(<ModuleAccessGate access={access}>secret</ModuleAccessGate>);
+    expect(onUat).toContain('not in your plan');
+    expect(onUat).not.toContain('is not available yet');
+    const elsewhere = renderToStaticMarkup(
+      <ModuleAccessGate access={{ ...access, uatPreview: false }}>secret</ModuleAccessGate>,
+    );
+    expect(elsewhere).toContain('is not available yet');
+    expect(elsewhere).not.toContain('secret');
+  });
+
   it('still says a released module the workspace lacks is not in its plan', () => {
     pathname = '/gigaops';
     const html = renderToStaticMarkup(<ModuleAccessGate access={access}>secret</ModuleAccessGate>);

@@ -1,7 +1,8 @@
 # WI-OI-120ak: Zero-mock sweep, the rest (plan v3 step 0.4)
 
 - **Status:** S1–S5 on UAT (release `162508b`, owner deploy 2026-10-15; journey rerun pending). S5b, S6 and L2
-  built locally (2026-10-15). S7 is owner actions only (below). Decisions D1a–D7a approved
+  committed (`4ba6bab`); release `f6123bf` was stopped before its build by its Security review (M1); S5c fixes it.
+  S7: the `demo-lab` switch is off; the brand workspaces wait for the owner. Decisions D1a–D7a approved
   2026-10-15 (D1b replaced D1a).
 - **Follows:** WI-OI-120ah, WI-OI-120an and WI-OI-120ao (the Time screen, done).
 - **Work item:** WI-OI-120. Evidence goes in `.pi/work/WI-OI-120.md`.
@@ -551,7 +552,7 @@ No High or Medium findings; nothing blocks the deploy. Follow-ups, slice **S5b**
   - `docs/runbooks/demo-lab-sandbox.md` is marked retired;
   - two comments are corrected;
   - the Sources label for synthetic sources reads "Synthetic (not real data)";
-  - WI-OI-011 (FR-13) is "Retired" in `WORK_ITEMS.md`.
+  - WI-OI-011 (FR-13) carries the removal note in `WORK_ITEMS.md` (status corrected to Review in S5c).
 - **Audit:** a baseline entry tolerated as `locked` names its catalogue module, which must be CONTAINED. Proof:
   pointing an entry at a released module fails.
 - **Left for later:** L2 (drop `reset_synthetic_facts`, after S7's cleanup); CODEOWNERS for `scripts/` and `config/`
@@ -629,4 +630,57 @@ What UAT holds today changes how S7 is done, not what D5a and D6a decided:
   - the real-database proof applies all 30 migrations to a throwaway PostgreSQL and passes;
   - the audit and its growth check pass;
   - UAT's ledger is at 29, so the next deploy runs migration 30.
+
+## Security review of release f6123bf (2026-10-15): approve with conditions; fix M1 before deploying
+
+- **M1, deploy blocker (fails closed):** the Analytics migration job in `compose.modules.local.yaml` still expected 29
+  while the directory ends at 30. `run-module-migrations.mjs` refuses before it connects, so the deploy would stop at
+  `analytics-migrations`, after the other modules' jobs and with no migration 30. L2 had raised only the API's pin.
+  The build of `f6123bf` was stopped in its first stage; `f6123bf` is never built or deployed.
+- **L1:** the access gate called a PLANNED module "not available yet" on UAT, where the preview opens it.
+- **Info:**
+  - I1: platform inspection opens a module's pages, but every data API still needs the plan and the permission. The
+    help should say so.
+  - I2: `refresh_place_rollup_statistics` stays as it is (only `ANALYZE`; no role but the runtime role has `USAGE` on
+    the schema).
+  - I3: a rollback to `162508b` after migration 30 must skip `analytics-migrations`. The `162508b` job refuses a
+    newer ledger; its API accepts it (`>=`) and no longer calls the dropped function.
+  - I4: a `locked` baseline entry is not tied to its file's module; the growth check stays the guard.
+  - I5: SUSPENDED blocks sign-in, refresh, workspace switch, OIDC, the web session, the tenant guard and kernel
+    schedules, and revokes sessions. Inbound Connector Hub webhooks and outbox relays do not check it, and workload
+    admission has no production caller.
+  - I6: the trial-invariant spec would have failed at `162508b`; S5 ran targeted suites only.
+  - I7: the handoff `deploy-uat.mjs` must run with the release worktree's compose.
+- **Verified:**
+  - release parity: identical patch-ids;
+  - L1 for all five methods and HEAD;
+  - no other path past a CONTAINED lock;
+  - `files: ["dist"]` honoured;
+  - Currency gating;
+  - every CONTAINED and PLANNED module is not trial-eligible;
+  - the help's rules match the access check, rendered as text only;
+  - migration 30 is idempotent, with no remaining reference;
+  - the audit passes in every mode.
+
+## S5c, the review's follow-ups (2026-10-15): built and verified locally
+
+- **M1:** `analytics-migrations` expects 30.
+- **New check `scripts/verify-migration-pins.mjs`, in CI:**
+  - each module's migration job, API pin and code version must equal the migration its image ships last;
+  - a job pinned below that refuses and stops the deploy;
+  - the one allowed exception is a declared hold: CMMS stays at 19 until step 1.3 (WI-OI-120aj M3);
+  - a compose migration job missing from the check fails it.
+
+  Proof: it fails on `f6123bf` with exactly M1, and passes on `162508b`, `85fdbcc` and the fix.
+- **L1:** the gate says "not available yet" for CONTAINED, and for PLANNED only outside the UAT preview; on UAT a
+  PLANNED module the workspace lacks says "not in your plan". Test added.
+- **I1:** the inspection sentence now says operators can open the pages, and that the data still needs the permission
+  and the plan. The registry test checks that `canUseTenantModule` refuses the operator.
+- **I5, checked read-only on UAT:** the 3 brand workspaces have no Connector Hub rows, no source connections, ingestion
+  streams or credential references, and no pending outbox events. Suspending them leaves nothing running.
+- **Correction:** S5b set WI-OI-011 to "Retired", which `config/sdlc-governance.json` does not allow; the SDLC
+  governance check failed on `4ba6bab`. It is back to Review, with the removal note. The label is decided in step 0.6.
+- **I6:** the whole repository suite now runs before each release.
+- **Verification:** whole repository 2,943 tests passed, 231 skipped, none failed (376 files); the 7 CI governance
+  checks pass; web type-check clean.
 

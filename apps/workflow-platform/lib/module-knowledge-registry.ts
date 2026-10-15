@@ -79,7 +79,7 @@ function accessRule(module: CatalogueModule): string {
   if (module.readiness === 'CONTAINED') return 'Nobody can open it until it is released.';
   const rule = `Opening it needs the ${module.requiredPermission} permission and the module in your workspace's plan.`;
   return module.platformInspection
-    ? `${rule} Platform operators can also open it inside a workspace, to inspect it.`
+    ? `${rule} Platform operators can also open its pages inside a workspace to inspect them; its data still needs the permission and the plan.`
     : rule;
 }
 
