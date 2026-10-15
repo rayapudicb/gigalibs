@@ -1,8 +1,9 @@
 # GigaLibs execution plan (version 3): one ordered list
 
 Date: 2026-10-13. Programme: WI-OI-120. **Status: Approved by the owner, 2026-10-13 ("approve v3"). It replaces the
-order in `platform-implementation-plan.md` §4.** Decisions marked "Proposed" inside it (§8 and step 0.7) still wait for
-the owner.
+order in `platform-implementation-plan.md` §4.** The owner decided step 0.7 on
+2026-10-15 ("0.7 as recommended"): see the step 0.7 note and `.pi/tasks/WI-OI-120ar.md`. Named reviewers (0.7b)
+still wait for names.
 
 Version 2 (`platform-implementation-plan.md`) keeps the card definitions (what each card builds). This version sets:
 
@@ -508,7 +509,8 @@ example `db-migrations-runtime` by the images. Decision 0.7g checks each one.
 
 ## 8. Module tiers: what every workspace gets, and what it buys
 
-Owner, 2026-10-13: three tiers. "Agreed" rows were settled in conversation. "Proposed" rows wait for decision 0.7h.
+Owner, 2026-10-13: three tiers. "Agreed" rows were settled in conversation. The rows once "Proposed" were confirmed as
+written by decision 0.7h (owner, 2026-10-15: "0.7 as recommended").
 This keeps ADR-0016 F1 (core means the kernel only): tier 1 is the kernel and its screens, and tiers 2 and 3 use the
 `capability` and `business` categories that the manifests already declare.
 
@@ -528,17 +530,17 @@ Platform Control Tower is not part of any workspace. Only the platform's own ope
 | --- | --- | --- |
 | Multi-Currency | Every workspace gets basic currency for money fields. Exchange rates switch on with Orders, AR, Procurement, Spend or Finance. | Agreed |
 | Tax | Orders, AR, Procurement, Spend or Finance | Agreed |
-| Places (the Geospatial place identity, T3) | CMMS, Workforce, Inventory | Proposed |
-| Analytics engine (reports inside every module, ADR-0016 F13) | Every module's reports (S8) | Proposed |
-| Workflow engine (approvals) | Approval policies (R6) | Proposed |
-| Connector Hub (the one way in, ADR-0016 F8) | Any integration or import | Proposed |
+| Places (the Geospatial place identity, T3) | CMMS, Workforce, Inventory | Confirmed (0.7h) |
+| Analytics engine (reports inside every module, ADR-0016 F13) | Every module's reports (S8) | Confirmed (0.7h) |
+| Workflow engine (approvals) | Approval policies (R6) | Confirmed (0.7h) |
+| Connector Hub (the one way in, ADR-0016 F8) | Any integration or import | Confirmed (0.7h) |
 
 ### Tier 3. Optional: chosen per plan
 
 | Kind | Modules | Status |
 | --- | --- | --- |
-| Business modules | CMMS, Workforce, Inventory, Product Catalogue, Procurement, Orders, Finance & GL, Accounts Receivable, Spend & AP | Spend & AP agreed; others proposed |
-| Add-on capabilities | GigaLibs Assistant, Analytics Studio (the builders), E-Signature, Document Scanner, Data Studio, Ontology, Saga, Autonomous Recovery, Communications channels beyond email, Business Value Ledger, Solution Packs | Assistant agreed (optional product, owner 2026-10-08); others proposed |
+| Business modules | CMMS, Workforce, Inventory, Product Catalogue, Procurement, Orders, Finance & GL, Accounts Receivable, Spend & AP | Spend & AP agreed; others confirmed (0.7h) |
+| Add-on capabilities | GigaLibs Assistant, Analytics Studio (the builders), E-Signature, Document Scanner, Data Studio, Ontology, Saga, Autonomous Recovery, Communications channels beyond email, Business Value Ledger, Solution Packs | Assistant agreed (optional product, owner 2026-10-08); others confirmed (0.7h) |
 | Future modules | §7 C and D | When carded |
 
 ### What this needs in the product (part of T8a, step 1.11)

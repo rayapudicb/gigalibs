@@ -94,10 +94,7 @@
     "modules/universal-inventory/web/src/UniversalInventoryWorkspace.tsx": 10,
     "modules/universal-orders/web/src/UniversalOrderWorkspace.tsx": 202,
     "modules/universal-procurement/web/src/UniversalProcurementWorkspace.tsx": 166,
-    "packages/charts-react/src/index.tsx": 80,
     "packages/configuration-react/src/DictionaryRenderer.tsx": 47,
-    "packages/kpi-widgets-react/src/index.tsx": 11,
-    "packages/maps-react/src/index.tsx": 52,
     "packages/notifications-react/src/index.tsx": 15
   }
 }

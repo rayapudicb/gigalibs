@@ -49,7 +49,10 @@ every file in every session:
   non-functional requirements.
 - Trace outcome → requirement → design/ADR → code/migration → tests → release evidence → production
   metric.
-- The canonical status is `.pi/WORK_ITEMS.md`; chat statements do not change it.
+- The canonical status is `.pi/WORK_ITEMS.md`; chat statements do not change it. Statuses follow evidence (plan v3
+  rule 8): Built, On UAT, Done (with the owner's recorded acceptance), Replaced; `pnpm audit:sdlc` checks each claim.
+- **UAT is production** (owner, 2026-10-15, plan v3 decision 0.7a): plan v3's Done checklist (§2) on UAT replaces the
+  separate G5–G7 gates. The owner runs every deploy, and an independent Security review precedes each one.
 - A producer cannot be the only reviewer of tenancy, authentication, permissions, secrets, AI, financial
   value, migrations, retention, external actions, or deployment.
 - Agents produce implementation and evidence. Named humans retain product acceptance, risk acceptance,

@@ -10,7 +10,6 @@ export default defineConfig({
       '@gigalibs/audit-core': path.resolve(__dirname, './packages/audit-core/dist/index.js'),
       '@gigalibs/ar-domain': path.resolve(__dirname, './modules/accounts-receivable/domain/src/index.ts'),
       '@gigalibs/maps-core': path.resolve(__dirname, './packages/maps-core/src/index.ts'),
-      '@gigalibs/maps-react': path.resolve(__dirname, './packages/maps-react/src/index.tsx'),
       '@gigalibs/rule-engine-universal': path.resolve(__dirname, './packages/rule-engine-universal/src/index.ts'),
       '@gigalibs/module-sdk': path.resolve(__dirname, './packages/module-sdk/src/index.ts'),
     },

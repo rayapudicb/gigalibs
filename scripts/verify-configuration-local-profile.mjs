@@ -186,7 +186,7 @@ for (const requiredWorkspace of [
 // pnpm cannot install inside the image. @gigalibs/financial-operations-web was missing from a8207c4 until 2026-10-05,
 // so the web, API and Workforce images could not be built from a clean checkout.
 const workspacePackageDirectories = new Map();
-for (const parent of ['apps', 'packages', 'packages/integrations']) {
+for (const parent of ['apps', 'packages']) {
   const parentPath = join(root, parent);
   if (!existsSync(parentPath)) continue;
   for (const name of readdirSync(parentPath)) workspacePackageDirectories.set(`${parent}/${name}`, null);

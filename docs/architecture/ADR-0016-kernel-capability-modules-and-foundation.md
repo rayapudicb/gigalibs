@@ -1,6 +1,6 @@
 # ADR-0016: Kernel, capability modules and the foundation decisions
 
-- **Status:** Proposed. The owner approved decisions F1–F17 on 2026-09-29 ("approve F1–F17 … let's start the
+- **Status:** Accepted (owner, 2026-10-15, plan v3 decision 0.7f). Before: Proposed. The owner approved decisions F1–F17 on 2026-09-29 ("approve F1–F17 … let's start the
   development"). Independent acceptance is pending.
 - **Date:** 2026-09-29.
 - **Work items:** WI-OI-102 (boundaries and inventory) and WI-OI-103 to WI-OI-107 (the capabilities below).

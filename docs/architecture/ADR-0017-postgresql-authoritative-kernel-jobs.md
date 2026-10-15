@@ -1,6 +1,7 @@
 # ADR-0017: PostgreSQL-authoritative kernel jobs with optional BullMQ dispatch
 
-- **Status:** Accepted for the bounded local-development implementation; production acceptance is pending.
+- **Status:** Accepted for production (owner, 2026-10-15, plan v3 decision 0.7g; UAT is production, 0.7a). Before:
+  accepted for the bounded local-development implementation, with production acceptance pending.
 - **Date:** 2026-09-30.
 - **Work item:** WI-OI-104b.
 - **Builds on:** ADR-0005 §3, ADR-0016 F14 and `.pi/tasks/FOUNDATION-CLOSE.md`.

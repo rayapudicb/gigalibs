@@ -35,9 +35,6 @@
       "@gigalibs/maps-core": [
         "../../packages/maps-core/dist/index.d.ts"
       ],
-      "@gigalibs/maps-react": [
-        "../../packages/maps-react/dist/index.d.ts"
-      ],
       "@gigalibs/i18n": [
         "../../packages/i18n/dist/index.d.ts"
       ]

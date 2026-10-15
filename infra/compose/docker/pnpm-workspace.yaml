@@ -25,7 +25,6 @@ packages:
   - packages/auth-core
   - packages/auth-nest
   - packages/broker
-  - packages/charts-react
   - packages/configuration-core
   - packages/configuration-react
   - packages/contracts
@@ -36,7 +35,6 @@ packages:
   - packages/jobs
   - packages/logger
   - packages/maps-core
-  - packages/maps-react
   - packages/module-registry
   - packages/module-registry-nest
   - packages/module-sdk

@@ -24,7 +24,8 @@ work starts. Production stays NO-GO until G5, G6 and G7 (§6).
   may name an interim reviewer (2026-10-06: GPT for WI-OI-120n); production always needs the named D7 reviewer.
   Posting rules also need the Accounting reviewer.
 - **Evidence for every status.** *Built* = code exists; *Verified* = proof and journey pass on the candidate image;
-  *Accepted* = G5. A claim of "ahead of iDempiere" needs Verified plus the comparative task evidence of X2.
+  *Accepted* = G5. **Superseded 2026-10-15 (plan v3 decision 0.7a, UAT is production):** the statuses are Built, On
+  UAT, Done (on UAT, with the owner's recorded acceptance) and Replaced, and plan v3's Done checklist replaces G5–G7. A claim of "ahead of iDempiere" needs Verified plus the comparative task evidence of X2.
 - **No parallel engines.** Extensions complete ADR-0019 and ADR-0033 (dictionary, renderer, document lifecycle,
   posting) and ADR-0018 (scope); nothing is rebuilt beside them.
 - **Metadata first (owner, 2026-10-05 and 2026-10-06: every module on the metadata foundation).** Every business
@@ -246,6 +247,7 @@ Operations (O2–O7) and the experience rules and benchmark (X1, X2) apply in ev
 - **Frozen denominators:** the action register, the parity register and the X2 task set, each versioned; changes
   only by owner decision, with exclusions signed.
 - **Status needs evidence:** Built, Verified and Accepted are separate; "ahead" needs Verified plus X2 evidence.
+  Superseded 2026-10-15 (plan v3 decision 0.7a): Built, On UAT and Done, with UAT as production.
 - **Defects:** no open Critical or High finding; Medium and Low triaged and accepted by the owner.
 - **Experience:** the X2 tasks are at least as fast and less error-prone than on iDempiere, with zero serious
   accessibility findings and a manual audit pass.

@@ -17,18 +17,14 @@
     "packages/auth-core",
     "packages/auth-nest",
     "packages/broker",
-    "packages/cache",
     "packages/configuration-core",
     "packages/contracts",
     "packages/crypto",
     "packages/db",
     "packages/db-migrations-runtime",
     "packages/embed-sdk",
-    "packages/event-bus",
     "packages/host-kit",
     "packages/i18n",
-    "packages/integrations/aws-s3",
-    "packages/integrations/minio",
     "packages/jobs",
     "packages/logger",
     "packages/module-registry",
@@ -40,9 +36,6 @@
     "packages/queue",
     "packages/rbac-core",
     "packages/rbac-nest",
-    "packages/realtime",
-    "packages/redis",
-    "packages/storage-core",
     "packages/tenancy-nest",
     "packages/validation-nest",
     "packages/web-sdk"
@@ -63,14 +56,10 @@
     ],
     "analytics": [
       "packages/analytics-charts",
-      "packages/analytics-core",
-      "packages/charts-react",
-      "packages/kpi-widgets-react"
+      "packages/analytics-core"
     ],
     "places": [
-      "packages/maps-core",
-      "packages/maps-react",
-      "packages/geofence-engine"
+      "packages/maps-core"
     ]
   },
   "retiring": [
@@ -78,8 +67,7 @@
   ],
   "modulePackages": {
     "accounts-receivable": [
-      "packages/invoices-core",
-      "packages/gigalibs-controls"
+      "packages/invoices-core"
     ],
     "spend-management": [
       "packages/spend-core"

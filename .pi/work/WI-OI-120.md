@@ -4021,3 +4021,25 @@ widening the card to fix the API faults the proof found.
   with its reason. None is Done.
 - **S4:** `NOW.md` is one page (67 lines); the old 360 lines are archived unchanged.
 - **Checks:** the governance check passes; the rules' test passes 4/4. Details: card WI-OI-120aq.
+
+## Plan v3 step 0.7 decided (2026-10-15; owner: "0.7 as recommended"); WI-OI-120ar S1 and S2
+
+- **S1:** the decisions are written into `AGENTS.md`, `.pi/PLAN.md`, plan v2 §1 and §6, `CLAUDE.md`, ADR-0016
+  (Accepted), ADR-0017 (Accepted for production) and plan v3 §8 (the module tiers confirmed). Named reviewers (0.7b)
+  wait for names; deploys keep the interim AI review.
+- **S2 (read-only):**
+  - **Relays:** cross-module relays have delivered nothing since 2026-10-01 02:25Z (Workforce 5,025 pending, CMMS
+    789, Geospatial 59; module-host leases stuck since 2026-10-04). The dead letters: Geospatial 980 (HTTP 401,
+    2026-09-26), Workforce 122 (HTTP 400), control plane 13. Carded as WI-OI-120as.
+  - **`platform-rbac`:** build leftovers and a `.env` only; recommended for the owner to delete.
+  - **Packages:** of the 20 unused, 2 are in use, 8 are named by cards, and 10 are recommended for removal. Of the 12
+    folders with no package, 11 are recommended for removal; `industry-packs` stays.
+  - **Sessions:** 828 ACTIVE on UAT, 306 already expired.
+- **WI-OI-120ar S4 (packages):**
+  - removed 10 unused packages, 10 folders with no package, and the 2 unused `packages/integrations` packages (88
+    tracked files);
+  - references and the lockfile updated (only the `@nestjs/websockets` peer key changed);
+  - audits pass, except design tokens (other sessions' files) and the `WORKFORCE_API_URL` drift, both as before;
+  - 2,966 tests pass.
+- **Session clean-up:** backup `gigalibs_backup_20261015_134343Z` and an owner-run `UPDATE` for 306 expired ACTIVE
+  sessions.

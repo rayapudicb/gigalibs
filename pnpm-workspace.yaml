@@ -1,6 +1,5 @@
 packages:
   - "packages/*"
-  - "packages/integrations/*"
   - "apps/*"
   - "e2e"
   - "modules/*/domain"

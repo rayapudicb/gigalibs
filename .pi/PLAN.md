@@ -19,6 +19,11 @@ G0 Intake and discovery
 
 Gate passage requires repository evidence, not elapsed time or an agent statement.
 
+**UAT is production (owner, 2026-10-15, plan v3 decision 0.7a).** G5–G7 are replaced by plan v3's Done checklist
+(`docs/plans/gigalibs-execution-plan-v3.md` §2), passed on UAT: each card is released, independently Security-reviewed,
+deployed by the owner and proven by the journey. Statuses follow evidence (Built, On UAT, Done, Replaced; see
+`.pi/WORK_ITEMS.md`). The "Current gate" text below is kept as history; the current position is `.pi/NOW.md`.
+
 ## Current gate
 
 The repository is between G4 and G5 for the Release 1 AP reference outcome. Its core vertical slice is
