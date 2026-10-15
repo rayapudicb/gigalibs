@@ -17,6 +17,7 @@ import {
   EmptyState,
   LoadingState,
   DataTable,
+  ErrorState,
 } from '@/components/design-system';
 import {
   MessageSquare,
@@ -104,7 +105,7 @@ export function CommunicationsWorkbench({
   const [newTplChannel, setNewTplChannel] = useState<ChannelType>('SMS');
   const [newTplBody, setNewTplBody] = useState('');
 
-  // Cross-Module Trigger Simulator
+  // Cross-module alert
   const [triggerModule, setTriggerModule] = useState<'AR' | 'ESIGN' | 'SPEND' | 'CMMS'>('AR');
   // WI-OI-120ak (S4): no invented recipient, record or variables; the person fills them in.
   const [triggerRecipient, setTriggerRecipient] = useState('');
@@ -165,14 +166,24 @@ export function CommunicationsWorkbench({
     fetchData();
   }, [fetchData]);
 
+  // WI-OI-120ak (S4b, review M1): a refused answer is shown with the service's own words, never swallowed.
+  const refused = useCallback(async (res: Response, fallback: string) => {
+    const body = await res.json().catch(() => null);
+    setError(body?.title || body?.message || body?.error || fallback);
+  }, []);
+
   // Fetch messages when selected conversation changes
   useEffect(() => {
     if (!selectedConversationId) return;
     fetch(`/api/communications/inbox/conversations/${selectedConversationId}/messages`)
-      .then((res) => res.ok ? res.json() : { messages: [] })
+      .then(async (res) => {
+        if (res.ok) return res.json();
+        await refused(res, 'Messages could not be loaded.');
+        return { messages: [] };
+      })
       .then((data) => setMessages(data.messages || []))
-      .catch((err) => console.error('Error fetching messages', err));
-  }, [selectedConversationId]);
+      .catch(() => setError('Messages could not be loaded.'));
+  }, [selectedConversationId, refused]);
 
   // Send reply in current thread
   const handleSendReply = async () => {
@@ -194,9 +205,11 @@ export function CommunicationsWorkbench({
           const convData = await convRes.json();
           setConversations(convData.conversations || []);
         }
+      } else {
+        await refused(res, 'The reply was not sent.');
       }
     } catch (err: any) {
-      alert(err.message || 'Error sending reply');
+      setError(err.message || 'The reply was not sent.');
     } finally {
       setIsSendingReply(false);
     }
@@ -221,9 +234,11 @@ export function CommunicationsWorkbench({
         setNewChanName('');
         setNewChanAddress('');
         fetchData();
+      } else {
+        await refused(res, 'The channel was not created.');
       }
     } catch (err: any) {
-      alert(err.message || 'Error creating channel');
+      setError(err.message || 'The channel was not created.');
     }
   };
 
@@ -248,9 +263,11 @@ export function CommunicationsWorkbench({
         setNewTplCode('');
         setNewTplBody('');
         fetchData();
+      } else {
+        await refused(res, 'The template was not created.');
       }
     } catch (err: any) {
-      alert(err.message || 'Error creating template');
+      setError(err.message || 'The template was not created.');
     }
   };
 
@@ -262,8 +279,9 @@ export function CommunicationsWorkbench({
       let parsedVars = {};
       try {
         parsedVars = JSON.parse(triggerVariables);
-      } catch (e) {
-        // ignore
+      } catch {
+        setError('Variables must be valid JSON.');
+        return;
       }
 
       const res = await fetch('/api/communications/dispatch', {
@@ -287,9 +305,11 @@ export function CommunicationsWorkbench({
         if (result.conversationId) {
           setSelectedConversationId(result.conversationId);
         }
+      } else {
+        await refused(res, 'The message was not dispatched.');
       }
     } catch (err: any) {
-      alert(err.message || 'Trigger execution failed');
+      setError(err.message || 'The message was not dispatched.');
     } finally {
       setIsTriggering(false);
     }
@@ -363,12 +383,6 @@ export function CommunicationsWorkbench({
           icon={<MessageSquare className="h-5 w-5 text-ui-fg-subtle" />}
         />
         <MetricCard
-          label="Avg. Delivery Success"
-          value="99.5%"
-          hint="Zero packet drop across providers"
-          icon={<CheckCircle2 className="h-5 w-5 text-emerald-500" />}
-        />
-        <MetricCard
           label="Reach Audiences"
           value={campaigns.reduce((acc, c) => acc + c.audienceCount, 0)}
           hint="Recipients engaged across campaigns"
@@ -376,9 +390,15 @@ export function CommunicationsWorkbench({
         />
       </div>
 
+      {error ? (
+        <div className="mt-4">
+          <ErrorState title="Communications" message={error} />
+        </div>
+      ) : null}
+
       {loading && conversations.length === 0 ? (
         <div className="mt-6">
-          <LoadingState message="Connecting to TextFly communications cluster..." />
+          <LoadingState message="Loading Communications…" />
         </div>
       ) : (
         <div className="mt-4">
@@ -392,7 +412,6 @@ export function CommunicationsWorkbench({
                     <span className="text-xs font-semibold uppercase tracking-wider text-ui-fg-muted">
                       Threads ({conversations.length})
                     </span>
-                    <span className="text-xs text-ui-fg-subtle">Real-time sync</span>
                   </div>
 
                   <div className="divide-y divide-ui-border-base overflow-y-auto max-h-[560px] mt-2">
@@ -796,7 +815,7 @@ export function CommunicationsWorkbench({
               <div className="w-full">
                 <Container className="p-5">
                   <div className="pb-3 border-b border-ui-border-base mb-4">
-                    <h3 className="text-base font-semibold text-ui-fg-base">Cross-Module Alert Simulator</h3>
+                    <h3 className="text-base font-semibold text-ui-fg-base">Send a cross-module alert</h3>
                     <p className="text-xs text-ui-fg-subtle mt-0.5">
                       Test automated event triggers dispatching from AR, E-Sign, Spend, or CMMS into TextFly.
                     </p>
@@ -908,11 +927,11 @@ export function CommunicationsWorkbench({
                         <div className="flex items-center gap-2">
                           <CheckCircle2 className="h-4 w-4 text-emerald-600" />
                           <span className="text-xs font-semibold text-emerald-800 dark:text-emerald-300">
-                            Dispatch Successfully Verified
+                            Accepted by the Communications service
                           </span>
                         </div>
                         <p className="text-xs text-emerald-700 dark:text-emerald-400 mt-1">
-                          Message sent to provider cluster and queued for instant delivery.
+                          The service accepted the message; delivery is reported by the provider.
                         </p>
                       </div>
 

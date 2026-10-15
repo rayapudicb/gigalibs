@@ -3712,3 +3712,14 @@ widening the card to fix the API faults the proof found.
 - **Verification:** type-check clean; 1,006 web and contracts tests passed; lint unchanged against HEAD; both audit
   modes pass; all ten audits pass on HEAD plus the change. Details: card WI-OI-120ak, "S3b", "S4" and "S3b and S4:
   verification".
+- **Security review of S3b/S4, release a4ac027: approve with conditions.** No High findings. Follow-ups are slice
+  S4b, with S5:
+  - correction, M1: the Communications screen never renders its error, and still shows an invented 99.5% delivery
+    card;
+  - M2 (existing): the public `/demo/index.html` loads unpinned third-party scripts on the app's origin;
+  - L1–L3: growth-check bypasses, line-only fingerprints, store-pattern gaps;
+  - Info: empty `--baseline-since`, CI `env:`, the test-failure message, an orphan script.
+- **Release a4ac027 ready:** release commit `a4ac027` (owner: "commit"; identity
+  `local-20261015T035421Z-a4ac0276c185-4d657d1c2a1a`). Five builds passed (03:54–04:12Z). Backup
+  `gigalibs_backup_20261015_041255Z` of `uat-postgres` (running 85fdbcc). Deploy tool retargeted from 85fdbcc; 33 of
+  33 tests; `--check` passed. Waiting for the owner's deploy.

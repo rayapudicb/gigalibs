@@ -17,8 +17,9 @@
 > (its review's findings: truthful Time help, no 403 for a user with no person) is done too (release `63178f6`).
 > [WI-OI-120ao](tasks/WI-OI-120ao.md) (the week follows the clock; site lists ask Geospatial only when allowed) is done
 > too (release `d75ccba`). Journey `8gti7u`: 2 blockers, both CMMS (step 1.3); the technician's week is submitted and
-> approved. Now: [WI-OI-120ak](tasks/WI-OI-120ak.md), the rest of the zero-mock sweep (approved with D1a–D7a;
-> slice S1, the guard).
+> approved. Now: [WI-OI-120ak](tasks/WI-OI-120ak.md), the rest of the zero-mock sweep (D1a–D7a). S1–S3 are on UAT
+> (`85fdbcc`); S3b and S4 are built (`a4ac027`, deploy pending); next S4b with S5 as one release, then S6 and S7.
+> In the bucket: [WI-OI-120ap](tasks/WI-OI-120ap.md), TextFly into GigaLibs (port the engine, drop the shell).
 
 > **WI-OI-120u on UAT: release `4b8db72eae10-c90a7bebc734` (2026-10-13), and the Workforce journey passes.** The journey
 > found that new workspaces got no module windows (creating a workspace wrote no `tenant.entitlements.changed.v1`).

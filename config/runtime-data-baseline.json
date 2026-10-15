@@ -1,13 +1,13 @@
 {
   "schemaVersion": 2,
-  "comment": "WI-OI-120ak: known mock still in the code, fingerprinted per match (rule, file, line text). Each slice removes its own entries; S5-lock entries stay reachable on UAT until S5 applies D1a/D3a. CI fails if a pull request or push adds a fingerprint (--baseline-since). Read by scripts/verify-runtime-data-integrity.mjs.",
+  "comment": "WI-OI-120ak: known mock still in the code, fingerprinted per match (rule, file, and the matched text; for record rules the whole literal). Each slice removes its own entries; S5-lock entries stay reachable on UAT until S5 applies D1a/D3a. CI fails if a pull request or push adds a fingerprint (--baseline-since). Read by scripts/verify-runtime-data-integrity.mjs.",
   "entries": [
     {
       "code": "DEV_SEED_SOURCE",
       "file": "apps/workflow-platform/lib/master-data-catalog.ts",
       "fingerprints": [
-        "445b8403c2d86d3c",
-        "56f96d602541d520"
+        "40aba15216f614cc",
+        "f83f8b9a6c70d772"
       ],
       "card": "WI-OI-120ak",
       "slice": "S5-lock",
@@ -17,7 +17,7 @@
       "code": "IN_MEMORY_BUSINESS_FIXTURE",
       "file": "apps/workflow-platform/app/(app)/rules/studio/page.tsx",
       "fingerprints": [
-        "af002d78947ac51d"
+        "96de1d4397f9e30f"
       ],
       "card": "WI-OI-120ak",
       "slice": "S5-lock",
@@ -27,8 +27,8 @@
       "code": "IN_MEMORY_BUSINESS_FIXTURE",
       "file": "modules/analytics-studio/apps/api/src/places/sample-farm.service.ts",
       "fingerprints": [
-        "217f22658e12c583",
-        "248ec4da3e3ed5a0"
+        "398ef0a3559f1986",
+        "426023dfa50fcf6a"
       ],
       "card": "WI-OI-120ak",
       "slice": "S5",
@@ -38,10 +38,10 @@
       "code": "IN_MEMORY_BUSINESS_STORE",
       "file": "apps/workflow-platform/lib/master-data-store.ts",
       "fingerprints": [
-        "00334c96a2cecea4",
+        "25854cad7757617e",
+        "25854cad7757617e",
         "2cb8c38e7a9840d9",
-        "53b3a0c73932bf40",
-        "f95f316e1a3db8ce"
+        "e58633f3a370c585"
       ],
       "card": "WI-OI-120ak",
       "slice": "S5-lock",
@@ -51,12 +51,12 @@
       "code": "IN_MEMORY_BUSINESS_STORE",
       "file": "apps/workflow-platform/lib/universal-rule-kernel-store.ts",
       "fingerprints": [
-        "0ca8a970a77b27f7",
-        "1ec0059f1599f6dc",
+        "0a2edf72aa46ee45",
+        "0a2edf72aa46ee45",
         "2b60021ef32f9c52",
         "794d4f300ceb211d",
-        "7b89fd9e6f0a80ca",
-        "7c75a40b134d69e9"
+        "aa045eb60aebe920",
+        "aa045eb60aebe920"
       ],
       "card": "WI-OI-120ak",
       "slice": "S5-lock",
@@ -66,8 +66,8 @@
       "code": "IN_MEMORY_SCREEN_RECORDS",
       "file": "apps/workflow-platform/app/(app)/ar/invoices/new/page.tsx",
       "fingerprints": [
-        "3e4df031e10b3df5",
-        "9a5d1d4c47156274"
+        "581c0ab5b0792822",
+        "f7d5a344e53d57d1"
       ],
       "card": "WI-OI-120ak",
       "slice": "S5-lock",
@@ -77,7 +77,7 @@
       "code": "IN_MEMORY_SCREEN_RECORDS",
       "file": "apps/workflow-platform/components/communications/OmnichannelSoftphoneDrawer.tsx",
       "fingerprints": [
-        "bb322200325f56f3"
+        "143341592643eb06"
       ],
       "card": "WI-OI-120ak",
       "slice": "S4-unmounted",
@@ -87,7 +87,7 @@
       "code": "PLACEHOLDER_PEOPLE_OR_COMPANIES",
       "file": "apps/workflow-platform/app/(app)/rules/studio/page.tsx",
       "fingerprints": [
-        "4a6934c7d49ce1ff"
+        "8860caeb24704c11"
       ],
       "card": "WI-OI-120ak",
       "slice": "S5-lock",
@@ -97,10 +97,10 @@
       "code": "PLACEHOLDER_PEOPLE_OR_COMPANIES",
       "file": "apps/workflow-platform/lib/master-data-catalog.ts",
       "fingerprints": [
-        "60962f01fd3b7ce2",
-        "f2670a8e57129fe8",
-        "f4d2058c1e4f5e92",
-        "fe1906ee0fb43dfe"
+        "2dd0497c85ed119f",
+        "4fad26ae78d5271e",
+        "655aad450a3c7c57",
+        "99404e755101fd92"
       ],
       "card": "WI-OI-120ak",
       "slice": "S5-lock",
@@ -110,7 +110,7 @@
       "code": "PLACEHOLDER_PEOPLE_OR_COMPANIES",
       "file": "modules/spend-management/db/migrations/seed_spend_data.sql",
       "fingerprints": [
-        "c90bcccffa3a5fca"
+        "4f0de9d37f4fd4fe"
       ],
       "card": "WI-OI-120ak",
       "slice": "not deployed",
@@ -120,8 +120,8 @@
       "code": "PLACEHOLDER_PEOPLE_OR_COMPANIES",
       "file": "packages/contracts/src/master-data/templates.ts",
       "fingerprints": [
-        "079ae9fb71af0e7e",
-        "1035e876825adee5"
+        "29a7cca596b258f8",
+        "29a7cca596b258f8"
       ],
       "card": "WI-OI-120ak",
       "slice": "S5-lock",

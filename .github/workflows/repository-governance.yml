@@ -25,10 +25,14 @@ jobs:
         run: node scripts/verify-runtime-data-integrity.mjs --all-runtime
       - name: Runtime data baseline adds no new mock (pull request)
         if: github.event_name == 'pull_request'
-        run: node scripts/verify-runtime-data-integrity.mjs --all-runtime --baseline-since "origin/${{ github.base_ref }}"
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: node scripts/verify-runtime-data-integrity.mjs --all-runtime --baseline-since "origin/$BASE_REF"
       - name: Runtime data baseline adds no new mock (push)
         if: github.event_name == 'push'
-        run: node scripts/verify-runtime-data-integrity.mjs --all-runtime --baseline-since "${{ github.event.before }}"
+        env:
+          BEFORE: ${{ github.event.before }}
+        run: node scripts/verify-runtime-data-integrity.mjs --all-runtime --baseline-since "$BEFORE"
       - name: Package dependency audit
         run: node scripts/verify-package-dependencies.mjs
       - name: API boundary audit

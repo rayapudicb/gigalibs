@@ -195,7 +195,8 @@ export default function ConnectionsPage() {
     try {
       const res = await fetch(`/api/connectors-hub/connections/${id}/test`, { method: 'POST' });
       const data = await res.json();
-      if (!res.ok || !data.success) throw new Error(data.message || 'Test failed');
+      // The hub reports a failed probe as `error` (WI-OI-120ak S4b).
+      if (!res.ok || !data.success) throw new Error(data.error || data.message || data.title || 'Test failed');
       // WI-OI-120ak (S3b): say what the hub checked: the stored credential or webhook secret, and a network probe only
       // when the connection has an address.
       const checks = data.checks ?? {};

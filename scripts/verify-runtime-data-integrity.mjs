@@ -61,6 +61,8 @@ const sourceExtensions = new Set([
   '.json',
   '.sql',
   '.prisma',
+  // WI-OI-120ak (S4b, review M2): static pages are served too (the deleted public/demo/index.html was never scanned).
+  '.html',
 ]);
 const forbiddenContent = [
   { code: 'DEMO_CREDENTIAL', pattern: /admin@demo\.com|demo1234/g },
@@ -136,11 +138,19 @@ const forbiddenContent = [
   // between instances): store classes with record maps or lists, and the methods that seed them with invented data.
   {
     code: 'IN_MEMORY_BUSINESS_STORE',
-    // S3b (review L1): any field modifier, `readonly`, `#private` and untyped `new Map<…>()` fields (a field ends with ";",
-    // a constructor parameter with ","), and `initialize…Default…` set-up methods. Module-level maps are left out:
-    // in the web app they are token and handler caches.
-    pattern:
-      /\b(?:private|protected|public|static|readonly)\s+(?:(?:static|readonly)\s+)*#?\w+\s*(?::[^=;]+)?=\s*(?:new Map(?:<[^>]*>)?\(\)|\[\])\s*;|^\s*#\w+\s*(?::[^=;]+)?=\s*(?:new Map(?:<[^>]*>)?\(\)|\[\])\s*;|\b(?:seed(?:Defaults|Initial\w*|Test\w*|Platform\w*)|initialize\w*Default\w*)\s*\(/gm,
+    // S3b (review L1): any field modifier, `readonly`, `#private` and untyped `new Map<…>()` fields, and `initialize…Default…`
+    // set-up methods. S4b (review L3): also typed fields with no modifier, arrow types, nested generics, `new Map(seed)`,
+    // `new Set()`, `= {}`, and code without semicolons. A field stands on its own line; a parameter ends with ",".
+    // Module-level maps are left out: in the web app they are token and handler caches.
+    pattern: new RegExp(
+      [
+        String.raw`^[ \t]*(?:(?:private|protected|public|static|readonly|declare|override)[ \t]+)+#?\w+[ \t]*(?::(?:[^=;\n]|=>)+)?=[ \t]*(?:new (?:Map|Set)\b[^;\n]*|\[\]|\{\})[ \t]*;?[ \t]*$`,
+        String.raw`^[ \t]*#?\w+[ \t]*:(?:[^=;\n]|=>)+=[ \t]*(?:new (?:Map|Set)\b[^;\n]*|\[\]|\{\})[ \t]*;?[ \t]*$`,
+        String.raw`^[ \t]*#\w+[ \t]*=[ \t]*(?:new (?:Map|Set)\b[^;\n]*|\[\]|\{\})[ \t]*;?[ \t]*$`,
+        String.raw`\b(?:seed(?:Defaults|Initial\w*|Test\w*|Platform\w*)|initialize\w*Default\w*)\s*\(`,
+      ].join('|'),
+      'gm',
+    ),
     paths: ['apps/workflow-platform/'],
   },
   // WI-OI-120ak (S1): a screen that pretends an action succeeded, or waits to look busy instead of calling a service.
@@ -193,9 +203,10 @@ const runtimeBaseline = existsSync(join(repositoryRoot, BASELINE_PATH))
 // S3b (review L2): each tolerated match is fingerprinted by its rule, file and line text, so one match cannot be traded
 // for another; `--baseline-since <git ref>` (CI: the pull request's base, or the previous commit of a push) fails when
 // the baseline holds a fingerprint the ref did not.
-const fingerprint = (code, file, excerpt) => createHash('sha256').update(`${code}\u0000${file}\u0000${excerpt}`).digest('hex').slice(0, 16);
+const fingerprint = (code, file, matched) => createHash('sha256').update(`${code}\u0000${file}\u0000${matched}`).digest('hex').slice(0, 16);
 const sinceArgument = process.argv.indexOf('--baseline-since');
-const baselineSince = sinceArgument >= 0 ? process.argv[sinceArgument + 1] : null;
+// S4b (review): a flag without a usable value fails instead of being skipped.
+const baselineSince = sinceArgument >= 0 ? (process.argv[sinceArgument + 1] ?? '') : null;
 
 const violations = [];
 const absentQuarantinedRoots = [];
@@ -284,21 +295,52 @@ function walk(path) {
         });
       }
     }
-    for (const rule of forbiddenContent) {
-      if (rule.paths && !rule.paths.some((prefix) => repoPath.startsWith(prefix))) continue;
-      rule.pattern.lastIndex = 0;
-      for (const match of source.matchAll(rule.pattern)) {
-        const before = source.slice(0, match.index);
-        const line = before.split('\n').length;
-        violations.push({
-          code: rule.code,
-          file: repoPath,
-          line,
-          excerpt: source.split('\n')[line - 1]?.trim().slice(0, 240) ?? '',
-        });
-      }
+    violations.push(...scanContent(source, repoPath));
+  }
+}
+
+// S4b (review L2): each match is fingerprinted by what it matched (whitespace collapsed), not by its first line; for the
+// record rules, by the whole literal from its opening bracket to the closing one. A tolerated match therefore cannot
+// keep its fingerprint while the records in it change. The excerpt is for people.
+function balancedEnd(source, start) {
+  let depth = 0;
+  let quote = null;
+  const limit = Math.min(source.length, start + 50_000);
+  for (let i = start; i < limit; i += 1) {
+    const ch = source[i];
+    if (quote) {
+      if (ch === '\\') i += 1;
+      else if (ch === quote) quote = null;
+      continue;
+    }
+    if (ch === "'" || ch === '"' || ch === '`') quote = ch;
+    else if ('([{'.includes(ch)) depth += 1;
+    else if (')]}'.includes(ch) && --depth === 0) return i + 1;
+  }
+  return limit;
+}
+function scanContent(source, repoPath) {
+  // Where each record rule's literal opens (declared here: the scan runs before later top-level constants exist).
+  const RECORD_START = { IN_MEMORY_BUSINESS_FIXTURE: /=\s*[[{]/, IN_MEMORY_SCREEN_RECORDS: /\(\[/ };
+  const found = [];
+  for (const rule of forbiddenContent) {
+    if (rule.paths && !rule.paths.some((prefix) => repoPath.startsWith(prefix))) continue;
+    rule.pattern.lastIndex = 0;
+    for (const match of source.matchAll(rule.pattern)) {
+      const line = source.slice(0, match.index).split('\n').length;
+      const opening = RECORD_START[rule.code]?.exec(match[0]);
+      const opener = opening ? match.index + opening.index + opening[0].length - 1 : -1;
+      const text = opening ? source.slice(match.index, balancedEnd(source, opener)) : match[0];
+      found.push({
+        code: rule.code,
+        file: repoPath,
+        line,
+        excerpt: source.split('\n')[line - 1]?.trim().slice(0, 240) ?? '',
+        fingerprint: fingerprint(rule.code, repoPath, text.replace(/\s+/g, ' ').trim()),
+      });
     }
   }
+  return found;
 }
 
 function verifyQuarantineBoundary() {
@@ -491,14 +533,14 @@ function applyRuntimeBaseline() {
     }
     entries.set(key(entry.code, entry.file), entry);
   }
-  if (baselineSince) checkBaselineGrowth(entries, key);
+  if (baselineSince !== null) checkBaselineGrowth(entries, key);
   let tolerated = 0;
   for (const [id, entry] of entries) {
     // An entry for a file this scope does not scan (packages/ outside --all-runtime) is judged only in the scope that does.
     if (!roots.some((root) => entry.file.startsWith(`${root}/`))) continue;
     const open = [...entry.fingerprints];
     for (const violation of violations.filter((item) => key(item.code, item.file) === id)) {
-      const at = open.indexOf(fingerprint(violation.code, violation.file, violation.excerpt));
+      const at = open.indexOf(violation.fingerprint);
       if (at < 0) continue; // not in the baseline: stays reported as new mock
       open.splice(at, 1);
       violations.splice(violations.indexOf(violation), 1);
@@ -517,6 +559,10 @@ function applyRuntimeBaseline() {
 }
 
 function checkBaselineGrowth(entries, key) {
+  if (!baselineSince || baselineSince.startsWith('-')) {
+    violations.push({ code: 'RUNTIME_BASELINE_REF_UNKNOWN', file: BASELINE_PATH, line: 1, excerpt: '--baseline-since needs a git ref' });
+    return;
+  }
   if (/^0+$/.test(baselineSince)) return; // a new branch has no earlier baseline
   const git = (...args) => execFileSync('git', args, { cwd: repositoryRoot, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
   try {
@@ -529,38 +575,48 @@ function checkBaselineGrowth(entries, key) {
   try {
     earlier = JSON.parse(git('show', `${baselineSince}:${BASELINE_PATH}`));
   } catch {
-    // the ref has no baseline: every tolerated match must be a line that already existed there
+    // the ref has no baseline: only matches the ref's own files already had may be tolerated
   }
-  const allowedBefore = new Map((earlier.entries ?? []).map((entry) => [key(entry.code, entry.file), [...(entry.fingerprints ?? [])]]));
-  const sourceAt = new Map();
-  const existedAt = (file, excerpt) => {
-    if (!sourceAt.has(file)) {
+  const allowedBefore = new Map(
+    (earlier.entries ?? []).filter((entry) => Array.isArray(entry.fingerprints)).map((entry) => [key(entry.code, entry.file), [...entry.fingerprints]]),
+  );
+  // S4b (review L1): the ref's file is scanned with today's rules, so a fingerprint the old baseline lacked is allowed
+  // only as many times as that exact match occurred at the ref (a widened rule finding old mock), never for a copy, a
+  // comment or text inside a longer line.
+  const atRef = new Map();
+  const occurrencesAtRef = (file) => {
+    if (!atRef.has(file)) {
+      let source = null;
       try {
-        sourceAt.set(file, git('show', `${baselineSince}:${file}`));
+        source = git('show', `${baselineSince}:${file}`);
       } catch {
-        sourceAt.set(file, '');
+        source = null;
       }
+      const counts = new Map();
+      for (const match of source === null ? [] : scanContent(source, file)) {
+        counts.set(match.fingerprint, (counts.get(match.fingerprint) ?? 0) + 1);
+      }
+      atRef.set(file, counts);
     }
-    return excerpt.length > 0 && sourceAt.get(file).includes(excerpt);
+    return atRef.get(file);
   };
-  // A fingerprint is new only if neither the earlier baseline held it nor its line already existed at the ref: a widened
-  // rule may baseline mock that was already there, but no pull request or push may add a mock line and baseline it.
   for (const [id, entry] of entries) {
-    const open = [...(allowedBefore.get(id) ?? [])];
-    const current = violations.filter((item) => key(item.code, item.file) === id);
+    // A fingerprint may be tolerated as many times as the larger of: the old baseline's count, or the ref's own matches
+    // (the same occurrence is never counted twice, so a copied line fails).
+    const allowance = new Map();
+    for (const value of allowedBefore.get(id) ?? []) allowance.set(value, (allowance.get(value) ?? 0) + 1);
+    for (const [value, count] of occurrencesAtRef(entry.file)) allowance.set(value, Math.max(allowance.get(value) ?? 0, count));
     for (const value of entry.fingerprints) {
-      const at = open.indexOf(value);
-      if (at >= 0) {
-        open.splice(at, 1);
+      const left = allowance.get(value) ?? 0;
+      if (left > 0) {
+        allowance.set(value, left - 1);
         continue;
       }
-      const match = current.find((item) => fingerprint(item.code, item.file, item.excerpt) === value);
-      if (match && existedAt(entry.file, match.excerpt)) continue;
       violations.push({
         code: 'RUNTIME_BASELINE_GREW',
         file: BASELINE_PATH,
         line: 1,
-        excerpt: `${entry.code} ${entry.file}: a tolerated line that is not in ${baselineSince}${match ? ` (${match.file}:${match.line})` : ''}`,
+        excerpt: `${entry.code} ${entry.file}: a tolerated match that ${baselineSince} neither baselined nor contained`,
       });
     }
   }

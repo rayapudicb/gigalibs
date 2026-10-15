@@ -93,7 +93,7 @@ Goal: a branch that builds, true statuses, no demo data, and the open decisions 
 | 0.3 | **Branch repair.** Decide each of the 12 unreviewed commits from other sessions: keep after review, fix, or revert. Fix the `0d4585e` build break and the `0e2f119` CMMS migration 20 vs contract 19 mismatch. Revert `507e7fa` (`assistant:*` granted to every member). HEAD then builds from a clean checkout. Owner chose option A (2026-10-14): revert the Assistant preview from the branch. | WI-OI-120aj; WI-OI-120a closes here | Part 1 done 2026-10-14 (`9b0c477`) |
 | 0.3b | **Undo the development script's writes on the UAT database:** modules switched on in 288 workspaces, and `*` and `assistant:` codes on members. A reconciliation report against the 2026-10-08 backup, then an owner-run script after a Security review. | WI-OI-120al (absorbs 120aj D1a, D2a) | Applied on UAT 2026-10-14; Q2a → WI-OI-120am |
 | 0.3c | **UAT gets its own database** (Q2a): `uat-postgres` with no published port, new passwords, the data moved and verified; the old database is development-only, bound to `127.0.0.1` with rotated logins | WI-OI-120am | Done 2026-10-14 (journey `7xqjy6`); C7, the D3a reset and the `.prev` deletion from 2026-10-21 |
-| 0.4 | **Zero-mock sweep** (details below) | WI-OI-120ah, WI-OI-120an, WI-OI-120ao (done), then new card WI-OI-120ak | Time done on UAT (d75ccba, journey 8gti7u); 120ak approved (D1a–D7a), S1 in progress |
+| 0.4 | **Zero-mock sweep** (details below) | WI-OI-120ah, WI-OI-120an, WI-OI-120ao (done), then new card WI-OI-120ak | Time done on UAT; 120ak S1–S3 on UAT, S3b and S4 built (release a4ac027, deploy pending), then S4b+S5, S6, S7 |
 | 0.5 | **Security fixes the reviews found** (details below) | WI-OI-120ag, 120ae, 120af, 120ai | Carded |
 | 0.6 | **Status truth.** Re-label every Review item by evidence (Built, On UAT, Done). Correct WI-OI-121a–j, which claim G6/G7 for a preview. Close each item that §5 replaces, with a pointer to its replacement. Shorten `NOW.md` back to one page. | WI-OI-119 follow-up | Not started |
 | 0.7 | **Owner decisions** (details below; no code) | — | Open |
@@ -143,7 +143,8 @@ Step 0.7, the owner decisions:
   Assistant's list of tools.
 - g. **Other open items:**
   - 980 place-fact dead letters;
-  - the `communications-textfly` and `platform-rbac` folders: adopt or remove;
+  - the `communications-textfly` and `platform-rbac` folders: adopt or remove. TextFly: adopt, by porting its engine
+    and dropping its shell ([WI-OI-120ap](../../.pi/tasks/WI-OI-120ap.md), in the bucket; owner, 2026-10-15);
   - Master Data Hub (a contained prototype): retire it, since Parties, Catalogue and Organization windows replace it;
   - whether S14 import and export runs on Universal Data Studio (if it does, Data Studio moves to Phase 4);
   - 12 package folders that hold no package, and 20 packages that no app or module uses (§7 F): keep each one for a

@@ -371,3 +371,90 @@ conditions are follow-ups, slice **S3b**, done before the card closes.
 - Lint compared with HEAD under the same config: unchanged on every file except one `any` fewer in the Communications
   route.
 - All ten audits pass on HEAD plus the 21 files alone (throwaway worktree, removed).
+
+## Security review of S3b and S4 / release a4ac027 (2026-10-15): approve with conditions
+
+No High findings, and no authorization change beyond Communications going to CONTAINED. The release matches 3868fe5.
+Follow-ups are slice **S4b**, released with S5.
+
+- **Correction, M1:** "the screen shows a refused answer" (S4 above) is wrong. The Communications screen sets `error`
+  but never renders it. On UAT's 503 a tester sees empty lists, "Real-time sync", and an invented metric card
+  ("Avg. Delivery Success 99.5% / Zero packet drop across providers"). Message loading and the send, create and
+  dispatch actions also do nothing on a refusal. Fix: render the error; remove the invented card and the "Real-time
+  sync" and "cluster" texts; report every refused action.
+- **M2 (existing, already known as P1-26 / WI-OI-119 U-11):** `apps/workflow-platform/public/demo/index.html` is a static
+  demo of an invented AR app.
+  - It is served without sign-in at `/demo/index.html`.
+  - It loads unpinned third-party scripts (`unpkg.com/lucide@latest`, `cdn.tailwindcss.com`) on the app's own
+    origin, with no content security policy.
+  - The audit never scans `.html`.
+
+  Fix: delete `public/demo/` and add `.html` to the scanned extensions.
+- **L1:** the growth check can be bypassed:
+  - by duplicating a tolerated line;
+  - because `existedAt` uses a substring match, so text that existed only in a comment counts;
+  - by keeping the first line of a multi-line match and adding new records under it.
+
+  Fix: run the rules over the ref's file, and allow a fingerprint the old baseline lacked only as often as it occurs
+  there.
+- **L2:** fingerprints use the first line of the match, so records under a tolerated `useState([` can be swapped. Fix:
+  fingerprint the matched text.
+- **L3:** the store pattern still misses fields with no modifier, types containing `=>`, nested generics,
+  `new Map(seed)`, `new Set()`, `= {}`, and code written without semicolons. There are no current misses.
+- **Info:**
+  - `--baseline-since` with an empty value is skipped silently; it should fail;
+  - pass `github.base_ref` to CI through `env:`;
+  - a failed connection test shows only "Test failed", because the hub returns `error`, not `message`;
+  - delete the orphan `scripts/verify-communications-textfly-integration.mjs`, which imports the deleted store;
+  - for the Connector Hub's card: `webhooks.service.ts` puts `target_workflow_code` into a URL without encoding it.
+- **Verified by the review:**
+  - the audit passes in every mode, and the growth check passes against 639db36, 85fdbcc, HEAD, a4ac027 and the zero
+    SHA; a bad ref fails;
+  - 27 roots, which is every tracked app and module;
+  - the route-folder scan is correct;
+  - the Communications route gives 503, 413 and 502 with no fallback, and its access checks are unchanged;
+  - the catalogue change is consistent;
+  - the Connections targets and the test message read the hub's real fields;
+  - Inventory's suffix is adequate (32 random bits within a millisecond);
+  - the deletions are unused, and the drawer is unmounted and untouched;
+  - 19 of the 21 files are identical in the release; the script and the lockfile differ only by the release base.
+
+## S4b, the second review's follow-ups (2026-10-15): built and verified locally
+
+- **M2:** `apps/workflow-platform/public/demo/index.html` is deleted: an invented AR app served without sign-in, which
+  loaded unpinned third-party scripts on the app's origin. Nothing linked to it. The audit now scans `.html`.
+- **M1:** the Communications screen:
+  - shows every refusal with the service's own words (loading, messages, reply, create channel, create template,
+    dispatch), and reports invalid dispatch variables instead of ignoring them;
+  - no longer shows the invented "Avg. Delivery Success 99.5% / Zero packet drop" card or "Real-time sync";
+  - its loading, success and title texts no longer claim a "cluster", "instant delivery" or a "simulator".
+- **L2:** each match is fingerprinted by what it matched, whitespace collapsed; for the record rules, by the whole
+  literal from its opening bracket to the closing one. Each match in the audit's output carries its fingerprint.
+- **L1:** `--baseline-since` scans the ref's file with today's rules. A fingerprint is tolerated at most as often as
+  the larger of the old baseline's count and the ref's own matches, so the same occurrence is never counted twice.
+  The substring check is gone. A flag without a ref fails.
+- **L3:** the store rule now also catches typed fields with no modifier, arrow types, nested generics,
+  `new Map(seed)`, `new Set()`, `= {}`, and code without semicolons. Measured on the web app: the same matches as
+  before, no false positives.
+- **Info:**
+  - CI passes the base ref and the push's `before` through `env:`;
+  - a failed connection test shows the hub's `error`;
+  - the orphan `scripts/verify-communications-textfly-integration.mjs` is deleted.
+- **Proof** in a throwaway copy:
+  - a copied mock line listed twice passes the plain audit, but the growth check fails it;
+  - swapping the records under a tolerated `useState([` line fails;
+  - editing inside a tolerated literal fails;
+  - the growth check passes against HEAD, 85fdbcc, 639db36 and the zero SHA;
+  - an empty `--baseline-since` fails.
+- **Verification:** baseline 11 entries, 26 fingerprints; both audit modes pass; web type-check clean; 1,006 web and
+  contracts tests passed; lint unchanged.
+
+## Decisions for S5 (owner, 2026-10-15: "commit S4b, D1b, Demo Lab as proposed")
+
+- **D1b, replacing D1a:** the UAT preview opens only PLANNED modules (real modules on metadata: Product Catalogue,
+  Inventory, Procurement, Orders, Finance), never CONTAINED ones (prototypes, many backed by mock). Turning the
+  setting off (D1a) would also have hidden the five real modules on UAT.
+- **D5a as proposed:**
+  - the Demo Lab code goes from every layer: control plane, web, Analytics API and contracts;
+  - the deployed migration 000015 (the synthetic-reset function) stays: deployed migrations are never edited;
+  - the `demo-lab` switch, on in 4 UAT workspaces, is switched off by S7's owner-run cleanup.
