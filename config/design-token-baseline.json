@@ -61,8 +61,6 @@
     "apps/workflow-platform/components/gigaops/WfoVendorDirectory.tsx": 1,
     "apps/workflow-platform/components/i18n/LanguageSelector.tsx": 10,
     "apps/workflow-platform/components/layout/ModuleControlBar.tsx": 17,
-    "apps/workflow-platform/components/master-data/MasterDataSelect.tsx": 16,
-    "apps/workflow-platform/components/master-data/MasterDataStudioWorkbench.tsx": 171,
     "apps/workflow-platform/components/page-shell.tsx": 3,
     "apps/workflow-platform/components/parties/PartyWorkspace.tsx": 291,
     "apps/workflow-platform/components/platform/PlatformTenantControl.tsx": 164,

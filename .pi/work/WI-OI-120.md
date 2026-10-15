@@ -4075,3 +4075,19 @@ widening the card to fix the API faults the proof found.
   - **B:** plan v3 Phase 5 makes a built, configured, visible relay a release condition for module-host modules.
   - **C:** carded as WI-OI-120aw, a UAT test-workspace clean-up by an owner-approved plan, suspension through the
     product path, and dead letters of non-existent tenants deleted.
+
+## WI-OI-120at built; WI-OI-120aw plan ready (2026-10-15; owner: "approved 120at and 120aw")
+
+- **WI-OI-120at:** Master Data Hub retired in code.
+  - 13 files removed: pages, API, the in-memory store and invented seed, the contracts, and an unreferenced script
+    that embedded a dead UAT login.
+  - The catalogue, navigation and permission catalogue are regenerated (the `master-data` entry and its 3 codes
+    removed); the base roles and Platform Control Tower links updated.
+  - The locked AR and E-Signature workbenches no longer use invented lists.
+  - The baselines are cleaned.
+  - 2,961 tests pass and the audits pass.
+  - After deploy, an owner-run step removes the `master-data` key from 121 workspaces and disables its 17 ENABLED
+    entitlements.
+- **WI-OI-120aw:** plan file `scripts/uat/wi-oi-120aw/plan-2026-10-15.csv` with 228 active, trial or provisioning
+  workspaces: KEEP 3 (`gigalibs-global`, `uatadmin`, `uat-approver`), SUSPEND 225 (certification, journey and test,
+  qualification, verification runs, and the 3 brand workspaces). For the owner's review.

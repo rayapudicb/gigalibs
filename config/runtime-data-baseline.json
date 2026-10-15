@@ -3,18 +3,6 @@
   "comment": "WI-OI-120ak: known mock still in the code, fingerprinted per match (rule, file, and the matched text; for record rules the whole literal). Each slice removes its own entries; locked entries cannot be reached: CONTAINED modules are locked everywhere, UAT included (D1b). CI fails if a pull request or push adds a fingerprint (--baseline-since). Read by scripts/verify-runtime-data-integrity.mjs.",
   "entries": [
     {
-      "code": "DEV_SEED_SOURCE",
-      "file": "apps/workflow-platform/lib/master-data-catalog.ts",
-      "fingerprints": [
-        "40aba15216f614cc",
-        "f83f8b9a6c70d772"
-      ],
-      "card": "WI-OI-120ak",
-      "slice": "locked",
-      "module": "master-data",
-      "reason": "Master data (CONTAINED) seed and in-memory store; locked everywhere, UAT included, since S5 (D1b); replaced by T4 parties (plan v3 5B)"
-    },
-    {
       "code": "IN_MEMORY_BUSINESS_FIXTURE",
       "file": "apps/workflow-platform/app/(app)/rules/studio/page.tsx",
       "fingerprints": [
@@ -24,20 +12,6 @@
       "slice": "locked",
       "module": "rule-studio",
       "reason": "Rule studio keeps tenant rules only in the web process memory; CONTAINED since S5 (D3a) and locked everywhere, UAT included (D1b); replaced when rules get real storage (its own card)"
-    },
-    {
-      "code": "IN_MEMORY_BUSINESS_STORE",
-      "file": "apps/workflow-platform/lib/master-data-store.ts",
-      "fingerprints": [
-        "25854cad7757617e",
-        "25854cad7757617e",
-        "2cb8c38e7a9840d9",
-        "e58633f3a370c585"
-      ],
-      "card": "WI-OI-120ak",
-      "slice": "locked",
-      "module": "master-data",
-      "reason": "Master data (CONTAINED) seed and in-memory store; locked everywhere, UAT included, since S5 (D1b); replaced by T4 parties (plan v3 5B)"
     },
     {
       "code": "IN_MEMORY_BUSINESS_STORE",
@@ -90,20 +64,6 @@
     },
     {
       "code": "PLACEHOLDER_PEOPLE_OR_COMPANIES",
-      "file": "apps/workflow-platform/lib/master-data-catalog.ts",
-      "fingerprints": [
-        "2dd0497c85ed119f",
-        "4fad26ae78d5271e",
-        "655aad450a3c7c57",
-        "99404e755101fd92"
-      ],
-      "card": "WI-OI-120ak",
-      "slice": "locked",
-      "module": "master-data",
-      "reason": "Master data (CONTAINED) seed and in-memory store; locked everywhere, UAT included, since S5 (D1b); replaced by T4 parties (plan v3 5B)"
-    },
-    {
-      "code": "PLACEHOLDER_PEOPLE_OR_COMPANIES",
       "file": "modules/spend-management/db/migrations/seed_spend_data.sql",
       "fingerprints": [
         "4f0de9d37f4fd4fe"
@@ -111,18 +71,6 @@
       "card": "WI-OI-120ak",
       "slice": "not deployed",
       "reason": "Spend seed, not in any UAT compose file and not a numbered migration; replaced in M-SPEND (plan v3 5B)"
-    },
-    {
-      "code": "PLACEHOLDER_PEOPLE_OR_COMPANIES",
-      "file": "packages/contracts/src/master-data/templates.ts",
-      "fingerprints": [
-        "29a7cca596b258f8",
-        "29a7cca596b258f8"
-      ],
-      "card": "WI-OI-120ak",
-      "slice": "locked",
-      "module": "master-data",
-      "reason": "Master data (CONTAINED) seed and in-memory store; locked everywhere, UAT included, since S5 (D1b); replaced by T4 parties (plan v3 5B)"
     }
   ]
 }

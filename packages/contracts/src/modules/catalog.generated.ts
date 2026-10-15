@@ -564,23 +564,6 @@ export const generatedPlatformModuleCatalog = [
   },
   // platform/core.yaml
   {
-    key: 'master-data',
-    name: 'Master Data Hub',
-    navigationLabel: 'Governed Enterprise Reference Data',
-    area: 'Operations',
-    navigationGroup: 'Data & Documents',
-    route: '/platform-admin/master-data',
-    iconKey: 'database',
-    readiness: 'CONTAINED',
-    maturity: 'UI_PROTOTYPE',
-    entitlementEligible: true,
-    trialEligible: false,
-    requiredPermission: 'master-data:read',
-    platformInspection: false,
-    reason: 'Locked. The workbench kept records only in the web server\'s memory, which were lost on restart; it returns when a persisted master-data capability is designed (ADR-0016, WI-OI-102f).',
-  },
-  // platform/core.yaml
-  {
     key: 'solution-packs',
     name: 'Solution Packs',
     navigationLabel: 'Solution Packs',

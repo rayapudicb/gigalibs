@@ -29,7 +29,7 @@ describe('PERMISSION_CATALOGUE', () => {
     const notDelegable = new Set(Object.keys(NOT_DELEGABLE_PERMISSIONS));
     const missing = [...checked.keys()].filter((code) => !isCataloguedPermission(code) && !notDelegable.has(code.replace(/\./g, ':')));
     expect(missing).toEqual([]);
-    for (const code of ['analytics:export', 'esign:sign', 'connections:sync', 'finance:journals:approve', 'workforce.bookings.override', 'configuration:unmask-sensitive', 'master-data:write'])
+    for (const code of ['analytics:export', 'esign:sign', 'connections:sync', 'finance:journals:approve', 'workforce.bookings.override', 'configuration:unmask-sensitive', 'inventory:items:manage'])
       expect(isCataloguedPermission(code)).toBe(true);
   });
 

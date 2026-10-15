@@ -23,7 +23,6 @@ export * from './connectors/index.js';
 export * from './modules/index.js';
 export * from './configuration/index.js';
 export * from './metering/index.js';
-export * from './master-data/index.js';
 export * from './workforce/index.js';
 export * from './geospatial/index.js';
 export * from './analytics/index.js';

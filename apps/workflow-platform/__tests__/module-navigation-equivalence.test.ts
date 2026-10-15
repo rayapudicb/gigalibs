@@ -17,6 +17,8 @@ describe('manifest-declared navigation equals the former sidebar tables', () => 
   // Entries removed after the freeze, each with its reason. Every other frozen entry must still be in the catalogue.
   const INTENDED_REMOVALS: Readonly<Record<string, string>> = {
     reports: 'WI-OI-103e (ADR-0016 F11): Analytics owns reports; the contained core Reports entry is removed.',
+    'master-data':
+      'WI-OI-120at (owner, 2026-10-15): the in-memory Master Data Hub prototype is retired; each module owns its master data.',
   };
 
   // Capability modules intentionally added after the WI-OI-083c freeze. Keeping these separate from the frozen

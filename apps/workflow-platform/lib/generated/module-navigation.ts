@@ -290,9 +290,6 @@ export const generatedModulePersonas: Readonly<Record<string, readonly PlatformC
     "WORKFORCE_MEMBER",
     "CUSTOMER_GUEST"
   ],
-  "master-data": [
-    "OPERATIONS_SUPERVISOR"
-  ],
   "solution-packs": [
     "C_LEVEL"
   ],

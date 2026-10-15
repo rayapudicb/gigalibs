@@ -3,7 +3,6 @@
 import type { FormEvent, ReactNode } from 'react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { StudioSurfaceBoundary } from '@/components/configuration/StudioMode';
-import { MASTER_COUNTRIES, MASTER_TAX_JURISDICTIONS } from '@/lib/master-data-catalog';
 
 
 type View = 'overview' | 'setup' | 'customers' | 'invoices' | 'new-invoice';
@@ -354,28 +353,11 @@ function CustomersPanel({
   const [showForm, setShowForm] = useState(customers.length === 0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
-  const [countryCode, setCountryCode] = useState('US');
-  const [jurisdictionCode, setJurisdictionCode] = useState('US-CA');
+  // WI-OI-120at: the country and jurisdiction lists came from the retired Master Data Hub's invented seed. They are
+  // typed codes until platform reference data (WI-OI-120av) gives them lookups.
+  const [countryCode, setCountryCode] = useState('');
+  const [jurisdictionCode, setJurisdictionCode] = useState('');
   const [currency, setCurrency] = useState('USD');
-
-  const availableJurisdictions = useMemo(() => {
-    const list = MASTER_TAX_JURISDICTIONS.filter((j) => j.countryCode === countryCode);
-    return list.length > 0 ? list : [{ jurisdictionCode: `${countryCode}-FED`, name: `${countryCode} Statutory Tax Authority`, defaultStandardRatePercent: 0 }];
-  }, [countryCode]);
-
-  const handleCountryChange = (newCountry: string) => {
-    setCountryCode(newCountry);
-    const country = MASTER_COUNTRIES.find((c) => c.code === newCountry);
-    if (country) {
-      setCurrency(country.defaultCurrency);
-    }
-    const matching = MASTER_TAX_JURISDICTIONS.filter((j) => j.countryCode === newCountry);
-    if (matching.length > 0 && matching[0]) {
-      setJurisdictionCode(matching[0].jurisdictionCode);
-    } else {
-      setJurisdictionCode(`${newCountry}-FED`);
-    }
-  };
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -423,34 +405,26 @@ function CustomersPanel({
           <Field label="Legal entity name" name="legalName" required />
           <Field label="Billing email" name="billingEmail" type="email" required />
           <div className="space-y-1">
-            <label className="text-xs font-semibold uppercase tracking-wider text-zinc-600">Country (ISO 3166-1 Master Data)</label>
-            <select
+            <label className="text-xs font-semibold uppercase tracking-wider text-zinc-600">Country code (ISO 3166-1)</label>
+            <input
               name="countryCode"
               value={countryCode}
-              onChange={(e) => handleCountryChange(e.target.value)}
-              className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-medium"
-            >
-              {MASTER_COUNTRIES.map((c) => (
-                <option key={c.code} value={c.code}>
-                  {c.code} — {c.name} ({c.defaultCurrency} / {c.region})
-                </option>
-              ))}
-            </select>
+              onChange={(e) => setCountryCode(e.target.value.toUpperCase())}
+              maxLength={2}
+              pattern="[A-Z]{2}"
+              className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-mono font-medium"
+              required
+            />
           </div>
           <div className="space-y-1">
-            <label className="text-xs font-semibold uppercase tracking-wider text-zinc-600">Tax Jurisdiction (Nexus Authority)</label>
-            <select
+            <label className="text-xs font-semibold uppercase tracking-wider text-zinc-600">Tax jurisdiction code</label>
+            <input
               name="jurisdictionCode"
               value={jurisdictionCode}
-              onChange={(e) => setJurisdictionCode(e.target.value)}
-              className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-medium"
-            >
-              {availableJurisdictions.map((j) => (
-                <option key={j.jurisdictionCode} value={j.jurisdictionCode}>
-                  {j.jurisdictionCode} — {j.name} ({j.defaultStandardRatePercent}%)
-                </option>
-              ))}
-            </select>
+              onChange={(e) => setJurisdictionCode(e.target.value.toUpperCase())}
+              className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-mono font-medium"
+              required
+            />
           </div>
           <div className="space-y-1">
             <label className="text-xs font-semibold uppercase tracking-wider text-zinc-600">Settlement Currency (ISO 4217)</label>
@@ -493,12 +467,12 @@ function CustomersPanel({
             </Cell>
             <Cell>
               <span className="inline-flex items-center rounded-md bg-zinc-100 px-2 py-0.5 font-mono text-xs font-bold text-zinc-800">
-                {customer.countryCode ?? 'US'}
+                {customer.countryCode ?? '—'}
               </span>
             </Cell>
             <Cell>
               <span className="font-mono text-xs font-semibold text-blue-700">
-                {customer.jurisdictionCode ?? 'US-CA'}
+                {customer.jurisdictionCode ?? '—'}
               </span>
             </Cell>
             <Cell>{customer.billingEmail}</Cell>
@@ -582,10 +556,10 @@ function InvoicesPanel({
               <Cell>
                 <div className="flex items-center gap-1.5">
                   <span className="rounded bg-zinc-100 px-1.5 py-0.5 font-mono text-[11px] font-bold text-zinc-800">
-                    {cust?.countryCode ?? 'US'}
+                    {cust?.countryCode ?? '—'}
                   </span>
                   <span className="font-mono text-xs font-semibold text-blue-700">
-                    {cust?.jurisdictionCode ?? 'US-CA'}
+                    {cust?.jurisdictionCode ?? '—'}
                   </span>
                 </div>
               </Cell>
@@ -626,8 +600,8 @@ function InvoicePanel({ customers, onCreated }: { customers: Customer[]; onCreat
   ]);
   const [busy, setBusy] = useState(false);
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>('');
-  const [countryCode, setCountryCode] = useState('US');         // overridden by customer selection
-  const [jurisdictionCode, setJurisdictionCode] = useState('US-CA'); // overridden by customer selection
+  const [countryCode, setCountryCode] = useState('');            // filled by customer selection
+  const [jurisdictionCode, setJurisdictionCode] = useState('');  // filled by customer selection
   const [currency, setCurrency] = useState('USD');               // overridden by customer selection
   const [error, setError] = useState<string>();
   const today = new Date().toISOString().slice(0, 10);
@@ -650,16 +624,11 @@ function InvoicePanel({ customers, onCreated }: { customers: Customer[]; onCreat
 
   useEffect(() => {
     if (selectedCust) {
-      setCountryCode(selectedCust.countryCode ?? 'US');
-      setJurisdictionCode(selectedCust.jurisdictionCode ?? 'US-CA');
+      setCountryCode(selectedCust.countryCode ?? '');
+      setJurisdictionCode(selectedCust.jurisdictionCode ?? '');
       setCurrency(selectedCust.currency ?? 'USD');
     }
   }, [selectedCust]);
-
-  const availableJurisdictions = useMemo(() => {
-    const list = MASTER_TAX_JURISDICTIONS.filter((j) => j.countryCode === countryCode);
-    return list.length > 0 ? list : [{ jurisdictionCode: `${countryCode}-FED`, name: `${countryCode} Statutory Tax Authority`, defaultStandardRatePercent: 0 }];
-  }, [countryCode]);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -717,7 +686,7 @@ function InvoicePanel({ customers, onCreated }: { customers: Customer[]; onCreat
             <option value="">Select a debtor / customer</option>
             {customers.map((customer) => (
               <option key={customer.id} value={customer.id}>
-                {customer.legalName} ({customer.countryCode ?? 'US'} / {customer.jurisdictionCode ?? 'US-CA'})
+                {customer.legalName} ({customer.countryCode ?? '—'} / {customer.jurisdictionCode ?? '—'})
               </option>
             ))}
           </select>
@@ -743,19 +712,14 @@ function InvoicePanel({ customers, onCreated }: { customers: Customer[]; onCreat
           />
         </div>
         <div className="space-y-1">
-          <label className="text-xs font-semibold uppercase tracking-wider text-zinc-600">Tax Jurisdiction (Nexus Authority)</label>
-          <select
+          <label className="text-xs font-semibold uppercase tracking-wider text-zinc-600">Tax jurisdiction code</label>
+          <input
             name="jurisdictionCode"
             value={jurisdictionCode}
-            onChange={(e) => setJurisdictionCode(e.target.value)}
-            className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-sm font-medium"
-          >
-            {availableJurisdictions.map((j) => (
-              <option key={j.jurisdictionCode} value={j.jurisdictionCode}>
-                {j.jurisdictionCode} — {j.name} ({j.defaultStandardRatePercent}%)
-              </option>
-            ))}
-          </select>
+            onChange={(e) => setJurisdictionCode(e.target.value.toUpperCase())}
+            className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-sm font-mono font-bold"
+            required
+          />
         </div>
         <Field label="Statutory issue date" name="issueDate" type="date" defaultValue={today} required />
         <Field label="Net payment due date" name="dueDate" type="date" defaultValue={due} required />

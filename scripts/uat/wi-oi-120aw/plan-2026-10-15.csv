@@ -1,0 +1,229 @@
+action,reason,id,slug,name,status,kind,created,active_members,last_session
+SUSPEND,"Real brand name, not a customer (closes WI-OI-120ak S7)",cmthshagv0000v8ndmjlgzt5y,paramount-pictures,Paramount Pictures Corp,ACTIVE,brand (WI-OI-120ak S7),2026-08-31,0,
+SUSPEND,"Real brand name, not a customer (closes WI-OI-120ak S7)",cmthshaj50001v8ndutzqnco4,warner-bros,Warner Bros Discovery,ACTIVE,brand (WI-OI-120ak S7),2026-08-31,0,
+SUSPEND,"Real brand name, not a customer (closes WI-OI-120ak S7)",cmthshaj70002v8ndd808tiya,netflix-europe,Netflix Studios Europe,ACTIVE,brand (WI-OI-120ak S7),2026-08-31,0,
+SUSPEND,certification workspace,cmui95qlq0000v82nubxq89n5,wi-oi-063-scope-opted-1790418855650-25ed39,WI-OI-063 scope opted,ACTIVE,certification,2026-09-26,1,2026-09-26
+SUSPEND,certification workspace,cmui95qms0001v82nmidfml6v,wi-oi-063-scope-flat-1790418855650-25ed39,WI-OI-063 scope flat,ACTIVE,certification,2026-09-26,0,
+SUSPEND,certification workspace,cmui95v8z0000v831390svz4w,wi-oi-063-scope-opted-1790418861680-1884e9,WI-OI-063 scope opted,ACTIVE,certification,2026-09-26,1,2026-09-26
+SUSPEND,certification workspace,cmui95v9k0001v8311vlb76o4,wi-oi-063-scope-flat-1790418861680-1884e9,WI-OI-063 scope flat,ACTIVE,certification,2026-09-26,0,
+SUSPEND,certification workspace,cmui9675w0000v840bbhzrdoh,wi-oi-063-scope-opted-1790418877110-e04346,WI-OI-063 scope opted,ACTIVE,certification,2026-09-26,3,2026-09-26
+SUSPEND,certification workspace,cmui9676x0002v840kn8abdqg,wi-oi-063-scope-flat-1790418877110-e04346,WI-OI-063 scope flat,ACTIVE,certification,2026-09-26,1,2026-09-26
+SUSPEND,certification workspace,cmuialzkc0000v8qu90l8mysg,wi-oi-063-scope-opted-1790421293383-2e80fd,WI-OI-063 scope opted,ACTIVE,certification,2026-09-26,3,2026-09-26
+SUSPEND,certification workspace,cmuialzlj0002v8quwu7xa3fg,wi-oi-063-scope-flat-1790421293383-2e80fd,WI-OI-063 scope flat,ACTIVE,certification,2026-09-26,1,2026-09-26
+SUSPEND,certification workspace,cmuibvej00000v8sl3ft9kj5t,wi-oi-063-scope-opted-1790423412288-bce602,WI-OI-063 scope opted,ACTIVE,certification,2026-09-26,3,2026-09-26
+SUSPEND,certification workspace,cmuibvejz0002v8slfiwswhjk,wi-oi-063-scope-flat-1790423412288-bce602,WI-OI-063 scope flat,ACTIVE,certification,2026-09-26,1,2026-09-26
+SUSPEND,certification workspace,cmuid759g0000v8mnuypf3rro,wi-oi-063-scope-opted-1790425639768-47af8c,WI-OI-063 scope opted,ACTIVE,certification,2026-09-26,3,2026-09-26
+SUSPEND,certification workspace,cmuid75ad0002v8mn6z5i3dox,wi-oi-063-scope-flat-1790425639768-47af8c,WI-OI-063 scope flat,ACTIVE,certification,2026-09-26,1,2026-09-26
+SUSPEND,certification workspace,cmuid96ju0000v8xlrhk0368v,wi-oi-064-web-1790425734752-2060d4,WI-OI-064 analytics web path,ACTIVE,certification,2026-09-26,2,2026-09-26
+SUSPEND,certification workspace,cmuih4uas0000v80dj9y0tl32,wi-oi-063-scope-opted-1790432250711-0a9b2a,WI-OI-063 scope opted,ACTIVE,certification,2026-09-26,3,2026-09-26
+SUSPEND,certification workspace,cmuih4ucp0002v80d1rdw46m9,wi-oi-063-scope-flat-1790432250711-0a9b2a,WI-OI-063 scope flat,ACTIVE,certification,2026-09-26,1,2026-09-26
+SUSPEND,certification workspace,cmuih4v3k0000v81pf59341nv,wi-oi-064-web-1790432251758-bc5122,WI-OI-064 analytics web path,ACTIVE,certification,2026-09-26,2,2026-09-26
+SUSPEND,certification workspace,cmuiiwdoe0000v84t5rta9rzy,wi-oi-063-scope-opted-1790435215161-5b1196,WI-OI-063 scope opted,ACTIVE,certification,2026-09-26,3,2026-09-26
+SUSPEND,certification workspace,cmuiiwdpa0002v84tbuvrpkea,wi-oi-063-scope-flat-1790435215161-5b1196,WI-OI-063 scope flat,ACTIVE,certification,2026-09-26,1,2026-09-26
+SUSPEND,certification workspace,cmuiiwebs0000v850i74yoilr,wi-oi-064-web-1790435216003-3f2e80,WI-OI-064 analytics web path,ACTIVE,certification,2026-09-26,2,2026-09-26
+SUSPEND,certification workspace,cmuij1amv0000v8hf31xbim4l,wi-oi-064-web-1790435444494-f39669,WI-OI-064 analytics web path,ACTIVE,certification,2026-09-26,2,2026-09-26
+SUSPEND,certification workspace,cmuijpk6e0000v8o217kgkxiy,wi-oi-064c-entitled-1790436576602-9fa704,WI-OI-064c entitled,ACTIVE,certification,2026-09-26,2,2026-09-26
+SUSPEND,certification workspace,cmuijpkll000cv8o2eucmgkdn,wi-oi-064c-unentitled-1790436576602-9fa704,WI-OI-064c unentitled,ACTIVE,certification,2026-09-26,1,2026-09-26
+SUSPEND,certification workspace,cmuijq5lb0000v8pal8dxfnus,wi-oi-064c-entitled-1790436604355-2ca139,WI-OI-064c entitled,ACTIVE,certification,2026-09-26,2,2026-09-26
+SUSPEND,certification workspace,cmuijq5xh000cv8patu4l8rst,wi-oi-064c-unentitled-1790436604355-2ca139,WI-OI-064c unentitled,ACTIVE,certification,2026-09-26,1,2026-09-26
+SUSPEND,certification workspace,cmuijvp5r0000v8npo4fthpkq,wi-oi-063-scope-opted-1790436862998-966876,WI-OI-063 scope opted,ACTIVE,certification,2026-09-26,3,2026-09-26
+SUSPEND,certification workspace,cmuijvp700002v8npitkhqsds,wi-oi-063-scope-flat-1790436862998-966876,WI-OI-063 scope flat,ACTIVE,certification,2026-09-26,1,2026-09-26
+SUSPEND,certification workspace,cmuijvppl0000v8nwv93ls65s,wi-oi-064-web-1790436863717-84f9c7,WI-OI-064 analytics web path,ACTIVE,certification,2026-09-26,2,2026-09-26
+SUSPEND,certification workspace,cmuijvq430000v8o3mjgvpsmr,wi-oi-064c-entitled-1790436864241-26a0a4,WI-OI-064c entitled,ACTIVE,certification,2026-09-26,2,2026-09-26
+SUSPEND,certification workspace,cmuijvqen000cv8o35cvt2kxi,wi-oi-064c-unentitled-1790436864241-26a0a4,WI-OI-064c unentitled,ACTIVE,certification,2026-09-26,1,2026-09-26
+SUSPEND,certification workspace,cmuj6ajwd0003v8cgnhczn1gt,wi-oi-064e-plain-1790474505795-7aaffd,WI-OI-064e plain,ACTIVE,certification,2026-09-27,1,2026-09-27
+SUSPEND,certification workspace,cmuj6p72z0003v8du4fklwacr,wi-oi-064e-plain-1790475189161-c69e19,WI-OI-064e plain,ACTIVE,certification,2026-09-27,1,2026-09-27
+SUSPEND,certification workspace,cmuj6vt7s0000v8rk074x6sdz,wi-oi-063-scope-opted-1790475499419-00862c,WI-OI-063 scope opted,ACTIVE,certification,2026-09-27,3,2026-09-27
+SUSPEND,certification workspace,cmuj6vt920002v8rkq945yv36,wi-oi-063-scope-flat-1790475499419-00862c,WI-OI-063 scope flat,ACTIVE,certification,2026-09-27,1,2026-09-27
+SUSPEND,certification workspace,cmuj6vtro0000v8rr3e7dv6vz,wi-oi-064-web-1790475500145-65f4c9,WI-OI-064 analytics web path,ACTIVE,certification,2026-09-27,2,2026-09-27
+SUSPEND,certification workspace,cmuj6vu520000v8ryfq14f8cl,wi-oi-064c-entitled-1790475500627-07c142,WI-OI-064c entitled,ACTIVE,certification,2026-09-27,2,2026-09-27
+SUSPEND,certification workspace,cmuj6vugp000cv8ry4nm643yh,wi-oi-064c-unentitled-1790475500627-07c142,WI-OI-064c unentitled,ACTIVE,certification,2026-09-27,1,2026-09-27
+SUSPEND,certification workspace,cmuj6vvmg0003v8s66rjlsgx1,wi-oi-064e-plain-1790475501315-c7e62e,WI-OI-064e plain,ACTIVE,certification,2026-09-27,1,2026-09-27
+SUSPEND,certification workspace,cmuj9eyed0000v8h9nczdkbyo,wi-oi-038-web-1790479751837-4fe189,WI-OI-038 CMMS web path,ACTIVE,certification,2026-09-27,2,2026-09-27
+SUSPEND,certification workspace,cmuj9jikv0000v8fl72r2j5mu,wi-oi-063-scope-opted-1790479964615-aae524,WI-OI-063 scope opted,ACTIVE,certification,2026-09-27,3,2026-09-27
+SUSPEND,certification workspace,cmuj9jils0002v8flj6qfusou,wi-oi-063-scope-flat-1790479964615-aae524,WI-OI-063 scope flat,ACTIVE,certification,2026-09-27,1,2026-09-27
+SUSPEND,certification workspace,cmuj9jj4e0000v8fs9i4ai2ih,wi-oi-064-web-1790479965324-c2ea5f,WI-OI-064 analytics web path,ACTIVE,certification,2026-09-27,2,2026-09-27
+SUSPEND,certification workspace,cmuj9jji90000v8fzkdxpglan,wi-oi-064c-entitled-1790479965823-e12c7b,WI-OI-064c entitled,ACTIVE,certification,2026-09-27,2,2026-09-27
+SUSPEND,certification workspace,cmuj9jjuj000cv8fz5nmopmrk,wi-oi-064c-unentitled-1790479965823-e12c7b,WI-OI-064c unentitled,ACTIVE,certification,2026-09-27,1,2026-09-27
+SUSPEND,certification workspace,cmuj9jkvr0003v8gewhntp7r3,wi-oi-064e-plain-1790479966542-c12a8d,WI-OI-064e plain,ACTIVE,certification,2026-09-27,1,2026-09-27
+SUSPEND,certification workspace,cmuj9jwbs0000v8nh94mevq7w,wi-oi-038-web-1790479982432-4cf317,WI-OI-038 CMMS web path,ACTIVE,certification,2026-09-27,2,2026-09-27
+SUSPEND,certification workspace,cmuk379q30000v8g1h66btqw1,wi-oi-065-web-1790529781745-232190,WI-OI-065 jobs web path,ACTIVE,certification,2026-09-27,2,2026-09-27
+SUSPEND,certification workspace,cmuk37ezw0000v8gk9e3v5xl5,wi-oi-065-web-1790529788586-c3eb02,WI-OI-065 jobs web path,ACTIVE,certification,2026-09-27,2,2026-09-27
+SUSPEND,certification workspace,cmuk37nk80000v8h5o5c8k7pj,wi-oi-065-web-1790529799679-2a716b,WI-OI-065 jobs web path,ACTIVE,certification,2026-09-27,2,2026-09-27
+SUSPEND,certification workspace,cmuklir7z0000v80lzttr1byu,wi-oi-038-web-1790560550707-262038,WI-OI-038 CMMS web path,ACTIVE,certification,2026-09-28,2,2026-09-28
+SUSPEND,certification workspace,cmuklirvq0000v80tadcnw2q7,wi-oi-065-web-1790560551576-b07518,WI-OI-065 jobs web path,ACTIVE,certification,2026-09-28,2,2026-09-28
+SUSPEND,certification workspace,cmukljs2h0000v87jxx6g1krj,wi-oi-064-web-1790560598455-3099fa,WI-OI-064 analytics web path,ACTIVE,certification,2026-09-28,2,2026-09-28
+SUSPEND,certification workspace,cmul039v30000v8ifa9nfuig4,wi-oi-038-web-1790585022624-08965a,WI-OI-038 CMMS web path,ACTIVE,certification,2026-09-28,2,2026-09-28
+SUSPEND,certification workspace,cmul03ahm0000v8im5c86slbm,wi-oi-065-web-1790585023435-f74e32,WI-OI-065 jobs web path,ACTIVE,certification,2026-09-28,2,2026-09-28
+SUSPEND,certification workspace,cmul144260000v86j7yts3vin,wi-oi-038-web-1790586741373-abff8f,WI-OI-038 CMMS web path,ACTIVE,certification,2026-09-28,2,2026-09-28
+SUSPEND,certification workspace,cmul145bb0000v86qj8a10aqq,wi-oi-065-web-1790586742991-7513be,WI-OI-065 jobs web path,ACTIVE,certification,2026-09-28,2,2026-09-28
+SUSPEND,certification workspace,cmul1yt650000v8zut52pa2d1,wi-oi-038-web-1790588173600-f3eec8,WI-OI-038 CMMS web path,ACTIVE,certification,2026-09-28,2,2026-09-28
+SUSPEND,certification workspace,cmul1ytx20000v8011d1mde7r,wi-oi-065-web-1790588174569-cbb7cd,WI-OI-065 jobs web path,ACTIVE,certification,2026-09-28,2,2026-09-28
+SUSPEND,journey/test workspace,cmtkzoy090003v88erxa6rouh,connector-certification-mtkzoxxc-44412-9decd24e,Connector Interfaces mtkzoxxc-44412-9decd24e,ACTIVE,journey/test,2026-09-03,1,2026-09-03
+SUSPEND,journey/test workspace,cmtkzql8z0003v8g8wyvv6v08,connector-certification-mtkzql6j-44692-3ca4f609,Connector Interfaces mtkzql6j-44692-3ca4f609,ACTIVE,journey/test,2026-09-03,1,2026-09-03
+SUSPEND,journey/test workspace,cmtkzqyqy002fv8g8f7s6fi3q,connector-certification-mtkzqyp4-44791-75def195,Connector Interfaces mtkzqyp4-44791-75def195,ACTIVE,journey/test,2026-09-03,1,2026-09-03
+SUSPEND,journey/test workspace,cmtkzsajd0003v8r7ictl8wvp,connector-certification-mtkzsafs-45156-e5d4d21a,Connector Interfaces mtkzsafs-45156-e5d4d21a,ACTIVE,journey/test,2026-09-03,1,2026-09-03
+SUSPEND,journey/test workspace,cmtkzsb2q002tv8r7rvfs3l2b,connector-certification-mtkzsb1s-45156-856a3ec3,Connector Isolation mtkzsb1s-45156-856a3ec3,ACTIVE,journey/test,2026-09-03,1,2026-09-03
+SUSPEND,journey/test workspace,cmtl24xwz0003v8g62fmrumu4,retention-certification-mtl24xuj-77069-9cc54cbe,Retention certification mtl24xuj-77069-9cc54cbe,ACTIVE,journey/test,2026-09-03,1,2026-09-03
+SUSPEND,journey/test workspace,cmtl25ryk0007v8ljziwdt4im,retention-certification-mtl25rw5-77260-74935f55,Retention certification mtl25rw5-77260-74935f55,ACTIVE,journey/test,2026-09-03,1,2026-09-03
+SUSPEND,journey/test workspace,cmtl280c3003pv8lj12vmfvm0,connector-certification-mtl2809z-77453-c56b8dc5,Connector Interfaces mtl2809z-77453-c56b8dc5,ACTIVE,journey/test,2026-09-03,1,2026-09-03
+SUSPEND,journey/test workspace,cmtl280vt006fv8ljc9farr52,connector-certification-mtl280u8-77453-ddb073ae,Connector Isolation mtl280u8-77453-ddb073ae,ACTIVE,journey/test,2026-09-03,1,2026-09-03
+SUSPEND,journey/test workspace,cmtl2h1an009qv8vk58awkfu5,retention-certification-mtl2h16m-79081-8bc21206,Retention certification mtl2h16m-79081-8bc21206,ACTIVE,journey/test,2026-09-03,1,2026-09-03
+SUSPEND,journey/test workspace,cmtl2je9n00csv8vkvhjspeab,connector-certification-mtl2je84-79332-d93a16ae,Connector Interfaces mtl2je84-79332-d93a16ae,ACTIVE,journey/test,2026-09-03,1,2026-09-03
+SUSPEND,journey/test workspace,cmtl2jekr00fiv8vkxpqd3ntr,connector-certification-mtl2jeju-79332-73faefab,Connector Isolation mtl2jeju-79332-73faefab,ACTIVE,journey/test,2026-09-03,1,2026-09-03
+SUSPEND,journey/test workspace,cmtl4kvrm0003v8818oybom0d,connector-certification-mtl4kvpq-92350-70c97c5e,Connector Interfaces mtl4kvpq-92350-70c97c5e,ACTIVE,journey/test,2026-09-03,1,2026-09-03
+SUSPEND,journey/test workspace,cmtl4kw9w002tv881shkks5ds,connector-certification-mtl4kw8r-92350-c4768c0e,Connector Isolation mtl4kw8r-92350-c4768c0e,ACTIVE,journey/test,2026-09-03,1,2026-09-03
+SUSPEND,journey/test workspace,cmtl4ld2g0095v881gzvur7e3,retention-certification-mtl4ld0w-92491-35afaf9e,Retention certification mtl4ld0w-92491-35afaf9e,ACTIVE,journey/test,2026-09-03,1,2026-09-03
+SUSPEND,journey/test workspace,cmufsacnr0002v8sq4sdq7d01,cert-tp2-primary-tp2-1790269584948-c35a4137,TP-2 Primary Tenant tp2-1790269584948-c35a4137,ACTIVE,journey/test,2026-09-24,0,
+SUSPEND,journey/test workspace,cmufsacnr0003v8sq3tqmtvfg,cert-tp2-outsider-tp2-1790269584948-c35a4137,TP-2 Outsider Tenant tp2-1790269584948-c35a4137,ACTIVE,journey/test,2026-09-24,0,
+SUSPEND,journey/test workspace,cmunwugrv0000v8me8wjt2ndm,schedules-live-1790760971322-7c73ca,Schedules live proof,ACTIVE,journey/test,2026-09-30,2,2026-09-30
+SUSPEND,journey/test workspace,cmuo0tzrx0000v8s1py2fy0vh,pull-proof-1790767667737-1e9a0a,Pull proof,ACTIVE,journey/test,2026-09-30,1,
+SUSPEND,journey/test workspace,cmuo0ul5u0000v8w5yhg0h24v,pull-proof-1790767695459-bc35d9,Pull proof,ACTIVE,journey/test,2026-09-30,1,2026-09-30
+SUSPEND,journey/test workspace,cmuo0vz840000v83bucv0escd,pull-proof-1790767760342-0b71a8,Pull proof,ACTIVE,journey/test,2026-09-30,1,2026-09-30
+SUSPEND,journey/test workspace,cmuo4p7cu0000v8eaq5uf3088,pull-proof-1790774162771-9f089a,Pull proof,ACTIVE,journey/test,2026-09-30,1,2026-09-30
+SUSPEND,journey/test workspace,cmuo4pxf90000v8iwx0zwew84,pull-proof-1790774196552-bea2b5,Pull proof,ACTIVE,journey/test,2026-09-30,1,2026-09-30
+SUSPEND,journey/test workspace,cmuo4ra6i0000v8r9oi6ekcxo,pull-proof-1790774259745-4bf8d9,Pull proof,ACTIVE,journey/test,2026-09-30,1,2026-09-30
+SUSPEND,journey/test workspace,cmuo6vjkr0000v8znc2oh3cyq,pull-proof-1790777817773-ac42d4,Pull proof,ACTIVE,journey/test,2026-09-30,1,2026-09-30
+SUSPEND,journey/test workspace,cmuodksun0000v8i5u74nnyci,pull-proof-1790789073891-992d5e,Pull proof,ACTIVE,journey/test,2026-09-30,1,2026-09-30
+SUSPEND,journey/test workspace,cmuodn51j0000v81h60vlp8vk,pull-proof-1790789183009-f21c68,Pull proof,ACTIVE,journey/test,2026-09-30,1,2026-09-30
+SUSPEND,journey/test workspace,cmuoeg81p0000v8xnm36dej7m,pull-proof-1790790539925-8c2c76,Pull proof,ACTIVE,journey/test,2026-09-30,1,2026-09-30
+SUSPEND,journey/test workspace,cmuoei1yy0000v875as0u9f3y,pull-proof-1790790625362-74d780,Pull proof,ACTIVE,journey/test,2026-09-30,2,2026-09-30
+SUSPEND,journey/test workspace,cmuow4mqb0000v87ovop0s2w3,packs-proof-1790820232173-29ea02,Packs proof,ACTIVE,journey/test,2026-10-01,2,2026-10-01
+SUSPEND,journey/test workspace,cmuowwu220000v87g5s38521w,packs-proof-1790821548034-3d8bd9,Packs proof,ACTIVE,journey/test,2026-10-01,2,2026-10-01
+SUSPEND,journey/test workspace,cmuw8snv6000bp807457kmsi1,journey-w8shy2,Journey Works w8shy2,TRIAL,journey/test,2026-10-06,1,2026-10-06
+SUSPEND,journey/test workspace,cmuw9h1le001mp80771sqpbyo,journey-w9gxgq,Journey Works w9gxgq,TRIAL,journey/test,2026-10-06,5,2026-10-06
+SUSPEND,journey/test workspace,cmuw9vpse0045p807ocevtte1,journey-w9vlls,Journey Works w9vlls,TRIAL,journey/test,2026-10-06,5,2026-10-06
+SUSPEND,journey/test workspace,cmuwr4qzv000bt307yocvgarr,journey-wr4o4q,Journey Works wr4o4q,TRIAL,journey/test,2026-10-06,1,2026-10-06
+SUSPEND,journey/test workspace,cmuwrk4l40028t307fm227xiq,journey-wrk1q0,Journey Works wrk1q0,TRIAL,journey/test,2026-10-06,5,2026-10-06
+SUSPEND,journey/test workspace,cmuwru5g9005lt307sq1rjdv8,journey-wru2p9,Journey Works wru2p9,TRIAL,journey/test,2026-10-06,5,2026-10-06
+SUSPEND,journey/test workspace,cmuws2emo008ut3074qu9pmpe,journey-ws2bwx,Journey Works ws2bwx,TRIAL,journey/test,2026-10-06,5,2026-10-06
+SUSPEND,journey/test workspace,cmuwsbttx00c7t307klswt8s8,journey-wsbqt9,Journey Works wsbqt9,TRIAL,journey/test,2026-10-06,5,2026-10-06
+SUSPEND,journey/test workspace,cmuwsn9nm00fkt307izn5uh59,journey-wsn693,Journey Works wsn693,TRIAL,journey/test,2026-10-06,5,2026-10-06
+SUSPEND,journey/test workspace,cmuwstji100jlt307f7dxsxe2,journey-wstgnf,Journey Works wstgnf,TRIAL,journey/test,2026-10-06,5,2026-10-06
+SUSPEND,journey/test workspace,cmuwt06ez00nst307vchccxv1,journey-wt03e0,Journey Works wt03e0,TRIAL,journey/test,2026-10-06,5,2026-10-06
+SUSPEND,journey/test workspace,cmuy09kom0005l8070pp3w7o8,journey-y09g6u,Journey Works y09g6u,TRIAL,journey/test,2026-10-07,5,2026-10-07
+SUSPEND,journey/test workspace,cmuy8aluv000bp907w0lhnezg,journey-y8adrr,Journey Works y8adrr,TRIAL,journey/test,2026-10-07,1,2026-10-07
+SUSPEND,journey/test workspace,cmuy8c9od0018p9073yus7zoe,journey-y8c560,Journey Works y8c560,TRIAL,journey/test,2026-10-07,5,2026-10-07
+SUSPEND,journey/test workspace,cmv3easzw00nemw07u2m1tmpi,asst-test-1791697279231,Assistant Test Tenant,TRIAL,journey/test,2026-10-11,1,2026-10-11
+SUSPEND,journey/test workspace,cmv3ec8mu00o9mw07eg638rv2,perm-test-1791697346624,Perm Test Tenant,TRIAL,journey/test,2026-10-11,1,2026-10-11
+SUSPEND,journey/test workspace,cmv3egutn00p4mw0797yu7up8,check-test-1791697561967,Check Test Tenant,TRIAL,journey/test,2026-10-11,1,2026-10-11
+SUSPEND,journey/test workspace,cmv3eqqnk0003v89od0um8xkn,live-test4-1791698023226,Live Test Tenant,TRIAL,journey/test,2026-10-11,1,2026-10-11
+SUSPEND,journey/test workspace,cmv3es7i1000zv89ob8v7orzq,e2e-test-1791698091735,E2E Test Tenant,TRIAL,journey/test,2026-10-11,1,2026-10-11
+SUSPEND,journey/test workspace,cmv6jqo9f0a8znq07aojeko6s,journey-6jqlzt,Journey Works 6jqlzt,TRIAL,journey/test,2026-10-13,5,2026-10-13
+SUSPEND,journey/test workspace,cmv6lujel004jon07aat6iw51,journey-6luh84,Journey Works 6luh84,TRIAL,journey/test,2026-10-13,5,2026-10-13
+SUSPEND,journey/test workspace,cmv7i0xi00005lf077gcidze6,journey-7i0v43,Journey Works 7i0v43,TRIAL,journey/test,2026-10-14,5,2026-10-14
+SUSPEND,journey/test workspace,cmv7phxe4009alf070n17vukq,journey-7phudp,Journey Works 7phudp,TRIAL,journey/test,2026-10-14,5,2026-10-14
+SUSPEND,journey/test workspace,cmv7xqmhq0003nv07qtz2pbd9,journey-7xqjy6,Journey Works 7xqjy6,TRIAL,journey/test,2026-10-14,5,2026-10-14
+SUSPEND,journey/test workspace,cmv89aewx0003p907m62istk3,journey-89ac2g,Journey Works 89ac2g,TRIAL,journey/test,2026-10-14,5,2026-10-14
+SUSPEND,journey/test workspace,cmv8bbpvn0003pk07lxc18w0w,journey-8bbnfc,Journey Works 8bbnfc,TRIAL,journey/test,2026-10-14,5,2026-10-14
+SUSPEND,journey/test workspace,cmv8chqud0098pk07n6xlqf9s,journey-8cho6n,Journey Works 8cho6n,TRIAL,journey/test,2026-10-14,5,2026-10-14
+SUSPEND,journey/test workspace,cmv8gtlaz00ifpk07ylcvosar,journey-8gti7u,Journey Works 8gti7u,TRIAL,journey/test,2026-10-14,5,2026-10-14
+SUSPEND,journey/test workspace,cmv8w9k7q0003mm07w1e351ov,journey-8w9h29,Journey Works 8w9h29,TRIAL,journey/test,2026-10-15,5,2026-10-15
+SUSPEND,journey/test workspace,cmv9buf9n0003o3070vqbsni2,journey-9bud1q,Journey Works 9bud1q,TRIAL,journey/test,2026-10-15,5,2026-10-15
+SUSPEND,journey/test workspace,cmv9jh98h0003pc07kxfbbvqv,journey-9jh56k,Journey Works 9jh56k,TRIAL,journey/test,2026-10-15,5,2026-10-15
+SUSPEND,other workspace,cmtfrpxun0003v87v9pjd6tqs,control-plane-mtfrpxqq-76813,Control Plane Verification,ACTIVE,other,2026-08-30,1,2026-09-02
+SUSPEND,other workspace,cmtk01vf20003v83dlncb0ae2,workflow-verification-mtk01vao-58631,Workflow verification mtk01vao-58631,ACTIVE,other,2026-09-02,1,2026-09-02
+SUSPEND,other workspace,cmtk02yh10003v83it4rgk8k2,workflow-verification-mtk02ycp-61559,Workflow verification mtk02ycp-61559,ACTIVE,other,2026-09-02,1,2026-09-02
+SUSPEND,other workspace,cmtk07idy000vv83ixc28n9zq,bff-verification-mtk07i95-75251,BFF verification mtk07i95-75251,ACTIVE,other,2026-09-02,1,2026-09-02
+SUSPEND,other workspace,cmtk0p8kc0003v8xqy50v3g3u,bff-verification-mtk0p8ed-40939,BFF verification mtk0p8ed-40939,ACTIVE,other,2026-09-02,1,2026-09-02
+SUSPEND,other workspace,cmtk0pams000rv8xq44mo0l0q,workflow-verification-mtk0pakw-41168,Workflow verification mtk0pakw-41168,ACTIVE,other,2026-09-02,1,2026-09-02
+SUSPEND,other workspace,cmtk0sqt60003v87rwlahz252,workflow-verification-mtk0sqnv-50745,Workflow verification mtk0sqnv-50745,ACTIVE,other,2026-09-02,1,2026-09-02
+SUSPEND,other workspace,cmtk0sshm000pv87rvta4vqa9,bff-verification-mtk0ssgh-50926,BFF verification mtk0ssgh-50926,ACTIVE,other,2026-09-02,1,2026-09-02
+SUSPEND,other workspace,cmtk0u468001nv87r15hygzpb,workflow-verification-mtk0u440-54545,Workflow verification mtk0u440-54545,ACTIVE,other,2026-09-02,1,2026-09-02
+SUSPEND,other workspace,cmtk0u75l002dv87r6q2bry7x,workflow-isolation-mtk0u440-54545-outsider,Workflow isolation mtk0u440-54545-outsider,ACTIVE,other,2026-09-02,1,2026-09-02
+SUSPEND,other workspace,cmtk13occ0003v8gh9ng2dtxm,workflow-verification-mtk13o1n-90455,Workflow verification mtk13o1n-90455,ACTIVE,other,2026-09-02,1,2026-09-02
+SUSPEND,other workspace,cmtk13pas000nv8ghcx5bn6ku,bff-verification-mtk13p9c-90635,BFF verification mtk13p9c-90635,ACTIVE,other,2026-09-02,1,2026-09-02
+SUSPEND,other workspace,cmtk13ram001fv8ghxpj3t3pn,workflow-isolation-mtk13o1n-90455-outsider,Workflow isolation mtk13o1n-90455-outsider,ACTIVE,other,2026-09-02,1,2026-09-02
+SUSPEND,other workspace,cmtkguzti0003v8813hge80p8,operational-intelligence-mtkguzjh-60659-c238c4be,Operational Intelligence mtkguzjh-60659-c238c4be,ACTIVE,other,2026-09-02,1,2026-09-02
+SUSPEND,other workspace,cmtkgva76000pv881go0glh25,operational-intelligence-mtkgva4p-61508-468cbae7,Operational Intelligence mtkgva4p-61508-468cbae7,ACTIVE,other,2026-09-02,1,2026-09-02
+SUSPEND,other workspace,cmtkgvahb0023v881tvmmsxzj,operational-intelligence-mtkgvagd-61508-a31b7fb5,Operational Isolation mtkgvagd-61508-a31b7fb5,ACTIVE,other,2026-09-02,1,2026-09-02
+SUSPEND,other workspace,cmtkgx1qf002fv88153qg20tp,bff-verification-mtkgx1mr-63982,BFF verification mtkgx1mr-63982,ACTIVE,other,2026-09-02,1,2026-09-02
+SUSPEND,other workspace,cmtkhy8np0003v8rgubr4ruae,ap-outcome-mtkhy8kn-98224-64c840a6,AP Outcome mtkhy8kn-98224-64c840a6,ACTIVE,other,2026-09-02,1,2026-09-02
+SUSPEND,other workspace,cmtkhywf40003v8sydz9yuq65,ap-outcome-mtkhywcc-99979-efb815ec,AP Outcome mtkhywcc-99979-efb815ec,ACTIVE,other,2026-09-02,1,2026-09-02
+SUSPEND,other workspace,cmtki2dtm0044v8syq316agc7,ap-outcome-mtki2drm-5594-6abb0cf3,AP Outcome mtki2drm-5594-6abb0cf3,ACTIVE,other,2026-09-02,1,2026-09-02
+SUSPEND,other workspace,cmtki2gdp007yv8syz1hgfvf3,ap-outcome-mtki2gcp-5594-b4cd375b,AP Isolation mtki2gcp-5594-b4cd375b,ACTIVE,other,2026-09-02,1,2026-09-02
+SUSPEND,other workspace,cmtkjic8w0003v8yr6lth3b1i,ap-outcome-mtkjic5i-32451-bf7fa49b,AP Outcome mtkjic5i-32451-bf7fa49b,ACTIVE,other,2026-09-02,1,2026-09-02
+SUSPEND,other workspace,cmtkjlfww000ev8bwhgulpkpq,ap-outcome-mtkjlfue-32898-aa1b4278,AP Outcome mtkjlfue-32898-aa1b4278,ACTIVE,other,2026-09-02,2,2026-09-02
+SUSPEND,other workspace,cmtkjli09004tv8bwsz3x1lht,ap-outcome-mtkjlhzd-32898-91e8557e,AP Isolation mtkjlhzd-32898-91e8557e,ACTIVE,other,2026-09-02,1,2026-09-02
+SUSPEND,other workspace,cmtkjnz9s0003v8k5ux0u1n2p,ap-outcome-mtkjnz6m-33174-fd83cc23,AP Outcome mtkjnz6m-33174-fd83cc23,ACTIVE,other,2026-09-02,2,2026-09-02
+SUSPEND,other workspace,cmtkjo1ot004iv8k5o5fcjrz4,ap-outcome-mtkjo1nv-33174-0fc6719a,AP Isolation mtkjo1nv-33174-0fc6719a,ACTIVE,other,2026-09-02,1,2026-09-02
+SUSPEND,other workspace,cmtkjr25n0005v8swbuwvxihf,ap-outcome-mtkjr230-33490-9a22b94b,AP Outcome mtkjr230-33490-9a22b94b,ACTIVE,other,2026-09-02,2,2026-09-02
+SUSPEND,other workspace,cmtkjr562004kv8sw92346yoj,ap-outcome-mtkjr555-33490-5ee4c034,AP Isolation mtkjr555-33490-5ee4c034,ACTIVE,other,2026-09-02,1,2026-09-02
+SUSPEND,other workspace,cmtl2619m0013v8lj804uswv6,control-plane-mtl2617p-77290,Control Plane Verification,PROVISIONING,other,2026-09-03,1,
+SUSPEND,other workspace,cmtl26wls001dv8lj1wvrfs3b,control-plane-mtl26wjk-77370,Control Plane Verification,PROVISIONING,other,2026-09-03,1,2026-09-03
+SUSPEND,other workspace,cmtl27l1q001nv8ljh1wdwcp6,control-plane-mtl27l03-77411,Control Plane Verification,ACTIVE,other,2026-09-03,1,2026-09-03
+SUSPEND,other workspace,cmtl27ri70021v8ljhn1lq5hv,operational-intelligence-mtl27rfs-77431-a8355faf,Operational Intelligence mtl27rfs-77431-a8355faf,ACTIVE,other,2026-09-03,1,2026-09-03
+SUSPEND,other workspace,cmtl27rti003dv8ljhj3r9r6g,operational-intelligence-mtl27rsm-77431-97c9d7ea,Operational Isolation mtl27rsm-77431-97c9d7ea,ACTIVE,other,2026-09-03,1,2026-09-03
+SUSPEND,other workspace,cmtl288cx006rv8ljdvapwkiq,ap-outcome-mtl288bc-77480-ba326508,AP Outcome mtl288bc-77480-ba326508,ACTIVE,other,2026-09-03,2,2026-09-03
+SUSPEND,other workspace,cmtl28ae800b4v8ljnfal2rd4,ap-outcome-mtl28add-77480-1cdb3fde,AP Isolation mtl28add-77480-1cdb3fde,ACTIVE,other,2026-09-03,1,2026-09-03
+SUSPEND,other workspace,cmtl2bmzy000bv8vk6dmytjp0,ap-outcome-mtl2bmxs-77645-68aad60d,AP Outcome mtl2bmxs-77645-68aad60d,ACTIVE,other,2026-09-03,2,2026-09-03
+SUSPEND,other workspace,cmtl2bpm8004ov8vk5zoddtke,ap-outcome-mtl2bpl4-77645-990e5cc4,AP Isolation mtl2bpl4-77645-990e5cc4,ACTIVE,other,2026-09-03,1,2026-09-03
+SUSPEND,other workspace,cmtl2c5df006hv8vk92mq3bnl,bff-verification-mtl2c5c4-77674,BFF verification mtl2c5c4-77674,ACTIVE,other,2026-09-03,1,2026-09-03
+SUSPEND,other workspace,cmtl2e27i0077v8vkcjcrxf0s,bff-verification-mtl2e263-77858,BFF verification mtl2e263-77858,ACTIVE,other,2026-09-03,1,2026-09-03
+SUSPEND,other workspace,cmtl2f1iu007xv8vkd3gumiif,bff-verification-mtl2f1hl-77906,BFF verification mtl2f1hl-77906,ACTIVE,other,2026-09-03,1,2026-09-03
+SUSPEND,other workspace,cmtl2fjgk008qv8vkb4t1ol5g,workflow-verification-mtl2fjeq-77955,Workflow verification mtl2fjeq-77955,ACTIVE,other,2026-09-03,1,2026-09-03
+SUSPEND,other workspace,cmtl2fmjb009dv8vkjlb2eral,workflow-isolation-mtl2fjeq-77955-outsider,Workflow isolation mtl2fjeq-77955-outsider,ACTIVE,other,2026-09-03,1,2026-09-03
+SUSPEND,other workspace,cmtl2hum100amv8vk0a3smdm1,operational-intelligence-mtl2hui2-79161-84e79871,Operational Intelligence mtl2hui2-79161-84e79871,ACTIVE,other,2026-09-03,1,2026-09-03
+SUSPEND,other workspace,cmtl2huw200byv8vknbhbi1kl,operational-intelligence-mtl2huv7-79161-702448e4,Operational Isolation mtl2huv7-79161-702448e4,ACTIVE,other,2026-09-03,1,2026-09-03
+SUSPEND,other workspace,cmtl2iefh00cev8vk73l51o07,control-plane-mtl2iedn-79252,Control Plane Verification,ACTIVE,other,2026-09-03,1,2026-09-03
+SUSPEND,other workspace,cmtl4it940003v8yok6ba7k0b,control-plane-mtl4it6m-92041,Control Plane Verification,ACTIVE,other,2026-09-03,1,2026-09-03
+SUSPEND,other workspace,cmtl4itr2000hv8yoqwdrp9pr,operational-intelligence-mtl4itpe-92085-f8444c8a,Operational Intelligence mtl4itpe-92085-f8444c8a,ACTIVE,other,2026-09-03,1,2026-09-03
+SUSPEND,other workspace,cmtl4jloq0003v838jc6w0x9j,operational-intelligence-mtl4jlma-92181-34cbcab8,Operational Intelligence mtl4jlma-92181-34cbcab8,ACTIVE,other,2026-09-03,1,2026-09-03
+SUSPEND,other workspace,cmtl4jlzy001fv838zj2tqc34,operational-intelligence-mtl4jlys-92181-98416c18,Operational Isolation mtl4jlys-92181-98416c18,ACTIVE,other,2026-09-03,1,2026-09-03
+SUSPEND,other workspace,cmtl4l6ol0035v881n2buls6o,ap-outcome-mtl4l6mz-92398-8ad5ac18,AP Outcome mtl4l6mz-92398-8ad5ac18,ACTIVE,other,2026-09-03,2,2026-09-03
+SUSPEND,other workspace,cmtl4l8h20070v881xg8tgw8y,ap-outcome-mtl4l8g7-92398-7b54d50a,AP Isolation mtl4l8g7-92398-7b54d50a,ACTIVE,other,2026-09-03,1,2026-09-03
+SUSPEND,other workspace,cmtl4lafn0088v881ckolzru0,workflow-verification-mtl4lae9-92447,Workflow verification mtl4lae9-92447,ACTIVE,other,2026-09-03,1,2026-09-03
+SUSPEND,other workspace,cmtl4lcon008sv881qk4vullu,workflow-isolation-mtl4lae9-92447-outsider,Workflow isolation mtl4lae9-92447-outsider,ACTIVE,other,2026-09-03,1,2026-09-03
+SUSPEND,other workspace,cmtl4lwkk00a1v881j2t2wzyq,bff-verification-mtl4lwj4-92635,BFF verification mtl4lwj4-92635,ACTIVE,other,2026-09-03,1,2026-09-03
+KEEP,"Main UAT workspace (5 members, used 2026-10-15)",cmtzhwgew0015v8jbvo1uvcay,gigalibs-global,GigaLibs Global Enterprise,TRIAL,other,2026-09-13,5,2026-10-15
+SUSPEND,other workspace,cmukkmgez0000v866jasaygm5,gigaops-web-1790559043571-9c4d16,GigaOps P6–P8 web path,ACTIVE,other,2026-09-28,2,2026-09-28
+SUSPEND,other workspace,cmukkn3000000v8864odjgkk8,gigaops-web-1790559072967-d13b87,GigaOps P6–P8 web path,ACTIVE,other,2026-09-28,2,2026-09-28
+SUSPEND,other workspace,cmukl40ox0000v8okbhkavrvj,gigaops-web-1790559863127-fae1c2,GigaOps P6–P8 web path,ACTIVE,other,2026-09-28,2,2026-09-28
+SUSPEND,other workspace,cmuklioeg0000v80eug8puepi,gigaops-web-1790560547039-02dabc,GigaOps P6–P8 web path,ACTIVE,other,2026-09-28,2,2026-09-28
+SUSPEND,other workspace,cmukq1qqk0000v835t32yhk86,login-repro-1790568154976-c989a2,Login repro,ACTIVE,other,2026-09-28,1,2026-09-28
+SUSPEND,other workspace,cmuky9pbg0000v8e5o4dbytx8,gigaops-web-1790581963177-7c033e,GigaOps P6–P8 web path,ACTIVE,other,2026-09-28,2,2026-09-28
+SUSPEND,other workspace,cmukykzys0000v88xr6u97pwi,gigaops-web-1790582490336-3af714,GigaOps P6–P8 web path,ACTIVE,other,2026-09-28,2,2026-09-28
+SUSPEND,other workspace,cmul035nt0000v8i2dgioor3g,gigaops-web-1790585017106-690db3,GigaOps P6–P8 web path,ACTIVE,other,2026-09-28,2,2026-09-28
+SUSPEND,other workspace,cmul140r90000v86dvlqoosqn,gigaops-web-1790586737043-bc6cfc,GigaOps P6–P8 web path,ACTIVE,other,2026-09-28,2,2026-09-28
+SUSPEND,other workspace,cmul1yqb50000v8zoqqudp0ji,gigaops-web-1790588169861-cf1e67,GigaOps P6–P8 web path,ACTIVE,other,2026-09-28,2,2026-09-28
+SUSPEND,other workspace,cmul8hae80000v8jeeqnaz4ac,gigaops-web-1790599113268-839d44,GigaOps P6–P8 web path,ACTIVE,other,2026-09-28,2,2026-09-28
+SUSPEND,other workspace,cmul996520000v8mgo7x6kqyc,gigaops-web-1790600414109-fd771f,GigaOps P6–P8 web path,ACTIVE,other,2026-09-28,2,2026-09-28
+SUSPEND,other workspace,cmulb9iou0000v8vmgxbtg7a3,gigaops-web-1790603789748-0e8221,GigaOps P6–P8 web path,ACTIVE,other,2026-09-28,2,2026-09-28
+SUSPEND,other workspace,cmulbaslw0000v835ktdfq2vj,gigaops-web-1790603849260-4b99e6,GigaOps P6–P8 web path,ACTIVE,other,2026-09-28,2,2026-09-28
+SUSPEND,other workspace,cmunilye10000v8ts7tpzqh6l,gigaops-web-1790737059455-c5ce81,GigaOps P6–P8 web path,ACTIVE,other,2026-09-30,2,2026-09-30
+SUSPEND,other workspace,cmunrekky0000v8kmlytr0a1c,gigaops-web-1790751831415-271798,GigaOps P6–P8 web path,ACTIVE,other,2026-09-30,2,2026-09-30
+SUSPEND,other workspace,cmunwtjhd0000v8cxdyft6156,gigaops-web-1790760927785-8c6862,GigaOps P6–P8 web path,ACTIVE,other,2026-09-30,2,2026-09-30
+SUSPEND,other workspace,cmuo0snqw0000v8h7a0oscvz4,gigaops-web-1790767605486-0b75ff,GigaOps P6–P8 web path,ACTIVE,other,2026-09-30,2,2026-09-30
+SUSPEND,other workspace,cmuo4ofzz0000v821ywxvhwkg,gigaops-web-1790774127156-0c375a,GigaOps P6–P8 web path,ACTIVE,other,2026-09-30,2,2026-09-30
+SUSPEND,other workspace,cmuo6usxo0000v8tvtgk9hr4h,gigaops-web-1790777783246-d8f6ca,GigaOps P6–P8 web path,ACTIVE,other,2026-09-30,2,2026-09-30
+SUSPEND,other workspace,cmuodk2820000v83o1r9i20v6,gigaops-web-1790789039242-81183c,GigaOps P6–P8 web path,ACTIVE,other,2026-09-30,2,2026-09-30
+SUSPEND,other workspace,cmuoefmry0000v8qmasva027r,gigaops-web-1790790512359-8a5b32,GigaOps P6–P8 web path,ACTIVE,other,2026-09-30,2,2026-09-30
+SUSPEND,other workspace,cmuow40fi0000v825tofdi912,gigaops-web-1790820203128-b48c3d,GigaOps P6–P8 web path,ACTIVE,other,2026-10-01,2,2026-10-01
+SUSPEND,other workspace,cmuoww6zd0000v80qpb85k8s0,gigaops-web-1790821517977-830d1f,GigaOps P6–P8 web path,ACTIVE,other,2026-10-01,2,2026-10-01
+KEEP,Home of uat.admin,cmuvxagju004nms068zwizxjz,uatadmin,uat.admin,TRIAL,other,2026-10-06,1,2026-10-06
+SUSPEND,other workspace,cmv1vtjd7001amw0737777tcw,tenant-mv1vtip2-39586,Tenant mv1vtip2-39586,TRIAL,other,2026-10-10,1,2026-10-10
+SUSPEND,other workspace,cmv1vvkgk0027mw07vkkd7qn9,tenant-mv1vvk70-39779,Tenant mv1vvk70-39779,TRIAL,other,2026-10-10,1,2026-10-10
+SUSPEND,other workspace,cmv26wb6i0034mw07cttjz172,tenant-tenant-a-mv26wai2-9a56f919,Tenant tenant-a mv26wai2-9a56f919,TRIAL,other,2026-10-10,1,2026-10-10
+SUSPEND,other workspace,cmv26wbtn0041mw0772fapiyo,tenant-tenant-b-mv26wbdg-7cb0e275,Tenant tenant-b mv26wbdg-7cb0e275,TRIAL,other,2026-10-10,1,2026-10-10
+SUSPEND,other workspace,cmv274n1j004ymw072yn4i11p,tenant-tenant-a-mv274mwt-1f36b726,Tenant tenant-a mv274mwt-1f36b726,TRIAL,other,2026-10-10,1,2026-10-10
+SUSPEND,other workspace,cmv274n82005vmw07c7new2mh,tenant-tenant-b-mv274n6c-46ca8820,Tenant tenant-b mv274n6c-46ca8820,TRIAL,other,2026-10-10,1,2026-10-10
+SUSPEND,other workspace,cmv27uyl4006smw07c00oidpi,tenant-tenant-a-mv27uy5l-1fa752ab,Tenant tenant-a mv27uy5l-1fa752ab,TRIAL,other,2026-10-10,1,2026-10-10
+SUSPEND,other workspace,cmv27uz6t007pmw07m5kjv2h7,tenant-tenant-b-mv27uyu3-31264c02,Tenant tenant-b mv27uyu3-31264c02,TRIAL,other,2026-10-10,1,2026-10-10
+SUSPEND,other workspace,cmv2c012i008mmw07glc3988e,audit-tenant-mv2c00ly-0688d69e,Audit Tenant mv2c00ly-0688d69e,TRIAL,other,2026-10-10,1,2026-10-10
+SUSPEND,qualification workspace,cmv2ccwi7009jmw07fcxm1dfw,qual-tenant-mv2ccw81-16274c08,Qualification Tenant mv2ccw81-16274c08,TRIAL,qualification,2026-10-10,1,2026-10-10
+SUSPEND,qualification workspace,cmv2ckdlm00agmw074uh7z2gv,qual-tenant-mv2ckd8j-ad7f27a8,Qualification Tenant mv2ckd8j-ad7f27a8,TRIAL,qualification,2026-10-10,1,2026-10-10
+SUSPEND,qualification workspace,cmv2cnufw00bdmw07bl9z4mxg,qual-tenant-mv2cnuc6-1c136797,Qualification Tenant mv2cnuc6-1c136797,TRIAL,qualification,2026-10-10,1,2026-10-10
+SUSPEND,qualification workspace,cmv2cr5in00camw07otu17glg,qual-tenant-mv2cr5e9-179a52b1,Qualification Tenant mv2cr5e9-179a52b1,TRIAL,qualification,2026-10-10,1,2026-10-10
+SUSPEND,qualification workspace,cmv2csfdp00d7mw07r1x4b7kc,qual-tenant-mv2csf8k-d8bc78a2,Qualification Tenant mv2csf8k-d8bc78a2,TRIAL,qualification,2026-10-10,1,2026-10-10
+SUSPEND,qualification workspace,cmv2dbbul00e4mw07zzfo34u9,qual-tenant-mv2dbbpo-57a2c34f,Qualification Tenant mv2dbbpo-57a2c34f,TRIAL,qualification,2026-10-10,1,2026-10-10
+SUSPEND,qualification workspace,cmv2druxi00f1mw076ncw95cj,qual-tenant-mv2drusj-477ec500,Qualification Tenant mv2drusj-477ec500,TRIAL,qualification,2026-10-10,1,2026-10-10
+SUSPEND,qualification workspace,cmv2du4gh00fwmw0789uvvbkq,qual-tenant-mv2du3x6-522dea05,Qualification Tenant mv2du3x6-522dea05,TRIAL,qualification,2026-10-10,1,2026-10-10
+SUSPEND,qualification workspace,cmv2dvkvy00gtmw07tb4ii537,qual-tenant-mv2dvkru-b9d7511b,Qualification Tenant mv2dvkru-b9d7511b,TRIAL,qualification,2026-10-10,1,2026-10-10
+SUSPEND,qualification workspace,cmv2dxmk400hqmw07qk9g9ej6,qual-tenant-mv2dxmf8-fff62b88,Qualification Tenant mv2dxmf8-fff62b88,TRIAL,qualification,2026-10-10,1,2026-10-10
+SUSPEND,qualification workspace,cmv2e03qh00inmw07zu0e92go,qual-tenant-mv2e03kr-d108e96c,Qualification Tenant mv2e03kr-d108e96c,TRIAL,qualification,2026-10-10,1,2026-10-10
+SUSPEND,qualification workspace,cmv2e1bhr00jkmw07lywzrzob,qual-tenant-mv2e1bdk-8f35ab90,Qualification Tenant mv2e1bdk-8f35ab90,TRIAL,qualification,2026-10-10,1,2026-10-10
+SUSPEND,qualification workspace,cmv2e28rt00khmw07ttd9yy3n,qual-tenant-mv2e28ni-099d3661,Qualification Tenant mv2e28ni-099d3661,TRIAL,qualification,2026-10-10,1,2026-10-10
+SUSPEND,qualification workspace,cmv2e34vj00lemw07ywh5x7a8,qual-tenant-mv2e34q1-33d6f969,Qualification Tenant mv2e34q1-33d6f969,TRIAL,qualification,2026-10-10,1,2026-10-10
+SUSPEND,qualification workspace,cmv2ewrw000mbmw070x89varg,qual-tenant-mv2f73ds-ff5ee4f9,Qualification Tenant mv2f73ds-ff5ee4f9,TRIAL,qualification,2026-10-10,1,2026-10-10
+SUSPEND,uat workspace,cmu3jwxx60002v8vqq8wbd3bj,uat-config-restart-1789529925780_fd9c06b7,UAT Configuration Database Restart Tenant,ACTIVE,uat,2026-09-16,2,
+KEEP,Home of uat.approver (UAT test specs sign in as it),cmuw14nkt0031o906aej9l6pp,uat-approver,uat approver,TRIAL,uat,2026-10-06,1,2026-10-06

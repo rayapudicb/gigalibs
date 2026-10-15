@@ -21,7 +21,6 @@ import {
 } from '@medusajs/icons';
 import { FileSignature, CheckCircle2, Award, Clock, ArrowRight, Lock, ExternalLink, Eye, PenTool, Layers, FileCheck } from 'lucide-react';
 import { useTranslation } from '@/components/i18n';
-import { MASTER_SIGNERS } from '@/lib/master-data-catalog';
 
 interface EnvelopeSummary {
   id: string;
@@ -664,33 +663,13 @@ export function CryptographicEsignWorkbench() {
                     + Add Signer
                   </button>
                 </div>
-                <div className="flex items-center gap-2 mb-2 p-2 bg-zinc-50 border border-zinc-200 rounded-lg">
-                  <span className="text-xs text-zinc-600 font-medium">Quick Pick Master Signer:</span>
-                  <select
-                    aria-label="Master Signers Directory"
-                    className="flex-1 rounded border border-zinc-300 bg-white px-2 py-1 text-xs text-zinc-800"
-                    onChange={(e) => {
-                      const selected = MASTER_SIGNERS.find((s) => s.id === e.target.value);
-                      if (selected) {
-                        setRecipients([...recipients, { name: selected.name, email: selected.email, role: selected.title }]);
-                      }
-                      e.target.value = '';
-                    }}
-                    defaultValue=""
-                  >
-                    <option value="" disabled>Choose from verified Master Signers Directory...</option>
-                    {MASTER_SIGNERS.map((s) => (
-                      <option key={s.id} value={s.id}>{s.name} ({s.title}) — {s.email}</option>
-                    ))}
-                  </select>
-                </div>
                 <div className="space-y-2">
                   {recipients.map((r, idx) => (
                     <div key={idx} className="flex gap-2 items-center">
                       <input
                         type="text"
                         className="w-1/3 rounded-lg border border-zinc-300 p-2 text-xs"
-                        placeholder="Full Name (e.g. Sarah Connor)"
+                        placeholder="Full name"
                         value={r.name}
                         onChange={(e) => {
                           const updated = [...recipients];

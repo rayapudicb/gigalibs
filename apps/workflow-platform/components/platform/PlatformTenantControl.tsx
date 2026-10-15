@@ -289,12 +289,6 @@ export default function PlatformTenantControl({ session }: { session: VerifiedSe
               👥 Global Users & Platform RBAC
             </a>
             <a
-              href="/platform-admin/master-data"
-              className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900 transition"
-            >
-              🛡️ Master Data
-            </a>
-            <a
               href="/platform-admin/infra"
               className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900 transition"
             >

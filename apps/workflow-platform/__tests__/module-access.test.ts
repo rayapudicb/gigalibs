@@ -88,7 +88,7 @@ describe('module access', () => {
   });
 
   it('refuses a locked module even with its feature and every permission (ADR-0016 F6)', () => {
-    for (const key of ['esignature', 'accounts-receivable', 'master-data']) {
+    for (const key of ['esignature', 'accounts-receivable', 'rule-studio']) {
       expect(platformModuleCatalog.find((module) => module.key === key)?.readiness, key).toBe('CONTAINED');
       expect(canUseTenantModule(key, new Set([key]), ['*']), key).toBe(false);
     }
@@ -150,7 +150,7 @@ describe('UAT preview (WI-OI-120a)', () => {
   const lockedKeys = ['financial-operations', 'universal-procurement', 'accounts-receivable', 'esignature'];
   // WI-OI-120ak (S5, D1b): the preview opens PLANNED modules only; CONTAINED ones stay locked.
   const plannedKeys = ['financial-operations', 'universal-procurement'];
-  const containedKeys = ['accounts-receivable', 'esignature', 'communications-textfly', 'master-data', 'rule-studio'];
+  const containedKeys = ['accounts-receivable', 'esignature', 'communications-textfly', 'rule-studio'];
 
   afterEach(() => {
     vi.unstubAllEnvs();

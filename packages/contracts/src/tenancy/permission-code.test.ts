@@ -10,7 +10,7 @@ describe('tenant permission codes', () => {
     'analytics:*',
     'analytics:charts:write',
     'analytics:models:publish',
-    'master-data:read',
+    'inventory:read',
     'cmms.work-orders.write',
     'workforce.time.punch',
     'maps.nodes.read',

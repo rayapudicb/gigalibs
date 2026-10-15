@@ -858,25 +858,6 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
     ]
   },
   {
-    "code": "master-data:admin",
-    "entries": [
-      "platform"
-    ]
-  },
-  {
-    "code": "master-data:read",
-    "entries": [
-      "master-data",
-      "platform"
-    ]
-  },
-  {
-    "code": "master-data:write",
-    "entries": [
-      "platform"
-    ]
-  },
-  {
     "code": "ontology:read",
     "entries": [
       "ontology",
