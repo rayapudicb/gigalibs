@@ -3851,3 +3851,61 @@ widening the card to fix the API faults the proof found.
 - **I5, read-only on UAT:** the brand workspaces have no Connector Hub, connection, credential or outbox activity.
 - **Checks:** the 7 CI governance checks pass, the web type-check is clean, and the whole repository suite passes:
   2,943 tests, 231 skipped, none failed.
+- **Release prepared, S5c on top of `f6123bf`** (feature commit `4f04746`, owner: "commit"): 7 files applied
+  three-way, no conflict, staged. Every file equals `4f04746` except compose (the release's CMMS pin at 19). On the
+  release:
+  - the migration pin check passes;
+  - web type-check clean;
+  - 4 governance checks pass; the audit fails only on the absent TextFly roots, as before;
+  - 2,804 tests pass; only the two known `CONTROL_PAYLOAD_KEY_VERSION` control-plane suites fail at import.
+- **Release commit `f41702b`** (owner: "commit") = `f6123bf` + S5c. Source identity: revision `f41702bc609d`, state
+  `9a4c400dacf5`. Five builds started with `GIGALIBS_KEEP_IMAGE_VERSIONS=3`; the reviewer re-checks the S5c fixes on
+  `f41702b`, read-only.
+- **Release `f41702b` ready:**
+  - five builds passed, 07:09–07:41Z;
+  - re-review: approve;
+  - backup `gigalibs_backup_20261015_074356Z` (running 162508b);
+  - deploy tool retargeted from 162508b: 33/33 tests;
+  - migration pins agree; `--check` passed;
+  - release ID `local-20261015T070910Z-f41702bc609d-9a4c400dacf5`, taken from the env file's modified time without
+    opening it, and confirmed by `--check`'s label comparison.
+
+  The Analytics image ships 30 migrations (last `000030_drop_synthetic_reset`), and no `test/` or `scripts/` (L3
+  confirmed).
+- **Disk guard during the build:** 59 GB free, so it cleaned automatically and removed 58 images. With
+  `KEEP_IMAGE_VERSIONS=3` it still removed `85fdbcc`'s control-plane migration image: the cancelled `f6123bf` build had
+  tagged one, and retention counts by creation time (the step 0.8 retention bug). The rollback for `f41702b` is
+  `162508b`, complete. It also reported "Build cache trimmed to at most 20GB" while the cache is 92 GB (the other
+  step 0.8 bug).
+
+## WI-OI-120ak release f41702b on UAT (2026-10-15, owner-run)
+
+- **Deploy:** the owner ran `deploy-uat.sh --deploy --backup gigalibs_backup_20261015_074356Z`. Images and backup were
+  verified; 546 tables; all 11 migration jobs passed, `analytics-migrations` included (migration 30); all 11 services
+  are healthy; the smoke test passed.
+- **Read-only check afterwards:**
+  - all 11 services run `local-20261015T070910Z-f41702bc609d-9a4c400dacf5`, healthy, with no restarts;
+  - the Analytics ledger is at 30; `reset_synthetic_facts` is gone and `refresh_place_rollup_statistics` stays;
+  - still 546 tables;
+  - `/api/health/ready` and `/login` answer 200, `/demo/index.html` 404, `/api/communications/channels` 401
+    signed out, `/inventory` 307 to sign-in;
+  - 0 error lines in 15 minutes from web, the API, Analytics, the Connector Hub, the kernel worker and the module host;
+  - the web bundle (954 files) holds the S5b and S6 texts ("Synthetic (not real data)", the new help headings, "not
+    available yet", the inspection sentence) and none of the removed claims ("Demo Lab" source label,
+    "Tenant-Isolated Scope Active", "immutable tenant audit trail", "Data isolation enforced at the database
+    layer").
+- **Docker after the owner's clean-up:**
+  - images 12.1 GB, build cache 0, 170 GiB free;
+  - the rollback `162508b` keeps all 9 images, and volumes are untouched.
+
+  The earlier 115 GB image figure mostly counted shared content.
+- **Journey `9bud1q`** (owner-run on `f41702b`): passed in 3.4 minutes; 55 findings (61 in `8w9h29`), 2 blockers.
+  - Both blockers are the known CMMS ones: the technician's request and the supervisor closing the work order (plan
+    v3 1.1 and 1.3).
+  - The one bug is the known organization-draft submit 400, and the UX findings are the known step 0.8 and X1 items:
+    internal codes, the Settings tab on reload, the invitation token, and "New work order" offered to a viewer.
+  - The other 46 are layout (29) and accessibility (17).
+
+  Nothing regressed.
+- **Still open:** the brand workspaces are ACTIVE (the owner suspends them in Platform Control Tower). Then the card
+  closes.

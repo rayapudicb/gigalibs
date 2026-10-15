@@ -1,8 +1,8 @@
 # WI-OI-120ak: Zero-mock sweep, the rest (plan v3 step 0.4)
 
-- **Status:** S1–S5 on UAT (release `162508b`, owner deploy 2026-10-15; journey rerun pending). S5b, S6 and L2
-  committed (`4ba6bab`); release `f6123bf` was stopped before its build by its Security review (M1); S5c fixes it.
-  S7: the `demo-lab` switch is off; the brand workspaces wait for the owner. Decisions D1a–D7a approved
+- **Status:** S1–S6, S5b, S5c and L2 on UAT (release `f41702b`, owner deploy 2026-10-15; re-review approved). S7: the
+  `demo-lab` switch is off; the brand workspaces wait for the owner's suspension in Platform Control Tower. Journey
+  `9bud1q` passed (55 findings, the 2 known CMMS blockers). The card closes when the 3 workspaces are suspended. Decisions D1a–D7a approved
   2026-10-15 (D1b replaced D1a).
 - **Follows:** WI-OI-120ah, WI-OI-120an and WI-OI-120ao (the Time screen, done).
 - **Work item:** WI-OI-120. Evidence goes in `.pi/work/WI-OI-120.md`.
@@ -683,4 +683,26 @@ What UAT holds today changes how S7 is done, not what D5a and D6a decided:
 - **I6:** the whole repository suite now runs before each release.
 - **Verification:** whole repository 2,943 tests passed, 231 skipped, none failed (376 files); the 7 CI governance
   checks pass; web type-check clean.
+
+## Re-review of release f41702b (2026-10-15): approve
+
+- **Verified:**
+  - M1, L1 and I1 are fixed;
+  - every module's job, API, code and shipped pins agree in `f41702b` (Analytics 30, CMMS 19, Connector Hub 9,
+    Workforce 27, Geospatial 8);
+  - the pin check's logic and its narrow CMMS hold are correct, and it would have failed on `f6123bf`;
+  - release parity: identical patch-ids;
+  - nothing else changes authorization;
+  - the audit passes in every mode.
+- **Low:** the pin check ran only in GitHub CI, which release branches never trigger. Now also a step of
+  `pnpm verify` (`scripts/verify.mjs`), and part of this card's release checks. `module-manifests.mjs --check` (the
+  module host's pins) stays in `pnpm verify` only: the CI job installs no dependencies and the check needs `js-yaml`.
+- **Info, the checker's limits (each still fails closed at deploy, because the migration runner refuses a mismatch):**
+  - it does not read the generated module-host compose (guarded by `module-manifests.mjs --check`), the dev compose,
+    or overrides of a listed service from another file;
+  - a 2-space comment inside a service block, or list-form environment entries, would hide a pin of an unlisted job;
+  - the shipped directories mirror the Dockerfile by hand.
+- **Info:**
+  - I7 still holds: deploy only with the release worktree's tool and compose (the main worktree pins CMMS's API at 20);
+  - the I1 test assertion is weak on its own; the routes were checked in the first review.
 
