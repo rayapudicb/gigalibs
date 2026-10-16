@@ -23,6 +23,7 @@ import {
   type OrgErrorView,
   type OrgPermissions,
   type OrgWorkflowAction,
+  reasonProblem,
   VERSION_STATUS_COLOR,
   workflowSteps,
 } from './organization-client';
@@ -200,6 +201,7 @@ export function OrgStructurePanel({ permissions, userId, userNames, onChanged }:
   ].filter(Boolean));
   const editable = !!work && (work.status === 'DRAFT' || work.status === 'VALIDATED') && permissions.draft;
   const steps = work ? workflowSteps(work, permissions, userId).filter((step) => step.action !== 'edit') : [];
+  const reasonMissing = reasonProblem(reason);
   const person = (id: string | null) => (id ? userNames[id] ?? id : '—');
 
   if (loadError && !trees) return <Container className="p-6"><OrgErrorAlert error={loadError} onRetry={() => void loadTrees()} onReload={() => void loadTrees()} /></Container>;
@@ -314,12 +316,16 @@ export function OrgStructurePanel({ permissions, userId, userNames, onChanged }:
                   </div>
                 )}
                 <div className="flex flex-wrap gap-2">
-                  {steps.map((step) => (
-                    <Button key={step.action} size="small" variant={step.action === 'reject' || step.action === 'withdraw' ? 'secondary' : 'primary'}
-                      disabled={!step.allowed || busy} onClick={() => void runStep(step.action)} title={step.reason ?? undefined}>
-                      {STEP_LABEL[step.action]}
-                    </Button>
-                  ))}
+                  {steps.map((step) => {
+                    // WI-OI-120ax: every step but Validate records the reason, so it waits for one the server accepts.
+                    const waiting = step.action === 'validate' ? null : reasonMissing;
+                    return (
+                      <Button key={step.action} size="small" variant={step.action === 'reject' || step.action === 'withdraw' ? 'secondary' : 'primary'}
+                        disabled={!step.allowed || busy || waiting !== null} onClick={() => void runStep(step.action)} title={step.reason ?? waiting ?? undefined}>
+                        {STEP_LABEL[step.action]}
+                      </Button>
+                    );
+                  })}
                   <Button size="small" variant="secondary" disabled={busy} onClick={() => void loadImpact()}>Preview impact</Button>
                 </div>
                 {steps.filter((step) => step.reason).map((step) => (

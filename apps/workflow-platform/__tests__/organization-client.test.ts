@@ -4,6 +4,8 @@ import {
   orgPermissions,
   orgRequest,
   OrgRequestError,
+  REASON_LIMITS,
+  reasonProblem,
   workflowSteps,
 } from '@/components/organization/organization-client';
 
@@ -20,9 +22,35 @@ describe('organization screen rules', () => {
     expect(refused).toBeInstanceOf(OrgRequestError);
     expect(describeOrgError(refused)).toMatchObject({ kind: 'invalid', message: expect.stringMatching(/no longer passes/), problems: [{ code: 'CYCLE' }], action: null });
 
+    // WI-OI-120ax: a missing or wrong field is named in words, and is not called a broken organization rule.
     respond(400, { message: 'Request validation failed.', issues: [{ path: ['labels', 'one'], message: 'Too small' }] });
     const invalid = describeOrgError(await orgRequest('/unit-types', { method: 'POST', body: {} }).catch((error: unknown) => error));
-    expect(invalid).toMatchObject({ kind: 'invalid', message: 'The change breaks an organization rule.', issues: ['labels.one: Too small'] });
+    expect(invalid).toMatchObject({ kind: 'invalid', title: 'Some details are missing', issues: ['Labels one: Too small'] });
+    expect(invalid.message).not.toMatch(/organization rule/);
+
+    // The validation pipe sends each path as a dotted string (packages/validation-nest), as for the journey's 400.
+    respond(400, { message: 'Request validation failed.', issues: [{ path: 'reason', message: 'Too small: expected string to have >=3 characters' }] });
+    const missingReason = describeOrgError(await orgRequest('/versions/v1/submit', { method: 'POST', body: {} }).catch((error: unknown) => error));
+    expect(missingReason).toMatchObject({ title: 'Some details are missing', issues: ['Reason: Too small: expected string to have >=3 characters'] });
+    respond(400, { message: 'Request validation failed.', issues: [{ path: 'expectedVersion', message: 'Required' }] });
+    expect(describeOrgError(await orgRequest('/versions/v1/submit', { method: 'POST', body: {} }).catch((error: unknown) => error)).issues).toEqual(['Expected version: Required']);
+
+    // A rule failure with problems keeps its wording, even when field issues come with it.
+    respond(422, { message: 'Request validation failed.', problems: [{ code: 'CYCLE', unitId: 'u1', detail: 'loops' }], issues: [{ path: 'edges', message: 'bad' }] });
+    expect(describeOrgError(await orgRequest('/versions/v1/validate', { method: 'POST', body: {} }).catch((error: unknown) => error))).toMatchObject({
+      title: 'Check the details',
+      message: 'The change breaks an organization rule.',
+    });
+  });
+
+  it('accepts a reason only within the contract limits, and says why otherwise', () => {
+    expect(REASON_LIMITS).toEqual({ min: 3, max: 500 });
+    expect(reasonProblem('')).toBe('Give a reason of at least 3 characters.');
+    expect(reasonProblem('  ab  ')).toBe('Give a reason of at least 3 characters.');
+    expect(reasonProblem('abc')).toBeNull();
+    expect(reasonProblem(' Journey run: first structure ')).toBeNull();
+    expect(reasonProblem('x'.repeat(500))).toBeNull();
+    expect(reasonProblem('x'.repeat(501))).toBe('Keep the reason to 500 characters.');
   });
 
   it.each([

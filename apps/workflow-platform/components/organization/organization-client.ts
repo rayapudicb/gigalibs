@@ -1,4 +1,4 @@
-import type { OrgHierarchyVersionV1 } from '@gigalibs/contracts';
+import { type OrgHierarchyVersionV1, OrgVersionTransitionV1Schema } from '@gigalibs/contracts';
 import { hasPermission } from '@/lib/module-access';
 
 // WI-OI-109d: the organization screens' requests and rules, kept free of React so they can be tested directly.
@@ -42,13 +42,36 @@ export async function orgRequest<T>(path: string, init: { method?: 'GET' | 'POST
     const message = typeof nested.message === 'string' ? nested.message : typeof body.detail === 'string' ? body.detail : '';
     const problems = Array.isArray(nested.problems) ? (nested.problems as OrgProblem[]) : [];
     const issues = Array.isArray(nested.issues)
-      ? (nested.issues as Array<{ path?: unknown[]; message?: string }>).map((issue) =>
-          [Array.isArray(issue.path) ? issue.path.join('.') : '', issue.message ?? ''].filter(Boolean).join(': '),
+      ? (nested.issues as Array<{ path?: unknown; message?: string }>).map((issue) =>
+          [fieldInWords(issue.path), issue.message ?? ''].filter(Boolean).join(': '),
         )
       : [];
     throw new OrgRequestError(message, response.status, problems, issues);
   }
   return payload as T;
+}
+
+/** A field path as a person reads it: `expectedVersion` → "Expected version", `labels.one` → "Labels one". */
+function fieldInWords(path: unknown): string {
+  const segments = Array.isArray(path) ? path : typeof path === 'string' && path ? path.split('.') : [];
+  const words = segments
+    .map((segment) => String(segment).replace(/([a-z0-9])([A-Z])/g, '$1 $2').toLowerCase())
+    .join(' ')
+    .trim();
+  return words.charAt(0).toUpperCase() + words.slice(1);
+}
+
+// WI-OI-120ax: every governed organization step records a reason, and the server refuses one outside these limits.
+// The limits come from the contract, so the screen and the server cannot disagree.
+const REASON_RULE = OrgVersionTransitionV1Schema.shape.reason;
+export const REASON_LIMITS = { min: REASON_RULE.minLength ?? 0, max: REASON_RULE.maxLength ?? Number.MAX_SAFE_INTEGER };
+
+/** Why a reason would be refused, in plain words; null when the server will accept it. */
+export function reasonProblem(value: string): string | null {
+  if (REASON_RULE.safeParse(value).success) return null;
+  return value.trim().length < REASON_LIMITS.min
+    ? `Give a reason of at least ${REASON_LIMITS.min} characters.`
+    : `Keep the reason to ${REASON_LIMITS.max} characters.`;
 }
 
 export type OrgErrorKind = 'session' | 'denied' | 'missing' | 'conflict' | 'invalid' | 'unavailable';
@@ -81,6 +104,9 @@ export function describeOrgError(error: unknown): OrgErrorView {
   if (status === 403) return view('denied', 'Not allowed', 'You do not have permission for this step.', null);
   if (status === 404) return view('missing', 'Not found', 'It no longer exists in this organization; reload to see the current state.', 'reload');
   if (status === 409) return view('conflict', 'Changed elsewhere', 'Someone changed this since you loaded it. Reload and try again.', 'reload');
+  // A field the request left out or got wrong is not a broken organization rule; only listed problems are.
+  if ((status === 400 || status === 422) && issues.length > 0 && problems.length === 0)
+    return view('invalid', 'Some details are missing', 'Fill in or correct the details below, then try again.', null);
   if (status === 400 || status === 422) return view('invalid', 'Check the details', 'The change breaks an organization rule.', null);
   return view('unavailable', 'Organization service unavailable', 'The organization service is unavailable. Try again shortly.', 'retry');
 }

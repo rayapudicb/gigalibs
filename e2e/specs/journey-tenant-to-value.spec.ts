@@ -412,10 +412,28 @@ test('a new customer from sign-up to maintenance work, as five people', async ({
         const error = await submit(admin, form, recorder, /^(place|save|add)/i);
         notes.push(error ? `placing ${unit} refused: ${error}` : `${unit} placed`);
       }
-      for (const name of [/preview impact/i, /^validate$/i, /^submit/i]) {
+      for (const name of [/preview impact/i, /^validate$/i]) {
         if (await press(admin, name)) {
           await settle(admin);
           notes.push(`${name.source} pressed`);
+        }
+      }
+      // WI-OI-120ax: Submit records a reason, so it must wait for one; the journey then gives one, as a person would.
+      const submitStep = admin.getByRole('button', { name: /^submit/i }).filter({ visible: true }).first();
+      if (await submitStep.count()) {
+        if (await submitStep.isEnabled()) {
+          recorder.add('BUG', 'Submit is offered before a reason is given', 'the server refuses a structure step without a reason', admin);
+        }
+        await admin.getByLabel(/^reason$/i).filter({ visible: true }).first().fill(`Journey ${RUN}: first structure for review`);
+        if (await press(admin, /^submit/i)) {
+          await settle(admin);
+          const done = admin.getByRole('status').filter({ hasText: /submitted for approval/i });
+          const refused = admin.getByRole('alert').filter({ visible: true });
+          notes.push(
+            (await done.count())
+              ? 'submitted for approval'
+              : `submit refused: ${(await refused.first().innerText().catch(() => 'no message shown')).replace(/\s+/g, ' ').slice(0, 160)}`,
+          );
         }
       }
       return notes.length ? notes.join(' · ') : 'PARTIAL: no structure controls were offered';

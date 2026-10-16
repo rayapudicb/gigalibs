@@ -4182,3 +4182,16 @@ widening the card to fix the API faults the proof found.
     - 0 active sessions in suspended workspaces, 0 orphaned dead letters.
   - UAT now holds 225 SUSPENDED, 4 TRIAL (`gigalibs-global`, `uatadmin`, `uat-approver`, `journey-ac0z09`) and 101
     CANCELLED workspaces.
+- **Journey `agxc2i`** (owner-run after the suspension): passed in 4.9 minutes, 57 findings (29 layout,
+  19 accessibility, 6 UX, 1 bug, 2 blockers).
+  - Compared with `ac0z09`, after normalising run names and ids: the same blockers (CMMS request and close), the same
+    bug (organization Submit 400, WI-OI-120ax) and the same layout and UX findings.
+  - The only differences are colour-contrast items: 2 new (labour logging, working week) and 1 gone (absence
+    types).
+  - The suspension did not affect the journey. Findings are kept in `scratchpad/journey-runs/agxc2i.json`.
+- **WI-OI-120ax built** (owner: "Approved WI-OI-120ax"):
+  - the 13 organization actions that record a reason wait for one the contract accepts;
+  - a missing field reads "Some details are missing", with the field named;
+  - the journey checks the guard, then submits with a reason.
+
+  12 organization tests and 683 web tests pass; the audits are unchanged. Not yet released.

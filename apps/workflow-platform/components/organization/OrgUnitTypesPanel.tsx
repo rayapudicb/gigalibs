@@ -3,7 +3,7 @@
 import { ORG_UNIT_CAPABILITIES, type OrgUnitTypeV1 } from '@gigalibs/contracts';
 import { Badge, Button, Checkbox, Container, Heading, Input, Label, Table, Text } from '@medusajs/ui';
 import { useId, useState } from 'react';
-import { describeOrgError, orgRequest, type OrgErrorView, type OrgPermissions } from './organization-client';
+import { describeOrgError, orgRequest, type OrgErrorView, type OrgPermissions, reasonProblem } from './organization-client';
 import { OrgErrorAlert, OrgSuccess, ReasonField } from './OrgShared';
 
 const CAPABILITY_LABELS: Record<string, string> = {
@@ -110,6 +110,8 @@ export function OrgUnitTypesPanel({ unitTypes, permissions, onChanged }: { unitT
   const toggle = (list: string[], value: string) => (list.includes(value) ? list.filter((item) => item !== value) : [...list, value]);
   const otherCodes = unitTypes.filter((type) => type.status === 'ACTIVE').map((type) => type.code);
 
+  // WI-OI-120ax: a step that records a reason waits for one the server accepts.
+  const editReasonWait = editing !== 'new' ? reasonProblem(draft.reason) : null;
   return (
     <Container className="flex flex-col gap-4 p-6">
       <div className="flex items-center justify-between gap-4">
@@ -190,7 +192,7 @@ export function OrgUnitTypesPanel({ unitTypes, permissions, onChanged }: { unitT
           </div>
           {editing !== 'new' && <ReasonField value={draft.reason} onChange={(reason) => setDraft({ ...draft, reason })} />}
           <div className="flex gap-2">
-            <Button size="small" type="submit" isLoading={saving}>Save</Button>
+            <Button size="small" type="submit" isLoading={saving} disabled={editReasonWait !== null} title={editReasonWait ?? undefined}>Save</Button>
             <Button size="small" variant="secondary" type="button" onClick={() => setEditing(null)}>Cancel</Button>
           </div>
         </form>

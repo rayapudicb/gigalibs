@@ -1,6 +1,6 @@
 # WI-OI-120ax: Organization steps can be sent without their reason (journey 400 on Submit)
 
-- **Status:** Proposed (2026-10-16). Waiting for the owner's approval.
+- **Status:** Built (2026-10-16), not yet released. Approved by the owner on 2026-10-16 ("Approved WI-OI-120ax").
 - **Plan v3:** step 0.8 (a core UX follow-up found by journey `ac0z09`).
 - **Work item:** WI-OI-120. Evidence goes in `.pi/work/WI-OI-120.md`.
 - **Size:** S. Web app and journey only: no API, contract, migration or env change.
@@ -61,6 +61,43 @@ Journey `ac0z09` (2026-10-16), step "Structure: the primary tree, a draft and pl
 rule in `organization.service.ts:525`), and only Tenant Admins hold `organization:approve`. The journey has one
 admin, and its approver persona does not hold it. The choice between a second admin and a steward custom role is
 the owner's. It will be carded separately.
+
+## Built (2026-10-16)
+
+- **The rule, once** (`organization-client.ts`): `reasonProblem` and `REASON_LIMITS` read the limits from the
+  contract (`OrgVersionTransitionV1Schema.shape.reason`: 3 to 500 characters after trimming), so the screen and the
+  server cannot disagree.
+- **`ReasonField`:**
+  - it is required and limited to 500 characters;
+  - its hint says what is accepted;
+  - once something is typed, it says why the reason would be refused, and marks the box invalid
+    (`aria-invalid`, `aria-describedby`).
+- **The 13 actions wait for a valid reason,** and each button's title says why:
+  - Structure: Submit, Withdraw, Approve, Reject, Publish, Activate (Validate needs none);
+  - Units: Save an edit, Archive;
+  - Unit types: Save an edit;
+  - Access: Grant, Revoke;
+  - Place links: Link, End.
+- **Errors:**
+  - a 400 or 422 listing field issues but no organization problems reads "Some details are missing";
+  - "The change breaks an organization rule" stays for real rule failures;
+  - each field is named in words ("Reason: …", "Expected version: …").
+  - Found while testing: the validation pipe sends each path as a dotted string, which the old code dropped, so the
+    field name never showed.
+- **The journey:** it checks that Submit is disabled before a reason is given (if not, that is a BUG finding), types
+  "Journey <run>: first structure for review", submits, and records "submitted for approval" or the alert the person
+  saw.
+- **Verification:**
+  - `organization-client.test.ts`: 12 tests pass, including the reason limits (blank, 2 characters plus spaces, 3,
+    500, 501) and the new error wording;
+  - the web app's suite: 683 passed, 107 skipped (database-backed), none failed;
+  - web type-check: no errors in source (the only errors are stale generated `.next/types` from an old local build);
+  - the journey spec loads (`--list`) and type-checks;
+  - lint findings on every changed file are the same as at HEAD;
+  - audits pass (runtime data, navigation, layers, API boundary, packages, anti-duplication, SDLC); design tokens
+    fails only on the 3 files other sessions own, as before;
+  - `organization-admin.spec.ts` already gives a reason before every step, so it is unaffected.
+- **Next:** release, Security review, the owner's deploy, then the journey on UAT.
 
 ## Tests
 

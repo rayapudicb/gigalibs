@@ -3,7 +3,7 @@
 import type { OrgPage, OrgUnitTypeV1, OrgUnitV1 } from '@gigalibs/contracts';
 import { Badge, Button, Container, Heading, Input, Label, Table, Text } from '@medusajs/ui';
 import { useCallback, useEffect, useId, useState } from 'react';
-import { describeOrgError, orgRequest, type OrgErrorView, type OrgPermissions } from './organization-client';
+import { describeOrgError, orgRequest, type OrgErrorView, type OrgPermissions, reasonProblem } from './organization-client';
 import { OrgErrorAlert, OrgSuccess, ReasonField, selectClassName } from './OrgShared';
 import { OrgPlaceLinksPanel } from './OrgPlaceLinksPanel';
 
@@ -177,6 +177,9 @@ export function OrgUnitsPanel({ unitTypes, members, permissions }: { unitTypes: 
     </div>
   );
 
+  // WI-OI-120ax: a step that records a reason waits for one the server accepts.
+  const editReasonWait = editing !== 'new' ? reasonProblem(draft.reason) : null;
+  const archiveReasonWait = reasonProblem(archiveReason);
   return (
     <Container className="flex flex-col gap-4 p-6">
       <div className="flex items-center justify-between gap-4">
@@ -243,7 +246,7 @@ export function OrgUnitsPanel({ unitTypes, members, permissions }: { unitTypes: 
           )}
           {editing !== 'new' && <ReasonField value={draft.reason} onChange={(reason) => setDraft({ ...draft, reason })} />}
           <div className="flex gap-2">
-            <Button size="small" type="submit" isLoading={saving}>Save</Button>
+            <Button size="small" type="submit" isLoading={saving} disabled={editReasonWait !== null} title={editReasonWait ?? undefined}>Save</Button>
             <Button size="small" variant="secondary" type="button" onClick={() => setEditing(null)}>Cancel</Button>
           </div>
         </form>
@@ -333,7 +336,7 @@ export function OrgUnitsPanel({ unitTypes, members, permissions }: { unitTypes: 
           </Text>
           <ReasonField value={archiveReason} onChange={setArchiveReason} />
           <div className="flex gap-2">
-            <Button size="small" variant="danger" onClick={() => void changeStatus(archiving, 'archive', archiveReason)}>Archive</Button>
+            <Button size="small" variant="danger" disabled={archiveReasonWait !== null} title={archiveReasonWait ?? undefined} onClick={() => void changeStatus(archiving, 'archive', archiveReason)}>Archive</Button>
             <Button size="small" variant="secondary" onClick={() => setArchiving(null)}>Cancel</Button>
           </div>
         </div>

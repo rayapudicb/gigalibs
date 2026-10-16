@@ -1,8 +1,7 @@
 # WI-OI-120aw: Clean up certification and test workspaces on UAT
 
 - **Status:** Applied on UAT by the owner (2026-10-16 04:21Z, backup `gigalibs_backup_20261016_035600Z`): 225
-  suspended and audited, 1,094 dead letters deleted, the read-back holds. Next: the journey rerun. Done needs the
-  owner's acceptance.
+  suspended and audited, 1,094 dead letters deleted, the read-back holds; journey `agxc2i` unaffected. Done needs the owner's acceptance.
 - **Plan v3:** step 0.8. This settles the old decision D5 on historical proof data. UAT is production (0.7a), so test
   workspaces do not belong there (plan v3 rule 2: test data only in labelled test workspaces).
 - **Work item:** WI-OI-120. Evidence goes in `.pi/work/WI-OI-120.md`.
@@ -46,7 +45,7 @@ Also:
 - [x] The owner ran the suspension; the read-only check confirms counts, audit records, and no active sessions in
   suspended workspaces.
 - [x] Dead letters of non-existent tenants deleted; counts recorded.
-- [ ] The journey reruns unaffected.
+- [x] The journey reruns unaffected (`agxc2i`, 2026-10-16: the same functional findings as `ac0z09`).
 
 ## The plan file (2026-10-15, read-only)
 

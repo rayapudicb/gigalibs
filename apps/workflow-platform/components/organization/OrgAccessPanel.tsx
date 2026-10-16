@@ -3,7 +3,7 @@
 import type { OrgPage, OrgScopeGrantV1, OrgUnitV1 } from '@gigalibs/contracts';
 import { Badge, Button, Checkbox, Container, Heading, Input, Label, Table, Text } from '@medusajs/ui';
 import { useCallback, useEffect, useId, useState } from 'react';
-import { describeOrgError, localDateTimeToIso, newIdempotencyKey, orgRequest, type OrgErrorView, type OrgPermissions } from './organization-client';
+import { describeOrgError, localDateTimeToIso, newIdempotencyKey, orgRequest, type OrgErrorView, type OrgPermissions, reasonProblem } from './organization-client';
 import { OrgErrorAlert, OrgSuccess, OrgUnitPicker, ReasonField, selectClassName, useUnitNames } from './OrgShared';
 import type { OrgMember } from './OrgUnitsPanel';
 
@@ -146,7 +146,7 @@ export function OrgAccessPanel({ members, permissions, userNames, userId, isAdmi
           <OrgUnitPicker label="Unit" value={form.unit} onChange={(unit) => setForm({ ...form, unit })} />
           <ReasonField value={form.reason} onChange={(reason) => setForm({ ...form, reason })} />
           <div className="flex gap-2">
-            <Button size="small" type="submit" isLoading={busy} disabled={!form.unit || !form.userId}>Grant</Button>
+            <Button size="small" type="submit" isLoading={busy} disabled={!form.unit || !form.userId || reasonProblem(form.reason) !== null} title={reasonProblem(form.reason) ?? undefined}>Grant</Button>
             <Button size="small" variant="secondary" type="button" onClick={() => setForm(null)}>Cancel</Button>
           </div>
         </form>
@@ -215,7 +215,7 @@ export function OrgAccessPanel({ members, permissions, userNames, userId, isAdmi
           </Text>
           <ReasonField value={revokeReason} onChange={setRevokeReason} />
           <div className="flex gap-2">
-            <Button size="small" variant="danger" isLoading={busy} onClick={() => void revoke()}>Revoke</Button>
+            <Button size="small" variant="danger" isLoading={busy} disabled={reasonProblem(revokeReason) !== null} title={reasonProblem(revokeReason) ?? undefined} onClick={() => void revoke()}>Revoke</Button>
             <Button size="small" variant="secondary" onClick={() => setRevoking(null)}>Cancel</Button>
           </div>
         </div>

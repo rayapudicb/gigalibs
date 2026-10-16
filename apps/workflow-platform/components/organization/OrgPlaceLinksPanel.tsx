@@ -4,7 +4,7 @@ import type { OrgUnitPlaceLinkV1, OrgUnitV1 } from '@gigalibs/contracts';
 import { Badge, Button, Heading, Input, Label, Table, Text } from '@medusajs/ui';
 import { useCallback, useEffect, useId, useState } from 'react';
 import { useSites } from '@/components/geospatial/SitePicker';
-import { describeOrgError, orgRequest, type OrgErrorView } from './organization-client';
+import { describeOrgError, orgRequest, type OrgErrorView, reasonProblem } from './organization-client';
 import { OrgErrorAlert, OrgSuccess, ReasonField, selectClassName } from './OrgShared';
 
 const today = () => new Date().toISOString().slice(0, 10);
@@ -106,7 +106,7 @@ export function OrgPlaceLinksPanel({ unit, canEdit, onClose }: { unit: OrgUnitV1
           </div>
           <ReasonField value={form.reason} onChange={(reason) => setForm({ ...form, reason })} />
           <div className="flex gap-2">
-            <Button size="small" type="submit" isLoading={busy} disabled={!form.placeId.trim()}>Link</Button>
+            <Button size="small" type="submit" isLoading={busy} disabled={!form.placeId.trim() || reasonProblem(form.reason) !== null} title={reasonProblem(form.reason) ?? undefined}>Link</Button>
             <Button size="small" variant="secondary" type="button" onClick={() => setForm(null)}>Cancel</Button>
           </div>
         </form>
@@ -155,7 +155,7 @@ export function OrgPlaceLinksPanel({ unit, canEdit, onClose }: { unit: OrgUnitV1
           </div>
           <ReasonField value={ending.reason} onChange={(reason) => setEnding({ ...ending, reason })} />
           <div className="flex gap-2">
-            <Button size="small" variant="danger" isLoading={busy}
+            <Button size="small" variant="danger" isLoading={busy} disabled={reasonProblem(ending.reason) !== null} title={reasonProblem(ending.reason) ?? undefined}
               onClick={() => void submit('Place link ended.', () => orgRequest(`/place-links/${ending.link.id}/end`, { method: 'POST', body: { effectiveTo: ending.date, reason: ending.reason } }))}>
               End link
             </Button>

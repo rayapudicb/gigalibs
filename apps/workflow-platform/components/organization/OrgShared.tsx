@@ -3,7 +3,7 @@
 import type { OrgPage, OrgUnitV1 } from '@gigalibs/contracts';
 import { Alert, Button, Input, Label, Text } from '@medusajs/ui';
 import { useEffect, useId, useState } from 'react';
-import { describeOrgError, orgRequest, type OrgErrorView } from './organization-client';
+import { describeOrgError, orgRequest, type OrgErrorView, REASON_LIMITS, reasonProblem } from './organization-client';
 
 export const selectClassName =
   'w-full rounded-md border border-ui-border-base bg-ui-bg-field px-3 py-1.5 text-sm text-ui-fg-base outline-none focus:border-ui-border-interactive disabled:text-ui-fg-disabled';
@@ -163,13 +163,32 @@ export function OrgUnitPicker({ label, value, onChange, excludeArchived = true }
   );
 }
 
-/** A required reason for a governed step. */
+/**
+ * A required reason for a governed step. WI-OI-120ax: it says what the server will accept, and the step's button stays
+ * disabled until `reasonProblem` is null.
+ */
 export function ReasonField({ value, onChange, label = 'Reason' }: { value: string; onChange: (value: string) => void; label?: string }) {
   const id = useId();
+  const hintId = useId();
+  // Only once something is typed: an empty box is explained by the hint, not shown as an error.
+  const problem = value.length > 0 ? reasonProblem(value) : null;
   return (
     <div className="flex flex-col gap-1">
       <Label size="small" htmlFor={id}>{label}</Label>
-      <Input id={id} size="small" value={value} onChange={(event) => onChange(event.target.value)} placeholder="At least 3 characters" />
+      <Input
+        id={id}
+        size="small"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        required
+        maxLength={REASON_LIMITS.max}
+        aria-invalid={problem ? true : undefined}
+        aria-describedby={hintId}
+        placeholder={`At least ${REASON_LIMITS.min} characters`}
+      />
+      <Text id={hintId} size="small" className={problem ? 'text-ui-fg-error' : 'text-ui-fg-subtle'}>
+        {problem ?? `Required, ${REASON_LIMITS.min} to ${REASON_LIMITS.max} characters. It is recorded with the change.`}
+      </Text>
     </div>
   );
 }
