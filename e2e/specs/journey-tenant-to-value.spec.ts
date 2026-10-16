@@ -497,6 +497,17 @@ test('a new customer from sign-up to maintenance work, as five people', async ({
           const link = new URL(persona.invite!);
           await token.fill(new URLSearchParams(link.hash.slice(1)).get('invite') ?? link.searchParams.get('invite') ?? '');
         }
+        // WI-OI-120ba: before accepting, the person sees which workspace and role the invitation is for.
+        const shown = await page
+          .locator('output')
+          .filter({ hasText: `Join ${WORKSPACE} as` })
+          .first()
+          .waitFor({ state: 'visible', timeout: 10000 })
+          .then(
+            () => true,
+            () => false,
+          );
+        if (!shown) recorder.add('UX', 'The invitation does not say what it is for', 'no workspace or role was shown before Accept', page);
         if (!(await press(page, /accept|join/i))) throw new Error('No accept button');
         // Accepting takes the person into the workspace (WI-OI-120n); wait for that, or for the chooser to offer the
         // workspace, before deciding which happened. Reading the address at once raced the move (2026-10-06).

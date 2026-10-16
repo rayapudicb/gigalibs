@@ -41,6 +41,7 @@ import {
   Delete,
   Get,
   Header,
+  HttpCode,
   Param,
   Patch,
   Post,
@@ -196,6 +197,19 @@ export class TenancyController {
     @Param('inviteId') inviteId: string,
   ) {
     return this.tenancyService.revokeInvite(tenantId, inviteId, userId);
+  }
+
+  // WI-OI-120ba: the invited person sees what an invitation is for before accepting. The token travels in the body, as
+  // for accept, so it never reaches an address or an access log.
+  @Post('invitations/preview')
+  @HttpCode(200)
+  @Header('Cache-Control', 'no-store')
+  @SetMetadata('skipTenantBoundary', true)
+  previewInvite(
+    @CurrentUser('sub') userId: string,
+    @Body(new ZodValidationPipe(AcceptTenantInviteSchema)) dto: AcceptTenantInviteDto,
+  ) {
+    return this.tenancyService.previewInvite(userId, dto);
   }
 
   @Post('invitations/accept')

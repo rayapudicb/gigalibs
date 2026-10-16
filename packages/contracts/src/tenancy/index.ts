@@ -100,6 +100,20 @@ export const AcceptTenantInviteSchema = z.object({
 });
 
 /**
+ * WI-OI-120ba: what an invitation is for, shown only to the invited person before they accept it. The role is its code;
+ * the screen shows it in words.
+ */
+export const TenantInvitePreviewV1Schema = z
+  .object({
+    workspaceName: z.string(),
+    role: z.string(),
+    invitedBy: z.string().nullable(),
+    expiresAt: z.string().datetime({ offset: true }),
+  })
+  .strict();
+export type TenantInvitePreviewV1 = z.infer<typeof TenantInvitePreviewV1Schema>;
+
+/**
  * A tenant permission code: `resource:action`, `resource:*`, or (WI-OI-103e, ADR-0016 F16) `module:resource:action`
  * such as `analytics:charts:write`. `resource:*` covers the three-part codes of that resource. A wildcard is only
  * allowed as the whole action of a two-part code, and `platform:` codes are never delegated by a tenant role.

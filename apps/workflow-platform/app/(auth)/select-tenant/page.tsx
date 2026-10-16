@@ -2,7 +2,9 @@
 
 import { useRouter } from 'next/navigation';
 import { type FormEvent, useCallback, useEffect, useState } from 'react';
+import type { TenantInvitePreviewV1 } from '@gigalibs/contracts';
 import { inviteTokenFrom, withInvite } from '@/lib/invitation-link';
+import { roleLabel } from '@/lib/role-labels';
 
 interface TenantOption {
   id: string;
@@ -70,6 +72,9 @@ export default function SelectTenantPage() {
   const [inviteToken, setInviteToken] = useState('');
   // WI-OI-120az: a signed-out visitor (usually a new invitee) is asked to sign in or sign up, keeping the token.
   const [signedOut, setSignedOut] = useState(false);
+  // WI-OI-120ba: what the invitation is for, from the server, shown before the person accepts it.
+  const [invitePreview, setInvitePreview] = useState<TenantInvitePreviewV1 | null>(null);
+  const [invitePreviewError, setInvitePreviewError] = useState<string | null>(null);
   const [acceptingInvite, setAcceptingInvite] = useState(false);
   const [inviteAccepted, setInviteAccepted] = useState<string | null>(null);
 
@@ -114,6 +119,36 @@ export default function SelectTenantPage() {
     window.addEventListener('hashchange', read);
     return () => window.removeEventListener('hashchange', read);
   }, [loadTenants]);
+
+  useEffect(() => {
+    const token = inviteToken.trim();
+    setInvitePreview(null);
+    setInvitePreviewError(null);
+    if (signedOut || loading || token.length < 32) return;
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      try {
+        // The token goes in the body, never in an address.
+        const response = await fetch('/api/control/tenants/invitations/preview', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token }),
+        });
+        const payload = await response.json().catch(() => null);
+        if (cancelled) return;
+        if (response.status === 400)
+          throw new Error('This invitation is not for this account. Sign in with the email address it was sent to.');
+        if (!response.ok) throw new Error(payload?.detail || payload?.message || 'This invitation could not be checked.');
+        setInvitePreview(payload as TenantInvitePreviewV1);
+      } catch (failure) {
+        if (!cancelled) setInvitePreviewError(failure instanceof Error ? failure.message : 'This invitation could not be checked.');
+      }
+    }, 300);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [inviteToken, signedOut, loading]);
 
   const handleNameChange = (value: string) => {
     setWorkspaceName(value);
@@ -533,18 +568,36 @@ export default function SelectTenantPage() {
                 />
                 <button
                   type="submit"
-                  disabled={acceptingInvite || inviteToken.trim().length < 32}
+                  disabled={acceptingInvite || !invitePreview}
                   className="h-9 px-4 rounded-lg bg-ui-fg-base text-ui-bg-base text-xs font-medium hover:bg-ui-fg-subtle disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex-shrink-0 flex items-center gap-1.5"
                 >
                   {acceptingInvite ? (
                     <>
                       <Spinner size={12} /> Accepting…
                     </>
+                  ) : invitePreview ? (
+                    `Join ${invitePreview.workspaceName}`
                   ) : (
                     'Accept'
                   )}
                 </button>
               </div>
+              {invitePreview && (
+                <output className="block text-sm text-ui-fg-base">
+                  Join <strong>{invitePreview.workspaceName}</strong> as <strong>{roleLabel(invitePreview.role)}</strong>
+                  {invitePreview.invitedBy ? (
+                    <>
+                      , invited by <strong>{invitePreview.invitedBy}</strong>
+                    </>
+                  ) : null}
+                  . This invitation expires on {new Date(invitePreview.expiresAt).toLocaleString()}.
+                </output>
+              )}
+              {invitePreviewError && (
+                <p className="text-xs text-ui-fg-error" role="alert">
+                  {invitePreviewError}
+                </p>
+              )}
             </form>
           </>
         )}

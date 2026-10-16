@@ -4257,3 +4257,8 @@ widening the card to fix the API faults the proof found.
 - **Journey `aqyb1q`** (owner-run on `503930b`): passed, 52 findings, 2 blockers (the known CMMS ones).
   - Both WI-OI-120az findings are gone, and nothing is new compared with `ainvqh`.
   - The Units, invitation and Structure steps all complete.
+- **WI-OI-120ba built** (approved 2026-10-16):
+  - the invited person sees the workspace, role, inviter and expiry before Accept, through `POST
+    /tenants/invitations/preview` (accept's checks, nothing written, the same refusal for anyone else);
+  - the button reads "Join <workspace>".
+  - 5 new tests, tenancy and contracts 389, web 688; the audits are unchanged. Not yet released.

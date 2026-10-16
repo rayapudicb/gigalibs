@@ -9,6 +9,7 @@ import type {
   CreateTenantDomainChallengeDto,
   CreateTenantDto,
   CreateTenantInviteDto,
+  TenantInvitePreviewV1,
   UpdateCustomRoleDto,
   UpdateDepartmentDto,
   UpdateTenantMemberDto,
@@ -1193,6 +1194,40 @@ export class TenancyService {
       });
       return { ...updated, status: 'REVOKED' as const };
     });
+  }
+
+  /**
+   * WI-OI-120ba: what an invitation is for, shown to the invited person before they accept it. The checks are the
+   * same as accepting, in the same order, with the same answers. A person who is not the invitee learns nothing, and
+   * nothing is written. Accepting checks everything again, including the sender's authority.
+   */
+  async previewInvite(userId: string, dto: AcceptTenantInviteDto): Promise<TenantInvitePreviewV1> {
+    const invitation = await prisma.tenantInvite.findUnique({
+      where: { token: this.hashInviteToken(dto.token) },
+      include: { tenant: { select: { name: true, status: true } } },
+    });
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: { email: true, status: true } });
+    if (!invitation || !user || user.status !== 'ACTIVE' || invitation.email.toLowerCase() !== user.email.toLowerCase()) {
+      throw new BadRequestException('Invitation is invalid for this user');
+    }
+    if (!['ACTIVE', 'PROVISIONING', 'TRIAL'].includes(invitation.tenant.status)) {
+      throw new ConflictException('Tenant is not accepting memberships');
+    }
+    const existingMember = await prisma.tenantMember.findUnique({
+      where: { userId_tenantId: { userId, tenantId: invitation.tenantId } },
+      select: { id: true },
+    });
+    if (existingMember) throw new ConflictException('A tenant membership already exists');
+    if (invitation.acceptedAt || invitation.revokedAt || invitation.expiresAt <= new Date()) {
+      throw new ConflictException('Invitation is expired, revoked, or already accepted');
+    }
+    const sender = await prisma.user.findUnique({ where: { id: invitation.invitedById }, select: { name: true } });
+    return {
+      workspaceName: invitation.tenant.name,
+      role: invitation.role,
+      invitedBy: sender?.name?.trim() || null,
+      expiresAt: invitation.expiresAt.toISOString(),
+    };
   }
 
   async acceptInvite(userId: string, dto: AcceptTenantInviteDto) {
