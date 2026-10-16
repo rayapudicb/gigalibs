@@ -1,7 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   describeOrgError,
+  ORG_SECTIONS,
   orgPermissions,
+  orgSectionFrom,
   orgRequest,
   OrgRequestError,
   REASON_LIMITS,
@@ -41,6 +43,15 @@ describe('organization screen rules', () => {
       title: 'Check the details',
       message: 'The change breaks an organization rule.',
     });
+  });
+
+  it('reads the Organization tab from the address, falling back to Structure (WI-OI-120az)', () => {
+    expect(ORG_SECTIONS).toEqual(['structure', 'units', 'types', 'access']);
+    expect(orgSectionFrom('units')).toBe('units');
+    expect(orgSectionFrom('access')).toBe('access');
+    expect(orgSectionFrom(null)).toBe('structure');
+    expect(orgSectionFrom('')).toBe('structure');
+    expect(orgSectionFrom('payroll')).toBe('structure');
   });
 
   it('accepts a reason only within the contract limits, and says why otherwise', () => {

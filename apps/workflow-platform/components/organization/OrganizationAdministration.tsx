@@ -2,16 +2,17 @@
 
 import type { OrgUnitTypeV1 } from '@gigalibs/contracts';
 import { Container, Heading, Text } from '@medusajs/ui';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { requestJson } from '@/lib/client-api';
-import { describeOrgError, orgPermissions, orgRequest, type OrgErrorView } from './organization-client';
+import { describeOrgError, orgPermissions, orgRequest, type OrgErrorView, type OrgSection, orgSectionFrom } from './organization-client';
 import { OrgAccessPanel } from './OrgAccessPanel';
 import { OrgErrorAlert } from './OrgShared';
 import { OrgStructurePanel } from './OrgStructurePanel';
 import { OrgUnitTypesPanel } from './OrgUnitTypesPanel';
 import { type OrgMember, OrgUnitsPanel } from './OrgUnitsPanel';
 
-type Section = 'structure' | 'units' | 'types' | 'access';
+type Section = OrgSection;
 const SECTIONS: Array<{ key: Section; label: string }> = [
   { key: 'structure', label: 'Structure' },
   { key: 'units', label: 'Units' },
@@ -26,7 +27,18 @@ export function OrganizationAdministration({ grantedPermissions, userId, isAdmin
   isAdministrator: boolean;
 }) {
   const permissions = useMemo(() => orgPermissions(grantedPermissions), [grantedPermissions]);
-  const [section, setSection] = useState<Section>('structure');
+  // WI-OI-120az: the tab lives in the address (`?section=`), so a reload stays on it.
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+  const [section, setSection] = useState<Section>(() => orgSectionFrom(searchParams.get('section')));
+  useEffect(() => setSection(orgSectionFrom(searchParams.get('section'))), [searchParams]);
+  const choose = (next: Section) => {
+    setSection(next);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('section', next);
+    router.replace(`${pathname}?${params}`, { scroll: false });
+  };
   const [unitTypes, setUnitTypes] = useState<OrgUnitTypeV1[] | null>(null);
   const [members, setMembers] = useState<OrgMember[]>([]);
   const [error, setError] = useState<OrgErrorView | null>(null);
@@ -76,7 +88,7 @@ export function OrganizationAdministration({ grantedPermissions, userId, isAdmin
             role="tab"
             aria-selected={section === item.key}
             aria-controls={`organization-panel-${item.key}`}
-            onClick={() => setSection(item.key)}
+            onClick={() => choose(item.key)}
             className={`-mb-px border-b-2 px-3 py-2 text-sm focus:outline-none focus-visible:shadow-borders-focus ${
               section === item.key ? 'border-ui-fg-base text-ui-fg-base' : 'border-transparent text-ui-fg-subtle hover:text-ui-fg-base'
             }`}

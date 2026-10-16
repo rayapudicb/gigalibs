@@ -111,6 +111,15 @@ export function describeOrgError(error: unknown): OrgErrorView {
   return view('unavailable', 'Organization service unavailable', 'The organization service is unavailable. Try again shortly.', 'retry');
 }
 
+/** WI-OI-120az: Organization's inner tabs, kept in the address (`?section=`) so a reload stays on the same one. */
+export const ORG_SECTIONS = ['structure', 'units', 'types', 'access'] as const;
+export type OrgSection = (typeof ORG_SECTIONS)[number];
+
+/** The tab named in the address; Structure when it names none or one that does not exist. */
+export function orgSectionFrom(value: string | null | undefined): OrgSection {
+  return ORG_SECTIONS.find((section) => section === value) ?? 'structure';
+}
+
 export interface OrgPermissions {
   read: boolean;
   draft: boolean;

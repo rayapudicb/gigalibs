@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { type FormEvent, useState } from 'react';
+import { type FormEvent, useEffect, useState } from 'react';
+import { afterSignIn, inviteTokenFrom, withInvite } from '@/lib/invitation-link';
 
 export default function AccountForm({
   register = false,
@@ -14,6 +15,14 @@ export default function AccountForm({
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // WI-OI-120az: a person who came from an invitation link keeps its token through sign-up or sign-in.
+  const [invite, setInvite] = useState<string | null>(null);
+  useEffect(() => {
+    const read = () => setInvite(inviteTokenFrom(window.location.href));
+    read();
+    window.addEventListener('hashchange', read);
+    return () => window.removeEventListener('hashchange', read);
+  }, []);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -33,6 +42,15 @@ export default function AccountForm({
       const payload = await response.json();
       if (!response.ok || payload.authenticated !== true) {
         throw new Error(payload.detail || 'The request could not be completed.');
+      }
+      const token = inviteTokenFrom(window.location.href);
+      if (token) {
+        // A full load, so the next page reads the token from its own address: MFA first when it is due, then the
+        // accept step.
+        window.location.assign(
+          !payload.requiresTenantSelection && payload.requiresMfa ? withInvite('/mfa', token) : afterSignIn('/modules', token),
+        );
+        return;
       }
       router.replace(
         payload.requiresTenantSelection
@@ -71,6 +89,12 @@ export default function AccountForm({
         <p className="text-sm text-ui-fg-subtle mt-1">
           {register ? 'Sign up to get started with GigaLibs' : 'Sign in to your GigaLibs workspace'}
         </p>
+        {invite && (
+          <p className="text-sm text-ui-fg-base mt-3 text-center">
+            You have been invited to a workspace. {register ? 'Create your account' : 'Sign in'} to accept the
+            invitation.
+          </p>
+        )}
       </div>
 
       {/* Main card */}
@@ -238,7 +262,7 @@ export default function AccountForm({
           <p className="text-center text-sm text-ui-fg-muted">
             {register ? 'Already have an account?' : "Don't have an account?"}{' '}
             <Link
-              href={register ? '/login' : '/register'}
+              href={withInvite(register ? '/login' : '/register', invite)}
               className="font-medium text-ui-fg-base hover:text-ui-fg-subtle transition-colors underline underline-offset-2"
             >
               {register ? 'Sign in' : 'Create one'}

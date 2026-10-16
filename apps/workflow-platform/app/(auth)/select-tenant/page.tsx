@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { type FormEvent, useCallback, useEffect, useState } from 'react';
+import { inviteTokenFrom, withInvite } from '@/lib/invitation-link';
 
 interface TenantOption {
   id: string;
@@ -67,6 +68,8 @@ export default function SelectTenantPage() {
   const [selectingId, setSelectingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [inviteToken, setInviteToken] = useState('');
+  // WI-OI-120az: a signed-out visitor (usually a new invitee) is asked to sign in or sign up, keeping the token.
+  const [signedOut, setSignedOut] = useState(false);
   const [acceptingInvite, setAcceptingInvite] = useState(false);
   const [inviteAccepted, setInviteAccepted] = useState<string | null>(null);
 
@@ -80,6 +83,10 @@ export default function SelectTenantPage() {
   const loadTenants = useCallback(async () => {
     try {
       const response = await fetch('/api/auth/tenants', { cache: 'no-store' });
+      if (response.status === 401) {
+        setSignedOut(true);
+        return;
+      }
       const payload = await response.json();
       if (!response.ok)
         throw new Error(payload.detail || payload.message || 'Unable to load tenant memberships.');
@@ -95,12 +102,17 @@ export default function SelectTenantPage() {
   useEffect(() => {
     void loadTenants();
     // WI-OI-120n: links carry the token after `#` (never sent to the server); older links used `?invite=`.
-    const current = new URL(window.location.href);
-    const invitation = new URLSearchParams(current.hash.slice(1)).get('invite') ?? current.searchParams.get('invite');
-    if (invitation) {
-      setInviteToken(invitation);
-      window.history.replaceState({}, '', '/select-tenant');
-    }
+    // WI-OI-120az: a link opened while this page is showing changes only the `#` part, so that is read too.
+    const read = () => {
+      const invitation = inviteTokenFrom(window.location.href);
+      if (invitation) {
+        setInviteToken(invitation);
+        window.history.replaceState({}, '', '/select-tenant');
+      }
+    };
+    read();
+    window.addEventListener('hashchange', read);
+    return () => window.removeEventListener('hashchange', read);
   }, [loadTenants]);
 
   const handleNameChange = (value: string) => {
@@ -259,7 +271,27 @@ export default function SelectTenantPage() {
         </output>
       )}
 
+      {signedOut && (
+        <div className="mb-4 rounded-lg border border-ui-border-base bg-ui-bg-subtle px-4 py-3 text-sm text-ui-fg-base">
+          <p>
+            {inviteToken
+              ? 'You have been invited to a workspace. Sign in, or create an account, to accept the invitation.'
+              : 'Sign in to choose a workspace.'}
+          </p>
+          {/* Full page loads, so the next page reads the token from its own address (after `#`). */}
+          <div className="mt-2 flex gap-4">
+            <a href={withInvite('/login', inviteToken)} className="font-medium underline underline-offset-2">
+              Sign in
+            </a>
+            <a href={withInvite('/register', inviteToken)} className="font-medium underline underline-offset-2">
+              Create an account
+            </a>
+          </div>
+        </div>
+      )}
+
       {/* Main card */}
+      {!signedOut && (
       <div className="bg-ui-bg-base border border-ui-border-base rounded-xl shadow-elevation-card-rest overflow-hidden">
         {/* ── CREATE WORKSPACE FORM ── */}
         {showCreate ? (
@@ -517,8 +549,10 @@ export default function SelectTenantPage() {
           </>
         )}
       </div>
+      )}
 
       {/* Sign out */}
+      {!signedOut && (
       <p className="text-center text-xs text-ui-fg-muted mt-6">
         Wrong account?{' '}
         <a
@@ -528,6 +562,7 @@ export default function SelectTenantPage() {
           Sign out
         </a>
       </p>
+      )}
     </div>
   );
 }

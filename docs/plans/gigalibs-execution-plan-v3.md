@@ -157,7 +157,9 @@ Step 0.7, the owner decisions:
 
 Step 0.8, the journey `7i0v43` follow-ups, routed by where they belong:
 - **Core bug now:** saving the organization structure draft answers 400 (`…/organization/versions/{id}/submit`).
-- **Core UX now:** the invitation link does not fill in its token; a reload loses the Settings tab.
+- **Core UX now:** the invitation link does not fill in its token; a reload loses the Settings tab. Both are carded as
+  [WI-OI-120az](../../.pi/tasks/WI-OI-120az.md) (2026-10-16): the token is lost through sign-up or sign-in, and
+  Organization's inner tab is not in the address.
   [WI-OI-120ax](../../.pi/tasks/WI-OI-120ax.md) (journey `ac0z09`, 2026-10-16): organization steps can be sent
   without their reason, so the structure Submit was refused (400).
 - **Tooling now:**

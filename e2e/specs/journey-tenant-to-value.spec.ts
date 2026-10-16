@@ -459,17 +459,37 @@ test('a new customer from sign-up to maintenance work, as five people', async ({
         return persona.invite ? 'one-time link shown to the administrator' : 'PARTIAL: no link text found';
       });
       if (!persona.invite) continue;
+      const invitePath = persona.invite.replace(origin, '');
       const page = await newPerson(browser, origin, recorder, persona);
-      await recorder.do(S3, `${persona.name} signs up`, page, async () => {
-        await page.goto('/register');
+      // WI-OI-120az: the first invitee takes the usual real path: the link first, signed out, then "Create an account".
+      // The others sign up first and then open the link in the same tab.
+      const fromLink = persona === people.supervisor;
+      await recorder.do(S3, fromLink ? `${persona.name} opens the link signed out, then signs up` : `${persona.name} signs up`, page, async () => {
+        if (fromLink) {
+          await page.goto(invitePath);
+          await settle(page);
+          if (!(await press(page, /create an account/i))) {
+            recorder.add('UX', 'A signed-out invitee is not offered a way to sign up', 'the invitation page shows no sign-up link', page);
+            await page.goto('/register');
+          }
+          await page.waitForURL((url) => url.pathname.startsWith('/register'), { timeout: 15000 });
+        } else {
+          await page.goto('/register');
+        }
         await page.locator('#name').fill(persona.name);
         await page.locator('#email').fill(persona.email);
         await page.locator('#password').fill(PASSWORD);
         await page.getByRole('button', { name: /create account/i }).click();
         await page.waitForURL((url) => !url.pathname.startsWith('/register'), { timeout: 15000 });
+        return fromLink ? `signed up from the invitation link; now on ${new URL(page.url()).pathname}` : 'signed up';
       });
       await recorder.do(S3, `${persona.name} accepts with the one-time link`, page, async () => {
-        await page.goto(persona.invite!.replace(origin, ''));
+        if (!fromLink || !new URL(page.url()).pathname.startsWith('/select-tenant')) {
+          if (fromLink) {
+            recorder.add('UX', 'Signing up from the invitation link does not lead back to the invitation', `ended on ${new URL(page.url()).pathname}`, page);
+          }
+          await page.goto(invitePath);
+        }
         await settle(page);
         const token = page.getByLabel('Invitation token');
         if ((await token.count()) && !(await token.inputValue())) {

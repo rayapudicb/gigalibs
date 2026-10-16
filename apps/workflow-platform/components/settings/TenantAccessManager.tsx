@@ -23,6 +23,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { type ChangeEvent, type FormEvent, useCallback, useEffect, useState } from 'react';
+import { withInvite } from '@/lib/invitation-link';
 import { MfaAssistedRecoveryManager } from './MfaAssistedRecoveryManager';
 import { TenantDataExportManager } from './TenantDataExportManager';
 import { TenantOidcManager } from './TenantOidcManager';
@@ -1109,7 +1110,7 @@ export function TenantAccessManager({
   const invitationLink =
     createdInvitation && typeof window !== 'undefined'
       ? // WI-OI-120n (security review): the token travels after `#`, which browsers never send to a server or proxy log.
-        `${window.location.origin}/select-tenant#invite=${encodeURIComponent(createdInvitation.token)}`
+        `${window.location.origin}${withInvite('/select-tenant', createdInvitation.token)}`
       : '';
 
   const showSecurity = displaySection === 'all' || displaySection === 'security';

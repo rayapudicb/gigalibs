@@ -4216,3 +4216,8 @@ widening the card to fix the API faults the proof found.
   - The guard finding did not appear.
   - Nothing new, compared with `agxc2i`: the only other changes are 2 colour-contrast items that vary between runs.
   - On UAT, read-only: the journey's version is SUBMITTED, and its audit record carries the journey's reason.
+- **WI-OI-120az built** (owner: "approved 120az").
+  - The invitation token now survives sign-up, sign-in and MFA, and a link opened in a tab already on the page.
+  - A signed-out invitee is asked to sign in or create an account.
+  - Organization's inner tab is kept in the address.
+  - 17 focused tests and the web suite (688) pass; the audits are unchanged. Not yet released.

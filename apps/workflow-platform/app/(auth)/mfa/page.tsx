@@ -3,6 +3,7 @@
 import { Alert, Button, Container, Heading, Text } from '@medusajs/ui';
 import { useRouter } from 'next/navigation';
 import { type FormEvent, useEffect, useState } from 'react';
+import { afterSignIn, inviteTokenFrom } from '@/lib/invitation-link';
 
 interface MfaContext {
   mfa: {
@@ -36,6 +37,18 @@ async function responseMessage(response: Response, fallback: string): Promise<st
   return fallback;
 }
 
+/** WI-OI-120az: on to the accept step when the person came from an invitation link, otherwise to the modules. */
+function continueAfterMfa(router: ReturnType<typeof useRouter>) {
+  const token = inviteTokenFrom(window.location.href);
+  if (token) {
+    // A full load, so the accept step reads the token from its own address.
+    window.location.assign(afterSignIn('/modules', token));
+    return;
+  }
+  router.replace('/modules');
+  router.refresh();
+}
+
 export default function MfaPage() {
   const router = useRouter();
   const [context, setContext] = useState<MfaContext | null>(null);
@@ -58,8 +71,7 @@ export default function MfaPage() {
         const payload = (await response.json()) as MfaContext;
         if (!payload?.mfa || !payload.tenant) throw new Error('Select a workspace first.');
         if (!payload.mfa.required || payload.mfa.verified) {
-          router.replace('/modules');
-          router.refresh();
+          continueAfterMfa(router);
           return;
         }
         setContext(payload);
@@ -124,8 +136,7 @@ export default function MfaPage() {
         setRecoveryCodes(recovery.codes);
         return;
       }
-      router.replace('/modules');
-      router.refresh();
+      continueAfterMfa(router);
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : 'Verification failed.');
     } finally {
@@ -174,8 +185,7 @@ export default function MfaPage() {
       });
       if (!response.ok)
         throw new Error(await responseMessage(response, 'Recovery verification failed.'));
-      router.replace('/modules');
-      router.refresh();
+      continueAfterMfa(router);
     } catch (requestError) {
       setError(
         requestError instanceof Error ? requestError.message : 'Recovery verification failed.',
@@ -281,8 +291,7 @@ export default function MfaPage() {
             <Button
               type="button"
               onClick={() => {
-                router.replace('/modules');
-                router.refresh();
+                continueAfterMfa(router);
               }}
             >
               I saved these codes
