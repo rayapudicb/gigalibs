@@ -4158,3 +4158,27 @@ widening the card to fix the API faults the proof found.
   - It cannot be pinned exactly: the previous run's findings file was overwritten. From now on each run's findings
     are kept for comparison.
   - Nothing functional regressed. The accessibility items belong to X1 (step 3.9).
+
+## UAT clean-up and platform owner recovery (2026-10-16, owner-run)
+
+- **WI-OI-120ax carded** (journey `ac0z09` bug, owner: "card the org draft 400 first"). The organization Submit sent an
+  empty reason, and the server rightly refused it. 13 organization actions require a reason and none checks it. No
+  structure version on UAT has ever been submitted. Waiting for approval.
+- **WI-OI-120ay** (owner: "approved 120ay"). The owner knew no platform owner password, so the first WI-OI-120aw run
+  stopped at sign-in (401, 03:57Z) before any change.
+  - The owner-run `scripts/uat/wi-oi-120ay/issue-reset.mjs` issued the product's assisted reset for
+    `newuser@gigalibs.io`, after backup `gigalibs_backup_20261016_035600Z`. It was rehearsed first on UAT's table
+    structure in a throwaway PostgreSQL.
+  - The owner set the password on the product's reset page; the reset is audited.
+  - Afterwards: the login's 80 earlier sessions are revoked, and no reset link is open.
+- **WI-OI-120aw** (owner: "plan approved as is"): `scripts/uat/wi-oi-120aw/suspend.mjs --apply`, 04:21Z, signed in as
+  that platform owner (session in `gigalibs-global`), same backup.
+  - 225 of 225 workspaces suspended through `PATCH /platform/tenants/:id/status`, each audited with the plan's
+    reason. The 3 brand workspaces are among them, which closes WI-OI-120ak S7.
+  - 980 Geospatial and 114 Workforce dead letters of workspaces that do not exist were deleted, in one guarded
+    transaction.
+  - Read-back from the script and a separate read-only verify:
+    - 225 suspended, 225 audited, the 3 kept workspaces unchanged;
+    - 0 active sessions in suspended workspaces, 0 orphaned dead letters.
+  - UAT now holds 225 SUSPENDED, 4 TRIAL (`gigalibs-global`, `uatadmin`, `uat-approver`, `journey-ac0z09`) and 101
+    CANCELLED workspaces.

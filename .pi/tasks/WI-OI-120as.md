@@ -1,7 +1,7 @@
 # WI-OI-120as: Cross-module relays: no stall found; make their health visible
 
-- **Status:** Approved (owner, 2026-10-15: "approved 120as", then "approved A, B, C"). Investigated: no stall. A built
-  locally; B in plan v3; C carded as WI-OI-120aw.
+- **Status:** On UAT for A (release `b7632d6`, 2026-10-16: every relay reports `running` and idle). B is in plan v3; C is
+  WI-OI-120aw. Follow-ups from the review: stall logic for slow passes, alert on failures.
 - **Plan v3:** belongs with step 0.8 (the journey follow-ups), before Phase 1. CMMS staffing (1.1, 1.3) depends on it.
 - **Work item:** WI-OI-120. Evidence goes in `.pi/work/WI-OI-120.md`.
 - **Size:** S to M, depending on the cause.

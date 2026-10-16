@@ -1,8 +1,8 @@
 # WI-OI-120ak: Zero-mock sweep, the rest (plan v3 step 0.4)
 
 - **Status:** S1–S6, S5b, S5c and L2 on UAT (release `f41702b`, owner deploy 2026-10-15; re-review approved). S7: the
-  `demo-lab` switch is off; the brand workspaces wait for the owner's suspension in Platform Control Tower. Journey
-  `9bud1q` passed (55 findings, the 2 known CMMS blockers). The card closes when the 3 workspaces are suspended. Decisions D1a–D7a approved
+  `demo-lab` switch is off, and the 3 brand workspaces were suspended by WI-OI-120aw (owner-run, 2026-10-16). Journey
+  `9bud1q` passed (55 findings, the 2 known CMMS blockers). S7 is complete. Decisions D1a–D7a approved
   2026-10-15 (D1b replaced D1a).
 - **Follows:** WI-OI-120ah, WI-OI-120an and WI-OI-120ao (the Time screen, done).
 - **Work item:** WI-OI-120. Evidence goes in `.pi/work/WI-OI-120.md`.

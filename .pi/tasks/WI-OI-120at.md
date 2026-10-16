@@ -1,7 +1,7 @@
 # WI-OI-120at: Retire the Master Data Hub prototype
 
-- **Status:** Built and verified locally (2026-10-15; owner: "approved 120at and 120aw"). Release and the owner-run data
-  step next.
+- **Status:** On UAT (release `b7632d6`, owner deploy 2026-10-16; the owner-run clean-up disabled 17 entitlements and
+  removed 121 feature keys; journey `ac0z09` passed). Done needs the owner's acceptance.
 - **Plan v3:** step 0.8 (follow-through of 0.7g, WI-OI-120ar S4).
 - **Work item:** WI-OI-120. Evidence goes in `.pi/work/WI-OI-120.md`.
 - **Size:** S to M.

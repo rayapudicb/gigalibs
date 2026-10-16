@@ -158,11 +158,15 @@ Step 0.7, the owner decisions:
 Step 0.8, the journey `7i0v43` follow-ups, routed by where they belong:
 - **Core bug now:** saving the organization structure draft answers 400 (`…/organization/versions/{id}/submit`).
 - **Core UX now:** the invitation link does not fill in its token; a reload loses the Settings tab.
+  [WI-OI-120ax](../../.pi/tasks/WI-OI-120ax.md) (journey `ac0z09`, 2026-10-16): organization steps can be sent
+  without their reason, so the structure Submit was refused (400).
 - **Tooling now:**
   - the `--journey` wrapper should not ask for an administrator sign-in;
   - `docker-disk-guard.sh` claims to trim the build cache to 20 GB but left 118 GB (found 2026-10-14, when a build
     stopped at 58 GB free; the owner cleared the cache by hand);
-  - an owner-run password reset for `uat.admin@gigalibs.io` (active, never signed in, password unknown).
+  - an owner-run password reset for `uat.admin@gigalibs.io` (active, never signed in, password unknown). Replaced by
+    [WI-OI-120ay](../../.pi/tasks/WI-OI-120ay.md) (2026-10-16): the owner knows no platform owner login's password,
+    so an owner-run step issues the product's own assisted reset for one.
 - **With 120ah (0.4):** `/gigaops/attendance` calls the timesheet preview for an administrator with no linked person
   (403). Partly fixed in 120ah; the first-load 403s are WI-OI-120an (120ah Security review L1).
 - **With R5 CMMS (1.1):** the CMMS viewer is offered "New work order", and its page calls `/api/maps/nodes` without

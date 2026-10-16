@@ -1,6 +1,8 @@
 # WI-OI-120aw: Clean up certification and test workspaces on UAT
 
-- **Status:** Approved (owner, 2026-10-15: "approved 120at and 120aw"). The plan file is ready for the owner's review.
+- **Status:** Applied on UAT by the owner (2026-10-16 04:21Z, backup `gigalibs_backup_20261016_035600Z`): 225
+  suspended and audited, 1,094 dead letters deleted, the read-back holds. Next: the journey rerun. Done needs the
+  owner's acceptance.
 - **Plan v3:** step 0.8. This settles the old decision D5 on historical proof data. UAT is production (0.7a), so test
   workspaces do not belong there (plan v3 rule 2: test data only in labelled test workspaces).
 - **Work item:** WI-OI-120. Evidence goes in `.pi/work/WI-OI-120.md`.
@@ -40,10 +42,10 @@ Also:
 
 ## Done when
 
-- [ ] The owner approved the plan file (keep or suspend for each active or trial workspace).
-- [ ] The owner ran the suspension; the read-only check confirms counts, audit records, and no active sessions in
+- [x] The owner approved the plan file (keep or suspend for each active or trial workspace).
+- [x] The owner ran the suspension; the read-only check confirms counts, audit records, and no active sessions in
   suspended workspaces.
-- [ ] Dead letters of non-existent tenants deleted; counts recorded.
+- [x] Dead letters of non-existent tenants deleted; counts recorded.
 - [ ] The journey reruns unaffected.
 
 ## The plan file (2026-10-15, read-only)
@@ -67,4 +69,51 @@ slug, name, status, kind, created date, active members, last session, and a prop
 - **The journey is unaffected:** it creates its own workspace and sign-ups on every run
   (`journey.<role>.<run>@gigalibs.test`).
 - The owner edits the action column, then approves; the plan's checksum is then fixed for the run.
+
+## Plan approved (owner, 2026-10-16: "plan approved as is")
+
+- `scripts/uat/wi-oi-120aw/plan-2026-10-15.csv`, committed in `e3fb0ff` and unchanged since: sha256 `d3df8ec6f5ee9f53a1964ac9d332503ae4f9354fb967824b1759510399f32f84`.
+- KEEP 3, SUSPEND 225. The suspension script refuses any other plan content.
+
+## The suspension script (2026-10-16): built, checked read-only on UAT
+
+`scripts/uat/wi-oi-120aw/suspend.mjs`, with `lib.mjs` and `lib.test.mjs`.
+
+- **Check (default, read-only):** it accepts only the approved plan (sha256 pinned). It compares every planned
+  workspace with its live status and counts the dead letters. It refuses if anything moved.
+- **Apply:**
+  1. It needs a verified backup less than an hour old: checksum, metadata, and a `pg_restore` listing that holds the
+     tenants, sessions, audit and both outbox tables.
+  2. It signs in as the owner's platform login, the way the browser does. The password is read from the environment,
+     never from the command line. It refuses an MFA login and a login without platform authority. It also refuses a
+     session bound to a workspace being suspended, since that session would be revoked part-way.
+  3. It suspends each workspace through `PATCH /api/control/platform/tenants/:id/status`, one at a time and under
+     the request budget, honouring `Retry-After`. Each suspension records the reason "WI-OI-120aw (plan
+     d3df8ec6f5ee): <the plan's reason>". It stops at the first failure; a rerun resumes, skipping workspaces
+     already suspended.
+  4. It then deletes the dead letters of workspaces that do not exist, in one transaction that raises and deletes
+     nothing unless the counts are exactly 980 (Geospatial) and 114 (Workforce).
+  5. It reads everything back.
+- **Verify (read-only):**
+  - 225 suspended;
+  - the 3 kept workspaces unchanged;
+  - 225 audited status changes carrying this run's reason;
+  - no active session in a suspended workspace;
+  - no orphaned dead letter.
+- **Evidence:**
+  - 10 tests pass (`node --test scripts/uat/wi-oi-120aw/lib.test.mjs`); Biome is clean.
+  - Check on UAT (read-only, 2026-10-16 02:30Z): 225 to suspend, 0 already suspended, 0 moved, 0 missing; dead
+    letters 980 and 114.
+  - Verify before the run reports, as expected: 0 suspended, 3 kept unchanged, 0 audited, 247 active sessions in
+    the workspaces to suspend, and the 980 and 114 dead letters.
+  - The dead-letter deletion was rehearsed in a throwaway PostgreSQL:
+    - with 979 rows it raises and deletes nothing;
+    - with 980 and 114 it deletes exactly those, and keeps the live workspace's dead letters and every PENDING or
+      PUBLISHED row.
+  - Both platform routes answer 401 without a session.
+- **Undo:** Reactivate (`ACTIVE`) per workspace. The status route cannot set TRIAL, so the 55 trial and 2
+  provisioning workspaces come back as ACTIVE; for an exact undo, restore from the backup.
+- **Not touched:**
+  - workspaces created after the plan (for example today's journey workspace `journey-ac0z09`);
+  - the 8 Workforce dead letters of `wi-oi-065-web-…` (they stay with their suspended workspace).
 

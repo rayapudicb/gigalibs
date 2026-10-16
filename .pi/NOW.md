@@ -6,22 +6,33 @@ longer version of this page is kept in [archive/NOW-2026-10-15.md](archive/NOW-2
 
 ## Current step
 
-**0.6, status truth** ([WI-OI-120aq](tasks/WI-OI-120aq.md)). Every registry row now has a status its evidence supports:
+**0.8, the follow-ups** (0.6 and 0.7 done; see [WI-OI-120aq](tasks/WI-OI-120aq.md) and
+[WI-OI-120ar](tasks/WI-OI-120ar.md)).
+- **Done today:**
+  - the UAT workspace clean-up ([WI-OI-120aw](tasks/WI-OI-120aw.md)): the owner suspended the 225 test and
+    certification workspaces and deleted 1,094 dead letters on 2026-10-16. This closes WI-OI-120ak S7.
+  - the owner recovered a platform owner login through the product's assisted reset
+    ([WI-OI-120ay](tasks/WI-OI-120ay.md)).
+- **Next:**
+  - the journey rerun;
+  - MFA on that login, and the owner's decision on the other two platform roles;
+  - the organization Submit 400 ([WI-OI-120ax](tasks/WI-OI-120ax.md)), waiting for approval. Every registry row now has a status its evidence supports:
 94 Replaced (with pointers to plan v3), 14 On UAT, 8 Built, 1 In Progress (WI-OI-120). None is Done yet: Done needs the
 owner's recorded acceptance.
 
 ## Running on UAT
 
-- **Release `d17db37`** (owner deploy 2026-10-15). It carries:
+- **Release `b7632d6`** (owner deploy 2026-10-16). It carries:
   - step 0.4, the zero-mock sweep: [WI-OI-120ak](tasks/WI-OI-120ak.md) S1–S6, S5b, S5c and L2;
-  - step 0.5, the security fixes: [120ai](tasks/WI-OI-120ai.md), [120ae](tasks/WI-OI-120ae.md) and
-    [120af](tasks/WI-OI-120af.md).
-- **Last journey `9jh56k`:** passed, 55 findings, 2 blockers. Both are CMMS, fixed in step 1.3.
-- **Rollback:** `f41702b`, whose images are kept.
+  - step 0.5 (120ai, 120ae, 120af) and 0.5b, the security fixes;
+  - relay health ([WI-OI-120as](tasks/WI-OI-120as.md));
+  - the unused packages removed;
+  - the Master Data Hub retired ([WI-OI-120at](tasks/WI-OI-120at.md)).
+- **Last journey `ac0z09`:** passed, 56 findings, 2 blockers. Both are CMMS, fixed in step 1.3.
+- **Rollback:** `d17db37`, whose images are kept.
 
 ## Built, not yet on UAT
 
-- **Step 0.5b** (`a094b3c`): the three Low items of the `d17db37` review.
 - **[WI-OI-120ag](tasks/WI-OI-120ag.md):** ships with the CMMS record routes (step 1.3).
 
 ## Waiting for the owner
