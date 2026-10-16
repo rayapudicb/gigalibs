@@ -185,12 +185,18 @@ Step 0.8, the journey `7i0v43` follow-ups, routed by where they belong:
   - [WI-OI-120au](../../.pi/tasks/WI-OI-120au.md): one "Master data" menu, with a platform section (locked) and a
     workspace section linking each module's own screen.
   - Disk guard (above): it also keeps undeployed builds over the running release's predecessor.
+- **Added 2026-10-16** (Security review of release `8a95dc9`; owner: "card the follow-ups"):
+  - [WI-OI-120ba](../../.pi/tasks/WI-OI-120ba.md): an invitation shows its workspace, role and inviter before Accept.
+  - [WI-OI-120bb](../../.pi/tasks/WI-OI-120bb.md): prove the email at sign-up. It belongs with 1.12 (N1) and 1.14
+    (R17); 613 active accounts on UAT are unverified.
 
 **Exit:** HEAD builds; the zero-mock audit passes on HEAD; every card has a true status; decisions a–f are recorded.
 
 ### Phase 1. The foundation, proven on CMMS
 
 This phase covers metadata, access control, generative UI, SaaS and production operations.
+
+Sizing, order and dates (owner-approved 2026-10-16): [phase-1-sizing.md](phase-1-sizing.md).
 
 Goal: the first production-ready product. A CMMS-only customer:
 - signs up and sets up;
