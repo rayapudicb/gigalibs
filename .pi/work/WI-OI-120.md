@@ -4195,3 +4195,24 @@ widening the card to fix the API faults the proof found.
   - the journey checks the guard, then submits with a reason.
 
   12 organization tests and 683 web tests pass; the audits are unchanged. Not yet released.
+
+## Release 59d286d on UAT (2026-10-16, owner-run)
+
+- **Release:** WI-OI-120ax on top of `b7632d6`.
+  - Release commit `59d286d`; images `59d286dc6864-2cd9481b56e2`.
+  - Release id `local-20261016T044914Z-59d286dc6864-2cd9481b56e2`.
+  - Backup `gigalibs_backup_20261016_051022Z`.
+  - Independent Security review: approve, with no High, Medium or Low findings.
+- **Deploy:** the owner ran `deploy-uat.sh --deploy`. Images and backup were verified, 546 tables, all 11 migration jobs
+  passed (nothing new), all 11 services healthy, and the smoke test passed.
+- **Read-only check:**
+  - all 11 containers run the new release id, healthy, with 0 restarts;
+  - 546 tables;
+  - `/api/health/ready`, `/login` and `/reset-password` answer 200; `/settings` redirects to sign-in when signed out;
+  - 0 error-level lines in 15 minutes from all 9 application services.
+- **Journey `ainvqh`** (owner-run on `59d286d`): passed in 3.9 minutes with 54 findings (29 layout, 17 accessibility,
+  6 UX, 2 blockers).
+  - The organization Submit 400 (WI-OI-120ax) is gone, and the Structure step reads "submitted for approval".
+  - The guard finding did not appear.
+  - Nothing new, compared with `agxc2i`: the only other changes are 2 colour-contrast items that vary between runs.
+  - On UAT, read-only: the journey's version is SUBMITTED, and its audit record carries the journey's reason.

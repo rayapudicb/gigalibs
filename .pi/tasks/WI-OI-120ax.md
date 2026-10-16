@@ -1,6 +1,7 @@
 # WI-OI-120ax: Organization steps can be sent without their reason (journey 400 on Submit)
 
-- **Status:** Review: release `59d286d` built, Security-approved and checked; waiting for the owner's deploy. Approved by the owner on 2026-10-16 ("Approved WI-OI-120ax").
+- **Status:** On UAT (release `59d286d`, owner deploy 2026-10-16 05:14Z); journey `ainvqh` confirms the fix. Done needs
+  the owner's acceptance.
 - **Plan v3:** step 0.8 (a core UX follow-up found by journey `ac0z09`).
 - **Work item:** WI-OI-120. Evidence goes in `.pi/work/WI-OI-120.md`.
 - **Size:** S. Web app and journey only: no API, contract, migration or env change.
@@ -135,7 +136,21 @@ the owner's. It will be carded separately.
 
 ## Done when
 
-- [ ] No organization action can be sent without its required reason, and the page says why.
-- [ ] A missing detail is no longer reported as a broken organization rule.
-- [ ] The journey submits the structure on UAT with no finding against this step.
-- [ ] Released and Security-reviewed. The owner has deployed it and the journey has been rerun.
+- [x] No organization action can be sent without its required reason, and the page says why.
+- [x] A missing detail is no longer reported as a broken organization rule.
+- [x] The journey submits the structure on UAT with no finding against this step.
+- [x] Released and Security-reviewed. The owner has deployed it and the journey has been rerun.
+
+## On UAT (2026-10-16)
+
+- **Deploy:** release `59d286d`, owner deploy 05:14Z. The read-only check passed: 11 containers on the new release,
+  healthy, 0 restarts, 546 tables, 0 error lines.
+- **Journey `ainvqh`:** passed in 3.9 minutes with 54 findings, against 57 for `agxc2i`.
+  - The organization 400 is gone. The Structure step reads "… ^validate$ pressed · submitted for approval".
+  - No "Submit is offered before a reason" finding, so the guard holds.
+  - The two other findings that disappeared are colour-contrast items, which vary between runs. Nothing new appeared.
+- **UAT, read-only:**
+  - the journey's version 1 is SUBMITTED (lock version 3, submitter recorded);
+  - its `STATUS_CHANGE` audit record carries the reason "Journey ainvqh: first structure for review".
+- **Seen, not new:** every run since `ac0z09` places only "North plant"; the second "Place a unit" is not offered after
+  the first. This is for the journey's next review.

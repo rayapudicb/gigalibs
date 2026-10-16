@@ -22,24 +22,24 @@ owner's recorded acceptance.
 
 ## Running on UAT
 
-- **Release `b7632d6`** (owner deploy 2026-10-16). It carries:
+- **Release `59d286d`** (owner deploy 2026-10-16 05:14Z): `b7632d6` plus WI-OI-120ax, the organization reason guard.
+  `b7632d6` carried:
   - step 0.4, the zero-mock sweep: [WI-OI-120ak](tasks/WI-OI-120ak.md) S1–S6, S5b, S5c and L2;
   - step 0.5 (120ai, 120ae, 120af) and 0.5b, the security fixes;
   - relay health ([WI-OI-120as](tasks/WI-OI-120as.md));
   - the unused packages removed;
   - the Master Data Hub retired ([WI-OI-120at](tasks/WI-OI-120at.md)).
-- **Last journey `ac0z09`:** passed, 56 findings, 2 blockers. Both are CMMS, fixed in step 1.3.
-- **Rollback:** `d17db37`, whose images are kept.
+- **Last journey `ainvqh`** (on `59d286d`): passed, 54 findings, 2 blockers. Both blockers are CMMS and are fixed in
+  step 1.3. The organization Submit 400 is gone.
+- **Rollback:** `b7632d6`, whose images are kept.
 
 ## Built, not yet on UAT
 
-- **Release `59d286d`** ([WI-OI-120ax](tasks/WI-OI-120ax.md), the organization reason guard): built,
-  Security-approved, `--check` passed with backup `gigalibs_backup_20261016_051022Z`. Waiting for the owner's deploy.
 - **[WI-OI-120ag](tasks/WI-OI-120ag.md):** ships with the CMMS record routes (step 1.3).
 
 ## Waiting for the owner
 
-1. Deploy release `59d286d`, then rerun the journey.
+1. Accept WI-OI-120ax (on UAT; journey `ainvqh` confirms it), with the other On UAT items below.
 2. MFA on `newuser@gigalibs.io`, the only usable platform owner login.
 3. The platform roles of `superadmin@gigalibs.io` and the certification test admin (recommended: remove both).
 4. Rotate the passwords that appeared in chat or transcripts: the test accounts' shared password, and the journey and
