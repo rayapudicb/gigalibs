@@ -228,6 +228,28 @@ Goal: the first production-ready product. A CMMS-only customer:
 | 1.9 | GU6 Adoption kit | The S16 conversion kit and `module:new` (WI-OI-085) add an Assistant contribution: descriptions, examples, exposed actions. The S16 checker fails a module without it. The journey template gains an Assistant section. |
 | 1.10 | GU7 Proven on CMMS | Examples: "my open work orders"; "raise a work order for pump P-1 at Site A" (confirmed); "close this work order"; "what is due this week". Refused for another unit, site or workspace. Security and Privacy review, deploy, journey. |
 
+
+**Design rules for GU1–GU7 (owner, 2026-10-16).** These keep the Assistant reusable by every module, embeddable in
+other systems later ([WI-OI-120bc](../../.pi/tasks/WI-OI-120bc.md)) and ready for mobile (X7). Each GU card shows how
+it meets them, and its Security review checks them.
+
+1. **Host-neutral.**
+   - The renderer, the component registry and the Assistant client depend on interfaces (record client, dictionary
+     source, identity), not on GigaLibs internals.
+   - They are published as packages, the way `configuration-react` already takes a record client.
+2. **A public dictionary format.** Windows, fields, actions and the generated tools have a versioned, documented
+   schema (JSON Schema), so another system can supply its own.
+3. **Embeddable.** The chat and its cards mount in any host as a web component, with sign-in through the host's
+   identity (OIDC token exchange). Nothing assumes the GigaLibs shell.
+4. **Standard tool exposure.**
+   - Generated tools are described in a standard tool protocol (MCP-compatible), behind the same gateway, acting as
+     the signed-in person.
+   - No tool bypasses roles, scope or field rules.
+5. **Platform-neutral cards.** Card and component contracts are plain data (typed props), never web-only. A mobile
+   renderer (X7) adds native versions of the registered components, with no module change.
+6. **A closed component catalogue.** The model only chooses registered components and fills their typed props. It
+   never writes code, HTML or styles.
+
 **1D. SaaS foundation for the first customer**
 
 | # | Card | What is built | Status now |
@@ -251,6 +273,16 @@ Goal: the first production-ready product. A CMMS-only customer:
 
 **Exit:** the first customer can go live on CMMS. The Phase 1 journeys pass on UAT, the restore drill passes, there
 are no Critical or High findings, and every card has its Security review.
+
+### After Phase 1: the standalone generative UI track (proposed)
+
+[WI-OI-120bc](../../.pi/tasks/WI-OI-120bc.md) (owner: "card the standalone product", 2026-10-16) offers the
+generative UI and Assistant as an embeddable product for other systems, built on GU1–GU7 and their design rules. It
+has seven slices: packages and contracts; bring your own data; an embeddable widget; a standard tool protocol;
+hosting; mobile; and proof.
+
+It is about 6–10 weeks with one writer. Its timing is the owner's decision: after Phase 1 in sequence, or in parallel
+with Phase 2 with a second writer.
 
 ### Phase 2. Workforce and departments (M1b), on the same foundation
 

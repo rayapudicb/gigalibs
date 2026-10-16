@@ -61,11 +61,15 @@ rather than before them. Phase 0's exit conditions are met, except decision b (n
 | W2 Sign-up, email, sign-in security | 14 (9.5–19) | 2026-11-30 | 2026-11-17 to 2026-12-16 |
 | W3 Lifecycle and data rights | 13 (9–18) | 2026-12-17 | 2026-11-30 to 2027-01-11 |
 | W4 Production operations | 23 (16–32) | 2027-01-19 | 2026-12-22 to 2027-02-24 |
-| W5 Assistant | 29 (20–40) | 2027-03-01 | 2027-01-19 to 2027-04-21 |
-| W6 Set-up wizard | 7 (5–10) | 2027-03-10 | 2027-01-26 to 2027-05-05 |
-| **Phase 1 total** | **103 (71.5–143), about 21 weeks (14–29)** | **2027-03-10** | **2027-01-26 to 2027-05-05** |
+| W5 Assistant, with the GU design rules | 36 (25–50) | 2027-03-10 | 2027-01-26 to 2027-05-05 |
+| W6 Set-up wizard | 7 (5–10) | 2027-03-19 | 2027-02-02 to 2027-05-19 |
+| **Phase 1 total** | **110 (76.5–153), about 22 weeks (15–31)** | **2027-03-19** | **2027-02-02 to 2027-05-19** |
 
 Add about 6 days for the step 0.8 items placed in W1, and any holidays.
+
+**Changed 2026-10-16** (owner: "add the design rules"): the GU design rules (plan v3, step 1C) add 5–10 days to W5
+(plan 7), which moves W5, W6 and the total by about 1.5 weeks. The standalone product is its own track after Phase 1
+([WI-OI-120bc](../../.pi/tasks/WI-OI-120bc.md)), not counted here.
 
 ## Decisions that move these dates (owner)
 
