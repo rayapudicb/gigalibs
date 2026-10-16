@@ -1,6 +1,6 @@
 # WI-OI-120ax: Organization steps can be sent without their reason (journey 400 on Submit)
 
-- **Status:** Built (2026-10-16), not yet released. Approved by the owner on 2026-10-16 ("Approved WI-OI-120ax").
+- **Status:** Review: release `59d286d` built, Security-approved and checked; waiting for the owner's deploy. Approved by the owner on 2026-10-16 ("Approved WI-OI-120ax").
 - **Plan v3:** step 0.8 (a core UX follow-up found by journey `ac0z09`).
 - **Work item:** WI-OI-120. Evidence goes in `.pi/work/WI-OI-120.md`.
 - **Size:** S. Web app and journey only: no API, contract, migration or env change.
@@ -98,6 +98,31 @@ the owner's. It will be carded separately.
     fails only on the 3 files other sessions own, as before;
   - `organization-admin.spec.ts` already gives a reason before every step, so it is unaffected.
 - **Next:** release, Security review, the owner's deploy, then the journey on UAT.
+
+## Release 59d286d (2026-10-16): built, Security-approved, checked
+
+- **Release commit `59d286d`** on `release/wi120u-workforce`, applied from `e3fb0ff..4099ea9` (9 files, applied
+  cleanly). The 8 app files are byte-identical to `4099ea9`.
+- **In the release worktree:**
+  - 12 organization tests pass;
+  - the web suite: 670 passed, 107 skipped, none failed;
+  - no source type errors;
+  - the migration pins agree.
+- **Images:** the five builds ran 04:49Z–05:10Z. All 9 images carry revision `59d286dc6864` and state
+  `2cd9481b56e2`. Release id `local-20261016T044914Z-59d286dc6864-2cd9481b56e2`.
+- **Backup** `gigalibs_backup_20261016_051022Z`. The deploy tool is retargeted from `b7632d6`, its 33 tests pass, and
+  `--check` passed: 11 images and the backup verified, nothing deployed.
+- **Independent Security review: approve.** No High, Medium or Low findings.
+  - The buttons are UX only: every write route still refuses a bad reason through its Zod pipe and
+    `@RequirePermissions`.
+  - Server text renders as React text only, with no HTML sinks in the organization panels.
+  - The new "Some details are missing" branch comes after the 401, 403, 404 and 409 checks, so it cannot hide a
+    permission refusal.
+  - The contracts runtime import exposes nothing; other client components already use it.
+  - Parity was confirmed: the same patch-id on both branches, and no server, package, lockfile, migration, compose,
+    Dockerfile or env change.
+  - Info: a `null` entry in `issues` already threw before this change, and falls back to the "unavailable" view.
+    From now on, the journey leaves one submitted version in its own workspace.
 
 ## Tests
 

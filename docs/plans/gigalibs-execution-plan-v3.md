@@ -94,11 +94,11 @@ Goal: a branch that builds, true statuses, no demo data, and the open decisions 
 | 0.3 | **Branch repair.** Decide each of the 12 unreviewed commits from other sessions: keep after review, fix, or revert. Fix the `0d4585e` build break and the `0e2f119` CMMS migration 20 vs contract 19 mismatch. Revert `507e7fa` (`assistant:*` granted to every member). HEAD then builds from a clean checkout. Owner chose option A (2026-10-14): revert the Assistant preview from the branch. | WI-OI-120aj; WI-OI-120a closes here | Part 1 done 2026-10-14 (`9b0c477`) |
 | 0.3b | **Undo the development script's writes on the UAT database:** modules switched on in 288 workspaces, and `*` and `assistant:` codes on members. A reconciliation report against the 2026-10-08 backup, then an owner-run script after a Security review. | WI-OI-120al (absorbs 120aj D1a, D2a) | Applied on UAT 2026-10-14; Q2a → WI-OI-120am |
 | 0.3c | **UAT gets its own database** (Q2a): `uat-postgres` with no published port, new passwords, the data moved and verified; the old database is development-only, bound to `127.0.0.1` with rotated logins | WI-OI-120am | Done 2026-10-14 (journey `7xqjy6`); C7, the D3a reset and the `.prev` deletion from 2026-10-21 |
-| 0.4 | **Zero-mock sweep** (details below) | WI-OI-120ah, WI-OI-120an, WI-OI-120ao (done), then new card WI-OI-120ak | Time done on UAT; 120ak S1–S3 on UAT, S3b and S4 built (release a4ac027, deploy pending), then S4b+S5, S6, S7 |
-| 0.5 | **Security fixes the reviews found** (details below) | WI-OI-120ag, 120ae, 120af, 120ai | Carded |
-| 0.6 | **Status truth.** Re-label every Review item by evidence (Built, On UAT, Done). Correct WI-OI-121a–j, which claim G6/G7 for a preview. Close each item that §5 replaces, with a pointer to its replacement. Shorten `NOW.md` back to one page. | WI-OI-119 follow-up | Not started |
-| 0.7 | **Owner decisions** (details below; no code) | — | Open |
-| 0.8 | **Journey `7i0v43` follow-ups** (details below) | new cards as needed | Found 2026-10-14 |
+| 0.4 | **Zero-mock sweep** (details below) | WI-OI-120ah, WI-OI-120an, WI-OI-120ao (done), then new card WI-OI-120ak | On UAT: 120ah and 120an; 120ak S1–S6, S5b, S5c, L2 (to `f41702b`) and S7 (the brand workspaces suspended by 120aw, 2026-10-16) |
+| 0.5 | **Security fixes the reviews found** (details below) | WI-OI-120ag, 120ae, 120af, 120ai | On UAT (`d17db37`, 2026-10-15) except 120ag, which ships with the CMMS record routes (1.3) |
+| 0.6 | **Status truth.** Re-label every Review item by evidence (Built, On UAT, Done). Correct WI-OI-121a–j, which claim G6/G7 for a preview. Close each item that §5 replaces, with a pointer to its replacement. Shorten `NOW.md` back to one page. | WI-OI-119 follow-up | Done (WI-OI-120aq, 2026-10-15) |
+| 0.7 | **Owner decisions** (details below; no code) | — | Decided 2026-10-15 (WI-OI-120ar); open: b (named reviewers) and the S3 briefs (ADR-0003, D2, D3, D6, D7, D9) |
+| 0.8 | **Journey `7i0v43` follow-ups** (details below) | new cards as needed | In progress: 120as, 120at, 120aw, 120ay and 120an done; 120ax in release `59d286d`; the rest listed below |
 
 Step 0.3, the 12 commits to decide: Assistant `e0ec197`, `507e7fa`, `7c15655`, `0d4585e`, `eee6276`; CMMS
 `f7cfa7b`, `e1246f8`, `c80ea2b`, `0e2f119`, `54d33bc`, `e723ba1`, `21e13da`.

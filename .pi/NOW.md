@@ -33,24 +33,22 @@ owner's recorded acceptance.
 
 ## Built, not yet on UAT
 
+- **Release `59d286d`** ([WI-OI-120ax](tasks/WI-OI-120ax.md), the organization reason guard): built,
+  Security-approved, `--check` passed with backup `gigalibs_backup_20261016_051022Z`. Waiting for the owner's deploy.
 - **[WI-OI-120ag](tasks/WI-OI-120ag.md):** ships with the CMMS record routes (step 1.3).
 
 ## Waiting for the owner
 
-1. Suspend Netflix Studios Europe, Paramount Pictures Corp and Warner Bros Discovery in Platform Control Tower. This
-   closes WI-OI-120ak; nothing is connected to them.
-2. Step 0.7 decisions (plan v3, "Step 0.7"):
-   - UAT is production;
-   - named reviewers;
-   - Assistant ownership;
-   - CopilotKit in `vendor/`;
-   - local model;
-   - Stage 0 decisions;
-   - the other open items;
-   - module tiers.
-3. Change `ANALYTICS_EXPECTED_MIGRATION_VERSION` from 29 to 30 in `modules/analytics-studio/apps/api/.env.example`.
-4. Rotate the UAT journey and approver passwords: earlier sessions passed them on command lines, so they are in agent
-   transcripts.
+1. Deploy release `59d286d`, then rerun the journey.
+2. MFA on `newuser@gigalibs.io`, the only usable platform owner login.
+3. The platform roles of `superadmin@gigalibs.io` and the certification test admin (recommended: remove both).
+4. Rotate the passwords that appeared in chat or transcripts: the test accounts' shared password, and the journey and
+   approver passwords.
+5. Step 0.7 b: named reviewers (Security on every deploy, Accounting for posting).
+6. Accept, so they become Done, the On UAT items you are satisfied with (for example 120aw, 120at, 120as, 120ak).
+7. Change `ANALYTICS_EXPECTED_MIGRATION_VERSION` from 29 to 30 in `modules/analytics-studio/apps/api/.env.example`.
+8. Delete `modules/platform-rbac`; run the expired-session clean-up (306 sessions), if not yet done.
+9. The plan for `gigalibs-global`: its trial ends 2026-12-16, and every live workspace on UAT is a trial.
 
 ## Known and accepted
 
@@ -59,13 +57,18 @@ owner's recorded acceptance.
 
 ## Next three steps
 
-1. **0.7:** the owner decisions above (no code).
-2. **0.8:** the journey follow-ups:
-   - the organization draft submit 400;
+1. **0.8:** finish the journey follow-ups:
    - the invitation token;
    - the Settings tab on reload;
-   - the disk guard's retention and cache trim;
-   - the `uat.admin` password reset.
+   - the journey wrapper's sign-in;
+   - the disk guard;
+   - 120au (one Master data menu);
+   - the Control Tower retired-key hardening;
+   - relay stall and failure alerts;
+   - the two dead default passwords;
+   - the journey's approval chain;
+   - an automatic expired-session sweep.
+2. **Plan Phase 1 for deadlines:** size each of the 21 steps (S, M or L) and order them into releases.
 3. **1.1:** R5 CMMS (WI-OI-120z, 120aa, 120ab, 120ac): Security review, deploy, and unit and site scope. Then 1.2 (T3
    places) and 1.3 (M-CM1, with 120ag and the CMMS migration pin raised to 20).
 
