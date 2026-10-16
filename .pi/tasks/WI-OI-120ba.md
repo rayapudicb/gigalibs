@@ -129,3 +129,17 @@
 - **Journey `asyz8p`:** passed in 3.4 minutes, with 52 findings and 2 blockers (the known CMMS ones).
   - All four invitees saw "Join <workspace> as …" before joining; there was no "does not say what it is for" finding.
   - Nothing new and nothing gone compared with `aqyb1q`.
+
+## Review Low 1 closed in the feature branch (2026-10-16)
+
+- **New test:** `packages/tenancy-nest/src/invitation-routes.guard.test.ts` (5 tests) covers both invitation routes,
+  preview and accept. It checks that each:
+  - is `POST tenants/invitations/…`;
+  - is not public and not open while MFA is pending, at handler or controller level;
+  - keeps `skipTenantBoundary` and `Cache-Control: no-store`;
+  - is refused by the real `JwtAuthGuard` without a session (`UnauthorizedException`).
+
+  It also checks that the preview answers 200.
+- **Proven to catch the mistake:** with `@SetMetadata('isPublic', true)` added to the preview for a moment, 2 tests
+  fail. Restored, the controller is identical to HEAD and all 5 pass.
+- **Release:** it ships with the next release; it changes no product code.
