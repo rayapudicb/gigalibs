@@ -39,6 +39,9 @@ describe('Connector Hub relay health route', () => {
       deliveredSinceStart: 0,
       lastFailureAt: null,
       lastFailureCode: null,
+      consecutiveFailedPasses: 0,
+      passStartedAt: null,
+      lastProgressAt: null,
     };
     registerRelayHealth(snapshot.relay, () => snapshot);
     const ok = await fetch(`${base}/api/connectors/v1/health/relays`);

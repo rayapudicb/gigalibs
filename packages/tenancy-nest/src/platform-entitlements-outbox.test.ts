@@ -67,6 +67,42 @@ describe('licensed module update', () => {
   });
 });
 
+// WI-OI-120bd: a module no longer offered (the retired `master-data`, release b7632d6 review M1) cannot stop a workspace
+// being saved; saving closes its row and records it.
+describe('a module no longer offered', () => {
+  afterEach(() => {
+    vi.clearAllMocks();
+    vi.restoreAllMocks();
+  });
+
+  const save = async (enabled: string[]) => {
+    tx.tenant.findUnique.mockResolvedValue({ id: 'tenant-1', status: 'ACTIVE', trialEndsAt: null });
+    tx.tenantModuleEntitlement.findMany.mockResolvedValue(enabled.map((moduleKey) => ({ moduleKey, status: 'ENABLED' })));
+    const service = new PlatformAdministrationService();
+    vi.spyOn(service, 'getTenant').mockResolvedValue({} as never);
+    await service.updateEntitlements('tenant-1', { moduleKeys: ['universal-inventory'], reason: 'UAT: modules' }, 'admin-1');
+  };
+
+  it('is switched off when the workspace is saved, and the audit names it', async () => {
+    await save(['universal-inventory', 'master-data']);
+    expect(tx.tenantModuleEntitlement.updateMany).toHaveBeenCalledWith({
+      where: { tenantId: 'tenant-1', moduleKey: { in: ['master-data'] }, status: 'ENABLED' },
+      data: { status: 'DISABLED', reason: 'Module no longer offered', updatedById: 'admin-1' },
+    });
+    expect(tx.auditLog.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ metadata: expect.objectContaining({ closedModulesNoLongerOffered: ['master-data'] }) }),
+    });
+  });
+
+  it('changes nothing extra when every enabled module is still offered', async () => {
+    await save(['universal-inventory']);
+    expect(tx.tenantModuleEntitlement.updateMany).not.toHaveBeenCalled();
+    expect(tx.auditLog.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ metadata: expect.not.objectContaining({ closedModulesNoLongerOffered: expect.anything() }) }),
+    });
+  });
+});
+
 // WI-OI-120u journey (2026-10-13): creating a workspace enables its trial modules, so it writes the same event; without
 // it a new workspace had no module windows (the Workforce screens) until the next API start.
 describe('a new workspace', () => {

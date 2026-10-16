@@ -637,6 +637,17 @@ export class PlatformAdministrationService {
           },
         });
       }
+      // WI-OI-120bd: a module no longer offered cannot stay switched on; saving closes its row too, so a retirement can
+      // never stop a workspace being saved.
+      const retired = current
+        .filter((entitlement) => entitlement.status === 'ENABLED' && !allEligible.includes(entitlement.moduleKey))
+        .map((entitlement) => entitlement.moduleKey);
+      if (retired.length > 0) {
+        await transaction.tenantModuleEntitlement.updateMany({
+          where: { tenantId, moduleKey: { in: retired }, status: 'ENABLED' },
+          data: { status: 'DISABLED', reason: 'Module no longer offered', updatedById: actorUserId },
+        });
+      }
       await transaction.tenant.update({ where: { id: tenantId }, data: { features: moduleKeys } });
       await transaction.auditLog.create({
         data: {
@@ -651,7 +662,7 @@ export class PlatformAdministrationService {
               .map((entitlement) => entitlement.moduleKey),
           },
           after: { moduleKeys },
-          metadata: { reason: dto.reason, source },
+          metadata: { reason: dto.reason, source, ...(retired.length > 0 ? { closedModulesNoLongerOffered: retired } : {}) },
         },
       });
       // WI-OI-120f (F0.2): the control plane activates the windows of newly enabled modules from this event, in its

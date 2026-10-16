@@ -7,8 +7,13 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const require = createRequire(resolve(root, 'modules/accounts-receivable/apps/e2e/package.json'));
 const { chromium } = require('@playwright/test');
 
-const email = process.env.GIGALIBS_UAT_EMAIL?.trim() || 'uat.tenant-admin.20260910a@gigalibs.io';
-const password = process.env.GIGALIBS_UAT_PASSWORD || 'UatSuitePassword2026!';
+// WI-OI-120bd: the sign-in comes from the environment only; no credential lives in code.
+const email = process.env.GIGALIBS_UAT_EMAIL?.trim() ?? '';
+const password = process.env.GIGALIBS_UAT_PASSWORD ?? '';
+if (!email || !password) {
+  console.error('Set GIGALIBS_UAT_EMAIL and GIGALIBS_UAT_PASSWORD (read the password with read -rs, never on the command line).');
+  process.exit(1);
+}
 const baseUrl = process.env.GIGALIBS_UAT_BASE_URL?.trim() || 'http://127.0.0.1:5180';
 const evidenceDirectory = resolve(root, 'docs/audits/2026-09-09-readiness/evidence/uat');
 

@@ -62,6 +62,9 @@ export class OutboxRelay<F extends string = string>
   private deliveredSinceStart = 0;
   private lastFailureAt: string | null = null;
   private lastFailureCode: string | null = null;
+  private passStartedAt: number | null = null;
+  private lastProgressAt: number | null = null;
+  private consecutiveFailedPasses = 0;
 
   constructor(
     private readonly relayDatabase: RelayDatabase<F>,
@@ -81,6 +84,9 @@ export class OutboxRelay<F extends string = string>
       deliveredSinceStart: this.deliveredSinceStart,
       lastFailureAt: this.lastFailureAt,
       lastFailureCode: this.lastFailureCode,
+      passStartedAt: this.passStartedAt,
+      lastProgressAt: this.lastProgressAt,
+      consecutiveFailedPasses: this.consecutiveFailedPasses,
     }));
     if (!this.relayConfig.outbound) {
       this.logger.log(this.relayOptions.notConfiguredMessage);
@@ -101,12 +107,16 @@ export class OutboxRelay<F extends string = string>
     const outbound = this.relayConfig.outbound;
     if (!outbound || this.running || this.stopping) return 0;
     this.running = true;
+    this.passStartedAt = Date.now();
+    this.lastProgressAt = null;
     let published = 0;
+    let leased = 0;
     const { leaseFunction, settleFunction, audience, source } = this.relayOptions;
     try {
       // biome-ignore lint/suspicious/noExplicitAny: rows come from the definer function's SETOF outbox row.
       const rows = await this.relayDatabase.relayCall<any>(leaseFunction, [BATCH, LEASE_SECONDS]);
       this.lastPassLeased = rows.length;
+      leased = rows.length;
       // The lease takes at most one pending fact per aggregate; order the batch by when facts happened.
       rows.sort(
         (left, right) =>
@@ -144,6 +154,7 @@ export class OutboxRelay<F extends string = string>
           outcome.ok ? 0 : retrySeconds,
           MAX_ATTEMPTS,
         ]);
+        this.lastProgressAt = Date.now();
         if (outcome.ok) {
           published += 1;
           this.deliveredSinceStart += 1;
@@ -158,7 +169,12 @@ export class OutboxRelay<F extends string = string>
       }
       // A pass counts as done only when it ran to the end, whether or not anything was routed.
       this.lastPassAt = new Date().toISOString();
+      // WI-OI-120bd: a delivery resets the failing count; a pass that leased facts and delivered none adds to it; an
+      // idle pass leaves it alone (failed facts wait for their retry time, so idle passes come between them).
+      if (published > 0) this.consecutiveFailedPasses = 0;
+      else if (leased > 0) this.consecutiveFailedPasses += 1;
     } catch (error) {
+      this.consecutiveFailedPasses += 1;
       this.lastFailureAt = new Date().toISOString();
       this.lastFailureCode = 'RELAY_PASS_FAILED';
       this.logger.error(
@@ -167,6 +183,7 @@ export class OutboxRelay<F extends string = string>
       );
     } finally {
       this.running = false;
+      this.passStartedAt = null;
     }
     return published;
   }

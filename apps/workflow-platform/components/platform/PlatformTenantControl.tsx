@@ -191,14 +191,16 @@ export default function PlatformTenantControl({ session }: { session: VerifiedSe
 
   useEffect(() => {
     if (!selected) return;
+    // WI-OI-120bd: only modules still offered are listed; saving closes any row for a module no longer offered.
+    const offered = new Set((catalog?.modules ?? []).filter((module) => module.entitlementEligible).map((module) => module.key));
     setEditModules(
       selected.moduleEntitlements
-        .filter((entitlement) => entitlement.status === 'ENABLED')
+        .filter((entitlement) => entitlement.status === 'ENABLED' && offered.has(entitlement.moduleKey))
         .map((entitlement) => entitlement.moduleKey),
     );
     setIsolationMode(selected.isolationMode as CreateForm['isolationMode']);
     setRegion(selected.region);
-  }, [selected]);
+  }, [selected, catalog]);
 
   async function mutate(
     path: string,

@@ -151,6 +151,7 @@ import { ConnectorProfileService } from './connector-profile.service.js';
 import { ControlOutboxWorker } from './control-outbox.worker.js';
 import { ModuleWindowBaselineService } from './module-window-baselines.service.js';
 import { DataRetentionWorker } from './data-retention.worker.js';
+import { SessionSweepWorker } from './session-sweep.worker.js';
 import { DatabaseAvailabilityFilter } from './database-availability.filter.js';
 import { ExceptionController } from './exception.controller.js';
 import { ExceptionService } from './exception.service.js';
@@ -223,6 +224,7 @@ import { WorkflowService } from './workflow.service.js';
     SourcePayloadParserService,
     SourceFileCleanupWorker,
     DataRetentionWorker,
+    SessionSweepWorker,
     RetentionService,
     ApPolicyService,
     ApMatchingService,

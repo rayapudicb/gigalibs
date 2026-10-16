@@ -183,6 +183,14 @@ const forbiddenContent = [
     pattern:
       /Warner Bros Discovery Operations LLC|US-EIN-95-1298412|4000 Warner Blvd|JPMorgan Chase Commercial Banking/gi,
   },
+  // WI-OI-120bd: a secret read from the environment never falls back to a value written in code. The report hides the
+  // value, so the audit itself does not print it.
+  {
+    code: 'DEFAULT_CREDENTIAL',
+    pattern:
+      /process\.env\.[A-Z0-9_]*(?:PASSWORD|SECRET|TOKEN|API_KEY)[A-Z0-9_]*\s*(?:\?\.trim\(\)\s*)?(?:\|\||\?\?)\s*(['"`])(?:(?!\1)[^\n]){3,}\1/g,
+    redact: true,
+  },
 ];
 
 // WI-OI-120ak (S1): the known items of the newer rules, removed slice by slice. Each entry names its card, slice and
@@ -218,6 +226,14 @@ for (const configuredRoot of roots) {
   const absoluteRoot = join(repositoryRoot, configuredRoot);
   if (!existsSync(absoluteRoot)) continue;
   walk(absoluteRoot);
+}
+// WI-OI-120bd: scripts are not product code, so only the credential rule applies to them; none may carry one.
+const credentialRules = forbiddenContent.filter((rule) => rule.code === 'DEFAULT_CREDENTIAL');
+for (const repoPath of execFileSync('git', ['ls-files', '-z', '--', 'scripts'], { cwd: repositoryRoot, encoding: 'utf8' })
+  .split('\0')
+  .filter(Boolean)) {
+  if (!sourceExtensions.has(extname(repoPath)) || /\.(?:spec|test)\.[cm]?[jt]sx?$/.test(repoPath)) continue;
+  violations.push(...scanContent(readFileSync(join(repositoryRoot, repoPath), 'utf8'), repoPath, credentialRules));
 }
 
 function verifyRetiredApplication(configuredRoot) {
@@ -319,11 +335,11 @@ function balancedEnd(source, start) {
   }
   return limit;
 }
-function scanContent(source, repoPath) {
+function scanContent(source, repoPath, rules = forbiddenContent) {
   // Where each record rule's literal opens (declared here: the scan runs before later top-level constants exist).
   const RECORD_START = { IN_MEMORY_BUSINESS_FIXTURE: /=\s*[[{]/, IN_MEMORY_SCREEN_RECORDS: /\(\[/ };
   const found = [];
-  for (const rule of forbiddenContent) {
+  for (const rule of rules) {
     if (rule.paths && !rule.paths.some((prefix) => repoPath.startsWith(prefix))) continue;
     rule.pattern.lastIndex = 0;
     for (const match of source.matchAll(rule.pattern)) {
@@ -335,12 +351,17 @@ function scanContent(source, repoPath) {
         code: rule.code,
         file: repoPath,
         line,
-        excerpt: source.split('\n')[line - 1]?.trim().slice(0, 240) ?? '',
+        excerpt: redacted(rule, source.split('\n')[line - 1]?.trim().slice(0, 240) ?? ''),
         fingerprint: fingerprint(rule.code, repoPath, text.replace(/\s+/g, ' ').trim()),
       });
     }
   }
   return found;
+}
+
+/** The source line as reported; a rule marked `redact` hides the value after `||` or `??`. */
+function redacted(rule, excerpt) {
+  return rule.redact ? excerpt.replace(/(\|\||\?\?)\s*(['"`]).*$/, '$1 <value hidden>') : excerpt;
 }
 
 function verifyQuarantineBoundary() {

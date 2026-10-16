@@ -4279,3 +4279,9 @@ widening the card to fix the API faults the proof found.
 - **Journey `asyz8p`** (owner-run on `70c19af`): passed, 52 findings, 2 blockers (the known CMMS ones).
   - Every invitee saw the invitation preview before joining.
   - The findings are the same as `aqyb1q`.
+- **WI-OI-120bd built** (owner: "approved 120bd"):
+  - no built-in sign-in in scripts, with a new audit rule that hides the value it finds;
+  - Control Tower closes modules no longer offered;
+  - relay health tells "running but slow" from "stalled", and adds "failing";
+  - expired sessions are swept every 15 minutes.
+  - 1,024 tests pass; the audits are unchanged. Not yet released.
