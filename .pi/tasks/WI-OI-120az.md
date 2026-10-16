@@ -1,7 +1,7 @@
 # WI-OI-120az: The invitation link keeps its token; a reload keeps the Organization tab
 
-- **Status:** On UAT (release `8a95dc9`). The invitation fix is confirmed by journey `anunhd`. The Organization-tab
-  change caused a regression, which is fixed in the feature branch and waits for its release.
+- **Status:** On UAT (release `503930b`, owner deploy 2026-10-16); journey `aqyb1q` confirms both fixes. Done needs the
+  owner's acceptance.
 - **Plan v3:** step 0.8, "Core UX now" (journey findings since `7i0v43`; still in `ainvqh`).
 - **Work item:** WI-OI-120. Evidence goes in `.pi/work/WI-OI-120.md`.
 - **Size:** S. Web app and journey only: no API, contract, migration or env change.
@@ -146,11 +146,11 @@
 
 ## Done when
 
-- [ ] An invitee who opens the link signed out, then signs up or signs in, reaches the accept step with the token
+- [x] An invitee who opens the link signed out, then signs up or signs in, reaches the accept step with the token
   filled in.
-- [ ] Opening the link in a tab already on `/select-tenant` fills the token.
-- [ ] A reload on any Organization tab stays on that tab.
-- [ ] Released and Security-reviewed. The owner has deployed it and the journey shows neither finding.
+- [x] Opening the link in a tab already on `/select-tenant` fills the token.
+- [x] A reload on any Organization tab stays on that tab.
+- [x] Released and Security-reviewed. The owner has deployed it and the journey shows neither finding.
 
 ## Journey `anunhd` on 8a95dc9 (2026-10-16)
 
@@ -170,3 +170,16 @@
   with it without a server round trip or remount, and a reload still reads `?section=`. The web suite passes (688), with
   no type errors and no new lint finding.
 - **Next:** release the fix, then rerun the journey. Expected result: 2 blockers, and no reload finding.
+
+## Fix release 503930b and journey `aqyb1q` (2026-10-16)
+
+- **Release `503930b`:** the Organization-tab fix only.
+  - The Security review approves, with no High, Medium or Low findings.
+  - The owner deployed it. Read-only, 11 of 11 containers are healthy with 0 restarts, and there are 0 error lines.
+- **Journey `aqyb1q`:** passed in 3.5 minutes, with 52 findings and **2 blockers** (the known CMMS ones, step 1.3).
+- **Compared with `ainvqh`:** both 120az findings are gone, "A reload loses the tab" and "The invitation link does
+  not fill in its token". Nothing new appeared.
+- **The steps that failed before now pass:**
+  - Units: three units created;
+  - the first invitee signed up from the link and joined;
+  - Structure: submitted for approval.

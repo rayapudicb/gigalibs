@@ -4243,3 +4243,17 @@ widening the card to fix the API faults the proof found.
   - **New blocker, a regression from WI-OI-120az S2:** the Organization tab's `router.replace` remounted the page (Next
     keys pages by search parameters), closing the add-unit form.
   - Fixed in the feature branch with `window.history.replaceState`; release to follow.
+
+## Release 503930b on UAT (2026-10-16, owner-run)
+
+- **Release:** the WI-OI-120az Organization-tab fix (`window.history.replaceState`) on top of `8a95dc9`.
+  - Release commit `503930b`; images `503930b66a15-1b928ce1c864`.
+  - Release id `local-20261016T075415Z-503930b66a15-1b928ce1c864`.
+  - Backup `gigalibs_backup_20261016_085019Z`.
+  - Independent Security review: approve, with no High, Medium or Low findings.
+- **Deploy:** the owner ran it, and the smoke test passed.
+- **Read-only check:** 11 of 11 containers on the new release, healthy, with 0 restarts; 546 tables; health, `/login`
+  and `/select-tenant` answer 200; 0 error lines.
+- **Journey `aqyb1q`** (owner-run on `503930b`): passed, 52 findings, 2 blockers (the known CMMS ones).
+  - Both WI-OI-120az findings are gone, and nothing is new compared with `ainvqh`.
+  - The Units, invitation and Structure steps all complete.
