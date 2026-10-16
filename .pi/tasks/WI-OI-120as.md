@@ -167,3 +167,34 @@ Plan v3 Phase 5 states it: a module-host module that publishes facts is released
 Carded as [WI-OI-120aw](WI-OI-120aw.md): clean up certification and test workspaces on UAT. The dead letters go with
 it.
 
+## Security review of release b7632d6 (2026-10-16): approve with conditions
+
+- **M1, operational:** until the post-deploy clean-up runs, Platform Control Tower cannot save entitlements for the
+  17 workspaces with an ENABLED `master-data` row.
+  - `PlatformTenantControl.tsx` seeds the edit list from every ENABLED row, including the hidden `master-data`.
+  - `assertEligibleModuleKeys` then answers 400.
+  - `updateEntitlements` only upserts catalogue keys, so it cannot disable the stale row itself.
+
+  **Condition:** the owner-run clean-up runs right after the deploy. It disables the 17 rows and removes the key from
+  the 121 workspaces. Every other path (session context, plan page, window baselines, entitlement events, the signed
+  proxy) ignores the stale key.
+- **Follow-up hardening (small, carded later):**
+  - the Control Tower filters its edit list to catalogue modules;
+  - `updateEntitlements` disables ENABLED rows whose key is not in the catalogue.
+- **Info, relay health:**
+  - a slow but progressing pass (20 rows at the 5-second timeout) can read as stalled for a while;
+  - a relay whose every delivery fails still reads as running, and only `lastFailureCode` shows it;
+  - the registry keeps entries after shutdown (tests only).
+
+  Follow-up: track the start of a pass, and let monitoring (O3) alert on failures too.
+- **Verified:**
+  - 0.5b: the constructor check breaks no module; the `SKIP LOCKED` sweep is valid under forced RLS; the method rule
+    is sound;
+  - relay health is reachable only inside the compose network (the gateways are allow-lists), has no route clash and
+    does not affect readiness;
+  - the package removal: nothing still imports them, the docker workspace resolves, and the lockfile change is pure
+    deletion;
+  - the Master Data Hub retirement is complete; roles that still hold `master-data:*` do not fail validation;
+  - release parity: 144 files, with 5 expected differences;
+  - no migration, compose or env change.
+

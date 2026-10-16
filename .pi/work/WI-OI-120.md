@@ -4091,3 +4091,70 @@ widening the card to fix the API faults the proof found.
 - **WI-OI-120aw:** plan file `scripts/uat/wi-oi-120aw/plan-2026-10-15.csv` with 228 active, trial or provisioning
   workspaces: KEEP 3 (`gigalibs-global`, `uatadmin`, `uat-approver`), SUSPEND 225 (certification, journey and test,
   qualification, verification runs, and the 3 brand workspaces). For the owner's review.
+- **Release prepared** (owner: "commit" on `e3fb0ff`). The code of `fdf32da..e3fb0ff` is applied three-way onto
+  `d17db37`, staged and not committed. It carries step 0.5b, the package removal, relay health and WI-OI-120at.
+  - **Excluded:** `.pi`, `docs`, `AGENTS.md`, `CLAUDE.md` and `scripts/uat` (governance and review documents, not
+    product code; the first try conflicted on `CLAUDE.md`, so the worktree was reset to `d17db37` and the change
+    re-applied).
+  - **One conflict:** CMMS `app.module.ts`, where the release branch has no record routes, so it takes only the
+    `RelayHealthController` import and mount.
+  - 144 files: 101 deletions and 43 changes or additions. They equal `e3fb0ff` except the release branch's own
+    long-standing differences (the CMMS navigation test and menus, the generated navigation and permission catalogue
+    from its own sources, 6 lockfile lines).
+- **Checks on the release:**
+  - frozen install accepts the lockfile;
+  - the manifest check passes (generated files match the release's sources);
+  - type-checks clean in 8 packages;
+  - the conversion check passes its 4 modules;
+  - pins and the 4 governance checks pass;
+  - the zero-mock audit fails only on the absent TextFly roots, as before;
+  - 2,819 tests pass; only the two known control-plane suites fail at import for want of
+    `CONTROL_PAYLOAD_KEY_VERSION` (environment), as on every release.
+- **Release commit `b7632d6`** (owner: "commit") = `d17db37` + step 0.5b, the package removal, relay health and
+  WI-OI-120at. Identity: revision `b7632d67c5a3`, state `faf7b20311d1`, release time `20261016T003452Z` (from the
+  env file, to be confirmed by `--check`). Five builds started with `GIGALIBS_KEEP_IMAGE_VERSIONS=3`; an
+  independent read-only Security review of `b7632d6` started.
+- **Security review of `b7632d6`: approve with conditions.**
+  - **M1 (operational, not an exposure):** Platform Control Tower cannot save entitlements for the 17 workspaces with
+    an ENABLED `master-data` row until the post-deploy clean-up disables those rows. **Condition:** run the clean-up
+    right after the deploy.
+  - **Info:** relay health's stall threshold versus slow passes; failures do not change the state.
+  - **Follow-ups:** the Control Tower filters to catalogue modules; the stall logic tracks the pass start.
+  - Everything else verified, including release parity (144 files, 5 expected differences).
+- **Release `b7632d6` ready:**
+  - five builds passed (00:35–01:42Z; a cold web build; the disk guard removed nothing, 139–152 GB free);
+  - 9 new images, and the rollback `d17db37` keeps all 9;
+  - backup `gigalibs_backup_20261016_014209Z` (running `d17db37`);
+  - deploy tool retargeted, 33/33 tests;
+  - pins agree; `--check` passed (release ID confirmed).
+
+  Waiting for the owner's deploy, then the Master Data clean-up (review condition M1).
+
+## Release b7632d6 on UAT (2026-10-16, owner-run)
+
+- **Deploy:** the owner ran `deploy-uat.sh --deploy --backup gigalibs_backup_20261016_014209Z`. Images and backup were
+  verified, 546 tables, all 11 migration jobs passed (nothing new), all 11 services are healthy, and the smoke test
+  passed.
+- **Master Data clean-up (review condition M1), owner-run right after the deploy:** `UPDATE 17` (entitlements
+  disabled with the reason "Module retired (WI-OI-120at)"), `UPDATE 121` (the feature key removed), and the guard
+  passed. Read-only afterwards: 0 ENABLED `master-data` rows, 0 feature keys.
+- **Read-only check:**
+  - all 11 services run `local-20261016T003452Z-b7632d67c5a3-faf7b20311d1`, healthy, with no restarts;
+  - still 546 tables;
+  - `/platform-admin/master-data`, `/master-data` and `/api/master-data` answer 404; `/api/health/ready` and
+    `/login` answer 200;
+  - 0 error lines in 10 minutes from all 9 application services.
+- **Relay health on UAT (from inside the compose network):**
+  - Workforce, CMMS and Geospatial `v1/health/relays`, and Connector Hub `api/connectors/v1/health/relays`, answer 200
+    `ok`;
+  - every configured relay is `running`, with a pass seconds ago and 0 leased.
+
+  This confirms WI-OI-120as's finding: the relays run and are idle, nothing routed is pending.
+- **Journey `ac0z09`** (owner-run on `b7632d6`): passed in 4.3 minutes.
+  - Findings: 56 (29 layout, 18 accessibility, 6 UX, 1 bug, 2 blockers); `9jh56k` had 55.
+  - The blockers (CMMS request and close), the bug (organization-draft submit 400) and the UX findings are the
+    known ones. The extra finding is one more accessibility item: colour contrast on `/settings` (9), `/modules` (4)
+    and single pages, plus a scrollable region and a `<dl>` on `/work-orders`.
+  - It cannot be pinned exactly: the previous run's findings file was overwritten. From now on each run's findings
+    are kept for comparison.
+  - Nothing functional regressed. The accessibility items belong to X1 (step 3.9).
