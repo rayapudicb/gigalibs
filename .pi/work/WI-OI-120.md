@@ -4285,3 +4285,28 @@ widening the card to fix the API faults the proof found.
   - relay health tells "running but slow" from "stalled", and adds "failing";
   - expired sessions are swept every 15 minutes.
   - 1,024 tests pass; the audits are unchanged. Not yet released.
+
+## Release f9de9a3 on UAT (2026-10-16, owner-run)
+
+- **Release:** WI-OI-120bd plus the WI-OI-120ba guard test, on top of `70c19af`.
+  - Backup `gigalibs_backup_20261016_124500Z`.
+  - Security review: approve with one condition, met. The 17 ENABLED rows not offered are all the key `reports`,
+    retired 2026-09-30; no code reads it.
+- **Deploy:** the owner ran it, and the smoke test passed.
+- **Read-only check:**
+  - 11 of 11 containers healthy, with 0 restarts; 546 tables; 0 errors;
+  - the session sweep marked 243 expired sessions EXPIRED (0 left, 1 audit row);
+  - every relay reports `running` with 0 failed passes.
+- **Journey `b03w3r`** (owner-run on `f9de9a3`, about 13:26–13:31Z): passed, 63 findings, 4 blockers.
+  - **New blocker (not code):** the web server's module proxy gives each module call 3 seconds. Two Workforce calls
+    (`capabilities`, `resources`) took longer and got "temporarily unavailable". The empty absence-type list then
+    blocked "asks for a day off", and with it "the approver decides the absence".
+  - Calls to sign-in context and CMMS search were slow at the same time.
+  - **The likely cause is the host itself:** the load average stood at about 9.5 over 5 and 15 minutes, right after the
+    deploy restarted all 11 containers, with the journey's browser running. No service logged an error, Workforce had
+    not restarted, and the containers are idle since.
+  - **Next:** a rerun once the load has dropped, to confirm. The 3-second proxy timeout under load is noted for O3
+    (step 1.19).
+- **Journey `b0j8mq`** (owner-run rerun on `f9de9a3`): passed, 52 findings, 2 blockers (the known CMMS ones).
+  - Identical to `asyz8p`, which confirms that `b03w3r`'s Workforce failures came from host load.
+  - The host's load average was still about 9–11 afterwards. UAT runs on the owner's laptop: noted for O1 (step 1.17).

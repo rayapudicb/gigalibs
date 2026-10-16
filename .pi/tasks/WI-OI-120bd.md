@@ -1,6 +1,6 @@
 # WI-OI-120bd: Four small hardening fixes from step 0.8
 
-- **Status:** Built (2026-10-16), not yet released. Approved by the owner on 2026-10-16 ("approved 120bd").
+- **Status:** On UAT (release `f9de9a3`); journey `b0j8mq` is clean. Done needs the owner's acceptance.
 - **Plan v3:** step 0.8 follow-ups, released together in one W1 release (phase-1-sizing.md).
 - **Work item:** WI-OI-120. Evidence goes in `.pi/work/WI-OI-120.md`.
 - **Size:** S overall: four S slices, one release. No migration.
@@ -115,8 +115,71 @@
 
 ## Done when
 
-- [ ] No script carries a default credential, and the audit stops new ones.
-- [ ] Retiring a module can no longer stop Control Tower saving a workspace.
-- [ ] Relay health reports slow passes as running and failing relays as failing.
-- [ ] No session stays ACTIVE past its expiry for more than one sweep interval.
-- [ ] Released and Security-reviewed. The owner has deployed it and the journey is rerun.
+- [x] No script carries a default credential, and the audit stops new ones.
+- [x] Retiring a module can no longer stop Control Tower saving a workspace.
+- [x] Relay health reports slow passes as running and failing relays as failing.
+- [x] No session stays ACTIVE past its expiry for more than one sweep interval.
+- [x] Released and Security-reviewed. The owner has deployed it and the journey is rerun.
+
+## Security review of release f9de9a3 (2026-10-16): approve with one condition, met
+
+- **Condition:** count, read-only on UAT, the ENABLED entitlement rows for modules that are not offered.
+  - **Result (2026-10-16):** 17 rows, all for the key `reports`: 1 in `gigalibs-global` (TRIAL, from the self-service
+    trial of 2026-09-13) and 16 in cancelled workspaces.
+  - `reports` left the catalogue on 2026-09-30, when Analytics took over reports (WI-OI-103e, ADR-0016 F11). No code
+    reads that key (`git grep`, release branch).
+  - So these are exactly the stale rows S2 is for. The next Control Tower save of `gigalibs-global` switches its row
+    off and records it, and nothing a person uses changes.
+- **No High findings in the diff.**
+- **Verified:**
+  - S1: no secret is printed; the rule matches exactly the 2 old scripts; the new pass reads only tracked
+    `scripts/` files; the redaction over-hides.
+  - S2: authorisation unchanged; closures happen in the same transaction after the tenant lock; the audit names the
+    keys; the entitlement event is still sent; key casing is consistent.
+  - S3: no healthcheck or readiness check uses `/relays`, so a 503 there cannot restart anything.
+  - S4: the sweep (`expiresAt < now`) and the guard and refresh (`> now`) cannot overlap; the update re-checks;
+    only the API process runs it; each run is bounded.
+  - Parity: 13 of 14 files byte-identical, and the audit script differs only by the older WI-OI-120aj block.
+- **Medium, old code, not in this release and not deployed:**
+  - `modules/accounts-receivable/apps/api/src/payments/webhooks.controller.ts:96` falls back to a written-in payment
+    webhook signing key when `ADYEN_HMAC_KEY` is unset.
+  - The AR API is in no compose file, so UAT is not exposed.
+  - The new `DEFAULT_CREDENTIAL` rule misses it: it reads `process.env['…']` with brackets, and the name ends in
+    `_KEY`.
+  - **Follow-up card:**
+    - remove that fallback;
+    - widen the rule to bracket access, `*_KEY`, `HMAC` and `PRIVATE_KEY` names, and shell `${X:-…}` defaults.
+- **Low:**
+  - S2 treats "not entitlement-eligible" as "no longer offered". A module later made ineligible only to stop new sales
+    would be switched off for current customers when saved. No impact today: the only ineligible module is
+    `platform-control`, which platform authority gates. Follow-up: document that ineligible means retired, or close
+    only keys missing from the catalogue.
+  - S3 "failing" holds until a delivery, and a failed lease counts. So 3 database blips on a quiet relay keep
+    `/relays` at 503 until the next delivery or restart. It affects monitoring only. Follow-up: count only passes that
+    leased facts, and clear the state after a quiet period.
+- **Info:**
+  - the audit fingerprint is a hash over text that includes the value;
+  - names like `*TOKEN_TTL` could be flagged falsely;
+  - a tracked script deleted from the worktree makes the pass fail closed;
+  - the sweep's audit row is written outside the batch writes;
+  - on UAT the sweep settings are the code defaults;
+  - there is no `(status, expiresAt)` index yet, which is negligible now.
+
+## On UAT (2026-10-16)
+
+- **Release `f9de9a3`:** owner deploy, smoke test passed.
+- **Read-only check:** 11 of 11 containers on `local-20261016T122119Z-f9de9a391bf8-ec895080a77e`, healthy, with 0
+  restarts; 546 tables; 0 error lines.
+- **S4 on its first run:**
+  - "Marked 243 expired session(s) EXPIRED";
+  - 0 sessions now ACTIVE past expiry;
+  - 1 audit row (`EXPIRED_SESSIONS_SWEPT`, count 243).
+- **S3, from inside the compose network:** every relay answers 200 `ok`, each `running` with 0 failed passes:
+  - Workforce, to Analytics and CMMS;
+  - CMMS, to Workforce;
+  - Geospatial, to Analytics;
+  - Connector Hub, to Analytics and Geospatial.
+- **Journeys on `f9de9a3`:**
+  - `b03w3r`: 4 blockers. They came from the host's load (about 9.5) right after the deploy: two Workforce calls ran
+    past the web proxy's 3-second limit.
+  - `b0j8mq`, the rerun: 52 findings, 2 blockers (the known CMMS ones), identical to `asyz8p`.
