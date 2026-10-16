@@ -22,7 +22,8 @@ owner's recorded acceptance.
 
 ## Running on UAT
 
-- **Release `503930b`** (owner deploy 2026-10-16): `8a95dc9` plus the WI-OI-120az Organization-tab fix. `8a95dc9`:
+- **Release `70c19af`** (owner deploy 2026-10-16): `503930b` plus WI-OI-120ba (the invitation preview). `503930b`:
+  `8a95dc9` plus the WI-OI-120az Organization-tab fix. `8a95dc9`:
   `59d286d` plus WI-OI-120az (the invitation link keeps its token; a
   reload keeps the Organization tab). `59d286d` added WI-OI-120ax, the organization reason guard, to `b7632d6`, which
   carried:
@@ -31,9 +32,9 @@ owner's recorded acceptance.
   - relay health ([WI-OI-120as](tasks/WI-OI-120as.md));
   - the unused packages removed;
   - the Master Data Hub retired ([WI-OI-120at](tasks/WI-OI-120at.md)).
-- **Last journey `aqyb1q`** (on `503930b`): passed, 52 findings, 2 blockers. Both blockers are CMMS and are fixed in
+- **Last journey `asyz8p`** (on `70c19af`): passed, 52 findings, 2 blockers. Both blockers are CMMS and are fixed in
   step 1.3. The organization 400, the invitation token and the reload findings are gone.
-- **Rollback:** `8a95dc9`, whose images are kept.
+- **Rollback:** `503930b`, whose images are kept.
 
 ## Built, not yet on UAT
 
@@ -41,7 +42,8 @@ owner's recorded acceptance.
 
 ## Waiting for the owner
 
-1. Accept WI-OI-120ax and WI-OI-120az (on UAT; journey `aqyb1q` confirms both), with the other On UAT items below.
+1. Accept WI-OI-120ax, 120az and 120ba (on UAT; journeys `aqyb1q` and `asyz8p` confirm them), with the other On UAT
+   items below.
 2. MFA on `newuser@gigalibs.io`, the only usable platform owner login.
 3. The platform roles of `superadmin@gigalibs.io` and the certification test admin (recommended: remove both).
 4. Rotate the passwords that appeared in chat or transcripts: the test accounts' shared password, and the journey and

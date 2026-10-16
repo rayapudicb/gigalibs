@@ -4262,3 +4262,20 @@ widening the card to fix the API faults the proof found.
     /tenants/invitations/preview` (accept's checks, nothing written, the same refusal for anyone else);
   - the button reads "Join <workspace>".
   - 5 new tests, tenancy and contracts 389, web 688; the audits are unchanged. Not yet released.
+
+## Release 70c19af on UAT (2026-10-16, owner-run)
+
+- **Release:** WI-OI-120ba, the invitation preview, on top of `503930b`.
+  - Release commit `70c19af`; images `70c19af04a43-063fab5bbf70`.
+  - Backup `gigalibs_backup_20261016_095300Z`.
+  - Independent Security review: approve, with no High or Medium findings. Low 1, the missing route-level guard test,
+    goes in the next release.
+- **Deploy:** the owner ran it, and the smoke test passed.
+- **Read-only check:**
+  - 11 of 11 containers healthy, with 0 restarts;
+  - 546 tables;
+  - a signed-out preview answers 401;
+  - 0 error lines.
+- **Journey `asyz8p`** (owner-run on `70c19af`): passed, 52 findings, 2 blockers (the known CMMS ones).
+  - Every invitee saw the invitation preview before joining.
+  - The findings are the same as `aqyb1q`.

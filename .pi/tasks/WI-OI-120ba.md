@@ -1,6 +1,6 @@
 # WI-OI-120ba: An invitation shows its workspace and role before Accept
 
-- **Status:** Built (2026-10-16), not yet released. Approved by the owner on 2026-10-16.
+- **Status:** On UAT (release `70c19af`); journey `asyz8p` confirms it. Done needs the owner's acceptance.
 - **Plan v3:** step 0.8 follow-up, from the Security review of release `8a95dc9` (WI-OI-120az, finding Low 1).
 - **Work item:** WI-OI-120. Evidence goes in `.pi/work/WI-OI-120.md`.
 - **Size:** S to M: one server route, its contract, the accept step, and tests. No migration.
@@ -85,6 +85,47 @@
 
 ## Done when
 
-- [ ] Before accepting, a person sees which workspace, role and inviter the invitation is for.
-- [ ] A token that is not valid for the signed-in person shows nothing about the invitation.
-- [ ] Released, Security-reviewed, deployed by the owner; the journey shows the preview.
+- [x] Before accepting, a person sees which workspace, role and inviter the invitation is for.
+- [x] A token that is not valid for the signed-in person shows nothing about the invitation.
+- [x] Released, Security-reviewed, deployed by the owner; the journey shows the preview.
+
+## Security review of release 70c19af (2026-10-16): approve
+
+- **No High or Medium findings.**
+- **Verified:**
+  - the guards match accept's (signed in, not allowed while MFA is pending, tenant boundary skipped);
+  - the web proxy forwards with the session and answers 401 when signed out;
+  - anyone but the active invitee gets one refusal, checked before anything else is read;
+  - the inviter's email is never returned;
+  - tokens are 256-bit and stored hashed, and the token travels only in the POST body;
+  - the preview writes nothing;
+  - the text renders as React text only;
+  - the release matches `b54d4db`, apart from the WI-OI-120ac difference in `tenancy.service.ts`, which predates
+    this change.
+- **Low 1 (mine): the route-level test this card asked for is missing.** A signed-out preview must answer 401, and the
+  route must not be marked public or allowed while MFA is pending. The guards are verified by reading, but no test
+  would fail if a later change loosened them. Accept has no such test either. Follow-up: a guard-metadata test for both
+  routes, in the next release.
+- **Low 2: the preview shows names the inviter controls,** the workspace name and their own display name. So a
+  malicious workspace administrator can still pose as someone else. Follow-up for later: a sign that cannot be faked,
+  such as a verified domain (T8a or R15).
+- **Info:**
+  - the preview does not re-check the sender's authority; accept still enforces it, with a 403;
+  - every 400 reads "not for this account";
+  - the button keeps the old label for one render after the token changes;
+  - neither route is rate limited (tokens are 256-bit; noted for O1 hardening).
+- **Card correction (review Info 2):** the Design says "any failure gives the same answer". In fact the non-invitee
+  always gets the one refusal, and the invitee gets accept's own specific answers. That reveals nothing beyond what
+  accept already tells the invitee.
+
+## On UAT (2026-10-16)
+
+- **Release `70c19af`:** owner deploy, smoke test passed.
+- **Read-only check:**
+  - 11 of 11 containers run `local-20261016T093626Z-70c19af04a43-063fab5bbf70`, healthy, with 0 restarts;
+  - 546 tables;
+  - 0 error lines;
+  - a signed-out `POST /api/control/tenants/invitations/preview` answers 401 on UAT.
+- **Journey `asyz8p`:** passed in 3.4 minutes, with 52 findings and 2 blockers (the known CMMS ones).
+  - All four invitees saw "Join <workspace> as …" before joining; there was no "does not say what it is for" finding.
+  - Nothing new and nothing gone compared with `aqyb1q`.
