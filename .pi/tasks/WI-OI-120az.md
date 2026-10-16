@@ -1,6 +1,7 @@
 # WI-OI-120az: The invitation link keeps its token; a reload keeps the Organization tab
 
-- **Status:** Built (2026-10-16), not yet released. Approved by the owner on 2026-10-16 ("approved 120az").
+- **Status:** On UAT (release `8a95dc9`). The invitation fix is confirmed by journey `anunhd`. The Organization-tab
+  change caused a regression, which is fixed in the feature branch and waits for its release.
 - **Plan v3:** step 0.8, "Core UX now" (journey findings since `7i0v43`; still in `ainvqh`).
 - **Work item:** WI-OI-120. Evidence goes in `.pi/work/WI-OI-120.md`.
 - **Size:** S. Web app and journey only: no API, contract, migration or env change.
@@ -107,6 +108,33 @@
   never put in a query string, `localStorage` or `sessionStorage`.
 - **Next:** release, Security review, the owner's deploy, then the journey on UAT.
 
+## Release 8a95dc9 (2026-10-16): built, Security-approved, checked
+
+- **Release commit `8a95dc9`** on top of `59d286d`, applied from `4099ea9..b0f6748`. The 9 app files are
+  byte-identical to `b0f6748`.
+- **In the release worktree:** 17 focused tests and the web suite (675 passed, 107 skipped) pass, with no type errors,
+  and the pins agree.
+- **Images:** the builds ran 06:00Z–07:11Z. The first was slow because the dependency layer was rebuilt. All 9 images
+  carry revision `8a95dc96468a` and state `991bfd73ff48`. Release id
+  `local-20261016T055949Z-8a95dc96468a-991bfd73ff48`.
+- **Backup** `gigalibs_backup_20261016_071141Z`. The deploy tool is retargeted from `59d286d`, its 33 tests pass, and
+  `--check` passed.
+- **Independent Security review: approve,** with no High or Medium findings.
+  - **Verified:**
+    - the token stays after `#` on every new path, with no query string, storage, cookie or log;
+    - every destination is a fixed same-origin path, so there is no open redirect;
+    - the server's accept is bound to the signed-in person's email, single use and expiring;
+    - MFA routing is unchanged, and the server enforces MFA itself;
+    - the release matches the feature commit.
+  - **Low 1** (predates this change): the accept step does not show the workspace, role or inviter. Carded as
+    [WI-OI-120ba](WI-OI-120ba.md) (approved).
+  - **Info:**
+    - Sign-up does not prove email ownership. Carded as [WI-OI-120bb](WI-OI-120bb.md) (approved, after N1).
+    - The token stays in the address on `/login`, `/register` and `/mfa`.
+    - The `hashchange` listener adds nothing new; framing and referrer headers are missing (O1, step 1.17).
+    - Old `?invite=` links are still read.
+    - Signing in with single sign-on drops the token, which costs a retry but is no security issue.
+
 ## Tests
 
 - **Unit tests for the token and section rules:**
@@ -123,3 +151,22 @@
 - [ ] Opening the link in a tab already on `/select-tenant` fills the token.
 - [ ] A reload on any Organization tab stays on that tab.
 - [ ] Released and Security-reviewed. The owner has deployed it and the journey shows neither finding.
+
+## Journey `anunhd` on 8a95dc9 (2026-10-16)
+
+- **Passed** in 5.8 minutes, with 54 findings and **3 blockers**, against 2 before.
+- **The invitation fix holds:**
+  - the first invitee opened the link signed out, signed up, landed on `/select-tenant` and joined;
+  - the other three joined after opening the link in the same tab;
+  - the "token not filled" finding is gone.
+- **Regression, new blocker:** "Units: two sites and an area" timed out waiting for the add-unit form's fields.
+  - **Cause:** choosing an Organization tab called `router.replace('/settings?…&section=…')`. Next 15.5 keys the page by
+    its search parameters (`__PAGE__?{…}`), so the navigation fetched the page from the server again and remounted it,
+    and the add-unit form the journey had just opened closed.
+  - **Effect on people:** a form opened within a second or two of switching the Organization tab closes. No data is
+    lost.
+  - The downstream "form without a visible submit button" finding on Access is very likely the same remount.
+- **Fix (feature branch):** the tab is written with `window.history.replaceState`. Next keeps `useSearchParams` in step
+  with it without a server round trip or remount, and a reload still reads `?section=`. The web suite passes (688), with
+  no type errors and no new lint finding.
+- **Next:** release the fix, then rerun the journey. Expected result: 2 blockers, and no reload finding.

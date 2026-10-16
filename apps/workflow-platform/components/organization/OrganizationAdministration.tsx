@@ -2,7 +2,7 @@
 
 import type { OrgUnitTypeV1 } from '@gigalibs/contracts';
 import { Container, Heading, Text } from '@medusajs/ui';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { requestJson } from '@/lib/client-api';
 import { describeOrgError, orgPermissions, orgRequest, type OrgErrorView, type OrgSection, orgSectionFrom } from './organization-client';
@@ -29,7 +29,6 @@ export function OrganizationAdministration({ grantedPermissions, userId, isAdmin
   const permissions = useMemo(() => orgPermissions(grantedPermissions), [grantedPermissions]);
   // WI-OI-120az: the tab lives in the address (`?section=`), so a reload stays on it.
   const searchParams = useSearchParams();
-  const router = useRouter();
   const pathname = usePathname();
   const [section, setSection] = useState<Section>(() => orgSectionFrom(searchParams.get('section')));
   useEffect(() => setSection(orgSectionFrom(searchParams.get('section'))), [searchParams]);
@@ -37,7 +36,10 @@ export function OrganizationAdministration({ grantedPermissions, userId, isAdmin
     setSection(next);
     const params = new URLSearchParams(searchParams.toString());
     params.set('section', next);
-    router.replace(`${pathname}?${params}`, { scroll: false });
+    // Not `router.replace`: Next keys the page by its search parameters, so a router navigation fetched the page again
+    // and remounted it, closing any form just opened (journey `anunhd`). Next keeps `useSearchParams` in step with the
+    // browser's own history API without a server round trip.
+    window.history.replaceState(null, '', `${pathname}?${params}`);
   };
   const [unitTypes, setUnitTypes] = useState<OrgUnitTypeV1[] | null>(null);
   const [members, setMembers] = useState<OrgMember[]>([]);

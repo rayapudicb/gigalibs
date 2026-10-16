@@ -4221,3 +4221,25 @@ widening the card to fix the API faults the proof found.
   - A signed-out invitee is asked to sign in or create an account.
   - Organization's inner tab is kept in the address.
   - 17 focused tests and the web suite (688) pass; the audits are unchanged. Not yet released.
+
+## Release 8a95dc9 on UAT (2026-10-16, owner-run)
+
+- **Release:** WI-OI-120az on top of `59d286d`.
+  - Release commit `8a95dc9`; images `8a95dc96468a-991bfd73ff48`.
+  - Release id `local-20261016T055949Z-8a95dc96468a-991bfd73ff48`.
+  - Backup `gigalibs_backup_20261016_071141Z`.
+  - Independent Security review: approve, with no High or Medium findings. Low 1 is carded as WI-OI-120ba, and the
+    sign-up email check as WI-OI-120bb.
+- **Deploy:** the owner ran `deploy-uat.sh --deploy`. Images and backup were verified, 546 tables, all 11 migration jobs
+  passed (nothing new), all 11 services healthy, and the smoke test passed.
+- **Read-only check:**
+  - all 11 containers run the new release id, healthy, with 0 restarts;
+  - 546 tables;
+  - `/api/health/ready`, `/login`, `/register`, `/select-tenant` and `/mfa` answer 200;
+  - 0 error-level lines since the deploy.
+- **Journey `anunhd`** (owner-run on `8a95dc9`): passed, 54 findings, 3 blockers.
+  - The invitation fix is confirmed: the first invitee took the signed-out sign-up path and joined, and the "token not
+    filled" finding is gone.
+  - **New blocker, a regression from WI-OI-120az S2:** the Organization tab's `router.replace` remounted the page (Next
+    keys pages by search parameters), closing the add-unit form.
+  - Fixed in the feature branch with `window.history.replaceState`; release to follow.
