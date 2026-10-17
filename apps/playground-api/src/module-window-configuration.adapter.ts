@@ -11,6 +11,17 @@ import type { ModuleConfigurationAdapterV1 } from './tenant-profile-configuratio
  * extension values; it registers the surface, serves its runtime manifest and checks tenant edits against the
  * baseline (locked fields, the module's resolvers and action handlers).
  */
+/**
+ * Maps a module dictionary's moduleKey (e.g. folder name 'physical-operations-cmms') to the canonical
+ * platform catalog entitlement key ('asset-maintenance') stored in tenant_module_entitlements.
+ */
+export function resolveEntitlementModuleKey(moduleKey: string): string {
+  if (moduleKey === 'physical-operations-cmms') {
+    return 'asset-maintenance';
+  }
+  return moduleKey;
+}
+
 export class ModuleWindowConfigurationAdapterV1 implements ModuleConfigurationAdapterV1 {
   readonly descriptor: ModuleAdapterDescriptorV1;
 
@@ -24,7 +35,7 @@ export class ModuleWindowConfigurationAdapterV1 implements ModuleConfigurationAd
       moduleKey: definition.moduleKey,
       entityKey: definition.entityKey,
       surfaceKey: definition.surfaceKey,
-      entitlementModuleKey: definition.moduleKey,
+      entitlementModuleKey: resolveEntitlementModuleKey(definition.moduleKey),
       capabilities: ['SURFACE_DISCOVERY', 'RUNTIME_MANIFEST', 'ADMINISTRATIVE_PREVIEW'],
       storageStrategy: 'MODULE_RECORD_DISPATCHER',
       compatibility: { descriptorVersion: '1.0', manifestContractVersion: '1.0', minimumRuntimeVersion: '1.0' },

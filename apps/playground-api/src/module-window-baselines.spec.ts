@@ -226,4 +226,120 @@ describe('module window baselines', () => {
     expect(studio.activateModuleBaseline).not.toHaveBeenCalled();
     shipped.baselines = [];
   });
+
+  it('maps physical-operations-cmms window baseline to asset-maintenance entitlement key', () => {
+    const cmmsBaseline = ModuleWindowBaselineV1Schema.parse({
+      contractVersion: '1.0',
+      window: { route: '/cmms/requests', label: 'Requests', description: 'CMMS requests.', readPermission: 'cmms:read' },
+      definition: {
+        kind: 'APPLICATION_DICTIONARY',
+        contractVersion: '1.0',
+        moduleKey: 'physical-operations-cmms',
+        entityKey: 'cmms-requests',
+        surfaceKey: 'cmms-requests',
+        title: 'Requests',
+        dictionary: {
+          packageKey: 'cmms-requests-module-baseline',
+          name: 'Requests',
+          version: '1.0.0',
+          moduleKey: 'physical-operations-cmms',
+          targetEntityKey: 'cmms.requests',
+          entities: [
+            { entityKey: 'cmms.requests', moduleKey: 'physical-operations-cmms', label: 'Requests', ownership: 'MODULE_CORE', primaryKeyField: 'id', isVersioned: true, isAuditLogged: true, isSoftDeletable: false },
+          ],
+          fields: [field('title')],
+          relationships: [],
+          references: [],
+          validationRules: [],
+          views: [
+            {
+              viewKey: 'requests',
+              label: 'Requests',
+              mode: 'LIST',
+              device: 'ALL',
+              searchFields: ['title'],
+              defaultSortDirection: 'ASC',
+              tabs: [
+                {
+                  tabKey: 'request',
+                  label: 'Request',
+                  position: 0,
+                  level: 0,
+                  targetEntityKey: 'cmms.requests',
+                  sections: [],
+                  fields: [{ fieldKey: 'title', position: 0, span: 6, componentKey: 'text-input' }],
+                },
+              ],
+            },
+          ],
+          navigation: [],
+          actions: [],
+          messages: [],
+        },
+      },
+    });
+    const adapter = new ModuleWindowConfigurationAdapterV1(cmmsBaseline);
+    expect(adapter.descriptor.moduleKey).toBe('physical-operations-cmms');
+    expect(adapter.descriptor.entitlementModuleKey).toBe('asset-maintenance');
+  });
+
+  it('activates CMMS windows for tenants entitled to asset-maintenance', async () => {
+    const cmmsBaseline = ModuleWindowBaselineV1Schema.parse({
+      contractVersion: '1.0',
+      window: { route: '/cmms/requests', label: 'Requests', description: 'CMMS requests.', readPermission: 'cmms:read' },
+      definition: {
+        kind: 'APPLICATION_DICTIONARY',
+        contractVersion: '1.0',
+        moduleKey: 'physical-operations-cmms',
+        entityKey: 'cmms-requests',
+        surfaceKey: 'cmms-requests',
+        title: 'Requests',
+        dictionary: {
+          packageKey: 'cmms-requests-module-baseline',
+          name: 'Requests',
+          version: '1.0.0',
+          moduleKey: 'physical-operations-cmms',
+          targetEntityKey: 'cmms.requests',
+          entities: [
+            { entityKey: 'cmms.requests', moduleKey: 'physical-operations-cmms', label: 'Requests', ownership: 'MODULE_CORE', primaryKeyField: 'id', isVersioned: true, isAuditLogged: true, isSoftDeletable: false },
+          ],
+          fields: [field('title')],
+          relationships: [],
+          references: [],
+          validationRules: [],
+          views: [
+            {
+              viewKey: 'requests',
+              label: 'Requests',
+              mode: 'LIST',
+              device: 'ALL',
+              searchFields: ['title'],
+              defaultSortDirection: 'ASC',
+              tabs: [
+                {
+                  tabKey: 'request',
+                  label: 'Request',
+                  position: 0,
+                  level: 0,
+                  targetEntityKey: 'cmms.requests',
+                  sections: [],
+                  fields: [{ fieldKey: 'title', position: 0, span: 6, componentKey: 'text-input' }],
+                },
+              ],
+            },
+          ],
+          navigation: [],
+          actions: [],
+          messages: [],
+        },
+      },
+    });
+    shipped.baselines = [cmmsBaseline];
+    database.tenantModuleEntitlement.findMany.mockResolvedValue([{ moduleKey: 'asset-maintenance', updatedById: 'admin-cmms' }]);
+    const studio = { activateModuleBaseline: vi.fn().mockResolvedValue({ status: 'ACTIVATED', checksum: 'cmms-sum' }) };
+    const outcomes = await new ModuleWindowBaselineService(studio as never).applyForTenant('tenant-cmms');
+    expect(studio.activateModuleBaseline).toHaveBeenCalledWith('tenant-cmms', 'admin-cmms', cmmsBaseline);
+    expect(outcomes).toEqual([{ surfaceKey: 'cmms-requests', status: 'ACTIVATED' }]);
+    shipped.baselines = [];
+  });
 });

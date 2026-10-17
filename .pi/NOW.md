@@ -10,40 +10,17 @@ state and the release procedure as it is run. The prompt to paste is [PROMPT-202
 
 ## Current step
 
-**Phase 1, W1: the W1-A CMMS release ([WI-OI-120be](tasks/WI-OI-120be.md), steps 1.1 and 1.3).**
-- **Built and reviewed:**
-  - the record lists load;
-  - requests stay within their units and sites (D2a);
-  - shared reference data needs workspace-wide access (D3a);
-  - asset paths are scoped;
-  - record idempotency is durable;
-  - migration 20, which has never been deployed.
-
-  The fixes are committed in main as `ec0faa2`. Two independent Security reviews of those fixes approved with
-  conditions, and their findings are fixed in main, not yet committed.
-- **The release worktree** has the 76-file W1-A set staged on `f9de9a3`. Tests: 1,450 passed, none failed.
-- **Waiting for the owner:** "commit" (two commits: main's review fixes and handover; the release commit). Then the
-  builds, the backup, `--check`, the owner's deploy, the role sync and the journey (the brief's section 4).
-- **Next card:** W1-B, which switches on CMMS unit and site scope and adds the North/South journey proof.
-
-Every registry row has a status its evidence supports. None is Done yet: Done needs the owner's recorded acceptance.
+**Phase 1, W1: Fix CMMS window entitlement key ([WI-OI-120bf](tasks/WI-OI-120bf.md)).**
+- W1-A deployed to UAT as `1bb0193`. CMMS is at migration 20; 3 tables exist; relays are healthy.
+- Journey `bzutxs` ran: 57 findings, 2 blockers. Both blockers traced to a 403 on `GET /api/control/configuration/runtime/manifest/current` ("The requested runtime scope is not available.") because `ModuleWindowConfigurationAdapterV1` expects `physical-operations-cmms` entitlement, while the tenant has `asset-maintenance`.
+- Card `WI-OI-120bf` maps `physical-operations-cmms` to `asset-maintenance` to unblock CMMS window rendering.
+- Next: `WI-OI-120bf` fix & deploy, then W1-B (unit/place scope enforcement).
 
 ## Running on UAT
 
-- **Release `f9de9a3`** (owner deploy 2026-10-16): `70c19af` plus WI-OI-120bd (script credentials, retired modules,
-  relay health, session sweep). `70c19af`: `503930b` plus WI-OI-120ba (the invitation preview). `503930b`:
-  `8a95dc9` plus the WI-OI-120az Organization-tab fix. `8a95dc9`:
-  `59d286d` plus WI-OI-120az (the invitation link keeps its token; a
-  reload keeps the Organization tab). `59d286d` added WI-OI-120ax, the organization reason guard, to `b7632d6`, which
-  carried:
-  - step 0.4, the zero-mock sweep: [WI-OI-120ak](tasks/WI-OI-120ak.md) S1–S6, S5b, S5c and L2;
-  - step 0.5 (120ai, 120ae, 120af) and 0.5b, the security fixes;
-  - relay health ([WI-OI-120as](tasks/WI-OI-120as.md));
-  - the unused packages removed;
-  - the Master Data Hub retired ([WI-OI-120at](tasks/WI-OI-120at.md)).
-- **Last journey `b0j8mq`** (on `f9de9a3`): passed, 52 findings, 2 blockers. Both blockers are CMMS and are fixed in
-  step 1.3. The organization 400, the invitation token and the reload findings are gone.
-- **Rollback:** `70c19af`, whose images are kept.
+- **Release `1bb0193`** (owner deploy 2026-10-17): W1-A release candidate (WI-OI-120be), CMMS at migration 20.
+- **Last journey `bzutxs`** (on `1bb0193`): 57 findings (17 accessibility, 33 layout, 4 UX, 1 bug, 2 blockers). The 2 CMMS blockers wait on the `WI-OI-120bf` entitlement key fix.
+- **Rollback:** `f9de9a3`, whose images are kept.
 
 ## Built, not yet on UAT
 

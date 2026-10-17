@@ -2,6 +2,7 @@ import { moduleWindowBaselines } from '@gigalibs/contracts';
 import { prisma } from '@gigalibs/db';
 import { Inject, Injectable, Logger, type OnApplicationBootstrap } from '@nestjs/common';
 import { ConfigurationStudioService } from './configuration-studio.service.js';
+import { resolveEntitlementModuleKey } from './module-window-configuration.adapter.js';
 
 export interface ModuleWindowOutcome {
   surfaceKey: string;
@@ -33,14 +34,16 @@ export class ModuleWindowBaselineService implements OnApplicationBootstrap {
   async applyForTenant(tenantId: string): Promise<ModuleWindowOutcome[]> {
     const baselines = moduleWindowBaselines();
     if (baselines.length === 0) return [];
+    const entitlementKeys = [...new Set(baselines.map((b) => resolveEntitlementModuleKey(b.definition.moduleKey)))];
     const entitlements = await prisma.tenantModuleEntitlement.findMany({
-      where: { tenantId, status: 'ENABLED', moduleKey: { in: [...new Set(baselines.map((b) => b.definition.moduleKey))] } },
+      where: { tenantId, status: 'ENABLED', moduleKey: { in: entitlementKeys } },
       select: { moduleKey: true, updatedById: true },
     });
     const actorByModule = new Map(entitlements.map((entitlement) => [entitlement.moduleKey, entitlement.updatedById]));
     const outcomes: ModuleWindowOutcome[] = [];
     for (const baseline of baselines) {
-      const actorId = actorByModule.get(baseline.definition.moduleKey);
+      const entitlementKey = resolveEntitlementModuleKey(baseline.definition.moduleKey);
+      const actorId = actorByModule.get(entitlementKey);
       if (!actorId) continue;
       const { status } = await this.configuration.activateModuleBaseline(tenantId, actorId, baseline);
       outcomes.push({ surfaceKey: baseline.definition.surfaceKey, status });
@@ -56,7 +59,7 @@ export class ModuleWindowBaselineService implements OnApplicationBootstrap {
 
   /** Every tenant with a module enabled whose windows are not yet active. Failures are logged; the next start retries. */
   async reconcileAll(): Promise<void> {
-    const moduleKeys = [...new Set(moduleWindowBaselines().map((baseline) => baseline.definition.moduleKey))];
+    const moduleKeys = [...new Set(moduleWindowBaselines().map((baseline) => resolveEntitlementModuleKey(baseline.definition.moduleKey)))];
     if (moduleKeys.length === 0) return;
     const tenants = await prisma.tenantModuleEntitlement.findMany({
       where: { status: 'ENABLED', moduleKey: { in: moduleKeys } },

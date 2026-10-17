@@ -2034,7 +2034,7 @@ export class ConfigurationStudioService {
       throw new BadRequestException({ message: 'The module window failed compilation.', findings: compiled.findings });
     }
     const manifest = compiled.manifest;
-    const scope = this.runtimeScope.resolve(definition.moduleKey);
+    const scope = this.runtimeScope.resolve(descriptor.entitlementModuleKey);
     const where = {
       tenantId,
       moduleKey: definition.moduleKey,

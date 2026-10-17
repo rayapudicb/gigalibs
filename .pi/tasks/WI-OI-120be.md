@@ -385,3 +385,14 @@ passes a tree).
 - The release worktree has no unstaged or untracked change before the build (other than `.pi/handoff`).
 - After the deploy, open the roles list in each asset-maintenance workspace so the built-in roles sync; until then the
   journey's CMMS blockers stay.
+
+## UAT deploy and journey evidence (2026-10-17)
+
+- **Release:** `1bb0193e418f-3502be4143e8` (source revision `1bb0193e418f3d0f9d26bc22055bd1c871d8caba`, state `3502be4143e89cf7ba9fe1421261e5c08c489276e97a2751922ea84ded2c01c6`).
+- **Backup:** `gigalibs_backup_20261017_055733Z` (verified).
+- **Preflight:** `deploy-uat.sh --check` passed; all 33 tests passed; migration pins agree for 5 modules.
+- **Deploy:** Deployed by owner. All 11 containers healthy; CMMS migration at 20; 3 tables created (`maintenance_requests`, `request_counters`, `record_idempotency`); all module outbox relays healthy and running.
+- **Journey `bzutxs`:** 57 findings (17 accessibility, 33 layout, 4 UX, 1 bug, 2 blockers).
+  - Both blockers remained due to Bug: 403 on `GET /api/control/configuration/runtime/manifest/current` ("The requested runtime scope is not available.").
+  - Root cause: `ModuleWindowConfigurationAdapterV1` sets `entitlementModuleKey: definition.moduleKey` (`physical-operations-cmms`), whereas the tenant entitlement is registered as `asset-maintenance`. Card `WI-OI-120bf` created to resolve the mapping.
+
