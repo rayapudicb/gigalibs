@@ -18,6 +18,7 @@ import {
   cmmsRecordDispatcher,
   type CmmsRecordDependencies,
 } from './cmms-record-adapters.js';
+import { MemoryIdempotencyStore } from '../test/memory-idempotency-store.js';
 
 function makePrincipal(subject: string, permissions: string[]): ModulePrincipal {
   return {
@@ -365,7 +366,7 @@ describe('WI-OI-120t: Request-to-Close Journey Verification', () => {
 
   it('executes full request-to-close journey with strict role boundaries and scope isolation', async () => {
     const { deps, getRequestState, getWorkOrderState } = setupJourneyDeps();
-    const dispatcher = cmmsRecordDispatcher(deps);
+    const dispatcher = cmmsRecordDispatcher(deps, new MemoryIdempotencyStore());
 
     // ─────────────────────────────────────────────────────────────────────────
     // Phase 1: Requester raises a maintenance request

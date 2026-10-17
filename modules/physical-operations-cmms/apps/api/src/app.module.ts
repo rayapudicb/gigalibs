@@ -29,7 +29,14 @@ import { ClassificationsController } from './classifications/classifications.con
 import { ClassificationsService } from './classifications/classifications.service.js';
 import { ReliabilityModule } from './reliability/reliability.module.js';
 
-import { createRecordController, RECORD_DISPATCHER, RelayHealthController } from '@gigalibs/module-sdk';
+import {
+  createRecordController,
+  loadIdempotencyRetentionDays,
+  ModuleIdempotencyStore,
+  RECORD_DISPATCHER,
+  RelayHealthController,
+} from '@gigalibs/module-sdk';
+import { DatabaseService } from './database/database.service.js';
 import { cmmsRecordDispatcher } from './work-orders/cmms-record-adapters.js';
 
 const CmmsRecordController = createRecordController({ guard: CmmsAuthorizationGuard, readPermission: 'cmms:read' });
@@ -86,6 +93,7 @@ const CmmsRecordController = createRecordController({ guard: CmmsAuthorizationGu
         MetersService,
         EamSpacesService,
         ClassificationsService,
+        DatabaseService,
       ],
       useFactory: (
         workOrders: WorkOrdersService,
@@ -96,7 +104,14 @@ const CmmsRecordController = createRecordController({ guard: CmmsAuthorizationGu
         meters: MetersService,
         spaces: EamSpacesService,
         classifications: ClassificationsService,
-      ) => cmmsRecordDispatcher({ workOrders, assets, parts, requests, pmSchedules, meters, spaces, classifications }),
+        database: DatabaseService,
+      ) =>
+        // WI-OI-120be (W1 reviews B M2, C M1): Idempotency-Key results are kept in CMMS's own record_idempotency table,
+        // as in Finance, Workforce and Catalogue, so a retry after a restart answers once and nothing grows in memory.
+        cmmsRecordDispatcher(
+          { workOrders, assets, parts, requests, pmSchedules, meters, spaces, classifications },
+          new ModuleIdempotencyStore(database, { retentionDays: loadIdempotencyRetentionDays(process.env, 'CMMS') }),
+        ),
     },
   ],
 })

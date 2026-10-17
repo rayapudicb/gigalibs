@@ -21,6 +21,7 @@ import {
   translateConstraint,
   versionConflict,
 } from '../common/command.js';
+import { assertWorkspaceWide, assertWritableScope, scopePredicates } from '../auth/scope.js';
 import { DatabaseService } from '../database/database.service.js';
 
 const CLASSIFICATION_COLUMNS = `c.id, c.code, c.name, c.description, c.parent_class_id,
@@ -59,6 +60,7 @@ export class ClassificationsService {
   }
 
   async create(context: CmmsCommandContext, raw: unknown): Promise<CmmsAssetClassificationV1> {
+    assertWorkspaceWide(context.principal);
     const input = parseInput(CreateCmmsClassificationV1Schema, raw);
     return this.database.withTenantTransaction(context.principal.tenantId, async (client) => {
       if (input.parentClassId) {
@@ -99,6 +101,7 @@ export class ClassificationsService {
   }
 
   async update(context: CmmsCommandContext, id: string, raw: unknown): Promise<CmmsAssetClassificationV1> {
+    assertWorkspaceWide(context.principal);
     assertUuid(id, 'classificationId');
     const input = parseInput(UpdateCmmsClassificationV1Schema, raw);
     return this.database.withTenantTransaction(context.principal.tenantId, async (client) => {
@@ -143,6 +146,7 @@ export class ClassificationsService {
   }
 
   async delete(context: CmmsCommandContext, id: string): Promise<{ success: true }> {
+    assertWorkspaceWide(context.principal);
     assertUuid(id, 'classificationId');
     return this.database.withTenantTransaction(context.principal.tenantId, async (client) => {
       const current = await this.lockClassification(client, context.principal.tenantId, id);
@@ -202,6 +206,7 @@ export class ClassificationsService {
   }
 
   async createSpecDefinition(context: CmmsCommandContext, raw: unknown): Promise<CmmsSpecDefinitionV1> {
+    assertWorkspaceWide(context.principal);
     const input = parseInput(CreateCmmsSpecDefinitionV1Schema, raw);
     return this.database.withTenantTransaction(context.principal.tenantId, async (client) => {
       await this.visibleClassification(client, context.principal.tenantId, input.classificationId);
@@ -248,6 +253,7 @@ export class ClassificationsService {
   async getAssetSpecs(principal: CmmsPrincipal, assetId: string): Promise<readonly CmmsAssetSpecValueV1[]> {
     assertUuid(assetId, 'assetId');
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
+      await this.scopedAsset(client, principal, assetId, false);
       const result = await client.query(
         `SELECT d.id AS spec_definition_id, d.attribute_key, d.label, d.data_type, d.uom,
                 s.value_text, s.value_number, s.value_boolean
@@ -280,6 +286,9 @@ export class ClassificationsService {
     assertUuid(assetId, 'assetId');
     const input = parseInput(SetCmmsAssetSpecsV1Schema, raw);
     return this.database.withTenantTransaction(context.principal.tenantId, async (client) => {
+      // WI-OI-120be (W1 review A, H2): only an asset the caller may change.
+      const asset = await this.scopedAsset(client, context.principal, assetId, true);
+      assertWritableScope(context.principal, { departmentId: asset.department_id, siteRef: asset.site_ref });
       for (const item of input.specs) {
         // Validate definition
         const defQuery = await client.query(
@@ -336,23 +345,28 @@ export class ClassificationsService {
   async getEquipmentTree(principal: CmmsPrincipal, assetId: string): Promise<CmmsEquipmentNodeV1> {
     assertUuid(assetId, 'assetId');
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
+      // WI-OI-120be (W1 review A, H2): the root and every child must be in the caller's scope; a child outside it is left
+      // out with its own children.
+      const values: unknown[] = [principal.tenantId, assetId];
+      const rootScope = scopePredicates(principal, values, 'a.');
+      const childScope = scopePredicates(principal, values, 'child.');
       const result = await client.query(
         `WITH RECURSIVE eq_tree AS (
            SELECT a.id, a.asset_tag, a.name, a.category, a.status, a.criticality,
                   a.classification_id, c.name AS classification_name, a.space_id, a.parent_asset_id, 1 AS depth
              FROM gigalibs_cmms.assets a
         LEFT JOIN gigalibs_cmms.cmms_asset_classifications c ON c.tenant_id = a.tenant_id AND c.id = a.classification_id
-            WHERE a.tenant_id = $1 AND a.id = $2
+            WHERE a.tenant_id = $1 AND a.id = $2${rootScope.map((predicate) => ` AND ${predicate}`).join('')}
             UNION ALL
            SELECT child.id, child.asset_tag, child.name, child.category, child.status, child.criticality,
                   child.classification_id, cc.name AS classification_name, child.space_id, child.parent_asset_id, eq_tree.depth + 1
              FROM gigalibs_cmms.assets child
              JOIN eq_tree ON child.tenant_id = $1 AND child.parent_asset_id = eq_tree.id
         LEFT JOIN gigalibs_cmms.cmms_asset_classifications cc ON cc.tenant_id = child.tenant_id AND cc.id = child.classification_id
-            WHERE child.archived_at IS NULL AND eq_tree.depth < 16
+            WHERE child.archived_at IS NULL AND eq_tree.depth < 16${childScope.map((predicate) => ` AND ${predicate}`).join('')}
          )
          SELECT * FROM eq_tree ORDER BY depth ASC, name ASC`,
-        [principal.tenantId, assetId],
+        values,
       );
       if (result.rows.length === 0) notFound('Asset');
 
@@ -390,21 +404,27 @@ export class ClassificationsService {
   ): Promise<{ affectedCount: number }> {
     assertUuid(assetId, 'assetId');
     return this.database.withTenantTransaction(context.principal.tenantId, async (client) => {
-      // Find all downstream children
-      const result = await client.query<{ id: string; version: number }>(
+      // WI-OI-120be (W1 review A, H2): the asset and every descendant must be within what the caller may change, or
+      // nothing changes.
+      const parent = await this.scopedAsset(client, context.principal, assetId, true);
+      assertWritableScope(context.principal, { departmentId: parent.department_id, siteRef: parent.site_ref });
+      const result = await client.query<{ id: string; version: number; department_id: string | null; site_ref: string | null }>(
         `WITH RECURSIVE downstream AS (
-           SELECT a.id, a.version, 1 AS depth
+           SELECT a.id, a.version, a.department_id, a.site_ref, 1 AS depth
              FROM gigalibs_cmms.assets a
             WHERE a.tenant_id = $1 AND a.parent_asset_id = $2 AND a.archived_at IS NULL
             UNION ALL
-           SELECT child.id, child.version, downstream.depth + 1
+           SELECT child.id, child.version, child.department_id, child.site_ref, downstream.depth + 1
              FROM gigalibs_cmms.assets child
              JOIN downstream ON child.tenant_id = $1 AND child.parent_asset_id = downstream.id
             WHERE child.archived_at IS NULL AND downstream.depth < 16
          )
-         SELECT id, version FROM downstream`,
+         SELECT id, version, department_id, site_ref FROM downstream`,
         [context.principal.tenantId, assetId],
       );
+      for (const child of result.rows) {
+        assertWritableScope(context.principal, { departmentId: child.department_id, siteRef: child.site_ref });
+      }
 
       for (const child of result.rows) {
         await client.query(
@@ -427,6 +447,24 @@ export class ClassificationsService {
   }
 
   // ─── Helpers ─────────────────────────────────────────────────────────────────────────────
+
+  /** WI-OI-120be (W1 review A, H2): an asset only within the caller's scope; otherwise not found. */
+  private async scopedAsset(
+    client: PoolClient,
+    principal: CmmsPrincipal,
+    assetId: string,
+    lock: boolean,
+  ): Promise<{ id: string; department_id: string | null; site_ref: string | null }> {
+    const values: unknown[] = [principal.tenantId, assetId];
+    const where = ['a.tenant_id = $1', 'a.id = $2', ...scopePredicates(principal, values, 'a.')];
+    const result = await client.query<{ id: string; department_id: string | null; site_ref: string | null }>(
+      `SELECT a.id, a.department_id, a.site_ref FROM gigalibs_cmms.assets a WHERE ${where.join(' AND ')}${lock ? ' FOR UPDATE' : ''}`,
+      values,
+    );
+    const asset = result.rows[0];
+    if (!asset) return notFound('Asset');
+    return asset;
+  }
 
   private async visibleClassification(
     client: PoolClient,

@@ -68,13 +68,17 @@ export function windowBuilder({ moduleKey, route, createWith = {} }) {
     return reference;
   };
 
-  /** A tab; each placement is `[fieldKey, span, sectionKey?]`, its component chosen from the field's type. */
+  /**
+   * A tab; each placement is `[fieldKey, span, sectionKey?, { lockedWhen? }]`, its component chosen from the field's type.
+   * `lockedWhen` (a dictionary condition) shows the field read-only while it holds, for example once a record exists.
+   */
   const tab = (key, label, level, entityKey, placements, allFields, { sections, parent } = {}) => {
-    const fields = placements.map(([fieldKey, span, sectionKey], position) => {
+    const fields = placements.map(([fieldKey, span, sectionKey, { lockedWhen } = {}], position) => {
       const declared = allFields.find((candidate) => candidate.fieldKey === fieldKey && candidate.entityKey === entityKey);
       if (!declared) throw new Error(`${moduleKey}: tab ${key} places ${fieldKey}, which ${entityKey} does not declare`);
       const placement = { fieldKey, position, span, componentKey: COMPONENT[declared.type] };
       if (sectionKey) placement.sectionKey = sectionKey;
+      if (lockedWhen) placement.readOnlyCondition = lockedWhen;
       return placement;
     });
     const value = { tabKey: key, label, position: level, level, targetEntityKey: entityKey, sections: sections ?? [], fields };

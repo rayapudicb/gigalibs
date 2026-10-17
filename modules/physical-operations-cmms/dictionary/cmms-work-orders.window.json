@@ -1357,7 +1357,7 @@
           "type": "COMMAND",
           "handlerKey": "cmms.work-orders.hold",
           "requiredPermissions": [
-            "cmms.work-orders.execute-own"
+            "cmms.work-orders.write"
           ],
           "confirmationPrompt": "Put this work order on hold?",
           "parameters": [
@@ -1418,7 +1418,7 @@
           "type": "COMMAND",
           "handlerKey": "cmms.work-orders.cancel",
           "requiredPermissions": [
-            "cmms.work-orders.execute-own"
+            "cmms.work-orders.write"
           ],
           "confirmationPrompt": "Cancel this work order? This cannot be undone.",
           "parameters": [

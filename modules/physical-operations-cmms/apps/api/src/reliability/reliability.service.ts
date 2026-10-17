@@ -12,7 +12,7 @@ import {
   type CmmsJobPlanV1,
 } from '@gigalibs/contracts';
 import type { CmmsCommandContext, CmmsPrincipal } from '../auth/authorization.js';
-import { assertWritableScope } from '../auth/scope.js';
+import { assertWorkspaceWide, assertWritableScope } from '../auth/scope.js';
 import {
   assertUuid,
   iso,
@@ -61,6 +61,7 @@ export class ReliabilityService {
   }
 
   async createFailureCode(context: CmmsCommandContext, raw: unknown): Promise<CmmsFailureCodeV1> {
+    assertWorkspaceWide(context.principal);
     const input = parseInput(CreateCmmsFailureCodeV1Schema, raw);
     return this.database.withTenantTransaction(context.principal.tenantId, async (client) => {
       if (input.parentCodeId) {
@@ -105,6 +106,7 @@ export class ReliabilityService {
   }
 
   async updateFailureCode(context: CmmsCommandContext, id: string, raw: unknown): Promise<CmmsFailureCodeV1> {
+    assertWorkspaceWide(context.principal);
     assertUuid(id, 'failureCodeId');
     const input = parseInput(UpdateCmmsFailureCodeV1Schema, raw);
     return this.database.withTenantTransaction(context.principal.tenantId, async (client) => {
@@ -137,6 +139,7 @@ export class ReliabilityService {
   }
 
   async deleteFailureCode(context: CmmsCommandContext, id: string): Promise<void> {
+    assertWorkspaceWide(context.principal);
     assertUuid(id, 'failureCodeId');
     return this.database.withTenantTransaction(context.principal.tenantId, async (client) => {
       const inUse = await client.query<{ n: string }>(
@@ -210,6 +213,7 @@ export class ReliabilityService {
   }
 
   async createJobPlan(context: CmmsCommandContext, raw: unknown): Promise<CmmsJobPlanV1> {
+    assertWorkspaceWide(context.principal);
     const input = parseInput(CreateCmmsJobPlanV1Schema, raw);
     return this.database.withTenantTransaction(context.principal.tenantId, async (client) => {
       try {
@@ -265,6 +269,7 @@ export class ReliabilityService {
   }
 
   async updateJobPlan(context: CmmsCommandContext, id: string, raw: unknown): Promise<CmmsJobPlanV1> {
+    assertWorkspaceWide(context.principal);
     assertUuid(id, 'jobPlanId');
     const input = parseInput(UpdateCmmsJobPlanV1Schema, raw);
     return this.database.withTenantTransaction(context.principal.tenantId, async (client) => {

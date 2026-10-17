@@ -352,7 +352,8 @@ export function windowSource(builderFor) {
           WO,
           'hold',
           'Put on hold',
-          'cmms.work-orders.execute-own',
+          // WI-OI-120be (W1 review B, M4): a planner's decision, so write, as the server requires.
+          'cmms.work-orders.write',
           ['status', 'EQ', 'IN_PROGRESS'],
           'Put this work order on hold?',
           REASON_REQUIRED,
@@ -378,7 +379,8 @@ export function windowSource(builderFor) {
           WO,
           'cancel',
           'Cancel',
-          'cmms.work-orders.execute-own',
+          // WI-OI-120be (W1 review B, M4): a planner's decision, so write, as the server requires.
+          'cmms.work-orders.write',
           ['status', 'IN', ['OPEN', 'IN_PROGRESS', 'ON_HOLD']],
           'Cancel this work order? This cannot be undone.',
           REASON_REQUIRED,
@@ -389,16 +391,19 @@ export function windowSource(builderFor) {
 
   // 2. Maintenance requests
   const REQ = 'cmms.maintenance-requests';
+  // WI-OI-120be (W1 review C, L4): a request is triaged or cancelled, never edited, so its fields lock once it exists
+  // and the window offers no Edit; only members who may raise requests see them writable on New.
+  const LOCKED_ONCE_SUBMITTED = { field: 'request-number', operator: 'IS_NOT_NULL' };
   const reqf = [
     field(REQ, 'request-number', 'Request number', 'TEXT', { readOnly: true }),
-    field(REQ, 'title', 'Title', 'TEXT', { required: true, help: 'Summary of the issue or maintenance request.' }),
-    field(REQ, 'description', 'Description', 'TEXTAREA'),
-    field(REQ, 'priority', 'Priority', 'SELECT', { required: true, ref: 'priorities' }),
+    field(REQ, 'title', 'Title', 'TEXT', { required: true, help: 'Summary of the issue or maintenance request.', writePermission: 'cmms.requests.create' }),
+    field(REQ, 'description', 'Description', 'TEXTAREA', { writePermission: 'cmms.requests.create' }),
+    field(REQ, 'priority', 'Priority', 'SELECT', { required: true, ref: 'priorities', writePermission: 'cmms.requests.create' }),
     field(REQ, 'status', 'Status', 'SELECT', { readOnly: true, ref: 'request-statuses' }),
-    field(REQ, 'asset-id', 'Asset', 'REFERENCE', { ref: 'asset-ref' }),
-    field(REQ, 'requester-name', 'Requester name', 'TEXT'),
-    field(REQ, 'requester-email', 'Requester email', 'TEXT'),
-    field(REQ, 'requester-phone', 'Requester phone', 'TEXT'),
+    field(REQ, 'asset-id', 'Asset', 'REFERENCE', { ref: 'asset-ref', writePermission: 'cmms.requests.create' }),
+    field(REQ, 'requester-name', 'Requester name', 'TEXT', { writePermission: 'cmms.requests.create' }),
+    field(REQ, 'requester-email', 'Requester email', 'TEXT', { writePermission: 'cmms.requests.create' }),
+    field(REQ, 'requester-phone', 'Requester phone', 'TEXT', { writePermission: 'cmms.requests.create' }),
     field(REQ, 'requester-subject', 'Requester login', 'TEXT', { readOnly: true }),
     field(REQ, 'rejection-reason', 'Rejection reason', 'TEXTAREA', { readOnly: true }),
     field(REQ, 'converted-wo-id', 'Work order', 'REFERENCE', { readOnly: true, ref: 'work-order-ref' }),
@@ -430,14 +435,14 @@ export function windowSource(builderFor) {
         view('requests', 'Maintenance requests', [
           tab('request', 'Request', 0, REQ, [
             ['request-number', 3, 'main'],
-            ['title', 6, 'main'],
-            ['priority', 3, 'main'],
+            ['title', 6, 'main', { lockedWhen: LOCKED_ONCE_SUBMITTED }],
+            ['priority', 3, 'main', { lockedWhen: LOCKED_ONCE_SUBMITTED }],
             ['status', 3, 'main'],
-            ['asset-id', 5, 'main'],
-            ['requester-name', 4, 'main'],
-            ['description', 12, 'details'],
-            ['requester-email', 6, 'contact'],
-            ['requester-phone', 6, 'contact'],
+            ['asset-id', 5, 'main', { lockedWhen: LOCKED_ONCE_SUBMITTED }],
+            ['requester-name', 4, 'main', { lockedWhen: LOCKED_ONCE_SUBMITTED }],
+            ['description', 12, 'details', { lockedWhen: LOCKED_ONCE_SUBMITTED }],
+            ['requester-email', 6, 'contact', { lockedWhen: LOCKED_ONCE_SUBMITTED }],
+            ['requester-phone', 6, 'contact', { lockedWhen: LOCKED_ONCE_SUBMITTED }],
             ['converted-wo-id', 4, 'triage'],
             ['rejection-reason', 8, 'triage'],
             ['triaged-by', 4, 'triage'],
@@ -946,10 +951,10 @@ export function windowSource(builderFor) {
   const CLS = 'cmms.classifications';
   const SDF = 'cmms.spec-definitions';
   const clsf = [
-    field(CLS, 'code', 'Classification code', 'TEXT', { required: true, help: 'Classification identifier.' }),
-    field(CLS, 'name', 'Classification name', 'TEXT', { required: true }),
-    field(CLS, 'description', 'Description', 'TEXTAREA'),
-    field(CLS, 'parent-class-id', 'Parent classification', 'REFERENCE', { ref: 'classification-ref' }),
+    field(CLS, 'code', 'Classification code', 'TEXT', { required: true, help: 'Classification identifier.', writePermission: 'cmms.assets.write' }),
+    field(CLS, 'name', 'Classification name', 'TEXT', { required: true, writePermission: 'cmms.assets.write' }),
+    field(CLS, 'description', 'Description', 'TEXTAREA', { writePermission: 'cmms.assets.write' }),
+    field(CLS, 'parent-class-id', 'Parent classification', 'REFERENCE', { ref: 'classification-ref', writePermission: 'cmms.assets.write' }),
     field(CLS, 'spec-count', 'Specification count', 'INTEGER', { readOnly: true }),
     field(CLS, 'asset-count', 'Asset count', 'INTEGER', { readOnly: true }),
     field(CLS, 'created-by', 'Created by', 'TEXT', { readOnly: true }),
@@ -958,14 +963,14 @@ export function windowSource(builderFor) {
   ];
   const sdff = [
     field(SDF, 'classification-id', 'Classification ID', 'TEXT', { readOnly: true }),
-    field(SDF, 'attribute-key', 'Attribute key', 'TEXT', { required: true }),
-    field(SDF, 'label', 'Label', 'TEXT', { required: true }),
-    field(SDF, 'data-type', 'Data type', 'SELECT', { required: true, ref: 'spec-data-types', default: 'TEXT' }),
-    field(SDF, 'uom', 'Unit of measure', 'TEXT'),
-    field(SDF, 'required', 'Required', 'BOOLEAN', { default: false }),
-    field(SDF, 'min-value', 'Min value', 'NUMBER'),
-    field(SDF, 'max-value', 'Max value', 'NUMBER'),
-    field(SDF, 'default-value', 'Default value', 'TEXT'),
+    field(SDF, 'attribute-key', 'Attribute key', 'TEXT', { required: true, writePermission: 'cmms.assets.write' }),
+    field(SDF, 'label', 'Label', 'TEXT', { required: true, writePermission: 'cmms.assets.write' }),
+    field(SDF, 'data-type', 'Data type', 'SELECT', { required: true, ref: 'spec-data-types', default: 'TEXT', writePermission: 'cmms.assets.write' }),
+    field(SDF, 'uom', 'Unit of measure', 'TEXT', { writePermission: 'cmms.assets.write' }),
+    field(SDF, 'required', 'Required', 'BOOLEAN', { default: false, writePermission: 'cmms.assets.write' }),
+    field(SDF, 'min-value', 'Min value', 'NUMBER', { writePermission: 'cmms.assets.write' }),
+    field(SDF, 'max-value', 'Max value', 'NUMBER', { writePermission: 'cmms.assets.write' }),
+    field(SDF, 'default-value', 'Default value', 'TEXT', { writePermission: 'cmms.assets.write' }),
   ];
 
   const classFields = [...clsf, ...sdff];

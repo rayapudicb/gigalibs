@@ -4,6 +4,17 @@ import { type CmmsOrganizationTree, expandUnitRoots } from './organization-proje
 import { type CmmsPlaceTree, expandPlaceRoots } from './place-projection.js';
 
 /**
+ * WI-OI-120be (W1 review A, M1): the units a UNITS principal covers when no unit tree is passed (no production caller
+ * passes one yet). Sign-in pairs UNITS with a department list that is the closure of the granted units
+ * (`resolveUnitRootsScope`: read and write roots are the same units), so it carries their child units; the raw roots
+ * alone would drop them. A list that overflowed is empty and so still fails closed.
+ */
+function unitsWithoutTree(principal: CmmsPrincipal, roots: readonly string[]): string[] {
+  // The closure includes the granted units themselves, so it is the whole set; units outside it were never in scope.
+  return principal.departmentScope.mode === 'DEPARTMENTS' ? [...principal.departmentScope.departmentIds] : [...roots];
+}
+
+/**
  * Read predicates for the caller's department, organization unit, and place scope, appended to `values` as bound parameters.
  * `alias` qualifies the columns (e.g. `a.`). Department/unit scope keeps tenant-wide rows (department_id NULL)
  * visible; place scope is exact and excludes rows without a site, so a scoped member never sees more than their
@@ -24,11 +35,15 @@ export function scopePredicates(
 
   if (principal.organization?.mode === 'UNITS') {
     const rawRoots = principal.organization.read_roots;
-    const expandedUnits = tree ? expandUnitRoots(tree, rawRoots) : [...rawRoots];
-    let effectiveUnits = expandedUnits;
-    if (principal.departmentScope.mode === 'DEPARTMENTS') {
-      const deptSet = new Set(principal.departmentScope.departmentIds);
-      effectiveUnits = effectiveUnits.filter((u) => deptSet.has(u));
+    let effectiveUnits: string[];
+    if (tree) {
+      effectiveUnits = expandUnitRoots(tree, rawRoots);
+      if (principal.departmentScope.mode === 'DEPARTMENTS') {
+        const deptSet = new Set(principal.departmentScope.departmentIds);
+        effectiveUnits = effectiveUnits.filter((u) => deptSet.has(u));
+      }
+    } else {
+      effectiveUnits = unitsWithoutTree(principal, rawRoots);
     }
     if (effectiveUnits.length === 0) return ['FALSE'];
     values.push(effectiveUnits);
@@ -74,7 +89,7 @@ export function assertWritableScope(
       });
     }
     const rawRoots = principal.organization.write_roots;
-    const expandedUnits = tree ? expandUnitRoots(tree, rawRoots) : [...rawRoots];
+    const expandedUnits = tree ? expandUnitRoots(tree, rawRoots) : unitsWithoutTree(principal, rawRoots);
     if (!expandedUnits.includes(target.departmentId)) {
       throw new ForbiddenException({
         code: 'CMMS_OUT_OF_SCOPE',
@@ -112,3 +127,21 @@ export function assertWritableScope(
   }
 }
 
+
+/**
+ * WI-OI-120be (owner decision D3a, W1 review A M2): shared reference data (failure codes, job plans, classifications
+ * and specification definitions) applies to every unit and site, so only members with workspace-wide access change it.
+ */
+export function assertWorkspaceWide(principal: CmmsPrincipal): void {
+  const scoped =
+    principal.organization?.mode === 'DENIED' ||
+    principal.organization?.mode === 'UNITS' ||
+    principal.departmentScope.mode === 'DEPARTMENTS' ||
+    principal.placeScope.mode === 'PLACES';
+  if (scoped) {
+    throw new ForbiddenException({
+      code: 'CMMS_OUT_OF_SCOPE',
+      message: 'Shared reference data is changed with workspace-wide access only.',
+    });
+  }
+}

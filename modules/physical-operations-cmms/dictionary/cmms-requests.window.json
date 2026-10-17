@@ -53,7 +53,8 @@
           "isSystemLocked": false,
           "classification": "INTERNAL",
           "maskOnDisplay": false,
-          "helpText": "Summary of the issue or maintenance request."
+          "helpText": "Summary of the issue or maintenance request.",
+          "writePermission": "cmms.requests.create"
         },
         {
           "fieldKey": "description",
@@ -64,7 +65,8 @@
           "readOnly": false,
           "isSystemLocked": false,
           "classification": "INTERNAL",
-          "maskOnDisplay": false
+          "maskOnDisplay": false,
+          "writePermission": "cmms.requests.create"
         },
         {
           "fieldKey": "priority",
@@ -76,7 +78,8 @@
           "isSystemLocked": false,
           "classification": "INTERNAL",
           "maskOnDisplay": false,
-          "referenceKey": "priorities"
+          "referenceKey": "priorities",
+          "writePermission": "cmms.requests.create"
         },
         {
           "fieldKey": "status",
@@ -100,7 +103,8 @@
           "isSystemLocked": false,
           "classification": "INTERNAL",
           "maskOnDisplay": false,
-          "referenceKey": "asset-ref"
+          "referenceKey": "asset-ref",
+          "writePermission": "cmms.requests.create"
         },
         {
           "fieldKey": "requester-name",
@@ -111,7 +115,8 @@
           "readOnly": false,
           "isSystemLocked": false,
           "classification": "INTERNAL",
-          "maskOnDisplay": false
+          "maskOnDisplay": false,
+          "writePermission": "cmms.requests.create"
         },
         {
           "fieldKey": "requester-email",
@@ -122,7 +127,8 @@
           "readOnly": false,
           "isSystemLocked": false,
           "classification": "INTERNAL",
-          "maskOnDisplay": false
+          "maskOnDisplay": false,
+          "writePermission": "cmms.requests.create"
         },
         {
           "fieldKey": "requester-phone",
@@ -133,7 +139,8 @@
           "readOnly": false,
           "isSystemLocked": false,
           "classification": "INTERNAL",
-          "maskOnDisplay": false
+          "maskOnDisplay": false,
+          "writePermission": "cmms.requests.create"
         },
         {
           "fieldKey": "requester-subject",
@@ -328,14 +335,22 @@
                   "position": 1,
                   "span": 6,
                   "componentKey": "text-input",
-                  "sectionKey": "main"
+                  "sectionKey": "main",
+                  "readOnlyCondition": {
+                    "field": "request-number",
+                    "operator": "IS_NOT_NULL"
+                  }
                 },
                 {
                   "fieldKey": "priority",
                   "position": 2,
                   "span": 3,
                   "componentKey": "select",
-                  "sectionKey": "main"
+                  "sectionKey": "main",
+                  "readOnlyCondition": {
+                    "field": "request-number",
+                    "operator": "IS_NOT_NULL"
+                  }
                 },
                 {
                   "fieldKey": "status",
@@ -349,35 +364,55 @@
                   "position": 4,
                   "span": 5,
                   "componentKey": "lookup",
-                  "sectionKey": "main"
+                  "sectionKey": "main",
+                  "readOnlyCondition": {
+                    "field": "request-number",
+                    "operator": "IS_NOT_NULL"
+                  }
                 },
                 {
                   "fieldKey": "requester-name",
                   "position": 5,
                   "span": 4,
                   "componentKey": "text-input",
-                  "sectionKey": "main"
+                  "sectionKey": "main",
+                  "readOnlyCondition": {
+                    "field": "request-number",
+                    "operator": "IS_NOT_NULL"
+                  }
                 },
                 {
                   "fieldKey": "description",
                   "position": 6,
                   "span": 12,
                   "componentKey": "textarea",
-                  "sectionKey": "details"
+                  "sectionKey": "details",
+                  "readOnlyCondition": {
+                    "field": "request-number",
+                    "operator": "IS_NOT_NULL"
+                  }
                 },
                 {
                   "fieldKey": "requester-email",
                   "position": 7,
                   "span": 6,
                   "componentKey": "text-input",
-                  "sectionKey": "contact"
+                  "sectionKey": "contact",
+                  "readOnlyCondition": {
+                    "field": "request-number",
+                    "operator": "IS_NOT_NULL"
+                  }
                 },
                 {
                   "fieldKey": "requester-phone",
                   "position": 8,
                   "span": 6,
                   "componentKey": "text-input",
-                  "sectionKey": "contact"
+                  "sectionKey": "contact",
+                  "readOnlyCondition": {
+                    "field": "request-number",
+                    "operator": "IS_NOT_NULL"
+                  }
                 },
                 {
                   "fieldKey": "converted-wo-id",

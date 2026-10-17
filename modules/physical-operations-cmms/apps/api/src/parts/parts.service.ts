@@ -31,8 +31,12 @@ import {
   recordMutation,
   translateConstraint,
   versionConflict,
+  chosenOrder,
 } from '../common/command.js';
 import { DatabaseService } from '../database/database.service.js';
+
+// WI-OI-120be: the columns a chosen sort may use; nothing else reaches ORDER BY.
+const PART_SORT = { partNumber: 'p.part_number', name: 'p.name' } as const;
 
 const PART_COLUMNS = `p.id, p.part_number, p.name, p.description, p.category, p.unit_of_measure, p.unit_cost,
   p.currency_code, p.quantity_on_hand, p.min_quantity, p.reorder_point, p.non_stock, p.barcode, p.site_ref,
@@ -76,7 +80,7 @@ export class PartsService {
         `SELECT ${PART_COLUMNS}, COUNT(*) OVER()::int AS total_count
            FROM gigalibs_cmms.parts p
           WHERE ${where.join(' AND ')}
-          ORDER BY p.name ASC, p.id ASC
+          ORDER BY ${chosenOrder(PART_SORT, query.sortField, query.sortDirection, 'p.id') ?? 'p.name ASC, p.id ASC'}
           LIMIT $${values.length - 1} OFFSET $${values.length}`,
         values,
       );
@@ -585,6 +589,8 @@ export class PartsService {
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
       const values: unknown[] = [principal.tenantId];
       const where = ['tenant_id = $1'];
+      // WI-OI-120be (W1 review A, L1): a denied organization scope sees nothing, as on every other CMMS read.
+      if (principal.organization?.mode === 'DENIED') where.push('FALSE');
       if (principal.placeScope.mode === 'PLACES') {
         values.push([...principal.placeScope.placeIds]);
         where.push(`site_ref = ANY($${values.length}::uuid[])`);

@@ -39,9 +39,13 @@ import {
   recordMutation,
   translateConstraint,
   versionConflict,
+  chosenOrder,
 } from '../common/command.js';
 import { DatabaseService } from '../database/database.service.js';
 import { PartsService } from '../parts/parts.service.js';
+
+// WI-OI-120be: the columns a chosen sort may use; nothing else reaches ORDER BY.
+const WO_SORT = { woNumber: 'w.wo_number', title: 'w.title', dueAt: 'w.due_at', createdAt: 'w.created_at' } as const;
 
 const ACTIVE_STATUSES: readonly CmmsWorkOrderStatusV1[] = ['OPEN', 'IN_PROGRESS', 'ON_HOLD'];
 const EXECUTION_STATUSES: readonly CmmsWorkOrderStatusV1[] = ['IN_PROGRESS', 'ON_HOLD'];
@@ -106,9 +110,12 @@ export class WorkOrdersService {
         `SELECT ${WO_COLUMNS}, COUNT(*) OVER()::int AS total_count
            FROM ${WO_FROM}
           WHERE ${where.join(' AND ')}
-          ORDER BY CASE w.status WHEN 'IN_PROGRESS' THEN 0 WHEN 'OPEN' THEN 1 WHEN 'ON_HOLD' THEN 2 ELSE 3 END,
+          ORDER BY ${
+            chosenOrder(WO_SORT, query.sortField, query.sortDirection, 'w.id') ??
+            `CASE w.status WHEN 'IN_PROGRESS' THEN 0 WHEN 'OPEN' THEN 1 WHEN 'ON_HOLD' THEN 2 ELSE 3 END,
                    CASE w.priority WHEN 'EMERGENCY' THEN 0 WHEN 'HIGH' THEN 1 WHEN 'MEDIUM' THEN 2 ELSE 3 END,
-                   w.due_at ASC NULLS LAST, w.created_at DESC, w.id
+                   w.due_at ASC NULLS LAST, w.created_at DESC, w.id`
+          }
           LIMIT $${values.length - 1} OFFSET $${values.length}`,
         values,
       );

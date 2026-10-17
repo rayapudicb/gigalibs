@@ -7,6 +7,7 @@ import {
   cmmsRecordDispatcher,
   type CmmsRecordDependencies,
 } from './cmms-record-adapters.js';
+import { MemoryIdempotencyStore } from '../test/memory-idempotency-store.js';
 
 function makePrincipal(subject: string, permissions: string[]): ModulePrincipal {
   return {
@@ -203,7 +204,7 @@ describe('WI-OI-120t (M-CM1 Slice 1): Technician Scope Isolation & CMMS Record A
 
     it('technician successfully executes "start" action on own work order', async () => {
       const { deps, mockWorkOrdersService } = createMockDeps();
-      const dispatcher = cmmsRecordDispatcher(deps);
+      const dispatcher = cmmsRecordDispatcher(deps, new MemoryIdempotencyStore());
       const tech = makePrincipal(techLogin, ['cmms:read', 'cmms.work-orders.read', 'cmms.work-orders.execute-own']);
 
       const result = await dispatcher.action(
@@ -225,7 +226,7 @@ describe('WI-OI-120t (M-CM1 Slice 1): Technician Scope Isolation & CMMS Record A
 
     it('technician is refused with 403 CMMS_OUT_OF_SCOPE when executing "start" on another tech\'s work order', async () => {
       const { deps, mockWorkOrdersService } = createMockDeps();
-      const dispatcher = cmmsRecordDispatcher(deps);
+      const dispatcher = cmmsRecordDispatcher(deps, new MemoryIdempotencyStore());
       const tech = makePrincipal(techLogin, ['cmms:read', 'cmms.work-orders.read', 'cmms.work-orders.execute-own']);
 
       await expect(
@@ -244,7 +245,7 @@ describe('WI-OI-120t (M-CM1 Slice 1): Technician Scope Isolation & CMMS Record A
 
     it('planner holding cmms.work-orders.write can execute status action on anyone\'s work order', async () => {
       const { deps, mockWorkOrdersService } = createMockDeps();
-      const dispatcher = cmmsRecordDispatcher(deps);
+      const dispatcher = cmmsRecordDispatcher(deps, new MemoryIdempotencyStore());
       const planner = makePrincipal('planner-carol', [
         'cmms:read',
         'cmms.work-orders.read',
@@ -266,7 +267,7 @@ describe('WI-OI-120t (M-CM1 Slice 1): Technician Scope Isolation & CMMS Record A
 
     it('technician can log labour on own work order and is refused on other work order', async () => {
       const { deps } = createMockDeps();
-      const dispatcher = cmmsRecordDispatcher(deps);
+      const dispatcher = cmmsRecordDispatcher(deps, new MemoryIdempotencyStore());
       const tech = makePrincipal(techLogin, ['cmms:read', 'cmms.work-orders.read', 'cmms.work-orders.execute-own']);
 
       // Allowed on own
@@ -303,7 +304,7 @@ describe('WI-OI-120t (M-CM1 Slice 1): Technician Scope Isolation & CMMS Record A
 
     it('technician can issue parts on own work order and is refused on other work order', async () => {
       const { deps } = createMockDeps();
-      const dispatcher = cmmsRecordDispatcher(deps);
+      const dispatcher = cmmsRecordDispatcher(deps, new MemoryIdempotencyStore());
       const tech = makePrincipal(techLogin, ['cmms:read', 'cmms.work-orders.read', 'cmms.work-orders.execute-own']);
 
       // Allowed on own
@@ -336,7 +337,7 @@ describe('WI-OI-120t (M-CM1 Slice 1): Technician Scope Isolation & CMMS Record A
 
     it('technician can add notes on own work order and is refused on other work order', async () => {
       const { deps } = createMockDeps();
-      const dispatcher = cmmsRecordDispatcher(deps);
+      const dispatcher = cmmsRecordDispatcher(deps, new MemoryIdempotencyStore());
       const tech = makePrincipal(techLogin, ['cmms:read', 'cmms.work-orders.read', 'cmms.work-orders.execute-own']);
 
       const note = await dispatcher.create(
@@ -365,7 +366,7 @@ describe('WI-OI-120t (M-CM1 Slice 1): Technician Scope Isolation & CMMS Record A
 
     it('resolves lookups for cmms-assets, cmms-parts, cmms-work-orders', async () => {
       const { deps } = createMockDeps();
-      const dispatcher = cmmsRecordDispatcher(deps);
+      const dispatcher = cmmsRecordDispatcher(deps, new MemoryIdempotencyStore());
       const viewer = makePrincipal('viewer-1', [
         'cmms:read',
         'cmms.assets.read',
@@ -668,7 +669,7 @@ describe('WI-OI-120t (M-CM1 Slice 1): Technician Scope Isolation & CMMS Record A
 
     it('manages PM schedules: lists, creates, updates and generates work orders', async () => {
       const { deps, mockPmSchedulesService } = createSlice3Deps();
-      const dispatcher = cmmsRecordDispatcher(deps);
+      const dispatcher = cmmsRecordDispatcher(deps, new MemoryIdempotencyStore());
       const planner = makePrincipal('planner-carol', [
         'cmms:read',
         'cmms.pm.read',
@@ -739,7 +740,7 @@ describe('WI-OI-120t (M-CM1 Slice 1): Technician Scope Isolation & CMMS Record A
 
     it('manages Meters & Readings: lists, creates, logs reading child records', async () => {
       const { deps, mockMetersService } = createSlice3Deps();
-      const dispatcher = cmmsRecordDispatcher(deps);
+      const dispatcher = cmmsRecordDispatcher(deps, new MemoryIdempotencyStore());
       const tech = makePrincipal('tech-alice', [
         'cmms:read',
         'cmms.meters.read',
@@ -808,7 +809,7 @@ describe('WI-OI-120t (M-CM1 Slice 1): Technician Scope Isolation & CMMS Record A
 
     it('manages MRO Parts & Movements: lists, creates, logs movement child records', async () => {
       const { deps, mockPartsService } = createSlice3Deps();
-      const dispatcher = cmmsRecordDispatcher(deps);
+      const dispatcher = cmmsRecordDispatcher(deps, new MemoryIdempotencyStore());
       const planner = makePrincipal('planner-carol', [
         'cmms:read',
         'cmms.parts.read',
@@ -1097,7 +1098,7 @@ describe('WI-OI-120t (M-CM1 Slice 1): Technician Scope Isolation & CMMS Record A
 
     it('manages Assets & Specifications: lists, gets, creates, updates, and archives via action', async () => {
       const { deps, assetId, mockAssetsService, mockClassificationsService } = createSlice4Deps();
-      const dispatcher = cmmsRecordDispatcher(deps);
+      const dispatcher = cmmsRecordDispatcher(deps, new MemoryIdempotencyStore());
       const planner = makePrincipal('planner-carol', [
         'cmms:read',
         'cmms.assets.read',
@@ -1194,7 +1195,7 @@ describe('WI-OI-120t (M-CM1 Slice 1): Technician Scope Isolation & CMMS Record A
 
     it('manages CAFM Spaces & Located Assets: lists, gets, creates, updates, and deletes via action', async () => {
       const { deps, spaceId, mockSpacesService } = createSlice4Deps();
-      const dispatcher = cmmsRecordDispatcher(deps);
+      const dispatcher = cmmsRecordDispatcher(deps, new MemoryIdempotencyStore());
       const planner = makePrincipal('planner-carol', [
         'cmms:read',
         'cmms.assets.read',
@@ -1272,7 +1273,7 @@ describe('WI-OI-120t (M-CM1 Slice 1): Technician Scope Isolation & CMMS Record A
 
     it('manages Classifications & Spec Definitions: lists, gets, creates, updates, and deletes via action', async () => {
       const { deps, classId, mockClassificationsService } = createSlice4Deps();
-      const dispatcher = cmmsRecordDispatcher(deps);
+      const dispatcher = cmmsRecordDispatcher(deps, new MemoryIdempotencyStore());
       const planner = makePrincipal('planner-carol', [
         'cmms:read',
         'cmms.assets.read',
@@ -1363,7 +1364,7 @@ describe('WI-OI-120t (M-CM1 Slice 1): Technician Scope Isolation & CMMS Record A
 
     it('resolves cmms-spaces and cmms-classifications lookups', async () => {
       const { deps, spaceId, classId } = createSlice4Deps();
-      const dispatcher = cmmsRecordDispatcher(deps);
+      const dispatcher = cmmsRecordDispatcher(deps, new MemoryIdempotencyStore());
       const viewer = makePrincipal('viewer-dave', ['cmms:read', 'cmms.assets.read']);
 
       const spaceLookup = await dispatcher.lookup(viewer, 'cmms-spaces', { limit: 10 });

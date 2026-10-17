@@ -2,7 +2,6 @@ import { randomUUID } from 'node:crypto';
 import {
   BadRequestException,
   ConflictException,
-  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -28,10 +27,15 @@ import {
   parseInput,
   recordMutation,
   versionConflict,
+  chosenOrder,
 } from '../common/command.js';
+import { assertWritableScope, scopePredicates } from '../auth/scope.js';
 import { DatabaseService } from '../database/database.service.js';
 import { AssetsService } from '../assets/assets.service.js';
 import { WorkOrdersService } from '../work-orders/work-orders.service.js';
+
+// WI-OI-120be: the columns a chosen sort may use; nothing else reaches ORDER BY.
+const REQ_SORT = { requestNumber: 'r.request_number', title: 'r.title', createdAt: 'r.created_at' } as const;
 
 const REQ_COLUMNS = `r.*, a.name AS asset_name, w.wo_number AS converted_wo_number`;
 const REQ_FROM = `gigalibs_cmms.maintenance_requests r
@@ -48,7 +52,8 @@ function mapRequest(row: any): CmmsMaintenanceRequestV1 {
     status: row.status,
     assetId: row.asset_id ?? null,
     assetName: row.asset_name ?? null,
-    locationId: row.location_id ?? null,
+    siteRef: row.site_ref ?? null,
+    departmentId: row.department_id ?? null,
     requesterSubject: row.requester_subject,
     requesterName: row.requester_name ?? null,
     requesterEmail: row.requester_email ?? null,
@@ -65,6 +70,24 @@ function mapRequest(row: any): CmmsMaintenanceRequestV1 {
   };
 }
 
+/**
+ * WI-OI-120be (W1 reviews; owner decision D2a): planners (cmms.requests.write) see the requests in their units and
+ * sites (R5, from the request's own unit and site); everyone else sees only the requests they raised. So requester
+ * contact details reach planners in scope and the requester only. A request that is not visible is "not found".
+ */
+function visibleRequests(principal: CmmsPrincipal, values: unknown[]): string[] {
+  if (holdsPermission(principal.permissions, 'cmms.requests.write')) return scopePredicates(principal, values, 'r.');
+  values.push(principal.subject);
+  return [`r.requester_subject = $${values.length}`];
+}
+
+/** Changing someone else's request needs write access to its unit and site; one's own pending request may be cancelled. */
+function assertMayChange(principal: CmmsPrincipal, request: CmmsMaintenanceRequestV1): void {
+  if (holdsPermission(principal.permissions, 'cmms.requests.write')) {
+    assertWritableScope(principal, { departmentId: request.departmentId, siteRef: request.siteRef });
+  }
+}
+
 @Injectable()
 export class RequestsService {
   constructor(
@@ -77,9 +100,8 @@ export class RequestsService {
   async submit(context: CmmsCommandContext, raw: unknown): Promise<CmmsMaintenanceRequestV1> {
     const input = parseInput(CreateCmmsRequestV1Schema, raw);
     return this.database.withTenantTransaction(context.principal.tenantId, async (client) => {
-      if (input.assetId) {
-        await this.assets.visibleAsset(client, context.principal, input.assetId, false);
-      }
+      // The request takes its asset's unit and site, so R5 scopes it like the asset's own work.
+      const asset = input.assetId ? await this.assets.visibleAsset(client, context.principal, input.assetId, false) : null;
 
       const counter = await client.query<{ last_value: string }>(
         `INSERT INTO gigalibs_cmms.request_counters AS c (tenant_id, last_value) VALUES ($1, 1)
@@ -93,9 +115,9 @@ export class RequestsService {
       const inserted = await client.query(
         `INSERT INTO gigalibs_cmms.maintenance_requests
            (tenant_id, id, request_number, title, description, priority, status,
-            asset_id, location_id, requester_subject, requester_name, requester_email, requester_phone,
+            asset_id, site_ref, department_id, requester_subject, requester_name, requester_email, requester_phone,
             correlation_id)
-         VALUES ($1, $2, $3, $4, $5, $6, 'PENDING', $7, $8, $9, $10, $11, $12, $13)
+         VALUES ($1, $2, $3, $4, $5, $6, 'PENDING', $7, $8, $9, $10, $11, $12, $13, $14)
          RETURNING *`,
         [
           context.principal.tenantId,
@@ -105,7 +127,8 @@ export class RequestsService {
           input.description ?? null,
           input.priority,
           input.assetId ?? null,
-          input.locationId ?? null,
+          asset?.siteRef ?? null,
+          asset?.departmentId ?? null,
           context.principal.subject,
           input.requesterName ?? null,
           input.requesterEmail ?? null,
@@ -135,26 +158,11 @@ export class RequestsService {
   async get(principal: CmmsPrincipal, id: string): Promise<CmmsMaintenanceRequestV1> {
     assertUuid(id, 'Maintenance request');
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
-      const result = await client.query(
-        `SELECT ${REQ_COLUMNS} FROM ${REQ_FROM} WHERE r.tenant_id = $1 AND r.id = $2`,
-        [principal.tenantId, id],
-      );
+      const values: unknown[] = [principal.tenantId, id];
+      const where = ['r.tenant_id = $1', 'r.id = $2', ...visibleRequests(principal, values)];
+      const result = await client.query(`SELECT ${REQ_COLUMNS} FROM ${REQ_FROM} WHERE ${where.join(' AND ')}`, values);
       if (!result.rows[0]) throw notFound('Maintenance request');
-      const req = mapRequest(result.rows[0]);
-
-      const canViewAll =
-        holdsPermission(principal.permissions, 'cmms.requests.write') ||
-        holdsPermission(principal.permissions, 'cmms.work-orders.write') ||
-        holdsPermission(principal.permissions, 'cmms.work-orders.read');
-
-      if (!canViewAll && req.requesterSubject !== principal.subject) {
-        throw new ForbiddenException({
-          code: 'CMMS_OUT_OF_SCOPE',
-          message: 'You can only view your own maintenance requests.',
-        });
-      }
-
-      return req;
+      return mapRequest(result.rows[0]);
     });
   }
 
@@ -163,17 +171,9 @@ export class RequestsService {
     const query = parseInput(SearchCmmsRequestsV1Schema, raw);
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
       const values: unknown[] = [principal.tenantId];
-      const where = ['r.tenant_id = $1'];
+      const where = ['r.tenant_id = $1', ...visibleRequests(principal, values)];
 
-      const canViewAll =
-        holdsPermission(principal.permissions, 'cmms.requests.write') ||
-        holdsPermission(principal.permissions, 'cmms.work-orders.write') ||
-        holdsPermission(principal.permissions, 'cmms.work-orders.read');
-
-      if (!canViewAll) {
-        values.push(principal.subject);
-        where.push(`r.requester_subject = $${values.length}`);
-      } else if (query.requesterSubject) {
+      if (query.requesterSubject && holdsPermission(principal.permissions, 'cmms.requests.write')) {
         values.push(query.requesterSubject);
         where.push(`r.requester_subject = $${values.length}`);
       }
@@ -203,9 +203,12 @@ export class RequestsService {
         `SELECT ${REQ_COLUMNS}, COUNT(*) OVER()::int AS total_count
            FROM ${REQ_FROM}
           WHERE ${where.join(' AND ')}
-          ORDER BY CASE r.status WHEN 'PENDING' THEN 0 WHEN 'ACCEPTED' THEN 1 ELSE 2 END,
+          ORDER BY ${
+            chosenOrder(REQ_SORT, query.sortField, query.sortDirection, 'r.id') ??
+            `CASE r.status WHEN 'PENDING' THEN 0 WHEN 'ACCEPTED' THEN 1 ELSE 2 END,
                    CASE r.priority WHEN 'EMERGENCY' THEN 0 WHEN 'HIGH' THEN 1 WHEN 'MEDIUM' THEN 2 ELSE 3 END,
-                   r.created_at DESC, r.id
+                   r.created_at DESC, r.id`
+          }
           LIMIT $${values.length - 1} OFFSET $${values.length}`,
         values,
       );
@@ -229,12 +232,15 @@ export class RequestsService {
     const input = parseInput(TriageCmmsRequestV1Schema, raw);
 
     return this.database.withTenantTransaction(context.principal.tenantId, async (client) => {
+      const values: unknown[] = [context.principal.tenantId, id];
+      const where = ['r.tenant_id = $1', 'r.id = $2', ...visibleRequests(context.principal, values)];
       const existingResult = await client.query(
-        `SELECT ${REQ_COLUMNS} FROM ${REQ_FROM} WHERE r.tenant_id = $1 AND r.id = $2 FOR UPDATE`,
-        [context.principal.tenantId, id],
+        `SELECT ${REQ_COLUMNS} FROM ${REQ_FROM} WHERE ${where.join(' AND ')} FOR UPDATE OF r`,
+        values,
       );
       if (!existingResult.rows[0]) throw notFound('Maintenance request');
       const req = mapRequest(existingResult.rows[0]);
+      assertMayChange(context.principal, req);
 
       if (req.status !== 'PENDING') {
         throw new ConflictException({
@@ -334,28 +340,20 @@ export class RequestsService {
     const input = parseInput(CancelCmmsRequestV1Schema, raw);
 
     return this.database.withTenantTransaction(context.principal.tenantId, async (client) => {
+      const values: unknown[] = [context.principal.tenantId, id];
+      const where = ['r.tenant_id = $1', 'r.id = $2', ...visibleRequests(context.principal, values)];
       const existingResult = await client.query(
-        `SELECT ${REQ_COLUMNS} FROM ${REQ_FROM} WHERE r.tenant_id = $1 AND r.id = $2 FOR UPDATE`,
-        [context.principal.tenantId, id],
+        `SELECT ${REQ_COLUMNS} FROM ${REQ_FROM} WHERE ${where.join(' AND ')} FOR UPDATE OF r`,
+        values,
       );
       if (!existingResult.rows[0]) throw notFound('Maintenance request');
       const req = mapRequest(existingResult.rows[0]);
+      assertMayChange(context.principal, req);
 
       if (req.status !== 'PENDING') {
         throw new ConflictException({
           code: 'CMMS_REQUEST_NOT_PENDING',
           message: `Only pending requests can be cancelled; this request is ${req.status.toLowerCase()}.`,
-        });
-      }
-
-      const isPlanner =
-        holdsPermission(context.principal.permissions, 'cmms.requests.write') ||
-        holdsPermission(context.principal.permissions, 'cmms.work-orders.write');
-
-      if (!isPlanner && req.requesterSubject !== context.principal.subject) {
-        throw new ForbiddenException({
-          code: 'CMMS_OUT_OF_SCOPE',
-          message: 'You can only cancel your own maintenance requests.',
         });
       }
 

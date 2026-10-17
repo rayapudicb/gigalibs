@@ -100,7 +100,8 @@ describe('TenancyService.syncDefaultRoles', () => {
     await expect(service.syncDefaultRoles(tenantId, [viewer])).rejects.toThrow('database down');
   });
 
-  it('refuses updating a built-in role if an existing holder has explicit unit scope and new permissions are not scope-enforced', async () => {
+  // WI-OI-120be (W1 review A, L4): a refused role is left as it was and the sync completes (it no longer fails).
+  it('leaves a built-in role unchanged if an existing holder has explicit unit scope and new permissions are not scope-enforced', async () => {
     prismaMock.customRole.findMany.mockResolvedValue([
       { id: 'r-steward', name: 'Analytics data steward', description: 'Old.', isSystem: true, permissions: ['analytics:read'] },
     ]);
@@ -109,13 +110,11 @@ describe('TenancyService.syncDefaultRoles', () => {
       { userId: 'u-1', scope: 'UNITS', customRoleId: 'r-steward' },
     ]);
     // analytics:models:publish is checked by analytics-studio which is not in SCOPE_ENFORCING_MODULES
-    await expect(service.syncDefaultRoles(tenantId, [steward])).rejects.toMatchObject({
-      response: expect.objectContaining({ code: 'ROLE_SCOPE_NOT_ENFORCED' }),
-    });
+    await expect(service.syncDefaultRoles(tenantId, [steward])).resolves.toBeUndefined();
     expect(prismaMock.customRole.update).not.toHaveBeenCalled();
   });
 
-  it('refuses updating a built-in role if an existing holder at units would gain control-plane permissions', async () => {
+  it('leaves a built-in role unchanged if an existing holder at units would gain control-plane permissions', async () => {
     prismaMock.customRole.findMany.mockResolvedValue([
       { id: 'r-viewer', name: 'Analytics viewer', description: 'Views.', isSystem: true, permissions: ['analytics:read'] },
     ]);
@@ -126,10 +125,19 @@ describe('TenancyService.syncDefaultRoles', () => {
       ...viewer,
       permissions: ['analytics:read', 'users:create'], // users:create is control-plane
     };
-    await expect(service.syncDefaultRoles(tenantId, [driftedViewer])).rejects.toMatchObject({
-      response: expect.objectContaining({ code: 'ROLE_SCOPE_WORKSPACE_ONLY' }),
-    });
+    await expect(service.syncDefaultRoles(tenantId, [driftedViewer])).resolves.toBeUndefined();
     expect(prismaMock.customRole.update).not.toHaveBeenCalled();
+  });
+
+  it('still syncs the other roles when one is refused', async () => {
+    prismaMock.customRole.findMany.mockResolvedValue([
+      { id: 'r-viewer', name: 'Analytics viewer', description: 'Views.', isSystem: true, permissions: ['analytics:read'] },
+    ]);
+    prismaMock.memberRoleAssignment.findMany.mockResolvedValue([{ userId: 'u-1', scope: 'UNITS', customRoleId: 'r-viewer' }]);
+    const driftedViewer = { ...viewer, permissions: ['analytics:read', 'users:create'] };
+    await expect(service.syncDefaultRoles(tenantId, [driftedViewer, steward])).resolves.toBeUndefined();
+    expect(prismaMock.customRole.update).not.toHaveBeenCalled();
+    expect(prismaMock.customRole.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ name: steward.name }) }));
   });
 
   it('ships the three Analytics roles of ADR-0016 F16 from the manifest', () => {

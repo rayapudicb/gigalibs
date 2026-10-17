@@ -21,8 +21,12 @@ import {
   recordMutation,
   translateConstraint,
   versionConflict,
+  chosenOrder,
 } from '../common/command.js';
 import { DatabaseService } from '../database/database.service.js';
+
+// WI-OI-120be: the columns a chosen sort may use; nothing else reaches ORDER BY.
+const ASSET_SORT = { assetTag: 'a.asset_tag', name: 'a.name', createdAt: 'a.created_at' } as const;
 
 const ASSET_COLUMNS = `a.id, a.asset_tag, a.name, a.description, a.category, a.status, a.criticality,
   a.manufacturer, a.model, a.serial_number, a.parent_asset_id, a.site_ref, a.department_id, a.space_id, a.classification_id,
@@ -64,7 +68,7 @@ export class AssetsService {
         `SELECT ${ASSET_COLUMNS}, COUNT(*) OVER()::int AS total_count
            FROM gigalibs_cmms.assets a
           WHERE ${where.join(' AND ')}
-          ORDER BY a.name ASC, a.id ASC
+          ORDER BY ${chosenOrder(ASSET_SORT, query.sortField, query.sortDirection, 'a.id') ?? 'a.name ASC, a.id ASC'}
           LIMIT $${values.length - 1} OFFSET $${values.length}`,
         values,
       );
@@ -94,6 +98,7 @@ export class AssetsService {
     const classificationId = input.classificationId === undefined ? null : input.classificationId;
     if (classificationId) assertUuid(classificationId, 'classificationId');
     return this.database.withTenantTransaction(context.principal.tenantId, async (client) => {
+      if (spaceId) await this.assertVisibleSpace(client, context.principal, spaceId);
       if (input.parentAssetId) await this.visibleAsset(client, context.principal, input.parentAssetId, false);
       try {
         const result = await client.query<{ id: string }>(
@@ -168,6 +173,7 @@ export class AssetsService {
       }
       const spaceId = input.spaceId === undefined ? current.space_id : input.spaceId;
       if (spaceId) assertUuid(spaceId, 'spaceId');
+      if (spaceId && spaceId !== current.space_id) await this.assertVisibleSpace(client, context.principal, spaceId);
       const classificationId =
         input.classificationId === undefined ? current.classification_id : input.classificationId;
       if (classificationId) assertUuid(classificationId, 'classificationId');
@@ -276,6 +282,19 @@ export class AssetsService {
     const result = await client.query(`SELECT ${ASSET_COLUMNS} FROM gigalibs_cmms.assets a WHERE ${where.join(' AND ')}`, values);
     if (!result.rows[0]) notFound('The asset');
     return mapAsset(result.rows[0]);
+  }
+
+  /** WI-OI-120be (W1 review A, L5): an asset may only be placed in a space the caller can see. */
+  private async assertVisibleSpace(client: PoolClient, principal: CmmsPrincipal, spaceId: string): Promise<void> {
+    const values: unknown[] = [principal.tenantId, spaceId];
+    const where = ['s.tenant_id = $1', 's.id = $2'];
+    if (principal.organization?.mode === 'DENIED') where.push('FALSE');
+    if (principal.placeScope.mode === 'PLACES') {
+      values.push([...principal.placeScope.placeIds]);
+      where.push(`s.site_ref = ANY($${values.length}::uuid[])`);
+    }
+    const result = await client.query(`SELECT s.id FROM gigalibs_cmms.cmms_spaces s WHERE ${where.join(' AND ')}`, values);
+    if (!result.rows[0]) notFound('Space');
   }
 
   private async lockVisibleAsset(client: PoolClient, principal: CmmsPrincipal, assetId: string) {

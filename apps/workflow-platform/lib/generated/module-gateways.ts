@@ -1261,13 +1261,20 @@ export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGat
         }
       },
       {
-        "template": "v1/work-orders/{id}/status|tasks|labour|parts|notes|staffing",
-        "pattern": "^v1/work-orders/[0-9a-fA-F-]{36}/(?:status|tasks|labour|parts|notes|staffing)$",
+        "template": "v1/work-orders/{id}/status|tasks|labour|parts|notes",
+        "pattern": "^v1/work-orders/[0-9a-fA-F-]{36}/(?:status|tasks|labour|parts|notes)$",
         "methods": {
           "POST": [
             "cmms.work-orders.write",
             "cmms.work-orders.execute-own"
           ]
+        }
+      },
+      {
+        "template": "v1/work-orders/{id}/staffing",
+        "pattern": "^v1/work-orders/[0-9a-fA-F-]{36}/staffing$",
+        "methods": {
+          "POST": "cmms.work-orders.write"
         }
       },
       {

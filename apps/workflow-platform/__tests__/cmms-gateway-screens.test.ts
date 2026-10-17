@@ -78,8 +78,8 @@ describe('CMMS screens reach their API through the gateway', () => {
 
   // WI-OI-120aj (Security review M2, 2026-10-14): the record and lookup routes come from the module SDK's
   // `createRecordController`, not from a `*.controller.ts` file. They count as served only while the CMMS app registers
-  // it. Their gateway permission (`cmms:read`; the API checks each record type's own permission) is finding W1 for the
-  // CMMS Security review (execution plan v3 steps 1.1–1.3).
+  // it. Their gateway permission is `cmms:read`; the API checks each record type's, action's and lookup's own permission
+  // (accepted as finding W1 by the W1 Security review, WI-OI-120be, 2026-10-16).
   const SDK_RECORD_ROUTES = [
     'GET v1/records/{entity}', 'POST v1/records/{entity}', 'GET v1/records/{entity}/{id}', 'PATCH v1/records/{entity}/{id}',
     'POST v1/records/{entity}/{id}/actions/{key}', 'GET v1/lookups/{key}',

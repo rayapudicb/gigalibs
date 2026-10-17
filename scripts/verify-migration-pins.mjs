@@ -46,8 +46,6 @@ const MODULES = [
       file: 'modules/physical-operations-cmms/apps/api/src/runtime-config.ts',
       pattern: /export const CMMS_SCHEMA_CONTRACT_VERSION = (\d+);/,
     },
-    // WI-OI-120aj (Security review M3): CMMS 000020 is not reviewed; the job stays at 19 until plan v3 step 1.3.
-    hold: 19,
   },
   {
     compose: 'infra/compose/compose.workforce.local.yaml',

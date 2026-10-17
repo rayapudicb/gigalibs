@@ -52,7 +52,8 @@
           "isSystemLocked": false,
           "classification": "INTERNAL",
           "maskOnDisplay": false,
-          "helpText": "Classification identifier."
+          "helpText": "Classification identifier.",
+          "writePermission": "cmms.assets.write"
         },
         {
           "fieldKey": "name",
@@ -63,7 +64,8 @@
           "readOnly": false,
           "isSystemLocked": false,
           "classification": "INTERNAL",
-          "maskOnDisplay": false
+          "maskOnDisplay": false,
+          "writePermission": "cmms.assets.write"
         },
         {
           "fieldKey": "description",
@@ -74,7 +76,8 @@
           "readOnly": false,
           "isSystemLocked": false,
           "classification": "INTERNAL",
-          "maskOnDisplay": false
+          "maskOnDisplay": false,
+          "writePermission": "cmms.assets.write"
         },
         {
           "fieldKey": "parent-class-id",
@@ -86,7 +89,8 @@
           "isSystemLocked": false,
           "classification": "INTERNAL",
           "maskOnDisplay": false,
-          "referenceKey": "classification-ref"
+          "referenceKey": "classification-ref",
+          "writePermission": "cmms.assets.write"
         },
         {
           "fieldKey": "spec-count",
@@ -163,7 +167,8 @@
           "readOnly": false,
           "isSystemLocked": false,
           "classification": "INTERNAL",
-          "maskOnDisplay": false
+          "maskOnDisplay": false,
+          "writePermission": "cmms.assets.write"
         },
         {
           "fieldKey": "label",
@@ -174,7 +179,8 @@
           "readOnly": false,
           "isSystemLocked": false,
           "classification": "INTERNAL",
-          "maskOnDisplay": false
+          "maskOnDisplay": false,
+          "writePermission": "cmms.assets.write"
         },
         {
           "fieldKey": "data-type",
@@ -186,7 +192,8 @@
           "isSystemLocked": false,
           "classification": "INTERNAL",
           "maskOnDisplay": false,
-          "referenceKey": "spec-data-types"
+          "referenceKey": "spec-data-types",
+          "writePermission": "cmms.assets.write"
         },
         {
           "fieldKey": "uom",
@@ -197,7 +204,8 @@
           "readOnly": false,
           "isSystemLocked": false,
           "classification": "INTERNAL",
-          "maskOnDisplay": false
+          "maskOnDisplay": false,
+          "writePermission": "cmms.assets.write"
         },
         {
           "fieldKey": "required",
@@ -208,7 +216,8 @@
           "readOnly": false,
           "isSystemLocked": false,
           "classification": "INTERNAL",
-          "maskOnDisplay": false
+          "maskOnDisplay": false,
+          "writePermission": "cmms.assets.write"
         },
         {
           "fieldKey": "min-value",
@@ -219,7 +228,8 @@
           "readOnly": false,
           "isSystemLocked": false,
           "classification": "INTERNAL",
-          "maskOnDisplay": false
+          "maskOnDisplay": false,
+          "writePermission": "cmms.assets.write"
         },
         {
           "fieldKey": "max-value",
@@ -230,7 +240,8 @@
           "readOnly": false,
           "isSystemLocked": false,
           "classification": "INTERNAL",
-          "maskOnDisplay": false
+          "maskOnDisplay": false,
+          "writePermission": "cmms.assets.write"
         },
         {
           "fieldKey": "default-value",
@@ -241,7 +252,8 @@
           "readOnly": false,
           "isSystemLocked": false,
           "classification": "INTERNAL",
-          "maskOnDisplay": false
+          "maskOnDisplay": false,
+          "writePermission": "cmms.assets.write"
         }
       ],
       "relationships": [

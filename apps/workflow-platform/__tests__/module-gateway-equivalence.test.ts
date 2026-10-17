@@ -194,25 +194,24 @@ function withNegatives(paths: string[]): string[] {
 }
 
 describe('manifest-generated gateways equal the hand-written allow-lists', () => {
-  // Under review (WI-OI-120aj, owner decision E2a; its Security review M2, 2026-10-14). The unreviewed CMMS commits
-  // (WI-OI-120t) differ from the reviewed hand-written allow-list (37e5556) in exactly these method-paths. Any other
-  // difference, or a change to one of these, fails. The CMMS Security review (execution plan v3 steps 1.1–1.3) moves
-  // each one it accepts into `intendedCmmsPermission`, or restores it, and then empties this list.
-  const CMMS_UNDER_REVIEW: Array<{ method: string; path: string; permission: unknown; reviewed: unknown }> = [
-    { method: 'POST', path: 'v1/requests/search', permission: 'cmms.requests.read', reviewed: null },
-    { method: 'POST', path: 'v1/requests', permission: 'cmms.requests.create', reviewed: null },
-    { method: 'GET', path: 'v1/requests/{id}', permission: 'cmms.requests.read', reviewed: null },
-    { method: 'POST', path: 'v1/requests/{id}/triage', permission: 'cmms.requests.write', reviewed: null },
-    { method: 'POST', path: 'v1/requests/{id}/cancel', permission: 'cmms.requests.create', reviewed: null },
-    { method: 'POST', path: 'v1/work-orders/{id}/status', permission: ['cmms.work-orders.write', 'cmms.work-orders.execute-own'], reviewed: 'cmms.work-orders.write' },
-    { method: 'POST', path: 'v1/work-orders/{id}/tasks', permission: ['cmms.work-orders.write', 'cmms.work-orders.execute-own'], reviewed: 'cmms.work-orders.write' },
-    { method: 'POST', path: 'v1/work-orders/{id}/labour', permission: ['cmms.work-orders.write', 'cmms.work-orders.execute-own'], reviewed: 'cmms.work-orders.write' },
-    { method: 'POST', path: 'v1/work-orders/{id}/parts', permission: ['cmms.work-orders.write', 'cmms.work-orders.execute-own'], reviewed: 'cmms.work-orders.write' },
-    { method: 'POST', path: 'v1/work-orders/{id}/notes', permission: ['cmms.work-orders.write', 'cmms.work-orders.execute-own'], reviewed: 'cmms.work-orders.write' },
-    { method: 'POST', path: 'v1/work-orders/{id}/staffing', permission: ['cmms.work-orders.write', 'cmms.work-orders.execute-own'], reviewed: 'cmms.work-orders.write' },
-    { method: 'PATCH', path: 'v1/work-orders/{id}/tasks/{id}', permission: ['cmms.work-orders.write', 'cmms.work-orders.execute-own'], reviewed: 'cmms.work-orders.write' },
-    { method: 'GET', path: 'v1/meters/{id}', permission: 'cmms.meters.read', reviewed: null },
-  ];
+  // WI-OI-120be (W1 Security review, 2026-10-16): the CMMS routes that differ from the frozen hand-written allow-list
+  // (37e5556), each accepted by the review. Executing work takes write or execute-own (the record API checks assignment);
+  // staffing stays write only (finding W2), so it matches the oracle and is not listed. Any other difference fails.
+  const EXECUTE = ['cmms.work-orders.write', 'cmms.work-orders.execute-own'];
+  const CMMS_REVIEWED: Readonly<Record<string, unknown>> = {
+    'POST v1/requests/search': 'cmms.requests.read',
+    'POST v1/requests': 'cmms.requests.create',
+    'GET v1/requests/{id}': 'cmms.requests.read',
+    'POST v1/requests/{id}/triage': 'cmms.requests.write',
+    'POST v1/requests/{id}/cancel': 'cmms.requests.create',
+    'POST v1/work-orders/{id}/status': EXECUTE,
+    'POST v1/work-orders/{id}/tasks': EXECUTE,
+    'POST v1/work-orders/{id}/labour': EXECUTE,
+    'POST v1/work-orders/{id}/parts': EXECUTE,
+    'POST v1/work-orders/{id}/notes': EXECUTE,
+    'PATCH v1/work-orders/{id}/tasks/{id}': EXECUTE,
+    'GET v1/meters/{id}': 'cmms.meters.read',
+  };
   it('CMMS: every method and path in the corpus', () => {
     const legacyPaths = LEGACY_CMMS_ROUTES.flatMap(([, pattern]) =>
       fromLegacyRegex(pattern.source),
@@ -222,16 +221,18 @@ describe('manifest-generated gateways equal the hand-written allow-lists', () =>
     const differences: Array<{ method: string; path: string; permission: unknown; reviewed: unknown }> = [];
     for (const path of corpus) {
       for (const method of METHODS) {
-        const expected =
-          legacyCmmsPermission(method, path.split('/')) ?? intendedCmmsPermission(method, path);
-        const permission = requiredCmmsPermission(method, path.split('/'));
         const template = path.replace(/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/g, '{id}');
+        const expected =
+          CMMS_REVIEWED[`${method} ${template}`] ??
+          legacyCmmsPermission(method, path.split('/')) ??
+          intendedCmmsPermission(method, path);
+        const permission = requiredCmmsPermission(method, path.split('/'));
         const seen = differences.some((d) => d.method === method && d.path === template);
         if (!seen && JSON.stringify(permission) !== JSON.stringify(expected)) differences.push({ method, path: template, permission, reviewed: expected });
         if (expected) allowed += 1;
       }
     }
-    expect(differences).toEqual(CMMS_UNDER_REVIEW);
+    expect(differences).toEqual([]);
     expect(legacyPaths.length).toBeGreaterThanOrEqual(30);
     expect(allowed).toBeGreaterThanOrEqual(30);
   });

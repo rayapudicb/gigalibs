@@ -1,4 +1,7 @@
 -- WI-OI-120t (M-CM1 Slice 2): Canonical maintenance requests intake, triage, and work-order conversion.
+-- WI-OI-120be (W1 reviews, before any deploy): a request carries its asset's unit and site, so R5 scopes it like the
+-- asset's own work (the unvalidated location_id is gone); record_idempotency keeps the record API's Idempotency-Key
+-- results durably, as in Finance, Workforce and Catalogue.
 BEGIN;
 
 CREATE TABLE gigalibs_cmms.request_counters (
@@ -16,7 +19,8 @@ CREATE TABLE gigalibs_cmms.maintenance_requests (
   status             text NOT NULL DEFAULT 'PENDING'
     CHECK (status IN ('PENDING', 'ACCEPTED', 'REJECTED', 'CANCELLED')),
   asset_id           uuid,
-  location_id        uuid,
+  site_ref           uuid,
+  department_id      text CHECK (char_length(department_id) BETWEEN 1 AND 64),
   requester_subject  gigalibs_cmms.principal_ref NOT NULL,
   requester_name     text CHECK (char_length(requester_name) <= 240),
   requester_email    text CHECK (char_length(requester_email) <= 240),
@@ -43,6 +47,28 @@ CREATE TABLE gigalibs_cmms.maintenance_requests (
 
 CREATE INDEX requests_queue ON gigalibs_cmms.maintenance_requests (tenant_id, status, priority, created_at DESC);
 CREATE INDEX requests_requester ON gigalibs_cmms.maintenance_requests (tenant_id, requester_subject);
+CREATE INDEX requests_by_site ON gigalibs_cmms.maintenance_requests (tenant_id, site_ref);
+CREATE INDEX requests_by_department ON gigalibs_cmms.maintenance_requests (tenant_id, department_id);
+
+CREATE TABLE gigalibs_cmms.record_idempotency (
+  tenant_id varchar(64) NOT NULL,
+  idempotency_key uuid NOT NULL,
+  operation varchar(200) NOT NULL,
+  request_hash char(64) NOT NULL,
+  state varchar(16) NOT NULL CHECK (state IN ('IN_PROGRESS', 'COMPLETED')),
+  response jsonb,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  completed_at timestamptz,
+  PRIMARY KEY (tenant_id, idempotency_key),
+  CHECK ((state = 'COMPLETED') = (completed_at IS NOT NULL))
+);
+CREATE INDEX record_idempotency_created ON gigalibs_cmms.record_idempotency (created_at);
+
+ALTER TABLE gigalibs_cmms.record_idempotency ENABLE ROW LEVEL SECURITY;
+ALTER TABLE gigalibs_cmms.record_idempotency FORCE ROW LEVEL SECURITY;
+CREATE POLICY record_idempotency_tenant_isolation ON gigalibs_cmms.record_idempotency
+  FOR ALL USING (tenant_id = NULLIF(current_setting('app.tenant_id', true), ''))
+  WITH CHECK (tenant_id = NULLIF(current_setting('app.tenant_id', true), ''));
 
 ALTER TABLE gigalibs_cmms.request_counters ENABLE ROW LEVEL SECURITY;
 ALTER TABLE gigalibs_cmms.request_counters FORCE ROW LEVEL SECURITY;

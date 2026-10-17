@@ -34,6 +34,7 @@ import {
   HttpException,
   HttpStatus,
   Injectable,
+  Logger,
   NotFoundException,
   ServiceUnavailableException,
   UnprocessableEntityException,
@@ -59,6 +60,7 @@ import { assertTenantAdminAuthority, assertTenantAdministratorRetained } from '.
 
 @Injectable()
 export class TenancyService {
+  private readonly logger = new Logger(TenancyService.name);
   async createTenant(dto: CreateTenantDto, ownerUserId: string) {
     const [existing, activeTrial] = await Promise.all([
       prisma.tenant.findUnique({ where: { slug: dto.slug }, select: { id: true } }),
@@ -767,18 +769,27 @@ export class TenancyService {
               where: { tenantId, customRoleId: { in: affected.map((entry) => entry.id) }, revokedAt: null },
               select: { userId: true, scope: true, customRoleId: true },
             });
-            for (const holder of holders) {
-              const added = affected.find((entry) => entry.id === holder.customRoleId)?.added ?? [];
-              if (holder.scope === 'UNITS' || holder.scope === 'PLACES') {
-                const controlPlane = CONTROL_PLANE_PERMISSIONS.filter((code) => holdsPermission(added, code));
-                if (controlPlane.length > 0)
-                  throw new UnprocessableEntityException({
-                    code: 'ROLE_SCOPE_WORKSPACE_ONLY',
-                    message: `A role held at units or places cannot gain workspace permissions (${controlPlane.slice(0, 5).join(', ')}).`,
-                  });
-                assertScopeEnforced(added, holder.scope === 'UNITS' ? 'units' : 'places');
+            try {
+              for (const holder of holders) {
+                const added = affected.find((entry) => entry.id === holder.customRoleId)?.added ?? [];
+                if (holder.scope === 'UNITS' || holder.scope === 'PLACES') {
+                  const controlPlane = CONTROL_PLANE_PERMISSIONS.filter((code) => holdsPermission(added, code));
+                  if (controlPlane.length > 0)
+                    throw new UnprocessableEntityException({
+                      code: 'ROLE_SCOPE_WORKSPACE_ONLY',
+                      message: `A role held at units or places cannot gain workspace permissions (${controlPlane.slice(0, 5).join(', ')}).`,
+                    });
+                  assertScopeEnforced(added, holder.scope === 'UNITS' ? 'units' : 'places');
+                }
+                await assertScopesConsistent(transaction, tenantId, holder.userId, { graph: after });
               }
-              await assertScopesConsistent(transaction, tenantId, holder.userId, { graph: after });
+            } catch (refusal) {
+              if (!(refusal instanceof HttpException)) throw refusal;
+              // WI-OI-120be (W1 review A, L4): a refused update leaves that one role as it was and the sync goes on, so
+              // one holder's scope cannot stop the other roles or the workspace's roles screen.
+              const code = (refusal.getResponse() as { code?: string }).code ?? refusal.name;
+              this.logger.warn(`Built-in role "${role.name}" in tenant ${tenantId} was not updated (${code}): ${refusal.message}`);
+              continue;
             }
           }
 

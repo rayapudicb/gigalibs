@@ -26,6 +26,7 @@
     "dist",
     "src/**/*.spec.ts",
     "src/**/*.test.ts",
-    "src/import-export/**"
+    "src/import-export/**",
+    "src/test/**"
   ]
 }

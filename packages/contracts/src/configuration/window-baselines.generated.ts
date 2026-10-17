@@ -5434,7 +5434,8 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "isSystemLocked": false,
             "classification": "INTERNAL",
             "maskOnDisplay": false,
-            "helpText": "Classification identifier."
+            "helpText": "Classification identifier.",
+            "writePermission": "cmms.assets.write"
           },
           {
             "fieldKey": "name",
@@ -5445,7 +5446,8 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "readOnly": false,
             "isSystemLocked": false,
             "classification": "INTERNAL",
-            "maskOnDisplay": false
+            "maskOnDisplay": false,
+            "writePermission": "cmms.assets.write"
           },
           {
             "fieldKey": "description",
@@ -5456,7 +5458,8 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "readOnly": false,
             "isSystemLocked": false,
             "classification": "INTERNAL",
-            "maskOnDisplay": false
+            "maskOnDisplay": false,
+            "writePermission": "cmms.assets.write"
           },
           {
             "fieldKey": "parent-class-id",
@@ -5468,7 +5471,8 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "isSystemLocked": false,
             "classification": "INTERNAL",
             "maskOnDisplay": false,
-            "referenceKey": "classification-ref"
+            "referenceKey": "classification-ref",
+            "writePermission": "cmms.assets.write"
           },
           {
             "fieldKey": "spec-count",
@@ -5545,7 +5549,8 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "readOnly": false,
             "isSystemLocked": false,
             "classification": "INTERNAL",
-            "maskOnDisplay": false
+            "maskOnDisplay": false,
+            "writePermission": "cmms.assets.write"
           },
           {
             "fieldKey": "label",
@@ -5556,7 +5561,8 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "readOnly": false,
             "isSystemLocked": false,
             "classification": "INTERNAL",
-            "maskOnDisplay": false
+            "maskOnDisplay": false,
+            "writePermission": "cmms.assets.write"
           },
           {
             "fieldKey": "data-type",
@@ -5568,7 +5574,8 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "isSystemLocked": false,
             "classification": "INTERNAL",
             "maskOnDisplay": false,
-            "referenceKey": "spec-data-types"
+            "referenceKey": "spec-data-types",
+            "writePermission": "cmms.assets.write"
           },
           {
             "fieldKey": "uom",
@@ -5579,7 +5586,8 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "readOnly": false,
             "isSystemLocked": false,
             "classification": "INTERNAL",
-            "maskOnDisplay": false
+            "maskOnDisplay": false,
+            "writePermission": "cmms.assets.write"
           },
           {
             "fieldKey": "required",
@@ -5590,7 +5598,8 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "readOnly": false,
             "isSystemLocked": false,
             "classification": "INTERNAL",
-            "maskOnDisplay": false
+            "maskOnDisplay": false,
+            "writePermission": "cmms.assets.write"
           },
           {
             "fieldKey": "min-value",
@@ -5601,7 +5610,8 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "readOnly": false,
             "isSystemLocked": false,
             "classification": "INTERNAL",
-            "maskOnDisplay": false
+            "maskOnDisplay": false,
+            "writePermission": "cmms.assets.write"
           },
           {
             "fieldKey": "max-value",
@@ -5612,7 +5622,8 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "readOnly": false,
             "isSystemLocked": false,
             "classification": "INTERNAL",
-            "maskOnDisplay": false
+            "maskOnDisplay": false,
+            "writePermission": "cmms.assets.write"
           },
           {
             "fieldKey": "default-value",
@@ -5623,7 +5634,8 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "readOnly": false,
             "isSystemLocked": false,
             "classification": "INTERNAL",
-            "maskOnDisplay": false
+            "maskOnDisplay": false,
+            "writePermission": "cmms.assets.write"
           }
         ],
         "relationships": [
@@ -6890,7 +6902,8 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "isSystemLocked": false,
             "classification": "INTERNAL",
             "maskOnDisplay": false,
-            "helpText": "Summary of the issue or maintenance request."
+            "helpText": "Summary of the issue or maintenance request.",
+            "writePermission": "cmms.requests.create"
           },
           {
             "fieldKey": "description",
@@ -6901,7 +6914,8 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "readOnly": false,
             "isSystemLocked": false,
             "classification": "INTERNAL",
-            "maskOnDisplay": false
+            "maskOnDisplay": false,
+            "writePermission": "cmms.requests.create"
           },
           {
             "fieldKey": "priority",
@@ -6913,7 +6927,8 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "isSystemLocked": false,
             "classification": "INTERNAL",
             "maskOnDisplay": false,
-            "referenceKey": "priorities"
+            "referenceKey": "priorities",
+            "writePermission": "cmms.requests.create"
           },
           {
             "fieldKey": "status",
@@ -6937,7 +6952,8 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "isSystemLocked": false,
             "classification": "INTERNAL",
             "maskOnDisplay": false,
-            "referenceKey": "asset-ref"
+            "referenceKey": "asset-ref",
+            "writePermission": "cmms.requests.create"
           },
           {
             "fieldKey": "requester-name",
@@ -6948,7 +6964,8 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "readOnly": false,
             "isSystemLocked": false,
             "classification": "INTERNAL",
-            "maskOnDisplay": false
+            "maskOnDisplay": false,
+            "writePermission": "cmms.requests.create"
           },
           {
             "fieldKey": "requester-email",
@@ -6959,7 +6976,8 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "readOnly": false,
             "isSystemLocked": false,
             "classification": "INTERNAL",
-            "maskOnDisplay": false
+            "maskOnDisplay": false,
+            "writePermission": "cmms.requests.create"
           },
           {
             "fieldKey": "requester-phone",
@@ -6970,7 +6988,8 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "readOnly": false,
             "isSystemLocked": false,
             "classification": "INTERNAL",
-            "maskOnDisplay": false
+            "maskOnDisplay": false,
+            "writePermission": "cmms.requests.create"
           },
           {
             "fieldKey": "requester-subject",
@@ -7165,14 +7184,22 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
                     "position": 1,
                     "span": 6,
                     "componentKey": "text-input",
-                    "sectionKey": "main"
+                    "sectionKey": "main",
+                    "readOnlyCondition": {
+                      "field": "request-number",
+                      "operator": "IS_NOT_NULL"
+                    }
                   },
                   {
                     "fieldKey": "priority",
                     "position": 2,
                     "span": 3,
                     "componentKey": "select",
-                    "sectionKey": "main"
+                    "sectionKey": "main",
+                    "readOnlyCondition": {
+                      "field": "request-number",
+                      "operator": "IS_NOT_NULL"
+                    }
                   },
                   {
                     "fieldKey": "status",
@@ -7186,35 +7213,55 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
                     "position": 4,
                     "span": 5,
                     "componentKey": "lookup",
-                    "sectionKey": "main"
+                    "sectionKey": "main",
+                    "readOnlyCondition": {
+                      "field": "request-number",
+                      "operator": "IS_NOT_NULL"
+                    }
                   },
                   {
                     "fieldKey": "requester-name",
                     "position": 5,
                     "span": 4,
                     "componentKey": "text-input",
-                    "sectionKey": "main"
+                    "sectionKey": "main",
+                    "readOnlyCondition": {
+                      "field": "request-number",
+                      "operator": "IS_NOT_NULL"
+                    }
                   },
                   {
                     "fieldKey": "description",
                     "position": 6,
                     "span": 12,
                     "componentKey": "textarea",
-                    "sectionKey": "details"
+                    "sectionKey": "details",
+                    "readOnlyCondition": {
+                      "field": "request-number",
+                      "operator": "IS_NOT_NULL"
+                    }
                   },
                   {
                     "fieldKey": "requester-email",
                     "position": 7,
                     "span": 6,
                     "componentKey": "text-input",
-                    "sectionKey": "contact"
+                    "sectionKey": "contact",
+                    "readOnlyCondition": {
+                      "field": "request-number",
+                      "operator": "IS_NOT_NULL"
+                    }
                   },
                   {
                     "fieldKey": "requester-phone",
                     "position": 8,
                     "span": 6,
                     "componentKey": "text-input",
-                    "sectionKey": "contact"
+                    "sectionKey": "contact",
+                    "readOnlyCondition": {
+                      "field": "request-number",
+                      "operator": "IS_NOT_NULL"
+                    }
                   },
                   {
                     "fieldKey": "converted-wo-id",
@@ -9703,7 +9750,7 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "type": "COMMAND",
             "handlerKey": "cmms.work-orders.hold",
             "requiredPermissions": [
-              "cmms.work-orders.execute-own"
+              "cmms.work-orders.write"
             ],
             "confirmationPrompt": "Put this work order on hold?",
             "parameters": [
@@ -9764,7 +9811,7 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "type": "COMMAND",
             "handlerKey": "cmms.work-orders.cancel",
             "requiredPermissions": [
-              "cmms.work-orders.execute-own"
+              "cmms.work-orders.write"
             ],
             "confirmationPrompt": "Cancel this work order? This cannot be undone.",
             "parameters": [

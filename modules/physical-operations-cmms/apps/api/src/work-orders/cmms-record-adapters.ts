@@ -14,7 +14,6 @@ import {
   type CmmsWorkOrderV1,
 } from '@gigalibs/contracts';
 import {
-  type IdempotencyEntry,
   type IdempotencyStore,
   type LookupOption,
   type LookupResolver,
@@ -437,18 +436,18 @@ async function executeStatusTransition(
 }
 
 /** CMMS record dispatcher: work orders and their child entities (tasks, labour, parts, notes, history). */
-export function cmmsRecordDispatcher(deps: CmmsRecordDependencies, idempotency?: IdempotencyStore): RecordDispatcher {
+export function cmmsRecordDispatcher(deps: CmmsRecordDependencies, idempotency: IdempotencyStore): RecordDispatcher {
   const workOrders: RecordAdapter = {
     rest: {
       read: 'POST v1/work-orders/search',
       create: 'POST v1/work-orders',
       update: 'PATCH v1/work-orders/{id}',
       actions: {
-        start: 'POST v1/work-orders/{id}/status|tasks|labour|parts|notes|staffing',
-        hold: 'POST v1/work-orders/{id}/status|tasks|labour|parts|notes|staffing',
-        resume: 'POST v1/work-orders/{id}/status|tasks|labour|parts|notes|staffing',
-        complete: 'POST v1/work-orders/{id}/status|tasks|labour|parts|notes|staffing',
-        cancel: 'POST v1/work-orders/{id}/status|tasks|labour|parts|notes|staffing',
+        start: 'POST v1/work-orders/{id}/status|tasks|labour|parts|notes',
+        hold: 'POST v1/work-orders/{id}/status|tasks|labour|parts|notes',
+        resume: 'POST v1/work-orders/{id}/status|tasks|labour|parts|notes',
+        complete: 'POST v1/work-orders/{id}/status|tasks|labour|parts|notes',
+        cancel: 'POST v1/work-orders/{id}/status|tasks|labour|parts|notes',
       },
     },
     entityKey: 'cmms.work-orders',
@@ -459,7 +458,7 @@ export function cmmsRecordDispatcher(deps: CmmsRecordDependencies, idempotency?:
     },
     fields: fieldPolicies(WORK_ORDER_FIELDS),
     searchFields: ['wo-number', 'title'],
-    filterFields: ['status', 'priority', 'type'],
+    filterFields: ['status', 'priority'],
     sortFields: ['wo-number', 'title', 'due-at', 'created-at'],
     async list(principal: ModulePrincipal, query: RecordListQuery): Promise<RecordPage> {
       const page = await deps.workOrders.search(principal as any, domainQuery(query));
@@ -512,8 +511,9 @@ export function cmmsRecordDispatcher(deps: CmmsRecordDependencies, idempotency?:
         permission: 'cmms.work-orders.execute-own',
         run: (context, id, params) => executeStatusTransition(deps, context, id, 'IN_PROGRESS', params),
       },
+      // WI-OI-120be (W1 review B, M4): putting work on hold or cancelling it is a planner's decision.
       hold: {
-        permission: 'cmms.work-orders.execute-own',
+        permission: 'cmms.work-orders.write',
         run: (context, id, params) => executeStatusTransition(deps, context, id, 'ON_HOLD', params),
       },
       resume: {
@@ -524,8 +524,9 @@ export function cmmsRecordDispatcher(deps: CmmsRecordDependencies, idempotency?:
         permission: 'cmms.work-orders.execute-own',
         run: (context, id, params) => executeStatusTransition(deps, context, id, 'COMPLETED', params),
       },
+      // WI-OI-120be (W1 review B, M4): putting work on hold or cancelling it is a planner's decision.
       cancel: {
-        permission: 'cmms.work-orders.execute-own',
+        permission: 'cmms.work-orders.write',
         run: (context, id, params) => executeStatusTransition(deps, context, id, 'CANCELLED', params),
       },
     },
@@ -534,7 +535,7 @@ export function cmmsRecordDispatcher(deps: CmmsRecordDependencies, idempotency?:
   const tasks: RecordAdapter = {
     rest: {
       read: 'GET v1/work-orders/{id}',
-      create: 'POST v1/work-orders/{id}/status|tasks|labour|parts|notes|staffing',
+      create: 'POST v1/work-orders/{id}/status|tasks|labour|parts|notes',
       update: 'PATCH v1/work-orders/{id}/tasks/{id}',
     },
     entityKey: 'cmms.work-order-tasks',
@@ -591,7 +592,7 @@ export function cmmsRecordDispatcher(deps: CmmsRecordDependencies, idempotency?:
   const labour: RecordAdapter = {
     rest: {
       read: 'GET v1/work-orders/{id}',
-      create: 'POST v1/work-orders/{id}/status|tasks|labour|parts|notes|staffing',
+      create: 'POST v1/work-orders/{id}/status|tasks|labour|parts|notes',
     },
     entityKey: 'cmms.work-order-labour',
     parentField: 'work-order-id',
@@ -618,14 +619,18 @@ export function cmmsRecordDispatcher(deps: CmmsRecordDependencies, idempotency?:
       }
       const wo = await deps.workOrders.get(context.principal as any, workOrderId);
       assertCanExecute(context.principal, wo);
-      const workerRef = (values['worker-ref'] as string) || context.principal.subject;
+      // WI-OI-120be (W1 review B, L1): only a planner (write) logs time for someone else or sets a rate; execute-own logs
+      // the caller's own time at the default rate.
+      const planner = holdsPermission(context.principal.permissions, 'cmms.work-orders.write');
+      const workerRef = (planner && (values['worker-ref'] as string)) || context.principal.subject;
       const performedOn = typeof values['performed-on'] === 'string' && values['performed-on'].length >= 10
         ? values['performed-on'].slice(0, 10)
         : new Date().toISOString().slice(0, 10);
       const updated = await deps.workOrders.logLabour(context as any, workOrderId, {
         workerRef,
         hours: Number(values.hours),
-        hourlyRate: values['hourly-rate'] !== null && values['hourly-rate'] !== undefined ? Number(values['hourly-rate']) : undefined,
+        hourlyRate:
+          planner && values['hourly-rate'] !== null && values['hourly-rate'] !== undefined ? Number(values['hourly-rate']) : undefined,
         currencyCode: (values['currency-code'] as string) || undefined,
         timeCategory: (values['time-category'] as any) || 'REGULAR',
         performedOn,
@@ -639,7 +644,7 @@ export function cmmsRecordDispatcher(deps: CmmsRecordDependencies, idempotency?:
   const workOrderParts: RecordAdapter = {
     rest: {
       read: 'GET v1/work-orders/{id}',
-      create: 'POST v1/work-orders/{id}/status|tasks|labour|parts|notes|staffing',
+      create: 'POST v1/work-orders/{id}/status|tasks|labour|parts|notes',
     },
     entityKey: 'cmms.work-order-parts',
     parentField: 'work-order-id',
@@ -692,7 +697,7 @@ export function cmmsRecordDispatcher(deps: CmmsRecordDependencies, idempotency?:
   const notes: RecordAdapter = {
     rest: {
       read: 'GET v1/work-orders/{id}',
-      create: 'POST v1/work-orders/{id}/status|tasks|labour|parts|notes|staffing',
+      create: 'POST v1/work-orders/{id}/status|tasks|labour|parts|notes',
     },
     entityKey: 'cmms.work-order-notes',
     parentField: 'work-order-id',
@@ -1068,7 +1073,7 @@ export function cmmsRecordDispatcher(deps: CmmsRecordDependencies, idempotency?:
     },
     fields: fieldPolicies(ASSET_FIELDS),
     searchFields: ['asset-tag', 'name', 'category'],
-    filterFields: ['status', 'criticality', 'category'],
+    filterFields: ['status', 'criticality'],
     sortFields: ['asset-tag', 'name', 'created-at'],
     async list(principal: ModulePrincipal, query: RecordListQuery): Promise<RecordPage> {
       const page = await deps.assets.search(principal as any, domainQuery(query));
@@ -1473,30 +1478,6 @@ export function cmmsRecordDispatcher(deps: CmmsRecordDependencies, idempotency?:
     },
   ];
 
-  class MemoryIdempotencyStore implements IdempotencyStore {
-    private readonly entries = new Map<string, IdempotencyEntry>();
-
-    async claim(tenantId: string, key: string, _operation: string, requestHash: string): Promise<IdempotencyEntry | null> {
-      const compound = `${tenantId}:${key}`;
-      const existing = this.entries.get(compound);
-      if (existing) return existing;
-      this.entries.set(compound, { requestHash, state: 'IN_PROGRESS', response: null });
-      return null;
-    }
-
-    async complete(tenantId: string, key: string, response: RecordValues): Promise<void> {
-      const compound = `${tenantId}:${key}`;
-      const existing = this.entries.get(compound);
-      if (existing) {
-        this.entries.set(compound, { requestHash: existing.requestHash, state: 'COMPLETED', response });
-      }
-    }
-
-    async release(tenantId: string, key: string): Promise<void> {
-      this.entries.delete(`${tenantId}:${key}`);
-    }
-  }
-
   return new RecordDispatcher(
     [
       workOrders,
@@ -1519,7 +1500,7 @@ export function cmmsRecordDispatcher(deps: CmmsRecordDependencies, idempotency?:
       specDefinitions,
     ],
     resolvers,
-    idempotency ?? new MemoryIdempotencyStore(),
+    idempotency,
     shippedRecordRules('physical-operations-cmms'),
   );
 }

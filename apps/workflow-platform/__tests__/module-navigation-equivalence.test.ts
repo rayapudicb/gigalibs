@@ -83,11 +83,22 @@ describe('manifest-declared navigation equals the former sidebar tables', () => 
       { key: 'reports', label: 'Reports', href: '/analytics/reports', icon: moduleIcons['file-text'] },
       { key: 'sources', label: 'Sources', href: '/analytics/sources', icon: moduleIcons.database },
     ],
-    'asset-maintenance': [
-      LEGACY_MODULE_MENUS['asset-maintenance']![0]!,
-      { key: 'spaces', label: 'CAFM Spaces', href: '/cmms/spaces', icon: moduleIcons.building },
-      ...LEGACY_MODULE_MENUS['asset-maintenance']!.slice(1),
-    ],
+    // WI-OI-120be (W1 review C, I3): Maintenance Requests (first, WI-OI-120t slice 2) and Classifications (after
+    // Assets, owner 2026-10-13) were accepted by the CMMS Security review.
+    'asset-maintenance': (() => {
+      const base = [
+        LEGACY_MODULE_MENUS['asset-maintenance']![0]!,
+        { key: 'spaces', label: 'CAFM Spaces', href: '/cmms/spaces', icon: moduleIcons.building },
+        ...LEGACY_MODULE_MENUS['asset-maintenance']!.slice(1),
+      ];
+      const assetsAt = base.findIndex((item) => item.key === 'assets');
+      return [
+        { key: 'requests', label: 'Maintenance Requests', href: '/cmms/requests', icon: moduleIcons['file-text'] },
+        ...base.slice(0, assetsAt + 1),
+        { key: 'classifications', label: 'Classifications', href: '/cmms/classifications', icon: moduleIcons.layers },
+        ...base.slice(assetsAt + 1),
+      ];
+    })(),
     // WI-OI-120u: Bookings, a read-only metadata window, follows Availability (Slice 2); Compliance and Workforce
     // Analytics, which showed the retired WFO screens, are gone (Slice 3, owner "retire all").
     gigaops: [
@@ -97,29 +108,8 @@ describe('manifest-declared navigation equals the former sidebar tables', () => 
     ],
   };
 
-  const CMMS_MENU_UNDER_REVIEW = 'asset-maintenance';
-
-  it.each(platformModuleCatalog.filter((module) => module.key !== CMMS_MENU_UNDER_REVIEW).map((module) => [module.key] as const))(
-    '%s keeps its sub-menu',
-    (key) => {
-      expect(moduleMenu(key)).toEqual(INTENDED_MENU_CHANGES[key] ?? LEGACY_MODULE_MENUS[key] ?? []);
-    },
-  );
-
-  // Under review (WI-OI-120aj, owner decision E2a; its Security review M2, 2026-10-14). The unreviewed CMMS commits
-  // (WI-OI-120t) added Maintenance Requests (first) and Classifications (after Assets) to the reviewed menu. The menu is
-  // pinned exactly, so any other change fails. The CMMS Security review (execution plan v3 steps 1.1–1.3) accepts them
-  // into INTENDED_MENU_CHANGES or removes them.
-  it(`${CMMS_MENU_UNDER_REVIEW} keeps its sub-menu, with two entries under review`, () => {
-    const reviewed = INTENDED_MENU_CHANGES[CMMS_MENU_UNDER_REVIEW]!;
-    const assetsAt = reviewed.findIndex((item) => item.key === 'assets');
-    expect(assetsAt).toBeGreaterThan(0);
-    expect(moduleMenu(CMMS_MENU_UNDER_REVIEW)).toEqual([
-      { key: 'requests', label: 'Maintenance Requests', href: '/cmms/requests', icon: moduleIcons['file-text'] },
-      ...reviewed.slice(0, assetsAt + 1),
-      { key: 'classifications', label: 'Classifications', href: '/cmms/classifications', icon: moduleIcons.layers },
-      ...reviewed.slice(assetsAt + 1),
-    ]);
+  it.each(platformModuleCatalog.map((module) => [module.key] as const))('%s keeps its sub-menu', (key) => {
+    expect(moduleMenu(key)).toEqual(INTENDED_MENU_CHANGES[key] ?? LEGACY_MODULE_MENUS[key] ?? []);
   });
 
   // Persona lenses widened after the freeze, each with its reason (the module's permission still decides).

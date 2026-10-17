@@ -22,6 +22,22 @@ export function parseInput<T>(schema: SafeParser<T>, value: unknown): T {
   });
 }
 
+/**
+ * WI-OI-120be: a chosen sort as SQL. Only columns from the service's fixed map reach ORDER BY, and the record id breaks
+ * ties so pages are stable. Answers null when no sort was chosen, so the service keeps its own order.
+ */
+export function chosenOrder(
+  columns: Readonly<Record<string, string>>,
+  field: string | undefined,
+  direction: 'ASC' | 'DESC',
+  idColumn: string,
+): string | null {
+  if (field === undefined) return null;
+  const column = columns[field];
+  if (!column) throw new BadRequestException({ code: 'CMMS_VALIDATION_FAILED', message: `Cannot sort by ${field}.` });
+  return `${column} ${direction === 'DESC' ? 'DESC' : 'ASC'} NULLS LAST, ${idColumn} ASC`;
+}
+
 export function assertUuid(value: string, field: string): void {
   if (!UUID_PATTERN.test(value)) {
     throw new BadRequestException({ code: 'CMMS_VALIDATION_FAILED', message: `${field} must be a UUID.` });

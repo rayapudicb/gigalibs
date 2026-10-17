@@ -70,19 +70,16 @@ describe('CMMS BFF boundary', () => {
     vi.unstubAllEnvs();
   });
 
-  // Under review (WI-OI-120aj, owner decision E2a; its Security review M2, 2026-10-14). The unreviewed CMMS commits
-  // (WI-OI-120t) changed these two routes from `cmms.work-orders.write` (reviewed at 37e5556) to any of write or
-  // execute-own. They are pinned exactly, so any further change fails. The CMMS Security review (execution plan v3
-  // steps 1.1–1.3) accepts them or restores write, and then removes this note (its finding W2: staffing should not take
-  // execute-own).
-  const UNDER_REVIEW_WRITE_OR_EXECUTE_OWN = ['cmms.work-orders.write', 'cmms.work-orders.execute-own'];
+  // WI-OI-120be (W1 Security review, 2026-10-16): executing work (status and the like) takes write or execute-own; the
+  // record API checks that the work order is assigned to the caller. Staffing stays write only (finding W2).
+  const WRITE_OR_EXECUTE_OWN = ['cmms.work-orders.write', 'cmms.work-orders.execute-own'];
   it('grants the module to cmms:* holders and maps granular permissions', () => {
     expect(canUseTenantModule('asset-maintenance', new Set(['asset-maintenance']), ['cmms:*'])).toBe(true);
     expect(canUseTenantModule('asset-maintenance', new Set(['asset-maintenance']), ['workforce:*'])).toBe(false);
     expect(hasPermission(['cmms:*'], 'cmms.work-orders.write')).toBe(true);
-    expect(requiredCmmsPermission('POST', ['v1', 'work-orders', ASSET_ID, 'status'])).toEqual(UNDER_REVIEW_WRITE_OR_EXECUTE_OWN);
+    expect(requiredCmmsPermission('POST', ['v1', 'work-orders', ASSET_ID, 'status'])).toEqual(WRITE_OR_EXECUTE_OWN);
     expect(requiredCmmsPermission('GET', ['v1', 'analytics', 'inventory', 'summary'])).toBe('cmms.analytics.read');
-    expect(requiredCmmsPermission('POST', ['v1', 'work-orders', ASSET_ID, 'staffing'])).toEqual(UNDER_REVIEW_WRITE_OR_EXECUTE_OWN);
+    expect(requiredCmmsPermission('POST', ['v1', 'work-orders', ASSET_ID, 'staffing'])).toBe('cmms.work-orders.write');
     expect(requiredCmmsPermission('POST', ['v1', 'work-orders', ASSET_ID, 'staffing', 'cancel'])).toBe('cmms.work-orders.write');
     expect(requiredCmmsPermission('GET', ['v1', 'work-orders', ASSET_ID, 'staffing'])).toBeNull();
   });

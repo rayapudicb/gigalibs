@@ -16,6 +16,7 @@ import { parseInput } from '../common/command.js';
 import { RequestsService } from './requests.service.js';
 import type { CmmsCommandContext, CmmsPrincipal } from '../auth/authorization.js';
 import { cmmsRecordDispatcher } from '../work-orders/cmms-record-adapters.js';
+import { MemoryIdempotencyStore } from '../test/memory-idempotency-store.js';
 
 function makePrincipal(subject: string, permissions: string[]): CmmsPrincipal {
   return {
@@ -188,27 +189,14 @@ describe('WI-OI-120t (M-CM1 Slice 2): Maintenance Requests Contracts & Service',
       expect(res.status).toBe('PENDING');
     });
 
-    it('enforces requester scope on get(): requester cannot read another user\'s request', async () => {
+    it('enforces requester scope on get(): another user\'s request is not found (WI-OI-120be, D2a)', async () => {
       const reqId = randomUUID();
-      mockClient.query.mockResolvedValueOnce({
-        rows: [
-          {
-            id: reqId,
-            tenant_id: 'tenant-test',
-            request_number: 'REQ-000002',
-            title: 'Water leak',
-            status: 'PENDING',
-            priority: 'MEDIUM',
-            requester_subject: otherRequester,
-            version: 1,
-            created_at: new Date(),
-            updated_at: new Date(),
-          },
-        ],
-      });
-
-      // Requester attempts to read other user's request -> 403 CMMS_OUT_OF_SCOPE
-      await expect(service.get(requesterPrincipal, reqId)).rejects.toThrow(ForbiddenException);
+      // The query itself keeps a non-planner to their own requests, so another user's row never comes back.
+      mockClient.query.mockResolvedValueOnce({ rows: [] });
+      await expect(service.get(requesterPrincipal, reqId)).rejects.toThrow(NotFoundException);
+      const [sql, values] = mockClient.query.mock.calls.at(-1) as [string, unknown[]];
+      expect(sql).toMatch(/r\.requester_subject = \$3/);
+      expect(values).toEqual(['tenant-test', reqId, requesterSubject]);
     });
 
     it('allows requester to get() their own request and planner to get() any request', async () => {
@@ -364,11 +352,14 @@ describe('WI-OI-120t (M-CM1 Slice 2): Maintenance Requests Contracts & Service',
         updated_at: new Date(),
       };
 
-      // Requester Alice tries to cancel Bob's request -> 403 Forbidden
-      mockClient.query.mockResolvedValueOnce({ rows: [existingRow] });
+      // Requester Alice tries to cancel Bob's request: the query keeps her to her own, so it is not found
+      // (WI-OI-120be, D2a).
+      mockClient.query.mockResolvedValueOnce({ rows: [] });
       await expect(
         service.cancel(makeContext(requesterPrincipal), reqId, { reason: 'No longer needed' }),
-      ).rejects.toThrow(ForbiddenException);
+      ).rejects.toThrow(NotFoundException);
+      expect((mockClient.query.mock.calls.at(-1) as [string])[0]).toMatch(/r\.requester_subject = \$3[\s\S]*FOR UPDATE OF r/);
+      expect(existingRow.requester_subject).toBe(otherRequester);
 
       // Requester cancels own request -> OK
       const ownRow = { ...existingRow, requester_subject: requesterSubject };
@@ -448,7 +439,7 @@ describe('WI-OI-120t (M-CM1 Slice 2): Maintenance Requests Contracts & Service',
         assets: {} as any,
         parts: {} as any,
         requests: mockRequestsService as any,
-      });
+      }, new MemoryIdempotencyStore());
 
       const plannerPrincipal = makePrincipal('planner', [
         'cmms:read',
@@ -510,7 +501,7 @@ describe('WI-OI-120t (M-CM1 Slice 2): Maintenance Requests Contracts & Service',
         assets: {} as any,
         parts: {} as any,
         requests: mockRequestsService as any,
-      });
+      }, new MemoryIdempotencyStore());
 
       const principal = makePrincipal('user1', ['cmms:read', 'cmms.requests.read']);
       const options = await dispatcher.lookup(principal as any, 'cmms-requests', { search: 'HVAC' });

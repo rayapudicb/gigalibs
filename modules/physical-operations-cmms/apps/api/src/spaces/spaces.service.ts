@@ -210,6 +210,8 @@ export class EamSpacesService {
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
       const values: unknown[] = [principal.tenantId];
       const where = ['s.tenant_id = $1'];
+      // WI-OI-120be (W1 review A, L1): a denied organization scope sees nothing, as on every other CMMS read.
+      if (principal.organization?.mode === 'DENIED') where.push('FALSE');
       if (principal.placeScope.mode === 'PLACES') {
         values.push([...principal.placeScope.placeIds]);
         where.push(`s.site_ref = ANY($${values.length}::uuid[])`);
@@ -288,6 +290,8 @@ export class EamSpacesService {
     assertUuid(spaceId, 'spaceId');
     const values: unknown[] = [principal.tenantId, spaceId];
     const where = ['s.tenant_id = $1', 's.id = $2'];
+    // WI-OI-120be (W1 review A, L1): a denied organization scope sees nothing, as on every other CMMS read.
+    if (principal.organization?.mode === 'DENIED') where.push('FALSE');
     if (principal.placeScope.mode === 'PLACES') {
       values.push([...principal.placeScope.placeIds]);
       where.push(`s.site_ref = ANY($${values.length}::uuid[])`);

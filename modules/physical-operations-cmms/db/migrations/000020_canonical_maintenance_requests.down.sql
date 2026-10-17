@@ -1,5 +1,6 @@
 BEGIN;
 
+DROP TABLE IF EXISTS gigalibs_cmms.record_idempotency;
 DROP TABLE IF EXISTS gigalibs_cmms.maintenance_requests;
 DROP TABLE IF EXISTS gigalibs_cmms.request_counters;
 

@@ -266,6 +266,7 @@ export const moduleDefaultRoles: readonly ModuleDefaultRole[] = [
     "permissions": [
       "cmms:read",
       "cmms.work-orders.read",
+      "cmms.work-orders.write",
       "cmms.work-orders.execute-own",
       "cmms.requests.read",
       "cmms.requests.create",
@@ -326,7 +327,7 @@ export const moduleDefaultRoles: readonly ModuleDefaultRole[] = [
     "catalogKey": "asset-maintenance",
     "key": "maintenance-viewer",
     "name": "Maintenance viewer",
-    "description": "Reads assets, work orders, schedules, meters, parts and reliability figures without changing them.",
+    "description": "Reads assets, work orders, schedules, meters, parts and reliability figures without changing them, and raises and follows their own maintenance requests.",
     "permissions": [
       "cmms:read",
       "cmms.work-orders.read",

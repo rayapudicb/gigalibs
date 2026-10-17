@@ -25,6 +25,8 @@ const PageSchema = {
   page: z.number().int().min(1).max(10_000).default(1),
   pageSize: z.number().int().min(1).max(100).default(25),
 };
+/** WI-OI-120be: a chosen sort. Each search names its own sortable fields; with none, the service keeps its order. */
+const SortDirectionSchema = z.enum(['ASC', 'DESC']).default('ASC');
 
 export const CmmsAssetStatusV1Schema = z.enum(['OPERATIONAL', 'UNDER_MAINTENANCE', 'OFFLINE', 'DECOMMISSIONED']);
 export const CmmsCriticalityV1Schema = z.enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']);
@@ -107,6 +109,8 @@ export const SearchCmmsAssetsV1Schema = z
     spaceId: UuidSchema.optional(),
     classificationId: UuidSchema.optional(),
     includeArchived: z.boolean().default(false),
+    sortField: z.enum(['assetTag', 'name', 'createdAt']).optional(),
+    sortDirection: SortDirectionSchema,
   })
   .strict();
 export type SearchCmmsAssetsV1 = z.infer<typeof SearchCmmsAssetsV1Schema>;
@@ -570,6 +574,8 @@ export const SearchCmmsWorkOrdersV1Schema = z
     siteRef: UuidSchema.optional(),
     assignedTo: CmmsPrincipalRefSchema.optional(),
     dueBefore: DateTimeSchema.optional(),
+    sortField: z.enum(['woNumber', 'title', 'dueAt', 'createdAt']).optional(),
+    sortDirection: SortDirectionSchema,
   })
   .strict();
 export type SearchCmmsWorkOrdersV1 = z.infer<typeof SearchCmmsWorkOrdersV1Schema>;
@@ -986,6 +992,8 @@ export const SearchCmmsPartsV1Schema = z
     lowStockOnly: z.boolean().default(false),
     siteRef: UuidSchema.optional(),
     includeArchived: z.boolean().default(false),
+    sortField: z.enum(['partNumber', 'name']).optional(),
+    sortDirection: SortDirectionSchema,
   })
   .strict();
 export type SearchCmmsPartsV1 = z.infer<typeof SearchCmmsPartsV1Schema>;
@@ -1232,7 +1240,6 @@ export const CreateCmmsRequestV1Schema = z
     description: TextSchema(10_000).optional(),
     priority: z.enum(CMMS_REQUEST_PRIORITIES).default('MEDIUM'),
     assetId: UuidSchema.optional(),
-    locationId: UuidSchema.optional(),
     requesterName: TextSchema(240).optional(),
     requesterEmail: z.string().trim().email().max(240).optional(),
     requesterPhone: TextSchema(64).optional(),
@@ -1264,12 +1271,14 @@ export const SearchCmmsRequestsV1Schema = z
   .object({
     page: z.number().int().min(1).default(1),
     pageSize: z.number().int().min(1).max(100).default(20),
-    q: z.string().trim().max(100).optional(),
+    q: z.string().trim().max(200).optional(),
     status: z.enum(CMMS_REQUEST_STATUSES).optional(),
     priority: z.enum(CMMS_REQUEST_PRIORITIES).optional(),
     assetId: UuidSchema.optional(),
     requesterSubject: TextSchema(128).optional(),
     openOnly: z.boolean().optional(),
+    sortField: z.enum(['requestNumber', 'title', 'createdAt']).optional(),
+    sortDirection: SortDirectionSchema,
   })
   .strict();
 export type SearchCmmsRequestsV1 = z.infer<typeof SearchCmmsRequestsV1Schema>;
@@ -1283,7 +1292,9 @@ export interface CmmsMaintenanceRequestV1 {
   readonly status: CmmsRequestStatusV1;
   readonly assetId: string | null;
   readonly assetName?: string | null;
-  readonly locationId: string | null;
+  /** WI-OI-120be: the unit and site, taken from the asset, so a request is scoped like the asset's own work. */
+  readonly siteRef: string | null;
+  readonly departmentId: string | null;
   readonly requesterSubject: string;
   readonly requesterName: string | null;
   readonly requesterEmail: string | null;
