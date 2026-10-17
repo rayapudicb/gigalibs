@@ -330,10 +330,58 @@ Main has 79 files that UAT does not. W1 takes the CMMS ones:
   rule asks for a test that the CMMS context covers every code the CMMS API checks.
   - The built-in maintenance roles also carry Workforce and Geospatial codes, so only custom roles made of CMMS codes
     could be held at units.
-- **W1-A (this release):** all the fixes above, and the journey blockers clear. With the gate closed, nobody is held
-  at units or places, so the new scope rules change no existing person's access. The visible changes are D2a, D3a,
-  the requests screen and work-order execution.
+- **W1-A (this release):** all the fixes above, and the journey blockers clear. With the gate closed, no role can be
+  held at units or places. Members can also be scoped through their own settings (the `organization-hierarchy` and
+  `spatial-scoping` features, a unit tree in force, unit grants), but on UAT no active workspace uses any of them
+  (checked 2026-10-17, below). So the new scope rules change no existing person's access on UAT today. The visible
+  changes are D2a, D3a, the requests screen and work-order execution.
 - **W1-B (next, with its own short review):**
   - add CMMS to `SCOPE_ENFORCING_MODULES` (units and places) with its context-coverage test;
   - the journey then creates a CMMS-only role, gives it at North, and proves that a North technician does not see
     South's work.
+
+## Security review of the fixes (2026-10-17): two reviews, both approve with conditions
+
+Two independent read-only reviews of `ec0faa2`: scope and authorization; records, roles, web and the release set.
+Neither found anything High or Critical. Every Review A, B and C item in the fix plan is closed. The release set is
+exact: the 76 staged files are byte-identical to main, nothing from 120aj, 120am or the journey spec is staged, and the
+shared generated files differ from `f9de9a3` only in CMMS entries. The 120ad place projection ships inert (nothing
+passes a tree).
+
+**Fixed (main, not yet committed):**
+- **Medium (both reviews): unit-less requests reached every scoped planner,** with the requester's email and phone,
+  though they could not triage them. Now a planner held to units, departments or places sees the requests strictly in
+  their units and sites plus their own (`scopePredicates` gains `shared: false`). A request with no unit, or no site
+  for a planner held to places, is seen by workspace-wide planners and its requester only.
+- **Low 1: planners lost their own requests.** Everyone sees their own requests, and their own pending request can
+  always be cancelled.
+- **Low 2: the cascade did not lock descendants.** It now locks them in id order and checks and changes the locked
+  rows (and audits their versions).
+- **Low 3: accepting a request created a work order without `cmms.work-orders.write`.** Accept now needs it, refused
+  before any read. The planner role holds both.
+- **Low (review 2, 2): a refused built-in role also skipped its removals.** It now loses the codes the manifest
+  dropped (never gains any), audited with `narrowedOnly`.
+- **Info:** `chosenOrder` looks up own keys only (`Object.hasOwn`).
+- **Low (review 2, 3):** the gateway admits execute-own on the REST execution paths, which the REST controllers serve
+  to write holders only. Not reachable. The test comment now says the controllers must add the assignment check before
+  they are relaxed.
+- **Tests:** 5 new or changed request tests, 1 new cascade test, 1 new role-sync test. CMMS, tenancy, contracts and the
+  4 web tests: 773 passed, none failed. Type-checks, conversion check and pins clean; lint matches HEAD.
+
+**Deferred, recorded:**
+- Review 2, 4: idempotency domain keys. A meter reading's key is random, and request submit, labour, notes and tasks
+  have no domain key, so if recording the replay fails after the change commits, a retry writes twice. Use
+  `context.idempotencyKey` as the domain key, with the work-order window card.
+- Review 2, Info: a cascade refused by an out-of-scope descendant shows that the descendant exists.
+
+**UAT, read-only (2026-10-17):**
+- No active workspace has `organization-hierarchy` or `spatial-scoping` on, a unit tree in force, or a unit grant.
+  Only 6 suspended test workspaces have `spatial-scoping`.
+- CMMS is at migration 19; `maintenance_requests`, `request_counters` and `record_idempotency` do not exist.
+
+**Conditions:**
+- Just before the deploy, confirm again that CMMS is at 19 and the three tables do not exist (the amended migration
+  20 would otherwise be skipped silently).
+- The release worktree has no unstaged or untracked change before the build (other than `.pi/handoff`).
+- After the deploy, open the roles list in each asset-maintenance workspace so the built-in roles sync; until then the
+  journey's CMMS blockers stay.

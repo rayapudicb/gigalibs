@@ -140,6 +140,22 @@ describe('TenancyService.syncDefaultRoles', () => {
     expect(prismaMock.customRole.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ name: steward.name }) }));
   });
 
+  it('still removes the codes the manifest dropped from a refused role, and adds none', async () => {
+    prismaMock.customRole.findMany.mockResolvedValue([
+      { id: 'r-viewer', name: 'Analytics viewer', description: 'Views.', isSystem: true, permissions: ['analytics:read', 'analytics:charts:write'] },
+    ]);
+    prismaMock.memberRoleAssignment.findMany.mockResolvedValue([{ userId: 'u-1', scope: 'UNITS', customRoleId: 'r-viewer' }]);
+    const driftedViewer = { ...viewer, permissions: ['analytics:read', 'users:create'] };
+    await expect(service.syncDefaultRoles(tenantId, [driftedViewer])).resolves.toBeUndefined();
+    expect(prismaMock.customRole.update).toHaveBeenCalledTimes(1);
+    expect(prismaMock.customRole.update).toHaveBeenCalledWith({ where: { id: 'r-viewer' }, data: { permissions: ['analytics:read'] } });
+    expect(prismaMock.auditLog.create.mock.calls[0][0].data).toMatchObject({
+      action: 'UPDATE',
+      after: { permissions: ['analytics:read'] },
+      metadata: { narrowedOnly: true },
+    });
+  });
+
   it('ships the three Analytics roles of ADR-0016 F16 from the manifest', () => {
     const analytics = moduleDefaultRoles.filter((role) => role.catalogKey === 'analytics-studio');
     expect(analytics.map((role) => [role.name, [...role.permissions].sort()])).toEqual([

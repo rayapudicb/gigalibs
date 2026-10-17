@@ -76,20 +76,34 @@ describe('asset paths under unit and site access', () => {
   });
 
   it('cascades nothing when any descendant is outside what the caller may change', async () => {
+    const children = [
+      { id: 'child-north', version: 1, department_id: 'north', site_ref: null },
+      { id: 'child-south', version: 1, department_id: 'south', site_ref: null },
+    ];
     const { classifications, query } = services([
       { rows: [{ id: assetId, department_id: 'north', site_ref: null }] },
-      {
-        rows: [
-          { id: 'child-north', version: 1, department_id: 'north', site_ref: null },
-          { id: 'child-south', version: 1, department_id: 'south', site_ref: null },
-        ],
-      },
+      { rows: children },
+      { rows: children },
     ]);
     await expect(
       classifications.cascadeStatus(context(northPlanner), assetId, 'OFFLINE', 'Shutdown'),
     ).rejects.toMatchObject({
       response: { code: 'CMMS_OUT_OF_SCOPE' },
     });
+    expect(sqlOf(query).some((sql) => /^\s*UPDATE gigalibs_cmms\.assets/.test(sql))).toBe(false);
+  });
+
+  it('checks the descendants as locked, so a child moved out of scope after the tree read is refused', async () => {
+    const { classifications, query } = services([
+      { rows: [{ id: assetId, department_id: 'north', site_ref: null }] },
+      { rows: [{ id: 'child-1', version: 1, department_id: 'north', site_ref: null }] },
+      // Moved to South by someone else before the lock was taken.
+      { rows: [{ id: 'child-1', version: 2, department_id: 'south', site_ref: null }] },
+    ]);
+    await expect(
+      classifications.cascadeStatus(context(northPlanner), assetId, 'OFFLINE', 'Shutdown'),
+    ).rejects.toMatchObject({ response: { code: 'CMMS_OUT_OF_SCOPE' } });
+    expect(sqlOf(query)[2]).toMatch(/id = ANY\(\$2::uuid\[\]\)[\s\S]*ORDER BY id[\s\S]*FOR UPDATE/);
     expect(sqlOf(query).some((sql) => /^\s*UPDATE gigalibs_cmms\.assets/.test(sql))).toBe(false);
   });
 });

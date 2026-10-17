@@ -71,13 +71,25 @@ const southRequest = {
 };
 
 describe('maintenance requests under unit and site access', () => {
-  it('lets a planner search only the requests in their units (and shared ones)', async () => {
+  it('lets a planner search the requests in their units, and their own, but not unit-less ones (W1-A review, M1)', async () => {
     const { requests, query } = service();
     await requests.search(northPlanner, {});
     const [sql, values] = query.mock.calls[0] as unknown as [string, unknown[]];
-    expect(sql).toMatch(/r\.department_id IS NULL OR r\.department_id = ANY\(\$2::text\[\]\)/);
-    expect(values[1]).toEqual(['north', 'north-line-1']);
-    expect(sql).not.toMatch(/requester_subject/);
+    expect(sql).toContain('(r.requester_subject = $2 OR (r.department_id = ANY($3::text[])))');
+    expect(sql).not.toMatch(/department_id IS NULL/);
+    expect(values.slice(1, 3)).toEqual(['planner-north', ['north', 'north-line-1']]);
+  });
+
+  it('lets a workspace-wide planner search every request', async () => {
+    const { requests, query } = service();
+    const workspacePlanner = {
+      ...northPlanner,
+      organization: undefined,
+      departmentScope: { mode: 'ALL' },
+    } as unknown as CmmsPrincipal;
+    await requests.search(workspacePlanner, {});
+    const [sql] = query.mock.calls[0] as unknown as [string, unknown[]];
+    expect(sql).not.toMatch(/requester_subject|department_id/);
   });
 
   it('keeps everyone without cmms.requests.write to their own requests, whatever else they hold', async () => {
@@ -111,6 +123,30 @@ describe('maintenance requests under unit and site access', () => {
     );
     // Only the two locked reads ran; nothing was updated.
     expect(query.mock.calls.some(([sql]) => /^\s*UPDATE\s/.test(String(sql)))).toBe(false);
+  });
+
+  it('lets a planner cancel their own pending request outside their units (W1-A review, L1)', async () => {
+    const own = { ...southRequest, requester_subject: 'planner-north', department_id: null };
+    const { requests, query } = service([own]);
+    await requests.cancel(context(northPlanner), own.id, {});
+    expect(
+      query.mock.calls.some(([sql]) =>
+        /^\s*UPDATE gigalibs_cmms\.maintenance_requests/.test(String(sql)),
+      ),
+    ).toBe(true);
+  });
+
+  it('refuses accepting a request into a work order without work-order write, before any read', async () => {
+    const { requests, query } = service([southRequest]);
+    const triageOnly = unitPrincipal('triage-only', [
+      'cmms:read',
+      'cmms.requests.read',
+      'cmms.requests.write',
+    ]);
+    await expect(
+      requests.triage(context(triageOnly), southRequest.id, { action: 'ACCEPT' }),
+    ).rejects.toMatchObject({ response: { code: 'CMMS_PERMISSION_DENIED' } });
+    expect(query).not.toHaveBeenCalled();
   });
 
   it("gives a new request its asset's unit and site", async () => {

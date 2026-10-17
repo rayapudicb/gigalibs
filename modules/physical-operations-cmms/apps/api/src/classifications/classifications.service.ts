@@ -422,11 +422,26 @@ export class ClassificationsService {
          SELECT id, version, department_id, site_ref FROM downstream`,
         [context.principal.tenantId, assetId],
       );
-      for (const child of result.rows) {
+      // W1-A review, Low 2: lock the descendants (in id order), then check and change the locked rows, so a concurrent
+      // move cannot take one out of scope between the check and the update.
+      const descendants =
+        result.rows.length === 0
+          ? []
+          : (
+              await client.query<{ id: string; version: number; department_id: string | null; site_ref: string | null }>(
+                `SELECT id, version, department_id, site_ref
+                   FROM gigalibs_cmms.assets
+                  WHERE tenant_id = $1 AND id = ANY($2::uuid[]) AND archived_at IS NULL
+                  ORDER BY id
+                  FOR UPDATE`,
+                [context.principal.tenantId, result.rows.map((row) => row.id)],
+              )
+            ).rows;
+      for (const child of descendants) {
         assertWritableScope(context.principal, { departmentId: child.department_id, siteRef: child.site_ref });
       }
 
-      for (const child of result.rows) {
+      for (const child of descendants) {
         await client.query(
           `UPDATE gigalibs_cmms.assets
               SET status = $3, version = version + 1, updated_by = $4, correlation_id = $5, updated_at = now()
@@ -442,7 +457,7 @@ export class ClassificationsService {
         });
       }
 
-      return { affectedCount: result.rows.length };
+      return { affectedCount: descendants.length };
     });
   }
 

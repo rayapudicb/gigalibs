@@ -33,7 +33,7 @@ export function chosenOrder(
   idColumn: string,
 ): string | null {
   if (field === undefined) return null;
-  const column = columns[field];
+  const column = Object.hasOwn(columns, field) ? columns[field] : undefined;
   if (!column) throw new BadRequestException({ code: 'CMMS_VALIDATION_FAILED', message: `Cannot sort by ${field}.` });
   return `${column} ${direction === 'DESC' ? 'DESC' : 'ASC'} NULLS LAST, ${idColumn} ASC`;
 }

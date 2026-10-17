@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -72,16 +73,19 @@ function mapRequest(row: any): CmmsMaintenanceRequestV1 {
 
 /**
  * WI-OI-120be (W1 reviews; owner decision D2a): planners (cmms.requests.write) see the requests in their units and
- * sites (R5, from the request's own unit and site); everyone else sees only the requests they raised. So requester
+ * sites (R5, from the request's own unit and site); everyone sees the requests they raised. A request with no unit, or
+ * no site for a planner held to places, is seen by workspace-wide planners only (W1-A review, Medium 1). So requester
  * contact details reach planners in scope and the requester only. A request that is not visible is "not found".
  */
 function visibleRequests(principal: CmmsPrincipal, values: unknown[]): string[] {
-  if (holdsPermission(principal.permissions, 'cmms.requests.write')) return scopePredicates(principal, values, 'r.');
   values.push(principal.subject);
-  return [`r.requester_subject = $${values.length}`];
+  const own = `r.requester_subject = $${values.length}`;
+  if (!holdsPermission(principal.permissions, 'cmms.requests.write')) return [own];
+  const inScope = scopePredicates(principal, values, 'r.', undefined, undefined, { shared: false });
+  return inScope.length === 0 ? [] : [`(${own} OR (${inScope.join(' AND ')}))`];
 }
 
-/** Changing someone else's request needs write access to its unit and site; one's own pending request may be cancelled. */
+/** Changing someone else's request needs write access to its unit and site. */
 function assertMayChange(principal: CmmsPrincipal, request: CmmsMaintenanceRequestV1): void {
   if (holdsPermission(principal.permissions, 'cmms.requests.write')) {
     assertWritableScope(principal, { departmentId: request.departmentId, siteRef: request.siteRef });
@@ -230,6 +234,13 @@ export class RequestsService {
   ): Promise<{ readonly request: CmmsMaintenanceRequestV1; readonly workOrderId?: string }> {
     assertUuid(id, 'Maintenance request');
     const input = parseInput(TriageCmmsRequestV1Schema, raw);
+    // W1-A review, Low 3: accepting creates a work order, which needs work-order write, as creating one directly does.
+    if (input.action === 'ACCEPT' && !holdsPermission(context.principal.permissions, 'cmms.work-orders.write')) {
+      throw new ForbiddenException({
+        code: 'CMMS_PERMISSION_DENIED',
+        message: 'Permission cmms.work-orders.write is required to accept a request into a work order.',
+      });
+    }
 
     return this.database.withTenantTransaction(context.principal.tenantId, async (client) => {
       const values: unknown[] = [context.principal.tenantId, id];
@@ -348,7 +359,8 @@ export class RequestsService {
       );
       if (!existingResult.rows[0]) throw notFound('Maintenance request');
       const req = mapRequest(existingResult.rows[0]);
-      assertMayChange(context.principal, req);
+      // One's own pending request may always be cancelled (W1-A review, Low 1); someone else's needs write scope.
+      if (req.requesterSubject !== context.principal.subject) assertMayChange(context.principal, req);
 
       if (req.status !== 'PENDING') {
         throw new ConflictException({

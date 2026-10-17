@@ -789,6 +789,23 @@ export class TenancyService {
               // one holder's scope cannot stop the other roles or the workspace's roles screen.
               const code = (refusal.getResponse() as { code?: string }).code ?? refusal.name;
               this.logger.warn(`Built-in role "${role.name}" in tenant ${tenantId} was not updated (${code}): ${refusal.message}`);
+              // W1-A review: it still loses the codes the manifest dropped, since removing a code never widens access.
+              const held = Array.isArray(current.permissions) ? current.permissions : [];
+              const kept = held.filter((code): code is string => typeof code === 'string' && permissions.includes(code));
+              if (kept.length === held.length) continue;
+              await transaction.customRole.update({ where: { id: current.id }, data: { permissions: kept } });
+              await transaction.auditLog.create({
+                data: {
+                  action: 'UPDATE',
+                  resource: 'custom_role',
+                  resourceId: current.id,
+                  userId: null,
+                  tenantId,
+                  before: { permissions: current.permissions as Prisma.InputJsonValue },
+                  after: { permissions: kept },
+                  metadata: { ...metadata, narrowedOnly: true },
+                },
+              });
               continue;
             }
           }

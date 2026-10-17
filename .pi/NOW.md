@@ -1,24 +1,32 @@
-# NOW: where the work stands (2026-10-15)
+# NOW: where the work stands (2026-10-17)
 
-The order of all work is [execution plan v3](../docs/plans/gigalibs-execution-plan-v3.md) (owner-approved 2026-10-13).
-Statuses are in [WORK_ITEMS.md](WORK_ITEMS.md); evidence is in [work/WI-OI-120.md](work/WI-OI-120.md). The previous,
-longer version of this page is kept in [archive/NOW-2026-10-15.md](archive/NOW-2026-10-15.md).
+The order of all work is [execution plan v3](../docs/plans/gigalibs-execution-plan-v3.md) (owner-approved 2026-10-13)
+and [the Phase 1 order](../docs/plans/phase-1-sizing.md) (owner-approved 2026-10-16). Statuses are in
+[WORK_ITEMS.md](WORK_ITEMS.md); evidence is in [work/WI-OI-120.md](work/WI-OI-120.md). The previous, longer version of
+this page is kept in [archive/NOW-2026-10-15.md](archive/NOW-2026-10-15.md).
+
+**A new agent taking over starts with [the handover brief](handoff/HANDOFF-2026-10-17.md)**: the rules, the exact
+state and the release procedure as it is run. The prompt to paste is [PROMPT-2026-10-17.md](handoff/PROMPT-2026-10-17.md).
 
 ## Current step
 
-**0.8, the follow-ups** (0.6 and 0.7 done; see [WI-OI-120aq](tasks/WI-OI-120aq.md) and
-[WI-OI-120ar](tasks/WI-OI-120ar.md)).
-- **Done today:**
-  - the UAT workspace clean-up ([WI-OI-120aw](tasks/WI-OI-120aw.md)): the owner suspended the 225 test and
-    certification workspaces and deleted 1,094 dead letters on 2026-10-16. This closes WI-OI-120ak S7.
-  - the owner recovered a platform owner login through the product's assisted reset
-    ([WI-OI-120ay](tasks/WI-OI-120ay.md)).
-- **Next:**
-  - the journey rerun;
-  - MFA on that login, and the owner's decision on the other two platform roles;
-  - the organization Submit 400 ([WI-OI-120ax](tasks/WI-OI-120ax.md)), waiting for approval. Every registry row now has a status its evidence supports:
-94 Replaced (with pointers to plan v3), 14 On UAT, 8 Built, 1 In Progress (WI-OI-120). None is Done yet: Done needs the
-owner's recorded acceptance.
+**Phase 1, W1: the W1-A CMMS release ([WI-OI-120be](tasks/WI-OI-120be.md), steps 1.1 and 1.3).**
+- **Built and reviewed:**
+  - the record lists load;
+  - requests stay within their units and sites (D2a);
+  - shared reference data needs workspace-wide access (D3a);
+  - asset paths are scoped;
+  - record idempotency is durable;
+  - migration 20, which has never been deployed.
+
+  The fixes are committed in main as `ec0faa2`. Two independent Security reviews of those fixes approved with
+  conditions, and their findings are fixed in main, not yet committed.
+- **The release worktree** has the 76-file W1-A set staged on `f9de9a3`. Tests: 1,450 passed, none failed.
+- **Waiting for the owner:** "commit" (two commits: main's review fixes and handover; the release commit). Then the
+  builds, the backup, `--check`, the owner's deploy, the role sync and the journey (the brief's section 4).
+- **Next card:** W1-B, which switches on CMMS unit and site scope and adds the North/South journey proof.
+
+Every registry row has a status its evidence supports. None is Done yet: Done needs the owner's recorded acceptance.
 
 ## Running on UAT
 
@@ -62,20 +70,13 @@ owner's recorded acceptance.
 
 ## Next three steps
 
-1. **0.8:** finish the journey follow-ups:
-   - the invitation token;
-   - the Settings tab on reload;
-   - the journey wrapper's sign-in;
-   - the disk guard;
-   - 120au (one Master data menu);
-   - the Control Tower retired-key hardening;
-   - relay stall and failure alerts;
-   - the two dead default passwords;
-   - the journey's approval chain;
-   - an automatic expired-session sweep.
-2. **Plan Phase 1 for deadlines:** size each of the 21 steps (S, M or L) and order them into releases.
-3. **1.1:** R5 CMMS (WI-OI-120z, 120aa, 120ab, 120ac): Security review, deploy, and unit and site scope. Then 1.2 (T3
-   places) and 1.3 (M-CM1, with 120ag and the CMMS migration pin raised to 20).
+1. **W1-A on UAT** ([WI-OI-120be](tasks/WI-OI-120be.md)): release commit, builds, backup, `--check`, the owner's
+   deploy, role sync in `gigalibs-global`, `uatadmin` and `uat-approver`, and the journey. The 2 CMMS blockers should
+   clear.
+2. **W1-B:** add CMMS to `SCOPE_ENFORCING_MODULES` with its context-coverage test. The journey proves that a North
+   technician does not see South's work (needs its own card and review).
+3. **Step 1.2, T3** (WI-OI-120ad), then a small release of the Phase 0 leftovers (WI-OI-120aj, WI-OI-120am). The
+   remaining 0.8 items go into W1's releases ([the Phase 1 order](../docs/plans/phase-1-sizing.md)).
 
 ## Standing rules
 

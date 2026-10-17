@@ -19,6 +19,7 @@ function unitsWithoutTree(principal: CmmsPrincipal, roots: readonly string[]): s
  * `alias` qualifies the columns (e.g. `a.`). Department/unit scope keeps tenant-wide rows (department_id NULL)
  * visible; place scope is exact and excludes rows without a site, so a scoped member never sees more than their
  * places. An empty scope list or DENIED organization scope matches nothing, not even tenant-wide rows (fail-closed).
+ * `shared: false` drops the tenant-wide rows too, for records that are private to their unit (maintenance requests).
  */
 export function scopePredicates(
   principal: CmmsPrincipal,
@@ -26,12 +27,17 @@ export function scopePredicates(
   alias = '',
   tree?: CmmsOrganizationTree,
   placeTree?: CmmsPlaceTree,
+  { shared = true }: { readonly shared?: boolean } = {},
 ): string[] {
   if (principal.organization?.mode === 'DENIED') {
     return ['FALSE'];
   }
 
   const predicates: string[] = [];
+  const inUnits = (position: number) =>
+    shared
+      ? `(${alias}department_id IS NULL OR ${alias}department_id = ANY($${position}::text[]))`
+      : `${alias}department_id = ANY($${position}::text[])`;
 
   if (principal.organization?.mode === 'UNITS') {
     const rawRoots = principal.organization.read_roots;
@@ -47,11 +53,11 @@ export function scopePredicates(
     }
     if (effectiveUnits.length === 0) return ['FALSE'];
     values.push(effectiveUnits);
-    predicates.push(`(${alias}department_id IS NULL OR ${alias}department_id = ANY($${values.length}::text[]))`);
+    predicates.push(inUnits(values.length));
   } else if (principal.departmentScope.mode === 'DEPARTMENTS') {
     if (principal.departmentScope.departmentIds.length === 0) return ['FALSE'];
     values.push([...principal.departmentScope.departmentIds]);
-    predicates.push(`(${alias}department_id IS NULL OR ${alias}department_id = ANY($${values.length}::text[]))`);
+    predicates.push(inUnits(values.length));
   }
 
   if (principal.placeScope.mode === 'PLACES') {
