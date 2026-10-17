@@ -355,8 +355,10 @@ test('a new customer from sign-up to maintenance work, as five people', async ({
       await settle(admin);
       const notes: string[] = [];
       for (const [code, name] of [['SITE', 'Site'], ['AREA', 'Area']]) {
+        await settle(admin);
         // A Site sits at the top; an Area sits under a Site, a checkbox labelled with the parent type's code.
         notes.push(await create(admin, recorder, /add unit type/i, [[/code/i, code!], [/^name|name$/i, name!], [/description/i, `${name} (journey ${RUN})`], [/top|root/i, code === 'SITE' ? 'check' : ''], [/^SITE$/, code === 'AREA' ? 'check' : '']]));
+        await settle(admin);
       }
       return notes.join(' · ');
     });
@@ -697,7 +699,8 @@ test('a new customer from sign-up to maintenance work, as five people', async ({
           await settle(technician);
           if (!(await press(technician, action))) throw new Error(`No "${label}" action for the technician`);
           await settle(technician);
-          const form = lastForm(technician);
+          const dialog = technician.locator('[role=dialog]').filter({ visible: true });
+          const form = (await dialog.count()) ? dialog.last().locator('form').last() : lastForm(technician);
           if (await form.count()) {
             await fill(form, [[/hours|duration|minutes/i, '2'], [/note|comment|description|summary|resolution/i, `Journey ${label} ${RUN}`]]);
             const error = await submit(technician, form, recorder);
@@ -714,7 +717,8 @@ test('a new customer from sign-up to maintenance work, as five people', async ({
         await settle(supervisor);
         if (!(await press(supervisor, /^close|approve|verify/i))) throw new Error('No close or approve action for the supervisor');
         await settle(supervisor);
-        const form = lastForm(supervisor);
+        const dialog = supervisor.locator('[role=dialog]').filter({ visible: true });
+        const form = (await dialog.count()) ? dialog.last().locator('form').last() : lastForm(supervisor);
         if (await form.count()) {
           await fill(form, [[/note|comment|reason/i, `Checked on site ${RUN}`]]);
           const error = await submit(supervisor, form, recorder);

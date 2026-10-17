@@ -9,18 +9,17 @@ this page is kept in [archive/NOW-2026-10-15.md](archive/NOW-2026-10-15.md).
 state and the release procedure as it is run. The prompt to paste is [PROMPT-2026-10-17.md](handoff/PROMPT-2026-10-17.md).
 
 ## Current step
-
-**Phase 1, W1: Fix CMMS window entitlement key ([WI-OI-120bf](tasks/WI-OI-120bf.md)).**
-- W1-A deployed to UAT as `1bb0193`. CMMS is at migration 20; 3 tables exist; relays are healthy.
-- Journey `bzutxs` ran: 57 findings, 2 blockers. Both blockers traced to a 403 on `GET /api/control/configuration/runtime/manifest/current` ("The requested runtime scope is not available.") because `ModuleWindowConfigurationAdapterV1` expects `physical-operations-cmms` entitlement, while the tenant has `asset-maintenance`.
-- Card `WI-OI-120bf` maps `physical-operations-cmms` to `asset-maintenance` to unblock CMMS window rendering.
-- Next: `WI-OI-120bf` fix & deploy, then W1-B (unit/place scope enforcement).
+ 
+**Phase 1, W1: CMMS work order lifecycle alignment ([WI-OI-120bg](tasks/WI-OI-120bg.md)).**
+- `WI-OI-120bf` deployed to UAT as `fd63d9305247-647b8a1f19e5`. 
+- Journey `cac8tz`: 56 findings (down from 57). **`The technician raises a request` CLEARED** without 403 error.
+- Fix implemented and verified locally (`workflow-platform` build passed, `cmms-request-to-close-journey` spec passed, `playground-api` tests passed). Ready to commit and promote to release worktree.
 
 ## Running on UAT
 
-- **Release `1bb0193`** (owner deploy 2026-10-17): W1-A release candidate (WI-OI-120be), CMMS at migration 20.
-- **Last journey `bzutxs`** (on `1bb0193`): 57 findings (17 accessibility, 33 layout, 4 UX, 1 bug, 2 blockers). The 2 CMMS blockers wait on the `WI-OI-120bf` entitlement key fix.
-- **Rollback:** `f9de9a3`, whose images are kept.
+- **Release `fd63d93`** (owner deploy 2026-10-17): `fd63d9305247-647b8a1f19e5`, CMMS at migration 20.
+- **Last journey `cac8tz`** (on `fd63d93`): 56 findings (17 accessibility, 33 layout, 4 UX, 2 blockers). Request creation is now functional.
+- **Rollback:** `1bb0193`, whose images and backup `gigalibs_backup_20261017_093504Z` are kept.
 
 ## Built, not yet on UAT
 

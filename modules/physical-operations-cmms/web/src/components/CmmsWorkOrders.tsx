@@ -690,12 +690,51 @@ function StatusActions({
   run: (action: () => Promise<CmmsWorkOrderDetailV1>) => Promise<boolean>;
 }) {
   const [completing, setCompleting] = useState(false);
+  const [closing, setClosing] = useState(false);
   const move = (status: CmmsWorkOrderStatusV1, extra: Record<string, unknown> = {}) =>
     run(() =>
       cmmsApi.changeStatus(workOrder.id, { expectedVersion: workOrder.version, status, ...extra }),
     );
 
-  if (workOrder.status === 'COMPLETED' || workOrder.status === 'CANCELLED') return null;
+  if (workOrder.status === 'COMPLETED') {
+    return (
+      <div className="mt-4">
+        <div className="flex flex-wrap gap-2">
+          <Button
+            type="button"
+            size="small"
+            isLoading={busy}
+            onClick={() => setClosing((value) => !value)}
+          >
+            Close work order
+          </Button>
+        </div>
+        {closing ? (
+          <div role="dialog" aria-label="Close work order">
+            <form
+              className="mt-3 grid gap-3 rounded-lg border border-ui-border-base bg-ui-bg-subtle p-3"
+              onSubmit={(event) => {
+                event.preventDefault();
+                const data = new FormData(event.currentTarget);
+                const note = optionalText(data.get('notes')) || 'Verified and closed by supervisor.';
+                void run(() => cmmsApi.addNote(workOrder.id, `Closed / Verified: ${note}`)).then(
+                  (saved) => saved && setClosing(false),
+                );
+              }}
+            >
+              <Field id="close-notes" label="Review & closing notes">
+                <Textarea id="close-notes" name="notes" rows={2} maxLength={4000} placeholder="Review notes or reason..." />
+              </Field>
+              <Button type="submit" size="small" isLoading={busy}>
+                Confirm close
+              </Button>
+            </form>
+          </div>
+        ) : null}
+      </div>
+    );
+  }
+  if (workOrder.status === 'CANCELLED') return null;
   return (
     <div className="mt-4">
       <div className="flex flex-wrap gap-2">
@@ -751,35 +790,37 @@ function StatusActions({
         </Button>
       </div>
       {completing && workOrder.status === 'IN_PROGRESS' ? (
-        <form
-          className="mt-3 grid gap-3 rounded-lg border border-ui-border-base bg-ui-bg-subtle p-3"
-          onSubmit={(event) => {
-            event.preventDefault();
-            const data = new FormData(event.currentTarget);
-            const signature = optionalText(data.get('signature'));
-            void move('COMPLETED', {
-              notes: optionalText(data.get('notes')),
-              ...(signature ? { signatureData: `typed:${signature}` } : {}),
-            });
-          }}
-        >
-          {pendingRequired > 0 ? (
-            <Text size="small" className="text-ui-fg-error">
-              {pendingRequired} required task(s) still pending; record them before completing.
-            </Text>
-          ) : null}
-          <Field id="complete-notes" label="Completion notes">
-            <Textarea id="complete-notes" name="notes" rows={2} maxLength={4000} />
-          </Field>
-          {workOrder.requiresSignature ? (
-            <Field id="complete-signature" label="Signature (type your full name)">
-              <Input id="complete-signature" name="signature" required maxLength={200} />
+        <div role="dialog" aria-label="Complete work order">
+          <form
+            className="mt-3 grid gap-3 rounded-lg border border-ui-border-base bg-ui-bg-subtle p-3"
+            onSubmit={(event) => {
+              event.preventDefault();
+              const data = new FormData(event.currentTarget);
+              const signature = optionalText(data.get('signature'));
+              void move('COMPLETED', {
+                notes: optionalText(data.get('notes')),
+                ...(signature ? { signatureData: `typed:${signature}` } : {}),
+              });
+            }}
+          >
+            {pendingRequired > 0 ? (
+              <Text size="small" className="text-ui-fg-error">
+                {pendingRequired} required task(s) still pending; record them before completing.
+              </Text>
+            ) : null}
+            <Field id="complete-notes" label="Completion notes">
+              <Textarea id="complete-notes" name="notes" rows={2} maxLength={4000} />
             </Field>
-          ) : null}
-          <Button type="submit" size="small" isLoading={busy}>
-            Confirm completion
-          </Button>
-        </form>
+            {workOrder.requiresSignature ? (
+              <Field id="complete-signature" label="Signature (type your full name)">
+                <Input id="complete-signature" name="signature" required maxLength={200} />
+              </Field>
+            ) : null}
+            <Button type="submit" size="small" isLoading={busy}>
+              Confirm completion
+            </Button>
+          </form>
+        </div>
       ) : null}
     </div>
   );

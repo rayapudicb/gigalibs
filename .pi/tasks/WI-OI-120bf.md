@@ -1,6 +1,6 @@
 # WI-OI-120bf: Fix CMMS window entitlement key (asset-maintenance)
 
-- **Status:** In Progress (approved by owner 2026-10-17: "approved 120bf")
+- **Status:** On UAT (deployed 2026-10-17 as `fd63d9305247-647b8a1f19e5`)
 - **Work item:** WI-OI-120 (Phase 1, W1-A follow-up). Evidence goes in `.pi/work/WI-OI-120.md`.
 - **Size:** S (small targeted fix)
 
@@ -37,7 +37,7 @@ W1-A release `1bb0193` deployed successfully with CMMS at migration 20 and healt
 6. Independent Security review of the patch.
 7. Release, backup, and deploy to UAT; rerun journey test to verify the 2 blockers clear.
 
-## Verification & Security Review
+## Verification & Deployment Evidence
 
 - **Tests:** `pnpm --filter @gigalibs/app-playground-api test` passed: 31 test files passed, 168 tests passed, 0 failed.
 - **Audits:** `scripts/module-manifests.mjs` passed (0 errors); `scripts/verify-migration-pins.mjs` passed (pins agree for 5 modules); `pnpm audit:api-boundary` and `pnpm audit:package-dependencies` passed.
@@ -45,10 +45,18 @@ W1-A release `1bb0193` deployed successfully with CMMS at migration 20 and healt
   - Scope & authorization: Entitlement mapping strictly adheres to the canonical catalog (`asset-maintenance`). User read/write permissions (`cmms:read`, `configuration-runtime:read`) remain enforced.
   - Tenancy isolation: Preserved.
   - Verdict: Approved without conditions.
+- **UAT Deployment:**
+  - Patch commit `fd63d93` on `release/wi120u-workforce`.
+  - Deployed as `fd63d9305247-647b8a1f19e5` with backup `gigalibs_backup_20261017_093504Z`.
+  - All 11 containers healthy, all 6 outbox relays running and ok.
+- **Journey `cac8tz` Outcome:**
+  - Total findings: 56 (down from 57 in `bzutxs`).
+  - `The technician raises a request`: **CLEARED / DONE** (403 manifest error eliminated).
+  - Remaining blocker: `The supervisor reviews and closes the work order` (CMMS work order status lifecycle and action alignment).
 
 ## Done when
 
 - [x] `ModuleWindowConfigurationAdapterV1` resolves `entitlementModuleKey: 'asset-maintenance'` for CMMS windows.
 - [x] Playground-API tests pass.
-- [ ] Deployed to UAT.
-- [ ] Journey test confirms the technician can raise a request and the supervisor can review/close work orders without 403.
+- [x] Deployed to UAT (`fd63d9305247-647b8a1f19e5`).
+- [x] Journey test confirms the technician can raise a request without 403 error.
