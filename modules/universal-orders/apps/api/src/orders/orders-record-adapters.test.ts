@@ -1,9 +1,25 @@
 import { describe, expect, it } from 'vitest';
 import {
   windowValuesToCreateCustomerInvoiceInput,
+  windowValuesToCreateFulfillmentOrderInput,
   windowValuesToCreateSalesOrderInput,
   windowValuesToCreateSalesQuoteInput,
 } from './orders-record-adapters.js';
+
+describe('windowValuesToCreateFulfillmentOrderInput', () => {
+  it('builds a one-line fulfillment from window field keys', () => {
+    const input = windowValuesToCreateFulfillmentOrderInput({
+      'order-id': '550e8400-e29b-41d4-a716-446655440000',
+      'warehouse-id': '660e8400-e29b-41d4-a716-446655440001',
+      'line-order-line-id': '770e8400-e29b-41d4-a716-446655440002',
+      'line-shipped-quantity': '3.000000',
+      carrier: 'UPS',
+    });
+    expect(input.orderId).toBe('550e8400-e29b-41d4-a716-446655440000');
+    expect(input.lines[0]?.orderLineId).toBe('770e8400-e29b-41d4-a716-446655440002');
+    expect(input.carrier).toBe('UPS');
+  });
+});
 
 describe('windowValuesToCreateCustomerInvoiceInput', () => {
   it('builds invoice input from window field keys', () => {

@@ -1,4 +1,4 @@
-import { CreatePurchaseOrderInputV1Schema } from '@gigalibs/contracts';
+import { CreatePurchaseOrderInputV1Schema, CreateVendorBillInputV1Schema, type VendorBillV1 } from '@gigalibs/contracts';
 import {
   type IdempotencyStore,
   type ModulePrincipal,
@@ -12,7 +12,7 @@ import { shippedRecordRules } from '@gigalibs/configuration-core';
 import { BadRequestException } from '@nestjs/common';
 import type { ProcurementService } from './procurement.service.js';
 
-// WI-OI-120gh: record routes for the first Procurement metadata window (purchase order header + first line on create).
+// WI-OI-120gh/gn: record routes for Procurement metadata windows (PO and vendor bills).
 
 const camel = (key: string) => key.replace(/-([a-z0-9])/g, (_match, letter: string) => letter.toUpperCase());
 
@@ -54,6 +54,86 @@ const PO_FIELDS: readonly FieldSpec[] = [
   { key: 'line-unit-price-minor', writable: true },
   { key: 'line-destination-warehouse-id', writable: true },
 ];
+
+function normalizeDatetime(value: unknown, fallbackDaysFromNow: number): string {
+  if (typeof value === 'string' && value.length > 0) return value;
+  if (value instanceof Date) return value.toISOString();
+  const fallback = new Date();
+  fallback.setUTCDate(fallback.getUTCDate() + fallbackDaysFromNow);
+  return fallback.toISOString();
+}
+
+function vendorBillToWindow(bill: VendorBillV1): RecordValues {
+  const line = bill.lines?.[0];
+  const values: Record<string, unknown> = {
+    id: bill.id,
+    version: bill.version,
+    'vendor-invoice-number': bill.vendorInvoiceNumber,
+    'vendor-id': bill.vendorPartyId,
+    'invoice-date': bill.invoiceDate,
+    'due-date': bill.dueDate,
+    'purchase-order-id': bill.purchaseOrderId ?? null,
+    'currency-code': bill.currencyCode,
+    status: bill.status,
+    'total-amount': bill.totalAmountMinor,
+  };
+  if (line) {
+    values['line-description'] = line.description;
+    values['line-billed-quantity'] = line.billedQuantity;
+    values['line-uom-id'] = line.uomId;
+    values['line-unit-price-minor'] = line.unitPriceMinor;
+    values['line-product-id'] = line.productId ?? null;
+  }
+  return values;
+}
+
+const VB_FIELDS: readonly FieldSpec[] = [
+  { key: 'vendor-invoice-number', domain: 'vendorInvoiceNumber', writable: true },
+  { key: 'vendor-id', domain: 'vendorPartyId', writable: true },
+  { key: 'invoice-date', domain: 'invoiceDate', writable: true },
+  { key: 'due-date', domain: 'dueDate', writable: true },
+  { key: 'purchase-order-id', domain: 'purchaseOrderId', writable: true },
+  { key: 'currency-code', domain: 'currencyCode', writable: true },
+  { key: 'status' },
+  { key: 'total-amount', domain: 'totalAmountMinor' },
+  { key: 'line-description', writable: true },
+  { key: 'line-billed-quantity', writable: true },
+  { key: 'line-uom-id', writable: true },
+  { key: 'line-unit-price-minor', writable: true },
+  { key: 'line-product-id', writable: true },
+];
+
+/** Maps metadata window values to the vendor bill create contract (exported for tests). */
+export function windowValuesToCreateVendorBillInput(values: RecordValues) {
+  const poId = values['purchase-order-id'];
+  const input = {
+    vendorPartyId: values['vendor-id'],
+    vendorInvoiceNumber: values['vendor-invoice-number'],
+    invoiceDate: normalizeDatetime(values['invoice-date'], 0),
+    dueDate: normalizeDatetime(values['due-date'], 30),
+    currencyCode: values['currency-code'] ?? 'USD',
+    purchaseOrderId: typeof poId === 'string' && poId.length > 0 ? poId : null,
+    lines: [
+      {
+        purchaseOrderId: typeof poId === 'string' && poId.length > 0 ? poId : null,
+        productId: values['line-product-id'] ?? null,
+        description: values['line-description'],
+        billedQuantity: String(values['line-billed-quantity'] ?? '1.000000'),
+        uomId: values['line-uom-id'],
+        unitPriceMinor: String(values['line-unit-price-minor'] ?? '0'),
+      },
+    ],
+  };
+  const parsed = CreateVendorBillInputV1Schema.safeParse(input);
+  if (!parsed.success) {
+    const issue = parsed.error.issues[0];
+    throw new BadRequestException({
+      code: 'UNIVERSAL_PROCUREMENT_VALIDATION_FAILED',
+      message: `${issue?.path.join('.') ?? 'value'}: ${issue?.message ?? 'invalid'}`,
+    });
+  }
+  return parsed.data;
+}
 
 /** Maps metadata window values to the procurement create contract (exported for tests). */
 export function windowValuesToCreatePurchaseOrderInput(values: RecordValues) {
@@ -141,5 +221,47 @@ export function procurementRecordDispatcher(deps: { procurement: ProcurementServ
     },
   };
 
-  return new RecordDispatcher([purchaseOrders], [], idempotency, shippedRecordRules('universal-procurement'));
+  const vendorBills: RecordAdapter = {
+    entityKey: 'procurement.vendor-bills',
+    permissions: { read: 'procurement:read', create: 'procurement:bills:manage' },
+    rest: { read: 'GET v1/bills', create: 'POST v1/bills' },
+    fields: fieldPolicies(VB_FIELDS),
+    searchFields: ['vendor-invoice-number'],
+    sortFields: ['vendor-invoice-number'],
+    async list(principal: ModulePrincipal, query: RecordListQuery) {
+      let items = (await deps.procurement.listVendorBills(principal)).map(vendorBillToWindow);
+      if (query.search) {
+        items = items.filter((item) => {
+          const needle = query.search!.toLowerCase();
+          const num = item['vendor-invoice-number'];
+          return typeof num === 'string' && num.toLowerCase().includes(needle);
+        });
+      }
+      const sortField = query.sortField ?? 'vendor-invoice-number';
+      const direction = query.sortDirection === 'ASC' ? 1 : -1;
+      items.sort((left, right) => {
+        const a = left[sortField];
+        const b = right[sortField];
+        if (typeof a === 'string' && typeof b === 'string') return a.localeCompare(b) * direction;
+        return 0;
+      });
+      const start = (query.page - 1) * query.pageSize;
+      const pageItems = items.slice(start, start + query.pageSize);
+      return { page: query.page, pageSize: query.pageSize, totalItems: items.length, items: pageItems };
+    },
+    async get(principal, id) {
+      try {
+        const bill = await deps.procurement.getVendorBill(principal, id);
+        return vendorBillToWindow(bill);
+      } catch {
+        return null;
+      }
+    },
+    async create(context, values) {
+      const bill = await deps.procurement.createVendorBill(context.principal, windowValuesToCreateVendorBillInput(values));
+      return vendorBillToWindow(bill);
+    },
+  };
+
+  return new RecordDispatcher([purchaseOrders, vendorBills], [], idempotency, shippedRecordRules('universal-procurement'));
 }

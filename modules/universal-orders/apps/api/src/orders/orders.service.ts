@@ -730,6 +730,28 @@ export class OrderService {
     });
   }
 
+  async listFulfillmentOrders(principal: { tenantId: string }): Promise<FulfillmentOrderV1[]> {
+    return this.database.withTenantTransaction(principal.tenantId, async (client) => {
+      const res = await client.query<{ id: string }>(
+        `SELECT id FROM gigalibs_orders.fulfillment_orders WHERE tenant_id = $1 ORDER BY created_at DESC`,
+        [principal.tenantId],
+      );
+      const items: FulfillmentOrderV1[] = [];
+      for (const row of res.rows) {
+        const foRes = await client.query(`SELECT * FROM gigalibs_orders.fulfillment_orders WHERE tenant_id = $1 AND id = $2`, [
+          principal.tenantId,
+          row.id,
+        ]);
+        const lines = await client.query(
+          `SELECT * FROM gigalibs_orders.fulfillment_order_lines WHERE tenant_id = $1 AND fulfillment_order_id = $2`,
+          [principal.tenantId, row.id],
+        );
+        items.push(this.mapFulfillment(foRes.rows[0], lines.rows));
+      }
+      return items;
+    });
+  }
+
   async dispatchFulfillment(
     tenantId: string,
     actorId: string,

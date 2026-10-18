@@ -1,0 +1,298 @@
+{
+  "contractVersion": "1.0",
+  "window": {
+    "route": "/orders",
+    "label": "Fulfillment orders",
+    "description": "Create outbound fulfillment shipments against allocated sales order lines.",
+    "readPermission": "orders:read"
+  },
+  "definition": {
+    "kind": "APPLICATION_DICTIONARY",
+    "contractVersion": "1.0",
+    "moduleKey": "universal-orders",
+    "entityKey": "orders-fulfillment-orders",
+    "surfaceKey": "orders-fulfillment-orders",
+    "title": "Fulfillment orders",
+    "dictionary": {
+      "packageKey": "orders-fulfillment-orders-module-baseline",
+      "name": "Fulfillment orders",
+      "version": "1.0.0",
+      "moduleKey": "universal-orders",
+      "targetEntityKey": "orders.fulfillment-orders",
+      "entities": [
+        {
+          "entityKey": "orders.fulfillment-orders",
+          "moduleKey": "universal-orders",
+          "label": "Fulfillment orders",
+          "ownership": "MODULE_CORE",
+          "primaryKeyField": "id",
+          "isVersioned": true,
+          "isAuditLogged": true,
+          "isSoftDeletable": false
+        }
+      ],
+      "fields": [
+        {
+          "fieldKey": "fulfillment-number",
+          "entityKey": "orders.fulfillment-orders",
+          "label": "Fulfillment number",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "order-id",
+          "entityKey": "orders.fulfillment-orders",
+          "label": "Sales order",
+          "type": "TEXT",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "writePermission": "orders:fulfill"
+        },
+        {
+          "fieldKey": "warehouse-id",
+          "entityKey": "orders.fulfillment-orders",
+          "label": "Ship-from warehouse",
+          "type": "REFERENCE",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "warehouse-ref",
+          "writePermission": "orders:fulfill"
+        },
+        {
+          "fieldKey": "carrier",
+          "entityKey": "orders.fulfillment-orders",
+          "label": "Carrier",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "writePermission": "orders:fulfill"
+        },
+        {
+          "fieldKey": "tracking-number",
+          "entityKey": "orders.fulfillment-orders",
+          "label": "Tracking number",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "writePermission": "orders:fulfill"
+        },
+        {
+          "fieldKey": "status",
+          "entityKey": "orders.fulfillment-orders",
+          "label": "Status",
+          "type": "SELECT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "fulfillment-statuses"
+        },
+        {
+          "fieldKey": "line-order-line-id",
+          "entityKey": "orders.fulfillment-orders",
+          "label": "Order line",
+          "type": "TEXT",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "helpText": "Sales order line UUID to ship.",
+          "writePermission": "orders:fulfill"
+        },
+        {
+          "fieldKey": "line-shipped-quantity",
+          "entityKey": "orders.fulfillment-orders",
+          "label": "Shipped quantity",
+          "type": "NUMBER",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "scale": 6,
+          "writePermission": "orders:fulfill",
+          "defaultValue": "1.000000"
+        }
+      ],
+      "relationships": [],
+      "references": [
+        {
+          "referenceKey": "fulfillment-statuses",
+          "referenceType": "VALUE_LIST",
+          "staticValues": [
+            {
+              "value": "DRAFT",
+              "label": "Draft"
+            },
+            {
+              "value": "RELEASED",
+              "label": "Released"
+            },
+            {
+              "value": "PICKING",
+              "label": "Picking"
+            },
+            {
+              "value": "PACKED",
+              "label": "Packed"
+            },
+            {
+              "value": "SHIPPED",
+              "label": "Shipped"
+            },
+            {
+              "value": "DELIVERED",
+              "label": "Delivered"
+            },
+            {
+              "value": "CANCELLED",
+              "label": "Cancelled"
+            }
+          ]
+        },
+        {
+          "referenceKey": "warehouse-ref",
+          "referenceType": "SEARCH_LOOKUP",
+          "resolverKey": "inventory-warehouses",
+          "createWith": {
+            "moduleKey": "universal-inventory",
+            "surfaceKey": "inventory-warehouses",
+            "permission": "inventory:warehouses:manage"
+          }
+        }
+      ],
+      "validationRules": [],
+      "views": [
+        {
+          "viewKey": "fulfillment-orders",
+          "label": "Fulfillment orders",
+          "mode": "LIST",
+          "device": "ALL",
+          "searchFields": [
+            "fulfillment-number"
+          ],
+          "defaultSortField": "fulfillment-number",
+          "defaultSortDirection": "DESC",
+          "tabs": [
+            {
+              "tabKey": "fo-header",
+              "label": "Shipment",
+              "position": 0,
+              "level": 0,
+              "targetEntityKey": "orders.fulfillment-orders",
+              "sections": [
+                {
+                  "sectionKey": "summary",
+                  "label": "Summary",
+                  "collapsible": false,
+                  "defaultCollapsed": false,
+                  "position": 0
+                },
+                {
+                  "sectionKey": "source",
+                  "label": "Sales order",
+                  "collapsible": false,
+                  "defaultCollapsed": false,
+                  "position": 1
+                },
+                {
+                  "sectionKey": "logistics",
+                  "label": "Carrier & warehouse",
+                  "collapsible": false,
+                  "defaultCollapsed": false,
+                  "position": 2
+                },
+                {
+                  "sectionKey": "first-line",
+                  "label": "First shipment line",
+                  "collapsible": false,
+                  "defaultCollapsed": false,
+                  "position": 3
+                }
+              ],
+              "fields": [
+                {
+                  "fieldKey": "fulfillment-number",
+                  "position": 0,
+                  "span": 4,
+                  "componentKey": "text-input",
+                  "sectionKey": "summary"
+                },
+                {
+                  "fieldKey": "status",
+                  "position": 1,
+                  "span": 4,
+                  "componentKey": "select",
+                  "sectionKey": "summary"
+                },
+                {
+                  "fieldKey": "order-id",
+                  "position": 2,
+                  "span": 8,
+                  "componentKey": "text-input",
+                  "sectionKey": "source"
+                },
+                {
+                  "fieldKey": "warehouse-id",
+                  "position": 3,
+                  "span": 6,
+                  "componentKey": "lookup",
+                  "sectionKey": "logistics"
+                },
+                {
+                  "fieldKey": "carrier",
+                  "position": 4,
+                  "span": 4,
+                  "componentKey": "text-input",
+                  "sectionKey": "logistics"
+                },
+                {
+                  "fieldKey": "tracking-number",
+                  "position": 5,
+                  "span": 4,
+                  "componentKey": "text-input",
+                  "sectionKey": "logistics"
+                },
+                {
+                  "fieldKey": "line-order-line-id",
+                  "position": 6,
+                  "span": 8,
+                  "componentKey": "text-input",
+                  "sectionKey": "first-line"
+                },
+                {
+                  "fieldKey": "line-shipped-quantity",
+                  "position": 7,
+                  "span": 4,
+                  "componentKey": "number-input",
+                  "sectionKey": "first-line"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "navigation": [],
+      "actions": [],
+      "messages": []
+    }
+  }
+}

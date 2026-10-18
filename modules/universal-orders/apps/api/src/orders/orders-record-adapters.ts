@@ -1,8 +1,10 @@
 import {
   CreateCustomerInvoiceInputV1Schema,
+  CreateFulfillmentOrderInputV1Schema,
   CreateSalesOrderInputV1Schema,
   CreateSalesQuoteInputV1Schema,
   type CustomerInvoiceV1,
+  type FulfillmentOrderV1,
   type SalesOrderV1,
   type SalesQuoteV1,
 } from '@gigalibs/contracts';
@@ -36,6 +38,25 @@ function normalizeDatetime(value: unknown, fallbackDaysFromNow: number): string 
   const fallback = new Date();
   fallback.setUTCDate(fallback.getUTCDate() + fallbackDaysFromNow);
   return fallback.toISOString();
+}
+
+function fulfillmentOrderToWindow(fulfillment: FulfillmentOrderV1): RecordValues {
+  const line = fulfillment.lines?.[0];
+  const values: Record<string, unknown> = {
+    id: fulfillment.id,
+    version: fulfillment.version,
+    'fulfillment-number': fulfillment.fulfillmentNumber,
+    'order-id': fulfillment.orderId,
+    'warehouse-id': fulfillment.warehouseId,
+    carrier: fulfillment.carrier ?? null,
+    'tracking-number': fulfillment.trackingNumber ?? null,
+    status: fulfillment.status,
+  };
+  if (line) {
+    values['line-order-line-id'] = line.orderLineId;
+    values['line-shipped-quantity'] = line.shippedQuantity;
+  }
+  return values;
 }
 
 function customerInvoiceToWindow(invoice: CustomerInvoiceV1): RecordValues {
@@ -150,6 +171,42 @@ export function windowValuesToCreateSalesQuoteInput(values: RecordValues) {
     ],
   };
   const parsed = CreateSalesQuoteInputV1Schema.safeParse(input);
+  if (!parsed.success) {
+    const issue = parsed.error.issues[0];
+    throw new BadRequestException({
+      code: 'UNIVERSAL_ORDERS_VALIDATION_FAILED',
+      message: `${issue?.path.join('.') ?? 'value'}: ${issue?.message ?? 'invalid'}`,
+    });
+  }
+  return parsed.data;
+}
+
+const FO_FIELDS: readonly FieldSpec[] = [
+  { key: 'fulfillment-number' },
+  { key: 'order-id', writable: true },
+  { key: 'warehouse-id', writable: true },
+  { key: 'carrier', writable: true },
+  { key: 'tracking-number', writable: true },
+  { key: 'status' },
+  { key: 'line-order-line-id', writable: true },
+  { key: 'line-shipped-quantity', writable: true },
+];
+
+/** Maps metadata window values to the fulfillment create contract (exported for tests). */
+export function windowValuesToCreateFulfillmentOrderInput(values: RecordValues) {
+  const input = {
+    orderId: values['order-id'],
+    warehouseId: values['warehouse-id'],
+    carrier: values['carrier'] ?? null,
+    trackingNumber: values['tracking-number'] ?? null,
+    lines: [
+      {
+        orderLineId: values['line-order-line-id'],
+        shippedQuantity: String(values['line-shipped-quantity'] ?? '1.000000'),
+      },
+    ],
+  };
+  const parsed = CreateFulfillmentOrderInputV1Schema.safeParse(input);
   if (!parsed.success) {
     const issue = parsed.error.issues[0];
     throw new BadRequestException({
@@ -336,6 +393,46 @@ export function ordersRecordDispatcher(deps: { orders: OrderService }, idempoten
     },
   };
 
+  const fulfillmentOrders: RecordAdapter = {
+    entityKey: 'orders.fulfillment-orders',
+    permissions: { read: 'orders:read', create: 'orders:fulfill' },
+    rest: { read: 'GET v1/fulfillments', create: 'POST v1/fulfillments' },
+    fields: fieldPolicies(FO_FIELDS),
+    searchFields: ['fulfillment-number'],
+    sortFields: ['fulfillment-number'],
+    async list(principal: ModulePrincipal, query: RecordListQuery) {
+      let items = (await deps.orders.listFulfillmentOrders(principal)).map(fulfillmentOrderToWindow);
+      if (query.search) items = items.filter((item) => matchesFields(item, query.search!, ['fulfillment-number']));
+      const sortField = query.sortField ?? 'fulfillment-number';
+      const direction = query.sortDirection === 'ASC' ? 1 : -1;
+      items.sort((left, right) => {
+        const a = left[sortField];
+        const b = right[sortField];
+        if (typeof a === 'string' && typeof b === 'string') return a.localeCompare(b) * direction;
+        return 0;
+      });
+      const start = (query.page - 1) * query.pageSize;
+      const pageItems = items.slice(start, start + query.pageSize);
+      return { page: query.page, pageSize: query.pageSize, totalItems: items.length, items: pageItems };
+    },
+    async get(principal, id) {
+      try {
+        const fulfillment = await deps.orders.getFulfillment(principal.tenantId, id);
+        return fulfillmentOrderToWindow(fulfillment);
+      } catch {
+        return null;
+      }
+    },
+    async create(context, values) {
+      const fulfillment = await deps.orders.createFulfillment(
+        context.principal.tenantId,
+        context.principal.subject,
+        windowValuesToCreateFulfillmentOrderInput(values),
+      );
+      return fulfillmentOrderToWindow(fulfillment);
+    },
+  };
+
   const customerInvoices: RecordAdapter = {
     entityKey: 'orders.customer-invoices',
     permissions: { read: 'orders:read', create: 'orders:invoices:manage' },
@@ -376,5 +473,10 @@ export function ordersRecordDispatcher(deps: { orders: OrderService }, idempoten
     },
   };
 
-  return new RecordDispatcher([salesQuotes, salesOrders, customerInvoices], [], idempotency, shippedRecordRules('universal-orders'));
+  return new RecordDispatcher(
+    [salesQuotes, salesOrders, fulfillmentOrders, customerInvoices],
+    [],
+    idempotency,
+    shippedRecordRules('universal-orders'),
+  );
 }

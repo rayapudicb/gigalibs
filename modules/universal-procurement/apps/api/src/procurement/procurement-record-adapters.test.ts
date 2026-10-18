@@ -1,5 +1,23 @@
 import { describe, expect, it } from 'vitest';
-import { windowValuesToCreatePurchaseOrderInput } from './procurement-record-adapters.js';
+import { windowValuesToCreatePurchaseOrderInput, windowValuesToCreateVendorBillInput } from './procurement-record-adapters.js';
+
+describe('windowValuesToCreateVendorBillInput', () => {
+  it('builds a one-line vendor bill from window field keys', () => {
+    const input = windowValuesToCreateVendorBillInput({
+      'vendor-id': '323e4567-e89b-12d3-a456-426614174000',
+      'vendor-invoice-number': 'VINV-9001',
+      'invoice-date': '2026-10-01T12:00:00.000Z',
+      'due-date': '2026-11-01T12:00:00.000Z',
+      'line-description': 'Maintenance supplies',
+      'line-billed-quantity': '2.000000',
+      'line-uom-id': '770e8400-e29b-41d4-a716-446655440002',
+      'line-unit-price-minor': '1200',
+    });
+    expect(input.vendorInvoiceNumber).toBe('VINV-9001');
+    expect(input.lines).toHaveLength(1);
+    expect(input.lines[0]?.unitPriceMinor).toBe('1200');
+  });
+});
 
 describe('windowValuesToCreatePurchaseOrderInput', () => {
   it('builds a one-line purchase order from window field keys', () => {

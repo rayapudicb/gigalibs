@@ -15437,6 +15437,304 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
     "contractVersion": "1.0",
     "window": {
       "route": "/orders",
+      "label": "Fulfillment orders",
+      "description": "Create outbound fulfillment shipments against allocated sales order lines.",
+      "readPermission": "orders:read"
+    },
+    "definition": {
+      "kind": "APPLICATION_DICTIONARY",
+      "contractVersion": "1.0",
+      "moduleKey": "universal-orders",
+      "entityKey": "orders-fulfillment-orders",
+      "surfaceKey": "orders-fulfillment-orders",
+      "title": "Fulfillment orders",
+      "dictionary": {
+        "packageKey": "orders-fulfillment-orders-module-baseline",
+        "name": "Fulfillment orders",
+        "version": "1.0.0",
+        "moduleKey": "universal-orders",
+        "targetEntityKey": "orders.fulfillment-orders",
+        "entities": [
+          {
+            "entityKey": "orders.fulfillment-orders",
+            "moduleKey": "universal-orders",
+            "label": "Fulfillment orders",
+            "ownership": "MODULE_CORE",
+            "primaryKeyField": "id",
+            "isVersioned": true,
+            "isAuditLogged": true,
+            "isSoftDeletable": false
+          }
+        ],
+        "fields": [
+          {
+            "fieldKey": "fulfillment-number",
+            "entityKey": "orders.fulfillment-orders",
+            "label": "Fulfillment number",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "order-id",
+            "entityKey": "orders.fulfillment-orders",
+            "label": "Sales order",
+            "type": "TEXT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "writePermission": "orders:fulfill"
+          },
+          {
+            "fieldKey": "warehouse-id",
+            "entityKey": "orders.fulfillment-orders",
+            "label": "Ship-from warehouse",
+            "type": "REFERENCE",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "warehouse-ref",
+            "writePermission": "orders:fulfill"
+          },
+          {
+            "fieldKey": "carrier",
+            "entityKey": "orders.fulfillment-orders",
+            "label": "Carrier",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "writePermission": "orders:fulfill"
+          },
+          {
+            "fieldKey": "tracking-number",
+            "entityKey": "orders.fulfillment-orders",
+            "label": "Tracking number",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "writePermission": "orders:fulfill"
+          },
+          {
+            "fieldKey": "status",
+            "entityKey": "orders.fulfillment-orders",
+            "label": "Status",
+            "type": "SELECT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "fulfillment-statuses"
+          },
+          {
+            "fieldKey": "line-order-line-id",
+            "entityKey": "orders.fulfillment-orders",
+            "label": "Order line",
+            "type": "TEXT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "helpText": "Sales order line UUID to ship.",
+            "writePermission": "orders:fulfill"
+          },
+          {
+            "fieldKey": "line-shipped-quantity",
+            "entityKey": "orders.fulfillment-orders",
+            "label": "Shipped quantity",
+            "type": "NUMBER",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "scale": 6,
+            "writePermission": "orders:fulfill",
+            "defaultValue": "1.000000"
+          }
+        ],
+        "relationships": [],
+        "references": [
+          {
+            "referenceKey": "fulfillment-statuses",
+            "referenceType": "VALUE_LIST",
+            "staticValues": [
+              {
+                "value": "DRAFT",
+                "label": "Draft"
+              },
+              {
+                "value": "RELEASED",
+                "label": "Released"
+              },
+              {
+                "value": "PICKING",
+                "label": "Picking"
+              },
+              {
+                "value": "PACKED",
+                "label": "Packed"
+              },
+              {
+                "value": "SHIPPED",
+                "label": "Shipped"
+              },
+              {
+                "value": "DELIVERED",
+                "label": "Delivered"
+              },
+              {
+                "value": "CANCELLED",
+                "label": "Cancelled"
+              }
+            ]
+          },
+          {
+            "referenceKey": "warehouse-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "inventory-warehouses",
+            "createWith": {
+              "moduleKey": "universal-inventory",
+              "surfaceKey": "inventory-warehouses",
+              "permission": "inventory:warehouses:manage"
+            }
+          }
+        ],
+        "validationRules": [],
+        "views": [
+          {
+            "viewKey": "fulfillment-orders",
+            "label": "Fulfillment orders",
+            "mode": "LIST",
+            "device": "ALL",
+            "searchFields": [
+              "fulfillment-number"
+            ],
+            "defaultSortField": "fulfillment-number",
+            "defaultSortDirection": "DESC",
+            "tabs": [
+              {
+                "tabKey": "fo-header",
+                "label": "Shipment",
+                "position": 0,
+                "level": 0,
+                "targetEntityKey": "orders.fulfillment-orders",
+                "sections": [
+                  {
+                    "sectionKey": "summary",
+                    "label": "Summary",
+                    "collapsible": false,
+                    "defaultCollapsed": false,
+                    "position": 0
+                  },
+                  {
+                    "sectionKey": "source",
+                    "label": "Sales order",
+                    "collapsible": false,
+                    "defaultCollapsed": false,
+                    "position": 1
+                  },
+                  {
+                    "sectionKey": "logistics",
+                    "label": "Carrier & warehouse",
+                    "collapsible": false,
+                    "defaultCollapsed": false,
+                    "position": 2
+                  },
+                  {
+                    "sectionKey": "first-line",
+                    "label": "First shipment line",
+                    "collapsible": false,
+                    "defaultCollapsed": false,
+                    "position": 3
+                  }
+                ],
+                "fields": [
+                  {
+                    "fieldKey": "fulfillment-number",
+                    "position": 0,
+                    "span": 4,
+                    "componentKey": "text-input",
+                    "sectionKey": "summary"
+                  },
+                  {
+                    "fieldKey": "status",
+                    "position": 1,
+                    "span": 4,
+                    "componentKey": "select",
+                    "sectionKey": "summary"
+                  },
+                  {
+                    "fieldKey": "order-id",
+                    "position": 2,
+                    "span": 8,
+                    "componentKey": "text-input",
+                    "sectionKey": "source"
+                  },
+                  {
+                    "fieldKey": "warehouse-id",
+                    "position": 3,
+                    "span": 6,
+                    "componentKey": "lookup",
+                    "sectionKey": "logistics"
+                  },
+                  {
+                    "fieldKey": "carrier",
+                    "position": 4,
+                    "span": 4,
+                    "componentKey": "text-input",
+                    "sectionKey": "logistics"
+                  },
+                  {
+                    "fieldKey": "tracking-number",
+                    "position": 5,
+                    "span": 4,
+                    "componentKey": "text-input",
+                    "sectionKey": "logistics"
+                  },
+                  {
+                    "fieldKey": "line-order-line-id",
+                    "position": 6,
+                    "span": 8,
+                    "componentKey": "text-input",
+                    "sectionKey": "first-line"
+                  },
+                  {
+                    "fieldKey": "line-shipped-quantity",
+                    "position": 7,
+                    "span": 4,
+                    "componentKey": "number-input",
+                    "sectionKey": "first-line"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "navigation": [],
+        "actions": [],
+        "messages": []
+      }
+    }
+  },
+  {
+    "contractVersion": "1.0",
+    "window": {
+      "route": "/orders",
       "label": "Sales orders",
       "description": "Create and review customer sales orders.",
       "readPermission": "orders:read"
@@ -16890,6 +17188,424 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
                     "position": 14,
                     "span": 6,
                     "componentKey": "lookup",
+                    "sectionKey": "first-line"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "navigation": [],
+        "actions": [],
+        "messages": []
+      }
+    }
+  },
+  {
+    "contractVersion": "1.0",
+    "window": {
+      "route": "/procurement",
+      "label": "Vendor bills",
+      "description": "Record vendor AP invoices for matching and approval.",
+      "readPermission": "procurement:read"
+    },
+    "definition": {
+      "kind": "APPLICATION_DICTIONARY",
+      "contractVersion": "1.0",
+      "moduleKey": "universal-procurement",
+      "entityKey": "procurement-vendor-bills",
+      "surfaceKey": "procurement-vendor-bills",
+      "title": "Vendor bills",
+      "dictionary": {
+        "packageKey": "procurement-vendor-bills-module-baseline",
+        "name": "Vendor bills",
+        "version": "1.0.0",
+        "moduleKey": "universal-procurement",
+        "targetEntityKey": "procurement.vendor-bills",
+        "entities": [
+          {
+            "entityKey": "procurement.vendor-bills",
+            "moduleKey": "universal-procurement",
+            "label": "Vendor bills",
+            "ownership": "MODULE_CORE",
+            "primaryKeyField": "id",
+            "isVersioned": true,
+            "isAuditLogged": true,
+            "isSoftDeletable": false
+          }
+        ],
+        "fields": [
+          {
+            "fieldKey": "vendor-invoice-number",
+            "entityKey": "procurement.vendor-bills",
+            "label": "Vendor invoice #",
+            "type": "TEXT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "writePermission": "procurement:bills:manage"
+          },
+          {
+            "fieldKey": "vendor-id",
+            "entityKey": "procurement.vendor-bills",
+            "label": "Vendor party",
+            "type": "TEXT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "helpText": "Active workspace party UUID (supplier).",
+            "writePermission": "procurement:bills:manage"
+          },
+          {
+            "fieldKey": "invoice-date",
+            "entityKey": "procurement.vendor-bills",
+            "label": "Invoice date",
+            "type": "DATETIME",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "writePermission": "procurement:bills:manage"
+          },
+          {
+            "fieldKey": "due-date",
+            "entityKey": "procurement.vendor-bills",
+            "label": "Due date",
+            "type": "DATETIME",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "writePermission": "procurement:bills:manage"
+          },
+          {
+            "fieldKey": "purchase-order-id",
+            "entityKey": "procurement.vendor-bills",
+            "label": "Purchase order",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "helpText": "Optional PO UUID to link the bill.",
+            "writePermission": "procurement:bills:manage"
+          },
+          {
+            "fieldKey": "currency-code",
+            "entityKey": "procurement.vendor-bills",
+            "label": "Currency",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "writePermission": "procurement:bills:manage",
+            "defaultValue": "USD"
+          },
+          {
+            "fieldKey": "status",
+            "entityKey": "procurement.vendor-bills",
+            "label": "Status",
+            "type": "SELECT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "vendor-bill-statuses"
+          },
+          {
+            "fieldKey": "total-amount",
+            "entityKey": "procurement.vendor-bills",
+            "label": "Total (minor units)",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "line-description",
+            "entityKey": "procurement.vendor-bills",
+            "label": "Line description",
+            "type": "TEXT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "helpText": "First line only in this window slice.",
+            "writePermission": "procurement:bills:manage"
+          },
+          {
+            "fieldKey": "line-billed-quantity",
+            "entityKey": "procurement.vendor-bills",
+            "label": "Line quantity",
+            "type": "NUMBER",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "scale": 6,
+            "writePermission": "procurement:bills:manage",
+            "defaultValue": "1.000000"
+          },
+          {
+            "fieldKey": "line-uom-id",
+            "entityKey": "procurement.vendor-bills",
+            "label": "Line unit of measure",
+            "type": "REFERENCE",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "uom-ref",
+            "writePermission": "procurement:bills:manage"
+          },
+          {
+            "fieldKey": "line-unit-price-minor",
+            "entityKey": "procurement.vendor-bills",
+            "label": "Line unit price (minor)",
+            "type": "INTEGER",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "writePermission": "procurement:bills:manage"
+          },
+          {
+            "fieldKey": "line-product-id",
+            "entityKey": "procurement.vendor-bills",
+            "label": "Line product",
+            "type": "REFERENCE",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "product-ref",
+            "writePermission": "procurement:bills:manage"
+          }
+        ],
+        "relationships": [],
+        "references": [
+          {
+            "referenceKey": "vendor-bill-statuses",
+            "referenceType": "VALUE_LIST",
+            "staticValues": [
+              {
+                "value": "DRAFT",
+                "label": "Draft"
+              },
+              {
+                "value": "SUBMITTED",
+                "label": "Submitted"
+              },
+              {
+                "value": "PENDING_MATCH",
+                "label": "Pending match"
+              },
+              {
+                "value": "MATCHED",
+                "label": "Matched"
+              },
+              {
+                "value": "PRICE_VARIANCE_HOLD",
+                "label": "Price variance hold"
+              },
+              {
+                "value": "APPROVED",
+                "label": "Approved"
+              },
+              {
+                "value": "PAID",
+                "label": "Paid"
+              },
+              {
+                "value": "VOID",
+                "label": "Void"
+              }
+            ]
+          },
+          {
+            "referenceKey": "product-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "catalogue-products",
+            "createWith": {
+              "moduleKey": "product-catalogue",
+              "surfaceKey": "catalogue-products",
+              "permission": "products:create"
+            }
+          },
+          {
+            "referenceKey": "uom-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "catalogue-uoms",
+            "createWith": {
+              "moduleKey": "product-catalogue",
+              "surfaceKey": "catalogue-units",
+              "permission": "uoms:manage"
+            }
+          }
+        ],
+        "validationRules": [],
+        "views": [
+          {
+            "viewKey": "vendor-bills",
+            "label": "Vendor bills",
+            "mode": "LIST",
+            "device": "ALL",
+            "searchFields": [
+              "vendor-invoice-number"
+            ],
+            "defaultSortField": "vendor-invoice-number",
+            "defaultSortDirection": "DESC",
+            "tabs": [
+              {
+                "tabKey": "vb-header",
+                "label": "Bill",
+                "position": 0,
+                "level": 0,
+                "targetEntityKey": "procurement.vendor-bills",
+                "sections": [
+                  {
+                    "sectionKey": "summary",
+                    "label": "Summary",
+                    "collapsible": false,
+                    "defaultCollapsed": false,
+                    "position": 0
+                  },
+                  {
+                    "sectionKey": "parties",
+                    "label": "Vendor",
+                    "collapsible": false,
+                    "defaultCollapsed": false,
+                    "position": 1
+                  },
+                  {
+                    "sectionKey": "source",
+                    "label": "Purchase order",
+                    "collapsible": false,
+                    "defaultCollapsed": false,
+                    "position": 2
+                  },
+                  {
+                    "sectionKey": "terms",
+                    "label": "Dates & currency",
+                    "collapsible": false,
+                    "defaultCollapsed": false,
+                    "position": 3
+                  },
+                  {
+                    "sectionKey": "first-line",
+                    "label": "First bill line",
+                    "collapsible": false,
+                    "defaultCollapsed": false,
+                    "position": 4
+                  }
+                ],
+                "fields": [
+                  {
+                    "fieldKey": "vendor-invoice-number",
+                    "position": 0,
+                    "span": 4,
+                    "componentKey": "text-input",
+                    "sectionKey": "summary"
+                  },
+                  {
+                    "fieldKey": "status",
+                    "position": 1,
+                    "span": 4,
+                    "componentKey": "select",
+                    "sectionKey": "summary"
+                  },
+                  {
+                    "fieldKey": "total-amount",
+                    "position": 2,
+                    "span": 4,
+                    "componentKey": "text-input",
+                    "sectionKey": "summary"
+                  },
+                  {
+                    "fieldKey": "vendor-id",
+                    "position": 3,
+                    "span": 6,
+                    "componentKey": "text-input",
+                    "sectionKey": "parties"
+                  },
+                  {
+                    "fieldKey": "purchase-order-id",
+                    "position": 4,
+                    "span": 6,
+                    "componentKey": "text-input",
+                    "sectionKey": "source"
+                  },
+                  {
+                    "fieldKey": "currency-code",
+                    "position": 5,
+                    "span": 3,
+                    "componentKey": "text-input",
+                    "sectionKey": "terms"
+                  },
+                  {
+                    "fieldKey": "invoice-date",
+                    "position": 6,
+                    "span": 6,
+                    "componentKey": "datetime-input",
+                    "sectionKey": "terms"
+                  },
+                  {
+                    "fieldKey": "due-date",
+                    "position": 7,
+                    "span": 6,
+                    "componentKey": "datetime-input",
+                    "sectionKey": "terms"
+                  },
+                  {
+                    "fieldKey": "line-description",
+                    "position": 8,
+                    "span": 8,
+                    "componentKey": "text-input",
+                    "sectionKey": "first-line"
+                  },
+                  {
+                    "fieldKey": "line-product-id",
+                    "position": 9,
+                    "span": 6,
+                    "componentKey": "lookup",
+                    "sectionKey": "first-line"
+                  },
+                  {
+                    "fieldKey": "line-billed-quantity",
+                    "position": 10,
+                    "span": 3,
+                    "componentKey": "number-input",
+                    "sectionKey": "first-line"
+                  },
+                  {
+                    "fieldKey": "line-uom-id",
+                    "position": 11,
+                    "span": 3,
+                    "componentKey": "lookup",
+                    "sectionKey": "first-line"
+                  },
+                  {
+                    "fieldKey": "line-unit-price-minor",
+                    "position": 12,
+                    "span": 3,
+                    "componentKey": "number-input",
                     "sectionKey": "first-line"
                   }
                 ]

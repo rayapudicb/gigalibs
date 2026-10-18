@@ -1,5 +1,16 @@
-// WI-OI-120gh (Table 1 row 6): first Procurement metadata window — purchase order header (create/read).
+// WI-OI-120gh/gn (Table 1): Procurement metadata windows — purchase orders and vendor bills.
 // Edit here, then `node scripts/generate-windows.mjs universal-procurement` and `pnpm modules:catalog`.
+
+const VENDOR_BILL_STATUS = [
+  ['DRAFT', 'Draft'],
+  ['SUBMITTED', 'Submitted'],
+  ['PENDING_MATCH', 'Pending match'],
+  ['MATCHED', 'Matched'],
+  ['PRICE_VARIANCE_HOLD', 'Price variance hold'],
+  ['APPROVED', 'Approved'],
+  ['PAID', 'Paid'],
+  ['VOID', 'Void'],
+];
 
 const PO_STATUS = [
   ['DRAFT', 'Draft'],
@@ -58,7 +69,62 @@ export function windowSource(builderFor) {
     field(PO, 'line-destination-warehouse-id', 'Line ship-to warehouse', 'REFERENCE', { ref: 'warehouse-ref', writePermission: 'procurement:orders:manage', help: 'Defaults to the header warehouse when empty.' }),
   ];
 
+  const VB = 'procurement.vendor-bills';
+  const vbFields = [
+    field(VB, 'vendor-invoice-number', 'Vendor invoice #', 'TEXT', { required: true, writePermission: 'procurement:bills:manage' }),
+    field(VB, 'vendor-id', 'Vendor party', 'TEXT', { required: true, help: 'Active workspace party UUID (supplier).', writePermission: 'procurement:bills:manage' }),
+    field(VB, 'invoice-date', 'Invoice date', 'DATETIME', { required: true, writePermission: 'procurement:bills:manage' }),
+    field(VB, 'due-date', 'Due date', 'DATETIME', { required: true, writePermission: 'procurement:bills:manage' }),
+    field(VB, 'purchase-order-id', 'Purchase order', 'TEXT', { writePermission: 'procurement:bills:manage', help: 'Optional PO UUID to link the bill.' }),
+    field(VB, 'currency-code', 'Currency', 'TEXT', { defaultValue: 'USD', writePermission: 'procurement:bills:manage' }),
+    field(VB, 'status', 'Status', 'SELECT', { readOnly: true, ref: 'vendor-bill-statuses' }),
+    field(VB, 'total-amount', 'Total (minor units)', 'TEXT', { readOnly: true }),
+    field(VB, 'line-description', 'Line description', 'TEXT', { required: true, writePermission: 'procurement:bills:manage', help: 'First line only in this window slice.' }),
+    field(VB, 'line-billed-quantity', 'Line quantity', 'NUMBER', { required: true, scale: 6, defaultValue: '1.000000', writePermission: 'procurement:bills:manage' }),
+    field(VB, 'line-uom-id', 'Line unit of measure', 'REFERENCE', { required: true, ref: 'uom-ref', writePermission: 'procurement:bills:manage' }),
+    field(VB, 'line-unit-price-minor', 'Line unit price (minor)', 'INTEGER', { required: true, writePermission: 'procurement:bills:manage' }),
+    field(VB, 'line-product-id', 'Line product', 'REFERENCE', { ref: 'product-ref', writePermission: 'procurement:bills:manage' }),
+  ];
+
   return {
+    'procurement-vendor-bills': window(
+      'procurement-vendor-bills',
+      'Vendor bills',
+      'Vendor bills',
+      'Record vendor AP invoices for matching and approval.',
+      'procurement:read',
+      dictionary('procurement-vendor-bills', 'Vendor bills', VB, [entity(VB, 'Vendor bills')], vbFields, [], [
+        values('vendor-bill-statuses', VENDOR_BILL_STATUS),
+        PRODUCT_REF,
+        UOM_REF,
+      ], [
+        view('vendor-bills', 'Vendor bills', [
+          tab('vb-header', 'Bill', 0, VB, [
+            ['vendor-invoice-number', 4, 'summary'],
+            ['status', 4, 'summary'],
+            ['total-amount', 4, 'summary'],
+            ['vendor-id', 6, 'parties'],
+            ['purchase-order-id', 6, 'source'],
+            ['currency-code', 3, 'terms'],
+            ['invoice-date', 6, 'terms'],
+            ['due-date', 6, 'terms'],
+            ['line-description', 8, 'first-line'],
+            ['line-product-id', 6, 'first-line'],
+            ['line-billed-quantity', 3, 'first-line'],
+            ['line-uom-id', 3, 'first-line'],
+            ['line-unit-price-minor', 3, 'first-line'],
+          ], vbFields, {
+            sections: [
+              section('summary', 'Summary', 0),
+              section('parties', 'Vendor', 1),
+              section('source', 'Purchase order', 2),
+              section('terms', 'Dates & currency', 3),
+              section('first-line', 'First bill line', 4),
+            ],
+          }),
+        ], { search: ['vendor-invoice-number'], sort: 'vendor-invoice-number' }),
+      ]),
+    ),
     'procurement-purchase-orders': window(
       'procurement-purchase-orders',
       'Purchase orders',

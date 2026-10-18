@@ -1,4 +1,4 @@
-// WI-OI-120gj–gl (Table 1): Orders metadata windows — quotes, orders, customer invoices.
+// WI-OI-120gj–gm (Table 1): Orders metadata windows — quotes, orders, fulfillment, invoices.
 // Edit here, then `node scripts/generate-windows.mjs universal-orders` and `pnpm modules:catalog`.
 
 const ORDER_TYPES = [
@@ -15,6 +15,16 @@ const QUOTE_STATUS = [
   ['ACCEPTED', 'Accepted'],
   ['EXPIRED', 'Expired'],
   ['CONVERTED', 'Converted'],
+  ['CANCELLED', 'Cancelled'],
+];
+
+const FULFILLMENT_STATUS = [
+  ['DRAFT', 'Draft'],
+  ['RELEASED', 'Released'],
+  ['PICKING', 'Picking'],
+  ['PACKED', 'Packed'],
+  ['SHIPPED', 'Shipped'],
+  ['DELIVERED', 'Delivered'],
   ['CANCELLED', 'Cancelled'],
 ];
 
@@ -103,6 +113,18 @@ export function windowSource(builderFor) {
     field(SQ, 'line-quoted-quantity', 'Line quantity', 'NUMBER', { required: true, scale: 6, defaultValue: '1.000000', writePermission: 'orders:quotes:manage' }),
     field(SQ, 'line-uom-id', 'Line unit of measure', 'REFERENCE', { required: true, ref: 'uom-ref', writePermission: 'orders:quotes:manage' }),
     field(SQ, 'line-unit-price-minor', 'Line unit price (minor)', 'INTEGER', { required: true, writePermission: 'orders:quotes:manage' }),
+  ];
+
+  const FO = 'orders.fulfillment-orders';
+  const foFields = [
+    field(FO, 'fulfillment-number', 'Fulfillment number', 'TEXT', { readOnly: true }),
+    field(FO, 'order-id', 'Sales order', 'TEXT', { required: true, writePermission: 'orders:fulfill' }),
+    field(FO, 'warehouse-id', 'Ship-from warehouse', 'REFERENCE', { required: true, ref: 'warehouse-ref', writePermission: 'orders:fulfill' }),
+    field(FO, 'carrier', 'Carrier', 'TEXT', { writePermission: 'orders:fulfill' }),
+    field(FO, 'tracking-number', 'Tracking number', 'TEXT', { writePermission: 'orders:fulfill' }),
+    field(FO, 'status', 'Status', 'SELECT', { readOnly: true, ref: 'fulfillment-statuses' }),
+    field(FO, 'line-order-line-id', 'Order line', 'TEXT', { required: true, help: 'Sales order line UUID to ship.', writePermission: 'orders:fulfill' }),
+    field(FO, 'line-shipped-quantity', 'Shipped quantity', 'NUMBER', { required: true, scale: 6, defaultValue: '1.000000', writePermission: 'orders:fulfill' }),
   ];
 
   const CI = 'orders.customer-invoices';
@@ -201,6 +223,37 @@ export function windowSource(builderFor) {
             ],
           }),
         ], { search: ['order-number', 'customer-name'], sort: 'order-number' }),
+      ]),
+    ),
+    'orders-fulfillment-orders': window(
+      'orders-fulfillment-orders',
+      'Fulfillment orders',
+      'Fulfillment orders',
+      'Create outbound fulfillment shipments against allocated sales order lines.',
+      'orders:read',
+      dictionary('orders-fulfillment-orders', 'Fulfillment orders', FO, [entity(FO, 'Fulfillment orders')], foFields, [], [
+        values('fulfillment-statuses', FULFILLMENT_STATUS),
+        WAREHOUSE_REF,
+      ], [
+        view('fulfillment-orders', 'Fulfillment orders', [
+          tab('fo-header', 'Shipment', 0, FO, [
+            ['fulfillment-number', 4, 'summary'],
+            ['status', 4, 'summary'],
+            ['order-id', 8, 'source'],
+            ['warehouse-id', 6, 'logistics'],
+            ['carrier', 4, 'logistics'],
+            ['tracking-number', 4, 'logistics'],
+            ['line-order-line-id', 8, 'first-line'],
+            ['line-shipped-quantity', 4, 'first-line'],
+          ], foFields, {
+            sections: [
+              section('summary', 'Summary', 0),
+              section('source', 'Sales order', 1),
+              section('logistics', 'Carrier & warehouse', 2),
+              section('first-line', 'First shipment line', 3),
+            ],
+          }),
+        ], { search: ['fulfillment-number'], sort: 'fulfillment-number' }),
       ]),
     ),
     'orders-customer-invoices': window(

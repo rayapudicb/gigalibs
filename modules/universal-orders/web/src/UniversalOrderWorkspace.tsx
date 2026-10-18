@@ -17,7 +17,11 @@ const LOOKUP_BASE_PATHS = {
   'catalogue-uoms': CATALOGUE_PATH,
 };
 
-type OrdersSurface = 'orders-sales-quotes' | 'orders-sales-orders' | 'orders-customer-invoices';
+type OrdersSurface =
+  | 'orders-sales-quotes'
+  | 'orders-sales-orders'
+  | 'orders-fulfillment-orders'
+  | 'orders-customer-invoices';
 
 export interface UniversalOrderWorkspaceProps {
   readonly permissions?: readonly string[];
@@ -70,7 +74,7 @@ export function UniversalOrderWorkspace({ permissions = [] }: UniversalOrderWork
       <header className="space-y-3">
         <div className="space-y-1">
           <h1 className="text-xl font-semibold text-ui-fg-base">Universal Order Management &amp; Fulfillment</h1>
-          <p className="text-sm text-ui-fg-subtle">Quotes, orders, and customer invoices backed by the Universal Orders service.</p>
+          <p className="text-sm text-ui-fg-subtle">Quotes, orders, fulfillment, and invoices backed by the Universal Orders service.</p>
         </div>
         <div className="inline-flex rounded-lg border border-ui-border-base bg-ui-bg-subtle p-1 text-sm font-medium">
           <button
@@ -89,10 +93,17 @@ export function UniversalOrderWorkspace({ permissions = [] }: UniversalOrderWork
           </button>
           <button
             type="button"
+            className={`rounded-md px-3 py-1.5 transition-colors ${surface === 'orders-fulfillment-orders' ? 'bg-ui-bg-base text-ui-fg-base shadow-sm' : 'text-ui-fg-muted hover:text-ui-fg-base'}`}
+            onClick={() => setSurface('orders-fulfillment-orders')}
+          >
+            Fulfillment
+          </button>
+          <button
+            type="button"
             className={`rounded-md px-3 py-1.5 transition-colors ${surface === 'orders-customer-invoices' ? 'bg-ui-bg-base text-ui-fg-base shadow-sm' : 'text-ui-fg-muted hover:text-ui-fg-base'}`}
             onClick={() => setSurface('orders-customer-invoices')}
           >
-            Customer invoices
+            Invoices
           </button>
         </div>
       </header>
