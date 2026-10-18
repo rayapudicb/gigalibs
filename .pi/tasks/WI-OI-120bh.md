@@ -1,6 +1,6 @@
 # WI-OI-120bh: Correct 120bf and 120bg: no fake close, no hard-coded module key, honest status
 
-- **Status:** Approved (owner, 2026-10-18); built in main, not committed
+- **Status:** On UAT (owner deploy 2026-10-18, release `3bc0c1f`; journey `dg84u3`). Done needs the owner's acceptance.
 - **Work item:** WI-OI-120 (Phase 1, W1). Evidence goes in `.pi/work/WI-OI-120.md`.
 - **Size:** S (one release)
 
@@ -54,10 +54,11 @@ true.
 
 ## Done when
 
-- [ ] UAT shows no "Close work order" button; nothing writes a "closed" or "verified" note on anyone's behalf.
-- [ ] No module key literal in the adapter; the map is generated and tested.
-- [ ] The journey is honest about the supervisor step; the 120bf, 120bg and NOW.md statuses match the evidence.
-- [ ] An independent Security review is recorded, and `pnpm verify` reports only the known drift.
+- [x] UAT shows no "Close work order" button; nothing writes a "closed" or "verified" note on anyone's behalf.
+- [x] No module key literal in the adapter; the map is generated and tested.
+- [x] The journey is honest about the supervisor step; the 120bf, 120bg and NOW.md statuses match the evidence.
+- [x] An independent Security review is recorded. (`pnpm verify --audits` on 2026-10-18 failed only on design tokens, in
+  the 3 files other sessions own; build and test were run per package.)
 
 ## After this card (not in it)
 
@@ -133,3 +134,59 @@ Critical, High or Medium.
   behind it. That is a fake result.
 - The AR API is not deployed, but 17 active UAT workspaces have AR enabled (read-only check, 2026-10-18).
 - To card after this one.
+
+## Release (2026-10-18), ready for the owner's deploy
+
+- **Commits:** main `f12eee5`; release commit `3bc0c1f` on `27450b7`. The release carries only the 7 product files.
+  Rerunning the generators on the release worktree changed nothing.
+- **Release worktree checks:**
+  - tests: 1,621 passed, none failed;
+  - type-checks clean;
+  - the conversion check passes for 5 modules, and the pins agree.
+- **Source identity:** revision `3bc0c1f46c27ac32f92da5ec786ffb2706c3e3ed`, state
+  `b896d4b5951774f312a562a7baf41ed21328aba8da344730e79b61ee7f77f610`. Release id
+  `local-20261018T034831Z-3bc0c1f46c27-b896d4b59517`.
+- **Images:** nine, tag `3bc0c1f46c27-b896d4b59517`.
+  - The disk guard stopped the Workforce build at 57 GB free.
+  - The owner approved removing the unused `1bb0193` images, then freed disk space (169 GB free).
+  - That clean-up also removed the six images built first, so they were rebuilt with the same identity.
+  - Content check:
+    - the control plane image holds `moduleWindowEntitlementKey` and no `resolveEntitlementModuleKey`;
+    - the web image holds the completion form and no "Verified and closed by supervisor".
+- **Backup:** `gigalibs_backup_20261018_062008Z` of the running `27450b7`.
+- **Before the deploy (read-only):** CMMS is at migration 20. This release has no migration.
+- **The deploy tool:**
+  - retargeted from `27450b7` to `3bc0c1f`;
+  - its 33 tests pass;
+  - `deploy-uat.sh --check` passed, with all images and the backup verified.
+- **Rollback:** the `27450b7` images are kept, with the backup above.
+
+## On UAT (owner deploy, 2026-10-18)
+
+- `deploy-uat.sh --deploy` passed:
+  - images and the backup verified;
+  - 11 migration jobs passed;
+  - 11 services healthy;
+  - `/api/health/ready` and `/login` answered 200;
+  - "DEPLOY SMOKE PASSED: 3bc0c1f46c27-b896d4b59517".
+- **Verified afterwards, read-only:**
+  - all 10 GigaLibs services run tag `3bc0c1f46c27-b896d4b59517` and are healthy;
+  - CMMS is at migration 20;
+  - the Workforce, CMMS, Geospatial and Connector Hub relays answer 200 with status ok.
+- **Rollback:** `27450b7` (images kept), backup `gigalibs_backup_20261018_062008Z`.
+
+## Journey `dg84u3` (2026-10-18, on `3bc0c1f`)
+
+56 findings: 33 layout, 17 accessibility, 5 UX, 1 blocker. Against `b0j8mq`, blockers are 1 against 2, layout 33
+against 29, and UX 5 against 4.
+
+**The CMMS steps:**
+- **Done:**
+  - the technician raises a request (POST 201);
+  - the supervisor raises and assigns a work order;
+  - the technician completes it;
+  - "The supervisor reviews the completed work order" passes, from a check scoped to that work order's own panel.
+- **Blocked:** "The supervisor signs off and closes the work order", with "No sign-off action: supervisor sign-off is
+  not built yet". This is the known gap, for [WI-OI-120bi](WI-OI-120bi.md).
+
+Host load average was about 6–8 during the run.

@@ -5,25 +5,34 @@ and [the Phase 1 order](../docs/plans/phase-1-sizing.md) (owner-approved 2026-10
 [WORK_ITEMS.md](WORK_ITEMS.md); evidence is in [work/WI-OI-120.md](work/WI-OI-120.md). The previous, longer version of
 this page is kept in [archive/NOW-2026-10-15.md](archive/NOW-2026-10-15.md).
 
-**A new agent taking over starts with [the handover brief](handoff/HANDOFF-2026-10-17.md)**: the rules, the exact
-state and the release procedure as it is run. The prompt to paste is [PROMPT-2026-10-17.md](handoff/PROMPT-2026-10-17.md).
+**A new agent taking over starts with [the Cursor handover brief](handoff/HANDOFF-2026-10-18-CURSOR.md)**: the
+owner's latest order, the exact state, the pending CMMS work and the release procedure. The prompt to paste is
+[PROMPT-2026-10-18-CURSOR.md](handoff/PROMPT-2026-10-18-CURSOR.md). The [2026-10-17 brief](handoff/HANDOFF-2026-10-17.md)
+keeps the full rules.
 
 ## Current step
 
-**Table 2 engines only (owner, 2026-10-18).** Agents stay on F0–F2 until the checklist below is fully evidenced; do not
-redirect the owner to other product tracks in chat.
+**Owner, 2026-10-18 (latest): hand over to Cursor.**
+1. Finish the pending CMMS work, in order:
+   - [WI-OI-120bi](tasks/WI-OI-120bi.md), supervisor sign-off. Proposed; it needs "approved 120bi".
+   - [WI-OI-120bj](tasks/WI-OI-120bj.md), the AR page's fake verification. Proposed.
+   - W1-B, CMMS unit and site scope.
+2. Then the owner's Table 1 audit prompt in detail: [TABLE-1-AUDIT-PROMPT-2026-10-18.md](handoff/TABLE-1-AUDIT-PROMPT-2026-10-18.md).
+3. Before T3 (step 1.2), ask the owner whether T3 or the audit comes first.
 
-- **Committed:** F1 `0d29f8f`; F2.1 `8a5b487`; UAT Playwright `36105e4`.
-- **Owner deploy:** [WI-OI-120fp](tasks/WI-OI-120fp.md) + relay keys for F2.1 on module-host.
-- **Committed (Table 2):** F2.2 `14845ae` ([WI-OI-120fr](tasks/WI-OI-120fr.md)).
-- **Committed:** F2.3 `1e54d17` ([WI-OI-120fs](tasks/WI-OI-120fs.md)).
-- **Committed:** F2.4 `631c4c7` ([WI-OI-120ft](tasks/WI-OI-120ft.md)).
-- **Committed:** F2.6 `7c1f4c1` ([WI-OI-120fu](tasks/WI-OI-120fu.md)); Finance migration **11**.
-- **Committed:** F2.5 `1fadfa4` ([WI-OI-120fv](tasks/WI-OI-120fv.md)); F2.7 [WI-OI-120fw](tasks/WI-OI-120fw.md); Inventory migration **5**.
-- **Committed:** F2.8 `930272f` ([WI-OI-120fx](tasks/WI-OI-120fx.md)) — period close blocked when inventory posting reconciliation has gaps.
-- **Committed:** F1.3 `de671f0` ([WI-OI-120fy](tasks/WI-OI-120fy.md)) — receipt `complete` on `@gigalibs/document-lifecycle`.
-- **Committed:** F1.4 `e7eaa3d` ([WI-OI-120fz](tasks/WI-OI-120fz.md)) — period-lock guard on receipt complete.
-- **Committed:** F2.9 packet `0a0e787` ([WI-OI-120ga](tasks/WI-OI-120ga.md)) — accounting review artifact (sign-off pending).
+**Table 2 engines (another agent, 2026-10-18; tracker [TABLE-2-ENGINES.md](TABLE-2-ENGINES.md)):**
+- **Built in git:** WI-OI-120fl to 120gb, Finance migrations 10 and 11, Inventory migration 5. Their tests pass (475,
+  2026-10-18).
+- **Not on UAT.** 5 of the 6 cards checked record no independent Security review, and the accounting sign-off (F2.9)
+  is pending.
+- **`pnpm verify --audits` found 3 defects from it (2026-10-18):**
+  - the Inventory API depends on `document-lifecycle` and `posting-rules`, which are missing from the Docker
+    workspace, so the image would not build;
+  - Finance writes Inventory's schema (`inventory-receipt-posting-status-sync.ts`, a new layer violation);
+  - the inventory-receipts window is stale (S16).
+- **Never deploy from the branch.** Table 2 goes to UAT through the release worktree, after its reviews, when the
+  owner decides it is its turn.
+- **One implementation writer at a time:** the owner confirms which agent writes.
 
 ## Running on UAT
 
@@ -80,9 +89,10 @@ redirect the owner to other product tracks in chat.
 
 **Table 2 code:** complete through **`0a0e787`**. **Remaining:** UAT evidence + F2.9 accountant ([TABLE-2-UAT-CLOSURE.md](TABLE-2-UAT-CLOSURE.md), [WI-OI-120gb](tasks/WI-OI-120gb.md)).
 
-**Owner next:** deploy **`0a0e787`+** ([WI-OI-120fp](tasks/WI-OI-120fp.md)); agents do **not** run `--deploy`. Then Playwright + F2.9 §6.
-
-**Agent next:** record evidence in `.pi/work/WI-OI-120.md` only after owner supplies tags/run ids/sign-off; say **commit** for closure runbook docs.
+**Superseded (owner, 2026-10-18, latest: CMMS first, via Cursor; see Current step):**
+- the earlier "Owner next: deploy `0a0e787`+" waits;
+- Table 2 is never deployed from the branch. When the owner decides it is its turn, it goes through the release
+  worktree, after an independent Security review of WI-OI-120fl to 120gb and the F2.9 accounting sign-off.
 
 **W2 is decided (owner, 2026-10-18):**
 - enterprise accounts only: an administrator creates each user and shares the username and password;
