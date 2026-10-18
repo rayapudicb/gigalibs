@@ -8638,6 +8638,39 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "maskOnDisplay": false
           },
           {
+            "fieldKey": "signed-off-at",
+            "entityKey": "cmms.work-orders",
+            "label": "Signed off at",
+            "type": "DATETIME",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "signed-off-by",
+            "entityKey": "cmms.work-orders",
+            "label": "Signed off by",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "sign-off-note",
+            "entityKey": "cmms.work-orders",
+            "label": "Sign-off note",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
             "fieldKey": "completion-notes",
             "entityKey": "cmms.work-orders",
             "label": "Completion notes",
@@ -9830,6 +9863,29 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
                 "IN_PROGRESS",
                 "ON_HOLD"
               ]
+            }
+          },
+          {
+            "actionKey": "sign-off",
+            "label": "Sign off",
+            "type": "COMMAND",
+            "handlerKey": "cmms.work-orders.sign-off",
+            "requiredPermissions": [
+              "cmms.work-orders.write"
+            ],
+            "confirmationPrompt": "Sign off this completed work order?",
+            "parameters": [
+              {
+                "key": "reason",
+                "label": "Reason",
+                "type": "TEXTAREA",
+                "required": true
+              }
+            ],
+            "visibilityCondition": {
+              "field": "status",
+              "operator": "EQ",
+              "value": "COMPLETED"
             }
           }
         ],

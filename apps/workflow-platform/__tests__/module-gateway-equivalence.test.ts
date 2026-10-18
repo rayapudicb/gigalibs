@@ -207,6 +207,7 @@ describe('manifest-generated gateways equal the hand-written allow-lists', () =>
     'POST v1/requests/{id}/triage': 'cmms.requests.write',
     'POST v1/requests/{id}/cancel': 'cmms.requests.create',
     'POST v1/work-orders/{id}/status': EXECUTE,
+    'POST v1/work-orders/{id}/sign-off': 'cmms.work-orders.write',
     'POST v1/work-orders/{id}/tasks': EXECUTE,
     'POST v1/work-orders/{id}/labour': EXECUTE,
     'POST v1/work-orders/{id}/parts': EXECUTE,

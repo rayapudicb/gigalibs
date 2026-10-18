@@ -67,6 +67,13 @@ export class WorkOrdersController {
     return this.workOrders.changeStatus(context, workOrderId, body);
   }
 
+  @Post(':workOrderId/sign-off')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermissions('cmms.work-orders.write')
+  signOff(@CommandContext() context: CmmsCommandContext, @Param('workOrderId') workOrderId: string, @Body() body: unknown) {
+    return this.workOrders.signOff(context, workOrderId, body);
+  }
+
   @Post(':workOrderId/tasks')
   @HttpCode(HttpStatus.OK)
   @RequirePermissions('cmms.work-orders.write')

@@ -1275,6 +1275,13 @@ export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGat
         }
       },
       {
+        "template": "v1/work-orders/{id}/sign-off",
+        "pattern": "^v1/work-orders/[0-9a-fA-F-]{36}/sign-off$",
+        "methods": {
+          "POST": "cmms.work-orders.write"
+        }
+      },
+      {
         "template": "v1/work-orders/{id}/status|tasks|labour|parts|notes",
         "pattern": "^v1/work-orders/[0-9a-fA-F-]{36}/(?:status|tasks|labour|parts|notes)$",
         "methods": {

@@ -1,11 +1,12 @@
 import { randomUUID } from 'node:crypto';
-import { BadRequestException, ConflictException, Injectable } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable } from '@nestjs/common';
 import {
   AddCmmsWorkOrderNoteV1Schema,
   AddCmmsWorkOrderTaskV1Schema,
   CMMS_WORK_ORDER_TRANSITIONS,
   CancelCmmsStaffingV1Schema,
   ChangeCmmsWorkOrderStatusV1Schema,
+  SignOffCmmsWorkOrderV1Schema,
   CreateCmmsWorkOrderV1Schema,
   IssueCmmsPartV1Schema,
   LogCmmsLabourV1Schema,
@@ -380,6 +381,69 @@ export class WorkOrdersService {
     });
   }
 
+  /** Supervisor sign-off after completion. Status stays COMPLETED; sign-off fields are immutable. */
+  async signOff(context: CmmsCommandContext, workOrderId: string, raw: unknown): Promise<CmmsWorkOrderDetailV1> {
+    assertUuid(workOrderId, 'workOrderId');
+    const input = parseInput(SignOffCmmsWorkOrderV1Schema, raw);
+    return this.database.withTenantTransaction(context.principal.tenantId, async (client) => {
+      const current = await this.lockForChange(client, context, workOrderId, input.expectedVersion, ['COMPLETED']);
+      if (current.signed_off_at) {
+        throw new ConflictException({
+          code: 'CMMS_ALREADY_SIGNED_OFF',
+          message: 'This work order is already signed off.',
+        });
+      }
+      const completer = await client.query<{ actor_subject: string }>(
+        `SELECT actor_subject
+           FROM gigalibs_cmms.work_order_events
+          WHERE tenant_id = $1 AND work_order_id = $2
+            AND event_type = 'STATUS_CHANGED' AND to_status = 'COMPLETED'
+          ORDER BY occurred_at DESC
+          LIMIT 1`,
+        [context.principal.tenantId, workOrderId],
+      );
+      const completedBy = completer.rows[0]?.actor_subject ?? null;
+      if (completedBy && completedBy === context.principal.subject) {
+        throw new ForbiddenException({
+          code: 'CMMS_SIGN_OFF_FOUR_EYES',
+          message: 'The person who completed the work order cannot sign it off.',
+        });
+      }
+      const result = await client.query<{ version: number }>(
+        `UPDATE gigalibs_cmms.work_orders
+            SET signed_off_at = now(),
+                signed_off_by = $4,
+                sign_off_note = $5,
+                version = version + 1,
+                updated_by = $4,
+                correlation_id = $6,
+                updated_at = now()
+          WHERE tenant_id = $1 AND id = $2 AND version = $3
+          RETURNING version`,
+        [
+          context.principal.tenantId,
+          workOrderId,
+          input.expectedVersion,
+          context.principal.subject,
+          input.note,
+          context.correlationId,
+        ],
+      );
+      if (result.rowCount === 0) versionConflict('The work order');
+      await this.appendEvent(client, context, workOrderId, 'SIGNED_OFF', 'COMPLETED', 'COMPLETED', {
+        note: input.note,
+      });
+      await recordMutation(client, context, {
+        action: 'CMMS_WORK_ORDER_SIGNED_OFF',
+        aggregateType: 'CMMS_WORK_ORDER',
+        aggregateId: workOrderId,
+        aggregateVersion: Number(result.rows[0]!.version),
+        payload: { note: input.note, signedOffBy: context.principal.subject },
+      });
+      return this.detailWithClient(client, context.principal, workOrderId);
+    });
+  }
+
   async addTask(context: CmmsCommandContext, workOrderId: string, raw: unknown): Promise<CmmsWorkOrderDetailV1> {
     assertUuid(workOrderId, 'workOrderId');
     const input = parseInput(AddCmmsWorkOrderTaskV1Schema, raw);
@@ -643,6 +707,12 @@ export class WorkOrdersService {
         message: `This is not possible while the work order is ${current.status}.`,
       });
     }
+    if (current.signed_off_at) {
+      throw new ConflictException({
+        code: 'CMMS_WORK_ORDER_SIGNED_OFF',
+        message: 'This work order is closed and cannot be changed.',
+      });
+    }
     return current;
   }
 
@@ -885,6 +955,9 @@ export function mapWorkOrder(row: any): CmmsWorkOrderV1 {
     startedAt: isoOrNull(row.started_at),
     completedAt: isoOrNull(row.completed_at),
     cancelledAt: isoOrNull(row.cancelled_at),
+    signedOffAt: isoOrNull(row.signed_off_at),
+    signedOffBy: row.signed_off_by ?? null,
+    signOffNote: row.sign_off_note ?? null,
     requiresSignature: row.requires_signature === true,
     signed: row.signature_data !== null && row.signature_data !== undefined,
     completionNotes: row.completion_notes ?? null,

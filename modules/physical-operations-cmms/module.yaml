@@ -256,6 +256,7 @@ spec:
       - { path: 'v1/work-orders', POST: cmms.work-orders.write }
       # WI-OI-120be (W1 reviews; 120aj finding W2): executing work (status, tasks, labour, parts, notes) takes write or
       # execute-own; requesting crew from Workforce is planning, so staffing takes write only, as staffing/cancel does.
+      - { path: 'v1/work-orders/{id}/sign-off', POST: cmms.work-orders.write }
       - { path: 'v1/work-orders/{id}/status|tasks|labour|parts|notes', POST: [cmms.work-orders.write, cmms.work-orders.execute-own] }
       - { path: 'v1/work-orders/{id}/staffing', POST: cmms.work-orders.write }
       - { path: 'v1/work-orders/{id}/staffing/cancel', POST: cmms.work-orders.write }

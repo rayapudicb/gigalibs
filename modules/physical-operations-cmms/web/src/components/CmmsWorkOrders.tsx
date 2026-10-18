@@ -72,6 +72,21 @@ const staffingColor: Record<CmmsStaffingV1['status'], BadgeColor> = {
   REJECTED: 'red',
   CANCELLED: 'grey',
 };
+function isWorkOrderClosed(workOrder: Pick<CmmsWorkOrderV1, 'signedOffAt'>): boolean {
+  return workOrder.signedOffAt != null;
+}
+
+function WorkOrderStatusBadge({ workOrder }: { workOrder: CmmsWorkOrderV1 }) {
+  if (isWorkOrderClosed(workOrder)) {
+    return <StatusBadge color="green">Closed</StatusBadge>;
+  }
+  return (
+    <StatusBadge color={statusColor[workOrder.status]}>
+      {workOrder.status.replace('_', ' ')}
+    </StatusBadge>
+  );
+}
+
 const bookingColor: Record<CmmsWorkOrderBookingV1['status'], BadgeColor> = {
   DRAFT: 'grey',
   CONFIRMED: 'blue',
@@ -222,9 +237,7 @@ export function CmmsWorkOrders() {
                       </StatusBadge>
                     </Table.Cell>
                     <Table.Cell>
-                      <StatusBadge color={statusColor[workOrder.status]}>
-                        {workOrder.status.replace('_', ' ')}
-                      </StatusBadge>
+                      <WorkOrderStatusBadge workOrder={workOrder} />
                     </Table.Cell>
                     <Table.Cell>{formatDate(workOrder.dueAt)}</Table.Cell>
                   </Table.Row>
@@ -430,9 +443,7 @@ function WorkOrderPanel({
             <StatusBadge color={priorityColor[workOrder.priority]}>
               {workOrder.priority}
             </StatusBadge>
-            <StatusBadge color={statusColor[workOrder.status]}>
-              {workOrder.status.replace('_', ' ')}
-            </StatusBadge>
+            <WorkOrderStatusBadge workOrder={workOrder} />
           </div>
         </div>
         {workOrder.description ? (
@@ -485,6 +496,22 @@ function WorkOrderPanel({
               <dt className="text-ui-fg-subtle">Completion notes</dt>
               <dd>{workOrder.completionNotes}</dd>
             </div>
+          ) : null}
+          {isWorkOrderClosed(workOrder) ? (
+            <>
+              <div className="col-span-2">
+                <dt className="text-ui-fg-subtle">Sign-off</dt>
+                <dd>
+                  Signed off by {workOrder.signedOffBy ?? '—'} on {formatDate(workOrder.signedOffAt)}
+                </dd>
+              </div>
+              {workOrder.signOffNote ? (
+                <div className="col-span-2">
+                  <dt className="text-ui-fg-subtle">Sign-off note</dt>
+                  <dd>{workOrder.signOffNote}</dd>
+                </div>
+              ) : null}
+            </>
           ) : null}
         </dl>
         <StatusActions
@@ -690,12 +717,53 @@ function StatusActions({
   run: (action: () => Promise<CmmsWorkOrderDetailV1>) => Promise<boolean>;
 }) {
   const [completing, setCompleting] = useState(false);
+  const [signingOff, setSigningOff] = useState(false);
   const move = (status: CmmsWorkOrderStatusV1, extra: Record<string, unknown> = {}) =>
     run(() =>
       cmmsApi.changeStatus(workOrder.id, { expectedVersion: workOrder.version, status, ...extra }),
     );
 
-  if (workOrder.status === 'COMPLETED' || workOrder.status === 'CANCELLED') return null;
+  if (workOrder.status === 'CANCELLED') return null;
+  if (workOrder.status === 'COMPLETED') {
+    if (isWorkOrderClosed(workOrder)) return null;
+    return (
+      <div className="mt-4">
+        <Button
+          type="button"
+          size="small"
+          isLoading={busy}
+          onClick={() => setSigningOff((value) => !value)}
+        >
+          Sign off
+        </Button>
+        {signingOff ? (
+          <div role="dialog" aria-label="Sign off work order">
+            <form
+              className="mt-3 grid gap-3 rounded-lg border border-ui-border-base bg-ui-bg-subtle p-3"
+              onSubmit={(event) => {
+                event.preventDefault();
+                const data = new FormData(event.currentTarget);
+                const note = optionalText(data.get('note'));
+                if (!note) return;
+                void run(() =>
+                  cmmsApi.signOff(workOrder.id, { expectedVersion: workOrder.version, note }),
+                ).then((ok) => {
+                  if (ok) setSigningOff(false);
+                });
+              }}
+            >
+              <Field id="sign-off-note" label="Sign-off note" required>
+                <Textarea id="sign-off-note" name="note" rows={3} required maxLength={4000} />
+              </Field>
+              <Button type="submit" size="small" isLoading={busy}>
+                Confirm sign-off
+              </Button>
+            </form>
+          </div>
+        ) : null}
+      </div>
+    );
+  }
   return (
     <div className="mt-4">
       <div className="flex flex-wrap gap-2">

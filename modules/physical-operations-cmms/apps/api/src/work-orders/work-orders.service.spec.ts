@@ -6,6 +6,7 @@
 import {
   CMMS_WORK_ORDER_TRANSITIONS,
   ChangeCmmsWorkOrderStatusV1Schema,
+  SignOffCmmsWorkOrderV1Schema,
   CreateCmmsWorkOrderV1Schema,
   LogCmmsLabourV1Schema,
   RecordCmmsStockMovementV1Schema,
@@ -52,6 +53,14 @@ describe('CMMS work-order rules', () => {
     expect(() => parseInput(LogCmmsLabourV1Schema, { workerRef: 'cmuser1', hours: 25, performedOn: '2026-09-27' })).toThrow(
       BadRequestException,
     );
+  });
+
+  it('requires a note and version for sign-off', () => {
+    expect(() => parseInput(SignOffCmmsWorkOrderV1Schema, { expectedVersion: 1 })).toThrow(BadRequestException);
+    expect(parseInput(SignOffCmmsWorkOrderV1Schema, { expectedVersion: 2, note: ' Checked ' })).toEqual({
+      expectedVersion: 2,
+      note: 'Checked',
+    });
   });
 
   it('only captures a well-formed status change', () => {

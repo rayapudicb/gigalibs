@@ -1,6 +1,6 @@
 # WI-OI-120bi: Supervisor sign-off closes a completed work order
 
-- **Status:** Approved (owner, 2026-10-18)
+- **Status:** In progress (Cursor, 2026-10-18)
 - **Work item:** WI-OI-120 (Phase 1, W1, step 1.3). Evidence goes in `.pi/work/WI-OI-120.md`.
 - **Size:** M (one release, with a migration)
 

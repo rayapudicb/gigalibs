@@ -146,6 +146,9 @@ const WORK_ORDER_FIELDS: readonly FieldSpec[] = [
   { key: 'started-at' },
   { key: 'completed-at' },
   { key: 'completion-notes' },
+  { key: 'signed-off-at' },
+  { key: 'signed-off-by' },
+  { key: 'sign-off-note' },
   { key: 'created-by' },
   { key: 'created-at' },
 ];
@@ -435,6 +438,28 @@ async function executeStatusTransition(
   return toWindow(WORK_ORDER_FIELDS, updated);
 }
 
+async function executeSignOff(
+  deps: CmmsRecordDependencies,
+  context: RecordCommandContext,
+  workOrderId: string,
+  parameters: RecordValues,
+): Promise<RecordValues> {
+  const current = await deps.workOrders.get(context.principal as any, workOrderId);
+  const expectedVersion =
+    typeof parameters.expectedVersion === 'number' ? parameters.expectedVersion : current.version;
+  const note =
+    typeof parameters.reason === 'string'
+      ? parameters.reason
+      : typeof parameters.note === 'string'
+        ? parameters.note
+        : undefined;
+  if (!note) {
+    throw new BadRequestException({ code: 'CMMS_VALIDATION_FAILED', message: 'A sign-off note is required.' });
+  }
+  const updated = await deps.workOrders.signOff(context as any, workOrderId, { expectedVersion, note });
+  return toWindow(WORK_ORDER_FIELDS, updated);
+}
+
 /** CMMS record dispatcher: work orders and their child entities (tasks, labour, parts, notes, history). */
 export function cmmsRecordDispatcher(deps: CmmsRecordDependencies, idempotency: IdempotencyStore): RecordDispatcher {
   const workOrders: RecordAdapter = {
@@ -448,6 +473,7 @@ export function cmmsRecordDispatcher(deps: CmmsRecordDependencies, idempotency: 
         resume: 'POST v1/work-orders/{id}/status|tasks|labour|parts|notes',
         complete: 'POST v1/work-orders/{id}/status|tasks|labour|parts|notes',
         cancel: 'POST v1/work-orders/{id}/status|tasks|labour|parts|notes',
+        'sign-off': 'POST v1/work-orders/{id}/sign-off',
       },
     },
     entityKey: 'cmms.work-orders',
@@ -528,6 +554,10 @@ export function cmmsRecordDispatcher(deps: CmmsRecordDependencies, idempotency: 
       cancel: {
         permission: 'cmms.work-orders.write',
         run: (context, id, params) => executeStatusTransition(deps, context, id, 'CANCELLED', params),
+      },
+      'sign-off': {
+        permission: 'cmms.work-orders.write',
+        run: (context, id, params) => executeSignOff(deps, context, id, params),
       },
     },
   };

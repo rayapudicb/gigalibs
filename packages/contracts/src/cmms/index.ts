@@ -517,6 +517,15 @@ export const ChangeCmmsWorkOrderStatusV1Schema = z
   .strict();
 export type ChangeCmmsWorkOrderStatusV1 = z.infer<typeof ChangeCmmsWorkOrderStatusV1Schema>;
 
+export const SignOffCmmsWorkOrderV1Schema = z
+  .object({
+    expectedVersion: z.number().int().positive(),
+    note: TextSchema(4_000),
+  })
+  .strict();
+
+export type SignOffCmmsWorkOrderV1 = z.infer<typeof SignOffCmmsWorkOrderV1Schema>;
+
 export const AddCmmsWorkOrderTaskV1Schema = z
   .object({ label: TaskLabelSchema, required: z.boolean().default(true) })
   .strict();
@@ -653,6 +662,9 @@ export interface CmmsWorkOrderV1 {
   readonly startedAt: string | null;
   readonly completedAt: string | null;
   readonly cancelledAt: string | null;
+  readonly signedOffAt: string | null;
+  readonly signedOffBy: string | null;
+  readonly signOffNote: string | null;
   readonly requiresSignature: boolean;
   readonly signed: boolean;
   readonly completionNotes: string | null;

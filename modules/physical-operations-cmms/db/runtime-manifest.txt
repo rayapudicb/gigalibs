@@ -17,3 +17,4 @@
 000018_eam_telemetry_and_meter_triggers.up.sql
 000019_eam_storerooms_and_mro_logistics.up.sql
 000020_canonical_maintenance_requests.up.sql
+000021_work_order_sign_off.up.sql

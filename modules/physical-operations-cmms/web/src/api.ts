@@ -148,6 +148,8 @@ export const cmmsApi = {
     requestCmms<CmmsWorkOrderDetailV1>(`/work-orders/${id(workOrderId)}`, patch(input)),
   changeStatus: (workOrderId: string, input: Record<string, unknown>) =>
     requestCmms<CmmsWorkOrderDetailV1>(`/work-orders/${id(workOrderId)}/status`, post(input)),
+  signOff: (workOrderId: string, input: { expectedVersion: number; note: string }) =>
+    requestCmms<CmmsWorkOrderDetailV1>(`/work-orders/${id(workOrderId)}/sign-off`, post(input)),
   addTask: (workOrderId: string, input: { label: string; required: boolean }) =>
     requestCmms<CmmsWorkOrderDetailV1>(`/work-orders/${id(workOrderId)}/tasks`, post(input)),
   recordTask: (workOrderId: string, taskId: string, input: Record<string, unknown>) =>
