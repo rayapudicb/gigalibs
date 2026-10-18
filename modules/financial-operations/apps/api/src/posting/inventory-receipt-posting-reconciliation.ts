@@ -1,5 +1,5 @@
-import { inventoryReceiptCompletedPostingPolicyV1 } from '@gigalibs/posting-rules';
 import type { PoolClient } from 'pg';
+import { listInventoryReceiptJournalGaps } from './subledger-posting-register.js';
 
 const CONSUMER = 'finance.inventory-subledger';
 const STALE_PROCESSING_MINUTES = 15;
@@ -10,14 +10,32 @@ export type InventoryReceiptPostingInboxSummary = {
   readonly processingStale: number;
 };
 
-/** ADR-0033 F2: inbox-side reconciliation for Inventory receipt posting (journal tie-out is a follow-up). */
+export type InventoryReceiptPostingReconciliationV1 = InventoryReceiptPostingInboxSummary & {
+  readonly missingJournalSourceIds: readonly string[];
+  readonly balanced: boolean;
+};
+
+/** ADR-0033 F2: inbox summary plus journal tie-out for Inventory receipt posting. */
+export async function reconcileInventoryReceiptPosting(
+  client: PoolClient,
+  schema: string,
+  tenantId: string,
+  eventType: string,
+): Promise<InventoryReceiptPostingReconciliationV1> {
+  const inbox = await summarizeInventoryReceiptPostingInbox(client, schema, tenantId, eventType);
+  const missingJournalSourceIds = await listInventoryReceiptJournalGaps(client, schema, tenantId);
+  const balanced =
+    inbox.failed.length === 0 && inbox.processingStale === 0 && missingJournalSourceIds.length === 0;
+  return { ...inbox, missingJournalSourceIds, balanced };
+}
+
+/** Inbox-side counts for Inventory receipt posting. */
 export async function summarizeInventoryReceiptPostingInbox(
   client: PoolClient,
   schema: string,
   tenantId: string,
+  eventType: string,
 ): Promise<InventoryReceiptPostingInboxSummary> {
-  const eventType = inventoryReceiptCompletedPostingPolicyV1.eventType;
-
   const processed = await client.query<{ count: string }>(
     `SELECT COUNT(*)::text AS count FROM ${schema}.inbox_receipts
       WHERE tenant_id = $1 AND consumer_name = $2 AND event_type = $3 AND status = 'PROCESSED'`,

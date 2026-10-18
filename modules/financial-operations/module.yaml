@@ -170,6 +170,7 @@ spec:
       - { path: 'v1/fiscal-years/standard', POST: 'finance:periods:manage' }
       - { path: 'v1/fiscal-periods', GET: finance:read }
       - { path: 'v1/fiscal-periods/{id}/status', PUT: 'finance:periods:manage' }
+      - { path: 'v1/subledger/inventory/posting-reconciliation', GET: finance:read }
       - { path: 'v1/journals', GET: finance:read, POST: 'finance:journals:post' }
       - { path: 'v1/journals/{id}', GET: finance:read }
       - { path: 'v1/journals/{id}/reverse', POST: 'finance:journals:reverse' }

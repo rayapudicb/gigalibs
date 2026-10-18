@@ -8,3 +8,4 @@
 000007_finance_period_close_accruals_forecasting.up.sql
 000008_finance_auth_replica_rls_journal_idempotency.up.sql
 000009_finance_journal_drafts.up.sql
+000010_finance_subledger_posting_register.up.sql

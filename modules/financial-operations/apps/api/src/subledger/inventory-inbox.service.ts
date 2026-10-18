@@ -11,6 +11,7 @@ import { SCHEMA } from '../config.js';
 import { DatabaseService } from '../database.service.js';
 import { CostingService } from '../costing/costing.service.js';
 import { resolvePrimaryBookPostingContext } from '../posting/finance-posting-context.js';
+import { recordInventoryReceiptLinePosting } from '../posting/subledger-posting-register.js';
 
 const CONSUMER = 'finance.inventory-subledger';
 const RECEIPTS: InboxReceiptOptions = { schema: SCHEMA, consumer: CONSUMER, sourceModule: 'inventory' };
@@ -91,6 +92,10 @@ export class InventorySubledgerInboxService {
     for (const line of payload.data.lines) {
       const qty = line.receivedQuantity;
       if (!qty || qty === '0') continue;
+      const sourceDocumentId = inventoryReceiptCompletedPostingPolicyV1.sourceLineDocumentId(
+        payload.data.receiptId,
+        line.receiptLineId,
+      );
       await this.costing.ingestReceiptLayer(envelope.tenantId, 'relay:inventory', {
         costProfileId: costProfile.id,
         productId: line.productId,
@@ -104,10 +109,13 @@ export class InventorySubledgerInboxService {
         periodId: postingContext.periodId,
         journalEntryType: inventoryReceiptCompletedPostingPolicyV1.entryType,
         sourceDocumentType: inventoryReceiptCompletedPostingPolicyV1.sourceDocumentType,
-        sourceDocumentId: inventoryReceiptCompletedPostingPolicyV1.sourceLineDocumentId(
-          payload.data.receiptId,
-          line.receiptLineId,
-        ),
+        sourceDocumentId,
+      });
+      await recordInventoryReceiptLinePosting(client, SCHEMA, {
+        tenantId: envelope.tenantId,
+        messageId: envelope.messageId,
+        sourceDocumentId,
+        journalEntryType: inventoryReceiptCompletedPostingPolicyV1.entryType,
       });
     }
 

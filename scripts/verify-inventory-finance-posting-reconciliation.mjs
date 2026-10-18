@@ -16,6 +16,7 @@ const result = spawnSync(
     '--config',
     'vitest.config.ts',
     'modules/financial-operations/apps/api/src/posting/inventory-receipt-posting-reconciliation.test.ts',
+    'modules/financial-operations/apps/api/src/posting/subledger-posting-register.test.ts',
   ],
   { cwd: root, stdio: 'inherit', env: process.env },
 );

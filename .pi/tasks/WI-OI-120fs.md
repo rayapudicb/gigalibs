@@ -1,6 +1,6 @@
 # WI-OI-120fs (F2.3): Inventory receipt posting reconciliation (inbox summary)
 
-- **Status:** Built (not committed; owner, 2026-10-18)
+- **Status:** Done in git (`1e54d17`; owner, 2026-10-18).
 - **Work item:** WI-OI-120 (F2 / ADR-0033 D3 reconciliation). Evidence in `.pi/work/WI-OI-120.md`.
 - **Size:** S
 

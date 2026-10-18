@@ -4331,3 +4331,10 @@ widening the card to fix the API faults the proof found.
 
 - **`summarizeInventoryReceiptPostingInbox`:** processed / failed (with codes) / stale PROCESSING counts for the Inventory subledger consumer.
 - **Cert:** `scripts/verify-inventory-finance-posting-reconciliation.mjs`; finance API **58/58** unit tests.
+
+## WI-OI-120ft (F2.4): Journal tie-out (2026-10-18, built, not committed)
+
+- **Migration 000010:** `subledger_posting_register` (RLS); module-host expects Finance migration **10**.
+- **Inbox apply** records each receipt line source id and links `gl_journals` when posted.
+- **API:** `GET /financial-operations/v1/subledger/inventory/posting-reconciliation` (`finance:read`) returns inbox summary + `missingJournalSourceIds` + `balanced`.
+- **Tests:** finance API **60/60** unit tests.

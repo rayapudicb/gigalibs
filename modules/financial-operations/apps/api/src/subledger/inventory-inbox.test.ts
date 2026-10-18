@@ -108,6 +108,9 @@ describe('Finance inventory subledger inbox', () => {
         if (sql.includes('UPDATE gigalibs_finance.inbox_receipts')) {
           return { rows: [], rowCount: 1 };
         }
+        if (sql.includes('subledger_posting_register') || sql.includes('gl_journals')) {
+          return { rows: [], rowCount: 1 };
+        }
         return { rows: [], rowCount: 0 };
       }),
     };

@@ -100,6 +100,13 @@ export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGat
         }
       },
       {
+        "template": "v1/subledger/inventory/posting-reconciliation",
+        "pattern": "^v1/subledger/inventory/posting-reconciliation$",
+        "methods": {
+          "GET": "finance:read"
+        }
+      },
+      {
         "template": "v1/journals",
         "pattern": "^v1/journals$",
         "methods": {
