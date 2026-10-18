@@ -4326,3 +4326,8 @@ widening the card to fix the API faults the proof found.
 - **Package:** `@gigalibs/posting-rules` — `inventoryReceiptCompletedPostingPolicyV1`, posting date helper.
 - **Finance:** `resolvePrimaryBookPostingContext`; inbox passes book/period and `INVENTORY_RECEIPT` source line ids into costing/GL.
 - **Cert:** `scripts/verify-inventory-finance-relay.mjs` (posting-rules + inbox/context unit tests); wired in `scripts/verify.mjs`.
+
+## WI-OI-120fs (F2.3): Inventory receipt posting inbox reconciliation (2026-10-18, built, not committed)
+
+- **`summarizeInventoryReceiptPostingInbox`:** processed / failed (with codes) / stale PROCESSING counts for the Inventory subledger consumer.
+- **Cert:** `scripts/verify-inventory-finance-posting-reconciliation.mjs`; finance API **58/58** unit tests.

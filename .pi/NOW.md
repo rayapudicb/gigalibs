@@ -16,6 +16,7 @@ redirect the owner to other product tracks in chat.
 - **Committed:** F1 `0d29f8f`; F2.1 `8a5b487`; UAT Playwright `36105e4`.
 - **Owner deploy:** [WI-OI-120fp](tasks/WI-OI-120fp.md) + relay keys for F2.1 on module-host.
 - **Committed (Table 2):** F2.2 `14845ae` ([WI-OI-120fr](tasks/WI-OI-120fr.md)).
+- **Built, not committed:** [WI-OI-120fs](tasks/WI-OI-120fs.md) F2.3 inbox posting reconciliation summary.
 
 ## Running on UAT
 
@@ -59,9 +60,10 @@ redirect the owner to other product tracks in chat.
 | **F1** document lifecycle | `0d29f8f` | Finance draft pilot on UAT when F0/F2 release ships |
 | **F2.1** Inventory→Finance relay | `8a5b487` | Relay keys, deploy, live receipt→inbox proof |
 | **F2.2** posting / GL handoff | `14845ae` | Deploy with F2.1; live journal proof on UAT |
+| **F2.3** inbox reconciliation | 120fs (local) | Commit; optional read API + journal tie-out |
 
-**Owner next (deploy):** release with `14845ae` (includes F2.1); F0 Playwright; relay env on module-host.
-**Agent next (code):** F2 reconciliation / UAT journal proof gaps after deploy.
+**Owner next (deploy):** release through `14845ae` (+ 120fs when committed); F0 Playwright; relay env on module-host.
+**Agent next (code):** F2.4 journal tie-out or F1/F2 UAT evidence after deploy.
 
 **W2 is decided (owner, 2026-10-18):**
 - enterprise accounts only: an administrator creates each user and shares the username and password;
