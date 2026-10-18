@@ -752,7 +752,7 @@ function StatusActions({
                 });
               }}
             >
-              <Field id="sign-off-note" label="Sign-off note" required>
+              <Field id="sign-off-note" label="Sign-off note">
                 <Textarea id="sign-off-note" name="note" rows={3} required maxLength={4000} />
               </Field>
               <Button type="submit" size="small" isLoading={busy}>

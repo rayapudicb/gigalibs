@@ -11,4 +11,6 @@ ALTER TABLE gigalibs_cmms.work_orders
   DROP COLUMN IF EXISTS signed_off_by,
   DROP COLUMN IF EXISTS signed_off_at;
 
+DELETE FROM gigalibs_cmms.schema_migrations WHERE version = 21;
+
 COMMIT;

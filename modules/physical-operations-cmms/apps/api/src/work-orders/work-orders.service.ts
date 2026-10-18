@@ -387,12 +387,6 @@ export class WorkOrdersService {
     const input = parseInput(SignOffCmmsWorkOrderV1Schema, raw);
     return this.database.withTenantTransaction(context.principal.tenantId, async (client) => {
       const current = await this.lockForChange(client, context, workOrderId, input.expectedVersion, ['COMPLETED']);
-      if (current.signed_off_at) {
-        throw new ConflictException({
-          code: 'CMMS_ALREADY_SIGNED_OFF',
-          message: 'This work order is already signed off.',
-        });
-      }
       const completer = await client.query<{ actor_subject: string }>(
         `SELECT actor_subject
            FROM gigalibs_cmms.work_order_events
@@ -438,7 +432,7 @@ export class WorkOrdersService {
         aggregateType: 'CMMS_WORK_ORDER',
         aggregateId: workOrderId,
         aggregateVersion: Number(result.rows[0]!.version),
-        payload: { note: input.note, signedOffBy: context.principal.subject },
+        payload: { signedOffBy: context.principal.subject },
       });
       return this.detailWithClient(client, context.principal, workOrderId);
     });

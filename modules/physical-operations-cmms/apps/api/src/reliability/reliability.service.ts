@@ -403,8 +403,14 @@ export class ReliabilityService {
     assertUuid(workOrderId, 'workOrderId');
     const input = parseInput(RecordCmmsFailureAttributionV1Schema, raw);
     return this.database.withTenantTransaction(context.principal.tenantId, async (client) => {
-      const woRow = await client.query<{ id: string; version: number; department_id: string | null; site_ref: string | null }>(
-        `SELECT id, version, department_id, site_ref
+      const woRow = await client.query<{
+        id: string;
+        version: number;
+        department_id: string | null;
+        site_ref: string | null;
+        signed_off_at: Date | null;
+      }>(
+        `SELECT id, version, department_id, site_ref, signed_off_at
            FROM gigalibs_cmms.work_orders WHERE tenant_id = $1 AND id = $2 FOR UPDATE`,
         [context.principal.tenantId, workOrderId],
       );
@@ -415,6 +421,12 @@ export class ReliabilityService {
       });
       // WI-OI-120h: the work order's version is checked and advanced, like every other work-order command.
       if (woRow.rows[0].version !== input.expectedVersion) versionConflict('The work order');
+      if (woRow.rows[0]!.signed_off_at) {
+        throw new ConflictException({
+          code: 'CMMS_WORK_ORDER_SIGNED_OFF',
+          message: 'This work order is closed and cannot be changed.',
+        });
+      }
 
       for (const [fieldId, label] of [
         [input.failureProblemId, 'Problem'],

@@ -1,5 +1,5 @@
 /** WI-OI-120bi: supervisor sign-off on completed work orders. */
-import { ConflictException, ForbiddenException } from '@nestjs/common';
+import { ConflictException, ForbiddenException, HttpException } from '@nestjs/common';
 import { describe, expect, it, vi } from 'vitest';
 import type { CmmsCommandContext, CmmsPrincipal } from '../auth/authorization.js';
 import type { AssetsService } from '../assets/assets.service.js';
@@ -138,6 +138,26 @@ describe('WI-OI-120bi work order sign-off', () => {
     expect(outboxCall).toBeTruthy();
     const auditCall = query.mock.calls.find(([sql]) => typeof sql === 'string' && sql.includes('audit_events'));
     expect(auditCall).toBeTruthy();
+  });
+
+  it('refuses sign-off outside the caller write scope', async () => {
+    const scopedPrincipal = {
+      ...plannerPrincipal,
+      departmentScope: { mode: 'DEPARTMENTS' as const, departmentIds: ['north'] },
+      placeScope: { mode: 'ALL' as const },
+    } as unknown as CmmsPrincipal;
+    const scopedContext: CmmsCommandContext = { principal: scopedPrincipal, correlationId: 'scope-proof' };
+    const { orders } = serviceForRow(baseRow({ department_id: 'south' }));
+    await expect(
+      orders.signOff(scopedContext, workOrderId, { expectedVersion: 2, note: 'Out of scope.' }),
+    ).rejects.toMatchObject({ response: { code: 'CMMS_OUT_OF_SCOPE' } });
+  });
+
+  it('refuses sign-off when expectedVersion is stale', async () => {
+    const { orders } = serviceForRow(baseRow({ version: 5 }));
+    await expect(
+      orders.signOff(context, workOrderId, { expectedVersion: 2, note: 'Stale version.' }),
+    ).rejects.toSatisfy((error: unknown) => error instanceof HttpException && error.getStatus() === 409);
   });
 
   it('refuses further changes after sign-off', async () => {

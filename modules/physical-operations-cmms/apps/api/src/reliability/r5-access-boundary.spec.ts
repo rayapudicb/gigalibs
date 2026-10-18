@@ -21,7 +21,9 @@ function serviceWithQuery(query: ReturnType<typeof vi.fn>) {
 
 describe('WI-OI-120aa Reliability work-order boundary', () => {
   it('refuses failure attribution before reading codes or changing an out-of-scope work order', async () => {
-    const query = vi.fn(async () => ({ rows: [{ id: workOrderId, version: 1, department_id: 'south', site_ref: null }] }));
+    const query = vi.fn(async () => ({
+      rows: [{ id: workOrderId, version: 1, department_id: 'south', site_ref: null, signed_off_at: null }],
+    }));
     const service = serviceWithQuery(query);
     await expect(service.recordFailureAttribution(context, workOrderId, { expectedVersion: 1 })).rejects.toMatchObject({ status: 403 });
     expect(query).toHaveBeenCalledTimes(1);
@@ -40,9 +42,27 @@ describe('WI-OI-120aa Reliability work-order boundary', () => {
     expect(query.mock.calls.some(([sql]) => /^\s*(UPDATE|INSERT|DELETE)\b/.test(sql))).toBe(false);
   });
 
+  it('refuses failure attribution when the work order is signed off', async () => {
+    const query = vi.fn(async (sql: string) => {
+      if (sql.includes('signed_off_at')) {
+        return {
+          rows: [{ id: workOrderId, version: 1, department_id: 'north', site_ref: null, signed_off_at: new Date() }],
+        };
+      }
+      return { rows: [], rowCount: 0 };
+    });
+    const service = serviceWithQuery(query);
+    await expect(service.recordFailureAttribution(context, workOrderId, { expectedVersion: 1 })).rejects.toMatchObject({
+      response: { code: 'CMMS_WORK_ORDER_SIGNED_OFF' },
+    });
+    expect(query.mock.calls.some(([sql]) => /^\s*(UPDATE|INSERT|DELETE)\b/.test(sql))).toBe(false);
+  });
+
   it('preserves an in-scope failure-attribution action with audit and outbox writes', async () => {
     const query = vi.fn(async (sql: string) => {
-      if (sql.includes('SELECT id, version, department_id')) return { rows: [{ id: workOrderId, version: 1, department_id: 'north', site_ref: null }] };
+      if (sql.includes('signed_off_at')) {
+        return { rows: [{ id: workOrderId, version: 1, department_id: 'north', site_ref: null, signed_off_at: null }] };
+      }
       if (sql.includes('UPDATE gigalibs_cmms.work_orders')) return { rows: [{ version: 2 }], rowCount: 1 };
       return { rows: [], rowCount: 1 };
     });
