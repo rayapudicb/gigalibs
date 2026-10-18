@@ -1434,6 +1434,9 @@ importers:
       '@gigalibs/contracts':
         specifier: workspace:*
         version: link:../../../../packages/contracts
+      '@gigalibs/document-lifecycle':
+        specifier: workspace:*
+        version: link:../../../../packages/document-lifecycle
       '@gigalibs/module-sdk':
         specifier: workspace:*
         version: link:../../../../packages/module-sdk

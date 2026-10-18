@@ -50,6 +50,7 @@ import {
 import type pg from 'pg';
 import { SCHEMA, TOPIC } from '../config.js';
 import { DatabaseService } from '../database.service.js';
+import { runInventoryReceiptTransition, type ReceiptLifecycleDocument } from './receipt-lifecycle.js';
 
 /**
  * WI-OI-120ak (S3b): the suffix of a document number (MOV-, REC-, ISSUE-, KIT-, CNT-, ADJ-). It was a non-crypto
@@ -703,20 +704,45 @@ export class InventoryService {
       );
       if (receiptRes.rowCount === 0) throw new NotFoundException('Receipt not found.');
       const receipt = receiptRes.rows[0];
-      if (receipt.status === 'COMPLETED') {
-        throw new ConflictException('Receipt is already completed.');
-      }
 
       const linesRes = await client.query(
         `SELECT * FROM ${SCHEMA}.receipt_lines WHERE tenant_id = $1 AND receipt_id = $2`,
         [principal.tenantId, receiptId],
       );
 
-      const now = new Date().toISOString();
+      const document: ReceiptLifecycleDocument = {
+        id: receiptId,
+        status: receipt.status,
+        version: Number(receipt.version),
+      };
 
-      // Post movements for each line into target location
-      for (const line of linesRes.rows) {
-        if (!line.target_location_id) {
+      return runInventoryReceiptTransition<InventoryReceiptV1>(
+        {
+          tenantId: principal.tenantId,
+          actorId: principal.subject,
+          lineCount: linesRes.rowCount ?? 0,
+          persistComplete: async () =>
+            this.persistReceiptComplete(client, principal, receipt, linesRes.rows),
+        },
+        document,
+        'complete',
+        document.version,
+      );
+    });
+  }
+
+  /** Stock movements, Finance posting status, and outbox — same transaction as lifecycle `complete`. */
+  private async persistReceiptComplete(
+    client: pg.PoolClient,
+    principal: ModulePrincipal,
+    receipt: { id: string; warehouse_id: string; receipt_number: string; version: number },
+    lines: readonly any[],
+  ): Promise<InventoryReceiptV1> {
+    const receiptId = receipt.id;
+    const now = new Date().toISOString();
+
+    for (const line of lines) {
+      if (!line.target_location_id) {
           throw new BadRequestException(`Line ${line.line_number} has no target receiving location assigned.`);
         }
         const qtyToReceive = line.received_quantity > 0 ? line.received_quantity : line.expected_quantity;
@@ -819,9 +845,9 @@ export class InventoryService {
           `UPDATE ${SCHEMA}.receipt_lines SET received_quantity = $1, updated_at = $2 WHERE id = $3`,
           [qtyToReceive, now, line.id],
         );
-      }
+    }
 
-      await client.query(
+    await client.query(
         `UPDATE ${SCHEMA}.receipts SET status = 'COMPLETED', completed_at = $1, updated_at = $1, version = version + 1,
           finance_posting_status = 'AWAITING_POSTING', finance_posting_rejection_code = NULL WHERE id = $2`,
         [now, receiptId],
@@ -865,8 +891,7 @@ export class InventoryService {
         ],
       );
 
-      return this.fetchReceipt(client, principal.tenantId, receiptId);
-    });
+    return this.fetchReceipt(client, principal.tenantId, receiptId);
   }
 
   // ─── Reservations (CMMS Work Orders) ────────────────────────────────────────

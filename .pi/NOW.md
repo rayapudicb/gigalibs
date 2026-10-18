@@ -71,10 +71,11 @@ redirect the owner to other product tracks in chat.
 | **F2.5** posting status on receipts | `1fadfa4` | Deploy; Inventory migration **5**; `FINANCE_INVENTORY_POSTING_DATABASE_URL` |
 | **F2.6** daily reconciliation | `7c1f4c1` | Deploy with migration **11** |
 | **F2.7** relay HTTP cert | `1fadfa4` | Isolated proof only (`PROOF_DATABASE_URL`) |
-| **F2.8** period-close gate | Done | Deploy with F2 stack; prove lock fails when reconciliation gaps exist |
+| **F2.8** period-close gate | `930272f` | Deploy with F2 stack; prove lock fails when reconciliation gaps exist |
+| **F1.3** receipt lifecycle | Done (this commit) | Ships with Inventory deploy |
 
-**Owner next (deploy):** release branch tip (F2 through **F2.8**); [WI-OI-120fp](tasks/WI-OI-120fp.md) checklist (migrations, relay keys, posting DB URL, Playwright, live F2).
-**Agent next (code):** **F1.3** Inventory receipt lifecycle graph ([TABLE-2 #9](TABLE-2-ENGINES.md)), unless owner prioritizes deploy evidence or F2.9 accounting review.
+**Owner next (deploy):** release branch tip (**F2 through F2.8 + F1.3**); [WI-OI-120fp](tasks/WI-OI-120fp.md) — agents do not run `--deploy`.
+**Agent next (code):** **F1.4** period-lock guard on Inventory financially relevant transitions ([TABLE-2 #10](TABLE-2-ENGINES.md)).
 
 **W2 is decided (owner, 2026-10-18):**
 - enterprise accounts only: an administrator creates each user and shares the username and password;
