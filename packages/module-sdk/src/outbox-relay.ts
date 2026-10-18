@@ -143,6 +143,7 @@ export class OutboxRelay<F extends string = string>
           audience,
           source,
           envelope,
+          outbound.inboxPath,
         );
         const retrySeconds = outcome.permanent
           ? null
@@ -195,6 +196,7 @@ export async function deliver(
   audience: string,
   source: string,
   envelope: RelayEnvelope,
+  inboxPath = '/internal/v1/inbox',
 ): Promise<{ readonly ok: boolean; readonly permanent: boolean; readonly code: string | null }> {
   const body = JSON.stringify(envelope);
   const token = signRelayToken(
@@ -203,7 +205,7 @@ export async function deliver(
     60,
   );
   try {
-    const response = await fetch(new URL('/internal/v1/inbox', targetOrigin), {
+    const response = await fetch(new URL(inboxPath, targetOrigin), {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,

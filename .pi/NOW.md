@@ -12,13 +12,14 @@ state and the release procedure as it is run. The prompt to paste is [PROMPT-202
 
 **Table 2 (architecture), owner 2026-10-18:** Claude stopped; Cursor continues engines after CMMS journey proof.
 - **[WI-OI-120bh](tasks/WI-OI-120bh.md) is on UAT** (`3bc0c1f`, journey `dg84u3`).
-- **Done (committed, not on UAT until owner deploy):** [WI-OI-120fl](tasks/WI-OI-120fl.md) (F1.1) and
-  [WI-OI-120fm](tasks/WI-OI-120fm.md) (F1.2) — `@gigalibs/document-lifecycle` and Finance journal-draft transitions.
-- **Next Table 2:** F2 first posting chain (E3) or finish [WI-OI-120f](tasks/WI-OI-120f.md) F0.5 Inventory deploy on UAT.
+- **Done (committed):** [WI-OI-120fl](tasks/WI-OI-120fl.md) / [WI-OI-120fm](tasks/WI-OI-120fm.md) (F1).
+- **Active:** [WI-OI-120fp](tasks/WI-OI-120fp.md) F0.5 UAT deploy + Playwright (owner).
+- **Built, not committed:** [WI-OI-120fq](tasks/WI-OI-120fq.md) F2.1 Inventory→Finance relay and inbox (+ module-sdk inbox path for module-host).
+- **F0 code** is already on `main` ancestry (`bf049e1`, `2104f91`); UAT needs a release that includes `0d29f8f`+ and owner deploy per 120fp.
 - **Parallel (deploy, not code):** [WI-OI-120f](tasks/WI-OI-120f.md) F0.5 Inventory metadata — commit/deploy and
   Playwright on UAT when the owner is ready (`E2E_UAT_ADMIN_*`).
-- **Deferred until owner chooses:** [WI-OI-120bi](tasks/WI-OI-120bi.md) supervisor sign-off (journey's one known
-  blocker); [WI-OI-120bj](tasks/WI-OI-120bj.md); W1-B scope switch-on.
+- **Frozen until Table 2 is 100%:** CMMS journey follow-ups ([WI-OI-120bi](tasks/WI-OI-120bi.md),
+  [WI-OI-120bj](tasks/WI-OI-120bj.md), W1-B) — not in agent scope until engines are done (owner, 2026-10-18).
 
 ## Running on UAT
 
@@ -54,14 +55,19 @@ state and the release procedure as it is run. The prompt to paste is [PROMPT-202
 - `pnpm verify` reports one known deployment-profile drift, `WORKFORCE_API_URL` (`scripts/verify.mjs`,
   `KNOWN_PROFILE_DRIFT`), until the owner decides it. It also reports 12 isolated-database proofs as not run.
 
-## Next three steps
+## Owner gate (2026-10-18): Table 2 before CMMS
 
-1. **[WI-OI-120bi](tasks/WI-OI-120bi.md), supervisor sign-off** (M). A planner closes a completed work order with a
-   note, and the person who completed it cannot. It comes with an audit record, the outbox event and migration 21.
-   The journey's last CMMS blocker then clears for real.
-2. **[WI-OI-120bj](tasks/WI-OI-120bj.md)** (S): no screen claims a verification it did not make.
-3. **W1-B:** add CMMS to `SCOPE_ENFORCING_MODULES` with its context-coverage test, and prove in the journey that
-   North does not see South. Then step 1.2, T3 (WI-OI-120ad), and the Phase 0 leftovers (WI-OI-120aj, WI-OI-120am).
+**Do not schedule or suggest CMMS / journey / Phase 1 product work** (for example 120bi, 120bj, W1-B) until the
+**architectural engines (Table 2: F0–F2 and plan v3 §5A)** are **100% complete** with evidence. CMMS cards stay in the
+backlog; they are not "next" for agents.
+
+## Next steps (Table 2 only)
+
+1. **[WI-OI-120fp](tasks/WI-OI-120fp.md):** owner release + deploy; **`pnpm e2e:uat:inventory`** (F0.5 UAT proof).
+2. **Commit 120fq** when the owner says so; relay keys + deploy; live receipt→Finance on UAT.
+3. **F2 remainder:** posting rules (E2), HTTP handshake script, receipt→journal with book/period on UAT.
+
+**F1** is committed (`0d29f8f`). **F0** product code is in git; UAT closure is 120fp.
 
 **W2 is decided (owner, 2026-10-18):**
 - enterprise accounts only: an administrator creates each user and shares the username and password;

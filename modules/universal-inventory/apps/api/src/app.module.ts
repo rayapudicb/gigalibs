@@ -14,14 +14,21 @@ import { InventoryRecordsService } from './inventory/inventory-records.service.j
 import { InventoryController } from './inventory/inventory.controller.js';
 import { InventoryService } from './inventory/inventory.service.js';
 import { OrganizationController } from './organization/organization.controller.js';
+import { createRelayHealthController } from '@gigalibs/module-sdk';
+import { InventoryFinanceOutboxRelay } from './relay/inventory-finance-relay.js';
+import { INVENTORY_RELAY_CONFIG, loadInventoryFinanceRelayConfig } from './relay/relay-config.js';
+
+const InventoryRelayHealthController = createRelayHealthController('v1/health');
 
 // WI-OI-120f (F0.5): the record routes behind Inventory's metadata windows. The signed-context guard checks the
 // Universal Inventory entitlement and inventory:read on every route; the dispatcher checks each entity's permissions.
 const InventoryRecordController = createRecordController({ guard: AuthorizationGuard, readPermission: 'inventory:read' });
 
 @Module({
-  controllers: [HealthController, InventoryController, OrganizationController, InventoryRecordController],
+  controllers: [HealthController, InventoryRelayHealthController, InventoryController, OrganizationController, InventoryRecordController],
   providers: [
+    { provide: INVENTORY_RELAY_CONFIG, useFactory: () => loadInventoryFinanceRelayConfig() },
+    InventoryFinanceOutboxRelay,
     runtimeConfigProvider,
     DatabaseService,
     AuthorizationGuard,

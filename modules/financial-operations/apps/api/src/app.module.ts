@@ -27,6 +27,10 @@ import { HealthController } from './health.controller.js';
 import { OrganizationController } from './organization/organization.controller.js';
 import { TreasuryController } from './treasury/treasury.controller.js';
 import { TreasuryService } from './treasury/treasury.service.js';
+import { FINANCE_RELAY_CONFIG, loadFinanceRelayConfig } from './relay/relay-config.js';
+import { FinanceRelayInboxGuard } from './relay/inbox.guard.js';
+import { FinanceInventoryInboxController } from './subledger/inventory-inbox.controller.js';
+import { InventorySubledgerInboxService } from './subledger/inventory-inbox.service.js';
 
 // WI-OI-120l (U12): record routes behind the general ledger's metadata windows and its book and account pickers.
 const FinanceRecordController = createRecordController({ guard: AuthorizationGuard, readPermission: 'finance:read' });
@@ -43,8 +47,12 @@ const FinanceRecordController = createRecordController({ guard: AuthorizationGua
     CloseController,
     OrganizationController,
     FinanceRecordController,
+    FinanceInventoryInboxController,
   ],
   providers: [
+    { provide: FINANCE_RELAY_CONFIG, useFactory: () => loadFinanceRelayConfig() },
+    FinanceRelayInboxGuard,
+    InventorySubledgerInboxService,
     runtimeConfigProvider,
     DatabaseService,
     AuthorizationGuard,

@@ -5,7 +5,12 @@ export interface RelayConfig {
   /** Verifies relay tokens from the peer; the inbox answers 503 when absent. */
   readonly inboxPublicKey: string | null;
   /** Delivers this module's facts to the peer inbox; the relay is off when absent. */
-  readonly outbound: { readonly targetOrigin: string; readonly privateKey: string } | null;
+  readonly outbound: {
+    readonly targetOrigin: string;
+    readonly privateKey: string;
+    /** Inbox POST path on the peer origin (module-host modules need their base path). */
+    readonly inboxPath: string;
+  } | null;
   readonly intervalMs: number;
 }
 
@@ -16,6 +21,8 @@ export interface RelayConfigNames {
   readonly signingKey: string;
   readonly interval: string;
   readonly peerService: string;
+  /** Optional env var for the inbox path; defaults to `/internal/v1/inbox`. */
+  readonly inboxPath?: string;
 }
 
 export function loadRelayConfig(
@@ -35,10 +42,20 @@ export function loadRelayConfig(
         ? {
             targetOrigin: relayOrigin(target, names.peerService),
             privateKey: privatePem(signing, names.signingKey),
+            inboxPath: relayInboxPath(environment, names.inboxPath),
           }
         : null,
     intervalMs: relayInterval(environment[names.interval], names.interval),
   });
+}
+
+function relayInboxPath(environment: NodeJS.ProcessEnv, name: string | undefined): string {
+  const raw = name ? environment[name]?.trim() : '';
+  const path = raw || '/internal/v1/inbox';
+  if (!path.startsWith('/') || path.includes('..') || path.includes('://')) {
+    throw new Error(`${name ?? 'inboxPath'} must be an absolute path such as /financial-operations/internal/v1/inbox.`);
+  }
+  return path;
 }
 
 function relayInterval(raw: string | undefined, name: string): number {

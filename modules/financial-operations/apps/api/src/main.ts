@@ -6,7 +6,7 @@ import { AppModule } from './app.module.js';
 
 async function bootstrap() {
   const listener = loadModuleListenerConfig({ prefix: 'FINANCIAL_OPERATIONS' });
-  const app = await NestFactory.create(AppModule, { logger: ['log', 'error', 'warn'] });
+  const app = await NestFactory.create(AppModule, { logger: ['log', 'error', 'warn'], rawBody: true });
   app.use(helmet());
   app.enableCors({ origin: listener.corsOrigins, credentials: true });
   await app.listen(listener.apiPort, listener.apiHost);

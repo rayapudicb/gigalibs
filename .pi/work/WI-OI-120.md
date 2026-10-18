@@ -4310,3 +4310,13 @@ widening the card to fix the API faults the proof found.
 - **Journey `b0j8mq`** (owner-run rerun on `f9de9a3`): passed, 52 findings, 2 blockers (the known CMMS ones).
   - Identical to `asyz8p`, which confirms that `b03w3r`'s Workforce failures came from host load.
   - The host's load average was still about 9–11 afterwards. UAT runs on the owner's laptop: noted for O1 (step 1.17).
+
+## WI-OI-120fq (F2.1): Inventory receipt → Finance inbox (2026-10-18, built, not committed)
+
+- **Outbox:** `InventoryFinanceOutboxRelay` on `relay_lease_inventory_events`; relay health at `GET …/v1/health/relays`.
+- **Inbox:** Finance `POST …/internal/v1/inbox` + `InventorySubledgerInboxService` for `inventory.receipt.completed.v1` →
+  `CostingService.ingestReceiptLayer` when a default cost profile with standard cost exists.
+- **Module-host:** `@gigalibs/module-sdk` relay `inboxPath` (default `/financial-operations/internal/v1/inbox` when Inventory
+  targets `http://127.0.0.1:4790`).
+- **Tests:** finance API 54/54 (includes duplicate → `DUPLICATE`); inventory relay config 2/2; module-sdk 78/78.
+- **UAT pending:** owner runs `infra/compose/scripts/generate-inventory-finance-relay-credentials.sh`, deploy with F1+F2, live proof.
