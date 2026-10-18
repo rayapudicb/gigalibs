@@ -18,7 +18,7 @@ redirect the owner to other product tracks in chat.
 - **Committed (Table 2):** F2.2 `14845ae` ([WI-OI-120fr](tasks/WI-OI-120fr.md)).
 - **Committed:** F2.3 `1e54d17` ([WI-OI-120fs](tasks/WI-OI-120fs.md)).
 - **Committed:** F2.4 `631c4c7` ([WI-OI-120ft](tasks/WI-OI-120ft.md)).
-- **Committed:** F2.6 ([WI-OI-120fu](tasks/WI-OI-120fu.md)); Finance migration **11** (same release as F2.4 deploy).
+- **Committed:** F2.6 `7c1f4c1` ([WI-OI-120fu](tasks/WI-OI-120fu.md)); Finance migration **11**.
 
 ## Running on UAT
 
@@ -66,7 +66,7 @@ redirect the owner to other product tracks in chat.
 | **F2.2** posting / GL handoff | `14845ae` | Deploy with F2.1; live journal proof on UAT |
 | **F2.3** inbox reconciliation | `1e54d17` | Deploy |
 | **F2.4** journal tie-out | `631c4c7` | Deploy; Finance migration **10** on module-host |
-| **F2.6** daily reconciliation | WI-OI-120fu (this commit) | Deploy with migration **11** |
+| **F2.6** daily reconciliation | `7c1f4c1` | Deploy with migration **11** |
 
 **Owner next (deploy):** release **`631c4c7`**+ (full F2 stack + F2.6); F0 Playwright; relay env; Finance migrations **10–11**; check `GET …/posting-reconciliation`.
 **Agent next (code):** F2.5 posting status UI; F2.7 isolated HTTP relay proof script.

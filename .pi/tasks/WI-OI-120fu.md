@@ -1,6 +1,6 @@
 # WI-OI-120fu (F2.6): Daily Inventory receipt posting reconciliation job
 
-- **Status:** Done in git (owner, 2026-10-18; commit pending tag in NOW). UAT deploy + Finance migration **11** still open.
+- **Status:** Done in git (`7c1f4c1`; owner, 2026-10-18). UAT deploy + Finance migration **11** still open.
 - **Work item:** WI-OI-120 (F2 / ADR-0033 D3). Evidence in `.pi/work/WI-OI-120.md`.
 - **Size:** S
 

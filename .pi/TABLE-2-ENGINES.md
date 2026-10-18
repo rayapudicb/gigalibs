@@ -44,4 +44,4 @@ All rows **1–14** (and **0**) have **Code = Done** and **UAT = Done** with evi
 3. **Agent — #15 (after UAT F0/F2 proof):** Receipt posting status on Inventory metadata UI.
 4. **Agent — #17–18:** Isolated HTTP relay cert script, period-close gate.
 
-*Last updated: 2026-10-18 (F2.6 code in working tree; deploy `631c4c7`+ including migration 11).*
+*Last updated: 2026-10-18 (F2.6 `7c1f4c1`; deploy `7c1f4c1`+ with Finance migrations 10–11).*
