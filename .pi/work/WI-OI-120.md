@@ -4345,3 +4345,10 @@ widening the card to fix the API faults the proof found.
 - **Packet:** [.pi/work/F2.9-INVENTORY-RECEIPT-POSTING-ACCOUNTING-REVIEW.md](F2.9-INVENTORY-RECEIPT-POSTING-ACCOUNTING-REVIEW.md) (spec vs implementation, UAT evidence checklist, sign-off table).
 - **Task card:** [WI-OI-120ga](../tasks/WI-OI-120ga.md).
 - **Status:** Awaiting named accountant sign-off; not Done until §6 of the packet is filled and owner accepts.
+
+## Table 2 — pre-UAT agent certifications (2026-10-18)
+
+- `verify-inventory-finance-relay.mjs`: passed (posting-rules + inbox + F1.3/F1.4 unit tests).
+- `verify-inventory-finance-posting-reconciliation.mjs`: passed (F2.3–F2.6/F2.8 unit tests).
+- `verify-inventory-finance-relay-http.mjs`: skipped without `PROOF_DATABASE_URL` (F2.7 isolated cert; not UAT).
+- **UAT rows #5–16, #18, #20:** pending owner deploy from **`0a0e787`+** — see [TABLE-2-UAT-CLOSURE.md](../TABLE-2-UAT-CLOSURE.md).

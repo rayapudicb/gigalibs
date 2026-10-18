@@ -37,14 +37,11 @@ Legend: **Code** = merged in git on the Table 2 branch. **UAT** = owner deploy +
 
 All rows **1–14** (and **0**) have **Code = Done** and **UAT = Done** with evidence; rows **15–19** are either Done or explicitly deferred by the owner in `.pi/NOW.md`.
 
-## Next work (always pick the first open row)
+## Next work (remaining = UAT + human only)
 
-1. **Owner — #5 [WI-OI-120fp](tasks/WI-OI-120fp.md):** Deploy **`631c4c7`+**, Finance migration **10**, relay keys (`generate-inventory-finance-relay-credentials.sh`), `pnpm e2e:uat:inventory`.
-2. **Owner — #11–14:** Same release: complete a receipt on UAT; confirm Finance inbox + `GET /financial-operations/v1/subledger/inventory/posting-reconciliation` → `balanced: true` when book/period/cost profile exist.
-3. **Owner — deploy:** release **`1fadfa4`**; set `FINANCE_INVENTORY_POSTING_DATABASE_URL` (= Inventory DSN) for POSTED sync; [WI-OI-120fp](tasks/WI-OI-120fp.md).
-4. **Owner — deploy:** ship F2 stack (**F2.5–F2.8** on branch) per [WI-OI-120fp](tasks/WI-OI-120fp.md).
-5. **Owner — deploy:** Table 2 stack tip (**F1.3–F1.4 + F2**) ([WI-OI-120fp](tasks/WI-OI-120fp.md)); module-host already has `FINANCIAL_OPERATIONS_DATABASE_URL` for F1.4.
-6. **Owner — #19:** Accountant completes [F2.9 review packet](work/F2.9-INVENTORY-RECEIPT-POSTING-ACCOUNTING-REVIEW.md) after UAT deploy evidence.
-7. **Owner — #5–20:** UAT deploy **`e7eaa3d`**+ remains the gating path for rows with **Open** UAT.
+**All engine code is in git** (tip **`0a0e787`**). Nothing left for agents on Table 2 implementation.
 
-*Last updated: 2026-10-18 (F2.8 in git; deploy tip branch tip after F2.8 commit; Finance migrations 10–11, Inventory 5).*
+1. **Owner — [TABLE-2-UAT-CLOSURE.md](TABLE-2-UAT-CLOSURE.md)** + [WI-OI-120gb](tasks/WI-OI-120gb.md): one deploy from **`0a0e787`+**, live F2 proofs, Playwright, evidence in `.pi/work/WI-OI-120.md`.
+2. **Owner — #19:** Accountant [F2.9 packet](work/F2.9-INVENTORY-RECEIPT-POSTING-ACCOUNTING-REVIEW.md) §6 (after sample journals on UAT).
+
+*Last updated: 2026-10-18 (deploy tip `0a0e787`; UAT still `3bc0c1f`).*

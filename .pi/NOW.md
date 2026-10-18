@@ -78,9 +78,11 @@ redirect the owner to other product tracks in chat.
 | **F1.3** receipt lifecycle | `de671f0` | Ships with Inventory deploy |
 | **F1.4** period-lock on complete | `e7eaa3d` | Uses module-host `FINANCIAL_OPERATIONS_DATABASE_URL` |
 
-**Owner next (deploy):** release **`e7eaa3d`**+ ([WI-OI-120fp](tasks/WI-OI-120fp.md)); agents do not run `--deploy`.
-**Owner next (human):** F2.9 — accountant sign-off using [F2.9 review packet](work/F2.9-INVENTORY-RECEIPT-POSTING-ACCOUNTING-REVIEW.md) ([WI-OI-120ga](tasks/WI-OI-120ga.md)).
-**Agent next (code):** none on Table 2 engines until owner deploy evidence or accountant feedback.
+**Table 2 code:** complete through **`0a0e787`**. **Remaining:** UAT evidence + F2.9 accountant ([TABLE-2-UAT-CLOSURE.md](TABLE-2-UAT-CLOSURE.md), [WI-OI-120gb](tasks/WI-OI-120gb.md)).
+
+**Owner next:** deploy **`0a0e787`+** ([WI-OI-120fp](tasks/WI-OI-120fp.md)); agents do **not** run `--deploy`. Then Playwright + F2.9 §6.
+
+**Agent next:** record evidence in `.pi/work/WI-OI-120.md` only after owner supplies tags/run ids/sign-off; say **commit** for closure runbook docs.
 
 **W2 is decided (owner, 2026-10-18):**
 - enterprise accounts only: an administrator creates each user and shares the username and password;
