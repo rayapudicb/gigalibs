@@ -1,6 +1,6 @@
 # WI-OI-120gf: Accounts Receivable on configuration-local profile (M-AR0)
 
-- **Status:** Proposed
+- **Status:** Blocked (M-AR0 / WI-OI-120aj E1a — API excluded from default build; see `modules/accounts-receivable/module.yaml`)
 - **Work item:** Table 1 rows 7–8. Evidence in `.pi/work/TABLE-1-AUDIT-2026-10-19.md`.
 - **Size:** L
 

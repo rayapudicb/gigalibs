@@ -58,9 +58,11 @@ keeps the full rules.
 
 ## Next implementation (Table 1 backlog, local compose)
 
-1. **WI-OI-120gd** — journey 0 blockers (needs `E2E_JOURNEY_PASSWORD` in `e2e/uat.env`).
-2. **WI-OI-120ge** — fix Inventory docker workspace deps (`document-lifecycle`, `posting-rules`) for local Table 2 stack.
-3. **WI-OI-120gf** / **120gg** / **120gh** — AR on compose, parties on PO, proc metadata (Proposed cards in `.pi/tasks/`).
+1. **WI-OI-120gd** — journey 0 blockers — **blocked:** `E2E_JOURNEY_PASSWORD` not in `e2e/uat.env` (only owner can set).
+2. **WI-OI-120ge** — **Done** in git **`0031a2f4`** (pushed); `pnpm audit:configuration-deployment-profile` passes.
+3. **WI-OI-120gf** — **blocked** on **M-AR0** (`modules/accounts-receivable/module.yaml`: API out of default build until SDK rebuild).
+4. **WI-OI-120gg** — next code slice: server-side **vendor party exists** on PO create (needs control-plane parties call; header already requires `vendorPartyId` UUID).
+5. **WI-OI-120gh** — procurement first metadata window (after 120gg or in parallel).
 
 ## Built, not yet on UAT
 
