@@ -1,7 +1,8 @@
 # Phase 1 CMMS exit (M-CM1) — single acceptance checklist
 
-Owner batch review (2026-10-18): verify every row after one UAT deploy of release **`8df9960a9366-5761295c67a6`**
-(or successor that includes the same product commits on main: **`361f160e`**, **`dc5a1326`**, and **120bj** when merged).
+Owner batch review (2026-10-18): verify every row after one UAT deploy of release worktree **`1d8d2634`**, tag
+**`1d8d2634b8f2-c6148e918ff0`** (CMMS mig **22**, **120bk**, **120bj**, journey; predecessor **`38aa3120`** on UAT).
+Main tip: **`b679ce24`** on `feat/gigaops-convergence-core`.
 
 | # | Card | Built in git | UAT / journey evidence | Owner Done |
 |---|------|--------------|------------------------|------------|
