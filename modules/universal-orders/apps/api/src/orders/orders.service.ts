@@ -1095,6 +1095,28 @@ export class OrderService {
     });
   }
 
+  async listCustomerInvoices(principal: { tenantId: string }): Promise<CustomerInvoiceV1[]> {
+    return this.database.withTenantTransaction(principal.tenantId, async (client) => {
+      const res = await client.query<{ id: string }>(
+        `SELECT id FROM gigalibs_orders.customer_invoices WHERE tenant_id = $1 ORDER BY created_at DESC`,
+        [principal.tenantId],
+      );
+      const items: CustomerInvoiceV1[] = [];
+      for (const row of res.rows) {
+        const invoiceRes = await client.query(`SELECT * FROM gigalibs_orders.customer_invoices WHERE tenant_id = $1 AND id = $2`, [
+          principal.tenantId,
+          row.id,
+        ]);
+        const lines = await client.query(
+          `SELECT * FROM gigalibs_orders.customer_invoice_lines WHERE tenant_id = $1 AND invoice_id = $2 ORDER BY line_number ASC`,
+          [principal.tenantId, row.id],
+        );
+        items.push(this.mapInvoice(invoiceRes.rows[0], lines.rows));
+      }
+      return items;
+    });
+  }
+
   // ─── 6. Customer Credit Memos ──────────────────────────────────────────────
 
   async createCreditMemo(

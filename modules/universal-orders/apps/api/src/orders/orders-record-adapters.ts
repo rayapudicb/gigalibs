@@ -1,6 +1,8 @@
 import {
+  CreateCustomerInvoiceInputV1Schema,
   CreateSalesOrderInputV1Schema,
   CreateSalesQuoteInputV1Schema,
+  type CustomerInvoiceV1,
   type SalesOrderV1,
   type SalesQuoteV1,
 } from '@gigalibs/contracts';
@@ -17,7 +19,7 @@ import { shippedRecordRules } from '@gigalibs/configuration-core';
 import { BadRequestException } from '@nestjs/common';
 import type { OrderService } from './orders.service.js';
 
-// WI-OI-120gj/gk: record routes for Orders metadata windows (sales quotes and sales orders).
+// WI-OI-120gj–gl: record routes for Orders metadata windows (quotes, orders, customer invoices).
 
 interface FieldSpec {
   readonly key: string;
@@ -26,6 +28,29 @@ interface FieldSpec {
 
 function fieldPolicies(fields: readonly FieldSpec[]): Record<string, RecordFieldPolicy> {
   return Object.fromEntries(fields.map((field) => [field.key, { writable: field.writable ?? false }]));
+}
+
+function normalizeDatetime(value: unknown, fallbackDaysFromNow: number): string {
+  if (typeof value === 'string' && value.length > 0) return value;
+  if (value instanceof Date) return value.toISOString();
+  const fallback = new Date();
+  fallback.setUTCDate(fallback.getUTCDate() + fallbackDaysFromNow);
+  return fallback.toISOString();
+}
+
+function customerInvoiceToWindow(invoice: CustomerInvoiceV1): RecordValues {
+  return {
+    id: invoice.id,
+    version: invoice.version,
+    'invoice-number': invoice.invoiceNumber,
+    'order-id': invoice.orderId,
+    'customer-name': invoice.customerName,
+    'currency-code': invoice.currencyCode,
+    'due-date': invoice.dueDate,
+    notes: invoice.notes ?? null,
+    status: invoice.status,
+    'total-amount': invoice.totalAmountMinor,
+  };
 }
 
 function salesQuoteToWindow(quote: SalesQuoteV1): RecordValues {
@@ -104,17 +129,7 @@ const SQ_FIELDS: readonly FieldSpec[] = [
 
 /** Maps metadata window values to the quote create contract (exported for tests). */
 export function windowValuesToCreateSalesQuoteInput(values: RecordValues) {
-  const validUntilRaw = values['valid-until'];
-  let validUntil: string;
-  if (typeof validUntilRaw === 'string' && validUntilRaw.length > 0) {
-    validUntil = validUntilRaw;
-  } else if (validUntilRaw instanceof Date) {
-    validUntil = validUntilRaw.toISOString();
-  } else {
-    const fallback = new Date();
-    fallback.setUTCDate(fallback.getUTCDate() + 30);
-    validUntil = fallback.toISOString();
-  }
+  const validUntil = normalizeDatetime(values['valid-until'], 30);
   const input = {
     orgUnitId: values['org-unit-id'],
     customerPartyId: values['customer-id'],
@@ -135,6 +150,35 @@ export function windowValuesToCreateSalesQuoteInput(values: RecordValues) {
     ],
   };
   const parsed = CreateSalesQuoteInputV1Schema.safeParse(input);
+  if (!parsed.success) {
+    const issue = parsed.error.issues[0];
+    throw new BadRequestException({
+      code: 'UNIVERSAL_ORDERS_VALIDATION_FAILED',
+      message: `${issue?.path.join('.') ?? 'value'}: ${issue?.message ?? 'invalid'}`,
+    });
+  }
+  return parsed.data;
+}
+
+const CI_FIELDS: readonly FieldSpec[] = [
+  { key: 'invoice-number' },
+  { key: 'order-id', writable: true },
+  { key: 'customer-name' },
+  { key: 'currency-code' },
+  { key: 'due-date', writable: true },
+  { key: 'notes', writable: true },
+  { key: 'status' },
+  { key: 'total-amount' },
+];
+
+/** Maps metadata window values to the customer invoice create contract (exported for tests). */
+export function windowValuesToCreateCustomerInvoiceInput(values: RecordValues) {
+  const input = {
+    orderId: values['order-id'],
+    dueDate: normalizeDatetime(values['due-date'], 30),
+    notes: values['notes'] ?? null,
+  };
+  const parsed = CreateCustomerInvoiceInputV1Schema.safeParse(input);
   if (!parsed.success) {
     const issue = parsed.error.issues[0];
     throw new BadRequestException({
@@ -292,5 +336,45 @@ export function ordersRecordDispatcher(deps: { orders: OrderService }, idempoten
     },
   };
 
-  return new RecordDispatcher([salesQuotes, salesOrders], [], idempotency, shippedRecordRules('universal-orders'));
+  const customerInvoices: RecordAdapter = {
+    entityKey: 'orders.customer-invoices',
+    permissions: { read: 'orders:read', create: 'orders:invoices:manage' },
+    rest: { read: 'GET v1/invoices', create: 'POST v1/invoices' },
+    fields: fieldPolicies(CI_FIELDS),
+    searchFields: ['invoice-number', 'customer-name'],
+    sortFields: ['invoice-number'],
+    async list(principal: ModulePrincipal, query: RecordListQuery) {
+      let items = (await deps.orders.listCustomerInvoices(principal)).map(customerInvoiceToWindow);
+      if (query.search) items = items.filter((item) => matchesFields(item, query.search!, ['invoice-number', 'customer-name']));
+      const sortField = query.sortField ?? 'invoice-number';
+      const direction = query.sortDirection === 'ASC' ? 1 : -1;
+      items.sort((left, right) => {
+        const a = left[sortField];
+        const b = right[sortField];
+        if (typeof a === 'string' && typeof b === 'string') return a.localeCompare(b) * direction;
+        return 0;
+      });
+      const start = (query.page - 1) * query.pageSize;
+      const pageItems = items.slice(start, start + query.pageSize);
+      return { page: query.page, pageSize: query.pageSize, totalItems: items.length, items: pageItems };
+    },
+    async get(principal, id) {
+      try {
+        const invoice = await deps.orders.getCustomerInvoice(principal.tenantId, id);
+        return customerInvoiceToWindow(invoice);
+      } catch {
+        return null;
+      }
+    },
+    async create(context, values) {
+      const invoice = await deps.orders.createCustomerInvoice(
+        context.principal.tenantId,
+        context.principal.subject,
+        windowValuesToCreateCustomerInvoiceInput(values),
+      );
+      return customerInvoiceToWindow(invoice);
+    },
+  };
+
+  return new RecordDispatcher([salesQuotes, salesOrders, customerInvoices], [], idempotency, shippedRecordRules('universal-orders'));
 }

@@ -1,5 +1,22 @@
 import { describe, expect, it } from 'vitest';
-import { windowValuesToCreateSalesOrderInput, windowValuesToCreateSalesQuoteInput } from './orders-record-adapters.js';
+import {
+  windowValuesToCreateCustomerInvoiceInput,
+  windowValuesToCreateSalesOrderInput,
+  windowValuesToCreateSalesQuoteInput,
+} from './orders-record-adapters.js';
+
+describe('windowValuesToCreateCustomerInvoiceInput', () => {
+  it('builds invoice input from window field keys', () => {
+    const input = windowValuesToCreateCustomerInvoiceInput({
+      'order-id': '550e8400-e29b-41d4-a716-446655440000',
+      'due-date': '2026-12-31T23:59:59.000Z',
+      notes: 'Net 30',
+    });
+    expect(input.orderId).toBe('550e8400-e29b-41d4-a716-446655440000');
+    expect(input.dueDate).toBe('2026-12-31T23:59:59.000Z');
+    expect(input.notes).toBe('Net 30');
+  });
+});
 
 describe('windowValuesToCreateSalesQuoteInput', () => {
   it('builds a one-line sales quote from window field keys', () => {

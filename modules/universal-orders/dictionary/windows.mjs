@@ -1,4 +1,4 @@
-// WI-OI-120gj/gk (Table 1): Orders metadata windows — sales quotes and sales orders.
+// WI-OI-120gj–gl (Table 1): Orders metadata windows — quotes, orders, customer invoices.
 // Edit here, then `node scripts/generate-windows.mjs universal-orders` and `pnpm modules:catalog`.
 
 const ORDER_TYPES = [
@@ -16,6 +16,15 @@ const QUOTE_STATUS = [
   ['EXPIRED', 'Expired'],
   ['CONVERTED', 'Converted'],
   ['CANCELLED', 'Cancelled'],
+];
+
+const INVOICE_STATUS = [
+  ['DRAFT', 'Draft'],
+  ['ISSUED', 'Issued'],
+  ['PARTIALLY_PAID', 'Partially paid'],
+  ['PAID', 'Paid'],
+  ['VOID', 'Void'],
+  ['DISPUTED', 'Disputed'],
 ];
 
 const ORDER_STATUS = [
@@ -94,6 +103,18 @@ export function windowSource(builderFor) {
     field(SQ, 'line-quoted-quantity', 'Line quantity', 'NUMBER', { required: true, scale: 6, defaultValue: '1.000000', writePermission: 'orders:quotes:manage' }),
     field(SQ, 'line-uom-id', 'Line unit of measure', 'REFERENCE', { required: true, ref: 'uom-ref', writePermission: 'orders:quotes:manage' }),
     field(SQ, 'line-unit-price-minor', 'Line unit price (minor)', 'INTEGER', { required: true, writePermission: 'orders:quotes:manage' }),
+  ];
+
+  const CI = 'orders.customer-invoices';
+  const ciFields = [
+    field(CI, 'invoice-number', 'Invoice number', 'TEXT', { readOnly: true }),
+    field(CI, 'order-id', 'Sales order', 'TEXT', { required: true, help: 'Sales order UUID to bill shipped quantities.', writePermission: 'orders:invoices:manage' }),
+    field(CI, 'customer-name', 'Customer name', 'TEXT', { readOnly: true }),
+    field(CI, 'currency-code', 'Currency', 'TEXT', { readOnly: true }),
+    field(CI, 'due-date', 'Due date', 'DATETIME', { required: true, writePermission: 'orders:invoices:manage' }),
+    field(CI, 'notes', 'Notes', 'TEXT', { writePermission: 'orders:invoices:manage' }),
+    field(CI, 'status', 'Status', 'SELECT', { readOnly: true, ref: 'invoice-statuses' }),
+    field(CI, 'total-amount', 'Total (minor units)', 'TEXT', { readOnly: true }),
   ];
 
   return {
@@ -180,6 +201,36 @@ export function windowSource(builderFor) {
             ],
           }),
         ], { search: ['order-number', 'customer-name'], sort: 'order-number' }),
+      ]),
+    ),
+    'orders-customer-invoices': window(
+      'orders-customer-invoices',
+      'Customer invoices',
+      'Customer invoices',
+      'Issue and review customer AR invoices against shipped order quantities.',
+      'orders:read',
+      dictionary('orders-customer-invoices', 'Customer invoices', CI, [entity(CI, 'Customer invoices')], ciFields, [], [
+        values('invoice-statuses', INVOICE_STATUS),
+      ], [
+        view('customer-invoices', 'Customer invoices', [
+          tab('inv-header', 'Invoice', 0, CI, [
+            ['invoice-number', 4, 'summary'],
+            ['status', 4, 'summary'],
+            ['total-amount', 4, 'summary'],
+            ['order-id', 8, 'source'],
+            ['customer-name', 8, 'parties'],
+            ['currency-code', 3, 'terms'],
+            ['due-date', 6, 'terms'],
+            ['notes', 12, 'terms'],
+          ], ciFields, {
+            sections: [
+              section('summary', 'Summary', 0),
+              section('source', 'Sales order', 1),
+              section('parties', 'Customer', 2),
+              section('terms', 'Billing terms', 3),
+            ],
+          }),
+        ], { search: ['invoice-number', 'customer-name'], sort: 'invoice-number' }),
       ]),
     ),
   };

@@ -1,0 +1,279 @@
+{
+  "contractVersion": "1.0",
+  "window": {
+    "route": "/orders",
+    "label": "Customer invoices",
+    "description": "Issue and review customer AR invoices against shipped order quantities.",
+    "readPermission": "orders:read"
+  },
+  "definition": {
+    "kind": "APPLICATION_DICTIONARY",
+    "contractVersion": "1.0",
+    "moduleKey": "universal-orders",
+    "entityKey": "orders-customer-invoices",
+    "surfaceKey": "orders-customer-invoices",
+    "title": "Customer invoices",
+    "dictionary": {
+      "packageKey": "orders-customer-invoices-module-baseline",
+      "name": "Customer invoices",
+      "version": "1.0.0",
+      "moduleKey": "universal-orders",
+      "targetEntityKey": "orders.customer-invoices",
+      "entities": [
+        {
+          "entityKey": "orders.customer-invoices",
+          "moduleKey": "universal-orders",
+          "label": "Customer invoices",
+          "ownership": "MODULE_CORE",
+          "primaryKeyField": "id",
+          "isVersioned": true,
+          "isAuditLogged": true,
+          "isSoftDeletable": false
+        }
+      ],
+      "fields": [
+        {
+          "fieldKey": "invoice-number",
+          "entityKey": "orders.customer-invoices",
+          "label": "Invoice number",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "order-id",
+          "entityKey": "orders.customer-invoices",
+          "label": "Sales order",
+          "type": "TEXT",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "helpText": "Sales order UUID to bill shipped quantities.",
+          "writePermission": "orders:invoices:manage"
+        },
+        {
+          "fieldKey": "customer-name",
+          "entityKey": "orders.customer-invoices",
+          "label": "Customer name",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "currency-code",
+          "entityKey": "orders.customer-invoices",
+          "label": "Currency",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "due-date",
+          "entityKey": "orders.customer-invoices",
+          "label": "Due date",
+          "type": "DATETIME",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "writePermission": "orders:invoices:manage"
+        },
+        {
+          "fieldKey": "notes",
+          "entityKey": "orders.customer-invoices",
+          "label": "Notes",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "writePermission": "orders:invoices:manage"
+        },
+        {
+          "fieldKey": "status",
+          "entityKey": "orders.customer-invoices",
+          "label": "Status",
+          "type": "SELECT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "invoice-statuses"
+        },
+        {
+          "fieldKey": "total-amount",
+          "entityKey": "orders.customer-invoices",
+          "label": "Total (minor units)",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        }
+      ],
+      "relationships": [],
+      "references": [
+        {
+          "referenceKey": "invoice-statuses",
+          "referenceType": "VALUE_LIST",
+          "staticValues": [
+            {
+              "value": "DRAFT",
+              "label": "Draft"
+            },
+            {
+              "value": "ISSUED",
+              "label": "Issued"
+            },
+            {
+              "value": "PARTIALLY_PAID",
+              "label": "Partially paid"
+            },
+            {
+              "value": "PAID",
+              "label": "Paid"
+            },
+            {
+              "value": "VOID",
+              "label": "Void"
+            },
+            {
+              "value": "DISPUTED",
+              "label": "Disputed"
+            }
+          ]
+        }
+      ],
+      "validationRules": [],
+      "views": [
+        {
+          "viewKey": "customer-invoices",
+          "label": "Customer invoices",
+          "mode": "LIST",
+          "device": "ALL",
+          "searchFields": [
+            "invoice-number",
+            "customer-name"
+          ],
+          "defaultSortField": "invoice-number",
+          "defaultSortDirection": "DESC",
+          "tabs": [
+            {
+              "tabKey": "inv-header",
+              "label": "Invoice",
+              "position": 0,
+              "level": 0,
+              "targetEntityKey": "orders.customer-invoices",
+              "sections": [
+                {
+                  "sectionKey": "summary",
+                  "label": "Summary",
+                  "collapsible": false,
+                  "defaultCollapsed": false,
+                  "position": 0
+                },
+                {
+                  "sectionKey": "source",
+                  "label": "Sales order",
+                  "collapsible": false,
+                  "defaultCollapsed": false,
+                  "position": 1
+                },
+                {
+                  "sectionKey": "parties",
+                  "label": "Customer",
+                  "collapsible": false,
+                  "defaultCollapsed": false,
+                  "position": 2
+                },
+                {
+                  "sectionKey": "terms",
+                  "label": "Billing terms",
+                  "collapsible": false,
+                  "defaultCollapsed": false,
+                  "position": 3
+                }
+              ],
+              "fields": [
+                {
+                  "fieldKey": "invoice-number",
+                  "position": 0,
+                  "span": 4,
+                  "componentKey": "text-input",
+                  "sectionKey": "summary"
+                },
+                {
+                  "fieldKey": "status",
+                  "position": 1,
+                  "span": 4,
+                  "componentKey": "select",
+                  "sectionKey": "summary"
+                },
+                {
+                  "fieldKey": "total-amount",
+                  "position": 2,
+                  "span": 4,
+                  "componentKey": "text-input",
+                  "sectionKey": "summary"
+                },
+                {
+                  "fieldKey": "order-id",
+                  "position": 3,
+                  "span": 8,
+                  "componentKey": "text-input",
+                  "sectionKey": "source"
+                },
+                {
+                  "fieldKey": "customer-name",
+                  "position": 4,
+                  "span": 8,
+                  "componentKey": "text-input",
+                  "sectionKey": "parties"
+                },
+                {
+                  "fieldKey": "currency-code",
+                  "position": 5,
+                  "span": 3,
+                  "componentKey": "text-input",
+                  "sectionKey": "terms"
+                },
+                {
+                  "fieldKey": "due-date",
+                  "position": 6,
+                  "span": 6,
+                  "componentKey": "datetime-input",
+                  "sectionKey": "terms"
+                },
+                {
+                  "fieldKey": "notes",
+                  "position": 7,
+                  "span": 12,
+                  "componentKey": "text-input",
+                  "sectionKey": "terms"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "navigation": [],
+      "actions": [],
+      "messages": []
+    }
+  }
+}
