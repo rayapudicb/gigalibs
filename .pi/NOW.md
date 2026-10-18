@@ -22,6 +22,7 @@ redirect the owner to other product tracks in chat.
 - **Committed:** F2.5 `1fadfa4` ([WI-OI-120fv](tasks/WI-OI-120fv.md)); F2.7 [WI-OI-120fw](tasks/WI-OI-120fw.md); Inventory migration **5**.
 - **Committed:** F2.8 `930272f` ([WI-OI-120fx](tasks/WI-OI-120fx.md)) — period close blocked when inventory posting reconciliation has gaps.
 - **Committed:** F1.3 `de671f0` ([WI-OI-120fy](tasks/WI-OI-120fy.md)) — receipt `complete` on `@gigalibs/document-lifecycle`.
+- **Committed:** F1.4 `e7eaa3d` ([WI-OI-120fz](tasks/WI-OI-120fz.md)) — period-lock guard on receipt complete.
 
 ## Running on UAT
 
@@ -74,10 +75,11 @@ redirect the owner to other product tracks in chat.
 | **F2.7** relay HTTP cert | `1fadfa4` | Isolated proof only (`PROOF_DATABASE_URL`) |
 | **F2.8** period-close gate | `930272f` | Deploy with F2 stack; prove lock fails when reconciliation gaps exist |
 | **F1.3** receipt lifecycle | `de671f0` | Ships with Inventory deploy |
-| **F1.4** period-lock on complete | Done (this commit) | Uses module-host `FINANCIAL_OPERATIONS_DATABASE_URL` |
+| **F1.4** period-lock on complete | `e7eaa3d` | Uses module-host `FINANCIAL_OPERATIONS_DATABASE_URL` |
 
 **Owner next (deploy):** release branch tip (**F2 through F2.8 + F1.3**); [WI-OI-120fp](tasks/WI-OI-120fp.md) — agents do not run `--deploy`.
-**Agent next (code):** F2.9 accounting review (human) or UAT deploy evidence after owner ships **`de671f0`**+ with F1.4.
+**Owner next (deploy):** release **`e7eaa3d`**+ ([WI-OI-120fp](tasks/WI-OI-120fp.md)).
+**Agent next (code):** F2.9 accounting review (human) or UAT deploy evidence support.
 
 **W2 is decided (owner, 2026-10-18):**
 - enterprise accounts only: an administrator creates each user and shares the username and password;

@@ -1,7 +1,7 @@
 # Table 2 — architectural engines (ADR-0033 / WI-OI-120)
 
 **Owner rule (2026-10-18):** Finish this list (code + UAT evidence) before any other product track.  
-**Canonical deploy tip for UAT:** release commit **`de671f0`** or later on `feat/gigaops-convergence-core` (F1 through F2.8).
+**Canonical deploy tip for UAT:** release commit **`e7eaa3d`** or later on `feat/gigaops-convergence-core` (F1 through F2.8).
 
 Legend: **Code** = merged in git on the Table 2 branch. **UAT** = owner deploy + recorded evidence in `.pi/work/WI-OI-120.md`.
 
@@ -19,7 +19,7 @@ Legend: **Code** = merged in git on the Table 2 branch. **UAT** = owner deploy +
 | 7 | F1.1 / E1 | `@gigalibs/document-lifecycle` package | Done `0d29f8f` | — | [WI-OI-120fl](tasks/WI-OI-120fl.md) |
 | 8 | F1.2 / E1 | Finance journal drafts on lifecycle runner | Done `0d29f8f` | **Open** | [WI-OI-120fm](tasks/WI-OI-120fm.md); prove on UAT after deploy |
 | 9 | F1.3 | Inventory receipt (or other doc) lifecycle graph | Done `de671f0` | — | [WI-OI-120fy](tasks/WI-OI-120fy.md); `complete` via document-lifecycle |
-| 10 | F1.4 | Period-lock guard on financial transitions (cross-module) | Done | **Open** | [WI-OI-120fz](tasks/WI-OI-120fz.md); receipt complete + Finance drafts |
+| 10 | F1.4 | Period-lock guard on financial transitions (cross-module) | Done `e7eaa3d` | **Open** | [WI-OI-120fz](tasks/WI-OI-120fz.md); receipt complete + Finance drafts |
 | **F2 — Posting & reconciliation (D3)** |
 | 11 | F2.1 / E3 | Inventory outbox → Finance inbox relay | Done `8a5b487` | **Open** | [WI-OI-120fq](tasks/WI-OI-120fq.md); relay keys + live delivery |
 | 12 | F2.2 / E2 | Posting policy + book/period + GL handoff | Done `14845ae` | **Open** | [WI-OI-120fr](tasks/WI-OI-120fr.md) |
