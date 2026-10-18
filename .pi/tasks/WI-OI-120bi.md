@@ -1,6 +1,6 @@
 # WI-OI-120bi: Supervisor sign-off closes a completed work order
 
-- **Status:** In progress (Cursor, 2026-10-18)
+- **Status:** Built (release worktree `38aa3120`; UAT deploy pending owner)
 - **Work item:** WI-OI-120 (Phase 1, W1, step 1.3). Evidence goes in `.pi/work/WI-OI-120.md`.
 - **Size:** M (one release, with a migration)
 
@@ -149,3 +149,23 @@ re-check of the fix commit is enough; a new full review is not needed.
 - before the deploy, read-only: CMMS is at 20, and the three sign-off columns do not exist;
 - after the deploy: CMMS is at 21;
 - the journey's sign-off step passes with no new blocker.
+
+## Release prepared (2026-10-18, not deployed)
+
+- **Main product tip:** `b8ded67e` (`72837662` + security fix).
+- **Release worktree:** `/Users/rayapudi/dev/gigalibs-release-wf120u`, branch `release/wi120u-workforce`, commit
+  **`38aa3120`** (CMMS-only cherry from `b8ded67e`; no Table 2).
+- **Identity:** `38aa3120ebfcf780f33f0b6e59dbfd81d24c7d47` /
+  `4cb1f260d82bf347975f8e45b205cd529fb5d20756cc8f38652242d5e607b19d` /
+  `local-20261018T082458Z-38aa3120ebfc-4cb1f260d82b`.
+- **Images:** tag `38aa3120ebfc-4cb1f260d82b` (five builds completed). Content check: `sign-off` in `cmms-api`
+  controller bundle.
+- **Pre-deploy read-only:** CMMS migration **20**; **`signed_off_at` absent** (0 columns).
+- **Backup:** `gigalibs_backup_20261018_084749Z` (predecessor running **`3bc0c1f`**).
+- **Deploy tool:** retargeted to **`WI-OI-120bi`**; `deploy-uat.test.mjs` **33 pass**; **`deploy-uat.sh --check`** →
+  **CHECK PASSED** (nothing deployed).
+- **UAT still running:** **`3bc0c1f46c27-b896d4b59517`** (owner has not run `--deploy` yet).
+- **Owner deploy:**
+  `cd /Users/rayapudi/dev/gigalibs-release-wf120u && bash .pi/handoff/proof-scripts/deploy-uat.sh --deploy --backup gigalibs_backup_20261018_084749Z`
+- **Rollback:** keep **`3bc0c1f`** images; backup above; if DB reaches 21, run `000021_work_order_sign_off.down.sql`
+  before rolling images back.

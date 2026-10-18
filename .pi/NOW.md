@@ -14,7 +14,8 @@ keeps the full rules.
 
 **Owner, 2026-10-18 (latest): hand over to Cursor.**
 1. Finish the pending CMMS work, in order:
-   - [WI-OI-120bi](tasks/WI-OI-120bi.md), supervisor sign-off. Proposed; it needs "approved 120bi".
+   - [WI-OI-120bi](tasks/WI-OI-120bi.md): **built** on main (`b8ded67e`); **release ready** on worktree
+     **`38aa3120`** (`deploy-uat.sh --check` passed). **Owner deploy** still pending (UAT is **`3bc0c1f`**).
    - [WI-OI-120bj](tasks/WI-OI-120bj.md), the AR page's fake verification. Proposed.
    - W1-B, CMMS unit and site scope.
 2. Then the owner's Table 1 audit prompt in detail: [TABLE-1-AUDIT-PROMPT-2026-10-18.md](handoff/TABLE-1-AUDIT-PROMPT-2026-10-18.md).
@@ -37,13 +38,16 @@ keeps the full rules.
 ## Running on UAT
 
 - **Release `3bc0c1f`** (owner deploy 2026-10-18), tag `3bc0c1f46c27-b896d4b59517`: `27450b7` plus WI-OI-120bh.
-  `27450b7` was `fd63d93` (WI-OI-120bf) plus WI-OI-120bg; `fd63d93` was `1bb0193` (W1-A, WI-OI-120be) plus WI-OI-120bf.
-  CMMS is at migration 20, and every relay is ok.
-- **Last journey `dg84u3`** (on `3bc0c1f`): 56 findings (33 layout, 17 accessibility, 5 UX, 1 blocker).
-  - The technician raises a request, the supervisor assigns a work order, and the technician completes it, all for
-    real.
-  - The one blocker is the known gap: supervisor sign-off is not built yet (WI-OI-120bi).
+  CMMS is at migration **20**, and every relay is ok.
+- **Last journey `dg84u3`** (on `3bc0c1f`): 56 findings (33 layout, 17 accessibility, 5 UX, 1 blocker) — supervisor
+  sign-off not built on this release.
 - **Rollback:** `27450b7` (images kept), backup `gigalibs_backup_20261018_062008Z`.
+
+## Ready to deploy (owner, WI-OI-120bi)
+
+- **Release worktree** `38aa3120` / tag `38aa3120ebfc-4cb1f260d82b`; backup **`gigalibs_backup_20261018_084749Z`**.
+- Deploy from `/Users/rayapudi/dev/gigalibs-release-wf120u` (see [WI-OI-120bi](tasks/WI-OI-120bi.md)). After deploy:
+  CMMS migration **21**, then `pnpm e2e:uat:journey`.
 
 ## Built, not yet on UAT
 
