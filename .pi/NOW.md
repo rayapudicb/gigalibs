@@ -62,8 +62,10 @@ keeps the full rules.
 2. **WI-OI-120ge** — **Done** in git **`0031a2f4`** (pushed); `pnpm audit:configuration-deployment-profile` passes.
 3. **WI-OI-120gf** — **blocked** on **M-AR0** (`modules/accounts-receivable/module.yaml`: API out of default build until SDK rebuild).
 4. **WI-OI-120gg** — **Built** in git **`cdcbf2c9`** (pushed): vendor party guard mig **4**.
-5. **WI-OI-120gh** — **Built (local, uncommitted):** `procurement-purchase-orders` metadata window + record routes + `/procurement` UI; API tests pass; publish window in tenant config to see it on compose.
-6. **Next code** — parties on **orders** (Table 1 row 3) or **WI-OI-120gf** when M-AR0 unblocks.
+5. **WI-OI-120gh** — **Built** in git **`b9e29301`** (local; push when owner asks).
+6. **WI-OI-120gi** — **Built** in git **`40601084`** (with 120gj): orders mig **4** customer party guard + SO dictionary **Customer** field.
+7. **WI-OI-120gj** — **Built** in git **`40601084`**: orders first metadata window (`orders-sales-orders`) + record routes + live `/orders` page.
+8. **Next code** — more orders windows (quotes, fulfillment) or **WI-OI-120gf** when M-AR0 unblocks; **120gd** still needs journey password.
 
 ## Built, not yet on UAT
 

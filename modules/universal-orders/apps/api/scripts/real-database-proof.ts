@@ -71,7 +71,7 @@ const postgres = await startThrowawayPostgres(`gigalibs-orders-proof-${process.p
 const db = new DatabaseService({
   databaseUrl: postgres.runtimeUrl,
   databasePoolSize: 5,
-  expectedMigrationVersion: 2,
+  expectedMigrationVersion: 4,
   platformContextAudience: 'proof',
   platformContextPublicKey: 'proof',
   corsOrigins: [],
@@ -104,6 +104,13 @@ try {
   try {
     const sentinelRes = await adminClient.query('SELECT value FROM public.unrelated_upgrade_sentinel WHERE id = 1');
     assert.equal(sentinelRes.rows[0].value, 'preserve-me');
+
+    await adminClient.query(
+      `INSERT INTO public.parties (
+        id, tenant_id, code, legal_name, display_name, party_type, status
+      ) VALUES ($1, $2, $3, $4, $5, 'ORGANIZATION', 'ACTIVE')`,
+      [customerPartyId, 'tenant-alpha', 'CUST-PROOF-1', 'Northwind Traders', 'Northwind Traders'],
+    );
 
     const tablesRes = await adminClient.query(`
       SELECT table_name FROM information_schema.tables 

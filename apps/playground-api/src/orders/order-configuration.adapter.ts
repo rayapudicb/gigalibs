@@ -160,6 +160,17 @@ const ORDER_DESCRIPTOR = ModuleAdapterDescriptorV1Schema.parse({
         maskOnDisplay: false,
       },
       {
+        fieldKey: 'customer-id',
+        entityKey: 'orders.sales_order',
+        label: 'Customer',
+        type: 'TEXT',
+        required: true,
+        readOnly: false,
+        isSystemLocked: true,
+        classification: 'INTERNAL',
+        maskOnDisplay: false,
+      },
+      {
         fieldKey: 'status',
         entityKey: 'orders.sales_order',
         label: 'Order Status',
@@ -210,6 +221,16 @@ const ORDER_DESCRIPTOR = ModuleAdapterDescriptorV1Schema.parse({
           operator: 'IS_NOT_NULL',
         },
       },
+      {
+        ruleKey: 'rule-customer-party-required',
+        label: 'Customer Party Required',
+        errorMessage: 'Select an active customer from workspace parties',
+        severity: 'ERROR',
+        condition: {
+          field: 'customer-id',
+          operator: 'IS_NOT_NULL',
+        },
+      },
     ],
     views: [
       {
@@ -242,16 +263,23 @@ const ORDER_DESCRIPTOR = ModuleAdapterDescriptorV1Schema.parse({
                 componentKey: 'text-input',
               },
               {
-                fieldKey: 'status',
+                fieldKey: 'customer-id',
                 sectionKey: 'core-section',
                 position: 1,
+                span: 6,
+                componentKey: 'text-input',
+              },
+              {
+                fieldKey: 'status',
+                sectionKey: 'core-section',
+                position: 2,
                 span: 6,
                 componentKey: 'select',
               },
               {
                 fieldKey: 'total-amount',
                 sectionKey: 'core-section',
-                position: 2,
+                position: 3,
                 span: 6,
                 componentKey: 'text-input',
               },

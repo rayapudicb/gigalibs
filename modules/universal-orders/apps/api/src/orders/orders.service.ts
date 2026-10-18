@@ -16,6 +16,7 @@ import {
 } from '@gigalibs/contracts';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { DatabaseService } from '../database.service.js';
+import { requireActiveCustomerParty } from './party-reference.js';
 
 @Injectable()
 export class OrderService {
@@ -29,6 +30,8 @@ export class OrderService {
     input: CreateSalesQuoteInputV1,
   ): Promise<SalesQuoteV1> {
     return this.database.withTenantTransaction(tenantId, async (client) => {
+      await requireActiveCustomerParty(client, tenantId, input.customerPartyId);
+
       let subtotal = 0n;
       let discountTotal = 0n;
       let taxTotal = 0n;
@@ -289,6 +292,8 @@ export class OrderService {
     input: CreateSalesOrderInputV1,
   ): Promise<SalesOrderV1> {
     return this.database.withTenantTransaction(tenantId, async (client) => {
+      await requireActiveCustomerParty(client, tenantId, input.customerPartyId);
+
       let subtotal = 0n;
       let discountTotal = 0n;
       let taxTotal = 0n;
@@ -391,6 +396,28 @@ export class OrderService {
       );
 
       return this.mapOrder(order);
+    });
+  }
+
+  async listSalesOrders(principal: { tenantId: string }): Promise<SalesOrderV1[]> {
+    return this.database.withTenantTransaction(principal.tenantId, async (client) => {
+      const res = await client.query<{ id: string }>(
+        `SELECT id FROM gigalibs_orders.sales_orders WHERE tenant_id = $1 ORDER BY created_at DESC`,
+        [principal.tenantId],
+      );
+      const items: SalesOrderV1[] = [];
+      for (const row of res.rows) {
+        const orderRes = await client.query(`SELECT * FROM gigalibs_orders.sales_orders WHERE tenant_id = $1 AND id = $2`, [
+          principal.tenantId,
+          row.id,
+        ]);
+        const lines = await client.query(
+          `SELECT * FROM gigalibs_orders.sales_order_lines WHERE tenant_id = $1 AND order_id = $2 ORDER BY line_number ASC`,
+          [principal.tenantId, row.id],
+        );
+        items.push(this.mapOrder(orderRes.rows[0], lines.rows));
+      }
+      return items;
     });
   }
 
@@ -1054,6 +1081,8 @@ export class OrderService {
     input: CreateCustomerCreditMemoInputV1,
   ): Promise<CustomerCreditMemoV1> {
     return this.database.withTenantTransaction(tenantId, async (client) => {
+      await requireActiveCustomerParty(client, tenantId, input.customerPartyId);
+
       let totalAmount = 0n;
       const creditMemoNumber = `CM-${Date.now().toString().slice(-6)}`;
 

@@ -802,6 +802,7 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
     "code": "inventory:warehouses:manage",
     "entries": [
       "universal-inventory",
+      "universal-orders",
       "universal-procurement"
     ]
   },
@@ -1127,6 +1128,7 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
     "entries": [
       "product-catalogue",
       "universal-inventory",
+      "universal-orders",
       "universal-procurement"
     ]
   },
@@ -1444,6 +1446,7 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
     "entries": [
       "product-catalogue",
       "universal-inventory",
+      "universal-orders",
       "universal-procurement"
     ]
   },

@@ -5,15 +5,21 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import pg from 'pg';
 
-const MIGRATION = join(
-  dirname(fileURLToPath(import.meta.url)),
-  '../../../db/migrations/000001_orders_fulfillment_foundation.up.sql',
-);
+const MIGRATIONS_DIR = join(dirname(fileURLToPath(import.meta.url)), '../../../db/migrations');
+const MANIFEST = join(dirname(fileURLToPath(import.meta.url)), '../../../db/runtime-manifest.txt');
 
 export interface ThrowawayPostgres {
   readonly adminUrl: string;
   readonly runtimeUrl: string;
   stop(): void;
+}
+
+function migrationFiles(): string[] {
+  return readFileSync(MANIFEST, 'utf8')
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((name) => join(MIGRATIONS_DIR, name));
 }
 
 /** A new anonymous-volume PostgreSQL. It cannot read or modify the owner's local database. */
@@ -62,7 +68,21 @@ export async function startThrowawayPostgres(name: string): Promise<ThrowawayPos
       'CREATE TABLE public.unrelated_upgrade_sentinel (id integer PRIMARY KEY, value text NOT NULL)',
     );
     await admin.query("INSERT INTO public.unrelated_upgrade_sentinel VALUES (1, 'preserve-me')");
-    await admin.query(readFileSync(MIGRATION, 'utf8'));
+    await admin.query(`
+      CREATE TABLE public.parties (
+        id uuid PRIMARY KEY,
+        tenant_id varchar(64) NOT NULL,
+        code varchar(64) NOT NULL,
+        legal_name varchar(255) NOT NULL,
+        display_name varchar(255) NOT NULL,
+        party_type varchar(32) NOT NULL,
+        status varchar(32) NOT NULL DEFAULT 'ACTIVE',
+        archived_at timestamptz
+      )
+    `);
+    for (const migration of migrationFiles()) {
+      await admin.query(readFileSync(migration, 'utf8'));
+    }
     await admin.query(
       `CREATE ROLE orders_runtime LOGIN PASSWORD '${runtimePassword}' NOSUPERUSER NOBYPASSRLS`,
     );
