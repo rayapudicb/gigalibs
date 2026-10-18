@@ -185,3 +185,24 @@ re-check of the fix commit is enough; a new full review is not needed.
   steps passed. **Re-run journey** after e2e fix in `journey-tenant-to-value.spec.ts` (WI-OI-120bi).
 - **Prior:** `dg84u3` on **`3bc0c1f`** — 56 findings, 1 blocker (no sign-off on UAT).
 - **Journey `dnnzu9` (2026-10-18):** sign-off **POST 500** — root cause: `work_order_events` CHECK omitted **`SIGNED_OFF`**. Fix: migration **`000022`** (pin **22**).
+
+## Independent Security review of `361f160e` (2026-10-18, migration 22 + bundled 120bk)
+
+Read-only review by Composer (producer was Cursor; separate session). Scope: migration **`000022`**, CMMS pin **22**, and
+**WI-OI-120bk** RBAC gate in the same commit.
+
+**Migration 22:** Extends `work_order_events_event_type_check` with **`SIGNED_OFF`** and ledger row **22** only. No new
+columns, routes, or permissions. Down migration restores the prior CHECK (sign-off events would be invalid if any existed;
+none expected on UAT before fix). **Approved** for deploy after UAT backup.
+
+**120bk (same release):** `SCOPE_ENFORCING_MODULES` and `PER_ASSIGNMENT_SCOPE_MODULES` for `asset-maintenance`. Default
+Maintenance roles still **refuse** unit/place assignment (bundled Workforce/maps/platform codes). Pure CMMS custom roles
+may be held at units/places; CMMS API scope predicates remain fail-closed (`FALSE` on empty or DENIED). **Risk accepted:**
+tenants with no unit grants today (UAT read-only, 2026-10-17) should not lose access until admins assign scoped roles.
+
+**Tests (main `361f160e`):** migration 22 down spec, sign-off service spec, contracts RBAC suite (71), migration pins at 22.
+
+**Release prepared (not deployed):** release worktree **`8df9960a`**, tag **`8df9960a9366-5761295c67a6`**, predecessor
+**`38aa3120`** (current UAT). Deploy tool retargeted; `deploy-uat.test.mjs` pass; `--check` pass (images still **`38aa3120`**
+until owner rebuilds). **Owner:** fresh backup (replace `gigalibs_backup_20261018_101400Z` in deploy tool if the name
+differs), build/push local images for **`8df9960a9366-5761295c67a6`**, then `--deploy`.

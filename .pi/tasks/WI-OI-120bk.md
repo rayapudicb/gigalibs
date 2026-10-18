@@ -32,7 +32,8 @@ custom role.
 - [x] `SCOPE_ENFORCING_MODULES` includes `asset-maintenance` with `units: true`, `places: true`.
 - [x] Context-coverage test passes (every CMMS-checked code covered by minted context).
 - [x] Journey proves North-scoped CMMS custom role does not see South work orders (git; needs W1-B on UAT to pass live).
-- [ ] Security review recorded; owner deploy from release worktree; evidence in `.pi/work/WI-OI-120.md`.
+- [x] Security review recorded (bundled with **`361f160e`** / release **`8df9960a`**; see [WI-OI-120bi](WI-OI-120bi.md) § migration 22 review).
+- [ ] Owner deploy from release worktree; journey North/South scope + sign-off **0 blockers** on UAT; evidence in `.pi/work/WI-OI-120.md`.
 
 ## Stop and ask if
 

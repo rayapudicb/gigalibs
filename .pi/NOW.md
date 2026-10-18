@@ -49,6 +49,9 @@ Then: [Table 1 audit](handoff/TABLE-1-AUDIT-PROMPT-2026-10-18.md). Ask owner: **
   event CHECK; fix **migration 22** in git, not on UAT yet). Prior **`dmrus2`**: e2e sign-off UI; **`dg84u3`**: sign-off not deployed.
 - **Rollback:** **`3bc0c1f`** images kept; backup **`gigalibs_backup_20261018_084749Z`** (before 120bi); down **`000021`**
   if rolling back after mig 21.
+- **Next release (prepared, not deployed):** release worktree commit **`8df9960a`**, tag **`8df9960a9366-5761295c67a6`**
+  (CMMS mig **22** + **WI-OI-120bk** + journey; predecessor **`38aa3120`** on UAT). Owner: backup → rebuild images →
+  `deploy-uat.sh --deploy` from `/Users/rayapudi/dev/gigalibs-release-wf120u`.
 
 ## Built, not yet on UAT
 
