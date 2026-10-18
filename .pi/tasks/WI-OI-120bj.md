@@ -1,6 +1,6 @@
 # WI-OI-120bj: Remove the AR invoice page's fake "Cryptographic Audit Verified"
 
-- **Status:** Built (2026-10-18); ships with Phase 1 CMMS release web image — UAT deploy pending
+- **Status:** On UAT (2026-10-18, web tag `1d8d2634b8f2-c6148e918ff0`)
 - **Work item:** WI-OI-120 (zero-mock rule, plan v3 step 0.4 follow-up). Evidence goes in `.pi/work/WI-OI-120.md`.
 - **Size:** S
 

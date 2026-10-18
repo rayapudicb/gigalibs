@@ -1,6 +1,6 @@
 # WI-OI-120bi: Supervisor sign-off closes a completed work order
 
-- **Status:** On UAT (owner deploy 2026-10-18, tag `38aa3120ebfc-4cb1f260d82b`; journey pending)
+- **Status:** On UAT (owner deploy 2026-10-18, tag `1d8d2634b8f2-c6148e918ff0`, CMMS mig **22**; journey pending)
 - **Work item:** WI-OI-120 (Phase 1, W1, step 1.3). Evidence goes in `.pi/work/WI-OI-120.md`.
 - **Size:** M (one release, with a migration)
 
@@ -202,7 +202,10 @@ tenants with no unit grants today (UAT read-only, 2026-10-17) should not lose ac
 
 **Tests (main `361f160e`):** migration 22 down spec, sign-off service spec, contracts RBAC suite (71), migration pins at 22.
 
-**Release prepared (not deployed):** release worktree **`1d8d2634`**, tag **`1d8d2634b8f2-c6148e918ff0`**, predecessor
-**`38aa3120`** (current UAT). Includes **120bj** web fix. Deploy tool retargeted to **`1d8d2634`**. **Owner:** backup
-(matching `gigalibs_backup_20261018_102100Z` or update deploy tool), rebuild images, `--deploy`. Batch acceptance:
-[PHASE-1-CM1-CHECKLIST.md](PHASE-1-CM1-CHECKLIST.md).
+## On UAT (owner deploy, 2026-10-18, Phase 1 batch)
+
+- **Tag:** **`1d8d2634b8f2-c6148e918ff0`** — **DEPLOY SMOKE PASSED** (11 migrations, 11 services healthy).
+- **CMMS migration:** **22** (read-only: `schema_migrations` top version **22**).
+- **Backup used:** `gigalibs_backup_20261018_112331Z` (predecessor **`38aa3120`**).
+- **Rollback:** **`38aa3120`** images kept; down **`000022`** if rolling back after mig 22.
+- **Next:** journey on UAT → **0 blockers** on sign-off → owner **Done** ([PHASE-1-CM1-CHECKLIST.md](PHASE-1-CM1-CHECKLIST.md)).

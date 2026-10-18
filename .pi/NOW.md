@@ -18,9 +18,9 @@ keeps the full rules.
 
 | # | Item | Card | Status |
 |---|------|------|--------|
-| 1 | Supervisor sign-off + journey **0 blockers** | [WI-OI-120bi](tasks/WI-OI-120bi.md) | On UAT mig **21**; git has mig **22** (`SIGNED_OFF`); journey **`dnnzu9`**: sign-off **500** until deploy |
-| 2 | Zero-mock detour (optional before W1-B) | [WI-OI-120bj](tasks/WI-OI-120bj.md) | **Built** — AR invoice; batch with CMMS release |
-| 3 | Unit/site scope **on** (North ≠ South) | [WI-OI-120bk](tasks/WI-OI-120bk.md) | **Approved**; Built in git — Security + deploy with 120bi release |
+| 1 | Supervisor sign-off + journey **0 blockers** | [WI-OI-120bi](tasks/WI-OI-120bi.md) | **On UAT** `1d8d2634`, CMMS mig **22** — run journey → owner **Done** |
+| 2 | Zero-mock detour (optional before W1-B) | [WI-OI-120bj](tasks/WI-OI-120bj.md) | **On UAT** (web in `1d8d2634`) |
+| 3 | Unit/site scope **on** (North ≠ South) | [WI-OI-120bk](tasks/WI-OI-120bk.md) | **On UAT** — journey North/South step proves scope |
 | 4 | CMMS record routes on UAT (if not in same release as W1-B) | [WI-OI-120ag](tasks/WI-OI-120ag.md) | Built; ships with 1.3 releases |
 | 5 | R5 slices on UAT (aa/ab/ac + M-CM1 120t) | [WI-OI-120be](tasks/WI-OI-120be.md) W1-A | Partially on UAT via prior releases; W1-B completes scope |
 
@@ -44,16 +44,17 @@ Then: [Table 1 audit](handoff/TABLE-1-AUDIT-PROMPT-2026-10-18.md). Ask owner: **
 
 ## Running on UAT
 
-- **Release `38aa3120`** (owner deploy 2026-10-18), tag **`38aa3120ebfc-4cb1f260d82b`**: WI-OI-120bi supervisor
-  sign-off (CMMS migration **21**). Predecessor **`3bc0c1f`** (WI-OI-120bh).
-- **Deploy smoke:** DEPLOY SMOKE PASSED; web + cmms-api on tag above (verified read-only).
-- **Journey `dnnzu9`** (owner, 2026-10-18): 58 findings, **1 blocker** — POST sign-off **500** (`SIGNED_OFF` missing from
-  event CHECK; fix **migration 22** in git, not on UAT yet). Prior **`dmrus2`**: e2e sign-off UI; **`dg84u3`**: sign-off not deployed.
-- **Rollback:** **`3bc0c1f`** images kept; backup **`gigalibs_backup_20261018_084749Z`** (before 120bi); down **`000021`**
-  if rolling back after mig 21.
-- **Next release (prepared, not deployed):** release worktree **`1d8d2634`**, tag **`1d8d2634b8f2-c6148e918ff0`**
-  (CMMS mig **22**, **120bk**, **120bj**, journey; predecessor **`38aa3120`**). Batch checklist:
-  [PHASE-1-CM1-CHECKLIST.md](tasks/PHASE-1-CM1-CHECKLIST.md).
+- **Release `1d8d2634`** (owner deploy 2026-10-18), tag **`1d8d2634b8f2-c6148e918ff0`**: Phase 1 CMMS batch (mig **22**,
+  **120bk**, **120bj**). Predecessor **`38aa3120`**.
+- **Deploy smoke:** DEPLOY SMOKE PASSED (all migrations, 11 services healthy, `/api/health/ready` and `/login` 200).
+- **CMMS migration:** **22** (read-only verified after deploy).
+- **Backup used:** `gigalibs_backup_20261018_112331Z` (predecessor **`38aa3120`**).
+- **Rollback:** keep **`38aa3120`** images; backup above; down **`000022`** then **`000021`** if rolling back schema.
+- **Journey `e55hku` (2026-10-18, tag `1d8d2634`):** 71 findings, **7 blockers** — org + North CMMS role at units **201** OK;
+  technician CMMS **403** because the custom role was saved with **one** permission (`cmms.parts.read`): the journey loop
+  called `selectOption` per code on a React multi-select (each call replaced the prior choice). **Fixed in journey spec**
+  (one `selectOption([...])` + selected-count assert). Re-run journey → target **0 blockers**; no UAT redeploy for this fix.
+  Prior **`dujc47`**: 8 blockers (org not in force); **`dnnzu9`**: sign-off **500** on mig **21**.
 
 ## Built, not yet on UAT
 

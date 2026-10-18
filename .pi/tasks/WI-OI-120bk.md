@@ -1,6 +1,6 @@
 # WI-OI-120bk: W1-B — switch on CMMS unit and site scope (R5)
 
-- **Status:** Approved (owner, 2026-10-18); **Built** in git — `SCOPE_ENFORCING`, catalogue coverage test, journey North/South proof; Security review + owner UAT deploy pending
+- **Status:** On UAT (2026-10-18, tag `1d8d2634b8f2-c6148e918ff0`); journey North/South proof pending
 - **Work item:** WI-OI-120 (Phase 1 W1, step 1.1 second half). Evidence goes in `.pi/work/WI-OI-120.md`.
 - **Size:** M (one release; no CMMS migration)
 

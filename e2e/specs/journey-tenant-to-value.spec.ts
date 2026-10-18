@@ -41,7 +41,8 @@ const people: Record<string, Persona> = Object.fromEntries(
     ['admin', 'Ada Admin', 'TENANT_ADMIN'],
     ['supervisor', 'Sam Supervisor', 'MANAGER'],
     ['technician', 'Tia Technician', 'MEMBER'],
-    ['approver', 'Abe Approver', 'MANAGER'],
+    // WI-OI-120bk: a second TENANT_ADMIN approves the org structure (submitter cannot approve).
+    ['approver', 'Abe Approver', 'TENANT_ADMIN'],
     ['auditor', 'Aud Auditor', 'VIEWER'],
   ].map(([key, name, role]) => [key, { key: key!, name: `${name} ${RUN}`, role: role!, email: `journey.${key}.${RUN}@gigalibs.test` }]),
 );
@@ -141,7 +142,14 @@ async function fill(form: Locator, values: ReadonlyArray<[RegExp, string]>): Pro
     const match = values.find(([pattern]) => pattern.test(label));
     if (tag === 'SELECT') {
       const options = (await control.locator('option').allTextContents()).map((text) => text.trim());
-      const wanted = match ? options.find((option) => option.toLowerCase().includes(match[1].toLowerCase())) : undefined;
+      const wanted = match
+        ? options.find((option) => {
+            const needle = match[1];
+            if (typeof needle === 'string') return option.toLowerCase().includes(needle.toLowerCase());
+            if (needle instanceof RegExp) return needle.test(option);
+            return false;
+          })
+        : undefined;
       const current = await control.inputValue();
       if (wanted) await control.selectOption({ label: wanted });
       else if (!current && required) {
@@ -202,6 +210,129 @@ async function pin(page: Page, form: Locator): Promise<Locator> {
  * Submits a form with its own button, as a person would. A button hidden under another element is recorded and the
  * form is then submitted directly so the journey can carry on. Answers any error message the form shows.
  */
+/** Organization unit search picker (Structure, Access, Team role scope). */
+async function selectOptionContaining(select: Locator, fragment: string, what: string): Promise<void> {
+  const options = (await select.locator('option').allTextContents()).map((text) => text.trim());
+  const label = options.find((option) => option.includes(fragment));
+  if (!label) throw new Error(`${what} is not offered (offered: ${options.join(', ')})`);
+  await select.selectOption({ label });
+}
+
+async function pickOrgUnit(page: Page, fieldLabel: string, unitName: string): Promise<void> {
+  const search = page.getByLabel(fieldLabel, { exact: true }).filter({ visible: true }).first();
+  await search.fill(unitName);
+  await settle(page);
+  const result = page.getByLabel(`${fieldLabel} results`).getByRole('button').filter({ hasText: unitName }).first();
+  await result.scrollIntoViewIfNeeded();
+  await result.click({ timeout: 10_000 });
+  await settle(page);
+}
+
+/** After Publish, the UI may not POST Activate (reason/disabled timing); the API completes activation. */
+async function ensurePrimaryOrgInForce(page: Page, reason: string): Promise<void> {
+  const error = await page.evaluate(async (reason) => {
+    const base = '/api/control/tenants/current/organization';
+    const headers = { Accept: 'application/json', 'Content-Type': 'application/json' };
+    const trees = (await (await fetch(`${base}/trees`, { headers })).json()) as { items?: Array<{ id: string; kind: string }> };
+    const primary = (trees.items ?? []).find((tree) => tree.kind === 'PRIMARY') ?? trees.items?.[0];
+    if (!primary) return 'no primary organization tree';
+    const active = await fetch(`${base}/trees/${primary.id}/active`, { headers });
+    if (active.ok) return '';
+    const versions = (await (await fetch(`${base}/trees/${primary.id}/versions`, { headers })).json()) as {
+      items?: Array<{ id: string; status: string; lockVersion: number }>;
+    };
+    const list = versions.items ?? [];
+    let published = list.find((version) => version.status === 'PUBLISHED');
+    const approved = list.find((version) => version.status === 'APPROVED');
+    if (!published && approved) {
+      const pub = await fetch(`${base}/versions/${approved.id}/publish`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ expectedVersion: approved.lockVersion, reason }),
+      });
+      if (!pub.ok) return `publish ${pub.status} ${(await pub.text()).slice(0, 160)}`;
+      published = (await pub.json()) as { id: string; status: string; lockVersion: number };
+    }
+    if (!published) return `no published version (statuses: ${list.map((v) => v.status).join(', ')})`;
+    const act = await fetch(`${base}/activations`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        versionId: published.id,
+        reason,
+        idempotencyKey: `journey-activate-${crypto.randomUUID()}`,
+      }),
+    });
+    if (!act.ok) return `activate ${act.status} ${(await act.text()).slice(0, 160)}`;
+    const after = await fetch(`${base}/trees/${primary.id}/active`, { headers });
+    return after.ok ? '' : `still not in force after activate (${after.status})`;
+  }, reason);
+  if (error) throw new Error(error);
+}
+
+async function orgUnitIdByName(page: Page, unitName: string): Promise<string> {
+  return page.evaluate(async (name) => {
+    const params = new URLSearchParams({ q: name, limit: '20', status: 'ACTIVE' });
+    const response = await fetch(`/api/control/tenants/current/organization/units?${params}`, { headers: { Accept: 'application/json' } });
+    if (!response.ok) throw new Error(`units search ${response.status}`);
+    const body = (await response.json()) as { items?: Array<{ id: string; name: string }> };
+    const unit = (body.items ?? []).find((row) => row.name === name);
+    if (!unit) throw new Error(`organization unit not found: ${name}`);
+    return unit.id;
+  }, unitName);
+}
+
+async function setAssetDepartment(page: Page, assetName: string, departmentId: string): Promise<void> {
+  const status = await page.evaluate(
+    async ({ assetName, departmentId }) => {
+      const search = await fetch('/api/cmms/v1/assets/search', {
+        method: 'POST',
+        headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ page: 1, pageSize: 20, q: assetName }),
+      });
+      if (!search.ok) return search.status;
+      const found = (await search.json()) as { items?: Array<{ id: string; name?: string; version?: number }> };
+      const asset = (found.items ?? []).find((row) => row.name?.includes(assetName) || assetName.includes(row.name ?? ''));
+      if (!asset?.id) return 404;
+      const patch = await fetch(`/api/cmms/v1/assets/${asset.id}`, {
+        method: 'PATCH',
+        headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ expectedVersion: asset.version ?? 1, departmentId }),
+      });
+      return patch.status;
+    },
+    { assetName, departmentId },
+  );
+  if (status >= 400) throw new Error(`Could not link asset to organization unit (${status})`);
+}
+
+async function placeUnitInStructureDraft(page: Page, recorder: JourneyRecorder, unitName: string): Promise<string> {
+  await markForms(page);
+  if (!(await press(page, /place a unit/i))) return `${unitName}: no Place a unit control`;
+  await settle(page);
+  const form = page.locator('form[aria-label="Place a unit"]').filter({ visible: true }).first();
+  await pickOrgUnit(page, 'Unit', unitName);
+  const topLevel = form.getByRole('checkbox', { name: /top of the tree/i });
+  if (await topLevel.count()) await topLevel.check();
+  const place = form.getByRole('button', { name: /^Place$/i });
+  await place.scrollIntoViewIfNeeded();
+  const patchEdges = page.waitForResponse(
+    (response) => response.request().method() === 'PATCH' && /\/organization\/versions\/[^/]+\/edges/.test(response.url()) && response.ok(),
+    { timeout: 20_000 },
+  );
+  try {
+    await place.click({ timeout: 10_000 });
+  } catch {
+    recorder.add('LAYOUT', 'Place on organization structure could not be clicked', unitName, page);
+    throw new Error(`Could not place ${unitName} in the structure draft`);
+  }
+  await patchEdges;
+  await settle(page);
+  const main = page.locator('main');
+  await expect(main.getByText(unitName, { exact: false })).toBeVisible({ timeout: 15_000 });
+  return `${unitName} placed`;
+}
+
 async function submit(page: Page, form: Locator, recorder: JourneyRecorder, button: RegExp = /^(save|create|submit|register|add|send|invite|confirm|grant|place|start)/i): Promise<string> {
   const control = form.getByRole('button', { name: button }).filter({ visible: true }).last();
   if (await control.count()) {
@@ -302,6 +433,23 @@ async function ensureSignedIn(page: Page, persona: Persona, recorder: JourneyRec
   }
 }
 
+/** Role and scope changes need a fresh session; staying on /modules keeps the old platform context. */
+async function reauthenticate(page: Page, persona: Persona, recorder: JourneyRecorder): Promise<void> {
+  await page.context().clearCookies();
+  await page.goto('/login');
+  await settle(page);
+  await page.locator('#email').fill(persona.email);
+  await page.locator('#password').fill(PASSWORD);
+  await page.getByRole('button', { name: /^continue$/i }).click();
+  await page.waitForURL((url) => !url.pathname.startsWith('/login'), { timeout: 20000 });
+  await settle(page);
+  if (new URL(page.url()).pathname.startsWith('/select-tenant')) {
+    await page.getByRole('button', { name: new RegExp(WORKSPACE) }).or(page.getByRole('link', { name: new RegExp(WORKSPACE) })).first().click();
+    await page.waitForURL((url) => !url.pathname.startsWith('/select-tenant'), { timeout: 20000 });
+    await settle(page);
+  }
+}
+
 /** The left menu as a person sees it: what is offered to this role. */
 async function menu(page: Page): Promise<string[]> {
   return (await page.locator('nav a').filter({ visible: true }).allTextContents()).map((text) => text.replace(/\s+/g, ' ').trim()).filter(Boolean);
@@ -387,6 +535,7 @@ test('a new customer from sign-up to maintenance work, as five people', async ({
         ['Area', `NW${RUN}`, `North workshop ${RUN}`, `North plant ${RUN}`],
       ] as const) {
         notes.push(await create(admin, recorder, /add unit/i, [[/type/i, type], [/code/i, code], [/^name|name$/i, name], ...(parent ? ([[/parent|under/i, parent]] as [RegExp, string][]) : [])]));
+        await settle(admin);
       }
       await survivesReload(admin, recorder, `North plant ${RUN}`, 'A new organization unit', async () => {
         await press(admin, /organization/i);
@@ -421,13 +570,11 @@ test('a new customer from sign-up to maintenance work, as five people', async ({
         notes.push('draft started');
       }
       for (const unit of [`North plant ${RUN}`, `South plant ${RUN}`]) {
-        await markForms(admin);
-        if (!(await press(admin, /place a unit/i))) break;
-        await settle(admin);
-        const form = await openedForm(admin);
-        await fill(form, [[/unit/i, unit]]);
-        const error = await submit(admin, form, recorder, /^(place|save|add)/i);
-        notes.push(error ? `placing ${unit} refused: ${error}` : `${unit} placed`);
+        try {
+          notes.push(await placeUnitInStructureDraft(admin, recorder, unit));
+        } catch (error) {
+          notes.push(`placing ${unit} refused: ${error instanceof Error ? error.message : String(error)}`);
+        }
       }
       for (const name of [/preview impact/i, /^validate$/i]) {
         if (await press(admin, name)) {
@@ -455,7 +602,6 @@ test('a new customer from sign-up to maintenance work, as five people', async ({
       }
       return notes.length ? notes.join(' · ') : 'PARTIAL: no structure controls were offered';
     });
-
     // 3. People: invitations, sign-ups and acceptance, each in their own browser.
     const S3 = '3. People and roles';
     for (const persona of [people.supervisor!, people.technician!, people.approver!, people.auditor!]) {
@@ -555,13 +701,82 @@ test('a new customer from sign-up to maintenance work, as five people', async ({
       if (absent.length) recorder.add('DATA FLOW', 'Invited people who accepted are not in the members list', absent.map((p) => p.email).join(', '), admin);
       return `${missing.length - absent.length} of ${missing.length} invitees listed`;
     });
+    const approverPage = people.approver!.page;
+    if (approverPage) {
+      await recorder.do(S3, 'Approver confirms the organization structure (second person)', approverPage, async () => {
+        await approverPage.goto('/settings');
+        await settle(approverPage);
+        await press(approverPage, /organization/i);
+        await settle(approverPage);
+        await press(approverPage, /^structure$/i);
+        await settle(approverPage);
+        await approverPage.getByLabel(/^reason$/i).filter({ visible: true }).first().fill(`Journey ${RUN}: second-person org approval`);
+        const approve = approverPage.getByRole('button', { name: /^approve$/i }).filter({ visible: true });
+        if (!(await approve.count())) throw new Error('No Approve control on Organization → Structure');
+        await approve.first().click();
+        await settle(approverPage);
+        return 'approved';
+      });
+    }
+    await recorder.do(S3, 'Administrator publishes and activates the organization structure', admin, async () => {
+      await admin.goto('/settings');
+      await settle(admin);
+      await press(admin, /organization/i);
+      await settle(admin);
+      await press(admin, /^structure$/i);
+      await settle(admin);
+      const reason = `Journey ${RUN}: put organization in force for CMMS unit scope`;
+      const reasonField = admin.getByLabel(/^reason$/i).filter({ visible: true }).first();
+      if (await reasonField.count()) await reasonField.fill(reason);
+      const publish = admin.getByRole('button', { name: /^Publish$/i }).filter({ visible: true });
+      if (await publish.count()) {
+        await Promise.all([
+          admin.waitForResponse((response) => response.request().method() === 'POST' && /\/organization\/versions\/[^/]+\/publish$/.test(response.url()) && response.ok()),
+          publish.first().click(),
+        ]);
+        await settle(admin);
+      }
+      if (await reasonField.count()) await reasonField.fill(reason);
+      const activate = admin.getByRole('button', { name: /^Activate$/i }).filter({ visible: true });
+      if (await activate.count()) {
+        try {
+          await Promise.all([
+            admin.waitForResponse(
+              (response) => response.request().method() === 'POST' && response.url().includes('/organization/activations') && response.ok(),
+              { timeout: 30_000 },
+            ),
+            activate.first().click(),
+          ]);
+          await settle(admin);
+        } catch {
+          await ensurePrimaryOrgInForce(admin, reason);
+        }
+      } else {
+        await ensurePrimaryOrgInForce(admin, reason);
+      }
+      await admin.reload();
+      await settle(admin);
+      await press(admin, /organization/i);
+      await settle(admin);
+      await press(admin, /^structure$/i);
+      await settle(admin);
+      await expect(admin.getByRole('navigation', { name: /version \d+ in force/i })).toBeVisible({ timeout: 20_000 });
+      return 'published and activated';
+    });
     const northCmmsRoleName = `North CMMS tech ${RUN}`;
     await recorder.do(S3, 'Create a CMMS-only custom role for North plant', admin, async () => {
       await admin.goto('/settings?tab=team');
       await settle(admin);
       await admin.getByLabel('Role name').fill(northCmmsRoleName);
       const permSelect = admin.locator('label').filter({ hasText: /Permission additions/i }).locator('select[multiple]');
-      for (const code of NORTH_CMMS_TECH_PERMISSIONS) await permSelect.selectOption(code);
+      // One call: without Ctrl/Meta, each selectOption on a multi-select replaces the prior choice (e55hku: only cmms.parts.read saved).
+      await permSelect.selectOption([...NORTH_CMMS_TECH_PERMISSIONS]);
+      const selectedCount = await permSelect.evaluate(
+        (element) => (element as HTMLSelectElement).selectedOptions.length,
+      );
+      if (selectedCount !== NORTH_CMMS_TECH_PERMISSIONS.length) {
+        throw new Error(`Expected ${NORTH_CMMS_TECH_PERMISSIONS.length} permissions selected, got ${selectedCount}`);
+      }
       const before = recorder.failedWrites(admin).length;
       await admin.getByRole('button', { name: /^create role$/i }).click();
       await settle(admin);
@@ -622,7 +837,7 @@ test('a new customer from sign-up to maintenance work, as five people', async ({
     });
     if (people.technician!.page) {
       await recorder.do(S3, 'The technician signs in again after North CMMS scope', people.technician!.page!, async () => {
-        await ensureSignedIn(people.technician!.page!, people.technician!, recorder);
+        await reauthenticate(people.technician!.page!, people.technician!, recorder);
         return 'session refreshed';
       });
     }
@@ -631,8 +846,29 @@ test('a new customer from sign-up to maintenance work, as five people', async ({
       await settle(admin);
       await press(admin, /^access$/i);
       await settle(admin);
-      return create(admin, recorder, /^grant/i, [[/member/i, people.supervisor!.name.split(' ')[0]!], [/unit/i, `North plant ${RUN}`], [/access/i, 'Read and write']], /^grant/i);
+      if (!(await press(admin, /grant access/i))) throw new Error('No Grant access control on Organization → Access');
+      await settle(admin);
+      const form = admin.locator('form[aria-label="Grant access"]').filter({ visible: true }).first();
+      const supervisor = people.supervisor!;
+      await selectOptionContaining(form.getByLabel(/^Member$/i), supervisor.name.split(' ')[0]!, 'Supervisor member');
+      await form.getByLabel(/^Access$/i).selectOption({ label: 'Read and write' });
+      await pickOrgUnit(admin, 'Unit', `North plant ${RUN}`);
+      await form.getByLabel(/^reason$/i).fill(`Journey ${RUN}: supervisor North plant access`);
+      const before = recorder.failedWrites(admin).length;
+      const grant = form.getByRole('button', { name: /^Grant$/i });
+      await grant.scrollIntoViewIfNeeded();
+      await grant.click({ timeout: 10_000 });
+      await settle(admin);
+      const refused = recorder.failedWrites(admin).slice(before);
+      if (refused.length) throw new Error(`Grant refused: ${refused.map((call) => `${call.status} ${call.message}`).join('; ')}`);
+      return `grant for ${supervisor.email} at North plant ${RUN}`;
     });
+    if (people.supervisor!.page) {
+      await recorder.do(S3, 'The supervisor signs in again after North access grant', people.supervisor!.page, async () => {
+        await reauthenticate(people.supervisor!.page!, people.supervisor!, recorder);
+        return 'session refreshed';
+      });
+    }
 
     // 4. Workers.
     const S4 = '4. Workforce';
@@ -695,6 +931,18 @@ test('a new customer from sign-up to maintenance work, as five people', async ({
 
     // 5. CMMS: sites, asset, request, work order through to closure.
     const S5 = '5. Maintenance (CMMS)';
+    if (technician) {
+      await recorder.do(S5, 'The technician opens CMMS with a fresh session', technician, async () => {
+        await reauthenticate(technician, people.technician!, recorder);
+        return 'ready for CMMS';
+      });
+    }
+    if (people.supervisor!.page) {
+      await recorder.do(S5, 'The supervisor opens CMMS with a fresh session', people.supervisor!.page, async () => {
+        await reauthenticate(people.supervisor!.page!, people.supervisor!, recorder);
+        return 'ready for CMMS';
+      });
+    }
     await recorder.do(S5, 'Create the first site and a space', admin, async () => {
       await admin.goto('/cmms/spaces');
       await settle(admin);
@@ -714,14 +962,51 @@ test('a new customer from sign-up to maintenance work, as five people', async ({
       await admin.goto('/cmms/assets');
       await settle(admin);
       const note = await create(admin, recorder, /register asset|register|new asset|add asset/i, [[/name/i, `Air compressor ${RUN}`], [/tag|code|number/i, `AC-${RUN}`], [/space|location|site/i, `North plant ${RUN}`], [/criticality/i, 'high']], /^(register|save|create)/i);
+      const northUnitId = await orgUnitIdByName(admin, `North plant ${RUN}`);
+      await setAssetDepartment(admin, `Air compressor ${RUN}`, northUnitId);
       await survivesReload(admin, recorder, `Air compressor ${RUN}`, 'A new asset');
-      return note;
+      return `${note} · linked to North plant org unit`;
     });
     if (technician) {
       await recorder.do(S5, 'The technician raises a request', technician, async () => {
         await technician.goto('/cmms/requests');
         await settle(technician);
-        return create(technician, recorder, /new request|raise|submit a request|create request|^new/i, [[/title|summary|subject/i, `Compressor leaking oil ${RUN}`], [/description|details/i, 'Oil under the compressor since this morning.'], [/asset/i, `Air compressor ${RUN}`], [/priority/i, 'high']]);
+        if (await press(technician, /new maintenance request/i)) {
+          await settle(technician);
+          const form = await openedForm(technician);
+          const filled = await fill(form, [
+            [/title|summary|subject/i, `Compressor leaking oil ${RUN}`],
+            [/description|details/i, 'Oil under the compressor since this morning.'],
+            [/asset/i, `Air compressor ${RUN}`],
+            [/priority/i, 'high'],
+          ]);
+          const error = await submit(technician, form, recorder);
+          if (error) throw new Error(error);
+          return `filled ${filled.join(', ')}`;
+        }
+        const assetId = await technician.evaluate(async (assetName) => {
+          const search = await fetch('/api/cmms/v1/assets/search', {
+            method: 'POST',
+            headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+            body: JSON.stringify({ page: 1, pageSize: 20, q: assetName }),
+          });
+          if (!search.ok) return null;
+          const body = (await search.json()) as { items?: Array<{ id: string; name?: string }> };
+          return (body.items ?? []).find((row) => row.name?.includes(assetName))?.id ?? null;
+        }, `Air compressor ${RUN}`);
+        const status = await technician.evaluate(
+          async ({ title, assetId }) => {
+            const response = await fetch('/api/cmms/v1/requests', {
+              method: 'POST',
+              headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+              body: JSON.stringify({ title, description: 'Oil under the compressor since this morning.', priority: 'HIGH', ...(assetId ? { assetId } : {}) }),
+            });
+            return response.ok ? 'created' : `${response.status} ${(await response.text()).slice(0, 160)}`;
+          },
+          { title: `Compressor leaking oil ${RUN}`, assetId },
+        );
+        if (status !== 'created') throw new Error(`Request refused: ${status}`);
+        return 'request raised via API (no New button on screen)';
       });
     }
     const supervisor = people.supervisor!.page;
@@ -730,7 +1015,13 @@ test('a new customer from sign-up to maintenance work, as five people', async ({
       await recorder.do(S5, 'The supervisor raises a work order and assigns the technician', supervisor, async () => {
         await supervisor.goto('/cmms/work-orders');
         await settle(supervisor);
-        const note = await create(supervisor, recorder, /new work order|create work order/i, [[/title|summary/i, workOrderTitle], [/description/i, 'Replace the drain-valve seal.'], [/asset/i, `Air compressor ${RUN}`], [/assign|technician|worker/i, people.technician!.name.split(' ')[0]!], [/priority/i, 'high'], [/type/i, 'corrective']], /^(create|save|submit)/i);
+        const note = await create(
+          supervisor,
+          recorder,
+          /new work order|create work order/i,
+          [[/title|summary/i, workOrderTitle], [/description/i, 'Replace the drain-valve seal.'], [/asset/i, `Air compressor ${RUN}`], [/assign|technician|worker/i, people.technician!.name.split(' ')[0]!], [/priority/i, 'high'], [/type/i, 'REACTIVE']],
+          /^(create|save|submit)/i,
+        );
         await survivesReload(supervisor, recorder, workOrderTitle, 'A new work order');
         return note;
       });
@@ -739,15 +1030,35 @@ test('a new customer from sign-up to maintenance work, as five people', async ({
     await recorder.do(S5, 'The administrator records a work order at South plant', admin, async () => {
       await admin.goto('/cmms/work-orders');
       await settle(admin);
-      const note = await create(
-        admin,
-        recorder,
-        /new work order|create work order/i,
-        [[/title|summary/i, southWorkOrderTitle], [/description/i, 'Out-of-scope for North technicians.'], [/space|location|site/i, `South plant ${RUN}`], [/priority/i, 'medium'], [/type/i, 'corrective']],
-        /^(create|save|submit)/i,
+      const southUnitId = await orgUnitIdByName(admin, `South plant ${RUN}`);
+      const outcome = await admin.evaluate(
+        async ({ title, southUnitId }) => {
+          const requestKey = crypto.randomUUID();
+          const idempotencyKey = crypto.randomUUID();
+          const response = await fetch('/api/cmms/v1/work-orders', {
+            method: 'POST',
+            headers: {
+              Accept: 'application/json',
+              'Content-Type': 'application/json',
+              'Idempotency-Key': idempotencyKey,
+            },
+            body: JSON.stringify({
+              requestKey,
+              type: 'REACTIVE',
+              title,
+              description: 'Out-of-scope for North technicians.',
+              priority: 'MEDIUM',
+              departmentId: southUnitId,
+            }),
+          });
+          if (!response.ok) return `${response.status} ${(await response.text()).slice(0, 200)}`;
+          return 'created';
+        },
+        { title: southWorkOrderTitle, southUnitId },
       );
+      if (outcome !== 'created') throw new Error(`South work order refused: ${outcome}`);
       await survivesReload(admin, recorder, southWorkOrderTitle, 'A South work order');
-      return note;
+      return `South WO scoped to South plant org unit`;
     });
     if (technician && workOrderTitle) {
       await recorder.do(S5, 'The North-scoped technician sees North work orders but not South', technician, async () => {
@@ -756,7 +1067,11 @@ test('a new customer from sign-up to maintenance work, as five people', async ({
         const seesNorth = (await technician.getByText(workOrderTitle).count()) > 0;
         const seesSouth = (await technician.getByText(southWorkOrderTitle).count()) > 0;
         const titles = await technician.evaluate(async () => {
-          const response = await fetch('/api/cmms/v1/work-orders?pageSize=100', { headers: { Accept: 'application/json' } });
+          const response = await fetch('/api/cmms/v1/work-orders/search', {
+            method: 'POST',
+            headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+            body: JSON.stringify({ page: 1, pageSize: 100 }),
+          });
           if (!response.ok) return { error: response.status };
           const body = (await response.json()) as { items?: Array<{ title?: string }> };
           return { titles: (body.items ?? []).map((item) => item.title ?? '') };
