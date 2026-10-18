@@ -28,6 +28,8 @@ export interface InventoryReceiptLifecycleDeps<TResult> {
   readonly tenantId: string;
   readonly actorId: string;
   readonly lineCount: number;
+  /** When set, runs before stock effects (ADR-0033 F1.4 / audit P1-07). */
+  readonly assertFinancePeriodOpen?: (receivedAtIso: string) => Promise<void>;
   readonly persistComplete: (context: TransitionContext<ReceiptLifecycleDocument>) => Promise<TResult>;
 }
 
@@ -43,6 +45,11 @@ function graphFor<TResult>(deps: InventoryReceiptLifecycleDeps<TResult>) {
               context.action,
               'Add at least one receipt line before completing.',
             );
+          }
+        },
+        async () => {
+          if (deps.assertFinancePeriodOpen) {
+            await deps.assertFinancePeriodOpen(new Date().toISOString());
           }
         },
       ],

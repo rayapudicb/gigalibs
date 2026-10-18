@@ -21,7 +21,8 @@ Playwright business flow passes against UAT with labelled test data.
 3. Build images from the release commit; run migration jobs (**Finance 10–11**, **Inventory 5** on this release).
 4. In `infra/compose/.env.modules` (owner-only): run `generate-inventory-finance-relay-credentials.sh` if keys absent; set
    `FINANCE_INVENTORY_POSTING_DATABASE_URL` to the **same value as `UNIVERSAL_INVENTORY_DATABASE_URL`** (Finance updates
-   receipt posting status via the Inventory definer function).
+   receipt posting status via the Inventory definer function). On the **Inventory** module-host env, set
+   `FINANCE_PERIOD_LOCK_DATABASE_URL` to **`FINANCIAL_OPERATIONS_DATABASE_URL`** (F1.4 period-lock guard on receipt complete).
 5. Deploy; read-only check: module host and web healthy; Finance migration **11**, Inventory **5**; relay health ok.
 6. Live F2: complete a receipt → `GET …/subledger/inventory/posting-reconciliation` balanced; receipt shows **Posted**.
 7. Control plane activates six Inventory window views for the tenant with Universal Inventory entitled.

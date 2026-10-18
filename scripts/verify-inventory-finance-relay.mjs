@@ -22,6 +22,7 @@ run('Finance inventory inbox + posting context tests', [
   '--config',
   'vitest.config.ts',
   'modules/financial-operations/apps/api/src/subledger/inventory-inbox.test.ts',
-  'modules/financial-operations/apps/api/src/posting/finance-posting-context.test.ts',
+  'modules/universal-inventory/apps/api/src/inventory/finance-period-lock-guard.test.ts',
+  'modules/universal-inventory/apps/api/src/inventory/receipt-lifecycle.test.ts',
 ]);
 console.log('\nWI-OI-120fr inventory–finance relay posting unit certification passed.');

@@ -50,6 +50,7 @@ import {
 import type pg from 'pg';
 import { SCHEMA, TOPIC } from '../config.js';
 import { DatabaseService } from '../database.service.js';
+import { assertInventoryReceiptFinancePeriodOpen } from './finance-period-lock-guard.js';
 import { runInventoryReceiptTransition, type ReceiptLifecycleDocument } from './receipt-lifecycle.js';
 
 /**
@@ -721,6 +722,9 @@ export class InventoryService {
           tenantId: principal.tenantId,
           actorId: principal.subject,
           lineCount: linesRes.rowCount ?? 0,
+          assertFinancePeriodOpen: async (receivedAtIso) => {
+            await assertInventoryReceiptFinancePeriodOpen(principal.tenantId, receivedAtIso);
+          },
           persistComplete: async () =>
             this.persistReceiptComplete(client, principal, receipt, linesRes.rows),
         },

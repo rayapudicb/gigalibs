@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { resolvePrimaryBookPostingContext } from './finance-posting-context.js';
+import { resolvePrimaryBookPostingContext } from './finance-primary-book-posting-context.js';
 
 describe('resolvePrimaryBookPostingContext', () => {
   it('returns the primary book and open period', async () => {
