@@ -31,6 +31,8 @@ packages:
   - packages/crypto
   - packages/db
   - packages/db-migrations-runtime
+  - packages/document-lifecycle
+  - packages/posting-rules
   - packages/i18n
   - packages/jobs
   - packages/logger

@@ -11,7 +11,7 @@
 - **Meta** — metadata windows shipped for that module.
 - **E2E** — evidenced business journey on UAT (not “API exists”).
 
-**UAT tips (2026-10-18):** running release **`3bc0c1f`**; Table 2 deploy tip **`0a0e787`**+ on `feat/gigaops-convergence-core`.
+**UAT tips (2026-10-19):** running release **`1d8d2634`** (CMMS mig **22**); Table 2 code tip **`0a0e787`**+ on `feat/gigaops-convergence-core`. Full audit: [work/TABLE-1-AUDIT-2026-10-19.md](work/TABLE-1-AUDIT-2026-10-19.md).
 
 | # | iDempiere area | Main iDempiere pieces (reference) | GigaLibs module / folder | What exists in GigaLibs | E2E on UAT today | What still needs (enhance vs net-new) |
 |---|----------------|-----------------------------------|--------------------------|-------------------------|------------------|----------------------------------------|
@@ -37,7 +37,7 @@
 | 20 | Manufacturing / MRP | BOM, production order | — | Not built (U24 in plan) | None | **Net-new:** BOM, production, issue/receipt, Doc_Production outcomes |
 | 21 | Project accounting | Project, phase, task, issue | — | Not built (U25) | None | **Net-new** module |
 | 22 | Returns (RMA) | MRMA, return receipt | — | Not built (U26; credit notes in AR code only) | None | **Net-new** U26 |
-| 23 | Field service / maintenance | Asset, request, work | `physical-operations-cmms` | UAT + Meta (8 built, not fully released) — WO, assets | Partial — request → assign → complete; no supervisor close (WI-OI-120bi) | **Enhance:** Phase 1 exit (scope, sign-off, metadata release); not full iDempiere MRequest/CS desk |
+| 23 | Field service / maintenance | Asset, request, work | `physical-operations-cmms` | UAT + Meta (8) — WO, assets, **sign-off mig 22** on UAT | Partial — journey must prove sign-off + North≠South (`f56ae886` journey fix) | **Enhance:** Phase 1 exit (0-blocker journey); not full iDempiere MRequest/CS desk |
 | 24 | Helpdesk / CRM pipeline | MRequest, lead/opportunity | CMMS requests; parties fragmented | Partial | None as CRM | **Net-new** product extension (plan §7D) unless customer-scoped |
 | 25 | Workflow & approvals | AD_Workflow | `workflow-studio` (no own service on UAT) | Partial — definitions exist; not fully deployed | None | **Enhance:** hook approvals into F1; Approval Queue on UAT (Phase 4) |
 | 26 | POS (retail) | POS terminal, cash drawer | — | Not built | None | **Net-new** if retail parity wanted |
@@ -60,7 +60,7 @@
 
 | Outcome | Status |
 |---------|--------|
-| Maintenance: request → assign → execute → close/sign-off | **Partial** (missing close — WI-OI-120bi) |
+| Maintenance: request → assign → execute → close/sign-off | **Partial** (sign-off on UAT mig 22; journey evidence pending — WI-OI-120gd) |
 | Procure-to-pay | **Not E2E** |
 | Order-to-cash | **Not E2E** (AR off UAT) |
 | Inventory receipt → subledger → GL | **Built in git; not E2E on UAT** until Table 2 closure deploy |
@@ -70,4 +70,4 @@
 
 Table 2 unlocks rows **5, 6 (receipt leg), 9, 12, 15, 18**. Engine checklist: [TABLE-2-ENGINES.md](TABLE-2-ENGINES.md).
 
-*Last updated: 2026-10-18.*
+*Last updated: 2026-10-19 (Table 1 audit pass).*

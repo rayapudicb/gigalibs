@@ -24,7 +24,7 @@ keeps the full rules.
 | 4 | CMMS record routes on UAT (if not in same release as W1-B) | [WI-OI-120ag](tasks/WI-OI-120ag.md) | Built; ships with 1.3 releases |
 | 5 | R5 slices on UAT (aa/ab/ac + M-CM1 120t) | [WI-OI-120be](tasks/WI-OI-120be.md) W1-A | Partially on UAT via prior releases; W1-B completes scope |
 
-Then: [Table 1 audit](handoff/TABLE-1-AUDIT-PROMPT-2026-10-18.md). Ask owner: **T3** vs audit first.
+**Table 1 audit (owner 2026-10-19):** done → [work/TABLE-1-AUDIT-2026-10-19.md](work/TABLE-1-AUDIT-2026-10-19.md). **T3 (120ad)** after Table 1 backlog starts. Dev rhythm: [OWNER-DEV-RHYTHM-2026-10-19.md](OWNER-DEV-RHYTHM-2026-10-19.md) (local compose, autonomous Table 1 slices).
 
 **Batch acceptance:** [PHASE-1-CM1-CHECKLIST.md](tasks/PHASE-1-CM1-CHECKLIST.md) — one deploy, one journey, tick all five rows.
 
@@ -53,8 +53,14 @@ Then: [Table 1 audit](handoff/TABLE-1-AUDIT-PROMPT-2026-10-18.md). Ask owner: **
 - **Journey `e55hku` (2026-10-18, tag `1d8d2634`):** 71 findings, **7 blockers** — org + North CMMS role at units **201** OK;
   technician CMMS **403** because the custom role was saved with **one** permission (`cmms.parts.read`): the journey loop
   called `selectOption` per code on a React multi-select (each call replaced the prior choice). **Fixed in journey spec**
-  (one `selectOption([...])` + selected-count assert). Re-run journey → target **0 blockers**; no UAT redeploy for this fix.
+  (one `selectOption([...])` + selected-count assert). Fix pushed **`f56ae886`**. Re-run journey → **WI-OI-120gd**; no redeploy for journey-only fix.
   Prior **`dujc47`**: 8 blockers (org not in force); **`dnnzu9`**: sign-off **500** on mig **21**.
+
+## Next implementation (Table 1 backlog, local compose)
+
+1. **WI-OI-120gd** — journey 0 blockers (needs `E2E_JOURNEY_PASSWORD` in `e2e/uat.env`).
+2. **WI-OI-120ge** — fix Inventory docker workspace deps (`document-lifecycle`, `posting-rules`) for local Table 2 stack.
+3. **WI-OI-120gf** / **120gg** / **120gh** — AR on compose, parties on PO, proc metadata (Proposed cards in `.pi/tasks/`).
 
 ## Built, not yet on UAT
 

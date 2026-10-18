@@ -132,7 +132,8 @@
         "RECOVERY_API_URL",
         "ANALYTICS_API_URL",
         "ESIGN_API_URL",
-        "CMMS_API_URL"
+        "CMMS_API_URL",
+        "WORKFORCE_API_URL"
       ],
       "liveness": "/api/health/live",
       "readiness": "/api/health/ready"
