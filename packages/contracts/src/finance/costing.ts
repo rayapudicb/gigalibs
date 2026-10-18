@@ -201,6 +201,9 @@ export const IngestReceiptCostLayerInputV1Schema = z
     postGlJournal: z.boolean().default(true),
     bookId: z.string().uuid().optional(),
     periodId: z.string().uuid().optional(),
+    sourceDocumentType: z.string().min(1).max(64).optional(),
+    sourceDocumentId: z.string().min(1).max(128).optional(),
+    journalEntryType: z.string().min(1).max(64).optional(),
   })
   .strict();
 export type IngestReceiptCostLayerInputV1 = z.infer<typeof IngestReceiptCostLayerInputV1Schema>;

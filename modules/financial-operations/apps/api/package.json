@@ -19,6 +19,7 @@
     "@gigalibs/contracts": "workspace:*",
     "@gigalibs/document-lifecycle": "workspace:*",
     "@gigalibs/module-sdk": "workspace:*",
+    "@gigalibs/posting-rules": "workspace:*",
     "@nestjs/common": "^11.2.3",
     "@nestjs/core": "^11.2.3",
     "@nestjs/platform-express": "^11.2.3",

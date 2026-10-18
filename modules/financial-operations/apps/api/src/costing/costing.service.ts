@@ -249,10 +249,10 @@ export class CostingService {
           accountingBookId: input.bookId,
           fiscalPeriodId: input.periodId,
           postingDate: input.receiptDate || now,
-          entryType: 'SUBLEDGER_INVENTORY',
+          entryType: input.journalEntryType ?? 'SUBLEDGER_INVENTORY',
           description: `Inventory Receipt ${input.receiptRef}`,
-          sourceDocumentType: 'INVENTORY_COST_LAYER',
-          sourceDocumentId: layerId,
+          sourceDocumentType: input.sourceDocumentType ?? 'INVENTORY_COST_LAYER',
+          sourceDocumentId: input.sourceDocumentId ?? layerId,
           lines,
         };
 

@@ -4320,3 +4320,9 @@ widening the card to fix the API faults the proof found.
   targets `http://127.0.0.1:4790`).
 - **Tests:** finance API 54/54 (includes duplicate → `DUPLICATE`); inventory relay config 2/2; module-sdk 78/78.
 - **UAT pending:** owner runs `infra/compose/scripts/generate-inventory-finance-relay-credentials.sh`, deploy with F1+F2, live proof.
+
+## WI-OI-120fr (F2.2 / E2): Inventory receipt posting policy (2026-10-18, built, not committed)
+
+- **Package:** `@gigalibs/posting-rules` — `inventoryReceiptCompletedPostingPolicyV1`, posting date helper.
+- **Finance:** `resolvePrimaryBookPostingContext`; inbox passes book/period and `INVENTORY_RECEIPT` source line ids into costing/GL.
+- **Cert:** `scripts/verify-inventory-finance-relay.mjs` (posting-rules + inbox/context unit tests); wired in `scripts/verify.mjs`.

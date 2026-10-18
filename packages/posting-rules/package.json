@@ -1,0 +1,25 @@
+{
+  "name": "@gigalibs/posting-rules",
+  "version": "0.1.0",
+  "description": "Explicit event-to-ledger posting policies (ADR-0033 F2 / E2)",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run --root ../.. --config vitest.config.ts packages/posting-rules",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist *.tsbuildinfo"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3",
+    "vitest": "^3.0.0"
+  }
+}

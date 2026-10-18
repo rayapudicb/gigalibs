@@ -10,16 +10,12 @@ state and the release procedure as it is run. The prompt to paste is [PROMPT-202
 
 ## Current step
 
-**Table 2 (architecture), owner 2026-10-18:** Claude stopped; Cursor continues engines after CMMS journey proof.
-- **[WI-OI-120bh](tasks/WI-OI-120bh.md) is on UAT** (`3bc0c1f`, journey `dg84u3`).
-- **Done (committed):** [WI-OI-120fl](tasks/WI-OI-120fl.md) / [WI-OI-120fm](tasks/WI-OI-120fm.md) (F1).
-- **Active:** [WI-OI-120fp](tasks/WI-OI-120fp.md) F0.5 UAT deploy + Playwright (owner).
-- **Built, not committed:** [WI-OI-120fq](tasks/WI-OI-120fq.md) F2.1 Inventory→Finance relay and inbox (+ module-sdk inbox path for module-host).
-- **F0 code** is already on `main` ancestry (`bf049e1`, `2104f91`); UAT needs a release that includes `0d29f8f`+ and owner deploy per 120fp.
-- **Parallel (deploy, not code):** [WI-OI-120f](tasks/WI-OI-120f.md) F0.5 Inventory metadata — commit/deploy and
-  Playwright on UAT when the owner is ready (`E2E_UAT_ADMIN_*`).
-- **Frozen until Table 2 is 100%:** CMMS journey follow-ups ([WI-OI-120bi](tasks/WI-OI-120bi.md),
-  [WI-OI-120bj](tasks/WI-OI-120bj.md), W1-B) — not in agent scope until engines are done (owner, 2026-10-18).
+**Table 2 engines only (owner, 2026-10-18).** Agents stay on F0–F2 until the checklist below is fully evidenced; do not
+redirect the owner to other product tracks in chat.
+
+- **Committed:** F1 `0d29f8f`; F2.1 `8a5b487`; UAT Playwright `36105e4`.
+- **Owner deploy:** [WI-OI-120fp](tasks/WI-OI-120fp.md) + relay keys for F2.1 on module-host.
+- **Built, not committed:** [WI-OI-120fr](tasks/WI-OI-120fr.md) F2.2 posting policy + book/period GL handoff.
 
 ## Running on UAT
 
@@ -55,19 +51,17 @@ state and the release procedure as it is run. The prompt to paste is [PROMPT-202
 - `pnpm verify` reports one known deployment-profile drift, `WORKFORCE_API_URL` (`scripts/verify.mjs`,
   `KNOWN_PROFILE_DRIFT`), until the owner decides it. It also reports 12 isolated-database proofs as not run.
 
-## Owner gate (2026-10-18): Table 2 before CMMS
+## Table 2 — completion checklist (engines only)
 
-**Do not schedule or suggest CMMS / journey / Phase 1 product work** (for example 120bi, 120bj, W1-B) until the
-**architectural engines (Table 2: F0–F2 and plan v3 §5A)** are **100% complete** with evidence. CMMS cards stay in the
-backlog; they are not "next" for agents.
+| Engine | Code | UAT / evidence still open |
+|--------|------|---------------------------|
+| **F0** metadata windows | In git (`bf049e1`, `2104f91`, …) | [WI-OI-120fp](tasks/WI-OI-120fp.md): deploy + `pnpm e2e:uat:inventory` |
+| **F1** document lifecycle | `0d29f8f` | Finance draft pilot on UAT when F0/F2 release ships |
+| **F2.1** Inventory→Finance relay | `8a5b487` | Relay keys, deploy, live receipt→inbox proof |
+| **F2.2** posting / GL handoff | Built (120fr, not committed) | Deploy with F2.1; live journal proof on UAT |
 
-## Next steps (Table 2 only)
-
-1. **[WI-OI-120fp](tasks/WI-OI-120fp.md):** owner release + deploy; **`pnpm e2e:uat:inventory`** (F0.5 UAT proof).
-2. **Commit 120fq** when the owner says so; relay keys + deploy; live receipt→Finance on UAT.
-3. **F2 remainder:** posting rules (E2), HTTP handshake script, receipt→journal with book/period on UAT.
-
-**F1** is committed (`0d29f8f`). **F0** product code is in git; UAT closure is 120fp.
+**Owner next (deploy):** release with `8a5b487` + 120fr; F0 Playwright; relay env on module-host.
+**Agent next (code):** F2 reconciliation / period-close guards when 120fr is committed (or UAT gaps from deploy).
 
 **W2 is decided (owner, 2026-10-18):**
 - enterprise accounts only: an administrator creates each user and shares the username and password;

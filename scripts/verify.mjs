@@ -47,6 +47,7 @@ const steps = [
   { name: 'module-host-http (U2)', cmd: process.execPath, args: ['scripts/verify-u2-module-host-http.mjs'] },
   // WI-OI-120f (F0.5): Inventory's metadata windows over HTTP through the module host (needs PROOF_DATABASE_URL).
   { name: 'inventory-windows (F0.5)', cmd: process.execPath, args: ['scripts/verify-f0-inventory-windows.mjs'] },
+  { name: 'inventory-finance-relay (F2.2)', cmd: process.execPath, args: ['scripts/verify-inventory-finance-relay.mjs'] },
   // WI-OI-120h (U19a): every CMMS screen call reaches the built CMMS API through the gateway allow-list (needs
   // PROOF_DATABASE_URL).
   { name: 'cmms-screen-routes (U19a)', cmd: process.execPath, args: ['scripts/verify-u19a-cmms-screen-routes.mjs'] },

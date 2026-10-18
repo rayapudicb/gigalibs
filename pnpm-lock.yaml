@@ -722,6 +722,9 @@ importers:
       '@gigalibs/module-sdk':
         specifier: workspace:*
         version: link:../../../../packages/module-sdk
+      '@gigalibs/posting-rules':
+        specifier: workspace:*
+        version: link:../../../../packages/posting-rules
       '@nestjs/common':
         specifier: ^11.2.3
         version: 11.2.3(reflect-metadata@0.2.2)(rxjs@7.8.2)
@@ -2292,6 +2295,15 @@ importers:
       '@types/node':
         specifier: ^24.10.0
         version: 24.13.3
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.3
+      vitest:
+        specifier: ^3.0.0
+        version: 3.2.7(@types/node@24.13.3)(jiti@2.7.0)(tsx@4.23.12)
+
+  packages/posting-rules:
+    devDependencies:
       typescript:
         specifier: ^5.8.3
         version: 5.9.3

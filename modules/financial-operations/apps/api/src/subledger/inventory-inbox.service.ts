@@ -1,4 +1,8 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import {
+  inventoryReceiptCompletedPostingPolicyV1,
+  inventoryReceiptPostingDate,
+} from '@gigalibs/posting-rules';
 import { RelayEnvelopeV1Schema, type RelayEnvelopeV1 } from '@gigalibs/contracts';
 import { type InboxReceiptOptions, receiveOnce } from '@gigalibs/module-sdk';
 import type { PoolClient } from 'pg';
@@ -6,6 +10,7 @@ import { z } from 'zod';
 import { SCHEMA } from '../config.js';
 import { DatabaseService } from '../database.service.js';
 import { CostingService } from '../costing/costing.service.js';
+import { resolvePrimaryBookPostingContext } from '../posting/finance-posting-context.js';
 
 const CONSUMER = 'finance.inventory-subledger';
 const RECEIPTS: InboxReceiptOptions = { schema: SCHEMA, consumer: CONSUMER, sourceModule: 'inventory' };
@@ -31,7 +36,7 @@ const ReceiptCompletedPayloadSchema = z
 
 export type FinanceInventoryInboxOutcome = { readonly status: 'PROCESSED' | 'DUPLICATE' | 'REJECTED'; readonly code?: string };
 
-/** WI-OI-120fq (F2 / E3): Finance consumer for inventory.receipt.completed.v1. */
+/** WI-OI-120fq/120fr (F2): Finance consumer for inventory.receipt.completed.v1 with E2 posting policy. */
 @Injectable()
 export class InventorySubledgerInboxService {
   private readonly logger = new Logger(InventorySubledgerInboxService.name);
@@ -47,7 +52,7 @@ export class InventorySubledgerInboxService {
       throw new BadRequestException({ code: 'FINANCE_INBOX_ENVELOPE_INVALID', message: parsed.error.issues[0]?.message });
     }
     const envelope = parsed.data;
-    if (envelope.eventType !== 'inventory.receipt.completed.v1') {
+    if (envelope.eventType !== inventoryReceiptCompletedPostingPolicyV1.eventType) {
       throw new BadRequestException({ code: 'FINANCE_INBOX_EVENT_UNKNOWN', message: `No consumer for ${envelope.eventType}.` });
     }
     return this.database.withTenantTransaction(envelope.tenantId, (client) =>
@@ -58,6 +63,19 @@ export class InventorySubledgerInboxService {
   private async apply(client: PoolClient, envelope: RelayEnvelopeV1): Promise<FinanceInventoryInboxOutcome> {
     const payload = ReceiptCompletedPayloadSchema.safeParse(envelope.payload);
     if (!payload.success) return { status: 'REJECTED', code: 'FINANCE_INBOX_PAYLOAD_INVALID' };
+
+    let postingDate: string;
+    try {
+      postingDate = inventoryReceiptPostingDate(payload.data.receivedAt);
+    } catch {
+      return { status: 'REJECTED', code: 'FINANCE_INBOX_PAYLOAD_INVALID' };
+    }
+
+    const postingContext = await resolvePrimaryBookPostingContext(client, SCHEMA, envelope.tenantId, postingDate);
+    if (typeof postingContext === 'string') {
+      this.logger.warn(`Receipt ${payload.data.receiptId}: posting context ${postingContext}.`);
+      return { status: 'REJECTED', code: postingContext };
+    }
 
     const profile = await client.query<{ id: string; standard_unit_cost_scaled: string | null }>(
       `SELECT id, standard_unit_cost_scaled FROM ${SCHEMA}.cost_profiles
@@ -82,6 +100,14 @@ export class InventorySubledgerInboxService {
         quantity: qty,
         unitCostScaled: String(costProfile.standard_unit_cost_scaled),
         postGlJournal: true,
+        bookId: postingContext.bookId,
+        periodId: postingContext.periodId,
+        journalEntryType: inventoryReceiptCompletedPostingPolicyV1.entryType,
+        sourceDocumentType: inventoryReceiptCompletedPostingPolicyV1.sourceDocumentType,
+        sourceDocumentId: inventoryReceiptCompletedPostingPolicyV1.sourceLineDocumentId(
+          payload.data.receiptId,
+          line.receiptLineId,
+        ),
       });
     }
 

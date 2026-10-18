@@ -93,6 +93,12 @@ describe('Finance inventory subledger inbox', () => {
         if (sql.includes('INSERT INTO gigalibs_finance.inbox_receipts')) {
           return { rows: options.receiptInserted ? [{ id: 'receipt-1' }] : [], rowCount: options.receiptInserted ? 1 : 0 };
         }
+        if (sql.includes('accounting_books')) {
+          return { rows: [{ id: 'book-1' }], rowCount: 1 };
+        }
+        if (sql.includes('fiscal_periods')) {
+          return { rows: [{ id: 'period-1', status: 'OPEN', period_name: '2026-10' }], rowCount: 1 };
+        }
         if (sql.includes('FROM gigalibs_finance.cost_profiles')) {
           return {
             rows: options.costProfile ? [options.costProfile] : [],
@@ -116,7 +122,17 @@ describe('Finance inventory subledger inbox', () => {
     });
     const body = receiptEnvelope();
     await expect(inbox.receive(body, JSON.stringify(body))).resolves.toEqual({ status: 'PROCESSED' });
-    expect(costing.ingestReceiptLayer).toHaveBeenCalledWith(TENANT, 'relay:inventory', expect.objectContaining({ postGlJournal: true }));
+    expect(costing.ingestReceiptLayer).toHaveBeenCalledWith(
+      TENANT,
+      'relay:inventory',
+      expect.objectContaining({
+        postGlJournal: true,
+        bookId: 'book-1',
+        periodId: 'period-1',
+        sourceDocumentType: 'INVENTORY_RECEIPT',
+        journalEntryType: 'SUBLEDGER_INVENTORY',
+      }),
+    );
   });
 
   it('treats a redelivered message as DUPLICATE without calling costing', async () => {
@@ -127,6 +143,43 @@ describe('Finance inventory subledger inbox', () => {
     const body = receiptEnvelope();
     await expect(inbox.receive(body, JSON.stringify(body))).resolves.toEqual({ status: 'DUPLICATE' });
     expect(costing.ingestReceiptLayer).not.toHaveBeenCalled();
+  });
+
+  it('receipts a locked fiscal period without calling costing', async () => {
+    const client = {
+      query: vi.fn(async (sql: string) => {
+        if (sql.includes('INSERT INTO gigalibs_finance.inbox_receipts')) {
+          return { rows: [{ id: 'receipt-1' }], rowCount: 1 };
+        }
+        if (sql.includes('accounting_books')) return { rows: [{ id: 'book-1' }] };
+        if (sql.includes('fiscal_periods')) {
+          return { rows: [{ id: 'period-1', status: 'LOCKED', period_name: '2026-09' }] };
+        }
+        return { rows: [], rowCount: 0 };
+      }),
+    };
+    const database = { withTenantTransaction: vi.fn(async (_t: string, work: (c: typeof client) => unknown) => work(client)) };
+    const inbox = new InventorySubledgerInboxService(database as never, { ingestReceiptLayer: vi.fn() } as never);
+    const body = receiptEnvelope({
+      payload: {
+        receiptId: randomUUID(),
+        receiptNumber: 'GR-LOCKED',
+        warehouseId: randomUUID(),
+        receivedAt: '2026-09-10T00:00:00.000Z',
+        lines: [
+          {
+            receiptLineId: randomUUID(),
+            productId: randomUUID(),
+            receivedQuantity: '1',
+            uomId: randomUUID(),
+          },
+        ],
+      },
+    });
+    await expect(inbox.receive(body, JSON.stringify(body))).resolves.toEqual({
+      status: 'REJECTED',
+      code: 'FINANCE_PERIOD_LOCKED',
+    });
   });
 
   it('receipts without a cost profile as REJECTED', async () => {

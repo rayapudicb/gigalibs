@@ -1,6 +1,6 @@
 # WI-OI-120fq (F2.1 / E3 slice 1): Inventory receipt outbox → Finance inbox
 
-- **Status:** Built (not committed; owner, 2026-10-18)
+- **Status:** Done in git (`8a5b487`; owner, 2026-10-18). UAT relay proof still open.
 - **Work item:** WI-OI-120 (F2 / E3 in plan v3 §5A). Evidence in `.pi/work/WI-OI-120.md`.
 - **Size:** L (slice 1: relay + inbox + costing handoff; E2 posting rules and reconciliation follow)
 
