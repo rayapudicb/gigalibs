@@ -1,8 +1,9 @@
-import { BadRequestException, ConflictException, ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import type { PoolClient } from 'pg';
 import { SCHEMA } from '../config.js';
 import { DatabaseService } from '../database.service.js';
 import { FinanceService } from './finance.service.js';
+import { runJournalDraftTransition, type JournalDraftLifecycleDeps } from './journal-draft-lifecycle.js';
 
 // WI-OI-120l (U12, owner decision 2026-10-06 "Option A"): manual journals are drafted, submitted and approved by a second
 // person before they post. A draft finds its fiscal period from its posting date; its lines name accounts of its own
@@ -193,74 +194,95 @@ export class JournalDraftsService {
   async submit(tenantId: string, actorId: string, id: string, expectedVersion: number): Promise<JournalDraftV1> {
     return this.database.withTenantTransaction(tenantId, async (client) => {
       const draft = await this.locked(client, tenantId, id, expectedVersion, ['DRAFT']);
-      if (draft.lineCount < 2) throw new BadRequestException('A journal needs at least two lines.');
-      if (BigInt(draft.totalDebitMinor) !== BigInt(draft.totalCreditMinor)) {
-        throw new BadRequestException(`The journal does not balance: debits ${draft.totalDebitMinor}, credits ${draft.totalCreditMinor} (minor units).`);
-      }
-      if (BigInt(draft.totalDebitMinor) === 0n) throw new BadRequestException('The journal has no amounts.');
-      await this.periodFor(client, tenantId, draft.accountingBookId, draft.postingDate);
-      await client.query(
-        `UPDATE ${SCHEMA}.gl_journal_drafts SET status = 'SUBMITTED', submitted_by = $3, submitted_at = now(), returned_reason = NULL,
-                version = version + 1, updated_at = now() WHERE tenant_id = $1 AND id = $2`,
-        [tenantId, id, actorId],
-      );
-      await this.audit(client, tenantId, id, 'JOURNAL_DRAFT_SUBMITTED', actorId, { totalMinor: draft.totalDebitMinor });
-      return this.read(client, tenantId, id);
+      return runJournalDraftTransition(this.lifecycleDeps(client, tenantId, actorId), draft, 'submit', expectedVersion);
     });
   }
 
   async approve(tenantId: string, actorId: string, id: string, expectedVersion: number, reason: string): Promise<JournalDraftV1> {
     return this.database.withTenantTransaction(tenantId, async (client) => {
       const draft = await this.locked(client, tenantId, id, expectedVersion, ['SUBMITTED']);
-      if (draft.submittedBy === actorId) throw new ForbiddenException('The person who submitted a journal cannot approve it.');
-      const lines = await client.query(
-        `SELECT account_id, debit_amount_minor, credit_amount_minor, memo FROM ${SCHEMA}.gl_journal_draft_lines
-          WHERE tenant_id = $1 AND draft_id = $2 ORDER BY line_number`,
-        [tenantId, id],
-      );
-      const journal = await this.finance.postJournal(
-        tenantId,
-        actorId,
-        {
-          accountingBookId: draft.accountingBookId,
-          fiscalPeriodId: draft.fiscalPeriodId,
-          postingDate: draft.postingDate,
-          entryType: draft.entryType as 'STANDARD_MANUAL',
-          sourceDocumentType: 'GL_JOURNAL_DRAFT',
-          sourceDocumentId: id,
-          description: draft.description,
-          lines: lines.rows.map((line) => ({
-            accountId: String(line.account_id),
-            debitAmountMinor: String(line.debit_amount_minor),
-            creditAmountMinor: String(line.credit_amount_minor),
-            exchangeRate: '1.000000',
-            ...(line.memo ? { memo: String(line.memo) } : {}),
-          })),
-        },
-        client,
-      );
-      await client.query(
-        `UPDATE ${SCHEMA}.gl_journal_drafts SET status = 'POSTED', approved_by = $3, approved_at = now(), posted_journal_id = $4,
-                version = version + 1, updated_at = now() WHERE tenant_id = $1 AND id = $2`,
-        [tenantId, id, actorId, journal.id],
-      );
-      await this.audit(client, tenantId, id, 'JOURNAL_DRAFT_APPROVED', actorId, { journalId: journal.id, journalNumber: journal.journalNumber, reason });
-      return this.read(client, tenantId, id);
+      return runJournalDraftTransition(this.lifecycleDeps(client, tenantId, actorId), draft, 'approve', expectedVersion, {
+        reason,
+      });
     });
   }
 
   async returnToDraft(tenantId: string, actorId: string, id: string, expectedVersion: number, reason: string): Promise<JournalDraftV1> {
-    if (!reason?.trim()) throw new BadRequestException('Say why the journal goes back to its author.');
     return this.database.withTenantTransaction(tenantId, async (client) => {
-      await this.locked(client, tenantId, id, expectedVersion, ['SUBMITTED']);
-      await client.query(
-        `UPDATE ${SCHEMA}.gl_journal_drafts SET status = 'DRAFT', submitted_by = NULL, submitted_at = NULL, returned_reason = $3,
-                version = version + 1, updated_at = now() WHERE tenant_id = $1 AND id = $2`,
-        [tenantId, id, reason.trim()],
-      );
-      await this.audit(client, tenantId, id, 'JOURNAL_DRAFT_RETURNED', actorId, { reason: reason.trim() });
-      return this.read(client, tenantId, id);
+      const draft = await this.locked(client, tenantId, id, expectedVersion, ['SUBMITTED']);
+      return runJournalDraftTransition(this.lifecycleDeps(client, tenantId, actorId), draft, 'returnToDraft', expectedVersion, {
+        reason,
+      });
     });
+  }
+
+  /** WI-OI-120fm (F1.2): persistence hooks for the shared document lifecycle runner. */
+  private lifecycleDeps(client: PoolClient, tenantId: string, actorId: string): JournalDraftLifecycleDeps {
+    return {
+      client,
+      tenantId,
+      actorId,
+      assertOpenPeriod: async (bookId, postingDate) => {
+        await this.periodFor(client, tenantId, bookId, postingDate);
+      },
+      persistSubmit: async (draft) => {
+        await client.query(
+          `UPDATE ${SCHEMA}.gl_journal_drafts SET status = 'SUBMITTED', submitted_by = $3, submitted_at = now(), returned_reason = NULL,
+                  version = version + 1, updated_at = now() WHERE tenant_id = $1 AND id = $2`,
+          [tenantId, draft.id, actorId],
+        );
+        await this.audit(client, tenantId, draft.id, 'JOURNAL_DRAFT_SUBMITTED', actorId, { totalMinor: draft.totalDebitMinor });
+        return this.read(client, tenantId, draft.id);
+      },
+      persistApprove: async (draft, approvalReason) => {
+        const lines = await client.query(
+          `SELECT account_id, debit_amount_minor, credit_amount_minor, memo FROM ${SCHEMA}.gl_journal_draft_lines
+            WHERE tenant_id = $1 AND draft_id = $2 ORDER BY line_number`,
+          [tenantId, draft.id],
+        );
+        const journal = await this.finance.postJournal(
+          tenantId,
+          actorId,
+          {
+            accountingBookId: draft.accountingBookId,
+            fiscalPeriodId: draft.fiscalPeriodId,
+            postingDate: draft.postingDate,
+            entryType: draft.entryType as 'STANDARD_MANUAL',
+            sourceDocumentType: 'GL_JOURNAL_DRAFT',
+            sourceDocumentId: draft.id,
+            description: draft.description,
+            lines: lines.rows.map((line) => ({
+              accountId: String(line.account_id),
+              debitAmountMinor: String(line.debit_amount_minor),
+              creditAmountMinor: String(line.credit_amount_minor),
+              exchangeRate: '1.000000',
+              ...(line.memo ? { memo: String(line.memo) } : {}),
+            })),
+          },
+          client,
+        );
+        await client.query(
+          `UPDATE ${SCHEMA}.gl_journal_drafts SET status = 'POSTED', approved_by = $3, approved_at = now(), posted_journal_id = $4,
+                  version = version + 1, updated_at = now() WHERE tenant_id = $1 AND id = $2`,
+          [tenantId, draft.id, actorId, journal.id],
+        );
+        await this.audit(client, tenantId, draft.id, 'JOURNAL_DRAFT_APPROVED', actorId, {
+          journalId: journal.id,
+          journalNumber: journal.journalNumber,
+          reason: approvalReason,
+        });
+        return this.read(client, tenantId, draft.id);
+      },
+      persistReturn: async (draft, returnReason) => {
+        await client.query(
+          `UPDATE ${SCHEMA}.gl_journal_drafts SET status = 'DRAFT', submitted_by = NULL, submitted_at = NULL, returned_reason = $3,
+                  version = version + 1, updated_at = now() WHERE tenant_id = $1 AND id = $2`,
+          [tenantId, draft.id, returnReason],
+        );
+        await this.audit(client, tenantId, draft.id, 'JOURNAL_DRAFT_RETURNED', actorId, { reason: returnReason });
+        return this.read(client, tenantId, draft.id);
+      },
+    };
   }
 
   private async activeBook(client: PoolClient, tenantId: string, bookId: string): Promise<void> {

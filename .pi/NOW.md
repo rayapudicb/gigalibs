@@ -10,30 +10,26 @@ state and the release procedure as it is run. The prompt to paste is [PROMPT-202
 
 ## Current step
 
-**Phase 1, W1: [WI-OI-120bh](tasks/WI-OI-120bh.md), correcting 120bf and 120bg** (approved by the owner 2026-10-18).
-- **Built in main, not committed:**
-  - the fake "Close work order" button is removed;
-  - the CMMS entitlement key comes from the manifest (a generated map), not a literal in the code;
-  - the journey's supervisor step is split into a real review and an honest sign-off step, which blocks until
-    sign-off exists.
-- **Independent Security review:** approve with conditions (Sonnet, read-only, 2026-10-18). Its two Lows are fixed.
-- **Next:**
-  - "commit";
-  - a release on `27450b7`;
-  - the owner's deploy;
-  - the journey.
-- **Then:** supervisor sign-off as a real feature (`COMPLETED → CLOSED`, migration 21; its own card). After that,
-  W1-B.
+**Table 2 (architecture), owner 2026-10-18:** Claude stopped; Cursor continues engines after CMMS journey proof.
+- **[WI-OI-120bh](tasks/WI-OI-120bh.md) is on UAT** (`3bc0c1f`, journey `dg84u3`).
+- **Done (committed, not on UAT until owner deploy):** [WI-OI-120fl](tasks/WI-OI-120fl.md) (F1.1) and
+  [WI-OI-120fm](tasks/WI-OI-120fm.md) (F1.2) — `@gigalibs/document-lifecycle` and Finance journal-draft transitions.
+- **Next Table 2:** F2 first posting chain (E3) or finish [WI-OI-120f](tasks/WI-OI-120f.md) F0.5 Inventory deploy on UAT.
+- **Parallel (deploy, not code):** [WI-OI-120f](tasks/WI-OI-120f.md) F0.5 Inventory metadata — commit/deploy and
+  Playwright on UAT when the owner is ready (`E2E_UAT_ADMIN_*`).
+- **Deferred until owner chooses:** [WI-OI-120bi](tasks/WI-OI-120bi.md) supervisor sign-off (journey's one known
+  blocker); [WI-OI-120bj](tasks/WI-OI-120bj.md); W1-B scope switch-on.
 
 ## Running on UAT
 
-- **Release `27450b7`** (owner deploy 2026-10-18): `1bb0193` (W1-A), plus `fd63d93` (WI-OI-120bf), plus WI-OI-120bg.
-  CMMS is at migration 20. It still has the fake "Close work order" button, which 120bh removes. The button has
-  written one note on UAT, in the journey test workspace `journey-d9e3oe` (read-only check, 2026-10-18).
-- **Last journey `d9e3oe`** (on `27450b7`): 55 findings (33 layout, 17 accessibility, 5 UX, 0 blockers). The
-  supervisor step passed only through the fake button, so the honest count is 1 gap: supervisor sign-off. The
-  technician raises, accepts and completes for real.
-- **Rollback:** `fd63d93`, whose images and backup `gigalibs_backup_20261018_015612Z` are kept.
+- **Release `3bc0c1f`** (owner deploy 2026-10-18), tag `3bc0c1f46c27-b896d4b59517`: `27450b7` plus WI-OI-120bh.
+  `27450b7` was `fd63d93` (WI-OI-120bf) plus WI-OI-120bg; `fd63d93` was `1bb0193` (W1-A, WI-OI-120be) plus WI-OI-120bf.
+  CMMS is at migration 20, and every relay is ok.
+- **Last journey `dg84u3`** (on `3bc0c1f`): 56 findings (33 layout, 17 accessibility, 5 UX, 1 blocker).
+  - The technician raises a request, the supervisor assigns a work order, and the technician completes it, all for
+    real.
+  - The one blocker is the known gap: supervisor sign-off is not built yet (WI-OI-120bi).
+- **Rollback:** `27450b7` (images kept), backup `gigalibs_backup_20261018_062008Z`.
 
 ## Built, not yet on UAT
 
@@ -60,11 +56,12 @@ state and the release procedure as it is run. The prompt to paste is [PROMPT-202
 
 ## Next three steps
 
-1. **[WI-OI-120bh](tasks/WI-OI-120bh.md)** on UAT: the review, the release, the owner's deploy and the journey.
-2. **Supervisor sign-off** (new card, M): a planner closes a completed work order with a sign-off note, an audit
-   record, the outbox event and migration 21. Plan v3 step 1.3 asks that supervisors "close work orders".
-3. **W1-B:** add CMMS to `SCOPE_ENFORCING_MODULES` with its context-coverage test. The journey proves that North does
-   not see South. Then step 1.2, T3 (WI-OI-120ad), and the Phase 0 leftovers (WI-OI-120aj, WI-OI-120am).
+1. **[WI-OI-120bi](tasks/WI-OI-120bi.md), supervisor sign-off** (M). A planner closes a completed work order with a
+   note, and the person who completed it cannot. It comes with an audit record, the outbox event and migration 21.
+   The journey's last CMMS blocker then clears for real.
+2. **[WI-OI-120bj](tasks/WI-OI-120bj.md)** (S): no screen claims a verification it did not make.
+3. **W1-B:** add CMMS to `SCOPE_ENFORCING_MODULES` with its context-coverage test, and prove in the journey that
+   North does not see South. Then step 1.2, T3 (WI-OI-120ad), and the Phase 0 leftovers (WI-OI-120aj, WI-OI-120am).
 
 **W2 is decided (owner, 2026-10-18):**
 - enterprise accounts only: an administrator creates each user and shares the username and password;

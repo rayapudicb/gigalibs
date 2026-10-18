@@ -716,6 +716,9 @@ importers:
       '@gigalibs/contracts':
         specifier: workspace:*
         version: link:../../../../packages/contracts
+      '@gigalibs/document-lifecycle':
+        specifier: workspace:*
+        version: link:../../../../packages/document-lifecycle
       '@gigalibs/module-sdk':
         specifier: workspace:*
         version: link:../../../../packages/module-sdk
@@ -2023,6 +2026,15 @@ importers:
       prisma:
         specifier: 6.19.3
         version: 6.19.3(typescript@5.9.3)
+
+  packages/document-lifecycle:
+    devDependencies:
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.3
+      vitest:
+        specifier: ^3.0.0
+        version: 3.2.7(@types/node@24.13.3)(jiti@2.7.0)(tsx@4.23.12)
 
   packages/email-templates:
     devDependencies:
