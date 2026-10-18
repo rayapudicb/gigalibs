@@ -17,6 +17,8 @@ import {
   type CogsPostedEventV1,
   type LandedCostPostedEventV1,
   type InventoryRevaluationPostedEventV1,
+  JournalEntryTypeSchema,
+  type JournalEntryType,
   type PostJournalInputV1,
 } from '@gigalibs/contracts';
 import {
@@ -249,7 +251,7 @@ export class CostingService {
           accountingBookId: input.bookId,
           fiscalPeriodId: input.periodId,
           postingDate: input.receiptDate || now,
-          entryType: input.journalEntryType ?? 'SUBLEDGER_INVENTORY',
+          entryType: resolveJournalEntryType(input.journalEntryType, 'SUBLEDGER_INVENTORY'),
           description: `Inventory Receipt ${input.receiptRef}`,
           sourceDocumentType: input.sourceDocumentType ?? 'INVENTORY_COST_LAYER',
           sourceDocumentId: input.sourceDocumentId ?? layerId,
@@ -986,4 +988,12 @@ export class CostingService {
       createdAt: new Date(row.created_at).toISOString(),
     };
   }
+}
+
+function resolveJournalEntryType(value: string | undefined, fallback: JournalEntryType): JournalEntryType {
+  if (value) {
+    const parsed = JournalEntryTypeSchema.safeParse(value);
+    if (parsed.success) return parsed.data;
+  }
+  return fallback;
 }

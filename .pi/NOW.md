@@ -77,9 +77,9 @@ redirect the owner to other product tracks in chat.
 | **F1.3** receipt lifecycle | `de671f0` | Ships with Inventory deploy |
 | **F1.4** period-lock on complete | `e7eaa3d` | Uses module-host `FINANCIAL_OPERATIONS_DATABASE_URL` |
 
-**Owner next (deploy):** release branch tip (**F2 through F2.8 + F1.3**); [WI-OI-120fp](tasks/WI-OI-120fp.md) — agents do not run `--deploy`.
-**Owner next (deploy):** release **`e7eaa3d`**+ ([WI-OI-120fp](tasks/WI-OI-120fp.md)).
-**Agent next (code):** F2.9 accounting review (human) or UAT deploy evidence support.
+**Owner next (deploy):** release **`e7eaa3d`**+ ([WI-OI-120fp](tasks/WI-OI-120fp.md)); agents do not run `--deploy`.
+**Owner next (human):** F2.9 — accountant sign-off using [F2.9 review packet](work/F2.9-INVENTORY-RECEIPT-POSTING-ACCOUNTING-REVIEW.md) ([WI-OI-120ga](tasks/WI-OI-120ga.md)).
+**Agent next (code):** none on Table 2 engines until owner deploy evidence or accountant feedback; optional **commit** for F2.9 packet + costing type fix.
 
 **W2 is decided (owner, 2026-10-18):**
 - enterprise accounts only: an administrator creates each user and shares the username and password;

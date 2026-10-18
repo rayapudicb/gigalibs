@@ -4338,3 +4338,10 @@ widening the card to fix the API faults the proof found.
 - **Inbox apply** records each receipt line source id and links `gl_journals` when posted.
 - **API:** `GET /financial-operations/v1/subledger/inventory/posting-reconciliation` (`finance:read`) returns inbox summary + `missingJournalSourceIds` + `balanced`.
 - **Tests:** finance API **60/60** unit tests.
+
+## WI-OI-120ga (F2.9): Accounting review — Inventory receipt posting (2026-10-18)
+
+- **Gate:** WI-OI-119 P1-28; Table 2 row #19.
+- **Packet:** [.pi/work/F2.9-INVENTORY-RECEIPT-POSTING-ACCOUNTING-REVIEW.md](F2.9-INVENTORY-RECEIPT-POSTING-ACCOUNTING-REVIEW.md) (spec vs implementation, UAT evidence checklist, sign-off table).
+- **Task card:** [WI-OI-120ga](../tasks/WI-OI-120ga.md).
+- **Status:** Awaiting named accountant sign-off; not Done until §6 of the packet is filled and owner accepts.

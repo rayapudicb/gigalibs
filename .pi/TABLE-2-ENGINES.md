@@ -29,7 +29,7 @@ Legend: **Code** = merged in git on the Table 2 branch. **UAT** = owner deploy +
 | 16 | F2.6 | Scheduled reconciliation job (daily) | Done | **Open** | [WI-OI-120fu](tasks/WI-OI-120fu.md); migration **11** on deploy |
 | 17 | F2.7 | Isolated HTTP handshake cert (Inventory↔Finance) | Done `1fadfa4` | — | [WI-OI-120fw](tasks/WI-OI-120fw.md); `verify-inventory-finance-relay-http.mjs` |
 | 18 | F2.8 | Period close blocked while posting gaps exist | Done `930272f` | **Open** | [WI-OI-120fx](tasks/WI-OI-120fx.md); guard on period lock + Inventory subledger lock |
-| 19 | F2.9 | Accounting review of default posting rules | Not started | — | Human gate (WI-OI-119 P1-28) |
+| 19 | F2.9 | Accounting review of default posting rules | Packet ready | **Open** | [WI-OI-120ga](tasks/WI-OI-120ga.md); human sign-off (P1-28) |
 | **Tooling (Table 2)** |
 | 20 | — | Non-interactive UAT Playwright | Done `36105e4` | **Open** | `e2e/uat.env` + `pnpm e2e:uat:inventory` |
 
@@ -44,6 +44,7 @@ All rows **1–14** (and **0**) have **Code = Done** and **UAT = Done** with evi
 3. **Owner — deploy:** release **`1fadfa4`**; set `FINANCE_INVENTORY_POSTING_DATABASE_URL` (= Inventory DSN) for POSTED sync; [WI-OI-120fp](tasks/WI-OI-120fp.md).
 4. **Owner — deploy:** ship F2 stack (**F2.5–F2.8** on branch) per [WI-OI-120fp](tasks/WI-OI-120fp.md).
 5. **Owner — deploy:** Table 2 stack tip (**F1.3–F1.4 + F2**) ([WI-OI-120fp](tasks/WI-OI-120fp.md)); module-host already has `FINANCIAL_OPERATIONS_DATABASE_URL` for F1.4.
-6. **Agent — #19:** F2.9 accounting review (human) or F0.5 UAT evidence after deploy.
+6. **Owner — #19:** Accountant completes [F2.9 review packet](work/F2.9-INVENTORY-RECEIPT-POSTING-ACCOUNTING-REVIEW.md) after UAT deploy evidence.
+7. **Owner — #5–20:** UAT deploy **`e7eaa3d`**+ remains the gating path for rows with **Open** UAT.
 
 *Last updated: 2026-10-18 (F2.8 in git; deploy tip branch tip after F2.8 commit; Finance migrations 10–11, Inventory 5).*
