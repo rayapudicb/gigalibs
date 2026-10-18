@@ -1,7 +1,7 @@
 # Table 2 — architectural engines (ADR-0033 / WI-OI-120)
 
 **Owner rule (2026-10-18):** Finish this list (code + UAT evidence) before any other product track.  
-**Canonical deploy tip for UAT:** release commit **`631c4c7`** or later on `feat/gigaops-convergence-core` (includes F1 + full F2 stack).
+**Canonical deploy tip for UAT:** release commit **`1fadfa4`** or later on `feat/gigaops-convergence-core` (F1 + F2 through F2.7).
 
 Legend: **Code** = merged in git on the Table 2 branch. **UAT** = owner deploy + recorded evidence in `.pi/work/WI-OI-120.md`.
 
@@ -27,7 +27,7 @@ Legend: **Code** = merged in git on the Table 2 branch. **UAT** = owner deploy +
 | 14 | F2.4 | Journal register + `GET …/posting-reconciliation` | Done `631c4c7` | **Open** | [WI-OI-120ft](tasks/WI-OI-120ft.md); **Finance migration 10** |
 | 15 | F2.5 | UI: awaiting posting / posted / rejected on documents | Done (uncommitted) | **Open** | [WI-OI-120fv](tasks/WI-OI-120fv.md); Inventory migration **5** |
 | 16 | F2.6 | Scheduled reconciliation job (daily) | Done | **Open** | [WI-OI-120fu](tasks/WI-OI-120fu.md); migration **11** on deploy |
-| 17 | F2.7 | Isolated HTTP handshake cert (Inventory↔Finance) | Done (uncommitted) | — | [WI-OI-120fw](tasks/WI-OI-120fw.md); `verify-inventory-finance-relay-http.mjs` |
+| 17 | F2.7 | Isolated HTTP handshake cert (Inventory↔Finance) | Done `1fadfa4` | — | [WI-OI-120fw](tasks/WI-OI-120fw.md); `verify-inventory-finance-relay-http.mjs` |
 | 18 | F2.8 | Period close blocked while posting gaps exist | Not started | — | Close engine integration |
 | 19 | F2.9 | Accounting review of default posting rules | Not started | — | Human gate (WI-OI-119 P1-28) |
 | **Tooling (Table 2)** |
@@ -44,4 +44,4 @@ All rows **1–14** (and **0**) have **Code = Done** and **UAT = Done** with evi
 3. **Owner — deploy:** include F2.5 + set `FINANCE_INVENTORY_POSTING_DATABASE_URL` on Finance (Inventory DSN) for POSTED sync.
 4. **Agent — #18:** Period close blocked while posting gaps exist (F2.8).
 
-*Last updated: 2026-10-18 (F2.6 `7c1f4c1`; deploy `7c1f4c1`+ with Finance migrations 10–11).*
+*Last updated: 2026-10-18 (deploy tip `1fadfa4`; Finance migrations 10–11, Inventory 5).*

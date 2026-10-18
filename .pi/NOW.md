@@ -19,6 +19,7 @@ redirect the owner to other product tracks in chat.
 - **Committed:** F2.3 `1e54d17` ([WI-OI-120fs](tasks/WI-OI-120fs.md)).
 - **Committed:** F2.4 `631c4c7` ([WI-OI-120ft](tasks/WI-OI-120ft.md)).
 - **Committed:** F2.6 `7c1f4c1` ([WI-OI-120fu](tasks/WI-OI-120fu.md)); Finance migration **11**.
+- **Committed:** F2.5 `1fadfa4` ([WI-OI-120fv](tasks/WI-OI-120fv.md)); F2.7 [WI-OI-120fw](tasks/WI-OI-120fw.md); Inventory migration **5**.
 
 ## Running on UAT
 
@@ -68,9 +69,8 @@ redirect the owner to other product tracks in chat.
 | **F2.4** journal tie-out | `631c4c7` | Deploy; Finance migration **10** on module-host |
 | **F2.6** daily reconciliation | `7c1f4c1` | Deploy with migration **11** |
 
-**Owner next (deploy):** release **`631c4c7`**+ (full F2 stack + F2.6); F0 Playwright; relay env; Finance migrations **10–11**; check `GET …/posting-reconciliation`.
-**Agent next (code):** F2.8 period-close gate; owner deploy of F2.5/F2.6/F2.7 stack.
-**Working tree:** F2.5 [WI-OI-120fv](tasks/WI-OI-120fv.md); F2.7 [WI-OI-120fw](tasks/WI-OI-120fw.md) (uncommitted).
+**Owner next (deploy):** release **`1fadfa4`** (F2 through F2.7); [WI-OI-120fp](tasks/WI-OI-120fp.md) checklist (migrations, relay keys, posting DB URL, Playwright, live F2).
+**Agent next (code):** F2.8 period-close gate after owner deploy evidence.
 
 **W2 is decided (owner, 2026-10-18):**
 - enterprise accounts only: an administrator creates each user and shares the username and password;

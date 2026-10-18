@@ -1,6 +1,6 @@
 # WI-OI-120fv (F2.5): Finance posting status on Inventory receipts
 
-- **Status:** Done in git (uncommitted; owner, 2026-10-18)
+- **Status:** Done in git (`1fadfa4`; owner, 2026-10-18)
 - **Work item:** WI-OI-120 (F2 / ADR-0033 D3). Evidence in `.pi/work/WI-OI-120.md`.
 - **Size:** M
 
