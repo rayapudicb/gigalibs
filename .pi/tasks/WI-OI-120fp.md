@@ -18,9 +18,14 @@ Playwright business flow passes against UAT with labelled test data.
 
 1. Verified backup of UAT Postgres.
 2. Independent Security review when the release touches module host / financial APIs (include F1 if in the tag).
-3. Build images from the release commit; run migration jobs (inventory contract pin unchanged unless a new migration ships).
-4. Deploy; read-only check: module host and web healthy; control plane activates six Inventory window views for the tenant with Universal Inventory entitled.
-5. Manual smoke: `/inventory` → Warehouses tab loads a grid (not “no view” / not static demo figures).
+3. Build images from the release commit; run migration jobs (**Finance 10–11**, **Inventory 5** on this release).
+4. In `infra/compose/.env.modules` (owner-only): run `generate-inventory-finance-relay-credentials.sh` if keys absent; set
+   `FINANCE_INVENTORY_POSTING_DATABASE_URL` to the **same value as `UNIVERSAL_INVENTORY_DATABASE_URL`** (Finance updates
+   receipt posting status via the Inventory definer function).
+5. Deploy; read-only check: module host and web healthy; Finance migration **11**, Inventory **5**; relay health ok.
+6. Live F2: complete a receipt → `GET …/subledger/inventory/posting-reconciliation` balanced; receipt shows **Posted**.
+7. Control plane activates six Inventory window views for the tenant with Universal Inventory entitled.
+8. Manual smoke: `/inventory` → Warehouses tab loads a grid (not “no view” / not static demo figures).
 
 ## Playwright (agent or owner machine)
 

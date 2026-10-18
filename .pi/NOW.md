@@ -69,7 +69,8 @@ redirect the owner to other product tracks in chat.
 | **F2.6** daily reconciliation | `7c1f4c1` | Deploy with migration **11** |
 
 **Owner next (deploy):** release **`631c4c7`**+ (full F2 stack + F2.6); F0 Playwright; relay env; Finance migrations **10–11**; check `GET …/posting-reconciliation`.
-**Agent next (code):** F2.5 posting status UI; F2.7 isolated HTTP relay proof script.
+**Agent next (code):** F2.8 period-close gate; owner deploy of F2.5/F2.6/F2.7 stack.
+**Working tree:** F2.5 [WI-OI-120fv](tasks/WI-OI-120fv.md); F2.7 [WI-OI-120fw](tasks/WI-OI-120fw.md) (uncommitted).
 
 **W2 is decided (owner, 2026-10-18):**
 - enterprise accounts only: an administrator creates each user and shares the username and password;

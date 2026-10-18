@@ -148,6 +148,8 @@ const RECEIPT_FIELDS: readonly FieldSpec[] = [
   { key: 'external-document-reference', writable: true },
   { key: 'notes', writable: true },
   { key: 'status' },
+  { key: 'finance-posting-status' },
+  { key: 'finance-posting-rejection-code' },
   { key: 'created-at' },
   { key: 'completed-at' },
 ];

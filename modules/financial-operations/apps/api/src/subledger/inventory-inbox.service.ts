@@ -12,6 +12,7 @@ import { DatabaseService } from '../database.service.js';
 import { CostingService } from '../costing/costing.service.js';
 import { resolvePrimaryBookPostingContext } from '../posting/finance-posting-context.js';
 import { recordInventoryReceiptLinePosting } from '../posting/subledger-posting-register.js';
+import { InventoryReceiptPostingStatusSync } from './inventory-receipt-posting-status-sync.js';
 
 const CONSUMER = 'finance.inventory-subledger';
 const RECEIPTS: InboxReceiptOptions = { schema: SCHEMA, consumer: CONSUMER, sourceModule: 'inventory' };
@@ -45,6 +46,7 @@ export class InventorySubledgerInboxService {
   constructor(
     private readonly database: DatabaseService,
     private readonly costing: CostingService,
+    private readonly postingStatusSync: InventoryReceiptPostingStatusSync,
   ) {}
 
   async receive(rawEnvelope: unknown, rawBody: string): Promise<FinanceInventoryInboxOutcome> {
@@ -63,18 +65,23 @@ export class InventorySubledgerInboxService {
 
   private async apply(client: PoolClient, envelope: RelayEnvelopeV1): Promise<FinanceInventoryInboxOutcome> {
     const payload = ReceiptCompletedPayloadSchema.safeParse(envelope.payload);
-    if (!payload.success) return { status: 'REJECTED', code: 'FINANCE_INBOX_PAYLOAD_INVALID' };
+    if (!payload.success) {
+      await this.postingStatusSync.setStatus(envelope.tenantId, envelope.aggregateId, 'POSTING_REJECTED', 'FINANCE_INBOX_PAYLOAD_INVALID');
+      return { status: 'REJECTED', code: 'FINANCE_INBOX_PAYLOAD_INVALID' };
+    }
 
     let postingDate: string;
     try {
       postingDate = inventoryReceiptPostingDate(payload.data.receivedAt);
     } catch {
+      await this.postingStatusSync.setStatus(envelope.tenantId, payload.data.receiptId, 'POSTING_REJECTED', 'FINANCE_INBOX_PAYLOAD_INVALID');
       return { status: 'REJECTED', code: 'FINANCE_INBOX_PAYLOAD_INVALID' };
     }
 
     const postingContext = await resolvePrimaryBookPostingContext(client, SCHEMA, envelope.tenantId, postingDate);
     if (typeof postingContext === 'string') {
       this.logger.warn(`Receipt ${payload.data.receiptId}: posting context ${postingContext}.`);
+      await this.postingStatusSync.setStatus(envelope.tenantId, payload.data.receiptId, 'POSTING_REJECTED', postingContext);
       return { status: 'REJECTED', code: postingContext };
     }
 
@@ -86,6 +93,7 @@ export class InventorySubledgerInboxService {
     const costProfile = profile.rows[0];
     if (!costProfile?.standard_unit_cost_scaled) {
       this.logger.warn(`Receipt ${payload.data.receiptId}: no default cost profile with standard cost on tenant ${envelope.tenantId}.`);
+      await this.postingStatusSync.setStatus(envelope.tenantId, payload.data.receiptId, 'POSTING_REJECTED', 'FINANCE_COST_PROFILE_MISSING');
       return { status: 'REJECTED', code: 'FINANCE_COST_PROFILE_MISSING' };
     }
 
@@ -119,6 +127,7 @@ export class InventorySubledgerInboxService {
       });
     }
 
+    await this.postingStatusSync.setStatus(envelope.tenantId, payload.data.receiptId, 'POSTED', null);
     return { status: 'PROCESSED' };
   }
 }

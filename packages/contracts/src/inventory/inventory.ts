@@ -305,6 +305,13 @@ export const InventoryReceiptLineV1Schema = z
   .strict();
 export type InventoryReceiptLineV1 = z.infer<typeof InventoryReceiptLineV1Schema>;
 
+export const ReceiptFinancePostingStatusSchema = z.enum([
+  'NOT_APPLICABLE',
+  'AWAITING_POSTING',
+  'POSTED',
+  'POSTING_REJECTED',
+]);
+
 export const InventoryReceiptV1Schema = z
   .object({
     id: z.string().uuid(),
@@ -315,6 +322,8 @@ export const InventoryReceiptV1Schema = z
     carrierPartyId: z.string().uuid().optional().nullable(),
     externalDocumentReference: z.string().max(128).optional().nullable(),
     status: ReceiptStatusSchema.default('DRAFT'),
+    financePostingStatus: ReceiptFinancePostingStatusSchema.optional(),
+    financePostingRejectionCode: z.string().max(128).optional().nullable(),
     notes: InventoryDescriptionSchema,
     lines: z.array(InventoryReceiptLineV1Schema).optional(),
     version: z.number().int().min(1).default(1),

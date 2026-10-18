@@ -56,7 +56,7 @@
     "service": "module-host",
     "port": 4790,
     "schema": "gigalibs_inventory",
-    "migrationVersion": 4,
+    "migrationVersion": 5,
     "audience": "gigalibs-universal-inventory-api",
     "appendOnlyTables": [
       "audit_events"

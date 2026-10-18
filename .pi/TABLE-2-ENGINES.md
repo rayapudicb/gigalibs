@@ -25,9 +25,9 @@ Legend: **Code** = merged in git on the Table 2 branch. **UAT** = owner deploy +
 | 12 | F2.2 / E2 | Posting policy + book/period + GL handoff | Done `14845ae` | **Open** | [WI-OI-120fr](tasks/WI-OI-120fr.md) |
 | 13 | F2.3 | Inbox reconciliation summary | Done `1e54d17` | **Open** | [WI-OI-120fs](tasks/WI-OI-120fs.md) |
 | 14 | F2.4 | Journal register + `GET …/posting-reconciliation` | Done `631c4c7` | **Open** | [WI-OI-120ft](tasks/WI-OI-120ft.md); **Finance migration 10** |
-| 15 | F2.5 | UI: awaiting posting / posted / rejected on documents | Not started | — | Inventory receipt screen |
+| 15 | F2.5 | UI: awaiting posting / posted / rejected on documents | Done (uncommitted) | **Open** | [WI-OI-120fv](tasks/WI-OI-120fv.md); Inventory migration **5** |
 | 16 | F2.6 | Scheduled reconciliation job (daily) | Done | **Open** | [WI-OI-120fu](tasks/WI-OI-120fu.md); migration **11** on deploy |
-| 17 | F2.7 | Isolated HTTP handshake cert (Inventory↔Finance) | Partial | — | Unit certs exist; live `verify-*` script TBD |
+| 17 | F2.7 | Isolated HTTP handshake cert (Inventory↔Finance) | Done (uncommitted) | — | [WI-OI-120fw](tasks/WI-OI-120fw.md); `verify-inventory-finance-relay-http.mjs` |
 | 18 | F2.8 | Period close blocked while posting gaps exist | Not started | — | Close engine integration |
 | 19 | F2.9 | Accounting review of default posting rules | Not started | — | Human gate (WI-OI-119 P1-28) |
 | **Tooling (Table 2)** |
@@ -41,7 +41,7 @@ All rows **1–14** (and **0**) have **Code = Done** and **UAT = Done** with evi
 
 1. **Owner — #5 [WI-OI-120fp](tasks/WI-OI-120fp.md):** Deploy **`631c4c7`+**, Finance migration **10**, relay keys (`generate-inventory-finance-relay-credentials.sh`), `pnpm e2e:uat:inventory`.
 2. **Owner — #11–14:** Same release: complete a receipt on UAT; confirm Finance inbox + `GET /financial-operations/v1/subledger/inventory/posting-reconciliation` → `balanced: true` when book/period/cost profile exist.
-3. **Agent — #15 (after UAT F0/F2 proof):** Receipt posting status on Inventory metadata UI.
-4. **Agent — #17–18:** Isolated HTTP relay cert script, period-close gate.
+3. **Owner — deploy:** include F2.5 + set `FINANCE_INVENTORY_POSTING_DATABASE_URL` on Finance (Inventory DSN) for POSTED sync.
+4. **Agent — #18:** Period close blocked while posting gaps exist (F2.8).
 
 *Last updated: 2026-10-18 (F2.6 `7c1f4c1`; deploy `7c1f4c1`+ with Finance migrations 10–11).*

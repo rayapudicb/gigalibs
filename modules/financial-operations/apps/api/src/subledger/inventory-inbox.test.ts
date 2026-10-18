@@ -115,7 +115,12 @@ describe('Finance inventory subledger inbox', () => {
       }),
     };
     const database = { withTenantTransaction: vi.fn(async (_tenant: string, work: (c: typeof client) => unknown) => work(client)) };
-    return { inbox: new InventorySubledgerInboxService(database as never, costing as never), costing };
+    const postingStatusSync = { setStatus: vi.fn(async () => undefined) };
+    return {
+      inbox: new InventorySubledgerInboxService(database as never, costing as never, postingStatusSync as never),
+      costing,
+      postingStatusSync,
+    };
   }
 
   it('ingests receipt layers when a default cost profile exists', async () => {
@@ -162,7 +167,12 @@ describe('Finance inventory subledger inbox', () => {
       }),
     };
     const database = { withTenantTransaction: vi.fn(async (_t: string, work: (c: typeof client) => unknown) => work(client)) };
-    const inbox = new InventorySubledgerInboxService(database as never, { ingestReceiptLayer: vi.fn() } as never);
+    const postingStatusSync = { setStatus: vi.fn(async () => undefined) };
+    const inbox = new InventorySubledgerInboxService(
+      database as never,
+      { ingestReceiptLayer: vi.fn() } as never,
+      postingStatusSync as never,
+    );
     const body = receiptEnvelope({
       payload: {
         receiptId: randomUUID(),

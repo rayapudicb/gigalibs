@@ -107,6 +107,13 @@ export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGat
         }
       },
       {
+        "template": "v1/subledger/inventory/receipts/{id}/posting-status",
+        "pattern": "^v1/subledger/inventory/receipts/[0-9a-fA-F-]{36}/posting-status$",
+        "methods": {
+          "GET": "finance:read"
+        }
+      },
+      {
         "template": "v1/journals",
         "pattern": "^v1/journals$",
         "methods": {

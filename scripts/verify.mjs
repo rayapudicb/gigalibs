@@ -53,6 +53,11 @@ const steps = [
     cmd: process.execPath,
     args: ['scripts/verify-inventory-finance-posting-reconciliation.mjs'],
   },
+  {
+    name: 'inventory-finance-relay-http (F2.7)',
+    cmd: process.execPath,
+    args: ['scripts/verify-inventory-finance-relay-http.mjs'],
+  },
   // WI-OI-120h (U19a): every CMMS screen call reaches the built CMMS API through the gateway allow-list (needs
   // PROOF_DATABASE_URL).
   { name: 'cmms-screen-routes (U19a)', cmd: process.execPath, args: ['scripts/verify-u19a-cmms-screen-routes.mjs'] },

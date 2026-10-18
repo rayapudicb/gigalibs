@@ -669,11 +669,21 @@ export class InventoryService {
       [tenantId, receiptId],
     );
     if (res.rowCount === 0) throw new NotFoundException('Receipt not found.');
+    const row = res.rows[0];
+    if (row.status === 'COMPLETED' && !row.finance_posting_status) {
+      const outbox = await client.query<{ status: string }>(
+        `SELECT status FROM ${SCHEMA}.outbox_events
+          WHERE tenant_id = $1 AND aggregate_id = $2 AND event_type = 'inventory.receipt.completed.v1'
+          ORDER BY created_at DESC LIMIT 1`,
+        [tenantId, receiptId],
+      );
+      row.outbox_status = outbox.rows[0]?.status ?? null;
+    }
     const linesRes = await client.query(
       `SELECT * FROM ${SCHEMA}.receipt_lines WHERE tenant_id = $1 AND receipt_id = $2 ORDER BY line_number ASC`,
       [tenantId, receiptId],
     );
-    return mapReceipt(res.rows[0], linesRes.rows);
+    return mapReceipt(row, linesRes.rows);
   }
 
   async getReceipt(principal: ModulePrincipal, receiptId: string): Promise<InventoryReceiptV1> {
@@ -812,7 +822,8 @@ export class InventoryService {
       }
 
       await client.query(
-        `UPDATE ${SCHEMA}.receipts SET status = 'COMPLETED', completed_at = $1, updated_at = $1, version = version + 1 WHERE id = $2`,
+        `UPDATE ${SCHEMA}.receipts SET status = 'COMPLETED', completed_at = $1, updated_at = $1, version = version + 1,
+          finance_posting_status = 'AWAITING_POSTING', finance_posting_rejection_code = NULL WHERE id = $2`,
         [now, receiptId],
       );
 
@@ -1901,7 +1912,29 @@ function mapReservation(row: any): InventoryReservationV1 {
   };
 }
 
+export type ReceiptFinancePostingStatus =
+  | 'NOT_APPLICABLE'
+  | 'AWAITING_POSTING'
+  | 'POSTED'
+  | 'POSTING_REJECTED';
+
+/** ADR-0033 D3: persisted Finance status, with outbox fallback before Finance sync. */
+export function resolveReceiptFinancePostingStatus(row: {
+  status: string;
+  finance_posting_status?: string | null;
+  outbox_status?: string | null;
+}): ReceiptFinancePostingStatus {
+  if (row.status !== 'COMPLETED') return 'NOT_APPLICABLE';
+  const stored = row.finance_posting_status;
+  if (stored === 'POSTED' || stored === 'POSTING_REJECTED' || stored === 'AWAITING_POSTING') {
+    return stored;
+  }
+  if (row.outbox_status === 'FAILED') return 'POSTING_REJECTED';
+  return 'AWAITING_POSTING';
+}
+
 export function mapReceipt(row: any, linesRows: any[]): InventoryReceiptV1 {
+  const financePostingStatus = resolveReceiptFinancePostingStatus(row);
   return {
     id: row.id,
     tenantId: row.tenant_id,
@@ -1911,6 +1944,8 @@ export function mapReceipt(row: any, linesRows: any[]): InventoryReceiptV1 {
     carrierPartyId: row.carrier_party_id,
     externalDocumentReference: row.external_document_reference,
     status: row.status,
+    financePostingStatus,
+    financePostingRejectionCode: row.finance_posting_rejection_code ?? null,
     notes: row.notes,
     version: row.version,
     createdAt: row.created_at.toISOString ? row.created_at.toISOString() : row.created_at,

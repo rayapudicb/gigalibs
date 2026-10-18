@@ -14155,6 +14155,29 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "referenceKey": "receipt-statuses"
           },
           {
+            "fieldKey": "finance-posting-status",
+            "entityKey": "inventory.receipts",
+            "label": "Finance posting",
+            "type": "SELECT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "finance-posting-statuses"
+          },
+          {
+            "fieldKey": "finance-posting-rejection-code",
+            "entityKey": "inventory.receipts",
+            "label": "Finance posting rejection",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
             "fieldKey": "created-at",
             "entityKey": "inventory.receipts",
             "label": "Created",
@@ -14362,6 +14385,28 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
               {
                 "value": "CANCELLED",
                 "label": "Cancelled"
+              }
+            ]
+          },
+          {
+            "referenceKey": "finance-posting-statuses",
+            "referenceType": "VALUE_LIST",
+            "staticValues": [
+              {
+                "value": "NOT_APPLICABLE",
+                "label": "Not applicable"
+              },
+              {
+                "value": "AWAITING_POSTING",
+                "label": "Awaiting posting"
+              },
+              {
+                "value": "POSTED",
+                "label": "Posted"
+              },
+              {
+                "value": "POSTING_REJECTED",
+                "label": "Posting rejected"
               }
             ]
           },
