@@ -28,6 +28,7 @@ import type { PoolClient } from 'pg';
 import { SCHEMA } from '../config.js';
 import { DatabaseService } from '../database.service.js';
 import { appendOutboxEvent } from '../outbox.js';
+import { assertInventoryReceiptPostingReadyForClose } from '../posting/inventory-receipt-posting-close-guard.js';
 
 @Injectable()
 export class FinanceService {
@@ -339,6 +340,10 @@ export class FinanceService {
       const current = await this.getFiscalPeriod(tenantId, periodId);
       if (current.status === 'LOCKED' && input.status !== 'LOCKED') {
         throw new BadRequestException('Cannot reopen or modify a LOCKED fiscal period');
+      }
+
+      if (input.status === 'LOCKED' || input.status === 'SOFT_CLOSED') {
+        await assertInventoryReceiptPostingReadyForClose(client, SCHEMA, tenantId);
       }
 
       const res = await client.query(

@@ -30,6 +30,7 @@ import type { PoolClient } from 'pg';
 import { SCHEMA } from '../config.js';
 import { appendOutboxEvent } from '../outbox.js';
 import { DatabaseService } from '../database.service.js';
+import { assertInventoryReceiptPostingReadyForClose } from '../posting/inventory-receipt-posting-close-guard.js';
 import {
   distributeAmortization,
   computeYearEndRollover,
@@ -87,6 +88,10 @@ export class CloseService {
 
       const isLocking = input.lockStatus === 'HARD_LOCKED' || input.lockStatus === 'SOFT_LOCKED';
       const now = new Date().toISOString();
+
+      if (isLocking && input.subledgerType === 'INVENTORY') {
+        await assertInventoryReceiptPostingReadyForClose(client, SCHEMA, tenantId);
+      }
 
       const upsertRes = await client.query(
         `INSERT INTO ${SCHEMA}.period_subledger_locks (
@@ -637,6 +642,8 @@ export class CloseService {
     input: ExecuteYearEndCloseInputV1,
   ): Promise<YearEndCloseRunV1> {
     return this.database.withTenantTransaction(tenantId, async (client: PoolClient) => {
+      await assertInventoryReceiptPostingReadyForClose(client, SCHEMA, tenantId);
+
       // 1. Fetch book currency
       const bookRes = await client.query(
         `SELECT currency_code FROM ${SCHEMA}.accounting_books WHERE tenant_id = $1 AND id = $2`,

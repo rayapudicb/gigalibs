@@ -28,7 +28,7 @@ Legend: **Code** = merged in git on the Table 2 branch. **UAT** = owner deploy +
 | 15 | F2.5 | UI: awaiting posting / posted / rejected on documents | Done `1fadfa4` | **Open** | [WI-OI-120fv](tasks/WI-OI-120fv.md); Inventory migration **5** |
 | 16 | F2.6 | Scheduled reconciliation job (daily) | Done | **Open** | [WI-OI-120fu](tasks/WI-OI-120fu.md); migration **11** on deploy |
 | 17 | F2.7 | Isolated HTTP handshake cert (Inventory↔Finance) | Done `1fadfa4` | — | [WI-OI-120fw](tasks/WI-OI-120fw.md); `verify-inventory-finance-relay-http.mjs` |
-| 18 | F2.8 | Period close blocked while posting gaps exist | Not started | — | Close engine integration |
+| 18 | F2.8 | Period close blocked while posting gaps exist | Done | **Open** | [WI-OI-120fx](tasks/WI-OI-120fx.md); guard on period lock + Inventory subledger lock |
 | 19 | F2.9 | Accounting review of default posting rules | Not started | — | Human gate (WI-OI-119 P1-28) |
 | **Tooling (Table 2)** |
 | 20 | — | Non-interactive UAT Playwright | Done `36105e4` | **Open** | `e2e/uat.env` + `pnpm e2e:uat:inventory` |
@@ -42,6 +42,7 @@ All rows **1–14** (and **0**) have **Code = Done** and **UAT = Done** with evi
 1. **Owner — #5 [WI-OI-120fp](tasks/WI-OI-120fp.md):** Deploy **`631c4c7`+**, Finance migration **10**, relay keys (`generate-inventory-finance-relay-credentials.sh`), `pnpm e2e:uat:inventory`.
 2. **Owner — #11–14:** Same release: complete a receipt on UAT; confirm Finance inbox + `GET /financial-operations/v1/subledger/inventory/posting-reconciliation` → `balanced: true` when book/period/cost profile exist.
 3. **Owner — deploy:** release **`1fadfa4`**; set `FINANCE_INVENTORY_POSTING_DATABASE_URL` (= Inventory DSN) for POSTED sync; [WI-OI-120fp](tasks/WI-OI-120fp.md).
-4. **Agent — #18:** Period close blocked while posting gaps exist (F2.8).
+4. **Owner — deploy:** ship F2 stack (**F2.5–F2.8** on branch) per [WI-OI-120fp](tasks/WI-OI-120fp.md).
+5. **Agent — #9:** F1.3 Inventory receipt lifecycle graph (after F0.5 UAT or in parallel if owner directs).
 
-*Last updated: 2026-10-18 (deploy tip `1fadfa4`; Finance migrations 10–11, Inventory 5).*
+*Last updated: 2026-10-18 (F2.8 in git; deploy tip branch tip after F2.8 commit; Finance migrations 10–11, Inventory 5).*

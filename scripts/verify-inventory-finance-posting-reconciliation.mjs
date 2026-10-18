@@ -18,6 +18,7 @@ const result = spawnSync(
     'modules/financial-operations/apps/api/src/posting/inventory-receipt-posting-reconciliation.test.ts',
     'modules/financial-operations/apps/api/src/posting/inventory-receipt-posting-reconciliation-job.test.ts',
     'modules/financial-operations/apps/api/src/posting/inventory-receipt-posting-status.test.ts',
+    'modules/financial-operations/apps/api/src/posting/inventory-receipt-posting-close-guard.test.ts',
     'modules/financial-operations/apps/api/src/posting/subledger-posting-register.test.ts',
   ],
   { cwd: root, stdio: 'inherit', env: process.env },

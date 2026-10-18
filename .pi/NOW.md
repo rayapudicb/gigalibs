@@ -20,6 +20,7 @@ redirect the owner to other product tracks in chat.
 - **Committed:** F2.4 `631c4c7` ([WI-OI-120ft](tasks/WI-OI-120ft.md)).
 - **Committed:** F2.6 `7c1f4c1` ([WI-OI-120fu](tasks/WI-OI-120fu.md)); Finance migration **11**.
 - **Committed:** F2.5 `1fadfa4` ([WI-OI-120fv](tasks/WI-OI-120fv.md)); F2.7 [WI-OI-120fw](tasks/WI-OI-120fw.md); Inventory migration **5**.
+- **Committed:** F2.8 ([WI-OI-120fx](tasks/WI-OI-120fx.md)) — period close blocked when inventory posting reconciliation has gaps.
 
 ## Running on UAT
 
@@ -67,10 +68,13 @@ redirect the owner to other product tracks in chat.
 | **F2.2** posting / GL handoff | `14845ae` | Deploy with F2.1; live journal proof on UAT |
 | **F2.3** inbox reconciliation | `1e54d17` | Deploy |
 | **F2.4** journal tie-out | `631c4c7` | Deploy; Finance migration **10** on module-host |
+| **F2.5** posting status on receipts | `1fadfa4` | Deploy; Inventory migration **5**; `FINANCE_INVENTORY_POSTING_DATABASE_URL` |
 | **F2.6** daily reconciliation | `7c1f4c1` | Deploy with migration **11** |
+| **F2.7** relay HTTP cert | `1fadfa4` | Isolated proof only (`PROOF_DATABASE_URL`) |
+| **F2.8** period-close gate | Done | Deploy with F2 stack; prove lock fails when reconciliation gaps exist |
 
-**Owner next (deploy):** release **`1fadfa4`** (F2 through F2.7); [WI-OI-120fp](tasks/WI-OI-120fp.md) checklist (migrations, relay keys, posting DB URL, Playwright, live F2).
-**Agent next (code):** F2.8 period-close gate after owner deploy evidence.
+**Owner next (deploy):** release branch tip (F2 through **F2.8**); [WI-OI-120fp](tasks/WI-OI-120fp.md) checklist (migrations, relay keys, posting DB URL, Playwright, live F2).
+**Agent next (code):** **F1.3** Inventory receipt lifecycle graph ([TABLE-2 #9](TABLE-2-ENGINES.md)), unless owner prioritizes deploy evidence or F2.9 accounting review.
 
 **W2 is decided (owner, 2026-10-18):**
 - enterprise accounts only: an administrator creates each user and shares the username and password;
