@@ -26,6 +26,8 @@ allure-results/
 .env
 .env.*
 !.env.example
+e2e/uat.env
+e2e/.env.uat
 .direnv/
 .envrc
 *.log

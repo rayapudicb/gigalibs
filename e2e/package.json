@@ -5,7 +5,10 @@
   "description": "End-to-end Playwright certification suite for WI-OI-042",
   "scripts": {
     "test": "playwright test",
-    "test:report": "playwright show-report test-results/playwright-report"
+    "test:report": "playwright show-report test-results/playwright-report",
+    "uat": "bash run-uat-walkthrough.sh",
+    "uat:inventory": "GIGALIBS_E2E_NONINTERACTIVE=1 bash run-uat-walkthrough.sh --inventory",
+    "uat:journey": "GIGALIBS_E2E_NONINTERACTIVE=1 bash run-uat-walkthrough.sh --journey"
   },
   "devDependencies": {
     "@axe-core/playwright": "4.13.0",

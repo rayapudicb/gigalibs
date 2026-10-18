@@ -48,7 +48,12 @@
     "module:conformance": "node scripts/module-conformance.mjs",
     "audit:anti-duplication": "node scripts/verify-anti-duplication.mjs",
     "audit:sdlc": "node scripts/verify-sdlc-governance.mjs",
-    "audit:design-tokens": "node scripts/verify-design-tokens.mjs"
+    "audit:design-tokens": "node scripts/verify-design-tokens.mjs",
+    "e2e:uat": "GIGALIBS_E2E_NONINTERACTIVE=1 bash e2e/run-uat-walkthrough.sh",
+    "e2e:uat:inventory": "GIGALIBS_E2E_NONINTERACTIVE=1 bash e2e/run-uat-walkthrough.sh --inventory",
+    "e2e:uat:journey": "GIGALIBS_E2E_NONINTERACTIVE=1 bash e2e/run-uat-walkthrough.sh --journey",
+    "e2e:uat:all": "GIGALIBS_E2E_NONINTERACTIVE=1 bash e2e/run-uat-walkthrough.sh --all",
+    "e2e:uat:screens": "GIGALIBS_E2E_NONINTERACTIVE=1 bash e2e/run-uat-walkthrough.sh --screens"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
