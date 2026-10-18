@@ -1,0 +1,471 @@
+{
+  "contractVersion": "1.0",
+  "window": {
+    "route": "/procurement",
+    "label": "Purchase orders",
+    "description": "Create and review purchase order commitments to vendors.",
+    "readPermission": "procurement:read"
+  },
+  "definition": {
+    "kind": "APPLICATION_DICTIONARY",
+    "contractVersion": "1.0",
+    "moduleKey": "universal-procurement",
+    "entityKey": "procurement-purchase-orders",
+    "surfaceKey": "procurement-purchase-orders",
+    "title": "Purchase orders",
+    "dictionary": {
+      "packageKey": "procurement-purchase-orders-module-baseline",
+      "name": "Purchase orders",
+      "version": "1.0.0",
+      "moduleKey": "universal-procurement",
+      "targetEntityKey": "procurement.purchase-orders",
+      "entities": [
+        {
+          "entityKey": "procurement.purchase-orders",
+          "moduleKey": "universal-procurement",
+          "label": "Purchase orders",
+          "ownership": "MODULE_CORE",
+          "primaryKeyField": "id",
+          "isVersioned": true,
+          "isAuditLogged": true,
+          "isSoftDeletable": false
+        }
+      ],
+      "fields": [
+        {
+          "fieldKey": "order-number",
+          "entityKey": "procurement.purchase-orders",
+          "label": "PO number",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "org-unit-id",
+          "entityKey": "procurement.purchase-orders",
+          "label": "Organization unit",
+          "type": "REFERENCE",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "org-unit-ref",
+          "writePermission": "procurement:orders:manage"
+        },
+        {
+          "fieldKey": "vendor-id",
+          "entityKey": "procurement.purchase-orders",
+          "label": "Vendor party",
+          "type": "TEXT",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "helpText": "Active workspace party UUID (supplier).",
+          "writePermission": "procurement:orders:manage"
+        },
+        {
+          "fieldKey": "vendor-name",
+          "entityKey": "procurement.purchase-orders",
+          "label": "Vendor name",
+          "type": "TEXT",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "writePermission": "procurement:orders:manage"
+        },
+        {
+          "fieldKey": "destination-warehouse-id",
+          "entityKey": "procurement.purchase-orders",
+          "label": "Ship-to warehouse",
+          "type": "REFERENCE",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "warehouse-ref",
+          "writePermission": "procurement:orders:manage"
+        },
+        {
+          "fieldKey": "currency-code",
+          "entityKey": "procurement.purchase-orders",
+          "label": "Currency",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "writePermission": "procurement:orders:manage",
+          "defaultValue": "USD"
+        },
+        {
+          "fieldKey": "status",
+          "entityKey": "procurement.purchase-orders",
+          "label": "Status",
+          "type": "SELECT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "po-statuses"
+        },
+        {
+          "fieldKey": "total-amount",
+          "entityKey": "procurement.purchase-orders",
+          "label": "Total (minor units)",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "line-product-id",
+          "entityKey": "procurement.purchase-orders",
+          "label": "Line product",
+          "type": "REFERENCE",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "product-ref",
+          "helpText": "First line only in this window slice.",
+          "writePermission": "procurement:orders:manage"
+        },
+        {
+          "fieldKey": "line-product-code",
+          "entityKey": "procurement.purchase-orders",
+          "label": "Line product code",
+          "type": "TEXT",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "writePermission": "procurement:orders:manage"
+        },
+        {
+          "fieldKey": "line-product-name",
+          "entityKey": "procurement.purchase-orders",
+          "label": "Line product name",
+          "type": "TEXT",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "writePermission": "procurement:orders:manage"
+        },
+        {
+          "fieldKey": "line-ordered-quantity",
+          "entityKey": "procurement.purchase-orders",
+          "label": "Line quantity",
+          "type": "NUMBER",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "scale": 6,
+          "writePermission": "procurement:orders:manage",
+          "defaultValue": "1.000000"
+        },
+        {
+          "fieldKey": "line-uom-id",
+          "entityKey": "procurement.purchase-orders",
+          "label": "Line unit of measure",
+          "type": "REFERENCE",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "uom-ref",
+          "writePermission": "procurement:orders:manage"
+        },
+        {
+          "fieldKey": "line-unit-price-minor",
+          "entityKey": "procurement.purchase-orders",
+          "label": "Line unit price (minor)",
+          "type": "INTEGER",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "writePermission": "procurement:orders:manage"
+        },
+        {
+          "fieldKey": "line-destination-warehouse-id",
+          "entityKey": "procurement.purchase-orders",
+          "label": "Line ship-to warehouse",
+          "type": "REFERENCE",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "warehouse-ref",
+          "helpText": "Defaults to the header warehouse when empty.",
+          "writePermission": "procurement:orders:manage"
+        }
+      ],
+      "relationships": [],
+      "references": [
+        {
+          "referenceKey": "po-statuses",
+          "referenceType": "VALUE_LIST",
+          "staticValues": [
+            {
+              "value": "DRAFT",
+              "label": "Draft"
+            },
+            {
+              "value": "SUBMITTED",
+              "label": "Submitted"
+            },
+            {
+              "value": "APPROVED",
+              "label": "Approved"
+            },
+            {
+              "value": "ISSUED",
+              "label": "Issued"
+            },
+            {
+              "value": "ACKNOWLEDGED",
+              "label": "Acknowledged"
+            },
+            {
+              "value": "PARTIALLY_RECEIVED",
+              "label": "Partially received"
+            },
+            {
+              "value": "RECEIVED",
+              "label": "Received"
+            },
+            {
+              "value": "CLOSED",
+              "label": "Closed"
+            },
+            {
+              "value": "CANCELLED",
+              "label": "Cancelled"
+            }
+          ]
+        },
+        {
+          "referenceKey": "org-unit-ref",
+          "referenceType": "SEARCH_LOOKUP",
+          "resolverKey": "organization-units"
+        },
+        {
+          "referenceKey": "warehouse-ref",
+          "referenceType": "SEARCH_LOOKUP",
+          "resolverKey": "inventory-warehouses",
+          "createWith": {
+            "moduleKey": "universal-inventory",
+            "surfaceKey": "inventory-warehouses",
+            "permission": "inventory:warehouses:manage"
+          }
+        },
+        {
+          "referenceKey": "product-ref",
+          "referenceType": "SEARCH_LOOKUP",
+          "resolverKey": "catalogue-products",
+          "createWith": {
+            "moduleKey": "product-catalogue",
+            "surfaceKey": "catalogue-products",
+            "permission": "products:create"
+          }
+        },
+        {
+          "referenceKey": "uom-ref",
+          "referenceType": "SEARCH_LOOKUP",
+          "resolverKey": "catalogue-uoms",
+          "createWith": {
+            "moduleKey": "product-catalogue",
+            "surfaceKey": "catalogue-units",
+            "permission": "uoms:manage"
+          }
+        }
+      ],
+      "validationRules": [],
+      "views": [
+        {
+          "viewKey": "purchase-orders",
+          "label": "Purchase orders",
+          "mode": "LIST",
+          "device": "ALL",
+          "searchFields": [
+            "order-number",
+            "vendor-name"
+          ],
+          "defaultSortField": "order-number",
+          "defaultSortDirection": "DESC",
+          "tabs": [
+            {
+              "tabKey": "po-header",
+              "label": "Order",
+              "position": 0,
+              "level": 0,
+              "targetEntityKey": "procurement.purchase-orders",
+              "sections": [
+                {
+                  "sectionKey": "summary",
+                  "label": "Summary",
+                  "collapsible": false,
+                  "defaultCollapsed": false,
+                  "position": 0
+                },
+                {
+                  "sectionKey": "parties",
+                  "label": "Vendor & organization",
+                  "collapsible": false,
+                  "defaultCollapsed": false,
+                  "position": 1
+                },
+                {
+                  "sectionKey": "delivery",
+                  "label": "Delivery",
+                  "collapsible": false,
+                  "defaultCollapsed": false,
+                  "position": 2
+                },
+                {
+                  "sectionKey": "first-line",
+                  "label": "First order line",
+                  "collapsible": false,
+                  "defaultCollapsed": false,
+                  "position": 3
+                }
+              ],
+              "fields": [
+                {
+                  "fieldKey": "order-number",
+                  "position": 0,
+                  "span": 4,
+                  "componentKey": "text-input",
+                  "sectionKey": "summary"
+                },
+                {
+                  "fieldKey": "status",
+                  "position": 1,
+                  "span": 4,
+                  "componentKey": "select",
+                  "sectionKey": "summary"
+                },
+                {
+                  "fieldKey": "total-amount",
+                  "position": 2,
+                  "span": 4,
+                  "componentKey": "text-input",
+                  "sectionKey": "summary"
+                },
+                {
+                  "fieldKey": "org-unit-id",
+                  "position": 3,
+                  "span": 6,
+                  "componentKey": "lookup",
+                  "sectionKey": "parties"
+                },
+                {
+                  "fieldKey": "vendor-id",
+                  "position": 4,
+                  "span": 6,
+                  "componentKey": "text-input",
+                  "sectionKey": "parties"
+                },
+                {
+                  "fieldKey": "vendor-name",
+                  "position": 5,
+                  "span": 12,
+                  "componentKey": "text-input",
+                  "sectionKey": "parties"
+                },
+                {
+                  "fieldKey": "destination-warehouse-id",
+                  "position": 6,
+                  "span": 6,
+                  "componentKey": "lookup",
+                  "sectionKey": "delivery"
+                },
+                {
+                  "fieldKey": "currency-code",
+                  "position": 7,
+                  "span": 3,
+                  "componentKey": "text-input",
+                  "sectionKey": "delivery"
+                },
+                {
+                  "fieldKey": "line-product-id",
+                  "position": 8,
+                  "span": 6,
+                  "componentKey": "lookup",
+                  "sectionKey": "first-line"
+                },
+                {
+                  "fieldKey": "line-product-code",
+                  "position": 9,
+                  "span": 3,
+                  "componentKey": "text-input",
+                  "sectionKey": "first-line"
+                },
+                {
+                  "fieldKey": "line-product-name",
+                  "position": 10,
+                  "span": 3,
+                  "componentKey": "text-input",
+                  "sectionKey": "first-line"
+                },
+                {
+                  "fieldKey": "line-ordered-quantity",
+                  "position": 11,
+                  "span": 3,
+                  "componentKey": "number-input",
+                  "sectionKey": "first-line"
+                },
+                {
+                  "fieldKey": "line-uom-id",
+                  "position": 12,
+                  "span": 3,
+                  "componentKey": "lookup",
+                  "sectionKey": "first-line"
+                },
+                {
+                  "fieldKey": "line-unit-price-minor",
+                  "position": 13,
+                  "span": 3,
+                  "componentKey": "number-input",
+                  "sectionKey": "first-line"
+                },
+                {
+                  "fieldKey": "line-destination-warehouse-id",
+                  "position": 14,
+                  "span": 6,
+                  "componentKey": "lookup",
+                  "sectionKey": "first-line"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "navigation": [],
+      "actions": [],
+      "messages": []
+    }
+  }
+}

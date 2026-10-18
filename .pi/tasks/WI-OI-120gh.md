@@ -1,6 +1,6 @@
 # WI-OI-120gh: Procurement PO header — first metadata window
 
-- **Status:** Proposed
+- **Status:** Built (2026-10-19, local; not on UAT)
 - **Work item:** Table 1 row 6 (UI). Evidence in `.pi/work/TABLE-1-AUDIT-2026-10-19.md`.
 - **Size:** M
 
@@ -15,8 +15,16 @@ Replace hard-coded procurement PO screen with one dictionary-driven window (head
 
 ## Done when
 
-- [ ] Window published; UI renders from metadata; test covers create
-- [ ] `pnpm verify` passes
+- [x] Window published (`procurement-purchase-orders.window.json` via `dictionary/windows.mjs`)
+- [x] UI renders from metadata (`UniversalProcurementWorkspace` + `/procurement` page from catalog)
+- [x] Record dispatcher + create mapping test (`procurement-record-adapters.test.ts`)
+- [ ] `pnpm verify` passes (full tree)
+
+## Evidence
+
+- `modules/universal-procurement/dictionary/windows.mjs` + generated window baseline
+- `procurement-record-adapters.ts`, `app.module.ts` record controller
+- `pnpm modules:catalog` + `node scripts/generate-windows.mjs --check universal-procurement`
 
 ## Stop and ask if
 
