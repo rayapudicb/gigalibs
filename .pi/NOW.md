@@ -17,7 +17,7 @@ redirect the owner to other product tracks in chat.
 - **Owner deploy:** [WI-OI-120fp](tasks/WI-OI-120fp.md) + relay keys for F2.1 on module-host.
 - **Committed (Table 2):** F2.2 `14845ae` ([WI-OI-120fr](tasks/WI-OI-120fr.md)).
 - **Committed:** F2.3 `1e54d17` ([WI-OI-120fs](tasks/WI-OI-120fs.md)).
-- **Built, not committed:** [WI-OI-120ft](tasks/WI-OI-120ft.md) F2.4 journal register + `GET …/posting-reconciliation`.
+- **Committed:** F2.4 `631c4c7` ([WI-OI-120ft](tasks/WI-OI-120ft.md)).
 
 ## Running on UAT
 
@@ -62,9 +62,9 @@ redirect the owner to other product tracks in chat.
 | **F2.1** Inventory→Finance relay | `8a5b487` | Relay keys, deploy, live receipt→inbox proof |
 | **F2.2** posting / GL handoff | `14845ae` | Deploy with F2.1; live journal proof on UAT |
 | **F2.3** inbox reconciliation | `1e54d17` | Deploy |
-| **F2.4** journal tie-out | 120ft (local) | Commit; migration **10** on module-host |
+| **F2.4** journal tie-out | `631c4c7` | Deploy; Finance migration **10** on module-host |
 
-**Owner next (deploy):** release through `1e54d17` + **120ft** when committed (Finance migration 10); F0 Playwright; relay env.
+**Owner next (deploy):** release **`631c4c7`** (full F2 stack); F0 Playwright; relay env; check `GET …/posting-reconciliation`.
 **Agent next (code):** Table 2 UAT proof scripts / F1 on UAT after deploy; F2 daily reconciliation job if needed.
 
 **W2 is decided (owner, 2026-10-18):**

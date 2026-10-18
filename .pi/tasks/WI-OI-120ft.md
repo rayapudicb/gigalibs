@@ -1,6 +1,6 @@
 # WI-OI-120ft (F2.4): Inventory receipt journal tie-out and reconciliation API
 
-- **Status:** Built (not committed; owner, 2026-10-18)
+- **Status:** Done in git (`631c4c7`; owner, 2026-10-18). UAT deploy + migration 10 still open.
 - **Work item:** WI-OI-120 (F2 / ADR-0033 D3). Evidence in `.pi/work/WI-OI-120.md`.
 - **Size:** M
 
