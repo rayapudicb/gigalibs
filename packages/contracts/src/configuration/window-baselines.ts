@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { DictionaryChangeSetDefinitionSchema, MODULE_BASELINE_PACKAGE_SUFFIX } from './dictionary.js';
 import { ConfigurationPermissionSchema } from './index.js';
-import { MODULE_WINDOW_BASELINE_SOURCES } from './window-baselines.generated.js';
+import { MODULE_WINDOW_BASELINE_SOURCES, MODULE_WINDOW_ENTITLEMENT_KEYS } from './window-baselines.generated.js';
 
 /**
  * WI-OI-120f (F0.2, ADR-0033 D1): a module ships each of its windows as an Application Dictionary package in
@@ -49,4 +49,15 @@ let parsed: readonly ModuleWindowBaselineV1[] | undefined;
 export function moduleWindowBaselines(): readonly ModuleWindowBaselineV1[] {
   parsed ??= Object.freeze(MODULE_WINDOW_BASELINE_SOURCES.map((source) => ModuleWindowBaselineV1Schema.parse(source)));
   return parsed;
+}
+
+/**
+ * WI-OI-120bh: the entitlement that brings a module's windows to a tenant: the key of the module's catalogue entry,
+ * generated from its manifest (CMMS: `physical-operations-cmms` → `asset-maintenance`). A module that ships no window
+ * has none, and asking for it is a programming error.
+ */
+export function moduleWindowEntitlementKey(moduleKey: string): string {
+  const key = Object.hasOwn(MODULE_WINDOW_ENTITLEMENT_KEYS, moduleKey) ? MODULE_WINDOW_ENTITLEMENT_KEYS[moduleKey] : undefined;
+  if (!key) throw new Error(`Module ${moduleKey} ships no window with a catalogue entitlement.`);
+  return key;
 }

@@ -1,6 +1,10 @@
 # WI-OI-120bf: Fix CMMS window entitlement key (asset-maintenance)
 
-- **Status:** On UAT (deployed 2026-10-17 as `fd63d9305247-647b8a1f19e5`)
+- **Status:** On UAT (deployed 2026-10-17 as `fd63d9305247-647b8a1f19e5`). Corrected by
+  [WI-OI-120bh](WI-OI-120bh.md) (review, 2026-10-18):
+  - the fix is real;
+  - the module key was hard-coded in the adapter; it now comes from a map generated from the manifests;
+  - the "Security review" below names no independent reviewer, so it does not count as one.
 - **Work item:** WI-OI-120 (Phase 1, W1-A follow-up). Evidence goes in `.pi/work/WI-OI-120.md`.
 - **Size:** S (small targeted fix)
 

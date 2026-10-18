@@ -1,4 +1,4 @@
-# NOW: where the work stands (2026-10-17)
+# NOW: where the work stands (2026-10-18)
 
 The order of all work is [execution plan v3](../docs/plans/gigalibs-execution-plan-v3.md) (owner-approved 2026-10-13)
 and [the Phase 1 order](../docs/plans/phase-1-sizing.md) (owner-approved 2026-10-16). Statuses are in
@@ -9,17 +9,31 @@ this page is kept in [archive/NOW-2026-10-15.md](archive/NOW-2026-10-15.md).
 state and the release procedure as it is run. The prompt to paste is [PROMPT-2026-10-17.md](handoff/PROMPT-2026-10-17.md).
 
 ## Current step
- 
-**Phase 1, W1: CMMS work order lifecycle alignment ([WI-OI-120bg](tasks/WI-OI-120bg.md)).**
-- `WI-OI-120bf` deployed to UAT as `fd63d9305247-647b8a1f19e5`. 
-- Journey `cac8tz`: 56 findings (down from 57). **`The technician raises a request` CLEARED** without 403 error.
-- Fix implemented and verified locally (`workflow-platform` build passed, `cmms-request-to-close-journey` spec passed, `playground-api` tests passed). Ready to commit and promote to release worktree.
+
+**Phase 1, W1: [WI-OI-120bh](tasks/WI-OI-120bh.md), correcting 120bf and 120bg** (approved by the owner 2026-10-18).
+- **Built in main, not committed:**
+  - the fake "Close work order" button is removed;
+  - the CMMS entitlement key comes from the manifest (a generated map), not a literal in the code;
+  - the journey's supervisor step is split into a real review and an honest sign-off step, which blocks until
+    sign-off exists.
+- **Independent Security review:** approve with conditions (Sonnet, read-only, 2026-10-18). Its two Lows are fixed.
+- **Next:**
+  - "commit";
+  - a release on `27450b7`;
+  - the owner's deploy;
+  - the journey.
+- **Then:** supervisor sign-off as a real feature (`COMPLETED → CLOSED`, migration 21; its own card). After that,
+  W1-B.
 
 ## Running on UAT
 
-- **Release `fd63d93`** (owner deploy 2026-10-17): `fd63d9305247-647b8a1f19e5`, CMMS at migration 20.
-- **Last journey `cac8tz`** (on `fd63d93`): 56 findings (17 accessibility, 33 layout, 4 UX, 2 blockers). Request creation is now functional.
-- **Rollback:** `1bb0193`, whose images and backup `gigalibs_backup_20261017_093504Z` are kept.
+- **Release `27450b7`** (owner deploy 2026-10-18): `1bb0193` (W1-A), plus `fd63d93` (WI-OI-120bf), plus WI-OI-120bg.
+  CMMS is at migration 20. It still has the fake "Close work order" button, which 120bh removes. The button has
+  written one note on UAT, in the journey test workspace `journey-d9e3oe` (read-only check, 2026-10-18).
+- **Last journey `d9e3oe`** (on `27450b7`): 55 findings (33 layout, 17 accessibility, 5 UX, 0 blockers). The
+  supervisor step passed only through the fake button, so the honest count is 1 gap: supervisor sign-off. The
+  technician raises, accepts and completes for real.
+- **Rollback:** `fd63d93`, whose images and backup `gigalibs_backup_20261018_015612Z` are kept.
 
 ## Built, not yet on UAT
 
@@ -46,13 +60,18 @@ state and the release procedure as it is run. The prompt to paste is [PROMPT-202
 
 ## Next three steps
 
-1. **W1-A on UAT** ([WI-OI-120be](tasks/WI-OI-120be.md)): release commit, builds, backup, `--check`, the owner's
-   deploy, role sync in `gigalibs-global`, `uatadmin` and `uat-approver`, and the journey. The 2 CMMS blockers should
-   clear.
-2. **W1-B:** add CMMS to `SCOPE_ENFORCING_MODULES` with its context-coverage test. The journey proves that a North
-   technician does not see South's work (needs its own card and review).
-3. **Step 1.2, T3** (WI-OI-120ad), then a small release of the Phase 0 leftovers (WI-OI-120aj, WI-OI-120am). The
-   remaining 0.8 items go into W1's releases ([the Phase 1 order](../docs/plans/phase-1-sizing.md)).
+1. **[WI-OI-120bh](tasks/WI-OI-120bh.md)** on UAT: the review, the release, the owner's deploy and the journey.
+2. **Supervisor sign-off** (new card, M): a planner closes a completed work order with a sign-off note, an audit
+   record, the outbox event and migration 21. Plan v3 step 1.3 asks that supervisors "close work orders".
+3. **W1-B:** add CMMS to `SCOPE_ENFORCING_MODULES` with its context-coverage test. The journey proves that North does
+   not see South. Then step 1.2, T3 (WI-OI-120ad), and the Phase 0 leftovers (WI-OI-120aj, WI-OI-120am).
+
+**W2 is decided (owner, 2026-10-18):**
+- enterprise accounts only: an administrator creates each user and shares the username and password;
+- no outside sign-up, OAuth or email provider;
+- no outside service may block development or testing.
+
+See [the Phase 1 order](../docs/plans/phase-1-sizing.md).
 
 ## Standing rules
 

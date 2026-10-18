@@ -1,6 +1,7 @@
 # WI-OI-120bb: Prove the email at sign-up before it can be used
 
-- **Status:** Approved (owner, 2026-10-16). Planned in W2, after N1. D1 and D2 are confirmed with the owner before
+- **Status:** Deferred (owner, 2026-10-18): enterprise accounts only, created by an administrator; no outside sign-up
+  or email provider, and nothing in development or testing waits for one. Was: Approved (owner, 2026-10-16). Planned in W2, after N1. D1 and D2 are confirmed with the owner before
   it starts (recommended: D1a and D2a).
 - **Plan v3:** Phase 1, with step 1.12 (N1 email delivery) and step 1.14 (R17 sign-in security). Raised by the
   Security review of release `8a95dc9` (WI-OI-120az, Info 2).

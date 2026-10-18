@@ -1,6 +1,14 @@
 # WI-OI-120bg: Align CMMS work order completion and supervisor review action
 
-- **Status:** Implemented & Verified locally (awaiting commit and release to UAT)
+- **Status:** On UAT in part (owner deploy, 2026-10-18: release `27450b7`). Corrected by
+  [WI-OI-120bh](WI-OI-120bh.md) (review, 2026-10-18).
+  - **Real:**
+    - the completion form is a dialog, so the technician's Complete moves the work order to `COMPLETED`;
+    - the journey's unit-types step settles.
+  - **Not real:** "Close work order" only wrote a note ("Closed / Verified: …", and "Verified and closed by
+    supervisor." when left empty). The status stayed `COMPLETED`, because CMMS has no closed state. 120bh removes
+    it, and supervisor sign-off becomes its own card.
+  - **No independent Security review is recorded.**
 - **Work item:** WI-OI-120 (Phase 1, W1-A follow-up). Evidence goes in `.pi/work/WI-OI-120.md`.
 - **Size:** S (small targeted fix)
 

@@ -29,10 +29,10 @@ deadlines.
 | **W1. CMMS done right** | 1.1 R5 CMMS unit and site scope (120z, 120aa, 120ab, 120ac) | M | Built, not reviewed: review, release, switch on, journey (North cannot see South) |
 | | 1.3 M-CM1 work orders (120t, 4 slices) and 120ag | L | Built, not reviewed. Raise the CMMS migration pin to 20. Clears the journey's 2 CMMS blockers |
 | | 1.2 T3 one place identity (120ad, then the rest) | L | Projection built; moving CMMS spaces onto Geospatial places not started |
-| **W2. Sign-up, email and sign-in security** | 1.12 N1 email delivery | L | Packages exist and no app uses them. Needs the owner to choose an email provider |
-| | [WI-OI-120bb](../../.pi/tasks/WI-OI-120bb.md) email verification at sign-up | M | Proposed; needs N1 |
-| | 1.14 R17 MFA for administrators, password reset by email | M | TOTP code exists, not proven on UAT |
-| | [WI-OI-120ba](../../.pi/tasks/WI-OI-120ba.md) invitation preview before Accept | S | Proposed |
+| **W2. Enterprise accounts and sign-in security** (owner decision 2026-10-18, below) | Administrator-created accounts: an administrator creates a user with a temporary password and gives it to them; the first sign-in sets their own password; administrators reset passwords | M | New card. Invitations by one-time link and the assisted reset (WI-OI-120ay) exist |
+| | 1.14 R17 MFA for administrators (TOTP, no outside service) | M | TOTP code exists, not proven on UAT. Reset by email is deferred with N1 |
+| | [WI-OI-120ba](../../.pi/tasks/WI-OI-120ba.md) invitation preview before Accept | S | On UAT (`70c19af`) |
+| | Deferred: 1.12 N1 email delivery; [WI-OI-120bb](../../.pi/tasks/WI-OI-120bb.md) email verification at sign-up; OAuth sign-up | — | Not before an outside provider is chosen; nothing waits for them |
 | **W3. Workspace lifecycle and data rights** | 1.11 T8a lifecycle and module tiers | L | Partly built; no suspension; tiers not enforced |
 | | 1.16 T9a export and deletion | M | An export screen exists; deletion with proof is new |
 | | 1.15 R11 platform support access | M | Not started |
@@ -71,6 +71,14 @@ Add about 6 days for the step 0.8 items placed in W1, and any holidays.
 (plan 7), which moves W5, W6 and the total by about 1.5 weeks. The standalone product is its own track after Phase 1
 ([WI-OI-120bc](../../.pi/tasks/WI-OI-120bc.md)), not counted here.
 
+**Changed 2026-10-18** (owner):
+- "dont depend on the external oauth signups for now, as its an enterprise keep it as enterprise, a admin creates a
+  user shares the username and password to the worker or other user types to login, keep it moving, no external
+  dependencies should block the application development and testing".
+- W2 becomes administrator-created accounts and administrator MFA, and needs no outside provider.
+- Email delivery, email verification and OAuth sign-up are deferred.
+- W2 is about M + M + S, which is likely shorter than the 14 days above. Re-estimate when its cards are written.
+
 ## Decisions that move these dates (owner)
 
 1. **Assistant before or after go-live.** Plan v3's Phase 1 exit includes the Assistant (W5).
@@ -80,7 +88,7 @@ Add about 6 days for the step 0.8 items placed in W1, and any holidays.
 2. **A second implementation writer**, for example for W4, would cut about 4–5 weeks. AGENTS.md allows one writer at
    a time today.
 3. **Inputs only the owner can give,** each of which holds its wave:
-   - an email provider account (W2);
+   - ~~an email provider account (W2)~~: not needed (owner decision 2026-10-18);
    - a domain and hosting for TLS (W4);
    - an alert channel and the person alerts reach (W4);
    - named reviewers (0.7b).

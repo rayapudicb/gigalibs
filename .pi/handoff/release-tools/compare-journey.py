@@ -15,6 +15,8 @@ KNOWN_BLOCKERS = {  # cleared by WI-OI-120be (W1-A); each must be gone after tha
     'The technician raises a request',
     'The supervisor reviews and closes the work order',
 }
+# WI-OI-120bh: CMMS has no closed state yet, so this step blocks honestly until supervisor sign-off is built.
+KNOWN_GAPS = {'The supervisor signs off and closes the work order': 'supervisor sign-off not built'}
 
 run = json.load(open(sys.argv[1]))
 findings = run['findings']
@@ -28,7 +30,9 @@ for kind in sorted(set(BASELINE) | set(counts)):
     print(f'  {kind:<14} {now:>3} (baseline {was:>3})  {mark}')
 for finding in findings:
     if finding.get('kind') == 'BLOCKER':
-        known = 'known, expected cleared by W1-A' if finding.get('step') in KNOWN_BLOCKERS else 'NEW'
+        step = finding.get('step')
+        known = ('known, expected cleared by W1-A' if step in KNOWN_BLOCKERS
+                 else f'known gap: {KNOWN_GAPS[step]}' if step in KNOWN_GAPS else 'NEW')
         print(f"  BLOCKER [{known}]: {finding.get('step')}")
         worse = True
 sys.exit(1 if worse else 0)

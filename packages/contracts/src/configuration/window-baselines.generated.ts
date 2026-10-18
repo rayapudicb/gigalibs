@@ -15054,3 +15054,12 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
     }
   }
 ];
+
+// WI-OI-120bh: each window module's entitlement, its catalogue entry's key in `modules/<module>/module.yaml`.
+export const MODULE_WINDOW_ENTITLEMENT_KEYS: Readonly<Record<string, string>> = {
+  "financial-operations": "financial-operations",
+  "gigaops": "gigaops",
+  "physical-operations-cmms": "asset-maintenance",
+  "product-catalogue": "product-catalogue",
+  "universal-inventory": "universal-inventory"
+};
