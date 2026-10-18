@@ -10,16 +10,21 @@ owner's latest order, the exact state, the pending CMMS work and the release pro
 [PROMPT-2026-10-18-CURSOR.md](handoff/PROMPT-2026-10-18-CURSOR.md). The [2026-10-17 brief](handoff/HANDOFF-2026-10-17.md)
 keeps the full rules.
 
-## Current step
+## Current step — **100% CMMS = Phase 1 exit (M-CM1), not M-CM2**
 
-**Owner, 2026-10-18 (latest): hand over to Cursor.**
-1. Finish the pending CMMS work, in order:
-   - [WI-OI-120bi](tasks/WI-OI-120bi.md): **On UAT** (`38aa3120ebfc-4cb1f260d82b`, CMMS mig **21**). Run journey
-     to close the card.
-   - [WI-OI-120bj](tasks/WI-OI-120bj.md), the AR page's fake verification. Proposed.
-   - W1-B, CMMS unit and site scope.
-2. Then the owner's Table 1 audit prompt in detail: [TABLE-1-AUDIT-PROMPT-2026-10-18.md](handoff/TABLE-1-AUDIT-PROMPT-2026-10-18.md).
-3. Before T3 (step 1.2), ask the owner whether T3 or the audit comes first.
+**Not in this track:** reliability, floor kiosk, full EAM (Phase 6 **M-CM2** / roadmap P4b).
+
+**Owner, 2026-10-18:** complete CMMS Phase 1 in order:
+
+| # | Item | Card | Status |
+|---|------|------|--------|
+| 1 | Supervisor sign-off + journey **0 blockers** | [WI-OI-120bi](tasks/WI-OI-120bi.md) | On UAT mig **21**; git has mig **22** (`SIGNED_OFF`); journey **`dnnzu9`**: sign-off **500** until deploy |
+| 2 | Zero-mock detour (optional before W1-B) | [WI-OI-120bj](tasks/WI-OI-120bj.md) | Proposed — AR page, not CMMS |
+| 3 | Unit/site scope **on** (North ≠ South) | [WI-OI-120bk](tasks/WI-OI-120bk.md) | **Approved**; Built in git — Security + deploy with 120bi release |
+| 4 | CMMS record routes on UAT (if not in same release as W1-B) | [WI-OI-120ag](tasks/WI-OI-120ag.md) | Built; ships with 1.3 releases |
+| 5 | R5 slices on UAT (aa/ab/ac + M-CM1 120t) | [WI-OI-120be](tasks/WI-OI-120be.md) W1-A | Partially on UAT via prior releases; W1-B completes scope |
+
+Then: [Table 1 audit](handoff/TABLE-1-AUDIT-PROMPT-2026-10-18.md). Ask owner: **T3** vs audit first.
 
 **Table 2 engines (another agent, 2026-10-18; tracker [TABLE-2-ENGINES.md](TABLE-2-ENGINES.md)):**
 - **Built in git:** WI-OI-120fl to 120gb, Finance migrations 10 and 11, Inventory migration 5. Their tests pass (475,
@@ -40,8 +45,8 @@ keeps the full rules.
 - **Release `38aa3120`** (owner deploy 2026-10-18), tag **`38aa3120ebfc-4cb1f260d82b`**: WI-OI-120bi supervisor
   sign-off (CMMS migration **21**). Predecessor **`3bc0c1f`** (WI-OI-120bh).
 - **Deploy smoke:** DEPLOY SMOKE PASSED; web + cmms-api on tag above (verified read-only).
-- **Journey `dmrus2`** on **`38aa3120`**: 53 findings, 1 blocker (e2e did not reopen WO detail for **Sign off**; API/UI
-  sign-off is on UAT). Re-run journey after e2e fix. Prior **`dg84u3`** on **`3bc0c1f`**: sign-off not deployed.
+- **Journey `dnnzu9`** (owner, 2026-10-18): 58 findings, **1 blocker** — POST sign-off **500** (`SIGNED_OFF` missing from
+  event CHECK; fix **migration 22** in git, not on UAT yet). Prior **`dmrus2`**: e2e sign-off UI; **`dg84u3`**: sign-off not deployed.
 - **Rollback:** **`3bc0c1f`** images kept; backup **`gigalibs_backup_20261018_084749Z`** (before 120bi); down **`000021`**
   if rolling back after mig 21.
 

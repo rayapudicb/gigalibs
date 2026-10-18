@@ -18,3 +18,4 @@
 000019_eam_storerooms_and_mro_logistics.up.sql
 000020_canonical_maintenance_requests.up.sql
 000021_work_order_sign_off.up.sql
+000022_work_order_signed_off_event.up.sql

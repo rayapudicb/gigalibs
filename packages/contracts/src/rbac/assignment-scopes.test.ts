@@ -38,7 +38,7 @@ describe('assignment scopes and the transition rule', () => {
         { permissions: technician, scopeKey: 'UNITS:north' },
         { permissions: worker, scopeKey: 'MEMBER' },
       ]),
-    ).toEqual(['asset-maintenance']);
+    ).toEqual([]); // asset-maintenance is per-assignment (PER_ASSIGNMENT_SCOPE_MODULES)
     expect(
       assignmentScopeConflicts([
         { permissions: ['finance:read', 'finance:journals:approve'], scopeKey: 'UNITS:north' },
@@ -59,16 +59,13 @@ describe('assignment scopes and the transition rule', () => {
     expect(moduleGrantScope([...grants, { permissions: worker, scopeKey: 'MEMBER' }], 'asset-maintenance')).toBe('CONFLICT');
   });
 
-  // Security review of slice 2b (H1, H2): units or places only where every module checking the role's codes is proven
-  // to limit its records by them, and never for a code the platform checks.
-  it('refuses units and places until the modules checking a role are proven to enforce them', () => {
-    expect(explicitScopeRefusal(technician, 'units')).toMatchObject({ code: expect.stringMatching(/^cmms/) });
-    const cmmsOnly = { 'asset-maintenance': { units: true, places: true } };
-    expect(explicitScopeRefusal(technician, 'units', cmmsOnly)).toBeNull();
-    expect(explicitScopeRefusal(technician, 'places', { 'asset-maintenance': { units: true, places: false } })).not.toBeNull();
-    // Maps codes are also checked by Geospatial and the platform; Finance codes by the platform.
-    expect(explicitScopeRefusal(['maps.nodes.read'], 'places', cmmsOnly)).toMatchObject({ owners: expect.arrayContaining(['platform']) });
-    expect(explicitScopeRefusal(['finance:read'], 'units', { 'financial-operations': { units: true, places: true } })).toMatchObject({
+  // WI-OI-120bk: asset-maintenance enforces units and places; mixed-module roles still refuse.
+  it('allows unit and place scope for pure CMMS permission sets; refuses workforce and platform codes', () => {
+    expect(explicitScopeRefusal(technician, 'units')).toBeNull();
+    expect(explicitScopeRefusal(technician, 'places')).toBeNull();
+    expect(explicitScopeRefusal(worker, 'units')).toMatchObject({ code: expect.stringMatching(/^workforce/) });
+    expect(explicitScopeRefusal(['maps.nodes.read'], 'places')).toMatchObject({ owners: expect.arrayContaining(['platform']) });
+    expect(explicitScopeRefusal(['finance:read'], 'units')).toMatchObject({
       owners: expect.arrayContaining(['platform']),
     });
   });
@@ -80,11 +77,10 @@ describe('assignment scopes and the transition rule', () => {
     });
   });
 
-  // Re-check of 2b: an R5 card that adds an enforcing module must replace this guard with a test that the module's
-  // minted context key covers every code its API checks (the Geospatial and Connector Hub keys do not today).
-  it('has no enforcing module until an R5 card proves one', async () => {
+  // WI-OI-120bk: CMMS R5 unit/place gate (see cmms-r5-context-coverage.spec.ts for catalogue coverage).
+  it('enforces units and places for asset-maintenance', async () => {
     const { SCOPE_ENFORCING_MODULES } = await import('./assignment-scopes.js');
-    expect(SCOPE_ENFORCING_MODULES).toEqual({});
+    expect(SCOPE_ENFORCING_MODULES).toEqual({ 'asset-maintenance': { units: true, places: true } });
   });
 });
 

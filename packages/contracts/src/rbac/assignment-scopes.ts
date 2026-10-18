@@ -7,7 +7,7 @@ import { holdsPermission } from './permission-match.js';
 // without widening one assignment by the other's scope.
 
 /** The modules that decide access per assignment through `scopeFor` (each R5 card adds its module key). */
-export const PER_ASSIGNMENT_SCOPE_MODULES: readonly string[] = [];
+export const PER_ASSIGNMENT_SCOPE_MODULES: readonly string[] = ['asset-maintenance'];
 
 /** An assignment as the rule sees it: what it grants and a key naming where (`assignmentScopeKey`). */
 export interface ScopedGrant {
@@ -83,7 +83,9 @@ export interface ScopeEnforcement {
  * role cannot be given at units or places. Each module's R5 card adds its entry, with the test that its minted context
  * key covers the codes its API checks.
  */
-export const SCOPE_ENFORCING_MODULES: Readonly<Record<string, ScopeEnforcement>> = {};
+export const SCOPE_ENFORCING_MODULES: Readonly<Record<string, ScopeEnforcement>> = {
+  'asset-maintenance': { units: true, places: true },
+};
 
 /**
  * Why `permissions` cannot be limited to units or places, or null when they can. A code checked by the platform (which

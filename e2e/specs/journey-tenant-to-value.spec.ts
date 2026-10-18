@@ -263,10 +263,25 @@ async function survivesReload(page: Page, recorder: JourneyRecorder, text: strin
 // WI-OI-120w (R2 slice 2a): a person may hold several roles; the technician repairs and clocks in.
 const MODULE_ROLE: Readonly<Record<string, readonly string[]>> = {
   supervisor: ['Maintenance planner'],
-  technician: ['Maintenance technician', 'Workforce member'],
+  // WI-OI-120bk: CMMS at North plant only via a custom role (default Maintenance technician cannot sit at units).
+  technician: ['Workforce member'],
   approver: ['Workforce supervisor'],
   auditor: ['Maintenance viewer'],
 };
+
+/** CMMS codes only — safe to hold at organization units once W1-B is on. */
+const NORTH_CMMS_TECH_PERMISSIONS = [
+  'cmms:read',
+  'cmms.work-orders.read',
+  'cmms.work-orders.execute-own',
+  'cmms.requests.read',
+  'cmms.requests.create',
+  'cmms.assets.read',
+  'cmms.meters.read',
+  'cmms.meters.write',
+  'cmms.pm.read',
+  'cmms.parts.read',
+] as const;
 
 /** Back into the workspace: signs in again when a role change ended the session, and records that it did. */
 async function ensureSignedIn(page: Page, persona: Persona, recorder: JourneyRecorder): Promise<void> {
@@ -540,6 +555,20 @@ test('a new customer from sign-up to maintenance work, as five people', async ({
       if (absent.length) recorder.add('DATA FLOW', 'Invited people who accepted are not in the members list', absent.map((p) => p.email).join(', '), admin);
       return `${missing.length - absent.length} of ${missing.length} invitees listed`;
     });
+    const northCmmsRoleName = `North CMMS tech ${RUN}`;
+    await recorder.do(S3, 'Create a CMMS-only custom role for North plant', admin, async () => {
+      await admin.goto('/settings?tab=team');
+      await settle(admin);
+      await admin.getByLabel('Role name').fill(northCmmsRoleName);
+      const permSelect = admin.locator('label').filter({ hasText: /Permission additions/i }).locator('select[multiple]');
+      for (const code of NORTH_CMMS_TECH_PERMISSIONS) await permSelect.selectOption(code);
+      const before = recorder.failedWrites(admin).length;
+      await admin.getByRole('button', { name: /^create role$/i }).click();
+      await settle(admin);
+      const refused = recorder.failedWrites(admin).slice(before);
+      if (refused.length) throw new Error(`Custom role was refused: ${refused.map((call) => `${call.status} ${call.message}`).join('; ')}`);
+      return `${northCmmsRoleName} (${NORTH_CMMS_TECH_PERMISSIONS.length} permissions)`;
+    });
     for (const persona of [people.supervisor!, people.technician!, people.approver!, people.auditor!]) {
       for (const role of MODULE_ROLE[persona.key]!) {
         await recorder.do(S3, `Give ${persona.name} the role "${role}"`, admin, async () => {
@@ -566,6 +595,35 @@ test('a new customer from sign-up to maintenance work, as five people', async ({
       await recorder.do(S3, `${persona.name} opens the workspace with the new role`, page, async () => {
         await ensureSignedIn(page, persona, recorder);
         return `menu: ${(await menu(page)).join(', ').slice(0, 400)}`;
+      });
+    }
+    await recorder.do(S3, 'Give the technician North CMMS only at North plant', admin, async () => {
+      const persona = people.technician!;
+      await admin.goto('/settings?tab=team');
+      await settle(admin);
+      await admin.getByLabel(`Add a role for ${persona.email}`).selectOption({ label: northCmmsRoleName });
+      await admin.getByLabel(`Where the role applies for ${persona.email}`).selectOption({ label: 'Chosen units' });
+      await admin.getByLabel(`Add a unit for ${persona.email}`).fill(`North plant ${RUN}`);
+      await settle(admin);
+      await admin
+        .getByLabel(`Add a unit for ${persona.email} results`)
+        .getByRole('button')
+        .filter({ hasText: `North plant ${RUN}` })
+        .first()
+        .click();
+      await admin.getByLabel(`Reason for the role change for ${persona.email}`).fill(`Journey ${RUN}: North CMMS scope`);
+      const before = recorder.failedWrites(admin).length;
+      await admin.getByRole('row').filter({ hasText: persona.email }).getByRole('button', { name: 'Add role' }).click();
+      await settle(admin);
+      const refused = recorder.failedWrites(admin).slice(before);
+      if (refused.length) throw new Error(`North CMMS scope was refused: ${refused.map((call) => `${call.status} ${call.message}`).join('; ')}`);
+      await expect(admin.getByRole('list', { name: `Roles of ${persona.email}` })).toContainText(northCmmsRoleName);
+      return `North CMMS at North plant ${RUN}`;
+    });
+    if (people.technician!.page) {
+      await recorder.do(S3, 'The technician signs in again after North CMMS scope', people.technician!.page!, async () => {
+        await ensureSignedIn(people.technician!.page!, people.technician!, recorder);
+        return 'session refreshed';
       });
     }
     await recorder.do(S3, 'Access: the supervisor manages North plant', admin, async () => {
@@ -645,6 +703,13 @@ test('a new customer from sign-up to maintenance work, as five people', async ({
       await survivesReload(admin, recorder, `North plant ${RUN}`, 'A new CMMS site');
       return notes.join(' · ');
     });
+    await recorder.do(S5, 'Create a second CMMS site at South plant (for scope proof)', admin, async () => {
+      await admin.goto('/cmms/spaces');
+      await settle(admin);
+      const note = await create(admin, recorder, /create space|^add|new top/i, [[/name/i, `South plant ${RUN}`], [/code/i, `SP${RUN}`], [/type|kind/i, 'site']]);
+      await survivesReload(admin, recorder, `South plant ${RUN}`, 'A South CMMS site');
+      return note;
+    });
     await recorder.do(S5, 'Register an asset', admin, async () => {
       await admin.goto('/cmms/assets');
       await settle(admin);
@@ -670,6 +735,46 @@ test('a new customer from sign-up to maintenance work, as five people', async ({
         return note;
       });
     } else workOrderTitle = '';
+    const southWorkOrderTitle = `South plant pump check ${RUN}`;
+    await recorder.do(S5, 'The administrator records a work order at South plant', admin, async () => {
+      await admin.goto('/cmms/work-orders');
+      await settle(admin);
+      const note = await create(
+        admin,
+        recorder,
+        /new work order|create work order/i,
+        [[/title|summary/i, southWorkOrderTitle], [/description/i, 'Out-of-scope for North technicians.'], [/space|location|site/i, `South plant ${RUN}`], [/priority/i, 'medium'], [/type/i, 'corrective']],
+        /^(create|save|submit)/i,
+      );
+      await survivesReload(admin, recorder, southWorkOrderTitle, 'A South work order');
+      return note;
+    });
+    if (technician && workOrderTitle) {
+      await recorder.do(S5, 'The North-scoped technician sees North work orders but not South', technician, async () => {
+        await technician.goto('/cmms/work-orders');
+        await settle(technician);
+        const seesNorth = (await technician.getByText(workOrderTitle).count()) > 0;
+        const seesSouth = (await technician.getByText(southWorkOrderTitle).count()) > 0;
+        const titles = await technician.evaluate(async () => {
+          const response = await fetch('/api/cmms/v1/work-orders?pageSize=100', { headers: { Accept: 'application/json' } });
+          if (!response.ok) return { error: response.status };
+          const body = (await response.json()) as { items?: Array<{ title?: string }> };
+          return { titles: (body.items ?? []).map((item) => item.title ?? '') };
+        });
+        if ('error' in titles) throw new Error(`Work order list API answered ${titles.error}`);
+        const apiSouth = titles.titles.some((title) => title.includes(southWorkOrderTitle) || title.includes('South plant'));
+        if (!seesNorth) throw new Error('The North-scoped technician does not see the North work order');
+        if (seesSouth || apiSouth) {
+          recorder.add(
+            'BUG',
+            'A North-scoped technician can see South plant work orders',
+            `UI south=${seesSouth}; API titles=${titles.titles.join(' | ')}`,
+            technician,
+          );
+        }
+        return `North visible; South hidden (UI ${seesSouth ? 'leak' : 'ok'}, API ${apiSouth ? 'leak' : 'ok'})`;
+      });
+    }
     const auditor = people.auditor!.page;
     if (auditor && workOrderTitle) {
       await recorder.do(S5, 'The auditor (viewer) can read but not change work orders', auditor, async () => {

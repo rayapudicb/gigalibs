@@ -36,9 +36,7 @@ describe('WI-OI-120ac: CMMS Default Role Reconciliation & explicitScopeRefusal P
     ]);
   });
 
-  it('refuses all 3 default CMMS roles at units and places while explicit scope gate remains empty', () => {
-    expect(SCOPE_ENFORCING_MODULES).toEqual({});
-
+  it('refuses all 3 default CMMS roles at units and places (bundled platform/workforce/maps codes)', () => {
     for (const role of cmmsRoles) {
       const unitRefusal = explicitScopeRefusal(role.permissions, 'units');
       expect(unitRefusal).not.toBeNull();
@@ -100,13 +98,8 @@ describe('WI-OI-120ac: CMMS Default Role Reconciliation & explicitScopeRefusal P
     expect(explicitScopeRefusal(techCore, 'units', candidateEnforcing)).toBeNull();
   });
 
-  it('preserves place refusal for core CMMS permissions until T3 place proof opens places gate', () => {
-    const candidateEnforcing: Record<string, ScopeEnforcement> = {
-      'asset-maintenance': { units: true, places: false },
-    };
-
-    const placeRefusal = explicitScopeRefusal(CORE_CMMS_PERMISSIONS, 'places', candidateEnforcing);
-    expect(placeRefusal).not.toBeNull();
-    expect(placeRefusal?.owners).toContain('asset-maintenance');
+  it('allows place scope for pure CMMS core permissions once asset-maintenance places are enforced (WI-OI-120bk)', () => {
+    const placeRefusal = explicitScopeRefusal(CORE_CMMS_PERMISSIONS, 'places', SCOPE_ENFORCING_MODULES);
+    expect(placeRefusal).toBeNull();
   });
 });

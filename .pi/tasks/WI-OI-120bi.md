@@ -184,3 +184,4 @@ re-check of the fix commit is enough; a new full review is not needed.
   spec did not reopen the work-order detail after reload (stale “not built yet” message). CMMS requests and completion
   steps passed. **Re-run journey** after e2e fix in `journey-tenant-to-value.spec.ts` (WI-OI-120bi).
 - **Prior:** `dg84u3` on **`3bc0c1f`** — 56 findings, 1 blocker (no sign-off on UAT).
+- **Journey `dnnzu9` (2026-10-18):** sign-off **POST 500** — root cause: `work_order_events` CHECK omitted **`SIGNED_OFF`**. Fix: migration **`000022`** (pin **22**).
