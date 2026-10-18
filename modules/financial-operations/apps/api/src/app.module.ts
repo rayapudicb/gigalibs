@@ -32,6 +32,7 @@ import { FinanceRelayInboxGuard } from './relay/inbox.guard.js';
 import { FinanceInventoryInboxController } from './subledger/inventory-inbox.controller.js';
 import { InventorySubledgerController } from './subledger/inventory-subledger.controller.js';
 import { InventorySubledgerInboxService } from './subledger/inventory-inbox.service.js';
+import { InventoryReceiptPostingReconciliationJob } from './posting/inventory-receipt-posting-reconciliation-job.js';
 
 // WI-OI-120l (U12): record routes behind the general ledger's metadata windows and its book and account pickers.
 const FinanceRecordController = createRecordController({ guard: AuthorizationGuard, readPermission: 'finance:read' });
@@ -55,6 +56,7 @@ const FinanceRecordController = createRecordController({ guard: AuthorizationGua
     { provide: FINANCE_RELAY_CONFIG, useFactory: () => loadFinanceRelayConfig() },
     FinanceRelayInboxGuard,
     InventorySubledgerInboxService,
+    InventoryReceiptPostingReconciliationJob,
     runtimeConfigProvider,
     DatabaseService,
     AuthorizationGuard,

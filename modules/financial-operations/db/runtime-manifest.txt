@@ -9,3 +9,4 @@
 000008_finance_auth_replica_rls_journal_idempotency.up.sql
 000009_finance_journal_drafts.up.sql
 000010_finance_subledger_posting_register.up.sql
+000011_finance_inventory_posting_reconciliation_job.up.sql

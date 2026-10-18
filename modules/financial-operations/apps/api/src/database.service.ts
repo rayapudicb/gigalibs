@@ -5,6 +5,7 @@ import { RUNTIME_CONFIG, SCHEMA } from './config.js';
 export const FINANCE_DEFINER_FUNCTIONS = [
   'relay_lease_finance_events',
   'relay_settle_finance_event',
+  'list_inventory_receipt_posting_reconciliation_tenants',
 ] as const;
 
 export type FinanceDefinerFunction = (typeof FINANCE_DEFINER_FUNCTIONS)[number];

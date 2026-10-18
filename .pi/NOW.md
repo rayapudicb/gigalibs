@@ -18,6 +18,7 @@ redirect the owner to other product tracks in chat.
 - **Committed (Table 2):** F2.2 `14845ae` ([WI-OI-120fr](tasks/WI-OI-120fr.md)).
 - **Committed:** F2.3 `1e54d17` ([WI-OI-120fs](tasks/WI-OI-120fs.md)).
 - **Committed:** F2.4 `631c4c7` ([WI-OI-120ft](tasks/WI-OI-120ft.md)).
+- **Committed:** F2.6 ([WI-OI-120fu](tasks/WI-OI-120fu.md)); Finance migration **11** (same release as F2.4 deploy).
 
 ## Running on UAT
 
@@ -53,6 +54,8 @@ redirect the owner to other product tracks in chat.
 - `pnpm verify` reports one known deployment-profile drift, `WORKFORCE_API_URL` (`scripts/verify.mjs`,
   `KNOWN_PROFILE_DRIFT`), until the owner decides it. It also reports 12 isolated-database proofs as not run.
 
+**Full Table 2 list (all rows + statuses):** [TABLE-2-ENGINES.md](TABLE-2-ENGINES.md) — read this when you ask “what’s next?”.
+
 ## Table 2 — completion checklist (engines only)
 
 | Engine | Code | UAT / evidence still open |
@@ -63,9 +66,10 @@ redirect the owner to other product tracks in chat.
 | **F2.2** posting / GL handoff | `14845ae` | Deploy with F2.1; live journal proof on UAT |
 | **F2.3** inbox reconciliation | `1e54d17` | Deploy |
 | **F2.4** journal tie-out | `631c4c7` | Deploy; Finance migration **10** on module-host |
+| **F2.6** daily reconciliation | WI-OI-120fu (this commit) | Deploy with migration **11** |
 
-**Owner next (deploy):** release **`631c4c7`** (full F2 stack); F0 Playwright; relay env; check `GET …/posting-reconciliation`.
-**Agent next (code):** Table 2 UAT proof scripts / F1 on UAT after deploy; F2 daily reconciliation job if needed.
+**Owner next (deploy):** release **`631c4c7`**+ (full F2 stack + F2.6); F0 Playwright; relay env; Finance migrations **10–11**; check `GET …/posting-reconciliation`.
+**Agent next (code):** F2.5 posting status UI; F2.7 isolated HTTP relay proof script.
 
 **W2 is decided (owner, 2026-10-18):**
 - enterprise accounts only: an administrator creates each user and shares the username and password;
