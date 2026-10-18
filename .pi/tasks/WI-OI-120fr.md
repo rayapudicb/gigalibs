@@ -1,6 +1,6 @@
 # WI-OI-120fr (F2.2 / E2): Inventory receipt posting policy and GL context
 
-- **Status:** Built (not committed; owner, 2026-10-18)
+- **Status:** Done in git (`14845ae`; owner, 2026-10-18). UAT journal proof still open.
 - **Work item:** WI-OI-120 (F2 / ADR-0033 D3, plan v3 §5A E2). Evidence in `.pi/work/WI-OI-120.md`.
 - **Size:** M
 
