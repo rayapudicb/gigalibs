@@ -150,6 +150,28 @@ export class OrderService {
     });
   }
 
+  async listSalesQuotes(principal: { tenantId: string }): Promise<SalesQuoteV1[]> {
+    return this.database.withTenantTransaction(principal.tenantId, async (client) => {
+      const res = await client.query<{ id: string }>(
+        `SELECT id FROM gigalibs_orders.sales_quotes WHERE tenant_id = $1 ORDER BY created_at DESC`,
+        [principal.tenantId],
+      );
+      const items: SalesQuoteV1[] = [];
+      for (const row of res.rows) {
+        const quoteRes = await client.query(`SELECT * FROM gigalibs_orders.sales_quotes WHERE tenant_id = $1 AND id = $2`, [
+          principal.tenantId,
+          row.id,
+        ]);
+        const lines = await client.query(
+          `SELECT * FROM gigalibs_orders.sales_quote_lines WHERE tenant_id = $1 AND quote_id = $2 ORDER BY line_number ASC`,
+          [principal.tenantId, row.id],
+        );
+        items.push(this.mapQuote(quoteRes.rows[0], lines.rows));
+      }
+      return items;
+    });
+  }
+
   async acceptQuote(tenantId: string, actorId: string, quoteId: string): Promise<SalesQuoteV1> {
     return this.database.withTenantTransaction(tenantId, async (client) => {
       const quote = await client.query(

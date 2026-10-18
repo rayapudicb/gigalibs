@@ -63,9 +63,10 @@ keeps the full rules.
 3. **WI-OI-120gf** — **blocked** on **M-AR0** (`modules/accounts-receivable/module.yaml`: API out of default build until SDK rebuild).
 4. **WI-OI-120gg** — **Built** in git **`cdcbf2c9`** (pushed): vendor party guard mig **4**.
 5. **WI-OI-120gh** — **Built** in git **`b9e29301`** (local; push when owner asks).
-6. **WI-OI-120gi** — **Built** in git **`40601084`** (with 120gj): orders mig **4** customer party guard + SO dictionary **Customer** field.
-7. **WI-OI-120gj** — **Built** in git **`40601084`**: orders first metadata window (`orders-sales-orders`) + record routes + live `/orders` page.
-8. **Next code** — more orders windows (quotes, fulfillment) or **WI-OI-120gf** when M-AR0 unblocks; **120gd** still needs journey password.
+6. **WI-OI-120gi** — **Built** in git **`530c2597`** (with 120gj): orders mig **4** customer party guard + SO dictionary **Customer** field.
+7. **WI-OI-120gj** — **Built** in git **`530c2597`**: orders first metadata window (`orders-sales-orders`) + record routes + live `/orders` page.
+8. **WI-OI-120gk** — **Built (local, uncommitted):** sales quotes metadata window + `/orders` tab with sales orders.
+9. **Next code** — fulfillment/invoices windows, procurement follow-on windows, or **WI-OI-120gf** when M-AR0 unblocks; **120gd** still needs journey password.
 
 ## Built, not yet on UAT
 

@@ -1,4 +1,4 @@
-// WI-OI-120gj (Table 1): first Orders metadata window — sales order header (create/read).
+// WI-OI-120gj/gk (Table 1): Orders metadata windows — sales quotes and sales orders.
 // Edit here, then `node scripts/generate-windows.mjs universal-orders` and `pnpm modules:catalog`.
 
 const ORDER_TYPES = [
@@ -7,6 +7,15 @@ const ORDER_TYPES = [
   ['DROP_SHIP', 'Drop ship'],
   ['CONTRACT', 'Contract'],
   ['RETURN_ORDER', 'Return order'],
+];
+
+const QUOTE_STATUS = [
+  ['DRAFT', 'Draft'],
+  ['SUBMITTED', 'Submitted'],
+  ['ACCEPTED', 'Accepted'],
+  ['EXPIRED', 'Expired'],
+  ['CONVERTED', 'Converted'],
+  ['CANCELLED', 'Cancelled'],
 ];
 
 const ORDER_STATUS = [
@@ -67,7 +76,68 @@ export function windowSource(builderFor) {
     field(SO, 'line-warehouse-id', 'Line warehouse', 'REFERENCE', { ref: 'warehouse-ref', writePermission: 'orders:manage', help: 'Defaults to the header warehouse when empty.' }),
   ];
 
+  const SQ = 'orders.sales-quotes';
+  const sqFields = [
+    field(SQ, 'quote-number', 'Quote number', 'TEXT', { readOnly: true }),
+    field(SQ, 'org-unit-id', 'Organization unit', 'REFERENCE', { required: true, ref: 'org-unit-ref', writePermission: 'orders:quotes:manage' }),
+    field(SQ, 'customer-id', 'Customer party', 'TEXT', { required: true, help: 'Active workspace party UUID (customer).', writePermission: 'orders:quotes:manage' }),
+    field(SQ, 'customer-name', 'Customer name', 'TEXT', { required: true, writePermission: 'orders:quotes:manage' }),
+    field(SQ, 'currency-code', 'Currency', 'TEXT', { defaultValue: 'USD', writePermission: 'orders:quotes:manage' }),
+    field(SQ, 'valid-until', 'Valid until', 'DATETIME', { required: true, writePermission: 'orders:quotes:manage' }),
+    field(SQ, 'payment-term-days', 'Payment term (days)', 'INTEGER', { defaultValue: '30', writePermission: 'orders:quotes:manage' }),
+    field(SQ, 'notes', 'Notes', 'TEXT', { writePermission: 'orders:quotes:manage' }),
+    field(SQ, 'status', 'Status', 'SELECT', { readOnly: true, ref: 'quote-statuses' }),
+    field(SQ, 'total-amount', 'Total (minor units)', 'TEXT', { readOnly: true }),
+    field(SQ, 'line-product-id', 'Line product', 'REFERENCE', { required: true, ref: 'product-ref', writePermission: 'orders:quotes:manage', help: 'First line only in this window slice.' }),
+    field(SQ, 'line-product-code', 'Line product code', 'TEXT', { required: true, writePermission: 'orders:quotes:manage' }),
+    field(SQ, 'line-product-name', 'Line product name', 'TEXT', { required: true, writePermission: 'orders:quotes:manage' }),
+    field(SQ, 'line-quoted-quantity', 'Line quantity', 'NUMBER', { required: true, scale: 6, defaultValue: '1.000000', writePermission: 'orders:quotes:manage' }),
+    field(SQ, 'line-uom-id', 'Line unit of measure', 'REFERENCE', { required: true, ref: 'uom-ref', writePermission: 'orders:quotes:manage' }),
+    field(SQ, 'line-unit-price-minor', 'Line unit price (minor)', 'INTEGER', { required: true, writePermission: 'orders:quotes:manage' }),
+  ];
+
   return {
+    'orders-sales-quotes': window(
+      'orders-sales-quotes',
+      'Sales quotes',
+      'Sales quotes',
+      'Create and review customer sales quotations.',
+      'orders:read',
+      dictionary('orders-sales-quotes', 'Sales quotes', SQ, [entity(SQ, 'Sales quotes')], sqFields, [], [
+        values('quote-statuses', QUOTE_STATUS),
+        ORG_UNIT_REF,
+        PRODUCT_REF,
+        UOM_REF,
+      ], [
+        view('sales-quotes', 'Sales quotes', [
+          tab('sq-header', 'Quote', 0, SQ, [
+            ['quote-number', 4, 'summary'],
+            ['status', 4, 'summary'],
+            ['total-amount', 4, 'summary'],
+            ['org-unit-id', 6, 'parties'],
+            ['customer-id', 6, 'parties'],
+            ['customer-name', 12, 'parties'],
+            ['currency-code', 3, 'terms'],
+            ['valid-until', 6, 'terms'],
+            ['payment-term-days', 3, 'terms'],
+            ['notes', 12, 'terms'],
+            ['line-product-id', 6, 'first-line'],
+            ['line-product-code', 3, 'first-line'],
+            ['line-product-name', 3, 'first-line'],
+            ['line-quoted-quantity', 3, 'first-line'],
+            ['line-uom-id', 3, 'first-line'],
+            ['line-unit-price-minor', 3, 'first-line'],
+          ], sqFields, {
+            sections: [
+              section('summary', 'Summary', 0),
+              section('parties', 'Customer & organization', 1),
+              section('terms', 'Commercial terms', 2),
+              section('first-line', 'First quote line', 3),
+            ],
+          }),
+        ], { search: ['quote-number', 'customer-name'], sort: 'quote-number' }),
+      ]),
+    ),
     'orders-sales-orders': window(
       'orders-sales-orders',
       'Sales orders',

@@ -1,6 +1,6 @@
 # WI-OI-120gj: Orders sales order header — first metadata window
 
-- **Status:** Built (2026-10-19, `40601084`; not on UAT)
+- **Status:** Built (2026-10-19, `530c2597`; not on UAT)
 - **Work item:** Table 1 row 7 (UI). Evidence in `.pi/work/TABLE-1-AUDIT-2026-10-19.md`.
 - **Size:** M
 

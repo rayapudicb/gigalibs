@@ -1,4 +1,9 @@
-import { CreateSalesOrderInputV1Schema, type SalesOrderV1 } from '@gigalibs/contracts';
+import {
+  CreateSalesOrderInputV1Schema,
+  CreateSalesQuoteInputV1Schema,
+  type SalesOrderV1,
+  type SalesQuoteV1,
+} from '@gigalibs/contracts';
 import {
   type IdempotencyStore,
   type ModulePrincipal,
@@ -12,7 +17,7 @@ import { shippedRecordRules } from '@gigalibs/configuration-core';
 import { BadRequestException } from '@nestjs/common';
 import type { OrderService } from './orders.service.js';
 
-// WI-OI-120gj: record routes for the first Orders metadata window (sales order header + first line on create).
+// WI-OI-120gj/gk: record routes for Orders metadata windows (sales quotes and sales orders).
 
 interface FieldSpec {
   readonly key: string;
@@ -21,6 +26,33 @@ interface FieldSpec {
 
 function fieldPolicies(fields: readonly FieldSpec[]): Record<string, RecordFieldPolicy> {
   return Object.fromEntries(fields.map((field) => [field.key, { writable: field.writable ?? false }]));
+}
+
+function salesQuoteToWindow(quote: SalesQuoteV1): RecordValues {
+  const line = quote.lines?.[0];
+  const values: Record<string, unknown> = {
+    id: quote.id,
+    version: quote.version,
+    'quote-number': quote.quoteNumber,
+    'org-unit-id': quote.orgUnitId,
+    'customer-id': quote.customerPartyId,
+    'customer-name': quote.customerName,
+    'currency-code': quote.currencyCode,
+    'valid-until': quote.validUntil,
+    'payment-term-days': quote.paymentTermDays,
+    notes: quote.notes ?? null,
+    status: quote.status,
+    'total-amount': quote.totalAmountMinor,
+  };
+  if (line) {
+    values['line-product-id'] = line.productId;
+    values['line-product-code'] = line.productCode;
+    values['line-product-name'] = line.productName;
+    values['line-quoted-quantity'] = line.quotedQuantity;
+    values['line-uom-id'] = line.uomId;
+    values['line-unit-price-minor'] = line.unitPriceMinor;
+  }
+  return values;
 }
 
 function salesOrderToWindow(order: SalesOrderV1): RecordValues {
@@ -49,6 +81,68 @@ function salesOrderToWindow(order: SalesOrderV1): RecordValues {
     values['line-warehouse-id'] = line.warehouseId;
   }
   return values;
+}
+
+const SQ_FIELDS: readonly FieldSpec[] = [
+  { key: 'quote-number' },
+  { key: 'org-unit-id', writable: true },
+  { key: 'customer-id', writable: true },
+  { key: 'customer-name', writable: true },
+  { key: 'currency-code', writable: true },
+  { key: 'valid-until', writable: true },
+  { key: 'payment-term-days', writable: true },
+  { key: 'notes', writable: true },
+  { key: 'status' },
+  { key: 'total-amount' },
+  { key: 'line-product-id', writable: true },
+  { key: 'line-product-code', writable: true },
+  { key: 'line-product-name', writable: true },
+  { key: 'line-quoted-quantity', writable: true },
+  { key: 'line-uom-id', writable: true },
+  { key: 'line-unit-price-minor', writable: true },
+];
+
+/** Maps metadata window values to the quote create contract (exported for tests). */
+export function windowValuesToCreateSalesQuoteInput(values: RecordValues) {
+  const validUntilRaw = values['valid-until'];
+  let validUntil: string;
+  if (typeof validUntilRaw === 'string' && validUntilRaw.length > 0) {
+    validUntil = validUntilRaw;
+  } else if (validUntilRaw instanceof Date) {
+    validUntil = validUntilRaw.toISOString();
+  } else {
+    const fallback = new Date();
+    fallback.setUTCDate(fallback.getUTCDate() + 30);
+    validUntil = fallback.toISOString();
+  }
+  const input = {
+    orgUnitId: values['org-unit-id'],
+    customerPartyId: values['customer-id'],
+    customerName: values['customer-name'],
+    currencyCode: values['currency-code'] ?? 'USD',
+    validUntil,
+    paymentTermDays: values['payment-term-days'] ?? 30,
+    notes: values['notes'] ?? null,
+    lines: [
+      {
+        productId: values['line-product-id'],
+        productCode: values['line-product-code'],
+        productName: values['line-product-name'],
+        quotedQuantity: String(values['line-quoted-quantity'] ?? '1.000000'),
+        uomId: values['line-uom-id'],
+        unitPriceMinor: String(values['line-unit-price-minor'] ?? '0'),
+      },
+    ],
+  };
+  const parsed = CreateSalesQuoteInputV1Schema.safeParse(input);
+  if (!parsed.success) {
+    const issue = parsed.error.issues[0];
+    throw new BadRequestException({
+      code: 'UNIVERSAL_ORDERS_VALIDATION_FAILED',
+      message: `${issue?.path.join('.') ?? 'value'}: ${issue?.message ?? 'invalid'}`,
+    });
+  }
+  return parsed.data;
 }
 
 const SO_FIELDS: readonly FieldSpec[] = [
@@ -109,15 +203,55 @@ export function windowValuesToCreateSalesOrderInput(values: RecordValues) {
   return parsed.data;
 }
 
-function matchesSearch(record: RecordValues, search: string): boolean {
+function matchesFields(record: RecordValues, search: string, fields: readonly string[]): boolean {
   const needle = search.toLowerCase();
-  return ['order-number', 'customer-name'].some((key) => {
+  return fields.some((key) => {
     const value = record[key];
     return typeof value === 'string' && value.toLowerCase().includes(needle);
   });
 }
 
 export function ordersRecordDispatcher(deps: { orders: OrderService }, idempotency: IdempotencyStore): RecordDispatcher {
+  const salesQuotes: RecordAdapter = {
+    entityKey: 'orders.sales-quotes',
+    permissions: { read: 'orders:read', create: 'orders:quotes:manage' },
+    rest: { read: 'GET v1/quotes', create: 'POST v1/quotes' },
+    fields: fieldPolicies(SQ_FIELDS),
+    searchFields: ['quote-number', 'customer-name'],
+    sortFields: ['quote-number'],
+    async list(principal: ModulePrincipal, query: RecordListQuery) {
+      let items = (await deps.orders.listSalesQuotes(principal)).map(salesQuoteToWindow);
+      if (query.search) items = items.filter((item) => matchesFields(item, query.search!, ['quote-number', 'customer-name']));
+      const sortField = query.sortField ?? 'quote-number';
+      const direction = query.sortDirection === 'ASC' ? 1 : -1;
+      items.sort((left, right) => {
+        const a = left[sortField];
+        const b = right[sortField];
+        if (typeof a === 'string' && typeof b === 'string') return a.localeCompare(b) * direction;
+        return 0;
+      });
+      const start = (query.page - 1) * query.pageSize;
+      const pageItems = items.slice(start, start + query.pageSize);
+      return { page: query.page, pageSize: query.pageSize, totalItems: items.length, items: pageItems };
+    },
+    async get(principal, id) {
+      try {
+        const quote = await deps.orders.getQuote(principal.tenantId, id);
+        return salesQuoteToWindow(quote);
+      } catch {
+        return null;
+      }
+    },
+    async create(context, values) {
+      const quote = await deps.orders.createQuote(
+        context.principal.tenantId,
+        context.principal.subject,
+        windowValuesToCreateSalesQuoteInput(values),
+      );
+      return salesQuoteToWindow(quote);
+    },
+  };
+
   const salesOrders: RecordAdapter = {
     entityKey: 'orders.sales-orders',
     permissions: { read: 'orders:read', create: 'orders:manage' },
@@ -127,7 +261,7 @@ export function ordersRecordDispatcher(deps: { orders: OrderService }, idempoten
     sortFields: ['order-number'],
     async list(principal: ModulePrincipal, query: RecordListQuery) {
       let items = (await deps.orders.listSalesOrders(principal)).map(salesOrderToWindow);
-      if (query.search) items = items.filter((item) => matchesSearch(item, query.search!));
+      if (query.search) items = items.filter((item) => matchesFields(item, query.search!, ['order-number', 'customer-name']));
       const sortField = query.sortField ?? 'order-number';
       const direction = query.sortDirection === 'ASC' ? 1 : -1;
       items.sort((left, right) => {
@@ -158,5 +292,5 @@ export function ordersRecordDispatcher(deps: { orders: OrderService }, idempoten
     },
   };
 
-  return new RecordDispatcher([salesOrders], [], idempotency, shippedRecordRules('universal-orders'));
+  return new RecordDispatcher([salesQuotes, salesOrders], [], idempotency, shippedRecordRules('universal-orders'));
 }

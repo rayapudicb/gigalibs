@@ -1,6 +1,6 @@
 # WI-OI-120gi: Customer party on orders quotes and credit memos (Table 1 row 3)
 
-- **Status:** Built (2026-10-19, `40601084`; not on UAT)
+- **Status:** Built (2026-10-19, `530c2597`; not on UAT)
 - **Work item:** Table 1 row 3 (parties on O2C transactional docs).
 - **Size:** S
 

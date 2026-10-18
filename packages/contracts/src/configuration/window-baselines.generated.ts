@@ -15690,6 +15690,472 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
   {
     "contractVersion": "1.0",
     "window": {
+      "route": "/orders",
+      "label": "Sales quotes",
+      "description": "Create and review customer sales quotations.",
+      "readPermission": "orders:read"
+    },
+    "definition": {
+      "kind": "APPLICATION_DICTIONARY",
+      "contractVersion": "1.0",
+      "moduleKey": "universal-orders",
+      "entityKey": "orders-sales-quotes",
+      "surfaceKey": "orders-sales-quotes",
+      "title": "Sales quotes",
+      "dictionary": {
+        "packageKey": "orders-sales-quotes-module-baseline",
+        "name": "Sales quotes",
+        "version": "1.0.0",
+        "moduleKey": "universal-orders",
+        "targetEntityKey": "orders.sales-quotes",
+        "entities": [
+          {
+            "entityKey": "orders.sales-quotes",
+            "moduleKey": "universal-orders",
+            "label": "Sales quotes",
+            "ownership": "MODULE_CORE",
+            "primaryKeyField": "id",
+            "isVersioned": true,
+            "isAuditLogged": true,
+            "isSoftDeletable": false
+          }
+        ],
+        "fields": [
+          {
+            "fieldKey": "quote-number",
+            "entityKey": "orders.sales-quotes",
+            "label": "Quote number",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "org-unit-id",
+            "entityKey": "orders.sales-quotes",
+            "label": "Organization unit",
+            "type": "REFERENCE",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "org-unit-ref",
+            "writePermission": "orders:quotes:manage"
+          },
+          {
+            "fieldKey": "customer-id",
+            "entityKey": "orders.sales-quotes",
+            "label": "Customer party",
+            "type": "TEXT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "helpText": "Active workspace party UUID (customer).",
+            "writePermission": "orders:quotes:manage"
+          },
+          {
+            "fieldKey": "customer-name",
+            "entityKey": "orders.sales-quotes",
+            "label": "Customer name",
+            "type": "TEXT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "writePermission": "orders:quotes:manage"
+          },
+          {
+            "fieldKey": "currency-code",
+            "entityKey": "orders.sales-quotes",
+            "label": "Currency",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "writePermission": "orders:quotes:manage",
+            "defaultValue": "USD"
+          },
+          {
+            "fieldKey": "valid-until",
+            "entityKey": "orders.sales-quotes",
+            "label": "Valid until",
+            "type": "DATETIME",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "writePermission": "orders:quotes:manage"
+          },
+          {
+            "fieldKey": "payment-term-days",
+            "entityKey": "orders.sales-quotes",
+            "label": "Payment term (days)",
+            "type": "INTEGER",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "writePermission": "orders:quotes:manage",
+            "defaultValue": "30"
+          },
+          {
+            "fieldKey": "notes",
+            "entityKey": "orders.sales-quotes",
+            "label": "Notes",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "writePermission": "orders:quotes:manage"
+          },
+          {
+            "fieldKey": "status",
+            "entityKey": "orders.sales-quotes",
+            "label": "Status",
+            "type": "SELECT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "quote-statuses"
+          },
+          {
+            "fieldKey": "total-amount",
+            "entityKey": "orders.sales-quotes",
+            "label": "Total (minor units)",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "line-product-id",
+            "entityKey": "orders.sales-quotes",
+            "label": "Line product",
+            "type": "REFERENCE",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "product-ref",
+            "helpText": "First line only in this window slice.",
+            "writePermission": "orders:quotes:manage"
+          },
+          {
+            "fieldKey": "line-product-code",
+            "entityKey": "orders.sales-quotes",
+            "label": "Line product code",
+            "type": "TEXT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "writePermission": "orders:quotes:manage"
+          },
+          {
+            "fieldKey": "line-product-name",
+            "entityKey": "orders.sales-quotes",
+            "label": "Line product name",
+            "type": "TEXT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "writePermission": "orders:quotes:manage"
+          },
+          {
+            "fieldKey": "line-quoted-quantity",
+            "entityKey": "orders.sales-quotes",
+            "label": "Line quantity",
+            "type": "NUMBER",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "scale": 6,
+            "writePermission": "orders:quotes:manage",
+            "defaultValue": "1.000000"
+          },
+          {
+            "fieldKey": "line-uom-id",
+            "entityKey": "orders.sales-quotes",
+            "label": "Line unit of measure",
+            "type": "REFERENCE",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "uom-ref",
+            "writePermission": "orders:quotes:manage"
+          },
+          {
+            "fieldKey": "line-unit-price-minor",
+            "entityKey": "orders.sales-quotes",
+            "label": "Line unit price (minor)",
+            "type": "INTEGER",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "writePermission": "orders:quotes:manage"
+          }
+        ],
+        "relationships": [],
+        "references": [
+          {
+            "referenceKey": "quote-statuses",
+            "referenceType": "VALUE_LIST",
+            "staticValues": [
+              {
+                "value": "DRAFT",
+                "label": "Draft"
+              },
+              {
+                "value": "SUBMITTED",
+                "label": "Submitted"
+              },
+              {
+                "value": "ACCEPTED",
+                "label": "Accepted"
+              },
+              {
+                "value": "EXPIRED",
+                "label": "Expired"
+              },
+              {
+                "value": "CONVERTED",
+                "label": "Converted"
+              },
+              {
+                "value": "CANCELLED",
+                "label": "Cancelled"
+              }
+            ]
+          },
+          {
+            "referenceKey": "org-unit-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "organization-units"
+          },
+          {
+            "referenceKey": "product-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "catalogue-products",
+            "createWith": {
+              "moduleKey": "product-catalogue",
+              "surfaceKey": "catalogue-products",
+              "permission": "products:create"
+            }
+          },
+          {
+            "referenceKey": "uom-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "catalogue-uoms",
+            "createWith": {
+              "moduleKey": "product-catalogue",
+              "surfaceKey": "catalogue-units",
+              "permission": "uoms:manage"
+            }
+          }
+        ],
+        "validationRules": [],
+        "views": [
+          {
+            "viewKey": "sales-quotes",
+            "label": "Sales quotes",
+            "mode": "LIST",
+            "device": "ALL",
+            "searchFields": [
+              "quote-number",
+              "customer-name"
+            ],
+            "defaultSortField": "quote-number",
+            "defaultSortDirection": "DESC",
+            "tabs": [
+              {
+                "tabKey": "sq-header",
+                "label": "Quote",
+                "position": 0,
+                "level": 0,
+                "targetEntityKey": "orders.sales-quotes",
+                "sections": [
+                  {
+                    "sectionKey": "summary",
+                    "label": "Summary",
+                    "collapsible": false,
+                    "defaultCollapsed": false,
+                    "position": 0
+                  },
+                  {
+                    "sectionKey": "parties",
+                    "label": "Customer & organization",
+                    "collapsible": false,
+                    "defaultCollapsed": false,
+                    "position": 1
+                  },
+                  {
+                    "sectionKey": "terms",
+                    "label": "Commercial terms",
+                    "collapsible": false,
+                    "defaultCollapsed": false,
+                    "position": 2
+                  },
+                  {
+                    "sectionKey": "first-line",
+                    "label": "First quote line",
+                    "collapsible": false,
+                    "defaultCollapsed": false,
+                    "position": 3
+                  }
+                ],
+                "fields": [
+                  {
+                    "fieldKey": "quote-number",
+                    "position": 0,
+                    "span": 4,
+                    "componentKey": "text-input",
+                    "sectionKey": "summary"
+                  },
+                  {
+                    "fieldKey": "status",
+                    "position": 1,
+                    "span": 4,
+                    "componentKey": "select",
+                    "sectionKey": "summary"
+                  },
+                  {
+                    "fieldKey": "total-amount",
+                    "position": 2,
+                    "span": 4,
+                    "componentKey": "text-input",
+                    "sectionKey": "summary"
+                  },
+                  {
+                    "fieldKey": "org-unit-id",
+                    "position": 3,
+                    "span": 6,
+                    "componentKey": "lookup",
+                    "sectionKey": "parties"
+                  },
+                  {
+                    "fieldKey": "customer-id",
+                    "position": 4,
+                    "span": 6,
+                    "componentKey": "text-input",
+                    "sectionKey": "parties"
+                  },
+                  {
+                    "fieldKey": "customer-name",
+                    "position": 5,
+                    "span": 12,
+                    "componentKey": "text-input",
+                    "sectionKey": "parties"
+                  },
+                  {
+                    "fieldKey": "currency-code",
+                    "position": 6,
+                    "span": 3,
+                    "componentKey": "text-input",
+                    "sectionKey": "terms"
+                  },
+                  {
+                    "fieldKey": "valid-until",
+                    "position": 7,
+                    "span": 6,
+                    "componentKey": "datetime-input",
+                    "sectionKey": "terms"
+                  },
+                  {
+                    "fieldKey": "payment-term-days",
+                    "position": 8,
+                    "span": 3,
+                    "componentKey": "number-input",
+                    "sectionKey": "terms"
+                  },
+                  {
+                    "fieldKey": "notes",
+                    "position": 9,
+                    "span": 12,
+                    "componentKey": "text-input",
+                    "sectionKey": "terms"
+                  },
+                  {
+                    "fieldKey": "line-product-id",
+                    "position": 10,
+                    "span": 6,
+                    "componentKey": "lookup",
+                    "sectionKey": "first-line"
+                  },
+                  {
+                    "fieldKey": "line-product-code",
+                    "position": 11,
+                    "span": 3,
+                    "componentKey": "text-input",
+                    "sectionKey": "first-line"
+                  },
+                  {
+                    "fieldKey": "line-product-name",
+                    "position": 12,
+                    "span": 3,
+                    "componentKey": "text-input",
+                    "sectionKey": "first-line"
+                  },
+                  {
+                    "fieldKey": "line-quoted-quantity",
+                    "position": 13,
+                    "span": 3,
+                    "componentKey": "number-input",
+                    "sectionKey": "first-line"
+                  },
+                  {
+                    "fieldKey": "line-uom-id",
+                    "position": 14,
+                    "span": 3,
+                    "componentKey": "lookup",
+                    "sectionKey": "first-line"
+                  },
+                  {
+                    "fieldKey": "line-unit-price-minor",
+                    "position": 15,
+                    "span": 3,
+                    "componentKey": "number-input",
+                    "sectionKey": "first-line"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "navigation": [],
+        "actions": [],
+        "messages": []
+      }
+    }
+  },
+  {
+    "contractVersion": "1.0",
+    "window": {
       "route": "/procurement",
       "label": "Purchase orders",
       "description": "Create and review purchase order commitments to vendors.",
