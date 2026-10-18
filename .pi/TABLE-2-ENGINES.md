@@ -1,7 +1,7 @@
 # Table 2 — architectural engines (ADR-0033 / WI-OI-120)
 
 **Owner rule (2026-10-18):** Finish this list (code + UAT evidence) before any other product track.  
-**Canonical deploy tip for UAT:** release commit **`1fadfa4`** or later on `feat/gigaops-convergence-core` (F1 + F2 through F2.7).
+**Canonical deploy tip for UAT:** release commit **`930272f`** or later on `feat/gigaops-convergence-core` (F1 + F2 through F2.8).
 
 Legend: **Code** = merged in git on the Table 2 branch. **UAT** = owner deploy + recorded evidence in `.pi/work/WI-OI-120.md`.
 
@@ -28,7 +28,7 @@ Legend: **Code** = merged in git on the Table 2 branch. **UAT** = owner deploy +
 | 15 | F2.5 | UI: awaiting posting / posted / rejected on documents | Done `1fadfa4` | **Open** | [WI-OI-120fv](tasks/WI-OI-120fv.md); Inventory migration **5** |
 | 16 | F2.6 | Scheduled reconciliation job (daily) | Done | **Open** | [WI-OI-120fu](tasks/WI-OI-120fu.md); migration **11** on deploy |
 | 17 | F2.7 | Isolated HTTP handshake cert (Inventory↔Finance) | Done `1fadfa4` | — | [WI-OI-120fw](tasks/WI-OI-120fw.md); `verify-inventory-finance-relay-http.mjs` |
-| 18 | F2.8 | Period close blocked while posting gaps exist | Done | **Open** | [WI-OI-120fx](tasks/WI-OI-120fx.md); guard on period lock + Inventory subledger lock |
+| 18 | F2.8 | Period close blocked while posting gaps exist | Done `930272f` | **Open** | [WI-OI-120fx](tasks/WI-OI-120fx.md); guard on period lock + Inventory subledger lock |
 | 19 | F2.9 | Accounting review of default posting rules | Not started | — | Human gate (WI-OI-119 P1-28) |
 | **Tooling (Table 2)** |
 | 20 | — | Non-interactive UAT Playwright | Done `36105e4` | **Open** | `e2e/uat.env` + `pnpm e2e:uat:inventory` |

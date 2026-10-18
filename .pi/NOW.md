@@ -20,7 +20,7 @@ redirect the owner to other product tracks in chat.
 - **Committed:** F2.4 `631c4c7` ([WI-OI-120ft](tasks/WI-OI-120ft.md)).
 - **Committed:** F2.6 `7c1f4c1` ([WI-OI-120fu](tasks/WI-OI-120fu.md)); Finance migration **11**.
 - **Committed:** F2.5 `1fadfa4` ([WI-OI-120fv](tasks/WI-OI-120fv.md)); F2.7 [WI-OI-120fw](tasks/WI-OI-120fw.md); Inventory migration **5**.
-- **Committed:** F2.8 ([WI-OI-120fx](tasks/WI-OI-120fx.md)) — period close blocked when inventory posting reconciliation has gaps.
+- **Committed:** F2.8 `930272f` ([WI-OI-120fx](tasks/WI-OI-120fx.md)) — period close blocked when inventory posting reconciliation has gaps.
 
 ## Running on UAT
 
