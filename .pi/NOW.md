@@ -61,8 +61,8 @@ keeps the full rules.
 1. **WI-OI-120gd** — journey 0 blockers — **blocked:** `E2E_JOURNEY_PASSWORD` not in `e2e/uat.env` (only owner can set).
 2. **WI-OI-120ge** — **Done** in git **`0031a2f4`** (pushed); `pnpm audit:configuration-deployment-profile` passes.
 3. **WI-OI-120gf** — **blocked** on **M-AR0** (`modules/accounts-receivable/module.yaml`: API out of default build until SDK rebuild).
-4. **WI-OI-120gg** — next code slice: server-side **vendor party exists** on PO create (needs control-plane parties call; header already requires `vendorPartyId` UUID).
-5. **WI-OI-120gh** — procurement first metadata window (after 120gg or in parallel).
+4. **WI-OI-120gg** — **Built (local, uncommitted):** PO / vendor bill / debit memo refuse unknown `vendorPartyId` via mig **4** `require_active_party` (kernel `parties` table); dictionary **Vendor** field on PO window; `pnpm --filter @gigalibs/universal-procurement-api test` passes.
+5. **WI-OI-120gh** — procurement first metadata window (next).
 
 ## Built, not yet on UAT
 

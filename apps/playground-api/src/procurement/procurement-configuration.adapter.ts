@@ -160,6 +160,17 @@ const PROCUREMENT_DESCRIPTOR = ModuleAdapterDescriptorV1Schema.parse({
         maskOnDisplay: false,
       },
       {
+        fieldKey: 'vendor-id',
+        entityKey: 'procurement.purchase_order',
+        label: 'Vendor',
+        type: 'TEXT',
+        required: true,
+        readOnly: false,
+        isSystemLocked: true,
+        classification: 'INTERNAL',
+        maskOnDisplay: false,
+      },
+      {
         fieldKey: 'status',
         entityKey: 'procurement.purchase_order',
         label: 'Order Status',
@@ -209,6 +220,16 @@ const PROCUREMENT_DESCRIPTOR = ModuleAdapterDescriptorV1Schema.parse({
           operator: 'IS_NOT_NULL',
         },
       },
+      {
+        ruleKey: 'rule-vendor-party-required',
+        label: 'Vendor Party Required',
+        errorMessage: 'Select an active vendor from workspace parties',
+        severity: 'ERROR',
+        condition: {
+          field: 'vendor-id',
+          operator: 'IS_NOT_NULL',
+        },
+      },
     ],
     views: [
       {
@@ -241,16 +262,23 @@ const PROCUREMENT_DESCRIPTOR = ModuleAdapterDescriptorV1Schema.parse({
                 componentKey: 'text-input',
               },
               {
-                fieldKey: 'status',
+                fieldKey: 'vendor-id',
                 sectionKey: 'core-section',
                 position: 1,
+                span: 6,
+                componentKey: 'text-input',
+              },
+              {
+                fieldKey: 'status',
+                sectionKey: 'core-section',
+                position: 2,
                 span: 6,
                 componentKey: 'select',
               },
               {
                 fieldKey: 'total-amount',
                 sectionKey: 'core-section',
-                position: 2,
+                position: 3,
                 span: 6,
                 componentKey: 'text-input',
               },

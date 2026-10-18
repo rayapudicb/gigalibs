@@ -72,7 +72,7 @@ const postgres = await startThrowawayPostgres(`gigalibs-proc-proof-${process.pid
 const db = new DatabaseService({
   databaseUrl: postgres.runtimeUrl,
   databasePoolSize: 5,
-  expectedMigrationVersion: 2,
+  expectedMigrationVersion: 4,
   platformContextAudience: 'proof',
   platformContextPublicKey: 'proof',
   corsOrigins: [],
@@ -105,6 +105,19 @@ try {
   try {
     const sentinelRes = await adminClient.query('SELECT value FROM public.unrelated_upgrade_sentinel WHERE id = 1');
     assert.equal(sentinelRes.rows[0].value, 'preserve-me');
+
+    await adminClient.query(
+      `INSERT INTO public.parties (
+        id, tenant_id, code, legal_name, display_name, party_type, status
+      ) VALUES ($1, $2, $3, $4, $5, 'ORGANIZATION', 'ACTIVE')`,
+      [
+        vendorPartyId,
+        'tenant-alpha',
+        'VEND-PROOF-1',
+        'Apex Precision Engineering Ltd',
+        'Apex Precision Engineering Ltd',
+      ],
+    );
 
     const tablesRes = await adminClient.query(`
       SELECT table_name FROM information_schema.tables 

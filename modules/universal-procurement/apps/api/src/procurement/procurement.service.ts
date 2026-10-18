@@ -37,6 +37,7 @@ import {
 import type { PoolClient } from 'pg';
 import { SCHEMA } from '../config.js';
 import { DatabaseService } from '../database.service.js';
+import { requireActiveVendorParty } from './party-reference.js';
 
 export const errors = moduleErrors('UNIVERSAL_PROCUREMENT', 'Universal Procurement');
 
@@ -308,6 +309,8 @@ export class ProcurementService {
     }
 
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
+      await requireActiveVendorParty(client, principal.tenantId, input.vendorPartyId);
+
       const countRes = await client.query<{ count: string }>(
         `SELECT COUNT(*) as count FROM ${SCHEMA}.purchase_orders WHERE tenant_id = $1`,
         [principal.tenantId],
@@ -943,6 +946,8 @@ export class ProcurementService {
     }
 
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
+      await requireActiveVendorParty(client, principal.tenantId, input.vendorPartyId);
+
       let subtotalMinor = 0n;
       let taxTotalMinor = 0n;
 
@@ -1112,6 +1117,8 @@ export class ProcurementService {
     input: CreateDebitMemoInputV1,
   ): Promise<DebitMemoV1> {
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
+      await requireActiveVendorParty(client, principal.tenantId, input.vendorPartyId);
+
       const countRes = await client.query<{ count: string }>(
         `SELECT COUNT(*) as count FROM ${SCHEMA}.debit_memos WHERE tenant_id = $1`,
         [principal.tenantId],
