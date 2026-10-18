@@ -1,7 +1,7 @@
 # Table 2 — architectural engines (ADR-0033 / WI-OI-120)
 
 **Owner rule (2026-10-18):** Finish this list (code + UAT evidence) before any other product track.  
-**Canonical deploy tip for UAT:** release commit **`930272f`** or later on `feat/gigaops-convergence-core` (F1 + F2 through F2.8).
+**Canonical deploy tip for UAT:** release commit **`de671f0`** or later on `feat/gigaops-convergence-core` (F1 through F2.8).
 
 Legend: **Code** = merged in git on the Table 2 branch. **UAT** = owner deploy + recorded evidence in `.pi/work/WI-OI-120.md`.
 
@@ -18,7 +18,7 @@ Legend: **Code** = merged in git on the Table 2 branch. **UAT** = owner deploy +
 | **F1 — Document lifecycle (D2)** |
 | 7 | F1.1 / E1 | `@gigalibs/document-lifecycle` package | Done `0d29f8f` | — | [WI-OI-120fl](tasks/WI-OI-120fl.md) |
 | 8 | F1.2 / E1 | Finance journal drafts on lifecycle runner | Done `0d29f8f` | **Open** | [WI-OI-120fm](tasks/WI-OI-120fm.md); prove on UAT after deploy |
-| 9 | F1.3 | Inventory receipt (or other doc) lifecycle graph | Done | — | [WI-OI-120fy](tasks/WI-OI-120fy.md); `complete` via document-lifecycle |
+| 9 | F1.3 | Inventory receipt (or other doc) lifecycle graph | Done `de671f0` | — | [WI-OI-120fy](tasks/WI-OI-120fy.md); `complete` via document-lifecycle |
 | 10 | F1.4 | Period-lock guard on financial transitions (cross-module) | Partial | — | Finance drafts; extend per ADR P1-07 |
 | **F2 — Posting & reconciliation (D3)** |
 | 11 | F2.1 / E3 | Inventory outbox → Finance inbox relay | Done `8a5b487` | **Open** | [WI-OI-120fq](tasks/WI-OI-120fq.md); relay keys + live delivery |
@@ -44,6 +44,6 @@ All rows **1–14** (and **0**) have **Code = Done** and **UAT = Done** with evi
 3. **Owner — deploy:** release **`1fadfa4`**; set `FINANCE_INVENTORY_POSTING_DATABASE_URL` (= Inventory DSN) for POSTED sync; [WI-OI-120fp](tasks/WI-OI-120fp.md).
 4. **Owner — deploy:** ship F2 stack (**F2.5–F2.8** on branch) per [WI-OI-120fp](tasks/WI-OI-120fp.md).
 5. **Agent — #10:** F1.4 period-lock guard on financially relevant Inventory transitions (extend Finance pattern).
-6. **Owner — commit F1.3** when ready; deploy with Table 2 stack (**`930272f`**+).
+6. **Owner — deploy:** Table 2 stack tip **`de671f0`**+ ([WI-OI-120fp](tasks/WI-OI-120fp.md)).
 
 *Last updated: 2026-10-18 (F2.8 in git; deploy tip branch tip after F2.8 commit; Finance migrations 10–11, Inventory 5).*

@@ -21,6 +21,7 @@ redirect the owner to other product tracks in chat.
 - **Committed:** F2.6 `7c1f4c1` ([WI-OI-120fu](tasks/WI-OI-120fu.md)); Finance migration **11**.
 - **Committed:** F2.5 `1fadfa4` ([WI-OI-120fv](tasks/WI-OI-120fv.md)); F2.7 [WI-OI-120fw](tasks/WI-OI-120fw.md); Inventory migration **5**.
 - **Committed:** F2.8 `930272f` ([WI-OI-120fx](tasks/WI-OI-120fx.md)) — period close blocked when inventory posting reconciliation has gaps.
+- **Committed:** F1.3 `de671f0` ([WI-OI-120fy](tasks/WI-OI-120fy.md)) — receipt `complete` on `@gigalibs/document-lifecycle`.
 
 ## Running on UAT
 
@@ -72,7 +73,7 @@ redirect the owner to other product tracks in chat.
 | **F2.6** daily reconciliation | `7c1f4c1` | Deploy with migration **11** |
 | **F2.7** relay HTTP cert | `1fadfa4` | Isolated proof only (`PROOF_DATABASE_URL`) |
 | **F2.8** period-close gate | `930272f` | Deploy with F2 stack; prove lock fails when reconciliation gaps exist |
-| **F1.3** receipt lifecycle | Done (this commit) | Ships with Inventory deploy |
+| **F1.3** receipt lifecycle | `de671f0` | Ships with Inventory deploy |
 
 **Owner next (deploy):** release branch tip (**F2 through F2.8 + F1.3**); [WI-OI-120fp](tasks/WI-OI-120fp.md) — agents do not run `--deploy`.
 **Agent next (code):** **F1.4** period-lock guard on Inventory financially relevant transitions ([TABLE-2 #10](TABLE-2-ENGINES.md)).
