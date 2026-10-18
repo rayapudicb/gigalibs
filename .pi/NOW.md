@@ -66,7 +66,7 @@ keeps the full rules.
 6. **WI-OI-120gi** — **Built** in git **`530c2597`** (with 120gj): orders mig **4** customer party guard + SO dictionary **Customer** field.
 7. **WI-OI-120gj** — **Built** in git **`530c2597`**: orders first metadata window (`orders-sales-orders`) + record routes + live `/orders` page.
 8. **WI-OI-120gk** — **Built** in git **`6e9cb4bd`**: sales quotes metadata window + `/orders` tab with sales orders.
-9. **WI-OI-120gl** — **Built (local):** customer invoices metadata window + `/orders` tab.
+9. **WI-OI-120gl** — **Built** in git **`29d000b5`**: customer invoices metadata window + `/orders` tab.
 10. **Next code** — fulfillment window, procurement vendor-bill window, or **WI-OI-120gf** (M-AR0); **120gd** blocked on journey password.
 
 ## Built, not yet on UAT

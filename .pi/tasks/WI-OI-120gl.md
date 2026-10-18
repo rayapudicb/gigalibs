@@ -1,6 +1,6 @@
 # WI-OI-120gl: Orders customer invoice header — metadata window
 
-- **Status:** Built (2026-10-19; not on UAT)
+- **Status:** Built (2026-10-19, `29d000b5`; not on UAT)
 - **Work item:** Table 1 row 7 (O2C billing UI).
 - **Size:** M
 
