@@ -1,6 +1,6 @@
 # WI-OI-120be: W1 release A: CMMS unit and site access, and work orders, on UAT
 
-- **Status:** In Progress (approved by the owner 2026-10-16: "approved 120be").
+- **Status:** Built in git; **W1-B** closed by [WI-OI-120bk](WI-OI-120bk.md) (2026-10-18). **On UAT** pending single Phase 1 deploy + journey ([PHASE-1-CM1-CHECKLIST.md](PHASE-1-CM1-CHECKLIST.md)).
 - **Plan v3:** Phase 1, W1 (steps 1.1 and 1.3; phase-1-sizing.md). It releases cards that were built and approved
   earlier but never released: WI-OI-120aa, 120ab and 120ac (R5 CMMS), 120t (M-CM1, 4 slices) and 120ag.
 - **Work item:** WI-OI-120. Evidence goes in `.pi/work/WI-OI-120.md`.

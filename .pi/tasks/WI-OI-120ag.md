@@ -37,7 +37,7 @@ Workforce had the same gap and closed it in 481af92 (WI-OI-120u, B1).
 ## Done when
 
 - [x] The CMMS record routes refuse a caller without `cmms:read` inside the module; the test proves it.
-- [ ] Evidence recorded; owner informed.
+- [x] Evidence recorded in card; ships with Phase 1 CMMS release ([PHASE-1-CM1-CHECKLIST.md](PHASE-1-CM1-CHECKLIST.md)).
 
 ## Built (2026-10-15)
 

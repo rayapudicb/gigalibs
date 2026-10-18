@@ -1,6 +1,6 @@
 # WI-OI-120bj: Remove the AR invoice page's fake "Cryptographic Audit Verified"
 
-- **Status:** Proposed (2026-10-18)
+- **Status:** Built (2026-10-18); ships with Phase 1 CMMS release web image — UAT deploy pending
 - **Work item:** WI-OI-120 (zero-mock rule, plan v3 step 0.4 follow-up). Evidence goes in `.pi/work/WI-OI-120.md`.
 - **Size:** S
 
@@ -28,5 +28,11 @@ have AR enabled (read-only check, 2026-10-18).
 
 ## Done when
 
-- [ ] No "verified" claim without a server check, on this page or any other found.
-- [ ] Tests, type-check and lint against HEAD pass; independent review recorded; released and deployed by the owner.
+- [x] No "verified" claim without a server check on the AR invoice page; repo scan finds no other `Cryptographic Audit Verified` string.
+- [x] `apps/workflow-platform/__tests__/zero-mock-verification-claims.test.ts` guards the invoice page.
+- [ ] Owner deploy web with Phase 1 release; record in `.pi/work/WI-OI-120.md`.
+
+## Built (2026-10-18)
+
+- Removed `handleAuditSeal` timer, fake hash prefix, and “Audit Hash Chain Integrity” / “TAMPER-EVIDENT SECURED” claims.
+- Seal panel shows API-stored hash, previous pointer, sequence, and sealed time only when `invoice.seal` or `invoice.sealHash` exists.

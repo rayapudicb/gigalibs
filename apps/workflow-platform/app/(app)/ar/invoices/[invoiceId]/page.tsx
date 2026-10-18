@@ -7,7 +7,7 @@ import { formatMinorAmount, newIdempotencyKey, requestAr } from '@/lib/ar-api';
 import Link from 'next/link';
 import { use, useCallback, useEffect, useMemo, useState } from 'react';
 import { Container, Heading, Text, Button, StatusBadge, Table, Alert, Input, Label, Badge } from '@medusajs/ui';
-import { CheckCircleSolid, ShieldCheck, DocumentText, ArrowPath } from '@medusajs/icons';
+import { CheckCircleSolid, ShieldCheck, DocumentText } from '@medusajs/icons';
 import { StudioSurfaceBoundary } from '@/components/configuration/StudioMode';
 
 
@@ -25,10 +25,6 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ invoic
   // E-Invoicing Modal State
   const [showXmlModal, setShowXmlModal] = useState(false);
   const [xmlFormat, setXmlFormat] = useState<'peppol' | 'zugferd'>('peppol');
-
-  // Ledger Seal verification state
-  const [verifyingSeal, setVerifyingSeal] = useState(false);
-  const [sealAuditResult, setSealAuditResult] = useState<{ verified: boolean; message: string } | null>(null);
 
   // Installment settlement state
   const [installments, setInstallments] = useState<InstallmentMilestone[]>([]);
@@ -115,18 +111,19 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ invoic
     void loadInvoice();
   }, [loadInvoice]);
 
-  // Authoritative cryptographic seal derivation for preview
-  const ledgerSeal: LedgerSeal = useMemo(() => {
-    if (invoice?.seal) return invoice.seal;
-    const computedSealHash = `c8f29e${invoiceId.replace(/-/g, '').slice(0, 16)}98a72b4f108d7e9301ab49c6`;
+  /** Seal fields returned by the AR API only — no client-side hash fabrication (WI-OI-120bj). */
+  const ledgerSeal: LedgerSeal | null = useMemo(() => {
+    if (!invoice) return null;
+    if (invoice.seal) return invoice.seal;
+    if (!invoice.sealHash) return null;
     return {
-      hash: invoice?.sealHash ?? computedSealHash,
-      previousHash: invoice?.previousSealHash ?? '0000000000000000000000000000000000000000000000000000000000000000',
-      sequenceNumber: invoice?.sealSequence ?? 1042,
-      sealedAt: invoice?.issuedAt ?? new Date().toISOString(),
+      hash: invoice.sealHash,
+      previousHash: invoice.previousSealHash ?? '',
+      sequenceNumber: invoice.sealSequence ?? 0,
+      sealedAt: invoice.issuedAt ?? invoice.updatedAt,
       algorithm: 'SHA-256',
     };
-  }, [invoice, invoiceId]);
+  }, [invoice]);
 
 
   async function handleIssue() {
@@ -153,18 +150,6 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ invoic
     } finally {
       setIssuing(false);
     }
-  }
-
-  function handleAuditSeal() {
-    setVerifyingSeal(true);
-    setSealAuditResult(null);
-    setTimeout(() => {
-      setVerifyingSeal(false);
-      setSealAuditResult({
-        verified: true,
-        message: `FIPS 180-4 Cryptographic Audit Verified: SHA-256 hash matches authoritative line items and chains back to genesis root (sequence #${ledgerSeal.sequenceNumber}).`,
-      });
-    }, 450);
   }
 
   function toggleMilestonePaid(pos: number) {
@@ -200,7 +185,7 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ invoic
     <cbc:ID>FIPS-180-4-LEDGER-SEAL</cbc:ID>
     <cbc:DocumentTypeCode>SEAL_SHA256</cbc:DocumentTypeCode>
     <cac:Attachment>
-      <cbc:EmbeddedDocumentBinaryObject mimeCode="text/plain">${ledgerSeal.hash}</cbc:EmbeddedDocumentBinaryObject>
+      <cbc:EmbeddedDocumentBinaryObject mimeCode="text/plain">${ledgerSeal?.hash ?? ''}</cbc:EmbeddedDocumentBinaryObject>
     </cac:Attachment>
   </cac:AdditionalDocumentReference>
   <cac:AccountingSupplierParty>
@@ -245,7 +230,7 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ invoic
       <qdt:DateTimeString format="102">${invoice.issueDate.replace(/-/g, '')}</qdt:DateTimeString>
     </ram:IssueDateTime>
     <ram:IncludedNote>
-      <ram:Content>Cryptographic Tamper-Evident Ledger Seal: ${ledgerSeal.hash}</ram:Content>
+      <ram:Content>Ledger seal hash: ${ledgerSeal?.hash ?? ''}</ram:Content>
     </ram:IncludedNote>
   </rsm:ExchangedDocument>
 </rsm:CrossIndustryInvoice>`;
@@ -337,65 +322,42 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ invoic
           </Alert>
         )}
 
-        {/* Cryptographic Ledger Seal Panel */}
-        {invoice.status === 'ISSUED' && (
+        {/* Ledger seal stored on the invoice (display only; verification requires a server check). WI-OI-120bj */}
+        {invoice.status === 'ISSUED' && ledgerSeal ? (
           <Container className="p-6 border border-ui-border-base bg-ui-bg-subtle shadow-elevation-card-rest rounded-xl space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-full bg-ui-tag-green-bg text-ui-tag-green-text flex items-center justify-center">
-                  <ShieldCheck />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <Heading level="h2" className="text-sm font-bold text-ui-fg-base">
-                      Cryptographic Ledger Seal (FIPS 180-4 SHA-256)
-                    </Heading>
-                    <Badge color="green" size="small">TAMPER-EVIDENT SECURED</Badge>
-                  </div>
-                  <Text size="xsmall" className="text-ui-fg-muted mt-0.5">
-                    Immutable hash chain position #{ledgerSeal.sequenceNumber} in Tenant Ledger
-                  </Text>
-                </div>
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-full bg-ui-bg-base border border-ui-border-base text-ui-fg-muted flex items-center justify-center">
+                <ShieldCheck />
               </div>
-              <Button
-                variant="secondary"
-                size="small"
-                onClick={handleAuditSeal}
-                disabled={verifyingSeal}
-                isLoading={verifyingSeal}
-              >
-                <ArrowPath className="mr-1.5" />
-                Audit Hash Chain Integrity
-              </Button>
+              <div>
+                <Heading level="h2" className="text-sm font-bold text-ui-fg-base">
+                  Ledger seal (stored on invoice)
+                </Heading>
+                <Text size="xsmall" className="text-ui-fg-muted mt-0.5">
+                  Sequence #{ledgerSeal.sequenceNumber} · {ledgerSeal.algorithm} · sealed {ledgerSeal.sealedAt}
+                </Text>
+              </div>
             </div>
-
-            {sealAuditResult && (
-              <Alert variant="success" className="text-xs">
-                {sealAuditResult.message}
-              </Alert>
-            )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
               <div className="p-3 rounded-lg bg-ui-bg-base border border-ui-border-base text-xs space-y-1 font-mono">
                 <span className="text-[10px] text-ui-fg-muted font-sans font-semibold uppercase tracking-wider block">
-                  Authoritative Record Hash
+                  Record hash
                 </span>
-                <span className="text-ui-tag-green-text font-bold text-xs break-all block">
-                  {ledgerSeal.hash}
-                </span>
+                <span className="text-ui-fg-base text-xs break-all block">{ledgerSeal.hash}</span>
               </div>
 
               <div className="p-3 rounded-lg bg-ui-bg-base border border-ui-border-base text-xs space-y-1 font-mono">
                 <span className="text-[10px] text-ui-fg-muted font-sans font-semibold uppercase tracking-wider block">
-                  Previous Seal Hash Pointer
+                  Previous hash pointer
                 </span>
                 <span className="text-ui-fg-muted text-xs break-all block">
-                  {ledgerSeal.previousHash}
+                  {ledgerSeal.previousHash || '—'}
                 </span>
               </div>
             </div>
           </Container>
-        )}
+        ) : null}
 
         {/* Invoice Summary Card */}
         <Container className="p-6 border border-ui-border-base bg-ui-bg-base shadow-elevation-card-rest rounded-xl space-y-4">
@@ -631,7 +593,7 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ invoic
 
             <div className="p-4 border-t border-ui-border-base flex justify-between items-center text-xs">
               <span className="text-ui-fg-muted font-mono text-[11px]">
-                Embedded Seal: {ledgerSeal.hash.slice(0, 24)}...
+                {ledgerSeal ? `Embedded seal: ${ledgerSeal.hash.slice(0, 24)}…` : 'No seal on record'}
               </span>
               <Button
                 variant="secondary"
