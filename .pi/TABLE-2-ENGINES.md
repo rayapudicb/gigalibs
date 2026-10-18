@@ -1,7 +1,7 @@
 # Table 2 — architectural engines (ADR-0033 / WI-OI-120)
 
 **Owner rule (2026-10-18):** Finish this list (code + UAT evidence) before any other product track.  
-**Canonical deploy tip for UAT:** release commit **`e7eaa3d`** or later on `feat/gigaops-convergence-core` (F1 through F2.8).
+**Canonical deploy tip for UAT:** release commit **`0a0e787`** or later on `feat/gigaops-convergence-core` (F1 through F2.8; F2.9 packet is docs-only).
 
 Legend: **Code** = merged in git on the Table 2 branch. **UAT** = owner deploy + recorded evidence in `.pi/work/WI-OI-120.md`.
 

@@ -23,6 +23,7 @@ redirect the owner to other product tracks in chat.
 - **Committed:** F2.8 `930272f` ([WI-OI-120fx](tasks/WI-OI-120fx.md)) — period close blocked when inventory posting reconciliation has gaps.
 - **Committed:** F1.3 `de671f0` ([WI-OI-120fy](tasks/WI-OI-120fy.md)) — receipt `complete` on `@gigalibs/document-lifecycle`.
 - **Committed:** F1.4 `e7eaa3d` ([WI-OI-120fz](tasks/WI-OI-120fz.md)) — period-lock guard on receipt complete.
+- **Committed:** F2.9 packet `0a0e787` ([WI-OI-120ga](tasks/WI-OI-120ga.md)) — accounting review artifact (sign-off pending).
 
 ## Running on UAT
 
@@ -79,7 +80,7 @@ redirect the owner to other product tracks in chat.
 
 **Owner next (deploy):** release **`e7eaa3d`**+ ([WI-OI-120fp](tasks/WI-OI-120fp.md)); agents do not run `--deploy`.
 **Owner next (human):** F2.9 — accountant sign-off using [F2.9 review packet](work/F2.9-INVENTORY-RECEIPT-POSTING-ACCOUNTING-REVIEW.md) ([WI-OI-120ga](tasks/WI-OI-120ga.md)).
-**Agent next (code):** none on Table 2 engines until owner deploy evidence or accountant feedback; optional **commit** for F2.9 packet + costing type fix.
+**Agent next (code):** none on Table 2 engines until owner deploy evidence or accountant feedback.
 
 **W2 is decided (owner, 2026-10-18):**
 - enterprise accounts only: an administrator creates each user and shares the username and password;
