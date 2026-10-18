@@ -202,7 +202,7 @@ tenants with no unit grants today (UAT read-only, 2026-10-17) should not lose ac
 
 **Tests (main `361f160e`):** migration 22 down spec, sign-off service spec, contracts RBAC suite (71), migration pins at 22.
 
-**Release prepared (not deployed):** release worktree **`8df9960a`**, tag **`8df9960a9366-5761295c67a6`**, predecessor
-**`38aa3120`** (current UAT). Deploy tool retargeted; `deploy-uat.test.mjs` pass; `--check` pass (images still **`38aa3120`**
-until owner rebuilds). **Owner:** fresh backup (replace `gigalibs_backup_20261018_101400Z` in deploy tool if the name
-differs), build/push local images for **`8df9960a9366-5761295c67a6`**, then `--deploy`.
+**Release prepared (not deployed):** release worktree **`1d8d2634`**, tag **`1d8d2634b8f2-c6148e918ff0`**, predecessor
+**`38aa3120`** (current UAT). Includes **120bj** web fix. Deploy tool retargeted to **`1d8d2634`**. **Owner:** backup
+(matching `gigalibs_backup_20261018_102100Z` or update deploy tool), rebuild images, `--deploy`. Batch acceptance:
+[PHASE-1-CM1-CHECKLIST.md](PHASE-1-CM1-CHECKLIST.md).
