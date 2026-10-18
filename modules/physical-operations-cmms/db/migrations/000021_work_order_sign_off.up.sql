@@ -21,4 +21,7 @@ ALTER TABLE gigalibs_cmms.work_orders
       OR (signed_off_at IS NOT NULL AND signed_off_by IS NOT NULL AND sign_off_note IS NOT NULL)
     );
 
+INSERT INTO gigalibs_cmms.schema_migrations (version, name)
+VALUES (21, '000021_work_order_sign_off');
+
 COMMIT;

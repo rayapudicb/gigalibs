@@ -363,7 +363,14 @@ is released only with its relay built on the module SDK's `OutboxRelay`, configu
 
 ### Phase 6. Every remaining module, one at a time (M7)
 
-1. **M-CM2 CMMS complete:** reliability, kiosk, EAM, permits (WI-OI-108).
+1. **M-CM2 CMMS complete:** reliability, kiosk, EAM, permits (WI-OI-108). Detail:
+   - **CM-07 / U19b — `/cmms/analytics`:** attributable downtime and service-restoration capture, then
+     MTBF, availability, downtime Pareto from persisted facts (no fabricated KPIs).
+   - **CM-04 / U19c — `/cmms/floor`:** shop-floor **kiosk** (device identity, live meter alerts, path into
+     work-order execution); **not** the same as a 3D plant twin (Geospatial **`/maps`**, T3 place identity;
+     optional spatial/CAD components stay separate).
+   - **EAM-001–005** and permits slice from WI-OI-108.
+   - Roadmap narrative: `docs/plans/gigaops-convergence-roadmap.md` § P4b.
 2. **M-WF3 Workforce complete:** scheduling, pay readiness, compliance, handovers; reuses the WI-OI-067 to 071 code.
 3. **M-GEO Geospatial.**
 4. **M-ANA Analytics:** WI-OI-103d and 103f, live intelligence (WI-OI-072).

@@ -725,8 +725,7 @@ test('a new customer from sign-up to maintenance work, as five people', async ({
           await settle(supervisor);
         }
       };
-      // WI-OI-120bh: the review is real (the completed work order, its status and the technician's work). Signing it
-      // off is a separate step, and stays a blocker until a real sign-off exists: CMMS has no closed state yet.
+      // WI-OI-120bi: sign-off is real; reopen the detail panel after reload before looking for Sign off.
       await recorder.do(S5, 'The supervisor reviews the completed work order', supervisor, async () => {
         await supervisor.goto('/cmms/work-orders');
         await settle(supervisor);
@@ -737,17 +736,27 @@ test('a new customer from sign-up to maintenance work, as five people', async ({
         await survivesReload(supervisor, recorder, workOrderTitle, 'The completed work order', showCompleted);
       });
       await recorder.do(S5, 'The supervisor signs off and closes the work order', supervisor, async () => {
-        if (!(await press(supervisor, /^(close|sign off)/i))) throw new Error('No sign-off action: supervisor sign-off is not built yet');
+        await supervisor.goto('/cmms/work-orders');
+        await settle(supervisor);
+        await showCompleted();
+        await supervisor.getByText(workOrderTitle).first().click();
+        await settle(supervisor);
+        if (!(await shownAs(/^\s*completed\s*$/i))) throw new Error('The work order is not shown as completed before sign-off');
+        if (!(await press(supervisor, /^sign off$/i))) throw new Error('No sign-off action on the completed work order');
         await settle(supervisor);
         const dialog = supervisor.locator('[role=dialog]').filter({ visible: true });
         const form = (await dialog.count()) ? dialog.last().locator('form').last() : lastForm(supervisor);
         if (await form.count()) {
           await fill(form, [[/note|comment|reason/i, `Checked on site ${RUN}`]]);
-          const error = await submit(supervisor, form, recorder);
+          const error = await submit(supervisor, form, recorder, /^(confirm|save|submit)/i);
           if (error) throw new Error(error);
         }
         if (!(await shownAs(/^\s*closed\s*$/i))) throw new Error('The work order is not shown as closed after sign-off');
-        await survivesReload(supervisor, recorder, workOrderTitle, 'The closed work order', showCompleted);
+        await survivesReload(supervisor, recorder, workOrderTitle, 'The closed work order', async () => {
+          await showCompleted();
+          await supervisor.getByText(workOrderTitle).first().click();
+          await settle(supervisor);
+        });
       });
     }
     for (const section of ['schedules', 'meters', 'inventory', 'people', 'calendar', 'workload', 'analytics']) {

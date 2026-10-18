@@ -1,6 +1,6 @@
 # WI-OI-120bi: Supervisor sign-off closes a completed work order
 
-- **Status:** Built (release worktree `38aa3120`; UAT deploy pending owner)
+- **Status:** On UAT (owner deploy 2026-10-18, tag `38aa3120ebfc-4cb1f260d82b`; journey pending)
 - **Work item:** WI-OI-120 (Phase 1, W1, step 1.3). Evidence goes in `.pi/work/WI-OI-120.md`.
 - **Size:** M (one release, with a migration)
 
@@ -169,3 +169,18 @@ re-check of the fix commit is enough; a new full review is not needed.
   `cd /Users/rayapudi/dev/gigalibs-release-wf120u && bash .pi/handoff/proof-scripts/deploy-uat.sh --deploy --backup gigalibs_backup_20261018_084749Z`
 - **Rollback:** keep **`3bc0c1f`** images; backup above; if DB reaches 21, run `000021_work_order_sign_off.down.sql`
   before rolling images back.
+
+## On UAT (owner deploy, 2026-10-18)
+
+- **Tag:** `38aa3120ebfc-4cb1f260d82b` — **DEPLOY SMOKE PASSED** (all 11 migrations, 11 services healthy, `/api/health/ready`
+  and `/login` 200).
+- **CMMS migration:** **21** (read-only verified after deploy).
+- **Deploy incident (fixed on UAT, fix in git pending commit):** first `--deploy` applied `000021` DDL but the up file
+  lacked `INSERT INTO schema_migrations` (ledger stayed **20**). Owner inserted row **21** manually; second `--deploy`
+  succeeded. Main worktree adds the ledger `INSERT` to `000021_work_order_sign_off.up.sql` + test.
+- **Backup used:** `gigalibs_backup_20261018_084749Z` (predecessor **`3bc0c1f`**).
+- **Rollback:** **`3bc0c1f`** images kept; backup above; down migration drops ledger **21** and columns.
+- **Journey `dmrus2` (2026-10-18, tag `38aa3120`):** 53 findings, **1 blocker** — sign-off step failed because the
+  spec did not reopen the work-order detail after reload (stale “not built yet” message). CMMS requests and completion
+  steps passed. **Re-run journey** after e2e fix in `journey-tenant-to-value.spec.ts` (WI-OI-120bi).
+- **Prior:** `dg84u3` on **`3bc0c1f`** — 56 findings, 1 blocker (no sign-off on UAT).

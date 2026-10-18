@@ -182,6 +182,28 @@ D4 tenant connection governance · D5 transactional audit evidence.
 - **Exit:** CMMS entitled without Workforce screens; clean install, upgrade, two-tenant denial, restart,
   restore.
 
+### P4b — CMMS complete: reliability, shop-floor kiosk, EAM (size L, plan v3 **Phase 6 / M-CM2**)
+
+**Not Phase 1.** These routes exist in navigation today as honest placeholders (`module.yaml` →
+`/cmms/analytics`, `/cmms/floor`). They must not show measured KPIs or live telemetry until the backlog
+items below are built and certified.
+
+| Capability | Route today | Backlog | What it is (product) | What it is not |
+| --- | --- | --- | --- | --- |
+| **Reliability reporting** | `/cmms/analytics` | **CM-07**, **U19b** | MTBF, availability, downtime Pareto and overdue/completion metrics from **attributable downtime and service-restoration events**, drill-through to source, unknown stays unknown | Guessed or empty-chart “reliability” |
+| **Shop-floor kiosk** | `/cmms/floor` | **CM-04**, **U19c** | Device-bound shop-floor UI: technician identity, **governed meter/threshold → request/work-order** automation, proven operational telemetry on a floor-oriented view | A generic **3D digital twin** of the plant (that direction is **Geospatial** — e.g. spatial exploration on `/maps` — plus optional CAD/BIM components later; kiosk may **use** place/asset identity from T3 but is not defined as “Three.js factory viewer”) |
+| **EAM depth** | (future surfaces) | **EAM-001–005**, **WI-OI-108** (permits slice) | Extended asset lifecycle, permits, contained forms rebuild | — |
+
+**Work item shell:** **M-CM2** in `docs/plans/platform-implementation-plan.md`; supersedes the contained
+other-stream rebuild notes in **WI-OI-108**.
+
+**Depends on:** **M-CM1** (work orders, requests, meters, parts — Phase 1 W1), **T3** one place identity,
+**T5** where stock/EAM touches inventory, and for kiosk **CM-04** meter/IoT consumer (audit backlog:
+versioned consumer, unique trigger key, no fake sensor state).
+
+**Exit:** `/cmms/analytics` and `/cmms/floor` show real persisted data only; journey and module-completeness
+evidence; independent Security review before UAT deploy (same as every release).
+
 ### P5 — People: jobs, engagements and availability (size M + M)
 
 - **Business outcome:** a workforce manager describes who the organisation employs or contracts, what each
@@ -283,6 +305,9 @@ D4 tenant connection governance · D5 transactional audit evidence.
 | Compliance engine (Japan, California, India, EU) | P8 | Universal Rule Pro packs, one jurisdiction at a time |
 | Dual sourcing with agreement signing | P6 | Kept; E-Signature owns signatures |
 | CMMS `resource_allocation_id` foreign key | P6 | Replaced by logical ID plus events |
+| CMMS reliability (MTBF, availability, downtime Pareto) | P4b | **CM-07**; route `/cmms/analytics`; no KPIs until downtime capture |
+| CMMS shop-floor kiosk (device + meter alerts) | P4b | **CM-04**, **U19c**; route `/cmms/floor`; not a 3D plant twin |
+| Plant / unit 3D spatial view | P2 / M-GEO | **`/maps`** and Geospatial place model; CMMS floor may link assets to places |
 | FX rate lock at approval | P8 | Reference to the multi-currency rate entry |
 | GAAP ledger and Merkle chain | — | Separate Finance product on named demand |
 | Pay versus bill margin | P8 | Kept |

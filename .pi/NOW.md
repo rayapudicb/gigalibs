@@ -14,8 +14,8 @@ keeps the full rules.
 
 **Owner, 2026-10-18 (latest): hand over to Cursor.**
 1. Finish the pending CMMS work, in order:
-   - [WI-OI-120bi](tasks/WI-OI-120bi.md): **built** on main (`b8ded67e`); **release ready** on worktree
-     **`38aa3120`** (`deploy-uat.sh --check` passed). **Owner deploy** still pending (UAT is **`3bc0c1f`**).
+   - [WI-OI-120bi](tasks/WI-OI-120bi.md): **On UAT** (`38aa3120ebfc-4cb1f260d82b`, CMMS mig **21**). Run journey
+     to close the card.
    - [WI-OI-120bj](tasks/WI-OI-120bj.md), the AR page's fake verification. Proposed.
    - W1-B, CMMS unit and site scope.
 2. Then the owner's Table 1 audit prompt in detail: [TABLE-1-AUDIT-PROMPT-2026-10-18.md](handoff/TABLE-1-AUDIT-PROMPT-2026-10-18.md).
@@ -37,17 +37,13 @@ keeps the full rules.
 
 ## Running on UAT
 
-- **Release `3bc0c1f`** (owner deploy 2026-10-18), tag `3bc0c1f46c27-b896d4b59517`: `27450b7` plus WI-OI-120bh.
-  CMMS is at migration **20**, and every relay is ok.
-- **Last journey `dg84u3`** (on `3bc0c1f`): 56 findings (33 layout, 17 accessibility, 5 UX, 1 blocker) — supervisor
-  sign-off not built on this release.
-- **Rollback:** `27450b7` (images kept), backup `gigalibs_backup_20261018_062008Z`.
-
-## Ready to deploy (owner, WI-OI-120bi)
-
-- **Release worktree** `38aa3120` / tag `38aa3120ebfc-4cb1f260d82b`; backup **`gigalibs_backup_20261018_084749Z`**.
-- Deploy from `/Users/rayapudi/dev/gigalibs-release-wf120u` (see [WI-OI-120bi](tasks/WI-OI-120bi.md)). After deploy:
-  CMMS migration **21**, then `pnpm e2e:uat:journey`.
+- **Release `38aa3120`** (owner deploy 2026-10-18), tag **`38aa3120ebfc-4cb1f260d82b`**: WI-OI-120bi supervisor
+  sign-off (CMMS migration **21**). Predecessor **`3bc0c1f`** (WI-OI-120bh).
+- **Deploy smoke:** DEPLOY SMOKE PASSED; web + cmms-api on tag above (verified read-only).
+- **Journey `dmrus2`** on **`38aa3120`**: 53 findings, 1 blocker (e2e did not reopen WO detail for **Sign off**; API/UI
+  sign-off is on UAT). Re-run journey after e2e fix. Prior **`dg84u3`** on **`3bc0c1f`**: sign-off not deployed.
+- **Rollback:** **`3bc0c1f`** images kept; backup **`gigalibs_backup_20261018_084749Z`** (before 120bi); down **`000021`**
+  if rolling back after mig 21.
 
 ## Built, not yet on UAT
 
@@ -104,6 +100,12 @@ keeps the full rules.
 - no outside service may block development or testing.
 
 See [the Phase 1 order](../docs/plans/phase-1-sizing.md).
+
+## CMMS later (roadmap, not Phase 1)
+
+Documented in [gigaops-convergence-roadmap § P4b](../docs/plans/gigaops-convergence-roadmap.md) and plan v3 Phase 6
+**M-CM2**: **CM-07** reliability (`/cmms/analytics`), **CM-04** shop-floor kiosk (`/cmms/floor` — operational kiosk,
+not the 3D plant view on `/maps`), EAM and permits (**WI-OI-108**).
 
 ## Standing rules
 
