@@ -72,6 +72,14 @@ export class ModuleDatabase<F extends string = string> {
     await this.pool?.end();
   }
 
+  /** After {@link onModuleInit}, for Nest helpers (forms engine) that need a shared `pg.Pool`. */
+  getPool(): pg.Pool {
+    if (!this.pool) {
+      throw new Error(`${this.moduleOptions.label} PostgreSQL runtime is not initialised yet.`);
+    }
+    return this.pool;
+  }
+
   async readiness(): Promise<{ readonly migrationVersion: number }> {
     return this.assertReady();
   }

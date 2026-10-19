@@ -25,11 +25,12 @@ function makeClientMock() {
 // ── withTenantTransaction ordering ────────────────────────────────────────────
 
 describe('withTenantTransaction ordering', () => {
-  it('sets app.tenant_id before any user DML', async () => {
+  it('sets search_path and app.tenant_id before any user DML', async () => {
     const { client, queryLog } = makeClientMock();
     const tenantId = 'tenant-ar-001';
 
     await client.query('BEGIN');
+    await client.query('SET LOCAL search_path TO gigalibs_ar, public');
     await client.query("SELECT set_config('app.tenant_id', $1, true)", [tenantId]);
     await client.query('INSERT INTO gigalibs_ar.customers VALUES($1)', ['row']);
     await client.query('COMMIT');
@@ -96,10 +97,10 @@ describe('queryWithTenant ordering', () => {
 // ── bootstrapCheck logic ──────────────────────────────────────────────────────
 
 describe('bootstrapCheck', () => {
-  const REQUIRED = 15;
+  const REQUIRED = 16;
 
-  it('accepts exactly 15 migration rows with a safe role', () => {
-    const row = { migration_count: '15', is_superuser: false, bypasses_rls: false };
+  it('accepts exactly 16 migration rows with a safe role', () => {
+    const row = { migration_count: '16', is_superuser: false, bypasses_rls: false };
     const count = Number(row.migration_count);
     expect(count).toBe(REQUIRED);
     expect(row.is_superuser).toBe(false);

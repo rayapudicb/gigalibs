@@ -1,6 +1,6 @@
 # WI-OI-120gf: Accounts Receivable on configuration-local profile (M-AR0)
 
-- **Status:** In progress — metadata windows in [WI-OI-120ha](WI-OI-120ha.md); module-host / `ModuleDatabase` refactor remain
+- **Status:** In progress — [WI-OI-120ha](WI-OI-120ha.md) + [WI-OI-120hb](WI-OI-120hb.md) done; verify on local compose + optional module-host remain
 - **Work item:** Table 1 rows 7–8. Evidence in `.pi/work/TABLE-1-AUDIT-2026-10-19.md`.
 - **Size:** L
 

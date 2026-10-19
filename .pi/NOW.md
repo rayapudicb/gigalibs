@@ -82,7 +82,8 @@ keeps the full rules.
 22. **WI-OI-120gy** — **Built** in git **`4d5ce45d`:** M-AR0 platform-context guard + mig **15** + compose keys.
 23. **WI-OI-120gz** — **Built** in git **`25b60036`:** manifest `spec.gateway` + signed BFF for `/api/ar/*` (OIDC proxy removed).
 24. **WI-OI-120ha** — **Built** in git **`ff5da0a7`:** AR metadata windows (`ar-invoices`, `ar-customers`) + record routes + mig **16**.
-25. **Next code** — **WI-OI-120gf** remainder (`ModuleDatabase` / module-host); **120gd** journey password.
+25. **WI-OI-120hb** — **Built** (pending commit): AR `DatabaseService` → canonical `ModuleDatabase` (mig **16** contract).
+26. **Next code** — **WI-OI-120gf** closeout (module-host optional); **120gd** journey password.
 
 ## Built, not yet on UAT
 

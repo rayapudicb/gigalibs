@@ -17,8 +17,6 @@ import type { CustomerResponse } from '../customers/customers.service.js';
 import { CustomersService } from '../customers/customers.service.js';
 import type { InvoiceResponse } from '../invoices/invoices.service.js';
 import { InvoicesService } from '../invoices/invoices.service.js';
-import type { DatabaseService } from '../database/database.service.js';
-
 interface FieldSpec {
   readonly key: string;
   readonly writable?: boolean;
@@ -160,16 +158,6 @@ const CUST_FIELDS: readonly FieldSpec[] = [
   { key: 'status' },
 ];
 
-function idempotencyDatabase(database: DatabaseService): Pick<DatabaseService, 'withTenantTransaction'> {
-  return {
-    withTenantTransaction: (tenantId, operation) =>
-      database.withTenantTransaction(tenantId, async (client) => {
-        await client.query('SET LOCAL search_path TO gigalibs_ar, public');
-        return operation(client);
-      }),
-  };
-}
-
 export function arRecordDispatcher(
   deps: { invoices: InvoicesService; customers: CustomersService },
   idempotency: IdempotencyStore,
@@ -264,5 +252,3 @@ export function arRecordDispatcher(
 
   return new RecordDispatcher([invoices, customers], [], idempotency, shippedRecordRules('accounts-receivable'));
 }
-
-export { idempotencyDatabase };

@@ -74,7 +74,7 @@ const AR_LOCKED_KEYS = new Set<string>([
 ]);
 
 import { DatabaseModule } from './database/database.module.js';
-import { arRecordDispatcher, idempotencyDatabase } from './records/ar-record-adapters.js';
+import { arRecordDispatcher } from './records/ar-record-adapters.js';
 
 const ArRecordController = createRecordController({
   guard: ArAuthorizationGuard,
@@ -93,7 +93,7 @@ const ArRecordController = createRecordController({
       imports: [DatabaseModule],
       inject: [DatabaseService],
       useFactory: (db: DatabaseService) => ({
-        pool: db.pool,
+        pool: db.getPool(),
         schema: 'gigalibs_ar',
         lockedKeys: AR_LOCKED_KEYS,
       }),
@@ -105,7 +105,7 @@ const ArRecordController = createRecordController({
       imports: [DatabaseModule],
       inject: [DatabaseService],
       useFactory: (db: DatabaseService) => ({
-        pool: db.pool,
+        pool: db.getPool(),
         schema: 'gigalibs_ar',
       }),
     }),
@@ -155,7 +155,7 @@ const ArRecordController = createRecordController({
       useFactory: (invoices: InvoicesService, customers: CustomersService, database: DatabaseService) =>
         arRecordDispatcher(
           { invoices, customers },
-          new ModuleIdempotencyStore(idempotencyDatabase(database), {
+          new ModuleIdempotencyStore(database, {
             retentionDays: loadIdempotencyRetentionDays(process.env, 'AR'),
           }),
         ),
