@@ -53,8 +53,11 @@ function toDefinition(row: CfdRow): CustomFieldDefinition {
     entityType: row.entity_type,
     name: row.name,
     label: row.label,
-    type: row.field_type,
+    fieldType: row.field_type,
     required: row.required,
+    position: row.position,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
   };
   if (row.default_value !== null && row.default_value !== undefined) def.defaultValue = row.default_value;
   if (row.options !== null && row.options !== undefined) def.options = row.options;
@@ -113,7 +116,7 @@ export class CustomFieldsNestService {
         entityType,
         input.name,
         input.label,
-        input.type,
+        input.fieldType,
         input.required,
         input.defaultValue !== undefined ? JSON.stringify(input.defaultValue) : null,
         input.options ? JSON.stringify(input.options) : null,
@@ -201,6 +204,8 @@ export class CustomFieldsNestService {
     } finally {
       client.release();
     }
+  }
+
   private validateFieldValue(
     def: CustomFieldDefinition,
     value: unknown,

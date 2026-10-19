@@ -2,6 +2,9 @@ packages:
   - apps/playground-api
   - apps/workflow-platform
   - modules/accounts-receivable/domain
+  - modules/accounts-receivable/apps/api
+  - packages/custom-fields-nest
+  - packages/forms-engine-nest
   - modules/analytics-studio/apps/api
   - modules/financial-operations/web
   - modules/geospatial/apps/api

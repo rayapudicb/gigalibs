@@ -60,7 +60,7 @@ keeps the full rules.
 
 1. **WI-OI-120gd** — journey 0 blockers — **blocked:** `E2E_JOURNEY_PASSWORD` not in `e2e/uat.env` (only owner can set).
 2. **WI-OI-120ge** — **Done** in git **`0031a2f4`** (pushed); `pnpm audit:configuration-deployment-profile` passes.
-3. **WI-OI-120gf** — **blocked** on **M-AR0** (`modules/accounts-receivable/module.yaml`: API out of default build until SDK rebuild).
+3. **WI-OI-120gf** — **In progress** (M-AR0): compose + module SDK; E1 build done in **WI-OI-120gw**.
 4. **WI-OI-120gg** — **Built** in git **`cdcbf2c9`** (pushed): vendor party guard mig **4**.
 5. **WI-OI-120gh** — **Built** in git **`b9e29301`** (pushed).
 6. **WI-OI-120gi** — **Built** in git **`530c2597`** (with 120gj): orders mig **4** customer party guard + SO dictionary **Customer** field.
@@ -77,7 +77,8 @@ keeps the full rules.
 17. **WI-OI-120gt** — **Built** in git **`8d979683`**: minimal P2P + O2C ([TABLE-1-MINIMAL-FLOWS.md](TABLE-1-MINIMAL-FLOWS.md)); `proof:minimal-p2p` / `proof:minimal-o2c`.
 18. **WI-OI-120gu** — **Built** in git **`90336704`:** Playwright minimal P2P/O2C compose flow + BFF `convert-to-po` gateway route.
 19. **WI-OI-120gv** — **Built** in git **`85d2b36c`:** SO **allocate** + fulfillment **dispatch** (`issue-id`) F0 metadata actions.
-20. **Next code** — **WI-OI-120gf** (M-AR0 on compose); **120gd** journey password.
+20. **WI-OI-120gw** — **Built** (pending commit): M-AR0 E1 — AR API in root build; nest helper packages fixed.
+21. **Next code** — **WI-OI-120gf** (AR on compose / module SDK); **120gd** journey password.
 
 ## Built, not yet on UAT
 

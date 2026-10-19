@@ -1,8 +1,6 @@
-# WI-OI-120aj (owner decision E1a, 2026-10-14): the AR API (`apps/api`) is left out of the default build (root
-# `package.json` `build`) until it is rebuilt on the module SDK as M-AR0 (execution plan v3 step 5C). From a clean
-# checkout it cannot compile: `@gigalibs/custom-fields-nest` and `@gigalibs/forms-engine-nest` have no build script,
-# the former has a syntax error and type drift (e4e4a69 and earlier), and the API passes options their types lack.
-# Local trees hid this with a stale `dist/` from 2026-09-14. The module is CONTAINED and not deployed.
+# WI-OI-120gw (2026-10-19): AR API is back in the root `pnpm build` after fixing `@gigalibs/custom-fields-nest` and
+# `@gigalibs/forms-engine-nest` (real modules replace index stubs). Full M-AR0 (module SDK + module-host compose) remains
+# WI-OI-120gf; the service is CONTAINED and not on UAT until that card completes.
 apiVersion: modules.gigalibs.io/v1
 kind: Module
 metadata:

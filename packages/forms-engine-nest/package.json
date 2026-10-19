@@ -19,6 +19,11 @@
     "@nestjs/common": "^11.2.3",
     "pg": "^8.11.0 || ^8.23.0"
   },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "clean": "rm -rf dist *.tsbuildinfo"
+  },
   "devDependencies": {
     "@types/node": "^24.10.0",
     "@types/pg": "^8.23.1",
