@@ -8,6 +8,13 @@ export const generatedModuleUpstreams = {
     "serviceHostname": "analytics-api",
     "basePath": ""
   },
+  "ar": {
+    "module": "accounts-receivable",
+    "environmentKey": "AR_API_URL",
+    "port": "3400",
+    "serviceHostname": "ar-api",
+    "basePath": ""
+  },
   "cmms": {
     "module": "physical-operations-cmms",
     "environmentKey": "CMMS_API_URL",

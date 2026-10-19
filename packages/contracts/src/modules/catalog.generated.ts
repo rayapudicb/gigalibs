@@ -186,7 +186,7 @@ export const generatedPlatformModuleCatalog = [
     trialEligible: false,
     requiredPermission: 'ar:read',
     platformInspection: true,
-    reason: 'Customer, draft and issuance domain with tests and migrations. Its service is not part of the running local stack. Frozen and locked (ADR-0016 F6).',
+    reason: 'Customer invoicing domain on local compose (M-AR0); suite BFF uses signed platform context (WI-OI-120gz).',
   },
   // modules/spend-management/module.yaml
   {

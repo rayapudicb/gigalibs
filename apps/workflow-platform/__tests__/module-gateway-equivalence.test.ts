@@ -15,6 +15,45 @@ import {
 
 const requiredCmmsPermission = moduleGatewayConfig('physical-operations-cmms').requiredPermission;
 const requiredWorkforcePermission = moduleGatewayConfig('gigaops').requiredPermission;
+const requiredArPermission = moduleGatewayConfig('accounts-receivable').requiredPermission;
+
+/** Oracle transcribed from the hand-written `/api/ar` route, with UUID segments tightened to match `spec.gateway` (WI-OI-120gz). */
+function legacyArPermission(method: string, path: readonly string[]): string | null {
+  if (path.some((part) => !/^[A-Za-z0-9._:-]{1,100}$/.test(part))) return null;
+  const joined = path.join('/');
+  const id = path[2];
+  const isUuid = typeof id === 'string' && new RegExp(`^${UUID_SEGMENT}$`).test(id);
+  if (method === 'POST' && joined === 'v1/setup') return 'ar:write';
+  if (joined === 'v1/customers') return method === 'GET' || method === 'POST' ? (method === 'GET' ? 'ar:read' : 'ar:write') : null;
+  if (path.length === 3 && path[0] === 'v1' && path[1] === 'customers') return method === 'GET' && isUuid ? 'ar:read' : null;
+  if (joined === 'v1/invoices') return method === 'GET' || method === 'POST' ? (method === 'GET' ? 'ar:read' : 'ar:write') : null;
+  if (joined === 'v1/invoices/aging') return method === 'GET' ? 'ar:read' : null;
+  if (path.length === 3 && path[0] === 'v1' && path[1] === 'invoices') {
+    return isUuid ? (method === 'GET' ? 'ar:read' : method === 'PATCH' ? 'ar:write' : null) : null;
+  }
+  if (path.length === 4 && path[0] === 'v1' && path[1] === 'invoices' && isUuid) {
+    const sub = path[3];
+    if (sub === 'issue') return method === 'POST' ? 'ar:issue' : null;
+    if (sub === 'deliver') return method === 'POST' ? 'ar:write' : null;
+    if (sub === 'deliveries' || sub === 'pdf') return method === 'GET' ? 'ar:read' : null;
+    if (sub === 'payments') return method === 'GET' ? 'ar:read' : method === 'POST' ? 'ar:write' : null;
+    if (sub === 'checkout-session') return method === 'POST' ? 'ar:write' : null;
+    if (sub === 'download-url') return method === 'GET' ? 'ar:read' : null;
+    if (sub === 'void') return method === 'GET' ? 'ar:read' : method === 'POST' ? 'ar:write' : null;
+    if (sub === 'credit-notes' || sub === 'collections') {
+      return method === 'GET' ? 'ar:read' : method === 'POST' ? 'ar:write' : null;
+    }
+  }
+  if (joined === 'v1/work-sources') return method === 'POST' ? 'ar:write' : null;
+  if (path.length === 4 && path[0] === 'v1' && path[1] === 'work-sources') {
+    const wsId = path[2];
+    if (!new RegExp(`^${UUID_SEGMENT}$`).test(wsId)) return null;
+    const sub = path[3];
+    if (sub === 'records' || sub === 'generate-invoice') return method === 'POST' ? 'ar:write' : null;
+    if (sub === 'summary' || sub === 'family') return method === 'GET' ? 'ar:read' : null;
+  }
+  return null;
+}
 
 const METHODS = ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS', 'HEAD'];
 const ID = '3f2b6c1e-9a4d-4e1f-8b2a-7c5d9e0f1a2b';
@@ -257,6 +296,23 @@ describe('manifest-generated gateways equal the hand-written allow-lists', () =>
     expect(allowed).toBeGreaterThanOrEqual(70);
   });
 
+  it('Accounts Receivable: manifest routes match the removed hand-written allow-list (WI-OI-120gz)', () => {
+    const corpus = withNegatives(fromTemplates('accounts-receivable'));
+    let allowed = 0;
+    for (const path of corpus) {
+      for (const method of METHODS) {
+        const expected = legacyArPermission(method, path.split('/'));
+        expect({
+          method,
+          path,
+          permission: requiredArPermission(method, path.split('/')),
+        }).toEqual({ method, path, permission: expected });
+        if (expected) allowed += 1;
+      }
+    }
+    expect(allowed).toBeGreaterThanOrEqual(20);
+  });
+
   it('generates the same upstream table the shell hard-coded before WI-OI-083c', () => {
     const pick = (entry: { environmentKey: string; port: string; serviceHostname: string }) => ({
       environmentKey: entry.environmentKey,
@@ -273,6 +329,7 @@ describe('manifest-generated gateways equal the hand-written allow-lists', () =>
         port: '4400',
         serviceHostname: 'analytics-api',
       },
+      ar: { environmentKey: 'AR_API_URL', port: '3400', serviceHostname: 'ar-api' },
       cmms: { environmentKey: 'CMMS_API_URL', port: '4200', serviceHostname: 'cmms-api' },
       'connector-hub': {
         environmentKey: 'CONNECTOR_HUB_API_URL',
@@ -339,6 +396,17 @@ describe('manifest-generated gateways equal the hand-written allow-lists', () =>
       routeNoun: 'Workforce',
       serviceName: 'GigaOps Workforce',
       entitlementName: 'GigaOps',
+    });
+    expect(generatedModuleGateways['accounts-receivable']).toMatchObject({
+      basePaths: ['/api/ar'],
+      catalogKey: 'accounts-receivable',
+      audience: 'gigalibs-ar-api',
+      upstream: 'ar',
+      signingKeyEnvironment: 'AR_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64',
+      codePrefix: 'AR',
+      routeNoun: 'Accounts Receivable',
+      serviceName: 'Accounts Receivable',
+      entitlementName: 'Accounts Receivable',
     });
   });
 });

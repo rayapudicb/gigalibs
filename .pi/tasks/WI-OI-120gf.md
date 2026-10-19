@@ -1,6 +1,6 @@
 # WI-OI-120gf: Accounts Receivable on configuration-local profile (M-AR0)
 
-- **Status:** In progress — E1 build unblocked in [WI-OI-120gw](WI-OI-120gw.md); module SDK + compose service remain
+- **Status:** In progress — compose + platform auth + manifest BFF in [WI-OI-120gx](WI-OI-120gx.md)–[WI-OI-120gz](WI-OI-120gz.md); module-host / `ModuleDatabase` / metadata windows remain
 - **Work item:** Table 1 rows 7–8. Evidence in `.pi/work/TABLE-1-AUDIT-2026-10-19.md`.
 - **Size:** L
 

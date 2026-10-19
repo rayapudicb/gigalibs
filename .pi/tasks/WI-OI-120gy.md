@@ -5,7 +5,7 @@
 
 ## Goal
 
-AR API accepts BFF-signed platform context when `AR_PLATFORM_CONTEXT_PUBLIC_KEY_*` is configured; OIDC dev issuer remains for compose `/api/ar` proxy.
+AR API accepts BFF-signed platform context when `AR_PLATFORM_CONTEXT_PUBLIC_KEY_*` is configured; OIDC dev issuer remains for direct API/tooling calls (suite BFF uses signed context per WI-OI-120gz).
 
 ## Done when
 

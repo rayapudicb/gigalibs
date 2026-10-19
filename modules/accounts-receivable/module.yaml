@@ -43,6 +43,11 @@ spec:
     basePath: /ar
   api:
     application: apps/api
+    port: 3400
+    upstream:
+      key: ar
+      serviceHostname: ar-api
+      environmentKey: AR_API_URL
     version: v1
     openapi: contracts/openapi.yaml
   worker:
@@ -55,7 +60,7 @@ spec:
       - ar.invoice.balance-changed.v1
     consumes: []
   identity:
-    protocol: oidc
+    protocol: signed-platform-context-v1
     tenantClaimRequired: true
     failClosed: true
   database:
@@ -64,6 +69,7 @@ spec:
     ownsSchema: true
     defaultSchema: gigalibs_ar
     crossSchemaAccess: false
+    runtimeManifest: db/runtime-manifest.txt
   deployment:
     modes:
       - suite
@@ -101,6 +107,38 @@ spec:
       trialEligible: false
       requiredPermission: ar:read
       platformInspection: true
-      reason: Customer, draft and issuance domain with tests and migrations. Its service is not part of the running local stack. Frozen and locked (ADR-0016 F6).
+      reason: Customer invoicing domain on local compose (M-AR0); suite BFF uses signed platform context (WI-OI-120gz).
       navigationOrder: 110
       personas: [C_LEVEL]
+  gateway:
+    basePaths: [/api/ar]
+    catalogKey: accounts-receivable
+    audience: gigalibs-ar-api
+    upstream: ar
+    signingKeyEnvironment: AR_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64
+    codePrefix: AR
+    routeNoun: Accounts Receivable
+    serviceName: Accounts Receivable
+    entitlementName: Accounts Receivable
+    routes:
+      - { path: 'v1/setup', POST: ar:write }
+      - { path: 'v1/customers', GET: ar:read, POST: ar:write }
+      - { path: 'v1/customers/{id}', GET: ar:read }
+      - { path: 'v1/invoices', GET: ar:read, POST: ar:write }
+      - { path: 'v1/invoices/aging', GET: ar:read }
+      - { path: 'v1/invoices/{id}', GET: ar:read, PATCH: ar:write }
+      - { path: 'v1/invoices/{id}/issue', POST: ar:issue }
+      - { path: 'v1/invoices/{id}/deliver', POST: ar:write }
+      - { path: 'v1/invoices/{id}/deliveries', GET: ar:read }
+      - { path: 'v1/invoices/{id}/pdf', GET: ar:read }
+      - { path: 'v1/invoices/{id}/payments', GET: ar:read, POST: ar:write }
+      - { path: 'v1/invoices/{id}/checkout-session', POST: ar:write }
+      - { path: 'v1/invoices/{id}/download-url', GET: ar:read }
+      - { path: 'v1/invoices/{id}/void', GET: ar:read, POST: ar:write }
+      - { path: 'v1/invoices/{id}/credit-notes', GET: ar:read, POST: ar:write }
+      - { path: 'v1/invoices/{id}/collections', GET: ar:read, POST: ar:write }
+      - { path: 'v1/work-sources', POST: ar:write }
+      - { path: 'v1/work-sources/{id}/records', POST: ar:write }
+      - { path: 'v1/work-sources/{id}/summary', GET: ar:read }
+      - { path: 'v1/work-sources/{id}/generate-invoice', POST: ar:write }
+      - { path: 'v1/work-sources/{id}/family', GET: ar:read }

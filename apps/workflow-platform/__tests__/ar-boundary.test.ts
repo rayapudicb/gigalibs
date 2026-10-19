@@ -7,6 +7,38 @@ vi.mock('../lib/verified-session', () => ({
   verifiedSession: vi.fn(),
 }));
 
+const arEntitlement = { moduleKey: 'accounts-receivable', status: 'ENABLED' as const, version: 'v1' };
+
+function arTenant(overrides: {
+  features?: string[];
+  entitlements?: typeof arEntitlement[];
+  permissions?: string[];
+} = {}) {
+  return {
+    id: 'tenant-ar-ok',
+    name: 'AR Tenant',
+    slug: 'ar-tenant',
+    status: 'ACTIVE' as const,
+    trialEndsAt: null,
+    features: overrides.features ?? ['accounts-receivable'],
+    entitlements: overrides.entitlements ?? [arEntitlement],
+  };
+}
+
+function arSession(tenantOverrides: Parameters<typeof arTenant>[0] = {}, permissions: string[] = ['ar:read', 'ar:write']) {
+  return {
+    context: {
+      user: { id: 'usr-1', email: 'user@example.invalid', name: 'Test', status: 'ACTIVE' },
+      tenant: arTenant(tenantOverrides),
+      roles: ['TENANT_ADMIN'],
+      platformRoles: [],
+      permissions,
+      session: { id: 'sess-1', expiresAt: '2099-01-01T00:00:00Z' },
+      mfa: { required: false, enrolled: true, verified: true, recoveryCodesRemaining: 5 },
+    },
+  } as never;
+}
+
 describe.skipIf(isLockedModule('accounts-receivable'))('WI-OI-019 / RT-02 Exit Proof: AR route security boundary and anti-mock enforcement', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -23,7 +55,7 @@ describe.skipIf(isLockedModule('accounts-receivable'))('WI-OI-019 / RT-02 Exit P
         { detail: 'Authentication required.' },
         { status: 401, headers: { 'Cache-Control': 'no-store' } },
       ),
-    } as any);
+    } as never);
 
     const req = new Request('https://platform.example.invalid/api/ar/v1/invoices', {
       method: 'GET',
@@ -49,7 +81,7 @@ describe.skipIf(isLockedModule('accounts-receivable'))('WI-OI-019 / RT-02 Exit P
         session: { id: 'sess-1', expiresAt: '2099-01-01T00:00:00Z' },
         mfa: { required: false, enrolled: true, verified: true, recoveryCodesRemaining: 5 },
       },
-    } as any);
+    } as never);
 
     const req = new Request('https://platform.example.invalid/api/ar/v1/invoices', {
       method: 'GET',
@@ -63,24 +95,9 @@ describe.skipIf(isLockedModule('accounts-receivable'))('WI-OI-019 / RT-02 Exit P
   });
 
   it('denies user when tenant is not entitled to accounts-receivable with HTTP 403', async () => {
-    vi.mocked(verifiedSession).mockResolvedValue({
-      context: {
-        user: { id: 'usr-1', email: 'user@example.invalid', name: 'Test', status: 'ACTIVE' },
-        tenant: {
-          id: 'tenant-no-ar',
-          name: 'No AR Tenant',
-          slug: 'no-ar',
-          status: 'ACTIVE',
-          trialEndsAt: null,
-          features: ['some-other-feature'],
-        },
-        roles: ['MEMBER'],
-        platformRoles: [],
-        permissions: ['ar:read'],
-        session: { id: 'sess-1', expiresAt: '2099-01-01T00:00:00Z' },
-        mfa: { required: false, enrolled: true, verified: true, recoveryCodesRemaining: 5 },
-      },
-    } as any);
+    vi.mocked(verifiedSession).mockResolvedValue(
+      arSession({ features: ['some-other-feature'], entitlements: [] }, ['ar:read']),
+    );
 
     const req = new Request('https://platform.example.invalid/api/ar/v1/invoices', {
       method: 'GET',
@@ -90,28 +107,12 @@ describe.skipIf(isLockedModule('accounts-receivable'))('WI-OI-019 / RT-02 Exit P
     const res = await getAr(req, context);
     expect(res.status).toBe(403);
     const body = await res.json();
-    expect(body.title).toBe('Permission ar:read is required.');
+    expect(body.title).toContain('Accounts Receivable');
+    expect(body.title).toContain('ar:read');
   });
 
   it('denies user when tenant is entitled but user lacks ar:read permission', async () => {
-    vi.mocked(verifiedSession).mockResolvedValue({
-      context: {
-        user: { id: 'usr-1', email: 'user@example.invalid', name: 'Test', status: 'ACTIVE' },
-        tenant: {
-          id: 'tenant-ar-ok',
-          name: 'AR Tenant',
-          slug: 'ar-tenant',
-          status: 'ACTIVE',
-          trialEndsAt: null,
-          features: ['accounts-receivable'],
-        },
-        roles: ['VIEWER'],
-        platformRoles: [],
-        permissions: ['other:read'],
-        session: { id: 'sess-1', expiresAt: '2099-01-01T00:00:00Z' },
-        mfa: { required: false, enrolled: true, verified: true, recoveryCodesRemaining: 5 },
-      },
-    } as any);
+    vi.mocked(verifiedSession).mockResolvedValue(arSession({}, ['other:read']));
 
     const req = new Request('https://platform.example.invalid/api/ar/v1/invoices', {
       method: 'GET',
@@ -121,28 +122,11 @@ describe.skipIf(isLockedModule('accounts-receivable'))('WI-OI-019 / RT-02 Exit P
     const res = await getAr(req, context);
     expect(res.status).toBe(403);
     const body = await res.json();
-    expect(body.title).toBe('Permission ar:read is required.');
+    expect(body.title).toContain('ar:read');
   });
 
   it('denies cross-site mutating requests (missing origin/referer)', async () => {
-    vi.mocked(verifiedSession).mockResolvedValue({
-      context: {
-        user: { id: 'usr-1', email: 'user@example.invalid', name: 'Test', status: 'ACTIVE' },
-        tenant: {
-          id: 'tenant-ar-ok',
-          name: 'AR Tenant',
-          slug: 'ar-tenant',
-          status: 'ACTIVE',
-          trialEndsAt: null,
-          features: ['accounts-receivable'],
-        },
-        roles: ['TENANT_ADMIN'],
-        platformRoles: [],
-        permissions: ['ar:read', 'ar:write'],
-        session: { id: 'sess-1', expiresAt: '2099-01-01T00:00:00Z' },
-        mfa: { required: false, enrolled: true, verified: true, recoveryCodesRemaining: 5 },
-      },
-    } as any);
+    vi.mocked(verifiedSession).mockResolvedValue(arSession());
 
     const req = new Request('https://platform.example.invalid/api/ar/v1/invoices', {
       method: 'POST',
@@ -158,24 +142,7 @@ describe.skipIf(isLockedModule('accounts-receivable'))('WI-OI-019 / RT-02 Exit P
   });
 
   it('rejects unsupported AR paths with HTTP 404', async () => {
-    vi.mocked(verifiedSession).mockResolvedValue({
-      context: {
-        user: { id: 'usr-1', email: 'user@example.invalid', name: 'Test', status: 'ACTIVE' },
-        tenant: {
-          id: 'tenant-ar-ok',
-          name: 'AR Tenant',
-          slug: 'ar-tenant',
-          status: 'ACTIVE',
-          trialEndsAt: null,
-          features: ['accounts-receivable'],
-        },
-        roles: ['TENANT_ADMIN'],
-        platformRoles: [],
-        permissions: ['*'],
-        session: { id: 'sess-1', expiresAt: '2099-01-01T00:00:00Z' },
-        mfa: { required: false, enrolled: true, verified: true, recoveryCodesRemaining: 5 },
-      },
-    } as any);
+    vi.mocked(verifiedSession).mockResolvedValue(arSession({}, ['*']));
 
     const req = new Request('https://platform.example.invalid/api/ar/unsupported-action-xyz', {
       method: 'GET',
@@ -189,24 +156,7 @@ describe.skipIf(isLockedModule('accounts-receivable'))('WI-OI-019 / RT-02 Exit P
   });
 
   it('rejects unsupported invoice sub-actions with HTTP 404', async () => {
-    vi.mocked(verifiedSession).mockResolvedValue({
-      context: {
-        user: { id: 'usr-1', email: 'user@example.invalid', name: 'Test', status: 'ACTIVE' },
-        tenant: {
-          id: 'tenant-ar-ok',
-          name: 'AR Tenant',
-          slug: 'ar-tenant',
-          status: 'ACTIVE',
-          trialEndsAt: null,
-          features: ['accounts-receivable'],
-        },
-        roles: ['TENANT_ADMIN'],
-        platformRoles: [],
-        permissions: ['*'],
-        session: { id: 'sess-1', expiresAt: '2099-01-01T00:00:00Z' },
-        mfa: { required: false, enrolled: true, verified: true, recoveryCodesRemaining: 5 },
-      },
-    } as any);
+    vi.mocked(verifiedSession).mockResolvedValue(arSession({}, ['*']));
 
     const req = new Request('https://platform.example.invalid/api/ar/v1/invoices/inv-1/unsupported-sub', {
       method: 'POST',
@@ -224,24 +174,7 @@ describe.skipIf(isLockedModule('accounts-receivable'))('WI-OI-019 / RT-02 Exit P
   });
 
   it('enforces ar:write permission on newly supported mutating payment routes', async () => {
-    vi.mocked(verifiedSession).mockResolvedValue({
-      context: {
-        user: { id: 'usr-1', email: 'user@example.invalid', name: 'Test', status: 'ACTIVE' },
-        tenant: {
-          id: 'tenant-ar-ok',
-          name: 'AR Tenant',
-          slug: 'ar-tenant',
-          status: 'ACTIVE',
-          trialEndsAt: null,
-          features: ['accounts-receivable'],
-        },
-        roles: ['VIEWER'],
-        platformRoles: [],
-        permissions: ['ar:read'], // only read permission, not write
-        session: { id: 'sess-1', expiresAt: '2099-01-01T00:00:00Z' },
-        mfa: { required: false, enrolled: true, verified: true, recoveryCodesRemaining: 5 },
-      },
-    } as any);
+    vi.mocked(verifiedSession).mockResolvedValue(arSession({}, ['ar:read']));
 
     const req = new Request('https://platform.example.invalid/api/ar/v1/invoices/inv-1/payments', {
       method: 'POST',
@@ -256,28 +189,11 @@ describe.skipIf(isLockedModule('accounts-receivable'))('WI-OI-019 / RT-02 Exit P
     const res = await postAr(req, context);
     expect(res.status).toBe(403);
     const body = await res.json();
-    expect(body.title).toBe('Permission ar:write is required.');
+    expect(body.title).toContain('ar:write');
   });
 
   it('enforces ar:write on checkout-session and work-sources generation', async () => {
-    vi.mocked(verifiedSession).mockResolvedValue({
-      context: {
-        user: { id: 'usr-1', email: 'user@example.invalid', name: 'Test', status: 'ACTIVE' },
-        tenant: {
-          id: 'tenant-ar-ok',
-          name: 'AR Tenant',
-          slug: 'ar-tenant',
-          status: 'ACTIVE',
-          trialEndsAt: null,
-          features: ['accounts-receivable'],
-        },
-        roles: ['VIEWER'],
-        platformRoles: [],
-        permissions: ['ar:read'], // read only
-        session: { id: 'sess-1', expiresAt: '2099-01-01T00:00:00Z' },
-        mfa: { required: false, enrolled: true, verified: true, recoveryCodesRemaining: 5 },
-      },
-    } as any);
+    vi.mocked(verifiedSession).mockResolvedValue(arSession({}, ['ar:read']));
 
     const req1 = new Request('https://platform.example.invalid/api/ar/v1/invoices/inv-1/checkout-session', {
       method: 'POST',

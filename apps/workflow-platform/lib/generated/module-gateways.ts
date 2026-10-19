@@ -25,6 +25,178 @@ export interface GeneratedModuleGateway {
   }[];
 }
 export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGateway>> = {
+  "accounts-receivable": {
+    "module": "accounts-receivable",
+    "basePaths": [
+      "/api/ar"
+    ],
+    "catalogKey": "accounts-receivable",
+    "audience": "gigalibs-ar-api",
+    "upstream": "ar",
+    "signingKeyEnvironment": "AR_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64",
+    "codePrefix": "AR",
+    "routeNoun": "Accounts Receivable",
+    "serviceName": "Accounts Receivable",
+    "entitlementName": "Accounts Receivable",
+    "routes": [
+      {
+        "template": "v1/setup",
+        "pattern": "^v1/setup$",
+        "methods": {
+          "POST": "ar:write"
+        }
+      },
+      {
+        "template": "v1/customers",
+        "pattern": "^v1/customers$",
+        "methods": {
+          "GET": "ar:read",
+          "POST": "ar:write"
+        }
+      },
+      {
+        "template": "v1/customers/{id}",
+        "pattern": "^v1/customers/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "GET": "ar:read"
+        }
+      },
+      {
+        "template": "v1/invoices",
+        "pattern": "^v1/invoices$",
+        "methods": {
+          "GET": "ar:read",
+          "POST": "ar:write"
+        }
+      },
+      {
+        "template": "v1/invoices/aging",
+        "pattern": "^v1/invoices/aging$",
+        "methods": {
+          "GET": "ar:read"
+        }
+      },
+      {
+        "template": "v1/invoices/{id}",
+        "pattern": "^v1/invoices/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "GET": "ar:read",
+          "PATCH": "ar:write"
+        }
+      },
+      {
+        "template": "v1/invoices/{id}/issue",
+        "pattern": "^v1/invoices/[0-9a-fA-F-]{36}/issue$",
+        "methods": {
+          "POST": "ar:issue"
+        }
+      },
+      {
+        "template": "v1/invoices/{id}/deliver",
+        "pattern": "^v1/invoices/[0-9a-fA-F-]{36}/deliver$",
+        "methods": {
+          "POST": "ar:write"
+        }
+      },
+      {
+        "template": "v1/invoices/{id}/deliveries",
+        "pattern": "^v1/invoices/[0-9a-fA-F-]{36}/deliveries$",
+        "methods": {
+          "GET": "ar:read"
+        }
+      },
+      {
+        "template": "v1/invoices/{id}/pdf",
+        "pattern": "^v1/invoices/[0-9a-fA-F-]{36}/pdf$",
+        "methods": {
+          "GET": "ar:read"
+        }
+      },
+      {
+        "template": "v1/invoices/{id}/payments",
+        "pattern": "^v1/invoices/[0-9a-fA-F-]{36}/payments$",
+        "methods": {
+          "GET": "ar:read",
+          "POST": "ar:write"
+        }
+      },
+      {
+        "template": "v1/invoices/{id}/checkout-session",
+        "pattern": "^v1/invoices/[0-9a-fA-F-]{36}/checkout-session$",
+        "methods": {
+          "POST": "ar:write"
+        }
+      },
+      {
+        "template": "v1/invoices/{id}/download-url",
+        "pattern": "^v1/invoices/[0-9a-fA-F-]{36}/download-url$",
+        "methods": {
+          "GET": "ar:read"
+        }
+      },
+      {
+        "template": "v1/invoices/{id}/void",
+        "pattern": "^v1/invoices/[0-9a-fA-F-]{36}/void$",
+        "methods": {
+          "GET": "ar:read",
+          "POST": "ar:write"
+        }
+      },
+      {
+        "template": "v1/invoices/{id}/credit-notes",
+        "pattern": "^v1/invoices/[0-9a-fA-F-]{36}/credit-notes$",
+        "methods": {
+          "GET": "ar:read",
+          "POST": "ar:write"
+        }
+      },
+      {
+        "template": "v1/invoices/{id}/collections",
+        "pattern": "^v1/invoices/[0-9a-fA-F-]{36}/collections$",
+        "methods": {
+          "GET": "ar:read",
+          "POST": "ar:write"
+        }
+      },
+      {
+        "template": "v1/work-sources",
+        "pattern": "^v1/work-sources$",
+        "methods": {
+          "POST": "ar:write"
+        }
+      },
+      {
+        "template": "v1/work-sources/{id}/records",
+        "pattern": "^v1/work-sources/[0-9a-fA-F-]{36}/records$",
+        "methods": {
+          "POST": "ar:write"
+        }
+      },
+      {
+        "template": "v1/work-sources/{id}/summary",
+        "pattern": "^v1/work-sources/[0-9a-fA-F-]{36}/summary$",
+        "methods": {
+          "GET": "ar:read"
+        }
+      },
+      {
+        "template": "v1/work-sources/{id}/generate-invoice",
+        "pattern": "^v1/work-sources/[0-9a-fA-F-]{36}/generate-invoice$",
+        "methods": {
+          "POST": "ar:write"
+        }
+      },
+      {
+        "template": "v1/work-sources/{id}/family",
+        "pattern": "^v1/work-sources/[0-9a-fA-F-]{36}/family$",
+        "methods": {
+          "GET": "ar:read"
+        }
+      }
+    ],
+    "transformBody": null,
+    "unavailable": []
+  },
   "financial-operations": {
     "module": "financial-operations",
     "basePaths": [

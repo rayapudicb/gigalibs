@@ -104,10 +104,22 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
     ]
   },
   {
+    "code": "ar:issue",
+    "entries": [
+      "accounts-receivable"
+    ]
+  },
+  {
     "code": "ar:read",
     "entries": [
       "accounts-receivable",
       "platform"
+    ]
+  },
+  {
+    "code": "ar:write",
+    "entries": [
+      "accounts-receivable"
     ]
   },
   {
