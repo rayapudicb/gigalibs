@@ -80,7 +80,7 @@ keeps the full rules.
 20. **WI-OI-120gw** — **Built** in git **`9f5021df`:** M-AR0 E1 — AR API in root build; nest helper packages fixed.
 21. **WI-OI-120gx** — **Built** in git **`1e0f7a38`:** AR `ar-api` image + compose migrations/service; BFF `ar-api` host.
 22. **WI-OI-120gy** — **Built** in git **`4d5ce45d`:** M-AR0 platform-context guard + mig **15** + compose keys.
-23. **WI-OI-120gz** — **Built** (pending commit): manifest `spec.gateway` + signed BFF for `/api/ar/*` (OIDC proxy removed).
+23. **WI-OI-120gz** — **Built** in git **`25b60036`:** manifest `spec.gateway` + signed BFF for `/api/ar/*` (OIDC proxy removed).
 24. **Next code** — **WI-OI-120gf** remainder (module-host / `ModuleDatabase` / AR metadata windows); **120gd** journey password.
 
 ## Built, not yet on UAT

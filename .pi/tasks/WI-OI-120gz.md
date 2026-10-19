@@ -1,6 +1,6 @@
 # WI-OI-120gz: M-AR0 manifest gateway + signed BFF proxy
 
-- **Status:** Built (2026-10-19; not on UAT)
+- **Status:** Built (2026-10-19; git `25b60036`; not on UAT)
 - **Work item:** [WI-OI-120gf](WI-OI-120gf.md) — BFF boundary aligned with module SDK (replaces OIDC client-credentials proxy).
 
 ## Goal
