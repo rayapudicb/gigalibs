@@ -1,6 +1,6 @@
 # WI-OI-120ha: AR metadata windows (invoices + customers)
 
-- **Status:** Built (2026-10-19; not on UAT)
+- **Status:** Built (2026-10-19; git `ff5da0a7`; not on UAT)
 - **Work item:** [WI-OI-120gf](WI-OI-120gf.md) — Table 1 row 8 (metadata windows).
 
 ## Goal
