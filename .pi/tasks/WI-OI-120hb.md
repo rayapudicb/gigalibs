@@ -1,6 +1,6 @@
 # WI-OI-120hb: AR canonical ModuleDatabase runtime
 
-- **Status:** Built (2026-10-19; not on UAT)
+- **Status:** Built (2026-10-19; git `83099e7b`; not on UAT)
 - **Work item:** [WI-OI-120gf](WI-OI-120gf.md) — module SDK database boundary (ADR-0013 / WI-OI-082).
 
 ## Goal
