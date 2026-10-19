@@ -34,3 +34,30 @@ The implementation producer cannot be the sole reviewer for tenancy, authenticat
 secrets, classification/retention, AI, financial value, migrations, external actions, infrastructure or
 release. The orchestrator coordinates but cannot substitute for that review.
 
+
+## The GigaLibs organisation (WI-OI-120bl, 2026-10-19)
+
+The roles above sit inside a fuller organisation:
+- design (UX research, product and UI design, design system, content, accessibility, data visualisation, service
+  design, ergonomics and human factors);
+- business module leads (product owner, functional consultant and business analyst in one per module);
+- industry practices;
+- centres of expertise (tax by country, accounting standards, financial maths and others);
+- quality, independent review, platform operations and customer operations (BAU).
+
+| Document | What it holds |
+| --- | --- |
+| [`.pi/org/ORGANIZATION.md`](org/ORGANIZATION.md) | Structure, how work flows, gates, activation by wave, human authorities |
+| [`.pi/org/ROSTER.md`](org/ROSTER.md) | All 112 roles and their status |
+| [`.pi/org/AGENT-TEMPLATE.md`](org/AGENT-TEMPLATE.md) | The definition format for new agents |
+| [`.pi/org/BENCHMARKS.md`](org/BENCHMARKS.md) | The best-in-class bar per area |
+| [`docs/knowledge`](../docs/knowledge/README.md) | The knowledge packs and their rules |
+
+**Active pilot (16):**
+- `product_office`;
+- Design: `design_lead`, `product_designer`, `ergonomics_human_factors` and `design_system`;
+- `maintenance_cmms_lead`, `reliability_engineering_specialist`, `industry_manufacturing` and
+  `industry_facilities_real_estate`;
+- `gl_record_to_report_lead`, `accounting_standards_specialist`, `financial_mathematics_specialist` and
+  `finance_controls_reviewer`;
+- `security_reviewer`, `code_reviewer` and `licence_ip_reviewer`.
