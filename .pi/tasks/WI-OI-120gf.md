@@ -1,6 +1,6 @@
 # WI-OI-120gf: Accounts Receivable on configuration-local profile (M-AR0)
 
-- **Status:** In progress — [WI-OI-120ha](WI-OI-120ha.md) + [WI-OI-120hb](WI-OI-120hb.md) done; verify on local compose + optional module-host remain
+- **Status:** In progress — git complete through [WI-OI-120hd](WI-OI-120hd.md); owner compose rebuild + `pnpm proof:ar-compose-health` remain
 - **Work item:** Table 1 rows 7–8. Evidence in `.pi/work/TABLE-1-AUDIT-2026-10-19.md`.
 - **Size:** L
 
@@ -17,7 +17,7 @@
 
 - [ ] Service healthy on local profile (owner compose rebuild after mig **16**)
 - [x] Root `pnpm build` + `pnpm test` pass ([WI-OI-120hc](WI-OI-120hc.md) fixes)
-- [ ] No fake verification UI (120bj) — `/ar` uses metadata ([WI-OI-120ha](WI-OI-120ha.md))
+- [x] No fake verification UI (120bj) on `/ar` — metadata workspace ([WI-OI-120ha](WI-OI-120ha.md)); aging route still uses live `requestAr`
 
 ## Stop and ask if
 

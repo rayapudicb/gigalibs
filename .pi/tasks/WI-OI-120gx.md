@@ -9,7 +9,7 @@
 
 ## Done when
 
-- [x] `db/runtime-manifest.txt` (migration **14**)
+- [x] `db/runtime-manifest.txt` (migration **16**)
 - [x] Docker `ar-api` target + `build-module-images.sh`
 - [x] `.env.modules` generator adds `AR_IMAGE` / `AR_DATABASE_URL`
 - [x] BFF allows `ar-api` upstream host
