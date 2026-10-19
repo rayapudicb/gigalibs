@@ -10,10 +10,11 @@ Structure and rules: [ORGANIZATION.md](ORGANIZATION.md). Definition format: [AGE
 
 Module leads name the plan v3 §7 entry they own.
 
-**Totals:** 112 roles.
+**Totals:** 118 roles.
 - 19 existed before this card.
 - 16 are the new active pilot: 12, plus 4 in Design, added 2026-10-19 at the owner's request.
-- The other 77 are dormant, defined here and written when needed.
+- 8 form the pharma practice, active for WI-OI-120bm: 2 existing roster roles activated, plus 6 new roles.
+- The other 75 are dormant, defined here and written when needed.
 
 ## 1. Product office (5)
 
@@ -119,7 +120,7 @@ One lead and one knowledge pack per sector. Each writes the sector's solution bl
 | --- | --- | --- |
 | `industry_manufacturing` | Discrete and process manufacturing; plant maintenance (plan: manufacturing) | **Active** |
 | `industry_facilities_real_estate` | Facilities management, real estate, campuses (the first CMMS customers) | **Active** |
-| `industry_pharma_life_sciences` | GMP, validated systems, batch and calibration records | Dormant until a customer or target |
+| `industry_pharma_life_sciences` | GMP, validated systems, batch and calibration records; the pharma specification suite (WI-OI-120bm) | **Active** (pharma practice) |
 | `industry_healthcare` | Hospitals and clinics: biomedical equipment, facilities, compliance (plan: healthcare) | Dormant |
 | `industry_agriculture_food` | Farms, food processing, traceability (plan: agriculture) | Dormant |
 | `industry_retail_qsr` | Stores, quick-service restaurants, e-commerce (plan: QSR) | Dormant |
@@ -131,7 +132,7 @@ One lead and one knowledge pack per sector. Each writes the sector's solution bl
 | `industry_utilities_energy` | Networks, plants, field crews, regulated assets | Dormant |
 | `industry_public_sector_education` | Councils, schools, universities: facilities, assets, procurement rules | Dormant |
 
-## 4. Centres of expertise (14)
+## 4. Centres of expertise (18)
 
 | ID | Expertise | Status |
 | --- | --- | --- |
@@ -144,7 +145,11 @@ One lead and one knowledge pack per sector. Each writes the sector's solution bl
 | `supply_chain_planning_specialist` | Availability, reorder points, safety stock, forecasting, MRP logic | Dormant until Phase 5A |
 | `trade_customs_specialist` | Incoterms, HS codes, duties, landed cost inputs | Dormant until Phase 5B |
 | `health_safety_environment_specialist` | Permits to work, lockout, incidents, inspections, ISO 45001 and 14001 | Dormant until CMMS M-CM2 |
-| `quality_regulatory_specialist` | ISO 9001, GMP, 21 CFR Part 11, EU Annex 11, validation | Dormant until a regulated customer |
+| `quality_regulatory_specialist` | ISO 9001, GMP, 21 CFR Part 11, EU Annex 11, validation | **Active** (pharma practice) |
+| `process_safety_specialist` | Thermal risk, reactive hazards, calorimetry plans, Stoessel classes (SPEED). A named human expert signs off | **Active** (pharma practice) |
+| `cheminformatics_specialist` | Structures, reactions, mole balance, property data, retrosynthesis methods | **Active** (pharma practice) |
+| `pat_chemometrics_specialist` | PAT, multivariate models, the analytical procedure lifecycle (ICH Q2(R2), Q14) | **Active** (pharma practice) |
+| `regulatory_cmc_specialist` | ICH Q8–Q12 and M7; starting materials; established conditions; filings | **Active** (pharma practice) |
 | `master_data_specialist` | Identity, duplicates, merges, data standards (GS1) | Dormant until Phase 5B |
 | `privacy_specialist` | GDPR, India's DPDP Act, HIPAA, at design time | Dormant until W2/W3 |
 | `payroll_labour_specialist` | Payroll and labour law, one pack per country | Dormant (payroll out of scope unless the owner decides) |
@@ -170,7 +175,7 @@ One lead and one knowledge pack per sector. Each writes the sector's solution bl
 | `ai_engineering` | The Assistant: tools, grounding, evaluation of answers | Dormant until W5 |
 | `mobile_offline_engineering` | Mobile and offline apps | Dormant until Phase 6 (U27) |
 
-## 6. Quality (5)
+## 6. Quality (6)
 
 | ID | Mission | Status |
 | --- | --- | --- |
@@ -179,8 +184,9 @@ One lead and one knowledge pack per sector. Each writes the sector's solution bl
 | `performance_testing` | Load and response-time budgets | Dormant until W4 |
 | `accessibility_testing` | WCAG checks; the 17 open contrast findings | Dormant until W4 |
 | `uat_coordinator` | Business acceptance with named users | Dormant until the first customer |
+| `gxp_validation_specialist` | CSV and CSA approach, validation packs, supplier audit readiness | **Active** (pharma practice) |
 
-## 7. Independent review and risk (5)
+## 7. Independent review and risk (6)
 
 | ID | Mission | Status |
 | --- | --- | --- |
@@ -189,6 +195,7 @@ One lead and one knowledge pack per sector. Each writes the sector's solution bl
 | `finance_controls_reviewer` | Postings, balances, periods, controls; prepares the accountant's packet | **Active** |
 | `licence_ip_reviewer` | Licences of dependencies and references; no copied code or text | **Active** |
 | `privacy_compliance_reviewer` | Personal data, retention, consent, regulated data | Dormant until W3 |
+| `ai_model_validation_specialist` | AI model specifications, credibility, drift, change control (Annex 22 and FDA AI drafts) | **Active** (pharma practice) |
 
 ## 8. Platform operations (6)
 

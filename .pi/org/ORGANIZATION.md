@@ -147,8 +147,8 @@ Agents research; knowledge packs remember. Sources, in order of value:
 
 ## 6. How many agents, and when
 
-- **The full organisation** is 112 roles ([ROSTER.md](ROSTER.md)). 19 existed before this card; 16 are the new active
-  pilot (12, plus 4 in Design).
+- **The full organisation** is 118 roles ([ROSTER.md](ROSTER.md)). 19 existed before WI-OI-120bl; 16 are its active
+  pilot (12, plus 4 in Design); 8 form the pharma practice (WI-OI-120bm).
 - **Active at any time:** about 15–20. A role is **Active** when its wave needs it, and **Dormant** otherwise
   (defined, not running).
 - **Activation follows `docs/plans/phase-1-sizing.md`:**

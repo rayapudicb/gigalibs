@@ -48,7 +48,7 @@ The roles above sit inside a fuller organisation:
 | Document | What it holds |
 | --- | --- |
 | [`.pi/org/ORGANIZATION.md`](org/ORGANIZATION.md) | Structure, how work flows, gates, activation by wave, human authorities |
-| [`.pi/org/ROSTER.md`](org/ROSTER.md) | All 112 roles and their status |
+| [`.pi/org/ROSTER.md`](org/ROSTER.md) | All 118 roles and their status |
 | [`.pi/org/AGENT-TEMPLATE.md`](org/AGENT-TEMPLATE.md) | The definition format for new agents |
 | [`.pi/org/BENCHMARKS.md`](org/BENCHMARKS.md) | The best-in-class bar per area |
 | [`docs/knowledge`](../docs/knowledge/README.md) | The knowledge packs and their rules |
@@ -61,3 +61,9 @@ The roles above sit inside a fuller organisation:
 - `gl_record_to_report_lead`, `accounting_standards_specialist`, `financial_mathematics_specialist` and
   `finance_controls_reviewer`;
 - `security_reviewer`, `code_reviewer` and `licence_ip_reviewer`.
+
+**Pharma practice (8, WI-OI-120bm):**
+- `industry_pharma_life_sciences`, `quality_regulatory_specialist`;
+- `process_safety_specialist`, `cheminformatics_specialist`;
+- `pat_chemometrics_specialist`, `regulatory_cmc_specialist`;
+- `gxp_validation_specialist`, `ai_model_validation_specialist`.
