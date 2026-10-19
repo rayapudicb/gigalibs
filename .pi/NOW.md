@@ -86,7 +86,8 @@ keeps the full rules.
 26. **WI-OI-120hc** — **Built** in git **`6c29fe92`:** relay `inboxPath` test fixtures + record `total` + AR migration pin audit + orders quote default.
 27. **WI-OI-120hd** — **Built** in git **`492839d7`:** `proof:ar-compose-health` + runtime-manifest pin **16** comment.
 28. **WI-OI-120he** — **Built** in git **`afb4eb3d`:** module-local compose loads workforce + geospatial env; `up-ar-api.sh`.
-29. **Next** — refresh identity + build images, `up-ar-api.sh`, `pnpm proof:ar-compose-health`; **120gd** journey password.
+29. **WI-OI-120hf** — **Built** in git **`6a4835a4`:** `AR_IMAGE` refresh + `pnpm proof:ar-compose-rebuild`; health proof blocked on local Postgres (`migrations` exit 1).
+30. **Next** — fix `DATABASE_URL` / Postgres, then `pnpm proof:ar-compose-rebuild`; **120gd** journey password.
 
 ## Built, not yet on UAT
 
