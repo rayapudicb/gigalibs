@@ -69,8 +69,9 @@ keeps the full rules.
 9. **WI-OI-120gl** — **Built** in git **`29d000b5`**: customer invoices metadata window + `/orders` tab.
 10. **WI-OI-120gm** — **Built** in git **`8932d626`**: fulfillment window + `/orders` tab.
 11. **WI-OI-120gn** — **Built** in git **`8932d626`**: vendor bills window + `/procurement` tab.
-12. **WI-OI-120go** — **Built (local):** customer credit memos window + `/orders` tab.
-13. **Next code** — procurement GRN/requisitions, orders returns (RMA), **WI-OI-120gf** (M-AR0 SDK rebuild — still blocked per module.yaml); **120gd** blocked on journey password.
+12. **WI-OI-120go** — **Built** in git **`3195e0aa`**: customer credit memos window + `/orders` tab.
+13. **WI-OI-120gp** — **Built (local):** procurement requisitions window + `/procurement` tab.
+14. **Next code** — procurement debit memos or inventory receipt link UI; orders RMA if API grows; **WI-OI-120gf** (M-AR0); **120gd** journey password.
 
 ## Built, not yet on UAT
 

@@ -1,6 +1,16 @@
 // WI-OI-120gh/gn (Table 1): Procurement metadata windows — purchase orders and vendor bills.
 // Edit here, then `node scripts/generate-windows.mjs universal-procurement` and `pnpm modules:catalog`.
 
+const REQUISITION_STATUS = [
+  ['DRAFT', 'Draft'],
+  ['SUBMITTED', 'Submitted'],
+  ['PENDING_APPROVAL', 'Pending approval'],
+  ['APPROVED', 'Approved'],
+  ['REJECTED', 'Rejected'],
+  ['CONVERTED', 'Converted'],
+  ['CANCELLED', 'Cancelled'],
+];
+
 const VENDOR_BILL_STATUS = [
   ['DRAFT', 'Draft'],
   ['SUBMITTED', 'Submitted'],
@@ -69,6 +79,22 @@ export function windowSource(builderFor) {
     field(PO, 'line-destination-warehouse-id', 'Line ship-to warehouse', 'REFERENCE', { ref: 'warehouse-ref', writePermission: 'procurement:orders:manage', help: 'Defaults to the header warehouse when empty.' }),
   ];
 
+  const REQ = 'procurement.requisitions';
+  const reqFields = [
+    field(REQ, 'requisition-number', 'Requisition number', 'TEXT', { readOnly: true }),
+    field(REQ, 'org-unit-id', 'Organization unit', 'REFERENCE', { required: true, ref: 'org-unit-ref', writePermission: 'procurement:requisitions:manage' }),
+    field(REQ, 'description', 'Description', 'TEXT', { writePermission: 'procurement:requisitions:manage' }),
+    field(REQ, 'currency-code', 'Currency', 'TEXT', { defaultValue: 'USD', writePermission: 'procurement:requisitions:manage' }),
+    field(REQ, 'status', 'Status', 'SELECT', { readOnly: true, ref: 'requisition-statuses' }),
+    field(REQ, 'total-estimated', 'Estimated total (minor units)', 'TEXT', { readOnly: true }),
+    field(REQ, 'line-product-id', 'Line product', 'REFERENCE', { required: true, ref: 'product-ref', writePermission: 'procurement:requisitions:manage', help: 'First line only in this window slice.' }),
+    field(REQ, 'line-product-code', 'Line product code', 'TEXT', { required: true, writePermission: 'procurement:requisitions:manage' }),
+    field(REQ, 'line-product-name', 'Line product name', 'TEXT', { required: true, writePermission: 'procurement:requisitions:manage' }),
+    field(REQ, 'line-quantity', 'Line quantity', 'NUMBER', { required: true, scale: 6, defaultValue: '1.000000', writePermission: 'procurement:requisitions:manage' }),
+    field(REQ, 'line-uom-id', 'Line unit of measure', 'REFERENCE', { required: true, ref: 'uom-ref', writePermission: 'procurement:requisitions:manage' }),
+    field(REQ, 'line-estimated-unit-price-minor', 'Line estimated unit price (minor)', 'INTEGER', { required: true, writePermission: 'procurement:requisitions:manage' }),
+  ];
+
   const VB = 'procurement.vendor-bills';
   const vbFields = [
     field(VB, 'vendor-invoice-number', 'Vendor invoice #', 'TEXT', { required: true, writePermission: 'procurement:bills:manage' }),
@@ -87,6 +113,43 @@ export function windowSource(builderFor) {
   ];
 
   return {
+    'procurement-requisitions': window(
+      'procurement-requisitions',
+      'Requisitions',
+      'Requisitions',
+      'Create and review internal purchase requisitions before PO conversion.',
+      'procurement:read',
+      dictionary('procurement-requisitions', 'Requisitions', REQ, [entity(REQ, 'Requisitions')], reqFields, [], [
+        values('requisition-statuses', REQUISITION_STATUS),
+        ORG_UNIT_REF,
+        PRODUCT_REF,
+        UOM_REF,
+      ], [
+        view('requisitions', 'Requisitions', [
+          tab('req-header', 'Requisition', 0, REQ, [
+            ['requisition-number', 4, 'summary'],
+            ['status', 4, 'summary'],
+            ['total-estimated', 4, 'summary'],
+            ['org-unit-id', 6, 'parties'],
+            ['description', 12, 'parties'],
+            ['currency-code', 3, 'terms'],
+            ['line-product-id', 6, 'first-line'],
+            ['line-product-code', 3, 'first-line'],
+            ['line-product-name', 3, 'first-line'],
+            ['line-quantity', 3, 'first-line'],
+            ['line-uom-id', 3, 'first-line'],
+            ['line-estimated-unit-price-minor', 3, 'first-line'],
+          ], reqFields, {
+            sections: [
+              section('summary', 'Summary', 0),
+              section('parties', 'Requester context', 1),
+              section('terms', 'Currency', 2),
+              section('first-line', 'First requisition line', 3),
+            ],
+          }),
+        ], { search: ['requisition-number', 'description'], sort: 'requisition-number' }),
+      ]),
+    ),
     'procurement-vendor-bills': window(
       'procurement-vendor-bills',
       'Vendor bills',

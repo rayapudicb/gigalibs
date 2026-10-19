@@ -17569,6 +17569,398 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
     "contractVersion": "1.0",
     "window": {
       "route": "/procurement",
+      "label": "Requisitions",
+      "description": "Create and review internal purchase requisitions before PO conversion.",
+      "readPermission": "procurement:read"
+    },
+    "definition": {
+      "kind": "APPLICATION_DICTIONARY",
+      "contractVersion": "1.0",
+      "moduleKey": "universal-procurement",
+      "entityKey": "procurement-requisitions",
+      "surfaceKey": "procurement-requisitions",
+      "title": "Requisitions",
+      "dictionary": {
+        "packageKey": "procurement-requisitions-module-baseline",
+        "name": "Requisitions",
+        "version": "1.0.0",
+        "moduleKey": "universal-procurement",
+        "targetEntityKey": "procurement.requisitions",
+        "entities": [
+          {
+            "entityKey": "procurement.requisitions",
+            "moduleKey": "universal-procurement",
+            "label": "Requisitions",
+            "ownership": "MODULE_CORE",
+            "primaryKeyField": "id",
+            "isVersioned": true,
+            "isAuditLogged": true,
+            "isSoftDeletable": false
+          }
+        ],
+        "fields": [
+          {
+            "fieldKey": "requisition-number",
+            "entityKey": "procurement.requisitions",
+            "label": "Requisition number",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "org-unit-id",
+            "entityKey": "procurement.requisitions",
+            "label": "Organization unit",
+            "type": "REFERENCE",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "org-unit-ref",
+            "writePermission": "procurement:requisitions:manage"
+          },
+          {
+            "fieldKey": "description",
+            "entityKey": "procurement.requisitions",
+            "label": "Description",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "writePermission": "procurement:requisitions:manage"
+          },
+          {
+            "fieldKey": "currency-code",
+            "entityKey": "procurement.requisitions",
+            "label": "Currency",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "writePermission": "procurement:requisitions:manage",
+            "defaultValue": "USD"
+          },
+          {
+            "fieldKey": "status",
+            "entityKey": "procurement.requisitions",
+            "label": "Status",
+            "type": "SELECT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "requisition-statuses"
+          },
+          {
+            "fieldKey": "total-estimated",
+            "entityKey": "procurement.requisitions",
+            "label": "Estimated total (minor units)",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "line-product-id",
+            "entityKey": "procurement.requisitions",
+            "label": "Line product",
+            "type": "REFERENCE",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "product-ref",
+            "helpText": "First line only in this window slice.",
+            "writePermission": "procurement:requisitions:manage"
+          },
+          {
+            "fieldKey": "line-product-code",
+            "entityKey": "procurement.requisitions",
+            "label": "Line product code",
+            "type": "TEXT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "writePermission": "procurement:requisitions:manage"
+          },
+          {
+            "fieldKey": "line-product-name",
+            "entityKey": "procurement.requisitions",
+            "label": "Line product name",
+            "type": "TEXT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "writePermission": "procurement:requisitions:manage"
+          },
+          {
+            "fieldKey": "line-quantity",
+            "entityKey": "procurement.requisitions",
+            "label": "Line quantity",
+            "type": "NUMBER",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "scale": 6,
+            "writePermission": "procurement:requisitions:manage",
+            "defaultValue": "1.000000"
+          },
+          {
+            "fieldKey": "line-uom-id",
+            "entityKey": "procurement.requisitions",
+            "label": "Line unit of measure",
+            "type": "REFERENCE",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "uom-ref",
+            "writePermission": "procurement:requisitions:manage"
+          },
+          {
+            "fieldKey": "line-estimated-unit-price-minor",
+            "entityKey": "procurement.requisitions",
+            "label": "Line estimated unit price (minor)",
+            "type": "INTEGER",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "writePermission": "procurement:requisitions:manage"
+          }
+        ],
+        "relationships": [],
+        "references": [
+          {
+            "referenceKey": "requisition-statuses",
+            "referenceType": "VALUE_LIST",
+            "staticValues": [
+              {
+                "value": "DRAFT",
+                "label": "Draft"
+              },
+              {
+                "value": "SUBMITTED",
+                "label": "Submitted"
+              },
+              {
+                "value": "PENDING_APPROVAL",
+                "label": "Pending approval"
+              },
+              {
+                "value": "APPROVED",
+                "label": "Approved"
+              },
+              {
+                "value": "REJECTED",
+                "label": "Rejected"
+              },
+              {
+                "value": "CONVERTED",
+                "label": "Converted"
+              },
+              {
+                "value": "CANCELLED",
+                "label": "Cancelled"
+              }
+            ]
+          },
+          {
+            "referenceKey": "org-unit-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "organization-units"
+          },
+          {
+            "referenceKey": "product-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "catalogue-products",
+            "createWith": {
+              "moduleKey": "product-catalogue",
+              "surfaceKey": "catalogue-products",
+              "permission": "products:create"
+            }
+          },
+          {
+            "referenceKey": "uom-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "catalogue-uoms",
+            "createWith": {
+              "moduleKey": "product-catalogue",
+              "surfaceKey": "catalogue-units",
+              "permission": "uoms:manage"
+            }
+          }
+        ],
+        "validationRules": [],
+        "views": [
+          {
+            "viewKey": "requisitions",
+            "label": "Requisitions",
+            "mode": "LIST",
+            "device": "ALL",
+            "searchFields": [
+              "requisition-number",
+              "description"
+            ],
+            "defaultSortField": "requisition-number",
+            "defaultSortDirection": "DESC",
+            "tabs": [
+              {
+                "tabKey": "req-header",
+                "label": "Requisition",
+                "position": 0,
+                "level": 0,
+                "targetEntityKey": "procurement.requisitions",
+                "sections": [
+                  {
+                    "sectionKey": "summary",
+                    "label": "Summary",
+                    "collapsible": false,
+                    "defaultCollapsed": false,
+                    "position": 0
+                  },
+                  {
+                    "sectionKey": "parties",
+                    "label": "Requester context",
+                    "collapsible": false,
+                    "defaultCollapsed": false,
+                    "position": 1
+                  },
+                  {
+                    "sectionKey": "terms",
+                    "label": "Currency",
+                    "collapsible": false,
+                    "defaultCollapsed": false,
+                    "position": 2
+                  },
+                  {
+                    "sectionKey": "first-line",
+                    "label": "First requisition line",
+                    "collapsible": false,
+                    "defaultCollapsed": false,
+                    "position": 3
+                  }
+                ],
+                "fields": [
+                  {
+                    "fieldKey": "requisition-number",
+                    "position": 0,
+                    "span": 4,
+                    "componentKey": "text-input",
+                    "sectionKey": "summary"
+                  },
+                  {
+                    "fieldKey": "status",
+                    "position": 1,
+                    "span": 4,
+                    "componentKey": "select",
+                    "sectionKey": "summary"
+                  },
+                  {
+                    "fieldKey": "total-estimated",
+                    "position": 2,
+                    "span": 4,
+                    "componentKey": "text-input",
+                    "sectionKey": "summary"
+                  },
+                  {
+                    "fieldKey": "org-unit-id",
+                    "position": 3,
+                    "span": 6,
+                    "componentKey": "lookup",
+                    "sectionKey": "parties"
+                  },
+                  {
+                    "fieldKey": "description",
+                    "position": 4,
+                    "span": 12,
+                    "componentKey": "text-input",
+                    "sectionKey": "parties"
+                  },
+                  {
+                    "fieldKey": "currency-code",
+                    "position": 5,
+                    "span": 3,
+                    "componentKey": "text-input",
+                    "sectionKey": "terms"
+                  },
+                  {
+                    "fieldKey": "line-product-id",
+                    "position": 6,
+                    "span": 6,
+                    "componentKey": "lookup",
+                    "sectionKey": "first-line"
+                  },
+                  {
+                    "fieldKey": "line-product-code",
+                    "position": 7,
+                    "span": 3,
+                    "componentKey": "text-input",
+                    "sectionKey": "first-line"
+                  },
+                  {
+                    "fieldKey": "line-product-name",
+                    "position": 8,
+                    "span": 3,
+                    "componentKey": "text-input",
+                    "sectionKey": "first-line"
+                  },
+                  {
+                    "fieldKey": "line-quantity",
+                    "position": 9,
+                    "span": 3,
+                    "componentKey": "number-input",
+                    "sectionKey": "first-line"
+                  },
+                  {
+                    "fieldKey": "line-uom-id",
+                    "position": 10,
+                    "span": 3,
+                    "componentKey": "lookup",
+                    "sectionKey": "first-line"
+                  },
+                  {
+                    "fieldKey": "line-estimated-unit-price-minor",
+                    "position": 11,
+                    "span": 3,
+                    "componentKey": "number-input",
+                    "sectionKey": "first-line"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "navigation": [],
+        "actions": [],
+        "messages": []
+      }
+    }
+  },
+  {
+    "contractVersion": "1.0",
+    "window": {
+      "route": "/procurement",
       "label": "Vendor bills",
       "description": "Record vendor AP invoices for matching and approval.",
       "readPermission": "procurement:read"

@@ -17,7 +17,7 @@ const LOOKUP_BASE_PATHS = {
   'catalogue-uoms': CATALOGUE_PATH,
 };
 
-type ProcurementSurface = 'procurement-purchase-orders' | 'procurement-vendor-bills';
+type ProcurementSurface = 'procurement-requisitions' | 'procurement-purchase-orders' | 'procurement-vendor-bills';
 
 export interface UniversalProcurementWorkspaceProps {
   readonly permissions?: readonly string[];
@@ -55,7 +55,7 @@ function ProcurementMetadataPanel({
 }
 
 export function UniversalProcurementWorkspace({ permissions = [] }: UniversalProcurementWorkspaceProps = {}) {
-  const [surface, setSurface] = useState<ProcurementSurface>('procurement-purchase-orders');
+  const [surface, setSurface] = useState<ProcurementSurface>('procurement-requisitions');
   const client = useMemo(() => createRecordClient({ basePath: BASE_PATH, lookupBasePaths: LOOKUP_BASE_PATHS }), []);
   const clients = useMemo(
     () => ({
@@ -70,9 +70,16 @@ export function UniversalProcurementWorkspace({ permissions = [] }: UniversalPro
       <header className="space-y-3">
         <div className="space-y-1">
           <h1 className="text-xl font-semibold text-ui-fg-base">Procurement &amp; Payables</h1>
-          <p className="text-sm text-ui-fg-subtle">Purchase orders and vendor bills backed by the Universal Procurement service.</p>
+          <p className="text-sm text-ui-fg-subtle">Requisitions, purchase orders, and vendor bills backed by the Universal Procurement service.</p>
         </div>
-        <div className="inline-flex rounded-lg border border-ui-border-base bg-ui-bg-subtle p-1 text-sm font-medium">
+        <div className="inline-flex flex-wrap rounded-lg border border-ui-border-base bg-ui-bg-subtle p-1 text-sm font-medium">
+          <button
+            type="button"
+            className={`rounded-md px-3 py-1.5 transition-colors ${surface === 'procurement-requisitions' ? 'bg-ui-bg-base text-ui-fg-base shadow-sm' : 'text-ui-fg-muted hover:text-ui-fg-base'}`}
+            onClick={() => setSurface('procurement-requisitions')}
+          >
+            Requisitions
+          </button>
           <button
             type="button"
             className={`rounded-md px-3 py-1.5 transition-colors ${surface === 'procurement-purchase-orders' ? 'bg-ui-bg-base text-ui-fg-base shadow-sm' : 'text-ui-fg-muted hover:text-ui-fg-base'}`}

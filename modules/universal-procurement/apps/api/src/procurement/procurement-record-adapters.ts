@@ -1,4 +1,10 @@
-import { CreatePurchaseOrderInputV1Schema, CreateVendorBillInputV1Schema, type VendorBillV1 } from '@gigalibs/contracts';
+import {
+  CreatePurchaseOrderInputV1Schema,
+  CreateRequisitionInputV1Schema,
+  CreateVendorBillInputV1Schema,
+  type ProcurementRequisitionV1,
+  type VendorBillV1,
+} from '@gigalibs/contracts';
 import {
   type IdempotencyStore,
   type ModulePrincipal,
@@ -63,6 +69,29 @@ function normalizeDatetime(value: unknown, fallbackDaysFromNow: number): string 
   return fallback.toISOString();
 }
 
+function requisitionToWindow(requisition: ProcurementRequisitionV1): RecordValues {
+  const line = requisition.lines?.[0];
+  const values: Record<string, unknown> = {
+    id: requisition.id,
+    version: requisition.version,
+    'requisition-number': requisition.requisitionNumber,
+    'org-unit-id': requisition.orgUnitId,
+    description: requisition.description ?? null,
+    'currency-code': requisition.currencyCode,
+    status: requisition.status,
+    'total-estimated': requisition.totalEstimatedMinor,
+  };
+  if (line) {
+    values['line-product-id'] = line.productId;
+    values['line-product-code'] = line.productCode;
+    values['line-product-name'] = line.productName;
+    values['line-quantity'] = line.quantity;
+    values['line-uom-id'] = line.uomId;
+    values['line-estimated-unit-price-minor'] = line.estimatedUnitPriceMinor;
+  }
+  return values;
+}
+
 function vendorBillToWindow(bill: VendorBillV1): RecordValues {
   const line = bill.lines?.[0];
   const values: Record<string, unknown> = {
@@ -85,6 +114,49 @@ function vendorBillToWindow(bill: VendorBillV1): RecordValues {
     values['line-product-id'] = line.productId ?? null;
   }
   return values;
+}
+
+const REQ_FIELDS: readonly FieldSpec[] = [
+  { key: 'requisition-number', domain: 'requisitionNumber' },
+  { key: 'org-unit-id', domain: 'orgUnitId', writable: true },
+  { key: 'description', writable: true },
+  { key: 'currency-code', domain: 'currencyCode', writable: true },
+  { key: 'status' },
+  { key: 'total-estimated', domain: 'totalEstimatedMinor' },
+  { key: 'line-product-id', writable: true },
+  { key: 'line-product-code', writable: true },
+  { key: 'line-product-name', writable: true },
+  { key: 'line-quantity', writable: true },
+  { key: 'line-uom-id', writable: true },
+  { key: 'line-estimated-unit-price-minor', writable: true },
+];
+
+/** Maps metadata window values to the requisition create contract (exported for tests). */
+export function windowValuesToCreateRequisitionInput(values: RecordValues) {
+  const input = {
+    orgUnitId: values['org-unit-id'],
+    description: values['description'] ?? null,
+    currencyCode: values['currency-code'] ?? 'USD',
+    lines: [
+      {
+        productId: values['line-product-id'],
+        productCode: values['line-product-code'],
+        productName: values['line-product-name'],
+        quantity: String(values['line-quantity'] ?? '1.000000'),
+        uomId: values['line-uom-id'],
+        estimatedUnitPriceMinor: String(values['line-estimated-unit-price-minor'] ?? '0'),
+      },
+    ],
+  };
+  const parsed = CreateRequisitionInputV1Schema.safeParse(input);
+  if (!parsed.success) {
+    const issue = parsed.error.issues[0];
+    throw new BadRequestException({
+      code: 'UNIVERSAL_PROCUREMENT_VALIDATION_FAILED',
+      message: `${issue?.path.join('.') ?? 'value'}: ${issue?.message ?? 'invalid'}`,
+    });
+  }
+  return parsed.data;
 }
 
 const VB_FIELDS: readonly FieldSpec[] = [
@@ -180,6 +252,53 @@ function matchesSearch(record: RecordValues, search: string): boolean {
 }
 
 export function procurementRecordDispatcher(deps: { procurement: ProcurementService }, idempotency: IdempotencyStore): RecordDispatcher {
+  const requisitions: RecordAdapter = {
+    entityKey: 'procurement.requisitions',
+    permissions: { read: 'procurement:read', create: 'procurement:requisitions:manage' },
+    rest: { read: 'GET v1/requisitions', create: 'POST v1/requisitions' },
+    fields: fieldPolicies(REQ_FIELDS),
+    searchFields: ['requisition-number', 'description'],
+    sortFields: ['requisition-number'],
+    async list(principal: ModulePrincipal, query: RecordListQuery) {
+      let items = (await deps.procurement.listRequisitions(principal)).map(requisitionToWindow);
+      if (query.search) {
+        items = items.filter((item) => {
+          const needle = query.search!.toLowerCase();
+          return ['requisition-number', 'description'].some((key) => {
+            const value = item[key];
+            return typeof value === 'string' && value.toLowerCase().includes(needle);
+          });
+        });
+      }
+      const sortField = query.sortField ?? 'requisition-number';
+      const direction = query.sortDirection === 'ASC' ? 1 : -1;
+      items.sort((left, right) => {
+        const a = left[sortField];
+        const b = right[sortField];
+        if (typeof a === 'string' && typeof b === 'string') return a.localeCompare(b) * direction;
+        return 0;
+      });
+      const start = (query.page - 1) * query.pageSize;
+      const pageItems = items.slice(start, start + query.pageSize);
+      return { page: query.page, pageSize: query.pageSize, totalItems: items.length, items: pageItems };
+    },
+    async get(principal, id) {
+      try {
+        const requisition = await deps.procurement.getRequisition(principal, id);
+        return requisitionToWindow(requisition);
+      } catch {
+        return null;
+      }
+    },
+    async create(context, values) {
+      const requisition = await deps.procurement.createRequisition(
+        context.principal,
+        windowValuesToCreateRequisitionInput(values),
+      );
+      return requisitionToWindow(requisition);
+    },
+  };
+
   const purchaseOrders: RecordAdapter = {
     entityKey: 'procurement.purchase-orders',
     permissions: { read: 'procurement:read', create: 'procurement:orders:manage' },
@@ -263,5 +382,5 @@ export function procurementRecordDispatcher(deps: { procurement: ProcurementServ
     },
   };
 
-  return new RecordDispatcher([purchaseOrders, vendorBills], [], idempotency, shippedRecordRules('universal-procurement'));
+  return new RecordDispatcher([requisitions, purchaseOrders, vendorBills], [], idempotency, shippedRecordRules('universal-procurement'));
 }

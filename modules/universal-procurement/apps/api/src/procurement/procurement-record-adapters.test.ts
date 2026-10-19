@@ -1,5 +1,26 @@
 import { describe, expect, it } from 'vitest';
-import { windowValuesToCreatePurchaseOrderInput, windowValuesToCreateVendorBillInput } from './procurement-record-adapters.js';
+import {
+  windowValuesToCreatePurchaseOrderInput,
+  windowValuesToCreateRequisitionInput,
+  windowValuesToCreateVendorBillInput,
+} from './procurement-record-adapters.js';
+
+describe('windowValuesToCreateRequisitionInput', () => {
+  it('builds a one-line requisition from window field keys', () => {
+    const input = windowValuesToCreateRequisitionInput({
+      'org-unit-id': 'unit-1',
+      description: 'Maintenance spares',
+      'line-product-id': '660e8400-e29b-41d4-a716-446655440001',
+      'line-product-code': 'SKU-1',
+      'line-product-name': 'Widget',
+      'line-quantity': '2.000000',
+      'line-uom-id': '770e8400-e29b-41d4-a716-446655440002',
+      'line-estimated-unit-price-minor': '500',
+    });
+    expect(input.orgUnitId).toBe('unit-1');
+    expect(input.lines[0]?.estimatedUnitPriceMinor).toBe('500');
+  });
+});
 
 describe('windowValuesToCreateVendorBillInput', () => {
   it('builds a one-line vendor bill from window field keys', () => {
