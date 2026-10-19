@@ -73,7 +73,8 @@ keeps the full rules.
 13. **WI-OI-120gp** — **Built** in git **`76ddb447`**: procurement requisitions window + `/procurement` tab.
 14. **WI-OI-120gq** — **Built:** procurement debit memos window + `/procurement` tab (see git log on branch).
 15. **WI-OI-120gr** — **Built** in git **`7d78ba84`**: requisition submit/approve + vendor bill approve F0 actions on procurement windows.
-16. **Next code** — more Table 1 actions (orders confirm/submit) or **WI-OI-120gf** (M-AR0); **120gd** journey password. GRN remains inventory receipts F0 + Table 2.
+16. **WI-OI-120gs** — **Built (local):** quote accept + SO confirm + PO issue/acknowledge F0 actions.
+17. **Next code** — remaining actions (quote convert, fulfillment dispatch needs issueId) or **WI-OI-120gf** (M-AR0); **120gd** journey password.
 
 ## Built, not yet on UAT
 

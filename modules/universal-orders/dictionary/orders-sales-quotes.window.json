@@ -459,7 +459,27 @@
         }
       ],
       "navigation": [],
-      "actions": [],
+      "actions": [
+        {
+          "actionKey": "accept",
+          "label": "Accept quote",
+          "type": "COMMAND",
+          "handlerKey": "orders.sales-quotes.accept",
+          "requiredPermissions": [
+            "orders:quotes:approve"
+          ],
+          "confirmationPrompt": "Mark this quote as accepted by the customer?",
+          "visibilityCondition": {
+            "field": "status",
+            "operator": "NOT_IN",
+            "value": [
+              "CANCELLED",
+              "CONVERTED",
+              "ACCEPTED"
+            ]
+          }
+        }
+      ],
       "messages": []
     }
   }

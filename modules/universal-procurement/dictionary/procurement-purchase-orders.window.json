@@ -464,7 +464,41 @@
         }
       ],
       "navigation": [],
-      "actions": [],
+      "actions": [
+        {
+          "actionKey": "issue",
+          "label": "Issue to vendor",
+          "type": "COMMAND",
+          "handlerKey": "procurement.purchase-orders.issue",
+          "requiredPermissions": [
+            "procurement:orders:issue"
+          ],
+          "confirmationPrompt": "Issue this purchase order to the vendor?",
+          "visibilityCondition": {
+            "field": "status",
+            "operator": "IN",
+            "value": [
+              "DRAFT",
+              "APPROVED"
+            ]
+          }
+        },
+        {
+          "actionKey": "acknowledge",
+          "label": "Acknowledge receipt",
+          "type": "COMMAND",
+          "handlerKey": "procurement.purchase-orders.acknowledge",
+          "requiredPermissions": [
+            "procurement:orders:manage"
+          ],
+          "confirmationPrompt": "Record vendor acknowledgment of this purchase order?",
+          "visibilityCondition": {
+            "field": "status",
+            "operator": "EQ",
+            "value": "ISSUED"
+          }
+        }
+      ],
       "messages": []
     }
   }

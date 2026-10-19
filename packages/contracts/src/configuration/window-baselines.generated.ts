@@ -16623,7 +16623,26 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
           }
         ],
         "navigation": [],
-        "actions": [],
+        "actions": [
+          {
+            "actionKey": "confirm",
+            "label": "Confirm order",
+            "type": "COMMAND",
+            "handlerKey": "orders.sales-orders.confirm",
+            "requiredPermissions": [
+              "orders:confirm"
+            ],
+            "confirmationPrompt": "Confirm this sales order for fulfillment?",
+            "visibilityCondition": {
+              "field": "status",
+              "operator": "IN",
+              "value": [
+                "DRAFT",
+                "SUBMITTED"
+              ]
+            }
+          }
+        ],
         "messages": []
       }
     }
@@ -17089,7 +17108,27 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
           }
         ],
         "navigation": [],
-        "actions": [],
+        "actions": [
+          {
+            "actionKey": "accept",
+            "label": "Accept quote",
+            "type": "COMMAND",
+            "handlerKey": "orders.sales-quotes.accept",
+            "requiredPermissions": [
+              "orders:quotes:approve"
+            ],
+            "confirmationPrompt": "Mark this quote as accepted by the customer?",
+            "visibilityCondition": {
+              "field": "status",
+              "operator": "NOT_IN",
+              "value": [
+                "CANCELLED",
+                "CONVERTED",
+                "ACCEPTED"
+              ]
+            }
+          }
+        ],
         "messages": []
       }
     }
@@ -17954,7 +17993,41 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
           }
         ],
         "navigation": [],
-        "actions": [],
+        "actions": [
+          {
+            "actionKey": "issue",
+            "label": "Issue to vendor",
+            "type": "COMMAND",
+            "handlerKey": "procurement.purchase-orders.issue",
+            "requiredPermissions": [
+              "procurement:orders:issue"
+            ],
+            "confirmationPrompt": "Issue this purchase order to the vendor?",
+            "visibilityCondition": {
+              "field": "status",
+              "operator": "IN",
+              "value": [
+                "DRAFT",
+                "APPROVED"
+              ]
+            }
+          },
+          {
+            "actionKey": "acknowledge",
+            "label": "Acknowledge receipt",
+            "type": "COMMAND",
+            "handlerKey": "procurement.purchase-orders.acknowledge",
+            "requiredPermissions": [
+              "procurement:orders:manage"
+            ],
+            "confirmationPrompt": "Record vendor acknowledgment of this purchase order?",
+            "visibilityCondition": {
+              "field": "status",
+              "operator": "EQ",
+              "value": "ISSUED"
+            }
+          }
+        ],
         "messages": []
       }
     }

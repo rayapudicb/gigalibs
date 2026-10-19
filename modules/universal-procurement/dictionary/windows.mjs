@@ -1,4 +1,4 @@
-// WI-OI-120gh/gr (Table 1): Procurement metadata windows and F0 record actions (submit/approve).
+// WI-OI-120gh/gs (Table 1): Procurement metadata windows and F0 record actions.
 // Edit here, then `node scripts/generate-windows.mjs universal-procurement` and `pnpm modules:catalog`.
 
 const REQUISITION_STATUS = [
@@ -315,6 +315,23 @@ export function windowSource(builderFor) {
             ],
           }),
         ], { search: ['order-number', 'vendor-name'], sort: 'order-number' }),
+      ], [
+        action(
+          PO,
+          'issue',
+          'Issue to vendor',
+          'procurement:orders:issue',
+          ['status', 'IN', ['DRAFT', 'APPROVED']],
+          'Issue this purchase order to the vendor?',
+        ),
+        action(
+          PO,
+          'acknowledge',
+          'Acknowledge receipt',
+          'procurement:orders:manage',
+          ['status', 'EQ', 'ISSUED'],
+          'Record vendor acknowledgment of this purchase order?',
+        ),
       ]),
     ),
   };

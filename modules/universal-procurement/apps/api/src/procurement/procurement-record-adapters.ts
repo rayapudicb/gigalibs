@@ -399,7 +399,14 @@ export function procurementRecordDispatcher(deps: { procurement: ProcurementServ
   const purchaseOrders: RecordAdapter = {
     entityKey: 'procurement.purchase-orders',
     permissions: { read: 'procurement:read', create: 'procurement:orders:manage' },
-    rest: { read: 'GET v1/orders', create: 'POST v1/orders' },
+    rest: {
+      read: 'GET v1/orders',
+      create: 'POST v1/orders',
+      actions: {
+        issue: 'POST v1/orders/{id}/issue',
+        acknowledge: 'POST v1/orders/{id}/acknowledge',
+      },
+    },
     fields: fieldPolicies(PO_FIELDS),
     searchFields: ['order-number', 'vendor-name'],
     sortFields: ['order-number'],
@@ -434,6 +441,22 @@ export function procurementRecordDispatcher(deps: { procurement: ProcurementServ
         windowValuesToCreatePurchaseOrderInput(values),
       );
       return toWindow(PO_FIELDS, order as unknown as Record<string, unknown>);
+    },
+    actions: {
+      issue: {
+        permission: 'procurement:orders:issue',
+        run: async (context, id) => {
+          const order = await deps.procurement.issuePurchaseOrder(context.principal, id);
+          return toWindow(PO_FIELDS, order as unknown as Record<string, unknown>);
+        },
+      },
+      acknowledge: {
+        permission: 'procurement:orders:manage',
+        run: async (context, id) => {
+          const order = await deps.procurement.acknowledgePurchaseOrder(context.principal, id);
+          return toWindow(PO_FIELDS, order as unknown as Record<string, unknown>);
+        },
+      },
     },
   };
 

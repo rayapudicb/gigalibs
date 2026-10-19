@@ -392,7 +392,11 @@ export function ordersRecordDispatcher(deps: { orders: OrderService }, idempoten
   const salesQuotes: RecordAdapter = {
     entityKey: 'orders.sales-quotes',
     permissions: { read: 'orders:read', create: 'orders:quotes:manage' },
-    rest: { read: 'GET v1/quotes', create: 'POST v1/quotes' },
+    rest: {
+      read: 'GET v1/quotes',
+      create: 'POST v1/quotes',
+      actions: { accept: 'POST v1/quotes/{id}/accept' },
+    },
     fields: fieldPolicies(SQ_FIELDS),
     searchFields: ['quote-number', 'customer-name'],
     sortFields: ['quote-number'],
@@ -427,12 +431,25 @@ export function ordersRecordDispatcher(deps: { orders: OrderService }, idempoten
       );
       return salesQuoteToWindow(quote);
     },
+    actions: {
+      accept: {
+        permission: 'orders:quotes:approve',
+        run: async (context, id) =>
+          salesQuoteToWindow(
+            await deps.orders.acceptQuote(context.principal.tenantId, context.principal.subject, id),
+          ),
+      },
+    },
   };
 
   const salesOrders: RecordAdapter = {
     entityKey: 'orders.sales-orders',
     permissions: { read: 'orders:read', create: 'orders:manage' },
-    rest: { read: 'GET v1/orders', create: 'POST v1/orders' },
+    rest: {
+      read: 'GET v1/orders',
+      create: 'POST v1/orders',
+      actions: { confirm: 'POST v1/orders/{id}/confirm' },
+    },
     fields: fieldPolicies(SO_FIELDS),
     searchFields: ['order-number', 'customer-name'],
     sortFields: ['order-number'],
@@ -466,6 +483,15 @@ export function ordersRecordDispatcher(deps: { orders: OrderService }, idempoten
         windowValuesToCreateSalesOrderInput(values),
       );
       return salesOrderToWindow(order);
+    },
+    actions: {
+      confirm: {
+        permission: 'orders:confirm',
+        run: async (context, id) =>
+          salesOrderToWindow(
+            await deps.orders.confirmOrder(context.principal.tenantId, context.principal.subject, id),
+          ),
+      },
     },
   };
 

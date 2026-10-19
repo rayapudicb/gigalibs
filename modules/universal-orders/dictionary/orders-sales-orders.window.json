@@ -526,7 +526,26 @@
         }
       ],
       "navigation": [],
-      "actions": [],
+      "actions": [
+        {
+          "actionKey": "confirm",
+          "label": "Confirm order",
+          "type": "COMMAND",
+          "handlerKey": "orders.sales-orders.confirm",
+          "requiredPermissions": [
+            "orders:confirm"
+          ],
+          "confirmationPrompt": "Confirm this sales order for fulfillment?",
+          "visibilityCondition": {
+            "field": "status",
+            "operator": "IN",
+            "value": [
+              "DRAFT",
+              "SUBMITTED"
+            ]
+          }
+        }
+      ],
       "messages": []
     }
   }

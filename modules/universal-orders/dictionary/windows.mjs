@@ -1,4 +1,4 @@
-// WI-OI-120gj–gm (Table 1): Orders metadata windows — quotes, orders, fulfillment, invoices.
+// WI-OI-120gj/gs (Table 1): Orders metadata windows and F0 lifecycle actions (accept/confirm).
 // Edit here, then `node scripts/generate-windows.mjs universal-orders` and `pnpm modules:catalog`.
 
 const ORDER_TYPES = [
@@ -57,7 +57,7 @@ const ORDER_STATUS = [
 ];
 
 export function windowSource(builderFor) {
-  const { entity, field, values, lookup, tab, section, dictionary, window } = builderFor({
+  const { entity, field, values, lookup, tab, section, action, dictionary, window } = builderFor({
     route: '/orders',
     createWith: {
       'catalogue-products': ['product-catalogue', 'catalogue-products', 'products:create'],
@@ -203,6 +203,15 @@ export function windowSource(builderFor) {
             ],
           }),
         ], { search: ['quote-number', 'customer-name'], sort: 'quote-number' }),
+      ], [
+        action(
+          SQ,
+          'accept',
+          'Accept quote',
+          'orders:quotes:approve',
+          ['status', 'NOT_IN', ['CANCELLED', 'CONVERTED', 'ACCEPTED']],
+          'Mark this quote as accepted by the customer?',
+        ),
       ]),
     ),
     'orders-sales-orders': window(
@@ -247,6 +256,15 @@ export function windowSource(builderFor) {
             ],
           }),
         ], { search: ['order-number', 'customer-name'], sort: 'order-number' }),
+      ], [
+        action(
+          SO,
+          'confirm',
+          'Confirm order',
+          'orders:confirm',
+          ['status', 'IN', ['DRAFT', 'SUBMITTED']],
+          'Confirm this sales order for fulfillment?',
+        ),
       ]),
     ),
     'orders-fulfillment-orders': window(
