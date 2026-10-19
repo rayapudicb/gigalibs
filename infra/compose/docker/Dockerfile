@@ -91,25 +91,33 @@ RUN --mount=type=cache,id=gigalibs-pnpm-store,target=/pnpm/store \
       --filter @gigalibs/analytics-api... \
       --filter @gigalibs/gigaops-api... \
       --filter @gigalibs/geospatial-api... \
-      --filter @gigalibs/cmms-api...
+      --filter @gigalibs/cmms-api... \
+      --filter @gigalibs/ar-api...
 RUN pnpm --recursive --sort --workspace-concurrency=1 \
       --filter @gigalibs/connectors-api... \
       --filter @gigalibs/analytics-api... \
       --filter @gigalibs/gigaops-api... \
       --filter @gigalibs/geospatial-api... \
       --filter @gigalibs/cmms-api... \
+      --filter @gigalibs/ar-api... \
       run build
 RUN pnpm --filter @gigalibs/connectors-api deploy --prod --legacy /output/connector-hub-api && \
     pnpm --filter @gigalibs/analytics-api deploy --prod --legacy /output/analytics-api && \
     pnpm --filter @gigalibs/gigaops-api deploy --prod --legacy /output/workforce-api && \
     pnpm --filter @gigalibs/geospatial-api deploy --prod --legacy /output/geospatial-api && \
-    pnpm --filter @gigalibs/cmms-api deploy --prod --legacy /output/cmms-api
+    pnpm --filter @gigalibs/cmms-api deploy --prod --legacy /output/cmms-api && \
+    pnpm --filter @gigalibs/ar-api deploy --prod --legacy /output/ar-api
 # WI-OI-038: CMMS installs only the ordered runtime manifest, never the prototype migrations beside it.
 RUN mkdir -p /output/cmms-api/migrations && \
     grep -Ev '^(#|$)' modules/physical-operations-cmms/db/runtime-manifest.txt | \
       while read -r migration; do cp "modules/physical-operations-cmms/db/migrations/${migration}" /output/cmms-api/migrations/; done && \
     test "$(ls /output/cmms-api/migrations | wc -l)" -eq "$(grep -Evc '^(#|$)' modules/physical-operations-cmms/db/runtime-manifest.txt)" && \
     cp infra/compose/docker/run-module-migrations.mjs /output/cmms-api/
+RUN mkdir -p /output/ar-api/migrations && \
+    grep -Ev '^(#|$)' modules/accounts-receivable/db/runtime-manifest.txt | \
+      while read -r migration; do cp "modules/accounts-receivable/db/migrations/${migration}" /output/ar-api/migrations/; done && \
+    test "$(ls /output/ar-api/migrations | wc -l)" -eq "$(grep -Evc '^(#|$)' modules/accounts-receivable/db/runtime-manifest.txt)" && \
+    cp infra/compose/docker/run-module-migrations.mjs /output/ar-api/
 RUN mkdir -p /output/connector-hub-api/migrations /output/analytics-api/migrations /output/workforce-api/migrations /output/geospatial-api/migrations && \
     cp modules/universal-connector-hub/db/migrations/*.up.sql /output/connector-hub-api/migrations/ && \
     cp modules/analytics-studio/db/migrations/*.up.sql /output/analytics-api/migrations/ && \
@@ -234,6 +242,23 @@ WORKDIR /app
 COPY --from=module-build --chown=65532:65532 /output/geospatial-api/ ./
 USER 65532:65532
 EXPOSE 4720
+CMD ["dist/main.js"]
+
+FROM gcr.io/distroless/nodejs24-debian13@sha256:bb6b03d81066993293a10feda7250e8e1cc034035fe9b61cfceededa7c8bf04d AS ar-api
+ARG SOURCE_REVISION
+ARG SOURCE_STATE_SHA256
+LABEL org.opencontainers.image.title="GigaLibs Accounts Receivable API" \
+      org.opencontainers.image.revision="${SOURCE_REVISION}" \
+      com.gigalibs.source-state-sha256="${SOURCE_STATE_SHA256}" \
+      com.gigalibs.component="ar-api" \
+      com.gigalibs.work-item="WI-OI-120gx" \
+      com.gigalibs.profile-key="module-runtime-local-development-v1"
+ENV NODE_ENV=development
+ENV PATH=/nodejs/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+WORKDIR /app
+COPY --from=module-build --chown=65532:65532 /output/ar-api/ ./
+USER 65532:65532
+EXPOSE 3400
 CMD ["dist/main.js"]
 
 FROM gcr.io/distroless/nodejs24-debian13@sha256:bb6b03d81066993293a10feda7250e8e1cc034035fe9b61cfceededa7c8bf04d AS cmms-api

@@ -44,6 +44,7 @@ declare -a BUILD_ROWS=(
   "connector-hub-api|CONNECTOR_HUB_IMAGE|gigalibs/connector-hub-api:${TAG}"
   "analytics-api|ANALYTICS_IMAGE|gigalibs/analytics-api:${TAG}"
   "cmms-api|CMMS_IMAGE|gigalibs/cmms-api:${TAG}"
+  "ar-api|AR_IMAGE|gigalibs/ar-api:${TAG}"
 )
 
 for row in "${BUILD_ROWS[@]}"; do

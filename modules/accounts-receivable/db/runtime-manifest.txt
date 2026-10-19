@@ -1,0 +1,15 @@
+# Ordered AR migrations for compose / runtime images (WI-OI-120gx). Expected version = 000014 → 14.
+000001_ar_foundation.up.sql
+000002_ar_outbox_delivery.up.sql
+000003_ar_ledger_seals_and_installments.up.sql
+000004_ar_settlements_and_wip.up.sql
+000005_ar_customer_contacts_and_billing_entity_expand.up.sql
+000006_ar_drop_foundation_tax_check.up.sql
+000007_ar_invoice_deliveries.up.sql
+000008_ar_payments_phase4.up.sql
+000009_ar_credit_notes_aging.up.sql
+000010_form_definitions.up.sql
+000011_ar_checkout_and_storage.up.sql
+000012_ar_work_sources_and_supplemental_families.up.sql
+000013_ar_ledger_repair_and_g4_hardening.up.sql
+000014_ar_orders_inbox_receipts.up.sql

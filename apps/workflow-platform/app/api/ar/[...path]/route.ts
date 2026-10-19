@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { parseLocalArUpstreamOrigin } from '@/lib/ar-local-upstream';
 import { arTenantBindingId } from '@/lib/ar-tenant-binding';
 import { readBoundedBody } from '@/lib/authenticated-upstream';
 import { canUseTenantModule, hasPermission } from '@/lib/module-access';
@@ -43,7 +44,7 @@ async function proxyAr(request: Request, context: RouteContext): Promise<NextRes
   }
 
   try {
-    const arBaseUrl = configuredArBaseUrl();
+    const arBaseUrl = parseLocalArUpstreamOrigin(process.env.AR_API_URL);
     const body = MUTATING_METHODS.has(method) ? await readBoundedBody(request) : undefined;
     const token = await arToken(
       arBaseUrl,
@@ -82,22 +83,6 @@ async function proxyAr(request: Request, context: RouteContext): Promise<NextRes
     }
     return problem(502, 'The Accounts Receivable service is temporarily unavailable.');
   }
-}
-
-function configuredArBaseUrl(): string {
-  const configured = process.env.AR_API_URL?.trim();
-  if (!configured) throw new Error('Local AR UAT requires AR_API_URL.');
-  const url = new URL(configured);
-  if (
-    url.protocol !== 'http:' ||
-    !['localhost', '127.0.0.1', '::1'].includes(url.hostname) ||
-    url.username ||
-    url.password ||
-    url.pathname !== '/'
-  ) {
-    throw new Error('Local AR UAT requires a credential-free loopback AR_API_URL origin.');
-  }
-  return url.origin;
 }
 
 async function arToken(baseUrl: string, tenantId: string, userId: string): Promise<string> {

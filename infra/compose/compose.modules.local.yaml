@@ -226,6 +226,80 @@ services:
       - ALL
     labels: *module-labels
 
+  ar-migrations:
+    image: ${AR_IMAGE:?AR_IMAGE is required}
+    pull_policy: never
+    command: ["run-module-migrations.mjs"]
+    restart: "no"
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    environment:
+      DATABASE_URL: ${MODULE_MIGRATIONS_DATABASE_URL:?MODULE_MIGRATIONS_DATABASE_URL is required}
+      MODULE_RUNTIME_DATABASE_URL: ${AR_DATABASE_URL:?AR_DATABASE_URL is required}
+      MODULE_MIGRATIONS_DIRECTORY: /app/migrations
+      MODULE_SCHEMA: gigalibs_ar
+      MODULE_EXPECTED_MIGRATION_VERSION: "14"
+      MODULE_APPEND_ONLY_TABLES: audit_events
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    depends_on:
+      migrations:
+        condition: service_completed_successfully
+    labels: *module-labels
+
+  ar-api:
+    image: ${AR_IMAGE:?AR_IMAGE is required}
+    pull_policy: never
+    restart: unless-stopped
+    init: true
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    environment:
+      NODE_ENV: development
+      AR_API_HOST: 0.0.0.0
+      AR_API_PORT: "3400"
+      AR_CORS_ORIGINS: ${PUBLIC_ORIGIN:?PUBLIC_ORIGIN is required}
+      AR_DATABASE_URL: ${AR_DATABASE_URL:?AR_DATABASE_URL is required}
+      AR_DATABASE_POOL_SIZE: "10"
+      AR_ALLOW_INSECURE_OIDC: "true"
+      AR_OIDC_ISSUER: http://ar-api:3400/oidc
+      AR_OIDC_AUDIENCE: gigalibs-ar
+      AR_OIDC_JWKS_URI: http://127.0.0.1:3400/oidc/jwks.json
+      AR_OIDC_ALGORITHMS: RS256
+      AR_OIDC_TENANT_CLAIM: tenant_id
+      AR_OIDC_PERMISSIONS_CLAIM: permissions
+      STORAGE_ENDPOINT: ${STORAGE_ENDPOINT-}
+      STORAGE_REGION: ${STORAGE_REGION-}
+      STORAGE_BUCKET: ${STORAGE_BUCKET-}
+      STORAGE_ACCESS_KEY: ${STORAGE_ACCESS_KEY-}
+      STORAGE_SECRET_KEY: ${STORAGE_SECRET_KEY-}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      ar-migrations:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3400/health/ready').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    labels: *module-labels
+
   # WI-OI-104c (ADR-0017): Redis carries only BullMQ job ids; PostgreSQL holds every job and schedule, so Redis keeps
   # nothing on disk and never evicts. Internal network only, password required.
   redis:
@@ -306,6 +380,7 @@ services:
 
   web:
     environment:
+      AR_API_URL: http://ar-api:3400
       CONNECTOR_HUB_API_URL: http://connector-hub-api:4100
       CONNECTOR_HUB_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64: ${CONNECTOR_HUB_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64:?CONNECTOR_HUB_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64 is required}
       ANALYTICS_API_URL: http://analytics-api:4400

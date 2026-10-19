@@ -71,6 +71,11 @@ cmms_runtime_values() {
   context_keys CMMS
 }
 
+ar_runtime_values() {
+  printf 'AR_IMAGE=gigalibs/ar-api:%s\n' "${TAG}"
+  printf 'AR_DATABASE_URL=%s\n' "$(runtime_database_url gigalibs_ar_runtime "$(openssl rand -hex 32)")"
+}
+
 DATABASE_URL="$(read_base_value DATABASE_URL)"
 SOURCE_REVISION="$(read_base_value SOURCE_REVISION)"
 SOURCE_STATE_SHA256="$(read_base_value SOURCE_STATE_SHA256)"
@@ -87,6 +92,10 @@ if [[ -e "${TARGET_ENV}" ]]; then
   if ! grep -q '^CMMS_PLATFORM_CONTEXT_PUBLIC_KEY_BASE64=' "${TARGET_ENV}"; then
     cmms_runtime_values >>"${TARGET_ENV}"
     added+=("CMMS image, runtime role and key pair")
+  fi
+  if ! grep -q '^AR_DATABASE_URL=' "${TARGET_ENV}"; then
+    ar_runtime_values >>"${TARGET_ENV}"
+    added+=("AR image and runtime database role")
   fi
   # WI-OI-104a: Connector Hub verifies BFF-signed contexts like the other module services.
   if ! grep -q '^CONNECTOR_HUB_PLATFORM_CONTEXT_PUBLIC_KEY_BASE64=' "${TARGET_ENV}"; then
@@ -144,6 +153,7 @@ relay_keys ANALYTICS >>"${TARGET_ENV}"
 relay_keys ANALYTICS_GEOSPATIAL >>"${TARGET_ENV}"
 relay_keys GEOSPATIAL_HUB >>"${TARGET_ENV}"
 cmms_runtime_values >>"${TARGET_ENV}"
+ar_runtime_values >>"${TARGET_ENV}"
 
 chmod 600 "${TARGET_ENV}"
 echo "Created ${TARGET_ENV} with mode 0600. Secret values were not printed."
