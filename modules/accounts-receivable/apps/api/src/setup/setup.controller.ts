@@ -1,7 +1,7 @@
 import { Body, Controller, Headers, Inject, Post, Req, Res, UseGuards } from '@nestjs/common';
 import {
   type AuthenticatedRequest,
-  OidcAuthorizationGuard,
+  ArAuthorizationGuard,
   RequirePermissions,
 } from '../auth/authorization.js';
 import { requireIdempotencyKey } from '../database/persistence-helpers.js';
@@ -13,7 +13,7 @@ interface PassthroughResponse {
 }
 
 @Controller('v1/setup')
-@UseGuards(OidcAuthorizationGuard)
+@UseGuards(ArAuthorizationGuard)
 export class SetupController {
   constructor(@Inject(SetupService) private readonly setup: SetupService) {}
 

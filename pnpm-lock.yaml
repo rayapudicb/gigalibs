@@ -346,6 +346,9 @@ importers:
       '@gigalibs/ar-domain':
         specifier: workspace:*
         version: link:../../domain
+      '@gigalibs/auth-core':
+        specifier: workspace:*
+        version: link:../../../../packages/auth-core
       '@gigalibs/configuration-core':
         specifier: workspace:*
         version: link:../../../../packages/configuration-core
@@ -358,6 +361,9 @@ importers:
       '@gigalibs/forms-engine-nest':
         specifier: workspace:*
         version: link:../../../../packages/forms-engine-nest
+      '@gigalibs/module-sdk':
+        specifier: workspace:*
+        version: link:../../../../packages/module-sdk
       '@nestjs/common':
         specifier: ^11.2.3
         version: 11.2.3(reflect-metadata@0.2.2)(rxjs@7.8.2)

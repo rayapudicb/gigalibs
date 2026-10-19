@@ -4,14 +4,28 @@ import {
   ForbiddenException,
   Inject,
   Injectable,
+  Optional,
+  ServiceUnavailableException,
   SetMetadata,
   UnauthorizedException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { type JWTPayload, createRemoteJWKSet, jwtVerify } from 'jose';
 import { holdsPermission } from '@gigalibs/contracts';
+import {
+  type ModuleRuntimeConfig,
+  SignedContextGuardBase,
+  type ModulePrincipal,
+} from '@gigalibs/module-sdk';
+import {
+  AR_MODULE_RUNTIME_CONFIG,
+  AR_PLATFORM_CONTEXT_ISSUER,
+  MODULE_KEY,
+  PERMISSION_PREFIX,
+} from '../config.module-sdk.js';
 import { AR_CONFIG } from '../config.provider.js';
 import type { ArRuntimeConfig } from '../runtime-config.js';
+import { DatabaseService } from '../database/database.service.js';
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const PERMISSION_PATTERN = /^[a-z][a-z0-9._:-]{1,99}$/;
@@ -27,6 +41,7 @@ export interface ArPrincipal {
 export interface AuthenticatedRequest {
   headers: Record<string, string | string[] | undefined>;
   principal?: ArPrincipal;
+  modulePrincipal?: ModulePrincipal;
   correlationId?: string;
 }
 
@@ -112,3 +127,63 @@ function extractBearerToken(value: string | string[] | undefined): string {
   }
   return match[1];
 }
+
+function arPrincipalFromModule(modulePrincipal: ModulePrincipal): ArPrincipal {
+  return {
+    tenantId: modulePrincipal.tenantId,
+    subject: modulePrincipal.subject,
+    issuer: AR_PLATFORM_CONTEXT_ISSUER,
+    permissions: modulePrincipal.permissions,
+  };
+}
+
+@Injectable()
+export class PlatformArAuthorizationGuard extends SignedContextGuardBase {
+  constructor(config: ModuleRuntimeConfig, database: DatabaseService) {
+    super(
+      {
+        label: 'Accounts Receivable',
+        moduleKey: MODULE_KEY,
+        entitlementName: 'Accounts Receivable',
+        permissionPrefix: PERMISSION_PREFIX,
+        publicKey: config.platformContextPublicKey,
+        audience: config.platformContextAudience,
+      },
+      database,
+    );
+  }
+
+  override async canActivate(context: ExecutionContext): Promise<boolean> {
+    const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
+    const ok = await super.canActivate(context);
+    if (request.modulePrincipal) request.principal = arPrincipalFromModule(request.modulePrincipal);
+    return ok;
+  }
+}
+
+/** Accepts suite platform context when configured; otherwise falls back to OIDC (compose dev issuer). */
+@Injectable()
+export class ArAuthorizationGuard implements CanActivate {
+  constructor(
+    private readonly oidc: OidcAuthorizationGuard,
+    @Inject(AR_MODULE_RUNTIME_CONFIG) private readonly platformConfig: ModuleRuntimeConfig | null,
+    @Optional() private readonly platform: PlatformArAuthorizationGuard | null,
+  ) {}
+
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    if (!this.platformConfig || !this.platform) return this.oidc.canActivate(context);
+    try {
+      return await this.platform.canActivate(context);
+    } catch (error) {
+      if (
+        error instanceof UnauthorizedException ||
+        error instanceof ForbiddenException ||
+        error instanceof ServiceUnavailableException
+      ) {
+        return this.oidc.canActivate(context);
+      }
+      throw error;
+    }
+  }
+}
+

@@ -14,7 +14,7 @@ import {
 import {
   type ArPrincipal,
   type AuthenticatedRequest,
-  OidcAuthorizationGuard,
+  ArAuthorizationGuard,
   RequirePermissions,
 } from '../auth/authorization.js';
 import { requireIdempotencyKey } from '../database/persistence-helpers.js';
@@ -26,7 +26,7 @@ interface PassthroughResponse {
 }
 
 @Controller('v1/series')
-@UseGuards(OidcAuthorizationGuard)
+@UseGuards(ArAuthorizationGuard)
 export class SeriesController {
   constructor(@Inject(SeriesService) private readonly series: SeriesService) {}
 

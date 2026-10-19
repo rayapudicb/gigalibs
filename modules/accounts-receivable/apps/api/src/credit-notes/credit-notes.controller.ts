@@ -12,13 +12,13 @@ import {
 import {
   type ArPrincipal,
   type AuthenticatedRequest,
-  OidcAuthorizationGuard,
+  ArAuthorizationGuard,
   RequirePermissions,
 } from '../auth/authorization.js';
 import { CreditNotesService } from './credit-notes.service.js';
 
 @Controller('v1')
-@UseGuards(OidcAuthorizationGuard)
+@UseGuards(ArAuthorizationGuard)
 export class CreditNotesController {
   constructor(private readonly creditNotes: CreditNotesService) {}
 

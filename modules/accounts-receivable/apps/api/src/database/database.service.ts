@@ -12,7 +12,7 @@ import type { ArRuntimeConfig } from '../runtime-config.js';
 export type TenantTransaction<T> = (client: PoolClient) => Promise<T>;
 
 // WI-OI-113: authoritative count of applied AR migrations (versions 1-13 + 14 = 14 rows).
-const REQUIRED_MIGRATION_COUNT = 14;
+const REQUIRED_MIGRATION_COUNT = 15;
 
 @Injectable()
 export class DatabaseService implements OnApplicationBootstrap, OnModuleDestroy {
@@ -66,7 +66,7 @@ export class DatabaseService implements OnApplicationBootstrap, OnModuleDestroy 
     if (count !== REQUIRED_MIGRATION_COUNT) {
       throw new Error(
         `AR schema_migrations has ${count} rows; expected exactly ${REQUIRED_MIGRATION_COUNT}. ` +
-        `Run all migrations through 000014 before starting the service.`,
+        `Run all migrations through 000015 before starting the service.`,
       );
     }
     if (this.config.nodeEnv === 'production' && ((state?.is_superuser) || (state?.bypasses_rls))) {
@@ -120,13 +120,38 @@ export class DatabaseService implements OnApplicationBootstrap, OnModuleDestroy 
 
   async isReady(): Promise<boolean> {
     try {
-      const result = await this._pool.query<{ count: string }>(
-        `SELECT COUNT(*)::text AS count FROM gigalibs_ar.schema_migrations`,
+      const result = await this._pool.query<{ count: string; max_version: string }>(
+        `SELECT COUNT(*)::text AS count, COALESCE(MAX(version)::text, '0') AS max_version FROM gigalibs_ar.schema_migrations`,
       );
-      return Number(result.rows[0]?.count) === REQUIRED_MIGRATION_COUNT;
+      const count = Number(result.rows[0]?.count);
+      const maxVersion = Number(result.rows[0]?.max_version);
+      return count === REQUIRED_MIGRATION_COUNT && maxVersion === REQUIRED_MIGRATION_COUNT;
     } catch {
       return false;
     }
+  }
+
+  async isContextRevoked(input: {
+    readonly tenantId: string;
+    readonly subject: string;
+    readonly sessionId: string;
+    readonly authVersion: number;
+  }): Promise<boolean> {
+    return this.withTenantTransaction(input.tenantId, async (client) => {
+      const result = await client.query<{ revoked: boolean }>(
+        `SELECT EXISTS (
+           SELECT 1
+             FROM gigalibs_ar.auth_revocation_events
+            WHERE tenant_id = $1
+              AND ((revocation_type = 'SESSION' AND session_id = $2)
+                OR (revocation_type = 'SUBJECT_AUTH_VERSION'
+                    AND subject_id = $3
+                    AND invalid_through_auth_version >= $4))
+         ) AS revoked`,
+        [input.tenantId, input.sessionId, input.subject, input.authVersion],
+      );
+      return result.rows[0]?.revoked === true;
+    });
   }
 
   async onModuleDestroy(): Promise<void> {

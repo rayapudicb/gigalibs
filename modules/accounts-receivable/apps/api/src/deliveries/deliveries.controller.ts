@@ -12,7 +12,7 @@ import {
 import {
   type ArPrincipal,
   type AuthenticatedRequest,
-  OidcAuthorizationGuard,
+  ArAuthorizationGuard,
   RequirePermissions,
 } from '../auth/authorization.js';
 import { requireIdempotencyKey } from '../database/persistence-helpers.js';
@@ -31,7 +31,7 @@ interface RawResponse {
 }
 
 @Controller('v1/invoices')
-@UseGuards(OidcAuthorizationGuard)
+@UseGuards(ArAuthorizationGuard)
 export class DeliveriesController {
   constructor(@Inject(DeliveriesService) private readonly deliveries: DeliveriesService) {}
 

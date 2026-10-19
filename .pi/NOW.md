@@ -79,7 +79,8 @@ keeps the full rules.
 19. **WI-OI-120gv** — **Built** in git **`85d2b36c`:** SO **allocate** + fulfillment **dispatch** (`issue-id`) F0 metadata actions.
 20. **WI-OI-120gw** — **Built** in git **`9f5021df`:** M-AR0 E1 — AR API in root build; nest helper packages fixed.
 21. **WI-OI-120gx** — **Built** in git **`1e0f7a38`:** AR `ar-api` image + compose migrations/service; BFF `ar-api` host.
-22. **Next code** — **WI-OI-120gf** (module SDK + boundary tests); **120gd** journey password.
+22. **WI-OI-120gy** — **Built** (pending commit): M-AR0 platform-context guard + mig **15** + compose keys.
+23. **Next code** — **WI-OI-120gf** (module-host / gateway / BFF boundary); **120gd** journey password.
 
 ## Built, not yet on UAT
 

@@ -13,3 +13,4 @@
 000012_ar_work_sources_and_supplemental_families.up.sql
 000013_ar_ledger_repair_and_g4_hardening.up.sql
 000014_ar_orders_inbox_receipts.up.sql
+000015_ar_auth_revocation_shape.up.sql

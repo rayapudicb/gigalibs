@@ -1,6 +1,15 @@
 import { Module, OnModuleInit } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { OidcAuthorizationGuard } from './auth/authorization.js';
+import {
+  ArAuthorizationGuard,
+  OidcAuthorizationGuard,
+  PlatformArAuthorizationGuard,
+} from './auth/authorization.js';
+import {
+  AR_MODULE_RUNTIME_CONFIG,
+  arModuleRuntimeConfigProvider,
+} from './config.module-sdk.js';
+import type { ModuleRuntimeConfig } from '@gigalibs/module-sdk';
 import { OidcDevController } from './auth/oidc-dev.controller.js';
 import { OidcDevService } from './auth/oidc-dev.service.js';
 import { BillingEntityController } from './billing-entity/billing-entity.controller.js';
@@ -105,9 +114,17 @@ import { DatabaseModule } from './database/database.module.js';
   ],
   providers: [
     arConfigProvider,
+    arModuleRuntimeConfigProvider,
     Reflector,
     DatabaseService,
     OidcAuthorizationGuard,
+    {
+      provide: PlatformArAuthorizationGuard,
+      inject: [AR_MODULE_RUNTIME_CONFIG, DatabaseService],
+      useFactory: (config: ModuleRuntimeConfig | null, database: DatabaseService) =>
+        config ? new PlatformArAuthorizationGuard(config, database) : null,
+    },
+    ArAuthorizationGuard,
     SetupService,
     BillingEntityService,
     SeriesService,

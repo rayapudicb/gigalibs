@@ -96,10 +96,10 @@ describe('queryWithTenant ordering', () => {
 // ── bootstrapCheck logic ──────────────────────────────────────────────────────
 
 describe('bootstrapCheck', () => {
-  const REQUIRED = 14;
+  const REQUIRED = 15;
 
-  it('accepts exactly 14 migration rows with a safe role', () => {
-    const row = { migration_count: '14', is_superuser: false, bypasses_rls: false };
+  it('accepts exactly 15 migration rows with a safe role', () => {
+    const row = { migration_count: '15', is_superuser: false, bypasses_rls: false };
     const count = Number(row.migration_count);
     expect(count).toBe(REQUIRED);
     expect(row.is_superuser).toBe(false);

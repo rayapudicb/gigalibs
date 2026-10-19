@@ -16,7 +16,7 @@ import {
 import {
   type ArPrincipal,
   type AuthenticatedRequest,
-  OidcAuthorizationGuard,
+  ArAuthorizationGuard,
   RequirePermissions,
 } from '../auth/authorization.js';
 import { requireIdempotencyKey } from '../database/persistence-helpers.js';
@@ -28,7 +28,7 @@ interface PassthroughResponse {
 }
 
 @Controller('v1/customers')
-@UseGuards(OidcAuthorizationGuard)
+@UseGuards(ArAuthorizationGuard)
 export class CustomersController {
   constructor(@Inject(CustomersService) private readonly customers: CustomersService) {}
 

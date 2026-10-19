@@ -13,7 +13,7 @@ import {
 import {
   type ArPrincipal,
   type AuthenticatedRequest,
-  OidcAuthorizationGuard,
+  ArAuthorizationGuard,
   RequirePermissions,
 } from '../auth/authorization.js';
 import {
@@ -28,7 +28,7 @@ interface PassthroughResponse {
 }
 
 @Controller('v1/invoices')
-@UseGuards(OidcAuthorizationGuard)
+@UseGuards(ArAuthorizationGuard)
 export class PaymentsController {
   constructor(@Inject(PaymentsService) private readonly payments: PaymentsService) {}
 

@@ -12,7 +12,7 @@ import {
 import {
   type ArPrincipal,
   type AuthenticatedRequest,
-  OidcAuthorizationGuard,
+  ArAuthorizationGuard,
   RequirePermissions,
 } from '../auth/authorization.js';
 import { BillingEntityService } from './billing-entity.service.js';
@@ -22,7 +22,7 @@ interface PassthroughResponse {
 }
 
 @Controller('v1/billing-entity')
-@UseGuards(OidcAuthorizationGuard)
+@UseGuards(ArAuthorizationGuard)
 export class BillingEntityController {
   constructor(
     @Inject(BillingEntityService) private readonly billingEntity: BillingEntityService,

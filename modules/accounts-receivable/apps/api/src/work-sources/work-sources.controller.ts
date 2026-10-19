@@ -12,7 +12,7 @@ import {
 import {
   type ArPrincipal,
   type AuthenticatedRequest,
-  OidcAuthorizationGuard,
+  ArAuthorizationGuard,
   RequirePermissions,
 } from '../auth/authorization.js';
 import {
@@ -27,7 +27,7 @@ interface PassthroughResponse {
 }
 
 @Controller('v1/work-sources')
-@UseGuards(OidcAuthorizationGuard)
+@UseGuards(ArAuthorizationGuard)
 export class WorkSourcesController {
   constructor(@Inject(WorkSourcesService) private readonly workSources: WorkSourcesService) {}
 
