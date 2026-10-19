@@ -85,7 +85,8 @@ keeps the full rules.
 25. **WI-OI-120hb** — **Built** in git **`83099e7b`:** AR `DatabaseService` → canonical `ModuleDatabase` (mig **16** contract).
 26. **WI-OI-120hc** — **Built** in git **`6c29fe92`:** relay `inboxPath` test fixtures + record `total` + AR migration pin audit + orders quote default.
 27. **WI-OI-120hd** — **Built** in git **`492839d7`:** `proof:ar-compose-health` + runtime-manifest pin **16** comment.
-28. **Next** — owner local compose rebuild + `pnpm proof:ar-compose-health`; **120gd** journey password.
+28. **WI-OI-120he** — **Built** in git **`afb4eb3d`:** module-local compose loads workforce + geospatial env; `up-ar-api.sh`.
+29. **Next** — refresh identity + build images, `up-ar-api.sh`, `pnpm proof:ar-compose-health`; **120gd** journey password.
 
 ## Built, not yet on UAT
 
