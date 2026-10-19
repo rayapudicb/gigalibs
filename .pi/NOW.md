@@ -70,8 +70,9 @@ keeps the full rules.
 10. **WI-OI-120gm** — **Built** in git **`8932d626`**: fulfillment window + `/orders` tab.
 11. **WI-OI-120gn** — **Built** in git **`8932d626`**: vendor bills window + `/procurement` tab.
 12. **WI-OI-120go** — **Built** in git **`3195e0aa`**: customer credit memos window + `/orders` tab.
-13. **WI-OI-120gp** — **Built (local):** procurement requisitions window + `/procurement` tab.
-14. **Next code** — procurement debit memos or inventory receipt link UI; orders RMA if API grows; **WI-OI-120gf** (M-AR0); **120gd** journey password.
+13. **WI-OI-120gp** — **Built** in git **`76ddb447`**: procurement requisitions window + `/procurement` tab.
+14. **WI-OI-120gq** — **Built (local):** procurement debit memos window + `/procurement` tab.
+15. **Next code** — Table 1 polish (window actions/submit flows) or **WI-OI-120gf** (M-AR0); **120gd** journey password. GRN remains inventory receipts F0 + Table 2.
 
 ## Built, not yet on UAT
 

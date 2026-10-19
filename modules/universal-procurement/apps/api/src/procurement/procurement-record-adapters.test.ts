@@ -1,9 +1,25 @@
 import { describe, expect, it } from 'vitest';
 import {
+  windowValuesToCreateDebitMemoInput,
   windowValuesToCreatePurchaseOrderInput,
   windowValuesToCreateRequisitionInput,
   windowValuesToCreateVendorBillInput,
 } from './procurement-record-adapters.js';
+
+describe('windowValuesToCreateDebitMemoInput', () => {
+  it('builds a one-line debit memo from window field keys', () => {
+    const input = windowValuesToCreateDebitMemoInput({
+      'vendor-id': '323e4567-e89b-12d3-a456-426614174000',
+      reason: 'Price correction',
+      'line-description': 'Returned overcharge',
+      'line-quantity': '1.000000',
+      'line-unit-price-minor': '900',
+      'line-reason': 'Vendor pricing error',
+    });
+    expect(input.vendorPartyId).toBe('323e4567-e89b-12d3-a456-426614174000');
+    expect(input.lines[0]?.reason).toBe('Vendor pricing error');
+  });
+});
 
 describe('windowValuesToCreateRequisitionInput', () => {
   it('builds a one-line requisition from window field keys', () => {

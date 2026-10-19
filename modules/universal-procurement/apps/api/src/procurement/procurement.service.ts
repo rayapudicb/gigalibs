@@ -1216,45 +1216,23 @@ export class ProcurementService {
     });
   }
 
+  async getDebitMemo(principal: ModulePrincipal, id: string): Promise<DebitMemoV1> {
+    return this.database.withTenantTransaction(principal.tenantId, async (client) => {
+      return this.fetchDebitMemo(client, principal.tenantId, id);
+    });
+  }
+
   async listDebitMemos(principal: ModulePrincipal): Promise<DebitMemoV1[]> {
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
-      const res = await client.query<{
-        id: string;
-        tenant_id: string;
-        debit_memo_number: string;
-        vendor_party_id: string;
-        vendor_bill_id: string | null;
-        purchase_order_id: string | null;
-        currency_code: string;
-        total_amount_minor: string;
-        status: string;
-        reason: string;
-        issued_at: string;
-        issued_by: string;
-        created_at: string;
-        updated_at: string;
-      }>(
-        `SELECT * FROM ${SCHEMA}.debit_memos WHERE tenant_id = $1 ORDER BY created_at DESC`,
+      const res = await client.query<{ id: string }>(
+        `SELECT id FROM ${SCHEMA}.debit_memos WHERE tenant_id = $1 ORDER BY created_at DESC`,
         [principal.tenantId],
       );
-      return res.rows.map((r) => ({
-        id: r.id,
-        tenantId: r.tenant_id,
-        debitMemoNumber: r.debit_memo_number,
-        vendorPartyId: r.vendor_party_id,
-        vendorBillId: r.vendor_bill_id,
-        purchaseOrderId: r.purchase_order_id,
-        currencyCode: r.currency_code,
-        totalAmountMinor: r.total_amount_minor,
-        status: r.status as any,
-        reason: r.reason,
-        issuedAt: r.issued_at,
-        issuedBy: r.issued_by,
-        version: 1,
-        lines: [],
-        createdAt: r.created_at,
-        updatedAt: r.updated_at,
-      }));
+      const items: DebitMemoV1[] = [];
+      for (const row of res.rows) {
+        items.push(await this.fetchDebitMemo(client, principal.tenantId, row.id));
+      }
+      return items;
     });
   }
 
@@ -1716,6 +1694,52 @@ export class ProcurementService {
       updatedAt: row.updated_at,
       createdBy: row.created_by,
       updatedBy: row.updated_by,
+    };
+  }
+
+  private async fetchDebitMemo(client: PoolClient, tenantId: string, id: string): Promise<DebitMemoV1> {
+    const res = await client.query(
+      `SELECT * FROM ${SCHEMA}.debit_memos WHERE tenant_id = $1 AND id = $2`,
+      [tenantId, id],
+    );
+    if (res.rows.length === 0) {
+      throw new NotFoundException(`Debit memo ${id} not found.`);
+    }
+    const row = res.rows[0];
+    const linesRes = await client.query(
+      `SELECT * FROM ${SCHEMA}.debit_memo_lines WHERE tenant_id = $1 AND debit_memo_id = $2 ORDER BY line_number ASC`,
+      [tenantId, id],
+    );
+    const lines = linesRes.rows.map((l) => ({
+      id: l.id,
+      tenantId: l.tenant_id,
+      debitMemoId: l.debit_memo_id,
+      lineNumber: l.line_number,
+      productId: l.product_id,
+      description: l.description,
+      quantity: l.quantity,
+      unitPriceMinor: l.unit_price_minor,
+      lineTotalMinor: l.line_total_minor,
+      reason: l.reason,
+      createdAt: l.created_at,
+    }));
+    return {
+      id: row.id,
+      tenantId: row.tenant_id,
+      debitMemoNumber: row.debit_memo_number,
+      vendorPartyId: row.vendor_party_id,
+      vendorBillId: row.vendor_bill_id,
+      purchaseOrderId: row.purchase_order_id,
+      currencyCode: row.currency_code,
+      totalAmountMinor: row.total_amount_minor,
+      status: row.status,
+      reason: row.reason,
+      issuedAt: row.issued_at,
+      issuedBy: row.issued_by,
+      version: row.version ?? 1,
+      lines,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
     };
   }
 }

@@ -17098,6 +17098,400 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
     "contractVersion": "1.0",
     "window": {
       "route": "/procurement",
+      "label": "Debit memos",
+      "description": "Issue vendor debit memos against bills or purchase orders.",
+      "readPermission": "procurement:read"
+    },
+    "definition": {
+      "kind": "APPLICATION_DICTIONARY",
+      "contractVersion": "1.0",
+      "moduleKey": "universal-procurement",
+      "entityKey": "procurement-debit-memos",
+      "surfaceKey": "procurement-debit-memos",
+      "title": "Debit memos",
+      "dictionary": {
+        "packageKey": "procurement-debit-memos-module-baseline",
+        "name": "Debit memos",
+        "version": "1.0.0",
+        "moduleKey": "universal-procurement",
+        "targetEntityKey": "procurement.debit-memos",
+        "entities": [
+          {
+            "entityKey": "procurement.debit-memos",
+            "moduleKey": "universal-procurement",
+            "label": "Debit memos",
+            "ownership": "MODULE_CORE",
+            "primaryKeyField": "id",
+            "isVersioned": true,
+            "isAuditLogged": true,
+            "isSoftDeletable": false
+          }
+        ],
+        "fields": [
+          {
+            "fieldKey": "debit-memo-number",
+            "entityKey": "procurement.debit-memos",
+            "label": "Debit memo number",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "vendor-id",
+            "entityKey": "procurement.debit-memos",
+            "label": "Vendor party",
+            "type": "TEXT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "helpText": "Active workspace party UUID (supplier).",
+            "writePermission": "procurement:debit-memos:manage"
+          },
+          {
+            "fieldKey": "vendor-bill-id",
+            "entityKey": "procurement.debit-memos",
+            "label": "Vendor bill",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "writePermission": "procurement:debit-memos:manage"
+          },
+          {
+            "fieldKey": "purchase-order-id",
+            "entityKey": "procurement.debit-memos",
+            "label": "Purchase order",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "writePermission": "procurement:debit-memos:manage"
+          },
+          {
+            "fieldKey": "currency-code",
+            "entityKey": "procurement.debit-memos",
+            "label": "Currency",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "writePermission": "procurement:debit-memos:manage",
+            "defaultValue": "USD"
+          },
+          {
+            "fieldKey": "reason",
+            "entityKey": "procurement.debit-memos",
+            "label": "Reason",
+            "type": "TEXT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "writePermission": "procurement:debit-memos:manage"
+          },
+          {
+            "fieldKey": "status",
+            "entityKey": "procurement.debit-memos",
+            "label": "Status",
+            "type": "SELECT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "debit-memo-statuses"
+          },
+          {
+            "fieldKey": "total-amount",
+            "entityKey": "procurement.debit-memos",
+            "label": "Total (minor units)",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "line-description",
+            "entityKey": "procurement.debit-memos",
+            "label": "Line description",
+            "type": "TEXT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "writePermission": "procurement:debit-memos:manage"
+          },
+          {
+            "fieldKey": "line-quantity",
+            "entityKey": "procurement.debit-memos",
+            "label": "Line quantity",
+            "type": "NUMBER",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "scale": 6,
+            "writePermission": "procurement:debit-memos:manage",
+            "defaultValue": "1.000000"
+          },
+          {
+            "fieldKey": "line-unit-price-minor",
+            "entityKey": "procurement.debit-memos",
+            "label": "Line unit price (minor)",
+            "type": "INTEGER",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "writePermission": "procurement:debit-memos:manage"
+          },
+          {
+            "fieldKey": "line-reason",
+            "entityKey": "procurement.debit-memos",
+            "label": "Line reason",
+            "type": "TEXT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "helpText": "Defaults to the header reason when empty.",
+            "writePermission": "procurement:debit-memos:manage"
+          },
+          {
+            "fieldKey": "line-product-id",
+            "entityKey": "procurement.debit-memos",
+            "label": "Line product",
+            "type": "REFERENCE",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "product-ref",
+            "writePermission": "procurement:debit-memos:manage"
+          }
+        ],
+        "relationships": [],
+        "references": [
+          {
+            "referenceKey": "debit-memo-statuses",
+            "referenceType": "VALUE_LIST",
+            "staticValues": [
+              {
+                "value": "DRAFT",
+                "label": "Draft"
+              },
+              {
+                "value": "ISSUED",
+                "label": "Issued"
+              },
+              {
+                "value": "APPLIED",
+                "label": "Applied"
+              },
+              {
+                "value": "REFUNDED",
+                "label": "Refunded"
+              },
+              {
+                "value": "CANCELLED",
+                "label": "Cancelled"
+              }
+            ]
+          },
+          {
+            "referenceKey": "product-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "catalogue-products",
+            "createWith": {
+              "moduleKey": "product-catalogue",
+              "surfaceKey": "catalogue-products",
+              "permission": "products:create"
+            }
+          }
+        ],
+        "validationRules": [],
+        "views": [
+          {
+            "viewKey": "debit-memos",
+            "label": "Debit memos",
+            "mode": "LIST",
+            "device": "ALL",
+            "searchFields": [
+              "debit-memo-number",
+              "reason"
+            ],
+            "defaultSortField": "debit-memo-number",
+            "defaultSortDirection": "DESC",
+            "tabs": [
+              {
+                "tabKey": "dm-header",
+                "label": "Debit memo",
+                "position": 0,
+                "level": 0,
+                "targetEntityKey": "procurement.debit-memos",
+                "sections": [
+                  {
+                    "sectionKey": "summary",
+                    "label": "Summary",
+                    "collapsible": false,
+                    "defaultCollapsed": false,
+                    "position": 0
+                  },
+                  {
+                    "sectionKey": "parties",
+                    "label": "Vendor",
+                    "collapsible": false,
+                    "defaultCollapsed": false,
+                    "position": 1
+                  },
+                  {
+                    "sectionKey": "source",
+                    "label": "Bill & PO",
+                    "collapsible": false,
+                    "defaultCollapsed": false,
+                    "position": 2
+                  },
+                  {
+                    "sectionKey": "terms",
+                    "label": "Reason",
+                    "collapsible": false,
+                    "defaultCollapsed": false,
+                    "position": 3
+                  },
+                  {
+                    "sectionKey": "first-line",
+                    "label": "First debit line",
+                    "collapsible": false,
+                    "defaultCollapsed": false,
+                    "position": 4
+                  }
+                ],
+                "fields": [
+                  {
+                    "fieldKey": "debit-memo-number",
+                    "position": 0,
+                    "span": 4,
+                    "componentKey": "text-input",
+                    "sectionKey": "summary"
+                  },
+                  {
+                    "fieldKey": "status",
+                    "position": 1,
+                    "span": 4,
+                    "componentKey": "select",
+                    "sectionKey": "summary"
+                  },
+                  {
+                    "fieldKey": "total-amount",
+                    "position": 2,
+                    "span": 4,
+                    "componentKey": "text-input",
+                    "sectionKey": "summary"
+                  },
+                  {
+                    "fieldKey": "vendor-id",
+                    "position": 3,
+                    "span": 6,
+                    "componentKey": "text-input",
+                    "sectionKey": "parties"
+                  },
+                  {
+                    "fieldKey": "vendor-bill-id",
+                    "position": 4,
+                    "span": 6,
+                    "componentKey": "text-input",
+                    "sectionKey": "source"
+                  },
+                  {
+                    "fieldKey": "purchase-order-id",
+                    "position": 5,
+                    "span": 6,
+                    "componentKey": "text-input",
+                    "sectionKey": "source"
+                  },
+                  {
+                    "fieldKey": "currency-code",
+                    "position": 6,
+                    "span": 3,
+                    "componentKey": "text-input",
+                    "sectionKey": "terms"
+                  },
+                  {
+                    "fieldKey": "reason",
+                    "position": 7,
+                    "span": 12,
+                    "componentKey": "text-input",
+                    "sectionKey": "terms"
+                  },
+                  {
+                    "fieldKey": "line-description",
+                    "position": 8,
+                    "span": 8,
+                    "componentKey": "text-input",
+                    "sectionKey": "first-line"
+                  },
+                  {
+                    "fieldKey": "line-product-id",
+                    "position": 9,
+                    "span": 6,
+                    "componentKey": "lookup",
+                    "sectionKey": "first-line"
+                  },
+                  {
+                    "fieldKey": "line-quantity",
+                    "position": 10,
+                    "span": 3,
+                    "componentKey": "number-input",
+                    "sectionKey": "first-line"
+                  },
+                  {
+                    "fieldKey": "line-unit-price-minor",
+                    "position": 11,
+                    "span": 3,
+                    "componentKey": "number-input",
+                    "sectionKey": "first-line"
+                  },
+                  {
+                    "fieldKey": "line-reason",
+                    "position": 12,
+                    "span": 6,
+                    "componentKey": "text-input",
+                    "sectionKey": "first-line"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "navigation": [],
+        "actions": [],
+        "messages": []
+      }
+    }
+  },
+  {
+    "contractVersion": "1.0",
+    "window": {
+      "route": "/procurement",
       "label": "Purchase orders",
       "description": "Create and review purchase order commitments to vendors.",
       "readPermission": "procurement:read"

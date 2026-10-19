@@ -11,6 +11,14 @@ const REQUISITION_STATUS = [
   ['CANCELLED', 'Cancelled'],
 ];
 
+const DEBIT_MEMO_STATUS = [
+  ['DRAFT', 'Draft'],
+  ['ISSUED', 'Issued'],
+  ['APPLIED', 'Applied'],
+  ['REFUNDED', 'Refunded'],
+  ['CANCELLED', 'Cancelled'],
+];
+
 const VENDOR_BILL_STATUS = [
   ['DRAFT', 'Draft'],
   ['SUBMITTED', 'Submitted'],
@@ -112,7 +120,61 @@ export function windowSource(builderFor) {
     field(VB, 'line-product-id', 'Line product', 'REFERENCE', { ref: 'product-ref', writePermission: 'procurement:bills:manage' }),
   ];
 
+  const DM = 'procurement.debit-memos';
+  const dmFields = [
+    field(DM, 'debit-memo-number', 'Debit memo number', 'TEXT', { readOnly: true }),
+    field(DM, 'vendor-id', 'Vendor party', 'TEXT', { required: true, help: 'Active workspace party UUID (supplier).', writePermission: 'procurement:debit-memos:manage' }),
+    field(DM, 'vendor-bill-id', 'Vendor bill', 'TEXT', { writePermission: 'procurement:debit-memos:manage' }),
+    field(DM, 'purchase-order-id', 'Purchase order', 'TEXT', { writePermission: 'procurement:debit-memos:manage' }),
+    field(DM, 'currency-code', 'Currency', 'TEXT', { defaultValue: 'USD', writePermission: 'procurement:debit-memos:manage' }),
+    field(DM, 'reason', 'Reason', 'TEXT', { required: true, writePermission: 'procurement:debit-memos:manage' }),
+    field(DM, 'status', 'Status', 'SELECT', { readOnly: true, ref: 'debit-memo-statuses' }),
+    field(DM, 'total-amount', 'Total (minor units)', 'TEXT', { readOnly: true }),
+    field(DM, 'line-description', 'Line description', 'TEXT', { required: true, writePermission: 'procurement:debit-memos:manage' }),
+    field(DM, 'line-quantity', 'Line quantity', 'NUMBER', { required: true, scale: 6, defaultValue: '1.000000', writePermission: 'procurement:debit-memos:manage' }),
+    field(DM, 'line-unit-price-minor', 'Line unit price (minor)', 'INTEGER', { required: true, writePermission: 'procurement:debit-memos:manage' }),
+    field(DM, 'line-reason', 'Line reason', 'TEXT', { required: true, writePermission: 'procurement:debit-memos:manage', help: 'Defaults to the header reason when empty.' }),
+    field(DM, 'line-product-id', 'Line product', 'REFERENCE', { ref: 'product-ref', writePermission: 'procurement:debit-memos:manage' }),
+  ];
+
   return {
+    'procurement-debit-memos': window(
+      'procurement-debit-memos',
+      'Debit memos',
+      'Debit memos',
+      'Issue vendor debit memos against bills or purchase orders.',
+      'procurement:read',
+      dictionary('procurement-debit-memos', 'Debit memos', DM, [entity(DM, 'Debit memos')], dmFields, [], [
+        values('debit-memo-statuses', DEBIT_MEMO_STATUS),
+        PRODUCT_REF,
+      ], [
+        view('debit-memos', 'Debit memos', [
+          tab('dm-header', 'Debit memo', 0, DM, [
+            ['debit-memo-number', 4, 'summary'],
+            ['status', 4, 'summary'],
+            ['total-amount', 4, 'summary'],
+            ['vendor-id', 6, 'parties'],
+            ['vendor-bill-id', 6, 'source'],
+            ['purchase-order-id', 6, 'source'],
+            ['currency-code', 3, 'terms'],
+            ['reason', 12, 'terms'],
+            ['line-description', 8, 'first-line'],
+            ['line-product-id', 6, 'first-line'],
+            ['line-quantity', 3, 'first-line'],
+            ['line-unit-price-minor', 3, 'first-line'],
+            ['line-reason', 6, 'first-line'],
+          ], dmFields, {
+            sections: [
+              section('summary', 'Summary', 0),
+              section('parties', 'Vendor', 1),
+              section('source', 'Bill & PO', 2),
+              section('terms', 'Reason', 3),
+              section('first-line', 'First debit line', 4),
+            ],
+          }),
+        ], { search: ['debit-memo-number', 'reason'], sort: 'debit-memo-number' }),
+      ]),
+    ),
     'procurement-requisitions': window(
       'procurement-requisitions',
       'Requisitions',

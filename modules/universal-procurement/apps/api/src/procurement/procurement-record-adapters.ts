@@ -1,7 +1,9 @@
 import {
+  CreateDebitMemoInputV1Schema,
   CreatePurchaseOrderInputV1Schema,
   CreateRequisitionInputV1Schema,
   CreateVendorBillInputV1Schema,
+  type DebitMemoV1,
   type ProcurementRequisitionV1,
   type VendorBillV1,
 } from '@gigalibs/contracts';
@@ -69,6 +71,35 @@ function normalizeDatetime(value: unknown, fallbackDaysFromNow: number): string 
   return fallback.toISOString();
 }
 
+function optionalUuid(value: unknown): string | null {
+  if (value === null || value === undefined || value === '') return null;
+  return typeof value === 'string' ? value : null;
+}
+
+function debitMemoToWindow(memo: DebitMemoV1): RecordValues {
+  const line = memo.lines?.[0];
+  const values: Record<string, unknown> = {
+    id: memo.id,
+    version: memo.version,
+    'debit-memo-number': memo.debitMemoNumber,
+    'vendor-id': memo.vendorPartyId,
+    'vendor-bill-id': memo.vendorBillId ?? null,
+    'purchase-order-id': memo.purchaseOrderId ?? null,
+    'currency-code': memo.currencyCode,
+    reason: memo.reason,
+    status: memo.status,
+    'total-amount': memo.totalAmountMinor,
+  };
+  if (line) {
+    values['line-description'] = line.description;
+    values['line-quantity'] = line.quantity;
+    values['line-unit-price-minor'] = line.unitPriceMinor;
+    values['line-reason'] = line.reason;
+    values['line-product-id'] = line.productId ?? null;
+  }
+  return values;
+}
+
 function requisitionToWindow(requisition: ProcurementRequisitionV1): RecordValues {
   const line = requisition.lines?.[0];
   const values: Record<string, unknown> = {
@@ -114,6 +145,53 @@ function vendorBillToWindow(bill: VendorBillV1): RecordValues {
     values['line-product-id'] = line.productId ?? null;
   }
   return values;
+}
+
+const DM_FIELDS: readonly FieldSpec[] = [
+  { key: 'debit-memo-number', domain: 'debitMemoNumber' },
+  { key: 'vendor-id', domain: 'vendorPartyId', writable: true },
+  { key: 'vendor-bill-id', domain: 'vendorBillId', writable: true },
+  { key: 'purchase-order-id', domain: 'purchaseOrderId', writable: true },
+  { key: 'currency-code', domain: 'currencyCode', writable: true },
+  { key: 'reason', writable: true },
+  { key: 'status' },
+  { key: 'total-amount', domain: 'totalAmountMinor' },
+  { key: 'line-description', writable: true },
+  { key: 'line-quantity', writable: true },
+  { key: 'line-unit-price-minor', writable: true },
+  { key: 'line-reason', writable: true },
+  { key: 'line-product-id', writable: true },
+];
+
+/** Maps metadata window values to the debit memo create contract (exported for tests). */
+export function windowValuesToCreateDebitMemoInput(values: RecordValues) {
+  const headerReason = values['reason'];
+  const lineReason = values['line-reason'] ?? headerReason;
+  const input = {
+    vendorPartyId: values['vendor-id'],
+    vendorBillId: optionalUuid(values['vendor-bill-id']),
+    purchaseOrderId: optionalUuid(values['purchase-order-id']),
+    currencyCode: values['currency-code'] ?? 'USD',
+    reason: typeof headerReason === 'string' ? headerReason : '',
+    lines: [
+      {
+        productId: optionalUuid(values['line-product-id']),
+        description: values['line-description'],
+        quantity: String(values['line-quantity'] ?? '1.000000'),
+        unitPriceMinor: String(values['line-unit-price-minor'] ?? '0'),
+        reason: typeof lineReason === 'string' ? lineReason : '',
+      },
+    ],
+  };
+  const parsed = CreateDebitMemoInputV1Schema.safeParse(input);
+  if (!parsed.success) {
+    const issue = parsed.error.issues[0];
+    throw new BadRequestException({
+      code: 'UNIVERSAL_PROCUREMENT_VALIDATION_FAILED',
+      message: `${issue?.path.join('.') ?? 'value'}: ${issue?.message ?? 'invalid'}`,
+    });
+  }
+  return parsed.data;
 }
 
 const REQ_FIELDS: readonly FieldSpec[] = [
@@ -382,5 +460,54 @@ export function procurementRecordDispatcher(deps: { procurement: ProcurementServ
     },
   };
 
-  return new RecordDispatcher([requisitions, purchaseOrders, vendorBills], [], idempotency, shippedRecordRules('universal-procurement'));
+  const debitMemos: RecordAdapter = {
+    entityKey: 'procurement.debit-memos',
+    permissions: { read: 'procurement:read', create: 'procurement:debit-memos:manage' },
+    rest: { read: 'GET v1/debit-memos', create: 'POST v1/debit-memos' },
+    fields: fieldPolicies(DM_FIELDS),
+    searchFields: ['debit-memo-number', 'reason'],
+    sortFields: ['debit-memo-number'],
+    async list(principal: ModulePrincipal, query: RecordListQuery) {
+      let items = (await deps.procurement.listDebitMemos(principal)).map(debitMemoToWindow);
+      if (query.search) {
+        items = items.filter((item) => {
+          const needle = query.search!.toLowerCase();
+          return ['debit-memo-number', 'reason'].some((key) => {
+            const value = item[key];
+            return typeof value === 'string' && value.toLowerCase().includes(needle);
+          });
+        });
+      }
+      const sortField = query.sortField ?? 'debit-memo-number';
+      const direction = query.sortDirection === 'ASC' ? 1 : -1;
+      items.sort((left, right) => {
+        const a = left[sortField];
+        const b = right[sortField];
+        if (typeof a === 'string' && typeof b === 'string') return a.localeCompare(b) * direction;
+        return 0;
+      });
+      const start = (query.page - 1) * query.pageSize;
+      const pageItems = items.slice(start, start + query.pageSize);
+      return { page: query.page, pageSize: query.pageSize, totalItems: items.length, items: pageItems };
+    },
+    async get(principal, id) {
+      try {
+        const memo = await deps.procurement.getDebitMemo(principal, id);
+        return debitMemoToWindow(memo);
+      } catch {
+        return null;
+      }
+    },
+    async create(context, values) {
+      const memo = await deps.procurement.createDebitMemo(context.principal, windowValuesToCreateDebitMemoInput(values));
+      return debitMemoToWindow(memo);
+    },
+  };
+
+  return new RecordDispatcher(
+    [requisitions, purchaseOrders, vendorBills, debitMemos],
+    [],
+    idempotency,
+    shippedRecordRules('universal-procurement'),
+  );
 }
