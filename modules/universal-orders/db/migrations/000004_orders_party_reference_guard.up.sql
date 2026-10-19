@@ -25,8 +25,8 @@ BEGIN
 END;
 $$;
 
-INSERT INTO gigalibs_orders.schema_migrations (version, name)
-VALUES (4, '000004_orders_party_reference_guard')
+INSERT INTO gigalibs_orders.schema_migrations (version)
+VALUES (4)
 ON CONFLICT (version) DO NOTHING;
 
 COMMIT;

@@ -16641,6 +16641,34 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
                 "SUBMITTED"
               ]
             }
+          },
+          {
+            "actionKey": "issue-invoice",
+            "label": "Issue customer invoice",
+            "type": "COMMAND",
+            "handlerKey": "orders.sales-orders.issue-invoice",
+            "requiredPermissions": [
+              "orders:invoices:manage"
+            ],
+            "confirmationPrompt": "Issue a customer invoice for shipped quantities on this order?",
+            "parameters": [
+              {
+                "key": "due-date",
+                "label": "Invoice due date",
+                "type": "DATETIME",
+                "required": true
+              }
+            ],
+            "visibilityCondition": {
+              "field": "status",
+              "operator": "IN",
+              "value": [
+                "CONFIRMED",
+                "PROCESSING",
+                "PARTIALLY_FULFILLED",
+                "FULFILLED"
+              ]
+            }
           }
         ],
         "messages": []
@@ -17126,6 +17154,29 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
                 "CONVERTED",
                 "ACCEPTED"
               ]
+            }
+          },
+          {
+            "actionKey": "convert",
+            "label": "Convert to sales order",
+            "type": "COMMAND",
+            "handlerKey": "orders.sales-quotes.convert",
+            "requiredPermissions": [
+              "orders:quotes:manage"
+            ],
+            "confirmationPrompt": "Create a draft sales order from this accepted quote?",
+            "parameters": [
+              {
+                "key": "warehouse-id",
+                "label": "Fulfillment warehouse UUID",
+                "type": "TEXT",
+                "required": true
+              }
+            ],
+            "visibilityCondition": {
+              "field": "status",
+              "operator": "EQ",
+              "value": "ACCEPTED"
             }
           }
         ],
@@ -18448,6 +18499,41 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
               "field": "status",
               "operator": "EQ",
               "value": "PENDING_APPROVAL"
+            }
+          },
+          {
+            "actionKey": "convert-to-po",
+            "label": "Convert to purchase order",
+            "type": "COMMAND",
+            "handlerKey": "procurement.requisitions.convert-to-po",
+            "requiredPermissions": [
+              "procurement:orders:manage"
+            ],
+            "confirmationPrompt": "Create a draft purchase order from this approved requisition?",
+            "parameters": [
+              {
+                "key": "vendor-id",
+                "label": "Vendor party UUID",
+                "type": "TEXT",
+                "required": true
+              },
+              {
+                "key": "vendor-name",
+                "label": "Vendor name",
+                "type": "TEXT",
+                "required": true
+              },
+              {
+                "key": "destination-warehouse-id",
+                "label": "Ship-to warehouse UUID",
+                "type": "TEXT",
+                "required": true
+              }
+            ],
+            "visibilityCondition": {
+              "field": "status",
+              "operator": "EQ",
+              "value": "APPROVED"
             }
           }
         ],

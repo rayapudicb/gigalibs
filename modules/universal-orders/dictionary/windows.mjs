@@ -77,6 +77,9 @@ export function windowSource(builderFor) {
     tabs,
   });
 
+  const WAREHOUSE_ID_PARAM = [{ key: 'warehouse-id', label: 'Fulfillment warehouse UUID', type: 'TEXT', required: true }];
+  const INVOICE_DUE_PARAM = [{ key: 'due-date', label: 'Invoice due date', type: 'DATETIME', required: true }];
+
   const ORG_UNIT_REF = lookup('org-unit-ref', 'organization-units');
   const WAREHOUSE_REF = lookup('warehouse-ref', 'inventory-warehouses');
   const PRODUCT_REF = lookup('product-ref', 'catalogue-products');
@@ -212,6 +215,15 @@ export function windowSource(builderFor) {
           ['status', 'NOT_IN', ['CANCELLED', 'CONVERTED', 'ACCEPTED']],
           'Mark this quote as accepted by the customer?',
         ),
+        action(
+          SQ,
+          'convert',
+          'Convert to sales order',
+          'orders:quotes:manage',
+          ['status', 'EQ', 'ACCEPTED'],
+          'Create a draft sales order from this accepted quote?',
+          WAREHOUSE_ID_PARAM,
+        ),
       ]),
     ),
     'orders-sales-orders': window(
@@ -264,6 +276,15 @@ export function windowSource(builderFor) {
           'orders:confirm',
           ['status', 'IN', ['DRAFT', 'SUBMITTED']],
           'Confirm this sales order for fulfillment?',
+        ),
+        action(
+          SO,
+          'issue-invoice',
+          'Issue customer invoice',
+          'orders:invoices:manage',
+          ['status', 'IN', ['CONFIRMED', 'PROCESSING', 'PARTIALLY_FULFILLED', 'FULFILLED']],
+          'Issue a customer invoice for shipped quantities on this order?',
+          INVOICE_DUE_PARAM,
         ),
       ]),
     ),

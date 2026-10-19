@@ -544,6 +544,34 @@
               "SUBMITTED"
             ]
           }
+        },
+        {
+          "actionKey": "issue-invoice",
+          "label": "Issue customer invoice",
+          "type": "COMMAND",
+          "handlerKey": "orders.sales-orders.issue-invoice",
+          "requiredPermissions": [
+            "orders:invoices:manage"
+          ],
+          "confirmationPrompt": "Issue a customer invoice for shipped quantities on this order?",
+          "parameters": [
+            {
+              "key": "due-date",
+              "label": "Invoice due date",
+              "type": "DATETIME",
+              "required": true
+            }
+          ],
+          "visibilityCondition": {
+            "field": "status",
+            "operator": "IN",
+            "value": [
+              "CONFIRMED",
+              "PROCESSING",
+              "PARTIALLY_FULFILLED",
+              "FULFILLED"
+            ]
+          }
         }
       ],
       "messages": []

@@ -7,6 +7,7 @@ import {
   MatchPoReceiptRecordV1Schema,
   MatchPoInvoiceRecordV1Schema,
   CreateRequisitionInputV1Schema,
+  ConvertRequisitionToPurchaseOrderInputV1Schema,
   CreatePurchaseOrderInputV1Schema,
   CreateVendorBillInputV1Schema,
   PurchaseOrderIssuedEventV1Schema,
@@ -72,6 +73,15 @@ describe('Procurement Contracts (Phase 6 / WI-OI-092)', () => {
       ],
     };
     const parsed = CreatePurchaseOrderInputV1Schema.safeParse(valid);
+    expect(parsed.success).toBe(true);
+  });
+
+  it('validates ConvertRequisitionToPurchaseOrderInputV1', () => {
+    const parsed = ConvertRequisitionToPurchaseOrderInputV1Schema.safeParse({
+      vendorPartyId: '323e4567-e89b-12d3-a456-426614174000',
+      vendorName: 'SKF Industrial Bearings Inc.',
+      destinationWarehouseId: '423e4567-e89b-12d3-a456-426614174000',
+    });
     expect(parsed.success).toBe(true);
   });
 

@@ -11,7 +11,8 @@
     "start": "node dist/main.js",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run --root ../../../.. modules/universal-procurement/apps/api/src",
-    "proof:real-database": "tsx scripts/real-database-proof.ts"
+    "proof:real-database": "tsx scripts/real-database-proof.ts",
+    "proof:minimal-p2p": "tsx scripts/minimal-p2p-business-flow.ts"
   },
   "dependencies": {
     "@gigalibs/auth-core": "workspace:*",

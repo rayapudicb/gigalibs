@@ -192,29 +192,14 @@ try {
   assert.equal(tenantBReqs.length, 0, 'Tenant B leaked Tenant A requisitions across RLS boundary!');
 
   // ─── Scenario 5: Purchase Order Creation & Issuance ─────────────────────────
-  step('5. Creating Purchase Order with minor unit zero-float arithmetic');
-  const po = await procurement.createPurchaseOrder(tenantA, {
-    orgUnitId: 'unit-procurement-1',
+  step('5. Converting approved requisition to Purchase Order');
+  const po = await procurement.convertRequisitionToPurchaseOrder(tenantA, approvedReq.id, {
     vendorPartyId,
     vendorName: 'Apex Precision Engineering Ltd',
-    currencyCode: 'USD',
     destinationWarehouseId: warehouseId,
-    paymentTermDays: 30,
-    requisitionId: approvedReq.id,
-    lines: [
-      {
-        requisitionLineId: approvedReq.lines[0].id,
-        productId,
-        productCode: 'BEAR-6205',
-        productName: 'Ball Bearing 6205-2RS',
-        orderedQuantity: '100.000000',
-        uomId,
-        unitPriceMinor: '1200',
-        taxRateBasisPoints: 0,
-        destinationWarehouseId: warehouseId,
-      },
-    ],
   });
+  const convertedReq = await procurement.getRequisition(tenantA, approvedReq.id);
+  assert.equal(convertedReq.status, 'CONVERTED');
   assert.equal(po.status, 'DRAFT');
   assert.equal(po.totalAmountMinor, '120000'); // $1,200.00
 

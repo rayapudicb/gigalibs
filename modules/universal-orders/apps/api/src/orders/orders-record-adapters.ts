@@ -395,7 +395,10 @@ export function ordersRecordDispatcher(deps: { orders: OrderService }, idempoten
     rest: {
       read: 'GET v1/quotes',
       create: 'POST v1/quotes',
-      actions: { accept: 'POST v1/quotes/{id}/accept' },
+      actions: {
+        accept: 'POST v1/quotes/{id}/accept',
+        convert: 'POST v1/quotes/{id}/convert',
+      },
     },
     fields: fieldPolicies(SQ_FIELDS),
     searchFields: ['quote-number', 'customer-name'],
@@ -439,6 +442,23 @@ export function ordersRecordDispatcher(deps: { orders: OrderService }, idempoten
             await deps.orders.acceptQuote(context.principal.tenantId, context.principal.subject, id),
           ),
       },
+      convert: {
+        permission: 'orders:quotes:manage',
+        run: async (context, id, parameters) => {
+          const warehouseId = parameters['warehouse-id'];
+          if (typeof warehouseId !== 'string' || warehouseId.length === 0) {
+            throw new BadRequestException('warehouse-id is required to convert a quote.');
+          }
+          await deps.orders.convertQuoteToOrder(
+            context.principal.tenantId,
+            context.principal.subject,
+            id,
+            warehouseId,
+          );
+          const quote = await deps.orders.getQuote(context.principal.tenantId, id);
+          return salesQuoteToWindow(quote);
+        },
+      },
     },
   };
 
@@ -448,7 +468,10 @@ export function ordersRecordDispatcher(deps: { orders: OrderService }, idempoten
     rest: {
       read: 'GET v1/orders',
       create: 'POST v1/orders',
-      actions: { confirm: 'POST v1/orders/{id}/confirm' },
+      actions: {
+        confirm: 'POST v1/orders/{id}/confirm',
+        'issue-invoice': 'POST v1/invoices',
+      },
     },
     fields: fieldPolicies(SO_FIELDS),
     searchFields: ['order-number', 'customer-name'],
@@ -491,6 +514,17 @@ export function ordersRecordDispatcher(deps: { orders: OrderService }, idempoten
           salesOrderToWindow(
             await deps.orders.confirmOrder(context.principal.tenantId, context.principal.subject, id),
           ),
+      },
+      'issue-invoice': {
+        permission: 'orders:invoices:manage',
+        run: async (context, id, parameters) => {
+          const dueDate = normalizeDatetime(parameters['due-date'], 30);
+          await deps.orders.createCustomerInvoice(context.principal.tenantId, context.principal.subject, {
+            orderId: id,
+            dueDate,
+          });
+          return salesOrderToWindow(await deps.orders.getOrder(context.principal.tenantId, id));
+        },
       },
     },
   };

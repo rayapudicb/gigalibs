@@ -61,8 +61,8 @@ Applied in map file (2026-10-19):
 | Outcome | Status | Evidence |
 |---------|--------|----------|
 | Maintenance: request → assign → execute → **sign-off/close** | **Partial** | UAT mig 22 + supervisor sign-off API; journey `e55hku` failed technician path (fixed in git); re-run needed |
-| P2P | **Not met** | No journey; hard-coded proc UI |
-| O2C | **Not met** | AR off stack |
+| P2P | **Partial (git)** | Minimal flow + F0 actions + `proof:minimal-p2p`; no UAT journey yet |
+| O2C | **Partial (git)** | Minimal flow + F0 actions + `proof:minimal-o2c`; AR still off compose |
 | Inventory receipt → subledger → GL | **Not met** on running stack | Table 2 complete in git `0a0e787+`; local profile missing inventory docker deps (audit 2026-10-19) |
 | Phase 1 CMMS exit (plan v3) | **Not met** | Checklist row 1 open until 0-blocker journey + owner tick |
 

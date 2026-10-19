@@ -415,6 +415,41 @@
             "operator": "EQ",
             "value": "PENDING_APPROVAL"
           }
+        },
+        {
+          "actionKey": "convert-to-po",
+          "label": "Convert to purchase order",
+          "type": "COMMAND",
+          "handlerKey": "procurement.requisitions.convert-to-po",
+          "requiredPermissions": [
+            "procurement:orders:manage"
+          ],
+          "confirmationPrompt": "Create a draft purchase order from this approved requisition?",
+          "parameters": [
+            {
+              "key": "vendor-id",
+              "label": "Vendor party UUID",
+              "type": "TEXT",
+              "required": true
+            },
+            {
+              "key": "vendor-name",
+              "label": "Vendor name",
+              "type": "TEXT",
+              "required": true
+            },
+            {
+              "key": "destination-warehouse-id",
+              "label": "Ship-to warehouse UUID",
+              "type": "TEXT",
+              "required": true
+            }
+          ],
+          "visibilityCondition": {
+            "field": "status",
+            "operator": "EQ",
+            "value": "APPROVED"
+          }
         }
       ],
       "messages": []

@@ -478,6 +478,29 @@
               "ACCEPTED"
             ]
           }
+        },
+        {
+          "actionKey": "convert",
+          "label": "Convert to sales order",
+          "type": "COMMAND",
+          "handlerKey": "orders.sales-quotes.convert",
+          "requiredPermissions": [
+            "orders:quotes:manage"
+          ],
+          "confirmationPrompt": "Create a draft sales order from this accepted quote?",
+          "parameters": [
+            {
+              "key": "warehouse-id",
+              "label": "Fulfillment warehouse UUID",
+              "type": "TEXT",
+              "required": true
+            }
+          ],
+          "visibilityCondition": {
+            "field": "status",
+            "operator": "EQ",
+            "value": "ACCEPTED"
+          }
         }
       ],
       "messages": []

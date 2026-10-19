@@ -273,6 +273,7 @@ try {
     tenantA.tenantId,
     tenantA.subject,
     partialFulfillment.id,
+    randomUUID(),
   );
   assert.equal(dispatchedFO.status, 'SHIPPED');
 

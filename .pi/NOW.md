@@ -74,7 +74,8 @@ keeps the full rules.
 14. **WI-OI-120gq** — **Built:** procurement debit memos window + `/procurement` tab (see git log on branch).
 15. **WI-OI-120gr** — **Built** in git **`7d78ba84`**: requisition submit/approve + vendor bill approve F0 actions on procurement windows.
 16. **WI-OI-120gs** — **Built** in git **`01f66dbd`**: quote accept + SO confirm + PO issue/acknowledge F0 actions.
-17. **Next code** — remaining actions (quote convert, fulfillment dispatch needs issueId) or **WI-OI-120gf** (M-AR0); **120gd** journey password.
+17. **WI-OI-120gt** — **Built (local):** minimal P2P + O2C flows ([TABLE-1-MINIMAL-FLOWS.md](TABLE-1-MINIMAL-FLOWS.md)); `proof:minimal-p2p` / `proof:minimal-o2c`.
+18. **Next code** — compose E2E journeys for P2P/O2C UI, **WI-OI-120gf** (M-AR0), fulfillment dispatch + inventory issueId; **120gd** journey password.
 
 ## Built, not yet on UAT
 

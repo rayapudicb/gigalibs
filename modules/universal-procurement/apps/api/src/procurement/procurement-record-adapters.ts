@@ -339,6 +339,7 @@ export function procurementRecordDispatcher(deps: { procurement: ProcurementServ
       actions: {
         submit: 'POST v1/requisitions/{id}/submit',
         approve: 'POST v1/requisitions/{id}/approve',
+        'convert-to-po': 'POST v1/requisitions/{id}/convert-to-po',
       },
     },
     fields: fieldPolicies(REQ_FIELDS),
@@ -392,6 +393,27 @@ export function procurementRecordDispatcher(deps: { procurement: ProcurementServ
         permission: 'procurement:requisitions:approve',
         run: async (context, id) =>
           requisitionToWindow(await deps.procurement.approveRequisition(context.principal, id)),
+      },
+      'convert-to-po': {
+        permission: 'procurement:orders:manage',
+        run: async (context, id, parameters) => {
+          const vendorId = parameters['vendor-id'];
+          const vendorName = parameters['vendor-name'];
+          const warehouseId = parameters['destination-warehouse-id'];
+          if (typeof vendorId !== 'string' || typeof vendorName !== 'string' || typeof warehouseId !== 'string') {
+            throw new BadRequestException({
+              code: 'UNIVERSAL_PROCUREMENT_VALIDATION_FAILED',
+              message: 'vendor-id, vendor-name, and destination-warehouse-id are required.',
+            });
+          }
+          await deps.procurement.convertRequisitionToPurchaseOrder(context.principal, id, {
+            vendorPartyId: vendorId,
+            vendorName,
+            destinationWarehouseId: warehouseId,
+          });
+          const requisition = await deps.procurement.getRequisition(context.principal, id);
+          return requisitionToWindow(requisition);
+        },
       },
     },
   };

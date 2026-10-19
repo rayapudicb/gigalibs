@@ -8,6 +8,8 @@ import {
   CreateDebitMemoInputV1Schema,
   type CreatePurchaseOrderInputV1,
   CreatePurchaseOrderInputV1Schema,
+  type ConvertRequisitionToPurchaseOrderInputV1,
+  ConvertRequisitionToPurchaseOrderInputV1Schema,
   type CreateRequisitionInputV1,
   CreateRequisitionInputV1Schema,
   type CreateVendorBillInputV1,
@@ -87,6 +89,18 @@ export class ProcurementController {
     @Param('id') id: string,
   ): Promise<ProcurementRequisitionV1> {
     return this.service.approveRequisition(principal, id);
+  }
+
+  @Post('requisitions/:id/convert-to-po')
+  @HttpCode(200)
+  @RequirePermissions('procurement:orders:manage')
+  async convertRequisitionToPurchaseOrder(
+    @CurrentPrincipal() principal: ModulePrincipal,
+    @Param('id') id: string,
+    @Body() body: unknown,
+  ): Promise<PurchaseOrderV1> {
+    const input = parse(ConvertRequisitionToPurchaseOrderInputV1Schema, body);
+    return this.service.convertRequisitionToPurchaseOrder(principal, id, input);
   }
 
   @Post('requisitions/:id/reject')

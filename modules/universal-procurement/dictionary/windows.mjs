@@ -63,6 +63,12 @@ export function windowSource(builderFor) {
     tabs,
   });
 
+  const CONVERT_REQ_PARAMS = [
+    { key: 'vendor-id', label: 'Vendor party UUID', type: 'TEXT', required: true },
+    { key: 'vendor-name', label: 'Vendor name', type: 'TEXT', required: true },
+    { key: 'destination-warehouse-id', label: 'Ship-to warehouse UUID', type: 'TEXT', required: true },
+  ];
+
   const ORG_UNIT_REF = lookup('org-unit-ref', 'organization-units');
   const WAREHOUSE_REF = lookup('warehouse-ref', 'inventory-warehouses');
   const PRODUCT_REF = lookup('product-ref', 'catalogue-products');
@@ -226,6 +232,15 @@ export function windowSource(builderFor) {
           'procurement:requisitions:approve',
           ['status', 'EQ', 'PENDING_APPROVAL'],
           'Approve this requisition?',
+        ),
+        action(
+          REQ,
+          'convert-to-po',
+          'Convert to purchase order',
+          'procurement:orders:manage',
+          ['status', 'EQ', 'APPROVED'],
+          'Create a draft purchase order from this approved requisition?',
+          CONVERT_REQ_PARAMS,
         ),
       ]),
     ),

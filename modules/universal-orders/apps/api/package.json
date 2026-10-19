@@ -11,7 +11,8 @@
     "start": "node dist/main.js",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run --root ../../../.. modules/universal-orders/apps/api/src",
-    "proof:real-database": "tsx scripts/real-database-proof.ts"
+    "proof:real-database": "tsx scripts/real-database-proof.ts",
+    "proof:minimal-o2c": "tsx scripts/minimal-o2c-business-flow.ts"
   },
   "dependencies": {
     "@gigalibs/auth-core": "workspace:*",

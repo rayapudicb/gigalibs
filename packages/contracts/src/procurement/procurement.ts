@@ -429,6 +429,18 @@ export const CreatePurchaseOrderInputV1Schema = z
   .strict();
 export type CreatePurchaseOrderInputV1 = z.infer<typeof CreatePurchaseOrderInputV1Schema>;
 
+/** Converts an APPROVED requisition into a draft purchase order (iDempiere-style req → PO). */
+export const ConvertRequisitionToPurchaseOrderInputV1Schema = z
+  .object({
+    vendorPartyId: z.string().uuid(),
+    vendorName: z.string().min(1).max(200),
+    destinationWarehouseId: z.string().uuid(),
+  })
+  .strict();
+export type ConvertRequisitionToPurchaseOrderInputV1 = z.infer<
+  typeof ConvertRequisitionToPurchaseOrderInputV1Schema
+>;
+
 export const MatchReceiptInputV1Schema = z
   .object({
     purchaseOrderId: z.string().uuid(),

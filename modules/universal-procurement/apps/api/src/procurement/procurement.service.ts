@@ -5,6 +5,7 @@ import {
   type ApprovePriceVarianceInputV1,
   type CreateApprovalPolicyInputV1,
   type CreateDebitMemoInputV1,
+  type ConvertRequisitionToPurchaseOrderInputV1,
   type CreatePurchaseOrderInputV1,
   type CreateRequisitionInputV1,
   type CreateVendorBillInputV1,
@@ -294,6 +295,63 @@ export class ProcurementService {
 
       return this.fetchRequisition(client, principal.tenantId, id);
     });
+  }
+
+  /** Approved requisition → draft PO; marks requisition CONVERTED (Table 1 minimal P2P). */
+  async convertRequisitionToPurchaseOrder(
+    principal: ModulePrincipal,
+    requisitionId: string,
+    input: ConvertRequisitionToPurchaseOrderInputV1,
+  ): Promise<PurchaseOrderV1> {
+    const req = await this.getRequisition(principal, requisitionId);
+    if (req.status !== 'APPROVED') {
+      throw new ConflictException(
+        `Requisition ${req.requisitionNumber} must be APPROVED before PO conversion (current: ${req.status}).`,
+      );
+    }
+    if (!req.lines?.length) {
+      throw new BadRequestException('Requisition has no lines to convert.');
+    }
+
+    const po = await this.createPurchaseOrder(principal, {
+      orgUnitId: req.orgUnitId,
+      vendorPartyId: input.vendorPartyId,
+      vendorName: input.vendorName,
+      currencyCode: req.currencyCode,
+      destinationWarehouseId: input.destinationWarehouseId,
+      requisitionId: req.id,
+      lines: req.lines.map((line) => ({
+        requisitionLineId: line.id,
+        productId: line.productId,
+        productCode: line.productCode,
+        productName: line.productName,
+        orderedQuantity: line.quantity,
+        uomId: line.uomId,
+        unitPriceMinor: line.estimatedUnitPriceMinor,
+        destinationWarehouseId: input.destinationWarehouseId,
+      })),
+    });
+
+    await this.database.withTenantTransaction(principal.tenantId, async (client) => {
+      const locked = await this.fetchRequisition(client, principal.tenantId, requisitionId);
+      if (locked.status !== 'APPROVED') {
+        throw new ConflictException('Requisition status changed during PO conversion.');
+      }
+      await client.query(
+        `UPDATE ${SCHEMA}.procurement_requisitions
+         SET status = 'CONVERTED', updated_at = NOW(), updated_by = $1
+         WHERE tenant_id = $2 AND id = $3`,
+        [principal.subject, principal.tenantId, requisitionId],
+      );
+      await client.query(
+        `UPDATE ${SCHEMA}.procurement_requisition_lines
+         SET status = 'CONVERTED', updated_at = NOW()
+         WHERE tenant_id = $1 AND requisition_id = $2`,
+        [principal.tenantId, requisitionId],
+      );
+    });
+
+    return po;
   }
 
   // ─── 2. Purchase Orders ──────────────────────────────────────────────────────
