@@ -78,7 +78,7 @@ keeps the full rules.
 18. **WI-OI-120gu** — **Built** in git **`90336704`:** Playwright minimal P2P/O2C compose flow + BFF `convert-to-po` gateway route.
 19. **WI-OI-120gv** — **Built** in git **`85d2b36c`:** SO **allocate** + fulfillment **dispatch** (`issue-id`) F0 metadata actions.
 20. **WI-OI-120gw** — **Built** in git **`9f5021df`:** M-AR0 E1 — AR API in root build; nest helper packages fixed.
-21. **WI-OI-120gx** — **Built** (pending commit): AR `ar-api` image + compose migrations/service; BFF `ar-api` host.
+21. **WI-OI-120gx** — **Built** in git **`1e0f7a38`:** AR `ar-api` image + compose migrations/service; BFF `ar-api` host.
 22. **Next code** — **WI-OI-120gf** (module SDK + boundary tests); **120gd** journey password.
 
 ## Built, not yet on UAT
