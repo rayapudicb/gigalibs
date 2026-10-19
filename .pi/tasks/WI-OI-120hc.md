@@ -1,6 +1,6 @@
 # WI-OI-120hc: Relay test fixtures include inboxPath
 
-- **Status:** Built (2026-10-19; not on UAT)
+- **Status:** Built (2026-10-19; git `6c29fe92`; not on UAT)
 - **Work item:** Unblocks **WI-OI-120gf** / root `pnpm verify` after module-sdk relay `inboxPath` (Table 2 relay hardening).
 
 ## Goal
