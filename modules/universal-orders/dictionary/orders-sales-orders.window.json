@@ -546,6 +546,24 @@
           }
         },
         {
+          "actionKey": "allocate",
+          "label": "Allocate inventory",
+          "type": "COMMAND",
+          "handlerKey": "orders.sales-orders.allocate",
+          "requiredPermissions": [
+            "orders:allocate"
+          ],
+          "confirmationPrompt": "Allocate the first order line at the order ship-to warehouse?",
+          "visibilityCondition": {
+            "field": "status",
+            "operator": "IN",
+            "value": [
+              "CONFIRMED",
+              "PROCESSING"
+            ]
+          }
+        },
+        {
           "actionKey": "issue-invoice",
           "label": "Issue customer invoice",
           "type": "COMMAND",

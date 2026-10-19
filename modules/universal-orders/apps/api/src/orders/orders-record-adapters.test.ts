@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import type { SalesOrderV1 } from '@gigalibs/contracts';
 import {
+  salesOrderToAllocateFirstLineInput,
   windowValuesToCreateCustomerCreditMemoInput,
   windowValuesToCreateCustomerInvoiceInput,
   windowValuesToCreateFulfillmentOrderInput,
@@ -88,5 +90,26 @@ describe('windowValuesToCreateSalesOrderInput', () => {
     expect(input.lines).toHaveLength(1);
     expect(input.lines[0]?.warehouseId).toBe('550e8400-e29b-41d4-a716-446655440000');
     expect(input.lines[0]?.unitPriceMinor).toBe('500');
+  });
+});
+
+describe('salesOrderToAllocateFirstLineInput', () => {
+  it('allocates remaining quantity on the first line at the order warehouse', () => {
+    const order = {
+      warehouseId: '550e8400-e29b-41d4-a716-446655440000',
+      lines: [
+        {
+          id: '660e8400-e29b-41d4-a716-446655440001',
+          warehouseId: '770e8400-e29b-41d4-a716-446655440002',
+          orderedQuantity: '5.000000',
+          allocatedQuantity: '2.000000',
+        },
+      ],
+    } as SalesOrderV1;
+    const input = salesOrderToAllocateFirstLineInput(order, '880e8400-e29b-41d4-a716-446655440003');
+    expect(input.orderId).toBe('880e8400-e29b-41d4-a716-446655440003');
+    expect(input.orderLineId).toBe('660e8400-e29b-41d4-a716-446655440001');
+    expect(input.warehouseId).toBe('550e8400-e29b-41d4-a716-446655440000');
+    expect(input.allocatedQuantity).toBe('3.000000');
   });
 });

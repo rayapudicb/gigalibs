@@ -159,6 +159,30 @@ function salesOrderToWindow(order: SalesOrderV1): RecordValues {
   return values;
 }
 
+/** Maps a sales order to allocate-first-line input (exported for tests). */
+export function salesOrderToAllocateFirstLineInput(order: SalesOrderV1, orderId: string) {
+  const line = order.lines?.[0];
+  if (!line) {
+    throw new BadRequestException('Sales order has no lines to allocate.');
+  }
+  const warehouseId = order.warehouseId ?? line.warehouseId;
+  if (!warehouseId) {
+    throw new BadRequestException('warehouse-id is required to allocate inventory.');
+  }
+  const ordered = Number.parseFloat(line.orderedQuantity);
+  const allocated = Number.parseFloat(line.allocatedQuantity ?? '0');
+  const remaining = ordered - allocated;
+  if (!Number.isFinite(remaining) || remaining <= 0) {
+    throw new BadRequestException('First order line is already fully allocated.');
+  }
+  return {
+    orderId,
+    orderLineId: line.id,
+    warehouseId,
+    allocatedQuantity: remaining.toFixed(6),
+  };
+}
+
 const SQ_FIELDS: readonly FieldSpec[] = [
   { key: 'quote-number' },
   { key: 'org-unit-id', writable: true },
@@ -470,6 +494,7 @@ export function ordersRecordDispatcher(deps: { orders: OrderService }, idempoten
       create: 'POST v1/orders',
       actions: {
         confirm: 'POST v1/orders/{id}/confirm',
+        allocate: 'POST v1/orders/{id}/allocate',
         'issue-invoice': 'POST v1/invoices',
       },
     },
@@ -515,6 +540,16 @@ export function ordersRecordDispatcher(deps: { orders: OrderService }, idempoten
             await deps.orders.confirmOrder(context.principal.tenantId, context.principal.subject, id),
           ),
       },
+      allocate: {
+        permission: 'orders:allocate',
+        run: async (context, id) => {
+          const order = await deps.orders.getOrder(context.principal.tenantId, id);
+          const input = salesOrderToAllocateFirstLineInput(order, id);
+          return salesOrderToWindow(
+            await deps.orders.allocateOrderLine(context.principal.tenantId, context.principal.subject, input),
+          );
+        },
+      },
       'issue-invoice': {
         permission: 'orders:invoices:manage',
         run: async (context, id, parameters) => {
@@ -532,7 +567,11 @@ export function ordersRecordDispatcher(deps: { orders: OrderService }, idempoten
   const fulfillmentOrders: RecordAdapter = {
     entityKey: 'orders.fulfillment-orders',
     permissions: { read: 'orders:read', create: 'orders:fulfill' },
-    rest: { read: 'GET v1/fulfillments', create: 'POST v1/fulfillments' },
+    rest: {
+      read: 'GET v1/fulfillments',
+      create: 'POST v1/fulfillments',
+      actions: { dispatch: 'POST v1/fulfillments/{id}/dispatch' },
+    },
     fields: fieldPolicies(FO_FIELDS),
     searchFields: ['fulfillment-number'],
     sortFields: ['fulfillment-number'],
@@ -566,6 +605,25 @@ export function ordersRecordDispatcher(deps: { orders: OrderService }, idempoten
         windowValuesToCreateFulfillmentOrderInput(values),
       );
       return fulfillmentOrderToWindow(fulfillment);
+    },
+    actions: {
+      dispatch: {
+        permission: 'orders:fulfill',
+        run: async (context, id, parameters) => {
+          const issueId = parameters['issue-id'];
+          if (typeof issueId !== 'string' || issueId.trim().length === 0) {
+            throw new BadRequestException('issue-id is required to dispatch a fulfillment.');
+          }
+          return fulfillmentOrderToWindow(
+            await deps.orders.dispatchFulfillment(
+              context.principal.tenantId,
+              context.principal.subject,
+              id,
+              issueId.trim(),
+            ),
+          );
+        },
+      },
     },
   };
 

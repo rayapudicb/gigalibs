@@ -79,6 +79,7 @@ export function windowSource(builderFor) {
 
   const WAREHOUSE_ID_PARAM = [{ key: 'warehouse-id', label: 'Fulfillment warehouse UUID', type: 'TEXT', required: true }];
   const INVOICE_DUE_PARAM = [{ key: 'due-date', label: 'Invoice due date', type: 'DATETIME', required: true }];
+  const INVENTORY_ISSUE_PARAM = [{ key: 'issue-id', label: 'Inventory issue UUID', type: 'TEXT', required: true }];
 
   const ORG_UNIT_REF = lookup('org-unit-ref', 'organization-units');
   const WAREHOUSE_REF = lookup('warehouse-ref', 'inventory-warehouses');
@@ -279,6 +280,14 @@ export function windowSource(builderFor) {
         ),
         action(
           SO,
+          'allocate',
+          'Allocate inventory',
+          'orders:allocate',
+          ['status', 'IN', ['CONFIRMED', 'PROCESSING']],
+          'Allocate the first order line at the order ship-to warehouse?',
+        ),
+        action(
+          SO,
           'issue-invoice',
           'Issue customer invoice',
           'orders:invoices:manage',
@@ -317,6 +326,16 @@ export function windowSource(builderFor) {
             ],
           }),
         ], { search: ['fulfillment-number'], sort: 'fulfillment-number' }),
+      ], [
+        action(
+          FO,
+          'dispatch',
+          'Dispatch shipment',
+          'orders:fulfill',
+          ['status', 'IN', ['RELEASED', 'PICKING', 'PACKED']],
+          'Dispatch this fulfillment and record inventory issue proof?',
+          INVENTORY_ISSUE_PARAM,
+        ),
       ]),
     ),
     'orders-customer-credit-memos': window(

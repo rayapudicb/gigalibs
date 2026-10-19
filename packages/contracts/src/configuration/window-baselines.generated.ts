@@ -16090,7 +16090,35 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
           }
         ],
         "navigation": [],
-        "actions": [],
+        "actions": [
+          {
+            "actionKey": "dispatch",
+            "label": "Dispatch shipment",
+            "type": "COMMAND",
+            "handlerKey": "orders.fulfillment-orders.dispatch",
+            "requiredPermissions": [
+              "orders:fulfill"
+            ],
+            "confirmationPrompt": "Dispatch this fulfillment and record inventory issue proof?",
+            "parameters": [
+              {
+                "key": "issue-id",
+                "label": "Inventory issue UUID",
+                "type": "TEXT",
+                "required": true
+              }
+            ],
+            "visibilityCondition": {
+              "field": "status",
+              "operator": "IN",
+              "value": [
+                "RELEASED",
+                "PICKING",
+                "PACKED"
+              ]
+            }
+          }
+        ],
         "messages": []
       }
     }
@@ -16639,6 +16667,24 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
               "value": [
                 "DRAFT",
                 "SUBMITTED"
+              ]
+            }
+          },
+          {
+            "actionKey": "allocate",
+            "label": "Allocate inventory",
+            "type": "COMMAND",
+            "handlerKey": "orders.sales-orders.allocate",
+            "requiredPermissions": [
+              "orders:allocate"
+            ],
+            "confirmationPrompt": "Allocate the first order line at the order ship-to warehouse?",
+            "visibilityCondition": {
+              "field": "status",
+              "operator": "IN",
+              "value": [
+                "CONFIRMED",
+                "PROCESSING"
               ]
             }
           },

@@ -76,7 +76,8 @@ keeps the full rules.
 16. **WI-OI-120gs** — **Built** in git **`01f66dbd`**: quote accept + SO confirm + PO issue/acknowledge F0 actions.
 17. **WI-OI-120gt** — **Built** in git **`8d979683`**: minimal P2P + O2C ([TABLE-1-MINIMAL-FLOWS.md](TABLE-1-MINIMAL-FLOWS.md)); `proof:minimal-p2p` / `proof:minimal-o2c`.
 18. **WI-OI-120gu** — **Built** in git **`90336704`:** Playwright minimal P2P/O2C compose flow + BFF `convert-to-po` gateway route.
-19. **Next code** — **WI-OI-120gf** (M-AR0), UI-driven metadata journeys, fulfillment dispatch + inventory issueId; **120gd** journey password.
+19. **WI-OI-120gv** — **Built** (pending commit): SO **allocate** + fulfillment **dispatch** (`issue-id`) F0 metadata actions.
+20. **Next code** — **WI-OI-120gf** (M-AR0 on compose); **120gd** journey password.
 
 ## Built, not yet on UAT
 
