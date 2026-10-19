@@ -1213,6 +1213,43 @@ export class OrderService {
     });
   }
 
+  async getCustomerCreditMemo(tenantId: string, creditMemoId: string): Promise<CustomerCreditMemoV1> {
+    return this.database.withTenantTransaction(tenantId, async (client) => {
+      const res = await client.query(
+        `SELECT * FROM gigalibs_orders.customer_credit_memos WHERE tenant_id = $1 AND id = $2`,
+        [tenantId, creditMemoId],
+      );
+      if (res.rows.length === 0) throw new NotFoundException('Credit memo not found');
+      const lines = await client.query(
+        `SELECT * FROM gigalibs_orders.customer_credit_memo_lines WHERE tenant_id = $1 AND credit_memo_id = $2 ORDER BY line_number ASC`,
+        [tenantId, creditMemoId],
+      );
+      return this.mapCreditMemo(res.rows[0], lines.rows);
+    });
+  }
+
+  async listCustomerCreditMemos(principal: { tenantId: string }): Promise<CustomerCreditMemoV1[]> {
+    return this.database.withTenantTransaction(principal.tenantId, async (client) => {
+      const res = await client.query<{ id: string }>(
+        `SELECT id FROM gigalibs_orders.customer_credit_memos WHERE tenant_id = $1 ORDER BY created_at DESC`,
+        [principal.tenantId],
+      );
+      const items: CustomerCreditMemoV1[] = [];
+      for (const row of res.rows) {
+        const cmRes = await client.query(`SELECT * FROM gigalibs_orders.customer_credit_memos WHERE tenant_id = $1 AND id = $2`, [
+          principal.tenantId,
+          row.id,
+        ]);
+        const lines = await client.query(
+          `SELECT * FROM gigalibs_orders.customer_credit_memo_lines WHERE tenant_id = $1 AND credit_memo_id = $2 ORDER BY line_number ASC`,
+          [principal.tenantId, row.id],
+        );
+        items.push(this.mapCreditMemo(cmRes.rows[0], lines.rows));
+      }
+      return items;
+    });
+  }
+
   // ─── Mapping Helpers ───────────────────────────────────────────────────────
 
   private mapQuote(row: any, lines: any[] = []): SalesQuoteV1 {
@@ -1420,13 +1457,13 @@ export class OrderService {
         id: l.id ?? '00000000-0000-0000-0000-000000000000',
         tenantId: row.tenant_id,
         creditMemoId: row.id,
-        lineNumber: l.lineNumber ?? 1,
-        productId: l.productId,
-        quantity: l.quantity.toString(),
-        unitPriceMinor: l.unitPriceMinor.toString(),
-        lineTotalMinor: l.lineTotalMinor.toString(),
+        lineNumber: l.line_number ?? l.lineNumber ?? 1,
+        productId: l.product_id ?? l.productId ?? null,
+        quantity: (l.quantity ?? '0').toString(),
+        unitPriceMinor: (l.unit_price_minor ?? l.unitPriceMinor ?? '0').toString(),
+        lineTotalMinor: (l.line_total_minor ?? l.lineTotalMinor ?? '0').toString(),
         reason: l.reason,
-        createdAt: new Date().toISOString(),
+        createdAt: l.created_at ? new Date(l.created_at).toISOString() : new Date().toISOString(),
       })),
       createdAt: new Date(row.created_at).toISOString(),
       updatedAt: new Date(row.updated_at).toISOString(),

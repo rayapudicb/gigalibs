@@ -1,0 +1,364 @@
+{
+  "contractVersion": "1.0",
+  "window": {
+    "route": "/orders",
+    "label": "Credit memos",
+    "description": "Issue customer credit memos for returns and billing adjustments.",
+    "readPermission": "orders:read"
+  },
+  "definition": {
+    "kind": "APPLICATION_DICTIONARY",
+    "contractVersion": "1.0",
+    "moduleKey": "universal-orders",
+    "entityKey": "orders-customer-credit-memos",
+    "surfaceKey": "orders-customer-credit-memos",
+    "title": "Credit memos",
+    "dictionary": {
+      "packageKey": "orders-customer-credit-memos-module-baseline",
+      "name": "Credit memos",
+      "version": "1.0.0",
+      "moduleKey": "universal-orders",
+      "targetEntityKey": "orders.customer-credit-memos",
+      "entities": [
+        {
+          "entityKey": "orders.customer-credit-memos",
+          "moduleKey": "universal-orders",
+          "label": "Customer credit memos",
+          "ownership": "MODULE_CORE",
+          "primaryKeyField": "id",
+          "isVersioned": true,
+          "isAuditLogged": true,
+          "isSoftDeletable": false
+        }
+      ],
+      "fields": [
+        {
+          "fieldKey": "credit-memo-number",
+          "entityKey": "orders.customer-credit-memos",
+          "label": "Credit memo number",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "customer-id",
+          "entityKey": "orders.customer-credit-memos",
+          "label": "Customer party",
+          "type": "TEXT",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "helpText": "Active workspace party UUID (customer).",
+          "writePermission": "orders:credit-memos:manage"
+        },
+        {
+          "fieldKey": "order-id",
+          "entityKey": "orders.customer-credit-memos",
+          "label": "Sales order",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "writePermission": "orders:credit-memos:manage"
+        },
+        {
+          "fieldKey": "invoice-id",
+          "entityKey": "orders.customer-credit-memos",
+          "label": "Customer invoice",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "writePermission": "orders:credit-memos:manage"
+        },
+        {
+          "fieldKey": "currency-code",
+          "entityKey": "orders.customer-credit-memos",
+          "label": "Currency",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "writePermission": "orders:credit-memos:manage",
+          "defaultValue": "USD"
+        },
+        {
+          "fieldKey": "reason",
+          "entityKey": "orders.customer-credit-memos",
+          "label": "Reason",
+          "type": "TEXT",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "writePermission": "orders:credit-memos:manage"
+        },
+        {
+          "fieldKey": "status",
+          "entityKey": "orders.customer-credit-memos",
+          "label": "Status",
+          "type": "SELECT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "credit-memo-statuses"
+        },
+        {
+          "fieldKey": "total-amount",
+          "entityKey": "orders.customer-credit-memos",
+          "label": "Total (minor units)",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "line-quantity",
+          "entityKey": "orders.customer-credit-memos",
+          "label": "Line quantity",
+          "type": "NUMBER",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "scale": 6,
+          "writePermission": "orders:credit-memos:manage",
+          "defaultValue": "1.000000"
+        },
+        {
+          "fieldKey": "line-unit-price-minor",
+          "entityKey": "orders.customer-credit-memos",
+          "label": "Line unit price (minor)",
+          "type": "INTEGER",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "writePermission": "orders:credit-memos:manage"
+        },
+        {
+          "fieldKey": "line-reason",
+          "entityKey": "orders.customer-credit-memos",
+          "label": "Line reason",
+          "type": "TEXT",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "helpText": "Defaults to the header reason when empty.",
+          "writePermission": "orders:credit-memos:manage"
+        },
+        {
+          "fieldKey": "line-product-id",
+          "entityKey": "orders.customer-credit-memos",
+          "label": "Line product",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "writePermission": "orders:credit-memos:manage"
+        }
+      ],
+      "relationships": [],
+      "references": [
+        {
+          "referenceKey": "credit-memo-statuses",
+          "referenceType": "VALUE_LIST",
+          "staticValues": [
+            {
+              "value": "DRAFT",
+              "label": "Draft"
+            },
+            {
+              "value": "ISSUED",
+              "label": "Issued"
+            },
+            {
+              "value": "APPLIED",
+              "label": "Applied"
+            },
+            {
+              "value": "REFUNDED",
+              "label": "Refunded"
+            },
+            {
+              "value": "CANCELLED",
+              "label": "Cancelled"
+            }
+          ]
+        }
+      ],
+      "validationRules": [],
+      "views": [
+        {
+          "viewKey": "customer-credit-memos",
+          "label": "Credit memos",
+          "mode": "LIST",
+          "device": "ALL",
+          "searchFields": [
+            "credit-memo-number",
+            "reason"
+          ],
+          "defaultSortField": "credit-memo-number",
+          "defaultSortDirection": "DESC",
+          "tabs": [
+            {
+              "tabKey": "cm-header",
+              "label": "Credit memo",
+              "position": 0,
+              "level": 0,
+              "targetEntityKey": "orders.customer-credit-memos",
+              "sections": [
+                {
+                  "sectionKey": "summary",
+                  "label": "Summary",
+                  "collapsible": false,
+                  "defaultCollapsed": false,
+                  "position": 0
+                },
+                {
+                  "sectionKey": "parties",
+                  "label": "Customer",
+                  "collapsible": false,
+                  "defaultCollapsed": false,
+                  "position": 1
+                },
+                {
+                  "sectionKey": "source",
+                  "label": "Order & invoice",
+                  "collapsible": false,
+                  "defaultCollapsed": false,
+                  "position": 2
+                },
+                {
+                  "sectionKey": "terms",
+                  "label": "Commercial reason",
+                  "collapsible": false,
+                  "defaultCollapsed": false,
+                  "position": 3
+                },
+                {
+                  "sectionKey": "first-line",
+                  "label": "First credit line",
+                  "collapsible": false,
+                  "defaultCollapsed": false,
+                  "position": 4
+                }
+              ],
+              "fields": [
+                {
+                  "fieldKey": "credit-memo-number",
+                  "position": 0,
+                  "span": 4,
+                  "componentKey": "text-input",
+                  "sectionKey": "summary"
+                },
+                {
+                  "fieldKey": "status",
+                  "position": 1,
+                  "span": 4,
+                  "componentKey": "select",
+                  "sectionKey": "summary"
+                },
+                {
+                  "fieldKey": "total-amount",
+                  "position": 2,
+                  "span": 4,
+                  "componentKey": "text-input",
+                  "sectionKey": "summary"
+                },
+                {
+                  "fieldKey": "customer-id",
+                  "position": 3,
+                  "span": 6,
+                  "componentKey": "text-input",
+                  "sectionKey": "parties"
+                },
+                {
+                  "fieldKey": "order-id",
+                  "position": 4,
+                  "span": 6,
+                  "componentKey": "text-input",
+                  "sectionKey": "source"
+                },
+                {
+                  "fieldKey": "invoice-id",
+                  "position": 5,
+                  "span": 6,
+                  "componentKey": "text-input",
+                  "sectionKey": "source"
+                },
+                {
+                  "fieldKey": "currency-code",
+                  "position": 6,
+                  "span": 3,
+                  "componentKey": "text-input",
+                  "sectionKey": "terms"
+                },
+                {
+                  "fieldKey": "reason",
+                  "position": 7,
+                  "span": 12,
+                  "componentKey": "text-input",
+                  "sectionKey": "terms"
+                },
+                {
+                  "fieldKey": "line-quantity",
+                  "position": 8,
+                  "span": 3,
+                  "componentKey": "number-input",
+                  "sectionKey": "first-line"
+                },
+                {
+                  "fieldKey": "line-unit-price-minor",
+                  "position": 9,
+                  "span": 3,
+                  "componentKey": "number-input",
+                  "sectionKey": "first-line"
+                },
+                {
+                  "fieldKey": "line-reason",
+                  "position": 10,
+                  "span": 6,
+                  "componentKey": "text-input",
+                  "sectionKey": "first-line"
+                },
+                {
+                  "fieldKey": "line-product-id",
+                  "position": 11,
+                  "span": 6,
+                  "componentKey": "text-input",
+                  "sectionKey": "first-line"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "navigation": [],
+      "actions": [],
+      "messages": []
+    }
+  }
+}

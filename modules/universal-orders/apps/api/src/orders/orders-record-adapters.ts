@@ -1,8 +1,10 @@
 import {
+  CreateCustomerCreditMemoInputV1Schema,
   CreateCustomerInvoiceInputV1Schema,
   CreateFulfillmentOrderInputV1Schema,
   CreateSalesOrderInputV1Schema,
   CreateSalesQuoteInputV1Schema,
+  type CustomerCreditMemoV1,
   type CustomerInvoiceV1,
   type FulfillmentOrderV1,
   type SalesOrderV1,
@@ -55,6 +57,34 @@ function fulfillmentOrderToWindow(fulfillment: FulfillmentOrderV1): RecordValues
   if (line) {
     values['line-order-line-id'] = line.orderLineId;
     values['line-shipped-quantity'] = line.shippedQuantity;
+  }
+  return values;
+}
+
+function optionalUuid(value: unknown): string | null | undefined {
+  if (value === null || value === undefined || value === '') return null;
+  return typeof value === 'string' ? value : null;
+}
+
+function creditMemoToWindow(memo: CustomerCreditMemoV1): RecordValues {
+  const line = memo.lines?.[0];
+  const values: Record<string, unknown> = {
+    id: memo.id,
+    version: memo.version,
+    'credit-memo-number': memo.creditMemoNumber,
+    'customer-id': memo.customerPartyId,
+    'order-id': memo.orderId ?? null,
+    'invoice-id': memo.invoiceId ?? null,
+    'currency-code': memo.currencyCode,
+    reason: memo.reason,
+    status: memo.status,
+    'total-amount': memo.totalAmountMinor,
+  };
+  if (line) {
+    values['line-quantity'] = line.quantity;
+    values['line-unit-price-minor'] = line.unitPriceMinor;
+    values['line-reason'] = line.reason;
+    values['line-product-id'] = line.productId ?? null;
   }
   return values;
 }
@@ -207,6 +237,52 @@ export function windowValuesToCreateFulfillmentOrderInput(values: RecordValues) 
     ],
   };
   const parsed = CreateFulfillmentOrderInputV1Schema.safeParse(input);
+  if (!parsed.success) {
+    const issue = parsed.error.issues[0];
+    throw new BadRequestException({
+      code: 'UNIVERSAL_ORDERS_VALIDATION_FAILED',
+      message: `${issue?.path.join('.') ?? 'value'}: ${issue?.message ?? 'invalid'}`,
+    });
+  }
+  return parsed.data;
+}
+
+const CM_FIELDS: readonly FieldSpec[] = [
+  { key: 'credit-memo-number' },
+  { key: 'customer-id', writable: true },
+  { key: 'order-id', writable: true },
+  { key: 'invoice-id', writable: true },
+  { key: 'currency-code', writable: true },
+  { key: 'reason', writable: true },
+  { key: 'status' },
+  { key: 'total-amount' },
+  { key: 'line-quantity', writable: true },
+  { key: 'line-unit-price-minor', writable: true },
+  { key: 'line-reason', writable: true },
+  { key: 'line-product-id', writable: true },
+];
+
+/** Maps metadata window values to the credit memo create contract (exported for tests). */
+export function windowValuesToCreateCustomerCreditMemoInput(values: RecordValues) {
+  const headerReason = values['reason'];
+  const lineReason = values['line-reason'] ?? headerReason;
+  const productId = optionalUuid(values['line-product-id']);
+  const input = {
+    customerPartyId: values['customer-id'],
+    invoiceId: optionalUuid(values['invoice-id']),
+    orderId: optionalUuid(values['order-id']),
+    currencyCode: values['currency-code'] ?? 'USD',
+    reason: typeof headerReason === 'string' ? headerReason : '',
+    lines: [
+      {
+        productId: productId ?? null,
+        quantity: String(values['line-quantity'] ?? '1.000000'),
+        unitPriceMinor: String(values['line-unit-price-minor'] ?? '0'),
+        reason: typeof lineReason === 'string' ? lineReason : '',
+      },
+    ],
+  };
+  const parsed = CreateCustomerCreditMemoInputV1Schema.safeParse(input);
   if (!parsed.success) {
     const issue = parsed.error.issues[0];
     throw new BadRequestException({
@@ -473,8 +549,48 @@ export function ordersRecordDispatcher(deps: { orders: OrderService }, idempoten
     },
   };
 
+  const customerCreditMemos: RecordAdapter = {
+    entityKey: 'orders.customer-credit-memos',
+    permissions: { read: 'orders:read', create: 'orders:credit-memos:manage' },
+    rest: { read: 'GET v1/credit-memos', create: 'POST v1/credit-memos' },
+    fields: fieldPolicies(CM_FIELDS),
+    searchFields: ['credit-memo-number', 'reason'],
+    sortFields: ['credit-memo-number'],
+    async list(principal: ModulePrincipal, query: RecordListQuery) {
+      let items = (await deps.orders.listCustomerCreditMemos(principal)).map(creditMemoToWindow);
+      if (query.search) items = items.filter((item) => matchesFields(item, query.search!, ['credit-memo-number', 'reason']));
+      const sortField = query.sortField ?? 'credit-memo-number';
+      const direction = query.sortDirection === 'ASC' ? 1 : -1;
+      items.sort((left, right) => {
+        const a = left[sortField];
+        const b = right[sortField];
+        if (typeof a === 'string' && typeof b === 'string') return a.localeCompare(b) * direction;
+        return 0;
+      });
+      const start = (query.page - 1) * query.pageSize;
+      const pageItems = items.slice(start, start + query.pageSize);
+      return { page: query.page, pageSize: query.pageSize, totalItems: items.length, items: pageItems };
+    },
+    async get(principal, id) {
+      try {
+        const memo = await deps.orders.getCustomerCreditMemo(principal.tenantId, id);
+        return creditMemoToWindow(memo);
+      } catch {
+        return null;
+      }
+    },
+    async create(context, values) {
+      const memo = await deps.orders.createCreditMemo(
+        context.principal.tenantId,
+        context.principal.subject,
+        windowValuesToCreateCustomerCreditMemoInput(values),
+      );
+      return creditMemoToWindow(memo);
+    },
+  };
+
   return new RecordDispatcher(
-    [salesQuotes, salesOrders, fulfillmentOrders, customerInvoices],
+    [salesQuotes, salesOrders, fulfillmentOrders, customerInvoices, customerCreditMemos],
     [],
     idempotency,
     shippedRecordRules('universal-orders'),

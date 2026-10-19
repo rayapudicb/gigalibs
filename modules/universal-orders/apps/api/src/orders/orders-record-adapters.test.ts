@@ -1,10 +1,25 @@
 import { describe, expect, it } from 'vitest';
 import {
+  windowValuesToCreateCustomerCreditMemoInput,
   windowValuesToCreateCustomerInvoiceInput,
   windowValuesToCreateFulfillmentOrderInput,
   windowValuesToCreateSalesOrderInput,
   windowValuesToCreateSalesQuoteInput,
 } from './orders-record-adapters.js';
+
+describe('windowValuesToCreateCustomerCreditMemoInput', () => {
+  it('builds a one-line credit memo from window field keys', () => {
+    const input = windowValuesToCreateCustomerCreditMemoInput({
+      'customer-id': '323e4567-e89b-12d3-a456-426614174000',
+      reason: 'Returned damaged goods',
+      'line-quantity': '1.000000',
+      'line-unit-price-minor': '2500',
+      'line-reason': 'Damaged in transit',
+    });
+    expect(input.customerPartyId).toBe('323e4567-e89b-12d3-a456-426614174000');
+    expect(input.lines[0]?.reason).toBe('Damaged in transit');
+  });
+});
 
 describe('windowValuesToCreateFulfillmentOrderInput', () => {
   it('builds a one-line fulfillment from window field keys', () => {

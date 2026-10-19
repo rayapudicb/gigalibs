@@ -28,6 +28,14 @@ const FULFILLMENT_STATUS = [
   ['CANCELLED', 'Cancelled'],
 ];
 
+const CREDIT_MEMO_STATUS = [
+  ['DRAFT', 'Draft'],
+  ['ISSUED', 'Issued'],
+  ['APPLIED', 'Applied'],
+  ['REFUNDED', 'Refunded'],
+  ['CANCELLED', 'Cancelled'],
+];
+
 const INVOICE_STATUS = [
   ['DRAFT', 'Draft'],
   ['ISSUED', 'Issued'],
@@ -125,6 +133,22 @@ export function windowSource(builderFor) {
     field(FO, 'status', 'Status', 'SELECT', { readOnly: true, ref: 'fulfillment-statuses' }),
     field(FO, 'line-order-line-id', 'Order line', 'TEXT', { required: true, help: 'Sales order line UUID to ship.', writePermission: 'orders:fulfill' }),
     field(FO, 'line-shipped-quantity', 'Shipped quantity', 'NUMBER', { required: true, scale: 6, defaultValue: '1.000000', writePermission: 'orders:fulfill' }),
+  ];
+
+  const CM = 'orders.customer-credit-memos';
+  const cmFields = [
+    field(CM, 'credit-memo-number', 'Credit memo number', 'TEXT', { readOnly: true }),
+    field(CM, 'customer-id', 'Customer party', 'TEXT', { required: true, help: 'Active workspace party UUID (customer).', writePermission: 'orders:credit-memos:manage' }),
+    field(CM, 'order-id', 'Sales order', 'TEXT', { writePermission: 'orders:credit-memos:manage' }),
+    field(CM, 'invoice-id', 'Customer invoice', 'TEXT', { writePermission: 'orders:credit-memos:manage' }),
+    field(CM, 'currency-code', 'Currency', 'TEXT', { defaultValue: 'USD', writePermission: 'orders:credit-memos:manage' }),
+    field(CM, 'reason', 'Reason', 'TEXT', { required: true, writePermission: 'orders:credit-memos:manage' }),
+    field(CM, 'status', 'Status', 'SELECT', { readOnly: true, ref: 'credit-memo-statuses' }),
+    field(CM, 'total-amount', 'Total (minor units)', 'TEXT', { readOnly: true }),
+    field(CM, 'line-quantity', 'Line quantity', 'NUMBER', { required: true, scale: 6, defaultValue: '1.000000', writePermission: 'orders:credit-memos:manage' }),
+    field(CM, 'line-unit-price-minor', 'Line unit price (minor)', 'INTEGER', { required: true, writePermission: 'orders:credit-memos:manage' }),
+    field(CM, 'line-reason', 'Line reason', 'TEXT', { required: true, writePermission: 'orders:credit-memos:manage', help: 'Defaults to the header reason when empty.' }),
+    field(CM, 'line-product-id', 'Line product', 'TEXT', { writePermission: 'orders:credit-memos:manage' }),
   ];
 
   const CI = 'orders.customer-invoices';
@@ -254,6 +278,41 @@ export function windowSource(builderFor) {
             ],
           }),
         ], { search: ['fulfillment-number'], sort: 'fulfillment-number' }),
+      ]),
+    ),
+    'orders-customer-credit-memos': window(
+      'orders-customer-credit-memos',
+      'Credit memos',
+      'Credit memos',
+      'Issue customer credit memos for returns and billing adjustments.',
+      'orders:read',
+      dictionary('orders-customer-credit-memos', 'Credit memos', CM, [entity(CM, 'Customer credit memos')], cmFields, [], [
+        values('credit-memo-statuses', CREDIT_MEMO_STATUS),
+      ], [
+        view('customer-credit-memos', 'Credit memos', [
+          tab('cm-header', 'Credit memo', 0, CM, [
+            ['credit-memo-number', 4, 'summary'],
+            ['status', 4, 'summary'],
+            ['total-amount', 4, 'summary'],
+            ['customer-id', 6, 'parties'],
+            ['order-id', 6, 'source'],
+            ['invoice-id', 6, 'source'],
+            ['currency-code', 3, 'terms'],
+            ['reason', 12, 'terms'],
+            ['line-quantity', 3, 'first-line'],
+            ['line-unit-price-minor', 3, 'first-line'],
+            ['line-reason', 6, 'first-line'],
+            ['line-product-id', 6, 'first-line'],
+          ], cmFields, {
+            sections: [
+              section('summary', 'Summary', 0),
+              section('parties', 'Customer', 1),
+              section('source', 'Order & invoice', 2),
+              section('terms', 'Commercial reason', 3),
+              section('first-line', 'First credit line', 4),
+            ],
+          }),
+        ], { search: ['credit-memo-number', 'reason'], sort: 'credit-memo-number' }),
       ]),
     ),
     'orders-customer-invoices': window(

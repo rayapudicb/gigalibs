@@ -67,9 +67,10 @@ keeps the full rules.
 7. **WI-OI-120gj** — **Built** in git **`530c2597`**: orders first metadata window (`orders-sales-orders`) + record routes + live `/orders` page.
 8. **WI-OI-120gk** — **Built** in git **`6e9cb4bd`**: sales quotes metadata window + `/orders` tab with sales orders.
 9. **WI-OI-120gl** — **Built** in git **`29d000b5`**: customer invoices metadata window + `/orders` tab.
-10. **WI-OI-120gm** — **Built (local):** fulfillment metadata window + `/orders` tab.
-11. **WI-OI-120gn** — **Built (local):** vendor bills metadata window + `/procurement` tab.
-12. **Next code** — credit memos / remaining O2C surfaces, **WI-OI-120gf** (M-AR0), or procurement GRN; **120gd** blocked on journey password.
+10. **WI-OI-120gm** — **Built** in git **`8932d626`**: fulfillment window + `/orders` tab.
+11. **WI-OI-120gn** — **Built** in git **`8932d626`**: vendor bills window + `/procurement` tab.
+12. **WI-OI-120go** — **Built (local):** customer credit memos window + `/orders` tab.
+13. **Next code** — procurement GRN/requisitions, orders returns (RMA), **WI-OI-120gf** (M-AR0 SDK rebuild — still blocked per module.yaml); **120gd** blocked on journey password.
 
 ## Built, not yet on UAT
 
