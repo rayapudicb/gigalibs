@@ -385,7 +385,38 @@
         }
       ],
       "navigation": [],
-      "actions": [],
+      "actions": [
+        {
+          "actionKey": "submit",
+          "label": "Submit for approval",
+          "type": "COMMAND",
+          "handlerKey": "procurement.requisitions.submit",
+          "requiredPermissions": [
+            "procurement:requisitions:manage"
+          ],
+          "confirmationPrompt": "Submit this requisition for approval?",
+          "visibilityCondition": {
+            "field": "status",
+            "operator": "EQ",
+            "value": "DRAFT"
+          }
+        },
+        {
+          "actionKey": "approve",
+          "label": "Approve",
+          "type": "COMMAND",
+          "handlerKey": "procurement.requisitions.approve",
+          "requiredPermissions": [
+            "procurement:requisitions:approve"
+          ],
+          "confirmationPrompt": "Approve this requisition?",
+          "visibilityCondition": {
+            "field": "status",
+            "operator": "EQ",
+            "value": "PENDING_APPROVAL"
+          }
+        }
+      ],
       "messages": []
     }
   }

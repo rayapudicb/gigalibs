@@ -1,4 +1,4 @@
-// WI-OI-120gh/gn (Table 1): Procurement metadata windows — purchase orders and vendor bills.
+// WI-OI-120gh/gr (Table 1): Procurement metadata windows and F0 record actions (submit/approve).
 // Edit here, then `node scripts/generate-windows.mjs universal-procurement` and `pnpm modules:catalog`.
 
 const REQUISITION_STATUS = [
@@ -43,7 +43,7 @@ const PO_STATUS = [
 ];
 
 export function windowSource(builderFor) {
-  const { entity, field, values, lookup, tab, section, dictionary, window } = builderFor({
+  const { entity, field, values, lookup, tab, section, action, dictionary, window } = builderFor({
     route: '/procurement',
     createWith: {
       'catalogue-products': ['product-catalogue', 'catalogue-products', 'products:create'],
@@ -210,6 +210,23 @@ export function windowSource(builderFor) {
             ],
           }),
         ], { search: ['requisition-number', 'description'], sort: 'requisition-number' }),
+      ], [
+        action(
+          REQ,
+          'submit',
+          'Submit for approval',
+          'procurement:requisitions:manage',
+          ['status', 'EQ', 'DRAFT'],
+          'Submit this requisition for approval?',
+        ),
+        action(
+          REQ,
+          'approve',
+          'Approve',
+          'procurement:requisitions:approve',
+          ['status', 'EQ', 'PENDING_APPROVAL'],
+          'Approve this requisition?',
+        ),
       ]),
     ),
     'procurement-vendor-bills': window(
@@ -248,6 +265,15 @@ export function windowSource(builderFor) {
             ],
           }),
         ], { search: ['vendor-invoice-number'], sort: 'vendor-invoice-number' }),
+      ], [
+        action(
+          VB,
+          'approve',
+          'Approve bill',
+          'procurement:bills:manage',
+          ['status', 'NOT_IN', ['APPROVED', 'PAID', 'VOID', 'PRICE_VARIANCE_HOLD']],
+          'Approve this vendor bill for payment?',
+        ),
       ]),
     ),
     'procurement-purchase-orders': window(

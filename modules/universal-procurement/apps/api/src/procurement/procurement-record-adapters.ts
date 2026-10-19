@@ -333,7 +333,14 @@ export function procurementRecordDispatcher(deps: { procurement: ProcurementServ
   const requisitions: RecordAdapter = {
     entityKey: 'procurement.requisitions',
     permissions: { read: 'procurement:read', create: 'procurement:requisitions:manage' },
-    rest: { read: 'GET v1/requisitions', create: 'POST v1/requisitions' },
+    rest: {
+      read: 'GET v1/requisitions',
+      create: 'POST v1/requisitions',
+      actions: {
+        submit: 'POST v1/requisitions/{id}/submit',
+        approve: 'POST v1/requisitions/{id}/approve',
+      },
+    },
     fields: fieldPolicies(REQ_FIELDS),
     searchFields: ['requisition-number', 'description'],
     sortFields: ['requisition-number'],
@@ -374,6 +381,18 @@ export function procurementRecordDispatcher(deps: { procurement: ProcurementServ
         windowValuesToCreateRequisitionInput(values),
       );
       return requisitionToWindow(requisition);
+    },
+    actions: {
+      submit: {
+        permission: 'procurement:requisitions:manage',
+        run: async (context, id) =>
+          requisitionToWindow(await deps.procurement.submitRequisition(context.principal, id)),
+      },
+      approve: {
+        permission: 'procurement:requisitions:approve',
+        run: async (context, id) =>
+          requisitionToWindow(await deps.procurement.approveRequisition(context.principal, id)),
+      },
     },
   };
 
@@ -421,7 +440,11 @@ export function procurementRecordDispatcher(deps: { procurement: ProcurementServ
   const vendorBills: RecordAdapter = {
     entityKey: 'procurement.vendor-bills',
     permissions: { read: 'procurement:read', create: 'procurement:bills:manage' },
-    rest: { read: 'GET v1/bills', create: 'POST v1/bills' },
+    rest: {
+      read: 'GET v1/bills',
+      create: 'POST v1/bills',
+      actions: { approve: 'POST v1/bills/{id}/approve' },
+    },
     fields: fieldPolicies(VB_FIELDS),
     searchFields: ['vendor-invoice-number'],
     sortFields: ['vendor-invoice-number'],
@@ -457,6 +480,13 @@ export function procurementRecordDispatcher(deps: { procurement: ProcurementServ
     async create(context, values) {
       const bill = await deps.procurement.createVendorBill(context.principal, windowValuesToCreateVendorBillInput(values));
       return vendorBillToWindow(bill);
+    },
+    actions: {
+      approve: {
+        permission: 'procurement:bills:manage',
+        run: async (context, id) =>
+          vendorBillToWindow(await deps.procurement.approveVendorBill(context.principal, id)),
+      },
     },
   };
 

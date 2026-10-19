@@ -411,7 +411,28 @@
         }
       ],
       "navigation": [],
-      "actions": [],
+      "actions": [
+        {
+          "actionKey": "approve",
+          "label": "Approve bill",
+          "type": "COMMAND",
+          "handlerKey": "procurement.vendor-bills.approve",
+          "requiredPermissions": [
+            "procurement:bills:manage"
+          ],
+          "confirmationPrompt": "Approve this vendor bill for payment?",
+          "visibilityCondition": {
+            "field": "status",
+            "operator": "NOT_IN",
+            "value": [
+              "APPROVED",
+              "PAID",
+              "VOID",
+              "PRICE_VARIANCE_HOLD"
+            ]
+          }
+        }
+      ],
       "messages": []
     }
   }

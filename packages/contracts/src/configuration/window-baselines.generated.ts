@@ -18346,7 +18346,38 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
           }
         ],
         "navigation": [],
-        "actions": [],
+        "actions": [
+          {
+            "actionKey": "submit",
+            "label": "Submit for approval",
+            "type": "COMMAND",
+            "handlerKey": "procurement.requisitions.submit",
+            "requiredPermissions": [
+              "procurement:requisitions:manage"
+            ],
+            "confirmationPrompt": "Submit this requisition for approval?",
+            "visibilityCondition": {
+              "field": "status",
+              "operator": "EQ",
+              "value": "DRAFT"
+            }
+          },
+          {
+            "actionKey": "approve",
+            "label": "Approve",
+            "type": "COMMAND",
+            "handlerKey": "procurement.requisitions.approve",
+            "requiredPermissions": [
+              "procurement:requisitions:approve"
+            ],
+            "confirmationPrompt": "Approve this requisition?",
+            "visibilityCondition": {
+              "field": "status",
+              "operator": "EQ",
+              "value": "PENDING_APPROVAL"
+            }
+          }
+        ],
         "messages": []
       }
     }
@@ -18764,7 +18795,28 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
           }
         ],
         "navigation": [],
-        "actions": [],
+        "actions": [
+          {
+            "actionKey": "approve",
+            "label": "Approve bill",
+            "type": "COMMAND",
+            "handlerKey": "procurement.vendor-bills.approve",
+            "requiredPermissions": [
+              "procurement:bills:manage"
+            ],
+            "confirmationPrompt": "Approve this vendor bill for payment?",
+            "visibilityCondition": {
+              "field": "status",
+              "operator": "NOT_IN",
+              "value": [
+                "APPROVED",
+                "PAID",
+                "VOID",
+                "PRICE_VARIANCE_HOLD"
+              ]
+            }
+          }
+        ],
         "messages": []
       }
     }
