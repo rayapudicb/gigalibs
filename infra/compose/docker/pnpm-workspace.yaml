@@ -3,6 +3,8 @@ packages:
   - apps/workflow-platform
   - modules/accounts-receivable/domain
   - modules/accounts-receivable/apps/api
+  - modules/tax-configuration/apps/api
+  - modules/multi-currency/apps/api
   - packages/custom-fields-nest
   - packages/forms-engine-nest
   - modules/analytics-studio/apps/api

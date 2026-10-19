@@ -1,0 +1,4 @@
+# Ordered Currency migrations for compose / runtime images. Expected version = 000003 → 3.
+000001_currency_foundation.up.sql
+000002_currency_rls_and_ledger.up.sql
+000003_currency_ledger_seals_and_inbox.up.sql
