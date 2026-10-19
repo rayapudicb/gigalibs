@@ -5,20 +5,13 @@ set -euo pipefail
 # Requires ar-api running from compose.modules.local.yaml (not host-published; probe runs in-container).
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-COMPOSE_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
-
-BASE_ENV="${COMPOSE_DIR}/.env"
-MODULE_ENV="${COMPOSE_DIR}/.env.modules"
-COMPOSE=(docker compose -f "${COMPOSE_DIR}/compose.yaml" -f "${COMPOSE_DIR}/compose.modules.local.yaml" --env-file "${BASE_ENV}" --env-file "${MODULE_ENV}")
+# shellcheck source=compose-modules-local.sh
+source "${SCRIPT_DIR}/compose-modules-local.sh"
 
 fail() {
   echo "Error: $*" >&2
   exit 1
 }
-
-for required_file in "${BASE_ENV}" "${MODULE_ENV}"; do
-  [[ -f "${required_file}" ]] || fail "${required_file} is required (run generate-module-runtime-credentials.sh if needed)."
-done
 
 "${COMPOSE[@]}" ps --status running --services 2>/dev/null | grep -qx 'ar-api' || fail 'ar-api is not running; start with: docker compose ... up -d ar-api'
 

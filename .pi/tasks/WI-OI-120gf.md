@@ -1,6 +1,6 @@
 # WI-OI-120gf: Accounts Receivable on configuration-local profile (M-AR0)
 
-- **Status:** In progress — git complete through [WI-OI-120hd](WI-OI-120hd.md); owner compose rebuild + `pnpm proof:ar-compose-health` remain
+- **Status:** In progress — through [WI-OI-120he](WI-OI-120he.md); image rebuild + health proof remain
 - **Work item:** Table 1 rows 7–8. Evidence in `.pi/work/TABLE-1-AUDIT-2026-10-19.md`.
 - **Size:** L
 

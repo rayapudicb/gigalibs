@@ -18,7 +18,6 @@ Repeatable script proves `ar-api` is healthy on the configuration-local profile 
 ```bash
 infra/compose/scripts/refresh-source-identity.sh   # if build-module-images complains
 infra/compose/scripts/build-module-images.sh         # builds gigalibs/ar-api tag
-docker compose -f infra/compose/compose.yaml -f infra/compose/compose.modules.local.yaml \
-  --env-file infra/compose/.env --env-file infra/compose/.env.modules up -d ar-api
+infra/compose/scripts/up-ar-api.sh                   # loads .env.workforce + .env.geospatial too
 pnpm proof:ar-compose-health
 ```

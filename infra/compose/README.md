@@ -85,12 +85,10 @@ infra/compose/scripts/build-module-images.sh
 Start or reconcile the base stack plus the module overlay together:
 
 ```bash
-docker compose \
-  --env-file infra/compose/.env \
-  --env-file infra/compose/.env.modules \
-  -f infra/compose/compose.yaml \
-  -f infra/compose/compose.modules.local.yaml \
-  up -d
+# Kernel-worker in the module overlay needs Workforce + Geospatial signing keys from their env files.
+infra/compose/scripts/up-ar-api.sh   # ar-api only
+# Or the full module overlay (bash — the helper uses BASH_SOURCE when sourced):
+bash -c 'source infra/compose/scripts/compose-modules-local.sh && "${COMPOSE[@]}" up -d'
 ```
 
 The one-shot module migration containers provision dedicated non-superuser, non-BYPASSRLS runtime roles.
