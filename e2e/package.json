@@ -8,7 +8,8 @@
     "test:report": "playwright show-report test-results/playwright-report",
     "uat": "bash run-uat-walkthrough.sh",
     "uat:inventory": "GIGALIBS_E2E_NONINTERACTIVE=1 bash run-uat-walkthrough.sh --inventory",
-    "uat:journey": "GIGALIBS_E2E_NONINTERACTIVE=1 bash run-uat-walkthrough.sh --journey"
+    "uat:journey": "GIGALIBS_E2E_NONINTERACTIVE=1 bash run-uat-walkthrough.sh --journey",
+    "test:minimal-p2p-o2c": "playwright test specs/minimal-p2p-o2c-compose-flow.spec.ts"
   },
   "devDependencies": {
     "@axe-core/playwright": "4.13.0",

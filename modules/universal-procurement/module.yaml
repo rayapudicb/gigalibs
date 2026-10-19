@@ -121,6 +121,7 @@ spec:
       - { path: 'v1/requisitions/{id}/submit', POST: 'procurement:requisitions:manage' }
       - { path: 'v1/requisitions/{id}/approve', POST: 'procurement:requisitions:approve' }
       - { path: 'v1/requisitions/{id}/reject', POST: 'procurement:requisitions:approve' }
+      - { path: 'v1/requisitions/{id}/convert-to-po', POST: 'procurement:orders:manage' }
       - { path: 'v1/orders', GET: procurement:read, POST: 'procurement:orders:manage' }
       - { path: 'v1/orders/{id}', GET: procurement:read }
       - { path: 'v1/orders/{id}/issue', POST: 'procurement:orders:issue' }

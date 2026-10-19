@@ -15,7 +15,7 @@ iDempiere is a **functional reference** (document types and outcomes), not copie
 | 6 | Vendor invoice + match | Vendor bill window + `matchInvoice` |
 | 7 | AP ready bill | `approve` on vendor bill |
 
-**Evidence:** `pnpm proof:minimal-p2p` in `@gigalibs/universal-procurement-api`.  
+**Evidence:** `pnpm proof:minimal-p2p` in `@gigalibs/universal-procurement-api`; compose E2E `e2e/specs/minimal-p2p-o2c-compose-flow.spec.ts` (P2P test).  
 **Not in minimal scope:** GL/AP posting (Table 2), spend/budget (row 16), full inventory receipt UI.
 
 ## Minimal O2C (sell side)
@@ -30,7 +30,7 @@ iDempiere is a **functional reference** (document types and outcomes), not copie
 | 6 | Shipment record | Fulfillment window create (updates shipped qty) |
 | 7 | Customer invoice | `issue-invoice` action on sales order |
 
-**Evidence:** `pnpm proof:minimal-o2c` in `@gigalibs/universal-orders-api`.  
+**Evidence:** `pnpm proof:minimal-o2c` in `@gigalibs/universal-orders-api`; compose E2E (O2C test in same spec).  
 **Not in minimal scope:** AR module on compose (M-AR0), dispatch with inventory `issueId`, payments/cash application (row 10).
 
 ## Work item

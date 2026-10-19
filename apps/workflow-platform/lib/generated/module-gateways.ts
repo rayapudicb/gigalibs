@@ -2306,6 +2306,13 @@ export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGat
         }
       },
       {
+        "template": "v1/requisitions/{id}/convert-to-po",
+        "pattern": "^v1/requisitions/[0-9a-fA-F-]{36}/convert-to-po$",
+        "methods": {
+          "POST": "procurement:orders:manage"
+        }
+      },
+      {
         "template": "v1/orders",
         "pattern": "^v1/orders$",
         "methods": {
