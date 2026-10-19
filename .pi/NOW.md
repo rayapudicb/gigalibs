@@ -84,7 +84,8 @@ keeps the full rules.
 24. **WI-OI-120ha** — **Built** in git **`ff5da0a7`:** AR metadata windows (`ar-invoices`, `ar-customers`) + record routes + mig **16**.
 25. **WI-OI-120hb** — **Built** in git **`83099e7b`:** AR `DatabaseService` → canonical `ModuleDatabase` (mig **16** contract).
 26. **WI-OI-120hc** — **Built** in git **`6c29fe92`:** relay `inboxPath` test fixtures + record `total` + AR migration pin audit + orders quote default.
-27. **Next code** — **WI-OI-120gf** compose rebuild (mig **16**); **120gd** journey password.
+27. **WI-OI-120hd** — **Built** in git **`492839d7`:** `proof:ar-compose-health` + runtime-manifest pin **16** comment.
+28. **Next** — owner local compose rebuild + `pnpm proof:ar-compose-health`; **120gd** journey password.
 
 ## Built, not yet on UAT
 
