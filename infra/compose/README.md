@@ -122,8 +122,11 @@ containment response until a later real business vertical is certified.
 
 ```bash
 node scripts/verify-configuration-local-profile.mjs
+node infra/compose/scripts/verify-compose-database-url.mjs
 docker compose --env-file infra/compose/.env -f infra/compose/compose.yaml config --quiet
 ```
+
+If control `migrations` or `pnpm proof:ar-compose-rebuild` fails with `Connection terminated unexpectedly`, run the database URL probe first. A **`28P01`** result means `DATABASE_URL` in `infra/compose/.env` does not match the Postgres instance on port **5440** (dev compose); fix the password to match `docker/docker-compose.dev.yml` or regenerate credentials against a fresh database.
 
 The verifier rejects obsolete aliases, missing source-required API settings, uncontracted environment
 keys, duplicate dependency services, a Redis dependency, remote pulls and incorrect probe paths.

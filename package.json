@@ -55,7 +55,8 @@
     "e2e:uat:all": "GIGALIBS_E2E_NONINTERACTIVE=1 bash e2e/run-uat-walkthrough.sh --all",
     "e2e:uat:screens": "GIGALIBS_E2E_NONINTERACTIVE=1 bash e2e/run-uat-walkthrough.sh --screens",
     "proof:ar-compose-health": "bash infra/compose/scripts/verify-ar-compose-health.sh",
-    "proof:ar-compose-rebuild": "bash infra/compose/scripts/rebuild-ar-compose-local.sh"
+    "proof:ar-compose-rebuild": "bash infra/compose/scripts/rebuild-ar-compose-local.sh",
+    "audit:compose-database-url": "node infra/compose/scripts/verify-compose-database-url.mjs"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",

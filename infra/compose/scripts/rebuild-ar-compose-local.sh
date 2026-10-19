@@ -11,16 +11,7 @@ MODULE_ENV="${COMPOSE_DIR}/.env.modules"
 
 "${SCRIPT_DIR}/docker-disk-guard.sh" check
 
-export DATABASE_URL="$(awk -F= '/^DATABASE_URL=/{print substr($0,index($0,"=")+1); exit}' "${BASE_ENV}")"
-node -e "
-  import('pg').then(({ default: pg }) => {
-    const client = new pg.Client({ connectionString: process.env.DATABASE_URL });
-    return client.connect().then(() => client.query('SELECT 1')).finally(() => client.end());
-  }).catch((err) => {
-    console.error('PostgreSQL is unreachable at DATABASE_URL in infra/compose/.env:', err.message);
-    process.exit(1);
-  });
-"
+node "${SCRIPT_DIR}/verify-compose-database-url.mjs"
 
 "${SCRIPT_DIR}/refresh-source-identity.sh"
 
