@@ -117,7 +117,7 @@
           "classification": "INTERNAL",
           "maskOnDisplay": false,
           "writePermission": "orders:quotes:manage",
-          "defaultValue": "30"
+          "defaultValue": 30
         },
         {
           "fieldKey": "notes",

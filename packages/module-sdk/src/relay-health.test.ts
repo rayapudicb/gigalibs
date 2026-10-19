@@ -92,7 +92,9 @@ describe('relay health from real passes', () => {
       database as never,
       {
         inboxPublicKey: null,
-        outbound: configured ? { targetOrigin: 'http://cmms-api:4200', privateKey } : null,
+        outbound: configured
+          ? { targetOrigin: 'http://cmms-api:4200', privateKey, inboxPath: '/internal/v1/inbox' }
+          : null,
         intervalMs: 60_000,
       },
       {

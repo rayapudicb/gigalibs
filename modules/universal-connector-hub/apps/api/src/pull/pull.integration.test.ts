@@ -187,7 +187,11 @@ integration('Connector Hub pulls on PostgreSQL', () => {
       const { AnalyticsOutboxRelay } = await import('../relay/analytics-relay.js');
       const relay = new AnalyticsOutboxRelay(services.db, {
         inboxPublicKey: null,
-        outbound: { targetOrigin: `http://127.0.0.1:${(inbox.address() as AddressInfo).port}`, privateKey: signingKey },
+        outbound: {
+          targetOrigin: `http://127.0.0.1:${(inbox.address() as AddressInfo).port}`,
+          privateKey: signingKey,
+          inboxPath: '/internal/v1/inbox',
+        },
         intervalMs: 1000,
       });
       await relay.tick();
@@ -237,7 +241,11 @@ integration('Connector Hub pulls on PostgreSQL', () => {
       expect(facts.rows.every((fact) => fact.event_type === 'CONNECTOR_PLACE_PULLED_V1' && fact.aggregate_type === 'connector_place' && fact.aggregate_version === 1)).toBe(true);
 
       const { AnalyticsOutboxRelay, GeospatialPlaceRelay } = await import('../relay/analytics-relay.js');
-      const outbound = { targetOrigin: `http://127.0.0.1:${(inbox.address() as AddressInfo).port}`, privateKey: signingKey };
+      const outbound = {
+        targetOrigin: `http://127.0.0.1:${(inbox.address() as AddressInfo).port}`,
+        privateKey: signingKey,
+        inboxPath: '/internal/v1/inbox',
+      };
       expect(await new AnalyticsOutboxRelay(services.db, { inboxPublicKey: null, outbound, intervalMs: 1000 }).tick()).toBe(0);
       expect(await new GeospatialPlaceRelay(services.db, { inboxPublicKey: null, outbound, intervalMs: 1000 }).tick()).toBe(pulled.records_synced);
       expect(received.find((fact) => fact.sourceId === 'h-1')?.place).toEqual({ nodeTypeCode: 'FIELD', code: 'h-1', name: 'maize', geometry: null, parentSourceId: null });

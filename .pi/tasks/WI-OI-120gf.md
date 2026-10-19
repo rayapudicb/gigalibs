@@ -15,8 +15,9 @@
 
 ## Done when
 
-- [ ] Service healthy on local profile; `pnpm verify` passes
-- [ ] No fake verification UI (120bj)
+- [ ] Service healthy on local profile (owner compose rebuild after mig **16**)
+- [x] Root `pnpm build` + `pnpm test` pass ([WI-OI-120hc](WI-OI-120hc.md) fixes)
+- [ ] No fake verification UI (120bj) — `/ar` uses metadata ([WI-OI-120ha](WI-OI-120ha.md))
 
 ## Stop and ask if
 

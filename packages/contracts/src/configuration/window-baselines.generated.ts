@@ -17357,7 +17357,7 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "classification": "INTERNAL",
             "maskOnDisplay": false,
             "writePermission": "orders:quotes:manage",
-            "defaultValue": "30"
+            "defaultValue": 30
           },
           {
             "fieldKey": "notes",

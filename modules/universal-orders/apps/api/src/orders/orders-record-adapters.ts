@@ -440,7 +440,7 @@ export function ordersRecordDispatcher(deps: { orders: OrderService }, idempoten
       });
       const start = (query.page - 1) * query.pageSize;
       const pageItems = items.slice(start, start + query.pageSize);
-      return { page: query.page, pageSize: query.pageSize, totalItems: items.length, items: pageItems };
+      return { page: query.page, pageSize: query.pageSize, total: items.length, items: pageItems };
     },
     async get(principal, id) {
       try {
@@ -514,7 +514,7 @@ export function ordersRecordDispatcher(deps: { orders: OrderService }, idempoten
       });
       const start = (query.page - 1) * query.pageSize;
       const pageItems = items.slice(start, start + query.pageSize);
-      return { page: query.page, pageSize: query.pageSize, totalItems: items.length, items: pageItems };
+      return { page: query.page, pageSize: query.pageSize, total: items.length, items: pageItems };
     },
     async get(principal, id) {
       try {
@@ -588,7 +588,7 @@ export function ordersRecordDispatcher(deps: { orders: OrderService }, idempoten
       });
       const start = (query.page - 1) * query.pageSize;
       const pageItems = items.slice(start, start + query.pageSize);
-      return { page: query.page, pageSize: query.pageSize, totalItems: items.length, items: pageItems };
+      return { page: query.page, pageSize: query.pageSize, total: items.length, items: pageItems };
     },
     async get(principal, id) {
       try {
@@ -647,7 +647,7 @@ export function ordersRecordDispatcher(deps: { orders: OrderService }, idempoten
       });
       const start = (query.page - 1) * query.pageSize;
       const pageItems = items.slice(start, start + query.pageSize);
-      return { page: query.page, pageSize: query.pageSize, totalItems: items.length, items: pageItems };
+      return { page: query.page, pageSize: query.pageSize, total: items.length, items: pageItems };
     },
     async get(principal, id) {
       try {
@@ -687,7 +687,7 @@ export function ordersRecordDispatcher(deps: { orders: OrderService }, idempoten
       });
       const start = (query.page - 1) * query.pageSize;
       const pageItems = items.slice(start, start + query.pageSize);
-      return { page: query.page, pageSize: query.pageSize, totalItems: items.length, items: pageItems };
+      return { page: query.page, pageSize: query.pageSize, total: items.length, items: pageItems };
     },
     async get(principal, id) {
       try {

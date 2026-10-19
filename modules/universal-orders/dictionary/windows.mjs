@@ -115,7 +115,7 @@ export function windowSource(builderFor) {
     field(SQ, 'customer-name', 'Customer name', 'TEXT', { required: true, writePermission: 'orders:quotes:manage' }),
     field(SQ, 'currency-code', 'Currency', 'TEXT', { defaultValue: 'USD', writePermission: 'orders:quotes:manage' }),
     field(SQ, 'valid-until', 'Valid until', 'DATETIME', { required: true, writePermission: 'orders:quotes:manage' }),
-    field(SQ, 'payment-term-days', 'Payment term (days)', 'INTEGER', { defaultValue: '30', writePermission: 'orders:quotes:manage' }),
+    field(SQ, 'payment-term-days', 'Payment term (days)', 'INTEGER', { defaultValue: 30, writePermission: 'orders:quotes:manage' }),
     field(SQ, 'notes', 'Notes', 'TEXT', { writePermission: 'orders:quotes:manage' }),
     field(SQ, 'status', 'Status', 'SELECT', { readOnly: true, ref: 'quote-statuses' }),
     field(SQ, 'total-amount', 'Total (minor units)', 'TEXT', { readOnly: true }),

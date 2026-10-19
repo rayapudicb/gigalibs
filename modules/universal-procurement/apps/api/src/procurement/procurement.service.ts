@@ -319,6 +319,7 @@ export class ProcurementService {
       vendorName: input.vendorName,
       currencyCode: req.currencyCode,
       destinationWarehouseId: input.destinationWarehouseId,
+      paymentTermDays: 30,
       requisitionId: req.id,
       lines: req.lines.map((line) => ({
         requisitionLineId: line.id,
@@ -328,6 +329,7 @@ export class ProcurementService {
         orderedQuantity: line.quantity,
         uomId: line.uomId,
         unitPriceMinor: line.estimatedUnitPriceMinor,
+        taxRateBasisPoints: 0,
         destinationWarehouseId: input.destinationWarehouseId,
       })),
     });

@@ -71,7 +71,11 @@ integration('Geospatial places reach Analytics', () => {
     try {
       const relay = new AnalyticsPlaceRelay(db, {
         inboxPublicKey: null,
-        outbound: { targetOrigin: `http://127.0.0.1:${(inbox.address() as AddressInfo).port}`, privateKey: pair.privateKey.export({ format: 'pem', type: 'pkcs8' }).toString() },
+        outbound: {
+          targetOrigin: `http://127.0.0.1:${(inbox.address() as AddressInfo).port}`,
+          privateKey: pair.privateKey.export({ format: 'pem', type: 'pkcs8' }).toString(),
+          inboxPath: '/internal/v1/inbox',
+        },
         intervalMs: 1000,
       });
       expect(await relay.tick()).toBe(1);

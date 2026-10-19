@@ -69,6 +69,17 @@ const MODULES = [
       pattern: /export const GEOSPATIAL_SCHEMA_CONTRACT_VERSION = (\d+);/,
     },
   },
+  {
+    compose: 'infra/compose/compose.modules.local.yaml',
+    job: 'ar-migrations',
+    api: 'ar-api',
+    apiVariable: 'AR_EXPECTED_MIGRATION_VERSION',
+    shipped: { manifest: 'modules/accounts-receivable/db/runtime-manifest.txt' },
+    code: {
+      file: 'modules/accounts-receivable/apps/api/src/config.module-sdk.ts',
+      pattern: /export const SCHEMA_CONTRACT_VERSION = (\d+);/,
+    },
+  },
 ];
 
 const read = (file) => readFileSync(join(root, file), 'utf8');
