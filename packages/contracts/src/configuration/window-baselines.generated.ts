@@ -4,6 +4,523 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
   {
     "contractVersion": "1.0",
     "window": {
+      "route": "/ar",
+      "label": "Customers",
+      "description": "Billing customers for accounts receivable.",
+      "readPermission": "ar:read"
+    },
+    "definition": {
+      "kind": "APPLICATION_DICTIONARY",
+      "contractVersion": "1.0",
+      "moduleKey": "accounts-receivable",
+      "entityKey": "ar-customers",
+      "surfaceKey": "ar-customers",
+      "title": "Customers",
+      "dictionary": {
+        "packageKey": "ar-customers-module-baseline",
+        "name": "Customers",
+        "version": "1.0.0",
+        "moduleKey": "accounts-receivable",
+        "targetEntityKey": "ar.customers",
+        "entities": [
+          {
+            "entityKey": "ar.customers",
+            "moduleKey": "accounts-receivable",
+            "label": "Customers",
+            "ownership": "MODULE_CORE",
+            "primaryKeyField": "id",
+            "isVersioned": true,
+            "isAuditLogged": true,
+            "isSoftDeletable": false
+          }
+        ],
+        "fields": [
+          {
+            "fieldKey": "legal-name",
+            "entityKey": "ar.customers",
+            "label": "Legal name",
+            "type": "TEXT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "writePermission": "ar:write"
+          },
+          {
+            "fieldKey": "billing-email",
+            "entityKey": "ar.customers",
+            "label": "Billing email",
+            "type": "TEXT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "writePermission": "ar:write"
+          },
+          {
+            "fieldKey": "currency",
+            "entityKey": "ar.customers",
+            "label": "Currency",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "writePermission": "ar:write",
+            "defaultValue": "USD"
+          },
+          {
+            "fieldKey": "external-reference",
+            "entityKey": "ar.customers",
+            "label": "External reference",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "writePermission": "ar:write"
+          },
+          {
+            "fieldKey": "status",
+            "entityKey": "ar.customers",
+            "label": "Status",
+            "type": "SELECT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "customer-statuses"
+          }
+        ],
+        "relationships": [],
+        "references": [
+          {
+            "referenceKey": "customer-statuses",
+            "referenceType": "VALUE_LIST",
+            "staticValues": [
+              {
+                "value": "ACTIVE",
+                "label": "Active"
+              },
+              {
+                "value": "INACTIVE",
+                "label": "Inactive"
+              }
+            ]
+          }
+        ],
+        "validationRules": [],
+        "views": [
+          {
+            "viewKey": "customers",
+            "label": "Customers",
+            "mode": "LIST",
+            "device": "ALL",
+            "searchFields": [
+              "legal-name",
+              "billing-email"
+            ],
+            "defaultSortField": "legal-name",
+            "defaultSortDirection": "ASC",
+            "tabs": [
+              {
+                "tabKey": "customer",
+                "label": "Customer",
+                "position": 0,
+                "level": 0,
+                "targetEntityKey": "ar.customers",
+                "sections": [
+                  {
+                    "sectionKey": "main",
+                    "label": "Customer",
+                    "collapsible": false,
+                    "defaultCollapsed": false,
+                    "position": 0
+                  },
+                  {
+                    "sectionKey": "refs",
+                    "label": "References",
+                    "collapsible": false,
+                    "defaultCollapsed": false,
+                    "position": 1
+                  }
+                ],
+                "fields": [
+                  {
+                    "fieldKey": "legal-name",
+                    "position": 0,
+                    "span": 6,
+                    "componentKey": "text-input",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "billing-email",
+                    "position": 1,
+                    "span": 6,
+                    "componentKey": "text-input",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "currency",
+                    "position": 2,
+                    "span": 3,
+                    "componentKey": "text-input",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "status",
+                    "position": 3,
+                    "span": 3,
+                    "componentKey": "select",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "external-reference",
+                    "position": 4,
+                    "span": 6,
+                    "componentKey": "text-input",
+                    "sectionKey": "refs"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "navigation": [],
+        "actions": [],
+        "messages": []
+      }
+    }
+  },
+  {
+    "contractVersion": "1.0",
+    "window": {
+      "route": "/ar",
+      "label": "Invoices",
+      "description": "Draft and issued AR invoices for the tenant.",
+      "readPermission": "ar:read"
+    },
+    "definition": {
+      "kind": "APPLICATION_DICTIONARY",
+      "contractVersion": "1.0",
+      "moduleKey": "accounts-receivable",
+      "entityKey": "ar-invoices",
+      "surfaceKey": "ar-invoices",
+      "title": "Customer invoices",
+      "dictionary": {
+        "packageKey": "ar-invoices-module-baseline",
+        "name": "Customer invoices",
+        "version": "1.0.0",
+        "moduleKey": "accounts-receivable",
+        "targetEntityKey": "ar.invoices",
+        "entities": [
+          {
+            "entityKey": "ar.invoices",
+            "moduleKey": "accounts-receivable",
+            "label": "Invoices",
+            "ownership": "MODULE_CORE",
+            "primaryKeyField": "id",
+            "isVersioned": true,
+            "isAuditLogged": true,
+            "isSoftDeletable": false
+          }
+        ],
+        "fields": [
+          {
+            "fieldKey": "invoice-number",
+            "entityKey": "ar.invoices",
+            "label": "Invoice number",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "customer-id",
+            "entityKey": "ar.invoices",
+            "label": "Customer",
+            "type": "TEXT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "writePermission": "ar:write"
+          },
+          {
+            "fieldKey": "currency",
+            "entityKey": "ar.invoices",
+            "label": "Currency",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "writePermission": "ar:write",
+            "defaultValue": "USD"
+          },
+          {
+            "fieldKey": "issue-date",
+            "entityKey": "ar.invoices",
+            "label": "Issue date",
+            "type": "DATE",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "writePermission": "ar:write"
+          },
+          {
+            "fieldKey": "due-date",
+            "entityKey": "ar.invoices",
+            "label": "Due date",
+            "type": "DATE",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "writePermission": "ar:write"
+          },
+          {
+            "fieldKey": "status",
+            "entityKey": "ar.invoices",
+            "label": "Status",
+            "type": "SELECT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "invoice-statuses"
+          },
+          {
+            "fieldKey": "total-minor",
+            "entityKey": "ar.invoices",
+            "label": "Total (minor units)",
+            "type": "INTEGER",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "amount-due-minor",
+            "entityKey": "ar.invoices",
+            "label": "Amount due (minor units)",
+            "type": "INTEGER",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "line-description",
+            "entityKey": "ar.invoices",
+            "label": "Line description",
+            "type": "TEXT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "writePermission": "ar:write"
+          },
+          {
+            "fieldKey": "line-quantity",
+            "entityKey": "ar.invoices",
+            "label": "Line quantity",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "writePermission": "ar:write",
+            "defaultValue": "1"
+          },
+          {
+            "fieldKey": "line-unit-amount-minor",
+            "entityKey": "ar.invoices",
+            "label": "Line unit amount (minor)",
+            "type": "INTEGER",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "writePermission": "ar:write"
+          }
+        ],
+        "relationships": [],
+        "references": [
+          {
+            "referenceKey": "invoice-statuses",
+            "referenceType": "VALUE_LIST",
+            "staticValues": [
+              {
+                "value": "DRAFT",
+                "label": "Draft"
+              },
+              {
+                "value": "ISSUED",
+                "label": "Issued"
+              }
+            ]
+          }
+        ],
+        "validationRules": [],
+        "views": [
+          {
+            "viewKey": "invoices",
+            "label": "Invoices",
+            "mode": "LIST",
+            "device": "ALL",
+            "searchFields": [
+              "invoice-number"
+            ],
+            "defaultSortField": "invoice-number",
+            "defaultSortDirection": "DESC",
+            "tabs": [
+              {
+                "tabKey": "invoice",
+                "label": "Invoice",
+                "position": 0,
+                "level": 0,
+                "targetEntityKey": "ar.invoices",
+                "sections": [
+                  {
+                    "sectionKey": "summary",
+                    "label": "Summary",
+                    "collapsible": false,
+                    "defaultCollapsed": false,
+                    "position": 0
+                  },
+                  {
+                    "sectionKey": "header",
+                    "label": "Customer & currency",
+                    "collapsible": false,
+                    "defaultCollapsed": false,
+                    "position": 1
+                  },
+                  {
+                    "sectionKey": "dates",
+                    "label": "Dates",
+                    "collapsible": false,
+                    "defaultCollapsed": false,
+                    "position": 2
+                  },
+                  {
+                    "sectionKey": "line",
+                    "label": "First line (create)",
+                    "collapsible": false,
+                    "defaultCollapsed": false,
+                    "position": 3
+                  }
+                ],
+                "fields": [
+                  {
+                    "fieldKey": "invoice-number",
+                    "position": 0,
+                    "span": 4,
+                    "componentKey": "text-input",
+                    "sectionKey": "summary"
+                  },
+                  {
+                    "fieldKey": "status",
+                    "position": 1,
+                    "span": 4,
+                    "componentKey": "select",
+                    "sectionKey": "summary"
+                  },
+                  {
+                    "fieldKey": "total-minor",
+                    "position": 2,
+                    "span": 4,
+                    "componentKey": "number-input",
+                    "sectionKey": "summary"
+                  },
+                  {
+                    "fieldKey": "amount-due-minor",
+                    "position": 3,
+                    "span": 4,
+                    "componentKey": "number-input",
+                    "sectionKey": "summary"
+                  },
+                  {
+                    "fieldKey": "customer-id",
+                    "position": 4,
+                    "span": 6,
+                    "componentKey": "text-input",
+                    "sectionKey": "header"
+                  },
+                  {
+                    "fieldKey": "currency",
+                    "position": 5,
+                    "span": 3,
+                    "componentKey": "text-input",
+                    "sectionKey": "header"
+                  },
+                  {
+                    "fieldKey": "issue-date",
+                    "position": 6,
+                    "span": 4,
+                    "componentKey": "date-input",
+                    "sectionKey": "dates"
+                  },
+                  {
+                    "fieldKey": "due-date",
+                    "position": 7,
+                    "span": 4,
+                    "componentKey": "date-input",
+                    "sectionKey": "dates"
+                  },
+                  {
+                    "fieldKey": "line-description",
+                    "position": 8,
+                    "span": 8,
+                    "componentKey": "text-input",
+                    "sectionKey": "line"
+                  },
+                  {
+                    "fieldKey": "line-quantity",
+                    "position": 9,
+                    "span": 4,
+                    "componentKey": "text-input",
+                    "sectionKey": "line"
+                  },
+                  {
+                    "fieldKey": "line-unit-amount-minor",
+                    "position": 10,
+                    "span": 4,
+                    "componentKey": "number-input",
+                    "sectionKey": "line"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "navigation": [],
+        "actions": [],
+        "messages": []
+      }
+    }
+  },
+  {
+    "contractVersion": "1.0",
+    "window": {
       "route": "/finance",
       "label": "Chart of accounts",
       "description": "The accounts journals post to, by book.",
@@ -19030,6 +19547,7 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
 
 // WI-OI-120bh: each window module's entitlement, its catalogue entry's key in `modules/<module>/module.yaml`.
 export const MODULE_WINDOW_ENTITLEMENT_KEYS: Readonly<Record<string, string>> = {
+  "accounts-receivable": "accounts-receivable",
   "financial-operations": "financial-operations",
   "gigaops": "gigaops",
   "physical-operations-cmms": "asset-maintenance",

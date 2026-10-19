@@ -1,0 +1,196 @@
+{
+  "contractVersion": "1.0",
+  "window": {
+    "route": "/ar",
+    "label": "Customers",
+    "description": "Billing customers for accounts receivable.",
+    "readPermission": "ar:read"
+  },
+  "definition": {
+    "kind": "APPLICATION_DICTIONARY",
+    "contractVersion": "1.0",
+    "moduleKey": "accounts-receivable",
+    "entityKey": "ar-customers",
+    "surfaceKey": "ar-customers",
+    "title": "Customers",
+    "dictionary": {
+      "packageKey": "ar-customers-module-baseline",
+      "name": "Customers",
+      "version": "1.0.0",
+      "moduleKey": "accounts-receivable",
+      "targetEntityKey": "ar.customers",
+      "entities": [
+        {
+          "entityKey": "ar.customers",
+          "moduleKey": "accounts-receivable",
+          "label": "Customers",
+          "ownership": "MODULE_CORE",
+          "primaryKeyField": "id",
+          "isVersioned": true,
+          "isAuditLogged": true,
+          "isSoftDeletable": false
+        }
+      ],
+      "fields": [
+        {
+          "fieldKey": "legal-name",
+          "entityKey": "ar.customers",
+          "label": "Legal name",
+          "type": "TEXT",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "writePermission": "ar:write"
+        },
+        {
+          "fieldKey": "billing-email",
+          "entityKey": "ar.customers",
+          "label": "Billing email",
+          "type": "TEXT",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "writePermission": "ar:write"
+        },
+        {
+          "fieldKey": "currency",
+          "entityKey": "ar.customers",
+          "label": "Currency",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "writePermission": "ar:write",
+          "defaultValue": "USD"
+        },
+        {
+          "fieldKey": "external-reference",
+          "entityKey": "ar.customers",
+          "label": "External reference",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "writePermission": "ar:write"
+        },
+        {
+          "fieldKey": "status",
+          "entityKey": "ar.customers",
+          "label": "Status",
+          "type": "SELECT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "customer-statuses"
+        }
+      ],
+      "relationships": [],
+      "references": [
+        {
+          "referenceKey": "customer-statuses",
+          "referenceType": "VALUE_LIST",
+          "staticValues": [
+            {
+              "value": "ACTIVE",
+              "label": "Active"
+            },
+            {
+              "value": "INACTIVE",
+              "label": "Inactive"
+            }
+          ]
+        }
+      ],
+      "validationRules": [],
+      "views": [
+        {
+          "viewKey": "customers",
+          "label": "Customers",
+          "mode": "LIST",
+          "device": "ALL",
+          "searchFields": [
+            "legal-name",
+            "billing-email"
+          ],
+          "defaultSortField": "legal-name",
+          "defaultSortDirection": "ASC",
+          "tabs": [
+            {
+              "tabKey": "customer",
+              "label": "Customer",
+              "position": 0,
+              "level": 0,
+              "targetEntityKey": "ar.customers",
+              "sections": [
+                {
+                  "sectionKey": "main",
+                  "label": "Customer",
+                  "collapsible": false,
+                  "defaultCollapsed": false,
+                  "position": 0
+                },
+                {
+                  "sectionKey": "refs",
+                  "label": "References",
+                  "collapsible": false,
+                  "defaultCollapsed": false,
+                  "position": 1
+                }
+              ],
+              "fields": [
+                {
+                  "fieldKey": "legal-name",
+                  "position": 0,
+                  "span": 6,
+                  "componentKey": "text-input",
+                  "sectionKey": "main"
+                },
+                {
+                  "fieldKey": "billing-email",
+                  "position": 1,
+                  "span": 6,
+                  "componentKey": "text-input",
+                  "sectionKey": "main"
+                },
+                {
+                  "fieldKey": "currency",
+                  "position": 2,
+                  "span": 3,
+                  "componentKey": "text-input",
+                  "sectionKey": "main"
+                },
+                {
+                  "fieldKey": "status",
+                  "position": 3,
+                  "span": 3,
+                  "componentKey": "select",
+                  "sectionKey": "main"
+                },
+                {
+                  "fieldKey": "external-reference",
+                  "position": 4,
+                  "span": 6,
+                  "componentKey": "text-input",
+                  "sectionKey": "refs"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "navigation": [],
+      "actions": [],
+      "messages": []
+    }
+  }
+}

@@ -14,3 +14,4 @@
 000013_ar_ledger_repair_and_g4_hardening.up.sql
 000014_ar_orders_inbox_receipts.up.sql
 000015_ar_auth_revocation_shape.up.sql
+000016_ar_record_idempotency.up.sql

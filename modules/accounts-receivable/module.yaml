@@ -120,6 +120,7 @@ spec:
     routeNoun: Accounts Receivable
     serviceName: Accounts Receivable
     entitlementName: Accounts Receivable
+    records: true
     routes:
       - { path: 'v1/setup', POST: ar:write }
       - { path: 'v1/customers', GET: ar:read, POST: ar:write }

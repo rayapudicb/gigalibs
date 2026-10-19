@@ -8,7 +8,7 @@ export const AUDIENCE = 'gigalibs-ar-api';
 export const MODULE_KEY = 'accounts-receivable';
 export const PERMISSION_PREFIX = 'ar';
 export const SCHEMA = 'gigalibs_ar';
-export const SCHEMA_CONTRACT_VERSION = 15;
+export const SCHEMA_CONTRACT_VERSION = 16;
 
 export const AR_MODULE_RUNTIME_CONFIG = Symbol('AR_MODULE_RUNTIME_CONFIG');
 

@@ -12,7 +12,7 @@ import type { ArRuntimeConfig } from '../runtime-config.js';
 export type TenantTransaction<T> = (client: PoolClient) => Promise<T>;
 
 // WI-OI-113: authoritative count of applied AR migrations (versions 1-13 + 14 = 14 rows).
-const REQUIRED_MIGRATION_COUNT = 15;
+const REQUIRED_MIGRATION_COUNT = 16;
 
 @Injectable()
 export class DatabaseService implements OnApplicationBootstrap, OnModuleDestroy {
@@ -66,7 +66,7 @@ export class DatabaseService implements OnApplicationBootstrap, OnModuleDestroy 
     if (count !== REQUIRED_MIGRATION_COUNT) {
       throw new Error(
         `AR schema_migrations has ${count} rows; expected exactly ${REQUIRED_MIGRATION_COUNT}. ` +
-        `Run all migrations through 000015 before starting the service.`,
+        `Run all migrations through 000016 before starting the service.`,
       );
     }
     if (this.config.nodeEnv === 'production' && ((state?.is_superuser) || (state?.bypasses_rls))) {

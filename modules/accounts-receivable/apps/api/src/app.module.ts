@@ -1,3 +1,9 @@
+import {
+  createRecordController,
+  loadIdempotencyRetentionDays,
+  ModuleIdempotencyStore,
+  RECORD_DISPATCHER,
+} from '@gigalibs/module-sdk';
 import { Module, OnModuleInit } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import {
@@ -68,6 +74,12 @@ const AR_LOCKED_KEYS = new Set<string>([
 ]);
 
 import { DatabaseModule } from './database/database.module.js';
+import { arRecordDispatcher, idempotencyDatabase } from './records/ar-record-adapters.js';
+
+const ArRecordController = createRecordController({
+  guard: ArAuthorizationGuard,
+  readPermission: 'ar:read',
+});
 
 @Module({
   imports: [
@@ -111,6 +123,7 @@ import { DatabaseModule } from './database/database.module.js';
     WorkSourcesController,
     WebhooksController,
     OidcDevController,
+    ArRecordController,
   ],
   providers: [
     arConfigProvider,
@@ -136,6 +149,17 @@ import { DatabaseModule } from './database/database.module.js';
     CreditNotesService,
     WorkSourcesService,
     OidcDevService,
+    {
+      provide: RECORD_DISPATCHER,
+      inject: [InvoicesService, CustomersService, DatabaseService],
+      useFactory: (invoices: InvoicesService, customers: CustomersService, database: DatabaseService) =>
+        arRecordDispatcher(
+          { invoices, customers },
+          new ModuleIdempotencyStore(idempotencyDatabase(database), {
+            retentionDays: loadIdempotencyRetentionDays(process.env, 'AR'),
+          }),
+        ),
+    },
   ],
 })
 export class AppModule implements OnModuleInit {

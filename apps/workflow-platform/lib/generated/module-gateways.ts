@@ -192,6 +192,36 @@ export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGat
         "methods": {
           "GET": "ar:read"
         }
+      },
+      {
+        "template": "v1/records/{entity}",
+        "pattern": "^v1/records/[a-z][a-z0-9-]*(?:[.][a-z0-9-]+)*$",
+        "methods": {
+          "GET": "ar:read",
+          "POST": "ar:read"
+        }
+      },
+      {
+        "template": "v1/records/{entity}/{id}",
+        "pattern": "^v1/records/[a-z][a-z0-9-]*(?:[.][a-z0-9-]+)*/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "GET": "ar:read",
+          "PATCH": "ar:read"
+        }
+      },
+      {
+        "template": "v1/records/{entity}/{id}/actions/{key}",
+        "pattern": "^v1/records/[a-z][a-z0-9-]*(?:[.][a-z0-9-]+)*/[0-9a-fA-F-]{36}/actions/[a-z][a-z0-9-]*$",
+        "methods": {
+          "POST": "ar:read"
+        }
+      },
+      {
+        "template": "v1/lookups/{key}",
+        "pattern": "^v1/lookups/[a-z][a-z0-9-]*$",
+        "methods": {
+          "GET": "ar:read"
+        }
       }
     ],
     "transformBody": null,
