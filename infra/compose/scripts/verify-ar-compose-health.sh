@@ -13,7 +13,8 @@ fail() {
   exit 1
 }
 
-"${COMPOSE[@]}" ps --status running --services 2>/dev/null | grep -qx 'ar-api' || fail 'ar-api is not running; start with: docker compose ... up -d ar-api'
+"${COMPOSE[@]}" ps --status running --services 2>/dev/null | grep -qx 'ar-api' \
+  || fail 'ar-api is not running; start with: infra/compose/scripts/up-ar-api.sh'
 
 "${COMPOSE[@]}" exec -T ar-api node -e "
   fetch('http://127.0.0.1:3400/health/ready')

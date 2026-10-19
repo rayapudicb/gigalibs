@@ -47,6 +47,7 @@ if [[ -f "${MODULE_ENV}" ]]; then
       /^CONNECTOR_HUB_IMAGE=/ { print "CONNECTOR_HUB_IMAGE=gigalibs/connector-hub-api:" tag; next }
       /^ANALYTICS_IMAGE=/ { print "ANALYTICS_IMAGE=gigalibs/analytics-api:" tag; next }
       /^CMMS_IMAGE=/ { print "CMMS_IMAGE=gigalibs/cmms-api:" tag; next }
+      /^AR_IMAGE=/ { print "AR_IMAGE=gigalibs/ar-api:" tag; next }
       { print }
     ' "${MODULE_ENV}" >"${MODULE_TEMP_ENV}"
   chmod 600 "${MODULE_TEMP_ENV}"
