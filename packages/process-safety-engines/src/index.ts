@@ -3,6 +3,7 @@
  * Pure and deterministic: the same code runs in the browser for instant feedback and on the server, whose result is
  * the record. Criteria, library and element data are inputs; results carry their versions.
  */
+export * from './actions.js';
 export * from './constants.js';
 export * from './criteria.js';
 export * from './data/elements-iupac-2021.js';

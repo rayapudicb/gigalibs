@@ -15,11 +15,17 @@ export interface ScreeningCriteria {
   /** Mole-balance tolerance, atoms per formula unit (FR-GATE-02). */
   readonly elementBalanceTolerance: number;
   /** Oxygen-balance alert band, %, exclusive bounds (FR-OB-03, BRL-02). */
-  readonly oxygenBalanceAlertBandPercent: { readonly lowerExclusive: number; readonly upperExclusive: number };
+  readonly oxygenBalanceAlertBandPercent: {
+    readonly lowerExclusive: number;
+    readonly upperExclusive: number;
+  };
   /** Severity from the adiabatic rise (FR-THM-08): below `mediumFromK` Low, up to `highAboveK` Medium, above it High. */
   readonly severityByAdiabaticRiseK: { readonly mediumFromK: number; readonly highAboveK: number };
   /** Probability from TMRad at MTSR (FR-THM-08): above `lowAboveHours` Low, from `highBelowHours` up Medium, below it High. */
-  readonly probabilityByTmrHours: { readonly lowAboveHours: number; readonly highBelowHours: number };
+  readonly probabilityByTmrHours: {
+    readonly lowAboveHours: number;
+    readonly highBelowHours: number;
+  };
   /** TD24 search interval for the bisection, °C (BRD §15). */
   readonly td24SearchRangeC: Range;
   /** The conservative TD24 when only a DSC onset is known: onset minus this many kelvin (BRL-06). */

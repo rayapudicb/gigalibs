@@ -30,7 +30,12 @@ export type GreenOutcome =
       readonly waterG: number;
       readonly productG: number;
     }
-  | { readonly status: 'NO_PRODUCT_MASS'; readonly atomEconomyPercent: number; readonly byStream: MassByStream; readonly inputsG: number }
+  | {
+      readonly status: 'NO_PRODUCT_MASS';
+      readonly atomEconomyPercent: number;
+      readonly byStream: MassByStream;
+      readonly inputsG: number;
+    }
   | { readonly status: 'LOCKED' };
 
 function productOf(gate: GateResult): AnalysedMaterial | undefined {
@@ -47,8 +52,13 @@ export function greenMetrics(gate: GateResult): GreenOutcome {
   const productCoefficient = product.input.coefficient ?? 0;
   const reactantMolarMass = gate.materials
     .filter((m) => m.input.role === 'Reactant' && m.formula.ok)
-    .reduce((sum, m) => sum + (m.input.coefficient ?? 0) * (m.formula.ok ? m.formula.molarMassGPerMol : 0), 0);
-  const atomEconomyPercent = ((productCoefficient * product.formula.molarMassGPerMol) / reactantMolarMass) * 100;
+    .reduce(
+      (sum, m) =>
+        sum + (m.input.coefficient ?? 0) * (m.formula.ok ? m.formula.molarMassGPerMol : 0),
+      0,
+    );
+  const atomEconomyPercent =
+    ((productCoefficient * product.formula.molarMassGPerMol) / reactantMolarMass) * 100;
 
   const byStream = { reactantsG: 0, additivesG: 0, solventsG: 0, workUpG: 0 };
   let waterG = 0;
@@ -99,7 +109,9 @@ export type RouteRollup =
  * Route roll-up (FR-GRN-04): inputs summed over the steps without double-counting carried intermediates; overall yield
  * as the product of step yields; route AE as the final product's molar mass over the non-carried reactants.
  */
-export function routeRollup(steps: readonly { readonly gate: GateResult; readonly green: GreenOutcome }[]): RouteRollup {
+export function routeRollup(
+  steps: readonly { readonly gate: GateResult; readonly green: GreenOutcome }[],
+): RouteRollup {
   let totalInputsG = 0;
   let yieldFraction = 1;
   let atomEconomyDenominator = 0;
@@ -123,7 +135,8 @@ export function routeRollup(steps: readonly { readonly gate: GateResult; readonl
     finalProduct = productOf(step.gate);
     previousProductHill = finalProduct?.formula.ok ? finalProduct.formula.hill : null;
   }
-  if (!finalProduct?.formula.ok) return { status: 'BLOCKED', blockedStepIndex: Math.max(steps.length - 1, 0) };
+  if (!finalProduct?.formula.ok)
+    return { status: 'BLOCKED', blockedStepIndex: Math.max(steps.length - 1, 0) };
   const finalProductG = finalProduct.input.massG ?? 0;
   const processMassIntensity = totalInputsG / finalProductG;
   return {

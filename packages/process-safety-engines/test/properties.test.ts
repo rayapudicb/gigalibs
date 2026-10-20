@@ -34,11 +34,13 @@ function generator(seed: number): () => number {
 
 const RUNS = 300;
 const between = (random: () => number, min: number, max: number) => min + random() * (max - min);
-const integer = (random: () => number, min: number, max: number) => Math.floor(between(random, min, max + 1));
+const integer = (random: () => number, min: number, max: number) =>
+  Math.floor(between(random, min, max + 1));
 
 function randomCounts(random: () => number): ElementCounts {
   const counts: Record<string, number> = { C: integer(random, 1, 20), H: integer(random, 1, 40) };
-  for (const symbol of ['N', 'O', 'S', 'Cl']) if (random() < 0.5) counts[symbol] = integer(random, 1, 6);
+  for (const symbol of ['N', 'O', 'S', 'Cl'])
+    if (random() < 0.5) counts[symbol] = integer(random, 1, 6);
   return counts;
 }
 
@@ -62,15 +64,33 @@ describe('engine properties (WI-OI-120br)', () => {
       const b = randomCounts(random);
       const product = sum(a, b);
       const materials: MaterialInput[] = [
-        { id: 'a', role: 'Reactant', formula: hillFormula(a), coefficient: 1, massG: between(random, 1, 500) },
-        { id: 'b', role: 'Reactant', formula: hillFormula(b), coefficient: 1, massG: between(random, 1, 500) },
+        {
+          id: 'a',
+          role: 'Reactant',
+          formula: hillFormula(a),
+          coefficient: 1,
+          massG: between(random, 1, 500),
+        },
+        {
+          id: 'b',
+          role: 'Reactant',
+          formula: hillFormula(b),
+          coefficient: 1,
+          massG: between(random, 1, 500),
+        },
         { id: 'p', role: 'Product', formula: hillFormula(product), coefficient: 1 },
       ];
       expect(gateOf(materials).pass).toBe(true);
       const broken = { ...product, H: (product.H ?? 0) - 1 };
-      const unbalanced = gateOf([materials[0] as MaterialInput, materials[1] as MaterialInput, { id: 'p', role: 'Product', formula: hillFormula(broken), coefficient: 1 }]);
+      const unbalanced = gateOf([
+        materials[0] as MaterialInput,
+        materials[1] as MaterialInput,
+        { id: 'p', role: 'Product', formula: hillFormula(broken), coefficient: 1 },
+      ]);
       expect(unbalanced.pass).toBe(false);
-      expect(unbalanced.issues.find((i) => i.code === 'GATE_ELEMENT_BALANCE')?.params?.elements).toEqual(['H']);
+      expect(
+        unbalanced.issues.find((i) => i.code === 'GATE_ELEMENT_BALANCE')?.params?.elements,
+      ).toEqual(['H']);
     }
   });
 
@@ -78,11 +98,29 @@ describe('engine properties (WI-OI-120br)', () => {
     const random = generator(42);
     for (let run = 0; run < RUNS; run += 1) {
       const gate = gateOf([
-        { id: 'a', role: 'Reactant', formula: 'C7H5FO', coefficient: 1, massG: between(random, 10, 1000) },
-        { id: 'b', role: 'Reactant', formula: 'C7H12O3', coefficient: 1, massG: between(random, 10, 1000) },
+        {
+          id: 'a',
+          role: 'Reactant',
+          formula: 'C7H5FO',
+          coefficient: 1,
+          massG: between(random, 10, 1000),
+        },
+        {
+          id: 'b',
+          role: 'Reactant',
+          formula: 'C7H12O3',
+          coefficient: 1,
+          massG: between(random, 10, 1000),
+        },
         { id: 's', role: 'Solvent', formula: 'C3H8O', massG: between(random, 0, 5000) },
         { id: 'w', role: 'Work-up', formula: 'H2O', massG: between(random, 0, 5000) },
-        { id: 'p', role: 'Product', formula: 'C14H15FO3', coefficient: 1, massG: between(random, 1, 500) },
+        {
+          id: 'p',
+          role: 'Product',
+          formula: 'C14H15FO3',
+          coefficient: 1,
+          massG: between(random, 1, 500),
+        },
         { id: 'x', role: 'By-product', formula: 'H2O', coefficient: 1 },
       ]);
       const green = greenMetrics(gate);
@@ -116,7 +154,9 @@ describe('engine properties (WI-OI-120br)', () => {
     const base = gateOf(step3.materials).extentMol ?? Number.NaN;
     for (let run = 0; run < RUNS; run += 1) {
       const factor = between(random, 0.01, 100);
-      const scaled = step3.materials.map((m) => ({ ...m, massG: m.massG == null ? m.massG : m.massG * factor }));
+      const scaled = step3.materials.map((m) =>
+        typeof m.massG === 'number' ? { ...m, massG: m.massG * factor } : m,
+      );
       expect(gateOf(scaled).extentMol).toBeCloseTo(base * factor, 9);
     }
   });
@@ -136,7 +176,11 @@ describe('engine properties (WI-OI-120br)', () => {
       const incomplete = criteria as unknown as ScreeningCriteria;
       const outcomes = [
         runGate(step3.materials, elements, incomplete),
-        oxygenBalance(analyseMaterial({ id: 'x', role: 'Reactant', formula: 'C7H8' }, elements), elements, incomplete),
+        oxygenBalance(
+          analyseMaterial({ id: 'x', role: 'Reactant', formula: 'C7H8' }, elements),
+          elements,
+          incomplete,
+        ),
         runThermal(gate, step3.conditions, PROTOTYPE_LIBRARY, incomplete),
       ];
       for (const outcome of outcomes) {

@@ -5,7 +5,7 @@ import {
   TD24_HORIZON_HOURS,
   ZERO_CELSIUS_K,
 } from './constants.js';
-import { criteriaGap, type Range, type ScreeningCriteria } from './criteria.js';
+import { type Range, type ScreeningCriteria, criteriaGap } from './criteria.js';
 import { type GateResult, isEquationRole } from './gate.js';
 import type { ScreeningLibrary } from './library.js';
 import { type StoesselClass, stoesselClass } from './stoessel.js';
@@ -46,30 +46,57 @@ function outside(value: number, range: Range): boolean {
 }
 
 /** Input ranges (BRD §15.1), all taken from the criteria in force. */
-export function validateConditions(conditions: ThermalConditions, criteria: ScreeningCriteria): ConditionCheck {
+export function validateConditions(
+  conditions: ThermalConditions,
+  criteria: ScreeningCriteria,
+): ConditionCheck {
   const errors: EngineMessage[] = [];
   const warnings: EngineMessage[] = [];
   const ranges = criteria.inputRanges;
   const block = (field: string, value: number | null | undefined, range: Range) => {
     if (typeof value === 'number' && outside(value, range)) {
-      errors.push({ code: 'INPUT_OUT_OF_RANGE', requirement: 'BRD-15.1', params: { field, min: range.min, max: range.max } });
+      errors.push({
+        code: 'INPUT_OUT_OF_RANGE',
+        requirement: 'BRD-15.1',
+        params: { field, min: range.min, max: range.max },
+      });
     }
   };
   block('processTemperatureC', conditions.processTemperatureC, ranges.temperatureC);
-  block('maximumTechnicalTemperatureC', conditions.maximumTechnicalTemperatureC, ranges.temperatureC);
-  block('referenceTemperatureC', conditions.decomposition?.referenceTemperatureC, ranges.temperatureC);
+  block(
+    'maximumTechnicalTemperatureC',
+    conditions.maximumTechnicalTemperatureC,
+    ranges.temperatureC,
+  );
+  block(
+    'referenceTemperatureC',
+    conditions.decomposition?.referenceTemperatureC,
+    ranges.temperatureC,
+  );
   block('dscOnsetC', conditions.dscOnsetC, ranges.temperatureC);
   block('td24EnteredC', conditions.td24EnteredC, ranges.temperatureC);
   block('heatCapacityJPerGK', conditions.heatCapacityJPerGK, ranges.heatCapacityJPerGK.block);
   block('accumulationPercent', conditions.accumulationPercent, ranges.accumulationPercent);
-  block('activationEnergyKJPerMol', conditions.decomposition?.activationEnergyKJPerMol, ranges.activationEnergyKJPerMol);
+  block(
+    'activationEnergyKJPerMol',
+    conditions.decomposition?.activationEnergyKJPerMol,
+    ranges.activationEnergyKJPerMol,
+  );
 
   const cp = conditions.heatCapacityJPerGK;
-  if (typeof cp === 'number' && !outside(cp, ranges.heatCapacityJPerGK.block) && outside(cp, ranges.heatCapacityJPerGK.warn)) {
+  if (
+    typeof cp === 'number' &&
+    !outside(cp, ranges.heatCapacityJPerGK.block) &&
+    outside(cp, ranges.heatCapacityJPerGK.warn)
+  ) {
     warnings.push({
       code: 'INPUT_UNUSUAL',
       requirement: 'BRD-15.1',
-      params: { field: 'heatCapacityJPerGK', min: ranges.heatCapacityJPerGK.warn.min, max: ranges.heatCapacityJPerGK.warn.max },
+      params: {
+        field: 'heatCapacityJPerGK',
+        min: ranges.heatCapacityJPerGK.warn.min,
+        max: ranges.heatCapacityJPerGK.warn.max,
+      },
     });
   }
   const enthalpy = conditions.reactionEnthalpy;
@@ -77,7 +104,11 @@ export function validateConditions(conditions: ThermalConditions, criteria: Scre
     const limits = ranges.reactionEnthalpyKJPerMol;
     block('reactionEnthalpyKJPerMol', enthalpy.kJPerMol, limits.block);
     if (!outside(enthalpy.kJPerMol, limits.block) && enthalpy.kJPerMol < limits.warnBelow) {
-      warnings.push({ code: 'INPUT_UNUSUAL', requirement: 'BRD-15.1', params: { field: 'reactionEnthalpyKJPerMol', warnBelow: limits.warnBelow } });
+      warnings.push({
+        code: 'INPUT_UNUSUAL',
+        requirement: 'BRD-15.1',
+        params: { field: 'reactionEnthalpyKJPerMol', warnBelow: limits.warnBelow },
+      });
     }
   }
   return { errors, warnings };
@@ -88,7 +119,10 @@ function heatReleaseRate(kinetics: DecompositionKinetics, temperatureC: number):
   const activationJ = kinetics.activationEnergyKJPerMol * 1000;
   const t = temperatureC + ZERO_CELSIUS_K;
   const tRef = kinetics.referenceTemperatureC + ZERO_CELSIUS_K;
-  return kinetics.heatReleaseRateWPerKg * Math.exp((-activationJ / GAS_CONSTANT_J_PER_MOL_K) * (1 / t - 1 / tRef));
+  return (
+    kinetics.heatReleaseRateWPerKg *
+    Math.exp((-activationJ / GAS_CONSTANT_J_PER_MOL_K) * (1 / t - 1 / tRef))
+  );
 }
 
 /** TMRad at a temperature, hours (BRD §15): Cp·R·T² / (q(T)·Ea), with Cp in J/(kg·K). */
@@ -113,7 +147,8 @@ export function td24FromKinetics(
 ): number | null {
   let low = searchRangeC.min;
   let high = searchRangeC.max;
-  const tmr = (temperatureC: number) => timeToMaximumRateHours(heatCapacityJPerGK, kinetics, temperatureC);
+  const tmr = (temperatureC: number) =>
+    timeToMaximumRateHours(heatCapacityJPerGK, kinetics, temperatureC);
   if (tmr(low) < TD24_HORIZON_HOURS || tmr(high) > TD24_HORIZON_HOURS) return null;
   for (let iteration = 0; iteration < 200; iteration += 1) {
     const middle = (low + high) / 2;
@@ -123,7 +158,12 @@ export function td24FromKinetics(
   return (low + high) / 2;
 }
 
-export type Td24Basis = 'KINETICS' | 'ENTERED' | 'CONSERVATIVE_ONSET' | 'OUT_OF_SEARCH_RANGE' | 'MISSING';
+export type Td24Basis =
+  | 'KINETICS'
+  | 'ENTERED'
+  | 'CONSERVATIVE_ONSET'
+  | 'OUT_OF_SEARCH_RANGE'
+  | 'MISSING';
 export type Severity = 'LOW' | 'MEDIUM' | 'HIGH';
 export type Probability = Severity | 'UNKNOWN';
 
@@ -167,23 +207,55 @@ export interface ThermalResult {
 export type ThermalOutcome =
   | ThermalResult
   | { readonly status: 'LOCKED' }
-  | { readonly status: 'INVALID'; readonly errors: readonly EngineMessage[]; readonly warnings: readonly EngineMessage[] }
+  | {
+      readonly status: 'INVALID';
+      readonly errors: readonly EngineMessage[];
+      readonly warnings: readonly EngineMessage[];
+    }
   | DataGap;
 
 function enthalpyFrom(
   conditions: ThermalConditions,
   gate: GateResult,
   library: ScreeningLibrary,
-): { kJPerMol: number | null; estimate: boolean; unreviewed: boolean; notComputed: EngineMessage | null } {
+): {
+  kJPerMol: number | null;
+  estimate: boolean;
+  unreviewed: boolean;
+  notComputed: EngineMessage | null;
+} {
   const choice = conditions.reactionEnthalpy;
-  if (!choice) return { kJPerMol: null, estimate: false, unreviewed: false, notComputed: { code: 'THM_ENTHALPY_SOURCE_MISSING', requirement: 'FR-THM-01' } };
-  if (choice.source === 'MANUAL') return { kJPerMol: choice.kJPerMol, estimate: false, unreviewed: false, notComputed: null };
+  if (!choice)
+    return {
+      kJPerMol: null,
+      estimate: false,
+      unreviewed: false,
+      notComputed: { code: 'THM_ENTHALPY_SOURCE_MISSING', requirement: 'FR-THM-01' },
+    };
+  if (choice.source === 'MANUAL')
+    return { kJPerMol: choice.kJPerMol, estimate: false, unreviewed: false, notComputed: null };
   if (choice.source === 'REACTION_CLASS') {
-    const reactionClass = library.reactionClasses.find((entry) => entry.id === choice.reactionClassId);
+    const reactionClass = library.reactionClasses.find(
+      (entry) => entry.id === choice.reactionClassId,
+    );
     if (!reactionClass) {
-      return { kJPerMol: null, estimate: true, unreviewed: false, notComputed: { code: 'THM_REACTION_CLASS_UNKNOWN', requirement: 'FR-THM-03', params: { reactionClassId: choice.reactionClassId } } };
+      return {
+        kJPerMol: null,
+        estimate: true,
+        unreviewed: false,
+        notComputed: {
+          code: 'THM_REACTION_CLASS_UNKNOWN',
+          requirement: 'FR-THM-03',
+          params: { reactionClassId: choice.reactionClassId },
+        },
+      };
     }
-    return { kJPerMol: reactionClass.typicalReactionEnthalpyKJPerMol, estimate: true, unreviewed: !reactionClass.reviewed, notComputed: null };
+    return {
+      kJPerMol: reactionClass.typicalReactionEnthalpyKJPerMol,
+      estimate: true,
+      unreviewed: !reactionClass.reviewed,
+      notComputed: null,
+    };
   }
   let sum = 0;
   let unreviewed = false;
@@ -199,7 +271,16 @@ function enthalpyFrom(
     sum += (m.input.role === 'Reactant' ? -1 : 1) * (m.input.coefficient ?? 0) * entry.kJPerMol;
   }
   if (missing.length) {
-    return { kJPerMol: null, estimate: false, unreviewed, notComputed: { code: 'THM_HESS_FORMATION_ENTHALPY_MISSING', requirement: 'FR-THM-02', params: { materialIds: missing } } };
+    return {
+      kJPerMol: null,
+      estimate: false,
+      unreviewed,
+      notComputed: {
+        code: 'THM_HESS_FORMATION_ENTHALPY_MISSING',
+        requirement: 'FR-THM-02',
+        params: { materialIds: missing },
+      },
+    };
   }
   return { kJPerMol: sum, estimate: false, unreviewed, notComputed: null };
 }
@@ -218,11 +299,14 @@ export function runThermal(
   if (gap) return gap;
   if (!gate.pass || gate.extentMol === null) return { status: 'LOCKED' };
   const check = validateConditions(conditions, criteria);
-  if (check.errors.length) return { status: 'INVALID', errors: check.errors, warnings: check.warnings };
+  if (check.errors.length)
+    return { status: 'INVALID', errors: check.errors, warnings: check.warnings };
 
   const extentMol = gate.extentMol;
   const reactionMassG = gate.materials
-    .filter((m) => ['Reactant', 'Additive', 'Solvent'].includes(m.input.role) && (m.input.massG ?? 0) > 0)
+    .filter(
+      (m) => ['Reactant', 'Additive', 'Solvent'].includes(m.input.role) && (m.input.massG ?? 0) > 0,
+    )
     .reduce((sum, m) => sum + (m.input.massG ?? 0), 0);
 
   let gasUnreviewed = false;
@@ -233,7 +317,12 @@ export function runThermal(
     if (!gas) continue;
     gasUnreviewed ||= !gas.reviewed;
     const moles = (m.input.coefficient ?? 0) * extentMol;
-    gases.push({ materialId: m.input.id, gasId: gas.id, moles, litresAtStp: moles * MOLAR_VOLUME_STP_L_PER_MOL });
+    gases.push({
+      materialId: m.input.id,
+      gasId: gas.id,
+      moles,
+      litresAtStp: moles * MOLAR_VOLUME_STP_L_PER_MOL,
+    });
   }
 
   const enthalpy = enthalpyFrom(conditions, gate, library);
@@ -270,7 +359,11 @@ export function runThermal(
   const tp = conditions.processTemperatureC;
   const accumulation = conditions.accumulationPercent;
   if (cp === null || !(cp > 0) || tp === null || accumulation === null) {
-    return { ...base, ...empty, notComputed: { code: 'THM_CONDITIONS_REQUIRED', requirement: 'FR-THM-04' } };
+    return {
+      ...base,
+      ...empty,
+      notComputed: { code: 'THM_CONDITIONS_REQUIRED', requirement: 'FR-THM-04' },
+    };
   }
   // A passing gate has at least one charged reactant (FR-GATE-05), so reactionMassG > 0 here.
 
@@ -282,7 +375,9 @@ export function runThermal(
 
   const kinetics = conditions.decomposition;
   const hasKinetics =
-    kinetics !== null && kinetics.activationEnergyKJPerMol > 0 && kinetics.heatReleaseRateWPerKg > 0;
+    kinetics !== null &&
+    kinetics.activationEnergyKJPerMol > 0 &&
+    kinetics.heatReleaseRateWPerKg > 0;
   let td24C: number | null = null;
   let td24Basis: Td24Basis = 'MISSING';
   if (hasKinetics) {
@@ -296,12 +391,18 @@ export function runThermal(
     td24Basis = 'CONSERVATIVE_ONSET';
   }
   const tmrAtMtsrHours = hasKinetics ? timeToMaximumRateHours(cp, kinetics, mtsrC) : null;
-  const tmrAtFullAccumulationHours = hasKinetics ? timeToMaximumRateHours(cp, kinetics, mtsrFullAccumulationC) : null;
+  const tmrAtFullAccumulationHours = hasKinetics
+    ? timeToMaximumRateHours(cp, kinetics, mtsrFullAccumulationC)
+    : null;
   const mtt = conditions.maximumTechnicalTemperatureC;
 
   const severityLimits = criteria.severityByAdiabaticRiseK;
   const severity: Severity =
-    adiabaticRiseK < severityLimits.mediumFromK ? 'LOW' : adiabaticRiseK <= severityLimits.highAboveK ? 'MEDIUM' : 'HIGH';
+    adiabaticRiseK < severityLimits.mediumFromK
+      ? 'LOW'
+      : adiabaticRiseK <= severityLimits.highAboveK
+        ? 'MEDIUM'
+        : 'HIGH';
   const probabilityLimits = criteria.probabilityByTmrHours;
   const probability: Probability =
     tmrAtMtsrHours === null

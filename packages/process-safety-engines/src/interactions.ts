@@ -10,6 +10,8 @@ export interface InteractionFinding {
   readonly severity: InteractionSeverity;
   readonly citation: string;
   readonly reviewed: boolean;
+  /** From the rule, when the library names a Stage 2 test for it. */
+  readonly recommendedTest?: string;
 }
 
 export interface MaterialNote {
@@ -32,10 +34,15 @@ export interface InteractionResult {
  * The binary interaction screener (FR-HAZ-01 to 06; BP-01 2.3). For every pair of materials in a step, the most severe
  * library rule whose two classes match. The rules and classes are library data; the engine only matches them.
  */
-export function screenInteractions(materials: readonly MaterialInput[], library: ScreeningLibrary): InteractionResult {
+export function screenInteractions(
+  materials: readonly MaterialInput[],
+  library: ScreeningLibrary,
+): InteractionResult {
   const linked = materials.map((material) => ({
     material,
-    entry: material.libraryMaterialId ? library.materials.find((m) => m.id === material.libraryMaterialId) : undefined,
+    entry: material.libraryMaterialId
+      ? library.materials.find((m) => m.id === material.libraryMaterialId)
+      : undefined,
   }));
   let unreviewed = false;
   const findings: InteractionFinding[] = [];
@@ -51,7 +58,8 @@ export function screenInteractions(materials: readonly MaterialInput[], library:
         const hit =
           (classesA.includes(rule.classA) && classesB.includes(rule.classB)) ||
           (classesA.includes(rule.classB) && classesB.includes(rule.classA));
-        if (hit && (!best || SEVERITY_RANK[rule.severity] > SEVERITY_RANK[best.severity])) best = rule;
+        if (hit && (!best || SEVERITY_RANK[rule.severity] > SEVERITY_RANK[best.severity]))
+          best = rule;
       }
       if (!best) continue;
       unreviewed ||= !best.reviewed || !a.entry.reviewed || !b.entry.reviewed;
@@ -62,6 +70,7 @@ export function screenInteractions(materials: readonly MaterialInput[], library:
         severity: best.severity,
         citation: best.citation,
         reviewed: best.reviewed,
+        ...(best.recommendedTest ? { recommendedTest: best.recommendedTest } : {}),
       });
     }
   }

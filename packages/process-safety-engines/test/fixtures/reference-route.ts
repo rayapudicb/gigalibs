@@ -41,7 +41,13 @@ function conditions(overrides: Partial<ThermalConditions>): ThermalConditions {
 export const REFERENCE_ROUTE: readonly FixtureStep[] = [
   {
     id: 's1',
-    conditions: conditions({ processTemperatureC: 40, maximumTechnicalTemperatureC: 82, heatCapacityJPerGK: 2.4, reactionEnthalpy: { source: 'REACTION_CLASS', reactionClassId: 'RC-01' }, dscOnsetC: 200 }),
+    conditions: conditions({
+      processTemperatureC: 40,
+      maximumTechnicalTemperatureC: 82,
+      heatCapacityJPerGK: 2.4,
+      reactionEnthalpy: { source: 'REACTION_CLASS', reactionClassId: 'RC-01' },
+      dscOnsetC: 200,
+    }),
     materials: [
       material('m11', 'Reactant', 'C7H5FO', 1, 100.0, 'L01'),
       material('m12', 'Reactant', 'C7H12O3', 1, 122.0, 'L02'),
@@ -55,7 +61,13 @@ export const REFERENCE_ROUTE: readonly FixtureStep[] = [
   },
   {
     id: 's2',
-    conditions: conditions({ processTemperatureC: 50, maximumTechnicalTemperatureC: 189, heatCapacityJPerGK: 2.0, reactionEnthalpy: { source: 'REACTION_CLASS', reactionClassId: 'RC-02' }, dscOnsetC: 210 }),
+    conditions: conditions({
+      processTemperatureC: 50,
+      maximumTechnicalTemperatureC: 189,
+      heatCapacityJPerGK: 2.0,
+      reactionEnthalpy: { source: 'REACTION_CLASS', reactionClassId: 'RC-02' },
+      dscOnsetC: 210,
+    }),
     materials: [
       material('m21', 'Reactant', 'C14H15FO3', 1, 171.5, 'L26'),
       material('m22', 'Reactant', 'C2H6N2S', 1, 74.1, 'L07'),
@@ -76,7 +88,11 @@ export const REFERENCE_ROUTE: readonly FixtureStep[] = [
       heatCapacityJPerGK: 2.2,
       accumulationPercent: 20,
       reactionEnthalpy: { source: 'REACTION_CLASS', reactionClassId: 'RC-03' },
-      decomposition: { activationEnergyKJPerMol: 90, heatReleaseRateWPerKg: 10, referenceTemperatureC: 140 },
+      decomposition: {
+        activationEnergyKJPerMol: 90,
+        heatReleaseRateWPerKg: 10,
+        referenceTemperatureC: 140,
+      },
     }),
     materials: [
       material('m31', 'Reactant', 'C16H19FN2O2S', 1, 176.7, 'L26'),
@@ -92,7 +108,13 @@ export const REFERENCE_ROUTE: readonly FixtureStep[] = [
   },
   {
     id: 's4',
-    conditions: conditions({ processTemperatureC: 70, maximumTechnicalTemperatureC: 189, heatCapacityJPerGK: 2.0, reactionEnthalpy: { source: 'REACTION_CLASS', reactionClassId: 'RC-04' }, dscOnsetC: 180 }),
+    conditions: conditions({
+      processTemperatureC: 70,
+      maximumTechnicalTemperatureC: 189,
+      heatCapacityJPerGK: 2.0,
+      reactionEnthalpy: { source: 'REACTION_CLASS', reactionClassId: 'RC-04' },
+      dscOnsetC: 180,
+    }),
     materials: [
       material('m41', 'Reactant', 'C16H17FN2O4S', 1, 164.2, 'L26'),
       material('m42', 'Reactant', 'C2H7NO2S', 1, 61.0, 'L16'),
@@ -106,7 +128,14 @@ export const REFERENCE_ROUTE: readonly FixtureStep[] = [
   },
   {
     id: 's5',
-    conditions: conditions({ processTemperatureC: -10, maximumTechnicalTemperatureC: 111, heatCapacityJPerGK: 1.8, accumulationPercent: 50, reactionEnthalpy: { source: 'REACTION_CLASS', reactionClassId: 'RC-05' }, dscOnsetC: 240 }),
+    conditions: conditions({
+      processTemperatureC: -10,
+      maximumTechnicalTemperatureC: 111,
+      heatCapacityJPerGK: 1.8,
+      accumulationPercent: 50,
+      reactionEnthalpy: { source: 'REACTION_CLASS', reactionClassId: 'RC-05' },
+      dscOnsetC: 240,
+    }),
     materials: [
       material('m51', 'Reactant', 'C17H20FN3O4S', 1, 160.0, 'L26'),
       material('m52', 'Reactant', 'C8H19Al', 2, 131.1, 'L19'),

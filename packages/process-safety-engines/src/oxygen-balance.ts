@@ -1,4 +1,4 @@
-import { criteriaGap, type ScreeningCriteria } from './criteria.js';
+import { type ScreeningCriteria, criteriaGap } from './criteria.js';
 import type { AnalysedMaterial } from './gate.js';
 import type { DataGap, ElementTable } from './types.js';
 
@@ -39,11 +39,21 @@ export function oxygenBalance(
     .reduce((sum, [, count]) => sum + count, 0);
   const percent =
     (-1600 / material.formula.molarMassGPerMol) *
-    (2 * (counts.C ?? 0) + ((counts.H ?? 0) - halogens) / 2 + 2 * (counts.S ?? 0) - (counts.O ?? 0));
+    (2 * (counts.C ?? 0) +
+      ((counts.H ?? 0) - halogens) / 2 +
+      2 * (counts.S ?? 0) -
+      (counts.O ?? 0));
   const band = criteria.oxygenBalanceAlertBandPercent;
   const inAlertBand = percent > band.lowerExclusive && percent < band.upperExclusive;
   const energetic = (material.input.energeticGroups ?? []).length > 0;
   const recommendation: OxygenBalanceRecommendation =
     inAlertBand && energetic ? 'HIGH' : inAlertBand || energetic ? 'REVIEW' : 'LOW';
-  return { status: 'OK', percent, inAlertBand, energetic, recommendation, criteriaVersion: criteria.version };
+  return {
+    status: 'OK',
+    percent,
+    inAlertBand,
+    energetic,
+    recommendation,
+    criteriaVersion: criteria.version,
+  };
 }

@@ -98,20 +98,32 @@ describe('gate refusals (FR-GATE-01 to 06, BRL-01, BRD §15.1)', () => {
 
   it('requires exactly one product', () => {
     expect(codes(base.filter((m) => m.role !== 'Product'))).toContain('GATE_PRODUCT_MISSING');
-    expect(codes([...base, { id: 'p2', role: 'Product', formula: 'H2O', coefficient: 1 }])).toContain('GATE_PRODUCT_NOT_UNIQUE');
+    expect(
+      codes([...base, { id: 'p2', role: 'Product', formula: 'H2O', coefficient: 1 }]),
+    ).toContain('GATE_PRODUCT_NOT_UNIQUE');
   });
 
   it('requires a positive coefficient, a valid formula and a positive reactant charge', () => {
-    expect(codes(base.map((m) => (m.id === 'b' ? { ...m, coefficient: 0 } : m)))).toContain('GATE_COEFFICIENT_INVALID');
-    expect(codes(base.map((m) => (m.id === 'b' ? { ...m, formula: 'Qq' } : m)))).toContain('FORMULA_UNKNOWN_ELEMENT');
-    expect(codes(base.map((m) => (m.id === 'b' ? { ...m, massG: -5 } : m)))).toContain('GATE_CHARGE_MASS_INVALID');
-    expect(codes(base.map((m) => (m.role === 'Reactant' ? { ...m, massG: null } : m)))).toContain('GATE_NO_CHARGED_REACTANT');
+    expect(codes(base.map((m) => (m.id === 'b' ? { ...m, coefficient: 0 } : m)))).toContain(
+      'GATE_COEFFICIENT_INVALID',
+    );
+    expect(codes(base.map((m) => (m.id === 'b' ? { ...m, formula: 'Qq' } : m)))).toContain(
+      'FORMULA_UNKNOWN_ELEMENT',
+    );
+    expect(codes(base.map((m) => (m.id === 'b' ? { ...m, massG: -5 } : m)))).toContain(
+      'GATE_CHARGE_MASS_INVALID',
+    );
+    expect(codes(base.map((m) => (m.role === 'Reactant' ? { ...m, massG: null } : m)))).toContain(
+      'GATE_NO_CHARGED_REACTANT',
+    );
   });
 
   it('only warns about a bad formula outside the equation, and ignores it', () => {
     const gate = gateOf([...base, { id: 's', role: 'Solvent', formula: '', massG: 300 }]);
     expect(gate.pass).toBe(true);
-    expect(gate.warnings).toEqual([{ code: 'GATE_FORMULA_IGNORED', requirement: 'FR-GATE-06', params: { materialId: 's' } }]);
+    expect(gate.warnings).toEqual([
+      { code: 'GATE_FORMULA_IGNORED', requirement: 'FR-GATE-06', params: { materialId: 's' } },
+    ]);
     expect(gate.criteriaVersion).toBe(BRD_CRITERIA.version);
     expect(gate.elementsVersion).toBe(elements.version);
   });
@@ -119,7 +131,11 @@ describe('gate refusals (FR-GATE-01 to 06, BRL-01, BRD §15.1)', () => {
 
 describe('oxygen balance (FR-OB-01 to 05)', () => {
   const ob = (formula: string, energeticGroups: string[] = []) =>
-    oxygenBalance(analyseMaterial({ id: 'x', role: 'Reactant', formula, energeticGroups }, elements), elements, BRD_CRITERIA);
+    oxygenBalance(
+      analyseMaterial({ id: 'x', role: 'Reactant', formula, energeticGroups }, elements),
+      elements,
+      BRD_CRITERIA,
+    );
 
   it('is not applicable to inorganic or metal-containing materials, and refuses bad formulas', () => {
     expect(ob('KMnO4')).toEqual({ status: 'NOT_APPLICABLE', reason: 'NO_CARBON' });
@@ -137,23 +153,34 @@ describe('oxygen balance (FR-OB-01 to 05)', () => {
     const toluene = ob('C7H8');
     expect(toluene.status === 'OK' && toluene.recommendation).toBe('LOW');
     const fluorinated = ob('C7H5FO');
-    expect(fluorinated.status === 'OK' && fluorinated.percent).toBeCloseTo((-1600 / 124.11) * (14 + (5 - 1) / 2 - 1), 1);
+    expect(fluorinated.status === 'OK' && fluorinated.percent).toBeCloseTo(
+      (-1600 / 124.11) * (14 + (5 - 1) / 2 - 1),
+      1,
+    );
   });
 });
 
 describe('thermal and runaway (FR-THM-01 to 12)', () => {
   const s3 = step('s3');
   const gate = gateOf(s3.materials);
-  const thermal = (overrides: Partial<ThermalConditions>, library: ScreeningLibrary = PROTOTYPE_LIBRARY) =>
-    runThermal(gate, conditions(overrides), library, BRD_CRITERIA);
+  const thermal = (
+    overrides: Partial<ThermalConditions>,
+    library: ScreeningLibrary = PROTOTYPE_LIBRARY,
+  ) => runThermal(gate, conditions(overrides), library, BRD_CRITERIA);
 
   it('is locked until the gate passes (FR-GATE-04)', () => {
     const failing = gateOf(s3.materials.filter((m) => m.role !== 'Product'));
-    expect(runThermal(failing, conditions({}), PROTOTYPE_LIBRARY, BRD_CRITERIA)).toEqual({ status: 'LOCKED' });
+    expect(runThermal(failing, conditions({}), PROTOTYPE_LIBRARY, BRD_CRITERIA)).toEqual({
+      status: 'LOCKED',
+    });
   });
 
   it('refuses inputs outside the §15.1 ranges and warns about unusual ones', () => {
-    const invalid = thermal({ processTemperatureC: 600, accumulationPercent: 120, heatCapacityJPerGK: 9 });
+    const invalid = thermal({
+      processTemperatureC: 600,
+      accumulationPercent: 120,
+      heatCapacityJPerGK: 9,
+    });
     expect(invalid.status).toBe('INVALID');
     expect(invalid.status === 'INVALID' && invalid.errors.map((e) => e.params?.field)).toEqual([
       'processTemperatureC',
@@ -161,12 +188,28 @@ describe('thermal and runaway (FR-THM-01 to 12)', () => {
       'accumulationPercent',
     ]);
     const check = validateConditions(
-      conditions({ heatCapacityJPerGK: 0.7, reactionEnthalpy: { source: 'MANUAL', kJPerMol: -1500 }, decomposition: { activationEnergyKJPerMol: 10, heatReleaseRateWPerKg: 1, referenceTemperatureC: 100 } }),
+      conditions({
+        heatCapacityJPerGK: 0.7,
+        reactionEnthalpy: { source: 'MANUAL', kJPerMol: -1500 },
+        decomposition: {
+          activationEnergyKJPerMol: 10,
+          heatReleaseRateWPerKg: 1,
+          referenceTemperatureC: 100,
+        },
+      }),
       BRD_CRITERIA,
     );
     expect(check.errors.map((e) => e.params?.field)).toEqual(['activationEnergyKJPerMol']);
-    expect(check.warnings.map((w) => w.params?.field)).toEqual(['heatCapacityJPerGK', 'reactionEnthalpyKJPerMol']);
-    expect(validateConditions(conditions({ reactionEnthalpy: { source: 'MANUAL', kJPerMol: -4000 } }), BRD_CRITERIA).errors).toHaveLength(1);
+    expect(check.warnings.map((w) => w.params?.field)).toEqual([
+      'heatCapacityJPerGK',
+      'reactionEnthalpyKJPerMol',
+    ]);
+    expect(
+      validateConditions(
+        conditions({ reactionEnthalpy: { source: 'MANUAL', kJPerMol: -4000 } }),
+        BRD_CRITERIA,
+      ).errors,
+    ).toHaveLength(1);
   });
 
   it('explains why figures are absent: no source, unknown class, missing ΔHf°, missing conditions', () => {
@@ -175,8 +218,12 @@ describe('thermal and runaway (FR-THM-01 to 12)', () => {
       return result.status === 'OK' ? result.notComputed?.code : result.status;
     };
     expect(reason({ reactionEnthalpy: null })).toBe('THM_ENTHALPY_SOURCE_MISSING');
-    expect(reason({ reactionEnthalpy: { source: 'REACTION_CLASS', reactionClassId: 'RC-99' } })).toBe('THM_REACTION_CLASS_UNKNOWN');
-    expect(reason({ reactionEnthalpy: { source: 'HESS' } })).toBe('THM_HESS_FORMATION_ENTHALPY_MISSING');
+    expect(
+      reason({ reactionEnthalpy: { source: 'REACTION_CLASS', reactionClassId: 'RC-99' } }),
+    ).toBe('THM_REACTION_CLASS_UNKNOWN');
+    expect(reason({ reactionEnthalpy: { source: 'HESS' } })).toBe(
+      'THM_HESS_FORMATION_ENTHALPY_MISSING',
+    );
     expect(reason({ processTemperatureC: null })).toBe('THM_CONDITIONS_REQUIRED');
     expect(reason({ heatCapacityJPerGK: null })).toBe('THM_CONDITIONS_REQUIRED');
   });
@@ -188,8 +235,16 @@ describe('thermal and runaway (FR-THM-01 to 12)', () => {
       { id: 'co2', role: 'Product', formula: 'CO2', coefficient: 1 },
       { id: 'h2o', role: 'By-product', formula: 'H2O', coefficient: 2 },
     ]);
-    const result = runThermal(methane, conditions({ reactionEnthalpy: { source: 'HESS' } }), PROTOTYPE_LIBRARY, BRD_CRITERIA);
-    expect(result.status === 'OK' && result.reactionEnthalpyKJPerMol).toBeCloseTo(-393.51 - 2 * 285.83 + 74.87, 6);
+    const result = runThermal(
+      methane,
+      conditions({ reactionEnthalpy: { source: 'HESS' } }),
+      PROTOTYPE_LIBRARY,
+      BRD_CRITERIA,
+    );
+    expect(result.status === 'OK' && result.reactionEnthalpyKJPerMol).toBeCloseTo(
+      -393.51 - 2 * 285.83 + 74.87,
+      6,
+    );
     expect(result.status === 'OK' && result.usesUnreviewedLibrary).toBe(true);
     // CO2 is the product here, not a by-product, so it is not an evolved gas (FR-THM-11 counts by-products only).
     expect(result.status === 'OK' && result.gases).toEqual([]);
@@ -203,18 +258,36 @@ describe('thermal and runaway (FR-THM-01 to 12)', () => {
     expect(basis({ td24EnteredC: 150 })).toEqual(['ENTERED', 150]);
     expect(basis({ dscOnsetC: 180 })).toEqual(['CONSERVATIVE_ONSET', 80]);
     expect(basis({})).toEqual(['MISSING', null]);
-    expect(basis({ decomposition: { activationEnergyKJPerMol: 100, heatReleaseRateWPerKg: 1e-12, referenceTemperatureC: 25 } })).toEqual([
-      'OUT_OF_SEARCH_RANGE',
-      null,
-    ]);
-    expect(td24FromKinetics(2, { activationEnergyKJPerMol: 100, heatReleaseRateWPerKg: 1e9, referenceTemperatureC: 25 }, BRD_CRITERIA.td24SearchRangeC)).toBeNull();
+    expect(
+      basis({
+        decomposition: {
+          activationEnergyKJPerMol: 100,
+          heatReleaseRateWPerKg: 1e-12,
+          referenceTemperatureC: 25,
+        },
+      }),
+    ).toEqual(['OUT_OF_SEARCH_RANGE', null]);
+    expect(
+      td24FromKinetics(
+        2,
+        { activationEnergyKJPerMol: 100, heatReleaseRateWPerKg: 1e9, referenceTemperatureC: 25 },
+        BRD_CRITERIA.td24SearchRangeC,
+      ),
+    ).toBeNull();
   });
 
   it('grades severity by ΔTad and probability by TMRad using the criteria', () => {
     const grade = (kJPerMol: number, qRef: number | null) => {
       const result = thermal({
         reactionEnthalpy: { source: 'MANUAL', kJPerMol },
-        decomposition: qRef === null ? null : { activationEnergyKJPerMol: 90, heatReleaseRateWPerKg: qRef, referenceTemperatureC: 140 },
+        decomposition:
+          qRef === null
+            ? null
+            : {
+                activationEnergyKJPerMol: 90,
+                heatReleaseRateWPerKg: qRef,
+                referenceTemperatureC: 140,
+              },
       });
       return result.status === 'OK' ? [result.severity, result.probability] : [result.status];
     };
@@ -228,11 +301,28 @@ describe('thermal and runaway (FR-THM-01 to 12)', () => {
   it('marks results that use unreviewed library entries, and not those that do not', () => {
     const reviewed: ScreeningLibrary = {
       ...PROTOTYPE_LIBRARY,
-      reactionClasses: [{ id: 'RC-03', typicalReactionEnthalpyKJPerMol: -450, citation: 'reviewed', reviewed: true }],
+      reactionClasses: [
+        {
+          id: 'RC-03',
+          typicalReactionEnthalpyKJPerMol: -450,
+          citation: 'reviewed',
+          reviewed: true,
+        },
+      ],
     };
-    const classBased = thermal({ reactionEnthalpy: { source: 'REACTION_CLASS', reactionClassId: 'RC-03' } }, reviewed);
-    expect(classBased.status === 'OK' && [classBased.enthalpyIsEstimate, classBased.usesUnreviewedLibrary]).toEqual([true, false]);
-    const unreviewed = thermal({ reactionEnthalpy: { source: 'REACTION_CLASS', reactionClassId: 'RC-03' } });
+    const classBased = thermal(
+      { reactionEnthalpy: { source: 'REACTION_CLASS', reactionClassId: 'RC-03' } },
+      reviewed,
+    );
+    expect(
+      classBased.status === 'OK' && [
+        classBased.enthalpyIsEstimate,
+        classBased.usesUnreviewedLibrary,
+      ],
+    ).toEqual([true, false]);
+    const unreviewed = thermal({
+      reactionEnthalpy: { source: 'REACTION_CLASS', reactionClassId: 'RC-03' },
+    });
     expect(unreviewed.status === 'OK' && unreviewed.usesUnreviewedLibrary).toBe(true);
   });
 
@@ -258,7 +348,9 @@ describe('interaction screener (FR-HAZ-01 to 06)', () => {
       ],
       PROTOTYPE_LIBRARY,
     );
-    expect(result.findings.map((f) => [f.materialAId, f.materialBId, f.ruleId, f.severity])).toEqual([
+    expect(
+      result.findings.map((f) => [f.materialAId, f.materialBId, f.ruleId, f.severity]),
+    ).toEqual([
       ['acid', 'base', 'R-11', 'Medium'],
       ['acid', 'dmso', 'R-02', 'Medium'],
       ['base', 'dmso', 'R-01', 'High'],
@@ -276,7 +368,16 @@ describe('interaction screener (FR-HAZ-01 to 06)', () => {
         { id: 'B', classes: ['amine'], citation: 'reviewed', reviewed: true },
         { id: 'C', classes: ['gas'], citation: 'reviewed', reviewed: true },
       ],
-      rules: [{ id: 'R', classA: 'amine', classB: 'acid', severity: 'Low', citation: 'reviewed', reviewed: true }],
+      rules: [
+        {
+          id: 'R',
+          classA: 'amine',
+          classB: 'acid',
+          severity: 'Low',
+          citation: 'reviewed',
+          reviewed: true,
+        },
+      ],
     };
     const result = screenInteractions(
       [
@@ -294,8 +395,12 @@ describe('interaction screener (FR-HAZ-01 to 06)', () => {
 describe('green metrics and the route roll-up (FR-GRN-01 to 04)', () => {
   it('is locked until the gate passes, and reports AE without a product mass', () => {
     const s1 = step('s1');
-    expect(greenMetrics(gateOf(s1.materials.filter((m) => m.role !== 'Product')))).toEqual({ status: 'LOCKED' });
-    const noMass = greenMetrics(gateOf(s1.materials.map((m) => (m.role === 'Product' ? { ...m, massG: null } : m))));
+    expect(greenMetrics(gateOf(s1.materials.filter((m) => m.role !== 'Product')))).toEqual({
+      status: 'LOCKED',
+    });
+    const noMass = greenMetrics(
+      gateOf(s1.materials.map((m) => (m.role === 'Product' ? { ...m, massG: null } : m))),
+    );
     expect(noMass.status).toBe('NO_PRODUCT_MASS');
   });
 
@@ -313,7 +418,9 @@ describe('green metrics and the route roll-up (FR-GRN-01 to 04)', () => {
 
   it('blocks the roll-up at the first step without complete metrics', () => {
     const steps = REFERENCE_ROUTE.map((s, index) => {
-      const gate = gateOf(index === 2 ? s.materials.filter((m) => m.role !== 'Product') : s.materials);
+      const gate = gateOf(
+        index === 2 ? s.materials.filter((m) => m.role !== 'Product') : s.materials,
+      );
       return { gate, green: greenMetrics(gate) };
     });
     expect(routeRollup(steps)).toEqual({ status: 'BLOCKED', blockedStepIndex: 2 });
@@ -325,7 +432,10 @@ describe('criteria and version', () => {
   it('lists every missing criterion, including the version', () => {
     expect(missingCriteria(undefined)[0]).toBe('version');
     expect(criteriaGap(BRD_CRITERIA)).toBeNull();
-    expect(criteriaGap({ ...BRD_CRITERIA, version: ' ' })).toEqual({ status: 'DATA_GAP', missing: ['version'] });
+    expect(criteriaGap({ ...BRD_CRITERIA, version: ' ' })).toEqual({
+      status: 'DATA_GAP',
+      missing: ['version'],
+    });
     expect(ENGINE_VERSION).toMatch(/^process-safety-engines \d+\.\d+\.\d+$/);
   });
 });

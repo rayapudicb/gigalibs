@@ -33,7 +33,11 @@ function step(id: string): FixtureStep {
 }
 
 function obPercent(formula: string): number {
-  const result = oxygenBalance(analyseMaterial({ id: 'x', role: 'Reactant', formula }, elements), elements, BRD_CRITERIA);
+  const result = oxygenBalance(
+    analyseMaterial({ id: 'x', role: 'Reactant', formula }, elements),
+    elements,
+    BRD_CRITERIA,
+  );
   if (result.status !== 'OK') throw new Error(`OB not computed: ${result.status}`);
   return result.percent;
 }
@@ -88,7 +92,11 @@ describe('SPEED-BRD-FRD-001 §17 reference validation cases', () => {
     const s3 = step('s3');
     const thermal = runThermal(
       gateOf(s3.materials),
-      { ...s3.conditions, reactionEnthalpy: { source: 'MANUAL', kJPerMol: -450 }, decomposition: null },
+      {
+        ...s3.conditions,
+        reactionEnthalpy: { source: 'MANUAL', kJPerMol: -450 },
+        decomposition: null,
+      },
       PROTOTYPE_LIBRARY,
       BRD_CRITERIA,
     );
@@ -101,7 +109,12 @@ describe('SPEED-BRD-FRD-001 §17 reference validation cases', () => {
 
   it('TC-08 (FR-THM-07 to 09): step 3 decomposition Ea 90 kJ/mol, q 10 W/kg at 140 °C gives TD24 91.8 °C, class 1, class 3 at 100 %', () => {
     const s3 = step('s3');
-    const thermal = runThermal(gateOf(s3.materials), s3.conditions, PROTOTYPE_LIBRARY, BRD_CRITERIA);
+    const thermal = runThermal(
+      gateOf(s3.materials),
+      s3.conditions,
+      PROTOTYPE_LIBRARY,
+      BRD_CRITERIA,
+    );
     if (thermal.status !== 'OK') throw new Error(thermal.status);
     expect(thermal.td24Basis).toBe('KINETICS');
     expect(round(thermal.td24C ?? Number.NaN, 1)).toBe(91.8);
@@ -126,7 +139,9 @@ describe('SPEED-BRD-FRD-001 §17 reference validation cases', () => {
   it('TC-11 (FR-HAZ-02): step 4 NaOH with DMSO is a High interaction', () => {
     const result = screenInteractions(step('s4').materials, PROTOTYPE_LIBRARY);
     const naohDmso = result.findings.find(
-      (f) => [f.materialAId, f.materialBId].includes('m43') && [f.materialAId, f.materialBId].includes('m44'),
+      (f) =>
+        [f.materialAId, f.materialBId].includes('m43') &&
+        [f.materialAId, f.materialBId].includes('m44'),
     );
     expect(naohDmso?.severity).toBe('High');
     expect(naohDmso?.ruleId).toBe('R-01');

@@ -1,6 +1,6 @@
 {
   "name": "@gigalibs/process-safety-engines",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "SPEED Stage 1 desk-screening engines: pure, deterministic process-safety and green-chemistry calculations (WI-OI-120br)",
   "private": true,
   "type": "module",

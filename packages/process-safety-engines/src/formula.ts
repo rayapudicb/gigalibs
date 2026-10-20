@@ -9,14 +9,25 @@ const formulaError = (code: string, params?: EngineMessage['params']): FormulaRe
   error: params ? { code, requirement: 'FR-GATE-01', params } : { code, requirement: 'FR-GATE-01' },
 });
 
-function addInto(target: Record<string, number>, source: Readonly<Record<string, number>>, factor: number): void {
-  for (const [element, count] of Object.entries(source)) target[element] = (target[element] ?? 0) + count * factor;
+function addInto(
+  target: Record<string, number>,
+  source: Readonly<Record<string, number>>,
+  factor: number,
+): void {
+  for (const [element, count] of Object.entries(source))
+    target[element] = (target[element] ?? 0) + count * factor;
 }
 
-function readDigits(text: string, start: number): { readonly value: number | null; readonly next: number } {
+function readDigits(
+  text: string,
+  start: number,
+): { readonly value: number | null; readonly next: number } {
   let index = start;
   while (index < text.length && /\d/.test(text.charAt(index))) index += 1;
-  return { value: index > start ? Number.parseInt(text.slice(start, index), 10) : null, next: index };
+  return {
+    value: index > start ? Number.parseInt(text.slice(start, index), 10) : null,
+    next: index,
+  };
 }
 
 /** One part of a formula, without hydrate dots: elements, counts and nested () or [] groups. */
@@ -46,7 +57,8 @@ function parseGroup(text: string, elements: ElementTable): FormulaResult {
         symbol += text.charAt(index);
         index += 1;
       }
-      if (!(symbol in elements.elements)) return formulaError('FORMULA_UNKNOWN_ELEMENT', { element: symbol });
+      if (!(symbol in elements.elements))
+        return formulaError('FORMULA_UNKNOWN_ELEMENT', { element: symbol });
       const digits = readDigits(text, index);
       const current = stack[stack.length - 1] as Record<string, number>;
       current[symbol] = (current[symbol] ?? 0) + (digits.value ?? 1);
@@ -63,7 +75,10 @@ function parseGroup(text: string, elements: ElementTable): FormulaResult {
  * Parses a molecular formula with brackets and hydrates: Al(OH)3, CuSO4·5H2O, (C2H6N2S)2·H2SO4, KNaC4H4O6·4H2O.
  * The hydrate separators "·", "•" and "*" are accepted.
  */
-export function parseFormula(raw: string | null | undefined, elements: ElementTable): FormulaResult {
+export function parseFormula(
+  raw: string | null | undefined,
+  elements: ElementTable,
+): FormulaResult {
   const text = (raw ?? '').replace(/\s+/g, '');
   if (!text) return formulaError('FORMULA_EMPTY');
   const total: Record<string, number> = {};

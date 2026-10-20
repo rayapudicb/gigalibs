@@ -13,7 +13,8 @@ const halogen = (weight: number) => ({ weight, metal: false, halogen: true }) as
 
 export const IUPAC_2021_ABRIDGED: ElementTable = {
   version: 'iupac-2021-abridged-1',
-  citation: 'IUPAC CIAAW, Standard atomic weights of the elements 2021, Pure Appl. Chem. 2022, 94(5), 573–600',
+  citation:
+    'IUPAC CIAAW, Standard atomic weights of the elements 2021, Pure Appl. Chem. 2022, 94(5), 573–600',
   elements: {
     H: nonMetal(1.008),
     He: nonMetal(4.0026),

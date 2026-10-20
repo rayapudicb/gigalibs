@@ -22,6 +22,8 @@ export interface InteractionRule {
   readonly severity: InteractionSeverity;
   readonly citation: string;
   readonly reviewed: boolean;
+  /** Stage 2 test this finding calls for (a test code from the library), for the dossier's test plan. */
+  readonly recommendedTest?: string;
 }
 
 export interface ReactionClass {

@@ -1,9 +1,21 @@
-import { criteriaGap, type ScreeningCriteria } from './criteria.js';
+import { type ScreeningCriteria, criteriaGap } from './criteria.js';
 import { hillFormula, hillOrder, molarMass, parseFormula } from './formula.js';
-import type { DataGap, ElementCounts, ElementTable, EngineMessage, MaterialInput, MaterialRole } from './types.js';
+import type {
+  DataGap,
+  ElementCounts,
+  ElementTable,
+  EngineMessage,
+  MaterialInput,
+  MaterialRole,
+} from './types.js';
 
 export type AnalysedFormula =
-  | { readonly ok: true; readonly counts: ElementCounts; readonly molarMassGPerMol: number; readonly hill: string }
+  | {
+      readonly ok: true;
+      readonly counts: ElementCounts;
+      readonly molarMassGPerMol: number;
+      readonly hill: string;
+    }
   | { readonly ok: false; readonly error: EngineMessage };
 
 export interface AnalysedMaterial {
@@ -35,7 +47,11 @@ export interface GateResult {
   readonly elementsVersion: string;
 }
 
-const EQUATION_ROLES: ReadonlySet<MaterialRole> = new Set<MaterialRole>(['Reactant', 'Product', 'By-product']);
+const EQUATION_ROLES: ReadonlySet<MaterialRole> = new Set<MaterialRole>([
+  'Reactant',
+  'Product',
+  'By-product',
+]);
 
 export function isEquationRole(role: MaterialRole): boolean {
   return EQUATION_ROLES.has(role);
@@ -51,7 +67,12 @@ export function analyseMaterial(input: MaterialInput, elements: ElementTable): A
   const molarMassGPerMol = molarMass(parsed.counts, elements);
   return {
     input,
-    formula: { ok: true, counts: parsed.counts, molarMassGPerMol, hill: hillFormula(parsed.counts) },
+    formula: {
+      ok: true,
+      counts: parsed.counts,
+      molarMassGPerMol,
+      hill: hillFormula(parsed.counts),
+    },
     moles: positive(input.massG) ? input.massG / molarMassGPerMol : null,
   };
 }
@@ -74,18 +95,34 @@ export function runGate(
   const equation = analysed.filter((m) => isEquationRole(m.input.role));
 
   for (const m of equation) {
-    if (!m.formula.ok) issues.push({ ...m.formula.error, params: { ...m.formula.error.params, materialId: m.input.id } });
+    if (!m.formula.ok)
+      issues.push({
+        ...m.formula.error,
+        params: { ...m.formula.error.params, materialId: m.input.id },
+      });
     if (!positive(m.input.coefficient)) {
-      issues.push({ code: 'GATE_COEFFICIENT_INVALID', requirement: 'FR-INP-05', params: { materialId: m.input.id } });
+      issues.push({
+        code: 'GATE_COEFFICIENT_INVALID',
+        requirement: 'FR-INP-05',
+        params: { materialId: m.input.id },
+      });
     }
   }
   for (const m of analysed) {
     if (!isEquationRole(m.input.role) && !m.formula.ok) {
-      warnings.push({ code: 'GATE_FORMULA_IGNORED', requirement: 'FR-GATE-06', params: { materialId: m.input.id } });
+      warnings.push({
+        code: 'GATE_FORMULA_IGNORED',
+        requirement: 'FR-GATE-06',
+        params: { materialId: m.input.id },
+      });
     }
     const mass = m.input.massG;
     if (m.input.role === 'Reactant' && typeof mass === 'number' && !(mass > 0)) {
-      issues.push({ code: 'GATE_CHARGE_MASS_INVALID', requirement: 'BRD-15.1', params: { materialId: m.input.id } });
+      issues.push({
+        code: 'GATE_CHARGE_MASS_INVALID',
+        requirement: 'BRD-15.1',
+        params: { materialId: m.input.id },
+      });
     }
   }
 
@@ -106,14 +143,25 @@ export function runGate(
       target[element] = (target[element] ?? 0) + count * m.input.coefficient;
     }
   }
-  const balance = [...new Set([...Object.keys(atomsIn), ...Object.keys(atomsOut)])].sort(hillOrder).map((element) => {
-    const inAtoms = atomsIn[element] ?? 0;
-    const outAtoms = atomsOut[element] ?? 0;
-    return { element, inAtoms, outAtoms, balanced: Math.abs(inAtoms - outAtoms) <= criteria.elementBalanceTolerance };
-  });
+  const balance = [...new Set([...Object.keys(atomsIn), ...Object.keys(atomsOut)])]
+    .sort(hillOrder)
+    .map((element) => {
+      const inAtoms = atomsIn[element] ?? 0;
+      const outAtoms = atomsOut[element] ?? 0;
+      return {
+        element,
+        inAtoms,
+        outAtoms,
+        balanced: Math.abs(inAtoms - outAtoms) <= criteria.elementBalanceTolerance,
+      };
+    });
   const unbalanced = balance.filter((row) => !row.balanced).map((row) => row.element);
   if (unbalanced.length) {
-    issues.push({ code: 'GATE_ELEMENT_BALANCE', requirement: 'FR-GATE-02', params: { elements: unbalanced } });
+    issues.push({
+      code: 'GATE_ELEMENT_BALANCE',
+      requirement: 'FR-GATE-02',
+      params: { elements: unbalanced },
+    });
   }
 
   let extentMol: number | null = null;
@@ -126,7 +174,8 @@ export function runGate(
       limitingMaterialId = m.input.id;
     }
   }
-  if (extentMol === null) issues.push({ code: 'GATE_NO_CHARGED_REACTANT', requirement: 'FR-GATE-05' });
+  if (extentMol === null)
+    issues.push({ code: 'GATE_NO_CHARGED_REACTANT', requirement: 'FR-GATE-05' });
 
   return {
     status: 'OK',

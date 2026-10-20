@@ -21,7 +21,13 @@ export interface ElementTable {
   readonly elements: Readonly<Record<ElementSymbol, ElementData>>;
 }
 
-export type MaterialRole = 'Reactant' | 'Additive' | 'Solvent' | 'Work-up' | 'Product' | 'By-product';
+export type MaterialRole =
+  | 'Reactant'
+  | 'Additive'
+  | 'Solvent'
+  | 'Work-up'
+  | 'Product'
+  | 'By-product';
 
 /** A material as the user enters it on a step. */
 export interface MaterialInput {
