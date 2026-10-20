@@ -40,6 +40,8 @@ keeps the full rules.
 
 **WI-OI-120bt (2026-10-21, Built, docs):** SPEED screen specifications for S3–S7: every mock screen as windows, fields and 8 registered panels with typed props, all states, the message catalogue for the engine codes, token mapping, accessibility and acceptance checks. Found: S7 needs engine functions `actionList` and `stage2Plan`, and interaction rules carry their recommended Stage 2 test (plan v1.4). [Screen specifications](../docs/pharma/speed/SPEED-Stage1-Screen-Specifications.md); card [WI-OI-120bt](tasks/WI-OI-120bt.md).
 
+**WI-OI-120bv (2026-10-21, Built, committed `0834520c` on branch `feat/speed-s1-engines`):** SPEED S7a engine functions `actionList` (actions before kilo-lab, with controls and accepted mitigations as inputs) and `stage2Plan` (test plan; an interaction's test comes from its library rule, not code); engines 0.2.0, 50 tests, coverage 98.9 % lines / 94.0 % branches. Screen spec v1.1 §4.4–4.5 lists the final codes. Card: [WI-OI-120bv](tasks/WI-OI-120bv.md).
+
 **WI-OI-120bp review (2026-10-21):** [WI-OI-120bp-REVIEW-2026-10-21.md](work/WI-OI-120bp-REVIEW-2026-10-21.md) — design sound, coupling gone, one-transaction posting and signed relays correct; **not releasable** until B1 (broken Finance 13 / Inventory 7 in the commit, fixed only in the working tree) is committed and B2 (no RLS on new replica tables), B3 (out-of-order period events), B4 (snapshot only after the first receipt), B5 (sync marked complete too early) are fixed.
 
 **Batch acceptance:** [PHASE-1-CM1-CHECKLIST.md](tasks/PHASE-1-CM1-CHECKLIST.md) — one deploy, one journey, tick all five rows.

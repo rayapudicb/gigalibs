@@ -11,6 +11,7 @@ for the implementers of those slices (`backend_domain`, `web_experience`, `api_c
 | Implementation plan v1.3 (§3.3, §4) | Windows, panels, data model, API |
 | WI-OI-120bs, metadata panels (`ad75a0f1`) | How panels are registered and placed |
 | WI-OI-120br, the engine package (`68be9379`) | The codes every screen translates |
+| WI-OI-120bv, actions and Stage 2 plan (engines 0.2.0) | The codes in §4.4 and §4.5 |
 
 **One rule runs through the whole document: the mock is the UI, and metadata drives it.**
 
@@ -503,6 +504,8 @@ gate result and the rail badges.
 | "Try it…" and "illustrative charges" sentences | Demo text | — |
 | Prefilled mitigation text | Demo data | Empty, or the library rule's control text |
 | Hard-coded Stage 2 "DMSO with acid or base" | Hard-coded | The library rule's `recommendedTest` |
+| "DSC onset − 100 K" in the action text | Hard-coded | The criteria set's `td24ConservativeOnsetOffsetK` |
+| ARC recommended for an entered TD24 | Mock defect: an entered TD24 was treated as conservative | No action and no Stage 2 test for an entered TD24 |
 
 <!-- pagebreak -->
 
@@ -560,21 +563,65 @@ same keys (`i18n`). `{…}` marks a parameter.
 
 ## 4.4 Actions before kilo-lab (S7 `actionList`; texts reviewed with 4.3)
 
-| Level | Rule | Text |
-| --- | --- | --- |
-| Critical | FR-GATE-04 | The gate is failing: no results for this step. |
-| Critical | BRL-02 | {material}: OB in the alert band with an energetic group. DSC and ARC are mandatory before use. |
-| Review | BRL-02 | {material}: OB in the alert band (or an energetic group is tagged). Run DSC. |
-| Critical | FR-THM-09 | Stoessel class {k}: {class action}. |
-| Review | FR-THM-09 | Stoessel class 3: boiling is the barrier. Check reflux and condenser capacity and gas release. |
-| Critical | FR-HAZ-02 | {A} × {B}: {finding}. Control: {control or "not documented"}. |
-| Review | FR-HAZ-02 | {A} × {B}: {finding}. |
-| Data gap | BRL-05 | ΔHr comes from a reaction-class estimate. Measure it by reaction calorimetry. |
-| Data gap | BRL-06 | TD24 is DSC onset − {offset} K (conservative). Measure the decomposition kinetics by ARC. |
-| Data gap | FR-THM-07 | No decomposition data: the Stoessel class cannot be assigned. Run DSC of the reaction mixture. |
-| Data gap | FR-THM-01 | Thermal results not computed: {reason}. |
-| Review | FR-THM-11 | {gas}: {mol} mol ({litres} L at STP). Check headspace and vent capacity. |
-| Data gap | FR-HAZ-05 | Hazard library v{version} is {status}: results are not reviewed screening. |
+`actionList(steps, decisions, library, criteria)` returns the actions in route order (WI-OI-120bv). Parameters
+carry ids, not names: the panel and dossier resolve material names from the route records, rule texts from the
+library rule (`ruleId`) and gas names from the library gas (`gasId`). `mitigationAccepted` and `controlDocumented` come
+from the route's records (BRL-03, BRL-04), passed in as `decisions`. A step whose gate fails yields only
+`ACTION_GATE_FAILING`. `stepId` is empty for a route-level action.
+
+| Code | Level | Rule | Parameters | Text |
+| --- | --- | --- | --- | --- |
+| `ACTION_GATE_FAILING` | Critical | FR-GATE-04 | — | The gate is failing: no results for this step. |
+| `ACTION_OB_HIGH` | Critical | BRL-02 | `materialId` | {material}: OB in the alert band with an energetic group. DSC and ARC are mandatory before synthesis. |
+| `ACTION_OB_REVIEW` | Review | FR-OB-05 | `materialId`, `percent`, `basis` | `ALERT_BAND`: {material}: OB {percent} % is inside the alert band. Confirm by DSC or a cited value. `ENERGETIC_GROUP`: {material}: an energetic group is tagged. Confirm by DSC or a cited value. |
+| `ACTION_STOESSEL_CRITICAL` | Critical | FR-THM-09 | `stoesselClass`, `mitigationAccepted` | Stoessel class {k}. `yes`: Mitigation accepted: {the mitigation record's text}. `no`: A mitigation must be recorded and accepted before approval. |
+| `ACTION_STOESSEL_3` | Review | FR-THM-09 | — | Stoessel class 3: boiling is the barrier. Check reflux and condenser capacity and gas release. |
+| `ACTION_INTERACTION_HIGH` | Critical | BRL-04 | `ruleId`, `materialAId`, `materialBId`, `controlDocumented` | {A} × {B}: {rule text}. `yes`: Control documented. `no`: Control not yet documented. |
+| `ACTION_INTERACTION_MEDIUM` | Review | FR-HAZ-02 | `ruleId`, `materialAId`, `materialBId` | {A} × {B}: {rule text}. |
+| `ACTION_DH_ESTIMATE` | Data gap | BRL-05 | — | ΔHr comes from a reaction-class estimate. Measure it by reaction calorimetry. |
+| `ACTION_TD24_CONSERVATIVE` | Data gap | BRL-06 | `offsetK` | TD24 is DSC onset − {offsetK} K (conservative). Measure the decomposition kinetics by ARC. |
+| `ACTION_NO_DECOMPOSITION_DATA` | Data gap | FR-THM-07 | — | No decomposition data: the Stoessel class cannot be assigned. Run DSC of the reaction mixture. |
+| `ACTION_TD24_OUT_OF_RANGE` | Data gap | FR-THM-07 | — | TMRad does not reach 24 h in the search range. Measure the decomposition kinetics by ARC. |
+| `ACTION_THERMAL_NOT_COMPUTED` | Data gap | FR-THM-01 | `reasonCode` | Thermal results not computed: {the §4.2 text of `reasonCode`}. |
+| `ACTION_CRITERIA_MISSING` | Data gap | FR-THM-01 | `missing` | Not computed: the screening criteria have no value for {missing}. |
+| `ACTION_GAS_EVOLUTION` | Review | FR-THM-11 | `materialId`, `gasId`, `moles`, `litresAtStp` | {gas} released: {moles} mol ({litresAtStp} L at STP). Check headspace and vent capacity. |
+| `ACTION_LIBRARY_UNREVIEWED` | Data gap | BRD 16.2 | `libraryVersion` (route level) | Hazard library v{libraryVersion} is not yet reviewed by the process safety specialist. |
+
+## 4.5 Stage 2 test plan (S7 `stage2Plan`)
+
+`stage2Plan(steps)` lists each step, target and test once; steps whose gate fails are left out (WI-OI-120bv).
+
+| Reason code | Rule | Target | Test | Why (text) |
+| --- | --- | --- | --- | --- |
+| `STAGE2_OB_HIGH` | BRL-02 | `MATERIAL` | `DSC_ARC` | OB in the band with an energetic group (BRL-02) |
+| `STAGE2_OB_REVIEW` | FR-OB-05 | `MATERIAL` | `DSC` | OB inside the alert band, or an energetic group is tagged |
+| `STAGE2_DH_ESTIMATE` | BRL-05 | `REACTION_MIXTURE` | `RC1` | ΔHr is an estimate (BRL-05) |
+| `STAGE2_NO_DECOMPOSITION_DATA` | FR-THM-07 | `REACTION_MIXTURE` | `DSC` | No decomposition data |
+| `STAGE2_TD24_CONSERVATIVE` | BRL-06 | `REACTION_MIXTURE` | `ARC` | Replace the conservative TD24 (BRL-06) |
+| `STAGE2_TD24_OUT_OF_RANGE` | FR-THM-07 | `REACTION_MIXTURE` | `ARC` | TD24 is outside the search range |
+| `STAGE2_STOESSEL_CLASS` | FR-THM-09 | `REACTION_AT_DOSING` | `RC1_ACCUMULATION` | Stoessel class {stoesselClass} |
+| `STAGE2_GAS_RELEASED` | FR-THM-11 | `MATERIAL` | `GAS_MEASUREMENT` | {moles} mol released |
+| `STAGE2_INTERACTION_RULE` | FR-HAZ-02 | `MATERIAL_PAIR` | The library rule's `recommendedTest` | {rule text} |
+
+| Target | Text |
+| --- | --- |
+| `MATERIAL` | {material} |
+| `MATERIAL_PAIR` | {A} + {B} |
+| `REACTION_MIXTURE` | Reaction mixture |
+| `REACTION_AT_DOSING` | Reaction at the intended dosing |
+
+| Test code | Text |
+| --- | --- |
+| `DSC` | DSC |
+| `DSC_ARC` | DSC and ARC |
+| `ARC` | ARC |
+| `RC1` | Reaction calorimetry (RC1) |
+| `RC1_ACCUMULATION` | Reaction calorimetry with accumulation |
+| `GAS_MEASUREMENT` | Gas measurement |
+| `DSC_MIXTURE` | DSC of the mixture |
+
+A library rule's `recommendedTest` must be a code in this table: the library import (S6) rejects any other, so every
+test in the plan has a text. A new test needs its code and text here first.
 
 <!-- pagebreak -->
 
