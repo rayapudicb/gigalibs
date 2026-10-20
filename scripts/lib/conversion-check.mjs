@@ -14,9 +14,10 @@ const ALWAYS = new Set(['id', 'version']);
  * @param {Set<string>} input.servedLookups  lookup keys served by any converted module or by the platform
  * @param {object} input.engine       `{ executableCapabilityFindings, entityRules, holdsPermission, notDelegable? }`
  * @param {Map<string, string>} [input.heldBack]  record types registered but shown by no window yet, with their card
+ * @param {Array} [input.panelCatalogue]  registered panels (WI-OI-120bs); without it every panel placement is refused
  * @returns {{ findings: string[], permissions: string[] }}
  */
-export function conversionFindings({ windows, description, manifest, roles, servedLookups, engine, heldBack = new Map() }) {
+export function conversionFindings({ windows, description, manifest, roles, servedLookups, engine, heldBack = new Map(), panelCatalogue = [] }) {
   const { executableCapabilityFindings, entityRules, holdsPermission, notDelegable = () => false } = engine;
   const findings = [];
   const fail = (message) => findings.push(message);
@@ -26,7 +27,7 @@ export function conversionFindings({ windows, description, manifest, roles, serv
   if (windows.length === 0) fail('ships no window');
   for (const baseline of windows) {
     const surface = baseline.definition.surfaceKey;
-    for (const finding of executableCapabilityFindings(baseline.definition.dictionary, undefined).filter((candidate) => candidate.severity === 'ERROR'))
+    for (const finding of executableCapabilityFindings(baseline.definition.dictionary, undefined, panelCatalogue).filter((candidate) => candidate.severity === 'ERROR'))
       fail(`${surface}: ${finding.code} at ${finding.path}`);
   }
   for (const conflict of entityRules(windows.map((baseline) => baseline.definition.dictionary)).conflicts) fail(conflict);

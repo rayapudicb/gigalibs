@@ -11,7 +11,7 @@ import yaml from 'js-yaml';
 import { conversionFindings } from './lib/conversion-check.mjs';
 
 const root = resolve(import.meta.dirname, '..');
-const { moduleWindowBaselines, moduleDefaultRoles, holdsPermission, canonicalPermission, NOT_DELEGABLE_PERMISSIONS, PLATFORM_LOOKUPS } = await import(
+const { moduleWindowBaselines, moduleDefaultRoles, holdsPermission, canonicalPermission, NOT_DELEGABLE_PERMISSIONS, PLATFORM_LOOKUPS, modulePanelCatalogue } = await import(
   pathToFileURL(join(root, 'packages/contracts/dist/index.js')).href
 );
 const { executableCapabilityFindings, entityRules } = await import(pathToFileURL(join(root, 'packages/configuration-core/dist/index.js')).href);
@@ -85,6 +85,7 @@ for (const name of modules) {
     roles,
     servedLookups: new Set(servedLookups.keys()),
     engine: { executableCapabilityFindings, entityRules, holdsPermission, notDelegable },
+    panelCatalogue: modulePanelCatalogue(),
     heldBack: new Map(Object.entries(HELD_BACK[name] ?? {})),
   });
 

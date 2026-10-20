@@ -250,6 +250,60 @@ export const DictionarySectionV1Schema = z
   .strict();
 export type DictionarySectionV1 = z.infer<typeof DictionarySectionV1Schema>;
 
+// WI-OI-120bs (SPEED S2b): metadata panels. A module registers panel components in its manifest
+// (`spec.ui.panels`); a window places them on a tab with typed props. Metadata decides where a panel appears and who
+// sees it; the registered component decides what it draws (a closed catalogue, plan v3 GU3).
+
+/** `<module-prefix>.<panel-name>`, for example `speed.gate-panel`. */
+export const DictionaryPanelComponentKeySchema = z
+  .string()
+  .regex(/^[a-z][a-z0-9-]*\.[a-z][a-z0-9-]*$/, 'A panel component key is <module-prefix>.<panel-name> in lowercase.')
+  .max(80);
+
+export const DictionaryPanelPropValueSchema = z.union([z.string().max(500), z.number().finite(), z.boolean()]);
+export type DictionaryPanelPropValue = z.infer<typeof DictionaryPanelPropValueSchema>;
+
+const PanelPropNameSchema = z.string().regex(/^[a-z][A-Za-z0-9]*$/).max(60);
+
+export const DictionaryPanelPlacementV1Schema = z
+  .object({
+    panelKey: ConfigurationKeySchema,
+    componentKey: DictionaryPanelComponentKeySchema,
+    sectionKey: ConfigurationKeySchema.optional(),
+    position: z.number().int().min(0).max(1000),
+    span: z.number().int().min(1).max(12).default(12),
+    props: z.record(PanelPropNameSchema, DictionaryPanelPropValueSchema).default({}),
+    readPermission: z.string().trim().max(100).optional(),
+    visibilityCondition: DictionaryValidationExpressionSchema.optional(),
+  })
+  .strict();
+export type DictionaryPanelPlacementV1 = z.infer<typeof DictionaryPanelPlacementV1Schema>;
+
+/** A prop a registered panel accepts: a closed set of types, so props are checked at publish. */
+export const ModulePanelPropDefinitionV1Schema = z
+  .object({
+    type: z.enum(['STRING', 'NUMBER', 'BOOLEAN', 'ENUM']),
+    required: z.boolean().default(false),
+    values: z.array(z.string().trim().min(1).max(80)).min(1).max(50).optional(),
+  })
+  .strict()
+  .refine((prop) => (prop.type === 'ENUM') === (prop.values !== undefined), {
+    message: 'An ENUM prop lists its values, and only an ENUM prop has values.',
+  });
+export type ModulePanelPropDefinitionV1 = z.infer<typeof ModulePanelPropDefinitionV1Schema>;
+
+/** A panel component a module registers in `spec.ui.panels`; generated into the panel catalogue. */
+export const ModulePanelDefinitionV1Schema = z
+  .object({
+    moduleKey: ConfigurationKeySchema,
+    componentKey: DictionaryPanelComponentKeySchema,
+    /** RECORD: the panel is drawn for the record the tab shows. */
+    binding: z.enum(['RECORD']),
+    props: z.record(PanelPropNameSchema, ModulePanelPropDefinitionV1Schema).default({}),
+  })
+  .strict();
+export type ModulePanelDefinitionV1 = z.infer<typeof ModulePanelDefinitionV1Schema>;
+
 export const DictionaryTabV1Schema = z
   .object({
     tabKey: ConfigurationKeySchema,
@@ -260,6 +314,8 @@ export const DictionaryTabV1Schema = z
     parentRelationshipKey: ConfigurationKeySchema.optional(),
     sections: z.array(DictionarySectionV1Schema).max(20).default([]),
     fields: z.array(DictionaryFieldPlacementV1Schema).max(CONFIGURATION_MAX_FIELDS).default([]),
+    /** Optional with no default, so a tab without panels compiles exactly as before (same checksum). */
+    panels: z.array(DictionaryPanelPlacementV1Schema).max(20).optional(),
     visibilityCondition: DictionaryValidationExpressionSchema.optional(),
   })
   .strict();
@@ -439,7 +495,7 @@ export function isDictionaryManifest(value: unknown): value is CompiledDictionar
  * being published and silently ignored (ADR-0033 D1; metadata investigation M-01). Raise the version whenever the
  * list changes.
  */
-export const DICTIONARY_CAPABILITY_VERSION = 1;
+export const DICTIONARY_CAPABILITY_VERSION = 2;
 export const DICTIONARY_EXECUTABLE_CAPABILITIES = Object.freeze({
   fieldTypes: Object.freeze([
     'TEXT',
@@ -473,6 +529,11 @@ export const DICTIONARY_EXECUTABLE_CAPABILITIES = Object.freeze({
   /** COMMAND runs a registered module command; NAVIGATE opens another window. WORKFLOW and REPORT are not executed yet. */
   actionTypes: Object.freeze(['COMMAND', 'NAVIGATE'] as const satisfies readonly DictionaryActionType[]),
   viewModes: Object.freeze(['LIST', 'READ', 'EDIT', 'CREATE'] as const satisfies readonly DictionarySurfaceMode[]),
+  /**
+   * WI-OI-120bs (version 2): panels are drawn for the record a level-0 tab shows. The main tab may mix fields and
+   * panels; a further level-0 tab on the same entity holds panels only; child tabs hold no panels yet.
+   */
+  panelBindings: Object.freeze(['RECORD'] as const),
   /** Types whose values are exact decimal strings when `scale` is set. */
   exactDecimalTypes: Object.freeze(['NUMBER', 'CURRENCY'] as const satisfies readonly DictionaryFieldType[]),
   /**

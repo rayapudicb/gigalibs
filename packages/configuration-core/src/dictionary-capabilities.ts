@@ -2,7 +2,9 @@ import {
   DICTIONARY_EXECUTABLE_CAPABILITIES,
   permissionParts,
   type DictionaryPackageDefinitionV1,
+  type DictionaryPanelPlacementV1,
   type DictionaryValidationExpression,
+  type ModulePanelDefinitionV1,
 } from '@gigalibs/contracts';
 import type { ConfigurationFinding } from './index.js';
 import { parseExactDecimal } from './dictionary-evaluator.js';
@@ -73,6 +75,51 @@ function permissionFindings(permission: string | undefined, path: string): Confi
   return [error('PERMISSION_INVALID', path, `${permission} is not a permission code such as finance:journals:post or cmms.work-orders.read.`)];
 }
 
+/**
+ * WI-OI-120bs (SPEED S2b): a panel placement must name a component its own module registered (a closed catalogue),
+ * with exactly the props that component declares, each of the declared type.
+ */
+function panelFindings(
+  placement: DictionaryPanelPlacementV1,
+  moduleKey: string,
+  catalogue: ReadonlyMap<string, ModulePanelDefinitionV1>,
+  path: string,
+): ConfigurationFinding[] {
+  const definition = catalogue.get(placement.componentKey);
+  if (!definition) {
+    return [error('PANEL_NOT_REGISTERED', `${path}.componentKey`, `Panel '${placement.componentKey}' is not registered by any module.`)];
+  }
+  if (definition.moduleKey !== moduleKey) {
+    return [error('PANEL_NOT_OWNED', `${path}.componentKey`, `Panel '${placement.componentKey}' belongs to module ${definition.moduleKey}, not ${moduleKey}.`)];
+  }
+  if (!(capabilities.panelBindings as readonly string[]).includes(definition.binding)) {
+    return [error('PANEL_BINDING_UNSUPPORTED', `${path}.componentKey`, `Panel binding ${definition.binding} is not executed.`)];
+  }
+  const findings: ConfigurationFinding[] = [];
+  for (const [name, value] of Object.entries(placement.props)) {
+    const prop = definition.props[name];
+    if (!prop) {
+      findings.push(error('PANEL_PROP_UNKNOWN', `${path}.props.${name}`, `Panel '${placement.componentKey}' has no prop '${name}'.`));
+      continue;
+    }
+    const fits =
+      prop.type === 'STRING' ? typeof value === 'string'
+      : prop.type === 'NUMBER' ? typeof value === 'number'
+      : prop.type === 'BOOLEAN' ? typeof value === 'boolean'
+      : typeof value === 'string' && (prop.values ?? []).includes(value);
+    if (!fits) {
+      const expected = prop.type === 'ENUM' ? `one of ${(prop.values ?? []).join(', ')}` : prop.type.toLowerCase();
+      findings.push(error('PANEL_PROP_TYPE', `${path}.props.${name}`, `Prop '${name}' must be ${expected}.`));
+    }
+  }
+  for (const [name, prop] of Object.entries(definition.props)) {
+    if (prop.required && !(name in placement.props)) {
+      findings.push(error('PANEL_PROP_REQUIRED', `${path}.props.${name}`, `Panel '${placement.componentKey}' needs prop '${name}'.`));
+    }
+  }
+  return findings;
+}
+
 /** Checks one expression tree: every leaf names a known field and a usable operator and value. */
 export function expressionFindings(
   expression: DictionaryValidationExpression,
@@ -125,13 +172,16 @@ export function expressionFindings(
 
 /**
  * Everything in the package that the window cannot execute, or that points at nothing. `baselineEntityKeys` and
- * `baselineFieldKeys` are the module's own entities and fields, which a tenant package may extend.
+ * `baselineFieldKeys` are the module's own entities and fields, which a tenant package may extend. `panelCatalogue` is
+ * the registered panels (generated from module manifests); without it, every panel placement is refused.
  */
 export function executableCapabilityFindings(
   pkg: DictionaryPackageDefinitionV1,
   baseline: Pick<DictionaryPackageDefinitionV1, 'entities' | 'fields' | 'relationships'> | undefined,
+  panelCatalogue: readonly ModulePanelDefinitionV1[] = [],
 ): ConfigurationFinding[] {
   const findings: ConfigurationFinding[] = [];
+  const panelsByComponent = new Map(panelCatalogue.map((definition) => [definition.componentKey, definition]));
   const entities = new Set([...(baseline?.entities ?? []), ...pkg.entities].map((entity) => entity.entityKey));
   const allFields = [...(baseline?.fields ?? []), ...pkg.fields];
   const fieldsByEntity = new Map<string, Set<string>>();
@@ -216,6 +266,20 @@ export function executableCapabilityFindings(
       findings.push(error('ROOT_TAB_REQUIRED', `${viewPath}.tabs`, 'A view needs a level-0 tab for its main record.'));
     }
     const rootEntity = rootTabs[0]?.targetEntityKey;
+    // WI-OI-120bs: further level-0 tabs show the same record and hold panels only (the record's fields stay on the
+    // main tab, so the edit form is unchanged).
+    for (const extra of rootTabs.slice(1)) {
+      const extraPath = `${viewPath}.tabs.${extra.tabKey}`;
+      if (extra.targetEntityKey !== rootEntity) {
+        findings.push(error('RECORD_TAB_ENTITY_MISMATCH', `${extraPath}.targetEntityKey`, `A further level-0 tab must show the main record (${rootEntity}).`));
+      }
+      if (extra.fields.length > 0) {
+        findings.push(error('RECORD_TAB_FIELDS_NOT_SUPPORTED', `${extraPath}.fields`, 'A further level-0 tab holds panels only; place fields on the main tab.'));
+      }
+      if (!extra.panels?.length) {
+        findings.push(error('RECORD_TAB_EMPTY', `${extraPath}.panels`, 'A further level-0 tab needs at least one panel.'));
+      }
+    }
     const rootFields = rootEntity ? (fieldsByEntity.get(rootEntity) ?? new Set<string>()) : new Set<string>();
     for (const key of [...(view.searchFields ?? []), ...(view.filterFields ?? []), ...(view.defaultSortField ? [view.defaultSortField] : [])]) {
       if (!rootFields.has(key)) {
@@ -256,6 +320,21 @@ export function executableCapabilityFindings(
         ] as const) {
           if (condition) findings.push(...expressionFindings(condition, tabFields, `${placementPath}.${name}`));
         }
+      }
+      const panelKeys = new Set<string>();
+      for (const panel of tab.panels ?? []) {
+        const panelPath = `${tabPath}.panels.${panel.panelKey}`;
+        if (panelKeys.has(panel.panelKey)) findings.push(error('PANEL_KEY_DUPLICATE', panelPath, `Panel key '${panel.panelKey}' is used twice on the tab.`));
+        panelKeys.add(panel.panelKey);
+        if (tab.level > 0) {
+          findings.push(error('PANEL_ON_CHILD_TAB_NOT_SUPPORTED', panelPath, 'Panels are drawn for the record a level-0 tab shows; child tabs hold none yet.'));
+        }
+        if (panel.sectionKey && !sections.has(panel.sectionKey)) {
+          findings.push(error('MISSING_SECTION', `${panelPath}.sectionKey`, `Section '${panel.sectionKey}' is not declared on the tab.`));
+        }
+        findings.push(...permissionFindings(panel.readPermission, `${panelPath}.readPermission`));
+        if (panel.visibilityCondition) findings.push(...expressionFindings(panel.visibilityCondition, tabFields, `${panelPath}.visibilityCondition`));
+        findings.push(...panelFindings(panel, pkg.moduleKey, panelsByComponent, panelPath));
       }
     }
   }
