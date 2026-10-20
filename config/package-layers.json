@@ -66,6 +66,9 @@
     "packages/forms-engine-nest"
   ],
   "modulePackages": {
+    "process-safety-screening": [
+      "packages/process-safety-engines"
+    ],
     "accounts-receivable": [
       "packages/invoices-core"
     ],
