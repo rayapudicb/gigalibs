@@ -38,12 +38,27 @@ export type InventoryReceiptPostingReconciliationSweepResult = {
 };
 
 /** ADR-0033 D3: compare inbox and journals per tenant; audit when gaps remain. */
+const RECONCILIATION_ADVISORY_LOCK_KEY = 'gigalibs_finance:inventory_receipt_posting_reconciliation';
+
 export async function runInventoryReceiptPostingReconciliationSweep(
-  database: Pick<DatabaseService, 'relayCall' | 'withTenantTransaction'>,
+  database: Pick<DatabaseService, 'relayCall' | 'withTenantTransaction' | 'getPool'>,
   config: InventoryReceiptPostingReconciliationJobConfig = loadInventoryReceiptPostingReconciliationJobConfig(),
 ): Promise<InventoryReceiptPostingReconciliationSweepResult> {
   if (!config.enabled) return { tenantsChecked: 0, unbalancedTenants: 0 };
 
+  const lockClient = await database.getPool().connect();
+  let locked = false;
+  try {
+    const row = await lockClient.query<{ locked: boolean }>(`SELECT pg_try_advisory_lock(hashtext($1)) AS locked`, [
+      RECONCILIATION_ADVISORY_LOCK_KEY,
+    ]);
+    locked = row.rows[0]?.locked === true;
+  } finally {
+    if (!locked) lockClient.release();
+  }
+  if (!locked) return { tenantsChecked: 0, unbalancedTenants: 0 };
+
+  try {
   const eventType = inventoryReceiptCompletedPostingPolicyV1.eventType;
   const rows = await database.relayCall<{ tenant_id: string }>(
     'list_inventory_receipt_posting_reconciliation_tenants',
@@ -64,6 +79,10 @@ export async function runInventoryReceiptPostingReconciliationSweep(
     }
   }
   return { tenantsChecked: rows.length, unbalancedTenants };
+  } finally {
+    await lockClient.query(`SELECT pg_advisory_unlock(hashtext($1))`, [RECONCILIATION_ADVISORY_LOCK_KEY]);
+    lockClient.release();
+  }
 }
 
 async function recordReconciliationGapAudit(

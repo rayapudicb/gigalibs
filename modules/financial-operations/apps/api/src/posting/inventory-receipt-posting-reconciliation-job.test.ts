@@ -33,11 +33,20 @@ describe('runInventoryReceiptPostingReconciliationSweep', () => {
       if (sql.includes('journal_id IS NULL')) return { rows: [] };
       return { rows: [] };
     });
+    const lockClient = {
+      query: vi.fn(async (sql: string) => {
+        if (sql.includes('pg_try_advisory_lock')) return { rows: [{ locked: true }] };
+        if (sql.includes('pg_advisory_unlock')) return { rows: [] };
+        return { rows: [] };
+      }),
+      release: vi.fn(),
+    };
     const database = {
       relayCall: vi.fn(async () => [{ tenant_id: 'tenant-a' }]),
       withTenantTransaction: vi.fn(async (_tenantId: string, operation: (client: { query: typeof query }) => unknown) =>
         operation({ query }),
       ),
+      getPool: vi.fn(() => ({ connect: async () => lockClient })),
     };
 
     const result = await runInventoryReceiptPostingReconciliationSweep(database as never, {

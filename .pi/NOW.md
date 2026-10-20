@@ -28,6 +28,10 @@ keeps the full rules.
 
 **WI-OI-120bo (2026-10-20, Built):** UAT module-host restored (owner) and verified. Prevention built: release-worktree rule on 29 UAT-acting scripts, compose wrapper limited to isolated project `gigalibs-test`, `pnpm test:minimal-p2p-o2c` **2 passed** on a fresh test database with no manual SQL. Card: [WI-OI-120bo](tasks/WI-OI-120bo.md). UAT cleanup done by the owner and verified. Open: commit on "commit".
 
+**WI-OI-120bp (2026-10-20, Built):** Two-way Finance ⇄ Inventory signed relay + Inventory fiscal period replica (D1); cross-DB URLs and `@gigalibs/posting-rules` on Inventory removed. Evidence: F2.2 unit cert, F2.7 HTTP proof **24/24** on test Postgres; `audit:layers` clean (baseline shrunk). Open: `build-test-stack-images.sh` + `pnpm test:minimal-p2p-o2c` on `gigalibs-test`, Security review, owner commit. Card: [WI-OI-120bp](tasks/WI-OI-120bp.md).
+
+**WI-OI-120bq (2026-10-20, Approved; Cursor after 120bp):** make Table 2 releasable — fix the Security review's H1–H3, M1–M3, L1–L3 (per-product standard cost, book currency, retry for rejected postings, period-scoped close, REVOKE on definer functions, filtered relay, cut-off confirmation). Card: [WI-OI-120bq](tasks/WI-OI-120bq.md); prompt: [PROMPT-2026-10-20-CURSOR-120bq.md](handoff/PROMPT-2026-10-20-CURSOR-120bq.md). Then Claude re-review → F2.9 accountant sign-off → release worktree → owner deploy.
+
 **Batch acceptance:** [PHASE-1-CM1-CHECKLIST.md](tasks/PHASE-1-CM1-CHECKLIST.md) — one deploy, one journey, tick all five rows.
 
 **Table 2 engines (another agent, 2026-10-18; tracker [TABLE-2-ENGINES.md](TABLE-2-ENGINES.md)):**
@@ -40,6 +44,7 @@ keeps the full rules.
     workspace, so the image would not build;
   - Finance writes Inventory's schema (`inventory-receipt-posting-status-sync.ts`, a new layer violation);
   - the inventory-receipts window is stale (S16).
+- **Independent Security review (2026-10-20):** [TABLE-2-SECURITY-REVIEW-2026-10-20.md](work/TABLE-2-SECURITY-REVIEW-2026-10-20.md) — **not releasable yet**: H1 retry doubles cost layers, H2 one rejected posting blocks period close forever, H3 single standard cost and hard-coded USD, H4 = WI-OI-120bp; M1–M3, L1–L3. Relay security itself is sound.
 - **Never deploy from the branch.** Table 2 goes to UAT through the release worktree, after its reviews, when the
   owner decides it is its turn.
 - **One implementation writer at a time:** the owner confirms which agent writes.
@@ -60,7 +65,7 @@ keeps the full rules.
 
 ## Next implementation (Table 1 backlog, local compose)
 
-1. **WI-OI-120gd** — journey 0 blockers — **blocked:** `E2E_JOURNEY_PASSWORD` not in `e2e/uat.env` (only owner can set).
+1. **WI-OI-120gd** — journey 0 blockers — **unblocked:** `E2E_JOURNEY_PASSWORD` is set in `e2e/uat.env` (checked 2026-10-20, value not read).
 2. **WI-OI-120ge** — **Done** in git **`0031a2f4`** (pushed); `pnpm audit:configuration-deployment-profile` passes.
 3. **WI-OI-120gf** — **In progress** (M-AR0): compose + module SDK; E1 build done in **WI-OI-120gw**.
 4. **WI-OI-120gg** — **Built** in git **`cdcbf2c9`** (pushed): vendor party guard mig **4**.

@@ -9,6 +9,8 @@ const LOC_TYPES = [
 const STOCK = [['AVAILABLE', 'Available'], ['RESERVED', 'Reserved'], ['QUARANTINED', 'Quarantined'], ['INSPECTION', 'Inspection'], ['DAMAGED', 'Damaged'], ['BLOCKED', 'Blocked'], ['EXPIRED', 'Expired']];
 const VALUATION = [['STANDARD', 'Standard cost'], ['MOVING_AVERAGE', 'Moving average'], ['FIFO', 'FIFO']];
 const RECEIPT = [['DRAFT', 'Draft'], ['EXPECTED', 'Expected'], ['RECEIVING', 'Receiving'], ['COMPLETED', 'Completed'], ['CANCELLED', 'Cancelled']];
+// WI-OI-120fv (F2.5): Finance's posting outcome on a completed receipt (ADR-0033 D3).
+const FINANCE_POSTING = [['NOT_APPLICABLE', 'Not applicable'], ['AWAITING_POSTING', 'Awaiting posting'], ['POSTED', 'Posted'], ['POSTING_REJECTED', 'Posting rejected']];
 const INSPECTION = [['PENDING', 'Pending'], ['PASSED', 'Passed'], ['FAILED', 'Failed'], ['QUARANTINED', 'Quarantined']];
 const DIRECTION = [['DEBIT', 'In (debit)'], ['CREDIT', 'Out (credit)']];
 
@@ -107,6 +109,8 @@ export function windowSource(builderFor) {
     field(R, 'receipt-number', 'Receipt number', 'TEXT', { readOnly: true }), field(R, 'warehouse-id', 'Warehouse', 'REFERENCE', { required: true, ref: 'warehouse-ref' }),
     field(R, 'external-document-reference', 'Supplier document'), field(R, 'notes', 'Notes', 'TEXTAREA'),
     field(R, 'status', 'Status', 'SELECT', { readOnly: true, ref: 'receipt-statuses' }),
+    field(R, 'finance-posting-status', 'Finance posting', 'SELECT', { readOnly: true, ref: 'finance-posting-statuses' }),
+    field(R, 'finance-posting-rejection-code', 'Finance posting rejection', 'TEXT', { readOnly: true }),
     field(R, 'created-at', 'Created', 'DATETIME', { readOnly: true }), field(R, 'completed-at', 'Completed', 'DATETIME', { readOnly: true }),
     field(RL, 'receipt-id', 'Receipt'), field(RL, 'line-number', 'Line', 'INTEGER', { readOnly: true }),
     field(RL, 'product-id', 'Product', 'REFERENCE', { required: true, ref: 'product-ref' }),
@@ -118,7 +122,8 @@ export function windowSource(builderFor) {
   ];
   windows['inventory-receipts'] = window('inventory-receipts', 'Goods receipts', 'Receipts', 'Receive goods into warehouse locations.', 'inventory:read',
     dictionary('inventory-receipts', 'Goods receipts', R, [entity(R, 'Receipts'), entity(RL, 'Receipt lines')], rf, [relationship('receipt-lines', R, RL, 'receipt-id')],
-      [WAREHOUSE_REF, LOCATION_REF, PRODUCT_REF, UOM_REF, values('receipt-statuses', RECEIPT), values('inspection-statuses', INSPECTION)], [
+      [WAREHOUSE_REF, LOCATION_REF, PRODUCT_REF, UOM_REF, values('receipt-statuses', RECEIPT), values('finance-posting-statuses', FINANCE_POSTING),
+        values('inspection-statuses', INSPECTION)], [
         view('receipts', 'Goods receipts', [
           tab('receipt', 'Receipt', 0, R, [
             ['receipt-number', 4, 'main'], ['status', 4, 'main'], ['warehouse-id', 4, 'main'], ['external-document-reference', 6, 'main'], ['created-at', 3, 'main'],

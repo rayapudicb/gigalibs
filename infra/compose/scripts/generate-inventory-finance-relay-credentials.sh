@@ -1,28 +1,57 @@
 #!/usr/bin/env bash
-# WI-OI-120fq: Inventory signs with FINANCE_INBOX_RELAY_PRIVATE_KEY; Finance verifies with FINANCE_INBOX_RELAY_PUBLIC_KEY.
+# WI-OI-120fq / WI-OI-120bp: Inventory→Finance and Finance→Inventory relay Ed25519 keys (never printed).
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-MODULE_ENV="${SCRIPT_DIR}/../.env.modules"
-if [[ ! -f "${MODULE_ENV}" ]]; then
-  echo "Error: ${MODULE_ENV} is required." >&2
-  exit 1
-fi
-if grep -q '^FINANCE_INBOX_RELAY_PUBLIC_KEY_BASE64=' "${MODULE_ENV}"; then
-  echo "Finance inventory relay keys already present in ${MODULE_ENV}; refusing to overwrite." >&2
-  exit 1
-fi
-key_dir="$(mktemp -d)"
-openssl genpkey -algorithm Ed25519 -out "${key_dir}/private.pem" >/dev/null 2>&1
-openssl pkey -in "${key_dir}/private.pem" -pubout -out "${key_dir}/public.pem" >/dev/null 2>&1
-PUBLIC="$(openssl pkey -pubin -in "${key_dir}/public.pem" -outform DER | base64 | tr -d '\n')"
-PRIVATE="$(openssl pkey -in "${key_dir}/private.pem" -outform DER | base64 | tr -d '\n')"
-rm -rf "${key_dir}"
+COMPOSE_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
+ENV_SUFFIX="${GIGALIBS_COMPOSE_ENV_SUFFIX:-}"
+MODULE_ENV="${COMPOSE_DIR}/.env${ENV_SUFFIX}.modules"
+FINANCE_MODULE_ENV="${COMPOSE_DIR}/.env${ENV_SUFFIX}.module.financial-operations"
+INVENTORY_MODULE_ENV="${COMPOSE_DIR}/.env${ENV_SUFFIX}.module.universal-inventory"
+
+for file in "${MODULE_ENV}"; do
+  if [[ ! -f "${file}" ]]; then
+    echo "Error: ${file} is required." >&2
+    exit 1
+  fi
+done
+
+PUBLIC=""
+PRIVATE=""
+gen_pair() {
+  local key_dir
+  key_dir="$(mktemp -d)"
+  openssl genpkey -algorithm Ed25519 -out "${key_dir}/private.pem" >/dev/null 2>&1
+  PUBLIC="$(openssl pkey -in "${key_dir}/private.pem" -pubout -outform DER | base64 | tr -d '\n')"
+  PRIVATE="$(openssl pkey -in "${key_dir}/private.pem" -outform DER | base64 | tr -d '\n')"
+  rm -rf "${key_dir}"
+}
+
 umask 077
-{
-  printf 'FINANCE_INBOX_RELAY_PUBLIC_KEY_BASE64=%s\n' "${PUBLIC}"
-  printf 'FINANCE_INBOX_RELAY_PRIVATE_KEY_BASE64=%s\n' "${PRIVATE}"
-  printf 'INVENTORY_RELAY_FINANCE_URL=http://127.0.0.1:4790\n'
-  printf 'INVENTORY_RELAY_FINANCE_INBOX_PATH=/financial-operations/internal/v1/inbox\n'
-} >>"${MODULE_ENV}"
-chmod 600 "${MODULE_ENV}"
-echo "Added Inventory→Finance relay keys to ${MODULE_ENV} (values not printed)."
+
+if ! grep -q '^FINANCE_INBOX_RELAY_PUBLIC_KEY_BASE64=' "${MODULE_ENV}"; then
+  gen_pair
+  {
+    printf 'FINANCE_INBOX_RELAY_PUBLIC_KEY_BASE64=%s\n' "${PUBLIC}"
+    printf 'FINANCE_INBOX_RELAY_PRIVATE_KEY_BASE64=%s\n' "${PRIVATE}"
+    printf 'INVENTORY_RELAY_FINANCE_URL=http://127.0.0.1:4790\n'
+    printf 'INVENTORY_RELAY_FINANCE_INBOX_PATH=/financial-operations/internal/v1/inbox\n'
+  } >>"${MODULE_ENV}"
+  echo "Added Inventory→Finance relay keys to ${MODULE_ENV} (values not printed)."
+fi
+
+if [[ -f "${FINANCE_MODULE_ENV}" && -f "${INVENTORY_MODULE_ENV}" ]] &&
+  ! grep -q '^FINANCE_INVENTORY_INBOX_RELAY_PRIVATE_KEY_BASE64=' "${FINANCE_MODULE_ENV}"; then
+  gen_pair
+  printf 'INVENTORY_INBOX_RELAY_PUBLIC_KEY_BASE64=%s\n' "${PUBLIC}" >>"${INVENTORY_MODULE_ENV}"
+  {
+    printf 'FINANCE_INVENTORY_INBOX_RELAY_PRIVATE_KEY_BASE64=%s\n' "${PRIVATE}"
+    printf 'FINANCE_RELAY_INVENTORY_URL=http://127.0.0.1:4790\n'
+    printf 'FINANCE_RELAY_INVENTORY_INBOX_PATH=/universal-inventory/internal/v1/inbox\n'
+    printf 'FINANCE_INVENTORY_RELAY_INTERVAL_MS=400\n'
+  } >>"${FINANCE_MODULE_ENV}"
+  echo "Added Finance→Inventory relay keys (values not printed)."
+fi
+
+chmod 600 "${MODULE_ENV}" 2>/dev/null || true
+[[ -f "${FINANCE_MODULE_ENV}" ]] && chmod 600 "${FINANCE_MODULE_ENV}"
+[[ -f "${INVENTORY_MODULE_ENV}" ]] && chmod 600 "${INVENTORY_MODULE_ENV}"

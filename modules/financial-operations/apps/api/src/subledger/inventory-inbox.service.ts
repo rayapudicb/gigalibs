@@ -12,10 +12,15 @@ import { DatabaseService } from '../database.service.js';
 import { CostingService } from '../costing/costing.service.js';
 import { resolvePrimaryBookPostingContext } from '../posting/finance-posting-context.js';
 import { recordInventoryReceiptLinePosting } from '../posting/subledger-posting-register.js';
-import { InventoryReceiptPostingStatusSync } from './inventory-receipt-posting-status-sync.js';
+import {
+  appendInventoryReceiptPostingOutcome,
+  ensureInventoryFiscalPeriodSnapshotPublished,
+} from './finance-inventory-outbox.js';
 
 const CONSUMER = 'finance.inventory-subledger';
 const RECEIPTS: InboxReceiptOptions = { schema: SCHEMA, consumer: CONSUMER, sourceModule: 'inventory' };
+
+const receiptQuantityPattern = /^(?:0|[1-9]\d*)(?:\.\d{1,6})?$/;
 
 const ReceiptCompletedPayloadSchema = z
   .object({
@@ -27,7 +32,9 @@ const ReceiptCompletedPayloadSchema = z
       z.object({
         receiptLineId: z.string().uuid(),
         productId: z.string().uuid(),
-        receivedQuantity: z.string(),
+        receivedQuantity: z
+          .string()
+          .regex(receiptQuantityPattern, 'receivedQuantity must be a positive decimal with at most six fractional digits'),
         uomId: z.string().uuid(),
         purchaseOrderId: z.string().uuid().nullable().optional(),
         purchaseOrderLineId: z.string().uuid().nullable().optional(),
@@ -46,7 +53,6 @@ export class InventorySubledgerInboxService {
   constructor(
     private readonly database: DatabaseService,
     private readonly costing: CostingService,
-    private readonly postingStatusSync: InventoryReceiptPostingStatusSync,
   ) {}
 
   async receive(rawEnvelope: unknown, rawBody: string): Promise<FinanceInventoryInboxOutcome> {
@@ -64,9 +70,17 @@ export class InventorySubledgerInboxService {
   }
 
   private async apply(client: PoolClient, envelope: RelayEnvelopeV1): Promise<FinanceInventoryInboxOutcome> {
+    await ensureInventoryFiscalPeriodSnapshotPublished(client, envelope.tenantId);
+
     const payload = ReceiptCompletedPayloadSchema.safeParse(envelope.payload);
     if (!payload.success) {
-      await this.postingStatusSync.setStatus(envelope.tenantId, envelope.aggregateId, 'POSTING_REJECTED', 'FINANCE_INBOX_PAYLOAD_INVALID');
+      await appendInventoryReceiptPostingOutcome(
+        client,
+        envelope.tenantId,
+        envelope.aggregateId,
+        'POSTING_REJECTED',
+        'FINANCE_INBOX_PAYLOAD_INVALID',
+      );
       return { status: 'REJECTED', code: 'FINANCE_INBOX_PAYLOAD_INVALID' };
     }
 
@@ -74,14 +88,26 @@ export class InventorySubledgerInboxService {
     try {
       postingDate = inventoryReceiptPostingDate(payload.data.receivedAt);
     } catch {
-      await this.postingStatusSync.setStatus(envelope.tenantId, payload.data.receiptId, 'POSTING_REJECTED', 'FINANCE_INBOX_PAYLOAD_INVALID');
+      await appendInventoryReceiptPostingOutcome(
+        client,
+        envelope.tenantId,
+        payload.data.receiptId,
+        'POSTING_REJECTED',
+        'FINANCE_INBOX_PAYLOAD_INVALID',
+      );
       return { status: 'REJECTED', code: 'FINANCE_INBOX_PAYLOAD_INVALID' };
     }
 
     const postingContext = await resolvePrimaryBookPostingContext(client, SCHEMA, envelope.tenantId, postingDate);
     if (typeof postingContext === 'string') {
       this.logger.warn(`Receipt ${payload.data.receiptId}: posting context ${postingContext}.`);
-      await this.postingStatusSync.setStatus(envelope.tenantId, payload.data.receiptId, 'POSTING_REJECTED', postingContext);
+      await appendInventoryReceiptPostingOutcome(
+        client,
+        envelope.tenantId,
+        payload.data.receiptId,
+        'POSTING_REJECTED',
+        postingContext,
+      );
       return { status: 'REJECTED', code: postingContext };
     }
 
@@ -93,7 +119,13 @@ export class InventorySubledgerInboxService {
     const costProfile = profile.rows[0];
     if (!costProfile?.standard_unit_cost_scaled) {
       this.logger.warn(`Receipt ${payload.data.receiptId}: no default cost profile with standard cost on tenant ${envelope.tenantId}.`);
-      await this.postingStatusSync.setStatus(envelope.tenantId, payload.data.receiptId, 'POSTING_REJECTED', 'FINANCE_COST_PROFILE_MISSING');
+      await appendInventoryReceiptPostingOutcome(
+        client,
+        envelope.tenantId,
+        payload.data.receiptId,
+        'POSTING_REJECTED',
+        'FINANCE_COST_PROFILE_MISSING',
+      );
       return { status: 'REJECTED', code: 'FINANCE_COST_PROFILE_MISSING' };
     }
 
@@ -104,21 +136,26 @@ export class InventorySubledgerInboxService {
         payload.data.receiptId,
         line.receiptLineId,
       );
-      await this.costing.ingestReceiptLayer(envelope.tenantId, 'relay:inventory', {
-        costProfileId: costProfile.id,
-        productId: line.productId,
-        warehouseId: payload.data.warehouseId,
-        receiptRef: payload.data.receiptNumber,
-        receiptDate: payload.data.receivedAt,
-        quantity: qty,
-        unitCostScaled: String(costProfile.standard_unit_cost_scaled),
-        postGlJournal: true,
-        bookId: postingContext.bookId,
-        periodId: postingContext.periodId,
-        journalEntryType: inventoryReceiptCompletedPostingPolicyV1.entryType,
-        sourceDocumentType: inventoryReceiptCompletedPostingPolicyV1.sourceDocumentType,
-        sourceDocumentId,
-      });
+      await this.costing.ingestReceiptLayer(
+        envelope.tenantId,
+        'relay:inventory',
+        {
+          costProfileId: costProfile.id,
+          productId: line.productId,
+          warehouseId: payload.data.warehouseId,
+          receiptRef: payload.data.receiptNumber,
+          receiptDate: payload.data.receivedAt,
+          quantity: qty,
+          unitCostScaled: String(costProfile.standard_unit_cost_scaled),
+          postGlJournal: true,
+          bookId: postingContext.bookId,
+          periodId: postingContext.periodId,
+          journalEntryType: inventoryReceiptCompletedPostingPolicyV1.entryType,
+          sourceDocumentType: inventoryReceiptCompletedPostingPolicyV1.sourceDocumentType,
+          sourceDocumentId,
+        },
+        client,
+      );
       await recordInventoryReceiptLinePosting(client, SCHEMA, {
         tenantId: envelope.tenantId,
         messageId: envelope.messageId,
@@ -127,7 +164,7 @@ export class InventorySubledgerInboxService {
       });
     }
 
-    await this.postingStatusSync.setStatus(envelope.tenantId, payload.data.receiptId, 'POSTED', null);
+    await appendInventoryReceiptPostingOutcome(client, envelope.tenantId, payload.data.receiptId, 'POSTED', null);
     return { status: 'PROCESSED' };
   }
 }

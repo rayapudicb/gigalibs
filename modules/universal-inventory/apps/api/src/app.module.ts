@@ -15,8 +15,16 @@ import { InventoryController } from './inventory/inventory.controller.js';
 import { InventoryService } from './inventory/inventory.service.js';
 import { OrganizationController } from './organization/organization.controller.js';
 import { createRelayHealthController } from '@gigalibs/module-sdk';
+import { FinanceInventoryInboxController } from './relay/finance-inbox.controller.js';
+import { FinanceInventoryInboxService } from './relay/finance-inbox.service.js';
+import { InventoryRelayInboxGuard } from './relay/inbox.guard.js';
 import { InventoryFinanceOutboxRelay } from './relay/inventory-finance-relay.js';
-import { INVENTORY_RELAY_CONFIG, loadInventoryFinanceRelayConfig } from './relay/relay-config.js';
+import {
+  INVENTORY_FINANCE_INBOX_CONFIG,
+  INVENTORY_RELAY_CONFIG,
+  loadInventoryFinanceInboxConfig,
+  loadInventoryFinanceRelayConfig,
+} from './relay/relay-config.js';
 
 const InventoryRelayHealthController = createRelayHealthController('v1/health');
 
@@ -25,9 +33,19 @@ const InventoryRelayHealthController = createRelayHealthController('v1/health');
 const InventoryRecordController = createRecordController({ guard: AuthorizationGuard, readPermission: 'inventory:read' });
 
 @Module({
-  controllers: [HealthController, InventoryRelayHealthController, InventoryController, OrganizationController, InventoryRecordController],
+  controllers: [
+    HealthController,
+    InventoryRelayHealthController,
+    InventoryController,
+    OrganizationController,
+    FinanceInventoryInboxController,
+    InventoryRecordController,
+  ],
   providers: [
     { provide: INVENTORY_RELAY_CONFIG, useFactory: () => loadInventoryFinanceRelayConfig() },
+    { provide: INVENTORY_FINANCE_INBOX_CONFIG, useFactory: () => loadInventoryFinanceInboxConfig() },
+    InventoryRelayInboxGuard,
+    FinanceInventoryInboxService,
     InventoryFinanceOutboxRelay,
     runtimeConfigProvider,
     DatabaseService,

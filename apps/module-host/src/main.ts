@@ -8,7 +8,7 @@ import { hostedModules } from './hosted-modules.generated.js';
 import { HOST_LISTENER } from './listener.js';
 
 async function bootstrap(): Promise<void> {
-  const app = await NestFactory.create(HostModule, { bufferLogs: true });
+  const app = await NestFactory.create(HostModule, { bufferLogs: true, rawBody: true });
   const listener = app.get<ModuleListenerConfig>(HOST_LISTENER);
   app.use(helmet());
   app.enableCors({

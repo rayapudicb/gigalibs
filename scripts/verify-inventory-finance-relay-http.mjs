@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-// WI-OI-120fw (F2.7): Inventory → Finance relay over HTTP on an isolated database and module host.
-// Completes a goods receipt, waits for the outbox relay, and checks Finance inbox, reconciliation, and posting status.
+// WI-OI-120bp (F2.7): Inventory ⇄ Finance signed relays over HTTP on an isolated database and module host.
+// Completes a goods receipt, waits for both outbox relays, checks Finance posting, Inventory posting status and period replica.
 //
 //   PROOF_DATABASE_URL=postgresql://… node scripts/verify-inventory-finance-relay-http.mjs
 //
@@ -24,7 +24,9 @@ const { default: pg } = await import(join(root, 'node_modules/.pnpm', pgDirector
 const adminUrl = isolatedProofDatabaseUrl('WI-OI-120fw Inventory→Finance relay HTTP proof');
 
 const modules = JSON.parse(readFileSync(join(root, 'infra/compose/generated/modules.json'), 'utf8'));
-const PROOF_MODULES = ['product-catalogue', 'universal-inventory', 'financial-operations'];
+const PROOF_MODULES = Object.entries(modules)
+  .filter(([, module]) => module.hosting === 'host')
+  .map(([name]) => name);
 const PORT = Number(process.env.IF2_PROOF_PORT ?? 47922);
 const BASE = `http://127.0.0.1:${PORT}`;
 
@@ -72,32 +74,42 @@ for (const name of PROOF_MODULES) {
   check(`migrate ${name} to ${module.migrationVersion}`, run.status === 0, `${run.stdout}${run.stderr}`.trim().split('\n').pop());
 }
 
-const financeRole = new URL(runtimeUrl(modules['financial-operations'].schema)).username;
-await admin.query(
-  `GRANT EXECUTE ON FUNCTION gigalibs_inventory.set_receipt_finance_posting_status(character varying, uuid, character varying, character varying) TO ${financeRole}`,
-);
-
 const platformKeys = generateKeyPairSync('ed25519');
 const platformPublicBase64 = platformKeys.publicKey.export({ format: 'der', type: 'spki' }).toString('base64');
 const platformPrivatePem = platformKeys.privateKey.export({ format: 'pem', type: 'pkcs8' }).toString();
 
-const relayKeys = generateKeyPairSync('ed25519');
-const relayPublicBase64 = relayKeys.publicKey.export({ format: 'der', type: 'spki' }).toString('base64');
-const relayPrivateBase64 = relayKeys.privateKey.export({ format: 'der', type: 'pkcs8' }).toString('base64');
+const inventoryToFinanceKeys = generateKeyPairSync('ed25519');
+const inventoryToFinancePublicBase64 = inventoryToFinanceKeys.publicKey
+  .export({ format: 'der', type: 'spki' })
+  .toString('base64');
+const inventoryToFinancePrivateBase64 = inventoryToFinanceKeys.privateKey
+  .export({ format: 'der', type: 'pkcs8' })
+  .toString('base64');
 
-const inventoryDbUrl = runtimeUrl(modules['universal-inventory'].schema);
+const financeToInventoryKeys = generateKeyPairSync('ed25519');
+const financeToInventoryPublicBase64 = financeToInventoryKeys.publicKey
+  .export({ format: 'der', type: 'spki' })
+  .toString('base64');
+const financeToInventoryPrivateBase64 = financeToInventoryKeys.privateKey
+  .export({ format: 'der', type: 'pkcs8' })
+  .toString('base64');
+
 const hostEnv = {
   ...process.env,
   NODE_ENV: 'production',
   MODULE_HOST_API_HOST: '127.0.0.1',
   MODULE_HOST_API_PORT: String(PORT),
   MODULE_HOST_CORS_ORIGINS: 'http://127.0.0.1:5180',
-  FINANCE_INBOX_RELAY_PUBLIC_KEY_BASE64: relayPublicBase64,
-  FINANCE_INBOX_RELAY_PRIVATE_KEY_BASE64: relayPrivateBase64,
+  FINANCE_INBOX_RELAY_PUBLIC_KEY_BASE64: inventoryToFinancePublicBase64,
+  FINANCE_INBOX_RELAY_PRIVATE_KEY_BASE64: inventoryToFinancePrivateBase64,
   INVENTORY_RELAY_FINANCE_URL: BASE,
   INVENTORY_RELAY_FINANCE_INBOX_PATH: '/financial-operations/internal/v1/inbox',
   INVENTORY_RELAY_INTERVAL_MS: '400',
-  FINANCE_INVENTORY_POSTING_DATABASE_URL: inventoryDbUrl,
+  INVENTORY_INBOX_RELAY_PUBLIC_KEY_BASE64: financeToInventoryPublicBase64,
+  FINANCE_INVENTORY_INBOX_RELAY_PRIVATE_KEY_BASE64: financeToInventoryPrivateBase64,
+  FINANCE_RELAY_INVENTORY_URL: BASE,
+  FINANCE_RELAY_INVENTORY_INBOX_PATH: '/universal-inventory/internal/v1/inbox',
+  FINANCE_INVENTORY_RELAY_INTERVAL_MS: '400',
 };
 
 for (const name of PROOF_MODULES) {
@@ -112,8 +124,14 @@ for (const name of PROOF_MODULES) {
 
 let hostLog = '';
 const host = spawn(process.execPath, [join(root, 'apps/module-host/dist/main.js')], { env: hostEnv });
-host.stdout.on('data', (chunk) => (hostLog += chunk));
-host.stderr.on('data', (chunk) => (hostLog += chunk));
+host.stdout.on('data', (chunk) => {
+  hostLog += chunk;
+  if (hostLog.length > 200_000) hostLog = hostLog.slice(-200_000);
+});
+host.stderr.on('data', (chunk) => {
+  hostLog += chunk;
+  if (hostLog.length > 200_000) hostLog = hostLog.slice(-200_000);
+});
 
 let ready = false;
 for (let attempt = 0; attempt < 80 && !ready; attempt += 1) {
@@ -168,8 +186,24 @@ async function call(moduleKey, method, path, body, headers = {}) {
 try {
   if (!ready) throw new Error('host not ready');
 
-  const relays = await call('universal-inventory', 'GET', '/v1/health/relays');
-  check('Inventory relay is configured', ok(relays) && relays.json?.relays?.some((r) => r.configured), relays.text.slice(0, 120));
+  const invRelays = await call('universal-inventory', 'GET', '/v1/health/relays');
+  check(
+    'Inventory → Finance relay configured',
+    ok(invRelays) &&
+      invRelays.json?.relays?.some(
+        (r) => r.relay?.includes('inventory') && r.relay?.includes('gigalibs-finance-inbox') && r.state !== 'not-configured',
+      ),
+    invRelays.text.slice(0, 120),
+  );
+  const finRelays = await call('financial-operations', 'GET', '/v1/health/relays');
+  check(
+    'Finance → Inventory relay configured',
+    ok(finRelays) &&
+      finRelays.json?.relays?.some(
+        (r) => r.relay?.includes('finance') && r.relay?.includes('gigalibs-inventory-inbox') && r.state !== 'not-configured',
+      ),
+    finRelays.text.slice(0, 120),
+  );
 
   const book = await call('financial-operations', 'POST', '/v1/books', {
     bookCode: 'IF2-BOOK',
@@ -187,6 +221,7 @@ try {
   });
   check('finance: fiscal year 2026', ok(year), year.text.slice(0, 80));
   const period = (year.json?.periods ?? []).find((p) => p.startDate <= '2026-10-18' && p.endDate >= '2026-10-18');
+  if (!period?.id) throw new Error('Expected an October 2026 fiscal period from standard year generation.');
 
   const account = async (accountCode, accountName, accountClass, accountSubtype, normalBalance) =>
     (
@@ -287,11 +322,75 @@ try {
   }
   check('finance: posting reconciliation balanced after relay', balanced, JSON.stringify(reconciliation).slice(0, 160));
 
-  const receiptRead = await call('universal-inventory', 'GET', `/v1/records/inventory.receipts/${receiptId}`);
+  let replicaReady = false;
+  for (let attempt = 0; attempt < 45 && !replicaReady; attempt += 1) {
+    await sleep(400);
+    const meta = await admin.query(
+      `SELECT initial_sync_completed_at FROM gigalibs_inventory.finance_period_replica_meta WHERE tenant_id = $1`,
+      [tenant],
+    );
+    replicaReady = Boolean(meta.rows[0]?.initial_sync_completed_at);
+  }
+  check('inventory: fiscal period replica initial sync after first posting', replicaReady, JSON.stringify({ tenant }));
+
+  let financeOutcomePublished = false;
+  let postedOnReceipt = false;
+  for (let attempt = 0; attempt < 120 && (!financeOutcomePublished || !postedOnReceipt); attempt += 1) {
+    await sleep(500);
+    const financeOutbox = await admin.query(
+      `SELECT status FROM gigalibs_finance.outbox_events
+        WHERE tenant_id = $1 AND event_type = 'finance.inventory-receipt.posting-outcome.v1'
+          AND aggregate_id = $2`,
+      [tenant, receiptId],
+    );
+    financeOutcomePublished = financeOutbox.rows[0]?.status === 'PUBLISHED';
+    const receiptRead = await call('universal-inventory', 'GET', `/v1/records/inventory.receipts/${receiptId}`);
+    postedOnReceipt = receiptRead.json?.['finance-posting-status'] === 'POSTED';
+  }
+  check('finance: posting-outcome outbox PUBLISHED', financeOutcomePublished, receiptId);
+  check('inventory: finance-posting-status POSTED via Finance relay', postedOnReceipt, receiptId);
+
+  const locked = await call('financial-operations', 'PUT', `/v1/fiscal-periods/${period.id}/status`, { status: 'LOCKED' });
+  check('finance: lock fiscal period covering receipt date', ok(locked), locked.text.slice(0, 100));
+
+  let periodLockedOnReplica = false;
+  for (let attempt = 0; attempt < 45 && !periodLockedOnReplica; attempt += 1) {
+    await sleep(400);
+    const row = await admin.query(
+      `SELECT status FROM gigalibs_inventory.finance_fiscal_period_replica
+        WHERE tenant_id = $1 AND fiscal_period_id = $2`,
+      [tenant, period.id],
+    );
+    periodLockedOnReplica = row.rows[0]?.status === 'LOCKED';
+  }
+  check('inventory: replicated period LOCKED after finance lock', periodLockedOnReplica, period.id);
+
+  const receipt2 = await call('universal-inventory', 'POST', '/v1/records/inventory.receipts', { 'warehouse-id': warehouseId }, { 'Idempotency-Key': randomUUID() });
+  const receipt2Id = receipt2.json?.id;
+  await call(
+    'universal-inventory',
+    'POST',
+    '/v1/records/inventory.receipt-lines',
+    {
+      'receipt-id': receipt2Id,
+      'product-id': product.json?.id,
+      'uom-id': uom.json?.id,
+      'expected-quantity': '1.000',
+      'target-location-id': location.json?.id,
+    },
+    { 'Idempotency-Key': randomUUID() },
+  );
+  const blocked = await call(
+    'universal-inventory',
+    'POST',
+    `/v1/records/inventory.receipts/${receipt2Id}/actions/complete`,
+    {},
+    { 'Idempotency-Key': randomUUID() },
+  );
   check(
-    'inventory: finance-posting-status POSTED on receipt',
-    receiptRead.json?.['finance-posting-status'] === 'POSTED',
-    receiptRead.text.slice(0, 120),
+    'inventory: completion refused when replicated period is locked',
+    blocked.status === 422 || blocked.status === 400,
+    blocked.text.slice(0, 160),
   );
 
   const inbox = await admin.query(

@@ -1,5 +1,6 @@
 import {
   createRecordController,
+  createRelayHealthController,
   loadIdempotencyRetentionDays,
   ModuleIdempotencyStore,
   RECORD_DISPATCHER,
@@ -33,14 +34,20 @@ import { FinanceInventoryInboxController } from './subledger/inventory-inbox.con
 import { InventorySubledgerController } from './subledger/inventory-subledger.controller.js';
 import { InventorySubledgerInboxService } from './subledger/inventory-inbox.service.js';
 import { InventoryReceiptPostingReconciliationJob } from './posting/inventory-receipt-posting-reconciliation-job.js';
-import { InventoryReceiptPostingStatusSync } from './subledger/inventory-receipt-posting-status-sync.js';
+import { FinanceInventoryOutboxRelay } from './relay/finance-inventory-relay.js';
+import {
+  FINANCE_INVENTORY_OUTBOUND_CONFIG,
+  loadFinanceInventoryOutboundConfig,
+} from './relay/relay-config.js';
 
 // WI-OI-120l (U12): record routes behind the general ledger's metadata windows and its book and account pickers.
 const FinanceRecordController = createRecordController({ guard: AuthorizationGuard, readPermission: 'finance:read' });
+const FinanceRelayHealthController = createRelayHealthController('v1/health');
 
 @Module({
   controllers: [
     HealthController,
+    FinanceRelayHealthController,
     FinanceController,
     TreasuryController,
     FixedAssetsController,
@@ -55,10 +62,11 @@ const FinanceRecordController = createRecordController({ guard: AuthorizationGua
   ],
   providers: [
     { provide: FINANCE_RELAY_CONFIG, useFactory: () => loadFinanceRelayConfig() },
+    { provide: FINANCE_INVENTORY_OUTBOUND_CONFIG, useFactory: () => loadFinanceInventoryOutboundConfig() },
     FinanceRelayInboxGuard,
+    FinanceInventoryOutboxRelay,
     InventorySubledgerInboxService,
     InventoryReceiptPostingReconciliationJob,
-    InventoryReceiptPostingStatusSync,
     runtimeConfigProvider,
     DatabaseService,
     AuthorizationGuard,

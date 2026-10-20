@@ -28,6 +28,7 @@ import type { PoolClient } from 'pg';
 import { SCHEMA } from '../config.js';
 import { DatabaseService } from '../database.service.js';
 import { appendOutboxEvent } from '../outbox.js';
+import { appendFiscalPeriodStateChanged } from '../subledger/finance-inventory-outbox.js';
 import { assertInventoryReceiptPostingReadyForClose } from '../posting/inventory-receipt-posting-close-guard.js';
 
 @Injectable()
@@ -256,6 +257,7 @@ export class FinanceService {
         ],
       );
       const period = this.mapFiscalPeriod(res.rows[0]);
+      await this.publishFiscalPeriodStateChanged(client, tenantId, period);
       await this.writeAudit(client, tenantId, 'fiscal_period', period.id, 'CREATE', actorId, input);
       return period;
     });
@@ -355,6 +357,7 @@ export class FinanceService {
       );
 
       const period = this.mapFiscalPeriod(res.rows[0]);
+      await this.publishFiscalPeriodStateChanged(client, tenantId, period);
 
       if (input.status === 'LOCKED') {
         const lockEvent: FiscalPeriodLockedEventV1 = {
@@ -1235,6 +1238,26 @@ export class FinanceService {
        VALUES ($1, $2, $3, $4, $5, $6)`,
       [tenantId, entityType, entityId, action, actorId, JSON.stringify(payload ?? {})],
     );
+  }
+
+  private async publishFiscalPeriodStateChanged(
+    client: PoolClient,
+    tenantId: string,
+    period: FiscalPeriodV1,
+  ): Promise<void> {
+    const book = await client.query<{ is_primary: boolean }>(
+      `SELECT is_primary FROM ${SCHEMA}.accounting_books WHERE tenant_id = $1 AND id = $2`,
+      [tenantId, period.accountingBookId],
+    );
+    await appendFiscalPeriodStateChanged(client, tenantId, {
+      id: period.id,
+      accounting_book_id: period.accountingBookId,
+      period_name: period.periodName,
+      start_date: period.startDate,
+      end_date: period.endDate,
+      status: period.status,
+      is_primary: Boolean(book.rows[0]?.is_primary),
+    });
   }
 
   private async writeOutbox(

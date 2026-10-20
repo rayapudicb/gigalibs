@@ -22,7 +22,8 @@ run('Finance inventory inbox + posting context tests', [
   '--config',
   'vitest.config.ts',
   'modules/financial-operations/apps/api/src/subledger/inventory-inbox.test.ts',
-  'modules/universal-inventory/apps/api/src/inventory/finance-period-lock-guard.test.ts',
+  'modules/universal-inventory/apps/api/src/inventory/finance-period-replica-guard.test.ts',
+  'modules/universal-inventory/apps/api/src/relay/finance-inbox.test.ts',
   'modules/universal-inventory/apps/api/src/inventory/receipt-lifecycle.test.ts',
 ]);
-console.log('\nWI-OI-120fr inventory–finance relay posting unit certification passed.');
+console.log('\nWI-OI-120bp inventory–finance two-way relay unit certification passed.');

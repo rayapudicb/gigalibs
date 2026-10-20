@@ -108,6 +108,24 @@ describe('Finance inventory subledger inbox', () => {
         if (sql.includes('UPDATE gigalibs_finance.inbox_receipts')) {
           return { rows: [], rowCount: 1 };
         }
+        if (sql.includes('inventory_fiscal_replica_publish')) {
+          return { rows: [{ tenant_id: TENANT }], rowCount: 1 };
+        }
+        if (sql.includes('pg_advisory_xact_lock')) {
+          return { rows: [], rowCount: 1 };
+        }
+        if (sql.includes('FROM gigalibs_finance.outbox_events') && sql.includes('aggregate_version')) {
+          return { rows: [{ version: 1 }], rowCount: 1 };
+        }
+        if (sql.includes('INSERT INTO gigalibs_finance.outbox_events')) {
+          return { rows: [], rowCount: 1 };
+        }
+        if (sql.includes('FROM gigalibs_finance.fiscal_periods')) {
+          return { rows: [], rowCount: 0 };
+        }
+        if (sql.includes('INSERT INTO gigalibs_finance.inventory_fiscal_replica_publish')) {
+          return { rows: [], rowCount: 1 };
+        }
         if (sql.includes('subledger_posting_register') || sql.includes('gl_journals')) {
           return { rows: [], rowCount: 1 };
         }
@@ -115,21 +133,30 @@ describe('Finance inventory subledger inbox', () => {
       }),
     };
     const database = { withTenantTransaction: vi.fn(async (_tenant: string, work: (c: typeof client) => unknown) => work(client)) };
-    const postingStatusSync = { setStatus: vi.fn(async () => undefined) };
     return {
-      inbox: new InventorySubledgerInboxService(database as never, costing as never, postingStatusSync as never),
+      inbox: new InventorySubledgerInboxService(database as never, costing as never),
       costing,
-      postingStatusSync,
+      client,
     };
   }
 
   it('ingests receipt layers when a default cost profile exists', async () => {
-    const { inbox, costing } = inboxWith({
+    const { inbox, costing, client } = inboxWith({
       receiptInserted: true,
       costProfile: { id: randomUUID(), standard_unit_cost_scaled: '1000000000' },
     });
     const body = receiptEnvelope();
     await expect(inbox.receive(body, JSON.stringify(body))).resolves.toEqual({ status: 'PROCESSED' });
+    const outboxInserts = client.query.mock.calls.filter(
+      ([sql]) => typeof sql === 'string' && sql.includes('INSERT INTO gigalibs_finance.outbox_events'),
+    );
+    expect(outboxInserts.length).toBeGreaterThan(0);
+    expect(
+      outboxInserts.some(([sql, params]) =>
+        String(sql).includes('event_type') &&
+        (params as unknown[])?.some((value) => value === 'finance.inventory-receipt.posting-outcome.v1'),
+      ),
+    ).toBe(true);
     expect(costing.ingestReceiptLayer).toHaveBeenCalledWith(
       TENANT,
       'relay:inventory',
@@ -140,7 +167,9 @@ describe('Finance inventory subledger inbox', () => {
         sourceDocumentType: 'INVENTORY_RECEIPT',
         journalEntryType: 'SUBLEDGER_INVENTORY',
       }),
+      expect.anything(),
     );
+    expect(costing.ingestReceiptLayer.mock.calls[0]?.[3]).toBe(client);
   });
 
   it('treats a redelivered message as DUPLICATE without calling costing', async () => {
@@ -163,16 +192,29 @@ describe('Finance inventory subledger inbox', () => {
         if (sql.includes('fiscal_periods')) {
           return { rows: [{ id: 'period-1', status: 'LOCKED', period_name: '2026-09' }] };
         }
+        if (sql.includes('inventory_fiscal_replica_publish')) {
+          return { rows: [{ tenant_id: TENANT }], rowCount: 1 };
+        }
+        if (sql.includes('pg_advisory_xact_lock')) {
+          return { rows: [], rowCount: 1 };
+        }
+        if (sql.includes('FROM gigalibs_finance.outbox_events') && sql.includes('aggregate_version')) {
+          return { rows: [{ version: 1 }], rowCount: 1 };
+        }
+        if (sql.includes('INSERT INTO gigalibs_finance.outbox_events')) {
+          return { rows: [], rowCount: 1 };
+        }
+        if (sql.includes('FROM gigalibs_finance.fiscal_periods')) {
+          return { rows: [], rowCount: 0 };
+        }
+        if (sql.includes('INSERT INTO gigalibs_finance.inventory_fiscal_replica_publish')) {
+          return { rows: [], rowCount: 1 };
+        }
         return { rows: [], rowCount: 0 };
       }),
     };
     const database = { withTenantTransaction: vi.fn(async (_t: string, work: (c: typeof client) => unknown) => work(client)) };
-    const postingStatusSync = { setStatus: vi.fn(async () => undefined) };
-    const inbox = new InventorySubledgerInboxService(
-      database as never,
-      { ingestReceiptLayer: vi.fn() } as never,
-      postingStatusSync as never,
-    );
+    const inbox = new InventorySubledgerInboxService(database as never, { ingestReceiptLayer: vi.fn() } as never);
     const body = receiptEnvelope({
       payload: {
         receiptId: randomUUID(),
@@ -195,13 +237,75 @@ describe('Finance inventory subledger inbox', () => {
     });
   });
 
+  it('passes the inbox transaction client into ingestReceiptLayer for every line', async () => {
+    const line1 = randomUUID();
+    const line2 = randomUUID();
+    let ingestCalls = 0;
+    const costing = {
+      ingestReceiptLayer: vi.fn(async (_tenant: string, _actor: string, _input: unknown, client?: unknown) => {
+        ingestCalls += 1;
+        if (ingestCalls === 2) throw new Error('line 2 failed');
+        expect(client).toBeDefined();
+        return {};
+      }),
+    };
+    const client = {
+      query: vi.fn(async (sql: string) => {
+        if (sql.includes('INSERT INTO gigalibs_finance.inbox_receipts')) {
+          return { rows: [{ id: 'receipt-1' }], rowCount: 1 };
+        }
+        if (sql.includes('accounting_books')) return { rows: [{ id: 'book-1' }] };
+        if (sql.includes('fiscal_periods')) {
+          return { rows: [{ id: 'period-1', status: 'OPEN', period_name: '2026-10' }] };
+        }
+        if (sql.includes('FROM gigalibs_finance.cost_profiles')) {
+          return { rows: [{ id: randomUUID(), standard_unit_cost_scaled: '1000000000' }], rowCount: 1 };
+        }
+        if (sql.includes('inventory_fiscal_replica_publish')) {
+          return { rows: [{ tenant_id: TENANT }], rowCount: 1 };
+        }
+        if (sql.includes('pg_advisory_xact_lock')) return { rowCount: 1 };
+        if (sql.includes('outbox_events')) return { rows: [{ version: 1 }], rowCount: 1 };
+        if (sql.includes('subledger_posting_register')) return { rowCount: 1 };
+        if (sql.includes('UPDATE gigalibs_finance.inbox_receipts')) return { rowCount: 1 };
+        return { rows: [], rowCount: 0 };
+      }),
+    };
+    const database = { withTenantTransaction: vi.fn(async (_t: string, work: (c: typeof client) => unknown) => work(client)) };
+    const inbox = new InventorySubledgerInboxService(database as never, costing as never);
+    const body = receiptEnvelope({
+      payload: {
+        receiptId: randomUUID(),
+        receiptNumber: 'GR-MULTI',
+        warehouseId: randomUUID(),
+        receivedAt: '2026-10-18T00:00:00.000Z',
+        lines: [
+          { receiptLineId: line1, productId: randomUUID(), receivedQuantity: '2', uomId: randomUUID() },
+          { receiptLineId: line2, productId: randomUUID(), receivedQuantity: '3', uomId: randomUUID() },
+        ],
+      },
+    });
+    await expect(inbox.receive(body, JSON.stringify(body))).rejects.toThrow('line 2 failed');
+    expect(ingestCalls).toBe(2);
+    expect(costing.ingestReceiptLayer.mock.calls[0]?.[3]).toBe(client);
+    expect(costing.ingestReceiptLayer.mock.calls[1]?.[3]).toBe(client);
+  });
+
   it('receipts without a cost profile as REJECTED', async () => {
-    const { inbox, costing } = inboxWith({ receiptInserted: true });
+    const { inbox, costing, client } = inboxWith({ receiptInserted: true });
     const body = receiptEnvelope();
     await expect(inbox.receive(body, JSON.stringify(body))).resolves.toEqual({
       status: 'REJECTED',
       code: 'FINANCE_COST_PROFILE_MISSING',
     });
     expect(costing.ingestReceiptLayer).not.toHaveBeenCalled();
+    const outboxInserts = client.query.mock.calls.filter(
+      ([sql]) => typeof sql === 'string' && sql.includes('INSERT INTO gigalibs_finance.outbox_events'),
+    );
+    expect(
+      outboxInserts.some(([, params]) =>
+        JSON.stringify(params ?? []).includes('POSTING_REJECTED'),
+      ),
+    ).toBe(true);
   });
 });

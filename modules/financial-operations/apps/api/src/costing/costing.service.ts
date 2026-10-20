@@ -176,9 +176,25 @@ export class CostingService {
     tenantId: string,
     actor: string,
     input: IngestReceiptCostLayerInputV1,
+    existingClient?: PoolClient,
   ): Promise<InventoryCostLayerV1> {
     const profile = await this.getCostProfile(tenantId, input.costProfileId);
+    if (existingClient) {
+      return this.ingestReceiptLayerOnClient(existingClient, tenantId, actor, input, profile);
+    }
+    return this.database.withTenantTransaction(tenantId, async (client: PoolClient) =>
+      this.ingestReceiptLayerOnClient(client, tenantId, actor, input, profile),
+    );
+  }
 
+  /** When `client` is the Finance inbox transaction, journal, layer and outbox commit or roll back together (P0-09 / H1). */
+  private async ingestReceiptLayerOnClient(
+    client: PoolClient,
+    tenantId: string,
+    actor: string,
+    input: IngestReceiptCostLayerInputV1,
+    profile: Awaited<ReturnType<CostingService['getCostProfile']>>,
+  ): Promise<InventoryCostLayerV1> {
     const qtyScaled = toScaledBigInt(input.quantity);
     const unitCostScaled = BigInt(input.unitCostScaled);
     const totalCostMinor = (qtyScaled * unitCostScaled) / 10_000_000_000n;
@@ -186,25 +202,36 @@ export class CostingService {
     const layerId = randomUUID();
     const now = new Date().toISOString();
 
-    return this.database.withTenantTransaction(tenantId, async (client: PoolClient) => {
+    {
+      let bookCurrency: string | null = null;
+      if (input.postGlJournal && input.bookId) {
+        const bookRes = await client.query<{ currency_code: string }>(
+          `SELECT currency_code FROM ${SCHEMA}.accounting_books WHERE tenant_id = $1 AND id = $2`,
+          [tenantId, input.bookId],
+        );
+        bookCurrency = bookRes.rows[0]?.currency_code ?? null;
+        if (!bookCurrency) throw new BadRequestException(`Accounting book ${input.bookId} was not found.`);
+      }
+      const functionalRate = '1.000000';
+
       // 1. Post GL Journal if requested and bookId & periodId provided
       let glJournalId: string | null = null;
-      if (input.postGlJournal && input.bookId && input.periodId && totalCostMinor > 0n) {
+      if (input.postGlJournal && input.bookId && input.periodId && totalCostMinor > 0n && bookCurrency) {
         const lines: PostJournalInputV1['lines'] = [
           {
             accountId: profile.inventoryGlAccountId,
             debitAmountMinor: totalCostMinor.toString(),
             creditAmountMinor: '0',
-            currencyCode: 'USD',
-            exchangeRate: '1.000000',
+            currencyCode: bookCurrency,
+            exchangeRate: functionalRate,
             memo: `Inventory Inbound: ${input.receiptRef} (${input.quantity} units)`,
           },
           {
             accountId: profile.grniGlAccountId,
             debitAmountMinor: '0',
             creditAmountMinor: totalCostMinor.toString(),
-            currencyCode: 'USD',
-            exchangeRate: '1.000000',
+            currencyCode: bookCurrency,
+            exchangeRate: functionalRate,
             memo: `GRNI Accrual: ${input.receiptRef}`,
           },
         ];
@@ -229,8 +256,8 @@ export class CostingService {
                 accountId: profile.purchasePriceVarianceGlAccountId,
                 debitAmountMinor: ppvMinor.toString(),
                 creditAmountMinor: '0',
-                currencyCode: 'USD',
-                exchangeRate: '1.000000',
+                currencyCode: bookCurrency,
+                exchangeRate: functionalRate,
                 memo: `Unfavorable PPV on ${input.receiptRef}`,
               });
             } else {
@@ -239,8 +266,8 @@ export class CostingService {
                 accountId: profile.purchasePriceVarianceGlAccountId,
                 debitAmountMinor: '0',
                 creditAmountMinor: (-ppvMinor).toString(),
-                currencyCode: 'USD',
-                exchangeRate: '1.000000',
+                currencyCode: bookCurrency,
+                exchangeRate: functionalRate,
                 memo: `Favorable PPV on ${input.receiptRef}`,
               });
             }
@@ -263,21 +290,30 @@ export class CostingService {
       }
 
       // 2. Insert cost layer
+      const sourceDocumentType = input.sourceDocumentType ?? null;
+      const sourceDocumentId = input.sourceDocumentId ?? null;
+
       const insertSql = `
         INSERT INTO ${SCHEMA}.inventory_cost_layers (
           id, tenant_id, cost_profile_id, product_id, warehouse_id,
           receipt_ref, receipt_date, initial_quantity, remaining_quantity,
           unit_cost_scaled, total_initial_cost_minor, total_remaining_cost_minor,
-          landed_cost_added_minor, status, created_at, updated_at
+          landed_cost_added_minor, status, source_document_type, source_document_id,
+          created_at, updated_at
         ) VALUES (
           $1, $2, $3, $4, $5,
           $6, $7, $8, $9,
           $10, $11, $12,
-          0, 'ACTIVE', $13, $14
-        ) RETURNING *;
+          0, 'ACTIVE', $15, $16,
+          $13, $14
+        )
+        ON CONFLICT (tenant_id, source_document_type, source_document_id)
+          WHERE source_document_id IS NOT NULL
+          DO NOTHING
+        RETURNING *;
       `;
 
-      const res = await client.query(insertSql, [
+      let res = await client.query(insertSql, [
         layerId,
         tenantId,
         input.costProfileId,
@@ -292,7 +328,17 @@ export class CostingService {
         totalCostMinor.toString(),
         now,
         now,
+        sourceDocumentType,
+        sourceDocumentId,
       ]);
+
+      if (!res.rows[0] && sourceDocumentId && sourceDocumentType) {
+        res = await client.query(
+          `SELECT * FROM ${SCHEMA}.inventory_cost_layers
+            WHERE tenant_id = $1 AND source_document_type = $2 AND source_document_id = $3`,
+          [tenantId, sourceDocumentType, sourceDocumentId],
+        );
+      }
 
       // 3. Outbox event
       const event: CostLayerCreatedEventV1 = {
@@ -322,7 +368,7 @@ export class CostingService {
       });
 
       return this.mapCostLayer(res.rows[0]);
-    });
+    }
   }
 
   // ─── 3. Outbound Shipment / Consumption (COGS Posting) ─────────────────────
