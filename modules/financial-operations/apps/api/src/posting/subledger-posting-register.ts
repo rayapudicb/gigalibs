@@ -51,13 +51,29 @@ export async function listInventoryReceiptJournalGaps(
   client: PoolClient,
   schema: string,
   tenantId: string,
+  periodRange?: { readonly periodStart: string; readonly periodEnd: string },
 ): Promise<readonly string[]> {
+  if (!periodRange) {
+    const rows = await client.query<{ source_document_id: string }>(
+      `SELECT source_document_id FROM ${schema}.subledger_posting_register
+        WHERE tenant_id = $1 AND consumer_name = $2 AND journal_id IS NULL
+        ORDER BY created_at DESC
+        LIMIT 500`,
+      [tenantId, INVENTORY_CONSUMER],
+    );
+    return rows.rows.map((row) => row.source_document_id);
+  }
   const rows = await client.query<{ source_document_id: string }>(
-    `SELECT source_document_id FROM ${schema}.subledger_posting_register
-      WHERE tenant_id = $1 AND consumer_name = $2 AND journal_id IS NULL
-      ORDER BY created_at DESC
+    `SELECT spr.source_document_id
+       FROM ${schema}.subledger_posting_register spr
+       JOIN ${schema}.inbox_receipts ir
+         ON ir.tenant_id = spr.tenant_id AND ir.message_id = spr.message_id
+      WHERE spr.tenant_id = $1 AND spr.consumer_name = $2 AND spr.journal_id IS NULL
+        AND ir.posting_date IS NOT NULL
+        AND ir.posting_date >= $3::date AND ir.posting_date <= $4::date
+      ORDER BY spr.created_at DESC
       LIMIT 500`,
-    [tenantId, INVENTORY_CONSUMER],
+    [tenantId, INVENTORY_CONSUMER, periodRange.periodStart, periodRange.periodEnd],
   );
   return rows.rows.map((row) => row.source_document_id);
 }

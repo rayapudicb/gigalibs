@@ -309,10 +309,32 @@ export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGat
         }
       },
       {
+        "template": "v1/subledger/inventory/postings/{id}/retry",
+        "pattern": "^v1/subledger/inventory/postings/[0-9a-fA-F-]{36}/retry$",
+        "methods": {
+          "POST": "finance:subledger:retry"
+        }
+      },
+      {
         "template": "v1/subledger/inventory/receipts/{id}/posting-status",
         "pattern": "^v1/subledger/inventory/receipts/[0-9a-fA-F-]{36}/posting-status$",
         "methods": {
           "GET": "finance:read"
+        }
+      },
+      {
+        "template": "v1/costing/product-standard-costs",
+        "pattern": "^v1/costing/product-standard-costs$",
+        "methods": {
+          "GET": "finance:read",
+          "POST": "finance:costing:manage"
+        }
+      },
+      {
+        "template": "v1/costing/product-standard-costs/{id}/archive",
+        "pattern": "^v1/costing/product-standard-costs/[0-9a-fA-F-]{36}/archive$",
+        "methods": {
+          "POST": "finance:costing:manage"
         }
       },
       {

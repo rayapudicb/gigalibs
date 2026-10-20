@@ -5,6 +5,7 @@ import {
   CreateLandedCostInputV1Schema,
   ExecuteRevaluationInputV1Schema,
 } from '@gigalibs/contracts';
+import { z } from 'zod';
 import {
   CurrentPrincipal,
   type ModulePrincipal,
@@ -71,6 +72,45 @@ export class CostingController {
     @Param('id') id: string,
   ) {
     return this.costingService.getCostProfile(principal.tenantId, id);
+  }
+
+  @Get('product-standard-costs')
+  @RequirePermissions('finance:read')
+  async listProductStandardCosts(
+    @CurrentPrincipal() principal: ModulePrincipal,
+    @Query('costProfileId') costProfileId?: string,
+    @Query('productId') productId?: string,
+  ) {
+    return this.costingService.listProductStandardCosts(principal.tenantId, costProfileId, productId);
+  }
+
+  @Post('product-standard-costs')
+  @RequirePermissions('finance:costing:manage')
+  async createProductStandardCost(@CurrentPrincipal() principal: ModulePrincipal, @Body() body: unknown) {
+    const input = parse(
+      z
+        .object({
+          costProfileId: z.string().uuid(),
+          productId: z.string().uuid(),
+          standardUnitCostScaled: z.string().regex(/^\d+$/),
+          effectiveFrom: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+          changeReason: z.string().min(1).max(500),
+        })
+        .strict(),
+      body,
+    );
+    return this.costingService.createProductStandardCost(principal.tenantId, principal.subject, input);
+  }
+
+  @Post('product-standard-costs/:id/archive')
+  @RequirePermissions('finance:costing:manage')
+  async archiveProductStandardCost(
+    @CurrentPrincipal() principal: ModulePrincipal,
+    @Param('id') id: string,
+    @Body() body: unknown,
+  ) {
+    const parsed = parse(z.object({ reason: z.string().min(1).max(500) }).strict(), body);
+    return this.costingService.archiveProductStandardCost(principal.tenantId, principal.subject, id, parsed.reason);
   }
 
   // ─── 2. Inbound Receipts & Cost Layers ──────────────────────────────────────

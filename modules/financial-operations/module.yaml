@@ -133,7 +133,7 @@ spec:
         - key: chief-accountant
           name: Chief Accountant
           description: Oversees chart of accounts, fiscal periods, posted journals, immutable reversals, and financial reporting.
-          permissions: [finance:read, 'finance:books:manage', 'finance:coa:manage', 'finance:periods:manage', 'finance:journals:manage', 'finance:journals:post', 'finance:journals:reverse', 'finance:reports:view']
+          permissions: [finance:read, 'finance:books:manage', 'finance:coa:manage', 'finance:periods:manage', 'finance:journals:manage', 'finance:journals:post', 'finance:journals:reverse', 'finance:reports:view', 'finance:costing:manage', 'finance:subledger:retry']
         - key: financial-analyst
           name: Financial Analyst
           description: Analyzes trial balance, balance sheet, and income statement facts across fiscal periods.
@@ -171,7 +171,10 @@ spec:
       - { path: 'v1/fiscal-periods', GET: finance:read }
       - { path: 'v1/fiscal-periods/{id}/status', PUT: 'finance:periods:manage' }
       - { path: 'v1/subledger/inventory/posting-reconciliation', GET: finance:read }
+      - { path: 'v1/subledger/inventory/postings/{id}/retry', POST: 'finance:subledger:retry' }
       - { path: 'v1/subledger/inventory/receipts/{id}/posting-status', GET: finance:read }
+      - { path: 'v1/costing/product-standard-costs', GET: finance:read, POST: 'finance:costing:manage' }
+      - { path: 'v1/costing/product-standard-costs/{id}/archive', POST: 'finance:costing:manage' }
       - { path: 'v1/journals', GET: finance:read, POST: 'finance:journals:post' }
       - { path: 'v1/journals/{id}', GET: finance:read }
       - { path: 'v1/journals/{id}/reverse', POST: 'finance:journals:reverse' }

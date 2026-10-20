@@ -6,3 +6,5 @@
 000005_inventory_receipt_finance_posting_status.up.sql
 000006_inventory_finance_period_replica.up.sql
 000007_inventory_finance_relay_filter.up.sql
+000008_inventory_posting_cutoff_relay.up.sql
+000009_inventory_finance_replica_hardening.up.sql

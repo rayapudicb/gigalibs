@@ -12,6 +12,7 @@ import { HealthController } from './health.controller.js';
 import { inventoryRecordDispatcher } from './inventory/inventory-record-adapters.js';
 import { InventoryRecordsService } from './inventory/inventory-records.service.js';
 import { InventoryController } from './inventory/inventory.controller.js';
+import { InventoryPostingCutoffService } from './inventory/inventory-posting-cutoff.service.js';
 import { InventoryService } from './inventory/inventory.service.js';
 import { OrganizationController } from './organization/organization.controller.js';
 import { createRelayHealthController } from '@gigalibs/module-sdk';
@@ -50,6 +51,7 @@ const InventoryRecordController = createRecordController({ guard: AuthorizationG
     runtimeConfigProvider,
     DatabaseService,
     AuthorizationGuard,
+    InventoryPostingCutoffService,
     InventoryService,
     InventoryRecordsService,
     {

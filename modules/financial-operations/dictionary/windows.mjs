@@ -165,5 +165,35 @@ export function windowSource(builderFor) {
           'Reverse this journal? A reversing journal is posted; the original stays in the ledger.', REVERSE),
       ]));
 
+  // 6. Per-product standard costs (WI-OI-120bq H3)
+  const PSC = 'finance.product-standard-costs';
+  const pscf = [
+    field(PSC, 'cost-profile-id', 'Cost profile', 'TEXT', { required: true }),
+    field(PSC, 'product-id', 'Product', 'TEXT', { required: true }),
+    field(PSC, 'standard-unit-cost-scaled', 'Standard unit cost (scaled)', 'TEXT', { required: true }),
+    field(PSC, 'effective-from', 'Effective from', 'DATE', { required: true }),
+    field(PSC, 'effective-to', 'Effective to', 'DATE'),
+    field(PSC, 'change-reason', 'Change reason', 'TEXT'),
+  ];
+  windows['finance-product-standard-costs'] = window(
+    'finance-product-standard-costs',
+    'Product standard costs',
+    'Standard costs',
+    'Per-product standard unit costs used when posting inventory receipts.',
+    'finance:read',
+    dictionary('finance-product-standard-costs', 'Product standard costs', PSC, [entity(PSC, 'Standard costs')], pscf, [], [], [
+      view('product-standard-costs', 'Product standard costs', [
+        tab('cost', 'Standard cost', 0, PSC, [
+          ['cost-profile-id', 4],
+          ['product-id', 4],
+          ['standard-unit-cost-scaled', 4],
+          ['effective-from', 3],
+          ['effective-to', 3],
+          ['change-reason', 6],
+        ], pscf),
+      ], { search: ['product-id', 'cost-profile-id'], sort: 'effective-from' }),
+    ]),
+  );
+
   return windows;
 }

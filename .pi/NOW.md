@@ -28,9 +28,9 @@ keeps the full rules.
 
 **WI-OI-120bo (2026-10-20, Built):** UAT module-host restored (owner) and verified. Prevention built: release-worktree rule on 29 UAT-acting scripts, compose wrapper limited to isolated project `gigalibs-test`, `pnpm test:minimal-p2p-o2c` **2 passed** on a fresh test database with no manual SQL. Card: [WI-OI-120bo](tasks/WI-OI-120bo.md). UAT cleanup done by the owner and verified. Open: commit on "commit".
 
-**WI-OI-120bp (2026-10-20, Built):** Two-way Finance ⇄ Inventory signed relay + Inventory fiscal period replica (D1); cross-DB URLs and `@gigalibs/posting-rules` on Inventory removed. Evidence: F2.2 unit cert, F2.7 HTTP proof **24/24** on test Postgres; `audit:layers` clean (baseline shrunk). Open: `build-test-stack-images.sh` + `pnpm test:minimal-p2p-o2c` on `gigalibs-test`, Security review, owner commit. Card: [WI-OI-120bp](tasks/WI-OI-120bp.md).
+**WI-OI-120bp (2026-10-21, Built):** Committed **`6ea5a927`** + stack evidence: `gigalibs-test` **`pnpm test:minimal-p2p-o2c` 2/2**, F2.7 **26/26**. **Open:** Security review. Card: [WI-OI-120bp](tasks/WI-OI-120bp.md).
 
-**WI-OI-120bq (2026-10-20, Approved; Cursor after 120bp):** make Table 2 releasable — fix the Security review's H1–H3, M1–M3, L1–L3 (per-product standard cost, book currency, retry for rejected postings, period-scoped close, REVOKE on definer functions, filtered relay, cut-off confirmation). Card: [WI-OI-120bq](tasks/WI-OI-120bq.md); prompt: [PROMPT-2026-10-20-CURSOR-120bq.md](handoff/PROMPT-2026-10-20-CURSOR-120bq.md). Then Claude re-review → F2.9 accountant sign-off → release worktree → owner deploy.
+**WI-OI-120bq (2026-10-21, Built — uncommitted):** Finance **13–15**, Inventory **7–9**; Table 2 H2/H3/M3 + **120bp review B2–B7** (RLS, period `stateVersion`, proactive snapshot sweep, snapshot-completed sync, contracts relay types, unknown-outcome logging). **Stack (2026-10-21):** F2.7 **26/26**, U12 **28/28**. **`pnpm verify`:** still **FAIL** on pre-existing **U2** / **U19a**; Table-2 slices pass. **Open:** Claude re-review, F2.9, owner **commit**. Card: [WI-OI-120bq](tasks/WI-OI-120bq.md).
 
 **WI-OI-120br (2026-10-20, Built, committed `68be9379` on its branch):** SPEED S1 engine package `packages/process-safety-engines` in worktree `gigalibs-speed-s1` (branch `feat/speed-s1-engines`): BRD TC-01–TC-12 pass, 40 tests, coverage 98.5 % lines / 93.0 % branches; criteria, library and element data are inputs (no hard-coded thresholds). Card: [WI-OI-120br](tasks/WI-OI-120br.md).
 
@@ -39,6 +39,8 @@ keeps the full rules.
 **WI-OI-120bs (2026-10-20, Built, committed `ad75a0f1` on its branch):** SPEED S2b metadata panels in worktree `gigalibs-speed-s2b` (branch `feat/speed-s2b-metadata-panels` from `6ea5a927`): modules register panels in `spec.ui.panels`, windows place them with typed props, the compiler refuses anything unregistered, foreign or mistyped, the renderer draws registered components or names a missing one. All 46 shipped windows compile to identical checksums; build and every audit pass. Card: [WI-OI-120bs](tasks/WI-OI-120bs.md).
 
 **WI-OI-120bt (2026-10-21, Built, docs):** SPEED screen specifications for S3–S7: every mock screen as windows, fields and 8 registered panels with typed props, all states, the message catalogue for the engine codes, token mapping, accessibility and acceptance checks. Found: S7 needs engine functions `actionList` and `stage2Plan`, and interaction rules carry their recommended Stage 2 test (plan v1.4). [Screen specifications](../docs/pharma/speed/SPEED-Stage1-Screen-Specifications.md); card [WI-OI-120bt](tasks/WI-OI-120bt.md).
+
+**WI-OI-120bp review (2026-10-21):** [WI-OI-120bp-REVIEW-2026-10-21.md](work/WI-OI-120bp-REVIEW-2026-10-21.md) — design sound, coupling gone, one-transaction posting and signed relays correct; **not releasable** until B1 (broken Finance 13 / Inventory 7 in the commit, fixed only in the working tree) is committed and B2 (no RLS on new replica tables), B3 (out-of-order period events), B4 (snapshot only after the first receipt), B5 (sync marked complete too early) are fixed.
 
 **Batch acceptance:** [PHASE-1-CM1-CHECKLIST.md](tasks/PHASE-1-CM1-CHECKLIST.md) — one deploy, one journey, tick all five rows.
 
@@ -73,7 +75,7 @@ keeps the full rules.
 
 ## Next implementation (Table 1 backlog, local compose)
 
-1. **WI-OI-120gd** — journey 0 blockers — **unblocked:** `E2E_JOURNEY_PASSWORD` is set in `e2e/uat.env` (checked 2026-10-20, value not read).
+1. **WI-OI-120gd** — journey 0 blockers — run **`hb53xk`** (2026-10-21 UTC, release `1d8d2634`): 69 findings, **6 blockers**, all in CMMS, from two product defects: CMMS ignores unit-scoped role assignments when listing, and "Assigned technician" is free text so nobody can be assigned. Triage and fixes: [WI-OI-120bu](tasks/WI-OI-120bu.md) (proposed).
 2. **WI-OI-120ge** — **Done** in git **`0031a2f4`** (pushed); `pnpm audit:configuration-deployment-profile` passes.
 3. **WI-OI-120gf** — **In progress** (M-AR0): compose + module SDK; E1 build done in **WI-OI-120gw**.
 4. **WI-OI-120gg** — **Built** in git **`cdcbf2c9`** (pushed): vendor party guard mig **4**.

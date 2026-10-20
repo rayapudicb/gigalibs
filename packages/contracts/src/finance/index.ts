@@ -1,4 +1,5 @@
 export * from './finance.js';
+export * from './inventory-relay.v1.js';
 export * from './treasury.js';
 export * from './fixed-assets.js';
 export * from './consolidation.js';

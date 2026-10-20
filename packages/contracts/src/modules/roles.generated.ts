@@ -189,7 +189,9 @@ export const moduleDefaultRoles: readonly ModuleDefaultRole[] = [
       "finance:journals:manage",
       "finance:journals:post",
       "finance:journals:reverse",
-      "finance:reports:view"
+      "finance:reports:view",
+      "finance:costing:manage",
+      "finance:subledger:retry"
     ]
   },
   {

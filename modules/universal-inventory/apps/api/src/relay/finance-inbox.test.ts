@@ -4,13 +4,15 @@
 import { generateKeyPairSync, randomUUID } from 'node:crypto';
 import type { ExecutionContext } from '@nestjs/common';
 import { signRelayToken } from '@gigalibs/auth-core';
+import {
+  FINANCE_FISCAL_PERIOD_SNAPSHOT_COMPLETED_V1,
+  FINANCE_FISCAL_PERIOD_STATE_CHANGED_V1,
+  FINANCE_INVENTORY_RECEIPT_POSTING_OUTCOME_V1,
+} from '@gigalibs/contracts';
 import { describe, expect, it, vi } from 'vitest';
 import { FinanceInventoryInboxService } from './finance-inbox.service.js';
 import { InventoryRelayInboxGuard } from './inbox.guard.js';
 import { INVENTORY_INBOX_AUDIENCE, loadInventoryFinanceInboxConfig } from './relay-config.js';
-
-const FINANCE_INVENTORY_RECEIPT_POSTING_OUTCOME_V1 = 'finance.inventory-receipt.posting-outcome.v1';
-const FINANCE_FISCAL_PERIOD_STATE_CHANGED_V1 = 'finance.fiscal-period.state-changed.v1';
 
 function keyPair() {
   const { publicKey, privateKey } = generateKeyPairSync('ed25519', {
@@ -83,6 +85,11 @@ describe('Inventory Finance relay inbox guard', () => {
   });
 });
 
+const noopPostingCutoff = {
+  tryPublishClearCutoffForReceiptDate: vi.fn(async () => undefined),
+  tryPublishClearCutoffForPeriod: vi.fn(async () => undefined),
+};
+
 describe('FinanceInventoryInboxService', () => {
   function inboxWith(initialStatus: string | null) {
     const updates: unknown[][] = [];
@@ -99,7 +106,7 @@ describe('FinanceInventoryInboxService', () => {
         }
         if (sql.includes('UPDATE gigalibs_inventory.receipts')) {
           updates.push(params ?? []);
-          return { rowCount: 1 };
+          return { rows: [{ completed_at: new Date().toISOString() }], rowCount: 1 };
         }
         if (sql.includes('finance_period_replica_meta') || sql.includes('finance_fiscal_period_replica')) {
           return { rowCount: 1 };
@@ -112,7 +119,7 @@ describe('FinanceInventoryInboxService', () => {
     };
     const database = { withTenantTransaction: vi.fn(async (_t: string, work: (c: typeof client) => unknown) => work(client)) };
     return {
-      inbox: new FinanceInventoryInboxService(database as never),
+      inbox: new FinanceInventoryInboxService(database as never, noopPostingCutoff as never),
       client,
       updates,
     };
@@ -151,7 +158,7 @@ describe('FinanceInventoryInboxService', () => {
       }),
     };
     const database = { withTenantTransaction: vi.fn(async (_t: string, work: (c: typeof client) => unknown) => work(client)) };
-    const inbox = new FinanceInventoryInboxService(database as never);
+    const inbox = new FinanceInventoryInboxService(database as never, noopPostingCutoff as never);
     const periodId = randomUUID();
     const bookId = randomUUID();
     const body = envelope(
@@ -164,11 +171,116 @@ describe('FinanceInventoryInboxService', () => {
         endDate: '2026-10-31',
         status: 'OPEN',
         isPrimaryBook: true,
+        stateVersion: 1,
       },
       { aggregateId: periodId },
     );
     await expect(inbox.receive(body, JSON.stringify(body))).resolves.toEqual({ status: 'PROCESSED' });
     expect(inserts.some((sql) => sql.includes('finance_fiscal_period_replica'))).toBe(true);
     expect(inserts.some((sql) => sql.includes('finance_period_replica_meta'))).toBe(true);
+    expect(inserts.some((sql) => sql.includes('initial_sync_completed_at'))).toBe(false);
+  });
+
+  it('ignores stale period state when a newer stateVersion was already applied', async () => {
+    const periodId = randomUUID();
+    const bookId = randomUUID();
+    const upsertRowCounts = [1, 0];
+    const client = {
+      query: vi.fn(async (sql: string) => {
+        if (sql.includes('INSERT INTO gigalibs_inventory.inbox_receipts')) {
+          return { rows: [{ id: 'inbox-1' }], rowCount: 1 };
+        }
+        if (sql.includes('UPDATE gigalibs_inventory.inbox_receipts')) {
+          return { rowCount: 1 };
+        }
+        if (sql.includes('finance_fiscal_period_replica')) {
+          return { rowCount: upsertRowCounts.shift() ?? 0 };
+        }
+        return { rowCount: 1 };
+      }),
+    };
+    const database = { withTenantTransaction: vi.fn(async (_t: string, work: (c: typeof client) => unknown) => work(client)) };
+    const inbox = new FinanceInventoryInboxService(database as never, noopPostingCutoff as never);
+    const locked = envelope(
+      FINANCE_FISCAL_PERIOD_STATE_CHANGED_V1,
+      {
+        fiscalPeriodId: periodId,
+        accountingBookId: bookId,
+        periodName: '2026-10',
+        startDate: '2026-10-01',
+        endDate: '2026-10-31',
+        status: 'LOCKED',
+        isPrimaryBook: true,
+        stateVersion: 2,
+      },
+      { aggregateId: periodId, messageId: randomUUID() },
+    );
+    const staleOpen = envelope(
+      FINANCE_FISCAL_PERIOD_STATE_CHANGED_V1,
+      {
+        fiscalPeriodId: periodId,
+        accountingBookId: bookId,
+        periodName: '2026-10',
+        startDate: '2026-10-01',
+        endDate: '2026-10-31',
+        status: 'OPEN',
+        isPrimaryBook: true,
+        stateVersion: 1,
+      },
+      { aggregateId: periodId, messageId: randomUUID() },
+    );
+    await inbox.receive(locked, JSON.stringify(locked));
+    await inbox.receive(staleOpen, JSON.stringify(staleOpen));
+    expect(upsertRowCounts).toHaveLength(0);
+  });
+
+  it('marks initial sync complete only on snapshot-completed', async () => {
+    const inserts: string[] = [];
+    const client = {
+      query: vi.fn(async (sql: string) => {
+        inserts.push(sql);
+        if (sql.includes('INSERT INTO gigalibs_inventory.inbox_receipts')) {
+          return { rows: [{ id: 'inbox-1' }], rowCount: 1 };
+        }
+        if (sql.includes('UPDATE gigalibs_inventory.inbox_receipts')) {
+          return { rowCount: 1 };
+        }
+        return { rowCount: 1 };
+      }),
+    };
+    const database = { withTenantTransaction: vi.fn(async (_t: string, work: (c: typeof client) => unknown) => work(client)) };
+    const inbox = new FinanceInventoryInboxService(database as never, noopPostingCutoff as never);
+    const bookId = randomUUID();
+    const body = envelope(
+      FINANCE_FISCAL_PERIOD_SNAPSHOT_COMPLETED_V1,
+      { primaryBookId: bookId, periodCount: 12 },
+      { aggregateId: bookId, aggregateType: 'fiscal_period_snapshot' },
+    );
+    await inbox.receive(body, JSON.stringify(body));
+    expect(inserts.some((sql) => sql.includes('initial_sync_completed_at'))).toBe(true);
+  });
+
+  it('logs and acknowledges posting outcomes for unknown receipts', async () => {
+    const client = {
+      query: vi.fn(async (sql: string) => {
+        if (sql.includes('INSERT INTO gigalibs_inventory.inbox_receipts')) {
+          return { rows: [{ id: 'inbox-1' }], rowCount: 1 };
+        }
+        if (sql.includes('UPDATE gigalibs_inventory.inbox_receipts')) {
+          return { rowCount: 1 };
+        }
+        if (sql.includes('SELECT finance_posting_status')) {
+          return { rows: [] };
+        }
+        if (sql.includes('UPDATE gigalibs_inventory.receipts')) {
+          return { rows: [], rowCount: 0 };
+        }
+        return { rows: [], rowCount: 0 };
+      }),
+    };
+    const database = { withTenantTransaction: vi.fn(async (_t: string, work: (c: typeof client) => unknown) => work(client)) };
+    const inbox = new FinanceInventoryInboxService(database as never, noopPostingCutoff as never);
+    const body = envelope(FINANCE_INVENTORY_RECEIPT_POSTING_OUTCOME_V1, { receiptId: RECEIPT_ID, status: 'POSTED' });
+    await expect(inbox.receive(body, JSON.stringify(body))).resolves.toEqual({ status: 'PROCESSED' });
   });
 });

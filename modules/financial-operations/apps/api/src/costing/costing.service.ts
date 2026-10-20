@@ -42,6 +42,31 @@ import {
   type LandedCostTarget,
 } from './costing-engine.js';
 
+/** Functional currency journals use a unit exchange rate by definition (book currency = line currency). */
+const FUNCTIONAL_CURRENCY_EXCHANGE_RATE = '1.000000';
+
+export type ProductStandardCostV1 = {
+  readonly id: string;
+  readonly tenantId: string;
+  readonly costProfileId: string;
+  readonly productId: string;
+  readonly standardUnitCostScaled: string;
+  readonly effectiveFrom: string;
+  readonly effectiveTo: string | null;
+  readonly changeReason: string | null;
+  readonly archivedAt: string | null;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+};
+
+export type UpsertProductStandardCostInputV1 = {
+  readonly costProfileId: string;
+  readonly productId: string;
+  readonly standardUnitCostScaled: string;
+  readonly effectiveFrom: string;
+  readonly changeReason: string;
+};
+
 @Injectable()
 export class CostingService {
   constructor(
@@ -212,7 +237,7 @@ export class CostingService {
         bookCurrency = bookRes.rows[0]?.currency_code ?? null;
         if (!bookCurrency) throw new BadRequestException(`Accounting book ${input.bookId} was not found.`);
       }
-      const functionalRate = '1.000000';
+      const functionalRate = FUNCTIONAL_CURRENCY_EXCHANGE_RATE;
 
       // 1. Post GL Journal if requested and bookId & periodId provided
       let glJournalId: string | null = null;
@@ -420,6 +445,7 @@ export class CostingService {
 
       // 2. Post COGS GL Journal if requested
       if (input.postGlJournal && input.bookId && input.periodId && totalCogsMinor > 0n) {
+        const bookCurrency = await this.resolveBookCurrencyCode(client, tenantId, input.bookId);
         const journalInput: PostJournalInputV1 = {
           accountingBookId: input.bookId,
           fiscalPeriodId: input.periodId,
@@ -431,16 +457,16 @@ export class CostingService {
               accountId: profile.cogsGlAccountId,
               debitAmountMinor: totalCogsMinor.toString(),
               creditAmountMinor: '0',
-              currencyCode: 'USD',
-              exchangeRate: '1.000000',
+              currencyCode: bookCurrency,
+              exchangeRate: FUNCTIONAL_CURRENCY_EXCHANGE_RATE,
               memo: `COGS: ${input.transactionRef} (${input.quantity} units)`,
             },
             {
               accountId: profile.inventoryGlAccountId,
               debitAmountMinor: '0',
               creditAmountMinor: totalCogsMinor.toString(),
-              currencyCode: 'USD',
-              exchangeRate: '1.000000',
+              currencyCode: bookCurrency,
+              exchangeRate: FUNCTIONAL_CURRENCY_EXCHANGE_RATE,
               memo: `Inventory Relief: ${input.transactionRef}`,
             },
           ],
@@ -758,6 +784,7 @@ export class CostingService {
 
       const now = new Date().toISOString();
       const revalId = randomUUID();
+      const bookCurrency = await this.resolveBookCurrencyCode(client, tenantId, input.bookId);
 
       // 2. Post GL journal
       let journalInput: PostJournalInputV1;
@@ -777,16 +804,16 @@ export class CostingService {
               accountId: profile.valuationLossGlAccountId,
               debitAmountMinor: lossAmountMinor,
               creditAmountMinor: '0',
-              currencyCode: 'USD',
-              exchangeRate: '1.000000',
+              currencyCode: bookCurrency,
+              exchangeRate: FUNCTIONAL_CURRENCY_EXCHANGE_RATE,
               memo: `NRV Impairment Loss on Product ${input.productId}`,
             },
             {
               accountId: profile.inventoryGlAccountId,
               debitAmountMinor: '0',
               creditAmountMinor: lossAmountMinor,
-              currencyCode: 'USD',
-              exchangeRate: '1.000000',
+              currencyCode: bookCurrency,
+              exchangeRate: FUNCTIONAL_CURRENCY_EXCHANGE_RATE,
               memo: `Inventory Write-down on Product ${input.productId}`,
             },
           ],
@@ -807,16 +834,16 @@ export class CostingService {
               accountId: profile.inventoryGlAccountId,
               debitAmountMinor: gainAmountMinor,
               creditAmountMinor: '0',
-              currencyCode: 'USD',
-              exchangeRate: '1.000000',
+              currencyCode: bookCurrency,
+              exchangeRate: FUNCTIONAL_CURRENCY_EXCHANGE_RATE,
               memo: `Inventory Revaluation on Product ${input.productId}`,
             },
             {
               accountId: profile.valuationLossGlAccountId,
               debitAmountMinor: '0',
               creditAmountMinor: gainAmountMinor,
-              currencyCode: 'USD',
-              exchangeRate: '1.000000',
+              currencyCode: bookCurrency,
+              exchangeRate: FUNCTIONAL_CURRENCY_EXCHANGE_RATE,
               memo: `Inventory Revaluation Gain on Product ${input.productId}`,
             },
           ],
@@ -892,6 +919,119 @@ export class CostingService {
 
       return this.mapRevaluation(revalRes.rows[0]);
     });
+  }
+
+  // ─── 5b. Per-product standard costs (WI-OI-120bq H3) ───────────────────────
+
+  async resolveProductStandardUnitCostScaled(
+    client: PoolClient,
+    tenantId: string,
+    costProfileId: string,
+    productId: string,
+    postingDate: string,
+  ): Promise<string | null> {
+    const res = await client.query<{ standard_unit_cost_scaled: string }>(
+      `SELECT standard_unit_cost_scaled::text FROM ${SCHEMA}.product_standard_costs
+        WHERE tenant_id = $1 AND cost_profile_id = $2 AND product_id = $3
+          AND archived_at IS NULL
+          AND effective_from <= $4::date
+          AND (effective_to IS NULL OR effective_to >= $4::date)
+        ORDER BY effective_from DESC
+        LIMIT 1`,
+      [tenantId, costProfileId, productId, postingDate],
+    );
+    return res.rows[0]?.standard_unit_cost_scaled ?? null;
+  }
+
+  async listProductStandardCosts(
+    tenantId: string,
+    costProfileId?: string,
+    productId?: string,
+  ): Promise<ProductStandardCostV1[]> {
+    let sql = `SELECT * FROM ${SCHEMA}.product_standard_costs WHERE tenant_id = $1 AND archived_at IS NULL`;
+    const params: unknown[] = [tenantId];
+    if (costProfileId) {
+      params.push(costProfileId);
+      sql += ` AND cost_profile_id = $${params.length}`;
+    }
+    if (productId) {
+      params.push(productId);
+      sql += ` AND product_id = $${params.length}`;
+    }
+    sql += ' ORDER BY effective_from DESC, product_id ASC';
+    const res = await this.query(tenantId, sql, params);
+    return res.rows.map((row) => this.mapProductStandardCost(row));
+  }
+
+  async createProductStandardCost(
+    tenantId: string,
+    actor: string,
+    input: UpsertProductStandardCostInputV1,
+  ): Promise<ProductStandardCostV1> {
+    const id = randomUUID();
+    const now = new Date().toISOString();
+    return this.database.withTenantTransaction(tenantId, async (client) => {
+      const res = await client.query(
+        `INSERT INTO ${SCHEMA}.product_standard_costs (
+           id, tenant_id, cost_profile_id, product_id, standard_unit_cost_scaled,
+           effective_from, change_reason, created_by, updated_by, created_at, updated_at
+         ) VALUES ($1, $2, $3, $4, $5, $6::date, $7, $8, $8, $9, $9)
+         RETURNING *`,
+        [
+          id,
+          tenantId,
+          input.costProfileId,
+          input.productId,
+          input.standardUnitCostScaled,
+          input.effectiveFrom,
+          input.changeReason,
+          actor,
+          now,
+        ],
+      );
+      return this.mapProductStandardCost(res.rows[0]);
+    });
+  }
+
+  async archiveProductStandardCost(tenantId: string, actor: string, id: string, reason: string): Promise<ProductStandardCostV1> {
+    const now = new Date().toISOString();
+    return this.database.withTenantTransaction(tenantId, async (client) => {
+      const res = await client.query(
+        `UPDATE ${SCHEMA}.product_standard_costs
+            SET archived_at = $3, change_reason = $4, updated_by = $5, updated_at = $3
+          WHERE tenant_id = $1 AND id = $2 AND archived_at IS NULL
+          RETURNING *`,
+        [tenantId, id, now, reason, actor],
+      );
+      if (!res.rows[0]) throw new NotFoundException(`Product standard cost ${id} was not found.`);
+      return this.mapProductStandardCost(res.rows[0]);
+    });
+  }
+
+  private async resolveBookCurrencyCode(client: PoolClient, tenantId: string, bookId: string): Promise<string> {
+    const bookRes = await client.query<{ currency_code: string }>(
+      `SELECT currency_code FROM ${SCHEMA}.accounting_books WHERE tenant_id = $1 AND id = $2`,
+      [tenantId, bookId],
+    );
+    const currency = bookRes.rows[0]?.currency_code;
+    if (!currency) throw new BadRequestException(`Accounting book ${bookId} was not found.`);
+    return currency;
+  }
+
+  private mapProductStandardCost(row: Record<string, unknown>): ProductStandardCostV1 {
+    return {
+      id: String(row.id),
+      tenantId: String(row.tenant_id),
+      costProfileId: String(row.cost_profile_id),
+      productId: String(row.product_id),
+      standardUnitCostScaled: String(row.standard_unit_cost_scaled),
+      effectiveFrom: String(row.effective_from).slice(0, 10),
+      effectiveTo: row.effective_to ? String(row.effective_to).slice(0, 10) : null,
+      changeReason: row.change_reason ? String(row.change_reason) : null,
+      archivedAt: row.archived_at ? new Date(String(row.archived_at)).toISOString() : null,
+      createdAt: new Date(String(row.created_at)).toISOString(),
+      updatedAt: new Date(String(row.updated_at)).toISOString(),
+    };
   }
 
   // ─── 6. Valuation Reporting ─────────────────────────────────────────────────

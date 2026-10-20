@@ -1,0 +1,172 @@
+{
+  "contractVersion": "1.0",
+  "window": {
+    "route": "/finance",
+    "label": "Standard costs",
+    "description": "Per-product standard unit costs used when posting inventory receipts.",
+    "readPermission": "finance:read"
+  },
+  "definition": {
+    "kind": "APPLICATION_DICTIONARY",
+    "contractVersion": "1.0",
+    "moduleKey": "financial-operations",
+    "entityKey": "finance-product-standard-costs",
+    "surfaceKey": "finance-product-standard-costs",
+    "title": "Product standard costs",
+    "dictionary": {
+      "packageKey": "finance-product-standard-costs-module-baseline",
+      "name": "Product standard costs",
+      "version": "1.0.0",
+      "moduleKey": "financial-operations",
+      "targetEntityKey": "finance.product-standard-costs",
+      "entities": [
+        {
+          "entityKey": "finance.product-standard-costs",
+          "moduleKey": "financial-operations",
+          "label": "Standard costs",
+          "ownership": "MODULE_CORE",
+          "primaryKeyField": "id",
+          "isVersioned": true,
+          "isAuditLogged": true,
+          "isSoftDeletable": false
+        }
+      ],
+      "fields": [
+        {
+          "fieldKey": "cost-profile-id",
+          "entityKey": "finance.product-standard-costs",
+          "label": "Cost profile",
+          "type": "TEXT",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "product-id",
+          "entityKey": "finance.product-standard-costs",
+          "label": "Product",
+          "type": "TEXT",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "standard-unit-cost-scaled",
+          "entityKey": "finance.product-standard-costs",
+          "label": "Standard unit cost (scaled)",
+          "type": "TEXT",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "effective-from",
+          "entityKey": "finance.product-standard-costs",
+          "label": "Effective from",
+          "type": "DATE",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "effective-to",
+          "entityKey": "finance.product-standard-costs",
+          "label": "Effective to",
+          "type": "DATE",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "change-reason",
+          "entityKey": "finance.product-standard-costs",
+          "label": "Change reason",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        }
+      ],
+      "relationships": [],
+      "references": [],
+      "validationRules": [],
+      "views": [
+        {
+          "viewKey": "product-standard-costs",
+          "label": "Product standard costs",
+          "mode": "LIST",
+          "device": "ALL",
+          "defaultSortDirection": "ASC",
+          "tabs": [
+            {
+              "tabKey": "cost",
+              "label": "Standard cost",
+              "position": 0,
+              "level": 0,
+              "targetEntityKey": "finance.product-standard-costs",
+              "sections": [],
+              "fields": [
+                {
+                  "fieldKey": "cost-profile-id",
+                  "position": 0,
+                  "span": 4,
+                  "componentKey": "text-input"
+                },
+                {
+                  "fieldKey": "product-id",
+                  "position": 1,
+                  "span": 4,
+                  "componentKey": "text-input"
+                },
+                {
+                  "fieldKey": "standard-unit-cost-scaled",
+                  "position": 2,
+                  "span": 4,
+                  "componentKey": "text-input"
+                },
+                {
+                  "fieldKey": "effective-from",
+                  "position": 3,
+                  "span": 3,
+                  "componentKey": "date-input"
+                },
+                {
+                  "fieldKey": "effective-to",
+                  "position": 4,
+                  "span": 3,
+                  "componentKey": "date-input"
+                },
+                {
+                  "fieldKey": "change-reason",
+                  "position": 5,
+                  "span": 6,
+                  "componentKey": "text-input"
+                }
+              ]
+            }
+          ],
+          "searchFields": [
+            "product-id",
+            "cost-profile-id"
+          ],
+          "defaultSortField": "effective-from"
+        }
+      ],
+      "navigation": [],
+      "actions": [],
+      "messages": []
+    }
+  }
+}

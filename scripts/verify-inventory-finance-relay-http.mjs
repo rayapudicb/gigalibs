@@ -274,6 +274,21 @@ try {
   );
   check('catalogue: product for receipt', ok(uom) && ok(product), `${uom.status} ${product.status}`);
 
+  const productCost = await call(
+    'financial-operations',
+    'POST',
+    '/v1/costing/product-standard-costs',
+    {
+      costProfileId: profile.json?.id,
+      productId: product.json?.id,
+      standardUnitCostScaled: '2500000',
+      effectiveFrom: '2026-01-01',
+      changeReason: 'WI-OI-120bq F2.7 proof seed',
+    },
+    { 'Idempotency-Key': randomUUID() },
+  );
+  check('finance: per-product standard cost (H3)', ok(productCost), productCost.text.slice(0, 120));
+
   const warehouse = await call('universal-inventory', 'POST', '/v1/records/inventory.warehouses', {
     code: 'WH-IF2',
     name: 'IF2 warehouse',
@@ -331,7 +346,7 @@ try {
     );
     replicaReady = Boolean(meta.rows[0]?.initial_sync_completed_at);
   }
-  check('inventory: fiscal period replica initial sync after first posting', replicaReady, JSON.stringify({ tenant }));
+  check('inventory: fiscal period replica initial sync after snapshot-completed', replicaReady, JSON.stringify({ tenant }));
 
   let financeOutcomePublished = false;
   let postedOnReceipt = false;
@@ -349,6 +364,18 @@ try {
   }
   check('finance: posting-outcome outbox PUBLISHED', financeOutcomePublished, receiptId);
   check('inventory: finance-posting-status POSTED via Finance relay', postedOnReceipt, receiptId);
+
+  let cutoffConfirmed = false;
+  for (let attempt = 0; attempt < 90 && !cutoffConfirmed; attempt += 1) {
+    await sleep(500);
+    const row = await admin.query(
+      `SELECT 1 FROM gigalibs_finance.inventory_posting_cutoff_confirmations
+        WHERE tenant_id = $1 AND fiscal_period_id = $2 AND undelivered_receipt_count = 0`,
+      [tenant, period.id],
+    );
+    cutoffConfirmed = (row.rowCount ?? 0) > 0;
+  }
+  check('finance: inventory posting cutoff confirmed (M3)', cutoffConfirmed, period.id);
 
   const locked = await call('financial-operations', 'PUT', `/v1/fiscal-periods/${period.id}/status`, { status: 'LOCKED' });
   check('finance: lock fiscal period covering receipt date', ok(locked), locked.text.slice(0, 100));

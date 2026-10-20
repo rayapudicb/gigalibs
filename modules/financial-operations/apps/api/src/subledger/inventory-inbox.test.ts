@@ -87,7 +87,12 @@ describe('Finance inventory relay inbox guard', () => {
 
 describe('Finance inventory subledger inbox', () => {
   function inboxWith(options: { receiptInserted: boolean; costProfile?: { id: string; standard_unit_cost_scaled: string } }) {
-    const costing = { ingestReceiptLayer: vi.fn(async () => ({})) };
+    const costing = {
+      ingestReceiptLayer: vi.fn(async () => ({})),
+      resolveProductStandardUnitCostScaled: vi.fn(async () =>
+        options.costProfile ? options.costProfile.standard_unit_cost_scaled : null,
+      ),
+    };
     const client = {
       query: vi.fn(async (sql: string) => {
         if (sql.includes('INSERT INTO gigalibs_finance.inbox_receipts')) {
@@ -101,9 +106,20 @@ describe('Finance inventory subledger inbox', () => {
         }
         if (sql.includes('FROM gigalibs_finance.cost_profiles')) {
           return {
-            rows: options.costProfile ? [options.costProfile] : [],
+            rows: options.costProfile ? [{ id: options.costProfile.id }] : [],
             rowCount: options.costProfile ? 1 : 0,
           };
+        }
+        if (sql.includes('product_standard_costs')) {
+          return {
+            rows: options.costProfile
+              ? [{ standard_unit_cost_scaled: options.costProfile.standard_unit_cost_scaled }]
+              : [],
+            rowCount: options.costProfile ? 1 : 0,
+          };
+        }
+        if (sql.includes('posting_date')) {
+          return { rows: [], rowCount: 1 };
         }
         if (sql.includes('UPDATE gigalibs_finance.inbox_receipts')) {
           return { rows: [], rowCount: 1 };
@@ -248,6 +264,7 @@ describe('Finance inventory subledger inbox', () => {
         expect(client).toBeDefined();
         return {};
       }),
+      resolveProductStandardUnitCostScaled: vi.fn(async () => '1000000000'),
     };
     const client = {
       query: vi.fn(async (sql: string) => {
@@ -259,7 +276,13 @@ describe('Finance inventory subledger inbox', () => {
           return { rows: [{ id: 'period-1', status: 'OPEN', period_name: '2026-10' }] };
         }
         if (sql.includes('FROM gigalibs_finance.cost_profiles')) {
-          return { rows: [{ id: randomUUID(), standard_unit_cost_scaled: '1000000000' }], rowCount: 1 };
+          return { rows: [{ id: randomUUID() }], rowCount: 1 };
+        }
+        if (sql.includes('product_standard_costs')) {
+          return { rows: [{ standard_unit_cost_scaled: '1000000000' }], rowCount: 1 };
+        }
+        if (sql.includes('posting_date')) {
+          return { rows: [], rowCount: 1 };
         }
         if (sql.includes('inventory_fiscal_replica_publish')) {
           return { rows: [{ tenant_id: TENANT }], rowCount: 1 };

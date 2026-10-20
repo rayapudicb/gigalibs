@@ -18,6 +18,9 @@
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist *.tsbuildinfo"
   },
+  "dependencies": {
+    "@gigalibs/contracts": "workspace:*"
+  },
   "devDependencies": {
     "@types/pg": "^8.23.1",
     "pg": "^8.23.0",

@@ -17,6 +17,8 @@ export interface InboxReceiptOptions {
   readonly consumer: string;
   /** The producing module, recorded on the receipt. */
   readonly sourceModule: string;
+  /** When true, persists the signed relay body on `inbox_receipts.raw_body` (Finance WI-OI-120bq). */
+  readonly storeRawBody?: boolean;
 }
 
 const IDENTIFIER_PATTERN = /^[a-z_][a-z0-9_]*$/;
@@ -35,24 +37,42 @@ export async function receiveOnce<O extends { readonly status: string; readonly 
 ): Promise<O | { readonly status: 'DUPLICATE' }> {
   if (!IDENTIFIER_PATTERN.test(options.schema))
     throw new Error('The inbox schema name is invalid.');
-  const receipt = await client.query<{ id: string }>(
-    `INSERT INTO ${options.schema}.inbox_receipts
-       (id, tenant_id, consumer_name, message_id, event_type, source_module, source_version, correlation_id, payload_sha256, status, attempt_count)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'PROCESSING', 1)
-     ON CONFLICT (tenant_id, consumer_name, message_id) DO NOTHING
-     RETURNING id`,
-    [
-      randomUUID(),
-      envelope.tenantId,
-      options.consumer,
-      envelope.messageId,
-      envelope.eventType,
-      options.sourceModule,
-      envelope.schemaVersion,
-      envelope.correlationId,
-      createHash('sha256').update(rawBody, 'utf8').digest('hex'),
-    ],
-  );
+  const insertSql = options.storeRawBody
+    ? `INSERT INTO ${options.schema}.inbox_receipts
+         (id, tenant_id, consumer_name, message_id, event_type, source_module, source_version, correlation_id, payload_sha256, raw_body, status, attempt_count)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'PROCESSING', 1)
+       ON CONFLICT (tenant_id, consumer_name, message_id) DO NOTHING
+       RETURNING id`
+    : `INSERT INTO ${options.schema}.inbox_receipts
+         (id, tenant_id, consumer_name, message_id, event_type, source_module, source_version, correlation_id, payload_sha256, status, attempt_count)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'PROCESSING', 1)
+       ON CONFLICT (tenant_id, consumer_name, message_id) DO NOTHING
+       RETURNING id`;
+  const insertParams = options.storeRawBody
+    ? [
+        randomUUID(),
+        envelope.tenantId,
+        options.consumer,
+        envelope.messageId,
+        envelope.eventType,
+        options.sourceModule,
+        envelope.schemaVersion,
+        envelope.correlationId,
+        createHash('sha256').update(rawBody, 'utf8').digest('hex'),
+        rawBody,
+      ]
+    : [
+        randomUUID(),
+        envelope.tenantId,
+        options.consumer,
+        envelope.messageId,
+        envelope.eventType,
+        options.sourceModule,
+        envelope.schemaVersion,
+        envelope.correlationId,
+        createHash('sha256').update(rawBody, 'utf8').digest('hex'),
+      ];
+  const receipt = await client.query<{ id: string }>(insertSql, insertParams);
   const receiptId = receipt.rows[0]?.id;
   if (!receiptId) return { status: 'DUPLICATE' as const };
   const outcome = await apply();

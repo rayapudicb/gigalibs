@@ -658,6 +658,12 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
     ]
   },
   {
+    "code": "finance:costing:manage",
+    "entries": [
+      "financial-operations"
+    ]
+  },
+  {
     "code": "finance:journals:approve",
     "entries": [
       "financial-operations"
@@ -714,6 +720,12 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
   },
   {
     "code": "finance:reports:view",
+    "entries": [
+      "financial-operations"
+    ]
+  },
+  {
+    "code": "finance:subledger:retry",
     "entries": [
       "financial-operations"
     ]

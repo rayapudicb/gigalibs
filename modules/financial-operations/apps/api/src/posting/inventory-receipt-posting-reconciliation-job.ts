@@ -7,6 +7,7 @@ import {
   reconcileInventoryReceiptPosting,
   type InventoryReceiptPostingReconciliationV1,
 } from './inventory-receipt-posting-reconciliation.js';
+import { runInventoryFiscalReplicaSnapshotSweep } from '../subledger/inventory-fiscal-replica-snapshot-sweep.js';
 
 const CONSUMER = 'finance.inventory-subledger';
 const SYSTEM_ACTOR = 'system:inventory-receipt-posting-reconciliation';
@@ -59,6 +60,7 @@ export async function runInventoryReceiptPostingReconciliationSweep(
   if (!locked) return { tenantsChecked: 0, unbalancedTenants: 0 };
 
   try {
+  await runInventoryFiscalReplicaSnapshotSweep(database);
   const eventType = inventoryReceiptCompletedPostingPolicyV1.eventType;
   const rows = await database.relayCall<{ tenant_id: string }>(
     'list_inventory_receipt_posting_reconciliation_tenants',
@@ -126,6 +128,7 @@ export class InventoryReceiptPostingReconciliationJob
       return;
     }
     this.logger.log(`Inventory receipt posting reconciliation every ${this.jobConfig.intervalMs} ms.`);
+    void this.tick();
     this.timer = setInterval(() => void this.tick(), this.jobConfig.intervalMs);
     this.timer.unref();
   }

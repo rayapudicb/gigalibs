@@ -51,6 +51,7 @@ import type pg from 'pg';
 import { SCHEMA, TOPIC } from '../config.js';
 import { DatabaseService } from '../database.service.js';
 import { assertInventoryReceiptFinancePeriodOpenFromReplica } from './finance-period-replica-guard.js';
+import { InventoryPostingCutoffService } from './inventory-posting-cutoff.service.js';
 import { runInventoryReceiptTransition, type ReceiptLifecycleDocument } from './receipt-lifecycle.js';
 
 /**
@@ -110,7 +111,10 @@ export function validateCustomExtensions(
 export class InventoryService {
   private readonly orgReplica = new OrganizationReplica(SCHEMA);
 
-  constructor(private readonly database: DatabaseService) {}
+  constructor(
+    private readonly database: DatabaseService,
+    private readonly postingCutoff: InventoryPostingCutoffService,
+  ) {}
 
   // ─── Warehouses ─────────────────────────────────────────────────────────────
 
@@ -894,6 +898,8 @@ export class InventoryService {
           now,
         ],
       );
+
+      await this.postingCutoff.tryPublishClearCutoffForReceiptDate(client, principal.tenantId, now);
 
     return this.fetchReceipt(client, principal.tenantId, receiptId);
   }

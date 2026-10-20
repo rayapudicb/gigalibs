@@ -7,8 +7,8 @@ import { financeRecordDispatcher, type FinanceRecordDependencies } from './finan
 import { FinanceVersionConflict } from './journal-drafts.service.js';
 
 // WI-OI-120l (U12): the general ledger's record adapters. The rules that hold before any database call: what a window
-// may change, which actions need a reason, version conflicts as 412, and that every action and picker the five Finance
-// windows name is one the API registers. The HTTP proof (scripts/verify-u12-general-ledger.mjs) covers the rest.
+// may change, which actions need a reason, version conflicts as 412, and that every action and picker the Finance
+// dictionary windows name is one the API registers. The HTTP proof (scripts/verify-u12-general-ledger.mjs) covers the rest.
 
 const dictionary = new URL('../../../../dictionary/', import.meta.url);
 const id = randomUUID();
@@ -39,11 +39,11 @@ async function status(promise: Promise<unknown>): Promise<number> {
 }
 
 describe('Finance record adapters (U12)', () => {
-  it('registers every entity, action and picker the five Finance windows name', () => {
+  it('registers every entity, action and picker the Finance dictionary windows name', () => {
     const { records } = dispatcher();
     const registry = records.registry();
     const files = readdirSync(dictionary).filter((name) => name.endsWith('.window.json'));
-    expect(files).toHaveLength(5);
+    expect(files.length).toBeGreaterThanOrEqual(5);
     for (const file of files) {
       const window = JSON.parse(readFileSync(new URL(file, dictionary), 'utf8'));
       const definition = window.definition.dictionary;

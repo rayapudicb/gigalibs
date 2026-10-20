@@ -1,9 +1,9 @@
 # WI-OI-120bq: make Table 2 releasable — fix the Security review findings
 
-- **Status:** Built (partial, 2026-10-20): Finance migration **13** (H1 source-document idempotency, M1 relay revokes),
-  Inventory **7** (M2 receipt-only lease, M1 revokes), book currency on receipt posting (H3 partial), L1 quantity schema,
-  L3 reconciliation advisory lock. **Open:** H2 retry + period-scoped close, H3 per-product standard costs + API, M3
-  posting-cutoff relay, full stack proof, Security re-review. Implementer: Cursor. Reviewer: Claude Code.
+- **Status:** Built (2026-10-20, uncommitted): Finance **13–14**, Inventory **7–8**; H2 retry endpoint + raw body + period-scoped
+  close; H3 product standard costs + book currency throughout `costing.service.ts`; M3 cutoff event + Finance confirmation
+  table; L1/L3 from prior slice. **Open:** metadata window, pg_proc M1 integration test, stack proof + `test:minimal-p2p-o2c`,
+  Claude re-review. Implementer: Cursor. Reviewer: Claude Code.
 - **Work item:** WI-OI-120 (Table 2; ADR-0007, ADR-0013, ADR-0033 D3).
 - **Size:** L.
 - **Source:** [TABLE-2-SECURITY-REVIEW-2026-10-20.md](../work/TABLE-2-SECURITY-REVIEW-2026-10-20.md) — findings H1–H3,

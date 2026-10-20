@@ -12,3 +12,5 @@
 000011_finance_inventory_posting_reconciliation_job.up.sql
 000012_finance_inventory_outbound_relay.up.sql
 000013_finance_table2_hardening.up.sql
+000014_finance_table2_releasability.up.sql
+000015_finance_d1_replica_hardening.up.sql

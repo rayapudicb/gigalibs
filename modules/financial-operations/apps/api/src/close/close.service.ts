@@ -90,7 +90,7 @@ export class CloseService {
       const now = new Date().toISOString();
 
       if (isLocking && input.subledgerType === 'INVENTORY') {
-        await assertInventoryReceiptPostingReadyForClose(client, SCHEMA, tenantId);
+        await assertInventoryReceiptPostingReadyForClose(client, SCHEMA, tenantId, input.fiscalPeriodId);
       }
 
       const upsertRes = await client.query(
@@ -642,7 +642,17 @@ export class CloseService {
     input: ExecuteYearEndCloseInputV1,
   ): Promise<YearEndCloseRunV1> {
     return this.database.withTenantTransaction(tenantId, async (client: PoolClient) => {
-      await assertInventoryReceiptPostingReadyForClose(client, SCHEMA, tenantId);
+      const closingPeriod = await client.query<{ id: string }>(
+        `SELECT id FROM ${SCHEMA}.fiscal_periods
+          WHERE tenant_id = $1 AND fiscal_year_id = $2
+          ORDER BY end_date DESC
+          LIMIT 1`,
+        [tenantId, input.fiscalYearId],
+      );
+      const closingPeriodId = closingPeriod.rows[0]?.id;
+      if (closingPeriodId) {
+        await assertInventoryReceiptPostingReadyForClose(client, SCHEMA, tenantId, closingPeriodId);
+      }
 
       // 1. Fetch book currency
       const bookRes = await client.query(

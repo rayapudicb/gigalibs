@@ -1,7 +1,6 @@
 # WI-OI-120bp: remove the direct Finance ⇄ Inventory database coupling (F1.4, F2.5)
 
-- **Status:** Approved for implementation (owner, 2026-10-20: "hand over this to cursor 120bp, D1"), D1 as recommended
-  (local period replica). Implementer: Cursor. Found while fixing `pnpm verify`.
+- **Status:** Built (2026-10-20). Committed **`6ea5a927`**. Implementer: Cursor. Found while fixing `pnpm verify`.
 - **Work item:** WI-OI-120 (Table 2; ADR-0007, ADR-0013, ADR-0033 D3).
 - **Size:** L. Two modules, one Finance migration, one new signed relay with its own keys, module-host settings,
   the F2.7 proof script, tests and a run on the isolated test stack.
@@ -77,9 +76,8 @@ Finance (ADR-0033 D3), now also in the other direction.
       `set_receipt_finance_posting_status` only in migration 5 down; Inventory no longer depends on `@gigalibs/posting-rules`.
 - [x] Unit tests: `inventory-inbox.test.ts` (outbox on post/reject), `finance-inbox.test.ts` (idempotent POSTED),
       `finance-period-replica-guard.test.ts` (no sync / missing period / locked).
-- [ ] On `gigalibs-test` with images from `build-test-stack-images.sh`: receipt Posted, period lock refuses completion;
-      `pnpm test:minimal-p2p-o2c` — **in progress** (test stack images rebuilding; prior run timed out on org replica
-      before module-host picked up 120bp).
+- [x] On `gigalibs-test` (`6ea5a927adaf-6d5a13c31ba2`): `pnpm test:minimal-p2p-o2c` **2/2 passed** (2026-10-21).
+      F2.7 HTTP proof **26/26** after 120bq cutoff fix (isolated proof DB + rebuilt module-host).
 - [ ] Independent review of the migrations, the relay keys and the inbox security before release.
 
 **Status:** Built (2026-10-20). Evidence: Finance migration **12**, Inventory **6**; `node scripts/verify-inventory-finance-relay.mjs`;

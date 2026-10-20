@@ -27,7 +27,8 @@ REVOKE ALL ON FUNCTION gigalibs_inventory.relay_settle_inventory_event(uuid, boo
 GRANT EXECUTE ON FUNCTION gigalibs_inventory.relay_lease_inventory_events(integer, integer) TO gigalibs_inventory_runtime;
 GRANT EXECUTE ON FUNCTION gigalibs_inventory.relay_settle_inventory_event(uuid, boolean, text, integer, integer) TO gigalibs_inventory_runtime;
 
-INSERT INTO gigalibs_inventory.schema_migrations (version) VALUES (7)
+INSERT INTO gigalibs_inventory.schema_migrations (version, name)
+VALUES (7, '000007_inventory_finance_relay_filter')
 ON CONFLICT (version) DO NOTHING;
 
 COMMIT;

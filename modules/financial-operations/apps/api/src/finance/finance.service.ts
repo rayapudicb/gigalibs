@@ -345,7 +345,7 @@ export class FinanceService {
       }
 
       if (input.status === 'LOCKED' || input.status === 'SOFT_CLOSED') {
-        await assertInventoryReceiptPostingReadyForClose(client, SCHEMA, tenantId);
+        await assertInventoryReceiptPostingReadyForClose(client, SCHEMA, tenantId, periodId);
       }
 
       const res = await client.query(
@@ -1257,6 +1257,7 @@ export class FinanceService {
       end_date: period.endDate,
       status: period.status,
       is_primary: Boolean(book.rows[0]?.is_primary),
+      version: period.version,
     });
   }
 

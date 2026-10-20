@@ -7,6 +7,7 @@ export const FINANCE_DEFINER_FUNCTIONS = [
   'relay_lease_finance_inventory_events',
   'relay_settle_finance_event',
   'list_inventory_receipt_posting_reconciliation_tenants',
+  'list_tenants_pending_inventory_fiscal_replica_snapshot',
 ] as const;
 
 export type FinanceDefinerFunction = (typeof FINANCE_DEFINER_FUNCTIONS)[number];
