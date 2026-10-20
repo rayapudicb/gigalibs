@@ -1,7 +1,21 @@
 # WI-OI-120bn: SPEED Stage 1 (desk screening) on GigaLibs: architecture alignment and R1 slices
 
-- **Status:** Proposed (2026-10-20). The owner asked: "lets work on this slice, can you align with the current
-  architecture".
+- **Status:** Approved 2026-10-20 (owner: "approved 120bn as recommended"); in progress. S1 is Built and committed
+  (`68be9379` on `feat/speed-s1-engines`, WI-OI-120br). The owner asked first: "lets work on this slice, can you align
+  with the current architecture".
+- **Decisions (all as recommended, 2026-10-20):**
+  - **D1** dedicated on-premises instance from the `speed-lab` solution bundle, not a separate application;
+  - **D2** RDKit WebAssembly inside the module, no Python;
+  - **D3** append-only, field-level audit (R1) and Part 11 e-signature (R2) as platform services;
+  - **D4** tenant OIDC to the site's AD FS; administrator-created accounts for the pilot;
+  - **D5** SPEED runs now, in parallel worktrees, without displacing the Phase 1 writer;
+  - **D6** R1 is a non-validated pilot: every Must except workflow, e-signature, library governance and structure
+    input, which come in R2;
+  - **D7** one product, two deployments: a SaaS workspace by entitlement, or a dedicated lab instance;
+  - **D8** no AI in R1; optional AI extraction in R2 at the earliest, run inside the deployment, every value confirmed
+    by the user;
+  - **D9** the library holds curated entries written by the process safety specialist, each citing its source; no
+    copied text; bulk loading only under a licence.
 - **Work item:** WI-OI-120 (pharma practice; follows WI-OI-120bm). Requirements baseline: SPEED-BRD-FRD-001 v0.1
   (`~/Downloads/SPEED_Stage1_BRD_FRD.docx`).
 - **Size:** L overall, in 9 slices (S1–S9); each slice is its own card.
@@ -17,6 +31,18 @@ SPEED Stage 1 runs as a GigaLibs module:
 
 `docs/pharma/speed/SPEED-Stage1-Architecture-Alignment.md` (Word copy alongside). It maps every BRD requirement to a
 GigaLibs component. Its section 2 records the independent recomputation: TC-01 to TC-12 reproduce exactly.
+
+## Implementation plan (2026-10-20)
+
+`docs/pharma/speed/SPEED-Stage1-Implementation-Plan.md` (and `.docx`): the clickable mock mapped screen by screen and
+action by action onto the architecture, the target code layout and data model, R1 slices S1–S9 and R2 slices
+S10–S15 with proofs, dependencies, sizes and agents, and the order (S1 can start in its own worktree). It assumes
+D1–D6 as recommended.
+
+**v1.2 (2026-10-20):** the mock is the UI, driven by metadata (calculation panels placed by the dictionary; platform
+slice S2b adds metadata panels); cross-check against the owner's BP-01 blueprint, Stage 1 note and reference route
+(section 9) adds decisions **D7** (SaaS and lab instance from one product), **D8** (AI extraction and retrieval,
+R2 at the earliest) and **D9** (reference literature as cited curated entries, not copied text).
 
 ## Decisions for the owner (alignment section 4)
 

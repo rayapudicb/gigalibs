@@ -32,6 +32,14 @@ keeps the full rules.
 
 **WI-OI-120bq (2026-10-20, Approved; Cursor after 120bp):** make Table 2 releasable — fix the Security review's H1–H3, M1–M3, L1–L3 (per-product standard cost, book currency, retry for rejected postings, period-scoped close, REVOKE on definer functions, filtered relay, cut-off confirmation). Card: [WI-OI-120bq](tasks/WI-OI-120bq.md); prompt: [PROMPT-2026-10-20-CURSOR-120bq.md](handoff/PROMPT-2026-10-20-CURSOR-120bq.md). Then Claude re-review → F2.9 accountant sign-off → release worktree → owner deploy.
 
+**WI-OI-120br (2026-10-20, Built, committed `68be9379` on its branch):** SPEED S1 engine package `packages/process-safety-engines` in worktree `gigalibs-speed-s1` (branch `feat/speed-s1-engines`): BRD TC-01–TC-12 pass, 40 tests, coverage 98.5 % lines / 93.0 % branches; criteria, library and element data are inputs (no hard-coded thresholds). Card: [WI-OI-120br](tasks/WI-OI-120br.md).
+
+**WI-OI-120bn (2026-10-20, Approved):** SPEED Stage 1 approved with D1–D9 as recommended (owner). S1 done; next S2b (metadata panels, own worktree, no overlap with Cursor); S2 (audit) after 120bp/120bq; S3 (module) after S2 and S2b. Plan v1.3: [SPEED-Stage1-Implementation-Plan.md](../docs/pharma/speed/SPEED-Stage1-Implementation-Plan.md).
+
+**WI-OI-120bs (2026-10-20, Built, committed `ad75a0f1` on its branch):** SPEED S2b metadata panels in worktree `gigalibs-speed-s2b` (branch `feat/speed-s2b-metadata-panels` from `6ea5a927`): modules register panels in `spec.ui.panels`, windows place them with typed props, the compiler refuses anything unregistered, foreign or mistyped, the renderer draws registered components or names a missing one. All 46 shipped windows compile to identical checksums; build and every audit pass. Card: [WI-OI-120bs](tasks/WI-OI-120bs.md).
+
+**WI-OI-120bt (2026-10-21, Built, docs):** SPEED screen specifications for S3–S7: every mock screen as windows, fields and 8 registered panels with typed props, all states, the message catalogue for the engine codes, token mapping, accessibility and acceptance checks. Found: S7 needs engine functions `actionList` and `stage2Plan`, and interaction rules carry their recommended Stage 2 test (plan v1.4). [Screen specifications](../docs/pharma/speed/SPEED-Stage1-Screen-Specifications.md); card [WI-OI-120bt](tasks/WI-OI-120bt.md).
+
 **Batch acceptance:** [PHASE-1-CM1-CHECKLIST.md](tasks/PHASE-1-CM1-CHECKLIST.md) — one deploy, one journey, tick all five rows.
 
 **Table 2 engines (another agent, 2026-10-18; tracker [TABLE-2-ENGINES.md](TABLE-2-ENGINES.md)):**
