@@ -18,7 +18,16 @@ const ACCENT = '1F4E79';
 const BODY_SIZE = 20; // half-points (10 pt)
 const CONTENT_WIDTH = 9026; // A4 with 1-inch margins, in DXA
 
-const TITLE = 'Pharma Specification Suite: Agent Investigation and Spec-Driven Implementation Plan on GigaLibs';
+const TITLE = process.env.DOC_TITLE || 'Pharma Specification Suite: Agent Investigation and Spec-Driven Implementation Plan on GigaLibs';
+const SUBTITLE = process.env.DOC_SUBTITLE || 'Module-by-module investigation by the GigaLibs agent organisation (pharma practice), with GxP classification, specification sets and implementation plans; and a worked example of SPEED Stage-1 desk screening.';
+const VERSION = process.env.DOC_VERSION || '1.0';
+const DATE = process.env.DOC_DATE || '19 October 2026';
+const CARD = process.env.DOC_CARD || 'WI-OI-120bm';
+const HEADER = process.env.DOC_HEADER || 'GigaLibs · Pharma specification suite: implementation plan · v1.0';
+const SOURCE = process.env.DOC_SOURCE || "The owner's Pharma Tech Spec Suite v2 (company and product names removed)";
+const PREPARED = process.env.DOC_PREPARED || 'GigaLibs agent organisation: pharma and life-sciences practice (see section 3)';
+const REVIEW = process.env.DOC_REVIEW || 'Head of QA · Process safety expert · Regulatory CMC lead · Data protection officer · Legal counsel (licensing)';
+const BASELINE = process.env.DOC_BASELINE || 'GigaLibs, release 1d8d2634 on UAT (19 October 2026); agent organisation WI-OI-120bl';
 
 function decode(s) {
   return String(s)
@@ -172,10 +181,10 @@ for (const t of marked.lexer(md)) block(t, body);
 const cover = [
   new Paragraph({ spacing: { before: 2400, after: 200 }, children: [new TextRun({ text: 'GigaLibs', bold: true, size: 28, color: ACCENT, font: FONT })] }),
   new Paragraph({ spacing: { after: 300 }, children: [new TextRun({ text: TITLE, bold: true, size: 44, color: '1F1F1F', font: FONT })] }),
-  new Paragraph({ spacing: { after: 120 }, children: [new TextRun({ text: 'Module-by-module investigation by the GigaLibs agent organisation (pharma practice), with GxP classification, specification sets and implementation plans; and a worked example of SPEED Stage-1 desk screening.', size: 24, color: '404040' })] }),
-  new Paragraph({ spacing: { before: 600, after: 60 }, children: [new TextRun({ text: 'Version 1.0  ·  19 October 2026', size: 22 })] }),
+  new Paragraph({ spacing: { after: 120 }, children: [new TextRun({ text: SUBTITLE, size: 24, color: '404040' })] }),
+  new Paragraph({ spacing: { before: 600, after: 60 }, children: [new TextRun({ text: `Version ${VERSION}  ·  ${DATE}`, size: 22 })] }),
   new Paragraph({ spacing: { after: 60 }, children: [new TextRun({ text: 'Status: Proposal for owner review. Not a validated document.', size: 22, bold: true })] }),
-  new Paragraph({ spacing: { after: 60 }, children: [new TextRun({ text: 'Card: WI-OI-120bm', size: 22 })] }),
+  new Paragraph({ spacing: { after: 60 }, children: [new TextRun({ text: `Card: ${CARD}`, size: 22 })] }),
   new Paragraph({ spacing: { after: 60 }, children: [new TextRun({ text: 'Confidential: internal planning document', size: 22, italics: true })] }),
   new Paragraph({ children: [new PageBreak()] }),
   new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun('Document control')] }),
@@ -194,13 +203,13 @@ const ctrl = (rows) => {
 };
 cover.push(ctrl([
   ['Document', TITLE],
-  ['Version', '1.0 (19 October 2026)'],
-  ['Prepared by', 'GigaLibs agent organisation: pharma and life-sciences practice (see section 3)'],
-  ['Source', "The owner's Pharma Tech Spec Suite v2 (company and product names removed)"],
-  ['Platform baseline', 'GigaLibs, release 1d8d2634 on UAT (19 October 2026); agent organisation WI-OI-120bl'],
-  ['Review required', 'Head of QA · Process safety expert · Regulatory CMC lead · Data protection officer · Legal counsel (licensing)'],
+  ['Version', `${VERSION} (${DATE})`],
+  ['Prepared by', PREPARED],
+  ['Source', SOURCE],
+  ['Platform baseline', BASELINE],
+  ['Review required', REVIEW],
   ['Approval', 'Owner (pending)'],
-  ['Change history', '1.0: first issue'],
+  ['Change history', `${VERSION}: first issue`],
 ]));
 cover.push(new Paragraph({ children: [new PageBreak()] }));
 cover.push(new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun('Contents')] }));
@@ -234,7 +243,7 @@ const doc = new Document({
   },
   sections: [{
     properties: { page: { size: { width: 11906, height: 16838 }, margin: { top: 1440, bottom: 1440, left: 1440, right: 1440 } } },
-    headers: { default: new Header({ children: [new Paragraph({ border: { bottom: { style: BorderStyle.SINGLE, size: 4, color: 'A6A6A6', space: 1 } }, children: [new TextRun({ text: 'GigaLibs · Pharma specification suite: implementation plan · v1.0', size: 16, color: '808080' })] })] }) },
+    headers: { default: new Header({ children: [new Paragraph({ border: { bottom: { style: BorderStyle.SINGLE, size: 4, color: 'A6A6A6', space: 1 } }, children: [new TextRun({ text: HEADER, size: 16, color: '808080' })] })] }) },
     footers: { default: new Footer({ children: [new Paragraph({ tabStops: [{ type: TabStopType.RIGHT, position: CONTENT_WIDTH }], children: [
       new TextRun({ text: 'Proposal for owner review. Not a validated document.', size: 16, color: '808080' }),
       new TextRun({ children: ['\tPage ', PageNumber.CURRENT, ' of ', PageNumber.TOTAL_PAGES], size: 16, color: '808080' }),
