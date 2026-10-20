@@ -26,6 +26,8 @@ keeps the full rules.
 
 **Table 1 audit (owner 2026-10-19):** done → [work/TABLE-1-AUDIT-2026-10-19.md](work/TABLE-1-AUDIT-2026-10-19.md). **T3 (120ad)** after Table 1 backlog starts. Dev rhythm: [OWNER-DEV-RHYTHM-2026-10-19.md](OWNER-DEV-RHYTHM-2026-10-19.md) (local compose, autonomous Table 1 slices).
 
+**WI-OI-120bo (2026-10-20, Built):** UAT module-host restored (owner) and verified. Prevention built: release-worktree rule on 29 UAT-acting scripts, compose wrapper limited to isolated project `gigalibs-test`, `pnpm test:minimal-p2p-o2c` **2 passed** on a fresh test database with no manual SQL. Card: [WI-OI-120bo](tasks/WI-OI-120bo.md). UAT cleanup done by the owner and verified. Open: commit on "commit".
+
 **Batch acceptance:** [PHASE-1-CM1-CHECKLIST.md](tasks/PHASE-1-CM1-CHECKLIST.md) — one deploy, one journey, tick all five rows.
 
 **Table 2 engines (another agent, 2026-10-18; tracker [TABLE-2-ENGINES.md](TABLE-2-ENGINES.md)):**

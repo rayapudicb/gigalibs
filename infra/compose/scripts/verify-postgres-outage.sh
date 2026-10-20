@@ -5,6 +5,10 @@
 # Usage: EVIDENCE_PATH=<path> bash infra/compose/scripts/verify-postgres-outage.sh
 set -euo pipefail
 
+# WI-OI-120bo: acts on the database and containers named in .env (UAT), so it runs only from the release worktree.
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/release-worktree.sh"
+gigalibs_require_release_worktree "$(basename "${BASH_SOURCE[0]}")"
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 COMPOSE_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 LOCAL_ENV="${COMPOSE_DIR}/.env"

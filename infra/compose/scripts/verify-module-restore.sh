@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# WI-OI-120bo: acts on the database and containers named in .env (UAT), so it runs only from the release worktree.
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/release-worktree.sh"
+gigalibs_require_release_worktree "$(basename "${BASH_SOURCE[0]}")"
+
 # G5 backup/restore drill for the Workforce and CMMS module schemas (WI-OI-068 to WI-OI-071). Dumps both schemas
 # from the live local database, restores them into a throwaway database, and proves the restore is complete and
 # still protected:

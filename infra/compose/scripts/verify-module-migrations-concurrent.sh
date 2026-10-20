@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# WI-OI-120bo: acts on the database and containers named in .env (UAT), so it runs only from the release worktree.
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/release-worktree.sh"
+gigalibs_require_release_worktree "$(basename "${BASH_SOURCE[0]}")"
+
 # Regression for the 2026-09-26 "tuple concurrently updated" failure: Workforce and Geospatial migration
 # jobs started together collided on shared catalog rows (GRANT CONNECT ON DATABASE). Runs both module
 # runners in parallel against a throwaway database for several rounds; every run must succeed.

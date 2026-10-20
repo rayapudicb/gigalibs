@@ -28,3 +28,7 @@ BEGIN
   END IF;
 END;
 $$;
+
+INSERT INTO gigalibs_inventory.schema_migrations (version, name)
+VALUES (5, '000005_inventory_receipt_finance_posting_status')
+ON CONFLICT (version) DO NOTHING;

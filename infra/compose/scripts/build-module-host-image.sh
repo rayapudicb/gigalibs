@@ -10,8 +10,9 @@ REPO_ROOT="$(cd "${COMPOSE_DIR}/../.." && pwd)"
 
 "${SCRIPT_DIR}/docker-disk-guard.sh" check
 
-BASE_ENV="${COMPOSE_DIR}/.env"
-HOST_ENV="${COMPOSE_DIR}/.env.module.host"
+ENV_SUFFIX="${GIGALIBS_COMPOSE_ENV_SUFFIX:-}"
+BASE_ENV="${COMPOSE_DIR}/.env${ENV_SUFFIX}"
+HOST_ENV="${COMPOSE_DIR}/.env${ENV_SUFFIX}.module.host"
 INDEX="${COMPOSE_DIR}/generated/modules.json"
 DOCKERFILE="${COMPOSE_DIR}/docker/Dockerfile"
 for required_file in "${BASE_ENV}" "${HOST_ENV}" "${INDEX}"; do
@@ -101,3 +102,4 @@ if [[ "${nest_copies}" != "1" ]]; then
 fi
 
 echo "Built the module host for ${HOSTED}: ${IMAGE} $(docker image inspect "${IMAGE}" --format '{{.Id}}')"
+echo "Next: bash infra/compose/scripts/up-table1-module-host.sh"

@@ -11,8 +11,9 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 COMPOSE_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
-MODULE_ENV="${COMPOSE_DIR}/.env.modules"
-WORKFORCE_ENV="${COMPOSE_DIR}/.env.workforce"
+ENV_SUFFIX="${GIGALIBS_COMPOSE_ENV_SUFFIX:-}"
+MODULE_ENV="${COMPOSE_DIR}/.env${ENV_SUFFIX}.modules"
+WORKFORCE_ENV="${COMPOSE_DIR}/.env${ENV_SUFFIX}.workforce"
 
 for file in "${MODULE_ENV}" "${WORKFORCE_ENV}"; do
   if [[ ! -f "${file}" ]]; then

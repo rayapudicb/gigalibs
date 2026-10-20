@@ -9,7 +9,8 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 COMPOSE_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
-BASE_ENV="${COMPOSE_DIR}/.env"
+ENV_SUFFIX="${GIGALIBS_COMPOSE_ENV_SUFFIX:-}"
+BASE_ENV="${COMPOSE_DIR}/.env${ENV_SUFFIX}"
 INDEX="${COMPOSE_DIR}/generated/modules.json"
 
 MODULE="${1:-}"
@@ -17,7 +18,7 @@ if [[ ! "${MODULE}" =~ ^[a-z0-9]+(-[a-z0-9]+)*$ || "${MODULE}" == host || "${MOD
   echo "Usage: $(basename "$0") <module>" >&2
   exit 2
 fi
-TARGET_ENV="${COMPOSE_DIR}/.env.module.${MODULE}"
+TARGET_ENV="${COMPOSE_DIR}/.env${ENV_SUFFIX}.module.${MODULE}"
 if [[ -e "${TARGET_ENV}" ]]; then
   echo "Error: ${TARGET_ENV} already exists; it is never replaced." >&2
   exit 1
@@ -83,7 +84,7 @@ RUNTIME_URL="$(
 } >"${TEMP_ENV}"
 mv "${TEMP_ENV}" "${TARGET_ENV}"
 trap 'rm -rf "${KEY_DIR}"' EXIT
-HOST_ENV="${COMPOSE_DIR}/.env.module.host"
+HOST_ENV="${COMPOSE_DIR}/.env${ENV_SUFFIX}.module.host"
 if [[ "${HOSTING}" == host && ! -e "${HOST_ENV}" ]]; then
   ( umask 077
     printf '# The shared module host (WI-OI-085e): its image identity. refresh-source-identity.sh keeps it current.\n' >"${HOST_ENV}"

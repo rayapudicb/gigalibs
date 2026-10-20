@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# WI-OI-120bo: acts on the database and containers named in .env (UAT), so it runs only from the release worktree.
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/release-worktree.sh"
+gigalibs_require_release_worktree "$(basename "${BASH_SOURCE[0]}")"
+
 # WI-OI-038 CMMS runtime certification against the exact CMMS image, in throwaway databases:
 #   1. clean install of the ordered runtime manifest (1, 2, 10, 11, 12, 13, 14);
 #   2. supported upgrade from an installed prototype foundation (version 2) to the canonical core;

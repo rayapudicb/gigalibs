@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# WI-OI-120bo: acts on the database and containers named in .env (UAT), so it runs only from the release worktree.
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/release-worktree.sh"
+gigalibs_require_release_worktree "$(basename "${BASH_SOURCE[0]}")"
+
 # G5 resilience drill for the CMMS ↔ Workforce relay (WI-OI-068). Each peer is stopped in turn while the other
 # produces facts:
 #   - Workforce down: a CMMS staffing request stays pending, retried with back-off, never dead-lettered; after

@@ -16,3 +16,6 @@ AS $$
     FROM gigalibs_finance.subledger_posting_register r
    WHERE r.consumer_name = p_consumer_name AND r.event_type = p_event_type
 $$;
+
+INSERT INTO gigalibs_finance.schema_migrations (version) VALUES (11)
+ON CONFLICT (version) DO NOTHING;

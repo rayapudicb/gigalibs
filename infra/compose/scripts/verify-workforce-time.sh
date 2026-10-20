@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# WI-OI-120bo: acts on the database and containers named in .env (UAT), so it runs only from the release worktree.
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/release-worktree.sh"
+gigalibs_require_release_worktree "$(basename "${BASH_SOURCE[0]}")"
+
 # WI-OI-069 time and attendance certification against the running Workforce API (workforce-time.mjs runs inside
 # the container). Run-scoped tenants wi-oi-069-cert-*: device idempotency (resend and cross-person reuse), fence
 # evidence and exceptions (outside, unverified, no location), late, future and stale punches, unlinked users,

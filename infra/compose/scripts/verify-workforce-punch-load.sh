@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# WI-OI-120bo: acts on the database and containers named in .env (UAT), so it runs only from the release worktree.
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/release-worktree.sh"
+gigalibs_require_release_worktree "$(basename "${BASH_SOURCE[0]}")"
+
 # WI-OI-069 punch ingestion baseline against the running Workforce API: TOTAL distinct punches (default 12,000)
 # from 100 linked workers with IN_FLIGHT requests outstanding (default 200), every tenth punch resent, 429s
 # retried with the same event id. Asserts exactly-once storage and prints punches per minute, the input to the

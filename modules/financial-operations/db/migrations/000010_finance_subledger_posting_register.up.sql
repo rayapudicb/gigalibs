@@ -30,4 +30,7 @@ CREATE POLICY subledger_posting_register_tenant_isolation ON gigalibs_finance.su
   USING (tenant_id = NULLIF(current_setting('app.tenant_id', true), ''))
   WITH CHECK (tenant_id = NULLIF(current_setting('app.tenant_id', true), ''));
 
+INSERT INTO gigalibs_finance.schema_migrations (version) VALUES (10)
+ON CONFLICT (version) DO NOTHING;
+
 COMMIT;

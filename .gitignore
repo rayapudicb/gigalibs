@@ -28,6 +28,8 @@ allure-results/
 !.env.example
 e2e/uat.env
 e2e/.env.uat
+# WI-OI-120bo: every e2e credential file (uat.env, test.env, …); the *.env.example templates stay tracked.
+e2e/*.env
 .direnv/
 .envrc
 *.log

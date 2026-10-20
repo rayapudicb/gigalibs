@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# WI-OI-120bo: acts on the database and containers named in .env (UAT), so it runs only from the release worktree.
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/release-worktree.sh"
+gigalibs_require_release_worktree "$(basename "${BASH_SOURCE[0]}")"
+
 # Production hardening: outbox and inbox retention for Workforce and CMMS. Seeds a run-scoped tenant with aged and
 # recent rows (as the schema owner), then runs each module's `outbox_sweep` as that module's runtime role, exactly as
 # the services do, and proves what is removed and what is kept:

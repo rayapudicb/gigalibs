@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# WI-OI-120bo: acts on the database and containers named in .env (UAT), so it runs only from the release worktree.
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/release-worktree.sh"
+gigalibs_require_release_worktree "$(basename "${BASH_SOURCE[0]}")"
+
 # WI-OI-063 / ADR-0006 exit gate: sub-tree query p95 under 8 ms at 50,000 places. Runs in a throwaway
 # database: replays the canonical migrations, loads two tenants of 50,505 places each
 # (5 regions x 100 districts x 100 sites) and times 200 scoped sub-tree queries as the RLS-bound runtime role.

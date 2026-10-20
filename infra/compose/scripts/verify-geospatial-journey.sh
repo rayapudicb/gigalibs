@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# WI-OI-120bo: acts on the database and containers named in .env (UAT), so it runs only from the release worktree.
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/release-worktree.sh"
+gigalibs_require_release_worktree "$(basename "${BASH_SOURCE[0]}")"
+
 # WI-OI-063 places-journey certification against the running local Geospatial API.
 # Creates attributable certification records under two run-scoped tenants (wi-oi-063-cert-*):
 # tenant A builds and re-paths a hierarchy, restarts, reads and updates; tenant B is denied throughout.

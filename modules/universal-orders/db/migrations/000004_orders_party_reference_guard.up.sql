@@ -14,10 +14,10 @@ BEGIN
   IF NOT EXISTS (
     SELECT 1
     FROM parties
-    WHERE tenant_id = p_tenant_id
+    WHERE "tenantId" = p_tenant_id
       AND id = p_party_id
       AND status = 'ACTIVE'
-      AND archived_at IS NULL
+      AND "archivedAt" IS NULL
   ) THEN
     RAISE EXCEPTION 'Customer party % is not an active workspace party for tenant %.', p_party_id, p_tenant_id
       USING ERRCODE = '23503';

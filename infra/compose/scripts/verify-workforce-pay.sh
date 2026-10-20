@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# WI-OI-120bo: acts on the database and containers named in .env (UAT), so it runs only from the release worktree.
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/release-worktree.sh"
+gigalibs_require_release_worktree "$(basename "${BASH_SOURCE[0]}")"
+
 # WI-OI-070 pay readiness certification against the running Workforce API (workforce-pay.mjs runs inside the
 # container). Run-scoped tenants wi-oi-070-cert-*: a Californian and an Indian week entered as corrections and
 # approved four-eyes; reference packs; rate history (overlap and back-dating refused); missing rate refused; golden

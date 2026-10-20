@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# WI-OI-120bo: acts on the database and containers named in .env (UAT), so it runs only from the release worktree.
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/release-worktree.sh"
+gigalibs_require_release_worktree "$(basename "${BASH_SOURCE[0]}")"
+
 # WI-OI-064b drill-down performance certification (roadmap P3 exit: p95 < 20 ms on 1,000,000 facts).
 # Loads synthetic facts into one run-scoped certification tenant (wi-oi-064b-perf-*), rebuilds rollups through the
 # running API, checks totals against the raw facts, measures drill-downs through the API, then deletes the facts

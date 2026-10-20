@@ -4,10 +4,11 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 COMPOSE_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 REPO_ROOT="$(cd "${COMPOSE_DIR}/../.." && pwd)"
-LOCAL_ENV="${COMPOSE_DIR}/.env"
-MODULE_ENV="${COMPOSE_DIR}/.env.modules"
-WORKFORCE_ENV="${COMPOSE_DIR}/.env.workforce"
-GEOSPATIAL_ENV="${COMPOSE_DIR}/.env.geospatial"
+ENV_SUFFIX="${GIGALIBS_COMPOSE_ENV_SUFFIX:-}"
+LOCAL_ENV="${COMPOSE_DIR}/.env${ENV_SUFFIX}"
+MODULE_ENV="${COMPOSE_DIR}/.env${ENV_SUFFIX}.modules"
+WORKFORCE_ENV="${COMPOSE_DIR}/.env${ENV_SUFFIX}.workforce"
+GEOSPATIAL_ENV="${COMPOSE_DIR}/.env${ENV_SUFFIX}.geospatial"
 
 if [[ ! -f "${LOCAL_ENV}" ]]; then
   echo "Error: ${LOCAL_ENV} is required; run generate-credentials.sh first." >&2
@@ -80,7 +81,7 @@ if [[ -f "${GEOSPATIAL_ENV}" ]]; then
 fi
 
 # WI-OI-085b: each generated module keeps its image identity in .env.module.<name>.
-for GENERATED_ENV in "${COMPOSE_DIR}"/.env.module.*; do
+for GENERATED_ENV in "${COMPOSE_DIR}"/.env${ENV_SUFFIX}.module.*; do
   [[ -f "${GENERATED_ENV}" ]] || continue
   GENERATED_TEMP_ENV="$(mktemp "${COMPOSE_DIR}/.env-module-refresh.XXXXXX")"
   awk \

@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# WI-OI-120bo: acts on the database and containers named in .env (UAT), so it runs only from the release worktree.
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/release-worktree.sh"
+gigalibs_require_release_worktree "$(basename "${BASH_SOURCE[0]}")"
+
 # WI-OI-038 CMMS business-journey certification against the running local CMMS API (cmms-journey.mjs runs
 # inside the container). Creates attributable records under two run-scoped tenants (wi-oi-038-cert-*):
 # assets at two Geospatial-style sites, a counter meter, a stock ledger, a preventive schedule and work orders

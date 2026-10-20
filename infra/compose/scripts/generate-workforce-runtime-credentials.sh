@@ -3,8 +3,9 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 COMPOSE_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
-BASE_ENV="${COMPOSE_DIR}/.env"
-TARGET_ENV="${COMPOSE_DIR}/.env.workforce"
+ENV_SUFFIX="${GIGALIBS_COMPOSE_ENV_SUFFIX:-}"
+BASE_ENV="${COMPOSE_DIR}/.env${ENV_SUFFIX}"
+TARGET_ENV="${COMPOSE_DIR}/.env${ENV_SUFFIX}.workforce"
 
 if [[ ! -f "${BASE_ENV}" ]]; then
   echo "Error: ${BASE_ENV} is required; generate the base local profile first." >&2

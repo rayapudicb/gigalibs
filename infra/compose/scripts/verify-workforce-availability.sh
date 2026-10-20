@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# WI-OI-120bo: acts on the database and containers named in .env (UAT), so it runs only from the release worktree.
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/release-worktree.sh"
+gigalibs_require_release_worktree "$(basename "${BASH_SOURCE[0]}")"
+
 # WI-OI-066 availability, absence and calendar certification against the running Workforce API
 # (workforce-availability.mjs runs inside the container). Creates run-scoped records under two tenants
 # (wi-oi-066-cert-*): working weeks across a daylight-saving change and overnight; overlap refusal by the

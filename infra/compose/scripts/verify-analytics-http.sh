@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# WI-OI-120bo: acts on the database and containers named in .env (UAT), so it runs only from the release worktree.
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/release-worktree.sh"
+gigalibs_require_release_worktree "$(basename "${BASH_SOURCE[0]}")"
+
 # WI-OI-064a live verification of the running Analytics API: it trusts only the BFF-signed PlatformContextV1.
 # Creates attributable setup records for two run-scoped tenants (wi-oi-064-cert-*) and one revocation record.
 

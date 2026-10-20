@@ -7,7 +7,8 @@ REPO_ROOT="$(cd "${COMPOSE_DIR}/../.." && pwd)"
 
 "${SCRIPT_DIR}/docker-disk-guard.sh" check
 
-LOCAL_ENV="${COMPOSE_DIR}/.env"
+ENV_SUFFIX="${GIGALIBS_COMPOSE_ENV_SUFFIX:-}"
+LOCAL_ENV="${GIGALIBS_COMPOSE_LOCAL_ENV:-${COMPOSE_DIR}/.env${ENV_SUFFIX}}"
 DOCKERFILE="${COMPOSE_DIR}/docker/Dockerfile"
 PROFILE="${REPO_ROOT}/config/deployment-profiles/configuration-local-development-v1.json"
 

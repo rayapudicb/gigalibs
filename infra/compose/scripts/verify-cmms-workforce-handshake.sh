@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# WI-OI-120bo: acts on the database and containers named in .env (UAT), so it runs only from the release worktree.
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/release-worktree.sh"
+gigalibs_require_release_worktree "$(basename "${BASH_SOURCE[0]}")"
+
 # WI-OI-068 CMMS ↔ Workforce handshake certification (ADR-0007 option A) against the running CMMS and Workforce
 # APIs (cmms-workforce-handshake.mjs runs inside the CMMS container). Run-scoped tenants wi-oi-068-cert-*:
 #   staffing request → Workforce requirement → booking → CMMS projection; unknown capability refused with a
