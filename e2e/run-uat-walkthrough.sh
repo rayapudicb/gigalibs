@@ -48,7 +48,8 @@ prompt_admin_login() {
 
 # One sign-in check before anything runs, so a mistyped login costs one attempt, not one per step. Five failed
 # sign-ins within 15 minutes lock the account for 15 minutes (WI-OI-120e).
-for attempt in 1 2; do
+login_ok=0
+for attempt in 1 2 3 4 5 6 7 8; do
   prompt_admin_login
   answer="$(node -e '
     fetch(process.argv[1] + "/api/auth/login", {
@@ -57,19 +58,30 @@ for attempt in 1 2; do
       body: JSON.stringify({ email: process.env.E2E_UAT_ADMIN_EMAIL, password: process.env.E2E_UAT_ADMIN_PASSWORD }),
     }).then(async (r) => console.log(r.status, (await r.text()).slice(0, 160))).catch((e) => console.log(0, e.message));
   ' "$BASE")"
-  case "$answer" in
-    200*) echo "Signed in as $E2E_UAT_ADMIN_EMAIL."; break ;;
-    429*) echo "This account is locked after too many failed sign-ins; wait 15 minutes and run again."; exit 1 ;;
+  status="${answer%% *}"
+  case "$status" in
+    200) echo "Signed in as $E2E_UAT_ADMIN_EMAIL."; login_ok=1; break ;;
+    429) echo "This account is locked after too many failed sign-ins; wait 15 minutes and run again."; exit 1 ;;
+    503)
+      echo "Platform synchronizing (503); waiting 5s before retry (${attempt}/8)…"
+      sleep 5
+      ;;
     *)
       echo "Sign-in refused: ${answer#* }"
-      if [ "$attempt" = 2 ]; then
+      if [ "$attempt" -ge 8 ]; then
         echo "Check the login by signing in at $BASE/login, then run again."
         exit 1
       fi
-      unset E2E_UAT_ADMIN_EMAIL E2E_UAT_ADMIN_PASSWORD
+      if [ "$status" = "401" ] || [ "$status" = "403" ]; then
+        unset E2E_UAT_ADMIN_EMAIL E2E_UAT_ADMIN_PASSWORD
+      fi
       ;;
   esac
 done
+if [ "$login_ok" != 1 ]; then
+  echo "Sign-in preflight did not succeed after retries."
+  exit 1
+fi
 
 mode="${1:-}"
 if [ "$mode" = "--approvals" ] || [ "$mode" = "--ledger" ] || [ "$mode" = "--all" ]; then

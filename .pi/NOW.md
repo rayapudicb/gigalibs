@@ -14,10 +14,9 @@ keeps the full rules.
 
 **Owner, 2026-10-21 — Option 1 (dev first):** Finish CMMS in **main worktree only**; **no release/deploy** until Phase A is done. Runbook: [CMMS-DEV-THEN-DEPLOY.md](handoff/CMMS-DEV-THEN-DEPLOY.md). Logs: `tee /tmp/gigalibs-verify.log`, journey board `e2e/test-results/journey/index.html`.
 
-**Next dev task:** [WI-OI-120gd](tasks/WI-OI-120gd.md) — **Built** `9eb14717` (execute-own REST, journey labour tab,
-0-blocker assert); last run **`hrmlri`** still **6 blockers** on UAT until **Phase B**. **Phase B base:** stack on
-**`release/speed-uat` `76780730`**, not `9734dca9` alone (Claude **120cd** SPEED + CMMS same train). **No push** until
-owner says. UAT deploy **paused**. Leave maps/auth/softphone TSX unstaged (not **120gd**).
+**Next dev task:** [WI-OI-120bq](tasks/WI-OI-120bq.md) — Table 2 releasability (tests + `pnpm verify`; no UAT deploy).
+**120gd** product **Built** (`9eb14717`, journey **`i76bgm`** = **4** stage-5 blockers until **5180** `cmms-api` refresh;
+proof only). **T3** [WI-OI-120ad](tasks/WI-OI-120ad.md) in **Review**. **No push** until owner says. Leave maps/auth/softphone unstaged.
 
 **Not in this track:** reliability, floor kiosk, full EAM (Phase 6 **M-CM2** / roadmap P4b).
 
@@ -100,7 +99,7 @@ owner says. UAT deploy **paused**. Leave maps/auth/softphone TSX unstaged (not *
 
 ## Next implementation (Table 1 backlog, local compose)
 
-1. **WI-OI-120gd** — journey **0 blockers** — fixes in [WI-OI-120bu](tasks/WI-OI-120bu.md) **Built** (uncommitted): assignment-scoped WO list, technician `workspace-members` picker, journey asserts North unit + assignee. **Next:** owner release worktree deploy → re-run journey → tick [PHASE-1-CM1-CHECKLIST](tasks/PHASE-1-CM1-CHECKLIST.md).
+1. **WI-OI-120gd** — **Built** (product); journey proof when **5180** `cmms-api` includes **`9eb14717`** ([CMMS-DEV-THEN-DEPLOY.md](handoff/CMMS-DEV-THEN-DEPLOY.md)).
 2. **WI-OI-120ge** — **Done** in git **`0031a2f4`** (pushed); `pnpm audit:configuration-deployment-profile` passes.
 3. **WI-OI-120gf** — **In progress** (M-AR0): compose + module SDK; E1 build done in **WI-OI-120gw**.
 4. **WI-OI-120gg** — **Built** in git **`cdcbf2c9`** (pushed): vendor party guard mig **4**.

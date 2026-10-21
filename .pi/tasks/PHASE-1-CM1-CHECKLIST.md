@@ -6,7 +6,7 @@ Main tip: **`b679ce24`** on `feat/gigaops-convergence-core`.
 
 | # | Card | Built in git | UAT / journey evidence | Owner Done |
 |---|------|--------------|------------------------|------------|
-| 1 | [WI-OI-120bi](WI-OI-120bi.md) sign-off | mig **22**, e2e sign-off reopen | Journey: **0 blockers** on sign-off; CMMS mig **22** | ☐ |
+| 1 | [WI-OI-120bi](WI-OI-120bi.md) sign-off | mig **22**, e2e sign-off reopen | Journey **`i76bgm`**: **4** stage-5 blockers until local **cmms-api** rebuild; then **0** + sign-off | ☐ |
 | 2 | [WI-OI-120bj](WI-OI-120bj.md) AR zero-mock | AR invoice page + test | Deploy web; no fake verify button | ☐ |
 | 3 | [WI-OI-120bk](WI-OI-120bk.md) unit scope | R5 gate + journey N/S | Journey: North tech ≠ South WO | ☐ |
 | 4 | [WI-OI-120ag](WI-OI-120ag.md) record routes guard | guard + spec | Same release as CMMS windows | ☐ |

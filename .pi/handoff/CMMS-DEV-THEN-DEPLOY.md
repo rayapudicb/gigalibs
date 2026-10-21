@@ -75,3 +75,18 @@ docker inspect gigalibs-configuration-local-web-1 \
 identity games.
 
 **Unrelated local edits (leave unstaged):** `apps/workflow-platform` maps/auth/communications files are not **120gd**.
+
+## Local 5180: refresh CMMS API only (owner / release worktree)
+
+Main-branch agents must **not** run compose against `gigalibs-configuration-local` (**WI-OI-120bo**). After **`9eb14717`**
+is on your branch, rebuild **`cmms-api`** from a **`release/*`** checkout (same repo paths), then recreate the service on
+the stack that serves **5180**:
+
+```bash
+cd infra/compose
+unset GIGALIBS_COMPOSE_ENV_SUFFIX
+bash scripts/refresh-source-identity.sh
+# build target cmms-api only (see build-module-images.sh row for cmms-api)
+docker compose -f compose.yaml -f compose.modules.local.yaml up -d cmms-api --force-recreate
+pnpm e2e:uat:journey   # expect 0 blockers when image matches git
+```
