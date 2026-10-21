@@ -1,7 +1,9 @@
 # Security review request: WI-OI-120cd, SPEED on UAT
 
-- **Release:** `release/speed-uat` at `19048071` (worktree `gigalibs-release-speed`), on top of UAT's previous release
-  `9734dca9`. Review the range `9734dca9..19048071`: three commits, `23ab3916` (SPEED S1 to S7, 177 files),
+- **Release:** `release/speed-uat` at `a1765ce6` (worktree `gigalibs-release-speed`), on top of UAT's previous release
+  `9734dca9`. Review the range `9734dca9..a1765ce6`: four commits, `a1765ce6` (the kernel's subject context accepts a
+  tenant on an unexpired trial, as a login session does; `packages/auth-nest/src/auth.service.ts`; tenancy and access,
+  please look closely), `23ab3916` (SPEED S1 to S7, 177 files),
   `76780730` (R1 completion, 42 files; deployed 2026-10-21 by the owner before this review) and `19048071` (CMMS's
   work-orders window kept as `9734dca9` ships it, and a test that compiles every shipped window as activation does).
 - **Why a review:** plan v3 rule 2. The release adds a module schema and migrations, roles and permissions, gateway

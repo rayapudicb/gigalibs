@@ -1,7 +1,8 @@
 # WI-OI-120cd: SPEED on UAT — release SPEED onto the running release
 
-- **Status:** In progress: deployed to UAT 2026-10-21 (`76780730`); waiting for the owner's switch-on and the
-  independent Security review (not recorded before the deploy). The release was paused until SPEED's R1 use case was complete (owner, 2026-10-21: "complete all the
+- **Status:** In progress: SPEED live on UAT (`19048071`), windows active for "GigaLibs Global Enterprise"; release
+  `a1765ce6` (organization delivery for trial workspaces) building; then the owner's deploy and "Send to modules
+  again", the browser check, and the independent Security review (not recorded before the deploys).
   modules for a business use case then we can have the deployment process"); R1 completed at `fb21e5c8`. Earlier:
   owner, 2026-10-21, "start S9b it should be working on http://127.0.0.1:5180/speed", then chose "Release SPEED to UAT
   (5180)". Implementer: Claude Code.
@@ -118,6 +119,34 @@
   tests 107/107; API typecheck and lint clean. Images build as `190480718a16-39cbe470ecf7`; then a backup of the
   running `76780730`, the deploy check and the owner's deploy; the API activates SPEED's windows 15 seconds after it
   starts.
+- **Fix release ready:** 9 images `190480718a16-39cbe470ecf7` built from the clean tree; in the new API image all 40
+  shipped windows compile (offline probe). Backup `gigalibs_backup_20261021_094357Z` of the running `767807308cbb`,
+  checksum OK. Deploy script values set (previous release `76780730`); its tests 33/33; `--check` passed. The deploy's
+  later gates pre-checked read-only: web on `767807308cbb`/`aa1f6d1820e4`, cutover record present (546), 570 tables
+  held, no failed kernel ticks. Rollback for this step: redeploy `767807308cbb-aa1f6d1820e4` (no migration changes).
+- **Fix release deployed (owner, 2026-10-21):** "DEPLOY SMOKE PASSED: 190480718a16-39cbe470ecf7"; every migration
+  passed, every service healthy. Read-only check: the API's window activation logged no failure and activated
+  `speed-criteria`, `speed-library`, `speed-projects`, `speed-routes` and `speed-substances` for "GigaLibs Global
+  Enterprise" only; no other module's activation changed (CMMS 1072 active, none new); no failed kernel ticks. newuser
+  holds SPEED Administrator and SPEED Chemist. SPEED has no copy of the workspace's organization yet ("Send to modules
+  again" not yet pressed).
+
+- **Second defect (platform, found through SPEED):** Projects, Routes and Outcomes answered 503
+  (`OrganizationVersionPendingError`: SPEED has no copy of the workspace's organization). Every "Send to modules again"
+  and every activation of "GigaLibs Global Enterprise" since 2026-10-19 is QUARANTINED in `platform_outbox_events`
+  after 5 attempts with "The tenant is not active": `AuthService.getSubjectContext` (the kernel's context for work run
+  as a member) accepts only ACTIVE tenants, while a login session also accepts an unexpired TRIAL. UAT has no ACTIVE
+  tenant (34 TRIAL, 225 SUSPENDED, 101 CANCELLED), so organization delivery has never worked on UAT for any module; 23
+  deliveries of trial workspaces are quarantined (11 activations, 12 resends). No kernel schedules exist, so nothing
+  else starts. Fix (release commit `a1765ce6`, SPEED branch `c47a5c1e`, on the owner's "commit"): the session's rule (ACTIVE, or TRIAL with
+  `trialEndsAt` in the future); test: unexpired trial accepted, expired and open-ended trials refused; it fails
+  without the fix; auth and kernel tests 97 passed (13 skipped, database tests); typecheck clean; my lines lint-clean
+  (both files carry earlier format findings). The quarantined events stay quarantined; the owner presses "Send to
+  modules again" after the deploy. Needs the Security review (tenancy and access).
+- **Empty lists are by design:** SPEED ships no data (plan v3 rule 3). Criteria and library sets are loaded only as
+  whole packs through the API (`POST v1/criteria-sets`, `v1/library-sets`, then put in force); SPEED has no screen for
+  it yet, so the Criteria and Library windows offer no "New". The BRD reference packs are TEST FIXTURE and may go only
+  into a labelled test workspace (rule 2); "GigaLibs Global Enterprise" is newuser's only working workspace.
 
 ## Recovery plan
 
