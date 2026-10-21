@@ -59,7 +59,7 @@ function action(
 }
 
 /**
- * The actions before kilo-lab (FR-RPT-01; the mock's `buildActions`), in route order. A step whose gate fails yields
+ * The actions before kilo-lab (FR-RPT-01; the design prototype's `buildActions`), in route order. A step whose gate fails yields
  * only "the gate is failing" (FR-GATE-04). Route-level: an unreviewed library (BRD 16.2).
  */
 export function actionList(
@@ -203,7 +203,7 @@ function targetKey(target: Stage2Target): string {
 }
 
 /**
- * The Stage 2 test plan (the mock's `stage2Plan`): OB for review (DSC, or DSC and ARC when high), an
+ * The Stage 2 test plan (the design prototype's `stage2Plan`): OB for review (DSC, or DSC and ARC when high), an
  * estimated ΔHr (RC1), a missing, conservative or out-of-range TD24 (DSC or ARC), class 3 or worse (RC1 with
  * accumulation), evolved gas (gas measurement), and every interaction whose library rule names a test. Steps whose gate
  * fails are left out; each step, target and test appears once.
