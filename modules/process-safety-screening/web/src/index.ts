@@ -1,6 +1,12 @@
 export { GateWorkbenchPanel, GateWorkbenchView } from './GateWorkbenchPanel.js';
 export { RouteSummaryPanel, RouteSummaryView } from './RouteSummaryPanel.js';
-export { SpeedWorkspace, type SpeedWorkspaceProps } from './SpeedWorkspace.js';
+export {
+  SPEED_SECTIONS,
+  type SpeedSection,
+  SpeedWorkspace,
+  type SpeedWorkspaceProps,
+  surfaceOf,
+} from './SpeedWorkspace.js';
 export { CriteriaValuesPanel, CriteriaValuesView } from './CriteriaValuesPanel.js';
 export { GreenScorecardPanel, GreenScorecardView } from './GreenScorecardPanel.js';
 export { ObChartPanel, ObChartView } from './ObChartPanel.js';

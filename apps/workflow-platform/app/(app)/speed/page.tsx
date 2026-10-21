@@ -4,5 +4,5 @@ import { SpeedWorkspace } from '@gigalibs/process-safety-screening-web';
 
 export default async function Page() {
   const session = await verifiedSession(false);
-  return <SpeedWorkspace permissions={session.context?.permissions ?? []} />;
+  return <SpeedWorkspace section={"projects"} permissions={session.context?.permissions ?? []} />;
 }

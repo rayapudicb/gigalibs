@@ -112,6 +112,14 @@ describe('manifest-declared navigation equals the former sidebar tables', () => 
       { key: 'bookings', label: 'Bookings', href: '/gigaops/bookings', icon: moduleIcons.layers },
       ...LEGACY_MODULE_MENUS.gigaops!.slice(5).filter((item) => item.key !== 'compliance' && item.key !== 'analytics'),
     ],
+    // WI-OI-120cb (owner, 2026-10-21): SPEED expands into its screens like EAM, each on its own page.
+    'process-safety-screening': [
+      { key: 'projects', label: 'Projects', href: '/speed/projects', icon: moduleIcons.layers },
+      { key: 'routes', label: 'Routes', href: '/speed/routes', icon: moduleIcons.workflow },
+      { key: 'substances', label: 'Substances', href: '/speed/substances', icon: moduleIcons.database },
+      { key: 'library', label: 'Screening library', href: '/speed/library', icon: moduleIcons['shield-alert'] },
+      { key: 'criteria', label: 'Screening criteria', href: '/speed/criteria', icon: moduleIcons.scale },
+    ],
   };
 
   it.each(platformModuleCatalog.map((module) => [module.key] as const))('%s keeps its sub-menu', (key) => {

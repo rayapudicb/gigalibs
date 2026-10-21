@@ -198,6 +198,38 @@ export const generatedModuleMenus: Readonly<Record<string, readonly GeneratedMod
       "path": "/communications/triggers",
       "icon": "zap"
     }
+  ],
+  "process-safety-screening": [
+    {
+      "key": "projects",
+      "label": "Projects",
+      "path": "/speed/projects",
+      "icon": "layers"
+    },
+    {
+      "key": "routes",
+      "label": "Routes",
+      "path": "/speed/routes",
+      "icon": "workflow"
+    },
+    {
+      "key": "substances",
+      "label": "Substances",
+      "path": "/speed/substances",
+      "icon": "database"
+    },
+    {
+      "key": "library",
+      "label": "Screening library",
+      "path": "/speed/library",
+      "icon": "shield-alert"
+    },
+    {
+      "key": "criteria",
+      "label": "Screening criteria",
+      "path": "/speed/criteria",
+      "icon": "scale"
+    }
   ]
 };
 

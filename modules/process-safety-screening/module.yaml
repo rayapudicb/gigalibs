@@ -26,9 +26,37 @@ spec:
   ui:
     basePath: /speed
     package: '@gigalibs/process-safety-screening-web'
+    # WI-OI-120cb: one page per screen, reached from the sidebar entry's menu as EAM's are; /speed opens Projects.
     pages:
       - route: /speed
         component: SpeedWorkspace
+        props:
+          section: projects
+        sessionPermissions: true
+      - route: /speed/projects
+        component: SpeedWorkspace
+        props:
+          section: projects
+        sessionPermissions: true
+      - route: /speed/routes
+        component: SpeedWorkspace
+        props:
+          section: routes
+        sessionPermissions: true
+      - route: /speed/substances
+        component: SpeedWorkspace
+        props:
+          section: substances
+        sessionPermissions: true
+      - route: /speed/library
+        component: SpeedWorkspace
+        props:
+          section: library
+        sessionPermissions: true
+      - route: /speed/criteria
+        component: SpeedWorkspace
+        props:
+          section: criteria
         sessionPermissions: true
     # Registered panels (WI-OI-120bs): the dictionary places them on record tabs; each draws for the record it is shown with.
     panels:
@@ -126,6 +154,13 @@ spec:
       navigationOrder: 330
       # Lab leads and chemists; `speed:read` still decides who sees it.
       personas: [OPERATIONS_SUPERVISOR, WORKFORCE_MEMBER]
+      # WI-OI-120cb: the sidebar entry expands into SPEED's screens (Outcomes joins in S9).
+      menu:
+        - { key: projects, label: Projects, path: /speed/projects, icon: layers }
+        - { key: routes, label: Routes, path: /speed/routes, icon: workflow }
+        - { key: substances, label: Substances, path: /speed/substances, icon: database }
+        - { key: library, label: Screening library, path: /speed/library, icon: shield-alert }
+        - { key: criteria, label: Screening criteria, path: /speed/criteria, icon: scale }
       # Plan v1.4 §3.2, R1 permissions only; the review, approval and library-governance permissions arrive with R2.
       roles:
         - key: speed-chemist
