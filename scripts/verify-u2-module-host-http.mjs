@@ -40,6 +40,30 @@ for (const extension of ['pgcrypto', 'ltree', 'btree_gist']) {
   await admin.query(`CREATE EXTENSION IF NOT EXISTS ${extension} WITH SCHEMA public`);
 }
 
+// WI-OI-120gi / 120bq: orders party guard reads kernel `public.parties` (Prisma camelCase); U2 proof DB has modules only.
+await admin.query(`
+  CREATE TABLE IF NOT EXISTS public.tenants (
+    id text PRIMARY KEY,
+    slug text,
+    name text,
+    status text NOT NULL DEFAULT 'ACTIVE',
+    "isolationMode" text,
+    "updatedAt" timestamptz NOT NULL DEFAULT now()
+  )
+`);
+await admin.query(`
+  CREATE TABLE IF NOT EXISTS public.parties (
+    id uuid PRIMARY KEY,
+    "tenantId" text NOT NULL,
+    code varchar(64) NOT NULL,
+    "legalName" varchar(255) NOT NULL,
+    "displayName" varchar(255) NOT NULL,
+    "partyType" varchar(32) NOT NULL,
+    status varchar(32) NOT NULL DEFAULT 'ACTIVE',
+    "archivedAt" timestamptz
+  )
+`);
+
 // 2. Install every hosted module with the real runner (copied next to a link to pg, which the repo root lacks).
 const work = mkdtempSync(join(tmpdir(), 'u2-proof-'));
 cpSync(join(root, 'infra/compose/docker/run-module-migrations.mjs'), join(work, 'run.mjs'));
@@ -153,8 +177,8 @@ async function seedActiveCustomerParty(tenantId) {
     );
   }
   await admin.query(
-    `INSERT INTO parties (id, "tenantId", code, "legalName", "displayName", "partyType", status, "updatedAt")
-     VALUES ($1, $2, $3, $4, $4, 'ORGANIZATION', 'ACTIVE', now())`,
+    `INSERT INTO parties (id, "tenantId", code, "legalName", "displayName", "partyType", status)
+     VALUES ($1, $2, $3, $4, $4, 'ORGANIZATION', 'ACTIVE')`,
     [partyId, tenantId, `U2-CUST-${partyId.slice(0, 8)}`, 'U2 proof customer'],
   );
   return partyId;

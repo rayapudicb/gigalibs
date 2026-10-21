@@ -165,7 +165,7 @@
     "finalRuntimeObserved": "node-v24.21.0-distroless-debian-13-linux-arm64",
     "runtimeUidGid": "65532:65532",
     "baseOsPackages": {
-      "ca-certificates": "20250419~deb12u1",
+      "ca-certificates": "20250419~deb12u2",
       "openssl": "3.0.20-1~deb12u2"
     },
     "allowedLifecycleBuilds": [

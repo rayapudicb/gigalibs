@@ -25,9 +25,9 @@
 ## Done when
 
 - [x] Every fix above has its test, red before and green after (relay/migration vitest + F2.3/F2.2 unit certs).
-- [ ] `pnpm verify` passes, including `audit:layers`, `audit:production-data` and migration pins; only the other
-      session's `audit:design-tokens` files may fail. **Legacy finance slice:** bootstrap + 7 scripts **PASS** when
-      `PROOF_DATABASE_URL` points at a dedicated DB (e.g. `gigalibs_finance_proof` on **5441**).
+- [x] `pnpm verify --audits` passes with `PROOF_DATABASE_URL` except **`audit:design-tokens`** (2026-10-21); U2 **39/39**
+      after kernel `parties` stub; deployment profile **ca-certificates** pin aligned with Dockerfile **deb12u2**.
+- [ ] Full `pnpm verify` (build + test + audits) green except design-tokens (owner/other session).
 - [ ] On the isolated `gigalibs-test` stack, fresh database, images built by `build-test-stack-images.sh`: two
       products with different standard costs are received, posted and reconciled; a receipt with no standard cost is
       rejected, the cost is added, the retry posts it, and the period then closes; `pnpm test:minimal-p2p-o2c` and the
