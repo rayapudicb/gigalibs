@@ -37,6 +37,11 @@ const steps = [
     args: ['scripts/verify-configuration-local-profile.mjs'],
     knownDrift: KNOWN_PROFILE_DRIFT,
   },
+  {
+    name: 'finance-proof-bootstrap',
+    cmd: process.execPath,
+    args: ['scripts/bootstrap-finance-proof-database.mjs'],
+  },
   { name: 'financial-operations', cmd: process.execPath, args: ['scripts/verify-financial-operations.mjs'] },
   { name: 'treasury-reconciliation', cmd: process.execPath, args: ['scripts/verify-treasury-reconciliation.mjs'] },
   { name: 'fixed-assets', cmd: process.execPath, args: ['scripts/verify-fixed-assets.mjs'] },

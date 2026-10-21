@@ -64,8 +64,11 @@ try {
 
   // ─── 2. Database Schema Verification ───────────────────────────────────────
   console.log('\n[2/13] Verifying PostgreSQL Schema gigalibs_finance Foundation...');
-  const migRes = await client.query('SELECT version FROM gigalibs_finance.schema_migrations');
-  assert.equal(migRes.rows[0]?.version, '1', 'Schema migration 1 applied');
+  const migRes = await client.query(
+    'SELECT version FROM gigalibs_finance.schema_migrations ORDER BY version::int',
+  );
+  const appliedVersions = migRes.rows.map((row) => row.version);
+  assert.ok(appliedVersions.includes('1'), 'Schema migration 1 applied');
 
   const tablesRes = await client.query(`
     SELECT table_name FROM information_schema.tables
@@ -635,18 +638,7 @@ try {
   console.log('  ✓ Trial Balance and Income Statement certified with exact BigInt mathematics.');
 
   // ─── 13. Scenario 11 & 12: RLS Isolation & Delta-5 FIFO Relay ──────────────
-  // Hardware RLS isolation: use non-superuser test role to test active RLS policy
-  await client.query(`
-    DO $$
-    BEGIN
-      IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'rls_test_user') THEN
-        CREATE ROLE rls_test_user LOGIN;
-        GRANT ALL ON SCHEMA gigalibs_finance TO rls_test_user;
-        GRANT ALL ON ALL TABLES IN SCHEMA gigalibs_finance TO rls_test_user;
-      END IF;
-    END $$;
-  `);
-
+  // Hardware RLS isolation: rls_test_user is provisioned by bootstrap-finance-proof-database.mjs (WI-OI-120bq).
   await client.query('BEGIN');
   await client.query('SET ROLE rls_test_user');
   await client.query("SELECT set_config('app.tenant_id', $1, true)", [TENANT_B]);
@@ -681,7 +673,9 @@ try {
     assert.ok(leaseRes.rows.some((r) => r.id === outboxId), 'Event leased by relay_lease_finance_events');
 
     // Settle event
-    await client.query('SELECT gigalibs_finance.relay_settle_finance_event($1, true, null, null, 5)', [outboxId]);
+    await client.query('SELECT gigalibs_finance.relay_settle_finance_event($1::text, true, null, null, 5)', [
+      outboxId,
+    ]);
     const settledRes = await client.query('SELECT status FROM gigalibs_finance.outbox_events WHERE id = $1', [outboxId]);
     assert.equal(settledRes.rows[0].status, 'PUBLISHED', 'Event settled to PUBLISHED');
   });
