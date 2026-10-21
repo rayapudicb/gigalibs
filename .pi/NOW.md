@@ -52,6 +52,8 @@ keeps the full rules.
 
 **WI-OI-120ca (2026-10-21, Built, committed `32c010a1` on `feat/speed-s3-module`):** SPEED S7 dossier: one model (domain package, which now holds the catalogue) rendered as DOCX and PDF by a module worker into the object store, watermarked "DRAFT — NOT APPROVED" on every page, each file's SHA-256 checked on every download (409 and audited on a mismatch); JSON and CSV exports; the route's Dossier tab. No `SPEED_STORAGE_*` wiring yet (S9): without it, generation answers 503. 143 SPEED tests; `pnpm verify` fails only on base-commit failures. Card: [WI-OI-120ca](tasks/WI-OI-120ca.md).
 
+**WI-OI-120cb (2026-10-21, Built, committed `02bd35ff` on `feat/speed-s3-module`):** SPEED as its own sidebar section like EAM (owner): the SPEED entry expands into Projects, Routes, Substances, Screening library and Screening criteria, each its own generated page (`/speed/projects` …; `/speed` opens Projects), declared as the catalogue entry's `menu` and pages in `module.yaml`. Readiness stays PLANNED (UAT preview only). `pnpm verify` fails only on base-commit failures. Card: [WI-OI-120cb](tasks/WI-OI-120cb.md).
+
 **WI-OI-120bp review (2026-10-21):** [WI-OI-120bp-REVIEW-2026-10-21.md](work/WI-OI-120bp-REVIEW-2026-10-21.md) — design sound, coupling gone, one-transaction posting and signed relays correct; **not releasable** until B1 (broken Finance 13 / Inventory 7 in the commit, fixed only in the working tree) is committed and B2 (no RLS on new replica tables), B3 (out-of-order period events), B4 (snapshot only after the first receipt), B5 (sync marked complete too early) are fixed.
 
 **Batch acceptance:** [PHASE-1-CM1-CHECKLIST.md](tasks/PHASE-1-CM1-CHECKLIST.md) — one deploy, one journey, tick all five rows.
