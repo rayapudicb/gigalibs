@@ -139,6 +139,27 @@ async function call(tenantId, moduleKey, method, path, body, extraHeaders = {}) 
 }
 const ok = (r) => r.status >= 200 && r.status < 300;
 
+/** WI-OI-120gi: orders require an active kernel party when `public.parties` exists on the proof database. */
+async function seedActiveCustomerParty(tenantId) {
+  const reg = await admin.query(`SELECT to_regclass('public.parties')::text AS parties, to_regclass('public.tenants')::text AS tenants`);
+  if (!reg.rows[0]?.parties) return randomUUID();
+  const partyId = randomUUID();
+  if (reg.rows[0]?.tenants) {
+    await admin.query(
+      `INSERT INTO tenants (id, slug, name, status, "isolationMode", "updatedAt")
+       VALUES ($1, $1, $1, 'ACTIVE', 'ROW_LEVEL_SECURITY', now())
+       ON CONFLICT (id) DO NOTHING`,
+      [tenantId],
+    );
+  }
+  await admin.query(
+    `INSERT INTO parties (id, "tenantId", code, "legalName", "displayName", "partyType", status, "updatedAt")
+     VALUES ($1, $2, $3, $4, $4, 'ORGANIZATION', 'ACTIVE', now())`,
+    [partyId, tenantId, `U2-CUST-${partyId.slice(0, 8)}`, 'U2 proof customer'],
+  );
+  return partyId;
+}
+
 try {
   if (ready) {
     // P1-02: signed-in reads succeed in every module.
@@ -297,8 +318,9 @@ try {
 
     // P1-09: a second partial allocation of the same order line succeeds.
     const warehouseForOrder = warehouseId ?? randomUUID();
+    const customerPartyId = await seedActiveCustomerParty(tenantA);
     const order = await call(tenantA, 'universal-orders', 'POST', '/v1/orders', {
-      orgUnitId: 'u2-org', customerPartyId: randomUUID(), customerName: 'U2 proof customer', currencyCode: 'USD',
+      orgUnitId: 'u2-org', customerPartyId, customerName: 'U2 proof customer', currencyCode: 'USD',
       warehouseId: warehouseForOrder,
       lines: [{ productId: randomUUID(), productCode: 'U2-PROD', productName: 'U2 proof product', orderedQuantity: '5',
         uomId: randomUUID(), unitPriceMinor: '1000', warehouseId: warehouseForOrder }],

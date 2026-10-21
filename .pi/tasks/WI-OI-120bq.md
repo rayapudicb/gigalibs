@@ -1,9 +1,6 @@
 # WI-OI-120bq: make Table 2 releasable — fix the Security review findings
 
-- **Status:** Built (2026-10-20, uncommitted): Finance **13–14**, Inventory **7–8**; H2 retry endpoint + raw body + period-scoped
-  close; H3 product standard costs + book currency throughout `costing.service.ts`; M3 cutoff event + Finance confirmation
-  table; L1/L3 from prior slice. **Open:** metadata window, pg_proc M1 integration test, stack proof + `test:minimal-p2p-o2c`,
-  Claude re-review. Implementer: Cursor. Reviewer: Claude Code.
+- **Status:** Built (2026-10-21): Committed **`b85a4244`** (Finance **13–15**, Inventory **7–9**, B2–B7). **Stack:** F2.7 **26/26**, U12 **28/28**; U2 **39/39**, U19a **70/70** (uncommitted proof + CMMS route fix). **S16:** `finance.product-standard-costs` record adapter (uncommitted). **Open:** Claude re-review, F2.9, `pnpm test:minimal-p2p-o2c` on fresh stack, owner commit for hygiene/S16. Implementer: Cursor. Reviewer: Claude Code.
 - **Work item:** WI-OI-120 (Table 2; ADR-0007, ADR-0013, ADR-0033 D3).
 - **Size:** L.
 - **Source:** [TABLE-2-SECURITY-REVIEW-2026-10-20.md](../work/TABLE-2-SECURITY-REVIEW-2026-10-20.md) — findings H1–H3,

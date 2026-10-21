@@ -20,12 +20,6 @@ export class MetersController {
     return this.meters.list(principal, assetId);
   }
 
-  @Get(':meterId')
-  @RequirePermissions('cmms.meters.read')
-  get(@CurrentPrincipal() principal: CmmsPrincipal, @Param('meterId') meterId: string) {
-    return this.meters.get(principal, meterId);
-  }
-
   @Post()
   @RequirePermissions('cmms.meters.write')
   create(@CommandContext() context: CmmsCommandContext, @Body() body: unknown) {
@@ -42,6 +36,7 @@ export class MetersController {
   }
 
   // ─── Meter Triggers (Condition-based Automation) ─────────────────────────────
+  // Static `triggers` segments must register before `@Get(':meterId')` or list is routed as get-by-id.
 
   @Get('triggers')
   @RequirePermissions('cmms.meters.read')
@@ -81,5 +76,11 @@ export class MetersController {
   @RequirePermissions('cmms.meters.write')
   record(@CommandContext() context: CmmsCommandContext, @Param('meterId') meterId: string, @Body() body: unknown) {
     return this.meters.recordReading(context, meterId, body);
+  }
+
+  @Get(':meterId')
+  @RequirePermissions('cmms.meters.read')
+  get(@CurrentPrincipal() principal: CmmsPrincipal, @Param('meterId') meterId: string) {
+    return this.meters.get(principal, meterId);
   }
 }

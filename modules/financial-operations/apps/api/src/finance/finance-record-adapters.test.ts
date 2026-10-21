@@ -25,6 +25,7 @@ function dispatcher() {
     finance: { createAccount: vi.fn(), updateAccount: vi.fn(), updatePeriodStatus: vi.fn(async () => ({ id, status: 'OPEN', version: 2 })), reverseJournal: vi.fn() },
     drafts: { create: vi.fn(), update: vi.fn(), addLine: vi.fn(), removeLine: vi.fn(), submit: vi.fn(), approve: vi.fn(async () => ({ id, status: 'POSTED', version: 4 })), returnToDraft: vi.fn() },
     records: { page: vi.fn(), get: vi.fn(), lookup: vi.fn() },
+    costing: { listProductStandardCosts: vi.fn(async () => []), getProductStandardCost: vi.fn(), createProductStandardCost: vi.fn() },
   };
   return { deps, records: financeRecordDispatcher(deps as unknown as FinanceRecordDependencies, noIdempotency) };
 }

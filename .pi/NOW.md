@@ -30,7 +30,7 @@ keeps the full rules.
 
 **WI-OI-120bp (2026-10-21, Built):** Committed **`6ea5a927`** + stack evidence: `gigalibs-test` **`pnpm test:minimal-p2p-o2c` 2/2**, F2.7 **26/26**. **Open:** Security review. Card: [WI-OI-120bp](tasks/WI-OI-120bp.md).
 
-**WI-OI-120bq (2026-10-21, Built — uncommitted):** Finance **13–15**, Inventory **7–9**; Table 2 H2/H3/M3 + **120bp review B2–B7** (RLS, period `stateVersion`, proactive snapshot sweep, snapshot-completed sync, contracts relay types, unknown-outcome logging). **Stack (2026-10-21):** F2.7 **26/26**, U12 **28/28**. **`pnpm verify`:** still **FAIL** on pre-existing **U2** / **U19a**; Table-2 slices pass. **Open:** Claude re-review, F2.9, owner **commit**. Card: [WI-OI-120bq](tasks/WI-OI-120bq.md).
+**WI-OI-120bq (2026-10-21, Built):** Committed **`b85a4244`** — Finance **13–15**, Inventory **7–9**; Table 2 H2/H3/M3 + **120bp review B2–B7**. **Stack:** F2.7 **26/26**, U12 **28/28**; **S16 conversion PASS** after `finance.product-standard-costs` adapter (uncommitted with U2/U19a fixes). **Open:** Claude re-review, F2.9, `test:minimal-p2p-o2c`, owner **commit** for verify hygiene + S16. Card: [WI-OI-120bq](tasks/WI-OI-120bq.md).
 
 **WI-OI-120br (2026-10-20, Built, committed `68be9379` on its branch):** SPEED S1 engine package `packages/process-safety-engines` in worktree `gigalibs-speed-s1` (branch `feat/speed-s1-engines`): BRD TC-01–TC-12 pass, 40 tests, coverage 98.5 % lines / 93.0 % branches; criteria, library and element data are inputs (no hard-coded thresholds). Card: [WI-OI-120br](tasks/WI-OI-120br.md).
 

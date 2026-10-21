@@ -16,6 +16,7 @@ import { BadRequestException, ConflictException } from '@nestjs/common';
 import type { FinanceEntity, FinancePage, FinanceRecordsService } from './finance-records.service.js';
 import type { FinanceService } from './finance.service.js';
 import { FinanceVersionConflict, type JournalDraftsService } from './journal-drafts.service.js';
+import type { CostingService } from '../costing/costing.service.js';
 
 // WI-OI-120l (U12, ADR-0033 D1): the general ledger's record adapters behind its metadata windows. Window field keys are
 // the dictionary's kebab-case keys; the domain speaks camelCase. Every command goes through FinanceService or
@@ -148,11 +149,20 @@ const DRAFT_LINE_FIELDS: readonly FieldSpec[] = [
   { key: 'memo', writable: true },
   { key: 'draft-status' },
 ];
+const PRODUCT_STANDARD_COST_FIELDS: readonly FieldSpec[] = [
+  { key: 'cost-profile-id', writable: true },
+  { key: 'product-id', writable: true },
+  { key: 'standard-unit-cost-scaled', writable: true },
+  { key: 'effective-from', writable: true },
+  { key: 'effective-to', writable: true },
+  { key: 'change-reason', writable: true },
+];
 
 export interface FinanceRecordDependencies {
   readonly finance: Pick<FinanceService, 'createAccount' | 'updateAccount' | 'updatePeriodStatus' | 'reverseJournal'>;
   readonly drafts: Pick<JournalDraftsService, 'create' | 'update' | 'addLine' | 'removeLine' | 'submit' | 'approve' | 'returnToDraft'>;
   readonly records: Pick<FinanceRecordsService, 'page' | 'get' | 'lookup'>;
+  readonly costing: Pick<CostingService, 'listProductStandardCosts' | 'getProductStandardCost' | 'createProductStandardCost'>;
 }
 
 function readAdapter(
@@ -332,11 +342,76 @@ export function financeRecordDispatcher(deps: FinanceRecordDependencies, idempot
     },
   };
 
+  const productStandardCosts: RecordAdapter = {
+    rest: {
+      read: 'GET v1/costing/product-standard-costs',
+      create: 'POST v1/costing/product-standard-costs',
+    },
+    entityKey: 'finance.product-standard-costs',
+    permissions: { read: 'finance:read', create: 'finance:costing:manage' },
+    fields: policies(PRODUCT_STANDARD_COST_FIELDS),
+    searchFields: ['product-id', 'cost-profile-id'],
+    filterFields: ['cost-profile-id', 'product-id'],
+    sortFields: ['effective-from'],
+    async list(principal, query) {
+      let items = await deps.costing.listProductStandardCosts(
+        principal.tenantId,
+        query.filters['cost-profile-id'],
+        query.filters['product-id'],
+      );
+      if (query.search) {
+        const needle = query.search.toLowerCase();
+        items = items.filter(
+          (row) => row.productId.toLowerCase().includes(needle) || row.costProfileId.toLowerCase().includes(needle),
+        );
+      }
+      const total = items.length;
+      const offset = (query.page - 1) * query.pageSize;
+      const pageItems = items.slice(offset, offset + query.pageSize);
+      return {
+        items: pageItems.map((row) => toWindow(PRODUCT_STANDARD_COST_FIELDS, { ...row, version: 1 })),
+        total,
+        page: query.page,
+        pageSize: query.pageSize,
+      };
+    },
+    async get(principal, id) {
+      const row = await deps.costing.getProductStandardCost(principal.tenantId, id);
+      return row ? toWindow(PRODUCT_STANDARD_COST_FIELDS, { ...row, version: 1 }) : null;
+    },
+    async create(context, values) {
+      const input = toDomain(PRODUCT_STANDARD_COST_FIELDS, values) as {
+        costProfileId?: string;
+        productId?: string;
+        standardUnitCostScaled?: string;
+        effectiveFrom?: string;
+        changeReason?: string;
+      };
+      if (!input.costProfileId || !input.productId || !input.standardUnitCostScaled || !input.effectiveFrom) {
+        throw new BadRequestException({ code: 'FINANCE_VALIDATION_FAILED', message: 'Cost profile, product, standard cost and effective from are required.' });
+      }
+      const reason = text(values, 'change-reason', true, 'Change reason')!;
+      const created = await deps.costing.createProductStandardCost(context.principal.tenantId, context.principal.subject, {
+        costProfileId: input.costProfileId,
+        productId: input.productId,
+        standardUnitCostScaled: input.standardUnitCostScaled,
+        effectiveFrom: input.effectiveFrom,
+        changeReason: reason,
+      });
+      return toWindow(PRODUCT_STANDARD_COST_FIELDS, { ...created, version: 1 });
+    },
+  };
+
   const resolvers: LookupResolver[] = [
     { key: 'finance-books', permission: 'finance:read', resolve: (principal, request) => deps.records.lookup(principal, 'books', request) },
     { key: 'finance-accounts', permission: 'finance:read', resolve: (principal, request) => deps.records.lookup(principal, 'accounts', request) },
   ];
 
   // WI-OI-120r (S1): the field rules of Finance's windows, enforced on every create and change.
-  return new RecordDispatcher([books, accounts, periods, journals, journalLines, drafts, draftLines], resolvers, idempotency, shippedRecordRules('financial-operations'));
+  return new RecordDispatcher(
+    [books, accounts, periods, journals, journalLines, drafts, draftLines, productStandardCosts],
+    resolvers,
+    idempotency,
+    shippedRecordRules('financial-operations'),
+  );
 }

@@ -75,9 +75,15 @@ const FinanceRelayHealthController = createRelayHealthController('v1/health');
     JournalDraftsService,
     {
       provide: RECORD_DISPATCHER,
-      inject: [DatabaseService, FinanceService, JournalDraftsService, FinanceRecordsService],
-      useFactory: (database: DatabaseService, finance: FinanceService, drafts: JournalDraftsService, records: FinanceRecordsService) =>
-        financeRecordDispatcher({ finance, drafts, records }, new ModuleIdempotencyStore(database, {
+      inject: [DatabaseService, FinanceService, JournalDraftsService, FinanceRecordsService, CostingService],
+      useFactory: (
+        database: DatabaseService,
+        finance: FinanceService,
+        drafts: JournalDraftsService,
+        records: FinanceRecordsService,
+        costing: CostingService,
+      ) =>
+        financeRecordDispatcher({ finance, drafts, records, costing }, new ModuleIdempotencyStore(database, {
           retentionDays: loadIdempotencyRetentionDays(process.env, 'FINANCIAL_OPERATIONS'),
         })),
     },

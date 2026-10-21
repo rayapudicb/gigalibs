@@ -943,6 +943,16 @@ export class CostingService {
     return res.rows[0]?.standard_unit_cost_scaled ?? null;
   }
 
+  async getProductStandardCost(tenantId: string, id: string): Promise<ProductStandardCostV1 | null> {
+    const res = await this.query(
+      tenantId,
+      `SELECT * FROM ${SCHEMA}.product_standard_costs WHERE tenant_id = $1 AND id = $2 AND archived_at IS NULL`,
+      [tenantId, id],
+    );
+    const row = res.rows[0];
+    return row ? this.mapProductStandardCost(row) : null;
+  }
+
   async listProductStandardCosts(
     tenantId: string,
     costProfileId?: string,
