@@ -67,6 +67,30 @@ deployment work targets `speed-lab`, not UAT (this corrects the session's sugges
   `actionList`, which the dossier uses: 10 data gaps); the Interactions matrix does not tell two materials of the same
   substance apart (the dossier now names them with their role).
 
+## R1 completion (2026-10-21, committed `fb21e5c8` on `feat/speed-s3-module`; owner: "complete all the modules for a business use case then we can have the deployment process")
+
+- **S9b Outcomes:** `GET v1/outcomes` (`speed.routes.read`) over the routes the member reads: BO-1 hazards (High and
+  Medium findings, steps of class 3 or worse, gas-forming steps), BO-2 median time to the first dossier, BO-3 routes
+  with a dossier, BO-4 dossiers showing route PMI and AE, the portfolio's worst class; page `/speed/outcomes` with the
+  BRD targets as page settings (2 h, 100 %), "What the client receives". The dossier model gains `facts` (the summary's
+  numbers as data). Tested on PostgreSQL with the reference route (6 High findings; steps 3 and 4 at class 3 or worse,
+  step 3 by BRD TC-08).
+- **S8 Write-up parser:** `parseWriteup` and `recogniseReagents` in the engine package (deterministic, no network, no
+  model); 20 annotated TEST FIXTURE procedures (98/98 quantities, none invented; written for the test, so the pilot
+  lab's annotated procedures remain the acceptance set, S9d); panel `speed.writeup-parser` on the route's tab 5, shown
+  on draft routes to `speed.routes.write`, applying confirmed Tp or confirmed reagents with the dictionary's reason.
+- **Audit trail (screen spec §3.3; it was not in any slice):** `GET v1/audit-events` (all with `speed.audit.read`, own with
+  `speed.audit.read-own`, else 403) and CSV (`speed.audit.read`); page `/speed/audit` with route, person, action and
+  day-range filters, one row per changed field, people by name.
+- **Screen gaps fixed:** the workbench's Data gaps tile counts the dossier model's data gaps (blue when any); a
+  substance charged twice in a step is named with its role on the Interactions matrix too (`materialLabel`, shared
+  with the dossier).
+- **Checks:** 238 SPEED, engine, panel and kernel tests on PostgreSQL and 15 dossier tests on MinIO pass; conformance 15/15;
+  `pnpm verify` fails only where the base commit fails (3304 tests pass).
+- **Moved to the deployment phase:** S9c (speed-lab bundle, solution-scoped module host, offline image transfer, TLS,
+  restore drill, deployment guide) and S9d (pilot), with the keyboard-only journey check, on the instance being
+  deployed.
+
 ## Done when
 
 - [ ] S9a: the owner opens the preview instance and walks project → route → steps → screens → dossier (built and

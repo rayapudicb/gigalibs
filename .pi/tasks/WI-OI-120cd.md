@@ -1,7 +1,10 @@
 # WI-OI-120cd: SPEED on UAT — release SPEED onto the running release
 
-- **Status:** In progress (owner, 2026-10-21: "start S9b it should be working on http://127.0.0.1:5180/speed"; then,
-  asked where SPEED should run, chose "Release SPEED to UAT (5180)"). Implementer: Claude Code. Comes before S9b.
+- **Status:** Paused (owner, 2026-10-21: "complete all the modules for a business use case then we can have the
+  deployment process"). The release is made once, after SPEED's R1 use case is complete, from the SPEED tip at that
+  time; `release/speed-uat` at `23ab3916` and its worktree stay as the starting point (its image build was stopped
+  unfinished). Earlier: owner, 2026-10-21, "start S9b it should be working on http://127.0.0.1:5180/speed", then chose
+  "Release SPEED to UAT (5180)". Implementer: Claude Code.
 - **Work item:** WI-OI-120bn (SPEED Stage 1).
 - **Owner decision:** this reverses plan v1.4 D1 and D7 for UAT ("the pilot runs on a dedicated speed-lab instance; never
   tested on UAT"). SPEED stays PLANNED, so on UAT it opens only under the UAT preview, and its data goes only into a
