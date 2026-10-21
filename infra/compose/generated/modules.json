@@ -19,7 +19,8 @@
     ],
     "readOnlyTables": [
       "auth_revocation_events"
-    ]
+    ],
+    "optionalEnvironment": []
   },
   "process-safety-screening": {
     "hosting": "host",
@@ -42,6 +43,16 @@
     ],
     "readOnlyTables": [
       "auth_revocation_events"
+    ],
+    "optionalEnvironment": [
+      "SPEED_STORAGE_ENDPOINT",
+      "SPEED_STORAGE_REGION",
+      "SPEED_STORAGE_BUCKET",
+      "SPEED_STORAGE_ACCESS_KEY",
+      "SPEED_STORAGE_SECRET_KEY",
+      "SPEED_STORAGE_FORCE_PATH_STYLE",
+      "SPEED_DOSSIER_WORKER_DISABLED",
+      "SPEED_DOSSIER_WORKER_INTERVAL_MS"
     ]
   },
   "product-catalogue": {
@@ -64,7 +75,8 @@
     ],
     "readOnlyTables": [
       "auth_revocation_events"
-    ]
+    ],
+    "optionalEnvironment": []
   },
   "universal-inventory": {
     "hosting": "host",
@@ -86,7 +98,8 @@
     ],
     "readOnlyTables": [
       "auth_revocation_events"
-    ]
+    ],
+    "optionalEnvironment": []
   },
   "universal-orders": {
     "hosting": "host",
@@ -108,7 +121,8 @@
     ],
     "readOnlyTables": [
       "auth_revocation_events"
-    ]
+    ],
+    "optionalEnvironment": []
   },
   "universal-procurement": {
     "hosting": "host",
@@ -130,6 +144,7 @@
     ],
     "readOnlyTables": [
       "auth_revocation_events"
-    ]
+    ],
+    "optionalEnvironment": []
   }
 }

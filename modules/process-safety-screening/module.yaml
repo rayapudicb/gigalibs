@@ -136,6 +136,16 @@ spec:
     # Results are immutable: a recompute adds a row (NFR-10).
     appendOnlyTables: [audit_events, results]
     readOnlyTables: [auth_revocation_events]
+    # WI-OI-120cd: the dossier store and worker (WI-OI-120ca). Unset, generating a dossier answers 503 and the worker idles.
+    optionalEnvironment:
+      - SPEED_STORAGE_ENDPOINT
+      - SPEED_STORAGE_REGION
+      - SPEED_STORAGE_BUCKET
+      - SPEED_STORAGE_ACCESS_KEY
+      - SPEED_STORAGE_SECRET_KEY
+      - SPEED_STORAGE_FORCE_PATH_STYLE
+      - SPEED_DOSSIER_WORKER_DISABLED
+      - SPEED_DOSSIER_WORKER_INTERVAL_MS
   catalog:
     - key: process-safety-screening
       name: SPEED Process Safety Screening

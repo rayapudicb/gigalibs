@@ -1030,6 +1030,7 @@ function hostOverlay(entries) {
       `      ${runtime.prefix}_EXPECTED_MIGRATION_VERSION: "${runtime.migrationVersion}"`,
       `      ${runtime.prefix}_PLATFORM_CONTEXT_AUDIENCE: ${runtime.audience}`,
       `      ${runtime.prefix}_PLATFORM_CONTEXT_PUBLIC_KEY_BASE64: ${required(`${runtime.prefix}_PLATFORM_CONTEXT_PUBLIC_KEY_BASE64`)}`,
+      ...runtime.optionalEnvironment.map((variable) => `      ${variable}: \${${variable}:-}`),
     ]),
     ...overlayHardening.slice(0, 2),
     '    depends_on:',
@@ -1109,6 +1110,7 @@ function runtimeOverlay(name, runtime) {
     `      ${prefix}_EXPECTED_MIGRATION_VERSION: "${migrationVersion}"`,
     `      ${prefix}_PLATFORM_CONTEXT_AUDIENCE: ${audience}`,
     `      ${prefix}_PLATFORM_CONTEXT_PUBLIC_KEY_BASE64: ${required(`${prefix}_PLATFORM_CONTEXT_PUBLIC_KEY_BASE64`)}`,
+    ...runtime.optionalEnvironment.map((variable) => `      ${variable}: \${${variable}:-}`),
     ...hardening.slice(0, 2),
     '    depends_on:',
     `      ${name}-migrations:`,
@@ -1142,7 +1144,7 @@ for (const [name, manifest] of modules) {
     continue;
   }
   const unknown = Object.keys(runtime).filter(
-    (key) => !['generated', 'hosting', 'appendOnlyTables', 'readOnlyTables'].includes(key),
+    (key) => !['generated', 'hosting', 'appendOnlyTables', 'readOnlyTables', 'optionalEnvironment'].includes(key),
   );
   if (unknown.length) fail(where, `unknown keys ${unknown.join(', ')}`);
   const tables = (field) => {
@@ -1208,6 +1210,22 @@ for (const [name, manifest] of modules) {
         (extra.length ? `; no such file ${extra.join(', ')}` : ''),
     );
   }
+  // WI-OI-120cd: settings a module reads when its operator sets them (an object store, a worker switch), passed as given;
+  // unset, the feature they enable stays off. Each carries the module's prefix and none replaces a generated setting.
+  const generatedSettings = new Set(
+    ['DATABASE_URL', 'DATABASE_POOL_SIZE', 'EXPECTED_MIGRATION_VERSION', 'PLATFORM_CONTEXT_AUDIENCE', 'PLATFORM_CONTEXT_PUBLIC_KEY_BASE64', 'PLATFORM_CONTEXT_PRIVATE_KEY_BASE64', 'API_HOST', 'API_PORT', 'API_URL', 'CORS_ORIGINS', 'IMAGE'].map(
+      (suffix) => `${prefix}_${suffix}`,
+    ),
+  );
+  const optionalEnvironment = runtime.optionalEnvironment ?? [];
+  if (
+    !Array.isArray(optionalEnvironment) ||
+    new Set(optionalEnvironment).size !== optionalEnvironment.length ||
+    optionalEnvironment.some(
+      (variable) => typeof variable !== 'string' || !variable.startsWith(`${prefix}_`) || !/^[A-Z][A-Z0-9_]*$/.test(variable) || generatedSettings.has(variable),
+    )
+  )
+    fail(where, `optionalEnvironment must list distinct ${prefix}_* settings that are not generated ones`);
   const resolved = {
     hosting,
     basePath: upstream.basePath ?? '',
@@ -1225,6 +1243,7 @@ for (const [name, manifest] of modules) {
     audience: gateway.audience,
     appendOnlyTables: tables('appendOnlyTables'),
     readOnlyTables: tables('readOnlyTables'),
+    optionalEnvironment: Array.isArray(optionalEnvironment) ? optionalEnvironment : [],
   };
   // Listing gate (WI-OI-085d): above PLANNED, a generated module needs a live conformance record for its current code.
   const listed = (manifest.spec.catalog ?? []).filter((entry) => entry.readiness !== 'PLANNED');
