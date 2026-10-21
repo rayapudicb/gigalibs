@@ -1,0 +1,129 @@
+apiVersion: modules.gigalibs.io/v1
+kind: Module
+metadata:
+  name: process-safety-screening
+  displayName: SPEED Process Safety Screening
+  version: 0.1.0-dev
+  lifecycle: implementation
+  # WI-OI-120bn (SPEED Stage 1, plan v1.4); this scaffold and Projects: WI-OI-120bw (slice S3).
+  workItem: WI-OI-120
+spec:
+  standalone: true
+  category: business
+  requiredModules: []
+  optionalModules: []
+  capabilities:
+    - speed-projects
+    - outbox-events
+    - audit
+  plannedCapabilities:
+    - speed-substances
+    - speed-routes
+    - speed-screening-results
+    - speed-interaction-findings
+    - speed-dossiers
+  # SPEED's screens are metadata windows over the module's record dispatcher (plan v1.4 §3.3).
+  ui:
+    basePath: /speed
+    package: '@gigalibs/process-safety-screening-web'
+    pages:
+      - route: /speed
+        component: SpeedWorkspace
+        sessionPermissions: true
+  api:
+    application: apps/api
+    port: 4790
+    upstream:
+      key: process-safety-screening
+      serviceHostname: module-host
+      environmentKey: SPEED_API_URL
+      basePath: /process-safety-screening
+    version: v1
+  events:
+    emits:
+      - speed.project.created.v1
+      - speed.project.updated.v1
+      - speed.project.archived.v1
+    consumes:
+      - platform.authorization.revoked.v1
+      - platform.organization.version.v1
+  identity:
+    protocol: signed-platform-context-v1
+    tenantClaimRequired: true
+    failClosed: true
+  database:
+    engine: postgresql
+    minimumVersion: '16'
+    ownsSchema: true
+    defaultSchema: gigalibs_speed
+    crossSchemaAccess: false
+    runtimeManifest: db/runtime-manifest.txt
+  runtime:
+    generated: true
+    hosting: host
+    appendOnlyTables: [audit_events]
+    readOnlyTables: [auth_revocation_events]
+  catalog:
+    - key: process-safety-screening
+      name: SPEED Process Safety Screening
+      navigationLabel: SPEED
+      area: Process safety
+      navigationGroup: Intelligence
+      route: /speed
+      iconKey: shield-alert
+      readiness: PLANNED
+      maturity: CORE_IMPLEMENTED
+      entitlementEligible: true
+      trialEligible: false
+      requiredPermission: speed:read
+      platformInspection: false
+      reason: SPEED Stage 1 (WI-OI-120bn) is being built slice by slice; it stays PLANNED until the R1 slices pass live module conformance and independent review.
+      navigationOrder: 330
+      # Lab leads and chemists; `speed:read` still decides who sees it.
+      personas: [OPERATIONS_SUPERVISOR, WORKFORCE_MEMBER]
+      # Plan v1.4 §3.2, R1 permissions only; the review, approval and library-governance permissions arrive with R2.
+      roles:
+        - key: speed-chemist
+          name: SPEED Chemist
+          description: Enters routes, substances and thermal data, and runs the screening engines.
+          permissions: [speed:read, speed.routes.read, speed.routes.write, speed.substances.write, speed.thermal-data.write, speed.engines.run, speed.audit.read-own]
+        - key: speed-process-engineer
+          name: SPEED Process Engineer
+          description: Enters routes, substances and thermal data, and runs the screening engines.
+          permissions: [speed:read, speed.routes.read, speed.routes.write, speed.substances.write, speed.thermal-data.write, speed.engines.run, speed.audit.read-own]
+        - key: speed-safety-reviewer
+          name: SPEED Safety Reviewer
+          description: Reads every route, adds thermal data and reads the whole audit trail.
+          permissions: [speed:read, speed.routes.read, speed.thermal-data.write, speed.engines.run, speed.audit.read]
+        - key: speed-quality-assurance
+          name: SPEED Quality Assurance
+          description: Reads every route and the whole audit trail.
+          permissions: [speed:read, speed.routes.read, speed.engines.run, speed.audit.read]
+        - key: speed-administrator
+          name: SPEED Administrator
+          description: Reads every route and the audit trail, and manages the module's settings.
+          permissions: [speed:read, speed.routes.read, speed.engines.run, speed.audit.read, speed.settings.manage]
+  # The live conformance probe (`pnpm module:conformance process-safety-screening --live`) on projects.
+  conformance:
+    collection: v1/projects
+    create: { code: CONFORMANCE-1, name: Conformance probe, siteUnitId: conformance-site }
+    update: { reason: Conformance probe, name: Conformance probe renamed }
+  # Web gateway (WI-OI-083): the BFF reaches only these routes, as the user, with a freshly signed context.
+  gateway:
+    basePaths: [/api/speed]
+    catalogKey: process-safety-screening
+    audience: gigalibs-process-safety-screening-api
+    upstream: process-safety-screening
+    signingKeyEnvironment: SPEED_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64
+    codePrefix: SPEED
+    routeNoun: SPEED
+    serviceName: SPEED Process Safety Screening
+    entitlementName: SPEED Process Safety Screening
+    # The module SDK's record routes behind the metadata windows (WI-OI-120f).
+    records: true
+    routes:
+      - { path: 'v1/projects', GET: speed.routes.read, POST: speed.routes.write }
+      - { path: 'v1/projects/{id}', GET: speed.routes.read, PATCH: speed.routes.write }
+      - { path: 'v1/projects/{id}/archive', POST: speed.routes.write }
+      - { path: 'v1/organization/versions/{id}/units', POST: 'organization:activate' }
+      - { path: 'v1/organization/versions/{id}/complete', POST: 'organization:activate' }

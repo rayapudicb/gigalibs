@@ -1858,6 +1858,91 @@ export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGat
       }
     ]
   },
+  "process-safety-screening": {
+    "module": "process-safety-screening",
+    "basePaths": [
+      "/api/speed"
+    ],
+    "catalogKey": "process-safety-screening",
+    "audience": "gigalibs-process-safety-screening-api",
+    "upstream": "process-safety-screening",
+    "signingKeyEnvironment": "SPEED_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64",
+    "codePrefix": "SPEED",
+    "routeNoun": "SPEED",
+    "serviceName": "SPEED Process Safety Screening",
+    "entitlementName": "SPEED Process Safety Screening",
+    "routes": [
+      {
+        "template": "v1/projects",
+        "pattern": "^v1/projects$",
+        "methods": {
+          "GET": "speed.routes.read",
+          "POST": "speed.routes.write"
+        }
+      },
+      {
+        "template": "v1/projects/{id}",
+        "pattern": "^v1/projects/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "GET": "speed.routes.read",
+          "PATCH": "speed.routes.write"
+        }
+      },
+      {
+        "template": "v1/projects/{id}/archive",
+        "pattern": "^v1/projects/[0-9a-fA-F-]{36}/archive$",
+        "methods": {
+          "POST": "speed.routes.write"
+        }
+      },
+      {
+        "template": "v1/organization/versions/{id}/units",
+        "pattern": "^v1/organization/versions/[0-9a-fA-F-]{36}/units$",
+        "methods": {
+          "POST": "organization:activate"
+        }
+      },
+      {
+        "template": "v1/organization/versions/{id}/complete",
+        "pattern": "^v1/organization/versions/[0-9a-fA-F-]{36}/complete$",
+        "methods": {
+          "POST": "organization:activate"
+        }
+      },
+      {
+        "template": "v1/records/{entity}",
+        "pattern": "^v1/records/[a-z][a-z0-9-]*(?:[.][a-z0-9-]+)*$",
+        "methods": {
+          "GET": "speed:read",
+          "POST": "speed:read"
+        }
+      },
+      {
+        "template": "v1/records/{entity}/{id}",
+        "pattern": "^v1/records/[a-z][a-z0-9-]*(?:[.][a-z0-9-]+)*/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "GET": "speed:read",
+          "PATCH": "speed:read"
+        }
+      },
+      {
+        "template": "v1/records/{entity}/{id}/actions/{key}",
+        "pattern": "^v1/records/[a-z][a-z0-9-]*(?:[.][a-z0-9-]+)*/[0-9a-fA-F-]{36}/actions/[a-z][a-z0-9-]*$",
+        "methods": {
+          "POST": "speed:read"
+        }
+      },
+      {
+        "template": "v1/lookups/{key}",
+        "pattern": "^v1/lookups/[a-z][a-z0-9-]*$",
+        "methods": {
+          "GET": "speed:read"
+        }
+      }
+    ],
+    "transformBody": null,
+    "unavailable": []
+  },
   "product-catalogue": {
     "module": "product-catalogue",
     "basePaths": [

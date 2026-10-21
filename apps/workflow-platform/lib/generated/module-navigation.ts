@@ -296,5 +296,9 @@ export const generatedModulePersonas: Readonly<Record<string, readonly PlatformC
   "communications-textfly": [
     "OPERATIONS_SUPERVISOR",
     "WORKFORCE_MEMBER"
+  ],
+  "process-safety-screening": [
+    "OPERATIONS_SUPERVISOR",
+    "WORKFORCE_MEMBER"
   ]
 };

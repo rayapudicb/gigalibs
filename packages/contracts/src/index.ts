@@ -39,3 +39,4 @@ export * from './inventory/index.js';
 export * from './procurement/index.js';
 export * from './orders/index.js';
 export * from './finance/index.js';
+export * from './speed/index.js';

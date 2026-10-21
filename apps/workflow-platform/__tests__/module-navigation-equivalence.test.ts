@@ -49,6 +49,12 @@ describe('manifest-declared navigation equals the former sidebar tables', () => 
       icon: moduleIcons.scale,
       personas: ['OPERATIONS_SUPERVISOR'],
     },
+    // WI-OI-120bw (SPEED S3, WI-OI-120bn): SPEED process safety screening for lab leads and chemists.
+    'process-safety-screening': {
+      group: 'Intelligence',
+      icon: moduleIcons['shield-alert'],
+      personas: ['OPERATIONS_SUPERVISOR', 'WORKFORCE_MEMBER'],
+    },
   } as const;
 
   it('covers exactly the catalogue entries the frozen tables covered, less the intended removals', () => {

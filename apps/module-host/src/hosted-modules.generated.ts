@@ -2,10 +2,11 @@
 // modules/*/module.yaml (WI-OI-085e). Do not edit: change the owning manifest and regenerate.
 import type { Type } from '@nestjs/common';
 import { AppModule as Hosted0 } from '@gigalibs/financial-operations-api';
-import { AppModule as Hosted1 } from '@gigalibs/product-catalogue-api';
-import { AppModule as Hosted2 } from '@gigalibs/universal-inventory-api';
-import { AppModule as Hosted3 } from '@gigalibs/universal-orders-api';
-import { AppModule as Hosted4 } from '@gigalibs/universal-procurement-api';
+import { AppModule as Hosted1 } from '@gigalibs/process-safety-screening-api';
+import { AppModule as Hosted2 } from '@gigalibs/product-catalogue-api';
+import { AppModule as Hosted3 } from '@gigalibs/universal-inventory-api';
+import { AppModule as Hosted4 } from '@gigalibs/universal-orders-api';
+import { AppModule as Hosted5 } from '@gigalibs/universal-procurement-api';
 
 export interface HostedModule {
   readonly name: string;
@@ -15,8 +16,9 @@ export interface HostedModule {
 
 export const hostedModules: readonly HostedModule[] = [
   { name: 'financial-operations', path: 'financial-operations', module: Hosted0 },
-  { name: 'product-catalogue', path: 'product-catalogue', module: Hosted1 },
-  { name: 'universal-inventory', path: 'universal-inventory', module: Hosted2 },
-  { name: 'universal-orders', path: 'universal-orders', module: Hosted3 },
-  { name: 'universal-procurement', path: 'universal-procurement', module: Hosted4 },
+  { name: 'process-safety-screening', path: 'process-safety-screening', module: Hosted1 },
+  { name: 'product-catalogue', path: 'product-catalogue', module: Hosted2 },
+  { name: 'universal-inventory', path: 'universal-inventory', module: Hosted3 },
+  { name: 'universal-orders', path: 'universal-orders', module: Hosted4 },
+  { name: 'universal-procurement', path: 'universal-procurement', module: Hosted5 },
 ];

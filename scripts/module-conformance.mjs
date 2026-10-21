@@ -124,11 +124,16 @@ check('S11', 'every table has tenant_id, forced RLS and a tenant policy', tables
 const rt = manifest.spec.runtime;
 check('S12', 'audit is append-only and revocations read-only', (rt.appendOnlyTables ?? []).includes('audit_events') && (rt.readOnlyTables ?? []).includes('auth_revocation_events'));
 const prefix = /PERMISSION_PREFIX\s*=\s*'([^']+)'/.exec(read(join(src, 'config.ts')))?.[1];
+// The module's own family in either grammar (`speed.routes.read`, and `speed:read`, the form windows require). The
+// kernel's organization delivery routes, which every module with an organization replica serves (WI-OI-109), carry the
+// kernel's `organization:activate` and nothing else.
+const KERNEL_DELIVERY = new Set(['v1/organization/versions/{id}/units', 'v1/organization/versions/{id}/complete']);
+const kernelDelivery = (route) => KERNEL_DELIVERY.has(route.path) && route.POST === 'organization:activate' && Object.keys(route).every((key) => ['path', 'POST'].includes(key));
 const permissions = [
-  ...(gateway.routes ?? []).flatMap((route) => ['GET', 'POST', 'PATCH', 'PUT', 'DELETE'].flatMap((m) => route[m] ?? [])),
+  ...(gateway.routes ?? []).filter((route) => !kernelDelivery(route)).flatMap((route) => ['GET', 'POST', 'PATCH', 'PUT', 'DELETE'].flatMap((m) => route[m] ?? [])),
   ...(manifest.spec.catalog ?? []).map((entry) => entry.requiredPermission),
 ].flat().filter(Boolean);
-const foreign = permissions.filter((permission) => !prefix || !permission.startsWith(`${prefix}.`));
+const foreign = permissions.filter((permission) => !prefix || !(permission.startsWith(`${prefix}.`) || permission.startsWith(`${prefix}:`)));
 check('S13', 'every permission uses the module prefix', prefix && foreign.length === 0, foreign.join(', '));
 const moduleBuild = run('pnpm', [
   '--filter',

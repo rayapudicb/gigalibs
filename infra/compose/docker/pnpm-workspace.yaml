@@ -14,6 +14,8 @@ packages:
   - modules/gigaops/web
   - modules/physical-operations-cmms/apps/api
   - modules/physical-operations-cmms/web
+  - modules/process-safety-screening/apps/api
+  - modules/process-safety-screening/web
   - modules/product-catalogue/apps/api
   - modules/product-catalogue/web
   - modules/universal-connector-hub/apps/api

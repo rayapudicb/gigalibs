@@ -596,4 +596,21 @@ export const generatedPlatformModuleCatalog = [
     platformInspection: true,
     reason: 'The TextFly communications product is a separate project and is not integrated into GigaLibs. Contained until its service is connected (WI-OI-120ak, owner decision D2a); without it the API answers 503.',
   },
+  // modules/process-safety-screening/module.yaml
+  {
+    key: 'process-safety-screening',
+    name: 'SPEED Process Safety Screening',
+    navigationLabel: 'SPEED',
+    area: 'Process safety',
+    navigationGroup: 'Intelligence',
+    route: '/speed',
+    iconKey: 'shield-alert',
+    readiness: 'PLANNED',
+    maturity: 'CORE_IMPLEMENTED',
+    entitlementEligible: true,
+    trialEligible: false,
+    requiredPermission: 'speed:read',
+    platformInspection: false,
+    reason: 'SPEED Stage 1 (WI-OI-120bn) is being built slice by slice; it stays PLANNED until the R1 slices pass live module conformance and independent review.',
+  },
 ] as const;

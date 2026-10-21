@@ -43,6 +43,13 @@ export const generatedModuleUpstreams = {
     "serviceHostname": "geospatial-api",
     "basePath": ""
   },
+  "process-safety-screening": {
+    "module": "process-safety-screening",
+    "environmentKey": "SPEED_API_URL",
+    "port": "4790",
+    "serviceHostname": "module-host",
+    "basePath": "/process-safety-screening"
+  },
   "product-catalogue": {
     "module": "product-catalogue",
     "environmentKey": "PRODUCT_CATALOGUE_API_URL",

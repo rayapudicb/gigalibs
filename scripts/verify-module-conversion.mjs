@@ -23,6 +23,7 @@ const CONVERTED = {
   'financial-operations': { dispatcher: 'apps/api/dist/finance/finance-record-adapters.js', factory: 'financeRecordDispatcher' },
   'physical-operations-cmms': { dispatcher: 'apps/api/dist/work-orders/cmms-record-adapters.js', factory: 'cmmsRecordDispatcher' },
   'gigaops': { dispatcher: 'apps/api/dist/resources/workforce-record-adapters.js', factory: 'workforceRecordDispatcher' },
+  'process-safety-screening': { dispatcher: 'apps/api/dist/projects/projects-record-adapters.js', factory: 'speedRecordDispatcher' },
 };
 
 /** Findings seen by the owner and closed by a named later card. */

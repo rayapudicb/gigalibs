@@ -1,0 +1,3 @@
+# Ordered runtime migrations for gigalibs_speed (WI-OI-120bw). Only these files, in this order, are copied into the
+# module image and installed by run-module-migrations.mjs.
+000001_speed_foundation.up.sql

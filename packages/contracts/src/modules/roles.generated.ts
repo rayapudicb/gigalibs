@@ -383,5 +383,73 @@ export const moduleDefaultRoles: readonly ModuleDefaultRole[] = [
       "workforce.absences.request",
       "workforce.absences.approve"
     ]
+  },
+  {
+    "catalogKey": "process-safety-screening",
+    "key": "speed-chemist",
+    "name": "SPEED Chemist",
+    "description": "Enters routes, substances and thermal data, and runs the screening engines.",
+    "permissions": [
+      "speed:read",
+      "speed.routes.read",
+      "speed.routes.write",
+      "speed.substances.write",
+      "speed.thermal-data.write",
+      "speed.engines.run",
+      "speed.audit.read-own"
+    ]
+  },
+  {
+    "catalogKey": "process-safety-screening",
+    "key": "speed-process-engineer",
+    "name": "SPEED Process Engineer",
+    "description": "Enters routes, substances and thermal data, and runs the screening engines.",
+    "permissions": [
+      "speed:read",
+      "speed.routes.read",
+      "speed.routes.write",
+      "speed.substances.write",
+      "speed.thermal-data.write",
+      "speed.engines.run",
+      "speed.audit.read-own"
+    ]
+  },
+  {
+    "catalogKey": "process-safety-screening",
+    "key": "speed-safety-reviewer",
+    "name": "SPEED Safety Reviewer",
+    "description": "Reads every route, adds thermal data and reads the whole audit trail.",
+    "permissions": [
+      "speed:read",
+      "speed.routes.read",
+      "speed.thermal-data.write",
+      "speed.engines.run",
+      "speed.audit.read"
+    ]
+  },
+  {
+    "catalogKey": "process-safety-screening",
+    "key": "speed-quality-assurance",
+    "name": "SPEED Quality Assurance",
+    "description": "Reads every route and the whole audit trail.",
+    "permissions": [
+      "speed:read",
+      "speed.routes.read",
+      "speed.engines.run",
+      "speed.audit.read"
+    ]
+  },
+  {
+    "catalogKey": "process-safety-screening",
+    "key": "speed-administrator",
+    "name": "SPEED Administrator",
+    "description": "Reads every route and the audit trail, and manages the module's settings.",
+    "permissions": [
+      "speed:read",
+      "speed.routes.read",
+      "speed.engines.run",
+      "speed.audit.read",
+      "speed.settings.manage"
+    ]
   }
 ];

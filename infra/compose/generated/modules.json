@@ -21,6 +21,28 @@
       "auth_revocation_events"
     ]
   },
+  "process-safety-screening": {
+    "hosting": "host",
+    "basePath": "/process-safety-screening",
+    "package": "@gigalibs/process-safety-screening-api",
+    "directory": "modules/process-safety-screening",
+    "image": "gigalibs/module-host",
+    "component": "module-host",
+    "title": "SPEED Process Safety Screening",
+    "workItem": "WI-OI-120",
+    "prefix": "SPEED",
+    "service": "module-host",
+    "port": 4790,
+    "schema": "gigalibs_speed",
+    "migrationVersion": 1,
+    "audience": "gigalibs-process-safety-screening-api",
+    "appendOnlyTables": [
+      "audit_events"
+    ],
+    "readOnlyTables": [
+      "auth_revocation_events"
+    ]
+  },
   "product-catalogue": {
     "hosting": "host",
     "basePath": "/product-catalogue",
