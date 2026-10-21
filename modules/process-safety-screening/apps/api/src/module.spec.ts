@@ -42,7 +42,7 @@ const environment = {
   SPEED_CORS_ORIGINS: 'http://127.0.0.1:5180',
   SPEED_DATABASE_URL: 'postgresql://runtime:secret@postgres:5432/gigalibs',
   SPEED_DATABASE_POOL_SIZE: '10',
-  SPEED_EXPECTED_MIGRATION_VERSION: '3',
+  SPEED_EXPECTED_MIGRATION_VERSION: '4',
   SPEED_PLATFORM_CONTEXT_PUBLIC_KEY_BASE64: publicKeyBase64,
 };
 
@@ -132,6 +132,7 @@ const ROUTE_PERMISSIONS: readonly [{ prototype: object; name: string }, string, 
   [StepsController, 'replaceConditions', 'speed.routes.write'],
   [StepsController, 'addThermalData', 'speed.thermal-data.write'],
   [StepsController, 'replaceMitigation', 'speed.routes.write'],
+  [StepsController, 'documentControl', 'speed.routes.write'],
   [MaterialsController, 'update', 'speed.routes.write'],
   [MaterialsController, 'remove', 'speed.routes.write'],
   [MaterialsController, 'setEnergeticGroups', 'speed.routes.write'],
@@ -170,7 +171,7 @@ describe('SPEED runtime configuration', () => {
   it('loads the SPEED_* variables', () => {
     expect(load()).toMatchObject({
       platformContextAudience: AUDIENCE,
-      expectedMigrationVersion: 3,
+      expectedMigrationVersion: 4,
     });
   });
   it('refuses another audience', () => {

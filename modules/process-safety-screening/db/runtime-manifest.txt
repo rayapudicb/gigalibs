@@ -3,3 +3,4 @@
 000001_speed_foundation.up.sql
 000002_speed_routes.up.sql
 000003_speed_screening_inputs.up.sql
+000004_speed_interactions.up.sql

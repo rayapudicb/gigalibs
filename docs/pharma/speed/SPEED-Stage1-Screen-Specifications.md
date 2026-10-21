@@ -448,6 +448,11 @@ gate result and the rail badges.
 - **Footer:** "Change control: the safety reviewer proposes, QA approves, the administrator applies. Each applied change
   raises the library version, which is stamped on every result."
 
+**As built (S6, WI-OI-120bz):** one window, `speed-library`, lists the library sets with "Put in force" (reason), and
+its tabs Materials, Interaction rules, Reaction classes and Energetic groups list the set's entries with these columns
+through the registered panel `speed.library-entries`. Metadata windows address records by UUID, and library entries are
+identified by their library ids inside an immutable set, so the entries are drawn per set rather than as records.
+
 ## 3.2 Screening criteria (`speed-criteria`, S5)
 
 - **Main tab: the criteria set.** Version, status (Unreviewed, Approved, In force), "in force" (one per workspace),
@@ -572,6 +577,8 @@ named (engine codes from §4.1 and §4.2). Any other refusal shows the server's 
 | `SPEED_CRITERIA_INCOMPLETE`, `SPEED_CRITERIA_UNCITED`, `SPEED_CRITERIA_CITATION_UNKNOWN` | Criteria import: a value is missing, a value has no citation, or a citation names no value (issues: the paths). |
 | `SPEED_REACTION_CLASS_UNKNOWN` | The reaction class is not in the library in force. |
 | `SPEED_ENERGETIC_GROUP_UNKNOWN` | An energetic group is not in the library in force. |
+| `SPEED_LIBRARY_MATERIAL_UNKNOWN` | The library material is not in the library in force. |
+| `SPEED_FINDING_UNKNOWN` | The step has no interaction finding for these two materials. |
 
 S5 (WI-OI-120by) adds the panels' own texts to the module's catalogue (`web/src/messages`), with the TD24 bases of §4.2
 and the class actions of §4.3 under the same keys the engines return.

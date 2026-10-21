@@ -91,6 +91,19 @@
           "maskOnDisplay": false
         },
         {
+          "fieldKey": "library-material-id",
+          "entityKey": "speed.substances",
+          "label": "Library material",
+          "type": "REFERENCE",
+          "required": false,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "library-material-ref",
+          "helpText": "Its reactivity classes drive the interaction screen; unlinked substances are listed as not classified."
+        },
+        {
           "fieldKey": "hill-formula",
           "entityKey": "speed.substances",
           "label": "Hill formula",
@@ -161,6 +174,11 @@
       ],
       "relationships": [],
       "references": [
+        {
+          "referenceKey": "library-material-ref",
+          "referenceType": "SEARCH_LOOKUP",
+          "resolverKey": "speed-library-materials"
+        },
         {
           "referenceKey": "substance-statuses",
           "referenceType": "VALUE_LIST",
@@ -253,8 +271,19 @@
                   }
                 },
                 {
-                  "fieldKey": "notes",
+                  "fieldKey": "library-material-id",
                   "position": 4,
+                  "span": 6,
+                  "componentKey": "lookup",
+                  "sectionKey": "main",
+                  "readOnlyCondition": {
+                    "field": "status",
+                    "operator": "IS_NOT_NULL"
+                  }
+                },
+                {
+                  "fieldKey": "notes",
+                  "position": 5,
                   "span": 12,
                   "componentKey": "textarea",
                   "sectionKey": "main",
@@ -265,42 +294,42 @@
                 },
                 {
                   "fieldKey": "hill-formula",
-                  "position": 5,
+                  "position": 6,
                   "span": 3,
                   "componentKey": "text-input",
                   "sectionKey": "computed"
                 },
                 {
                   "fieldKey": "molar-mass-g-per-mol",
-                  "position": 6,
+                  "position": 7,
                   "span": 3,
                   "componentKey": "number-input",
                   "sectionKey": "computed"
                 },
                 {
                   "fieldKey": "elements-version",
-                  "position": 7,
+                  "position": 8,
                   "span": 3,
                   "componentKey": "text-input",
                   "sectionKey": "computed"
                 },
                 {
                   "fieldKey": "in-use",
-                  "position": 8,
+                  "position": 9,
                   "span": 3,
                   "componentKey": "checkbox",
                   "sectionKey": "computed"
                 },
                 {
                   "fieldKey": "status",
-                  "position": 9,
+                  "position": 10,
                   "span": 3,
                   "componentKey": "select",
                   "sectionKey": "computed"
                 },
                 {
                   "fieldKey": "updated-at",
-                  "position": 10,
+                  "position": 11,
                   "span": 3,
                   "componentKey": "datetime-input",
                   "sectionKey": "computed"

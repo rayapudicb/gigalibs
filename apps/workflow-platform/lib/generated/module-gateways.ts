@@ -2056,6 +2056,13 @@ export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGat
         }
       },
       {
+        "template": "v1/steps/{id}/controls",
+        "pattern": "^v1/steps/[0-9a-fA-F-]{36}/controls$",
+        "methods": {
+          "PUT": "speed.routes.write"
+        }
+      },
+      {
         "template": "v1/materials/{id}",
         "pattern": "^v1/materials/[0-9a-fA-F-]{36}$",
         "methods": {

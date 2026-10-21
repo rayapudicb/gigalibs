@@ -184,6 +184,7 @@ function stored(position: number): SpeedStepV1 {
         ]
       : [],
     mitigation: null,
+    controls: [],
     latestResult: result,
   };
 }

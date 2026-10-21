@@ -4,7 +4,7 @@ import type { MetadataPanelProps } from '@gigalibs/configuration-react';
 import type { SpeedRouteDetailV1 } from '@gigalibs/contracts';
 import { useEffect, useMemo, useState } from 'react';
 import { type Translate, speedText } from './messages/index.js';
-import { routeWorstClass, shown } from './screens-model.js';
+import { highInteractions, routeWorstClass, shown } from './screens-model.js';
 import { createSpeedApi } from './speed-api.js';
 import { summaryView } from './workbench-model.js';
 
@@ -17,8 +17,8 @@ const WORST_TONE = [
   'text-ui-tag-red-text',
 ];
 
-// WI-OI-120bx/120by (SPEED S4, S5; screen spec §2.4, panel speed.route-summary): six tiles in the prototype's order, from
-// the stored results. The interactions and data-gap tiles fill as S6 and S7 store those results.
+// WI-OI-120bx/120by/120bz (SPEED S4 to S6; screen spec §2.4, panel speed.route-summary): six tiles in the prototype's
+// order, from the stored results. The data-gap tile fills with S7's actions.
 
 const tile = 'rounded-lg border border-ui-border-base bg-ui-bg-base p-3';
 
@@ -32,6 +32,7 @@ export function RouteSummaryView({ route, compact, t }: RouteSummaryViewProps) {
   const summary = summaryView(route);
   const gateTone = summary.allPass ? 'text-ui-tag-green-text' : 'text-ui-tag-red-text';
   const worst = routeWorstClass(route);
+  const high = highInteractions(route);
   const rollup =
     route.rollup?.['status'] === 'OK'
       ? (route.rollup as { processMassIntensity: number; atomEconomyPercent: number })
@@ -43,7 +44,11 @@ export function RouteSummaryView({ route, compact, t }: RouteSummaryViewProps) {
       value: worst === null ? null : t('speed.summary.class', { value: worst }),
       tone: worst === null ? undefined : WORST_TONE[worst],
     },
-    { key: 'high', value: null },
+    {
+      key: 'high',
+      value: high.total === 0 && !high.screened ? null : `${high.controlled}/${high.total}`,
+      tone: high.controlled < high.total ? 'text-ui-tag-red-text' : 'text-ui-tag-green-text',
+    },
     { key: 'pmi', value: rollup ? shown(rollup.processMassIntensity, 2) : null },
     { key: 'ae', value: rollup ? `${shown(rollup.atomEconomyPercent, 1)} %` : null },
     { key: 'gaps', value: null },

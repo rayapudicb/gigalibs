@@ -202,6 +202,17 @@ interface ThermalRow {
   superseded_at: Date | null;
 }
 
+interface ControlRow {
+  step_id: string;
+  material_a_id: string;
+  material_b_id: string;
+  rule_id: string;
+  text: string;
+  version: number;
+  documented_by: string;
+  documented_at: Date;
+}
+
 interface MitigationRow {
   step_id: string;
   text: string;
@@ -319,6 +330,11 @@ export async function readSteps(
       WHERE tenant_id = $1 AND step_id = ANY($2::uuid[])`,
     [tenantId, ids],
   );
+  const controls = await client.query<ControlRow>(
+    `SELECT step_id, material_a_id, material_b_id, rule_id, text, version, documented_by, documented_at FROM ${SCHEMA}.interaction_controls
+      WHERE tenant_id = $1 AND step_id = ANY($2::uuid[]) ORDER BY documented_at, material_a_id, material_b_id`,
+    [tenantId, ids],
+  );
   const results = await latestResults(client, tenantId, ids);
   return steps.rows.map((step) => {
     const found = conditions.rows.find((row) => row.step_id === step.id);
@@ -336,6 +352,17 @@ export async function readSteps(
         const mitigation = mitigations.rows.find((row) => row.step_id === step.id);
         return mitigation ? toMitigation(mitigation) : null;
       })(),
+      controls: controls.rows
+        .filter((row) => row.step_id === step.id)
+        .map((row) => ({
+          materialAId: row.material_a_id,
+          materialBId: row.material_b_id,
+          ruleId: row.rule_id,
+          text: row.text,
+          version: Number(row.version),
+          documentedBy: row.documented_by,
+          documentedAt: new Date(row.documented_at).toISOString(),
+        })),
       latestResult: results.get(step.id) ?? null,
     };
   });

@@ -12,7 +12,7 @@ export const SCHEMA = 'gigalibs_speed';
 /** Outbox topic of this module's facts. */
 export const TOPIC = 'speed.facts.v1';
 /** Last migration in `db/runtime-manifest.txt`; readiness requires the database to be exactly here. */
-export const SCHEMA_CONTRACT_VERSION = 3;
+export const SCHEMA_CONTRACT_VERSION = 4;
 
 export const RUNTIME_CONFIG = Symbol('SPEED_RUNTIME_CONFIG');
 

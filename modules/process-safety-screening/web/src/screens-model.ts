@@ -67,9 +67,7 @@ export function obRows(route: SpeedRouteDetailV1): ObRowView[] {
 }
 
 /** One chart point per distinct formula; the worst recommendation of its materials. */
-export function obPoints(
-  rows: readonly ObRowView[],
-): {
+export function obPoints(rows: readonly ObRowView[]): {
   formula: string;
   names: string;
   percent: number;
@@ -192,9 +190,11 @@ export function engineLibrary(set: SpeedLibrarySetV1): ScreeningLibrary {
   const library = set.library;
   return {
     version: set.versionLabel,
+    // As the server: a material's note is the library's text, carried to the engines by its entry id.
     materials: library.materials.map((entry) => ({
       id: entry.id,
       classes: entry.classes,
+      ...(entry.note ? { noteKey: entry.id } : {}),
       citation: entry.citation,
       reviewed: entry.reviewed,
     })),
@@ -238,4 +238,38 @@ export function shown(value: number | null | undefined, digits: number): string 
   return typeof value === 'number' && Number.isFinite(value)
     ? value.toLocaleString(undefined, { maximumFractionDigits: digits })
     : null;
+}
+
+/** High interaction findings over the route's steps, and how many have a documented control (BRL-04). */
+export function highInteractions(route: SpeedRouteDetailV1): {
+  total: number;
+  controlled: number;
+  screened: boolean;
+} {
+  let total = 0;
+  let controlled = 0;
+  let screened = false;
+  for (const step of route.steps) {
+    const screen = outputs(step.latestResult)['interactions'] as
+      | {
+          status?: string;
+          findings?: readonly { materialAId: string; materialBId: string; severity: string }[];
+        }
+      | undefined;
+    if (screen?.status !== 'OK') continue;
+    screened = true;
+    for (const finding of screen.findings ?? []) {
+      if (finding.severity !== 'High') continue;
+      total += 1;
+      if (
+        step.controls.some(
+          (control) =>
+            control.materialAId === finding.materialAId &&
+            control.materialBId === finding.materialBId,
+        )
+      )
+        controlled += 1;
+    }
+  }
+  return { total, controlled, screened };
 }

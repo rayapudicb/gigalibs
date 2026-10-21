@@ -12,6 +12,8 @@ import { useMemo, useState } from 'react';
 import { CriteriaValuesPanel } from './CriteriaValuesPanel.js';
 import { GateWorkbenchPanel } from './GateWorkbenchPanel.js';
 import { GreenScorecardPanel } from './GreenScorecardPanel.js';
+import { InteractionMatrixPanel } from './InteractionMatrixPanel.js';
+import { LibraryEntriesPanel } from './LibraryEntriesPanel.js';
 import { ObChartPanel } from './ObChartPanel.js';
 import { RouteSummaryPanel } from './RouteSummaryPanel.js';
 import { ThermalPanel } from './ThermalPanel.js';
@@ -23,7 +25,13 @@ import { ThermalPanel } from './ThermalPanel.js';
 
 const BASE_PATH = '/api/speed';
 const MODULE_KEY = 'process-safety-screening';
-const SURFACES = ['speed-projects', 'speed-routes', 'speed-substances', 'speed-criteria'] as const;
+const SURFACES = [
+  'speed-projects',
+  'speed-routes',
+  'speed-substances',
+  'speed-library',
+  'speed-criteria',
+] as const;
 type Surface = (typeof SURFACES)[number];
 
 /** The components SPEED registers in `spec.ui.panels`; the dictionary decides where each appears. */
@@ -34,6 +42,8 @@ const PANELS: MetadataPanelRegistry = {
   'speed.thermal-panel': ThermalPanel,
   'speed.green-scorecard': GreenScorecardPanel,
   'speed.criteria-values': CriteriaValuesPanel,
+  'speed.interaction-matrix': InteractionMatrixPanel,
+  'speed.library-entries': LibraryEntriesPanel,
 };
 
 export interface SpeedWorkspaceProps {
@@ -66,6 +76,11 @@ export function SpeedWorkspace({ permissions = [] }: SpeedWorkspaceProps = {}) {
       moduleKey: MODULE_KEY,
       entityKey: 'speed-substances',
       surfaceKey: 'speed-substances',
+    }),
+    'speed-library': usePublishedManifest({
+      moduleKey: MODULE_KEY,
+      entityKey: 'speed-library',
+      surfaceKey: 'speed-library',
     }),
     'speed-criteria': usePublishedManifest({
       moduleKey: MODULE_KEY,

@@ -60,6 +60,14 @@ spec:
           showStreams: { type: BOOLEAN }
       - componentKey: speed.criteria-values
         binding: RECORD
+      - componentKey: speed.interaction-matrix
+        binding: RECORD
+        props:
+          changeReasons: { type: STRING, required: true }
+      - componentKey: speed.library-entries
+        binding: RECORD
+        props:
+          kind: { type: ENUM, required: true, values: [MATERIALS, RULES, REACTION_CLASSES, ENERGETIC_GROUPS] }
   api:
     application: apps/api
     port: 4790
@@ -178,6 +186,7 @@ spec:
       - { path: 'v1/steps/{id}/conditions', PUT: speed.routes.write }
       - { path: 'v1/steps/{id}/thermal-data', POST: speed.thermal-data.write }
       - { path: 'v1/steps/{id}/mitigation', PUT: speed.routes.write }
+      - { path: 'v1/steps/{id}/controls', PUT: speed.routes.write }
       - { path: 'v1/materials/{id}', PATCH: speed.routes.write }
       - { path: 'v1/materials/{id}/remove', POST: speed.routes.write }
       - { path: 'v1/materials/{id}/energetic-groups', PUT: speed.routes.write }

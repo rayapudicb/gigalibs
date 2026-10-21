@@ -3,6 +3,7 @@ import {
   AddSpeedStepInputV1Schema,
   AddSpeedThermalDataInputV1Schema,
   CreateSpeedRouteInputV1Schema,
+  DocumentSpeedControlInputV1Schema,
   ListSpeedRoutesQueryV1Schema,
   MoveSpeedStepInputV1Schema,
   RemoveSpeedRecordInputV1Schema,
@@ -221,6 +222,21 @@ export class StepsController {
       context,
       id,
       errors.parseInput(AddSpeedThermalDataInputV1Schema, body),
+    );
+  }
+
+  /** Documents the control of an interaction finding (BRL-04). */
+  @Put(':id/controls')
+  @RequirePermissions('speed.routes.write')
+  documentControl(
+    @CommandContext() context: ModuleCommandContext,
+    @Param('id') id: string,
+    @Body() body: unknown,
+  ) {
+    return this.steps.documentControl(
+      context,
+      id,
+      errors.parseInput(DocumentSpeedControlInputV1Schema, body),
     );
   }
 

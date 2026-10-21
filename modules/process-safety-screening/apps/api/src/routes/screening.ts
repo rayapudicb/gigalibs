@@ -13,6 +13,7 @@ import {
   routeRollup,
   runGate,
   runThermal,
+  screenInteractions,
 } from '@gigalibs/process-safety-engines';
 import type { Client } from '../access.js';
 import { SCHEMA, TOPIC } from '../config.js';
@@ -108,8 +109,9 @@ export async function stepMaterials(
     coefficient: string | null;
     mass_g: string | null;
     energetic_groups: string[];
+    library_material_id: string | null;
   }>(
-    `SELECT m.id, m.role, s.formula, m.coefficient, m.mass_g, m.energetic_groups
+    `SELECT m.id, m.role, s.formula, m.coefficient, m.mass_g, m.energetic_groups, s.library_material_id
        FROM ${SCHEMA}.step_materials m
        JOIN ${SCHEMA}.substances s ON s.tenant_id = m.tenant_id AND s.id = m.substance_id
       WHERE m.tenant_id = $1 AND m.step_id = $2
@@ -123,6 +125,7 @@ export async function stepMaterials(
     coefficient: number(row.coefficient),
     massG: number(row.mass_g),
     energeticGroups: [...row.energetic_groups].sort(),
+    libraryMaterialId: row.library_material_id,
   }));
 }
 
@@ -213,6 +216,9 @@ export function screenStep(
       ? runThermal(gate, conditions, sets.library.library, criteria)
       : { status: 'DATA_GAP', missing: [], reason: NO_LIBRARY },
     green: greenMetrics(gate),
+    interactions: sets.library
+      ? screenInteractions(materials, sets.library.library)
+      : { status: 'DATA_GAP', missing: [], reason: NO_LIBRARY },
   };
 }
 

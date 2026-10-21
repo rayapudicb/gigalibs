@@ -18,6 +18,8 @@ export function windowSource(builderFor) {
   const SITE_REF = lookup('site-ref', 'organization-units');
   const MEMBER_REF = lookup('member-ref', 'workspace-members');
   const PROJECT_REF = lookup('project-ref', 'speed-projects');
+  // The library in force's materials: a substance's reactivity classes come from its link (FR-HAZ-01).
+  const LIBRARY_MATERIAL_REF = lookup('library-material-ref', 'speed-library-materials');
   const windows = {};
 
   // A saved record changes only with a reason (FR-AUD-01). The window asks for one from S2; until then a saved
@@ -81,6 +83,10 @@ export function windowSource(builderFor) {
     field(S, 'formula', 'Formula', 'TEXT', { required: true, help: 'Brackets and hydrates are accepted: CuSO4·5H2O.' }),
     field(S, 'density-g-per-ml', 'Density (g/mL)', 'NUMBER', { scale: 4 }),
     field(S, 'notes', 'Notes', 'TEXTAREA'),
+    field(S, 'library-material-id', 'Library material', 'REFERENCE', {
+      ref: 'library-material-ref',
+      help: 'Its reactivity classes drive the interaction screen; unlinked substances are listed as not classified.',
+    }),
     field(S, 'hill-formula', 'Hill formula', 'TEXT', { readOnly: true }),
     field(S, 'molar-mass-g-per-mol', 'Molar mass (g/mol)', 'NUMBER', { readOnly: true, scale: 3 }),
     field(S, 'elements-version', 'Atomic weights', 'TEXT', { readOnly: true }),
@@ -89,12 +95,12 @@ export function windowSource(builderFor) {
     field(S, 'updated-at', 'Last change', 'DATETIME', { readOnly: true }),
   ];
   windows['speed-substances'] = window('speed-substances', 'Substances', 'Substances', 'The substances your routes use, with formulas and molar masses.', 'speed:read',
-    dictionary('speed-substances', 'Substances', S, [entity(S, 'Substances')], sf, [], [values('substance-statuses', RECORD_STATUSES)], [
+    dictionary('speed-substances', 'Substances', S, [entity(S, 'Substances')], sf, [], [LIBRARY_MATERIAL_REF, values('substance-statuses', RECORD_STATUSES)], [
       view('substances', 'Substances', [
         tab('substance', 'Substance', 0, S, [
           ['name', 6, 'main', { lockedWhen: SAVED }], ['cas-number', 3, 'main', { lockedWhen: SAVED }],
           ['formula', 3, 'main', { lockedWhen: SAVED }], ['density-g-per-ml', 3, 'main', { lockedWhen: SAVED }],
-          ['notes', 12, 'main', { lockedWhen: SAVED }],
+          ['library-material-id', 6, 'main', { lockedWhen: SAVED }], ['notes', 12, 'main', { lockedWhen: SAVED }],
           ['hill-formula', 3, 'computed'], ['molar-mass-g-per-mol', 3, 'computed'], ['elements-version', 3, 'computed'],
           ['in-use', 3, 'computed'], ['status', 3, 'computed'], ['updated-at', 3, 'computed'],
         ], sf, { sections: [section('main', 'Substance', 0), section('computed', 'Computed on the server', 1)] }),
@@ -128,6 +134,10 @@ export function windowSource(builderFor) {
         tab('thermal', 'Thermal & runaway', 0, R, [], rf, {
           position: 2,
           panels: [panel('thermal', 'speed.thermal-panel', 0, { props: { changeReasons: CHANGE_REASONS } })],
+        }),
+        tab('interactions', 'Interactions', 0, R, [], rf, {
+          position: 3,
+          panels: [panel('interactions', 'speed.interaction-matrix', 0, { props: { changeReasons: CHANGE_REASONS } })],
         }),
         tab('green', 'Green metrics', 0, R, [], rf, {
           position: 4,
@@ -166,6 +176,38 @@ export function windowSource(builderFor) {
     ], [
       action(C, 'put-in-force', 'Put in force', 'speed.settings.manage', ['in-force', 'EQ', false],
         'Put this criteria set in force? Results computed from now on use it; earlier results keep the set they used.', REASON_REQUIRED),
+    ]));
+
+  // The screening library (§3.1): the sets imported into the workspace, the one in force, and each set's entries with
+  // their citations. One window with entry tabs: entries are identified by their library ids inside an immutable set.
+  const L = 'speed.library-sets';
+  const lf = [
+    field(L, 'version-label', 'Version', 'TEXT', { readOnly: true }),
+    field(L, 'source', 'Source', 'TEXT', { readOnly: true }),
+    field(L, 'review-status', 'Status', 'SELECT', { readOnly: true, ref: 'review-statuses' }),
+    field(L, 'in-force', 'In force', 'BOOLEAN', { readOnly: true }),
+    field(L, 'imported-by', 'Imported by', 'REFERENCE', { readOnly: true, ref: 'member-ref' }),
+    field(L, 'imported-at', 'Imported', 'DATETIME', { readOnly: true }),
+    field(L, 'in-force-since', 'In force since', 'DATETIME', { readOnly: true }),
+  ];
+  const entries = (key, label, position, kind) =>
+    tab(key, label, 0, L, [], lf, { position, panels: [panel(key, 'speed.library-entries', 0, { props: { kind } })] });
+  windows['speed-library'] = window('speed-library', 'Screening library', 'Library', 'The cited reference data the screening engines read: materials, interaction rules, reaction classes and energetic groups.', 'speed:read',
+    dictionary('speed-library', 'Screening library', L, [entity(L, 'Library sets')], lf, [],
+      [MEMBER_REF, values('review-statuses', [['UNREVIEWED', 'Unreviewed'], ['APPROVED', 'Approved']])], [
+      view('library-sets', 'Library sets', [
+        tab('set', 'Library set', 0, L, [
+          ['version-label', 3, 'main'], ['review-status', 3, 'main'], ['in-force', 3, 'main'], ['in-force-since', 3, 'main'],
+          ['source', 6, 'main'], ['imported-by', 3, 'main'], ['imported-at', 3, 'main'],
+        ], lf, { sections: [section('main', 'Library set', 0)] }),
+        entries('materials', 'Materials', 1, 'MATERIALS'),
+        entries('rules', 'Interaction rules', 2, 'RULES'),
+        entries('reaction-classes', 'Reaction classes', 3, 'REACTION_CLASSES'),
+        entries('energetic-groups', 'Energetic groups', 4, 'ENERGETIC_GROUPS'),
+      ], { search: ['version-label'], sort: 'version-label' }),
+    ], [
+      action(L, 'put-in-force', 'Put in force', 'speed.settings.manage', ['in-force', 'EQ', false],
+        'Put this library set in force? Results computed from now on use it; earlier results keep the set they used.', REASON_REQUIRED),
     ]));
 
   return windows;

@@ -319,6 +319,26 @@
               ]
             },
             {
+              "tabKey": "interactions",
+              "label": "Interactions",
+              "position": 3,
+              "level": 0,
+              "targetEntityKey": "speed.routes",
+              "sections": [],
+              "fields": [],
+              "panels": [
+                {
+                  "panelKey": "interactions",
+                  "componentKey": "speed.interaction-matrix",
+                  "position": 0,
+                  "span": 12,
+                  "props": {
+                    "changeReasons": "Data entry|Correction|Measured value|Literature value|Mitigation"
+                  }
+                }
+              ]
+            },
+            {
               "tabKey": "green",
               "label": "Green metrics",
               "position": 4,

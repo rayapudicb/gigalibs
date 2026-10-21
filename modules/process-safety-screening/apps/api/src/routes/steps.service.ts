@@ -3,6 +3,7 @@ import {
   type AddSpeedMaterialInputV1,
   type AddSpeedStepInputV1,
   type AddSpeedThermalDataInputV1,
+  type DocumentSpeedControlInputV1,
   type MoveSpeedStepInputV1,
   type RemoveSpeedRecordInputV1,
   type ReplaceSpeedConditionsInputV1,
@@ -212,6 +213,7 @@ export class StepsService {
             conditions: before.conditions,
             thermalData: before.thermalData,
             mitigation: before.mitigation,
+            controls: before.controls,
           },
           reason: input.reason,
         },
@@ -596,6 +598,83 @@ export class StepsService {
         ),
         warnings: [],
       };
+    });
+  }
+
+  /**
+   * Documents the control of an interaction finding (BRL-04): the pair must have a finding in the step's latest result,
+   * whose rule the control is recorded against. Changing it needs the version read and a reason.
+   */
+  documentControl(
+    context: ModuleCommandContext,
+    stepId: string,
+    input: DocumentSpeedControlInputV1,
+  ): Promise<SpeedStepChangeV1> {
+    const { tenantId, subject } = context.principal;
+    return this.database.withTenantTransaction(tenantId, async (client) => {
+      const routeId = await this.lockRouteOfStep(client, context, stepId);
+      const before = await readStep(client, tenantId, routeId, stepId);
+      const interactions = before.latestResult?.outputs['interactions'] as
+        | {
+            status?: string;
+            findings?: readonly { materialAId: string; materialBId: string; ruleId: string }[];
+          }
+        | undefined;
+      const finding = interactions?.findings?.find(
+        (candidate) =>
+          (candidate.materialAId === input.materialAId &&
+            candidate.materialBId === input.materialBId) ||
+          (candidate.materialAId === input.materialBId &&
+            candidate.materialBId === input.materialAId),
+      );
+      if (!finding)
+        unprocessable(
+          'SPEED_FINDING_UNKNOWN',
+          'The step has no interaction finding for these two materials.',
+          [{ path: 'materialBId', code: 'SPEED_FINDING_UNKNOWN' }],
+        );
+      const existing = before.controls.find(
+        (control) =>
+          control.materialAId === finding.materialAId &&
+          control.materialBId === finding.materialBId,
+      );
+      if ((existing?.version ?? 0) !== input.version) return errors.versionConflict('The control');
+      await client.query(
+        `INSERT INTO ${SCHEMA}.interaction_controls (tenant_id, step_id, material_a_id, material_b_id, rule_id, text, documented_by)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)
+         ON CONFLICT (tenant_id, step_id, material_a_id, material_b_id) DO UPDATE
+           SET rule_id = EXCLUDED.rule_id, text = EXCLUDED.text, documented_by = EXCLUDED.documented_by, documented_at = now(),
+               version = ${SCHEMA}.interaction_controls.version + 1`,
+        [
+          tenantId,
+          stepId,
+          finding.materialAId,
+          finding.materialBId,
+          finding.ruleId,
+          input.text,
+          subject,
+        ],
+      );
+      const after = await readStep(client, tenantId, routeId, stepId);
+      const control = after.controls.find(
+        (candidate) =>
+          candidate.materialAId === finding.materialAId &&
+          candidate.materialBId === finding.materialBId,
+      );
+      await recordMutation(client, { schema: SCHEMA, topic: TOPIC }, context, {
+        action: 'CONTROL_DOCUMENTED',
+        aggregateType: 'interaction-control',
+        aggregateId: stepId,
+        aggregateVersion: control?.version ?? 1,
+        payload: {
+          materialAId: finding.materialAId,
+          materialBId: finding.materialBId,
+          ruleId: finding.ruleId,
+          changes: { text: { from: existing?.text ?? null, to: control?.text ?? null } },
+          reason: input.reason,
+        },
+      });
+      return { step: after, warnings: [] };
     });
   }
 

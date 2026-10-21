@@ -31,6 +31,34 @@ export const MODULE_PANEL_SOURCES: readonly unknown[] = [
   },
   {
     "moduleKey": "process-safety-screening",
+    "componentKey": "speed.interaction-matrix",
+    "binding": "RECORD",
+    "props": {
+      "changeReasons": {
+        "type": "STRING",
+        "required": true
+      }
+    }
+  },
+  {
+    "moduleKey": "process-safety-screening",
+    "componentKey": "speed.library-entries",
+    "binding": "RECORD",
+    "props": {
+      "kind": {
+        "type": "ENUM",
+        "required": true,
+        "values": [
+          "MATERIALS",
+          "RULES",
+          "REACTION_CLASSES",
+          "ENERGETIC_GROUPS"
+        ]
+      }
+    }
+  },
+  {
+    "moduleKey": "process-safety-screening",
     "componentKey": "speed.ob-chart",
     "binding": "RECORD",
     "props": {

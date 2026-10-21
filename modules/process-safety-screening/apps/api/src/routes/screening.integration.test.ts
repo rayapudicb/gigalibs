@@ -207,7 +207,11 @@ describe.skipIf(!adminUrl)('SPEED screening results through the API (WI-OI-120by
     speed = await speedDatabase('screening');
     const criteria = new CriteriaService(speed.database);
     const library = new LibraryService(speed.database);
-    substances = new SubstancesService(speed.database);
+    substances = new SubstancesService(
+      speed.database,
+      new CriteriaService(speed.database),
+      new LibraryService(speed.database),
+    );
     routes = new RoutesService(speed.database, criteria, library);
     steps = new StepsService(speed.database, criteria, library);
     const citations = Object.fromEntries(

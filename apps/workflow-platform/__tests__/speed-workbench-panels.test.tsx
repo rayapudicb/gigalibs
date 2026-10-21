@@ -73,6 +73,9 @@ const balanced: SpeedStepV1 = {
     material('w', 'By-product', 'Water', 'H2O', 1, null, 18.015),
   ],
   conditions: null,
+  thermalData: [],
+  mitigation: null,
+  controls: [],
   latestResult: result({
     status: 'OK',
     pass: true,

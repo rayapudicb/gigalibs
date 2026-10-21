@@ -5,3 +5,5 @@ export { CriteriaValuesPanel, CriteriaValuesView } from './CriteriaValuesPanel.j
 export { GreenScorecardPanel, GreenScorecardView } from './GreenScorecardPanel.js';
 export { ObChartPanel, ObChartView } from './ObChartPanel.js';
 export { ThermalPanel, ThermalView } from './ThermalPanel.js';
+export { InteractionMatrixPanel, InteractionMatrixView } from './InteractionMatrixPanel.js';
+export { LibraryEntriesPanel, LibraryEntriesView } from './LibraryEntriesPanel.js';

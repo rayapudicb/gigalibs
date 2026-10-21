@@ -84,7 +84,12 @@ describe.skipIf(!adminUrl)('SPEED projects on PostgreSQL (WI-OI-120bw)', () => {
       {
         projects,
         criteria: new CriteriaService(speed.database),
-        substances: new SubstancesService(speed.database),
+        library: new LibraryService(speed.database),
+        substances: new SubstancesService(
+          speed.database,
+          new CriteriaService(speed.database),
+          new LibraryService(speed.database),
+        ),
         routes: new RoutesService(
           speed.database,
           new CriteriaService(speed.database),

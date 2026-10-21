@@ -10852,6 +10852,335 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
     "contractVersion": "1.0",
     "window": {
       "route": "/speed",
+      "label": "Library",
+      "description": "The cited reference data the screening engines read: materials, interaction rules, reaction classes and energetic groups.",
+      "readPermission": "speed:read"
+    },
+    "definition": {
+      "kind": "APPLICATION_DICTIONARY",
+      "contractVersion": "1.0",
+      "moduleKey": "process-safety-screening",
+      "entityKey": "speed-library",
+      "surfaceKey": "speed-library",
+      "title": "Screening library",
+      "dictionary": {
+        "packageKey": "speed-library-module-baseline",
+        "name": "Screening library",
+        "version": "1.0.0",
+        "moduleKey": "process-safety-screening",
+        "targetEntityKey": "speed.library-sets",
+        "entities": [
+          {
+            "entityKey": "speed.library-sets",
+            "moduleKey": "process-safety-screening",
+            "label": "Library sets",
+            "ownership": "MODULE_CORE",
+            "primaryKeyField": "id",
+            "isVersioned": true,
+            "isAuditLogged": true,
+            "isSoftDeletable": false
+          }
+        ],
+        "fields": [
+          {
+            "fieldKey": "version-label",
+            "entityKey": "speed.library-sets",
+            "label": "Version",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "source",
+            "entityKey": "speed.library-sets",
+            "label": "Source",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "review-status",
+            "entityKey": "speed.library-sets",
+            "label": "Status",
+            "type": "SELECT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "review-statuses"
+          },
+          {
+            "fieldKey": "in-force",
+            "entityKey": "speed.library-sets",
+            "label": "In force",
+            "type": "BOOLEAN",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "imported-by",
+            "entityKey": "speed.library-sets",
+            "label": "Imported by",
+            "type": "REFERENCE",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "member-ref"
+          },
+          {
+            "fieldKey": "imported-at",
+            "entityKey": "speed.library-sets",
+            "label": "Imported",
+            "type": "DATETIME",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "in-force-since",
+            "entityKey": "speed.library-sets",
+            "label": "In force since",
+            "type": "DATETIME",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          }
+        ],
+        "relationships": [],
+        "references": [
+          {
+            "referenceKey": "member-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "workspace-members"
+          },
+          {
+            "referenceKey": "review-statuses",
+            "referenceType": "VALUE_LIST",
+            "staticValues": [
+              {
+                "value": "UNREVIEWED",
+                "label": "Unreviewed"
+              },
+              {
+                "value": "APPROVED",
+                "label": "Approved"
+              }
+            ]
+          }
+        ],
+        "validationRules": [],
+        "views": [
+          {
+            "viewKey": "library-sets",
+            "label": "Library sets",
+            "mode": "LIST",
+            "device": "ALL",
+            "defaultSortDirection": "ASC",
+            "tabs": [
+              {
+                "tabKey": "set",
+                "label": "Library set",
+                "position": 0,
+                "level": 0,
+                "targetEntityKey": "speed.library-sets",
+                "sections": [
+                  {
+                    "sectionKey": "main",
+                    "label": "Library set",
+                    "collapsible": false,
+                    "defaultCollapsed": false,
+                    "position": 0
+                  }
+                ],
+                "fields": [
+                  {
+                    "fieldKey": "version-label",
+                    "position": 0,
+                    "span": 3,
+                    "componentKey": "text-input",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "review-status",
+                    "position": 1,
+                    "span": 3,
+                    "componentKey": "select",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "in-force",
+                    "position": 2,
+                    "span": 3,
+                    "componentKey": "checkbox",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "in-force-since",
+                    "position": 3,
+                    "span": 3,
+                    "componentKey": "datetime-input",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "source",
+                    "position": 4,
+                    "span": 6,
+                    "componentKey": "text-input",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "imported-by",
+                    "position": 5,
+                    "span": 3,
+                    "componentKey": "lookup",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "imported-at",
+                    "position": 6,
+                    "span": 3,
+                    "componentKey": "datetime-input",
+                    "sectionKey": "main"
+                  }
+                ]
+              },
+              {
+                "tabKey": "materials",
+                "label": "Materials",
+                "position": 1,
+                "level": 0,
+                "targetEntityKey": "speed.library-sets",
+                "sections": [],
+                "fields": [],
+                "panels": [
+                  {
+                    "panelKey": "materials",
+                    "componentKey": "speed.library-entries",
+                    "position": 0,
+                    "span": 12,
+                    "props": {
+                      "kind": "MATERIALS"
+                    }
+                  }
+                ]
+              },
+              {
+                "tabKey": "rules",
+                "label": "Interaction rules",
+                "position": 2,
+                "level": 0,
+                "targetEntityKey": "speed.library-sets",
+                "sections": [],
+                "fields": [],
+                "panels": [
+                  {
+                    "panelKey": "rules",
+                    "componentKey": "speed.library-entries",
+                    "position": 0,
+                    "span": 12,
+                    "props": {
+                      "kind": "RULES"
+                    }
+                  }
+                ]
+              },
+              {
+                "tabKey": "reaction-classes",
+                "label": "Reaction classes",
+                "position": 3,
+                "level": 0,
+                "targetEntityKey": "speed.library-sets",
+                "sections": [],
+                "fields": [],
+                "panels": [
+                  {
+                    "panelKey": "reaction-classes",
+                    "componentKey": "speed.library-entries",
+                    "position": 0,
+                    "span": 12,
+                    "props": {
+                      "kind": "REACTION_CLASSES"
+                    }
+                  }
+                ]
+              },
+              {
+                "tabKey": "energetic-groups",
+                "label": "Energetic groups",
+                "position": 4,
+                "level": 0,
+                "targetEntityKey": "speed.library-sets",
+                "sections": [],
+                "fields": [],
+                "panels": [
+                  {
+                    "panelKey": "energetic-groups",
+                    "componentKey": "speed.library-entries",
+                    "position": 0,
+                    "span": 12,
+                    "props": {
+                      "kind": "ENERGETIC_GROUPS"
+                    }
+                  }
+                ]
+              }
+            ],
+            "searchFields": [
+              "version-label"
+            ],
+            "defaultSortField": "version-label"
+          }
+        ],
+        "navigation": [],
+        "actions": [
+          {
+            "actionKey": "put-in-force",
+            "label": "Put in force",
+            "type": "COMMAND",
+            "handlerKey": "speed.library-sets.put-in-force",
+            "requiredPermissions": [
+              "speed.settings.manage"
+            ],
+            "confirmationPrompt": "Put this library set in force? Results computed from now on use it; earlier results keep the set they used.",
+            "parameters": [
+              {
+                "key": "reason",
+                "label": "Reason",
+                "type": "TEXTAREA",
+                "required": true
+              }
+            ],
+            "visibilityCondition": {
+              "field": "in-force",
+              "operator": "EQ",
+              "value": false
+            }
+          }
+        ],
+        "messages": []
+      }
+    }
+  },
+  {
+    "contractVersion": "1.0",
+    "window": {
+      "route": "/speed",
       "label": "Projects",
       "description": "Process development projects and the routes screened in them.",
       "readPermission": "speed:read"
@@ -11688,6 +12017,26 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
                 ]
               },
               {
+                "tabKey": "interactions",
+                "label": "Interactions",
+                "position": 3,
+                "level": 0,
+                "targetEntityKey": "speed.routes",
+                "sections": [],
+                "fields": [],
+                "panels": [
+                  {
+                    "panelKey": "interactions",
+                    "componentKey": "speed.interaction-matrix",
+                    "position": 0,
+                    "span": 12,
+                    "props": {
+                      "changeReasons": "Data entry|Correction|Measured value|Literature value|Mitigation"
+                    }
+                  }
+                ]
+              },
+              {
                 "tabKey": "green",
                 "label": "Green metrics",
                 "position": 4,
@@ -11837,6 +12186,19 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "maskOnDisplay": false
           },
           {
+            "fieldKey": "library-material-id",
+            "entityKey": "speed.substances",
+            "label": "Library material",
+            "type": "REFERENCE",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "library-material-ref",
+            "helpText": "Its reactivity classes drive the interaction screen; unlinked substances are listed as not classified."
+          },
+          {
             "fieldKey": "hill-formula",
             "entityKey": "speed.substances",
             "label": "Hill formula",
@@ -11907,6 +12269,11 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
         ],
         "relationships": [],
         "references": [
+          {
+            "referenceKey": "library-material-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "speed-library-materials"
+          },
           {
             "referenceKey": "substance-statuses",
             "referenceType": "VALUE_LIST",
@@ -11999,8 +12366,19 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
                     }
                   },
                   {
-                    "fieldKey": "notes",
+                    "fieldKey": "library-material-id",
                     "position": 4,
+                    "span": 6,
+                    "componentKey": "lookup",
+                    "sectionKey": "main",
+                    "readOnlyCondition": {
+                      "field": "status",
+                      "operator": "IS_NOT_NULL"
+                    }
+                  },
+                  {
+                    "fieldKey": "notes",
+                    "position": 5,
                     "span": 12,
                     "componentKey": "textarea",
                     "sectionKey": "main",
@@ -12011,42 +12389,42 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
                   },
                   {
                     "fieldKey": "hill-formula",
-                    "position": 5,
+                    "position": 6,
                     "span": 3,
                     "componentKey": "text-input",
                     "sectionKey": "computed"
                   },
                   {
                     "fieldKey": "molar-mass-g-per-mol",
-                    "position": 6,
+                    "position": 7,
                     "span": 3,
                     "componentKey": "number-input",
                     "sectionKey": "computed"
                   },
                   {
                     "fieldKey": "elements-version",
-                    "position": 7,
+                    "position": 8,
                     "span": 3,
                     "componentKey": "text-input",
                     "sectionKey": "computed"
                   },
                   {
                     "fieldKey": "in-use",
-                    "position": 8,
+                    "position": 9,
                     "span": 3,
                     "componentKey": "checkbox",
                     "sectionKey": "computed"
                   },
                   {
                     "fieldKey": "status",
-                    "position": 9,
+                    "position": 10,
                     "span": 3,
                     "componentKey": "select",
                     "sectionKey": "computed"
                   },
                   {
                     "fieldKey": "updated-at",
-                    "position": 10,
+                    "position": 11,
                     "span": 3,
                     "componentKey": "datetime-input",
                     "sectionKey": "computed"

@@ -19,6 +19,7 @@ const CasNumber = z
   .regex(/^[0-9]{2,7}-[0-9]{2}-[0-9]$/, 'Use the CAS format 1234-56-7.');
 const Formula = z.string().trim().min(1).max(200);
 const Density = z.number().finite().positive();
+const LibraryMaterialId = z.string().trim().min(1).max(64);
 
 export const CreateSpeedSubstanceInputV1Schema = z
   .object({
@@ -28,6 +29,8 @@ export const CreateSpeedSubstanceInputV1Schema = z
     formula: Formula,
     densityGPerMl: Density.optional(),
     notes: SpeedNotesSchema.optional(),
+    /** The library material its reactivity classes come from (FR-HAZ-01), an id in the library pack. */
+    libraryMaterialId: LibraryMaterialId.optional(),
   })
   .strict();
 export type CreateSpeedSubstanceInputV1 = z.infer<typeof CreateSpeedSubstanceInputV1Schema>;
@@ -41,11 +44,12 @@ export const UpdateSpeedSubstanceInputV1Schema = z
     formula: Formula.optional(),
     densityGPerMl: Density.nullable().optional(),
     notes: SpeedNotesSchema.nullable().optional(),
+    libraryMaterialId: LibraryMaterialId.nullable().optional(),
   })
   .strict()
   .refine(
     (value) =>
-      ['name', 'casNumber', 'formula', 'densityGPerMl', 'notes'].some(
+      ['name', 'casNumber', 'formula', 'densityGPerMl', 'notes', 'libraryMaterialId'].some(
         (key) => value[key as keyof typeof value] !== undefined,
       ),
     { message: 'Change at least one field.' },
@@ -67,6 +71,7 @@ export interface SpeedSubstanceV1 {
   readonly elementsVersion: string;
   readonly densityGPerMl: number | null;
   readonly notes: string | null;
+  readonly libraryMaterialId: string | null;
   readonly status: SpeedRecordStatus;
   /** A route uses it, so its formula is fixed. */
   readonly inUse: boolean;

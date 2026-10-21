@@ -91,6 +91,17 @@ export interface SpeedApi {
     text: string,
     reason: string,
   ): Promise<SpeedStepChangeV1>;
+  documentControl(
+    stepId: string,
+    version: number,
+    materialAId: string,
+    materialBId: string,
+    text: string,
+    reason: string,
+  ): Promise<SpeedStepChangeV1>;
+  /** Links a substance to a library material (its reactivity classes come from there). */
+  linkSubstance(substanceId: string, libraryMaterialId: string, reason: string): Promise<unknown>;
+  librarySet(id: string): Promise<SpeedLibrarySetV1>;
   /** The criteria and library sets in force, or null where a workspace has none. */
   setsInForce(): Promise<{
     criteria: SpeedCriteriaSetV1 | null;
@@ -151,6 +162,17 @@ export function createSpeedApi(send: typeof fetch = (input, init) => fetch(input
       call('PUT', `/materials/${materialId}/energetic-groups`, { version, reason, groups }),
     replaceMitigation: (stepId, version, text, reason) =>
       call('PUT', `/steps/${stepId}/mitigation`, { version, reason, text }),
+    documentControl: (stepId, version, materialAId, materialBId, text, reason) =>
+      call('PUT', `/steps/${stepId}/controls`, { version, reason, materialAId, materialBId, text }),
+    linkSubstance: async (substanceId, libraryMaterialId, reason) => {
+      const substance = await call<{ version: number }>('GET', `/substances/${substanceId}`);
+      return call('PATCH', `/substances/${substanceId}`, {
+        version: substance.version,
+        reason,
+        libraryMaterialId,
+      });
+    },
+    librarySet: (id) => call('GET', `/library-sets/${id}`),
     setsInForce: async () => {
       const [criteria, library] = await Promise.all([
         call<{ items: SpeedCriteriaSetV1[] }>('GET', '/criteria-sets'),

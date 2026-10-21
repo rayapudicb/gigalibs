@@ -23,13 +23,16 @@ import { Injectable } from '@nestjs/common';
 import type { Client } from '../access.js';
 import { changes, likePattern } from '../audit.js';
 import { SCHEMA, TOPIC } from '../config.js';
+import { CriteriaService } from '../criteria/criteria.service.js';
 import { DatabaseService } from '../database.service.js';
 import { errors, refuse, unprocessable } from '../errors.js';
+import { LibraryService } from '../library/library.service.js';
+import { NO_LIBRARY, computeStep } from '../routes/screening.js';
 
 const ELEMENTS = IUPAC_2021_ABRIDGED;
 
 const COLUMNS = `s.id, s.name, s.cas_number, s.formula, s.hill_formula, s.molar_mass_g_per_mol, s.elements_version, s.density_g_per_ml,
-  s.notes, s.status, s.version, s.created_by, s.created_at, s.updated_at, s.archived_by, s.archived_at,
+  s.notes, s.library_material_id, s.status, s.version, s.created_by, s.created_at, s.updated_at, s.archived_by, s.archived_at,
   EXISTS (SELECT 1 FROM ${SCHEMA}.step_materials m WHERE m.tenant_id = s.tenant_id AND m.substance_id = s.id) AS in_use`;
 
 interface SubstanceRow {
@@ -42,6 +45,7 @@ interface SubstanceRow {
   elements_version: string;
   density_g_per_ml: string | null;
   notes: string | null;
+  library_material_id: string | null;
   status: SpeedRecordStatus;
   version: number;
   created_by: string;
@@ -63,6 +67,7 @@ function toSubstance(row: SubstanceRow): SpeedSubstanceV1 {
     elementsVersion: row.elements_version,
     densityGPerMl: row.density_g_per_ml === null ? null : Number(row.density_g_per_ml),
     notes: row.notes,
+    libraryMaterialId: row.library_material_id,
     status: row.status,
     inUse: row.in_use,
     version: Number(row.version),
@@ -81,6 +86,7 @@ const AUDITED: readonly (keyof SpeedSubstanceV1)[] = [
   'molarMassGPerMol',
   'densityGPerMl',
   'notes',
+  'libraryMaterialId',
   'status',
 ];
 
@@ -125,7 +131,65 @@ function assertCas(cas: string | null | undefined): void {
  */
 @Injectable()
 export class SubstancesService {
-  constructor(private readonly database: DatabaseService) {}
+  constructor(
+    private readonly database: DatabaseService,
+    private readonly criteria: CriteriaService,
+    private readonly library: LibraryService,
+  ) {}
+
+  /** A library material id must be in the library in force: its reactivity classes come from there (FR-HAZ-01). */
+  private async assertLibraryMaterial(
+    client: Client,
+    tenantId: string,
+    libraryMaterialId: string | null | undefined,
+  ): Promise<void> {
+    if (!libraryMaterialId) return;
+    const library = await this.library.inForce(client, tenantId);
+    if (!library)
+      refuse(
+        NO_LIBRARY.code,
+        'No screening library is in force in this workspace, so the link cannot be checked.',
+      );
+    if (!library.library.materials.some((entry) => entry.id === libraryMaterialId))
+      unprocessable(
+        'SPEED_LIBRARY_MATERIAL_UNKNOWN',
+        'The library material is not in the library in force.',
+        [
+          {
+            path: 'libraryMaterialId',
+            code: 'SPEED_LIBRARY_MATERIAL_UNKNOWN',
+            params: { libraryMaterialId },
+          },
+        ],
+      );
+  }
+
+  /**
+   * A changed library link changes the interaction screen of every draft step that uses the substance, so those steps
+   * are recomputed in the same transaction (results of other routes stay as they were).
+   */
+  private async recomputeUsers(
+    client: Client,
+    context: ModuleCommandContext,
+    substanceId: string,
+  ): Promise<void> {
+    const { tenantId } = context.principal;
+    const users = await client.query<{ route_id: string; step_id: string }>(
+      `SELECT DISTINCT s.route_id, s.id AS step_id
+         FROM ${SCHEMA}.step_materials m
+         JOIN ${SCHEMA}.steps s ON s.tenant_id = m.tenant_id AND s.id = m.step_id
+         JOIN ${SCHEMA}.routes r ON r.tenant_id = s.tenant_id AND r.id = s.route_id
+        WHERE m.tenant_id = $1 AND m.substance_id = $2 AND r.status = 'DRAFT'`,
+      [tenantId, substanceId],
+    );
+    if (users.rows.length === 0) return;
+    const sets = {
+      criteria: await this.criteria.inForce(client, tenantId),
+      library: await this.library.inForce(client, tenantId),
+    };
+    for (const user of users.rows)
+      await computeStep(client, context, user.route_id, user.step_id, sets);
+  }
 
   list(
     principal: ModulePrincipal,
@@ -189,12 +253,13 @@ export class SubstancesService {
         [tenantId, input.requestKey],
       );
       if (replay.rows[0]) return { substance: toSubstance(replay.rows[0]), replayed: true };
+      await this.assertLibraryMaterial(client, tenantId, input.libraryMaterialId);
       const id = randomUUID();
       try {
         await client.query(
           `INSERT INTO ${SCHEMA}.substances (id, tenant_id, request_key, name, cas_number, formula, hill_formula, molar_mass_g_per_mol,
-             elements_version, density_g_per_ml, notes, created_by)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
+             elements_version, density_g_per_ml, notes, library_material_id, created_by)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
           [
             id,
             tenantId,
@@ -207,6 +272,7 @@ export class SubstancesService {
             formula.elementsVersion,
             input.densityGPerMl ?? null,
             input.notes ?? null,
+            input.libraryMaterialId ?? null,
             subject,
           ],
         );
@@ -245,6 +311,9 @@ export class SubstancesService {
           'A route uses this substance, so its formula stays; create a new substance for the new formula.',
         );
       const set = (key: keyof UpdateSpeedSubstanceInputV1) => input[key] !== undefined;
+      const relinked =
+        set('libraryMaterialId') && (input.libraryMaterialId ?? null) !== before.libraryMaterialId;
+      if (relinked) await this.assertLibraryMaterial(client, tenantId, input.libraryMaterialId);
       try {
         await client.query(
           `UPDATE ${SCHEMA}.substances
@@ -256,6 +325,7 @@ export class SubstancesService {
                   elements_version = CASE WHEN $7 THEN $11 ELSE elements_version END,
                   density_g_per_ml = CASE WHEN $12 THEN $13::numeric ELSE density_g_per_ml END,
                   notes = CASE WHEN $14 THEN $15 ELSE notes END,
+                  library_material_id = CASE WHEN $16 THEN $17 ELSE library_material_id END,
                   version = version + 1, updated_at = now()
             WHERE tenant_id = $1 AND id = $2`,
           [
@@ -274,6 +344,8 @@ export class SubstancesService {
             input.densityGPerMl ?? null,
             set('notes'),
             input.notes ?? null,
+            set('libraryMaterialId'),
+            input.libraryMaterialId ?? null,
           ],
         );
       } catch (error) {
@@ -287,6 +359,7 @@ export class SubstancesService {
         aggregateVersion: substance.version,
         payload: { changes: changes(before, substance, AUDITED), reason: input.reason },
       });
+      if (relinked) await this.recomputeUsers(client, context, id);
       return substance;
     });
   }

@@ -261,6 +261,8 @@ export interface SpeedStepV1 {
   /** The active thermal data of the step's mixture, one per kind. */
   readonly thermalData: readonly SpeedThermalDataV1[];
   readonly mitigation: SpeedMitigationV1 | null;
+  /** Controls documented for the step's interaction findings (BRL-04). */
+  readonly controls: readonly SpeedControlV1[];
   readonly latestResult: SpeedResultV1 | null;
 }
 
@@ -343,6 +345,35 @@ export const ReplaceSpeedMitigationInputV1Schema = z
   })
   .strict();
 export type ReplaceSpeedMitigationInputV1 = z.infer<typeof ReplaceSpeedMitigationInputV1Schema>;
+
+/**
+ * Documents the control of an interaction finding between two of the step's materials (BRL-04; mandatory for High).
+ * `version` 0 means none is documented yet; the pair must have a finding in the step's latest result.
+ */
+export const DocumentSpeedControlInputV1Schema = z
+  .object({
+    version: z.number().int().min(0),
+    reason: SpeedReasonSchema,
+    materialAId: z.uuid(),
+    materialBId: z.uuid(),
+    text: z.string().trim().min(1).max(4000),
+  })
+  .strict()
+  .refine((value) => value.materialAId !== value.materialBId, {
+    path: ['materialBId'],
+    message: 'A control is for two different materials.',
+  });
+export type DocumentSpeedControlInputV1 = z.infer<typeof DocumentSpeedControlInputV1Schema>;
+
+export interface SpeedControlV1 {
+  readonly materialAId: string;
+  readonly materialBId: string;
+  readonly ruleId: string;
+  readonly text: string;
+  readonly version: number;
+  readonly documentedBy: string;
+  readonly documentedAt: string;
+}
 
 export interface SpeedMitigationV1 {
   readonly text: string;

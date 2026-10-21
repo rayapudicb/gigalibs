@@ -59,16 +59,24 @@ const SpeedRecordController = createRecordController({
     StepsService,
     {
       provide: RECORD_DISPATCHER,
-      inject: [DatabaseService, ProjectsService, SubstancesService, RoutesService, CriteriaService],
+      inject: [
+        DatabaseService,
+        ProjectsService,
+        SubstancesService,
+        RoutesService,
+        CriteriaService,
+        LibraryService,
+      ],
       useFactory: (
         database: DatabaseService,
         projects: ProjectsService,
         substances: SubstancesService,
         routes: RoutesService,
         criteria: CriteriaService,
+        library: LibraryService,
       ) =>
         speedRecordDispatcher(
-          { projects, substances, routes, criteria },
+          { projects, substances, routes, criteria, library },
           new ModuleIdempotencyStore(database, {
             retentionDays: loadIdempotencyRetentionDays(process.env, 'SPEED'),
           }),

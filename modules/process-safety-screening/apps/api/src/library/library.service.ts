@@ -86,9 +86,11 @@ export function engineLibrary(
   const entries = stored(pack, reviewed);
   return {
     version: versionLabel,
+    // A material's note is the library's own text; the engines carry its key (the entry id) and the screens look it up.
     materials: entries.materials.map((entry) => ({
       id: entry.id,
       classes: entry.classes,
+      ...(entry.note ? { noteKey: entry.id } : {}),
       citation: entry.citation,
       reviewed: entry.reviewed,
     })),

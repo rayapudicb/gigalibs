@@ -5,8 +5,10 @@ import {
   CreateSpeedRouteInputV1Schema,
   CreateSpeedSubstanceInputV1Schema,
   PutSpeedCriteriaSetInForceInputV1Schema,
+  PutSpeedLibrarySetInForceInputV1Schema,
   SpeedArchiveInputV1Schema,
   type SpeedCriteriaSetV1,
+  type SpeedLibrarySetV1,
   type SpeedProjectStatus,
   type SpeedProjectV1,
   type SpeedRouteV1,
@@ -24,6 +26,7 @@ import {
 import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 import { MODULE_KEY } from '../config.js';
 import type { CriteriaService } from '../criteria/criteria.service.js';
+import type { LibraryService } from '../library/library.service.js';
 import type { RoutesService } from '../routes/routes.service.js';
 import type { SubstancesService } from '../substances/substances.service.js';
 import { type ProjectPageQuery, type ProjectsService, errors } from './projects.service.js';
@@ -102,6 +105,7 @@ async function versioned<T>(work: () => Promise<T>): Promise<T> {
 
 export interface SpeedRecordDependencies {
   readonly criteria: CriteriaService;
+  readonly library: LibraryService;
   readonly projects: ProjectsService;
   readonly substances: SubstancesService;
   readonly routes: RoutesService;
@@ -113,6 +117,7 @@ const SUBSTANCE_FIELDS: Readonly<Record<string, RecordFieldPolicy>> = {
   formula: writable,
   'density-g-per-ml': writable,
   notes: writable,
+  'library-material-id': writable,
   'hill-formula': derived,
   'molar-mass-g-per-mol': derived,
   'elements-version': derived,
@@ -130,6 +135,7 @@ function substanceToWindow(substance: SpeedSubstanceV1): RecordValues {
     formula: substance.formula,
     'density-g-per-ml': substance.densityGPerMl,
     notes: substance.notes,
+    'library-material-id': substance.libraryMaterialId,
     'hill-formula': substance.hillFormula,
     'molar-mass-g-per-mol': substance.molarMassGPerMol,
     'elements-version': substance.elementsVersion,
@@ -162,6 +168,20 @@ function routeToWindow(route: SpeedRouteV1): RecordValues {
     'step-count': route.stepCount,
     'steps-passing-gate': route.stepsPassingGate,
     'updated-at': route.updatedAt,
+  };
+}
+
+function libraryToWindow(set: SpeedLibrarySetV1): RecordValues {
+  return {
+    id: set.id,
+    version: set.version,
+    'version-label': set.versionLabel,
+    source: set.source,
+    'review-status': set.reviewStatus,
+    'in-force': set.inForce,
+    'imported-by': set.importedBy,
+    'imported-at': set.importedAt,
+    'in-force-since': set.inForceSince,
   };
 }
 
@@ -320,6 +340,7 @@ export function speedRecordDispatcher(
         formula: values['formula'],
         densityGPerMl: given(values['density-g-per-ml']),
         notes: given(values['notes']),
+        libraryMaterialId: given(values['library-material-id']),
       });
       return substanceToWindow((await deps.substances.create(context, input)).substance);
     },
@@ -458,7 +479,88 @@ export function speedRecordDispatcher(
     },
   };
 
+  // Screening library sets (§3.1): read-only records whose entries a registered panel lists; putting one in force is the
+  // administrator's action, with a reason.
+  const librarySets: RecordAdapter = {
+    entityKey: 'speed.library-sets',
+    permissions: { read: READ },
+    rest: {
+      read: 'GET v1/library-sets',
+      actions: { 'put-in-force': 'POST v1/library-sets/{id}/put-in-force' },
+    },
+    fields: {
+      'version-label': derived,
+      source: derived,
+      'review-status': derived,
+      'in-force': derived,
+      'imported-by': derived,
+      'imported-at': derived,
+      'in-force-since': derived,
+    },
+    searchFields: ['version-label'],
+    sortFields: ['version-label'],
+    async list(principal, query) {
+      const all = (await deps.library.list(principal)).items.filter(
+        (set) =>
+          !query.search ||
+          set.versionLabel
+            .toLocaleLowerCase('en-US')
+            .includes(query.search.toLocaleLowerCase('en-US')),
+      );
+      const start = (query.page - 1) * query.pageSize;
+      return {
+        items: all.slice(start, start + query.pageSize).map(libraryToWindow),
+        total: all.length,
+        page: query.page,
+        pageSize: query.pageSize,
+      };
+    },
+    async get(principal, id) {
+      const found = await orNull(() => deps.library.get(principal, id));
+      return found ? libraryToWindow(found) : null;
+    },
+    actions: {
+      'put-in-force': {
+        permission: 'speed.settings.manage',
+        async run(context, id, parameters) {
+          const input = errors.parseInput(PutSpeedLibrarySetInForceInputV1Schema, {
+            version: parameters['expectedVersion'],
+            reason: parameters['reason'],
+          });
+          return libraryToWindow(
+            await versioned(() => deps.library.putInForce(context, id, input)),
+          );
+        },
+      },
+    },
+  };
+
   const resolvers: LookupResolver[] = [
+    // The library in force's materials, for a substance's link (its reactivity classes come from there).
+    {
+      key: 'speed-library-materials',
+      permission: READ,
+      async resolve(principal, request) {
+        const set = (await deps.library.list(principal)).items.find(
+          (candidate) => candidate.inForce,
+        );
+        const search = request.search?.toLocaleLowerCase('en-US');
+        return (set?.library.materials ?? [])
+          .filter((entry) => (request.ids?.length ? request.ids.includes(entry.id) : true))
+          .filter(
+            (entry) =>
+              !search ||
+              `${entry.id} ${entry.name ?? ''} ${entry.casNumber ?? ''} ${entry.formula ?? ''}`
+                .toLocaleLowerCase('en-US')
+                .includes(search),
+          )
+          .slice(0, request.limit)
+          .map((entry) => ({
+            value: entry.id,
+            label: entry.name ? `${entry.name} (${entry.id})` : entry.id,
+          }));
+      },
+    },
     {
       key: 'speed-projects',
       permission: READ,
@@ -472,7 +574,7 @@ export function speedRecordDispatcher(
   ];
 
   return new RecordDispatcher(
-    [projects, substances, routes, criteriaSets],
+    [projects, substances, routes, criteriaSets, librarySets],
     resolvers,
     idempotency,
     // The field rules of SPEED's windows, enforced on every create and change (WI-OI-120r).

@@ -197,7 +197,11 @@ describe.skipIf(!adminUrl)('SPEED routes and the server gate on PostgreSQL (WI-O
     speed = await speedDatabase('routes');
     await seedOrganization(speed.admin, TENANT);
     criteria = new CriteriaService(speed.database);
-    substances = new SubstancesService(speed.database);
+    substances = new SubstancesService(
+      speed.database,
+      new CriteriaService(speed.database),
+      new LibraryService(speed.database),
+    );
     projects = new ProjectsService(speed.database);
     library = new LibraryService(speed.database);
     routes = new RoutesService(speed.database, criteria, library);
