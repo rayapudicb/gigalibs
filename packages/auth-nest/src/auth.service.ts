@@ -414,7 +414,12 @@ export class AuthService {
       }),
     ]);
     if (!user || user.status !== 'ACTIVE') throw new UnauthorizedException('The subject is not an active user');
-    if (!tenant || tenant.status !== 'ACTIVE') throw new ForbiddenException('The tenant is not active');
+    // WI-OI-120cd: a tenant on an unexpired trial is in service, exactly as for a login session (refresh above);
+    // refusing it quarantined every organization delivery of every trial workspace.
+    const inService =
+      tenant?.status === 'ACTIVE' ||
+      (tenant?.status === 'TRIAL' && !!tenant.trialEndsAt && tenant.trialEndsAt > now);
+    if (!tenant || !inService) throw new ForbiddenException('The tenant is not active');
     return this.assembleContext(
       { id: contextId, expiresAt: new Date(now.getTime() + 300_000), createdAt: now, mfaVerifiedAt: now, user, tenant },
       userId,
