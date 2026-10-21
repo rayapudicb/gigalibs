@@ -25,7 +25,7 @@
 - **On UAT afterwards (owner-run):** SPEED switched on for one labelled TEST workspace; its people given SPEED roles;
   criteria and library imported (TEST FIXTURE packs, labelled) or real ones once reviewed.
 
-## Progress (2026-10-21, nothing committed)
+## Progress (2026-10-21)
 
 - **Release tree:** worktree `gigalibs-release-speed`, branch `release/speed-uat` at `9734dca9`. SPEED's combined change
   (`b85a4244..feat/speed-s3-module`, which holds only SPEED commits) applied as one uncommitted patch, without `.pi`,
@@ -40,12 +40,24 @@
   (owner-run, release worktree only) creates the bucket `gigalibs-speed-dossiers` in UAT's MinIO (`docker-minio-1`,
   the platform's store), a policy for that bucket only and a key holding it, and appends `SPEED_STORAGE_*` to
   `.env.module.process-safety-screening`; nothing printed.
+- **Committed (owner "commit"):** SPEED branch `ec693cf0` (optional module settings, SPEED's dossier store,
+  `create-speed-storage.sh`) and `40aa4af8` (the script checks the release branch itself: `9734dca9` has no
+  `release-worktree.sh`); release commit `23ab3916` on `release/speed-uat` (177 files).
+- **CMMS kept as UAT runs it:** `cmms-work-orders.window.json` (120bu) names `technician-ref` without declaring it, and
+  `9734dca9`'s generated window baselines were never regenerated for it, so UAT still runs the earlier CMMS window.
+  Regenerating would publish a broken CMMS window; the release keeps CMMS's baseline exactly as `9734dca9` (so
+  `module-manifests --check` reports that file out of date, as on `9734dca9`). The fix belongs to CMMS.
+- **Release checks:** build passes except `@gigalibs/ar-api` (fails the same way on a clean `9734dca9`); tests pass
+  except the two Playground files (`CONTROL_PAYLOAD_KEY_VERSION`) and a pay-rule test that times out under load and
+  passes alone (13/13); conversions pass for 6 modules; SPEED conformance 15/15; the two data audits fail only because
+  `communications-textfly` is not tracked on this release (`QUARANTINED_PACKAGE_MISSING`).
 - **UAT facts read (read-only):** `GIGALIBS_UAT_PREVIEW=enabled` on the web, so PLANNED SPEED opens under the preview;
   the platform's store is `http://host.docker.internal:9010`, bucket `gigalibs-dev`.
 
 ## Done when
 
-- [ ] The release builds, tests and passes S16 in its worktree; the release commit made on the owner's "commit".
+- [x] The release builds, tests and passes S16 in its worktree (base failures aside, above); release commit
+      `23ab3916` made on the owner's "commit".
 - [ ] Security review recorded with the reviewer named; migration rehearsal and recovery plan recorded.
 - [ ] Backup verified; the owner deploys; read-only check: `/speed` opens under the UAT preview in the TEST workspace,
       and the other modules are unchanged.
