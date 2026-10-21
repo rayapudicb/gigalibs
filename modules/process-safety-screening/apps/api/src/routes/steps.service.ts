@@ -2,10 +2,13 @@ import { randomUUID } from 'node:crypto';
 import {
   type AddSpeedMaterialInputV1,
   type AddSpeedStepInputV1,
+  type AddSpeedThermalDataInputV1,
   type MoveSpeedStepInputV1,
   type RemoveSpeedRecordInputV1,
   type ReplaceSpeedConditionsInputV1,
+  type ReplaceSpeedMitigationInputV1,
   SPEED_EQUATION_ROLES,
+  type SetSpeedEnergeticGroupsInputV1,
   type SpeedMaterialRole,
   type SpeedRouteDetailV1,
   type SpeedStepChangeV1,
@@ -23,16 +26,16 @@ import { SCHEMA, TOPIC } from '../config.js';
 import { CriteriaService } from '../criteria/criteria.service.js';
 import { DatabaseService } from '../database.service.js';
 import { errors, refuse, unprocessable } from '../errors.js';
+import { LibraryService } from '../library/library.service.js';
 import {
   readRoute,
+  readRouteDetail,
   readStep,
-  readSteps,
   routeForChange,
   routeOfStep,
   stepOfMaterial,
-  toRoute,
 } from './route-store.js';
-import { NO_CRITERIA, computeStep } from './screening.js';
+import { NO_CRITERIA, NO_LIBRARY, type ScreeningSets, computeStep } from './screening.js';
 
 const STEP_FIELDS: readonly (keyof SpeedStepV1)[] = ['position', 'name', 'notes'];
 const MATERIAL_FIELDS: readonly (keyof SpeedStepMaterialV1)[] = [
@@ -53,6 +56,7 @@ export class StepsService {
   constructor(
     private readonly database: DatabaseService,
     private readonly criteria: CriteriaService,
+    private readonly library: LibraryService,
   ) {}
 
   /** Appends a step; idempotent by request key. */
@@ -206,6 +210,8 @@ export class StepsService {
             notes: before.notes,
             materials: before.materials,
             conditions: before.conditions,
+            thermalData: before.thermalData,
+            mitigation: before.mitigation,
           },
           reason: input.reason,
         },
@@ -358,8 +364,7 @@ export class StepsService {
         aggregateVersion: before.version + 1,
         payload: { removed: before, reason: input.reason },
       });
-      const criteria = await this.criteria.inForce(client, tenantId);
-      await computeStep(client, context, routeId, stepId, criteria);
+      await computeStep(client, context, routeId, stepId, await this.sets(client, tenantId));
       return { step: await readStep(client, tenantId, routeId, stepId), warnings: [] };
     });
   }
@@ -405,15 +410,34 @@ export class StepsService {
           'A condition is outside the range the criteria allow.',
           check.errors,
         );
+      const library = await this.library.inForce(client, tenantId);
+      if (
+        input.reactionClassId &&
+        library &&
+        !library.library.reactionClasses.some((entry) => entry.id === input.reactionClassId)
+      )
+        unprocessable(
+          'SPEED_REACTION_CLASS_UNKNOWN',
+          'The reaction class is not in the library in force.',
+          [
+            {
+              path: 'reactionClassId',
+              code: 'THM_REACTION_CLASS_UNKNOWN',
+              params: { reactionClassId: input.reactionClassId },
+            },
+          ],
+        );
       await client.query(
         `INSERT INTO ${SCHEMA}.step_conditions (tenant_id, step_id, process_temperature_c, maximum_technical_temperature_c, heat_capacity_j_per_g_k,
-           accumulation_percent, updated_by)
-         VALUES ($1, $2, $3, $4, $5, $6, $7)
+           accumulation_percent, reaction_enthalpy_source, reaction_class_id, updated_by)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
          ON CONFLICT (tenant_id, step_id) DO UPDATE
            SET process_temperature_c = EXCLUDED.process_temperature_c,
                maximum_technical_temperature_c = EXCLUDED.maximum_technical_temperature_c,
                heat_capacity_j_per_g_k = EXCLUDED.heat_capacity_j_per_g_k,
                accumulation_percent = EXCLUDED.accumulation_percent,
+               reaction_enthalpy_source = EXCLUDED.reaction_enthalpy_source,
+               reaction_class_id = EXCLUDED.reaction_class_id,
                updated_by = EXCLUDED.updated_by, updated_at = now(), version = ${SCHEMA}.step_conditions.version + 1`,
         [
           tenantId,
@@ -422,9 +446,13 @@ export class StepsService {
           input.maximumTechnicalTemperatureC,
           input.heatCapacityJPerGK,
           input.accumulationPercent,
+          input.reactionEnthalpySource,
+          input.reactionClassId,
           subject,
         ],
       );
+      // The conditions feed the thermal results (FR-THM-01 to 12): the step is recomputed with them.
+      await computeStep(client, context, routeId, stepId, { criteria, library });
       const after = await readStep(client, tenantId, routeId, stepId);
       const conditionChanges = changes(
         before.conditions ?? emptyConditions,
@@ -442,6 +470,166 @@ export class StepsService {
         input.reason,
       );
       return { step: after, warnings: check.warnings };
+    });
+  }
+
+  /**
+   * Adds a cited thermal value to a step's mixture (FR-THM-01 to 07, BRL-06); it supersedes the active value of its kind,
+   * which stays in the record. Idempotent by request key. The step is recomputed.
+   */
+  addThermalData(
+    context: ModuleCommandContext,
+    stepId: string,
+    input: AddSpeedThermalDataInputV1,
+  ): Promise<SpeedStepChangeV1> {
+    const { tenantId, subject } = context.principal;
+    return this.database.withTenantTransaction(tenantId, async (client) => {
+      const routeId = await this.lockRouteOfStep(client, context, stepId);
+      const replay = await client.query<{ id: string }>(
+        `SELECT id FROM ${SCHEMA}.thermal_data WHERE tenant_id = $1 AND step_id = $2 AND request_key = $3`,
+        [tenantId, stepId, input.requestKey],
+      );
+      if (replay.rows[0])
+        return { step: await readStep(client, tenantId, routeId, stepId), warnings: [] };
+      const replaced = await client.query<{ id: string }>(
+        `UPDATE ${SCHEMA}.thermal_data SET status = 'SUPERSEDED', superseded_by = $4, superseded_at = now()
+          WHERE tenant_id = $1 AND step_id = $2 AND kind = $3 AND status = 'ACTIVE'
+          RETURNING id`,
+        [tenantId, stepId, input.kind, subject],
+      );
+      const id = randomUUID();
+      await client.query(
+        `INSERT INTO ${SCHEMA}.thermal_data (id, tenant_id, request_key, step_id, kind, reaction_enthalpy_kj_per_mol, onset_c, td24_c,
+           activation_energy_kj_per_mol, heat_release_rate_w_per_kg, reference_temperature_c, basis, citation, notes, created_by)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
+        [
+          id,
+          tenantId,
+          input.requestKey,
+          stepId,
+          input.kind,
+          input.kind === 'REACTION_ENTHALPY' ? input.kJPerMol : null,
+          input.kind === 'DSC_ONSET' ? input.onsetC : null,
+          input.kind === 'TD24' ? input.td24C : null,
+          input.kind === 'DECOMPOSITION_KINETICS' ? input.activationEnergyKJPerMol : null,
+          input.kind === 'DECOMPOSITION_KINETICS' ? input.heatReleaseRateWPerKg : null,
+          input.kind === 'DECOMPOSITION_KINETICS' ? input.referenceTemperatureC : null,
+          input.basis,
+          input.citation,
+          input.notes ?? null,
+          subject,
+        ],
+      );
+      await recordMutation(client, { schema: SCHEMA, topic: TOPIC }, context, {
+        action: 'THERMAL_DATA_ADDED',
+        aggregateType: 'thermal-data',
+        aggregateId: id,
+        aggregateVersion: 1,
+        payload: {
+          stepId,
+          kind: input.kind,
+          basis: input.basis,
+          citation: input.citation,
+          superseded: replaced.rows[0]?.id ?? null,
+          reason: input.reason,
+        },
+      });
+      await computeStep(client, context, routeId, stepId, await this.sets(client, tenantId));
+      return { step: await readStep(client, tenantId, routeId, stepId), warnings: [] };
+    });
+  }
+
+  /** Tags a material's energetic groups (FR-OB-04), ids from the library in force. The step is recomputed. */
+  setEnergeticGroups(
+    context: ModuleCommandContext,
+    materialId: string,
+    input: SetSpeedEnergeticGroupsInputV1,
+  ): Promise<SpeedStepChangeV1> {
+    const { tenantId } = context.principal;
+    return this.database.withTenantTransaction(tenantId, async (client) => {
+      const access = await resolveAccess(client, context.principal);
+      const { stepId, routeId } = await stepOfMaterial(
+        client,
+        context.principal,
+        access,
+        materialId,
+      );
+      await routeForChange(client, context.principal, access, routeId);
+      const before = (await readStep(client, tenantId, routeId, stepId)).materials.find(
+        (material) => material.id === materialId,
+      );
+      if (!before) return errors.notFound('The material');
+      if (before.version !== input.version) return errors.versionConflict('The material');
+      const library = await this.library.inForce(client, tenantId);
+      if (!library)
+        refuse(
+          NO_LIBRARY.code,
+          'No screening library is in force in this workspace, so energetic groups cannot be checked.',
+        );
+      const groups = [...new Set(input.groups)].sort();
+      const unknown = groups.filter((group) => !library.energeticGroups.has(group));
+      if (unknown.length > 0)
+        unprocessable(
+          'SPEED_ENERGETIC_GROUP_UNKNOWN',
+          'An energetic group is not in the library in force.',
+          unknown.map((group) => ({
+            path: 'groups',
+            code: 'SPEED_ENERGETIC_GROUP_UNKNOWN',
+            params: { group },
+          })),
+        );
+      await client.query(
+        `UPDATE ${SCHEMA}.step_materials SET energetic_groups = $3::varchar[], version = version + 1, updated_at = now() WHERE tenant_id = $1 AND id = $2`,
+        [tenantId, materialId, groups],
+      );
+      return {
+        step: await this.finish(
+          client,
+          context,
+          routeId,
+          stepId,
+          'ENERGETIC_GROUPS_SET',
+          'material',
+          materialId,
+          before,
+          input.reason,
+        ),
+        warnings: [],
+      };
+    });
+  }
+
+  /** Records the mitigation of a class 4 or 5 step (BRL-03); acceptance by the safety reviewer is R2. */
+  replaceMitigation(
+    context: ModuleCommandContext,
+    stepId: string,
+    input: ReplaceSpeedMitigationInputV1,
+  ): Promise<SpeedStepChangeV1> {
+    const { tenantId, subject } = context.principal;
+    return this.database.withTenantTransaction(tenantId, async (client) => {
+      const routeId = await this.lockRouteOfStep(client, context, stepId);
+      const before = await readStep(client, tenantId, routeId, stepId);
+      if ((before.mitigation?.version ?? 0) !== input.version)
+        return errors.versionConflict('The mitigation');
+      await client.query(
+        `INSERT INTO ${SCHEMA}.mitigations (tenant_id, step_id, text, recorded_by) VALUES ($1, $2, $3, $4)
+         ON CONFLICT (tenant_id, step_id) DO UPDATE
+           SET text = EXCLUDED.text, recorded_by = EXCLUDED.recorded_by, recorded_at = now(), accepted_by = NULL, accepted_at = NULL,
+               version = ${SCHEMA}.mitigations.version + 1`,
+        [tenantId, stepId, input.text, subject],
+      );
+      const after = await readStep(client, tenantId, routeId, stepId);
+      await this.audit(
+        client,
+        context,
+        'MITIGATION_RECORDED',
+        'mitigation',
+        stepId,
+        after.mitigation?.version ?? 1,
+        { text: { from: before.mitigation?.text ?? null, to: after.mitigation?.text ?? null } },
+        input.reason,
+      );
+      return { step: after, warnings: [] };
     });
   }
 
@@ -509,8 +697,7 @@ export class StepsService {
     reason: string,
   ): Promise<SpeedStepV1> {
     const { tenantId } = context.principal;
-    const criteria = await this.criteria.inForce(client, tenantId);
-    await computeStep(client, context, routeId, stepId, criteria);
+    await computeStep(client, context, routeId, stepId, await this.sets(client, tenantId));
     const step = await readStep(client, tenantId, routeId, stepId);
     if (aggregateType === 'step') {
       await this.audit(
@@ -566,7 +753,15 @@ export class StepsService {
   ): Promise<SpeedRouteDetailV1> {
     const access = await resolveAccess(client, context.principal);
     const row = await readRoute(client, context.principal, access, routeId);
-    return { ...toRoute(row), steps: await readSteps(client, context.principal.tenantId, routeId) };
+    return readRouteDetail(client, context.principal.tenantId, row);
+  }
+
+  /** The criteria and library sets in force. */
+  private async sets(client: Client, tenantId: string): Promise<ScreeningSets> {
+    return {
+      criteria: await this.criteria.inForce(client, tenantId),
+      library: await this.library.inForce(client, tenantId),
+    };
   }
 }
 
@@ -575,12 +770,16 @@ const CONDITION_FIELDS = [
   'maximumTechnicalTemperatureC',
   'heatCapacityJPerGK',
   'accumulationPercent',
+  'reactionEnthalpySource',
+  'reactionClassId',
 ] as const;
 const emptyConditions = {
   processTemperatureC: null,
   maximumTechnicalTemperatureC: null,
   heatCapacityJPerGK: null,
   accumulationPercent: null,
+  reactionEnthalpySource: null,
+  reactionClassId: null,
 };
 
 /** A coefficient belongs to the equation's roles; a by-product has no charge (FR-INP-02). */

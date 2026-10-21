@@ -147,6 +147,10 @@ export const UpdateSpeedMaterialInputV1Schema = z
   );
 export type UpdateSpeedMaterialInputV1 = z.infer<typeof UpdateSpeedMaterialInputV1Schema>;
 
+export const SPEED_ENTHALPY_SOURCES = ['MANUAL', 'REACTION_CLASS', 'HESS'] as const;
+export const SpeedEnthalpySourceSchema = z.enum(SPEED_ENTHALPY_SOURCES);
+export type SpeedEnthalpySource = z.infer<typeof SpeedEnthalpySourceSchema>;
+
 /** The step's process values; null clears one. `version` 0 means the step has none yet. */
 export const ReplaceSpeedConditionsInputV1Schema = z
   .object({
@@ -156,8 +160,19 @@ export const ReplaceSpeedConditionsInputV1Schema = z
     maximumTechnicalTemperatureC: Measured.nullable(),
     heatCapacityJPerGK: Measured.nullable(),
     accumulationPercent: Measured.nullable(),
+    /** Where ΔHr comes from (FR-THM-01 to 03); a reaction class names its id in the library in force. */
+    reactionEnthalpySource: SpeedEnthalpySourceSchema.nullable().default(null),
+    reactionClassId: z.string().trim().min(1).max(64).nullable().default(null),
   })
-  .strict();
+  .strict()
+  .refine(
+    (value) =>
+      (value.reactionEnthalpySource === 'REACTION_CLASS') === (value.reactionClassId !== null),
+    {
+      path: ['reactionClassId'],
+      message: 'A reaction class source names the class, and only it does.',
+    },
+  );
 export type ReplaceSpeedConditionsInputV1 = z.infer<typeof ReplaceSpeedConditionsInputV1Schema>;
 
 export interface SpeedRouteV1 {
@@ -189,6 +204,8 @@ export interface SpeedStepMaterialV1 {
   readonly role: SpeedMaterialRole;
   readonly coefficient: number | null;
   readonly massG: number | null;
+  /** Energetic groups tagged on the material (FR-OB-04), ids from the library. */
+  readonly energeticGroups: readonly string[];
   readonly version: number;
 }
 
@@ -197,6 +214,8 @@ export interface SpeedStepConditionsV1 {
   readonly maximumTechnicalTemperatureC: number | null;
   readonly heatCapacityJPerGK: number | null;
   readonly accumulationPercent: number | null;
+  readonly reactionEnthalpySource: SpeedEnthalpySource | null;
+  readonly reactionClassId: string | null;
   readonly version: number;
   readonly updatedBy: string;
   readonly updatedAt: string;
@@ -220,8 +239,11 @@ export interface SpeedResultV1 {
   readonly criteriaSetId: string | null;
   readonly criteriaVersion: string | null;
   readonly criteriaReviewed: boolean | null;
+  readonly librarySetId: string | null;
+  readonly libraryVersion: string | null;
+  readonly libraryReviewed: boolean | null;
   readonly inputsHash: string;
-  /** The engines' outputs: `gate` (and, from S5, the oxygen balance, thermal and green results). */
+  /** The engines' outputs: `gate`, and for a step that passes it `oxygenBalance`, `thermal` and `green`. */
   readonly outputs: Readonly<Record<string, unknown>>;
   readonly computedBy: string;
   readonly computedAt: string;
@@ -236,11 +258,99 @@ export interface SpeedStepV1 {
   readonly version: number;
   readonly materials: readonly SpeedStepMaterialV1[];
   readonly conditions: SpeedStepConditionsV1 | null;
+  /** The active thermal data of the step's mixture, one per kind. */
+  readonly thermalData: readonly SpeedThermalDataV1[];
+  readonly mitigation: SpeedMitigationV1 | null;
   readonly latestResult: SpeedResultV1 | null;
 }
 
 export interface SpeedRouteDetailV1 extends SpeedRouteV1 {
   readonly steps: readonly SpeedStepV1[];
+  /** The route roll-up of the steps' latest green results (FR-GRN-04), or null before any step has one. */
+  readonly rollup: Readonly<Record<string, unknown>> | null;
+}
+
+export const SPEED_THERMAL_KINDS = [
+  'REACTION_ENTHALPY',
+  'DSC_ONSET',
+  'TD24',
+  'DECOMPOSITION_KINETICS',
+] as const;
+export type SpeedThermalKind = (typeof SPEED_THERMAL_KINDS)[number];
+/** A thermal value is measured or taken from literature, and always cited; estimates come only from the library. */
+export const SpeedThermalBasisSchema = z.enum(['MEASURED', 'LITERATURE']);
+
+const ThermalCommon = {
+  requestKey: z.uuid(),
+  reason: SpeedReasonSchema,
+  basis: SpeedThermalBasisSchema,
+  citation: z.string().trim().min(1).max(1000),
+  notes: SpeedNotesSchema.optional(),
+};
+
+/** Adds a thermal value to a step's mixture; it replaces the active value of its kind (FR-THM-01 to 07, BRL-06). */
+export const AddSpeedThermalDataInputV1Schema = z.discriminatedUnion('kind', [
+  z.object({ ...ThermalCommon, kind: z.literal('REACTION_ENTHALPY'), kJPerMol: Measured }).strict(),
+  z.object({ ...ThermalCommon, kind: z.literal('DSC_ONSET'), onsetC: Measured }).strict(),
+  z.object({ ...ThermalCommon, kind: z.literal('TD24'), td24C: Measured }).strict(),
+  z
+    .object({
+      ...ThermalCommon,
+      kind: z.literal('DECOMPOSITION_KINETICS'),
+      activationEnergyKJPerMol: Measured,
+      heatReleaseRateWPerKg: Positive,
+      referenceTemperatureC: Measured,
+    })
+    .strict(),
+]);
+export type AddSpeedThermalDataInputV1 = z.infer<typeof AddSpeedThermalDataInputV1Schema>;
+
+export interface SpeedThermalDataV1 {
+  readonly id: string;
+  readonly stepId: string;
+  readonly kind: SpeedThermalKind;
+  readonly kJPerMol: number | null;
+  readonly onsetC: number | null;
+  readonly td24C: number | null;
+  readonly activationEnergyKJPerMol: number | null;
+  readonly heatReleaseRateWPerKg: number | null;
+  readonly referenceTemperatureC: number | null;
+  readonly basis: 'MEASURED' | 'LITERATURE';
+  readonly citation: string;
+  readonly notes: string | null;
+  readonly status: 'ACTIVE' | 'SUPERSEDED';
+  readonly createdBy: string;
+  readonly createdAt: string;
+  readonly supersededAt: string | null;
+}
+
+/** Tags a material's energetic groups (FR-OB-04), ids from the library in force. */
+export const SetSpeedEnergeticGroupsInputV1Schema = z
+  .object({
+    version: SpeedRowVersionSchema,
+    reason: SpeedReasonSchema,
+    groups: z.array(z.string().trim().min(1).max(64)).max(20),
+  })
+  .strict();
+export type SetSpeedEnergeticGroupsInputV1 = z.infer<typeof SetSpeedEnergeticGroupsInputV1Schema>;
+
+/** Records the mitigation of a class 4 or 5 step (BRL-03); `version` 0 means none is recorded yet. */
+export const ReplaceSpeedMitigationInputV1Schema = z
+  .object({
+    version: z.number().int().min(0),
+    reason: SpeedReasonSchema,
+    text: z.string().trim().min(1).max(4000),
+  })
+  .strict();
+export type ReplaceSpeedMitigationInputV1 = z.infer<typeof ReplaceSpeedMitigationInputV1Schema>;
+
+export interface SpeedMitigationV1 {
+  readonly text: string;
+  readonly version: number;
+  readonly recordedBy: string;
+  readonly recordedAt: string;
+  readonly acceptedBy: string | null;
+  readonly acceptedAt: string | null;
 }
 
 /** What a change to a step's content answers: the step as stored, with the result the server computed. */

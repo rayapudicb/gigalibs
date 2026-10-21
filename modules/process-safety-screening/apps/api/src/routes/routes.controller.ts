@@ -1,11 +1,14 @@
 import {
   AddSpeedMaterialInputV1Schema,
   AddSpeedStepInputV1Schema,
+  AddSpeedThermalDataInputV1Schema,
   CreateSpeedRouteInputV1Schema,
   ListSpeedRoutesQueryV1Schema,
   MoveSpeedStepInputV1Schema,
   RemoveSpeedRecordInputV1Schema,
   ReplaceSpeedConditionsInputV1Schema,
+  ReplaceSpeedMitigationInputV1Schema,
+  SetSpeedEnergeticGroupsInputV1Schema,
   SpeedArchiveInputV1Schema,
   UpdateSpeedMaterialInputV1Schema,
   UpdateSpeedRouteInputV1Schema,
@@ -205,6 +208,35 @@ export class StepsController {
       errors.parseInput(ReplaceSpeedConditionsInputV1Schema, body),
     );
   }
+
+  /** Cited thermal data of the step's mixture: measured or literature values (`speed.thermal-data.write`). */
+  @Post(':id/thermal-data')
+  @RequirePermissions('speed.thermal-data.write')
+  addThermalData(
+    @CommandContext() context: ModuleCommandContext,
+    @Param('id') id: string,
+    @Body() body: unknown,
+  ) {
+    return this.steps.addThermalData(
+      context,
+      id,
+      errors.parseInput(AddSpeedThermalDataInputV1Schema, body),
+    );
+  }
+
+  @Put(':id/mitigation')
+  @RequirePermissions('speed.routes.write')
+  replaceMitigation(
+    @CommandContext() context: ModuleCommandContext,
+    @Param('id') id: string,
+    @Body() body: unknown,
+  ) {
+    return this.steps.replaceMitigation(
+      context,
+      id,
+      errors.parseInput(ReplaceSpeedMitigationInputV1Schema, body),
+    );
+  }
 }
 
 /** Materials, `/api/speed/v1/materials/{id}`: a step's materials. */
@@ -239,6 +271,20 @@ export class MaterialsController {
       context,
       id,
       errors.parseInput(RemoveSpeedRecordInputV1Schema, body),
+    );
+  }
+
+  @Put(':id/energetic-groups')
+  @RequirePermissions('speed.routes.write')
+  setEnergeticGroups(
+    @CommandContext() context: ModuleCommandContext,
+    @Param('id') id: string,
+    @Body() body: unknown,
+  ) {
+    return this.steps.setEnergeticGroups(
+      context,
+      id,
+      errors.parseInput(SetSpeedEnergeticGroupsInputV1Schema, body),
     );
   }
 }

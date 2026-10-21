@@ -34,7 +34,7 @@
     "service": "module-host",
     "port": 4790,
     "schema": "gigalibs_speed",
-    "migrationVersion": 2,
+    "migrationVersion": 3,
     "audience": "gigalibs-process-safety-screening-api",
     "appendOnlyTables": [
       "audit_events",

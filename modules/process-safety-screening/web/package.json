@@ -14,7 +14,8 @@
   "dependencies": {
     "@gigalibs/configuration-react": "workspace:*",
     "@gigalibs/contracts": "workspace:*",
-    "@gigalibs/i18n": "workspace:*"
+    "@gigalibs/i18n": "workspace:*",
+    "@gigalibs/process-safety-engines": "workspace:*"
   },
   "peerDependencies": {
     "next": "^15.2.0",

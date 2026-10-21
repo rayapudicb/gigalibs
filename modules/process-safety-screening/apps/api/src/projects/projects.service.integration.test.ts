@@ -16,6 +16,7 @@ import {
 import type pg from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { CriteriaService } from '../criteria/criteria.service.js';
+import { LibraryService } from '../library/library.service.js';
 import { RoutesService } from '../routes/routes.service.js';
 import { SubstancesService } from '../substances/substances.service.js';
 import {
@@ -82,8 +83,13 @@ describe.skipIf(!adminUrl)('SPEED projects on PostgreSQL (WI-OI-120bw)', () => {
     records = speedRecordDispatcher(
       {
         projects,
+        criteria: new CriteriaService(speed.database),
         substances: new SubstancesService(speed.database),
-        routes: new RoutesService(speed.database, new CriteriaService(speed.database)),
+        routes: new RoutesService(
+          speed.database,
+          new CriteriaService(speed.database),
+          new LibraryService(speed.database),
+        ),
       },
       new ModuleIdempotencyStore(speed.database, { retentionDays: 7 }),
     );

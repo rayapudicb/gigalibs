@@ -53,8 +53,13 @@ function toSet(row: CriteriaRow): SpeedCriteriaSetV1 {
   };
 }
 
-/** Every value path the engines need (`inputRanges.temperatureC.min` …), from the engine package itself. */
-const REQUIRED_PATHS: readonly string[] = missingCriteria({});
+/**
+ * Every value path the engines need (`inputRanges.temperatureC.min` …), from the engine package itself; the set's
+ * version is its label, not a value, so it needs no citation.
+ */
+export const CRITERIA_VALUE_PATHS: readonly string[] = missingCriteria({}).filter(
+  (path) => path !== 'version',
+);
 
 /** The set in force, as the engines read it, with what a result records about it. */
 export interface CriteriaInForce {
@@ -109,8 +114,10 @@ export class CriteriaService {
         'The criteria set has no value for some paths.',
         missing,
       );
-    const uncited = REQUIRED_PATHS.filter((path) => !input.citations[path]);
-    const unknown = Object.keys(input.citations).filter((path) => !REQUIRED_PATHS.includes(path));
+    const uncited = CRITERIA_VALUE_PATHS.filter((path) => !input.citations[path]);
+    const unknown = Object.keys(input.citations).filter(
+      (path) => !CRITERIA_VALUE_PATHS.includes(path),
+    );
     if (uncited.length > 0)
       unprocessable('SPEED_CRITERIA_UNCITED', 'Every criteria value needs a citation.', uncited);
     if (unknown.length > 0)

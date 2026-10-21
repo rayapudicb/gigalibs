@@ -11,6 +11,8 @@ import { CriteriaController } from './criteria/criteria.controller.js';
 import { CriteriaService } from './criteria/criteria.service.js';
 import { DatabaseService } from './database.service.js';
 import { HealthController } from './health.controller.js';
+import { LibraryController } from './library/library.controller.js';
+import { LibraryService } from './library/library.service.js';
 import { OrganizationController } from './organization/organization.controller.js';
 import { speedRecordDispatcher } from './projects/projects-record-adapters.js';
 import { ProjectsController } from './projects/projects.controller.js';
@@ -37,6 +39,7 @@ const SpeedRecordController = createRecordController({
     HealthController,
     ProjectsController,
     CriteriaController,
+    LibraryController,
     SubstancesController,
     RoutesController,
     StepsController,
@@ -50,20 +53,22 @@ const SpeedRecordController = createRecordController({
     AuthorizationGuard,
     ProjectsService,
     CriteriaService,
+    LibraryService,
     SubstancesService,
     RoutesService,
     StepsService,
     {
       provide: RECORD_DISPATCHER,
-      inject: [DatabaseService, ProjectsService, SubstancesService, RoutesService],
+      inject: [DatabaseService, ProjectsService, SubstancesService, RoutesService, CriteriaService],
       useFactory: (
         database: DatabaseService,
         projects: ProjectsService,
         substances: SubstancesService,
         routes: RoutesService,
+        criteria: CriteriaService,
       ) =>
         speedRecordDispatcher(
-          { projects, substances, routes },
+          { projects, substances, routes, criteria },
           new ModuleIdempotencyStore(database, {
             retentionDays: loadIdempotencyRetentionDays(process.env, 'SPEED'),
           }),

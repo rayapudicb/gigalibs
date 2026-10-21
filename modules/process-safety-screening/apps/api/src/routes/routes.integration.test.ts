@@ -27,6 +27,7 @@ import {
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { BRD_CRITERIA } from '../../../../../../packages/process-safety-engines/test/fixtures/criteria.js';
 import { CriteriaService } from '../criteria/criteria.service.js';
+import { LibraryService } from '../library/library.service.js';
 import { ProjectsService } from '../projects/projects.service.js';
 import { SubstancesService } from '../substances/substances.service.js';
 import {
@@ -58,7 +59,9 @@ const ALL = [
 ];
 const { version: _fixtureVersion, ...BRD_VALUES } = BRD_CRITERIA;
 const CITATIONS = Object.fromEntries(
-  missingCriteria({}).map((path) => [path, 'TEST FIXTURE: SPEED-BRD-FRD-001 v0.1 §15']),
+  missingCriteria({})
+    .filter((path) => path !== 'version')
+    .map((path) => [path, 'TEST FIXTURE: SPEED-BRD-FRD-001 v0.1 §15']),
 );
 
 const command = (who: ModulePrincipal): ModuleCommandContext => ({
@@ -89,6 +92,7 @@ async function rejection(
 describe.skipIf(!adminUrl)('SPEED routes and the server gate on PostgreSQL (WI-OI-120bx)', () => {
   let speed: SpeedDatabase;
   let criteria: CriteriaService;
+  let library: LibraryService;
   let substances: SubstancesService;
   let projects: ProjectsService;
   let routes: RoutesService;
@@ -195,8 +199,9 @@ describe.skipIf(!adminUrl)('SPEED routes and the server gate on PostgreSQL (WI-O
     criteria = new CriteriaService(speed.database);
     substances = new SubstancesService(speed.database);
     projects = new ProjectsService(speed.database);
-    routes = new RoutesService(speed.database, criteria);
-    steps = new StepsService(speed.database, criteria);
+    library = new LibraryService(speed.database);
+    routes = new RoutesService(speed.database, criteria, library);
+    steps = new StepsService(speed.database, criteria, library);
     const versioned = principal(TENANT, 'admin', ALL, { mode: 'TENANT', tree_version: TREE });
     northProject = (
       await projects.create(command(versioned), {

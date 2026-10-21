@@ -120,10 +120,52 @@ export function windowSource(builderFor) {
             panel('gate', 'speed.gate-workbench', 110, { section: 'workbench', props: { changeReasons: CHANGE_REASONS } }),
           ],
         }),
+        // Panel-only tabs on the same route record (screen spec §2.4); the spec's order with the later slices' tabs.
+        tab('oxygen-balance', 'Oxygen balance', 0, R, [], rf, {
+          position: 1,
+          panels: [panel('ob', 'speed.ob-chart', 0, { props: { axisMinPercent: -350, axisMaxPercent: 100, tickPercent: 50, showTable: true, changeReasons: CHANGE_REASONS } })],
+        }),
+        tab('thermal', 'Thermal & runaway', 0, R, [], rf, {
+          position: 2,
+          panels: [panel('thermal', 'speed.thermal-panel', 0, { props: { changeReasons: CHANGE_REASONS } })],
+        }),
+        tab('green', 'Green metrics', 0, R, [], rf, {
+          position: 4,
+          panels: [panel('green', 'speed.green-scorecard', 0, { props: { showStreams: true } })],
+        }),
       ], { search: ['name'], sort: 'name' }),
     ], [
       action(R, 'archive', 'Archive', 'speed.routes.write', ['status', 'EQ', 'DRAFT'],
         'Archive this route? It stays readable with its results and can no longer change.', REASON_REQUIRED),
+    ]));
+
+  // Screening criteria (§3.2): the sets imported into the workspace, the one in force, and each value with its citation.
+  // Import is the administrator's API call in R1; putting a set in force asks for a reason.
+  const C = 'speed.criteria-sets';
+  const cf = [
+    field(C, 'version-label', 'Version', 'TEXT', { readOnly: true }),
+    field(C, 'source', 'Source', 'TEXT', { readOnly: true }),
+    field(C, 'review-status', 'Status', 'SELECT', { readOnly: true, ref: 'review-statuses' }),
+    field(C, 'in-force', 'In force', 'BOOLEAN', { readOnly: true }),
+    field(C, 'imported-by', 'Imported by', 'REFERENCE', { readOnly: true, ref: 'member-ref' }),
+    field(C, 'imported-at', 'Imported', 'DATETIME', { readOnly: true }),
+    field(C, 'in-force-since', 'In force since', 'DATETIME', { readOnly: true }),
+  ];
+  windows['speed-criteria'] = window('speed-criteria', 'Screening criteria', 'Screening criteria', 'The cited thresholds and ranges the screening engines apply.', 'speed:read',
+    dictionary('speed-criteria', 'Screening criteria', C, [entity(C, 'Criteria sets')], cf, [],
+      [MEMBER_REF, values('review-statuses', [['UNREVIEWED', 'Unreviewed'], ['APPROVED', 'Approved']])], [
+      view('criteria-sets', 'Criteria sets', [
+        tab('set', 'Criteria set', 0, C, [
+          ['version-label', 3, 'main'], ['review-status', 3, 'main'], ['in-force', 3, 'main'], ['in-force-since', 3, 'main'],
+          ['source', 6, 'main'], ['imported-by', 3, 'main'], ['imported-at', 3, 'main'],
+        ], cf, {
+          sections: [section('main', 'Criteria set', 0), section('values', 'Values', 1)],
+          panels: [panel('values', 'speed.criteria-values', 100, { section: 'values' })],
+        }),
+      ], { search: ['version-label'], sort: 'version-label' }),
+    ], [
+      action(C, 'put-in-force', 'Put in force', 'speed.settings.manage', ['in-force', 'EQ', false],
+        'Put this criteria set in force? Results computed from now on use it; earlier results keep the set they used.', REASON_REQUIRED),
     ]));
 
   return windows;

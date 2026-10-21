@@ -273,6 +273,70 @@
                   "sectionKey": "workbench"
                 }
               ]
+            },
+            {
+              "tabKey": "oxygen-balance",
+              "label": "Oxygen balance",
+              "position": 1,
+              "level": 0,
+              "targetEntityKey": "speed.routes",
+              "sections": [],
+              "fields": [],
+              "panels": [
+                {
+                  "panelKey": "ob",
+                  "componentKey": "speed.ob-chart",
+                  "position": 0,
+                  "span": 12,
+                  "props": {
+                    "axisMinPercent": -350,
+                    "axisMaxPercent": 100,
+                    "tickPercent": 50,
+                    "showTable": true,
+                    "changeReasons": "Data entry|Correction|Measured value|Literature value|Mitigation"
+                  }
+                }
+              ]
+            },
+            {
+              "tabKey": "thermal",
+              "label": "Thermal & runaway",
+              "position": 2,
+              "level": 0,
+              "targetEntityKey": "speed.routes",
+              "sections": [],
+              "fields": [],
+              "panels": [
+                {
+                  "panelKey": "thermal",
+                  "componentKey": "speed.thermal-panel",
+                  "position": 0,
+                  "span": 12,
+                  "props": {
+                    "changeReasons": "Data entry|Correction|Measured value|Literature value|Mitigation"
+                  }
+                }
+              ]
+            },
+            {
+              "tabKey": "green",
+              "label": "Green metrics",
+              "position": 4,
+              "level": 0,
+              "targetEntityKey": "speed.routes",
+              "sections": [],
+              "fields": [],
+              "panels": [
+                {
+                  "panelKey": "green",
+                  "componentKey": "speed.green-scorecard",
+                  "position": 0,
+                  "span": 12,
+                  "props": {
+                    "showStreams": true
+                  }
+                }
+              ]
             }
           ],
           "searchFields": [

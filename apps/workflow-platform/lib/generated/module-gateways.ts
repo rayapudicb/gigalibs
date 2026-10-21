@@ -1918,6 +1918,28 @@ export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGat
         }
       },
       {
+        "template": "v1/library-sets",
+        "pattern": "^v1/library-sets$",
+        "methods": {
+          "GET": "speed.routes.read",
+          "POST": "speed.settings.manage"
+        }
+      },
+      {
+        "template": "v1/library-sets/{id}",
+        "pattern": "^v1/library-sets/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "GET": "speed.routes.read"
+        }
+      },
+      {
+        "template": "v1/library-sets/{id}/put-in-force",
+        "pattern": "^v1/library-sets/[0-9a-fA-F-]{36}/put-in-force$",
+        "methods": {
+          "POST": "speed.settings.manage"
+        }
+      },
+      {
         "template": "v1/substances",
         "pattern": "^v1/substances$",
         "methods": {
@@ -2020,6 +2042,20 @@ export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGat
         }
       },
       {
+        "template": "v1/steps/{id}/thermal-data",
+        "pattern": "^v1/steps/[0-9a-fA-F-]{36}/thermal-data$",
+        "methods": {
+          "POST": "speed.thermal-data.write"
+        }
+      },
+      {
+        "template": "v1/steps/{id}/mitigation",
+        "pattern": "^v1/steps/[0-9a-fA-F-]{36}/mitigation$",
+        "methods": {
+          "PUT": "speed.routes.write"
+        }
+      },
+      {
         "template": "v1/materials/{id}",
         "pattern": "^v1/materials/[0-9a-fA-F-]{36}$",
         "methods": {
@@ -2031,6 +2067,13 @@ export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGat
         "pattern": "^v1/materials/[0-9a-fA-F-]{36}/remove$",
         "methods": {
           "POST": "speed.routes.write"
+        }
+      },
+      {
+        "template": "v1/materials/{id}/energetic-groups",
+        "pattern": "^v1/materials/[0-9a-fA-F-]{36}/energetic-groups$",
+        "methods": {
+          "PUT": "speed.routes.write"
         }
       },
       {

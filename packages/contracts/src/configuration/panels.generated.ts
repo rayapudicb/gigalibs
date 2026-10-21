@@ -3,9 +3,53 @@
 export const MODULE_PANEL_SOURCES: readonly unknown[] = [
   {
     "moduleKey": "process-safety-screening",
+    "componentKey": "speed.criteria-values",
+    "binding": "RECORD",
+    "props": {}
+  },
+  {
+    "moduleKey": "process-safety-screening",
     "componentKey": "speed.gate-workbench",
     "binding": "RECORD",
     "props": {
+      "changeReasons": {
+        "type": "STRING",
+        "required": true
+      }
+    }
+  },
+  {
+    "moduleKey": "process-safety-screening",
+    "componentKey": "speed.green-scorecard",
+    "binding": "RECORD",
+    "props": {
+      "showStreams": {
+        "type": "BOOLEAN",
+        "required": false
+      }
+    }
+  },
+  {
+    "moduleKey": "process-safety-screening",
+    "componentKey": "speed.ob-chart",
+    "binding": "RECORD",
+    "props": {
+      "axisMinPercent": {
+        "type": "NUMBER",
+        "required": true
+      },
+      "axisMaxPercent": {
+        "type": "NUMBER",
+        "required": true
+      },
+      "tickPercent": {
+        "type": "NUMBER",
+        "required": true
+      },
+      "showTable": {
+        "type": "BOOLEAN",
+        "required": false
+      },
       "changeReasons": {
         "type": "STRING",
         "required": true
@@ -20,6 +64,17 @@ export const MODULE_PANEL_SOURCES: readonly unknown[] = [
       "compact": {
         "type": "BOOLEAN",
         "required": false
+      }
+    }
+  },
+  {
+    "moduleKey": "process-safety-screening",
+    "componentKey": "speed.thermal-panel",
+    "binding": "RECORD",
+    "props": {
+      "changeReasons": {
+        "type": "STRING",
+        "required": true
       }
     }
   }

@@ -4,7 +4,9 @@ import {
   CreateSpeedProjectInputV1Schema,
   CreateSpeedRouteInputV1Schema,
   CreateSpeedSubstanceInputV1Schema,
+  PutSpeedCriteriaSetInForceInputV1Schema,
   SpeedArchiveInputV1Schema,
+  type SpeedCriteriaSetV1,
   type SpeedProjectStatus,
   type SpeedProjectV1,
   type SpeedRouteV1,
@@ -21,6 +23,7 @@ import {
 } from '@gigalibs/module-sdk';
 import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 import { MODULE_KEY } from '../config.js';
+import type { CriteriaService } from '../criteria/criteria.service.js';
 import type { RoutesService } from '../routes/routes.service.js';
 import type { SubstancesService } from '../substances/substances.service.js';
 import { type ProjectPageQuery, type ProjectsService, errors } from './projects.service.js';
@@ -98,6 +101,7 @@ async function versioned<T>(work: () => Promise<T>): Promise<T> {
 }
 
 export interface SpeedRecordDependencies {
+  readonly criteria: CriteriaService;
   readonly projects: ProjectsService;
   readonly substances: SubstancesService;
   readonly routes: RoutesService;
@@ -158,6 +162,20 @@ function routeToWindow(route: SpeedRouteV1): RecordValues {
     'step-count': route.stepCount,
     'steps-passing-gate': route.stepsPassingGate,
     'updated-at': route.updatedAt,
+  };
+}
+
+function criteriaToWindow(set: SpeedCriteriaSetV1): RecordValues {
+  return {
+    id: set.id,
+    version: set.version,
+    'version-label': set.versionLabel,
+    source: set.source,
+    'review-status': set.reviewStatus,
+    'in-force': set.inForce,
+    'imported-by': set.importedBy,
+    'imported-at': set.importedAt,
+    'in-force-since': set.inForceSince,
   };
 }
 
@@ -385,6 +403,61 @@ export function speedRecordDispatcher(
     },
   };
 
+  // Screening criteria sets (§3.2): read-only records; putting one in force is the administrator's action, with a reason.
+  const criteriaSets: RecordAdapter = {
+    entityKey: 'speed.criteria-sets',
+    permissions: { read: READ },
+    rest: {
+      read: 'GET v1/criteria-sets',
+      actions: { 'put-in-force': 'POST v1/criteria-sets/{id}/put-in-force' },
+    },
+    fields: {
+      'version-label': derived,
+      source: derived,
+      'review-status': derived,
+      'in-force': derived,
+      'imported-by': derived,
+      'imported-at': derived,
+      'in-force-since': derived,
+    },
+    searchFields: ['version-label'],
+    sortFields: ['version-label'],
+    async list(principal, query) {
+      const all = (await deps.criteria.list(principal)).items.filter(
+        (set) =>
+          !query.search ||
+          set.versionLabel
+            .toLocaleLowerCase('en-US')
+            .includes(query.search.toLocaleLowerCase('en-US')),
+      );
+      const start = (query.page - 1) * query.pageSize;
+      return {
+        items: all.slice(start, start + query.pageSize).map(criteriaToWindow),
+        total: all.length,
+        page: query.page,
+        pageSize: query.pageSize,
+      };
+    },
+    async get(principal, id) {
+      const found = await orNull(() => deps.criteria.get(principal, id));
+      return found ? criteriaToWindow(found) : null;
+    },
+    actions: {
+      'put-in-force': {
+        permission: 'speed.settings.manage',
+        async run(context, id, parameters) {
+          const input = errors.parseInput(PutSpeedCriteriaSetInForceInputV1Schema, {
+            version: parameters['expectedVersion'],
+            reason: parameters['reason'],
+          });
+          return criteriaToWindow(
+            await versioned(() => deps.criteria.putInForce(context, id, input)),
+          );
+        },
+      },
+    },
+  };
+
   const resolvers: LookupResolver[] = [
     {
       key: 'speed-projects',
@@ -399,7 +472,7 @@ export function speedRecordDispatcher(
   ];
 
   return new RecordDispatcher(
-    [projects, substances, routes],
+    [projects, substances, routes, criteriaSets],
     resolvers,
     idempotency,
     // The field rules of SPEED's windows, enforced on every create and change (WI-OI-120r).

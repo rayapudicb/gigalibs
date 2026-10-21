@@ -41,6 +41,25 @@ spec:
         props:
           # The reasons a chemist chooses from with every change (FR-AUD-01), separated by "|"; configurable per workspace.
           changeReasons: { type: STRING, required: true }
+      - componentKey: speed.ob-chart
+        binding: RECORD
+        props:
+          # The chart's span and ticks, %; the alert band itself comes from the criteria in force.
+          axisMinPercent: { type: NUMBER, required: true }
+          axisMaxPercent: { type: NUMBER, required: true }
+          tickPercent: { type: NUMBER, required: true }
+          showTable: { type: BOOLEAN }
+          changeReasons: { type: STRING, required: true }
+      - componentKey: speed.thermal-panel
+        binding: RECORD
+        props:
+          changeReasons: { type: STRING, required: true }
+      - componentKey: speed.green-scorecard
+        binding: RECORD
+        props:
+          showStreams: { type: BOOLEAN }
+      - componentKey: speed.criteria-values
+        binding: RECORD
   api:
     application: apps/api
     port: 4790
@@ -140,6 +159,9 @@ spec:
       - { path: 'v1/criteria-sets', GET: speed.routes.read, POST: speed.settings.manage }
       - { path: 'v1/criteria-sets/{id}', GET: speed.routes.read }
       - { path: 'v1/criteria-sets/{id}/put-in-force', POST: speed.settings.manage }
+      - { path: 'v1/library-sets', GET: speed.routes.read, POST: speed.settings.manage }
+      - { path: 'v1/library-sets/{id}', GET: speed.routes.read }
+      - { path: 'v1/library-sets/{id}/put-in-force', POST: speed.settings.manage }
       - { path: 'v1/substances', GET: speed.routes.read, POST: speed.substances.write }
       - { path: 'v1/substances/{id}', GET: speed.routes.read, PATCH: speed.substances.write }
       - { path: 'v1/substances/{id}/archive', POST: speed.substances.write }
@@ -154,7 +176,10 @@ spec:
       - { path: 'v1/steps/{id}/remove', POST: speed.routes.write }
       - { path: 'v1/steps/{id}/materials', POST: speed.routes.write }
       - { path: 'v1/steps/{id}/conditions', PUT: speed.routes.write }
+      - { path: 'v1/steps/{id}/thermal-data', POST: speed.thermal-data.write }
+      - { path: 'v1/steps/{id}/mitigation', PUT: speed.routes.write }
       - { path: 'v1/materials/{id}', PATCH: speed.routes.write }
       - { path: 'v1/materials/{id}/remove', POST: speed.routes.write }
+      - { path: 'v1/materials/{id}/energetic-groups', PUT: speed.routes.write }
       - { path: 'v1/organization/versions/{id}/units', POST: 'organization:activate' }
       - { path: 'v1/organization/versions/{id}/complete', POST: 'organization:activate' }

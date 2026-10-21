@@ -17,6 +17,7 @@ import { AuthorizationGuard } from './authorization.js';
 import { AUDIENCE, MODULE_KEY, runtimeConfigProvider } from './config.js';
 import { CriteriaController } from './criteria/criteria.controller.js';
 import type { DatabaseService } from './database.service.js';
+import { LibraryController } from './library/library.controller.js';
 import { ProjectsController } from './projects/projects.controller.js';
 import {
   MaterialsController,
@@ -41,7 +42,7 @@ const environment = {
   SPEED_CORS_ORIGINS: 'http://127.0.0.1:5180',
   SPEED_DATABASE_URL: 'postgresql://runtime:secret@postgres:5432/gigalibs',
   SPEED_DATABASE_POOL_SIZE: '10',
-  SPEED_EXPECTED_MIGRATION_VERSION: '2',
+  SPEED_EXPECTED_MIGRATION_VERSION: '3',
   SPEED_PLATFORM_CONTEXT_PUBLIC_KEY_BASE64: publicKeyBase64,
 };
 
@@ -107,6 +108,10 @@ const ROUTE_PERMISSIONS: readonly [{ prototype: object; name: string }, string, 
   [CriteriaController, 'get', 'speed.routes.read'],
   [CriteriaController, 'import', 'speed.settings.manage'],
   [CriteriaController, 'putInForce', 'speed.settings.manage'],
+  [LibraryController, 'list', 'speed.routes.read'],
+  [LibraryController, 'get', 'speed.routes.read'],
+  [LibraryController, 'import', 'speed.settings.manage'],
+  [LibraryController, 'putInForce', 'speed.settings.manage'],
   [SubstancesController, 'list', 'speed.routes.read'],
   [SubstancesController, 'get', 'speed.routes.read'],
   [SubstancesController, 'create', 'speed.substances.write'],
@@ -125,8 +130,11 @@ const ROUTE_PERMISSIONS: readonly [{ prototype: object; name: string }, string, 
   [StepsController, 'remove', 'speed.routes.write'],
   [StepsController, 'addMaterial', 'speed.routes.write'],
   [StepsController, 'replaceConditions', 'speed.routes.write'],
+  [StepsController, 'addThermalData', 'speed.thermal-data.write'],
+  [StepsController, 'replaceMitigation', 'speed.routes.write'],
   [MaterialsController, 'update', 'speed.routes.write'],
   [MaterialsController, 'remove', 'speed.routes.write'],
+  [MaterialsController, 'setEnergeticGroups', 'speed.routes.write'],
 ];
 
 describe('SPEED authorization on every S4 route (WI-OI-120bx)', () => {
@@ -141,6 +149,7 @@ describe('SPEED authorization on every S4 route (WI-OI-120bx)', () => {
       'speed.routes.read',
       'speed.routes.write',
       'speed.substances.write',
+      'speed.thermal-data.write',
       'speed.engines.run',
       'speed.settings.manage',
     ].filter((scope) => scope !== permission);
@@ -161,7 +170,7 @@ describe('SPEED runtime configuration', () => {
   it('loads the SPEED_* variables', () => {
     expect(load()).toMatchObject({
       platformContextAudience: AUDIENCE,
-      expectedMigrationVersion: 2,
+      expectedMigrationVersion: 3,
     });
   });
   it('refuses another audience', () => {

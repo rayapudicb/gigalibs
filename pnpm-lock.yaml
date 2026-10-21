@@ -1188,6 +1188,9 @@ importers:
       '@gigalibs/i18n':
         specifier: workspace:*
         version: link:../../../packages/i18n
+      '@gigalibs/process-safety-engines':
+        specifier: workspace:*
+        version: link:../../../packages/process-safety-engines
     devDependencies:
       '@types/react':
         specifier: 19.2.18

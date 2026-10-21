@@ -1,4 +1,8 @@
 import type {
+  AddSpeedThermalDataInputV1,
+  SpeedCriteriaSetV1,
+  SpeedEnthalpySource,
+  SpeedLibrarySetV1,
   SpeedMaterialRole,
   SpeedMessageV1,
   SpeedRouteDetailV1,
@@ -65,10 +69,36 @@ export interface SpeedApi {
       maximumTechnicalTemperatureC: number | null;
       heatCapacityJPerGK: number | null;
       accumulationPercent: number | null;
+      reactionEnthalpySource?: SpeedEnthalpySource | null;
+      reactionClassId?: string | null;
     },
     reason: string,
   ): Promise<SpeedStepChangeV1>;
+  addThermalData(
+    stepId: string,
+    data: DistributiveOmit<AddSpeedThermalDataInputV1, 'requestKey' | 'reason'>,
+    reason: string,
+  ): Promise<SpeedStepChangeV1>;
+  setEnergeticGroups(
+    materialId: string,
+    version: number,
+    groups: readonly string[],
+    reason: string,
+  ): Promise<SpeedStepChangeV1>;
+  replaceMitigation(
+    stepId: string,
+    version: number,
+    text: string,
+    reason: string,
+  ): Promise<SpeedStepChangeV1>;
+  /** The criteria and library sets in force, or null where a workspace has none. */
+  setsInForce(): Promise<{
+    criteria: SpeedCriteriaSetV1 | null;
+    library: SpeedLibrarySetV1 | null;
+  }>;
 }
+
+type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K> : never;
 
 export function createSpeedApi(send: typeof fetch = (input, init) => fetch(input, init)): SpeedApi {
   const call = async <T>(method: string, path: string, body?: unknown): Promise<T> => {
@@ -115,5 +145,21 @@ export function createSpeedApi(send: typeof fetch = (input, init) => fetch(input
       call('POST', `/materials/${materialId}/remove`, { version, reason }),
     replaceConditions: (stepId, version, values, reason) =>
       call('PUT', `/steps/${stepId}/conditions`, { version, reason, ...values }),
+    addThermalData: (stepId, data, reason) =>
+      call('POST', `/steps/${stepId}/thermal-data`, { requestKey: key(), reason, ...data }),
+    setEnergeticGroups: (materialId, version, groups, reason) =>
+      call('PUT', `/materials/${materialId}/energetic-groups`, { version, reason, groups }),
+    replaceMitigation: (stepId, version, text, reason) =>
+      call('PUT', `/steps/${stepId}/mitigation`, { version, reason, text }),
+    setsInForce: async () => {
+      const [criteria, library] = await Promise.all([
+        call<{ items: SpeedCriteriaSetV1[] }>('GET', '/criteria-sets'),
+        call<{ items: SpeedLibrarySetV1[] }>('GET', '/library-sets'),
+      ]);
+      return {
+        criteria: criteria.items.find((set) => set.inForce) ?? null,
+        library: library.items.find((set) => set.inForce) ?? null,
+      };
+    },
   };
 }

@@ -21,12 +21,13 @@ import { SCHEMA, TOPIC } from '../config.js';
 import { CriteriaService } from '../criteria/criteria.service.js';
 import { DatabaseService } from '../database.service.js';
 import { errors, refuse } from '../errors.js';
+import { LibraryService } from '../library/library.service.js';
 import {
   ROUTE_COLUMNS,
   ROUTE_FROM,
   type RouteRow,
   readRoute,
-  readSteps,
+  readRouteDetail,
   routeForChange,
   toRoute,
 } from './route-store.js';
@@ -50,6 +51,7 @@ export class RoutesService {
   constructor(
     private readonly database: DatabaseService,
     private readonly criteria: CriteriaService,
+    private readonly library: LibraryService,
   ) {}
 
   list(principal: ModulePrincipal, query: RoutePageQuery): Promise<SpeedPageV1<SpeedRouteV1>> {
@@ -144,7 +146,7 @@ export class RoutesService {
         aggregateVersion: route.version,
         payload: { changes: changes(null, route, AUDITED), reason: null },
       });
-      return { route: { ...route, steps: [] }, replayed: false };
+      return { route: { ...route, steps: [], rollup: null }, replayed: false };
     });
   }
 
@@ -220,12 +222,15 @@ export class RoutesService {
       const route = await readRoute(client, context.principal, access, id, true);
       if (route.status !== 'DRAFT')
         refuse('SPEED_ROUTE_NOT_DRAFT', 'Only a draft route is recomputed; its results are kept.');
-      const criteria = await this.criteria.inForce(client, tenantId);
+      const sets = {
+        criteria: await this.criteria.inForce(client, tenantId),
+        library: await this.library.inForce(client, tenantId),
+      };
       const steps = await client.query<{ id: string }>(
         `SELECT id FROM ${SCHEMA}.steps WHERE tenant_id = $1 AND route_id = $2 ORDER BY position`,
         [tenantId, id],
       );
-      for (const step of steps.rows) await computeStep(client, context, id, step.id, criteria);
+      for (const step of steps.rows) await computeStep(client, context, id, step.id, sets);
       return this.detail(client, tenantId, await readRoute(client, context.principal, access, id));
     });
   }
@@ -248,6 +253,6 @@ export class RoutesService {
     tenantId: string,
     row: RouteRow,
   ): Promise<SpeedRouteDetailV1> {
-    return { ...toRoute(row), steps: await readSteps(client, tenantId, row.id) };
+    return readRouteDetail(client, tenantId, row);
   }
 }

@@ -1,17 +1,22 @@
 import type {
+  SpeedEnthalpySource,
   SpeedMaterialRole,
+  SpeedMitigationV1,
   SpeedRecordStatus,
+  SpeedRouteDetailV1,
   SpeedRouteStatus,
   SpeedRouteV1,
   SpeedStepConditionsV1,
   SpeedStepMaterialV1,
   SpeedStepV1,
+  SpeedThermalDataV1,
+  SpeedThermalKind,
 } from '@gigalibs/contracts';
 import type { ModulePrincipal, OrganizationAccess } from '@gigalibs/module-sdk';
 import { type Client, assertSiteWrite, readableSite } from '../access.js';
 import { SCHEMA } from '../config.js';
 import { errors, refuse } from '../errors.js';
-import { latestResults } from './screening.js';
+import { latestResults, rollupOf } from './screening.js';
 
 // WI-OI-120bx (SPEED S4): reading routes and their content, and the rule every change to a route follows: the member
 // may write the route's site, the route is a draft, its project is active, and the route row is locked for the rest of
@@ -161,6 +166,7 @@ interface MaterialRow {
   role: SpeedMaterialRole;
   coefficient: string | null;
   mass_g: string | null;
+  energetic_groups: string[];
   version: number;
 }
 
@@ -170,9 +176,75 @@ interface ConditionsRow {
   maximum_technical_temperature_c: string | null;
   heat_capacity_j_per_g_k: string | null;
   accumulation_percent: string | null;
+  reaction_enthalpy_source: SpeedEnthalpySource | null;
+  reaction_class_id: string | null;
   version: number;
   updated_by: string;
   updated_at: Date;
+}
+
+interface ThermalRow {
+  id: string;
+  step_id: string;
+  kind: SpeedThermalKind;
+  reaction_enthalpy_kj_per_mol: string | null;
+  onset_c: string | null;
+  td24_c: string | null;
+  activation_energy_kj_per_mol: string | null;
+  heat_release_rate_w_per_kg: string | null;
+  reference_temperature_c: string | null;
+  basis: 'MEASURED' | 'LITERATURE';
+  citation: string;
+  notes: string | null;
+  status: 'ACTIVE' | 'SUPERSEDED';
+  created_by: string;
+  created_at: Date;
+  superseded_at: Date | null;
+}
+
+interface MitigationRow {
+  step_id: string;
+  text: string;
+  version: number;
+  recorded_by: string;
+  recorded_at: Date;
+  accepted_by: string | null;
+  accepted_at: Date | null;
+}
+
+export const THERMAL_COLUMNS = `id, step_id, kind, reaction_enthalpy_kj_per_mol, onset_c, td24_c, activation_energy_kj_per_mol,
+  heat_release_rate_w_per_kg, reference_temperature_c, basis, citation, notes, status, created_by, created_at, superseded_at`;
+
+export function toThermal(row: ThermalRow): SpeedThermalDataV1 {
+  return {
+    id: row.id,
+    stepId: row.step_id,
+    kind: row.kind,
+    kJPerMol: number(row.reaction_enthalpy_kj_per_mol),
+    onsetC: number(row.onset_c),
+    td24C: number(row.td24_c),
+    activationEnergyKJPerMol: number(row.activation_energy_kj_per_mol),
+    heatReleaseRateWPerKg: number(row.heat_release_rate_w_per_kg),
+    referenceTemperatureC: number(row.reference_temperature_c),
+    basis: row.basis,
+    citation: row.citation,
+    notes: row.notes,
+    status: row.status,
+    createdBy: row.created_by,
+    createdAt: new Date(row.created_at).toISOString(),
+    supersededAt: row.superseded_at ? new Date(row.superseded_at).toISOString() : null,
+  };
+}
+
+function toMitigation(row: MitigationRow): SpeedMitigationV1 {
+  return {
+    text: row.text,
+    version: Number(row.version),
+    recordedBy: row.recorded_by,
+    recordedAt: new Date(row.recorded_at).toISOString(),
+    acceptedBy: row.accepted_by,
+    acceptedAt: row.accepted_at ? new Date(row.accepted_at).toISOString() : null,
+  };
 }
 
 const number = (value: string | null): number | null => (value === null ? null : Number(value));
@@ -189,6 +261,7 @@ function toMaterial(row: MaterialRow): SpeedStepMaterialV1 {
     role: row.role,
     coefficient: number(row.coefficient),
     massG: number(row.mass_g),
+    energeticGroups: [...row.energetic_groups],
     version: Number(row.version),
   };
 }
@@ -199,6 +272,8 @@ function toConditions(row: ConditionsRow): SpeedStepConditionsV1 {
     maximumTechnicalTemperatureC: number(row.maximum_technical_temperature_c),
     heatCapacityJPerGK: number(row.heat_capacity_j_per_g_k),
     accumulationPercent: number(row.accumulation_percent),
+    reactionEnthalpySource: row.reaction_enthalpy_source,
+    reactionClassId: row.reaction_class_id,
     version: Number(row.version),
     updatedBy: row.updated_by,
     updatedAt: new Date(row.updated_at).toISOString(),
@@ -223,15 +298,25 @@ export async function readSteps(
   if (ids.length === 0) return [];
   const materials = await client.query<MaterialRow>(
     `SELECT m.id, m.step_id, m.position, m.substance_id, s.name AS substance_name, s.formula, s.molar_mass_g_per_mol, m.role, m.coefficient,
-            m.mass_g, m.version
+            m.mass_g, m.energetic_groups, m.version
        FROM ${SCHEMA}.step_materials m JOIN ${SCHEMA}.substances s ON s.tenant_id = m.tenant_id AND s.id = m.substance_id
       WHERE m.tenant_id = $1 AND m.step_id = ANY($2::uuid[]) ORDER BY m.position, m.id`,
     [tenantId, ids],
   );
   const conditions = await client.query<ConditionsRow>(
-    `SELECT step_id, process_temperature_c, maximum_technical_temperature_c, heat_capacity_j_per_g_k, accumulation_percent, version, updated_by,
-            updated_at
+    `SELECT step_id, process_temperature_c, maximum_technical_temperature_c, heat_capacity_j_per_g_k, accumulation_percent,
+            reaction_enthalpy_source, reaction_class_id, version, updated_by, updated_at
        FROM ${SCHEMA}.step_conditions WHERE tenant_id = $1 AND step_id = ANY($2::uuid[])`,
+    [tenantId, ids],
+  );
+  const thermal = await client.query<ThermalRow>(
+    `SELECT ${THERMAL_COLUMNS} FROM ${SCHEMA}.thermal_data WHERE tenant_id = $1 AND step_id = ANY($2::uuid[]) AND status = 'ACTIVE'
+      ORDER BY kind`,
+    [tenantId, ids],
+  );
+  const mitigations = await client.query<MitigationRow>(
+    `SELECT step_id, text, version, recorded_by, recorded_at, accepted_by, accepted_at FROM ${SCHEMA}.mitigations
+      WHERE tenant_id = $1 AND step_id = ANY($2::uuid[])`,
     [tenantId, ids],
   );
   const results = await latestResults(client, tenantId, ids);
@@ -246,6 +331,11 @@ export async function readSteps(
       version: Number(step.version),
       materials: materials.rows.filter((row) => row.step_id === step.id).map(toMaterial),
       conditions: found ? toConditions(found) : null,
+      thermalData: thermal.rows.filter((row) => row.step_id === step.id).map(toThermal),
+      mitigation: (() => {
+        const mitigation = mitigations.rows.find((row) => row.step_id === step.id);
+        return mitigation ? toMitigation(mitigation) : null;
+      })(),
       latestResult: results.get(step.id) ?? null,
     };
   });
@@ -260,4 +350,14 @@ export async function readStep(
 ): Promise<SpeedStepV1> {
   const [step] = await readSteps(client, tenantId, routeId, stepId);
   return step ?? errors.notFound('The step');
+}
+
+/** A route with its steps and the roll-up of their latest results (FR-GRN-04). */
+export async function readRouteDetail(
+  client: Client,
+  tenantId: string,
+  row: RouteRow,
+): Promise<SpeedRouteDetailV1> {
+  const steps = await readSteps(client, tenantId, row.id);
+  return { ...toRoute(row), steps, rollup: rollupOf(steps.map((step) => step.latestResult)) };
 }

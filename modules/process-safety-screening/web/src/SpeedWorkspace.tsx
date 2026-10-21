@@ -9,8 +9,12 @@ import {
 } from '@gigalibs/configuration-react';
 import { PLATFORM_LOOKUP_BASE_PATHS } from '@gigalibs/contracts';
 import { useMemo, useState } from 'react';
+import { CriteriaValuesPanel } from './CriteriaValuesPanel.js';
 import { GateWorkbenchPanel } from './GateWorkbenchPanel.js';
+import { GreenScorecardPanel } from './GreenScorecardPanel.js';
+import { ObChartPanel } from './ObChartPanel.js';
 import { RouteSummaryPanel } from './RouteSummaryPanel.js';
+import { ThermalPanel } from './ThermalPanel.js';
 
 // WI-OI-120bw/120bx (SPEED S3, S4; plan v1.4 §3.3): SPEED's screens are metadata windows drawn from the dictionary each
 // workspace has published, over the module's own record dispatcher. Labels, fields, actions and permissions come from
@@ -19,13 +23,17 @@ import { RouteSummaryPanel } from './RouteSummaryPanel.js';
 
 const BASE_PATH = '/api/speed';
 const MODULE_KEY = 'process-safety-screening';
-const SURFACES = ['speed-projects', 'speed-routes', 'speed-substances'] as const;
+const SURFACES = ['speed-projects', 'speed-routes', 'speed-substances', 'speed-criteria'] as const;
 type Surface = (typeof SURFACES)[number];
 
 /** The components SPEED registers in `spec.ui.panels`; the dictionary decides where each appears. */
 const PANELS: MetadataPanelRegistry = {
   'speed.route-summary': RouteSummaryPanel,
   'speed.gate-workbench': GateWorkbenchPanel,
+  'speed.ob-chart': ObChartPanel,
+  'speed.thermal-panel': ThermalPanel,
+  'speed.green-scorecard': GreenScorecardPanel,
+  'speed.criteria-values': CriteriaValuesPanel,
 };
 
 export interface SpeedWorkspaceProps {
@@ -58,6 +66,11 @@ export function SpeedWorkspace({ permissions = [] }: SpeedWorkspaceProps = {}) {
       moduleKey: MODULE_KEY,
       entityKey: 'speed-substances',
       surfaceKey: 'speed-substances',
+    }),
+    'speed-criteria': usePublishedManifest({
+      moduleKey: MODULE_KEY,
+      entityKey: 'speed-criteria',
+      surfaceKey: 'speed-criteria',
     }),
   };
   const available = SURFACES.filter((surface) => states[surface].status !== 'forbidden');

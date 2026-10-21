@@ -4,11 +4,21 @@ import type { MetadataPanelProps } from '@gigalibs/configuration-react';
 import type { SpeedRouteDetailV1 } from '@gigalibs/contracts';
 import { useEffect, useMemo, useState } from 'react';
 import { type Translate, speedText } from './messages/index.js';
+import { routeWorstClass, shown } from './screens-model.js';
 import { createSpeedApi } from './speed-api.js';
 import { summaryView } from './workbench-model.js';
 
-// WI-OI-120bx (SPEED S4; screen spec §2.4, panel speed.route-summary): six tiles in the prototype's order. S4 computes
-// the gate; the criticality, interactions, green metrics and data-gap tiles fill as S5 to S7 store those results.
+const WORST_TONE = [
+  '',
+  'text-ui-tag-green-text',
+  'text-ui-tag-green-text',
+  'text-ui-tag-orange-text',
+  'text-ui-tag-red-text',
+  'text-ui-tag-red-text',
+];
+
+// WI-OI-120bx/120by (SPEED S4, S5; screen spec §2.4, panel speed.route-summary): six tiles in the prototype's order, from
+// the stored results. The interactions and data-gap tiles fill as S6 and S7 store those results.
 
 const tile = 'rounded-lg border border-ui-border-base bg-ui-bg-base p-3';
 
@@ -21,12 +31,21 @@ export interface RouteSummaryViewProps {
 export function RouteSummaryView({ route, compact, t }: RouteSummaryViewProps) {
   const summary = summaryView(route);
   const gateTone = summary.allPass ? 'text-ui-tag-green-text' : 'text-ui-tag-red-text';
-  const tiles: readonly { key: string; value: string | null; tone?: string }[] = [
+  const worst = routeWorstClass(route);
+  const rollup =
+    route.rollup?.['status'] === 'OK'
+      ? (route.rollup as { processMassIntensity: number; atomEconomyPercent: number })
+      : null;
+  const tiles: readonly { key: string; value: string | null; tone?: string | undefined }[] = [
     { key: 'gate', value: `${summary.passing}/${summary.steps}`, tone: gateTone },
-    { key: 'worst', value: null },
+    {
+      key: 'worst',
+      value: worst === null ? null : t('speed.summary.class', { value: worst }),
+      tone: worst === null ? undefined : WORST_TONE[worst],
+    },
     { key: 'high', value: null },
-    { key: 'pmi', value: null },
-    { key: 'ae', value: null },
+    { key: 'pmi', value: rollup ? shown(rollup.processMassIntensity, 2) : null },
+    { key: 'ae', value: rollup ? `${shown(rollup.atomEconomyPercent, 1)} %` : null },
     { key: 'gaps', value: null },
   ];
   return (
