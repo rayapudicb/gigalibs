@@ -11,13 +11,18 @@ const partId = '550e8400-e29b-41d4-a716-446655440002';
 const storeroomId = '550e8400-e29b-41d4-a716-446655440003';
 const requestKey = '550e8400-e29b-41d4-a716-446655440004';
 const principal = {
-  tenantId: 'tenant-a', subject: 'worker-a', departmentScope: { mode: 'DEPARTMENTS', departmentIds: ['north'] },
+  tenantId: 'tenant-a',
+  subject: 'worker-a',
+  permissions: ['cmms.work-orders.write'],
+  departmentScope: { mode: 'DEPARTMENTS', departmentIds: ['north'] },
   placeScope: { mode: 'ALL' },
 } as unknown as CmmsPrincipal;
 const context: CmmsCommandContext = { principal, correlationId: 'r5-proof' };
 
 function services() {
-  const query = vi.fn(async () => ({ rows: [{ id: workOrderId, status: 'IN_PROGRESS', department_id: 'north', site_ref: null }] }));
+  const query = vi.fn(async () => ({
+    rows: [{ id: workOrderId, status: 'IN_PROGRESS', department_id: 'north', site_ref: null, assigned_to: 'worker-a', version: 1 }],
+  }));
   const database = {
     withTenantTransaction: vi.fn(async (_tenant: string, operation: (client: unknown) => Promise<unknown>) => operation({ query })),
   } as unknown as DatabaseService;

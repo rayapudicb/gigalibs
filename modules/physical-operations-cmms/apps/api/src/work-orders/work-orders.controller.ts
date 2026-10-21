@@ -3,6 +3,7 @@ import {
   CmmsAuthorizationGuard,
   CommandContext,
   CurrentPrincipal,
+  RequireAnyPermission,
   RequirePermissions,
   type CmmsCommandContext,
   type CmmsPrincipal,
@@ -62,7 +63,7 @@ export class WorkOrdersController {
 
   @Post(':workOrderId/status')
   @HttpCode(HttpStatus.OK)
-  @RequirePermissions('cmms.work-orders.write')
+  @RequireAnyPermission('cmms.work-orders.write', 'cmms.work-orders.execute-own')
   status(@CommandContext() context: CmmsCommandContext, @Param('workOrderId') workOrderId: string, @Body() body: unknown) {
     return this.workOrders.changeStatus(context, workOrderId, body);
   }
@@ -76,13 +77,13 @@ export class WorkOrdersController {
 
   @Post(':workOrderId/tasks')
   @HttpCode(HttpStatus.OK)
-  @RequirePermissions('cmms.work-orders.write')
+  @RequireAnyPermission('cmms.work-orders.write', 'cmms.work-orders.execute-own')
   addTask(@CommandContext() context: CmmsCommandContext, @Param('workOrderId') workOrderId: string, @Body() body: unknown) {
     return this.workOrders.addTask(context, workOrderId, body);
   }
 
   @Patch(':workOrderId/tasks/:taskId')
-  @RequirePermissions('cmms.work-orders.write')
+  @RequireAnyPermission('cmms.work-orders.write', 'cmms.work-orders.execute-own')
   recordTask(
     @CommandContext() context: CmmsCommandContext,
     @Param('workOrderId') workOrderId: string,
@@ -94,14 +95,14 @@ export class WorkOrdersController {
 
   @Post(':workOrderId/labour')
   @HttpCode(HttpStatus.OK)
-  @RequirePermissions('cmms.work-orders.write')
+  @RequireAnyPermission('cmms.work-orders.write', 'cmms.work-orders.execute-own')
   labour(@CommandContext() context: CmmsCommandContext, @Param('workOrderId') workOrderId: string, @Body() body: unknown) {
     return this.workOrders.logLabour(context, workOrderId, body);
   }
 
   @Post(':workOrderId/parts')
   @HttpCode(HttpStatus.OK)
-  @RequirePermissions('cmms.work-orders.write')
+  @RequireAnyPermission('cmms.work-orders.write', 'cmms.work-orders.execute-own')
   parts(@CommandContext() context: CmmsCommandContext, @Param('workOrderId') workOrderId: string, @Body() body: unknown) {
     return this.workOrders.issuePart(context, workOrderId, body);
   }
@@ -123,7 +124,7 @@ export class WorkOrdersController {
 
   @Post(':workOrderId/notes')
   @HttpCode(HttpStatus.OK)
-  @RequirePermissions('cmms.work-orders.write')
+  @RequireAnyPermission('cmms.work-orders.write', 'cmms.work-orders.execute-own')
   note(@CommandContext() context: CmmsCommandContext, @Param('workOrderId') workOrderId: string, @Body() body: unknown) {
     return this.workOrders.addNote(context, workOrderId, body);
   }

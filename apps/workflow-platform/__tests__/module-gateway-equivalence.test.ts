@@ -234,10 +234,9 @@ function withNegatives(paths: string[]): string[] {
 
 describe('manifest-generated gateways equal the hand-written allow-lists', () => {
   // WI-OI-120be (W1 Security review, 2026-10-16): the CMMS routes that differ from the frozen hand-written allow-list
-  // (37e5556), each accepted by the review. Executing work takes write or execute-own at the gateway: the record API
-  // checks assignment, while the REST controllers still serve these paths to write holders only, and must add the same
-  // assignment check before they are relaxed (W1-A review). Staffing stays write only (finding W2), so it matches the
-  // oracle and is not listed. Any other difference fails.
+  // (37e5556), each accepted by the review. Executing work takes write or execute-own at the gateway and on the CMMS
+  // REST controllers (WI-OI-120gd); assignment is enforced in WorkOrdersService.lockForChange. Staffing stays write only
+  // (finding W2), so it matches the oracle and is not listed. Any other difference fails.
   const EXECUTE = ['cmms.work-orders.write', 'cmms.work-orders.execute-own'];
   const CMMS_REVIEWED: Readonly<Record<string, unknown>> = {
     'POST v1/requests/search': 'cmms.requests.read',

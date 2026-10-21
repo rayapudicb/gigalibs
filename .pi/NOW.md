@@ -14,7 +14,7 @@ keeps the full rules.
 
 **Owner, 2026-10-21 — Option 1 (dev first):** Finish CMMS in **main worktree only**; **no release/deploy** until Phase A is done. Runbook: [CMMS-DEV-THEN-DEPLOY.md](handoff/CMMS-DEV-THEN-DEPLOY.md). Logs: `tee /tmp/gigalibs-verify.log`, journey board `e2e/test-results/journey/index.html`.
 
-**Next dev task:** [WI-OI-120gd](tasks/WI-OI-120gd.md) — CMMS REST **execute-own** fix in git (uncommitted); journey retries tenant **503**; last run **`hrk5y3`** stopped on control-plane sync (not CMMS). Re-run journey when UAT stable; then Phase B deploy for cmms-api. **120bu** Built on main (`c7ee6091`). UAT deploy **paused**.
+**Next dev task:** [WI-OI-120gd](tasks/WI-OI-120gd.md) — CMMS **execute-own** REST + `lockForChange` in git (uncommitted); journey labour tab + **0-blocker** assert; last run **`hrmlri`** 6 blockers until **Phase B** cmms-api deploy. **120bu** Built on main (`c7ee6091`). UAT deploy **paused**.
 
 **Not in this track:** reliability, floor kiosk, full EAM (Phase 6 **M-CM2** / roadmap P4b).
 

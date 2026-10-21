@@ -26,7 +26,7 @@ import {
   type CreateCmmsWorkOrderV1,
 } from '@gigalibs/contracts';
 import type { PoolClient } from 'pg';
-import type { CmmsCommandContext, CmmsPrincipal } from '../auth/authorization.js';
+import { hasCmmsPermission, type CmmsCommandContext, type CmmsPrincipal } from '../auth/authorization.js';
 import { assertWritableScope, scopePredicates } from '../auth/scope.js';
 import { AssetsService } from '../assets/assets.service.js';
 import {
@@ -701,9 +701,29 @@ export class WorkOrdersService {
   ): Promise<any> {
     const current = await this.visibleRow(client, context.principal, workOrderId, true);
     if (expectedVersion !== null && Number(current.version) !== expectedVersion) versionConflict('The work order');
-    assertWritableScope(context.principal, { departmentId: current.department_id, siteRef: current.site_ref }, undefined, undefined, {
-      permission: 'cmms.work-orders.write',
-    });
+    const canWrite = hasCmmsPermission(context.principal.permissions, 'cmms.work-orders.write');
+    const mutationPermission = canWrite ? 'cmms.work-orders.write' : 'cmms.work-orders.execute-own';
+    assertWritableScope(
+      context.principal,
+      { departmentId: current.department_id, siteRef: current.site_ref },
+      undefined,
+      undefined,
+      { permission: mutationPermission },
+    );
+    if (!canWrite) {
+      if (!hasCmmsPermission(context.principal.permissions, 'cmms.work-orders.execute-own')) {
+        throw new ForbiddenException({
+          code: 'CMMS_PERMISSION_DENIED',
+          message: 'Permission cmms.work-orders.write or cmms.work-orders.execute-own is required.',
+        });
+      }
+      if (!current.assigned_to || current.assigned_to !== context.principal.subject) {
+        throw new ForbiddenException({
+          code: 'CMMS_OUT_OF_SCOPE',
+          message: 'You can only execute work orders assigned to you.',
+        });
+      }
+    }
     if (allowedStatuses && !allowedStatuses.includes(current.status)) {
       throw new ConflictException({
         code: 'CMMS_WORK_ORDER_STATE',

@@ -24,6 +24,7 @@ import { DatabaseService } from '../database/database.service.js';
 import { CMMS_MODULE_KEY, type CmmsRuntimeConfig } from '../runtime-config.js';
 
 const PERMISSIONS_METADATA = 'cmms.required-permissions';
+const PERMISSIONS_ANY_METADATA = 'cmms.required-permissions-any';
 // WI-OI-120ag: built against a module SDK without this export, the guard would skip the record routes' baseline
 // permission without a word. Refuse to start instead (as Workforce does, WI-OI-120u I-new-1).
 if (typeof MODULE_PERMISSIONS_METADATA !== 'string' || MODULE_PERMISSIONS_METADATA.length === 0) {
@@ -71,6 +72,10 @@ interface AuthenticatedRequest {
 }
 
 export const RequirePermissions = (...permissions: string[]) => SetMetadata(PERMISSIONS_METADATA, permissions);
+
+/** At least one listed permission must be granted (WI-OI-120be W1-A: execute-own OR write on work-order execution routes). */
+export const RequireAnyPermission = (...permissions: string[]) =>
+  SetMetadata(PERMISSIONS_ANY_METADATA, permissions);
 
 export const CurrentPrincipal = createParamDecorator((_data: unknown, context: ExecutionContext): CmmsPrincipal => {
   const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
@@ -143,6 +148,17 @@ export class CmmsAuthorizationGuard implements CanActivate {
     for (const permission of required) {
       if (!hasCmmsPermission(platformContext.granted_scopes, permission)) {
         throw new ForbiddenException(`Missing required permission: ${permission}`);
+      }
+    }
+    const anyRequired =
+      this.reflector.getAllAndOverride<string[] | undefined>(PERMISSIONS_ANY_METADATA, [
+        context.getHandler(),
+        context.getClass(),
+      ]) ?? [];
+    if (anyRequired.length > 0) {
+      const granted = platformContext.granted_scopes;
+      if (!anyRequired.some((permission) => hasCmmsPermission(granted, permission))) {
+        throw new ForbiddenException(`Missing required permission: ${anyRequired[0]}`);
       }
     }
 
