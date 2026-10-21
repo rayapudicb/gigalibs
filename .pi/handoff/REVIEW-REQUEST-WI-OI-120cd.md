@@ -1,7 +1,9 @@
 # Security review request: WI-OI-120cd, SPEED on UAT
 
-- **Release:** `release/speed-uat` at `23ab3916` (worktree `gigalibs-release-speed`), on top of the running UAT release
-  `9734dca9`. Review the range `9734dca9..23ab3916` (one commit, 177 files).
+- **Release:** `release/speed-uat` at `19048071` (worktree `gigalibs-release-speed`), on top of UAT's previous release
+  `9734dca9`. Review the range `9734dca9..19048071`: three commits, `23ab3916` (SPEED S1 to S7, 177 files),
+  `76780730` (R1 completion, 42 files; deployed 2026-10-21 by the owner before this review) and `19048071` (CMMS's
+  work-orders window kept as `9734dca9` ships it, and a test that compiles every shipped window as activation does).
 - **Why a review:** plan v3 rule 2. The release adds a module schema and migrations, roles and permissions, gateway
   routes, a kernel job that signs a context for a module, and a SECURITY DEFINER function.
 - **Author:** Claude Code (this session). The reviewer must be someone else; record the reviewer's name in
@@ -33,7 +35,13 @@
    prefixed settings, never a generated one, as `${NAME:-}`.
 7. **Build** (`infra/compose/docker/Dockerfile`, deployment profile): Debian pins moved to `ca-certificates
    20250419~deb12u2` and `openssl 3.0.22-1~deb12u1`, the versions Debian serves now.
-8. **Kept as running:** CMMS's `cmms-work-orders` window baseline is the one `9734dca9` ships (its 120bu window file names
+8. **R1 completion (`fb21e5c8`):**
+   - `GET v1/outcomes` (`speed.routes.read`): aggregates over the routes the member reads (site scope as every read);
+   - `GET v1/audit-events` (gateway `speed:read`; the service reads all entries with `speed.audit.read`, only the
+     member's own with `speed.audit.read-own`, and refuses anyone else) and `GET v1/audit-events/export/csv`
+     (`speed.audit.read`); the audit trail is workspace-wide for `speed.audit.read`, not site-scoped; please confirm;
+   - the write-up parser runs in the browser only and saves through the existing step routes with a reason.
+9. **Kept as running:** CMMS's `cmms-work-orders` window baseline is the one `9734dca9` ships (its 120bu window file names
    an undeclared `technician-ref`); no other module changes.
 
 ## Evidence
@@ -41,4 +49,8 @@
 - SPEED tests: 143 (60 unit, 53 PostgreSQL of which 11 against MinIO, 30 panel renders); conformance 15/15; the
   speed-lab instance ran the whole journey through the real gateway (WI-OI-120cc).
 - Release checks and their known base failures: `.pi/tasks/WI-OI-120cd.md`.
-- Migration rehearsal on a copy of UAT: recorded on the card before the deploy.
+- Migration rehearsal on a copy of UAT (passed, recorded on `.pi/tasks/WI-OI-120cd.md` with the recovery plan): the
+  backup restored, platform "No pending migrations", SPEED 1 to 5 applied (21 tables, forced RLS on all but the ledger),
+  the definer function in place, the runtime role neither superuser nor RLS-bypassing, every other module's ledger
+  unchanged.
+- Backup `gigalibs_backup_20261021_072508Z` verified; `deploy-uat.sh --check` passed; nothing deployed.
