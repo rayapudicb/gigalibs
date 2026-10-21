@@ -31,13 +31,23 @@ open e2e/test-results/journey/index.html   # board: blockers by stage
 
 ## Phase B — One UAT release (later)
 
-**When:** owner schedules a **deploy day** after Phase A for that batch.
+**When:** owner schedules a **deploy day** after Phase A for that batch, **after** Claude’s SPEED UAT release
+([WI-OI-120cd](../tasks/WI-OI-120cd.md)) is on the running stack—or in the **same** release train on top of it.
 
-**Where:** `gigalibs-release-wf120u` only.
+**Where:** worktree on branch **`release/speed-uat`** (e.g. `gigalibs-release-speed`), **not** a fresh cut from
+`9734dca9` / `release/wi120u-workforce` alone.
+
+**Release base (owner, 2026-10-21):** stack CMMS (**120gd**, **120bu**, etc.) on **`release/speed-uat` at
+`76780730`** (SPEED R1 on the UAT release). Deploying CMMS built only from `9734dca9` **after** SPEED lands would
+**remove SPEED from UAT**; deploying SPEED-only on top of an old CMMS-only release does the reverse. One combined
+release keeps both.
+
+**Do not:** edit or commit `.pi/handoff/REVIEW-REQUEST-WI-OI-120cd.md` (Claude / **120cd**).
 
 **Order (no steps skipped):**
 
-1. Path checkout / one release commit from main (product paths only).
+1. On **`release/speed-uat`**, one release commit from main with **CMMS (and any co-deploy) paths only**—SPEED paths
+   stay as Claude left them on that branch.
 2. `bash infra/compose/scripts/refresh-source-identity.sh` — write down `REV / STATE`.
 3. All five builds (`GIGALIBS_KEEP_IMAGE_VERSIONS=3`) → `tee /tmp/uat-build.log`.
 4. `backup-uat.sh` → note basename.
@@ -61,4 +71,7 @@ docker inspect gigalibs-configuration-local-web-1 \
 | 2 | [WI-OI-120gd](../tasks/WI-OI-120gd.md) | Journey **org stages 2–3** then CMMS **0 blockers** (spec + product if needed) |
 | 3 | [WI-OI-120bi](../tasks/WI-OI-120bi.md)–[120be](../tasks/WI-OI-120be.md) | Already on UAT baseline; journey proves sign-off + N/S scope after **120gd** |
 
-**Not Phase A:** Table 2 (**120bq**), SPEED UAT (**120cd**), release worktree Dockerfile/apt identity games.
+**Not Phase A:** Table 2 (**120bq**), SPEED UAT release prep (**120cd** — Claude), release worktree Dockerfile/apt
+identity games.
+
+**Unrelated local edits (leave unstaged):** `apps/workflow-platform` maps/auth/communications files are not **120gd**.

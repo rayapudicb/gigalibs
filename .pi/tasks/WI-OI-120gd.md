@@ -31,3 +31,8 @@ The tenant-to-value journey completes CMMS (sign-off + North ≠ South) with **0
 - Latest run **`hrmlri`**: **6 blockers** — technician **POST …/status** still **403 write** on UAT (fix in git, needs Phase B); labour tab flow updated in journey; stages 6 approver/time flaky. Run **`hrk5y3`**: workspace **503** (retry added).
 - Journey spec now **fails the test** when blockers &gt; 0.
 - Do **not** run `deploy-uat.sh` during this card; Phase B is one batch after git is ready ([CMMS-DEV-THEN-DEPLOY.md](../handoff/CMMS-DEV-THEN-DEPLOY.md)).
+- **Phase B UAT release base (owner, 2026-10-21):** branch **`release/speed-uat`** at **`76780730`** (or its successor
+  after Claude’s **120cd** deploy)—**not** `9734dca9` alone. CMMS and SPEED must ship on the **same** UAT release train
+  or one side drops off UAT.
+- **Built in git:** `9eb14717` — execute-own REST + journey (labour tab, 0-blocker assert, tenant 503 retry).
+- **Do not** touch `.pi/handoff/REVIEW-REQUEST-WI-OI-120cd.md` (Claude / **120cd**).
