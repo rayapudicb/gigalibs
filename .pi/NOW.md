@@ -130,7 +130,7 @@ owner says. UAT deploy **paused**. Leave maps/auth/softphone TSX unstaged (not *
 28. **WI-OI-120he** — **Built** in git **`afb4eb3d`:** module-local compose loads workforce + geospatial env; `up-ar-api.sh`.
 29. **WI-OI-120hf** — **Built** in git **`6a4835a4`:** `AR_IMAGE` refresh + `pnpm proof:ar-compose-rebuild`; health proof blocked on local Postgres (`migrations` exit 1).
 30. **WI-OI-120hi** — **Built** in git **`412ae0c7`:** `pnpm audit:compose-database-url` (diagnoses **28P01** credential drift).
-31. **Next** — owner: fix `infra/compose/.env` `DATABASE_URL` password vs `gigalibs-postgres:5440`, then `pnpm proof:ar-compose-rebuild`; **120gd** journey password.
+31. **WI-OI-120gf / 120hf** — **Built** (2026-10-21): `pnpm audit:compose-database-url` + `pnpm proof:ar-compose-health` on **`gigalibs-test`**; AR DI + compose probe/rebuild scripts fixed on main. **Next (no deploy):** **120gd** local journey or extend minimal P2P/O2C on test stack.
 
 ## Built, not yet on UAT
 

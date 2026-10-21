@@ -23,6 +23,8 @@ export class DatabaseService
   extends ModuleDatabase<ArDefinerFunction>
   implements OnModuleInit, OnModuleDestroy
 {
+  private runtimeReady = false;
+
   constructor(
     @Inject(AR_MODULE_RUNTIME_CONFIG) moduleConfig: ModuleRuntimeConfig | null,
     @Inject(AR_CONFIG) arConfig: ArRuntimeConfig,
@@ -41,7 +43,9 @@ export class DatabaseService
   }
 
   override async onModuleInit(): Promise<void> {
+    if (this.runtimeReady) return;
     await super.onModuleInit();
+    this.runtimeReady = true;
   }
 
   override async onModuleDestroy(): Promise<void> {

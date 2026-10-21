@@ -6,14 +6,17 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 COMPOSE_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 REPO_ROOT="$(cd "${COMPOSE_DIR}/../.." && pwd)"
 DOCKERFILE="${COMPOSE_DIR}/docker/Dockerfile"
-BASE_ENV="${COMPOSE_DIR}/.env"
-MODULE_ENV="${COMPOSE_DIR}/.env.modules"
+# shellcheck source=compose-modules-local-guard-only.sh
+source "${SCRIPT_DIR}/compose-modules-local-guard-only.sh"
+BASE_ENV="${COMPOSE_DIR}/.env${GIGALIBS_COMPOSE_ENV_SUFFIX}"
+MODULE_ENV="${COMPOSE_DIR}/.env${GIGALIBS_COMPOSE_ENV_SUFFIX}.modules"
+export GIGALIBS_COMPOSE_ENV_SUFFIX
 
 "${SCRIPT_DIR}/docker-disk-guard.sh" check
 
 node "${SCRIPT_DIR}/verify-compose-database-url.mjs"
 
-"${SCRIPT_DIR}/refresh-source-identity.sh"
+GIGALIBS_COMPOSE_ENV_SUFFIX="${GIGALIBS_COMPOSE_ENV_SUFFIX}" "${SCRIPT_DIR}/refresh-source-identity.sh"
 
 read_value() {
   local file="$1" key="$2" value

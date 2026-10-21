@@ -1,6 +1,6 @@
 # WI-OI-120gf: Accounts Receivable on configuration-local profile (M-AR0)
 
-- **Status:** In progress — through [WI-OI-120hi](WI-OI-120hi.md); owner `DATABASE_URL` fix then `proof:ar-compose-rebuild`
+- **Status:** Built (2026-10-21, local `gigalibs-test`) — `pnpm proof:ar-compose-health` OK; compose probe uses `.env.test` on main
 - **Work item:** Table 1 rows 7–8. Evidence in `.pi/work/TABLE-1-AUDIT-2026-10-19.md`.
 - **Size:** L
 
@@ -15,7 +15,7 @@
 
 ## Done when
 
-- [ ] Service healthy on local profile (owner compose rebuild after mig **16**)
+- [x] Service healthy on local profile (`gigalibs-test`, mig **16**, `proof:ar-compose-health` 2026-10-21)
 - [x] Root `pnpm build` + `pnpm test` pass ([WI-OI-120hc](WI-OI-120hc.md) fixes)
 - [x] No fake verification UI (120bj) on `/ar` — metadata workspace ([WI-OI-120ha](WI-OI-120ha.md)); aging route still uses live `requestAr`
 

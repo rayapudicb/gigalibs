@@ -8,7 +8,7 @@ FROM node:24-bookworm-slim@sha256:0e0ff40c39bc087845bfb27465a0df4ea419520094bc35
 USER root
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-      ca-certificates=20250419~deb12u1 \
+      ca-certificates=20250419~deb12u2 \
       openssl=3.0.20-1~deb12u2 && \
     rm -rf /var/lib/apt/lists/*
 

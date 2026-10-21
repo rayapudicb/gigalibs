@@ -11,4 +11,4 @@ Host-side check explains `28P01` / connection failures before AR rebuild; `proof
 
 - [x] `verify-compose-database-url.mjs` + `pnpm audit:compose-database-url`
 - [x] README troubleshooting for control migrations / AR rebuild
-- [ ] Owner: align `DATABASE_URL` password → `pnpm proof:ar-compose-rebuild` → health OK
+- [x] Main worktree probes `.env.test` + port **5441**; release worktree still uses `.env` + **5440** (2026-10-21)

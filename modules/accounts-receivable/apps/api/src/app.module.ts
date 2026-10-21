@@ -11,16 +11,12 @@ import {
   OidcAuthorizationGuard,
   PlatformArAuthorizationGuard,
 } from './auth/authorization.js';
-import {
-  AR_MODULE_RUNTIME_CONFIG,
-  arModuleRuntimeConfigProvider,
-} from './config.module-sdk.js';
+import { AR_MODULE_RUNTIME_CONFIG } from './config.module-sdk.js';
 import type { ModuleRuntimeConfig } from '@gigalibs/module-sdk';
 import { OidcDevController } from './auth/oidc-dev.controller.js';
 import { OidcDevService } from './auth/oidc-dev.service.js';
 import { BillingEntityController } from './billing-entity/billing-entity.controller.js';
 import { BillingEntityService } from './billing-entity/billing-entity.service.js';
-import { arConfigProvider } from './config.provider.js';
 import { CreditNotesController } from './credit-notes/credit-notes.controller.js';
 import { CreditNotesService } from './credit-notes/credit-notes.service.js';
 import { CustomersController } from './customers/customers.controller.js';
@@ -92,11 +88,14 @@ const ArRecordController = createRecordController({
     FormsEngineNestModule.forRootAsync({
       imports: [DatabaseModule],
       inject: [DatabaseService],
-      useFactory: (db: DatabaseService) => ({
-        pool: db.getPool(),
-        schema: 'gigalibs_ar',
-        lockedKeys: AR_LOCKED_KEYS,
-      }),
+      useFactory: async (db: DatabaseService) => {
+        await db.onModuleInit();
+        return {
+          pool: db.getPool(),
+          schema: 'gigalibs_ar',
+          lockedKeys: AR_LOCKED_KEYS,
+        };
+      },
     }),
     /**
      * Per-tenant custom field definitions persisted to gigalibs_ar.custom_field_definitions.
@@ -104,10 +103,13 @@ const ArRecordController = createRecordController({
     CustomFieldsNestModule.forRootAsync({
       imports: [DatabaseModule],
       inject: [DatabaseService],
-      useFactory: (db: DatabaseService) => ({
-        pool: db.getPool(),
-        schema: 'gigalibs_ar',
-      }),
+      useFactory: async (db: DatabaseService) => {
+        await db.onModuleInit();
+        return {
+          pool: db.getPool(),
+          schema: 'gigalibs_ar',
+        };
+      },
     }),
   ],
   controllers: [
@@ -126,10 +128,7 @@ const ArRecordController = createRecordController({
     ArRecordController,
   ],
   providers: [
-    arConfigProvider,
-    arModuleRuntimeConfigProvider,
     Reflector,
-    DatabaseService,
     OidcAuthorizationGuard,
     {
       provide: PlatformArAuthorizationGuard,

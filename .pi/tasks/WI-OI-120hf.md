@@ -11,4 +11,4 @@
 
 - [x] `AR_IMAGE` updated in `refresh-source-identity.sh`
 - [x] `rebuild-ar-compose-local.sh` + root `pnpm proof:ar-compose-rebuild`
-- [ ] `pnpm proof:ar-compose-health` passes (blocked here: control `migrations` → `Connection terminated unexpectedly`)
+- [x] `pnpm proof:ar-compose-health` passes (2026-10-21; probe + AR DI bootstrap fixes on main)
