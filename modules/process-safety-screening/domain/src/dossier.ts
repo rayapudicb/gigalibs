@@ -61,6 +61,21 @@ export interface DossierModelV1 {
   /** The text on every page until the route is approved (R2); null once approved. */
   readonly watermark: string | null;
   readonly sections: readonly DossierSection[];
+  /** WI-OI-120cc (S9b): the summary's numbers as data, for the business outcomes; absent in dossiers made before. */
+  readonly facts?: DossierFactsV1;
+}
+
+export interface DossierFactsV1 {
+  readonly steps: number;
+  readonly stepsPassingGate: number;
+  readonly worstClass: number | null;
+  readonly criticalActions: number;
+  /** Actions before kilo-lab by level (FR-RPT-02): the summary's totals. */
+  readonly reviewActions: number;
+  readonly dataGaps: number;
+  readonly routePmi: number | null;
+  readonly atomEconomyPercent: number | null;
+  readonly overallYieldPercent: number | null;
 }
 
 export interface DossierInput {
@@ -109,23 +124,27 @@ function screeningOf(step: SpeedStepV1): StepScreening | null {
   };
 }
 
+/**
+ * A material's name in a step; a substance charged twice in one step (water as reagent and as quench) is told apart by
+ * its role. Shared by the dossier and the screens (WI-OI-120cc).
+ */
+export function materialLabel(step: SpeedStepV1, materialId: string, t: Translate): string {
+  const found = step.materials.find((m) => m.id === materialId);
+  if (!found) return materialId;
+  const twice = step.materials.some(
+    (m) => m.id !== found.id && m.substanceId === found.substanceId,
+  );
+  return twice ? `${found.substanceName} (${t(`speed.role.${found.role}`)})` : found.substanceName;
+}
+
 export function dossierModel(input: DossierInput): DossierModelV1 {
   const t = speedText(input.locale ?? 'en-US');
   const { route } = input;
   const steps = route.steps;
   const stepById = new Map(steps.map((step) => [step.id, step]));
-  // A substance charged twice in one step (water as reagent and as quench) is told apart by its role.
   const material = (id: unknown) => {
-    for (const step of steps) {
-      const found = step.materials.find((m) => m.id === id);
-      if (!found) continue;
-      const twice = step.materials.some(
-        (m) => m.id !== found.id && m.substanceId === found.substanceId,
-      );
-      return twice
-        ? `${found.substanceName} (${t(`speed.role.${found.role}`)})`
-        : found.substanceName;
-    }
+    for (const step of steps)
+      if (step.materials.some((m) => m.id === id)) return materialLabel(step, String(id), t);
     return String(id ?? '');
   };
   const rules = new Map((input.library?.library.rules ?? []).map((rule) => [rule.id, rule]));
@@ -551,8 +570,22 @@ export function dossierModel(input: DossierInput): DossierModelV1 {
     }),
     watermark: input.approved ? null : t('speed.dossier.watermark'),
     sections,
+    facts: {
+      steps: route.stepCount,
+      stepsPassingGate: route.stepsPassingGate,
+      worstClass: classes.length > 0 ? Math.max(...classes) : null,
+      criticalActions: count('CRITICAL'),
+      reviewActions: count('REVIEW'),
+      dataGaps: count('DATA_GAP'),
+      routePmi: rollup?.status === 'OK' ? finite(rollup.processMassIntensity) : null,
+      atomEconomyPercent: rollup?.status === 'OK' ? finite(rollup.atomEconomyPercent) : null,
+      overallYieldPercent: rollup?.status === 'OK' ? finite(rollup.overallYieldPercent) : null,
+    },
   };
 }
+
+const finite = (value: unknown): number | null =>
+  typeof value === 'number' && Number.isFinite(value) ? value : null;
 
 /** The route's materials step by step with their results, as CSV (RFC 4180): the data a lab imports elsewhere. */
 export function routeCsv(route: SpeedRouteDetailV1, t: Translate = speedText()): string {

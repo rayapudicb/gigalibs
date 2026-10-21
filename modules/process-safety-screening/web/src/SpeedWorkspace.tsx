@@ -8,15 +8,18 @@ import {
 } from '@gigalibs/configuration-react';
 import { PLATFORM_LOOKUP_BASE_PATHS } from '@gigalibs/contracts';
 import { useMemo } from 'react';
+import { AuditTrailPage } from './AuditTrailPanel.js';
 import { CriteriaValuesPanel } from './CriteriaValuesPanel.js';
 import { DossierPreviewPanel } from './DossierPreviewPanel.js';
 import { GateWorkbenchPanel } from './GateWorkbenchPanel.js';
 import { GreenScorecardPanel } from './GreenScorecardPanel.js';
 import { InteractionMatrixPanel } from './InteractionMatrixPanel.js';
 import { LibraryEntriesPanel } from './LibraryEntriesPanel.js';
+import { OutcomesPage } from './OutcomesPanel.js';
 import { ObChartPanel } from './ObChartPanel.js';
 import { RouteSummaryPanel } from './RouteSummaryPanel.js';
 import { ThermalPanel } from './ThermalPanel.js';
+import { WriteupParserPanel } from './WriteupParserPanel.js';
 
 // WI-OI-120bw/120bx (SPEED S3, S4; plan v1.4 §3.3): SPEED's screens are metadata windows drawn from the dictionary each
 // workspace has published, over the module's own record dispatcher. Labels, fields, actions and permissions come from
@@ -38,6 +41,7 @@ const PANELS: MetadataPanelRegistry = {
   'speed.interaction-matrix': InteractionMatrixPanel,
   'speed.library-entries': LibraryEntriesPanel,
   'speed.dossier-preview': DossierPreviewPanel,
+  'speed.writeup-parser': WriteupParserPanel,
 };
 
 /** The page's screen and its window (WI-OI-120cb): each has its own page, reached from the sidebar entry's menu. */
@@ -59,13 +63,47 @@ export function surfaceOf(section: string | undefined): Surface {
 }
 
 export interface SpeedWorkspaceProps {
-  /** The screen this page shows. */
+  /** The screen this page shows: a window's section, `outcomes` or `audit`. */
   readonly section?: string;
   /** The signed-in user's permissions, for the windows' deny-by-default rules (the server still decides). */
   readonly permissions?: readonly string[];
+  /** The Outcomes page's targets (WI-OI-120cc), from its page settings in the module manifest. */
+  readonly screeningTargetHours?: number;
+  readonly screenedTargetPercent?: number;
 }
 
-export function SpeedWorkspace({ section, permissions = [] }: SpeedWorkspaceProps = {}) {
+/** The Outcomes page (a module page, screen spec §3.4) or the window of a section. */
+export function SpeedWorkspace({
+  section,
+  permissions = [],
+  screeningTargetHours,
+  screenedTargetPercent,
+}: SpeedWorkspaceProps = {}) {
+  if (
+    section === 'outcomes' &&
+    typeof screeningTargetHours === 'number' &&
+    typeof screenedTargetPercent === 'number'
+  )
+    return (
+      <div className="p-6">
+        <OutcomesPage
+          targets={{ screeningHours: screeningTargetHours, screenedPercent: screenedTargetPercent }}
+        />
+      </div>
+    );
+  if (section === 'audit')
+    return (
+      <div className="p-6">
+        <AuditTrailPage />
+      </div>
+    );
+  return <SpeedWindow section={section} permissions={permissions} />;
+}
+
+function SpeedWindow({
+  section,
+  permissions,
+}: { section: string | undefined; permissions: readonly string[] }) {
   const client = useMemo(
     () => createRecordClient({ basePath: BASE_PATH, lookupBasePaths: PLATFORM_LOOKUP_BASE_PATHS }),
     [],

@@ -7,8 +7,12 @@ import type {
   SpeedLibrarySetV1,
   SpeedMaterialRole,
   SpeedMessageV1,
+  SpeedOutcomesV1,
+  SpeedAuditPageV1,
   SpeedRouteDetailV1,
+  SpeedRouteV1,
   SpeedStepChangeV1,
+  SpeedSubstanceV1,
 } from '@gigalibs/contracts';
 import type { DossierModelV1 } from '@gigalibs/process-safety-screening-domain';
 
@@ -114,6 +118,35 @@ export interface SpeedApi {
   dossierPreview(routeId: string): Promise<{ model: DossierModelV1; route: SpeedRouteDetailV1 }>;
   dossiers(routeId: string): Promise<{ items: SpeedDossierV1[] }>;
   requestDossier(routeId: string): Promise<SpeedDossierV1>;
+  /** WI-OI-120cc: the business outcomes over the routes the member reads. */
+  outcomes(): Promise<SpeedOutcomesV1>;
+  /** WI-OI-120cc (S8): the workspace's active substances, every page, for the write-up parser's reagents. */
+  activeSubstances(): Promise<SpeedSubstanceV1[]>;
+  /** WI-OI-120cc: the audit trail, filtered (screen spec §3.3). */
+  auditEvents(filters: AuditFilters, page: number, pageSize: number): Promise<SpeedAuditPageV1>;
+  /** The routes the member reads, for the audit trail's route filter. */
+  routeOptions(): Promise<SpeedRouteV1[]>;
+}
+
+/** WI-OI-120cc: the audit trail's filters; empty values are left out. */
+export interface AuditFilters {
+  readonly routeId?: string;
+  readonly actor?: string;
+  readonly action?: string;
+  readonly from?: string;
+  readonly to?: string;
+}
+
+const auditQuery = (filters: AuditFilters) =>
+  Object.entries(filters)
+    .filter(([, value]) => typeof value === 'string' && value.trim() !== '')
+    .map(([key, value]) => `${key}=${encodeURIComponent(String(value).trim())}`)
+    .join('&');
+
+/** WI-OI-120cc: the audit trail as CSV (`speed.audit.read`), with the same filters. */
+export function auditCsvUrl(filters: AuditFilters): string {
+  const query = auditQuery(filters);
+  return `${SPEED_API}/audit-events/export/csv${query ? `?${query}` : ''}`;
 }
 
 /** WI-OI-120ca: a dossier file, served by the module after its hash is checked. */
@@ -203,5 +236,35 @@ export function createSpeedApi(send: typeof fetch = (input, init) => fetch(input
     dossierPreview: (routeId) => call('GET', `/routes/${routeId}/export/json`),
     dossiers: (routeId) => call('GET', `/routes/${routeId}/dossiers`),
     requestDossier: (routeId) => call('POST', `/routes/${routeId}/dossiers`, { requestKey: key() }),
+    outcomes: () => call('GET', '/outcomes'),
+    auditEvents: (filters, page, pageSize) => {
+      const query = auditQuery(filters);
+      return call(
+        'GET',
+        `/audit-events?page=${page}&pageSize=${pageSize}${query ? `&${query}` : ''}`,
+      );
+    },
+    routeOptions: async () => {
+      const all: SpeedRouteV1[] = [];
+      for (let page = 1; ; page += 1) {
+        const loaded = await call<{ items: SpeedRouteV1[] }>(
+          'GET',
+          `/routes?pageSize=100&page=${page}`,
+        );
+        all.push(...loaded.items);
+        if (loaded.items.length < 100) return all;
+      }
+    },
+    activeSubstances: async () => {
+      const all: SpeedSubstanceV1[] = [];
+      for (let page = 1; ; page += 1) {
+        const loaded = await call<{ items: SpeedSubstanceV1[] }>(
+          'GET',
+          `/substances?status=ACTIVE&pageSize=100&page=${page}`,
+        );
+        all.push(...loaded.items);
+        if (loaded.items.length < 100) return all;
+      }
+    },
   };
 }

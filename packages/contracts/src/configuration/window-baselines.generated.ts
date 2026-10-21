@@ -12057,6 +12057,32 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
                 ]
               },
               {
+                "tabKey": "writeup",
+                "label": "Write-up parser",
+                "position": 5,
+                "level": 0,
+                "targetEntityKey": "speed.routes",
+                "sections": [],
+                "fields": [],
+                "panels": [
+                  {
+                    "panelKey": "writeup",
+                    "componentKey": "speed.writeup-parser",
+                    "position": 0,
+                    "span": 12,
+                    "props": {
+                      "applyReason": "Data entry"
+                    },
+                    "readPermission": "speed.routes.write",
+                    "visibilityCondition": {
+                      "field": "status",
+                      "operator": "EQ",
+                      "value": "DRAFT"
+                    }
+                  }
+                ]
+              },
+              {
                 "tabKey": "dossier",
                 "label": "Dossier",
                 "position": 6,

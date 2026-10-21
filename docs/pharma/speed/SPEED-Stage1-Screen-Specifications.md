@@ -398,6 +398,12 @@ gate result and the rail badges.
 
   Each saves through the record routes with the reason "Data entry".
 
+**As built (S8, WI-OI-120cc):** the parser is `parseWriteup` and `recogniseReagents` in the engine package (no network,
+no model); reagents are the workspace's own substances, matched by name, CAS number or formula, each with a role the
+chemist chooses (Reactant by default). The panel sits on the route's Write-up parser tab, shown on draft routes to
+`speed.routes.write`; the reason comes from the dictionary (`applyReason`). Its 20 annotated test procedures are written
+for the test; the pilot lab's own annotated procedures are the acceptance set (S9d).
+
 ### Panel `speed.dossier-preview` (S7; FR-RPT-01 to 05)
 
 1. **Actions.**
@@ -482,6 +488,14 @@ identified by their library ids inside an immutable set, so the entries are draw
 - **Export CSV** (`speed.audit.read`).
 - `speed.audit.read-own` users see only their own entries.
 
+**As built (WI-OI-120cc):** a module page, `/speed/audit` in the SPEED menu, like Outcomes: the metadata list view has no
+filters, local-time column or export yet. It reads SPEED's own append-only audit table (the platform audit of S2 waits on
+WI-OI-120bp): one row per changed field, people by name through the platform member lookup, filters by route (its own
+entries, entries naming it and those of its current steps), person, action and day range, 50 entries a page. Export CSV
+(`speed.audit.read`) has one line per changed field; a value a spreadsheet would read as a formula is kept as text.
+`speed.audit.read` reads the whole workspace's trail; `speed.audit.read-own` only the member's own; anyone else is
+refused (`SPEED_AUDIT_FORBIDDEN`).
+
 ## 3.4 Outcomes (module page `/speed/outcomes`, S9; BO-1 to BO-5)
 
 - **Heading and note:** "Business outcomes. The BRD's objectives, measured from SPEED's own data."
@@ -498,6 +512,14 @@ identified by their library ids inside an immutable set, so the entries are draw
 - **"What the client receives":** the dossier contents list.
 - **Moved here from the mock's Projects page:** the portfolio tiles "Routes screened before kilo-lab" and "Worst
   criticality in portfolio".
+
+**As built (S9b, WI-OI-120cc):** `GET v1/outcomes` computes the measures over the routes the member reads (archived ones
+aside), from each current step's latest result and the dossiers. BO-1 counts High and Medium interaction findings, steps
+whose worst Stoessel class (actual or full accumulation) is 3 or worse, and steps whose thermal screen releases gas.
+BO-2 is the median from a route's creation to its first finished dossier (R1). BO-3 counts routes with a finished
+dossier. BO-4 counts routes whose latest dossier holds a route PMI and atom economy (the dossier model's `facts`). The
+targets (2 h, 100 %) are the page's settings in the module manifest; a measure that meets its target is green, one that
+does not is orange.
 
 ## 3.5 Dialogs (R2)
 

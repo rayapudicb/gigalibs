@@ -120,5 +120,16 @@ export const MODULE_PANEL_SOURCES: readonly unknown[] = [
         "required": true
       }
     }
+  },
+  {
+    "moduleKey": "process-safety-screening",
+    "componentKey": "speed.writeup-parser",
+    "binding": "RECORD",
+    "props": {
+      "applyReason": {
+        "type": "STRING",
+        "required": true
+      }
+    }
   }
 ];

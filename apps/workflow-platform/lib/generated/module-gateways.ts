@@ -2036,6 +2036,27 @@ export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGat
         }
       },
       {
+        "template": "v1/outcomes",
+        "pattern": "^v1/outcomes$",
+        "methods": {
+          "GET": "speed.routes.read"
+        }
+      },
+      {
+        "template": "v1/audit-events",
+        "pattern": "^v1/audit-events$",
+        "methods": {
+          "GET": "speed:read"
+        }
+      },
+      {
+        "template": "v1/audit-events/export/csv",
+        "pattern": "^v1/audit-events/export/csv$",
+        "methods": {
+          "GET": "speed.audit.read"
+        }
+      },
+      {
         "template": "v1/steps/{id}",
         "pattern": "^v1/steps/[0-9a-fA-F-]{36}$",
         "methods": {

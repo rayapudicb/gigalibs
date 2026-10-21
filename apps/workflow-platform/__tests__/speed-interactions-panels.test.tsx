@@ -206,6 +206,27 @@ describe('SPEED interactions (speed.interaction-matrix)', () => {
     );
     expect(undocumented).toMatch(/text-ui-tag-red-text">0\/1</);
   });
+
+  // WI-OI-120cc: one substance charged twice in a step is told apart by its role, as in the dossier.
+  it('names a substance charged twice in one step with its role', () => {
+    const base = step();
+    const [first, second] = [0, 1].map((index) => base.materials[index]);
+    const other = base.materials.findIndex((m, index) => index > 0 && m.role !== first?.role);
+    if (!first || !second || other < 0) throw new Error('fixture');
+    const twice = {
+      ...base,
+      materials: base.materials.map((m, index) =>
+        index === 0 || index === other
+          ? { ...m, substanceId: 's-shared', substanceName: 'TEST FIXTURE water' }
+          : m,
+      ),
+    };
+    const html = matrix(route([twice]));
+    expect(html).toContain(`TEST FIXTURE water (${t(`speed.role.${first.role}`)})`);
+    expect(html).toContain(
+      `TEST FIXTURE water (${t(`speed.role.${base.materials[other]?.role}`)})`,
+    );
+  });
 });
 
 describe('SPEED library entries (speed.library-entries)', () => {

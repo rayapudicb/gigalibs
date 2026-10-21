@@ -229,6 +229,18 @@ export const generatedModuleMenus: Readonly<Record<string, readonly GeneratedMod
       "label": "Screening criteria",
       "path": "/speed/criteria",
       "icon": "scale"
+    },
+    {
+      "key": "outcomes",
+      "label": "Outcomes",
+      "path": "/speed/outcomes",
+      "icon": "bar-chart"
+    },
+    {
+      "key": "audit",
+      "label": "Audit trail",
+      "path": "/speed/audit",
+      "icon": "file-check"
     }
   ]
 };

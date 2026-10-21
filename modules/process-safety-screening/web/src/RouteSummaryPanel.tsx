@@ -18,7 +18,8 @@ const WORST_TONE = [
 ];
 
 // WI-OI-120bx/120by/120bz (SPEED S4 to S6; screen spec §2.4, panel speed.route-summary): six tiles in the prototype's
-// order, from the stored results. The data-gap tile fills with S7's actions.
+// order, from the stored results. WI-OI-120cc: the data-gap tile counts the dossier model's data gaps, so it always
+// agrees with the dossier.
 
 const tile = 'rounded-lg border border-ui-border-base bg-ui-bg-base p-3';
 
@@ -26,9 +27,11 @@ export interface RouteSummaryViewProps {
   readonly route: SpeedRouteDetailV1;
   readonly compact: boolean;
   readonly t: Translate;
+  /** The dossier model's data gaps; null while not known (no preview, or steps screened with different sets). */
+  readonly dataGaps?: number | null;
 }
 
-export function RouteSummaryView({ route, compact, t }: RouteSummaryViewProps) {
+export function RouteSummaryView({ route, compact, t, dataGaps = null }: RouteSummaryViewProps) {
   const summary = summaryView(route);
   const gateTone = summary.allPass ? 'text-ui-tag-green-text' : 'text-ui-tag-red-text';
   const worst = routeWorstClass(route);
@@ -51,7 +54,11 @@ export function RouteSummaryView({ route, compact, t }: RouteSummaryViewProps) {
     },
     { key: 'pmi', value: rollup ? shown(rollup.processMassIntensity, 2) : null },
     { key: 'ae', value: rollup ? `${shown(rollup.atomEconomyPercent, 1)} %` : null },
-    { key: 'gaps', value: null },
+    {
+      key: 'gaps',
+      value: dataGaps === null ? null : String(dataGaps),
+      tone: dataGaps !== null && dataGaps > 0 ? 'text-ui-tag-blue-text' : 'text-ui-tag-green-text',
+    },
   ];
   return (
     <section
@@ -85,6 +92,7 @@ export function RouteSummaryPanel({ record, props }: MetadataPanelProps) {
   );
   const api = useMemo(() => createSpeedApi(), []);
   const [route, setRoute] = useState<SpeedRouteDetailV1 | null>(null);
+  const [dataGaps, setDataGaps] = useState<number | null>(null);
   const [failed, setFailed] = useState(false);
   const routeId = String(record['id'] ?? '');
   const version = record['version'];
@@ -93,6 +101,11 @@ export function RouteSummaryPanel({ record, props }: MetadataPanelProps) {
     api.route(routeId).then(
       (loaded) => live && setRoute(loaded),
       () => live && setFailed(true),
+    );
+    // The same model as the Dossier tab: when it cannot be made, the tile says the gaps are not computed.
+    api.dossierPreview(routeId).then(
+      (preview) => live && setDataGaps(preview.model.facts?.dataGaps ?? null),
+      () => live && setDataGaps(null),
     );
     return () => {
       live = false;
@@ -106,5 +119,7 @@ export function RouteSummaryPanel({ record, props }: MetadataPanelProps) {
     );
   if (!route)
     return <div aria-busy="true" className="h-20 animate-pulse rounded-lg bg-ui-bg-subtle" />;
-  return <RouteSummaryView route={route} compact={props['compact'] === true} t={t} />;
+  return (
+    <RouteSummaryView route={route} compact={props['compact'] === true} t={t} dataGaps={dataGaps} />
+  );
 }

@@ -7,6 +7,7 @@ import {
   type SpeedStepV1,
   holdsPermission,
 } from '@gigalibs/contracts';
+import { materialLabel } from '@gigalibs/process-safety-screening-domain';
 import { useMemo, useState } from 'react';
 import { useRoute, useSetsInForce, useSpeedApi, useSpeedText } from './hooks.js';
 import type { Translate } from './messages/index.js';
@@ -138,7 +139,7 @@ function StepInteractions({
   const screen = screenOf(step);
   if (!screen) return <p className="text-sm text-ui-fg-muted">{t('speed.haz.notComputed')}</p>;
   const materials = step.materials;
-  const nameOf = (id: string) => materials.find((m) => m.id === id)?.substanceName ?? id;
+  const nameOf = (id: string) => materialLabel(step, id, t);
   const pairKey = (a: string, b: string) => [a, b].sort().join(':');
   const byPair = new Map(
     screen.findings.map((finding) => [pairKey(finding.materialAId, finding.materialBId), finding]),
@@ -167,7 +168,7 @@ function StepInteractions({
                     key={m.id}
                     scope="col"
                     className="px-1 font-medium text-ui-fg-subtle"
-                    title={m.substanceName}
+                    title={nameOf(m.id)}
                   >
                     {column + 1}
                   </th>
@@ -180,7 +181,7 @@ function StepInteractions({
                   <th
                     scope="row"
                     className="pr-2 text-left font-medium text-ui-fg-subtle"
-                  >{`${rowIndex + 1}. ${row.substanceName}`}</th>
+                  >{`${rowIndex + 1}. ${nameOf(row.id)}`}</th>
                   {materials.map((column) => {
                     if (column.id === row.id)
                       return (
@@ -198,8 +199,8 @@ function StepInteractions({
                         <a
                           href={`#${anchor(finding)}`}
                           aria-label={t('speed.haz.cell', {
-                            a: row.substanceName,
-                            b: column.substanceName,
+                            a: nameOf(row.id),
+                            b: nameOf(column.id),
                             severity: t(`speed.severity.${finding.severity}`),
                           })}
                           className={`flex h-7 w-7 items-center justify-center rounded border font-semibold ${TONE[finding.severity]}`}
@@ -219,14 +220,14 @@ function StepInteractions({
           <div className="space-y-1">
             <p className="text-sm text-ui-tag-blue-text">
               {t('speed.haz.unclassified', {
-                names: unclassified.map((m) => m.substanceName).join(', '),
+                names: unclassified.map((m) => nameOf(m.id)).join(', '),
               })}
             </p>
             {canLink && library
               ? unclassified.map((material) => (
                   <LinkPicker
                     key={material.id}
-                    name={material.substanceName}
+                    name={nameOf(material.id)}
                     substanceId={material.substanceId}
                     library={library}
                     busy={busy}

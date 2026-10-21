@@ -14,3 +14,10 @@ export { ThermalPanel, ThermalView } from './ThermalPanel.js';
 export { InteractionMatrixPanel, InteractionMatrixView } from './InteractionMatrixPanel.js';
 export { LibraryEntriesPanel, LibraryEntriesView } from './LibraryEntriesPanel.js';
 export { DossierPreviewPanel, DossierPreviewView } from './DossierPreviewPanel.js';
+export { OutcomesPage, OutcomesView, type OutcomeTargets } from './OutcomesPanel.js';
+export {
+  WriteupParserPanel,
+  WriteupParserView,
+  confirmedTemperature,
+} from './WriteupParserPanel.js';
+export { AuditTrailPage, AuditTrailView, auditRows, dayRange } from './AuditTrailPanel.js';

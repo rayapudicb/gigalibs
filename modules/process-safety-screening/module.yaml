@@ -58,6 +58,20 @@ spec:
         props:
           section: criteria
         sessionPermissions: true
+      # WI-OI-120cc: the audit trail, a module page (screen spec §3.3).
+      - route: /speed/audit
+        component: SpeedWorkspace
+        props:
+          section: audit
+        sessionPermissions: true
+      # WI-OI-120cc (S9b): the business outcomes, a module page; the targets are the BRD's (BO-2 ≤ 2 h, BO-3 100 %).
+      - route: /speed/outcomes
+        component: SpeedWorkspace
+        props:
+          section: outcomes
+          screeningTargetHours: 2
+          screenedTargetPercent: 100
+        sessionPermissions: true
     # Registered panels (WI-OI-120bs): the dictionary places them on record tabs; each draws for the record it is shown with.
     panels:
       - componentKey: speed.route-summary
@@ -96,6 +110,11 @@ spec:
         binding: RECORD
         props:
           kind: { type: ENUM, required: true, values: [MATERIALS, RULES, REACTION_CLASSES, ENERGETIC_GROUPS] }
+      - componentKey: speed.writeup-parser
+        binding: RECORD
+        props:
+          # The reason every applied value is saved with (FR-AUD-01).
+          applyReason: { type: STRING, required: true }
       - componentKey: speed.dossier-preview
         binding: RECORD
         props:
@@ -164,13 +183,15 @@ spec:
       navigationOrder: 330
       # Lab leads and chemists; `speed:read` still decides who sees it.
       personas: [OPERATIONS_SUPERVISOR, WORKFORCE_MEMBER]
-      # WI-OI-120cb: the sidebar entry expands into SPEED's screens (Outcomes joins in S9).
+      # WI-OI-120cb: the sidebar entry expands into SPEED's screens; WI-OI-120cc adds Outcomes.
       menu:
         - { key: projects, label: Projects, path: /speed/projects, icon: layers }
         - { key: routes, label: Routes, path: /speed/routes, icon: workflow }
         - { key: substances, label: Substances, path: /speed/substances, icon: database }
         - { key: library, label: Screening library, path: /speed/library, icon: shield-alert }
         - { key: criteria, label: Screening criteria, path: /speed/criteria, icon: scale }
+        - { key: outcomes, label: Outcomes, path: /speed/outcomes, icon: bar-chart }
+        - { key: audit, label: Audit trail, path: /speed/audit, icon: file-check }
       # Plan v1.4 §3.2, R1 permissions only; the review, approval and library-governance permissions arrive with R2.
       roles:
         - key: speed-chemist
@@ -235,6 +256,11 @@ spec:
       - { path: 'v1/routes/{id}/export/json|csv', GET: speed.routes.read }
       - { path: 'v1/dossiers/{id}', GET: speed.routes.read }
       - { path: 'v1/dossiers/{id}/files/docx|pdf', GET: speed.routes.read }
+      # WI-OI-120cc (S9b): the business outcomes, computed from the member's readable sites.
+      - { path: 'v1/outcomes', GET: speed.routes.read }
+      # WI-OI-120cc: the audit trail (the service reads all, own or nothing by speed.audit.*); CSV for speed.audit.read.
+      - { path: 'v1/audit-events', GET: 'speed:read' }
+      - { path: 'v1/audit-events/export/csv', GET: speed.audit.read }
       - { path: 'v1/steps/{id}', PATCH: speed.routes.write }
       - { path: 'v1/steps/{id}/move', POST: speed.routes.write }
       - { path: 'v1/steps/{id}/remove', POST: speed.routes.write }

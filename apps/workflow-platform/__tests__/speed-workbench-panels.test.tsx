@@ -185,6 +185,17 @@ describe('SPEED route summary (speed.route-summary)', () => {
     expect(html).toContain('text-ui-tag-red-text');
     expect(html.match(/Not computed yet/g)).toHaveLength(5);
   });
+
+  // WI-OI-120cc: the data-gap tile counts the dossier model's data gaps (blue when there are any).
+  it('shows the dossier model’s data gaps, blue when there are any, and not computed while unknown', () => {
+    const tileOf = (gaps: number | null) =>
+      renderToStaticMarkup(
+        <RouteSummaryView route={route([balanced])} compact={false} t={t} dataGaps={gaps} />,
+      );
+    expect(tileOf(10)).toMatch(/text-ui-tag-blue-text">10</);
+    expect(tileOf(0)).toMatch(/text-ui-tag-green-text">0</);
+    expect(tileOf(null).match(/Not computed yet/g)).toHaveLength(5);
+  });
 });
 
 describe('SPEED gate workbench (speed.gate-workbench)', () => {

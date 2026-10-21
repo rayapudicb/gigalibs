@@ -143,7 +143,15 @@ export function windowSource(builderFor) {
           position: 4,
           panels: [panel('green', 'speed.green-scorecard', 0, { props: { showStreams: true } })],
         }),
-        // Position 5 is kept for the write-up parser (S8).
+        // WI-OI-120cc (S8): the write-up parser, on draft routes for people who change routes.
+        tab('writeup', 'Write-up parser', 0, R, [], rf, {
+          position: 5,
+          panels: [panel('writeup', 'speed.writeup-parser', 0, {
+            props: { applyReason: 'Data entry' },
+            permission: 'speed.routes.write',
+            visibleWhen: { field: 'status', operator: 'EQ', value: 'DRAFT' },
+          })],
+        }),
         tab('dossier', 'Dossier', 0, R, [], rf, {
           position: 6,
           panels: [panel('dossier', 'speed.dossier-preview', 0, { props: { pollSeconds: 3, historyCount: 5 } })],

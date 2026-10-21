@@ -5,6 +5,8 @@ import {
   loadIdempotencyRetentionDays,
 } from '@gigalibs/module-sdk';
 import { Module } from '@nestjs/common';
+import { AuditTrailController } from './audit-trail/audit-trail.controller.js';
+import { AuditTrailService } from './audit-trail/audit-trail.service.js';
 import { AuthorizationGuard } from './authorization.js';
 import { runtimeConfigProvider } from './config.js';
 import { CriteriaController } from './criteria/criteria.controller.js';
@@ -18,6 +20,8 @@ import { HealthController } from './health.controller.js';
 import { LibraryController } from './library/library.controller.js';
 import { LibraryService } from './library/library.service.js';
 import { OrganizationController } from './organization/organization.controller.js';
+import { OutcomesController } from './outcomes/outcomes.controller.js';
+import { OutcomesService } from './outcomes/outcomes.service.js';
 import { speedRecordDispatcher } from './projects/projects-record-adapters.js';
 import { ProjectsController } from './projects/projects.controller.js';
 import { ProjectsService } from './projects/projects.service.js';
@@ -51,6 +55,8 @@ const SpeedRecordController = createRecordController({
     MaterialsController,
     RouteDossiersController,
     DossiersController,
+    OutcomesController,
+    AuditTrailController,
     OrganizationController,
     SpeedRecordController,
   ],
@@ -70,6 +76,8 @@ const SpeedRecordController = createRecordController({
     },
     DossiersService,
     DossierWorker,
+    OutcomesService,
+    AuditTrailService,
     {
       provide: RECORD_DISPATCHER,
       inject: [

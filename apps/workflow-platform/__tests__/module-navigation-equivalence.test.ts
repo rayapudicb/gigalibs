@@ -119,6 +119,9 @@ describe('manifest-declared navigation equals the former sidebar tables', () => 
       { key: 'substances', label: 'Substances', href: '/speed/substances', icon: moduleIcons.database },
       { key: 'library', label: 'Screening library', href: '/speed/library', icon: moduleIcons['shield-alert'] },
       { key: 'criteria', label: 'Screening criteria', href: '/speed/criteria', icon: moduleIcons.scale },
+      // WI-OI-120cc: the business outcomes (S9b) and the audit trail.
+      { key: 'outcomes', label: 'Outcomes', href: '/speed/outcomes', icon: moduleIcons['bar-chart'] },
+      { key: 'audit', label: 'Audit trail', href: '/speed/audit', icon: moduleIcons['file-check'] },
     ],
   };
 

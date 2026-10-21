@@ -13,12 +13,14 @@ import {
 } from '@gigalibs/contracts';
 import { type ExecutionContext, ForbiddenException, UnauthorizedException } from '@nestjs/common';
 import { describe, expect, it } from 'vitest';
+import { AuditTrailController } from './audit-trail/audit-trail.controller.js';
 import { AuthorizationGuard } from './authorization.js';
 import { AUDIENCE, MODULE_KEY, runtimeConfigProvider } from './config.js';
 import { CriteriaController } from './criteria/criteria.controller.js';
 import type { DatabaseService } from './database.service.js';
 import { DossiersController, RouteDossiersController } from './dossiers/dossiers.controller.js';
 import { LibraryController } from './library/library.controller.js';
+import { OutcomesController } from './outcomes/outcomes.controller.js';
 import { ProjectsController } from './projects/projects.controller.js';
 import {
   MaterialsController,
@@ -144,6 +146,9 @@ const ROUTE_PERMISSIONS: readonly [{ prototype: object; name: string }, string, 
   [RouteDossiersController, 'exportCsv', 'speed.routes.read'],
   [DossiersController, 'get', 'speed.routes.read'],
   [DossiersController, 'download', 'speed.routes.read'],
+  [OutcomesController, 'get', 'speed.routes.read'],
+  [AuditTrailController, 'list', 'speed:read'],
+  [AuditTrailController, 'exportCsv', 'speed.audit.read'],
 ];
 
 describe('SPEED authorization on every S4 route (WI-OI-120bx)', () => {
