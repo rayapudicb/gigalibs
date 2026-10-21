@@ -3,6 +3,7 @@ import type {
   DictionaryActionV1,
   DictionaryFieldPlacementV1,
   DictionaryFieldV1,
+  DictionaryPanelPlacementV1,
   DictionaryTabV1,
   DictionaryViewV1,
 } from '@gigalibs/contracts';
@@ -24,6 +25,11 @@ export interface WindowModel {
   readonly manifest: CompiledDictionaryManifestV1;
   readonly view: DictionaryViewV1;
   readonly rootTab: DictionaryTabV1;
+  /**
+   * WI-OI-120bs: the tabs drawn for one record, the main tab first: further level-0 tabs on the main entity, which
+   * hold panels only (the compiler refuses anything else).
+   */
+  readonly recordTabs: readonly DictionaryTabV1[];
   readonly childTabs: readonly DictionaryTabV1[];
   readonly fields: ReadonlyMap<string, DictionaryFieldV1>;
 }
@@ -59,6 +65,7 @@ export function windowModel(manifest: CompiledDictionaryManifestV1, viewKey?: st
     manifest,
     view,
     rootTab,
+    recordTabs: [rootTab, ...tabs.filter((tab) => tab !== rootTab && tab.level === 0 && tab.targetEntityKey === rootTab.targetEntityKey)],
     childTabs: tabs.filter((tab) => tab.level === 1 && tab.parentRelationshipKey),
     fields: new Map(manifest.fields.filter((field) => field.entityKey === rootTab.targetEntityKey || tabs.some((tab) => tab.targetEntityKey === field.entityKey)).map((field) => [`${field.entityKey}/${field.fieldKey}`, field])),
   };
@@ -98,6 +105,23 @@ export function placedFields(
         },
       ];
     });
+}
+
+/** WI-OI-120bs: a panel the user may see on this record, in position order. */
+export interface PlacedPanel {
+  readonly placement: DictionaryPanelPlacementV1;
+}
+
+/**
+ * The tab's panels this user may see for this record: denied by default like fields (a named read permission must be
+ * held) and hidden by the placement's visibility condition, in position order.
+ */
+export function placedPanels(tab: DictionaryTabV1, values: RecordValues, permissions: readonly string[]): PlacedPanel[] {
+  return [...(tab.panels ?? [])]
+    .sort((a, b) => a.position - b.position)
+    .filter((placement) => holds(permissions, placement.readPermission))
+    .filter((placement) => !placement.visibilityCondition || evaluateDictionaryCondition(placement.visibilityCondition, values))
+    .map((placement) => ({ placement }));
 }
 
 /** Grid columns: the tab's readable fields, in placement order. */

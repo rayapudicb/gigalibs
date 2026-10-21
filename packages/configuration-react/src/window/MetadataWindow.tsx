@@ -1,5 +1,5 @@
 import type { CompiledDictionaryManifestV1, DictionaryActionV1, DictionaryTabV1 } from '@gigalibs/contracts';
-import { createContext, type FormEvent, type ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { type ComponentType, createContext, type FormEvent, type ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { type LookupOption, type RecordClient, RecordClientError, type RecordPage, type RecordValues } from './record-client.js';
 import { usePublishedManifest } from './use-published-manifest.js';
 import {
@@ -11,8 +11,10 @@ import {
   inputFromValue,
   newRecordDefaults,
   type PlacedField,
+  type PlacedPanel,
   parentField,
   placedFields,
+  placedPanels,
   recordActions,
   recordTitle,
   validateValues,
@@ -27,6 +29,18 @@ import {
 // denies by default (fields and actions a user may not use are not shown), and shows every state: loading, empty,
 // refused, not found, changed by someone else, unavailable. Styling uses the design standard's ui-* tokens only.
 
+/** WI-OI-120bs (SPEED S2b): what a registered panel component receives for the record its tab shows. */
+export interface MetadataPanelProps {
+  readonly record: RecordValues;
+  /** The placement's props, already checked at publish against the panel's declared prop types. */
+  readonly props: Readonly<Record<string, string | number | boolean>>;
+  readonly client: RecordClient;
+  readonly permissions: readonly string[];
+}
+
+/** Panel components by component key, supplied by the page that hosts the window (the module's web package). */
+export type MetadataPanelRegistry = Readonly<Record<string, ComponentType<MetadataPanelProps>>>;
+
 export interface MetadataWindowProps {
   readonly manifest: CompiledDictionaryManifestV1;
   readonly client: RecordClient;
@@ -37,6 +51,8 @@ export interface MetadataWindowProps {
    * (another module's, such as the Catalogue's product window from Inventory). A module without a client is not offered.
    */
   readonly clients?: Readonly<Record<string, RecordClient>>;
+  /** WI-OI-120bs: the module's panel components; a placed panel missing here shows as unavailable, never as a gap. */
+  readonly panels?: MetadataPanelRegistry;
 }
 
 /** A window opened from a picker, over the current one: create a record, or open the chosen one. */
@@ -51,6 +67,7 @@ interface QuickDialog {
 interface WindowEnvironment {
   readonly clients: Readonly<Record<string, RecordClient>>;
   readonly permissions: readonly string[];
+  readonly panels: MetadataPanelRegistry;
   readonly open: (dialog: QuickDialog) => void;
 }
 
@@ -75,7 +92,7 @@ function newKey(): string {
   return globalThis.crypto.randomUUID();
 }
 
-export function MetadataWindow({ manifest, client, permissions, viewKey, clients }: MetadataWindowProps) {
+export function MetadataWindow({ manifest, client, permissions, viewKey, clients, panels }: MetadataWindowProps) {
   const model = useMemo(() => windowModel(manifest, viewKey), [manifest, viewKey]);
   const [screen, setScreen] = useState<Screen>({ kind: 'list' });
   const [dialogs, setDialogs] = useState<readonly QuickDialog[]>([]);
@@ -87,9 +104,10 @@ export function MetadataWindow({ manifest, client, permissions, viewKey, clients
       outer ?? {
         clients: { ...(clients ?? {}), ...(ownModule ? { [ownModule]: client } : {}) },
         permissions,
+        panels: panels ?? {},
         open: (dialog) => setDialogs((current) => [...current, dialog]),
       },
-    [outer, clients, ownModule, client, permissions],
+    [outer, clients, ownModule, client, permissions, panels],
   );
   if (!model) {
     return <Notice tone="error" title="This window cannot be drawn" text="The published definition declares no view with a main tab." />;
@@ -459,6 +477,8 @@ function FieldSections({
   errors,
   client,
   onChange,
+  panels = [],
+  panelSlot,
 }: {
   tab: DictionaryTabV1;
   fields: readonly PlacedField[];
@@ -466,26 +486,106 @@ function FieldSections({
   errors: Readonly<Record<string, string>>;
   client: RecordClient;
   onChange?: (fieldKey: string, value: unknown) => void;
+  /** WI-OI-120bs: panels shown with the fields (read view only), merged by position within their section. */
+  panels?: readonly PlacedPanel[];
+  panelSlot?: (panel: PlacedPanel) => ReactNode;
 }) {
+  type Item = { readonly key: string; readonly position: number; readonly span: number; readonly node: ReactNode };
   const sections = [...tab.sections].sort((a, b) => a.position - b.position);
-  const groups = sections.length > 0 ? sections.map((section) => ({ key: section.sectionKey, label: section.label, fields: fields.filter((placed) => placed.placement.sectionKey === section.sectionKey) })) : [];
-  const loose = fields.filter((placed) => !placed.placement.sectionKey || !sections.some((section) => section.sectionKey === placed.placement.sectionKey));
+  const declared = (sectionKey: string | undefined) => !!sectionKey && sections.some((section) => section.sectionKey === sectionKey);
+  const fieldItem = (placed: PlacedField): Item => ({
+    key: `field:${placed.field.fieldKey}`,
+    position: placed.placement.position,
+    span: placed.placement.span,
+    node: <FieldInput placed={placed} value={values[placed.field.fieldKey]} error={errors[placed.field.fieldKey]} client={client} onChange={onChange} />,
+  });
+  const panelItem = (panel: PlacedPanel): Item => ({
+    key: `panel:${panel.placement.panelKey}`,
+    position: panel.placement.position,
+    span: panel.placement.span,
+    node: panelSlot ? panelSlot(panel) : null,
+  });
+  const itemsFor = (inSection: (sectionKey: string | undefined) => boolean): Item[] =>
+    [
+      ...fields.filter((placed) => inSection(placed.placement.sectionKey)).map(fieldItem),
+      ...(panelSlot ? panels.filter((panel) => inSection(panel.placement.sectionKey)).map(panelItem) : []),
+    ].sort((a, b) => a.position - b.position);
+  const groups = sections.map((section) => ({ key: section.sectionKey, label: section.label, items: itemsFor((key) => key === section.sectionKey) }));
+  const loose = itemsFor((key) => !declared(key));
   return (
     <div className="space-y-4">
-      {[...groups, ...(loose.length > 0 ? [{ key: '_', label: '', fields: loose }] : [])].map((group) =>
-        group.fields.length === 0 ? null : (
+      {[...groups, ...(loose.length > 0 ? [{ key: '_', label: '', items: loose }] : [])].map((group) =>
+        group.items.length === 0 ? null : (
           <fieldset key={group.key} className="space-y-3">
             {group.label ? <legend className="text-xs font-medium uppercase text-ui-fg-muted">{group.label}</legend> : null}
             <div className="grid grid-cols-12 gap-3">
-              {group.fields.map((placed) => (
-                <div key={placed.field.fieldKey} className="col-span-12 space-y-1" style={{ gridColumn: `span ${placed.placement.span} / span ${placed.placement.span}` }}>
-                  <FieldInput placed={placed} value={values[placed.field.fieldKey]} error={errors[placed.field.fieldKey]} client={client} onChange={onChange} />
+              {group.items.map((item) => (
+                <div key={item.key} className="col-span-12 space-y-1" style={{ gridColumn: `span ${item.span} / span ${item.span}` }}>
+                  {item.node}
                 </div>
               ))}
             </div>
           </fieldset>
         ),
       )}
+    </div>
+  );
+}
+
+/**
+ * WI-OI-120bs: one placed panel. The component comes from the registry the page supplies; a panel the registry does
+ * not hold is shown as unavailable (named, so it can be fixed), never silently left out.
+ */
+export function MetadataPanel({
+  panel,
+  registry,
+  record,
+  client,
+  permissions,
+}: {
+  panel: PlacedPanel;
+  registry: MetadataPanelRegistry;
+  record: RecordValues;
+  client: RecordClient;
+  permissions: readonly string[];
+}) {
+  const Component = registry[panel.placement.componentKey];
+  if (!Component) {
+    return (
+      <div data-panel-unavailable={panel.placement.componentKey}>
+        <Notice tone="error" title="This panel is not available" text={`The page does not provide ${panel.placement.componentKey}.`} />
+      </div>
+    );
+  }
+  return (
+    <div data-panel={panel.placement.panelKey}>
+      <Component record={record} props={panel.placement.props} client={client} permissions={permissions} />
+    </div>
+  );
+}
+
+/** WI-OI-120bs: the panels of a panel-only record tab, in position order on a 12-column grid. */
+export function MetadataPanels({
+  panels,
+  registry,
+  record,
+  client,
+  permissions,
+}: {
+  panels: readonly PlacedPanel[];
+  registry: MetadataPanelRegistry;
+  record: RecordValues;
+  client: RecordClient;
+  permissions: readonly string[];
+}) {
+  if (panels.length === 0) return <p className="text-sm text-ui-fg-muted">Nothing to show here.</p>;
+  return (
+    <div className="grid grid-cols-12 gap-3">
+      {panels.map((panel) => (
+        <div key={panel.placement.panelKey} className="col-span-12" style={{ gridColumn: `span ${panel.placement.span} / span ${panel.placement.span}` }}>
+          <MetadataPanel panel={panel} registry={registry} record={record} client={client} permissions={permissions} />
+        </div>
+      ))}
     </div>
   );
 }
@@ -663,6 +763,8 @@ function RecordDetail({ model, client, permissions, id, onBack }: { model: Windo
   const [editing, setEditing] = useState(false);
   const [notice, setNotice] = useState<{ tone: 'error' | 'info'; text: string } | null>(null);
   const [activeChild, setActiveChild] = useState(model.childTabs[0]?.tabKey);
+  const [activeRecordTab, setActiveRecordTab] = useState(model.rootTab.tabKey);
+  const registry = useContext(Environment)?.panels ?? {};
   // WI-OI-120l: while the record is reread after a child change, its actions wait, so they never carry the version
   // from before that change (which answered "someone else changed this record" to the person who made it).
   const [refreshing, setRefreshing] = useState(false);
@@ -689,6 +791,10 @@ function RecordDetail({ model, client, permissions, id, onBack }: { model: Windo
   const canEdit = placedFields(model, model.rootTab, record, permissions, 'EDIT').some((placed) => !placed.readOnly);
   const actions = recordActions(model, entityKey, record, permissions);
   const child = model.childTabs.find((tab) => tab.tabKey === activeChild);
+  const recordTab = model.recordTabs.find((tab) => tab.tabKey === activeRecordTab) ?? model.rootTab;
+  const renderPanel = (panel: PlacedPanel) => (
+    <MetadataPanel panel={panel} registry={registry} record={record} client={client} permissions={permissions} />
+  );
 
   return (
     <div className="space-y-4">
@@ -739,8 +845,38 @@ function RecordDetail({ model, client, permissions, id, onBack }: { model: Windo
           }}
         />
       ) : (
-        <div className={`${box} p-4`}>
-          <FieldSections tab={model.rootTab} fields={fields} values={record} errors={{}} client={client} />
+        <div className="space-y-3">
+          {model.recordTabs.length > 1 && (
+            <div role="tablist" className="flex gap-1 border-b border-ui-border-base">
+              {model.recordTabs.map((tab) => (
+                <button
+                  key={tab.tabKey}
+                  type="button"
+                  role="tab"
+                  aria-selected={tab.tabKey === recordTab.tabKey}
+                  className={`px-3 py-2 text-sm ${tab.tabKey === recordTab.tabKey ? 'border-b-2 border-ui-border-interactive font-medium text-ui-fg-base' : 'text-ui-fg-subtle'}`}
+                  onClick={() => setActiveRecordTab(tab.tabKey)}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          )}
+          <div className={`${box} p-4`}>
+            {recordTab === model.rootTab ? (
+              <FieldSections
+                tab={model.rootTab}
+                fields={fields}
+                values={record}
+                errors={{}}
+                client={client}
+                panels={placedPanels(model.rootTab, record, permissions)}
+                panelSlot={renderPanel}
+              />
+            ) : (
+              <MetadataPanels panels={placedPanels(recordTab, record, permissions)} registry={registry} record={record} client={client} permissions={permissions} />
+            )}
+          </div>
         </div>
       )}
       {model.childTabs.length > 0 && (

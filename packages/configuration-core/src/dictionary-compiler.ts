@@ -13,6 +13,7 @@ import {
   type DictionaryValidationExpression,
   type DictionaryValidationRuleV1,
   type DictionaryViewV1,
+  type ModulePanelDefinitionV1,
   CONFIGURATION_MAX_FIELDS,
   MODULE_BASELINE_PACKAGE_SUFFIX,
 } from '@gigalibs/contracts';
@@ -29,6 +30,8 @@ export interface CompileDictionaryOptions {
   registeredResolvers?: readonly string[] | undefined;
   /** WI-OI-120f (F0.2): true only when the platform publishes a module's own baseline window. */
   moduleBaseline?: boolean | undefined;
+  /** WI-OI-120bs: the registered panels (MODULE_PANEL_CATALOGUE); without them every panel placement is refused. */
+  panelCatalogue?: readonly ModulePanelDefinitionV1[] | undefined;
 }
 
 export interface CompileDictionaryResult {
@@ -316,7 +319,9 @@ export function compileDictionaryPackage(
 
   // 8. WI-OI-120f (F0.1): only what the metadata window executes may be published, and every view, tab, placement,
   // rule and action must point at something that exists.
-  findings.push(...executableCapabilityFindings(pkg, options.baseline as DictionaryPackageDefinitionV1 | undefined));
+  findings.push(
+    ...executableCapabilityFindings(pkg, options.baseline as DictionaryPackageDefinitionV1 | undefined, options.panelCatalogue ?? []),
+  );
 
   if (findings.some((f) => f.severity === 'ERROR')) {
     return {
