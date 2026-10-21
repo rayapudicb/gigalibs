@@ -7,9 +7,13 @@
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 COMPOSE_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
-# shellcheck source=release-worktree.sh
-source "${SCRIPT_DIR}/release-worktree.sh"
-gigalibs_require_release_worktree "$(basename "$0")"
+# It writes UAT's settings, so it runs only from the release worktree (a checkout on a release/* branch).
+CHECKOUT_ROOT="$(cd "${COMPOSE_DIR}/../.." && pwd -P)"
+BRANCH="$(git -C "${CHECKOUT_ROOT}" symbolic-ref --quiet --short HEAD 2>/dev/null || true)"
+if [[ "${BRANCH}" != release/* ]]; then
+  echo "Error: run $(basename "$0") from the release worktree (a checkout on a release/* branch)." >&2
+  exit 1
+fi
 
 BASE_ENV="${COMPOSE_DIR}/.env"
 SPEED_ENV="${COMPOSE_DIR}/.env.module.process-safety-screening"
