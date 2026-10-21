@@ -18,15 +18,20 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1124.0",
     "@gigalibs/auth-core": "workspace:*",
     "@gigalibs/configuration-core": "workspace:*",
     "@gigalibs/contracts": "workspace:*",
     "@gigalibs/module-sdk": "workspace:*",
     "@gigalibs/process-safety-engines": "workspace:*",
+    "@gigalibs/process-safety-screening-domain": "workspace:*",
     "@nestjs/common": "^11.2.3",
     "@nestjs/core": "^11.2.3",
     "@nestjs/platform-express": "^11.2.3",
+    "dejavu-fonts-ttf": "2.37.3",
+    "docx": "9.5.1",
     "helmet": "^8.1.0",
+    "pdfkit": "^0.15.2",
     "pg": "^8.23.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
@@ -34,7 +39,9 @@
   },
   "devDependencies": {
     "@types/node": "^24.10.0",
+    "@types/pdfkit": "^0.13.9",
     "@types/pg": "^8.23.1",
+    "jszip": "3.10.2",
     "typescript": "^5.8.3",
     "vitest": "^2.0.0"
   }

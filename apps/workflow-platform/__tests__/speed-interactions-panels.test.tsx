@@ -168,7 +168,7 @@ describe('SPEED interactions (speed.interaction-matrix)', () => {
     expect(html).toContain('Step 1 · 1 High');
     expect(html).toContain('aria-label="NaOH × C2H6OS: High"');
     expect(html).toContain('TEST FIXTURE finding R-01');
-    expect(html).toContain('Library vprototype-0.1 (unreviewed)');
+    expect(html).toContain('Library prototype-0.1 (unreviewed)');
     expect(html).toContain('Control not yet documented.');
     expect(html).toContain('TEST FIXTURE control R-01');
     expect(html).toContain('H High · M Medium · L Low.');

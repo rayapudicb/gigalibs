@@ -2007,6 +2007,35 @@ export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGat
         }
       },
       {
+        "template": "v1/routes/{id}/dossiers",
+        "pattern": "^v1/routes/[0-9a-fA-F-]{36}/dossiers$",
+        "methods": {
+          "GET": "speed.routes.read",
+          "POST": "speed.routes.read"
+        }
+      },
+      {
+        "template": "v1/routes/{id}/export/json|csv",
+        "pattern": "^v1/routes/[0-9a-fA-F-]{36}/export/(?:json|csv)$",
+        "methods": {
+          "GET": "speed.routes.read"
+        }
+      },
+      {
+        "template": "v1/dossiers/{id}",
+        "pattern": "^v1/dossiers/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "GET": "speed.routes.read"
+        }
+      },
+      {
+        "template": "v1/dossiers/{id}/files/docx|pdf",
+        "pattern": "^v1/dossiers/[0-9a-fA-F-]{36}/files/(?:docx|pdf)$",
+        "methods": {
+          "GET": "speed.routes.read"
+        }
+      },
+      {
         "template": "v1/steps/{id}",
         "pattern": "^v1/steps/[0-9a-fA-F-]{36}$",
         "methods": {

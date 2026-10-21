@@ -12055,6 +12055,27 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
                     }
                   }
                 ]
+              },
+              {
+                "tabKey": "dossier",
+                "label": "Dossier",
+                "position": 6,
+                "level": 0,
+                "targetEntityKey": "speed.routes",
+                "sections": [],
+                "fields": [],
+                "panels": [
+                  {
+                    "panelKey": "dossier",
+                    "componentKey": "speed.dossier-preview",
+                    "position": 0,
+                    "span": 12,
+                    "props": {
+                      "pollSeconds": 3,
+                      "historyCount": 5
+                    }
+                  }
+                ]
               }
             ],
             "searchFields": [

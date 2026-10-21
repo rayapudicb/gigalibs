@@ -264,6 +264,15 @@ export class LibraryService {
     });
   }
 
+  /** A set by id in the caller's transaction (the set a stored result used), or null. */
+  async byId(client: Client, tenantId: string, id: string): Promise<SpeedLibrarySetV1 | null> {
+    const row = await client.query<LibraryRow>(
+      `SELECT ${COLUMNS} FROM ${SCHEMA}.library_sets WHERE tenant_id = $1 AND id = $2`,
+      [tenantId, id],
+    );
+    return row.rows[0] ? toSet(row.rows[0]) : null;
+  }
+
   /** The set in force in the caller's transaction, or null when the workspace has none. */
   async inForce(client: Client, tenantId: string): Promise<LibraryInForce | null> {
     const row = await client.query<LibraryRow>(

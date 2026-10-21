@@ -68,6 +68,12 @@ spec:
         binding: RECORD
         props:
           kind: { type: ENUM, required: true, values: [MATERIALS, RULES, REACTION_CLASSES, ENERGETIC_GROUPS] }
+      - componentKey: speed.dossier-preview
+        binding: RECORD
+        props:
+          # How often a queued dossier's progress is read, in seconds, and how many earlier dossiers are listed.
+          pollSeconds: { type: NUMBER, required: true }
+          historyCount: { type: NUMBER, required: true }
   api:
     application: apps/api
     port: 4790
@@ -179,6 +185,11 @@ spec:
       - { path: 'v1/routes/{id}/recompute', POST: speed.engines.run }
       - { path: 'v1/routes/{id}/results', GET: speed.routes.read }
       - { path: 'v1/routes/{id}/steps', POST: speed.routes.write }
+      # WI-OI-120ca (S7): dossiers and exports read the route (plan v1.4 §4.4); downloads are hash-checked and audited.
+      - { path: 'v1/routes/{id}/dossiers', GET: speed.routes.read, POST: speed.routes.read }
+      - { path: 'v1/routes/{id}/export/json|csv', GET: speed.routes.read }
+      - { path: 'v1/dossiers/{id}', GET: speed.routes.read }
+      - { path: 'v1/dossiers/{id}/files/docx|pdf', GET: speed.routes.read }
       - { path: 'v1/steps/{id}', PATCH: speed.routes.write }
       - { path: 'v1/steps/{id}/move', POST: speed.routes.write }
       - { path: 'v1/steps/{id}/remove', POST: speed.routes.write }

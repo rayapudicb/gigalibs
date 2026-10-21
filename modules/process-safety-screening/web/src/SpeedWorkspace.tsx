@@ -10,6 +10,7 @@ import {
 import { PLATFORM_LOOKUP_BASE_PATHS } from '@gigalibs/contracts';
 import { useMemo, useState } from 'react';
 import { CriteriaValuesPanel } from './CriteriaValuesPanel.js';
+import { DossierPreviewPanel } from './DossierPreviewPanel.js';
 import { GateWorkbenchPanel } from './GateWorkbenchPanel.js';
 import { GreenScorecardPanel } from './GreenScorecardPanel.js';
 import { InteractionMatrixPanel } from './InteractionMatrixPanel.js';
@@ -44,6 +45,7 @@ const PANELS: MetadataPanelRegistry = {
   'speed.criteria-values': CriteriaValuesPanel,
   'speed.interaction-matrix': InteractionMatrixPanel,
   'speed.library-entries': LibraryEntriesPanel,
+  'speed.dossier-preview': DossierPreviewPanel,
 };
 
 export interface SpeedWorkspaceProps {

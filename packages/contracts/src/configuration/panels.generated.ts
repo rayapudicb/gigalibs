@@ -9,6 +9,21 @@ export const MODULE_PANEL_SOURCES: readonly unknown[] = [
   },
   {
     "moduleKey": "process-safety-screening",
+    "componentKey": "speed.dossier-preview",
+    "binding": "RECORD",
+    "props": {
+      "pollSeconds": {
+        "type": "NUMBER",
+        "required": true
+      },
+      "historyCount": {
+        "type": "NUMBER",
+        "required": true
+      }
+    }
+  },
+  {
+    "moduleKey": "process-safety-screening",
     "componentKey": "speed.gate-workbench",
     "binding": "RECORD",
     "props": {

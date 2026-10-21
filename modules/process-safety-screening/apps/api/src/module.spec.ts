@@ -17,6 +17,7 @@ import { AuthorizationGuard } from './authorization.js';
 import { AUDIENCE, MODULE_KEY, runtimeConfigProvider } from './config.js';
 import { CriteriaController } from './criteria/criteria.controller.js';
 import type { DatabaseService } from './database.service.js';
+import { DossiersController, RouteDossiersController } from './dossiers/dossiers.controller.js';
 import { LibraryController } from './library/library.controller.js';
 import { ProjectsController } from './projects/projects.controller.js';
 import {
@@ -42,7 +43,7 @@ const environment = {
   SPEED_CORS_ORIGINS: 'http://127.0.0.1:5180',
   SPEED_DATABASE_URL: 'postgresql://runtime:secret@postgres:5432/gigalibs',
   SPEED_DATABASE_POOL_SIZE: '10',
-  SPEED_EXPECTED_MIGRATION_VERSION: '4',
+  SPEED_EXPECTED_MIGRATION_VERSION: '5',
   SPEED_PLATFORM_CONTEXT_PUBLIC_KEY_BASE64: publicKeyBase64,
 };
 
@@ -136,6 +137,13 @@ const ROUTE_PERMISSIONS: readonly [{ prototype: object; name: string }, string, 
   [MaterialsController, 'update', 'speed.routes.write'],
   [MaterialsController, 'remove', 'speed.routes.write'],
   [MaterialsController, 'setEnergeticGroups', 'speed.routes.write'],
+  // WI-OI-120ca (S7): dossiers and exports need only speed.routes.read (plan v1.4 §4.4).
+  [RouteDossiersController, 'request', 'speed.routes.read'],
+  [RouteDossiersController, 'list', 'speed.routes.read'],
+  [RouteDossiersController, 'exportJson', 'speed.routes.read'],
+  [RouteDossiersController, 'exportCsv', 'speed.routes.read'],
+  [DossiersController, 'get', 'speed.routes.read'],
+  [DossiersController, 'download', 'speed.routes.read'],
 ];
 
 describe('SPEED authorization on every S4 route (WI-OI-120bx)', () => {
@@ -171,7 +179,7 @@ describe('SPEED runtime configuration', () => {
   it('loads the SPEED_* variables', () => {
     expect(load()).toMatchObject({
       platformContextAudience: AUDIENCE,
-      expectedMigrationVersion: 4,
+      expectedMigrationVersion: 5,
     });
   });
   it('refuses another audience', () => {

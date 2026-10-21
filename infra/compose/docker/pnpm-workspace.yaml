@@ -15,6 +15,7 @@ packages:
   - modules/physical-operations-cmms/apps/api
   - modules/physical-operations-cmms/web
   - modules/process-safety-screening/apps/api
+  - modules/process-safety-screening/domain
   - modules/process-safety-screening/web
   - modules/product-catalogue/apps/api
   - modules/product-catalogue/web

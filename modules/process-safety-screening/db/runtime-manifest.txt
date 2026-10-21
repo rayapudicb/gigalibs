@@ -4,3 +4,4 @@
 000002_speed_routes.up.sql
 000003_speed_screening_inputs.up.sql
 000004_speed_interactions.up.sql
+000005_speed_dossiers.up.sql

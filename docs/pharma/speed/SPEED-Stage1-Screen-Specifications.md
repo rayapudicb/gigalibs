@@ -426,6 +426,16 @@ gate result and the rail badges.
 3. **Watermark.** Until the route is approved, every page of the files says "DRAFT — NOT APPROVED". On screen, a banner
    says the same.
 
+**As built (S7, WI-OI-120ca):** the model is `dossierModel` in the module's domain package
+(`modules/process-safety-screening/domain`, which now also holds the message catalogue). The API renders DOCX (`docx`,
+the watermark in every page header) and PDF (`pdfkit` with DejaVu Sans, the watermark across and atop every page) from
+it, and the panel previews the JSON export, so preview, files and export are one model. "Generate dossier" queues a
+dossier with the model as it is then; the module's worker renders the files into the object store (`SPEED_STORAGE_*`)
+and records each SHA-256. "Download" is a link to the module's file route, which serves the file only after recomputing
+its SHA-256 (409 on a mismatch, audited), not a signed object-store link. A dossier needs one criteria set and one
+library set across the steps' results. The panel reads a queued dossier's progress every `pollSeconds` and lists the
+last `historyCount` dossiers (both from the dictionary). A substance charged twice in one step is named with its role.
+
 <!-- pagebreak -->
 
 # 3. Library, criteria, audit and outcomes
@@ -579,9 +589,16 @@ named (engine codes from §4.1 and §4.2). Any other refusal shows the server's 
 | `SPEED_ENERGETIC_GROUP_UNKNOWN` | An energetic group is not in the library in force. |
 | `SPEED_LIBRARY_MATERIAL_UNKNOWN` | The library material is not in the library in force. |
 | `SPEED_FINDING_UNKNOWN` | The step has no interaction finding for these two materials. |
+| `SPEED_STORAGE_UNAVAILABLE` | The object store is not configured on this instance, so dossiers cannot be generated. (S7) |
+| `SPEED_DOSSIER_STALE` | The steps were screened with different criteria or library versions. Recompute the route, then generate the dossier. (S7) |
+| `SPEED_DOSSIER_NOT_READY` | The dossier is not ready yet. (S7) |
+| `SPEED_DOSSIER_INTEGRITY` | The stored file does not match its recorded SHA-256; it was not served. (S7) |
+| `SPEED_DOSSIER_RENDER_FAILED` | The dossier files could not be generated. Generate it again. (S7, on a failed dossier) |
 
 S5 (WI-OI-120by) adds the panels' own texts to the module's catalogue (`web/src/messages`), with the TD24 bases of §4.2
 and the class actions of §4.3 under the same keys the engines return.
+S7 (WI-OI-120ca) moves the catalogue to the module's domain package (`domain/src/messages`), shared by the API's files
+and the screens; the web package re-exports it.
 
 ## 4.3 Stoessel class actions (content: the process safety specialist confirms before release)
 

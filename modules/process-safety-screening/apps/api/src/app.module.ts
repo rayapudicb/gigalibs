@@ -10,6 +10,10 @@ import { runtimeConfigProvider } from './config.js';
 import { CriteriaController } from './criteria/criteria.controller.js';
 import { CriteriaService } from './criteria/criteria.service.js';
 import { DatabaseService } from './database.service.js';
+import { DossierWorker } from './dossiers/dossier-worker.js';
+import { DossiersController, RouteDossiersController } from './dossiers/dossiers.controller.js';
+import { DossiersService } from './dossiers/dossiers.service.js';
+import { SpeedStorage, storageConfigFromEnv } from './dossiers/storage.js';
 import { HealthController } from './health.controller.js';
 import { LibraryController } from './library/library.controller.js';
 import { LibraryService } from './library/library.service.js';
@@ -28,7 +32,8 @@ import { SubstancesController } from './substances/substances.controller.js';
 import { SubstancesService } from './substances/substances.service.js';
 
 // WI-OI-120bw/120bx (SPEED S3, S4): projects, criteria sets, substances, routes and their content through the module's
-// API and its metadata windows, and the organization replica the sites come from.
+// API and its metadata windows, and the organization replica the sites come from. WI-OI-120ca (S7): dossiers, their
+// worker and the object store they are kept in.
 const SpeedRecordController = createRecordController({
   guard: AuthorizationGuard,
   readPermission: 'speed.routes.read',
@@ -44,6 +49,8 @@ const SpeedRecordController = createRecordController({
     RoutesController,
     StepsController,
     MaterialsController,
+    RouteDossiersController,
+    DossiersController,
     OrganizationController,
     SpeedRecordController,
   ],
@@ -57,6 +64,12 @@ const SpeedRecordController = createRecordController({
     SubstancesService,
     RoutesService,
     StepsService,
+    {
+      provide: SpeedStorage,
+      useFactory: () => new SpeedStorage(storageConfigFromEnv(process.env)),
+    },
+    DossiersService,
+    DossierWorker,
     {
       provide: RECORD_DISPATCHER,
       inject: [

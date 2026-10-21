@@ -1,6 +1,8 @@
 import type {
   AddSpeedThermalDataInputV1,
   SpeedCriteriaSetV1,
+  SpeedDossierFormat,
+  SpeedDossierV1,
   SpeedEnthalpySource,
   SpeedLibrarySetV1,
   SpeedMaterialRole,
@@ -8,6 +10,7 @@ import type {
   SpeedRouteDetailV1,
   SpeedStepChangeV1,
 } from '@gigalibs/contracts';
+import type { DossierModelV1 } from '@gigalibs/process-safety-screening-domain';
 
 // WI-OI-120bx (SPEED S4): the module API the workbench panels call as the signed-in user, through the web gateway
 // `/api/speed` (the BFF signs a fresh platform context for each call). Adds carry a request key in the body, so a retry
@@ -107,6 +110,20 @@ export interface SpeedApi {
     criteria: SpeedCriteriaSetV1 | null;
     library: SpeedLibrarySetV1 | null;
   }>;
+  /** WI-OI-120ca: the dossier model of the route as it is now (the JSON export). */
+  dossierPreview(routeId: string): Promise<{ model: DossierModelV1; route: SpeedRouteDetailV1 }>;
+  dossiers(routeId: string): Promise<{ items: SpeedDossierV1[] }>;
+  requestDossier(routeId: string): Promise<SpeedDossierV1>;
+}
+
+/** WI-OI-120ca: a dossier file, served by the module after its hash is checked. */
+export function dossierFileUrl(dossierId: string, format: SpeedDossierFormat): string {
+  return `${SPEED_API}/dossiers/${dossierId}/files/${format}`;
+}
+
+/** WI-OI-120ca: the route's export as JSON (the dossier model) or CSV. */
+export function routeExportUrl(routeId: string, format: 'json' | 'csv'): string {
+  return `${SPEED_API}/routes/${routeId}/export/${format}`;
 }
 
 type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K> : never;
@@ -183,5 +200,8 @@ export function createSpeedApi(send: typeof fetch = (input, init) => fetch(input
         library: library.items.find((set) => set.inForce) ?? null,
       };
     },
+    dossierPreview: (routeId) => call('GET', `/routes/${routeId}/export/json`),
+    dossiers: (routeId) => call('GET', `/routes/${routeId}/dossiers`),
+    requestDossier: (routeId) => call('POST', `/routes/${routeId}/dossiers`, { requestKey: key() }),
   };
 }

@@ -143,6 +143,11 @@ export function windowSource(builderFor) {
           position: 4,
           panels: [panel('green', 'speed.green-scorecard', 0, { props: { showStreams: true } })],
         }),
+        // Position 5 is kept for the write-up parser (S8).
+        tab('dossier', 'Dossier', 0, R, [], rf, {
+          position: 6,
+          panels: [panel('dossier', 'speed.dossier-preview', 0, { props: { pollSeconds: 3, historyCount: 5 } })],
+        }),
       ], { search: ['name'], sort: 'name' }),
     ], [
       action(R, 'archive', 'Archive', 'speed.routes.write', ['status', 'EQ', 'DRAFT'],

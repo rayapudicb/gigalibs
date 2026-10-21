@@ -180,58 +180,8 @@ export function labelPositions(values: readonly number[], height: number, gap: n
   return placed;
 }
 
-/** The criteria in force as the engines read them. */
-export function engineCriteria(set: SpeedCriteriaSetV1): ScreeningCriteria {
-  return { version: set.versionLabel, ...set.criteria };
-}
-
-/** The library in force as the engines read it (the server's `engineLibrary`, from the same stored entries). */
-export function engineLibrary(set: SpeedLibrarySetV1): ScreeningLibrary {
-  const library = set.library;
-  return {
-    version: set.versionLabel,
-    // As the server: a material's note is the library's text, carried to the engines by its entry id.
-    materials: library.materials.map((entry) => ({
-      id: entry.id,
-      classes: entry.classes,
-      ...(entry.note ? { noteKey: entry.id } : {}),
-      citation: entry.citation,
-      reviewed: entry.reviewed,
-    })),
-    rules: library.rules.map((entry) => ({
-      id: entry.id,
-      classA: entry.classA,
-      classB: entry.classB,
-      severity: entry.severity,
-      citation: entry.citation,
-      reviewed: entry.reviewed,
-      ...(entry.recommendedTest ? { recommendedTest: entry.recommendedTest } : {}),
-    })),
-    reactionClasses: library.reactionClasses.map((entry) => ({
-      id: entry.id,
-      typicalReactionEnthalpyKJPerMol: entry.typicalReactionEnthalpyKJPerMol,
-      citation: entry.citation,
-      reviewed: entry.reviewed,
-    })),
-    formationEnthalpies: Object.fromEntries(
-      Object.entries(library.formationEnthalpies).map(([hill, entry]) => [
-        hill,
-        {
-          kJPerMol: entry.kJPerMol,
-          phase: entry.phase,
-          citation: entry.citation,
-          reviewed: entry.reviewed,
-        },
-      ]),
-    ),
-    gases: Object.fromEntries(
-      Object.entries(library.gases).map(([hill, entry]) => [
-        hill,
-        { id: entry.id, citation: entry.citation, reviewed: entry.reviewed },
-      ]),
-    ),
-  };
-}
+/** The sets in force as the engines read them (shared with the server through the domain package). */
+export { engineCriteria, engineLibrary } from '@gigalibs/process-safety-screening-domain';
 
 /** A number for display, or null when there is none. */
 export function shown(value: number | null | undefined, digits: number): string | null {

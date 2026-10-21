@@ -16,7 +16,8 @@ export class DatabaseService extends ModuleDatabase {
       databaseUrl: config.databaseUrl,
       poolSize: config.databasePoolSize,
       expectedMigrationVersion: config.expectedMigrationVersion,
-      definerFunctions: [],
+      // WI-OI-120ca: the dossier worker's list of tenants with queued dossiers.
+      definerFunctions: ['list_dossier_tenants'],
       tenantBinding: 'set-local',
       poolOptions: {
         statement_timeout: 15_000,
