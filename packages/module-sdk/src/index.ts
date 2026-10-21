@@ -84,6 +84,7 @@ export {
 } from './organization-access.js';
 // WI-OI-120w (R2 slice 3): where a person may use a permission, decided per role assignment (ADR-0034).
 export {
+  assignmentsFromContext,
   scopeFor,
   type AssignmentCoverage,
   type ModuleAssignment,

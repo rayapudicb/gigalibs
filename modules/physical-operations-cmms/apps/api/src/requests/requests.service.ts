@@ -81,14 +81,19 @@ function visibleRequests(principal: CmmsPrincipal, values: unknown[]): string[] 
   values.push(principal.subject);
   const own = `r.requester_subject = $${values.length}`;
   if (!holdsPermission(principal.permissions, 'cmms.requests.write')) return [own];
-  const inScope = scopePredicates(principal, values, 'r.', undefined, undefined, { shared: false });
+  const inScope = scopePredicates(principal, values, 'r.', undefined, undefined, {
+    shared: false,
+    permission: 'cmms.requests.read',
+  });
   return inScope.length === 0 ? [] : [`(${own} OR (${inScope.join(' AND ')}))`];
 }
 
 /** Changing someone else's request needs write access to its unit and site. */
 function assertMayChange(principal: CmmsPrincipal, request: CmmsMaintenanceRequestV1): void {
   if (holdsPermission(principal.permissions, 'cmms.requests.write')) {
-    assertWritableScope(principal, { departmentId: request.departmentId, siteRef: request.siteRef });
+    assertWritableScope(principal, { departmentId: request.departmentId, siteRef: request.siteRef }, undefined, undefined, {
+      permission: 'cmms.requests.write',
+    });
   }
 }
 

@@ -79,7 +79,7 @@ keeps the full rules.
 
 ## Next implementation (Table 1 backlog, local compose)
 
-1. **WI-OI-120gd** — journey 0 blockers — run **`hb53xk`** (2026-10-21 UTC, release `1d8d2634`): 69 findings, **6 blockers**, all in CMMS, from two product defects: CMMS ignores unit-scoped role assignments when listing, and "Assigned technician" is free text so nobody can be assigned. Triage and fixes: [WI-OI-120bu](tasks/WI-OI-120bu.md) (proposed).
+1. **WI-OI-120gd** — journey **0 blockers** — fixes in [WI-OI-120bu](tasks/WI-OI-120bu.md) **Built** (uncommitted): assignment-scoped WO list, technician `workspace-members` picker, journey asserts North unit + assignee. **Next:** owner release worktree deploy → re-run journey → tick [PHASE-1-CM1-CHECKLIST](tasks/PHASE-1-CM1-CHECKLIST.md).
 2. **WI-OI-120ge** — **Done** in git **`0031a2f4`** (pushed); `pnpm audit:configuration-deployment-profile` passes.
 3. **WI-OI-120gf** — **In progress** (M-AR0): compose + module SDK; E1 build done in **WI-OI-120gw**.
 4. **WI-OI-120gg** — **Built** in git **`cdcbf2c9`** (pushed): vendor party guard mig **4**.

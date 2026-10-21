@@ -12,7 +12,12 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { PlatformContextError, verifyPlatformContextToken, type PlatformContextV1 } from '@gigalibs/auth-core';
-import { MODULE_PERMISSIONS_METADATA, type OrganizationClaim } from '@gigalibs/module-sdk';
+import {
+  MODULE_PERMISSIONS_METADATA,
+  assignmentsFromContext,
+  type ModuleAssignment,
+  type OrganizationClaim,
+} from '@gigalibs/module-sdk';
 import { holdsPermission } from '@gigalibs/contracts';
 import { CMMS_CONFIG } from '../config.provider.js';
 import { DatabaseService } from '../database/database.service.js';
@@ -51,6 +56,8 @@ export interface CmmsPrincipal {
   readonly organization?: OrganizationClaim;
   readonly departmentScope: CmmsDepartmentScope;
   readonly placeScope: CmmsPlaceScope;
+  /** WI-OI-120bu (F1): per-assignment scope from the platform context (WI-OI-120w). */
+  readonly assignments?: readonly ModuleAssignment[];
 }
 
 export interface CmmsCommandContext {
@@ -161,6 +168,31 @@ export class CmmsAuthorizationGuard implements CanActivate {
 export function principalFromContext(context: PlatformContextV1): CmmsPrincipal {
   const org = context.org_scope;
   const spatial = context.spatial_scope ?? { mode: 'UNBOUNDED' as const };
+  const organization: OrganizationClaim = Object.freeze(
+    context.organization?.mode === 'UNITS'
+      ? {
+          mode: 'UNITS' as const,
+          tree_version: context.organization.tree_version,
+          read_roots: Object.freeze([...context.organization.read_roots]),
+          write_roots: Object.freeze([...context.organization.write_roots]),
+        }
+      : context.organization?.mode === 'DENIED'
+        ? { mode: 'DENIED' as const }
+        : context.organization?.tree_version
+          ? { mode: 'TENANT' as const, tree_version: context.organization.tree_version }
+          : { mode: 'TENANT' as const },
+  );
+  const departmentScope: CmmsDepartmentScope = Object.freeze(
+    org.mode === 'SCOPED_DEPARTMENTS'
+      ? { mode: 'DEPARTMENTS' as const, departmentIds: Object.freeze([...org.department_ids]) }
+      : { mode: 'ALL' as const },
+  );
+  const placeScope: CmmsPlaceScope = Object.freeze(
+    spatial.mode === 'SCOPED_PLACES'
+      ? { mode: 'PLACES' as const, placeIds: Object.freeze([...spatial.place_ids]) }
+      : { mode: 'ALL' as const },
+  );
+  const assignments = assignmentsFromContext(context, organization, placeScope, departmentScope);
   return Object.freeze({
     tenantId: context.tenant_id,
     subject: context.sub,
@@ -169,30 +201,10 @@ export function principalFromContext(context: PlatformContextV1): CmmsPrincipal 
     permissions: Object.freeze([...context.granted_scopes]),
     roles: Object.freeze([...context.roles]),
     persona: context.persona_type,
-    organization: Object.freeze(
-      context.organization?.mode === 'UNITS'
-        ? {
-            mode: 'UNITS' as const,
-            tree_version: context.organization.tree_version,
-            read_roots: Object.freeze([...context.organization.read_roots]),
-            write_roots: Object.freeze([...context.organization.write_roots]),
-          }
-        : context.organization?.mode === 'DENIED'
-          ? { mode: 'DENIED' as const }
-          : context.organization?.tree_version
-            ? { mode: 'TENANT' as const, tree_version: context.organization.tree_version }
-            : { mode: 'TENANT' as const },
-    ),
-    departmentScope: Object.freeze(
-      org.mode === 'SCOPED_DEPARTMENTS'
-        ? { mode: 'DEPARTMENTS' as const, departmentIds: Object.freeze([...org.department_ids]) }
-        : { mode: 'ALL' as const },
-    ),
-    placeScope: Object.freeze(
-      spatial.mode === 'SCOPED_PLACES'
-        ? { mode: 'PLACES' as const, placeIds: Object.freeze([...spatial.place_ids]) }
-        : { mode: 'ALL' as const },
-    ),
+    organization,
+    departmentScope,
+    placeScope,
+    ...(assignments ? { assignments: Object.freeze(assignments) } : {}),
   });
 }
 

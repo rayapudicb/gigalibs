@@ -84,7 +84,10 @@ export class WorkOrdersService {
     const query = parseInput(SearchCmmsWorkOrdersV1Schema, raw);
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
       const values: unknown[] = [principal.tenantId];
-      const where = ['w.tenant_id = $1', ...scopePredicates(principal, values, 'w.')];
+      const where = [
+        'w.tenant_id = $1',
+        ...scopePredicates(principal, values, 'w.', undefined, undefined, { permission: 'cmms.work-orders.read' }),
+      ];
       if (query.openOnly) where.push(`w.status IN ('OPEN', 'IN_PROGRESS', 'ON_HOLD')`);
       for (const [column, value] of [
         ['status', query.status],
@@ -181,7 +184,9 @@ export class WorkOrdersService {
       siteRef ??= asset.siteRef;
       departmentId ??= asset.departmentId;
     }
-    assertWritableScope(context.principal, { departmentId, siteRef });
+    assertWritableScope(context.principal, { departmentId, siteRef }, undefined, undefined, {
+      permission: 'cmms.work-orders.write',
+    });
 
     const counter = await client.query<{ last_value: string }>(
       `INSERT INTO gigalibs_cmms.work_order_counters AS c (tenant_id, last_value) VALUES ($1, 1)
@@ -552,7 +557,9 @@ export class WorkOrdersService {
     return this.database.withTenantTransaction(context.principal.tenantId, async (client) => {
       await this.lockForChange(client, context, workOrderId, null, EXECUTION_STATUSES);
       const part = await this.parts.visiblePartRow(client, context.principal, input.partId, { lock: false });
-      assertWritableScope(context.principal, { departmentId: part.department_id, siteRef: part.site_ref });
+      assertWritableScope(context.principal, { departmentId: part.department_id, siteRef: part.site_ref }, undefined, undefined, {
+        permission: 'cmms.work-orders.write',
+      });
       if (input.storeroomId) await this.parts.assertWritableStoreroom(client, context.principal, input.storeroomId);
       const replay = await this.parts.replayedMovement(client, context.principal.tenantId, input.idempotencyKey, input.partId);
       if (replay) {
@@ -694,7 +701,9 @@ export class WorkOrdersService {
   ): Promise<any> {
     const current = await this.visibleRow(client, context.principal, workOrderId, true);
     if (expectedVersion !== null && Number(current.version) !== expectedVersion) versionConflict('The work order');
-    assertWritableScope(context.principal, { departmentId: current.department_id, siteRef: current.site_ref });
+    assertWritableScope(context.principal, { departmentId: current.department_id, siteRef: current.site_ref }, undefined, undefined, {
+      permission: 'cmms.work-orders.write',
+    });
     if (allowedStatuses && !allowedStatuses.includes(current.status)) {
       throw new ConflictException({
         code: 'CMMS_WORK_ORDER_STATE',
@@ -763,7 +772,11 @@ export class WorkOrdersService {
 
   private async visibleRow(client: PoolClient, principal: CmmsPrincipal, workOrderId: string, lock: boolean): Promise<any> {
     const values: unknown[] = [principal.tenantId, workOrderId];
-    const where = ['w.tenant_id = $1', 'w.id = $2', ...scopePredicates(principal, values, 'w.')];
+    const where = [
+      'w.tenant_id = $1',
+      'w.id = $2',
+      ...scopePredicates(principal, values, 'w.', undefined, undefined, { permission: 'cmms.work-orders.read' }),
+    ];
     const result = await client.query(
       `SELECT w.* FROM gigalibs_cmms.work_orders w WHERE ${where.join(' AND ')}${lock ? ' FOR UPDATE' : ''}`,
       values,
@@ -775,7 +788,11 @@ export class WorkOrdersService {
   /** The full work order read inside the caller's transaction. */
   async detailWithClient(client: PoolClient, principal: CmmsPrincipal, workOrderId: string): Promise<CmmsWorkOrderDetailV1> {
     const values: unknown[] = [principal.tenantId, workOrderId];
-    const where = ['w.tenant_id = $1', 'w.id = $2', ...scopePredicates(principal, values, 'w.')];
+    const where = [
+      'w.tenant_id = $1',
+      'w.id = $2',
+      ...scopePredicates(principal, values, 'w.', undefined, undefined, { permission: 'cmms.work-orders.read' }),
+    ];
     const header = await client.query(`SELECT ${WO_COLUMNS} FROM ${WO_FROM} WHERE ${where.join(' AND ')}`, values);
     if (!header.rows[0]) notFound('The work order');
     const [tasks, labour, parts, notes, staffing, bookings] = await Promise.all([

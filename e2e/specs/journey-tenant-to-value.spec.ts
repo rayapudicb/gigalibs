@@ -1013,17 +1013,56 @@ test('a new customer from sign-up to maintenance work, as five people', async ({
     let workOrderTitle = `Fix compressor oil leak ${RUN}`;
     if (supervisor) {
       await recorder.do(S5, 'The supervisor raises a work order and assigns the technician', supervisor, async () => {
+        const northUnitId = await orgUnitIdByName(supervisor, `North plant ${RUN}`);
+        const technicianEmail = people.technician!.email;
+        const outcome = await supervisor.evaluate(
+          async ({ title, northUnitId, technicianEmail, assetName }) => {
+            const assetSearch = await fetch('/api/cmms/v1/assets/search', {
+              method: 'POST',
+              headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+              body: JSON.stringify({ page: 1, pageSize: 20, q: assetName }),
+            });
+            if (!assetSearch.ok) return `asset search ${assetSearch.status}`;
+            const assets = (await assetSearch.json()) as { items?: Array<{ id: string; name?: string }> };
+            const assetId = (assets.items ?? []).find((row) => row.name?.includes(assetName))?.id;
+            if (!assetId) return 'asset not found';
+            const membersResponse = await fetch('/api/control/v1/lookups/workspace-members?limit=200');
+            if (!membersResponse.ok) return `members ${membersResponse.status}`;
+            const members = (await membersResponse.json()) as Array<{ value: string; label: string; active?: boolean }>;
+            const technician = members.find((member) => member.label.toLowerCase().includes(technicianEmail.toLowerCase()));
+            if (!technician?.value) return `technician not found for ${technicianEmail}`;
+            const requestKey = crypto.randomUUID();
+            const idempotencyKey = crypto.randomUUID();
+            const response = await fetch('/api/cmms/v1/work-orders', {
+              method: 'POST',
+              headers: {
+                Accept: 'application/json',
+                'Content-Type': 'application/json',
+                'Idempotency-Key': idempotencyKey,
+              },
+              body: JSON.stringify({
+                requestKey,
+                type: 'REACTIVE',
+                title,
+                description: 'Replace the drain-valve seal.',
+                priority: 'HIGH',
+                departmentId: northUnitId,
+                assetId,
+                assignedTo: technician.value,
+              }),
+            });
+            if (!response.ok) return `${response.status} ${(await response.text()).slice(0, 200)}`;
+            const body = (await response.json()) as { assignedTo?: string | null };
+            if (body.assignedTo !== technician.value) return `assignee not stored (got ${body.assignedTo ?? 'null'})`;
+            return 'created';
+          },
+          { title: workOrderTitle, northUnitId, technicianEmail, assetName: `Air compressor ${RUN}` },
+        );
+        if (outcome !== 'created') throw new Error(`North work order refused: ${outcome}`);
         await supervisor.goto('/cmms/work-orders');
         await settle(supervisor);
-        const note = await create(
-          supervisor,
-          recorder,
-          /new work order|create work order/i,
-          [[/title|summary/i, workOrderTitle], [/description/i, 'Replace the drain-valve seal.'], [/asset/i, `Air compressor ${RUN}`], [/assign|technician|worker/i, people.technician!.name.split(' ')[0]!], [/priority/i, 'high'], [/type/i, 'REACTIVE']],
-          /^(create|save|submit)/i,
-        );
         await survivesReload(supervisor, recorder, workOrderTitle, 'A new work order');
-        return note;
+        return `North unit ${northUnitId}; assignee ${technicianEmail}`;
       });
     } else workOrderTitle = '';
     const southWorkOrderTitle = `South plant pump check ${RUN}`;

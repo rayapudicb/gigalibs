@@ -149,6 +149,8 @@ export function windowSource(builderFor) {
   const REQUEST_REF = lookup('request-ref', 'cmms-requests');
   const SPACE_REF = lookup('space-ref', 'cmms-spaces');
   const CLASSIFICATION_REF = lookup('classification-ref', 'cmms-classifications');
+  // WI-OI-120bu (F2): store the platform user id (subject), not a free-text login.
+  const TECHNICIAN_REF = lookup('technician-ref', 'workspace-members');
 
   const windows = {};
 
@@ -169,7 +171,10 @@ export function windowSource(builderFor) {
     field(WO, 'priority', 'Priority', 'SELECT', { required: true, ref: 'priorities' }),
     field(WO, 'status', 'Status', 'SELECT', { readOnly: true, ref: 'work-order-statuses' }),
     field(WO, 'asset-id', 'Asset', 'REFERENCE', { ref: 'asset-ref' }),
-    field(WO, 'assigned-to', 'Assigned technician', 'TEXT', { help: 'Login of the technician assigned to execute this work order.' }),
+    field(WO, 'assigned-to', 'Assigned technician', 'REFERENCE', {
+      ref: 'technician-ref',
+      help: 'Member who will execute this work order (must hold execute-own in this unit).',
+    }),
     field(WO, 'due-at', 'Due date', 'DATETIME'),
     field(WO, 'estimated-hours', 'Estimated hours', 'NUMBER', { scale: 1 }),
     field(WO, 'requires-signature', 'Requires signature', 'BOOLEAN'),

@@ -168,13 +168,14 @@
           "fieldKey": "assigned-to",
           "entityKey": "cmms.work-orders",
           "label": "Assigned technician",
-          "type": "TEXT",
+          "type": "REFERENCE",
           "required": false,
           "readOnly": false,
           "isSystemLocked": false,
           "classification": "INTERNAL",
           "maskOnDisplay": false,
-          "helpText": "Login of the technician assigned to execute this work order."
+          "referenceKey": "technician-ref",
+          "helpText": "Member who will execute this work order (must hold execute-own in this unit)."
         },
         {
           "fieldKey": "due-at",
@@ -1038,7 +1039,7 @@
                   "fieldKey": "assigned-to",
                   "position": 7,
                   "span": 4,
-                  "componentKey": "text-input",
+                  "componentKey": "lookup",
                   "sectionKey": "planning"
                 },
                 {
