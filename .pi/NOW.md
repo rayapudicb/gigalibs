@@ -14,7 +14,7 @@ keeps the full rules.
 
 **Owner, 2026-10-21 — Option 1 (dev first):** Finish CMMS in **main worktree only**; **no release/deploy** until Phase A is done. Runbook: [CMMS-DEV-THEN-DEPLOY.md](handoff/CMMS-DEV-THEN-DEPLOY.md). Logs: `tee /tmp/gigalibs-verify.log`, journey board `e2e/test-results/journey/index.html`.
 
-**Next dev task:** [WI-OI-120bq](tasks/WI-OI-120bq.md) — finance proof bootstrap in git; wire remaining WI-OI-094–118 scripts + `pnpm verify` with `PROOF_DATABASE_URL`.
+**Next dev task:** [WI-OI-120bq](tasks/WI-OI-120bq.md) — legacy finance proofs **7/7 PASS** after bootstrap (2026-10-21); **next:** `pnpm verify` with `PROOF_DATABASE_URL`, then `test:minimal-p2p-o2c` / F2.9 / re-review.
 **120gd** product **Built** (`9eb14717`, journey **`i76bgm`** = **4** stage-5 blockers until **5180** `cmms-api` refresh;
 proof only). **T3** [WI-OI-120ad](tasks/WI-OI-120ad.md) in **Review**. **No push** until owner says. Leave maps/auth/softphone unstaged.
 

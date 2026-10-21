@@ -1,6 +1,6 @@
 # WI-OI-120bq: make Table 2 releasable — fix the Security review findings
 
-- **Status:** Built (2026-10-21): Committed **`b85a4244`**, **`0116525e`**. **Evidence:** F2.7 **26/26**, U12 **28/28**, U2 **39/39**, U19a **70/70**, S16 conversion **PASS**; migration SQL tests **8/8** via vitest (Inventory **000007** + vitest include). **2026-10-21:** relay + migration vitest **27/27**; `verify-inventory-finance-relay.mjs` **23/23**; `verify-inventory-finance-posting-reconciliation.mjs` **13/13** (Finance subledger/inbox, Inventory finance-inbox, mig **12–15** / **7–9**). **2026-10-21 (120bq dev):** `bootstrap-finance-proof-database.mjs` + `verify.mjs` step installs Finance mig **15** on `PROOF_DATABASE_URL`; `verify-financial-operations.mjs` mig check + relay settle **text** id; WI-OI-094 **PASS** on isolated `gigalibs_finance_proof` @ **5441**. **Open:** Claude re-review, F2.9, remaining legacy finance proofs on same bootstrap, `test:minimal-p2p-o2c` (org bootstrap flake on test stack). Implementer: Cursor. Reviewer: Claude Code.
+- **Status:** Built (2026-10-21): Committed **`b85a4244`**, **`0116525e`**. **Evidence:** F2.7 **26/26**, U12 **28/28**, U2 **39/39**, U19a **70/70**, S16 conversion **PASS**; migration SQL tests **8/8** via vitest (Inventory **000007** + vitest include). **2026-10-21:** relay + migration vitest **27/27**; `verify-inventory-finance-relay.mjs` **23/23**; `verify-inventory-finance-posting-reconciliation.mjs` **13/13** (Finance subledger/inbox, Inventory finance-inbox, mig **12–15** / **7–9**). **2026-10-21 (120bq dev):** `bootstrap-finance-proof-database.mjs` + `verify.mjs` step (commit **`ad706e76`**). **Legacy finance proofs ALL PASS** on fresh `gigalibs_finance_proof` @ **5441** after bootstrap: WI-OI-094 through **118** (7 scripts, one chained run). **Open:** full `pnpm verify` (needs `PROOF_DATABASE_URL`), `test:minimal-p2p-o2c`, Claude re-review, F2.9. Implementer: Cursor. Reviewer: Claude Code.
 - **Work item:** WI-OI-120 (Table 2; ADR-0007, ADR-0013, ADR-0033 D3).
 - **Size:** L.
 - **Source:** [TABLE-2-SECURITY-REVIEW-2026-10-20.md](../work/TABLE-2-SECURITY-REVIEW-2026-10-20.md) — findings H1–H3,
@@ -24,9 +24,10 @@
 
 ## Done when
 
-- [ ] Every fix above has its test, red before and green after.
+- [x] Every fix above has its test, red before and green after (relay/migration vitest + F2.3/F2.2 unit certs).
 - [ ] `pnpm verify` passes, including `audit:layers`, `audit:production-data` and migration pins; only the other
-      session's `audit:design-tokens` files may fail.
+      session's `audit:design-tokens` files may fail. **Legacy finance slice:** bootstrap + 7 scripts **PASS** when
+      `PROOF_DATABASE_URL` points at a dedicated DB (e.g. `gigalibs_finance_proof` on **5441**).
 - [ ] On the isolated `gigalibs-test` stack, fresh database, images built by `build-test-stack-images.sh`: two
       products with different standard costs are received, posted and reconciled; a receipt with no standard cost is
       rejected, the cost is added, the retry posts it, and the period then closes; `pnpm test:minimal-p2p-o2c` and the
