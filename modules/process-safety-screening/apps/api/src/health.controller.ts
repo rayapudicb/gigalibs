@@ -9,7 +9,11 @@ export class HealthController {
   /** Liveness: the process answers; it never touches dependencies. */
   @Get('live')
   live() {
-    return { status: 'ok', service: 'gigalibs-process-safety-screening-api', timestamp: new Date().toISOString() };
+    return {
+      status: 'ok',
+      service: 'gigalibs-process-safety-screening-api',
+      timestamp: new Date().toISOString(),
+    };
   }
 
   /** Readiness: the schema is exactly at the image contract and the runtime role is least-privileged. */

@@ -34,10 +34,11 @@
     "service": "module-host",
     "port": 4790,
     "schema": "gigalibs_speed",
-    "migrationVersion": 1,
+    "migrationVersion": 2,
     "audience": "gigalibs-process-safety-screening-api",
     "appendOnlyTables": [
-      "audit_events"
+      "audit_events",
+      "results"
     ],
     "readOnlyTables": [
       "auth_revocation_events"

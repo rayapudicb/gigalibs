@@ -1896,6 +1896,144 @@ export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGat
         }
       },
       {
+        "template": "v1/criteria-sets",
+        "pattern": "^v1/criteria-sets$",
+        "methods": {
+          "GET": "speed.routes.read",
+          "POST": "speed.settings.manage"
+        }
+      },
+      {
+        "template": "v1/criteria-sets/{id}",
+        "pattern": "^v1/criteria-sets/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "GET": "speed.routes.read"
+        }
+      },
+      {
+        "template": "v1/criteria-sets/{id}/put-in-force",
+        "pattern": "^v1/criteria-sets/[0-9a-fA-F-]{36}/put-in-force$",
+        "methods": {
+          "POST": "speed.settings.manage"
+        }
+      },
+      {
+        "template": "v1/substances",
+        "pattern": "^v1/substances$",
+        "methods": {
+          "GET": "speed.routes.read",
+          "POST": "speed.substances.write"
+        }
+      },
+      {
+        "template": "v1/substances/{id}",
+        "pattern": "^v1/substances/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "GET": "speed.routes.read",
+          "PATCH": "speed.substances.write"
+        }
+      },
+      {
+        "template": "v1/substances/{id}/archive",
+        "pattern": "^v1/substances/[0-9a-fA-F-]{36}/archive$",
+        "methods": {
+          "POST": "speed.substances.write"
+        }
+      },
+      {
+        "template": "v1/routes",
+        "pattern": "^v1/routes$",
+        "methods": {
+          "GET": "speed.routes.read",
+          "POST": "speed.routes.write"
+        }
+      },
+      {
+        "template": "v1/routes/{id}",
+        "pattern": "^v1/routes/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "GET": "speed.routes.read",
+          "PATCH": "speed.routes.write"
+        }
+      },
+      {
+        "template": "v1/routes/{id}/archive",
+        "pattern": "^v1/routes/[0-9a-fA-F-]{36}/archive$",
+        "methods": {
+          "POST": "speed.routes.write"
+        }
+      },
+      {
+        "template": "v1/routes/{id}/recompute",
+        "pattern": "^v1/routes/[0-9a-fA-F-]{36}/recompute$",
+        "methods": {
+          "POST": "speed.engines.run"
+        }
+      },
+      {
+        "template": "v1/routes/{id}/results",
+        "pattern": "^v1/routes/[0-9a-fA-F-]{36}/results$",
+        "methods": {
+          "GET": "speed.routes.read"
+        }
+      },
+      {
+        "template": "v1/routes/{id}/steps",
+        "pattern": "^v1/routes/[0-9a-fA-F-]{36}/steps$",
+        "methods": {
+          "POST": "speed.routes.write"
+        }
+      },
+      {
+        "template": "v1/steps/{id}",
+        "pattern": "^v1/steps/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "PATCH": "speed.routes.write"
+        }
+      },
+      {
+        "template": "v1/steps/{id}/move",
+        "pattern": "^v1/steps/[0-9a-fA-F-]{36}/move$",
+        "methods": {
+          "POST": "speed.routes.write"
+        }
+      },
+      {
+        "template": "v1/steps/{id}/remove",
+        "pattern": "^v1/steps/[0-9a-fA-F-]{36}/remove$",
+        "methods": {
+          "POST": "speed.routes.write"
+        }
+      },
+      {
+        "template": "v1/steps/{id}/materials",
+        "pattern": "^v1/steps/[0-9a-fA-F-]{36}/materials$",
+        "methods": {
+          "POST": "speed.routes.write"
+        }
+      },
+      {
+        "template": "v1/steps/{id}/conditions",
+        "pattern": "^v1/steps/[0-9a-fA-F-]{36}/conditions$",
+        "methods": {
+          "PUT": "speed.routes.write"
+        }
+      },
+      {
+        "template": "v1/materials/{id}",
+        "pattern": "^v1/materials/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "PATCH": "speed.routes.write"
+        }
+      },
+      {
+        "template": "v1/materials/{id}/remove",
+        "pattern": "^v1/materials/[0-9a-fA-F-]{36}/remove$",
+        "methods": {
+          "POST": "speed.routes.write"
+        }
+      },
+      {
         "template": "v1/organization/versions/{id}/units",
         "pattern": "^v1/organization/versions/[0-9a-fA-F-]{36}/units$",
         "methods": {

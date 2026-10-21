@@ -37,7 +37,11 @@ describe('panel contracts', () => {
     expect('panels' in tab).toBe(false);
   });
 
-  it('parses the generated catalogue (empty until a module registers a panel)', () => {
-    expect(modulePanelCatalogue()).toEqual([]);
+  it('parses the generated catalogue: every panel a module registers, bound to a record, under its own prefix', () => {
+    const catalogue = modulePanelCatalogue();
+    for (const panel of catalogue) expect(panel.binding).toBe('RECORD');
+    const keys = catalogue.map((panel) => panel.componentKey);
+    expect(new Set(keys).size).toBe(keys.length);
+    expect([...keys].sort()).toEqual(keys);
   });
 });

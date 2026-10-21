@@ -29,6 +29,16 @@
           "isVersioned": true,
           "isAuditLogged": true,
           "isSoftDeletable": false
+        },
+        {
+          "entityKey": "speed.routes",
+          "moduleKey": "process-safety-screening",
+          "label": "Routes",
+          "ownership": "MODULE_CORE",
+          "primaryKeyField": "id",
+          "isVersioned": true,
+          "isAuditLogged": true,
+          "isSoftDeletable": false
         }
       ],
       "fields": [
@@ -149,9 +159,108 @@
           "isSystemLocked": false,
           "classification": "INTERNAL",
           "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "project-id",
+          "entityKey": "speed.routes",
+          "label": "Project",
+          "type": "REFERENCE",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "project-ref"
+        },
+        {
+          "fieldKey": "name",
+          "entityKey": "speed.routes",
+          "label": "Route",
+          "type": "TEXT",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "route-version",
+          "entityKey": "speed.routes",
+          "label": "Version",
+          "type": "INTEGER",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "status",
+          "entityKey": "speed.routes",
+          "label": "Status",
+          "type": "SELECT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "route-statuses"
+        },
+        {
+          "fieldKey": "author-subject",
+          "entityKey": "speed.routes",
+          "label": "Author",
+          "type": "REFERENCE",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "member-ref"
+        },
+        {
+          "fieldKey": "step-count",
+          "entityKey": "speed.routes",
+          "label": "Steps",
+          "type": "INTEGER",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "steps-passing-gate",
+          "entityKey": "speed.routes",
+          "label": "Steps passing the gate",
+          "type": "INTEGER",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "updated-at",
+          "entityKey": "speed.routes",
+          "label": "Last change",
+          "type": "DATETIME",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
         }
       ],
-      "relationships": [],
+      "relationships": [
+        {
+          "relationshipKey": "project-routes",
+          "sourceEntityKey": "speed.projects",
+          "targetEntityKey": "speed.routes",
+          "type": "ONE_TO_MANY",
+          "foreignKeyField": "project-id"
+        }
+      ],
       "references": [
         {
           "referenceKey": "site-ref",
@@ -164,12 +273,36 @@
           "resolverKey": "workspace-members"
         },
         {
+          "referenceKey": "project-ref",
+          "referenceType": "SEARCH_LOOKUP",
+          "resolverKey": "speed-projects",
+          "createWith": {
+            "moduleKey": "process-safety-screening",
+            "surfaceKey": "speed-projects",
+            "permission": "speed.routes.write"
+          }
+        },
+        {
           "referenceKey": "project-statuses",
           "referenceType": "VALUE_LIST",
           "staticValues": [
             {
               "value": "ACTIVE",
               "label": "Active"
+            },
+            {
+              "value": "ARCHIVED",
+              "label": "Archived"
+            }
+          ]
+        },
+        {
+          "referenceKey": "route-statuses",
+          "referenceType": "VALUE_LIST",
+          "staticValues": [
+            {
+              "value": "DRAFT",
+              "label": "Draft"
             },
             {
               "value": "ARCHIVED",
@@ -294,6 +427,57 @@
                   "sectionKey": "record"
                 }
               ]
+            },
+            {
+              "tabKey": "routes",
+              "label": "Routes",
+              "position": 1,
+              "level": 1,
+              "targetEntityKey": "speed.routes",
+              "sections": [],
+              "fields": [
+                {
+                  "fieldKey": "name",
+                  "position": 0,
+                  "span": 4,
+                  "componentKey": "text-input",
+                  "readOnlyCondition": {
+                    "field": "status",
+                    "operator": "IS_NOT_NULL"
+                  }
+                },
+                {
+                  "fieldKey": "route-version",
+                  "position": 1,
+                  "span": 2,
+                  "componentKey": "number-input"
+                },
+                {
+                  "fieldKey": "status",
+                  "position": 2,
+                  "span": 2,
+                  "componentKey": "select"
+                },
+                {
+                  "fieldKey": "step-count",
+                  "position": 3,
+                  "span": 2,
+                  "componentKey": "number-input"
+                },
+                {
+                  "fieldKey": "steps-passing-gate",
+                  "position": 4,
+                  "span": 2,
+                  "componentKey": "number-input"
+                },
+                {
+                  "fieldKey": "updated-at",
+                  "position": 5,
+                  "span": 3,
+                  "componentKey": "datetime-input"
+                }
+              ],
+              "parentRelationshipKey": "project-routes"
             }
           ],
           "searchFields": [

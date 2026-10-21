@@ -543,6 +543,7 @@ same keys (`i18n`). `{…}` marks a parameter.
 | `THM_HESS_FORMATION_ENTHALPY_MISSING` | Missing ΔHf° for: {materials}. |
 | `THM_CONDITIONS_REQUIRED` | Enter Tp, Cp and the accumulation. |
 | `DATA_GAP` | Not computed: the screening criteria have no value for {missing}. |
+| `SPEED_NO_CRITERIA_IN_FORCE` | No screening criteria are in force in this workspace. An administrator imports a cited set and puts it in force. |
 | TD24 basis `KINETICS` | Decomposition kinetics |
 | TD24 basis `ENTERED` | Entered value |
 | TD24 basis `CONSERVATIVE_ONSET` | DSC onset − {offset} K (conservative, BRL-06) |
@@ -550,6 +551,24 @@ same keys (`i18n`). `{…}` marks a parameter.
 | TD24 basis `MISSING` | Missing |
 | OB `NOT_APPLICABLE` | n/a: classify by reactivity |
 | OB `INVALID_FORMULA` | Invalid formula |
+
+## 4.2a API refusals the screens explain (S4, WI-OI-120bx)
+
+The module API refuses a change with a code; the workbench shows these texts and, below them, the issues the server
+named (engine codes from §4.1 and §4.2). Any other refusal shows the server's message.
+
+| Code | Text |
+| --- | --- |
+| `SPEED_VERSION_CONFLICT` | Someone else changed this first. The route has been reloaded; make the change again. |
+| `SPEED_ROUTE_NOT_DRAFT` | Only a draft route changes. |
+| `SPEED_PROJECT_ARCHIVED` | The project is archived and its routes can no longer change. |
+| `SPEED_MATERIAL_INVALID` | The material does not fit its role (`SPEED_COEFFICIENT_NOT_FOR_ROLE`, `SPEED_BY_PRODUCT_NO_CHARGE`). |
+| `SPEED_CONDITIONS_OUT_OF_RANGE` | A condition is outside the range the criteria allow (issues: `INPUT_OUT_OF_RANGE`). |
+| `SPEED_FORMULA_INVALID` | The formula is not valid (issues: the §4.1 formula codes). |
+| `SPEED_CAS_INVALID` | The CAS number check digit does not match. |
+| `SPEED_SUBSTANCE_IN_USE` | A route uses this substance, so its formula stays; create a new substance for the new formula. |
+| `SPEED_SUBSTANCE_ARCHIVED` | The substance is archived; choose an active one. |
+| `SPEED_CRITERIA_INCOMPLETE`, `SPEED_CRITERIA_UNCITED`, `SPEED_CRITERIA_CITATION_UNKNOWN` | Criteria import: a value is missing, a value has no citation, or a citation names no value (issues: the paths). |
 
 ## 4.3 Stoessel class actions (content: the process safety specialist confirms before release)
 

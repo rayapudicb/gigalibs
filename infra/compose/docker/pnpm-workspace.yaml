@@ -40,6 +40,7 @@ packages:
   - packages/db-migrations-runtime
   - packages/document-lifecycle
   - packages/posting-rules
+  - packages/process-safety-engines
   - packages/i18n
   - packages/jobs
   - packages/logger

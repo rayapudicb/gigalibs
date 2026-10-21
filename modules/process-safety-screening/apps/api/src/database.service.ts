@@ -18,7 +18,10 @@ export class DatabaseService extends ModuleDatabase {
       expectedMigrationVersion: config.expectedMigrationVersion,
       definerFunctions: [],
       tenantBinding: 'set-local',
-      poolOptions: { statement_timeout: 15_000, application_name: 'gigalibs-process-safety-screening-api' },
+      poolOptions: {
+        statement_timeout: 15_000,
+        application_name: 'gigalibs-process-safety-screening-api',
+      },
     });
   }
 }

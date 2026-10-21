@@ -1,13 +1,10 @@
 import 'reflect-metadata';
 import { randomUUID } from 'node:crypto';
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import type { CreateSpeedProjectInputV1 } from '@gigalibs/contracts';
 import {
   type ModuleCommandContext,
   ModuleIdempotencyStore,
   type ModulePrincipal,
-  type OrganizationClaim,
   type RecordDispatcher,
 } from '@gigalibs/module-sdk';
 import {
@@ -16,59 +13,30 @@ import {
   HttpException,
   NotFoundException,
 } from '@nestjs/common';
-import pg from 'pg';
+import type pg from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { DatabaseService } from '../database.service.js';
+import { CriteriaService } from '../criteria/criteria.service.js';
+import { RoutesService } from '../routes/routes.service.js';
+import { SubstancesService } from '../substances/substances.service.js';
+import {
+  type SpeedDatabase,
+  TREE,
+  adminUrl,
+  principal,
+  seedOrganization,
+  speedDatabase,
+  units,
+} from '../test-support/speed-database.js';
 import { speedRecordDispatcher } from './projects-record-adapters.js';
 import { ProjectsService } from './projects.service.js';
 
 // WI-OI-120bw (SPEED S3): projects on PostgreSQL 16, as the least-privileged runtime role the module migration runner
-// creates, under forced row-level security. Opt-in, and only against a local database named speed_proof (never the UAT
-// instance on port 5440): start a throwaway PostgreSQL and set SPEED_TEST_DATABASE_URL to its admin URL.
-const adminUrl = process.env.SPEED_TEST_DATABASE_URL;
-if (adminUrl) {
-  const parsed = new URL(adminUrl);
-  if (
-    !['127.0.0.1', 'localhost'].includes(parsed.hostname) ||
-    parsed.port === '5440' ||
-    parsed.pathname !== '/speed_proof'
-  ) {
-    throw new Error(
-      'Refusing the SPEED proof: only a local speed_proof database (not port 5440) is allowed.',
-    );
-  }
-}
+// creates, under forced row-level security (opt-in; see test-support/speed-database.ts).
 
-const MIGRATION = join(
-  import.meta.dirname,
-  '../../../../db/migrations/000001_speed_foundation.up.sql',
-);
-const ROLE = 'speed_runtime_proof';
 const TENANT_A = `tenant-a-${randomUUID().slice(0, 8)}`;
 const TENANT_B = `tenant-b-${randomUUID().slice(0, 8)}`;
-const TREE = 'tree-version-1';
 const READ = ['speed:read', 'speed.routes.read'];
 const WRITE = [...READ, 'speed.routes.write'];
-
-function principal(
-  tenantId: string,
-  subject: string,
-  permissions: readonly string[],
-  organization?: OrganizationClaim,
-): ModulePrincipal {
-  return {
-    tenantId,
-    subject,
-    sessionId: `session-${subject}`,
-    authVersion: 1,
-    permissions,
-    roles: [],
-    persona: 'TENANT_ADMIN' as ModulePrincipal['persona'],
-    ...(organization ? { organization } : {}),
-    departmentScope: { mode: 'ALL' },
-    placeScope: { mode: 'ALL' },
-  } as ModulePrincipal;
-}
 
 const command = (who: ModulePrincipal): ModuleCommandContext => ({
   principal: who,
@@ -96,98 +64,33 @@ async function rejection(work: Promise<unknown>): Promise<{ type: unknown; code:
 }
 
 describe.skipIf(!adminUrl)('SPEED projects on PostgreSQL (WI-OI-120bw)', () => {
+  let speed: SpeedDatabase;
   let admin: pg.Client;
-  let database: DatabaseService;
   let projects: ProjectsService;
   let records: RecordDispatcher;
-  let runtimeUrl: string;
   // A tenant-wide administrator in each tenant, and two site members in tenant A.
   const adminA = principal(TENANT_A, 'admin-a', WRITE);
   const adminB = principal(TENANT_B, 'admin-b', WRITE);
-  const units = (roots: string[]): OrganizationClaim => ({
-    mode: 'UNITS',
-    tree_version: TREE,
-    read_roots: roots,
-    write_roots: roots,
-  });
   const northChemist = principal(TENANT_A, 'chemist-north', WRITE, units(['north']));
   const northReader = principal(TENANT_A, 'reader-north', READ, units(['north']));
 
   beforeAll(async () => {
-    admin = new pg.Client({ connectionString: adminUrl });
-    await admin.connect();
-    await admin.query('DROP SCHEMA IF EXISTS gigalibs_speed CASCADE');
-    await admin.query(`DROP ROLE IF EXISTS ${ROLE}`);
-    await admin.query(readFileSync(MIGRATION, 'utf8'));
-    // The runtime role as run-module-migrations.mjs creates it: no superuser, no BYPASSRLS, audit append-only.
-    const password = randomUUID().replaceAll('-', '');
-    await admin.query(`CREATE ROLE ${ROLE} LOGIN PASSWORD '${password}' NOSUPERUSER NOBYPASSRLS`);
-    await admin.query(`GRANT USAGE ON SCHEMA gigalibs_speed TO ${ROLE}`);
-    await admin.query(
-      `GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA gigalibs_speed TO ${ROLE}`,
-    );
-    await admin.query(`GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA gigalibs_speed TO ${ROLE}`);
-    await admin.query(
-      `REVOKE INSERT, UPDATE, DELETE, TRUNCATE ON gigalibs_speed.schema_migrations FROM ${ROLE}`,
-    );
-    await admin.query(
-      `REVOKE INSERT, UPDATE, DELETE, TRUNCATE ON gigalibs_speed.auth_revocation_events FROM ${ROLE}`,
-    );
-    await admin.query(
-      `REVOKE UPDATE, DELETE, TRUNCATE ON gigalibs_speed.audit_events FROM ${ROLE}`,
-    );
-    // Tenant A's organization in force: a site group holding North and South, and a plant group that holds no records.
-    await admin.query(
-      `INSERT INTO gigalibs_speed.org_replica_versions (tenant_id, version_id, tree_id, tree_kind, version_number, checksum, status, unit_count, ready_at)
-       VALUES ($1, $2, 'tree-1', 'PRIMARY', 1, $3, 'READY', 3, now())`,
-      [TENANT_A, TREE, `sha256:${'0'.repeat(64)}`],
-    );
-    for (const [unit, parent, holds, order] of [
-      ['sites', null, false, 0],
-      ['north', 'sites', true, 1],
-      ['south', 'sites', true, 2],
-    ] as const) {
-      await admin.query(
-        `INSERT INTO gigalibs_speed.org_replica_units (tenant_id, version_id, unit_id, parent_unit_id, code, name, sort_order, status, holds_records, type_code)
-         VALUES ($1, $2, $3, $4, $3, $3, $5, 'ACTIVE', $6, $7)`,
-        [TENANT_A, TREE, unit, parent, order, holds, holds ? 'SITE' : 'REGION'],
-      );
-    }
-    for (const [ancestor, descendant, depth] of [
-      ['sites', 'sites', 0],
-      ['north', 'north', 0],
-      ['south', 'south', 0],
-      ['sites', 'north', 1],
-      ['sites', 'south', 1],
-    ] as const) {
-      await admin.query(
-        `INSERT INTO gigalibs_speed.org_replica_closure (tenant_id, version_id, ancestor_unit_id, descendant_unit_id, depth) VALUES ($1, $2, $3, $4, $5)`,
-        [TENANT_A, TREE, ancestor, descendant, depth],
-      );
-    }
-    const runtime = new URL(adminUrl as string);
-    runtime.username = ROLE;
-    runtime.password = password;
-    runtimeUrl = runtime.toString();
-    database = new DatabaseService({
-      databaseUrl: runtimeUrl,
-      databasePoolSize: 4,
-      expectedMigrationVersion: 1,
-    } as never);
-    // Readiness as the module host runs it: the schema exactly at migration 1, the role neither superuser nor BYPASSRLS.
-    await database.onModuleInit();
-    projects = new ProjectsService(database);
+    speed = await speedDatabase('projects');
+    admin = speed.admin;
+    await seedOrganization(admin, TENANT_A);
+    projects = new ProjectsService(speed.database);
     records = speedRecordDispatcher(
-      { projects },
-      new ModuleIdempotencyStore(database, { retentionDays: 7 }),
+      {
+        projects,
+        substances: new SubstancesService(speed.database),
+        routes: new RoutesService(speed.database, new CriteriaService(speed.database)),
+      },
+      new ModuleIdempotencyStore(speed.database, { retentionDays: 7 }),
     );
   });
 
   afterAll(async () => {
-    await database?.onModuleDestroy();
-    await admin?.query('DROP SCHEMA IF EXISTS gigalibs_speed CASCADE');
-    await admin?.query(`DROP ROLE IF EXISTS ${ROLE}`);
-    await admin?.end();
+    await speed?.close();
   });
 
   const audit = async (projectId: string) =>
@@ -354,24 +257,16 @@ describe.skipIf(!adminUrl)('SPEED projects on PostgreSQL (WI-OI-120bw)', () => {
         projects.archive(command(adminA), project.id, { version: 2, reason: 'again' }),
       ),
     ).toEqual({ type: ForbiddenException, code: 'SPEED_PROJECT_ARCHIVED' });
-    const runtime = new pg.Client({ connectionString: runtimeUrl });
-    await runtime.connect();
-    try {
-      await runtime.query('BEGIN');
-      await runtime.query(`SELECT set_config('app.tenant_id', $1, true)`, [TENANT_A]);
+    await speed.asRuntime(TENANT_A, async (runtime) => {
       await expect(
         runtime.query('DELETE FROM gigalibs_speed.projects WHERE id = $1', [project.id]),
       ).rejects.toMatchObject({ code: '55000' });
-      await runtime.query('ROLLBACK');
-      await runtime.query('BEGIN');
-      await runtime.query(`SELECT set_config('app.tenant_id', $1, true)`, [TENANT_A]);
+    });
+    await speed.asRuntime(TENANT_A, async (runtime) => {
       await expect(
         runtime.query('UPDATE gigalibs_speed.audit_events SET action = $1', ['TAMPERED']),
       ).rejects.toMatchObject({ code: '42501' });
-      await runtime.query('ROLLBACK');
-    } finally {
-      await runtime.end();
-    }
+    });
   });
 
   it('lists with search, status filter, sorting and paging', async () => {

@@ -30,6 +30,17 @@ spec:
       - route: /speed
         component: SpeedWorkspace
         sessionPermissions: true
+    # Registered panels (WI-OI-120bs): the dictionary places them on record tabs; each draws for the record it is shown with.
+    panels:
+      - componentKey: speed.route-summary
+        binding: RECORD
+        props:
+          compact: { type: BOOLEAN }
+      - componentKey: speed.gate-workbench
+        binding: RECORD
+        props:
+          # The reasons a chemist chooses from with every change (FR-AUD-01), separated by "|"; configurable per workspace.
+          changeReasons: { type: STRING, required: true }
   api:
     application: apps/api
     port: 4790
@@ -61,7 +72,8 @@ spec:
   runtime:
     generated: true
     hosting: host
-    appendOnlyTables: [audit_events]
+    # Results are immutable: a recompute adds a row (NFR-10).
+    appendOnlyTables: [audit_events, results]
     readOnlyTables: [auth_revocation_events]
   catalog:
     - key: process-safety-screening
@@ -125,5 +137,24 @@ spec:
       - { path: 'v1/projects', GET: speed.routes.read, POST: speed.routes.write }
       - { path: 'v1/projects/{id}', GET: speed.routes.read, PATCH: speed.routes.write }
       - { path: 'v1/projects/{id}/archive', POST: speed.routes.write }
+      - { path: 'v1/criteria-sets', GET: speed.routes.read, POST: speed.settings.manage }
+      - { path: 'v1/criteria-sets/{id}', GET: speed.routes.read }
+      - { path: 'v1/criteria-sets/{id}/put-in-force', POST: speed.settings.manage }
+      - { path: 'v1/substances', GET: speed.routes.read, POST: speed.substances.write }
+      - { path: 'v1/substances/{id}', GET: speed.routes.read, PATCH: speed.substances.write }
+      - { path: 'v1/substances/{id}/archive', POST: speed.substances.write }
+      - { path: 'v1/routes', GET: speed.routes.read, POST: speed.routes.write }
+      - { path: 'v1/routes/{id}', GET: speed.routes.read, PATCH: speed.routes.write }
+      - { path: 'v1/routes/{id}/archive', POST: speed.routes.write }
+      - { path: 'v1/routes/{id}/recompute', POST: speed.engines.run }
+      - { path: 'v1/routes/{id}/results', GET: speed.routes.read }
+      - { path: 'v1/routes/{id}/steps', POST: speed.routes.write }
+      - { path: 'v1/steps/{id}', PATCH: speed.routes.write }
+      - { path: 'v1/steps/{id}/move', POST: speed.routes.write }
+      - { path: 'v1/steps/{id}/remove', POST: speed.routes.write }
+      - { path: 'v1/steps/{id}/materials', POST: speed.routes.write }
+      - { path: 'v1/steps/{id}/conditions', PUT: speed.routes.write }
+      - { path: 'v1/materials/{id}', PATCH: speed.routes.write }
+      - { path: 'v1/materials/{id}/remove', POST: speed.routes.write }
       - { path: 'v1/organization/versions/{id}/units', POST: 'organization:activate' }
       - { path: 'v1/organization/versions/{id}/complete', POST: 'organization:activate' }

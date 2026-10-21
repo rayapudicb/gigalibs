@@ -152,12 +152,13 @@ describe('metadata panels at publish (WI-OI-120bs)', () => {
     expect(canonicalJson(plain.manifest?.views)).not.toContain('"panels"');
   });
 
-  it('leaves every window a module ships unchanged: no panels key in any compiled view', async () => {
+  it('compiles every window a module ships; a window that places no panel has no panels key', async () => {
     const { moduleWindowBaselines, modulePanelCatalogue } = await import('@gigalibs/contracts');
     for (const baseline of moduleWindowBaselines()) {
       const result = compileDictionaryPackage(baseline.definition.dictionary, { moduleBaseline: true, panelCatalogue: modulePanelCatalogue() });
       expect(result.findings).toEqual([]);
-      expect(canonicalJson(result.manifest?.views)).not.toContain('"panels"');
+      const placesPanels = baseline.definition.dictionary.views.some((view) => view.tabs.some((tab) => tab.panels !== undefined));
+      if (!placesPanels) expect(canonicalJson(result.manifest?.views)).not.toContain('"panels"');
     }
   });
 });

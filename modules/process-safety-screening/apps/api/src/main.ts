@@ -19,10 +19,16 @@ async function bootstrap(): Promise<void> {
   });
   app.enableShutdownHooks();
   await app.listen(config.apiPort, config.apiHost);
-  Logger.log(`SPEED Process Safety Screening API is accepting connections on ${config.apiHost}:${config.apiPort}`, 'Bootstrap');
+  Logger.log(
+    `SPEED Process Safety Screening API is accepting connections on ${config.apiHost}:${config.apiPort}`,
+    'Bootstrap',
+  );
 }
 
 bootstrap().catch((error: unknown) => {
-  new Logger('Bootstrap').error('SPEED Process Safety Screening API failed to start.', error instanceof Error ? error.stack : undefined);
+  new Logger('Bootstrap').error(
+    'SPEED Process Safety Screening API failed to start.',
+    error instanceof Error ? error.stack : undefined,
+  );
   process.exitCode = 1;
 });

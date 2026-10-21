@@ -11,24 +11,22 @@ import {
   type ModuleCommandContext,
   type ModulePrincipal,
   type OrganizationAccess,
-  OrganizationReplica,
-  OrganizationScopeRefusal,
-  OrganizationVersionPendingError,
-  assertOrganizationWrite,
-  assertOwningUnit,
-  moduleErrors,
-  organizationAccess,
-  organizationReadCondition,
   recordMutation,
 } from '@gigalibs/module-sdk';
-import { ForbiddenException, Injectable, ServiceUnavailableException } from '@nestjs/common';
-import type pg from 'pg';
+import { Injectable } from '@nestjs/common';
+import {
+  type Client,
+  assertSite,
+  assertSiteWrite,
+  readableSite,
+  resolveAccess,
+} from '../access.js';
+import { changes, likePattern } from '../audit.js';
 import { SCHEMA, TOPIC } from '../config.js';
 import { DatabaseService } from '../database.service.js';
+import { errors, refuse } from '../errors.js';
 
-export const errors = moduleErrors('SPEED', 'SPEED');
-
-type Client = pg.PoolClient;
+export { errors };
 
 const COLUMNS = `id, code, name, site_unit_id, owner_subject, notes, status, version, created_by, created_at, updated_at,
   archived_by, archived_at`;
@@ -77,19 +75,6 @@ const AUDITED: readonly (keyof SpeedProjectV1)[] = [
   'status',
 ];
 
-/** Field by field, what a change did: `{ name: { from, to } }` (FR-AUD-01). */
-function changes(
-  before: SpeedProjectV1 | null,
-  after: SpeedProjectV1,
-): Record<string, { from: unknown; to: unknown }> {
-  const changed: Record<string, { from: unknown; to: unknown }> = {};
-  for (const field of AUDITED) {
-    const from = before ? before[field] : null;
-    if (from !== after[field]) changed[field] = { from, to: after[field] };
-  }
-  return changed;
-}
-
 /** Sortable columns, by the name the list query uses; nothing else reaches ORDER BY. */
 const SORT: Readonly<Record<string, string>> = {
   code: 'lower(p.code)',
@@ -115,25 +100,21 @@ export interface ProjectPageQuery {
  */
 @Injectable()
 export class ProjectsService {
-  private readonly organization = new OrganizationReplica(SCHEMA);
-
   constructor(private readonly database: DatabaseService) {}
 
   list(principal: ModulePrincipal, query: ProjectPageQuery): Promise<SpeedProjectPageV1> {
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
-      const access = await this.access(client, principal);
+      const access = await resolveAccess(client, principal);
       const values: unknown[] = [principal.tenantId];
       const bind = (value: unknown) => {
         values.push(value);
         return `$${values.length}`;
       };
       const conditions = ['p.tenant_id = $1'];
-      const scope = organizationReadCondition(access, 'p.site_unit_id', bind);
+      const scope = readableSite(access, 'p.site_unit_id', values);
       if (scope) conditions.push(scope);
       if (query.search) {
-        const slot = bind(
-          `%${query.search.toLocaleLowerCase('en-US').replace(/[\\%_]/g, (character) => `\\${character}`)}%`,
-        );
+        const slot = bind(likePattern(query.search));
         conditions.push(`(lower(p.code) LIKE ${slot} OR lower(p.name) LIKE ${slot})`);
       }
       if (query.status) conditions.push(`p.status = ${bind(query.status)}`);
@@ -164,7 +145,7 @@ export class ProjectsService {
   get(principal: ModulePrincipal, id: string): Promise<SpeedProjectV1> {
     errors.assertUuid(id, 'id');
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
-      const access = await this.access(client, principal);
+      const access = await resolveAccess(client, principal);
       return toProject(await this.readable(client, principal, access, id));
     });
   }
@@ -176,18 +157,15 @@ export class ProjectsService {
   ): Promise<{ project: SpeedProjectV1; replayed: boolean }> {
     const { tenantId, subject } = context.principal;
     return this.database.withTenantTransaction(tenantId, async (client) => {
-      const access = await this.access(client, context.principal);
+      const access = await resolveAccess(client, context.principal);
       const values: unknown[] = [tenantId, input.requestKey];
-      const scope = organizationReadCondition(access, 'site_unit_id', (value) => {
-        values.push(value);
-        return `$${values.length}`;
-      });
+      const scope = readableSite(access, 'site_unit_id', values);
       const replay = await client.query<ProjectRow>(
         `SELECT ${COLUMNS} FROM ${SCHEMA}.projects WHERE tenant_id = $1 AND request_key = $2${scope ? ` AND ${scope}` : ''}`,
         values,
       );
       if (replay.rows[0]) return { project: toProject(replay.rows[0]), replayed: true };
-      await this.assertSite(client, context.principal, access, input.siteUnitId);
+      await assertSite(client, context.principal, access, input.siteUnitId);
       let row: ProjectRow | undefined;
       try {
         const inserted = await client.query<ProjectRow>(
@@ -217,7 +195,7 @@ export class ProjectsService {
         aggregateType: 'project',
         aggregateId: project.id,
         aggregateVersion: project.version,
-        payload: { changes: changes(null, project), reason: null },
+        payload: { changes: changes(null, project, AUDITED), reason: null },
       });
       return { project, replayed: false };
     });
@@ -231,13 +209,13 @@ export class ProjectsService {
     errors.assertUuid(id, 'id');
     const { tenantId } = context.principal;
     return this.database.withTenantTransaction(tenantId, async (client) => {
-      const access = await this.access(client, context.principal);
+      const access = await resolveAccess(client, context.principal);
       const before = toProject(await this.readable(client, context.principal, access, id, true));
-      this.assertWrite(access, before.siteUnitId);
+      assertSiteWrite(access, before.siteUnitId);
       if (before.status === 'ARCHIVED') this.refuseArchived();
       if (before.version !== input.version) return errors.versionConflict('The project');
       if (input.siteUnitId !== undefined && input.siteUnitId !== before.siteUnitId) {
-        await this.assertSite(client, context.principal, access, input.siteUnitId);
+        await assertSite(client, context.principal, access, input.siteUnitId);
       }
       const updated = await client.query<ProjectRow>(
         `UPDATE ${SCHEMA}.projects
@@ -264,7 +242,7 @@ export class ProjectsService {
         aggregateType: 'project',
         aggregateId: project.id,
         aggregateVersion: project.version,
-        payload: { changes: changes(before, project), reason: input.reason },
+        payload: { changes: changes(before, project, AUDITED), reason: input.reason },
       });
       return project;
     });
@@ -278,9 +256,9 @@ export class ProjectsService {
     errors.assertUuid(id, 'id');
     const { tenantId, subject } = context.principal;
     return this.database.withTenantTransaction(tenantId, async (client) => {
-      const access = await this.access(client, context.principal);
+      const access = await resolveAccess(client, context.principal);
       const before = toProject(await this.readable(client, context.principal, access, id, true));
-      this.assertWrite(access, before.siteUnitId);
+      assertSiteWrite(access, before.siteUnitId);
       if (before.status === 'ARCHIVED') this.refuseArchived();
       if (before.version !== input.version) return errors.versionConflict('The project');
       const archived = await client.query<ProjectRow>(
@@ -298,9 +276,41 @@ export class ProjectsService {
         aggregateType: 'project',
         aggregateId: project.id,
         aggregateVersion: project.version,
-        payload: { changes: changes(before, project), reason: input.reason },
+        payload: { changes: changes(before, project, AUDITED), reason: input.reason },
       });
       return project;
+    });
+  }
+
+  /** Active projects the member may read, for a picker, by code or name. */
+  lookup(
+    principal: ModulePrincipal,
+    request: { search?: string; ids?: readonly string[]; limit: number },
+  ): Promise<{ value: string; label: string }[]> {
+    return this.database.withTenantTransaction(principal.tenantId, async (client) => {
+      const access = await resolveAccess(client, principal);
+      const values: unknown[] = [principal.tenantId];
+      const conditions = ['tenant_id = $1'];
+      const scope = readableSite(access, 'site_unit_id', values);
+      if (scope) conditions.push(scope);
+      if (request.ids?.length) {
+        values.push([...request.ids]);
+        conditions.push(`id = ANY($${values.length}::uuid[])`);
+      } else {
+        conditions.push(`status = 'ACTIVE'`);
+        if (request.search) {
+          values.push(likePattern(request.search));
+          conditions.push(
+            `(lower(code) LIKE $${values.length} OR lower(name) LIKE $${values.length})`,
+          );
+        }
+      }
+      values.push(request.limit);
+      const rows = await client.query<{ id: string; code: string; name: string }>(
+        `SELECT id, code, name FROM ${SCHEMA}.projects WHERE ${conditions.join(' AND ')} ORDER BY lower(code), id LIMIT $${values.length}`,
+        values,
+      );
+      return rows.rows.map((row) => ({ value: row.id, label: `${row.code} ${row.name}` }));
     });
   }
 
@@ -313,10 +323,7 @@ export class ProjectsService {
     lock = false,
   ): Promise<ProjectRow> {
     const values: unknown[] = [principal.tenantId, id];
-    const scope = organizationReadCondition(access, 'site_unit_id', (value) => {
-      values.push(value);
-      return `$${values.length}`;
-    });
+    const scope = readableSite(access, 'site_unit_id', values);
     const result = await client.query<ProjectRow>(
       `SELECT ${COLUMNS} FROM ${SCHEMA}.projects WHERE tenant_id = $1 AND id = $2${scope ? ` AND ${scope}` : ''}${lock ? ' FOR UPDATE' : ''}`,
       values,
@@ -324,59 +331,7 @@ export class ProjectsService {
     return result.rows[0] ?? errors.notFound('The project');
   }
 
-  private async access(client: Client, principal: ModulePrincipal): Promise<OrganizationAccess> {
-    try {
-      return await organizationAccess(
-        this.organization,
-        client,
-        principal.tenantId,
-        principal.organization ?? { mode: 'TENANT' },
-      );
-    } catch (error) {
-      if (error instanceof OrganizationVersionPendingError)
-        throw new ServiceUnavailableException({ code: error.code, message: error.message });
-      throw error;
-    }
-  }
-
-  /** The site must be a unit that holds records in the organization in force, and one the member may write. */
-  private async assertSite(
-    client: Client,
-    principal: ModulePrincipal,
-    access: OrganizationAccess,
-    siteUnitId: string,
-  ): Promise<void> {
-    try {
-      await assertOwningUnit(
-        this.organization,
-        client,
-        principal.tenantId,
-        access,
-        'UNIT',
-        siteUnitId,
-      );
-    } catch (error) {
-      if (error instanceof OrganizationScopeRefusal)
-        throw new ForbiddenException({ code: error.code, message: error.message });
-      throw error;
-    }
-    this.assertWrite(access, siteUnitId);
-  }
-
-  private assertWrite(access: OrganizationAccess, siteUnitId: string): void {
-    try {
-      assertOrganizationWrite(access, siteUnitId);
-    } catch (error) {
-      if (error instanceof OrganizationScopeRefusal)
-        throw new ForbiddenException({ code: error.code, message: error.message });
-      throw error;
-    }
-  }
-
   private refuseArchived(): never {
-    throw new ForbiddenException({
-      code: 'SPEED_PROJECT_ARCHIVED',
-      message: 'The project is archived and can no longer change.',
-    });
+    return refuse('SPEED_PROJECT_ARCHIVED', 'The project is archived and can no longer change.');
   }
 }

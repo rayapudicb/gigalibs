@@ -15,8 +15,15 @@ import { type ExecutionContext, ForbiddenException, UnauthorizedException } from
 import { describe, expect, it } from 'vitest';
 import { AuthorizationGuard } from './authorization.js';
 import { AUDIENCE, MODULE_KEY, runtimeConfigProvider } from './config.js';
+import { CriteriaController } from './criteria/criteria.controller.js';
 import type { DatabaseService } from './database.service.js';
 import { ProjectsController } from './projects/projects.controller.js';
+import {
+  MaterialsController,
+  RoutesController,
+  StepsController,
+} from './routes/routes.controller.js';
+import { SubstancesController } from './substances/substances.controller.js';
 
 const pem = {
   privateKeyEncoding: { type: 'pkcs8', format: 'pem' },
@@ -34,7 +41,7 @@ const environment = {
   SPEED_CORS_ORIGINS: 'http://127.0.0.1:5180',
   SPEED_DATABASE_URL: 'postgresql://runtime:secret@postgres:5432/gigalibs',
   SPEED_DATABASE_POOL_SIZE: '10',
-  SPEED_EXPECTED_MIGRATION_VERSION: '1',
+  SPEED_EXPECTED_MIGRATION_VERSION: '2',
   SPEED_PLATFORM_CONTEXT_PUBLIC_KEY_BASE64: publicKeyBase64,
 };
 
@@ -75,6 +82,72 @@ function authorize(handler: keyof ProjectsController, overrides: Partial<Platfor
   return new AuthorizationGuard(config as never, database).canActivate(context);
 }
 
+/** Signs a context with `scopes` and asks the real guard whether it may call `controller.handler`. */
+function guarded(controller: { prototype: object }, handler: string, scopes: string[]) {
+  const request = {
+    headers: {
+      authorization: `Bearer ${signPlatformContextToken(claims({ granted_scopes: scopes }), signer.privateKey)}`,
+    },
+  };
+  const context = {
+    switchToHttp: () => ({ getRequest: () => request }),
+    getHandler: () => (controller.prototype as Record<string, unknown>)[handler],
+    getClass: () => controller,
+  } as unknown as ExecutionContext;
+  const database = { isContextRevoked: async () => false } as unknown as DatabaseService;
+  const config = { platformContextPublicKey: signer.publicKey, platformContextAudience: AUDIENCE };
+  return new AuthorizationGuard(config as never, database).canActivate(context);
+}
+
+// WI-OI-120bx (SPEED S4, plan v1.4 §3.2 and §4.4): each route's permission, by role. Reading needs speed.routes.read;
+// changing a route's content speed.routes.write; substances speed.substances.write; recomputing speed.engines.run;
+// importing or putting criteria in force speed.settings.manage (the SPEED Administrator).
+const ROUTE_PERMISSIONS: readonly [{ prototype: object; name: string }, string, string][] = [
+  [CriteriaController, 'list', 'speed.routes.read'],
+  [CriteriaController, 'get', 'speed.routes.read'],
+  [CriteriaController, 'import', 'speed.settings.manage'],
+  [CriteriaController, 'putInForce', 'speed.settings.manage'],
+  [SubstancesController, 'list', 'speed.routes.read'],
+  [SubstancesController, 'get', 'speed.routes.read'],
+  [SubstancesController, 'create', 'speed.substances.write'],
+  [SubstancesController, 'update', 'speed.substances.write'],
+  [SubstancesController, 'archive', 'speed.substances.write'],
+  [RoutesController, 'list', 'speed.routes.read'],
+  [RoutesController, 'get', 'speed.routes.read'],
+  [RoutesController, 'results', 'speed.routes.read'],
+  [RoutesController, 'create', 'speed.routes.write'],
+  [RoutesController, 'update', 'speed.routes.write'],
+  [RoutesController, 'archive', 'speed.routes.write'],
+  [RoutesController, 'addStep', 'speed.routes.write'],
+  [RoutesController, 'recompute', 'speed.engines.run'],
+  [StepsController, 'update', 'speed.routes.write'],
+  [StepsController, 'move', 'speed.routes.write'],
+  [StepsController, 'remove', 'speed.routes.write'],
+  [StepsController, 'addMaterial', 'speed.routes.write'],
+  [StepsController, 'replaceConditions', 'speed.routes.write'],
+  [MaterialsController, 'update', 'speed.routes.write'],
+  [MaterialsController, 'remove', 'speed.routes.write'],
+];
+
+describe('SPEED authorization on every S4 route (WI-OI-120bx)', () => {
+  it.each(
+    ROUTE_PERMISSIONS.map(
+      ([controller, handler, permission]) =>
+        [`${controller.name}.${handler}`, controller, handler, permission] as const,
+    ),
+  )('%s needs %s', async (_name, controller, handler, permission) => {
+    await expect(guarded(controller, handler, [permission])).resolves.toBe(true);
+    const others = [
+      'speed.routes.read',
+      'speed.routes.write',
+      'speed.substances.write',
+      'speed.engines.run',
+      'speed.settings.manage',
+    ].filter((scope) => scope !== permission);
+    await expect(guarded(controller, handler, others)).rejects.toBeInstanceOf(ForbiddenException);
+  });
+});
+
 describe('SPEED runtime configuration', () => {
   const load = (overrides: Record<string, string> = {}) => {
     const saved = { ...process.env };
@@ -88,7 +161,7 @@ describe('SPEED runtime configuration', () => {
   it('loads the SPEED_* variables', () => {
     expect(load()).toMatchObject({
       platformContextAudience: AUDIENCE,
-      expectedMigrationVersion: 1,
+      expectedMigrationVersion: 2,
     });
   });
   it('refuses another audience', () => {

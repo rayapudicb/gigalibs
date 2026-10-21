@@ -1136,6 +1136,9 @@ importers:
       '@gigalibs/module-sdk':
         specifier: workspace:*
         version: link:../../../../packages/module-sdk
+      '@gigalibs/process-safety-engines':
+        specifier: workspace:*
+        version: link:../../../../packages/process-safety-engines
       '@nestjs/common':
         specifier: ^11.2.3
         version: 11.2.3(reflect-metadata@0.2.2)(rxjs@7.8.2)
@@ -1182,6 +1185,9 @@ importers:
       '@gigalibs/contracts':
         specifier: workspace:*
         version: link:../../../packages/contracts
+      '@gigalibs/i18n':
+        specifier: workspace:*
+        version: link:../../../packages/i18n
     devDependencies:
       '@types/react':
         specifier: 19.2.18
