@@ -1,7 +1,11 @@
 # Security review request: WI-OI-120cd, SPEED on UAT
 
-- **Release:** `release/speed-uat` at `d039b970` (worktree `gigalibs-release-speed`), on top of UAT's previous release
-  `9734dca9`. Review the range `9734dca9..d039b970`: five commits, `d039b970` (WI-OI-120ce: the module SDK's
+- **Release:** `release/speed-uat` at `a1eb8242` (worktree `gigalibs-release-speed`), on top of UAT's previous release
+  `9734dca9`. Review the range `9734dca9..a1eb8242`: six commits, `a1eb8242` (WI-OI-120ce, second round: SPEED's
+  `speed-sites` lookup reads its organization replica (sites in force, as the member may write; unit ids validated by
+  pattern); the metadata window keeps typed text and trims on save, hides system fields on create, and draws one
+  searchable picker; pack files read in the browser with ExcelJS 4.4.0 (MIT, already in the lockfile); a lab-only
+  Playwright suite), `d039b970` (WI-OI-120ce: the module SDK's
   `LookupResolver` gains an opt-in `idPattern` for lookup ids, UUID still the default; the metadata window gains opt-in
   `onChanged` and a panel `refresh`; SPEED's pack import runs in the browser through the existing import API, which
   still checks permissions and citations; please look at the lookup id validation), `a1765ce6` (the kernel's subject context accepts a

@@ -1,8 +1,9 @@
 # WI-OI-120ce: SPEED usable on UAT as the prototype shows it — end-to-end check, pack import, starter data
 
-- **Status:** In progress: committed (owner "commit", 2026-10-22): SPEED branch `bd0f63df` + `c4b5c43b`, release
-  `d039b970` on `release/speed-uat`; release images building; then backup, deploy check, owner deploy. Implementer:
-  Claude Code.
+- **Status:** In progress: second round committed (owner "commit", 2026-10-22): SPEED branch `dc99f1bb`, release
+  `a1eb8242` on `release/speed-uat` (802 tests pass there, database tests included); release images building; then
+  backup, deploy check, owner deploy. First round: SPEED `bd0f63df` + `c4b5c43b`, release `d039b970` (deployed).
+  Implementer: Claude Code.
 - **Work item:** WI-OI-120bn (SPEED Stage 1, R1). Follows WI-OI-120cd (SPEED on UAT).
 - **Owner, 2026-10-21:** "can you check the mock html correctly what is the master data actions, can you test end to
   end to fix the issues and correct flow that needs to be working; can you add the required data as need to start a
@@ -90,6 +91,49 @@ is "data gap: no criteria in force"), a library set in force (else thermal and i
   the lab builds kept 3 versions per repository, and two lab versions plus two releases made four. The running
   `a1765ce6c275` (9) is untouched and becomes the rollback of this release. Space: my superseded lab images removed,
   build cache older than 1 h cleared; the release builds with the guard's floor at 30 GB (48 GB free at start).
+
+- 2026-10-22, the owner on 5180 after deploying `d039b970`: could not create a project. Found (read-only) and fixed on
+  the SPEED branch (uncommitted):
+  1. **"That unit is not in the organization in force":** the workspace's organization in force (version 1, activated
+     2026-10-19 by an end-to-end run) holds only "Main site E2EEU4LJQ" and "Main site E2EEVJQFT"; the owner's "SB1
+     (STore1)" is a workspace unit outside it, yet the Site picker (the platform's `organization-units` lookup)
+     offered it. SPEED now has its own `speed-sites` lookup from its organization replica: active units of the version
+     in force that hold records, those the member may write (a saved project's site is named for readers). PostgreSQL
+     test. To use SB1 the owner adds it to the organization (draft, second approval, activate, send to modules).
+  2. **Spaces could not be typed (every module):** the window converted each keystroke with `valueFromInput`, which
+     trims, so a typed trailing space vanished. Text is kept as typed and trimmed once on save (`valueWhileTyping`,
+     `submittedValues`).
+  3. **Create forms showed the system's fields disabled** (Status, Created by, Created, Last change): left out of
+     create forms (`createFormFields`), shown on the record.
+  4. **Every picker was a search box above a separate list (every module):** one searchable field (an accessible
+     combobox: type, arrow keys and Enter, Escape, clear), keeping "Add new" and "Open".
+  5. **Pack files:** the import box explains the Excel layout, downloads each starter pack and a blank template as
+     Excel, and reads Excel (.xlsx) or JSON, checked against the import contract before sending. ExcelJS 4.4.0 (MIT,
+     already used by the CMMS and Analytics APIs), loaded only when used; the lockfile gains only its two importer
+     entries. Round-trip tests: each starter pack written as a workbook reads back unchanged.
+  - The "service unavailable" (503) messages the owner saw: no lasting cause found (SPEED holds the version in force,
+    READY); most likely the services restarting during the deploy. The end-to-end suite watches for 5xx.
+- End-to-end suite (`e2e/speed-lab.config.ts`, `e2e/specs/speed/`): runs only against speed-lab (refuses any other
+  target, 5180 included); signs in through the real sign-in page; 27 cases: packs (starter download, JSON and Excel
+  import, refusals, duplicate version, put in force), projects (create form, sites in force, required fields, typing
+  with spaces, duplicate code, list), substances (library link by name, molar mass, bad formula, bad CAS, list),
+  routes (from the project, balanced and unbalanced steps, tiles and counts, thermal class, High interaction and its
+  control, dossier files and exports), audit and outcomes. HTML report and JSON results.
+- Images: the remaining 5 images of `190480718a16` (two releases back; UAT runs `d039b970791c`, rollback
+  `a1765ce6c275` with all 9) removed for space.
+
+- 2026-10-22 ~09:15–09:18 (local): every Docker image not used by a container was deleted while my lab build ran:
+  UAT's rollback release `a1765ce6c275` (all 9), the previous lab set and three new lab images. Not my scripts: the
+  only image removal in the build tooling is the disk guard's, which logged none; old stopped containers remain, so
+  not a whole-system prune; the pattern matches a manual `docker image prune -a` elsewhere. UAT is unaffected
+  (`d039b970791c`, all services healthy, its 9 images present). A rollback to `a1765ce6c275` now first rebuilds it from
+  `release/speed-uat` at `a1765ce6`. The lab images are being rebuilt.
+
+- 2026-10-22, end-to-end suite on speed-lab (build of the uncommitted fixes): **27 of 27 passed** (1 min 48 s; no 5xx).
+  The first runs failed only on the suite's own selectors (a field label also naming its option list, the persona
+  selector's hidden options, the step rail's tabs, datalist values) and one expectation corrected to the engine's
+  behaviour (no Stoessel class without TD24; a cited DSC onset assigns one, as the prototype). Report with every case,
+  its BRD reference and its screenshot: https://claude.ai/artifact/5GjAFyMmCcba35ohiRytMY (private).
 
 ## Done when
 
