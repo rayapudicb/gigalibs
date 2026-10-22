@@ -28,6 +28,7 @@ import {
   speedDatabase,
   units,
 } from '../test-support/speed-database.js';
+import { FIXTURE, PROTOTYPE_PACK } from '../test-support/speed-fixtures.js';
 import { speedRecordDispatcher } from './projects-record-adapters.js';
 import { ProjectsService } from './projects.service.js';
 
@@ -309,6 +310,29 @@ describe.skipIf(!adminUrl)('SPEED projects on PostgreSQL (WI-OI-120bw)', () => {
   });
 
   describe('through the metadata window (record dispatcher)', () => {
+    // WI-OI-120ce: the Substances window shows each link's material name by looking it up by its pack id (L01 …);
+    // the lookup refused every non-UUID id, so the column stayed empty.
+    it('looks up library materials by their pack ids', async () => {
+      const library = new LibraryService(speed.database);
+      const manager = principal(TENANT_A, 'admin-a', [...WRITE, 'speed.settings.manage']);
+      const pack = await library.import(command(manager), {
+        requestKey: randomUUID(),
+        versionLabel: 'prototype-0.1',
+        source: FIXTURE,
+        library: PROTOTYPE_PACK,
+      });
+      await library.putInForce(command(manager), pack.set.id, {
+        version: 1,
+        reason: 'Pilot start',
+      });
+      const options = await records.lookup(adminA, 'speed-library-materials', { ids: 'L01,L19' });
+      expect(options.map((option) => option.value).sort()).toEqual(['L01', 'L19']);
+      expect(
+        (await rejection(records.lookup(adminA, 'speed-library-materials', { ids: 'L01,x;drop' })))
+          .code,
+      ).toBe('RECORD_QUERY_INVALID');
+    });
+
     it("creates with the window's rules: required fields, and the owner defaults to the signed-in user", async () => {
       const key = randomUUID();
       const context = { principal: northChemist, correlationId: randomUUID(), idempotencyKey: key };

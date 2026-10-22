@@ -2,7 +2,8 @@
 
 import type { MetadataPanelProps } from '@gigalibs/configuration-react';
 import type { SpeedRouteDetailV1 } from '@gigalibs/contracts';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useId, useMemo, useState } from 'react';
+import { useRouteChanges } from './hooks.js';
 import { type Translate, speedText } from './messages/index.js';
 import { highInteractions, routeWorstClass, shown } from './screens-model.js';
 import { createSpeedApi } from './speed-api.js';
@@ -96,6 +97,12 @@ export function RouteSummaryPanel({ record, props }: MetadataPanelProps) {
   const [failed, setFailed] = useState(false);
   const routeId = String(record['id'] ?? '');
   const version = record['version'];
+  // WI-OI-120ce: the tiles follow every change the route's other panels make.
+  const [changes, setChanges] = useState(0);
+  const changed = useCallback(() => setChanges((value) => value + 1), []);
+  const source = useId();
+  useRouteChanges(routeId, source, changed);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: another panel's change reloads the tiles.
   useEffect(() => {
     let live = true;
     api.route(routeId).then(
@@ -110,7 +117,7 @@ export function RouteSummaryPanel({ record, props }: MetadataPanelProps) {
     return () => {
       live = false;
     };
-  }, [api, routeId, version]);
+  }, [api, routeId, version, changes]);
   if (failed)
     return (
       <p role="alert" className="text-sm text-ui-fg-error">

@@ -202,7 +202,9 @@ describe('SPEED gate workbench (speed.gate-workbench)', () => {
   it('TC-04: draws the balanced step, its written equation, the balance and the versions of its result', () => {
     const html = workbench(route([balanced]));
     expect(html).toContain('Gate passed');
-    expect(html).toContain('C7H5FO + C7H12O3 → C14H15FO3 + H2O');
+    // The written equation with element counts as subscripts, as in the prototype (WI-OI-120ce).
+    expect(html.replace(/<\/?(sub|span)>/g, '')).toContain('C7H5FO + C7H12O3 → C14H15FO3 + H2O');
+    expect(html).toContain('<span>C</span><sub>7</sub>');
     expect(html).toContain('limited by 4-Fluorobenzaldehyde');
     expect(html).toContain('criteria brd-0.1 (unreviewed)');
     expect(html).toContain('Add step');

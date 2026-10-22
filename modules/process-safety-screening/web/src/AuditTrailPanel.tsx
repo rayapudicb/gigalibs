@@ -42,6 +42,22 @@ export function auditRows(entries: readonly SpeedAuditEntryV1[]): AuditRow[] {
   );
 }
 
+/** Work SPEED does itself (the dossier worker) is recorded as `system:<name>`; it is not a workspace member. */
+export const isSystemActor = (subject: string) => subject.startsWith('system:');
+
+/** A person by name through the member lookup; SPEED's own work by its catalogue label. */
+export function actorLabel(
+  subject: string,
+  names: Readonly<Record<string, string>>,
+  t: Translate,
+): string {
+  if (isSystemActor(subject)) {
+    const key = `speed.audit.system.${subject.slice('system:'.length)}`;
+    return knowsCode(key) ? t(key) : t('speed.audit.system');
+  }
+  return names[subject] ?? subject;
+}
+
 const shown = (value: unknown) =>
   value === null || value === undefined
     ? '—'
@@ -185,9 +201,7 @@ export function AuditTrailView({
                   <td className="whitespace-nowrap pr-3 text-ui-fg-subtle">
                     {new Date(row.entry.occurredAt).toLocaleString()}
                   </td>
-                  <td className="pr-3 text-ui-fg-base">
-                    {names[row.entry.actor] ?? row.entry.actor}
-                  </td>
+                  <td className="pr-3 text-ui-fg-base">{actorLabel(row.entry.actor, names, t)}</td>
                   <td className="pr-3 text-ui-fg-base">{row.entry.action}</td>
                   <td className="pr-3 text-ui-fg-subtle">
                     {row.entry.entityType}
@@ -276,8 +290,9 @@ export function AuditTrailPage() {
     try {
       const loaded = await api.auditEvents(dayRange(applied), pageNumber, PAGE_SIZE);
       setPage(loaded);
+      // Only workspace members go to the member lookup; it refuses SPEED's own `system:` actors.
       const subjects = [...new Set(loaded.items.map((entry) => entry.actor))].filter(
-        (subject) => !(subject in names),
+        (subject) => !(subject in names) && !isSystemActor(subject),
       );
       if (subjects.length) {
         const response = await fetch(

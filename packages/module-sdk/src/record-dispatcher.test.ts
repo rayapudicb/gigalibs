@@ -285,6 +285,20 @@ describe('RecordDispatcher', () => {
     expect(await status(records.lookup(manager, 'unknown', {}))).toBe(404);
   });
 
+  // WI-OI-120ce: a resolver whose values are stable keys (not row ids) declares their format; every other one stays UUID.
+  it("accepts ids in the resolver's declared format only", async () => {
+    const resolve = vi.fn().mockResolvedValue([{ value: 'L01', label: 'Main' }]);
+    const records = new RecordDispatcher(
+      [],
+      [{ key: 'materials', permission: 'inventory:read', idPattern: /^[A-Z][A-Z0-9-]{0,15}$/, resolve }],
+      new MemoryIdempotency(),
+    );
+    expect(await records.lookup(manager, 'materials', { ids: 'L01,R-12' })).toHaveLength(1);
+    expect(resolve).toHaveBeenCalledWith(manager, { ids: ['L01', 'R-12'], limit: 50 });
+    expect(await status(records.lookup(manager, 'materials', { ids: 'L01,drop table' }))).toBe(400);
+    expect(await status(records.lookup(manager, 'materials', { ids: randomUUID() }))).toBe(400);
+  });
+
   it('refuses a misconfigured adapter at start-up', () => {
     const { adapter } = warehouses();
     expect(() => new RecordDispatcher([{ ...adapter, sortFields: ['undeclared'] }], [], new MemoryIdempotency())).toThrow(/not declared/);

@@ -36,6 +36,11 @@ export interface MetadataPanelProps {
   readonly props: Readonly<Record<string, string | number | boolean>>;
   readonly client: RecordClient;
   readonly permissions: readonly string[];
+  /**
+   * WI-OI-120ce: rereads the record quietly (the panel stays mounted), after the panel changed something the record's
+   * own fields show (a route's step count after a step is added, say).
+   */
+  readonly refresh?: () => void;
 }
 
 /** Panel components by component key, supplied by the page that hosts the window (the module's web package). */
@@ -53,6 +58,8 @@ export interface MetadataWindowProps {
   readonly clients?: Readonly<Record<string, RecordClient>>;
   /** WI-OI-120bs: the module's panel components; a placed panel missing here shows as unavailable, never as a gap. */
   readonly panels?: MetadataPanelRegistry;
+  /** WI-OI-120ce: called after an action on one of the window's records succeeds (a page's summary can refresh). */
+  readonly onChanged?: () => void;
 }
 
 /** A window opened from a picker, over the current one: create a record, or open the chosen one. */
@@ -69,6 +76,7 @@ interface WindowEnvironment {
   readonly permissions: readonly string[];
   readonly panels: MetadataPanelRegistry;
   readonly open: (dialog: QuickDialog) => void;
+  readonly changed?: () => void;
 }
 
 const Environment = createContext<WindowEnvironment | null>(null);
@@ -92,7 +100,7 @@ function newKey(): string {
   return globalThis.crypto.randomUUID();
 }
 
-export function MetadataWindow({ manifest, client, permissions, viewKey, clients, panels }: MetadataWindowProps) {
+export function MetadataWindow({ manifest, client, permissions, viewKey, clients, panels, onChanged }: MetadataWindowProps) {
   const model = useMemo(() => windowModel(manifest, viewKey), [manifest, viewKey]);
   const [screen, setScreen] = useState<Screen>({ kind: 'list' });
   const [dialogs, setDialogs] = useState<readonly QuickDialog[]>([]);
@@ -106,8 +114,9 @@ export function MetadataWindow({ manifest, client, permissions, viewKey, clients
         permissions,
         panels: panels ?? {},
         open: (dialog) => setDialogs((current) => [...current, dialog]),
+        ...(onChanged ? { changed: onChanged } : {}),
       },
-    [outer, clients, ownModule, client, permissions, panels],
+    [outer, clients, ownModule, client, permissions, panels, onChanged],
   );
   if (!model) {
     return <Notice tone="error" title="This window cannot be drawn" text="The published definition declares no view with a main tab." />;
@@ -542,12 +551,14 @@ export function MetadataPanel({
   record,
   client,
   permissions,
+  refresh,
 }: {
   panel: PlacedPanel;
   registry: MetadataPanelRegistry;
   record: RecordValues;
   client: RecordClient;
   permissions: readonly string[];
+  refresh?: () => void;
 }) {
   const Component = registry[panel.placement.componentKey];
   if (!Component) {
@@ -559,7 +570,13 @@ export function MetadataPanel({
   }
   return (
     <div data-panel={panel.placement.panelKey}>
-      <Component record={record} props={panel.placement.props} client={client} permissions={permissions} />
+      <Component
+        record={record}
+        props={panel.placement.props}
+        client={client}
+        permissions={permissions}
+        {...(refresh ? { refresh } : {})}
+      />
     </div>
   );
 }
@@ -571,19 +588,21 @@ export function MetadataPanels({
   record,
   client,
   permissions,
+  refresh,
 }: {
   panels: readonly PlacedPanel[];
   registry: MetadataPanelRegistry;
   record: RecordValues;
   client: RecordClient;
   permissions: readonly string[];
+  refresh?: () => void;
 }) {
   if (panels.length === 0) return <p className="text-sm text-ui-fg-muted">Nothing to show here.</p>;
   return (
     <div className="grid grid-cols-12 gap-3">
       {panels.map((panel) => (
         <div key={panel.placement.panelKey} className="col-span-12" style={{ gridColumn: `span ${panel.placement.span} / span ${panel.placement.span}` }}>
-          <MetadataPanel panel={panel} registry={registry} record={record} client={client} permissions={permissions} />
+          <MetadataPanel panel={panel} registry={registry} record={record} client={client} permissions={permissions} {...(refresh ? { refresh } : {})} />
         </div>
       ))}
     </div>
@@ -764,10 +783,20 @@ function RecordDetail({ model, client, permissions, id, onBack }: { model: Windo
   const [notice, setNotice] = useState<{ tone: 'error' | 'info'; text: string } | null>(null);
   const [activeChild, setActiveChild] = useState(model.childTabs[0]?.tabKey);
   const [activeRecordTab, setActiveRecordTab] = useState(model.rootTab.tabKey);
-  const registry = useContext(Environment)?.panels ?? {};
+  const environment = useContext(Environment);
+  const registry = environment?.panels ?? {};
   // WI-OI-120l: while the record is reread after a child change, its actions wait, so they never carry the version
   // from before that change (which answered "someone else changed this record" to the person who made it).
   const [refreshing, setRefreshing] = useState(false);
+  // WI-OI-120g: reread the record quietly, so its version and status stay current for its actions (child changes) and
+  // its fields show what a panel changed (WI-OI-120ce).
+  const reread = useCallback(() => {
+    setRefreshing(true);
+    client
+      .get(entityKey, id)
+      .then((fresh) => setState({ status: 'ready', record: fresh }), () => undefined)
+      .finally(() => setRefreshing(false));
+  }, [client, entityKey, id]);
 
   const load = useCallback(async () => {
     setState({ status: 'loading' });
@@ -793,7 +822,7 @@ function RecordDetail({ model, client, permissions, id, onBack }: { model: Windo
   const child = model.childTabs.find((tab) => tab.tabKey === activeChild);
   const recordTab = model.recordTabs.find((tab) => tab.tabKey === activeRecordTab) ?? model.rootTab;
   const renderPanel = (panel: PlacedPanel) => (
-    <MetadataPanel panel={panel} registry={registry} record={record} client={client} permissions={permissions} />
+    <MetadataPanel panel={panel} registry={registry} record={record} client={client} permissions={permissions} refresh={reread} />
   );
 
   return (
@@ -823,6 +852,7 @@ function RecordDetail({ model, client, permissions, id, onBack }: { model: Windo
                   const result = await client.action(entityKey, String(record.id), actionKey(action, entityKey), { ...parameters, ...read }, newKey());
                   setState({ status: 'ready', record: { ...record, ...result } });
                   setNotice({ tone: 'info', text: `${action.label}: done.` });
+                  environment?.changed?.();
                 }}
                 onFailure={(message) => setNotice({ tone: 'error', text: message })}
               />
@@ -874,7 +904,7 @@ function RecordDetail({ model, client, permissions, id, onBack }: { model: Windo
                 panelSlot={renderPanel}
               />
             ) : (
-              <MetadataPanels panels={placedPanels(recordTab, record, permissions)} registry={registry} record={record} client={client} permissions={permissions} />
+              <MetadataPanels panels={placedPanels(recordTab, record, permissions)} registry={registry} record={record} client={client} permissions={permissions} refresh={reread} />
             )}
           </div>
         </div>
@@ -903,14 +933,7 @@ function RecordDetail({ model, client, permissions, id, onBack }: { model: Windo
               client={client}
               permissions={permissions}
               parentId={String(record.id)}
-              onChanged={() => {
-                // WI-OI-120g: reread the parent quietly, so its version and status stay current for its actions.
-                setRefreshing(true);
-                client
-                  .get(entityKey, String(record.id))
-                  .then((fresh) => setState({ status: 'ready', record: fresh }), () => undefined)
-                  .finally(() => setRefreshing(false));
-              }}
+              onChanged={reread}
             />
           )}
         </div>

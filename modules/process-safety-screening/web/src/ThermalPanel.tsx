@@ -24,6 +24,7 @@ import { useMemo, useState } from 'react';
 import { useRoute, useSetsInForce, useSpeedApi, useSpeedText } from './hooks.js';
 import type { Translate } from './messages/index.js';
 import {
+  type LadderMarker,
   engineCriteria,
   engineLibrary,
   labelPositions,
@@ -59,6 +60,15 @@ const CLASS_TONE = [
   'bg-ui-tag-red-bg',
   'bg-ui-tag-red-bg',
 ];
+// The ladder's lines in the prototype's colours; each line also carries its name and value, so colour is never the only
+// signal.
+const LADDER_STROKE: Readonly<Record<LadderMarker['key'], string>> = {
+  tp: 'stroke-ui-fg-muted',
+  mtsr: 'stroke-ui-tag-orange-icon',
+  mtsrFull: 'stroke-ui-tag-red-icon',
+  mtt: 'stroke-ui-tag-blue-icon',
+  td24: 'stroke-ui-tag-purple-icon',
+};
 
 interface ThermalInputs {
   readonly processTemperatureC: string;
@@ -468,11 +478,12 @@ function ThermalResultView({
           {markers.map((marker, index) => (
             <g key={marker.key}>
               <line
-                x1={52}
-                x2={68}
+                x1={50}
+                x2={70}
                 y1={positions[index]}
                 y2={positions[index]}
-                className="stroke-ui-fg-base"
+                strokeWidth={3}
+                className={LADDER_STROKE[marker.key]}
               />
               <text x={76} y={(positions[index] ?? 0) + 4} className="fill-ui-fg-base text-[11px]">
                 {`${t(`speed.thermal.marker.${marker.key}`, { accumulation })}: ${shown(marker.valueC, 1)} °C`}

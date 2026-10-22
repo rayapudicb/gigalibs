@@ -1,0 +1,578 @@
+{
+  "versionLabel": "Starter 0.1 (unreviewed)",
+  "source": "SPEED design-review prototype starter library v0.1 (unreviewed; BRD 16.2, FR-HAZ-05)",
+  "library": {
+    "materials": [
+      {
+        "id": "L01",
+        "classes": [
+          "organic",
+          "flammable"
+        ],
+        "name": "4-Fluorobenzaldehyde",
+        "casNumber": "403-42-9",
+        "formula": "C7H5FO",
+        "note": "Combustible liquid. Oxidises slowly in air on storage.",
+        "citation": "Supplier SDS, section 10 (stability and reactivity)"
+      },
+      {
+        "id": "L02",
+        "classes": [
+          "organic",
+          "flammable"
+        ],
+        "name": "Methyl isobutyrylacetate",
+        "casNumber": "42558-54-3",
+        "formula": "C7H12O3",
+        "citation": "Supplier SDS, section 10 (stability and reactivity)"
+      },
+      {
+        "id": "L03",
+        "classes": [
+          "amine",
+          "flammable"
+        ],
+        "name": "Piperidine",
+        "casNumber": "110-89-4",
+        "formula": "C5H11N",
+        "note": "Flammable, toxic base. Controlled precursor in some jurisdictions (check locally).",
+        "citation": "Supplier SDS, section 10 (stability and reactivity)"
+      },
+      {
+        "id": "L04",
+        "classes": [
+          "acid",
+          "flammable"
+        ],
+        "name": "Acetic acid",
+        "casNumber": "64-19-7",
+        "formula": "C2H4O2",
+        "citation": "Supplier SDS, section 10 (stability and reactivity)"
+      },
+      {
+        "id": "L05",
+        "classes": [
+          "flammable",
+          "protic",
+          "peroxide-former"
+        ],
+        "name": "Isopropanol",
+        "casNumber": "67-63-0",
+        "formula": "C3H8O",
+        "note": "Listed as a peroxide former on some site lists when concentrated.",
+        "citation": "Supplier SDS, section 10 (stability and reactivity)"
+      },
+      {
+        "id": "L06",
+        "classes": [
+          "protic"
+        ],
+        "name": "Water",
+        "casNumber": "7732-18-5",
+        "formula": "H2O",
+        "citation": "Supplier SDS, section 10 (stability and reactivity)"
+      },
+      {
+        "id": "L07",
+        "classes": [
+          "sulfur",
+          "organic"
+        ],
+        "name": "S-Methylisothiourea",
+        "casNumber": "2986-19-0",
+        "formula": "C2H6N2S",
+        "note": "May release methanethiol (toxic, flammable, strong odour) under basic or hot conditions.",
+        "citation": "Process safety literature (licensed source to be confirmed)"
+      },
+      {
+        "id": "L08",
+        "classes": [
+          "carbonate"
+        ],
+        "name": "Sodium bicarbonate",
+        "casNumber": "144-55-8",
+        "formula": "NaHCO3",
+        "note": "Releases CO2 with acids.",
+        "citation": "Supplier SDS, section 10 (stability and reactivity)"
+      },
+      {
+        "id": "L09",
+        "classes": [
+          "dmso",
+          "organic"
+        ],
+        "name": "Dimethyl sulfoxide",
+        "casNumber": "67-68-5",
+        "formula": "C2H6OS",
+        "note": "Decomposition can be autocatalytic; acids, bases and some salts lower its onset.",
+        "citation": "Process safety literature (licensed source to be confirmed)"
+      },
+      {
+        "id": "L10",
+        "classes": [
+          "acid"
+        ],
+        "name": "Hydrochloric acid",
+        "casNumber": "7647-01-0",
+        "formula": "HCl",
+        "note": "Corrosive. Liberates CO2 from carbonates.",
+        "citation": "Supplier SDS, section 10 (stability and reactivity)"
+      },
+      {
+        "id": "L11",
+        "classes": [
+          "oxidiser"
+        ],
+        "name": "Potassium permanganate",
+        "casNumber": "7722-64-7",
+        "formula": "KMnO4",
+        "note": "Strong oxidiser. Oxidises chloride to chlorine.",
+        "citation": "Supplier SDS, section 10 (stability and reactivity)"
+      },
+      {
+        "id": "L12",
+        "classes": [
+          "flammable",
+          "organic"
+        ],
+        "name": "Acetone",
+        "casNumber": "67-64-1",
+        "formula": "C3H6O",
+        "citation": "Supplier SDS, section 10 (stability and reactivity)"
+      },
+      {
+        "id": "L13",
+        "classes": [],
+        "name": "Manganese dioxide",
+        "casNumber": "1313-13-9",
+        "formula": "MnO2",
+        "note": "Fine solid waste. The filter cake can retain unreacted permanganate.",
+        "citation": "Process safety literature (licensed source to be confirmed)"
+      },
+      {
+        "id": "L14",
+        "classes": [
+          "base"
+        ],
+        "name": "Potassium hydroxide",
+        "casNumber": "1310-58-3",
+        "formula": "KOH",
+        "citation": "Supplier SDS, section 10 (stability and reactivity)"
+      },
+      {
+        "id": "L15",
+        "classes": [
+          "reducer"
+        ],
+        "name": "Sodium bisulfite",
+        "casNumber": "7631-90-5",
+        "formula": "NaHSO3",
+        "note": "Used to quench excess oxidant.",
+        "citation": "Supplier SDS, section 10 (stability and reactivity)"
+      },
+      {
+        "id": "L16",
+        "classes": [
+          "sulfur",
+          "organic"
+        ],
+        "name": "N-Methylmethanesulfonamide",
+        "casNumber": "1184-85-6",
+        "formula": "C2H7NO2S",
+        "citation": "Supplier SDS, section 10 (stability and reactivity)"
+      },
+      {
+        "id": "L17",
+        "classes": [
+          "base"
+        ],
+        "name": "Sodium hydroxide",
+        "casNumber": "1310-73-2",
+        "formula": "NaOH",
+        "note": "Strong base. Dissolution in water is exothermic.",
+        "citation": "Supplier SDS, section 10 (stability and reactivity)"
+      },
+      {
+        "id": "L18",
+        "classes": [
+          "sulfur"
+        ],
+        "name": "Sodium methanesulfinate",
+        "casNumber": "20277-69-4",
+        "formula": "CH3NaO2S",
+        "citation": "Supplier SDS, section 10 (stability and reactivity)"
+      },
+      {
+        "id": "L19",
+        "classes": [
+          "pyrophoric",
+          "water-reactive",
+          "reducer"
+        ],
+        "name": "Diisobutylaluminium hydride",
+        "casNumber": "1191-15-7",
+        "formula": "C8H19Al",
+        "note": "Pyrophoric (neat). Reacts violently with water and protic solvents, releasing isobutane and hydrogen.",
+        "citation": "Supplier SDS, section 10 (stability and reactivity)"
+      },
+      {
+        "id": "L20",
+        "classes": [
+          "flammable",
+          "organic"
+        ],
+        "name": "Toluene",
+        "casNumber": "108-88-3",
+        "formula": "C7H8",
+        "note": "Static accumulator. ICH Q3C class 2.",
+        "citation": "Supplier SDS, section 10 (stability and reactivity)"
+      },
+      {
+        "id": "L21",
+        "classes": [
+          "flammable",
+          "protic"
+        ],
+        "name": "Methanol",
+        "casNumber": "67-56-1",
+        "formula": "CH4O",
+        "note": "ICH Q3C class 2.",
+        "citation": "Supplier SDS, section 10 (stability and reactivity)"
+      },
+      {
+        "id": "L22",
+        "classes": [],
+        "name": "Aluminium hydroxide",
+        "casNumber": "21645-51-2",
+        "formula": "Al(OH)3",
+        "note": "Gelatinous solid; can slow filtration.",
+        "citation": "Process safety literature (licensed source to be confirmed)"
+      },
+      {
+        "id": "L23",
+        "classes": [
+          "flammable",
+          "gas"
+        ],
+        "name": "Isobutane",
+        "casNumber": "75-28-5",
+        "formula": "C4H10",
+        "note": "Flammable gas (bp about −12 °C). Dissolves when cold and is released on warming.",
+        "citation": "Supplier SDS, section 10 (stability and reactivity)"
+      },
+      {
+        "id": "L24",
+        "classes": [],
+        "name": "Potassium sodium tartrate tetrahydrate",
+        "casNumber": "6381-59-5",
+        "formula": "KNaC4H4O6·4H2O",
+        "note": "Used to break aluminium emulsions in work-up.",
+        "citation": "Supplier SDS, section 10 (stability and reactivity)"
+      },
+      {
+        "id": "L25",
+        "classes": [
+          "flammable",
+          "organic"
+        ],
+        "name": "Ethyl acetate",
+        "casNumber": "141-78-6",
+        "formula": "C4H8O2",
+        "citation": "Supplier SDS, section 10 (stability and reactivity)"
+      },
+      {
+        "id": "L26",
+        "classes": [
+          "organic"
+        ],
+        "name": "Route intermediate",
+        "citation": "Classified by the chemist"
+      }
+    ],
+    "rules": [
+      {
+        "id": "R-01",
+        "classA": "base",
+        "classB": "dmso",
+        "severity": "High",
+        "finding": "Strong bases can lower the decomposition onset of DMSO; the decomposition may be autocatalytic.",
+        "control": "DSC and ARC of the actual mixture; keep Tp well below the measured onset; limit hold time at temperature.",
+        "recommendedTest": "DSC_MIXTURE",
+        "citation": "Process safety literature on DMSO mixtures (licensed source to be confirmed)"
+      },
+      {
+        "id": "R-02",
+        "classA": "acid",
+        "classB": "dmso",
+        "severity": "Medium",
+        "finding": "Acids can lower the decomposition onset of DMSO.",
+        "control": "DSC of the mixture before scale-up.",
+        "recommendedTest": "DSC_MIXTURE",
+        "citation": "Process safety literature on DMSO mixtures (licensed source to be confirmed)"
+      },
+      {
+        "id": "R-03",
+        "classA": "oxidiser",
+        "classB": "dmso",
+        "severity": "High",
+        "finding": "DMSO is incompatible with strong oxidisers.",
+        "control": "Test for residual oxidant before any DMSO step.",
+        "citation": "Supplier SDS, section 10 (stability and reactivity)"
+      },
+      {
+        "id": "R-04",
+        "classA": "oxidiser",
+        "classB": "flammable",
+        "severity": "High",
+        "finding": "A strong oxidiser with a flammable solvent: exothermic oxidation of the solvent, and accumulation if a solid oxidant is dosed cold.",
+        "control": "Dose the oxidant in portions under reaction calorimetry, with temperature-controlled addition.",
+        "citation": "Supplier SDS, section 10 (stability and reactivity)"
+      },
+      {
+        "id": "R-05",
+        "classA": "oxidiser",
+        "classB": "organic",
+        "severity": "Medium",
+        "finding": "Exothermic oxidation of organic material.",
+        "control": "Reaction calorimetry with the real dosing mode.",
+        "citation": "Supplier SDS, section 10 (stability and reactivity)"
+      },
+      {
+        "id": "R-06",
+        "classA": "oxidiser",
+        "classB": "acid",
+        "severity": "High",
+        "finding": "Permanganate oxidises chloride to chlorine.",
+        "control": "Remove acid and chloride before the oxidation (in-process control).",
+        "citation": "Supplier SDS, section 10 (stability and reactivity)"
+      },
+      {
+        "id": "R-07",
+        "classA": "oxidiser",
+        "classB": "reducer",
+        "severity": "High",
+        "finding": "A strongly exothermic redox reaction, even when it is the intended quench.",
+        "control": "Controlled, temperature-limited quench with a defined end-point test.",
+        "citation": "Supplier SDS, section 10 (stability and reactivity)"
+      },
+      {
+        "id": "R-08",
+        "classA": "water-reactive",
+        "classB": "protic",
+        "severity": "High",
+        "finding": "A violent reaction releasing flammable gas.",
+        "control": "Controlled quench at low temperature under inert gas; vent sizing for the gas released.",
+        "citation": "Supplier SDS, section 10 (stability and reactivity)"
+      },
+      {
+        "id": "R-09",
+        "classA": "pyrophoric",
+        "classB": "flammable",
+        "severity": "Medium",
+        "finding": "An ignition source for flammable vapour.",
+        "control": "Inert atmosphere; closed transfer.",
+        "citation": "Supplier SDS, section 10 (stability and reactivity)"
+      },
+      {
+        "id": "R-10",
+        "classA": "acid",
+        "classB": "carbonate",
+        "severity": "Medium",
+        "finding": "CO2 evolution and foaming.",
+        "control": "Slow acid addition; check headspace and vent capacity.",
+        "citation": "Supplier SDS, section 10 (stability and reactivity)"
+      },
+      {
+        "id": "R-11",
+        "classA": "acid",
+        "classB": "base",
+        "severity": "Medium",
+        "finding": "Neutralisation exotherm.",
+        "control": "Controlled addition with cooling.",
+        "citation": "Supplier SDS, section 10 (stability and reactivity)"
+      },
+      {
+        "id": "R-12",
+        "classA": "acid",
+        "classB": "amine",
+        "severity": "Low",
+        "finding": "Salt-formation exotherm.",
+        "control": "Standard controls.",
+        "citation": "Supplier SDS, section 10 (stability and reactivity)"
+      }
+    ],
+    "reactionClasses": [
+      {
+        "id": "RC-01",
+        "name": "Knoevenagel condensation (typical range −20 to −60 kJ/mol)",
+        "typicalReactionEnthalpyKJPerMol": -40,
+        "citation": "Illustrative value for design review"
+      },
+      {
+        "id": "RC-02",
+        "name": "Cyclocondensation (isothiourea) (typical range −50 to −120 kJ/mol)",
+        "typicalReactionEnthalpyKJPerMol": -80,
+        "citation": "Illustrative value for design review"
+      },
+      {
+        "id": "RC-03",
+        "name": "Oxidation, sulfide to sulfone (permanganate) (typical range −350 to −550 kJ/mol)",
+        "typicalReactionEnthalpyKJPerMol": -450,
+        "citation": "BRD TC-07 input; illustrative"
+      },
+      {
+        "id": "RC-04",
+        "name": "Substitution by a sulfonamide anion (typical range −80 to −160 kJ/mol)",
+        "typicalReactionEnthalpyKJPerMol": -120,
+        "citation": "Illustrative value for design review"
+      },
+      {
+        "id": "RC-05",
+        "name": "Ester reduction by aluminium hydride, with quench (typical range −250 to −400 kJ/mol)",
+        "typicalReactionEnthalpyKJPerMol": -300,
+        "citation": "Illustrative value for design review"
+      }
+    ],
+    "formationEnthalpies": {
+      "H2O": {
+        "kJPerMol": -285.83,
+        "phase": "liquid",
+        "citation": "Standard reference values (NIST Chemistry WebBook); verify the phase before use"
+      },
+      "CO2": {
+        "kJPerMol": -393.51,
+        "phase": "gas",
+        "citation": "Standard reference values (NIST Chemistry WebBook); verify the phase before use"
+      },
+      "CH4O": {
+        "kJPerMol": -239.2,
+        "phase": "liquid",
+        "citation": "Standard reference values (NIST Chemistry WebBook); verify the phase before use"
+      },
+      "O2": {
+        "kJPerMol": 0,
+        "phase": "gas",
+        "citation": "Element in its standard state"
+      }
+    },
+    "gases": {
+      "CO2": {
+        "id": "carbon-dioxide",
+        "name": "Carbon dioxide",
+        "citation": "Design-review prototype starter list (unreviewed; to be reviewed and cited by the process safety specialist)"
+      },
+      "H2": {
+        "id": "hydrogen",
+        "name": "Hydrogen",
+        "citation": "Design-review prototype starter list (unreviewed; to be reviewed and cited by the process safety specialist)"
+      },
+      "CH4": {
+        "id": "methane",
+        "name": "Methane",
+        "citation": "Design-review prototype starter list (unreviewed; to be reviewed and cited by the process safety specialist)"
+      },
+      "C4H10": {
+        "id": "isobutane",
+        "name": "Isobutane",
+        "citation": "Design-review prototype starter list (unreviewed; to be reviewed and cited by the process safety specialist)"
+      },
+      "HCl": {
+        "id": "hydrogen-chloride",
+        "name": "Hydrogen chloride",
+        "citation": "Design-review prototype starter list (unreviewed; to be reviewed and cited by the process safety specialist)"
+      },
+      "O2S": {
+        "id": "sulfur-dioxide",
+        "name": "Sulfur dioxide",
+        "citation": "Design-review prototype starter list (unreviewed; to be reviewed and cited by the process safety specialist)"
+      },
+      "H3N": {
+        "id": "ammonia",
+        "name": "Ammonia",
+        "citation": "Design-review prototype starter list (unreviewed; to be reviewed and cited by the process safety specialist)"
+      },
+      "CO": {
+        "id": "carbon-monoxide",
+        "name": "Carbon monoxide",
+        "citation": "Design-review prototype starter list (unreviewed; to be reviewed and cited by the process safety specialist)"
+      },
+      "CH4S": {
+        "id": "methanethiol",
+        "name": "Methanethiol",
+        "citation": "Design-review prototype starter list (unreviewed; to be reviewed and cited by the process safety specialist)"
+      },
+      "H2S": {
+        "id": "hydrogen-sulfide",
+        "name": "Hydrogen sulfide",
+        "citation": "Design-review prototype starter list (unreviewed; to be reviewed and cited by the process safety specialist)"
+      },
+      "N2": {
+        "id": "nitrogen",
+        "name": "Nitrogen",
+        "citation": "Design-review prototype starter list (unreviewed; to be reviewed and cited by the process safety specialist)"
+      }
+    },
+    "energeticGroups": [
+      {
+        "id": "nitro",
+        "name": "nitro",
+        "citation": "Design-review prototype starter list (unreviewed; to be reviewed and cited by the process safety specialist)"
+      },
+      {
+        "id": "azide",
+        "name": "azide",
+        "citation": "Design-review prototype starter list (unreviewed; to be reviewed and cited by the process safety specialist)"
+      },
+      {
+        "id": "diazo",
+        "name": "diazo",
+        "citation": "Design-review prototype starter list (unreviewed; to be reviewed and cited by the process safety specialist)"
+      },
+      {
+        "id": "peroxide",
+        "name": "peroxide",
+        "citation": "Design-review prototype starter list (unreviewed; to be reviewed and cited by the process safety specialist)"
+      },
+      {
+        "id": "n-oxide",
+        "name": "N-oxide",
+        "citation": "Design-review prototype starter list (unreviewed; to be reviewed and cited by the process safety specialist)"
+      },
+      {
+        "id": "hydrazine",
+        "name": "hydrazine",
+        "citation": "Design-review prototype starter list (unreviewed; to be reviewed and cited by the process safety specialist)"
+      },
+      {
+        "id": "hydroxylamine",
+        "name": "hydroxylamine",
+        "citation": "Design-review prototype starter list (unreviewed; to be reviewed and cited by the process safety specialist)"
+      },
+      {
+        "id": "nitrate-ester",
+        "name": "nitrate ester",
+        "citation": "Design-review prototype starter list (unreviewed; to be reviewed and cited by the process safety specialist)"
+      },
+      {
+        "id": "perchlorate-chlorate",
+        "name": "perchlorate/chlorate",
+        "citation": "Design-review prototype starter list (unreviewed; to be reviewed and cited by the process safety specialist)"
+      },
+      {
+        "id": "acetylide",
+        "name": "acetylide",
+        "citation": "Design-review prototype starter list (unreviewed; to be reviewed and cited by the process safety specialist)"
+      },
+      {
+        "id": "n-halo",
+        "name": "N-halo",
+        "citation": "Design-review prototype starter list (unreviewed; to be reviewed and cited by the process safety specialist)"
+      },
+      {
+        "id": "tetrazole-triazole",
+        "name": "tetrazole/triazole",
+        "citation": "Design-review prototype starter list (unreviewed; to be reviewed and cited by the process safety specialist)"
+      }
+    ]
+  }
+}

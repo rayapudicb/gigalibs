@@ -140,7 +140,10 @@ export interface LadderMarker {
   readonly valueC: number;
 }
 
-/** The temperature ladder's markers, lowest first; a marker without a value is left out. */
+/**
+ * The temperature ladder's markers, lowest first; a marker without a value is left out, and the full-accumulation MTSR
+ * only when it equals the actual one (accumulation 100 %), so the ladder never shows the same line twice.
+ */
 export function ladderMarkers(
   thermal: ThermalResult,
   processTemperatureC: number | null,
@@ -149,7 +152,11 @@ export function ladderMarkers(
   const markers: { key: LadderMarker['key']; valueC: number | null }[] = [
     { key: 'tp', valueC: processTemperatureC },
     { key: 'mtsr', valueC: thermal.mtsrC },
-    { key: 'mtsrFull', valueC: thermal.mtsrFullAccumulationC },
+    {
+      key: 'mtsrFull',
+      valueC:
+        thermal.mtsrFullAccumulationC === thermal.mtsrC ? null : thermal.mtsrFullAccumulationC,
+    },
     { key: 'mtt', valueC: maximumTechnicalTemperatureC },
     { key: 'td24', valueC: thermal.td24C },
   ];

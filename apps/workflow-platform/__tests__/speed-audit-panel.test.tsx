@@ -1,5 +1,11 @@
 import type { SpeedAuditPageV1, SpeedRouteV1 } from '@gigalibs/contracts';
-import { AuditTrailView, auditRows, dayRange } from '@gigalibs/process-safety-screening-web';
+import {
+  AuditTrailView,
+  actorLabel,
+  auditRows,
+  dayRange,
+  isSystemActor,
+} from '@gigalibs/process-safety-screening-web';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
@@ -90,5 +96,24 @@ describe('SPEED audit trail page (WI-OI-120cc)', () => {
 
   it('explains a refusal in the catalogue’s words', () => {
     expect(render(null, 'SPEED_AUDIT_FORBIDDEN')).toContain(t('SPEED_AUDIT_FORBIDDEN'));
+  });
+
+  // WI-OI-120ce: SPEED's own work (the dossier worker) is not a member; the member lookup refused it with 400.
+  it('names SPEED’s own work from the catalogue and keeps it out of the member lookup', () => {
+    expect(isSystemActor('system:speed-dossier-worker')).toBe(true);
+    expect(isSystemActor('u1')).toBe(false);
+    expect(actorLabel('system:speed-dossier-worker', {}, t)).toBe(
+      'SPEED dossier generator (automatic)',
+    );
+    expect(actorLabel('system:something-new', {}, t)).toBe('SPEED (automatic)');
+    expect(actorLabel('u1', { u1: 'TEST FIXTURE Chemist' }, t)).toBe('TEST FIXTURE Chemist');
+    const withWorker = page(false);
+    const html = render({
+      ...withWorker,
+      items: [{ ...withWorker.items[1], id: 'e3', actor: 'system:speed-dossier-worker' }],
+      total: 1,
+    } as SpeedAuditPageV1);
+    expect(html).toContain('SPEED dossier generator (automatic)');
+    expect(html).not.toContain('system:speed-dossier-worker');
   });
 });

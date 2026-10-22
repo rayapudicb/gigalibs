@@ -244,7 +244,7 @@ export function WriteupParserView({
 }
 
 /** The registered panel `speed.writeup-parser`. */
-export function WriteupParserPanel({ record, props }: MetadataPanelProps) {
+export function WriteupParserPanel({ record, props, refresh }: MetadataPanelProps) {
   const t = useSpeedText();
   const api = useSpeedApi();
   const routeId = String(record['id'] ?? '');
@@ -278,6 +278,7 @@ export function WriteupParserPanel({ record, props }: MetadataPanelProps) {
     try {
       await work(step);
       await reload();
+      refresh?.();
     } catch (error) {
       setNotice(error instanceof SpeedApiError ? error.code : 'SPEED_REQUEST_FAILED');
     } finally {

@@ -24,7 +24,8 @@ const RANK: Readonly<Record<Severity, number>> = { High: 3, Medium: 2, Low: 1 };
 const TONE: Readonly<Record<Severity, string>> = {
   High: 'border-ui-tag-red-border bg-ui-tag-red-bg text-ui-tag-red-text',
   Medium: 'border-ui-tag-orange-border bg-ui-tag-orange-bg text-ui-tag-orange-text',
-  Low: 'border-ui-tag-blue-border bg-ui-tag-blue-bg text-ui-tag-blue-text',
+  // Screen spec §1 (token mapping): Low is green, as in the prototype.
+  Low: 'border-ui-tag-green-border bg-ui-tag-green-bg text-ui-tag-green-text',
 };
 const input =
   'w-full rounded-md border border-ui-border-base bg-ui-bg-field px-2 py-1 text-sm text-ui-fg-base focus:border-ui-border-interactive focus:outline-none';

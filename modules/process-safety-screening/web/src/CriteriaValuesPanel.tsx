@@ -4,11 +4,11 @@ import type { MetadataPanelProps } from '@gigalibs/configuration-react';
 import type { SpeedCriteriaSetV1 } from '@gigalibs/contracts';
 import { useEffect, useState } from 'react';
 import { useSpeedText } from './hooks.js';
-import type { Translate } from './messages/index.js';
+import { type Translate, knowsCode } from './messages/index.js';
 import { SPEED_API, SpeedApiError } from './speed-api.js';
 
 // WI-OI-120by (SPEED S5; screen spec §3.2, panel speed.criteria-values): every value of a criteria set with its citation,
-// by the engine's own keys.
+// by name (WI-OI-120ce) with the engine's own key beside it.
 
 function leaves(value: unknown, path: string[] = []): [string, number][] {
   if (typeof value === 'number') return [[path.join('.'), value]];
@@ -22,6 +22,7 @@ export function CriteriaValuesView({ set, t }: { set: SpeedCriteriaSetV1; t: Tra
     <table aria-label={t('speed.criteria.label')} className="w-full text-sm">
       <thead>
         <tr className="text-left text-ui-fg-subtle">
+          <th className="pr-2 font-medium">{t('speed.criteria.name')}</th>
           <th className="pr-2 font-medium">{t('speed.criteria.key')}</th>
           <th className="pr-2 font-medium">{t('speed.criteria.value')}</th>
           <th className="font-medium">{t('speed.criteria.citation')}</th>
@@ -30,7 +31,10 @@ export function CriteriaValuesView({ set, t }: { set: SpeedCriteriaSetV1; t: Tra
       <tbody>
         {leaves(set.criteria).map(([key, value]) => (
           <tr key={key} className="border-t border-ui-border-base">
-            <td className="pr-2 font-mono text-xs">{key}</td>
+            <td className="pr-2 text-ui-fg-base">
+              {knowsCode(`speed.criteria.path.${key}`) ? t(`speed.criteria.path.${key}`) : key}
+            </td>
+            <td className="pr-2 font-mono text-xs text-ui-fg-subtle">{key}</td>
             <td className="pr-2">{value}</td>
             <td className="text-ui-fg-subtle">{set.citations[key] ?? '—'}</td>
           </tr>

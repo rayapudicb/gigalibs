@@ -18,6 +18,7 @@ import { LibraryEntriesPanel } from './LibraryEntriesPanel.js';
 import { OutcomesPage } from './OutcomesPanel.js';
 import { ObChartPanel } from './ObChartPanel.js';
 import { RouteSummaryPanel } from './RouteSummaryPanel.js';
+import { SetsPage } from './SetsPage.js';
 import { ThermalPanel } from './ThermalPanel.js';
 import { WriteupParserPanel } from './WriteupParserPanel.js';
 
@@ -97,13 +98,39 @@ export function SpeedWorkspace({
         <AuditTrailPage />
       </div>
     );
+  // WI-OI-120ce: the Library and Criteria pages show the set in force and the pack import above every version.
+  if (section === 'library' || section === 'criteria')
+    return (
+      <SetsPage kind={section} permissions={permissions}>
+        {(refresh, changed) => (
+          <SpeedWindow
+            section={section}
+            permissions={permissions}
+            refresh={refresh}
+            onChanged={changed}
+            bare
+          />
+        )}
+      </SetsPage>
+    );
   return <SpeedWindow section={section} permissions={permissions} />;
 }
 
 function SpeedWindow({
   section,
   permissions,
-}: { section: string | undefined; permissions: readonly string[] }) {
+  refresh = 0,
+  onChanged,
+  bare = false,
+}: {
+  section: string | undefined;
+  permissions: readonly string[];
+  /** A new value reloads the window's list (after an import on the page). */
+  refresh?: number;
+  onChanged?: () => void;
+  /** Inside a page that already pads its content. */
+  bare?: boolean;
+}) {
   const client = useMemo(
     () => createRecordClient({ basePath: BASE_PATH, lookupBasePaths: PLATFORM_LOOKUP_BASE_PATHS }),
     [],
@@ -116,17 +143,18 @@ function SpeedWindow({
     surfaceKey: surface,
   });
   return (
-    <div className="space-y-6 p-6">
+    <div className={bare ? 'space-y-6' : 'space-y-6 p-6'}>
       {state.status === 'loading' ? (
         <div aria-busy="true" className="h-40 animate-pulse rounded-lg bg-ui-bg-subtle" />
       ) : state.status === 'ready' ? (
         <MetadataWindow
-          key={surface}
+          key={`${surface}-${refresh}`}
           manifest={state.manifest}
           client={client}
           clients={clients}
           permissions={permissions}
           panels={PANELS}
+          {...(onChanged ? { onChanged } : {})}
         />
       ) : (
         <div role="alert" className="rounded-lg border border-ui-border-base bg-ui-bg-base p-4">

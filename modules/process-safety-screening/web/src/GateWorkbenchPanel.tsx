@@ -11,7 +11,8 @@ import {
   type SpeedStepV1,
   holdsPermission,
 } from '@gigalibs/contracts';
-import { type KeyboardEvent, useCallback, useEffect, useMemo, useState } from 'react';
+import { type KeyboardEvent, useCallback, useEffect, useId, useMemo, useState } from 'react';
+import { announceRouteChange } from './hooks.js';
 import { type Translate, knowsCode, speedText } from './messages/index.js';
 import { SpeedApiError, createSpeedApi } from './speed-api.js';
 import {
@@ -288,25 +289,11 @@ function StepEditor({
       {written ? (
         <p className="text-sm text-ui-fg-base">
           <span className="text-ui-fg-subtle">{`${t('speed.workbench.equation')}: `}</span>
-          <span className="font-mono">{`${written.left} → ${written.right}`}</span>
+          <span className="font-mono">
+            <FormulaText text={`${written.left} → ${written.right}`} />
+          </span>
         </p>
       ) : null}
-      <MaterialsGrid
-        step={step}
-        rows={rows}
-        editable={editable}
-        busy={busy}
-        handlers={handlers}
-        t={t}
-      />
-      <Conditions
-        step={step}
-        editable={editable}
-        busy={busy}
-        handlers={handlers}
-        t={t}
-        warnings={warnings}
-      />
       <div
         aria-live="polite"
         className="space-y-2 rounded-lg border border-ui-border-base bg-ui-bg-base p-3"
@@ -326,27 +313,37 @@ function StepEditor({
           </ul>
         ) : null}
         {gate.balance.length > 0 ? (
-          <table className="text-sm">
-            <thead>
-              <tr className="text-left text-ui-fg-subtle">
-                <th className="pr-4 font-medium">{t('speed.gate.element')}</th>
-                <th className="pr-4 font-medium">{t('speed.gate.in')}</th>
-                <th className="font-medium">{t('speed.gate.out')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {gate.balance.map((row) => (
-                <tr
-                  key={row.element}
-                  className={row.balanced ? 'text-ui-fg-base' : 'text-ui-tag-red-text'}
-                >
-                  <td className="pr-4">{row.element}</td>
-                  <td className="pr-4">{format(row.inAtoms, 3)}</td>
-                  <td>{format(row.outAtoms, 3)}</td>
+          <div className="overflow-x-auto">
+            <table className="text-sm">
+              <tbody>
+                <tr className="text-left text-ui-fg-subtle">
+                  <th scope="row" className="pr-4 font-medium">
+                    {t('speed.gate.element')}
+                  </th>
+                  {gate.balance.map((row) => (
+                    <th key={row.element} scope="col" className="pr-4 font-mono font-medium">
+                      {row.element}
+                    </th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+                {(['in', 'out'] as const).map((side) => (
+                  <tr key={side}>
+                    <th scope="row" className="pr-4 text-left font-medium text-ui-fg-subtle">
+                      {t(`speed.gate.${side}`)}
+                    </th>
+                    {gate.balance.map((row) => (
+                      <td
+                        key={row.element}
+                        className={`pr-4 ${row.balanced ? 'text-ui-fg-base' : 'text-ui-tag-red-text'}`}
+                      >
+                        {format(side === 'in' ? row.inAtoms : row.outAtoms, 3)}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         ) : null}
         {gate.extentMol !== null ? (
           <p className="text-sm text-ui-fg-base">
@@ -371,7 +368,41 @@ function StepEditor({
           </p>
         ) : null}
       </div>
+      <MaterialsGrid
+        step={step}
+        rows={rows}
+        editable={editable}
+        busy={busy}
+        handlers={handlers}
+        t={t}
+      />
+      <Conditions
+        step={step}
+        editable={editable}
+        busy={busy}
+        handlers={handlers}
+        t={t}
+        warnings={warnings}
+      />
     </div>
+  );
+}
+
+/** A formula or equation with element counts as subscripts (C7H5FO → C₇H₅FO); coefficients stay full size. */
+export function FormulaText({ text }: { readonly text: string }) {
+  const parts = text.split(/(?<=[A-Za-z)\]])(\d+)/);
+  return (
+    <>
+      {parts.map((part, index) =>
+        index % 2 === 1 ? (
+          // biome-ignore lint/suspicious/noArrayIndexKey: the parts of one fixed string, never reordered.
+          <sub key={index}>{part}</sub>
+        ) : (
+          // biome-ignore lint/suspicious/noArrayIndexKey: the parts of one fixed string, never reordered.
+          <span key={index}>{part}</span>
+        ),
+      )}
+    </>
   );
 }
 
@@ -435,87 +466,91 @@ function MaterialsGrid({
         <p className="text-sm text-ui-fg-muted">{t('speed.materials.none')}</p>
       ) : null}
       {rows.length > 0 ? (
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="text-left text-ui-fg-subtle">
-              {[
-                'role',
-                'substance',
-                'formula',
-                'coefficient',
-                'mass',
-                'molarMass',
-                'moles',
-                'equivalents',
-              ].map((column) => (
-                <th key={column} className="pr-2 font-medium">
-                  {t(`speed.materials.${column}`)}
-                </th>
-              ))}
-              {editable ? <th /> : null}
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map(({ material, moles, equivalents }) => (
-              <tr key={material.id} className="border-t border-ui-border-base">
-                <td className="pr-2">
-                  <select
-                    className={input}
-                    aria-label={t('speed.materials.role')}
-                    value={material.role}
-                    disabled={!editable || busy}
-                    onChange={(event) =>
-                      roleChange(material, event.target.value as SpeedMaterialRole)
-                    }
-                  >
-                    {SPEED_MATERIAL_ROLES.map((option) => (
-                      <option key={option} value={option}>
-                        {t(`speed.role.${option}`)}
-                      </option>
-                    ))}
-                  </select>
-                </td>
-                <td className="pr-2 text-ui-fg-base">{material.substanceName}</td>
-                <td className="pr-2 font-mono text-ui-fg-base">{material.formula}</td>
-                <td className="pr-2">
-                  <NumberCell
-                    label={t('speed.materials.coefficient')}
-                    value={material.coefficient}
-                    disabled={!editable || busy || !SPEED_EQUATION_ROLES.includes(material.role)}
-                    onCommit={(value) => handlers.updateMaterial(material, { coefficient: value })}
-                  />
-                </td>
-                <td className="pr-2">
-                  <NumberCell
-                    label={t('speed.materials.mass')}
-                    value={material.massG}
-                    disabled={!editable || busy || material.role === 'By-product'}
-                    onCommit={(value) => handlers.updateMaterial(material, { massG: value })}
-                  />
-                </td>
-                <td className="pr-2 text-ui-fg-subtle">{format(material.molarMassGPerMol, 3)}</td>
-                <td className="pr-2 text-ui-fg-subtle">{format(moles, 4)}</td>
-                <td className="pr-2 text-ui-fg-subtle">{format(equivalents, 3)}</td>
-                {editable ? (
-                  <td>
-                    <button
-                      type="button"
-                      className={button}
-                      disabled={busy}
-                      onClick={() => handlers.removeMaterial(material)}
-                    >
-                      {t('speed.materials.remove')}
-                    </button>
-                  </td>
-                ) : null}
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-ui-fg-subtle">
+                {[
+                  'role',
+                  'substance',
+                  'formula',
+                  'coefficient',
+                  'mass',
+                  'molarMass',
+                  'moles',
+                  'equivalents',
+                ].map((column) => (
+                  <th key={column} className="pr-2 font-medium">
+                    {t(`speed.materials.${column}`)}
+                  </th>
+                ))}
+                {editable ? <th /> : null}
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {rows.map(({ material, moles, equivalents }) => (
+                <tr key={material.id} className="border-t border-ui-border-base">
+                  <td className="pr-2">
+                    <select
+                      className={`${input} min-w-[8.5rem]`}
+                      aria-label={t('speed.materials.role')}
+                      value={material.role}
+                      disabled={!editable || busy}
+                      onChange={(event) =>
+                        roleChange(material, event.target.value as SpeedMaterialRole)
+                      }
+                    >
+                      {SPEED_MATERIAL_ROLES.map((option) => (
+                        <option key={option} value={option}>
+                          {t(`speed.role.${option}`)}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
+                  <td className="pr-2 text-ui-fg-base">{material.substanceName}</td>
+                  <td className="pr-2 font-mono text-ui-fg-base">{material.formula}</td>
+                  <td className="pr-2">
+                    <NumberCell
+                      label={t('speed.materials.coefficient')}
+                      value={material.coefficient}
+                      disabled={!editable || busy || !SPEED_EQUATION_ROLES.includes(material.role)}
+                      onCommit={(value) =>
+                        handlers.updateMaterial(material, { coefficient: value })
+                      }
+                    />
+                  </td>
+                  <td className="pr-2">
+                    <NumberCell
+                      label={t('speed.materials.mass')}
+                      value={material.massG}
+                      disabled={!editable || busy || material.role === 'By-product'}
+                      onCommit={(value) => handlers.updateMaterial(material, { massG: value })}
+                    />
+                  </td>
+                  <td className="pr-2 text-ui-fg-subtle">{format(material.molarMassGPerMol, 3)}</td>
+                  <td className="pr-2 text-ui-fg-subtle">{format(moles, 4)}</td>
+                  <td className="pr-2 text-ui-fg-subtle">{format(equivalents, 3)}</td>
+                  {editable ? (
+                    <td>
+                      <button
+                        type="button"
+                        className={button}
+                        disabled={busy}
+                        onClick={() => handlers.removeMaterial(material)}
+                      >
+                        {t('speed.materials.remove')}
+                      </button>
+                    </td>
+                  ) : null}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       ) : null}
       {editable ? (
         <div className="grid grid-cols-12 items-end gap-2">
-          <label className="col-span-12 text-sm text-ui-fg-subtle md:col-span-5">
+          <label className="col-span-12 text-sm text-ui-fg-subtle md:col-span-4">
             {t('speed.materials.substance')}
             <input
               className={input}
@@ -571,7 +606,7 @@ function MaterialsGrid({
           </label>
           <button
             type="button"
-            className={`${primary} col-span-12 md:col-span-1`}
+            className={`${primary} col-span-12 whitespace-nowrap md:col-span-2`}
             disabled={busy || substanceId === ''}
             onClick={add}
           >
@@ -688,7 +723,13 @@ function Conditions({
 }
 
 /** The registered panel `speed.gate-workbench`: loads the route, saves every change through the module API. */
-export function GateWorkbenchPanel({ record, props, client, permissions }: MetadataPanelProps) {
+export function GateWorkbenchPanel({
+  record,
+  props,
+  client,
+  permissions,
+  refresh,
+}: MetadataPanelProps) {
   const t = useMemo(
     () =>
       speedText(
@@ -706,6 +747,7 @@ export function GateWorkbenchPanel({ record, props, client, permissions }: Metad
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<GateWorkbenchViewProps['notice']>(null);
   const [warnings, setWarnings] = useState<readonly SpeedMessageV1[]>([]);
+  const source = useId();
 
   const load = useCallback(async () => {
     const loaded = await api.route(routeId);
@@ -729,6 +771,9 @@ export function GateWorkbenchPanel({ record, props, client, permissions }: Metad
         setWarnings('warnings' in outcome && outcome.warnings ? outcome.warnings : []);
         if ('step' in outcome && outcome.step) setSelected(outcome.step.id);
         await load();
+        // WI-OI-120ce: the summary tiles and the route's own fields (step counts) follow the change.
+        announceRouteChange(routeId, source);
+        refresh?.();
       } catch (error) {
         if (error instanceof SpeedApiError) {
           setNotice({ code: error.code, issues: error.issues, fallback: error.message });
@@ -740,7 +785,7 @@ export function GateWorkbenchPanel({ record, props, client, permissions }: Metad
         setBusy(false);
       }
     },
-    [load],
+    [load, refresh, routeId, source],
   );
 
   const handlers = useMemo<WorkbenchHandlers>(

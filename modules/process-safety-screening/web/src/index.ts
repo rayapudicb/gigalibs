@@ -20,4 +20,14 @@ export {
   WriteupParserView,
   confirmedTemperature,
 } from './WriteupParserPanel.js';
-export { AuditTrailPage, AuditTrailView, auditRows, dayRange } from './AuditTrailPanel.js';
+export {
+  AuditTrailPage,
+  AuditTrailView,
+  actorLabel,
+  auditRows,
+  dayRange,
+  isSystemActor,
+} from './AuditTrailPanel.js';
+// WI-OI-120ce: the Library and Criteria pages' set in force and pack import.
+export { InForceView, PackImportView, SetsPage } from './SetsPage.js';
+export { STARTER_PACKS, packCounts, parsePack, parsePackFile } from './packs.js';

@@ -540,6 +540,8 @@ export function speedRecordDispatcher(
     {
       key: 'speed-library-materials',
       permission: READ,
+      // Values are the pack's own material ids (L01 …), stable across library versions, not row UUIDs (WI-OI-120ce).
+      idPattern: /^[A-Za-z0-9][A-Za-z0-9 ._()/+-]{0,63}$/,
       async resolve(principal, request) {
         const set = (await deps.library.list(principal)).items.find(
           (candidate) => candidate.inForce,

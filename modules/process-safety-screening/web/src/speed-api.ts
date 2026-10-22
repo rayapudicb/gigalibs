@@ -1,5 +1,7 @@
 import type {
   AddSpeedThermalDataInputV1,
+  ImportSpeedCriteriaSetInputV1,
+  ImportSpeedLibrarySetInputV1,
   SpeedCriteriaSetV1,
   SpeedDossierFormat,
   SpeedDossierV1,
@@ -109,6 +111,11 @@ export interface SpeedApi {
   /** Links a substance to a library material (its reactivity classes come from there). */
   linkSubstance(substanceId: string, libraryMaterialId: string, reason: string): Promise<unknown>;
   librarySet(id: string): Promise<SpeedLibrarySetV1>;
+  /** WI-OI-120ce: imports a cited criteria or library pack as unreviewed (an administrator then puts it in force). */
+  importPack(
+    kind: 'criteria' | 'library',
+    pack: SpeedPackBody,
+  ): Promise<{ id: string; versionLabel: string }>;
   /** The criteria and library sets in force, or null where a workspace has none. */
   setsInForce(): Promise<{
     criteria: SpeedCriteriaSetV1 | null;
@@ -160,6 +167,11 @@ export function routeExportUrl(routeId: string, format: 'json' | 'csv'): string 
 }
 
 type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K> : never;
+
+/** A pack as a file holds it: everything the import takes except the request key. */
+export type SpeedPackBody =
+  | Omit<ImportSpeedCriteriaSetInputV1, 'requestKey'>
+  | Omit<ImportSpeedLibrarySetInputV1, 'requestKey'>;
 
 export function createSpeedApi(send: typeof fetch = (input, init) => fetch(input, init)): SpeedApi {
   const call = async <T>(method: string, path: string, body?: unknown): Promise<T> => {
@@ -223,6 +235,11 @@ export function createSpeedApi(send: typeof fetch = (input, init) => fetch(input
       });
     },
     librarySet: (id) => call('GET', `/library-sets/${id}`),
+    importPack: (kind, pack) =>
+      call('POST', kind === 'criteria' ? '/criteria-sets' : '/library-sets', {
+        requestKey: key(),
+        ...pack,
+      }),
     setsInForce: async () => {
       const [criteria, library] = await Promise.all([
         call<{ items: SpeedCriteriaSetV1[] }>('GET', '/criteria-sets'),

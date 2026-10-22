@@ -17,7 +17,10 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { conditionsFrom } from '../../../modules/process-safety-screening/web/src/ThermalPanel';
 import { speedText } from '../../../modules/process-safety-screening/web/src/messages/index';
-import { labelPositions } from '../../../modules/process-safety-screening/web/src/screens-model';
+import {
+  labelPositions,
+  ladderMarkers,
+} from '../../../modules/process-safety-screening/web/src/screens-model';
 import {
   type GateResult,
   IUPAC_2021_ABRIDGED,
@@ -309,6 +312,27 @@ describe('SPEED thermal and runaway (speed.thermal-panel)', () => {
     const ys = labelPositions([25, 36.3, 56, 81.5, 91.8], 180, 16).sort((a, b) => a - b);
     for (let i = 1; i < ys.length; i += 1)
       expect((ys[i] as number) - (ys[i - 1] as number)).toBeGreaterThanOrEqual(16 - 1e-9);
+  });
+
+  // WI-OI-120ce: at 100 % accumulation the two MTSR values are the same; the ladder showed the same line twice.
+  it('shows one MTSR line when the actual and full-accumulation values are equal', () => {
+    const thermal = (mtsrC: number, mtsrFullAccumulationC: number) =>
+      ({ mtsrC, mtsrFullAccumulationC, td24C: 100 }) as unknown as Parameters<
+        typeof ladderMarkers
+      >[0];
+    expect(ladderMarkers(thermal(61.4, 61.4), 40, 82).map((marker) => marker.key)).toEqual([
+      'tp',
+      'mtsr',
+      'mtt',
+      'td24',
+    ]);
+    expect(ladderMarkers(thermal(36.3, 91.8), 25, 56).map((marker) => marker.key)).toEqual([
+      'tp',
+      'mtsr',
+      'mtt',
+      'mtsrFull',
+      'td24',
+    ]);
   });
 });
 
