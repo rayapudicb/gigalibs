@@ -10,6 +10,7 @@ import { CriteriaValuesView } from './CriteriaValuesPanel.js';
 import { LibraryEntriesView, type LibraryKind } from './LibraryEntriesPanel.js';
 import { useSpeedApi, useSpeedText } from './hooks.js';
 import { type Translate, knowsCode } from './messages/index.js';
+import { packToWorkbook, workbookToPack } from './pack-workbook.js';
 import {
   type PackKind,
   STARTER_PACKS,
@@ -108,6 +109,8 @@ export interface PackImportViewProps {
   readonly on: {
     importPack(body: SpeedPackBody): void;
     chooseFile(file: File): void;
+    /** Downloads a pack, or with null a blank template, as an Excel workbook. */
+    downloadExcel(body: SpeedPackBody | null): void;
   };
 }
 
@@ -145,6 +148,13 @@ export function PackImportView({ kind, starters, file, busy, notice, t, on }: Pa
                 <button
                   type="button"
                   className={button}
+                  onClick={() => on.downloadExcel(pack.body)}
+                >
+                  {t('speed.packs.downloadExcel')}
+                </button>
+                <button
+                  type="button"
+                  className={button}
                   disabled={busy}
                   onClick={() => on.importPack(pack.body)}
                 >
@@ -157,11 +167,19 @@ export function PackImportView({ kind, starters, file, busy, notice, t, on }: Pa
       ) : null}
       <div className="space-y-2">
         <h3 className="text-sm font-semibold text-ui-fg-base">{t('speed.packs.fromFile')}</h3>
+        <p className="text-xs text-ui-fg-subtle">{t(`speed.packs.format.${kind}`)}</p>
+        <button
+          type="button"
+          className="text-sm text-ui-fg-interactive hover:underline"
+          onClick={() => on.downloadExcel(null)}
+        >
+          {t('speed.packs.template')}
+        </button>
         <label className="block text-sm text-ui-fg-subtle">
           <span className="sr-only">{t('speed.packs.chooseFile')}</span>
           <input
             type="file"
-            accept="application/json,.json"
+            accept="application/json,.json,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,.xlsx"
             disabled={busy}
             className="text-sm text-ui-fg-base"
             onChange={(event) => {
@@ -250,8 +268,10 @@ export function SetsPage({
           on={{
             chooseFile: (chosen) => {
               setNotice(null);
-              chosen.text().then((text) => {
-                const parsed = parsePackFile(kind, text);
+              const read = /\.xlsx$/i.test(chosen.name)
+                ? chosen.arrayBuffer().then((data) => workbookToPack(kind, data))
+                : chosen.text().then((text) => parsePackFile(kind, text));
+              read.then((parsed) => {
                 if (parsed.ok) setFile({ name: chosen.name, body: parsed.body });
                 else {
                   setFile(null);
@@ -264,6 +284,24 @@ export function SetsPage({
                   });
                 }
               });
+            },
+            downloadExcel: (body) => {
+              packToWorkbook(kind, body, t).then(
+                (data) => {
+                  const url = URL.createObjectURL(
+                    new Blob([data], {
+                      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                    }),
+                  );
+                  const link = document.createElement('a');
+                  link.href = url;
+                  link.download = `${body ? body.versionLabel.replace(/[^A-Za-z0-9.-]+/g, '-') : `speed-${kind}-template`}.xlsx`;
+                  link.click();
+                  setTimeout(() => URL.revokeObjectURL(url), 1000);
+                },
+                () =>
+                  setNotice({ tone: 'error', text: t('SPEED_REQUEST_FAILED', { status: 'xlsx' }) }),
+              );
             },
             importPack: (body) => {
               setBusy(true);

@@ -348,8 +348,14 @@ export const SPEED_EN_US: Readonly<Record<string, string>> = {
   'speed.packs.note':
     'An imported pack is unreviewed. Open it in the list below and choose Put in force; results computed from then on use it, and earlier results keep the set they were computed with.',
   'speed.packs.starter': 'Starter packs shipped with SPEED',
-  'speed.packs.fromFile': 'From a file (JSON)',
+  'speed.packs.fromFile': 'From a file (Excel or JSON)',
   'speed.packs.chooseFile': 'Choose a pack file',
+  'speed.packs.downloadExcel': 'Download as Excel',
+  'speed.packs.template': 'Download a blank Excel template',
+  'speed.packs.format.criteria':
+    'An Excel pack has a sheet "Pack" (version label and source) and a sheet "Criteria" with the columns Criterion, Key, Value and Citation: one row per value, every value cited. Download the starter pack as Excel to see it filled in.',
+  'speed.packs.format.library':
+    'An Excel pack has a sheet "Pack" (version label and source) and one sheet each for Materials, Interaction rules, Reaction classes, Energetic groups, Gases and Formation enthalpies; the first row names the columns and every entry needs a citation. Download the starter pack as Excel to see every column filled in.',
   'speed.packs.import': 'Import',
   'speed.packs.importing': 'Importing…',
   'speed.packs.imported':

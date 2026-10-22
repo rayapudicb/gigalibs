@@ -31,3 +31,4 @@ export {
 // WI-OI-120ce: the Library and Criteria pages' set in force and pack import.
 export { InForceView, PackImportView, SetsPage } from './SetsPage.js';
 export { STARTER_PACKS, packCounts, parsePack, parsePackFile } from './packs.js';
+export { PACK_SHEETS, packToWorkbook, workbookToPack } from './pack-workbook.js';

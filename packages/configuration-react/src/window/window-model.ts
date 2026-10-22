@@ -167,6 +167,36 @@ export function valueFromInput(field: DictionaryFieldV1, input: string | boolean
   return text;
 }
 
+/**
+ * WI-OI-120ce: a form input's text while the user types, kept exactly as typed (a trailing space too), so typing
+ * "Pyrimidine methanol" works; `submittedValues` trims it when the form is saved.
+ */
+export function valueWhileTyping(field: DictionaryFieldV1, input: string | boolean): unknown {
+  if (field.type === 'BOOLEAN') return input === true || input === 'true';
+  const text = String(input);
+  if (text.trim() === '') return null;
+  if (field.type === 'INTEGER') return /^-?\d+$/.test(text.trim()) ? Number(text.trim()) : text;
+  return text;
+}
+
+/**
+ * WI-OI-120ce: a create form leaves out the fields the system fills (status, created by, created, last change): shown
+ * disabled and empty they only confused; they appear on the record once it exists.
+ */
+export function createFormFields(fields: readonly PlacedField[]): PlacedField[] {
+  return fields.filter((placed) => !placed.field.readOnly);
+}
+
+/** The form's values as they are saved: typed text trimmed and converted as `valueFromInput` does. */
+export function submittedValues(fields: readonly PlacedField[], values: RecordValues): Record<string, unknown> {
+  const out: Record<string, unknown> = { ...values };
+  for (const placed of fields) {
+    const value = out[placed.field.fieldKey];
+    if (typeof value === 'string') out[placed.field.fieldKey] = valueFromInput(placed.field, value);
+  }
+  return out;
+}
+
 /** A stored value as form input text. */
 export function inputFromValue(field: DictionaryFieldV1, value: unknown): string {
   if (value === null || value === undefined) return '';

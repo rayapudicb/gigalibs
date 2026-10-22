@@ -15,7 +15,8 @@ export function windowSource(builderFor) {
     },
   });
   // Sites and people are the workspace's own, served by the platform lookups (WI-OI-120u).
-  const SITE_REF = lookup('site-ref', 'organization-units');
+  // WI-OI-120ce: SPEED's own list of the sites in force (the platform's unit list offered units outside it).
+  const SITE_REF = lookup('site-ref', 'speed-sites');
   const MEMBER_REF = lookup('member-ref', 'workspace-members');
   const PROJECT_REF = lookup('project-ref', 'speed-projects');
   // The library in force's materials: a substance's reactivity classes come from its link (FR-HAZ-01).

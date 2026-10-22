@@ -11444,7 +11444,7 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
           {
             "referenceKey": "site-ref",
             "referenceType": "SEARCH_LOOKUP",
-            "resolverKey": "organization-units"
+            "resolverKey": "speed-sites"
           },
           {
             "referenceKey": "member-ref",

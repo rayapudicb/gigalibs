@@ -314,6 +314,59 @@ export class ProjectsService {
     });
   }
 
+  /**
+   * WI-OI-120ce: the sites a project can belong to, from SPEED's copy of the organization: active units of the version
+   * in force that hold records. A picker offers the ones the member may write; a saved project's site is named for
+   * whoever may read it. (The platform's unit list also offered units outside the version in force, which SPEED then
+   * refused with "That unit is not in the organization in force".)
+   */
+  sites(
+    principal: ModulePrincipal,
+    request: { search?: string; ids?: readonly string[]; limit: number },
+  ): Promise<{ value: string; label: string }[]> {
+    return this.database.withTenantTransaction(principal.tenantId, async (client) => {
+      const access = await resolveAccess(client, principal);
+      const values: unknown[] = [principal.tenantId];
+      const conditions = [
+        'u.tenant_id = $1',
+        `u.status = 'ACTIVE'`,
+        'u.holds_records',
+        `v.status = 'READY'`,
+      ];
+      if (access.versionId) {
+        values.push(access.versionId);
+        conditions.push(`u.version_id = $${values.length}`);
+      } else {
+        conditions.push(
+          `u.version_id = (SELECT version_id FROM ${SCHEMA}.org_replica_versions WHERE tenant_id = $1 AND status = 'READY' ORDER BY ready_at DESC LIMIT 1)`,
+        );
+      }
+      const units = request.ids?.length ? access.readUnits : access.writeUnits;
+      if (units !== null) {
+        values.push([...units]);
+        conditions.push(`u.unit_id = ANY($${values.length}::text[])`);
+      }
+      if (request.ids?.length) {
+        values.push([...request.ids]);
+        conditions.push(`u.unit_id = ANY($${values.length}::text[])`);
+      } else if (request.search) {
+        values.push(likePattern(request.search));
+        conditions.push(`(lower(u.code) LIKE $${values.length} OR lower(u.name) LIKE $${values.length})`);
+      }
+      values.push(request.limit);
+      const rows = await client.query<{ unit_id: string; code: string; name: string }>(
+        `SELECT u.unit_id, u.code, u.name
+           FROM ${SCHEMA}.org_replica_units u
+           JOIN ${SCHEMA}.org_replica_versions v ON v.tenant_id = u.tenant_id AND v.version_id = u.version_id
+          WHERE ${conditions.join(' AND ')}
+          ORDER BY u.sort_order, lower(u.name), u.unit_id
+          LIMIT $${values.length}`,
+        values,
+      );
+      return rows.rows.map((row) => ({ value: row.unit_id, label: `${row.name} (${row.code})` }));
+    });
+  }
+
   /** The row when the member may read it; locked for the rest of the transaction when it is about to change. */
   private async readable(
     client: Client,

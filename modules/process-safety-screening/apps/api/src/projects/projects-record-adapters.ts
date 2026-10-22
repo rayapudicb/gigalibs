@@ -568,6 +568,13 @@ export function speedRecordDispatcher(
       permission: READ,
       resolve: (principal, request) => deps.projects.lookup(principal, request),
     },
+    // WI-OI-120ce: the sites of the organization in force that hold records (the organization's unit ids).
+    {
+      key: 'speed-sites',
+      permission: READ,
+      idPattern: /^[A-Za-z0-9_-]{1,64}$/,
+      resolve: (principal, request) => deps.projects.sites(principal, request),
+    },
     {
       key: 'speed-substances',
       permission: READ,

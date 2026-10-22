@@ -18,7 +18,9 @@ import {
   recordActions,
   recordTitle,
   validateValues,
-  valueFromInput,
+  createFormFields,
+  submittedValues,
+  valueWhileTyping,
   type WindowModel,
   windowModel,
   writableValues,
@@ -432,19 +434,22 @@ function RecordForm({
   const [busy, setBusy] = useState(false);
   // One key per form: a retry after a network failure replays the first answer instead of saving twice.
   const [idempotencyKey] = useState(newKey);
-  const fields = placedFields(model, tab, values, permissions, record ? 'EDIT' : 'CREATE').filter((placed) => !(placed.field.fieldKey in fixed));
+  const placed = placedFields(model, tab, values, permissions, record ? 'EDIT' : 'CREATE').filter((candidate) => !(candidate.field.fieldKey in fixed));
+  const fields = record ? placed : createFormFields(placed);
 
   async function submit(event: FormEvent) {
     event.preventDefault();
-    const found = validateValues(model, fields, values, tab.targetEntityKey);
+    // WI-OI-120ce: text is kept as typed while editing and trimmed here, once.
+    const saving = submittedValues(fields, values);
+    const found = validateValues(model, fields, saving, tab.targetEntityKey);
     setErrors(found);
     if (Object.keys(found).length > 0) return;
     setBusy(true);
     setFailure(null);
     try {
       const saved = record
-        ? await client.update(tab.targetEntityKey, String(record.id), writableValues(fields, values, record), Number(record.version))
-        : await client.create(tab.targetEntityKey, { ...writableValues(fields, values), ...fixed }, idempotencyKey);
+        ? await client.update(tab.targetEntityKey, String(record.id), writableValues(fields, saving, record), Number(record.version))
+        : await client.create(tab.targetEntityKey, { ...writableValues(fields, saving), ...fixed }, idempotencyKey);
       onSaved(saved);
     } catch (error) {
       // WI-OI-120r (S1): the server's field rules name each field, shown under it as the form's own checks are.
@@ -625,7 +630,7 @@ function FieldInput({
   const { field, readOnly, required } = placed;
   const id = `field-${field.fieldKey}`;
   const disabled = readOnly || !onChange;
-  const set = (input: string | boolean) => onChange?.(field.fieldKey, valueFromInput(field, input));
+  const set = (input: string | boolean) => onChange?.(field.fieldKey, valueWhileTyping(field, input));
   const label = (
     <label htmlFor={id} className="text-xs font-medium text-ui-fg-subtle">
       {field.label}
@@ -699,51 +704,151 @@ function LookupInput({
   client: RecordClient;
   onChange: (input: string) => void;
 }) {
+  // WI-OI-120ce: one searchable field (a combobox), not a search box above a separate list: type to search, choose with
+  // the mouse or the arrow keys and Enter; the chosen record shows by its name.
   const resolverKey = placed.resolverKey;
+  const current = typeof value === 'string' && value ? value : null;
   const [options, setOptions] = useState<readonly LookupOption[]>([]);
+  const [chosen, setChosen] = useState<LookupOption | null>(null);
   const [search, setSearch] = useState('');
+  const [open, setOpen] = useState(false);
+  const [active, setActive] = useState(0);
   const [failure, setFailure] = useState<string | null>(null);
+  const listId = `${id}-options`;
+  // The chosen record's name, looked up by its id when the form opens with a value.
   useEffect(() => {
-    if (!resolverKey) return;
-    let active = true;
-    const current = typeof value === 'string' && value ? [value] : [];
+    if (!resolverKey || !current || chosen?.value === current) return;
+    let live = true;
     client
-      .lookup(resolverKey, search ? { search } : current.length > 0 ? { ids: current } : {})
+      .lookup(resolverKey, { ids: [current] })
       .then((found) => {
-        if (active) {
-          setOptions(found);
-          setFailure(null);
-        }
+        if (live) setChosen(found.find((option) => option.value === current) ?? null);
       })
-      .catch((error: unknown) => {
-        if (active) setFailure(failureOf(error).message);
-      });
+      .catch(() => undefined);
     return () => {
-      active = false;
+      live = false;
     };
-  }, [client, resolverKey, search, value]);
+  }, [client, resolverKey, current, chosen]);
+  // The options, while the list is open; a short pause after typing before each search.
+  useEffect(() => {
+    if (!resolverKey || !open) return;
+    let live = true;
+    const timer = setTimeout(() => {
+      client
+        .lookup(resolverKey, search.trim() ? { search: search.trim() } : {})
+        .then((found) => {
+          if (live) {
+            setOptions(found);
+            setActive(0);
+            setFailure(null);
+          }
+        })
+        .catch((error: unknown) => {
+          if (live) setFailure(failureOf(error).message);
+        });
+    }, 200);
+    return () => {
+      live = false;
+      clearTimeout(timer);
+    };
+  }, [client, resolverKey, search, open]);
   const environment = useContext(Environment);
   const target = placed.createWith;
   const targetClient = target ? environment?.clients[target.moduleKey] : undefined;
   const label = placed.field.label;
   const canAdd = Boolean(!disabled && target && targetClient && environment && holds(environment.permissions, target.permission));
-  const canOpen = Boolean(target && targetClient && typeof value === 'string' && value);
+  const canOpen = Boolean(target && targetClient && current);
   if (!resolverKey) return <p className="text-xs text-ui-fg-error">This field has no lookup.</p>;
+  const choose = (option: LookupOption) => {
+    setChosen(option);
+    setSearch('');
+    setOpen(false);
+    onChange(option.value);
+  };
+  const shownName = current ? (chosen?.value === current ? chosen.label : '') : '';
   return (
     <div className="space-y-1">
-      {!disabled && <input aria-label={`Search ${placed.field.label}`} className={inputClass} placeholder="Type to search" value={search} onChange={(event) => setSearch(event.target.value)} />}
-      <select id={id} className={inputClass} value={value === null || value === undefined ? '' : String(value)} disabled={disabled} onChange={(event) => onChange(event.target.value)}>
-        <option value="">Select…</option>
-        {options.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
+      <div className="relative">
+        <input
+          id={id}
+          role="combobox"
+          aria-expanded={open}
+          aria-controls={listId}
+          aria-autocomplete="list"
+          aria-activedescendant={open && options[active] ? `${listId}-${active}` : undefined}
+          className={`${inputClass} pr-8`}
+          placeholder={disabled ? '' : `Search ${label}`}
+          disabled={disabled}
+          value={open ? search : shownName}
+          onFocus={() => {
+            setSearch('');
+            setOpen(true);
+          }}
+          onBlur={() => setOpen(false)}
+          onChange={(event) => {
+            setSearch(event.target.value);
+            setOpen(true);
+          }}
+          onKeyDown={(event) => {
+            if (event.key === 'ArrowDown') {
+              event.preventDefault();
+              setOpen(true);
+              setActive((index) => Math.min(index + 1, Math.max(options.length - 1, 0)));
+            } else if (event.key === 'ArrowUp') {
+              event.preventDefault();
+              setActive((index) => Math.max(index - 1, 0));
+            } else if (event.key === 'Enter' && open && options[active]) {
+              event.preventDefault();
+              choose(options[active]);
+            } else if (event.key === 'Escape') {
+              setOpen(false);
+            }
+          }}
+        />
+        {!disabled && current ? (
+          <button
+            type="button"
+            aria-label={`Clear ${label}`}
+            className="absolute inset-y-0 right-2 text-sm text-ui-fg-muted hover:text-ui-fg-base"
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={() => {
+              setChosen(null);
+              onChange('');
+            }}
+          >
+            ×
+          </button>
+        ) : null}
+        {open && !disabled ? (
+          <ul
+            id={listId}
+            role="listbox"
+            aria-label={label}
+            className={`${box} absolute z-20 mt-1 max-h-60 w-full overflow-auto py-1 shadow-elevation-flyout`}
+          >
+            {options.map((option, index) => (
+              <li
+                key={option.value}
+                id={`${listId}-${index}`}
+                role="option"
+                aria-selected={option.value === current}
+                className={`cursor-pointer px-2 py-1.5 text-sm ${index === active ? 'bg-ui-bg-base-hover text-ui-fg-base' : 'text-ui-fg-base'}`}
+                onMouseDown={(event) => event.preventDefault()}
+                onMouseEnter={() => setActive(index)}
+                onClick={() => choose(option)}
+              >
+                {option.label}
+              </li>
+            ))}
+            {options.length === 0 && !failure ? (
+              <li className="px-2 py-1.5 text-sm text-ui-fg-muted">
+                {search.trim() ? `No ${label} matches “${search.trim()}”.` : `No ${label} records yet.`}
+              </li>
+            ) : null}
+          </ul>
+        ) : null}
+      </div>
       {failure ? <p className="text-xs text-ui-fg-error">{failure}</p> : null}
-      {!disabled && !failure && options.length === 0 && (
-        <p className="text-xs text-ui-fg-muted">{search ? `No ${label} matches “${search}”.` : `No ${label} records yet.`}</p>
-      )}
       {(canAdd || canOpen) && environment && target && (
         <div className="flex flex-wrap gap-3 text-xs">
           {canAdd && (
@@ -756,7 +861,7 @@ function LookupInput({
                   target,
                   label,
                   onCreated: (created) => {
-                    setSearch('');
+                    setChosen(null);
                     onChange(created);
                   },
                 })

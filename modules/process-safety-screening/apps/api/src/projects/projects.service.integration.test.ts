@@ -333,6 +333,21 @@ describe.skipIf(!adminUrl)('SPEED projects on PostgreSQL (WI-OI-120bw)', () => {
       ).toBe('RECORD_QUERY_INVALID');
     });
 
+    // WI-OI-120ce: the Site picker offered every unit of the workspace, including ones outside the organization in
+    // force, which SPEED then refused ("That unit is not in the organization in force").
+    it('offers as sites only the units of the organization in force that hold records, as the member may write', async () => {
+      const values = async (who: ModulePrincipal, request: Record<string, unknown> = {}) =>
+        (await records.lookup(who, 'speed-sites', request)).map((option) => option.value);
+      expect(await values(adminA)).toEqual(['north', 'south']);
+      expect(await values(adminA, { search: 'sou' })).toEqual(['south']);
+      expect(await values(northChemist)).toEqual(['north']);
+      // A saved project's site is named for whoever may read it; a unit outside the version in force never is.
+      expect(await values(northReader, { ids: 'north' })).toEqual(['north']);
+      expect(await values(northReader, { ids: 'south' })).toEqual([]);
+      expect(await values(adminA, { ids: 'sites,store-1' })).toEqual([]);
+      expect(await values(adminB)).toEqual([]);
+    });
+
     it("creates with the window's rules: required fields, and the owner defaults to the signed-in user", async () => {
       const key = randomUUID();
       const context = { principal: northChemist, correlationId: randomUUID(), idempotencyKey: key };

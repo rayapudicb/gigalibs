@@ -4,7 +4,9 @@ import {
   PackImportView,
   STARTER_PACKS,
   packCounts,
+  packToWorkbook,
   parsePackFile,
+  workbookToPack,
 } from '@gigalibs/process-safety-screening-web';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
@@ -111,7 +113,7 @@ describe('SPEED Library and Criteria pages (WI-OI-120ce)', () => {
           text: t('speed.packs.imported', { version: 'Starter 0.1 (unreviewed)' }),
         }}
         t={t}
-        on={{ importPack: noop, chooseFile: noop }}
+        on={{ importPack: noop, chooseFile: noop, downloadExcel: noop }}
       />,
     );
     expect(html).toContain('Import a pack');
@@ -120,6 +122,43 @@ describe('SPEED Library and Criteria pages (WI-OI-120ce)', () => {
       '26 materials, 12 interaction rules, 5 reaction classes, 12 energetic groups, 11 gases',
     );
     expect(html).toContain('type="file"');
+    expect(html).toContain('.xlsx');
+    expect(html).toContain('Download as Excel');
+    expect(html).toContain('Download a blank Excel template');
+    expect(html).toContain(
+      'Interaction rules, Reaction classes, Energetic groups, Gases and Formation enthalpies',
+    );
     expect(html).toContain('Open it in the list below and choose Put in force.');
+  });
+});
+
+describe('SPEED packs as Excel workbooks (WI-OI-120ce)', () => {
+  it('writes each starter pack as a workbook and reads it back unchanged', async () => {
+    for (const kind of ['criteria', 'library'] as const) {
+      const pack = starter(kind);
+      const workbook = await packToWorkbook(kind, pack.body, t);
+      const read = await workbookToPack(kind, workbook);
+      expect(read).toEqual({ ok: true, body: pack.body });
+    }
+  });
+
+  it('gives a blank template with every sheet and column, which is refused until it is filled in', async () => {
+    const blank = await packToWorkbook('library', null);
+    const read = await workbookToPack('library', blank);
+    expect(read.ok).toBe(false);
+    const criteria = await workbookToPack('criteria', await packToWorkbook('criteria', null, t));
+    expect(criteria.ok).toBe(false);
+  });
+
+  it('refuses a workbook of the other kind and a file that is not a workbook', async () => {
+    const library = await packToWorkbook('library', starter('library').body);
+    expect(await workbookToPack('criteria', library)).toEqual({
+      ok: false,
+      detail: 'the sheet "Criteria" is missing',
+    });
+    expect(await workbookToPack('library', new TextEncoder().encode('not excel').buffer)).toEqual({
+      ok: false,
+      detail: 'not an Excel workbook (.xlsx)',
+    });
   });
 });

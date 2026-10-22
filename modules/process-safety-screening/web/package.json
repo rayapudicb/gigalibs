@@ -16,7 +16,8 @@
     "@gigalibs/contracts": "workspace:*",
     "@gigalibs/i18n": "workspace:*",
     "@gigalibs/process-safety-engines": "workspace:*",
-    "@gigalibs/process-safety-screening-domain": "workspace:*"
+    "@gigalibs/process-safety-screening-domain": "workspace:*",
+    "exceljs": "4.4.0"
   },
   "peerDependencies": {
     "next": "^15.2.0",

@@ -265,7 +265,7 @@
         {
           "referenceKey": "site-ref",
           "referenceType": "SEARCH_LOOKUP",
-          "resolverKey": "organization-units"
+          "resolverKey": "speed-sites"
         },
         {
           "referenceKey": "member-ref",
