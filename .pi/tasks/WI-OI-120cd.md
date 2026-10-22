@@ -1,8 +1,8 @@
 # WI-OI-120cd: SPEED on UAT — release SPEED onto the running release
 
-- **Status:** In progress: SPEED live on UAT (`19048071`), windows active for "GigaLibs Global Enterprise"; release
-  `a1765ce6` (organization delivery for trial workspaces) building; then the owner's deploy and "Send to modules
-  again", the browser check, and the independent Security review (not recorded before the deploys).
+- **Status:** In progress: SPEED live on UAT (`a1765ce6`), its windows active and the organization delivered for
+  "GigaLibs Global Enterprise"; the next release (`d039b970`, WI-OI-120ce) is being built; the independent Security
+  review is still not recorded (the deploys went ahead before it).
   modules for a business use case then we can have the deployment process"); R1 completed at `fb21e5c8`. Earlier:
   owner, 2026-10-21, "start S9b it should be working on http://127.0.0.1:5180/speed", then chose "Release SPEED to UAT
   (5180)". Implementer: Claude Code.
@@ -143,6 +143,21 @@
   without the fix; auth and kernel tests 97 passed (13 skipped, database tests); typecheck clean; my lines lint-clean
   (both files carry earlier format findings). The quarantined events stay quarantined; the owner presses "Send to
   modules again" after the deploy. Needs the Security review (tenancy and access).
+- **Trial-delivery release ready:** 9 images `a1765ce6c275-87aae3c19242` (labels checked; the fix is in the API
+  image's `auth-nest`; all 40 windows compile); backup `gigalibs_backup_20261021_110105Z` of the running
+  `190480718a16`, checksum OK; deploy values set, tests 33/33, `--check` passed; later gates pre-checked read-only (web
+  on `190480718a16`/`39cbe470ecf7`, 570 tables, no failed ticks, no window activation failures). No migration changes;
+  rollback: redeploy `190480718a16-39cbe470ecf7`.
+- **Trial-delivery release deployed (owner, 2026-10-21):** "DEPLOY SMOKE PASSED: a1765ce6c275-87aae3c19242". After the
+  owner's "Send to modules again" the sync jobs succeeded for SPEED, Workforce, Analytics and Product Catalogue (the
+  workspace's first successful organization delivery on UAT); SPEED holds the organization (1 version, 2 units), so
+  Projects, Routes and Outcomes load. Data and the prototype's look continue in WI-OI-120ce.
+- **Rollback image lost (mine, 2026-10-21, WI-OI-120ce's lab build):** the disk guard keeps the newest 2 tags of each
+  `gigalibs/*` repository; building the speed-lab images from the SPEED branch on the same machine counted as a third
+  version and removed `gigalibs/control-plane-migrations:190480718a16-39cbe470ecf7` (UAT's rollback release; its other
+  8 images remain). UAT is unaffected (`a1765ce6c275-87aae3c19242`, all 9 images present). A rollback to `190480718a16`
+  first rebuilds that image from `release/speed-uat` at `19048071` (no migration differs between the two releases).
+  Lab builds now run with `GIGALIBS_KEEP_IMAGE_VERSIONS=3`; space was freed only from the build cache (older than 6 h).
 - **Empty lists are by design:** SPEED ships no data (plan v3 rule 3). Criteria and library sets are loaded only as
   whole packs through the API (`POST v1/criteria-sets`, `v1/library-sets`, then put in force); SPEED has no screen for
   it yet, so the Criteria and Library windows offer no "New". The BRD reference packs are TEST FIXTURE and may go only

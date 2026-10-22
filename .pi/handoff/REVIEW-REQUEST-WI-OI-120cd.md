@@ -1,7 +1,10 @@
 # Security review request: WI-OI-120cd, SPEED on UAT
 
-- **Release:** `release/speed-uat` at `a1765ce6` (worktree `gigalibs-release-speed`), on top of UAT's previous release
-  `9734dca9`. Review the range `9734dca9..a1765ce6`: four commits, `a1765ce6` (the kernel's subject context accepts a
+- **Release:** `release/speed-uat` at `d039b970` (worktree `gigalibs-release-speed`), on top of UAT's previous release
+  `9734dca9`. Review the range `9734dca9..d039b970`: five commits, `d039b970` (WI-OI-120ce: the module SDK's
+  `LookupResolver` gains an opt-in `idPattern` for lookup ids, UUID still the default; the metadata window gains opt-in
+  `onChanged` and a panel `refresh`; SPEED's pack import runs in the browser through the existing import API, which
+  still checks permissions and citations; please look at the lookup id validation), `a1765ce6` (the kernel's subject context accepts a
   tenant on an unexpired trial, as a login session does; `packages/auth-nest/src/auth.service.ts`; tenancy and access,
   please look closely), `23ab3916` (SPEED S1 to S7, 177 files),
   `76780730` (R1 completion, 42 files; deployed 2026-10-21 by the owner before this review) and `19048071` (CMMS's
