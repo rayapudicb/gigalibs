@@ -327,6 +327,170 @@ try {
   );
   check('inventory: receipt completed', ok(completed) && completed.json?.status === 'COMPLETED', completed.text.slice(0, 100));
 
+  async function waitForReceiptFinancePosted(targetReceiptId) {
+    for (let attempt = 0; attempt < 120; attempt += 1) {
+      await sleep(500);
+      const receiptRead = await call('universal-inventory', 'GET', `/v1/records/inventory.receipts/${targetReceiptId}`);
+      if (receiptRead.json?.['finance-posting-status'] === 'POSTED') return true;
+    }
+    return false;
+  }
+
+  async function completeGoodsReceipt(productId, quantity) {
+    const draft = await call(
+      'universal-inventory',
+      'POST',
+      '/v1/records/inventory.receipts',
+      { 'warehouse-id': warehouseId },
+      { 'Idempotency-Key': randomUUID() },
+    );
+    const id = draft.json?.id;
+    await call(
+      'universal-inventory',
+      'POST',
+      '/v1/records/inventory.receipt-lines',
+      {
+        'receipt-id': id,
+        'product-id': productId,
+        'uom-id': uom.json?.id,
+        'expected-quantity': quantity,
+        'target-location-id': location.json?.id,
+      },
+      { 'Idempotency-Key': randomUUID() },
+    );
+    const done = await call(
+      'universal-inventory',
+      'POST',
+      `/v1/records/inventory.receipts/${id}/actions/complete`,
+      {},
+      { 'Idempotency-Key': randomUUID() },
+    );
+    check('inventory: receipt completed', ok(done) && done.json?.status === 'COMPLETED', done.text.slice(0, 100));
+    return id;
+  }
+
+  check('inventory: finance-posting-status POSTED (product A)', await waitForReceiptFinancePosted(receiptId), receiptId);
+
+  const productB = await call(
+    'product-catalogue',
+    'POST',
+    '/v1/products',
+    {
+      code: 'IF2-WASHER',
+      name: 'IF2 washer',
+      productType: 'GOOD',
+      baseUomId: uom.json?.id,
+      isSold: true,
+      isPurchased: true,
+      isStocked: true,
+    },
+    { 'Idempotency-Key': randomUUID() },
+  );
+  check('catalogue: second product (H3)', ok(productB), productB.text.slice(0, 80));
+  const productBCost = await call(
+    'financial-operations',
+    'POST',
+    '/v1/costing/product-standard-costs',
+    {
+      costProfileId: profile.json?.id,
+      productId: productB.json?.id,
+      standardUnitCostScaled: '4000000',
+      effectiveFrom: '2026-01-01',
+      changeReason: 'WI-OI-120bq two-product proof',
+    },
+    { 'Idempotency-Key': randomUUID() },
+  );
+  check('finance: second per-product standard cost (H3)', ok(productBCost), productBCost.text.slice(0, 120));
+  const receiptBId = await completeGoodsReceipt(productB.json?.id, '2.000');
+  check('inventory: finance-posting-status POSTED (product B)', await waitForReceiptFinancePosted(receiptBId), receiptBId);
+
+  const layerCosts = await admin.query(
+    `SELECT product_id, unit_cost_scaled::text AS unit_cost_scaled
+       FROM gigalibs_finance.inventory_cost_layers
+      WHERE tenant_id = $1 AND product_id = ANY($2::uuid[])
+      ORDER BY product_id, created_at DESC`,
+    [tenant, [product.json?.id, productB.json?.id]],
+  );
+  const costA = layerCosts.rows.find((row) => row.product_id === product.json?.id)?.unit_cost_scaled;
+  const costB = layerCosts.rows.find((row) => row.product_id === productB.json?.id)?.unit_cost_scaled;
+  check(
+    'finance: two products post at different standard unit costs (H3)',
+    costA === '2500000' && costB === '4000000' && costA !== costB,
+    JSON.stringify({ costA, costB }),
+  );
+
+  const productC = await call(
+    'product-catalogue',
+    'POST',
+    '/v1/products',
+    {
+      code: 'IF2-NOCOST',
+      name: 'IF2 no cost yet',
+      productType: 'GOOD',
+      baseUomId: uom.json?.id,
+      isSold: true,
+      isPurchased: true,
+      isStocked: true,
+    },
+    { 'Idempotency-Key': randomUUID() },
+  );
+  check('catalogue: product without standard cost (H2)', ok(productC), productC.text.slice(0, 80));
+  const receiptCId = await completeGoodsReceipt(productC.json?.id, '1.000');
+
+  let inboxFailed = false;
+  let failedMessageId = null;
+  for (let attempt = 0; attempt < 120 && !inboxFailed; attempt += 1) {
+    await sleep(500);
+    const inboxRow = await admin.query(
+      `SELECT message_id, status, last_error_code
+         FROM gigalibs_finance.inbox_receipts
+        WHERE tenant_id = $1 AND consumer_name = 'finance.inventory-subledger' AND correlation_id = $2`,
+      [tenant, receiptCId],
+    );
+    if (inboxRow.rows[0]?.status === 'FAILED' && inboxRow.rows[0]?.last_error_code === 'FINANCE_STANDARD_COST_MISSING') {
+      inboxFailed = true;
+      failedMessageId = inboxRow.rows[0]?.message_id;
+    }
+  }
+  check('finance: missing standard cost → inbox FAILED (H2/H3)', inboxFailed, failedMessageId ?? receiptCId);
+
+  const lockWhileFailed = await call('financial-operations', 'PUT', `/v1/fiscal-periods/${period.id}/status`, {
+    status: 'LOCKED',
+  });
+  check(
+    'finance: period lock refused while failed receipt posting in period (H2)',
+    lockWhileFailed.status === 409,
+    lockWhileFailed.text.slice(0, 160),
+  );
+
+  const productCCost = await call(
+    'financial-operations',
+    'POST',
+    '/v1/costing/product-standard-costs',
+    {
+      costProfileId: profile.json?.id,
+      productId: productC.json?.id,
+      standardUnitCostScaled: '1000000',
+      effectiveFrom: '2026-01-01',
+      changeReason: 'WI-OI-120bq retry after cost added',
+    },
+    { 'Idempotency-Key': randomUUID() },
+  );
+  check('finance: standard cost added for retry (H2)', ok(productCCost), productCCost.text.slice(0, 120));
+
+  const retried = await call(
+    'financial-operations',
+    'POST',
+    `/v1/subledger/inventory/postings/${failedMessageId}/retry`,
+    { reason: 'WI-OI-120bq F2.7 proof retry after standard cost' },
+  );
+  check('finance: subledger retry after cost fix (H2)', ok(retried), retried.text.slice(0, 120));
+  check(
+    'inventory: finance-posting-status POSTED after retry (H2)',
+    await waitForReceiptFinancePosted(receiptCId),
+    receiptCId,
+  );
+
   let balanced = false;
   let reconciliation = null;
   for (let attempt = 0; attempt < 45 && !balanced; attempt += 1) {
@@ -349,8 +513,7 @@ try {
   check('inventory: fiscal period replica initial sync after snapshot-completed', replicaReady, JSON.stringify({ tenant }));
 
   let financeOutcomePublished = false;
-  let postedOnReceipt = false;
-  for (let attempt = 0; attempt < 120 && (!financeOutcomePublished || !postedOnReceipt); attempt += 1) {
+  for (let attempt = 0; attempt < 120 && !financeOutcomePublished; attempt += 1) {
     await sleep(500);
     const financeOutbox = await admin.query(
       `SELECT status FROM gigalibs_finance.outbox_events
@@ -359,11 +522,8 @@ try {
       [tenant, receiptId],
     );
     financeOutcomePublished = financeOutbox.rows[0]?.status === 'PUBLISHED';
-    const receiptRead = await call('universal-inventory', 'GET', `/v1/records/inventory.receipts/${receiptId}`);
-    postedOnReceipt = receiptRead.json?.['finance-posting-status'] === 'POSTED';
   }
   check('finance: posting-outcome outbox PUBLISHED', financeOutcomePublished, receiptId);
-  check('inventory: finance-posting-status POSTED via Finance relay', postedOnReceipt, receiptId);
 
   let cutoffConfirmed = false;
   for (let attempt = 0; attempt < 90 && !cutoffConfirmed; attempt += 1) {
@@ -392,8 +552,8 @@ try {
   }
   check('inventory: replicated period LOCKED after finance lock', periodLockedOnReplica, period.id);
 
-  const receipt2 = await call('universal-inventory', 'POST', '/v1/records/inventory.receipts', { 'warehouse-id': warehouseId }, { 'Idempotency-Key': randomUUID() });
-  const receipt2Id = receipt2.json?.id;
+  const receiptAfterLock = await call('universal-inventory', 'POST', '/v1/records/inventory.receipts', { 'warehouse-id': warehouseId }, { 'Idempotency-Key': randomUUID() });
+  const receipt2Id = receiptAfterLock.json?.id;
   await call(
     'universal-inventory',
     'POST',

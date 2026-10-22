@@ -938,6 +938,11 @@
             "surfaceKey": "cmms-work-orders",
             "permission": "cmms.work-orders.write"
           }
+        },
+        {
+          "referenceKey": "technician-ref",
+          "referenceType": "SEARCH_LOOKUP",
+          "resolverKey": "workspace-members"
         }
       ],
       "validationRules": [],

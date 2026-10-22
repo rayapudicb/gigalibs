@@ -14,7 +14,7 @@ keeps the full rules.
 
 **Owner, 2026-10-21 — Option 1 (dev first):** Finish CMMS in **main worktree only**; **no release/deploy** until Phase A is done. Runbook: [CMMS-DEV-THEN-DEPLOY.md](handoff/CMMS-DEV-THEN-DEPLOY.md). Logs: `tee /tmp/gigalibs-verify.log`, journey board `e2e/test-results/journey/index.html`.
 
-**Next dev task:** [WI-OI-120bq](tasks/WI-OI-120bq.md) — **`pnpm verify --audits` OK** with `PROOF_DATABASE_URL` (only **design-tokens** fails); **next:** `test:minimal-p2p-o2c`, F2.9, Claude re-review.
+**Next dev task:** [WI-OI-120bq](tasks/WI-OI-120bq.md) — proofs **done**; **review handoff** [WI-OI-120bq-REVIEW-READY-2026-10-22.md](work/WI-OI-120bq-REVIEW-READY-2026-10-22.md). **Owner:** say **commit** (scoped files only), run **Claude re-review**, then **F2.9**.
 **120gd** product **Built** (`9eb14717`, journey **`i76bgm`** = **4** stage-5 blockers until **5180** `cmms-api` refresh;
 proof only). **T3** [WI-OI-120ad](tasks/WI-OI-120ad.md) in **Review**. **No push** until owner says. Leave maps/auth/softphone unstaged.
 

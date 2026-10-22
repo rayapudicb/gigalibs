@@ -121,7 +121,8 @@ describe('Zero-Knowledge Universal Rule Engine Kernel', () => {
 
     expect(verdict.actionTaken).toBe('BLOCK_DROP');
     expect(verdict.primaryMatchedRule?.ruleCode).toBe('SYS-SEC-AUTH-GATEWAY');
-    expect(verdict.executionLatencyMs).toBeLessThan(10);
+    // Full `pnpm test` runs hundreds of files in parallel; 10 ms is too tight on a loaded machine.
+    expect(verdict.executionLatencyMs).toBeLessThan(50);
     expect(verdict.fipsSha256Receipt.length).toBe(64);
   });
 

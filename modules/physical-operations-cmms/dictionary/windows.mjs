@@ -273,6 +273,7 @@ export function windowSource(builderFor) {
         ASSET_REF,
         PART_REF,
         WORK_ORDER_REF,
+        TECHNICIAN_REF,
       ],
       [
         view('work-orders', 'Work orders', [

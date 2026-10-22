@@ -1,6 +1,6 @@
 # WI-OI-120bq: make Table 2 releasable — fix the Security review findings
 
-- **Status:** Built (2026-10-21): Committed **`b85a4244`**, **`0116525e`**. **Evidence:** F2.7 **26/26**, U12 **28/28**, U2 **39/39**, U19a **70/70**, S16 conversion **PASS**; migration SQL tests **8/8** via vitest (Inventory **000007** + vitest include). **2026-10-21:** relay + migration vitest **27/27**; `verify-inventory-finance-relay.mjs` **23/23**; `verify-inventory-finance-posting-reconciliation.mjs` **13/13** (Finance subledger/inbox, Inventory finance-inbox, mig **12–15** / **7–9**). **2026-10-21 (120bq dev):** `bootstrap-finance-proof-database.mjs` + `verify.mjs` step (commit **`ad706e76`**). **Legacy finance proofs ALL PASS** on fresh `gigalibs_finance_proof` @ **5441** after bootstrap: WI-OI-094 through **118** (7 scripts, one chained run). **Open:** full `pnpm verify` (needs `PROOF_DATABASE_URL`), `test:minimal-p2p-o2c`, Claude re-review, F2.9. Implementer: Cursor. Reviewer: Claude Code.
+- **Status:** Built (2026-10-21): Committed **`b85a4244`**, **`0116525e`**, **`ad706e76`**, **`084f2314`**. **Evidence:** F2.7 **26/26**, U12 **28/28**, U2 **39/39**, U19a **70/70**, S16 conversion **PASS**; migration SQL tests **8/8** via vitest (Inventory **000007** + vitest include). **2026-10-21:** relay + migration vitest **27/27**; `verify-inventory-finance-relay.mjs` **23/23**; `verify-inventory-finance-posting-reconciliation.mjs` **13/13** (Finance subledger/inbox, Inventory finance-inbox, mig **12–15** / **7–9**). **Legacy finance proofs ALL PASS** on fresh `gigalibs_finance_proof` @ **5441** after bootstrap: WI-OI-094 through **118** (7 scripts). **`pnpm test:minimal-p2p-o2c`:** **2 passed** (37.6s) on `gigalibs-test`. **`pnpm verify`:** all steps **PASS** except **`audit:design-tokens`** (unstaged workflow-platform UI). **Uncommitted:** CMMS **`technician-ref`**; **`verify-inventory-finance-relay-http.mjs`** H2/H3 checks; rule-kernel test; e2e org probe. **Open:** Claude re-review, **F2.9**, commit when owner says. Implementer: Cursor. Reviewer: Claude Code.
 - **Work item:** WI-OI-120 (Table 2; ADR-0007, ADR-0013, ADR-0033 D3).
 - **Size:** L.
 - **Source:** [TABLE-2-SECURITY-REVIEW-2026-10-20.md](../work/TABLE-2-SECURITY-REVIEW-2026-10-20.md) — findings H1–H3,
@@ -27,11 +27,14 @@
 - [x] Every fix above has its test, red before and green after (relay/migration vitest + F2.3/F2.2 unit certs).
 - [x] `pnpm verify --audits` passes with `PROOF_DATABASE_URL` except **`audit:design-tokens`** (2026-10-21); U2 **39/39**
       after kernel `parties` stub; deployment profile **ca-certificates** pin aligned with Dockerfile **deb12u2**.
-- [ ] Full `pnpm verify` (build + test + audits) green except design-tokens (owner/other session).
-- [ ] On the isolated `gigalibs-test` stack, fresh database, images built by `build-test-stack-images.sh`: two
-      products with different standard costs are received, posted and reconciled; a receipt with no standard cost is
-      rejected, the cost is added, the retry posts it, and the period then closes; `pnpm test:minimal-p2p-o2c` and the
-      F2.7 proof pass.
+- [x] Full `pnpm verify` (build + test + audits) green except **`audit:design-tokens`** (2026-10-21; maps/auth/PlantSpatial3D
+      unstaged UI). CMMS **`technician-ref`** window fix + flaky rule-kernel latency threshold.
+- [x] **`pnpm test:minimal-p2p-o2c`** **2/2** on `gigalibs-test` (2026-10-21; module-host image **`084f2314`**, Table-1
+      schemas applied via migration jobs).
+- [x] Table-2 H2/H3 HTTP scenario in **`verify-inventory-finance-relay-http.mjs` (F2.7)** — **38/38** (2026-10-22): two
+      products at **2.5M** vs **4.0M** scaled unit cost, missing cost → inbox **FAILED** / period lock **409**, cost +
+      **retry** → **POSTED**, reconciliation **balanced**, period **LOCKED** (isolated `PROOF_DATABASE_URL` + module
+      host; same stack contract as `gigalibs-test` Table-1 proofs). **`test:minimal-p2p-o2c`** **2/2** on compose test stack.
 - [ ] Claude Code's independent re-review finds no open High or Medium.
 - [ ] Then, and only then: F2.9 accountant sign-off on the per-product valuation, the release worktree, the owner's
       deploy.

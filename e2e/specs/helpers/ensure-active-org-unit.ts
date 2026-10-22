@@ -467,6 +467,8 @@ async function finishStructureActivation(page: Page, tag: string) {
 
 /** Poll until product-catalogue accepts writes (kernel-worker delivered the active org version). */
 export async function waitForProductCatalogueOrgReady(page: Page, origin: string) {
+  let lastDetail =
+    'product-catalogue UOM probe has not succeeded yet (need kernel-worker + module-host; bash infra/compose/scripts/up-table1-module-host.sh on gigalibs-test)';
   await expect
     .poll(
       async () => {
@@ -484,9 +486,16 @@ export async function waitForProductCatalogueOrgReady(page: Page, origin: string
             dimension: 'COUNT',
           },
         });
-        return probe.status() === 201;
+        const text = await probe.text();
+        if (probe.status() === 201) return true;
+        if (probe.status() === 503 && text.includes('ORGANIZATION_VERSION_PENDING')) {
+          lastDetail = '503 ORGANIZATION_VERSION_PENDING — kernel has not delivered the active org version yet';
+          return false;
+        }
+        lastDetail = `${probe.status()}: ${text.slice(0, 320)}`;
+        return false;
       },
-      { timeout: 180_000, intervals: [2000, 3000, 5000] },
+      { timeout: 180_000, intervals: [2000, 3000, 5000], message: () => lastDetail },
     )
     .toBe(true);
 }

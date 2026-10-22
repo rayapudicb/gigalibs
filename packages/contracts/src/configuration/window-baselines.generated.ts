@@ -10020,6 +10020,11 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
               "surfaceKey": "cmms-work-orders",
               "permission": "cmms.work-orders.write"
             }
+          },
+          {
+            "referenceKey": "technician-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "workspace-members"
           }
         ],
         "validationRules": [],
