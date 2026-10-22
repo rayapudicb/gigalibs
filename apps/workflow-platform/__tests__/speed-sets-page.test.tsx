@@ -35,7 +35,7 @@ describe('SPEED starter packs (WI-OI-120ce)', () => {
       groups: 12,
       gases: 11,
     });
-    const body = library.body as { library: SpeedLibrarySetV1['library'] };
+    const body = library.body as unknown as { library: SpeedLibrarySetV1['library'] };
     // Real wording from the prototype, never a placeholder.
     expect(body.library.rules.find((rule) => rule.id === 'R-01')?.finding).toContain('DMSO');
     expect(JSON.stringify(body)).not.toContain('TEST FIXTURE');
@@ -54,7 +54,7 @@ describe('SPEED starter packs (WI-OI-120ce)', () => {
 
 describe('SPEED Library and Criteria pages (WI-OI-120ce)', () => {
   it('shows the library in force with its entries, and says when none is in force', () => {
-    const library = starter('library').body as {
+    const library = starter('library').body as unknown as {
       versionLabel: string;
       source: string;
       library: SpeedLibrarySetV1['library'];
