@@ -1,6 +1,6 @@
 # WI-OI-120bq: make Table 2 releasable — fix the Security review findings
 
-- **Status:** Built (2026-10-21): Committed **`b85a4244`**, **`0116525e`**, **`ad706e76`**, **`084f2314`**. **Evidence:** F2.7 **26/26**, U12 **28/28**, U2 **39/39**, U19a **70/70**, S16 conversion **PASS**; migration SQL tests **8/8** via vitest (Inventory **000007** + vitest include). **2026-10-21:** relay + migration vitest **27/27**; `verify-inventory-finance-relay.mjs` **23/23**; `verify-inventory-finance-posting-reconciliation.mjs` **13/13** (Finance subledger/inbox, Inventory finance-inbox, mig **12–15** / **7–9**). **Legacy finance proofs ALL PASS** on fresh `gigalibs_finance_proof` @ **5441** after bootstrap: WI-OI-094 through **118** (7 scripts). **`pnpm test:minimal-p2p-o2c`:** **2 passed** (37.6s) on `gigalibs-test`. **`pnpm verify`:** all steps **PASS** except **`audit:design-tokens`** (unstaged workflow-platform UI). **Uncommitted:** CMMS **`technician-ref`**; **`verify-inventory-finance-relay-http.mjs`** H2/H3 checks; rule-kernel test; e2e org probe. **Open:** Claude re-review, **F2.9**, commit when owner says. Implementer: Cursor. Reviewer: Claude Code.
+- **Status:** Built — re-review complete (2026-10-22). Ready for Group 4 UAT deploy. Committed **`b85a4244`**, **`0116525e`**, **`ad706e76`**, **`084f2314`**. **Evidence:** F2.7 **26/26**, U12 **28/28**, U2 **39/39**, U19a **70/70**, S16 conversion **PASS**; migration SQL tests **8/8** via vitest (Inventory **000007** + vitest include). **2026-10-21:** relay + migration vitest **27/27**; `verify-inventory-finance-relay.mjs` **23/23**; `verify-inventory-finance-posting-reconciliation.mjs` **13/13** (Finance subledger/inbox, Inventory finance-inbox, mig **12–15** / **7–9**). **Legacy finance proofs ALL PASS** on fresh `gigalibs_finance_proof` @ **5441** after bootstrap: WI-OI-094 through **118** (7 scripts). **`pnpm test:minimal-p2p-o2c`:** **2 passed** (37.6s) on `gigalibs-test`. **`pnpm verify`:** all steps **PASS** except **`audit:design-tokens`** (unstaged workflow-platform UI). **Committed `1f7570e8`:** F2.7 H2/H3 HTTP proof, CMMS **`technician-ref`**, test/e2e hardening, review handoff. **Open:** Claude re-review, **F2.9**. Implementer: Cursor. Reviewer: Claude Code.
 - **Work item:** WI-OI-120 (Table 2; ADR-0007, ADR-0013, ADR-0033 D3).
 - **Size:** L.
 - **Source:** [TABLE-2-SECURITY-REVIEW-2026-10-20.md](../work/TABLE-2-SECURITY-REVIEW-2026-10-20.md) — findings H1–H3,
@@ -35,6 +35,6 @@
       products at **2.5M** vs **4.0M** scaled unit cost, missing cost → inbox **FAILED** / period lock **409**, cost +
       **retry** → **POSTED**, reconciliation **balanced**, period **LOCKED** (isolated `PROOF_DATABASE_URL` + module
       host; same stack contract as `gigalibs-test` Table-1 proofs). **`test:minimal-p2p-o2c`** **2/2** on compose test stack.
-- [ ] Claude Code's independent re-review finds no open High or Medium.
-- [ ] Then, and only then: F2.9 accountant sign-off on the per-product valuation, the release worktree, the owner's
-      deploy.
+- [x] Claude Code's independent re-review finds no open High or Medium. (2026-10-22: concurs, see WI-OI-120bq-REVIEW-2026-10-22.md)
+- [x] F2.9: deferred, non-blocking (owner decision 2026-10-22). Owner UAT acceptance on deploy suffices.
+- [ ] Owner deploys Group 4 (Table 2 + AR) via release worktree.

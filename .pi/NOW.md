@@ -18,7 +18,7 @@ Full deploy sequence and module completion gate are in `AGENTS.md`.
 
 **Owner, 2026-10-21 — Option 1 (dev first):** Finish CMMS in **main worktree only**; **no release/deploy** until Phase A is done. Runbook: [CMMS-DEV-THEN-DEPLOY.md](handoff/CMMS-DEV-THEN-DEPLOY.md). Logs: `tee /tmp/gigalibs-verify.log`, journey board `e2e/test-results/journey/index.html`.
 
-**Next dev task:** [WI-OI-120bq](tasks/WI-OI-120bq.md) — proofs **done**; **review handoff** [WI-OI-120bq-REVIEW-READY-2026-10-22.md](work/WI-OI-120bq-REVIEW-READY-2026-10-22.md). **Committed `1f7570e8` (120bq proof + CMMS window). Next:** **Claude re-review**, **F2.9** (owner).
+**WI-OI-120bq:** re-review complete (2026-10-22); all H/M findings closed; F2.9 deferred non-blocking per owner. **Ready for Group 4 UAT deploy** (release worktree, after CMMS M-CM1 deploy). **Current dev task:** CMMS M-CM1 exit — 120gd journey proof on local compose, then owner deploys Group 1.
 **120gd** product **Built** (`9eb14717`, journey **`i76bgm`** = **4** stage-5 blockers until **5180** `cmms-api` refresh;
 proof only). **T3** [WI-OI-120ad](tasks/WI-OI-120ad.md) in **Review**. **No push** until owner says. Leave maps/auth/softphone unstaged.
 
