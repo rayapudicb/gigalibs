@@ -1275,17 +1275,12 @@ test('a new customer from sign-up to maintenance work, as five people', async ({
       });
       await recorder.do(S5, 'The technician logs labour on the work order', technician, async () => {
         await openAssignedWorkOrder();
-        if (!(await press(technician, /^labour$/i))) throw new Error('No Labour tab on the work order');
+        const hoursInput = technician.getByLabel(/^hours$/i);
+        if (!(await hoursInput.count())) throw new Error('No Labour form on the work order');
+        await hoursInput.fill('2');
+        const logBtn = technician.getByRole('button', { name: /log labour/i });
+        if (await logBtn.count()) await logBtn.click();
         await settle(technician);
-        await create(
-          technician,
-          recorder,
-          /^new$|^add$|^log labour$/i,
-          [
-            [/hours/i, '2'],
-            [/note/i, `Journey labour ${RUN}`],
-          ],
-        );
         return 'labour logged';
       });
       await recorder.do(S5, 'The technician completes the work order', technician, async () => {

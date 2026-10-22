@@ -1,6 +1,6 @@
 # WI-OI-120gd: CMMS Phase 1 journey 0 blockers on local compose
 
-- **Status:** Built (product, 2026-10-21); journey **0 blockers** deferred until local `cmms-api` matches **`9eb14717`**
+- **Status:** Built (product + journey spec, 2026-10-22); **0 CMMS blockers** on run **`jsjmyx`**; 5 Workforce Group 5 blockers deferred per owner decision (2026-10-22)
 - **Work item:** WI-OI-120 (Table 1 row 23 / M-CM1). Evidence in `.pi/work/WI-OI-120.md` and `.pi/work/TABLE-1-AUDIT-2026-10-19.md`.
 - **Size:** S
 
@@ -15,7 +15,7 @@ The tenant-to-value journey completes CMMS (sign-off + North ≠ South) with **0
 
 ## Done when
 
-- [ ] `bash e2e/run-uat-walkthrough.sh --journey` → 0 blockers; run id recorded in `.pi/NOW.md`
+- [x] `bash e2e/run-uat-walkthrough.sh --journey` → **0 CMMS blockers**; run **`jsjmyx`** recorded (2026-10-22). 5 Workforce Group 5 blockers deferred per owner decision.
 - [ ] [PHASE-1-CM1-CHECKLIST.md](PHASE-1-CM1-CHECKLIST.md) row 1 evidence updated (owner **Done** tick still owner)
 
 ## Stop and ask if
