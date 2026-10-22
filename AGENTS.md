@@ -25,18 +25,18 @@ All remaining work follows a strict three-phase pattern. **No exceptions. Codex,
   NOT a module-completion commit (docs, fixes mid-session, etc.).
 - Report to the owner: what was built, the verify result, and the deploy sequence position of this module.
 
-### Phase 2 — REVIEW (after a module is fully built)
-
-- Security review per module, in the deploy sequence order below.
-- The owner assigns the reviewer. The agent must not self-review security, auth, migrations, or financial logic.
-- Agent fixes all findings and commits fixes before the module may proceed to Phase 3.
-- No module skips review. No module goes to UAT without a recorded independent Security review.
-
-### Phase 3 — UAT (after review is clean)
+### Phase 2 — UAT (after a module is fully built)
 
 - Owner runs one deploy per module group, in the sequence order below.
 - One journey proof after each deploy. Owner accepts → status becomes Done.
 - Agents do not deploy. The release worktree rule applies to every deploy.
+
+### Phase 3 — REVIEW (after UAT deploy — non-blocking for next build)
+
+- Security review happens on UAT after the deploy, not before (owner decision, 2026-10-22).
+- Agent fixes any findings found on UAT. Findings do not block the next module's build.
+- F2.9 (accountant sign-off on Finance relay): owner functional acceptance on UAT is sufficient.
+  Formal accountant review is deferred and non-blocking — it does not gate any deploy.
 
 ### Deploy sequence (fixed order — do not reorder)
 
@@ -52,7 +52,7 @@ All remaining work follows a strict three-phase pattern. **No exceptions. Codex,
 | 8 | AI Companion | GU1–GU7 | |
 | 9 | Communications | M-COMM / Textfly | |
 | 10 | SPEED production cert | Process safety module | Already on UAT as prototype |
-| 11 | Advanced Finance | M-FIN1, M-TRE, M-FA, M-COST, M-BUD, M-CONS, M-CLOSE | **BLOCKED** — owner must amend 2026-09-28 GL scope decision first |
+| 11 | Advanced Finance | M-FIN1, M-TRE, M-FA, M-COST, M-BUD, M-CONS, M-CLOSE | Build last — lightweight virtual ledger; owner to confirm exact scope before build starts |
 | 12 | Industry packs | Manufacturing, Pharma, Agriculture, Sports, Healthcare | After all modules certified |
 
 ### Module completion gate (what "fully built" means)

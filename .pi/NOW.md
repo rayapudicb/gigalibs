@@ -9,10 +9,10 @@ See `AGENTS.md § Delivery phases`. Summary: BUILD all modules → REVIEW per mo
 Agents commit once the full module is complete and `pnpm verify` is clean. No mid-module deploys.
 Full deploy sequence and module completion gate are in `AGENTS.md`.
 
-**Owner decisions still needed before some modules can start:**
-1. GL scope amendment — 7 Advanced Finance modules blocked until owner amends 2026-09-28 "No GL" decision.
-2. Named Security reviewers (step 0.7b — open).
-3. Named accountant for F2.9 Finance relay sign-off (open).
+**Owner decisions recorded 2026-10-22:**
+- GL: build last as lightweight virtual ledger; scope confirmed before Group 11 build starts.
+- Security review: post-UAT, not pre-deploy. Does not block any deploy.
+- F2.9: owner functional acceptance on UAT is sufficient; formal accountant review deferred, non-blocking.
 
 ## Current step — **CMMS M-CM1 exit (Phase 1 BUILD → then deploy)**
 
