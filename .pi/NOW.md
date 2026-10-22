@@ -1,20 +1,24 @@
-# NOW: where the work stands (2026-10-18)
+# NOW: where the work stands (2026-10-22)
 
 The order of all work is [execution plan v3](../docs/plans/gigalibs-execution-plan-v3.md) (owner-approved 2026-10-13)
 and [the Phase 1 order](../docs/plans/phase-1-sizing.md) (owner-approved 2026-10-16). Statuses are in
-[WORK_ITEMS.md](WORK_ITEMS.md); evidence is in [work/WI-OI-120.md](work/WI-OI-120.md). The previous, longer version of
-this page is kept in [archive/NOW-2026-10-15.md](archive/NOW-2026-10-15.md).
+[WORK_ITEMS.md](WORK_ITEMS.md); evidence is in [work/WI-OI-120.md](work/WI-OI-120.md).
 
-**A new agent taking over starts with [the Cursor handover brief](handoff/HANDOFF-2026-10-18-CURSOR.md)**: the
-owner's latest order, the exact state, the pending CMMS work and the release procedure. The prompt to paste is
-[PROMPT-2026-10-18-CURSOR.md](handoff/PROMPT-2026-10-18-CURSOR.md). The [2026-10-17 brief](handoff/HANDOFF-2026-10-17.md)
-keeps the full rules.
+**Delivery rule change (owner, 2026-10-22):** Three-phase pattern now in force for all agents (Codex, Cursor, Claude).
+See `AGENTS.md § Delivery phases`. Summary: BUILD all modules → REVIEW per module → UAT per module group in sequence.
+Agents commit once the full module is complete and `pnpm verify` is clean. No mid-module deploys.
+Full deploy sequence and module completion gate are in `AGENTS.md`.
 
-## Current step — **100% CMMS = Phase 1 exit (M-CM1), not M-CM2**
+**Owner decisions still needed before some modules can start:**
+1. GL scope amendment — 7 Advanced Finance modules blocked until owner amends 2026-09-28 "No GL" decision.
+2. Named Security reviewers (step 0.7b — open).
+3. Named accountant for F2.9 Finance relay sign-off (open).
+
+## Current step — **CMMS M-CM1 exit (Phase 1 BUILD → then deploy)**
 
 **Owner, 2026-10-21 — Option 1 (dev first):** Finish CMMS in **main worktree only**; **no release/deploy** until Phase A is done. Runbook: [CMMS-DEV-THEN-DEPLOY.md](handoff/CMMS-DEV-THEN-DEPLOY.md). Logs: `tee /tmp/gigalibs-verify.log`, journey board `e2e/test-results/journey/index.html`.
 
-**Next dev task:** [WI-OI-120bq](tasks/WI-OI-120bq.md) — proofs **done**; **review handoff** [WI-OI-120bq-REVIEW-READY-2026-10-22.md](work/WI-OI-120bq-REVIEW-READY-2026-10-22.md). **Owner:** say **commit** (scoped files only), run **Claude re-review**, then **F2.9**.
+**Next dev task:** [WI-OI-120bq](tasks/WI-OI-120bq.md) — proofs **done**; **review handoff** [WI-OI-120bq-REVIEW-READY-2026-10-22.md](work/WI-OI-120bq-REVIEW-READY-2026-10-22.md). **Committed `1f7570e8` (120bq proof + CMMS window). Next:** **Claude re-review**, **F2.9** (owner).
 **120gd** product **Built** (`9eb14717`, journey **`i76bgm`** = **4** stage-5 blockers until **5180** `cmms-api` refresh;
 proof only). **T3** [WI-OI-120ad](tasks/WI-OI-120ad.md) in **Review**. **No push** until owner says. Leave maps/auth/softphone unstaged.
 
@@ -62,7 +66,7 @@ proof only). **T3** [WI-OI-120ad](tasks/WI-OI-120ad.md) in **Review**. **No push
 
 **WI-OI-120cc (2026-10-21, In progress; S9a built, committed `5b74a503` on `feat/speed-s3-module`):** SPEED S9 targets the `speed-lab` instance, not UAT (plan v1.4 D1/D7). S9a: the kernel now delivers organization versions to SPEED; a `gigalibs-speed-lab` preview instance (own PostgreSQL, MinIO, network, port 5190; scripts refuse any other project) is running with a TEST workspace, the TEST FIXTURE criteria and library and the reference route; every SPEED screen checked at 1366 × 768; Dockerfile Debian pins moved to the served security versions (main's builds fail on the old pins). Found: Finance and Inventory migrations cannot install on a fresh database (they grant to their runtime role before the runner creates it). Card: [WI-OI-120cc](tasks/WI-OI-120cc.md). R1 completion committed `fb21e5c8`: Outcomes page (S9b), write-up parser (S8), audit trail page, Data gaps tile and role labels on the matrix; S9c and S9d move to the deployment phase.
 
-**WI-OI-120ce (2026-10-22, In progress: second release building):** SPEED as the prototype shows it. Round 1 (`d039b970`, deployed): 7 prototype defects fixed, pack import, starter packs. Round 2, from the owner's failed project on UAT: sites in force only (SPEED's `speed-sites`), typing spaces (every window), no system fields on create forms, one searchable picker, Excel/JSON pack files with templates, and a lab-only browser suite (27/27 passed; report https://claude.ai/artifact/5GjAFyMmCcba35ohiRytMY). SPEED `dc99f1bb`, release `a1eb8242`: images built and checked, UAT backed up (`gigalibs_backup_20261022_053053Z`); next: the owner's deploy. Card: [WI-OI-120ce](tasks/WI-OI-120ce.md).
+**WI-OI-120ce (2026-10-22, second release deployed):** SPEED as the prototype shows it. Round 1 (`d039b970`, deployed): 7 prototype defects fixed, pack import, starter packs. Round 2, from the owner's failed project on UAT: sites in force only (SPEED's `speed-sites`), typing spaces (every window), no system fields on create forms, one searchable picker, Excel/JSON pack files with templates, and a lab-only browser suite (27/27 passed; report https://claude.ai/artifact/5GjAFyMmCcba35ohiRytMY). SPEED `dc99f1bb`, release `a1eb8242`: deployed on UAT (running since 05:43 UTC, healthy; backup `gigalibs_backup_20261022_053053Z`). Card: [WI-OI-120ce](tasks/WI-OI-120ce.md).
 
 **WI-OI-120cf (2026-10-22, Review: first proof committed `25bed181`):** the mobile v1 BFF. Slice 1, identity and session: `/mobile/v1` sign-in, TOTP challenge (no token before it), workspaces with an idempotent switch, session v3, one-use refresh with reuse revoking the session, logout; mobile-only tokens bound to the installation; one forward migration (four `mobile_*` tables). Slice 2: a local-network HTTPS proxy that exposes only `/mobile/v1` to phones, with a local certificate authority. Branch `feat/mobile-v1-bff` (worktree `gigalibs-mobile-bff`). Next: the independent Security review ([request](handoff/REVIEW-REQUEST-WI-OI-120cf.md)), then release. Card: [WI-OI-120cf](tasks/WI-OI-120cf.md).
 **WI-OI-120cd (2026-10-21, In progress: SPEED live on UAT; trial-delivery fix building):** SPEED on UAT (owner, reversing plan v1.4 D1/D7 for UAT; SPEED stays PLANNED, under the UAT preview). Deployed `76780730`, then fix `19048071` (CMMS's regenerated `cmms-work-orders` baseline had stopped window activation for every tenant); SPEED's windows active for "GigaLibs Global Enterprise". Platform defect found: the kernel's subject context refused TRIAL tenants, so organization delivery never worked on UAT (no ACTIVE tenant; 23 deliveries quarantined); fix `a1765ce6` (SPEED branch `c47a5c1e`) building. SPEED ships no data; criteria and library load only through the API (no screen yet). Security review not yet recorded. Card: [WI-OI-120cd](tasks/WI-OI-120cd.md).

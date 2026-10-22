@@ -10,6 +10,63 @@ certification.
 Never claim that the full platform, an industry pack, a quarantined package, or an external production
 deployment is complete without the evidence required by the SDLC and module-completeness gates.
 
+## Delivery phases (owner decision, 2026-10-22)
+
+All remaining work follows a strict three-phase pattern. **No exceptions. Codex, Cursor, and all agents follow this.**
+
+### Phase 1 — BUILD (current phase for each unbuilt module)
+
+- Build the **entire module** end-to-end before stopping.
+- No partial commits, no mid-module reviews, no UAT deploys.
+- `pnpm verify` must pass (no new failures) before the module is considered built.
+- **Commit rule:** the agent commits once the full module is complete and `pnpm verify` is clean.
+  No "commit" command from the owner is needed to trigger a module-completion commit.
+  The owner reviews commits asynchronously. The owner still says "commit" for anything that is
+  NOT a module-completion commit (docs, fixes mid-session, etc.).
+- Report to the owner: what was built, the verify result, and the deploy sequence position of this module.
+
+### Phase 2 — REVIEW (after a module is fully built)
+
+- Security review per module, in the deploy sequence order below.
+- The owner assigns the reviewer. The agent must not self-review security, auth, migrations, or financial logic.
+- Agent fixes all findings and commits fixes before the module may proceed to Phase 3.
+- No module skips review. No module goes to UAT without a recorded independent Security review.
+
+### Phase 3 — UAT (after review is clean)
+
+- Owner runs one deploy per module group, in the sequence order below.
+- One journey proof after each deploy. Owner accepts → status becomes Done.
+- Agents do not deploy. The release worktree rule applies to every deploy.
+
+### Deploy sequence (fixed order — do not reorder)
+
+| # | Group | Modules | Notes |
+|---|-------|---------|-------|
+| 1 | CMMS M-CM1 | Work orders, parts, assets, unit scope | Current — finish first |
+| 2 | Mobile BFF | v1 BFF, mobile app logout, LAN profile | Parallel to CMMS |
+| 3 | Orders + Procurement + Inventory | M-ORD, M-PROC, M-INV1 | Build and deploy together |
+| 4 | AR + Finance relay | M-AR0, Table 2 (F0–F2.8) | Fix B2–B7 blockers first |
+| 5 | Workforce | M-WF1, M-WF2, M-WF3 | |
+| 6 | Geospatial | T3, M-GEO | |
+| 7 | Analytics | M-ANA, Connector Hub full | |
+| 8 | AI Companion | GU1–GU7 | |
+| 9 | Communications | M-COMM / Textfly | |
+| 10 | SPEED production cert | Process safety module | Already on UAT as prototype |
+| 11 | Advanced Finance | M-FIN1, M-TRE, M-FA, M-COST, M-BUD, M-CONS, M-CLOSE | **BLOCKED** — owner must amend 2026-09-28 GL scope decision first |
+| 12 | Industry packs | Manufacturing, Pharma, Agriculture, Sports, Healthcare | After all modules certified |
+
+### Module completion gate (what "fully built" means)
+
+A module is complete when ALL of the following are true:
+- `pnpm verify` passes with no new failures.
+- Every sub-task in the module's card is done.
+- All persistence uses real databases — no mocks, no fixtures, no hard-coded data.
+- Migrations are present with verification and a roll-forward plan.
+- Tests cover all happy paths and key failure paths.
+- No embedded credentials, no default tenants, no local-only business state.
+
+---
+
 ## Every session: start here
 
 Work in short, focused sessions. The owner starts a fresh session for each task and may just say "next".
@@ -25,7 +82,9 @@ Work in short, focused sessions. The owner starts a fresh session for each task 
    - show only the tail of long command output;
    - verify with `pnpm verify`, which prints one line per step and the path of the full log.
 5. Finish by updating `.pi/NOW.md` and the task card's status. Then report in at most five short bullets: what
-   changed, the evidence, what's next, and what the owner must decide. Commit only when the owner says "commit".
+   changed, the evidence, what's next, and what the owner must decide.
+6. Commit rule: commit once the **full module** is built and `pnpm verify` is clean (Phase 1 completion).
+   For all other commits (fixes, docs), wait for the owner to say "commit".
 
 "next" (or `/next`) means: run steps 1–5 for the task that `.pi/NOW.md` names.
 
