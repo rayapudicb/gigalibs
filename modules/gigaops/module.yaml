@@ -34,9 +34,11 @@ spec:
     basePath: /gigaops
     package: '@gigalibs/gigaops-web'
     # WI-OI-120u (owner, 2026-10-13): People, Availability and Bookings are metadata windows; the other sections stay
-    # on the Workforce workbench (`app/(app)/gigaops/[section]`) until their windows can do what those screens do
-    # (Jobs: revisions, people in positions and a site picker). The dictionary renderer gets the signed-in user's
-    # permissions (WI-OI-120e).
+    # on the Workforce workbench (`app/(app)/gigaops/[section]`). WI-OI-120hm (owner, 2026-10-24): Jobs stays a
+    # workbench component like clock-in and dispatch — its effective-dated revision chain and engagement lifecycle
+    # need record adapters and metadata-framework features a window cannot express today; a metadata build is
+    # deferred to a future L card (the held window is kept in `dictionary/jobs-window.held.mjs`). The dictionary
+    # renderer gets the signed-in user's permissions (WI-OI-120e).
     pages:
       - route: /gigaops/resources
         component: WorkforceWorkspace

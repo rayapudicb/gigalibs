@@ -29,6 +29,12 @@ Full deploy sequence and module completion gate are in `AGENTS.md`.
 - [WI-OI-120hl](tasks/WI-OI-120hl.md) (M-WF1 fix, **no code needed**): window JSONs are correct; lookup
   chain works; tests exist in `availability-record-adapters.spec.ts`. B3/B5 unblock when B1 is fixed +
   `wf-my-absences` manifest republished in Config Studio.
+- [WI-OI-120hm](tasks/WI-OI-120hm.md) (M-WF1, **Done — investigation; owner decision 2026-10-24**): the held
+  Jobs & positions window is **not** built as metadata. Its workbench parity (effective-dated revision chain +
+  engagement lifecycle) needs new record adapters (revisions, engagements) + framework features (multi-select,
+  as-of, date-conditional actions) — L-sized, overlapping M-WF3. **Decision: `/gigaops/jobs` stays a workbench
+  component** (like clock-in and dispatch); metadata build deferred to a future L card; `jobs-window.held.mjs`
+  retained. Only the site/dept picker was trivially ready (`wf.positions` already writable).
 
 **WI-OI-120bq:** re-review complete (2026-10-22); all H/M findings closed; F2.9 deferred non-blocking per owner. **Ready for Group 4 UAT deploy** (release worktree, after CMMS M-CM1 deploy).
 

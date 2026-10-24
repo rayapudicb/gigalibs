@@ -1,7 +1,10 @@
 // WI-OI-120u (M-WF1, ADR-0033 D1): the Jobs & positions window, held back by the owner on 2026-10-13. It is not
-// generated: it returns to windows.mjs in the follow-up that lets it revise job profiles, place people in positions (a
-// window of its own, since a window has one level of child tabs) and pick a site. Until then /gigaops/jobs stays on
-// the Workforce workbench. Its record adapters (wf.job-profiles, wf.positions) are registered and tested already.
+// generated. WI-OI-120hm (owner, 2026-10-24): Jobs stays a workbench component — matching the workbench needs an
+// effective-dated revision chain and an engagement lifecycle (engage/end/cancel/withdraw, single incumbent), which
+// require new record adapters (revisions, engagements) and metadata-framework features (multi-select, as-of views,
+// date-conditional actions). This file is retained as the starting point for a future L card that builds those; it
+// still needs the site/department pickers (positions' site-ref and organization-unit-id → REFERENCE) wired in then.
+// Its record adapters (wf.job-profiles, wf.positions) are registered and tested already.
 
 const PROFILE_STATUSES = [
   ['ACTIVE', 'Active'],

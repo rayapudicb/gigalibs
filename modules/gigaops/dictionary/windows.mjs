@@ -1,7 +1,8 @@
 // WI-OI-120u (M-WF1, ADR-0033 D1): Workforce metadata windows. Edit here, then run
 // `node scripts/generate-windows.mjs gigaops` and `pnpm modules:catalog`.
-// Jobs & positions is held back (owner, 2026-10-13) in jobs-window.held.mjs until it does what the workbench's Jobs screen
-// does; /gigaops/jobs stays on the workbench until then.
+// Jobs & positions stays on the Workforce workbench as an accepted component (owner, WI-OI-120hm, 2026-10-24): its
+// revision chain and engagement lifecycle need adapters and framework features a window cannot express today, so the
+// metadata build is deferred to a future L card. The starting point is kept in jobs-window.held.mjs (not generated).
 // A record type shown in two windows (working weeks, absences) has the same fields in both: its field rules are one set.
 // Child tabs add and list; a record's actions (end, approve, withdraw) are on the window where it is the main record.
 
