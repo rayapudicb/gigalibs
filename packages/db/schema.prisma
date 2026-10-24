@@ -1066,6 +1066,7 @@ model TenantMember {
   orgScopeGrants       OrgScopeGrant[]
   // WI-OI-120w (R2, ADR-0034): the roles this member holds, each at a scope.
   roleAssignments      MemberRoleAssignment[]
+  dutyConflictAcceptances DutyConflictAcceptance[]
 
   @@unique([userId, tenantId])
   @@index([tenantId])
@@ -2846,6 +2847,7 @@ model DutyConflictAcceptance {
   id            String    @id @default(cuid())
   tenantId      String
   userId        String
+  member        TenantMember @relation(fields: [userId, tenantId], references: [userId, tenantId], onDelete: Cascade, map: "duty_conflict_acceptances_member_fkey")
   conflictSetId String
   reason        String    @db.VarChar(500)
   acceptedById  String
