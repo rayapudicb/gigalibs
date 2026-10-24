@@ -17,8 +17,25 @@ The 15 contiguous commits `6ecca404..f21cbf0e` on `feat/gigaops-convergence-core
   live-only mint; routes.
 - **R5 scope (WI-OI-120ho)** `cb8295f2`, `25e7b9a5`, `8e0bb21d` — unit+place scope-by-assignment on the person reads.
 
-Shared branch: use the **release worktree** and cherry-pick `6ecca404..f21cbf0e` onto the running release
-(`1d8d2634`), per the release-worktree rule — do not deploy the whole branch (it carries other sessions' commits).
+Shared branch: do not deploy the whole branch (it carries ~208 other, unreviewed commits).
+
+## Release assembly — dry-run verified clean (2026-10-24)
+
+Target line: **`release/wi120u-workforce`** (worktree `gigalibs-release-wf120u`), the Workforce release line (UAT is
+assembled per-domain from its own release worktrees; the current UAT points are CMMS `1d8d2634`, SPEED `a1eb8242`,
+etc. — none is an ancestor of this feature branch).
+
+A **non-destructive dry-run** (throwaway detached worktree at `9734dca9`, then `git cherry-pick 6ecca404^..f21cbf0e`)
+proved the 15 commits apply with **no product-code conflict** — the only conflict is `.pi/NOW.md` (the status index),
+resolved by taking the incoming version. So the delta is cleanly isolatable; it does not depend on the branch's other
+commits for code.
+
+Assembly steps (owner):
+1. **Clear the release worktree first** — `gigalibs-release-wf120u` currently has an uncommitted
+   `infra/compose/docker/Dockerfile` change (+ untracked proof-scripts); commit or stash it before assembling.
+2. In that clean worktree: `git cherry-pick 6ecca404^..f21cbf0e`; when `.pi/NOW.md` conflicts, take the incoming
+   version (`git checkout --theirs .pi/NOW.md && git add .pi/NOW.md && git cherry-pick --continue`). No other conflicts expected.
+3. Then build + back up (the session can do these once the worktree is clean) and deploy with your tool.
 
 ## Migrations (control-plane DB only; both additive, low risk)
 
