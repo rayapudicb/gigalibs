@@ -30,10 +30,12 @@ import {
   AdmissionGate,
   type EffectivePunch,
   type WeekComputation,
+  type WorkerRow,
   addDays,
   computeWeek,
   localDate,
   punchTiming,
+  requireWorker,
   weekStart,
 } from './time.rules.js';
 
@@ -603,18 +605,18 @@ export class TimeService {
   // ─── Helpers ───────────────────────────────────────────────────────────────────────────────────────────
   /** The signed-in user's own active person. */
   private async ownWorker(client: PoolClient, principal: GigaOpsPrincipal): Promise<{ id: string; display_name: string }> {
-    const result = await client.query<{ id: string; display_name: string; status: string; resource_type: string }>(
+    const result = await client.query<WorkerRow>(
       `SELECT id, display_name, status, resource_type FROM gigalibs_workforce.workforce_resources WHERE tenant_id = $1 AND platform_user_id = $2`,
       [principal.tenantId, principal.subject],
     );
-    const worker = result.rows[0];
-    if (!worker) {
-      throw new ForbiddenException({ code: 'WORKFORCE_NOT_A_WORKER', message: 'Your user is not linked to a Workforce person; ask an administrator to link it.' });
+    const outcome = requireWorker(result.rows);
+    if (!outcome.ok) {
+      const message = outcome.code === 'WORKFORCE_NOT_A_WORKER'
+        ? 'Your user is not linked to a Workforce person; ask an administrator to link it.'
+        : 'Your Workforce person is not an active individual.';
+      throw new ForbiddenException({ code: outcome.code, message });
     }
-    if (worker.status !== 'ACTIVE' || worker.resource_type !== 'HUMAN') {
-      throw new ForbiddenException({ code: 'WORKFORCE_WORKER_INACTIVE', message: 'Your Workforce person is not an active individual.' });
-    }
-    return worker;
+    return outcome;
   }
 
   /** Whose time a request concerns: one's own (no resource id, or one's own person) or another person's with the permission. */

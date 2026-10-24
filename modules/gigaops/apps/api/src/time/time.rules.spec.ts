@@ -1,6 +1,6 @@
 /** WI-OI-069 — time and attendance rules: punch timing, local dates, weeks and shift pairing. */
 import { describe, expect, it } from 'vitest';
-import { ADMISSION_REFUSED, AdmissionGate, type EffectivePunch, computeWeek, localDate, punchTiming, weekStart } from './time.rules.js';
+import { ADMISSION_REFUSED, AdmissionGate, type EffectivePunch, computeWeek, localDate, punchTiming, requireWorker, weekStart } from './time.rules.js';
 
 let sequence = 0;
 function punch(kind: EffectivePunch['kind'], occurredAt: string, workDate = occurredAt.slice(0, 10)): EffectivePunch {
@@ -112,6 +112,24 @@ describe('computeWeek', () => {
     );
     expect(week.issues.map((item) => item.code)).toEqual(['BREAK_NOT_ENDED']);
     expect(week.lines).toEqual([]);
+  });
+});
+
+describe('requireWorker', () => {
+  it('returns ok for an active human person', () => {
+    expect(requireWorker([{ id: 'r1', display_name: 'Alice', status: 'ACTIVE', resource_type: 'HUMAN' }]))
+      .toEqual({ ok: true, id: 'r1', display_name: 'Alice' });
+  });
+  it('returns WORKFORCE_NOT_A_WORKER when no person is linked', () => {
+    expect(requireWorker([])).toEqual({ ok: false, code: 'WORKFORCE_NOT_A_WORKER' });
+  });
+  it('returns WORKFORCE_WORKER_INACTIVE for an inactive person', () => {
+    expect(requireWorker([{ id: 'r1', display_name: 'Alice', status: 'INACTIVE', resource_type: 'HUMAN' }]))
+      .toEqual({ ok: false, code: 'WORKFORCE_WORKER_INACTIVE' });
+  });
+  it('returns WORKFORCE_WORKER_INACTIVE for a non-human resource', () => {
+    expect(requireWorker([{ id: 'eq1', display_name: 'Forklift', status: 'ACTIVE', resource_type: 'EQUIPMENT' }]))
+      .toEqual({ ok: false, code: 'WORKFORCE_WORKER_INACTIVE' });
   });
 });
 

@@ -14,12 +14,23 @@ Full deploy sequence and module completion gate are in `AGENTS.md`.
 - Security review: post-UAT, not pre-deploy. Does not block any deploy.
 - F2.9: owner functional acceptance on UAT is sufficient; formal accountant review deferred, non-blocking.
 
-## Current step — **CMMS M-CM1 exit (Phase 1 BUILD → then deploy)**
+## Current step — **Group 5 Workforce BUILD (Phase 1)**
 
-**Owner, 2026-10-21 — Option 1 (dev first):** Finish CMMS in **main worktree only**; **no release/deploy** until Phase A is done. Runbook: [CMMS-DEV-THEN-DEPLOY.md](handoff/CMMS-DEV-THEN-DEPLOY.md). Logs: `tee /tmp/gigalibs-verify.log`, journey board `e2e/test-results/journey/index.html`.
+**120gd** journey **`jsjmyx`** (2026-10-22): **0 CMMS blockers** — 5 Workforce blockers deferred to Group 5. Labour form fix committed `9b9945c1`. **Owner: accept CMMS journey as clean → tick PHASE-1-CM1 row 1 → schedule Group 1 deploy day.**
 
-**WI-OI-120bq:** re-review complete (2026-10-22); all H/M findings closed; F2.9 deferred non-blocking per owner. **Ready for Group 4 UAT deploy** (release worktree, after CMMS M-CM1 deploy). **Current dev task:** CMMS M-CM1 exit — 120gd journey proof on local compose, then owner deploys Group 1.
-**120gd** journey **`jsjmyx`** (2026-10-22): **0 CMMS blockers** — 5 remaining are all Workforce Group 5 scope (clock-in person link, submit week, absence type, approver queue); deferred per owner decision. Labour form fix committed to journey spec. **Owner: accept CMMS journey as clean → tick PHASE-1-CM1 row 1 → schedule Group 1 deploy day.** Leave maps/auth/softphone unstaged. Workforce blockers → new Group 5 cards.
+**Group 5 Workforce task cards (2026-10-24 status):**
+- [WI-OI-120hj](tasks/WI-OI-120hj.md) (T1a, **Built — uncommitted**): root cause found: stale compiled
+  manifest on UAT stored `platform-user-id` as TEXT → admin typed email → UUID mismatch → 403.
+  `requireWorker` extracted + 4 tests; `ownWorker` refactored; 343 tests pass, TS clean.
+  **Next: owner says "commit" → deploy → republish `wf-resources` and `wf-my-absences` in Config Studio.**
+- [WI-OI-120hk](tasks/WI-OI-120hk.md) (M-WF2, **no code needed**): "Submit week" button exists at
+  `TimeAndAttendance.tsx:477`; `Approvals` component exists at lines 484–543; all API endpoints exist.
+  B2/B4 unblock when B1 (120hj) is fixed.
+- [WI-OI-120hl](tasks/WI-OI-120hl.md) (M-WF1 fix, **no code needed**): window JSONs are correct; lookup
+  chain works; tests exist in `availability-record-adapters.spec.ts`. B3/B5 unblock when B1 is fixed +
+  `wf-my-absences` manifest republished in Config Studio.
+
+**WI-OI-120bq:** re-review complete (2026-10-22); all H/M findings closed; F2.9 deferred non-blocking per owner. **Ready for Group 4 UAT deploy** (release worktree, after CMMS M-CM1 deploy).
 
 **Not in this track:** reliability, floor kiosk, full EAM (Phase 6 **M-CM2** / roadmap P4b).
 
@@ -135,7 +146,8 @@ Full deploy sequence and module completion gate are in `AGENTS.md`.
 28. **WI-OI-120he** — **Built** in git **`afb4eb3d`:** module-local compose loads workforce + geospatial env; `up-ar-api.sh`.
 29. **WI-OI-120hf** — **Built** in git **`6a4835a4`:** `AR_IMAGE` refresh + `pnpm proof:ar-compose-rebuild`; health proof blocked on local Postgres (`migrations` exit 1).
 30. **WI-OI-120hi** — **Built** in git **`412ae0c7`:** `pnpm audit:compose-database-url` (diagnoses **28P01** credential drift).
-31. **WI-OI-120gf / 120hf** — **Built** (2026-10-21): `pnpm audit:compose-database-url` + `pnpm proof:ar-compose-health` on **`gigalibs-test`**; AR DI + compose probe/rebuild scripts fixed on main. **Next (no deploy):** **120gd** local journey or extend minimal P2P/O2C on test stack.
+31. **WI-OI-120gf / 120hf** — **Built** (2026-10-21): `pnpm audit:compose-database-url` + `pnpm proof:ar-compose-health` on **`gigalibs-test`**; AR DI + compose probe/rebuild scripts fixed on main.
+32. **WI-OI-120gd** — **Built** (2026-10-22, `9b9945c1`): journey `jsjmyx` **0 CMMS blockers**; Labour form fix in spec; 5 Workforce blockers → Group 5 cards (120hj/hk/hl). **Next:** owner approves 120hj/hk/hl → start Group 5 BUILD.
 
 ## Built, not yet on UAT
 

@@ -145,6 +145,19 @@ export function computeWeek(punches: readonly EffectivePunch[], periodStart: str
   };
 }
 
+export type WorkerRow = { readonly id: string; readonly display_name: string; readonly status: string; readonly resource_type: string };
+export type WorkerResult =
+  | { readonly ok: true; readonly id: string; readonly display_name: string }
+  | { readonly ok: false; readonly code: 'WORKFORCE_NOT_A_WORKER' | 'WORKFORCE_WORKER_INACTIVE' };
+
+/** Validates that a DB row set contains an active human person linked to the caller's login. */
+export function requireWorker(rows: readonly WorkerRow[]): WorkerResult {
+  const worker = rows[0];
+  if (!worker) return { ok: false, code: 'WORKFORCE_NOT_A_WORKER' };
+  if (worker.status !== 'ACTIVE' || worker.resource_type !== 'HUMAN') return { ok: false, code: 'WORKFORCE_WORKER_INACTIVE' };
+  return { ok: true, id: worker.id, display_name: worker.display_name };
+}
+
 /** Bounded in-process admission for punch transactions; beyond the limit the caller answers 429. */
 export class AdmissionGate {
   private active = 0;
