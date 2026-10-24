@@ -1,6 +1,6 @@
 # WI-OI-120ho (R5 Workforce): unit & place scope on Workforce
 
-- **Status:** Place dimension done (2026-10-24) — unblocked; place-scope-by-assignment now on all four person-centric reads (directory, picker, absence queue, working weeks), integration-tested North≠South. Open: UNITS scope, the allow-list flip (gated), the UAT journey.
+- **Status:** Enforcement built, both dimensions (2026-10-24) — unblocked; unit+place scope-by-assignment on all four person-centric reads (directory, picker, absence queue, working weeks), integration-tested North≠South by both place and unit. Open: the allow-list flip (gated on a reference-data decision), R5 Geospatial (separate module), the UAT journey.
 - **Work item:** WI-OI-120 (execution plan v3 Phase 2 step 2.7). Evidence in `.pi/work/WI-OI-120.md`.
 - **Size:** L
 
@@ -60,18 +60,22 @@ requirement there. Unassigned people are visible only to an unbounded caller (in
 `modules/gigaops/apps/api/src/common/scope.ts` (`peoplePlacesScopeByAssignment`), used by both the service and the test.
 
 **Built + integration-tested (throwaway PG16, North≠South):**
-- All four person-centric reads apply the place filter when the caller is `SCOPED_PLACES`: `listResources`
-  (directory), `lookupResources` (picker — search path only; the id path stays unscoped so a window can resolve a
-  referenced resource's name), `listAbsences` (absence approver queue) and `listAllPatterns` (working weeks).
-- `scope.integration.test.ts` (throwaway PG16, both predicate shapes `r.id` and `a.resource_id`): North sees only
-  North, South only South, no cross-leak, unassigned hidden from a scoped caller, unbounded sees all, approver sees
-  only in-place absences (5 tests).
+- `common/scope.ts` `peopleScopeClause(client, principal, push, …)`: the full scope-by-assignment predicate over
+  **both** dimensions — unit (the engaged position's `department_id`, expanded through the organization replica via
+  `organizationAccess`/`organizationReadCondition`) and place (`site_ref`); the booking path is place-only (work
+  requirements carry no unit). Returns the clause, or null for an unbounded caller.
+- All four person-centric reads use it: `listResources` (directory), `lookupResources` (picker — search path only;
+  the id path stays unscoped so a window can resolve a referenced resource's name), `listAbsences` (absence approver
+  queue) and `listAllPatterns` (working weeks).
+- `scope.integration.test.ts` (throwaway PG16, org replica seeded): **place** scope (North/South) and **unit** scope
+  (North unit / South unit) each isolate; no cross-leak; unassigned hidden from a scoped caller; unbounded sees all (4 tests).
 - `pnpm --filter @gigalibs/gigaops-api test run`: 343 pass (integration test skips without R5_TEST_DATABASE_URL).
 
 ## Remaining (open)
 
-- **UNITS scope-by-assignment** (positions/engagements carry `department_id`, resolved through the org replica);
-  and bookings/time/pay enforce places but not units.
+- The **allow-list flip** (`SCOPE_ENFORCING_MODULES[gigaops]`) — still gated: bookings/time/pay enforce places but
+  not units, and the per-dimension claim is all-or-nothing over *every* code, so it also needs a decision on
+  workspace-wide reference-data codes (capabilities, absence-types). Do not flip until then.
 - **The allow-list flip** (`SCOPE_ENFORCING_MODULES[gigaops]`): still deferred — it is an all-or-nothing per-dimension
   security claim over *every* code, so it needs units closed everywhere **and** a decision on reference-data codes
   (capabilities, absence-types are workspace-wide, not place-bound). Do not flip until then.

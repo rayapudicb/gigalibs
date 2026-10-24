@@ -25,7 +25,7 @@ import {
 } from '@gigalibs/contracts';
 import type { PoolClient } from 'pg';
 import { type GigaOpsPrincipal, hasWorkforcePermission } from '../auth/authorization.js';
-import { peoplePlacesScopeByAssignment } from '../common/scope.js';
+import { peopleScopeClause } from '../common/scope.js';
 import { WorkforceDatabaseService } from '../database/database.service.js';
 
 interface CommandContext {
@@ -57,11 +57,12 @@ export class WorkforceResourcesService {
         values.push(query.status);
         where.push(`r.status = $${values.length}`);
       }
-      // WI-OI-120ho (R5): a place-scoped caller sees only people assigned at their places (scope-by-assignment).
-      if (principal.spatialScope.mode === 'SCOPED_PLACES') {
-        values.push([...principal.spatialScope.place_ids]);
-        where.push(peoplePlacesScopeByAssignment(`$${values.length}::uuid[]`));
-      }
+      // WI-OI-120ho (R5): a scoped caller sees only people assigned in their units and at their places (scope-by-assignment).
+      const scope = await peopleScopeClause(client, principal, (value) => {
+        values.push(value);
+        return `$${values.length}`;
+      });
+      if (scope) where.push(scope);
       values.push(query.pageSize, (query.page - 1) * query.pageSize);
       const direction = query.direction === 'DESC' ? 'DESC' : 'ASC';
       const result = await client.query(
@@ -106,11 +107,14 @@ export class WorkforceResourcesService {
         values.push(`%${request.search}%`);
         where.push(`(r.display_name ILIKE $${values.length} OR r.reference_code ILIKE $${values.length})`);
       }
-      // WI-OI-120ho (R5): a place-scoped caller browses only people assigned at their places. The id path is left
-      // unscoped so a window can still resolve the display name of a resource it already refers to.
-      if (!request.ids?.length && principal.spatialScope.mode === 'SCOPED_PLACES') {
-        values.push([...principal.spatialScope.place_ids]);
-        where.push(peoplePlacesScopeByAssignment(`$${values.length}::uuid[]`));
+      // WI-OI-120ho (R5): a scoped caller browses only people assigned in their units and at their places. The id
+      // path is left unscoped so a window can still resolve the display name of a resource it already refers to.
+      if (!request.ids?.length) {
+        const scope = await peopleScopeClause(client, principal, (value) => {
+          values.push(value);
+          return `$${values.length}`;
+        });
+        if (scope) where.push(scope);
       }
       values.push(Math.min(Math.max(request.limit, 1), 100));
       const result = await client.query(

@@ -32,7 +32,7 @@ import {
   recordMutation,
   translate,
 } from '../common/commands.js';
-import { peoplePlacesScopeByAssignment } from '../common/scope.js';
+import { peopleScopeClause } from '../common/scope.js';
 import { WorkforceDatabaseService } from '../database/database.service.js';
 
 export interface Interval {
@@ -66,11 +66,12 @@ export class AvailabilityService {
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
       const values: unknown[] = [principal.tenantId];
       const where = ['p.tenant_id = $1'];
-      // WI-OI-120ho (R5): a place-scoped caller sees only the working weeks of people assigned at their places.
-      if (principal.spatialScope.mode === 'SCOPED_PLACES') {
-        values.push([...principal.spatialScope.place_ids]);
-        where.push(peoplePlacesScopeByAssignment(`$${values.length}::uuid[]`));
-      }
+      // WI-OI-120ho (R5): a scoped caller sees only the working weeks of people assigned in their units and places.
+      const scope = await peopleScopeClause(client, principal, (value) => {
+        values.push(value);
+        return `$${values.length}`;
+      });
+      if (scope) where.push(scope);
       const result = await client.query(
         `SELECT p.*, r.display_name AS resource_name
            FROM gigalibs_workforce.availability_patterns p
@@ -225,11 +226,18 @@ export class AvailabilityService {
         values.push(query.to);
         where.push(`a.starts_at < $${values.length}`);
       }
-      // WI-OI-120ho (R5): a place-scoped approver sees only absences of people assigned at their places.
-      if (principal.spatialScope.mode === 'SCOPED_PLACES') {
-        values.push([...principal.spatialScope.place_ids]);
-        where.push(peoplePlacesScopeByAssignment(`$${values.length}::uuid[]`, 'a.resource_id', 'a.tenant_id'));
-      }
+      // WI-OI-120ho (R5): a scoped approver sees only absences of people assigned in their units and at their places.
+      const scope = await peopleScopeClause(
+        client,
+        principal,
+        (value) => {
+          values.push(value);
+          return `$${values.length}`;
+        },
+        'a.resource_id',
+        'a.tenant_id',
+      );
+      if (scope) where.push(scope);
       const result = await client.query(`${ABSENCE_SELECT} WHERE ${where.join(' AND ')} ORDER BY a.starts_at DESC LIMIT 500`, values);
       return { items: result.rows.map(mapAbsence) };
     });
