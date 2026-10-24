@@ -4,6 +4,7 @@ import {
   assignmentScopeConflicts,
   assignmentScopeKey,
   baseRolePermissions,
+  dutyConflicts,
   explicitScopeRefusal,
   holdsPermission,
   isTenantPermissionCode,
@@ -128,4 +129,47 @@ export async function assertScopesConsistent(
       modules: conflicts,
     });
   }
+}
+
+/**
+ * WI-OI-120hp (R3, segregation of duties): refuses a change that would leave `userId` holding both sides of a
+ * declared duty-conflict set (e.g. requesting and approving absence), unless an administrator has a live acceptance
+ * of that set for this member. The member's resulting permissions are the union of their base role, every live role
+ * assignment, and the permissions being added. The per-record four-eyes checks stay as defence in depth.
+ */
+export async function assertNoDutyConflict(
+  tx: Prisma.TransactionClient,
+  tenantId: string,
+  userId: string,
+  adding: readonly string[] = [],
+  graphOverride?: RoleGraph,
+): Promise<void> {
+  const member = await tx.tenantMember.findUnique({
+    where: { userId_tenantId: { userId, tenantId } },
+    select: { role: true, permissions: true },
+  });
+  if (!member) return;
+  const live = await tx.memberRoleAssignment.findMany({
+    where: { tenantId, userId, revokedAt: null },
+    select: { customRoleId: true },
+  });
+  const graph = live.length > 0 ? (graphOverride ?? (await loadRoleGraph(tx, tenantId))) : undefined;
+  const permissions = [
+    ...baseRolePermissions(member.role),
+    ...(member.permissions ?? []).filter(isTenantPermissionCode),
+    ...live.flatMap((assignment) => expandRole(graph!, assignment.customRoleId)),
+    ...adding,
+  ];
+  const accepted = (
+    await tx.dutyConflictAcceptance.findMany({ where: { tenantId, userId, revokedAt: null }, select: { conflictSetId: true } })
+  ).map((row) => row.conflictSetId);
+  const conflicts = dutyConflicts(permissions, accepted);
+  if (conflicts.length > 0)
+    throw new ConflictException({
+      code: 'DUTY_CONFLICT',
+      message: `This would give one person both sides of a separated duty. ${conflicts
+        .map((set) => set.reason)
+        .join(' ')} An administrator must record an acceptance of the conflict to proceed.`,
+      conflicts: conflicts.map((set) => set.id),
+    });
 }

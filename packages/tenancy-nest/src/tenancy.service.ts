@@ -17,6 +17,7 @@ import type {
 } from '@gigalibs/contracts';
 import {
   CONTROL_PLANE_PERMISSIONS,
+  DUTY_CONFLICT_SETS,
   holdsPermission,
   MAX_MEMBER_ROLE_ASSIGNMENTS,
   type ModuleDefaultRole,
@@ -55,7 +56,7 @@ import {
   ownAuthority,
 } from './grant-bound.js';
 import { assertInclusionsValid, expandRole, loadRoleGraph, rolesIncluding, withRole } from './role-graph.js';
-import { assertScopeEnforced, assertScopesConsistent, resolveRoleScope } from './role-scopes.js';
+import { assertNoDutyConflict, assertScopeEnforced, assertScopesConsistent, resolveRoleScope } from './role-scopes.js';
 import { assertTenantAdminAuthority, assertTenantAdministratorRetained } from './tenant-member-safety.js';
 
 @Injectable()
@@ -572,6 +573,8 @@ export class TenancyService {
         });
         if (held) throw new ConflictException({ code: 'ROLE_ALREADY_HELD', message: `${role.name} is already held by this member.` });
         await assertScopesConsistent(transaction, tenantId, member.userId, { add: { permissions: rolePermissions, scope } });
+        // WI-OI-120hp (R3): refuse a grant that leaves the member holding both sides of a separated duty, unless accepted.
+        await assertNoDutyConflict(transaction, tenantId, member.userId, rolePermissions);
         // WI-OI-120w (R2 slice 3): every role travels in the member's signed context, which stays small.
         if ((await transaction.memberRoleAssignment.count({ where: { tenantId, userId: member.userId, revokedAt: null } })) >= MAX_MEMBER_ROLE_ASSIGNMENTS)
           throw new ConflictException({
@@ -647,6 +650,56 @@ export class TenancyService {
    * The member whose roles change. Giving oneself a role is refused unless the actor is a Tenant Admin, and only a
    * Tenant Admin changes a Tenant Admin's roles (WI-OI-120v; Security review of 2a, M1).
    */
+  // WI-OI-120hp (R3): an administrator records that a member may hold both sides of a named duty-conflict set (a
+  // compensating control). A live acceptance lets assertNoDutyConflict pass for that set; revoking it re-blocks.
+  async acceptDutyConflict(tenantId: string, memberId: string, actorId: string, dto: { conflictSetId: string; reason: string }) {
+    const reason = requireReason(dto.reason);
+    if (!DUTY_CONFLICT_SETS.some((set) => set.id === dto.conflictSetId))
+      throw new BadRequestException({ code: 'DUTY_CONFLICT_UNKNOWN', message: 'That duty-conflict set does not exist.' });
+    return prisma.$transaction(async (transaction) => {
+      await transaction.$queryRaw`SELECT "id" FROM "tenants" WHERE "id" = ${tenantId} FOR UPDATE`;
+      const member = await this.memberForRoleChange(transaction, tenantId, memberId, actorId);
+      const held = await transaction.dutyConflictAcceptance.findFirst({
+        where: { tenantId, userId: member.userId, conflictSetId: dto.conflictSetId, revokedAt: null },
+        select: { id: true },
+      });
+      if (held) throw new ConflictException({ code: 'DUTY_CONFLICT_ALREADY_ACCEPTED', message: 'That conflict is already accepted for this member.' });
+      const acceptance = await transaction.dutyConflictAcceptance.create({
+        data: { tenantId, userId: member.userId, conflictSetId: dto.conflictSetId, reason, acceptedById: actorId },
+        select: { id: true, conflictSetId: true, createdAt: true },
+      });
+      await transaction.auditLog.create({
+        data: {
+          action: 'PERMISSION_CHANGE',
+          resource: 'duty_conflict_acceptance',
+          resourceId: acceptance.id,
+          userId: actorId,
+          tenantId,
+          after: { memberId: member.id, conflictSetId: dto.conflictSetId },
+          metadata: { reason },
+        },
+      });
+      return { ...acceptance, createdAt: acceptance.createdAt.toISOString() };
+    });
+  }
+
+  async revokeDutyConflictAcceptance(tenantId: string, memberId: string, acceptanceId: string, actorId: string, dto: { reason: string }) {
+    const reason = requireReason(dto.reason);
+    return prisma.$transaction(async (transaction) => {
+      await transaction.$queryRaw`SELECT "id" FROM "tenants" WHERE "id" = ${tenantId} FOR UPDATE`;
+      const member = await this.memberForRoleChange(transaction, tenantId, memberId, actorId);
+      const updated = await transaction.dutyConflictAcceptance.updateMany({
+        where: { id: acceptanceId, tenantId, userId: member.userId, revokedAt: null },
+        data: { revokedAt: new Date(), revokedById: actorId, revokeReason: reason },
+      });
+      if (updated.count === 0) throw new NotFoundException('Acceptance was not found or is already revoked.');
+      await transaction.auditLog.create({
+        data: { action: 'PERMISSION_CHANGE', resource: 'duty_conflict_acceptance', resourceId: acceptanceId, userId: actorId, tenantId, metadata: { reason, revoked: true } },
+      });
+      return { id: acceptanceId, revoked: true };
+    });
+  }
+
   private async memberForRoleChange(transaction: Prisma.TransactionClient, tenantId: string, memberId: string, actorId: string) {
     const member = await transaction.tenantMember.findFirst({
       where: { id: memberId, tenantId },

@@ -2834,6 +2834,25 @@ model MemberRoleAssignment {
   @@map("member_role_assignments")
 }
 
+// WI-OI-120hp (R3, segregation of duties): a workspace administrator's recorded acceptance of a specific
+// duty-conflict set for a member — a compensating control so a small team is not locked out. A live acceptance
+// (revokedAt null) lets a grant that would otherwise be refused for that conflict proceed; revoking it re-blocks.
+model DutyConflictAcceptance {
+  id            String    @id @default(cuid())
+  tenantId      String
+  userId        String
+  conflictSetId String
+  reason        String    @db.VarChar(500)
+  acceptedById  String
+  createdAt     DateTime  @default(now()) @db.Timestamptz(3)
+  revokedAt     DateTime? @db.Timestamptz(3)
+  revokedById   String?
+  revokeReason  String?   @db.VarChar(500)
+
+  @@index([tenantId, userId], map: "duty_conflict_acceptances_member_idx")
+  @@map("duty_conflict_acceptances")
+}
+
 model UserGroup {
   id       String @id @default(cuid())
   tenantId String
