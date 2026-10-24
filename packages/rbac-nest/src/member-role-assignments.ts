@@ -38,8 +38,19 @@ export async function memberRoleGrants(
     readonly placeIds: readonly string[];
   }[];
 }> {
+  // WI-OI-120hq (R4): a delegated assignment counts only while live (effectiveFrom <= now < effectiveTo); an ordinary
+  // assignment leaves both bounds null and is always live. A revoked or lapsed delegation is simply not minted.
+  const now = new Date();
   const rows = await db.memberRoleAssignment.findMany({
-    where: { tenantId, userId, revokedAt: null },
+    where: {
+      tenantId,
+      userId,
+      revokedAt: null,
+      AND: [
+        { OR: [{ effectiveFrom: null }, { effectiveFrom: { lte: now } }] },
+        { OR: [{ effectiveTo: null }, { effectiveTo: { gt: now } }] },
+      ],
+    },
     select: { customRoleId: true, scope: true, unitIds: true, placeIds: true, customRole: { select: { name: true, permissions: true } } },
     orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
   });

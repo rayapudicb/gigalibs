@@ -18,6 +18,7 @@ import type {
 import {
   CONTROL_PLANE_PERMISSIONS,
   DUTY_CONFLICT_SETS,
+  delegationBounds,
   holdsPermission,
   MAX_MEMBER_ROLE_ASSIGNMENTS,
   type ModuleDefaultRole,
@@ -697,6 +698,85 @@ export class TenancyService {
         data: { action: 'PERMISSION_CHANGE', resource: 'duty_conflict_acceptance', resourceId: acceptanceId, userId: actorId, tenantId, metadata: { reason, revoked: true } },
       });
       return { id: acceptanceId, revoked: true };
+    });
+  }
+
+  // WI-OI-120hq (R4): a role-holder delegates a role they hold to another member for a bounded time. v1 delegates at
+  // workspace scope (the delegator must hold the role's permissions at their own/workspace scope via
+  // assertGrantWithinOwn); unit/place-scoped delegation is a later refinement. The delegation rides the signed context
+  // as an ordinary assignment, live only within [effectiveFrom, effectiveTo); revoking it (or its lapse) stops it
+  // being minted. Immediate revocation across live sessions (auth_version bump) is a later refinement.
+  async delegateRole(
+    tenantId: string,
+    delegatorUserId: string,
+    dto: { toMemberId: string; customRoleId: string; effectiveFrom: string; effectiveTo: string; reason: string },
+  ) {
+    const reason = requireReason(dto.reason);
+    const bounds = delegationBounds(dto.effectiveFrom, dto.effectiveTo, new Date(), 90);
+    if (!bounds.ok) throw new BadRequestException({ code: bounds.code, message: bounds.message });
+    return roleChangeConflicts(() =>
+      prisma.$transaction(async (transaction) => {
+        await transaction.$queryRaw`SELECT "id" FROM "tenants" WHERE "id" = ${tenantId} FOR UPDATE`;
+        const delegate = await transaction.tenantMember.findFirst({ where: { id: dto.toMemberId, tenantId }, select: { id: true, userId: true, status: true } });
+        if (!delegate || delegate.status !== 'ACTIVE') throw new NotFoundException('Tenant member was not found');
+        if (delegate.userId === delegatorUserId) throw new BadRequestException({ code: 'DELEGATION_TO_SELF', message: 'You cannot delegate a role to yourself.' });
+        const role = await transaction.customRole.findFirst({ where: { id: dto.customRoleId, tenantId }, select: { id: true, name: true } });
+        if (!role) throw new BadRequestException({ code: 'ROLE_NOT_IN_WORKSPACE', message: 'That role does not belong to this workspace.' });
+        const rolePermissions = expandRole(await loadRoleGraph(transaction, tenantId), role.id);
+        // The delegator may delegate only permissions they themselves hold at their own or the workspace scope.
+        await assertGrantWithinOwn(transaction, tenantId, delegatorUserId, rolePermissions);
+        // The delegation must not leave the delegate holding both sides of a separated duty (R3).
+        await assertNoDutyConflict(transaction, tenantId, delegate.userId, rolePermissions);
+        const held = await transaction.memberRoleAssignment.findFirst({ where: { tenantId, userId: delegate.userId, customRoleId: role.id, revokedAt: null }, select: { id: true } });
+        if (held) throw new ConflictException({ code: 'ROLE_ALREADY_HELD', message: `${role.name} is already held by this member.` });
+        if ((await transaction.memberRoleAssignment.count({ where: { tenantId, userId: delegate.userId, revokedAt: null } })) >= MAX_MEMBER_ROLE_ASSIGNMENTS)
+          throw new ConflictException({ code: 'ROLE_LIMIT', message: `A member holds at most ${MAX_MEMBER_ROLE_ASSIGNMENTS} roles; take one away before adding another.` });
+        const assignment = await transaction.memberRoleAssignment.create({
+          data: {
+            tenantId,
+            userId: delegate.userId,
+            customRoleId: role.id,
+            scope: 'WORKSPACE',
+            reason,
+            grantedById: delegatorUserId,
+            delegatedById: delegatorUserId,
+            effectiveFrom: new Date(dto.effectiveFrom),
+            effectiveTo: new Date(dto.effectiveTo),
+          },
+          select: { id: true, createdAt: true },
+        });
+        await transaction.auditLog.create({
+          data: {
+            action: 'PERMISSION_CHANGE',
+            resource: 'role_delegation',
+            resourceId: assignment.id,
+            userId: delegatorUserId,
+            tenantId,
+            after: { memberId: delegate.id, customRoleId: role.id, roleName: role.name, effectiveFrom: dto.effectiveFrom, effectiveTo: dto.effectiveTo },
+            metadata: { reason },
+          },
+        });
+        return { id: assignment.id, roleName: role.name, effectiveFrom: dto.effectiveFrom, effectiveTo: dto.effectiveTo };
+      }),
+    );
+  }
+
+  async revokeDelegation(tenantId: string, delegationId: string, actorUserId: string, dto: { reason: string }) {
+    const reason = requireReason(dto.reason);
+    return prisma.$transaction(async (transaction) => {
+      await transaction.$queryRaw`SELECT "id" FROM "tenants" WHERE "id" = ${tenantId} FOR UPDATE`;
+      const delegation = await transaction.memberRoleAssignment.findFirst({
+        where: { id: delegationId, tenantId, revokedAt: null, NOT: { delegatedById: null } },
+        select: { id: true, delegatedById: true },
+      });
+      if (!delegation) throw new NotFoundException('Delegation was not found or is already revoked.');
+      if (delegation.delegatedById !== actorUserId && !(await ownAuthority(transaction, tenantId, actorUserId)).administrator)
+        throw new ForbiddenException({ code: 'DELEGATION_REVOKE_FORBIDDEN', message: 'Only the person who delegated it, or an administrator, can revoke it.' });
+      await transaction.memberRoleAssignment.update({ where: { id: delegationId }, data: { revokedAt: new Date(), revokedById: actorUserId, revokeReason: reason } });
+      await transaction.auditLog.create({
+        data: { action: 'PERMISSION_CHANGE', resource: 'role_delegation', resourceId: delegationId, userId: actorUserId, tenantId, metadata: { reason, revoked: true } },
+      });
+      return { id: delegationId, revoked: true };
     });
   }
 

@@ -1,6 +1,6 @@
 # WI-OI-120hq (R4): delegation and revocation
 
-- **Status:** Core built (2026-10-24) — `validateDelegation`/`scopeWithin`/`delegationBounds` in contracts, unit-tested. Control-plane wiring (migration, create/revoke, context mint, sweep) pending a stack + Security sign-off.
+- **Status:** Built v1 (2026-10-24) — validation core (contracts, unit-tested) AND control-plane wiring (delegation columns/migration, `delegateRole`/`revokeDelegation`, live-only mint filter) integration-tested against an isolated throwaway PostgreSQL 16. v1 delegates at workspace scope. Open (refinements): unit/place-scoped delegation, `exp` bounding + `auth_version` bump for immediate revocation, HTTP routes; independent Security review (post-UAT).
 - **Work item:** WI-OI-120 (execution plan v3 Phase 2 step 2.9). Evidence in `.pi/work/WI-OI-120.md`.
 - **Size:** L
 

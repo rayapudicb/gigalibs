@@ -2828,6 +2828,11 @@ model MemberRoleAssignment {
   revokedAt    DateTime?       @db.Timestamptz(3)
   revokedById  String?
   revokeReason String?         @db.VarChar(500)
+  // WI-OI-120hq (R4, delegation): set together for a delegated assignment (both null for an ordinary one). The
+  // context includes a delegation only while effectiveFrom <= now < effectiveTo and it is not revoked.
+  delegatedById String?
+  effectiveFrom DateTime?      @db.Timestamptz(3)
+  effectiveTo   DateTime?      @db.Timestamptz(3)
 
   @@index([tenantId, userId], map: "member_role_assignments_member_idx")
   @@index([tenantId, customRoleId], map: "member_role_assignments_role_idx")
