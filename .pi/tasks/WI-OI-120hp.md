@@ -1,6 +1,6 @@
 # WI-OI-120hp (R3): segregation of duties
 
-- **Status:** Proposed — net-new control-plane RBAC; needs a design pass before code, plus post-UAT security review.
+- **Status:** Design ready (2026-10-24) — concrete spec below for owner + Security sign-off, then build. Post-UAT security review still applies.
 - **Work item:** WI-OI-120 (execution plan v3 Phase 2 step 2.8). Evidence in `.pi/work/WI-OI-120.md`.
 - **Size:** L
 
@@ -17,17 +17,39 @@ The control plane owns roles and assignments (`packages/tenancy-nest` — `assig
 not a Workforce-module feature, though Workforce four-eyes flows (absence approve, timesheet approve, pay approve)
 are the first consumers.
 
-## Design pass needed first (stop-and-ask items)
+## Design (2026-10-24) — for owner + Security sign-off
 
-- The conflict model: declared pairs of conflicting permissions/roles (e.g. `*.request` vs `*.approve` on the same
-  entity) — a static catalogue, per-tenant config, or both?
-- Enforcement point: refuse at **assignment time** (can't be granted both), at **action time** (four-eyes already
-  blocks self-approval per record — is SoD broader?), or both.
-- Relationship to existing four-eyes (e.g. `availability.service` absence decisions already forbid deciding your own).
+**Conflict model — a declared catalogue, like the permission catalogue.** Each module (and the platform) declares
+*duty-conflict sets*: groups of permissions no single person should hold together, with a stable id and a reason.
+Static in `@gigalibs/contracts` (versioned, reviewable), generated into the same place as `modulePermissionCatalogue`
+so `pnpm verify` checks every referenced code exists. First entries (the existing four-eyes pairs, now enforced at
+grant time too):
+- `workforce.absences.request(-own)` ⊗ `workforce.absences.approve`
+- `workforce.time.punch`/`time.manage` ⊗ `workforce.timesheets.approve`
+- `workforce.pay.manage` ⊗ `workforce.pay.approve`
+- (platform) role-granting ⊗ the thing granted, where applicable.
 
-## Done when (to be refined by the design pass)
+**Enforcement — grant-time primary, action-time kept as defence in depth.** This is why: SoD is about *who can hold
+the combination*, which is an assignment property; blocking only at action time lets a toxic combination sit latent.
+- Add `assertNoDutyConflict(resultingPermissions)` beside the existing `assertScopesConsistent` in
+  `assignMemberRole` (and the R4 delegation path). It computes the member's permissions across **all** live
+  assignments (same union the context is built from) and refuses if any declared conflict set is fully satisfied,
+  naming the conflict and the two codes.
+- Keep the existing record-level four-eyes (absence/timesheet/pay self-approval already blocked) — unchanged; SoD is
+  the broader role-combination guard, four-eyes is the per-record backstop.
 
-- [ ] Conflict catalogue defined and reviewed (Security + Product).
-- [ ] Assignment and/or action enforcement implemented in the control plane with audit; migrations as needed.
-- [ ] Tests: a conflicting assignment is refused/flagged; a non-conflicting one passes; action-time block where chosen.
-- [ ] `pnpm verify` clean; UAT proof; independent security review (post-UAT).
+**Compensating control (small orgs can't always separate duties).** A workspace administrator may record an
+*accepted* conflict for a specific member + conflict-set, with a mandatory justification; the grant then proceeds and
+the acceptance is audited (`PERMISSION_CHANGE`, resource `duty_conflict_acceptance`). Without an acceptance, the
+grant is refused. This mirrors standard SoD practice and keeps the platform usable for a two-person team.
+
+**Data:** a small `duty_conflict_acceptance` table (tenantId, userId, conflictSetId, reason, acceptedById, createdAt,
+revokedAt) — forward migration. No change to the signed context (SoD is decided at grant time; the context is unchanged).
+
+## Done when
+
+- [ ] Conflict catalogue in contracts (generated, verify-checked); reviewed by Security + Product.
+- [ ] `assertNoDutyConflict` enforced in `assignMemberRole` and the delegation path, with the acceptance override; audited.
+- [ ] `duty_conflict_acceptance` migration with verification + roll-forward.
+- [ ] Tests: conflicting grant refused; accepted-override proceeds + audited; non-conflicting grant passes; revoked acceptance re-blocks.
+- [ ] `pnpm verify` clean; UAT proof; independent security review (post-UAT). Evidence in `.pi/work/WI-OI-120.md`.

@@ -1,6 +1,6 @@
 # WI-OI-120hq (R4): delegation and revocation
 
-- **Status:** Proposed — net-new control-plane RBAC; needs a design pass before code, plus post-UAT security review.
+- **Status:** Design ready (2026-10-24) — concrete spec below for owner + Security sign-off, then build. Post-UAT security review still applies.
 - **Work item:** WI-OI-120 (execution plan v3 Phase 2 step 2.9). Evidence in `.pi/work/WI-OI-120.md`.
 - **Size:** L
 
@@ -17,17 +17,45 @@ The control plane owns roles, assignments and the signed context (`packages/tena
 today** (confirmed 2026-10-24). A delegation is a time-bounded, revocable, audited assignment that must flow into
 the minted `PlatformContextV1` so modules enforce it unchanged.
 
-## Design pass needed first (stop-and-ask items)
+## Design (2026-10-24) — for owner + Security sign-off
 
-- Can a member delegate only what they hold, and only within their own scope (cannot widen)? (Mirror
-  `assertBaseRoleWithinOwn` used at invite/assign time.)
-- Interaction with R3 (SoD): a delegation must not create a segregation-of-duties conflict for the delegate.
-- Expiry mechanism: how a time-bounded assignment lapses (context `exp`, a sweep job, or check-at-use) and how
-  revocation propagates to live sessions (session/auth-version bump).
+**A delegation is a time-bounded, revocable, audited role assignment of a role the grantor already holds.** Model it
+as a `memberRoleAssignment` with delegation fields rather than a parallel system, so it reuses every existing guard
+and the context build:
+- New columns on `memberRoleAssignment` (forward migration): `delegatedById` (the grantor — distinct from
+  `grantedById`, which may be an admin acting), `effectiveFrom` and `effectiveTo` (**both required** for a
+  delegation; a plain assignment leaves them null). Existing `scope`/`unitIds`/`placeIds`/`revokedAt`/`reason` reused.
 
-## Done when (to be refined by the design pass)
+**Grant rules (reuse the existing assignMemberRole guards):**
+- `assertGrantWithinOwn` — the grantor may delegate only permissions they themselves hold. A delegate cannot be
+  given more than the grantor has.
+- Scope cannot widen — the delegation's scope must be within the grantor's own scope (same resolve/consistency checks;
+  `assertScopesConsistent` across the delegate's live assignments).
+- `assertNoDutyConflict` (R3) on the delegate's resulting permissions — a delegation that creates an SoD conflict is
+  refused unless an acceptance exists.
+- Counts toward `MAX_MEMBER_ROLE_ASSIGNMENTS`; `effectiveTo` must be in the future and bounded (cap the horizon, e.g. ≤ 90 days, owner to set).
 
-- [ ] Delegation model defined and reviewed (Security + Product): bounded, scope-limited, revocable, audited.
-- [ ] Control-plane implementation: create/revoke delegation, carried in the signed context; migrations as needed.
-- [ ] Tests: delegate gains the role within bounds; cannot widen scope; revocation and expiry remove it; audited.
-- [ ] `pnpm verify` clean; UAT proof; independent security review (post-UAT).
+**Carriage — no signed-context change.** A live delegation rides as an ordinary `PlatformContextAssignment` item
+(the same `grants` bitmap + `scope`); modules enforce it exactly like any assignment and need not know it is a
+delegation. The "delegation-ness" (grantor, bounds) lives only in the control-plane record. This deliberately avoids
+a `PlatformContextAssignmentsSchema` shape change and the verifier deploy-ordering constraint (L1).
+
+**Expiry — mint-time filtering, bounded `exp`, sweep backstop:**
+- The control plane includes a delegation in a minted context **only while live** (`effectiveFrom ≤ now < effectiveTo`
+  and not revoked), and sets the context `exp` no later than the nearest live assignment's `effectiveTo` — so a cached
+  context can never carry an expired delegation.
+- A periodic sweep marks lapsed delegations (for listings/audit) and is the backstop; it is not the primary gate.
+
+**Revocation (early):** set `revokedAt` + reason and bump the delegate's `auth_version` (mirrors `revokeMemberRole`),
+so live sessions drop it on their next context refresh. Audited.
+
+**Audit:** create, revoke and lapse each write `PERMISSION_CHANGE` / resource `role_delegation`, with grantor,
+delegate, role, scope, bounds and reason.
+
+## Done when
+
+- [ ] `memberRoleAssignment` delegation columns migration (verification + roll-forward).
+- [ ] Create/revoke delegation in the control plane: within-own, scope-not-widened, SoD-checked, bounded, audited.
+- [ ] Mint-time live-only inclusion + `exp` bounding; sweep backstop; `auth_version` bump on revoke.
+- [ ] Tests: delegate gains the role within bounds; cannot widen scope or exceed the grantor; expiry and revoke remove it (context + sweep); SoD conflict refused; all audited.
+- [ ] `pnpm verify` clean; UAT proof; independent security review (post-UAT). Evidence in `.pi/work/WI-OI-120.md`.

@@ -48,8 +48,8 @@ Owner directed completing Phase 2 development (plan v3 steps 2.1–2.9) autonomo
 | 2.4 | T1b worker reconciliation | **Done — moot** ([WI-OI-120hn](tasks/WI-OI-120hn.md)); 0 rows in `wfo_workers`. |
 | 2.6 | T2 departments → org units | **Essentially done** — positions carry org-unit `department_id` with scope enforcement; no free-text department remains. |
 | 2.7 | R5 Workforce scope | **Audit done ([WI-OI-120ho](tasks/WI-OI-120ho.md)); blocked on a person-scoping decision.** Operational place-records (positions/bookings/time/pay/calendars) enforce scope; jobs/positions also enforce units. But people, absences and working-weeks filter by tenant only, and a person has no intrinsic unit/place — so the allow-list can't honestly flip until the model is decided (recommend scope-by-assignment). |
-| 2.8 | R3 segregation of duties | **Proposed, L** ([WI-OI-120hp](tasks/WI-OI-120hp.md)) — net-new control-plane RBAC; design pass first. |
-| 2.9 | R4 delegation & revocation | **Proposed, L** ([WI-OI-120hq](tasks/WI-OI-120hq.md)) — net-new control-plane RBAC; design pass first. |
+| 2.8 | R3 segregation of duties | **Design ready ([WI-OI-120hp](tasks/WI-OI-120hp.md))** — declared duty-conflict catalogue in contracts; `assertNoDutyConflict` at grant time beside `assertScopesConsistent`; admin acceptance override (audited); `duty_conflict_acceptance` migration. Needs owner+Security sign-off, then build. |
+| 2.9 | R4 delegation & revocation | **Design ready ([WI-OI-120hq](tasks/WI-OI-120hq.md))** — delegation as a bounded `memberRoleAssignment` (delegatedById/effectiveFrom/effectiveTo), within-own + scope-not-widened + SoD-checked; rides the context as an ordinary assignment (no schema change); mint-time live-only + `exp` bound + sweep; revoke bumps auth_version. Needs owner+Security sign-off, then build. |
 
 **Net:** 5 of 8 resolved with no new product code (decisions / already-done). The remaining 3 (R5, R3, R4) are
 large security-critical RBAC builds that each need a deploy-time journey proof and the post-UAT security review —
