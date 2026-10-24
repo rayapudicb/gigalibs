@@ -2,8 +2,16 @@ import { AllowMfaPending, CurrentUser } from '@gigalibs/auth-nest';
 import {
   type AcceptTenantInviteDto,
   AcceptTenantInviteSchema,
+  type AcceptDutyConflictDto,
+  AcceptDutyConflictSchema,
   type AssignMemberRoleDto,
   AssignMemberRoleSchema,
+  type DelegateRoleDto,
+  DelegateRoleSchema,
+  type RevokeDelegationDto,
+  RevokeDelegationSchema,
+  type RevokeDutyConflictAcceptanceDto,
+  RevokeDutyConflictAcceptanceSchema,
   type RevokeMemberRoleDto,
   RevokeMemberRoleSchema,
   type ChangeTenantStatusDto,
@@ -255,6 +263,53 @@ export class TenancyController {
     @Body(new ZodValidationPipe(RevokeMemberRoleSchema)) dto: RevokeMemberRoleDto,
   ) {
     return this.tenancyService.revokeMemberRole(tenantId, memberId, assignmentId, userId, dto);
+  }
+
+  // WI-OI-120hp (R3): an administrator records / revokes acceptance of a named duty-conflict set for a member.
+  @Post('current/members/:memberId/duty-conflicts')
+  @RequirePermissions('roles:assign')
+  acceptDutyConflict(
+    @CurrentTenant('tenantId') tenantId: string,
+    @CurrentUser('sub') userId: string,
+    @Param('memberId') memberId: string,
+    @Body(new ZodValidationPipe(AcceptDutyConflictSchema)) dto: AcceptDutyConflictDto,
+  ) {
+    return this.tenancyService.acceptDutyConflict(tenantId, memberId, userId, dto);
+  }
+
+  @Post('current/members/:memberId/duty-conflicts/:acceptanceId/revoke')
+  @RequirePermissions('roles:assign')
+  revokeDutyConflictAcceptance(
+    @CurrentTenant('tenantId') tenantId: string,
+    @CurrentUser('sub') userId: string,
+    @Param('memberId') memberId: string,
+    @Param('acceptanceId') acceptanceId: string,
+    @Body(new ZodValidationPipe(RevokeDutyConflictAcceptanceSchema)) dto: RevokeDutyConflictAcceptanceDto,
+  ) {
+    return this.tenancyService.revokeDutyConflictAcceptance(tenantId, memberId, acceptanceId, userId, dto);
+  }
+
+  // WI-OI-120hq (R4): delegate a role the caller holds to this member for a bounded window; revoke a delegation.
+  @Post('current/members/:memberId/role-delegations')
+  @RequirePermissions('roles:assign')
+  delegateRole(
+    @CurrentTenant('tenantId') tenantId: string,
+    @CurrentUser('sub') userId: string,
+    @Param('memberId') memberId: string,
+    @Body(new ZodValidationPipe(DelegateRoleSchema)) dto: DelegateRoleDto,
+  ) {
+    return this.tenancyService.delegateRole(tenantId, userId, { toMemberId: memberId, ...dto });
+  }
+
+  @Post('current/role-delegations/:delegationId/revoke')
+  @RequirePermissions('roles:assign')
+  revokeDelegation(
+    @CurrentTenant('tenantId') tenantId: string,
+    @CurrentUser('sub') userId: string,
+    @Param('delegationId') delegationId: string,
+    @Body(new ZodValidationPipe(RevokeDelegationSchema)) dto: RevokeDelegationDto,
+  ) {
+    return this.tenancyService.revokeDelegation(tenantId, delegationId, userId, dto);
   }
 
   @Get('current/departments')

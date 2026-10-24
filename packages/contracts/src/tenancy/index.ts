@@ -233,6 +233,25 @@ export const RevokeMemberRoleSchema = z.object({ reason: RoleChangeReasonSchema 
 export type AssignMemberRoleDto = z.input<typeof AssignMemberRoleSchema>;
 export type RevokeMemberRoleDto = z.infer<typeof RevokeMemberRoleSchema>;
 
+// WI-OI-120hp (R3): an administrator records/revokes acceptance of a named duty-conflict set for a member.
+export const AcceptDutyConflictSchema = z.object({ conflictSetId: z.string().trim().min(1).max(100), reason: RoleChangeReasonSchema }).strict();
+export const RevokeDutyConflictAcceptanceSchema = z.object({ reason: RoleChangeReasonSchema }).strict();
+export type AcceptDutyConflictDto = z.infer<typeof AcceptDutyConflictSchema>;
+export type RevokeDutyConflictAcceptanceDto = z.infer<typeof RevokeDutyConflictAcceptanceSchema>;
+
+// WI-OI-120hq (R4): delegate a role the caller holds to a member for a bounded window; revoke an existing delegation.
+export const DelegateRoleSchema = z
+  .object({
+    customRoleId: z.string().trim().min(1).max(64),
+    effectiveFrom: z.string().datetime({ offset: true }),
+    effectiveTo: z.string().datetime({ offset: true }),
+    reason: RoleChangeReasonSchema,
+  })
+  .strict();
+export const RevokeDelegationSchema = z.object({ reason: RoleChangeReasonSchema }).strict();
+export type DelegateRoleDto = z.infer<typeof DelegateRoleSchema>;
+export type RevokeDelegationDto = z.infer<typeof RevokeDelegationSchema>;
+
 /**
  * A role a member holds, as Settings → Team lists it to anyone with `users:read`. Who granted it and why stay in the
  * audit log (Security review of 2a, L3).

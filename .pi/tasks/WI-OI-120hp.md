@@ -1,6 +1,6 @@
 # WI-OI-120hp (R3): segregation of duties
 
-- **Status:** Built (2026-10-24) — catalogue + detection (contracts, unit-tested) AND control-plane wiring (grant-time enforcement, acceptance table/migration, accept/revoke methods) integration-tested against an isolated throwaway PostgreSQL 16. Open: HTTP routes; independent Security review (post-UAT).
+- **Status:** Built (2026-10-24) — catalogue + detection (contracts, unit-tested); control-plane wiring (grant-time enforcement, acceptance table/migration, accept/revoke methods) integration-tested against a throwaway PostgreSQL 16; **HTTP routes added** (`POST current/members/:memberId/duty-conflicts` + `…/:acceptanceId/revoke`, `roles:assign`). Open: independent Security review (post-UAT).
 - **Work item:** WI-OI-120 (execution plan v3 Phase 2 step 2.8). Evidence in `.pi/work/WI-OI-120.md`.
 - **Size:** L
 
