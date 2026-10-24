@@ -106,6 +106,12 @@ export class WorkforceResourcesService {
         values.push(`%${request.search}%`);
         where.push(`(r.display_name ILIKE $${values.length} OR r.reference_code ILIKE $${values.length})`);
       }
+      // WI-OI-120ho (R5): a place-scoped caller browses only people assigned at their places. The id path is left
+      // unscoped so a window can still resolve the display name of a resource it already refers to.
+      if (!request.ids?.length && principal.spatialScope.mode === 'SCOPED_PLACES') {
+        values.push([...principal.spatialScope.place_ids]);
+        where.push(peoplePlacesScopeByAssignment(`$${values.length}::uuid[]`));
+      }
       values.push(Math.min(Math.max(request.limit, 1), 100));
       const result = await client.query(
         `SELECT r.*, 0 AS qualification_count

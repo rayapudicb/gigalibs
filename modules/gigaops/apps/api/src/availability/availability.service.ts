@@ -64,14 +64,21 @@ export class AvailabilityService {
   /** Everyone's working patterns, by person then newest first (WI-OI-120u: the Working weeks window). */
   async listAllPatterns(principal: GigaOpsPrincipal): Promise<{ readonly items: readonly (AvailabilityPatternV1 & { readonly resourceName: string })[] }> {
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
+      const values: unknown[] = [principal.tenantId];
+      const where = ['p.tenant_id = $1'];
+      // WI-OI-120ho (R5): a place-scoped caller sees only the working weeks of people assigned at their places.
+      if (principal.spatialScope.mode === 'SCOPED_PLACES') {
+        values.push([...principal.spatialScope.place_ids]);
+        where.push(peoplePlacesScopeByAssignment(`$${values.length}::uuid[]`));
+      }
       const result = await client.query(
         `SELECT p.*, r.display_name AS resource_name
            FROM gigalibs_workforce.availability_patterns p
            JOIN gigalibs_workforce.workforce_resources r ON r.tenant_id = p.tenant_id AND r.id = p.resource_id
-          WHERE p.tenant_id = $1
+          WHERE ${where.join(' AND ')}
           ORDER BY r.display_name, p.effective_from DESC
           LIMIT 1000`,
-        [principal.tenantId],
+        values,
       );
       return { items: result.rows.map((row) => ({ ...mapPattern(row), resourceName: String(row.resource_name) })) };
     });
