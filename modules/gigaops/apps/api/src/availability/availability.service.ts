@@ -32,6 +32,7 @@ import {
   recordMutation,
   translate,
 } from '../common/commands.js';
+import { peoplePlacesScopeByAssignment } from '../common/scope.js';
 import { WorkforceDatabaseService } from '../database/database.service.js';
 
 export interface Interval {
@@ -216,6 +217,11 @@ export class AvailabilityService {
       if (query.to) {
         values.push(query.to);
         where.push(`a.starts_at < $${values.length}`);
+      }
+      // WI-OI-120ho (R5): a place-scoped approver sees only absences of people assigned at their places.
+      if (principal.spatialScope.mode === 'SCOPED_PLACES') {
+        values.push([...principal.spatialScope.place_ids]);
+        where.push(peoplePlacesScopeByAssignment(`$${values.length}::uuid[]`, 'a.resource_id', 'a.tenant_id'));
       }
       const result = await client.query(`${ABSENCE_SELECT} WHERE ${where.join(' AND ')} ORDER BY a.starts_at DESC LIMIT 500`, values);
       return { items: result.rows.map(mapAbsence) };

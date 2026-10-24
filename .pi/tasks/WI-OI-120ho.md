@@ -1,6 +1,6 @@
 # WI-OI-120ho (R5 Workforce): unit & place scope on Workforce
 
-- **Status:** Audit done (2026-10-24) — **blocked on a person-scoping design decision** before enforcement can close and the allow-list can flip.
+- **Status:** Core built (2026-10-24) — unblocked (schema stands up fresh); place-scope-by-assignment on the people directory and the absence approver queue, integration-tested North≠South. Open: the other two person reads, UNITS scope, the allow-list flip, the UAT journey.
 - **Work item:** WI-OI-120 (execution plan v3 Phase 2 step 2.7). Evidence in `.pi/work/WI-OI-120.md`.
 - **Size:** L
 
@@ -45,6 +45,36 @@ without deciding the model:
 
 Recommendation: **(a) scope-by-assignment** — matches how jobs/positions/bookings already work and needs no schema
 change, though the resource/absence queries get a join against positions+engagements+bookings. Owner/Security to confirm.
+
+## Unblocked + built (2026-10-24)
+
+**WI-OI-119 resolved:** the real Workforce chain is `modules/gigaops/db/runtime-foundation/` (creates
+`gigalibs_workforce`); the legacy `db/migrations/` (`gigalibs_gigaops`) is dead inventory, as 000001's own header
+states. All 27 runtime-foundation migrations apply cleanly to a fresh PostgreSQL 16 — the "can't install fresh"
+was stale runner/ledger state in the running stack, not an inherent failure. So a trustworthy `gigalibs_workforce`
+schema stands up for integration testing.
+
+**Person-scoping decision:** scope-by-assignment (owner-approved). A person has no intrinsic site, so a place-scoped
+caller sees a person only via an active engagement on a position at one of their places, or a booking on a
+requirement there. Unassigned people are visible only to an unbounded caller (intended). Predicate:
+`modules/gigaops/apps/api/src/common/scope.ts` (`peoplePlacesScopeByAssignment`), used by both the service and the test.
+
+**Built + integration-tested (throwaway PG16, North≠South):**
+- `listResources` (people directory) and `listAbsences` (absence approver queue) now apply the place filter when
+  the caller is `SCOPED_PLACES`. `scope.integration.test.ts`: North sees only North, South only South, no cross-leak,
+  unassigned hidden from a scoped caller, unbounded sees all, approver sees only in-place absences (5 tests).
+- `pnpm --filter @gigalibs/gigaops-api test run`: 343 pass (integration test skips without R5_TEST_DATABASE_URL).
+
+## Remaining (open)
+
+- The other two person reads — `lookupResources` (picker, search path) and `listAllPatterns` (working weeks) —
+  take the same helper; mechanical follow-up.
+- **UNITS scope-by-assignment** (positions/engagements carry `department_id`); and bookings/time/pay enforce places
+  but not units.
+- **The allow-list flip** (`SCOPE_ENFORCING_MODULES[gigaops]`): still deferred — it is an all-or-nothing per-dimension
+  security claim over *every* code, so it needs units closed everywhere **and** a decision on reference-data codes
+  (capabilities, absence-types are workspace-wide, not place-bound). Do not flip until then.
+- North≠South **UAT journey** proof (owner deploy) + independent Security review (post-UAT).
 
 ## Steps (after the decision)
 

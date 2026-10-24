@@ -25,6 +25,7 @@ import {
 } from '@gigalibs/contracts';
 import type { PoolClient } from 'pg';
 import { type GigaOpsPrincipal, hasWorkforcePermission } from '../auth/authorization.js';
+import { peoplePlacesScopeByAssignment } from '../common/scope.js';
 import { WorkforceDatabaseService } from '../database/database.service.js';
 
 interface CommandContext {
@@ -55,6 +56,11 @@ export class WorkforceResourcesService {
       if (query.status) {
         values.push(query.status);
         where.push(`r.status = $${values.length}`);
+      }
+      // WI-OI-120ho (R5): a place-scoped caller sees only people assigned at their places (scope-by-assignment).
+      if (principal.spatialScope.mode === 'SCOPED_PLACES') {
+        values.push([...principal.spatialScope.place_ids]);
+        where.push(peoplePlacesScopeByAssignment(`$${values.length}::uuid[]`));
       }
       values.push(query.pageSize, (query.page - 1) * query.pageSize);
       const direction = query.direction === 'DESC' ? 'DESC' : 'ASC';

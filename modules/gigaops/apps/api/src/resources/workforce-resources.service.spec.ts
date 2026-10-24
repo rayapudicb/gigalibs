@@ -12,6 +12,7 @@ const principal = {
   roles: ['MEMBER'],
   persona: 'OPERATIONS_SUPERVISOR' as const,
   orgScope: { mode: 'FLAT_TENANT' as const },
+  spatialScope: { mode: 'UNBOUNDED' as const },
 };
 
 describe('WorkforceResourcesService', () => {
