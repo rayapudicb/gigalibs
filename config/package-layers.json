@@ -124,6 +124,7 @@
       "OrgUnitPlaceLink",
       "OrgScopeGrant",
       "MemberRoleAssignment",
+      "DutyConflictAcceptance",
       "OrgIdempotencyRecord",
       "TenantInvite",
       "AuditLog",
