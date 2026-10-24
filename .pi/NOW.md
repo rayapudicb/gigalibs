@@ -47,7 +47,7 @@ Owner directed completing Phase 2 development (plan v3 steps 2.1–2.9) autonomo
 | 2.3 | M-WF2 time on metadata | **Done — keep component** ([WI-OI-120hk](tasks/WI-OI-120hk.md)); Jobs-class, works via B1. |
 | 2.4 | T1b worker reconciliation | **Done — moot** ([WI-OI-120hn](tasks/WI-OI-120hn.md)); 0 rows in `wfo_workers`. |
 | 2.6 | T2 departments → org units | **Essentially done** — positions carry org-unit `department_id` with scope enforcement; no free-text department remains. |
-| 2.7 | R5 Workforce scope | **Proposed, L** ([WI-OI-120ho](tasks/WI-OI-120ho.md)) — security allow-list; must prove every code enforces unit+place scope; needs UAT journey + security review. |
+| 2.7 | R5 Workforce scope | **Audit done ([WI-OI-120ho](tasks/WI-OI-120ho.md)); blocked on a person-scoping decision.** Operational place-records (positions/bookings/time/pay/calendars) enforce scope; jobs/positions also enforce units. But people, absences and working-weeks filter by tenant only, and a person has no intrinsic unit/place — so the allow-list can't honestly flip until the model is decided (recommend scope-by-assignment). |
 | 2.8 | R3 segregation of duties | **Proposed, L** ([WI-OI-120hp](tasks/WI-OI-120hp.md)) — net-new control-plane RBAC; design pass first. |
 | 2.9 | R4 delegation & revocation | **Proposed, L** ([WI-OI-120hq](tasks/WI-OI-120hq.md)) — net-new control-plane RBAC; design pass first. |
 

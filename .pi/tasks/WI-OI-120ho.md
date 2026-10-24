@@ -1,6 +1,6 @@
 # WI-OI-120ho (R5 Workforce): unit & place scope on Workforce
 
-- **Status:** Proposed — large security-critical build; needs the North≠South journey proof (owner deploy) + post-UAT security review.
+- **Status:** Audit done (2026-10-24) — **blocked on a person-scoping design decision** before enforcement can close and the allow-list can flip.
 - **Work item:** WI-OI-120 (execution plan v3 Phase 2 step 2.7). Evidence in `.pi/work/WI-OI-120.md`.
 - **Size:** L
 
@@ -19,11 +19,36 @@ everywhere). CMMS R5 took four cards (WI-OI-120z/aa/ab/ac) for exactly this. Par
 exists (`jobs.service.ts assertWritableScope`/`assertPositionOwner`; `time.service.ts assertTimesheetScope`;
 `spatialScope` on the principal), so this completes and proves it rather than starting from zero.
 
-## Steps
+## Coverage audit result (2026-10-24)
 
-1. **Coverage audit (read-only):** for every `gigaops` code in the generated permission catalogue
-   (resources, jobs, positions, availability, absences, calendars, bookings, time, timesheets, pay…), trace its
-   read and write paths and record whether they filter/guard by unit and by place. Produce the gap list.
+| Area | Place (spatial_scope) | Unit (organization) | Notes |
+|---|---|---|---|
+| jobs / positions / engagements | **yes** | **yes** | `assertWritableScope` + `assertPositionOwner` + `organizationAccess`; `department_id` is an org unit. |
+| bookings | **yes** | no | `bookings.service` filters by `place_ids`; no unit guard. |
+| time / punches / timesheets | **yes** | no | `time.service` place filter + `assertTimesheetScope`; time is per-person, no unit. |
+| calendars / closures | **yes** | no | `availability.service` place guard on site calendars. |
+| pay / pay-export | **yes** | no | place filter on pay runs/exports. |
+| **resources (people directory, picker)** | **NO** | **NO** | `listResources`/`lookupResources` filter by `tenant_id` only. |
+| **absences (approver queue)** | **NO** | **NO** | `listAbsences` filters by `tenant_id` only. |
+| **working-week patterns** | **NO** | **NO** | `listAllPatterns` tenant-wide. |
+| capabilities (skill definitions) | n/a | n/a | tenant-wide master data; arguably correctly unscoped. |
+
+**Gating decision (stop-and-ask):** a person carries **no intrinsic unit or place** (`workforce_resources` has no
+site/unit column). So people and their person-level records (absences, working weeks) cannot be place/unit-filtered
+without deciding the model:
+- **(a) by assignment** — a person is "in my scope" if they hold an active position/engagement/booking in my
+  units/places (join-based filter; a person in several units shows in each). No schema change.
+- **(b) home unit/place on the person** — add a column, scope by it (schema change + data backfill).
+- **(c) people stay workspace-visible** — only operational place-records (positions, time, bookings, pay) are
+  scoped; then the allow-list entry must be `{ units: false, places: false }` for the *resource* codes, which the
+  current all-or-nothing `SCOPE_ENFORCING_MODULES` shape does not express per-code — so this needs a model change too.
+
+Recommendation: **(a) scope-by-assignment** — matches how jobs/positions/bookings already work and needs no schema
+change, though the resource/absence queries get a join against positions+engagements+bookings. Owner/Security to confirm.
+
+## Steps (after the decision)
+
+1. ~~Coverage audit~~ — **done** (table above).
 2. **Fill the gaps:** add unit/place filtering to every read that lacks it and a scope guard to every write,
    using the principal's `spatialScope`/`organization`. Fail closed when scope is unknown.
 3. Add `gigaops` to `PER_ASSIGNMENT_SCOPE_MODULES` and `SCOPE_ENFORCING_MODULES` ({ units: true, places: true }).
