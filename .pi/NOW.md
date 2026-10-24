@@ -36,6 +36,25 @@ Full deploy sequence and module completion gate are in `AGENTS.md`.
   component** (like clock-in and dispatch); metadata build deferred to a future L card; `jobs-window.held.mjs`
   retained. Only the site/dept picker was trivially ready (`wf.positions` already writable).
 
+### Phase 2 — Workforce & departments: development status (2026-10-24)
+
+Owner directed completing Phase 2 development (plan v3 steps 2.1–2.9) autonomously. Outcome after investigation:
+
+| Step | Item | Outcome |
+|---|---|---|
+| 2.1 | M-WF1 Jobs window | **Done** — kept as workbench component ([WI-OI-120hm](tasks/WI-OI-120hm.md)). |
+| 2.2 | T1a auto worker-link | **Deferred** ([WI-OI-120o](tasks/WI-OI-120o.md)) — cross-service identity delivery; B1 already fixed the blocker. |
+| 2.3 | M-WF2 time on metadata | **Done — keep component** ([WI-OI-120hk](tasks/WI-OI-120hk.md)); Jobs-class, works via B1. |
+| 2.4 | T1b worker reconciliation | **Done — moot** ([WI-OI-120hn](tasks/WI-OI-120hn.md)); 0 rows in `wfo_workers`. |
+| 2.6 | T2 departments → org units | **Essentially done** — positions carry org-unit `department_id` with scope enforcement; no free-text department remains. |
+| 2.7 | R5 Workforce scope | **Proposed, L** ([WI-OI-120ho](tasks/WI-OI-120ho.md)) — security allow-list; must prove every code enforces unit+place scope; needs UAT journey + security review. |
+| 2.8 | R3 segregation of duties | **Proposed, L** ([WI-OI-120hp](tasks/WI-OI-120hp.md)) — net-new control-plane RBAC; design pass first. |
+| 2.9 | R4 delegation & revocation | **Proposed, L** ([WI-OI-120hq](tasks/WI-OI-120hq.md)) — net-new control-plane RBAC; design pass first. |
+
+**Net:** 5 of 8 resolved with no new product code (decisions / already-done). The remaining 3 (R5, R3, R4) are
+large security-critical RBAC builds that each need a deploy-time journey proof and the post-UAT security review —
+they cannot be auto-shipped in one pass; cards are ready to build on the owner's priority.
+
 **WI-OI-120bq:** re-review complete (2026-10-22); all H/M findings closed; F2.9 deferred non-blocking per owner. **Ready for Group 4 UAT deploy** (release worktree, after CMMS M-CM1 deploy).
 
 **Not in this track:** reliability, floor kiosk, full EAM (Phase 6 **M-CM2** / roadmap P4b).

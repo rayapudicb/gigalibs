@@ -1,6 +1,16 @@
 # WI-OI-120hk (M-WF2): Time and timesheet on metadata — submit week + approver queue
 
-- **Status:** No code changes needed — blocked by WI-OI-120hj (B1)
+- **Status:** No code changes needed — blocked by WI-OI-120hj (B1). **2.3 decision (2026-10-24): keep the component.**
+
+## 2.3 decision — M-WF2 stays a component (2026-10-24)
+
+Plan step 2.3 asks for time/timesheet approval "on metadata (the clock-in panel stays a component)". Investigation
+(this card) showed the React component `TimeAndAttendance.tsx` already does submit-week + the approver queue and
+works once B1 links the person. Rebuilding it as a metadata window hits the **same wall as the Jobs window
+(WI-OI-120hm)**: a weekly timesheet is a *computed aggregate* (paired punches, issues, open exceptions) with a
+submit→approve/reject lifecycle and four-eyes immutability — not CRUD a metadata window expresses. `module.yaml`
+already keeps clock-in and dispatch as components for the same reason. **Decision: time & timesheet approval stays
+the `TimeAndAttendance` component; no metadata rebuild.** B2/B4 clear on the B1 deploy, no further code.
 - **Work item:** WI-OI-120 (execution plan v3 Phase 2 step 2.3). Evidence in `.pi/work/WI-OI-120.md`.
 - **Size:** M
 
