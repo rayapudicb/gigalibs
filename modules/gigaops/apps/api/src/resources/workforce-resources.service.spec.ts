@@ -103,6 +103,9 @@ describe('WorkforceResourcesService', () => {
 describe('WorkforceResourcesService login links', () => {
   const manager = { ...principal, subject: 'manager-1', permissions: ['workforce.resources.read', 'workforce.resources.manage'] };
   const resourceId = '00000000-0000-4000-8000-000000000009';
+  // WI-OI-120hj: platformUserId must be a platform user UUID; these stand in for the member being linked.
+  const linkTarget = '00000000-0000-4000-8000-000000000101';
+  const newLink = '00000000-0000-4000-8000-000000000102';
   const detailRow = {
     id: resourceId,
     reference_code: 'TECH-09',
@@ -124,14 +127,14 @@ describe('WorkforceResourcesService login links', () => {
   it('refuses a manager who links a new person to a login', async () => {
     const { database, service } = harness();
     await expect(
-      service.createResource({ principal: manager, correlationId: 'c-1' } as never, { referenceCode: 'TECH-10', displayName: 'Ten', resourceType: 'HUMAN', platformUserId: 'manager-1' }),
+      service.createResource({ principal: manager, correlationId: 'c-1' } as never, { referenceCode: 'TECH-10', displayName: 'Ten', resourceType: 'HUMAN', platformUserId: linkTarget }),
     ).rejects.toMatchObject({ response: { code: 'WORKFORCE_LINK_FORBIDDEN' } });
     expect(database.withTenantTransaction).not.toHaveBeenCalled();
   });
 
   it("refuses a manager who re-points or clears someone's link", async () => {
     const { database, service } = harness();
-    for (const platformUserId of ['manager-1', null]) {
+    for (const platformUserId of [linkTarget, null]) {
       await expect(
         service.updateResource({ principal: manager, correlationId: 'c-2' } as never, resourceId, { expectedVersion: 2, platformUserId }),
       ).rejects.toMatchObject({ response: { code: 'WORKFORCE_LINK_FORBIDDEN' } });
@@ -163,9 +166,9 @@ describe('WorkforceResourcesService login links', () => {
       if (/resource_capabilities rc/.test(sql) && !/COUNT\(/.test(sql)) return { rowCount: 0, rows: [] };
       return { rowCount: 1, rows: [detailRow] };
     });
-    await service.updateResource({ principal, correlationId: 'c-4' } as never, resourceId, { expectedVersion: 2, platformUserId: 'user-new' });
+    await service.updateResource({ principal, correlationId: 'c-4' } as never, resourceId, { expectedVersion: 2, platformUserId: newLink });
     const audit = client.query.mock.calls.find(([sql]) => /audit_events/.test(sql as string))!;
-    expect(JSON.parse(audit[1][7] as string)).toMatchObject({ platformUserId: { before: 'user-old', after: 'user-new' } });
+    expect(JSON.parse(audit[1][7] as string)).toMatchObject({ platformUserId: { before: 'user-old', after: newLink } });
   });
 });
 

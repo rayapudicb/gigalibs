@@ -44,7 +44,23 @@ NOT_A_WORKER; inactive → WORKER_INACTIVE; non-human (EQUIPMENT) → WORKER_INA
 **`time.service.ts`** (lines 607–619): `ownWorker()` refactored to use `requireWorker`. Error
 message: "Your user is not linked to a Workforce person; ask an administrator to link it."
 
-**343 tests pass. TypeScript builds clean.**
+### Defense-in-depth hardening (added 2026-10-24 after review)
+
+Review found the underlying cause behind the stale manifest: the write contract accepted any
+1–128-char string for `platformUserId`, so the email was stored verbatim. Tightened at the boundary:
+
+**`packages/contracts/src/workforce/index.ts`**: new `PlatformUserLinkSchema =
+z.string().trim().uuid().nullable().optional()`, used by both `CreateWorkforceResourceV1Schema` and
+`UpdateWorkforceResourceV1Schema`. A non-UUID (e.g. an email) is now rejected at parse → clean 400 at
+entry instead of a silent 403 three journey-steps later, and the hole is closed against direct API
+calls and future manifest drift. The read schema stays permissive (`z.string().nullable()`) so existing
+rows still deserialize. `assertMayLinkLogin` (permission gate) is unchanged.
+
+**`index.spec.ts`** (new): 6 tests — create/update accept a UUID and null, reject an email and other
+non-UUID strings. **`workforce-resources.service.spec.ts`**: link fixtures changed from placeholder
+strings to UUIDs (preserving each test's intent).
+
+**343 gigaops tests pass; 6 new contract tests pass; contracts + gigaops-api build clean.**
 
 ## UAT fix (owner must do after deploy)
 

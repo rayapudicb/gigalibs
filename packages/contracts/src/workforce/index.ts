@@ -36,11 +36,16 @@ const WorkforceReferenceCodeSchema = z
   .max(64)
   .regex(/^[A-Za-z0-9][A-Za-z0-9._-]*$/);
 
+// WI-OI-120hj: the person→login link is a platform user id (UUID), never free text. A stale TEXT
+// manifest once let an admin type a member's email here; it was stored verbatim and silently broke
+// the login lookup (ownWorker queries by UUID), 403'ing the technician's own time page three steps later.
+const PlatformUserLinkSchema = z.string().trim().uuid().nullable().optional();
+
 export const CreateWorkforceResourceV1Schema = z.object({
   referenceCode: WorkforceReferenceCodeSchema,
   displayName: z.string().trim().min(1).max(200),
   resourceType: WorkforceResourceTypeV1Schema,
-  platformUserId: z.string().trim().min(1).max(128).nullable().optional(),
+  platformUserId: PlatformUserLinkSchema,
 });
 export type CreateWorkforceResourceV1 = z.infer<typeof CreateWorkforceResourceV1Schema>;
 
@@ -49,7 +54,7 @@ export const UpdateWorkforceResourceV1Schema = z
     expectedVersion: z.number().int().positive(),
     displayName: z.string().trim().min(1).max(200).optional(),
     resourceType: WorkforceResourceTypeV1Schema.optional(),
-    platformUserId: z.string().trim().min(1).max(128).nullable().optional(),
+    platformUserId: PlatformUserLinkSchema,
     status: WorkforceRecordStatusV1Schema.optional(),
     // WI-OI-120u: why a resource was deactivated or reactivated, kept in its audit record.
     reason: z.string().trim().min(1).max(500).optional(),
