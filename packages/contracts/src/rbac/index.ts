@@ -51,3 +51,5 @@ export * from './permission-catalogue.generated.js';
 export * from './control-plane-permissions.js';
 export * from './base-roles.js';
 export * from './assignment-scopes.js';
+export * from './duty-conflicts.js';
+export * from './role-delegation.js';

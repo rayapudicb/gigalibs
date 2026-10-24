@@ -1,6 +1,6 @@
 # WI-OI-120hq (R4): delegation and revocation
 
-- **Status:** Design ready (2026-10-24) — concrete spec below for owner + Security sign-off, then build. Post-UAT security review still applies.
+- **Status:** Core built (2026-10-24) — `validateDelegation`/`scopeWithin`/`delegationBounds` in contracts, unit-tested. Control-plane wiring (migration, create/revoke, context mint, sweep) pending a stack + Security sign-off.
 - **Work item:** WI-OI-120 (execution plan v3 Phase 2 step 2.9). Evidence in `.pi/work/WI-OI-120.md`.
 - **Size:** L
 
@@ -54,8 +54,11 @@ delegate, role, scope, bounds and reason.
 
 ## Done when
 
-- [ ] `memberRoleAssignment` delegation columns migration (verification + roll-forward).
-- [ ] Create/revoke delegation in the control plane: within-own, scope-not-widened, SoD-checked, bounded, audited.
-- [ ] Mint-time live-only inclusion + `exp` bounding; sweep backstop; `auth_version` bump on revoke.
-- [ ] Tests: delegate gains the role within bounds; cannot widen scope or exceed the grantor; expiry and revoke remove it (context + sweep); SoD conflict refused; all audited.
+- [x] Within-own + scope-not-widened + bounds rules in `packages/contracts/src/rbac/role-delegation.ts`
+      (`validateDelegation`, `scopeWithin`, `delegationBounds`). 13 unit tests pass; contracts build clean.
+- [ ] Reviewed by Security + Product (bounds horizon cap, unit descendant-expansion resolved upstream of `scopeWithin`).
+- [ ] `memberRoleAssignment` delegation columns migration (verification + roll-forward). *(stack)*
+- [ ] Create/revoke delegation in the control plane: calls `validateDelegation` + R3 `dutyConflicts` on the delegate's union; audited. *(stack)*
+- [ ] Mint-time live-only inclusion + `exp` bounding; sweep backstop; `auth_version` bump on revoke. *(stack)*
+- [ ] Integration tests: delegate gains the role within bounds; cannot widen or exceed the grantor; expiry and revoke remove it; SoD conflict refused; all audited. *(stack)*
 - [ ] `pnpm verify` clean; UAT proof; independent security review (post-UAT). Evidence in `.pi/work/WI-OI-120.md`.

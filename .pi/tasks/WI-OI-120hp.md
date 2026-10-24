@@ -1,6 +1,6 @@
 # WI-OI-120hp (R3): segregation of duties
 
-- **Status:** Design ready (2026-10-24) — concrete spec below for owner + Security sign-off, then build. Post-UAT security review still applies.
+- **Status:** Core built (2026-10-24) — conflict catalogue + `dutyConflicts` detection in contracts, unit-tested. Control-plane wiring (grant-time enforcement, acceptance table + migration) pending a stack + Security sign-off.
 - **Work item:** WI-OI-120 (execution plan v3 Phase 2 step 2.8). Evidence in `.pi/work/WI-OI-120.md`.
 - **Size:** L
 
@@ -48,8 +48,10 @@ revokedAt) — forward migration. No change to the signed context (SoD is decide
 
 ## Done when
 
-- [ ] Conflict catalogue in contracts (generated, verify-checked); reviewed by Security + Product.
-- [ ] `assertNoDutyConflict` enforced in `assignMemberRole` and the delegation path, with the acceptance override; audited.
-- [ ] `duty_conflict_acceptance` migration with verification + roll-forward.
-- [ ] Tests: conflicting grant refused; accepted-override proceeds + audited; non-conflicting grant passes; revoked acceptance re-blocks.
+- [x] Conflict catalogue + `dutyConflicts` detection in `packages/contracts/src/rbac/duty-conflicts.ts`, with a
+      catalogue-coverage test (no set references an unknown code). 8 unit tests pass; contracts build clean.
+- [ ] Reviewed by Security + Product (the catalogue, e.g. whether `time.punch` should ever be a side — kept out for now).
+- [ ] `assertNoDutyConflict` wired into `assignMemberRole` and the delegation path, with the acceptance override; audited. *(stack)*
+- [ ] `duty_conflict_acceptance` migration with verification + roll-forward. *(stack)*
+- [ ] Integration tests: conflicting grant refused; accepted-override proceeds + audited; non-conflicting grant passes; revoked acceptance re-blocks. *(stack)*
 - [ ] `pnpm verify` clean; UAT proof; independent security review (post-UAT). Evidence in `.pi/work/WI-OI-120.md`.
