@@ -53,6 +53,8 @@ export const CONTROL_PLANE_PERMISSIONS = [
   'parties:merge',
   'parties:read',
   'parties:update',
+  'people:manage',
+  'people:read',
   'retention:manage',
   'retention:read',
   'roles:assign',
