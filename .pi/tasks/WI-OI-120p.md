@@ -112,9 +112,19 @@
   `chart_of_accounts`) and `financial-operations` has no throwaway-postgres harness; the scope logic is identical to
   the Docker-proven Procurement/Orders, and the wiring is typecheck-clean. Follow-up: build the finance harness + the
   cross-department fixed-asset integration test.
-- **Slice 9 — remaining (same ungated pattern):** Procurement POs/vendor-bills + create-scoping; Orders downstream
-  documents (fulfillments, customer invoices, credit memos, AR-invoice projections, returns); CMMS units (adds unit
-  scope alongside its existing place scope). Note: the per-module `organization-scope.ts` is duplicated across
+- **Slice 9 — CMMS units already done (verified 2026-10-25):** correcting the stale "Today" note — CMMS no longer
+  applies place scope only. Its `auth/scope.ts` (`scopePredicates`/`assertWritableScope`, WI-OI-120be/120bu) filters
+  work orders on **`department_id`** (units) and **`site_ref`** (places) for both reads and writes, driven by the
+  principal's `organization` (UNITS) claim and assignments. Unit scoping is unit-tested (`scope.spec.ts`,
+  `r5-assignment-scope.spec.ts`: a UNITS-scoped assignment yields the `department_id` predicate). No new code needed; a
+  full DB dept-isolation integration test could be added for parity with Procurement/Orders, but the enforcement is in
+  place and tested at the predicate level.
+- **Slice 9 milestone:** the **primary record of every main module is now organization-scoped** — Procurement
+  requisitions, Orders quotes+orders (both Docker-integration-proven), Finance fixed assets (wired; GL tenant-wide by
+  design), CMMS work orders (units+places, already done), and Analytics/Catalogue/Workforce/Geospatial (pre-existing).
+- **Slice 9 — remaining (secondary records, same pattern, diminishing value):** Procurement POs/vendor-bills +
+  create-scoping; Orders downstream documents (fulfillments, customer invoices, credit memos, AR-invoice projections,
+  returns). Note: the per-module `organization-scope.ts` is duplicated across
   Procurement/Orders/Finance, but **by design** — the glue maps module-sdk's plain `OrganizationScopeRefusal`/
   `OrganizationVersionPendingError` to NestJS `ForbiddenException`/`ServiceUnavailableException`, and `module-sdk` is
   deliberately Nest-agnostic, so the nest glue lives per nest module (Analytics does the same). Not a shared-helper

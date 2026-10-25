@@ -111,8 +111,13 @@ Owner approved starting Phase 3 while the Phase 2 deploy waits on disk. [WI-OI-1
   level. Typecheck clean; finance suite 71 pass. **DB integration test deferred** (deep book→account→class→asset
   fixture chain + no finance harness; logic identical to Docker-proven proc/orders) — follow-up. **Uncommitted —
   awaiting "commit".**
-- Remaining slice 9 (same pattern): Procurement POs/bills, Orders downstream docs, CMMS units. The per-module
-  `organization-scope.ts` copy is by-design (nest glue over nest-agnostic module-sdk), not a shared-helper candidate.
+- **slice 9 — CMMS units already done (verified 2026-10-25):** stale card note corrected — CMMS `auth/scope.ts`
+  (WI-OI-120be/bu) filters work orders on `department_id` (units) + `site_ref` (places), reads and writes, unit-tested.
+  No new code. **Milestone: every main module's primary record is now org-scoped** (Procurement requisitions, Orders
+  quotes+orders [integration-proven], Finance fixed assets [wired], CMMS work orders [done], Analytics/Catalogue/
+  Workforce/Geospatial [pre-existing]). **Docs-only change uncommitted — awaiting "commit".**
+- Remaining slice 9 (secondary records, diminishing value): Procurement POs/bills, Orders downstream docs. The
+  per-module `organization-scope.ts` copy is by-design (nest glue over nest-agnostic module-sdk), not a shared helper.
 - WI-OI-120p remaining is otherwise gated: slice 6 (WI-OI-120o, deferred), slice 7-grant + the R5 allow-list flip
   (owner/Security), slice 8 SSO (credentials).
 
