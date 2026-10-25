@@ -19,6 +19,7 @@ import {
   CONTROL_PLANE_PERMISSIONS,
   DUTY_CONFLICT_SETS,
   delegationBounds,
+  dutyConflicts,
   holdsPermission,
   MAX_MEMBER_ROLE_ASSIGNMENTS,
   type ModuleDefaultRole,
@@ -56,7 +57,9 @@ import {
   isWorkspaceAdministrator,
   ownAuthority,
 } from './grant-bound.js';
+import { memberRoleGrants } from '@gigalibs/rbac-nest';
 import { assertInclusionsValid, expandRole, loadRoleGraph, rolesIncluding, withRole } from './role-graph.js';
+import { authorizeDelegatedPeopleAdd, invitedRoleAssignments } from './people-admin.js';
 import { assertNoDutyConflict, assertScopeEnforced, assertScopesConsistent, resolveRoleScope } from './role-scopes.js';
 import { assertTenantAdminAuthority, assertTenantAdministratorRetained } from './tenant-member-safety.js';
 
@@ -778,6 +781,82 @@ export class TenancyService {
       });
       return { id: delegationId, revoked: true };
     });
+  }
+
+  // WI-OI-120p slice 4 (R13): a delegated head invites a person into one of their units with allowed roles. No email
+  // is sent — the one-time link (raw token) is returned once, like createInvite. The carried roles are authorized here
+  // (within the head's people:manage units, on the unit's allowance, held by the head, SoD-clean) and granted scoped
+  // to the unit on acceptance.
+  async delegatedInvite(
+    tenantId: string,
+    headUserId: string,
+    dto: { email: string; unitId: string; customRoleIds: readonly string[]; expiresInHours: number },
+  ) {
+    const email = dto.email.trim().toLowerCase();
+    return roleChangeConflicts(() =>
+      prisma.$transaction(async (transaction) => {
+        await transaction.$queryRaw`SELECT "id" FROM "tenants" WHERE "id" = ${tenantId} FOR UPDATE`;
+        // The units where the head holds people:manage, from their live assignments.
+        const { assignments } = await memberRoleGrants(transaction, tenantId, headUserId);
+        const headUnits = [
+          ...new Set(
+            assignments
+              .filter((assignment) => assignment.scope === 'UNITS' && holdsPermission(assignment.permissions, 'people:manage'))
+              .flatMap((assignment) => assignment.unitIds),
+          ),
+        ];
+        const authorized = await authorizeDelegatedPeopleAdd(transaction, tenantId, headUserId, headUnits, {
+          unit: dto.unitId,
+          roleIds: dto.customRoleIds,
+        });
+        if (!authorized.ok) throw new ForbiddenException({ code: authorized.code, message: authorized.message });
+        // The carried roles must not give one person both sides of a separated duty (R3).
+        const graph = await loadRoleGraph(transaction, tenantId);
+        const carriedPermissions = [...new Set(dto.customRoleIds.flatMap((roleId) => expandRole(graph, roleId)))];
+        const conflicts = dutyConflicts(carriedPermissions);
+        if (conflicts.length > 0)
+          throw new ConflictException({
+            code: 'DUTY_CONFLICT',
+            message: `These roles would give one person both sides of a separated duty. ${conflicts.map((set) => set.reason).join(' ')}`,
+            conflicts: conflicts.map((set) => set.id),
+          });
+        const existingMember = await transaction.tenantMember.findFirst({
+          where: { tenantId, user: { email: { equals: email, mode: 'insensitive' } } },
+          select: { id: true },
+        });
+        if (existingMember) throw new ConflictException('A membership for this email already exists in the tenant');
+        await transaction.tenantInvite.updateMany({
+          where: { tenantId, email: { equals: email, mode: 'insensitive' }, acceptedAt: null, revokedAt: null },
+          data: { revokedAt: new Date() },
+        });
+        const rawToken = randomBytes(32).toString('base64url');
+        const created = await transaction.tenantInvite.create({
+          data: {
+            tenantId,
+            email,
+            role: 'MEMBER',
+            token: this.hashInviteToken(rawToken),
+            expiresAt: new Date(Date.now() + dto.expiresInHours * 60 * 60 * 1_000),
+            invitedById: headUserId,
+            customRoleIds: [...dto.customRoleIds],
+            unitId: dto.unitId,
+          },
+          select: { id: true, email: true, expiresAt: true },
+        });
+        await transaction.auditLog.create({
+          data: {
+            action: 'PERMISSION_CHANGE',
+            resource: 'tenant_invite',
+            resourceId: created.id,
+            userId: headUserId,
+            tenantId,
+            after: { email, unitId: dto.unitId, customRoleIds: [...dto.customRoleIds], delegated: true },
+            metadata: { delivery: 'MANUAL_SECURE_LINK', tokenStoredAsHash: true },
+          },
+        });
+        return { id: created.id, email: created.email, expiresAt: created.expiresAt.toISOString(), token: rawToken };
+      }),
+    );
   }
 
   // WI-OI-120p slice 3 (R13): a Tenant Admin sets, per unit, which custom roles a delegated head may assign there.
@@ -1540,6 +1619,21 @@ export class TenancyService {
             after: { acceptedAt: acceptedAt.toISOString(), membershipId: membership.id },
           },
         });
+        // WI-OI-120p slice 4 (R13): a delegated invitation grants its carried custom roles at its unit on acceptance
+        // (authorized at create-time by delegatedInvite). An ordinary base-role invite carries none and grants nothing.
+        for (const grant of invitedRoleAssignments(invitation)) {
+          await transaction.memberRoleAssignment.create({
+            data: {
+              tenantId: invitation.tenantId,
+              userId,
+              customRoleId: grant.customRoleId,
+              scope: grant.scope,
+              unitIds: [...grant.unitIds],
+              reason: 'Accepted delegated invitation',
+              grantedById: invitation.invitedById,
+            },
+          });
+        }
         return { tenant, membership };
       },
       { isolationLevel: 'Serializable' },

@@ -1122,6 +1122,11 @@ model TenantInvite {
 
   invitedById String // userId of who sent the invite
 
+  // WI-OI-120p slice 4 (R13): a delegated invite carries the custom roles and the unit to grant on acceptance; both
+  // authorized at create-time by authorizeDelegatedPeopleAdd. Empty/null for an ordinary (base-role-only) invite.
+  customRoleIds String[] @default([])
+  unitId        String?
+
   createdAt DateTime @default(now()) @db.Timestamptz(3)
 
   @@index([email])

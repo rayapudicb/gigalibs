@@ -472,6 +472,17 @@ export type UpdateTenantDto = z.infer<typeof UpdateTenantSchema>;
 export type ChangeTenantStatusDto = z.infer<typeof ChangeTenantStatusSchema>;
 export type TenantMemberRole = z.infer<typeof TenantMemberRoleSchema>;
 export type CreateTenantInviteDto = z.infer<typeof CreateTenantInviteSchema>;
+
+// WI-OI-120p slice 4 (R13): a delegated head invites a person into one of their units with allowed custom roles.
+export const DelegatedInviteSchema = z
+  .object({
+    email: EmailSchema.transform((email) => email.trim().toLowerCase()),
+    unitId: z.string().trim().min(1).max(64),
+    customRoleIds: z.array(z.string().trim().min(1).max(64)).min(1).max(20),
+    expiresInHours: z.number().int().min(1).max(168).default(72),
+  })
+  .strict();
+export type DelegatedInviteDto = z.infer<typeof DelegatedInviteSchema>;
 export type AcceptTenantInviteDto = z.infer<typeof AcceptTenantInviteSchema>;
 export type CreateCustomRoleDto = z.infer<typeof CreateCustomRoleSchema>;
 export type UpdateCustomRoleDto = z.infer<typeof UpdateCustomRoleSchema>;

@@ -63,10 +63,13 @@ decision), T1c (ADR-level), Assistant part (needs GU1–GU7), R5 Geospatial (sep
 Owner approved starting Phase 3 while the Phase 2 deploy waits on disk. [WI-OI-120p](tasks/WI-OI-120p.md) (R13/R14, XL):
 - slice 1 (module roles) largely in place; slice 2 (several roles) done.
 - **slice 3 (department allowances) built:** `department_role_allowances` table/migration + Tenant-Admin set/remove/list.
-- **slice 4 (delegated people-mgmt) built:** `assertDelegatedPeopleAdd` (pure, 5 unit tests) + `authorizeDelegatedPeopleAdd`
-  (DB-backed) integration-tested on a throwaway control DB (5 tests); `people:manage`/`people:read` registered.
-  Remaining: the delegated invite *endpoint* (calls the authorizer then `createInvite`; head's units from context).
-- Not started: slice 5 bulk add (R14), 8 directory groups/SSO (R15), 9 cross-module scope, 10 platform-role review.
+- **slice 4 (delegated people-mgmt) complete:** authorization core + `authorizeDelegatedPeopleAdd` + the
+  `delegatedInvite` endpoint (`POST current/delegated-invitations`, `people:manage`) — issues a one-time invite
+  carrying custom roles + unit (no email), and `acceptInvite` grants them scoped to the unit on acceptance.
+  End-to-end integration-tested on a throwaway control DB (invite→accept→scoped role; out-of-unit refused);
+  `people:manage`/`people:read` registered; `tenant_invites` gained `customRoleIds`/`unitId`.
+- Not started: slice 5 bulk add (R14), 7 bulk grants/offboarding, 8 directory groups/SSO (R15), 9 cross-module
+  scope, 10 platform-role review.
 
 **WI-OI-120bq:** re-review complete (2026-10-22); all H/M findings closed; F2.9 deferred non-blocking per owner. **Ready for Group 4 UAT deploy** (release worktree, after CMMS M-CM1 deploy).
 

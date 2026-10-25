@@ -16,8 +16,15 @@
   `tenancy-nest/people-admin.ts`) which loads the unit allowances and the head's held roles and applies the rule.
   Integration-tested against a throwaway control DB (5 tests: allowed+held→ok; out-of-unit / not-allowed /
   not-held-escalation / base-role-above-MEMBER → refused). `people:manage`/`people:read` registered in the
-  control-plane catalogue. **Remaining:** the delegated invite/add *endpoint* that calls `authorizeDelegatedPeopleAdd`
-  then `createInvite` (the head's units come from their signed context) — thin wiring on the existing invite path.
+  control-plane catalogue.
+- **Slice 4 (delegated invite) — complete:** `delegatedInvite` (tenancy.service): loads the head's `people:manage`
+  units, authorizes (`authorizeDelegatedPeopleAdd` + a duty-conflict check on the carried roles), refuses an existing
+  membership, and issues a one-time invite carrying the custom roles + unit (no email — raw token returned once, same
+  as `createInvite`). `tenant_invites` gained `customRoleIds`/`unitId` (migration); `acceptInvite` grants those roles
+  scoped to the unit on acceptance (pure `invitedRoleAssignments`, unit-tested). Route
+  `POST current/delegated-invitations` (`people:manage`). End-to-end integration-tested on a throwaway control DB
+  (`delegated-invite.integration.test.ts`: invite→accept grants the tech role scoped to North; out-of-unit refused);
+  tenancy-nest suite 96 green, no regression.
 - **Not started:** slice 5 bulk add (R14), slice 6 workers-in-step (ties to WI-OI-120o, deferred), 7 bulk grants,
   8 directory groups/SSO (R15), 9 scope in Procurement/Orders/Finance + CMMS units, 10 platform-role review.
 

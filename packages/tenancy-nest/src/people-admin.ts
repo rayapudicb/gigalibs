@@ -31,3 +31,23 @@ export async function authorizeDelegatedPeopleAdd(
     request,
   );
 }
+
+export interface InvitedRoleAssignment {
+  readonly customRoleId: string;
+  readonly scope: 'UNITS';
+  readonly unitIds: readonly string[];
+}
+
+/**
+ * WI-OI-120p slice 4 (R13): the scoped role assignments an accepted delegated invitation grants. A delegated invite
+ * carries custom roles and a unit (both authorized at create-time); on acceptance each role is granted at that unit.
+ * An ordinary base-role invite carries neither and grants nothing here. Pure so acceptInvite's application is tested.
+ */
+export function invitedRoleAssignments(invitation: {
+  readonly customRoleIds: readonly string[];
+  readonly unitId: string | null;
+}): readonly InvitedRoleAssignment[] {
+  if (invitation.customRoleIds.length === 0 || !invitation.unitId) return [];
+  const unitIds = [invitation.unitId];
+  return [...new Set(invitation.customRoleIds)].map((customRoleId) => ({ customRoleId, scope: 'UNITS', unitIds }));
+}

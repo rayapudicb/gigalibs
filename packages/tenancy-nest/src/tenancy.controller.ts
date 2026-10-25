@@ -25,6 +25,8 @@ import {
   type CreateTenantDto,
   type CreateTenantInviteDto,
   CreateTenantInviteSchema,
+  type DelegatedInviteDto,
+  DelegatedInviteSchema,
   CreateTenantSchema,
   type DeleteCustomRoleDto,
   DeleteCustomRoleSchema,
@@ -195,6 +197,18 @@ export class TenancyController {
     @Body(new ZodValidationPipe(CreateTenantInviteSchema)) dto: CreateTenantInviteDto,
   ) {
     return this.tenancyService.createInvite(tenantId, userId, dto);
+  }
+
+  // WI-OI-120p slice 4 (R13): a delegated head invites into one of their units with allowed roles (returns a one-time link).
+  @Post('current/delegated-invitations')
+  @Header('Cache-Control', 'no-store')
+  @RequirePermissions('people:manage')
+  delegatedInvite(
+    @CurrentTenant('tenantId') tenantId: string,
+    @CurrentUser('sub') userId: string,
+    @Body(new ZodValidationPipe(DelegatedInviteSchema)) dto: DelegatedInviteDto,
+  ) {
+    return this.tenancyService.delegatedInvite(tenantId, userId, dto);
   }
 
   @Delete('current/invitations/:inviteId')
