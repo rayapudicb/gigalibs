@@ -38,6 +38,7 @@ import {
 import type { PoolClient } from 'pg';
 import { SCHEMA } from '../config.js';
 import { DatabaseService } from '../database.service.js';
+import { assertWritableUnit, canReadUnit, orgReadCondition, resolveOrganizationAccess } from '../organization/organization-scope.js';
 import { requireActiveVendorParty } from './party-reference.js';
 
 export const errors = moduleErrors('UNIVERSAL_PROCUREMENT', 'Universal Procurement');
@@ -218,13 +219,28 @@ export class ProcurementService {
 
   async getRequisition(principal: ModulePrincipal, id: string): Promise<ProcurementRequisitionV1> {
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
-      return this.fetchRequisition(client, principal.tenantId, id);
+      return this.fetchScopedRequisition(client, principal, id);
     });
+  }
+
+  // WI-OI-120p slice 9 (R14): a requisition is visible/changeable only within the member's organization scope. A unit
+  // outside their read access reads as not-found (invisible); a unit outside their write access refuses the change.
+  private async fetchScopedRequisition(
+    client: PoolClient,
+    principal: ModulePrincipal,
+    id: string,
+    forWrite = false,
+  ): Promise<ProcurementRequisitionV1> {
+    const access = await resolveOrganizationAccess(client, principal);
+    const req = await this.fetchRequisition(client, principal.tenantId, id);
+    if (!canReadUnit(access, req.orgUnitId)) throw new NotFoundException(`Requisition ${id} not found.`);
+    if (forWrite) assertWritableUnit(access, req.orgUnitId);
+    return req;
   }
 
   async submitRequisition(principal: ModulePrincipal, id: string): Promise<ProcurementRequisitionV1> {
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
-      const req = await this.fetchRequisition(client, principal.tenantId, id);
+      const req = await this.fetchScopedRequisition(client, principal, id, true);
       if (req.status !== 'DRAFT') {
         throw new ConflictException(`Requisition ${req.requisitionNumber} is not in DRAFT status (current: ${req.status}).`);
       }
@@ -242,7 +258,7 @@ export class ProcurementService {
 
   async approveRequisition(principal: ModulePrincipal, id: string): Promise<ProcurementRequisitionV1> {
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
-      const req = await this.fetchRequisition(client, principal.tenantId, id);
+      const req = await this.fetchScopedRequisition(client, principal, id, true);
       if (req.status !== 'PENDING_APPROVAL' && req.status !== 'DRAFT') {
         throw new ConflictException(`Requisition ${req.requisitionNumber} cannot be approved from status ${req.status}.`);
       }
@@ -267,9 +283,13 @@ export class ProcurementService {
 
   async listRequisitions(principal: ModulePrincipal): Promise<ProcurementRequisitionV1[]> {
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
+      // WI-OI-120p slice 9 (R14): a member lists only requisitions in their organization units (and tenant-shared ones).
+      const access = await resolveOrganizationAccess(client, principal);
+      const params: unknown[] = [principal.tenantId];
+      const scope = orgReadCondition(access, 'org_unit_id', (value) => `$${params.push(value)}`);
       const res = await client.query<{ id: string }>(
-        `SELECT id FROM ${SCHEMA}.procurement_requisitions WHERE tenant_id = $1 ORDER BY created_at DESC`,
-        [principal.tenantId],
+        `SELECT id FROM ${SCHEMA}.procurement_requisitions WHERE tenant_id = $1 AND ${scope} ORDER BY created_at DESC`,
+        params,
       );
       const items: ProcurementRequisitionV1[] = [];
       for (const row of res.rows) {
@@ -281,7 +301,7 @@ export class ProcurementService {
 
   async rejectRequisition(principal: ModulePrincipal, id: string, reason?: string): Promise<ProcurementRequisitionV1> {
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
-      const req = await this.fetchRequisition(client, principal.tenantId, id);
+      const req = await this.fetchScopedRequisition(client, principal, id, true);
       if (req.status !== 'PENDING_APPROVAL' && req.status !== 'DRAFT') {
         throw new ConflictException(`Requisition ${req.requisitionNumber} cannot be rejected from status ${req.status}.`);
       }

@@ -1,0 +1,142 @@
+/**
+ * WI-OI-120p slice 9 (R14, scope in every module): a department-A member can neither read nor change department-B's
+ * procurement requisitions. Runs against a throwaway PostgreSQL that the harness starts and removes; it needs Docker,
+ * so it is skipped unless PROCUREMENT_SCOPE_IT is set.
+ */
+import { createHash, randomUUID } from 'node:crypto';
+import { type ModulePrincipal, OrganizationReplica, type ReplicaUnit } from '@gigalibs/module-sdk';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import {
+  type ThrowawayPostgres,
+  startThrowawayPostgres,
+} from '../../scripts/throwaway-postgres.js';
+import { SCHEMA } from '../config.js';
+import { DatabaseService } from '../database.service.js';
+import { ProcurementService } from './procurement.service.js';
+
+const integration = describe.skipIf(!process.env.PROCUREMENT_SCOPE_IT);
+
+const versionId = 'scope-it-version-1';
+const units: ReplicaUnit[] = [
+  {
+    unit_id: 'north',
+    parent_unit_id: null,
+    code: 'NORTH',
+    name: 'North plant',
+    sort_order: 0,
+    status: 'ACTIVE',
+    holds_records: true,
+    type_code: 'OPERATING_UNIT',
+  },
+  {
+    unit_id: 'south',
+    parent_unit_id: null,
+    code: 'SOUTH',
+    name: 'South plant',
+    sort_order: 1,
+    status: 'ACTIVE',
+    holds_records: true,
+    type_code: 'OPERATING_UNIT',
+  },
+];
+const checksum = `sha256:${createHash('sha256')
+  .update(
+    units
+      .toSorted((a, b) => a.unit_id.localeCompare(b.unit_id, 'en', { usage: 'sort' }))
+      .map((u) => `${u.unit_id}>${u.parent_unit_id ?? ''}#${u.sort_order}`)
+      .join('\n'),
+  )
+  .digest('hex')}`;
+const header = { tree_id: 'tree-proc', tree_kind: 'PRIMARY' as const, version_number: 1, checksum };
+
+const tenantId = 'tenant-scope';
+const base = (subject: string, organization: ModulePrincipal['organization']): ModulePrincipal => ({
+  tenantId,
+  subject,
+  sessionId: `session-${subject}`,
+  authVersion: 1,
+  permissions: ['*'],
+  roles: ['MEMBER'],
+  persona: 'WORKFORCE_MEMBER',
+  organization,
+  departmentScope: { mode: 'ALL' },
+  placeScope: { mode: 'ALL' },
+});
+const tenantWide = base('admin', { mode: 'TENANT', tree_version: versionId });
+const northMember = base('north-user', {
+  mode: 'UNITS',
+  tree_version: versionId,
+  read_roots: ['north'],
+  write_roots: ['north'],
+});
+
+integration('Procurement organization scope (isolated PostgreSQL)', () => {
+  let pg: ThrowawayPostgres;
+  let db: DatabaseService;
+  let service: ProcurementService;
+  const northReq = randomUUID();
+  const southReq = randomUUID();
+
+  beforeAll(async () => {
+    pg = await startThrowawayPostgres(`gigalibs-proc-scope-${process.pid}`);
+    db = new DatabaseService({
+      databaseUrl: pg.runtimeUrl,
+      databasePoolSize: 5,
+      expectedMigrationVersion: 4,
+      platformContextAudience: 'proof',
+      platformContextPublicKey: 'proof',
+      corsOrigins: [],
+      apiHost: '127.0.0.1',
+      apiPort: 0,
+    } as never);
+    await db.onModuleInit();
+    const replica = new OrganizationReplica(SCHEMA);
+    await db.withTenantTransaction(tenantId, async (client) => {
+      await replica.receivePage(client, tenantId, versionId, header, units);
+      await replica.complete(client, tenantId, versionId, header, units.length);
+      // Two requisitions, one owned by each plant.
+      for (const [id, unit, number] of [
+        [northReq, 'north', 'REQ-N'],
+        [southReq, 'south', 'REQ-S'],
+      ] as const) {
+        await client.query(
+          `INSERT INTO ${SCHEMA}.procurement_requisitions (id, tenant_id, requisition_number, org_unit_id, requested_by, status)
+           VALUES ($1, $2, $3, $4, 'admin', 'DRAFT')`,
+          [id, tenantId, number, unit],
+        );
+      }
+    });
+    service = new ProcurementService(db);
+  }, 60_000);
+
+  afterAll(async () => {
+    await db?.onModuleDestroy?.();
+    pg?.stop();
+  });
+
+  it('tenant-wide authority sees both plants; a north member sees only north', async () => {
+    const all = await service.listRequisitions(tenantWide);
+    expect(all.map((r) => r.requisitionNumber).sort()).toEqual(['REQ-N', 'REQ-S']);
+
+    const northList = await service.listRequisitions(northMember);
+    expect(northList.map((r) => r.requisitionNumber)).toEqual(['REQ-N']);
+  });
+
+  it('a north member cannot read south by id (invisible → not found), but can read north', async () => {
+    await expect(service.getRequisition(northMember, southReq)).rejects.toMatchObject({
+      status: 404,
+    });
+    await expect(service.getRequisition(northMember, northReq)).resolves.toMatchObject({
+      requisitionNumber: 'REQ-N',
+    });
+  });
+
+  it('a north member cannot change south (not found), but can submit north', async () => {
+    await expect(service.approveRequisition(northMember, southReq)).rejects.toMatchObject({
+      status: 404,
+    });
+    await expect(service.submitRequisition(northMember, northReq)).resolves.toMatchObject({
+      status: 'PENDING_APPROVAL',
+    });
+  });
+});

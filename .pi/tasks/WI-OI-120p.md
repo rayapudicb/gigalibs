@@ -76,10 +76,24 @@
     role added to the enum would inherit tenant-wide data authority silently. Recommend an explicit allow-set (mirroring
     the persona resolver). Also noted: the persona resolver (`contracts/auth/platform-context.ts`) lists five names
     (incl. `PLATFORM_OPERATOR`/`PLATFORM_SUPPORT`) not in the DB enum — the two lists are maintained separately.
-- **Not started / gated:** slice 6 workers-in-step (ties to WI-OI-120o, deferred); slice 8 directory groups/SSO (R15,
-  needs OIDC/SAML credentials); slice 9 scope in Procurement/Orders/Finance + CMMS units (shares the R5
-  `SCOPE_ENFORCING_MODULES` allow-list gate). With slices 3–5, 7-offboarding and 10 done, WI-OI-120p's ungated scope
-  is complete; what remains is gated on the R5 allow-list decision, SSO credentials, or WI-OI-120o.
+- **Slice 9 (scope in every module, R14) — Procurement requisitions built (2026-10-25):** correcting the earlier note,
+  record read/write scoping is **not** gated on the R5 `SCOPE_ENFORCING_MODULES` allow-list — that gate governs only
+  unit-scoped role *grants* (`resolveRoleScope`), while filtering records by the principal's own org scope is what every
+  scope-applying module already does. Procurement requisitions carry `org_unit_id` and the org replica is delivered, but
+  reads ignored it. Added `organization/organization-scope.ts` (`resolveOrganizationAccess`, `orgReadCondition`,
+  `canReadUnit`, `assertWritableUnit`) mirroring Analytics, and wired it into `listRequisitions` (read filter),
+  `getRequisition` and the state-change writes (`submit`/`approve`/`reject`) via one `fetchScopedRequisition` choke
+  point: a unit outside read access is not-found (invisible), outside write access is Forbidden. Fail-open when no org
+  tree is in force, so workspaces without hierarchy are unaffected. 10 pure unit tests
+  (`organization-scope.spec.ts`) + a Docker-gated cross-department integration test
+  (`procurement-organization-scope.integration.test.ts`, 3 tests, run green: a North member can't list/read/change
+  South's requisitions; tenant-wide sees all). Procurement suite 16 pass; typecheck clean.
+- **Slice 9 — remaining (same ungated pattern):** Procurement POs/vendor-bills + create-scoping; Orders and Finance
+  (no org-scope enforcement yet); CMMS units (adds unit scope alongside its existing place scope). Each is the same
+  `organizationReadCondition`/`assertOrganizationWrite` wiring + a cross-department test.
+- **Not started / gated:** slice 6 workers-in-step (ties to WI-OI-120o, deferred); slice 7-grant + the R5 allow-list
+  flip (unit-scoped role *grants*, owner/Security reference-data decision); slice 8 directory groups/SSO (R15, needs
+  OIDC/SAML credentials).
 
 The 2026-10-06 "Today" section below predates the R2 assignments work and is stale where it says "at most one custom role."
 - **Work item:** WI-OI-120 (tenant-to-value; WI-OI-120m journey). Evidence goes in `.pi/work/WI-OI-120.md`.

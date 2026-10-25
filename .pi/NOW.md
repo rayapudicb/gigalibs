@@ -94,8 +94,15 @@ Owner approved starting Phase 3 while the Phase 2 deploy waits on disk. [WI-OI-1
   `platformRoles.length > 0` (any role); correct for the 3 current enum values but a blanket rule — recommend an
   explicit allow-set. Also repaired a pre-existing stale assertion in that spec (R4 live-window `where`).
   **Uncommitted — awaiting "commit".**
-- **WI-OI-120p ungated scope complete** (slices 3–5, 7-offboarding, 10). Remaining is gated: slice 6 (WI-OI-120o,
-  deferred), 7-grant + 9 (R5 `SCOPE_ENFORCING_MODULES` allow-list), 8 (SSO credentials).
+- **slice 9 (scope in every module, R14) — Procurement requisitions built (2026-10-25):** record read/write scoping
+  is NOT gated on the R5 allow-list (that gate is only for unit-scoped role *grants*). Added
+  `universal-procurement .../organization/organization-scope.ts` and wired it into `listRequisitions`/`getRequisition`/
+  submit/approve/reject (one `fetchScopedRequisition` choke point): out-of-read-scope → not-found, out-of-write-scope →
+  Forbidden, fail-open when no org tree is in force. 10 pure unit tests + a Docker-gated cross-department integration
+  test (3, run green). Remaining (same pattern): Procurement POs/bills, Orders, Finance, CMMS units.
+  **Uncommitted — awaiting "commit".**
+- WI-OI-120p remaining is otherwise gated: slice 6 (WI-OI-120o, deferred), slice 7-grant + the R5 allow-list flip
+  (owner/Security), slice 8 SSO (credentials).
 
 **WI-OI-120bq:** re-review complete (2026-10-22); all H/M findings closed; F2.9 deferred non-blocking per owner. **Ready for Group 4 UAT deploy** (release worktree, after CMMS M-CM1 deploy).
 
