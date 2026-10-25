@@ -47,7 +47,22 @@
   Integration-tested (`bulk-invite.integration.test.ts`, 5 tests): valid batch + accept; all-or-nothing abort; tracker
   statuses + no token; resend rotates pending only (accepted skipped) and the new link works; revoke pending only +
   re-revoke no-op. Slice 5 (R14) complete; tenancy-nest 108 unit pass, audit:layers clean.
-- **Not started:** slice 6 workers-in-step (ties to WI-OI-120o, deferred), 7 bulk grants, 8 directory groups/SSO (R15),
+- **Slice 7 (bulk grants / offboarding) — offboarding built (2026-10-25):** the plan's exit line splits the actors —
+  grants are the department head within allowances, offboarding is the administrator. `bulkOffboardMembers`
+  (tenancy.service) lets an administrator suspend many members at once (`MemberStatus` has no DEACTIVATED at member
+  level, so offboard = SUSPENDED; status gates access, roles are kept for a bounded reactivation). All-or-nothing under
+  one tenant lock: an unknown id, or a suspension that would leave no workspace administrator
+  (`assertTenantAdministratorRetained`), rolls the whole batch back; the actor's own membership and already-suspended
+  members are skipped; a Super Admin / Tenant Admin target is protected as in `updateMember`. DTO
+  `BulkOffboardMembersSchema`; route `POST current/members/bulk-offboard` (`users:update` + in-service admin check).
+  Integration-tested (`bulk-offboard.integration.test.ts`, 5 tests): offboard two actives; skip self + already-suspended;
+  unknown id refused (nothing changed); non-admin refused; the sole Tenant Admin can never be suspended (rolls back).
+- **Slice 7 — bulk grant GATED (not built):** entitling existing members with a unit-scoped role runs through
+  `resolveRoleScope` → `assertScopeEnforced`, which only permits a unit scope for a module on the
+  `SCOPE_ENFORCING_MODULES` allow-list (currently just `asset-maintenance`). Until the gated R5 allow-list flip
+  (owner/Security reference-data decision), a unit-scoped grant for Workforce/CMMS/etc. is either refused or cosmetic
+  (the same latent scope-leak the delegated-invite accept path carries). Build the enforced bulk grant after that flip.
+- **Not started:** slice 6 workers-in-step (ties to WI-OI-120o, deferred), 8 directory groups/SSO (R15),
   9 scope in Procurement/Orders/Finance + CMMS units, 10 platform-role review.
 
 The 2026-10-06 "Today" section below predates the R2 assignments work and is stale where it says "at most one custom role."

@@ -31,6 +31,8 @@ import {
   BulkDelegatedInviteSchema,
   type BulkInviteIdsDto,
   BulkInviteIdsSchema,
+  type BulkOffboardMembersDto,
+  BulkOffboardMembersSchema,
   CreateTenantSchema,
   type DeleteCustomRoleDto,
   DeleteCustomRoleSchema,
@@ -302,6 +304,18 @@ export class TenancyController {
     @Body(new ZodValidationPipe(UpdateTenantMemberSchema)) dto: UpdateTenantMemberDto,
   ) {
     return this.tenancyService.updateMember(tenantId, memberId, userId, dto);
+  }
+
+  // WI-OI-120p slice 7 (R14): an administrator offboards (suspends) many members at once; the last admin is protected.
+  @Post('current/members/bulk-offboard')
+  @Header('Cache-Control', 'no-store')
+  @RequirePermissions('users:update')
+  bulkOffboardMembers(
+    @CurrentTenant('tenantId') tenantId: string,
+    @CurrentUser('sub') userId: string,
+    @Body(new ZodValidationPipe(BulkOffboardMembersSchema)) dto: BulkOffboardMembersDto,
+  ) {
+    return this.tenancyService.bulkOffboardMembers(tenantId, userId, dto);
   }
 
   // WI-OI-120w (R2 slice 2a): a member may hold several roles; each is given and taken away on its own, with a reason.

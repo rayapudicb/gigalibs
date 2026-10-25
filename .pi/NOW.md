@@ -80,8 +80,14 @@ Owner approved starting Phase 3 while the Phase 2 deploy waits on disk. [WI-OI-1
   and `bulkResendDelegatedInvites` (`people:manage`, pending-only, resend re-authorizes + rotates the link in place).
   Integration suite now 5 tests (add/abort/tracker/resend/revoke); single-invite path re-verified; tenancy-nest 108
   unit pass; audit:layers clean. **Slice 5 (R14) complete. Uncommitted — awaiting "commit".**
-- Not started: slice 6 workers-in-step (deferred), 7 bulk grants/offboarding, 8 directory groups/SSO (R15),
-  9 cross-module scope, 10 platform-role review.
+- **slice 7 offboarding built (2026-10-25):** plan exit line splits actors (grant = head within allowances, offboard
+  = administrator). `bulkOffboardMembers` suspends many members at once (member status has no DEACTIVATED, so offboard
+  = SUSPENDED; access gated, roles kept); all-or-nothing under one tenant lock, the sole Tenant Admin protected, self +
+  already-suspended skipped. Route `POST current/members/bulk-offboard` (`users:update` + admin check). 5 integration
+  tests. **Bulk grant GATED:** a unit-scoped grant needs the module on `SCOPE_ENFORCING_MODULES` (R5 allow-list flip,
+  owner/Security) to be enforced — build after that. **Uncommitted — awaiting "commit".**
+- Not started: slice 6 workers-in-step (deferred), 8 directory groups/SSO (R15), 9 cross-module scope,
+  10 platform-role review.
 
 **WI-OI-120bq:** re-review complete (2026-10-22); all H/M findings closed; F2.9 deferred non-blocking per owner. **Ready for Group 4 UAT deploy** (release worktree, after CMMS M-CM1 deploy).
 

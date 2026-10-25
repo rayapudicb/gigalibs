@@ -517,6 +517,17 @@ export const BulkInviteIdsSchema = z
   .strict();
 export type BulkInviteIdsDto = z.infer<typeof BulkInviteIdsSchema>;
 
+// WI-OI-120p slice 7 (R14, bulk offboarding): an administrator suspends many members at once. Suspension cuts their
+// access (status gates every call) while keeping their roles for a bounded reactivation later. The last workspace
+// administrator can never be suspended (enforced in the service); the actor's own membership is skipped.
+export const BulkOffboardMembersSchema = z
+  .object({
+    memberIds: z.array(z.string().trim().min(1).max(64)).min(1).max(500),
+    reason: z.string().trim().min(3).max(500),
+  })
+  .strict();
+export type BulkOffboardMembersDto = z.infer<typeof BulkOffboardMembersSchema>;
+
 export type InviteStatus = 'ACCEPTED' | 'REVOKED' | 'EXPIRED' | 'PENDING';
 
 // WI-OI-120p slice 5 (R14, join tracker): the single derived status of an invite. Acceptance is final (an accepted

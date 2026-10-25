@@ -4,6 +4,7 @@ import type {
   AssignMemberRoleDto,
   BulkDelegatedInviteDto,
   BulkInviteIdsDto,
+  BulkOffboardMembersDto,
   RevokeMemberRoleDto,
   ChangeTenantStatusDto,
   CreateCustomRoleDto,
@@ -1064,6 +1065,52 @@ export class TenancyService {
         return { count: invites.length, invites };
       }),
     );
+  }
+
+  // WI-OI-120p slice 7 (R14, bulk offboarding): an administrator suspends many members at once — suspension gates off
+  // their access while keeping their roles for a bounded reactivation. The whole batch runs under one tenant lock and
+  // is all-or-nothing: an unknown id, or a suspension that would leave no workspace administrator, rolls it all back.
+  // The actor's own membership and already-suspended members are skipped. Roles are not touched (status is the gate).
+  async bulkOffboardMembers(tenantId: string, actorId: string, dto: BulkOffboardMembersDto) {
+    const reason = requireReason(dto.reason);
+    return prisma.$transaction(async (transaction) => {
+      await transaction.$queryRaw`SELECT "id" FROM "tenants" WHERE "id" = ${tenantId} FOR UPDATE`;
+      if (!(await ownAuthority(transaction, tenantId, actorId)).administrator)
+        throw new ForbiddenException({ code: 'OFFBOARD_ADMIN_ONLY', message: 'Only a workspace administrator offboards members.' });
+      const ids = [...new Set(dto.memberIds)];
+      const members = await transaction.tenantMember.findMany({
+        where: { id: { in: ids }, tenantId },
+        select: { id: true, userId: true, role: true, status: true },
+      });
+      const found = new Set(members.map((member) => member.id));
+      const missing = ids.filter((id) => !found.has(id));
+      if (missing.length > 0)
+        throw new BadRequestException({ code: 'OFFBOARD_UNKNOWN_MEMBER', message: 'Some members do not belong to this workspace; nothing was changed.', missing });
+
+      const offboarded: string[] = [];
+      for (const member of members) {
+        if (member.userId === actorId) continue; // never offboard yourself
+        if (member.status === 'SUSPENDED') continue; // idempotent
+        // A Super Admin / Tenant Admin target is protected exactly as updateMember protects it.
+        await assertTenantAdminAuthority(transaction, tenantId, actorId, { grantsAdmin: false, touchesAdmin: isWorkspaceAdministrator(member.role) });
+        // The last workspace administrator can never be suspended.
+        await assertTenantAdministratorRetained(transaction, tenantId, member, { role: member.role, status: 'SUSPENDED' });
+        await transaction.tenantMember.update({ where: { id: member.id }, data: { status: 'SUSPENDED' } });
+        await transaction.auditLog.create({
+          data: {
+            action: 'PERMISSION_CHANGE',
+            resource: 'tenant_member',
+            resourceId: member.id,
+            userId: actorId,
+            tenantId,
+            after: { status: 'SUSPENDED', offboarded: true },
+            metadata: { reason, bulk: true },
+          },
+        });
+        offboarded.push(member.id);
+      }
+      return { offboarded: offboarded.length, ids: offboarded };
+    });
   }
 
   // WI-OI-120p slice 3 (R13): a Tenant Admin sets, per unit, which custom roles a delegated head may assign there.
