@@ -88,9 +88,22 @@
   (`organization-scope.spec.ts`) + a Docker-gated cross-department integration test
   (`procurement-organization-scope.integration.test.ts`, 3 tests, run green: a North member can't list/read/change
   South's requisitions; tenant-wide sees all). Procurement suite 16 pass; typecheck clean.
-- **Slice 9 — remaining (same ungated pattern):** Procurement POs/vendor-bills + create-scoping; Orders and Finance
-  (no org-scope enforcement yet); CMMS units (adds unit scope alongside its existing place scope). Each is the same
-  `organizationReadCondition`/`assertOrganizationWrite` wiring + a cross-department test.
+- **Slice 9 — Orders (sales quotes + orders) built (2026-10-25):** same pattern, bigger surface — Orders' service
+  reads/writes took `tenantId`/`actorId` and are called from the controller **and 7 window/workbench record-adapter
+  sites**, so the scope is threaded through the service (both paths share it) by passing the `ModulePrincipal`.
+  `universal-orders .../organization/organization-scope.ts` (copy of Procurement's); every quote + order read and write
+  is scoped: `listSalesQuotes`/`listSalesOrders`/`getQuote`/`getOrder` + the controller's inline `listQuotes`/
+  `listOrders` (read filter), `createQuote`/`createOrder` (create only in a writable unit), `acceptQuote`/`confirmOrder`/
+  `convertQuoteToOrder`/`allocateOrderLine` + the controller's inline `cancelOrder` (out-of-read-scope → not-found,
+  out-of-write-scope → Forbidden). ~21 call sites updated across controller + record-adapters; typecheck clean; orders
+  suite 7 pass (6 adapter tests unaffected). Docker-gated cross-department integration test
+  (`orders-organization-scope.integration.test.ts`, 3, run green: a North member can't list/read/confirm South's
+  orders, tenant-wide sees both).
+- **Slice 9 — remaining (same ungated pattern):** Procurement POs/vendor-bills + create-scoping; Orders downstream
+  documents (fulfillments, customer invoices, credit memos, AR-invoice projections, returns); Finance (no org-scope
+  enforcement yet); CMMS units (adds unit scope alongside its existing place scope). Also: the per-module
+  `organization-scope.ts` is now duplicated (Procurement + Orders identical); a shared `@gigalibs/module-sdk` helper
+  would de-dup — a safe follow-up refactor.
 - **Not started / gated:** slice 6 workers-in-step (ties to WI-OI-120o, deferred); slice 7-grant + the R5 allow-list
   flip (unit-scoped role *grants*, owner/Security reference-data decision); slice 8 directory groups/SSO (R15, needs
   OIDC/SAML credentials).

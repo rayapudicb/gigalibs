@@ -7,9 +7,10 @@ import {
   CreateSalesQuoteInputV1Schema,
 } from '@gigalibs/contracts';
 import { CurrentPrincipal, type ModulePrincipal, RequirePermissions } from '@gigalibs/module-sdk';
-import { BadRequestException, Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, NotFoundException, Param, Post, UseGuards } from '@nestjs/common';
 import { AuthorizationGuard } from '../authorization.js';
 import { DatabaseService } from '../database.service.js';
+import { assertWritableUnit, canReadUnit, orgReadCondition, resolveOrganizationAccess } from '../organization/organization-scope.js';
 import { OrderService } from './orders.service.js';
 
 @Controller('v1')
@@ -26,9 +27,13 @@ export class OrderController {
   @RequirePermissions('orders:read')
   async listQuotes(@CurrentPrincipal() principal: ModulePrincipal) {
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
+      // WI-OI-120p slice 9: list only quotes in the member's organization units (and tenant-shared ones).
+      const access = await resolveOrganizationAccess(client, principal);
+      const params: unknown[] = [principal.tenantId];
+      const scope = orgReadCondition(access, 'org_unit_id', (value) => `$${params.push(value)}`);
       const res = await client.query(
-        `SELECT * FROM gigalibs_orders.sales_quotes WHERE tenant_id = $1 ORDER BY created_at DESC LIMIT 50`,
-        [principal.tenantId],
+        `SELECT * FROM gigalibs_orders.sales_quotes WHERE tenant_id = $1 AND ${scope} ORDER BY created_at DESC LIMIT 50`,
+        params,
       );
       return res.rows;
     });
@@ -37,7 +42,7 @@ export class OrderController {
   @Get('quotes/:id')
   @RequirePermissions('orders:read')
   async getQuote(@CurrentPrincipal() principal: ModulePrincipal, @Param('id') id: string) {
-    return this.orderService.getQuote(principal.tenantId, id);
+    return this.orderService.getQuote(principal, id);
   }
 
   @Post('quotes')
@@ -45,13 +50,13 @@ export class OrderController {
   async createQuote(@CurrentPrincipal() principal: ModulePrincipal, @Body() body: unknown) {
     const parsed = CreateSalesQuoteInputV1Schema.safeParse(body);
     if (!parsed.success) throw new BadRequestException(parsed.error.message);
-    return this.orderService.createQuote(principal.tenantId, principal.subject, parsed.data);
+    return this.orderService.createQuote(principal, parsed.data);
   }
 
   @Post('quotes/:id/accept')
   @RequirePermissions('orders:quotes:approve')
   async acceptQuote(@CurrentPrincipal() principal: ModulePrincipal, @Param('id') id: string) {
-    return this.orderService.acceptQuote(principal.tenantId, principal.subject, id);
+    return this.orderService.acceptQuote(principal, id);
   }
 
   @Post('quotes/:id/convert')
@@ -62,7 +67,7 @@ export class OrderController {
     @Body() body: { warehouseId: string },
   ) {
     if (!body?.warehouseId) throw new BadRequestException('warehouseId is required to convert quote');
-    return this.orderService.convertQuoteToOrder(principal.tenantId, principal.subject, id, body.warehouseId);
+    return this.orderService.convertQuoteToOrder(principal, id, body.warehouseId);
   }
 
   // ─── Sales Orders ──────────────────────────────────────────────────────────
@@ -71,9 +76,13 @@ export class OrderController {
   @RequirePermissions('orders:read')
   async listOrders(@CurrentPrincipal() principal: ModulePrincipal) {
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
+      // WI-OI-120p slice 9: list only orders in the member's organization units (and tenant-shared ones).
+      const access = await resolveOrganizationAccess(client, principal);
+      const params: unknown[] = [principal.tenantId];
+      const scope = orgReadCondition(access, 'org_unit_id', (value) => `$${params.push(value)}`);
       const res = await client.query(
-        `SELECT * FROM gigalibs_orders.sales_orders WHERE tenant_id = $1 ORDER BY created_at DESC LIMIT 50`,
-        [principal.tenantId],
+        `SELECT * FROM gigalibs_orders.sales_orders WHERE tenant_id = $1 AND ${scope} ORDER BY created_at DESC LIMIT 50`,
+        params,
       );
       return res.rows;
     });
@@ -82,7 +91,7 @@ export class OrderController {
   @Get('orders/:id')
   @RequirePermissions('orders:read')
   async getOrder(@CurrentPrincipal() principal: ModulePrincipal, @Param('id') id: string) {
-    return this.orderService.getOrder(principal.tenantId, id);
+    return this.orderService.getOrder(principal, id);
   }
 
   @Post('orders')
@@ -90,19 +99,27 @@ export class OrderController {
   async createOrder(@CurrentPrincipal() principal: ModulePrincipal, @Body() body: unknown) {
     const parsed = CreateSalesOrderInputV1Schema.safeParse(body);
     if (!parsed.success) throw new BadRequestException(parsed.error.message);
-    return this.orderService.createOrder(principal.tenantId, principal.subject, parsed.data);
+    return this.orderService.createOrder(principal, parsed.data);
   }
 
   @Post('orders/:id/confirm')
   @RequirePermissions('orders:confirm')
   async confirmOrder(@CurrentPrincipal() principal: ModulePrincipal, @Param('id') id: string) {
-    return this.orderService.confirmOrder(principal.tenantId, principal.subject, id);
+    return this.orderService.confirmOrder(principal, id);
   }
 
   @Post('orders/:id/cancel')
   @RequirePermissions('orders:manage')
   async cancelOrder(@CurrentPrincipal() principal: ModulePrincipal, @Param('id') id: string) {
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
+      // WI-OI-120p slice 9: an order outside the member's scope is invisible/unchangeable.
+      const access = await resolveOrganizationAccess(client, principal);
+      const owner = await client.query<{ org_unit_id: string }>(
+        `SELECT org_unit_id FROM gigalibs_orders.sales_orders WHERE tenant_id = $1 AND id = $2`,
+        [principal.tenantId, id],
+      );
+      if (owner.rows.length === 0 || !canReadUnit(access, owner.rows[0].org_unit_id)) throw new NotFoundException('Sales Order not found');
+      assertWritableUnit(access, owner.rows[0].org_unit_id);
       const res = await client.query(
         `UPDATE gigalibs_orders.sales_orders
          SET status = 'CANCELLED', updated_at = CURRENT_TIMESTAMP, updated_by = $3
@@ -124,7 +141,7 @@ export class OrderController {
   ) {
     const parsed = AllocateOrderLineInputV1Schema.safeParse({ ...(body as any), orderId: id });
     if (!parsed.success) throw new BadRequestException(parsed.error.message);
-    return this.orderService.allocateOrderLine(principal.tenantId, principal.subject, parsed.data);
+    return this.orderService.allocateOrderLine(principal, parsed.data);
   }
 
   // ─── Fulfillments ──────────────────────────────────────────────────────────

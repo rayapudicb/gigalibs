@@ -99,8 +99,15 @@ Owner approved starting Phase 3 while the Phase 2 deploy waits on disk. [WI-OI-1
   `universal-procurement .../organization/organization-scope.ts` and wired it into `listRequisitions`/`getRequisition`/
   submit/approve/reject (one `fetchScopedRequisition` choke point): out-of-read-scope → not-found, out-of-write-scope →
   Forbidden, fail-open when no org tree is in force. 10 pure unit tests + a Docker-gated cross-department integration
-  test (3, run green). Remaining (same pattern): Procurement POs/bills, Orders, Finance, CMMS units.
-  **Uncommitted — awaiting "commit".**
+  test (3, run green).
+- **slice 9 — Orders (quotes + orders) built (2026-10-25):** same pattern, bigger surface (service reads/writes took
+  `tenantId` and are called from the controller + 7 window/workbench record-adapter sites → threaded the
+  `ModulePrincipal` through). Every quote/order read+write scoped (list/get/create/accept/confirm/convert/allocate/
+  cancel): out-of-read → not-found, out-of-write → Forbidden. ~21 call sites; typecheck clean; orders suite 7 pass;
+  Docker-gated cross-department integration test (3, run green). **Uncommitted — awaiting "commit".**
+- Remaining slice 9 (same pattern): Procurement POs/bills, Orders downstream docs (fulfillments/invoices/credit-memos),
+  Finance, CMMS units. The per-module `organization-scope.ts` is now duplicated (Procurement+Orders) → a shared
+  module-sdk helper would de-dup (safe follow-up).
 - WI-OI-120p remaining is otherwise gated: slice 6 (WI-OI-120o, deferred), slice 7-grant + the R5 allow-list flip
   (owner/Security), slice 8 SSO (credentials).
 

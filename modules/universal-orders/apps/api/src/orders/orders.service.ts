@@ -14,8 +14,10 @@ import {
   ExactDecimal,
   SCALE_FACTOR,
 } from '@gigalibs/contracts';
+import type { ModulePrincipal } from '@gigalibs/module-sdk';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { DatabaseService } from '../database.service.js';
+import { assertWritableUnit, canReadUnit, orgReadCondition, resolveOrganizationAccess } from '../organization/organization-scope.js';
 import { requireActiveCustomerParty } from './party-reference.js';
 
 @Injectable()
@@ -24,12 +26,11 @@ export class OrderService {
 
   // ─── 1. Sales Quotations ───────────────────────────────────────────────────
 
-  async createQuote(
-    tenantId: string,
-    actorId: string,
-    input: CreateSalesQuoteInputV1,
-  ): Promise<SalesQuoteV1> {
+  async createQuote(principal: ModulePrincipal, input: CreateSalesQuoteInputV1): Promise<SalesQuoteV1> {
+    const { tenantId, subject: actorId } = principal;
     return this.database.withTenantTransaction(tenantId, async (client) => {
+      // WI-OI-120p slice 9: a member may create a quote only in a unit they may change.
+      assertWritableUnit(await resolveOrganizationAccess(client, principal), input.orgUnitId);
       await requireActiveCustomerParty(client, tenantId, input.customerPartyId);
 
       let subtotal = 0n;
@@ -135,13 +136,16 @@ export class OrderService {
     });
   }
 
-  async getQuote(tenantId: string, quoteId: string): Promise<SalesQuoteV1> {
+  async getQuote(principal: ModulePrincipal, quoteId: string): Promise<SalesQuoteV1> {
+    const { tenantId } = principal;
     return this.database.withTenantTransaction(tenantId, async (client) => {
+      const access = await resolveOrganizationAccess(client, principal);
       const res = await client.query(
         `SELECT * FROM gigalibs_orders.sales_quotes WHERE tenant_id = $1 AND id = $2`,
         [tenantId, quoteId],
       );
-      if (res.rows.length === 0) throw new NotFoundException('Quote not found');
+      // WI-OI-120p slice 9: a quote in a unit outside the member's scope reads as not-found (invisible).
+      if (res.rows.length === 0 || !canReadUnit(access, res.rows[0].org_unit_id)) throw new NotFoundException('Quote not found');
       const lines = await client.query(
         `SELECT * FROM gigalibs_orders.sales_quote_lines WHERE tenant_id = $1 AND quote_id = $2 ORDER BY line_number ASC`,
         [tenantId, quoteId],
@@ -150,11 +154,15 @@ export class OrderService {
     });
   }
 
-  async listSalesQuotes(principal: { tenantId: string }): Promise<SalesQuoteV1[]> {
+  async listSalesQuotes(principal: ModulePrincipal): Promise<SalesQuoteV1[]> {
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
+      // WI-OI-120p slice 9: a member lists only quotes in their organization units (and tenant-shared ones).
+      const access = await resolveOrganizationAccess(client, principal);
+      const params: unknown[] = [principal.tenantId];
+      const scope = orgReadCondition(access, 'org_unit_id', (value) => `$${params.push(value)}`);
       const res = await client.query<{ id: string }>(
-        `SELECT id FROM gigalibs_orders.sales_quotes WHERE tenant_id = $1 ORDER BY created_at DESC`,
-        [principal.tenantId],
+        `SELECT id FROM gigalibs_orders.sales_quotes WHERE tenant_id = $1 AND ${scope} ORDER BY created_at DESC`,
+        params,
       );
       const items: SalesQuoteV1[] = [];
       for (const row of res.rows) {
@@ -172,13 +180,17 @@ export class OrderService {
     });
   }
 
-  async acceptQuote(tenantId: string, actorId: string, quoteId: string): Promise<SalesQuoteV1> {
+  async acceptQuote(principal: ModulePrincipal, quoteId: string): Promise<SalesQuoteV1> {
+    const { tenantId, subject: actorId } = principal;
     return this.database.withTenantTransaction(tenantId, async (client) => {
+      const access = await resolveOrganizationAccess(client, principal);
       const quote = await client.query(
         `SELECT * FROM gigalibs_orders.sales_quotes WHERE tenant_id = $1 AND id = $2 FOR UPDATE`,
         [tenantId, quoteId],
       );
-      if (quote.rows.length === 0) throw new NotFoundException('Quote not found');
+      // WI-OI-120p slice 9: out-of-scope quote is invisible (not found); a read-only unit refuses the change.
+      if (quote.rows.length === 0 || !canReadUnit(access, quote.rows[0].org_unit_id)) throw new NotFoundException('Quote not found');
+      assertWritableUnit(access, quote.rows[0].org_unit_id);
       if (quote.rows[0].status === 'CANCELLED' || quote.rows[0].status === 'CONVERTED') {
         throw new BadRequestException(`Cannot accept quote in state ${quote.rows[0].status}`);
       }
@@ -203,17 +215,20 @@ export class OrderService {
   }
 
   async convertQuoteToOrder(
-    tenantId: string,
-    actorId: string,
+    principal: ModulePrincipal,
     quoteId: string,
     warehouseId: string,
   ): Promise<SalesOrderV1> {
+    const { tenantId, subject: actorId } = principal;
     return this.database.withTenantTransaction(tenantId, async (client) => {
+      const access = await resolveOrganizationAccess(client, principal);
       const quoteRes = await client.query(
         `SELECT * FROM gigalibs_orders.sales_quotes WHERE tenant_id = $1 AND id = $2 FOR UPDATE`,
         [tenantId, quoteId],
       );
-      if (quoteRes.rows.length === 0) throw new NotFoundException('Quote not found');
+      // WI-OI-120p slice 9: the order inherits the quote's unit, so a member may convert only a quote they may change.
+      if (quoteRes.rows.length === 0 || !canReadUnit(access, quoteRes.rows[0].org_unit_id)) throw new NotFoundException('Quote not found');
+      assertWritableUnit(access, quoteRes.rows[0].org_unit_id);
       const quote = quoteRes.rows[0];
 
       if (quote.status !== 'ACCEPTED') {
@@ -308,12 +323,11 @@ export class OrderService {
 
   // ─── 2. Sales Orders ───────────────────────────────────────────────────────
 
-  async createOrder(
-    tenantId: string,
-    actorId: string,
-    input: CreateSalesOrderInputV1,
-  ): Promise<SalesOrderV1> {
+  async createOrder(principal: ModulePrincipal, input: CreateSalesOrderInputV1): Promise<SalesOrderV1> {
+    const { tenantId, subject: actorId } = principal;
     return this.database.withTenantTransaction(tenantId, async (client) => {
+      // WI-OI-120p slice 9: a member may create an order only in a unit they may change.
+      assertWritableUnit(await resolveOrganizationAccess(client, principal), input.orgUnitId);
       await requireActiveCustomerParty(client, tenantId, input.customerPartyId);
 
       let subtotal = 0n;
@@ -421,11 +435,15 @@ export class OrderService {
     });
   }
 
-  async listSalesOrders(principal: { tenantId: string }): Promise<SalesOrderV1[]> {
+  async listSalesOrders(principal: ModulePrincipal): Promise<SalesOrderV1[]> {
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
+      // WI-OI-120p slice 9: a member lists only orders in their organization units (and tenant-shared ones).
+      const access = await resolveOrganizationAccess(client, principal);
+      const params: unknown[] = [principal.tenantId];
+      const scope = orgReadCondition(access, 'org_unit_id', (value) => `$${params.push(value)}`);
       const res = await client.query<{ id: string }>(
-        `SELECT id FROM gigalibs_orders.sales_orders WHERE tenant_id = $1 ORDER BY created_at DESC`,
-        [principal.tenantId],
+        `SELECT id FROM gigalibs_orders.sales_orders WHERE tenant_id = $1 AND ${scope} ORDER BY created_at DESC`,
+        params,
       );
       const items: SalesOrderV1[] = [];
       for (const row of res.rows) {
@@ -443,13 +461,16 @@ export class OrderService {
     });
   }
 
-  async getOrder(tenantId: string, orderId: string): Promise<SalesOrderV1> {
+  async getOrder(principal: ModulePrincipal, orderId: string): Promise<SalesOrderV1> {
+    const { tenantId } = principal;
     return this.database.withTenantTransaction(tenantId, async (client) => {
+      const access = await resolveOrganizationAccess(client, principal);
       const res = await client.query(
         `SELECT * FROM gigalibs_orders.sales_orders WHERE tenant_id = $1 AND id = $2`,
         [tenantId, orderId],
       );
-      if (res.rows.length === 0) throw new NotFoundException('Sales Order not found');
+      // WI-OI-120p slice 9: an order in a unit outside the member's scope reads as not-found (invisible).
+      if (res.rows.length === 0 || !canReadUnit(access, res.rows[0].org_unit_id)) throw new NotFoundException('Sales Order not found');
       const lines = await client.query(
         `SELECT * FROM gigalibs_orders.sales_order_lines WHERE tenant_id = $1 AND order_id = $2 ORDER BY line_number ASC`,
         [tenantId, orderId],
@@ -458,13 +479,17 @@ export class OrderService {
     });
   }
 
-  async confirmOrder(tenantId: string, actorId: string, orderId: string): Promise<SalesOrderV1> {
+  async confirmOrder(principal: ModulePrincipal, orderId: string): Promise<SalesOrderV1> {
+    const { tenantId, subject: actorId } = principal;
     return this.database.withTenantTransaction(tenantId, async (client) => {
+      const access = await resolveOrganizationAccess(client, principal);
       const order = await client.query(
         `SELECT * FROM gigalibs_orders.sales_orders WHERE tenant_id = $1 AND id = $2 FOR UPDATE`,
         [tenantId, orderId],
       );
-      if (order.rows.length === 0) throw new NotFoundException('Sales Order not found');
+      // WI-OI-120p slice 9: out-of-scope order is invisible (not found); a read-only unit refuses the change.
+      if (order.rows.length === 0 || !canReadUnit(access, order.rows[0].org_unit_id)) throw new NotFoundException('Sales Order not found');
+      assertWritableUnit(access, order.rows[0].org_unit_id);
       if (order.rows[0].status !== 'DRAFT' && order.rows[0].status !== 'SUBMITTED') {
         throw new BadRequestException(`Order cannot be confirmed in state ${order.rows[0].status}`);
       }
@@ -489,12 +514,17 @@ export class OrderService {
 
   // ─── 3. Available-to-Promise (ATP) Allocation ──────────────────────────────
 
-  async allocateOrderLine(
-    tenantId: string,
-    actorId: string,
-    input: AllocateOrderLineInputV1,
-  ): Promise<SalesOrderV1> {
+  async allocateOrderLine(principal: ModulePrincipal, input: AllocateOrderLineInputV1): Promise<SalesOrderV1> {
+    const { tenantId, subject: actorId } = principal;
     return this.database.withTenantTransaction(tenantId, async (client) => {
+      // WI-OI-120p slice 9: allocation changes an order, so scope by the parent order's unit.
+      const access = await resolveOrganizationAccess(client, principal);
+      const orderUnit = await client.query<{ org_unit_id: string }>(
+        `SELECT org_unit_id FROM gigalibs_orders.sales_orders WHERE tenant_id = $1 AND id = $2`,
+        [tenantId, input.orderId],
+      );
+      if (orderUnit.rows.length === 0 || !canReadUnit(access, orderUnit.rows[0].org_unit_id)) throw new NotFoundException('Order line not found');
+      assertWritableUnit(access, orderUnit.rows[0].org_unit_id);
       const lineRes = await client.query(
         `SELECT * FROM gigalibs_orders.sales_order_lines
          WHERE tenant_id = $1 AND id = $2 AND order_id = $3 FOR UPDATE`,

@@ -444,27 +444,21 @@ export function ordersRecordDispatcher(deps: { orders: OrderService }, idempoten
     },
     async get(principal, id) {
       try {
-        const quote = await deps.orders.getQuote(principal.tenantId, id);
+        const quote = await deps.orders.getQuote(principal, id);
         return salesQuoteToWindow(quote);
       } catch {
         return null;
       }
     },
     async create(context, values) {
-      const quote = await deps.orders.createQuote(
-        context.principal.tenantId,
-        context.principal.subject,
-        windowValuesToCreateSalesQuoteInput(values),
-      );
+      const quote = await deps.orders.createQuote(context.principal, windowValuesToCreateSalesQuoteInput(values));
       return salesQuoteToWindow(quote);
     },
     actions: {
       accept: {
         permission: 'orders:quotes:approve',
         run: async (context, id) =>
-          salesQuoteToWindow(
-            await deps.orders.acceptQuote(context.principal.tenantId, context.principal.subject, id),
-          ),
+          salesQuoteToWindow(await deps.orders.acceptQuote(context.principal, id)),
       },
       convert: {
         permission: 'orders:quotes:manage',
@@ -473,13 +467,8 @@ export function ordersRecordDispatcher(deps: { orders: OrderService }, idempoten
           if (typeof warehouseId !== 'string' || warehouseId.length === 0) {
             throw new BadRequestException('warehouse-id is required to convert a quote.');
           }
-          await deps.orders.convertQuoteToOrder(
-            context.principal.tenantId,
-            context.principal.subject,
-            id,
-            warehouseId,
-          );
-          const quote = await deps.orders.getQuote(context.principal.tenantId, id);
+          await deps.orders.convertQuoteToOrder(context.principal, id, warehouseId);
+          const quote = await deps.orders.getQuote(context.principal, id);
           return salesQuoteToWindow(quote);
         },
       },
@@ -518,36 +507,28 @@ export function ordersRecordDispatcher(deps: { orders: OrderService }, idempoten
     },
     async get(principal, id) {
       try {
-        const order = await deps.orders.getOrder(principal.tenantId, id);
+        const order = await deps.orders.getOrder(principal, id);
         return salesOrderToWindow(order);
       } catch {
         return null;
       }
     },
     async create(context, values) {
-      const order = await deps.orders.createOrder(
-        context.principal.tenantId,
-        context.principal.subject,
-        windowValuesToCreateSalesOrderInput(values),
-      );
+      const order = await deps.orders.createOrder(context.principal, windowValuesToCreateSalesOrderInput(values));
       return salesOrderToWindow(order);
     },
     actions: {
       confirm: {
         permission: 'orders:confirm',
         run: async (context, id) =>
-          salesOrderToWindow(
-            await deps.orders.confirmOrder(context.principal.tenantId, context.principal.subject, id),
-          ),
+          salesOrderToWindow(await deps.orders.confirmOrder(context.principal, id)),
       },
       allocate: {
         permission: 'orders:allocate',
         run: async (context, id) => {
-          const order = await deps.orders.getOrder(context.principal.tenantId, id);
+          const order = await deps.orders.getOrder(context.principal, id);
           const input = salesOrderToAllocateFirstLineInput(order, id);
-          return salesOrderToWindow(
-            await deps.orders.allocateOrderLine(context.principal.tenantId, context.principal.subject, input),
-          );
+          return salesOrderToWindow(await deps.orders.allocateOrderLine(context.principal, input));
         },
       },
       'issue-invoice': {
@@ -558,7 +539,7 @@ export function ordersRecordDispatcher(deps: { orders: OrderService }, idempoten
             orderId: id,
             dueDate,
           });
-          return salesOrderToWindow(await deps.orders.getOrder(context.principal.tenantId, id));
+          return salesOrderToWindow(await deps.orders.getOrder(context.principal, id));
         },
       },
     },
