@@ -51,9 +51,21 @@ Owner directed completing Phase 2 development (plan v3 steps 2.1–2.9) autonomo
 | 2.8 | R3 segregation of duties | **Built ([WI-OI-120hp](tasks/WI-OI-120hp.md))** — catalogue + `dutyConflicts` (contracts, 8 unit tests); control-plane wiring: `assertNoDutyConflict` in `assignMemberRole`, `duty_conflict_acceptances` table/migration, accept/revoke methods (throwaway PG16, 3 tests); **HTTP routes added**. Open: Security review (post-UAT). |
 | 2.9 | R4 delegation & revocation | **Built v1 ([WI-OI-120hq](tasks/WI-OI-120hq.md))** — validation core (contracts, 13 unit tests); control-plane wiring: delegation columns/migration, `delegateRole`/`revokeDelegation`, live-only mint filter (throwaway PG16, 5 tests); **HTTP routes added**. v1 = workspace-scope. Open: unit/place scope, `exp` bound + `auth_version` bump; Security review (post-UAT). |
 
-**Net:** 5 of 8 resolved with no new product code (decisions / already-done). The remaining 3 (R5, R3, R4) are
-large security-critical RBAC builds that each need a deploy-time journey proof and the post-UAT security review —
-they cannot be auto-shipped in one pass; cards are ready to build on the owner's priority.
+**Net (updated 2026-10-25):** Phase 2 feasible work is complete. R3 (SoD), R4 (delegation v1) and R5 (unit+place
+scope) are now **built + integration-tested** (throwaway PG16) with HTTP routes; B1 fixed + hardened. The 15-commit
+release is **assembled + parked** on `release/wi120u-workforce` (Dockerfile build-fix + cherry-pick, proven clean);
+the only thing blocking the UAT build is **disk** (23 GB free, needs 60 — owner freeing it). See
+[DEPLOY handoff](handoff/DEPLOY-2026-10-24-WORKFORCE-RBAC.md). Still gated: R5 allow-list flip (reference-data
+decision), T1c (ADR-level), Assistant part (needs GU1–GU7), R5 Geospatial (separate module).
+
+### Phase 3 — Enterprise onboarding & SaaS completion (started 2026-10-25)
+
+Owner approved starting Phase 3 while the Phase 2 deploy waits on disk. [WI-OI-120p](tasks/WI-OI-120p.md) (R13/R14,
+XL): slice 1 (module roles) largely in place; slice 2 (several roles) done; **slice 4 delegated people-management
+core built** — `assertDelegatedPeopleAdd` in `contracts/rbac/people-admin.ts` (5 unit tests): a head adds people only
+in units they manage, only with allowed+held roles, never a base role above MEMBER. Remaining (needs a throwaway
+control DB like R3/R4): `people:manage` permission, the per-unit allowance table (slice 3), the delegated invite flow;
+then slice 5 bulk add (R14), 8 SSO (R15), 9 cross-module scope, etc.
 
 **WI-OI-120bq:** re-review complete (2026-10-22); all H/M findings closed; F2.9 deferred non-blocking per owner. **Ready for Group 4 UAT deploy** (release worktree, after CMMS M-CM1 deploy).
 

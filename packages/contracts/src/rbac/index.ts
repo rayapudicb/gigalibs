@@ -53,3 +53,4 @@ export * from './base-roles.js';
 export * from './assignment-scopes.js';
 export * from './duty-conflicts.js';
 export * from './role-delegation.js';
+export * from './people-admin.js';

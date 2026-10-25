@@ -1,7 +1,23 @@
 # WI-OI-120p: Access model and people administration (bulk and delegated)
 
-- **Status:** Proposed (owner direction and decisions 2026-10-06; card to be approved before work starts). Starts after
-  WI-OI-120n. Independent Security review before deploy.
+- **Status:** In progress (owner approved the Phase 3 start, 2026-10-24). Independent Security review before deploy.
+
+## Progress (2026-10-24)
+
+- **Slice 1 (module roles):** largely in place — modules declare `roles:` in `module.yaml` and `syncDefaultRoles`
+  copies them into a workspace.
+- **Slice 2 (several roles per person):** done — the `member_role_assignments` model (R2); a member's permissions
+  are the union across live assignments (and R3 SoD / R4 delegation build on it, WI-OI-120hp/hq).
+- **Slice 4 (delegated people management) — core built:** `assertDelegatedPeopleAdd` in
+  `packages/contracts/src/rbac/people-admin.ts` (pure, 5 unit tests): a delegated head may add a person only into a
+  unit they manage, only with roles on that unit's allowance, never a role they do not hold (no escalation), never a
+  base role above MEMBER (so never Tenant Admin). Remaining wiring (needs a throwaway control DB like R3/R4): the
+  `people:manage` permission in the control-plane catalogue, the per-unit department-allowance table (slice 3), and
+  the delegated invite/add flow that calls this rule.
+- **Not started:** slice 5 bulk add (R14), slice 6 workers-in-step (ties to WI-OI-120o, deferred), 7 bulk grants,
+  8 directory groups/SSO (R15), 9 scope in Procurement/Orders/Finance + CMMS units, 10 platform-role review.
+
+The 2026-10-06 "Today" section below predates the R2 assignments work and is stale where it says "at most one custom role."
 - **Work item:** WI-OI-120 (tenant-to-value; WI-OI-120m journey). Evidence goes in `.pi/work/WI-OI-120.md`.
 - **Size:** XL (delivered in slices, each approved and deployed separately)
 
