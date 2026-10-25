@@ -125,6 +125,7 @@
       "OrgScopeGrant",
       "MemberRoleAssignment",
       "DutyConflictAcceptance",
+      "DepartmentRoleAllowance",
       "OrgIdempotencyRecord",
       "TenantInvite",
       "AuditLog",

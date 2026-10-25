@@ -780,6 +780,62 @@ export class TenancyService {
     });
   }
 
+  // WI-OI-120p slice 3 (R13): a Tenant Admin sets, per unit, which custom roles a delegated head may assign there.
+  async setDepartmentRoleAllowance(tenantId: string, actorId: string, dto: { unitId: string; customRoleId: string; reason: string }) {
+    const reason = requireReason(dto.reason);
+    return prisma.$transaction(async (transaction) => {
+      await transaction.$queryRaw`SELECT "id" FROM "tenants" WHERE "id" = ${tenantId} FOR UPDATE`;
+      if (!(await ownAuthority(transaction, tenantId, actorId)).administrator)
+        throw new ForbiddenException({ code: 'DEPARTMENT_ALLOWANCE_ADMIN_ONLY', message: 'Only a workspace administrator sets department role allowances.' });
+      const role = await transaction.customRole.findFirst({ where: { id: dto.customRoleId, tenantId }, select: { id: true } });
+      if (!role) throw new BadRequestException({ code: 'ROLE_NOT_IN_WORKSPACE', message: 'That role does not belong to this workspace.' });
+      const existing = await transaction.departmentRoleAllowance.findFirst({
+        where: { tenantId, unitId: dto.unitId, customRoleId: dto.customRoleId },
+        select: { id: true },
+      });
+      if (existing) return { id: existing.id, created: false };
+      const allowance = await transaction.departmentRoleAllowance.create({
+        data: { tenantId, unitId: dto.unitId, customRoleId: dto.customRoleId, createdById: actorId },
+        select: { id: true },
+      });
+      await transaction.auditLog.create({
+        data: {
+          action: 'PERMISSION_CHANGE',
+          resource: 'department_role_allowance',
+          resourceId: allowance.id,
+          userId: actorId,
+          tenantId,
+          after: { unitId: dto.unitId, customRoleId: dto.customRoleId },
+          metadata: { reason },
+        },
+      });
+      return { id: allowance.id, created: true };
+    });
+  }
+
+  async removeDepartmentRoleAllowance(tenantId: string, actorId: string, allowanceId: string, dto: { reason: string }) {
+    const reason = requireReason(dto.reason);
+    return prisma.$transaction(async (transaction) => {
+      await transaction.$queryRaw`SELECT "id" FROM "tenants" WHERE "id" = ${tenantId} FOR UPDATE`;
+      if (!(await ownAuthority(transaction, tenantId, actorId)).administrator)
+        throw new ForbiddenException({ code: 'DEPARTMENT_ALLOWANCE_ADMIN_ONLY', message: 'Only a workspace administrator changes department role allowances.' });
+      const deleted = await transaction.departmentRoleAllowance.deleteMany({ where: { id: allowanceId, tenantId } });
+      if (deleted.count === 0) throw new NotFoundException('Department role allowance was not found.');
+      await transaction.auditLog.create({
+        data: { action: 'PERMISSION_CHANGE', resource: 'department_role_allowance', resourceId: allowanceId, userId: actorId, tenantId, metadata: { reason, removed: true } },
+      });
+      return { id: allowanceId, removed: true };
+    });
+  }
+
+  async listDepartmentRoleAllowances(tenantId: string, unitId?: string) {
+    return prisma.departmentRoleAllowance.findMany({
+      where: { tenantId, ...(unitId ? { unitId } : {}) },
+      select: { id: true, unitId: true, customRoleId: true, createdAt: true },
+      orderBy: [{ unitId: 'asc' }, { customRoleId: 'asc' }],
+    });
+  }
+
   private async memberForRoleChange(transaction: Prisma.TransactionClient, tenantId: string, memberId: string, actorId: string) {
     const member = await transaction.tenantMember.findFirst({
       where: { id: memberId, tenantId },

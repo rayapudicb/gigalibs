@@ -8,12 +8,16 @@
   copies them into a workspace.
 - **Slice 2 (several roles per person):** done — the `member_role_assignments` model (R2); a member's permissions
   are the union across live assignments (and R3 SoD / R4 delegation build on it, WI-OI-120hp/hq).
-- **Slice 4 (delegated people management) — core built:** `assertDelegatedPeopleAdd` in
-  `packages/contracts/src/rbac/people-admin.ts` (pure, 5 unit tests): a delegated head may add a person only into a
-  unit they manage, only with roles on that unit's allowance, never a role they do not hold (no escalation), never a
-  base role above MEMBER (so never Tenant Admin). Remaining wiring (needs a throwaway control DB like R3/R4): the
-  `people:manage` permission in the control-plane catalogue, the per-unit department-allowance table (slice 3), and
-  the delegated invite/add flow that calls this rule.
+- **Slice 3 (department allowances) — built:** `department_role_allowances` table (Prisma model + migration;
+  relation-free, classified core); `setDepartmentRoleAllowance`/`removeDepartmentRoleAllowance`/
+  `listDepartmentRoleAllowances` in `tenancy.service` (Tenant-Admin-guarded, audited).
+- **Slice 4 (delegated people management) — core + authorization built:** `assertDelegatedPeopleAdd` (pure,
+  `contracts/rbac/people-admin.ts`, 5 unit tests) + `authorizeDelegatedPeopleAdd` (DB-backed,
+  `tenancy-nest/people-admin.ts`) which loads the unit allowances and the head's held roles and applies the rule.
+  Integration-tested against a throwaway control DB (5 tests: allowed+held→ok; out-of-unit / not-allowed /
+  not-held-escalation / base-role-above-MEMBER → refused). `people:manage`/`people:read` registered in the
+  control-plane catalogue. **Remaining:** the delegated invite/add *endpoint* that calls `authorizeDelegatedPeopleAdd`
+  then `createInvite` (the head's units come from their signed context) — thin wiring on the existing invite path.
 - **Not started:** slice 5 bulk add (R14), slice 6 workers-in-step (ties to WI-OI-120o, deferred), 7 bulk grants,
   8 directory groups/SSO (R15), 9 scope in Procurement/Orders/Finance + CMMS units, 10 platform-role review.
 

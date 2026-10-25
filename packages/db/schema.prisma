@@ -2860,6 +2860,22 @@ model DutyConflictAcceptance {
   @@map("duty_conflict_acceptances")
 }
 
+// WI-OI-120p slice 3 (R13): per unit, the custom-role ids a delegated department head may assign there, set by a
+// Tenant Admin (the department allowance). assertDelegatedPeopleAdd reads this. Relation-free (no FK to custom_roles):
+// the service validates the role at set-time, and a stale row is harmless because the add also checks the head holds it.
+model DepartmentRoleAllowance {
+  id           String   @id @default(cuid())
+  tenantId     String
+  unitId       String
+  customRoleId String
+  createdById  String
+  createdAt    DateTime @default(now()) @db.Timestamptz(3)
+
+  @@unique([tenantId, unitId, customRoleId], map: "department_role_allowances_unique")
+  @@index([tenantId, unitId], map: "department_role_allowances_unit_idx")
+  @@map("department_role_allowances")
+}
+
 model UserGroup {
   id       String @id @default(cuid())
   tenantId String
