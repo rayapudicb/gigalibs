@@ -86,8 +86,16 @@ Owner approved starting Phase 3 while the Phase 2 deploy waits on disk. [WI-OI-1
   already-suspended skipped. Route `POST current/members/bulk-offboard` (`users:update` + admin check). 5 integration
   tests. **Bulk grant GATED:** a unit-scoped grant needs the module on `SCOPE_ENFORCING_MODULES` (R5 allow-list flip,
   owner/Security) to be enforced — build after that. **Uncommitted — awaiting "commit".**
-- Not started: slice 6 workers-in-step (deferred), 8 directory groups/SSO (R15), 9 cross-module scope,
-  10 platform-role review.
+- **slice 10 (platform-role review) reviewed (2026-10-25):** CONFIRMED + locked with regression tests
+  (`auth-nest/session-permissions.spec.ts`). A platform role (`PLATFORM_OWNER|ADMIN|AUDITOR`) gives tenant-wide data
+  authority (whole org tree + unbounded places via `hasTenantWideAuthority`), but only inside a workspace the holder
+  belongs to — the active-membership gate in `assembleContext` is checked before platform roles are read, so they
+  never bypass it (new test). Scope only, not permissions. Finding for Security: `hasTenantWideAuthority` keys off
+  `platformRoles.length > 0` (any role); correct for the 3 current enum values but a blanket rule — recommend an
+  explicit allow-set. Also repaired a pre-existing stale assertion in that spec (R4 live-window `where`).
+  **Uncommitted — awaiting "commit".**
+- **WI-OI-120p ungated scope complete** (slices 3–5, 7-offboarding, 10). Remaining is gated: slice 6 (WI-OI-120o,
+  deferred), 7-grant + 9 (R5 `SCOPE_ENFORCING_MODULES` allow-list), 8 (SSO credentials).
 
 **WI-OI-120bq:** re-review complete (2026-10-22); all H/M findings closed; F2.9 deferred non-blocking per owner. **Ready for Group 4 UAT deploy** (release worktree, after CMMS M-CM1 deploy).
 

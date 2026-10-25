@@ -62,8 +62,24 @@
   `SCOPE_ENFORCING_MODULES` allow-list (currently just `asset-maintenance`). Until the gated R5 allow-list flip
   (owner/Security reference-data decision), a unit-scoped grant for Workforce/CMMS/etc. is either refused or cosmetic
   (the same latent scope-leak the delegated-invite accept path carries). Build the enforced bulk grant after that flip.
-- **Not started:** slice 6 workers-in-step (ties to WI-OI-120o, deferred), 8 directory groups/SSO (R15),
-  9 scope in Procurement/Orders/Finance + CMMS units, 10 platform-role review.
+- **Slice 10 (platform-role review) — reviewed (2026-10-25):** CONFIRMED and locked with regression tests
+  (`auth-nest/session-permissions.spec.ts`). A platform role (the `PlatformRole` enum is
+  `PLATFORM_OWNER | PLATFORM_ADMIN | PLATFORM_AUDITOR`) gives tenant-wide data authority — the whole organization tree
+  (`resolveTreeScope` with `tenantWide:true` → org scope `TENANT` / legacy `FLAT_TENANT`) and unbounded places
+  (`resolveSpatialScope` → `UNBOUNDED`), via `hasTenantWideAuthority` (auth.service.ts). This is bounded to a workspace
+  the holder **belongs to**: `assembleContext` checks the active-membership gate *before* platform roles are read, so a
+  platform-role holder with no active membership is refused the tenant session (new test proves it). Platform roles
+  grant tenant-wide **scope only, not permissions** — actions remain gated by the member's base role + assignments;
+  workspace-admin authority is the member role (`isWorkspaceAdministrator`), never the platform role.
+  - **Finding for Security (low, no current over-grant):** `hasTenantWideAuthority` keys off `platformRoles.length > 0`
+    (any role). All three current enum values are intended tenant-wide, so it is correct today, but a future platform
+    role added to the enum would inherit tenant-wide data authority silently. Recommend an explicit allow-set (mirroring
+    the persona resolver). Also noted: the persona resolver (`contracts/auth/platform-context.ts`) lists five names
+    (incl. `PLATFORM_OPERATOR`/`PLATFORM_SUPPORT`) not in the DB enum — the two lists are maintained separately.
+- **Not started / gated:** slice 6 workers-in-step (ties to WI-OI-120o, deferred); slice 8 directory groups/SSO (R15,
+  needs OIDC/SAML credentials); slice 9 scope in Procurement/Orders/Finance + CMMS units (shares the R5
+  `SCOPE_ENFORCING_MODULES` allow-list gate). With slices 3–5, 7-offboarding and 10 done, WI-OI-120p's ungated scope
+  is complete; what remains is gated on the R5 allow-list decision, SSO credentials, or WI-OI-120o.
 
 The 2026-10-06 "Today" section below predates the R2 assignments work and is stale where it says "at most one custom role."
 - **Work item:** WI-OI-120 (tenant-to-value; WI-OI-120m journey). Evidence goes in `.pi/work/WI-OI-120.md`.

@@ -293,8 +293,10 @@ describe('session roles from role assignments', () => {
     const context = await new AuthService().getSessionContext('user-1', 'session-1', tenantId);
     expect(context.permissions).toEqual(expect.arrayContaining(['cmms.work-orders.read', 'workforce.time.punch']));
     expect(context.roles).toEqual(['MEMBER', 'Maintenance technician', 'Workforce member']);
+    // "Only live ones": scoped to this member and not revoked. R4 (WI-OI-120hq) also adds an effective-window filter to
+    // the same query, so match the stable fields without pinning the whole where clause.
     expect(prismaMock.memberRoleAssignment.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { tenantId, userId: 'user-1', revokedAt: null } }),
+      expect.objectContaining({ where: expect.objectContaining({ tenantId, userId: 'user-1', revokedAt: null }) }),
     );
   });
 
@@ -351,5 +353,42 @@ describe('session roles from role assignments', () => {
     prismaMock.tenantMember.findUnique.mockResolvedValue(null);
     const context = await new AuthService().getSessionContext('user-1', 'session-1');
     expect(context.assignments).toBeUndefined();
+  });
+});
+
+// WI-OI-120p slice 10: a platform role gives tenant-wide data authority (the whole organization tree and unbounded
+// places), but only inside a workspace the holder belongs to — platform roles never bypass the active-membership gate,
+// which is checked before platform roles are even read. Confirms the reviewed behaviour of hasTenantWideAuthority and
+// the assembleContext membership check.
+describe('platform roles and the tenant-membership bound', () => {
+  beforeEach(() => {
+    vi.stubEnv('JWT_ACCESS_SECRET', 'x'.repeat(48));
+    vi.stubEnv('JWT_ACCESS_EXPIRES_IN', '15m');
+    vi.stubEnv('JWT_REFRESH_EXPIRES_IN', '30d');
+    vi.stubEnv('CONTROL_PAYLOAD_KEY_VERSION', 'v1');
+    vi.stubEnv('CONTROL_PAYLOAD_ENCRYPTION_KEY', randomBytes(32).toString('base64'));
+    prismaMock.session.findFirst.mockResolvedValue(activeSession());
+    prismaMock.memberRoleAssignment.findMany.mockResolvedValue([]);
+    prismaMock.mfaRecoveryCode.count.mockResolvedValue(0);
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.clearAllMocks();
+  });
+
+  it('gives a platform-role holder the whole organization once the tree is in force, though their base role is only MEMBER', async () => {
+    prismaMock.platformRoleAssignment.findMany.mockResolvedValue([{ role: 'PLATFORM_AUDITOR' }]);
+    prismaMock.tenantMember.findUnique.mockResolvedValue({ ...membership('MEMBER'), permissions: [] });
+    prismaMock.$queryRaw.mockResolvedValueOnce([{ versionId: 'version-9' }]);
+    const context = await new AuthService().getSessionContext('user-1', 'session-1', tenantId);
+    expect(context.organizationScope).toEqual({ mode: 'TENANT', tree_version: 'version-9' });
+    expect(context.orgScope).toEqual({ mode: 'FLAT_TENANT' });
+  });
+
+  it('refuses a platform-role holder a tenant session when they are not a member (platform roles do not bypass membership)', async () => {
+    prismaMock.platformRoleAssignment.findMany.mockResolvedValue([{ role: 'PLATFORM_OWNER' }]);
+    prismaMock.tenantMember.findUnique.mockResolvedValue(null);
+    await expect(new AuthService().getSessionContext('user-1', 'session-1', tenantId)).rejects.toThrow('inactive or has been revoked');
   });
 });
