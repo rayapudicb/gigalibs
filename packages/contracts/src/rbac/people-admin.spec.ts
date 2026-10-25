@@ -1,6 +1,6 @@
 /** WI-OI-120p slice 4 (R13): delegated people-administration authorization. */
 import { describe, expect, it } from 'vitest';
-import { assertDelegatedPeopleAdd } from './people-admin.js';
+import { assertDelegatedPeopleAdd, validateBulkPeopleAdd } from './people-admin.js';
 
 const scope = {
   units: ['north', 'northwest'],
@@ -29,5 +29,39 @@ describe('assertDelegatedPeopleAdd', () => {
 
   it('refuses a base role above MEMBER (never Tenant Admin)', () => {
     expect(assertDelegatedPeopleAdd(scope, { unit: 'north', roleIds: ['maint-tech'], baseRole: 'TENANT_ADMIN' })).toMatchObject({ ok: false, code: 'PEOPLE_ADMIN_NO_BASE_ROLE' });
+  });
+});
+
+describe('validateBulkPeopleAdd', () => {
+  const existing = new Set(['already@acme.test']);
+
+  it('accepts a batch where every row is a valid, in-scope, non-duplicate new email', () => {
+    const rows = [
+      { email: 'Ann@acme.test', unit: 'north', roleIds: ['maint-tech'] },
+      { email: 'bob@acme.test', unit: 'northwest', roleIds: ['maint-tech'] },
+    ];
+    expect(validateBulkPeopleAdd(rows, scope, existing)).toEqual({ ok: true, errors: [] });
+  });
+
+  it('is all-or-nothing: one bad row makes the whole batch invalid, with the offending index', () => {
+    const rows = [
+      { email: 'ann@acme.test', unit: 'north', roleIds: ['maint-tech'] },
+      { email: 'carol@acme.test', unit: 'south', roleIds: ['maint-tech'] }, // out of scope
+    ];
+    const result = validateBulkPeopleAdd(rows, scope, existing);
+    expect(result.ok).toBe(false);
+    expect(result.errors).toEqual([{ index: 1, email: 'carol@acme.test', code: 'PEOPLE_ADMIN_OUT_OF_UNIT', message: expect.any(String) }]);
+  });
+
+  it('flags a malformed email, an already-member email, a repeat within the batch, and a row with no roles', () => {
+    const rows = [
+      { email: 'not-an-email', unit: 'north', roleIds: ['maint-tech'] },
+      { email: 'already@acme.test', unit: 'north', roleIds: ['maint-tech'] },
+      { email: 'dup@acme.test', unit: 'north', roleIds: ['maint-tech'] },
+      { email: 'DUP@acme.test', unit: 'north', roleIds: ['maint-tech'] },
+      { email: 'eve@acme.test', unit: 'north', roleIds: [] },
+    ];
+    const codes = validateBulkPeopleAdd(rows, scope, existing).errors.map((e) => e.code);
+    expect(codes).toEqual(['BULK_INVALID_EMAIL', 'BULK_ALREADY_MEMBER', 'BULK_DUPLICATE_EMAIL', 'BULK_NO_ROLES']);
   });
 });

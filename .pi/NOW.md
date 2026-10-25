@@ -68,8 +68,15 @@ Owner approved starting Phase 3 while the Phase 2 deploy waits on disk. [WI-OI-1
   carrying custom roles + unit (no email), and `acceptInvite` grants them scoped to the unit on acceptance.
   End-to-end integration-tested on a throwaway control DB (invite→accept→scoped role; out-of-unit refused);
   `people:manage`/`people:read` registered; `tenant_invites` gained `customRoleIds`/`unitId`.
-- Not started: slice 5 bulk add (R14), 7 bulk grants/offboarding, 8 directory groups/SSO (R15), 9 cross-module
-  scope, 10 platform-role review.
+- **slice 5 (bulk add, R14) core built (2026-10-25):** `validateBulkPeopleAdd` (pure, 3 unit tests) checks every
+  row before anything is created, so a batch is all-or-nothing; `bulkDelegatedInvite` loads the head's scope once,
+  validates the batch + per-row duty conflicts, then issues each invite in one transaction via the shared
+  `writeDelegatedInvite` (returns one-time links, no email). Route `POST current/delegated-invitations/bulk`
+  (`people:manage`). Integration-tested on a throwaway control DB (valid batch creates all + accept grants scoped
+  role; out-of-unit + already-member batch creates none). Single-invite path re-verified; tenancy-nest 96 pass.
+  Remaining in slice 5: a join tracker and bulk resend/revoke. **Uncommitted — awaiting "commit".**
+- Not started: slice 6 workers-in-step (deferred), 7 bulk grants/offboarding, 8 directory groups/SSO (R15),
+  9 cross-module scope, 10 platform-role review.
 
 **WI-OI-120bq:** re-review complete (2026-10-22); all H/M findings closed; F2.9 deferred non-blocking per owner. **Ready for Group 4 UAT deploy** (release worktree, after CMMS M-CM1 deploy).
 

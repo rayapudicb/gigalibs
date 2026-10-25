@@ -25,6 +25,51 @@ export type PeopleAdminResult = { readonly ok: true } | { readonly ok: false; re
 
 const fail = (code: string, message: string): PeopleAdminResult => ({ ok: false, code, message });
 
+export interface BulkPersonRow {
+  readonly email: string;
+  readonly unit: string;
+  readonly roleIds: readonly string[];
+  readonly name?: string | undefined;
+}
+
+export interface BulkRowError {
+  readonly index: number;
+  readonly email: string;
+  readonly code: string;
+  readonly message: string;
+}
+
+export interface BulkValidation {
+  readonly ok: boolean;
+  readonly errors: readonly BulkRowError[];
+}
+
+/**
+ * WI-OI-120p slice 5 (R14, bulk add): check every row against the delegated rule before anything is created. A batch
+ * is all-or-nothing — if any row fails (bad/duplicate/already-a-member email, no roles, or a delegated-add refusal),
+ * `ok` is false and the caller creates nothing. `existingEmails` are the tenant's current member emails (lower-cased).
+ */
+export function validateBulkPeopleAdd(
+  rows: readonly BulkPersonRow[],
+  scope: PeopleAdminScope,
+  existingEmails: ReadonlySet<string>,
+): BulkValidation {
+  const errors: BulkRowError[] = [];
+  const seen = new Set<string>();
+  rows.forEach((row, index) => {
+    const email = row.email.trim().toLowerCase();
+    const add = (code: string, message: string) => errors.push({ index, email, code, message });
+    if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) add('BULK_INVALID_EMAIL', 'A valid email is required.');
+    else if (seen.has(email)) add('BULK_DUPLICATE_EMAIL', 'This email appears more than once in the batch.');
+    else if (existingEmails.has(email)) add('BULK_ALREADY_MEMBER', 'This email is already a member of the workspace.');
+    seen.add(email);
+    if (row.roleIds.length === 0) add('BULK_NO_ROLES', 'At least one role is required.');
+    const authorized = assertDelegatedPeopleAdd(scope, { unit: row.unit, roleIds: row.roleIds });
+    if (!authorized.ok) add(authorized.code, authorized.message);
+  });
+  return { ok: errors.length === 0, errors };
+}
+
 /** Whether a delegated head may add/invite a person into `request.unit` with `request.roleIds`, or the first rule broken. */
 export function assertDelegatedPeopleAdd(scope: PeopleAdminScope, request: PeopleAdminRequest): PeopleAdminResult {
   if (request.baseRole !== undefined && request.baseRole !== 'MEMBER')

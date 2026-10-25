@@ -27,6 +27,8 @@ import {
   CreateTenantInviteSchema,
   type DelegatedInviteDto,
   DelegatedInviteSchema,
+  type BulkDelegatedInviteDto,
+  BulkDelegatedInviteSchema,
   CreateTenantSchema,
   type DeleteCustomRoleDto,
   DeleteCustomRoleSchema,
@@ -209,6 +211,19 @@ export class TenancyController {
     @Body(new ZodValidationPipe(DelegatedInviteSchema)) dto: DelegatedInviteDto,
   ) {
     return this.tenancyService.delegatedInvite(tenantId, userId, dto);
+  }
+
+  // WI-OI-120p slice 5 (R14): a delegated head invites many people at once; every row is validated before anything is
+  // created, and the response carries a one-time link per invite for download (no email).
+  @Post('current/delegated-invitations/bulk')
+  @Header('Cache-Control', 'no-store')
+  @RequirePermissions('people:manage')
+  bulkDelegatedInvite(
+    @CurrentTenant('tenantId') tenantId: string,
+    @CurrentUser('sub') userId: string,
+    @Body(new ZodValidationPipe(BulkDelegatedInviteSchema)) dto: BulkDelegatedInviteDto,
+  ) {
+    return this.tenancyService.bulkDelegatedInvite(tenantId, userId, dto);
   }
 
   @Delete('current/invitations/:inviteId')

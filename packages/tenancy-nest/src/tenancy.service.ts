@@ -2,6 +2,7 @@ import { createHash, randomBytes } from 'node:crypto';
 import type {
   AcceptTenantInviteDto,
   AssignMemberRoleDto,
+  BulkDelegatedInviteDto,
   RevokeMemberRoleDto,
   ChangeTenantStatusDto,
   CreateCustomRoleDto,
@@ -25,6 +26,7 @@ import {
   type ModuleDefaultRole,
   moduleDefaultRoles,
   uncataloguedAdditions,
+  validateBulkPeopleAdd,
 } from '@gigalibs/contracts';
 import { primaryVersionInForce } from '@gigalibs/auth-nest';
 import { type Prisma, prisma } from '@gigalibs/db';
@@ -59,7 +61,7 @@ import {
 } from './grant-bound.js';
 import { memberRoleGrants } from '@gigalibs/rbac-nest';
 import { assertInclusionsValid, expandRole, loadRoleGraph, rolesIncluding, withRole } from './role-graph.js';
-import { authorizeDelegatedPeopleAdd, invitedRoleAssignments } from './people-admin.js';
+import { authorizeDelegatedPeopleAdd, invitedRoleAssignments, loadPeopleAdminScope } from './people-admin.js';
 import { assertNoDutyConflict, assertScopeEnforced, assertScopesConsistent, resolveRoleScope } from './role-scopes.js';
 import { assertTenantAdminAuthority, assertTenantAdministratorRetained } from './tenant-member-safety.js';
 
@@ -820,41 +822,117 @@ export class TenancyService {
             message: `These roles would give one person both sides of a separated duty. ${conflicts.map((set) => set.reason).join(' ')}`,
             conflicts: conflicts.map((set) => set.id),
           });
-        const existingMember = await transaction.tenantMember.findFirst({
-          where: { tenantId, user: { email: { equals: email, mode: 'insensitive' } } },
-          select: { id: true },
+        return this.writeDelegatedInvite(transaction, tenantId, headUserId, {
+          email,
+          unitId: dto.unitId,
+          customRoleIds: dto.customRoleIds,
+          expiresInHours: dto.expiresInHours,
         });
-        if (existingMember) throw new ConflictException('A membership for this email already exists in the tenant');
-        await transaction.tenantInvite.updateMany({
-          where: { tenantId, email: { equals: email, mode: 'insensitive' }, acceptedAt: null, revokedAt: null },
-          data: { revokedAt: new Date() },
+      }),
+    );
+  }
+
+  // The create half of a delegated invite, shared by the single (delegatedInvite) and bulk (bulkDelegatedInvite) paths:
+  // it refuses an existing membership, revokes any prior pending invite for the email, writes a single-use invite with
+  // the token stored as a hash, audits it, and returns the raw token once. Authorization (unit/role/SoD) happens before
+  // this is reached; a throw here rolls back the surrounding transaction, so in a bulk batch one failure undoes all.
+  private async writeDelegatedInvite(
+    transaction: Prisma.TransactionClient,
+    tenantId: string,
+    headUserId: string,
+    row: { email: string; unitId: string; customRoleIds: readonly string[]; expiresInHours: number },
+  ): Promise<{ id: string; email: string; expiresAt: string; token: string }> {
+    const email = row.email.trim().toLowerCase();
+    const existingMember = await transaction.tenantMember.findFirst({
+      where: { tenantId, user: { email: { equals: email, mode: 'insensitive' } } },
+      select: { id: true },
+    });
+    if (existingMember) throw new ConflictException('A membership for this email already exists in the tenant');
+    await transaction.tenantInvite.updateMany({
+      where: { tenantId, email: { equals: email, mode: 'insensitive' }, acceptedAt: null, revokedAt: null },
+      data: { revokedAt: new Date() },
+    });
+    const rawToken = randomBytes(32).toString('base64url');
+    const created = await transaction.tenantInvite.create({
+      data: {
+        tenantId,
+        email,
+        role: 'MEMBER',
+        token: this.hashInviteToken(rawToken),
+        expiresAt: new Date(Date.now() + row.expiresInHours * 60 * 60 * 1_000),
+        invitedById: headUserId,
+        customRoleIds: [...row.customRoleIds],
+        unitId: row.unitId,
+      },
+      select: { id: true, email: true, expiresAt: true },
+    });
+    await transaction.auditLog.create({
+      data: {
+        action: 'PERMISSION_CHANGE',
+        resource: 'tenant_invite',
+        resourceId: created.id,
+        userId: headUserId,
+        tenantId,
+        after: { email, unitId: row.unitId, customRoleIds: [...row.customRoleIds], delegated: true },
+        metadata: { delivery: 'MANUAL_SECURE_LINK', tokenStoredAsHash: true },
+      },
+    });
+    return { id: created.id, email: created.email, expiresAt: created.expiresAt.toISOString(), token: rawToken };
+  }
+
+  // WI-OI-120p slice 5 (R14, bulk add): a delegated head invites many people at once (CSV or a pasted list). Every row
+  // is checked against the delegated rule and for separation of duties before anything is created; the batch is
+  // all-or-nothing, so a single bad row returns the full list of errors and creates nothing. On success each invite is
+  // written in one transaction and its one-time link is returned once for download (no email, same as the single path).
+  async bulkDelegatedInvite(tenantId: string, headUserId: string, dto: BulkDelegatedInviteDto) {
+    return roleChangeConflicts(() =>
+      prisma.$transaction(async (transaction) => {
+        await transaction.$queryRaw`SELECT "id" FROM "tenants" WHERE "id" = ${tenantId} FOR UPDATE`;
+        const { assignments } = await memberRoleGrants(transaction, tenantId, headUserId);
+        const headUnits = [
+          ...new Set(
+            assignments
+              .filter((assignment) => assignment.scope === 'UNITS' && holdsPermission(assignment.permissions, 'people:manage'))
+              .flatMap((assignment) => assignment.unitIds),
+          ),
+        ];
+        const scope = await loadPeopleAdminScope(transaction, tenantId, headUserId, headUnits);
+
+        const rows = dto.rows.map((row) => ({ ...row, email: row.email.trim().toLowerCase() }));
+        // Which of the batch emails already belong to a member — a clean up-front message; writeDelegatedInvite still
+        // guards each create case-insensitively, so a race or a missed case variant rolls the whole batch back.
+        const candidates = [...new Set(dto.rows.flatMap((row) => [row.email.trim(), row.email.trim().toLowerCase()]))];
+        const members = await transaction.tenantMember.findMany({
+          where: { tenantId, user: { email: { in: candidates } } },
+          select: { user: { select: { email: true } } },
         });
-        const rawToken = randomBytes(32).toString('base64url');
-        const created = await transaction.tenantInvite.create({
-          data: {
-            tenantId,
-            email,
-            role: 'MEMBER',
-            token: this.hashInviteToken(rawToken),
-            expiresAt: new Date(Date.now() + dto.expiresInHours * 60 * 60 * 1_000),
-            invitedById: headUserId,
-            customRoleIds: [...dto.customRoleIds],
-            unitId: dto.unitId,
-          },
-          select: { id: true, email: true, expiresAt: true },
+        const existingEmails = new Set(members.map((member) => member.user.email.trim().toLowerCase()));
+
+        const validation = validateBulkPeopleAdd(rows, scope, existingEmails);
+        // Separation of duties (R3) is per row: the roles one person carries must not give both sides of a split duty.
+        const graph = await loadRoleGraph(transaction, tenantId);
+        const sodErrors = rows.flatMap((row, index) => {
+          const permissions = [...new Set(row.roleIds.flatMap((roleId) => expandRole(graph, roleId)))];
+          const conflicts = dutyConflicts(permissions);
+          return conflicts.length === 0
+            ? []
+            : [{ index, email: row.email, code: 'DUTY_CONFLICT', message: conflicts.map((set) => set.reason).join(' ') }];
         });
-        await transaction.auditLog.create({
-          data: {
-            action: 'PERMISSION_CHANGE',
-            resource: 'tenant_invite',
-            resourceId: created.id,
-            userId: headUserId,
-            tenantId,
-            after: { email, unitId: dto.unitId, customRoleIds: [...dto.customRoleIds], delegated: true },
-            metadata: { delivery: 'MANUAL_SECURE_LINK', tokenStoredAsHash: true },
-          },
-        });
-        return { id: created.id, email: created.email, expiresAt: created.expiresAt.toISOString(), token: rawToken };
+        const errors = [...validation.errors, ...sodErrors].sort((a, b) => a.index - b.index);
+        if (errors.length > 0)
+          throw new BadRequestException({ code: 'BULK_VALIDATION_FAILED', message: `${errors.length} of ${rows.length} rows cannot be added; nothing was created.`, errors });
+
+        const invites = [];
+        for (const row of rows)
+          invites.push(
+            await this.writeDelegatedInvite(transaction, tenantId, headUserId, {
+              email: row.email,
+              unitId: row.unit,
+              customRoleIds: row.roleIds,
+              expiresInHours: dto.expiresInHours,
+            }),
+          );
+        return { count: invites.length, invites };
       }),
     );
   }

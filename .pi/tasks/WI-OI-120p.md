@@ -25,8 +25,21 @@
   `POST current/delegated-invitations` (`people:manage`). End-to-end integration-tested on a throwaway control DB
   (`delegated-invite.integration.test.ts`: invite→accept grants the tech role scoped to North; out-of-unit refused);
   tenancy-nest suite 96 green, no regression.
-- **Not started:** slice 5 bulk add (R14), slice 6 workers-in-step (ties to WI-OI-120o, deferred), 7 bulk grants,
-  8 directory groups/SSO (R15), 9 scope in Procurement/Orders/Finance + CMMS units, 10 platform-role review.
+- **Slice 5 (bulk add, R14) — core built (2026-10-25):** `validateBulkPeopleAdd` (pure, `contracts/rbac/people-admin.ts`,
+  3 unit tests) checks every row before anything is created — malformed/duplicate/already-member email, no roles, and
+  the delegated rule per row — so a batch is all-or-nothing. `bulkDelegatedInvite` (tenancy.service) loads the head's
+  `people:manage` units and allowances once (`loadPeopleAdminScope`, extracted from the slice-4 authorizer), validates
+  the batch + a per-row duty-conflict (R3) check, then in one transaction issues each invite via the shared
+  `writeDelegatedInvite` (extracted from `delegatedInvite`) — one bad row rolls the whole batch back. Returns one
+  one-time link per invite for download (no email, W2). DTO `BulkDelegatedInviteSchema` (rows bounded but permissive,
+  so bad cells become per-row errors, max 500 rows); route `POST current/delegated-invitations/bulk` (`people:manage`).
+  Integration-tested on a throwaway control DB (`bulk-invite.integration.test.ts`: a valid 2-row batch creates both +
+  an accepted link grants the tech role scoped to North; an out-of-unit + already-member batch aborts, creating none).
+  The single-invite path (slice 4) re-verified green after the extraction; tenancy-nest suite 96 pass; audit:layers clean.
+- **Slice 5 — remaining:** a join tracker (list delegated invites by status, scoped to the head's units) and bulk
+  resend/revoke of pending invites.
+- **Not started:** slice 6 workers-in-step (ties to WI-OI-120o, deferred), 7 bulk grants, 8 directory groups/SSO (R15),
+  9 scope in Procurement/Orders/Finance + CMMS units, 10 platform-role review.
 
 The 2026-10-06 "Today" section below predates the R2 assignments work and is stale where it says "at most one custom role."
 - **Work item:** WI-OI-120 (tenant-to-value; WI-OI-120m journey). Evidence goes in `.pi/work/WI-OI-120.md`.

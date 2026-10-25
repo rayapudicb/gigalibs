@@ -483,6 +483,29 @@ export const DelegatedInviteSchema = z
   })
   .strict();
 export type DelegatedInviteDto = z.infer<typeof DelegatedInviteSchema>;
+
+// WI-OI-120p slice 5 (R14, bulk add): a delegated head invites many people at once (CSV or a pasted list). Rows are
+// bounded but otherwise permissive — malformed/empty cells, duplicates and out-of-scope roles become per-row errors
+// from validateBulkPeopleAdd, not a blanket rejection, so the uploader sees exactly which rows to fix.
+export const BulkDelegatedInviteSchema = z
+  .object({
+    rows: z
+      .array(
+        z
+          .object({
+            email: z.string().trim().max(320),
+            unit: z.string().trim().max(64),
+            roleIds: z.array(z.string().trim().min(1).max(64)).max(20),
+            name: z.string().trim().max(200).optional(),
+          })
+          .strict(),
+      )
+      .min(1)
+      .max(500),
+    expiresInHours: z.number().int().min(1).max(168).default(72),
+  })
+  .strict();
+export type BulkDelegatedInviteDto = z.infer<typeof BulkDelegatedInviteSchema>;
 export type AcceptTenantInviteDto = z.infer<typeof AcceptTenantInviteSchema>;
 export type CreateCustomRoleDto = z.infer<typeof CreateCustomRoleSchema>;
 export type UpdateCustomRoleDto = z.infer<typeof UpdateCustomRoleSchema>;

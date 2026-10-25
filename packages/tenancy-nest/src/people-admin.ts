@@ -1,4 +1,4 @@
-import { type PeopleAdminRequest, type PeopleAdminResult, assertDelegatedPeopleAdd } from '@gigalibs/contracts';
+import { type PeopleAdminRequest, type PeopleAdminResult, type PeopleAdminScope, assertDelegatedPeopleAdd } from '@gigalibs/contracts';
 import type { Prisma } from '@gigalibs/db';
 
 // WI-OI-120p slice 4 (R13): the DB-backed delegated people-add authorization. The head's units come from their signed
@@ -7,13 +7,17 @@ import type { Prisma } from '@gigalibs/db';
 
 type Reader = Pick<Prisma.TransactionClient, 'departmentRoleAllowance' | 'memberRoleAssignment'>;
 
-export async function authorizeDelegatedPeopleAdd(
+/**
+ * The delegated head's authority as the pure rule needs it: the units they manage, the roles allowed per unit (the
+ * admin-set allowance), and the roles they themselves hold. Loaded once and reused for a whole bulk batch (R14) so
+ * one add and a hundred adds cost the same two reads.
+ */
+export async function loadPeopleAdminScope(
   db: Reader,
   tenantId: string,
   headUserId: string,
   headUnits: readonly string[],
-  request: PeopleAdminRequest,
-): Promise<PeopleAdminResult> {
+): Promise<PeopleAdminScope> {
   const allowances = await db.departmentRoleAllowance.findMany({
     where: { tenantId, unitId: { in: [...headUnits] } },
     select: { unitId: true, customRoleId: true },
@@ -26,10 +30,17 @@ export async function authorizeDelegatedPeopleAdd(
     select: { customRoleId: true },
   });
 
-  return assertDelegatedPeopleAdd(
-    { units: headUnits, allowedRolesByUnit, heldRoleIds: [...new Set(held.map((row) => row.customRoleId))] },
-    request,
-  );
+  return { units: headUnits, allowedRolesByUnit, heldRoleIds: [...new Set(held.map((row) => row.customRoleId))] };
+}
+
+export async function authorizeDelegatedPeopleAdd(
+  db: Reader,
+  tenantId: string,
+  headUserId: string,
+  headUnits: readonly string[],
+  request: PeopleAdminRequest,
+): Promise<PeopleAdminResult> {
+  return assertDelegatedPeopleAdd(await loadPeopleAdminScope(db, tenantId, headUserId, headUnits), request);
 }
 
 export interface InvitedRoleAssignment {
