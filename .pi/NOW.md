@@ -105,9 +105,14 @@ Owner approved starting Phase 3 while the Phase 2 deploy waits on disk. [WI-OI-1
   `ModulePrincipal` through). Every quote/order read+write scoped (list/get/create/accept/confirm/convert/allocate/
   cancel): out-of-read → not-found, out-of-write → Forbidden. ~21 call sites; typecheck clean; orders suite 7 pass;
   Docker-gated cross-department integration test (3, run green). **Uncommitted — awaiting "commit".**
-- Remaining slice 9 (same pattern): Procurement POs/bills, Orders downstream docs (fulfillments/invoices/credit-memos),
-  Finance, CMMS units. The per-module `organization-scope.ts` is now duplicated (Procurement+Orders) → a shared
-  module-sdk helper would de-dup (safe follow-up).
+- **slice 9 — Finance (fixed assets) built (2026-10-25):** finding — Finance's GL (books/accounts/periods/journals)
+  is tenant-level by design; only fixed assets carry a (nullable) `org_unit_id`. Scoped every fixed-asset read+write
+  (list/get/schedules/create/capitalize; reads restructured to `withTenantTransaction`); asset classes stay tenant
+  level. Typecheck clean; finance suite 71 pass. **DB integration test deferred** (deep book→account→class→asset
+  fixture chain + no finance harness; logic identical to Docker-proven proc/orders) — follow-up. **Uncommitted —
+  awaiting "commit".**
+- Remaining slice 9 (same pattern): Procurement POs/bills, Orders downstream docs, CMMS units. The per-module
+  `organization-scope.ts` copy is by-design (nest glue over nest-agnostic module-sdk), not a shared-helper candidate.
 - WI-OI-120p remaining is otherwise gated: slice 6 (WI-OI-120o, deferred), slice 7-grant + the R5 allow-list flip
   (owner/Security), slice 8 SSO (credentials).
 

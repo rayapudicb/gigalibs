@@ -99,11 +99,26 @@
   suite 7 pass (6 adapter tests unaffected). Docker-gated cross-department integration test
   (`orders-organization-scope.integration.test.ts`, 3, run green: a North member can't list/read/confirm South's
   orders, tenant-wide sees both).
+- **Slice 9 — Finance (fixed assets) built (2026-10-25):** finding — Finance's general ledger (books, accounts,
+  periods, journals) is **tenant-level by design** and carries no unit; the only unit-bearing records are **fixed
+  assets** (`org_unit_id`, nullable → null = tenant-shared). `financial-operations .../organization/
+  organization-scope.ts` (copy of Procurement's); every fixed-asset read and write is scoped —
+  `listFixedAssets`/`getFixedAsset`/`getAssetSchedules` (reads restructured from the one-shot `this.query` to
+  `withTenantTransaction` so they resolve access on a client), `createFixedAsset` (create only in a writable unit;
+  a null/shared unit needs tenant-wide), `capitalizeFixedAsset` (out-of-read → not-found, out-of-write → Forbidden).
+  Asset classes stay tenant-level (unscoped). Controller's 5 calls threaded to `ModulePrincipal`. Typecheck clean;
+  finance suite **71 pass** (no regression). **DB integration test deferred (documented):** a valid fixed asset needs a
+  deep fixture chain (accounting book → account → asset class → asset, because `fixed_asset_classes` FK-chains to
+  `chart_of_accounts`) and `financial-operations` has no throwaway-postgres harness; the scope logic is identical to
+  the Docker-proven Procurement/Orders, and the wiring is typecheck-clean. Follow-up: build the finance harness + the
+  cross-department fixed-asset integration test.
 - **Slice 9 — remaining (same ungated pattern):** Procurement POs/vendor-bills + create-scoping; Orders downstream
-  documents (fulfillments, customer invoices, credit memos, AR-invoice projections, returns); Finance (no org-scope
-  enforcement yet); CMMS units (adds unit scope alongside its existing place scope). Also: the per-module
-  `organization-scope.ts` is now duplicated (Procurement + Orders identical); a shared `@gigalibs/module-sdk` helper
-  would de-dup — a safe follow-up refactor.
+  documents (fulfillments, customer invoices, credit memos, AR-invoice projections, returns); CMMS units (adds unit
+  scope alongside its existing place scope). Note: the per-module `organization-scope.ts` is duplicated across
+  Procurement/Orders/Finance, but **by design** — the glue maps module-sdk's plain `OrganizationScopeRefusal`/
+  `OrganizationVersionPendingError` to NestJS `ForbiddenException`/`ServiceUnavailableException`, and `module-sdk` is
+  deliberately Nest-agnostic, so the nest glue lives per nest module (Analytics does the same). Not a shared-helper
+  candidate.
 - **Not started / gated:** slice 6 workers-in-step (ties to WI-OI-120o, deferred); slice 7-grant + the R5 allow-list
   flip (unit-scoped role *grants*, owner/Security reference-data decision); slice 8 directory groups/SSO (R15, needs
   OIDC/SAML credentials).

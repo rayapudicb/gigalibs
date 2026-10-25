@@ -15,6 +15,7 @@ import {
   type DepreciationRunPostedEventV1,
   type AssetDisposedEventV1,
 } from '@gigalibs/contracts';
+import type { ModulePrincipal } from '@gigalibs/module-sdk';
 import {
   BadRequestException,
   ConflictException,
@@ -25,6 +26,7 @@ import type { PoolClient } from 'pg';
 import { SCHEMA, TOPIC } from '../config.js';
 import { DatabaseService } from '../database.service.js';
 import { FinanceService } from '../finance/finance.service.js';
+import { assertWritableUnit, canReadUnit, orgReadCondition, resolveOrganizationAccess } from '../organization/organization-scope.js';
 import { calculateDepreciationSchedule } from './depreciation-calculator.js';
 
 @Injectable()
@@ -117,11 +119,8 @@ export class FixedAssetsService {
 
   // ─── 2. Fixed Assets Register ────────────────────────────────────────────────
 
-  async createFixedAsset(
-    tenantId: string,
-    actor: string,
-    input: CreateFixedAssetInputV1,
-  ): Promise<FixedAssetV1> {
+  async createFixedAsset(principal: ModulePrincipal, input: CreateFixedAssetInputV1): Promise<FixedAssetV1> {
+    const { tenantId, subject: actor } = principal;
     const assetClass = await this.getAssetClass(tenantId, input.assetClassId);
 
     const existing = await this.query(
@@ -139,6 +138,8 @@ export class FixedAssetsService {
     const deprMethod = input.depreciationMethod ?? assetClass.depreciationMethod;
 
     return this.database.withTenantTransaction(tenantId, async (client: PoolClient) => {
+      // WI-OI-120p slice 9: a member may create an asset only in a unit they may change (null unit needs tenant-wide).
+      assertWritableUnit(await resolveOrganizationAccess(client, principal), input.orgUnitId ?? null);
       const res = await client.query(
         `INSERT INTO ${SCHEMA}.fixed_assets (
           id, tenant_id, asset_code, asset_name, description, asset_class_id,
@@ -188,12 +189,13 @@ export class FixedAssetsService {
   }
 
   async capitalizeFixedAsset(
-    tenantId: string,
-    actor: string,
+    principal: ModulePrincipal,
     assetId: string,
     input: CapitalizeFixedAssetInputV1,
   ): Promise<FixedAssetV1> {
+    const { tenantId, subject: actor } = principal;
     return this.database.withTenantTransaction(tenantId, async (client: PoolClient) => {
+      const access = await resolveOrganizationAccess(client, principal);
       const assetRes = await client.query(
         `SELECT a.*, c.asset_gl_account_id, c.depreciation_expense_gl_account_id, c.accumulated_depreciation_gl_account_id
          FROM ${SCHEMA}.fixed_assets a
@@ -201,9 +203,11 @@ export class FixedAssetsService {
          WHERE a.tenant_id = $1 AND a.id = $2 FOR UPDATE`,
         [tenantId, assetId],
       );
-      if (assetRes.rows.length === 0) {
+      // WI-OI-120p slice 9: out-of-scope asset is invisible (not found); a read-only unit refuses the change.
+      if (assetRes.rows.length === 0 || !canReadUnit(access, assetRes.rows[0].org_unit_id)) {
         throw new NotFoundException(`Fixed asset ${assetId} not found.`);
       }
+      assertWritableUnit(access, assetRes.rows[0].org_unit_id);
 
       const assetRow = assetRes.rows[0];
       if (assetRow.status !== 'DRAFT') {
@@ -314,42 +318,57 @@ export class FixedAssetsService {
     });
   }
 
-  async listFixedAssets(tenantId: string, status?: string): Promise<FixedAssetV1[]> {
-    let sql = `SELECT * FROM ${SCHEMA}.fixed_assets WHERE tenant_id = $1`;
-    const params: unknown[] = [tenantId];
-    if (status) {
-      sql += ' AND status = $2';
-      params.push(status);
-    }
-    sql += ' ORDER BY asset_code ASC';
-
-    const res = await this.query(tenantId, sql, params);
-    return res.rows.map((row) => this.mapFixedAsset(row));
+  async listFixedAssets(principal: ModulePrincipal, status?: string): Promise<FixedAssetV1[]> {
+    const { tenantId } = principal;
+    return this.database.withTenantTransaction(tenantId, async (client: PoolClient) => {
+      // WI-OI-120p slice 9: a member lists only assets in their organization units (and tenant-shared ones).
+      const access = await resolveOrganizationAccess(client, principal);
+      const params: unknown[] = [tenantId];
+      const scope = orgReadCondition(access, 'org_unit_id', (value) => `$${params.push(value)}`);
+      let sql = `SELECT * FROM ${SCHEMA}.fixed_assets WHERE tenant_id = $1 AND ${scope}`;
+      if (status) sql += ` AND status = $${params.push(status)}`;
+      sql += ' ORDER BY asset_code ASC';
+      const res = await client.query(sql, params);
+      return res.rows.map((row) => this.mapFixedAsset(row));
+    });
   }
 
-  async getFixedAsset(tenantId: string, id: string): Promise<FixedAssetV1> {
-    const res = await this.query(
-      tenantId,
-      `SELECT * FROM ${SCHEMA}.fixed_assets WHERE tenant_id = $1 AND id = $2`,
-      [tenantId, id],
-    );
-    if (res.rows.length === 0) {
-      throw new NotFoundException(`Fixed asset ${id} not found.`);
-    }
-    return this.mapFixedAsset(res.rows[0]);
+  async getFixedAsset(principal: ModulePrincipal, id: string): Promise<FixedAssetV1> {
+    const { tenantId } = principal;
+    return this.database.withTenantTransaction(tenantId, async (client: PoolClient) => {
+      const access = await resolveOrganizationAccess(client, principal);
+      const res = await client.query(
+        `SELECT * FROM ${SCHEMA}.fixed_assets WHERE tenant_id = $1 AND id = $2`,
+        [tenantId, id],
+      );
+      // WI-OI-120p slice 9: an asset in a unit outside the member's scope reads as not-found (invisible).
+      if (res.rows.length === 0 || !canReadUnit(access, res.rows[0].org_unit_id)) {
+        throw new NotFoundException(`Fixed asset ${id} not found.`);
+      }
+      return this.mapFixedAsset(res.rows[0]);
+    });
   }
 
   // ─── 3. Depreciation Schedules & Periodic Run Engine ──────────────────────────
 
-  async getAssetSchedules(tenantId: string, assetId: string): Promise<AssetDepreciationScheduleV1[]> {
-    const res = await this.query(
-      tenantId,
-      `SELECT * FROM ${SCHEMA}.asset_depreciation_schedules
-       WHERE tenant_id = $1 AND asset_id = $2
-       ORDER BY period_number ASC`,
-      [tenantId, assetId],
-    );
-    return res.rows.map((row) => this.mapDepreciationSchedule(row));
+  async getAssetSchedules(principal: ModulePrincipal, assetId: string): Promise<AssetDepreciationScheduleV1[]> {
+    const { tenantId } = principal;
+    return this.database.withTenantTransaction(tenantId, async (client: PoolClient) => {
+      // WI-OI-120p slice 9: schedules follow their asset's scope — an out-of-scope asset yields nothing.
+      const access = await resolveOrganizationAccess(client, principal);
+      const asset = await client.query<{ org_unit_id: string | null }>(
+        `SELECT org_unit_id FROM ${SCHEMA}.fixed_assets WHERE tenant_id = $1 AND id = $2`,
+        [tenantId, assetId],
+      );
+      if (asset.rows.length === 0 || !canReadUnit(access, asset.rows[0].org_unit_id)) return [];
+      const res = await client.query(
+        `SELECT * FROM ${SCHEMA}.asset_depreciation_schedules
+         WHERE tenant_id = $1 AND asset_id = $2
+         ORDER BY period_number ASC`,
+        [tenantId, assetId],
+      );
+      return res.rows.map((row) => this.mapDepreciationSchedule(row));
+    });
   }
 
   async executeDepreciationRun(

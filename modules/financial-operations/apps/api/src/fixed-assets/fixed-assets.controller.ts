@@ -78,7 +78,7 @@ export class FixedAssetsController {
     @Body() body: unknown,
   ) {
     const input = parse(CreateFixedAssetInputV1Schema, body);
-    return this.fixedAssetsService.createFixedAsset(principal.tenantId, principal.subject, input);
+    return this.fixedAssetsService.createFixedAsset(principal, input);
   }
 
   @Get('assets')
@@ -87,7 +87,7 @@ export class FixedAssetsController {
     @CurrentPrincipal() principal: ModulePrincipal,
     @Query('status') status?: string,
   ) {
-    return this.fixedAssetsService.listFixedAssets(principal.tenantId, status);
+    return this.fixedAssetsService.listFixedAssets(principal, status);
   }
 
   @Get('assets/:id')
@@ -96,7 +96,7 @@ export class FixedAssetsController {
     @CurrentPrincipal() principal: ModulePrincipal,
     @Param('id') id: string,
   ) {
-    return this.fixedAssetsService.getFixedAsset(principal.tenantId, id);
+    return this.fixedAssetsService.getFixedAsset(principal, id);
   }
 
   @Post('assets/:id/capitalize')
@@ -107,12 +107,7 @@ export class FixedAssetsController {
     @Body() body: unknown,
   ) {
     const input = parse(CapitalizeFixedAssetInputV1Schema, body);
-    return this.fixedAssetsService.capitalizeFixedAsset(
-      principal.tenantId,
-      principal.subject,
-      id,
-      input,
-    );
+    return this.fixedAssetsService.capitalizeFixedAsset(principal, id, input);
   }
 
   @Get('assets/:id/schedules')
@@ -121,7 +116,7 @@ export class FixedAssetsController {
     @CurrentPrincipal() principal: ModulePrincipal,
     @Param('id') id: string,
   ) {
-    return this.fixedAssetsService.getAssetSchedules(principal.tenantId, id);
+    return this.fixedAssetsService.getAssetSchedules(principal, id);
   }
 
   // ─── 3. Periodic Depreciation Runs ───────────────────────────────────────────
