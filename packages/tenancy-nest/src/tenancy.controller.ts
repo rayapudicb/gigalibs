@@ -29,6 +29,8 @@ import {
   DelegatedInviteSchema,
   type BulkDelegatedInviteDto,
   BulkDelegatedInviteSchema,
+  type BulkInviteIdsDto,
+  BulkInviteIdsSchema,
   CreateTenantSchema,
   type DeleteCustomRoleDto,
   DeleteCustomRoleSchema,
@@ -224,6 +226,38 @@ export class TenancyController {
     @Body(new ZodValidationPipe(BulkDelegatedInviteSchema)) dto: BulkDelegatedInviteDto,
   ) {
     return this.tenancyService.bulkDelegatedInvite(tenantId, userId, dto);
+  }
+
+  // WI-OI-120p slice 5 (R14, join tracker): the delegated invitations into the head's units, each with its status.
+  @Get('current/delegated-invitations')
+  @Header('Cache-Control', 'no-store')
+  @RequirePermissions('people:read')
+  listDelegatedInvites(@CurrentTenant('tenantId') tenantId: string, @CurrentUser('sub') userId: string) {
+    return this.tenancyService.listDelegatedInvites(tenantId, userId);
+  }
+
+  // WI-OI-120p slice 5 (R14): revoke many pending delegated invitations at once (only those into the head's units).
+  @Post('current/delegated-invitations/bulk/revoke')
+  @Header('Cache-Control', 'no-store')
+  @RequirePermissions('people:manage')
+  bulkRevokeDelegatedInvites(
+    @CurrentTenant('tenantId') tenantId: string,
+    @CurrentUser('sub') userId: string,
+    @Body(new ZodValidationPipe(BulkInviteIdsSchema)) dto: BulkInviteIdsDto,
+  ) {
+    return this.tenancyService.bulkRevokeDelegatedInvites(tenantId, userId, dto);
+  }
+
+  // WI-OI-120p slice 5 (R14): regenerate one-time links for many pending delegated invitations at once (re-authorized).
+  @Post('current/delegated-invitations/bulk/resend')
+  @Header('Cache-Control', 'no-store')
+  @RequirePermissions('people:manage')
+  bulkResendDelegatedInvites(
+    @CurrentTenant('tenantId') tenantId: string,
+    @CurrentUser('sub') userId: string,
+    @Body(new ZodValidationPipe(BulkInviteIdsSchema)) dto: BulkInviteIdsDto,
+  ) {
+    return this.tenancyService.bulkResendDelegatedInvites(tenantId, userId, dto);
   }
 
   @Delete('current/invitations/:inviteId')

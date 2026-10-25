@@ -36,8 +36,17 @@
   Integration-tested on a throwaway control DB (`bulk-invite.integration.test.ts`: a valid 2-row batch creates both +
   an accepted link grants the tech role scoped to North; an out-of-unit + already-member batch aborts, creating none).
   The single-invite path (slice 4) re-verified green after the extraction; tenancy-nest suite 96 pass; audit:layers clean.
-- **Slice 5 — remaining:** a join tracker (list delegated invites by status, scoped to the head's units) and bulk
-  resend/revoke of pending invites.
+- **Slice 5 — tracker + bulk resend/revoke built (2026-10-25):** `inviteStatus` (pure, `contracts/tenancy`, 4 unit
+  tests) derives one status (acceptance final > revoke > expiry > pending). `listDelegatedInvites` is the join tracker:
+  the invites into the head's units (people:read/manage), each with its status, no tokens (`GET
+  current/delegated-invitations`, `people:read`). `bulkRevokeDelegatedInvites` revokes only still-pending invites in
+  the head's units (accepted/foreign ids skipped, audited). `bulkResendDelegatedInvites` rotates a fresh one-time link
+  for pending invites, re-authorizing each as if freshly invited (unit still managed, roles still allowed+held,
+  SoD-clean) so a resend cannot outlive the head's authority; all-or-nothing, same id kept. Both guarded by
+  `people:manage`; DTO `BulkInviteIdsSchema`. A shared `peopleUnits` helper now backs the single/bulk/tracker paths.
+  Integration-tested (`bulk-invite.integration.test.ts`, 5 tests): valid batch + accept; all-or-nothing abort; tracker
+  statuses + no token; resend rotates pending only (accepted skipped) and the new link works; revoke pending only +
+  re-revoke no-op. Slice 5 (R14) complete; tenancy-nest 108 unit pass, audit:layers clean.
 - **Not started:** slice 6 workers-in-step (ties to WI-OI-120o, deferred), 7 bulk grants, 8 directory groups/SSO (R15),
   9 scope in Procurement/Orders/Finance + CMMS units, 10 platform-role review.
 

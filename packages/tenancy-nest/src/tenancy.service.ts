@@ -3,6 +3,7 @@ import type {
   AcceptTenantInviteDto,
   AssignMemberRoleDto,
   BulkDelegatedInviteDto,
+  BulkInviteIdsDto,
   RevokeMemberRoleDto,
   ChangeTenantStatusDto,
   CreateCustomRoleDto,
@@ -27,6 +28,7 @@ import {
   moduleDefaultRoles,
   uncataloguedAdditions,
   validateBulkPeopleAdd,
+  inviteStatus,
 } from '@gigalibs/contracts';
 import { primaryVersionInForce } from '@gigalibs/auth-nest';
 import { type Prisma, prisma } from '@gigalibs/db';
@@ -799,14 +801,7 @@ export class TenancyService {
       prisma.$transaction(async (transaction) => {
         await transaction.$queryRaw`SELECT "id" FROM "tenants" WHERE "id" = ${tenantId} FOR UPDATE`;
         // The units where the head holds people:manage, from their live assignments.
-        const { assignments } = await memberRoleGrants(transaction, tenantId, headUserId);
-        const headUnits = [
-          ...new Set(
-            assignments
-              .filter((assignment) => assignment.scope === 'UNITS' && holdsPermission(assignment.permissions, 'people:manage'))
-              .flatMap((assignment) => assignment.unitIds),
-          ),
-        ];
+        const headUnits = await this.peopleUnits(transaction, tenantId, headUserId, ['people:manage']);
         const authorized = await authorizeDelegatedPeopleAdd(transaction, tenantId, headUserId, headUnits, {
           unit: dto.unitId,
           roleIds: dto.customRoleIds,
@@ -880,6 +875,24 @@ export class TenancyService {
     return { id: created.id, email: created.email, expiresAt: created.expiresAt.toISOString(), token: rawToken };
   }
 
+  // The units where a member holds one of the given people permissions at UNITS scope — the reach of a delegated head:
+  // people:manage for writes (invite/add/resend/revoke), people:read for the tracker.
+  private async peopleUnits(
+    db: Parameters<typeof memberRoleGrants>[0],
+    tenantId: string,
+    userId: string,
+    permissions: readonly string[],
+  ): Promise<string[]> {
+    const { assignments } = await memberRoleGrants(db, tenantId, userId);
+    return [
+      ...new Set(
+        assignments
+          .filter((assignment) => assignment.scope === 'UNITS' && permissions.some((permission) => holdsPermission(assignment.permissions, permission)))
+          .flatMap((assignment) => assignment.unitIds),
+      ),
+    ];
+  }
+
   // WI-OI-120p slice 5 (R14, bulk add): a delegated head invites many people at once (CSV or a pasted list). Every row
   // is checked against the delegated rule and for separation of duties before anything is created; the batch is
   // all-or-nothing, so a single bad row returns the full list of errors and creates nothing. On success each invite is
@@ -888,14 +901,7 @@ export class TenancyService {
     return roleChangeConflicts(() =>
       prisma.$transaction(async (transaction) => {
         await transaction.$queryRaw`SELECT "id" FROM "tenants" WHERE "id" = ${tenantId} FOR UPDATE`;
-        const { assignments } = await memberRoleGrants(transaction, tenantId, headUserId);
-        const headUnits = [
-          ...new Set(
-            assignments
-              .filter((assignment) => assignment.scope === 'UNITS' && holdsPermission(assignment.permissions, 'people:manage'))
-              .flatMap((assignment) => assignment.unitIds),
-          ),
-        ];
+        const headUnits = await this.peopleUnits(transaction, tenantId, headUserId, ['people:manage']);
         const scope = await loadPeopleAdminScope(transaction, tenantId, headUserId, headUnits);
 
         const rows = dto.rows.map((row) => ({ ...row, email: row.email.trim().toLowerCase() }));
@@ -932,6 +938,129 @@ export class TenancyService {
               expiresInHours: dto.expiresInHours,
             }),
           );
+        return { count: invites.length, invites };
+      }),
+    );
+  }
+
+  // WI-OI-120p slice 5 (R14, join tracker): the delegated invitations a head can see — those into the units they
+  // manage (people:read or people:manage) — each with its single derived status, so a head can watch who has joined.
+  // No tokens are returned here; a head regenerates a link with resend.
+  async listDelegatedInvites(tenantId: string, headUserId: string) {
+    const units = await this.peopleUnits(prisma, tenantId, headUserId, ['people:read', 'people:manage']);
+    if (units.length === 0) return { invites: [] };
+    const rows = await prisma.tenantInvite.findMany({
+      where: { tenantId, unitId: { in: units } },
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      select: {
+        id: true,
+        email: true,
+        unitId: true,
+        customRoleIds: true,
+        createdAt: true,
+        expiresAt: true,
+        acceptedAt: true,
+        revokedAt: true,
+        invitedById: true,
+      },
+    });
+    const now = new Date();
+    return {
+      invites: rows.map((row) => ({
+        id: row.id,
+        email: row.email,
+        unitId: row.unitId,
+        customRoleIds: row.customRoleIds,
+        invitedById: row.invitedById,
+        createdAt: row.createdAt.toISOString(),
+        expiresAt: row.expiresAt.toISOString(),
+        acceptedAt: row.acceptedAt?.toISOString() ?? null,
+        status: inviteStatus(row, now),
+      })),
+    };
+  }
+
+  // WI-OI-120p slice 5 (R14): a head revokes many pending invitations at once. Only still-pending invites into units
+  // the head manages are touched; ids that are accepted, already revoked, or outside the head's units are skipped (not
+  // an error). Returns how many were revoked.
+  async bulkRevokeDelegatedInvites(tenantId: string, headUserId: string, dto: BulkInviteIdsDto) {
+    return prisma.$transaction(async (transaction) => {
+      await transaction.$queryRaw`SELECT "id" FROM "tenants" WHERE "id" = ${tenantId} FOR UPDATE`;
+      const units = await this.peopleUnits(transaction, tenantId, headUserId, ['people:manage']);
+      if (units.length === 0) return { revoked: 0, ids: [] as string[] };
+      const targets = await transaction.tenantInvite.findMany({
+        where: { tenantId, id: { in: dto.inviteIds }, unitId: { in: units }, acceptedAt: null, revokedAt: null },
+        select: { id: true },
+      });
+      const ids = targets.map((target) => target.id);
+      if (ids.length === 0) return { revoked: 0, ids };
+      await transaction.tenantInvite.updateMany({ where: { id: { in: ids } }, data: { revokedAt: new Date() } });
+      await transaction.auditLog.create({
+        data: {
+          action: 'PERMISSION_CHANGE',
+          resource: 'tenant_invite',
+          resourceId: ids[0] ?? headUserId,
+          userId: headUserId,
+          tenantId,
+          after: { revoked: ids, delegated: true },
+          metadata: { bulk: true },
+        },
+      });
+      return { revoked: ids.length, ids };
+    });
+  }
+
+  // WI-OI-120p slice 5 (R14): a head regenerates one-time links for many pending invitations at once (the earlier link
+  // was never delivered by email). Each target is re-authorized as if freshly invited — the head must still manage the
+  // unit, and still hold and be allowed the carried roles, SoD-clean — so a resend cannot outlive the head's authority.
+  // The batch is all-or-nothing; each rotated invite keeps its id and returns a fresh link once.
+  async bulkResendDelegatedInvites(tenantId: string, headUserId: string, dto: BulkInviteIdsDto) {
+    return roleChangeConflicts(() =>
+      prisma.$transaction(async (transaction) => {
+        await transaction.$queryRaw`SELECT "id" FROM "tenants" WHERE "id" = ${tenantId} FOR UPDATE`;
+        const headUnits = await this.peopleUnits(transaction, tenantId, headUserId, ['people:manage']);
+        const scope = await loadPeopleAdminScope(transaction, tenantId, headUserId, headUnits);
+        const targets =
+          headUnits.length === 0
+            ? []
+            : await transaction.tenantInvite.findMany({
+                where: { tenantId, id: { in: dto.inviteIds }, unitId: { in: headUnits }, acceptedAt: null, revokedAt: null },
+                select: { id: true, email: true, unitId: true, customRoleIds: true },
+              });
+        if (targets.length === 0) return { count: 0, invites: [] as { id: string; email: string; token: string }[] };
+
+        const rows = targets.map((target) => ({ email: target.email, unit: target.unitId ?? '', roleIds: target.customRoleIds }));
+        const validation = validateBulkPeopleAdd(rows, scope, new Set());
+        const graph = await loadRoleGraph(transaction, tenantId);
+        const sodErrors = rows.flatMap((row, index) => {
+          const permissions = [...new Set(row.roleIds.flatMap((roleId) => expandRole(graph, roleId)))];
+          const conflicts = dutyConflicts(permissions);
+          return conflicts.length === 0 ? [] : [{ index, email: row.email, code: 'DUTY_CONFLICT', message: conflicts.map((set) => set.reason).join(' ') }];
+        });
+        const errors = [...validation.errors, ...sodErrors].sort((a, b) => a.index - b.index);
+        if (errors.length > 0)
+          throw new BadRequestException({ code: 'BULK_VALIDATION_FAILED', message: `${errors.length} invitation(s) can no longer be resent; nothing was changed.`, errors });
+
+        const invites: { id: string; email: string; token: string }[] = [];
+        for (const target of targets) {
+          const rawToken = randomBytes(32).toString('base64url');
+          await transaction.tenantInvite.update({
+            where: { id: target.id },
+            data: { token: this.hashInviteToken(rawToken), expiresAt: new Date(Date.now() + dto.expiresInHours * 60 * 60 * 1_000), revokedAt: null },
+          });
+          invites.push({ id: target.id, email: target.email, token: rawToken });
+        }
+        await transaction.auditLog.create({
+          data: {
+            action: 'PERMISSION_CHANGE',
+            resource: 'tenant_invite',
+            resourceId: targets[0]?.id ?? headUserId,
+            userId: headUserId,
+            tenantId,
+            after: { resent: invites.map((invite) => invite.id), delegated: true },
+            metadata: { bulk: true, delivery: 'MANUAL_SECURE_LINK', tokenStoredAsHash: true },
+          },
+        });
         return { count: invites.length, invites };
       }),
     );

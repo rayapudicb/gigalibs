@@ -506,6 +506,31 @@ export const BulkDelegatedInviteSchema = z
   })
   .strict();
 export type BulkDelegatedInviteDto = z.infer<typeof BulkDelegatedInviteSchema>;
+
+// WI-OI-120p slice 5 (R14): the ids a bulk resend or revoke acts on. Each must be a pending invite in one of the
+// caller's units; ineligible ids (accepted, already revoked, or outside the caller's units) are skipped, not an error.
+export const BulkInviteIdsSchema = z
+  .object({
+    inviteIds: z.array(z.string().trim().min(1).max(64)).min(1).max(500),
+    expiresInHours: z.number().int().min(1).max(168).default(72),
+  })
+  .strict();
+export type BulkInviteIdsDto = z.infer<typeof BulkInviteIdsSchema>;
+
+export type InviteStatus = 'ACCEPTED' | 'REVOKED' | 'EXPIRED' | 'PENDING';
+
+// WI-OI-120p slice 5 (R14, join tracker): the single derived status of an invite. Acceptance is final (an accepted
+// invite stays accepted even past its expiry); otherwise an explicit revoke wins, then expiry, then it is still open.
+export function inviteStatus(
+  invite: { readonly acceptedAt: Date | null; readonly revokedAt: Date | null; readonly expiresAt: Date },
+  now: Date = new Date(),
+): InviteStatus {
+  if (invite.acceptedAt) return 'ACCEPTED';
+  if (invite.revokedAt) return 'REVOKED';
+  if (invite.expiresAt.getTime() <= now.getTime()) return 'EXPIRED';
+  return 'PENDING';
+}
+
 export type AcceptTenantInviteDto = z.infer<typeof AcceptTenantInviteSchema>;
 export type CreateCustomRoleDto = z.infer<typeof CreateCustomRoleSchema>;
 export type UpdateCustomRoleDto = z.infer<typeof UpdateCustomRoleSchema>;

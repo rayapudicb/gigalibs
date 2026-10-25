@@ -74,7 +74,12 @@ Owner approved starting Phase 3 while the Phase 2 deploy waits on disk. [WI-OI-1
   `writeDelegatedInvite` (returns one-time links, no email). Route `POST current/delegated-invitations/bulk`
   (`people:manage`). Integration-tested on a throwaway control DB (valid batch creates all + accept grants scoped
   role; out-of-unit + already-member batch creates none). Single-invite path re-verified; tenancy-nest 96 pass.
-  Remaining in slice 5: a join tracker and bulk resend/revoke. **Uncommitted — awaiting "commit".**
+  **Committed c855779c.**
+- **slice 5 tracker + bulk resend/revoke built (2026-10-25):** `inviteStatus` (pure, 4 tests); `listDelegatedInvites`
+  (join tracker, `GET current/delegated-invitations`, `people:read`, statuses, no tokens); `bulkRevokeDelegatedInvites`
+  and `bulkResendDelegatedInvites` (`people:manage`, pending-only, resend re-authorizes + rotates the link in place).
+  Integration suite now 5 tests (add/abort/tracker/resend/revoke); single-invite path re-verified; tenancy-nest 108
+  unit pass; audit:layers clean. **Slice 5 (R14) complete. Uncommitted — awaiting "commit".**
 - Not started: slice 6 workers-in-step (deferred), 7 bulk grants/offboarding, 8 directory groups/SSO (R15),
   9 cross-module scope, 10 platform-role review.
 
