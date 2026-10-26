@@ -22,7 +22,7 @@
    key derived from `JWT_ACCESS_SECRET` (HMAC with "gigalibs-mobile:access:v1"), with `aud`, `iss`, installation,
    profile and binding claims, 10 minutes. The web guard verifies with the root secret, so it refuses them; mobile
    refuses web tokens. Is deriving from the same root secret acceptable, or should mobile have its own secret?
-3. **Sessions** (`mobile-auth.service.ts`, migration `20261022000000_mobile_sessions`): a mobile sign-in is a
+3. **Sessions** (`mobile-auth.service.ts`, migration `20261026100000_mobile_sessions`): a mobile sign-in is a
    `sessions` row (so logout, password change and reset, member removal, SCIM, identity revocation and the sweep end
    it); its `refreshToken` column holds `mobile:<random>`, so the web `POST /auth/refresh` can never use it; the
    rotating refresh hash lives in `mobile_sessions`. Every request rechecks session, user, installation and profile;

@@ -1,8 +1,12 @@
 # WI-OI-120cf: Mobile v1 BFF — the platform producer for GigaLibs Mobile sign-in, session and read-only windows
 
-- **Status:** Review; slices 1 (identity and session) and 2 (local-network HTTPS address) committed `25bed181` on
-  `feat/mobile-v1-bff` (owner: "commit", 2026-10-22), awaiting the independent Security review
-  (`.pi/handoff/REVIEW-REQUEST-WI-OI-120cf.md`), then release and deployment (owner,
+- **Status:** Built (module complete, 2026-10-26): deploy group 2 of the fixed sequence (AGENTS.md, "v1 BFF, mobile app
+  logout, LAN profile", parallel to CMMS). First proof committed `25bed181` (owner "commit", 2026-10-22); module
+  completion (permission vectors, minimum app version, cleanup, migration renamed to sort after the main line, the
+  mobile team's connection guide) committed as the module-completion commit. Next: UAT deploy of group 2 by the owner
+  from a release worktree, then the Security review on UAT (owner, 2026-10-22: review after UAT, non-blocking;
+  request `.pi/handoff/REVIEW-REQUEST-WI-OI-120cf.md`). The app's own logout and LAN app profile are the mobile
+  team's (their repository). Decisions: owner,
   2026-10-22: "lets start mobile", then "mobile defaults ok": a local-network HTTPS address, TOTP only, first proof
   only). Worktree `gigalibs-mobile-bff`, branch `feat/mobile-v1-bff` from the SPEED branch `dc99f1bb` (it carries the
   trial-workspace sign-in fix; UAT's release branch is built from it). The mobile team's contract
@@ -52,7 +56,7 @@ login) and `verifyTotpForSignIn` (the same TOTP lock, replay and attempt countin
 **Sessions.** A mobile sign-in is an ordinary row in `sessions`, so every existing revocation ends it too (logout,
 password change or reset, member removal, SCIM, identity revocation, expiry sweep). Its web refresh column holds a
 random `mobile:` value nobody has, so the web refresh can never use a mobile session (tested). Mobile-only facts are in
-four new tables (forward migration `20261022000000_mobile_sessions`, no change to existing tables):
+four new tables (forward migration `20261026100000_mobile_sessions`, no change to existing tables):
 `mobile_sessions` (installation, app profile, refresh-token hash, revision), `mobile_retired_refresh_tokens`,
 `mobile_mfa_challenges`, `mobile_switch_outcomes`. Secrets are stored as SHA-256 or sealed.
 
@@ -148,13 +152,31 @@ user-installed authority when its network security configuration allows user cer
   predate this branch and are identical on the unchanged SPEED worktree `dc99f1bb`: Finance record adapters and module conversions (`finance-product-standard-costs`, from
   `b85a4244`, WI-OI-120bq); two API specs that need `CONTROL_PAYLOAD_KEY_VERSION` from a `.env` this worktree lacks.
 
+## Slice 3: module completion (built 2026-10-26)
+
+- **Permission conformance:** the mobile team's `mobile-permission-conformance-v1.json` (copied unchanged into
+  `packages/contracts/src/mobile/`) runs against the platform's `holdsPermission`: all 12 vectors agree.
+- **Minimum app version:** `MOBILE_MIN_APP_VERSION` (optional; compose, deployment profile and `.env.example` declare
+  it). When set, every route but logout refuses an app below it, or one that does not send
+  `X-Gigalibs-App-Version`, with `426 MOBILE_CONTRACT_UNSUPPORTED`. A pre-release counts below its release.
+- **Cleanup:** `pruneMobileAuthState` (auth-nest), run by the data-retention worker after the login-throttle pruning:
+  MFA challenges an hour past expiry, switch outcomes past expiry, and retired refresh-token hashes of ended sessions
+  or older than the refresh lifetime. Sessions and the audit log stay.
+- **Migration order:** renamed `20261022000000_mobile_sessions` → `20261026100000_mobile_sessions` (deployed nowhere)
+  so it sorts after the main line's latest (`20261026030000_platform_reference_data`). Applying the mobile commits onto
+  the main line (`git merge-tree`, base `dc99f1bb`) conflicts only in `packages/contracts/src/index.ts` (both append an
+  export).
+- **Connection guide for the mobile team:** `docs/mobile/MOBILE_V1_CONNECT.md` on the branch: origin, certificate
+  trust (iOS and Android), app profile, headers, routes, behaviour, problem codes, what is not served.
+- **Evidence:** 62 mobile tests pass (unit 38, flows on PostgreSQL 15, over HTTP 4, LAN proxy 5) on a fresh
+  `mobile_bff_proof` database migrated from scratch with no drift; the earlier run's data is kept as
+  `mobile_bff_proof_run_20261022` in the same container.
+
 ### Not built (recorded)
 
 - `issuerId` and `membershipId` in the token response: needs a new token contract version from the mobile team.
-- Minimum app version and maintenance answers; `x-gigalibs-app-version` is forwarded but not yet checked.
-- Retention: retired refresh tokens and spent challenges are kept with their session (at most one row per refresh);
-  a sweep belongs with the session retention worker.
-- Mobile logout in the app (`mobile-logout.v1` is the mobile team's proposed shape; the platform accepts it).
+- Maintenance answers (no public bootstrap is served; the app's entry is build-owned).
+- Mobile logout and the LAN app profile in the app: the mobile team's repository.
 - Windows, records, lookups and module grants: the second card.
 
 ## Scope when started (first proof only)
