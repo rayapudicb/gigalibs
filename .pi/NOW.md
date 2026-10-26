@@ -127,8 +127,14 @@ Owner approved starting Phase 3 while the Phase 2 deploy waits on disk. [WI-OI-1
   Integration test now 5 (fulfillment/invoice/memo dept-isolation green); bumped throwaway-pg connect timeout 60→180
   (container start slow under many-container load). Orders suite 7 pass. **Uncommitted — awaiting "commit"** (one
   logical change with the fulfillment work from the prior turn).
-- Remaining slice 9 (diminishing value): only Procurement vendor-bills/debit-memos (join bill→PO). The per-module
-  `organization-scope.ts` copy is by-design (nest glue).
+- **slice 9 — Procurement vendor bills / debit memos built (2026-10-26) → SLICE 9 COMPLETE:** both carry no
+  `org_unit_id`; scoped by joining to their purchase order (`purchaseOrderUnit`/`vendorBillUnit`/`debitMemoUnit`; a
+  memo reaches its PO directly or via its bill). get/list/approve/create for both scoped (no caller churn — already
+  took `ModulePrincipal`); integration test now 5 (vendor-bill dept-isolation green); proc throwaway-pg timeout
+  60→180. Procurement suite 16 pass. **Uncommitted — awaiting "commit".**
+- **Slice 9 COMPLETE:** every unit-bearing record + downstream doc across all modules is org-scoped with
+  cross-department tests. Optional leftovers only: Procurement approval-policies list (config); finance fixed-asset DB
+  integration test (deferred). The per-module `organization-scope.ts` copy is by-design (nest glue).
 - WI-OI-120p remaining is otherwise gated: slice 6 (WI-OI-120o, deferred), slice 7-grant + the R5 allow-list flip
   (owner/Security), slice 8 SSO (credentials).
 

@@ -78,6 +78,8 @@ integration('Procurement organization scope (isolated PostgreSQL)', () => {
   const southReq = randomUUID();
   const northPo = randomUUID();
   const southPo = randomUUID();
+  const northBill = randomUUID();
+  const southBill = randomUUID();
 
   beforeAll(async () => {
     pg = await startThrowawayPostgres(`gigalibs-proc-scope-${process.pid}`);
@@ -116,6 +118,17 @@ integration('Procurement organization scope (isolated PostgreSQL)', () => {
           `INSERT INTO ${SCHEMA}.purchase_orders (id, tenant_id, order_number, org_unit_id, vendor_party_id, vendor_name, destination_warehouse_id, status)
            VALUES ($1, $2, $3, $4, $5, 'Acme', $6, 'DRAFT')`,
           [id, tenantId, number, unit, randomUUID(), randomUUID()],
+        );
+      }
+      // A vendor bill per PO — bills carry no unit, so scope follows the parent purchase order.
+      for (const [id, po, number] of [
+        [northBill, northPo, 'VB-N'],
+        [southBill, southPo, 'VB-S'],
+      ] as const) {
+        await client.query(
+          `INSERT INTO ${SCHEMA}.vendor_bills (id, tenant_id, vendor_party_id, vendor_invoice_number, invoice_date, due_date, subtotal_minor, total_amount_minor, purchase_order_id)
+           VALUES ($1, $2, $3, $4, NOW(), NOW(), 0, 0, $5)`,
+          [id, tenantId, randomUUID(), number, po],
         );
       }
     });
@@ -168,6 +181,18 @@ integration('Procurement organization scope (isolated PostgreSQL)', () => {
     });
     await expect(service.issuePurchaseOrder(northMember, northPo)).resolves.toMatchObject({
       status: 'ISSUED',
+    });
+  });
+
+  it('vendor bills follow their purchase order: a north member lists/reads only north', async () => {
+    expect((await service.listVendorBills(northMember)).map((b) => b.vendorInvoiceNumber)).toEqual([
+      'VB-N',
+    ]);
+    await expect(service.getVendorBill(northMember, southBill)).rejects.toMatchObject({
+      status: 404,
+    });
+    await expect(service.getVendorBill(northMember, northBill)).resolves.toMatchObject({
+      vendorInvoiceNumber: 'VB-N',
     });
   });
 });

@@ -1047,6 +1047,8 @@ export class ProcurementService {
 
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
       await requireActiveVendorParty(client, principal.tenantId, input.vendorPartyId);
+      // WI-OI-120p slice 9: a bill may be raised only against a purchase order the member may change.
+      assertWritableUnit(await resolveOrganizationAccess(client, principal), await this.purchaseOrderUnit(client, principal.tenantId, input.purchaseOrderId ?? null));
 
       let subtotalMinor = 0n;
       let taxTotalMinor = 0n;
@@ -1172,17 +1174,56 @@ export class ProcurementService {
     });
   }
 
+  // WI-OI-120p slice 9: vendor bills and debit memos carry no unit of their own; their scope is their purchase order's
+  // unit (a debit memo may reach it directly or via its vendor bill). A record with no purchase order is tenant-shared.
+  private async purchaseOrderUnit(client: PoolClient, tenantId: string, poId: string | null): Promise<string | null> {
+    if (!poId) return null;
+    const res = await client.query<{ org_unit_id: string | null }>(
+      `SELECT org_unit_id FROM ${SCHEMA}.purchase_orders WHERE tenant_id = $1 AND id = $2`,
+      [tenantId, poId],
+    );
+    return res.rows[0]?.org_unit_id ?? null;
+  }
+
+  private async vendorBillUnit(client: PoolClient, tenantId: string, billId: string | null): Promise<string | null> {
+    if (!billId) return null;
+    const res = await client.query<{ purchase_order_id: string | null }>(
+      `SELECT purchase_order_id FROM ${SCHEMA}.vendor_bills WHERE tenant_id = $1 AND id = $2`,
+      [tenantId, billId],
+    );
+    return this.purchaseOrderUnit(client, tenantId, res.rows[0]?.purchase_order_id ?? null);
+  }
+
+  private async debitMemoUnit(
+    client: PoolClient,
+    tenantId: string,
+    parents: { purchaseOrderId: string | null; vendorBillId: string | null },
+  ): Promise<string | null> {
+    if (parents.purchaseOrderId) return this.purchaseOrderUnit(client, tenantId, parents.purchaseOrderId);
+    return this.vendorBillUnit(client, tenantId, parents.vendorBillId);
+  }
+
   async getVendorBill(principal: ModulePrincipal, id: string): Promise<VendorBillV1> {
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
-      return this.fetchVendorBill(client, principal.tenantId, id);
+      const bill = await this.fetchVendorBill(client, principal.tenantId, id);
+      // WI-OI-120p slice 9: a bill whose purchase order is out of the member's scope reads as not-found.
+      const access = await resolveOrganizationAccess(client, principal);
+      if (!canReadUnit(access, await this.vendorBillUnit(client, principal.tenantId, id))) throw new NotFoundException(`Vendor Bill ${id} not found.`);
+      return bill;
     });
   }
 
   async listVendorBills(principal: ModulePrincipal): Promise<VendorBillV1[]> {
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
+      // WI-OI-120p slice 9: list only bills whose purchase order is in the member's units (tenant-shared when none).
+      const access = await resolveOrganizationAccess(client, principal);
+      const params: unknown[] = [principal.tenantId];
+      const scope = orgReadCondition(access, 'po.org_unit_id', (value) => `$${params.push(value)}`);
       const res = await client.query<{ id: string }>(
-        `SELECT id FROM ${SCHEMA}.vendor_bills WHERE tenant_id = $1 ORDER BY created_at DESC`,
-        [principal.tenantId],
+        `SELECT b.id FROM ${SCHEMA}.vendor_bills b
+         LEFT JOIN ${SCHEMA}.purchase_orders po ON po.id = b.purchase_order_id
+         WHERE b.tenant_id = $1 AND ${scope} ORDER BY b.created_at DESC`,
+        params,
       );
       const items: VendorBillV1[] = [];
       for (const row of res.rows) {
@@ -1195,6 +1236,11 @@ export class ProcurementService {
   async approveVendorBill(principal: ModulePrincipal, id: string): Promise<VendorBillV1> {
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
       const bill = await this.fetchVendorBill(client, principal.tenantId, id);
+      // WI-OI-120p slice 9: out-of-read → not-found; out-of-write → Forbidden.
+      const access = await resolveOrganizationAccess(client, principal);
+      const unit = await this.vendorBillUnit(client, principal.tenantId, id);
+      if (!canReadUnit(access, unit)) throw new NotFoundException(`Vendor Bill ${id} not found.`);
+      assertWritableUnit(access, unit);
       if (bill.status === 'PRICE_VARIANCE_HOLD') {
         throw new ConflictException(`Vendor Bill ${bill.vendorInvoiceNumber} is on PRICE_VARIANCE_HOLD and cannot be approved without variance resolution.`);
       }
@@ -1218,6 +1264,11 @@ export class ProcurementService {
   ): Promise<DebitMemoV1> {
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
       await requireActiveVendorParty(client, principal.tenantId, input.vendorPartyId);
+      // WI-OI-120p slice 9: a debit memo may be raised only against a purchase order (direct or via its bill) the member may change.
+      assertWritableUnit(
+        await resolveOrganizationAccess(client, principal),
+        await this.debitMemoUnit(client, principal.tenantId, { purchaseOrderId: input.purchaseOrderId ?? null, vendorBillId: input.vendorBillId ?? null }),
+      );
 
       const countRes = await client.query<{ count: string }>(
         `SELECT COUNT(*) as count FROM ${SCHEMA}.debit_memos WHERE tenant_id = $1`,
@@ -1318,15 +1369,35 @@ export class ProcurementService {
 
   async getDebitMemo(principal: ModulePrincipal, id: string): Promise<DebitMemoV1> {
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
-      return this.fetchDebitMemo(client, principal.tenantId, id);
+      const memo = await this.fetchDebitMemo(client, principal.tenantId, id);
+      // WI-OI-120p slice 9: scoped by the memo's purchase order (direct or via its vendor bill).
+      const access = await resolveOrganizationAccess(client, principal);
+      const parents = await client.query<{ purchase_order_id: string | null; vendor_bill_id: string | null }>(
+        `SELECT purchase_order_id, vendor_bill_id FROM ${SCHEMA}.debit_memos WHERE tenant_id = $1 AND id = $2`,
+        [principal.tenantId, id],
+      );
+      const unit = await this.debitMemoUnit(client, principal.tenantId, {
+        purchaseOrderId: parents.rows[0]?.purchase_order_id ?? null,
+        vendorBillId: parents.rows[0]?.vendor_bill_id ?? null,
+      });
+      if (!canReadUnit(access, unit)) throw new NotFoundException(`Debit Memo ${id} not found.`);
+      return memo;
     });
   }
 
   async listDebitMemos(principal: ModulePrincipal): Promise<DebitMemoV1[]> {
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
+      // WI-OI-120p slice 9: scope by the memo's purchase order via either parent path (direct, or via vendor bill).
+      const access = await resolveOrganizationAccess(client, principal);
+      const params: unknown[] = [principal.tenantId];
+      const scope = orgReadCondition(access, 'COALESCE(po1.org_unit_id, po2.org_unit_id)', (value) => `$${params.push(value)}`);
       const res = await client.query<{ id: string }>(
-        `SELECT id FROM ${SCHEMA}.debit_memos WHERE tenant_id = $1 ORDER BY created_at DESC`,
-        [principal.tenantId],
+        `SELECT m.id FROM ${SCHEMA}.debit_memos m
+         LEFT JOIN ${SCHEMA}.purchase_orders po1 ON po1.id = m.purchase_order_id
+         LEFT JOIN ${SCHEMA}.vendor_bills vb ON vb.id = m.vendor_bill_id
+         LEFT JOIN ${SCHEMA}.purchase_orders po2 ON po2.id = vb.purchase_order_id
+         WHERE m.tenant_id = $1 AND ${scope} ORDER BY m.created_at DESC`,
+        params,
       );
       const items: DebitMemoV1[] = [];
       for (const row of res.rows) {

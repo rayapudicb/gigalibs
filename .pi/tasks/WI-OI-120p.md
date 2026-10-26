@@ -141,9 +141,21 @@
   a North member sees only North's fulfillments, invoices and credit memos). Also bumped the throwaway-postgres connect
   timeout (60→180 attempts) — a fresh container can take >15s to accept connections when the host runs many containers.
   Orders suite 7 pass; typecheck clean.
-- **Slice 9 — remaining (identical join pattern, diminishing value):** only **Procurement vendor bills / debit memos**
-  (no `org_unit_id`; join bill→PO, memo→bill→PO) remain. Note: the per-module `organization-scope.ts` is duplicated
-  across
+- **Slice 9 — Procurement vendor bills / debit memos built (2026-10-26) → slice 9 COMPLETE:** both carry no
+  `org_unit_id`; scoped by joining to their purchase order (`purchaseOrderUnit`/`vendorBillUnit`/`debitMemoUnit`
+  helpers; a debit memo reaches its PO directly or via its vendor bill). `getVendorBill`/`listVendorBills`/
+  `approveVendorBill`/`createVendorBill` and `getDebitMemo`/`listDebitMemos`/`createDebitMemo` all scoped (out-of-read →
+  not-found, out-of-write → Forbidden; lists LEFT JOIN the PO, COALESCE for the memo's two parent paths). These methods
+  already took `ModulePrincipal`, so no caller churn. Integration test extended (now 5, Docker-gated, run green: a
+  North member lists/reads only North's vendor bill). Procurement suite 16 pass; typecheck clean. Also bumped the
+  procurement throwaway-postgres connect timeout 60→180 (matching Orders).
+- **Slice 9 — COMPLETE:** every unit-bearing record and every downstream document across all main modules is now
+  organization-scoped (dept-isolated) with cross-department tests — Procurement (requisitions, POs, vendor bills, debit
+  memos), Orders (quotes, orders, fulfillments, invoices, credit memos, returns, AR projections), Finance (fixed
+  assets), CMMS (work orders, units+places), Analytics/Catalogue/Workforce/Geospatial (pre-existing). Minor/optional
+  leftovers only: Procurement approval-policies list (config, has a nullable `org_unit_id`) and a finance fixed-asset DB
+  integration test (deferred, logic identical to the Docker-proven modules). Note: the per-module
+  `organization-scope.ts` is duplicated across
   Procurement/Orders/Finance, but **by design** — the glue maps module-sdk's plain `OrganizationScopeRefusal`/
   `OrganizationVersionPendingError` to NestJS `ForbiddenException`/`ServiceUnavailableException`, and `module-sdk` is
   deliberately Nest-agnostic, so the nest glue lives per nest module (Analytics does the same). Not a shared-helper
