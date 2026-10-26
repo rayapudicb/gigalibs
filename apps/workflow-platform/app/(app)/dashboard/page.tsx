@@ -8,7 +8,11 @@ export default async function DashboardPage() {
   if (session.response?.status === 401) redirect('/login');
   if (session.response) redirect('/modules');
 
-  const persona = determinePersona(session.context.roles, session.context.platformRoles);
+  const persona = determinePersona(
+    session.context.roles,
+    session.context.platformRoles,
+    session.context.permissions,
+  );
   const permitted = new Set([
     'C_LEVEL',
     'TENANT_ADMIN',

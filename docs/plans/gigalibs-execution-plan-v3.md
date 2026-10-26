@@ -309,7 +309,7 @@ work. The Assistant can do the same on Workforce, within the same limits.
 | 3.2 | R13 Delegated people administration | WI-OI-120p | Proposed |
 | 3.3 | R14 Bulk people: import, invitations, grants, offboarding | WI-OI-120p | Proposed |
 | 3.4 | R15 Directory groups mapped to scoped roles, plus single sign-on (OIDC and SAML) | WI-OI-120p, WI-OI-013 | SCIM exists; SSO not built |
-| 3.5 | R16 Personas from roles | WI-OI-120p | Proposed |
+| 3.5 | R16 Personas from roles | WI-OI-120p | Built 2026-10-26 (local; capability-aware `determinePersona`) |
 | 3.6 | T11b Full set-up wizard: all chosen modules and solution packs | new | Not started |
 | 3.7 | T8b Metering, quotas and billing hand-off | WI-OI-015 | Not built |
 | 3.8 | T9b Retention classes and legal hold | new | Not started |

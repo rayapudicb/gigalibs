@@ -33,6 +33,33 @@ modules:
   grant nothing); the successful scoped write reuses the org-tree-in-force `resolveRoleScope` path (covered by its own
   tests). tenancy-nest 107 unit pass; typecheck clean. **Slice 7 (bulk grants + offboarding) complete.**
 
+## R16 — personas from roles (2026-10-26) — BUILT
+
+Plan item 3.5. The persona resolver (`contracts/auth/platform-context.ts`, `determinePersona`) was purely name-based:
+a role whose name matched none of the hardcoded sets fell through to `CUSTOMER_GUEST`. With custom and per-module roles
+now first-class (slices 1–2), that hid the whole product from anyone holding only a custom role — e.g. a "Maintenance
+Planner" with `cmms:work-orders:write` got the guest navigation lens and saw nothing.
+
+Fix: persona is now the **highest** rung a member's role **names** or their **permissions** imply (a six-rung ladder
+GUEST < WORKFORCE_MEMBER < OPERATIONS_SUPERVISOR < TENANT_ADMIN < C_LEVEL < PLATFORM_OPERATOR). Names keep their exact
+historical mapping (no known role regresses — `Math.max` only raises); permissions add a capability signal derived from
+real catalogued codes: workspace administration (`settings:update`, `roles:*`, `tenant:update`, `billing:update`,
+`users:delete`) → TENANT_ADMIN; approving/assigning/publishing work or managing people in a scope (`*:approve`,
+`people:manage`, `roles:assign`, `organization:grant`, …) → OPERATIONS_SUPERVISOR; any other business-record write →
+WORKFORCE_MEMBER; reads/self-service only → CUSTOMER_GUEST.
+
+Safety: persona is a **navigation lens only** (`personaSeesModule` is its sole consumer — verified repo-wide; nothing
+authorises on it), so a capability-derived persona only widens the sidebar, never grants data access the member's
+permissions do not already carry. The permission signal **caps at TENANT_ADMIN** — PLATFORM_OPERATOR and C_LEVEL stay
+identity (platform-/executive-role names), so a tenant can never mint either by granting permissions. `permissions` is
+an optional 3rd arg, so any pre-R16 caller (names only) keeps its exact result.
+
+Threaded through all three mint/derive sites: the signed-context builder (`auth-core`, passes the member's
+`granted_scopes`) and both web consumers (`dashboard/page.tsx`, `AppSidebar.tsx`, pass `session.permissions`). Proof:
+`contracts/auth/persona-from-roles.test.ts` (10 cases incl. the custom-role fix, the people:manage-is-a-supervisor-not-
+admin boundary, the max/no-regression semantics, the `*`→TENANT_ADMIN cap, and each base role's permission set);
+existing `persona-routing` + `executive-control-tower` web tests still green (14). Typecheck 12/12; no new lint.
+
 ## Progress (2026-10-24)
 
 - **Slice 1 (module roles):** largely in place — modules declare `roles:` in `module.yaml` and `syncDefaultRoles`

@@ -281,7 +281,9 @@ export function buildPlatformContext(
     auth_version: subject.authVersion,
     roles: [...subject.roles],
     granted_scopes: grantedScopes,
-    persona_type: determinePersona([...subject.roles], [...subject.platformRoles]),
+    // R16 (WI-OI-120p): persona follows the member's capability as well as their role names, so a custom role lands on
+    // a sensible navigation lens instead of CUSTOMER_GUEST. `grantedScopes` is the member's effective permission set.
+    persona_type: determinePersona([...subject.roles], [...subject.platformRoles], grantedScopes),
     org_scope:
       scope.orgScope.mode === 'SCOPED_DEPARTMENTS'
         ? { mode: 'SCOPED_DEPARTMENTS', department_ids: [...scope.orgScope.departmentIds] }

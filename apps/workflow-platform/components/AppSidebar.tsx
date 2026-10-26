@@ -136,7 +136,7 @@ export default function AppSidebar({
   // 'personal-security' is accessed via top-right UserNav avatar menu, not as a business module.
   const SIDEBAR_HIDDEN_KEYS = new Set(['solutions', 'personal-security']);
 
-  const naturalPersona = determinePersona(session.roles, session.platformRoles);
+  const naturalPersona = determinePersona(session.roles, session.platformRoles, session.permissions);
   const [activePersona, setActivePersona] = useState<PlatformContextPersona>(naturalPersona);
   const isSimulating = activePersona !== naturalPersona;
 

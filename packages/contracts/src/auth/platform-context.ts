@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { MAX_ORG_GRANTS_PER_MEMBER, OrganizationScopeV2Schema } from '../organization/index.js';
 import { SpatialScopePlaceIdsSchema } from '../geospatial/index.js';
+import { holdsAnyPermission, permissionParts } from '../rbac/permission-match.js';
 
 export const PlatformContextPersonaSchema = z.enum([
   'PLATFORM_OPERATOR',
@@ -189,63 +190,135 @@ export const PlatformContextV1Schema = z.object({
 export type PlatformContextV1 = z.infer<typeof PlatformContextV1Schema>;
 
 /**
- * Pure, browser-safe persona resolution from tenant and platform role names (moved here from the web shell in
- * WI-OI-104c so the kernel worker and the web sign identical module contexts).
+ * The persona authority ladder, lowest rung first. A member sits at the highest rung their role names or their
+ * permissions reach (WI-OI-120p R16); the array index is the rank used below.
+ */
+const PERSONA_LADDER = [
+  'CUSTOMER_GUEST', // 0 — reads, or has nothing to do
+  'WORKFORCE_MEMBER', // 1 — does operational work
+  'OPERATIONS_SUPERVISOR', // 2 — approves/assigns work, manages people within a scope
+  'TENANT_ADMIN', // 3 — administers the workspace
+  'C_LEVEL', // 4 — executive standing (role names only)
+  'PLATFORM_OPERATOR', // 5 — operates the platform itself (platform roles only)
+] as const satisfies readonly PlatformContextPersona[];
+
+/** Platform-role names that operate the platform; any one makes the member a PLATFORM_OPERATOR. */
+const PLATFORM_OPERATOR_ROLE_NAMES = ['PLATFORM_OWNER', 'PLATFORM_ADMIN', 'PLATFORM_OPERATOR', 'PLATFORM_AUDITOR', 'PLATFORM_SUPPORT'];
+
+// Historical role-name → ladder rung, kept verbatim from the pre-R16 heuristic so no known role moves rung.
+const C_LEVEL_ROLE_NAMES = ['OWNER', 'C_LEVEL', 'EXECUTIVE', 'CEO', 'CFO', 'CTO', 'COO'];
+const TENANT_ADMIN_ROLE_NAMES = ['SUPER_ADMIN', 'ADMIN', 'TENANT_ADMIN'];
+const OPERATIONS_SUPERVISOR_ROLE_NAMES = ['SUPERVISOR', 'MANAGER', 'DISPATCHER', 'OPERATIONS_SUPERVISOR'];
+const WORKFORCE_MEMBER_ROLE_NAMES = ['WORKFORCE_MEMBER', 'MEMBER', 'WORKER', 'OPERATOR', 'TECHNICIAN'];
+
+/** The highest ladder rung the (tenant) role names reach; platform roles are resolved before this is called. */
+function personaRankFromNames(roles: string[]): number {
+  const upper = new Set(roles.map((r) => r.toUpperCase()));
+  if (C_LEVEL_ROLE_NAMES.some((name) => upper.has(name))) return 4;
+  if (TENANT_ADMIN_ROLE_NAMES.some((name) => upper.has(name))) return 3;
+  if (OPERATIONS_SUPERVISOR_ROLE_NAMES.some((name) => upper.has(name))) return 2;
+  if (WORKFORCE_MEMBER_ROLE_NAMES.some((name) => upper.has(name))) return 1;
+  return 0;
+}
+
+// Administering the workspace: managing roles, settings, the tenant or billing, or removing people outright.
+const TENANT_ADMIN_PERMISSION_SIGNALS = [
+  'settings:update',
+  'roles:create',
+  'roles:update',
+  'roles:delete',
+  'tenant:update',
+  'tenant:export',
+  'users:delete',
+  'billing:update',
+];
+// Supervising work: approving/assigning/publishing others' work, or managing people and access within a scope.
+const OPERATIONS_SUPERVISOR_PERMISSION_SIGNALS = [
+  'people:manage',
+  'users:create',
+  'users:update',
+  'invites:create',
+  'invites:delete',
+  'roles:assign',
+  'organization:grant',
+  'organization:approve',
+  'organization:activate',
+  'actions:approve',
+  'spend:approve',
+  'esign:sign',
+  'recovery:action',
+  'exceptions:assign',
+  'exceptions:recover',
+  'exceptions:resolve',
+  'finance:journals:approve',
+  'finance:journals:post',
+  'inventory:adjust:approve',
+  'inventory:counts:approve',
+  'procurement:orders:approve',
+  'procurement:requisitions:approve',
+  'procurement:variance:override',
+  'orders:quotes:approve',
+  'catalogues:approve',
+  'catalogues:publish',
+  'pricing:approve',
+  'configuration:approve',
+  'configuration:publish',
+  'workflows:publish',
+  'analytics:models:publish',
+  'contracts:publish',
+];
+
+// Families that are self-service, collaboration or read-only config — holding one is not "operational work".
+const NON_OPERATIONAL_FAMILIES = new Set(['profile', 'content', 'dashboard', 'chat', 'comments', 'configuration-runtime']);
+// Actions that only observe or compute, never change a business record.
+const NON_OPERATIONAL_ACTIONS = new Set(['read', 'list', 'view', 'export', 'evaluate', 'test', 'convert', 'verify', 'credentials']);
+
+/** Whether a single permission lets its holder change a business record (so, at least, a workforce member). */
+function impliesOperationalWork(code: string): boolean {
+  const parts = permissionParts(code);
+  if (!parts) return false;
+  if (parts.length === 1) return true; // `*` — every action, everywhere
+  const family = parts[0];
+  const action = parts[parts.length - 1];
+  if (family === undefined || action === undefined) return false;
+  if (NON_OPERATIONAL_FAMILIES.has(family)) return false;
+  if (parts.length === 2 && action === '*') return true; // a family wildcard covers that family's writes
+  return !NON_OPERATIONAL_ACTIONS.has(action);
+}
+
+/** The highest ladder rung the permissions reach. Capped at TENANT_ADMIN — see {@link determinePersona}. */
+function personaRankFromPermissions(permissions: readonly string[]): number {
+  if (holdsAnyPermission(permissions, TENANT_ADMIN_PERMISSION_SIGNALS)) return 3;
+  if (holdsAnyPermission(permissions, OPERATIONS_SUPERVISOR_PERMISSION_SIGNALS)) return 2;
+  if (permissions.some(impliesOperationalWork)) return 1;
+  return 0;
+}
+
+/**
+ * Pure, browser-safe persona resolution (moved here from the web shell in WI-OI-104c so the kernel worker and the web
+ * sign identical module contexts).
+ *
+ * WI-OI-120p (R16, personas from roles): a member's persona is the HIGHEST authority their role names or their
+ * permissions imply. Names keep their historical mapping, so no known role regresses; permissions add a capability
+ * signal so a CUSTOM role — one whose name matches nothing — still lands on a sensible persona instead of falling
+ * through to CUSTOMER_GUEST and hiding the whole product from someone who can plainly work in it.
+ *
+ * Persona is a NAVIGATION lens only (`personaSeesModule`): it decides which modules the shell offers, never whether a
+ * request is authorised — every module still enforces its own permissions on the data. So a capability-derived persona
+ * can widen the sidebar but never grants access the member's permissions do not already carry.
+ *
+ * Platform operation (PLATFORM_OPERATOR) and executive standing (C_LEVEL) are identity, not tenant capability, so they
+ * come only from platform- and tenant-role NAMES; a tenant can never mint either by granting permissions. The
+ * permission signal therefore caps at TENANT_ADMIN. `permissions` is optional, so a caller minted before R16 (names
+ * only) keeps its exact historical result.
  */
 export function determinePersona(
   roles: string[],
   platformRoles: string[],
+  permissions: readonly string[] = [],
 ): PlatformContextPersona {
   const upperPlatformRoles = new Set(platformRoles.map((r) => r.toUpperCase()));
-  if (
-    upperPlatformRoles.has('PLATFORM_OWNER') ||
-    upperPlatformRoles.has('PLATFORM_ADMIN') ||
-    upperPlatformRoles.has('PLATFORM_OPERATOR') ||
-    upperPlatformRoles.has('PLATFORM_AUDITOR') ||
-    upperPlatformRoles.has('PLATFORM_SUPPORT')
-  ) {
-    return 'PLATFORM_OPERATOR';
-  }
-
-  const upperRoles = new Set(roles.map((r) => r.toUpperCase()));
-  if (
-    upperRoles.has('OWNER') ||
-    upperRoles.has('C_LEVEL') ||
-    upperRoles.has('EXECUTIVE') ||
-    upperRoles.has('CEO') ||
-    upperRoles.has('CFO') ||
-    upperRoles.has('CTO') ||
-    upperRoles.has('COO')
-  ) {
-    return 'C_LEVEL';
-  }
-
-  if (
-    upperRoles.has('SUPER_ADMIN') ||
-    upperRoles.has('ADMIN') ||
-    upperRoles.has('TENANT_ADMIN')
-  ) {
-    return 'TENANT_ADMIN';
-  }
-
-  if (
-    upperRoles.has('SUPERVISOR') ||
-    upperRoles.has('MANAGER') ||
-    upperRoles.has('DISPATCHER') ||
-    upperRoles.has('OPERATIONS_SUPERVISOR')
-  ) {
-    return 'OPERATIONS_SUPERVISOR';
-  }
-
-  if (
-    upperRoles.has('WORKFORCE_MEMBER') ||
-    upperRoles.has('MEMBER') ||
-    upperRoles.has('WORKER') ||
-    upperRoles.has('OPERATOR') ||
-    upperRoles.has('TECHNICIAN')
-  ) {
-    return 'WORKFORCE_MEMBER';
-  }
-
-  return 'CUSTOMER_GUEST';
+  if (PLATFORM_OPERATOR_ROLE_NAMES.some((name) => upperPlatformRoles.has(name))) return 'PLATFORM_OPERATOR';
+  const rank = Math.max(personaRankFromNames(roles), personaRankFromPermissions(permissions));
+  return PERSONA_LADDER[rank] ?? 'CUSTOMER_GUEST';
 }
