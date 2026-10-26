@@ -314,7 +314,7 @@ work. The Assistant can do the same on Workforce, within the same limits.
 | 3.7 | T8b Metering, quotas and billing hand-off | WI-OI-015 | Usage counters + plan quotas + billing statement built 2026-10-26 (local); rate-limiter governor pre-existing; Redis hot-path, Stripe sync, alerts deferred |
 | 3.8 | T9b Retention classes and legal hold | new | Classes + purge wiring built 2026-10-26 (local); legal hold pre-existing; per-record cross-module classification deferred |
 | 3.9 | X1 UX standard version 2 | WI-OI-120b closes here | 120b in progress; this session's new UI (S17, T11b) brought to design-token conformance 2026-10-26 |
-| 3.10 | X2 Task benchmark (a measurement, not a gate) | new | Not started |
+| 3.10 | X2 Task benchmark (a measurement, not a gate) | new | Day-1 onboarding benchmark built 2026-10-26 (local): 8 tasks, 88% automatable, 200-person import in 1 call vs 600 |
 
 **Exit:** a department head adds 200 people in one import, within allowances. Single sign-on, directory groups and
 the set-up wizard work. Usage is metered. Administrators can invite, grant and offboard through the Assistant, with
