@@ -1,6 +1,6 @@
 /** WI-OI-120p slice 4 (R13): delegated people-administration authorization. */
 import { describe, expect, it } from 'vitest';
-import { assertDelegatedPeopleAdd, validateBulkPeopleAdd } from './people-admin.js';
+import { assertDelegatedPeopleAdd, validateBulkPeopleAdd, validateBulkPeopleGrant } from './people-admin.js';
 
 const scope = {
   units: ['north', 'northwest'],
@@ -63,5 +63,34 @@ describe('validateBulkPeopleAdd', () => {
     ];
     const codes = validateBulkPeopleAdd(rows, scope, existing).errors.map((e) => e.code);
     expect(codes).toEqual(['BULK_INVALID_EMAIL', 'BULK_ALREADY_MEMBER', 'BULK_DUPLICATE_EMAIL', 'BULK_NO_ROLES']);
+  });
+});
+
+describe('validateBulkPeopleGrant', () => {
+  const members = new Set(['ann@acme.test', 'bob@acme.test']);
+
+  it('accepts a batch of existing members with allowed, held, in-scope roles', () => {
+    const rows = [
+      { email: 'Ann@acme.test', unit: 'north', roleIds: ['maint-tech'] },
+      { email: 'bob@acme.test', unit: 'northwest', roleIds: ['maint-tech'] },
+    ];
+    expect(validateBulkPeopleGrant(rows, scope, members)).toEqual({ ok: true, errors: [] });
+  });
+
+  it('refuses a non-member (grant targets existing people — invite newcomers instead)', () => {
+    const rows = [{ email: 'stranger@acme.test', unit: 'north', roleIds: ['maint-tech'] }];
+    const result = validateBulkPeopleGrant(rows, scope, members);
+    expect(result.ok).toBe(false);
+    expect(result.errors[0]).toMatchObject({ code: 'BULK_NOT_A_MEMBER' });
+  });
+
+  it('still enforces the delegated rule (out-of-unit, not-allowed, escalation) and all-or-nothing', () => {
+    const rows = [
+      { email: 'ann@acme.test', unit: 'north', roleIds: ['maint-tech'] },
+      { email: 'bob@acme.test', unit: 'south', roleIds: ['maint-tech'] }, // out of scope
+    ];
+    const result = validateBulkPeopleGrant(rows, scope, members);
+    expect(result.ok).toBe(false);
+    expect(result.errors).toEqual([{ index: 1, email: 'bob@acme.test', code: 'PEOPLE_ADMIN_OUT_OF_UNIT', message: expect.any(String) }]);
   });
 });

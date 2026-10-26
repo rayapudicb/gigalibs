@@ -70,6 +70,33 @@ export function validateBulkPeopleAdd(
   return { ok: errors.length === 0, errors };
 }
 
+/**
+ * WI-OI-120p slice 7 (R14, delegated grant): like validateBulkPeopleAdd, but the targets are EXISTING members — a head
+ * grants an allowed unit-scoped role to people already in the workspace (rather than inviting newcomers). A batch is
+ * all-or-nothing; a row fails if the email is malformed, repeated, not a member, names no roles, or the delegated rule
+ * refuses it. `memberEmails` are the tenant's current member emails (lower-cased).
+ */
+export function validateBulkPeopleGrant(
+  rows: readonly BulkPersonRow[],
+  scope: PeopleAdminScope,
+  memberEmails: ReadonlySet<string>,
+): BulkValidation {
+  const errors: BulkRowError[] = [];
+  const seen = new Set<string>();
+  rows.forEach((row, index) => {
+    const email = row.email.trim().toLowerCase();
+    const add = (code: string, message: string) => errors.push({ index, email, code, message });
+    if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) add('BULK_INVALID_EMAIL', 'A valid email is required.');
+    else if (seen.has(email)) add('BULK_DUPLICATE_EMAIL', 'This email appears more than once in the batch.');
+    else if (!memberEmails.has(email)) add('BULK_NOT_A_MEMBER', 'This email is not a member of the workspace; invite them first.');
+    seen.add(email);
+    if (row.roleIds.length === 0) add('BULK_NO_ROLES', 'At least one role is required.');
+    const authorized = assertDelegatedPeopleAdd(scope, { unit: row.unit, roleIds: row.roleIds });
+    if (!authorized.ok) add(authorized.code, authorized.message);
+  });
+  return { ok: errors.length === 0, errors };
+}
+
 /** Whether a delegated head may add/invite a person into `request.unit` with `request.roleIds`, or the first rule broken. */
 export function assertDelegatedPeopleAdd(scope: PeopleAdminScope, request: PeopleAdminRequest): PeopleAdminResult {
   if (request.baseRole !== undefined && request.baseRole !== 'MEMBER')

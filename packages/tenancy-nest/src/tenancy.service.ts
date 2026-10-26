@@ -3,6 +3,7 @@ import type {
   AcceptTenantInviteDto,
   AssignMemberRoleDto,
   BulkDelegatedInviteDto,
+  BulkDelegatedGrantDto,
   BulkInviteIdsDto,
   BulkOffboardMembersDto,
   RevokeMemberRoleDto,
@@ -29,6 +30,7 @@ import {
   moduleDefaultRoles,
   uncataloguedAdditions,
   validateBulkPeopleAdd,
+  validateBulkPeopleGrant,
   inviteStatus,
 } from '@gigalibs/contracts';
 import { primaryVersionInForce } from '@gigalibs/auth-nest';
@@ -940,6 +942,93 @@ export class TenancyService {
             }),
           );
         return { count: invites.length, invites };
+      }),
+    );
+  }
+
+  // WI-OI-120p slice 7 (R14, delegated grant): a delegated head grants allowed unit-scoped roles to EXISTING members
+  // (people already in the workspace), the direct complement of the delegated invite. Every row is checked against the
+  // delegated rule and separation of duties before anything is written; the batch is all-or-nothing. Each role is
+  // granted scoped to the row's unit through resolveRoleScope, so it must be unit-scope-enforcing (R5 allow-list) and a
+  // version in force — the same checks assignMemberRole applies, authorized here by the delegated rule instead of an
+  // administrator. A role a member already holds is skipped.
+  async bulkDelegatedGrant(tenantId: string, headUserId: string, dto: BulkDelegatedGrantDto) {
+    return roleChangeConflicts(() =>
+      prisma.$transaction(async (transaction) => {
+        await transaction.$queryRaw`SELECT "id" FROM "tenants" WHERE "id" = ${tenantId} FOR UPDATE`;
+        const headUnits = await this.peopleUnits(transaction, tenantId, headUserId, ['people:manage']);
+        const scope = await loadPeopleAdminScope(transaction, tenantId, headUserId, headUnits);
+        const rows = dto.rows.map((row) => ({ ...row, email: row.email.trim().toLowerCase() }));
+
+        const candidates = [...new Set(dto.rows.flatMap((row) => [row.email.trim(), row.email.trim().toLowerCase()]))];
+        const members = await transaction.tenantMember.findMany({
+          where: { tenantId, user: { email: { in: candidates } } },
+          select: { id: true, userId: true, user: { select: { email: true } } },
+        });
+        const memberByEmail = new Map(members.map((member) => [member.user.email.trim().toLowerCase(), member]));
+        const memberEmails = new Set(memberByEmail.keys());
+
+        const validation = validateBulkPeopleGrant(rows, scope, memberEmails);
+        const graph = await loadRoleGraph(transaction, tenantId);
+        const sodErrors = rows.flatMap((row, index) => {
+          const permissions = [...new Set(row.roleIds.flatMap((roleId) => expandRole(graph, roleId)))];
+          const conflicts = dutyConflicts(permissions);
+          return conflicts.length === 0
+            ? []
+            : [{ index, email: row.email, code: 'DUTY_CONFLICT', message: conflicts.map((set) => set.reason).join(' ') }];
+        });
+        const errors = [...validation.errors, ...sodErrors].sort((a, b) => a.index - b.index);
+        if (errors.length > 0)
+          throw new BadRequestException({ code: 'BULK_VALIDATION_FAILED', message: `${errors.length} of ${rows.length} rows cannot be granted; nothing was changed.`, errors });
+
+        let granted = 0;
+        const skipped: { email: string; roleId: string }[] = [];
+        for (const row of rows) {
+          const member = memberByEmail.get(row.email);
+          if (!member) continue; // unreachable: validateBulkPeopleGrant already rejected non-members.
+          for (const roleId of [...new Set(row.roleIds)]) {
+            const held = await transaction.memberRoleAssignment.findFirst({
+              where: { tenantId, userId: member.userId, customRoleId: roleId, revokedAt: null },
+              select: { id: true },
+            });
+            if (held) {
+              skipped.push({ email: row.email, roleId });
+              continue;
+            }
+            const rolePermissions = expandRole(graph, roleId);
+            const resolved = await resolveRoleScope(transaction, tenantId, { kind: 'UNITS', unitIds: [row.unit] }, rolePermissions);
+            await assertScopesConsistent(transaction, tenantId, member.userId, { add: { permissions: rolePermissions, scope: resolved } });
+            await assertNoDutyConflict(transaction, tenantId, member.userId, rolePermissions);
+            if ((await transaction.memberRoleAssignment.count({ where: { tenantId, userId: member.userId, revokedAt: null } })) >= MAX_MEMBER_ROLE_ASSIGNMENTS)
+              throw new ConflictException({ code: 'ROLE_LIMIT', message: `A member holds at most ${MAX_MEMBER_ROLE_ASSIGNMENTS} roles; take one away before adding another.` });
+            const assignment = await transaction.memberRoleAssignment.create({
+              data: {
+                tenantId,
+                userId: member.userId,
+                customRoleId: roleId,
+                scope: resolved.scope,
+                unitIds: resolved.unitIds,
+                placeIds: resolved.placeIds,
+                reason: 'Delegated unit grant',
+                grantedById: headUserId,
+              },
+              select: { id: true },
+            });
+            await transaction.auditLog.create({
+              data: {
+                action: 'PERMISSION_CHANGE',
+                resource: 'member_role_assignment',
+                resourceId: assignment.id,
+                userId: headUserId,
+                tenantId,
+                after: { memberId: member.id, customRoleId: roleId, scope: resolved.scope, unitIds: resolved.unitIds, delegated: true },
+                metadata: { delegatedGrant: true },
+              },
+            });
+            granted += 1;
+          }
+        }
+        return { granted, skipped };
       }),
     );
   }

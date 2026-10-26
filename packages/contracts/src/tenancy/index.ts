@@ -507,6 +507,27 @@ export const BulkDelegatedInviteSchema = z
   .strict();
 export type BulkDelegatedInviteDto = z.infer<typeof BulkDelegatedInviteSchema>;
 
+// WI-OI-120p slice 7 (R14, delegated grant): a delegated head grants allowed unit-scoped roles to EXISTING members.
+// Same permissive rows as the bulk invite (bad cells surface as per-row errors from validateBulkPeopleGrant); no
+// expiry, since this grants immediately rather than issuing an invite.
+export const BulkDelegatedGrantSchema = z
+  .object({
+    rows: z
+      .array(
+        z
+          .object({
+            email: z.string().trim().max(320),
+            unit: z.string().trim().max(64),
+            roleIds: z.array(z.string().trim().min(1).max(64)).max(20),
+          })
+          .strict(),
+      )
+      .min(1)
+      .max(500),
+  })
+  .strict();
+export type BulkDelegatedGrantDto = z.infer<typeof BulkDelegatedGrantSchema>;
+
 // WI-OI-120p slice 5 (R14): the ids a bulk resend or revoke acts on. Each must be a pending invite in one of the
 // caller's units; ineligible ids (accepted, already revoked, or outside the caller's units) are skipped, not an error.
 export const BulkInviteIdsSchema = z

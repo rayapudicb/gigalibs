@@ -29,6 +29,8 @@ import {
   DelegatedInviteSchema,
   type BulkDelegatedInviteDto,
   BulkDelegatedInviteSchema,
+  type BulkDelegatedGrantDto,
+  BulkDelegatedGrantSchema,
   type BulkInviteIdsDto,
   BulkInviteIdsSchema,
   type BulkOffboardMembersDto,
@@ -228,6 +230,18 @@ export class TenancyController {
     @Body(new ZodValidationPipe(BulkDelegatedInviteSchema)) dto: BulkDelegatedInviteDto,
   ) {
     return this.tenancyService.bulkDelegatedInvite(tenantId, userId, dto);
+  }
+
+  // WI-OI-120p slice 7 (R14): a delegated head grants allowed unit-scoped roles to existing members (all-or-nothing).
+  @Post('current/delegated-grants')
+  @Header('Cache-Control', 'no-store')
+  @RequirePermissions('people:manage')
+  bulkDelegatedGrant(
+    @CurrentTenant('tenantId') tenantId: string,
+    @CurrentUser('sub') userId: string,
+    @Body(new ZodValidationPipe(BulkDelegatedGrantSchema)) dto: BulkDelegatedGrantDto,
+  ) {
+    return this.tenancyService.bulkDelegatedGrant(tenantId, userId, dto);
   }
 
   // WI-OI-120p slice 5 (R14, join tracker): the delegated invitations into the head's units, each with its status.

@@ -140,7 +140,13 @@ Owner approved starting Phase 3 while the Phase 2 deploy waits on disk. [WI-OI-1
   owned); paired with the slice-9 cross-department integration tests = both halves of the R5 card.
 - **R5 flip APPLIED (owner-authorized 2026-10-26):** the three ERP modules added to `SCOPE_ENFORCING_MODULES` as
   `{units:true, places:false}` — unit-scoped role *grants* now allowed for them (Tenant Admin Settings→Team + delegated
-  invite). RBAC suite 106 pass; flagged for the independent Security review. Next: wire the slice-7 delegated grant.
+  invite). RBAC suite 106 pass; flagged for the independent Security review.
+- **slice-7 delegated GRANT built (2026-10-26) → slice 7 COMPLETE:** `validateBulkPeopleGrant` (3 unit tests;
+  requires an existing member) + `bulkDelegatedGrant` (resolve members → delegated-rule + SoD validation, all-or-nothing
+  → grant each role unit-scoped via `resolveRoleScope`, reusing assignMemberRole's invariants; already-held skipped).
+  Route `POST current/delegated-grants` (`people:manage`). Integration test (3: non-member/out-of-unit/mixed-batch
+  refused, grant nothing); happy-path write reuses the tested `resolveRoleScope` path. tenancy-nest 107 pass.
+  **Uncommitted — awaiting "commit".**
 - WI-OI-120p remaining is otherwise gated: slice 6 (WI-OI-120o, deferred), slice 7-grant + the R5 allow-list flip
   (owner/Security), slice 8 SSO (credentials).
 

@@ -21,9 +21,17 @@ modules:
   `explicitScopeRefusal`. Effect: Tenant Admins can now assign these modules' roles scoped to units via Settings → Team
   (`assignMemberRole`), and the delegated invite/grant can carry them. RBAC suite 106 pass. **Flagged for the
   independent Security review before deploy.**
-- Next: wire the **slice-7 delegated grant** (a head grants an allowed unit-scoped role to existing members) on top of
-  this — the authorization reuses `authorizeDelegatedPeopleAdd`; the write reuses `assignMemberRole`'s scoped-grant
-  path which now passes `assertScopeEnforced` for these modules.
+- **Slice-7 delegated grant BUILT (2026-10-26) on top of the flip → slice 7 COMPLETE:** `validateBulkPeopleGrant`
+  (pure, `contracts/rbac/people-admin.ts`, 3 unit tests) mirrors `validateBulkPeopleAdd` but requires the target be an
+  existing member (`BULK_NOT_A_MEMBER`). `bulkDelegatedGrant` (tenancy.service): loads the head's `people:manage`
+  units + allowances once, resolves the batch emails to members, validates the delegated rule + per-row SoD
+  (all-or-nothing), then grants each role scoped to the row's unit through `resolveRoleScope` (so it passes
+  `assertScopeEnforced` — now true for these modules — and the full `assignMemberRole` invariants: scopes-consistent,
+  no duty conflict, role limit; a role already held is skipped), authorized by the delegated rule rather than an
+  administrator. DTO `BulkDelegatedGrantSchema`; route `POST current/delegated-grants` (`people:manage`). Integration
+  test (`delegated-grant.integration.test.ts`, 3, control DB: non-member / out-of-unit / mixed-batch all refused and
+  grant nothing); the successful scoped write reuses the org-tree-in-force `resolveRoleScope` path (covered by its own
+  tests). tenancy-nest 107 unit pass; typecheck clean. **Slice 7 (bulk grants + offboarding) complete.**
 
 ## Progress (2026-10-24)
 
