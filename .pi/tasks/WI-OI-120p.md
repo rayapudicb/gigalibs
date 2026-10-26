@@ -2,6 +2,25 @@
 
 - **Status:** In progress (owner approved the Phase 3 start, 2026-10-24). Independent Security review before deploy.
 
+## R5 readiness for the allow-list flip (owner/Security decision) — 2026-10-26
+
+The slice-7 **grant** path is gated on adding modules to `SCOPE_ENFORCING_MODULES` (`contracts/rbac/assignment-scopes.ts`),
+which turns on unit-scoped role *grants*. That entry needs two halves of evidence; both are now in place for the ERP
+modules:
+- **Catalogue coverage** (every API-checked code is catalogued + owned by the module, so a unit-scoped grant is carried
+  under the unit key and nothing falls through to `platform`): `contracts/rbac/erp-r5-context-coverage.spec.ts`
+  (mirrors the CMMS proof) — green for `universal-procurement`, `universal-orders`, `financial-operations`.
+- **Record enforcement** (the module actually filters its records by the unit): the Docker-gated cross-department
+  integration tests from slice 9 (Procurement 5, Orders 5) + the Finance fixed-asset wiring.
+- **Recommended flip (owner's one line each):** `SCOPE_ENFORCING_MODULES['universal-procurement' | 'universal-orders' |
+  'financial-operations'] = { units: true, places: false }` (these scope by organization unit, not place — unlike CMMS
+  which is `{units:true, places:true}`). They stay OUT of `PER_ASSIGNMENT_SCOPE_MODULES` (they read the single
+  `organization` claim, not per-assignment `scopeFor`; `assignmentScopeConflicts` correctly stops holding a module's
+  permissions at two scopes). Cross-cutting/control-plane codes a role might also carry (e.g. `organization:activate`)
+  remain correctly un-unit-scopable via `explicitScopeRefusal`.
+- After the flip, extend `erp-r5-context-coverage.spec.ts` to assert the entry (the "not yet in SCOPE_ENFORCING" test
+  there will go red on flip, as a prompt), then I wire the slice-7 delegated grant.
+
 ## Progress (2026-10-24)
 
 - **Slice 1 (module roles):** largely in place — modules declare `roles:` in `module.yaml` and `syncDefaultRoles`
