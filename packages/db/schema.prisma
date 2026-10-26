@@ -288,6 +288,15 @@ enum RetentionExecutionStatus {
   FAILED
 }
 
+// WI-OI-120 (T9b): why a retention class keeps data for as long as it does. Drives nothing but the record it is on; it
+// is there so an auditor can see the justification beside the period.
+enum RetentionBasis {
+  REGULATORY
+  LEGAL
+  CONTRACTUAL
+  OPERATIONAL
+}
+
 enum ConnectorOperation {
   TEST
   PROFILE
@@ -544,6 +553,7 @@ model Tenant {
   sourceFileImports       SourceFileImport[]
   retentionHolds          DataRetentionHold[]
   retentionExecutions     DataRetentionExecution[]
+  retentionClasses        RetentionClass[]
   oidcConfiguration       TenantOidcConfiguration?
   oidcLoginTransactions   OidcLoginTransaction[]
   configurationChangeSets ConfigurationChangeSet[]
@@ -1720,6 +1730,10 @@ model TenantEnvironment {
   status        EnvironmentStatus         @default(ACTIVE)
   region        String
   retentionDays Int
+  // WI-OI-120 (T9b): an environment may adopt a named retention class; its period then governs the purge. Null keeps
+  // the bare `retentionDays`, so environments created before T9b are unaffected.
+  retentionClassId String?
+  retentionClass   RetentionClass? @relation(fields: [retentionClassId], references: [id], onDelete: SetNull)
   expiresAt     DateTime?                 @db.Timestamptz(3)
   configuration Json?
   createdById   String
@@ -2022,6 +2036,32 @@ model DataRetentionExecution {
   @@index([tenantId, environmentId, startedAt(sort: Desc)])
   @@index([status, startedAt])
   @@map("data_retention_executions")
+}
+
+// WI-OI-120 (T9b): a named, tenant-defined retention class — how long a category of data is kept and why. An
+// environment adopts a class (see TenantEnvironment.retentionClass) and the purge uses its period; a legal hold still
+// overrides any class. `key` is a stable slug the tenant (or a solution pack) references; `isDefault` marks the class
+// new environments adopt when none is chosen. Archiving is soft (archivedAt) so executions keep pointing at a class.
+model RetentionClass {
+  id            String         @id @default(cuid())
+  tenantId      String
+  tenant        Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  key           String
+  name          String
+  description   String?
+  retentionDays Int
+  basis         RetentionBasis @default(OPERATIONAL)
+  isDefault     Boolean        @default(false)
+  createdById   String
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  archivedAt    DateTime?
+
+  environments TenantEnvironment[]
+
+  @@unique([tenantId, key])
+  @@index([tenantId, archivedAt])
+  @@map("retention_classes")
 }
 
 model ConnectorCheckpoint {

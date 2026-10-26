@@ -157,6 +157,7 @@
       "SourceFileImport",
       "DataRetentionHold",
       "DataRetentionExecution",
+      "RetentionClass",
       "ConnectorCheckpoint",
       "ControlOutboxEvent",
       "RuleVersion",

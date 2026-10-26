@@ -171,6 +171,7 @@ import { OperationalIntelligenceController } from './operational-intelligence.co
 import { OperationalIntelligenceService } from './operational-intelligence.service.js';
 import { PayloadCryptoService } from './payload-crypto.service.js';
 import { RetentionService } from './retention.service.js';
+import { RetentionClassService } from './retention-class.service.js';
 import { ScimController } from './scim.controller.js';
 import { ScimService } from './scim.service.js';
 import { SourceFileCleanupWorker } from './source-file-cleanup.worker.js';
@@ -226,6 +227,7 @@ import { WorkflowService } from './workflow.service.js';
     DataRetentionWorker,
     SessionSweepWorker,
     RetentionService,
+    RetentionClassService,
     ApPolicyService,
     ApMatchingService,
     ApIngestionService,

@@ -1,4 +1,5 @@
 import { pruneLoginThrottles } from '@gigalibs/auth-nest';
+import { effectiveRetentionDays, retentionCutoff } from '@gigalibs/contracts';
 import { Prisma, prisma } from '@gigalibs/db';
 import {
   Injectable,
@@ -36,7 +37,13 @@ export class DataRetentionWorker implements OnApplicationBootstrap, OnApplicatio
     try {
       const environments = await prisma.tenantEnvironment.findMany({
         where: { status: { in: ['ACTIVE', 'LOCKED', 'EXPIRED'] } },
-        select: { id: true, tenantId: true, retentionDays: true },
+        select: {
+          id: true,
+          tenantId: true,
+          retentionDays: true,
+          // WI-OI-120 (T9b): if the environment adopts a retention class, its period governs the purge.
+          retentionClass: { select: { retentionDays: true } },
+        },
         orderBy: { createdAt: 'asc' },
         take: runtimeConfig.retentionEnvironmentBatchSize,
       });
@@ -51,7 +58,9 @@ export class DataRetentionWorker implements OnApplicationBootstrap, OnApplicatio
                 tenantId: environment.tenantId,
                 environmentId: environment.id,
                 status: 'FAILED',
-                cutoffAt: this.cutoff(environment.retentionDays),
+                cutoffAt: retentionCutoff(
+                  effectiveRetentionDays(environment, environment.retentionClass),
+                ),
                 failureCode,
                 completedAt: new Date(),
               },
@@ -70,7 +79,9 @@ export class DataRetentionWorker implements OnApplicationBootstrap, OnApplicatio
       }
       // WI-OI-120e (U3.2): login throttle rows with no live lock or window are removed after a day.
       await pruneLoginThrottles().catch((error: unknown) =>
-        this.logger.error(`Login throttle pruning failed. error=${error instanceof Error ? error.name : 'UnknownError'}`),
+        this.logger.error(
+          `Login throttle pruning failed. error=${error instanceof Error ? error.name : 'UnknownError'}`,
+        ),
       );
     } finally {
       this.running = false;
@@ -81,8 +92,11 @@ export class DataRetentionWorker implements OnApplicationBootstrap, OnApplicatio
     id: string;
     tenantId: string;
     retentionDays: number;
+    retentionClass: { retentionDays: number } | null;
   }) {
-    const cutoffAt = this.cutoff(environment.retentionDays);
+    const cutoffAt = retentionCutoff(
+      effectiveRetentionDays(environment, environment.retentionClass),
+    );
     return prisma.$transaction(
       async (transaction) => {
         const hold = await transaction.dataRetentionHold.findFirst({
@@ -157,9 +171,5 @@ export class DataRetentionWorker implements OnApplicationBootstrap, OnApplicatio
       },
       { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
     );
-  }
-
-  private cutoff(retentionDays: number) {
-    return new Date(Date.now() - retentionDays * 24 * 60 * 60 * 1_000);
   }
 }

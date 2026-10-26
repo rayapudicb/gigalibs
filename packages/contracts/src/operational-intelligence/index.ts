@@ -349,6 +349,121 @@ export const ReleaseRetentionHoldSchema = z
   })
   .strict();
 
+// WI-OI-120 (T9b): named retention classes. A class is the reusable "how long, and on what basis" that an environment
+// adopts (TenantEnvironment.retentionClass) so the purge uses its period. A legal hold still overrides any class.
+export const RetentionBasisSchema = z.enum(['REGULATORY', 'LEGAL', 'CONTRACTUAL', 'OPERATIONAL']);
+export type RetentionBasis = z.infer<typeof RetentionBasisSchema>;
+
+/** A stable slug a tenant (or a solution pack) references; lower-case, 2–63 chars, starts with a letter. */
+export const RetentionClassKeySchema = z
+  .string()
+  .regex(
+    /^[a-z][a-z0-9-]{1,62}$/,
+    'A key is lower-case letters, digits and hyphens, 2–63 characters, starting with a letter.',
+  );
+
+/** At most 100 years — the same ceiling the migration's CHECK enforces, so the API refuses before the database does. */
+export const RETENTION_DAYS_MAX = 36_500;
+
+export const CreateRetentionClassSchema = z
+  .object({
+    key: RetentionClassKeySchema,
+    name: z.string().trim().min(1).max(120),
+    description: z.string().trim().max(2_000).optional(),
+    retentionDays: z.number().int().min(1).max(RETENTION_DAYS_MAX),
+    basis: RetentionBasisSchema.default('OPERATIONAL'),
+    isDefault: z.boolean().default(false),
+  })
+  .strict();
+
+export const UpdateRetentionClassSchema = z
+  .object({
+    name: z.string().trim().min(1).max(120).optional(),
+    description: z.string().trim().max(2_000).nullable().optional(),
+    retentionDays: z.number().int().min(1).max(RETENTION_DAYS_MAX).optional(),
+    basis: RetentionBasisSchema.optional(),
+    isDefault: z.boolean().optional(),
+  })
+  .strict()
+  .refine((patch) => Object.keys(patch).length > 0, 'Change at least one field.');
+
+/** Point an environment at a retention class, or clear it (null) to fall back to the environment's bare period. */
+export const AssignRetentionClassSchema = z
+  .object({
+    environmentId: z.string().min(1).max(128),
+    retentionClassId: z.string().min(1).max(128).nullable(),
+  })
+  .strict();
+
+/**
+ * The cutoff instant for a retention period: data first seen before this is eligible to purge. Pure, so the worker and
+ * its tests compute it the same way.
+ */
+export function retentionCutoff(retentionDays: number, now: Date = new Date()): Date {
+  return new Date(now.getTime() - retentionDays * 24 * 60 * 60 * 1_000);
+}
+
+/** The period that actually governs an environment: its adopted class's, or its own bare `retentionDays` when none. */
+export function effectiveRetentionDays(
+  environment: { readonly retentionDays: number },
+  retentionClass: { readonly retentionDays: number } | null | undefined,
+): number {
+  return retentionClass?.retentionDays ?? environment.retentionDays;
+}
+
+/** Whether any of the environment's holds is active, which blocks every purge regardless of class period. */
+export function legalHoldBlocksPurge(holds: ReadonlyArray<{ readonly status: string }>): boolean {
+  return holds.some((hold) => hold.status === 'ACTIVE');
+}
+
+/**
+ * Sensible starting classes a workspace (or a setup wizard) can adopt. These are data, not auto-created: a tenant picks
+ * what it needs. Periods are deliberately round and conservative; a compliance owner tunes them per jurisdiction.
+ */
+export const RETENTION_CLASS_PRESETS: ReadonlyArray<{
+  readonly key: string;
+  readonly name: string;
+  readonly description: string;
+  readonly retentionDays: number;
+  readonly basis: RetentionBasis;
+}> = [
+  {
+    key: 'operational-telemetry',
+    name: 'Operational telemetry',
+    description: 'Event and processing data kept only as long as operations need it.',
+    retentionDays: 90,
+    basis: 'OPERATIONAL',
+  },
+  {
+    key: 'security-audit',
+    name: 'Security & audit logs',
+    description: 'Access and change evidence for security review.',
+    retentionDays: 365,
+    basis: 'REGULATORY',
+  },
+  {
+    key: 'personal-data',
+    name: 'Personal data',
+    description: 'Records about identifiable people, kept no longer than the lawful basis allows.',
+    retentionDays: 1_095,
+    basis: 'LEGAL',
+  },
+  {
+    key: 'contracts-and-agreements',
+    name: 'Contracts & agreements',
+    description: 'Signed agreements and their supporting records.',
+    retentionDays: 3_650,
+    basis: 'CONTRACTUAL',
+  },
+  {
+    key: 'financial-records',
+    name: 'Financial records',
+    description: 'Accounting and tax records kept for the statutory period.',
+    retentionDays: 2_555,
+    basis: 'REGULATORY',
+  },
+];
+
 export type CreateEnvironmentDto = z.infer<typeof CreateEnvironmentSchema>;
 export type CreateCredentialReferenceDto = z.infer<typeof CreateCredentialReferenceSchema>;
 export type CreateConnectionDto = z.infer<typeof CreateConnectionSchema>;
@@ -360,3 +475,6 @@ export type RequestSourceFileUploadDto = z.infer<typeof RequestSourceFileUploadS
 export type CompleteSourceFileDto = z.infer<typeof CompleteSourceFileSchema>;
 export type CreateRetentionHoldDto = z.infer<typeof CreateRetentionHoldSchema>;
 export type ReleaseRetentionHoldDto = z.infer<typeof ReleaseRetentionHoldSchema>;
+export type CreateRetentionClassDto = z.infer<typeof CreateRetentionClassSchema>;
+export type UpdateRetentionClassDto = z.infer<typeof UpdateRetentionClassSchema>;
+export type AssignRetentionClassDto = z.infer<typeof AssignRetentionClassSchema>;

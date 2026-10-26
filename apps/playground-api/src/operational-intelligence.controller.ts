@@ -1,5 +1,7 @@
 import { CurrentUser, Public } from '@gigalibs/auth-nest';
 import {
+  type AssignRetentionClassDto,
+  AssignRetentionClassSchema,
   type CompleteSourceFileDto,
   CompleteSourceFileSchema,
   type CreateConnectionDto,
@@ -10,23 +12,40 @@ import {
   CreateDataContractSchema,
   type CreateEnvironmentDto,
   CreateEnvironmentSchema,
+  type CreateRetentionClassDto,
+  CreateRetentionClassSchema,
+  type CreateRetentionHoldDto,
+  CreateRetentionHoldSchema,
   type IngestOperationalEventDto,
   IngestOperationalEventSchema,
   type PublishDataContractDto,
   PublishDataContractSchema,
-  type RequestSourceFileUploadDto,
-  RequestSourceFileUploadSchema,
-  type CreateRetentionHoldDto,
-  CreateRetentionHoldSchema,
   type ReleaseRetentionHoldDto,
   ReleaseRetentionHoldSchema,
+  type RequestSourceFileUploadDto,
+  RequestSourceFileUploadSchema,
+  type UpdateRetentionClassDto,
+  UpdateRetentionClassSchema,
 } from '@gigalibs/contracts';
 import { RequirePermissions } from '@gigalibs/rbac-nest';
 import { CurrentTenant } from '@gigalibs/tenancy-nest';
 import { ZodValidationPipe } from '@gigalibs/validation-nest';
-import { Body, Controller, Get, HttpCode, Param, Post, Query, Req } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  Param,
+  Patch,
+  Post,
+  Query,
+  Req,
+} from '@nestjs/common';
 // biome-ignore lint/style/useImportType: NestJS needs the runtime constructor token for dependency injection.
 import { OperationalIntelligenceService } from './operational-intelligence.service.js';
+// biome-ignore lint/style/useImportType: NestJS needs the runtime constructor token for dependency injection.
+import { RetentionClassService } from './retention-class.service.js';
 // biome-ignore lint/style/useImportType: NestJS needs the runtime constructor token for dependency injection.
 import { RetentionService } from './retention.service.js';
 
@@ -40,6 +59,7 @@ export class OperationalIntelligenceController {
   constructor(
     private readonly service: OperationalIntelligenceService,
     private readonly retentionService: RetentionService,
+    private readonly retentionClassService: RetentionClassService,
   ) {}
 
   @Get('environments')
@@ -86,6 +106,57 @@ export class OperationalIntelligenceController {
     @Body(new ZodValidationPipe(ReleaseRetentionHoldSchema)) dto: ReleaseRetentionHoldDto,
   ) {
     return this.retentionService.release(tenantId, userId, holdId, dto);
+  }
+
+  // WI-OI-120 (T9b): named retention classes — the reusable periods an environment adopts.
+  @Get('retention-classes')
+  @RequirePermissions('retention:read')
+  listRetentionClasses(
+    @CurrentTenant('tenantId') tenantId: string,
+    @Query('includeArchived') includeArchived?: string,
+  ) {
+    return this.retentionClassService.list(tenantId, includeArchived === 'true');
+  }
+
+  @Post('retention-classes')
+  @RequirePermissions('retention:manage')
+  createRetentionClass(
+    @CurrentTenant('tenantId') tenantId: string,
+    @CurrentUser('sub') userId: string,
+    @Body(new ZodValidationPipe(CreateRetentionClassSchema)) dto: CreateRetentionClassDto,
+  ) {
+    return this.retentionClassService.create(tenantId, userId, dto);
+  }
+
+  @Patch('retention-classes/:classId')
+  @RequirePermissions('retention:manage')
+  updateRetentionClass(
+    @CurrentTenant('tenantId') tenantId: string,
+    @CurrentUser('sub') userId: string,
+    @Param('classId') classId: string,
+    @Body(new ZodValidationPipe(UpdateRetentionClassSchema)) dto: UpdateRetentionClassDto,
+  ) {
+    return this.retentionClassService.update(tenantId, userId, classId, dto);
+  }
+
+  @Delete('retention-classes/:classId')
+  @RequirePermissions('retention:manage')
+  archiveRetentionClass(
+    @CurrentTenant('tenantId') tenantId: string,
+    @CurrentUser('sub') userId: string,
+    @Param('classId') classId: string,
+  ) {
+    return this.retentionClassService.archive(tenantId, userId, classId);
+  }
+
+  @Post('retention-classes/assign')
+  @RequirePermissions('retention:manage')
+  assignRetentionClass(
+    @CurrentTenant('tenantId') tenantId: string,
+    @CurrentUser('sub') userId: string,
+    @Body(new ZodValidationPipe(AssignRetentionClassSchema)) dto: AssignRetentionClassDto,
+  ) {
+    return this.retentionClassService.assign(tenantId, userId, dto);
   }
 
   @Get('credential-references')
