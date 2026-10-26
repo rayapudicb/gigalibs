@@ -120,8 +120,15 @@ Owner approved starting Phase 3 while the Phase 2 deploy waits on disk. [WI-OI-1
   `fetchScopedPurchaseOrder` choke point + create-guard); integration test extended to 4 (PO dept-isolation green).
   Vendor bills/debit memos carry no `org_unit_id` → isolated transitively via parent PO (direct scoping needs a join,
   deferred). Procurement suite 16 pass. **Uncommitted — awaiting "commit".**
-- Remaining slice 9 (secondary records, diminishing value): Orders downstream docs; optional join-scoping of
-  Procurement vendor bills/debit memos. The per-module `organization-scope.ts` copy is by-design (nest glue).
+- **slice 9 — Orders downstream documents built (join pattern, 2026-10-26):** downstream docs have no `org_unit_id`;
+  scoped by joining to the parent order's unit (`parentOrderUnit`/`memoOrderUnit` helpers; credit memos COALESCE
+  order_id + invoice→order). Done: fulfillments (list/get/create/dispatch), customer invoices (list/get/create),
+  credit memos (list/get/create), returns (list), AR projections (get) — ~20 sites across controller + record-adapters.
+  Integration test now 5 (fulfillment/invoice/memo dept-isolation green); bumped throwaway-pg connect timeout 60→180
+  (container start slow under many-container load). Orders suite 7 pass. **Uncommitted — awaiting "commit"** (one
+  logical change with the fulfillment work from the prior turn).
+- Remaining slice 9 (diminishing value): only Procurement vendor-bills/debit-memos (join bill→PO). The per-module
+  `organization-scope.ts` copy is by-design (nest glue).
 - WI-OI-120p remaining is otherwise gated: slice 6 (WI-OI-120o, deferred), slice 7-grant + the R5 allow-list flip
   (owner/Security), slice 8 SSO (credentials).
 

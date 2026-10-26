@@ -130,9 +130,20 @@
   only North's PO). **Vendor bills and debit memos carry no `org_unit_id`** (only requisitions, POs and
   approval-policies do) — they are isolated transitively via their parent PO; scoping them directly would need a join
   and is deferred. Procurement suite 16 pass; typecheck clean.
-- **Slice 9 — remaining (secondary records, diminishing value):** Orders downstream documents (fulfillments, customer
-  invoices, credit memos, AR-invoice projections, returns); optionally join-based scoping of Procurement vendor
-  bills/debit memos. Note: the per-module `organization-scope.ts` is duplicated across
+- **Slice 9 — Orders downstream documents built (join-based, 2026-10-26):** downstream documents carry no
+  `org_unit_id`; they reference `order_id → sales_orders` (credit memos also `invoice_id → customer_invoices → order`),
+  so they are scoped by **joining to the parent order's unit**. A `parentOrderUnit`/`memoOrderUnit` helper resolves the
+  unit; list endpoints JOIN `sales_orders` and filter `o.org_unit_id` (credit memos `COALESCE` both parent paths);
+  get/create/change resolve the parent unit and apply `canReadUnit`/`assertWritableUnit` (out-of-read → not-found,
+  out-of-write → Forbidden). Covered: **fulfillments** (list/get/create/dispatch), **customer invoices** (list/get/
+  create), **credit memos** (list/get/create), **returns** (list), **AR-invoice projections** (get). ~20 call sites
+  threaded to `ModulePrincipal` across controller + record-adapters. Integration test extended (now 5, run green:
+  a North member sees only North's fulfillments, invoices and credit memos). Also bumped the throwaway-postgres connect
+  timeout (60→180 attempts) — a fresh container can take >15s to accept connections when the host runs many containers.
+  Orders suite 7 pass; typecheck clean.
+- **Slice 9 — remaining (identical join pattern, diminishing value):** only **Procurement vendor bills / debit memos**
+  (no `org_unit_id`; join bill→PO, memo→bill→PO) remain. Note: the per-module `organization-scope.ts` is duplicated
+  across
   Procurement/Orders/Finance, but **by design** — the glue maps module-sdk's plain `OrganizationScopeRefusal`/
   `OrganizationVersionPendingError` to NestJS `ForbiddenException`/`ServiceUnavailableException`, and `module-sdk` is
   deliberately Nest-agnostic, so the nest glue lives per nest module (Analytics does the same). Not a shared-helper

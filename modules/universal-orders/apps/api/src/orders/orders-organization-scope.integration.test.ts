@@ -81,6 +81,12 @@ integration('Orders organization scope (isolated PostgreSQL)', () => {
   let service: OrderService;
   const northOrder = randomUUID();
   const southOrder = randomUUID();
+  const northFulfillment = randomUUID();
+  const southFulfillment = randomUUID();
+  const northInvoice = randomUUID();
+  const southInvoice = randomUUID();
+  const northMemo = randomUUID();
+  const southMemo = randomUUID();
 
   beforeAll(async () => {
     pg = await startThrowawayPostgres(`gigalibs-orders-scope-${process.pid}`);
@@ -107,6 +113,38 @@ integration('Orders organization scope (isolated PostgreSQL)', () => {
           `INSERT INTO ${SCHEMA}.sales_orders (id, tenant_id, order_number, org_unit_id, customer_party_id, customer_name, warehouse_id, status)
            VALUES ($1, $2, $3, $4, $5, 'Acme', $6, 'DRAFT')`,
           [id, tenantId, number, unit, randomUUID(), randomUUID()],
+        );
+      }
+      // A fulfillment per order — these carry no unit, so scope follows the parent order.
+      for (const [id, order, number] of [
+        [northFulfillment, northOrder, 'FO-N'],
+        [southFulfillment, southOrder, 'FO-S'],
+      ] as const) {
+        await client.query(
+          `INSERT INTO ${SCHEMA}.fulfillment_orders (id, tenant_id, fulfillment_number, order_id, warehouse_id, status)
+           VALUES ($1, $2, $3, $4, $5, 'DRAFT')`,
+          [id, tenantId, number, order, randomUUID()],
+        );
+      }
+      // An invoice and a credit memo per order — both inherit the parent order's unit.
+      for (const [id, order, number] of [
+        [northInvoice, northOrder, 'INV-N'],
+        [southInvoice, southOrder, 'INV-S'],
+      ] as const) {
+        await client.query(
+          `INSERT INTO ${SCHEMA}.customer_invoices (id, tenant_id, invoice_number, order_id, customer_party_id, customer_name, due_date, issued_by)
+           VALUES ($1, $2, $3, $4, $5, 'Acme', NOW(), 'admin')`,
+          [id, tenantId, number, order, randomUUID()],
+        );
+      }
+      for (const [id, order, number] of [
+        [northMemo, northOrder, 'CM-N'],
+        [southMemo, southOrder, 'CM-S'],
+      ] as const) {
+        await client.query(
+          `INSERT INTO ${SCHEMA}.customer_credit_memos (id, tenant_id, credit_memo_number, order_id, customer_party_id, reason, issued_by)
+           VALUES ($1, $2, $3, $4, $5, 'proof', 'admin')`,
+          [id, tenantId, number, order, randomUUID()],
         );
       }
     });
@@ -137,6 +175,43 @@ integration('Orders organization scope (isolated PostgreSQL)', () => {
     await expect(service.confirmOrder(north, southOrder)).rejects.toMatchObject({ status: 404 });
     await expect(service.confirmOrder(north, northOrder)).resolves.toMatchObject({
       status: 'CONFIRMED',
+    });
+  });
+
+  it('downstream documents follow the parent order: a north member sees only north fulfillments', async () => {
+    expect(
+      (await service.listFulfillmentOrders(tenantWide)).map((f) => f.fulfillmentNumber).sort(),
+    ).toEqual(['FO-N', 'FO-S']);
+    expect((await service.listFulfillmentOrders(north)).map((f) => f.fulfillmentNumber)).toEqual([
+      'FO-N',
+    ]);
+    await expect(service.getFulfillment(north, southFulfillment)).rejects.toMatchObject({
+      status: 404,
+    });
+    await expect(service.getFulfillment(north, northFulfillment)).resolves.toMatchObject({
+      fulfillmentNumber: 'FO-N',
+    });
+  });
+
+  it('invoices and credit memos follow the parent order too', async () => {
+    expect((await service.listCustomerInvoices(north)).map((i) => i.invoiceNumber)).toEqual([
+      'INV-N',
+    ]);
+    await expect(service.getCustomerInvoice(north, southInvoice)).rejects.toMatchObject({
+      status: 404,
+    });
+    await expect(service.getCustomerInvoice(north, northInvoice)).resolves.toMatchObject({
+      invoiceNumber: 'INV-N',
+    });
+
+    expect((await service.listCustomerCreditMemos(north)).map((m) => m.creditMemoNumber)).toEqual([
+      'CM-N',
+    ]);
+    await expect(service.getCustomerCreditMemo(north, southMemo)).rejects.toMatchObject({
+      status: 404,
+    });
+    await expect(service.getCustomerCreditMemo(north, northMemo)).resolves.toMatchObject({
+      creditMemoNumber: 'CM-N',
     });
   });
 });

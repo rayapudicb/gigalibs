@@ -90,9 +90,7 @@ export async function startThrowawayPostgres(name: string): Promise<ThrowawayPos
     await admin.query(
       'GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA gigalibs_orders TO orders_runtime',
     );
-    await admin.query(
-      'REVOKE UPDATE, DELETE ON gigalibs_orders.audit_events FROM orders_runtime',
-    );
+    await admin.query('REVOKE UPDATE, DELETE ON gigalibs_orders.audit_events FROM orders_runtime');
     await admin.end();
     return {
       adminUrl,
@@ -106,7 +104,8 @@ export async function startThrowawayPostgres(name: string): Promise<ThrowawayPos
 }
 
 async function connectWhenReady(url: string): Promise<pg.Client> {
-  for (let attempt = 0; attempt < 60; attempt += 1) {
+  // Up to ~45s: a fresh container can take longer to accept connections when the host is busy (many containers/CI).
+  for (let attempt = 0; attempt < 180; attempt += 1) {
     const client = new pg.Client({ connectionString: url });
     try {
       await client.connect();

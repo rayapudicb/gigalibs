@@ -16,6 +16,7 @@ import {
 } from '@gigalibs/contracts';
 import type { ModulePrincipal } from '@gigalibs/module-sdk';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import type { PoolClient } from 'pg';
 import { DatabaseService } from '../database.service.js';
 import { assertWritableUnit, canReadUnit, orgReadCondition, resolveOrganizationAccess } from '../organization/organization-scope.js';
 import { requireActiveCustomerParty } from './party-reference.js';
@@ -650,17 +651,26 @@ export class OrderService {
 
   // ─── 4. Fulfillment Orders & Dispatch ──────────────────────────────────────
 
-  async createFulfillment(
-    tenantId: string,
-    actorId: string,
-    input: CreateFulfillmentOrderInputV1,
-  ): Promise<FulfillmentOrderV1> {
+  // WI-OI-120p slice 9: a fulfillment/invoice/credit-memo has no unit of its own; its scope is its parent order's unit.
+  private async parentOrderUnit(client: PoolClient, tenantId: string, orderId: string): Promise<string | null> {
+    const res = await client.query<{ org_unit_id: string | null }>(
+      `SELECT org_unit_id FROM gigalibs_orders.sales_orders WHERE tenant_id = $1 AND id = $2`,
+      [tenantId, orderId],
+    );
+    return res.rows[0]?.org_unit_id ?? null;
+  }
+
+  async createFulfillment(principal: ModulePrincipal, input: CreateFulfillmentOrderInputV1): Promise<FulfillmentOrderV1> {
+    const { tenantId, subject: actorId } = principal;
     return this.database.withTenantTransaction(tenantId, async (client) => {
       const orderRes = await client.query(
         `SELECT * FROM gigalibs_orders.sales_orders WHERE tenant_id = $1 AND id = $2 FOR UPDATE`,
         [tenantId, input.orderId],
       );
-      if (orderRes.rows.length === 0) throw new NotFoundException('Order not found');
+      // Scope by the parent order: invisible out of read scope, refused out of write scope.
+      const access = await resolveOrganizationAccess(client, principal);
+      if (orderRes.rows.length === 0 || !canReadUnit(access, orderRes.rows[0].org_unit_id)) throw new NotFoundException('Order not found');
+      assertWritableUnit(access, orderRes.rows[0].org_unit_id);
 
       const fulfillmentNumber = `FO-${Date.now().toString().slice(-6)}`;
       const foRes = await client.query(
@@ -745,13 +755,17 @@ export class OrderService {
     });
   }
 
-  async getFulfillment(tenantId: string, fulfillmentId: string): Promise<FulfillmentOrderV1> {
+  async getFulfillment(principal: ModulePrincipal, fulfillmentId: string): Promise<FulfillmentOrderV1> {
+    const { tenantId } = principal;
     return this.database.withTenantTransaction(tenantId, async (client) => {
       const res = await client.query(
         `SELECT * FROM gigalibs_orders.fulfillment_orders WHERE tenant_id = $1 AND id = $2`,
         [tenantId, fulfillmentId],
       );
-      if (res.rows.length === 0) throw new NotFoundException('Fulfillment not found');
+      const access = await resolveOrganizationAccess(client, principal);
+      // WI-OI-120p slice 9: scoped by the parent order's unit; out of scope reads as not-found.
+      if (res.rows.length === 0 || !canReadUnit(access, await this.parentOrderUnit(client, tenantId, res.rows[0].order_id)))
+        throw new NotFoundException('Fulfillment not found');
       const lines = await client.query(
         `SELECT * FROM gigalibs_orders.fulfillment_order_lines WHERE tenant_id = $1 AND fulfillment_order_id = $2`,
         [tenantId, fulfillmentId],
@@ -760,11 +774,17 @@ export class OrderService {
     });
   }
 
-  async listFulfillmentOrders(principal: { tenantId: string }): Promise<FulfillmentOrderV1[]> {
+  async listFulfillmentOrders(principal: ModulePrincipal): Promise<FulfillmentOrderV1[]> {
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
+      // WI-OI-120p slice 9: list only fulfillments whose parent order is in the member's units (joined scope).
+      const access = await resolveOrganizationAccess(client, principal);
+      const params: unknown[] = [principal.tenantId];
+      const scope = orgReadCondition(access, 'o.org_unit_id', (value) => `$${params.push(value)}`);
       const res = await client.query<{ id: string }>(
-        `SELECT id FROM gigalibs_orders.fulfillment_orders WHERE tenant_id = $1 ORDER BY created_at DESC`,
-        [principal.tenantId],
+        `SELECT f.id FROM gigalibs_orders.fulfillment_orders f
+         JOIN gigalibs_orders.sales_orders o ON o.id = f.order_id
+         WHERE f.tenant_id = $1 AND ${scope} ORDER BY f.created_at DESC`,
+        params,
       );
       const items: FulfillmentOrderV1[] = [];
       for (const row of res.rows) {
@@ -782,12 +802,8 @@ export class OrderService {
     });
   }
 
-  async dispatchFulfillment(
-    tenantId: string,
-    actorId: string,
-    fulfillmentId: string,
-    issueId?: string,
-  ): Promise<FulfillmentOrderV1> {
+  async dispatchFulfillment(principal: ModulePrincipal, fulfillmentId: string, issueId?: string): Promise<FulfillmentOrderV1> {
+    const { tenantId, subject: actorId } = principal;
     return this.database.withTenantTransaction(tenantId, async (client) => {
       const foRes = await client.query(
         `SELECT * FROM gigalibs_orders.fulfillment_orders WHERE tenant_id = $1 AND id = $2 FOR UPDATE`,
@@ -795,6 +811,11 @@ export class OrderService {
       );
       if (foRes.rows.length === 0) throw new NotFoundException('Fulfillment not found');
       const fo = foRes.rows[0];
+      // WI-OI-120p slice 9: scoped by the parent order's unit — invisible out of read, refused out of write.
+      const access = await resolveOrganizationAccess(client, principal);
+      const unit = await this.parentOrderUnit(client, tenantId, fo.order_id);
+      if (!canReadUnit(access, unit)) throw new NotFoundException('Fulfillment not found');
+      assertWritableUnit(access, unit);
 
       if (fo.status === 'SHIPPED') {
         const lines = await client.query(
@@ -991,17 +1012,17 @@ export class OrderService {
 
   // ─── 5. Customer Invoices (AR) ─────────────────────────────────────────────
 
-  async createCustomerInvoice(
-    tenantId: string,
-    actorId: string,
-    input: CreateCustomerInvoiceInputV1,
-  ): Promise<CustomerInvoiceV1> {
+  async createCustomerInvoice(principal: ModulePrincipal, input: CreateCustomerInvoiceInputV1): Promise<CustomerInvoiceV1> {
+    const { tenantId, subject: actorId } = principal;
     return this.database.withTenantTransaction(tenantId, async (client) => {
       const orderRes = await client.query(
         `SELECT * FROM gigalibs_orders.sales_orders WHERE tenant_id = $1 AND id = $2 FOR UPDATE`,
         [tenantId, input.orderId],
       );
-      if (orderRes.rows.length === 0) throw new NotFoundException('Order not found');
+      // WI-OI-120p slice 9: an invoice inherits its order's unit, so scope the create by the parent order.
+      const access = await resolveOrganizationAccess(client, principal);
+      if (orderRes.rows.length === 0 || !canReadUnit(access, orderRes.rows[0].org_unit_id)) throw new NotFoundException('Order not found');
+      assertWritableUnit(access, orderRes.rows[0].org_unit_id);
       const order = orderRes.rows[0];
 
       const linesRes = await client.query(
@@ -1132,13 +1153,17 @@ export class OrderService {
     });
   }
 
-  async getCustomerInvoice(tenantId: string, invoiceId: string): Promise<CustomerInvoiceV1> {
+  async getCustomerInvoice(principal: ModulePrincipal, invoiceId: string): Promise<CustomerInvoiceV1> {
+    const { tenantId } = principal;
     return this.database.withTenantTransaction(tenantId, async (client) => {
       const res = await client.query(
         `SELECT * FROM gigalibs_orders.customer_invoices WHERE tenant_id = $1 AND id = $2`,
         [tenantId, invoiceId],
       );
-      if (res.rows.length === 0) throw new NotFoundException('Customer invoice not found');
+      const access = await resolveOrganizationAccess(client, principal);
+      // WI-OI-120p slice 9: scoped by the parent order's unit; out of scope reads as not-found.
+      if (res.rows.length === 0 || !canReadUnit(access, await this.parentOrderUnit(client, tenantId, res.rows[0].order_id)))
+        throw new NotFoundException('Customer invoice not found');
       const lines = await client.query(
         `SELECT * FROM gigalibs_orders.customer_invoice_lines WHERE tenant_id = $1 AND invoice_id = $2 ORDER BY line_number ASC`,
         [tenantId, invoiceId],
@@ -1147,11 +1172,17 @@ export class OrderService {
     });
   }
 
-  async listCustomerInvoices(principal: { tenantId: string }): Promise<CustomerInvoiceV1[]> {
+  async listCustomerInvoices(principal: ModulePrincipal): Promise<CustomerInvoiceV1[]> {
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
+      // WI-OI-120p slice 9: list only invoices whose parent order is in the member's units (joined scope).
+      const access = await resolveOrganizationAccess(client, principal);
+      const params: unknown[] = [principal.tenantId];
+      const scope = orgReadCondition(access, 'o.org_unit_id', (value) => `$${params.push(value)}`);
       const res = await client.query<{ id: string }>(
-        `SELECT id FROM gigalibs_orders.customer_invoices WHERE tenant_id = $1 ORDER BY created_at DESC`,
-        [principal.tenantId],
+        `SELECT i.id FROM gigalibs_orders.customer_invoices i
+         JOIN gigalibs_orders.sales_orders o ON o.id = i.order_id
+         WHERE i.tenant_id = $1 AND ${scope} ORDER BY i.created_at DESC`,
+        params,
       );
       const items: CustomerInvoiceV1[] = [];
       for (const row of res.rows) {
@@ -1171,12 +1202,12 @@ export class OrderService {
 
   // ─── 6. Customer Credit Memos ──────────────────────────────────────────────
 
-  async createCreditMemo(
-    tenantId: string,
-    actorId: string,
-    input: CreateCustomerCreditMemoInputV1,
-  ): Promise<CustomerCreditMemoV1> {
+  async createCreditMemo(principal: ModulePrincipal, input: CreateCustomerCreditMemoInputV1): Promise<CustomerCreditMemoV1> {
+    const { tenantId, subject: actorId } = principal;
     return this.database.withTenantTransaction(tenantId, async (client) => {
+      // WI-OI-120p slice 9: a memo may be created only within the parent order's writable unit.
+      const access = await resolveOrganizationAccess(client, principal);
+      assertWritableUnit(access, await this.memoOrderUnit(client, tenantId, { order_id: input.orderId ?? null, invoice_id: input.invoiceId ?? null }));
       await requireActiveCustomerParty(client, tenantId, input.customerPartyId);
 
       let totalAmount = 0n;
@@ -1243,13 +1274,34 @@ export class OrderService {
     });
   }
 
-  async getCustomerCreditMemo(tenantId: string, creditMemoId: string): Promise<CustomerCreditMemoV1> {
+  // WI-OI-120p slice 9: a credit memo's unit is its order's — directly (order_id) or via its invoice (invoice→order).
+  private async memoOrderUnit(
+    client: PoolClient,
+    tenantId: string,
+    memo: { order_id: string | null; invoice_id: string | null },
+  ): Promise<string | null> {
+    if (memo.order_id) return this.parentOrderUnit(client, tenantId, memo.order_id);
+    if (memo.invoice_id) {
+      const inv = await client.query<{ order_id: string | null }>(
+        `SELECT order_id FROM gigalibs_orders.customer_invoices WHERE tenant_id = $1 AND id = $2`,
+        [tenantId, memo.invoice_id],
+      );
+      const orderId = inv.rows[0]?.order_id;
+      if (orderId) return this.parentOrderUnit(client, tenantId, orderId);
+    }
+    return null;
+  }
+
+  async getCustomerCreditMemo(principal: ModulePrincipal, creditMemoId: string): Promise<CustomerCreditMemoV1> {
+    const { tenantId } = principal;
     return this.database.withTenantTransaction(tenantId, async (client) => {
       const res = await client.query(
         `SELECT * FROM gigalibs_orders.customer_credit_memos WHERE tenant_id = $1 AND id = $2`,
         [tenantId, creditMemoId],
       );
-      if (res.rows.length === 0) throw new NotFoundException('Credit memo not found');
+      const access = await resolveOrganizationAccess(client, principal);
+      if (res.rows.length === 0 || !canReadUnit(access, await this.memoOrderUnit(client, tenantId, res.rows[0])))
+        throw new NotFoundException('Credit memo not found');
       const lines = await client.query(
         `SELECT * FROM gigalibs_orders.customer_credit_memo_lines WHERE tenant_id = $1 AND credit_memo_id = $2 ORDER BY line_number ASC`,
         [tenantId, creditMemoId],
@@ -1258,11 +1310,19 @@ export class OrderService {
     });
   }
 
-  async listCustomerCreditMemos(principal: { tenantId: string }): Promise<CustomerCreditMemoV1[]> {
+  async listCustomerCreditMemos(principal: ModulePrincipal): Promise<CustomerCreditMemoV1[]> {
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
+      // WI-OI-120p slice 9: scope by the memo's order unit via either parent path (COALESCE order_id / invoice→order).
+      const access = await resolveOrganizationAccess(client, principal);
+      const params: unknown[] = [principal.tenantId];
+      const scope = orgReadCondition(access, 'COALESCE(o1.org_unit_id, o2.org_unit_id)', (value) => `$${params.push(value)}`);
       const res = await client.query<{ id: string }>(
-        `SELECT id FROM gigalibs_orders.customer_credit_memos WHERE tenant_id = $1 ORDER BY created_at DESC`,
-        [principal.tenantId],
+        `SELECT m.id FROM gigalibs_orders.customer_credit_memos m
+         LEFT JOIN gigalibs_orders.sales_orders o1 ON o1.id = m.order_id
+         LEFT JOIN gigalibs_orders.customer_invoices ci ON ci.id = m.invoice_id
+         LEFT JOIN gigalibs_orders.sales_orders o2 ON o2.id = ci.order_id
+         WHERE m.tenant_id = $1 AND ${scope} ORDER BY m.created_at DESC`,
+        params,
       );
       const items: CustomerCreditMemoV1[] = [];
       for (const row of res.rows) {

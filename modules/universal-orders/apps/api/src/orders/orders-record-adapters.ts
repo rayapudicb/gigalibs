@@ -535,7 +535,7 @@ export function ordersRecordDispatcher(deps: { orders: OrderService }, idempoten
         permission: 'orders:invoices:manage',
         run: async (context, id, parameters) => {
           const dueDate = normalizeDatetime(parameters['due-date'], 30);
-          await deps.orders.createCustomerInvoice(context.principal.tenantId, context.principal.subject, {
+          await deps.orders.createCustomerInvoice(context.principal, {
             orderId: id,
             dueDate,
           });
@@ -573,18 +573,14 @@ export function ordersRecordDispatcher(deps: { orders: OrderService }, idempoten
     },
     async get(principal, id) {
       try {
-        const fulfillment = await deps.orders.getFulfillment(principal.tenantId, id);
+        const fulfillment = await deps.orders.getFulfillment(principal, id);
         return fulfillmentOrderToWindow(fulfillment);
       } catch {
         return null;
       }
     },
     async create(context, values) {
-      const fulfillment = await deps.orders.createFulfillment(
-        context.principal.tenantId,
-        context.principal.subject,
-        windowValuesToCreateFulfillmentOrderInput(values),
-      );
+      const fulfillment = await deps.orders.createFulfillment(context.principal, windowValuesToCreateFulfillmentOrderInput(values));
       return fulfillmentOrderToWindow(fulfillment);
     },
     actions: {
@@ -595,14 +591,7 @@ export function ordersRecordDispatcher(deps: { orders: OrderService }, idempoten
           if (typeof issueId !== 'string' || issueId.trim().length === 0) {
             throw new BadRequestException('issue-id is required to dispatch a fulfillment.');
           }
-          return fulfillmentOrderToWindow(
-            await deps.orders.dispatchFulfillment(
-              context.principal.tenantId,
-              context.principal.subject,
-              id,
-              issueId.trim(),
-            ),
-          );
+          return fulfillmentOrderToWindow(await deps.orders.dispatchFulfillment(context.principal, id, issueId.trim()));
         },
       },
     },
@@ -632,18 +621,14 @@ export function ordersRecordDispatcher(deps: { orders: OrderService }, idempoten
     },
     async get(principal, id) {
       try {
-        const invoice = await deps.orders.getCustomerInvoice(principal.tenantId, id);
+        const invoice = await deps.orders.getCustomerInvoice(principal, id);
         return customerInvoiceToWindow(invoice);
       } catch {
         return null;
       }
     },
     async create(context, values) {
-      const invoice = await deps.orders.createCustomerInvoice(
-        context.principal.tenantId,
-        context.principal.subject,
-        windowValuesToCreateCustomerInvoiceInput(values),
-      );
+      const invoice = await deps.orders.createCustomerInvoice(context.principal, windowValuesToCreateCustomerInvoiceInput(values));
       return customerInvoiceToWindow(invoice);
     },
   };
@@ -672,18 +657,14 @@ export function ordersRecordDispatcher(deps: { orders: OrderService }, idempoten
     },
     async get(principal, id) {
       try {
-        const memo = await deps.orders.getCustomerCreditMemo(principal.tenantId, id);
+        const memo = await deps.orders.getCustomerCreditMemo(principal, id);
         return creditMemoToWindow(memo);
       } catch {
         return null;
       }
     },
     async create(context, values) {
-      const memo = await deps.orders.createCreditMemo(
-        context.principal.tenantId,
-        context.principal.subject,
-        windowValuesToCreateCustomerCreditMemoInput(values),
-      );
+      const memo = await deps.orders.createCreditMemo(context.principal, windowValuesToCreateCustomerCreditMemoInput(values));
       return creditMemoToWindow(memo);
     },
   };

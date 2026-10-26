@@ -150,9 +150,15 @@ export class OrderController {
   @RequirePermissions('orders:read')
   async listFulfillments(@CurrentPrincipal() principal: ModulePrincipal) {
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
+      // WI-OI-120p slice 9: fulfillments inherit their parent order's unit — join and filter on it.
+      const access = await resolveOrganizationAccess(client, principal);
+      const params: unknown[] = [principal.tenantId];
+      const scope = orgReadCondition(access, 'o.org_unit_id', (value) => `$${params.push(value)}`);
       const res = await client.query(
-        `SELECT * FROM gigalibs_orders.fulfillment_orders WHERE tenant_id = $1 ORDER BY created_at DESC LIMIT 50`,
-        [principal.tenantId],
+        `SELECT f.* FROM gigalibs_orders.fulfillment_orders f
+         JOIN gigalibs_orders.sales_orders o ON o.id = f.order_id
+         WHERE f.tenant_id = $1 AND ${scope} ORDER BY f.created_at DESC LIMIT 50`,
+        params,
       );
       return res.rows;
     });
@@ -161,7 +167,7 @@ export class OrderController {
   @Get('fulfillments/:id')
   @RequirePermissions('orders:read')
   async getFulfillment(@CurrentPrincipal() principal: ModulePrincipal, @Param('id') id: string) {
-    return this.orderService.getFulfillment(principal.tenantId, id);
+    return this.orderService.getFulfillment(principal, id);
   }
 
   @Post('fulfillments')
@@ -169,7 +175,7 @@ export class OrderController {
   async createFulfillment(@CurrentPrincipal() principal: ModulePrincipal, @Body() body: unknown) {
     const parsed = CreateFulfillmentOrderInputV1Schema.safeParse(body);
     if (!parsed.success) throw new BadRequestException(parsed.error.message);
-    return this.orderService.createFulfillment(principal.tenantId, principal.subject, parsed.data);
+    return this.orderService.createFulfillment(principal, parsed.data);
   }
 
   @Post('fulfillments/:id/dispatch')
@@ -179,7 +185,7 @@ export class OrderController {
     @Param('id') id: string,
     @Body() body?: { issueId?: string },
   ) {
-    return this.orderService.dispatchFulfillment(principal.tenantId, principal.subject, id, body?.issueId);
+    return this.orderService.dispatchFulfillment(principal, id, body?.issueId);
   }
 
   @Post('inbox/invoices')
@@ -198,9 +204,15 @@ export class OrderController {
     @Param('id') id: string,
   ) {
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
+      // WI-OI-120p slice 9: the AR projection is readable only if its order is in the member's scope.
+      const access = await resolveOrganizationAccess(client, principal);
+      const params: unknown[] = [principal.tenantId, id];
+      const scope = orgReadCondition(access, 'o.org_unit_id', (value) => `$${params.push(value)}`);
       const res = await client.query(
-        `SELECT * FROM gigalibs_orders.order_ar_invoice_projections WHERE tenant_id = $1 AND order_id = $2`,
-        [principal.tenantId, id],
+        `SELECT p.* FROM gigalibs_orders.order_ar_invoice_projections p
+         JOIN gigalibs_orders.sales_orders o ON o.id = p.order_id
+         WHERE p.tenant_id = $1 AND p.order_id = $2 AND ${scope}`,
+        params,
       );
       return res.rows[0] ?? null;
     });
@@ -212,9 +224,15 @@ export class OrderController {
   @RequirePermissions('orders:read')
   async listInvoices(@CurrentPrincipal() principal: ModulePrincipal) {
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
+      // WI-OI-120p slice 9: invoices inherit their parent order's unit — join and filter on it.
+      const access = await resolveOrganizationAccess(client, principal);
+      const params: unknown[] = [principal.tenantId];
+      const scope = orgReadCondition(access, 'o.org_unit_id', (value) => `$${params.push(value)}`);
       const res = await client.query(
-        `SELECT * FROM gigalibs_orders.customer_invoices WHERE tenant_id = $1 ORDER BY created_at DESC LIMIT 50`,
-        [principal.tenantId],
+        `SELECT i.* FROM gigalibs_orders.customer_invoices i
+         JOIN gigalibs_orders.sales_orders o ON o.id = i.order_id
+         WHERE i.tenant_id = $1 AND ${scope} ORDER BY i.created_at DESC LIMIT 50`,
+        params,
       );
       return res.rows;
     });
@@ -223,7 +241,7 @@ export class OrderController {
   @Get('invoices/:id')
   @RequirePermissions('orders:read')
   async getInvoice(@CurrentPrincipal() principal: ModulePrincipal, @Param('id') id: string) {
-    return this.orderService.getCustomerInvoice(principal.tenantId, id);
+    return this.orderService.getCustomerInvoice(principal, id);
   }
 
   @Post('invoices')
@@ -231,7 +249,7 @@ export class OrderController {
   async createInvoice(@CurrentPrincipal() principal: ModulePrincipal, @Body() body: unknown) {
     const parsed = CreateCustomerInvoiceInputV1Schema.safeParse(body);
     if (!parsed.success) throw new BadRequestException(parsed.error.message);
-    return this.orderService.createCustomerInvoice(principal.tenantId, principal.subject, parsed.data);
+    return this.orderService.createCustomerInvoice(principal, parsed.data);
   }
 
   // ─── Credit Memos ──────────────────────────────────────────────────────────
@@ -240,9 +258,17 @@ export class OrderController {
   @RequirePermissions('orders:read')
   async listCreditMemos(@CurrentPrincipal() principal: ModulePrincipal) {
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
+      // WI-OI-120p slice 9: a memo's unit is its order's — directly, or via its invoice's order; COALESCE both paths.
+      const access = await resolveOrganizationAccess(client, principal);
+      const params: unknown[] = [principal.tenantId];
+      const scope = orgReadCondition(access, 'COALESCE(o1.org_unit_id, o2.org_unit_id)', (value) => `$${params.push(value)}`);
       const res = await client.query(
-        `SELECT * FROM gigalibs_orders.customer_credit_memos WHERE tenant_id = $1 ORDER BY created_at DESC LIMIT 50`,
-        [principal.tenantId],
+        `SELECT m.* FROM gigalibs_orders.customer_credit_memos m
+         LEFT JOIN gigalibs_orders.sales_orders o1 ON o1.id = m.order_id
+         LEFT JOIN gigalibs_orders.customer_invoices ci ON ci.id = m.invoice_id
+         LEFT JOIN gigalibs_orders.sales_orders o2 ON o2.id = ci.order_id
+         WHERE m.tenant_id = $1 AND ${scope} ORDER BY m.created_at DESC LIMIT 50`,
+        params,
       );
       return res.rows;
     });
@@ -253,7 +279,7 @@ export class OrderController {
   async createCreditMemo(@CurrentPrincipal() principal: ModulePrincipal, @Body() body: unknown) {
     const parsed = CreateCustomerCreditMemoInputV1Schema.safeParse(body);
     if (!parsed.success) throw new BadRequestException(parsed.error.message);
-    return this.orderService.createCreditMemo(principal.tenantId, principal.subject, parsed.data);
+    return this.orderService.createCreditMemo(principal, parsed.data);
   }
 
   // ─── Returns (RMA) ─────────────────────────────────────────────────────────
@@ -262,9 +288,15 @@ export class OrderController {
   @RequirePermissions('orders:read')
   async listReturns(@CurrentPrincipal() principal: ModulePrincipal) {
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
+      // WI-OI-120p slice 9: a return's unit is its order's (LEFT JOIN — a return with no order is tenant-shared).
+      const access = await resolveOrganizationAccess(client, principal);
+      const params: unknown[] = [principal.tenantId];
+      const scope = orgReadCondition(access, 'o.org_unit_id', (value) => `$${params.push(value)}`);
       const res = await client.query(
-        `SELECT * FROM gigalibs_orders.customer_returns WHERE tenant_id = $1 ORDER BY created_at DESC LIMIT 50`,
-        [principal.tenantId],
+        `SELECT r.* FROM gigalibs_orders.customer_returns r
+         LEFT JOIN gigalibs_orders.sales_orders o ON o.id = r.order_id
+         WHERE r.tenant_id = $1 AND ${scope} ORDER BY r.created_at DESC LIMIT 50`,
+        params,
       );
       return res.rows;
     });
