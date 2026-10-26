@@ -83,10 +83,10 @@ async function readError(
 }
 
 const STATUS_STYLE: Record<InviteStatus, string> = {
-  ACCEPTED: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-  PENDING: 'bg-amber-50 text-amber-700 border-amber-200',
-  REVOKED: 'bg-zinc-100 text-zinc-600 border-zinc-200',
-  EXPIRED: 'bg-rose-50 text-rose-700 border-rose-200',
+  ACCEPTED: 'bg-ui-tag-green-bg text-ui-tag-green-text border-ui-tag-green-border',
+  PENDING: 'bg-ui-tag-orange-bg text-ui-tag-orange-text border-ui-tag-orange-border',
+  REVOKED: 'bg-ui-bg-subtle text-ui-fg-muted border-ui-border-base',
+  EXPIRED: 'bg-ui-tag-red-bg text-ui-fg-error border-ui-tag-red-border',
 };
 
 function StatusBadge({ status }: { status: InviteStatus }) {
@@ -117,9 +117,9 @@ function InviteLinks({ title, invites }: { title: string; invites: CreatedInvite
   if (invites.length === 0) return null;
   const handout = inviteLinksText(origin(), invites);
   return (
-    <div className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50/60 p-4">
+    <div className="mt-4 rounded-lg border border-ui-tag-green-border bg-ui-tag-green-bg p-4">
       <div className="flex items-center justify-between gap-2">
-        <p className="text-sm font-semibold text-emerald-900">
+        <p className="text-sm font-semibold text-ui-tag-green-text">
           {title} — {invites.length} one-time link{invites.length === 1 ? '' : 's'}
         </p>
         <div className="flex gap-2">
@@ -139,15 +139,17 @@ function InviteLinks({ title, invites }: { title: string; invites: CreatedInvite
           </Button>
         </div>
       </div>
-      <p className="mt-1 text-xs text-emerald-800">
+      <p className="mt-1 text-xs text-ui-tag-green-text">
         Email is not wired yet, so share each link with its person directly. The token travels after
         “#”, so it is never sent to a server.
       </p>
       <ul className="mt-3 space-y-1.5">
         {invites.map((invite) => (
           <li key={invite.email} className="flex items-center gap-2 text-xs">
-            <span className="w-56 shrink-0 truncate font-medium text-zinc-700">{invite.email}</span>
-            <code className="flex-1 truncate rounded bg-white px-2 py-1 text-[11px] text-zinc-600 border border-emerald-200">
+            <span className="w-56 shrink-0 truncate font-medium text-ui-fg-subtle">
+              {invite.email}
+            </span>
+            <code className="flex-1 truncate rounded bg-ui-bg-base px-2 py-1 text-[11px] text-ui-fg-muted border border-ui-tag-green-border">
               {inviteAcceptUrl(origin(), invite.token)}
             </code>
             <Button
@@ -168,12 +170,12 @@ function InviteLinks({ title, invites }: { title: string; invites: CreatedInvite
 
 function RowErrors({ errors, total }: { errors: RowError[]; total: number }) {
   return (
-    <div className="mt-4 rounded-lg border border-rose-200 bg-rose-50/60 p-4">
-      <p className="text-sm font-semibold text-rose-900">
+    <div className="mt-4 rounded-lg border border-ui-tag-red-border bg-ui-tag-red-bg p-4">
+      <p className="text-sm font-semibold text-ui-tag-red-text">
         {errors.length} of {total} row{total === 1 ? '' : 's'} could not be added — nothing was
         created. Fix these and try again:
       </p>
-      <ul className="mt-2 space-y-1 text-xs text-rose-800">
+      <ul className="mt-2 space-y-1 text-xs text-ui-tag-red-text">
         {errors.map((error) => (
           <li key={`${error.index}-${error.code}`}>
             <span className="font-medium">Row {error.index + 1}</span>
@@ -275,8 +277,8 @@ function BulkInviteSection({
                     onClick={() => toggleRole(role.id)}
                     className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium transition ${
                       on
-                        ? 'border-zinc-900 bg-zinc-900 text-white'
-                        : 'border-ui-border-base bg-white text-ui-fg-base hover:bg-ui-bg-subtle'
+                        ? 'border-ui-fg-base bg-ui-fg-base text-ui-fg-on-inverted'
+                        : 'border-ui-border-base bg-ui-bg-base text-ui-fg-base hover:bg-ui-bg-subtle'
                     }`}
                     aria-pressed={on}
                   >
@@ -305,7 +307,7 @@ function BulkInviteSection({
             onChange={(event) => setEmails(event.target.value)}
             rows={6}
             placeholder={'ada@example.com, Ada Lovelace\nalan@example.com'}
-            className="w-full rounded-lg border border-ui-border-base bg-white px-3 py-2 text-sm font-mono text-ui-fg-base focus:outline-none focus:ring-2 focus:ring-zinc-900"
+            className="w-full rounded-lg border border-ui-border-base bg-ui-bg-base px-3 py-2 text-sm font-mono text-ui-fg-base focus:outline-none focus:ring-2 focus:ring-ui-border-interactive"
           />
           <p className="mt-1 text-xs text-ui-fg-subtle">
             {parsed.people.length} ready
@@ -347,7 +349,7 @@ function BulkInviteSection({
           </Button>
         </div>
 
-        {error && <p className="text-sm text-rose-700">{error}</p>}
+        {error && <p className="text-sm text-ui-fg-error">{error}</p>}
         {rowErrors && (
           <RowErrors errors={rowErrors} total={parsed.people.length || rowErrors.length} />
         )}
@@ -521,7 +523,7 @@ function JoinTrackerSection({ canManage, reloadKey }: { canManage: boolean; relo
             </Table>
           </>
         )}
-        {error && <p className="mt-3 text-sm text-rose-700">{error}</p>}
+        {error && <p className="mt-3 text-sm text-ui-fg-error">{error}</p>}
         <InviteLinks title="Resent" invites={resent} />
       </CardContent>
     </Card>
@@ -661,8 +663,8 @@ function BulkOffboardSection() {
             Off-board selected
           </Button>
         </div>
-        {notice && <p className="text-sm text-emerald-700">{notice}</p>}
-        {error && <p className="text-sm text-rose-700">{error}</p>}
+        {notice && <p className="text-sm text-ui-tag-green-text">{notice}</p>}
+        {error && <p className="text-sm text-ui-fg-error">{error}</p>}
       </CardContent>
     </Card>
   );
@@ -756,8 +758,8 @@ function DelegatedGrantSection({ roles }: { roles: WorkspaceRole[] }) {
                     onClick={() => toggleRole(role.id)}
                     className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium transition ${
                       on
-                        ? 'border-zinc-900 bg-zinc-900 text-white'
-                        : 'border-ui-border-base bg-white text-ui-fg-base hover:bg-ui-bg-subtle'
+                        ? 'border-ui-fg-base bg-ui-fg-base text-ui-fg-on-inverted'
+                        : 'border-ui-border-base bg-ui-bg-base text-ui-fg-base hover:bg-ui-bg-subtle'
                     }`}
                     aria-pressed={on}
                   >
@@ -785,7 +787,7 @@ function DelegatedGrantSection({ roles }: { roles: WorkspaceRole[] }) {
             onChange={(event) => setEmails(event.target.value)}
             rows={4}
             placeholder={'ada@example.com\nalan@example.com'}
-            className="w-full rounded-lg border border-ui-border-base bg-white px-3 py-2 text-sm font-mono text-ui-fg-base focus:outline-none focus:ring-2 focus:ring-zinc-900"
+            className="w-full rounded-lg border border-ui-border-base bg-ui-bg-base px-3 py-2 text-sm font-mono text-ui-fg-base focus:outline-none focus:ring-2 focus:ring-ui-border-interactive"
           />
           <p className="mt-1 text-xs text-ui-fg-subtle">{parsed.people.length} ready.</p>
         </div>
@@ -800,8 +802,8 @@ function DelegatedGrantSection({ roles }: { roles: WorkspaceRole[] }) {
             Grant roles
           </Button>
         </div>
-        {notice && <p className="text-sm text-emerald-700">{notice}</p>}
-        {error && <p className="text-sm text-rose-700">{error}</p>}
+        {notice && <p className="text-sm text-ui-tag-green-text">{notice}</p>}
+        {error && <p className="text-sm text-ui-fg-error">{error}</p>}
         {rowErrors && (
           <RowErrors errors={rowErrors} total={parsed.people.length || rowErrors.length} />
         )}

@@ -30,9 +30,18 @@ interface WorkspaceCounts {
 }
 
 const STATUS_BADGE: Record<SetupStepStatus, { label: string; className: string }> = {
-  done: { label: 'Done', className: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-  todo: { label: 'To do', className: 'bg-amber-50 text-amber-700 border-amber-200' },
-  optional: { label: 'Optional', className: 'bg-zinc-100 text-zinc-600 border-zinc-200' },
+  done: {
+    label: 'Done',
+    className: 'bg-ui-tag-green-bg text-ui-tag-green-text border-ui-tag-green-border',
+  },
+  todo: {
+    label: 'To do',
+    className: 'bg-ui-tag-orange-bg text-ui-tag-orange-text border-ui-tag-orange-border',
+  },
+  optional: {
+    label: 'Optional',
+    className: 'bg-ui-bg-subtle text-ui-fg-muted border-ui-border-base',
+  },
 };
 
 async function countFrom(path: string, shape: 'array' | 'items'): Promise<number> {
@@ -94,7 +103,7 @@ export function SetupWizard({ companyName, companyNamed, enabledModuleCount }: S
             aria-hidden="true"
           >
             <div
-              className="h-full rounded-full bg-emerald-500 transition-all"
+              className="h-full rounded-full bg-ui-fg-base transition-all"
               style={{ width: `${progress.percent}%` }}
             />
           </div>
@@ -122,7 +131,7 @@ export function SetupWizard({ companyName, companyNamed, enabledModuleCount }: S
         <Card>
           <CardContent className="flex flex-wrap items-center justify-between gap-3 py-5">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
+              <p className="text-xs font-semibold uppercase tracking-wide text-ui-tag-green-text">
                 Next step
               </p>
               <p className="font-semibold text-ui-fg-base">{nextStep.title}</p>
@@ -147,7 +156,7 @@ export function SetupWizard({ companyName, companyNamed, enabledModuleCount }: S
                     <span
                       className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${
                         status === 'done'
-                          ? 'bg-emerald-500 text-white'
+                          ? 'bg-ui-fg-base text-ui-fg-on-inverted'
                           : 'bg-ui-bg-subtle text-ui-fg-subtle'
                       }`}
                       aria-hidden
