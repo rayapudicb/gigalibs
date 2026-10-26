@@ -77,6 +77,13 @@ export function TenantSettingsView({
         >
           👤 My Profile & Security
         </Link>
+        {/* WI-OI-120 (T11b): the guided set-up wizard for a new workspace. */}
+        <Link
+          href="/setup"
+          className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-ui-fg-muted hover:bg-ui-bg-subtle hover:text-ui-fg-base transition"
+        >
+          🚀 Set-up guide
+        </Link>
         <span className="inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
           Tenant: {tenantName}
         </span>
