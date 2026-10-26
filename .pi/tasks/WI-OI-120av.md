@@ -45,3 +45,30 @@ and only the platform changes it.
   never deleting a code in use.
 - [ ] M-CUR and M-TAX are planned to use them, not their own lists.
 - [ ] Migration rehearsal, tests, Security review, released and deployed by the owner; journey rerun.
+
+## Progress (2026-10-26, local)
+
+Built across commits `a43a5da0` (model + ICU currencies/time-zones), `97dcc7fe` (control-plane store + load/lookup
+service + read endpoint), `fb786355` (ICU countries + languages).
+
+- **Model + generator** (`contracts/platform-reference` + `scripts/build-platform-reference-data.mjs`): set keys, entry
+  shapes, provenance (source/version/sha256/entryCount/loadedAt), read-only `PlatformReferenceSet`, load schema, the
+  browser-safe `canonicalReferenceString` the checksum is taken over, and `findReferenceEntry`.
+- **Four of five sets live, zero mock, zero new dependency** — all from the runtime's ICU (= Unicode CLDR), checksummed:
+  CURRENCIES (162, ISO 4217 incl. minor units), TIME_ZONES (417, IANA), COUNTRIES (279, ISO 3166-1/CLDR), LANGUAGES
+  (190, ISO 639-1). Names come from `Intl.DisplayNames`; code lists from ICU enumeration.
+- **Store + service** (`platform_reference_versions` + `platform_reference_entries`, migration
+  `20261026030000_platform_reference_data`): a version is loaded whole with its checksum re-verified, the live version
+  retired (never deleted) and the new one made live; `lookup` serves the live version; read endpoint
+  `GET platform-reference/:setKey` (`@Public`, non-sensitive standards). The "locked" rule is `GRANT SELECT … TO
+  gigalibs_platform_reference` (per-feature role pattern); models classified in `package-layers` (audit:layers clean).
+- Tests: 15 (contracts 10 + generated integrity + service 3); typecheck 22/22; lint clean.
+
+**Remaining:**
+- **UNITS_OF_MEASURE (UN/ECE Rec 20) + ISO 3166-2 subdivisions** — not in ICU/CLDR; need the official UN/ECE file. The
+  service/model are set-agnostic, so the generator gains one input and they load like the rest. (TAX_JURISDICTIONS
+  derives from countries + subdivisions once subdivisions land.)
+- **Platform-operator LOAD endpoint** — needs platform-role gating (not wired in playground-api; load is a tested
+  service method today).
+- **GRANT lock verification** against the control DB, and the card's **Security review + owner deploy + journey**.
+- This work is **after** the Phase-3/4 release candidate (tag `4e0a2f3653bf-…`), so it belongs to a later release.
