@@ -389,6 +389,8 @@ export class ProcurementService {
     }
 
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
+      // WI-OI-120p slice 9: a member may create a purchase order only in a unit they may change.
+      assertWritableUnit(await resolveOrganizationAccess(client, principal), input.orgUnitId);
       await requireActiveVendorParty(client, principal.tenantId, input.vendorPartyId);
 
       const countRes = await client.query<{ count: string }>(
@@ -542,17 +544,35 @@ export class ProcurementService {
     });
   }
 
+  // WI-OI-120p slice 9: a purchase order is visible/changeable only within the member's organization scope.
+  private async fetchScopedPurchaseOrder(
+    client: PoolClient,
+    principal: ModulePrincipal,
+    id: string,
+    forWrite = false,
+  ): Promise<PurchaseOrderV1> {
+    const access = await resolveOrganizationAccess(client, principal);
+    const po = await this.fetchPurchaseOrder(client, principal.tenantId, id);
+    if (!canReadUnit(access, po.orgUnitId)) throw new NotFoundException(`Purchase Order ${id} not found.`);
+    if (forWrite) assertWritableUnit(access, po.orgUnitId);
+    return po;
+  }
+
   async getPurchaseOrder(principal: ModulePrincipal, id: string): Promise<PurchaseOrderV1> {
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
-      return this.fetchPurchaseOrder(client, principal.tenantId, id);
+      return this.fetchScopedPurchaseOrder(client, principal, id);
     });
   }
 
   async listPurchaseOrders(principal: ModulePrincipal): Promise<PurchaseOrderV1[]> {
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
+      // WI-OI-120p slice 9: a member lists only purchase orders in their organization units (and tenant-shared ones).
+      const access = await resolveOrganizationAccess(client, principal);
+      const params: unknown[] = [principal.tenantId];
+      const scope = orgReadCondition(access, 'org_unit_id', (value) => `$${params.push(value)}`);
       const res = await client.query<{ id: string }>(
-        `SELECT id FROM ${SCHEMA}.purchase_orders WHERE tenant_id = $1 ORDER BY created_at DESC`,
-        [principal.tenantId],
+        `SELECT id FROM ${SCHEMA}.purchase_orders WHERE tenant_id = $1 AND ${scope} ORDER BY created_at DESC`,
+        params,
       );
       const items: PurchaseOrderV1[] = [];
       for (const row of res.rows) {
@@ -564,7 +584,7 @@ export class ProcurementService {
 
   async issuePurchaseOrder(principal: ModulePrincipal, id: string): Promise<PurchaseOrderV1> {
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
-      const po = await this.fetchPurchaseOrder(client, principal.tenantId, id);
+      const po = await this.fetchScopedPurchaseOrder(client, principal, id, true);
       if (po.status !== 'DRAFT' && po.status !== 'APPROVED') {
         throw new ConflictException(`Purchase Order ${po.orderNumber} cannot be issued from status ${po.status}.`);
       }
@@ -582,7 +602,7 @@ export class ProcurementService {
 
   async acknowledgePurchaseOrder(principal: ModulePrincipal, id: string): Promise<PurchaseOrderV1> {
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
-      const po = await this.fetchPurchaseOrder(client, principal.tenantId, id);
+      const po = await this.fetchScopedPurchaseOrder(client, principal, id, true);
       if (po.status !== 'ISSUED') {
         throw new ConflictException(`Purchase Order ${po.orderNumber} cannot be acknowledged from status ${po.status}.`);
       }

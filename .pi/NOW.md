@@ -116,8 +116,12 @@ Owner approved starting Phase 3 while the Phase 2 deploy waits on disk. [WI-OI-1
   No new code. **Milestone: every main module's primary record is now org-scoped** (Procurement requisitions, Orders
   quotes+orders [integration-proven], Finance fixed assets [wired], CMMS work orders [done], Analytics/Catalogue/
   Workforce/Geospatial [pre-existing]). **Docs-only change uncommitted — awaiting "commit".**
-- Remaining slice 9 (secondary records, diminishing value): Procurement POs/bills, Orders downstream docs. The
-  per-module `organization-scope.ts` copy is by-design (nest glue over nest-agnostic module-sdk), not a shared helper.
+- **slice 9 — Procurement purchase orders built (2026-10-25):** scoped PO read+write (get/list/issue/acknowledge via a
+  `fetchScopedPurchaseOrder` choke point + create-guard); integration test extended to 4 (PO dept-isolation green).
+  Vendor bills/debit memos carry no `org_unit_id` → isolated transitively via parent PO (direct scoping needs a join,
+  deferred). Procurement suite 16 pass. **Uncommitted — awaiting "commit".**
+- Remaining slice 9 (secondary records, diminishing value): Orders downstream docs; optional join-scoping of
+  Procurement vendor bills/debit memos. The per-module `organization-scope.ts` copy is by-design (nest glue).
 - WI-OI-120p remaining is otherwise gated: slice 6 (WI-OI-120o, deferred), slice 7-grant + the R5 allow-list flip
   (owner/Security), slice 8 SSO (credentials).
 

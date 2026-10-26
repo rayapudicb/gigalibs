@@ -122,9 +122,17 @@
 - **Slice 9 milestone:** the **primary record of every main module is now organization-scoped** — Procurement
   requisitions, Orders quotes+orders (both Docker-integration-proven), Finance fixed assets (wired; GL tenant-wide by
   design), CMMS work orders (units+places, already done), and Analytics/Catalogue/Workforce/Geospatial (pre-existing).
-- **Slice 9 — remaining (secondary records, same pattern, diminishing value):** Procurement POs/vendor-bills +
-  create-scoping; Orders downstream documents (fulfillments, customer invoices, credit memos, AR-invoice projections,
-  returns). Note: the per-module `organization-scope.ts` is duplicated across
+- **Slice 9 — Procurement purchase orders built (2026-10-25):** scoped every PO read+write — `getPurchaseOrder`,
+  `listPurchaseOrders`, `issuePurchaseOrder`, `acknowledgePurchaseOrder` (via a `fetchScopedPurchaseOrder` choke
+  point: out-of-read → not-found, out-of-write → Forbidden) and `createPurchaseOrder` (create only in a writable
+  unit). PO methods already took `ModulePrincipal`, so no signature churn. Integration test extended
+  (`procurement-organization-scope.integration.test.ts`, now 4 tests, run green: a North member lists/reads/issues
+  only North's PO). **Vendor bills and debit memos carry no `org_unit_id`** (only requisitions, POs and
+  approval-policies do) — they are isolated transitively via their parent PO; scoping them directly would need a join
+  and is deferred. Procurement suite 16 pass; typecheck clean.
+- **Slice 9 — remaining (secondary records, diminishing value):** Orders downstream documents (fulfillments, customer
+  invoices, credit memos, AR-invoice projections, returns); optionally join-based scoping of Procurement vendor
+  bills/debit memos. Note: the per-module `organization-scope.ts` is duplicated across
   Procurement/Orders/Finance, but **by design** — the glue maps module-sdk's plain `OrganizationScopeRefusal`/
   `OrganizationVersionPendingError` to NestJS `ForbiddenException`/`ServiceUnavailableException`, and `module-sdk` is
   deliberately Nest-agnostic, so the nest glue lives per nest module (Analytics does the same). Not a shared-helper

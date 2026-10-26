@@ -1,7 +1,7 @@
 /**
  * WI-OI-120p slice 9 (R14, scope in every module): a department-A member can neither read nor change department-B's
- * procurement requisitions. Runs against a throwaway PostgreSQL that the harness starts and removes; it needs Docker,
- * so it is skipped unless PROCUREMENT_SCOPE_IT is set.
+ * procurement requisitions or purchase orders. Runs against a throwaway PostgreSQL that the harness starts and
+ * removes; it needs Docker, so it is skipped unless PROCUREMENT_SCOPE_IT is set.
  */
 import { createHash, randomUUID } from 'node:crypto';
 import { type ModulePrincipal, OrganizationReplica, type ReplicaUnit } from '@gigalibs/module-sdk';
@@ -76,6 +76,8 @@ integration('Procurement organization scope (isolated PostgreSQL)', () => {
   let service: ProcurementService;
   const northReq = randomUUID();
   const southReq = randomUUID();
+  const northPo = randomUUID();
+  const southPo = randomUUID();
 
   beforeAll(async () => {
     pg = await startThrowawayPostgres(`gigalibs-proc-scope-${process.pid}`);
@@ -103,6 +105,17 @@ integration('Procurement organization scope (isolated PostgreSQL)', () => {
           `INSERT INTO ${SCHEMA}.procurement_requisitions (id, tenant_id, requisition_number, org_unit_id, requested_by, status)
            VALUES ($1, $2, $3, $4, 'admin', 'DRAFT')`,
           [id, tenantId, number, unit],
+        );
+      }
+      // Two purchase orders, one owned by each plant.
+      for (const [id, unit, number] of [
+        [northPo, 'north', 'PO-N'],
+        [southPo, 'south', 'PO-S'],
+      ] as const) {
+        await client.query(
+          `INSERT INTO ${SCHEMA}.purchase_orders (id, tenant_id, order_number, org_unit_id, vendor_party_id, vendor_name, destination_warehouse_id, status)
+           VALUES ($1, $2, $3, $4, $5, 'Acme', $6, 'DRAFT')`,
+          [id, tenantId, number, unit, randomUUID(), randomUUID()],
         );
       }
     });
@@ -137,6 +150,24 @@ integration('Procurement organization scope (isolated PostgreSQL)', () => {
     });
     await expect(service.submitRequisition(northMember, northReq)).resolves.toMatchObject({
       status: 'PENDING_APPROVAL',
+    });
+  });
+
+  it('purchase orders are scoped too: a north member lists/reads/issues only north', async () => {
+    expect((await service.listPurchaseOrders(tenantWide)).map((p) => p.orderNumber).sort()).toEqual(
+      ['PO-N', 'PO-S'],
+    );
+    expect((await service.listPurchaseOrders(northMember)).map((p) => p.orderNumber)).toEqual([
+      'PO-N',
+    ]);
+    await expect(service.getPurchaseOrder(northMember, southPo)).rejects.toMatchObject({
+      status: 404,
+    });
+    await expect(service.issuePurchaseOrder(northMember, southPo)).rejects.toMatchObject({
+      status: 404,
+    });
+    await expect(service.issuePurchaseOrder(northMember, northPo)).resolves.toMatchObject({
+      status: 'ISSUED',
     });
   });
 });
