@@ -56,7 +56,7 @@ describe('PlatformReferenceService', () => {
   });
 
   it('refuses a set with no sourced dataset yet', async () => {
-    await expect(service.loadGeneratedSet('op-1', 'COUNTRIES', 'x')).rejects.toThrow(
+    await expect(service.loadGeneratedSet('op-1', 'UNITS_OF_MEASURE', 'x')).rejects.toThrow(
       /sourced dataset/,
     );
     expect(database.$transaction).not.toHaveBeenCalled();

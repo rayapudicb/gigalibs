@@ -1,6 +1,8 @@
 import { createHash } from 'node:crypto';
 import {
+  GENERATED_COUNTRIES,
   GENERATED_CURRENCIES,
+  GENERATED_LANGUAGES,
   GENERATED_TIME_ZONES,
   type ReferenceSetKey,
   canonicalReferenceString,
@@ -28,6 +30,8 @@ const GENERATED: Partial<
 > = {
   CURRENCIES: GENERATED_CURRENCIES,
   TIME_ZONES: GENERATED_TIME_ZONES,
+  COUNTRIES: GENERATED_COUNTRIES,
+  LANGUAGES: GENERATED_LANGUAGES,
 };
 
 @Injectable()
@@ -124,7 +128,8 @@ export class PlatformReferenceService {
               setKey,
               code,
               name,
-              payload: Object.keys(rest).length > 0 ? (rest as Prisma.InputJsonValue) : Prisma.JsonNull,
+              payload:
+                Object.keys(rest).length > 0 ? (rest as Prisma.InputJsonValue) : Prisma.JsonNull,
             };
           }),
         });
