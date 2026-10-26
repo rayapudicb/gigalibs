@@ -12,14 +12,18 @@ modules:
   (mirrors the CMMS proof) — green for `universal-procurement`, `universal-orders`, `financial-operations`.
 - **Record enforcement** (the module actually filters its records by the unit): the Docker-gated cross-department
   integration tests from slice 9 (Procurement 5, Orders 5) + the Finance fixed-asset wiring.
-- **Recommended flip (owner's one line each):** `SCOPE_ENFORCING_MODULES['universal-procurement' | 'universal-orders' |
-  'financial-operations'] = { units: true, places: false }` (these scope by organization unit, not place — unlike CMMS
-  which is `{units:true, places:true}`). They stay OUT of `PER_ASSIGNMENT_SCOPE_MODULES` (they read the single
-  `organization` claim, not per-assignment `scopeFor`; `assignmentScopeConflicts` correctly stops holding a module's
-  permissions at two scopes). Cross-cutting/control-plane codes a role might also carry (e.g. `organization:activate`)
-  remain correctly un-unit-scopable via `explicitScopeRefusal`.
-- After the flip, extend `erp-r5-context-coverage.spec.ts` to assert the entry (the "not yet in SCOPE_ENFORCING" test
-  there will go red on flip, as a prompt), then I wire the slice-7 delegated grant.
+- **Flip APPLIED (owner-authorized 2026-10-26, after reviewing the evidence above):**
+  `SCOPE_ENFORCING_MODULES['universal-procurement' | 'universal-orders' | 'financial-operations'] =
+  { units: true, places: false }` (scope by organization unit, not place — unlike CMMS's `{units:true, places:true}`).
+  They stay OUT of `PER_ASSIGNMENT_SCOPE_MODULES` (they read the single `organization` claim, not per-assignment
+  `scopeFor`; `assignmentScopeConflicts` stops holding a module's permissions at two scopes). Cross-cutting/control-
+  plane codes a role might also carry (e.g. `organization:activate`) remain correctly un-unit-scopable via
+  `explicitScopeRefusal`. Effect: Tenant Admins can now assign these modules' roles scoped to units via Settings → Team
+  (`assignMemberRole`), and the delegated invite/grant can carry them. RBAC suite 106 pass. **Flagged for the
+  independent Security review before deploy.**
+- Next: wire the **slice-7 delegated grant** (a head grants an allowed unit-scoped role to existing members) on top of
+  this — the authorization reuses `authorizeDelegatedPeopleAdd`; the write reuses `assignMemberRole`'s scoped-grant
+  path which now passes `assertScopeEnforced` for these modules.
 
 ## Progress (2026-10-24)
 

@@ -85,6 +85,14 @@ export interface ScopeEnforcement {
  */
 export const SCOPE_ENFORCING_MODULES: Readonly<Record<string, ScopeEnforcement>> = {
   'asset-maintenance': { units: true, places: true },
+  // WI-OI-120p slice 9: these ERP modules filter their records by the organization unit on the signed claim (proven by
+  // erp-r5-context-coverage.spec.ts for catalogue coverage and the per-module cross-department integration tests for
+  // record enforcement). They scope by unit, not place, and read the single `organization` claim rather than deciding
+  // per assignment — so they are NOT in PER_ASSIGNMENT_SCOPE_MODULES, and assignmentScopeConflicts keeps a member from
+  // holding one module's permissions at two scopes.
+  'universal-procurement': { units: true, places: false },
+  'universal-orders': { units: true, places: false },
+  'financial-operations': { units: true, places: false },
 };
 
 /**

@@ -10,10 +10,8 @@
  * integration test (…-organization-scope.integration.test.ts for Procurement and Orders; fixed-assets wiring for
  * Finance).
  *
- * This file deliberately does NOT assert a SCOPE_ENFORCING_MODULES entry: adding one is the owner/Security flip that
- * turns unit-scoped role *grants* on for the module. When that flip lands, extend this spec to assert the entry
- * (`{ units: true, places: false }` — these modules scope by organization unit, not place) exactly as the CMMS spec
- * asserts `{ units: true, places: true }`.
+ * The allow-list flip is in force (WI-OI-120p slice 9): each module is `{ units: true, places: false }` — they scope by
+ * organization unit, not place, unlike CMMS which is `{ units: true, places: true }`.
  */
 import { describe, expect, it } from 'vitest';
 import { moduleCheckedCodes } from './assignment-scopes.js';
@@ -33,9 +31,8 @@ describe('WI-OI-120p ERP R5 context / catalogue coverage', () => {
     }
   });
 
-  it.each(MODULES)('%s is not yet in SCOPE_ENFORCING_MODULES (the flip is the owner/Security decision)', async (moduleKey) => {
+  it.each(MODULES)('%s enforces unit scope (and not place) in SCOPE_ENFORCING_MODULES', async (moduleKey) => {
     const { SCOPE_ENFORCING_MODULES } = await import('./assignment-scopes.js');
-    // Standing reminder: this stays undefined until the reviewed flip; flipping it turns on unit-scoped grants.
-    expect(SCOPE_ENFORCING_MODULES[moduleKey]).toBeUndefined();
+    expect(SCOPE_ENFORCING_MODULES[moduleKey]).toEqual({ units: true, places: false });
   });
 });

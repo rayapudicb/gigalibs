@@ -78,9 +78,15 @@ describe('assignment scopes and the transition rule', () => {
   });
 
   // WI-OI-120bk: CMMS R5 unit/place gate (see cmms-r5-context-coverage.spec.ts for catalogue coverage).
-  it('enforces units and places for asset-maintenance', async () => {
+  // WI-OI-120p slice 9: the ERP modules enforce unit scope (not place) — see erp-r5-context-coverage.spec.ts.
+  it('enforces the proven unit/place scope per module', async () => {
     const { SCOPE_ENFORCING_MODULES } = await import('./assignment-scopes.js');
-    expect(SCOPE_ENFORCING_MODULES).toEqual({ 'asset-maintenance': { units: true, places: true } });
+    expect(SCOPE_ENFORCING_MODULES).toEqual({
+      'asset-maintenance': { units: true, places: true },
+      'universal-procurement': { units: true, places: false },
+      'universal-orders': { units: true, places: false },
+      'financial-operations': { units: true, places: false },
+    });
   });
 });
 

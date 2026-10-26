@@ -137,9 +137,10 @@ Owner approved starting Phase 3 while the Phase 2 deploy waits on disk. [WI-OI-1
   integration test (deferred). The per-module `organization-scope.ts` copy is by-design (nest glue).
 - **R5 readiness evidence built (2026-10-26):** `contracts/rbac/erp-r5-context-coverage.spec.ts` proves catalogue
   coverage for `universal-procurement`/`universal-orders`/`financial-operations` (every checked code catalogued +
-  owned); paired with the slice-9 cross-department integration tests = both halves of the R5 card. The allow-list
-  **flip** (add each as `{units:true, places:false}` to `SCOPE_ENFORCING_MODULES`) stays the owner/Security decision;
-  see WI-OI-120p "R5 readiness" for the exact one-liner. The flip unblocks the slice-7 delegated grant.
+  owned); paired with the slice-9 cross-department integration tests = both halves of the R5 card.
+- **R5 flip APPLIED (owner-authorized 2026-10-26):** the three ERP modules added to `SCOPE_ENFORCING_MODULES` as
+  `{units:true, places:false}` — unit-scoped role *grants* now allowed for them (Tenant Admin Settings→Team + delegated
+  invite). RBAC suite 106 pass; flagged for the independent Security review. Next: wire the slice-7 delegated grant.
 - WI-OI-120p remaining is otherwise gated: slice 6 (WI-OI-120o, deferred), slice 7-grant + the R5 allow-list flip
   (owner/Security), slice 8 SSO (credentials).
 
