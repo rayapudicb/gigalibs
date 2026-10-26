@@ -622,6 +622,8 @@ export class ProcurementService {
 
   async matchReceipt(principal: ModulePrincipal, input: MatchReceiptInputV1): Promise<MatchPoReceiptRecordV1> {
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
+      // WI-OI-120p slice 9: matching is a change on the purchase order; scope by the PO's unit.
+      assertWritableUnit(await resolveOrganizationAccess(client, principal), await this.purchaseOrderUnit(client, principal.tenantId, input.purchaseOrderId));
       const lineRes = await client.query<{
         ordered_quantity: string;
         received_quantity: string;
@@ -837,6 +839,8 @@ export class ProcurementService {
 
   async matchInvoice(principal: ModulePrincipal, input: MatchInvoiceInputV1): Promise<MatchPoInvoiceRecordV1> {
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
+      // WI-OI-120p slice 9: matching is a change on the purchase order; scope by the PO's unit.
+      assertWritableUnit(await resolveOrganizationAccess(client, principal), await this.purchaseOrderUnit(client, principal.tenantId, input.purchaseOrderId));
       const poLineRes = await client.query<{
         ordered_quantity: string;
         received_quantity: string;
@@ -989,9 +993,13 @@ export class ProcurementService {
         [principal.tenantId, input.matchRecordId],
       );
 
-      if (matchRes.rows.length === 0) {
+      // WI-OI-120p slice 9: scoped by the match's purchase order — invisible out of read scope, refused out of write.
+      const access = await resolveOrganizationAccess(client, principal);
+      const matchUnit = await this.purchaseOrderUnit(client, principal.tenantId, matchRes.rows[0]?.purchase_order_id ?? null);
+      if (matchRes.rows.length === 0 || !canReadUnit(access, matchUnit)) {
         throw new NotFoundException(`Match record ${input.matchRecordId} not found.`);
       }
+      assertWritableUnit(access, matchUnit);
 
       const rec = matchRes.rows[0];
 
@@ -1411,6 +1419,10 @@ export class ProcurementService {
 
   async listApprovalPolicies(principal: ModulePrincipal): Promise<ApprovalPolicyV1[]> {
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
+      // WI-OI-120p slice 9: a member lists only approval policies for their units (a null-unit policy is tenant-wide).
+      const access = await resolveOrganizationAccess(client, principal);
+      const params: unknown[] = [principal.tenantId];
+      const scope = orgReadCondition(access, 'org_unit_id', (value) => `$${params.push(value)}`);
       const res = await client.query<{
         id: string;
         tenant_id: string;
@@ -1424,8 +1436,8 @@ export class ProcurementService {
         created_at: string;
         updated_at: string;
       }>(
-        `SELECT * FROM ${SCHEMA}.procurement_approval_policies WHERE tenant_id = $1 ORDER BY sort_order ASC, max_amount_minor ASC`,
-        [principal.tenantId],
+        `SELECT * FROM ${SCHEMA}.procurement_approval_policies WHERE tenant_id = $1 AND ${scope} ORDER BY sort_order ASC, max_amount_minor ASC`,
+        params,
       );
       return res.rows.map((r) => ({
         id: r.id,

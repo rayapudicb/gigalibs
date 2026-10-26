@@ -146,7 +146,10 @@ Owner approved starting Phase 3 while the Phase 2 deploy waits on disk. [WI-OI-1
   → grant each role unit-scoped via `resolveRoleScope`, reusing assignMemberRole's invariants; already-held skipped).
   Route `POST current/delegated-grants` (`people:manage`). Integration test (3: non-member/out-of-unit/mixed-batch
   refused, grant nothing); happy-path write reuses the tested `resolveRoleScope` path. tenancy-nest 107 pass.
-  **Uncommitted — awaiting "commit".**
+- **Procurement scope coverage hardened (2026-10-26):** closed the handoff's spot-check gaps — `matchReceipt`/
+  `matchInvoice`/`approvePriceVariance` write-scoped by the PO's unit, `listApprovalPolicies` read-scoped by
+  `org_unit_id` (integration test now 6). `projectInventoryReceipt` left unscoped by design (inbound inventory relay,
+  not a user action). Procurement is now fully unit-scope-covered. **Uncommitted — awaiting "commit".**
 - WI-OI-120p remaining is otherwise gated: slice 6 (WI-OI-120o, deferred), slice 7-grant + the R5 allow-list flip
   (owner/Security), slice 8 SSO (credentials).
 

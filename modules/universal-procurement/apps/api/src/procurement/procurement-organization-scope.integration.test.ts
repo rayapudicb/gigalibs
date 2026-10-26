@@ -80,6 +80,8 @@ integration('Procurement organization scope (isolated PostgreSQL)', () => {
   const southPo = randomUUID();
   const northBill = randomUUID();
   const southBill = randomUUID();
+  const northPolicy = randomUUID();
+  const southPolicy = randomUUID();
 
   beforeAll(async () => {
     pg = await startThrowawayPostgres(`gigalibs-proc-scope-${process.pid}`);
@@ -129,6 +131,17 @@ integration('Procurement organization scope (isolated PostgreSQL)', () => {
           `INSERT INTO ${SCHEMA}.vendor_bills (id, tenant_id, vendor_party_id, vendor_invoice_number, invoice_date, due_date, subtotal_minor, total_amount_minor, purchase_order_id)
            VALUES ($1, $2, $3, $4, NOW(), NOW(), 0, 0, $5)`,
           [id, tenantId, randomUUID(), number, po],
+        );
+      }
+      // An approval policy per plant (these carry a unit directly).
+      for (const [id, unit, name] of [
+        [northPolicy, 'north', 'POL-N'],
+        [southPolicy, 'south', 'POL-S'],
+      ] as const) {
+        await client.query(
+          `INSERT INTO ${SCHEMA}.procurement_approval_policies (id, tenant_id, policy_name, org_unit_id, max_amount_minor, required_role)
+           VALUES ($1, $2, $3, $4, 100000, 'procurement:orders:approve')`,
+          [id, tenantId, name, unit],
         );
       }
     });
@@ -194,5 +207,14 @@ integration('Procurement organization scope (isolated PostgreSQL)', () => {
     await expect(service.getVendorBill(northMember, northBill)).resolves.toMatchObject({
       vendorInvoiceNumber: 'VB-N',
     });
+  });
+
+  it('approval policies (which carry a unit directly) list only the member units', async () => {
+    expect(
+      (await service.listApprovalPolicies(tenantWide)).map((p) => p.policyName).sort(),
+    ).toEqual(['POL-N', 'POL-S']);
+    expect((await service.listApprovalPolicies(northMember)).map((p) => p.policyName)).toEqual([
+      'POL-N',
+    ]);
   });
 });

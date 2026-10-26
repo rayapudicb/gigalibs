@@ -37,10 +37,14 @@ Evidence it is safe (both halves of the R5 card):
   `assignmentScopeConflicts` stops holding one module's permissions at two scopes); control-plane codes a role might
   also carry (e.g. `organization:activate`) remain un-unit-scopable via `explicitScopeRefusal`.
 
-Please confirm: (1) each of the three modules genuinely enforces unit scope on **all** endpoints that check its codes
-(spot-check beyond the tested records, e.g. Procurement receipts/match, approval-policies list — approval-policies
-carry a nullable `org_unit_id` and the list is not yet unit-scoped); (2) the single-claim model + `assignmentScopeConflicts`
-is acceptable (no per-assignment multi-unit for these modules).
+Please confirm: (1) each of the three modules genuinely enforces unit scope on **all** endpoints that check its codes;
+(2) the single-claim model + `assignmentScopeConflicts` is acceptable (no per-assignment multi-unit for these modules).
+
+Update (2026-10-26, closing my own spot-check note): **Procurement is now fully covered** — `matchReceipt`,
+`matchInvoice` and `approvePriceVariance` are write-scoped by their purchase order's unit, and `listApprovalPolicies`
+is read-scoped by `org_unit_id` (integration-tested). `projectInventoryReceipt` is left unscoped by design — it is an
+**inbound inventory relay event** (system-to-system), not a delegated user action. Orders/Finance: the primary records
+and downstream documents are scoped (see slice-9 commits); any remaining read-only projections are system relays.
 
 ## Migrations (control-plane, additive)
 
