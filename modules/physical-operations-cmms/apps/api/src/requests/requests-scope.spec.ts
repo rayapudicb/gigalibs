@@ -55,6 +55,15 @@ function service(rows: Array<Record<string, unknown>> = []) {
     assets,
   };
 }
+// A query must bind exactly the parameters its SQL references — no orphan (the cause of the 500
+// "bind supplies N parameters but prepared statement requires M" / "could not determine data type of parameter").
+function assertParamsConsistent(sql: string, values: unknown[]) {
+  const placeholders = [...String(sql).matchAll(/\$(\d+)/g)].map((m) => Number(m[1]));
+  const maxPlaceholder = placeholders.length === 0 ? 0 : Math.max(...placeholders);
+  expect(values.length).toBe(maxPlaceholder);
+  for (let i = 1; i <= maxPlaceholder; i += 1) expect(placeholders).toContain(i);
+}
+
 const southRequest = {
   id: randomUUID(),
   tenant_id: 'tenant-a',
@@ -75,9 +84,10 @@ describe('maintenance requests under unit and site access', () => {
     const { requests, query } = service();
     await requests.search(northPlanner, {});
     const [sql, values] = query.mock.calls[0] as unknown as [string, unknown[]];
-    expect(sql).toContain('(r.requester_subject = $2 OR (r.department_id = ANY($3::text[])))');
+    expect(sql).toContain('(r.requester_subject = $3 OR (r.department_id = ANY($2::text[])))');
     expect(sql).not.toMatch(/department_id IS NULL/);
-    expect(values.slice(1, 3)).toEqual(['planner-north', ['north', 'north-line-1']]);
+    expect(values.slice(1, 3)).toEqual([['north', 'north-line-1'], 'planner-north']);
+    assertParamsConsistent(sql, values);
   });
 
   it('lets a workspace-wide planner search every request', async () => {
@@ -88,8 +98,23 @@ describe('maintenance requests under unit and site access', () => {
       departmentScope: { mode: 'ALL' },
     } as unknown as CmmsPrincipal;
     await requests.search(workspacePlanner, {});
-    const [sql] = query.mock.calls[0] as unknown as [string, unknown[]];
+    const [sql, values] = query.mock.calls[0] as unknown as [string, unknown[]];
     expect(sql).not.toMatch(/requester_subject|department_id/);
+    // Regression: an unrestricted writer left an orphan `requester_subject` bound parameter (500 on a real DB).
+    assertParamsConsistent(sql, values);
+  });
+
+  it('a workspace-wide planner can GET a request with no orphan bound parameter (500 regression)', async () => {
+    const { requests, query } = service([southRequest]);
+    const workspacePlanner = {
+      ...northPlanner,
+      organization: undefined,
+      departmentScope: { mode: 'ALL' },
+    } as unknown as CmmsPrincipal;
+    await requests.get(workspacePlanner, southRequest.id);
+    const [sql, values] = query.mock.calls[0] as unknown as [string, unknown[]];
+    assertParamsConsistent(sql, values);
+    expect(values).toEqual(['tenant-a', southRequest.id]);
   });
 
   it('keeps everyone without cmms.requests.write to their own requests, whatever else they hold', async () => {

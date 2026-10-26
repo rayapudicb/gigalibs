@@ -78,14 +78,22 @@ function mapRequest(row: any): CmmsMaintenanceRequestV1 {
  * contact details reach planners in scope and the requester only. A request that is not visible is "not found".
  */
 function visibleRequests(principal: CmmsPrincipal, values: unknown[]): string[] {
-  values.push(principal.subject);
-  const own = `r.requester_subject = $${values.length}`;
-  if (!holdsPermission(principal.permissions, 'cmms.requests.write')) return [own];
+  // Only bind `requester_subject` when the predicate using it is actually returned: pushing it up front and then
+  // discarding the predicate (the unrestricted-writer branch below) left an orphan parameter in `values`, so the
+  // bound-parameter count no longer matched the SQL (500: "bind supplies N parameters but prepared statement
+  // requires M" / "could not determine data type of parameter").
+  const own = (): string => {
+    values.push(principal.subject);
+    return `r.requester_subject = $${values.length}`;
+  };
+  if (!holdsPermission(principal.permissions, 'cmms.requests.write')) return [own()];
+  // A writer sees requests in their scope; scope predicates are bound first, then their own requests.
   const inScope = scopePredicates(principal, values, 'r.', undefined, undefined, {
     shared: false,
     permission: 'cmms.requests.read',
   });
-  return inScope.length === 0 ? [] : [`(${own} OR (${inScope.join(' AND ')}))`];
+  // Empty means unrestricted (tenant-wide): no extra WHERE, and nothing orphaned in `values`.
+  return inScope.length === 0 ? [] : [`(${own()} OR (${inScope.join(' AND ')}))`];
 }
 
 /** Changing someone else's request needs write access to its unit and site. */
