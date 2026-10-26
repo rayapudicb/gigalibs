@@ -308,7 +308,7 @@ work. The Assistant can do the same on Workforce, within the same limits.
 | 3.1 | S17 Platform screens on metadata: settings, team, organization, access, plan, parties, administration | new | People console built 2026-10-26 (local); settings/team/org/plan/parties/admin screens pre-existing; dept-allowance editor deferred |
 | 3.2 | R13 Delegated people administration | WI-OI-120p | Proposed |
 | 3.3 | R14 Bulk people: import, invitations, grants, offboarding | WI-OI-120p | Proposed |
-| 3.4 | R15 Directory groups mapped to scoped roles, plus single sign-on (OIDC and SAML) | WI-OI-120p, WI-OI-013 | SCIM exists; SSO not built |
+| 3.4 | R15 Directory groups mapped to scoped roles, plus single sign-on (OIDC and SAML) | WI-OI-120p, WI-OI-013 | Group→scoped-role mapping + reconcile built 2026-10-26 (local); OIDC pre-existing; SAML + live SCIM-group push gated on a provider |
 | 3.5 | R16 Personas from roles | WI-OI-120p | Built 2026-10-26 (local; capability-aware `determinePersona`) |
 | 3.6 | T11b Full set-up wizard: all chosen modules and solution packs | new | Built 2026-10-26 (local; `/setup` orchestrates company/org/people/access/modules/packs, progress derived from data) |
 | 3.7 | T8b Metering, quotas and billing hand-off | WI-OI-015 | Usage counters + plan quotas + billing statement built 2026-10-26 (local); rate-limiter governor pre-existing; Redis hot-path, Stripe sync, alerts deferred |

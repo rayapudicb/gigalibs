@@ -126,6 +126,7 @@
       "MemberRoleAssignment",
       "DutyConflictAcceptance",
       "DepartmentRoleAllowance",
+      "ScimGroupRoleMapping",
       "OrgIdempotencyRecord",
       "TenantInvite",
       "AuditLog",

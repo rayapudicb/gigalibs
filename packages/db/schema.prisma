@@ -2940,6 +2940,26 @@ model DepartmentRoleAllowance {
   @@map("department_role_allowances")
 }
 
+// WI-OI-120 (R15): a directory (IdP) group mapped to a scoped custom role. When SCIM reports a person in the group,
+// the control plane grants them this role at this scope (WORKSPACE or UNITS); removing them from the group revokes it.
+// Relation-free like department_role_allowances — the service validates the role and scope at reconcile time, so a
+// stale row is harmless.
+model ScimGroupRoleMapping {
+  id              String          @id @default(cuid())
+  tenantId        String
+  externalGroupId String
+  customRoleId    String
+  scope           MemberRoleScope
+  unitIds         String[]        @default([])
+  createdById     String
+  createdAt       DateTime        @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime        @updatedAt @db.Timestamptz(3)
+
+  @@unique([tenantId, externalGroupId, customRoleId], map: "scim_group_role_mappings_unique")
+  @@index([tenantId, externalGroupId], map: "scim_group_role_mappings_group_idx")
+  @@map("scim_group_role_mappings")
+}
+
 model UserGroup {
   id       String @id @default(cuid())
   tenantId String

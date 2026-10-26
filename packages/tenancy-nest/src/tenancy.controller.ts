@@ -35,6 +35,12 @@ import {
   BulkInviteIdsSchema,
   type BulkOffboardMembersDto,
   BulkOffboardMembersSchema,
+  SetDirectoryGroupMappingSchema,
+  type SetDirectoryGroupMappingDto,
+  RemoveDirectoryGroupMappingSchema,
+  type RemoveDirectoryGroupMappingDto,
+  SyncMemberGroupsSchema,
+  type SyncMemberGroupsDto,
   CreateTenantSchema,
   type DeleteCustomRoleDto,
   DeleteCustomRoleSchema,
@@ -330,6 +336,49 @@ export class TenancyController {
     @Body(new ZodValidationPipe(BulkOffboardMembersSchema)) dto: BulkOffboardMembersDto,
   ) {
     return this.tenancyService.bulkOffboardMembers(tenantId, userId, dto);
+  }
+
+  // WI-OI-120 (R15): a Tenant Admin maps a directory (IdP) group to a scoped role; reconcile then grants it to whoever
+  // the IdP reports in the group, so an enterprise adds nobody by hand.
+  @Post('current/directory-group-mappings')
+  @Header('Cache-Control', 'no-store')
+  @RequirePermissions('roles:assign')
+  setDirectoryGroupMapping(
+    @CurrentTenant('tenantId') tenantId: string,
+    @CurrentUser('sub') userId: string,
+    @Body(new ZodValidationPipe(SetDirectoryGroupMappingSchema)) dto: SetDirectoryGroupMappingDto,
+  ) {
+    return this.tenancyService.setDirectoryGroupMapping(tenantId, userId, dto);
+  }
+
+  @Get('current/directory-group-mappings')
+  @Header('Cache-Control', 'no-store')
+  @RequirePermissions('roles:read')
+  listDirectoryGroupMappings(@CurrentTenant('tenantId') tenantId: string) {
+    return this.tenancyService.listDirectoryGroupMappings(tenantId);
+  }
+
+  @Delete('current/directory-group-mappings/:mappingId')
+  @RequirePermissions('roles:assign')
+  removeDirectoryGroupMapping(
+    @CurrentTenant('tenantId') tenantId: string,
+    @CurrentUser('sub') userId: string,
+    @Param('mappingId') mappingId: string,
+    @Body(new ZodValidationPipe(RemoveDirectoryGroupMappingSchema)) dto: RemoveDirectoryGroupMappingDto,
+  ) {
+    return this.tenancyService.removeDirectoryGroupMapping(tenantId, userId, mappingId, dto);
+  }
+
+  // Reconcile a member's directory-sourced roles with their current group membership (the IdP/SCIM connector calls this).
+  @Post('current/directory-group-sync')
+  @Header('Cache-Control', 'no-store')
+  @RequirePermissions('roles:assign')
+  reconcileMemberDirectoryGroups(
+    @CurrentTenant('tenantId') tenantId: string,
+    @CurrentUser('sub') userId: string,
+    @Body(new ZodValidationPipe(SyncMemberGroupsSchema)) dto: SyncMemberGroupsDto,
+  ) {
+    return this.tenancyService.reconcileMemberDirectoryGroups(tenantId, userId, dto);
   }
 
   // WI-OI-120w (R2 slice 2a): a member may hold several roles; each is given and taken away on its own, with a reason.

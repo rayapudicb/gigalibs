@@ -32,6 +32,12 @@ import {
   validateBulkPeopleAdd,
   validateBulkPeopleGrant,
   inviteStatus,
+  type DirectoryGroupMapping,
+  type HeldDirectoryAssignment,
+  type SetDirectoryGroupMappingDto,
+  type SyncMemberGroupsDto,
+  planDirectoryReconcile,
+  resolveGroupRoleGrants,
 } from '@gigalibs/contracts';
 import { primaryVersionInForce } from '@gigalibs/auth-nest';
 import { type Prisma, prisma } from '@gigalibs/db';
@@ -1256,6 +1262,127 @@ export class TenancyService {
       select: { id: true, unitId: true, customRoleId: true, createdAt: true },
       orderBy: [{ unitId: 'asc' }, { customRoleId: 'asc' }],
     });
+  }
+
+  // WI-OI-120 (R15): a Tenant Admin maps a directory (IdP) group to a scoped custom role. Reconcile then grants that
+  // role to whoever the IdP reports in the group. The role is validated at set time; the scope (WORKSPACE or UNITS) is
+  // enforced for real when the grant is applied, through the same assignment engine Settings → Team uses.
+  async setDirectoryGroupMapping(tenantId: string, actorId: string, dto: SetDirectoryGroupMappingDto) {
+    const reason = requireReason(dto.reason);
+    return prisma.$transaction(async (transaction) => {
+      await transaction.$queryRaw`SELECT "id" FROM "tenants" WHERE "id" = ${tenantId} FOR UPDATE`;
+      if (!(await ownAuthority(transaction, tenantId, actorId)).administrator)
+        throw new ForbiddenException({ code: 'DIRECTORY_MAPPING_ADMIN_ONLY', message: 'Only a workspace administrator maps directory groups to roles.' });
+      const role = await transaction.customRole.findFirst({ where: { id: dto.customRoleId, tenantId }, select: { id: true } });
+      if (!role) throw new BadRequestException({ code: 'ROLE_NOT_IN_WORKSPACE', message: 'That role does not belong to this workspace.' });
+      const mapping = await transaction.scimGroupRoleMapping.upsert({
+        where: { tenantId_externalGroupId_customRoleId: { tenantId, externalGroupId: dto.externalGroupId, customRoleId: dto.customRoleId } },
+        create: { tenantId, externalGroupId: dto.externalGroupId, customRoleId: dto.customRoleId, scope: dto.scope, unitIds: dto.unitIds, createdById: actorId },
+        update: { scope: dto.scope, unitIds: dto.unitIds },
+        select: { id: true },
+      });
+      await transaction.auditLog.create({
+        data: {
+          action: 'PERMISSION_CHANGE',
+          resource: 'scim_group_role_mapping',
+          resourceId: mapping.id,
+          userId: actorId,
+          tenantId,
+          after: { externalGroupId: dto.externalGroupId, customRoleId: dto.customRoleId, scope: dto.scope, unitIds: dto.unitIds },
+          metadata: { reason },
+        },
+      });
+      return { id: mapping.id };
+    });
+  }
+
+  async listDirectoryGroupMappings(tenantId: string) {
+    return prisma.scimGroupRoleMapping.findMany({
+      where: { tenantId },
+      select: { id: true, externalGroupId: true, customRoleId: true, scope: true, unitIds: true, createdAt: true },
+      orderBy: [{ externalGroupId: 'asc' }, { customRoleId: 'asc' }],
+    });
+  }
+
+  async removeDirectoryGroupMapping(tenantId: string, actorId: string, mappingId: string, dto: { reason: string }) {
+    const reason = requireReason(dto.reason);
+    return prisma.$transaction(async (transaction) => {
+      await transaction.$queryRaw`SELECT "id" FROM "tenants" WHERE "id" = ${tenantId} FOR UPDATE`;
+      if (!(await ownAuthority(transaction, tenantId, actorId)).administrator)
+        throw new ForbiddenException({ code: 'DIRECTORY_MAPPING_ADMIN_ONLY', message: 'Only a workspace administrator changes directory group mappings.' });
+      const deleted = await transaction.scimGroupRoleMapping.deleteMany({ where: { id: mappingId, tenantId } });
+      if (deleted.count === 0) throw new NotFoundException('Directory group mapping was not found.');
+      await transaction.auditLog.create({
+        data: { action: 'PERMISSION_CHANGE', resource: 'scim_group_role_mapping', resourceId: mappingId, userId: actorId, tenantId, metadata: { reason, removed: true } },
+      });
+      return { id: mappingId, removed: true };
+    });
+  }
+
+  // WI-OI-120 (R15): reconcile a member's directory-sourced role assignments with their current group membership (as
+  // the IdP reports it, over SCIM). Roles the mappings now require are granted; directory-sourced roles no longer
+  // required are revoked. Manual grants (any assignment not marked directory-sourced) are never touched. All-or-nothing;
+  // each grant goes through resolveRoleScope + the scope/duty/limit invariants, so a mapping can only grant what a
+  // Tenant Admin could grant by hand.
+  async reconcileMemberDirectoryGroups(tenantId: string, actorId: string, dto: SyncMemberGroupsDto) {
+    const DIRECTORY_SYNC = 'directory-sync';
+    return roleChangeConflicts(() =>
+      prisma.$transaction(async (transaction) => {
+        await transaction.$queryRaw`SELECT "id" FROM "tenants" WHERE "id" = ${tenantId} FOR UPDATE`;
+        if (!(await ownAuthority(transaction, tenantId, actorId)).administrator)
+          throw new ForbiddenException({ code: 'DIRECTORY_SYNC_ADMIN_ONLY', message: 'Only a workspace administrator or the directory connector reconciles group membership.' });
+        const email = dto.email.trim().toLowerCase();
+        const member = await transaction.tenantMember.findFirst({
+          where: { tenantId, user: { email: { equals: email, mode: 'insensitive' } } },
+          select: { id: true, userId: true },
+        });
+        if (!member) throw new NotFoundException('No member with that email in this workspace; provision the person first.');
+
+        const mappingRows = await transaction.scimGroupRoleMapping.findMany({
+          where: { tenantId },
+          select: { externalGroupId: true, customRoleId: true, scope: true, unitIds: true },
+        });
+        const mappings: DirectoryGroupMapping[] = mappingRows
+          .filter((row) => row.scope === 'WORKSPACE' || row.scope === 'UNITS')
+          .map((row) => ({ externalGroupId: row.externalGroupId, customRoleId: row.customRoleId, scope: row.scope as 'WORKSPACE' | 'UNITS', unitIds: row.unitIds }));
+        const desired = resolveGroupRoleGrants(dto.groupIds, mappings);
+
+        const heldRows = await transaction.memberRoleAssignment.findMany({
+          where: { tenantId, userId: member.userId, grantedById: DIRECTORY_SYNC, revokedAt: null, scope: { in: ['WORKSPACE', 'UNITS'] } },
+          select: { id: true, customRoleId: true, scope: true, unitIds: true },
+        });
+        const held: HeldDirectoryAssignment[] = heldRows.map((row) => ({ assignmentId: row.id, customRoleId: row.customRoleId, scope: row.scope as 'WORKSPACE' | 'UNITS', unitIds: row.unitIds }));
+
+        const plan = planDirectoryReconcile(desired, held);
+
+        if (plan.toRevoke.length > 0)
+          await transaction.memberRoleAssignment.updateMany({
+            where: { id: { in: [...plan.toRevoke] }, tenantId },
+            data: { revokedAt: new Date(), revokedById: DIRECTORY_SYNC, revokeReason: 'Directory group membership removed' },
+          });
+
+        const graph = await loadRoleGraph(transaction, tenantId);
+        for (const want of plan.toGrant) {
+          const rolePermissions = expandRole(graph, want.customRoleId);
+          const resolved =
+            want.scope === 'WORKSPACE'
+              ? await resolveRoleScope(transaction, tenantId, { kind: 'WORKSPACE' }, rolePermissions)
+              : await resolveRoleScope(transaction, tenantId, { kind: 'UNITS', unitIds: [...want.unitIds] }, rolePermissions);
+          await assertScopesConsistent(transaction, tenantId, member.userId, { add: { permissions: rolePermissions, scope: resolved } });
+          await assertNoDutyConflict(transaction, tenantId, member.userId, rolePermissions);
+          if ((await transaction.memberRoleAssignment.count({ where: { tenantId, userId: member.userId, revokedAt: null } })) >= MAX_MEMBER_ROLE_ASSIGNMENTS)
+            throw new ConflictException({ code: 'ROLE_LIMIT', message: `A member holds at most ${MAX_MEMBER_ROLE_ASSIGNMENTS} roles; take one away before adding another.` });
+          const assignment = await transaction.memberRoleAssignment.create({
+            data: { tenantId, userId: member.userId, customRoleId: want.customRoleId, scope: resolved.scope, unitIds: resolved.unitIds, placeIds: resolved.placeIds, reason: 'Directory group membership', grantedById: DIRECTORY_SYNC },
+            select: { id: true },
+          });
+          await transaction.auditLog.create({
+            data: { action: 'PERMISSION_CHANGE', resource: 'member_role_assignment', resourceId: assignment.id, userId: actorId, tenantId, after: { memberId: member.id, customRoleId: want.customRoleId, scope: resolved.scope, unitIds: resolved.unitIds, directory: true }, metadata: { directorySync: true } },
+          });
+        }
+        return { email, granted: plan.toGrant.length, revoked: plan.toRevoke.length };
+      }),
+    );
   }
 
   private async memberForRoleChange(transaction: Prisma.TransactionClient, tenantId: string, memberId: string, actorId: string) {
