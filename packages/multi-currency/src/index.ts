@@ -9,9 +9,9 @@
  */
 
 export interface CurrencyConfig {
-  code: string;       // ISO-4217 3-letter code
-  symbol: string;     // e.g. '$', '€', '£', '¥', '₹'
-  decimals: number;   // e.g. 2 for USD, 0 for JPY, 3 for KWD
+  code: string; // ISO-4217 3-letter code
+  symbol: string; // e.g. '$', '€', '£', '¥', '₹'
+  decimals: number; // e.g. 2 for USD, 0 for JPY, 3 for KWD
   name: string;
   fractionalUnit: string; // e.g. 'Cent', 'Pence', 'Sen'
 }
@@ -23,24 +23,48 @@ export const SUPPORTED_CURRENCIES: Record<string, CurrencyConfig> = {
   INR: { code: 'INR', symbol: '₹', decimals: 2, name: 'Indian Rupee', fractionalUnit: 'Paisa' },
   JPY: { code: 'JPY', symbol: '¥', decimals: 0, name: 'Japanese Yen', fractionalUnit: 'Yen' },
   CAD: { code: 'CAD', symbol: 'CA$', decimals: 2, name: 'Canadian Dollar', fractionalUnit: 'Cent' },
-  AUD: { code: 'AUD', symbol: 'A$', decimals: 2, name: 'Australian Dollar', fractionalUnit: 'Cent' },
+  AUD: {
+    code: 'AUD',
+    symbol: 'A$',
+    decimals: 2,
+    name: 'Australian Dollar',
+    fractionalUnit: 'Cent',
+  },
   SGD: { code: 'SGD', symbol: 'S$', decimals: 2, name: 'Singapore Dollar', fractionalUnit: 'Cent' },
   CHF: { code: 'CHF', symbol: 'CHF', decimals: 2, name: 'Swiss Franc', fractionalUnit: 'Rappen' },
   AED: { code: 'AED', symbol: 'AED', decimals: 2, name: 'UAE Dirham', fractionalUnit: 'Fils' },
 };
 
-export const DEFAULT_FX_RATES: Record<string, number> = {
-  USD: 1.0,
-  EUR: 0.924,
-  GBP: 0.788,
-  INR: 86.85,
-  JPY: 154.20,
-  CAD: 1.358,
-  AUD: 1.522,
-  SGD: 1.341,
-  CHF: 0.885,
-  AED: 3.6725,
-};
+// WI-OI-120 (M-CUR, Phase 5A): "real rates; the fabricated figure removed." The hard-coded DEFAULT_FX_RATES are gone —
+// conversion now REQUIRES a real rate table (workspace-scoped; see FxRate) and refuses, loudly, when a rate is missing
+// instead of silently assuming 1.0.
+
+/** A real exchange rate a workspace recorded (not platform data). `rate` is units of this currency per base unit. */
+export interface FxRate {
+  readonly baseCurrency: string;
+  readonly quoteCurrency: string;
+  readonly rate: number;
+  readonly asOf: string; // ISO date the rate is effective
+  readonly source: string; // where it came from (a feed, a manual entry)
+}
+
+/** A base-relative rate lookup: `table[currency]` is units of `currency` per one base unit (the base maps to 1). */
+export type FxRateTable = Record<string, number>;
+
+/** Thrown when a conversion is asked for a currency with no real rate — never silently defaulted. */
+export class NoExchangeRateError extends Error {
+  constructor(readonly currency: string) {
+    super(`No exchange rate for ${currency}; record a real rate before converting.`);
+    this.name = 'NoExchangeRateError';
+  }
+}
+
+function requireRate(table: FxRateTable, currency: string): number {
+  const rate = table[currency];
+  if (rate === undefined || !Number.isFinite(rate) || rate <= 0)
+    throw new NoExchangeRateError(currency);
+  return rate;
+}
 
 export interface FxJournalEntry {
   accountCode: string;
@@ -84,12 +108,12 @@ export class MultiCurrencyEngine {
     amount: number,
     fromCurrency: string,
     toCurrency: string,
-    rates: Record<string, number> = DEFAULT_FX_RATES,
+    rates: FxRateTable,
   ): number {
     if (fromCurrency === toCurrency) return amount;
 
-    const fromRate = rates[fromCurrency] ?? 1.0;
-    const toRate = rates[toCurrency] ?? 1.0;
+    const fromRate = requireRate(rates, fromCurrency);
+    const toRate = requireRate(rates, toCurrency);
 
     const amountInUsd = amount / fromRate;
     const converted = amountInUsd * toRate;
@@ -105,15 +129,15 @@ export class MultiCurrencyEngine {
     amountMinorUnits: number,
     fromCurrency: string,
     toCurrency: string,
-    rates: Record<string, number> = DEFAULT_FX_RATES,
+    rates: FxRateTable,
   ): number {
     if (fromCurrency === toCurrency) return amountMinorUnits;
 
     const fromDecimals = SUPPORTED_CURRENCIES[fromCurrency]?.decimals ?? 2;
     const toDecimals = SUPPORTED_CURRENCIES[toCurrency]?.decimals ?? 2;
 
-    const fromRate = rates[fromCurrency] ?? 1.0;
-    const toRate = rates[toCurrency] ?? 1.0;
+    const fromRate = requireRate(rates, fromCurrency);
+    const toRate = requireRate(rates, toCurrency);
 
     // Convert from minor units to standard major units
     const majorAmount = amountMinorUnits / Math.pow(10, fromDecimals);
@@ -132,8 +156,8 @@ export class MultiCurrencyEngine {
     customerName: string,
     originalAmount: number,
     foreignCurrency: string,
-    issueRate: number,       // e.g. 0.92 EUR per USD at issue
-    settlementRate: number,  // e.g. 0.90 EUR per USD at payment
+    issueRate: number, // e.g. 0.92 EUR per USD at issue
+    settlementRate: number, // e.g. 0.90 EUR per USD at payment
     baseCurrency = 'USD',
   ): FxGainLossCalculation {
     const amountInBaseAtIssue = Number((originalAmount / issueRate).toFixed(2));
@@ -197,11 +221,7 @@ export class MultiCurrencyEngine {
   /**
    * Format currency value localized according to ISO standard and locale.
    */
-  static format(
-    amountInSubunits: number,
-    currencyCode = 'USD',
-    locale = 'en-US',
-  ): string {
+  static format(amountInSubunits: number, currencyCode = 'USD', locale = 'en-US'): string {
     const config = SUPPORTED_CURRENCIES[currencyCode] ?? { decimals: 2 };
     const majorUnits = amountInSubunits / Math.pow(10, config.decimals);
 
