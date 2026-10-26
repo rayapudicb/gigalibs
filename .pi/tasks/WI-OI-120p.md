@@ -33,6 +33,31 @@ modules:
   grant nothing); the successful scoped write reuses the org-tree-in-force `resolveRoleScope` path (covered by its own
   tests). tenancy-nest 107 unit pass; typecheck clean. **Slice 7 (bulk grants + offboarding) complete.**
 
+## S17 — people administration console (2026-10-26) — BUILT
+
+Plan item 3.1 (web surface for this card's R13/R14 backend). The control-plane endpoints built here
+(`current/delegated-invitations[/bulk,/bulk/resend,/bulk/revoke]`, `current/delegated-grants`,
+`current/members/bulk-offboard`) had no web UI; they are reachable through the existing `/api/control/[...path]` catch-all
+proxy (root `tenants` is allow-listed), so this was pure front end. New `components/settings/PeopleAdministration.tsx`,
+mounted as a **People** tab in `TenantSettingsView` (shown when the member holds `people:manage`, `people:read` or
+`users:update`), with four permission-gated sections:
+- **Bulk invite** (`people:manage`): pick a unit (`OrgUnitPicker`) and roles, paste one email per line (optional name);
+  rows are expanded to the chosen unit+roles and sent to `/delegated-invitations/bulk`. Per-row server errors render
+  inline (nothing is created on failure); on success the one-time accept links (`/select-tenant#invite=<token>` via
+  `withInvite`) are shown with copy / copy-all / download, since email delivery is not wired yet.
+- **Join tracker** (`people:read`): the delegated invitations into the member's units with a derived status badge;
+  with `people:manage`, still-pending rows can be selected to bulk resend (fresh links) or bulk revoke.
+- **Delegated grant** (`people:manage`): give allowed unit-scoped roles to people already in the workspace, via
+  `/delegated-grants`; reports granted vs. skipped (already held).
+- **Bulk off-board** (`users:update`): searchable member checklist + reason → `/members/bulk-offboard` (the last admin
+  is protected server-side).
+Pure parsing is factored into `lib/people-admin-parse.ts` (lenient — the control plane is the authority). Proof:
+`people-admin-parse.test.ts` (7) + `people-administration.test.tsx` (5, SSR render asserts each section shows only for
+its permission). Web typecheck green; new files lint clean. The other S17 screens (settings shell, team=TenantAccessManager,
+organization=hierarchy tab, plan=entitlements, parties route, administration=admin/platform-admin) already exist.
+**Deferred (flagged):** a Tenant-Admin **department-role-allowance editor** (the `setDepartmentRoleAllowance` write
+exists; a read endpoint to populate a per-unit × per-role matrix does not yet) and a full UX review of the new console.
+
 ## R16 — personas from roles (2026-10-26) — BUILT
 
 Plan item 3.5. The persona resolver (`contracts/auth/platform-context.ts`, `determinePersona`) was purely name-based:

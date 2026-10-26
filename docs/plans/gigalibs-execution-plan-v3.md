@@ -305,7 +305,7 @@ work. The Assistant can do the same on Workforce, within the same limits.
 
 | # | Step | Cards | Status now |
 | --- | --- | --- | --- |
-| 3.1 | S17 Platform screens on metadata: settings, team, organization, access, plan, parties, administration | new | Not started |
+| 3.1 | S17 Platform screens on metadata: settings, team, organization, access, plan, parties, administration | new | People console built 2026-10-26 (local); settings/team/org/plan/parties/admin screens pre-existing; dept-allowance editor deferred |
 | 3.2 | R13 Delegated people administration | WI-OI-120p | Proposed |
 | 3.3 | R14 Bulk people: import, invitations, grants, offboarding | WI-OI-120p | Proposed |
 | 3.4 | R15 Directory groups mapped to scoped roles, plus single sign-on (OIDC and SAML) | WI-OI-120p, WI-OI-013 | SCIM exists; SSO not built |

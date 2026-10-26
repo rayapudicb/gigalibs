@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import type { VerifiedSession } from '@/lib/verified-session';
 import { TenantAccessManager } from './TenantAccessManager';
+import { PeopleAdministration } from './PeopleAdministration';
 import { TenantPlanEntitlements } from './TenantPlanEntitlements';
 import { TenantLocalizationSettings } from './TenantLocalizationSettings';
 import { ConfiguredTenantFields } from './ConfiguredTenantFields';
@@ -19,7 +20,7 @@ interface TenantSettingsViewProps {
   canUpdateConfiguredValues: boolean;
 }
 
-type SettingsTab = 'team' | 'hierarchy' | 'plan' | 'general' | 'security';
+type SettingsTab = 'team' | 'people' | 'hierarchy' | 'plan' | 'general' | 'security';
 
 export function TenantSettingsView({
   session,
@@ -32,7 +33,7 @@ export function TenantSettingsView({
     (entitlement) => entitlement.moduleKey === 'geospatial-studio' && entitlement.status === 'ENABLED',
   );
   const initialTab = (searchParams.get('tab') as SettingsTab) || 'team';
-  const validTabs: SettingsTab[] = ['team', 'hierarchy', 'plan', 'general', 'security'];
+  const validTabs: SettingsTab[] = ['team', 'people', 'hierarchy', 'plan', 'general', 'security'];
   const [activeTab, setActiveTab] = useState<SettingsTab>(
     validTabs.includes(initialTab) ? initialTab : 'team'
   );
@@ -52,6 +53,13 @@ export function TenantSettingsView({
   // WI-OI-120x: a workspace administrator may change their own access; anyone else asks one.
   const isWorkspaceAdministrator = session.roles.some((role) => role === 'TENANT_ADMIN' || role === 'SUPER_ADMIN');
   const tenantName = session.tenant?.name ?? 'Current workspace';
+  // WI-OI-120p (S17): the People tab is for delegated people administration — a head who can manage or read invites
+  // into their units, or an administrator who can off-board. Tenant Admins reach the same endpoints through their
+  // wildcard permissions, so the tab also shows for them.
+  const canSeePeople =
+    hasPermission(session.permissions, 'people:manage') ||
+    hasPermission(session.permissions, 'people:read') ||
+    hasPermission(session.permissions, 'users:update');
 
   return (
     <div className="max-w-6xl mx-auto p-6 space-y-6">
@@ -95,6 +103,19 @@ export function TenantSettingsView({
         >
           <span>👥</span> Team & Access
         </button>
+        {canSeePeople && (
+          <button
+            type="button"
+            onClick={() => handleTabChange('people')}
+            className={`pb-2.5 transition-colors cursor-pointer flex items-center gap-1.5 ${
+              activeTab === 'people'
+                ? 'border-b-2 border-ui-fg-base text-ui-fg-base font-semibold'
+                : 'text-ui-fg-muted hover:text-ui-fg-base'
+            }`}
+          >
+            <span>🧑‍🤝‍🧑</span> People
+          </button>
+        )}
         <button
           type="button"
           onClick={() => handleTabChange('hierarchy')}
@@ -151,6 +172,10 @@ export function TenantSettingsView({
             tenantName={tenantName}
             displaySection="team"
           />
+        )}
+
+        {activeTab === 'people' && canSeePeople && (
+          <PeopleAdministration permissions={session.permissions} />
         )}
 
         {activeTab === 'hierarchy' && (
