@@ -34,6 +34,8 @@ export const CONTROL_PLANE_PERMISSIONS = [
   'contracts:create',
   'contracts:publish',
   'contracts:read',
+  'currency:read',
+  'currency:write',
   'events:ingest',
   'events:read',
   'exceptions:assign',

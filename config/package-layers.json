@@ -162,6 +162,7 @@
       "UsageCounter",
       "PlatformReferenceVersion",
       "PlatformReferenceEntry",
+      "TenantExchangeRate",
       "ConnectorCheckpoint",
       "ControlOutboxEvent",
       "RuleVersion",

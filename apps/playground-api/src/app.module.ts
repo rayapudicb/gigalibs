@@ -165,6 +165,8 @@ import { UsageController } from './usage.controller.js';
 import { UsageMeteringService } from './usage-metering.service.js';
 import { PlatformReferenceController } from './platform-reference.controller.js';
 import { PlatformReferenceService } from './platform-reference.service.js';
+import { TenantExchangeRateController } from './tenant-exchange-rate.controller.js';
+import { TenantExchangeRateService } from './tenant-exchange-rate.service.js';
 import { GovernorThrottlingGuard } from './governor.guard.js';
 import { GovernorService } from './governor.service.js';
 import { JsonSchemaService } from './json-schema.service.js';
@@ -211,6 +213,7 @@ import { WorkflowService } from './workflow.service.js';
     GovernorController,
     UsageController,
     PlatformReferenceController,
+    TenantExchangeRateController,
     ScimController,
     PartyController,
   ],
@@ -262,6 +265,7 @@ import { WorkflowService } from './workflow.service.js';
     GovernorService,
     UsageMeteringService,
     PlatformReferenceService,
+    TenantExchangeRateService,
     GovernorThrottlingGuard,
     GovernorPersistentService,
     GovernorPersistentThrottlingGuard,

@@ -555,6 +555,7 @@ model Tenant {
   retentionExecutions     DataRetentionExecution[]
   retentionClasses        RetentionClass[]
   usageCounters           UsageCounter[]
+  exchangeRates           TenantExchangeRate[]
   oidcConfiguration       TenantOidcConfiguration?
   oidcLoginTransactions   OidcLoginTransaction[]
   configurationChangeSets ConfigurationChangeSet[]
@@ -3372,6 +3373,27 @@ model CurrencyExchangeRate {
 
   @@unique([baseCurrency, targetCurrency])
   @@map("currency_exchange_rates")
+}
+
+// WI-OI-120 (M-CUR, Phase 5A): workspace-scoped exchange rates. Per the owner decision (120av), FX rates belong to each
+// workspace, not the platform. A rate is recorded with the moment it is effective and where it came from (a manual
+// entry or, later, a feed); the live rate for a pair is the newest `asOf`. These are the real rates the M-CUR engine
+// converts with — replacing the fabricated DEFAULT_FX_RATES. The older global `currency_exchange_rates` above predates
+// this and is not workspace-scoped.
+model TenantExchangeRate {
+  id            String   @id @default(cuid())
+  tenantId      String
+  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  baseCurrency  String
+  quoteCurrency String
+  rate          Float
+  asOf          DateTime @db.Timestamptz(3)
+  source        String
+  createdById   String
+  createdAt     DateTime @default(now()) @db.Timestamptz(3)
+
+  @@index([tenantId, baseCurrency, quoteCurrency, asOf(sort: Desc)])
+  @@map("tenant_exchange_rates")
 }
 
 // ═══════════════════════════════════════════════════════════════════════
