@@ -43,6 +43,7 @@ export interface LanguageEntry {
 }
 export interface TimeZoneEntry {
   readonly code: string; // IANA tz database id
+  readonly name: string; // the IANA id is its own display name (uniform code+name shape across sets)
 }
 export interface TaxJurisdictionEntry {
   readonly code: string; // country or subdivision code
@@ -108,3 +109,5 @@ export function findReferenceEntry<Entry extends { readonly code: string }>(
   const needle = code.trim().toUpperCase();
   return set.entries.find((entry) => entry.code.toUpperCase() === needle) ?? null;
 }
+
+export * from './data.generated.js';

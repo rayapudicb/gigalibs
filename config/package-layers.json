@@ -160,6 +160,8 @@
       "DataRetentionExecution",
       "RetentionClass",
       "UsageCounter",
+      "PlatformReferenceVersion",
+      "PlatformReferenceEntry",
       "ConnectorCheckpoint",
       "ControlOutboxEvent",
       "RuleVersion",

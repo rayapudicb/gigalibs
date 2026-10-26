@@ -163,6 +163,8 @@ import { GovernorPersistentService } from './governor-persistent.service.js';
 import { GovernorController } from './governor.controller.js';
 import { UsageController } from './usage.controller.js';
 import { UsageMeteringService } from './usage-metering.service.js';
+import { PlatformReferenceController } from './platform-reference.controller.js';
+import { PlatformReferenceService } from './platform-reference.service.js';
 import { GovernorThrottlingGuard } from './governor.guard.js';
 import { GovernorService } from './governor.service.js';
 import { JsonSchemaService } from './json-schema.service.js';
@@ -208,6 +210,7 @@ import { WorkflowService } from './workflow.service.js';
     ConfigurationStudioController,
     GovernorController,
     UsageController,
+    PlatformReferenceController,
     ScimController,
     PartyController,
   ],
@@ -258,6 +261,7 @@ import { WorkflowService } from './workflow.service.js';
     ConfigurationStudioService,
     GovernorService,
     UsageMeteringService,
+    PlatformReferenceService,
     GovernorThrottlingGuard,
     GovernorPersistentService,
     GovernorPersistentThrottlingGuard,

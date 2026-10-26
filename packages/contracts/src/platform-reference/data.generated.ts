@@ -829,1259 +829,1676 @@ export const GENERATED_TIME_ZONES = {
   "setKey": "TIME_ZONES",
   "source": "IANA tz 2025a via ICU (Intl)",
   "version": "2025a",
-  "checksum": "sha256:9130a65918ad73be180fa6567c651986f384e5ee07311efdab48c79f0482ddcf",
+  "checksum": "sha256:73d1bd5cb655ba37e29b3d5a82792ef1cb86b3d5723445d75d01473c94ad1270",
   "entryCount": 417,
   "entries": [
     {
-      "code": "Africa/Abidjan"
+      "code": "Africa/Abidjan",
+      "name": "Africa/Abidjan"
     },
     {
-      "code": "Africa/Accra"
+      "code": "Africa/Accra",
+      "name": "Africa/Accra"
     },
     {
-      "code": "Africa/Addis_Ababa"
+      "code": "Africa/Addis_Ababa",
+      "name": "Africa/Addis_Ababa"
     },
     {
-      "code": "Africa/Algiers"
+      "code": "Africa/Algiers",
+      "name": "Africa/Algiers"
     },
     {
-      "code": "Africa/Asmera"
+      "code": "Africa/Asmera",
+      "name": "Africa/Asmera"
     },
     {
-      "code": "Africa/Bamako"
+      "code": "Africa/Bamako",
+      "name": "Africa/Bamako"
     },
     {
-      "code": "Africa/Bangui"
+      "code": "Africa/Bangui",
+      "name": "Africa/Bangui"
     },
     {
-      "code": "Africa/Banjul"
+      "code": "Africa/Banjul",
+      "name": "Africa/Banjul"
     },
     {
-      "code": "Africa/Bissau"
+      "code": "Africa/Bissau",
+      "name": "Africa/Bissau"
     },
     {
-      "code": "Africa/Blantyre"
+      "code": "Africa/Blantyre",
+      "name": "Africa/Blantyre"
     },
     {
-      "code": "Africa/Brazzaville"
+      "code": "Africa/Brazzaville",
+      "name": "Africa/Brazzaville"
     },
     {
-      "code": "Africa/Bujumbura"
+      "code": "Africa/Bujumbura",
+      "name": "Africa/Bujumbura"
     },
     {
-      "code": "Africa/Cairo"
+      "code": "Africa/Cairo",
+      "name": "Africa/Cairo"
     },
     {
-      "code": "Africa/Casablanca"
+      "code": "Africa/Casablanca",
+      "name": "Africa/Casablanca"
     },
     {
-      "code": "Africa/Ceuta"
+      "code": "Africa/Ceuta",
+      "name": "Africa/Ceuta"
     },
     {
-      "code": "Africa/Conakry"
+      "code": "Africa/Conakry",
+      "name": "Africa/Conakry"
     },
     {
-      "code": "Africa/Dakar"
+      "code": "Africa/Dakar",
+      "name": "Africa/Dakar"
     },
     {
-      "code": "Africa/Dar_es_Salaam"
+      "code": "Africa/Dar_es_Salaam",
+      "name": "Africa/Dar_es_Salaam"
     },
     {
-      "code": "Africa/Djibouti"
+      "code": "Africa/Djibouti",
+      "name": "Africa/Djibouti"
     },
     {
-      "code": "Africa/Douala"
+      "code": "Africa/Douala",
+      "name": "Africa/Douala"
     },
     {
-      "code": "Africa/El_Aaiun"
+      "code": "Africa/El_Aaiun",
+      "name": "Africa/El_Aaiun"
     },
     {
-      "code": "Africa/Freetown"
+      "code": "Africa/Freetown",
+      "name": "Africa/Freetown"
     },
     {
-      "code": "Africa/Gaborone"
+      "code": "Africa/Gaborone",
+      "name": "Africa/Gaborone"
     },
     {
-      "code": "Africa/Harare"
+      "code": "Africa/Harare",
+      "name": "Africa/Harare"
     },
     {
-      "code": "Africa/Johannesburg"
+      "code": "Africa/Johannesburg",
+      "name": "Africa/Johannesburg"
     },
     {
-      "code": "Africa/Juba"
+      "code": "Africa/Juba",
+      "name": "Africa/Juba"
     },
     {
-      "code": "Africa/Kampala"
+      "code": "Africa/Kampala",
+      "name": "Africa/Kampala"
     },
     {
-      "code": "Africa/Khartoum"
+      "code": "Africa/Khartoum",
+      "name": "Africa/Khartoum"
     },
     {
-      "code": "Africa/Kigali"
+      "code": "Africa/Kigali",
+      "name": "Africa/Kigali"
     },
     {
-      "code": "Africa/Kinshasa"
+      "code": "Africa/Kinshasa",
+      "name": "Africa/Kinshasa"
     },
     {
-      "code": "Africa/Lagos"
+      "code": "Africa/Lagos",
+      "name": "Africa/Lagos"
     },
     {
-      "code": "Africa/Libreville"
+      "code": "Africa/Libreville",
+      "name": "Africa/Libreville"
     },
     {
-      "code": "Africa/Lome"
+      "code": "Africa/Lome",
+      "name": "Africa/Lome"
     },
     {
-      "code": "Africa/Luanda"
+      "code": "Africa/Luanda",
+      "name": "Africa/Luanda"
     },
     {
-      "code": "Africa/Lubumbashi"
+      "code": "Africa/Lubumbashi",
+      "name": "Africa/Lubumbashi"
     },
     {
-      "code": "Africa/Lusaka"
+      "code": "Africa/Lusaka",
+      "name": "Africa/Lusaka"
     },
     {
-      "code": "Africa/Malabo"
+      "code": "Africa/Malabo",
+      "name": "Africa/Malabo"
     },
     {
-      "code": "Africa/Maputo"
+      "code": "Africa/Maputo",
+      "name": "Africa/Maputo"
     },
     {
-      "code": "Africa/Maseru"
+      "code": "Africa/Maseru",
+      "name": "Africa/Maseru"
     },
     {
-      "code": "Africa/Mbabane"
+      "code": "Africa/Mbabane",
+      "name": "Africa/Mbabane"
     },
     {
-      "code": "Africa/Mogadishu"
+      "code": "Africa/Mogadishu",
+      "name": "Africa/Mogadishu"
     },
     {
-      "code": "Africa/Monrovia"
+      "code": "Africa/Monrovia",
+      "name": "Africa/Monrovia"
     },
     {
-      "code": "Africa/Nairobi"
+      "code": "Africa/Nairobi",
+      "name": "Africa/Nairobi"
     },
     {
-      "code": "Africa/Ndjamena"
+      "code": "Africa/Ndjamena",
+      "name": "Africa/Ndjamena"
     },
     {
-      "code": "Africa/Niamey"
+      "code": "Africa/Niamey",
+      "name": "Africa/Niamey"
     },
     {
-      "code": "Africa/Nouakchott"
+      "code": "Africa/Nouakchott",
+      "name": "Africa/Nouakchott"
     },
     {
-      "code": "Africa/Ouagadougou"
+      "code": "Africa/Ouagadougou",
+      "name": "Africa/Ouagadougou"
     },
     {
-      "code": "Africa/Porto-Novo"
+      "code": "Africa/Porto-Novo",
+      "name": "Africa/Porto-Novo"
     },
     {
-      "code": "Africa/Sao_Tome"
+      "code": "Africa/Sao_Tome",
+      "name": "Africa/Sao_Tome"
     },
     {
-      "code": "Africa/Tripoli"
+      "code": "Africa/Tripoli",
+      "name": "Africa/Tripoli"
     },
     {
-      "code": "Africa/Tunis"
+      "code": "Africa/Tunis",
+      "name": "Africa/Tunis"
     },
     {
-      "code": "Africa/Windhoek"
+      "code": "Africa/Windhoek",
+      "name": "Africa/Windhoek"
     },
     {
-      "code": "America/Adak"
+      "code": "America/Adak",
+      "name": "America/Adak"
     },
     {
-      "code": "America/Anchorage"
+      "code": "America/Anchorage",
+      "name": "America/Anchorage"
     },
     {
-      "code": "America/Anguilla"
+      "code": "America/Anguilla",
+      "name": "America/Anguilla"
     },
     {
-      "code": "America/Antigua"
+      "code": "America/Antigua",
+      "name": "America/Antigua"
     },
     {
-      "code": "America/Araguaina"
+      "code": "America/Araguaina",
+      "name": "America/Araguaina"
     },
     {
-      "code": "America/Argentina/La_Rioja"
+      "code": "America/Argentina/La_Rioja",
+      "name": "America/Argentina/La_Rioja"
     },
     {
-      "code": "America/Argentina/Rio_Gallegos"
+      "code": "America/Argentina/Rio_Gallegos",
+      "name": "America/Argentina/Rio_Gallegos"
     },
     {
-      "code": "America/Argentina/Salta"
+      "code": "America/Argentina/Salta",
+      "name": "America/Argentina/Salta"
     },
     {
-      "code": "America/Argentina/San_Juan"
+      "code": "America/Argentina/San_Juan",
+      "name": "America/Argentina/San_Juan"
     },
     {
-      "code": "America/Argentina/San_Luis"
+      "code": "America/Argentina/San_Luis",
+      "name": "America/Argentina/San_Luis"
     },
     {
-      "code": "America/Argentina/Tucuman"
+      "code": "America/Argentina/Tucuman",
+      "name": "America/Argentina/Tucuman"
     },
     {
-      "code": "America/Argentina/Ushuaia"
+      "code": "America/Argentina/Ushuaia",
+      "name": "America/Argentina/Ushuaia"
     },
     {
-      "code": "America/Aruba"
+      "code": "America/Aruba",
+      "name": "America/Aruba"
     },
     {
-      "code": "America/Asuncion"
+      "code": "America/Asuncion",
+      "name": "America/Asuncion"
     },
     {
-      "code": "America/Bahia"
+      "code": "America/Bahia",
+      "name": "America/Bahia"
     },
     {
-      "code": "America/Bahia_Banderas"
+      "code": "America/Bahia_Banderas",
+      "name": "America/Bahia_Banderas"
     },
     {
-      "code": "America/Barbados"
+      "code": "America/Barbados",
+      "name": "America/Barbados"
     },
     {
-      "code": "America/Belem"
+      "code": "America/Belem",
+      "name": "America/Belem"
     },
     {
-      "code": "America/Belize"
+      "code": "America/Belize",
+      "name": "America/Belize"
     },
     {
-      "code": "America/Blanc-Sablon"
+      "code": "America/Blanc-Sablon",
+      "name": "America/Blanc-Sablon"
     },
     {
-      "code": "America/Boa_Vista"
+      "code": "America/Boa_Vista",
+      "name": "America/Boa_Vista"
     },
     {
-      "code": "America/Bogota"
+      "code": "America/Bogota",
+      "name": "America/Bogota"
     },
     {
-      "code": "America/Boise"
+      "code": "America/Boise",
+      "name": "America/Boise"
     },
     {
-      "code": "America/Buenos_Aires"
+      "code": "America/Buenos_Aires",
+      "name": "America/Buenos_Aires"
     },
     {
-      "code": "America/Cambridge_Bay"
+      "code": "America/Cambridge_Bay",
+      "name": "America/Cambridge_Bay"
     },
     {
-      "code": "America/Campo_Grande"
+      "code": "America/Campo_Grande",
+      "name": "America/Campo_Grande"
     },
     {
-      "code": "America/Cancun"
+      "code": "America/Cancun",
+      "name": "America/Cancun"
     },
     {
-      "code": "America/Caracas"
+      "code": "America/Caracas",
+      "name": "America/Caracas"
     },
     {
-      "code": "America/Catamarca"
+      "code": "America/Catamarca",
+      "name": "America/Catamarca"
     },
     {
-      "code": "America/Cayenne"
+      "code": "America/Cayenne",
+      "name": "America/Cayenne"
     },
     {
-      "code": "America/Cayman"
+      "code": "America/Cayman",
+      "name": "America/Cayman"
     },
     {
-      "code": "America/Chicago"
+      "code": "America/Chicago",
+      "name": "America/Chicago"
     },
     {
-      "code": "America/Chihuahua"
+      "code": "America/Chihuahua",
+      "name": "America/Chihuahua"
     },
     {
-      "code": "America/Ciudad_Juarez"
+      "code": "America/Ciudad_Juarez",
+      "name": "America/Ciudad_Juarez"
     },
     {
-      "code": "America/Coral_Harbour"
+      "code": "America/Coral_Harbour",
+      "name": "America/Coral_Harbour"
     },
     {
-      "code": "America/Cordoba"
+      "code": "America/Cordoba",
+      "name": "America/Cordoba"
     },
     {
-      "code": "America/Costa_Rica"
+      "code": "America/Costa_Rica",
+      "name": "America/Costa_Rica"
     },
     {
-      "code": "America/Creston"
+      "code": "America/Creston",
+      "name": "America/Creston"
     },
     {
-      "code": "America/Cuiaba"
+      "code": "America/Cuiaba",
+      "name": "America/Cuiaba"
     },
     {
-      "code": "America/Curacao"
+      "code": "America/Curacao",
+      "name": "America/Curacao"
     },
     {
-      "code": "America/Danmarkshavn"
+      "code": "America/Danmarkshavn",
+      "name": "America/Danmarkshavn"
     },
     {
-      "code": "America/Dawson"
+      "code": "America/Dawson",
+      "name": "America/Dawson"
     },
     {
-      "code": "America/Dawson_Creek"
+      "code": "America/Dawson_Creek",
+      "name": "America/Dawson_Creek"
     },
     {
-      "code": "America/Denver"
+      "code": "America/Denver",
+      "name": "America/Denver"
     },
     {
-      "code": "America/Detroit"
+      "code": "America/Detroit",
+      "name": "America/Detroit"
     },
     {
-      "code": "America/Dominica"
+      "code": "America/Dominica",
+      "name": "America/Dominica"
     },
     {
-      "code": "America/Edmonton"
+      "code": "America/Edmonton",
+      "name": "America/Edmonton"
     },
     {
-      "code": "America/Eirunepe"
+      "code": "America/Eirunepe",
+      "name": "America/Eirunepe"
     },
     {
-      "code": "America/El_Salvador"
+      "code": "America/El_Salvador",
+      "name": "America/El_Salvador"
     },
     {
-      "code": "America/Fort_Nelson"
+      "code": "America/Fort_Nelson",
+      "name": "America/Fort_Nelson"
     },
     {
-      "code": "America/Fortaleza"
+      "code": "America/Fortaleza",
+      "name": "America/Fortaleza"
     },
     {
-      "code": "America/Glace_Bay"
+      "code": "America/Glace_Bay",
+      "name": "America/Glace_Bay"
     },
     {
-      "code": "America/Godthab"
+      "code": "America/Godthab",
+      "name": "America/Godthab"
     },
     {
-      "code": "America/Goose_Bay"
+      "code": "America/Goose_Bay",
+      "name": "America/Goose_Bay"
     },
     {
-      "code": "America/Grand_Turk"
+      "code": "America/Grand_Turk",
+      "name": "America/Grand_Turk"
     },
     {
-      "code": "America/Grenada"
+      "code": "America/Grenada",
+      "name": "America/Grenada"
     },
     {
-      "code": "America/Guadeloupe"
+      "code": "America/Guadeloupe",
+      "name": "America/Guadeloupe"
     },
     {
-      "code": "America/Guatemala"
+      "code": "America/Guatemala",
+      "name": "America/Guatemala"
     },
     {
-      "code": "America/Guayaquil"
+      "code": "America/Guayaquil",
+      "name": "America/Guayaquil"
     },
     {
-      "code": "America/Guyana"
+      "code": "America/Guyana",
+      "name": "America/Guyana"
     },
     {
-      "code": "America/Halifax"
+      "code": "America/Halifax",
+      "name": "America/Halifax"
     },
     {
-      "code": "America/Havana"
+      "code": "America/Havana",
+      "name": "America/Havana"
     },
     {
-      "code": "America/Hermosillo"
+      "code": "America/Hermosillo",
+      "name": "America/Hermosillo"
     },
     {
-      "code": "America/Indiana/Knox"
+      "code": "America/Indiana/Knox",
+      "name": "America/Indiana/Knox"
     },
     {
-      "code": "America/Indiana/Marengo"
+      "code": "America/Indiana/Marengo",
+      "name": "America/Indiana/Marengo"
     },
     {
-      "code": "America/Indiana/Petersburg"
+      "code": "America/Indiana/Petersburg",
+      "name": "America/Indiana/Petersburg"
     },
     {
-      "code": "America/Indiana/Tell_City"
+      "code": "America/Indiana/Tell_City",
+      "name": "America/Indiana/Tell_City"
     },
     {
-      "code": "America/Indiana/Vevay"
+      "code": "America/Indiana/Vevay",
+      "name": "America/Indiana/Vevay"
     },
     {
-      "code": "America/Indiana/Vincennes"
+      "code": "America/Indiana/Vincennes",
+      "name": "America/Indiana/Vincennes"
     },
     {
-      "code": "America/Indiana/Winamac"
+      "code": "America/Indiana/Winamac",
+      "name": "America/Indiana/Winamac"
     },
     {
-      "code": "America/Indianapolis"
+      "code": "America/Indianapolis",
+      "name": "America/Indianapolis"
     },
     {
-      "code": "America/Inuvik"
+      "code": "America/Inuvik",
+      "name": "America/Inuvik"
     },
     {
-      "code": "America/Iqaluit"
+      "code": "America/Iqaluit",
+      "name": "America/Iqaluit"
     },
     {
-      "code": "America/Jamaica"
+      "code": "America/Jamaica",
+      "name": "America/Jamaica"
     },
     {
-      "code": "America/Jujuy"
+      "code": "America/Jujuy",
+      "name": "America/Jujuy"
     },
     {
-      "code": "America/Juneau"
+      "code": "America/Juneau",
+      "name": "America/Juneau"
     },
     {
-      "code": "America/Kentucky/Monticello"
+      "code": "America/Kentucky/Monticello",
+      "name": "America/Kentucky/Monticello"
     },
     {
-      "code": "America/Kralendijk"
+      "code": "America/Kralendijk",
+      "name": "America/Kralendijk"
     },
     {
-      "code": "America/La_Paz"
+      "code": "America/La_Paz",
+      "name": "America/La_Paz"
     },
     {
-      "code": "America/Lima"
+      "code": "America/Lima",
+      "name": "America/Lima"
     },
     {
-      "code": "America/Los_Angeles"
+      "code": "America/Los_Angeles",
+      "name": "America/Los_Angeles"
     },
     {
-      "code": "America/Louisville"
+      "code": "America/Louisville",
+      "name": "America/Louisville"
     },
     {
-      "code": "America/Lower_Princes"
+      "code": "America/Lower_Princes",
+      "name": "America/Lower_Princes"
     },
     {
-      "code": "America/Maceio"
+      "code": "America/Maceio",
+      "name": "America/Maceio"
     },
     {
-      "code": "America/Managua"
+      "code": "America/Managua",
+      "name": "America/Managua"
     },
     {
-      "code": "America/Manaus"
+      "code": "America/Manaus",
+      "name": "America/Manaus"
     },
     {
-      "code": "America/Marigot"
+      "code": "America/Marigot",
+      "name": "America/Marigot"
     },
     {
-      "code": "America/Martinique"
+      "code": "America/Martinique",
+      "name": "America/Martinique"
     },
     {
-      "code": "America/Matamoros"
+      "code": "America/Matamoros",
+      "name": "America/Matamoros"
     },
     {
-      "code": "America/Mazatlan"
+      "code": "America/Mazatlan",
+      "name": "America/Mazatlan"
     },
     {
-      "code": "America/Mendoza"
+      "code": "America/Mendoza",
+      "name": "America/Mendoza"
     },
     {
-      "code": "America/Menominee"
+      "code": "America/Menominee",
+      "name": "America/Menominee"
     },
     {
-      "code": "America/Merida"
+      "code": "America/Merida",
+      "name": "America/Merida"
     },
     {
-      "code": "America/Metlakatla"
+      "code": "America/Metlakatla",
+      "name": "America/Metlakatla"
     },
     {
-      "code": "America/Mexico_City"
+      "code": "America/Mexico_City",
+      "name": "America/Mexico_City"
     },
     {
-      "code": "America/Miquelon"
+      "code": "America/Miquelon",
+      "name": "America/Miquelon"
     },
     {
-      "code": "America/Moncton"
+      "code": "America/Moncton",
+      "name": "America/Moncton"
     },
     {
-      "code": "America/Monterrey"
+      "code": "America/Monterrey",
+      "name": "America/Monterrey"
     },
     {
-      "code": "America/Montevideo"
+      "code": "America/Montevideo",
+      "name": "America/Montevideo"
     },
     {
-      "code": "America/Montserrat"
+      "code": "America/Montserrat",
+      "name": "America/Montserrat"
     },
     {
-      "code": "America/Nassau"
+      "code": "America/Nassau",
+      "name": "America/Nassau"
     },
     {
-      "code": "America/New_York"
+      "code": "America/New_York",
+      "name": "America/New_York"
     },
     {
-      "code": "America/Nome"
+      "code": "America/Nome",
+      "name": "America/Nome"
     },
     {
-      "code": "America/Noronha"
+      "code": "America/Noronha",
+      "name": "America/Noronha"
     },
     {
-      "code": "America/North_Dakota/Beulah"
+      "code": "America/North_Dakota/Beulah",
+      "name": "America/North_Dakota/Beulah"
     },
     {
-      "code": "America/North_Dakota/Center"
+      "code": "America/North_Dakota/Center",
+      "name": "America/North_Dakota/Center"
     },
     {
-      "code": "America/North_Dakota/New_Salem"
+      "code": "America/North_Dakota/New_Salem",
+      "name": "America/North_Dakota/New_Salem"
     },
     {
-      "code": "America/Ojinaga"
+      "code": "America/Ojinaga",
+      "name": "America/Ojinaga"
     },
     {
-      "code": "America/Panama"
+      "code": "America/Panama",
+      "name": "America/Panama"
     },
     {
-      "code": "America/Paramaribo"
+      "code": "America/Paramaribo",
+      "name": "America/Paramaribo"
     },
     {
-      "code": "America/Phoenix"
+      "code": "America/Phoenix",
+      "name": "America/Phoenix"
     },
     {
-      "code": "America/Port_of_Spain"
+      "code": "America/Port_of_Spain",
+      "name": "America/Port_of_Spain"
     },
     {
-      "code": "America/Port-au-Prince"
+      "code": "America/Port-au-Prince",
+      "name": "America/Port-au-Prince"
     },
     {
-      "code": "America/Porto_Velho"
+      "code": "America/Porto_Velho",
+      "name": "America/Porto_Velho"
     },
     {
-      "code": "America/Puerto_Rico"
+      "code": "America/Puerto_Rico",
+      "name": "America/Puerto_Rico"
     },
     {
-      "code": "America/Punta_Arenas"
+      "code": "America/Punta_Arenas",
+      "name": "America/Punta_Arenas"
     },
     {
-      "code": "America/Rankin_Inlet"
+      "code": "America/Rankin_Inlet",
+      "name": "America/Rankin_Inlet"
     },
     {
-      "code": "America/Recife"
+      "code": "America/Recife",
+      "name": "America/Recife"
     },
     {
-      "code": "America/Regina"
+      "code": "America/Regina",
+      "name": "America/Regina"
     },
     {
-      "code": "America/Resolute"
+      "code": "America/Resolute",
+      "name": "America/Resolute"
     },
     {
-      "code": "America/Rio_Branco"
+      "code": "America/Rio_Branco",
+      "name": "America/Rio_Branco"
     },
     {
-      "code": "America/Santarem"
+      "code": "America/Santarem",
+      "name": "America/Santarem"
     },
     {
-      "code": "America/Santiago"
+      "code": "America/Santiago",
+      "name": "America/Santiago"
     },
     {
-      "code": "America/Santo_Domingo"
+      "code": "America/Santo_Domingo",
+      "name": "America/Santo_Domingo"
     },
     {
-      "code": "America/Sao_Paulo"
+      "code": "America/Sao_Paulo",
+      "name": "America/Sao_Paulo"
     },
     {
-      "code": "America/Scoresbysund"
+      "code": "America/Scoresbysund",
+      "name": "America/Scoresbysund"
     },
     {
-      "code": "America/Sitka"
+      "code": "America/Sitka",
+      "name": "America/Sitka"
     },
     {
-      "code": "America/St_Barthelemy"
+      "code": "America/St_Barthelemy",
+      "name": "America/St_Barthelemy"
     },
     {
-      "code": "America/St_Johns"
+      "code": "America/St_Johns",
+      "name": "America/St_Johns"
     },
     {
-      "code": "America/St_Kitts"
+      "code": "America/St_Kitts",
+      "name": "America/St_Kitts"
     },
     {
-      "code": "America/St_Lucia"
+      "code": "America/St_Lucia",
+      "name": "America/St_Lucia"
     },
     {
-      "code": "America/St_Thomas"
+      "code": "America/St_Thomas",
+      "name": "America/St_Thomas"
     },
     {
-      "code": "America/St_Vincent"
+      "code": "America/St_Vincent",
+      "name": "America/St_Vincent"
     },
     {
-      "code": "America/Swift_Current"
+      "code": "America/Swift_Current",
+      "name": "America/Swift_Current"
     },
     {
-      "code": "America/Tegucigalpa"
+      "code": "America/Tegucigalpa",
+      "name": "America/Tegucigalpa"
     },
     {
-      "code": "America/Thule"
+      "code": "America/Thule",
+      "name": "America/Thule"
     },
     {
-      "code": "America/Tijuana"
+      "code": "America/Tijuana",
+      "name": "America/Tijuana"
     },
     {
-      "code": "America/Toronto"
+      "code": "America/Toronto",
+      "name": "America/Toronto"
     },
     {
-      "code": "America/Tortola"
+      "code": "America/Tortola",
+      "name": "America/Tortola"
     },
     {
-      "code": "America/Vancouver"
+      "code": "America/Vancouver",
+      "name": "America/Vancouver"
     },
     {
-      "code": "America/Whitehorse"
+      "code": "America/Whitehorse",
+      "name": "America/Whitehorse"
     },
     {
-      "code": "America/Winnipeg"
+      "code": "America/Winnipeg",
+      "name": "America/Winnipeg"
     },
     {
-      "code": "America/Yakutat"
+      "code": "America/Yakutat",
+      "name": "America/Yakutat"
     },
     {
-      "code": "Antarctica/Casey"
+      "code": "Antarctica/Casey",
+      "name": "Antarctica/Casey"
     },
     {
-      "code": "Antarctica/Davis"
+      "code": "Antarctica/Davis",
+      "name": "Antarctica/Davis"
     },
     {
-      "code": "Antarctica/DumontDUrville"
+      "code": "Antarctica/DumontDUrville",
+      "name": "Antarctica/DumontDUrville"
     },
     {
-      "code": "Antarctica/Macquarie"
+      "code": "Antarctica/Macquarie",
+      "name": "Antarctica/Macquarie"
     },
     {
-      "code": "Antarctica/Mawson"
+      "code": "Antarctica/Mawson",
+      "name": "Antarctica/Mawson"
     },
     {
-      "code": "Antarctica/McMurdo"
+      "code": "Antarctica/McMurdo",
+      "name": "Antarctica/McMurdo"
     },
     {
-      "code": "Antarctica/Palmer"
+      "code": "Antarctica/Palmer",
+      "name": "Antarctica/Palmer"
     },
     {
-      "code": "Antarctica/Rothera"
+      "code": "Antarctica/Rothera",
+      "name": "Antarctica/Rothera"
     },
     {
-      "code": "Antarctica/Syowa"
+      "code": "Antarctica/Syowa",
+      "name": "Antarctica/Syowa"
     },
     {
-      "code": "Antarctica/Troll"
+      "code": "Antarctica/Troll",
+      "name": "Antarctica/Troll"
     },
     {
-      "code": "Antarctica/Vostok"
+      "code": "Antarctica/Vostok",
+      "name": "Antarctica/Vostok"
     },
     {
-      "code": "Arctic/Longyearbyen"
+      "code": "Arctic/Longyearbyen",
+      "name": "Arctic/Longyearbyen"
     },
     {
-      "code": "Asia/Aden"
+      "code": "Asia/Aden",
+      "name": "Asia/Aden"
     },
     {
-      "code": "Asia/Almaty"
+      "code": "Asia/Almaty",
+      "name": "Asia/Almaty"
     },
     {
-      "code": "Asia/Amman"
+      "code": "Asia/Amman",
+      "name": "Asia/Amman"
     },
     {
-      "code": "Asia/Anadyr"
+      "code": "Asia/Anadyr",
+      "name": "Asia/Anadyr"
     },
     {
-      "code": "Asia/Aqtau"
+      "code": "Asia/Aqtau",
+      "name": "Asia/Aqtau"
     },
     {
-      "code": "Asia/Aqtobe"
+      "code": "Asia/Aqtobe",
+      "name": "Asia/Aqtobe"
     },
     {
-      "code": "Asia/Ashgabat"
+      "code": "Asia/Ashgabat",
+      "name": "Asia/Ashgabat"
     },
     {
-      "code": "Asia/Atyrau"
+      "code": "Asia/Atyrau",
+      "name": "Asia/Atyrau"
     },
     {
-      "code": "Asia/Baghdad"
+      "code": "Asia/Baghdad",
+      "name": "Asia/Baghdad"
     },
     {
-      "code": "Asia/Bahrain"
+      "code": "Asia/Bahrain",
+      "name": "Asia/Bahrain"
     },
     {
-      "code": "Asia/Baku"
+      "code": "Asia/Baku",
+      "name": "Asia/Baku"
     },
     {
-      "code": "Asia/Bangkok"
+      "code": "Asia/Bangkok",
+      "name": "Asia/Bangkok"
     },
     {
-      "code": "Asia/Barnaul"
+      "code": "Asia/Barnaul",
+      "name": "Asia/Barnaul"
     },
     {
-      "code": "Asia/Beirut"
+      "code": "Asia/Beirut",
+      "name": "Asia/Beirut"
     },
     {
-      "code": "Asia/Bishkek"
+      "code": "Asia/Bishkek",
+      "name": "Asia/Bishkek"
     },
     {
-      "code": "Asia/Brunei"
+      "code": "Asia/Brunei",
+      "name": "Asia/Brunei"
     },
     {
-      "code": "Asia/Calcutta"
+      "code": "Asia/Calcutta",
+      "name": "Asia/Calcutta"
     },
     {
-      "code": "Asia/Chita"
+      "code": "Asia/Chita",
+      "name": "Asia/Chita"
     },
     {
-      "code": "Asia/Colombo"
+      "code": "Asia/Colombo",
+      "name": "Asia/Colombo"
     },
     {
-      "code": "Asia/Damascus"
+      "code": "Asia/Damascus",
+      "name": "Asia/Damascus"
     },
     {
-      "code": "Asia/Dhaka"
+      "code": "Asia/Dhaka",
+      "name": "Asia/Dhaka"
     },
     {
-      "code": "Asia/Dili"
+      "code": "Asia/Dili",
+      "name": "Asia/Dili"
     },
     {
-      "code": "Asia/Dubai"
+      "code": "Asia/Dubai",
+      "name": "Asia/Dubai"
     },
     {
-      "code": "Asia/Dushanbe"
+      "code": "Asia/Dushanbe",
+      "name": "Asia/Dushanbe"
     },
     {
-      "code": "Asia/Famagusta"
+      "code": "Asia/Famagusta",
+      "name": "Asia/Famagusta"
     },
     {
-      "code": "Asia/Gaza"
+      "code": "Asia/Gaza",
+      "name": "Asia/Gaza"
     },
     {
-      "code": "Asia/Hebron"
+      "code": "Asia/Hebron",
+      "name": "Asia/Hebron"
     },
     {
-      "code": "Asia/Hong_Kong"
+      "code": "Asia/Hong_Kong",
+      "name": "Asia/Hong_Kong"
     },
     {
-      "code": "Asia/Hovd"
+      "code": "Asia/Hovd",
+      "name": "Asia/Hovd"
     },
     {
-      "code": "Asia/Irkutsk"
+      "code": "Asia/Irkutsk",
+      "name": "Asia/Irkutsk"
     },
     {
-      "code": "Asia/Jakarta"
+      "code": "Asia/Jakarta",
+      "name": "Asia/Jakarta"
     },
     {
-      "code": "Asia/Jayapura"
+      "code": "Asia/Jayapura",
+      "name": "Asia/Jayapura"
     },
     {
-      "code": "Asia/Jerusalem"
+      "code": "Asia/Jerusalem",
+      "name": "Asia/Jerusalem"
     },
     {
-      "code": "Asia/Kabul"
+      "code": "Asia/Kabul",
+      "name": "Asia/Kabul"
     },
     {
-      "code": "Asia/Kamchatka"
+      "code": "Asia/Kamchatka",
+      "name": "Asia/Kamchatka"
     },
     {
-      "code": "Asia/Karachi"
+      "code": "Asia/Karachi",
+      "name": "Asia/Karachi"
     },
     {
-      "code": "Asia/Katmandu"
+      "code": "Asia/Katmandu",
+      "name": "Asia/Katmandu"
     },
     {
-      "code": "Asia/Khandyga"
+      "code": "Asia/Khandyga",
+      "name": "Asia/Khandyga"
     },
     {
-      "code": "Asia/Krasnoyarsk"
+      "code": "Asia/Krasnoyarsk",
+      "name": "Asia/Krasnoyarsk"
     },
     {
-      "code": "Asia/Kuala_Lumpur"
+      "code": "Asia/Kuala_Lumpur",
+      "name": "Asia/Kuala_Lumpur"
     },
     {
-      "code": "Asia/Kuching"
+      "code": "Asia/Kuching",
+      "name": "Asia/Kuching"
     },
     {
-      "code": "Asia/Kuwait"
+      "code": "Asia/Kuwait",
+      "name": "Asia/Kuwait"
     },
     {
-      "code": "Asia/Macau"
+      "code": "Asia/Macau",
+      "name": "Asia/Macau"
     },
     {
-      "code": "Asia/Magadan"
+      "code": "Asia/Magadan",
+      "name": "Asia/Magadan"
     },
     {
-      "code": "Asia/Makassar"
+      "code": "Asia/Makassar",
+      "name": "Asia/Makassar"
     },
     {
-      "code": "Asia/Manila"
+      "code": "Asia/Manila",
+      "name": "Asia/Manila"
     },
     {
-      "code": "Asia/Muscat"
+      "code": "Asia/Muscat",
+      "name": "Asia/Muscat"
     },
     {
-      "code": "Asia/Nicosia"
+      "code": "Asia/Nicosia",
+      "name": "Asia/Nicosia"
     },
     {
-      "code": "Asia/Novokuznetsk"
+      "code": "Asia/Novokuznetsk",
+      "name": "Asia/Novokuznetsk"
     },
     {
-      "code": "Asia/Novosibirsk"
+      "code": "Asia/Novosibirsk",
+      "name": "Asia/Novosibirsk"
     },
     {
-      "code": "Asia/Omsk"
+      "code": "Asia/Omsk",
+      "name": "Asia/Omsk"
     },
     {
-      "code": "Asia/Oral"
+      "code": "Asia/Oral",
+      "name": "Asia/Oral"
     },
     {
-      "code": "Asia/Phnom_Penh"
+      "code": "Asia/Phnom_Penh",
+      "name": "Asia/Phnom_Penh"
     },
     {
-      "code": "Asia/Pontianak"
+      "code": "Asia/Pontianak",
+      "name": "Asia/Pontianak"
     },
     {
-      "code": "Asia/Pyongyang"
+      "code": "Asia/Pyongyang",
+      "name": "Asia/Pyongyang"
     },
     {
-      "code": "Asia/Qatar"
+      "code": "Asia/Qatar",
+      "name": "Asia/Qatar"
     },
     {
-      "code": "Asia/Qostanay"
+      "code": "Asia/Qostanay",
+      "name": "Asia/Qostanay"
     },
     {
-      "code": "Asia/Qyzylorda"
+      "code": "Asia/Qyzylorda",
+      "name": "Asia/Qyzylorda"
     },
     {
-      "code": "Asia/Rangoon"
+      "code": "Asia/Rangoon",
+      "name": "Asia/Rangoon"
     },
     {
-      "code": "Asia/Riyadh"
+      "code": "Asia/Riyadh",
+      "name": "Asia/Riyadh"
     },
     {
-      "code": "Asia/Saigon"
+      "code": "Asia/Saigon",
+      "name": "Asia/Saigon"
     },
     {
-      "code": "Asia/Sakhalin"
+      "code": "Asia/Sakhalin",
+      "name": "Asia/Sakhalin"
     },
     {
-      "code": "Asia/Samarkand"
+      "code": "Asia/Samarkand",
+      "name": "Asia/Samarkand"
     },
     {
-      "code": "Asia/Seoul"
+      "code": "Asia/Seoul",
+      "name": "Asia/Seoul"
     },
     {
-      "code": "Asia/Shanghai"
+      "code": "Asia/Shanghai",
+      "name": "Asia/Shanghai"
     },
     {
-      "code": "Asia/Singapore"
+      "code": "Asia/Singapore",
+      "name": "Asia/Singapore"
     },
     {
-      "code": "Asia/Srednekolymsk"
+      "code": "Asia/Srednekolymsk",
+      "name": "Asia/Srednekolymsk"
     },
     {
-      "code": "Asia/Taipei"
+      "code": "Asia/Taipei",
+      "name": "Asia/Taipei"
     },
     {
-      "code": "Asia/Tashkent"
+      "code": "Asia/Tashkent",
+      "name": "Asia/Tashkent"
     },
     {
-      "code": "Asia/Tbilisi"
+      "code": "Asia/Tbilisi",
+      "name": "Asia/Tbilisi"
     },
     {
-      "code": "Asia/Tehran"
+      "code": "Asia/Tehran",
+      "name": "Asia/Tehran"
     },
     {
-      "code": "Asia/Thimphu"
+      "code": "Asia/Thimphu",
+      "name": "Asia/Thimphu"
     },
     {
-      "code": "Asia/Tokyo"
+      "code": "Asia/Tokyo",
+      "name": "Asia/Tokyo"
     },
     {
-      "code": "Asia/Tomsk"
+      "code": "Asia/Tomsk",
+      "name": "Asia/Tomsk"
     },
     {
-      "code": "Asia/Ulaanbaatar"
+      "code": "Asia/Ulaanbaatar",
+      "name": "Asia/Ulaanbaatar"
     },
     {
-      "code": "Asia/Urumqi"
+      "code": "Asia/Urumqi",
+      "name": "Asia/Urumqi"
     },
     {
-      "code": "Asia/Ust-Nera"
+      "code": "Asia/Ust-Nera",
+      "name": "Asia/Ust-Nera"
     },
     {
-      "code": "Asia/Vientiane"
+      "code": "Asia/Vientiane",
+      "name": "Asia/Vientiane"
     },
     {
-      "code": "Asia/Vladivostok"
+      "code": "Asia/Vladivostok",
+      "name": "Asia/Vladivostok"
     },
     {
-      "code": "Asia/Yakutsk"
+      "code": "Asia/Yakutsk",
+      "name": "Asia/Yakutsk"
     },
     {
-      "code": "Asia/Yekaterinburg"
+      "code": "Asia/Yekaterinburg",
+      "name": "Asia/Yekaterinburg"
     },
     {
-      "code": "Asia/Yerevan"
+      "code": "Asia/Yerevan",
+      "name": "Asia/Yerevan"
     },
     {
-      "code": "Atlantic/Azores"
+      "code": "Atlantic/Azores",
+      "name": "Atlantic/Azores"
     },
     {
-      "code": "Atlantic/Bermuda"
+      "code": "Atlantic/Bermuda",
+      "name": "Atlantic/Bermuda"
     },
     {
-      "code": "Atlantic/Canary"
+      "code": "Atlantic/Canary",
+      "name": "Atlantic/Canary"
     },
     {
-      "code": "Atlantic/Cape_Verde"
+      "code": "Atlantic/Cape_Verde",
+      "name": "Atlantic/Cape_Verde"
     },
     {
-      "code": "Atlantic/Faeroe"
+      "code": "Atlantic/Faeroe",
+      "name": "Atlantic/Faeroe"
     },
     {
-      "code": "Atlantic/Madeira"
+      "code": "Atlantic/Madeira",
+      "name": "Atlantic/Madeira"
     },
     {
-      "code": "Atlantic/Reykjavik"
+      "code": "Atlantic/Reykjavik",
+      "name": "Atlantic/Reykjavik"
     },
     {
-      "code": "Atlantic/South_Georgia"
+      "code": "Atlantic/South_Georgia",
+      "name": "Atlantic/South_Georgia"
     },
     {
-      "code": "Atlantic/St_Helena"
+      "code": "Atlantic/St_Helena",
+      "name": "Atlantic/St_Helena"
     },
     {
-      "code": "Atlantic/Stanley"
+      "code": "Atlantic/Stanley",
+      "name": "Atlantic/Stanley"
     },
     {
-      "code": "Australia/Adelaide"
+      "code": "Australia/Adelaide",
+      "name": "Australia/Adelaide"
     },
     {
-      "code": "Australia/Brisbane"
+      "code": "Australia/Brisbane",
+      "name": "Australia/Brisbane"
     },
     {
-      "code": "Australia/Broken_Hill"
+      "code": "Australia/Broken_Hill",
+      "name": "Australia/Broken_Hill"
     },
     {
-      "code": "Australia/Darwin"
+      "code": "Australia/Darwin",
+      "name": "Australia/Darwin"
     },
     {
-      "code": "Australia/Eucla"
+      "code": "Australia/Eucla",
+      "name": "Australia/Eucla"
     },
     {
-      "code": "Australia/Hobart"
+      "code": "Australia/Hobart",
+      "name": "Australia/Hobart"
     },
     {
-      "code": "Australia/Lindeman"
+      "code": "Australia/Lindeman",
+      "name": "Australia/Lindeman"
     },
     {
-      "code": "Australia/Lord_Howe"
+      "code": "Australia/Lord_Howe",
+      "name": "Australia/Lord_Howe"
     },
     {
-      "code": "Australia/Melbourne"
+      "code": "Australia/Melbourne",
+      "name": "Australia/Melbourne"
     },
     {
-      "code": "Australia/Perth"
+      "code": "Australia/Perth",
+      "name": "Australia/Perth"
     },
     {
-      "code": "Australia/Sydney"
+      "code": "Australia/Sydney",
+      "name": "Australia/Sydney"
     },
     {
-      "code": "Europe/Amsterdam"
+      "code": "Europe/Amsterdam",
+      "name": "Europe/Amsterdam"
     },
     {
-      "code": "Europe/Andorra"
+      "code": "Europe/Andorra",
+      "name": "Europe/Andorra"
     },
     {
-      "code": "Europe/Astrakhan"
+      "code": "Europe/Astrakhan",
+      "name": "Europe/Astrakhan"
     },
     {
-      "code": "Europe/Athens"
+      "code": "Europe/Athens",
+      "name": "Europe/Athens"
     },
     {
-      "code": "Europe/Belgrade"
+      "code": "Europe/Belgrade",
+      "name": "Europe/Belgrade"
     },
     {
-      "code": "Europe/Berlin"
+      "code": "Europe/Berlin",
+      "name": "Europe/Berlin"
     },
     {
-      "code": "Europe/Bratislava"
+      "code": "Europe/Bratislava",
+      "name": "Europe/Bratislava"
     },
     {
-      "code": "Europe/Brussels"
+      "code": "Europe/Brussels",
+      "name": "Europe/Brussels"
     },
     {
-      "code": "Europe/Bucharest"
+      "code": "Europe/Bucharest",
+      "name": "Europe/Bucharest"
     },
     {
-      "code": "Europe/Budapest"
+      "code": "Europe/Budapest",
+      "name": "Europe/Budapest"
     },
     {
-      "code": "Europe/Busingen"
+      "code": "Europe/Busingen",
+      "name": "Europe/Busingen"
     },
     {
-      "code": "Europe/Chisinau"
+      "code": "Europe/Chisinau",
+      "name": "Europe/Chisinau"
     },
     {
-      "code": "Europe/Copenhagen"
+      "code": "Europe/Copenhagen",
+      "name": "Europe/Copenhagen"
     },
     {
-      "code": "Europe/Dublin"
+      "code": "Europe/Dublin",
+      "name": "Europe/Dublin"
     },
     {
-      "code": "Europe/Gibraltar"
+      "code": "Europe/Gibraltar",
+      "name": "Europe/Gibraltar"
     },
     {
-      "code": "Europe/Guernsey"
+      "code": "Europe/Guernsey",
+      "name": "Europe/Guernsey"
     },
     {
-      "code": "Europe/Helsinki"
+      "code": "Europe/Helsinki",
+      "name": "Europe/Helsinki"
     },
     {
-      "code": "Europe/Isle_of_Man"
+      "code": "Europe/Isle_of_Man",
+      "name": "Europe/Isle_of_Man"
     },
     {
-      "code": "Europe/Istanbul"
+      "code": "Europe/Istanbul",
+      "name": "Europe/Istanbul"
     },
     {
-      "code": "Europe/Jersey"
+      "code": "Europe/Jersey",
+      "name": "Europe/Jersey"
     },
     {
-      "code": "Europe/Kaliningrad"
+      "code": "Europe/Kaliningrad",
+      "name": "Europe/Kaliningrad"
     },
     {
-      "code": "Europe/Kiev"
+      "code": "Europe/Kiev",
+      "name": "Europe/Kiev"
     },
     {
-      "code": "Europe/Kirov"
+      "code": "Europe/Kirov",
+      "name": "Europe/Kirov"
     },
     {
-      "code": "Europe/Lisbon"
+      "code": "Europe/Lisbon",
+      "name": "Europe/Lisbon"
     },
     {
-      "code": "Europe/Ljubljana"
+      "code": "Europe/Ljubljana",
+      "name": "Europe/Ljubljana"
     },
     {
-      "code": "Europe/London"
+      "code": "Europe/London",
+      "name": "Europe/London"
     },
     {
-      "code": "Europe/Luxembourg"
+      "code": "Europe/Luxembourg",
+      "name": "Europe/Luxembourg"
     },
     {
-      "code": "Europe/Madrid"
+      "code": "Europe/Madrid",
+      "name": "Europe/Madrid"
     },
     {
-      "code": "Europe/Malta"
+      "code": "Europe/Malta",
+      "name": "Europe/Malta"
     },
     {
-      "code": "Europe/Mariehamn"
+      "code": "Europe/Mariehamn",
+      "name": "Europe/Mariehamn"
     },
     {
-      "code": "Europe/Minsk"
+      "code": "Europe/Minsk",
+      "name": "Europe/Minsk"
     },
     {
-      "code": "Europe/Monaco"
+      "code": "Europe/Monaco",
+      "name": "Europe/Monaco"
     },
     {
-      "code": "Europe/Moscow"
+      "code": "Europe/Moscow",
+      "name": "Europe/Moscow"
     },
     {
-      "code": "Europe/Oslo"
+      "code": "Europe/Oslo",
+      "name": "Europe/Oslo"
     },
     {
-      "code": "Europe/Paris"
+      "code": "Europe/Paris",
+      "name": "Europe/Paris"
     },
     {
-      "code": "Europe/Podgorica"
+      "code": "Europe/Podgorica",
+      "name": "Europe/Podgorica"
     },
     {
-      "code": "Europe/Prague"
+      "code": "Europe/Prague",
+      "name": "Europe/Prague"
     },
     {
-      "code": "Europe/Riga"
+      "code": "Europe/Riga",
+      "name": "Europe/Riga"
     },
     {
-      "code": "Europe/Rome"
+      "code": "Europe/Rome",
+      "name": "Europe/Rome"
     },
     {
-      "code": "Europe/Samara"
+      "code": "Europe/Samara",
+      "name": "Europe/Samara"
     },
     {
-      "code": "Europe/San_Marino"
+      "code": "Europe/San_Marino",
+      "name": "Europe/San_Marino"
     },
     {
-      "code": "Europe/Sarajevo"
+      "code": "Europe/Sarajevo",
+      "name": "Europe/Sarajevo"
     },
     {
-      "code": "Europe/Saratov"
+      "code": "Europe/Saratov",
+      "name": "Europe/Saratov"
     },
     {
-      "code": "Europe/Simferopol"
+      "code": "Europe/Simferopol",
+      "name": "Europe/Simferopol"
     },
     {
-      "code": "Europe/Skopje"
+      "code": "Europe/Skopje",
+      "name": "Europe/Skopje"
     },
     {
-      "code": "Europe/Sofia"
+      "code": "Europe/Sofia",
+      "name": "Europe/Sofia"
     },
     {
-      "code": "Europe/Stockholm"
+      "code": "Europe/Stockholm",
+      "name": "Europe/Stockholm"
     },
     {
-      "code": "Europe/Tallinn"
+      "code": "Europe/Tallinn",
+      "name": "Europe/Tallinn"
     },
     {
-      "code": "Europe/Tirane"
+      "code": "Europe/Tirane",
+      "name": "Europe/Tirane"
     },
     {
-      "code": "Europe/Ulyanovsk"
+      "code": "Europe/Ulyanovsk",
+      "name": "Europe/Ulyanovsk"
     },
     {
-      "code": "Europe/Vaduz"
+      "code": "Europe/Vaduz",
+      "name": "Europe/Vaduz"
     },
     {
-      "code": "Europe/Vatican"
+      "code": "Europe/Vatican",
+      "name": "Europe/Vatican"
     },
     {
-      "code": "Europe/Vienna"
+      "code": "Europe/Vienna",
+      "name": "Europe/Vienna"
     },
     {
-      "code": "Europe/Vilnius"
+      "code": "Europe/Vilnius",
+      "name": "Europe/Vilnius"
     },
     {
-      "code": "Europe/Volgograd"
+      "code": "Europe/Volgograd",
+      "name": "Europe/Volgograd"
     },
     {
-      "code": "Europe/Warsaw"
+      "code": "Europe/Warsaw",
+      "name": "Europe/Warsaw"
     },
     {
-      "code": "Europe/Zagreb"
+      "code": "Europe/Zagreb",
+      "name": "Europe/Zagreb"
     },
     {
-      "code": "Europe/Zurich"
+      "code": "Europe/Zurich",
+      "name": "Europe/Zurich"
     },
     {
-      "code": "Indian/Antananarivo"
+      "code": "Indian/Antananarivo",
+      "name": "Indian/Antananarivo"
     },
     {
-      "code": "Indian/Chagos"
+      "code": "Indian/Chagos",
+      "name": "Indian/Chagos"
     },
     {
-      "code": "Indian/Christmas"
+      "code": "Indian/Christmas",
+      "name": "Indian/Christmas"
     },
     {
-      "code": "Indian/Cocos"
+      "code": "Indian/Cocos",
+      "name": "Indian/Cocos"
     },
     {
-      "code": "Indian/Comoro"
+      "code": "Indian/Comoro",
+      "name": "Indian/Comoro"
     },
     {
-      "code": "Indian/Kerguelen"
+      "code": "Indian/Kerguelen",
+      "name": "Indian/Kerguelen"
     },
     {
-      "code": "Indian/Mahe"
+      "code": "Indian/Mahe",
+      "name": "Indian/Mahe"
     },
     {
-      "code": "Indian/Maldives"
+      "code": "Indian/Maldives",
+      "name": "Indian/Maldives"
     },
     {
-      "code": "Indian/Mauritius"
+      "code": "Indian/Mauritius",
+      "name": "Indian/Mauritius"
     },
     {
-      "code": "Indian/Mayotte"
+      "code": "Indian/Mayotte",
+      "name": "Indian/Mayotte"
     },
     {
-      "code": "Indian/Reunion"
+      "code": "Indian/Reunion",
+      "name": "Indian/Reunion"
     },
     {
-      "code": "Pacific/Apia"
+      "code": "Pacific/Apia",
+      "name": "Pacific/Apia"
     },
     {
-      "code": "Pacific/Auckland"
+      "code": "Pacific/Auckland",
+      "name": "Pacific/Auckland"
     },
     {
-      "code": "Pacific/Bougainville"
+      "code": "Pacific/Bougainville",
+      "name": "Pacific/Bougainville"
     },
     {
-      "code": "Pacific/Chatham"
+      "code": "Pacific/Chatham",
+      "name": "Pacific/Chatham"
     },
     {
-      "code": "Pacific/Easter"
+      "code": "Pacific/Easter",
+      "name": "Pacific/Easter"
     },
     {
-      "code": "Pacific/Efate"
+      "code": "Pacific/Efate",
+      "name": "Pacific/Efate"
     },
     {
-      "code": "Pacific/Enderbury"
+      "code": "Pacific/Enderbury",
+      "name": "Pacific/Enderbury"
     },
     {
-      "code": "Pacific/Fakaofo"
+      "code": "Pacific/Fakaofo",
+      "name": "Pacific/Fakaofo"
     },
     {
-      "code": "Pacific/Fiji"
+      "code": "Pacific/Fiji",
+      "name": "Pacific/Fiji"
     },
     {
-      "code": "Pacific/Funafuti"
+      "code": "Pacific/Funafuti",
+      "name": "Pacific/Funafuti"
     },
     {
-      "code": "Pacific/Galapagos"
+      "code": "Pacific/Galapagos",
+      "name": "Pacific/Galapagos"
     },
     {
-      "code": "Pacific/Gambier"
+      "code": "Pacific/Gambier",
+      "name": "Pacific/Gambier"
     },
     {
-      "code": "Pacific/Guadalcanal"
+      "code": "Pacific/Guadalcanal",
+      "name": "Pacific/Guadalcanal"
     },
     {
-      "code": "Pacific/Guam"
+      "code": "Pacific/Guam",
+      "name": "Pacific/Guam"
     },
     {
-      "code": "Pacific/Honolulu"
+      "code": "Pacific/Honolulu",
+      "name": "Pacific/Honolulu"
     },
     {
-      "code": "Pacific/Kiritimati"
+      "code": "Pacific/Kiritimati",
+      "name": "Pacific/Kiritimati"
     },
     {
-      "code": "Pacific/Kosrae"
+      "code": "Pacific/Kosrae",
+      "name": "Pacific/Kosrae"
     },
     {
-      "code": "Pacific/Kwajalein"
+      "code": "Pacific/Kwajalein",
+      "name": "Pacific/Kwajalein"
     },
     {
-      "code": "Pacific/Majuro"
+      "code": "Pacific/Majuro",
+      "name": "Pacific/Majuro"
     },
     {
-      "code": "Pacific/Marquesas"
+      "code": "Pacific/Marquesas",
+      "name": "Pacific/Marquesas"
     },
     {
-      "code": "Pacific/Midway"
+      "code": "Pacific/Midway",
+      "name": "Pacific/Midway"
     },
     {
-      "code": "Pacific/Nauru"
+      "code": "Pacific/Nauru",
+      "name": "Pacific/Nauru"
     },
     {
-      "code": "Pacific/Niue"
+      "code": "Pacific/Niue",
+      "name": "Pacific/Niue"
     },
     {
-      "code": "Pacific/Norfolk"
+      "code": "Pacific/Norfolk",
+      "name": "Pacific/Norfolk"
     },
     {
-      "code": "Pacific/Noumea"
+      "code": "Pacific/Noumea",
+      "name": "Pacific/Noumea"
     },
     {
-      "code": "Pacific/Pago_Pago"
+      "code": "Pacific/Pago_Pago",
+      "name": "Pacific/Pago_Pago"
     },
     {
-      "code": "Pacific/Palau"
+      "code": "Pacific/Palau",
+      "name": "Pacific/Palau"
     },
     {
-      "code": "Pacific/Pitcairn"
+      "code": "Pacific/Pitcairn",
+      "name": "Pacific/Pitcairn"
     },
     {
-      "code": "Pacific/Ponape"
+      "code": "Pacific/Ponape",
+      "name": "Pacific/Ponape"
     },
     {
-      "code": "Pacific/Port_Moresby"
+      "code": "Pacific/Port_Moresby",
+      "name": "Pacific/Port_Moresby"
     },
     {
-      "code": "Pacific/Rarotonga"
+      "code": "Pacific/Rarotonga",
+      "name": "Pacific/Rarotonga"
     },
     {
-      "code": "Pacific/Saipan"
+      "code": "Pacific/Saipan",
+      "name": "Pacific/Saipan"
     },
     {
-      "code": "Pacific/Tahiti"
+      "code": "Pacific/Tahiti",
+      "name": "Pacific/Tahiti"
     },
     {
-      "code": "Pacific/Tarawa"
+      "code": "Pacific/Tarawa",
+      "name": "Pacific/Tarawa"
     },
     {
-      "code": "Pacific/Tongatapu"
+      "code": "Pacific/Tongatapu",
+      "name": "Pacific/Tongatapu"
     },
     {
-      "code": "Pacific/Truk"
+      "code": "Pacific/Truk",
+      "name": "Pacific/Truk"
     },
     {
-      "code": "Pacific/Wake"
+      "code": "Pacific/Wake",
+      "name": "Pacific/Wake"
     },
     {
-      "code": "Pacific/Wallis"
+      "code": "Pacific/Wallis",
+      "name": "Pacific/Wallis"
     }
   ]
 } as const satisfies {

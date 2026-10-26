@@ -2083,6 +2083,43 @@ model UsageCounter {
   @@map("usage_counters")
 }
 
+// WI-OI-120av (Phase 5A): platform reference data — kernel-owned, version-locked standard sets (ISO/UN-ECE/IANA)
+// that every workspace reads but none writes (the migration grants runtime roles SELECT only). A new version is
+// loaded whole, with its source, version and a sha256 checksum; the live version is the one with `retiredAt` NULL
+// (a code is retired, never deleted, so existing records keep their value).
+model PlatformReferenceVersion {
+  id         String    @id @default(cuid())
+  setKey     String
+  source     String
+  version    String
+  checksum   String
+  entryCount Int
+  reason     String
+  loadedById String
+  loadedAt   DateTime  @default(now()) @db.Timestamptz(3)
+  retiredAt  DateTime? @db.Timestamptz(3)
+
+  entries PlatformReferenceEntry[]
+
+  @@index([setKey, retiredAt])
+  @@map("platform_reference_versions")
+}
+
+model PlatformReferenceEntry {
+  id        String                   @id @default(cuid())
+  versionId String
+  version   PlatformReferenceVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  setKey    String
+  code      String
+  name      String
+  // Set-specific fields (currency minorUnits, subdivision countryCode, …); the served entry shape lives in contracts.
+  payload   Json?
+
+  @@unique([versionId, code], map: "platform_reference_entries_version_code")
+  @@index([setKey, versionId])
+  @@map("platform_reference_entries")
+}
+
 model ConnectorCheckpoint {
   id            String            @id @default(cuid())
   tenantId      String
