@@ -158,6 +158,7 @@
       "DataRetentionHold",
       "DataRetentionExecution",
       "RetentionClass",
+      "UsageCounter",
       "ConnectorCheckpoint",
       "ControlOutboxEvent",
       "RuleVersion",

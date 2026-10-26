@@ -161,6 +161,8 @@ import { ExecutionEventsService } from './execution-events.service.js';
 import { GovernorPersistentThrottlingGuard } from './governor-persistent.guard.js';
 import { GovernorPersistentService } from './governor-persistent.service.js';
 import { GovernorController } from './governor.controller.js';
+import { UsageController } from './usage.controller.js';
+import { UsageMeteringService } from './usage-metering.service.js';
 import { GovernorThrottlingGuard } from './governor.guard.js';
 import { GovernorService } from './governor.service.js';
 import { JsonSchemaService } from './json-schema.service.js';
@@ -205,6 +207,7 @@ import { WorkflowService } from './workflow.service.js';
     KernelSchedulesController,
     ConfigurationStudioController,
     GovernorController,
+    UsageController,
     ScimController,
     PartyController,
   ],
@@ -254,6 +257,7 @@ import { WorkflowService } from './workflow.service.js';
     ConfigurationOutboxPublisher,
     ConfigurationStudioService,
     GovernorService,
+    UsageMeteringService,
     GovernorThrottlingGuard,
     GovernorPersistentService,
     GovernorPersistentThrottlingGuard,

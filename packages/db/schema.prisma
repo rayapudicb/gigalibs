@@ -554,6 +554,7 @@ model Tenant {
   retentionHolds          DataRetentionHold[]
   retentionExecutions     DataRetentionExecution[]
   retentionClasses        RetentionClass[]
+  usageCounters           UsageCounter[]
   oidcConfiguration       TenantOidcConfiguration?
   oidcLoginTransactions   OidcLoginTransaction[]
   configurationChangeSets ConfigurationChangeSet[]
@@ -2062,6 +2063,24 @@ model RetentionClass {
   @@unique([tenantId, key])
   @@index([tenantId, archivedAt])
   @@map("retention_classes")
+}
+
+// WI-OI-015 (T8b): a cumulative, monotonic usage counter per tenant, billing period (YYYY-MM) and meter. Metered work
+// increments it in place; the billing hand-off reads the period's counters and turns them into reconciled line-items
+// against the tenant's plan quotas. Distinct from the governor's tenant_rate_buckets, which is a per-minute rate
+// limiter, not a billing ledger.
+model UsageCounter {
+  id        String   @id @default(cuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  periodKey String
+  meterKey  String
+  quantity  BigInt   @default(0)
+  updatedAt DateTime @updatedAt
+
+  @@unique([tenantId, periodKey, meterKey])
+  @@index([tenantId, periodKey])
+  @@map("usage_counters")
 }
 
 model ConnectorCheckpoint {

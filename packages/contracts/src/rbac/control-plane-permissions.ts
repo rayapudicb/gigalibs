@@ -11,6 +11,7 @@ export const CONTROL_PLANE_PERMISSIONS = [
   'ap:evaluate',
   'ap:read',
   'audit:read',
+  'billing:read',
   'configuration-apps:read',
   'configuration-apps:write',
   'configuration-runtime:read',
