@@ -29,12 +29,12 @@ the engine to CMMS and Workforce** — plus the Accounting/Security reviews. (b)
 | **S12** document templates | ~ `email-templates` + partial |
 | **S13** numbering | 🟢 **GAP → built this session** (`contracts/numbering`) |
 | **S14** import & export | ~ `forms-engine-nest` / `privacy-gdpr` export |
-| **R8** record sharing | 🔴 **gap** — needs a persisted share model (flagged) |
+| **R8** record sharing | 🟢 **GAP → built this session** (`contracts/rbac/record-sharing`, pure resolver; per-module share table flagged) |
 | **R9** column rules | 🟢 **GAP → built this session** (`contracts/rbac/column-rules`) |
 | **R12** explainable access | 🟢 **GAP → built this session** (`contracts/rbac/explainable-access`) |
 | **X4** my-work inbox | ✅ `notifications-core` + module `inbox.service` |
-| **X5** search everywhere | 🔴 **gap** — needs a search index/integration (flagged) |
-| **Apply to CMMS + Workforce** | 🔴 **not done** — CMMS/gigaops do not import the engine packages yet; the integration-heavy last step |
+| **X5** search everywhere | 🟢 **GAP → built this session** (`contracts/search`, pure merge+rank; per-module providers + index flagged) |
+| **Apply to CMMS + Workforce** | 🟡 **started** — S13 numbering now wired into CMMS (work-order + request numbers go through `renderDocumentNumber`); the rest of the per-module wiring remains |
 
 ## Built this session (pure engine gaps, contracts + tests)
 
@@ -46,14 +46,28 @@ the engine to CMMS and Workforce** — plus the Accounting/Security reviews. (b)
 - **R9 column rules** (`contracts/src/rbac/column-rules.ts`): `resolveColumnAccess` / `visibleColumns` — per-column
   view/edit gating (edit requires view), wildcard-aware.
 
-Tests: `numbering.test.ts` (5), `explainable-access.test.ts` (6), `column-rules.test.ts` (6). Contracts typecheck green;
-new files lint clean. These are the "build once" layer; wiring each into module screens/services is per-module work.
+Tests: `numbering.test.ts` (5), `explainable-access.test.ts` (6), `column-rules.test.ts` (6). Then a second pass added
+the last two pure gaps and the first module-apply slice:
+- **R8 record sharing** (`contracts/src/rbac/record-sharing.ts`): `resolveRecordShareAccess` (shares + principal →
+  VIEW/EDIT/null; EDIT wins; user- and role-grantees) + `CreateRecordShareSchema`. Tests (6).
+- **X5 search everywhere** (`contracts/src/search/index.ts`): `scoreSearchResult` + `rankSearchResults` — the
+  deterministic merge/rank of every module's hits (exact > starts-with > contains > subtitle, recency tiebreak).
+  Tests (4).
+- **S13 → CMMS (first apply slice):** CMMS work-order and maintenance-request numbering now go through the shared
+  `renderDocumentNumber` (identical `WO-######` / `REQ-######` output) instead of hand-rolled `padStart`. CMMS
+  typecheck green.
+
+All pure cores: contracts typecheck green, source files lint clean (420+ contracts tests). Wiring each into module
+screens/services is per-module work.
 
 ## Remaining to truly close Phase 4 (not an autonomous pass)
 
-- **Apply the engine to CMMS and Workforce** — wire document-lifecycle, custom-fields, audit history, i18n, numbering,
-  approval policies, column rules, inbox, etc. into those two modules' services/screens, and prove it. Integration work
-  that needs running modules and the Done checklist.
-- **Remaining gaps:** R8 record sharing (persisted share model), X5 search-everywhere (index), and a unified home for the
-  partial ones (S4 quantity, S8 reports, S10 attachments, S12 templates, S14 import/export, R7/R10 rights).
+- **Apply the rest of the engine to CMMS and Workforce** — document-lifecycle, custom-fields, audit history, i18n,
+  approval policies, column rules, record sharing, inbox, search providers, etc. into both modules' services/screens,
+  and prove it. (S13 numbering is now wired into CMMS as the first slice.) Integration work that needs running modules
+  and the Done checklist.
+- **A unified home for the partial capabilities:** S4 quantity, S8 reports, S10 attachments, S12 templates, S14
+  import/export, R7/R10 rights (each exists in part; consolidating them is refactor/integration, not greenfield).
+- **Per-gap persistence/integration:** R8 a per-module share table + authorise-read/write wiring; X5 per-module search
+  providers + an index.
 - **Reviews:** Accounting reviewer for posting; Security for the access layers.

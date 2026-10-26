@@ -24,6 +24,7 @@ import {
   type CmmsWorkOrderStatusV1,
   type CmmsWorkOrderV1,
   type CreateCmmsWorkOrderV1,
+  renderDocumentNumber,
 } from '@gigalibs/contracts';
 import type { PoolClient } from 'pg';
 import { hasCmmsPermission, type CmmsCommandContext, type CmmsPrincipal } from '../auth/authorization.js';
@@ -194,7 +195,8 @@ export class WorkOrdersService {
        RETURNING last_value`,
       [context.principal.tenantId],
     );
-    const woNumber = `WO-${String(counter.rows[0]!.last_value).padStart(6, '0')}`;
+    // WI-OI-120 (Phase 4, S13): CMMS now numbers through the shared engine (identical format, one rule everywhere).
+    const woNumber = renderDocumentNumber('WO-{SEQ:6}', Number(counter.rows[0]!.last_value));
     let id: string;
     try {
       const inserted = await client.query<{ id: string }>(

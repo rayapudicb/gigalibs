@@ -344,9 +344,11 @@ cards.
 
 **Status (2026-10-26):** the engine largely exists as packages (E1 `document-lifecycle`, S3 `multi-currency`, S5/S6
 `custom-fields-nest`/`configuration-core`, S7 `rule-engine-universal`, S9 `audit-core`, S11 `i18n`, S15
-`module-registry`, R6 `posting-rules`). This session filled the pure-logic gaps **S13 numbering, R9 column rules, R12
-explainable access** (contracts + tests). Remaining: R8 record sharing + X5 search (gaps), the partial capabilities, and
-the integration-heavy **apply-to-CMMS/Workforce** last step + reviews. Map: `.pi/tasks/PHASE-4-ENGINE-STATUS.md`.
+`module-registry`, R6 `posting-rules`). This session built every pure-logic gap — **S13 numbering, R9 column rules, R12
+explainable access, R8 record sharing, X5 search** (contracts + tests) — and wired the first apply slice (**S13 → CMMS**
+work-order/request numbering). Remaining to close: the rest of the apply-to-CMMS/Workforce integration, consolidating
+the partial capabilities (S4/S8/S10/S12/S14/R7/R10), per-gap persistence (R8 share table, X5 index), and the
+Accounting/Security reviews. Map: `.pi/tasks/PHASE-4-ENGINE-STATUS.md`.
 
 ### Phase 5. Money flows, one module at a time (M3–M6)
 

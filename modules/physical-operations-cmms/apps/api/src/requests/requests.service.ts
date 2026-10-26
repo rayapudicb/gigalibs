@@ -12,6 +12,7 @@ import {
   SearchCmmsRequestsV1Schema,
   TriageCmmsRequestV1Schema,
   holdsPermission,
+  renderDocumentNumber,
   type CancelCmmsRequestV1,
   type CmmsMaintenanceRequestV1,
   type CmmsPageV1,
@@ -126,7 +127,8 @@ export class RequestsService {
          RETURNING last_value`,
         [context.principal.tenantId],
       );
-      const requestNumber = `REQ-${String(counter.rows[0]!.last_value).padStart(6, '0')}`;
+      // WI-OI-120 (Phase 4, S13): number through the shared engine (same REQ-###### format, one rule everywhere).
+      const requestNumber = renderDocumentNumber('REQ-{SEQ:6}', Number(counter.rows[0]!.last_value));
       const id = randomUUID();
 
       const inserted = await client.query(

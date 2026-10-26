@@ -57,3 +57,4 @@ export * from './people-admin.js';
 export * from './directory-groups.js';
 export * from './explainable-access.js';
 export * from './column-rules.js';
+export * from './record-sharing.js';
