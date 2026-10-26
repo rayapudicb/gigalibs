@@ -24,6 +24,7 @@ export * from './modules/index.js';
 export * from './configuration/index.js';
 export * from './setup/index.js';
 export * from './benchmark/index.js';
+export * from './numbering/index.js';
 export * from './metering/index.js';
 export * from './workforce/index.js';
 export * from './geospatial/index.js';

@@ -342,6 +342,12 @@ cards.
 
 **Last step:** apply them to CMMS and Workforce, so the first two modules are complete.
 
+**Status (2026-10-26):** the engine largely exists as packages (E1 `document-lifecycle`, S3 `multi-currency`, S5/S6
+`custom-fields-nest`/`configuration-core`, S7 `rule-engine-universal`, S9 `audit-core`, S11 `i18n`, S15
+`module-registry`, R6 `posting-rules`). This session filled the pure-logic gaps **S13 numbering, R9 column rules, R12
+explainable access** (contracts + tests). Remaining: R8 record sharing + X5 search (gaps), the partial capabilities, and
+the integration-heavy **apply-to-CMMS/Workforce** last step + reviews. Map: `.pi/tasks/PHASE-4-ENGINE-STATUS.md`.
+
 ### Phase 5. Money flows, one module at a time (M3–M6)
 
 Every module goes through the S16 kit (metadata, access rows, Assistant) and the Done checklist. Posting also needs
