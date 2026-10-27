@@ -1,5 +1,6 @@
 import AppSidebar from '@/components/AppSidebar';
 import { UserNav } from '@/components/auth/UserNav';
+import { CompanionLauncher } from '@/components/companion/CompanionLauncher';
 import { StudioModeProvider, StudioModeToggle } from '@/components/configuration/StudioMode';
 import { CurrencyLocaleProvider } from '@/components/currency/CurrencyLocaleContext';
 import { GeospatialPlacesProvider } from '@/components/geospatial/GeospatialPlacesProvider';
@@ -110,6 +111,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           </div>
           {/* WI-OI-120ak (S4, owner decision D4a): the Softphone & WhatsApp button is off every page until Communications is
               connected; it showed an invented chat. */}
+          {/* WI-OI-120bc: the Giga AI Companion launcher — mounted only when the local model is configured
+              (OLLAMA_HOST), so it is never a dead button where it cannot run (honours D4a). */}
+          {process.env.OLLAMA_HOST ? <CompanionLauncher /> : null}
         </div>
       </StudioModeProvider>
     </AppI18nProvider>

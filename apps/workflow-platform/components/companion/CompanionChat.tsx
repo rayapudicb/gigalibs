@@ -1,0 +1,91 @@
+'use client';
+
+import { GenerativeUI } from '@/components/companion/GenerativeUI';
+import type { GenerativeUINode } from '@gigalibs/contracts';
+import { Button, Heading, Input, Text } from '@medusajs/ui';
+import * as React from 'react';
+
+// WI-OI-120bc (Giga AI Companion): the shared chat surface, used by both the /companion page and the floating
+// launcher. It posts a goal to /api/companion/run (which runs the loop on the local model, as the signed-in user) and
+// renders the returned generative-UI panels with the vetted renderer. It never fabricates a reply: a 503 (local model
+// not running) or any error is shown as a plain message, honouring owner decision D4a (no invented chat).
+
+interface CompanionRunResult {
+  readonly outcome: string;
+  readonly panels: readonly GenerativeUINode[];
+  readonly question?: string;
+}
+
+export function CompanionChat(): React.ReactElement {
+  const [goal, setGoal] = React.useState('');
+  const [busy, setBusy] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+  const [result, setResult] = React.useState<CompanionRunResult | null>(null);
+
+  async function run(): Promise<void> {
+    setBusy(true);
+    setError(null);
+    setResult(null);
+    try {
+      const res = await fetch('/api/companion/run', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ goal }),
+      });
+      if (!res.ok) {
+        const detail = (await res.json().catch(() => ({}))) as { detail?: string };
+        setError(
+          res.status === 503
+            ? 'The local AI model is not running. Start Ollama and try again.'
+            : (detail.detail ?? `The Companion is unavailable (HTTP ${res.status}).`),
+        );
+        return;
+      }
+      setResult((await res.json()) as CompanionRunResult);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Something went wrong.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-y-4">
+      <div className="flex flex-col gap-y-1">
+        <Heading level="h2">Giga AI Companion</Heading>
+        <Text size="small" className="text-ui-fg-subtle">
+          Describe a goal; it uses the tools you are allowed to use and shows the result.
+        </Text>
+      </div>
+      <div className="flex gap-x-2">
+        <Input
+          placeholder="e.g. Show the exchange-rate table for USD"
+          value={goal}
+          onChange={(e) => setGoal(e.currentTarget.value)}
+          disabled={busy}
+        />
+        <Button
+          variant="primary"
+          onClick={run}
+          disabled={busy || goal.trim().length === 0}
+          isLoading={busy}
+        >
+          Ask
+        </Button>
+      </div>
+      {error ? <Text className="text-ui-tag-red-text">{error}</Text> : null}
+      {result ? (
+        <div className="flex flex-col gap-y-4">
+          {result.question ? <Text className="text-ui-fg-base">{result.question}</Text> : null}
+          {result.panels.map((panel, i) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: panels are a positional, wholesale-rendered list.
+            <GenerativeUI key={`panel-${i}`} node={panel} />
+          ))}
+          <Text size="small" className="text-ui-fg-muted">
+            Outcome: {result.outcome}
+          </Text>
+        </div>
+      ) : null}
+    </div>
+  );
+}

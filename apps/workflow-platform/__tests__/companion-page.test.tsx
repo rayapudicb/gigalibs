@@ -2,15 +2,16 @@
 import * as React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import CompanionPage from '../app/(app)/companion/page';
+import { CompanionChat } from '../components/companion/CompanionChat';
 
-// WI-OI-120bc (Giga AI Companion): the page renders its initial ask form (no network in the initial render).
+// WI-OI-120bc (Giga AI Companion): the chat surface (used by both the /companion page and the floating launcher)
+// renders its goal form.
 
-describe('CompanionPage', () => {
+describe('CompanionChat', () => {
   it('renders the goal form', () => {
-    const html = renderToStaticMarkup(<CompanionPage />);
+    const html = renderToStaticMarkup(<CompanionChat />);
     expect(html).toContain('Giga AI Companion');
-    expect(html).toContain('Who can work at Site A tomorrow?'); // the input placeholder
+    expect(html).toContain('Show the exchange-rate table for USD'); // the input placeholder
     expect(html).toContain('Ask');
   });
 });
