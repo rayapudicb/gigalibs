@@ -6,8 +6,10 @@ import {
   type AgentToolResult,
   type AgentToolSpec,
   type GenerativeUINode,
+  type NavigableScreen,
   advanceCampaign,
   buildSystemPrompt,
+  findScreen,
   parseAgentDecision,
   validateGenerativeUI,
 } from './index.js';
@@ -31,6 +33,8 @@ export interface RunCompanionOptions {
   readonly goal: string;
   /** The tools the caller may use — already the least-privilege set (see toolsForPermissions). */
   readonly tools: readonly AgentToolSpec[];
+  /** The screens the caller may be sent to — already the least-privilege set (see screensForPermissions). */
+  readonly screens?: readonly NavigableScreen[];
   readonly model: ModelClient;
   readonly executor: ToolExecutor;
   readonly createdBy: string;
@@ -38,7 +42,7 @@ export interface RunCompanionOptions {
   readonly maxTurns?: number;
 }
 
-export type CompanionOutcome = 'done' | 'needs_input' | 'failed' | 'max_turns';
+export type CompanionOutcome = 'done' | 'needs_input' | 'navigate' | 'failed' | 'max_turns';
 
 export interface CompanionRun {
   readonly outcome: CompanionOutcome;
@@ -48,6 +52,8 @@ export interface CompanionRun {
   readonly transcript: readonly AgentMessage[];
   /** Present when the outcome is `needs_input`: the question to put to the user. */
   readonly question?: string;
+  /** Present when the outcome is `navigate`: the in-app path the client should open. */
+  readonly navigateTo?: string;
 }
 
 const DEFAULT_MAX_TURNS = 12;
@@ -60,7 +66,8 @@ const DEFAULT_MAX_TURNS = 12;
  */
 export async function runCompanion(opts: RunCompanionOptions): Promise<CompanionRun> {
   const maxTurns = opts.maxTurns ?? DEFAULT_MAX_TURNS;
-  const system = buildSystemPrompt(opts.goal, opts.tools);
+  const screens = opts.screens ?? [];
+  const system = buildSystemPrompt(opts.goal, opts.tools, screens);
   const offered = new Set(opts.tools.map((t) => t.name));
 
   const transcript: AgentMessage[] = [{ role: 'user', content: opts.goal }];
@@ -98,6 +105,16 @@ export async function runCompanion(opts: RunCompanionOptions): Promise<Companion
     if (decision.kind === 'ask') {
       say('assistant', decision.question);
       return { outcome: 'needs_input', campaign, panels, transcript, question: decision.question };
+    }
+    if (decision.kind === 'navigate') {
+      const screen = findScreen(screens, decision.screen);
+      if (!screen) {
+        // Only a screen that was offered (and exists) can be opened — never an invented path.
+        say('user', `Screen "${decision.screen}" is not available; choose one that was offered.`);
+        continue;
+      }
+      say('assistant', decision.reason ?? `Opening ${screen.label}.`);
+      return { outcome: 'navigate', campaign, panels, transcript, navigateTo: screen.path };
     }
     if (decision.kind === 'plan') {
       const steps: AgentStep[] = decision.steps.map((s, i) => ({

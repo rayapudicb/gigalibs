@@ -66,7 +66,13 @@ export async function POST(request: Request): Promise<Response> {
       maxTurns: 10,
     });
     return Response.json(
-      { outcome: run.outcome, panels: run.panels, campaign: run.campaign, question: run.question },
+      {
+        outcome: run.outcome,
+        panels: run.panels,
+        campaign: run.campaign,
+        question: run.question,
+        navigateTo: run.navigateTo,
+      },
       { headers: { 'Cache-Control': 'no-store' } },
     );
   } catch (error) {

@@ -3,6 +3,7 @@
 import { GenerativeUI } from '@/components/companion/GenerativeUI';
 import type { GenerativeUINode } from '@gigalibs/contracts';
 import { Button, Heading, Input, Text } from '@medusajs/ui';
+import { useRouter } from 'next/navigation';
 import * as React from 'react';
 
 // WI-OI-120bc (Giga AI Companion): the shared chat surface, used by both the /companion page and the floating
@@ -14,9 +15,16 @@ interface CompanionRunResult {
   readonly outcome: string;
   readonly panels: readonly GenerativeUINode[];
   readonly question?: string;
+  readonly navigateTo?: string;
 }
 
-export function CompanionChat(): React.ReactElement {
+/** `onNavigated` lets a host (the floating launcher) close itself once the Companion opens a screen. */
+export function CompanionChat({
+  onNavigated,
+}: {
+  onNavigated?: () => void;
+} = {}): React.ReactElement {
+  const router = useRouter();
   const [goal, setGoal] = React.useState('');
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -41,7 +49,14 @@ export function CompanionChat(): React.ReactElement {
         );
         return;
       }
-      setResult((await res.json()) as CompanionRunResult);
+      const data = (await res.json()) as CompanionRunResult;
+      if (data.outcome === 'navigate' && data.navigateTo) {
+        // The Companion opens the real app screen — an in-app route change, not a reload.
+        router.push(data.navigateTo);
+        onNavigated?.();
+        return;
+      }
+      setResult(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong.');
     } finally {

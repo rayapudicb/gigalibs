@@ -18,7 +18,7 @@ export function CompanionLauncher(): React.ReactElement {
           role="dialog"
           aria-label="Giga AI Companion"
         >
-          <CompanionChat />
+          <CompanionChat onNavigated={() => setOpen(false)} />
         </div>
       ) : null}
       <div className="fixed bottom-6 right-6 z-40 print:hidden">

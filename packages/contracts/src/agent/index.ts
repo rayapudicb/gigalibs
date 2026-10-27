@@ -227,6 +227,13 @@ export const AgentDecisionSchema = z.discriminatedUnion('kind', [
     .object({ kind: z.literal('show'), ui: GenerativeUINodeSchema, done: z.boolean().optional() })
     .strict(),
   z.object({ kind: z.literal('ask'), question: z.string().min(1).max(2000) }).strict(),
+  z
+    .object({
+      kind: z.literal('navigate'),
+      screen: z.string().min(1).max(120),
+      reason: z.string().max(500).optional(),
+    })
+    .strict(),
   z.object({ kind: z.literal('done'), summary: z.string().min(1).max(4000) }).strict(),
 ]);
 export type AgentDecision = z.infer<typeof AgentDecisionSchema>;
@@ -341,3 +348,4 @@ export * from './tools.js';
 export * from './loop.js';
 export * from './marketing.js';
 export * from './builder.js';
+export * from './navigation.js';

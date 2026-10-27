@@ -4,9 +4,11 @@ import {
   type CompanionRun,
   MARKETING_TOOLS,
   type ModelClient,
+  NAVIGABLE_SCREENS,
   OPERATIONAL_TOOLS,
   type ToolExecutor,
   runCompanion,
+  screensForPermissions,
   toolsForPermissions,
 } from '@gigalibs/contracts';
 
@@ -34,9 +36,11 @@ export interface CompanionSessionInput {
 /** Run one Companion session: offer only the tools the caller may use, then drive the loop to an outcome. */
 export function runCompanionSession(input: CompanionSessionInput): Promise<CompanionRun> {
   const tools = toolsForPermissions(ALL_COMPANION_TOOLS, input.heldPermissions);
+  const screens = screensForPermissions(NAVIGABLE_SCREENS, input.heldPermissions);
   return runCompanion({
     goal: input.goal,
     tools,
+    screens,
     model: input.model,
     executor: input.executor,
     createdBy: input.createdBy,
