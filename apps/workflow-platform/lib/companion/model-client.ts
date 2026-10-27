@@ -23,26 +23,10 @@ const DECISION_SCHEMA = {
     question: { type: 'string' },
     screen: { type: 'string' },
     reason: { type: 'string' },
-    steps: {
-      type: 'array',
-      items: {
-        type: 'object',
-        properties: { title: { type: 'string' }, tool: { type: 'string' } },
-        required: ['title'],
-      },
-    },
-    calls: {
-      type: 'array',
-      items: {
-        type: 'object',
-        properties: {
-          id: { type: 'string' },
-          tool: { type: 'string' },
-          arguments: { type: 'object' },
-        },
-        required: ['tool'],
-      },
-    },
+    // Kept generic (not nested object schemas) so the structured-output grammar stays simple enough for small models;
+    // parseAgentDecision does the full validation of steps/calls/ui afterwards.
+    steps: { type: 'array' },
+    calls: { type: 'array' },
     ui: { type: 'object' },
   },
   required: ['kind'],
