@@ -1,6 +1,6 @@
 # WI-OI-120l (U12): General ledger on metadata windows (record to report)
 
-- **Status:** Approved (owner, 2026-10-06; Option A, draft journals with two-person approval). In progress.
+- **Status:** Code-complete and re-verified 2026-10-27 (typecheck clean; 71 finance unit tests; negative-path HTTP proof 25/25). Remaining is owner-gated: on-screen Playwright on UAT + owner deploy + Accounting review. (Approved owner 2026-10-06; Option A, draft journals with two-person approval.)
 - **Work item:** WI-OI-120 (U12 in `remediation-backlog.md`; `MODULE_ACTION_OUTCOMES.md` §2, Finance GL). Evidence
   goes in `.pi/work/WI-OI-120.md`.
 - **Size:** L
@@ -66,6 +66,20 @@ A tester runs the general ledger on screen, with every record saved, audited and
   - [x] missing permission.
 - [x] `pnpm build`, `pnpm test` and `pnpm verify` pass; the proof passes on an isolated database (25/25).
 - [ ] Evidence recorded; images built and handed to the owner.
+
+## Progress (2026-10-27, re-verified)
+
+Code-complete: migration `000009_finance_journal_drafts` (up/down), `journal-drafts.service.ts` +
+`journal-draft-lifecycle.ts` (DRAFT→SUBMITTED→APPROVED/rejected, maker-checker, balanced-and-open-period submit,
+idempotent approve via `postJournal`), draft/book/account/period/posted-journal record adapters, the
+`finance-journal-drafts.window.json` window, and `scripts/real-database-proof.ts`. Re-verified locally today:
+`@gigalibs/financial-operations-api` typecheck clean; **71 unit tests pass** (incl. the draft adapters) alongside
+treasury, costing, budgeting, fixed-assets, close and consolidation. The negative-path HTTP proof (25/25) and
+`pnpm build`/`test`/`verify` were already green per the Done-when boxes above.
+
+**Remaining (owner-gated):** the on-screen Playwright run on UAT (needs a deployed UAT + admin login) and the owner
+deploy; then the Accounting review of posting defaults ([[PHASE-5-COMPLETION-LEDGER-2026-10-27]]). The module code
+ships in the 5A release image (via `module-host`); activation needs Finance migration 000009 run on UAT.
 
 ## Stop and ask if
 
