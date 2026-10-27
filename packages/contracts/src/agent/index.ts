@@ -16,6 +16,12 @@ export const DEFAULT_AGENT_MODEL: AgentModel = 'claude-opus-5-5';
 export const AgentRoleSchema = z.enum(['user', 'assistant', 'tool']);
 export type AgentRole = z.infer<typeof AgentRoleSchema>;
 
+/** One entry in the running transcript the model is given each turn. */
+export interface AgentMessage {
+  readonly role: AgentRole;
+  readonly content: string;
+}
+
 /** A tool the agent may call. `input` is a JSON-Schema-shaped descriptor the model is given; execution is elsewhere. */
 export interface AgentToolSpec {
   readonly name: string;
