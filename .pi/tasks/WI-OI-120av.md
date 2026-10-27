@@ -18,7 +18,7 @@ and only the platform changes it.
 | --- | --- | --- |
 | Countries and subdivisions | ISO 3166-1 and 3166-2 | Codes and names. |
 | Currencies | ISO 4217 | Code, number, minor units. Exchange rates are not platform data: they belong to each workspace (M-CUR). |
-| Units of measure | UN/ECE Recommendation 20 | Base set; a workspace may add its own units on top, never edit these. |
+| Units of measure | Unicode CLDR measurement units via ICU (owner accepted over UN/ECE Rec 20, 2026-10-27) | Base set; a workspace may add its own units on top, never edit these. |
 | Languages and time zones | ISO 639, IANA tz | |
 | Tax jurisdiction codes | Country and subdivision codes | Their rates and rules stay with M-TAX. |
 
@@ -49,26 +49,32 @@ and only the platform changes it.
 ## Progress (2026-10-26, local)
 
 Built across commits `a43a5da0` (model + ICU currencies/time-zones), `97dcc7fe` (control-plane store + load/lookup
-service + read endpoint), `fb786355` (ICU countries + languages).
+service + read endpoint), `fb786355` (ICU countries + languages), `ef44be8b` (ICU units of measure, 2026-10-27).
 
 - **Model + generator** (`contracts/platform-reference` + `scripts/build-platform-reference-data.mjs`): set keys, entry
   shapes, provenance (source/version/sha256/entryCount/loadedAt), read-only `PlatformReferenceSet`, load schema, the
   browser-safe `canonicalReferenceString` the checksum is taken over, and `findReferenceEntry`.
-- **Four of five sets live, zero mock, zero new dependency** — all from the runtime's ICU (= Unicode CLDR), checksummed:
+- **Five of five sets live, zero mock, zero new dependency** — all from the runtime's ICU (= Unicode CLDR), checksummed:
   CURRENCIES (162, ISO 4217 incl. minor units), TIME_ZONES (417, IANA), COUNTRIES (279, ISO 3166-1/CLDR), LANGUAGES
-  (190, ISO 639-1). Names come from `Intl.DisplayNames`; code lists from ICU enumeration.
+  (190, ISO 639-1), UNITS_OF_MEASURE (45, CLDR measurement units via `Intl.NumberFormat` long names). Names come from
+  `Intl.DisplayNames`/`Intl.NumberFormat`; code lists from ICU enumeration (`Intl.supportedValuesOf`).
 - **Store + service** (`platform_reference_versions` + `platform_reference_entries`, migration
   `20261026030000_platform_reference_data`): a version is loaded whole with its checksum re-verified, the live version
   retired (never deleted) and the new one made live; `lookup` serves the live version; read endpoint
   `GET platform-reference/:setKey` (`@Public`, non-sensitive standards). The "locked" rule is `GRANT SELECT … TO
   gigalibs_platform_reference` (per-feature role pattern); models classified in `package-layers` (audit:layers clean).
-- Tests: 15 (contracts 10 + generated integrity + service 3); typecheck 22/22; lint clean.
+- Tests: contracts platform-reference 12 (incl. the generated-integrity re-derivation across all five sets) + service 3;
+  playground-api typecheck 21/21; lint clean.
 
 **Remaining:**
-- **UNITS_OF_MEASURE (UN/ECE Rec 20) + ISO 3166-2 subdivisions** — not in ICU/CLDR; need the official UN/ECE file. The
+- **ISO 3166-2 subdivisions + TAX_JURISDICTIONS** — not in ICU/CLDR; need a pinned official subdivisions file. The
   service/model are set-agnostic, so the generator gains one input and they load like the rest. (TAX_JURISDICTIONS
   derives from countries + subdivisions once subdivisions land.)
 - **Platform-operator LOAD endpoint** — needs platform-role gating (not wired in playground-api; load is a tested
   service method today).
 - **GRANT lock verification** against the control DB, and the card's **Security review + owner deploy + journey**.
-- This work is **after** the Phase-3/4 release candidate (tag `4e0a2f3653bf-…`), so it belongs to a later release.
+- **Release note:** the five-set reference data (currencies/time-zones/countries/languages through `fb786355`) is
+  inside the Phase-3/4/5A reconciliation release `2a3ff3ec29b4-6888e499f312`, but the units commit `ef44be8b`
+  (2026-10-27) landed **after** that image was cut, so it is not in it. For a coherent 5A the release should be
+  rebuilt to fold `ef44be8b` in (it is the only non-held commit after the merge-base; the WI-OI-120bc Companion
+  commits stay held). Owner-gated — deploy is owner-run.
