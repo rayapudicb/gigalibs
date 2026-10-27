@@ -31,6 +31,14 @@ describe('screensForPermissions / findScreen', () => {
     expect(keys([])).toEqual([]);
   });
 
+  it('offers GigaOps/workforce screens to a people:read caller', () => {
+    const k = keys(['people:read']);
+    expect(k).toEqual(
+      expect.arrayContaining(['gigaops.people', 'gigaops.availability', 'gigaops.bookings']),
+    );
+    expect(k).not.toContain('cmms.work-orders');
+  });
+
   it('resolves a key to its real app path', () => {
     expect(findScreen(NAVIGABLE_SCREENS, 'cmms.work-orders')?.path).toBe('/cmms/work-orders');
     expect(findScreen(NAVIGABLE_SCREENS, 'nope')).toBeUndefined();

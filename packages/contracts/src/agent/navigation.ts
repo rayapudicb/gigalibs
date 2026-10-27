@@ -74,6 +74,41 @@ export const NAVIGABLE_SCREENS: readonly NavigableScreen[] = [
     description: 'Customers, vendors and other parties.',
     requiresPermission: 'parties:read',
   },
+  {
+    key: 'gigaops.people',
+    label: 'People & workforce',
+    path: '/gigaops',
+    description: 'People, workforce and day-to-day operations.',
+    requiresPermission: 'people:read',
+  },
+  {
+    key: 'gigaops.availability',
+    label: 'Availability',
+    path: '/gigaops/availability',
+    description: 'Who can work, and when.',
+    requiresPermission: 'people:read',
+  },
+  {
+    key: 'gigaops.bookings',
+    label: 'Bookings',
+    path: '/gigaops/bookings',
+    description: 'Workforce bookings and assignments.',
+    requiresPermission: 'people:read',
+  },
+  {
+    key: 'gigaops.resources',
+    label: 'Resources',
+    path: '/gigaops/resources',
+    description: 'The people and resources available to schedule.',
+    requiresPermission: 'people:read',
+  },
+  {
+    key: 'workflows',
+    label: 'Workflows',
+    path: '/workflows',
+    description: 'Automations and workflow runs.',
+    requiresPermission: 'workflows:read',
+  },
 ];
 
 /** Find a screen by its key. */
