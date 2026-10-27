@@ -34,7 +34,7 @@ export interface SubdivisionEntry {
   readonly countryCode: string;
 }
 export interface UomEntry {
-  readonly code: string; // UN/ECE Recommendation 20
+  readonly code: string; // CLDR measurement unit id (ICU), e.g. "kilogram", "liter"
   readonly name: string;
 }
 export interface LanguageEntry {
