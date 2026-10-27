@@ -101,11 +101,16 @@ export function createCompanionModelClient(options: CompanionModelOptions = {}):
           const msg = err instanceof Error ? err.message : String(err);
           throw new LlmProviderUnavailableError(`Ollama host ${host} connection failed: ${msg}`);
         }
-        const data = (await res.json()) as { response?: string };
+        const data = (await res.json().catch(() => ({}))) as { response?: string; error?: string };
+        if (!res.ok)
+          return { raw: `ollama HTTP ${res.status}: ${JSON.stringify(data).slice(0, 300)}` };
+        if (data.error) return { raw: `ollama error: ${data.error}` };
+        const text = (data.response ?? '').trim();
+        if (!text) return { raw: `ollama returned an empty response (model=${model})` };
         try {
-          return JSON.parse(data.response ?? '{}');
+          return JSON.parse(text);
         } catch {
-          return { raw: data.response };
+          return { raw: text.slice(0, 300) };
         }
       }
 
