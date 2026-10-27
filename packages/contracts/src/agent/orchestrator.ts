@@ -5,6 +5,7 @@ import {
   type AgentToolCall,
   type AgentToolResult,
   type AgentToolSpec,
+  type CompanionContext,
   type GenerativeUINode,
   type NavigableScreen,
   advanceCampaign,
@@ -35,6 +36,8 @@ export interface RunCompanionOptions {
   readonly tools: readonly AgentToolSpec[];
   /** The screens the caller may be sent to — already the least-privilege set (see screensForPermissions). */
   readonly screens?: readonly NavigableScreen[];
+  /** Where the user is when they ask, so the Companion can favour relevant tools, screens and actions. */
+  readonly context?: CompanionContext;
   readonly model: ModelClient;
   readonly executor: ToolExecutor;
   readonly createdBy: string;
@@ -67,7 +70,7 @@ const DEFAULT_MAX_TURNS = 12;
 export async function runCompanion(opts: RunCompanionOptions): Promise<CompanionRun> {
   const maxTurns = opts.maxTurns ?? DEFAULT_MAX_TURNS;
   const screens = opts.screens ?? [];
-  const system = buildSystemPrompt(opts.goal, opts.tools, screens);
+  const system = buildSystemPrompt(opts.goal, opts.tools, screens, opts.context);
   const offered = new Set(opts.tools.map((t) => t.name));
 
   const transcript: AgentMessage[] = [{ role: 'user', content: opts.goal }];

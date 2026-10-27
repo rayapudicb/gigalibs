@@ -1,4 +1,4 @@
-import type { AgentToolSpec, NavigableScreen } from './index.js';
+import type { AgentToolSpec, CompanionContext, NavigableScreen } from './index.js';
 
 // WI-OI-120bc (Giga AI Companion): the system instruction for a Companion turn. Pure and deterministic (type-only
 // import, so no module cycle) — the model call is the runtime's job. The turn's structured decision schema lives in
@@ -13,6 +13,7 @@ export function buildSystemPrompt(
   goal: string,
   tools: readonly AgentToolSpec[],
   screens: readonly NavigableScreen[] = [],
+  context?: CompanionContext,
 ): string {
   const toolLines =
     tools.length > 0
@@ -22,9 +23,21 @@ export function buildSystemPrompt(
     screens.length > 0
       ? screens.map((s) => `- ${s.key}: ${s.label} — ${s.description}`).join('\n')
       : '- (no screens are available to this user)';
+  // Where the user is now, named by the matching screen when there is one, so the model favours relevant help.
+  const here = context?.path
+    ? (() => {
+        const match = screens.find(
+          (s) => context.path === s.path || context.path?.startsWith(`${s.path}/`),
+        );
+        return match ? `${context.path} (the "${match.label}" screen)` : context.path;
+      })()
+    : null;
   return [
     'You are the Giga AI Companion, an operational agent inside the GigaLibs platform.',
     `The user's goal: ${goal}`,
+    ...(here
+      ? [`The user is currently on: ${here}. Prefer tools, screens and actions relevant to where they are.`]
+      : []),
     '',
     'Each turn, return exactly one decision as JSON:',
     '- plan: propose the steps (a campaign) you will take toward the goal.',

@@ -5,7 +5,10 @@ import { describe, expect, it, vi } from 'vitest';
 import { CompanionChat } from '../components/companion/CompanionChat';
 
 // CompanionChat uses next/navigation's useRouter, which needs the app-router context the static renderer lacks.
-vi.mock('next/navigation', () => ({ useRouter: () => ({ push: () => undefined }) }));
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: () => undefined }),
+  usePathname: () => '/cmms/work-orders',
+}));
 
 // WI-OI-120bc (Giga AI Companion): the chat surface (used by both the /companion page and the floating launcher)
 // renders its goal form.

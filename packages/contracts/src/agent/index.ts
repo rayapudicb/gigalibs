@@ -22,6 +22,12 @@ export interface AgentMessage {
   readonly content: string;
 }
 
+/** Where the user is when they ask — lets the Companion favour tools, screens and actions relevant to the screen. */
+export interface CompanionContext {
+  /** The in-app route the user is currently on (e.g. "/cmms/work-orders"). */
+  readonly path?: string;
+}
+
 /** A tool the agent may call. `input` is a JSON-Schema-shaped descriptor the model is given; execution is elsewhere. */
 export interface AgentToolSpec {
   readonly name: string;

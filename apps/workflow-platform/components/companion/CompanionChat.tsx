@@ -3,7 +3,7 @@
 import { GenerativeUI } from '@/components/companion/GenerativeUI';
 import type { GenerativeUINode } from '@gigalibs/contracts';
 import { Button, Heading, Input, Text } from '@medusajs/ui';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import * as React from 'react';
 
 // WI-OI-120bc (Giga AI Companion): the shared chat surface, used by both the /companion page and the floating
@@ -25,6 +25,7 @@ export function CompanionChat({
   onNavigated?: () => void;
 } = {}): React.ReactElement {
   const router = useRouter();
+  const pathname = usePathname();
   const [goal, setGoal] = React.useState('');
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -38,7 +39,7 @@ export function CompanionChat({
       const res = await fetch('/api/companion/run', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ goal }),
+        body: JSON.stringify({ goal, context: { path: pathname } }),
       });
       if (!res.ok) {
         const detail = (await res.json().catch(() => ({}))) as { detail?: string };

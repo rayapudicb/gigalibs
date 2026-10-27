@@ -1,6 +1,7 @@
 import {
   type AgentToolSpec,
   BUILDER_TOOLS,
+  type CompanionContext,
   type CompanionRun,
   MARKETING_TOOLS,
   type ModelClient,
@@ -30,6 +31,8 @@ export interface CompanionSessionInput {
   readonly model: ModelClient;
   readonly executor: ToolExecutor;
   readonly createdBy: string;
+  /** Where the user is when they ask (current route), for context-aware help. */
+  readonly context?: CompanionContext;
   readonly maxTurns?: number;
 }
 
@@ -41,6 +44,7 @@ export function runCompanionSession(input: CompanionSessionInput): Promise<Compa
     goal: input.goal,
     tools,
     screens,
+    context: input.context,
     model: input.model,
     executor: input.executor,
     createdBy: input.createdBy,

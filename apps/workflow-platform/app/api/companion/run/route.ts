@@ -23,8 +23,15 @@ export async function POST(request: Request): Promise<Response> {
   const session = result.context;
 
   let goal = '';
+  let contextPath: string | undefined;
   try {
-    goal = String((JSON.parse(await readBoundedBody(request)) as { goal?: unknown }).goal ?? '');
+    const body = JSON.parse(await readBoundedBody(request)) as {
+      goal?: unknown;
+      context?: { path?: unknown };
+    };
+    goal = String(body.goal ?? '');
+    const path = body.context?.path;
+    if (typeof path === 'string' && path.startsWith('/')) contextPath = path;
   } catch {
     goal = '';
   }
@@ -61,6 +68,7 @@ export async function POST(request: Request): Promise<Response> {
       goal,
       heldPermissions: session.permissions,
       createdBy: session.user.id,
+      context: contextPath ? { path: contextPath } : undefined,
       model: createCompanionModelClient(),
       executor: createCompanionToolExecutor(caller),
       maxTurns: 10,

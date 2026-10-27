@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  buildSystemPrompt,
   type ModelClient,
   NAVIGABLE_SCREENS,
   type ToolExecutor,
@@ -59,6 +60,17 @@ describe('runCompanion navigate', () => {
     });
     expect(run.outcome).toBe('navigate');
     expect(run.navigateTo).toBe('/cmms/work-orders');
+  });
+
+  it('names the current screen in the prompt when context is given, and omits it otherwise', () => {
+    const screens = screensForPermissions(NAVIGABLE_SCREENS, ['cmms.work-orders.read']);
+    const withCtx = buildSystemPrompt('create a work order', [], screens, {
+      path: '/cmms/work-orders',
+    });
+    expect(withCtx).toContain('currently on');
+    expect(withCtx).toContain('/cmms/work-orders');
+    expect(withCtx).toContain('Work orders'); // named from the matching screen
+    expect(buildSystemPrompt('x', [], [])).not.toContain('currently on');
   });
 
   it('refuses a screen the caller was not offered (never an invented path)', async () => {
