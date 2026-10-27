@@ -1,10 +1,10 @@
 import type { AgentToolCall, AgentToolResult, ToolExecutor } from '@gigalibs/contracts';
 
-// WI-OI-120bc (Giga AI Companion): the ToolExecutor — turns a tool call into a real backend request. The route injects
-// a `caller` carrying the signed-in user's auth and the control-plane base URL, so a tool runs as the person (the
-// least-privilege filter already decided WHICH tools are offered). Only tools with a verified backend route are bound
-// here; any other offered tool returns an honest "not wired yet" failure rather than a fabricated call. Bindings grow
-// as module HTTP surfaces are confirmed.
+// WI-OI-120bc (Giga AI Companion): the ToolExecutor — turns a tool call into a real backend request. Two targets:
+// CONTROL-plane routes (via the injected control caller, carrying the user's token through authenticatedUpstream) and
+// MODULE routes (via the injected module caller, which signs a per-module platform-context token through the module
+// gateway). The least-privilege filter already chose WHICH tools are offered; the module also enforces the permission
+// server-side. Only tools with a verified backend route are bound here; any other offered tool fails honestly.
 
 export interface CompanionHttpResponse {
   readonly ok: boolean;
@@ -12,28 +12,49 @@ export interface CompanionHttpResponse {
   readonly data: unknown;
 }
 
-/** The authenticated HTTP caller the route provides. */
+/** Calls a CONTROL-plane route with the user's token. */
 export type CompanionHttpCaller = (
   method: 'GET' | 'POST',
   path: string,
   init?: { readonly query?: Record<string, string | undefined>; readonly body?: unknown },
 ) => Promise<CompanionHttpResponse>;
 
-interface ToolBinding {
-  readonly method: 'GET' | 'POST';
-  readonly build: (args: Record<string, unknown>) => {
-    readonly path: string;
-    readonly query?: Record<string, string | undefined>;
-    readonly body?: unknown;
-  };
-  readonly summarize: (data: unknown) => string;
-}
+/** Calls a MODULE route (e.g. CMMS) through the signed module gateway, as the user. */
+export type CompanionModuleCaller = (
+  module: string,
+  method: 'GET' | 'POST',
+  segments: readonly string[],
+  body?: unknown,
+) => Promise<CompanionHttpResponse>;
+
+type ToolBinding =
+  | {
+      readonly target: 'control';
+      readonly method: 'GET' | 'POST';
+      readonly build: (args: Record<string, unknown>) => {
+        readonly path: string;
+        readonly query?: Record<string, string | undefined>;
+        readonly body?: unknown;
+      };
+      readonly summarize: (data: unknown) => string;
+    }
+  | {
+      readonly target: 'module';
+      readonly module: string;
+      readonly method: 'GET' | 'POST';
+      readonly build: (args: Record<string, unknown>) => {
+        readonly segments: readonly string[];
+        readonly body?: unknown;
+      };
+      readonly summarize: (data: unknown) => string;
+    };
 
 const str = (v: unknown): string | undefined => (typeof v === 'string' ? v : undefined);
+const CMMS = 'physical-operations-cmms';
 
-// Bound to control-plane routes verified this session (WI-OI-015 metering, M-CUR exchange-rate store).
 const BINDINGS: Record<string, ToolBinding> = {
   'billing.usage.statement': {
+    target: 'control',
     method: 'GET',
     build: (a) => ({
       path: '/usage/statement',
@@ -45,6 +66,7 @@ const BINDINGS: Record<string, ToolBinding> = {
     },
   },
   'currency.rates.table': {
+    target: 'control',
     method: 'GET',
     build: (a) => ({ path: '/currency/exchange-rates/table', query: { base: str(a.base) } }),
     summarize: (d) => {
@@ -52,10 +74,47 @@ const BINDINGS: Record<string, ToolBinding> = {
       return `Exchange-rate table for base ${s.base ?? '?'}: ${s.rates?.length ?? 0} rate(s).`;
     },
   },
+  'cmms.workOrders.search': {
+    target: 'module',
+    module: CMMS,
+    method: 'POST',
+    build: (a) => ({
+      segments: ['v1', 'work-orders', 'search'],
+      body: { unitId: str(a.unitId), status: str(a.status), assetId: str(a.assetId) },
+    }),
+    summarize: (d) => {
+      const s = (d ?? {}) as { rows?: readonly unknown[]; items?: readonly unknown[] };
+      return `Found ${s.rows?.length ?? s.items?.length ?? 0} work order(s).`;
+    },
+  },
+  'cmms.workOrders.create': {
+    target: 'module',
+    module: CMMS,
+    method: 'POST',
+    build: (a) => ({
+      segments: ['v1', 'work-orders'],
+      body: {
+        title: str(a.title),
+        assetId: str(a.assetId),
+        priority: str(a.priority),
+        description: str(a.description),
+      },
+    }),
+    summarize: (d) => {
+      const s = (d ?? {}) as { id?: string; number?: string; reference?: string };
+      return `Work order created${s.number || s.reference || s.id ? ` (${s.number ?? s.reference ?? s.id})` : ''}.`;
+    },
+  },
 };
 
-/** Build a ToolExecutor over an authenticated caller. Unknown/unbound tools fail with a clear reason, never a guess. */
-export function createCompanionToolExecutor(caller: CompanionHttpCaller): ToolExecutor {
+const asData = (value: unknown): Record<string, unknown> | undefined =>
+  value && typeof value === 'object' ? (value as Record<string, unknown>) : undefined;
+
+/** Build a ToolExecutor over a control caller (and, when available, a module caller). Unbound tools fail honestly. */
+export function createCompanionToolExecutor(
+  control: CompanionHttpCaller,
+  moduleCaller?: CompanionModuleCaller,
+): ToolExecutor {
   return {
     async execute(call: AgentToolCall): Promise<AgentToolResult> {
       const binding = BINDINGS[call.tool];
@@ -66,9 +125,22 @@ export function createCompanionToolExecutor(caller: CompanionHttpCaller): ToolEx
           summary: `Tool "${call.tool}" is not wired to a backend yet.`,
         };
       }
-      const req = binding.build(call.arguments);
       try {
-        const res = await caller(binding.method, req.path, { query: req.query, body: req.body });
+        let res: CompanionHttpResponse;
+        if (binding.target === 'control') {
+          const req = binding.build(call.arguments);
+          res = await control(binding.method, req.path, { query: req.query, body: req.body });
+        } else {
+          if (!moduleCaller) {
+            return {
+              callId: call.id,
+              ok: false,
+              summary: `${call.tool} needs the module gateway, which is not configured here.`,
+            };
+          }
+          const req = binding.build(call.arguments);
+          res = await moduleCaller(binding.module, binding.method, req.segments, req.body);
+        }
         if (!res.ok) {
           return {
             callId: call.id,
@@ -76,11 +148,12 @@ export function createCompanionToolExecutor(caller: CompanionHttpCaller): ToolEx
             summary: `${call.tool} failed (HTTP ${res.status}).`,
           };
         }
-        const data =
-          res.data && typeof res.data === 'object'
-            ? (res.data as Record<string, unknown>)
-            : undefined;
-        return { callId: call.id, ok: true, summary: binding.summarize(res.data), data };
+        return {
+          callId: call.id,
+          ok: true,
+          summary: binding.summarize(res.data),
+          data: asData(res.data),
+        };
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);
         return { callId: call.id, ok: false, summary: `${call.tool} could not run: ${msg}` };

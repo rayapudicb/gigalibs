@@ -32,6 +32,7 @@ describe('toolsForPermissions (least privilege)', () => {
     expect(names(['cmms:*'])).toEqual([
       'cmms.meters.read',
       'cmms.workOrders.assign',
+      'cmms.workOrders.create',
       'cmms.workOrders.search',
     ]);
   });

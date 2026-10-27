@@ -2,6 +2,7 @@ import type { AgentToolCall } from '@gigalibs/contracts';
 import { describe, expect, it, vi } from 'vitest';
 import {
   type CompanionHttpCaller,
+  type CompanionModuleCaller,
   createCompanionToolExecutor,
 } from '../lib/companion/tool-executor';
 
@@ -50,6 +51,41 @@ describe('createCompanionToolExecutor', () => {
     });
     expect(result.summary).toContain('2026-10');
     expect(result.summary).toContain('500 minor');
+  });
+
+  it('routes a CMMS create to the signed module caller with the work-order body', async () => {
+    const control = vi.fn<CompanionHttpCaller>(async () => ({ ok: true, status: 200, data: {} }));
+    const moduleCaller = vi.fn<CompanionModuleCaller>(async () => ({
+      ok: true,
+      status: 201,
+      data: { id: 'wo-1', number: 'WO-000123' },
+    }));
+    const result = await createCompanionToolExecutor(control, moduleCaller).execute(
+      call('cmms.workOrders.create', { title: 'Fix pump', assetId: 'a-1', priority: 'HIGH' }),
+    );
+    expect(control).not.toHaveBeenCalled();
+    expect(moduleCaller).toHaveBeenCalledWith(
+      'physical-operations-cmms',
+      'POST',
+      ['v1', 'work-orders'],
+      {
+        title: 'Fix pump',
+        assetId: 'a-1',
+        priority: 'HIGH',
+        description: undefined,
+      },
+    );
+    expect(result.ok).toBe(true);
+    expect(result.summary).toContain('WO-000123');
+  });
+
+  it('fails honestly when a module tool is called but no module caller is configured', async () => {
+    const control = vi.fn<CompanionHttpCaller>(async () => ({ ok: true, status: 200, data: {} }));
+    const result = await createCompanionToolExecutor(control).execute(
+      call('cmms.workOrders.create', { title: 'x' }),
+    );
+    expect(result.ok).toBe(false);
+    expect(result.summary).toContain('module gateway');
   });
 
   it('fails honestly for an unbound tool — no fabricated call', async () => {

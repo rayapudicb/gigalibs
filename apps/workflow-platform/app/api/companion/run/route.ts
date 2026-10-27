@@ -8,8 +8,11 @@ import { createCompanionModelClient } from '@/lib/companion/model-client';
 import { runCompanionSession } from '@/lib/companion/session';
 import {
   type CompanionHttpCaller,
+  type CompanionModuleCaller,
   createCompanionToolExecutor,
 } from '@/lib/companion/tool-executor';
+import { moduleGatewayConfig } from '@/lib/module-gateway';
+import { callSignedModule } from '@/lib/signed-module-proxy';
 import { verifiedSession } from '@/lib/verified-session';
 
 // WI-OI-120bc (Giga AI Companion): the session route. It runs as the signed-in user — their permissions scope which
@@ -63,6 +66,29 @@ export async function POST(request: Request): Promise<Response> {
     return { ok: res.ok, status: res.status, data };
   };
 
+  // Module tools (e.g. CMMS create) go through the signed module gateway, as the user; the module enforces the
+  // permission the tool declares. The gateway's signing key + upstream must be configured for this to run live.
+  const moduleCaller: CompanionModuleCaller = async (module, method, segments, body) => {
+    try {
+      const res = await callSignedModule(
+        moduleGatewayConfig(module),
+        session,
+        method,
+        segments,
+        body,
+      );
+      let data: unknown = null;
+      try {
+        data = await res.json();
+      } catch {
+        data = null;
+      }
+      return { ok: res.ok, status: res.status, data };
+    } catch {
+      return { ok: false, status: 503, data: null };
+    }
+  };
+
   try {
     const run = await runCompanionSession({
       goal,
@@ -70,7 +96,7 @@ export async function POST(request: Request): Promise<Response> {
       createdBy: session.user.id,
       context: contextPath ? { path: contextPath } : undefined,
       model: createCompanionModelClient(),
-      executor: createCompanionToolExecutor(caller),
+      executor: createCompanionToolExecutor(caller, moduleCaller),
       maxTurns: 10,
     });
     return Response.json(

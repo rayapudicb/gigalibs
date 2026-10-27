@@ -21,6 +21,22 @@ export const OPERATIONAL_TOOLS: readonly AgentToolSpec[] = [
     requiresPermission: 'cmms.work-orders.read',
   },
   {
+    name: 'cmms.workOrders.create',
+    description:
+      'Create a maintenance work order. Confirm the details with the user before calling this (it is a write).',
+    input: {
+      type: 'object',
+      properties: {
+        title: { type: 'string' },
+        assetId: { type: 'string' },
+        priority: { type: 'string', enum: ['LOW', 'MEDIUM', 'HIGH', 'URGENT'] },
+        description: { type: 'string' },
+      },
+      required: ['title'],
+    },
+    requiresPermission: 'cmms.work-orders.write',
+  },
+  {
     name: 'cmms.workOrders.assign',
     description: 'Assign a technician to a work order.',
     input: {
