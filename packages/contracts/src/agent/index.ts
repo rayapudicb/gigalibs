@@ -340,3 +340,4 @@ export function advanceCampaign(campaign: AgentCampaign, event: AgentCampaignEve
 export * from './tools.js';
 export * from './loop.js';
 export * from './marketing.js';
+export * from './builder.js';
