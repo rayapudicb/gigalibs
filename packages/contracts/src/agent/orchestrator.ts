@@ -94,9 +94,14 @@ export async function runCompanion(opts: RunCompanionOptions): Promise<Companion
   };
 
   for (let turn = 0; turn < maxTurns; turn += 1) {
-    const parsed = parseAgentDecision(await opts.model.decide(system, transcript));
+    const raw = await opts.model.decide(system, transcript);
+    const parsed = parseAgentDecision(raw);
     if (!parsed.ok) {
-      say('user', `Your last message was not a valid decision (${parsed.reason}). Try again.`);
+      const seen = JSON.stringify(raw).slice(0, 300);
+      say(
+        'user',
+        `That was not a valid decision. Return ONE JSON object with a "kind" field (one of plan, tool_calls, navigate, show, ask, done). You sent: ${seen}`,
+      );
       continue;
     }
     const decision = parsed.decision;

@@ -1,10 +1,10 @@
 import type { AgentMessage, ModelClient } from '@gigalibs/contracts';
-import { type LlmConfig, callLlm } from '../llm-inference';
+import { type LlmConfig, LlmProviderUnavailableError, callLlm } from '../llm-inference';
 
-// WI-OI-120bc (Giga AI Companion): the real ModelClient, backed by the existing multi-provider llm-inference helper.
-// It defaults to the LOCAL, air-gapped Ollama (llama3.2) that the platform already ships for generative UI — no cloud
-// key, no external egress — and can be pointed at a cloud provider by options when one is configured. Each turn it
-// renders the system prompt + transcript and asks for exactly one AgentDecision JSON object; runCompanion validates it.
+// WI-OI-120bc (Giga AI Companion): the real ModelClient. For the LOCAL Ollama (default, no cloud key) it calls
+// /api/generate with a JSON SCHEMA as `format` — Ollama's structured output then forces the model to emit a decision
+// with a valid "kind", instead of free-form JSON that never parses. Set OLLAMA_MODEL to a stronger model
+// (qwen2.5:7b, llama3.1:8b) for better field-filling. Cloud providers go through the shared llm-inference helper.
 
 export interface CompanionModelOptions {
   readonly provider?: LlmConfig['provider'];
@@ -13,6 +13,41 @@ export interface CompanionModelOptions {
   readonly maxTokens?: number;
 }
 
+// Ollama structured-output schema: shallow but it REQUIRES a valid `kind`, which is what the model kept getting wrong.
+// parseAgentDecision does the full validation afterwards.
+const DECISION_SCHEMA = {
+  type: 'object',
+  properties: {
+    kind: { type: 'string', enum: ['plan', 'tool_calls', 'navigate', 'show', 'ask', 'done'] },
+    summary: { type: 'string' },
+    question: { type: 'string' },
+    screen: { type: 'string' },
+    reason: { type: 'string' },
+    steps: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: { title: { type: 'string' }, tool: { type: 'string' } },
+        required: ['title'],
+      },
+    },
+    calls: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          id: { type: 'string' },
+          tool: { type: 'string' },
+          arguments: { type: 'object' },
+        },
+        required: ['tool'],
+      },
+    },
+    ui: { type: 'object' },
+  },
+  required: ['kind'],
+} as const;
+
 const DECISION_TEMPLATE = [
   '{{system}}',
   '',
@@ -20,25 +55,65 @@ const DECISION_TEMPLATE = [
   '{{transcript}}',
   '',
   '--- Your turn ---',
-  'Reply with ONLY the next decision as a single JSON object whose "kind" is one of',
-  '"plan", "tool_calls", "show", "ask" or "done". No prose, no markdown fences.',
+  'Reply with ONLY the next decision as a single JSON object with a "kind" field.',
 ].join('\n');
 
 /**
  * Build the Companion's ModelClient. Defaults to local Ollama, model from `OLLAMA_MODEL` (else `llama3.2`), needs
- * `OLLAMA_HOST`; fails closed if it is unset. Set `OLLAMA_MODEL` to a stronger model (e.g. `qwen2.5:7b`,
- * `llama3.1:8b`) for far more reliable tool-use and structured output — no code change.
+ * `OLLAMA_HOST`; fails closed if it is unset.
  */
 export function createCompanionModelClient(options: CompanionModelOptions = {}): ModelClient {
   const provider = options.provider ?? 'ollama';
   const model = options.model ?? process.env.OLLAMA_MODEL ?? 'llama3.2';
+  const temperature = options.temperature ?? 0.1;
   return {
     async decide(system: string, messages: readonly AgentMessage[]): Promise<unknown> {
       const transcript = messages.map((m) => `${m.role.toUpperCase()}: ${m.content}`).join('\n');
+
+      if (provider === 'ollama') {
+        const host = process.env.OLLAMA_HOST;
+        if (!host) {
+          throw new LlmProviderUnavailableError('OLLAMA_HOST is not configured');
+        }
+        const prompt = [
+          system,
+          '',
+          '--- Conversation so far ---',
+          transcript,
+          '',
+          '--- Your turn ---',
+          'Return one decision as a JSON object with a "kind" field.',
+        ].join('\n');
+        let res: Response;
+        try {
+          res = await fetch(`${host}/api/generate`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              model,
+              prompt,
+              stream: false,
+              format: DECISION_SCHEMA,
+              options: { temperature },
+            }),
+          });
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : String(err);
+          throw new LlmProviderUnavailableError(`Ollama host ${host} connection failed: ${msg}`);
+        }
+        const data = (await res.json()) as { response?: string };
+        try {
+          return JSON.parse(data.response ?? '{}');
+        } catch {
+          return { raw: data.response };
+        }
+      }
+
+      // Cloud providers (when configured) through the shared helper.
       const config: LlmConfig = {
         provider,
         model,
-        temperature: options.temperature ?? 0.1,
+        temperature,
         max_tokens: options.maxTokens ?? 1024,
         prompt_template: DECISION_TEMPLATE,
       };

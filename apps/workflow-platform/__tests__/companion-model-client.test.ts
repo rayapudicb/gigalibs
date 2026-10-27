@@ -31,7 +31,8 @@ describe('createCompanionModelClient (local Ollama)', () => {
     expect(url).toBe('http://127.0.0.1:11434/api/generate');
     const body = JSON.parse(init.body as string);
     expect(body.model).toBe('llama3.2');
-    expect(body.format).toBe('json');
+    expect(body.format.required).toContain('kind'); // structured-output schema, not free-form json
+    expect(body.format.properties.kind.enum).toContain('navigate');
     expect(body.prompt).toContain('SYSTEM PROMPT');
     expect(body.prompt).toContain('USER: hi there');
   });
@@ -41,9 +42,12 @@ describe('createCompanionModelClient (local Ollama)', () => {
     vi.stubEnv('OLLAMA_MODEL', 'qwen2.5:7b');
     const fetchMock = vi.fn(
       async () =>
-        new Response(JSON.stringify({ response: JSON.stringify({ kind: 'done', summary: 'ok' }) }), {
-          status: 200,
-        }),
+        new Response(
+          JSON.stringify({ response: JSON.stringify({ kind: 'done', summary: 'ok' }) }),
+          {
+            status: 200,
+          },
+        ),
     );
     vi.stubGlobal('fetch', fetchMock);
     await createCompanionModelClient().decide('S', [{ role: 'user', content: 'x' }]);
