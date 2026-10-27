@@ -71,3 +71,17 @@ screens/services is per-module work.
 - **Per-gap persistence/integration:** R8 a per-module share table + authorise-read/write wiring; X5 per-module search
   providers + an index.
 - **Reviews:** Accounting reviewer for posting; Security for the access layers.
+
+## Update 2026-10-27 — last pure-core gap closed; the rest is integration
+
+- **X5 aggregator core built** (`90e0f48e`, `contracts/search`): `SearchProvider` + `SearchContext` and the pure
+  `aggregateSearch(providers, query, context, options)` — parallel query, per-provider failure isolation
+  (`failedModules`), malformed-row drop, dedup, then `rankSearchResults`. Tests 11/11; typecheck + biome clean. This
+  was the **last cleanly build-once pure-core gap**; the concrete per-module providers + a host endpoint + the search
+  box are integration.
+- **Honest ceiling:** with that, the autonomously-completable Phase 4 work (the shared pure cores) is **done**. Every
+  remaining item above — apply the engine into CMMS's services/screens, consolidate the partial capabilities, add the
+  per-gap persistence (R8 share table, X5 providers/index) — is per-module integration that needs the **running stack**
+  to prove (and the Accounting/Security reviews need named people). Building it blind would repeat exactly the
+  unverified-integration pattern WI-OI-119 flagged. The realistic path: **deploy the release** (so there is a running
+  stack), then do the apply slices against it with real HTTP proofs, module by module.
