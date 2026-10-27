@@ -16,6 +16,7 @@ interface CompanionRunResult {
   readonly panels: readonly GenerativeUINode[];
   readonly question?: string;
   readonly navigateTo?: string;
+  readonly transcript?: readonly { readonly role: string; readonly content: string }[];
 }
 
 /** `onNavigated` lets a host (the floating launcher) close itself once the Companion opens a screen. */
@@ -100,6 +101,21 @@ export function CompanionChat({
           <Text size="small" className="text-ui-fg-muted">
             Outcome: {result.outcome}
           </Text>
+          {result.outcome !== 'done' &&
+          result.outcome !== 'navigate' &&
+          result.transcript?.length ? (
+            <div className="flex flex-col gap-y-1 rounded-lg border border-ui-border-base bg-ui-bg-subtle p-3">
+              <Text size="xsmall" className="text-ui-fg-muted">
+                What it tried:
+              </Text>
+              {result.transcript.map((m, i) => (
+                // biome-ignore lint/suspicious/noArrayIndexKey: a positional transcript log
+                <Text key={`t-${i}`} size="xsmall" className="text-ui-fg-subtle">
+                  {m.role}: {m.content}
+                </Text>
+              ))}
+            </div>
+          ) : null}
         </div>
       ) : null}
     </div>

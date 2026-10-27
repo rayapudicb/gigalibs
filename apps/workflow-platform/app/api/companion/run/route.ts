@@ -106,6 +106,7 @@ export async function POST(request: Request): Promise<Response> {
         campaign: run.campaign,
         question: run.question,
         navigateTo: run.navigateTo,
+        transcript: run.transcript,
       },
       { headers: { 'Cache-Control': 'no-store' } },
     );
