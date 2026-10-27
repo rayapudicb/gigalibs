@@ -58,3 +58,96 @@ export function rankSearchResults(
     .sort((a, b) => b.score - a.score || (b.updatedAt ?? '').localeCompare(a.updatedAt ?? ''))
     .slice(0, Math.max(0, limit));
 }
+
+// ─── X5 aggregation: the "search everywhere" shell (providers + merge) ───────────
+// The pieces above rank a flat list; these turn "every module contributes hits" into one call. Each module registers a
+// SearchProvider; the shell queries them in parallel, isolates per-provider failures, then ranks the union. Pure with
+// respect to the injected providers (unit-tested with fakes) — the concrete providers and their index stay in modules.
+
+/** The caller's scope, handed to every provider so each can limit its query to this tenant/user and cap its own fetch. */
+export interface SearchContext {
+  readonly tenantId: string;
+  readonly userId: string;
+  /** A soft cap the provider should apply to its own fetch; the aggregator still enforces the global `limit`. */
+  readonly limit: number;
+}
+
+/** What a module implements to join "search everywhere": given a query and the caller's scope, return its candidate
+ *  hits (unranked — the shell ranks every module's hits by the same rule). The provider reads its own data or index. */
+export interface SearchProvider {
+  /** The module this provider answers for; matches the `moduleKey` on the results it returns. */
+  readonly moduleKey: string;
+  search(query: string, context: SearchContext): Promise<readonly SearchResult[]>;
+}
+
+export interface AggregateSearchOptions {
+  /** Cap on the merged, ranked list (default 50). */
+  readonly limit?: number;
+  /** Per-provider soft cap passed in each provider's context (default = `limit`). */
+  readonly perProviderLimit?: number;
+  /** When set, only these modules are queried (by `moduleKey`). */
+  readonly moduleKeys?: readonly string[];
+}
+
+export interface AggregateSearchOutcome {
+  readonly results: RankedSearchResult[];
+  /** `moduleKey`s whose provider rejected or returned a non-array — so the UI can say some modules did not respond. */
+  readonly failedModules: string[];
+}
+
+const hasSearchShape = (value: unknown): value is SearchResult =>
+  typeof value === 'object' &&
+  value !== null &&
+  typeof (value as SearchResult).title === 'string' &&
+  typeof (value as SearchResult).moduleKey === 'string' &&
+  typeof (value as SearchResult).recordType === 'string' &&
+  typeof (value as SearchResult).recordId === 'string';
+
+/**
+ * "Search everywhere": query every provider for a term in parallel, isolate per-provider failures (one slow or broken
+ * module never breaks search), drop malformed rows, de-duplicate by module+type+id, then merge and rank into one list
+ * with `rankSearchResults`. Pure with respect to the injected providers — unit-tested with fakes. An empty query
+ * short-circuits to no results without calling any provider.
+ */
+export async function aggregateSearch(
+  providers: readonly SearchProvider[],
+  query: string,
+  context: { readonly tenantId: string; readonly userId: string },
+  options: AggregateSearchOptions = {},
+): Promise<AggregateSearchOutcome> {
+  if (norm(query) === '') return { results: [], failedModules: [] };
+
+  const limit = Math.max(0, options.limit ?? 50);
+  const perProviderLimit = Math.max(1, options.perProviderLimit ?? Math.max(1, limit));
+  const only = options.moduleKeys;
+  const selected = only
+    ? providers.filter((provider) => only.includes(provider.moduleKey))
+    : providers;
+  const providerContext: SearchContext = { ...context, limit: perProviderLimit };
+
+  const failedModules: string[] = [];
+  const settled = await Promise.allSettled(
+    selected.map((provider) => provider.search(query, providerContext)),
+  );
+
+  const collected: SearchResult[] = [];
+  settled.forEach((outcome, index) => {
+    const provider = selected[index];
+    if (!provider) return;
+    if (outcome.status === 'rejected' || !Array.isArray(outcome.value)) {
+      failedModules.push(provider.moduleKey);
+      return;
+    }
+    for (const row of outcome.value) if (hasSearchShape(row)) collected.push(row);
+  });
+
+  const seen = new Set<string>();
+  const unique = collected.filter((row) => {
+    const key = `${row.moduleKey}\u0000${row.recordType}\u0000${row.recordId}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+
+  return { results: rankSearchResults(unique, query, limit), failedModules };
+}
