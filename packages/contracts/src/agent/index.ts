@@ -200,6 +200,41 @@ export function validateGenerativeUI(node: unknown): GenerativeUIValidation {
   return err ? { ok: false, reason: err } : { ok: true };
 }
 
+// ─── Agent turn — the structured decision the model returns ─────────────────────
+
+/** A single planned step the model proposes (a title, and optionally the tool that runs it). */
+const PlannedStepSchema = z
+  .object({
+    title: z.string().min(1).max(200),
+    tool: z.string().min(1).optional(),
+    arguments: z.record(z.string(), z.unknown()).optional(),
+  })
+  .strict();
+
+/** The one decision a Companion turn yields: propose a plan, call tools, show a panel, ask, or finish. */
+export const AgentDecisionSchema = z.discriminatedUnion('kind', [
+  z.object({ kind: z.literal('plan'), steps: z.array(PlannedStepSchema).min(1).max(30) }).strict(),
+  z
+    .object({ kind: z.literal('tool_calls'), calls: z.array(AgentToolCallSchema).min(1).max(8) })
+    .strict(),
+  z
+    .object({ kind: z.literal('show'), ui: GenerativeUINodeSchema, done: z.boolean().optional() })
+    .strict(),
+  z.object({ kind: z.literal('ask'), question: z.string().min(1).max(2000) }).strict(),
+  z.object({ kind: z.literal('done'), summary: z.string().min(1).max(4000) }).strict(),
+]);
+export type AgentDecision = z.infer<typeof AgentDecisionSchema>;
+
+/** Parse a model's raw decision, returning a reason instead of throwing on bad output. */
+export function parseAgentDecision(
+  raw: unknown,
+): { ok: true; decision: AgentDecision } | { ok: false; reason: string } {
+  const parsed = AgentDecisionSchema.safeParse(raw);
+  return parsed.success
+    ? { ok: true, decision: parsed.data }
+    : { ok: false, reason: 'the model did not return a valid decision' };
+}
+
 // ─── Campaign — the goal-directed unit of agent work ───────────────────────────
 
 export const AgentStepStatusSchema = z.enum(['PENDING', 'RUNNING', 'DONE', 'FAILED', 'SKIPPED']);
@@ -293,3 +328,8 @@ export function advanceCampaign(campaign: AgentCampaign, event: AgentCampaignEve
       return setStep((s) => (STEP_TERMINAL.has(s.status) ? s : { ...s, status: 'SKIPPED' }));
   }
 }
+
+// Capability 1 (operational): the tool catalogue and the pure agent turn. Re-exported at the end so the runtime values
+// these modules import from here (the tool-call and generative-UI schemas) are defined before the re-export loads them.
+export * from './tools.js';
+export * from './loop.js';
