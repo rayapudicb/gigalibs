@@ -67,6 +67,7 @@ try {
   const orders = new OrderService(db);
   const tenantId = 'tenant-alpha';
   const subject = 'usr-sales';
+  const principal = tenant(tenantId, subject);
   const customerPartyId = randomUUID();
   const productId = randomUUID();
   const uomId = randomUUID();
@@ -76,7 +77,7 @@ try {
   await admin.connect();
   try {
     await admin.query(
-      `INSERT INTO public.parties (id, tenant_id, code, legal_name, display_name, party_type, status)
+      `INSERT INTO public.parties (id, "tenantId", code, "legalName", "displayName", "partyType", status)
        VALUES ($1, $2, 'CUST-MIN-O2C', 'Minimal O2C Customer Inc', 'Minimal O2C Customer Inc', 'ORGANIZATION', 'ACTIVE')`,
       [customerPartyId, tenantId],
     );
@@ -85,7 +86,7 @@ try {
   }
 
   step('Quote → accept → convert to sales order');
-  const quote = await orders.createQuote(tenantId, subject, {
+  const quote = await orders.createQuote(principal, {
     orgUnitId: 'unit-sales-1',
     customerPartyId,
     customerName: 'Minimal O2C Customer Inc',
@@ -105,30 +106,30 @@ try {
       },
     ],
   });
-  await orders.acceptQuote(tenantId, subject, quote.id);
-  const salesOrder = await orders.convertQuoteToOrder(tenantId, subject, quote.id, warehouseId);
+  await orders.acceptQuote(principal,quote.id);
+  const salesOrder = await orders.convertQuoteToOrder(principal,quote.id, warehouseId);
   assert.equal(salesOrder.status, 'DRAFT');
 
   step('Confirm order, allocate, fulfill (shipped qty)');
-  const confirmed = await orders.confirmOrder(tenantId, subject, salesOrder.id);
+  const confirmed = await orders.confirmOrder(principal,salesOrder.id);
   assert.equal(confirmed.status, 'CONFIRMED');
   const orderLineId = confirmed.lines![0]!.id;
 
-  await orders.allocateOrderLine(tenantId, subject, {
+  await orders.allocateOrderLine(principal,{
     orderId: confirmed.id,
     orderLineId,
     warehouseId,
     allocatedQuantity: '5.000000',
   });
 
-  await orders.createFulfillment(tenantId, subject, {
+  await orders.createFulfillment(principal,{
     orderId: confirmed.id,
     warehouseId,
     lines: [{ orderLineId, shippedQuantity: '5.000000' }],
   });
 
   step('Issue customer invoice for shipped quantity');
-  const invoice = await orders.createCustomerInvoice(tenantId, subject, {
+  const invoice = await orders.createCustomerInvoice(principal,{
     orderId: confirmed.id,
     dueDate: '2026-11-15T00:00:00Z',
   });

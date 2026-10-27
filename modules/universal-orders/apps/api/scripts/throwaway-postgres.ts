@@ -71,13 +71,13 @@ export async function startThrowawayPostgres(name: string): Promise<ThrowawayPos
     await admin.query(`
       CREATE TABLE public.parties (
         id uuid PRIMARY KEY,
-        tenant_id varchar(64) NOT NULL,
+        "tenantId" varchar(64) NOT NULL,
         code varchar(64) NOT NULL,
-        legal_name varchar(255) NOT NULL,
-        display_name varchar(255) NOT NULL,
-        party_type varchar(32) NOT NULL,
+        "legalName" varchar(255) NOT NULL,
+        "displayName" varchar(255) NOT NULL,
+        "partyType" varchar(32) NOT NULL,
         status varchar(32) NOT NULL DEFAULT 'ACTIVE',
-        archived_at timestamptz
+        "archivedAt" timestamptz
       )
     `);
     for (const migration of migrationFiles()) {

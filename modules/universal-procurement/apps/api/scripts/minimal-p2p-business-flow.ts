@@ -74,7 +74,7 @@ try {
   await admin.connect();
   try {
     await admin.query(
-      `INSERT INTO public.parties (id, tenant_id, code, legal_name, display_name, party_type, status)
+      `INSERT INTO public.parties (id, "tenantId", code, "legalName", "displayName", "partyType", status)
        VALUES ($1, $2, 'VEND-MIN-P2P', 'Minimal P2P Vendor Ltd', 'Minimal P2P Vendor Ltd', 'ORGANIZATION', 'ACTIVE')`,
       [vendorPartyId, 'tenant-alpha'],
     );

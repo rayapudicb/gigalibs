@@ -108,7 +108,7 @@ try {
 
     await adminClient.query(
       `INSERT INTO public.parties (
-        id, tenant_id, code, legal_name, display_name, party_type, status
+        id, "tenantId", code, "legalName", "displayName", "partyType", status
       ) VALUES ($1, $2, $3, $4, $5, 'ORGANIZATION', 'ACTIVE')`,
       [
         vendorPartyId,

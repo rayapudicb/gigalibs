@@ -107,7 +107,7 @@ try {
 
     await adminClient.query(
       `INSERT INTO public.parties (
-        id, tenant_id, code, legal_name, display_name, party_type, status
+        id, "tenantId", code, "legalName", "displayName", "partyType", status
       ) VALUES ($1, $2, $3, $4, $5, 'ORGANIZATION', 'ACTIVE')`,
       [customerPartyId, 'tenant-alpha', 'CUST-PROOF-1', 'Northwind Traders', 'Northwind Traders'],
     );
@@ -135,7 +135,7 @@ try {
   // Net subtotal = 142,500 minor
   // Tax 1000 basis points (10.0%) = 14,250 minor
   // Total = 156,750 minor ($1,567.50)
-  const quote = await orderService.createQuote(tenantA.tenantId, tenantA.subject, {
+  const quote = await orderService.createQuote(tenantA,{
     orgUnitId: 'unit-sales-1',
     customerPartyId,
     customerName: 'Acme Commercial Technologies Inc',
@@ -163,12 +163,11 @@ try {
 
   // ─── Scenario 3: Quote Acceptance & Quote-to-Order Conversion ───────────────
   step('3. Testing Quote acceptance and conversion to Sales Order');
-  const acceptedQuote = await orderService.acceptQuote(tenantA.tenantId, tenantA.subject, quote.id);
+  const acceptedQuote = await orderService.acceptQuote(tenantA,quote.id);
   assert.equal(acceptedQuote.status, 'ACCEPTED');
 
   const convertedOrder = await orderService.convertQuoteToOrder(
-    tenantA.tenantId,
-    tenantA.subject,
+    tenantA,
     acceptedQuote.id,
     warehouseId,
   );
@@ -192,7 +191,7 @@ try {
 
   // ─── Scenario 5: Sales Order Confirmation Lifecycle ─────────────────────────
   step('5. Confirming Sales Order into confirmed status');
-  const confirmedOrder = await orderService.confirmOrder(tenantA.tenantId, tenantA.subject, convertedOrder.id);
+  const confirmedOrder = await orderService.confirmOrder(tenantA,convertedOrder.id);
   assert.equal(confirmedOrder.status, 'CONFIRMED');
   const orderLineId = confirmedOrder.lines![0].id;
 
@@ -201,7 +200,7 @@ try {
   // Attempt to allocate 120 units when only 100 ordered -> must throw invariant error
   let blockedOverAlloc = false;
   try {
-    await orderService.allocateOrderLine(tenantA.tenantId, tenantA.subject, {
+    await orderService.allocateOrderLine(tenantA,{
       orderId: confirmedOrder.id,
       orderLineId,
       warehouseId,
@@ -214,7 +213,7 @@ try {
   assert.ok(blockedOverAlloc, 'System allowed allocating more than ordered quantity!');
 
   // Valid allocation of 100 units
-  const allocatedOrder = await orderService.allocateOrderLine(tenantA.tenantId, tenantA.subject, {
+  const allocatedOrder = await orderService.allocateOrderLine(tenantA,{
     orderId: confirmedOrder.id,
     orderLineId,
     warehouseId,
@@ -229,7 +228,7 @@ try {
   // Attempt to fulfill 110 units when only 100 allocated -> must throw invariant error
   let blockedOverShip = false;
   try {
-    await orderService.createFulfillment(tenantA.tenantId, tenantA.subject, {
+    await orderService.createFulfillment(tenantA,{
       orderId: confirmedOrder.id,
       warehouseId,
       lines: [
@@ -246,7 +245,7 @@ try {
   assert.ok(blockedOverShip, 'System allowed fulfilling more than allocated quantity!');
 
   // Valid partial fulfillment of 60 units
-  const partialFulfillment = await orderService.createFulfillment(tenantA.tenantId, tenantA.subject, {
+  const partialFulfillment = await orderService.createFulfillment(tenantA,{
     orderId: confirmedOrder.id,
     warehouseId,
     carrier: 'DHL Express',
@@ -283,7 +282,7 @@ try {
   // ─── Scenario 9: Customer AR Invoice Generation Matching Shipped Quantities ──
   step('9. Generating Customer AR Invoice strictly bounded by shipped quantity');
   // First invoice for 60 units shipped
-  const invoice = await orderService.createCustomerInvoice(tenantA.tenantId, tenantA.subject, {
+  const invoice = await orderService.createCustomerInvoice(tenantA,{
     orderId: confirmedOrder.id,
     dueDate: '2026-11-15T00:00:00Z',
   });
@@ -295,7 +294,7 @@ try {
   // Attempting second invoice immediately when no additional shipped units remain -> throws error
   let blockedEmptyInvoice = false;
   try {
-    await orderService.createCustomerInvoice(tenantA.tenantId, tenantA.subject, {
+    await orderService.createCustomerInvoice(tenantA,{
       orderId: confirmedOrder.id,
       dueDate: '2026-11-15T00:00:00Z',
     });
@@ -308,7 +307,7 @@ try {
   // ─── Scenario 10: Customer RMA Return & Credit Memo Issuance ────────────────
   step('10. Issuing Customer RMA Credit Memo');
   // Customer returns 5 units for credit @ 1500 minor = 7500 minor ($75.00)
-  const creditMemo = await orderService.createCreditMemo(tenantA.tenantId, tenantA.subject, {
+  const creditMemo = await orderService.createCreditMemo(tenantA,{
     customerPartyId,
     orderId: confirmedOrder.id,
     invoiceId: invoice.id,
