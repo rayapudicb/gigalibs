@@ -36,6 +36,21 @@ describe('createCompanionModelClient (local Ollama)', () => {
     expect(body.prompt).toContain('USER: hi there');
   });
 
+  it('uses OLLAMA_MODEL when set (swap to a stronger model without code changes)', async () => {
+    vi.stubEnv('OLLAMA_HOST', 'http://127.0.0.1:11434');
+    vi.stubEnv('OLLAMA_MODEL', 'qwen2.5:7b');
+    const fetchMock = vi.fn(
+      async () =>
+        new Response(JSON.stringify({ response: JSON.stringify({ kind: 'done', summary: 'ok' }) }), {
+          status: 200,
+        }),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+    await createCompanionModelClient().decide('S', [{ role: 'user', content: 'x' }]);
+    const [, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
+    expect(JSON.parse(init.body as string).model).toBe('qwen2.5:7b');
+  });
+
   it('fails closed when the local host is not configured', async () => {
     vi.stubEnv('OLLAMA_HOST', '');
     const client = createCompanionModelClient();

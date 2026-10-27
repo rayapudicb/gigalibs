@@ -24,10 +24,14 @@ const DECISION_TEMPLATE = [
   '"plan", "tool_calls", "show", "ask" or "done". No prose, no markdown fences.',
 ].join('\n');
 
-/** Build the Companion's ModelClient. Defaults to local Ollama `llama3.2` (needs `OLLAMA_HOST`); fails closed if it is unset. */
+/**
+ * Build the Companion's ModelClient. Defaults to local Ollama, model from `OLLAMA_MODEL` (else `llama3.2`), needs
+ * `OLLAMA_HOST`; fails closed if it is unset. Set `OLLAMA_MODEL` to a stronger model (e.g. `qwen2.5:7b`,
+ * `llama3.1:8b`) for far more reliable tool-use and structured output — no code change.
+ */
 export function createCompanionModelClient(options: CompanionModelOptions = {}): ModelClient {
   const provider = options.provider ?? 'ollama';
-  const model = options.model ?? 'llama3.2';
+  const model = options.model ?? process.env.OLLAMA_MODEL ?? 'llama3.2';
   return {
     async decide(system: string, messages: readonly AgentMessage[]): Promise<unknown> {
       const transcript = messages.map((m) => `${m.role.toUpperCase()}: ${m.content}`).join('\n');
