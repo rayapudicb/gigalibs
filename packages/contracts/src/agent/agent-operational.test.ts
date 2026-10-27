@@ -66,6 +66,12 @@ describe('parseAgentDecision', () => {
     expect(parseAgentDecision({ kind: 'done', summary: 'All set.' }).ok).toBe(true);
   });
 
+  it('is forgiving of real local-model output: extra keys, a { raw } wrapper, prose around JSON', () => {
+    expect(parseAgentDecision({ kind: 'done', summary: 'ok', reasoning: 'because' }).ok).toBe(true);
+    expect(parseAgentDecision({ raw: '{"kind":"done","summary":"ok"}' }).ok).toBe(true);
+    expect(parseAgentDecision('Sure — {"kind":"ask","question":"Which asset?"}').ok).toBe(true);
+  });
+
   it('rejects an unknown kind and a show with an invalid UI node', () => {
     expect(parseAgentDecision({ kind: 'exec', shell: 'rm -rf /' }).ok).toBe(false);
     expect(parseAgentDecision({ kind: 'show', ui: { kind: 'html', value: '<b>x</b>' } }).ok).toBe(

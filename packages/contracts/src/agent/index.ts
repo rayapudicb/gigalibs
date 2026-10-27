@@ -37,13 +37,11 @@ export interface AgentToolSpec {
   readonly requiresPermission: string;
 }
 
-export const AgentToolCallSchema = z
-  .object({
-    id: z.string().min(1),
-    tool: z.string().min(1),
-    arguments: z.record(z.string(), z.unknown()),
-  })
-  .strict();
+export const AgentToolCallSchema = z.object({
+  id: z.string().min(1).catch('call'),
+  tool: z.string().min(1),
+  arguments: z.record(z.string(), z.unknown()).catch({}),
+});
 export type AgentToolCall = z.infer<typeof AgentToolCallSchema>;
 
 export const AgentToolResultSchema = z
@@ -225,30 +223,47 @@ const PlannedStepSchema = z
 
 /** The one decision a Companion turn yields: propose a plan, call tools, show a panel, ask, or finish. */
 export const AgentDecisionSchema = z.discriminatedUnion('kind', [
-  z.object({ kind: z.literal('plan'), steps: z.array(PlannedStepSchema).min(1).max(30) }).strict(),
-  z
-    .object({ kind: z.literal('tool_calls'), calls: z.array(AgentToolCallSchema).min(1).max(8) })
-    .strict(),
-  z
-    .object({ kind: z.literal('show'), ui: GenerativeUINodeSchema, done: z.boolean().optional() })
-    .strict(),
-  z.object({ kind: z.literal('ask'), question: z.string().min(1).max(2000) }).strict(),
-  z
-    .object({
-      kind: z.literal('navigate'),
-      screen: z.string().min(1).max(120),
-      reason: z.string().max(500).optional(),
-    })
-    .strict(),
-  z.object({ kind: z.literal('done'), summary: z.string().min(1).max(4000) }).strict(),
+  z.object({ kind: z.literal('plan'), steps: z.array(PlannedStepSchema).min(1).max(30) }),
+  z.object({ kind: z.literal('tool_calls'), calls: z.array(AgentToolCallSchema).min(1).max(8) }),
+  z.object({ kind: z.literal('show'), ui: GenerativeUINodeSchema, done: z.boolean().optional() }),
+  z.object({ kind: z.literal('ask'), question: z.string().min(1).max(2000) }),
+  z.object({
+    kind: z.literal('navigate'),
+    screen: z.string().min(1).max(120),
+    reason: z.string().max(500).optional(),
+  }),
+  z.object({ kind: z.literal('done'), summary: z.string().min(1).max(4000) }),
 ]);
 export type AgentDecision = z.infer<typeof AgentDecisionSchema>;
 
-/** Parse a model's raw decision, returning a reason instead of throwing on bad output. */
+/** Pull a decision object out of common model wrappers: a JSON string, prose around JSON, or `{ raw: "..." }`. */
+function decisionCandidate(raw: unknown): unknown {
+  const fromText = (text: string): unknown => {
+    const start = text.indexOf('{');
+    const end = text.lastIndexOf('}');
+    if (start < 0 || end <= start) return text;
+    try {
+      return JSON.parse(text.slice(start, end + 1));
+    } catch {
+      return text;
+    }
+  };
+  if (typeof raw === 'string') return fromText(raw);
+  if (raw && typeof raw === 'object' && typeof (raw as { raw?: unknown }).raw === 'string') {
+    return fromText((raw as { raw: string }).raw);
+  }
+  return raw;
+}
+
+/**
+ * Parse a model's raw decision, forgivingly: it unwraps a JSON string / prose / `{ raw }` wrapper, and the schema no
+ * longer rejects extra keys (a small local model often adds "reasoning" and the like). Returns a reason instead of
+ * throwing so the loop can feed a correction back rather than stall.
+ */
 export function parseAgentDecision(
   raw: unknown,
 ): { ok: true; decision: AgentDecision } | { ok: false; reason: string } {
-  const parsed = AgentDecisionSchema.safeParse(raw);
+  const parsed = AgentDecisionSchema.safeParse(decisionCandidate(raw));
   return parsed.success
     ? { ok: true, decision: parsed.data }
     : { ok: false, reason: 'the model did not return a valid decision' };
