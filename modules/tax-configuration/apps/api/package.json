@@ -6,7 +6,8 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "start": "node dist/main.js",
-    "typecheck": "tsc --noEmit -p tsconfig.json"
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run --root ../../../.. modules/tax-configuration/apps/api/src"
   },
   "dependencies": {
     "@gigalibs/contracts": "workspace:*",
