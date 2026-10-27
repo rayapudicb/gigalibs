@@ -339,3 +339,4 @@ export function advanceCampaign(campaign: AgentCampaign, event: AgentCampaignEve
 // these modules import from here (the tool-call and generative-UI schemas) are defined before the re-export loads them.
 export * from './tools.js';
 export * from './loop.js';
+export * from './marketing.js';
