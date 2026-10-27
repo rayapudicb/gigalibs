@@ -111,9 +111,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           </div>
           {/* WI-OI-120ak (S4, owner decision D4a): the Softphone & WhatsApp button is off every page until Communications is
               connected; it showed an invented chat. */}
-          {/* WI-OI-120bc: the Giga AI Companion launcher — mounted only when the local model is configured
-              (OLLAMA_HOST), so it is never a dead button where it cannot run (honours D4a). */}
-          {process.env.OLLAMA_HOST ? <CompanionLauncher /> : null}
+          {/* WI-OI-120bc: the Giga AI Companion launcher. Shown in development always, and in other environments only
+              when the local model is configured (OLLAMA_HOST) — so on UAT it is never a dead button where it cannot
+              run (honours owner decision D4a). The chat degrades to a plain "model not running" message, never a fake. */}
+          {process.env.NODE_ENV === 'development' || process.env.OLLAMA_HOST ? (
+            <CompanionLauncher />
+          ) : null}
         </div>
       </StudioModeProvider>
     </AppI18nProvider>
