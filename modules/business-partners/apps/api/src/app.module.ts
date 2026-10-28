@@ -5,6 +5,8 @@ import {
   loadIdempotencyRetentionDays,
 } from '@gigalibs/module-sdk';
 import { Module } from '@nestjs/common';
+import { PartnerBankController } from './bank/bank.controller.js';
+import { PartnerBankService } from './bank/bank.service.js';
 import { PartnerAccountsController } from './accounts/accounts.controller.js';
 import { PartnerAccountsService } from './accounts/accounts.service.js';
 import { FinanceAccountReferenceClient } from './accounts/finance-account-reference.client.js';
@@ -65,6 +67,7 @@ const BusinessPartnersRecordController = createRecordController({
     CreditStatusController,
     NettingController,
     PartnerAccountsController,
+    PartnerBankController,
     BusinessPartnersRecordController,
   ],
   providers: [
@@ -86,6 +89,7 @@ const BusinessPartnersRecordController = createRecordController({
     NettingService,
     FinanceAccountReferenceClient,
     PartnerAccountsService,
+    PartnerBankService,
     RecordsService,
     {
       provide: RECORD_DISPATCHER,

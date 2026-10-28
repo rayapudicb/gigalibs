@@ -1,0 +1,225 @@
+{
+  "contractVersion": "1.0",
+  "window": {
+    "route": "/business-partners",
+    "label": "AR/AP netting",
+    "description": "Net receivable and payable positions per partner for settlement planning.",
+    "readPermission": "business-partners:read"
+  },
+  "definition": {
+    "kind": "APPLICATION_DICTIONARY",
+    "contractVersion": "1.0",
+    "moduleKey": "business-partners",
+    "entityKey": "partner-netting",
+    "surfaceKey": "partner-netting",
+    "title": "AR/AP netting",
+    "dictionary": {
+      "packageKey": "partner-netting-module-baseline",
+      "name": "AR/AP netting",
+      "version": "1.0.0",
+      "moduleKey": "business-partners",
+      "targetEntityKey": "business-partners.partner-netting",
+      "entities": [
+        {
+          "entityKey": "business-partners.partner-netting",
+          "moduleKey": "business-partners",
+          "label": "Netting",
+          "ownership": "MODULE_CORE",
+          "primaryKeyField": "id",
+          "isVersioned": true,
+          "isAuditLogged": true,
+          "isSoftDeletable": false
+        }
+      ],
+      "fields": [
+        {
+          "fieldKey": "partner-name",
+          "entityKey": "business-partners.partner-netting",
+          "label": "Partner",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "currency",
+          "entityKey": "business-partners.partner-netting",
+          "label": "Currency",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "open-ar-minor",
+          "entityKey": "business-partners.partner-netting",
+          "label": "Open AR",
+          "type": "INTEGER",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "open-ap-minor",
+          "entityKey": "business-partners.partner-netting",
+          "label": "Open AP",
+          "type": "INTEGER",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "nettable-minor",
+          "entityKey": "business-partners.partner-netting",
+          "label": "Nettable",
+          "type": "INTEGER",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "position",
+          "entityKey": "business-partners.partner-netting",
+          "label": "Position",
+          "type": "SELECT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "netting-positions"
+        },
+        {
+          "fieldKey": "net-amount-minor",
+          "entityKey": "business-partners.partner-netting",
+          "label": "Net amount",
+          "type": "INTEGER",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "org-unit-id",
+          "entityKey": "business-partners.partner-netting",
+          "label": "Owning unit",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        }
+      ],
+      "relationships": [],
+      "references": [
+        {
+          "referenceKey": "netting-positions",
+          "referenceType": "VALUE_LIST",
+          "staticValues": [
+            {
+              "value": "NET_RECEIVABLE",
+              "label": "Net receivable"
+            },
+            {
+              "value": "NET_PAYABLE",
+              "label": "Net payable"
+            },
+            {
+              "value": "SETTLED",
+              "label": "Settled"
+            }
+          ]
+        }
+      ],
+      "validationRules": [],
+      "views": [
+        {
+          "viewKey": "partner-netting",
+          "label": "AR/AP netting",
+          "mode": "LIST",
+          "device": "ALL",
+          "searchFields": [
+            "partner-name"
+          ],
+          "defaultSortField": "partner-name",
+          "defaultSortDirection": "ASC",
+          "tabs": [
+            {
+              "tabKey": "netting",
+              "label": "Netting",
+              "position": 0,
+              "level": 0,
+              "targetEntityKey": "business-partners.partner-netting",
+              "sections": [],
+              "fields": [
+                {
+                  "fieldKey": "partner-name",
+                  "position": 0,
+                  "span": 6,
+                  "componentKey": "text-input"
+                },
+                {
+                  "fieldKey": "currency",
+                  "position": 1,
+                  "span": 2,
+                  "componentKey": "text-input"
+                },
+                {
+                  "fieldKey": "position",
+                  "position": 2,
+                  "span": 2,
+                  "componentKey": "select"
+                },
+                {
+                  "fieldKey": "open-ar-minor",
+                  "position": 3,
+                  "span": 3,
+                  "componentKey": "number-input"
+                },
+                {
+                  "fieldKey": "open-ap-minor",
+                  "position": 4,
+                  "span": 3,
+                  "componentKey": "number-input"
+                },
+                {
+                  "fieldKey": "nettable-minor",
+                  "position": 5,
+                  "span": 3,
+                  "componentKey": "number-input"
+                },
+                {
+                  "fieldKey": "net-amount-minor",
+                  "position": 6,
+                  "span": 3,
+                  "componentKey": "number-input"
+                },
+                {
+                  "fieldKey": "org-unit-id",
+                  "position": 7,
+                  "span": 3,
+                  "componentKey": "text-input"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "navigation": [],
+      "actions": [],
+      "messages": []
+    }
+  }
+}

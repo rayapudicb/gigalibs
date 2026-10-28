@@ -22,4 +22,12 @@ export class CreditStatusController {
     const query = errors.parseInput(QueryV1, rawQuery);
     return this.credit.get(principal, partyId, query.orgUnitId, query.currencyCode);
   }
+
+  @Get('explain')
+  @RequirePermissions('business-partners.credit.read')
+  explain(@CurrentPrincipal() principal: ModulePrincipal, @Param('partyId') partyId: string, @Query() rawQuery: unknown) {
+    errors.assertUuid(partyId, 'partyId');
+    const query = errors.parseInput(QueryV1, rawQuery);
+    return this.credit.explain(principal, partyId, query.orgUnitId, query.currencyCode);
+  }
 }

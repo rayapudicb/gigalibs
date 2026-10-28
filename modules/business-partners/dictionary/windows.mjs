@@ -29,6 +29,20 @@ const HOLD_ORIGINS = [
   ['EXPOSURE', 'Exposure'],
 ];
 
+const CREDIT_DECISIONS = [
+  ['APPROVED', 'Approved'],
+  ['ACTIVE_HOLD', 'On hold'],
+  ['SOURCE_INCOMPLETE', 'Feeds incomplete'],
+  ['OVER_LIMIT', 'Over limit'],
+  ['RECONCILE_REQUIRED', 'Reconcile required'],
+];
+
+const NETTING_POSITIONS = [
+  ['NET_RECEIVABLE', 'Net receivable'],
+  ['NET_PAYABLE', 'Net payable'],
+  ['SETTLED', 'Settled'],
+];
+
 export function windowSource(builderFor) {
   const { entity, field, values, tab, dictionary, window } = builderFor({
     route: '/business-partners',
@@ -66,6 +80,33 @@ export function windowSource(builderFor) {
     field(CREDIT, 'exposure-minor', 'Exposure (minor units)', 'INTEGER', { readOnly: true }),
     field(CREDIT, 'available-minor', 'Available (minor units)', 'INTEGER', { readOnly: true }),
     field(CREDIT, 'org-unit-id', 'Owning unit', 'TEXT', { readOnly: true }),
+  ];
+
+  const GAUGE = 'business-partners.credit-status';
+  const gaugeFields = [
+    field(GAUGE, 'partner-name', 'Partner', 'TEXT', { readOnly: true }),
+    field(GAUGE, 'currency', 'Currency', 'TEXT', { readOnly: true }),
+    field(GAUGE, 'decision', 'Decision', 'SELECT', { readOnly: true, ref: 'credit-decisions' }),
+    field(GAUGE, 'complete', 'Feeds complete', 'TEXT', { readOnly: true }),
+    field(GAUGE, 'credit-limit-minor', 'Credit limit', 'INTEGER', { readOnly: true }),
+    field(GAUGE, 'exposure-minor', 'Exposure', 'INTEGER', { readOnly: true }),
+    field(GAUGE, 'available-minor', 'Available', 'INTEGER', { readOnly: true }),
+    field(GAUGE, 'open-ar-minor', 'Open AR', 'INTEGER', { readOnly: true }),
+    field(GAUGE, 'uninvoiced-minor', 'Uninvoiced orders', 'INTEGER', { readOnly: true }),
+    field(GAUGE, 'prepayment-minor', 'Prepayments', 'INTEGER', { readOnly: true }),
+    field(GAUGE, 'org-unit-id', 'Owning unit', 'TEXT', { readOnly: true }),
+  ];
+
+  const NETTING = 'business-partners.partner-netting';
+  const nettingFields = [
+    field(NETTING, 'partner-name', 'Partner', 'TEXT', { readOnly: true }),
+    field(NETTING, 'currency', 'Currency', 'TEXT', { readOnly: true }),
+    field(NETTING, 'open-ar-minor', 'Open AR', 'INTEGER', { readOnly: true }),
+    field(NETTING, 'open-ap-minor', 'Open AP', 'INTEGER', { readOnly: true }),
+    field(NETTING, 'nettable-minor', 'Nettable', 'INTEGER', { readOnly: true }),
+    field(NETTING, 'position', 'Position', 'SELECT', { readOnly: true, ref: 'netting-positions' }),
+    field(NETTING, 'net-amount-minor', 'Net amount', 'INTEGER', { readOnly: true }),
+    field(NETTING, 'org-unit-id', 'Owning unit', 'TEXT', { readOnly: true }),
   ];
 
   const HOLDS = 'business-partners.credit-holds';
@@ -123,6 +164,55 @@ export function windowSource(builderFor) {
             ['org-unit-id', 3],
           ], creditFields),
         ], { search: ['partner-name'], sort: 'utilization-pct', direction: 'DESC' }),
+      ]),
+    ),
+    'credit-status': window(
+      'credit-status',
+      'Credit gauge',
+      'Credit gauge',
+      'Live credit decision surface: limit, exposure, available and decision per customer position.',
+      'business-partners:read',
+      dictionary('credit-status', 'Credit gauge', GAUGE, [entity(GAUGE, 'Credit gauge')], gaugeFields, [], [
+        values('credit-decisions', CREDIT_DECISIONS),
+      ], [
+        view('credit-status', 'Credit gauge', [
+          tab('gauge', 'Gauge', 0, GAUGE, [
+            ['partner-name', 6],
+            ['currency', 2],
+            ['decision', 2],
+            ['complete', 2],
+            ['credit-limit-minor', 3],
+            ['exposure-minor', 3],
+            ['available-minor', 3],
+            ['open-ar-minor', 3],
+            ['uninvoiced-minor', 3],
+            ['prepayment-minor', 3],
+            ['org-unit-id', 3],
+          ], gaugeFields),
+        ], { search: ['partner-name'], sort: 'partner-name', direction: 'ASC' }),
+      ]),
+    ),
+    'partner-netting': window(
+      'partner-netting',
+      'AR/AP netting',
+      'AR/AP netting',
+      'Net receivable and payable positions per partner for settlement planning.',
+      'business-partners:read',
+      dictionary('partner-netting', 'AR/AP netting', NETTING, [entity(NETTING, 'Netting')], nettingFields, [], [
+        values('netting-positions', NETTING_POSITIONS),
+      ], [
+        view('partner-netting', 'AR/AP netting', [
+          tab('netting', 'Netting', 0, NETTING, [
+            ['partner-name', 6],
+            ['currency', 2],
+            ['position', 2],
+            ['open-ar-minor', 3],
+            ['open-ap-minor', 3],
+            ['nettable-minor', 3],
+            ['net-amount-minor', 3],
+            ['org-unit-id', 3],
+          ], nettingFields),
+        ], { search: ['partner-name'], sort: 'partner-name', direction: 'ASC' }),
       ]),
     ),
     'credit-holds': window(

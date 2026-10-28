@@ -78,4 +78,32 @@ export class CreditStatusService {
       };
     });
   }
+
+  /** Governed hold explainer: returns audit facts only; no generative inference without a configured source. */
+  async explain(
+    principal: ModulePrincipal,
+    partyId: string,
+    orgUnitId: string,
+    currencyCode: string,
+  ): Promise<{ available: boolean; summary: string; facts: readonly string[] }> {
+    const status = await this.get(principal, partyId, orgUnitId, currencyCode);
+    const facts: string[] = [
+      `Decision: ${status.decision}.`,
+      `Exposure ${status.exposureMinor} minor units against limit ${status.creditLimitMinor}.`,
+      `Available ${status.availableMinor} minor units.`,
+    ];
+    if (status.activeHoldId) facts.push(`Active hold ${status.activeHoldId}.`);
+    if (!status.complete) facts.push('Credit feeds are incomplete; approval stays closed.');
+    return {
+      available: true,
+      summary: status.activeHoldId
+        ? 'Credit is blocked by an active hold on this partner position.'
+        : status.decision === 'OVER_LIMIT'
+          ? 'Exposure exceeds the configured credit limit.'
+          : status.decision === 'APPROVED'
+            ? 'Within limit and feeds are complete.'
+            : `Credit status is ${status.decision}.`,
+      facts,
+    };
+  }
 }

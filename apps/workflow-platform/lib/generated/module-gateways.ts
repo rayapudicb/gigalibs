@@ -302,6 +302,21 @@ export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGat
         }
       },
       {
+        "template": "v1/partners/{id}/credit-status/explain",
+        "pattern": "^v1/partners/[0-9a-fA-F-]{36}/credit-status/explain$",
+        "methods": {
+          "GET": "business-partners.credit.read"
+        }
+      },
+      {
+        "template": "v1/partners/{id}/bank-accounts",
+        "pattern": "^v1/partners/[0-9a-fA-F-]{36}/bank-accounts$",
+        "methods": {
+          "GET": "business-partners.accounts.read",
+          "POST": "business-partners.accounts.manage"
+        }
+      },
+      {
         "template": "v1/partners/{id}/netting",
         "pattern": "^v1/partners/[0-9a-fA-F-]{36}/netting$",
         "methods": {

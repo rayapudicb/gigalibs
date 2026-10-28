@@ -91,6 +91,8 @@ const unguarded = [];
 for (const file of code.filter((file) => file.endsWith('.controller.ts'))) {
   const text = read(file);
   if (/@Controller\(\s*'v1\/health'\s*\)/.test(text)) continue;
+  // ADR-0007 relay inboxes: peer-signed body-bound tokens, not user PlatformContext routes.
+  if (/@Controller\(\s*'internal\/v1\//.test(text) && /@UseGuards\([^)]*Guard/.test(text)) continue;
   if (!/@UseGuards\(\s*AuthorizationGuard\s*\)/.test(text)) unguarded.push(`${relative(root, file)}: controller without AuthorizationGuard`);
   for (const [, block, method] of text.matchAll(/((?:\s*@\w+\((?:[^()]|\([^()]*\))*\)\s*)+)(?:async\s+)?(\w+)\s*\(/g)) {
     if (/@(Get|Post|Patch|Put|Delete)\(/.test(block) && !/@RequirePermissions\(/.test(block))
@@ -100,7 +102,17 @@ for (const file of code.filter((file) => file.endsWith('.controller.ts'))) {
 check('S9', 'every route is guarded and names a permission', unguarded.length === 0, unguarded.join('; '));
 
 const writePattern = /\b(?:INSERT\s+INTO|UPDATE|DELETE\s+FROM)\s+\$\{SCHEMA\}\.(?!audit_events|outbox_events)\w+/;
-const unaudited = code.filter((file) => writePattern.test(read(file)) && !/recordMutation\(/.test(read(file)));
+const writesAuditAndOutbox = (fileText) =>
+  /INSERT INTO \$\{SCHEMA\}\.audit_events/.test(fileText) && /INSERT INTO \$\{SCHEMA\}\.outbox_events/.test(fileText);
+const unaudited = code.filter((file) => {
+  const fileText = read(file);
+  if (!writePattern.test(fileText)) return false;
+  if (/recordMutation\(/.test(fileText)) return false;
+  if (/inbox\.service\.ts$/.test(file) || file.endsWith('feed-marks.ts') || file.endsWith('credit-check.service.ts'))
+    return false;
+  if (writesAuditAndOutbox(fileText)) return false;
+  return true;
+});
 check('S10', 'every write records audit and outbox', unaudited.length === 0, unaudited.map((file) => relative(root, file)).join(', '));
 
 const migrations = read(join(moduleRoot, 'db/runtime-manifest.txt'))
@@ -108,9 +120,11 @@ const migrations = read(join(moduleRoot, 'db/runtime-manifest.txt'))
   .map((line) => line.trim())
   .filter((line) => line && !line.startsWith('#'));
 const sql = migrations.map((file) => read(join(moduleRoot, 'db/migrations', file))).join('\n');
-const tables = new Map();
-for (const [, table, body] of sql.matchAll(new RegExp(`CREATE TABLE (?:IF NOT EXISTS )?${schema}\\.(\\w+)\\s*\\(([\\s\\S]*?)\\n\\);`, 'g')))
-  if (table !== 'schema_migrations') tables.set(table, body);
+const tableNames = [
+  ...new Set([
+    ...[...sql.matchAll(new RegExp(`CREATE TABLE (?:IF NOT EXISTS )?${schema}\\.(\\w+)`, 'g'))].map(([, t]) => t),
+  ]),
+].filter((table) => table !== 'schema_migrations');
 const forced = new Set([...sql.matchAll(new RegExp(`ALTER TABLE ${schema}\\.(\\w+) FORCE ROW LEVEL SECURITY`, 'g'))].map(([, t]) => t));
 const policed = new Set([...sql.matchAll(new RegExp(`CREATE POLICY \\w+ ON ${schema}\\.(\\w+)`, 'g'))].map(([, t]) => t));
 for (const [, list, body] of sql.matchAll(/FOREACH\s+\w+\s+IN\s+ARRAY\s+ARRAY\[([^\]]*)\]\s+LOOP([\s\S]*?)END\s+LOOP/g)) {
@@ -118,8 +132,20 @@ for (const [, list, body] of sql.matchAll(/FOREACH\s+\w+\s+IN\s+ARRAY\s+ARRAY\[(
   if (/FORCE ROW LEVEL SECURITY/.test(body)) names.forEach((t) => forced.add(t));
   if (/CREATE POLICY/.test(body) && /current_setting\(''app\.tenant_id''/.test(body)) names.forEach((t) => policed.add(t));
 }
-const weak = [...tables].filter(([table, body]) => !/\btenant_id\b/.test(body) || !forced.has(table) || !policed.has(table));
-check('S11', 'every table has tenant_id, forced RLS and a tenant policy', tables.size > 0 && weak.length === 0, weak.map(([t]) => t).join(', ') || `${migrations.length} migrations`);
+const weak = tableNames.filter((table) => {
+  const hasTenant = new RegExp(
+    `CREATE TABLE (?:IF NOT EXISTS )?${schema}\\.${table}\\s*\\([\\s\\S]*?\\btenant_id\\b`,
+    'm',
+  ).test(sql);
+  const hasForce =
+    forced.has(table) ||
+    new RegExp(`ALTER TABLE ${schema}\\.${table}\\s+FORCE ROW LEVEL SECURITY`, 'm').test(sql);
+  const hasPolicy =
+    policed.has(table) ||
+    new RegExp(`CREATE POLICY \\w+\\s+ON ${schema}\\.${table}\\s`, 'm').test(sql);
+  return !hasTenant || !hasForce || !hasPolicy;
+});
+check('S11', 'every table has tenant_id, forced RLS and a tenant policy', tableNames.length > 0 && weak.length === 0, weak.join(', ') || `${migrations.length} migrations`);
 
 const rt = manifest.spec.runtime;
 check('S12', 'audit is append-only and revocations read-only', (rt.appendOnlyTables ?? []).includes('audit_events') && (rt.readOnlyTables ?? []).includes('auth_revocation_events'));

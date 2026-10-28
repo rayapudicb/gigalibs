@@ -15,7 +15,7 @@ import { SCHEMA, TOPIC } from '../config.js';
 import { DatabaseService } from '../database.service.js';
 import type { CreateCustomerAccount, CreateVendorAccount, PartnerAccountV1, UpdateCustomerAccount } from './accounts.contract.js';
 import { FinanceAccountReferenceClient } from './finance-account-reference.client.js';
-import { seedPrepaymentFeedReady } from '../credit/feed-marks.js';
+import { seedOpenApFeedReady, seedPrepaymentFeedReady } from '../credit/feed-marks.js';
 
 type AccountKind = 'CUSTOMER' | 'VENDOR';
 type CreateInput = CreateCustomerAccount | CreateVendorAccount;
@@ -192,6 +192,8 @@ export class PartnerAccountsService {
       const account = toAccount(kind, row);
       if (kind === 'CUSTOMER') {
         await seedPrepaymentFeedReady(client, tenantId, partyId, input.orgUnitId, input.currencyCode);
+      } else {
+        await seedOpenApFeedReady(client, tenantId, partyId, input.orgUnitId, input.currencyCode);
       }
       await recordMutation(client, { schema: SCHEMA, topic: TOPIC }, context, {
         action: `PARTNER_${kind}_ACCOUNT_CREATED`,

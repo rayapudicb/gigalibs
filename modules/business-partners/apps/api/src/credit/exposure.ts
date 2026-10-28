@@ -1,5 +1,5 @@
 /** Exact minor-unit arithmetic for the partner credit decision. */
-export type CreditComponent = 'OPEN_AR' | 'UNINVOICED_ORDER' | 'PREPAYMENT';
+export type CreditComponent = 'OPEN_AR' | 'UNINVOICED_ORDER' | 'PREPAYMENT' | 'OPEN_AP';
 
 export interface CreditDelta {
   readonly component: CreditComponent;
@@ -29,6 +29,7 @@ export function calculateCreditExposure(deltas: readonly CreditDelta[], creditLi
     if (delta.component === 'OPEN_AR') openArMinor += delta.deltaMinor;
     else if (delta.component === 'UNINVOICED_ORDER') uninvoicedOrdersMinor += delta.deltaMinor;
     else if (delta.component === 'PREPAYMENT') prepaymentsMinor += delta.deltaMinor;
+    else if (delta.component === 'OPEN_AP') continue;
     else throw new Error('Unknown credit component.');
   }
   if (openArMinor < 0n || uninvoicedOrdersMinor < 0n || prepaymentsMinor < 0n) {

@@ -40,6 +40,16 @@ export async function loadFeedMarks(
   };
 }
 
+export async function seedOpenApFeedReady(
+  client: PoolClient,
+  tenantId: string,
+  partyId: string,
+  orgUnitId: string,
+  currencyCode: string,
+): Promise<void> {
+  await markFeedReady(client, tenantId, partyId, orgUnitId, currencyCode, 'OPEN_AP');
+}
+
 export async function seedPrepaymentFeedReady(
   client: PoolClient,
   tenantId: string,

@@ -1008,6 +1008,515 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
     "contractVersion": "1.0",
     "window": {
       "route": "/business-partners",
+      "label": "Credit gauge",
+      "description": "Live credit decision surface: limit, exposure, available and decision per customer position.",
+      "readPermission": "business-partners:read"
+    },
+    "definition": {
+      "kind": "APPLICATION_DICTIONARY",
+      "contractVersion": "1.0",
+      "moduleKey": "business-partners",
+      "entityKey": "credit-status",
+      "surfaceKey": "credit-status",
+      "title": "Credit gauge",
+      "dictionary": {
+        "packageKey": "credit-status-module-baseline",
+        "name": "Credit gauge",
+        "version": "1.0.0",
+        "moduleKey": "business-partners",
+        "targetEntityKey": "business-partners.credit-status",
+        "entities": [
+          {
+            "entityKey": "business-partners.credit-status",
+            "moduleKey": "business-partners",
+            "label": "Credit gauge",
+            "ownership": "MODULE_CORE",
+            "primaryKeyField": "id",
+            "isVersioned": true,
+            "isAuditLogged": true,
+            "isSoftDeletable": false
+          }
+        ],
+        "fields": [
+          {
+            "fieldKey": "partner-name",
+            "entityKey": "business-partners.credit-status",
+            "label": "Partner",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "currency",
+            "entityKey": "business-partners.credit-status",
+            "label": "Currency",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "decision",
+            "entityKey": "business-partners.credit-status",
+            "label": "Decision",
+            "type": "SELECT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "credit-decisions"
+          },
+          {
+            "fieldKey": "complete",
+            "entityKey": "business-partners.credit-status",
+            "label": "Feeds complete",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "credit-limit-minor",
+            "entityKey": "business-partners.credit-status",
+            "label": "Credit limit",
+            "type": "INTEGER",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "exposure-minor",
+            "entityKey": "business-partners.credit-status",
+            "label": "Exposure",
+            "type": "INTEGER",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "available-minor",
+            "entityKey": "business-partners.credit-status",
+            "label": "Available",
+            "type": "INTEGER",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "open-ar-minor",
+            "entityKey": "business-partners.credit-status",
+            "label": "Open AR",
+            "type": "INTEGER",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "uninvoiced-minor",
+            "entityKey": "business-partners.credit-status",
+            "label": "Uninvoiced orders",
+            "type": "INTEGER",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "prepayment-minor",
+            "entityKey": "business-partners.credit-status",
+            "label": "Prepayments",
+            "type": "INTEGER",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "org-unit-id",
+            "entityKey": "business-partners.credit-status",
+            "label": "Owning unit",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          }
+        ],
+        "relationships": [],
+        "references": [
+          {
+            "referenceKey": "credit-decisions",
+            "referenceType": "VALUE_LIST",
+            "staticValues": [
+              {
+                "value": "APPROVED",
+                "label": "Approved"
+              },
+              {
+                "value": "ACTIVE_HOLD",
+                "label": "On hold"
+              },
+              {
+                "value": "SOURCE_INCOMPLETE",
+                "label": "Feeds incomplete"
+              },
+              {
+                "value": "OVER_LIMIT",
+                "label": "Over limit"
+              },
+              {
+                "value": "RECONCILE_REQUIRED",
+                "label": "Reconcile required"
+              }
+            ]
+          }
+        ],
+        "validationRules": [],
+        "views": [
+          {
+            "viewKey": "credit-status",
+            "label": "Credit gauge",
+            "mode": "LIST",
+            "device": "ALL",
+            "searchFields": [
+              "partner-name"
+            ],
+            "defaultSortField": "partner-name",
+            "defaultSortDirection": "ASC",
+            "tabs": [
+              {
+                "tabKey": "gauge",
+                "label": "Gauge",
+                "position": 0,
+                "level": 0,
+                "targetEntityKey": "business-partners.credit-status",
+                "sections": [],
+                "fields": [
+                  {
+                    "fieldKey": "partner-name",
+                    "position": 0,
+                    "span": 6,
+                    "componentKey": "text-input"
+                  },
+                  {
+                    "fieldKey": "currency",
+                    "position": 1,
+                    "span": 2,
+                    "componentKey": "text-input"
+                  },
+                  {
+                    "fieldKey": "decision",
+                    "position": 2,
+                    "span": 2,
+                    "componentKey": "select"
+                  },
+                  {
+                    "fieldKey": "complete",
+                    "position": 3,
+                    "span": 2,
+                    "componentKey": "text-input"
+                  },
+                  {
+                    "fieldKey": "credit-limit-minor",
+                    "position": 4,
+                    "span": 3,
+                    "componentKey": "number-input"
+                  },
+                  {
+                    "fieldKey": "exposure-minor",
+                    "position": 5,
+                    "span": 3,
+                    "componentKey": "number-input"
+                  },
+                  {
+                    "fieldKey": "available-minor",
+                    "position": 6,
+                    "span": 3,
+                    "componentKey": "number-input"
+                  },
+                  {
+                    "fieldKey": "open-ar-minor",
+                    "position": 7,
+                    "span": 3,
+                    "componentKey": "number-input"
+                  },
+                  {
+                    "fieldKey": "uninvoiced-minor",
+                    "position": 8,
+                    "span": 3,
+                    "componentKey": "number-input"
+                  },
+                  {
+                    "fieldKey": "prepayment-minor",
+                    "position": 9,
+                    "span": 3,
+                    "componentKey": "number-input"
+                  },
+                  {
+                    "fieldKey": "org-unit-id",
+                    "position": 10,
+                    "span": 3,
+                    "componentKey": "text-input"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "navigation": [],
+        "actions": [],
+        "messages": []
+      }
+    }
+  },
+  {
+    "contractVersion": "1.0",
+    "window": {
+      "route": "/business-partners",
+      "label": "AR/AP netting",
+      "description": "Net receivable and payable positions per partner for settlement planning.",
+      "readPermission": "business-partners:read"
+    },
+    "definition": {
+      "kind": "APPLICATION_DICTIONARY",
+      "contractVersion": "1.0",
+      "moduleKey": "business-partners",
+      "entityKey": "partner-netting",
+      "surfaceKey": "partner-netting",
+      "title": "AR/AP netting",
+      "dictionary": {
+        "packageKey": "partner-netting-module-baseline",
+        "name": "AR/AP netting",
+        "version": "1.0.0",
+        "moduleKey": "business-partners",
+        "targetEntityKey": "business-partners.partner-netting",
+        "entities": [
+          {
+            "entityKey": "business-partners.partner-netting",
+            "moduleKey": "business-partners",
+            "label": "Netting",
+            "ownership": "MODULE_CORE",
+            "primaryKeyField": "id",
+            "isVersioned": true,
+            "isAuditLogged": true,
+            "isSoftDeletable": false
+          }
+        ],
+        "fields": [
+          {
+            "fieldKey": "partner-name",
+            "entityKey": "business-partners.partner-netting",
+            "label": "Partner",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "currency",
+            "entityKey": "business-partners.partner-netting",
+            "label": "Currency",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "open-ar-minor",
+            "entityKey": "business-partners.partner-netting",
+            "label": "Open AR",
+            "type": "INTEGER",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "open-ap-minor",
+            "entityKey": "business-partners.partner-netting",
+            "label": "Open AP",
+            "type": "INTEGER",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "nettable-minor",
+            "entityKey": "business-partners.partner-netting",
+            "label": "Nettable",
+            "type": "INTEGER",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "position",
+            "entityKey": "business-partners.partner-netting",
+            "label": "Position",
+            "type": "SELECT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "netting-positions"
+          },
+          {
+            "fieldKey": "net-amount-minor",
+            "entityKey": "business-partners.partner-netting",
+            "label": "Net amount",
+            "type": "INTEGER",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "org-unit-id",
+            "entityKey": "business-partners.partner-netting",
+            "label": "Owning unit",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          }
+        ],
+        "relationships": [],
+        "references": [
+          {
+            "referenceKey": "netting-positions",
+            "referenceType": "VALUE_LIST",
+            "staticValues": [
+              {
+                "value": "NET_RECEIVABLE",
+                "label": "Net receivable"
+              },
+              {
+                "value": "NET_PAYABLE",
+                "label": "Net payable"
+              },
+              {
+                "value": "SETTLED",
+                "label": "Settled"
+              }
+            ]
+          }
+        ],
+        "validationRules": [],
+        "views": [
+          {
+            "viewKey": "partner-netting",
+            "label": "AR/AP netting",
+            "mode": "LIST",
+            "device": "ALL",
+            "searchFields": [
+              "partner-name"
+            ],
+            "defaultSortField": "partner-name",
+            "defaultSortDirection": "ASC",
+            "tabs": [
+              {
+                "tabKey": "netting",
+                "label": "Netting",
+                "position": 0,
+                "level": 0,
+                "targetEntityKey": "business-partners.partner-netting",
+                "sections": [],
+                "fields": [
+                  {
+                    "fieldKey": "partner-name",
+                    "position": 0,
+                    "span": 6,
+                    "componentKey": "text-input"
+                  },
+                  {
+                    "fieldKey": "currency",
+                    "position": 1,
+                    "span": 2,
+                    "componentKey": "text-input"
+                  },
+                  {
+                    "fieldKey": "position",
+                    "position": 2,
+                    "span": 2,
+                    "componentKey": "select"
+                  },
+                  {
+                    "fieldKey": "open-ar-minor",
+                    "position": 3,
+                    "span": 3,
+                    "componentKey": "number-input"
+                  },
+                  {
+                    "fieldKey": "open-ap-minor",
+                    "position": 4,
+                    "span": 3,
+                    "componentKey": "number-input"
+                  },
+                  {
+                    "fieldKey": "nettable-minor",
+                    "position": 5,
+                    "span": 3,
+                    "componentKey": "number-input"
+                  },
+                  {
+                    "fieldKey": "net-amount-minor",
+                    "position": 6,
+                    "span": 3,
+                    "componentKey": "number-input"
+                  },
+                  {
+                    "fieldKey": "org-unit-id",
+                    "position": 7,
+                    "span": 3,
+                    "componentKey": "text-input"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "navigation": [],
+        "actions": [],
+        "messages": []
+      }
+    }
+  },
+  {
+    "contractVersion": "1.0",
+    "window": {
+      "route": "/business-partners",
       "label": "Partners",
       "description": "Customers, vendors and employees as one counterparty.",
       "readPermission": "business-partners:read"

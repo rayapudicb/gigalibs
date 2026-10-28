@@ -103,5 +103,7 @@ spec:
       - { path: 'v1/partners/{id}/credit-holds', GET: business-partners.credit.read, POST: business-partners.credit.manage }
       - { path: 'v1/partners/{id}/credit-holds/{id}/release', POST: business-partners.credit.manage }
       - { path: 'v1/partners/{id}/credit-status', GET: business-partners.credit.read }
+      - { path: 'v1/partners/{id}/credit-status/explain', GET: business-partners.credit.read }
+      - { path: 'v1/partners/{id}/bank-accounts', GET: business-partners.accounts.read, POST: business-partners.accounts.manage }
       - { path: 'v1/partners/{id}/netting', GET: business-partners.credit.read }
       - { path: 'v1/credit-check', POST: business-partners.credit.read }
