@@ -268,7 +268,8 @@ export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGat
         "template": "v1/partners/{id}/customer-accounts",
         "pattern": "^v1/partners/[0-9a-fA-F-]{36}/customer-accounts$",
         "methods": {
-          "POST": "business-partners.accounts.manage"
+          "POST": "business-partners.accounts.manage",
+          "PATCH": "business-partners.accounts.manage"
         }
       },
       {

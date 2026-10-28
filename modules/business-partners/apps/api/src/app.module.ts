@@ -17,6 +17,12 @@ import {
   loadCreditInboxConfig,
 } from './credit/credit-inbox.guard.js';
 import { CreditInboxService } from './credit/credit-inbox.service.js';
+import { CreditCheckCommandController } from './credit/credit-check-command.controller.js';
+import {
+  CREDIT_CHECK_COMMAND_CONFIG,
+  CreditCheckCommandGuard,
+  loadCreditCheckCommandConfig,
+} from './credit/credit-check-command.guard.js';
 import { CreditCheckController } from './credit/credit-check.controller.js';
 import { CreditCheckService } from './credit/credit-check.service.js';
 import { CreditHoldsController } from './credit/holds.controller.js';
@@ -53,6 +59,7 @@ const BusinessPartnersRecordController = createRecordController({
     PartyInboxController,
     PartnersController,
     CreditInboxController,
+    CreditCheckCommandController,
     CreditCheckController,
     CreditHoldsController,
     CreditStatusController,
@@ -64,12 +71,14 @@ const BusinessPartnersRecordController = createRecordController({
     runtimeConfigProvider,
     { provide: PARTY_INBOX_CONFIG, useFactory: loadPartyInboxConfig },
     { provide: CREDIT_INBOX_CONFIG, useFactory: loadCreditInboxConfig },
+    { provide: CREDIT_CHECK_COMMAND_CONFIG, useFactory: loadCreditCheckCommandConfig },
     DatabaseService,
     AuthorizationGuard,
     PartyInboxGuard,
     PartyInboxService,
     PartnersService,
     CreditInboxGuard,
+    CreditCheckCommandGuard,
     CreditInboxService,
     CreditCheckService,
     CreditHoldsService,

@@ -1,10 +1,10 @@
 import {
   CommandContext, CurrentPrincipal, type ModuleCommandContext, type ModulePrincipal, RequirePermissions,
 } from '@gigalibs/module-sdk';
-import { Body, Controller, Get, Param, Post, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Res, UseGuards } from '@nestjs/common';
 import { AuthorizationGuard } from '../authorization.js';
 import { errors } from '../records/records.service.js';
-import { CreateCustomerAccountV1, CreateVendorAccountV1 } from './accounts.contract.js';
+import { CreateCustomerAccountV1, CreateVendorAccountV1, UpdateCustomerAccountV1 } from './accounts.contract.js';
 import { PartnerAccountsService } from './accounts.service.js';
 
 interface ReplayResponse {
@@ -35,6 +35,25 @@ export class PartnerAccountsController {
     errors.assertUuid(partyId, 'partyId');
     const { account, replayed } = await this.accounts.createCustomer(context, partyId, errors.parseInput(CreateCustomerAccountV1, body));
     response.status(replayed ? 200 : 201);
+    if (replayed) response.setHeader('Idempotency-Replayed', 'true');
+    return account;
+  }
+
+  @Patch('customer-accounts')
+  @RequirePermissions('business-partners.accounts.manage')
+  async updateCustomer(
+    @CommandContext() context: ModuleCommandContext,
+    @Param('partyId') partyId: string,
+    @Body() body: unknown,
+    @Res({ passthrough: true }) response: ReplayResponse,
+  ) {
+    errors.assertUuid(partyId, 'partyId');
+    const { account, replayed } = await this.accounts.updateCustomer(
+      context,
+      partyId,
+      errors.parseInput(UpdateCustomerAccountV1, body),
+    );
+    response.status(replayed ? 200 : 200);
     if (replayed) response.setHeader('Idempotency-Replayed', 'true');
     return account;
   }

@@ -64,7 +64,7 @@ try {
     await replica.complete(client, 'tenant-alpha', versionId, header, units.length);
   });
 
-  const orders = new OrderService(db);
+  const orders = new OrderService(db, { check: async () => ({ decision: 'APPROVED' }) } as never);
   const tenantId = 'tenant-alpha';
   const subject = 'usr-sales';
   const principal = tenant(tenantId, subject);

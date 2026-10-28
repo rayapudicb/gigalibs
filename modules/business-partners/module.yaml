@@ -98,7 +98,7 @@ spec:
       - { path: 'v1/records', GET: business-partners.records.read, POST: business-partners.records.manage }
       - { path: 'v1/records/{id}', GET: business-partners.records.read, PATCH: business-partners.records.manage }
       - { path: 'v1/partners/{id}/accounts', GET: business-partners.accounts.read }
-      - { path: 'v1/partners/{id}/customer-accounts', POST: business-partners.accounts.manage }
+      - { path: 'v1/partners/{id}/customer-accounts', POST: business-partners.accounts.manage, PATCH: business-partners.accounts.manage }
       - { path: 'v1/partners/{id}/vendor-accounts', POST: business-partners.accounts.manage }
       - { path: 'v1/partners/{id}/credit-holds', GET: business-partners.credit.read, POST: business-partners.credit.manage }
       - { path: 'v1/partners/{id}/credit-holds/{id}/release', POST: business-partners.credit.manage }

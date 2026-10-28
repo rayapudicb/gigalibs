@@ -10,6 +10,7 @@ import {
 } from '@gigalibs/module-sdk';
 import { SCHEMA } from '../config.js';
 import { creditExposureRecordAdapter } from '../credit/credit-exposure-record-adapter.js';
+import { creditHoldsRecordAdapter } from '../credit/credit-holds-record-adapter.js';
 import type { DatabaseService } from '../database.service.js';
 
 const READ = 'business-partners:read';
@@ -100,7 +101,7 @@ export function businessPartnersRecordDispatcher(
   idempotency: IdempotencyStore,
 ): RecordDispatcher {
   return new RecordDispatcher(
-    [partnersRecordAdapter(database), creditExposureRecordAdapter(database)],
+    [partnersRecordAdapter(database), creditExposureRecordAdapter(database), creditHoldsRecordAdapter(database)],
     [],
     idempotency,
   );

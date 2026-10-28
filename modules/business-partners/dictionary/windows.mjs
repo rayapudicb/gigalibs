@@ -24,6 +24,11 @@ const CREDIT_RISK_STATUSES = [
   ['RECONCILE', 'Needs reconciliation'],
 ];
 
+const HOLD_ORIGINS = [
+  ['MANUAL', 'Manual'],
+  ['EXPOSURE', 'Exposure'],
+];
+
 export function windowSource(builderFor) {
   const { entity, field, values, tab, dictionary, window } = builderFor({
     route: '/business-partners',
@@ -61,6 +66,19 @@ export function windowSource(builderFor) {
     field(CREDIT, 'exposure-minor', 'Exposure (minor units)', 'INTEGER', { readOnly: true }),
     field(CREDIT, 'available-minor', 'Available (minor units)', 'INTEGER', { readOnly: true }),
     field(CREDIT, 'org-unit-id', 'Owning unit', 'TEXT', { readOnly: true }),
+  ];
+
+  const HOLDS = 'business-partners.credit-holds';
+  const holdFields = [
+    field(HOLDS, 'partner-name', 'Partner', 'TEXT', { readOnly: true }),
+    field(HOLDS, 'party-id', 'Party id', 'TEXT', { readOnly: true }),
+    field(HOLDS, 'org-unit-id', 'Owning unit', 'TEXT', { readOnly: true }),
+    field(HOLDS, 'currency', 'Currency', 'TEXT', { readOnly: true }),
+    field(HOLDS, 'origin', 'Origin', 'SELECT', { readOnly: true, ref: 'hold-origins' }),
+    field(HOLDS, 'reason', 'Reason', 'TEXT', { readOnly: true }),
+    field(HOLDS, 'status', 'Status', 'TEXT', { readOnly: true }),
+    field(HOLDS, 'created-at', 'Placed at', 'TEXT', { readOnly: true }),
+    field(HOLDS, 'created-by', 'Placed by', 'TEXT', { readOnly: true }),
   ];
 
   return {
@@ -105,6 +123,29 @@ export function windowSource(builderFor) {
             ['org-unit-id', 3],
           ], creditFields),
         ], { search: ['partner-name'], sort: 'utilization-pct', direction: 'DESC' }),
+      ]),
+    ),
+    'credit-holds': window(
+      'credit-holds',
+      'Credit holds',
+      'Credit holds',
+      'Active credit holds across the tenant — triage and release with maker-checker.',
+      'business-partners:read',
+      dictionary('credit-holds', 'Credit holds', HOLDS, [entity(HOLDS, 'Credit holds')], holdFields, [], [
+        values('hold-origins', HOLD_ORIGINS),
+      ], [
+        view('credit-holds', 'Credit holds', [
+          tab('hold', 'Hold', 0, HOLDS, [
+            ['partner-name', 6],
+            ['currency', 2],
+            ['origin', 2],
+            ['status', 2],
+            ['reason', 8],
+            ['org-unit-id', 4],
+            ['created-at', 4],
+            ['created-by', 4],
+          ], holdFields),
+        ], { search: ['partner-name', 'reason'], sort: 'created-at', direction: 'DESC' }),
       ]),
     ),
   };

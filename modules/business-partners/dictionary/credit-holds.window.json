@@ -1,0 +1,233 @@
+{
+  "contractVersion": "1.0",
+  "window": {
+    "route": "/business-partners",
+    "label": "Credit holds",
+    "description": "Active credit holds across the tenant \u2014 triage and release with maker-checker.",
+    "readPermission": "business-partners:read"
+  },
+  "definition": {
+    "kind": "APPLICATION_DICTIONARY",
+    "contractVersion": "1.0",
+    "moduleKey": "business-partners",
+    "entityKey": "credit-holds",
+    "surfaceKey": "credit-holds",
+    "title": "Credit holds",
+    "dictionary": {
+      "packageKey": "credit-holds-module-baseline",
+      "name": "Credit holds",
+      "version": "1.0.0",
+      "moduleKey": "business-partners",
+      "targetEntityKey": "business-partners.credit-holds",
+      "entities": [
+        {
+          "entityKey": "business-partners.credit-holds",
+          "moduleKey": "business-partners",
+          "label": "Credit holds",
+          "ownership": "MODULE_CORE",
+          "primaryKeyField": "id",
+          "isVersioned": true,
+          "isAuditLogged": true,
+          "isSoftDeletable": false
+        }
+      ],
+      "fields": [
+        {
+          "fieldKey": "partner-name",
+          "entityKey": "business-partners.credit-holds",
+          "label": "Partner",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "party-id",
+          "entityKey": "business-partners.credit-holds",
+          "label": "Party id",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "org-unit-id",
+          "entityKey": "business-partners.credit-holds",
+          "label": "Owning unit",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "currency",
+          "entityKey": "business-partners.credit-holds",
+          "label": "Currency",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "origin",
+          "entityKey": "business-partners.credit-holds",
+          "label": "Origin",
+          "type": "SELECT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "hold-origins"
+        },
+        {
+          "fieldKey": "reason",
+          "entityKey": "business-partners.credit-holds",
+          "label": "Reason",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "status",
+          "entityKey": "business-partners.credit-holds",
+          "label": "Status",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "created-at",
+          "entityKey": "business-partners.credit-holds",
+          "label": "Placed at",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "created-by",
+          "entityKey": "business-partners.credit-holds",
+          "label": "Placed by",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        }
+      ],
+      "relationships": [],
+      "references": [
+        {
+          "referenceKey": "hold-origins",
+          "referenceType": "VALUE_LIST",
+          "staticValues": [
+            {
+              "value": "MANUAL",
+              "label": "Manual"
+            },
+            {
+              "value": "EXPOSURE",
+              "label": "Exposure"
+            }
+          ]
+        }
+      ],
+      "validationRules": [],
+      "views": [
+        {
+          "viewKey": "credit-holds",
+          "label": "Credit holds",
+          "mode": "LIST",
+          "device": "ALL",
+          "searchFields": [
+            "partner-name",
+            "reason"
+          ],
+          "defaultSortField": "created-at",
+          "defaultSortDirection": "DESC",
+          "tabs": [
+            {
+              "tabKey": "hold",
+              "label": "Hold",
+              "position": 0,
+              "level": 0,
+              "targetEntityKey": "business-partners.credit-holds",
+              "sections": [],
+              "fields": [
+                {
+                  "fieldKey": "partner-name",
+                  "position": 0,
+                  "span": 6,
+                  "componentKey": "text-input"
+                },
+                {
+                  "fieldKey": "currency",
+                  "position": 1,
+                  "span": 2,
+                  "componentKey": "text-input"
+                },
+                {
+                  "fieldKey": "origin",
+                  "position": 2,
+                  "span": 2,
+                  "componentKey": "select"
+                },
+                {
+                  "fieldKey": "status",
+                  "position": 3,
+                  "span": 2,
+                  "componentKey": "text-input"
+                },
+                {
+                  "fieldKey": "reason",
+                  "position": 4,
+                  "span": 8,
+                  "componentKey": "text-input"
+                },
+                {
+                  "fieldKey": "org-unit-id",
+                  "position": 5,
+                  "span": 4,
+                  "componentKey": "text-input"
+                },
+                {
+                  "fieldKey": "created-at",
+                  "position": 6,
+                  "span": 4,
+                  "componentKey": "text-input"
+                },
+                {
+                  "fieldKey": "created-by",
+                  "position": 7,
+                  "span": 4,
+                  "componentKey": "text-input"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "navigation": [],
+      "actions": [],
+      "messages": []
+    }
+  }
+}

@@ -8,7 +8,9 @@ import pg from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { PartyInboxService } from './party/party-inbox.service.js';
 import { PartnerAccountsService } from './accounts/accounts.service.js';
+import { CreditCheckService } from './credit/credit-check.service.js';
 import { CreditInboxService } from './credit/credit-inbox.service.js';
+import { markFeedReady } from './credit/feed-marks.js';
 import { CreditHoldsService } from './credit/holds.service.js';
 import { CreditStatusService } from './credit/status.service.js';
 import { calculateCreditExposure } from './credit/exposure.js';
@@ -435,5 +437,91 @@ describe.skipIf(!enabled)('Business Partner migration on isolated PostgreSQL 16'
     expect(evidence.audit).toBe(2);
     expect(evidence.outbox).toHaveLength(2);
     expect(evidence.outbox.every((row) => PartnerCreditHoldV1Schema.safeParse(row.payload).success)).toBe(true);
+  });
+
+  it('runs signed credit-check with idempotent outcomes and account limit updates', async () => {
+    const tenantId = 'tenant-credit-check-proof';
+    const partyId = randomUUID();
+    const accountId = randomUUID();
+    const database = {
+      withTenantTransaction: async <T>(tenant: string, work: (client: pg.Client) => Promise<T>): Promise<T> => {
+        await runtime.query('BEGIN');
+        try {
+          await runtime.query(`SELECT set_config('app.tenant_id', $1, true)`, [tenant]);
+          const result = await work(runtime);
+          await runtime.query('COMMIT');
+          return result;
+        } catch (error) { await runtime.query('ROLLBACK'); throw error; }
+      },
+    };
+    await database.withTenantTransaction(tenantId, async (client) => {
+      await client.query(
+        `INSERT INTO ${schema}.org_replica_versions
+         (tenant_id, version_id, tree_id, tree_kind, version_number, checksum, status, unit_count, ready_at)
+         VALUES ($1, 'cc-v1', 'cc-tree', 'PRIMARY', 1, $2, 'READY', 1, now())`,
+        [tenantId, `sha256:${'c'.repeat(64)}`],
+      );
+      await client.query(
+        `INSERT INTO ${schema}.org_replica_units
+         (tenant_id, version_id, unit_id, code, name, sort_order, status, holds_records, type_code)
+         VALUES ($1, 'cc-v1', 'north', 'N', 'North', 0, 'ACTIVE', true, 'BRANCH')`, [tenantId],
+      );
+      await client.query(
+        `INSERT INTO ${schema}.org_replica_closure
+         (tenant_id, version_id, ancestor_unit_id, descendant_unit_id, depth)
+         VALUES ($1, 'cc-v1', 'north', 'north', 0)`, [tenantId],
+      );
+      await client.query(
+        `INSERT INTO ${schema}.party_references
+         (tenant_id, party_id, source_version, code, display_name, party_type, status)
+         VALUES ($1, $2, 1, 'CC-1', 'Credit Check Co', 'ORGANIZATION', 'ACTIVE')`, [tenantId, partyId],
+      );
+      await client.query(
+        `INSERT INTO ${schema}.party_role_references
+         (tenant_id, party_id, role_type, status, source_version)
+         VALUES ($1, $2, 'CUSTOMER', 'ACTIVE', 1)`, [tenantId, partyId],
+      );
+    });
+    const finance = { check: async () => ({ accountId, accountingBookId: randomUUID(), accountClass: 'ASSET' as const, version: 1 }) };
+    const accounts = new PartnerAccountsService(database as never, finance as never);
+    const creditCheck = new CreditCheckService(database as never);
+    const principal: ModulePrincipal = {
+      tenantId, subject: 'credit-clerk', sessionId: 'session-1', authVersion: 1,
+      permissions: ['business-partners.accounts.manage', 'business-partners.credit.read'],
+      roles: ['TENANT_ADMIN'], persona: 'TENANT_ADMIN',
+      organization: { mode: 'UNITS', tree_version: 'cc-v1', read_roots: ['north'], write_roots: ['north'] },
+      departmentScope: { mode: 'ALL' }, placeScope: { mode: 'ALL' },
+    };
+    const context: ModuleCommandContext = { principal, correlationId: randomUUID() };
+    const createKey = randomUUID();
+    await accounts.createCustomer(context, partyId, {
+      requestKey: createKey, orgUnitId: 'north', currencyCode: 'USD', accountId,
+      termsVersion: 'terms-v1', creditLimitMinor: '5000',
+    });
+    await database.withTenantTransaction(tenantId, async (client) => {
+      await markFeedReady(client, tenantId, partyId, 'north', 'USD', 'OPEN_AR');
+      await markFeedReady(client, tenantId, partyId, 'north', 'USD', 'UNINVOICED_ORDER');
+    });
+    const checkInput = {
+      requestKey: randomUUID(), partyId, orgUnitId: 'north', currencyCode: 'USD',
+      additionalExposureMinor: '6000',
+    };
+    const blocked = await creditCheck.check(context, checkInput);
+    expect(blocked).toMatchObject({ decision: 'OVER_LIMIT', complete: true });
+    expect(await creditCheck.check(context, checkInput)).toEqual(blocked);
+    const updateKey = randomUUID();
+    const updated = await accounts.updateCustomer(context, partyId, {
+      requestKey: updateKey, orgUnitId: 'north', currencyCode: 'USD', expectedVersion: 1,
+      creditLimitMinor: '20000',
+    });
+    expect(updated.account).toMatchObject({ creditLimitMinor: '20000', version: 2 });
+    expect(await accounts.updateCustomer(context, partyId, {
+      requestKey: updateKey, orgUnitId: 'north', currencyCode: 'USD', expectedVersion: 1,
+      creditLimitMinor: '20000',
+    })).toMatchObject({ replayed: true });
+    const approved = await creditCheck.check(context, {
+      ...checkInput, requestKey: randomUUID(), additionalExposureMinor: '6000',
+    });
+    expect(approved).toMatchObject({ decision: 'APPROVED', complete: true });
   });
 });

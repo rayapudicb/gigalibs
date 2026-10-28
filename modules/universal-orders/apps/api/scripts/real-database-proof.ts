@@ -89,7 +89,7 @@ try {
     });
   }
 
-  const orderService = new OrderService(db);
+  const orderService = new OrderService(db, { check: async () => ({ decision: 'APPROVED' }) } as never);
   const tenantA = tenant('tenant-alpha', 'usr-sales-alpha');
   const tenantB = tenant('tenant-beta', 'usr-sales-beta');
   const customerPartyId = randomUUID();

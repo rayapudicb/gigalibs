@@ -17,13 +17,38 @@ import {
 import type { ModulePrincipal } from '@gigalibs/module-sdk';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import type { PoolClient } from 'pg';
+import {
+  BusinessPartnersCreditCheckClient,
+  isOrdersCreditCheckConfigured,
+} from '../credit/business-partners-credit-check.client.js';
 import { DatabaseService } from '../database.service.js';
 import { assertWritableUnit, canReadUnit, orgReadCondition, resolveOrganizationAccess } from '../organization/organization-scope.js';
 import { requireActiveCustomerParty } from './party-reference.js';
 
+interface OrderLineExposureRow {
+  ordered_quantity: string;
+  invoiced_quantity: string;
+  line_total_minor: string;
+}
+
+export function computePendingUninvoicedMinor(lines: readonly OrderLineExposureRow[]): bigint {
+  let total = 0n;
+  for (const line of lines) {
+    const ordered = ExactDecimal.toScaledBigInt(line.ordered_quantity);
+    const invoiced = ExactDecimal.toScaledBigInt(line.invoiced_quantity);
+    const lineTotal = BigInt(line.line_total_minor);
+    if (ordered <= 0n || invoiced >= ordered) continue;
+    total += (lineTotal * (ordered - invoiced)) / ordered;
+  }
+  return total;
+}
+
 @Injectable()
 export class OrderService {
-  constructor(private readonly database: DatabaseService) {}
+  constructor(
+    private readonly database: DatabaseService,
+    private readonly businessPartnersCreditCheck: BusinessPartnersCreditCheckClient,
+  ) {}
 
   // ─── 1. Sales Quotations ───────────────────────────────────────────────────
 
@@ -493,6 +518,30 @@ export class OrderService {
       assertWritableUnit(access, order.rows[0].org_unit_id);
       if (order.rows[0].status !== 'DRAFT' && order.rows[0].status !== 'SUBMITTED') {
         throw new BadRequestException(`Order cannot be confirmed in state ${order.rows[0].status}`);
+      }
+
+      if (isOrdersCreditCheckConfigured()) {
+        const exposureLines = await client.query<OrderLineExposureRow>(
+          `SELECT ordered_quantity::text, invoiced_quantity::text, line_total_minor::text
+             FROM gigalibs_orders.sales_order_lines
+            WHERE tenant_id = $1 AND order_id = $2`,
+          [tenantId, orderId],
+        );
+        const additionalExposureMinor = computePendingUninvoicedMinor(exposureLines.rows).toString();
+        const credit = await this.businessPartnersCreditCheck.check(principal, {
+          requestKey: randomUUID(),
+          partyId: order.rows[0].customer_party_id,
+          orgUnitId: order.rows[0].org_unit_id,
+          currencyCode: order.rows[0].currency_code.trim(),
+          additionalExposureMinor,
+        });
+        if (credit.decision !== 'APPROVED') {
+          throw new BadRequestException({
+            code: 'ORDERS_CREDIT_BLOCKED',
+            decision: credit.decision,
+            activeHoldId: credit.activeHoldId,
+          });
+        }
       }
 
       const res = await client.query(

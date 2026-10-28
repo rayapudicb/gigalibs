@@ -148,7 +148,7 @@ integration('Orders organization scope (isolated PostgreSQL)', () => {
         );
       }
     });
-    service = new OrderService(db);
+    service = new OrderService(db, { check: async () => ({ decision: 'APPROVED' }) } as never);
   }, 60_000);
 
   afterAll(async () => {

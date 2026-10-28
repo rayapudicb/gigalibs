@@ -14,6 +14,7 @@ import { OrderController } from './orders/orders.controller.js';
 import { OrderService } from './orders/orders.service.js';
 import { OrganizationController } from './organization/organization.controller.js';
 import { OrdersArOutboxRelay } from './relay/orders-ar-relay.js';
+import { BusinessPartnersCreditCheckClient } from './credit/business-partners-credit-check.client.js';
 import { OrdersCreditUninvoicedRelay } from './relay/orders-credit-relay.js';
 
 const OrdersRecordController = createRecordController({
@@ -28,6 +29,7 @@ const OrdersRecordController = createRecordController({
     DatabaseService,
     AuthorizationGuard,
     OrderService,
+    BusinessPartnersCreditCheckClient,
     OrdersArOutboxRelay,
     OrdersCreditUninvoicedRelay,
     {

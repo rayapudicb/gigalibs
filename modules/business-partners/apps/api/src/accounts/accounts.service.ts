@@ -9,11 +9,11 @@ import {
   type ModuleCommandContext,
   type ModulePrincipal,
 } from '@gigalibs/module-sdk';
-import { ConflictException, Injectable, ServiceUnavailableException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
 import type { PoolClient } from 'pg';
 import { SCHEMA, TOPIC } from '../config.js';
 import { DatabaseService } from '../database.service.js';
-import type { CreateCustomerAccount, CreateVendorAccount, PartnerAccountV1 } from './accounts.contract.js';
+import type { CreateCustomerAccount, CreateVendorAccount, PartnerAccountV1, UpdateCustomerAccount } from './accounts.contract.js';
 import { FinanceAccountReferenceClient } from './finance-account-reference.client.js';
 import { seedPrepaymentFeedReady } from '../credit/feed-marks.js';
 
@@ -51,6 +51,71 @@ export class PartnerAccountsService {
 
   async createVendor(context: ModuleCommandContext, partyId: string, input: CreateVendorAccount): Promise<{ account: PartnerAccountV1; replayed: boolean }> {
     return this.create('VENDOR', context, partyId, input);
+  }
+
+  async updateCustomer(
+    context: ModuleCommandContext,
+    partyId: string,
+    input: UpdateCustomerAccount,
+  ): Promise<{ account: PartnerAccountV1; replayed: boolean }> {
+    const { tenantId } = context.principal;
+    const operation = 'UPDATE_CUSTOMER_ACCOUNT';
+    const requestHash = createHash('sha256').update(JSON.stringify({ operation, partyId, input })).digest('hex');
+    return this.database.withTenantTransaction(tenantId, async (client) => {
+      await client.query('SELECT pg_advisory_xact_lock(hashtextextended($1, 0))',
+        [`${SCHEMA}:${tenantId}:customer-account:${input.requestKey}`]);
+      await this.authorize(client, context.principal, input.orgUnitId);
+      const replay = await this.outcome(client, tenantId, input.requestKey, requestHash);
+      if (replay) return { account: replay, replayed: true };
+
+      const current = await client.query<AccountRow>(
+        `SELECT party_id, org_unit_id, currency_code, receivable_account_ref AS account_id,
+                receivable_account_version AS account_version, accounting_book_id,
+                terms_version, credit_limit_minor::text, status, version
+           FROM ${SCHEMA}.partner_customer_acct
+          WHERE tenant_id = $1 AND party_id = $2 AND org_unit_id = $3 AND currency_code = $4
+          FOR UPDATE`,
+        [tenantId, partyId, input.orgUnitId, input.currencyCode],
+      );
+      const row = current.rows[0];
+      if (!row || row.status !== 'ACTIVE') throw new NotFoundException({ code: 'BUSINESS_PARTNERS_ACCOUNT_NOT_FOUND' });
+      if (Number(row.version) !== input.expectedVersion) {
+        throw new ConflictException({ code: 'BUSINESS_PARTNERS_VERSION_CONFLICT' });
+      }
+
+      const creditLimitMinor = input.creditLimitMinor ?? row.credit_limit_minor;
+      const termsVersion = input.termsVersion ?? row.terms_version;
+      const updated = await client.query<AccountRow>(
+        `UPDATE ${SCHEMA}.partner_customer_acct
+            SET credit_limit_minor = $5, terms_version = $6, version = version + 1, updated_by = $7
+          WHERE tenant_id = $1 AND party_id = $2 AND org_unit_id = $3 AND currency_code = $4
+          RETURNING party_id, org_unit_id, currency_code, receivable_account_ref AS account_id,
+                    receivable_account_version AS account_version, accounting_book_id,
+                    terms_version, credit_limit_minor::text, status, version`,
+        [tenantId, partyId, input.orgUnitId, input.currencyCode, creditLimitMinor, termsVersion, context.principal.subject],
+      );
+      const account = toAccount('CUSTOMER', updated.rows[0]!);
+      await recordMutation(client, { schema: SCHEMA, topic: TOPIC }, context, {
+        action: 'PARTNER_CUSTOMER_ACCOUNT_UPDATED',
+        aggregateType: 'customer_account',
+        aggregateId: `${partyId}:${input.orgUnitId}:${input.currencyCode}`,
+        aggregateVersion: account.version,
+        payload: {
+          partyId,
+          orgUnitId: input.orgUnitId,
+          currencyCode: input.currencyCode,
+          creditLimitMinor: account.creditLimitMinor,
+          termsVersion: account.termsVersion,
+        },
+      });
+      await client.query(
+        `INSERT INTO ${SCHEMA}.partner_account_action_outcomes
+           (tenant_id, request_key, operation, request_hash, result)
+         VALUES ($1, $2, $3, $4, $5::jsonb)`,
+        [tenantId, input.requestKey, operation, requestHash, JSON.stringify(account)],
+      );
+      return { account, replayed: false };
+    });
   }
 
   async list(principal: ModulePrincipal, partyId: string): Promise<{ items: PartnerAccountV1[] }> {

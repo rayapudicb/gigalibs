@@ -16,8 +16,23 @@ const BaseAccountCreate = z.object({
 export const CreateCustomerAccountV1 = BaseAccountCreate.extend({ creditLimitMinor: MoneyMinor }).strict();
 export const CreateVendorAccountV1 = BaseAccountCreate.strict();
 
+export const UpdateCustomerAccountV1 = z
+  .object({
+    requestKey: z.uuid(),
+    orgUnitId: z.string().min(1).max(64),
+    currencyCode: z.string().regex(/^[A-Z]{3}$/),
+    expectedVersion: z.number().int().positive(),
+    creditLimitMinor: MoneyMinor.optional(),
+    termsVersion: z.string().min(1).max(128).optional(),
+  })
+  .strict()
+  .refine((value) => value.creditLimitMinor !== undefined || value.termsVersion !== undefined, {
+    message: 'At least one of creditLimitMinor or termsVersion is required.',
+  });
+
 export type CreateCustomerAccount = z.infer<typeof CreateCustomerAccountV1>;
 export type CreateVendorAccount = z.infer<typeof CreateVendorAccountV1>;
+export type UpdateCustomerAccount = z.infer<typeof UpdateCustomerAccountV1>;
 
 export interface PartnerAccountV1 {
   readonly kind: 'CUSTOMER' | 'VENDOR';

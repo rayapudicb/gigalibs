@@ -27,9 +27,13 @@ The kernel Party remains the identity, contact, location and role authority. Bus
 
 ## Open before Built
 
-- Deliver Orders uninvoiced balances, prepayment/AP netting and source watermarks to the immutable credit ledger; add hold document actions, signed credit checks, block flow, reconciliation and tenant-negative tests. Historical AR rows with NULL owner or Party mapping must fail credit approval until reconciled from their source document.
-- Certify the AR event versioning and legacy manual-invoice compatibility, finish organization scope on AR financial actions beyond invoice get/list/create/update/issue, and run the AR/Orders relay through a full HTTP journey with owner-managed configuration.
-- Complete account edits, terms/configuration authority, kernel Party/contact/location composition, metadata windows, credit gauge, bank vault flow, netting view, governed AI explanation and Playwright journey. Then run clean `pnpm verify`, complete the card and make one module-completion commit.
+- Vendor-bill **OPEN_AP** feed (netting AP side still 0 by design until procurement slice); bank vault routes/UI; partner detail split-screen + live gauge chrome beyond metadata list windows; governed AI hold explainer when a source exists.
+- Static **module conformance** (2026-10-28): S9 relay inbox controllers, S10 custom audit/outbox on credit/party inbox paths, S11 parser false-positives on `credit_feed_marks` / `credit_source_positions` — address or exempt before `--live --record`.
+- **Live conformance**, full HTTP owner-config journey, and **clean full `pnpm verify`** (repo still has pre-existing audit/test failures unrelated to BP). One module-completion commit after gate passes.
+
+## Slice added 2026-10-28 (closing pass)
+
+- Credit-Hold queue window (`credit-holds` record adapter), customer account PATCH, Orders confirm credit gate via relay-signed internal credit-check command, integration test for credit-check idempotency + account update (opt-in PG), unit test for uninvoiced exposure math. `@gigalibs/business-partners-api` build and module unit tests pass (26/26; PG proofs skipped unless env set).
 
 ## Migration compatibility and roll-forward
 
