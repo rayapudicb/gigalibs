@@ -72,7 +72,7 @@ describe('Universal Business Partner runtime configuration', () => {
     }
   };
   it('loads the BUSINESS_PARTNERS_* variables', () => {
-    expect(load()).toMatchObject({ platformContextAudience: AUDIENCE, expectedMigrationVersion: 3 });
+    expect(load()).toMatchObject({ platformContextAudience: AUDIENCE, expectedMigrationVersion: 4 });
   });
   it('refuses another audience', () => {
     expect(() => load({ BUSINESS_PARTNERS_PLATFORM_CONTEXT_AUDIENCE: 'gigalibs-other-api' })).toThrow(AUDIENCE);
