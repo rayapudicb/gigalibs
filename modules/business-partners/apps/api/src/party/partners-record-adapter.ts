@@ -9,7 +9,7 @@ import {
   type RecordValues,
 } from '@gigalibs/module-sdk';
 import { SCHEMA } from '../config.js';
-import { DatabaseService } from '../database.service.js';
+import type { DatabaseService } from '../database.service.js';
 
 const READ = 'business-partners:read';
 const unwritable: RecordFieldPolicy = { writable: false };
