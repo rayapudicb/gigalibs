@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { MoneyMinorSchema } from '../catalogue/index.js';
+import { PositiveDecimalQuantitySchema, ReservationTypeSchema } from '../inventory/inventory.js';
 
 // ─── Scaled-BigInt Exact Decimal Arithmetic Utility ──────────────────────────
 // Bounded to 6 decimal places (scale factor = 1,000,000n). Eliminates IEEE 754 floats.
@@ -165,6 +166,57 @@ export const InventoryAtpCheckResponseV1Schema = z
   })
   .strict();
 export type InventoryAtpCheckResponseV1 = z.infer<typeof InventoryAtpCheckResponseV1Schema>;
+
+const InventoryDemandTypeSchema = z.enum(['WORK_ORDER', 'SALES_ORDER', 'TRANSFER', 'PROJECT']);
+
+/** Gateway: `inventory.reserve/release` — reserve branch (Material Ledger S2). */
+export const InventoryReserveRequestV1Schema = z
+  .object({
+    commandKey: z.string().uuid(),
+    action: z.literal('RESERVE'),
+    reservationType: ReservationTypeSchema.default('HARD'),
+    demandType: InventoryDemandTypeSchema,
+    demandReferenceId: z.string().min(1).max(128),
+    demandLineId: z.string().max(128).optional().nullable(),
+    warehouseId: z.string().uuid(),
+    locationId: z.string().uuid().optional().nullable(),
+    productId: z.string().uuid(),
+    uomId: z.string().uuid(),
+    quantity: PositiveDecimalQuantitySchema,
+    idempotencyKey: z.string().max(128).optional().nullable(),
+  })
+  .strict();
+export type InventoryReserveRequestV1 = z.infer<typeof InventoryReserveRequestV1Schema>;
+
+/** Gateway: `inventory.reserve/release` — release branch (Material Ledger S2). */
+export const InventoryReleaseRequestV1Schema = z
+  .object({
+    commandKey: z.string().uuid(),
+    action: z.literal('RELEASE'),
+    reservationId: z.string().uuid(),
+  })
+  .strict();
+export type InventoryReleaseRequestV1 = z.infer<typeof InventoryReleaseRequestV1Schema>;
+
+export const InventoryReserveReleaseRequestV1Schema = z.discriminatedUnion('action', [
+  InventoryReserveRequestV1Schema,
+  InventoryReleaseRequestV1Schema,
+]);
+export type InventoryReserveReleaseRequestV1 = z.infer<typeof InventoryReserveReleaseRequestV1Schema>;
+
+export const InventoryReserveReleaseOutcomeSchema = z.enum(['RESERVED', 'RELEASED', 'REJECTED']);
+export type InventoryReserveReleaseOutcome = z.infer<typeof InventoryReserveReleaseOutcomeSchema>;
+
+export const InventoryReserveReleaseResponseV1Schema = z
+  .object({
+    outcome: InventoryReserveReleaseOutcomeSchema,
+    commandKey: z.string().uuid(),
+    reservationId: z.string().uuid().optional().nullable(),
+    availableQuantity: ScaledQuantitySchema.optional(),
+    reason: z.string().max(255).optional(),
+  })
+  .strict();
+export type InventoryReserveReleaseResponseV1 = z.infer<typeof InventoryReserveReleaseResponseV1Schema>;
 
 /** Inventory confirms physical stock deduction (event: `inventory.stock.issued.v1`) */
 export const InventoryStockIssuedV1Schema = z

@@ -122,6 +122,7 @@ spec:
       - { path: 'v1/items', GET: inventory:read, POST: 'inventory:items:manage' }
       - { path: 'v1/lots', GET: inventory:read, POST: inventory:receive }
       - { path: 'v1/atp/check', POST: inventory:read }
+      - { path: 'v1/reserve-release', POST: inventory:reserve }
       - { path: 'v1/balances', GET: inventory:read }
       - { path: 'v1/ledger', GET: 'inventory:ledger:read' }
       - { path: 'v1/movements', POST: inventory:transfer }

@@ -21,6 +21,10 @@ import {
   BusinessPartnersCreditCheckClient,
   isOrdersCreditCheckConfigured,
 } from '../credit/business-partners-credit-check.client.js';
+import {
+  InventoryAtpCheckClient,
+  isOrdersInventoryAtpCheckConfigured,
+} from '../inventory/inventory-atp-check.client.js';
 import { DatabaseService } from '../database.service.js';
 import { assertWritableUnit, canReadUnit, orgReadCondition, resolveOrganizationAccess } from '../organization/organization-scope.js';
 import { requireActiveCustomerParty } from './party-reference.js';
@@ -48,6 +52,7 @@ export class OrderService {
   constructor(
     private readonly database: DatabaseService,
     private readonly businessPartnersCreditCheck: BusinessPartnersCreditCheckClient,
+    private readonly inventoryAtpCheck: InventoryAtpCheckClient,
   ) {}
 
   // ─── 1. Sales Quotations ───────────────────────────────────────────────────
@@ -592,6 +597,24 @@ export class OrderService {
         throw new BadRequestException(
           `Cannot allocate ${input.allocatedQuantity}. Total allocated (${ExactDecimal.fromScaledBigInt(currentAllocatedScaled + requestedAllocScaled)}) would exceed ordered quantity (${line.ordered_quantity})`,
         );
+      }
+
+      if (isOrdersInventoryAtpCheckConfigured()) {
+        const atp = await this.inventoryAtpCheck.check(principal, {
+          requestKey: randomUUID(),
+          warehouseId: input.warehouseId,
+          productId: line.product_id,
+          uomId: line.uom_id,
+          requestedQuantity: input.allocatedQuantity,
+          locationId: input.locationId ?? undefined,
+        });
+        if (atp.decision !== 'AVAILABLE') {
+          throw new BadRequestException({
+            code: 'ORDERS_ATP_SHORT',
+            availableQuantity: atp.availableQuantity,
+            requestedQuantity: input.allocatedQuantity,
+          });
+        }
       }
 
       const allocationId = randomUUID();

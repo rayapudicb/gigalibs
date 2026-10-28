@@ -22,6 +22,7 @@
 | Date | Slice | Evidence |
 |---|---|---|
 | 2026-10-28 | S2 ATP | Pure `calculateAtp` (`atp.ts` + unit tests); `InventoryAtpCheckRequestV1` / `ResponseV1` contracts; `InventoryService.checkAtp`; gateway route in `module.yaml`; `workItem` → WI-OI-124 |
+| 2026-10-28 | S2 reserve/release | `InventoryReserveRelease*` contracts; `POST v1/reserve-release`; internal `atp-check-command` + `reserve-release-command`; Orders `InventoryAtpCheckClient` gates allocation when `ORDERS_INVENTORY_RELAY_URL` set |
 
 ## Remaining (card steps)
 

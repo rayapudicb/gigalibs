@@ -14,6 +14,8 @@ import {
   type CreateWarehouseInputV1,
   type InventoryAtpCheckRequestV1,
   type InventoryAtpCheckResponseV1,
+  type InventoryReserveReleaseRequestV1,
+  type InventoryReserveReleaseResponseV1,
   type InventoryAdjustmentV1,
   type InventoryItemV1,
   type InventoryKitV1,
@@ -948,6 +950,56 @@ export class InventoryService {
         availableQuantity: atp.availableQuantity,
       };
     });
+  }
+
+  async executeReserveRelease(
+    principal: ModulePrincipal,
+    input: InventoryReserveReleaseRequestV1,
+  ): Promise<InventoryReserveReleaseResponseV1> {
+    if (input.action === 'RELEASE') {
+      const released = await this.releaseReservation(principal, input.reservationId);
+      return {
+        outcome: 'RELEASED',
+        commandKey: input.commandKey,
+        reservationId: released.id,
+      };
+    }
+
+    const atp = await this.checkAtp(principal, {
+      requestKey: input.commandKey,
+      warehouseId: input.warehouseId,
+      productId: input.productId,
+      uomId: input.uomId,
+      requestedQuantity: input.quantity,
+      locationId: input.locationId ?? undefined,
+    });
+    if (atp.decision === 'SHORT') {
+      return {
+        outcome: 'REJECTED',
+        commandKey: input.commandKey,
+        availableQuantity: atp.availableQuantity,
+        reason: `Insufficient available stock (${atp.availableQuantity} available, ${input.quantity} requested).`,
+      };
+    }
+
+    const reservation = await this.createReservation(principal, {
+      reservationType: input.reservationType,
+      demandType: input.demandType,
+      demandReferenceId: input.demandReferenceId,
+      demandLineId: input.demandLineId ?? null,
+      warehouseId: input.warehouseId,
+      locationId: input.locationId ?? null,
+      productId: input.productId,
+      uomId: input.uomId,
+      quantity: input.quantity,
+      expiryDate: null,
+      idempotencyKey: input.idempotencyKey ?? input.commandKey,
+    });
+    return {
+      outcome: 'RESERVED',
+      commandKey: input.commandKey,
+      reservationId: reservation.id,
+    };
   }
 
   // ─── Reservations (CMMS Work Orders) ────────────────────────────────────────

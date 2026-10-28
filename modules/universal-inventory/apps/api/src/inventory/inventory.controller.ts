@@ -20,6 +20,8 @@ import {
   CreateReservationInputV1Schema,
   type InventoryAtpCheckResponseV1,
   InventoryAtpCheckRequestV1Schema,
+  type InventoryReserveReleaseResponseV1,
+  InventoryReserveReleaseRequestV1Schema,
   type CreateWarehouseInputV1,
   CreateWarehouseInputV1Schema,
   type InventoryAdjustmentV1,
@@ -204,6 +206,16 @@ export class InventoryController {
   ): Promise<InventoryAtpCheckResponseV1> {
     const input = parse(InventoryAtpCheckRequestV1Schema, body);
     return this.service.checkAtp(principal, input);
+  }
+
+  @Post('reserve-release')
+  @RequirePermissions('inventory:reserve')
+  async reserveRelease(
+    @CurrentPrincipal() principal: ModulePrincipal,
+    @Body() body: unknown,
+  ): Promise<InventoryReserveReleaseResponseV1> {
+    const input = parse(InventoryReserveReleaseRequestV1Schema, body);
+    return this.service.executeReserveRelease(principal, input);
   }
 
   // ─── Reservations ───────────────────────────────────────────────────────────

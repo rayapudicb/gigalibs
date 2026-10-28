@@ -11,7 +11,19 @@ import { DatabaseService } from './database.service.js';
 import { HealthController } from './health.controller.js';
 import { inventoryRecordDispatcher } from './inventory/inventory-record-adapters.js';
 import { InventoryRecordsService } from './inventory/inventory-records.service.js';
+import { AtpCheckCommandController } from './inventory/atp-check-command.controller.js';
+import {
+  ATP_CHECK_COMMAND_CONFIG,
+  AtpCheckCommandGuard,
+  loadAtpCheckCommandConfig,
+} from './inventory/atp-check-command.guard.js';
 import { InventoryController } from './inventory/inventory.controller.js';
+import { ReserveReleaseCommandController } from './inventory/reserve-release-command.controller.js';
+import {
+  RESERVE_RELEASE_COMMAND_CONFIG,
+  ReserveReleaseCommandGuard,
+  loadReserveReleaseCommandConfig,
+} from './inventory/reserve-release-command.guard.js';
 import { InventoryPostingCutoffService } from './inventory/inventory-posting-cutoff.service.js';
 import { InventoryService } from './inventory/inventory.service.js';
 import { OrganizationController } from './organization/organization.controller.js';
@@ -38,6 +50,8 @@ const InventoryRecordController = createRecordController({ guard: AuthorizationG
     HealthController,
     InventoryRelayHealthController,
     InventoryController,
+    AtpCheckCommandController,
+    ReserveReleaseCommandController,
     OrganizationController,
     FinanceInventoryInboxController,
     InventoryRecordController,
@@ -53,6 +67,10 @@ const InventoryRecordController = createRecordController({ guard: AuthorizationG
     AuthorizationGuard,
     InventoryPostingCutoffService,
     InventoryService,
+    { provide: ATP_CHECK_COMMAND_CONFIG, useFactory: () => loadAtpCheckCommandConfig() },
+    AtpCheckCommandGuard,
+    { provide: RESERVE_RELEASE_COMMAND_CONFIG, useFactory: () => loadReserveReleaseCommandConfig() },
+    ReserveReleaseCommandGuard,
     InventoryRecordsService,
     {
       provide: RECORD_DISPATCHER,

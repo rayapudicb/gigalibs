@@ -2,7 +2,7 @@
 
 ## Active task
 
-**WI-OI-124 Material Ledger** — [task card](tasks/WI-OI-124.md), [evidence](work/WI-OI-124.md). Module 1 (WI-OI-123 Business Partner) is **Built** in the registry; parity batch continues Module 2 on `universal-inventory`. First slice landed: ATP pure function + `POST v1/atp/check` + handshake contracts.
+**WI-OI-124 Material Ledger** — [task card](tasks/WI-OI-124.md), [evidence](work/WI-OI-124.md). Module 1 (WI-OI-123) is **Built**; Module 2 extends `universal-inventory`. S2 in progress: ATP + `inventory.reserve/release` gateway, signed command inboxes, Orders allocation ATP gate when relay env is set. S3–S7 (cost records, warehouse map, concurrency proof) remain.
 
 ## Current owner-directed build — seven iDempiere-reference modules
 

@@ -14,6 +14,8 @@ import {
   ArInvoiceIssuedV1Schema,
   InventoryAtpCheckRequestV1Schema,
   InventoryAtpCheckResponseV1Schema,
+  InventoryReserveReleaseRequestV1Schema,
+  InventoryReserveReleaseResponseV1Schema,
 } from './commercial-operational.js';
 
 describe('ExactDecimal utility', () => {
@@ -234,5 +236,34 @@ describe('Commercial & Operational Handshake Schemas', () => {
       availableQuantity: '84.500000',
     };
     expect(InventoryAtpCheckResponseV1Schema.safeParse(response).success).toBe(true);
+  });
+
+  it('validates inventory reserve/release gateway payloads', () => {
+    const reserve = {
+      commandKey: '5b9f7c1e-4d2a-4e8b-9c3f-1a2b3c4d5e6f',
+      action: 'RESERVE' as const,
+      demandType: 'SALES_ORDER' as const,
+      demandReferenceId: 'SO-1001',
+      demandLineId: 'line-1',
+      warehouseId: 'a0000000-0000-4000-a000-000000000001',
+      productId: 'a0000000-0000-4000-a000-000000000002',
+      uomId: 'a0000000-0000-4000-a000-000000000003',
+      quantity: '2.000000',
+    };
+    expect(InventoryReserveReleaseRequestV1Schema.safeParse(reserve).success).toBe(true);
+    const release = {
+      commandKey: '5b9f7c1e-4d2a-4e8b-9c3f-1a2b3c4d5e6f',
+      action: 'RELEASE' as const,
+      reservationId: 'b0000000-0000-4000-a000-000000000001',
+    };
+    expect(InventoryReserveReleaseRequestV1Schema.safeParse(release).success).toBe(true);
+    expect(
+      InventoryReserveReleaseResponseV1Schema.safeParse({
+        outcome: 'REJECTED',
+        commandKey: reserve.commandKey,
+        availableQuantity: '1.000000',
+        reason: 'Insufficient available stock',
+      }).success,
+    ).toBe(true);
   });
 });
