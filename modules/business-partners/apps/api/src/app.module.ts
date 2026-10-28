@@ -27,6 +27,8 @@ import {
   loadPartyInboxConfig,
 } from './party/party-inbox.guard.js';
 import { PartyInboxService } from './party/party-inbox.service.js';
+import { PartnersController } from './party/partners.controller.js';
+import { PartnersService } from './party/partners.service.js';
 import { RecordsController } from './records/records.controller.js';
 import { RecordsService } from './records/records.service.js';
 
@@ -36,6 +38,7 @@ import { RecordsService } from './records/records.service.js';
     HealthController,
     OrganizationController,
     PartyInboxController,
+    PartnersController,
     CreditInboxController,
     CreditHoldsController,
     CreditStatusController,
@@ -51,6 +54,7 @@ import { RecordsService } from './records/records.service.js';
     AuthorizationGuard,
     PartyInboxGuard,
     PartyInboxService,
+    PartnersService,
     CreditInboxGuard,
     CreditInboxService,
     CreditHoldsService,
