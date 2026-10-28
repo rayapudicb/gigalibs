@@ -12,6 +12,8 @@ import {
   type CreateReceiptInputV1,
   type CreateReservationInputV1,
   type CreateWarehouseInputV1,
+  type InventoryAtpCheckRequestV1,
+  type InventoryAtpCheckResponseV1,
   type InventoryAdjustmentV1,
   type InventoryItemV1,
   type InventoryKitV1,
@@ -48,6 +50,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import type pg from 'pg';
+import { calculateAtp } from './atp.js';
 import { SCHEMA, TOPIC } from '../config.js';
 import { DatabaseService } from '../database.service.js';
 import { assertInventoryReceiptFinancePeriodOpenFromReplica } from './finance-period-replica-guard.js';
@@ -902,6 +905,49 @@ export class InventoryService {
       await this.postingCutoff.tryPublishClearCutoffForReceiptDate(client, principal.tenantId, now);
 
     return this.fetchReceipt(client, principal.tenantId, receiptId);
+  }
+
+  // ─── ATP (Material Ledger gateway) ─────────────────────────────────────────
+
+  async checkAtp(
+    principal: ModulePrincipal,
+    input: InventoryAtpCheckRequestV1,
+  ): Promise<InventoryAtpCheckResponseV1> {
+    return this.database.withTenantTransaction(principal.tenantId, async (client) => {
+      const params: unknown[] = [
+        principal.tenantId,
+        input.warehouseId,
+        input.productId,
+        input.uomId,
+      ];
+      let locationFilter = '';
+      if (input.locationId) {
+        params.push(input.locationId);
+        locationFilter = ` AND location_id = $${params.length}`;
+      }
+      const balRes = await client.query(
+        `SELECT on_hand_quantity, reserved_quantity
+         FROM ${SCHEMA}.stock_balances
+         WHERE tenant_id = $1 AND warehouse_id = $2 AND product_id = $3 AND uom_id = $4
+           AND stock_status = 'AVAILABLE'${locationFilter}`,
+        params,
+      );
+
+      let onHandQuantity = '0.000000';
+      let reservedQuantity = '0.000000';
+      for (const row of balRes.rows) {
+        onHandQuantity = ExactDecimal.add(onHandQuantity, String(row.on_hand_quantity));
+        reservedQuantity = ExactDecimal.add(reservedQuantity, String(row.reserved_quantity));
+      }
+
+      const atp = calculateAtp(onHandQuantity, reservedQuantity);
+      return {
+        decision: atp.sufficientFor(input.requestedQuantity) ? 'AVAILABLE' : 'SHORT',
+        onHandQuantity,
+        reservedQuantity,
+        availableQuantity: atp.availableQuantity,
+      };
+    });
   }
 
   // ─── Reservations (CMMS Work Orders) ────────────────────────────────────────

@@ -1,5 +1,9 @@
 # NOW: where the work stands (2026-10-28)
 
+## Active task
+
+**WI-OI-124 Material Ledger** — [task card](tasks/WI-OI-124.md), [evidence](work/WI-OI-124.md). Module 1 (WI-OI-123 Business Partner) is **Built** in the registry; parity batch continues Module 2 on `universal-inventory`. First slice landed: ATP pure function + `POST v1/atp/check` + handshake contracts.
+
 ## Current owner-directed build — seven iDempiere-reference modules
 
 On 2026-10-28 the owner directed F0 then Modules 1–7 in order, without UAT pauses; the owner will deploy all seven

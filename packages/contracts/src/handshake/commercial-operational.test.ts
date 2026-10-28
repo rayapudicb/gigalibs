@@ -12,6 +12,8 @@ import {
   InventoryReceiptCompletedV1Schema,
   OrdersFulfillmentDispatchedV1Schema,
   ArInvoiceIssuedV1Schema,
+  InventoryAtpCheckRequestV1Schema,
+  InventoryAtpCheckResponseV1Schema,
 } from './commercial-operational.js';
 
 describe('ExactDecimal utility', () => {
@@ -214,5 +216,23 @@ describe('Commercial & Operational Handshake Schemas', () => {
       activeHoldId: null,
     };
     expect(PartnerCreditCheckResponseV1Schema.safeParse(response).success).toBe(true);
+  });
+
+  it('validates inventory ATP check request and response', () => {
+    const request = {
+      requestKey: '5b9f7c1e-4d2a-4e8b-9c3f-1a2b3c4d5e6f',
+      warehouseId: 'a0000000-0000-4000-a000-000000000001',
+      productId: 'a0000000-0000-4000-a000-000000000002',
+      uomId: 'a0000000-0000-4000-a000-000000000003',
+      requestedQuantity: '12.500000',
+    };
+    expect(InventoryAtpCheckRequestV1Schema.safeParse(request).success).toBe(true);
+    const response = {
+      decision: 'AVAILABLE',
+      onHandQuantity: '100.000000',
+      reservedQuantity: '15.500000',
+      availableQuantity: '84.500000',
+    };
+    expect(InventoryAtpCheckResponseV1Schema.safeParse(response).success).toBe(true);
   });
 });

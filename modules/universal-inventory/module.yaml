@@ -5,7 +5,7 @@ metadata:
   displayName: Universal Inventory & Warehouse Operations
   version: 0.1.0-dev
   lifecycle: implementation
-  workItem: WI-OI-091
+  workItem: WI-OI-124
 spec:
   standalone: true
   category: business
@@ -91,7 +91,7 @@ spec:
       trialEligible: false
       requiredPermission: inventory:read
       platformInspection: true
-      reason: The module boundary is implemented under WI-OI-091 and remains PLANNED until live module conformance and independent review are recorded.
+      reason: Material Ledger parity (WI-OI-124) extends the WI-OI-091 inventory boundary; remains PLANNED until live module conformance and independent review are recorded.
       navigationOrder: 126
       personas: [OPERATIONS_SUPERVISOR]
       roles:
@@ -121,6 +121,7 @@ spec:
       - { path: 'v1/locations', GET: inventory:read, POST: 'inventory:warehouses:manage' }
       - { path: 'v1/items', GET: inventory:read, POST: 'inventory:items:manage' }
       - { path: 'v1/lots', GET: inventory:read, POST: inventory:receive }
+      - { path: 'v1/atp/check', POST: inventory:read }
       - { path: 'v1/balances', GET: inventory:read }
       - { path: 'v1/ledger', GET: 'inventory:ledger:read' }
       - { path: 'v1/movements', POST: inventory:transfer }

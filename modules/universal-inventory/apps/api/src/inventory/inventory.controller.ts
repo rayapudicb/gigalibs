@@ -18,6 +18,8 @@ import {
   CreateReceiptInputV1Schema,
   type CreateReservationInputV1,
   CreateReservationInputV1Schema,
+  type InventoryAtpCheckResponseV1,
+  InventoryAtpCheckRequestV1Schema,
   type CreateWarehouseInputV1,
   CreateWarehouseInputV1Schema,
   type InventoryAdjustmentV1,
@@ -190,6 +192,18 @@ export class InventoryController {
     @Param('id') id: string,
   ): Promise<InventoryReceiptV1> {
     return this.service.completeReceipt(principal, id);
+  }
+
+  // ─── ATP ────────────────────────────────────────────────────────────────────
+
+  @Post('atp/check')
+  @RequirePermissions('inventory:read')
+  async checkAtp(
+    @CurrentPrincipal() principal: ModulePrincipal,
+    @Body() body: unknown,
+  ): Promise<InventoryAtpCheckResponseV1> {
+    const input = parse(InventoryAtpCheckRequestV1Schema, body);
+    return this.service.checkAtp(principal, input);
   }
 
   // ─── Reservations ───────────────────────────────────────────────────────────

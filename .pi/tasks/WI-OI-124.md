@@ -1,6 +1,6 @@
 # WI-OI-124: Material and Warehouse Ledger
 
-- **Status:** Approved (owner, 2026-10-28); queued after F0 and WI-OI-123
+- **Status:** In Progress (2026-10-28); builds on existing `universal-inventory` (WI-OI-091)
 - **Work item:** WI-OI-124; evidence in `.pi/work/WI-OI-124.md`.
 - **Size:** L
 

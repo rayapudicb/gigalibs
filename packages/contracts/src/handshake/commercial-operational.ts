@@ -140,6 +140,32 @@ export const InventoryReservationRejectedV1Schema = z
   .strict();
 export type InventoryReservationRejectedV1 = z.infer<typeof InventoryReservationRejectedV1Schema>;
 
+/** Gateway: `inventory.atp.check` (Material Ledger S2). */
+export const InventoryAtpCheckRequestV1Schema = z
+  .object({
+    requestKey: z.string().uuid(),
+    warehouseId: z.string().uuid(),
+    productId: z.string().uuid(),
+    uomId: z.string().uuid(),
+    requestedQuantity: ScaledQuantitySchema,
+    locationId: z.string().uuid().optional(),
+  })
+  .strict();
+export type InventoryAtpCheckRequestV1 = z.infer<typeof InventoryAtpCheckRequestV1Schema>;
+
+export const InventoryAtpCheckDecisionSchema = z.enum(['AVAILABLE', 'SHORT']);
+export type InventoryAtpCheckDecision = z.infer<typeof InventoryAtpCheckDecisionSchema>;
+
+export const InventoryAtpCheckResponseV1Schema = z
+  .object({
+    decision: InventoryAtpCheckDecisionSchema,
+    onHandQuantity: ScaledQuantitySchema,
+    reservedQuantity: ScaledQuantitySchema,
+    availableQuantity: ScaledQuantitySchema,
+  })
+  .strict();
+export type InventoryAtpCheckResponseV1 = z.infer<typeof InventoryAtpCheckResponseV1Schema>;
+
 /** Inventory confirms physical stock deduction (event: `inventory.stock.issued.v1`) */
 export const InventoryStockIssuedV1Schema = z
   .object({
