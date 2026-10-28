@@ -596,4 +596,21 @@ export const generatedPlatformModuleCatalog = [
     platformInspection: true,
     reason: 'The TextFly communications product is a separate project and is not integrated into GigaLibs. Contained until its service is connected (WI-OI-120ak, owner decision D2a); without it the API answers 503.',
   },
+  // modules/business-partners/module.yaml
+  {
+    key: 'business-partners',
+    name: 'Universal Business Partner',
+    navigationLabel: 'Universal Business Partner',
+    area: 'Universal Business Partner',
+    navigationGroup: 'Financial Operations',
+    route: '/business-partners',
+    iconKey: 'building',
+    readiness: 'PLANNED',
+    maturity: 'CONCEPT',
+    entitlementEligible: true,
+    trialEligible: false,
+    requiredPermission: 'business-partners.records.read',
+    platformInspection: false,
+    reason: 'Scaffold only; Business Partner financial persistence, screens and handshakes are not built.',
+  },
 ] as const;

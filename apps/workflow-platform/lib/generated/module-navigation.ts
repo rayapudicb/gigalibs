@@ -296,5 +296,8 @@ export const generatedModulePersonas: Readonly<Record<string, readonly PlatformC
   "communications-textfly": [
     "OPERATIONS_SUPERVISOR",
     "WORKFORCE_MEMBER"
+  ],
+  "business-partners": [
+    "OPERATIONS_SUPERVISOR"
   ]
 };

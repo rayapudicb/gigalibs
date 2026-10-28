@@ -15,6 +15,13 @@ export const generatedModuleUpstreams = {
     "serviceHostname": "ar-api",
     "basePath": ""
   },
+  "business-partners": {
+    "module": "business-partners",
+    "environmentKey": "BUSINESS_PARTNERS_API_URL",
+    "port": "4790",
+    "serviceHostname": "module-host",
+    "basePath": "/business-partners"
+  },
   "cmms": {
     "module": "physical-operations-cmms",
     "environmentKey": "CMMS_API_URL",

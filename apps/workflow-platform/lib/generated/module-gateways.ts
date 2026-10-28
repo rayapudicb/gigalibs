@@ -227,6 +227,83 @@ export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGat
     "transformBody": null,
     "unavailable": []
   },
+  "business-partners": {
+    "module": "business-partners",
+    "basePaths": [
+      "/api/business-partners"
+    ],
+    "catalogKey": "business-partners",
+    "audience": "gigalibs-business-partners-api",
+    "upstream": "business-partners",
+    "signingKeyEnvironment": "BUSINESS_PARTNERS_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64",
+    "codePrefix": "BUSINESS_PARTNERS",
+    "routeNoun": "Universal Business Partner",
+    "serviceName": "Universal Business Partner",
+    "entitlementName": "Universal Business Partner",
+    "routes": [
+      {
+        "template": "v1/records",
+        "pattern": "^v1/records$",
+        "methods": {
+          "GET": "business-partners.records.read",
+          "POST": "business-partners.records.manage"
+        }
+      },
+      {
+        "template": "v1/records/{id}",
+        "pattern": "^v1/records/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "GET": "business-partners.records.read",
+          "PATCH": "business-partners.records.manage"
+        }
+      },
+      {
+        "template": "v1/partners/{id}/accounts",
+        "pattern": "^v1/partners/[0-9a-fA-F-]{36}/accounts$",
+        "methods": {
+          "GET": "business-partners.accounts.read"
+        }
+      },
+      {
+        "template": "v1/partners/{id}/customer-accounts",
+        "pattern": "^v1/partners/[0-9a-fA-F-]{36}/customer-accounts$",
+        "methods": {
+          "POST": "business-partners.accounts.manage"
+        }
+      },
+      {
+        "template": "v1/partners/{id}/vendor-accounts",
+        "pattern": "^v1/partners/[0-9a-fA-F-]{36}/vendor-accounts$",
+        "methods": {
+          "POST": "business-partners.accounts.manage"
+        }
+      },
+      {
+        "template": "v1/partners/{id}/credit-holds",
+        "pattern": "^v1/partners/[0-9a-fA-F-]{36}/credit-holds$",
+        "methods": {
+          "GET": "business-partners.credit.read",
+          "POST": "business-partners.credit.manage"
+        }
+      },
+      {
+        "template": "v1/partners/{id}/credit-holds/{id}/release",
+        "pattern": "^v1/partners/[0-9a-fA-F-]{36}/credit-holds/[0-9a-fA-F-]{36}/release$",
+        "methods": {
+          "POST": "business-partners.credit.manage"
+        }
+      },
+      {
+        "template": "v1/partners/{id}/credit-status",
+        "pattern": "^v1/partners/[0-9a-fA-F-]{36}/credit-status$",
+        "methods": {
+          "GET": "business-partners.credit.read"
+        }
+      }
+    ],
+    "transformBody": null,
+    "unavailable": []
+  },
   "financial-operations": {
     "module": "financial-operations",
     "basePaths": [

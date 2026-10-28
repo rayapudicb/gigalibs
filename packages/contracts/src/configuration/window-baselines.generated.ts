@@ -255,6 +255,18 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "writePermission": "ar:write"
           },
           {
+            "fieldKey": "org-unit-id",
+            "entityKey": "ar.invoices",
+            "label": "Owning organization unit",
+            "type": "TEXT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "writePermission": "ar:write"
+          },
+          {
             "fieldKey": "currency",
             "entityKey": "ar.invoices",
             "label": "Currency",
@@ -466,46 +478,234 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
                     "sectionKey": "header"
                   },
                   {
-                    "fieldKey": "currency",
+                    "fieldKey": "org-unit-id",
                     "position": 5,
+                    "span": 6,
+                    "componentKey": "text-input",
+                    "sectionKey": "header"
+                  },
+                  {
+                    "fieldKey": "currency",
+                    "position": 6,
                     "span": 3,
                     "componentKey": "text-input",
                     "sectionKey": "header"
                   },
                   {
                     "fieldKey": "issue-date",
-                    "position": 6,
-                    "span": 4,
-                    "componentKey": "date-input",
-                    "sectionKey": "dates"
-                  },
-                  {
-                    "fieldKey": "due-date",
                     "position": 7,
                     "span": 4,
                     "componentKey": "date-input",
                     "sectionKey": "dates"
                   },
                   {
-                    "fieldKey": "line-description",
+                    "fieldKey": "due-date",
                     "position": 8,
+                    "span": 4,
+                    "componentKey": "date-input",
+                    "sectionKey": "dates"
+                  },
+                  {
+                    "fieldKey": "line-description",
+                    "position": 9,
                     "span": 8,
                     "componentKey": "text-input",
                     "sectionKey": "line"
                   },
                   {
                     "fieldKey": "line-quantity",
-                    "position": 9,
+                    "position": 10,
                     "span": 4,
                     "componentKey": "text-input",
                     "sectionKey": "line"
                   },
                   {
                     "fieldKey": "line-unit-amount-minor",
-                    "position": 10,
+                    "position": 11,
                     "span": 4,
                     "componentKey": "number-input",
                     "sectionKey": "line"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "navigation": [],
+        "actions": [],
+        "messages": []
+      }
+    }
+  },
+  {
+    "contractVersion": "1.0",
+    "window": {
+      "route": "/business-partners",
+      "label": "Partners",
+      "description": "Customers, vendors and employees as one counterparty.",
+      "readPermission": "business-partners:read"
+    },
+    "definition": {
+      "kind": "APPLICATION_DICTIONARY",
+      "contractVersion": "1.0",
+      "moduleKey": "business-partners",
+      "entityKey": "partners",
+      "surfaceKey": "partners",
+      "title": "Partners",
+      "dictionary": {
+        "packageKey": "partners-module-baseline",
+        "name": "Partners",
+        "version": "1.0.0",
+        "moduleKey": "business-partners",
+        "targetEntityKey": "business-partners.partners",
+        "entities": [
+          {
+            "entityKey": "business-partners.partners",
+            "moduleKey": "business-partners",
+            "label": "Partners",
+            "ownership": "MODULE_CORE",
+            "primaryKeyField": "id",
+            "isVersioned": true,
+            "isAuditLogged": true,
+            "isSoftDeletable": false
+          }
+        ],
+        "fields": [
+          {
+            "fieldKey": "display-name",
+            "entityKey": "business-partners.partners",
+            "label": "Name",
+            "type": "TEXT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "party-type",
+            "entityKey": "business-partners.partners",
+            "label": "Type",
+            "type": "SELECT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "party-types"
+          },
+          {
+            "fieldKey": "code",
+            "entityKey": "business-partners.partners",
+            "label": "Code",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "status",
+            "entityKey": "business-partners.partners",
+            "label": "Status",
+            "type": "SELECT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "partner-statuses"
+          }
+        ],
+        "relationships": [],
+        "references": [
+          {
+            "referenceKey": "party-types",
+            "referenceType": "VALUE_LIST",
+            "staticValues": [
+              {
+                "value": "ORGANIZATION",
+                "label": "Organization"
+              },
+              {
+                "value": "PERSON",
+                "label": "Person"
+              }
+            ]
+          },
+          {
+            "referenceKey": "partner-statuses",
+            "referenceType": "VALUE_LIST",
+            "staticValues": [
+              {
+                "value": "ACTIVE",
+                "label": "Active"
+              },
+              {
+                "value": "INACTIVE",
+                "label": "Inactive"
+              },
+              {
+                "value": "PROSPECT",
+                "label": "Prospect"
+              },
+              {
+                "value": "ARCHIVED",
+                "label": "Archived"
+              },
+              {
+                "value": "MERGED",
+                "label": "Merged"
+              }
+            ]
+          }
+        ],
+        "validationRules": [],
+        "views": [
+          {
+            "viewKey": "partners",
+            "label": "Partners",
+            "mode": "LIST",
+            "device": "ALL",
+            "searchFields": [
+              "display-name",
+              "code"
+            ],
+            "defaultSortField": "display-name",
+            "defaultSortDirection": "ASC",
+            "tabs": [
+              {
+                "tabKey": "partner",
+                "label": "Partner",
+                "position": 0,
+                "level": 0,
+                "targetEntityKey": "business-partners.partners",
+                "sections": [],
+                "fields": [
+                  {
+                    "fieldKey": "display-name",
+                    "position": 0,
+                    "span": 8,
+                    "componentKey": "text-input"
+                  },
+                  {
+                    "fieldKey": "party-type",
+                    "position": 1,
+                    "span": 4,
+                    "componentKey": "select"
+                  },
+                  {
+                    "fieldKey": "code",
+                    "position": 2,
+                    "span": 4,
+                    "componentKey": "text-input"
+                  },
+                  {
+                    "fieldKey": "status",
+                    "position": 3,
+                    "span": 4,
+                    "componentKey": "select"
                   }
                 ]
               }
@@ -19726,6 +19926,7 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
 // WI-OI-120bh: each window module's entitlement, its catalogue entry's key in `modules/<module>/module.yaml`.
 export const MODULE_WINDOW_ENTITLEMENT_KEYS: Readonly<Record<string, string>> = {
   "accounts-receivable": "accounts-receivable",
+  "business-partners": "business-partners",
   "financial-operations": "financial-operations",
   "gigaops": "gigaops",
   "physical-operations-cmms": "asset-maintenance",

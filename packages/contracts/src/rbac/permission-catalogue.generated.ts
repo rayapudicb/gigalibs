@@ -201,6 +201,60 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
     ]
   },
   {
+    "code": "billing:read",
+    "entries": [
+      "platform"
+    ]
+  },
+  {
+    "code": "business-partners:read",
+    "entries": [
+      "business-partners"
+    ]
+  },
+  {
+    "code": "business-partners:write",
+    "entries": [
+      "business-partners"
+    ]
+  },
+  {
+    "code": "business-partners.accounts.manage",
+    "entries": [
+      "business-partners"
+    ]
+  },
+  {
+    "code": "business-partners.accounts.read",
+    "entries": [
+      "business-partners"
+    ]
+  },
+  {
+    "code": "business-partners.credit.manage",
+    "entries": [
+      "business-partners"
+    ]
+  },
+  {
+    "code": "business-partners.credit.read",
+    "entries": [
+      "business-partners"
+    ]
+  },
+  {
+    "code": "business-partners.records.manage",
+    "entries": [
+      "business-partners"
+    ]
+  },
+  {
+    "code": "business-partners.records.read",
+    "entries": [
+      "business-partners"
+    ]
+  },
+  {
     "code": "catalogues:approve",
     "entries": [
       "product-catalogue"
@@ -566,6 +620,12 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
     "code": "currency:read",
     "entries": [
       "multi-currency",
+      "platform"
+    ]
+  },
+  {
+    "code": "currency:write",
+    "entries": [
       "platform"
     ]
   },
@@ -961,7 +1021,9 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
   {
     "code": "organization:activate",
     "entries": [
+      "accounts-receivable",
       "analytics-studio",
+      "business-partners",
       "financial-operations",
       "gigaops",
       "platform",
@@ -1027,6 +1089,18 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
   },
   {
     "code": "parties:update",
+    "entries": [
+      "platform"
+    ]
+  },
+  {
+    "code": "people:manage",
+    "entries": [
+      "platform"
+    ]
+  },
+  {
+    "code": "people:read",
     "entries": [
       "platform"
     ]
