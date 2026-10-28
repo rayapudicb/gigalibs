@@ -7,32 +7,33 @@
 
 ## 1. Principles
 
-Not yet researched. To be written from ISO 9241-110 (the interaction principles), ISO 9241-210 (human-centred
-design), plan v3's GU design rules, and research with real users. Each principle gets a GigaLibs example and a check a
-journey can run.
+The platform's engineering and interaction principles are formally specified in the developer-facing
+[Enterprise UI/UX Design Rulebook](../../ux/ENTERPRISE_UI_UX_RULEBOOK.md):
+- **Outcome & Benchmark-Driven:** Every screen is measured against hard completion benchmarks (lookups $\le 5$s, approvals $\le 10$s, quick-creates $\le 30$s, standard entry $\le 60$s).
+- **Zero-Training Mandate:** Plain-language affordance (no ERP T-codes), progressive disclosure (2-field quick create drawers), inline guardrails, and contextual next-best actions.
+- **Minimal Data Entry (80/20 Rule):** Zero re-keying. Everything derivable is derived, everything shared is inherited from the organization context, and computed metrics (credit exposure, ATP, tax) are strictly read-only and live.
 
 ## 2. Ergonomics and human factors (`ergonomics_human_factors`)
 
-Not yet researched. Personas and environments to cover first (CMMS):
-- the technician on a plant floor (gloves, glare, noise, one hand, a phone, weak signal);
-- the supervisor at a desk and on the move;
-- the requester who uses the product once a month.
-
-Standards: ISO 9241 (parts 11, 110, 210), ISO 6385, ISO 11064 where control rooms apply.
+Design standards follow the [Enterprise UI/UX Design Rulebook](../../ux/ENTERPRISE_UI_UX_RULEBOOK.md) (§5):
+- **The Desk Clerk (Keyboard-First):** Full `Tab` focus order, `Cmd/Ctrl+Enter` submit, `Esc` dismiss, `/` search, fuzzy typeaheads. Mouse-optional for high-volume data entry.
+- **The Plant Floor Technician (Mobile/Tablet):**
+  - **Thumb-Zone Layout:** Primary actions anchored in the bottom 30% of the viewport.
+  - **Touch Targets:** Minimum $48 \times 48\text{px}$ touch targets with $8\text{px}$ gutters for gloved operation.
+  - **High-Contrast Glare Mode:** WCAG 2.2 AAA ($7:1$) outdoor legibility.
+- **Standards:** ISO 9241 (parts 11, 110, 210), ISO 6385, and ISO 11064 for control rooms.
 
 ## 3. Design system (`design_system`)
 
-Not yet researched:
-- tokens (colour, type, spacing, elevation, light and dark);
-- components and when to use each;
-- patterns (list and detail, forms, dialogs, wizards, empty, error, offline and no-permission states);
-- density rules.
-
-Base: `@medusajs/ui` with its preset.
+- **Spatial Architecture:** Master-Detail Split-Screen standard (60% DataTable left / 40% Focus Drawer right) to prevent context loss and eliminate full-page redirect cycles.
+- **3-Tier Visual Hierarchy:** Glanceable Anchor Header (status + live gauge) $\rightarrow$ Operational Canvas (line items/forms) $\rightarrow$ Context/Audit tab.
+- **Tokens & Library:** `@medusajs/ui` ^4.2.3 with `@medusajs/ui-preset`. Zero hardcoded hex colors.
+- **Shimmer Skeletons:** Standardized dimension-matched skeletons for loading states (no blocking center spinners).
 
 ## 4. Accessibility
 
-Not yet researched. WCAG 2.2 AA as the floor (EN 301 549 for public-sector buyers in Europe).
+- **Baseline Floor:** WCAG 2.2 AA floor across all desktop screens (EN 301 549 compliance).
+- **Outdoor / Plant Mode:** WCAG 2.2 AAA ($7:1$ contrast) for rugged field and mobile CMMS screens.
 
 ## 5. GigaLibs today (verified 2026-10-19)
 

@@ -4,7 +4,10 @@ import { RUNTIME_CONFIG, SCHEMA } from './config.js';
 
 export const ORDERS_DEFINER_FUNCTIONS = [
   'relay_lease_orders_events',
+  'relay_lease_ar_fulfillments',
   'relay_settle_orders_event',
+  'relay_lease_credit_uninvoiced',
+  'relay_settle_credit_uninvoiced',
 ] as const;
 
 export type OrdersDefinerFunction = (typeof ORDERS_DEFINER_FUNCTIONS)[number];

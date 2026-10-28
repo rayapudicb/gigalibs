@@ -56,6 +56,18 @@
           "writePermission": "ar:write"
         },
         {
+          "fieldKey": "org-unit-id",
+          "entityKey": "ar.invoices",
+          "label": "Owning organization unit",
+          "type": "TEXT",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "writePermission": "ar:write"
+        },
+        {
           "fieldKey": "currency",
           "entityKey": "ar.invoices",
           "label": "Currency",
@@ -267,43 +279,50 @@
                   "sectionKey": "header"
                 },
                 {
-                  "fieldKey": "currency",
+                  "fieldKey": "org-unit-id",
                   "position": 5,
+                  "span": 6,
+                  "componentKey": "text-input",
+                  "sectionKey": "header"
+                },
+                {
+                  "fieldKey": "currency",
+                  "position": 6,
                   "span": 3,
                   "componentKey": "text-input",
                   "sectionKey": "header"
                 },
                 {
                   "fieldKey": "issue-date",
-                  "position": 6,
-                  "span": 4,
-                  "componentKey": "date-input",
-                  "sectionKey": "dates"
-                },
-                {
-                  "fieldKey": "due-date",
                   "position": 7,
                   "span": 4,
                   "componentKey": "date-input",
                   "sectionKey": "dates"
                 },
                 {
-                  "fieldKey": "line-description",
+                  "fieldKey": "due-date",
                   "position": 8,
+                  "span": 4,
+                  "componentKey": "date-input",
+                  "sectionKey": "dates"
+                },
+                {
+                  "fieldKey": "line-description",
+                  "position": 9,
                   "span": 8,
                   "componentKey": "text-input",
                   "sectionKey": "line"
                 },
                 {
                   "fieldKey": "line-quantity",
-                  "position": 9,
+                  "position": 10,
                   "span": 4,
                   "componentKey": "text-input",
                   "sectionKey": "line"
                 },
                 {
                   "fieldKey": "line-unit-amount-minor",
-                  "position": 10,
+                  "position": 11,
                   "span": 4,
                   "componentKey": "number-input",
                   "sectionKey": "line"

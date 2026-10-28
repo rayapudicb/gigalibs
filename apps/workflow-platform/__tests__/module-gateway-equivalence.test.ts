@@ -329,6 +329,11 @@ describe('manifest-generated gateways equal the hand-written allow-lists', () =>
         serviceHostname: 'analytics-api',
       },
       ar: { environmentKey: 'AR_API_URL', port: '3400', serviceHostname: 'ar-api' },
+      'business-partners': {
+        environmentKey: 'BUSINESS_PARTNERS_API_URL',
+        port: '4790',
+        serviceHostname: 'module-host',
+      },
       cmms: { environmentKey: 'CMMS_API_URL', port: '4200', serviceHostname: 'cmms-api' },
       'connector-hub': {
         environmentKey: 'CONNECTOR_HUB_API_URL',

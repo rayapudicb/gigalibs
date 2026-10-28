@@ -62,7 +62,7 @@ describe.skipIf(!enabled)('Business Partner migration on isolated PostgreSQL 16'
     if (started) execFileSync('docker', ['rm', '-f', '-v', container], { stdio: 'ignore' });
   });
 
-  it('installs all four migrations and grants a least-privilege runtime role', async () => {
+  it('installs all five migrations and grants a least-privilege runtime role', async () => {
     const runtimeUrl = new URL(adminUrl);
     runtimeUrl.username = 'business_partners_proof_runtime';
     runtimeUrl.password = runtimePassword;
@@ -74,14 +74,14 @@ describe.skipIf(!enabled)('Business Partner migration on isolated PostgreSQL 16'
         MODULE_RUNTIME_DATABASE_URL: runtimeUrl.toString(),
         MODULE_MIGRATIONS_DIRECTORY: join(root, 'modules/business-partners/db/migrations'),
         MODULE_SCHEMA: schema,
-        MODULE_EXPECTED_MIGRATION_VERSION: '4',
+        MODULE_EXPECTED_MIGRATION_VERSION: '5',
         MODULE_APPEND_ONLY_TABLES: 'audit_events,credit_status',
         MODULE_READ_ONLY_TABLES: 'auth_revocation_events',
       },
     });
     expect(run.status, `${run.stdout}\n${run.stderr}`).toBe(0);
     const ledger = await admin.query(`SELECT max(version)::int AS version FROM ${schema}.schema_migrations`);
-    expect(ledger.rows[0]?.version).toBe(4);
+    expect(ledger.rows[0]?.version).toBe(5);
     const tables = await admin.query<{ relname: string; relrowsecurity: boolean; relforcerowsecurity: boolean }>(
       `SELECT c.relname, c.relrowsecurity, c.relforcerowsecurity FROM pg_class c
        JOIN pg_namespace n ON n.oid = c.relnamespace

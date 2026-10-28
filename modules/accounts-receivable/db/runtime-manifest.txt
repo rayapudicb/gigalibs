@@ -1,4 +1,4 @@
-# Ordered AR migrations for compose / runtime images (WI-OI-120gx). Expected version = 000016 → 16.
+# Ordered AR migrations for compose / runtime images (WI-OI-123). Expected version = 000018 → 18.
 000001_ar_foundation.up.sql
 000002_ar_outbox_delivery.up.sql
 000003_ar_ledger_seals_and_installments.up.sql
@@ -15,3 +15,5 @@
 000014_ar_orders_inbox_receipts.up.sql
 000015_ar_auth_revocation_shape.up.sql
 000016_ar_record_idempotency.up.sql
+000017_ar_invoice_organization_ownership.up.sql
+000018_ar_credit_balance_relay.up.sql

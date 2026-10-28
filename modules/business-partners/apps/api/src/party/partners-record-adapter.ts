@@ -9,6 +9,7 @@ import {
   type RecordValues,
 } from '@gigalibs/module-sdk';
 import { SCHEMA } from '../config.js';
+import { creditExposureRecordAdapter } from '../credit/credit-exposure-record-adapter.js';
 import type { DatabaseService } from '../database.service.js';
 
 const READ = 'business-partners:read';
@@ -90,10 +91,17 @@ export function partnersRecordAdapter(database: DatabaseService): RecordAdapter 
   };
 }
 
-/** The record dispatcher behind the Partners metadata window — read-only over `party_references`. */
+/**
+ * The record dispatcher behind the Business Partner metadata windows: the Partners list over `party_references`
+ * and the Credit exposure list over the customer accounts and credit ledger. Both are read-only.
+ */
 export function businessPartnersRecordDispatcher(
   database: DatabaseService,
   idempotency: IdempotencyStore,
 ): RecordDispatcher {
-  return new RecordDispatcher([partnersRecordAdapter(database)], [], idempotency);
+  return new RecordDispatcher(
+    [partnersRecordAdapter(database), creditExposureRecordAdapter(database)],
+    [],
+    idempotency,
+  );
 }

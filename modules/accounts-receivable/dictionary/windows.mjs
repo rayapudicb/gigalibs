@@ -31,6 +31,7 @@ export function windowSource(builderFor) {
   const invoiceFields = [
     field(INV, 'invoice-number', 'Invoice number', 'TEXT', { readOnly: true }),
     field(INV, 'customer-id', 'Customer', 'TEXT', { required: true, writePermission: 'ar:write' }),
+    field(INV, 'org-unit-id', 'Owning organization unit', 'TEXT', { required: true, writePermission: 'ar:write' }),
     field(INV, 'currency', 'Currency', 'TEXT', { defaultValue: 'USD', writePermission: 'ar:write' }),
     field(INV, 'issue-date', 'Issue date', 'DATE', { required: true, writePermission: 'ar:write' }),
     field(INV, 'due-date', 'Due date', 'DATE', { required: true, writePermission: 'ar:write' }),
@@ -68,6 +69,7 @@ export function windowSource(builderFor) {
             ['total-minor', 4, 'summary'],
             ['amount-due-minor', 4, 'summary'],
             ['customer-id', 6, 'header'],
+            ['org-unit-id', 6, 'header'],
             ['currency', 3, 'header'],
             ['issue-date', 4, 'dates'],
             ['due-date', 4, 'dates'],

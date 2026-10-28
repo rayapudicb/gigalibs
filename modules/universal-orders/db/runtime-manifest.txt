@@ -2,3 +2,5 @@
 000002_orders_outbox_inbox_relay.up.sql
 000003_orders_auth_revocation_shape.up.sql
 000004_orders_party_reference_guard.up.sql
+000005_orders_ar_fulfillment_relay.up.sql
+000006_orders_credit_uninvoiced_relay.up.sql

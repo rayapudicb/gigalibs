@@ -27,6 +27,6 @@ fail() {
 " || fail 'ar-api /health/ready failed inside the container (migrations or database).'
 
 migration_pin="$("${COMPOSE[@]}" exec -T ar-api node -e "process.stdout.write(process.env.AR_EXPECTED_MIGRATION_VERSION || '')")"
-[[ "${migration_pin}" == '16' ]] || fail "AR_EXPECTED_MIGRATION_VERSION must be 16 in ar-api; got '${migration_pin}'."
+[[ "${migration_pin}" == '18' ]] || fail "AR_EXPECTED_MIGRATION_VERSION must be 18 in ar-api; got '${migration_pin}'."
 
 echo "AR compose health OK (migration pin ${migration_pin}, /health/ready)."

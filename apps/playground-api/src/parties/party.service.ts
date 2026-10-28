@@ -285,6 +285,7 @@ export class PartyService {
         partyId,
         reason: input.reason,
         archivedAt: now.toISOString(),
+        version: res.version,
       });
 
       await this.recordAudit(tx, tenantId, actorId, 'STATUS_CHANGE', 'party', partyId, input.reason, existing, res);
@@ -437,6 +438,8 @@ export class PartyService {
         targetPartyId: target.id,
         reason: input.reason,
         mergedAt: now.toISOString(),
+        sourceVersion: source.version + 1,
+        targetVersion: target.version + 1,
       });
 
       await this.recordAudit(tx, tenantId, actorId, 'STATUS_CHANGE', 'party', source.id, `Merged into ${target.id}: ${input.reason}`, source, { status: 'MERGED', survivorPartyId: target.id });
@@ -482,6 +485,9 @@ export class PartyService {
         roleType: created.roleType,
         action: 'ADDED',
         status: created.status,
+        version: created.version,
+        effectiveFrom: created.effectiveFrom?.toISOString() ?? null,
+        effectiveTo: created.effectiveTo?.toISOString() ?? null,
       });
 
       await this.recordAudit(tx, tenantId, actorId, 'CREATE', 'party_role', created.id, `Added role ${input.roleType}`, null, created);
@@ -520,6 +526,9 @@ export class PartyService {
         roleType: res.roleType,
         action: 'UPDATED',
         status: res.status,
+        version: res.version,
+        effectiveFrom: res.effectiveFrom?.toISOString() ?? null,
+        effectiveTo: res.effectiveTo?.toISOString() ?? null,
       });
 
       await this.recordAudit(tx, tenantId, actorId, 'UPDATE', 'party_role', roleId, 'Updated role', existing, res);

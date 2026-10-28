@@ -56,6 +56,7 @@ spec:
     asyncapi: contracts/asyncapi.yaml
     emits:
       - ar.invoice.issued.v1
+      - ar.credit.invoice-balance.v1
     plannedEmits:
       - ar.invoice.balance-changed.v1
     consumes: []

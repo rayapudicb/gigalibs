@@ -1,5 +1,27 @@
 # Phase 3 + 4 + 5A — integration hold (2026-10-27)
 
+> ## ✅ DEPLOYED TO UAT (2026-10-27 ~13:0x UTC) — tag `7722d85b7cd9-37e91fa8a3b0`
+> Owner authorised the session to run the cutover ("run it" → "hand-roll it"). Done via `docker compose`
+> (`-p gigalibs-configuration-local`, 6 compose files, 12 env files) from the integration worktree — the live
+> project was **adopted** from the `gigalibs-release-speed` worktree to `gigalibs-integration-p345a` (its management
+> home is now there). AR excluded (used release-speed's no-AR `compose.modules.local.yaml`, matching live topology).
+>
+> - **Result: all services Up + healthy at the new tag** (api, web, kernel-worker, module-host, analytics, cmms,
+>   connector-hub, geospatial, workforce + redis/uat-postgres). cmms unified from `c88763ff` to the new tag.
+> - **Migrations clean:** control-plane 60→69 (9 additive: RBAC delegation, retention, usage, scim, platform-reference,
+>   exchange-rates); module schemas **finance 9→15, inventory 4→9, orders 3→4, procurement 3→4** (+ product-catalogue,
+>   process-safety, cmms, analytics, connector-hub, geospatial, workforce) — all exit 0, **no schema conflict** with
+>   UAT's unreleased writes. Data intact (tenants 366, parties 9).
+> - **Hiccup (recovered):** the first `up -d` recreated the postgres container; the one-off migration jobs raced it and
+>   failed on `ECONNREFUSED`. Data was safe (external volume `gigalibs-uat-database` reattached); a second `up -d` with
+>   postgres already healthy applied everything cleanly. ~1–2 min where app services were down.
+> - **Post-deploy, still open:** load the 5 platform-reference sets via the audited operator action (deployed empty by
+>   design — `provenance:null`); the `health/relays` check path; and the Security/Accounting review gates were
+>   **deployed ahead of sign-off** per the owner's explicit instruction.
+> - **Rollback if needed:** redeploy `a1eb8242f379-1e6936b449cd` / cmms `c88763ffb5bb-3d79c392b6f9` (images retained) +
+>   restore `infra/compose/backups/gigalibs_backup_20261027_110615Z.dump`.
+
+
 > ## ⟹ DEPLOYABLE TAG (updated 2026-10-27 PM): `7722d85b7cd9-37e91fa8a3b0`
 >
 > The release was **rebuilt** to fold in the ICU units commit (`ef44be8b`) + its card sync (`10581cb3`),

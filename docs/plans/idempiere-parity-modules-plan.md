@@ -1,10 +1,20 @@
 # iDempiere-parity modules — end-to-end production development plan
 
-**Goal.** Build the 7 missing/partial Enterprise Modules to **100% functional parity with iDempiere, enhanced beyond
-it**, on the GigaLibs architecture (multi-tenant RLS, metadata-driven screens, the document engine, module relays).
+**Goal.** Build the seven listed Enterprise Module outcomes with the stated iDempiere reference flows and GigaLibs
+enhancements. The named slices are the acceptance scope; exhaustive iDempiere parity needs a separate feature-by-feature
+gap map and cannot be inferred from this plan.
 Each module ships real-time transactions, a real DB schema, all screens, and the handshakes that let a business
-transaction complete end-to-end. Built the GigaLibs way: zero hard-coding, server-authoritative math, immutable
-stamped ledgers, independent review, tested on `gigalibs-test`, deployed by the owner.
+transaction complete end-to-end. Built the GigaLibs way: versioned business configuration, server-authoritative math,
+immutable stamped ledgers, independent review, isolated integration proof, and deployment by the owner.
+
+**Owner delivery direction (2026-10-28).** Build F0 and Modules 1–7 in the order below without waiting for a UAT
+deployment between modules. A full module and a clean `pnpm verify` trigger its module-completion commit. The owner
+will deploy the seven-module batch once from a release worktree, then run and accept each module journey. This batch
+deployment decision supersedes the per-phase deploy cadence below and the earlier group order for these seven modules;
+it does not make an unverified module Built or a merely Built module Done.
+
+**Architecture reconciliation.** ADR-0018, ADR-0033 and ADR-0007 govern where the shorthand below differed from
+accepted design: no magic Org-0, per-document lifecycle graphs, and asynchronous cross-module posting.
 
 Modules in scope: **Universal Business Partner · WMS/Material Ledger · Manufacturing/BOM/MRP · Advanced SCM &
 Transfers · Landed Cost · Returns/RMA · Project Accounting/WBS.**
@@ -16,14 +26,14 @@ Transfers · Landed Cost · Returns/RMA · Project Accounting/WBS.**
 | Concern | The GigaLibs way (all 7 modules follow it) |
 | --- | --- |
 | **Module shape** | `modules/<name>/` = `apps/api` (NestJS on `@gigalibs/module-sdk`), `web/` (metadata-window React + `@medusajs/ui`), `db/migrations/` (own schema `gigalibs_<name>`, `runtime-manifest.txt`), `dictionary/` (windows + panels), `module.yaml` (catalog entry, gateway routes, roles, `navigationGroup`, readiness). Runs in `module-host`. |
-| **Multi-tenancy** | Forced PostgreSQL RLS; **two-tier `tenantId` + `orgId`** on every row (see F0 — the two-tier upgrade). Writes through `withTenantTransaction`; runtime role is least-privilege (SELECT/INSERT on append-only ledgers). |
+| **Multi-tenancy** | Tenant is the forced PostgreSQL RLS boundary. ADR-0018 supplies explicit `UNIT`, `SHARED`, or `EITHER` ownership, signed organization grants and a versioned organization replica. Financial/stock rows have explicit owning-unit references where their policy requires them. No magic Org-0 or implicit shared owner. Runtime roles remain least-privilege. |
 | **Screens** | Metadata windows (`dictionary/*.window.json`) + registered **panels** (S2b) placed by metadata — no bespoke routing. `@medusajs/ui` + `ui-*` tokens (passes `audit:design-tokens`). Customers reorder/relabel/add fields with no code. |
-| **Document engine** | **`@gigalibs/document-lifecycle`** = iDempiere's DocAction. Every business document is a state machine: `DRAFT → PREPARED → APPROVED → COMPLETED → CLOSED/VOIDED/REVERSED`. `prepareIt` (validate period, credit, reserve stock, explode BOM, compute tax) and `completeIt` (generate downstream docs, move stock, **auto-post GL**) run in one transaction with row locks; `reverseCorrectIt` writes an inverted counter-document (never deletes). |
-| **Real-time** | Writes are synchronous + ACID; cross-module effects go through the **outbox → inbox relay** (`module-sdk`, ADR-0007) drained by BullMQ jobs; live tiles (ATP, stock, match status) stream over the existing WS channel. No external calls at runtime. |
-| **Handshake** | Modules talk **only** through the **signed module gateway** (`callSignedModule`) and **published events** in `@gigalibs/contracts`; never another module's schema. GL posting goes through `@gigalibs/posting-rules` into `financial-operations`' subledger inbox (the proven inventory→finance pattern). |
+| **Document engine** | `@gigalibs/document-lifecycle` supplies shared transition, idempotency, concurrency, audit and outbox primitives. Each document owns its graph and guards; `prepareIt`/`completeIt`/`reverseCorrectIt` are document actions where applicable, not one imposed state list. The owning module locks and commits its own rows and outbox atomically. Counter-documents reverse immutable effects. |
+| **Real-time** | Local writes are ACID. Cross-module facts use the existing signed HTTP outbox/inbox relay (ADR-0007); a future BullMQ transport needs its own decision and proof. Live tiles stream confirmed state and expose pending/rejected downstream work. Gateway calls have bounded timeouts, idempotency and failure states. |
+| **Handshake** | Modules communicate through versioned signed gateway commands or published events in `@gigalibs/contracts`, never another module's schema. Finance posting is asynchronous and idempotent per ADR-0033 D3: local completion emits an outbox fact, Finance posts in its transaction, and the source shows awaiting/posted/rejected status with reconciliation. No cross-module ACID claim. |
 | **Ledgers & audit** | Money/stock/cost tables are **immutable append-only**; corrections post reversals. Field-level audit (`audit-core`) with actor + reason on every write. Every computed row stamps its engine/criteria/rate versions + inputs hash. |
 | **No hard-coding** | No business values in code — tax rates, cost methods, tolerances, replenishment rules are **versioned, cited config**. Pure engines `f(inputs, config) → outputs` in `packages/*`; migrations are structure-only. |
-| **Proof** | Tier-1 Vitest (pure math: ATP, 3-way, depreciation, BOM rollup, landed-cost allocation); Tier-2 integration on throwaway Postgres (RLS, DocAction, relays — the `proof:minimal-*` + `verify-*-relay` harnesses); Tier-3 Playwright E2E. `security_reviewer` every slice; `gxp`/`accounting` for posting. |
+| **Proof** | Tier-1 Vitest (pure math: ATP, BOM rollup, landed-cost allocation); Tier-2 integration on throwaway Postgres (RLS, document actions, relays); Tier-3 Playwright E2E. Record independent Security and Accounting findings against the assembled UAT release; resolve findings without blocking the next module's build. |
 
 ---
 
@@ -31,8 +41,8 @@ Transfers · Landed Cost · Returns/RMA · Project Accounting/WBS.**
 
 | # | Foundation | Why it blocks everything | Key tasks |
 | --- | --- | --- | --- |
-| **F0.1 Two-tier Tenant→Org** | iDempiere's AD_Client→AD_Org; GigaLibs is Tenant+Department today. Orgs = legal entities/branches/cost centres; Org-0 holds shared master data (products, price lists, CoA, tax). | 1. Add `orgId` to the RLS context + a Prisma `$extends` that splices `tenantId`+`orgId` into every query AST. 2. `organizations` replica + the Org-0 inheritance rule. 3. Scope all existing money modules to Org. |
-| **F0.2 Universal Document Engine** | Generalise `document-lifecycle` into the DocAction two-phase (`prepareIt`/`completeIt`/`reverseCorrectIt`) with pessimistic `SELECT FOR UPDATE NOWAIT`, period-open check, and a pluggable "downstream-doc + GL-post" callback. | 1. The generic runner + lock + period guard. 2. The reversal (counter-document) helper. 3. The GL-post hook into `posting-rules`. |
+| **F0.1 Organization ownership** | ADR-0018 already provides tenant-bound, versioned organizations and a module replica; this foundation closes gaps for the seven modules. Shared master data uses explicit `SHARED` ownership and its permission policy. | 1. Reuse signed organization scope and module replicas; add ownership policy and owning-unit references only where required. 2. Prove sibling-unit and tenant isolation in API and PostgreSQL. 3. Migrate existing financial/stock records with a verified owner mapping or explicit shared classification; refuse ambiguous rows. |
+| **F0.2 Document actions** | Extend `document-lifecycle` without imposing one graph. Row locking and period checks live in the owning module transaction; Finance posting follows ADR-0033 D3. | 1. Shared transition/idempotency/audit/outbox helpers. 2. Per-document counter-document and replay proof. 3. Posting status, rejection recovery and reconciliation through the existing Finance relay. |
 | **F0.3 Material Ledger core** | The single stock authority every logistics/finance module reads (this is Module 2's engine; build it as the shared ledger). | See **Module 2**. |
 
 > Module **1 (Business Partner)** and **2 (Material Ledger)** are themselves foundations — build them first; the
@@ -43,14 +53,23 @@ Transfers · Landed Cost · Returns/RMA · Project Accounting/WBS.**
 ## The 7 modules (schema · screens · handshake · tasks · UX-beyond-iDempiere)
 
 ### Module 1 — Universal Business Partner (`business-partners`)  ⟶ build 1st
-**Parity:** one counterparty (`isCustomer/isVendor/isEmployee`) with simultaneous AR (11200) & AP (21100) control
-accounts; credit exposure `OpenAR + UninvoicedOrders − Prepayments ≤ CreditLimit`; AR/AP netting.
-**Schema (`gigalibs_partners`):** `partners` (extends kernel `parties`), `partner_locations`, `partner_contacts`,
+**Build status (2026-10-28): In Progress, not Built.** Completed sub-slices: Party/organization projection and
+forced-RLS schema; scoped customer/vendor account create with Finance control-account validation; Orders → AR
+owned fulfillment issue; AR issue/payment/void balance snapshots → signed Business Partner inbox → immutable
+credit deltas. The remaining slices and verification gate are tracked in [WI-OI-123](../../.pi/tasks/WI-OI-123.md).
+The kernel's existing `Party`, roles, addresses, contacts and organization assignments remain the master-data
+authority. This module owns only commercial/financial extensions keyed by the canonical party id; it consumes
+versioned party facts and never adds a second partner/contact/location master.
+**Parity:** one counterparty (`isCustomer/isVendor/isEmployee`) with simultaneous AR and AP control
+accounts selected from tenant-approved, versioned account configuration; credit exposure `OpenAR + UninvoicedOrders − Prepayments ≤ CreditLimit`; AR/AP netting.
+**Schema (`gigalibs_business_partners`):** `party_references` (versioned projection of kernel `parties`),
 `partner_bank`, `partner_customer_acct`, `partner_vendor_acct`, `credit_status` (ledger), `credit_holds`.
+Locations and contacts are read through the kernel Party API and composed by the BFF.
 **Screens:** Partner **split-screen** window (DataTable left / FocusModal-Drawer right) with tabs Locations · Contacts ·
 **Credit Status** (live gauge) · Financials; a Credit-Hold queue window.
 **Handshake:** publishes `partner.credit-hold.v1`; **serves** credit checks to Orders/Procurement/AR/AP via the gateway
-(`partners.credit.check`); consumes `invoice.completed.v1` to update open balance.
+(`partners.credit.check`); consumes AR-owned invoice and settlement facts to update open balance. AR remains the
+customer-invoice authority (platform implementation plan D4/T7); Orders' current invoice path needs convergence.
 **Slices:** S1 schema+RLS+Org; S2 partner CRUD + locations/contacts windows; S3 customer/vendor acct + CoA link;
 S4 **credit-exposure engine** (pure) + live gauge panel; S5 credit-hold state machine + gateway check + block flow;
 S6 AR/AP netting view; S7 relays + Playwright (clerk blocked on CREDIT_HOLD).
@@ -84,7 +103,7 @@ auto-generating POs.
 **> iDempiere:** Kanban + drag transfer; predictive replenishment (demand signal) vs static min-max.
 
 ### Module 4 — Manufacturing, BOM & MRP (new `universal-manufacturing`)  ⟶ build 4th
-**Parity:** multi-level BOM explosion/where-used; atomic production run (discharge raw, stock finished, roll cost);
+**Parity:** multi-level BOM explosion/where-used; a recoverable production run (discharge raw, stock finished, roll cost);
 scrap factor.
 **Schema (`gigalibs_manufacturing`):** `boms`, `bom_lines`, `production_orders`, `production_lines`, `production_plans`,
 `work_centers`, `routings`.
@@ -92,8 +111,8 @@ scrap factor.
 MRP run preview grid.
 **Handshake:** reserves/issues components via `inventory.reserve`; receives finished goods into stock; rolls cost via
 `cost_records`; posts WIP + variance to GL.
-**Slices:** S1 BOM schema + **explosion/implosion engine** (pure, recursive); S2 production order on DocAction (reserve
-→ issue → receive, atomic); S3 **cost rollup** (incl. scrap %) pure engine; S4 MRP netting (demand vs supply) → planned
+**Slices:** S1 BOM schema + **explosion/implosion engine** (pure, recursive); S2 production order on document actions
+(reserve → issue → receive, with durable pending/compensation across module boundaries); S3 **cost rollup** (incl. scrap %) pure engine; S4 MRP netting (demand vs supply) → planned
 orders; S5 BOM tree + shortage panel; S6 execution cockpit; S7 GL WIP/variance relay + E2E (run deducts raw, adds
 finished).
 **> iDempiere:** graph-based BOM editor; real-time shortage radar; what-if MRP simulation (reuse SPEED-style scenario
@@ -111,11 +130,14 @@ S4 sold-goods → COGS variance posting; S5 wizard + impact panel; S6 E2E ($3k f
 **> iDempiere:** multi-shipment container allocation UI; auto-suggest basis from commodity type.
 
 ### Module 6 — Returns / RMA (new `universal-returns`)  ⟶ build 6th
+Orders already owns `customer_returns` and `customer_credit_memos`. The RMA module owns authorization, inspection
+and disposition, then requests the existing Orders credit-memo action; Orders remains the financial document owner.
+Existing Orders returns need a compatibility/migration plan so the same return cannot be processed twice.
 **Parity:** RMA linked to original SO/Invoice; disposition Restock/Quarantine/Scrap; returned qty ≤ invoiced qty;
 credit memo.
 **Schema (`gigalibs_returns`):** `rma`, `rma_lines`, `rma_types`, `dispositions`.
 **Screens:** RMA **processing checklist**; RadioGroup disposition; one-click Credit-Memo modal.
-**Handshake:** validates against Orders (`orders.invoice.lookup`); restock → `inventory.receive` to sellable ATP;
+**Handshake:** validates the original sales order with Orders and the invoice with AR (T7); restock → `inventory.receive` to sellable ATP;
 scrap → expense GL; credit memo → AR.
 **Slices:** S1 schema + anti-fraud qty guard (pure); S2 RMA on DocAction linked to SO/Invoice; S3 disposition routing
 (restock/quarantine/scrap) + stock/GL effects; S4 credit-memo → AR handshake; S5 checklist UI; S6 E2E (damaged return →
@@ -151,7 +173,7 @@ F0.2 DocAction  ───┤
                                            └─► 7 Project Acct  (needs BP + Stock + GL + AR)
 ```
 
-**Phasing (each phase = one business-use-case batch: finish all slices → one review → one commit → one deploy):**
+**Phasing (build every full module, verify and commit it; owner deploys all seven together afterward):**
 - **Phase A (foundations):** F0.1, F0.2, then **Module 1** and **Module 2** (they unblock everything).
 - **Phase B (logistics):** **Module 3** then **Module 4** (both extend the Material Ledger).
 - **Phase C (cost & returns):** **Module 5** then **Module 6**.
@@ -166,8 +188,12 @@ RLS + two-tier Org · isomorphic Zod validation (one schema, client+server) · A
 (credit-hold explainer, defect triage, MRP what-if, bank-match confidence) · mobile-first drawers (scanner, timesheet) ·
 immutable stamped ledgers with one-click reversal.
 
-## Definition of Done (per module)
-All slices committed; Tier-1/2/3 tests green (100% on money/stock/cost math, no float errors); RLS + two-tier isolation
-proven; DocAction reversal proven (no orphan GL/stock); `pnpm verify` green (`audit:layers`, `audit:design-tokens`,
-`audit:production-data`); independent Security review (+ Accounting for any posting); metadata windows published;
-catalogue entry + `navigationGroup` + readiness; deployed by the owner to UAT; journey rerun.
+## Completion evidence (per module)
+**Built:** all slices and key failure paths work against real persistence; exact arithmetic and negative-stock guards
+are tested; tenant and organization isolation, document reversal, relay replay and reconciliation are proven;
+`pnpm verify` is green; migration and roll-forward evidence exists; metadata windows and catalogue registration are
+present. Commit the complete module once its build gate passes.
+
+**Done:** after the batch release from a release worktree, the owner deploys to UAT and accepts that module's journey.
+Independent Security review on UAT and Accounting findings for posting are recorded and resolved under the applicable
+release rules. Built, On UAT and Done remain distinct evidence statuses.

@@ -32,6 +32,7 @@ function arPrincipal(principal: ModulePrincipal): ArPrincipal {
     subject: principal.subject,
     issuer: 'urn:gigalibs:platform-context:v1',
     permissions: principal.permissions,
+    ...(principal.organization ? { organization: principal.organization } : {}),
   };
 }
 
@@ -50,6 +51,7 @@ function invoiceToWindow(invoice: InvoiceResponse): RecordValues {
     version: invoice.version,
     'invoice-number': invoice.invoiceNumber,
     'customer-id': invoice.customerId,
+    'org-unit-id': invoice.orgUnitId,
     currency: invoice.currency,
     'issue-date': invoice.issueDate,
     'due-date': invoice.dueDate,
@@ -86,6 +88,10 @@ export function windowValuesToCreateDraftInvoiceInput(values: RecordValues) {
   const issueDate = values['issue-date'];
   const dueDate = values['due-date'];
   const customerId = values['customer-id'];
+  const orgUnitId = values['org-unit-id'];
+  if (typeof orgUnitId !== 'string' || orgUnitId.trim().length === 0 || orgUnitId.length > 64) {
+    throw new BadRequestException('org-unit-id must name the owning organization unit.');
+  }
   const parsedIssue = typeof issueDate === 'string' ? isoDate.safeParse(issueDate) : isoDate.safeParse(String(issueDate ?? ''));
   const parsedDue = typeof dueDate === 'string' ? isoDate.safeParse(dueDate) : isoDate.safeParse(String(dueDate ?? ''));
   const parsedCustomer = uuid.safeParse(customerId);
@@ -102,6 +108,7 @@ export function windowValuesToCreateDraftInvoiceInput(values: RecordValues) {
   }
   return {
     customerId: parsedCustomer.data,
+    orgUnitId: orgUnitId.trim(),
     currency: typeof values.currency === 'string' ? values.currency : 'USD',
     issueDate: parsedIssue.data,
     dueDate: parsedDue.data,
@@ -139,6 +146,7 @@ export function windowValuesToCreateCustomerInput(values: RecordValues) {
 const INV_FIELDS: readonly FieldSpec[] = [
   { key: 'invoice-number' },
   { key: 'customer-id', writable: true },
+  { key: 'org-unit-id', writable: true },
   { key: 'currency', writable: true },
   { key: 'issue-date', writable: true },
   { key: 'due-date', writable: true },

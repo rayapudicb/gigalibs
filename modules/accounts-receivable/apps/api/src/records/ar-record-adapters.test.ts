@@ -8,6 +8,7 @@ describe('windowValuesToCreateDraftInvoiceInput', () => {
   it('builds a one-line draft invoice from window field keys', () => {
     const input = windowValuesToCreateDraftInvoiceInput({
       'customer-id': '323e4567-e89b-12d3-a456-426614174000',
+      'org-unit-id': 'north',
       currency: 'USD',
       'issue-date': '2026-10-01',
       'due-date': '2026-10-31',
@@ -16,6 +17,7 @@ describe('windowValuesToCreateDraftInvoiceInput', () => {
       'line-unit-amount-minor': 15000,
     });
     expect(input.customerId).toBe('323e4567-e89b-12d3-a456-426614174000');
+    expect(input.orgUnitId).toBe('north');
     expect(input.lines[0]?.description).toBe('Consulting');
     expect(input.lines[0]?.unitAmountMinor).toBe(15000);
   });

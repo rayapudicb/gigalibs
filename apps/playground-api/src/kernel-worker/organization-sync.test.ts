@@ -13,10 +13,14 @@ const environment = {
   ANALYTICS_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64: key,
   PRODUCT_CATALOGUE_API_URL: 'http://module-host:4790',
   PRODUCT_CATALOGUE_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64: key,
+  BUSINESS_PARTNERS_API_URL: 'http://module-host:4790',
+  BUSINESS_PARTNERS_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64: key,
+  AR_API_URL: 'http://ar-api:3400',
+  AR_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64: key,
 } as NodeJS.ProcessEnv;
 const owner = (permissions: string[]) => ({
   user: { id: 'admin-1' },
-  tenant: { id: 'tenant-1', entitlements: [{ moduleKey: 'gigaops', status: 'ENABLED', version: 'v1' }, { moduleKey: 'analytics-studio', status: 'ENABLED', version: 'v1' }, { moduleKey: 'product-catalogue', status: 'ENABLED', version: 'v1' }] },
+  tenant: { id: 'tenant-1', entitlements: [{ moduleKey: 'gigaops', status: 'ENABLED', version: 'v1' }, { moduleKey: 'analytics-studio', status: 'ENABLED', version: 'v1' }, { moduleKey: 'product-catalogue', status: 'ENABLED', version: 'v1' }, { moduleKey: 'business-partners', status: 'ENABLED', version: 'v1' }, { moduleKey: 'accounts-receivable', status: 'ENABLED', version: 'v1' }] },
   roles: ['TENANT_ADMIN'],
   platformRoles: [],
   permissions,
@@ -95,9 +99,39 @@ describe('organization sync jobs', () => {
     ]);
   });
 
+  it('delivers an activated organization version to Business Partner with its own audience', async () => {
+    const calls: string[] = [];
+    const fetchImpl = vi.fn(async (url: string, init: RequestInit) => {
+      const claims = verifyPlatformContextToken(String((init.headers as Record<string, string>).Authorization).slice(7), publicKey.export({ format: 'pem', type: 'spki' }).toString(), 'gigalibs-business-partners-api');
+      expect(claims).toMatchObject({ tenant_id: 'tenant-1', entitlement: { module_key: 'business-partners' } });
+      calls.push(url);
+      return new Response(JSON.stringify({ version_id: 'version-0004', status: url.endsWith('/complete') ? 'READY' : 'RECEIVING', received_units: 1_001 }), { status: 200 });
+    });
+    await run(['organization:activate'], fetchImpl as never, source(), 'business-partners.organization-sync');
+    expect(calls).toHaveLength(4);
+    expect(calls[0]).toBe('http://module-host:4790/business-partners/v1/organization/versions/version-0004/units');
+    expect(calls[3]).toBe('http://module-host:4790/business-partners/v1/organization/versions/version-0004/complete');
+  });
+
+  it('delivers an activated organization version to AR with its own audience', async () => {
+    const calls: string[] = [];
+    const fetchImpl = vi.fn(async (url: string, init: RequestInit) => {
+      const claims = verifyPlatformContextToken(String((init.headers as Record<string, string>).Authorization).slice(7), publicKey.export({ format: 'pem', type: 'spki' }).toString(), 'gigalibs-ar-api');
+      expect(claims).toMatchObject({ tenant_id: 'tenant-1', entitlement: { module_key: 'accounts-receivable' } });
+      calls.push(url);
+      return new Response(JSON.stringify({ version_id: 'version-0004', status: url.endsWith('/complete') ? 'READY' : 'RECEIVING', received_units: 1_001 }), { status: 200 });
+    });
+    await run(['organization:activate'], fetchImpl as never, source(), 'accounts-receivable.organization-sync');
+    expect(calls).toHaveLength(4);
+    expect(calls[0]).toBe('http://ar-api:3400/v1/organization/versions/version-0004/units');
+    expect(calls[3]).toBe('http://ar-api:3400/v1/organization/versions/version-0004/complete');
+  });
+
   it('accepts only organization sync payloads with a version id', () => {
     expect(parseModuleCallPayload({ operation: 'analytics.organization-sync', versionId: 'cmversion0001' })).toEqual({ operation: 'analytics.organization-sync', versionId: 'cmversion0001' });
     expect(parseModuleCallPayload({ operation: 'product-catalogue.organization-sync', versionId: 'cmversion0001' })).toEqual({ operation: 'product-catalogue.organization-sync', versionId: 'cmversion0001' });
+    expect(parseModuleCallPayload({ operation: 'business-partners.organization-sync', versionId: 'cmversion0001' })).toEqual({ operation: 'business-partners.organization-sync', versionId: 'cmversion0001' });
+    expect(parseModuleCallPayload({ operation: 'accounts-receivable.organization-sync', versionId: 'cmversion0001' })).toEqual({ operation: 'accounts-receivable.organization-sync', versionId: 'cmversion0001' });
     expect(() => parseModuleCallPayload({ operation: 'analytics.organization-sync', versionId: '../x' })).toThrow();
   });
 });

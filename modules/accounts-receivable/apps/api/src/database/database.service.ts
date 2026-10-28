@@ -13,8 +13,10 @@ import {
 } from '../config.module-sdk.js';
 import type { ArRuntimeConfig } from '../runtime-config.js';
 
-/** AR has no SECURITY DEFINER relay functions on the standalone service yet (WI-OI-120hb). */
-export const AR_DEFINER_FUNCTIONS = [] as const;
+export const AR_DEFINER_FUNCTIONS = [
+  'relay_lease_credit_balances',
+  'relay_settle_credit_balance',
+] as const;
 
 export type ArDefinerFunction = (typeof AR_DEFINER_FUNCTIONS)[number];
 

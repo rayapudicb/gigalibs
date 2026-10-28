@@ -17,6 +17,8 @@ import {
   loadCreditInboxConfig,
 } from './credit/credit-inbox.guard.js';
 import { CreditInboxService } from './credit/credit-inbox.service.js';
+import { CreditCheckController } from './credit/credit-check.controller.js';
+import { CreditCheckService } from './credit/credit-check.service.js';
 import { CreditHoldsController } from './credit/holds.controller.js';
 import { CreditHoldsService } from './credit/holds.service.js';
 import { NettingController } from './credit/netting.controller.js';
@@ -51,6 +53,7 @@ const BusinessPartnersRecordController = createRecordController({
     PartyInboxController,
     PartnersController,
     CreditInboxController,
+    CreditCheckController,
     CreditHoldsController,
     CreditStatusController,
     NettingController,
@@ -68,6 +71,7 @@ const BusinessPartnersRecordController = createRecordController({
     PartnersService,
     CreditInboxGuard,
     CreditInboxService,
+    CreditCheckService,
     CreditHoldsService,
     CreditStatusService,
     NettingService,

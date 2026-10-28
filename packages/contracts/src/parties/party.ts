@@ -437,6 +437,9 @@ export const PartyRoleChangedEventV1Schema = BaseEventSchema.extend({
     roleType: PartyRoleTypeSchema,
     action: z.enum(['ADDED', 'UPDATED', 'REMOVED']),
     status: z.enum(['ACTIVE', 'INACTIVE', 'SUSPENDED']),
+    version: z.number().int().positive().optional(),
+    effectiveFrom: z.string().datetime().nullable().optional(),
+    effectiveTo: z.string().datetime().nullable().optional(),
   }),
 }).strict();
 export type PartyRoleChangedEventV1 = z.infer<typeof PartyRoleChangedEventV1Schema>;
@@ -447,6 +450,7 @@ export const PartyArchivedEventV1Schema = BaseEventSchema.extend({
     partyId: z.string().uuid(),
     reason: z.string(),
     archivedAt: z.string().datetime(),
+    version: z.number().int().positive().optional(),
   }),
 }).strict();
 export type PartyArchivedEventV1 = z.infer<typeof PartyArchivedEventV1Schema>;
@@ -458,6 +462,8 @@ export const PartyMergedEventV1Schema = BaseEventSchema.extend({
     targetPartyId: z.string().uuid(),
     reason: z.string(),
     mergedAt: z.string().datetime(),
+    sourceVersion: z.number().int().positive().optional(),
+    targetVersion: z.number().int().positive().optional(),
   }),
 }).strict();
 export type PartyMergedEventV1 = z.infer<typeof PartyMergedEventV1Schema>;

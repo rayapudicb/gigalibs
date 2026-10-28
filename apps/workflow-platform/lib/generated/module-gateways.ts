@@ -299,6 +299,20 @@ export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGat
         "methods": {
           "GET": "business-partners.credit.read"
         }
+      },
+      {
+        "template": "v1/partners/{id}/netting",
+        "pattern": "^v1/partners/[0-9a-fA-F-]{36}/netting$",
+        "methods": {
+          "GET": "business-partners.credit.read"
+        }
+      },
+      {
+        "template": "v1/credit-check",
+        "pattern": "^v1/credit-check$",
+        "methods": {
+          "POST": "business-partners.credit.read"
+        }
       }
     ],
     "transformBody": null,

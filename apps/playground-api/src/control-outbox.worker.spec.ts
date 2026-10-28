@@ -10,6 +10,7 @@ const database = vi.hoisted(() => {
     $transaction: vi.fn(async (operation: (client: typeof transaction) => unknown) =>
       operation(transaction),
     ),
+    controlOutboxEvent: { updateMany: vi.fn() },
     transaction,
   };
 });
@@ -46,15 +47,18 @@ const event = {
 function createWorker(
   publish = vi.fn().mockResolvedValue(undefined),
   applyForTenant = vi.fn().mockResolvedValue([]),
+  deliverParty = vi.fn().mockResolvedValue(undefined),
 ) {
   return {
     publish,
     applyForTenant,
+    deliverParty,
     worker: new ControlOutboxWorker(
       { processSourceEvent: vi.fn() } as never,
       {} as never,
       { publish } as never,
       { applyForTenant } as never,
+      { deliver: deliverParty } as never,
     ),
   };
 }
@@ -65,6 +69,7 @@ describe('ControlOutboxWorker Configuration delivery', () => {
     vi.useRealTimers();
     database.$queryRaw.mockResolvedValue([{ ...event }]);
     database.transaction.controlOutboxEvent.updateMany.mockResolvedValue({ count: 1 });
+    database.controlOutboxEvent.updateMany.mockResolvedValue({ count: 1 });
     database.transaction.auditLog.create.mockResolvedValue({});
   });
 
@@ -173,6 +178,36 @@ describe('ControlOutboxWorker Configuration delivery', () => {
     await worker.tick();
 
     expect(database.transaction.auditLog.create).not.toHaveBeenCalled();
+  });
+});
+
+describe('ControlOutboxWorker Party delivery', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    database.transaction.controlOutboxEvent.updateMany.mockResolvedValue({ count: 1 });
+    database.controlOutboxEvent.updateMany.mockResolvedValue({ count: 1 });
+    database.transaction.auditLog.create.mockResolvedValue({});
+    database.$queryRaw.mockResolvedValue([{ ...event, eventType: 'party.created.v1', aggregateId: 'party-1' }]);
+  });
+
+  it('marks the claimed Party fact published only after the relay acknowledges it', async () => {
+    const { deliverParty, worker } = createWorker();
+    await worker.tick();
+    expect(deliverParty).toHaveBeenCalledOnce();
+    expect(database.controlOutboxEvent.updateMany).toHaveBeenCalledWith({
+      where: { id: event.id, status: 'PROCESSING', attempts: 1 },
+      data: { status: 'PUBLISHED', publishedAt: expect.any(Date), claimedAt: null, lastErrorCode: null },
+    });
+  });
+
+  it('keeps the fact retryable when the inbox is unavailable', async () => {
+    const { worker } = createWorker(undefined, undefined, vi.fn().mockRejectedValue(new Error('PARTY_RELAY_UNAVAILABLE')));
+    await worker.tick();
+    expect(database.controlOutboxEvent.updateMany).not.toHaveBeenCalled();
+    expect(database.transaction.controlOutboxEvent.updateMany).toHaveBeenCalledWith({
+      where: { id: event.id, status: 'PROCESSING', attempts: 1 },
+      data: expect.objectContaining({ status: 'PENDING', lastErrorCode: 'PARTY_RELAY_UNAVAILABLE' }),
+    });
   });
 });
 

@@ -2,6 +2,7 @@ import { Prisma, prisma } from '@gigalibs/db';
 import {
   Injectable,
   Logger,
+  Optional,
   type OnApplicationBootstrap,
   type OnApplicationShutdown,
 } from '@nestjs/common';
@@ -14,6 +15,8 @@ import { ConfigurationOutboxPublisher } from './configuration-outbox.publisher.j
 import { ExceptionService } from './exception.service.js';
 // biome-ignore lint/style/useImportType: NestJS needs the runtime constructor token for dependency injection.
 import { ModuleWindowBaselineService } from './module-window-baselines.service.js';
+// biome-ignore lint/style/useImportType: NestJS needs the runtime constructor token for dependency injection.
+import { PartyProjectionRelayService, PARTY_PROJECTION_EVENT_TYPES } from './parties/party-projection-relay.service.js';
 
 interface ClaimedOutboxEvent {
   id: string;
@@ -36,6 +39,7 @@ export class ControlOutboxWorker implements OnApplicationBootstrap, OnApplicatio
     private readonly exceptionService: ExceptionService,
     private readonly configurationPublisher: ConfigurationOutboxPublisher,
     private readonly moduleWindows: ModuleWindowBaselineService,
+    @Optional() private readonly partyProjectionRelay?: PartyProjectionRelayService,
   ) {}
 
   onApplicationBootstrap() {
@@ -164,6 +168,14 @@ export class ControlOutboxWorker implements OnApplicationBootstrap, OnApplicatio
         this.logger.log(
           `Applied module windows for tenant ${event.tenantId}: ${outcomes.map((o) => `${o.surfaceKey}=${o.status}`).join(', ') || 'none shipped'}`,
         );
+      } else if ((PARTY_PROJECTION_EVENT_TYPES as readonly string[]).includes(event.eventType)) {
+        if (!this.partyProjectionRelay) throw new Error('PARTY_RELAY_NOT_CONFIGURED');
+        await this.partyProjectionRelay.deliver(event);
+        const published = await prisma.controlOutboxEvent.updateMany({
+          where: { id: event.id, status: 'PROCESSING', attempts: event.attempts },
+          data: { status: 'PUBLISHED', publishedAt: new Date(), claimedAt: null, lastErrorCode: null },
+        });
+        if (published.count !== 1) throw new Error('OUTBOX_CLAIM_LOST');
       } else if (event.eventType.startsWith('saga.') || event.eventType.startsWith('webhook.')) {
         // These legacy event families remain outside WI-OI-039. Their transport must be reconciled by
         // their owning work items before either family can be production-certified.

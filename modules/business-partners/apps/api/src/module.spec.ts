@@ -24,7 +24,7 @@ const environment = {
   BUSINESS_PARTNERS_CORS_ORIGINS: 'http://127.0.0.1:5180',
   BUSINESS_PARTNERS_DATABASE_URL: 'postgresql://runtime:secret@postgres:5432/gigalibs',
   BUSINESS_PARTNERS_DATABASE_POOL_SIZE: '10',
-  BUSINESS_PARTNERS_EXPECTED_MIGRATION_VERSION: '4',
+  BUSINESS_PARTNERS_EXPECTED_MIGRATION_VERSION: '5',
   BUSINESS_PARTNERS_PLATFORM_CONTEXT_PUBLIC_KEY_BASE64: publicKeyBase64,
 };
 
@@ -72,7 +72,7 @@ describe('Universal Business Partner runtime configuration', () => {
     }
   };
   it('loads the BUSINESS_PARTNERS_* variables', () => {
-    expect(load()).toMatchObject({ platformContextAudience: AUDIENCE, expectedMigrationVersion: 4 });
+    expect(load()).toMatchObject({ platformContextAudience: AUDIENCE, expectedMigrationVersion: 5 });
   });
   it('refuses another audience', () => {
     expect(() => load({ BUSINESS_PARTNERS_PLATFORM_CONTEXT_AUDIENCE: 'gigalibs-other-api' })).toThrow(AUDIENCE);

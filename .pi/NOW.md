@@ -1,4 +1,68 @@
-# NOW: where the work stands (2026-10-22)
+# NOW: where the work stands (2026-10-28)
+
+## Current owner-directed build — seven iDempiere-reference modules
+
+On 2026-10-28 the owner directed F0 then Modules 1–7 in order, without UAT pauses; the owner will deploy all seven
+in one batch after implementation. The source plan is
+[`idempiere-parity-modules-plan.md`](../docs/plans/idempiere-parity-modules-plan.md). The accepted ADR-0018/0033/0007
+contracts replace the plan's earlier Org-0 and cross-module ACID shorthand. Work items are WI-OI-122–129; the active
+card is [WI-OI-122](tasks/WI-OI-122.md) for shared foundations, followed by Business Partner, Material Ledger,
+Advanced SCM, Manufacturing, Landed Cost, RMA and Project Accounting. No module is Built or deployed from this directive.
+The existing Workforce and release state below remains historical context; its unrelated working-tree edits are
+untouched.
+
+`pnpm verify --audits` baseline on this branch (2026-10-28) fails four pre-existing steps: production-data and
+all-runtime-data suspicious text matches, undeclared `vitest` in `multi-currency`, and a stale generated permission
+catalogue. `audit:sdlc`, layers, API boundary, navigation, windows, migration pins and deployment profile pass.
+Full log: `/var/folders/jp/fkzm1c3s1d52rj_9cvjv6kx00000gn/T/gigalibs-verify/verify-2026-10-28T03-08-14-135Z.log`.
+
+**Current implementation evidence (2026-10-28):** WI-OI-122 added a transaction-bound document-action coordinator
+with authorized idempotent replay, local audit/outbox writes and rollback on failure; its package typecheck and 8
+tests pass. The `business-partners` module was generated as a **PLANNED, CONCEPT-only scaffold** for WI-OI-123; no
+Business Partner business slice is complete. Generated gateway/navigation equivalence tests were updated and pass
+(79/79). Full `pnpm verify` built successfully but is **not clean**: the escalated run found six test failures before
+the equivalence test corrections (three from the new scaffold, now corrected, and three unrelated), plus the three
+pre-existing audit categories. The Inventory period-replica certification also failed; isolated proof needs
+rechecking. Full log: `/var/folders/jp/fkzm1c3s1d52rj_9cvjv6kx00000gn/T/gigalibs-verify/verify-2026-10-28T03-22-05-519Z.log`.
+
+**F0 proof update (2026-10-28):** the shared document-action coordinator passed 3 opt-in tests on throwaway
+PostgreSQL 16 with a least-privilege role and forced RLS (replay/authorization/tenant isolation, rollback, row-lock
+contention). The organization access contract passed 2 opt-in tests on a separate throwaway PostgreSQL 16 (North
+versus South, explicit shared rows, other-tenant isolation, grouping-unit refusal, version lag). Both containers were
+removed. Package typechecks pass. F0 remains In Progress until a clean full verification and its first module adapter
+prove the contract in a business flow; Business Partner remains a PLANNED scaffold.
+
+**Business Partner Build update (2026-10-28):** WI-OI-123 is In Progress. Additive migration 2, forced tenant RLS,
+local organization replica, kernel organization job, signed Party/role relay and versioned inbox projection, scoped
+customer/vendor account routes with live Finance control-account validation, and exact credit arithmetic are in the
+working tree. Four isolated PostgreSQL 16 tests pass, including migration grants, tenant isolation, event replay and
+scoped customer account creation; targeted relay, Finance, navigation and module tests pass. Orders now sends its
+owning unit through a signed fulfillment outbox relay to AR; AR migration 17 and Orders migration 5 passed isolated
+PostgreSQL proof. New AR invoices require immutable organization ownership, an active Party/customer mapping and
+configured billing; manual AR writes check the delivered organization version. Historical ownerless invoices remain
+unmapped and must fail future BP credit approvals closed. The module remains PLANNED/CONCEPT because complete
+credit exposure, holds, metadata screens and the complete business journey are open.
+Evidence: `.pi/work/WI-OI-123.md`.
+
+**Business Partner credit-feed sub-slice (2026-10-28):** AR migration 18 queues ordered balance snapshots on
+invoice issue, payment/credit-note settlement and void; a signed relay targets the Business Partner credit inbox.
+The inbox converts snapshots into immutable exact deltas and rejects gaps or changed-body duplicate messages.
+Disposable PostgreSQL 16 proofs passed for AR issue → payment → void (100 → 70 → 0), ordered leasing, and BP
+credit deltas (+100/−30), tenant isolation and replay refusal. Source watermarks, Orders exposure, prepayments,
+historical reconciliation, holds, screens and the complete journey remain open. WI-OI-123 remains In Progress;
+Business Partner remains PLANNED/CONCEPT, with no module-completion commit or deploy.
+Targeted AR/BP/contract tests passed 26/26 and migration pins agree. The full `pnpm verify` build stopped making
+progress and was interrupted without a result; the subsequent `pnpm verify --audits` passed all gates other than
+the existing production/all-runtime data and multi-currency dependency audits. Audit log:
+`/var/folders/jp/fkzm1c3s1d52rj_9cvjv6kx00000gn/T/gigalibs-verify/verify-2026-10-28T05-04-29-855Z.log`.
+
+The latest full `pnpm verify` passed build, navigation, SDLC, layers, module manifests, migration pins, windows and
+deployment profile. It failed three unrelated test suites (workflow companion route classification, privacy model
+catalogue, RBAC expectation) and the existing production/all-runtime data and multi-currency dependency audits.
+Full log: `/var/folders/jp/fkzm1c3s1d52rj_9cvjv6kx00000gn/T/gigalibs-verify/verify-2026-10-28T04-25-43-296Z.log`.
+No module is Built or Done; no module-completion commit or deploy was made.
+
+---
 
 The order of all work is [execution plan v3](../docs/plans/gigalibs-execution-plan-v3.md) (owner-approved 2026-10-13)
 and [the Phase 1 order](../docs/plans/phase-1-sizing.md) (owner-approved 2026-10-16). Statuses are in
@@ -14,7 +78,7 @@ Full deploy sequence and module completion gate are in `AGENTS.md`.
 - Security review: post-UAT, not pre-deploy. Does not block any deploy.
 - F2.9: owner functional acceptance on UAT is sufficient; formal accountant review deferred, non-blocking.
 
-## Current step — **Group 5 Workforce BUILD (Phase 1)**
+## Historical step — **Group 5 Workforce BUILD (Phase 1)**
 
 **120gd** journey **`jsjmyx`** (2026-10-22): **0 CMMS blockers** — 5 Workforce blockers deferred to Group 5. Labour form fix committed `9b9945c1`. **Owner: accept CMMS journey as clean → tick PHASE-1-CM1 row 1 → schedule Group 1 deploy day.**
 

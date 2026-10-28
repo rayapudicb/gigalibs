@@ -57,7 +57,7 @@ export type ModuleCallPayload =
   | { readonly operation: 'analytics.summaries-build'; readonly datasetVersionId: string }
   /** WI-OI-107: queued when a tenant activates an industry or country pack (never scheduled directly). */
   | { readonly operation: 'workforce.pack-apply' | 'geospatial.pack-apply'; readonly publishedVersionId: string }
-  | { readonly operation: 'workforce.organization-sync' | 'analytics.organization-sync' | 'product-catalogue.organization-sync'; readonly versionId: string };
+  | { readonly operation: 'workforce.organization-sync' | 'analytics.organization-sync' | 'product-catalogue.organization-sync' | 'business-partners.organization-sync' | 'accounts-receivable.organization-sync'; readonly versionId: string };
 
 /**
  * The pack-apply operation of each module that reads packs, by the module's name in packs (its manifest name), with
@@ -73,6 +73,8 @@ export const ORGANIZATION_SYNC_OPERATIONS = {
   gigaops: { operation: 'workforce.organization-sync' },
   'analytics-studio': { operation: 'analytics.organization-sync' },
   'product-catalogue': { operation: 'product-catalogue.organization-sync' },
+  'business-partners': { operation: 'business-partners.organization-sync' },
+  'accounts-receivable': { operation: 'accounts-receivable.organization-sync' },
 } as const;
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -166,6 +168,26 @@ export const MODULE_CALL_OPERATIONS: Readonly<Record<ModuleCallPayload['operatio
     body: () => ({}),
     organizationVersion: true,
   },
+  'business-partners.organization-sync': {
+    moduleKey: 'business-partners',
+    audience: 'gigalibs-business-partners-api',
+    baseUrlEnvironment: 'BUSINESS_PARTNERS_API_URL',
+    privateKeyEnvironment: 'BUSINESS_PARTNERS_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64',
+    permission: 'organization:activate',
+    path: (payload) => `business-partners/v1/organization/versions/${encodeURIComponent(moduleCallTarget(payload))}`,
+    body: () => ({}),
+    organizationVersion: true,
+  },
+  'accounts-receivable.organization-sync': {
+    moduleKey: 'accounts-receivable',
+    audience: 'gigalibs-ar-api',
+    baseUrlEnvironment: 'AR_API_URL',
+    privateKeyEnvironment: 'AR_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64',
+    permission: 'organization:activate',
+    path: (payload) => `v1/organization/versions/${encodeURIComponent(moduleCallTarget(payload))}`,
+    body: () => ({}),
+    organizationVersion: true,
+  },
 };
 
 export function parseModuleCallPayload(value: unknown): ModuleCallPayload {
@@ -191,7 +213,7 @@ export function parseModuleCallPayload(value: unknown): ModuleCallPayload {
     return { operation: input.operation, publishedVersionId: input.publishedVersionId };
   }
   if (
-    (input.operation === 'workforce.organization-sync' || input.operation === 'analytics.organization-sync' || input.operation === 'product-catalogue.organization-sync') &&
+    (input.operation === 'workforce.organization-sync' || input.operation === 'analytics.organization-sync' || input.operation === 'product-catalogue.organization-sync' || input.operation === 'business-partners.organization-sync' || input.operation === 'accounts-receivable.organization-sync') &&
     typeof input.versionId === 'string' &&
     /^[A-Za-z0-9_-]{8,64}$/.test(input.versionId)
   ) {
@@ -212,6 +234,8 @@ export function moduleCallPayload(operation: ModuleCallPayload['operation'], tar
     'workforce.organization-sync': { versionId: targetId },
     'analytics.organization-sync': { versionId: targetId },
     'product-catalogue.organization-sync': { versionId: targetId },
+    'business-partners.organization-sync': { versionId: targetId },
+    'accounts-receivable.organization-sync': { versionId: targetId },
   }[operation];
   return parseModuleCallPayload({ operation, ...target });
 }
@@ -233,6 +257,8 @@ export function moduleCallTarget(payload: ModuleCallPayload): string {
     case 'workforce.organization-sync':
     case 'analytics.organization-sync':
     case 'product-catalogue.organization-sync':
+    case 'business-partners.organization-sync':
+    case 'accounts-receivable.organization-sync':
       return payload.versionId;
   }
 }

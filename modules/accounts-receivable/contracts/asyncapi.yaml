@@ -12,8 +12,43 @@ channels:
       operationId: publishInvoiceIssued
       message:
         $ref: '#/components/messages/InvoiceIssued'
+  ar.credit.invoice-balance.v1:
+    publish:
+      operationId: publishInvoiceCreditBalance
+      message:
+        $ref: '#/components/messages/InvoiceCreditBalance'
 components:
   messages:
+    InvoiceCreditBalance:
+      name: ar.credit.invoice-balance.v1
+      messageId: messageId
+      x-delivery: signed-module-relay-v1
+      payload:
+        type: object
+        additionalProperties: false
+        required: [messageId, tenantId, eventType, aggregateType, aggregateId, aggregateVersion, correlationId, schemaVersion, payload, occurredAt]
+        properties:
+          messageId: {type: string, format: uuid}
+          tenantId: {type: string, format: uuid}
+          eventType: {type: string, const: ar.credit.invoice-balance.v1}
+          aggregateType: {type: string, const: invoice}
+          aggregateId: {type: string, format: uuid}
+          aggregateVersion: {type: integer, minimum: 1}
+          correlationId: {type: string}
+          causationId: {type: [string, 'null']}
+          schemaVersion: {type: integer, const: 1}
+          occurredAt: {type: string, format: date-time}
+          payload:
+            type: object
+            additionalProperties: false
+            required: [invoiceId, customerPartyId, orgUnitId, currencyCode, openAmountMinor, sourceVersion]
+            properties:
+              invoiceId: {type: string, format: uuid}
+              customerPartyId: {type: string, format: uuid}
+              orgUnitId: {type: string, minLength: 1, maxLength: 64}
+              currencyCode: {type: string, pattern: '^[A-Z]{3}$'}
+              openAmountMinor: {type: string, pattern: '^(0|[1-9][0-9]*)$'}
+              sourceVersion: {type: integer, minimum: 1}
     InvoiceIssued:
       name: ar.invoice.issued.v1
       messageId: eventId

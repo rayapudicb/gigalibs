@@ -71,7 +71,7 @@ spec:
       trialEligible: false
       requiredPermission: business-partners.records.read
       platformInspection: false
-      reason: Scaffold only; Business Partner financial persistence, screens and handshakes are not built.
+      reason: Credit exposure, holds, netting, AR/Orders feeds and signed credit-check gateway; partner windows on metadata.
       navigationOrder: 330
       personas: [OPERATIONS_SUPERVISOR]
       roles:
@@ -103,3 +103,5 @@ spec:
       - { path: 'v1/partners/{id}/credit-holds', GET: business-partners.credit.read, POST: business-partners.credit.manage }
       - { path: 'v1/partners/{id}/credit-holds/{id}/release', POST: business-partners.credit.manage }
       - { path: 'v1/partners/{id}/credit-status', GET: business-partners.credit.read }
+      - { path: 'v1/partners/{id}/netting', GET: business-partners.credit.read }
+      - { path: 'v1/credit-check', POST: business-partners.credit.read }

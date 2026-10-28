@@ -13,6 +13,8 @@ import { ordersRecordDispatcher } from './orders/orders-record-adapters.js';
 import { OrderController } from './orders/orders.controller.js';
 import { OrderService } from './orders/orders.service.js';
 import { OrganizationController } from './organization/organization.controller.js';
+import { OrdersArOutboxRelay } from './relay/orders-ar-relay.js';
+import { OrdersCreditUninvoicedRelay } from './relay/orders-credit-relay.js';
 
 const OrdersRecordController = createRecordController({
   guard: AuthorizationGuard,
@@ -26,6 +28,8 @@ const OrdersRecordController = createRecordController({
     DatabaseService,
     AuthorizationGuard,
     OrderService,
+    OrdersArOutboxRelay,
+    OrdersCreditUninvoicedRelay,
     {
       provide: RECORD_DISPATCHER,
       inject: [OrderService, DatabaseService],

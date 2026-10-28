@@ -132,18 +132,6 @@ export class InvoicesController {
     return result.body;
   }
 
-  @Post('inbox/fulfillments')
-  @RequirePermissions('ar.invoices.write')
-  async ingestFulfillment(
-    @Body() body: any,
-    @Req() request: AuthenticatedRequest,
-  ): Promise<object> {
-    return this.invoices.issueInvoiceFromFulfillment(
-      requirePrincipal(request),
-      body,
-      request.correlationId ?? 'unavailable',
-    );
-  }
 }
 
 function requirePrincipal(request: AuthenticatedRequest): ArPrincipal {

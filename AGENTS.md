@@ -40,6 +40,12 @@ All remaining work follows a strict three-phase pattern. **No exceptions. Codex,
 
 ### Deploy sequence (fixed order — do not reorder)
 
+**Owner override, 2026-10-28, limited to the seven iDempiere-reference modules:** build F0 and Modules 1–7 in
+dependency order without UAT pauses. Commit each complete module after clean verification. The owner deploys all
+seven together once from a release worktree and accepts each module journey afterward. See WI-OI-122–129 and
+`docs/plans/idempiere-parity-modules-plan.md`. This override does not authorize an agent deploy or change the
+remaining groups' order.
+
 | # | Group | Modules | Notes |
 |---|-------|---------|-------|
 | 1 | CMMS M-CM1 | Work orders, parts, assets, unit scope | Current — finish first |

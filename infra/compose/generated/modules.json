@@ -1,4 +1,27 @@
 {
+  "business-partners": {
+    "hosting": "host",
+    "basePath": "/business-partners",
+    "package": "@gigalibs/business-partners-api",
+    "directory": "modules/business-partners",
+    "image": "gigalibs/module-host",
+    "component": "module-host",
+    "title": "Universal Business Partner",
+    "workItem": "WI-OI-123",
+    "prefix": "BUSINESS_PARTNERS",
+    "service": "module-host",
+    "port": 4790,
+    "schema": "gigalibs_business_partners",
+    "migrationVersion": 5,
+    "audience": "gigalibs-business-partners-api",
+    "appendOnlyTables": [
+      "audit_events",
+      "credit_status"
+    ],
+    "readOnlyTables": [
+      "auth_revocation_events"
+    ]
+  },
   "financial-operations": {
     "hosting": "host",
     "basePath": "/financial-operations",
@@ -78,7 +101,7 @@
     "service": "module-host",
     "port": 4790,
     "schema": "gigalibs_orders",
-    "migrationVersion": 4,
+    "migrationVersion": 6,
     "audience": "gigalibs-universal-orders-api",
     "appendOnlyTables": [
       "audit_events"

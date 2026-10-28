@@ -8,6 +8,7 @@ platform `Invoice`, `PaymentTransaction`, or supplier/AP tables.
 | --- | --- | --- |
 | `000001_ar_foundation.up.sql` | Tenant mapping, billing identity/numbering, customers, drafts, immutable issued invoices, idempotency, audit, outbox, indexes and RLS | In implementation review; not deployed |
 | `000002_ar_outbox_delivery.up.sql` | Leased claims, dead-letter state, index, and narrowly scoped cross-tenant outbox worker role | In implementation review; not deployed |
+| `000018_ar_credit_balance_relay.up.sql` | Additive credit snapshot positions, ordered signed-relay outbox, issue/payment/void triggers, forced tenant RLS. Existing invoices are not backfilled. | In implementation proof; not deployed |
 
 The release process must record the file checksum, PostgreSQL version, execution identity, start/end time,
 and verification result. Released migrations are never edited; corrections use a new forward migration.

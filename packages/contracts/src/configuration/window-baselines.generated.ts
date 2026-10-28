@@ -541,6 +541,240 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
     "contractVersion": "1.0",
     "window": {
       "route": "/business-partners",
+      "label": "Credit exposure",
+      "description": "Every active customer account with its credit limit, exposure, available credit and risk — highest utilisation first.",
+      "readPermission": "business-partners:read"
+    },
+    "definition": {
+      "kind": "APPLICATION_DICTIONARY",
+      "contractVersion": "1.0",
+      "moduleKey": "business-partners",
+      "entityKey": "credit-exposure",
+      "surfaceKey": "credit-exposure",
+      "title": "Credit exposure",
+      "dictionary": {
+        "packageKey": "credit-exposure-module-baseline",
+        "name": "Credit exposure",
+        "version": "1.0.0",
+        "moduleKey": "business-partners",
+        "targetEntityKey": "business-partners.credit-exposure",
+        "entities": [
+          {
+            "entityKey": "business-partners.credit-exposure",
+            "moduleKey": "business-partners",
+            "label": "Credit positions",
+            "ownership": "MODULE_CORE",
+            "primaryKeyField": "id",
+            "isVersioned": true,
+            "isAuditLogged": true,
+            "isSoftDeletable": false
+          }
+        ],
+        "fields": [
+          {
+            "fieldKey": "partner-name",
+            "entityKey": "business-partners.credit-exposure",
+            "label": "Partner",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "currency",
+            "entityKey": "business-partners.credit-exposure",
+            "label": "Currency",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "utilization-pct",
+            "entityKey": "business-partners.credit-exposure",
+            "label": "Utilization %",
+            "type": "INTEGER",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "helpText": "Exposure as a percentage of the credit limit."
+          },
+          {
+            "fieldKey": "status",
+            "entityKey": "business-partners.credit-exposure",
+            "label": "Risk",
+            "type": "SELECT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "credit-risk-statuses"
+          },
+          {
+            "fieldKey": "credit-limit-minor",
+            "entityKey": "business-partners.credit-exposure",
+            "label": "Credit limit (minor units)",
+            "type": "INTEGER",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "exposure-minor",
+            "entityKey": "business-partners.credit-exposure",
+            "label": "Exposure (minor units)",
+            "type": "INTEGER",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "available-minor",
+            "entityKey": "business-partners.credit-exposure",
+            "label": "Available (minor units)",
+            "type": "INTEGER",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "org-unit-id",
+            "entityKey": "business-partners.credit-exposure",
+            "label": "Owning unit",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          }
+        ],
+        "relationships": [],
+        "references": [
+          {
+            "referenceKey": "credit-risk-statuses",
+            "referenceType": "VALUE_LIST",
+            "staticValues": [
+              {
+                "value": "OK",
+                "label": "Within limit"
+              },
+              {
+                "value": "NEAR_LIMIT",
+                "label": "Near limit"
+              },
+              {
+                "value": "OVER_LIMIT",
+                "label": "Over limit"
+              },
+              {
+                "value": "ON_HOLD",
+                "label": "On hold"
+              },
+              {
+                "value": "RECONCILE",
+                "label": "Needs reconciliation"
+              }
+            ]
+          }
+        ],
+        "validationRules": [],
+        "views": [
+          {
+            "viewKey": "credit-exposure",
+            "label": "Credit exposure",
+            "mode": "LIST",
+            "device": "ALL",
+            "searchFields": [
+              "partner-name"
+            ],
+            "defaultSortField": "utilization-pct",
+            "defaultSortDirection": "DESC",
+            "tabs": [
+              {
+                "tabKey": "position",
+                "label": "Position",
+                "position": 0,
+                "level": 0,
+                "targetEntityKey": "business-partners.credit-exposure",
+                "sections": [],
+                "fields": [
+                  {
+                    "fieldKey": "partner-name",
+                    "position": 0,
+                    "span": 6,
+                    "componentKey": "text-input"
+                  },
+                  {
+                    "fieldKey": "currency",
+                    "position": 1,
+                    "span": 2,
+                    "componentKey": "text-input"
+                  },
+                  {
+                    "fieldKey": "utilization-pct",
+                    "position": 2,
+                    "span": 2,
+                    "componentKey": "number-input"
+                  },
+                  {
+                    "fieldKey": "status",
+                    "position": 3,
+                    "span": 2,
+                    "componentKey": "select"
+                  },
+                  {
+                    "fieldKey": "credit-limit-minor",
+                    "position": 4,
+                    "span": 3,
+                    "componentKey": "number-input"
+                  },
+                  {
+                    "fieldKey": "exposure-minor",
+                    "position": 5,
+                    "span": 3,
+                    "componentKey": "number-input"
+                  },
+                  {
+                    "fieldKey": "available-minor",
+                    "position": 6,
+                    "span": 3,
+                    "componentKey": "number-input"
+                  },
+                  {
+                    "fieldKey": "org-unit-id",
+                    "position": 7,
+                    "span": 3,
+                    "componentKey": "text-input"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "navigation": [],
+        "actions": [],
+        "messages": []
+      }
+    }
+  },
+  {
+    "contractVersion": "1.0",
+    "window": {
+      "route": "/business-partners",
       "label": "Partners",
       "description": "Customers, vendors and employees as one counterparty.",
       "readPermission": "business-partners:read"
@@ -576,8 +810,8 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "entityKey": "business-partners.partners",
             "label": "Name",
             "type": "TEXT",
-            "required": true,
-            "readOnly": false,
+            "required": false,
+            "readOnly": true,
             "isSystemLocked": false,
             "classification": "INTERNAL",
             "maskOnDisplay": false
@@ -587,8 +821,8 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "entityKey": "business-partners.partners",
             "label": "Type",
             "type": "SELECT",
-            "required": true,
-            "readOnly": false,
+            "required": false,
+            "readOnly": true,
             "isSystemLocked": false,
             "classification": "INTERNAL",
             "maskOnDisplay": false,

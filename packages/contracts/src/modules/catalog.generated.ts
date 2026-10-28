@@ -611,6 +611,6 @@ export const generatedPlatformModuleCatalog = [
     trialEligible: false,
     requiredPermission: 'business-partners.records.read',
     platformInspection: false,
-    reason: 'Scaffold only; Business Partner financial persistence, screens and handshakes are not built.',
+    reason: 'Credit exposure, holds, netting, AR/Orders feeds and signed credit-check gateway; partner windows on metadata.',
   },
 ] as const;

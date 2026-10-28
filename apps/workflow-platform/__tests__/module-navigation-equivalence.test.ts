@@ -24,6 +24,11 @@ describe('manifest-declared navigation equals the former sidebar tables', () => 
   // Capability modules intentionally added after the WI-OI-083c freeze. Keeping these separate from the frozen
   // fixture makes each new navigation surface an explicit, reviewable architecture decision.
   const INTENDED_ADDITIONS = {
+    'business-partners': {
+      group: 'Financial Operations',
+      icon: moduleIcons.building,
+      personas: ['OPERATIONS_SUPERVISOR'],
+    },
     'product-catalogue': {
       group: 'Workforce & Operations',
       icon: moduleIcons.boxes,

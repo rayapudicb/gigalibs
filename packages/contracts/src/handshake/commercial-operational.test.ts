@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import {
+  ArCreditInvoiceBalanceV1Schema,
+  OrdersCreditUninvoicedBalanceV1Schema,
+  PartnerCreditCheckRequestV1Schema,
+  PartnerCreditCheckResponseV1Schema,
   ExactDecimal,
   OrdersAllocationRequestedV1Schema,
   InventoryReservationConfirmedV1Schema,
@@ -126,6 +130,7 @@ describe('Commercial & Operational Handshake Schemas', () => {
       fulfillmentId: 'a0000000-0000-4000-a000-000000000001',
       orderId: 'b0000000-0000-4000-a000-000000000001',
       orderNumber: 'SO-2026-0001',
+      orgUnitId: 'north',
       customerPartyId: 'c0000000-0000-4000-a000-000000000001',
       currencyCode: 'USD',
       issueId: 'd0000000-0000-4000-a000-000000000001',
@@ -149,9 +154,11 @@ describe('Commercial & Operational Handshake Schemas', () => {
     const valid = {
       invoiceId: 'a0000000-0000-4000-a000-000000000001',
       invoiceNumber: 'INV-2026-0001',
+      orgUnitId: 'north',
       orderId: 'b0000000-0000-4000-a000-000000000001',
       fulfillmentId: 'c0000000-0000-4000-a000-000000000001',
       customerPartyId: 'd0000000-0000-4000-a000-000000000001',
+      billingEntityId: 'e0000000-0000-4000-a000-000000000001',
       totalAmountMinor: '38750',
       currencyCode: 'USD',
       sealHash: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
@@ -159,5 +166,53 @@ describe('Commercial & Operational Handshake Schemas', () => {
       issuedAt: '2026-10-04T10:00:00.000Z',
     };
     expect(ArInvoiceIssuedV1Schema.safeParse(valid).success).toBe(true);
+    const { orderId: _orderId, fulfillmentId: _fulfillmentId, ...manual } = valid;
+    expect(ArInvoiceIssuedV1Schema.safeParse(manual).success).toBe(true);
+    expect(ArInvoiceIssuedV1Schema.safeParse({ ...manual, orgUnitId: undefined }).success).toBe(false);
+  });
+
+  it('requires an owned exact AR balance and positive source version', () => {
+    const valid = {
+      invoiceId: 'a0000000-0000-4000-a000-000000000001',
+      customerPartyId: 'b0000000-0000-4000-a000-000000000001',
+      orgUnitId: 'north', currencyCode: 'USD', openAmountMinor: '0', sourceVersion: 2,
+    };
+    expect(ArCreditInvoiceBalanceV1Schema.safeParse(valid).success).toBe(true);
+    expect(ArCreditInvoiceBalanceV1Schema.safeParse({ ...valid, orgUnitId: '' }).success).toBe(false);
+    expect(ArCreditInvoiceBalanceV1Schema.safeParse({ ...valid, openAmountMinor: '-1' }).success).toBe(false);
+    expect(ArCreditInvoiceBalanceV1Schema.safeParse({ ...valid, sourceVersion: 0 }).success).toBe(false);
+  });
+
+  it('validates OrdersCreditUninvoicedBalanceV1Schema', () => {
+    const valid = {
+      orderId: 'a0000000-0000-4000-a000-000000000001',
+      customerPartyId: 'b0000000-0000-4000-a000-000000000001',
+      orgUnitId: 'north',
+      currencyCode: 'USD',
+      uninvoicedAmountMinor: '2500',
+      sourceVersion: 1,
+    };
+    expect(OrdersCreditUninvoicedBalanceV1Schema.safeParse(valid).success).toBe(true);
+    expect(OrdersCreditUninvoicedBalanceV1Schema.safeParse({ ...valid, uninvoicedAmountMinor: '-1' }).success).toBe(false);
+  });
+
+  it('validates partner credit-check request and response', () => {
+    const request = {
+      requestKey: '5b9f7c1e-4d2a-4e8b-9c3f-1a2b3c4d5e6f',
+      partyId: 'a0000000-0000-4000-a000-000000000001',
+      orgUnitId: 'north',
+      currencyCode: 'USD',
+      additionalExposureMinor: '100',
+    };
+    expect(PartnerCreditCheckRequestV1Schema.safeParse(request).success).toBe(true);
+    const response = {
+      decision: 'APPROVED',
+      complete: true,
+      creditLimitMinor: '10000',
+      exposureMinor: '2500',
+      availableMinor: '7500',
+      activeHoldId: null,
+    };
+    expect(PartnerCreditCheckResponseV1Schema.safeParse(response).success).toBe(true);
   });
 });

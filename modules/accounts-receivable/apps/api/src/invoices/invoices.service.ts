@@ -6,8 +6,9 @@ import {
   formatInvoiceNumber,
   validateIssueDates,
 } from '@gigalibs/ar-domain';
-import { HttpException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, HttpException, Inject, Injectable, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
 import type { PoolClient } from 'pg';
+import { OrganizationReplica, OrganizationScopeRefusal, OrganizationVersionPendingError, assertOrganizationWrite, assertOwningUnit, organizationAccess, type OrganizationAccess } from '@gigalibs/module-sdk';
 import { z } from 'zod';
 import type { ArPrincipal } from '../auth/authorization.js';
 import { DatabaseService } from '../database/database.service.js';
@@ -30,6 +31,7 @@ import {
 } from './invoice-ledger-seal.js';
 
 const uuid = z.uuid();
+const organizationReplica = new OrganizationReplica('gigalibs_ar');
 const lineSchema = z
   .object({
     description: z.string().trim().min(1).max(500),
@@ -42,6 +44,7 @@ const draftInputSchema = z
     billingEntityId: uuid.optional(),
     invoiceSeriesId: uuid.optional(),
     customerId: uuid,
+    orgUnitId: z.string().trim().min(1).max(64),
     currency: z.string().regex(/^[A-Z]{3}$/),
     issueDate: z.iso.date(),
     dueDate: z.iso.date(),
@@ -60,6 +63,7 @@ interface DraftHeaderRow {
   billing_entity_id: string;
   invoice_series_id: string;
   customer_id: string;
+  org_unit_id: string | null;
   currency: string;
   issue_date: string;
   due_date: string;
@@ -129,6 +133,7 @@ export interface InvoiceResponse {
   billingEntityId: string;
   invoiceSeriesId: string;
   customerId: string;
+  orgUnitId: string | null;
   invoiceNumber: string | null;
   status: 'DRAFT' | 'ISSUED';
   currency: string;
@@ -179,6 +184,8 @@ export class InvoicesService {
       );
       if (replay) return replay;
 
+      await assertInvoiceOrganization(client, principal, input.orgUnitId);
+
       const entity = await resolveBillingEntity(client, principal.tenantId, input.billingEntityId);
       const series = await resolveInvoiceSeries(
         client,
@@ -192,10 +199,10 @@ export class InvoicesService {
       await client.query(
         `
           INSERT INTO gigalibs_ar.invoice_drafts (
-            tenant_id, id, billing_entity_id, invoice_series_id, customer_id, currency,
+            tenant_id, id, billing_entity_id, invoice_series_id, customer_id, org_unit_id, currency,
             issue_date, due_date, purchase_order_reference, subtotal_minor, tax_minor, total_minor,
             created_by, updated_by
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7::date, $8::date, $9, $10, $11, $12, $13, $13)
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8::date, $9::date, $10, $11, $12, $13, $14, $14)
         `,
         [
           principal.tenantId,
@@ -203,6 +210,7 @@ export class InvoicesService {
           entity.id,
           series.id,
           input.customerId,
+          input.orgUnitId,
           input.currency,
           input.issueDate,
           input.dueDate,
@@ -259,6 +267,11 @@ export class InvoicesService {
       }
       if (prior.version !== expectedVersion) throw staleVersion();
 
+      await assertInvoiceOrganization(client, principal, input.orgUnitId);
+      if (prior.orgUnitId && prior.orgUnitId !== input.orgUnitId) {
+        throw new ArConflictError('INVOICE_ORGANIZATION_IMMUTABLE', 'The owning organization cannot change on an existing draft.');
+      }
+
       const entity = await resolveBillingEntity(client, principal.tenantId, input.billingEntityId);
       const series = await resolveInvoiceSeries(
         client,
@@ -274,6 +287,7 @@ export class InvoicesService {
             billing_entity_id = $3,
             invoice_series_id = $4,
             customer_id = $5,
+            org_unit_id = $15,
             currency = $6,
             issue_date = $7::date,
             due_date = $8::date,
@@ -301,6 +315,7 @@ export class InvoicesService {
           calculation.totalMinor,
           principal.subject,
           expectedVersion,
+          input.orgUnitId,
         ],
       );
       if (update.rowCount !== 1) throw staleVersion();
@@ -353,8 +368,15 @@ export class InvoicesService {
       }
       if (prior.version !== expectedVersion) throw staleVersion();
 
+      if (!prior.orgUnitId) throw new ArConflictError('INVOICE_ORGANIZATION_REQUIRED', 'Reconcile the draft organization before issuing.');
+      await assertInvoiceOrganization(client, principal, prior.orgUnitId);
+
       const entity = await loadBillingEntity(client, principal.tenantId, prior.billingEntityId);
       const customer = await requireActiveCustomer(client, principal.tenantId, prior.customerId);
+      const customerPartyId = uuid.safeParse(customer.external_reference);
+      if (!customerPartyId.success) {
+        throw new ArConflictError('CUSTOMER_PARTY_MAPPING_REQUIRED', 'Map the customer to a canonical Party before issuing.');
+      }
       const seriesResult = await client.query<SeriesRow>(
         `
           SELECT id, billing_entity_id, prefix, next_value::text, padding
@@ -404,14 +426,14 @@ export class InvoicesService {
         `
           INSERT INTO gigalibs_ar.invoices (
             tenant_id, id, source_draft_id, billing_entity_id, invoice_series_id, customer_id,
-            invoice_number, currency, issue_date, due_date, purchase_order_reference,
+            org_unit_id, invoice_number, currency, issue_date, due_date, purchase_order_reference,
             seller_snapshot, buyer_snapshot, terms_snapshot,
             subtotal_minor, tax_minor, total_minor, issued_by, issued_at,
             seal_sequence, seal_hash, previous_seal_hash
           ) VALUES (
-            $1, $2, $2, $3, $4, $5, $6, $7, $8::date, $9::date, $10,
-            $11::jsonb, $12::jsonb, $13::jsonb, $14, $15, $16, $17, $18::timestamptz,
-            $19, $20, $21
+            $1, $2, $2, $3, $4, $5, $6, $7, $8, $9::date, $10::date, $11,
+            $12::jsonb, $13::jsonb, $14::jsonb, $15, $16, $17, $18, $19::timestamptz,
+            $20, $21, $22
           )
         `,
         [
@@ -420,6 +442,7 @@ export class InvoicesService {
           prior.billingEntityId,
           prior.invoiceSeriesId,
           prior.customerId,
+          prior.orgUnitId,
           invoiceNumber,
           prior.currency,
           prior.issueDate,
@@ -503,10 +526,14 @@ export class InvoicesService {
         causationId: idempotencyKey,
         data: {
           invoiceId: id,
+          customerPartyId: customerPartyId.data,
+          orgUnitId: prior.orgUnitId,
           billingEntityId: prior.billingEntityId,
           invoiceNumber,
-          currency: prior.currency,
-          totalMinor: prior.totalMinor,
+          currencyCode: prior.currency,
+          totalAmountMinor: String(prior.totalMinor),
+          sealHash,
+          sealSequence: nextSealSequence,
           issuedAt: occurredAt,
         },
       };
@@ -555,7 +582,12 @@ export class InvoicesService {
     const id = uuid.parse(invoiceId);
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
       await assertActiveTenant(client, principal.tenantId, principal.issuer);
-      return loadInvoice(client, principal.tenantId, id);
+      const access = await resolveInvoiceAccess(client, principal);
+      const invoice = await loadInvoice(client, principal.tenantId, id);
+      if (access.readUnits !== null && (!invoice.orgUnitId || !access.readUnits.includes(invoice.orgUnitId))) {
+        throw new NotFoundException('Invoice was not found.');
+      }
+      return invoice;
     });
   }
 
@@ -574,6 +606,7 @@ export class InvoicesService {
     const cursor = decodeInvoiceCursor(rawCursor);
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
       await assertActiveTenant(client, principal.tenantId, principal.issuer);
+      const access = await resolveInvoiceAccess(client, principal);
       const result = await client.query<DraftHeaderRow>(
         `
           SELECT
@@ -581,6 +614,7 @@ export class InvoicesService {
             d.billing_entity_id,
             d.invoice_series_id,
             d.customer_id,
+            d.org_unit_id,
             d.currency,
             d.issue_date::text,
             d.due_date::text,
@@ -605,6 +639,7 @@ export class InvoicesService {
           LEFT JOIN LATERAL gigalibs_ar.invoice_balance(d.tenant_id, i.id) bal
             ON i.id IS NOT NULL
           WHERE d.tenant_id = $1
+            AND ($7::boolean OR (d.org_unit_id IS NOT NULL AND d.org_unit_id = ANY($8::text[])))
             AND ($2::text IS NULL OR d.status = $2)
             AND ($3::uuid IS NULL OR d.customer_id = $3)
             AND (
@@ -621,6 +656,8 @@ export class InvoicesService {
           cursor?.u ?? null,
           cursor?.i ?? null,
           limit + 1,
+          access.readUnits === null,
+          access.readUnits ?? [],
         ],
       );
       const hasMore = result.rows.length > limit;
@@ -709,6 +746,7 @@ export class InvoicesService {
       fulfillmentId: string;
       orderId: string;
       orderNumber: string;
+      orgUnitId: string;
       customerPartyId: string;
       currencyCode: string;
       issueId: string;
@@ -724,25 +762,31 @@ export class InvoicesService {
       dispatchedAt: string;
     },
     correlationId: string,
+    messageId: string,
   ): Promise<{ invoiceId: string; invoiceNumber: string; totalAmountMinor: string; sealHash: string; duplicate: boolean }> {
+    if (!event.orgUnitId?.trim() || event.orgUnitId.length > 64) {
+      throw new ArConflictError('INVOICE_ORGANIZATION_REQUIRED', 'The fulfillment must name its owning organization unit.');
+    }
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
       await assertActiveTenant(client, principal.tenantId, principal.issuer);
 
-      const messageId = event.fulfillmentId;
       const sha256 = hashCanonicalJson(event);
 
       // 1. Deduplicate via gigalibs_ar.inbox_receipts
-      const existingInbox = await client.query<{ status: string; id: string }>(
-        `SELECT status, id FROM gigalibs_ar.inbox_receipts
+      const existingInbox = await client.query<{ status: string; id: string; payload_sha256: string }>(
+        `SELECT status, id, payload_sha256 FROM gigalibs_ar.inbox_receipts
          WHERE tenant_id = $1 AND consumer_name = 'ar_orders_fulfillment_consumer' AND message_id = $2`,
         [principal.tenantId, messageId],
       );
 
+      if (existingInbox.rows.length > 0 && existingInbox.rows[0]?.payload_sha256 !== sha256) {
+        throw new ArConflictError('FULFILLMENT_REPLAY_CONFLICT', 'A fulfillment message was replayed with different content.');
+      }
       if (existingInbox.rows.length > 0 && existingInbox.rows[0]?.status === 'PROCESSED') {
         const invRes = await client.query<{ id: string; invoice_number: string; total_minor: string; seal_hash: string }>(
           `SELECT id, invoice_number, total_minor::text, seal_hash FROM gigalibs_ar.invoices
-           WHERE tenant_id = $1 AND purchase_order_reference = $2 LIMIT 1`,
-          [principal.tenantId, event.orderNumber],
+           WHERE tenant_id = $1 AND source_fulfillment_id = $2`,
+          [principal.tenantId, event.fulfillmentId],
         );
         const inv = invRes.rows[0];
         if (inv) {
@@ -754,6 +798,10 @@ export class InvoicesService {
             duplicate: true,
           };
         }
+        throw new ArConflictError('FULFILLMENT_RECEIPT_INCOMPLETE', 'The fulfillment receipt has no matching invoice.');
+      }
+      if (existingInbox.rows.length > 0) {
+        throw new ServiceUnavailableException('The fulfillment is still processing; retry delivery.');
       }
 
       if (existingInbox.rows.length === 0) {
@@ -766,71 +814,23 @@ export class InvoicesService {
         );
       }
 
-      // 2. Resolve or provision active customer
-      await client.query(
-        `INSERT INTO gigalibs_ar.customers (
-          tenant_id, id, legal_name, billing_email, external_reference, currency, status, created_by, updated_by
-        ) VALUES (
-          $1, $2, $3, $4, $5, $6, 'ACTIVE', $7, $7
-        ) ON CONFLICT (tenant_id, id) DO UPDATE SET updated_at = NOW()`,
-        [
-          principal.tenantId,
-          event.customerPartyId,
-          `Customer ${event.customerPartyId.slice(0, 8)}`,
-          `billing-${event.customerPartyId.slice(0, 8)}@example.com`,
-          event.customerPartyId,
-          event.currencyCode,
-          principal.subject,
-        ],
+      // The canonical Party must already be mapped to a real, active AR customer.
+      // Missing setup holds the source event for retry; no customer or accounting
+      // configuration is invented from a fulfillment payload.
+      const customerResult = await client.query<CustomerSnapshotRow>(
+        `SELECT id, legal_name, billing_email, external_reference, currency, status
+         FROM gigalibs_ar.customers
+         WHERE tenant_id = $1 AND external_reference = $2 AND currency = $3 AND status = 'ACTIVE'`,
+        [principal.tenantId, event.customerPartyId, event.currencyCode],
       );
+      const customer = customerResult.rows[0];
+      if (!customer) throw new ArConflictError('CUSTOMER_MAPPING_REQUIRED', 'Map the Party to an active AR customer before invoicing.');
 
-      // 3. Resolve active billing entity & series
-      let entityRes = await client.query<EntityRow>(
-        `SELECT id, legal_name, legal_identifier, default_currency, locale, time_zone
-         FROM gigalibs_ar.billing_entities
-         WHERE tenant_id = $1 LIMIT 1`,
-        [principal.tenantId],
-      );
-      if (entityRes.rows.length === 0) {
-        const newEntityId = randomUUID();
-        await client.query(
-          `INSERT INTO gigalibs_ar.billing_entities (
-            tenant_id, id, legal_name, legal_identifier, default_currency, locale, time_zone, created_by, updated_by
-          ) VALUES ($1, $2, 'Default Operating Entity', 'CORP-001', $3, 'en-US', 'UTC', $4, $4)`,
-          [principal.tenantId, newEntityId, event.currencyCode, principal.subject],
-        );
-        entityRes = await client.query<EntityRow>(
-          `SELECT id, legal_name, legal_identifier, default_currency, locale, time_zone
-           FROM gigalibs_ar.billing_entities WHERE tenant_id = $1 AND id = $2`,
-          [principal.tenantId, newEntityId],
-        );
+      const entity = await resolveBillingEntity(client, principal.tenantId);
+      if (entity.default_currency !== event.currencyCode) {
+        throw new ArConflictError('BILLING_CURRENCY_MISMATCH', 'The billing entity currency does not match the order.');
       }
-      const entity = entityRes.rows[0];
-      if (!entity) throw new NotFoundException('Failed to resolve billing entity');
-
-      let seriesRes = await client.query<SeriesRow>(
-        `SELECT id, billing_entity_id, prefix, next_value::text, padding
-         FROM gigalibs_ar.invoice_series
-         WHERE tenant_id = $1 AND billing_entity_id = $2
-         FOR UPDATE LIMIT 1`,
-        [principal.tenantId, entity.id],
-      );
-      if (seriesRes.rows.length === 0) {
-        const newSeriesId = randomUUID();
-        await client.query(
-          `INSERT INTO gigalibs_ar.invoice_series (
-            tenant_id, id, billing_entity_id, code, prefix, next_value, padding
-          ) VALUES ($1, $2, $3, 'DEFAULT', 'INV-', 1, 5)`,
-          [principal.tenantId, newSeriesId, entity.id],
-        );
-        seriesRes = await client.query<SeriesRow>(
-          `SELECT id, billing_entity_id, prefix, next_value::text, padding
-           FROM gigalibs_ar.invoice_series WHERE tenant_id = $1 AND id = $2 FOR UPDATE`,
-          [principal.tenantId, newSeriesId],
-        );
-      }
-      const series = seriesRes.rows[0];
-      if (!series) throw new NotFoundException('Failed to resolve invoice series');
+      const series = await resolveInvoiceSeries(client, principal.tenantId, entity.id);
 
       // 4. Calculate invoice lines
       const draftLinesInput: InvoiceDraftLineInput[] = event.lines.map((l) => ({
@@ -848,17 +848,18 @@ export class InvoicesService {
       await client.query(
         `INSERT INTO gigalibs_ar.invoice_drafts (
           tenant_id, id, billing_entity_id, invoice_series_id, customer_id,
-          currency, issue_date, due_date, purchase_order_reference,
+          org_unit_id, currency, issue_date, due_date, purchase_order_reference,
           subtotal_minor, tax_minor, total_minor, status, created_by, updated_by
         ) VALUES (
-          $1, $2, $3, $4, $5, $6, $7::date, $8::date, $9, $10, $11, $12, 'DRAFT', $13, $13
+          $1, $2, $3, $4, $5, $6, $7, $8::date, $9::date, $10, $11, $12, $13, 'DRAFT', $14, $14
         )`,
         [
           principal.tenantId,
           invoiceId,
           entity.id,
           series.id,
-          event.customerPartyId,
+          customer.id,
+          event.orgUnitId,
           event.currencyCode,
           issueDate,
           dueDate,
@@ -903,28 +904,30 @@ export class InvoicesService {
       await client.query(
         `INSERT INTO gigalibs_ar.invoices (
           tenant_id, id, source_draft_id, billing_entity_id, invoice_series_id, customer_id,
-          invoice_number, currency, issue_date, due_date, purchase_order_reference,
+          org_unit_id, source_fulfillment_id, invoice_number, currency, issue_date, due_date, purchase_order_reference,
           seller_snapshot, buyer_snapshot, terms_snapshot,
           subtotal_minor, tax_minor, total_minor, issued_by, issued_at,
           seal_sequence, seal_hash, previous_seal_hash
         ) VALUES (
-          $1, $2, $2, $3, $4, $5, $6, $7, $8::date, $9::date, $10,
-          $11::jsonb, $12::jsonb, $13::jsonb, $14, $15, $16, $17, $18::timestamptz,
-          $19, $20, $21
+          $1, $2, $2, $3, $4, $5, $6, $7, $8, $9, $10::date, $11::date, $12,
+          $13::jsonb, $14::jsonb, $15::jsonb, $16, $17, $18, $19, $20::timestamptz,
+          $21, $22, $23
         )`,
         [
           principal.tenantId,
           invoiceId,
           entity.id,
           series.id,
-          event.customerPartyId,
+          customer.id,
+          event.orgUnitId,
+          event.fulfillmentId,
           invoiceNumber,
           event.currencyCode,
           issueDate,
           dueDate,
           event.orderNumber,
           JSON.stringify({ id: entity.id, legalName: entity.legal_name, legalIdentifier: entity.legal_identifier }),
-          JSON.stringify({ id: event.customerPartyId, externalReference: event.customerPartyId }),
+          JSON.stringify({ id: customer.id, legalName: customer.legal_name, billingEmail: customer.billing_email, externalReference: event.customerPartyId }),
           JSON.stringify({ reason: `Order ${event.orderNumber} fulfillment ${event.fulfillmentId}` }),
           calculation.subtotalMinor,
           calculation.taxMinor,
@@ -983,6 +986,7 @@ export class InvoicesService {
           orderId: event.orderId,
           fulfillmentId: event.fulfillmentId,
           customerPartyId: event.customerPartyId,
+          orgUnitId: event.orgUnitId,
           totalAmountMinor: calculation.totalMinor.toString(),
           currencyCode: event.currencyCode,
           sealHash,
@@ -1009,6 +1013,16 @@ export class InvoicesService {
           issuedAt,
         ],
       );
+
+      await writeAudit(client, {
+        principal,
+        aggregateId: invoiceId,
+        action: 'ar.invoice.issued-from-fulfillment',
+        reason: `Orders fulfillment ${event.fulfillmentId}`,
+        priorState: null,
+        newState: await loadInvoice(client, principal.tenantId, invoiceId),
+        correlationId,
+      });
 
       // Mark inbox_receipts as PROCESSED
       await client.query(
@@ -1042,6 +1056,7 @@ async function loadInvoice(
         d.billing_entity_id,
         d.invoice_series_id,
         d.customer_id,
+        d.org_unit_id,
         d.currency,
         d.issue_date::text,
         d.due_date::text,
@@ -1089,6 +1104,34 @@ async function loadInvoice(
   return mapInvoice(row, lines.rows);
 }
 
+async function assertInvoiceOrganization(client: PoolClient, principal: ArPrincipal, orgUnitId: string): Promise<void> {
+  const access = await resolveInvoiceAccess(client, principal);
+  try {
+    assertOrganizationWrite(access, orgUnitId);
+    await assertOwningUnit(organizationReplica, client, principal.tenantId, access, 'UNIT', orgUnitId);
+  } catch (error) {
+    if (error instanceof OrganizationScopeRefusal) {
+      throw new ForbiddenException({ code: error.code, message: error.message });
+    }
+    throw error;
+  }
+}
+
+async function resolveInvoiceAccess(client: PoolClient, principal: ArPrincipal): Promise<OrganizationAccess> {
+  const claim = principal.organization;
+  if (!claim || (claim.mode === 'TENANT' && !claim.tree_version)) {
+    throw new ForbiddenException('An active, signed organization version is required for invoice access.');
+  }
+  try {
+    return await organizationAccess(organizationReplica, client, principal.tenantId, claim);
+  } catch (error) {
+    if (error instanceof OrganizationVersionPendingError) {
+      throw new ServiceUnavailableException({ code: error.code, message: error.message });
+    }
+    throw error;
+  }
+}
+
 function mapInvoice(row: DraftHeaderRow, lines: readonly LineRow[]): InvoiceResponse {
   const totalMinor = safeInteger(row.total_minor, 'totalMinor');
   return {
@@ -1096,6 +1139,7 @@ function mapInvoice(row: DraftHeaderRow, lines: readonly LineRow[]): InvoiceResp
     billingEntityId: row.billing_entity_id,
     invoiceSeriesId: row.invoice_series_id,
     customerId: row.customer_id,
+    orgUnitId: row.org_unit_id,
     invoiceNumber: row.invoice_number,
     status: row.status,
     currency: row.currency,

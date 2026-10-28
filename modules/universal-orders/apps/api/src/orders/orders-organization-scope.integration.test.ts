@@ -93,7 +93,7 @@ integration('Orders organization scope (isolated PostgreSQL)', () => {
     db = new DatabaseService({
       databaseUrl: pg.runtimeUrl,
       databasePoolSize: 5,
-      expectedMigrationVersion: 4,
+      expectedMigrationVersion: 5,
       platformContextAudience: 'proof',
       platformContextPublicKey: 'proof',
       corsOrigins: [],

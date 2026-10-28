@@ -13,6 +13,12 @@ import { FinanceController } from './finance/finance.controller.js';
 import { financeRecordDispatcher } from './finance/finance-record-adapters.js';
 import { FinanceRecordsService } from './finance/finance-records.service.js';
 import { FinanceService } from './finance/finance.service.js';
+import {
+  FINANCE_ACCOUNT_REFERENCE_CONFIG,
+  FinanceAccountReferenceController,
+  FinanceAccountReferenceGuard,
+  loadFinanceAccountReferenceConfig,
+} from './finance/account-reference.controller.js';
 import { JournalDraftsService } from './finance/journal-drafts.service.js';
 import { ConsolidationController } from './consolidation/consolidation.controller.js';
 import { ConsolidationService } from './consolidation/consolidation.service.js';
@@ -49,6 +55,7 @@ const FinanceRelayHealthController = createRelayHealthController('v1/health');
     HealthController,
     FinanceRelayHealthController,
     FinanceController,
+    FinanceAccountReferenceController,
     TreasuryController,
     FixedAssetsController,
     ConsolidationController,
@@ -62,6 +69,8 @@ const FinanceRelayHealthController = createRelayHealthController('v1/health');
   ],
   providers: [
     { provide: FINANCE_RELAY_CONFIG, useFactory: () => loadFinanceRelayConfig() },
+    { provide: FINANCE_ACCOUNT_REFERENCE_CONFIG, useFactory: () => loadFinanceAccountReferenceConfig() },
+    FinanceAccountReferenceGuard,
     { provide: FINANCE_INVENTORY_OUTBOUND_CONFIG, useFactory: () => loadFinanceInventoryOutboundConfig() },
     FinanceRelayInboxGuard,
     FinanceInventoryOutboxRelay,

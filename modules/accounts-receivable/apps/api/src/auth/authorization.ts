@@ -16,6 +16,7 @@ import {
   type ModuleRuntimeConfig,
   SignedContextGuardBase,
   type ModulePrincipal,
+  type OrganizationClaim,
 } from '@gigalibs/module-sdk';
 import {
   AR_MODULE_RUNTIME_CONFIG,
@@ -36,6 +37,7 @@ export interface ArPrincipal {
   subject: string;
   issuer: string;
   permissions: readonly string[];
+  organization?: OrganizationClaim;
 }
 
 export interface AuthenticatedRequest {
@@ -134,6 +136,7 @@ function arPrincipalFromModule(modulePrincipal: ModulePrincipal): ArPrincipal {
     subject: modulePrincipal.subject,
     issuer: AR_PLATFORM_CONTEXT_ISSUER,
     permissions: modulePrincipal.permissions,
+    ...(modulePrincipal.organization ? { organization: modulePrincipal.organization } : {}),
   };
 }
 

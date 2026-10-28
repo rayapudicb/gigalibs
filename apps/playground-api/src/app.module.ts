@@ -149,6 +149,7 @@ import { ConfigurationStudioService } from './configuration-studio.service.js';
 import { ConnectorCredentialService } from './connector-credential.service.js';
 import { ConnectorProfileService } from './connector-profile.service.js';
 import { ControlOutboxWorker } from './control-outbox.worker.js';
+import { PartyProjectionRelayService } from './parties/party-projection-relay.service.js';
 import { ModuleWindowBaselineService } from './module-window-baselines.service.js';
 import { DataRetentionWorker } from './data-retention.worker.js';
 import { SessionSweepWorker } from './session-sweep.worker.js';
@@ -244,6 +245,7 @@ import { WorkflowService } from './workflow.service.js';
     ExceptionService,
     ValueLedgerService,
     ControlOutboxWorker,
+    PartyProjectionRelayService,
     ModuleWindowBaselineService,
     TenantDataExportService,
     KernelSchedulesService,

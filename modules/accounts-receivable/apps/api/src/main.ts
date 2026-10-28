@@ -15,7 +15,7 @@ async function bootstrap(): Promise<void> {
     // Environment injection remains authoritative; absence of .env is expected in containers.
   }
 
-  const app = await NestFactory.create(AppModule, { bufferLogs: true });
+  const app = await NestFactory.create(AppModule, { bufferLogs: true, rawBody: true });
   const config = app.get<ArRuntimeConfig>(AR_CONFIG);
   app.use(requestContextMiddleware);
   app.use(helmet());

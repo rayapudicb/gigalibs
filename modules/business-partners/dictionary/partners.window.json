@@ -37,8 +37,8 @@
           "entityKey": "business-partners.partners",
           "label": "Name",
           "type": "TEXT",
-          "required": true,
-          "readOnly": false,
+          "required": false,
+          "readOnly": true,
           "isSystemLocked": false,
           "classification": "INTERNAL",
           "maskOnDisplay": false
@@ -48,8 +48,8 @@
           "entityKey": "business-partners.partners",
           "label": "Type",
           "type": "SELECT",
-          "required": true,
-          "readOnly": false,
+          "required": false,
+          "readOnly": true,
           "isSystemLocked": false,
           "classification": "INTERNAL",
           "maskOnDisplay": false,
@@ -85,19 +85,40 @@
           "referenceKey": "party-types",
           "referenceType": "VALUE_LIST",
           "staticValues": [
-            { "value": "ORGANIZATION", "label": "Organization" },
-            { "value": "PERSON", "label": "Person" }
+            {
+              "value": "ORGANIZATION",
+              "label": "Organization"
+            },
+            {
+              "value": "PERSON",
+              "label": "Person"
+            }
           ]
         },
         {
           "referenceKey": "partner-statuses",
           "referenceType": "VALUE_LIST",
           "staticValues": [
-            { "value": "ACTIVE", "label": "Active" },
-            { "value": "INACTIVE", "label": "Inactive" },
-            { "value": "PROSPECT", "label": "Prospect" },
-            { "value": "ARCHIVED", "label": "Archived" },
-            { "value": "MERGED", "label": "Merged" }
+            {
+              "value": "ACTIVE",
+              "label": "Active"
+            },
+            {
+              "value": "INACTIVE",
+              "label": "Inactive"
+            },
+            {
+              "value": "PROSPECT",
+              "label": "Prospect"
+            },
+            {
+              "value": "ARCHIVED",
+              "label": "Archived"
+            },
+            {
+              "value": "MERGED",
+              "label": "Merged"
+            }
           ]
         }
       ],
@@ -108,7 +129,10 @@
           "label": "Partners",
           "mode": "LIST",
           "device": "ALL",
-          "searchFields": ["display-name", "code"],
+          "searchFields": [
+            "display-name",
+            "code"
+          ],
           "defaultSortField": "display-name",
           "defaultSortDirection": "ASC",
           "tabs": [
@@ -120,10 +144,30 @@
               "targetEntityKey": "business-partners.partners",
               "sections": [],
               "fields": [
-                { "fieldKey": "display-name", "position": 0, "span": 8, "componentKey": "text-input" },
-                { "fieldKey": "party-type", "position": 1, "span": 4, "componentKey": "select" },
-                { "fieldKey": "code", "position": 2, "span": 4, "componentKey": "text-input" },
-                { "fieldKey": "status", "position": 3, "span": 4, "componentKey": "select" }
+                {
+                  "fieldKey": "display-name",
+                  "position": 0,
+                  "span": 8,
+                  "componentKey": "text-input"
+                },
+                {
+                  "fieldKey": "party-type",
+                  "position": 1,
+                  "span": 4,
+                  "componentKey": "select"
+                },
+                {
+                  "fieldKey": "code",
+                  "position": 2,
+                  "span": 4,
+                  "componentKey": "text-input"
+                },
+                {
+                  "fieldKey": "status",
+                  "position": 3,
+                  "span": 4,
+                  "componentKey": "select"
+                }
               ]
             }
           ]

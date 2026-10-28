@@ -196,6 +196,7 @@ export const OrdersFulfillmentDispatchedV1Schema = z
     fulfillmentId: z.string().uuid(),
     orderId: z.string().uuid(),
     orderNumber: z.string().min(1).max(64),
+    orgUnitId: z.string().min(1).max(64),
     customerPartyId: z.string().uuid(),
     currencyCode: z.string().regex(/^[A-Z]{3}$/),
     issueId: z.string().uuid(),
@@ -210,9 +211,11 @@ export const ArInvoiceIssuedV1Schema = z
   .object({
     invoiceId: z.string().uuid(),
     invoiceNumber: z.string().min(1).max(64),
-    orderId: z.string().uuid(),
-    fulfillmentId: z.string().uuid(),
+    orgUnitId: z.string().min(1).max(64),
+    orderId: z.string().uuid().optional(),
+    fulfillmentId: z.string().uuid().optional(),
     customerPartyId: z.string().uuid(),
+    billingEntityId: z.string().uuid(),
     totalAmountMinor: MoneyMinorSchema,
     currencyCode: z.string().regex(/^[A-Z]{3}$/),
     sealHash: z.string().length(64),
@@ -221,3 +224,73 @@ export const ArInvoiceIssuedV1Schema = z
   })
   .strict();
 export type ArInvoiceIssuedV1 = z.infer<typeof ArInvoiceIssuedV1Schema>;
+
+/** AR publishes the outstanding balance of one owned invoice after each committed financial fact. */
+export const ArCreditInvoiceBalanceV1Schema = z.object({
+  invoiceId: z.string().uuid(),
+  customerPartyId: z.string().uuid(),
+  orgUnitId: z.string().min(1).max(64),
+  currencyCode: z.string().regex(/^[A-Z]{3}$/),
+  openAmountMinor: z.string().regex(/^(0|[1-9]\d{0,18})$/),
+  sourceVersion: z.number().int().positive(),
+}).strict();
+export type ArCreditInvoiceBalanceV1 = z.infer<typeof ArCreditInvoiceBalanceV1Schema>;
+
+/** Orders publishes uninvoiced sales-order exposure after confirm and line invoice progress. */
+export const OrdersCreditUninvoicedBalanceV1Schema = z
+  .object({
+    orderId: z.string().uuid(),
+    customerPartyId: z.string().uuid(),
+    orgUnitId: z.string().min(1).max(64),
+    currencyCode: z.string().regex(/^[A-Z]{3}$/),
+    uninvoicedAmountMinor: z.string().regex(/^(0|[1-9]\d{0,18})$/),
+    sourceVersion: z.number().int().positive(),
+  })
+  .strict();
+export type OrdersCreditUninvoicedBalanceV1 = z.infer<typeof OrdersCreditUninvoicedBalanceV1Schema>;
+
+/** Business Partner credit-check command (gateway: `partners.credit.check`). */
+export const PartnerCreditCheckRequestV1Schema = z
+  .object({
+    requestKey: z.string().uuid(),
+    partyId: z.string().uuid(),
+    orgUnitId: z.string().trim().min(1).max(64),
+    currencyCode: z.string().regex(/^[A-Z]{3}$/),
+    additionalExposureMinor: z.string().regex(/^(0|[1-9]\d{0,18})$/).optional(),
+  })
+  .strict();
+export type PartnerCreditCheckRequestV1 = z.infer<typeof PartnerCreditCheckRequestV1Schema>;
+
+export const PartnerCreditCheckDecisionSchema = z.enum([
+  'APPROVED',
+  'ACTIVE_HOLD',
+  'SOURCE_INCOMPLETE',
+  'OVER_LIMIT',
+  'RECONCILE_REQUIRED',
+]);
+export type PartnerCreditCheckDecision = z.infer<typeof PartnerCreditCheckDecisionSchema>;
+
+export const PartnerCreditCheckResponseV1Schema = z
+  .object({
+    decision: PartnerCreditCheckDecisionSchema,
+    complete: z.boolean(),
+    creditLimitMinor: z.string().regex(/^(0|[1-9]\d{0,18})$/),
+    exposureMinor: z.string().regex(/^(0|[1-9]\d{0,18})$/),
+    availableMinor: z.string().regex(/^-?(0|[1-9]\d{0,18})$/),
+    activeHoldId: z.string().uuid().nullable(),
+  })
+  .strict();
+export type PartnerCreditCheckResponseV1 = z.infer<typeof PartnerCreditCheckResponseV1Schema>;
+
+/** Business Partner publishes each committed hold transition; unknown exposure is omitted for manual holds. */
+export const PartnerCreditHoldV1Schema = z.object({
+  holdId: z.string().uuid(),
+  partyId: z.string().uuid(),
+  orgUnitId: z.string().min(1).max(64),
+  currencyCode: z.string().regex(/^[A-Z]{3}$/),
+  status: z.enum(['ACTIVE', 'RELEASED']),
+  origin: z.enum(['MANUAL', 'EXPOSURE']),
+  outcome: z.enum(['PLACED', 'RELEASED']),
+  version: z.number().int().positive(),
+}).strict();
+export type PartnerCreditHoldV1 = z.infer<typeof PartnerCreditHoldV1Schema>;

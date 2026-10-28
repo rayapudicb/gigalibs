@@ -4,6 +4,12 @@ export {
   DocumentVersionConflictError,
 } from './errors.js';
 export { defineDocumentGraph, DocumentLifecycleRunner } from './transition-runner.js';
+export { DocumentIdempotencyConflictError, executeTransactionalDocumentAction } from './transactional-action.js';
+export type {
+  StoredDocumentActionOutcome,
+  TransactionalDocumentActionInput,
+  TransactionalDocumentActionStore,
+} from './transactional-action.js';
 export type {
   DocumentStatus,
   DocumentTransitionGraph,

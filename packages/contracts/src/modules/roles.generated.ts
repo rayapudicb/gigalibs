@@ -383,5 +383,33 @@ export const moduleDefaultRoles: readonly ModuleDefaultRole[] = [
       "workforce.absences.request",
       "workforce.absences.approve"
     ]
+  },
+  {
+    "catalogKey": "business-partners",
+    "key": "partner-manager",
+    "name": "Partner Manager",
+    "description": "Manages business partners, their accounts, credit limits and holds.",
+    "permissions": [
+      "business-partners:read",
+      "business-partners:write",
+      "business-partners.records.read",
+      "business-partners.records.manage",
+      "business-partners.accounts.read",
+      "business-partners.accounts.manage",
+      "business-partners.credit.read",
+      "business-partners.credit.manage"
+    ]
+  },
+  {
+    "catalogKey": "business-partners",
+    "key": "partner-viewer",
+    "name": "Partner Viewer",
+    "description": "Reads business partners, their accounts and credit status.",
+    "permissions": [
+      "business-partners:read",
+      "business-partners.records.read",
+      "business-partners.accounts.read",
+      "business-partners.credit.read"
+    ]
   }
 ];

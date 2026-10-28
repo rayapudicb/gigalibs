@@ -915,6 +915,7 @@ export class OrderService {
             fulfillmentId,
             orderId: fo.order_id,
             orderNumber: order.order_number,
+            orgUnitId: order.org_unit_id,
             customerPartyId: order.customer_party_id,
             currencyCode: order.currency_code,
             issueId: effectiveIssueId,

@@ -3,6 +3,8 @@ import { Injectable, NotFoundException, ServiceUnavailableException } from '@nes
 import { SCHEMA } from '../config.js';
 import { DatabaseService } from '../database.service.js';
 import { calculateCreditExposure, type CreditComponent } from './exposure.js';
+import { loadFeedMarks } from './feed-marks.js';
+import { evaluateCreditDecision, type CreditDecision } from './reconciliation.js';
 
 const orgReplica = new OrganizationReplica(SCHEMA);
 
@@ -17,11 +19,11 @@ export interface CreditStatusV1 {
   readonly exposureMinor: string;
   readonly availableMinor: string;
   readonly activeHoldId: string | null;
-  readonly decision: 'ACTIVE_HOLD' | 'SOURCE_INCOMPLETE';
-  readonly complete: false;
+  readonly decision: CreditDecision;
+  readonly complete: boolean;
 }
 
-/** Read model for the live credit panel. It never returns an approval before source reconciliation is proven. */
+/** Read model for the live credit panel and partner header gauge. */
 @Injectable()
 export class CreditStatusService {
   constructor(private readonly database: DatabaseService) {}
@@ -58,6 +60,13 @@ export class CreditStatusService {
            AND org_unit_id = $3 AND currency_code = $4 AND status = 'ACTIVE'`,
         [principal.tenantId, partyId, orgUnitId, currencyCode],
       );
+      const feedMarks = await loadFeedMarks(client, principal.tenantId, partyId, orgUnitId, currencyCode);
+      const outcome = evaluateCreditDecision({
+        feedMarks,
+        activeHoldId: hold.rows[0]?.id ?? null,
+        creditLimitMinor: BigInt(account.rows[0].credit_limit_minor),
+        ledger: ledger.rows.map((row) => ({ component: row.component, deltaMinor: BigInt(row.delta_minor) })),
+      });
       return {
         partyId, orgUnitId, currencyCode, creditLimitMinor: account.rows[0].credit_limit_minor,
         openArMinor: exposure.openArMinor.toString(),
@@ -65,7 +74,7 @@ export class CreditStatusService {
         prepaymentsMinor: exposure.prepaymentsMinor.toString(),
         exposureMinor: exposure.exposureMinor.toString(), availableMinor: exposure.availableMinor.toString(),
         activeHoldId: hold.rows[0]?.id ?? null,
-        decision: hold.rows[0] ? 'ACTIVE_HOLD' : 'SOURCE_INCOMPLETE', complete: false,
+        decision: outcome.decision, complete: outcome.complete,
       };
     });
   }
